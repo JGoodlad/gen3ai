@@ -1,0 +1,59 @@
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 0 Atk / 0 Def / 0 SpA / 144 SpD / 112 Spe
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Knock Off
+- Rest
+- Rock Blast
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 0 Atk / 0 Def / 252 SpA / 0 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rapid Spin
+- Surf
+- Thunderbolt
+- Ice Beam
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 0 Atk / 0 Def / 0 SpA / 216 SpD / 40 Spe
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Seismic Toss
+- Toxic
+- Rest
+- Thunder Wave
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 0 Atk / 0 Def / 0 SpA / 252 SpD / 4 Spe
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Spikes
+- Hidden Power [Dark]
+- Whirlwind
+- Protect
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 0 HP / 0 Atk / 0 Def / 252 SpA / 76 SpD / 180 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Psychic
+- Hidden Power [Dark]
+- Baton Pass
+- Giga Drain
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 0 HP / 252 Atk / 0 Def / 0 SpA / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Earthquake
+- Rock Slide
+- Beat Up
+- Hidden Power [Dark]

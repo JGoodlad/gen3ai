@@ -1,0 +1,59 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 0 HP / 0 Atk / 0 Def / 252 SpA / 80 SpD / 176 Spe
+Mild Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Dragon Claw
+- Rock Slide
+- Hidden Power [Dark]
+- Dragon Dance
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 0 Atk / 0 Def / 96 SpA / 0 SpD / 160 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Punch
+- Protect
+- Calm Mind
+- Ice Punch
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 0 Atk / 0 Def / 192 SpA / 0 SpD / 64 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Rest
+- Sleep Talk
+- Calm Mind
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 0 HP / 252 Atk / 172 Def / 0 SpA / 84 SpD / 0 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Body Slam
+- Earthquake
+- Curse
+- Return
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Crunch
+- Surf
+- Rock Slide
+- Hidden Power [Dark]
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rock Slide
+- Explosion
+- Earthquake
+- Rapid Spin

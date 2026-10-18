@@ -1,0 +1,59 @@
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 HP / 0 Atk / 0 Def / 252 SpA / 0 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Body Slam
+- Fire Punch
+- Wish
+- Protect
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 0 Atk / 0 Def / 0 SpA / 252 SpD / 4 Spe
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Drill Peck
+- Spikes
+- Protect
+- Toxic
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 0 Atk / 252 Def / 4 SpA / 0 SpD / 0 Spe
+Bold Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Toxic
+- Recover
+- Ice Beam
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 80 HP / 0 Atk / 0 Def / 16 SpA / 236 SpD / 176 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Punch
+- Focus Punch
+- Thunderbolt
+- Hypnosis
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 252 HP / 0 Atk / 0 Def / 252 SpA / 0 SpD / 4 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Roar
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 0 Atk / 112 Def / 0 SpA / 144 SpD / 0 Spe
+Sassy Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Shadow Ball
+- Explosion
+- Rock Slide
+- Refresh

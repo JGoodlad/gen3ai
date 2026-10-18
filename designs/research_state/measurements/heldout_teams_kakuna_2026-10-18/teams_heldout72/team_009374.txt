@@ -1,0 +1,59 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 0 HP / 0 Atk / 0 Def / 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Baton Pass
+- Hidden Power [Dark]
+- Substitute
+- Thunderbolt
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 0 Atk / 0 Def / 0 SpA / 216 SpD / 40 Spe
+Calm Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Leech Seed
+- Psychic
+- Recover
+- Hidden Power [Dark]
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 0 Atk / 0 Def / 212 SpA / 0 SpD / 48 Spe
+Quiet Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rock Slide
+- Focus Punch
+- Earthquake
+- Flamethrower
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 0 Atk / 176 Def / 60 SpA / 0 SpD / 20 Spe
+Bold Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Protect
+- Hydro Pump
+- Earthquake
+- Surf
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 0 HP / 252 Atk / 0 Def / 0 SpA / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Earthquake
+- Hidden Power [Dark]
+- Rock Slide
+- Aerial Ace
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 0 Atk / 0 Def / 252 SpA / 0 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Rapid Spin
+- Thunderbolt
+- Recover

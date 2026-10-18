@@ -1,0 +1,59 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 0 HP / 252 Atk / 0 Def / 52 SpA / 0 SpD / 204 Spe
+Naughty Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Protect
+- Hidden Power [Dark]
+- Thunder Wave
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 0 Atk / 216 Def / 0 SpA / 44 SpD / 0 Spe
+Relaxed Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Protect
+- Roar
+- Substitute
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 248 HP / 0 Atk / 0 Def / 212 SpA / 0 SpD / 48 Spe
+Quiet Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hidden Power [Dark]
+- Earthquake
+- Substitute
+- Rock Slide
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 0 Atk / 0 Def / 0 SpA / 204 SpD / 52 Spe
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Spikes
+- Rapid Spin
+- Surf
+- Ice Beam
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 0 Atk / 0 Def / 64 SpA / 0 SpD / 192 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Body Slam
+- Wish
+- Protect
+- Hidden Power [Dark]
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Double-Edge
+- Earthquake
+- Hidden Power [Dark]
+- Rock Slide

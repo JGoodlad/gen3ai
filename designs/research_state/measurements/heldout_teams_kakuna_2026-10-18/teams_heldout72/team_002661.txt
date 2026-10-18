@@ -1,0 +1,59 @@
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 0 Atk / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Will-O-Wisp
+- Destiny Bond
+- Hidden Power [Dark]
+- Fire Punch
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 104 Atk / 0 Def / 152 SpA / 0 SpD / 0 Spe
+Quiet Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunder Wave
+- Rain Dance
+- Thunderbolt
+- Ice Beam
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 128 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Earthquake
+- Protect
+- Meteor Mash
+- Explosion
+
+Ludicolo @ Leftovers
+Ability: Swift Swim
+EVs: 152 HP / 0 Atk / 0 Def / 252 SpA / 0 SpD / 104 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Leech Seed
+- Rain Dance
+- Surf
+- Hydro Pump
+
+Kingdra @ Leftovers
+Ability: Swift Swim
+EVs: 104 HP / 0 Atk / 0 Def / 252 SpA / 0 SpD / 152 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Beam
+- Surf
+- Hidden Power [Dark]
+- Rain Dance
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 0 HP / 252 Atk / 0 Def / 0 SpA / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Earthquake
+- Hidden Power [Dark]
+- Substitute
+- Aerial Ace

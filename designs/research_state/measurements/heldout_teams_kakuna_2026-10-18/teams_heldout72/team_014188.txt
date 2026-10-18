@@ -1,0 +1,59 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 0 Atk / 0 Def / 236 SpA / 0 SpD / 32 Spe
+Quiet Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Flamethrower
+- Hidden Power [Dark]
+- Pursuit
+- Focus Punch
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 0 Atk / 4 Def / 0 SpA / 252 SpD / 0 Spe
+Sassy Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Spikes
+- Hidden Power [Dark]
+- Rapid Spin
+- Zap Cannon
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 180 HP / 0 Atk / 0 Def / 100 SpA / 0 SpD / 228 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Flamethrower
+- Will-O-Wisp
+- Hidden Power [Dark]
+- Overheat
+
+Quagsire @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 0 Atk / 252 Def / 0 SpA / 4 SpD / 0 Spe
+Relaxed Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Curse
+- Ice Beam
+- Rest
+- Surf
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 0 Atk / 216 Def / 0 SpA / 40 SpD / 0 Spe
+Relaxed Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Wish
+- Body Slam
+- Protect
+- Substitute
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 0 HP / 0 Atk / 252 Def / 252 SpA / 0 SpD / 4 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunder Wave
+- Seismic Toss
+- Thunderbolt
+- Aromatherapy

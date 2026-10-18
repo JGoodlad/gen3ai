@@ -1,0 +1,59 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 0 HP / 4 Atk / 0 Def / 252 SpA / 0 SpD / 252 Spe
+Rash Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hidden Power [Dark]
+- Earthquake
+- Brick Break
+- Fire Blast
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 0 Atk / 0 Def / 80 SpA / 0 SpD / 180 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Leech Seed
+- Swords Dance
+- Baton Pass
+- Recover
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 0 HP / 0 Atk / 0 Def / 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power [Dark]
+- Protect
+- Toxic
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 0 HP / 228 Atk / 0 Def / 28 SpA / 0 SpD / 252 Spe
+Lonely Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rock Slide
+- Earthquake
+- Crunch
+- Hidden Power [Dark]
+
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 0 HP / 252 Atk / 0 Def / 0 SpA / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Substitute
+- Rock Slide
+- Hidden Power [Dark]
+- Earthquake
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 156 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 100 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Meteor Mash
+- Earthquake
+- Explosion
+- Agility

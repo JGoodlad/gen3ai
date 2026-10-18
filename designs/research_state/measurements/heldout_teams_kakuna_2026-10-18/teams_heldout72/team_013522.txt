@@ -1,0 +1,59 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 0 HP / 0 Atk / 0 Def / 252 SpA / 80 SpD / 176 Spe
+Mild Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Brick Break
+- Fire Blast
+- Dragon Claw
+- Hidden Power [Dark]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 0 Atk / 0 Def / 0 SpA / 252 SpD / 4 Spe
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Spikes
+- Drill Peck
+- Thief
+- Toxic
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 0 HP / 0 Atk / 0 Def / 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rapid Spin
+- Recover
+- Thunder Wave
+- Surf
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 0 HP / 0 Atk / 252 Def / 252 SpA / 0 SpD / 4 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Beam
+- Soft-Boiled
+- Wish
+- Thunderbolt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 0 Atk / 176 Def / 0 SpA / 44 SpD / 48 Spe
+Relaxed Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Roar
+- Protect
+- Surf
+- Focus Punch
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 0 HP / 0 Atk / 0 Def / 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Roar
+- Thunderbolt
+- Hidden Power [Dark]
+- Protect

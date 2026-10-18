@@ -1,0 +1,59 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Brick Break
+- Dragon Claw
+- Earthquake
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 0 Atk / 168 Def / 0 SpA / 88 SpD / 0 Spe
+Bold Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Earthquake
+- Focus Punch
+- Surf
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 0 SpA / 144 SpD / 12 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Focus Punch
+- Body Slam
+- Shadow Ball
+- Earthquake
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 0 Atk / 0 Def / 60 SpA / 0 SpD / 196 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power [Dark]
+- Thunder Wave
+- Roar
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 88 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Meteor Mash
+- Hidden Power [Dark]
+- Explosion
+- Psychic
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 252 HP / 0 Atk / 0 Def / 252 SpA / 0 SpD / 4 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Dragon Dance
+- Rock Slide
+- Hidden Power [Dark]
+- Earthquake

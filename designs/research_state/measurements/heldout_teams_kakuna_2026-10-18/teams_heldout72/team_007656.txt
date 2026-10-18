@@ -1,0 +1,59 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 88 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Explosion
+- Protect
+- Meteor Mash
+- Agility
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 136 HP / 164 Atk / 120 Def / 0 SpA / 88 SpD / 0 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Curse
+- Shadow Ball
+- Self-Destruct
+- Earthquake
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 140 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hidden Power [Dark]
+- Brick Break
+- Dragon Dance
+- Earthquake
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 0 HP / 252 Atk / 0 Def / 0 SpA / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Spore
+- Focus Punch
+- Mach Punch
+- Sky Uppercut
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 100 HP / 0 Atk / 0 Def / 252 SpA / 0 SpD / 156 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Calm Mind
+- Rest
+- Surf
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 0 HP / 0 Atk / 8 Def / 248 SpA / 0 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Calm Mind
+- Thunderbolt
+- Substitute
+- Hidden Power [Dark]

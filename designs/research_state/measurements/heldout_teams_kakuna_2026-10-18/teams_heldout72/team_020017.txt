@@ -1,0 +1,59 @@
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 248 HP / 0 Atk / 228 Def / 0 SpA / 0 SpD / 32 Spe
+Bold Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Roar
+- Substitute
+- Protect
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 0 HP / 0 Atk / 0 Def / 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hidden Power [Dark]
+- Baton Pass
+- Thunderbolt
+- Substitute
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 0 Atk / 0 Def / 0 SpA / 252 SpD / 8 Spe
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Spikes
+- Roar
+- Protect
+- Drill Peck
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 0 Atk / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Will-O-Wisp
+- Hidden Power [Dark]
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 148 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 108 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Earthquake
+- Meteor Mash
+- Agility
+- Protect
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hidden Power [Dark]
+- Dragon Dance
+- Brick Break
+- Fire Blast

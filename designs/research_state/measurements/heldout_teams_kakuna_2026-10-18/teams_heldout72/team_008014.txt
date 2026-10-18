@@ -1,0 +1,59 @@
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 0 HP / 0 Atk / 252 Def / 252 SpA / 0 SpD / 4 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Seismic Toss
+- Thunder Wave
+- Soft-Boiled
+- Thunderbolt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 0 Atk / 216 Def / 0 SpA / 44 SpD / 0 Spe
+Relaxed Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Roar
+- Hydro Pump
+- Substitute
+- Refresh
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rock Slide
+- Dragon Dance
+- Roar
+- Earthquake
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 0 HP / 156 Atk / 0 Def / 0 SpA / 140 SpD / 212 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Flamethrower
+- Rock Slide
+- Dragon Claw
+- Brick Break
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 0 Atk / 8 Def / 224 SpA / 0 SpD / 84 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Baton Pass
+- Swords Dance
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 0 Atk / 0 Def / 0 SpA / 252 SpD / 8 Spe
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Roar
+- Spikes
+- Toxic
+- Taunt
