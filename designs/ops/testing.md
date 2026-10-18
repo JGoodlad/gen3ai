@@ -1076,6 +1076,14 @@ python -m agents.observation.rust_encoder_benchmark [--decisions 40] [--reps 300
 #   cuda REFUSES a GPU with any compute process or a live trainer; --tiny is the CPU code-path check
 python3 -m agents.training.learner_benchmark run --device cuda [--k 5] [--warmup 1] [--buffer <pkl>] [--publish <dir>]
 python3 -m agents.training.learner_benchmark run --device cpu --tiny
+# HOW FAST IS THIS CARD — the FROZEN GPU suite (T13, the GPU-upgrade decision; FIXTURES only, no run data, so it runs
+#   on a rented box from the public repo): the production update at bf16 + fp32, two larger-micro-batch points (the
+#   VRAM-headroom question), rollout throughput through the real trainer against a fixture self-play pool, nvidia-smi
+#   around every phase; ONE JSON (`gen3_gpu_bench_suite_v1`). Runbook + the comparison table:
+#   designs/ops/cloud_gpu_benchmark.md. GPU only under a LEASE locally; --quick is the CPU code path (~3 min)
+python3 -m agents.training.gpu_bench_suite run --out <dir> [--tag <name>] [--meta dph=0.26]
+python3 -m agents.training.gpu_bench_suite run --out <dir> --quick           # CUDA_VISIBLE_DEVICES="" is fine
+python3 -m agents.training.gpu_bench_suite compare <a.json> <b.json> … --reference <tag>
 ```
 
 🚨 **`learner_benchmark` (and `main.compile_inventory`, which reuses its argv builder) runs K9(b)'s

@@ -8,8 +8,11 @@
 #
 # setup = apt uv python venv pip torch_sanity clone submodule node showdown rust rust_build (no GPU work)
 # all   = setup + smoke + gpu_sanity
-# Inputs, scp'd next to this script by the driver (tools/cloud/vast/README.md): requirements_cu128.txt (derived
-# by tools/cloud/vast/requirements.py from environment_torch28.yml) and remote_sanity.py.
+# bench = THE FROZEN SUITE (python -m agents.training.gpu_bench_suite run; resumable, ~35-60 min on the card);
+#         BENCH_TAG / BENCH_META ("--meta dph=0.26 --meta geo=KR") are recorded in its JSON
+# Inputs, scp'd next to this script by the driver (tools/cloud/vast/README.md): the pip requirements ($REQS, default
+# requirements_cu128.txt; a cu126 box gets requirements_cu126.txt — both derived by tools/cloud/vast/requirements.py)
+# and remote_sanity.py.
 set -uo pipefail
 PROV=${PROV:-/root/prov}
 REPO=${REPO:-/root/gen3ai}
@@ -19,6 +22,7 @@ NODE_VERSION=${NODE_VERSION:-v22.22.1}       # the local box's node (2026-10-12)
 RUST_TOOLCHAIN=${RUST_TOOLCHAIN:-1.96.0}     # the local box's rustc (2026-10-12)
 PY_VERSION=${PY_VERSION:-3.11.15}            # the shared env's exact python (a bare 3.11 gave 3.11.17, 2026-10-12)
 HERE="$(cd "$(dirname "$0")" && pwd)"
+REQS=${REQS:-$HERE/requirements_cu128.txt}
 STEP=${1:?step}
 COMMIT=${2:-$(cat "$PROV/commit" 2>/dev/null || echo main)}
 mkdir -p "$PROV/done" "$PROV/logs" "$PROV/results"
@@ -50,7 +54,7 @@ s_apt() {
 s_uv() { curl -LsSf https://astral.sh/uv/install.sh | sh && uv --version; }
 s_python() { uv python install "$PY_VERSION" && uv venv -p "$PY_VERSION" "$VENV" && "$VENV/bin/python" -V; }
 s_pip() {
-    uv pip install -p "$VENV/bin/python" --index-strategy unsafe-best-match -r "$HERE/requirements_cu128.txt" &&
+    uv pip install -p "$VENV/bin/python" --index-strategy unsafe-best-match -r "$REQS" &&
         uv pip check -p "$VENV/bin/python" && uv pip freeze -p "$VENV/bin/python" > "$PROV/results/pip_freeze.txt"
 }
 s_torch_sanity() { "$VENV/bin/python" "$HERE/remote_sanity.py" --out "$PROV/results/torch_sanity.json"; }
@@ -88,6 +92,11 @@ s_gpu_sanity() {   # ONE update-bench call on the end state: proves compile + CU
     cd "$REPO" && PYTHONPATH="$REPO/src" DIAG_SRC="$REPO/src" "$VENV/bin/python" "$B/update_bench.py" --tag E_sanity \
         --argv "$("$VENV/bin/python" "$B/configs.py" --argv E)" --epochs 1 --warm 0 --reps 1 \
         --out "$PROV/results/E_sanity.json"
+}
+
+s_bench() {   # THE FROZEN GPU BENCHMARK SUITE (src/agents/training/gpu_bench_suite.py); incremental, so a re-run resumes
+    cd "$REPO" && PYTHONPATH="$REPO/src" GEN3AI_BENCH_COMMIT="$COMMIT" "$VENV/bin/python" -m agents.training.gpu_bench_suite \
+        run --out "$PROV/results/suite" --tag "${BENCH_TAG:-}" ${BENCH_META:-}
 }
 
 SETUP=(apt uv python pip torch_sanity clone submodule node showdown rust rust_build)

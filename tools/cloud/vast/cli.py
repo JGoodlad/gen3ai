@@ -92,7 +92,7 @@ def cmd_credit(_a: argparse.Namespace) -> int:
 
 
 def cmd_search(a: argparse.Namespace) -> int:
-    c = O.Criteria(gpu_name=a.gpu, max_dph=a.max_dph, min_reliability=a.min_reliability)
+    c = O.Criteria(gpu_name=a.gpu, max_dph=a.max_dph, min_reliability=a.min_reliability, min_cuda=a.min_cuda)
     raw = api.search_offers(O.search_query(c))
     keep, why = O.select(raw, c)
     _say(f"{len(raw)} offers returned; {len(keep)} pass; rejected: {why}")
@@ -142,7 +142,7 @@ def cmd_create(a: argparse.Namespace) -> int:
     cr = api.credit()
     if cr < a.min_credit + 0.5:
         raise SystemExit(f"REFUSED: credit {cr:.2f} is within $0.50 of the floor {a.min_credit:.2f}")
-    crit = O.Criteria(gpu_name=a.gpu, max_dph=a.max_dph)
+    crit = O.Criteria(gpu_name=a.gpu, max_dph=a.max_dph, min_cuda=a.min_cuda)
     # Offer ids are UNSTABLE between calls (2026-10-12: a search names ONE representative offer per machine, and
     # the same query named different ids on consecutive calls; two ids from a search were absent from the next).
     # So `--offer auto` searches afresh and tries the ranked survivors in order; a typed id is looked up BY ID.
@@ -312,6 +312,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     s.add_argument("--gpu", default="RTX 5090")
     s.add_argument("--max-dph", type=float, default=1.0)
     s.add_argument("--min-reliability", type=float, default=0.98)
+    s.add_argument("--min-cuda", type=float, default=12.8,
+                   help="the driver's CUDA floor (12.8 runs the cu128 stack; a cu126 box may take 12.6)")
     s.add_argument("--show", type=int, default=15)
     s.add_argument("--out", default="")
     s.set_defaults(fn=cmd_search)
@@ -321,6 +323,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     c.add_argument("--tries", type=int, default=3, help="with --offer auto: how many ranked offers to try")
     c.add_argument("--gpu", default="RTX 5090")
     c.add_argument("--max-dph", type=float, default=1.0)
+    c.add_argument("--min-cuda", type=float, default=12.8)
     c.add_argument("--image", default=DEFAULT_IMAGE)
     c.add_argument("--disk", type=float, default=60.0)
     c.add_argument("--label", default="gen3ai-bench")

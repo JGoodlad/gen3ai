@@ -277,6 +277,14 @@
    "contention": 1.27,
    "detail": ""
   },
+  "src/agents/training/gpu_bench_suite_integration_test.py::test_quick_suite_end_to_end": {
+   "status": "pass",
+   "commit": "20fe0ae71246d26d995e34f149701de749a85d0f",
+   "at": "2026-10-18T16:24:53Z",
+   "duration_s": 142.52,
+   "contention": 1.97,
+   "detail": ""
+  },
   "src/agents/training/instrumented_ppo_device_batches_test.py::test_on_cuda_staged_updates_strand_no_cache_on_a_new_stream": {
    "status": "pass",
    "commit": "174f5e628dfa5cf656aff7d784c8e686522d634b",
@@ -975,5 +983,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-17T11:47:26Z"
+ "last_written": "2026-10-18T16:24:53Z"
 }
