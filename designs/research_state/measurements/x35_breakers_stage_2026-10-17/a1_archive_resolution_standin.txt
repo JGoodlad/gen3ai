@@ -1,0 +1,9 @@
+ext_x26_160m /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_160000085_steps.zip 160000085 explicit_zip
+ext_x26_140m /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_140000062_steps.zip 140000062 explicit_zip
+ext_x26_120m /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_120000055_steps.zip 120000055 explicit_zip
+ext_x26_100m /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_100000037_steps.zip 100000037 explicit_zip
+ext_x26_080m /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_80000111_steps.zip 80000111 explicit_zip
+ext_x26_060m /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_60000135_steps.zip 60000135 explicit_zip
+ext_x26_040m /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_40000045_steps.zip 40000045 explicit_zip
+ext_x26_020m /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_20000043_steps.zip 20000043 explicit_zip
+n 8 unique labels 8

@@ -1,0 +1,1 @@
+--model models/rb_toy_ent_s4002/final_model.zip --behaviour-check fatal --steps 170081428 --checkpoint-every-steps 1000000 --snapshot-ladder-games 0 --supply-starve-cycles self_play_pool=0 --device cuda --seed 3601 --run-name rb_x35t_c0_s3601

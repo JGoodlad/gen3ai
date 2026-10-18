@@ -86,6 +86,14 @@ build or decision that differs updates this doc and its Decision record in the s
 
 - **The trap:** calling a treadmill a plateau and reaching for forks. On a treadmill, exploration only finds more
   holes faster.
+- **The plateau-breaker phase (X35, staged 2026-10-17, [`design_compute_efficiency.md`](design_compute_efficiency.md) §5.6)** reads every breaker against the POPULATION, per §0.
+  - Its PRIMARY is Δ against a frozen reference population: our own archive plus another lineage, kept inside the
+    15–85 % band.
+  - Exploitability (§0(b)) is a guard on every arm and the co-primary where the lever targets it.
+  - The b-ON × b-OFF head-to-head is a guard, never the verdict.
+  - The population levers are ranked there: an archive opponent pool first ("grow the pool", the uniform form of the
+    Nash-mixture lever), then PFSP, then main exploiters; a Nash-weighted archive and league exploiters are
+    conditional.
 - **Open gaps in any test design:**
 
 | # | gap | TODO |
@@ -125,3 +133,4 @@ build or decision that differs updates this doc and its Decision record in the s
 | 2026-10-03 | Eviction rule **(orchestrator, after review M5; PROPOSED, owner Q6)** | a declared ledger read at matrix DONE: among confidently zero-weight members, evict the one the newest member most surely beats; ties oldest, then id; grow otherwise; archive deletion separate | the PFSP-weight tie-break | `design_evaluation.md` §2.4 |
 | 2026-10-02 | Doc structure (orchestrator; the owner left it to the orchestrator) | ONE doc for the three population decisions (shared problem and machinery); the SYSTEM in `design_evaluation.md` | three separate docs | they share §0 and one machinery |
 | 2026-10-06 | The plateau meter's FIRST slice (plateau-meter agent, for the owner's plateau-first plan) | Tier 1 BUILT offline (U9a): the registered GSPRT newest vs W-back as a pure rule over ledger rows, `main.plateau tick / status`, a Tier-1 status beside an explicit "Tier 2 not built" caveat | waiting for U4's scheduler and U5's monitor before any plateau read (a deep run would start with no "done" signal at all) | `design_evaluation.md` §8.1 "As built", Decision record |
+| 2026-10-17 | The plateau-breaker readout (X35; design worker, for the orchestrator) | breakers scored against a frozen POPULATION (own archive + another lineage, band-filtered), with exploitability a guard everywhere and the co-primary for exploiter / magnet arms; the head-to-head a guard | the b-ON × b-OFF head-to-head as the verdict (one opponent, which §0 rules out in a cyclic regime); the archive Nash mixture as the primary (not built; F-ED-3's instability) | [`design_compute_efficiency.md`](design_compute_efficiency.md) §5.6.4 |

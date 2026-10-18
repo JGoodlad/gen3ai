@@ -453,7 +453,10 @@ so starvation is not the reason X26 is slowing; the evidence points at (c) (a sh
 the information ceiling (§3.5: what the starved moves are worth is in the hidden information). The breakers that
 address those are PFSP / league and search, in X35's order. Starvation reads (B2, B4) ride along every breaker arm as a
 GUARD: a breaker that sharpens the policy (one-ply search distilled, a lower entropy) must not do what the ai_v14
-lineage did (starvation +0.14 to +0.16 for −0.018 dominated mass).
+lineage did (starvation +0.14 to +0.16 for −0.018 dominated mass). **X35's guard thresholds (2026-10-17, [`design_compute_efficiency.md`](design_compute_efficiency.md) §5.6.5):** an arm
+FAILS G-C when B1's ON − OFF entropy interval lies wholly below −0.05 nats, or when B2's starved share shows a detected
+rise (the interval's lower bound > 0). B3 and B6 are reported; B4 refreshes the truth once if P\* is ≥ 50M past
+150M. No GPU arm targets anti-starvation (X35-A7 is trigger-gated).
 
 ## 6. FINDINGS
 
@@ -496,3 +499,4 @@ lineage did (starvation +0.14 to +0.16 for −0.018 dominated mass).
 |---|---|---|---|---|
 | 2026-10-17 | ESTABLISHED (owner request: "what type of collapse … we need some way to give counterfactuals") | The taxonomy (a1 tie-collapse / a2 misrank / b–f), each with its instrument; true-world one-ply rollouts as the REFEREE for starvation, honest-world ones as the deployable read; the battery B1–B10 on X26 every 20M and on every X35 arm, starvation as a GUARD on breakers | Treating entropy as the collapse meter (X26's entropy is flat while ~3 in 10 decisive turns starve); one undivided "starvation" number (it hides that 3/4 is misrank); an anti-starvation GPU arm on X26 now (its starvation is flat, and no deployable counterfactual can target the right moves, §3.5) | §3; `../research_state/measurements/collapse_pilot_2026-10-17/` |
 | 2026-10-17 | Counterfactual targets (iii) Q head on rollout labels and (iv) Gumbel completed-Q | Written up as DEFERRED designs, in line with the owner's 2026-09-30 label-scope rule (`design_q_head.md` §5.0); their usefulness is gated on honest-world value quality, i.e. the search programme | Recommending them now: honest one-ply values flag the wrong starved moves (−0.068 vs the top choice) | §2, §3.5 |
+| 2026-10-17 | The battery as X35's guard (design worker, for the orchestrator) | G-C = B1 (FAIL iff the ON − OFF entropy interval is wholly below −0.05 nats) + B2 (FAIL iff a detected rise in the starved share), on every b-ON and b-OFF final; B3 / B6 reported; an anti-starvation arm NOT run, with three named triggers | a guard on B4–B10 (cost; B5 and B10 not built); a fixed starvation bar of +0.05 (read A cannot resolve it, F-CC-3) | `design_compute_efficiency.md` §5.6.5 |

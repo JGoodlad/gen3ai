@@ -1,6 +1,6 @@
 # What the end state's compute buys: the cost / value ledger, the toy to its plateau, and plateau-breakers on both architectures
 
-**Status: DESIGN 2026-10-16 (planning input; nothing built, nothing launched).** ALWAYS-CURRENT (owner, 2026-09-27):
+**Status: DESIGN 2026-10-16 (planning input; nothing built, nothing launched). §5.6, the X35 plan, is STAGED ON PAPER 2026-10-17: arms ranked, readout pre-registered, the first arm's launch block dry-run validated, nothing launched.** ALWAYS-CURRENT (owner, 2026-09-27):
 a later decision or measurement that differs updates this doc in the same commit, and the Decision record (§7) says
 what changed and why.
 
@@ -51,6 +51,8 @@ meaningful difference there. **This doc therefore makes NO "replace or slim prod
   2. **R-T2.** Already registered; CPU.
   3. **X34 — the toy deep run.** One seed from its 100M cap, under X26's own Tier-1 rule, after X26: ≈ 12–29 GPU-h.
   4. **X35 — plateau-breakers on both architectures,** with a transfer calibration before the toy may gate anything.
+     Launch-ready on paper since 2026-10-17 (§5.6): seven arms ranked, the archive opponent pool (A1) first, the
+     readout scored against the POPULATION with the collapse battery and a Kakuna read as guards.
   5. **X36 — the toy + 1 component ladder.** DEFERRED.
 - **One owner question (§6.4):** run X34 on a rented cloud GPU in parallel with X26, or after X26 on ours.
 
@@ -371,11 +373,14 @@ in the backlog) is TWO arms per architecture:
 - 3 fork seeds per arm.
 
 **Fork lengths:**
-- production L_P = 20M steps (≈ 3.4 GPU-h per seed);
-- the toy at EQUAL GPU TIME (≈ 60M toy steps ≈ 3.5 GPU-h). The toy's 20M-step node is read as a secondary,
+- production L_P = 20M steps (≈ 4.4 GPU-h per seed at X26's MEASURED late-run rate, §5.6.1; the first draft's 3.4
+  assumed ≈ 1,600 fps, F13);
+- the toy at EQUAL GPU TIME (≈ 70M toy steps ≈ 4.2 GPU-h, §5.6.1). The toy's 20M-step node is read as a secondary,
   matched-step view.
 
-**The readout** for each breaker, on each architecture, is Δ_b = b-ON − b-OFF:
+**The readout** for each breaker, on each architecture, is Δ_b = b-ON − b-OFF. **AMENDED 2026-10-17 (§5.6.4):** Δ_b's
+PRIMARY is scored against a frozen POPULATION of opponents, per `design_league_decisions.md` §0; the b-ON × b-OFF
+head-to-head below becomes a guard (G-F) and the sensitive descriptor. The bar and the classes are unchanged:
 - the closing test's `cross_stat` on a square cross, or T40's rectangular statistic once built;
 - the ±2.0 pp bar;
 - classes GAIN (interval wholly above +2.0), NULL (inside [−2.0, +2.0]), LOSS (wholly below −2.0), else UNDECIDED.
@@ -461,9 +466,281 @@ same wall clock.
 | 1 | **X33** | **The equal-time CURVE from existing checkpoints**: each toy seed at the step whose effective learn time equals X26 at its checkpoints, for X26 at ≈ 15M (≈ 2.6 h), ≈ 30M (≈ 5.6 h, against the toy's 100M cap) and every later X26 node a toy node can match. 3 × 1 cells × 500 mirrored pairs per budget | **0** | ≈ 2–3 h per budget on the agent cores | does the toy's equal-time lead survive a larger budget? It is the first "curve, not a point" read, available NOW (X26 is past 45M) |
 | 2 | R-T2 | the toy cap vs X26 plateau (registered) | 0 | ≈ 3 h | G_p(cap), biased toward production |
 | 3 | **X34** | the toy deep run to plateau (§4) | ≈ 6–24 | Tier-1 checks ≈ 1 h each | the toy's ceiling; R-T2 re-read at plateau; the start point for §5 |
-| 4 | **X35** | breaker transfer calibration: breakers 1–2 on both, 3 fork seeds × (ON + OFF) | per breaker ≈ 20 (production) + ≈ 21 (toy at equal time) | crosses | does the architecture matter at the plateau-breaker stage; may the toy pre-screen? |
-| 5 | X35 (cont.) | further breakers, toy-first once calibrated | ≈ 21 per toy screen, ≈ 20 per production confirm | crosses | the breaker ranking |
+| 4 | **X35** | breaker transfer calibration: breakers 1–2 on both, 3 fork seeds × (ON + OFF) | per breaker ≈ 14.6 (production: 3 seeds ≈ 13 + guards ≈ 1.4) + ≈ 14.6 (toy at equal time); the shared control ≈ 13 + 13 once per batch (§5.6) | crosses | does the architecture matter at the plateau-breaker stage; may the toy pre-screen? |
+| 5 | X35 (cont.) | further breakers, toy-first once calibrated | ≈ 14.6 per toy screen, ≈ 14.6 per production confirm (§5.6) | crosses | the breaker ranking |
 | 6 | X36 | the toy + 1 component ladder (§5.3), only on its trigger | ≈ 7.5 per arm (3 seeds × 2.5) | crosses | which component carries a measured difference |
+
+### 5.6 X35 LAUNCH-READY ON PAPER: the arm list, the readout, the builds (2026-10-17)
+
+**Status: STAGED ON PAPER, nothing launched.** The day the plateau is called, the first arm can launch once the
+orchestrator gives its GO; a design block is not a launch command. The staging record, with every dry-run transcript,
+is [`../research_state/measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md).
+**Why now:** X26 is still CLIMBING at 180M (Tier 1 GAIN at every 10M check). The owner's order (2026-10-16) is X26 to
+its plateau, then the toy (X34) to its plateau, then breakers on both. No PFSP or league lever goes inside X26 itself.
+
+#### 5.6.1 The shared frame (every arm)
+
+- **The start.** P\* is X26's plateau checkpoint: the newest node of the second FLAT Tier-1 check (§4.3's convention),
+  a 10M-multiple `checkpoints/checkpoint_<N>_steps.zip`, sha256 frozen at the call. T\* is the same for X34.
+- **One pin per BATCH.** `X35_PIN_k` is one main commit that carries every build its arms need, T54 at least (§5.6.7).
+  A control is valid only at its own pin (`feedback_replicate_means_pin_and_seed`). So an arm whose build lands after a
+  batch's pin forms a later batch with its OWN control. Dispatching the builds now is what keeps batch 1 large.
+- **The recipe is X26's own record, not `recipe.fork`.** The launcher restores X26's 12 recipe knobs typed (10 epochs,
+  the KL → LR controller continuing from the inherited rate). `recipe.fork` (5 epochs, a frozen 5.6e-5) would be a
+  second lever, the X27 / X28 question. Each arm records its dose (`main.dose`). A dose gap over 10 % between b-ON and
+  b-OFF is reported as a confound, the threshold `main.best_response_gap` uses.
+- **Typed on every production arm: `--behaviour-check warn`**, X26's Amendment 3 regime, with its fixed GIGO ceilings
+  read by hand (`design_x26_readiness.md` Decision record, 2026-10-17). Untyped, a fork defaults to `fatal`
+  (`main/train/rust_env_setup.py`). Amendment 3 predicts ≈ 110 rounding stops by 500M, so `fatal` would mean about 6
+  stops per 20M arm (F14). Toy arms keep `fatal`, as X34 does.
+- **Lengths.** Production L_P = 20M steps. The toy L_T = 70M, at equal effective learn time (§5.4): 4.2 GPU-h at
+  ≈ 5.8 GPU-h per 100M is ≈ 72M. The realised Σ (`collect_ms` + `update_wall_s`) is recorded. A mismatch beyond ±15 %
+  is reported, with the toy's +20M node read as the matched-step secondary.
+- **Seeds.** Production 3501–3503 (look 1) and 3504–3505 (look 2); toy 3601–3605. b-ON and b-OFF share seed i.
+  Exploiters use 3511–3513, league exploiters 3521–3523 and best-response readers 3531+.
+- **ONE shared control set, C0, per (start checkpoint, pin).** Every breaker in the batch is read against it.
+- **The GPU order (batch 1, production):** A1 s3501, C0 s3501, C0 s3502, A1 s3502, A1 s3503, C0 s3503. This is an ABBA
+  order, so drift in box load does not land on one side. Then A2 × 3, then the toy calibration in the same order. The
+  first A1-vs-C0 read lands after ≈ 26 GPU-h.
+- **Throughput (MEASURED, X26's checkpoint mtimes):** 150,000,100 → 180,000,055 took 22,483 s, i.e. 7,494 s per 10M
+  ≈ 1,334 steps/s of wall time, eval cycles included. So a 20M fork is ≈ 4.2 GPU-h, plus ≈ 0.2 h for start and compile:
+  ≈ 4.4 GPU-h per seed and ≈ 13 GPU-h per arm of 3 seeds. The first draft's 3.4 GPU-h per seed is superseded (F13).
+- **Eval is inherited:** every 2M steps, 9 bots and 5 greedy sentinels at 100 games each, plus
+  `--snapshot-ladder-games 100` per promotion. An arm that adds evaluated opponents (A1: +8, A2: +5 sentinels) pays
+  ≈ 2 % more wall time at equal steps. That is declared, not corrected.
+
+#### 5.6.2 The ranked arm list
+
+Rank is expected information per GPU-hour toward the plateau mechanism X26 actually shows. The collapse pilot
+(`design_collapse_and_counterfactuals.md` §3–§5) finds no entropy collapse and flat starvation. It finds a slow
+transitive climb with a small, real cycle: Hodge excess width 32 Elo, p = 0.005, with significant 3-cycles through
+66M, 72M, 90M, 108M, 138M and 160M. Built arms rank above arms that need a build of equal promise. GPU-h is
+production, look 1 (3 seeds), plus the guards (one best-response reader ≈ 1.1, the population read ≈ 0.3 in a lease
+window). The toy side costs about the same again for an arm in the calibration pair.
+
+| rank | arm | in plain words | the ONE lever | mechanism it targets | GPU-h (prod.) | built? | decision rule |
+|---|---|---|---|---|---|---|---|
+| 1 | **A1 ARCHIVE POOL** (fictitious self-play over the whole past) | half of the self-play games are played against 8 frozen selves spread over the whole run, not only the last 20 snapshots | `--stable-opponents <8 archive nodes> --stable-opponent-selfplay-share 0.5` | COVERAGE of forgotten strategies and CYCLING: the measured 3-cycles run through nodes the 20-deep window (80–176M today) no longer holds. It is league §B's "grow the pool" and the uniform (Borda) form of "train vs the archive's Nash mixture" | ≈ 13 + 1.4 | **YES** (flags; T54 recommended before the pin) | R1 (§5.6.4) |
+| 2 | **A2 PFSP over the snapshot pool** | the recent selves the trainee loses to are drawn more often | `--pfsp-scale 2.5 --n-sentinels 10` (the extra sentinels feed PFSP fresh win rates; without PFSP they change no training) | pool-relative WEAK SPOTS, the treadmill | ≈ 13 + 1.4 | **YES** | R1. Prior: plausibly NULL. Pure PFSP over a homogeneous fresh self-pool was CONVICTED at −26 to −33 Elo in the pre-era gen-17 attribution (F15). That makes it the calibration pair's "plausible null" (§5.2) |
+| 3 | **A3 MAIN EXPLOITERS, folded in** (the population loop) | train 3 exploiters to beat P\*, then continue P\* with them taking 40 % of its challenge games | the exploiter slice: `--stable-opponents mx1,mx2,mx3 --stable-opponent-selfplay-share 0.4 --stable-opponent-pfsp` (the registered round-1 B recipe) | EXPLOITABILITY, the holes a best responder finds (league §0(b)) | ≈ 3 × 1.1 + 13 + 1.4 ≈ 18 | **YES** (flags; a two-phase kit, T55) | R1, or the co-primary R2 (the gap falls) |
+| 4 | **A4 TRAILING-MAGNET KL** (R-NaD / MMD style) | a pull toward a recent copy of itself, refreshed every eval cycle, beside the unchanged entropy bonus | `β · KL(π ‖ π_mag)`, β 0.05 (the entropy bonus's weight), the magnet refreshed every 2M steps | oscillation (the treadmill) and exploitable tie-breaks (collapse type a1): a trailing magnet converges toward equilibrium in two-player zero-sum games (`design_learner_recipe.md` §3.9; UNVERIFIED here) | ≈ 13 × 1.03 + 1.4 | **NO**: T56, ≈ 2 agent-days | R1, or R2 |
+| 5 | **A5 NASH-MIXTURE ARCHIVE** | A1, with each archive node weighted by the archive's max-entropy Nash (the posterior mean) instead of uniformly | the weights | CYCLING (league §0(a)'s lever, literally) | ≈ 13 + 1.4, plus the archive matrix (≈ 45k games: ≈ 0.3 GPU-h or ≈ 11 CPU-h) | **NO**: T57, ≈ 2 agent-days | CONDITIONAL: runs only if A1 is not LOSS. R1 against C0, and Δ against A1 reported |
+| 6 | **A6 LEAGUE EXPLOITERS** | 3 exploiters trained against the whole league (P\* plus the archive, PFSP-weighted), folded in as A3 is | the league-exploiter slice | holes the WHOLE league shares, which an exploiter of P\* alone may not find | ≈ 18 | **YES** (flags; a two-phase kit, T55) | CONDITIONAL on A3 reading ADOPT-CANDIDATE, or on gap(P\*) ≥ 0.15 at R0. R1, or R2 |
+| 7 | **A7 ENTROPY / ANTI-STARVATION** | — | — | — | — | — | **NOT RUN.** The collapse doc finds no entropy collapse and flat starvation. No deployable counterfactual knows which starved move is good (its §0, §5, F-CC-2). TRIGGERS: B1 shows an entropy fall on C0, B2 shows a starvation rise on C0, or R0 shows exploitable tie-breaks. Then X23 is run, re-scoped |
+| — | **C0 CONTROL**, plain continuation | P\* trained on, unchanged | none | the noise floor at the plateau (league G5) | ≈ 13 per batch | **YES** | — |
+
+Plus **R0**, at the plateau call and before any arm: a fresh best responder against P\* itself (≈ 1.1 GPU-h). It gives
+the plateau's exploitability baseline and A6's trigger.
+
+**The transfer calibration (§5.2) is A1 + A2.** Both are architecture-agnostic and both are built, so calibration
+starts on the first day. A1 is the one expected to help and A2 the plausible null. One-ply search, §5.2's example,
+belongs to the search programme (`search_ledger.md`). It takes a calibration slot when its harness is registered, and
+is not ranked here. X28, X29 and X30 stay on their own backlog rows.
+
+#### 5.6.3 Each arm's fork design (b-ON vs b-OFF from P\*)
+
+Every arm is `--model P* --behaviour-check warn --steps P*+20M` on `X35_PIN_k`. b-OFF is C0, the same argv with no
+lever.
+- **A1.** The 8 archive nodes are N_k for k = 1..8: the 10M-multiple checkpoint nearest k·(P\* − 20M)/8, ties
+  down. For P\* = 180M that is 20, 40, …, 160M. Each is passed as an explicit `.zip` with a label `:x26_<step>m`.
+  - A `run@step` spelling would label every node `ext_rb_x26_s2601`. The explicit form resolves to 8 unique labels,
+    arch-gated (verified offline, STAGED_PLAN §2).
+  - Nodes the trainee masters (≥ 0.80 for 2 cycles) move to the bot FLOOR by design. That is part of the arm's
+    mechanism, declared rather than prevented.
+  - The toy side uses the same rule on T\*'s own archive (`rb_toy_ent_s4002` + `_deep`).
+- **A2.** The pool is the auto-seeded parent pool (20 snapshots). PFSP starts cold: every factor is 1 until the first
+  eval cycle measures a win rate.
+- **A3.**
+  - Phase 1: three exploiters `--model P* --exploiter P* --no-self-play`, 5M steps each, the full trainee pool
+    (unpinned: a main exploiter plays the whole game). `--no-self-play` is required (F16).
+  - Phase 2: the 3 seed continuations carry the exploiters' finals as stable opponents.
+  - Our exploiters target a FROZEN P\*. AlphaStar's main exploiters track the moving main agent (UNVERIFIED, from
+    memory). A co-trained exploiter would need two learners on one GPU, which is not designed (F24).
+- **A4.** The magnet starts at P\* and is refreshed to the trainee's own frozen eval weights each cycle (2M).
+  - A STATIC anchor (the magnet held at P\*) is the degenerate variant. It runs only if A4 reads ADOPT-CANDIDATE, as
+    the attribution follow-up.
+  - A Smogon-prior behaviour-cloned magnet (§3.9's second candidate) needs a BC policy that does not exist. It is
+    deferred.
+- **A5.** A1's 8 nodes, weighted by the posterior-mean max-entropy Nash (`design_evaluation.md` §2.3 candidate (i)).
+  The weights are solved once, at fork time, on a matrix of the 8 nodes plus P\* at 500 mirrored pairs per edge, and
+  frozen.
+  - On a near-transitive pool the point Nash is near-pure (F-ED-3), and A5 can then degenerate into "self-play vs
+    P\*". The posterior mean spreads the weight. A support of fewer than 3 nodes is reported, and A5 is not run.
+- **A6.**
+  - Phase 1: three league exploiters `--model P* --stable-opponents P*,<A1's 8 nodes> --stable-opponent-selfplay-share
+    1.0 --stable-opponent-pfsp`, 5M steps each.
+  - Phase 2: the same as A3, with these exploiters' finals.
+
+#### 5.6.4 The readout and its PRE-REGISTERED decision rule
+
+**The reference population R** is frozen at the plateau call, before any arm runs. It is written to the staging
+directory with each file's sha256.
+- **A-block, our own archive:** P\*, P\* − 10M, and the midpoints between A1's adjacent pairs (N_2 | N_3, N_4 | N_5,
+  N_6 | N_7). For P\* = 180M that is 180, 170, 130, 90 and 50M. It is disjoint by FILE from A1's training nodes but
+  ADJACENT to them, so the A-block read leans toward A1 by construction (F20). The X-block, G-F and G-K are the
+  unbiased checks.
+- **X-block, another lineage that no arm trains against:** T\* (a cross-architecture cell, which `main.h2h play-many`
+  supports) and the registry baseline `production`. Each is kept iff P\*'s score against it, at 500 mirrored pairs,
+  lies in [0.20, 0.80]. That is Dota's 15–85 % band (`design_evaluation.md` §0a), with a rule-8 margin.
+- The toy side mirrors this: T\*'s own archive, with P\* in its X-block.
+
+**The population score** S(final) is the equal-weight mean, over R's members, of the mirrored-pair score: 500 pairs
+(1,000 games) per member on `main.h2h play-many`, greedy vs greedy with symmetric builders.
+
+**R1, the PRIMARY.**
+- **The statistic.** Δ_pop = mean over b-ON seeds of S − mean over b-OFF seeds of S, in pp. Seed finals are the units;
+  the interval is Welch's two-sample t with Satterthwaite df, two-sided at 97.5 % per look (two looks, Bonferroni).
+- **Classes**, at §5.1's ±2.0 pp bar:
+  - GAIN: the interval wholly above +2.0;
+  - NULL: wholly inside [−2.0, +2.0];
+  - LOSS: wholly below −2.0;
+  - else UNDECIDED.
+  - A bound within 1e-9 of a boundary counts as UNDECIDED (rule 8).
+- **Looks.** Look 1 is at 3 seeds per side. An UNDECIDED with Δ̂ > 0 goes to look 2, at 5 seeds per side; C0's two
+  extra seeds serve every arm in the batch. Look 2 is final.
+
+**R2, the CO-PRIMARY for A3, A4 and A6** (their mechanism is exploitability, league §0(b)):
+- **The read.** For each arm's seed-3501 final (b-ON and b-OFF), one fresh best responder: the OFFENSE 5-team archetype
+  (`exploiter_teamsets_2026-09-22.json`), 5M steps, at matched budget, dose and regime. `main.best_response_gap
+  --rounds` reads it, as population-loop round 1 did.
+- **"The gap FALLS"** iff the Newcombe 95 % upper bound of gap(ON) − gap(OFF) < 0. At n ≈ 400 per cell that detects a
+  fall of about 7 pp; round 1 read −10.0.
+
+**The guards.** Each one passes or fails deterministically.
+- **G-F, the head-to-head frontier.** b-ON × b-OFF via `cross_stat` (square, 3 × 3 or 5 × 5). FAIL iff its two-sided
+  95 % upper bound < −2.0 (a detected LOSS).
+- **G-E, exploitability.** The R2 read on every arm. FAIL iff the Newcombe 95 % lower bound of gap(ON) − gap(OFF)
+  > 0 (detected MORE exploitable).
+- **G-C, the collapse battery** (§5.6.5).
+- **G-K, the external anchor** (§5.6.6). FAIL iff ON − OFF is detected below 0 (Newcombe 95 %) on EITHER team set.
+
+**Verdicts.**
+- **ADOPT-CANDIDATE:** R1 is GAIN, or, for A3 / A4 / A6, R1 is NULL and R2 says the gap FALLS. In both cases every
+  guard must pass.
+- **TRADE:** R1 qualifies, but a guard fails. A GAIN on R with a head-to-head LOSS is the non-transitive case.
+- **NULL / LOSS / UNDECIDED**, after look 2.
+- An ADOPT-CANDIDATE goes to the owner as a recipe change for the deep continuation. Nothing is adopted by this rule
+  alone.
+
+**Always reported, descriptive:**
+- each final's lag curve against the archive (§0(c)), A1's built in through its `ext_` eval rows;
+- the max-entropy Nash score, once T57's solver exists;
+- §5.1's Δ_b(P) − Δ_b(T), and P\* + b against T\* + b.
+
+**The read's cost.**
+- R1: R has ≤ 7 members × 1,000 games × 6 finals, ≈ 42k games per look; C0's games are reused across the batch.
+- G-F: 9k games.
+- On the GPU in a lease window: 118 games/s pooled on the production net of 2026-10-03 (`eval_and_rating.md`;
+  UNVERIFIED for the end state), ≈ 10 min plus the engine starts.
+- On rule 5b's CPU: ≈ 1.16 games/s (`design_x26_readiness.md` §2.6), ≈ 12 h. So the read is scheduled in the GPU windows between
+  arms.
+
+#### 5.6.5 The collapse battery as a guard (G-C)
+
+Battery items from `design_collapse_and_counterfactuals.md` §4 are read on every final, b-ON and b-OFF, all seeds,
+on CPU at rule 5b. Each takes minutes. The intervals are battle-clustered 95 %, ON against OFF, pooled over seeds.
+- **B1, entropy** on X26's 7,028-turn bank. FAIL iff the interval of ON − OFF lies wholly below −0.05 nats. X26
+  itself broadened by +0.062 from 30M to 160M; a fall of this size is the first sign of type-(b) collapse.
+- **B2, the starved share of decisive turns** on X26's own 306-turn truth. FAIL iff the interval's lower bound > 0, a
+  detected rise. Read A's resolution (±0.07–0.08, F-CC-3) excludes an ai_v14-sized rise (+0.14), not a small one.
+- **B3**, the same on `truth_v2`: reported.
+- **B6**, Tier 1 and the Hodge width on each arm's own ladder: reported.
+- **Not in the guard:** B4 (3.7 CPU-h), B5 and B10 (not built), B8 and B9.
+- **Truth refresh.** If P\* is ≥ 50M past the truth's 150M continuation, B4 re-branches the truth once under P\*'s
+  continuation (≈ 3.7 CPU-h), before the first read. That is the collapse doc's own cadence.
+
+#### 5.6.6 The external-anchor protocol at the breaker readout (`../ops/EXTERNAL_ANCHORS_SOP.md`)
+
+Run on every arm (each b-ON and C0) on its seed finals, on P\* once per batch, and on the toy arms the same way:
+- **The cell.** `metamon:Kakuna` (ckpt 34), GREEDY vs GREEDY (SOP rule 2). Our side is greedy on CPU, on the
+  in-process Rust front end, on a 95xx port.
+- **BOTH team sets:** home72 (the sanitised 72-team copy from `n0_endofrun_2026-09-27/scripts/make_home72.py`, as in
+  the X26 read) and away (Metamon's 20 `competitive` teams).
+- **n ≥ 420 per team set per arm:** 7 role-balanced 20-game units per seed final × 3 seeds, so away carries ≥ 400.
+  The unit seeds 0–6 are SHARED across arms (`--team-seed = --seed-base = unit seed`).
+- **A unit counts** under the X26 read's rule: `status == OK`, `n == 20`, `regime_verified_decisions`, no
+  `team_source_asymmetry`, `peer_clean`.
+- **Reported:** each arm against 0.50 (Wilson), ON − OFF (Newcombe; this is G-K), and P\* against X26 @161M's read
+  (0.600 home72 / 0.570 away). Each number carries its regime (SOP rule 1).
+- **Where it runs:** from the checkout ROOT (the pool source's CWD hazard). Cost: ≈ 840 games × ≈ 9 s ≈ 2.1 h per arm
+  on one lane (≈ 2 cores), at rule 5b. The home72 config must be committed or regenerated first (F21).
+
+#### 5.6.7 The implementation audit, and the ordered build list
+
+Every dry-run below ran at `9ebda190` on a stand-in P\* (`checkpoint_180000055_steps.zip`), `CUDA_VISIBLE_DEVICES=""`,
+rule 5b. Nothing was created. The transcripts are in the staging directory.
+
+| arm | what exists | proven how | what must be built |
+|---|---|---|---|
+| C0 | the fork path, the pool auto-seed, the recipe restore | `checkargs` exit 0; `launcher --dry-run` "would launch", role FORK, +20,000,000 steps | T54 (the pool seed's step filter, F18) |
+| A1 | `--stable-opponents` (explicit zips + labels), `--stable-opponent-selfplay-share`, mastery → floor | `checkargs` 0; dry-run "would launch"; `resolve_stable_opponents` resolved 8 explicit-zip entries, 8 unique labels, arch-gated against X26's `ModelVersion` | nothing for the arm itself |
+| A2 | `--pfsp-scale`, `--n-sentinels` (end-to-end skew tests, `self_play_and_pool.md`) | dry-run "would launch" | nothing |
+| A3 | `--exploiter`, `--no-self-play`, the stable-opponent slice | phase 1 dry-run "would launch". Without `--no-self-play` it is REFUSED (F16). Phase 2 cannot be dry-run until the exploiters exist, because the resolver runs child-side | a two-phase launch kit (T55) |
+| A4 | nothing: the L3 off-slice anchor (`distill_anchor.py`) was deleted 2026-10-02; it is recoverable at `LAST_COMMIT_L3 615a764f` as a reference | — | **T56** |
+| A5 | uniform stable sampling and stable PFSP; `=<weight>` is refused at parse; no Nash solver in `src/` (scipy 1.17.1 is in the env) | — | **T57** |
+| A6 | the same flags as A1 at share 1.0 + `--stable-opponent-pfsp` | phase 1 dry-run "would launch" (share 1.0 is inside the parser's [0, 1]) | a two-phase launch kit (T55) |
+| toy C0 | the fork path from `rb_toy_ent_s4002` | dry-run "would launch" (X34 proved the toy at HEAD, §4.2) | — |
+| readout | `main.h2h play-many` (two architectures per engine), `cross_stat` (square), `main.best_response_gap` (pinned archetypes) | — | the population-score estimator and decision function, the reference-freeze tool, the Kakuna runner (T55); the arm-vs-arm / full-pool reader mode is optional (T58) |
+
+**No arm on this list needs a Rust or engine change.** A4 is learner-side and A5 lives in the Python opponent sampler
+(`rust_env_opponents.EpisodeOpponentSampler._pick_stable`). Search breakers would need one; they are not on the list.
+
+**The build list, in dispatch order** (all `TASK_BACKLOG.md` §2, rank X35-n):
+1. **T54 — the pool seed's STEP FILTER** (opus-medium, ≈ 0.3 agent-day). A fork seeds only the parent's snapshots at
+   or below the fork step, and prints and records the ones it dropped. Without it every arm, C0 included, trains
+   against X26's post-P\* selves (F18). It must land before batch 1's pin, and it must fail on revert.
+2. **T55 — the X35 stage kit** (opus-high, ≈ 1–1.5 agent-days).
+   - `launch_x35.sh`, which re-checks P\*, the pin, the sha256s, `checkargs` and the dry-run before anything is
+     created; the two-phase kits for A3 and A6.
+   - The reference-freeze tool, with the band rule.
+   - The population-score estimator and the deterministic decision function of §5.6.4, self-checked on constructed
+     cases BEFORE any real read (T40's discipline).
+   - The Kakuna unit runner (the X26 read's `xq.py` pattern) and the committed home72 config.
+   - It must land before the first READ, not before the first launch.
+3. **T56 — the trailing-magnet KL** for A4 (opus-high, ≈ 2 agent-days).
+   - The magnet's logits are a no-grad pre-pass over the rollout buffer, once per rollout (≈ +3 % of the update,
+     ESTIMATED). The loss adds `β · KL(π_θ ‖ π_mag)` over legal actions.
+   - The magnet refreshes on a declared schedule (P\* static, or every K steps); telemetry `train/magnet_kl`.
+   - β = 0 must be bit-identical to the current trainer. Not Rust. It joins batch 1 if it lands before the pin.
+4. **T57 — Nash weights** for A5 (opus-high, ≈ 2 agent-days).
+   - A deterministic max-entropy Nash solve (LP, then maximum entropy; fixed solver and tolerance) with the
+     posterior-mean variant (§2.3 (i)).
+   - Per-entry weights on `--stable-opponents`, honoured by `_pick_stable`, with the weights recorded in metadata.
+   - The 9-node matrix is played on `main.h2h play-many`.
+5. **T58 — `best_response_gap` reads arm against arm** (opus-high, ≈ 0.5–1 agent-day, OPTIONAL). It adds a full-pool
+   pseudo-archetype, so unpinned readers stop being UNASSIGNED (F17). The interim is pinned offense readers with
+   `--rounds`.
+6. **T59 — `ridealong_read --truth-dir` takes generic rows** (F-CC-4; opus-medium, ≈ 0.25 agent-day, OPTIONAL). B5 is
+   not in the guard.
+
+#### 5.6.8 The first arm's launch block (A1, seed 3501), dry-run validated, NEEDS THE ORCHESTRATOR'S GO
+
+The validated stand-in is in STAGED_PLAN §2. At the plateau call `launch_x35.sh` (T55) substitutes P\*, the 8 archive
+nodes and `X35_PIN_1`, and re-runs `checkargs` and the dry-run. Until T55 lands, the operator does that by hand.
+
+```
+# NEEDS GO. A design block is not a launch command. Stand-in values: P* = 180,000,055, pin 9ebda190.
+C=models/rb_x26_s2601/checkpoints
+python -m main.launcher --restart-interval-hours 24 --pin-commit <X35_PIN_1> \
+  --model $C/checkpoint_<P*>_steps.zip --behaviour-check warn \
+  --stable-opponents $C/checkpoint_<N8>_steps.zip:x26_<n8>m,…,$C/checkpoint_<N1>_steps.zip:x26_<n1>m \
+  --stable-opponent-selfplay-share 0.5 \
+  --steps <P*+20,000,000> --seed 3501 --checkpoint-every-steps 1000000 --device cuda --run-name rb_x35_a1arch_s3501
+```
+
+The control C0 s3501 is the same line without the two stable-opponent flags, with `--run-name rb_x35_c0_s3501`.
+Pre-checks before the GO:
+- X26 and X34 have stopped, and the GPU lease and window are the Training session's;
+- the pin contains T54;
+- none of the run dirs exists;
+- every sha256 is unchanged;
+- `checkargs --pin <X35_PIN_1>` exits 0, and the dry-run says "would launch", FORK of `rb_x26_s2601`, +20,000,000.
+
+The startup banners to expect:
+- `🌱 [SELFPLAY] [pool] seeded …`, with T54's dropped-step line;
+- `🐴 [STABLE] 8 cross-run opponent(s) …`;
+- `🧮 [TRUNK PRECISION] bf16`;
+- the compile gate's `parity PASS … clip margin`.
 
 ## 6. Efficiency ideas, as cost-reducers for the experiment programme only
 
@@ -529,6 +806,44 @@ Everything else here is the orchestrator's tactical call (GPU order, seeds, the 
   here.
 - **F12. Measured on one box, one commit, one thread.** `component_cost.py` ran at `38d76746` beside a live X26
   (rule 5b: 3 cores, nice 19). Absolute CPU seconds carry that contention. Shares and FLOPs do not.
+- **F13. The X35 fork cost was understated.** §5.1 priced a 20M production fork at 3.4 GPU-h from ≈ 1,600 fps. X26's
+  checkpoint mtimes give 7,494 s per 10M from 150M to 180M (≈ 1,334 steps/s of wall time, eval included): ≈ 4.2 GPU-h,
+  or ≈ 4.4 with start and compile (§5.6.1).
+- **F14 (HAZARD). A fork defaults to `--behaviour-check fatal`** (`main/train/rust_env_setup.py`), while X26 runs `warn`
+  under Amendment 3. That amendment predicts ≈ 110 rounding stops by 500M, so an untyped 20M arm would stop about 6
+  times. Every production X35 argv types `--behaviour-check warn`, and b-ON and b-OFF match.
+- **F15. The PFSP prior is negative, and it is pre-era history.** Pure PFSP over a homogeneous fresh-lineage self-pool
+  cost ≈ 26–33 Elo (ledger 2026-08-21, the gen-17 attribution). The one positive read, v8's +69, was over a diverse,
+  ANCHORED pool under a distillation KL. The PFSP fork `ai_v12_04_pfsp_fork25M` was paused at 30.5M and never read.
+  None of these is a comparator (ERAS). They only set A2's prior.
+- **F16. An exploiter fork of a self-play parent is REFUSED unless it types `--no-self-play`.** The launcher restores
+  `self_play=True` typed from the parent's record, and `--exploiter` is mutually exclusive with it (`resolve_config`).
+- **F17. `main.best_response_gap` cannot pair an UNPINNED reader.** `archetype_of` returns UNASSIGNED with "no pinned
+  teams", so a full-pool best responder never enters the paired delta. X35's readers are pinned offense-archetype
+  readers until T58.
+- **F18 (HAZARD, every arm). The fork pool seed copies the parent's WHOLE pool with no step filter**
+  (`agents/training/pool_seed.seed_pool`). X26 keeps training while its Tier-1 checks run, so at the plateau call its
+  pool holds snapshots from AFTER P\*. Every fork would train against future selves, unlike X26 at P\*. It is matched
+  between b-ON and b-OFF, but it is not "plain continuation from P\*". T54 fixes it. Without T54 the leak must be
+  declared in the read.
+- **F19. Power at 3 seeds per side is low.** With a seed-mean SD of ≈ 2 pp per side (an ASSUMPTION; the plateau noise
+  floor G5 is unmeasured), a two-sample t at df ≈ 4 needs Δ̂ ≳ +6 pp for a GAIN wholly above +2.0. The second look (5
+  seeds) is registered for that reason. C0's first seeds measure the SD.
+- **F20. A1 trains next to the A-block.** Its archive nodes are 10M from R's own nodes, so the A-block score leans
+  toward A1 by construction. The X-block, the head-to-head guard and the Kakuna guard are the unbiased checks. That is
+  why A1 cannot be adopted on R alone when they fail.
+- **F21. The home72 team config is not in the repo.** The X26 read used `anchors_home72_kakuna.json` from
+  `/home/goodlad/dev/gen3ai-reads/…`, regenerated by `n0_endofrun_2026-09-27/scripts/make_home72.py`. T55 must commit
+  it, or regenerate it under a recorded sha256, before any X35 Kakuna read.
+- **F22. Disk.** The launcher requires ≈ 20.7 GiB of headroom per 20M production fork (13.35 GiB before margins).
+  Batch 1 is 9 production forks + 9 toy forks + ≈ 7 exploiter and reader runs, against 318 GiB free today (X34 needs 48
+  GiB). Finished arms must be thinned to their 10M nodes + final under the retention policy as they finish, or a later
+  launch is refused.
+- **F23. Literature is from memory or second-hand, UNVERIFIED here:** AlphaStar's league roles (main agents, main
+  exploiters, league exploiters, PFSP; Vinyals et al. 2019), PSRO (Lanctot et al. 2017), and R-NaD / MMD (as cited in
+  `design_learner_recipe.md` §3.9).
+- **F24. Our "main exploiter" targets a FROZEN P\*.** AlphaStar's track the moving main agent (UNVERIFIED). A
+  co-trained exploiter would need two learners sharing one GPU, which is neither designed nor costed.
 
 ## 7. Decision record
 
@@ -541,3 +856,7 @@ Everything else here is the orchestrator's tactical call (GPU order, seeds, the 
 | 2026-10-16 | Equal compute | effective learn GPU-time (Σ collect + update) as PRIMARY, FLOPs as a descriptor, ≥ 3 budgets, load recorded | FLOP-matching as primary (collect is not FLOP-bound); `time_elapsed` against X26 (F2) | §5.4 |
 | 2026-10-16 | The toy + 1 ladder | DEFERRED with two named triggers | running it now (the owner's plan does not need attribution yet) | §5.3 |
 | 2026-10-17 | How X34 carries T36's canary fix | **a FORK at main** (`--pin-commit` main; the minimal argv inherits the arch and has the recipe restored), after network identity was PROVEN: the same keys and shapes, a strict load, and a bit-identical fp32 forward at HEAD vs the pin | resuming at the pin `3899277a` (the pre-T36 canary lottery for 400M steps); typing the toy's arch flags on the fork (resolves to the same config; more surface); a fork without `--pin-commit` (it pins the PARENT's commit, F1) | `x34_toy_deep_stage_2026-10-17/`; `toy_network_identity_test.py` |
+| 2026-10-17 | **X35's arm list and order** (design worker, for the orchestrator) | **A1 archive pool (first) → A2 PFSP → A3 main exploiters → A4 trailing-magnet KL → A5 Nash-weighted archive (conditional) → A6 league exploiters (conditional) → A7 entropy NOT RUN (trigger-gated)**, with C0 as the shared control and R0 (exploitability of P\*) at the call. A1 + A2 are the transfer-calibration pair | PFSP first (a negative pre-era prior, F15; it reweights only the 20-deep recent window, which the measured cycles have left); an anti-starvation arm (the collapse doc finds nothing for it to fix, and no deployable counterfactual); one-ply search in this list (the search programme owns it, through the §5.2 slot) | §5.6.2; `design_collapse_and_counterfactuals.md` §3–§5; ledger 2026-08-21, 2026-09-24 |
+| 2026-10-17 | **X35's shared frame** | forks from P\* at ONE pin per batch, with ONE shared control set per (start, pin); X26's own recipe (not `recipe.fork`); `--behaviour-check warn` typed; L_P 20M / L_T 70M; seeds 3501–3505 / 3601–3605; ABBA order, A1's seeds first | a control per breaker (doubles the cost for no information at a shared pin); `recipe.fork`'s 5 epochs and frozen LR (a second lever); the fork default `fatal` (≈ 6 rounding stops per arm, F14) | §5.6.1 |
+| 2026-10-17 | **X35's readout (amends §5.1)** | the PRIMARY R1 = Δ_pop against a FROZEN reference population (own archive + another lineage, band-filtered), Welch over seed finals at 97.5 % per look, looks at 3 and 5 seeds, the ±2.0 bar; the co-primary R2 (the best-response gap falls) for A3 / A4 / A6; guards G-F (head-to-head), G-E (exploitability), G-C (collapse battery), G-K (Kakuna, both team sets) | §5.1's b-ON × b-OFF head-to-head as the primary (a single-opponent read, which league §0 rules out in a cyclic regime); the archive Nash mixture as the primary (not built, and unstable on our data, F-ED-3) | §5.6.4–§5.6.6; `design_league_decisions.md` §0 |
+| 2026-10-17 | **The fork cost** | ≈ 4.4 GPU-h per 20M production seed (MEASURED from X26's late-run checkpoints) | 3.4 (assumed ≈ 1,600 fps) | F13 |
