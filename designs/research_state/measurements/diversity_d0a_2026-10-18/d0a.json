@@ -1,0 +1,1267 @@
+{
+ "schema": "diversity_d0a_v1",
+ "post_hoc": true,
+ "descriptive_only": true,
+ "pool_teams": 719,
+ "matcher": "gen3_team_overlap_v1",
+ "note": "our piloted team only; Wilson intervals treat games as independent (optimistic: teams repeat)",
+ "sets": {
+  "home72": {
+   "n_teams": 72,
+   "n_mons": 432,
+   "mons_with_unseen_species": 0,
+   "move_slots_with_a_move_no_pool_mon_carries": 0,
+   "species_move_pairs_absent_from_pool": 0,
+   "of_which_not_hidden_power": 0,
+   "mons_with_unseen_item": 0,
+   "mons_with_unseen_ability": 0,
+   "teams_with_any_unseen_entity": 0,
+   "mon_sets_seen": 432,
+   "same_species6_teams": 72,
+   "max_shared_hist": {
+    "6": 72
+   },
+   "hp_dark_mons": 0,
+   "archetype_mix": {
+    "balance": 16,
+    "hyper_offense": 11,
+    "offense": 19,
+    "semi_stall": 12,
+    "stall": 14
+   }
+  },
+  "away": {
+   "n_teams": 20,
+   "n_mons": 120,
+   "mons_with_unseen_species": 0,
+   "move_slots_with_a_move_no_pool_mon_carries": 0,
+   "species_move_pairs_absent_from_pool": 0,
+   "of_which_not_hidden_power": 0,
+   "mons_with_unseen_item": 0,
+   "mons_with_unseen_ability": 0,
+   "teams_with_any_unseen_entity": 0,
+   "mon_sets_seen": 119,
+   "same_species6_teams": 19,
+   "max_shared_hist": {
+    "2": 1,
+    "6": 19
+   },
+   "hp_dark_mons": 0,
+   "archetype_mix": {
+    "balance": 5,
+    "hyper_offense": 1,
+    "offense": 5,
+    "semi_stall": 5,
+    "stall": 4
+   }
+  },
+  "heldout72": {
+   "n_teams": 72,
+   "n_mons": 432,
+   "mons_with_unseen_species": 7,
+   "move_slots_with_a_move_no_pool_mon_carries": 7,
+   "species_move_pairs_absent_from_pool": 203,
+   "of_which_not_hidden_power": 43,
+   "mons_with_unseen_item": 0,
+   "mons_with_unseen_ability": 1,
+   "teams_with_any_unseen_entity": 9,
+   "mon_sets_seen": 104,
+   "same_species6_teams": 21,
+   "max_shared_hist": {
+    "0": 14,
+    "1": 42,
+    "2": 16
+   },
+   "hp_dark_mons": 164,
+   "archetype_mix": {
+    "balance": 25,
+    "hyper_offense": 7,
+    "offense": 18,
+    "semi_stall": 18,
+    "stall": 4
+   }
+  },
+  "pool719": {
+   "n_teams": 719,
+   "archetype_mix": {
+    "balance": 206,
+    "hyper_offense": 139,
+    "offense": 155,
+    "semi_stall": 129,
+    "stall": 90
+   }
+  }
+ },
+ "cells": {
+  "K2|away": {
+   "games": 400,
+   "score": 0.3563,
+   "median_turns": 36,
+   "by_max_shared_with_one_pool_team": {
+    "0": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    "1": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    "2-3": {
+     "games": 10,
+     "score": 0.2,
+     "wilson95": [
+      0.0567,
+      0.5098
+     ]
+    },
+    "4-6": {
+     "games": 390,
+     "score": 0.3603,
+     "wilson95": [
+      0.3142,
+      0.4091
+     ]
+    }
+   },
+   "by_same_species6": {
+    "yes": {
+     "games": 390,
+     "score": 0.3603,
+     "wilson95": [
+      0.3142,
+      0.4091
+     ]
+    },
+    "no": {
+     "games": 10,
+     "score": 0.2,
+     "wilson95": [
+      0.0567,
+      0.5098
+     ]
+    }
+   },
+   "by_unseen_species": {
+    "0": {
+     "games": 400,
+     "score": 0.3563,
+     "wilson95": [
+      0.3109,
+      0.4043
+     ]
+    },
+    ">=1": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_unseen_species_move_pairs": {
+    "0-2": {
+     "games": 400,
+     "score": 0.3563,
+     "wilson95": [
+      0.3109,
+      0.4043
+     ]
+    },
+    "3-5": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    ">=6": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_unseen_species_move_pairs_non_hp": {
+    "0-1": {
+     "games": 400,
+     "score": 0.3563,
+     "wilson95": [
+      0.3109,
+      0.4043
+     ]
+    },
+    "2-3": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    ">=4": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_hp_dark_mons": {
+    "0-1": {
+     "games": 400,
+     "score": 0.3563,
+     "wilson95": [
+      0.3109,
+      0.4043
+     ]
+    },
+    "2": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    ">=3": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_archetype": {
+    "hyper_offense": {
+     "games": 20,
+     "score": 0.6,
+     "wilson95": [
+      0.3866,
+      0.7812
+     ]
+    },
+    "offense": {
+     "games": 90,
+     "score": 0.4111,
+     "wilson95": [
+      0.3151,
+      0.5144
+     ]
+    },
+    "balance": {
+     "games": 98,
+     "score": 0.3571,
+     "wilson95": [
+      0.2693,
+      0.4557
+     ]
+    },
+    "semi_stall": {
+     "games": 106,
+     "score": 0.316,
+     "wilson95": [
+      0.2353,
+      0.4097
+     ]
+    },
+    "stall": {
+     "games": 86,
+     "score": 0.2907,
+     "wilson95": [
+      0.2053,
+      0.394
+     ]
+    }
+   }
+  },
+  "K2|heldout72": {
+   "games": 400,
+   "score": 0.3575,
+   "median_turns": 41,
+   "by_max_shared_with_one_pool_team": {
+    "0": {
+     "games": 74,
+     "score": 0.3514,
+     "wilson95": [
+      0.2524,
+      0.465
+     ]
+    },
+    "1": {
+     "games": 224,
+     "score": 0.3348,
+     "wilson95": [
+      0.2763,
+      0.3989
+     ]
+    },
+    "2-3": {
+     "games": 102,
+     "score": 0.4118,
+     "wilson95": [
+      0.3212,
+      0.5088
+     ]
+    },
+    "4-6": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_same_species6": {
+    "yes": {
+     "games": 108,
+     "score": 0.3519,
+     "wilson95": [
+      0.2683,
+      0.4456
+     ]
+    },
+    "no": {
+     "games": 292,
+     "score": 0.3596,
+     "wilson95": [
+      0.3067,
+      0.4161
+     ]
+    }
+   },
+   "by_unseen_species": {
+    "0": {
+     "games": 368,
+     "score": 0.375,
+     "wilson95": [
+      0.3271,
+      0.4255
+     ]
+    },
+    ">=1": {
+     "games": 32,
+     "score": 0.1562,
+     "wilson95": [
+      0.0686,
+      0.3175
+     ]
+    }
+   },
+   "by_unseen_species_move_pairs": {
+    "0-2": {
+     "games": 212,
+     "score": 0.4292,
+     "wilson95": [
+      0.3645,
+      0.4965
+     ]
+    },
+    "3-5": {
+     "games": 148,
+     "score": 0.2838,
+     "wilson95": [
+      0.2173,
+      0.3612
+     ]
+    },
+    ">=6": {
+     "games": 40,
+     "score": 0.25,
+     "wilson95": [
+      0.1419,
+      0.4019
+     ]
+    }
+   },
+   "by_unseen_species_move_pairs_non_hp": {
+    "0-1": {
+     "games": 340,
+     "score": 0.3529,
+     "wilson95": [
+      0.304,
+      0.4051
+     ]
+    },
+    "2-3": {
+     "games": 34,
+     "score": 0.6176,
+     "wilson95": [
+      0.4504,
+      0.761
+     ]
+    },
+    ">=4": {
+     "games": 26,
+     "score": 0.0769,
+     "wilson95": [
+      0.0214,
+      0.2414
+     ]
+    }
+   },
+   "by_hp_dark_mons": {
+    "0-1": {
+     "games": 94,
+     "score": 0.4255,
+     "wilson95": [
+      0.3304,
+      0.5265
+     ]
+    },
+    "2": {
+     "games": 144,
+     "score": 0.3889,
+     "wilson95": [
+      0.3131,
+      0.4704
+     ]
+    },
+    ">=3": {
+     "games": 162,
+     "score": 0.2901,
+     "wilson95": [
+      0.2257,
+      0.3642
+     ]
+    }
+   },
+   "by_archetype": {
+    "hyper_offense": {
+     "games": 34,
+     "score": 0.2941,
+     "wilson95": [
+      0.1683,
+      0.4617
+     ]
+    },
+    "offense": {
+     "games": 80,
+     "score": 0.475,
+     "wilson95": [
+      0.3692,
+      0.583
+     ]
+    },
+    "balance": {
+     "games": 158,
+     "score": 0.3101,
+     "wilson95": [
+      0.2432,
+      0.386
+     ]
+    },
+    "semi_stall": {
+     "games": 98,
+     "score": 0.3776,
+     "wilson95": [
+      0.2879,
+      0.4764
+     ]
+    },
+    "stall": {
+     "games": 30,
+     "score": 0.3,
+     "wilson95": [
+      0.1666,
+      0.4788
+     ]
+    }
+   }
+  },
+  "K2|home72": {
+   "games": 400,
+   "score": 0.4888,
+   "median_turns": 33,
+   "by_max_shared_with_one_pool_team": {
+    "0": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    "1": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    "2-3": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    "4-6": {
+     "games": 400,
+     "score": 0.4888,
+     "wilson95": [
+      0.4401,
+      0.5376
+     ]
+    }
+   },
+   "by_same_species6": {
+    "yes": {
+     "games": 400,
+     "score": 0.4888,
+     "wilson95": [
+      0.4401,
+      0.5376
+     ]
+    },
+    "no": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_unseen_species": {
+    "0": {
+     "games": 400,
+     "score": 0.4888,
+     "wilson95": [
+      0.4401,
+      0.5376
+     ]
+    },
+    ">=1": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_unseen_species_move_pairs": {
+    "0-2": {
+     "games": 400,
+     "score": 0.4888,
+     "wilson95": [
+      0.4401,
+      0.5376
+     ]
+    },
+    "3-5": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    ">=6": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_unseen_species_move_pairs_non_hp": {
+    "0-1": {
+     "games": 400,
+     "score": 0.4888,
+     "wilson95": [
+      0.4401,
+      0.5376
+     ]
+    },
+    "2-3": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    ">=4": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_hp_dark_mons": {
+    "0-1": {
+     "games": 400,
+     "score": 0.4888,
+     "wilson95": [
+      0.4401,
+      0.5376
+     ]
+    },
+    "2": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    ">=3": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_archetype": {
+    "hyper_offense": {
+     "games": 74,
+     "score": 0.5946,
+     "wilson95": [
+      0.4808,
+      0.6991
+     ]
+    },
+    "offense": {
+     "games": 122,
+     "score": 0.4918,
+     "wilson95": [
+      0.4047,
+      0.5794
+     ]
+    },
+    "balance": {
+     "games": 102,
+     "score": 0.5098,
+     "wilson95": [
+      0.4142,
+      0.6047
+     ]
+    },
+    "semi_stall": {
+     "games": 52,
+     "score": 0.3942,
+     "wilson95": [
+      0.2731,
+      0.5299
+     ]
+    },
+    "stall": {
+     "games": 50,
+     "score": 0.38,
+     "wilson95": [
+      0.2586,
+      0.5185
+     ]
+    }
+   }
+  },
+  "X26|away": {
+   "games": 400,
+   "score": 0.4975,
+   "median_turns": 37,
+   "by_max_shared_with_one_pool_team": {
+    "0": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    "1": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    "2-3": {
+     "games": 10,
+     "score": 0.5,
+     "wilson95": [
+      0.2366,
+      0.7634
+     ]
+    },
+    "4-6": {
+     "games": 390,
+     "score": 0.4974,
+     "wilson95": [
+      0.4481,
+      0.5468
+     ]
+    }
+   },
+   "by_same_species6": {
+    "yes": {
+     "games": 390,
+     "score": 0.4974,
+     "wilson95": [
+      0.4481,
+      0.5468
+     ]
+    },
+    "no": {
+     "games": 10,
+     "score": 0.5,
+     "wilson95": [
+      0.2366,
+      0.7634
+     ]
+    }
+   },
+   "by_unseen_species": {
+    "0": {
+     "games": 400,
+     "score": 0.4975,
+     "wilson95": [
+      0.4488,
+      0.5463
+     ]
+    },
+    ">=1": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_unseen_species_move_pairs": {
+    "0-2": {
+     "games": 400,
+     "score": 0.4975,
+     "wilson95": [
+      0.4488,
+      0.5463
+     ]
+    },
+    "3-5": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    ">=6": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_unseen_species_move_pairs_non_hp": {
+    "0-1": {
+     "games": 400,
+     "score": 0.4975,
+     "wilson95": [
+      0.4488,
+      0.5463
+     ]
+    },
+    "2-3": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    ">=4": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_hp_dark_mons": {
+    "0-1": {
+     "games": 400,
+     "score": 0.4975,
+     "wilson95": [
+      0.4488,
+      0.5463
+     ]
+    },
+    "2": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    ">=3": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_archetype": {
+    "hyper_offense": {
+     "games": 20,
+     "score": 0.4,
+     "wilson95": [
+      0.2188,
+      0.6134
+     ]
+    },
+    "offense": {
+     "games": 90,
+     "score": 0.5556,
+     "wilson95": [
+      0.4527,
+      0.6538
+     ]
+    },
+    "balance": {
+     "games": 98,
+     "score": 0.449,
+     "wilson95": [
+      0.3543,
+      0.5475
+     ]
+    },
+    "semi_stall": {
+     "games": 106,
+     "score": 0.5189,
+     "wilson95": [
+      0.4248,
+      0.6116
+     ]
+    },
+    "stall": {
+     "games": 86,
+     "score": 0.4884,
+     "wilson95": [
+      0.3855,
+      0.5922
+     ]
+    }
+   }
+  },
+  "X26|heldout72": {
+   "games": 400,
+   "score": 0.395,
+   "median_turns": 40,
+   "by_max_shared_with_one_pool_team": {
+    "0": {
+     "games": 74,
+     "score": 0.3378,
+     "wilson95": [
+      0.2405,
+      0.4512
+     ]
+    },
+    "1": {
+     "games": 224,
+     "score": 0.4107,
+     "wilson95": [
+      0.3483,
+      0.4761
+     ]
+    },
+    "2-3": {
+     "games": 102,
+     "score": 0.402,
+     "wilson95": [
+      0.312,
+      0.499
+     ]
+    },
+    "4-6": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_same_species6": {
+    "yes": {
+     "games": 108,
+     "score": 0.4259,
+     "wilson95": [
+      0.3368,
+      0.5201
+     ]
+    },
+    "no": {
+     "games": 292,
+     "score": 0.3836,
+     "wilson95": [
+      0.3296,
+      0.4405
+     ]
+    }
+   },
+   "by_unseen_species": {
+    "0": {
+     "games": 368,
+     "score": 0.4076,
+     "wilson95": [
+      0.3586,
+      0.4585
+     ]
+    },
+    ">=1": {
+     "games": 32,
+     "score": 0.25,
+     "wilson95": [
+      0.1325,
+      0.4211
+     ]
+    }
+   },
+   "by_unseen_species_move_pairs": {
+    "0-2": {
+     "games": 212,
+     "score": 0.4434,
+     "wilson95": [
+      0.3781,
+      0.5107
+     ]
+    },
+    "3-5": {
+     "games": 148,
+     "score": 0.3514,
+     "wilson95": [
+      0.2791,
+      0.4311
+     ]
+    },
+    ">=6": {
+     "games": 40,
+     "score": 0.3,
+     "wilson95": [
+      0.1807,
+      0.4543
+     ]
+    }
+   },
+   "by_unseen_species_move_pairs_non_hp": {
+    "0-1": {
+     "games": 340,
+     "score": 0.4,
+     "wilson95": [
+      0.3493,
+      0.4529
+     ]
+    },
+    "2-3": {
+     "games": 34,
+     "score": 0.4412,
+     "wilson95": [
+      0.2888,
+      0.6055
+     ]
+    },
+    ">=4": {
+     "games": 26,
+     "score": 0.2692,
+     "wilson95": [
+      0.137,
+      0.4608
+     ]
+    }
+   },
+   "by_hp_dark_mons": {
+    "0-1": {
+     "games": 94,
+     "score": 0.4468,
+     "wilson95": [
+      0.3504,
+      0.5474
+     ]
+    },
+    "2": {
+     "games": 144,
+     "score": 0.4097,
+     "wilson95": [
+      0.3328,
+      0.4914
+     ]
+    },
+    ">=3": {
+     "games": 162,
+     "score": 0.3519,
+     "wilson95": [
+      0.2825,
+      0.428
+     ]
+    }
+   },
+   "by_archetype": {
+    "hyper_offense": {
+     "games": 34,
+     "score": 0.2647,
+     "wilson95": [
+      0.146,
+      0.4312
+     ]
+    },
+    "offense": {
+     "games": 80,
+     "score": 0.425,
+     "wilson95": [
+      0.3226,
+      0.5343
+     ]
+    },
+    "balance": {
+     "games": 158,
+     "score": 0.3797,
+     "wilson95": [
+      0.3078,
+      0.4574
+     ]
+    },
+    "semi_stall": {
+     "games": 98,
+     "score": 0.449,
+     "wilson95": [
+      0.3543,
+      0.5475
+     ]
+    },
+    "stall": {
+     "games": 30,
+     "score": 0.3667,
+     "wilson95": [
+      0.2187,
+      0.5449
+     ]
+    }
+   }
+  },
+  "X26|home72": {
+   "games": 400,
+   "score": 0.5775,
+   "median_turns": 30,
+   "by_max_shared_with_one_pool_team": {
+    "0": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    "1": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    "2-3": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    "4-6": {
+     "games": 400,
+     "score": 0.5775,
+     "wilson95": [
+      0.5286,
+      0.6249
+     ]
+    }
+   },
+   "by_same_species6": {
+    "yes": {
+     "games": 400,
+     "score": 0.5775,
+     "wilson95": [
+      0.5286,
+      0.6249
+     ]
+    },
+    "no": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_unseen_species": {
+    "0": {
+     "games": 400,
+     "score": 0.5775,
+     "wilson95": [
+      0.5286,
+      0.6249
+     ]
+    },
+    ">=1": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_unseen_species_move_pairs": {
+    "0-2": {
+     "games": 400,
+     "score": 0.5775,
+     "wilson95": [
+      0.5286,
+      0.6249
+     ]
+    },
+    "3-5": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    ">=6": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_unseen_species_move_pairs_non_hp": {
+    "0-1": {
+     "games": 400,
+     "score": 0.5775,
+     "wilson95": [
+      0.5286,
+      0.6249
+     ]
+    },
+    "2-3": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    ">=4": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_hp_dark_mons": {
+    "0-1": {
+     "games": 400,
+     "score": 0.5775,
+     "wilson95": [
+      0.5286,
+      0.6249
+     ]
+    },
+    "2": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    },
+    ">=3": {
+     "games": 0,
+     "score": null,
+     "wilson95": [
+      null,
+      null
+     ]
+    }
+   },
+   "by_archetype": {
+    "hyper_offense": {
+     "games": 74,
+     "score": 0.5135,
+     "wilson95": [
+      0.4018,
+      0.6239
+     ]
+    },
+    "offense": {
+     "games": 122,
+     "score": 0.627,
+     "wilson95": [
+      0.5386,
+      0.7078
+     ]
+    },
+    "balance": {
+     "games": 102,
+     "score": 0.6127,
+     "wilson95": [
+      0.5158,
+      0.7015
+     ]
+    },
+    "semi_stall": {
+     "games": 52,
+     "score": 0.5,
+     "wilson95": [
+      0.3689,
+      0.6311
+     ]
+    },
+    "stall": {
+     "games": 50,
+     "score": 0.56,
+     "wilson95": [
+      0.4231,
+      0.6884
+     ]
+    }
+   }
+  }
+ }
+}

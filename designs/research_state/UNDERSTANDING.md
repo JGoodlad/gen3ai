@@ -719,6 +719,16 @@ with any pool or `competitive` team. [ledger 2026-10-18 · *THE AWAY SET IS NOT 
 is met only on our training teams**, and the K2 → X26 gain against Kakuna is at least partly a gain on the pool's own
 teams. Unseen-by-us and a different (replay-derived, Kakuna-kind) team population are confounded in this read.
 [ledger 2026-10-18 · *X26 / K2 vs KAKUNA ON HELD-OUT TEAMS*]
+**What heldout72 is, read with zero games (2026-10-18, D0a, descriptive, post hoc):**
+- It is NOT stall-heavy: 4 of its 72 teams are stall, against 90 of the pool's 719.
+- Its games run longer: median 40–41 turns against 30–37.
+- Only 9 of its 72 teams carry a species, move, item or ability the pool never had. 160 of its 203 species-move
+  pairs absent from the pool are Hidden Power.
+
+So the drop is not explained by unknown entities or by stall. The leading hypotheses are memorisation of the CLOSED
+pool (policy, team identification, belief heads), the replay population, Kakuna's home turf and the Hidden Power
+artifact. Each has a kill test, and the cheapest discriminator, a THIRD-SOURCE set (X37a, CPU), is
+`endstate/design_diversity_teams_opponents.md` §3. [ledger 2026-10-18 · *DIVERSITY OF TEAMS AND OPPONENTS*]
 
 **And a second anchor ABOVE us (2026-09-14, `foul_play_derisk_2026-09-14/`):** [MEASURED] Foul Play — MCTS with
 decoupled UCT over a hand-written evaluator on the Rust poke-engine, determinising the opponent's sets from Smogon

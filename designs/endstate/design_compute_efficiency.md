@@ -532,6 +532,12 @@ window). The toy side costs about the same again for an arm in the calibration p
 Plus **R0**, at the plateau call and before any arm: a fresh best responder against P\* itself (≈ 1.1 GPU-h). It gives
 the plateau's exploitability baseline and A6's trigger.
 
+**PROPOSED 2026-10-18, NOT adopted (nothing in this section changes without the orchestrator's GO):** a diversity arm
+**D1** would rank 2nd, after A1 and ahead of A2. It widens the team pool on both sides with HP-repaired `hl_05_26`
+teams, minus every held-out panel. It is read against C0 with its OWN primary: the held-out panel vs Kakuna, with
+in-pool non-inferiority as a co-primary. The design is [`design_diversity_teams_opponents.md`](design_diversity_teams_opponents.md)
+§4.2 and §6. Every arm above draws POOL teams, and R1 and G-K read pool teams only (that doc's F-DV-1).
+
 **The transfer calibration (§5.2) is A1 + A2.** Both are architecture-agnostic and both are built, so calibration
 starts on the first day. A1 is the one expected to help and A2 the plausible null. One-ply search, §5.2's example,
 belongs to the search programme (`search_ledger.md`). It takes a calibration slot when its harness is registered, and
@@ -659,12 +665,15 @@ Run on every arm (each b-ON and C0) on its seed finals, on P\* once per batch, a
   in-process Rust front end, on a 95xx port.
 - **BOTH team sets:** home72 (the sanitised 72-team copy from `n0_endofrun_2026-09-27/scripts/make_home72.py`, as in
   the X26 read) and away (Metamon's 20 `competitive` teams).
+  🚨 Both are TRAINING DATA for X26: home72 is 72 / 72 pool teams and away 19 / 20 (ledger 2026-10-18). Adding the
+  held-out panel (`heldout72_hpfix` + a third source) to G-K is PROPOSED in
+  [`design_diversity_teams_opponents.md`](design_diversity_teams_opponents.md) §5 (F-DV-1); it is not adopted.
 - **n ≥ 420 per team set per arm:** 7 role-balanced 20-game units per seed final × 3 seeds, so away carries ≥ 400.
   The unit seeds 0–6 are SHARED across arms (`--team-seed = --seed-base = unit seed`).
 - **A unit counts** under the X26 read's rule: `status == OK`, `n == 20`, `regime_verified_decisions`, no
   `team_source_asymmetry`, `peer_clean`.
 - **Reported:** each arm against 0.50 (Wilson), ON − OFF (Newcombe; this is G-K), and P\* against X26 @161M's read
-  (0.600 home72 / 0.570 away). Each number carries its regime (SOP rule 1).
+  (0.575 home72 / 0.497 away at n = 400, `k2_x26_kakuna_both_teamsets_2026-10-17`; 0.395 on the held-out heldout72). Each number carries its regime (SOP rule 1).
 - **Where it runs:** from the checkout ROOT (the pool source's CWD hazard). Cost: ≈ 840 games × ≈ 9 s ≈ 2.1 h per arm
   on one lane (≈ 2 cores), at rule 5b. The home72 config must be committed or regenerated first (F21).
 
@@ -899,3 +908,4 @@ The T55 build (2026-10-17) adds:
 | 2026-10-17 | **X35's readout (amends §5.1)** | the PRIMARY R1 = Δ_pop against a FROZEN reference population (own archive + another lineage, band-filtered), Welch over seed finals at 97.5 % per look, looks at 3 and 5 seeds, the ±2.0 bar; the co-primary R2 (the best-response gap falls) for A3 / A4 / A6; guards G-F (head-to-head), G-E (exploitability), G-C (collapse battery), G-K (Kakuna, both team sets) | §5.1's b-ON × b-OFF head-to-head as the primary (a single-opponent read, which league §0 rules out in a cyclic regime); the archive Nash mixture as the primary (not built, and unstable on our data, F-ED-3) | §5.6.4–§5.6.6; `design_league_decisions.md` §0 |
 | 2026-10-17 | **The fork cost** | ≈ 4.4 GPU-h per 20M production seed (MEASURED from X26's late-run checkpoints) | 3.4 (assumed ≈ 1,600 fps) | F13 |
 | 2026-10-17 | **T55, the stage kit** (build worker) | `src/main/x35/`: the readout as pure functions with a constructed-case self-check committed BEFORE any real read; R frozen write-once with every sha256 and re-verified before each launch; every argv built from the frozen R (never typed) and equal to its validated stand-in; a launch script whose default is a dry run, HOLDs (exit 7) on the first failed pre-check and launches only on a literal `GO`; the home72 config committed byte-identical with a 72-team manifest | hand-substituted argvs at the call (the drift F18 / F14 came from); a decision function reading the ledger itself (the readout takes declared cells or numbers); regenerating home72 (a second team set to prove identical) | §5.6.4, §5.6.7; F25–F31; STAGED_PLAN §6 |
+| 2026-10-18 | **Cross-references to the diversity design (design worker; no change to X35)** | §5.6.2 and §5.6.6 point at `design_diversity_teams_opponents.md`. Its arm D1 is PROPOSED at rank 2, and adding a held-out panel to G-K is PROPOSED, both pending the orchestrator's GO. §5.6.6's "P\* against X26 @161M" reference values were updated from the n = 100 / 240 reads (0.600 / 0.570) to the n = 400 reads (0.575 home72 / 0.497 away; 0.395 heldout72) | editing the arm list or the readout here before adoption | `design_diversity_teams_opponents.md` §6, F-DV-1; ledger 2026-10-17 / 2026-10-18 |

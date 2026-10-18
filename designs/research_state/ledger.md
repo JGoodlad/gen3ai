@@ -26908,3 +26908,38 @@ only on training teams · CONFOUNDED (unseen vs population) · PROVISIONAL** · 
 `research_state/measurements/heldout_teams_kakuna_2026-10-18/` (README § The read, `cells.json`, `rows.jsonl`,
 `paired.json`); `ops/EXTERNAL_ANCHORS_SOP.md` goal row + X26 section; `research_state/UNDERSTANDING.md`;
 `research_state/EXPERIMENT_BACKLOG.md` GOALS status
+
+### 2026-10-18 · DESIGN + MEASUREMENT (descriptive) · **DIVERSITY OF TEAMS AND OPPONENTS: the held-out gap as eleven competing hypotheses with kill tests, the THIRD-SOURCE 2 × 2, frozen held-out panels with a refusing guard, and the WIDEN fork (D1) proposed at rank 2 in X35 after A1. D0a (zero games): heldout72 is NOT stall-heavy (4 / 72 stall vs 90 / 719 in the pool), only 9 / 72 teams carry an entity the pool never had, 160 of its 203 unseen species-move pairs are Hidden Power, and its games run longer (median 40–41 turns vs 30–37)**
+
+**Design** (`endstate/design_diversity_teams_opponents.md`, owner request after the heldout72 read). Four axes of
+diversity (our teams; the opponent's teams; the opponent policies; the evaluation sets) and the self-play coupling
+between the first three. Every policy-diversity lever in X35 draws POOL teams, and no in-run meter, plateau test or X35
+readout component reads a team our models have not trained on (F-DV-1). The held-out drop (X26 −0.180 from home72) is
+split into H1–H11; H7 (team quality alone) is killed by logic (the score crossed 0.50), H8 (entity coverage) and H11
+(the forfeit) as MAJOR causes by D0a and the rows, H9 partly (K2 replicates the sign). The first experiment is X37a:
+a procedural Smogon-only third source (P72) plus the DEPLOYMENT cell (our home72 vs Kakuna's heldout72) and its
+reverse, ≈ 3 CPU lane-hours, 0 GPU. Proposed: D1 widens both builders with ~22.7k HP-repaired `hl_05_26` teams minus
+every held-out panel and its ≥ 4-shared near neighbours, a fork of X26's plateau against X35's C0 (≈ 13 GPU-h), primary
+= the held-out panel vs Kakuna, co-primary = in-pool non-inferiority; nothing adopted, the orchestrator's GO.
+
+**D0a** (`measurements/diversity_d0a_2026-10-18/`, post hoc, descriptive, our piloted team only): archetype mix
+heldout72 hyper offense / offense / balance / semi-stall / stall = 7 / 18 / 25 / 18 / 4 (pool 139 / 155 / 206 / 129 /
+90); 7 / 432 mons with a species no pool team carries, 7 move slots with a move none carries, 0 items, 1 ability; 203
+species-move pairs absent from the pool, 160 of them Hidden Power; median length X26 / K2 40 / 41 turns (home72 30 / 33,
+away 37 / 36). Inside heldout72 the score falls with HP Dark mons on OUR team in BOTH models (X26 0.447 / 0.410 / 0.352,
+K2 0.426 / 0.389 / 0.290 for 0–1 / 2 / ≥ 3), confounded with team strength; no mon-set familiarity gradient (X26 0.338 /
+0.411 / 0.402 for 0 / 1 / 2 sets shared with the closest pool team). All intervals overlap.
+
+**FINDINGS.** (1) Anything placed under `data/teams/` widens X26's own pool at its next restart (`TeamLoader` walks it
+recursively; pinned runs read `data/` from main) (F-DV-2). (2) The exploiter gate refuses non-sample teams, so off-meta
+exploiters are blocked by design (F-DV-3). (3) The HP repair of `heldout72_hpfix` and T8 must be one function (F-DV-4).
+(4) `team_source_asymmetry` compares counts only (F-DV-5). (5) Anchor rows carry no per-game peer team, and the peer CSV's
+`Team File` does not align one-to-one with `team_draws` (F-DV-6): per-game facing analysis on banked reads is unsafe.
+(6) The "untaught 8" are pool teams the generalist pilots (F-DV-7). (7) Open off-pool crash classes reach the ladder
+corpus (F-DV-8). The (X26 − K2) shrink from home72 to heldout72 is +0.050 [−0.046, +0.146] (Wald, independence assumed),
+NOT DETECTED; from away it is +0.105 [+0.010, +0.200] (20 teams, clustering ignored).
+
+Tag: **DESIGN · MEASUREMENT (descriptive, post hoc) · held-out gap hypotheses + kill tests · third source · held-out
+panels · D1 proposed at X35 rank 2 · PROVISIONAL (161M)** · evidence: `endstate/design_diversity_teams_opponents.md`;
+`research_state/measurements/diversity_d0a_2026-10-18/` (README, `d0a.json`, `scripts/d0a_team_covariates.py`);
+`research_state/EXPERIMENT_BACKLOG.md` DV-1 … DV-10 (X37a–X43)
