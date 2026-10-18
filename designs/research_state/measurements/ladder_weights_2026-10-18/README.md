@@ -51,7 +51,7 @@ sets ≥ 4 = 0.2 %. That agrees with this module to 0.1 pp.
 
 ## Freezing and versioning
 
-`ladder_weights_v1.json` is a DRAFT (`status`) until X37a's registration commit freezes it, BEFORE any
+`ladder_weights_v1.json` is FROZEN (2026-10-18) by X37a's registration commit ([`../x37a_eval_matrix_2026-10-18/PREREG.md`](../x37a_eval_matrix_2026-10-18/PREREG.md)), BEFORE any
 deployment-cell game. The JSON records:
 
 - every input's digest (each file's name and sha256);

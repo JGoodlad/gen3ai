@@ -1,6 +1,6 @@
 {
  "schema": "gen3_ladder_weights_v1",
- "status": "DRAFT \u2014 frozen only by X37a's registration commit; a change of any input is a NEW version",
+ "status": "FROZEN 2026-10-18 by X37a's registration (measurements/x37a_eval_matrix_2026-10-18/PREREG.md); the exact weights are the count fractions 4025 / 15424 / 3413 of 22862. A change of any input is a NEW version",
  "matcher": "gen3_team_overlap_v1",
  "ladder_proxy": {
   "path": "~/gen3ai_archive/metamon_cache_2026-09-24/teams/hl_05_26/gen3ou",
