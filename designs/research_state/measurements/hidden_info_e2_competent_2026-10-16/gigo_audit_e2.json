@@ -1,0 +1,1095 @@
+{
+ "end2": {
+  "arms": {
+   "F": {
+    "consistency": {
+     "row_ok_world_not_ok": 0,
+     "row_without_world": 0,
+     "row_world_head_differs_from_world_head": 0,
+     "world_not_ok_row_ok": 0,
+     "world_ok_row_not_ok": 0,
+     "world_without_row": 0
+    },
+    "files": {
+     "rows": [
+      "rows_0_of_1.jsonl"
+     ],
+     "worlds": [
+      "worlds_0_of_1.jsonl"
+     ]
+    },
+    "rows": {
+     "action_keys_differ_from_truth": 0,
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "n_worlds_not_8": 0,
+     "out_len_not_8": 0,
+     "pin_head": {
+      "67f3f7fab078c34e815bc75dbc8807d9b27e5576": 600
+     },
+     "refused_examples": [],
+     "rows": 600,
+     "status": {
+      "excluded": 40,
+      "ok": 560
+     },
+     "torn_lines": 0,
+     "world_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     }
+    },
+    "worlds": {
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "builder_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     },
+     "defect_examples": [],
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "ok_without_8_worlds": 0,
+     "rows": 600,
+     "status": {
+      "excluded": 40,
+      "ok": 560
+     },
+     "torn_lines": 0
+    }
+   },
+   "F+M": {
+    "consistency": {
+     "row_ok_world_not_ok": 0,
+     "row_without_world": 0,
+     "row_world_head_differs_from_world_head": 0,
+     "world_not_ok_row_ok": 0,
+     "world_ok_row_not_ok": 0,
+     "world_without_row": 0
+    },
+    "files": {
+     "rows": [
+      "rows_0_of_1.jsonl"
+     ],
+     "worlds": [
+      "worlds_0_of_1.jsonl"
+     ]
+    },
+    "rows": {
+     "action_keys_differ_from_truth": 0,
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "n_worlds_not_8": 0,
+     "out_len_not_8": 0,
+     "pin_head": {
+      "67f3f7fab078c34e815bc75dbc8807d9b27e5576": 600
+     },
+     "refused_examples": [],
+     "rows": 600,
+     "status": {
+      "excluded": 45,
+      "ok": 555
+     },
+     "torn_lines": 0,
+     "world_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     }
+    },
+    "worlds": {
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "builder_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     },
+     "defect_examples": [],
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "ok_without_8_worlds": 0,
+     "rows": 600,
+     "status": {
+      "excluded": 45,
+      "ok": 555
+     },
+     "torn_lines": 0
+    }
+   },
+   "F+U": {
+    "consistency": {
+     "row_ok_world_not_ok": 0,
+     "row_without_world": 0,
+     "row_world_head_differs_from_world_head": 0,
+     "world_not_ok_row_ok": 0,
+     "world_ok_row_not_ok": 0,
+     "world_without_row": 0
+    },
+    "files": {
+     "rows": [
+      "rows_0_of_1.jsonl"
+     ],
+     "worlds": [
+      "worlds_0_of_1.jsonl"
+     ]
+    },
+    "rows": {
+     "action_keys_differ_from_truth": 0,
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "n_worlds_not_8": 0,
+     "out_len_not_8": 0,
+     "pin_head": {
+      "67f3f7fab078c34e815bc75dbc8807d9b27e5576": 600
+     },
+     "refused_examples": [],
+     "rows": 600,
+     "status": {
+      "excluded": 39,
+      "ok": 561
+     },
+     "torn_lines": 0,
+     "world_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     }
+    },
+    "worlds": {
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "builder_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     },
+     "defect_examples": [],
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "ok_without_8_worlds": 0,
+     "rows": 600,
+     "status": {
+      "excluded": 39,
+      "ok": 561
+     },
+     "torn_lines": 0
+    }
+   },
+   "O-M": {
+    "consistency": {
+     "row_ok_world_not_ok": 0,
+     "row_without_world": 0,
+     "row_world_head_differs_from_world_head": 0,
+     "world_not_ok_row_ok": 0,
+     "world_ok_row_not_ok": 0,
+     "world_without_row": 0
+    },
+    "files": {
+     "rows": [
+      "rows_0_of_1.jsonl"
+     ],
+     "worlds": [
+      "worlds_0_of_1.jsonl"
+     ]
+    },
+    "rows": {
+     "action_keys_differ_from_truth": 0,
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "n_worlds_not_8": 0,
+     "out_len_not_8": 0,
+     "pin_head": {
+      "67f3f7fab078c34e815bc75dbc8807d9b27e5576": 600
+     },
+     "refused_examples": [],
+     "rows": 600,
+     "status": {
+      "ok": 600
+     },
+     "torn_lines": 0,
+     "world_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     }
+    },
+    "worlds": {
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "builder_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     },
+     "defect_examples": [],
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "ok_without_8_worlds": 0,
+     "rows": 600,
+     "status": {
+      "ok": 600
+     },
+     "torn_lines": 0
+    }
+   },
+   "O-U": {
+    "consistency": {
+     "row_ok_world_not_ok": 0,
+     "row_without_world": 0,
+     "row_world_head_differs_from_world_head": 0,
+     "world_not_ok_row_ok": 0,
+     "world_ok_row_not_ok": 0,
+     "world_without_row": 0
+    },
+    "files": {
+     "rows": [
+      "rows_0_of_1.jsonl"
+     ],
+     "worlds": [
+      "worlds_0_of_1.jsonl"
+     ]
+    },
+    "rows": {
+     "action_keys_differ_from_truth": 0,
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "n_worlds_not_8": 0,
+     "out_len_not_8": 0,
+     "pin_head": {
+      "67f3f7fab078c34e815bc75dbc8807d9b27e5576": 600
+     },
+     "refused_examples": [],
+     "rows": 600,
+     "status": {
+      "excluded": 1,
+      "ok": 599
+     },
+     "torn_lines": 0,
+     "world_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     }
+    },
+    "worlds": {
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "builder_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     },
+     "defect_examples": [],
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "ok_without_8_worlds": 0,
+     "rows": 600,
+     "status": {
+      "excluded": 1,
+      "ok": 599
+     },
+     "torn_lines": 0
+    }
+   }
+  },
+  "bank": {
+   "battles": 365,
+   "decision_ids_equal_states_ids": true,
+   "k_counts": {
+    "1": 32,
+    "2": 72,
+    "3": 99,
+    "4": 129,
+    "5": 155,
+    "6": 113
+   },
+   "manifest_sha_matches_states_file": true,
+   "max_states_per_battle": 2,
+   "per_quintile": {
+    "1": 120,
+    "2": 120,
+    "3": 120,
+    "4": 120,
+    "5": 120
+   },
+   "states": 600
+  },
+  "identity_set": {
+   "registered_ids": 12,
+   "rows_ids_equal": true,
+   "rows_ok": 12,
+   "rows_rows": 12,
+   "worlds_ids_equal": true,
+   "worlds_rows": 12
+  },
+  "pin_regates": {
+   "F": {
+    "agree": true,
+    "criterion_recomputed": "PASS",
+    "fail": 0,
+    "ok_worlds_rows": 560,
+    "padded_worlds": 1021,
+    "pin_head_is_pad": true,
+    "plant_item": {
+     "caught": 348,
+     "tried": 560
+    },
+    "plant_move": {
+     "caught": 544,
+     "tried": 544
+    },
+    "plant_strip": {
+     "caught": 996,
+     "tried": 1021
+    },
+    "present": true,
+    "recorded": "PASS",
+    "states": 560,
+    "states_equal_ok_world_rows": true,
+    "worlds_equal_8x_states": true
+   },
+   "F+M": {
+    "agree": true,
+    "criterion_recomputed": "PASS",
+    "fail": 0,
+    "ok_worlds_rows": 555,
+    "padded_worlds": 999,
+    "pin_head_is_pad": true,
+    "plant_item": {
+     "caught": 343,
+     "tried": 555
+    },
+    "plant_move": {
+     "caught": 539,
+     "tried": 539
+    },
+    "plant_strip": {
+     "caught": 974,
+     "tried": 999
+    },
+    "present": true,
+    "recorded": "PASS",
+    "states": 555,
+    "states_equal_ok_world_rows": true,
+    "worlds_equal_8x_states": true
+   },
+   "F+U": {
+    "agree": true,
+    "criterion_recomputed": "PASS",
+    "fail": 0,
+    "ok_worlds_rows": 561,
+    "padded_worlds": 0,
+    "pin_head_is_pad": true,
+    "plant_item": {
+     "caught": 349,
+     "tried": 561
+    },
+    "plant_move": {
+     "caught": 545,
+     "tried": 545
+    },
+    "plant_strip": null,
+    "present": true,
+    "recorded": "PASS",
+    "states": 561,
+    "states_equal_ok_world_rows": true,
+    "worlds_equal_8x_states": true
+   },
+   "O-M": {
+    "agree": true,
+    "criterion_recomputed": "PASS",
+    "fail": 0,
+    "ok_worlds_rows": 600,
+    "padded_worlds": 0,
+    "pin_head_is_pad": true,
+    "plant_item": {
+     "caught": 377,
+     "tried": 600
+    },
+    "plant_move": {
+     "caught": 584,
+     "tried": 584
+    },
+    "plant_strip": null,
+    "present": true,
+    "recorded": "PASS",
+    "states": 600,
+    "states_equal_ok_world_rows": true,
+    "worlds_equal_8x_states": true
+   },
+   "O-U": {
+    "agree": true,
+    "criterion_recomputed": "PASS",
+    "fail": 0,
+    "ok_worlds_rows": 599,
+    "padded_worlds": 1095,
+    "pin_head_is_pad": true,
+    "plant_item": {
+     "caught": 376,
+     "tried": 599
+    },
+    "plant_move": {
+     "caught": 583,
+     "tried": 583
+    },
+    "plant_strip": {
+     "caught": 1070,
+     "tried": 1095
+    },
+    "present": true,
+    "recorded": "PASS",
+    "states": 599,
+    "states_equal_ok_world_rows": true,
+    "worlds_equal_8x_states": true
+   }
+  },
+  "truth": {
+   "bank_ids_missing": 0,
+   "distinct_ids": 600,
+   "duplicates": {
+    "examples": [],
+    "ids_with_more_than_one_row": 0,
+    "of_which_byte_identical": 0
+   },
+   "field_mismatch": {
+    "action_keys_differ_out_crit_trace": 0,
+    "cp": 0,
+    "n_seeds_not_40": 0,
+    "out_len_not_40": 0,
+    "pin": 0,
+    "set": 0
+   },
+   "file_order_equals_sorted_bank_ids": true,
+   "files_other_than_shard_0_of_1": [],
+   "foreign_examples": [],
+   "foreign_ids": 0,
+   "missing_examples": [],
+   "outcome_chars": [
+    "+",
+    "-",
+    "0"
+   ],
+   "rows": 600,
+   "rows_by_selecting_code": {
+    "6a1cf301 (post-fix)": 570,
+    "d5880c87 (pre-fix, the first 30-id call)": 30
+   },
+   "status": {
+    "ok": 600
+   },
+   "torn_lines": 0
+  }
+ },
+ "non_finite_values": {
+  "by_source_field": {},
+  "total": 0
+ },
+ "prod": {
+  "arms": {
+   "F": {
+    "consistency": {
+     "row_ok_world_not_ok": 0,
+     "row_without_world": 0,
+     "row_world_head_differs_from_world_head": 0,
+     "world_not_ok_row_ok": 0,
+     "world_ok_row_not_ok": 0,
+     "world_without_row": 0
+    },
+    "files": {
+     "rows": [
+      "rows_0_of_1.jsonl"
+     ],
+     "worlds": [
+      "worlds_0_of_1.jsonl"
+     ]
+    },
+    "rows": {
+     "action_keys_differ_from_truth": 0,
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "n_worlds_not_8": 0,
+     "out_len_not_8": 0,
+     "pin_head": {
+      "9a698801b69a6cc4a43d3b2b70022b105d2c64b7": 600
+     },
+     "refused_examples": [],
+     "rows": 600,
+     "status": {
+      "excluded": 52,
+      "ok": 548
+     },
+     "torn_lines": 0,
+     "world_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     }
+    },
+    "worlds": {
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "builder_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     },
+     "defect_examples": [],
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "ok_without_8_worlds": 0,
+     "rows": 600,
+     "status": {
+      "excluded": 52,
+      "ok": 548
+     },
+     "torn_lines": 0
+    }
+   },
+   "F+M": {
+    "consistency": {
+     "row_ok_world_not_ok": 0,
+     "row_without_world": 0,
+     "row_world_head_differs_from_world_head": 0,
+     "world_not_ok_row_ok": 0,
+     "world_ok_row_not_ok": 0,
+     "world_without_row": 0
+    },
+    "files": {
+     "rows": [
+      "rows_0_of_1.jsonl"
+     ],
+     "worlds": [
+      "worlds_0_of_1.jsonl"
+     ]
+    },
+    "rows": {
+     "action_keys_differ_from_truth": 0,
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "n_worlds_not_8": 0,
+     "out_len_not_8": 0,
+     "pin_head": {
+      "9a698801b69a6cc4a43d3b2b70022b105d2c64b7": 600
+     },
+     "refused_examples": [],
+     "rows": 600,
+     "status": {
+      "excluded": 50,
+      "ok": 550
+     },
+     "torn_lines": 0,
+     "world_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     }
+    },
+    "worlds": {
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "builder_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     },
+     "defect_examples": [],
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "ok_without_8_worlds": 0,
+     "rows": 600,
+     "status": {
+      "excluded": 50,
+      "ok": 550
+     },
+     "torn_lines": 0
+    }
+   },
+   "F+U": {
+    "consistency": {
+     "row_ok_world_not_ok": 0,
+     "row_without_world": 0,
+     "row_world_head_differs_from_world_head": 0,
+     "world_not_ok_row_ok": 0,
+     "world_ok_row_not_ok": 0,
+     "world_without_row": 0
+    },
+    "files": {
+     "rows": [
+      "rows_0_of_1.jsonl"
+     ],
+     "worlds": [
+      "worlds_0_of_1.jsonl"
+     ]
+    },
+    "rows": {
+     "action_keys_differ_from_truth": 0,
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "n_worlds_not_8": 0,
+     "out_len_not_8": 0,
+     "pin_head": {
+      "9a698801b69a6cc4a43d3b2b70022b105d2c64b7": 600
+     },
+     "refused_examples": [],
+     "rows": 600,
+     "status": {
+      "excluded": 51,
+      "ok": 549
+     },
+     "torn_lines": 0,
+     "world_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     }
+    },
+    "worlds": {
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "builder_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     },
+     "defect_examples": [],
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "ok_without_8_worlds": 0,
+     "rows": 600,
+     "status": {
+      "excluded": 51,
+      "ok": 549
+     },
+     "torn_lines": 0
+    }
+   },
+   "O-M": {
+    "consistency": {
+     "row_ok_world_not_ok": 0,
+     "row_without_world": 0,
+     "row_world_head_differs_from_world_head": 0,
+     "world_not_ok_row_ok": 0,
+     "world_ok_row_not_ok": 0,
+     "world_without_row": 0
+    },
+    "files": {
+     "rows": [
+      "rows_0_of_1.jsonl"
+     ],
+     "worlds": [
+      "worlds_0_of_1.jsonl"
+     ]
+    },
+    "rows": {
+     "action_keys_differ_from_truth": 0,
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "n_worlds_not_8": 0,
+     "out_len_not_8": 0,
+     "pin_head": {
+      "9a698801b69a6cc4a43d3b2b70022b105d2c64b7": 600
+     },
+     "refused_examples": [],
+     "rows": 600,
+     "status": {
+      "ok": 600
+     },
+     "torn_lines": 0,
+     "world_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     }
+    },
+    "worlds": {
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "builder_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     },
+     "defect_examples": [],
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "ok_without_8_worlds": 0,
+     "rows": 600,
+     "status": {
+      "ok": 600
+     },
+     "torn_lines": 0
+    }
+   },
+   "O-U": {
+    "consistency": {
+     "row_ok_world_not_ok": 0,
+     "row_without_world": 0,
+     "row_world_head_differs_from_world_head": 0,
+     "world_not_ok_row_ok": 0,
+     "world_ok_row_not_ok": 0,
+     "world_without_row": 0
+    },
+    "files": {
+     "rows": [
+      "rows_0_of_1.jsonl"
+     ],
+     "worlds": [
+      "worlds_0_of_1.jsonl"
+     ]
+    },
+    "rows": {
+     "action_keys_differ_from_truth": 0,
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "n_worlds_not_8": 0,
+     "out_len_not_8": 0,
+     "pin_head": {
+      "9a698801b69a6cc4a43d3b2b70022b105d2c64b7": 600
+     },
+     "refused_examples": [],
+     "rows": 600,
+     "status": {
+      "excluded": 1,
+      "ok": 599
+     },
+     "torn_lines": 0,
+     "world_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     }
+    },
+    "worlds": {
+     "arm_label_mismatch": 0,
+     "bank_ids_missing": 0,
+     "builder_head": {
+      "d5880c879ad5690fc60397d92eb2d71b67d5c6ef": 600
+     },
+     "defect_examples": [],
+     "distinct_ids": 600,
+     "duplicates": {
+      "examples": [],
+      "ids_with_more_than_one_row": 0,
+      "of_which_byte_identical": 0
+     },
+     "foreign_examples": [],
+     "foreign_ids": 0,
+     "missing_examples": [],
+     "ok_without_8_worlds": 0,
+     "rows": 600,
+     "status": {
+      "excluded": 1,
+      "ok": 599
+     },
+     "torn_lines": 0
+    }
+   }
+  },
+  "bank": {
+   "battles": 371,
+   "decision_ids_equal_states_ids": true,
+   "k_counts": {
+    "1": 54,
+    "2": 115,
+    "3": 108,
+    "4": 112,
+    "5": 120,
+    "6": 91
+   },
+   "manifest_sha_matches_states_file": true,
+   "max_states_per_battle": 2,
+   "per_quintile": {
+    "1": 120,
+    "2": 120,
+    "3": 120,
+    "4": 120,
+    "5": 120
+   },
+   "states": 600
+  },
+  "identity_set": {
+   "registered_ids": 12,
+   "rows_ids_equal": true,
+   "rows_ok": 12,
+   "rows_rows": 12,
+   "worlds_ids_equal": true,
+   "worlds_rows": 12
+  },
+  "pin_regates": {
+   "F": {
+    "agree": true,
+    "criterion_recomputed": "PASS",
+    "fail": 0,
+    "ok_worlds_rows": 548,
+    "padded_worlds": 1112,
+    "pin_head_is_pad": true,
+    "plant_item": {
+     "caught": 344,
+     "tried": 548
+    },
+    "plant_move": {
+     "caught": 537,
+     "tried": 537
+    },
+    "plant_strip": {
+     "caught": 1055,
+     "tried": 1112
+    },
+    "present": true,
+    "recorded": "PASS",
+    "states": 548,
+    "states_equal_ok_world_rows": true,
+    "worlds_equal_8x_states": true
+   },
+   "F+M": {
+    "agree": true,
+    "criterion_recomputed": "PASS",
+    "fail": 0,
+    "ok_worlds_rows": 550,
+    "padded_worlds": 1098,
+    "pin_head_is_pad": true,
+    "plant_item": {
+     "caught": 344,
+     "tried": 550
+    },
+    "plant_move": {
+     "caught": 539,
+     "tried": 539
+    },
+    "plant_strip": {
+     "caught": 1041,
+     "tried": 1098
+    },
+    "present": true,
+    "recorded": "PASS",
+    "states": 550,
+    "states_equal_ok_world_rows": true,
+    "worlds_equal_8x_states": true
+   },
+   "F+U": {
+    "agree": true,
+    "criterion_recomputed": "PASS",
+    "fail": 0,
+    "ok_worlds_rows": 549,
+    "padded_worlds": 0,
+    "pin_head_is_pad": true,
+    "plant_item": {
+     "caught": 344,
+     "tried": 549
+    },
+    "plant_move": {
+     "caught": 538,
+     "tried": 538
+    },
+    "plant_strip": null,
+    "present": true,
+    "recorded": "PASS",
+    "states": 549,
+    "states_equal_ok_world_rows": true,
+    "worlds_equal_8x_states": true
+   },
+   "O-M": {
+    "agree": true,
+    "criterion_recomputed": "PASS",
+    "fail": 0,
+    "ok_worlds_rows": 600,
+    "padded_worlds": 0,
+    "pin_head_is_pad": true,
+    "plant_item": {
+     "caught": 386,
+     "tried": 600
+    },
+    "plant_move": {
+     "caught": 589,
+     "tried": 589
+    },
+    "plant_strip": null,
+    "present": true,
+    "recorded": "PASS",
+    "states": 600,
+    "states_equal_ok_world_rows": true,
+    "worlds_equal_8x_states": true
+   },
+   "O-U": {
+    "agree": true,
+    "criterion_recomputed": "PASS",
+    "fail": 0,
+    "ok_worlds_rows": 599,
+    "padded_worlds": 1185,
+    "pin_head_is_pad": true,
+    "plant_item": {
+     "caught": 386,
+     "tried": 599
+    },
+    "plant_move": {
+     "caught": 588,
+     "tried": 588
+    },
+    "plant_strip": {
+     "caught": 1128,
+     "tried": 1185
+    },
+    "present": true,
+    "recorded": "PASS",
+    "states": 599,
+    "states_equal_ok_world_rows": true,
+    "worlds_equal_8x_states": true
+   }
+  },
+  "truth": {
+   "bank_ids_missing": 0,
+   "distinct_ids": 600,
+   "duplicates": {
+    "examples": [],
+    "ids_with_more_than_one_row": 0,
+    "of_which_byte_identical": 0
+   },
+   "field_mismatch": {
+    "action_keys_differ_out_crit_trace": 0,
+    "cp": 0,
+    "n_seeds_not_40": 0,
+    "out_len_not_40": 0,
+    "pin": 0,
+    "set": 0
+   },
+   "file_order_equals_sorted_bank_ids": true,
+   "files_other_than_shard_0_of_1": [],
+   "foreign_examples": [],
+   "foreign_ids": 0,
+   "missing_examples": [],
+   "outcome_chars": [
+    "+",
+    "-",
+    "0"
+   ],
+   "rows": 600,
+   "rows_by_selecting_code": {
+    "6a1cf301 (post-fix)": 570,
+    "d5880c87 (pre-fix, the first 30-id call)": 30
+   },
+   "status": {
+    "ok": 600
+   },
+   "torn_lines": 0
+  }
+ },
+ "queue_done": "2026-10-18 03:21:32 parked=[]"
+}

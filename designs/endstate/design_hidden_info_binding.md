@@ -3,7 +3,7 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-15, latest): the KNOCK-IN FORKS READ (§8.7; `measurements/hidden_info_forks_2026-10-14/`, banked `ffd2280e`; PROVISIONAL: +3M steps from one 15M parent, no placebo):** K-MOVES NULL (Δ −0.38 pp [−1.86, +1.10]), K-ITEMS NULL, species NULL (an arm added by decision (b)), K-SPREADS NOT DETECTED (half-width 2.84); no moves extension; MOVES-FIRST false; K-L-WORTH not declarable (no placebo). DESCRIPTIVE: withheld at play, the moves and species forks are ≈ 2.4–2.6 pp below the control (a dependence cost; told − withheld ≈ +1.9 pp); the control gained +4.4 pp over its parent (CONFOUNDED). Reading: information matters to SEARCH, not to the amortized policy at this maturity; privileged information, if ever used in training, belongs in the critic only. **Status (2026-10-15): TIER 1 READ (§16.8; `measurements/hidden_info_tier1_2026-10-13/`: the blinded read committed `67bee8d6` before any arm output, AMENDMENT 3 (§12.14, per-class dose curves) before any outcome was unblinded, the table frozen `c6f71d9a`): R-MOVES = MOVES-REFUTED (R3: the never-seen Pokémon dominate the seen mons' moves on both sides); computed, not yet red-teamed. **REPLICA COMPARISON READ (§16.9, 2026-10-15, a third party):** G replicated on the same states (+0.070 vs +0.072), the moves' shares replicate in size (s_M 0.11 / 0.12, n_M 0.39 / 0.47), the tie-break step replicates; R3's never-seen half, the stage, recover, eval and dose / placebo rules are NOT replicated (the replica ran no such arms); R-REPLICATE as registered NOT MET. **RED TEAM READ (§16.10, 2026-10-15; post hoc, no registered verdict changed):** "the moves are not THE binding constraint" SURVIVES every attack; R3's never-seen dominance is WEAKENED (it survives tie-free scoring, the exclusions, the mis-keyed records and a U-leak check, but is not detected on the states from games against the network's own snapshots, nor on end2 alone, and per hidden fact the classes are equal); C5's "0.2–0.35" and "FN ≈ Smogon" (for species) are BROKEN; R-EVAL and the empty frontier are WEAKENED; POOL = identification SURVIVES. Status (2026-10-11): DESIGN + PRE-REGISTRATION (§12, landed `e25a5240` before any arm was run or read); the CHEAP
+**Status (2026-10-18, latest): E2, the COMPETENT-OPPONENT bank, READ (§16.12; pre-registered `5881ee83`):** R3 on fresh own-snapshot states = **U-FIRST** by the registered pooled LEAF-K8 primary (reveal-only +0.0169 [+0.0065, +0.0268], hide-only +0.0114 [+0.0010, +0.0220]), printed SCORER-DEPENDENT (tie-free: SHARED) and SHARED on each checkpoint alone; the red team's population attack fails on the reveal side and replicates on the hide side (n_M 0.58, B4 holds); GIGO audit clean; PROVISIONAL at 15M. **Status (2026-10-16): the BLIND U-ARM BUILD compared (§16.11):** R3's never-seen half REPLICATED at LEAF-K8 on the registered mix. **Status (2026-10-15): the KNOCK-IN FORKS READ (§8.7; `measurements/hidden_info_forks_2026-10-14/`, banked `ffd2280e`; PROVISIONAL: +3M steps from one 15M parent, no placebo):** K-MOVES NULL (Δ −0.38 pp [−1.86, +1.10]), K-ITEMS NULL, species NULL (an arm added by decision (b)), K-SPREADS NOT DETECTED (half-width 2.84); no moves extension; MOVES-FIRST false; K-L-WORTH not declarable (no placebo). DESCRIPTIVE: withheld at play, the moves and species forks are ≈ 2.4–2.6 pp below the control (a dependence cost; told − withheld ≈ +1.9 pp); the control gained +4.4 pp over its parent (CONFOUNDED). Reading: information matters to SEARCH, not to the amortized policy at this maturity; privileged information, if ever used in training, belongs in the critic only. **Status (2026-10-15): TIER 1 READ (§16.8; `measurements/hidden_info_tier1_2026-10-13/`: the blinded read committed `67bee8d6` before any arm output, AMENDMENT 3 (§12.14, per-class dose curves) before any outcome was unblinded, the table frozen `c6f71d9a`): R-MOVES = MOVES-REFUTED (R3: the never-seen Pokémon dominate the seen mons' moves on both sides); computed, not yet red-teamed. **REPLICA COMPARISON READ (§16.9, 2026-10-15, a third party):** G replicated on the same states (+0.070 vs +0.072), the moves' shares replicate in size (s_M 0.11 / 0.12, n_M 0.39 / 0.47), the tie-break step replicates; R3's never-seen half, the stage, recover, eval and dose / placebo rules are NOT replicated (the replica ran no such arms); R-REPLICATE as registered NOT MET. **RED TEAM READ (§16.10, 2026-10-15; post hoc, no registered verdict changed):** "the moves are not THE binding constraint" SURVIVES every attack; R3's never-seen dominance is WEAKENED (it survives tie-free scoring, the exclusions, the mis-keyed records and a U-leak check, but is not detected on the states from games against the network's own snapshots, nor on end2 alone, and per hidden fact the classes are equal); C5's "0.2–0.35" and "FN ≈ Smogon" (for species) are BROKEN; R-EVAL and the empty frontier are WEAKENED; POOL = identification SURVIVES. Status (2026-10-11): DESIGN + PRE-REGISTRATION (§12, landed `e25a5240` before any arm was run or read); the CHEAP
 parts RUN AND READ (§16; Amendment 1 after the audits, §12.12). AMENDMENT 2 (2026-10-12, §12.13, before any new arm):
 the STAGE of the game (reveal count k, turn, material) becomes a registered dimension of Tier 1 with a k-stratified
 supplement, the K-world belief-quality dose-response is a Tier-1 arm family (§6.9, no extra playout), and a maturity
@@ -109,6 +109,17 @@ then still feeling good about it."
   told facts, not to gain from them (descriptive, no rule).
 - The control gained +4.4 pp over its parent in the same 3M steps (CONFOUNDED by the learnset fix and the bf16 switch).
 - Reading: hidden information matters to SEARCH (G +0.07), not to the amortized policy at this maturity.
+
+**The red team, the blind U-arm build and E2 (§16.10–§16.12, 2026-10-15 → 18; PROVISIONAL at 15M):**
+- The red team found the never-seen Pokémon's lead only on states from games against scripted bots. A blind second
+  build of the never-seen arms replicated the lead on the registered mix at the 8-rollout leaf.
+- **E2, pre-registered on 1,200 FRESH states from games against the network's own snapshots, reads U-FIRST.**
+  - Revealing only the never-seen Pokémon helps honest search more than revealing only the moves (+1.7 points per
+    decision).
+  - Hiding only them costs more (+1.1 points).
+- **The second half is thin.** It is not clear with ties broken at random, nor on either checkpoint alone. On
+  competent play, hiding only the moves opens 0.58 of the gap, so the moves are a NECESSARY share. They are still
+  not a sufficient one, and not THE binding constraint.
 
 ---
 
@@ -1949,32 +1960,124 @@ on prod because O−U has no row on 2 of 103 k = 6 states. The reasons for the r
 Next come E3 (the second referee: what both builds share), the M side's residual difference, a tie-free or 16-world leaf
 (E5, for the scorer dependence) and the plateau replication (E6).
 
-### 16.12 E2, the COMPETENT-OPPONENT bank: PRE-REGISTERED and running (2026-10-16; `measurements/hidden_info_e2_competent_2026-10-16/`)
+### 16.12 E2, the COMPETENT-OPPONENT bank: the REGISTERED READ (pre-registered 2026-10-16, read 2026-10-18; `measurements/hidden_info_e2_competent_2026-10-16/`)
 
-**Status.** Registered before any E2 game was generated or any state drawn: `PREREGISTRATION.md`, shipped `5881ee83`.
-No result yet.
+**What E2 is.**
+- **Registration:** before any E2 game was generated or any state drawn (`PREREGISTRATION.md`, shipped `5881ee83`). The
+  harness and the bank followed at `d5880c87`, and the read (`read_e2.py`) was committed before any arm output existed.
+- **The bank:** 600 states per checkpoint, drawn only from FRESH games against the network's own snapshots.
+  - The games come from the pin's own offline eval-cycle generator (`main.ops.eval_trace_gen`), replaying the three live
+    cycles that fed the registered bank: the same trace players, sentinel sets and greedy regime, with registered seeds.
+  - The capture is 2 : 1 : 1 loss : draw : win, mirroring the live quota.
+  - The draw is the registered bank's procedure (gap quintiles, at most 2 states per battle), with a new salt.
+- **The arms:** Phase 1 plus F, F+M, F+U, O−M and O−U, on the original harness, with the world guard on.
+- **PRIMARY:** R3's two paired numerators, pooled over end2 + prod at LEAF-K8.
+- **Rule 8:** ±0.0005, the registered R3's band. A separate descriptive MATERIAL flag sits at 0.005. (The E1
+  pre-registration's 0.005 was a cross-build point tolerance, not a band.)
+- **The read itself:** run exactly as committed (`read_e2_test.py` 7 / 7 first), after a GIGO audit
+  (`gigo_audit_e2.py`). No deviation. The full tables are in the folder's README §4.
 
-**The bank.** 600 states per checkpoint, drawn from FRESH games.
-- **How the games are made:** the pin's own offline eval-cycle generator (`main.ops.eval_trace_gen`) replays the three
-  live cycles that fed the registered bank: the same trace players, the same sentinel sets and the same greedy regime,
-  with registered seeds.
-- **Capture:** a 2 : 1 : 1 loss : draw : win quota, mirroring the live one.
-- **The draw:** the registered bank's procedure (gap quintiles, ≤ 2 per battle), with a new salt.
+**Plain language.** E2 re-asked Tier 1's question on fresh positions from games against the network's own past selves.
+- **Revealing.** Revealing only the opponent's never-seen Pokémon still helps honest search clearly more than revealing
+  only the seen Pokémon's hidden moves: 1.7 points of win probability per decision more.
+- **Hiding.** Hiding only the never-seen Pokémon still costs a little more than hiding only the moves: 1.1 points more.
+- **The verdict.** By the registered rule that is **U-FIRST**: the never-seen Pokémon are the largest class on competent
+  play too.
+- **The thin half.** The second half is marginal. It is not clear with ties broken at random, nor on either checkpoint
+  alone. Hiding only the moves opens 0.58 of the gap, close to the never-seen Pokémon's 0.73.
+- **The red team's population attack** (§16.10) fails on the reveal side and replicates on the hide side.
 
-**The arms:** Phase 1 + F, F+M, F+U, O−M, O−U, on the original harness. The world guard is on.
+**Validity: the GIGO audit is clean** (`gigo_audit_e2.json`, `identity_e2.json`, the ten `pin_regate_e2_*.json`).
+- **Coverage:** every arm and the truth hold exactly one row per bank id, 600 per checkpoint, with 0 duplicates, 0
+  foreign ids and 0 torn lines.
+- **Provenance:** every world was built at `d5880c87` and every playout ran at the pad pins (`67f3f7fa` / `9a698801`).
+- **Exclusions:** F 40 / 52, under §6.1's 10 % on each checkpoint. **Guard defects: 0. Refused truth: 0. Non-finite
+  values: 0.**
+- **The identities:** the cross-commit oracle identity is exact on 12 / 12 states per checkpoint (max |ΔV| 1e-5). The k = 6
+  identities hold outcome for outcome: F+U ≡ F on 181 states, O−U ≡ O on 204.
+- **The pin re-gate:** 10 / 10 PASS. 45,768 worlds, 0 failures; the revealed-move plant was caught 5,586 / 5,586.
+- **The truth rows:** 30 per checkpoint were selected by `d5880c87`, and 570 by the `--limit` fix `6a1cf301` (from
+  2026-10-17 14:20 PDT). The rows follow sorted-id order, so no id was re-picked or skipped. The row computation is the
+  same code in both.
+- **The world builder's twin defect** (`ids[: a.limit]`, never exercised) is fixed with a test that fails on revert.
 
-**PRIMARY:** R3's two paired numerators, pooled over end2 + prod at LEAF-K8. The verdicts are U-FIRST, M-FIRST, SHARED or
-NOT DETECTED.
+**The registered read** (LEAF-K8 unless stated):
 
-**SECONDARY:**
-- per checkpoint;
-- the tie-free LEAF-K8|RAND, flagged SCORER-DEPENDENT when its verdict differs;
-- the shares;
-- Tier 1's two populations, descriptive.
+| frame | Δs = IMP(F+U) − IMP(F+M) | Δn = IMP(O−M) − IMP(O−U) | verdict |
+|---|---|---|---|
+| **PRIMARY: pooled** | **+0.0169 [+0.0065, +0.0268]** U, MATERIAL | **+0.0114 [+0.0010, +0.0220]** U | **U-FIRST**, SCORER-DEPENDENT |
+| end2 alone | +0.0195 [+0.0045, +0.0348] U | +0.0099 [−0.0053, +0.0244] none | SHARED |
+| prod alone | +0.0143 [+0.0018, +0.0268] U | +0.0128 [−0.0023, +0.0275] none | SHARED |
+| pooled, tie-free LEAF-K8\|RAND | +0.0160 [+0.0065, +0.0253] U | +0.0100 [−0.0002, +0.0193] none | SHARED |
 
-**Rule 8 resolved:** ±0.0005, the registered R3's band. A separate descriptive MATERIAL flag sits at 0.005. The E1
-pre-registration's 0.005 was a cross-build point tolerance, not a band. The read is `read_e2.py`, committed before any arm
-output.
+- **Qualifiers:** both classes are detected; GAP holds, with G **+0.0718 [+0.0599, +0.0827]** (Tier 1's +0.070); not
+  CLOSE; not SIDES-DISAGREE. The verdict is quoted as "computed".
+- **The other scorers** (reported without a verdict):
+  - LEAF-K8|CRITIC, LEAF-K8|TRUNC4 and LEAF-K4 read U on the reveal-only side and none on the hide-only side;
+  - TRUNC-4-K8 reads the reverse (none / U);
+  - LEAF-K1 reads none / none;
+  - CRITIC has no detected gap.
+  - **No scorer or frame gives the moves a clear lead on either side.** Here only the primary LEAF-K8 meets both
+    conditions at once. In Tier 1 its tie-free variants met them too (§16.10).
+- **The shares** (descriptive), with Tier 1's registered mix in brackets:
+  - s_M **0.16** [0.02, 0.28] and n_M **0.58** [0.47, 0.70] (Tier 1: 0.13 / 0.42);
+  - s_U **0.40** [0.28, 0.50] and n_U **0.73** [0.62, 0.86] (Tier 1: 0.31 / 0.82);
+  - s_U − s_M +0.24 [+0.09, +0.40]; n_U − n_M +0.15 [−0.006, +0.30];
+  - **B3 for M fails; B4 for M HOLDS.**
+- **Against Tier 1's populations** (descriptive; Tier 1's registered 600 + supplement; independent samples):
+  - **Reveal-only:** E2 − Tier 1's snapshot-game states is **+0.021 [+0.002, +0.038]**, and E2 − its bot-game states
+    −0.009 [−0.026, +0.009].
+  - **Hide-only:** E2 − the bot-game states is **−0.028 [−0.044, −0.013]**, and E2 − the snapshot-game states +0.001
+    [−0.016, +0.018].
+- **By stage:** the U margin falls with k, the number of opponent Pokémon seen:
+  - Δs +0.036 / +0.033 / +0.023 / +0.014 at k 1–2 / 3 / 4 / 5;
+  - −0.035 at k = 6, where by the identity only the moves can carry value.
+
+**What it does to the claim.**
+- **R3 on competent play: MET by the registered primary (U-FIRST).** It is SCORER-DEPENDENT, and SHARED on each checkpoint
+  alone. **"U > M in competent play" HOLDS, PROVISIONAL**: 15M checkpoints that have not plateaued, one implementation, no
+  per-checkpoint replication.
+  - By the registered meaning: "the never-seen Pokémon are the largest class on competent play too"; "U first" holds on
+    both populations at LEAF-K8.
+- **The red team's population attack (§16.10) splits.**
+  - **Its reveal-only half does NOT replicate on fresh states.** E2 sits with the bot-game states and clearly above Tier 1's
+    post-hoc snapshot subset. That subset's −0.004 looks like a subgroup found after the data regressing to the mean
+    (mechanism UNVERIFIED).
+  - **Its hide-only half DOES replicate.** On competent play the moves' necessity share (0.58) approaches the never-seen
+    mons' (0.73), and the U margin there is 2.8 points smaller than on bot games.
+  - Neither difference is composition-adjusted. The reader's registered "k-adjusted" numerators equal the raw ones by
+    construction: FINDING 1 in the folder's README §4.5.
+- **R-MOVES on competent play.** "The moves are THE binding constraint" stays refuted: B3 fails (s_M 0.16), and no frame
+  gives M a lead. B4 holds: the moves are a NECESSARY, material share. An honest world sampler that got the never-seen
+  Pokémon right would still lose more than half the gap with wrong moves.
+- **§13.2's gate.** E2 was the decisive open read for anything resting on U. The gate opens for "U ≥ M at LEAF-K8 on both
+  populations" as a scoped, PROVISIONAL claim, with the scorer dependence and the single implementation attached. The
+  plateau replication (§10.5) still owes it.
+
+**Confidence (this read's; §16.8–§16.11's figures stay as written):**
+
+| statement | confidence |
+|---|---|
+| hidden team information binds honest search | ≈ 95 % (G +0.072 on fresh states) |
+| the moves are THE binding constraint | ≈ 5 % |
+| the moves are a material share | ≈ 95 % (n_M 0.58, B4 holds) |
+| the never-seen class is the largest on the registered mix at LEAF-K8 | ≈ 85 % |
+| **… on competent-opponent states at LEAF-K8, both sides** | **≈ 65 %** (was ≈ 30 %) |
+| … its reveal-only half alone | ≈ 90 % |
+| U's dominance is a bot-game property | ≈ 35 % (was ≈ 80 %) |
+
+**For the roadmap and the search path (§14): the direction is unchanged.**
+- **No move-inference programme:** B3 fails on both populations.
+- **If belief work for search is ever opened, the never-seen class is its first target.** Its reveal-only value is ≈ 2.6×
+  the moves' (σ_U +0.029 vs σ_M +0.011). But the moves are a necessary share, so a world sampler must get both right.
+- **Nothing here opens search:** the honest frontier is still empty (§16.8).
+- **No multi-week commitment** rests on this read before the plateau replication.
+
+**Next (the reader's recommendation):**
+1. **Spend no more CPU on U vs M at 15M.** The decisive read is in, and it does not move the roadmap line.
+2. **Carry R3 into the plateau battery (§12.13.7)** with competent-opponent states in its frozen bank, so that the plateau
+   replication covers the population E2 read.
+3. **Optionally, E3** (the second referee, 3–5 CPU-h): the one common-mode part no build has checked.
 
 ---
 
@@ -2013,3 +2116,4 @@ output.
 | 2026-10-15 | **§8.2's identity precondition is unreachable at HEAD after legacy deletion U3** (config v157; manifest D-LD7, F-LD-5) | later forks of this lane run from the recorded P_hib / `hib-forks-pin`, or re-register against a post-U3 parent; the banked forks are unaffected (they ran before U3) | an RNG burn replaying the deleted draws (rejected in D-LD7) | the manifest §0 D-LD7, §6 F-LD-5; the ledger's U3 entry |
 | 2026-10-16 | **THE BLIND U-ARM BUILD COMPARED by a third party (§16.11; red team E1, under its pre-registration `8dd25833`)**: the registered criterion AGREES on C (978 states, LEAF-K8): s_U 0.32 / 0.31, n_U 0.83 / 0.92, R3's two numerators and conditions the same (both hold), σ_U / ν_U \|Δ\| 0.0022 / 0.0014; R3's never-seen half REPLICATED, scoped (LEAF-K8, the registered bot-heavy mix; R3 fails on end2 alone and on snapshot-game states in BOTH builds); the population split REPLICATED; R-REPLICATE §12.2 as a whole still NOT MET (the M side) | The blind build's `HOLD = false` on prod ruled a guard-caused EXCLUSION, not an identity failure: no outcome differs where both rows exist; the guard's one trigger is a single true set's untyped Hidden Power (all-31 IVs = Dark) that the engine reports typed, it raised before any playout on exactly the 4 states holding that set, the original's O−U equals O there outcome for outcome, and the states lie outside C. Rule 8 read as the study's ±0.0005 (primary), the ±0.005-band reading reported (DISAGREE, on the original's own s-side lower bound +0.0020). Reported beside the verdict: the scorer dependence (R3 flips at LEAF-K4 / K1, in opposite directions), the M side's residual difference with the learnset handicap fixed (ν_M −0.0078; n_M 0.38 vs 0.54, B4 differs; §16.9's handicap attribution not supported), the permutation-null TV (U content at the null; U.move, the first-slot placement (U2), M.move and S.nature differ). Third-party confidence that the never-seen Pokémon are the largest class on the registered mix at LEAF-K8 ≈ 85 %, on competent-opponent states ≈ 30 % | reading the literal `HOLD = false` as voiding the build (the missing rows carry no outcome, their cause is construction-independent, and no compared number contains them); the ±0.005 band as primary (it would re-write the original's registered R3 rule inside a comparison); quoting R3 as replicated without its scorer and population scope; editing §16.8–§16.10's verdicts or confidences | `measurements/hidden_info_u_replica_2026-10-15/third_party_comparison.md` / `.json`, `third_party_compare.py`; the blind build's README, `result.json`, `imp_per_state.json`; ledger 2026-10-16 |
 | 2026-10-16 | **E2 (the competent-opponent bank) PRE-REGISTERED (`5881ee83`) before any game or state existed; harness and bank committed; the arms crawling (§16.12)** | fresh own-snapshot games from the pin's offline eval generator for the three live cycles that fed the registered bank (same trace players, sentinel sets, regime; registered seeds), a 2 : 1 : 1 capture mirroring the live quota, the registered draw (600 / checkpoint); Phase 1 + F, F+M, F+U, O−M, O−U on the original harness with the world guard on; PRIMARY = R3's two numerators pooled at LEAF-K8 (U-FIRST / M-FIRST / SHARED / NOT DETECTED), per checkpoint and LEAF-K8\|RAND secondary; rule 8 at ±0.0005 with a separate MATERIAL flag at 0.005 | the remaining sentinel states of the live cycles (only 248 / 238 sentinel battles exist, too few for 600 states at ≤ 2 per battle, and they share games with Tier 1's post-hoc 503); no capture quota (a different outcome mix from the registered bank's); the ±0.005 band as the significance band (it was E1's cross-build point tolerance); blinding (the read is code before any arm output; Tier 1 §3: blinding protected the scripts, not knowledge) | `measurements/hidden_info_e2_competent_2026-10-16/` (`PREREGISTRATION.md`, `README.md`, the scripts, `states_e2_<cp>.json`) |
+| 2026-10-18 | **E2 READ (§16.12): R3 on the competent-opponent bank = U-FIRST by the registered pooled LEAF-K8 primary, printed SCORER-DEPENDENT; SHARED on each checkpoint alone and tie-free; "U > M in competent play" HOLDS, PROVISIONAL** | The registered scripts run unchanged after `QUEUE_DONE` (`read_e2_test.py` 7 / 7, `identity_e2.py`, `read_e2.py`), behind a GIGO audit written for the read (`gigo_audit_e2.py`: one row per bank id in the truth and every arm, 0 duplicates, 0 guard defects, 0 non-finite values, provenance heads as registered, the 10 pin re-gates PASS on their recomputed criterion; the truth rows' sorted-id order proves the `--limit` fix `6a1cf301` re-picked and skipped nothing). Δs +0.0169 [+0.0065, +0.0268] (MATERIAL), Δn +0.0114 [+0.0010, +0.0220]; G +0.0718; s_M 0.16, n_M 0.58 (B4 holds, B3 fails), s_U 0.40, n_U 0.73. The red team's population attack splits: its reveal-only half does not replicate (E2 − Tier-1 snapshot +0.021 [+0.002, +0.038]), its hide-only half does (E2 − Tier-1 bot −0.028 [−0.044, −0.013]). Confidence that U is the largest class on competent play at LEAF-K8 ≈ 65 % (was ≈ 30 %). Roadmap direction unchanged (no move-inference programme; the never-seen class is the first belief target for search if any; nothing opens search). The world builder's latent `--limit` twin fixed with a test that fails on revert | quoting U-FIRST without SCORER-DEPENDENT and the per-checkpoint SHARED (both registered qualifiers); patching the reader's vacuous k-adjustment in this unit (a reader change needs its own test and a named deviation; the read is descriptive there, so it is a FINDING); re-running any arm or extending the bank (§5: no size rule, no re-run after outcomes); treating the reveal-only population difference as composition-adjusted (it is not) | `measurements/hidden_info_e2_competent_2026-10-16/` (README §4, `result_e2.json`, `identity_e2.json`, `gigo_audit_e2.json`, `pin_regate_e2_*.json`); ledger 2026-10-18 MEASUREMENT (MAJOR) "E2" |

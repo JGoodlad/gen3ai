@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-26,719-line file. **The ledger itself is append-only and is never edited by this**;
+26,826-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**895 headings · 840 dated · 2026-08-01 → 2026-10-17 · ledger 26,719 lines.**
+**896 headings · 841 dated · 2026-08-01 → 2026-10-18 · ledger 26,826 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -915,3 +915,4 @@ rename.
   - `L26555` · `2026-10-17` · MEASUREMENT (PILOT, DESCRIPTIVE) · **COLLAPSE PILOT: X26 shows NO entropy collapse and NO growing starvation. About 0.3 of decisive turns starve a near-best move at every checkpoint from 10M to 160M (own truth −0.011 [−0.090, +0.061]; pre-era truth +0.013 to +0.023, not detected 3/3), while dominated mass and greedy regret FALL. About 3/4 of it is MISRANK, not tie-collapse. The starved moves are worth +0.35 to +0.39 per starved decisive turn, but only in the TRUE world: an honest one-ply read flags them at 1.35× chance and acting on its flag loses −0.068**
   - `L26618` · `2026-10-17` · MEASUREMENT · **K2 vs KAKUNA, BOTH TEAM SETS — on Metamon's teams X26 IS a step over K2 (G0′): K2 loses to `metamon:Kakuna` 0.355 [0.310, 0.403] (n = 400, WORSE), X26 @161,000,169 reads 0.497 [0.449, 0.546] (n = 400, NOT DETECTED), X26 − K2 +0.143 [+0.074, +0.209] DETECTED. On our teams (home72) K2 0.521 [0.458, 0.583] vs X26 0.600 (n = 240 each), X26 − K2 +0.079 [−0.010, +0.166] NOT DETECTED. X26's away 0.570 at n = 100 was a lucky first draw**
   - `L26677` · `2026-10-17` · MEASUREMENT · **K2 vs KAKUNA — home72 n = 400 follow-up: X26 − K2 on our teams is DETECTED, +0.087 [+0.018, +0.155]. K2 reads 0.487 [0.439, 0.536] and X26 @161,000,169 reads 0.575 [0.526, 0.623]; the goal bar still holds. The gain over N0 against Kakuna belongs to the K2 → X26 step (K2 − N0 +0.027, NOT DETECTED)**
+  - `L26720` · `2026-10-18` · MEASUREMENT (MAJOR) · **HIDDEN-INFO STUDY: E2, the COMPETENT-OPPONENT bank, READ under its pre-registration (`5881ee83`). On 1,200 FRESH states from games against the network's own snapshots, R3 reads U-FIRST by the registered pooled LEAF-K8 primary: reveal-only IMP(F+U) − IMP(F+M) +0.0169 [+0.0065, +0.0268] (MATERIAL), hide-only IMP(O−M) − IMP(O−U) +0.0114 [+0.0010, +0.0220]. Printed SCORER-DEPENDENT (tie-free LEAF-K8|RAND: SHARED, hide-only lower −0.0002) and SHARED on end2 and on prod alone. The red team's population attack splits: its reveal-only half does NOT replicate, its hide-only half does (n_M 0.58, B4 holds). GIGO audit clean. PROVISIONAL at 15M**

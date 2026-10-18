@@ -5,6 +5,7 @@ the seen-mon screen is deterministic per (decision, constraint) and F+U takes F'
 ``screen_cache`` per state: common random numbers).
 
     run_e2.sh head 1 8 24h build_e2_worlds.py --cp end2 [--arms F,F+U,...] [--shard i --of W] [--limit N] [--ids FILE]
+                                               (--limit N: at most N states with an arm still to build; `select_ids`)
     run_e2.sh head 1 8 2h  build_e2_worlds.py --cp end2 --validation oracle --ids FILE     # the identity check
 
 One durable row per (state, arm) in ``<archive>/<cp>/worlds/<arm>/worlds_<shard>_of_<W>.jsonl`` in the pilot's det
@@ -22,7 +23,7 @@ import sys
 import time
 import traceback
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import e2_common as E  # noqa: E402
@@ -34,6 +35,16 @@ def cpu_seconds() -> float:
     a = resource.getrusage(resource.RUSAGE_SELF)
     b = resource.getrusage(resource.RUSAGE_CHILDREN)
     return a.ru_utime + a.ru_stime + b.ru_utime + b.ru_stime
+
+
+def select_ids(ids: List[str], done: Dict[str, set], want: List[str], limit: Optional[int]) -> List[str]:
+    """The states one call builds: those with ANY wanted arm not yet built, in id order, capped at ``limit`` only AFTER
+    the built ones are dropped. Capping the id list first (this script's original ``ids[: a.limit]``) re-picks the same
+    already-built states on every call once they are done, so a ``--limit`` call never advances: the defect that
+    stalled phase1_e2's truth unit for a day (fixed in 6a1cf301, 2026-10-17). It never bit here, because the queue never
+    passed ``--limit`` to a build; `build_e2_worlds_test.py` pins the order."""
+    todo = [did for did in ids if any(did not in done[lab] for lab in want)]
+    return todo[:limit] if limit else todo
 
 
 def main():
@@ -77,7 +88,6 @@ def main():
     if a.ids:
         keep = {x.strip() for x in Path(a.ids).read_text().splitlines() if x.strip()}
         ids = [x for x in ids if x in keep]
-    ids = E.shard(ids, a.shard, a.of)[: a.limit]
     samplers = {lab: WorldSampler(reveal=labels[lab], max_tries=60) for lab in want}
     done: Dict[str, set] = {}
     files = {}
@@ -86,6 +96,7 @@ def main():
         d.mkdir(parents=True, exist_ok=True)
         done[lab] = set(E.read_dir(d, "worlds_*.jsonl"))
         files[lab] = open(d / f"worlds_{a.shard}_of_{a.of}.jsonl", "a")
+    ids = select_ids(E.shard(ids, a.shard, a.of), done, want, a.limit)     # --limit caps NEW work, never the id list
     sha = os.environ["HIB_E2_CHECKOUT_HEAD"]
     dec = {d["id"]: d for d in bank.decisions}
     print(f"[e2 worlds] {a.cp} shard {a.shard}/{a.of}: {len(ids)} states x {want} at {sha[:8]}", flush=True)

@@ -26716,3 +26716,110 @@ crosses two harnesses.
 Tag: **MEASUREMENT · PROVISIONAL · X26 − K2 home72 DETECTED (n = 400) · X26 vs Kakuna home72 0.575, goal bar holds** ·
 evidence: `research_state/measurements/k2_x26_kakuna_both_teamsets_2026-10-17/` (README, `cells.json`, `rows.jsonl`,
 `paired.json`, `scripts/`); `designs/ops/EXTERNAL_ANCHORS_SOP.md` §1 goal row, §4 "X26".
+
+### 2026-10-18 · MEASUREMENT (MAJOR) · **HIDDEN-INFO STUDY: E2, the COMPETENT-OPPONENT bank, READ under its pre-registration (`5881ee83`). On 1,200 FRESH states from games against the network's own snapshots, R3 reads U-FIRST by the registered pooled LEAF-K8 primary: reveal-only IMP(F+U) − IMP(F+M) +0.0169 [+0.0065, +0.0268] (MATERIAL), hide-only IMP(O−M) − IMP(O−U) +0.0114 [+0.0010, +0.0220]. Printed SCORER-DEPENDENT (tie-free LEAF-K8|RAND: SHARED, hide-only lower −0.0002) and SHARED on end2 and on prod alone. The red team's population attack splits: its reveal-only half does NOT replicate, its hide-only half does (n_M 0.58, B4 holds). GIGO audit clean. PROVISIONAL at 15M**
+
+**What E2 is.** The red team (2026-10-15) found that the never-seen Pokémon's (class U) lead over the seen mons' hidden moves
+(class M) lived only in the registered mix's games against scripted bots. The blind U-arm build (2026-10-16) replicated
+that split. E2 re-asks R3 on a bank drawn ONLY from competent play, as the PRIMARY question.
+- **The registration:** written before any game or state existed (`measurements/hidden_info_e2_competent_2026-10-16/
+  PREREGISTRATION.md`). The harness and the bank followed at `d5880c87`, and the read (`read_e2.py`) before any arm output.
+- **The bank:** 600 states per checkpoint (end2 `rb_es_end2_s2001`, prod `rb_es_prod_s2001`, both at 15M).
+  - The games are fresh: the pin's offline eval generator replayed the three live cycles that fed the registered bank,
+    with the same trace players, sentinel sets and greedy regime, at registered seeds.
+  - The capture is 2 : 1 : 1 loss : draw : win.
+  - The draw is the registered one: gap quintiles, at most 2 states per battle.
+- **The arms:** Phase 1 (the truth, O) plus F, F+M, F+U, O−M and O−U, on the original harness. Worlds were built at
+  `d5880c87` with the world guard on, and played at Tier 1's pad pins.
+
+**How it was read (2026-10-18).**
+- **The queue:** `QUEUE_DONE` at 03:21, nothing parked.
+- **The registered scripts, unchanged:** `read_e2_test.py` 7 / 7, then `identity_e2.py` and `read_e2.py`. No deviation.
+- **The GIGO audit:** `gigo_audit_e2.py`, written for this read and computing no outcome, ran first.
+- **The `--limit` fix:** `6a1cf301` (`phase1_e2` capped the id list before dropping done ids, so the truth unit stalled for
+  a day) was cherry-picked to main in this unit.
+
+**The GIGO audit (every check passed).**
+- **Coverage:** the truth and every arm hold exactly one row per bank id, 600 per checkpoint, with 0 duplicates, 0 foreign
+  ids and 0 torn lines.
+- **Provenance:** every world `head` is `d5880c87`, every playout `pin_head` the pad pin (`67f3f7fa` / `9a698801`), and
+  every truth `pin` the plain pin.
+- **The truth rows:** 30 per checkpoint were selected by `d5880c87`'s first call and 570 by `6a1cf301`, from 2026-10-17
+  14:20 PDT. The shard file's row order equals sorted(bank ids), so no id was re-picked or skipped. The row computation is
+  the same code in both.
+- **Exclusions** (end2 / prod): F 40 / 52 (under the 10 % rule), F+M 45 / 50, F+U 39 / 51, O−M 0 / 0, O−U 1 / 1.
+- **Guard defects: 0. Refused truth: 0. Non-finite values: 0.**
+- **The identities:** the cross-commit oracle identity holds on 12 / 12 states per checkpoint (0 mismatches, max |ΔV|
+  1e-5). The k = 6 identities hold outcome for outcome (F+U ≡ F on 181 states, O−U ≡ O on 204).
+- **The pin re-gates:** 10 / 10 PASS on their recomputed criterion. 45,768 worlds, 0 failures; the revealed-move plant was
+  caught 5,586 / 5,586.
+
+**The registered read** (LEAF-K8 = the mean of 8 world outcomes, ties to the policy's order; rule 8 at ±0.0005):
+
+| frame | Δs reveal-only | Δn hide-only | verdict |
+|---|---|---|---|
+| **pooled (PRIMARY)** | **+0.0169 [+0.0065, +0.0268]** U, MATERIAL | **+0.0114 [+0.0010, +0.0220]** U | **U-FIRST**, SCORER-DEPENDENT |
+| end2 | +0.0195 [+0.0045, +0.0348] U | +0.0099 [−0.0053, +0.0244] | SHARED |
+| prod | +0.0143 [+0.0018, +0.0268] U | +0.0128 [−0.0023, +0.0275] | SHARED |
+| pooled, tie-free LEAF-K8\|RAND | +0.0160 [+0.0065, +0.0253] U | +0.0100 [−0.0002, +0.0193] | SHARED |
+
+- **The gap:** G = IMP(O) − IMP(F) **+0.0718 [+0.0599, +0.0827]** (Tier 1: +0.070).
+- **The class contrasts:** σ_M +0.0109, σ_U +0.0286, ν_M +0.0432, ν_U +0.0541; both classes are detected.
+- **The shares:**
+  - s_M 0.16 [0.02, 0.28] and **n_M 0.58** [0.47, 0.70]: B3 fails, **B4 holds**;
+  - s_U 0.40 [0.28, 0.50] and n_U 0.73 [0.62, 0.86];
+  - s_U − s_M +0.24 [+0.09, +0.40]; n_U − n_M +0.15 [−0.006, +0.30].
+- **The other scorers** (no verdict):
+  - LEAF-K8|CRITIC, LEAF-K8|TRUNC4 and LEAF-K4 read U / none;
+  - TRUNC-4-K8 reads none / U;
+  - LEAF-K1 reads none / none;
+  - CRITIC has no gap.
+  - **No scorer or frame gives M a clear lead on either side.**
+- **Against Tier 1's populations** (descriptive; the registered 600 + supplement):
+  - **Reveal-only:** E2 − the snapshot-game states +0.021 [+0.002, +0.038]; E2 − the bot-game states −0.009 [−0.026,
+    +0.009].
+  - **Hide-only:** E2 − the bot-game states −0.028 [−0.044, −0.013]; E2 − the snapshot-game states +0.001.
+- **By k** (the opponent's mons seen): Δs +0.036 → +0.014 from k 1–2 to k 5, and −0.035 at k 6 (only the moves exist there).
+
+**Reading.**
+- **The claim:** "U > M in competent play" HOLDS by the registered rule. It is scorer-dependent and replicated on neither
+  checkpoint alone; PROVISIONAL (15M, not plateaued; one implementation).
+- **The red team's population attack splits.**
+  - Its reveal-only half does not replicate on fresh states: Tier 1's post-hoc snapshot subset looks like regression to
+    the mean (mechanism UNVERIFIED).
+  - Its hide-only half does: on competent play, hiding only the moves opens 0.58 of the gap.
+- **The moves:** a NECESSARY, material share, not a sufficient one, and not THE binding constraint.
+- **The roadmap is unchanged:**
+  - no move-inference programme;
+  - the never-seen class is the first belief target for search if one is ever opened, but the moves cannot be ignored;
+  - the honest frontier is still empty.
+- **Confidence (the reader's)** that U is the largest class on competent play at LEAF-K8: ≈ 65 % (the third party's was
+  ≈ 30 %). The reveal-only half alone: ≈ 90 %.
+
+**Recommendation.**
+1. No more CPU on U vs M at 15M.
+2. Carry R3 into the plateau battery (the study's §12.13.7), with competent-opponent states in its frozen bank.
+3. Optionally, E3 (the second referee, 3–5 CPU-h).
+
+**FINDINGS.**
+1. **The registered "k-adjusted E2 Δs / Δn" is vacuous as coded.** `read_e2.by_groups` evaluates the OLS fit at the frame's
+   own mean, which reproduces the raw mean. So the population differences above are NOT composition-adjusted. Not patched:
+   a reader change needs its own test and a named deviation.
+2. **The reader keeps the last row per id** (`e2_common.read_dir`), so a duplicate would be silent. The audit counted raw
+   rows: 0 duplicates.
+3. **The world builder's latent `--limit` twin** (`build_e2_worlds.py`: `ids[: a.limit]` before the done filter, never
+   exercised) is FIXED with `select_ids` + `build_e2_worlds_test.py`. The test also pins phase1_e2's fix, and fails on a
+   revert of either.
+4. **`play_e2_worlds.py` shards the NOT-DONE list**, so two shards started at different times could pick the same id. It is
+   latent: the queue ran one shard, with 0 duplicates. Not fixed (out of scope).
+5. **The queue gated the re-gates on the build, not on "after every playout unit" as documented.** Harmless: a re-gate reads
+   worlds only.
+6. **Tier 1's populations here include its supplement** (912 / 708 states). The red team's split used the registered 600
+   only (697 / 503).
+7. **Not verified:** no arm was re-run, and no second implementation exists for E2.
+8. **Rule 5b was followed:** nice 19, cores 5–7 / 13–15, `mem_cap` (peak 1.3 GB), no GPU.
+
+Tag: **MEASUREMENT (MAJOR) · PRE-REGISTERED (`5881ee83`) · R3 on competent-opponent states U-FIRST (pooled LEAF-K8) · SCORER-DEPENDENT (tie-free SHARED) · SHARED per checkpoint · the red team's population attack: reveal-only half NOT replicated, hide-only half REPLICATED · B4 HOLDS on competent play (n_M 0.58), B3 fails · GIGO audit clean · single implementation · PROVISIONAL at 15M (not plateaued)** ·
+evidence: `research_state/measurements/hidden_info_e2_competent_2026-10-16/` (README §4, `result_e2.json`, `identity_e2.json`,
+`gigo_audit_e2.json` / `.py`, `pin_regate_e2_*.json`); `endstate/design_hidden_info_binding.md` §16.12; `endstate/search_ledger.md`;
+`research_state/UNDERSTANDING.md` §4.7

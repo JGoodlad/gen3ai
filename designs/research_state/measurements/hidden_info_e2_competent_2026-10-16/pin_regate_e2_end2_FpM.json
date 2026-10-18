@@ -1,0 +1,23 @@
+{
+ "arm": "F+M",
+ "cp": "end2",
+ "examples": [],
+ "fail": 0,
+ "padded_worlds": 999,
+ "pin_head": "67f3f7fab078c34e815bc75dbc8807d9b27e5576",
+ "plant_item": {
+  "caught": 343,
+  "tried": 555
+ },
+ "plant_move": {
+  "caught": 539,
+  "tried": 539
+ },
+ "plant_strip": {
+  "caught": 974,
+  "tried": 999
+ },
+ "states": 555,
+ "verdict": "PASS",
+ "worlds": 4440
+}
