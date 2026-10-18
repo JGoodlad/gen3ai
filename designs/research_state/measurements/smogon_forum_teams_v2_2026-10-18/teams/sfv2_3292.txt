@@ -1,57 +1,57 @@
-Hariyama @ Leftovers
-Ability: Thick Fat
-EVs: 176 Atk / 156 Def / 116 SpD / 60 Spe
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Roar
+- Substitute
+- Endeavor
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 76 SpD / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Psychic
+- Giga Drain
+- Hidden Power [Fire]
+
+Tyranitar @ Silk Scarf
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpD / 252 Spe
 Adamant Nature
-- Knock Off
-- Brick Break
-- Focus Punch
+- Dragon Dance
 - Rock Slide
+- Earthquake
+- Hyper Beam
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 248 HP / 200 Def / 60 SpD
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunderbolt
+- Recover
+- Thunder Wave
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 240 HP / 176 Atk / 92 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Brick Break
-- Fire Blast
-- Hidden Power [Grass]
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Ice Beam
-- Fire Blast
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
+EVs: 144 Atk / 212 SpD / 152 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
 - Earthquake
-- Rapid Spin
-- Hidden Power [Bug]
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 76 Def / 180 SpD
-Sassy Nature
-- Wish
-- Fire Punch
-- Body Slam
-- Protect
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 236 SpA / 20 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Thunderbolt
-- Ice Beam
-- Soft-Boiled
+- Rock Slide

@@ -1,56 +1,55 @@
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
-Relaxed Nature
-- Protect
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
 - Earthquake
 - Hydro Pump
 - Ice Beam
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 200 HP / 68 SpA / 140 SpD / 100 Spe
-Modest Nature
-- Spikes
-- Rapid Spin
-- Surf
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
 - Explosion
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
-Hasty Nature
-- Will-O-Wisp
-- Thunder
-- Giga Drain
-- Explosion
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
-- Rest
+- Substitute
 - Thunderbolt
 - Hidden Power [Grass]
-- Roar
+- Baton Pass
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
+Snorlax @ Leftovers
+Ability: Thick Fat
+EVs: 32 HP / 96 Atk / 120 Def / 88 SpA / 172 SpD
+Brave Nature
+- Double-Edge
+- Earthquake
+- Fire Blast
+- Self-Destruct
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 108 Atk / 220 SpA / 180 Spe
 Mild Nature
 IVs: 30 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
+- Dragon Claw
 - Brick Break
-- Beat Up
+- Hidden Power [Grass]
+- Fire Blast

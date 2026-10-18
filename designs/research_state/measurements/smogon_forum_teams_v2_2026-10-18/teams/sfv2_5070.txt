@@ -1,0 +1,53 @@
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 64 Atk / 192 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Soft-Boiled
+- Calm Mind
+- Thunderbolt
+- Ice Beam
+
+Skarmory (F) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Toxic
+
+Gengar (F) @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 112 SpD / 104 Spe
+Timid Nature
+- Will-O-Wisp
+- Taunt
+- Thunderbolt
+- Giga Drain
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 216 Def / 40 SpD
+Relaxed Nature
+- Earthquake
+- Surf
+- Refresh
+- Toxic
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+- Recover
+- Rapid Spin
+- Thunderbolt
+- Surf

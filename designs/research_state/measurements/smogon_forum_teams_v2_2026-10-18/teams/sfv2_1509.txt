@@ -1,56 +1,56 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
-Modest Nature
-IVs: 30 Spe
-- Protect
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
 - Toxic
 - Thunderbolt
-- Hidden Power [Ice]
+- Rain Dance
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 196 SpA / 128 Spe
-Modest Nature
-- Crunch
-- Pursuit
-- Flamethrower
-- Brick Break
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 240 HP / 240 SpD / 28 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 28 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
 - Roar
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 80 HP / 252 SpA / 176 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Toxic
+- Flamethrower
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
 Rash Nature
-IVs: 30 Atk / 30 SpA
-- Water Pulse
-- Thunderbolt
-- Psychic
-- Dynamic Punch
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 220 Def / 36 Spe
-Impish Nature
-- Protect
-- Screech
-- Earthquake
-- Rock Slide
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Wish
+- Dragon Claw
+- Flamethrower
+- Brick Break

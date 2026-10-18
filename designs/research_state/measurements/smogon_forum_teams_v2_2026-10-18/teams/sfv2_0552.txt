@@ -1,57 +1,57 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 72 HP / 252 Atk / 184 Spe
+Machamp @ Leftovers
+Ability: Guts
+EVs: 248 HP / 176 Atk / 20 Def / 44 SpD / 20 Spe
 Adamant Nature
-- Meteor Mash
-- Rock Slide
-- Earthquake
-- Explosion
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
+IVs: 30 Atk / 30 SpD
+- Bulk Up
+- Low Kick
+- Hidden Power [Ghost]
 - Rock Slide
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 44 Def / 32 SpA / 184 Spe
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 64 SpA / 192 Spe
 Timid Nature
-IVs: 30 Atk / 30 SpA
-- Ice Punch
-- Will-O-Wisp
-- Hidden Power [Grass]
-- Explosion
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 252 Atk / 8 Spe
-Adamant Nature
-- Earthquake
-- Psychic
-- Rapid Spin
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Surf
 - Ice Beam
-- Hidden Power [Grass]
+- Rapid Spin
+- Spikes
+- Explosion
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 120 SpA / 136 Spe
+EVs: 252 HP / 40 Def / 180 SpA / 36 Spe
 Modest Nature
 IVs: 0 Atk
 - Substitute
 - Calm Mind
+- Thunder
 - Ice Punch
-- Thunderbolt
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 212 SpD / 140 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 184 HP / 144 Atk / 180 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Thunder Wave
+- Counter
+- Soft-Boiled

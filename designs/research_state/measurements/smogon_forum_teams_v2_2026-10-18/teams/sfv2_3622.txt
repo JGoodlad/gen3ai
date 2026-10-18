@@ -1,58 +1,58 @@
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 104 HP / 252 SpA / 152 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Hidden Power [Grass]
-- Thunder Wave
-- Thunderbolt
-- Baton Pass
-
-Rhydon (M) @ Leftovers
-Ability: Lightning Rod
-EVs: 212 HP / 168 Atk / 128 Spe
-Adamant Nature
-- Swords Dance
-- Earthquake
-- Rock Slide
-- Substitute
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
 
 Magneton @ Leftovers
 Ability: Magnet Pull
-Shiny: Yes
-EVs: 68 HP / 252 SpA / 188 Spe
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Hidden Power [Fire]
-- Thunder Wave
+IVs: 2 Atk / 30 SpA
+- Toxic
 - Thunderbolt
-- Toxic
+- Hidden Power [Grass]
+- Rain Dance
 
-Snorlax (M) @ Leftovers
-Ability: Thick Fat
-EVs: 16 HP / 124 Atk / 220 Def / 136 SpD / 12 Spe
-Careful Nature
-- Shadow Ball
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
+Adamant Nature
 - Body Slam
-- Curse
-- Rest
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
 
-Flygon @ Leftovers
-Ability: Levitate
-Shiny: Yes
-EVs: 180 HP / 176 Atk / 152 Spe
-Adamant Nature
-- Earthquake
-- Substitute
-- Fire Blast
-- Toxic
-
-Tyranitar (M) @ Leftovers
-Ability: Sand Stream
-EVs: 176 HP / 160 Atk / 172 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Hidden Power [Bug]
-- Dragon Dance
-- Earthquake
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 144 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
 - Rock Slide
+- Hidden Power [Grass]
+- Explosion
+
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 200 HP / 252 Atk / 56 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Rock Slide
+- Hidden Power [Ghost]
+- Superpower
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 192 Atk / 200 SpD / 116 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break

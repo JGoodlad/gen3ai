@@ -1,57 +1,56 @@
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 244 Def / 176 SpA / 12 SpD / 60 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 136 SpA / 156 Spe
 Modest Nature
-IVs: 0 Atk
-- Substitute
-- Hydro Pump
-- Ice Beam
-- Baton Pass
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 0 Atk
-- Recover
-- Leech Seed
-- Swords Dance
-- Baton Pass
-
-Snorlax @ Leftovers
-Ability: Thick Fat
-EVs: 32 HP / 96 Atk / 120 Def / 88 SpA / 172 SpD
-Brave Nature
-- Double-Edge
-- Earthquake
-- Fire Blast
-- Self-Destruct
+IVs: 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 224 SpA / 44 Spe
+EVs: 240 HP / 252 SpA / 16 Spe
 Quiet Nature
+- Curse
 - Earthquake
 - Hydro Pump
 - Ice Beam
-- Focus Punch
 
-Regirock @ Choice Band
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 200 HP / 252 Atk / 56 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Rock Slide
-- Hidden Power [Ghost]
-- Superpower
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Earthquake
+- Thunder Punch
+- Hidden Power [Grass]
 - Explosion
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Naughty Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 212 Spe
+Adamant Nature
 - Dragon Dance
+- Earthquake
 - Rock Slide
-- Hidden Power [Flying]
-- Fire Blast
+- Double-Edge
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Swords Dance
+- Megahorn
+- Brick Break
+- Rock Slide
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Flamethrower
+- Hidden Power [Grass]
+- Focus Punch

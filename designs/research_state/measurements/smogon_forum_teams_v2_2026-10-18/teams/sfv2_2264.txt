@@ -1,12 +1,12 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 248 SpD / 20 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
-- Toxic
-- Thunderbolt
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 216 SpA / 108 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Crunch
+- Pursuit
+- Flamethrower
+- Brick Break
 
 Skarmory @ Leftovers
 Ability: Keen Eye
@@ -18,40 +18,41 @@ IVs: 0 Atk
 - Toxic
 - Roar
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
-Hasty Nature
-- Will-O-Wisp
-- Thunder
-- Giga Drain
-- Explosion
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Fire Punch
+- Hidden Power [Grass]
+- Psychic
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 12 Atk / 176 Def / 44 SpD / 36 Spe
-Relaxed Nature
-- Protect
-- Surf
-- Focus Punch
-- Roar
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 76 HP / 252 SpA / 180 Spe
-Rash Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Thunder
-- Fire Punch
-- Psychic
-- Hidden Power [Fighting]
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
 - Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Hydro Pump
+- Ice Beam
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 168 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up

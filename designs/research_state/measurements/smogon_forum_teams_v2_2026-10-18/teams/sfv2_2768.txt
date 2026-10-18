@@ -1,56 +1,59 @@
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
+EVs: 248 HP / 180 Def / 80 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
 - Rest
-- Thunderbolt
-- Hidden Power [Grass]
 - Roar
+- Surf
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 40 Atk / 216 SpD
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 164 Def / 176 SpD / 24 Spe
+Impish Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Body Slam
+- Curse
+- Hidden Power [Bug]
+- Rest
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+Shiny: Yes
+EVs: 248 HP / 248 SpD / 12 Spe
 Careful Nature
-IVs: 30 Atk / 30 SpD
+IVs: 0 Atk
 - Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
+- Toxic
+- Protect
+- Whirlwind
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 36 HP / 252 SpA / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Thunder Wave
+- Thunderbolt
+- Toxic
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 8 HP / 252 Def / 248 SpA
+Modest Nature
+IVs: 0 Atk
+- Seismic Toss
+- Toxic
+- Ice Beam
+- Soft-Boiled
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
+EVs: 252 HP / 216 Def / 40 SpD
+Relaxed Nature
 - Rapid Spin
 - Earthquake
 - Psychic
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 120 Def / 136 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Wish
-- Body Slam
-- Fire Punch
-- Hidden Power [Grass]
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Earthquake
-- Shadow Ball
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 176 Atk / 196 SpD / 136 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Brick Break
+- Ice Beam

@@ -1,0 +1,59 @@
+Tyranitar @ Silk Scarf
+Ability: Sand Stream
+Hidden Power: Bug
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 120 HP / 192 Atk / 196 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Brick Break
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Crunch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 140 HP / 16 Def / 232 SpA / 120 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Hydro Pump
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 76 HP / 252 SpA / 180 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic

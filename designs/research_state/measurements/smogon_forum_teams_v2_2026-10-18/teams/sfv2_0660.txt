@@ -1,57 +1,61 @@
-Tyranitar @ Salac Berry
-Ability: Sand Stream
-EVs: 4 HP / 252 SpA / 252 Spe
-Hasty Nature
-- Pursuit
-- Crunch
-- Taunt
-- Brick Break
-
-Poliwrath @ Leftovers
-Ability: Water Absorb
-EVs: 248 HP / 252 Atk / 8 SpD
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Brick Break
-- Bulk Up
-- Rest
-- Hidden Power [Bug]
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Flying]
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
-IVs: 0 Atk
-- Spikes
-- Surf
-- Icy Wind
-- Rapid Spin
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 236 SpA / 32 Spe
-Quiet Nature
-- Hydro Pump
-- Ice Beam
+Tyranitar @ Chesto Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 244 HP / 252 Atk / 12 Spe
+Adamant Nature
+- Rock Slide
 - Earthquake
+- Rest
 - Focus Punch
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 144 HP / 188 SpA / 176 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
+Heracross @ Leftovers
+Ability: Guts
+Shiny: Yes
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Focus Punch
+- Megahorn
+- Rock Slide
+- Substitute
+
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
 - Toxic
-- Wish
-- Protect
-- Hidden Power [Ice]
+- Calm Mind
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 72 HP / 252 SpA / 184 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Hidden Power [Grass]
+- Calm Mind
+- Fire Punch
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+Shiny: Yes
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+- Rock Slide

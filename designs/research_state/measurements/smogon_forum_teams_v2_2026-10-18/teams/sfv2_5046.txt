@@ -1,0 +1,58 @@
+Starmie @ Mystic Water
+Ability: Natural Cure
+EVs: 4 HP / 116 Def / 252 SpA / 136 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 128 HP / 252 SpA / 128 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 104 Atk / 152 SpA
+Quiet Nature
+- Ice Beam
+- Thunderbolt
+- Explosion
+- Thunder Wave
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 64 HP / 252 SpA / 192 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Will-O-Wisp
+- Hidden Power [Grass]
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Ice Beam

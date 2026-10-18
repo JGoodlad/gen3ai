@@ -1,58 +1,55 @@
-Smeargle @ Leftovers
-Ability: Own Tempo
-EVs: 252 HP / 92 Def / 100 SpD / 64 Spe
-Jolly Nature
-IVs: 0 Atk
-- Spore
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Focus Punch
+- Rock Slide
+- Earthquake
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
 - Spikes
-- Encore
-- Agility
+- Roar
+- Thief
+- Protect
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Brick Break
-- Hidden Power [Grass]
-- Fire Blast
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Roar
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 HP / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Focus Punch
-- Crunch
+EVs: 76 HP / 252 Atk / 180 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Dragon Dance
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 224 Atk / 16 Def / 100 Spe
+EVs: 252 HP / 56 Atk / 140 Def / 60 Spe
 Adamant Nature
+- Explosion
+- Protect
 - Meteor Mash
 - Earthquake
-- Agility
-- Rock Slide
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 28 HP / 252 SpA / 228 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 228 SpA / 28 Spe
 Modest Nature
 IVs: 0 Atk
-- Calm Mind
-- Hydro Pump
+- Thunderbolt
+- Toxic
 - Ice Beam
-- Roar
+- Soft-Boiled
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 196 Atk / 60 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Explosion
+- Rapid Spin

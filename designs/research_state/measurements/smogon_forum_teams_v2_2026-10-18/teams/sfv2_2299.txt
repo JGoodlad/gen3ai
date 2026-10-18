@@ -1,57 +1,58 @@
-Arcanine @ Leftovers
-Ability: Intimidate
-EVs: 188 Atk / 140 SpA / 180 Spe
-Lonely Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Fire Blast
-- Hidden Power [Fighting]
-- Extreme Speed
-- Howl
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 Atk / 68 SpD / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 240 Atk / 16 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 244 HP / 124 Def / 140 Spe
-Impish Nature
-IVs: 0 Atk
-- Swords Dance
+EVs: 188 HP / 140 SpA / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
 - Baton Pass
-- Leech Seed
-- Recover
 
-Aerodactyl @ Lum Berry
+Raikou @ Leftovers
 Ability: Pressure
-EVs: 16 HP / 220 Atk / 20 SpD / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Taunt
-- Hidden Power [Flying]
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Toxic
+- Hydro Pump
+- Endeavor
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
 - Earthquake
 - Rock Slide
-
-Metagross @ Lum Berry
-Ability: Clear Body
-EVs: 128 HP / 252 Atk / 16 Def / 112 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 92 HP / 148 Atk / 120 Def / 128 SpD / 20 Spe
-Adamant Nature
-- Self-Destruct
-- Body Slam
-- Shadow Ball
-- Focus Punch
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 68 HP / 252 Atk / 188 Spe
-Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Rock]
-- Earthquake
-- Taunt
+- Hidden Power [Flying]

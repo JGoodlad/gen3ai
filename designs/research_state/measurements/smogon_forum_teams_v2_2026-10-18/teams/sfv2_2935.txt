@@ -1,57 +1,54 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-- Spikes
-- Roar
-- Toxic
-- Drill Peck
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 40 SpA / 216 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Thunder Wave
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 132 SpA / 84 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Ice Punch
-- Thunderbolt
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 232 SpA / 24 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Soft-Boiled
-- Thunder Wave
-- Hidden Power [Grass]
-- Fire Blast
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 216 Def / 8 SpA / 36 Spe
-Lax Nature
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 224 HP / 252 Atk / 32 Spe
+Adamant Nature
+- Meteor Mash
 - Earthquake
-- Fire Blast
-- Rock Slide
-- Toxic
+- Sludge Bomb
+- Explosion
 
-Misdreavus @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 176 Def / 16 SpD / 64 Spe
-Calm Nature
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 152 HP / 252 SpD / 104 Spe
+Timid Nature
+- Surf
+- Spikes
+- Rapid Spin
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 216 Def / 36 SpA / 8 Spe
+Bold Nature
 IVs: 0 Atk
-- Mean Look
-- Perish Song
-- Thunderbolt
+- Surf
+- Sleep Talk
+- Calm Mind
 - Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 96 HP / 216 Atk / 52 SpA / 144 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 28 Atk / 48 Def / 112 SpD / 68 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 64 Def / 176 SpD / 16 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct

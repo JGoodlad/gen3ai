@@ -1,58 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 228 HP / 104 SpA / 176 Spe
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 160 SpA / 96 SpD
 Modest Nature
 IVs: 2 Atk / 30 Def
-- Thunderbolt
 - Hidden Power [Ice]
-- Baton Pass
-- Substitute
+- Will-O-Wisp
+- Thunder
+- Memento
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 80 HP / 160 Atk / 172 SpD / 96 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Beat Up
-- Aerial Ace
-- Hidden Power [Bug]
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 184 HP / 148 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunderbolt
-- Wish
-- Substitute
-- Baton Pass
+- Hidden Power [Fire]
+- Rain Dance
+- Thunder Wave
 
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 132 HP / 140 SpA / 16 SpD / 220 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-- Substitute
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 180 Atk / 56 Def / 20 SpA / 252 Spe
+Naughty Nature
+- Dragon Dance
+- Rock Slide
 - Earthquake
 - Ice Beam
-- Protect
-- Hydro Pump
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 196 HP / 200 Atk / 112 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Earthquake
+- Hidden Power [Grass]
+- Agility
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 84 HP / 84 Atk / 240 Def / 76 SpD / 24 Spe
+Adamant Nature
+- Return
+- Belly Drum
+- Shadow Ball
+- Earthquake
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 28 HP / 252 SpA / 228 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
+EVs: 240 HP / 200 Def / 48 SpA / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
 - Calm Mind
-- Hydro Pump
-- Ice Beam
-- Hidden Power [Grass]
+- Rest
+- Sleep Talk

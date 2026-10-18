@@ -1,58 +1,57 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 204 Def / 52 SpD
-Impish Nature
-IVs: 0 Atk
-- Spikes
-- Toxic
-- Protect
-- Roar
-
-Dragonair @ Leftovers
-Ability: Shed Skin
-EVs: 252 HP / 4 SpA / 252 SpD
-Calm Nature
-IVs: 0 Atk
-- Flamethrower
-- Toxic
-- Haze
-- Rest
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 200 HP / 252 Atk / 56 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Rock Slide
+- Hidden Power [Ghost]
+- Superpower
+- Explosion
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 40 SpD
-Adamant Nature
-- Shadow Ball
-- Earthquake
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
+IVs: 0 Atk
 - Rapid Spin
-- Rest
+- Earthquake
+- Psychic
+- Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 128 Def / 172 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Toxic
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 Spe
 Bold Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Aromatherapy
-- Seismic Toss
-- Ice Beam
-
-Diglett @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
-
-Sableye @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
 - Recover
-- Ice Punch
-- Thunder Punch
+- Refresh
+- Toxic
+- Surf
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Brick Break
+- Hidden Power [Flying]

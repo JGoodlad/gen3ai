@@ -1,57 +1,57 @@
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 20 HP / 252 Atk / 36 SpD / 200 Spe
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 96 Atk / 216 Def / 100 SpD / 96 Spe
 Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Spore
-- Stun Spore
-- Hidden Power [Ghost]
-- Sky Uppercut
+- Knock Off
+- Brick Break
+- Focus Punch
+- Rock Slide
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 124 SpA / 184 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
 - Psychic
+- Hidden Power [Fire]
+- Giga Drain
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 232 SpA / 24 Spe
+Modest Nature
+IVs: 0 Atk
+- Wish
+- Ice Beam
+- Thunderbolt
+- Soft-Boiled
+
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Brick Break
+- Rock Slide
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 52 Atk / 184 Def / 24 Spe
+Impish Nature
+- Meteor Mash
+- Earthquake
+- Protect
 - Explosion
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Earthquake
-- Shadow Ball
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 220 Def / 36 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Wish
-- Calm Mind
-- Thunder
-- Hidden Power [Grass]
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 32 Def / 40 SpA / 184 Spe
+Timid Nature
 IVs: 0 Atk
-- Rest
-- Calm Mind
+- Thunder Wave
 - Surf
-- Ice Beam
+- Rapid Spin
+- Recover

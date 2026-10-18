@@ -1,57 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
+Jynx (F) @ Leftovers
+Ability: Oblivious
 EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Light Screen
+- Calm Mind
+- Ice Beam
+- Lovely Kiss
+- Substitute
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
 - Baton Pass
 
-Blaziken @ Leftovers
-Ability: Blaze
-EVs: 16 HP / 56 Atk / 240 SpA / 196 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Sky Uppercut
-- Roar
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 76 SpD / 180 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-
-Metagross @ Leftovers
+Metagross @ Lum Berry
 Ability: Clear Body
-EVs: 252 HP / 216 Atk / 20 Def / 20 Spe
+EVs: 168 HP / 252 Atk / 88 Spe
 Adamant Nature
+- Agility
 - Meteor Mash
 - Earthquake
-- Explosion
 - Rock Slide
 
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Spore
-- Sky Uppercut
-- Mach Punch
-- Stun Spore
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
+Starmie @ Leftovers
+Ability: Illuminate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Pursuit
-- Crunch
+- Recover
+- Hydro Pump
 - Ice Beam
+- Psychic
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Calm Mind
+- Ice Punch
 - Thunder
+
+Solrock @ Choice Band
+Ability: Levitate
+EVs: 252 Atk / 76 SpA / 180 Spe
+Naive Nature
+- Explosion
+- Rock Slide
+- Earthquake
+- Overheat

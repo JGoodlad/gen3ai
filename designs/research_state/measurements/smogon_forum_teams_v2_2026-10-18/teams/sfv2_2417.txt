@@ -1,56 +1,56 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 188 HP / 252 Atk / 68 Spe
-Adamant Nature
-- Meteor Mash
-- Rock Slide
-- Brick Break
-- Explosion
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Refresh
+- Toxic
+- Surf
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
 - Rapid Spin
-- Earthquake
+- Refresh
 - Psychic
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 204 Def / 52 Spe
+Impish Nature
+- Thunder Wave
+- Seismic Toss
+- Counter
 - Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
 IVs: 0 Atk
 - Soft-Boiled
-- Wish
-- Seismic Toss
-- Ice Beam
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 216 Def / 40 Spe
-Bold Nature
-IVs: 0 Atk
-- Rest
 - Calm Mind
-- Surf
-- Roar
-
-Dragonite @ Leftovers
-Ability: Inner Focus
-EVs: 152 Atk / 252 SpA / 36 SpD / 68 Spe
-Mild Nature
-- Substitute
-- Thunder
 - Ice Beam
-- Focus Punch
+- Thunderbolt
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide

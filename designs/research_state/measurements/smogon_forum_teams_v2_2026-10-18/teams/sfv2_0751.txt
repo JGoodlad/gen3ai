@@ -1,57 +1,58 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Protect
-- Roar
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Earthquake
-- Rock Slide
-- Double-Edge
-- Hidden Power [Flying]
-
-Gyarados @ Leftovers
+Salamence @ Leftovers
 Ability: Intimidate
-EVs: 68 HP / 252 Atk / 188 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Earthquake
-- Dragon Dance
-- Hidden Power [Flying]
-- Taunt
+Hidden Power: Grass
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+- Fire Blast
+- Dragon Claw
+- Brick Break
+- Sunny Day
 
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
+Poliwrath @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Brick Break
+- Rest
+- Sleep Talk
+- Focus Punch
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 252 HP / 32 SpA / 88 SpD / 136 Spe
 Timid Nature
-IVs: 30 Atk / 30 SpA
-- Hidden Power [Grass]
-- Will-O-Wisp
-- Flamethrower
-- Roar
+IVs: 0 Atk
+- Toxic
+- Wish
+- Protect
+- Thunderbolt
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 Def / 4 SpD
+Impish Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Hidden Power [Bug]
+- Rapid Spin
+- Earthquake
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
 - Earthquake
 - Hidden Power [Bug]
-- Dragon Dance
+- Focus Punch
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Protect
-- Hydro Pump
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 224 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Thunder Wave
+- Hidden Power [Grass]
+- Roar

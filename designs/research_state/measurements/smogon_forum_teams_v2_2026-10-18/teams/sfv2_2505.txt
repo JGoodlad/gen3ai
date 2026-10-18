@@ -1,57 +1,58 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Pursuit
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Return
-- Earthquake
-- Shadow Ball
-
-Venusaur @ Leftovers
-Ability: Overgrow
-EVs: 8 HP / 192 SpA / 56 SpD / 252 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 Def
-- Leech Seed
-- Sleep Powder
-- Giga Drain
+- Thunderbolt
 - Hidden Power [Ice]
+- Thunder Wave
+- Baton Pass
 
-Machamp @ Leftovers
-Ability: Guts
-EVs: 248 HP / 176 Atk / 20 Def / 40 SpD / 24 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Bulk Up
-- Cross Chop
-- Rock Slide
-- Hidden Power [Bug]
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Hydro Pump
+- Ice Beam
+- Calm Mind
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 8 HP / 188 Atk / 100 SpD / 212 Spe
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
+- Spore
+- Focus Punch
+- Hidden Power [Ghost]
+- Mach Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
 Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
+- Meteor Mash
 - Earthquake
-- Hidden Power [Rock]
-- Double-Edge
+- Rock Slide
+- Explosion
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 216 Atk / 188 SpD / 96 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Beat Up

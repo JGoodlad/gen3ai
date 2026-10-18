@@ -1,56 +1,57 @@
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 252 Atk / 20 Def / 20 SpD / 216 Spe
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 Atk / 68 SpD / 188 Spe
 Adamant Nature
-- Recover
-- Brick Break
+- Meteor Mash
+- Earthquake
 - Rock Slide
-- Shadow Ball
+- Explosion
 
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 192 HP / 140 SpA / 176 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Endure
-- Thunderbolt
+- Calm Mind
+- Fire Punch
 - Hidden Power [Grass]
-- Rain Dance
+- Psychic
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Toxic
+- Calm Mind
+- Surf
+- Ice Beam
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 168 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 32 HP / 176 Atk / 128 Def / 172 SpD
+EVs: 252 Atk / 120 Def / 136 SpD
 Adamant Nature
 - Curse
-- Return
-- Shadow Ball
-- Self-Destruct
-
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 8 Def / 248 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
+- Double-Edge
 - Earthquake
-- Hidden Power [Grass]
-- Explosion
+- Shadow Ball
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 196 Atk / 200 SpD / 112 Spe
+EVs: 116 HP / 252 Atk / 140 Spe
 Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
 - Earthquake
 - Rock Slide
-- Brick Break
+- Hidden Power [Flying]

@@ -1,56 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 224 Atk / 44 Spe
-Brave Nature
-- Curse
-- Earthquake
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 20 Atk / 236 SpA / 252 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Brick Break
 - Rock Slide
-- Ice Beam
+- Fire Blast
+- Hidden Power [Grass]
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 24 SpD / 224 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Fire]
-- Sunny Day
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 240 SpA / 20 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Psychic
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 120 Atk / 148 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Drill Peck
+- Hidden Power [Grass]
 - Baton Pass
+- Thunderbolt
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Earthquake
-- Shadow Ball
-
-Metagross @ Leftovers
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 252 HP / 176 Atk / 28 SpD / 52 Spe
+EVs: 56 HP / 252 Atk / 200 Spe
 Adamant Nature
-- Toxic
 - Meteor Mash
+- Double-Edge
 - Earthquake
 - Explosion
 
-Gyarados @ Leftovers
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 16 Def / 184 SpA / 68 Spe
+Quiet Nature
+- Earthquake
+- Focus Punch
+- Ice Beam
+- Hydro Pump
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 40 Def / 180 SpA / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
+
+Salamence @ Leftovers
 Ability: Intimidate
-EVs: 248 HP / 16 Atk / 140 SpD / 104 Spe
+EVs: 8 HP / 140 Atk / 200 SpD / 160 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
-- Rest
 - Dragon Dance
-- Earthquake
 - Hidden Power [Flying]
+- Earthquake
+- Rock Slide

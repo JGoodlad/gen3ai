@@ -1,0 +1,57 @@
+Salamence @ Black Belt
+Ability: Intimidate
+EVs: 24 HP / 220 Atk / 12 Def / 252 Spe
+Hasty Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Fire Blast
+- Rock Slide
+- Brick Break
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 80 HP / 16 SpA / 236 SpD / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Taunt
+- Giga Drain
+- Thunderbolt
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 30 SpD
+- Spikes
+- Roar
+- Hidden Power [Steel]
+- Toxic
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 200 SpD / 56 Spe
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Counter
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 SpA / 44 Spe
+Quiet Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Curse
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 132 HP / 140 SpA / 16 SpD / 220 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Ice]
+- Substitute

@@ -1,57 +1,58 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 100 SpD / 156 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Brick Break
+- Hidden Power [Flying]
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 240 HP / 252 SpA / 16 Spe
+EVs: 240 HP / 76 Def / 176 SpA / 16 Spe
 Modest Nature
+IVs: 0 Atk
 - Crunch
 - Pursuit
 - Flamethrower
-- Brick Break
+- Roar
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 4 Def / 252 SpD / 4 Spe
 Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 0 Atk
 - Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Counter
+- Protect
+- Thief
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Taunt
+- Will-O-Wisp
+- Ice Punch
+- Giga Drain
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 76 HP / 252 SpA / 180 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Body Slam
-- Fire Punch
-- Hidden Power [Grass]
-- Dynamic Punch
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
+EVs: 248 HP / 80 Def / 8 SpA / 136 SpD / 36 Spe
+Calm Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
-- Ice Beam
-- Thunderbolt
+- Wish
+- Protect
+- Toxic
+- Fire Punch
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Def / 44 SpD / 48 Spe
+Relaxed Nature
+- Protect
+- Earthquake
+- Surf
+- Ice Beam

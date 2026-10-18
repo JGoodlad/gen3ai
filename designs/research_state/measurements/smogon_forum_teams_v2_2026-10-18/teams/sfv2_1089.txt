@@ -1,56 +1,59 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 160 SpA / 52 SpD / 48 Spe
-Quiet Nature
-- Crunch
-- Thunder
-- Focus Punch
+Jynx (F) @ Leftovers
+Ability: Oblivious
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Lovely Kiss
+- Calm Mind
 - Substitute
+- Ice Beam
+
+Dugtrio @ Salac Berry
+Ability: Arena Trap
+EVs: 40 HP / 244 Atk / 200 SpD / 24 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Beat Up
+- Endure
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 16 HP / 4 Atk / 236 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Psychic
-- Hidden Power [Fire]
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 216 Def / 40 Spe
-Bold Nature
-IVs: 0 Atk
-- Psychic
-- Calm Mind
-- Recover
-- Baton Pass
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 176 HP / 136 Atk / 156 SpA / 4 SpD / 36 Spe
-Brave Nature
-- Hydro Pump
+EVs: 24 HP / 252 Atk / 52 SpD / 180 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
 - Earthquake
+- Hidden Power [Flying]
+- Rock Slide
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Ice Punch
+- Hidden Power [Grass]
+- Fire Punch
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 16 Atk / 220 SpA / 88 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
 - Ice Beam
 - Focus Punch
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 104 HP / 216 SpA / 188 Spe
-Timid Nature
-- Thunderbolt
-- Ice Punch
-- Will-O-Wisp
-- Explosion
+- Fire Blast
+- Hidden Power [Grass]

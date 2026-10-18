@@ -1,58 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 72 SpA / 20 SpD / 176 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+- Crunch
+- Pursuit
+- Fire Blast
+- Roar
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Counter
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
 Timid Nature
 IVs: 0 Atk
-- Substitute
-- Toxic
-- Hydro Pump
-- Endeavor
+- Taunt
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 140 Def / 188 SpA / 180 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Baton Pass
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 216 Def / 44 SpD / 8 Spe
+Relaxed Nature
+- Protect
 - Earthquake
+- Surf
+- Ice Beam
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Impish Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Thunder Wave
+- Seismic Toss
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
 - Rock Slide
-- Hidden Power [Flying]

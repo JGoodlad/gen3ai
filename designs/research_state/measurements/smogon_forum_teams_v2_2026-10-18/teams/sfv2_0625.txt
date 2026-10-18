@@ -1,58 +1,57 @@
-Snorlax (F) @ Leftovers
-Ability: Thick Fat
-EVs: 156 Atk / 176 Def / 32 SpA / 140 SpD / 4 Spe
-Sassy Nature
-- Return
-- Refresh
-- Shadow Ball
-- Earthquake
-
-Forretress (M) @ Leftovers
-Ability: Sturdy
-EVs: 248 HP / 8 Atk / 252 SpD
-Sassy Nature
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 208 Atk / 48 Spe
+Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Explosion
-- Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-
-Flygon (M) @ Choice Band
-Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
 - Rock Slide
+- Focus Punch
+- Substitute
 - Hidden Power [Bug]
-- Quick Attack
 
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 200 HP / 36 SpA / 200 SpD / 72 Spe
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 124 Def / 132 SpD / 4 Spe
 Calm Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Thunder Wave
-- Protect
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 232 HP / 96 SpA / 180 Spe
-Timid Nature
 IVs: 0 Atk
 - Surf
-- Ice Beam
-- Roar
-- Calm Mind
+- Protect
+- Toxic
+- Refresh
 
-Gyarados (M) @ Lum Berry
-Ability: Intimidate
-EVs: 80 HP / 252 Atk / 176 Spe
-Jolly Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
+- Thunderbolt
+- Rest
+- Toxic
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Fire Punch
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 116 Def / 44 SpA / 96 SpD
+Relaxed Nature
+- Rapid Spin
 - Earthquake
-- Double-Edge
+- Psychic
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 24 HP / 252 Atk / 232 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+- Rock Slide

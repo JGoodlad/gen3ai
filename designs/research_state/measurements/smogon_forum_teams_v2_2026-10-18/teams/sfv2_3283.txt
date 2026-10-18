@@ -1,59 +1,57 @@
-Raikou @ Magnet
-Ability: Pressure
-EVs: 252 SpA / 252 Spe
+Jirachi @ Choice Band
+Ability: Serene Grace
+EVs: 252 Atk / 52 SpA / 204 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Body Slam
+- Fire Punch
+- Doom Desire
+- Hidden Power [Fighting]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder
+- Psychic
+- Hidden Power [Fire]
+- Giga Drain
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 200 HP / 140 Atk / 168 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 152 Def / 96 SpA / 20 Spe
+EVs: 248 HP / 232 SpA / 28 Spe
 Modest Nature
 IVs: 0 Atk
-- Calm Mind
 - Surf
-- Rain Dance
+- Calm Mind
 - Rest
+- Sleep Talk
 
-Entei @ Leftovers
-Ability: Pressure
-EVs: 132 HP / 232 SpA / 144 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Calm Mind
-- Flamethrower
-- Hidden Power [Grass]
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 252 Def / 4 SpD
-Bold Nature
-IVs: 0 Atk
-- Ice Beam
-- Thunderbolt
-- Recover
-- Thunder Wave
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 76 SpA / 140 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Psychic
-- Thunder
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 212 Atk / 16 Def / 28 SpD
+Relaxed Nature
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide
+- Explosion
+- Rapid Spin
+- Psychic
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 56 SpA / 200 Spe
+Lonely Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Fire Blast
+- Brick Break

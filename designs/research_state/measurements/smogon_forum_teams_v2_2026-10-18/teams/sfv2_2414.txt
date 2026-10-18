@@ -1,11 +1,21 @@
-Metagross @ Choice Band
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 224 Atk / 16 Def / 100 Spe
-Adamant Nature
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
 - Meteor Mash
-- Earthquake
-- Brick Break
+- Thunder Punch
+- Hidden Power [Grass]
 - Explosion
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
 
 Claydol @ Leftovers
 Ability: Levitate
@@ -16,25 +26,6 @@ Careful Nature
 - Psychic
 - Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 SpD
-Impish Nature
-- Soft-Boiled
-- Aromatherapy
-- Thunder Wave
-- Seismic Toss
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Wish
-- Calm Mind
-- Thunder
-- Hidden Power [Grass]
-
 Suicune @ Leftovers
 Ability: Pressure
 EVs: 252 HP / 240 Def / 16 Spe
@@ -43,14 +34,24 @@ IVs: 0 Atk
 - Rest
 - Calm Mind
 - Surf
-- Roar
+- Ice Beam
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 156 Atk / 12 Def / 200 SpD / 140 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
 - Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
+- Sunny Day

@@ -1,57 +1,56 @@
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 80 HP / 176 SpD / 252 Spe
+Jolly Nature
+- Substitute
+- Spore
+- Spikes
+- Explosion
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 128 Atk / 4 SpD / 192 Spe
+EVs: 204 HP / 80 Atk / 44 SpD / 180 Spe
 Adamant Nature
-IVs: 30 SpD / 30 Spe
+IVs: 30 Atk / 30 Def / 30 SpD
 - Dragon Dance
 - Rock Slide
+- Earthquake
 - Hidden Power [Bug]
-- Focus Punch
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
 - Protect
-- Drill Peck
-- Roar
 
-Starmie @ Leftovers
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
 IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Thunderbolt
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
+- Swords Dance
+- Leech Seed
 - Baton Pass
+- Recover
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
-Relaxed Nature
-- Protect
-- Surf
-- Focus Punch
-- Roar
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Substitute

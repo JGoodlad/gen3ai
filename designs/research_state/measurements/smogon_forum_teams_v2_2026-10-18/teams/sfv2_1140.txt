@@ -1,56 +1,59 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
+Nidoqueen @ Leftovers
+Ability: Poison Point
+EVs: 252 HP / 172 SpD / 84 Spe
+Gentle Nature
 - Earthquake
-- Hydro Pump
 - Ice Beam
+- Taunt
+- Toxic
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
+EVs: 252 HP / 252 SpA / 4 Spe
 Modest Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 112 Atk / 220 SpA / 176 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Body Slam
-- Fire Punch
+IVs: 2 Atk / 30 SpA
+- Pursuit
+- Crunch
+- Fire Blast
 - Hidden Power [Grass]
-- Dynamic Punch
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
-Modest Nature
-IVs: 0 Atk
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
 - Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
+- Recover
+- Heal Bell
+- Hidden Power [Grass]
 
 Charizard @ Leftovers
 Ability: Blaze
 EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Dragon Claw
+Mild Nature
+IVs: 30 Atk / 30 SpA
 - Flamethrower
 - Hidden Power [Grass]
-- Beat Up
+- Focus Punch
+- Substitute
+
+Claydol @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+Shiny: Yes
+EVs: 252 HP / 244 Def / 12 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Recover
+- Toxic
+- Ice Beam

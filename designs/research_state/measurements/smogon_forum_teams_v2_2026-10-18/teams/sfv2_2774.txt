@@ -1,56 +1,57 @@
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 SpD
-Adamant Nature
-- Thunder Wave
-- Rock Slide
-- Superpower
-- Explosion
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 104 HP / 224 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+- Protect
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Return
-- Shadow Ball
-- Self-Destruct
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 160 SpA / 96 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Ice Beam
+- Toxic
+- Soft-Boiled
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 80 Atk / 96 Def / 80 SpD
-Sassy Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Wish
-- Fire Punch
-- Body Slam
-- Hidden Power [Fighting]
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 52 SpA / 176 SpD / 28 Spe
-Calm Nature
+EVs: 240 HP / 136 Def / 100 SpA / 32 Spe
+Bold Nature
 IVs: 0 Atk
-- Rest
-- Sleep Talk
+- Wish
 - Calm Mind
-- Surf
+- Thunder
+- Ice Punch
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 156 Atk / 12 Def / 200 SpD / 140 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Aerial Ace
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 36 Def / 52 SpD / 180 Spe
+Adamant Nature
 - Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
+- Rock Slide
+- Earthquake
+- Toxic
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 240 HP / 76 Atk / 192 SpD
+Sassy Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Refresh

@@ -1,0 +1,56 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 36 Def / 28 SpD / 16 Spe
+Adamant Nature
+- Toxic
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Protect
+- Toxic
+- Thunderbolt
+- Hidden Power [Fire]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 Atk / 16 Spe
+Naughty Nature
+- Curse
+- Earthquake
+- Rock Slide
+- Ice Beam

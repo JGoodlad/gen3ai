@@ -1,58 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 Atk / 60 SpA / 196 Spe
-Mild Nature
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
 IVs: 30 Atk / 30 SpA
-- Thunderbolt
+- Dragon Claw
+- Flamethrower
 - Hidden Power [Grass]
-- Drill Peck
-- Thunder Wave
+- Brick Break
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 72 HP / 252 SpA / 184 Spe
+EVs: 240 HP / 252 SpA / 16 Spe
 Modest Nature
 IVs: 0 Atk
-- Calm Mind
 - Surf
-- Ice Beam
+- Calm Mind
+- Rest
+- Sleep Talk
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 240 HP / 236 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Fire Punch
 - Toxic
+- Wish
+- Protect
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 24 HP / 252 Atk / 232 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 56 HP / 60 Def / 252 SpA / 140 Spe
+EVs: 252 SpA / 4 SpD / 252 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
+- Psychic
 - Giga Drain
 - Hidden Power [Fire]
-- Psychic
+- Leech Seed
 
-Jirachi @ Salac Berry
-Ability: Serene Grace
-EVs: 84 Def / 244 SpA / 180 Spe
-Timid Nature
-IVs: 0 Atk
-- Calm Mind
-- Psychic
-- Thunderbolt
-- Ice Punch
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 88 HP / 128 Atk / 176 SpD / 116 Spe
-Jolly Nature
-IVs: 30 SpD / 30 Spe
-- Earthquake
-- Aerial Ace
-- Hidden Power [Bug]
-- Beat Up
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 204 HP / 216 Atk / 88 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Drill Peck
+- Spikes
+- Protect
+- Roar

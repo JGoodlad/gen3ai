@@ -1,12 +1,12 @@
-Tyranitar @ Lum Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 68 Atk / 252 SpA / 188 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
+EVs: 248 HP / 8 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
 - Fire Blast
-- Hidden Power [Grass]
-- Rock Slide
-- Brick Break
+- Pursuit
+- Protect
+- Counter
 
 Forretress @ Leftovers
 Ability: Sturdy
@@ -28,31 +28,31 @@ IVs: 0 Atk
 - Ice Beam
 - Wish
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 76 HP / 252 SpA / 180 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Psychic
-- Giga Drain
-- Hidden Power [Fire]
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 252 Def / 140 SpD / 116 Spe
+Adamant Nature
+- Knock Off
+- Brick Break
+- Rest
+- Whirlwind
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpA
-Relaxed Nature
-- Hydro Pump
-- Ice Beam
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Recover
+- Refresh
+
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 8 HP / 252 Atk / 4 Def / 244 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
 - Earthquake
-- Sleep Talk
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
-- Earthquake
-- Double-Edge
-- Hidden Power [Bug]
+- Brick Break

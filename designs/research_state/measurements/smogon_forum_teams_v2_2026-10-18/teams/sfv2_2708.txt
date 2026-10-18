@@ -1,56 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 220 SpD / 36 Spe
-Careful Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Grass]
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 192 HP / 144 Atk / 172 Spe
 Adamant Nature
-- Curse
-- Double-Edge
+IVs: 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
 - Earthquake
-- Shadow Ball
+- Hidden Power [Bug]
 
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 252 Def / 100 SpD / 140 Spe
-Bold Nature
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 SpA / 180 Spe
+Modest Nature
 IVs: 0 Atk
 - Substitute
-- Wish
-- Surf
-- Baton Pass
+- Calm Mind
+- Thunderbolt
+- Ice Punch
 
-Heracross @ Leftovers
-Ability: Guts
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Substitute
-- Megahorn
-- Rock Slide
-- Focus Punch
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Will-O-Wisp
+- Roar
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Toxic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 16 Atk / 176 Def / 8 SpA / 8 SpD / 52 Spe
+Relaxed Nature
+- Surf
+- Earthquake
+- Ice Beam
+- Protect
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Soft-Boiled
+- Thunderbolt
+- Toxic

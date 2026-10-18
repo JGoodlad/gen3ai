@@ -1,56 +1,55 @@
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 112 HP / 208 Atk / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Double-Edge
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 112 Def / 144 SpD
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 4 Atk / 252 SpA
+Quiet Nature
 - Ice Beam
 - Thunderbolt
-- Rapid Spin
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 180 HP / 252 Atk / 76 Spe
-Adamant Nature
-- Spore
-- Focus Punch
-- Brick Break
-- Stun Spore
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 144 Atk / 116 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 224 HP / 252 SpA / 32 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Psychic
-- Fire Punch
-- Hidden Power [Grass]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Protect
-- Hydro Pump
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 76 SpA / 184 Spe
-Naive Nature
-- Will-O-Wisp
-- Ice Punch
-- Fire Punch
 - Explosion
+- Thunder Wave
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Ice Beam
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 32 SpA / 76 SpD / 148 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide

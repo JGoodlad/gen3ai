@@ -1,55 +1,57 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 248 HP / 176 Atk / 64 SpD / 20 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
-Dusclops @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 36 Atk / 20 Def / 200 SpD
-Careful Nature
-- Shadow Ball
-- Focus Punch
-- Will-O-Wisp
-- Pain Split
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
-- Ice Beam
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 Def
 - Thunderbolt
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 Atk / 232 SpA / 252 Spe
-Rash Nature
-- Dragon Claw
-- Fire Blast
-- Wish
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 0 Atk
-- Toxic
-- Protect
-- Spikes
+- Hidden Power [Ice]
+- Thunder Wave
 - Roar
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 216 Atk / 36 SpA / 8 Spe
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-- Earthquake
-- Psychic
-- Rapid Spin
-- Explosion
+- Brick Break
+- Focus Punch
+- Mach Punch
+- Spore
+
+Tyranitar @ Black Glasses
+Ability: Sand Stream
+EVs: 168 HP / 252 SpA / 88 Spe
+Modest Nature
+- Crunch
+- Pursuit
+- Flamethrower
+- Brick Break
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Endeavor
+- Substitute
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 SpA / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Calm Mind
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Beat Up
+- Hidden Power [Grass]
+- Dragon Claw

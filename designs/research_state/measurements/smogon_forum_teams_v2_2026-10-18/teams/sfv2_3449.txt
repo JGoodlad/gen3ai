@@ -1,58 +1,58 @@
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Counter
-- Hidden Power [Bug]
-- Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 156 Def / 44 SpD / 60 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Toxic
-- Roar
-- Protect
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 40 Def / 8 SpA / 32 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Thunder Wave
-- Surf
-- Rapid Spin
-- Recover
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 168 SpA / 88 Spe
-Modest Nature
-- Crunch
-- Fire Blast
-- Counter
-- Focus Punch
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
 
-Blissey @ Leftovers
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Toxic
+- Roar
+
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
+EVs: 252 Def / 248 SpA / 8 Spe
 Modest Nature
 IVs: 0 Atk
-- Seismic Toss
-- Ice Beam
-- Wish
 - Soft-Boiled
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 100 HP / 140 Atk / 80 SpA / 188 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
+- Toxic
+- Ice Beam
 - Thunderbolt
-- Hidden Power [Grass]
-- Drill Peck
-- Agility
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 8 HP / 248 SpA / 72 SpD / 180 Spe
+Mild Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Ice Punch
+- Thunder
+- Psychic
+- Hidden Power [Fighting]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Surf
+- Roar

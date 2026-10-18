@@ -1,56 +1,57 @@
-Suicune @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
+EVs: 124 HP / 240 SpA / 144 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Hydro Pump
-- Ice Beam
+IVs: 30 HP / 30 SpA
+- Thunderbolt
+- Baton Pass
 - Hidden Power [Grass]
+- Toxic
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
+Dugtrio (F) @ Choice Band
+Ability: Arena Trap
+EVs: 32 HP / 252 Atk / 224 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Hydro Pump
-- Ice Beam
+- Aerial Ace
+- Hidden Power [Bug]
+- Rock Slide
 
-Tyranitar @ Leftovers
+Tyranitar (M) @ Choice Band
 Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
+EVs: 160 HP / 252 Atk / 96 Spe
 Adamant Nature
-- Dragon Dance
+IVs: 30 Atk / 30 Def / 30 SpD
+- Focus Punch
+- Hidden Power [Bug]
 - Earthquake
 - Rock Slide
-- Double-Edge
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 120 Def / 136 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Wish
-- Body Slam
-- Fire Punch
-- Hidden Power [Grass]
+Lunatone @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 236 Def / 20 Spe
+Bold Nature
+- Baton Pass
+- Calm Mind
+- Ice Beam
+- Hypnosis
 
-Heracross @ Leftovers
-Ability: Guts
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Swords Dance
-- Megahorn
-- Brick Break
-- Rock Slide
+Vaporeon (M) @ Leftovers
+Ability: Water Absorb
+EVs: 100 HP / 252 SpA / 156 Spe
+Modest Nature
+IVs: 30 SpA
+- Hydro Pump
+- Ice Beam
+- Baton Pass
+- Hidden Power [Electric]
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 156 Atk / 212 SpD / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Hidden Power [Flying]
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 232 HP / 252 SpA / 24 Spe
+Modest Nature
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+- Rest

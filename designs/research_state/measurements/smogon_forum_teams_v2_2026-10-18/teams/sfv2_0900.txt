@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 Atk / 4 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Substitute
-- Focus Punch
-- Rock Slide
-- Hidden Power [Bug]
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 236 HP / 96 SpA / 176 Spe
+EVs: 216 HP / 92 SpA / 200 Spe
 Modest Nature
-IVs: 2 Atk / 30 Def
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
+- Hidden Power [Grass]
 - Thunder Wave
-- Hidden Power [Ice]
 - Toxic
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 36 Def / 84 SpA / 136 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA
-- Body Slam
-- Fire Punch
-- Substitute
-- Hidden Power [Grass]
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 40 Def / 216 Spe
-Timid Nature
-IVs: 0 Atk
-- Surf
-- Thunder Wave
-- Rapid Spin
-- Recover
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 200 SpD / 60 Spe
+Careful Nature
+- Spikes
+- Roar
+- Taunt
+- Drill Peck
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 120 HP / 252 Def / 136 Spe
-Bold Nature
+EVs: 252 Def / 112 SpA / 144 Spe
+Modest Nature
+IVs: 0 Atk
 - Soft-Boiled
-- Counter
-- Seismic Toss
-- Wish
+- Fire Blast
+- Ice Beam
+- Toxic
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 252 HP / 232 Def / 24 SpD
-Relaxed Nature
+EVs: 248 HP / 84 Atk / 140 Def / 36 Spe
+Brave Nature
 - Earthquake
 - Ice Beam
-- Curse
 - Protect
+- Refresh
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Double-Edge
+- Hidden Power [Bug]

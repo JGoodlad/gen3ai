@@ -1,57 +1,59 @@
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 60 Atk / 236 Def / 164 SpD / 48 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Brick Break
-- Knock Off
-- Focus Punch
-- Hidden Power [Bug]
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 120 HP / 252 Atk / 136 Spe
-Adamant Nature
-- Meteor Mash
-- Explosion
-- Earthquake
-- Brick Break
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 176 HP / 248 SpA / 84 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Pursuit
-- Crunch
-- Fire Blast
-- Hidden Power [Grass]
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 40 SpA / 216 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Thunderbolt
-- Recover
-- Rapid Spin
-
-Salamence @ Leftovers
+Salamence @ Choice Band
 Ability: Intimidate
-EVs: 4 Def / 252 SpA / 252 Spe
-Rash Nature
-- Dragon Claw
-- Fire Blast
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
 - Brick Break
-- Wish
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 244 SpA / 12 Spe
-Modest Nature
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
 IVs: 0 Atk
 - Soft-Boiled
-- Ice Beam
+- Thunder Wave
 - Seismic Toss
-- Fire Blast
+- Wish
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 28 Def / 200 SpD / 28 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Surf
+- Thunder Wave
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Hidden Power [Bug]
+- Knock Off
+- Swords Dance
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Protect
+- Roar
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Spikes
+- Rapid Spin
+- Counter
+- Hidden Power [Fire]

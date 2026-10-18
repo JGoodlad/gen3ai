@@ -1,56 +1,57 @@
-Steelix @ Leftovers
-Ability: Rock Head
-EVs: 248 HP / 236 Atk / 4 SpD / 20 Spe
+Machamp @ Leftovers
+Ability: Guts
+EVs: 252 Atk / 4 SpD / 252 Spe
 Adamant Nature
-- Earthquake
-- Double-Edge
-- Roar
-- Explosion
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Earthquake
-- Dragon Dance
-- Substitute
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 240 HP / 248 SpA / 20 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Thunder Wave
-- Toxic
+IVs: 30 Atk / 30 SpD
+- Cross Chop
+- Hidden Power [Ghost]
+- Rock Slide
+- Bulk Up
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 12 Atk / 160 SpA / 52 SpD / 36 Spe
-Quiet Nature
-- Rock Slide
-- Crunch
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
 - Pursuit
+- Crunch
+- Fire Blast
 - Focus Punch
 
-Starmie @ Leftovers
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Protect
+- Baton Pass
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Protect
+
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 8 HP / 248 SpA / 252 Spe
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 30 Atk / 30 SpA
+- Leech Seed
+- Recover
+- Psychic
+- Hidden Power [Grass]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 SpA / 176 Spe
 Modest Nature
 IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
-- Thunderbolt
-- Recover
-
-Heracross @ Leftovers
-Ability: Guts
-EVs: 248 HP / 124 Atk / 116 SpD / 20 Spe
-Adamant Nature
-- Megahorn
-- Rock Slide
-- Focus Punch
 - Substitute
+- Calm Mind
+- Ice Punch
+- Thunderbolt

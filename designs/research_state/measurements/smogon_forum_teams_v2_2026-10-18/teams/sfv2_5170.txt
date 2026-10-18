@@ -1,0 +1,58 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 4 Def / 252 SpD
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Rest
+- Sleep Talk
+
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 252 HP / 4 Def / 252 SpD
+Bold Nature
+- Calm Mind
+- Roar
+- Rest
+- Sleep Talk
+
+Skarmory (F) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Roar
+- Protect
+
+Dusclops @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 96 Def / 160 SpD
+Careful Nature
+- Night Shade
+- Will-O-Wisp
+- Sleep Talk
+- Rest
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 SpD / 4 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Thunderbolt
+- Recover
+- Rapid Spin
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
+Calm Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Rest
+- Sleep Talk

@@ -1,55 +1,59 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Counter
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Ice Beam
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
+Heracross (F) @ Choice Band
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-- Curse
-- Body Slam
-- Earthquake
-- Self-Destruct
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 168 HP / 224 Atk / 16 Def / 100 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
 - Brick Break
-- Explosion
+- Focus Punch
+- Megahorn
+- Rock Slide
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 120 SpA / 136 SpD
-Calm Nature
+Milotic (F) @ Leftovers
+Ability: Marvel Scale
+Shiny: Yes
+EVs: 248 HP / 252 Def / 8 SpD
+Bold Nature
 IVs: 0 Atk
-- Rest
-- Sleep Talk
-- Calm Mind
+- Hypnosis
+- Ice Beam
+- Recover
 - Surf
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 Atk / 252 SpA / 140 Spe
-Rash Nature
-- Wish
-- Dragon Claw
-- Flamethrower
+Gengar (F) @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 40 HP / 252 Atk / 216 Spe
+Adamant Nature
 - Brick Break
+- Explosion
+- Sludge Bomb
+- Will-O-Wisp
+
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Focus Punch
+- Hidden Power [Bug]
+- Rock Slide
+- Substitute
+
+Snorlax (F) @ Leftovers
+Ability: Immunity
+Shiny: Yes
+EVs: 32 HP / 216 Atk / 84 Def / 176 SpD
+Adamant Nature
+- Earthquake
+- Return
+- Self-Destruct
+- Shadow Ball
+
+Flygon (F) @ Salac Berry
+Ability: Levitate
+EVs: 252 Atk / 4 SpA / 252 Spe
+Naughty Nature
+- Earthquake
+- Endure
+- Fire Blast
+- Rock Slide

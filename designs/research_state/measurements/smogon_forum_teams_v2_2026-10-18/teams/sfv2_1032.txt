@@ -1,57 +1,56 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
 - Earthquake
 - Rock Slide
-- Hidden Power [Bug]
-- Brick Break
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 244 SpD / 192 Spe
-Timid Nature
-- Spikes
-- Toxic
-- Surf
-- Explosion
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
-Timid Nature
-IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Giga Drain
-- Thunderbolt
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Roar
-- Baton Pass
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 SpA / 4 Spe
-Rash Nature
-- Earthquake
-- Thunder Punch
-- Ice Punch
-- Explosion
-
-Starmie @ Leftovers
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
+EVs: 252 Def / 240 SpA / 16 Spe
 Modest Nature
-IVs: 0 Atk
-- Rapid Spin
-- Surf
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Flamethrower
+- Hidden Power [Grass]
+- Soft-Boiled
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Bold Nature
+- Focus Punch
 - Ice Beam
-- Thunderbolt
+- Refresh
+- Hydro Pump
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 176 Atk / 212 SpD / 120 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 76 HP / 252 SpA / 180 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion

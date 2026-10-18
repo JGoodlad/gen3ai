@@ -1,0 +1,58 @@
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 56 Def / 228 SpA / 36 SpD / 188 Spe
+Calm Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Mirror Coat
+- Recover
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 244 SpA / 12 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Crunch
+- Fire Blast
+- Focus Punch
+- Substitute
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Explosion
+
+Camerupt @ Leftovers
+Ability: Magma Armor
+EVs: 76 Atk / 252 SpA / 180 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Earthquake
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+- Wish
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 144 Atk / 80 SpA / 32 Spe
+Naughty Nature
+- Fire Blast
+- Rock Slide
+- Toxic
+- Earthquake

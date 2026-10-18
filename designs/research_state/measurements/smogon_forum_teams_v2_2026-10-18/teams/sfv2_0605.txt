@@ -1,57 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 60 Atk / 252 SpA / 196 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Brick Break
+- Hidden Power [Grass]
+- Flamethrower
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Protect
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Rest
+- Toxic
+- Roar
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 192 HP / 136 Atk / 180 Spe
-Adamant Nature
-IVs: 30 HP / 30 SpA
-- Dragon Dance
-- Hidden Power [Grass]
-- Rock Slide
-- Earthquake
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 244 HP / 216 SpA / 48 Spe
-Quiet Nature
-- Surf
-- Earthquake
-- Focus Punch
-- Ice Beam
-
-Lunatone @ Leftovers
-Ability: Levitate
-EVs: 228 HP / 140 SpA / 140 Spe
+EVs: 240 HP / 228 SpA / 40 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Ice Beam
-- Hidden Power [Grass]
-- Calm Mind
-- Baton Pass
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 36 HP / 136 Atk / 160 Def / 156 SpD / 20 Spe
-Adamant Nature
-- Self-Destruct
-- Curse
-- Body Slam
-- Shadow Ball
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 72 SpA / 184 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Thunderbolt
-- Ice Punch
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
+- Crunch
+- Pursuit
 - Fire Blast
-- Focus Punch
-- Beat Up
 - Hidden Power [Grass]
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 64 Atk / 164 Def / 32 Spe
+Impish Nature
+- Earthquake
+- Rock Slide
+- Toxic
+- Protect
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt

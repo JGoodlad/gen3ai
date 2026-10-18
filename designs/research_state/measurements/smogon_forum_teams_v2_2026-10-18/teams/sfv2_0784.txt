@@ -1,57 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 136 HP / 220 SpA / 152 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Brick Break
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 160 HP / 116 Atk / 80 Def / 128 SpD / 24 Spe
+Adamant Nature
+IVs: 30 SpD
+- Curse
+- Rest
+- Body Slam
+- Hidden Power [Steel]
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Wish
+- Protect
 - Baton Pass
 
-Tyranitar @ Black Glasses
-Ability: Sand Stream
-EVs: 216 HP / 180 SpA / 112 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Crunch
-- Pursuit
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 76 HP / 236 Atk / 4 SpD / 192 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Spore
-- Focus Punch
-- Sky Uppercut
-- Hidden Power [Rock]
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Meteor Mash
 - Earthquake
-- Hidden Power [Bug]
-- Double-Edge
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 216 SpD / 40 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Roar
-- Taunt
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
 - Protect
-- Hydro Pump
+- Explosion
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 SpA / 60 SpD / 196 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Substitute
+- Rain Dance

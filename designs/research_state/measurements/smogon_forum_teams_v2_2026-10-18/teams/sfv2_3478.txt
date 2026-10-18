@@ -1,57 +1,58 @@
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 12 HP / 252 Atk / 52 Def / 192 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
-- Focus Punch
-- Brick Break
-- Shadow Ball
-- Recover
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 8 HP / 168 Atk / 192 SpD / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
+IVs: 30 Atk / 30 SpD
 - Dragon Dance
-- Hidden Power [Flying]
 - Earthquake
 - Rock Slide
+- Hidden Power [Ghost]
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
 Starmie @ Leftovers
 Ability: Natural Cure
 EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
 Timid Nature
 IVs: 0 Atk
-- Surf
-- Psychic
-- Recover
 - Rapid Spin
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 220 Def / 40 SpD
-Relaxed Nature
-- Protect
-- Curse
-- Earthquake
+- Recover
+- Surf
 - Ice Beam
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 240 HP / 64 Def / 36 SpA / 136 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Psychic
-- Hidden Power [Grass]
-- Leech Seed
-- Recover
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 144 HP / 112 SpA / 252 Spe
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 184 HP / 148 SpD / 176 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
+IVs: 2 Atk / 30 SpA
 - Substitute
-- Toxic
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 132 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Rest
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar

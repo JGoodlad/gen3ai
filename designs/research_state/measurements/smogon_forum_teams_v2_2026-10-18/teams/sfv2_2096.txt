@@ -1,58 +1,59 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Ghost]
-- Focus Punch
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Rest
+EVs: 240 HP / 100 SpA / 20 SpD / 148 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Protect
+- Toxic
 - Thunderbolt
-- Hidden Power [Grass]
+- Hidden Power [Ice]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Hydro Pump
 - Roar
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Hydro Pump
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Surf
 - Ice Beam
 
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
+- Dragon Claw
 - Flamethrower
 - Hidden Power [Grass]
-- Overheat
+- Beat Up
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day

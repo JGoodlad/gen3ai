@@ -1,57 +1,55 @@
-Tyranitar @ Leftovers
+Tyranitar (M) @ Lum Berry
 Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunder Wave
-- Crunch
-- Pursuit
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Ice Beam
+- Brick Break
 - Hidden Power [Grass]
+- Fire Blast
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 232 SpD / 24 Spe
+Careful Nature
+- Spikes
 - Toxic
+- Drill Peck
+- Roar
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Mild Nature
+- Dragon Claw
+- Hydro Pump
+- Brick Break
+- Fire Blast
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 236 Atk / 16 Def / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
 - Thunderbolt
-- Hidden Power [Fire]
+- Rapid Spin
 
 Registeel @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 36 Atk / 220 SpD
+EVs: 252 HP / 88 Def / 168 SpD
 Careful Nature
-- Toxic
-- Seismic Toss
-- Superpower
+- Thunder Wave
 - Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Self-Destruct
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 192 Atk / 200 SpD / 116 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
-- Brick Break
+- Counter
+- Seismic Toss

@@ -1,56 +1,61 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Double-Edge
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 80 HP / 16 SpA / 236 SpD / 176 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 192 HP / 116 SpA / 200 Spe
 Modest Nature
-IVs: 30 Atk / 30 SpA
-- Will-O-Wisp
-- Explosion
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Toxic
+- Roar
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+Shiny: Yes
+EVs: 248 HP / 216 SpD / 44 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Taunt
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 224 SpA / 36 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Wish
+- Psychic
 - Fire Punch
 - Hidden Power [Grass]
 
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
+Swampert @ Leftovers
+Ability: Torrent
+Shiny: Yes
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Hydro Pump
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 244 HP / 80 Atk / 184 Spe
+Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
+- Dragon Dance
 - Rock Slide
-- Hidden Power [Bug]
-- Quick Attack
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 236 HP / 176 Atk / 96 Spe
-Adamant Nature
-- Rapid Spin
-- Explosion
 - Earthquake
-- Psychic
+- Hidden Power [Bug]
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 56 Def / 112 SpD / 88 Spe
-Careful Nature
-- Thunder Wave
-- Toxic
-- Explosion
-- Seismic Toss
-
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Substitute
-- Megahorn
-- Focus Punch
-- Hidden Power [Ghost]
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]

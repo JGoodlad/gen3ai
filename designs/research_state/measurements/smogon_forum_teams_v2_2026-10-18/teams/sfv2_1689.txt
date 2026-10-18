@@ -1,57 +1,57 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Rest
+EVs: 216 HP / 136 SpA / 156 Spe
+Modest Nature
+IVs: 30 Spe
+- Thunder Wave
+- Toxic
 - Thunderbolt
-- Hidden Power [Grass]
-- Roar
+- Hidden Power [Ice]
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
+EVs: 240 HP / 240 SpD / 28 Spe
 Careful Nature
 - Spikes
-- Toxic
+- Taunt
 - Drill Peck
 - Roar
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
+EVs: 252 Def / 252 SpA / 4 Spe
 Modest Nature
 IVs: 0 Atk
 - Soft-Boiled
-- Calm Mind
+- Toxic
+- Fire Blast
 - Ice Beam
-- Thunderbolt
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 220 Def / 36 Spe
-Impish Nature
-- Protect
-- Toxic
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 72 SpA / 44 SpD / 16 Spe
+Relaxed Nature
+- Curse
 - Earthquake
-- Rock Slide
+- Hydro Pump
+- Ice Beam
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
 
 Charizard @ Leftovers
 Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
 - Dragon Claw
 - Flamethrower
 - Hidden Power [Grass]
-- Beat Up
+- Brick Break

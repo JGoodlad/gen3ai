@@ -1,0 +1,56 @@
+Tyranitar @ Black Glasses
+Ability: Sand Stream
+EVs: 184 HP / 108 Atk / 216 Spe
+Brave Nature
+IVs: 30 Atk / 30 SpA
+- Crunch
+- Rock Slide
+- Hidden Power [Grass]
+- Focus Punch
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 160 Atk / 48 SpA / 44 SpD / 16 Spe
+Brave Nature
+- Curse
+- Earthquake
+- Rock Slide
+- Hydro Pump
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 12 Def / 200 SpD / 140 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

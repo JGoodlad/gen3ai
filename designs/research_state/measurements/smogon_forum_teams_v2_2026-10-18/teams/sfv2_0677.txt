@@ -1,56 +1,56 @@
-Lanturn @ Leftovers
-Ability: Volt Absorb
-EVs: 252 HP / 4 SpA / 252 SpD
-Calm Nature
-IVs: 0 Atk
-- Thunderbolt
-- Hydro Pump
-- Toxic
-- Substitute
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 232 Def / 24 Spe
-Bold Nature
-IVs: 0 Atk
-- Spikes
-- Whirlwind
-- Toxic
-- Protect
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 4 Atk / 252 Def
-Relaxed Nature
-- Toxic
-- Rock Slide
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+- Pursuit
+- Crunch
+- Flamethrower
 - Earthquake
-- Fire Blast
 
-Dusclops @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-- Will-O-Wisp
-- Pain Split
-- Shadow Ball
-- Seismic Toss
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 Def
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Curse
+- Hidden Power [Rock]
+- Earthquake
+- Focus Punch
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 4 Atk / 252 SpD
-Sassy Nature
+EVs: 252 HP / 152 Def / 104 SpD
+Relaxed Nature
+- Earthquake
 - Rapid Spin
-- Psychic
-- Toxic
+- Ice Beam
 - Explosion
 
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 4 SpA / 252 SpD
-Calm Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+Lapras @ Leftovers
+Ability: Water Absorb
+EVs: 252 SpA / 40 SpD / 216 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
 - Ice Beam
-- Hidden Power [Fire]
-- Recover
-- Toxic
+- Thunderbolt
+- Heal Bell
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Spore
+- Focus Punch
+- Brick Break
+- Mach Punch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Overheat
+- Hidden Power [Grass]
+- Beat Up

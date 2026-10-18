@@ -1,57 +1,57 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Ghost]
-- Focus Punch
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
-Hasty Nature
-- Will-O-Wisp
-- Thunder
-- Giga Drain
-- Explosion
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Wish
-- Seismic Toss
-- Ice Beam
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Protect
-- Toxic
-- Surf
-- Roar
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 120 SpD / 148 Spe
-Modest Nature
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
 IVs: 2 Atk / 30 SpA
 - Rest
 - Thunderbolt
 - Hidden Power [Grass]
 - Roar
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
+- Protect
+- Toxic
+- Earthquake
+- Rock Slide
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 100 HP / 44 Def / 220 SpA / 144 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up

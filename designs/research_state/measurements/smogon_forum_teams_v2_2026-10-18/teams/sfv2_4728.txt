@@ -1,0 +1,57 @@
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 68 HP / 188 SpD / 252 Spe
+Jolly Nature
+IVs: 0 Atk
+- Spore
+- Spikes
+- Substitute
+- Encore
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 140 HP / 108 Def / 72 SpA / 188 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Hidden Power [Grass]
+- Ice Punch
+- Thunderbolt
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 72 Atk / 188 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 236 SpA / 32 Spe
+Quiet Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Curse
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 Atk / 60 SpA / 200 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Thunderbolt
+- Drill Peck
+- Hidden Power [Fighting]
+- Agility
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 244 HP / 168 SpA / 96 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]

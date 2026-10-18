@@ -1,60 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 56 HP / 252 SpA / 200 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Thunder Wave
-- Baton Pass
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 76 SpA / 180 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Baton Pass
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-Hidden Power: Grass
-EVs: 252 HP / 40 Def / 80 SpA / 136 Spe
-Modest Nature
-IVs: 0 Atk / 30 SpA
-- Substitute
-- Calm Mind
-- Thunder
-- Ice Punch
-
-Swampert (M) @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 136 SpA / 120 Spe
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
 Rash Nature
-- Substitute
-- Surf
-- Ice Beam
-- Focus Punch
-
-Charizard @ Leftovers
-Ability: Blaze
-Hidden Power: Grass
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Beat Up
+- Wish
 - Dragon Claw
+- Flamethrower
+- Brick Break
 
-Tangela @ Leftovers
-Ability: Chlorophyll
-EVs: 252 HP / 88 SpA / 168 Spe
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Thunder Wave
+- Surf
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
 Modest Nature
 IVs: 0 Atk
-- Sleep Powder
-- Leech Seed
-- Sunny Day
-- Solar Beam
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 228 SpD / 40 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 196 Def / 28 SpD / 32 Spe
+Impish Nature
+- Protect
+- Meteor Mash
+- Earthquake
+- Explosion

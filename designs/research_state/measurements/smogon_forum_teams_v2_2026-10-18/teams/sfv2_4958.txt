@@ -1,0 +1,56 @@
+Hariyama @ Leftovers
+Ability: Guts
+Hidden Power: Ghost
+EVs: 252 Atk / 24 SpD / 232 Spe
+Jolly Nature
+- Belly Drum
+- Brick Break
+- Rock Slide
+- Cross Chop
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 56 HP / 252 Atk / 76 SpD / 124 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Brick Break
+- Rock Slide
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 Def / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Crunch
+- Hidden Power [Grass]
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 200 SpD / 60 Spe
+Careful Nature
+- Thunder Wave
+- Counter
+- Explosion
+- Seismic Toss
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Surf
+- Toxic

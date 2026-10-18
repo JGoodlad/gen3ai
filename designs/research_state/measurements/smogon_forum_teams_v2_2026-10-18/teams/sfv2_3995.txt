@@ -1,0 +1,57 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Brave Nature
+- Crunch
+- Rock Slide
+- Fire Blast
+- Brick Break
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 164 SpA / 96 SpD
+Calm Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Spikes
+- Toxic
+- Hidden Power [Fire]
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 128 Def / 40 SpA / 32 SpD / 56 Spe
+Bold Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Surf
+- Psychic
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
+- Protect
+- Toxic
+- Earthquake
+- Rock Slide
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Fire Blast
+- Hidden Power [Grass]
+- Beat Up

@@ -1,0 +1,56 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 8 Spe
+Adamant Nature
+- Fire Blast
+- Pursuit
+- Rock Slide
+- Brick Break
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 220 SpD / 36 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Whirlwind
+- Protect
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 112 SpA / 144 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt
+- Toxic
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+- Ice Punch
+- Thunderbolt
+- Giga Drain
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 40 SpA / 48 SpD / 44 Spe
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Surf
+- Protect
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 216 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Overheat
+- Flamethrower
+- Hidden Power [Grass]
+- Roar

@@ -1,0 +1,58 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 4 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Fire Blast
+- Crunch
+- Taunt
+- Toxic
+
+Kabutops @ Salac Berry
+Ability: Swift Swim
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Swords Dance
+- Rock Slide
+- Endure
+- Flail
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
+- Double-Edge
+- Earthquake
+- Rock Slide
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 48 SpD / 208 Spe
+Timid Nature
+IVs: 0 Atk
+- Whirlwind
+- Spikes
+- Taunt
+- Toxic
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 68 HP / 152 Def / 104 SpA / 184 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Will-O-Wisp
+- Ice Punch
+- Hypnosis
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 216 Def / 40 SpA
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Toxic
+- Roar
+- Surf

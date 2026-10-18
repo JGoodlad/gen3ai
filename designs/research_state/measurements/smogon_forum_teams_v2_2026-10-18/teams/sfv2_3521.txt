@@ -1,58 +1,56 @@
-Armaldo @ Leftovers
-Ability: Battle Armor
-EVs: 248 HP / 56 Atk / 204 SpD
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Swords Dance
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
 - Rock Slide
 - Hidden Power [Bug]
-- Rapid Spin
+- Double-Edge
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 176 Def / 64 SpD / 20 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Toxic
-- Fire Punch
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
 - Protect
-
-Dragonite @ Leftovers
-Ability: Inner Focus
-EVs: 248 HP / 64 Atk / 88 SpD / 108 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Heal Bell
-- Hidden Power [Flying]
+- Drill Peck
 - Roar
 
-Roselia @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 124 SpD / 136 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Stun Spore
-- Spikes
-- Hidden Power [Grass]
-- Leech Seed
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
+Hasty Nature
+- Will-O-Wisp
+- Thunder
+- Giga Drain
+- Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 4 HP / 252 Def / 252 SpA
+EVs: 212 HP / 252 Def / 44 SpA
 Bold Nature
 IVs: 0 Atk
-- Ice Beam
-- Thunder Wave
-- Seismic Toss
 - Soft-Boiled
-
-Quagsire @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 4 Atk / 252 Def
-Relaxed Nature
-- Earthquake
+- Aromatherapy
+- Seismic Toss
 - Ice Beam
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
 - Protect
 - Toxic
+- Earthquake
+- Rock Slide

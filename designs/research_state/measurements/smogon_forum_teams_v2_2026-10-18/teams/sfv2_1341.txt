@@ -1,58 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Light Screen
-- Thunderbolt
-- Hidden Power [Ice]
-- Rain Dance
+Tyranitar @ Choice Band
+Ability: Sand Stream
+Hidden Power: Bug
+EVs: 80 HP / 184 Atk / 80 Def / 164 Spe
+Adamant Nature
+- Earthquake
+- Rock Slide
+- Brick Break
+- Focus Punch
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
+- Spikes
+- Toxic
+- Surf
 - Explosion
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 192 HP / 140 SpA / 176 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Hasty Nature
+- Will-O-Wisp
+- Giga Drain
+- Thunderbolt
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 188 HP / 140 SpA / 180 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Calm Mind
-- Fire Punch
-- Hidden Power [Grass]
+- Giga Drain
+- Hidden Power [Fire]
 - Psychic
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 84 Atk / 136 Def / 48 Spe
+Relaxed Nature
+- Protect
+- Earthquake
 - Surf
+- Ice Beam
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Will-O-Wisp
+- Flamethrower
+- Hidden Power [Grass]
 - Roar
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Hidden Power [Flying]

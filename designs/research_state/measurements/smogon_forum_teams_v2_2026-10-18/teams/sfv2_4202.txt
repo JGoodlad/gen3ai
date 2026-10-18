@@ -1,0 +1,56 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 176 Atk / 196 SpD / 136 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Brick Break
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 8 Def / 252 SpA
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Crunch
+- Pursuit
+- Hidden Power [Grass]
+- Brick Break
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Fire]
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 36 SpA / 96 SpD / 124 Spe
+Sassy Nature
+IVs: 30 Atk / 30 SpA
+- Seismic Toss
+- Hidden Power [Grass]
+- Superpower
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 56 Atk / 124 Def / 44 SpD / 44 Spe
+Brave Nature
+- Curse
+- Earthquake
+- Rock Slide
+- Ice Beam

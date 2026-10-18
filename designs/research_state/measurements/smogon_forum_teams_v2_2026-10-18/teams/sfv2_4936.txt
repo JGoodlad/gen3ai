@@ -1,0 +1,57 @@
+Medicham @ Lum Berry
+Ability: Pure Power
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Brick Break
+- Focus Punch
+- Rock Slide
+- Shadow Ball
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Beat Up
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 148 Atk / 220 SpD / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+- Substitute
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 140 HP / 228 SpA / 140 Spe
+IVs: 30 Atk / 30 SpA
+- Thunder Punch
+- Hidden Power [Grass]
+- Earthquake
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 184 HP / 132 Atk / 192 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]

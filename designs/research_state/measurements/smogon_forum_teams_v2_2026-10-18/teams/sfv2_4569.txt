@@ -1,0 +1,57 @@
+Nidoking @ Leftovers
+Ability: Poison Point
+EVs: 120 Atk / 228 SpA / 160 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Sludge Bomb
+- Fire Blast
+- Hidden Power [Grass]
+- Earthquake
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 88 Atk / 172 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Dragon Dance
+- Hidden Power [Bug]
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 244 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+- Soft-Boiled
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 136 Def / 80 SpA / 44 Spe
+Relaxed Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Focus Punch
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 120 Atk / 212 SpA / 176 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Drill Peck
+- Hidden Power [Grass]
+- Agility

@@ -1,57 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 228 Atk / 12 SpA / 16 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Earthquake
-- Hidden Power [Grass]
-- Focus Punch
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 244 SpD / 16 Spe
-Careful Nature
-- Spikes
-- Roar
-- Protect
-- Drill Peck
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 60 SpA / 200 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Toxic
-- Roar
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 80 HP / 16 SpA / 236 SpD / 176 Spe
-Modest Nature
-IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Giga Drain
-- Thunderbolt
-
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 196 Atk / 16 Def / 128 Spe
-Adamant Nature
-- Agility
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Meteor Mash
-- Earthquake
+- Hidden Power [Fire]
+- Psychic
 - Explosion
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 12 HP / 228 Atk / 16 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Double-Edge
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Surf
+- Ice Beam
+- Thunderbolt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
 - Earthquake
-- Hidden Power [Bug]
+- Hydro Pump
+- Ice Beam
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunder
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Flamethrower
+- Hidden Power [Grass]
+- Focus Punch

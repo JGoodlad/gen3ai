@@ -1,56 +1,58 @@
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Ice Beam
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 36 SpA / 96 SpD / 124 Spe
-Sassy Nature
-- Toxic
-- Seismic Toss
-- Thunder
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 32 Def / 136 SpA / 28 SpD / 60 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 176 Atk / 44 SpA / 48 Spe
-Brave Nature
-- Curse
-- Earthquake
-- Rock Slide
-- Hydro Pump
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 24 HP / 240 Atk / 64 SpD / 180 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
+EVs: 240 HP / 132 SpA / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
 - Fire Blast
+- Hidden Power [Grass]
+- Wish
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 244 Atk / 16 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Toxic
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 116 Def / 140 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Roar
+- Rest
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 192 SpA / 64 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Ice Beam
+- Sing
+- Soft-Boiled
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 252 Atk / 248 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 Def / 216 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Recover
+- Rapid Spin

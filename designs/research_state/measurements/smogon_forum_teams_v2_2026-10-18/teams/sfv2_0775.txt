@@ -1,21 +1,21 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 112 HP / 252 Atk / 144 Spe
-Adamant Nature
-- Meteor Mash
-- Explosion
-- Earthquake
-- Rock Slide
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 228 Def / 28 Spe
+Bold Nature
+- Calm Mind
+- Surf
+- Rest
+- Roar
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 240 SpA / 16 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Flamethrower
-- Hidden Power [Grass]
+EVs: 192 HP / 252 Def / 64 Spe
+Bold Nature
+IVs: 0 Atk
 - Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Thunder Wave
 
 Claydol @ Leftovers
 Ability: Levitate
@@ -26,31 +26,31 @@ Adamant Nature
 - Psychic
 - Explosion
 
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 248 HP / 8 Atk / 252 SpD
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Knock Off
+- Rock Blast
+- Hidden Power [Bug]
+- Swords Dance
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 56 Atk / 144 Def / 60 Spe
+Impish Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 192 Atk / 136 SpD / 180 Spe
+EVs: 248 HP / 8 Atk / 52 Def / 200 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
 - Hidden Power [Flying]
 - Earthquake
-- Rock Slide
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 176 Def / 80 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
-- Roar
-
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 208 HP / 252 Atk / 48 Spe
-Adamant Nature
-- Rock Slide
-- Earthquake
-- Counter
-- Explosion
+- Wish
+- Protect

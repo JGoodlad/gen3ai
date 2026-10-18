@@ -1,31 +1,30 @@
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 224 Def / 32 Spe
+Impish Nature
+- Protect
+- Screech
+- Earthquake
+- Rock Slide
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
+
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
-Bold Nature
+EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
+Calm Nature
 IVs: 0 Atk
 - Wish
 - Protect
 - Toxic
 - Fire Punch
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Aromatherapy
-- Seismic Toss
-- Ice Beam
 
 Zapdos @ Leftovers
 Ability: Pressure
@@ -37,14 +36,15 @@ IVs: 2 Atk / 30 SpA
 - Hidden Power [Grass]
 - Roar
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 220 Def / 36 Spe
-Impish Nature
-- Protect
-- Toxic
-- Earthquake
-- Rock Slide
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
 
 Aerodactyl @ Choice Band
 Ability: Rock Head

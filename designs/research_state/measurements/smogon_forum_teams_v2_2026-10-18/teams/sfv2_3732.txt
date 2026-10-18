@@ -1,0 +1,57 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 160 Atk / 48 SpA / 44 SpD / 16 Spe
+Brave Nature
+- Curse
+- Earthquake
+- Rock Slide
+- Hydro Pump
+
+Tyranitar @ Black Glasses
+Ability: Sand Stream
+EVs: 184 HP / 108 Atk / 216 Spe
+Brave Nature
+IVs: 30 Atk / 30 SpA
+- Crunch
+- Rock Slide
+- Hidden Power [Grass]
+- Focus Punch
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 64 HP / 248 SpD / 196 Spe
+Timid Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 84 HP / 248 SpA / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+- Baton Pass
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 160 SpA / 56 Spe
+Modest Nature
+IVs: 0 Atk
+- Wish
+- Calm Mind
+- Ice Punch
+- Thunderbolt
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

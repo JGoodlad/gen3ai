@@ -1,56 +1,57 @@
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+EVs: 180 HP / 132 SpA / 196 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Crunch
+- Brick Break
+
+Medicham @ Salac Berry
+Ability: Pure Power
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-- Dragon Dance
-- Earthquake
+IVs: 30 Atk / 30 Def / 30 SpD
+- Brick Break
+- Shadow Ball
 - Rock Slide
-- Double-Edge
+- Hidden Power [Bug]
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
-- Roar
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 244 HP / 80 Def / 164 SpA / 20 Spe
 Modest Nature
 IVs: 0 Atk
-- Soft-Boiled
 - Calm Mind
-- Ice Beam
-- Thunderbolt
+- Surf
+- Rest
+- Sleep Talk
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 8 Def / 192 SpA / 56 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Thunder
-- Fire Punch
-- Hidden Power [Grass]
-- Dynamic Punch
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 220 Def / 36 Spe
-Impish Nature
-- Protect
-- Toxic
-- Earthquake
-- Rock Slide
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 80 HP / 252 SpA / 176 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 108 HP / 204 SpA / 196 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
+- Thunderbolt
 - Hidden Power [Grass]
-- Beat Up
+- Thunder Wave
+- Protect
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion

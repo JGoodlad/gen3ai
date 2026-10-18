@@ -1,58 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Pursuit
-- Crunch
-- Fire Blast
-- Roar
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+- Drill Peck
+- Protect
+- Roar
 - Spikes
-- Rapid Spin
-- Counter
-- Hidden Power [Bug]
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Destiny Bond
+- Taunt
+- Thunderbolt
+- Will-O-Wisp
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 224 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Roar
+- Sleep Talk
+- Thunderbolt
+
+Misdreavus (F) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Perish Song
+- Thunderbolt
+- Toxic
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 216 Def / 12 SpD / 32 Spe
+Impish Nature
+- Earthquake
+- Protect
+- Rock Slide
+- Toxic
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
 EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Soft-Boiled
-- Ice Beam
-- Thunderbolt
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Substitute
-- Hidden Power [Grass]
-- Flamethrower
-- Focus Punch
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 224 Def / 4 SpA / 28 Spe
 Bold Nature
 IVs: 0 Atk
-- Surf
-- Recover
-- Toxic
-- Refresh
-
-Quagsire @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 4 Atk / 252 Def
-Relaxed Nature
-- Curse
-- Rest
-- Earthquake
+- Aromatherapy
 - Ice Beam
+- Seismic Toss
+- Soft-Boiled

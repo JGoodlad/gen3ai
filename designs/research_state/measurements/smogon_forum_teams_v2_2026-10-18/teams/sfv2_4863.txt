@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 SpD / 4 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Rest
+- Sleep Talk
+- Roar
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Protect
+- Toxic
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Hasty Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Taunt
+- Destiny Bond
+- Thunderbolt
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 208 HP / 252 Atk / 12 Def / 36 Spe
+Adamant Nature
+- Earthquake
+- Protect
+- Rock Slide
+- Toxic
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 180 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Crunch
+- Flamethrower
+- Thunder Wave

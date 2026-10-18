@@ -1,0 +1,62 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 248 HP / 252 SpA / 8 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Crunch
+- Pursuit
+- Hidden Power [Grass]
+- Ice Beam
+
+Gyarados @ Leftovers
+Ability: Intimidate
+Shiny: Yes
+EVs: 216 HP / 16 Atk / 88 SpD / 188 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rest
+
+Registeel @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 248 HP / 56 Atk / 16 Def / 112 SpD / 76 Spe
+Careful Nature
+- Counter
+- Thunder Wave
+- Seismic Toss
+- Explosion
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 52 HP / 252 Atk / 204 Spe
+Jolly Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Heal Bell
+- Brick Break
+
+Steelix @ Leftovers
+Ability: Rock Head
+Shiny: Yes
+EVs: 248 HP / 136 Atk / 124 SpD
+Adamant Nature
+- Earthquake
+- Protect
+- Rock Slide
+- Explosion
+
+Magneton @ Salac Berry
+Ability: Magnet Pull
+Shiny: Yes
+EVs: 252 SpA / 52 SpD / 204 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Toxic
+- Hidden Power [Fire]
+- Endure

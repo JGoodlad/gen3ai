@@ -1,56 +1,58 @@
-Machamp @ Leftovers
-Ability: Guts
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Bulk Up
-- Cross Chop
-- Rock Slide
-- Hidden Power [Bug]
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-- Wish
-- Dragon Claw
-- Fire Blast
-- Brick Break
-
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 16 Def / 232 SpA / 92 Spe
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
 Rash Nature
 IVs: 30 Atk / 30 SpA
+- Meteor Mash
 - Thunder Punch
-- Earthquake
 - Hidden Power [Grass]
 - Explosion
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
 - Rapid Spin
-- Explosion
 - Earthquake
 - Psychic
+- Explosion
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 92 HP / 176 Atk / 128 Def / 112 SpD
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Giga Drain
+- Psychic
+- Baton Pass
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 Def / 248 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Crunch
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 252 SpA / 16 Spe
+EVs: 252 HP / 192 SpA / 64 Spe
 Modest Nature
 IVs: 0 Atk
+- Substitute
 - Calm Mind
-- Rest
-- Sleep Talk
-- Surf
+- Hydro Pump
+- Rain Dance
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

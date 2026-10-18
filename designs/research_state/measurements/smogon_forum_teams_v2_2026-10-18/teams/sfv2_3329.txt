@@ -1,55 +1,56 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 244 Def / 96 SpA / 12 SpD / 140 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Wish
+- Surf
+- Baton Pass
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 188 SpA / 68 Spe
-Quiet Nature
-- Substitute
-- Focus Punch
-- Crunch
-- Thunder
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 244 HP / 212 Def / 40 SpD / 12 Spe
-Impish Nature
-- Meteor Mash
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
 - Earthquake
-- Protect
-- Explosion
+- Rock Slide
+- Double-Edge
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 236 SpA / 20 Spe
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Thunder Wave
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 68 HP / 252 SpA / 188 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Reflect
-- Thunder Wave
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
+- Counter
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 216 Atk / 36 SpA / 8 Spe
+EVs: 252 HP / 252 Atk / 4 Spe
 Adamant Nature
-- Earthquake
-- Psychic
 - Rapid Spin
+- Earthquake
+- Rock Slide
 - Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Toxic
+- Seismic Toss
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 236 Atk / 12 Def / 200 SpD / 60 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

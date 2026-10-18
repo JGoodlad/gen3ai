@@ -1,59 +1,57 @@
-Suicune @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Protect
-- Toxic
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Metal Sound
 - Thunderbolt
-- Hidden Power [Fire]
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 216 SpD / 40 Spe
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Rest
-- Seismic Toss
-- Hidden Power [Ghost]
-- Counter
+- Hidden Power [Ice]
+- Sunny Day
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Agility
 - Meteor Mash
 - Earthquake
-- Hidden Power [Grass]
 - Explosion
 
-Heracross @ Choice Band
-Ability: Guts
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Megahorn
-- Rock Slide
-- Hidden Power [Ghost]
-- Brick Break
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Surf
+- Roar
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 40 HP / 188 Atk / 100 SpD / 180 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
 - Dragon Dance
 - Earthquake
-- Hidden Power [Rock]
+- Rock Slide
 - Double-Edge
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Earthquake
+- Shadow Ball
+- Self-Destruct
+
+Charizard @ Salac Berry
+Ability: Blaze
+EVs: 88 HP / 252 Atk / 16 SpD / 152 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Belly Drum
+- Hidden Power [Flying]
+- Rock Slide
+- Fire Blast

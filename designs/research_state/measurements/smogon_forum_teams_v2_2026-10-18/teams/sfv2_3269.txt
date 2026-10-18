@@ -1,57 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 192 SpA / 120 SpD / 196 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+- Rest
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 212 SpA / 44 Spe
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Soft-Boiled
+- Seismic Toss
+- Aromatherapy
+
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 236 HP / 252 Def / 20 Spe
+EVs: 248 HP / 184 Def / 76 Spe
 Bold Nature
 IVs: 0 Atk
-- Calm Mind
 - Surf
-- Ice Beam
+- Calm Mind
 - Rest
+- Roar
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 124 Def / 40 SpA / 56 SpD / 36 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Hidden Power [Grass]
-- Leech Seed
-- Recover
-- Heal Bell
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day
 
-Arcanine @ Chesto Berry
-Ability: Intimidate
-EVs: 252 HP / 80 Def / 176 Spe
-Bold Nature
-IVs: 0 Atk
-- Flamethrower
-- Toxic
-- Rest
-- Thief
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 176 Atk / 80 Def / 252 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
 Careful Nature
-- Curse
-- Return
-- Shadow Ball
-- Rest
+- Spikes
+- Drill Peck
+- Roar
+- Protect
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 220 Atk / 56 SpA / 232 Spe
-Adamant Nature
+EVs: 248 HP / 88 Atk / 116 Def / 56 SpD
+Sassy Nature
 - Earthquake
 - Psychic
-- Rapid Spin
 - Explosion
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 232 HP / 252 SpA / 24 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Protect
+- Rapid Spin

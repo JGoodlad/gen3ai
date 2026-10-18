@@ -1,57 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 84 Atk / 172 Spe
 Adamant Nature
-- Curse
-- Double-Edge
-- Shadow Ball
-- Self-Destruct
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
+IVs: 30 SpD / 30 Spe
 - Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
+- Rock Slide
 - Hidden Power [Bug]
-- Aerial Ace
-- Sunny Day
+- Focus Punch
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Taunt
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 Def / 176 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Toxic
+- Surf

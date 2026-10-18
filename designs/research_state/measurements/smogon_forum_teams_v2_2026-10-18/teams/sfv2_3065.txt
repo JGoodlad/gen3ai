@@ -1,56 +1,58 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 224 SpA / 64 SpD / 196 Spe
-Mild Nature
-- Dragon Claw
-- Fire Blast
-- Wish
-- Brick Break
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 44 HP / 96 Atk / 152 Def / 216 SpD
-Careful Nature
-- Curse
-- Return
-- Shadow Ball
-- Rest
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 16 Def / 252 SpA
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Thunder Wave
-
-Blastoise @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 140 Def / 36 SpA / 84 Spe
-Bold Nature
 IVs: 0 Atk
-- Surf
-- Rapid Spin
-- Ice Beam
+- Crunch
+- Pursuit
+- Flamethrower
 - Roar
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 196 HP / 180 Atk / 32 Def / 40 SpA / 60 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Earthquake
-- Hidden Power [Grass]
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 SpD / 30 Spe
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
 - Explosion
 
-Heracross @ Leftovers
-Ability: Swarm
-EVs: 248 HP / 108 SpD / 152 Spe
-Careful Nature
-- Bulk Up
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Thunder Wave
+- Surf
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 252 Def / 16 Spe
+Impish Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Toxic
+- Seismic Toss
+
+Quagsire @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 184 Def / 72 SpD
+Relaxed Nature
 - Rest
-- Sleep Talk
-- Megahorn
+- Curse
+- Earthquake
+- Ice Beam
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Will-O-Wisp
+- Flamethrower
+- Hidden Power [Grass]
+- Roar

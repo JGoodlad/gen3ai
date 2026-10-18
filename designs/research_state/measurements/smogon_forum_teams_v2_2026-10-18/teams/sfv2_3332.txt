@@ -1,64 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 36 Def / 164 SpD / 60 Spe
-Calm Nature
-IVs: 0 Atk
-- Thunderbolt
-- Light Screen
-- Roar
-- Rest
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 200 HP / 252 Atk / 56 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Rock Slide
+- Hidden Power [Ghost]
+- Superpower
+- Explosion
 
-Blissey @ Leftovers
-Ability: Natural Cure
-Shiny: Yes
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Toxic
-- Ice Beam
-- Soft-Boiled
-- Seismic Toss
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
 
-Skarmory @ Leftovers
+Skarmory
 Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
-- Toxic
-- Protect
-- Whirlwind
+- Thief
+- Drill Peck
+- Roar
 
-Dugtrio (M) @ Choice Band
-Ability: Arena Trap
-Happiness: 0
-EVs: 136 HP / 244 Atk / 24 SpD / 104 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 104 Def / 20 SpA / 96 SpD / 36 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Recover
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Toxic
+- Surf
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Aerial Ace
 - Earthquake
+- Rock Slide
 - Hidden Power [Bug]
-- Beat Up
-
-Gengar (M) @ Leftovers
-Ability: Levitate
-Shiny: Yes
-Happiness: 0
-EVs: 252 HP / 48 Def / 8 SpA / 112 SpD / 88 Spe
-Timid Nature
-IVs: 0 Atk
-- Ice Punch
-- Thunderbolt
-- Taunt
-- Will-O-Wisp
-
-Flygon @ Leftovers
-Ability: Levitate
-Happiness: 0
-EVs: 252 HP / 96 Atk / 140 Def / 20 Spe
-Impish Nature
-IVs: 30 Atk / 30 SpD
-- Earthquake
-- Hidden Power [Ghost]
-- Toxic
-- Protect
+- Double-Edge

@@ -1,58 +1,56 @@
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Toxic
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Psychic
-
-Raikou @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 248 HP / 8 SpA / 252 Spe
-Timid Nature
+EVs: 188 SpA / 120 SpD / 200 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Rest
-- Calm Mind
 - Thunderbolt
+- Baton Pass
 - Hidden Power [Grass]
+- Thunder Wave
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 60 SpD / 196 Spe
+Jolly Nature
+- Spore
+- Stun Spore
+- Brick Break
+- Focus Punch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 3 Atk / 30 Def / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Beat Up
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 248 SpA / 76 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Psychic
+- Hidden Power [Fire]
+- Explosion
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
+EVs: 36 HP / 176 Atk / 120 Def / 160 SpD / 16 Spe
 Adamant Nature
-- Curse
-- Body Slam
-- Earthquake
+- Counter
 - Shadow Ball
+- Focus Punch
+- Self-Destruct
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 252 Def / 4 SpA
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Thunder Wave
-- Toxic
-- Thunderbolt
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 SpA / 44 SpD
+Quiet Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Curse

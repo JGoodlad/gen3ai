@@ -1,0 +1,58 @@
+Suicune @ Salac Berry
+Ability: Pressure
+EVs: 32 HP / 24 Def / 220 SpA / 232 Spe
+Modest Nature
+IVs: 3 Atk / 30 SpA
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Electric]
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 28 Atk / 228 SpA / 252 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Dance
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 140 HP / 156 Atk / 112 SpD / 100 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Beat Up
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 Def / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Psychic
+- Hidden Power [Fire]
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Baton Pass
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide

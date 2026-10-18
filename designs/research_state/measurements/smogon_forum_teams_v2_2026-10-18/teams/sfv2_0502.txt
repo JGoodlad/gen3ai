@@ -1,56 +1,57 @@
-Heracross (M) @ Leftovers
-Ability: Guts
-EVs: 124 HP / 184 Atk / 16 SpD / 184 Spe
-Adamant Nature
-- Brick Break
-- Swords Dance
-- Megahorn
-- Rock Slide
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 84 SpA / 172 Spe
-Timid Nature
-- Calm Mind
-- Hydro Pump
-- Roar
-- Ice Beam
-
-Tyranitar (M) @ Choice Band
+Tyranitar @ Choice Band
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-IVs: 30 SpD / 30 Spe
+EVs: 252 Atk / 4 SpD / 252 Spe
 Adamant Nature
-- Focus Punch
-- Earthquake
+IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Brick Break
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 80 HP / 252 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+- Protect
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Double-Edge
 - Hidden Power [Bug]
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 4 HP / 252 SpA / 252 Spe
-IVs: 30 Atk / 30 SpA
-Timid Nature
-- Calm Mind
-- Psychic
-- Fire Punch
-- Hidden Power [Grass]
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Drill Peck
+- Spikes
+- Taunt
+- Roar
 
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 192 Def / 64 SpA
-Bold Nature
-- Thunder Wave
-- Thunderbolt
-- Ice Beam
-- Recover
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 224 Def / 32 Spe
+Impish Nature
+- Earthquake
+- Rock Slide
+- Toxic
+- Protect
 
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-IVs: 30 Atk / 30 SpA
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
 Modest Nature
-- Calm Mind
-- Hidden Power [Grass]
-- Substitute
-- Thunderbolt
+IVs: 0 Atk
+- Ice Beam
+- Flamethrower
+- Toxic
+- Soft-Boiled

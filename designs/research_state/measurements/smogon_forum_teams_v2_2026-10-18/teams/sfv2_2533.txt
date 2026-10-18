@@ -1,57 +1,58 @@
+Zapdos @ Magnet
+Ability: Pressure
+EVs: 60 HP / 252 SpA / 196 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+- Thunder Wave
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 40 HP / 140 Atk / 100 SpD / 228 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Substitute
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
+
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Earthquake
-- Hidden Power [Grass]
-- Explosion
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Thunderbolt
+EVs: 184 HP / 220 SpA / 104 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
 - Hidden Power [Fire]
-- Sunny Day
+- Explosion
+- Meteor Mash
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Return
-- Shadow Ball
-- Self-Destruct
-
-Entei @ Leftovers
-Ability: Pressure
-EVs: 140 HP / 228 SpA / 140 Spe
+Kingdra @ Lum Berry
+Ability: Swift Swim
+EVs: 104 HP / 252 SpA / 152 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Substitute
-- Calm Mind
-- Flamethrower
+- Rain Dance
+- Hydro Pump
+- Ice Beam
 - Hidden Power [Grass]
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 40 HP / 188 Atk / 100 SpD / 180 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Hidden Power [Rock]
-- Double-Edge
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 32 SpA / 184 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Perish Song
+- Explosion

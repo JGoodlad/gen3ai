@@ -1,58 +1,58 @@
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 SpD
-- Spore
-- Mach Punch
-- Hidden Power [Ghost]
-- Sky Uppercut
-
-Tyranitar @ Lum Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 240 Atk / 16 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Grass]
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Flamethrower
+- Brick Break
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 184 HP / 148 SpD / 176 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Toxic
+- Roar
 
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
-- Substitute
-- Toxic
+- Rapid Spin
 - Hydro Pump
-- Endeavor
+- Ice Beam
+- Thunderbolt
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 216 Def / 8 SpA / 36 Spe
+Lax Nature
+- Toxic
+- Earthquake
+- Rock Slide
+- Fire Blast
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Rock Slide
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
 - Brick Break
-- Hidden Power [Flying]

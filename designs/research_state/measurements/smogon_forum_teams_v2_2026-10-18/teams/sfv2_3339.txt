@@ -1,56 +1,58 @@
-Suicune @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 152 Def / 96 SpA / 20 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
+EVs: 224 HP / 252 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 Def
 - Rest
-- Sleep Talk
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 252 HP / 76 Def / 180 SpA
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunderbolt
-- Hidden Power [Fire]
-- Protect
-- Toxic
+- Hidden Power [Ice]
+- Roar
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 40 SpD
-Brave Nature
-- Rapid Spin
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 184 HP / 144 Atk / 4 SpD / 176 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
 - Earthquake
-- Ice Beam
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Toxic
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+- Will-O-Wisp
+- Fire Punch
+- Ice Punch
 - Explosion
 
-Weezing @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 240 Def / 16 Spe
-Impish Nature
-- Will-O-Wisp
-- Haze
-- Sludge Bomb
-- Pain Split
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 192 SpA / 28 SpD / 36 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Thunder
+- Hidden Power [Grass]
+- Dynamic Punch
 
-Umbreon @ Leftovers
-Ability: Synchronize
-EVs: 252 HP / 160 SpA / 88 SpD / 8 Spe
-Calm Nature
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
 IVs: 0 Atk
-- Pursuit
-- Wish
 - Protect
+- Refresh
 - Toxic
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
-Careful Nature
-- Curse
-- Rest
-- Return
-- Earthquake
+- Surf

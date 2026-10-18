@@ -1,58 +1,56 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Hidden Power [Flying]
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 Def / 176 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Toxic
-- Hydro Pump
-- Endeavor
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 252 SpA / 16 SpD
 Modest Nature
 IVs: 0 Atk
-- Substitute
-- Calm Mind
+- Crunch
+- Pursuit
+- Flamethrower
+- Roar
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Counter
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 72 SpA / 44 SpD / 16 Spe
+Relaxed Nature
+- Protect
+- Earthquake
 - Surf
 - Ice Beam
 
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Bulk Up
-- Brick Break
-- Rock Slide
-- Shadow Ball
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 252 Def / 164 SpA / 20 SpD / 56 Spe
+Bold Nature
 IVs: 0 Atk
-- Substitute
+- Wish
+- Protect
 - Toxic
-- Thunderbolt
-- Baton Pass
+- Surf
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+- Dragon Claw
+- Flamethrower
+- Brick Break
+- Roar

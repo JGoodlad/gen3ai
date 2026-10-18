@@ -1,57 +1,57 @@
-Metagross @ Choice Band
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
-Adamant Nature
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
-- Earthquake
+- Hidden Power [Fire]
 - Psychic
 - Explosion
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
-- Sunny Day
-
-Slaking @ Choice Band
-Ability: Truant
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 SpD
-- Return
-- Earthquake
-- Hidden Power [Steel]
-- Focus Punch
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Rest
-- Calm Mind
+- Rapid Spin
 - Surf
 - Ice Beam
+- Thunderbolt
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Substitute
-- Fire Blast
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 56 Atk / 108 Def / 96 SpD / 8 Spe
+Sassy Nature
+- Rest
+- Curse
+- Earthquake
+- Ice Beam
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Wish
+- Thunderbolt
 - Hidden Power [Grass]
-- Focus Punch
+- Baton Pass
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 240 SpA / 64 SpD / 180 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break

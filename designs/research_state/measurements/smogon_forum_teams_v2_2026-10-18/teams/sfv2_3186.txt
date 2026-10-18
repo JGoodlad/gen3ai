@@ -1,58 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 Def
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Focus Punch
-- Hidden Power [Bug]
-
-Skarmory @ Leftovers
+Skarmory
 Ability: Keen Eye
-EVs: 252 HP / 240 SpD / 16 Spe
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
-- Toxic
-- Protect
+- Thief
+- Drill Peck
 - Roar
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Hasty Nature
+- Substitute
+- Ice Punch
+- Focus Punch
+- Explosion
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 172 Atk / 88 Spe
-Adamant Nature
-- Meteor Mash
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Wish
+- Protect
+- Fire Punch
+- Hidden Power [Grass]
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
+- Protect
+- Toxic
 - Earthquake
 - Rock Slide
-- Agility
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 220 HP / 252 SpA / 36 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Psychic
-- Giga Drain
-- Hidden Power [Fire]
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
 IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
+- Rest
+- Sleep Talk
 - Thunderbolt
-- Rapid Spin
+- Roar
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

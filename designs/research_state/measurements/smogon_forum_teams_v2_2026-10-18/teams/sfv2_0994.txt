@@ -1,55 +1,57 @@
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-- Shadow Ball
-- Brick Break
-- Explosion
-- Will-O-Wisp
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 8 HP / 228 Atk / 76 SpD / 196 Spe
-Adamant Nature
-- Meteor Mash
-- Sleep Talk
-- Earthquake
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 196 Atk / 108 Def / 172 SpD
-Adamant Nature
-- Curse
-- Shadow Ball
-- Earthquake
-- Self-Destruct
-
-Camerupt @ Leftovers
-Ability: Magma Armor
-EVs: 176 Atk / 80 SpA / 252 Spe
-Lonely Nature
-IVs: 30 Spe
-- Explosion
-- Earthquake
-- Fire Blast
-- Hidden Power [Ice]
-
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 236 Def / 20 Spe
 Timid Nature
 IVs: 0 Atk
-- Substitute
-- Roar
-- Hydro Pump
-- Endeavor
+- Protect
+- Flamethrower
+- Toxic
+- Wish
 
-Slaking @ Choice Band
-Ability: Truant
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-- Hyper Beam
-- Fury Swipes
-- Shadow Ball
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 144 HP / 112 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Substitute
+- Toxic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 Def / 44 SpD
+Relaxed Nature
+- Protect
+- Curse
 - Earthquake
+- Ice Beam
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 64 Def / 36 SpA / 136 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Psychic
+- Leech Seed
+- Recover
+- Heal Bell
+
+Shuckle @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Rollout
+- Defense Curl
+- Toxic
+- Rest
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide

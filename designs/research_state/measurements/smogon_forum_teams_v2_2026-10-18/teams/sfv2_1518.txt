@@ -1,57 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 216 SpA / 108 Spe
-Modest Nature
-IVs: 30 Def / 30 SpD
-- Crunch
-- Pursuit
-- Flamethrower
-- Brick Break
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
-- Roar
-
-Gengar @ Leftovers
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
+EVs: 252 HP / 100 Atk / 112 Def / 44 SpD
+Sassy Nature
+- Rapid Spin
 - Earthquake
-- Hydro Pump
+- Psychic
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 228 SpA / 28 Spe
+Modest Nature
+- Substitute
+- Calm Mind
+- Surf
 - Ice Beam
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 112 SpA / 180 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
 Modest Nature
-IVs: 3 Atk / 30 Spe
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
-- Roar
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 136 Atk / 156 Def / 172 SpD / 12 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Flamethrower
+- Hidden Power [Grass]
+- Focus Punch

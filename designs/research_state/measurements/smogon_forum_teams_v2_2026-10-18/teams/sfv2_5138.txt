@@ -1,0 +1,56 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 48 HP / 176 Def / 136 SpA / 148 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Baton Pass
+- Surf
+- Ice Beam
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 236 HP / 216 SpD / 56 Spe
+Calm Nature
+- Substitute
+- Thunderbolt
+- Mud-Slap
+- Baton Pass
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 120 Def / 136 SpD
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Counter
+- Explosion
+
+Smeargle @ Leftovers
+Ability: Own Tempo
+EVs: 4 HP / 252 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Belly Drum
+- Spore
+- Baton Pass
+- Confuse Ray
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 160 HP / 252 Atk / 96 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Rock Slide
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 252 HP / 132 Atk / 80 Def / 28 SpD / 16 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Dragon Dance
+- Focus Punch
+- Earthquake
+- Hidden Power [Ghost]

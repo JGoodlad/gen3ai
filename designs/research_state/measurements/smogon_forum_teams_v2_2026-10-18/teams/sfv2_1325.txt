@@ -1,59 +1,58 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 116 SpA / 176 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Metal Sound
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
+Machamp @ Leftovers
+Ability: Guts
+EVs: 248 HP / 136 Atk / 76 SpD / 48 Spe
+Adamant Nature
+- Low Kick
+- Focus Punch
+- Rock Slide
+- Earthquake
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 80 Def / 148 SpD / 32 Spe
+Calm Nature
 IVs: 0 Atk
-- Substitute
 - Toxic
-- Hydro Pump
-- Endeavor
+- Protect
+- Wish
+- Fire Punch
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 56 Def / 188 SpA / 16 Spe
 Modest Nature
 IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
-- Ice Beam
+- Crunch
+- Fire Blast
+- Counter
+- Pursuit
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 188 HP / 140 SpA / 180 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Baton Pass
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Focus Punch
+- Brick Break
+- Hidden Power [Grass]
+- Spore
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Roar
+- Protect
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
+EVs: 136 Atk / 212 SpD / 160 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Rock Slide
-- Brick Break
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Dragon Dance

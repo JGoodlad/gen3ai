@@ -1,55 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 176 HP / 136 Atk / 156 SpA / 4 SpD / 36 Spe
-Brave Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Focus Punch
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 16 HP / 240 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Fire Blast
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 100 SpA / 120 SpD / 40 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 48 HP / 252 SpA / 208 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Thunderbolt
+- Pursuit
 - Hidden Power [Grass]
-- Rest
-- Sleep Talk
+- Fire Blast
+- Thunder
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 104 HP / 220 SpA / 184 Spe
-Timid Nature
-- Thunderbolt
-- Ice Punch
-- Hypnosis
-- Explosion
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 192 HP / 220 Atk / 4 Def / 56 SpA / 36 Spe
+Brave Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Hidden Power [Bug]
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
+EVs: 248 HP / 136 SpD / 124 Spe
 Careful Nature
-- Drill Peck
-- Toxic
 - Spikes
 - Roar
+- Drill Peck
+- Taunt
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 12 Atk / 160 SpA / 52 SpD / 36 Spe
-Quiet Nature
-- Rock Slide
-- Crunch
-- Pursuit
-- Focus Punch
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+- Will-O-Wisp
+- Taunt
+- Thunderbolt
+- Ice Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Fire Blast
+- Hidden Power [Grass]
+- Wish

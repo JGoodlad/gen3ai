@@ -1,57 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 HP / 252 SpA / 252 Spe
-Rash Nature
-- Brick Break
-- Hydro Pump
-- Fire Blast
-- Dragon Claw
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Thunder
-- Baton Pass
-- Hidden Power [Grass]
-
-Poliwrath @ Leftovers
-Ability: Water Absorb
-EVs: 240 HP / 16 Atk / 252 SpA
-Quiet Nature
-- Focus Punch
-- Surf
-- Hypnosis
-- Dynamic Punch
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-IVs: 30 SpA / 30 SpD
-- Spikes
-- Roar
-- Drill Peck
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
 - Toxic
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 132 HP / 252 Atk / 124 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Focus Punch
-- Earthquake
-- Hidden Power [Bug]
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
 - Fire Punch
-- Explosion
-- Ice Punch
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Ice Beam
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
 - Hidden Power [Grass]
+- Roar
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
+- Protect
+- Toxic
+- Earthquake
+- Rock Slide
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

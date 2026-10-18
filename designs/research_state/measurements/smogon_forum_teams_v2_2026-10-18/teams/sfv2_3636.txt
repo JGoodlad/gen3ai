@@ -1,53 +1,58 @@
-Swampert (F) @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 216 Def / 40 SpA
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Hydro Pump
-- Rest
-
-Skarmory (M) @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 Def / 4 Spe
-Impish Nature
-- Toxic
-- Spikes
-- Whirlwind
-- Rest
-
-Regice @ Leftovers
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 4 SpA / 252 SpD
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+IVs: 30 SpA
+- Agility
+- Meteor Mash
+- Earthquake
+- Rock Slide
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
 Modest Nature
-- Ice Beam
-- Thunderbolt
+IVs: 0 Atk
+- Protect
+- Thunder Wave
 - Toxic
-- Rest
+- Thunderbolt
 
-Venusaur (F) @ Leftovers
-Ability: Overgrow
-EVs: 252 HP / 84 Def / 148 SpD / 24 Spe
-Careful Nature
-- Sludge Bomb
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 0 Atk
 - Leech Seed
-- Sleep Powder
-- Synthesis
+- Calm Mind
+- Giga Drain
+- Psychic
 
-Blastoise (M) @ Leftovers
+Swampert @ Salac Berry
 Ability: Torrent
-EVs: 252 HP / 252 Def
-Bold Nature
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Toxic
 - Surf
-- Ice Beam
-- Rapid Spin
-- Rest
+- Endeavor
 
-Zangoose (M) @ Leftovers
-Ability: Immunity
-EVs: 96 HP / 160 Atk / 252 Spe
-Jolly Nature
-- Return
-- Brick Break
-- Shadow Ball
-- Swords Dance
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass

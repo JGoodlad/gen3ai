@@ -1,59 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
-
-Venusaur @ Leftovers
-Ability: Overgrow
-EVs: 252 HP / 8 SpD / 248 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Razor Leaf
-- Sleep Powder
-- Leech Seed
-- Hidden Power [Fire]
-
-Armaldo @ Leftovers
-Ability: Battle Armor
-EVs: 248 HP / 252 Atk / 8 SpD
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Hidden Power [Bug]
-- Rock Slide
-- Knock Off
-- Protect
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-IVs: 0 Atk
-- Taunt
-- Spikes
-- Roar
-- Toxic
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Def / 136 Spe
-Bold Nature
-IVs: 0 Atk
-- Giga Drain
-- Fire Blast
-- Toxic
-- Protect
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
+Medicham @ Choice Band
+Ability: Pure Power
 EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+Adamant Nature
+- Brick Break
+- Shadow Ball
 - Rock Slide
-- Double-Edge
+- Fake Out
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 144 HP / 216 Atk / 36 SpD / 112 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
 - Earthquake
-- Hidden Power [Flying]
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Psychic
+- Ice Beam
+- Rapid Spin
+
+Solrock @ Choice Band
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Hidden Power [Fighting]
+- Explosion
+- Earthquake
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Ice Punch
+- Thunder
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 196 HP / 8 Def / 120 SpA / 184 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic

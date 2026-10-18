@@ -1,0 +1,57 @@
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+- Substitute
+- Endeavor
+- Hydro Pump
+- Roar
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Beat Up
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 148 Atk / 220 SpD / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+- Substitute
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge

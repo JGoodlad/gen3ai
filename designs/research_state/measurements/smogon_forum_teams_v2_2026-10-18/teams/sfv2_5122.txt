@@ -1,0 +1,59 @@
+Hypno @ Leftovers
+Ability: Insomnia
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Psychic
+- Calm Mind
+- Baton Pass
+- Hypnosis
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 80 HP / 252 SpA / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
+- Hidden Power [Grass]
+- Fire Punch
+
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Encore
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 108 SpA / 148 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Calm Mind
+- Substitute
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+- Roar
+
+Steelix @ Choice Band
+Ability: Rock Head
+EVs: 144 HP / 228 Atk / 136 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpA / 2 Spe
+- Earthquake
+- Hidden Power [Steel]
+- Double-Edge
+- Explosion

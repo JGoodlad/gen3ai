@@ -1,58 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Substitute
-- Baton Pass
-
-Dugtrio (M) @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 144 SpD / 112 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Aerial Ace
-
-Snorlax (M) @ Leftovers
-Ability: Immunity
-EVs: 232 HP / 252 Atk / 24 Spe
-Adamant Nature
-- Body Slam
-- Self-Destruct
-- Shadow Ball
-- Focus Punch
-
-Swampert (F) @ Salac Berry
+Swampert @ Leftovers
 Ability: Torrent
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
+- Earthquake
 - Hydro Pump
 - Ice Beam
-- Endeavor
-
-Breloom (F) @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 SpD
-- Substitute
-- Spore
 - Focus Punch
-- Hidden Power [Ghost]
 
-Gyarados (M) @ Leftovers
-Ability: Intimidate
-EVs: 82 HP / 252 Atk / 174 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Double-Edge
-- Hidden Power [Rock]
-- Earthquake
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
 - Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 244 HP / 124 Def / 140 Spe
+Impish Nature
+- Recover
+- Leech Seed
+- Swords Dance
+- Baton Pass
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 Atk / 68 SpD / 188 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Naughty Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Hidden Power [Flying]
+- Fire Blast

@@ -1,57 +1,58 @@
-Medicham @ Lum Berry
-Ability: Pure Power
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Focus Punch
-- Brick Break
-- Shadow Ball
-- Rock Slide
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 SpA / 8 SpD
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Fire Blast
+- Pursuit
+- Ice Beam
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 64 HP / 252 SpA / 192 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+- Sunny Day
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 28 SpA / 228 Spe
+Hasty Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Pursuit
 
 Gyarados @ Leftovers
 Ability: Intimidate
-EVs: 68 HP / 248 Atk / 192 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
-- Double-Edge
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 156 Atk / 168 Spe
+EVs: 216 HP / 16 Atk / 88 SpD / 188 Spe
 Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Earthquake
 - Dragon Dance
-- Rock Slide
+- Rest
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 48 HP / 144 Atk / 132 Def / 184 SpD
+Careful Nature
+- Body Slam
 - Earthquake
-- Double-Edge
+- Curse
+- Rest
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Baton Pass
-- Thunderbolt
-- Hidden Power [Ice]
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 128 HP / 40 Def / 232 SpA / 108 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Hidden Power [Grass]
-- Thunder Punch
+Steelix @ Leftovers
+Ability: Rock Head
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+IVs: 30 Def / 30 SpD / 30 Spe
 - Earthquake
-- Explosion
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 16 Atk / 240 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Substitute
-- Focus Punch
+- Hidden Power [Rock]
+- Rest
+- Roar

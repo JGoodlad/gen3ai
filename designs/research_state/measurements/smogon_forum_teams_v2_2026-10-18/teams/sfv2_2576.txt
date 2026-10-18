@@ -1,56 +1,57 @@
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 116 Atk / 252 SpA / 140 Spe
+EVs: 4 HP / 252 SpA / 252 Spe
 Rash Nature
-- Wish
-- Dragon Claw
-- Flamethrower
 - Brick Break
+- Substitute
+- Fire Blast
+- Dragon Claw
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 44 HP / 212 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Thunder Wave
+- Baton Pass
+- Hidden Power [Ice]
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
+Poliwrath @ Leftovers
+Ability: Water Absorb
+EVs: 122 HP / 112 Atk / 252 SpA / 22 Spe
 Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 52 Def / 60 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Double-Edge
-- Shadow Ball
-- Self-Destruct
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 176 Def / 60 SpA / 20 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Calm Mind
-- Fire Punch
-- Psychic
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 160 SpA / 68 SpD / 28 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
-- Calm Mind
+- Focus Punch
 - Surf
+- Hypnosis
+- Dynamic Punch
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 244 SpD / 12 Spe
+Careful Nature
+IVs: 0 Atk / 30 SpA / 30 SpD
+- Spikes
+- Roar
+- Taunt
+- Toxic
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 124 HP / 252 Atk / 132 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Fire Punch
+- Explosion
+- Ice Punch
+- Hidden Power [Grass]

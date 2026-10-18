@@ -1,57 +1,55 @@
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 96 Atk / 232 Def / 180 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Knock Off
-- Cross Chop
-- Rock Slide
-- Hidden Power [Ghost]
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Roar
 
 Skarmory
 Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Calm Nature
-IVs: 0 Atk
-- Protect
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
 - Spikes
-- Roar
 - Thief
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 244 HP / 48 Atk / 216 Def
-Impish Nature
-- Meteor Mash
-- Earthquake
-- Protect
-- Explosion
+- Drill Peck
+- Roar
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 180 Atk / 16 SpA / 60 Spe
-Adamant Nature
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
 - Earthquake
 - Psychic
 - Explosion
-- Rapid Spin
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
+EVs: 212 HP / 252 Def / 44 SpA
 Bold Nature
 IVs: 0 Atk
 - Soft-Boiled
-- Thunder
-- Ice Beam
+- Thunder Wave
 - Seismic Toss
+- Ice Beam
 
-Gyarados @ Leftovers
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
+- Thunder Wave
+- Toxic
+- Seismic Toss
+- Explosion
+
+Salamence @ Leftovers
 Ability: Intimidate
-EVs: 252 Atk / 48 SpD / 208 Spe
+EVs: 196 Atk / 200 SpD / 112 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
 - Earthquake
-- Double-Edge
-- Hidden Power [Flying]
+- Rock Slide
+- Brick Break

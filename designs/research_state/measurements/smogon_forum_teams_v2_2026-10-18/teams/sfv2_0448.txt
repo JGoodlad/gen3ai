@@ -1,57 +1,58 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 60 SpA / 196 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
+EVs: 252 Atk / 56 SpA / 200 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Thunderbolt
-- Hidden Power [Ice]
-- Thunder Wave
+- Drill Peck
+- Hidden Power [Fighting]
 - Baton Pass
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 56 HP / 252 SpA / 200 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Thunder Wave
-- Toxic
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 104 Atk / 100 SpD / 56 Spe
-Adamant Nature
-- Meteor Mash
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 136 HP / 248 Atk / 8 Def / 116 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
 - Earthquake
-- Rock Slide
-- Explosion
-
-Heracross @ Leftovers
-Ability: Guts
-EVs: 24 HP / 252 Atk / 232 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Megahorn
-- Focus Punch
-- Hidden Power [Ghost]
-- Sleep Talk
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 12 HP / 176 Atk / 176 Def / 144 SpD
-Adamant Nature
-- Curse
-- Earthquake
-- Shadow Ball
-- Self-Destruct
+- Beat Up
+- Hidden Power [Bug]
+- Aerial Ace
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 248 HP / 100 Def / 160 SpA
-Bold Nature
-IVs: 0 Atk
+EVs: 24 HP / 252 SpA / 232 Spe
+Modest Nature
+IVs: 3 Atk / 30 SpA
 - Calm Mind
-- Surf
-- Rest
-- Sleep Talk
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Electric]
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 60 Def / 128 SpD / 68 Spe
+Timid Nature
+- Will-O-Wisp
+- Thunderbolt
+- Ice Punch
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 SpA / 136 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Psychic
+- Fire Punch
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+- Baton Pass

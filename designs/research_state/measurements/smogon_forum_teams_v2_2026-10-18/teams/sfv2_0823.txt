@@ -1,59 +1,59 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 68 SpA / 116 SpD / 108 Spe
-Calm Nature
-IVs: 0 Atk
-- Thunderbolt
-- Toxic
-- Baton Pass
-- Protect
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 244 Atk / 12 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Grass]
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 40 HP / 252 Atk / 100 SpD / 116 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Beat Up
-
-Starmie @ Leftovers
-Ability: Natural Cure
-Shiny: Yes
-EVs: 4 HP / 252 SpA / 252 Spe
+Vaporeon (F) @ Leftovers
+Ability: Water Absorb
+EVs: 12 HP / 20 Def / 252 SpA / 224 Spe
 Timid Nature
 IVs: 0 Atk
 - Hydro Pump
-- Thunderbolt
-- Recover
-- Rapid Spin
+- Ice Beam
+- Substitute
+- Baton Pass
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 8 HP / 252 Def / 236 SpA / 12 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 80 HP / 252 SpA / 176 Spe
 Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Ice Beam
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
-- Soft-Boiled
+- Hidden Power [Grass]
+- Agility
+- Roar
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 28 Atk / 184 Def / 32 SpA / 16 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 64 Def / 24 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Giga Drain
+- Hidden Power [Fire]
+- Calm Mind
+- Baton Pass
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Calm Mind
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 224 Def / 32 SpA
 Relaxed Nature
-- Earthquake
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Ice Beam
-- Hydro Pump
-- Protect
+- Hidden Power [Fighting]
+- Thunder Wave
+- Recover
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
+- Calm Mind

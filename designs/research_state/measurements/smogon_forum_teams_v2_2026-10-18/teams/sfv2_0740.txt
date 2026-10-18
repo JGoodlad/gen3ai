@@ -1,58 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 252 Def / 8 SpA / 8 Spe
-Bold Nature
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
 IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
-- Toxic
-
-Steelix @ Leftovers
-Ability: Rock Head
-EVs: 248 HP / 36 Atk / 208 SpD / 16 Spe
-Impish Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Earthquake
-- Hidden Power [Rock]
-- Roar
-- Explosion
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 248 HP / 12 Atk / 248 SpD
-Sassy Nature
-- Spikes
-- Rapid Spin
-- Earthquake
-- Zap Cannon
-
-Umbreon @ Leftovers
-Ability: Synchronize
-EVs: 248 HP / 16 Atk / 96 Def / 140 SpD / 8 Spe
-Sassy Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Pursuit
+- Crunch
+- Fire Blast
+- Roar
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Double-Edge
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Hydro Pump
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Substitute
+- Focus Punch
+- Curse
+- Body Slam
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 144 HP / 188 SpA / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Toxic
 - Wish
 - Protect
-- Hidden Power [Fighting]
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 64 HP / 44 Def / 16 SpA / 248 SpD / 136 Spe
-Timid Nature
-IVs: 0 Atk
-- Fire Punch
-- Giga Drain
-- Will-O-Wisp
-- Hypnosis
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 28 Atk / 232 SpD
-Gentle Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Thunderbolt
-- Drill Peck
-- Hidden Power [Fighting]
-- Rest
+- Hidden Power [Ice]

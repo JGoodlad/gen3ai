@@ -1,58 +1,59 @@
-Blaziken @ Leftovers
-Ability: Blaze
-EVs: 16 HP / 56 Atk / 212 SpA / 224 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Sky Uppercut
-- Hidden Power [Grass]
-- Thunder Punch
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Toxic
+- Spikes
+- Whirlwind
+- Protect
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 112 SpA / 148 Spe
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 Def
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
-- Substitute
+- Hidden Power [Grass]
+- Roar
 - Baton Pass
-- Hidden Power [Ice]
 
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 216 Atk / 40 SpD / 252 Spe
-Adamant Nature
-- Sky Uppercut
-- Spore
-- Focus Punch
-- Mach Punch
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 216 Def / 36 SpA / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Calm Mind
+- Rest
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 236 SpA / 24 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Psychic
-- Hidden Power [Fire]
-- Meteor Mash
-- Explosion
-
-Tyranitar @ Lum Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
 Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
 - Rock Slide
 - Earthquake
 - Hidden Power [Bug]
+- Focus Punch
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 56 Atk / 252 SpA / 4 SpD / 196 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Hidden Power [Grass]
-- Fire Blast
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 48 Def / 104 SpD / 104 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Punch
+- Taunt
+- Will-O-Wisp
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 48 SpD / 208 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
 - Brick Break
+- Hidden Power [Ghost]
+- Focus Punch
+- Spore

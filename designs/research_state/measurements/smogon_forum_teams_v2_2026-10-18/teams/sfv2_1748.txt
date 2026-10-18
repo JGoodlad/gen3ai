@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 72 Atk / 188 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
-- Flamethrower
-- Hidden Power [Grass]
-- Roar
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-IVs: 30 SpD
-- Spikes
-- Roar
-- Protect
-- Hidden Power [Steel]
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Wish
-
-Quagsire @ Leftovers
-Ability: Water Absorb
-EVs: 248 HP / 204 Def / 56 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Curse
-- Rest
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
-- Earthquake
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 16 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
 - Psychic
 - Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Surf
+- Ice Beam
+- Thunderbolt
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 228 SpA / 28 Spe
+Modest Nature
+- Substitute
+- Calm Mind
+- Surf
+- Ice Beam
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 4 Def / 136 SpA / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up

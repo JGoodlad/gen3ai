@@ -1,59 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 248 Atk / 12 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 52 Atk / 112 SpA / 176 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
 - Fire Punch
-- Hidden Power [Grass]
-- Focus Punch
-- Explosion
+- Toxic
+
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Gust
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 156 SpD / 104 Spe
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
-- Taunt
-- Toxic
 - Roar
+- Protect
+- Drill Peck
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
 - Thunderbolt
-- Hidden Power [Grass]
-- Roar
-- Baton Pass
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 236 SpA / 24 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 SpA / 216 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Surf
 - Psychic
-- Hidden Power [Fire]
-- Meteor Mash
-- Explosion
 
-Sceptile @ Leftovers
-Ability: Overgrow
-EVs: 16 Atk / 240 SpA / 252 Spe
-Hasty Nature
-IVs: 30 HP / 30 Def
-- Leaf Blade
-- Hidden Power [Ice]
-- Thunder Punch
-- Focus Punch
+Sableye @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Knock Off
+- Recover
+- Seismic Toss
+- Psych Up

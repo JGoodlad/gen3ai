@@ -1,57 +1,58 @@
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 4 SpA / 252 Spe
+Medicham @ Lum Berry
+Ability: Pure Power
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Brick Break
+- Shadow Ball
+- Rock Slide
+- Focus Punch
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 40 SpA / 216 SpD
+Calm Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Rapid Spin
+- Refresh
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Psychic
+- Hidden Power [Grass]
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 216 Def / 40 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Calm Mind
+- Psychic
+- Thunderbolt
+- Ice Punch
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 40 HP / 252 SpA / 216 Spe
 Timid Nature
 IVs: 0 Atk
 - Hydro Pump
-- Substitute
-- Wish
-- Baton Pass
-
-Jirachi @ Salac Berry
-Ability: Serene Grace
-EVs: 112 Atk / 252 SpA / 144 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dynamic Punch
-- Ice Punch
-- Thunder
-- Hidden Power [Grass]
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 144 HP / 252 Atk / 112 SpD
-Adamant Nature
-- Self-Destruct
-- Focus Punch
-- Earthquake
-- Shadow Ball
-
-Tyranitar @ Liechi Berry
-Ability: Sand Stream
-EVs: 252 HP / 64 Atk / 192 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Dragon Dance
-- Hidden Power [Bug]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 208 HP / 36 Atk / 216 SpA / 48 Spe
-Quiet Nature
-- Hydro Pump
-- Earthquake
 - Ice Beam
-- Focus Punch
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 112 SpD / 144 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Flying]
-- Dragon Dance
-- Brick Break
-- Rock Slide
+- Thunderbolt
+- Recover

@@ -1,57 +1,59 @@
-Raikou @ Petaya Berry
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 4 HP / 176 Def / 192 SpA / 136 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
+EVs: 252 HP / 100 SpA / 156 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
 - Substitute
-- Toxic
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 64 Def / 100 SpA / 12 SpD / 80 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Psychic
-- Hidden Power [Fire]
-- Giga Drain
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 240 Atk / 16 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
 
 Metagross @ Choice Band
 Ability: Clear Body
-EVs: 128 HP / 252 Atk / 128 Spe
+EVs: 252 Atk / 68 SpD / 188 Spe
 Adamant Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Meteor Mash
-- Explosion
 - Earthquake
 - Rock Slide
+- Explosion
 
-Swampert @ Leftovers
+Swampert @ Salac Berry
 Ability: Torrent
-EVs: 248 HP / 136 Def / 40 SpA / 44 SpD / 40 Spe
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Protect
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Toxic
 - Hydro Pump
+- Endeavor
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
+- Spore
+- Sky Uppercut
+- Hidden Power [Ghost]
+- Focus Punch
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 156 Atk / 216 SpD / 136 Spe
+EVs: 116 HP / 252 Atk / 140 Spe
 Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
+- Earthquake
+- Rock Slide
 - Hidden Power [Flying]
-- Rock Slide
-- Earthquake
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 SpD
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch

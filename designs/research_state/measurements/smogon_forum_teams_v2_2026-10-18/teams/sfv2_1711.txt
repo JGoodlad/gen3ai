@@ -1,57 +1,57 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
+EVs: 248 HP / 40 Def / 200 SpD / 20 Spe
 Calm Nature
-IVs: 2 Atk / 30 SpA
+IVs: 0 Atk
 - Rest
+- Thunder Wave
+- Toxic
 - Thunderbolt
-- Hidden Power [Grass]
-- Roar
 
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 240 HP / 240 SpD / 28 Spe
 Careful Nature
 - Spikes
-- Thief
+- Taunt
 - Drill Peck
 - Roar
 
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Taunt
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Bold Nature
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
 IVs: 0 Atk
 - Soft-Boiled
 - Toxic
-- Seismic Toss
+- Fire Blast
 - Ice Beam
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 220 Def / 36 Spe
-Impish Nature
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Def / 32 SpA / 44 SpD / 16 Spe
+Relaxed Nature
 - Protect
-- Screech
 - Earthquake
-- Rock Slide
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
+- Hydro Pump
+- Ice Beam
 
 Dugtrio @ Choice Band
 Ability: Arena Trap
 EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
+- Screech
 - Earthquake
 - Hidden Power [Bug]
 - Aerial Ace
-- Rock Slide

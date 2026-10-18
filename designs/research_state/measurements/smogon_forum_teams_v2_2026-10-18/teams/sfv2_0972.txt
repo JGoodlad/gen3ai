@@ -1,55 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 240 SpA / 20 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 28 HP / 252 SpA / 228 Spe
 Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Roar
+
+Arcanine @ Choice Band
+Ability: Intimidate
+EVs: 180 HP / 252 Atk / 76 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Extreme Speed
+- Iron Tail
+- Hidden Power [Fighting]
+- Overheat
+
+Sceptile @ Black Glasses
+Ability: Overgrow
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Leaf Blade
 - Crunch
+- Hidden Power [Ice]
 - Pursuit
-- Brick Break
-- Flamethrower
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Atk / 252 SpD
-Sassy Nature
-- Zap Cannon
-- Rapid Spin
-- Explosion
-- Spikes
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 212 Atk / 120 SpA / 176 Spe
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 Atk / 252 SpA / 252 Spe
 Hasty Nature
-- Fire Punch
-- Ice Punch
-- Focus Punch
-- Destiny Bond
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Ice Beam
+- Brick Break
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
 - Rock Slide
 - Earthquake
-- Hidden Power [Bug]
-- Double-Edge
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Surf
-- Earthquake
-- Ice Beam
-- Protect
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 88 Def / 140 SpA / 32 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Leech Seed
-- Hidden Power [Grass]
-- Recover
-- Psychic

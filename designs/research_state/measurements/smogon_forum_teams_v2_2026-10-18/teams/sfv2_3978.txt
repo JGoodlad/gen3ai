@@ -1,0 +1,57 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Protect
+- Drill Peck
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 68 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Rest
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Fire]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 108 Def / 20 SpA / 96 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Recover
+- Leech Seed
+- Hidden Power [Grass]
+- Light Screen
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 136 Atk / 80 Def / 28 SpD / 12 Spe
+Adamant Nature
+- Toxic
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

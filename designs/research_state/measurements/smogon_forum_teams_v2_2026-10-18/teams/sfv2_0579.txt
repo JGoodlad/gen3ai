@@ -1,57 +1,57 @@
-Hariyama (M) @ Leftovers
-Ability: Thick Fat
-EVs: 104 HP / 252 Def / 152 SpD
-Impish Nature
-- Brick Break
-- Knock Off
-- Rest
+Heracross @ Choice Band
+Ability: Guts
+Hidden Power: Ghost
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Megahorn
+- Focus Punch
+- Rock Slide
 - Sleep Talk
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 180 SpA / 76 SpD
-Modest Nature
-IVs: 0 Atk
-- Fire Blast
-- Roar
-- Crunch
-- Pursuit
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 80 Atk / 252 SpA / 176 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Drill Peck
+- Thunder Wave
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Def / 252 SpA / 252 Spe
-Rash Nature
-- Brick Break
-- Fire Blast
-- Wish
-- Dragon Claw
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 136 Def / 76 SpA / 44 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Thunder
-- Ice Punch
-- Wish
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 248 HP / 196 SpD / 64 Spe
+Calm Nature
+- Surf
+- Spikes
+- Rapid Spin
+- Explosion
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 240 HP / 64 Def / 36 SpA / 136 SpD / 32 Spe
-Calm Nature
+EVs: 252 HP / 4 Def / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Psychic
+- Substitute
 - Leech Seed
-- Perish Song
 - Recover
+- Baton Pass
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Hidden Power [Bug]
-- Rapid Spin
-- Counter
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 160 HP / 236 Atk / 112 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 96 SpA / 160 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Substitute
+- Calm Mind
+- Roar

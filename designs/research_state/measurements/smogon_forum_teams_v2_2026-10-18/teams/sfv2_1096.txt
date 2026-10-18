@@ -1,57 +1,55 @@
-Tyranitar (M) @ Leftovers
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 92 Atk / 168 Spe
-Adamant Nature
-- Toxic
-- Earthquake
-- Rock Slide
-- Taunt
-
-Milotic (F) @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Toxic
-- Recover
-- Refresh
-
-Dugtrio (M) @ Choice Band
-Ability: Arena Trap
-EVs: 8 HP / 248 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Aerial Ace
-- Earthquake
-- Hidden Power [Bug]
-- Rock Slide
-
-Skarmory (M) @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 236 SpD / 24 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Protect
-- Toxic
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+- Pursuit
+- Crunch
+- Fire Blast
 - Roar
 
-Blissey @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Ice Beam
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
-- Soft-Boiled
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Earthquake
-- Psychic
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Whirlwind
+- Protect
+- Toxic
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 Atk / 232 SpA / 252 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Fire Blast
+- Brick Break
+- Dragon Claw
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 180 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Hydro Pump
+- Thunderbolt
+- Ice Beam
 - Rapid Spin
-- Refresh

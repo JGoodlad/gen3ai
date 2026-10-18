@@ -1,57 +1,57 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Protect
-- Drill Peck
-- Roar
-
-Misdreavus @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 4 Def / 252 SpD
-Calm Nature
-IVs: 0 Atk
-- Rest
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Calm Mind
 - Thunderbolt
-- Mean Look
-- Perish Song
+- Hidden Power [Grass]
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
-Flygon @ Leftovers
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Earthquake
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Gengar @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 224 Def / 32 Spe
-Impish Nature
-- Protect
-- Toxic
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Ice Punch
+- Fire Punch
+- Hidden Power [Grass]
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
 - Earthquake
 - Rock Slide
+- Double-Edge
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
-- Ice Beam
-- Thunderbolt
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 232 SpD / 36 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Light Screen
-- Toxic
-- Thunderbolt
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 212 SpD / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

@@ -1,57 +1,57 @@
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 176 Atk / 196 SpD / 136 Spe
+EVs: 32 Atk / 224 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Brick Break
+- Dragon Claw
+- Fire Blast
+- Hidden Power [Grass]
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 224 HP / 252 Atk / 32 Spe
 Adamant Nature
-- Dragon Dance
+- Meteor Mash
 - Earthquake
 - Rock Slide
-- Brick Break
+- Explosion
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 216 Def / 36 SpA / 8 Spe
+Bold Nature
 IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 40 Atk / 216 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 36 SpA / 96 SpD / 124 Spe
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Grass]
-- Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 56 Atk / 80 Def / 44 SpA / 44 SpD / 44 Spe
-Brave Nature
-- Curse
-- Earthquake
-- Hydro Pump
+- Surf
 - Ice Beam
+- Calm Mind
+- Rest
 
-Dragonite @ Leftovers
-Ability: Inner Focus
-EVs: 36 HP / 252 Atk / 220 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 16 HP / 116 Atk / 124 Def / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
 - Dragon Dance
-- Hidden Power [Flying]
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 40 SpD / 216 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
 - Brick Break
-- Fire Blast
+- Hidden Power [Ghost]
+- Focus Punch
+- Spore
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 176 Atk / 64 Def / 252 SpD / 16 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Curse
+- Self-Destruct

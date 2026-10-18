@@ -1,56 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 200 SpD / 56 Spe
 Careful Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
+- Spikes
+- Roar
+- Taunt
+- Drill Peck
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Shadow Ball
-- Self-Destruct
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 Def
-- Rest
-- Toxic
-- Thunderbolt
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 Def
+- Fire Blast
+- Beat Up
 - Hidden Power [Ice]
+- Brick Break
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Calm Mind
-- Fire Punch
-- Psychic
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 48 HP / 252 SpA / 208 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
+- Hidden Power [Grass]
+- Destiny Bond
 
-Heracross @ Leftovers
-Ability: Guts
-EVs: 116 HP / 216 Atk / 176 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
 Adamant Nature
-- Substitute
-- Megahorn
+- Agility
+- Meteor Mash
+- Earthquake
 - Rock Slide
-- Focus Punch
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+- Thunder Wave
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Hydro Pump
+- Ice Beam

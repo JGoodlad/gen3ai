@@ -1,57 +1,60 @@
-Vaporeon (F) @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 244 Def / 96 SpA / 12 SpD / 140 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Wish
-- Surf
-- Baton Pass
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 252 HP / 188 Atk / 16 Def / 52 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Focus Punch
+- Earthquake
+- Hidden Power [Bug]
 
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 SpA / 4 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+Starmie @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
 - Ice Beam
 - Thunderbolt
-- Hidden Power [Fire]
-- Psych Up
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 144 Atk / 112 Def
-Relaxed Nature
-- Earthquake
-- Ice Beam
 - Rapid Spin
-- Explosion
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 216 Atk / 16 Def / 108 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Explosion
-- Agility
+Skarmory @ Leftovers
+Ability: Keen Eye
+Shiny: Yes
+EVs: 240 HP / 240 SpD / 28 Spe
+Calm Nature
+- Taunt
+- Toxic
+- Drill Peck
+- Spikes
 
-Machamp @ Leftovers
-Ability: Guts
-EVs: 16 HP / 216 Atk / 60 SpD / 216 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Cross Chop
+Swampert @ Leftovers
+Ability: Torrent
+Shiny: Yes
+EVs: 248 HP / 136 Def / 48 SpA / 44 SpD / 32 Spe
+Bold Nature
+- Surf
+- Ice Beam
+- Focus Punch
+- Protect
+
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Substitute
 - Rock Slide
-- Hidden Power [Ghost]
-- Bulk Up
+- Earthquake
+- Double-Edge
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 152 Atk / 12 Def / 204 SpD / 140 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 76 HP / 252 SpA / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Hidden Power [Fire]
+- Psychic
+- Giga Drain

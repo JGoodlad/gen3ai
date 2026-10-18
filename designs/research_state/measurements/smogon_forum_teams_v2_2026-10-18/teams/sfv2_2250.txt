@@ -1,58 +1,57 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 240 HP / 16 Def / 252 SpA
+EVs: 184 HP / 196 SpA / 128 Spe
 Modest Nature
-IVs: 0 Atk
 - Crunch
 - Pursuit
 - Flamethrower
-- Roar
+- Brick Break
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
 Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Counter
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Wish
-- Seismic Toss
-- Ice Beam
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 228 SpD / 40 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Rest
-- Thunderbolt
-- Hidden Power [Grass]
+- Spikes
+- Taunt
+- Toxic
 - Roar
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Rock Slide
 
 Jirachi @ Leftovers
 Ability: Serene Grace
 EVs: 76 HP / 252 SpA / 180 Spe
-Mild Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Ice Punch
-- Thunder
+Rash Nature
+IVs: 30 SpA
+- Water Pulse
+- Thunderbolt
 - Psychic
-- Hidden Power [Fighting]
+- Dynamic Punch
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 176 Def / 44 SpD / 48 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Surf
-- Ice Beam
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 108 SpA / 20 SpD / 140 Spe
+Modest Nature
+IVs: 30 Spe
+- Light Screen
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break

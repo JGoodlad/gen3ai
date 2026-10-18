@@ -1,0 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 44 Atk / 212 SpA / 252 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 112 Atk / 212 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Focus Punch
+- Hidden Power [Bug]
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Seismic Toss
+- Ice Beam
+- Thunder Wave
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 156 SpD / 104 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Roar
+- Toxic
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 180 SpD
+Sassy Nature
+- Wish
+- Fire Punch
+- Body Slam
+- Protect
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 220 HP / 156 Atk / 132 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion

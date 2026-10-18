@@ -1,0 +1,57 @@
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Protect
+- Toxic
+
+Weezing (M) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 240 Def / 16 Spe
+Impish Nature
+- Will-O-Wisp
+- Haze
+- Sludge Bomb
+- Pain Split
+
+Flygon (M) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 208 Def / 16 SpD / 32 Spe
+Impish Nature
+- Earthquake
+- Toxic
+- Protect
+- Rock Slide
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Toxic
+- Ice Beam
+- Seismic Toss
+
+Mantine (M) @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Ice Beam
+- Rest
+
+Misdreavus (F) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Mean Look
+- Perish Song
+- Taunt
+- Protect

@@ -1,55 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 120 Atk / 244 SpA / 144 Spe
-Mild Nature
-- Dragon Claw
-- Flamethrower
-- Brick Break
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 212 SpD / 44 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
 - Roar
+- Rest
+- Hidden Power [Grass]
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
+Flygon (M) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 212 Def / 12 SpD / 32 Spe
+Impish Nature
 - Earthquake
 - Rock Slide
-- Double-Edge
+- Toxic
+- Protect
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Counter
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 232 Atk / 16 Def / 8 Spe
-Relaxed Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
+Skarmory (F) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 88 Def / 168 SpD
 Impish Nature
-- Soft-Boiled
-- Wish
-- Thunder Wave
-- Seismic Toss
+- Spikes
+- Roar
+- Protect
+- Drill Peck
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 152 Atk / 48 SpA / 56 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
+Misdreavus (F) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Perish Song
+- Mean Look
+- Rest
+
+Gengar (F) @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Taunt
+
+Aerodactyl (F) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Double-Edge
 - Earthquake
-- Hidden Power [Grass]
-- Explosion
+- Hidden Power [Bug]

@@ -1,57 +1,58 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Brick Break
-- Fire Blast
-- Ice Beam
-- Hidden Power [Grass]
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 244 SpD / 12 Spe
-Careful Nature
-- Spikes
-- Whirlwind
-- Protect
-- Toxic
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 132 HP / 228 Atk / 20 Def / 128 Spe
 Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Rock Slide
-- Double-Edge
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Hidden Power [Flying]
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day
 
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 128 HP / 252 Atk / 128 Spe
-Adamant Nature
-- Meteor Mash
-- Explosion
-- Earthquake
-- Rock Slide
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 40 Def / 216 SpA / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Ice Punch
-- Explosion
-- Hidden Power [Grass]
-
-Lanturn (F) @ Leftovers
-Ability: Volt Absorb
-EVs: 208 SpA / 92 SpD / 208 Spe
-Modest Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 220 SpD / 40 Spe
+Calm Nature
 IVs: 0 Atk
-- Hydro Pump
 - Thunderbolt
-- Ice Beam
-- Protect
+- Rest
+- Substitute
+- Baton Pass
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Zap Cannon
+- Hidden Power [Bug]
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 88 Atk / 168 Def
+Relaxed Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Seismic Toss
+- Thunder Wave
+- Aromatherapy
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 SpA
+Bold Nature
+IVs: 0 Atk
+- Psychic
+- Fire Punch
+- Calm Mind
+- Wish

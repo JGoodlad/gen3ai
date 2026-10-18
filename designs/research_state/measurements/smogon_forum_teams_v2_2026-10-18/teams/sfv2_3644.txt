@@ -1,0 +1,57 @@
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+- Thunder Wave
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Focus Punch
+- Earthquake
+- Hidden Power [Bug]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 224 SpA / 84 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Leech Seed
+- Psychic
+- Giga Drain
+
+Skarmory
+Ability: Sturdy
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Thief
+- Roar
+- Drill Peck
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 152 HP / 252 Atk / 104 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Agility
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 40 SpA / 140 SpD / 80 Spe
+Calm Nature
+IVs: 0 Atk
+- Surf
+- Recover
+- Thunder Wave
+- Rapid Spin

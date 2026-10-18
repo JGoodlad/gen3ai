@@ -1,58 +1,57 @@
-Tyranitar @ Lum Berry
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 120 HP / 164 Atk / 32 Def / 32 SpD / 160 Spe
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Dragon Dance
-- Rock Slide
 - Earthquake
+- Rock Slide
 - Hidden Power [Bug]
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 76 HP / 252 Def / 180 SpD
-Sassy Nature
-- Wish
-- Protect
-- Fire Punch
-- Body Slam
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Roar
-- Protect
-- Toxic
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 84 HP / 128 Def / 148 SpA / 148 Spe
-Naive Nature
-IVs: 0 Atk
-- Dragon Breath
-- Fire Blast
-- Toxic
-- Protect
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 40 HP / 252 SpA / 216 Spe
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
 Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Psychic
-- Thunderbolt
+- Spikes
 - Rapid Spin
+- Ice Beam
+- Explosion
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 44 HP / 160 Def / 224 SpA / 56 SpD / 24 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
+- Focus Punch
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

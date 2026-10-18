@@ -1,58 +1,55 @@
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 184 Atk / 152 SpA / 172 Spe
-Lonely Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 248 SpD / 8 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Whirlwind
-- Protect
-- Toxic
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 208 HP / 216 Atk / 84 Def
+EVs: 184 HP / 208 Atk / 116 Spe
 Adamant Nature
-- Meteor Mash
-- Earthquake
-- Explosion
-- Protect
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 40 Atk / 252 SpA / 216 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Fire Punch
-- Ice Punch
-- Explosion
-- Hidden Power [Grass]
-
-Lanturn @ Leftovers
-Ability: Volt Absorb
-EVs: 252 SpA / 48 SpD / 208 Spe
-Modest Nature
-IVs: 0 Atk
-- Hydro Pump
-- Thunderbolt
-- Ice Beam
-- Protect
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
 - Rock Slide
-- Double-Edge
 - Earthquake
-- Hidden Power [Flying]
+- Double-Edge
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+- Calm Mind
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 140 Atk / 192 SpA / 176 Spe
+Naughty Nature
+- Brick Break
+- Dragon Claw
+- Fire Blast
+- Wish
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Seismic Toss
+- Thunder Wave
+- Counter
+- Explosion

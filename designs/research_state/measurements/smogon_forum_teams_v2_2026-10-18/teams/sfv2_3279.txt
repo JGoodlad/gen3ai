@@ -1,58 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 180 Spe
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 140 HP / 252 Atk / 12 Def / 104 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
+IVs: 30 SpD / 30 Spe
 - Earthquake
+- Aerial Ace
 - Hidden Power [Bug]
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 244 SpD / 12 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Roar
-- Protect
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 24 HP / 252 Def / 212 SpA / 20 Spe
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Toxic
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-IVs: 0 Atk
-- Surf
-- Toxic
-- Protect
-- Refresh
+- Rock Slide
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 40 Def / 32 SpD / 188 Spe
+EVs: 248 HP / 60 SpD / 200 Spe
+Timid Nature
+- Rain Dance
+- Thunderbolt
+- Ice Punch
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 152 Def / 64 SpA / 44 SpD
+Bold Nature
+IVs: 0 Atk
+- Roar
+- Counter
+- Surf
+- Protect
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 44 SpA / 216 Spe
 Timid Nature
 IVs: 0 Atk
-- Fire Punch
-- Ice Punch
-- Taunt
-- Will-O-Wisp
+- Surf
+- Ice Beam
+- Recover
+- Rapid Spin
 
-Haunter @ Leftovers
-Ability: Levitate
-EVs: 252 SpA / 32 SpD / 224 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Will-O-Wisp
-- Destiny Bond
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 168 HP / 252 Def / 88 Spe
+Bold Nature
+IVs: 0 Atk
+- Aromatherapy
+- Thunder Wave
+- Seismic Toss
+- Soft-Boiled
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 184 HP / 24 Atk / 204 Def / 96 SpD
+Careful Nature
+- Curse
+- Rest
+- Return
+- Shadow Ball

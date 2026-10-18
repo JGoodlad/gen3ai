@@ -1,0 +1,58 @@
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Thunder Wave
+- Surf
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Toxic
+- Seismic Toss
+- Ice Beam
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 Def / 248 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Crunch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 208 Def / 4 SpA / 48 Spe
+Naive Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Flamethrower

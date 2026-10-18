@@ -1,56 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Hydro Pump
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 216 SpA / 108 Spe
+Modest Nature
+IVs: 30 Def / 30 SpD
+- Crunch
+- Pursuit
+- Flamethrower
+- Brick Break
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
 - Roar
 
-Tyranitar @ Choice Band
-Ability: Sand Stream
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Taunt
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 112 SpA / 180 Spe
+Modest Nature
+IVs: 3 Atk / 30 Spe
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
 EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
+Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
 - Hidden Power [Bug]
-- Focus Punch
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 244 SpD / 192 Spe
-Timid Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
-Hasty Nature
-- Will-O-Wisp
-- Ice Punch
-- Thunder
-- Explosion
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 184 HP / 148 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Toxic
-- Thunderbolt
-- Baton Pass
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 228 SpD / 40 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Rest
-- Thunderbolt
-- Hidden Power [Grass]
-- Roar
+- Double-Edge

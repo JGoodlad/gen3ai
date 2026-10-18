@@ -1,58 +1,56 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Ice Beam
-- Hidden Power [Grass]
-- Fire Blast
-- Brick Break
-
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
-- Substitute
-- Endeavor
-
-Metagross @ Lum Berry
-Ability: Clear Body
-EVs: 160 HP / 236 SpA / 112 Spe
-Quiet Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Psychic
-- Hidden Power [Fire]
-- Explosion
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 220 Atk / 96 Def / 160 SpD
+EVs: 116 HP / 252 Atk / 140 Spe
 Adamant Nature
-- Body Slam
-- Focus Punch
-- Shadow Ball
-- Self-Destruct
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Rock Slide
 - Double-Edge
 - Earthquake
-- Hidden Power [Bug]
+- Hidden Power [Fighting]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Toxic
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 80 Atk / 180 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
 - Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 104 SpA / 152 Spe
+Modest Nature
+- Substitute
+- Calm Mind
+- Surf
+- Ice Beam

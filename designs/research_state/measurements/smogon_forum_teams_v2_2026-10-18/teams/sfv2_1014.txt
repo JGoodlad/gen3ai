@@ -1,56 +1,58 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 176 Atk / 80 SpD / 4 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 160 HP / 156 Def / 16 SpD / 176 Spe
-Calm Nature
-IVs: 0 Atk
-- Substitute
-- Baton Pass
-- Surf
-- Wish
-
 Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 232 HP / 156 Atk / 120 Spe
-Adamant Nature
+EVs: 244 Atk / 16 SpA / 248 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
 - Dragon Dance
 - Rock Slide
 - Earthquake
-- Counter
+- Hidden Power [Grass]
 
-Heracross @ Leftovers
-Ability: Guts
-EVs: 136 HP / 216 Atk / 88 SpD / 68 Spe
-Adamant Nature
-- Brick Break
-- Megahorn
-- Swords Dance
-- Rock Slide
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 60 Def / 196 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Sludge Bomb
+- Hidden Power [Fighting]
+- Will-O-Wisp
+- Explosion
 
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 240 HP / 220 SpA / 48 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Fire Punch
+- Will-O-Wisp
+- Hidden Power [Grass]
+- Explosion
+
+Houndoom @ Leftovers
+Ability: Early Bird
+EVs: 252 SpA / 80 SpD / 176 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Protect
-- Thunder Wave
-- Hidden Power [Fire]
+IVs: 0 Atk
+- Pursuit
+- Fire Blast
+- Beat Up
+- Will-O-Wisp
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 136 Atk / 212 SpD / 160 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 76 HP / 252 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Flying]
+- Agility
+- Meteor Mash
 - Earthquake
-- Rock Slide
-- Dragon Dance
+- Explosion

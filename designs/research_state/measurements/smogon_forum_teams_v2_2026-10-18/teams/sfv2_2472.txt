@@ -1,58 +1,57 @@
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Refresh
-- Toxic
-- Surf
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Counter
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 36 Atk / 220 SpD
-Careful Nature
-IVs: 30 SpD / 30 Spe
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Bug]
-- Explosion
-
-Quagsire @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 252 Atk / 4 SpD
-Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Rest
-- Curse
-- Earthquake
-- Hidden Power [Rock]
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 120 Def / 248 SpA / 140 Spe
-Rash Nature
-- Wish
+EVs: 252 SpA / 4 SpD / 252 Spe
+Hasty Nature
+IVs: 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Fire Blast
 - Dragon Claw
-- Flamethrower
 - Brick Break
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 44 Def / 216 SpA
+Quiet Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Focus Punch
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 208 HP / 4 Def / 160 SpA / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Hidden Power [Grass]
+- Fire Punch
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 32 Def / 228 SpA
+Quiet Nature
+- Thunderbolt
+- Ice Beam
+- Thunder Wave
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunderbolt
+- Hydro Pump
+- Rapid Spin

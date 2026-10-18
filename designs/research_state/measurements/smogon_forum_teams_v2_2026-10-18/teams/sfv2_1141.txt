@@ -1,56 +1,56 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 228 SpA / 28 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
-- Ice Beam
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 72 SpA / 44 SpD / 16 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Toxic
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
+Salamence (F) @ Leftovers
+Ability: Intimidate
+EVs: 8 HP / 60 Def / 188 SpA / 252 Spe
+Rash Nature
 IVs: 30 Atk / 30 SpA
 - Dragon Claw
 - Flamethrower
-- Hidden Power [Grass]
 - Brick Break
+- Hidden Power [Grass]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 4 Atk / 244 Def / 8 SpD
+Impish Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Bold Nature
+IVs: 0 Atk / 30 Spe
+- Thunder Wave
+- Seismic Toss
+- Ice Beam
+- Soft-Boiled
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 240 HP / 224 Atk / 8 SpA / 36 SpD
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 252 Atk / 4 Def / 12 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Skarmory (F)
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Thief
+- Roar

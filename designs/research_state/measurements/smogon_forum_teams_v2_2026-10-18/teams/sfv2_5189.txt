@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Substitute
+- Baton Pass
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
+- Focus Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Leech Seed
+- Hidden Power [Fire]
+- Baton Pass
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Ice Punch
+- Calm Mind
+- Hidden Power [Grass]
+- Thunderbolt
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Substitute
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 144 Def / 128 SpA / 144 SpD
+Quiet Nature
+- Self-Destruct
+- Focus Punch
+- Fire Blast
+- Ice Beam

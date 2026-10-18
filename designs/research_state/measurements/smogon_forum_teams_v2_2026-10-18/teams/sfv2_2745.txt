@@ -1,58 +1,56 @@
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 244 Def / 96 SpA / 12 SpD / 140 Spe
-Modest Nature
-IVs: 0 Atk
-- Wish
-- Substitute
-- Surf
-- Baton Pass
+Jirachi @ Lum Berry
+Ability: Serene Grace
+EVs: 120 Atk / 136 SpA / 52 SpD / 200 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Psychic
+- Thunder
+- Hidden Power [Fighting]
+- Body Slam
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 108 Atk / 216 Spe
-Brave Nature
-IVs: 30 Atk / 30 SpA
-- Crunch
-- Rock Slide
-- Hidden Power [Grass]
-- Focus Punch
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 244 SpD / 24 Spe
 Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 68 HP / 252 SpA / 12 SpD / 176 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
+- Drill Peck
+- Taunt
 - Roar
-- Baton Pass
+- Spikes
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 248 HP / 92 Atk / 168 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 56 Atk / 80 Def / 44 SpA / 44 SpD / 44 Spe
-Brave Nature
-- Curse
+EVs: 252 HP / 88 Def / 96 SpA / 32 SpD / 40 Spe
+Quiet Nature
 - Earthquake
-- Rock Slide
 - Hydro Pump
+- Ice Beam
+- Curse
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 252 Atk / 4 SpD / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
 - Double-Edge
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 112 HP / 60 Def / 252 SpA / 48 SpD / 36 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Psychic
+- Giga Drain
+- Leech Seed
+- Hidden Power [Fire]

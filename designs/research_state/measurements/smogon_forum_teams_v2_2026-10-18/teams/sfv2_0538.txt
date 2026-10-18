@@ -1,55 +1,59 @@
-Marowak @ Thick Club
-Ability: Rock Head
-EVs: 124 HP / 216 Atk / 168 Spe
-Adamant Nature
-- Earthquake
-- Rock Slide
-- Swords Dance
-- Focus Punch
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Bug]
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 244 Atk / 96 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 244 Atk / 108 Def / 144 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Shadow Ball
-- Self-Destruct
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 68 SpD / 188 Spe
-Hasty Nature
-- Hypnosis
-- Rain Dance
-- Ice Punch
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 136 SpA / 68 SpD / 64 Spe
-Calm Nature
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 204 HP / 252 SpA / 52 Spe
+Modest Nature
 IVs: 0 Atk
-- Surf
+- Hydro Pump
 - Ice Beam
+- Hypnosis
+- Recover
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 212 SpD / 140 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Rock Slide
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 76 SpD / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 HP / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
+- Rock Slide
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 48 Def / 56 SpA / 152 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
 - Calm Mind
-- Rest
+- Thunder
+- Ice Punch
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+- Rock Slide

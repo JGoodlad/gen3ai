@@ -1,56 +1,57 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-- Fire Blast
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 252 Def / 4 SpA
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Psychic
-- Thunderbolt
-- Wish
-
-Cloyster @ Lum Berry
-Ability: Shell Armor
-EVs: 252 HP / 16 Def / 88 SpA / 148 SpD / 4 Spe
-Bold Nature
-- Spikes
-- Rapid Spin
-- Surf
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Thick Fat
-EVs: 144 HP / 68 Atk / 132 Def / 164 SpD
-Adamant Nature
-- Body Slam
-- Curse
-- Rest
-- Shadow Ball
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 16 HP / 200 Atk / 120 Def / 172 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Thunder Wave
-
-Heracross @ Choice Band
-Ability: Guts
-Shiny: Yes
+Medicham @ Leftovers
+Ability: Pure Power
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-- Megahorn
-- Focus Punch
+- Brick Break
 - Rock Slide
-- Facade
+- Shadow Ball
+- Focus Punch
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Toxic
+- Thunderbolt
+- Hidden Power [Fire]
+- Rain Dance
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Earthquake
+- Hidden Power [Grass]
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 SpD / 16 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Sleep Talk
+- Calm Mind
+- Surf
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 192 Atk / 200 SpD / 116 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break

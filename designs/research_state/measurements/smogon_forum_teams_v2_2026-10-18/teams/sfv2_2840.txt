@@ -1,56 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 176 SpA / 92 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 240 HP / 252 SpD / 16 Spe
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-- Spikes
-- Toxic
 - Drill Peck
+- Spikes
 - Roar
+- Protect
 
-Blissey (F) @ Leftovers
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
+EVs: 248 HP / 96 Def / 44 SpA / 80 SpD / 40 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Perish Song
+- Leech Seed
+- Recover
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 176 Def / 40 SpA / 44 SpD
+Relaxed Nature
+- Earthquake
+- Refresh
+- Ice Beam
+- Protect
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 12 SpA / 32 SpD / 216 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Psychic
+- Rapid Spin
+- Recover
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 8 HP / 252 Def / 248 SpA
 Modest Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
-- Ice Beam
 - Thunderbolt
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 36 Atk / 68 Def / 96 SpD / 56 Spe
-Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Superpower
-- Explosion
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 112 Def / 92 SpA / 56 Spe
-Lax Nature
-- Earthquake
-- Rock Slide
-- Giga Drain
-- Fire Blast
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Beat Up
+- Ice Beam
+- Calm Mind
+- Soft-Boiled

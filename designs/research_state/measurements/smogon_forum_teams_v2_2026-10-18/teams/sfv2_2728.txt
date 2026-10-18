@@ -1,57 +1,56 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 176 Atk / 88 Def / 68 SpD / 152 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
+Jirachi @ Lum Berry
+Ability: Serene Grace
+EVs: 104 Atk / 220 SpA / 184 Spe
+Hasty Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Psychic
-- Explosion
+- Thunder
+- Hidden Power [Fighting]
+- Ice Punch
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 104 SpD / 156 Spe
+Careful Nature
+- Toxic
+- Taunt
+- Drill Peck
+- Spikes
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 248 HP / 92 Atk / 168 Spe
 Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 80 Def / 176 SpA / 4 Spe
+Quiet Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
 - Curse
-- Body Slam
-- Shadow Ball
-- Self-Destruct
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 16 HP / 228 Atk / 12 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Double-Edge
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 152 Def / 44 SpA / 28 SpD / 32 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Recover
+EVs: 112 HP / 96 Def / 156 SpA / 96 SpD / 48 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Psychic
+- Giga Drain
 - Leech Seed
-- Heal Bell
-- Hidden Power [Grass]
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 156 SpA / 60 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Wish
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 176 Def / 76 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Recover
-- Toxic
-- Surf
-- Ice Beam
+- Hidden Power [Fire]

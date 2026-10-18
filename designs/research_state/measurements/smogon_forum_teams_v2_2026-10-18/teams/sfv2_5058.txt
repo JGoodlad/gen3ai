@@ -1,0 +1,54 @@
+Forretress (F) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Sassy Nature
+IVs: 30 SpD / 30 Spe
+- Hidden Power [Bug]
+- Spikes
+- Rapid Spin
+- Explosion
+
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+- Crunch
+- Brick Break
+- Flamethrower
+- Pursuit
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 164 HP / 252 Def / 92 Spe
+Bold Nature
+- Seismic Toss
+- Thunder Wave
+- Soft-Boiled
+- Wish
+
+Swampert (F) @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 176 Def / 80 SpD
+Bold Nature
+- Surf
+- Toxic
+- Protect
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 68 SpA / 188 Spe
+Timid Nature
+- Ice Punch
+- Thunderbolt
+- Substitute
+- Calm Mind
+
+Gengar (F) @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 112 SpD / 104 Spe
+Timid Nature
+- Will-O-Wisp
+- Taunt
+- Thunderbolt
+- Giga Drain

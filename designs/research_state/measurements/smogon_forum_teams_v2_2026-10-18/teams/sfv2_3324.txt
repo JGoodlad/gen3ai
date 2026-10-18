@@ -1,58 +1,57 @@
-Salamence (M) @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 120 SpD / 136 Spe
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 140 HP / 252 Atk / 12 Def / 104 Spe
 Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
+IVs: 30 SpD / 30 Spe
 - Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
 - Rock Slide
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 232 HP / 4 Def / 96 SpA / 176 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Swords Dance
-- Baton Pass
-- Hidden Power [Grass]
-- Leech Seed
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 248 HP / 72 Def / 188 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Thunder Wave
+- Hidden Power [Fire]
+- Toxic
 
-Milotic (F) @ Leftovers
+Milotic @ Leftovers
 Ability: Marvel Scale
-EVs: 252 HP / 200 Def / 56 SpD
+EVs: 248 HP / 252 Def / 8 Spe
 Bold Nature
 IVs: 0 Atk
 - Surf
 - Ice Beam
-- Mirror Coat
 - Recover
+- Refresh
 
-Metagross @ Lum Berry
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Agility
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 232 HP / 252 SpA / 24 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 216 SpD / 44 Spe
+Calm Nature
+IVs: 0 Atk
 - Thunderbolt
-- Hidden Power [Fire]
-- Reflect
-- Thunder Wave
+- Toxic
+- Rain Dance
+- Rest
 
-Tauros (M) @ Liechi Berry
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Return
+Claydol @ Choice Band
+Ability: Levitate
+EVs: 144 HP / 252 Atk / 112 Spe
+Adamant Nature
 - Earthquake
-- Hidden Power [Rock]
-- Substitute
+- Shadow Ball
+- Explosion
+- Rapid Spin
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 184 HP / 24 Atk / 204 Def / 96 SpD
+Careful Nature
+- Return
+- Shadow Ball
+- Curse
+- Rest

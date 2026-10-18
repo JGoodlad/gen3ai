@@ -1,56 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Pursuit
-- Crunch
-- Fire Blast
-- Roar
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 176 Atk / 80 Def / 4 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Protect
-- Explosion
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 56 Atk / 200 SpA / 252 Spe
-Naughty Nature
+EVs: 16 HP / 16 Atk / 224 SpA / 252 Spe
+Naive Nature
 IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Fire Blast
 - Hidden Power [Grass]
 - Brick Break
-- Rock Slide
-- Fire Blast
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 48 HP / 144 Def / 108 SpA / 16 SpD / 192 Spe
+Timid Nature
+IVs: 0 Atk
+- Destiny Bond
+- Thunderbolt
+- Giga Drain
+- Will-O-Wisp
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 172 Def / 52 SpD / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Fire Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 48 Atk / 104 Def / 108 SpA
+Quiet Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Protect
 
 Skarmory @ Leftovers
 Ability: Keen Eye
 EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-- Spikes
-- Roar
-- Drill Peck
-- Toxic
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 20 HP / 252 Def / 236 Spe
-Timid Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Seismic Toss
-- Sing
+- Spikes
 - Toxic
+- Protect
+- Roar
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 232 Atk / 16 Def / 12 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Rapid Spin
-- Explosion
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Fire Blast
+- Roar

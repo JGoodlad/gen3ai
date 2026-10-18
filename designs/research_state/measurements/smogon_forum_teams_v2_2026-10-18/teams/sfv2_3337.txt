@@ -1,57 +1,54 @@
-Salamence (M) @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 120 SpD / 136 Spe
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 188 HP / 252 Atk / 68 Spe
 Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
+- Meteor Mash
 - Earthquake
-- Rock Slide
-
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Screech
-- Endure
-
-Tyranitar (M) @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 4 Def / 252 SpA
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Crunch
-- Pursuit
-- Fire Blast
-- Hidden Power [Grass]
-
-Steelix (M) @ Leftovers
-Ability: Rock Head
-EVs: 252 HP / 108 Atk / 148 SpD
-Adamant Nature
-- Earthquake
-- Rock Slide
-- Protect
+- Brick Break
 - Explosion
 
-Snorlax (M) @ Leftovers
-Ability: Immunity
-EVs: 72 Atk / 252 Def / 184 SpD
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Earthquake
-- Self-Destruct
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
-Gyarados (M) @ Leftovers
-Ability: Intimidate
-EVs: 216 HP / 16 Atk / 88 SpD / 188 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
 - Earthquake
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
+
+Quagsire @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 176 Def / 80 SpD
+Relaxed Nature
 - Rest
+- Curse
+- Earthquake
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
+Mild Nature
+- Dragon Claw
+- Flamethrower
+- Brick Break
+- Roar

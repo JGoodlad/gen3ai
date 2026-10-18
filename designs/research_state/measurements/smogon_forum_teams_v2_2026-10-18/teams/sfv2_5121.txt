@@ -1,0 +1,58 @@
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 248 HP / 56 Atk / 204 SpD
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Swords Dance
+- Rock Slide
+- Hidden Power [Bug]
+- Rapid Spin
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 176 Def / 64 SpD / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Toxic
+- Fire Punch
+- Protect
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 248 HP / 64 Atk / 88 SpD / 108 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Heal Bell
+- Hidden Power [Flying]
+- Roar
+
+Roselia @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 124 SpD / 136 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Stun Spore
+- Spikes
+- Hidden Power [Grass]
+- Leech Seed
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunder Wave
+- Seismic Toss
+- Soft-Boiled
+
+Quagsire @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 4 Atk / 252 Def
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Toxic

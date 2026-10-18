@@ -1,56 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 224 Def / 44 SpD
-Relaxed Nature
-- Protect
-- Curse
-- Earthquake
-- Ice Beam
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Protect
-- Drill Peck
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 152 HP / 216 Atk / 140 Spe
-Adamant Nature
-- Earthquake
-- Psychic
-- Explosion
-- Rapid Spin
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 196 SpA / 60 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 88 HP / 100 SpA / 140 SpD / 180 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Flamethrower
+- Thunderbolt
 - Hidden Power [Grass]
-- Soft-Boiled
-
-Armaldo @ Leftovers
-Ability: Battle Armor
-EVs: 252 HP / 36 Def / 220 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
 - Protect
-- Knock Off
-- Hidden Power [Bug]
-- Rock Slide
+- Baton Pass
 
-Articuno @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 32 SpA / 160 SpD / 64 Spe
-Calm Nature
-IVs: 0 Atk
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 240 HP / 252 SpD / 16 Spe
+Lax Nature
+- Spikes
+- Surf
 - Ice Beam
-- Heal Bell
-- Roar
-- Rest
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 76 SpA / 36 SpD / 20 Spe
+Bold Nature
+IVs: 3 Atk / 30 SpA
+- Calm Mind
+- Baton Pass
+- Hidden Power [Electric]
+- Recover
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Beat Up
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 184 HP / 60 Atk / 252 SpA / 12 Spe
+Brave Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Psychic
+- Hidden Power [Fire]
+- Explosion
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 124 HP / 52 Atk / 220 Def / 72 SpA / 40 Spe
+Naive Nature
+- Earthquake
+- Rock Slide
+- Fire Blast
+- Toxic

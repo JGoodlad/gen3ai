@@ -1,0 +1,59 @@
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 160 Atk / 112 Def / 192 SpD / 44 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Brick Break
+- Focus Punch
+- Hidden Power [Bug]
+- Rock Slide
+
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Brick Break
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 72 HP / 252 SpA / 184 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Substitute
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 52 HP / 252 SpA / 16 SpD / 180 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Fire Blast
+- Will-O-Wisp
+
+Machamp @ Leftovers
+Ability: Guts
+EVs: 96 HP / 252 Atk / 16 Def / 144 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Bulk Up
+- Cross Chop
+- Hidden Power [Bug]
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Illuminate
+EVs: 232 HP / 24 Def / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Recover
+- Rapid Spin

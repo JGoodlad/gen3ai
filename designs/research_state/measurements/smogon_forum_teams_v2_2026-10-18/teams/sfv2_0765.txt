@@ -1,57 +1,56 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 80 SpD
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Explosion
-- Rock Slide
-
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 104 SpA / 156 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
 - Thunderbolt
 - Hidden Power [Grass]
 - Thunder Wave
-- Endure
+- Baton Pass
 
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 232 HP / 156 Atk / 120 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 128 HP / 244 Atk / 28 SpD / 108 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Counter
+- Hidden Power [Bug]
+- Aerial Ace
+- Beat Up
 
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 120 HP / 252 Def / 136 Spe
-Bold Nature
+Slowking @ Leftovers
+Ability: Oblivious
+EVs: 252 HP / 16 Def / 216 SpA / 24 Spe
+Modest Nature
 IVs: 0 Atk
 - Surf
-- Substitute
-- Wish
-- Baton Pass
+- Fire Blast
+- Ice Beam
+- Thunder Wave
 
-Dodrio @ Choice Band
-Ability: Early Bird
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 SpA / 30 SpD
-- Drill Peck
-- Baton Pass
-- Hidden Power [Ground]
-- Return
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 28 Def / 228 SpA / 4 Spe
+Quiet Nature
+- Ice Beam
+- Thunderbolt
+- Explosion
+- Thunder Wave
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 156 Atk / 212 SpD / 140 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 200 HP / 252 Atk / 56 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
+- Meteor Mash
 - Earthquake
 - Rock Slide
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 244 HP / 216 Atk / 12 SpA / 36 SpD
+Brave Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion

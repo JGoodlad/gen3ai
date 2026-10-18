@@ -1,58 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 248 SpA / 20 Spe
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Naughty Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Hidden Power [Flying]
+- Iron Tail
+- Fire Blast
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
 Modest Nature
 IVs: 0 Atk
-- Pursuit
-- Roar
-- Fire Blast
-- Crunch
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 244 HP / 76 Def / 32 SpA / 120 SpD / 36 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
 Calm Nature
-IVs: 2 Atk / 30 SpA
-- Toxic
-- Hidden Power [Grass]
-- Recover
-- Leech Seed
+IVs: 2 Atk / 30 Def
+- Rest
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 108 Atk / 88 SpA / 60 Spe
-Modest Nature
-- Substitute
-- Dynamic Punch
-- Ice Punch
-- Thunder
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Protect
-- Fire Blast
-- Will-O-Wisp
-- Hidden Power [Grass]
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Protect
-- Hidden Power [Bug]
-- Earthquake
-- Rock Slide
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 72 SpD / 188 Spe
-Jolly Nature
+EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
+Bold Nature
 IVs: 0 Atk
-- Taunt
-- Spikes
+- Wish
+- Protect
 - Toxic
-- Roar
+- Fire Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 72 SpA / 44 SpD / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Toxic
+- Surf

@@ -1,57 +1,57 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 244 HP / 252 SpD / 12 Spe
-Careful Nature
-IVs: 30 SpD
-- Hidden Power [Steel]
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 24 Atk / 92 Def / 140 SpA
+Relaxed Nature
+- Counter
+- Ice Beam
 - Protect
-- Roar
-- Spikes
+- Explosion
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Toxic
+- Hidden Power [Grass]
+- Thunder Wave
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 128 Def / 44 SpA / 48 SpD / 36 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Psychic
+- Leech Seed
+- Recover
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 160 Atk / 212 SpD / 136 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 224 Atk / 32 Spe
+EVs: 144 HP / 180 Atk / 16 Def / 168 Spe
 Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Focus Punch
-- Rock Slide
-- Hidden Power [Bug]
-- Substitute
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
+- Dragon Dance
 - Rock Slide
-- Hidden Power [Bug]
-- Substitute
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 160 Atk / 96 Spe
-Jolly Nature
-- Substitute
-- Thunder
-- Body Slam
-- Water Pulse
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 SpD
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Ice Beam
-- Hidden Power [Grass]
-- Soft-Boiled
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 240 HP / 216 Atk / 8 SpA / 36 SpD / 8 Spe
-Adamant Nature
 - Earthquake
-- Psychic
-- Rapid Spin
-- Explosion
+- Hidden Power [Bug]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Rock Slide
+- Meteor Mash
+- Earthquake

@@ -1,33 +1,35 @@
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 224 SpA / 44 Spe
+EVs: 240 HP / 252 SpA / 16 Spe
 Quiet Nature
+- Curse
 - Earthquake
 - Hydro Pump
 - Ice Beam
-- Focus Punch
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 244 SpD / 192 Spe
-Timid Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Agility
+- Meteor Mash
+- Earthquake
 - Explosion
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
-Hasty Nature
-- Will-O-Wisp
-- Thunder
-- Giga Drain
-- Explosion
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 100 HP / 44 Def / 220 SpA / 144 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
 
 Jolteon @ Leftovers
 Ability: Volt Absorb
-EVs: 184 HP / 148 SpD / 176 Spe
+EVs: 76 HP / 252 SpA / 180 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
 - Substitute
@@ -35,22 +37,21 @@ IVs: 2 Atk / 30 SpA
 - Hidden Power [Grass]
 - Baton Pass
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 96 Atk / 120 Def / 88 SpA / 172 SpD
+Brave Nature
+- Body Slam
+- Earthquake
+- Fire Blast
+- Self-Destruct
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 80 Atk / 244 SpA / 184 Spe
 Rash Nature
 IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
+- Dragon Claw
 - Flamethrower
 - Hidden Power [Grass]
-- Roar
+- Brick Break

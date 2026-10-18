@@ -1,58 +1,55 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Tyranitar @ Choice Band
-Ability: Sand Stream
+Medicham @ White Herb
+Ability: Pure Power
 EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Ghost]
+Jolly Nature
+- Brick Break
 - Focus Punch
+- Shadow Ball
+- Rock Slide
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 224 HP / 216 SpD / 68 Spe
-Careful Nature
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 28 Def / 12 Spe
+Adamant Nature
+- Earthquake
+- Rapid Spin
+- Psychic
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 192 SpA / 76 Spe
+Modest Nature
 IVs: 0 Atk
-- Spikes
-- Taunt
-- Toxic
-- Roar
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 96 Atk / 64 Def / 96 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Protect
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 4 Atk / 252 SpA
+Quiet Nature
+- Ice Beam
 - Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
+- Thunder Wave
+- Explosion
 
 Salamence @ Leftovers
 Ability: Intimidate
 EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
+Hasty Nature
 IVs: 30 Atk / 30 SpA
 - Dragon Claw
-- Flamethrower
+- Fire Blast
 - Hidden Power [Grass]
 - Brick Break
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge

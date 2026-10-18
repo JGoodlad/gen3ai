@@ -1,59 +1,56 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
+EVs: 252 HP / 44 Def / 212 SpA
 Modest Nature
 IVs: 0 Atk
 - Crunch
 - Pursuit
-- Protect
+- Fire Blast
 - Ice Beam
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 248 HP / 12 Def / 248 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 160 HP / 252 SpD / 96 Spe
+Bold Nature
 - Spikes
 - Rapid Spin
-- Hidden Power [Fire]
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 76 Def / 164 SpD / 20 Spe
-Calm Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Fire Punch
-- Toxic
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 196 Def / 64 Spe
-Bold Nature
-IVs: 0 Atk
 - Surf
-- Calm Mind
-- Rest
-- Roar
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 3 Atk / 30 SpA
-- Will-O-Wisp
-- Flamethrower
-- Hidden Power [Electric]
-- Protect
+- Explosion
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
+EVs: 4 HP / 252 Atk / 28 SpD / 224 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Rock Slide
 - Earthquake
+- Hidden Power [Fighting]
 - Double-Edge
-- Hidden Power [Bug]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 132 Atk / 124 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Protect
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Snatch
+- Flamethrower
+- Toxic
+- Soft-Boiled
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 SpA / 252 Spe
+Hasty Nature
+- Dragon Claw
+- Fire Blast
+- Brick Break
+- Roar

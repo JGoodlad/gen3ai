@@ -1,0 +1,56 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 120 Def / 244 SpA / 144 Spe
+Rash Nature
+- Wish
+- Dragon Claw
+- Flamethrower
+- Brick Break
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 120 Atk / 136 Def
+Relaxed Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Ice Beam
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 136 Atk / 148 Def / 8 SpD / 12 Spe
+Adamant Nature
+- Rest
+- Curse
+- Body Slam
+- Earthquake
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 220 Def / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Roar

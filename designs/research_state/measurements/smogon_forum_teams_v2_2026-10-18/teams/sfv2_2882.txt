@@ -1,57 +1,59 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Careful Nature
-- Spikes
-- Roar
-- Drill Peck
-- Protect
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 252 SpA / 64 SpD / 192 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
-- Hidden Power [Fire]
-- Thunder Wave
-- Rain Dance
+- Hidden Power [Grass]
+- Roar
+- Baton Pass
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 88 Atk / 176 Def / 4 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Curse
-- Rest
-
-Blissey @ Leftovers
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 200 HP / 252 Def / 56 Spe
+EVs: 72 HP / 248 SpA / 188 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Giga Drain
+- Hidden Power [Fire]
+- Calm Mind
+- Baton Pass
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 176 Def / 20 SpA / 64 Spe
 Bold Nature
 IVs: 0 Atk
-- Aromatherapy
-- Seismic Toss
-- Thunder Wave
-- Soft-Boiled
+- Surf
+- Ice Beam
+- Calm Mind
+- Rest
 
-Umbreon @ Leftovers
-Ability: Synchronize
-EVs: 248 HP / 196 SpA / 56 SpD / 8 Spe
-Calm Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Pursuit
-- Toxic
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 112 Atk / 136 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Beat Up
+- Aerial Ace
+- Hidden Power [Bug]
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 68 Def / 152 SpA / 40 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
+- Calm Mind

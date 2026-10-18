@@ -1,62 +1,59 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 Atk / 12 SpA / 244 Spe
-Lonely Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Thunderbolt
-- Drill Peck
-- Hidden Power [Fighting]
-- Thunder Wave
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 36 Def / 152 SpA / 68 Spe
-Modest Nature
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
-- Psychic
-- Calm Mind
-- Fire Punch
+- Thunderbolt
 - Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-Shiny: Yes
-EVs: 200 HP / 184 Atk / 124 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 244 Atk / 156 SpD / 108 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
+- Beat Up
 - Hidden Power [Bug]
-- Focus Punch
+- Aerial Ace
 
-Blissey @ Leftovers
-Ability: Natural Cure
-Shiny: Yes
-EVs: 252 Def / 212 SpA / 44 Spe
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
+Kingdra @ Lum Berry
+Ability: Swift Swim
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+IVs: 3 Atk / 30 SpA
+- Rain Dance
+- Surf
 - Ice Beam
-- Seismic Toss
-- Wish
+- Hidden Power [Electric]
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-Shiny: Yes
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-IVs: 0 Atk
-- Toxic
-- Protect
-- Roar
-- Spikes
+Gengar @ Leftovers
+Ability: Levitate
+Hidden Power: Grass
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
+- Hidden Power [Grass]
+- Explosion
 
 Swampert @ Leftovers
 Ability: Torrent
-Shiny: Yes
-EVs: 248 HP / 136 Def / 68 SpA / 44 SpD / 12 Spe
-Relaxed Nature
-- Surf
+EVs: 108 Def / 252 SpA / 148 Spe
+Rash Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
 - Focus Punch
-- Roar
-- Protect
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 76 SpD / 180 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic

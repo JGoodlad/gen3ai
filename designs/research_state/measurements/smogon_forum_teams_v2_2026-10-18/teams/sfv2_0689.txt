@@ -1,39 +1,57 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 HP / 252 Atk
-Adamant Nature
-- Explosion
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 212 Def / 12 SpA / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Rest
 
-Gengar @ Choice Band
-Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Explosion
-
-Muk @ Choice Band
-Ability: Sticky Hold
-EVs: 252 HP / 252 Atk / 4 Spe
-Adamant Nature
-- Explosion
-
-Golem @ Choice Band
-Ability: Rock Head
-EVs: 252 HP / 252 Atk / 4 Spe
-Adamant Nature
-- Explosion
-
-Snorlax @ Choice Band
-Ability: Immunity
-EVs: 252 HP / 252 Atk
-Adamant Nature
-- Self-Destruct
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
-Modest Nature
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
 IVs: 0 Atk
-- Pursuit
-- Crunch
-- Fire Blast
+- Ice Beam
+- Recover
+- Thunderbolt
+- Rain Dance
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 96 Def / 44 SpA / 116 SpD
+Bold Nature
+IVs: 30 HP / 30 SpA
+- Heal Bell
+- Hidden Power [Grass]
+- Leech Seed
+- Recover
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 Def / 64 Spe
+Bold Nature
+- Calm Mind
+- Rest
 - Roar
+- Surf
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Toxic
+- Fire Punch
+- Wish
+- Protect
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 120 Atk / 136 Def
+Relaxed Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Refresh

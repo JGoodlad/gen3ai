@@ -1,56 +1,58 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 108 Def / 144 SpA / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 100 Atk / 112 Def / 44 SpD
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 192 HP / 176 SpA / 140 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 16 HP / 216 Atk / 108 Def / 168 SpD
-Adamant Nature
-- Return
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
-
-Charizard @ Leftovers
-Ability: Blaze
+Zapdos @ Leftovers
+Ability: Pressure
 EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
+- Thunder
 - Hidden Power [Grass]
-- Beat Up
+- Baton Pass
+- Rain Dance
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 216 Atk / 40 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power [Bug]
+
+Jirachi @ Salac Berry
+Ability: Serene Grace
+EVs: 100 HP / 252 SpA / 156 Spe
+Modest Nature
+IVs: 0 Atk
+- Endure
+- Ice Punch
+- Thunder
+- Rain Dance
+
+Kingdra @ Leftovers
+Ability: Swift Swim
+EVs: 68 HP / 244 SpA / 196 Spe
+Modest Nature
+IVs: 0 Atk
+- Rain Dance
+- Hydro Pump
+- Ice Beam
+- Substitute
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 96 HP / 56 Atk / 136 Def / 80 SpA / 140 SpD
+Brave Nature
+- Body Slam
+- Brick Break
+- Self-Destruct
+- Thunder
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Swords Dance
+- Megahorn
+- Substitute
+- Reversal

@@ -1,0 +1,56 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Atk / 44 SpA / 48 Spe
+Brave Nature
+- Curse
+- Earthquake
+- Rock Slide
+- Hydro Pump
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Hydro Pump
+- Psychic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 216 Atk / 60 Def / 8 SpD / 20 Spe
+Adamant Nature
+- Curse
+- Body Slam
+- Shadow Ball
+- Self-Destruct
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 36 SpA / 96 SpD / 124 Spe
+Sassy Nature
+- Seismic Toss
+- Thunder
+- Superpower
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 36 Def / 176 SpA / 28 SpD / 20 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Psychic
+- Baton Pass
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 24 Atk / 232 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break

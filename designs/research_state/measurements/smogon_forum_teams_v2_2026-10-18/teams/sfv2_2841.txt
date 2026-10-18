@@ -1,56 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 240 Atk / 64 SpD / 180 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 80 Atk / 16 SpA / 228 Spe
-Brave Nature
-IVs: 30 Atk / 30 SpA
-- Earthquake
-- Ice Beam
-- Hidden Power [Grass]
-- Focus Punch
-
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 240 HP / 252 SpD / 16 Spe
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-- Spikes
-- Taunt
 - Drill Peck
+- Spikes
 - Roar
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 120 Def / 136 SpD
-Sassy Nature
-- Wish
 - Protect
-- Fire Punch
-- Body Slam
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 248 HP / 204 SpA / 56 SpD
 Calm Nature
-IVs: 2 Atk / 30 Def
-- Rest
-- Thunderbolt
-- Hidden Power [Ice]
-- Roar
+IVs: 0 Atk
+- Pursuit
+- Charm
+- Protect
+- Wish
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 56 Atk / 80 Def / 44 SpA / 44 SpD / 44 Spe
-Brave Nature
-- Curse
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 248 HP / 36 Def / 180 SpD / 44 Spe
+Careful Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
 - Earthquake
-- Rock Slide
-- Hydro Pump
+- Thunder Wave
+- Rest
+
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 100 Def / 160 SpD
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Rapid Spin
+- Protect
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 176 Atk / 96 Def / 216 SpD / 20 Spe
+Careful Nature
+- Body Slam
+- Earthquake
+- Curse
+- Rest

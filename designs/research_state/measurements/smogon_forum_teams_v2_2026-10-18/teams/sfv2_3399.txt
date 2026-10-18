@@ -1,56 +1,56 @@
-Venusaur @ Leftovers
-Ability: Overgrow
-EVs: 252 HP / 64 Def / 80 SpA / 56 SpD / 56 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Giga Drain
-- Hidden Power [Fire]
-- Leech Seed
-- Sleep Powder
-
-Registeel @ Leftovers
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 212 SpD / 44 Spe
-Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Counter
-- Explosion
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Roar
-- Toxic
+EVs: 252 HP / 176 Atk / 40 Def / 40 Spe
+Adamant Nature
 - Protect
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Hasty Nature
-- Will-O-Wisp
+- Meteor Mash
+- Earthquake
 - Explosion
-- Ice Punch
-- Thunderbolt
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 236 SpA / 8 SpD / 12 Spe
-Mild Nature
-- Crunch
-- Thunder
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Spikes
+- Rapid Spin
+- Hidden Power [Fire]
+- Counter
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
 - Focus Punch
-- Substitute
+- Self-Destruct
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 Spe
+Bold Nature
 IVs: 0 Atk
-- Substitute
-- Endeavor
-- Surf
+- Recover
 - Toxic
+- Surf
+- Ice Beam

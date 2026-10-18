@@ -1,58 +1,56 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 108 Def / 72 SpA / 44 SpD / 44 Spe
-Relaxed Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Tyranitar @ Choice Band
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 16 HP / 120 Atk / 120 Def / 252 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
 - Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Counter
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
+- Earthquake
 - Taunt
-- Will-O-Wisp
-- Thunderbolt
-- Giga Drain
+- Dragon Dance
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 184 HP / 148 SpD / 176 Spe
-Timid Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
 IVs: 2 Atk / 30 SpA
-- Substitute
 - Thunderbolt
 - Hidden Power [Grass]
-- Baton Pass
+- Roar
+- Rest
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Endeavor
+- Substitute
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 216 Atk / 16 Def / 28 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+- Meteor Mash
 - Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Sludge Bomb
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 32 Atk / 224 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Brick Break
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 84 Def / 176 SpD
+Sassy Nature
+- Body Slam
+- Fire Punch
+- Protect
+- Wish

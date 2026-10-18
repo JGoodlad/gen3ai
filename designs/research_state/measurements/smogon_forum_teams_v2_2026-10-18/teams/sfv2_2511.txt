@@ -1,56 +1,57 @@
-Regirock @ Choice Band
-Ability: Clear Body
-EVs: 200 HP / 252 Atk / 56 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Rock Slide
-- Hidden Power [Ghost]
-- Superpower
-- Explosion
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 12 Def / 248 SpD
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Protect
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Shadow Ball
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 48 HP / 252 SpA / 208 Spe
 Modest Nature
-IVs: 2 Atk / 30 Def
+IVs: 2 Atk / 30 SpA
 - Substitute
 - Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
+- Hidden Power [Grass]
+- Toxic
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 228 Atk / 16 Def / 96 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 208 HP / 252 Def / 48 Spe
+Bold Nature
+IVs: 0 Atk
+- Thunder Wave
+- Seismic Toss
+- Aromatherapy
+- Soft-Boiled
 
-Swampert @ Leftovers
+Swampert (M) @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 252 Atk / 16 Spe
-Naughty Nature
+EVs: 252 HP / 252 Def / 4 SpD
+Relaxed Nature
 - Curse
 - Earthquake
-- Rock Slide
-- Hydro Pump
+- Ice Beam
+- Rest
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Bug]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 192 Def / 44 SpD / 20 Spe
+Bold Nature
+IVs: 30 Atk / 30 SpA
+- Leech Seed
+- Hidden Power [Grass]
+- Perish Song
+- Recover

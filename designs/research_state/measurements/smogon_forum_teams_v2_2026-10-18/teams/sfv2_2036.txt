@@ -1,56 +1,57 @@
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 200 HP / 68 SpA / 140 SpD / 100 Spe
-Modest Nature
-- Spikes
-- Surf
-- Ice Beam
-- Explosion
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
 - Earthquake
+- Hydro Pump
+- Ice Beam
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
 - Psychic
 - Explosion
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 52 Atk / 208 SpD
-Hasty Nature
-- Will-O-Wisp
-- Thunder
-- Giga Drain
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 24 Atk / 88 Def / 136 SpD / 8 Spe
-Sassy Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Wish
-- Protect
-- Fire Punch
-- Hidden Power [Fighting]
-
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 4 SpA / 252 SpD
-Calm Nature
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
 IVs: 0 Atk
-- Rest
-- Sleep Talk
+- Toxic
 - Calm Mind
-- Surf
+- Hydro Pump
+- Ice Beam
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
-- Rest
+- Substitute
 - Thunderbolt
 - Hidden Power [Grass]
-- Roar
+- Baton Pass
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 96 Atk / 120 Def / 88 SpA / 172 SpD
+Brave Nature
+- Double-Edge
+- Earthquake
+- Fire Blast
+- Self-Destruct
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

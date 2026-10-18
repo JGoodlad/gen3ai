@@ -1,57 +1,58 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Rest
-- Thunderbolt
-- Hidden Power [Grass]
-- Roar
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
 
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 224 HP / 216 SpD / 68 Spe
 Careful Nature
+IVs: 0 Atk
 - Spikes
-- Thief
-- Drill Peck
+- Taunt
+- Toxic
 - Roar
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Thunder Wave
-- Surf
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
 EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
-- Ice Beam
-- Thunderbolt
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
 Bold Nature
 IVs: 0 Atk
-- Wish
+- Soft-Boiled
+- Thunder Wave
+- Seismic Toss
+- Ice Beam
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 140 SpA / 152 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
 - Protect
 - Toxic
-- Fire Punch
+- Thunderbolt
+- Hidden Power [Grass]
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 40 SpA / 44 SpD / 48 Spe
-Relaxed Nature
-- Protect
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
 - Earthquake
-- Surf
-- Ice Beam
+- Rock Slide
+- Hidden Power [Flying]

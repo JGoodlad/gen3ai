@@ -1,40 +1,11 @@
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 224 SpA / 44 Spe
+EVs: 240 HP / 252 SpA / 16 Spe
 Quiet Nature
+- Curse
 - Earthquake
 - Hydro Pump
 - Ice Beam
-- Focus Punch
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 244 SpD / 192 Spe
-Timid Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 220 SpA / 40 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 120 SpD / 148 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
-- Roar
 
 Metagross @ Leftovers
 Ability: Clear Body
@@ -46,12 +17,40 @@ IVs: 30 Atk / 30 SpA / 30 Spe
 - Psychic
 - Explosion
 
+Heracross @ Leftovers
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Substitute
+- Megahorn
+- Rock Slide
+- Focus Punch
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
-Lonely Nature
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
+- Earthquake
+- Rock Slide
 - Hidden Power [Flying]
-- Brick Break
-- Fire Blast

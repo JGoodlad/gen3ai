@@ -1,63 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-Shiny: Yes
-EVs: 220 HP / 180 SpA / 108 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Toxic
-- Protect
-
-Gengar (M) @ Leftovers
-Ability: Levitate
-Shiny: Yes
-EVs: 76 HP / 96 Atk / 152 Def / 184 Spe
-Jolly Nature
-- Will-O-Wisp
-- Night Shade
-- Focus Punch
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 188 HP / 252 Atk / 68 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Brick Break
 - Explosion
 
 Claydol @ Leftovers
 Ability: Levitate
-Shiny: Yes
-EVs: 252 HP / 112 Def / 128 SpD / 16 Spe
-Sassy Nature
-- Explosion
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
 - Rapid Spin
 - Earthquake
 - Psychic
+- Explosion
 
-Dugtrio (M) @ Choice Band
-Ability: Arena Trap
-Shiny: Yes
-EVs: 8 HP / 252 Atk / 140 SpD / 108 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Aerial Ace
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 176 SpA / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Wish
+- Calm Mind
+- Thunder
+- Hidden Power [Grass]
 
 Suicune @ Leftovers
 Ability: Pressure
-Shiny: Yes
-EVs: 236 HP / 116 SpA / 156 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
 - Calm Mind
-- Hydro Pump
+- Surf
 - Ice Beam
-- Hidden Power [Grass]
 
-Kingdra @ Lum Berry
-Ability: Swift Swim
-Shiny: Yes
-EVs: 160 HP / 252 SpA / 96 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Rain Dance
-- Hydro Pump
-- Ice Beam
-- Hidden Power [Grass]
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

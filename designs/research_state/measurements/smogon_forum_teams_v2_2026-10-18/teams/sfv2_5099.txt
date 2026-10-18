@@ -1,0 +1,59 @@
+Blaziken @ Leftovers
+Ability: Blaze
+Shiny: Yes
+EVs: 20 Atk / 238 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 Def
+- Overheat
+- Sky Uppercut
+- Hidden Power [Ice]
+- Substitute
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Surf
+- Roar
+
+Sceptile @ Petaya Berry
+Ability: Overgrow
+Shiny: Yes
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk / 30 Def
+- Leaf Blade
+- Hidden Power [Ice]
+- Endeavor
+- Substitute
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 120 Atk / 252 SpA / 136 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Drill Peck
+- Hidden Power [Grass]
+- Thunder Wave
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 236 Atk / 16 Def / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 4 Atk / 252 SpA
+Quiet Nature
+- Rock Slide
+- Fire Blast
+- Crunch
+- Pursuit

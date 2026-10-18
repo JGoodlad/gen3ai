@@ -1,0 +1,57 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Hidden Power: Bug
+EVs: 180 HP / 148 Atk / 180 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Focus Punch
+
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 136 HP / 168 SpA / 204 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Sleep Powder
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 196 SpD / 60 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Taunt
+- Toxic
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 200 HP / 72 Def / 52 SpA / 184 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Giga Drain
+- Explosion
+
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Substitute
+- Rock Slide
+- Earthquake
+- Hidden Power [Flying]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 224 HP / 80 Def / 160 SpA / 44 Spe
+Quiet Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Focus Punch

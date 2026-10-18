@@ -1,0 +1,56 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 68 SpD / 188 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Spikes
+- Taunt
+- Hidden Power [Fighting]
+- Roar
+
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 216 HP / 228 Atk / 64 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Superpower
+- Earthquake
+- Explosion
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 104 Atk / 152 SpA
+Quiet Nature
+- Ice Beam
+- Thunderbolt
+- Explosion
+- Thunder Wave
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 12 Def / 16 SpA / 112 SpD / 120 Spe
+Modest Nature
+- Fire Punch
+- Giga Drain
+- Will-O-Wisp
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 200 HP / 216 Atk / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin

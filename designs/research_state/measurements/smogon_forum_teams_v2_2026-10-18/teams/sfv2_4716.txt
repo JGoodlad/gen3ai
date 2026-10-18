@@ -1,0 +1,57 @@
+Glalie @ Salac Berry
+Ability: Inner Focus
+EVs: 252 HP / 124 Atk / 24 SpD / 108 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Fighting]
+- Explosion
+- Substitute
+- Spikes
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 80 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 200 SpD / 56 Spe
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Counter
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 76 SpA / 36 SpD / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Leech Seed
+- Psychic
+- Recover
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Double-Edge
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Roar

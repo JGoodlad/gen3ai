@@ -1,55 +1,57 @@
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Recover
-- Brick Break
-- Rock Slide
-- Shadow Ball
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Grass]
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
+EVs: 252 HP / 148 SpA / 108 Spe
+Brave Nature
+- Pursuit
+- Crunch
+- Fire Blast
+- Brick Break
 
-Celebi @ Leftovers
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 228 Def / 32 SpD / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Roar
+- Toxic
+- Protect
+
+Blissey @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 4 SpD / 252 Spe
-Jolly Nature
-- Recover
-- Substitute
-- Leech Seed
-- Baton Pass
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Thunder Wave
+- Wish
+- Soft-Boiled
 
-Gyarados @ Leftovers
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Roar
+- Overheat
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Protect
+- Toxic
+- Drill Peck
+
+Salamence (M) @ Leftovers
 Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Earthquake
-- Hidden Power [Flying]
-- Double-Edge
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Brick Break

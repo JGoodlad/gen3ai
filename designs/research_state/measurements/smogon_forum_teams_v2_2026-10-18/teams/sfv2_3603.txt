@@ -1,56 +1,57 @@
-Ludicolo @ Lum Berry
-Ability: Swift Swim
-EVs: 252 SpA / 72 SpD / 184 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Rain Dance
-- Hydro Pump
-- Hidden Power [Grass]
-- Ice Beam
-
-Kingdra @ Petaya Berry
-Ability: Swift Swim
-EVs: 104 Def / 252 SpA / 152 Spe
-Modest Nature
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
 IVs: 0 Atk
-- Rain Dance
-- Substitute
-- Hydro Pump
+- Rest
+- Calm Mind
+- Surf
 - Ice Beam
 
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 24 SpD / 232 Spe
-Adamant Nature
-- Substitute
-- Swords Dance
-- Megahorn
-- Reversal
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Toxic
+- Seismic Toss
+- Explosion
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 4 HP / 252 Atk / 252 Def
+Shiny: Yes
+EVs: 252 Atk / 120 Def / 136 SpD
 Adamant Nature
 - Curse
-- Return
+- Double-Edge
 - Earthquake
 - Shadow Ball
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 32 SpD / 224 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Rock Slide
-- Aerial Ace
+Ludicolo @ Leftovers
+Ability: Swift Swim
+EVs: 248 HP / 144 Def / 16 SpA / 100 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Leech Seed
+- Surf
+- Rain Dance
 
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 Atk / 72 Def / 184 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

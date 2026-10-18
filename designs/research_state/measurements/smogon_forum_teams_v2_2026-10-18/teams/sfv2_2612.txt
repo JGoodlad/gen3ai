@@ -1,56 +1,57 @@
-Skarmory
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 8 Atk / 248 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 84 SpA / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+- Taunt
+
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 252 HP / 240 SpD / 16 Spe
 Careful Nature
 - Spikes
-- Thief
 - Drill Peck
 - Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Aromatherapy
-- Thunder Wave
-- Seismic Toss
+- Protect
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 176 Def / 60 SpA / 20 Spe
-Bold Nature
-IVs: 0 Atk
-- Recover
+EVs: 100 HP / 252 SpA / 120 SpD / 36 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Leech Seed
-- Calm Mind
 - Psychic
+- Giga Drain
+- Hidden Power [Fire]
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Calm Mind
-- Fire Punch
-- Psychic
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 176 Def / 40 SpA / 44 SpD
+Relaxed Nature
+- Curse
+- Earthquake
+- Ice Beam
+- Hydro Pump
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 240 Def / 16 Spe
-Bold Nature
-- Rest
-- Calm Mind
-- Surf
-- Roar
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Double-Edge
+- Hidden Power [Bug]

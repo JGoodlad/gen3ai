@@ -1,0 +1,60 @@
+Ninjask @ Salac Berry
+Ability: Speed Boost
+EVs: 84 HP / 252 Atk / 172 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Substitute
+- Swords Dance
+- Silver Wind
+- Hidden Power [Rock]
+
+Smeargle
+Ability: Own Tempo
+Shiny: Yes
+EVs: 252 HP / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Endure
+- Recycle
+- Spore
+- Baton Pass
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Sleep Talk
+- Rest
+
+Scizor @ Salac Berry
+Ability: Swarm
+EVs: 126 HP / 252 Atk / 130 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Reversal
+- Swords Dance
+- Endure
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Rain Dance
+- Protect
+- Seismic Toss
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Rain Dance
+- Thunder Wave
+- Hidden Power [Fire]

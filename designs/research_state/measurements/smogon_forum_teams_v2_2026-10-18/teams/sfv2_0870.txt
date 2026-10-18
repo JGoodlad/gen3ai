@@ -1,60 +1,57 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-Shiny: Yes
-EVs: 252 HP / 248 Atk / 8 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Focus Punch
-- Hidden Power [Bug]
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 240 SpD / 16 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Whirlwind
-- Toxic
-- Protect
-
-Blissey @ Leftovers
-Ability: Natural Cure
-Shiny: Yes
-EVs: 4 HP / 252 Def / 252 SpA
+Arcanine @ Leftovers
+Ability: Intimidate
+EVs: 64 HP / 252 SpA / 192 Spe
 Modest Nature
-IVs: 0 Atk
-- Thunderbolt
-- Counter
-- Soft-Boiled
-- Ice Beam
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Crunch
+- Extreme Speed
+- Hidden Power [Grass]
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 52 Def / 32 SpD / 172 Spe
-Timid Nature
-IVs: 0 Atk
-- Surf
-- Thunder Wave
-- Recover
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 236 HP / 20 Def / 252 SpA
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Psychic
+- Ice Beam
+- Hidden Power [Fire]
 - Rapid Spin
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 244 Def / 12 Spe
-Impish Nature
-- Meteor Mash
+Rhydon (F) @ Choice Band
+Ability: Rock Head
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Rock Slide
 - Earthquake
-- Protect
-- Explosion
+- Megahorn
+- Double-Edge
 
-Salamence @ Leftovers
+Lapras @ Leftovers
+Ability: Water Absorb
+EVs: 96 Def / 160 SpA / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Thunderbolt
+- Heal Bell
+
+Gyarados @ Leftovers
 Ability: Intimidate
-EVs: 172 Atk / 212 SpD / 124 Spe
+EVs: 52 HP / 252 Atk / 204 Spe
 Adamant Nature
 IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
 - Dragon Dance
+- Hidden Power [Flying]
 - Earthquake
-- Rock Slide
+- Thunder Wave
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 140 Def / 60 SpD / 56 Spe
+Impish Nature
+- Seismic Toss
+- Counter
+- Thunder Wave
+- Explosion

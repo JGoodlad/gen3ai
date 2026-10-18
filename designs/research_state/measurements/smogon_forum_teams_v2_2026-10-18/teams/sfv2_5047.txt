@@ -1,0 +1,57 @@
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Brick Break
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Rain Dance
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Curse
+- Rest
+- Return
+- Earthquake
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Ludicolo @ Leftovers
+Ability: Swift Swim
+EVs: 152 HP / 252 SpA / 104 Spe
+Modest Nature
+IVs: 0 Atk
+- Rain Dance
+- Surf
+- Leech Seed
+- Ice Beam
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 120 Def / 136 SpD
+Calm Nature
+IVs: 0 Atk / 0 Spe
+- Wish
+- Protect
+- Pursuit
+- Toxic

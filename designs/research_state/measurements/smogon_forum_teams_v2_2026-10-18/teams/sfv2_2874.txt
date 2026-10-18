@@ -1,55 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 232 HP / 224 Atk / 52 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 248 HP / 176 SpA / 84 Spe
-Modest Nature
-IVs: 30 Atk / 30 Def
-- Protect
-- Hidden Power [Ice]
-- Toxic
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 244 SpD / 16 Spe
-Careful Nature
-- Spikes
+- Hidden Power [Grass]
 - Roar
-- Drill Peck
-- Protect
+- Rest
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 228 Def / 32 Spe
-Bold Nature
-- Surf
-- Toxic
-- Protect
-- Roar
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 12 Atk / 176 SpA / 72 SpD
+Quiet Nature
+- Rock Slide
+- Earthquake
+- Crunch
+- Pursuit
 
-Blissey (F) @ Leftovers
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 216 Atk / 16 Def / 28 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Starmie @ Leftovers
 Ability: Natural Cure
-EVs: 224 HP / 252 Def / 32 Spe
+EVs: 248 HP / 164 Def / 40 SpD / 56 Spe
 Bold Nature
-- Soft-Boiled
-- Wish
-- Seismic Toss
+IVs: 0 Atk
+- Surf
 - Thunder Wave
+- Rapid Spin
+- Recover
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 140 HP / 16 SpA / 224 SpD / 128 Spe
-Modest Nature
-- Taunt
-- Will-O-Wisp
-- Giga Drain
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 32 Atk / 224 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Brick Break
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 84 Def / 176 SpD
+Sassy Nature
+- Body Slam
 - Fire Punch
+- Protect
+- Wish

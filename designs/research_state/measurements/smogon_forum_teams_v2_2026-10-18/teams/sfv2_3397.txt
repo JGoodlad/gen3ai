@@ -1,55 +1,57 @@
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 160 HP / 252 SpA / 96 Spe
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 200 HP / 68 SpA / 140 SpD / 100 Spe
 Modest Nature
-IVs: 0 Atk
-- Surf
-- Recover
-- Ice Beam
-- Refresh
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-- Spore
-- Focus Punch
-- Substitute
-- Mach Punch
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
+- Spikes
 - Rapid Spin
-- Earthquake
-- Psychic
+- Surf
 - Explosion
 
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
 Timid Nature
-IVs: 30 Atk / 30 SpA
-- Calm Mind
+IVs: 0 Atk
+- Taunt
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 184 HP / 148 SpD / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
 - Thunderbolt
 - Hidden Power [Grass]
-- Substitute
+- Baton Pass
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 156 Def / 92 SpA / 20 Spe
 Modest Nature
-- Pursuit
-- Crunch
-- Fire Blast
-- Focus Punch
+IVs: 3 Atk / 30 SpA
+- Leech Seed
+- Calm Mind
+- Hidden Power [Electric]
+- Baton Pass
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 224 Atk / 60 Def / 8 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Focus Punch
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 200 HP / 252 SpA / 56 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Agility
+- Metal Sound
+- Thunderbolt
+- Hidden Power [Grass]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
+Relaxed Nature
+- Protect
 - Earthquake
+- Hydro Pump
+- Roar

@@ -1,0 +1,56 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 Atk / 76 SpA / 180 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Thunderbolt
+- Toxic
+- Drill Peck
+- Hidden Power [Fighting]
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 76 HP / 180 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Thunder Wave
+- Hidden Power [Grass]
+- Baton Pass
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 116 SpD / 140 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Taunt
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 168 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Tyranitar @ Salac Berry
+Ability: Sand Stream
+EVs: 16 HP / 188 Atk / 120 Def / 184 Spe
+Naughty Nature
+- Rock Slide
+- Earthquake
+- Ice Beam
+- Dragon Dance

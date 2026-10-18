@@ -1,57 +1,56 @@
-Metagross @ Leftovers
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Hidden Power: Grass
+EVs: 40 Atk / 252 SpA / 216 Spe
+Mild Nature
+- Pursuit
+- Thunder
+- Ice Beam
+- Focus Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 32 HP / 252 SpA / 4 SpD / 220 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Psychic
+- Hidden Power [Fire]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 176 HP / 236 Atk / 56 SpA / 40 Spe
+Brave Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Ice Beam
+- Hydro Pump
+- Hidden Power [Bug]
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpD
+Bold Nature
+- Recover
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+
+Heracross @ Choice Band
+Ability: Swarm
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Megahorn
+- Brick Break
+- Rock Slide
+- Focus Punch
+
+Metagross @ Lum Berry
 Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+EVs: 168 HP / 252 Atk / 88 Spe
 Adamant Nature
 - Agility
 - Meteor Mash
 - Earthquake
 - Explosion
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Toxic
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Fire]
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 136 Atk / 144 Def / 168 SpD / 28 Spe
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
-
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 HP
-- Substitute
-- Swords Dance
-- Megahorn
-- Rock Slide
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 32 SpD / 224 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Dragon Dance
-- Earthquake
-- Hidden Power [Ghost]
-- Double-Edge
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 116 SpD / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Rock Slide
-- Brick Break
-- Hidden Power [Flying]

@@ -1,59 +1,56 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 252 Atk / 120 SpD / 136 Spe
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 96 Def / 136 SpD / 28 Spe
+Impish Nature
+- Sludge Bomb
+- Pain Split
+- Will-O-Wisp
+- Explosion
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 Atk / 4 SpD / 252 Spe
 Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-- Brick Break
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 Def / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Substitute
-- Toxic
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 208 Def / 20 SpA / 28 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Toxic
-- Protect
+IVs: 30 SpA / 30 SpD
+- Drill Peck
+- Spikes
 - Roar
+- Hidden Power [Ground]
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 216 Atk / 20 Def / 20 Spe
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 20 Atk / 144 Def / 56 SpD / 40 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
 - Earthquake
-- Focus Punch
-- Hidden Power [Bug]
+- Protect
+- Toxic
+- Rest
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 80 Def / 40 SpA / 72 SpD / 64 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 228 SpD / 32 Spe
 Calm Nature
 IVs: 2 Atk / 30 SpA
-- Leech Seed
+- Thunderbolt
 - Hidden Power [Grass]
-- Perish Song
-- Recover
+- Roar
+- Rest
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 120 Def / 136 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Thunder Wave
-- Recover
-- Rapid Spin
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Double-Edge
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 84 Def / 176 SpD
+Sassy Nature
+- Body Slam
+- Fire Punch
+- Protect
+- Wish

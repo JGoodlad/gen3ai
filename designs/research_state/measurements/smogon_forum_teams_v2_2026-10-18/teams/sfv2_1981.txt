@@ -1,58 +1,58 @@
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 68 Def / 140 SpA / 48 Spe
-Quiet Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Calm Mind
-- Ice Punch
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 SpD / 4 Spe
+Calm Nature
+IVs: 30 Spe
+- Rest
+- Toxic
 - Thunderbolt
-- Hidden Power [Fighting]
+- Roar
 
-Gyarados @ Liechi Berry
-Ability: Intimidate
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Substitute
-- Flail
-- Dragon Dance
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 64 HP / 176 Atk / 108 Def / 144 SpD / 16 Spe
-Adamant Nature
-- Body Slam
-- Earthquake
-- Self-Destruct
-- Shadow Ball
-
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 188 Atk / 68 SpD
-Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Hidden Power [Rock]
-- Superpower
-- Explosion
-- Thunder Wave
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 252 SpA / 4 SpD / 252 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 252 SpA / 16 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Thunder Wave
-- Sunny Day
+IVs: 30 SpD / 30 Spe
+- Crunch
+- Pursuit
+- Flamethrower
+- Brick Break
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 8 HP / 248 Atk / 252 Spe
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Toxic
+- Roar
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 216 Def / 8 SpA / 36 Spe
+Lax Nature
+- Toxic
+- Earthquake
+- Rock Slide
+- Fire Blast
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Aerial Ace
+- Rock Slide
 - Hidden Power [Bug]
-- Beat Up
+- Double-Edge

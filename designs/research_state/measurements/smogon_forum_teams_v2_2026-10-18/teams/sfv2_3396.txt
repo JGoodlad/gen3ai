@@ -1,57 +1,57 @@
-Venusaur @ Leftovers
-Ability: Overgrow
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Giga Drain
-- Hidden Power [Ice]
-- Sleep Powder
-- Leech Seed
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Substitute
-- Focus Punch
-
-Swampert @ Leftovers
+Swampert @ Salac Berry
 Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Curse
-- Hydro Pump
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Wish
+- Substitute
+- Hydro Pump
+- Roar
+- Endeavor
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
 - Spikes
 - Rapid Spin
-- Hidden Power [Bug]
+- Ice Beam
 - Explosion
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
-Modest Nature
-- Pursuit
-- Crunch
-- Fire Blast
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
+Hasty Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Thunder
+- Giga Drain
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 184 HP / 148 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Thunderbolt
 - Roar
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 176 Atk / 196 SpD / 136 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Brick Break

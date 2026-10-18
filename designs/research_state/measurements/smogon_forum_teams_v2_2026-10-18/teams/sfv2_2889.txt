@@ -1,56 +1,59 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 152 HP / 216 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Rock Slide
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 204 HP / 216 Atk / 88 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Rock Slide
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 252 SpA / 64 SpD / 192 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Thunder Wave
+- Hidden Power [Grass]
+- Roar
+- Baton Pass
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 104 SpD / 152 Spe
-Jolly Nature
-- Leech Seed
-- Shadow Ball
-- Swords Dance
+EVs: 72 HP / 248 SpA / 188 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Giga Drain
+- Hidden Power [Fire]
+- Calm Mind
 - Baton Pass
 
-Aerodactyl @ Liechi Berry
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Substitute
-- Rock Slide
-- Earthquake
-- Double-Edge
-
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 128 HP / 252 Def / 28 SpD / 100 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 176 Def / 76 SpA / 8 Spe
 Bold Nature
 IVs: 0 Atk
 - Surf
-- Wish
-- Roar
-- Baton Pass
+- Ice Beam
+- Calm Mind
+- Rest
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Endeavor
+- Substitute
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 188 SpA / 68 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Calm Mind
+- Substitute

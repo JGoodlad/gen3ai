@@ -1,56 +1,56 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 20 Def / 28 SpD / 32 Spe
-Adamant Nature
-- Toxic
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Substitute
-- Toxic
-- Thunderbolt
-- Hidden Power [Fire]
-
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 136 Def / 40 SpA / 44 SpD / 48 Spe
+EVs: 248 HP / 176 Def / 84 SpD
 Relaxed Nature
 - Curse
+- Protect
 - Earthquake
-- Hydro Pump
 - Ice Beam
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 136 Atk / 152 Def / 172 SpD / 16 Spe
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 240 HP / 216 Atk / 8 SpA / 36 SpD / 8 Spe
 Adamant Nature
-- Body Slam
 - Earthquake
-- Shadow Ball
-- Self-Destruct
+- Explosion
+- Psychic
+- Rapid Spin
 
-Charizard @ Salac Berry
-Ability: Blaze
-EVs: 88 HP / 252 Atk / 16 SpD / 152 Spe
-Lonely Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Belly Drum
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 112 Def / 148 SpD
+Calm Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Wish
+- Hidden Power [Grass]
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 248 HP / 176 Def / 16 SpD / 68 Spe
+Impish Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
 - Hidden Power [Flying]
+- Thunder Wave
+- Heal Bell
+- Roar
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Knock Off
 - Rock Slide
-- Fire Blast
+- Rest
+- Earthquake
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 248 HP / 84 Def / 176 SpD
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Mean Look
+- Toxic
+- Pursuit

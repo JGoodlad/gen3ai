@@ -1,56 +1,57 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 196 HP / 24 Atk / 176 SpA / 112 Spe
-Rash Nature
-- Fire Blast
-- Ice Beam
-- Brick Break
-- Pursuit
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 196 SpD / 60 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Toxic
-- Taunt
-- Counter
-
-Lanturn @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 88 Def / 168 SpA / 84 SpD / 160 Spe
-Modest Nature
-IVs: 0 Atk
-- Hydro Pump
-- Thunderbolt
-- Ice Beam
-- Confuse Ray
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 104 HP / 48 Atk / 180 SpA / 176 Spe
+EVs: 4 HP / 252 SpA / 252 Spe
 Mild Nature
 IVs: 30 Atk / 30 SpA
-- Brick Break
 - Dragon Claw
-- Fire Blast
+- Flamethrower
 - Hidden Power [Grass]
+- Brick Break
 
-Breloom @ Black Belt
-Ability: Effect Spore
-EVs: 76 HP / 216 Atk / 216 Spe
-Adamant Nature
-- Spore
-- Focus Punch
-- Sky Uppercut
-- Mach Punch
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 76 Def / 172 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Rest
+- Calm Mind
+- Sleep Talk
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 96 Atk / 72 Def / 88 Spe
+EVs: 208 HP / 188 Atk / 112 Spe
 Adamant Nature
 - Meteor Mash
 - Earthquake
+- Rock Slide
 - Agility
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 236 SpA / 20 SpD
+Sassy Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Ice Beam
+- Rapid Spin
 - Explosion
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 16 HP / 252 SpA / 240 Spe
+Modest Nature
+IVs: 0 Atk
+- Fire Blast
+- Pursuit
+- Beat Up
+- Will-O-Wisp
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 HP / 96 Atk / 48 Def / 112 SpD
+Careful Nature
+- Body Slam
+- Earthquake
+- Curse
+- Rest

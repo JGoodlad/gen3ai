@@ -1,56 +1,59 @@
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 248 HP / 212 SpA / 8 SpD / 40 Spe
-Quiet Nature
-- Pursuit
-- Crunch
-- Fire Blast
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Ice Beam
 - Brick Break
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Thunder Wave
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 68 HP / 252 Atk / 188 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
-- Double-Edge
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 120 SpA / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Leech Seed
-- Psychic
-- Hidden Power [Grass]
-
-Steelix @ Leftovers
-Ability: Rock Head
-EVs: 252 HP / 36 Atk / 220 SpD
-Adamant Nature
-- Earthquake
-- Explosion
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
 - Roar
-- Rock Slide
+- Protect
+- Toxic
 
-Claydol @ Leftovers
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Hidden Power [Grass]
+- Flamethrower
+- Focus Punch
+
+Gengar @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 28 SpD / 12 Spe
-Brave Nature
+EVs: 160 HP / 164 SpD / 184 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Taunt
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 212 Def / 48 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Protect
 - Earthquake
+- Hidden Power [Rock]
+- Toxic
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Soft-Boiled
 - Ice Beam
-- Rapid Spin
-- Explosion
+- Thunderbolt

@@ -1,57 +1,58 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 244 Atk / 12 SpA / 252 Spe
-Naive Nature
-IVs: 30 Def / 30 SpA
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Grass]
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 152 SpA / 64 Spe
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
 Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Psychic
-- Fire Punch
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
 - Substitute
 
-Metagross @ Lum Berry
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 104 Def / 40 SpA / 80 SpD / 32 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
+Dugtrio (F) @ Choice Band
+Ability: Arena Trap
+EVs: 80 HP / 208 Atk / 220 Spe
 Adamant Nature
-- Agility
-- Meteor Mash
+IVs: 30 SpD / 30 Spe
 - Earthquake
-- Explosion
+- Aerial Ace
+- Hidden Power [Bug]
+- Beat Up
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 76 HP / 252 SpA / 180 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 188 HP / 216 SpA / 104 Spe
-Rash Nature
+Machamp (M) @ Leftovers
+Ability: Guts
+EVs: 252 HP / 136 Atk / 112 Def / 8 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Low Kick
 - Earthquake
-- Ice Beam
-- Hydro Pump
-- Focus Punch
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Flying]
+- Hidden Power [Ghost]
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 80 HP / 180 Atk / 124 Def / 108 SpD / 16 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Gengar (F) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 44 Def / 96 SpA / 116 Spe
+Modest Nature
+IVs: 0 Atk
+- Fire Punch
+- Ice Punch
+- Giga Drain
+- Will-O-Wisp

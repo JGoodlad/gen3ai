@@ -1,16 +1,16 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
-Modest Nature
-IVs: 1 Atk / 30 Spe
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
-- Rain Dance
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
 
 Starmie @ Leftovers
 Ability: Natural Cure
-EVs: 252 SpA / 4 SpD / 252 Spe
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
 - Rapid Spin
@@ -18,40 +18,41 @@ IVs: 0 Atk
 - Ice Beam
 - Thunderbolt
 
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpA
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Toxic
+- Ice Beam
+- Thunderbolt
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
 Adamant Nature
-- Meteor Mash
+- Dragon Dance
 - Earthquake
 - Rock Slide
-- Explosion
+- Double-Edge
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 176 SpA / 140 Spe
 Modest Nature
 IVs: 0 Atk
-- Rest
+- Leech Seed
 - Calm Mind
-- Surf
-- Ice Beam
+- Giga Drain
+- Psychic
 
-Heracross @ Choice Band
-Ability: Swarm
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Megahorn
-- Rock Slide
-- Hidden Power [Ghost]
-- Brick Break
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 176 Atk / 128 Def / 172 SpD
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Shadow Ball
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Flamethrower
+- Hidden Power [Grass]
+- Focus Punch

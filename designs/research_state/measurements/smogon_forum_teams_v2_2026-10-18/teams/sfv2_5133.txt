@@ -1,0 +1,56 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 116 HP / 252 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 SpA
+Bold Nature
+- Thunder
+- Rain Dance
+- Protect
+- Wish
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk
+
+Snorlax @ Leftovers
+Ability: Thick Fat
+EVs: 144 HP / 68 Atk / 132 Def / 164 SpD
+Adamant Nature
+- Curse
+- Body Slam
+- Shadow Ball
+- Rest
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 16 HP / 200 Atk / 120 Def / 172 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Kingdra @ Leftovers
+Ability: Swift Swim
+EVs: 160 HP / 252 SpA / 96 Spe
+Modest Nature
+IVs: 30 SpA
+- Rain Dance
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Electric]

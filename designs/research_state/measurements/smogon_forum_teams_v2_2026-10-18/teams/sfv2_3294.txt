@@ -1,57 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 136 Atk / 188 Spe
+Snorlax @ Choice Band
+Ability: Immunity
+EVs: 8 HP / 252 Atk / 48 Def / 116 SpD / 84 Spe
 Adamant Nature
-- Rock Slide
-- Earthquake
-- Focus Punch
-- Dragon Dance
+- Body Slam
+- Self-Destruct
+- Brick Break
+- Shadow Ball
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 240 SpD / 16 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Roar
-- Toxic
-- Protect
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 40 Def / 152 SpA / 68 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
-- Flamethrower
+- Calm Mind
+- Psychic
+- Fire Punch
 - Hidden Power [Grass]
-- Overheat
 
-Blissey (F) @ Leftovers
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 192 Atk / 64 SpD
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Thunder Wave
+- Hidden Power [Rock]
+- Explosion
+- Earthquake
+
+Starmie @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
+EVs: 252 SpA / 4 SpD / 252 Spe
 Modest Nature
 IVs: 0 Atk
-- Calm Mind
-- Soft-Boiled
-- Ice Beam
+- Surf
 - Thunderbolt
+- Ice Beam
+- Rapid Spin
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 40 Def / 8 SpA / 116 SpD / 96 Spe
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 IVs: 0 Atk
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
-- Taunt
+- Surf
+- Toxic
+- Substitute
+- Endeavor
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 216 Def / 40 SpD
-Relaxed Nature
-- Earthquake
-- Hydro Pump
-- Ice Beam
-- Protect
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 144 Atk / 112 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Rock Slide

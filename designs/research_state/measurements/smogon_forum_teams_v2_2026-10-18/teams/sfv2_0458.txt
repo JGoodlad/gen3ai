@@ -1,58 +1,58 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 60 HP / 252 SpA / 196 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Toxic
-- Protect
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 252 Atk / 4 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 4 SpD / 252 Spe
+EVs: 248 HP / 8 Def / 252 SpA
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Giga Drain
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Protect
+- Counter
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 12 Def / 248 SpD
+Sassy Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Spikes
+- Rapid Spin
 - Hidden Power [Fire]
-- Calm Mind
-- Baton Pass
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Seismic Toss
+- Ice Beam
+- Sing
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 168 HP / 252 SpA / 88 Spe
-Modest Nature
+EVs: 248 HP / 180 Def / 80 SpD
+Relaxed Nature
 - Surf
-- Ice Beam
-- Earthquake
 - Focus Punch
+- Protect
+- Roar
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 76 Def / 148 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Ice Punch
-- Thunder
-- Wish
-- Calm Mind
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 252 Atk / 4 SpD / 252 Spe
 Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
 - Earthquake
 - Double-Edge
-- Hidden Power [Flying]
+- Hidden Power [Bug]

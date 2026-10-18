@@ -1,0 +1,59 @@
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Refresh
+- Toxic
+- Surf
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
+- Counter
+
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 140 Def / 116 SpD
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Rapid Spin
+- Protect
+- Hidden Power [Rock]
+- Earthquake
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Fire Punch

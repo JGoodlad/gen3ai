@@ -1,56 +1,55 @@
-Snorlax (M) @ Leftovers
-Ability: Thick Fat
-EVs: 92 HP / 128 Atk / 124 Def / 164 SpD
-Adamant Nature
-- Curse
-- Shadow Ball
-- Body Slam
-- Self-Destruct
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Hydro Pump
+- Roar
+- Endeavor
 
-Tyranitar (M) @ Lum Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 176 HP / 252 SpA / 80 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Pursuit
-- Crunch
-- Fire Blast
-- Hidden Power [Grass]
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 120 Def / 100 SpA / 36 Spe
-Bold Nature
-IVs: 30 Atk / 30 SpA
-- Leech Seed
-- Perish Song
-- Recover
-- Hidden Power [Grass]
-
-Aerodactyl (M) @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
 - Earthquake
 - Rock Slide
 - Double-Edge
 
-Forretress (M) @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 252 SpD / 4 Spe
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 100 Atk / 32 SpA / 16 SpD
 Careful Nature
-- Spikes
 - Rapid Spin
 - Earthquake
+- Psychic
 - Explosion
 
-Swampert (M) @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 252 Def / 8 SpD
-Relaxed Nature
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Toxic
+- Seismic Toss
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 196 Atk / 200 SpD / 112 Spe
+Adamant Nature
+- Dragon Dance
 - Earthquake
-- Protect
-- Hydro Pump
-- Ice Beam
+- Rock Slide
+- Brick Break

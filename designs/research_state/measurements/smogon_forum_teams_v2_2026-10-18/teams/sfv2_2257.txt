@@ -1,56 +1,57 @@
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Toxic
-- Surf
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
 - Ice Beam
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 224 Atk / 4 SpD / 96 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
+EVs: 184 HP / 196 SpA / 128 Spe
+Modest Nature
+- Crunch
+- Pursuit
+- Flamethrower
+- Brick Break
 
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 224 HP / 216 SpD / 68 Spe
 Careful Nature
+IVs: 0 Atk
 - Spikes
-- Thief
-- Drill Peck
+- Taunt
+- Toxic
 - Roar
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 100 Atk / 112 Def / 16 SpD / 28 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 76 HP / 252 SpA / 180 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 SpD
-Impish Nature
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
 - Soft-Boiled
-- Wish
-- Thunder Wave
-- Seismic Toss
+- Calm Mind
+- Ice Beam
+- Thunderbolt
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 Def
-- Rest
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunder Wave
 - Thunderbolt
-- Hidden Power [Ice]
+- Hidden Power [Grass]
 - Roar

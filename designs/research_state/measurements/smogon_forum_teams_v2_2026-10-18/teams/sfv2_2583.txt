@@ -1,58 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 240 Def / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Roar
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 240 HP / 16 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Counter
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+- Substitute
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 16 Def / 112 SpA / 8 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 76 HP / 36 Def / 240 SpA / 156 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+- Leech Seed
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 224 SpD / 32 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Taunt
+- Roar
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 176 Def / 36 SpA / 48 Spe
 Relaxed Nature
-- Rapid Spin
+- Hydro Pump
 - Earthquake
 - Ice Beam
-- Explosion
+- Focus Punch
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 SpD
-Impish Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Aromatherapy
-- Thunder Wave
-- Seismic Toss
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 248 SpD / 20 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
-- Toxic
-- Thunderbolt
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 188 Def / 48 SpA / 20 Spe
+EVs: 252 Def / 252 SpA / 4 Spe
 Bold Nature
 IVs: 0 Atk
-- Wish
-- Calm Mind
-- Fire Punch
-- Psychic
+- Ice Beam
+- Seismic Toss
+- Thunder Wave
+- Soft-Boiled
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin

@@ -1,57 +1,56 @@
-Jynx (F) @ Never-Melt Ice
-Ability: Oblivious
-EVs: 252 SpA / 12 SpD / 244 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Ice Beam
-- Lovely Kiss
-- Hidden Power [Fire]
-- Taunt
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 4 HP / 252 SpD / 252 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide
+- Substitute
+- Spikes
+- Spore
+- Explosion
 
 Jirachi @ Salac Berry
 Ability: Serene Grace
-EVs: 60 HP / 252 SpA / 196 Spe
-Modest Nature
-IVs: 0 Atk
-- Rain Dance
-- Endure
-- Thunder
+EVs: 72 Atk / 236 SpA / 200 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Fire Punch
+- Dynamic Punch
+- Hidden Power [Grass]
 - Ice Punch
 
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-- Swords Dance
-- Endure
-- Reversal
-- Megahorn
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 200 Atk / 72 Def / 76 SpA / 160 SpD
-Brave Nature
-- Return
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 4 HP / 252 SpA / 252 Spe
+Naive Nature
+- Hydro Pump
 - Earthquake
-- Thunder
-- Self-Destruct
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 68 SpA / 188 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
 - Ice Beam
+- Focus Punch
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 172 Atk / 144 SpA / 192 Spe
+Hasty Nature
+- Focus Punch
+- Explosion
+- Thunderbolt
+- Giga Drain
+
+Tyranitar (F) @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 124 HP / 116 Atk / 128 SpD / 140 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Dragon Dance
+- Rock Slide

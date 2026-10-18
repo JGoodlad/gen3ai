@@ -1,57 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 176 Atk / 196 SpD / 136 Spe
+Regirock @ Lum Berry
+Ability: Clear Body
+Shiny: Yes
+EVs: 216 HP / 180 Atk / 112 SpD
 Adamant Nature
-- Dragon Dance
-- Earthquake
+- Counter
 - Rock Slide
-- Brick Break
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-Hidden Power: Bug
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Double-Edge
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
+- Thunder Wave
 - Explosion
 
-Claydol @ Choice Band
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 252 Atk / 4 Def
-Impish Nature
+EVs: 16 HP / 244 Atk / 4 Def / 244 Spe
+Jolly Nature
 - Rapid Spin
 - Earthquake
 - Shadow Ball
 - Explosion
 
-Registeel @ Leftovers
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 200 SpD / 56 Spe
-Calm Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Grass]
+EVs: 192 HP / 176 Atk / 140 SpD
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
 - Explosion
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 244 Atk / 84 SpD / 180 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 196 HP / 8 Def / 128 SpA / 176 Spe
+Modest Nature
 IVs: 0 Atk
-- Substitute
+- Psychic
+- Giga Drain
+- Leech Seed
+- Calm Mind
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 92 Def / 108 SpA / 68 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
 - Surf
+- Rest
 - Roar
-- Endeavor

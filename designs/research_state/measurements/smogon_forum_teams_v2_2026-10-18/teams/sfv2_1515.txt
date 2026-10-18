@@ -1,56 +1,55 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 196 SpA / 128 Spe
-Modest Nature
-- Crunch
-- Pursuit
-- Flamethrower
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
-- Roar
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 44 SpA / 44 SpD / 44 Spe
+Relaxed Nature
+- Protect
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
+EVs: 252 HP / 128 Atk / 112 Def / 16 SpD
+Careful Nature
 - Rapid Spin
 - Earthquake
-- Psychic
+- Shadow Ball
 - Explosion
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 16 HP / 56 Atk / 160 Def / 248 SpD / 28 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Hidden Power [Bug]
+- Brick Break
+- Knock Off
 
-Blissey (F) @ Leftovers
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+- Rest
+- Dragon Dance
+- Earthquake
+- Rock Slide
+
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
+EVs: 252 HP / 224 SpA / 32 Spe
 Modest Nature
 IVs: 0 Atk
-- Soft-Boiled
+- Leech Seed
 - Calm Mind
-- Ice Beam
-- Thunderbolt
+- Giga Drain
+- Psychic
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
+EVs: 24 HP / 24 Atk / 252 SpA / 64 SpD / 144 Spe
+Mild Nature
+- Wish
 - Dragon Claw
 - Flamethrower
-- Hidden Power [Grass]
 - Brick Break

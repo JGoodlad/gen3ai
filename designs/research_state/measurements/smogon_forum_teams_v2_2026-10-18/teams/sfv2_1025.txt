@@ -1,59 +1,56 @@
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Fighting]
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 40 Def / 152 SpA / 68 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Psychic
-- Fire Punch
-- Hidden Power [Grass]
-- Calm Mind
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Hydro Pump
-- Ice Beam
-- Hidden Power [Grass]
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Substitute
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 SpD
-- Spore
-- Focus Punch
-- Hidden Power [Ghost]
-- Mach Punch
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 16 HP / 188 Atk / 120 Def / 184 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
+EVs: 240 HP / 252 Atk / 16 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
 - Rock Slide
 - Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+- Will-O-Wisp
+- Explosion
+- Thunderbolt
+- Ice Punch
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 152 HP / 180 SpA / 176 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
 - Hidden Power [Grass]
-- Dragon Dance
+- Thunder Wave
+- Roar
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
+Timid Nature
+- Spikes
+- Surf
+- Rapid Spin
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 24 Def / 232 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+- Roar

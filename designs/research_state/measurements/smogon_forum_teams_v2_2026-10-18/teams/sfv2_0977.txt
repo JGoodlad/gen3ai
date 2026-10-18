@@ -1,55 +1,55 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-- Dragon Claw
-- Fire Blast
-- Brick Break
-- Wish
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 192 HP / 8 Def / 196 SpA / 112 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Psychic
-- Hidden Power [Fire]
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 8 HP / 156 Atk / 156 Def / 172 SpD / 16 Spe
-Adamant Nature
-- Earthquake
-- Body Slam
-- Shadow Ball
-- Self-Destruct
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 124 HP / 132 Def / 56 SpA / 196 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 72 Def / 176 SpA / 20 Spe
 Modest Nature
-IVs: 0 Atk
-- Recover
-- Surf
-- Ice Beam
-- Toxic
+- Focus Punch
+- Crunch
+- Thunder
+- Substitute
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 240 HP / 232 Atk / 36 SpD
-Adamant Nature
+Clefable @ Leftovers
+Ability: Cute Charm
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Seismic Toss
+- Encore
+- Mud-Slap
+- Thunder Wave
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 76 Atk / 252 SpA / 180 Spe
+Hasty Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Ice Punch
+- Thunderbolt
+- Hidden Power [Fighting]
+- Body Slam
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 SpA / 44 Spe
+Quiet Nature
+- Hydro Pump
 - Earthquake
-- Shadow Ball
+- Focus Punch
+- Ice Beam
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 64 HP / 252 SpD / 192 Spe
+Timid Nature
+- Surf
+- Spikes
 - Rapid Spin
 - Explosion
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 236 HP / 224 Atk / 8 Def / 40 SpD
-Adamant Nature
-- Meteor Mash
+Flygon @ Liechi Berry
+Ability: Levitate
+EVs: 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Earthquake
-- Protect
-- Explosion
+- Substitute
+- Hidden Power [Flying]
+- Rock Slide

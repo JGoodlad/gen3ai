@@ -1,57 +1,62 @@
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 248 HP / 216 SpA / 44 Spe
-Quiet Nature
-- Pursuit
-- Crunch
-- Fire Blast
-- Brick Break
+Shiny: Yes
+EVs: 236 Atk / 8 Def / 12 SpA / 252 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 240 HP / 8 SpA / 208 SpD / 52 Spe
-Modest Nature
-- Surf
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+- Baton Pass
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+Shiny: Yes
+EVs: 120 HP / 252 SpD / 136 Spe
+Careful Nature
+- Roar
+- Drill Peck
 - Spikes
-- Rapid Spin
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 216 SpA / 40 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Thunder
-- Ice Punch
-- Toxic
+- Taunt
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 224 HP / 80 Def / 160 SpA / 44 Spe
-Quiet Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Focus Punch
-
-Raikou @ Leftovers
-Ability: Pressure
 Shiny: Yes
-EVs: 4 HP / 252 SpA / 252 Spe
+EVs: 248 HP / 136 Def / 48 SpA / 44 SpD / 32 Spe
+Bold Nature
+- Surf
+- Roar
+- Focus Punch
+- Protect
+
+Gengar @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 168 HP / 164 SpD / 176 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-- Toxic
+IVs: 0 Atk
+- Taunt
+- Will-O-Wisp
+- Ice Punch
+- Destiny Bond
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 104 HP / 236 Atk / 24 SpD / 144 Spe
+Shiny: Yes
+EVs: 8 HP / 168 Atk / 192 SpD / 140 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Dragon Dance
 - Hidden Power [Flying]
-- Rock Slide
 - Earthquake
+- Rock Slide

@@ -1,57 +1,56 @@
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 20 HP / 252 Atk / 36 SpD / 200 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Spore
-- Stun Spore
-- Hidden Power [Ghost]
-- Sky Uppercut
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 100 Atk / 100 Def / 56 Spe
-Careful Nature
-- Rapid Spin
-- Earthquake
-- Rock Slide
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 216 SpD / 40 Spe
-Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Counter
-- Explosion
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 120 SpD / 148 Spe
-Modest Nature
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
 - Substitute
 - Thunderbolt
 - Hidden Power [Grass]
 - Baton Pass
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Rest
-- Calm Mind
+- Rapid Spin
 - Surf
 - Ice Beam
+- Thunderbolt
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Curse
+- Earthquake
+- Rock Slide
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+IVs: 0 Atk
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball

@@ -1,56 +1,57 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 188 HP / 216 Atk / 104 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Brick Break
-- Explosion
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 24 SpD / 224 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Rest
-- Toxic
-- Thunderbolt
-- Hidden Power [Fire]
-
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 40 Def / 180 SpD / 48 Spe
-Sassy Nature
-- Rest
-- Curse
-- Earthquake
+EVs: 248 HP / 176 Def / 84 SpD
+Relaxed Nature
 - Ice Beam
+- Protect
+- Earthquake
+- Curse
 
-Celebi @ Leftovers
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
+EVs: 4 HP / 252 Def / 252 SpA
 Modest Nature
 IVs: 0 Atk
-- Leech Seed
+- Toxic
+- Ice Beam
+- Thunderbolt
+- Soft-Boiled
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Will-O-Wisp
+- Roar
+- Hidden Power [Grass]
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 144 HP / 168 Atk / 8 SpA / 188 Spe
+Hasty Nature
+- Will-O-Wisp
+- Thunderbolt
+- Ice Punch
+- Focus Punch
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 196 Def / 40 SpA / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
 - Calm Mind
-- Giga Drain
 - Psychic
+- Fire Punch
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 164 Atk / 140 Def / 172 SpD
-Adamant Nature
-- Return
-- Earthquake
-- Shadow Ball
-- Self-Destruct
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 60 HP / 252 Atk / 196 Spe
-Jolly Nature
-IVs: 30 Atk / 30 SpD
-- Dragon Dance
-- Earthquake
-- Hidden Power [Ghost]
-- Double-Edge
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 48 Def / 40 SpA / 32 SpD / 136 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Psychic
+- Rapid Spin
+- Recover

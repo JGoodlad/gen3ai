@@ -1,57 +1,56 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
-Modest Nature
-- Crunch
-- Substitute
-- Focus Punch
-- Thunder
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 252 Def / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Seismic Toss
+EVs: 252 HP / 44 Def / 212 SpA
+Quiet Nature
 - Thunder Wave
-- Wish
-- Soft-Boiled
+- Brick Break
+- Fire Blast
+- Pursuit
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 124 Def / 44 SpA / 40 SpD / 52 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Hidden Power [Grass]
-- Leech Seed
-- Recover
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 180 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Marowak @ Thick Club
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
 
 Milotic @ Leftovers
 Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 SpA
+EVs: 252 HP / 240 Def / 16 SpA
 Bold Nature
 IVs: 0 Atk
 - Surf
-- Toxic
 - Recover
+- Dragon Breath
 - Refresh
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Aerial Ace
-- Hidden Power [Bug]
-- Screech
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 240 HP / 136 Def / 32 SpA / 100 SpD
-Impish Nature
-- Psychic
-- Refresh
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
 - Rapid Spin
+- Earthquake
+- Psychic
 - Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 136 SpA / 120 Spe
+Modest Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Fire Blast
+- Dragon Claw

@@ -1,58 +1,56 @@
-Blissey @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 244 SpA / 12 Spe
-Bold Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
 IVs: 0 Atk
-- Seismic Toss
-- Ice Beam
-- Aromatherapy
-- Soft-Boiled
+- Rest
+- Sleep Talk
+- Thunderbolt
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 196 SpA / 128 Spe
+Modest Nature
+- Crunch
+- Pursuit
+- Flamethrower
+- Brick Break
 
 Skarmory
 Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
-- Protect
-- Roar
 - Thief
+- Drill Peck
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 104 Def / 20 SpA / 96 SpD / 36 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Recover
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 216 Def / 40 SpD / 12 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Roar
+EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
+Relaxed Nature
 - Protect
-- Toxic
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 112 Def / 132 SpD / 16 Spe
-Sassy Nature
 - Earthquake
-- Psychic
-- Rapid Spin
-- Rest
+- Surf
+- Ice Beam
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 216 Def / 8 SpA / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Ice Punch
-- Thunderbolt
-- Wish
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Aerial Ace
 - Earthquake
-- Hidden Power [Bug]
 - Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

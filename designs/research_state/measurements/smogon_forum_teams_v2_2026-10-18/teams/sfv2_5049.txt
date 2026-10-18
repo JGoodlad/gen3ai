@@ -1,0 +1,57 @@
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 40 HP / 252 Atk / 216 Spe
+Adamant Nature
+- Brick Break
+- Focus Punch
+- Rock Slide
+- Shadow Ball
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 28 SpA / 36 SpD / 192 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Baton Pass
+- Hidden Power [Grass]
+- Substitute
+- Thunderbolt
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 200 Def / 56 Spe
+Bold Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Surf
+- Thunder Wave
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Earthquake
+- Explosion
+- Meteor Mash
+- Rock Slide
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 76 Atk / 192 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Recover
+- Thunderbolt
+- Thunder Wave

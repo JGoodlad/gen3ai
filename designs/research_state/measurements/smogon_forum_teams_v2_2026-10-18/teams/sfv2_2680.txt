@@ -1,54 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-
-Tyranitar @ Lum Berry
+Tyranitar (M) @ Lum Berry
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+EVs: 96 HP / 240 Atk / 172 Spe
 Adamant Nature
-- Dragon Dance
-- Earthquake
+IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
+- Hidden Power [Bug]
+- Earthquake
+- Dragon Dance
+
+Skarmory (F) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 152 SpD / 104 Spe
+Careful Nature
+- Drill Peck
+- Spikes
+- Taunt
+- Roar
+
+Aerodactyl (F) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Hidden Power [Flying]
+- Earthquake
 - Double-Edge
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Shadow Ball
-- Self-Destruct
-
-Metagross @ Liechi Berry
-Ability: Clear Body
-EVs: 168 HP / 228 Atk / 16 Def / 96 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 160 Atk / 48 SpA / 44 SpD / 16 Spe
-Brave Nature
-- Curse
-- Earthquake
-- Rock Slide
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 24 HP / 252 SpA / 232 Spe
+Modest Nature
+IVs: 0 Atk
 - Hydro Pump
+- Ice Beam
+- Calm Mind
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 72 SpD / 184 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+- Leech Seed
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 152 HP / 252 Atk / 104 Spe
+Adamant Nature
+- Meteor Mash
+- Rock Slide
+- Earthquake
+- Agility

@@ -2,38 +2,28 @@ Zapdos @ Leftovers
 Ability: Pressure
 EVs: 240 HP / 236 SpD / 32 Spe
 Calm Nature
-IVs: 2 Atk / 30 SpA
+IVs: 0 Atk
 - Rest
+- Light Screen
+- Toxic
 - Thunderbolt
-- Hidden Power [Grass]
-- Roar
 
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
 - Spikes
-- Thief
+- Toxic
 - Drill Peck
 - Roar
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Toxic
-- Seismic Toss
-- Ice Beam
-
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 116 HP / 252 SpA / 140 Spe
-Mild Nature
+EVs: 76 HP / 252 SpA / 180 Spe
+Rash Nature
 IVs: 30 Atk / 30 SpA
-- Ice Punch
-- Thunder
+- Body Slam
+- Fire Punch
 - Hidden Power [Grass]
 - Dynamic Punch
 
@@ -45,6 +35,16 @@ Impish Nature
 - Toxic
 - Earthquake
 - Rock Slide
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
 
 Aerodactyl @ Choice Band
 Ability: Rock Head

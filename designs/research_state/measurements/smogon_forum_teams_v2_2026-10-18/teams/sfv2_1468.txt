@@ -1,58 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 136 SpA / 156 Spe
-Modest Nature
-IVs: 30 Spe
-- Protect
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 SpA / 44 SpD / 48 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-IVs: 30 SpD
-- Spikes
-- Toxic
-- Hidden Power [Steel]
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Flamethrower
 - Roar
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Thunder Punch
-- Hidden Power [Grass]
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 168 SpA / 244 SpD / 96 Spe
+Modest Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
 - Explosion
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Substitute
-- Fire Blast
-- Hidden Power [Grass]
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 68 Atk / 252 SpA / 188 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Body Slam
+- Fire Punch
+- Ice Punch
+- Hidden Power [Fighting]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 152 Atk / 152 Def / 172 SpD
+Adamant Nature
+- Curse
+- Return
 - Focus Punch
+- Self-Destruct
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Earthquake
 - Rock Slide
-- Hidden Power [Bug]
+- Hidden Power [Flying]
 - Double-Edge

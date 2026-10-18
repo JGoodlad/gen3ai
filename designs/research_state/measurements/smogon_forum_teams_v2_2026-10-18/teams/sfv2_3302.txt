@@ -1,57 +1,56 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-- Meteor Mash
+Tyranitar @ Black Belt
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Brick Break
 - Rock Slide
+- Focus Punch
 - Earthquake
-- Explosion
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 176 Atk / 192 SpD / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Flying]
-- Rock Slide
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 144 SpD / 112 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Dragon Dance
+- Aerial Ace
+- Hidden Power [Bug]
+- Beat Up
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 68 HP / 252 Atk / 188 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Dragon Dance
-- Hidden Power [Ghost]
-- Earthquake
-- Double-Edge
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 68 HP / 252 SpA / 188 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 36 Def / 156 SpA / 68 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Thunder Wave
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 128 Def / 96 SpA / 32 Spe
-Bold Nature
 IVs: 2 Atk / 30 SpA
-- Leech Seed
-- Recover
-- Hidden Power [Grass]
+- Calm Mind
 - Psychic
+- Fire Punch
+- Hidden Power [Grass]
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
-Careful Nature
-- Curse
-- Rest
-- Body Slam
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 184 SpA / 148 SpD / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Baton Pass
+- Thunderbolt
+- Hidden Power [Grass]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 88 Def / 96 SpA / 36 SpD / 40 Spe
+Quiet Nature
+- Hydro Pump
+- Ice Beam
 - Earthquake
+- Refresh
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 96 Atk / 160 SpA / 252 Spe
+Hasty Nature
+- Thunderbolt
+- Ice Punch
+- Explosion
+- Hypnosis

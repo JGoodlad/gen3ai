@@ -1,56 +1,56 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-Hidden Power: Grass
-EVs: 40 Atk / 252 SpA / 216 Spe
-Mild Nature
-- Pursuit
-- Thunder
-- Ice Beam
-- Focus Punch
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 32 HP / 252 SpA / 4 SpD / 220 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Psychic
-- Hidden Power [Fire]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 176 HP / 236 Atk / 56 SpA / 40 Spe
-Brave Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Ice Beam
-- Hydro Pump
-- Hidden Power [Bug]
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 200 Def / 56 SpD
-Bold Nature
-- Recover
-- Ice Beam
-- Thunderbolt
-- Thunder Wave
-
-Heracross @ Choice Band
-Ability: Swarm
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 184 HP / 184 Atk / 112 Def / 28 Spe
 Adamant Nature
-- Megahorn
-- Brick Break
+- Dragon Dance
 - Rock Slide
-- Focus Punch
-
-Metagross @ Lum Berry
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
 - Earthquake
-- Explosion
+- Counter
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 252 Def / 64 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Thunder Wave
+- Soft-Boiled
+- Aromatherapy
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 148 Atk / 92 Def / 16 SpD
+Sassy Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Ice Beam
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Seismic Toss
+- Knock Off
+- Harden
+- Rest
+
+Quagsire @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 216 Def / 40 SpD
+Relaxed Nature
+- Rest
+- Curse
+- Earthquake
+- Ice Beam
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 236 SpD / 20 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Rest
+- Hidden Power [Grass]
+- Roar

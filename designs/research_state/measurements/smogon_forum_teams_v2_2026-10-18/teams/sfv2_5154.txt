@@ -1,0 +1,57 @@
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 228 HP / 216 Atk / 64 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Superpower
+- Counter
+- Explosion
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Protect
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 228 SpA / 28 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Ice Beam
+- Fire Blast
+- Toxic
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 16 Def / 16 SpA / 112 SpD / 116 Spe
+Modest Nature
+IVs: 0 Atk
+- Thunderbolt
+- Giga Drain
+- Will-O-Wisp
+- Taunt
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 8 HP / 248 SpA / 252 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Thunderbolt
+- Recover

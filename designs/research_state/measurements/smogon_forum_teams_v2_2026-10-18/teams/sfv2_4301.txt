@@ -1,0 +1,55 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 SpA / 80 SpD / 176 Spe
+Mild Nature
+- Dragon Claw
+- Flamethrower
+- Substitute
+- Brick Break
+
+Charizard @ Lum Berry
+Ability: Blaze
+EVs: 144 Atk / 212 SpA / 152 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 20 Def / 216 SpA / 20 Spe
+Modest Nature
+- Surf
+- Ice Beam
+- Focus Punch
+- Substitute
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 180 HP / 232 Atk / 96 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Thick Fat
+EVs: 136 Atk / 212 Def / 160 SpD
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Earthquake
+- Self-Destruct

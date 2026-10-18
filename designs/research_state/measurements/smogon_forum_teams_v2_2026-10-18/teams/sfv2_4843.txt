@@ -1,0 +1,56 @@
+Glalie @ Salac Berry
+Ability: Inner Focus
+EVs: 248 HP / 44 Def / 216 Spe
+Timid Nature
+- Spikes
+- Ice Beam
+- Explosion
+- Taunt
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Hidden Power: Bug
+EVs: 248 HP / 72 Atk / 188 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 32 SpD / 176 Spe
+Timid Nature
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+- Explosion
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Surf
+- Roar
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake

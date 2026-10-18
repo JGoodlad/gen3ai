@@ -1,57 +1,58 @@
-Jynx (F) @ Lum Berry
-Ability: Oblivious
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Lovely Kiss
-- Ice Beam
-- Hidden Power [Fire]
-- Substitute
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 140 Atk / 60 SpA / 60 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Explosion
+- Hidden Power [Grass]
+- Meteor Mash
+- Earthquake
 
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 76 HP / 252 Atk / 180 Spe
 Adamant Nature
-- Dragon Dance
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
-- Double-Edge
+- Iron Tail
+- Hidden Power [Bug]
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 16 HP / 136 Atk / 100 Def / 88 SpA / 168 SpD
-Brave Nature
-- Body Slam
-- Brick Break
-- Fire Blast
-- Self-Destruct
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 148 SpA / 68 Spe
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 224 HP / 56 Atk / 180 SpA / 48 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Hidden Power [Grass]
-- Fire Punch
-- Psychic
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 252 Atk / 232 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Taunt
+- Hidden Power [Rock]
+- Earthquake
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 40 SpD / 216 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
+- Spore
+- Stun Spore
+- Sky Uppercut
+- Hidden Power [Ghost]
 
 Charizard @ Leftovers
 Ability: Blaze
 EVs: 4 Atk / 252 SpA / 252 Spe
 Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Toxic
-- Flamethrower
-- Hidden Power [Grass]
+IVs: 30 Atk / 30 Def
+- Fire Blast
+- Hidden Power [Ice]
 - Brick Break
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Pursuit
+- Beat Up

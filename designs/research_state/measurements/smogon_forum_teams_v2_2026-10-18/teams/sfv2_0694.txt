@@ -1,54 +1,57 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+
+Medicham @ Salac Berry
+Ability: Pure Power
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Substitute
+- Reversal
+- Focus Punch
+- Shadow Ball
+
+Kingdra @ Lum Berry
+Ability: Swift Swim
+EVs: 156 HP / 252 SpA / 24 SpD / 76 Spe
 Modest Nature
 IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Thunder Wave
+- Rain Dance
+- Surf
+- Ice Beam
 - Hidden Power [Grass]
-- Roar
 
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Spore
-- Focus Punch
-- Sky Uppercut
-- Mach Punch
-
-Metagross @ Leftovers
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 200 HP / 220 Atk / 80 Def / 8 Spe
+EVs: 128 HP / 232 Atk / 16 Def / 132 Spe
 Adamant Nature
 - Meteor Mash
-- Earthquake
-- Shadow Ball
 - Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 92 HP / 128 Atk / 108 Def / 168 SpD / 12 Spe
-Adamant Nature
-- Self-Destruct
-- Body Slam
 - Earthquake
-- Focus Punch
+- Rock Slide
 
-Starmie @ Leftovers
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-- Thunderbolt
-- Ice Beam
-- Rapid Spin
-- Hydro Pump
+EVs: 252 SpA / 56 SpD / 200 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
-Mild Nature
-- Pursuit
-- Crunch
-- Fire Blast
-- Brick Break
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide

@@ -1,0 +1,56 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Sunny Day
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 108 HP / 112 SpA / 36 SpD / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Zap Cannon
+- Hidden Power [Bug]
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 232 HP / 252 Def / 24 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Thunder Wave
+- Seismic Toss
+- Aromatherapy
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Rest
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+- Calm Mind
+- Surf
+- Rest
+- Roar

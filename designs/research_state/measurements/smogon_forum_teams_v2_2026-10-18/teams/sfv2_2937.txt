@@ -1,58 +1,56 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 12 Atk / 176 SpA / 72 SpD
+Quiet Nature
+- Rock Slide
+- Earthquake
+- Crunch
+- Pursuit
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Rest
+
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 92 SpA / 164 Spe
-Modest Nature
+EVs: 248 HP / 176 Def / 8 SpA / 76 Spe
+Bold Nature
 IVs: 0 Atk
+- Surf
+- Roar
 - Calm Mind
-- Hydro Pump
-- Ice Beam
-- Substitute
+- Rest
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 88 HP / 180 Atk / 120 Def / 120 SpD
-Adamant Nature
-- Curse
-- Double-Edge
-- Shadow Ball
-- Self-Destruct
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 224 HP / 252 SpA / 32 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Hidden Power [Grass]
-- Thunder
-- Refresh
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Substitute
-- Focus Punch
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 236 SpA / 20 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Psychic
-- Hidden Power [Fire]
-- Meteor Mash
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 152 HP / 252 SpD / 104 Spe
+Timid Nature
+- Surf
+- Spikes
+- Rapid Spin
 - Explosion
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 184 SpA / 76 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 48 Def / 104 SpD / 104 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
 - Thunderbolt
+- Ice Punch
 - Hidden Power [Grass]
-- Thunder Wave
-- Roar
+- Will-O-Wisp
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 84 Def / 176 SpD
+Sassy Nature
+- Body Slam
+- Fire Punch
+- Protect
+- Wish

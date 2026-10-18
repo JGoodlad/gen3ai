@@ -1,58 +1,57 @@
-Flygon @ Leftovers
+Smeargle (M) @ Salac Berry
+Ability: Own Tempo
+EVs: 4 HP / 252 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Spore
+- Spikes
+- Encore
+- Destiny Bond
+
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Gengar (F) @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 220 Def / 36 Spe
-Impish Nature
-IVs: 30 Atk / 30 SpD
-- Protect
+EVs: 248 HP / 44 Def / 32 SpA / 184 Spe
+Timid Nature
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
 - Earthquake
 - Rock Slide
-- Hidden Power [Ghost]
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 108 Atk / 16 SpA / 200 Spe
-Brave Nature
-IVs: 30 Atk / 30 SpA
-- Crunch
-- Rock Slide
-- Hidden Power [Grass]
-- Focus Punch
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 Def
-- Rest
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunder Wave
 - Thunderbolt
-- Hidden Power [Ice]
-- Roar
+- Hidden Power [Grass]
+- Baton Pass
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+Swampert (F) @ Salac Berry
+Ability: Torrent
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 HP / 0 Atk
+- Substitute
+- Hydro Pump
+- Ice Beam
+- Endeavor

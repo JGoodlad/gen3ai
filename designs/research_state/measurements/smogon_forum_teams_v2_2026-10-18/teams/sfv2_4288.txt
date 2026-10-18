@@ -1,0 +1,56 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 80 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Toxic
+- Protect
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 72 HP / 252 Atk / 184 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Brick Break
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Earthquake
+- Hidden Power [Flying]
+- Double-Edge
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 88 HP / 180 Atk / 120 Def / 120 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Shadow Ball
+- Earthquake
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 64 Def / 116 SpA / 76 Spe
+Timid Nature
+IVs: 0 Atk
+- Calm Mind
+- Psychic
+- Thunderbolt
+- Substitute
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+- Earthquake
+- Shadow Ball
+- Rapid Spin
+- Explosion

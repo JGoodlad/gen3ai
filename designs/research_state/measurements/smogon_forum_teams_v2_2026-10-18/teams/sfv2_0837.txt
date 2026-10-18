@@ -1,57 +1,58 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Rock Slide
-- Earthquake
-- Brick Break
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 252 HP / 252 SpA / 4 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 104 SpA / 152 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Refresh
-
-Exeggutor @ Leftovers
-Ability: Chlorophyll
-EVs: 216 HP / 180 SpA / 112 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA
-- Wish
-- Sleep Powder
-- Explosion
-- Hidden Power [Grass]
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 200 Def / 56 SpD
-Bold Nature
-- Recover
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Surf
 - Ice Beam
-- Thunderbolt
-- Thunder Wave
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 216 Atk / 44 SpD
-Adamant Nature
-- Rock Slide
-- Meteor Mash
-- Earthquake
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
+Timid Nature
+- Spikes
+- Surf
+- Ice Beam
 - Explosion
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 112 SpA / 144 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Hydro Pump
+- Roar
 
 Starmie @ Leftovers
 Ability: Natural Cure
 EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
-- Hydro Pump
+- Surf
+- Ice Beam
 - Thunderbolt
-- Recover
 - Rapid Spin
+
+Kingdra @ Lum Berry
+Ability: Swift Swim
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Rain Dance
+- Surf
+- Ice Beam
+- Hidden Power [Grass]
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Thunder Wave

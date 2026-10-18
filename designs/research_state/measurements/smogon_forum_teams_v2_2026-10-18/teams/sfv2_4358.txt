@@ -1,0 +1,56 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 76 HP / 252 Atk / 180 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Rock Slide
+- Earthquake
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+Shiny: Yes
+EVs: 224 HP / 252 SpA / 4 SpD / 28 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Focus Punch
+- Hidden Power [Grass]
+- Thunderbolt
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 92 Atk / 164 SpD
+Bold Nature
+- Spikes
+- Rapid Spin
+- Explosion
+- Ice Beam
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 76 SpA / 180 SpD
+Brave Nature
+- Earthquake
+- Ice Beam
+- Hydro Pump
+- Roar
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 88 HP / 252 Atk / 168 Def
+Careful Nature
+- Yawn
+- Shadow Ball
+- Focus Punch
+- Return
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Destiny Bond
+- Thunderbolt
+- Ice Punch
+- Fire Punch

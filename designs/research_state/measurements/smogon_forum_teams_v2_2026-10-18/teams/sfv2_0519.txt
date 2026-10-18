@@ -1,58 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 196 Def / 64 Spe
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 252 Def / 4 SpA
 Bold Nature
 IVs: 0 Atk
-- Calm Mind
-- Surf
-- Roar
+- Flamethrower
+- Protect
+- Toxic
+- Wish
+
+Houndoom @ Leftovers
+Ability: Early Bird
+EVs: 208 SpA / 124 SpD / 176 Spe
+Modest Nature
+- Crunch
+- Flamethrower
+- Pursuit
 - Rest
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 248 HP / 228 Def / 32 Spe
-Bold Nature
+EVs: 252 HP / 148 SpA / 108 Spe
+Modest Nature
 IVs: 0 Atk
-- Wish
-- Fire Punch
-- Toxic
-- Protect
+- Calm Mind
+- Ice Punch
+- Substitute
+- Thunderbolt
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Atk / 252 SpD
-Sassy Nature
+Machamp @ Leftovers
+Ability: Guts
+EVs: 96 HP / 252 Atk / 16 Def / 144 Spe
+Adamant Nature
 IVs: 30 SpD / 30 Spe
-- Zap Cannon
+- Bulk Up
+- Cross Chop
 - Hidden Power [Bug]
-- Spikes
-- Explosion
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 244 HP / 252 Def / 12 Spe
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Aromatherapy
-- Seismic Toss
-- Thunder Wave
+- Rock Slide
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 240 HP / 212 Atk / 40 SpD / 16 Spe
-Adamant Nature
-- Rapid Spin
+EVs: 252 HP / 16 Atk / 240 Spe
+Jolly Nature
 - Earthquake
-- Shadow Ball
-- Rest
+- Explosion
+- Ice Beam
+- Rapid Spin
 
-Raikou @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 8 Def / 248 SpA / 252 Spe
-Timid Nature
+EVs: 252 HP / 192 Def / 64 Spe
+Bold Nature
 IVs: 0 Atk
-- Thunderbolt
-- Crunch
+- Calm Mind
+- Rest
 - Roar
-- Psych Up
+- Surf

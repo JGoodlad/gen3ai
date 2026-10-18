@@ -1,55 +1,56 @@
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 244 Def / 96 SpA / 12 SpD / 140 Spe
+Slaking @ Choice Band
+Ability: Truant
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Double-Edge
+- Earthquake
+- Shadow Ball
+- Focus Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
 Bold Nature
 IVs: 0 Atk
-- Substitute
-- Wish
+- Calm Mind
 - Surf
-- Baton Pass
+- Rest
+- Roar
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Curse
+- Rest
+- Return
+- Shadow Ball
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
 - Rapid Spin
 - Earthquake
 - Psychic
 - Explosion
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Earthquake
-- Shadow Ball
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
+Magneton @ Leftovers
+Ability: Magnet Pull
+Shiny: Yes
+EVs: 144 HP / 112 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 168 HP / 224 Atk / 16 Def / 100 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
+- Rain Dance
+- Toxic
+- Hidden Power [Fire]

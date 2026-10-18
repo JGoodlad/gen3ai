@@ -1,56 +1,57 @@
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 224 Atk / 252 Def / 32 Spe
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
 Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Cross Chop
-- Focus Punch
-- Knock Off
-- Hidden Power [Bug]
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Protect
-- Toxic
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 136 Atk / 100 Def / 20 Spe
+EVs: 252 HP / 176 Atk / 80 Def
 Adamant Nature
-- Protect
 - Meteor Mash
 - Earthquake
+- Protect
 - Explosion
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Thunder Wave
+
+Gyarados (F) @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Roar
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 236 SpA / 20 Spe
-Bold Nature
-- Seismic Toss
-- Ice Beam
-- Soft-Boiled
-- Wish
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 196 Atk / 120 Def / 8 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Roar
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
-Bold Nature
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
 IVs: 0 Atk
-- Surf
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt
 - Thunder Wave
-- Recover
-- Rapid Spin
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Earthquake
+- Surf
+- Protect
+- Ice Beam

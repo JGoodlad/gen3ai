@@ -1,61 +1,58 @@
-Arcanine (M) @ Leftovers
-Ability: Intimidate
-EVs: 252 HP / 176 Def / 8 SpA / 72 Spe
-Modest Nature
-IVs: 0 Atk
-- Flamethrower
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunder Wave
 - Toxic
-- Charm
-- Protect
+- Thunderbolt
+- Hidden Power [Ice]
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 236 HP / 4 Atk / 252 SpA / 16 Spe
-Quiet Nature
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
 IVs: 30 Atk / 30 SpA / 30 Spe
-- Psychic
-- Hidden Power [Fire]
 - Meteor Mash
+- Hidden Power [Fire]
+- Psychic
 - Explosion
 
-Roselia (F) @ Leftovers
-Ability: Natural Cure
-Shiny: Yes
-EVs: 252 HP / 144 Def / 112 SpD
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Spikes
-- Leech Seed
-- Hidden Power [Grass]
-- Aromatherapy
+Vaporeon @ Leftovers
+Ability: Water Absorb
+Happiness: 0
+EVs: 16 HP / 240 Def / 176 SpA / 12 SpD / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Hydro Pump
+- Ice Beam
+- Baton Pass
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 188 HP / 176 Atk / 144 Spe
-Careful Nature
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Double-Edge
 - Earthquake
 - Shadow Ball
-- Explosion
-- Rapid Spin
 
-Gengar @ Leftovers
-Ability: Levitate
-Shiny: Yes
-EVs: 204 HP / 12 SpA / 116 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Taunt
-- Ice Punch
-- Thunderbolt
-
-Suicune @ Leftovers
-Ability: Pressure
-Shiny: Yes
-EVs: 252 HP / 176 Def / 16 SpA / 64 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
-- Roar
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

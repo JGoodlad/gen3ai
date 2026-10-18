@@ -1,56 +1,58 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
+EVs: 252 HP / 228 SpA / 28 Spe
+Modest Nature
 IVs: 0 Atk
-- Rest
+- Substitute
 - Calm Mind
 - Surf
 - Ice Beam
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
-
-Alakazam @ Leftovers
-Ability: Synchronize
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def / 30 SpA
-- Calm Mind
-- Hidden Power [Water]
-- Fire Punch
-- Psychic
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 188 HP / 252 Atk / 68 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Brick Break
-- Explosion
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 192 Atk / 200 SpD / 116 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
-- Hidden Power [Flying]
+- Earthquake
 - Rock Slide
-- Brick Break
+- Double-Edge
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 188 HP / 140 SpA / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 112 SpA / 180 Spe
+Modest Nature
+IVs: 30 Spe
+- Metal Sound
+- Thunderbolt
+- Hidden Power [Ice]
+- Sunny Day
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up

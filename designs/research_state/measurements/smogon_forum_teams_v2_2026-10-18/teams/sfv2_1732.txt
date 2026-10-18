@@ -1,58 +1,57 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 96 SpA / 8 SpD / 152 Spe
+EVs: 216 HP / 136 SpA / 156 Spe
 Modest Nature
-IVs: 0 Atk
-- Substitute
+IVs: 30 Spe
+- Thunder Wave
 - Toxic
 - Thunderbolt
-- Baton Pass
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 240 Atk / 16 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Hidden Power [Grass]
-
-Venusaur @ Leftovers
-Ability: Overgrow
-EVs: 8 HP / 192 SpA / 56 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Leech Seed
-- Sleep Powder
-- Giga Drain
 - Hidden Power [Ice]
 
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
-Adamant Nature
-- Meteor Mash
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Surf
+- Ice Beam
+- Thunderbolt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
 - Earthquake
-- Rock Slide
+- Hydro Pump
+- Ice Beam
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Earthquake
+- Thunder Punch
+- Hidden Power [Grass]
 - Explosion
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 192 HP / 140 SpA / 176 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Ice Punch
 - Fire Punch
 - Hidden Power [Grass]
-- Psychic
+- Explosion
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
 - Earthquake
 - Rock Slide
-- Hidden Power [Flying]
+- Double-Edge

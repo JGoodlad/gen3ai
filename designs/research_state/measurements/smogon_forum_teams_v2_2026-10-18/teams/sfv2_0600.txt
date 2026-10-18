@@ -1,55 +1,53 @@
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 252 Atk / 56 Def / 200 Spe
+Marowak @ Thick Club
+Ability: Rock Head
+EVs: 124 HP / 216 Atk / 168 Spe
 Adamant Nature
-- Brick Break
-- Shadow Ball
-- Bulk Up
-- Baton Pass
+- Earthquake
+- Rock Slide
+- Swords Dance
+- Focus Punch
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 24 HP / 232 Atk / 116 SpD / 136 Spe
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Aerial Ace
-- Hidden Power [Bug]
 - Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Bug]
 
-Snorlax (M) @ Leftovers
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 244 Atk / 96 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Snorlax @ Leftovers
 Ability: Immunity
-EVs: 44 HP / 176 Atk / 138 Def / 134 SpD / 16 Spe
-Careful Nature
-- Body Slam
-- Sleep Talk
+EVs: 244 Atk / 108 Def / 144 SpD / 12 Spe
+Adamant Nature
 - Curse
-- Rest
+- Body Slam
+- Shadow Ball
+- Self-Destruct
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 68 SpD / 188 Spe
+Hasty Nature
+- Hypnosis
 - Rain Dance
-
-Houndoom @ Black Glasses
-Ability: Flash Fire
-EVs: 16 HP / 252 SpA / 240 Spe
-Modest Nature
-IVs: 0 Atk
-- Pursuit
-- Solar Beam
-- Fire Blast
-- Sunny Day
+- Ice Punch
+- Explosion
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 252 Def / 16 Spe
-Bold Nature
+EVs: 240 HP / 136 SpA / 68 SpD / 64 Spe
+Calm Nature
 IVs: 0 Atk
 - Surf
 - Ice Beam

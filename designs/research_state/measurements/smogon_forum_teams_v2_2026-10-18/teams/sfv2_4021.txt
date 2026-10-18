@@ -1,0 +1,57 @@
+Marowak @ Thick Club
+Ability: Rock Head
+EVs: 156 HP / 252 Atk / 100 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 8 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Flamethrower
+- Roar
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 136 Def / 40 SpA / 32 SpD / 48 Spe
+Bold Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Surf
+- Ice Beam
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Return

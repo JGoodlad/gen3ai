@@ -1,58 +1,57 @@
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 96 Atk / 228 Def / 184 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Cross Chop
+- Knock Off
+- Hidden Power [Bug]
+- Focus Punch
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+IVs: 0 Atk
+- Protect
+- Spikes
+- Roar
+- Thief
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 Def / 8 SpA / 32 SpD / 176 Spe
+Timid Nature
+- Thunder Wave
+- Surf
+- Rapid Spin
+- Recover
+
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 128 HP / 248 SpA / 24 SpD / 108 Spe
-Quiet Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Explosion
-- Hidden Power [Fire]
+EVs: 244 HP / 48 Atk / 216 Def
+Impish Nature
 - Meteor Mash
-- Psychic
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Hidden Power [Fire]
-- Thunderbolt
-- Thunder Wave
-- Toxic
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 60 HP / 252 Atk / 196 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
 - Earthquake
-- Hidden Power [Flying]
-- Rock Slide
+- Protect
+- Explosion
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 72 HP / 252 Atk / 96 Def / 88 SpD
-Adamant Nature
-- Curse
-- Earthquake
-- Self-Destruct
-- Shadow Ball
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 44 SpA / 212 Spe
-Timid Nature
-IVs: 0 Atk
-- Calm Mind
-- Ice Beam
-- Substitute
-- Surf
-
-Celebi @ Leftovers
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 100 Def / 44 SpA / 80 SpD / 32 Spe
+EVs: 252 Def / 252 SpA / 4 SpD
 Bold Nature
-IVs: 30 Atk / 30 SpA
-- Hidden Power [Grass]
-- Leech Seed
-- Psychic
-- Recover
+IVs: 22 Spe
+- Sing
+- Seismic Toss
+- Ice Beam
+- Soft-Boiled
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Screech

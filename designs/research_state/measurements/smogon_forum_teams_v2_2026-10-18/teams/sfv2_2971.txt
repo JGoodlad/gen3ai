@@ -1,58 +1,56 @@
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Roar
-- Hydro Pump
-- Endeavor
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 4 HP / 252 SpA / 252 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 164 SpD / 96 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
 - Thunderbolt
 - Hidden Power [Grass]
+- Substitute
 - Baton Pass
-- Substitute
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Hidden Power [Flying]
-
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+EVs: 248 HP / 88 Atk / 172 Spe
 Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Dragon Dance
-- Earthquake
 - Rock Slide
-- Double-Edge
+- Earthquake
+- Hidden Power [Bug]
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 204 Def / 56 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Recover
+- Rapid Spin
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Substitute
-- Fire Blast
-- Hidden Power [Grass]
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Earthquake
+- Surf
+- Ice Beam
+- Protect
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 64 HP / 216 Atk / 228 Spe
+Adamant Nature
+- Megahorn
 - Focus Punch
+- Rock Slide
+- Substitute
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+- Body Slam
+- Fire Punch
+- Wish
+- Protect

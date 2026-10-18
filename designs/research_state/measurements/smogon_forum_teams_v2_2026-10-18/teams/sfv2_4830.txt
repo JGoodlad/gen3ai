@@ -1,0 +1,55 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 224 Atk / 12 Def / 76 SpA / 196 Spe
+Lonely Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Fire Blast
+- Brick Break
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 112 Atk / 24 Def / 188 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Skarmory
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Thief
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 200 SpD / 56 Spe
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Counter
+- Explosion
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+- Substitute
+- Endeavor
+- Hydro Pump
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 SpA / 176 Spe
+Timid Nature
+IVs: 30 HP / 30 SpA
+- Substitute
+- Calm Mind
+- Hidden Power [Grass]
+- Thunderbolt

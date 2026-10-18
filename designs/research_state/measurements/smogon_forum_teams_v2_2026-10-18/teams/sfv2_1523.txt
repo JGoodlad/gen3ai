@@ -1,58 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 216 SpA / 108 Spe
-Modest Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Crunch
-- Pursuit
-- Flamethrower
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Protect
-- Toxic
-- Roar
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Hasty Nature
-IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Surf
-- Ice Beam
-- Thunderbolt
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 108 Def / 144 SpA / 16 Spe
+Quiet Nature
+- Curse
 - Earthquake
+- Hydro Pump
+- Ice Beam
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 100 Atk / 112 Def / 44 SpD
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
 - Explosion
 
-Blissey (F) @ Leftovers
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Fire Punch
+
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
+EVs: 192 HP / 176 SpA / 140 Spe
 Modest Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Toxic
-- Ice Beam
-- Thunderbolt
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 216 Atk / 108 Def / 168 SpD
+Adamant Nature
+- Return
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up

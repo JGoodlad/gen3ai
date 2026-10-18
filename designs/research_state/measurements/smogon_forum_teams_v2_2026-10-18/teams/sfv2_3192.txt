@@ -1,55 +1,57 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-- Rock Slide
-- Earthquake
-- Brick Break
-- Double-Edge
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 240 SpD / 16 Spe
-IVs: 0 Atk
-- Spikes
-- Toxic
-- Protect
-- Roar
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 236 SpA / 20 Spe
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Toxic
-- Ice Beam
-- Seismic Toss
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 128 Def / 240 SpA / 140 Spe
-Rash Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Focus Punch
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 Atk / 108 SpA / 148 Spe
-Naive Nature
-- Earthquake
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpA / 252 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
 - Rock Slide
 - Fire Blast
-- Toxic
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 120 Atk / 236 SpA / 152 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
 - Hidden Power [Grass]
-- Drill Peck
+- Brick Break
+
+Claydol @ Choice Band
+Ability: Levitate
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Rock Slide
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 200 SpA / 56 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Leech Seed
+- Psychic
+- Baton Pass
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 176 Atk / 140 Def / 132 SpD / 60 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Cross Chop
+- Rock Slide
+- Hidden Power [Bug]
+- Knock Off
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
 - Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam

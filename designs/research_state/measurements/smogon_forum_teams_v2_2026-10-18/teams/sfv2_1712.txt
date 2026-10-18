@@ -1,56 +1,56 @@
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 220 Def / 36 Spe
-Impish Nature
-- Protect
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Toxic
+- Thunderbolt
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+- Taunt
 - Toxic
 - Earthquake
 - Rock Slide
 
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
+EVs: 240 HP / 240 SpD / 28 Spe
 Careful Nature
 - Spikes
-- Thief
+- Taunt
 - Drill Peck
 - Roar
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Bold Nature
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Toxic
-- Seismic Toss
-- Ice Beam
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 232 SpD / 36 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Rest
-- Substitute
+- Taunt
+- Will-O-Wisp
+- Ice Punch
 - Thunderbolt
-- Hidden Power [Grass]
 
-Aerodactyl
-Ability: Pressure
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Thief
-- Substitute
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Def / 44 SpD / 48 Spe
+Relaxed Nature
+- Protect
 - Earthquake
-- Rock Slide
+- Hydro Pump
+- Ice Beam
 
 Dugtrio @ Choice Band
 Ability: Arena Trap
 EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
+Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Hidden Power [Bug]
 - Aerial Ace
-- Sunny Day
+- Rock Slide

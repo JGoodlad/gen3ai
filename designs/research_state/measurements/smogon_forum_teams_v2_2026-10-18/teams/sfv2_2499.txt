@@ -1,58 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 152 Atk / 172 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 176 Atk / 80 SpD / 4 Spe
 Adamant Nature
-IVs: 30 SpD / 30 Spe
+- Meteor Mash
 - Earthquake
+- Explosion
 - Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-IVs: 30 Atk / 30 SpD
+- Drill Peck
 - Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Counter
+- Protect
+- Roar
 
-Donphan @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 20 Def / 200 SpD / 36 Spe
-Impish Nature
-IVs: 30 Def / 30 SpD / 30 Spe
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 196 Atk / 60 Spe
+Adamant Nature
 - Rapid Spin
-- Rest
 - Earthquake
-- Hidden Power [Rock]
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Refresh
-- Toxic
-- Surf
+- Shadow Ball
+- Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-- Soft-Boiled
-- Aromatherapy
-- Thunder Wave
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
+IVs: 0 Atk
 - Seismic Toss
+- Ice Beam
+- Aromatherapy
+- Soft-Boiled
 
-Zapdos @ Leftovers
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Sunny Day
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
+EVs: 248 HP / 244 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
 - Rest
-- Thunderbolt
-- Hidden Power [Grass]
+- Surf
 - Roar

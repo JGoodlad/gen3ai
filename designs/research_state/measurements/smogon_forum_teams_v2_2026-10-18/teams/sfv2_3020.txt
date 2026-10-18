@@ -1,56 +1,54 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 12 Atk / 240 SpA / 64 SpD / 192 Spe
+Hasty Nature
+- Dragon Claw
+- Flamethrower
+- Rock Slide
+- Brick Break
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 SpD
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
+EVs: 252 HP / 188 SpA / 68 Spe
+Quiet Nature
+- Substitute
 - Focus Punch
+- Crunch
+- Thunder
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
+EVs: 252 HP / 244 SpD / 12 Spe
 Careful Nature
 - Spikes
-- Roar
-- Toxic
 - Drill Peck
-
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 SpD
-Adamant Nature
-- Rock Slide
-- Thunder Wave
-- Explosion
-- Superpower
+- Toxic
+- Roar
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 192 HP / 8 Def / 152 SpA / 140 Spe
+EVs: 196 HP / 8 Def / 236 SpA / 68 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
 - Leech Seed
 - Giga Drain
-- Psychic
+- Recover
 - Hidden Power [Fire]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+EVs: 100 HP / 216 Atk / 36 SpA / 156 Spe
 Adamant Nature
 - Rapid Spin
 - Earthquake
-- Psychic
 - Explosion
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 176 Atk / 152 SpA / 180 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Drill Peck
-- Thunder Wave
+- Psychic

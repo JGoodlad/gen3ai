@@ -1,58 +1,58 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 240 HP / 244 SpD / 24 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Roar
-- Drill Peck
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 Def / 252 SpA
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 24 HP / 244 SpA / 100 SpD / 140 Spe
 Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Aromatherapy
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Protect
+- Toxic
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Surf
 - Ice Beam
-- Seismic Toss
+- Hidden Power [Grass]
+- Calm Mind
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 216 Atk / 68 SpD / 224 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Beat Up
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 24 HP / 252 Atk / 232 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 248 HP / 176 Def / 48 SpA / 36 Spe
-Bold Nature
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Calm Mind
-- Wish
+- Psychic
+- Fire Punch
 - Hidden Power [Grass]
+- Calm Mind
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 164 Def / 96 SpD
-Relaxed Nature
-IVs: 0 Atk
-- Protect
-- Surf
-- Roar
-- Counter
-
-Armaldo @ Leftovers
-Ability: Battle Armor
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-IVs: 30 SpD / 30 Spe
-- Swords Dance
-- Rapid Spin
-- Rock Slide
-- Hidden Power [Bug]
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 72 SpA / 16 SpD / 168 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Ancient Power
+- Brick Break
+- Fire Blast
+- Hidden Power [Grass]

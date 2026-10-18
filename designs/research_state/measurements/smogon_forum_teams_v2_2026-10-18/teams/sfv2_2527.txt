@@ -1,56 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 192 Atk / 200 SpD / 116 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Brick Break
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 180 SpA / 144 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Crunch
-- Pursuit
+Glalie @ Leftovers
+Ability: Inner Focus
+EVs: 40 HP / 252 SpD / 216 Spe
+Timid Nature
 - Ice Beam
-- Hidden Power [Grass]
+- Explosion
+- Taunt
+- Spikes
 
-Magneton @ Magnet
-Ability: Magnet Pull
+Swampert @ Leftovers
+Ability: Torrent
 EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunder Wave
-- Toxic
+Naive Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 172 Atk / 144 SpA / 192 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Focus Punch
+- Explosion
 - Thunderbolt
 - Hidden Power [Grass]
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Return
-- Earthquake
-- Self-Destruct
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 20 Def / 28 SpD / 32 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
 - Rock Slide
-- Explosion
+- Earthquake
+- Hidden Power [Bug]
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
 - Substitute
-- Surf
-- Roar
-- Endeavor
+- Earthquake
+- Hidden Power [Flying]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 104 SpA / 12 SpD / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Toxic
+- Protect

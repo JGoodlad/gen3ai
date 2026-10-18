@@ -1,58 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 124 HP / 232 SpA / 152 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Substitute
-- Baton Pass
-
-Breloom @ Black Belt
-Ability: Effect Spore
-EVs: 8 HP / 240 Atk / 76 SpD / 184 Spe
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
 IVs: 30 Atk / 30 SpD
-- Spore
-- Hidden Power [Ghost]
-- Focus Punch
-- Mach Punch
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 204 HP / 244 Def / 24 SpA / 36 Spe
-Lax Nature
-IVs: 30 Spe
 - Earthquake
 - Rock Slide
-- Fire Blast
-- Hidden Power [Ice]
-
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 204 HP / 112 Atk / 192 SpA
-Quiet Nature
-- Ice Beam
-- Thunderbolt
-- Explosion
-- Rest
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 76 HP / 244 SpA / 188 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Psychic
-- Hidden Power [Fire]
-- Meteor Mash
-- Explosion
-
-Charizard @ Petaya Berry
-Ability: Blaze
-EVs: 20 Atk / 236 SpA / 252 Spe
-Hasty Nature
-IVs: 30 HP / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
+- Hidden Power [Ghost]
 - Focus Punch
-- Substitute
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
+Hasty Nature
+- Will-O-Wisp
+- Thunder
+- Giga Drain
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Toxic
+- Surf
+- Roar
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 120 SpD / 148 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar

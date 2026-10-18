@@ -1,57 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 136 SpA / 156 Spe
-Modest Nature
-IVs: 30 Spe
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 72 SpA / 44 SpD / 16 Spe
-Relaxed Nature
-- Curse
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Rock Slide
 - Earthquake
-- Hydro Pump
-- Ice Beam
+- Brick Break
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 220 SpA / 36 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
+EVs: 224 HP / 252 Atk / 32 Spe
+Adamant Nature
+- Doom Desire
+- Body Slam
+- Wish
+- Protect
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
 - Calm Mind
-- Psychic
-- Hidden Power [Grass]
-- Fire Punch
+- Surf
+- Rest
+- Sleep Talk
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
-- Explosion
-
-Celebi @ Leftovers
+Starmie @ Leftovers
 Ability: Natural Cure
-EVs: 220 HP / 252 SpA / 36 Spe
+EVs: 252 HP / 168 Def / 40 SpA / 32 SpD / 16 Spe
+Bold Nature
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 244 SpA / 12 SpD
 Modest Nature
 IVs: 0 Atk
-- Leech Seed
+- Ice Beam
+- Thunderbolt
 - Calm Mind
-- Giga Drain
-- Psychic
+- Soft-Boiled
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 196 Atk / 140 Def / 172 Spe
+Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
 - Rock Slide
+- Focus Punch
+- Earthquake
 - Hidden Power [Bug]
-- Aerial Ace

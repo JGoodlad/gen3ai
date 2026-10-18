@@ -1,58 +1,61 @@
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 Atk / 40 Def / 32 SpA / 184 Spe
-Naive Nature
-- Substitute
+Gyarados @ Leftovers
+Ability: Intimidate
+Hidden Power: Flying
+EVs: 216 HP / 16 Atk / 88 SpD / 188 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
 - Earthquake
-- Flamethrower
-- Toxic
+- Rest
 
-Suicune @ Leftovers
+Raikou @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 252 Def / 4 Spe
-Bold Nature
-IVs: 0 Atk
+EVs: 252 HP / 120 SpA / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Rest
 - Calm Mind
+- Thunderbolt
+- Hidden Power [Ice]
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+Hidden Power: Bug
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
+
+Celebi @ Leftovers
+Ability: Natural Cure
+Hidden Power: Grass
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
+- Heal Bell
+- Psychic
+- Hidden Power [Grass]
+
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 180 Atk / 76 SpD
+Adamant Nature
+- Curse
+- Rock Slide
+- Earthquake
+- Rest
+
+Tentacruel @ Leftovers
+Ability: Liquid Ooze
+EVs: 252 HP / 240 SpD / 16 Spe
+Calm Nature
+IVs: 0 Atk
+- Rapid Spin
 - Surf
 - Rest
-- Roar
-
-Alakazam @ Leftovers
-Ability: Synchronize
-EVs: 252 HP / 4 Def / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Psychic
-- Knock Off
-- Recover
-- Fire Punch
-
-Armaldo @ Leftovers
-Ability: Battle Armor
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Swords Dance
-- Hidden Power [Bug]
-- Rock Slide
-- Rapid Spin
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 252 Def / 4 SpD
-Bold Nature
-IVs: 0 Atk
-- Thunder Wave
-- Seismic Toss
-- Soft-Boiled
-- Aromatherapy
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Hidden Power [Bug]
-- Rapid Spin
-- Rest
+- Toxic

@@ -1,56 +1,59 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 68 HP / 252 Atk / 188 Spe
-Jolly Nature
-IVs: 30 SpA / 30 Spe
-- Meteor Mash
-- Explosion
-- Earthquake
+Heracross @ Choice Band
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Megahorn
+- Rock Slide
+- Hidden Power [Ghost]
 - Brick Break
 
-Breloom @ Black Belt
-Ability: Effect Spore
-EVs: 216 Atk / 40 SpD / 252 Spe
-Adamant Nature
-- Focus Punch
-- Sky Uppercut
-- Mach Punch
-- Spore
-
-Houndoom (M) @ Leftovers
-Ability: Flash Fire
-EVs: 196 SpA / 120 SpD / 192 Spe
-Modest Nature
-IVs: 0 Atk
-- Pursuit
-- Fire Blast
-- Beat Up
-- Will-O-Wisp
-
-Snorlax (M) @ Leftovers
-Ability: Immunity
-EVs: 216 Atk / 116 Def / 176 SpD
-Adamant Nature
-- Focus Punch
-- Body Slam
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 240 Atk / 16 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Rock Slide
 - Earthquake
-- Self-Destruct
+- Hidden Power [Grass]
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 40 Def
-Brave Nature
-- Earthquake
-- Ice Beam
-- Rapid Spin
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 8 HP / 192 SpA / 56 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Leech Seed
+- Sleep Powder
+- Giga Drain
+- Hidden Power [Ice]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
 - Explosion
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 64 HP / 252 Atk / 192 Spe
-Hasty Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 248 Def / 176 SpA / 12 SpD / 56 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
 - Hydro Pump
+- Ice Beam
+- Baton Pass
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

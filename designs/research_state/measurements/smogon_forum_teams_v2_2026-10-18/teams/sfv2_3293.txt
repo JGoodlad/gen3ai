@@ -1,57 +1,56 @@
-Tyranitar (M) @ Leftovers
+Tyranitar @ Choice Band
 Ability: Sand Stream
-EVs: 184 HP / 196 SpA / 128 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Fire Blast
-- Ice Beam
-
-Nidoking @ Leftovers
-Ability: Poison Point
-EVs: 120 Atk / 228 SpA / 160 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Sludge Bomb
-- Fire Blast
-- Hidden Power [Grass]
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Brick Break
+- Rock Slide
 - Earthquake
+- Double-Edge
 
-Skarmory (M) @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 244 SpD / 12 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
-- Roar
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpD
+Bold Nature
 IVs: 0 Atk
-- Calm Mind
 - Ice Beam
 - Thunderbolt
-- Soft-Boiled
+- Thunder Wave
+- Recover
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Crunch
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 136 Def / 92 SpD / 28 Spe
+Impish Nature
+- Thunder Wave
+- Seismic Toss
+- Explosion
+- Counter
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 252 HP / 136 Def / 120 SpA
-Relaxed Nature
-- Curse
-- Hydro Pump
+EVs: 188 HP / 4 Def / 136 SpA / 180 Spe
+Rash Nature
+- Surf
+- Focus Punch
 - Earthquake
-- Ice Beam
+- Refresh
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 140 Atk / 212 SpA / 156 Spe
-Mild Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Thunderbolt
-- Drill Peck
-- Hidden Power [Fighting]
-- Baton Pass
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 Atk / 212 SpD / 180 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide

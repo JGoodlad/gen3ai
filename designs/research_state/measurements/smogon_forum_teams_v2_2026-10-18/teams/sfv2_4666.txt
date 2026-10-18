@@ -1,0 +1,57 @@
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 120 SpD / 136 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Screech
+- Endure
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 4 Def / 252 SpA
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Crunch
+- Pursuit
+- Fire Blast
+- Hidden Power [Grass]
+
+Steelix (M) @ Leftovers
+Ability: Rock Head
+EVs: 252 HP / 108 Atk / 148 SpD
+Adamant Nature
+- Earthquake
+- Rock Slide
+- Protect
+- Explosion
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 72 Atk / 252 Def / 184 SpD
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Earthquake
+- Self-Destruct
+
+Gyarados (M) @ Leftovers
+Ability: Intimidate
+EVs: 216 HP / 16 Atk / 88 SpD / 188 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rest

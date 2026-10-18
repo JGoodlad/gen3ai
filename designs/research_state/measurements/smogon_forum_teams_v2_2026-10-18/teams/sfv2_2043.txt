@@ -1,25 +1,25 @@
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 200 HP / 68 SpA / 140 SpD / 100 Spe
-Modest Nature
-- Spikes
-- Rapid Spin
-- Surf
-- Explosion
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
 
 Jolteon @ Leftovers
 Ability: Volt Absorb
-EVs: 184 HP / 148 SpD / 176 Spe
+EVs: 8 HP / 248 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
 - Substitute
@@ -29,29 +29,29 @@ IVs: 2 Atk / 30 SpA
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 240 HP / 156 Def / 92 SpA / 20 Spe
-Modest Nature
-IVs: 3 Atk / 30 SpA
+EVs: 252 HP / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 0 Atk
+- Recover
 - Leech Seed
-- Calm Mind
-- Hidden Power [Electric]
+- Swords Dance
 - Baton Pass
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 200 HP / 252 SpA / 56 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Agility
-- Metal Sound
-- Thunderbolt
-- Hidden Power [Grass]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
-Relaxed Nature
-- Protect
+Snorlax @ Leftovers
+Ability: Thick Fat
+EVs: 32 HP / 96 Atk / 120 Def / 88 SpA / 172 SpD
+Brave Nature
+- Body Slam
 - Earthquake
-- Hydro Pump
-- Roar
+- Fire Blast
+- Self-Destruct
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

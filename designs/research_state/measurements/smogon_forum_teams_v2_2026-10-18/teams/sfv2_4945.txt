@@ -1,0 +1,58 @@
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 248 HP / 80 SpA / 180 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Razor Leaf
+- Hidden Power [Fire]
+- Leech Seed
+- Sleep Powder
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 100 HP / 140 SpA / 48 SpD / 220 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Ice]
+- Substitute
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 232 Atk / 24 SpD
+Adamant Nature
+- Thunder Wave
+- Seismic Toss
+- Superpower
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 120 HP / 192 Atk / 196 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Substitute
+- Brick Break
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 140 HP / 16 Def / 232 SpA / 120 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Beat Up

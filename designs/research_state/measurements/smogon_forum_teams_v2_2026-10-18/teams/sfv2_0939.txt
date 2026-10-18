@@ -1,63 +1,57 @@
-Metagross @ Leftovers
-Ability: Clear Body
-Shiny: Yes
-EVs: 168 HP / 252 Atk / 16 Def / 12 SpA / 60 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Hidden Power [Grass]
-- Earthquake
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 36 Def / 72 SpA / 152 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Psychic
-- Giga Drain
-- Calm Mind
-
 Tyranitar @ Lum Berry
 Ability: Sand Stream
-Shiny: Yes
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
 - Dragon Dance
+- Rock Slide
 - Earthquake
 - Double-Edge
-- Rock Slide
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-Shiny: Yes
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Surf
-- Hypnosis
-- Ice Beam
-- Recover
+- Substitute
+- Endeavor
+- Toxic
+- Hydro Pump
 
-Gyarados @ Leftovers
-Ability: Intimidate
-Shiny: Yes
-EVs: 252 Atk / 4 Def / 252 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 180 SpD
+Sassy Nature
+IVs: 30 Atk / 30 SpA
+- Wish
+- Hidden Power [Grass]
+- Fire Punch
+- Body Slam
+
+Machamp @ Leftovers
+Ability: Guts
+EVs: 76 HP / 216 Atk / 216 Spe
 Adamant Nature
 IVs: 30 Atk / 30 SpD
+- Bulk Up
+- Cross Chop
+- Rock Slide
 - Hidden Power [Ghost]
-- Dragon Dance
-- Double-Edge
-- Earthquake
 
-Magneton @ Magnet
-Ability: Magnet Pull
-Shiny: Yes
-EVs: 240 HP / 80 Def / 140 SpA / 48 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 Def / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
 - Thunderbolt
-- Hidden Power [Fire]
-- Protect
-- Toxic
+- Crunch
+- Hidden Power [Grass]
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 168 Atk / 200 SpD / 140 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Brick Break
+- Rock Slide

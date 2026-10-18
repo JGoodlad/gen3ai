@@ -1,57 +1,57 @@
-Tyranitar (F) @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 224 Atk / 32 Spe
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 188 HP / 252 Atk / 68 Spe
 Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
+- Meteor Mash
 - Earthquake
-- Hidden Power [Bug]
-- Focus Punch
+- Brick Break
+- Explosion
 
-Skarmory (F) @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Atk / 252 SpD
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
+IVs: 30 Atk / 30 SpD
 - Spikes
-- Roar
-- Drill Peck
-- Toxic
+- Rapid Spin
+- Hidden Power [Ghost]
+- Explosion
 
-Gengar (F) @ Leftovers
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 60 Def / 136 SpD / 60 Spe
-Calm Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Taunt
-- Thunderbolt
-- Ice Punch
-
-Aerodactyl (F) @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
 - Earthquake
-- Rock Slide
-- Double-Edge
-- Hidden Power [Bug]
-
-Swampert (F) @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 216 Def / 40 SpD
-Bold Nature
-- Surf
-- Toxic
-- Protect
-- Refresh
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 132 Def / 44 SpA / 80 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Hidden Power [Grass]
 - Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
 - Recover
+- Refresh
+- Toxic
+- Surf
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

@@ -1,0 +1,56 @@
+Hitmontop (M) @ Leftovers
+Ability: Intimidate
+EVs: 244 HP / 216 Atk / 32 SpD / 16 Spe
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Rapid Spin
+- Brick Break
+- Hidden Power [Ghost]
+- Rock Slide
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 12 HP / 176 Atk / 252 Def / 68 SpD
+Careful Nature
+- Body Slam
+- Earthquake
+- Shadow Ball
+- Self-Destruct
+
+Umbreon (M) @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 156 SpA / 100 SpD
+Calm Nature
+IVs: 0 Atk
+- Wish
+- Baton Pass
+- Pursuit
+- Curse
+
+Aerodactyl @ White Herb
+Ability: Rock Head
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Substitute
+- Taunt
+- Rock Slide
+- Earthquake
+
+Steelix @ Leftovers
+Ability: Rock Head
+EVs: 252 HP / 92 Atk / 136 SpD
+Careful Nature
+- Earthquake
+- Rock Slide
+- Roar
+- Explosion
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 HP / 28 Def / 216 SpA / 12 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Toxic
+- Sunny Day
+- Hidden Power [Fire]

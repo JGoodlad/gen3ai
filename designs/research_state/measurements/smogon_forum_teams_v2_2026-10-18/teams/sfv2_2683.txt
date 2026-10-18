@@ -1,56 +1,57 @@
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 Def
-Adamant Nature
-IVs: 30 Def / 30 SpD
-- Thunder Wave
-- Rock Slide
-- Focus Punch
-- Explosion
+Salamence @ Leftovers
+Ability: Intimidate
+Hidden Power: Grass
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+- Roar
+- Protect
+- Wish
+- Flamethrower
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Psychic
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Shadow Ball
-
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 16 SpA / 100 SpD / 140 Spe
+EVs: 240 HP / 252 SpA / 16 Spe
 Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 160 Atk / 64 SpA / 44 Spe
-Brave Nature
-- Curse
-- Earthquake
-- Rock Slide
+- Calm Mind
 - Surf
+- Rest
+- Sleep Talk
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 116 Def / 128 SpD / 16 Spe
+Sassy Nature
+- Explosion
+- Rapid Spin
+- Earthquake
+- Psychic
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 228 Atk / 16 Def / 96 Spe
-Adamant Nature
-- Agility
+EVs: 240 HP / 248 SpA / 20 Spe
+Quiet Nature
+IVs: 30 Def / 30 SpA / 30 Spe
 - Meteor Mash
-- Earthquake
+- Psychic
+- Hidden Power [Fire]
 - Explosion
+
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Gust

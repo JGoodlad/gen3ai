@@ -1,56 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 176 SpA / 76 SpD / 16 Spe
-Modest Nature
-- Crunch
-- Pursuit
-- Flamethrower
-- Brick Break
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 120 HP / 252 Atk / 136 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Double-Edge
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 20 Atk / 236 SpD
-Careful Nature
-- Spikes
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 176 Atk / 212 SpD / 120 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Recover
+- Hidden Power [Fire]
+- Giga Drain
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 240 HP / 216 Atk / 32 SpA / 20 Spe
+Adamant Nature
 - Rapid Spin
 - Earthquake
+- Psychic
 - Explosion
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
-- Explosion
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 208 HP / 252 Def / 48 Spe
 Bold Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Wish
-- Seismic Toss
-- Ice Beam
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 216 Def / 28 SpD / 24 Spe
-Bold Nature
-IVs: 0 Atk
-- Protect
-- Toxic
 - Surf
-- Roar
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Overheat
-- Flamethrower
-- Hidden Power [Grass]
-- Roar
+- Recover
+- Ice Beam
+- Hypnosis

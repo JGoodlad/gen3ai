@@ -1,58 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Ice Beam
-- Brick Break
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
 
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 252 SpA / 4 Spe
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Ice Beam
-- Hidden Power [Grass]
-- Recover
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-
-Aerodactyl @ Liechi Berry
-Ability: Rock Head
-EVs: 12 HP / 244 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Hidden Power [Bug]
-- Substitute
-- Earthquake
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Rock Slide
-- Aerial Ace
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 80 Def
-Adamant Nature
-- Earthquake
-- Meteor Mash
+IVs: 0 Atk
 - Protect
+- Toxic
+- Thunderbolt
+- Rain Dance
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
 - Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 Spe
+Impish Nature
+- Soft-Boiled
+- Aromatherapy
+- Thunder Wave
+- Seismic Toss
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 Def
+- Rest
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Roar

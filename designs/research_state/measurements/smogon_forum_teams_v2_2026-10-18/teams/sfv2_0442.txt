@@ -1,58 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 Atk / 56 SpA / 200 Spe
-Lonely Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Thunderbolt
-- Drill Peck
-- Hidden Power [Fighting]
-- Baton Pass
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 136 HP / 248 Atk / 8 Def / 116 Spe
-Jolly Nature
-IVs: 30 SpD / 30 Spe
-- Earthquake
-- Beat Up
-- Hidden Power [Bug]
-- Aerial Ace
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 24 HP / 252 SpA / 232 Spe
-Modest Nature
-IVs: 3 Atk / 30 SpA
-- Calm Mind
-- Hydro Pump
-- Ice Beam
-- Hidden Power [Electric]
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 60 Def / 128 SpD / 68 Spe
-Timid Nature
-- Will-O-Wisp
-- Thunderbolt
-- Ice Punch
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 120 SpA / 136 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 44 Def / 212 SpA
 Modest Nature
 IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Psychic
-- Fire Punch
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
+- Crunch
+- Pursuit
+- Fire Blast
 - Roar
-- Baton Pass
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 104 SpD / 152 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Taunt
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 64 HP / 252 Def / 192 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Toxic
+- Snatch
+- Soft-Boiled
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 124 Def / 44 SpA / 36 SpD / 56 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Rapid Spin
+- Thunder Wave
+- Recover
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+- Dragon Claw
+- Fire Blast
+- Wish
+- Brick Break
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 124 Atk / 136 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion

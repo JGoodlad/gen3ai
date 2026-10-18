@@ -1,57 +1,55 @@
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Hydro Pump
-- Roar
-- Endeavor
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
+Snorlax (M) @ Leftovers
+Ability: Thick Fat
+EVs: 252 HP / 108 Atk / 136 SpD / 12 Spe
 Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
+- Body Slam
+- Curse
+- Rest
+- Shadow Ball
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 36 SpA / 96 SpD / 124 Spe
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Grass]
-- Explosion
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 128 HP / 252 SpA / 128 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Protect
+- Thunderbolt
+- Toxic
 
-Heracross @ Leftovers
-Ability: Guts
-EVs: 252 Atk / 76 Def / 180 Spe
-Adamant Nature
-- Substitute
-- Megahorn
-- Rock Slide
-- Focus Punch
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 208 Atk / 40 SpD / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
+- Aerial Ace
 - Earthquake
-- Rock Slide
 - Hidden Power [Bug]
-- Double-Edge
+- Rock Slide
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 244 HP / 128 Def / 136 Spe
+Bold Nature
+- Calm Mind
+- Leech Seed
+- Psychic
+- Recover
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 16 Def / 240 SpD
+Impish Nature
+- Protect
+- Spikes
+- Toxic
+- Whirlwind
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 176 Def / 44 SpA / 36 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Toxic

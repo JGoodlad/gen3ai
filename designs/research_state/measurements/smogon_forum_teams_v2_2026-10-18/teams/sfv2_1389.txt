@@ -1,57 +1,58 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 248 SpD / 8 Spe
+Careful Nature
+IVs: 30 SpD / 30 Spe
+- Hidden Power [Bug]
+- Spikes
+- Rapid Spin
 - Explosion
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
-- Refresh
-- Earthquake
-- Psychic
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 192 HP / 252 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
-- Calm Mind
-- Surf
-
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 Def / 252 Spe
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 216 Atk / 176 Def / 104 SpD / 12 Spe
 Adamant Nature
-IVs: 30 HP
-- Substitute
-- Megahorn
+IVs: 30 SpD / 30 Spe
+- Cross Chop
 - Rock Slide
-- Focus Punch
+- Hidden Power [Bug]
+- Knock Off
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
+EVs: 80 HP / 176 Atk / 124 Def / 108 SpD / 20 Spe
 Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
+- Body Slam
 - Shadow Ball
+- Focus Punch
+- Self-Destruct
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 216 HP / 112 SpA / 180 Spe
+EVs: 252 HP / 100 SpA / 120 SpD / 36 Spe
 Modest Nature
-IVs: 30 Spe
-- Light Screen
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
-- Hidden Power [Ice]
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 44 HP / 104 Atk / 128 SpD / 232 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+- Beat Up
+
+Kingdra @ Leftovers
+Ability: Swift Swim
+EVs: 248 HP / 244 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
 - Rain Dance
+- Substitute

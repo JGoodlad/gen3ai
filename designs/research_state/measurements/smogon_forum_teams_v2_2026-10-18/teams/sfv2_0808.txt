@@ -1,57 +1,57 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Focus Punch
-- Earthquake
-- Hidden Power [Bug]
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 216 SpD / 40 Spe
+Calm Nature
+IVs: 0 Atk
 - Thunderbolt
-- Will-O-Wisp
-- Ice Punch
+- Substitute
+- Baton Pass
+- Rest
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 252 Def / 64 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Thunder Wave
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 124 Atk / 96 Def / 20 SpA / 16 SpD
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
 - Explosion
 
-Moltres @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Will-O-Wisp
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+- Calm Mind
+- Surf
+- Rest
 - Roar
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 248 SpD / 8 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Roar
-- Protect
-- Toxic
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 16 Atk / 136 Def / 24 SpA / 44 SpD / 40 Spe
-Relaxed Nature
-- Hydro Pump
-- Ice Beam
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
 - Earthquake
-- Refresh
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 44 Atk / 44 Def / 32 SpA / 84 SpD / 52 Spe
-Sassy Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Fighting]
-- Body Slam
-- Wish
-- Thunderbolt
+Trapinch @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+- Quick Attack

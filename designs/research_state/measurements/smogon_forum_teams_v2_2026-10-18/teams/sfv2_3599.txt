@@ -1,56 +1,58 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-IVs: 0 Atk / 30 SpA / 30 SpD
-- Spikes
-- Roar
-- Taunt
-- Toxic
-
-Articuno @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 114 SpA / 136 SpD / 8 Spe
-Calm Nature
-- Ice Beam
-- Rest
-- Sleep Talk
-- Roar
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
+Breloom @ Leftovers
+Ability: Effect Spore
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
+IVs: 30 Atk / 30 SpD
+- Spore
+- Stun Spore
+- Hidden Power [Ghost]
+- Sky Uppercut
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
-Timid Nature
-- Will-O-Wisp
-- Taunt
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Substitute
 - Thunderbolt
-- Ice Punch
+- Hidden Power [Ice]
+- Baton Pass
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
 Adamant Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Refresh
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
 
-Metagross @ Leftovers
-Ability: Clear Body
-Hidden Power: Fire
-EVs: 252 HP / 176 Atk / 80 Def
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 160 SpA / 56 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Ice Beam
+- Rain Dance
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
 Adamant Nature
-- Meteor Mash
-- Earthquake
-- Protect
-- Explosion
+IVs: 30 HP
+- Substitute
+- Megahorn
+- Rock Slide
+- Focus Punch

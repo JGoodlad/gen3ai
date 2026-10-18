@@ -1,57 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 36 Atk / 120 SpA / 168 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Fire Blast
-- Ice Beam
-- Hidden Power [Grass]
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 44 Atk / 68 Def / 148 SpD
+Sassy Nature
+- Body Slam
+- Fire Punch
+- Protect
+- Wish
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 228 HP / 80 SpA / 200 Spe
-Modest Nature
-IVs: 3 Atk / 30 Spe
-- Roar
-- Agility
-- Thunderbolt
-- Hidden Power [Ice]
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 216 Def / 12 SpD / 32 Spe
+Impish Nature
+- Protect
+- Earthquake
+- Rock Slide
+- Toxic
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 204 SpD / 56 Spe
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
-- Taunt
-- Toxic
+- Roar
+- Drill Peck
+- Protect
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 32 HP / 252 SpA / 224 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Will-O-Wisp
 - Roar
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 244 HP / 168 SpA / 96 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Psychic
-- Fire Punch
-- Hidden Power [Grass]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 84 Atk / 128 SpA / 48 Spe
-Brave Nature
-- Hydro Pump
-- Earthquake
+Articuno @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 114 SpA / 136 SpD / 8 Spe
+Calm Nature
+IVs: 0 Atk
 - Ice Beam
-- Refresh
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 204 Atk / 136 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Rock Slide
+- Rest
+- Sleep Talk
+- Haze

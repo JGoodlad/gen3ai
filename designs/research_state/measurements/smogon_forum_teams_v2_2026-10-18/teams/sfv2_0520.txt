@@ -1,61 +1,58 @@
-Starmie @ Leftovers
-Ability: Natural Cure
-Shiny: Yes
-EVs: 248 HP / 156 Def / 28 SpA / 20 SpD / 56 Spe
-Timid Nature
-IVs: 0 Atk
-- Surf
-- Rapid Spin
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 28 Def / 208 SpD / 32 Spe
+Calm Nature
+IVs: 30 Atk / 30 SpA
+- Baton Pass
+- Hidden Power [Grass]
+- Thunderbolt
 - Thunder Wave
-- Recover
 
-Tyranitar (M) @ Leftovers
-Ability: Sand Stream
-Shiny: Yes
-EVs: 252 HP / 220 Atk / 16 Def / 20 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
-- Substitute
-
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
+EVs: 252 HP / 176 Def / 80 SpD
+Impish Nature
 IVs: 0 Atk
-- Spikes
-- Thief
 - Protect
 - Roar
+- Spikes
+- Toxic
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Rapid Spin
+- Thunderbolt
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 244 HP / 48 Atk / 216 Def
-Impish Nature
-- Meteor Mash
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
 - Earthquake
-- Protect
 - Explosion
+- Meteor Mash
 
-Blissey @ Leftovers
-Ability: Natural Cure
-Shiny: Yes
-EVs: 252 Def / 252 SpA / 4 SpD
-Bold Nature
-IVs: 0 Atk / 30 Spe
-- Sing
-- Seismic Toss
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
 - Ice Beam
-- Soft-Boiled
+- Pursuit
 
-Dugtrio (M) @ Choice Band
+Dugtrio @ Choice Band
 Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
+EVs: 40 HP / 148 Atk / 100 SpD / 220 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 SpD / 30 Spe
+- Beat Up
 - Earthquake
 - Hidden Power [Bug]
-- Aerial Ace
-- Screech
+- Rock Slide

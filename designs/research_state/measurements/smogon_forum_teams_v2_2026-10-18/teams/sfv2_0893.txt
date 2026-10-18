@@ -1,61 +1,59 @@
-Salamence (M) @ Leftovers
-Ability: Intimidate
-Shiny: Yes
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Brick Break
-- Dragon Claw
-- Fire Blast
-- Toxic
-
-Tyranitar (M) @ Leftovers
-Ability: Sand Stream
-Shiny: Yes
-EVs: 16 HP / 200 Atk / 120 Def / 172 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Taunt
-- Rock Slide
-
-Snorlax (M) @ Leftovers
-Ability: Immunity
-Shiny: Yes
-EVs: 80 HP / 252 Atk / 136 Def / 28 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Self-Destruct
-- Body Slam
-- Shadow Ball
-
-Swampert (M) @ Salac Berry
-Ability: Torrent
-Shiny: Yes
-EVs: 4 HP / 252 SpA / 252 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 80 SpD / 176 Spe
 Timid Nature
-- Substitute
-- Hydro Pump
-- Ice Beam
-- Endeavor
+IVs: 0 Atk
+- Hypnosis
+- Mean Look
+- Perish Song
+- Protect
 
-Aerodactyl (F) @ Choice Band
-Ability: Rock Head
-Shiny: Yes
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 60 Atk / 196 Def
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Rapid Spin
+- Earthquake
+- Rest
+- Hidden Power [Rock]
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Counter
+- Ice Beam
+- Soft-Boiled
+- Aromatherapy
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Hidden Power [Grass]
+- Thunderbolt
+- Roar
+
+Jirachi @ Choice Band
+Ability: Serene Grace
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Double-Edge
-- Hidden Power [Bug]
+IVs: 30 SpA / 30 SpD
+- Body Slam
+- Hidden Power [Ground]
+- Shadow Ball
+- Dynamic Punch
 
-Metagross @ Lum Berry
-Ability: Clear Body
-Shiny: Yes
-EVs: 152 HP / 240 Atk / 16 Def / 100 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Agility
-- Explosion
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Haze
+- Surf
+- Toxic
+- Wish

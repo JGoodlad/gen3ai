@@ -1,0 +1,57 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 152 HP / 216 Atk / 28 Def / 112 Spe
+Adamant Nature
+IVs: 30 SpA
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 224 Atk / 60 Def / 20 SpD
+Adamant Nature
+- Curse
+- Body Slam
+- Earthquake
+- Shadow Ball
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Beat Up
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 220 SpA / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 72 Def / 40 SpA / 148 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Surf
+- Thunder Wave

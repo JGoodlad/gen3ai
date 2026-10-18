@@ -1,31 +1,51 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Protect
-- Refresh
-- Surf
-- Roar
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 240 HP / 16 Def / 252 SpA
+EVs: 184 HP / 216 SpA / 108 Spe
 Modest Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Crunch
 - Pursuit
 - Flamethrower
-- Focus Punch
+- Brick Break
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 0 Atk
 - Spikes
+- Protect
+- Toxic
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Hasty Nature
+IVs: 0 Atk
+- Taunt
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
 - Rapid Spin
-- Hidden Power [Bug]
-- Counter
+- Surf
+- Ice Beam
+- Thunderbolt
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
@@ -36,23 +56,3 @@ IVs: 0 Atk
 - Toxic
 - Ice Beam
 - Thunderbolt
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 80 HP / 252 SpA / 176 Spe
-Rash Nature
-IVs: 30 SpA
-- Ice Punch
-- Thunder
-- Psychic
-- Dynamic Punch
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast

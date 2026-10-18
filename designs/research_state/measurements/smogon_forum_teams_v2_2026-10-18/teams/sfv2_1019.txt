@@ -1,56 +1,57 @@
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 200 SpA / 56 Spe
-Modest Nature
-IVs: 0 Atk
-- Seismic Toss
-- Ice Beam
-- Aromatherapy
-- Soft-Boiled
-
-Skarmory (M)
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Calm Nature
-- Spikes
-- Thief
-- Roar
-- Protect
-
-Milotic (F) @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Toxic
-- Refresh
-- Recover
-
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 248 HP / 176 Atk / 80 SpD / 4 Spe
+EVs: 252 HP / 176 Atk / 80 SpD
 Adamant Nature
 - Meteor Mash
 - Earthquake
 - Explosion
-- Rest
+- Rock Slide
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 116 Def / 140 SpD
-Sassy Nature
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Endure
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 232 HP / 156 Atk / 120 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
 - Earthquake
-- Psychic
-- Rapid Spin
-- Rest
+- Counter
 
-Dugtrio (M) @ Choice Band
-Ability: Arena Trap
-EVs: 8 HP / 248 Atk / 252 Spe
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 120 HP / 252 Def / 136 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Substitute
+- Wish
+- Baton Pass
+
+Dodrio @ Choice Band
+Ability: Early Bird
+EVs: 252 Atk / 4 SpD / 252 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 SpA / 30 SpD
+- Drill Peck
+- Baton Pass
+- Hidden Power [Ground]
+- Return
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 212 SpD / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rest
+- Rock Slide

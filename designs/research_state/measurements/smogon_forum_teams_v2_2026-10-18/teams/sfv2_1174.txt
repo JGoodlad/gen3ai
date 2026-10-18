@@ -1,57 +1,56 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 56 Atk / 64 Def / 140 SpA
-Quiet Nature
-- Curse
-- Hydro Pump
-- Ice Beam
-- Earthquake
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Earthquake
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 188 HP / 140 SpA / 180 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 228 HP / 216 Def / 64 Spe
+Bold Nature
 - Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
+- Surf
+- Rest
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 240 HP / 224 Def / 12 SpA / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
 - Psychic
+- Fire Punch
+- Wish
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 136 Atk / 152 Def / 172 SpD / 16 Spe
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 4 Def / 252 SpA
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Beat Up
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Fire Blast
+- Ice Beam
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 140 SpD / 116 Spe
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 112 HP / 252 Def / 144 Spe
+Bold Nature
+- Seismic Toss
+- Counter
+- Soft-Boiled
+- Aromatherapy
+
+Dugtrio (F) @ Choice Band
+Ability: Arena Trap
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
 - Rock Slide
-- Brick Break
-- Hidden Power [Flying]
+- Hidden Power [Bug]
+- Aerial Ace
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 200 HP / 152 Atk / 12 SpA / 144 Spe
+Jolly Nature
+- Psychic
+- Earthquake
+- Rapid Spin
+- Explosion

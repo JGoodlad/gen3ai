@@ -1,0 +1,57 @@
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 76 HP / 180 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Baton Pass
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 156 SpD
+Adamant Nature
+- Return
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Machamp @ Leftovers
+Ability: Guts
+EVs: 136 Atk / 4 SpD
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Cross Chop
+- Rock Slide
+- Hidden Power [Ghost]
+- Bulk Up
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Double-Edge
+
+Salamence @ Lum Berry
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

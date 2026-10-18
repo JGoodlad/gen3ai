@@ -1,59 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 92 SpA / 160 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
-- Roar
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 76 SpA / 180 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Hidden Power [Grass]
-- Leech Seed
-- Baton Pass
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Wish
-- Ice Punch
-- Thunder
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 224 Def / 32 SpD
-Bold Nature
-IVs: 0 Atk
-- Thunder Wave
-- Ice Beam
-- Thunderbolt
-- Recover
-
-Starmie @ Leftovers
-Ability: Illuminate
+Swampert @ Salac Berry
+Ability: Torrent
 EVs: 4 Def / 252 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
+- Substitute
+- Toxic
 - Hydro Pump
-- Thunderbolt
-- Ice Beam
-- Rapid Spin
+- Endeavor
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 228 Atk / 48 SpD / 232 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
 - Earthquake
+- Psychic
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 192 Atk / 112 Def / 172 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 200 HP / 252 Atk / 56 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
 - Rock Slide
-- Aerial Ace
-- Hidden Power [Bug]
+- Hidden Power [Ghost]
+- Superpower
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Sleep Talk
+- Calm Mind
+- Surf

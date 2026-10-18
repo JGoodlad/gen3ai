@@ -1,0 +1,57 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Roar
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 Def
+- Rest
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 156 SpA / 60 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Wish
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]

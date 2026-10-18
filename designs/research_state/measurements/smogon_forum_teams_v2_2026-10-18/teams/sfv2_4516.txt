@@ -1,0 +1,57 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 240 HP / 248 SpA / 20 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Explosion
+- Psychic
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 156 HP / 96 Def / 136 SpA / 36 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Calm Mind
+- Leech Seed
+- Baton Pass
+
+Zapdos @ Choice Band
+Ability: Pressure
+EVs: 252 Atk / 100 SpA / 156 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Thunderbolt
+- Hidden Power [Fighting]
+- Drill Peck
+- Baton Pass
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Protect
+- Drill Peck
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 176 Def / 36 SpA / 44 Spe
+Relaxed Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Focus Punch

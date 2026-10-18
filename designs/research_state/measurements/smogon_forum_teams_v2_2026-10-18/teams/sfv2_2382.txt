@@ -1,55 +1,58 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 160 Atk / 20 SpA / 44 SpD / 44 Spe
-Brave Nature
-- Curse
-- Earthquake
-- Rock Slide
-- Hydro Pump
-
-Tyranitar @ Black Belt
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 184 HP / 156 Atk / 168 Spe
-Brave Nature
-- Crunch
+EVs: 252 Atk / 4 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
 - Rock Slide
 - Fire Blast
+- Hidden Power [Grass]
 - Brick Break
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 64 HP / 248 SpD / 196 Spe
-Timid Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
 - Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 192 HP / 8 Def / 248 SpA / 60 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 120 SpD / 148 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
+- Taunt
+- Drill Peck
 - Roar
 
-Metagross @ Liechi Berry
-Ability: Clear Body
-EVs: 168 HP / 228 Atk / 16 Def / 96 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Thunder Wave
+- Seismic Toss
+- Ice Beam
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Surf
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 SpA / 136 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Water Pulse
+- Thunderbolt
+- Psychic
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

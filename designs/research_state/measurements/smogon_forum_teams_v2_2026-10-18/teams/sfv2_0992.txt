@@ -1,56 +1,57 @@
-Metagross @ Choice Band
-Ability: Clear Body
+Breloom @ Leftovers
+Ability: Effect Spore
 EVs: 252 Atk / 4 SpD / 252 Spe
 Adamant Nature
-- Meteor Mash
-- Rock Slide
+- Swords Dance
+- Sky Uppercut
+- Mach Punch
+- Spore
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 48 Atk / 212 SpA
+Quiet Nature
+IVs: 30 Atk / 30 SpA
+- Ice Punch
+- Hidden Power [Grass]
 - Earthquake
 - Explosion
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 196 Atk / 80 Def / 176 SpD / 24 Spe
-Adamant Nature
-- Curse
-- Return
-- Shadow Ball
-- Self-Destruct
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 100 Atk / 56 Def / 240 SpA / 108 Spe
+Naughty Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Sludge Bomb
+- Hidden Power [Fighting]
+- Fire Blast
+- Memento
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 SpD
-- Dragon Dance
-- Earthquake
-- Double-Edge
-- Hidden Power [Ghost]
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 40 Def / 84 SpA / 136 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Psychic
-- Fire Punch
+- Crunch
+- Pursuit
+- Fire Blast
 - Hidden Power [Grass]
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 28 HP / 192 SpA / 52 SpD / 236 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 4 Atk / 168 Def / 8 SpA / 76 SpD
+Sassy Nature
+- Hydro Pump
 - Ice Beam
-- Toxic
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Dragon Dance
-- Rock Slide
 - Earthquake
-- Double-Edge
+- Protect
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide

@@ -1,0 +1,55 @@
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Hydro Pump
+- Roar
+- Endeavor
+
+Tyranitar @ Black Glasses
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Brave Nature
+- Crunch
+- Rock Slide
+- Fire Blast
+- Brick Break
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Toxic
+- Seismic Toss
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Atk / 208 SpD
+Hasty Nature
+- Will-O-Wisp
+- Thunderbolt
+- Giga Drain
+- Explosion
+
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 12 HP / 252 Atk / 68 SpD / 176 Spe
+Jolly Nature
+- Substitute
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide

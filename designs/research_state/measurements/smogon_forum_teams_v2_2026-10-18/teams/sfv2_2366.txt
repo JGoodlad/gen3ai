@@ -1,56 +1,59 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 240 SpA / 20 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Psychic
-- Baton Pass
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 52 Def / 60 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Shadow Ball
-- Self-Destruct
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 172 SpA / 68 SpD / 16 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
-- Calm Mind
-- Surf
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 120 Atk / 248 SpA / 140 Spe
-Rash Nature
-- Wish
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
 - Dragon Claw
 - Flamethrower
+- Hidden Power [Grass]
 - Brick Break
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Toxic
+- Roar
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Toxic
+- Surf
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

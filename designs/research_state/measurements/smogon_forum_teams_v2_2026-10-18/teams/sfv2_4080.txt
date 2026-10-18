@@ -1,0 +1,54 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 168 HP / 224 Atk / 16 Def / 100 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Brick Break
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 252 Def / 8 Spe
+Impish Nature
+- Soft-Boiled
+- Aromatherapy
+- Thunder Wave
+- Seismic Toss
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
+Adamant Nature
+- Curse
+- Double-Edge
+- Shadow Ball
+- Self-Destruct
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 176 Def / 76 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Recover
+- Toxic
+- Surf
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 120 Def / 248 SpA / 140 Spe
+Rash Nature
+- Wish
+- Dragon Claw
+- Flamethrower
+- Brick Break

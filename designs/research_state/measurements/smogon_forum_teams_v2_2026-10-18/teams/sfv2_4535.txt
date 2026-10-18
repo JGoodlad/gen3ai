@@ -1,0 +1,56 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 8 Def / 252 SpA
+Quiet Nature
+- Crunch
+- Pursuit
+- Counter
+- Earthquake
+
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 8 HP / 196 SpA / 52 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Razor Leaf
+- Hidden Power [Ice]
+- Leech Seed
+- Substitute
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 124 Def / 104 SpA / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Psychic
+- Calm Mind
+- Leech Seed
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Spore
+- Swords Dance
+- Sky Uppercut
+- Mach Punch
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 20 Atk / 196 Def / 44 Spe
+Impish Nature
+- Earthquake
+- Rock Slide
+- Toxic
+- Protect
+
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Endure
+- Thunder Wave

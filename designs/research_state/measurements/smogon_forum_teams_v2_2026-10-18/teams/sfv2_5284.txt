@@ -1,0 +1,56 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 180 Atk / 76 Def
+Brave Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Ice Beam
+- Hydro Pump
+
+Snorlax @ Choice Band
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 136 Def / 160 SpD / 4 Spe
+Adamant Nature
+- Return
+- Focus Punch
+- Shadow Ball
+- Self-Destruct
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 156 Def / 100 Spe
+Timid Nature
+- Wish
+- Toxic
+- Fire Blast
+- Brick Break
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 44 HP / 252 Def / 212 SpA
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt
+
+Ludicolo @ Leftovers
+Ability: Swift Swim
+EVs: 200 HP / 216 SpA / 92 Spe
+Modest Nature
+IVs: 0 Atk
+- Rain Dance
+- Hydro Pump
+- Ice Beam
+- Leech Seed
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Earthquake
+- Explosion
+- Spikes
+- Rapid Spin

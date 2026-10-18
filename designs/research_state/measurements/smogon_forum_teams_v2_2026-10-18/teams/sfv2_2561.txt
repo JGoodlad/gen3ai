@@ -1,56 +1,57 @@
-Metagross @ Leftovers
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 32 Atk / 224 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Ice Beam
+- Brick Break
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
+- Surf
+- Ice Beam
+- Explosion
+- Spikes
+
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 252 HP / 176 Atk / 36 Def / 28 SpD / 16 Spe
+EVs: 104 HP / 216 Atk / 188 Spe
 Adamant Nature
-- Toxic
 - Meteor Mash
 - Earthquake
+- Double-Edge
 - Explosion
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Protect
-- Toxic
-- Thunderbolt
-- Hidden Power [Fire]
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 60 SpD / 196 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Ice Punch
+- Fire Punch
+- Hidden Power [Grass]
+- Explosion
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
-Modest Nature
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 8 HP / 252 SpA / 248 Spe
+Timid Nature
 IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Shadow Ball
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
+- Surf
+- Endeavor
+- Roar
 - Substitute
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
 - Thunderbolt
 - Hidden Power [Ice]
-- Baton Pass
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 Atk / 16 Spe
-Naughty Nature
-- Curse
-- Earthquake
-- Rock Slide
-- Ice Beam
+- Thunder Wave
+- Roar

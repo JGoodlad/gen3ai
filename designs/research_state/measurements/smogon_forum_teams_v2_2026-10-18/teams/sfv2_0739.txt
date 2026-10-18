@@ -1,59 +1,58 @@
-Registeel @ Leftovers
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 24 Def / 232 SpD
-Calm Nature
-IVs: 0 Atk
-- Seismic Toss
-- Thunder Wave
-- Rest
-- Sleep Talk
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 244 Def / 12 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
-- Roar
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 80 Def / 176 SpD
-Calm Nature
-IVs: 0 Atk
-- Recover
-- Perish Song
-- Leech Seed
-- Heal Bell
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 HP / 140 Def / 8 SpD / 108 Spe
-Bold Nature
-IVs: 0 Atk
-- Flamethrower
-- Toxic
-- Protect
-- Wish
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 160 Atk / 24 Def / 72 SpD
-Relaxed Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Psychic
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Meteor Mash
 - Earthquake
-- Rapid Spin
-- Hidden Power [Bug]
+- Protect
+- Explosion
 
-Blissey (F) @ Leftovers
+Starmie @ Leftovers
 Ability: Natural Cure
-EVs: 224 Def / 240 SpA / 44 Spe
-Modest Nature
+EVs: 252 HP / 200 Def / 40 SpA / 16 Spe
+Bold Nature
+- Rapid Spin
+- Recover
+- Surf
+- Thunder Wave
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+Shiny: Yes
+EVs: 236 HP / 128 SpA / 144 Spe
+Timid Nature
 IVs: 0 Atk
+- Toxic
+- Wish
+- Protect
 - Thunderbolt
-- Calm Mind
-- Ice Beam
-- Soft-Boiled
+
+Gyarados @ Leftovers
+Ability: Intimidate
+Happiness: 0
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Fighting]
+- Earthquake
+- Double-Edge
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+- Substitute
+- Focus Punch
+- Body Slam
+- Curse
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Pursuit
+- Crunch
+- Fire Blast
+- Hidden Power [Grass]

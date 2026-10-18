@@ -1,0 +1,57 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 220 SpA / 104 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 240 HP / 8 SpA / 208 SpD / 52 Spe
+Modest Nature
+- Surf
+- Spikes
+- Rapid Spin
+- Explosion
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Focus Punch
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 28 Def / 192 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Flygon @ Salac Berry
+Ability: Levitate
+EVs: 28 HP / 252 Atk / 12 Def / 216 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Endure
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+- Thunder Wave

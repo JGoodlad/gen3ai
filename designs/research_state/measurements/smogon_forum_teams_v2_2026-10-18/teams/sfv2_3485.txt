@@ -1,55 +1,55 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 244 Def / 96 SpA / 12 SpD / 140 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Surf
+- Ice Beam
+- Baton Pass
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 40 Def / 216 SpA
-Quiet Nature
-- Crunch
-- Pursuit
-- Fire Blast
-- Focus Punch
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 136 SpD / 120 Spe
-Careful Nature
-- Spikes
-- Taunt
-- Toxic
-- Roar
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 Atk / 80 SpA / 176 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-- Drill Peck
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Brick Break
-- Mach Punch
-- Swords Dance
-- Spore
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 224 HP / 252 SpA / 32 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Psychic
-- Hidden Power [Fire]
+Claydol @ Choice Band
+Ability: Levitate
+EVs: 252 HP / 252 Atk / 4 Def
+Impish Nature
+- Rapid Spin
+- Earthquake
+- Rock Slide
 - Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Bold Nature
-- Ice Beam
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Toxic
 - Seismic Toss
-- Soft-Boiled
-- Wish
+- Explosion
+
+Heracross
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Thief
+- Megahorn
+- Rock Slide
+- Brick Break
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

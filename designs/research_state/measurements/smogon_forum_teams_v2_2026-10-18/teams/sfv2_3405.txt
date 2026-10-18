@@ -1,58 +1,57 @@
-Slaking @ Choice Band
-Ability: Truant
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+IVs: 0 Atk
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Pursuit
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Heracross
+Ability: Guts
 EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
+- Thief
+- Megahorn
+- Rock Slide
 - Brick Break
-- Earthquake
-- Double-Edge
-- Encore
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 248 SpD / 8 Spe
-Careful Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Spikes
-- Rapid Spin
-- Hidden Power [Fire]
-- Toxic
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 180 HP / 252 Def / 76 Spe
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Sing
-- Seismic Toss
-- Aromatherapy
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
-- Rest
-- Sunny Day
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Toxic
-- Protect
-- Roar
-
-Umbreon @ Leftovers
-Ability: Synchronize
-EVs: 252 HP / 120 Def / 136 SpD
-Sassy Nature
-IVs: 0 Atk / 0 Spe
-- Wish
-- Protect
-- Pursuit
-- Charm
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

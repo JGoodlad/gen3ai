@@ -1,56 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 44 SpA / 44 SpD / 44 Spe
-Relaxed Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+IVs: 0 Atk
 - Protect
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
+- Toxic
+- Roar
 - Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Roar
+- Rest
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 196 Def / 60 SpD
+Calm Nature
+IVs: 0 Atk
+- Flash
+- Conversion 2
+- Rest
+- Thunder Wave
+
+Gardevoir @ Salac Berry
+Ability: Trace
+EVs: 40 HP / 252 SpA / 216 Spe
 Timid Nature
 IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Ice Punch
+- Calm Mind
+- Wish
 - Thunderbolt
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
 - Psychic
 
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
 Modest Nature
-IVs: 30 Atk / 30 SpA
-- Will-O-Wisp
-- Flamethrower
-- Hidden Power [Grass]
-- Roar
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion

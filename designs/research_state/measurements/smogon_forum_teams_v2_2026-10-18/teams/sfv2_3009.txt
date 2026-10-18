@@ -1,57 +1,59 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 108 HP / 252 SpA / 148 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Substitute
+- Baton Pass
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 40 HP / 144 Atk / 100 SpD / 224 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Beat Up
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-Hidden Power: Bug
-EVs: 252 HP / 216 SpA / 40 Spe
-Quiet Nature
-- Pursuit
-- Crunch
-- Fire Blast
-- Brick Break
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Baton Pass
+- Giga Drain
+- Hidden Power [Fire]
 
 Metagross @ Leftovers
 Ability: Clear Body
-Hidden Power: Fire
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Agility
+EVs: 248 HP / 240 SpA / 20 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Meteor Mash
-- Earthquake
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 216 Atk / 116 Def / 164 SpD / 12 Spe
-Adamant Nature
-- Self-Destruct
-- Body Slam
-- Earthquake
-- Focus Punch
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 108 Atk / 220 SpA / 180 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Dance
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 28 Def / 12 Spe
-Brave Nature
-- Rapid Spin
-- Earthquake
-- Ice Beam
+- Psychic
+- Hidden Power [Fire]
 - Explosion
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 252 SpA / 16 Spe
+EVs: 4 HP / 252 SpA / 252 Spe
 Modest Nature
-IVs: 0 Atk
+IVs: 2 Atk / 30 SpA
 - Calm Mind
-- Surf
-- Rest
-- Sleep Talk
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Grass]

@@ -1,56 +1,55 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Earthquake
-- Rock Slide
-- Brick Break
-- Hidden Power [Flying]
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 240 SpA / 20 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Protect
-- Toxic
-- Thunderbolt
-- Hidden Power [Fire]
+- Crunch
+- Pursuit
+- Brick Break
+- Flamethrower
 
-Quagsire @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 136 Def / 104 SpD / 16 Spe
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Sassy Nature
+- Zap Cannon
+- Rapid Spin
+- Explosion
+- Spikes
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 212 Atk / 120 SpA / 176 Spe
+Hasty Nature
+- Fire Punch
+- Ice Punch
+- Focus Punch
+- Destiny Bond
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Double-Edge
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
 Relaxed Nature
-- Rest
-- Curse
+- Surf
 - Earthquake
 - Ice Beam
+- Protect
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 28 SpD / 52 Spe
-Adamant Nature
-- Toxic
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 80 HP / 252 SpA / 176 Spe
-Timid Nature
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 88 Def / 140 SpA / 32 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Wish
-- Thunderbolt
+- Leech Seed
 - Hidden Power [Grass]
-- Baton Pass
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 136 Atk / 152 Def / 172 SpD / 16 Spe
-Adamant Nature
-- Body Slam
-- Earthquake
-- Shadow Ball
-- Self-Destruct
+- Recover
+- Psychic

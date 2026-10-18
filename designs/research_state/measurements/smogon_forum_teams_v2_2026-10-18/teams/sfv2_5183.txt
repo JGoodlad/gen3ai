@@ -1,0 +1,58 @@
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 20 HP / 252 Atk / 36 SpD / 200 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Spore
+- Stun Spore
+- Hidden Power [Ghost]
+- Sky Uppercut
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 100 Atk / 100 Def / 56 Spe
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Rock Slide
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 36 Atk / 96 Def / 120 SpD / 4 Spe
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Curse
+- Hidden Power [Ghost]
+- Superpower
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 120 SpD / 148 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam

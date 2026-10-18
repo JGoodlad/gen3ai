@@ -1,57 +1,57 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 188 HP / 136 Atk / 184 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Explosion
-- Agility
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 184 Atk / 16 Def / 56 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Focus Punch
-- Substitute
-- Hidden Power [Bug]
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 24 HP / 80 Atk / 188 SpA / 216 Spe
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
 Mild Nature
 IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Substitute
+- Dragon Claw
+- Flamethrower
 - Hidden Power [Grass]
-- Focus Punch
+- Brick Break
 
-Snorlax @ Leftovers
-Ability: Immunity
-Shiny: Yes
-EVs: 24 HP / 176 Atk / 108 Def / 184 SpD / 16 Spe
-Adamant Nature
-- Focus Punch
-- Self-Destruct
-- Shadow Ball
-- Body Slam
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 28 Atk / 116 Def / 16 SpD / 96 Spe
-Sassy Nature
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
 - Rapid Spin
 - Earthquake
 - Psychic
 - Explosion
 
-Starmie @ Leftovers
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 40 HP / 248 SpA / 220 Spe
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Toxic
+- Ice Beam
+- Thunderbolt
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 Def / 248 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
-- Hydro Pump
+- Substitute
+- Calm Mind
 - Thunderbolt
-- Ice Beam
-- Recover
+- Crunch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Agility
+- Meteor Mash
+- Hidden Power [Grass]
+- Explosion

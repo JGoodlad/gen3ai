@@ -1,0 +1,56 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 12 Atk / 196 Def / 28 SpD / 20 Spe
+Impish Nature
+- Protect
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 220 SpA / 48 Spe
+Quiet Nature
+- Crunch
+- Pursuit
+- Fire Blast
+- Brick Break
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 136 Def / 40 SpA / 32 SpD / 48 Spe
+Bold Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Thunder Wave
+- Surf
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 176 Atk / 12 Def / 180 SpD / 140 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

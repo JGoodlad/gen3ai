@@ -1,0 +1,56 @@
+Metagross @ Charcoal
+Ability: Clear Body
+EVs: 168 HP / 140 Atk / 16 Def / 92 SpA / 92 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Agility
+- Meteor Mash
+- Hidden Power [Fire]
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 8 Def / 160 SpA / 32 SpD / 56 Spe
+Modest Nature
+IVs: 0 Atk
+- Recover
+- Surf
+- Ice Beam
+- Thunderbolt
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 240 SpA / 20 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Psychic
+- Baton Pass
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 220 Atk / 60 Def / 8 SpD / 16 Spe
+Adamant Nature
+- Curse
+- Body Slam
+- Earthquake
+- Shadow Ball
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 120 Def / 248 SpA / 140 Spe
+Rash Nature
+- Wish
+- Dragon Claw
+- Flamethrower
+- Brick Break

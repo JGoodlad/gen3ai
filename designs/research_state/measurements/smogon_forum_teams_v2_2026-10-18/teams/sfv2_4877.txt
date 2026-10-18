@@ -1,0 +1,57 @@
+Politoed
+Ability: Water Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hypnosis
+- Thief
+- Hydro Pump
+- Ice Beam
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Beat Up
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 108 SpA / 148 Spe
+Naive Nature
+- Substitute
+- Thunder
+- Ice Punch
+- Dynamic Punch
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 64 SpA / 196 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Baton Pass

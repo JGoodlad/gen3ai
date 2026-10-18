@@ -1,57 +1,56 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 4 Atk / 252 SpA
+Brave Nature
+- Ice Punch
+- Thunder Punch
+- Earthquake
+- Explosion
+
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 252 HP / 216 SpD / 40 Spe
 Careful Nature
+IVs: 0 Atk
 - Spikes
 - Toxic
-- Drill Peck
-- Roar
+- Counter
+- Taunt
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Psychic
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 184 HP / 148 SpD / 176 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Wish
-- Calm Mind
-- Thunder
-- Hidden Power [Grass]
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 220 Def / 36 Spe
-Impish Nature
-- Protect
-- Toxic
-- Earthquake
-- Rock Slide
-
-Charizard @ Leftovers
+Charizard @ Petaya Berry
 Ability: Blaze
 EVs: 252 SpA / 4 SpD / 252 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Beat Up
+IVs: 30 HP / 0 Atk
+- Substitute
+- Sunny Day
+- Fire Blast
+- Overheat
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 68 HP / 248 SpD / 192 Spe
+Timid Nature
+- Ice Punch
+- Will-O-Wisp
+- Destiny Bond
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Hydro Pump
+- Curse
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Beam
+- Thunder Wave
+- Soft-Boiled

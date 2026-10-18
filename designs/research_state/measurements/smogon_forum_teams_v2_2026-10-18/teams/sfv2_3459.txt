@@ -1,57 +1,57 @@
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 96 Atk / 228 Def / 184 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Cross Chop
-- Knock Off
-- Hidden Power [Bug]
-- Focus Punch
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 16 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Flamethrower
+- Roar
 
 Skarmory
 Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
-IVs: 0 Atk
-- Protect
 - Spikes
-- Roar
 - Thief
+- Drill Peck
+- Roar
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 40 Def / 8 SpA / 32 SpD / 176 Spe
-Timid Nature
-- Thunder Wave
-- Surf
-- Rapid Spin
-- Recover
-
-Metagross @ Leftovers
+Registeel @ Leftovers
 Ability: Clear Body
-EVs: 244 HP / 48 Atk / 216 Def
-Impish Nature
-- Meteor Mash
-- Earthquake
-- Protect
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Counter
 - Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 SpD
-Bold Nature
-IVs: 22 Spe
-- Sing
-- Seismic Toss
-- Ice Beam
-- Soft-Boiled
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Surf
+- Roar
+- Endeavor
 
-Dugtrio (M) @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 152 Atk / 252 SpA / 36 SpD / 68 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Thunder
+- Hidden Power [Grass]
+- Brick Break
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
+- Rock Slide
 - Hidden Power [Bug]
-- Aerial Ace
-- Screech
+- Double-Edge

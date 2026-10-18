@@ -1,57 +1,58 @@
-Slaking @ Leftovers
-Ability: Truant
-EVs: 252 Atk / 76 SpD / 180 Spe
-Jolly Nature
-- Return
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
 - Focus Punch
-- Shadow Ball
-- Encore
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 232 HP / 252 SpA / 24 Spe
+Tyranitar @ Hard Stone
+Ability: Sand Stream
+EVs: 240 Atk / 16 SpA / 168 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 156 Def / 92 SpA / 20 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
+- Calm Mind
+- Giga Drain
 - Hidden Power [Fire]
-- Reflect
-- Thunder Wave
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 176 Atk / 80 Def
-Adamant Nature
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
 - Meteor Mash
-- Earthquake
-- Protect
+- Thunder Punch
+- Hidden Power [Grass]
 - Explosion
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 252 Atk / 116 SpD / 140 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
 - Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 212 SpA / 44 Spe
-Bold Nature
-IVs: 0 Atk
-- Thunder Wave
-- Ice Beam
-- Seismic Toss
-- Soft-Boiled
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 60 SpD / 196 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Rock]
-- Earthquake
-- Thunder Wave
+- Brick Break
+- Fire Blast

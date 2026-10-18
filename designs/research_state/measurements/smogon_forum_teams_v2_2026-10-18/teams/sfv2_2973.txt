@@ -1,56 +1,56 @@
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 12 HP / 252 SpA / 244 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 76 Atk / 252 SpA / 180 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Body Slam
+- Fire Punch
+- Ice Punch
+- Hidden Power [Fighting]
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 168 SpA / 244 SpD / 96 Spe
 Modest Nature
-- Baton Pass
-- Substitute
-- Ice Beam
-- Hydro Pump
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 200 Def / 56 SpD
-Bold Nature
-- Recover
-- Ice Beam
-- Thunderbolt
-- Thunder Wave
-
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-- Substitute
-
-Hitmonlee (M) @ Lum Berry
-Ability: Limber
-EVs: 252 Atk / 120 SpD / 136 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Brick Break
-- Mach Punch
-- Hidden Power [Ghost]
-- Rock Slide
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 128 HP / 252 Atk / 128 Spe
-Adamant Nature
-- Meteor Mash
+- Spikes
+- Rapid Spin
 - Explosion
-- Earthquake
+- Surf
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 132 SpA / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Leech Seed
+- Psychic
+- Giga Drain
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 156 Atk / 168 Spe
+Adamant Nature
+- Dragon Dance
 - Rock Slide
+- Earthquake
+- Double-Edge
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 88 Def / 176 SpA / 4 Spe
+Relaxed Nature
+- Curse
+- Hydro Pump
+- Ice Beam
+- Earthquake
 
 Charizard @ Leftovers
 Ability: Blaze
-EVs: 16 Atk / 240 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Dragon Claw
 - Hidden Power [Grass]
-- Substitute
-- Focus Punch
+- Beat Up

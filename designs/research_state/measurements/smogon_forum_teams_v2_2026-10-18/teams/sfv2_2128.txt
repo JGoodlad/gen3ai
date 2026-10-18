@@ -1,56 +1,58 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Light Screen
+- Thunder Wave
 - Thunderbolt
-- Roar
+- Hidden Power [Ice]
 
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Endure
+- Thunderbolt
+- Hidden Power [Grass]
+- Rain Dance
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 120 HP / 252 SpA / 136 Spe
-Modest Nature
-IVs: 0 Atk
-- Rapid Spin
-- Hydro Pump
-- Ice Beam
-- Thunder
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
-Hasty Nature
-- Will-O-Wisp
-- Thunder
-- Giga Drain
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
 - Explosion
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 84 Atk / 136 Def / 48 Spe
-Relaxed Nature
-- Protect
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Curse
 - Earthquake
-- Surf
-- Roar
+- Hidden Power [Rock]
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Brick Break
+- Hidden Power [Flying]

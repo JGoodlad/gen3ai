@@ -1,62 +1,59 @@
-Breloom (M) @ Leftovers
-Ability: Effect Spore
+Tyranitar @ Lum Berry
+Ability: Sand Stream
 Shiny: Yes
-EVs: 252 Atk / 4 SpD / 252 Spe
+EVs: 144 HP / 224 Atk / 20 Def / 120 Spe
 Adamant Nature
-- Spore
-- Mach Punch
-- Sky Uppercut
-- Focus Punch
-
-Houndoom (F) @ Leftovers
-Ability: Flash Fire
-Shiny: Yes
-EVs: 196 SpA / 120 SpD / 192 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Fire Blast
-- Crunch
-- Pursuit
-- Hidden Power [Grass]
-
-Gyarados (M) @ Leftovers
-Ability: Intimidate
-Shiny: Yes
-EVs: 64 HP / 252 Atk / 192 Spe
-Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
+IVs: 30 SpD / 30 Spe
 - Dragon Dance
-- Hidden Power [Rock]
-- Earthquake
-- Taunt
-
-Flygon (F) @ Leftovers
-Ability: Levitate
-Shiny: Yes
-EVs: 172 HP / 160 Atk / 176 Spe
-Naughty Nature
-- Earthquake
 - Rock Slide
-- Toxic
-- Fire Blast
-
-Snorlax (M) @ Leftovers
-Ability: Immunity
-Shiny: Yes
-EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
-Careful Nature
-- Curse
-- Rest
-- Return
 - Earthquake
+- Hidden Power [Bug]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 188 SpD / 72 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Taunt
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-Shiny: Yes
-EVs: 252 HP / 40 Def / 80 SpA / 136 Spe
+EVs: 248 HP / 228 SpA / 32 Spe
 Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
+IVs: 2 Atk / 30 SpA
+- Wish
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
+
+Swampert @ Leftovers
+Ability: Torrent
+Shiny: Yes
+EVs: 240 HP / 156 Def / 112 SpA
+Relaxed Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Refresh
+
+Gengar @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 248 HP / 64 Def / 4 SpD / 192 Spe
+Timid Nature
+- Explosion
 - Thunderbolt
-- Ice Punch
+- Hypnosis
+- Will-O-Wisp
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]

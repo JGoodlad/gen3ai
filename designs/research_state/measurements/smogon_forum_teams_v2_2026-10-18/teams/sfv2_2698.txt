@@ -1,57 +1,57 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 SpD
+Quiet Nature
+- Crunch
+- Earthquake
+- Ice Beam
+- Pursuit
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Ice Beam
+- Seismic Toss
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Protect
+- Toxic
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 196 Def / 28 SpD / 32 Spe
+Impish Nature
+- Protect
+- Earthquake
+- Rock Slide
+- Toxic
+
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
+EVs: 252 HP / 252 SpD / 4 Spe
+Calm Nature
+IVs: 0 Atk
 - Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 220 SpD / 36 Spe
-Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Explosion
-- Rain Dance
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 192 HP / 160 SpA / 156 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Ice Beam
+- Rest
+- Sleep Talk
 - Roar
 
-Machamp @ Leftovers
-Ability: Guts
-EVs: 248 HP / 176 Atk / 20 Def / 40 SpD / 24 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Bulk Up
-- Cross Chop
-- Rock Slide
-- Hidden Power [Bug]
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Taunt
+- Thunderbolt
+- Destiny Bond

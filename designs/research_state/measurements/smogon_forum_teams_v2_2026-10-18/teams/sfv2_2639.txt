@@ -1,57 +1,58 @@
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 224 SpD / 32 Spe
+Calm Nature
 IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Psychic
+- Thunderbolt
+- Light Screen
+- Thunder Wave
+- Rest
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 68 Atk / 4 Def / 252 Spe
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Hypnosis
+- Recover
+
+Machamp @ Leftovers
+Ability: Guts
+EVs: 248 HP / 148 Atk / 4 Def / 4 SpD / 104 Spe
 Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Earthquake
+- Bulk Up
+- Cross Chop
 - Rock Slide
 - Hidden Power [Bug]
 
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 108 Def / 20 SpA / 96 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Recover
-- Leech Seed
-- Hidden Power [Grass]
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
 - Psychic
+- Explosion
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 Atk / 16 Spe
-Naughty Nature
-- Curse
-- Earthquake
-- Rock Slide
-- Hydro Pump
-
-Aerodactyl @ Liechi Berry
-Ability: Rock Head
+Medicham @ Leftovers
+Ability: Pure Power
 EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 HP
-- Substitute
-- Earthquake
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Brick Break
+- Hidden Power [Bug]
 - Rock Slide
-- Double-Edge
+- Shadow Ball
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 216 Def / 40 Spe
+Timid Nature
+IVs: 0 Atk
+- Flamethrower
+- Toxic
+- Wish
+- Protect

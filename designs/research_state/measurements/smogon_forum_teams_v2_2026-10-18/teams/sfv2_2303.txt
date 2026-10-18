@@ -1,57 +1,56 @@
-Zapdos @ Choice Band
-Ability: Pressure
-EVs: 252 Atk / 12 SpA / 244 Spe
-Lonely Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Thunderbolt
-- Hidden Power [Fighting]
-- Drill Peck
-- Baton Pass
-
-Kingdra @ Lum Berry
-Ability: Swift Swim
-EVs: 104 HP / 252 SpA / 152 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA
-- Rain Dance
-- Surf
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
+- Earthquake
+- Hydro Pump
 - Ice Beam
-- Hidden Power [Grass]
+- Focus Punch
 
-Blaziken @ Salac Berry
-Ability: Blaze
-EVs: 228 Atk / 80 SpA / 200 Spe
-Hasty Nature
-- Endure
-- Swords Dance
-- Reversal
-- Fire Blast
-
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 Def / 252 Spe
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-- Swords Dance
-- Megahorn
-- Substitute
-- Reversal
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
 
-Regirock @ Choice Band
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 168 SpA / 244 SpD / 96 Spe
+Modest Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
+- Explosion
+
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 SpD
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
 Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Hidden Power [Rock]
-- Superpower
+- Agility
+- Meteor Mash
 - Earthquake
 - Explosion
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
 Modest Nature
-IVs: 2 Atk / 30 Def
-- Leech Seed
-- Giga Drain
-- Hidden Power [Ice]
-- Psychic
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up

@@ -1,59 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 176 SpA / 76 SpD / 16 Spe
+Modest Nature
+- Crunch
+- Pursuit
+- Flamethrower
+- Brick Break
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 20 Atk / 236 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
+- Earthquake
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
 Timid Nature
-IVs: 2 Atk / 30 Def
-- Light Screen
-- Toxic
+- Will-O-Wisp
+- Ice Punch
 - Thunderbolt
-- Hidden Power [Ice]
+- Explosion
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
 IVs: 0 Atk
-- Substitute
-- Toxic
-- Hydro Pump
-- Endeavor
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 192 HP / 140 SpA / 176 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Fire Punch
-- Hidden Power [Grass]
-- Psychic
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
+- Soft-Boiled
+- Wish
+- Seismic Toss
 - Ice Beam
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 148 Def / 180 SpA / 180 Spe
-Modest Nature
-IVs: 3 Atk / 30 SpA
-- Calm Mind
-- Giga Drain
-- Hidden Power [Electric]
-- Baton Pass
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 216 Def / 28 SpD / 24 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Toxic
+- Surf
+- Roar
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Overheat
+- Flamethrower
+- Hidden Power [Grass]
+- Roar

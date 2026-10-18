@@ -1,0 +1,56 @@
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 88 Atk / 172 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 228 Atk / 16 SpD
+Careful Nature
+- Seismic Toss
+- Thunder Wave
+- Superpower
+- Explosion
+
+Skarmory (F) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Toxic
+
+Aerodactyl (F) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Double-Edge
+- Hidden Power [Bug]
+
+Gengar (F) @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 112 SpD / 104 Spe
+Timid Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Taunt
+- Thunderbolt
+- Giga Drain
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Surf
+- Roar

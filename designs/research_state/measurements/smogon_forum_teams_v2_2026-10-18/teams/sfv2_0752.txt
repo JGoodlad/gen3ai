@@ -1,60 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
+Tyranitar @ Salac Berry
+Ability: Sand Stream
 EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Baton Pass
-- Hidden Power [Grass]
-- Thunder Wave
+Hasty Nature
+- Pursuit
+- Crunch
+- Taunt
+- Brick Break
 
-Exeggutor @ Leftovers
-Ability: Chlorophyll
-Shiny: Yes
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Sunny Day
-- Solar Beam
-- Hidden Power [Fire]
-- Explosion
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-Shiny: Yes
-EVs: 8 HP / 248 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Beat Up
-- Hidden Power [Bug]
-- Sunny Day
-
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 Def / 252 Spe
+Poliwrath @ Leftovers
+Ability: Water Absorb
+EVs: 248 HP / 252 Atk / 8 SpD
 Adamant Nature
-IVs: 30 HP
-- Swords Dance
-- Megahorn
-- Substitute
+IVs: 30 Atk / 30 Def / 30 SpD
+- Brick Break
+- Bulk Up
+- Rest
+- Hidden Power [Bug]
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
+Timid Nature
+IVs: 0 Atk
+- Spikes
+- Surf
+- Icy Wind
+- Rapid Spin
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 236 SpA / 32 Spe
+Quiet Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
 - Focus Punch
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 164 HP / 240 SpA / 104 Spe
-Quiet Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Psychic
-- Hidden Power [Fire]
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 120 SpA / 136 Spe
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 144 HP / 188 SpA / 176 Spe
 Timid Nature
-- Substitute
-- Calm Mind
-- Surf
-- Ice Beam
+IVs: 2 Atk / 30 Def
+- Toxic
+- Wish
+- Protect
+- Hidden Power [Ice]

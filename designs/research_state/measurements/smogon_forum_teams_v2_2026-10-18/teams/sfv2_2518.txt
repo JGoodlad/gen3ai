@@ -1,57 +1,55 @@
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Refresh
-- Toxic
-- Surf
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 240 HP / 16 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Roar
-- Sunny Day
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Fire]
-- Rain Dance
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 24 Atk / 220 Def / 60 SpD
-Impish Nature
-- Rest
-- Curse
-- Return
-- Earthquake
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-- Toxic
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 112 HP / 252 Atk / 144 Spe
+EVs: 248 HP / 252 Atk / 8 SpD
 Adamant Nature
 IVs: 30 SpD / 30 Spe
-- Earthquake
 - Rock Slide
+- Earthquake
 - Hidden Power [Bug]
-- Gust
+- Focus Punch
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 220 Def / 36 Spe
+Bold Nature
+- Wish
+- Fire Punch
+- Toxic
+- Protect
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+- Surf
+- Recover
+- Toxic
+- Refresh
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Drill Peck

@@ -1,0 +1,57 @@
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Toxic
+- Thunderbolt
+- Substitute
+- Hidden Power [Ice]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 96 SpA / 160 Spe
+Modest Nature
+- Hydro Pump
+- Ice Beam
+- Substitute
+- Calm Mind
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 60 HP / 252 SpA / 196 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+- Substitute
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
+- Calm Mind
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 84 HP / 140 Atk / 176 SpD / 108 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+- Beat Up

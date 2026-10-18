@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 36 Atk / 220 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Substitute
-- Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 244 SpD / 192 Spe
-Timid Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 204 SpD / 56 Spe
-Calm Nature
-IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Thunderbolt
-- Giga Drain
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
-
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 108 Def / 72 SpA / 44 SpD / 44 Spe
-Relaxed Nature
-- Protect
+EVs: 240 HP / 108 Def / 144 SpA / 16 Spe
+Modest Nature
+- Curse
 - Earthquake
 - Hydro Pump
 - Ice Beam
 
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 Def / 140 SpA / 36 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
+- Calm Mind
+- Fire Punch
+- Hidden Power [Grass]
+- Psychic
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Toxic
 - Flamethrower
 - Hidden Power [Grass]
-- Roar
+- Focus Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 176 Atk / 212 SpD / 120 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

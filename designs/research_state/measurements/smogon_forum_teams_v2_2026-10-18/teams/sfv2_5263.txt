@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 224 Def / 252 SpA / 32 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Baton Pass
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 116 Atk / 140 SpD / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+- Beat Up
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 140 SpA / 116 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
+- Hidden Power [Grass]
+- Explosion
+
+Kingdra @ Leftovers
+Ability: Swift Swim
+EVs: 104 Def / 252 SpA / 152 Spe
+Modest Nature
+IVs: 3 Atk / 30 SpA
+- Rain Dance
+- Surf
+- Ice Beam
+- Hidden Power [Electric]
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Substitute
+- Swords Dance
+- Megahorn
+- Reversal

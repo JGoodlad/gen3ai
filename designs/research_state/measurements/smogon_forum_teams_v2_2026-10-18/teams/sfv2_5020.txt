@@ -1,0 +1,57 @@
+Heracross @ Choice Band
+Ability: Guts
+Hidden Power: Ghost
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Megahorn
+- Brick Break
+- Rock Slide
+- Focus Punch
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpD
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Ice Beam
+- Thunderbolt
+- Toxic
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Crunch
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Recover
+- Thunderbolt
+- Rapid Spin
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+- Substitute
+- Focus Punch
+- Fire Blast
+- Crunch

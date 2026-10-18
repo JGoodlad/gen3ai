@@ -1,0 +1,55 @@
+Heracross @ Leftovers
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Megahorn
+- Rock Slide
+- Focus Punch
+- Brick Break
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 220 SpA / 40 Spe
+Quiet Nature
+- Pursuit
+- Ice Beam
+- Fire Blast
+- Focus Punch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 16 Atk / 240 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Substitute
+- Focus Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 32 Def / 244 SpA / 232 Spe
+Rash Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 216 Atk / 40 SpD / 252 Spe
+Adamant Nature
+- Spore
+- Sky Uppercut
+- Mach Punch
+- Focus Punch
+
+Ampharos @ Leftovers
+Ability: Static
+EVs: 248 HP / 88 Atk / 56 SpA / 116 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA
+- Focus Punch
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave

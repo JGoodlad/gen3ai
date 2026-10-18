@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
+Tyranitar (F) @ Lum Berry
 Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 32 Def / 136 SpA / 32 SpD / 56 Spe
-Modest Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Ice Beam
+EVs: 188 HP / 64 Atk / 88 Def / 168 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Focus Punch
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 244 HP / 36 Def / 140 SpA / 28 SpD / 60 Spe
+EVs: 212 HP / 252 SpA / 44 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
-- Recover
-- Leech Seed
 - Giga Drain
 - Hidden Power [Fire]
+- Psychic
+- Leech Seed
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 228 Atk / 16 Def / 96 Spe
+Shiny: Yes
+EVs: 158 HP / 252 Atk / 98 Spe
 Adamant Nature
 - Agility
+- Earthquake
 - Meteor Mash
-- Earthquake
-- Explosion
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 72 Atk / 44 SpA / 144 Spe
-Naughty Nature
-IVs: 30 SpD / 30 Spe
-- Earthquake
 - Rock Slide
-- Hidden Power [Bug]
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+Shiny: Yes
+EVs: 8 HP / 236 SpA / 88 SpD / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
 - Fire Blast
+- Dragon Claw
+- Hidden Power [Grass]
+- Hydro Pump
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Drill Peck
+- Toxic
+- Roar
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 148 Def / 44 SpA / 24 SpD / 44 Spe
+Relaxed Nature
+- Hydro Pump
+- Protect
+- Ice Beam
+- Earthquake

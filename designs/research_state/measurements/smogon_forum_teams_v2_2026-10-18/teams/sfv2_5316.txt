@@ -1,0 +1,56 @@
+Snorlax (M) @ Leftovers
+Ability: Thick Fat
+EVs: 92 HP / 128 Atk / 124 Def / 164 SpD
+Adamant Nature
+- Curse
+- Shadow Ball
+- Body Slam
+- Self-Destruct
+
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 176 HP / 252 SpA / 80 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Pursuit
+- Crunch
+- Fire Blast
+- Hidden Power [Grass]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 120 Def / 100 SpA / 36 Spe
+Bold Nature
+IVs: 30 Atk / 30 SpA
+- Leech Seed
+- Perish Song
+- Recover
+- Hidden Power [Grass]
+
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Rapid Spin
+- Earthquake
+- Explosion
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 252 Def / 8 SpD
+Relaxed Nature
+- Earthquake
+- Protect
+- Hydro Pump
+- Ice Beam

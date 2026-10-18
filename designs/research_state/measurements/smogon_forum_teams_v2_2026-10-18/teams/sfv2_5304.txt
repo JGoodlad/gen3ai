@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 202 HP / 172 SpA / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Thunder Wave
+- Thunderbolt
+- Baton Pass
+
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Brick Break
+- Earthquake
+- Rock Slide
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 184 Atk / 140 Def / 168 SpD
+Adamant Nature
+- Self-Destruct
+- Focus Punch
+- Shadow Ball
+- Body Slam
+
+Rhydon @ Leftovers
+Ability: Rock Head
+EVs: 212 HP / 122 Atk / 176 Spe
+Adamant Nature
+- Swords Dance
+- Earthquake
+- Rock Slide
+- Substitute
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 64 HP / 252 SpA / 192 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Thunder Wave
+- Thunderbolt
+- Toxic
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Thunder Wave
+- Dragon Dance
+- Earthquake

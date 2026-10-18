@@ -1,57 +1,59 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 240 SpD / 16 Spe
-Careful Nature
-- Spikes
-- Roar
-- Taunt
-- Drill Peck
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
 
-Tyranitar @ Lum Berry
+Tyranitar @ Choice Band
 Ability: Sand Stream
+Shiny: Yes
 Hidden Power: Bug
 EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Double-Edge
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 76 HP / 180 SpA / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-- Roar
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
+Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
-- Double-Edge
+- Focus Punch
 - Earthquake
 - Hidden Power [Bug]
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Ice Punch
-- Hidden Power [Grass]
-- Explosion
-
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 180 Def / 44 SpD / 36 Spe
+EVs: 248 HP / 216 Def / 44 SpD
 Relaxed Nature
+- Hydro Pump
 - Earthquake
 - Ice Beam
-- Focus Punch
-- Hydro Pump
+- Protect
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power [Bug]
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Double-Edge
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 Def / 236 SpD
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+- Rest

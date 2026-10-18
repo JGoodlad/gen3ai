@@ -1,58 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 4 Def / 252 SpA
-Modest Nature
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
 IVs: 0 Atk
-- Fire Blast
-- Crunch
-- Taunt
-- Toxic
-
-Kabutops @ Salac Berry
-Ability: Swift Swim
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Swords Dance
-- Rock Slide
-- Endure
-- Flail
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Hidden Power [Bug]
-- Double-Edge
-- Earthquake
-- Rock Slide
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 48 SpD / 208 Spe
-Timid Nature
-IVs: 0 Atk
-- Whirlwind
-- Spikes
-- Taunt
-- Toxic
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 68 HP / 152 Def / 104 SpA / 184 Spe
-Timid Nature
-IVs: 0 Atk
-- Thunderbolt
-- Will-O-Wisp
-- Ice Punch
-- Hypnosis
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 216 Def / 40 SpA
-Bold Nature
-IVs: 0 Atk
-- Protect
-- Toxic
-- Roar
+- Rest
+- Calm Mind
 - Surf
+- Ice Beam
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Toxic
+- Thunderbolt
+- Hidden Power [Fire]
+- Rain Dance
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Return
+- Shadow Ball
+- Self-Destruct
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 100 SpA / 20 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Earthquake
+- Hidden Power [Grass]
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 168 Atk / 200 SpD / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break

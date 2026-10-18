@@ -1,56 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 44 Def / 212 SpA
-Quiet Nature
-- Thunder Wave
-- Brick Break
-- Fire Blast
-- Pursuit
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 196 Def / 64 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Roar
+- Rest
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 76 Def / 180 SpD
-Sassy Nature
-- Wish
-- Protect
-- Fire Punch
-- Body Slam
-
-Marowak @ Thick Club
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 240 Def / 16 SpA
+EVs: 248 HP / 228 Def / 32 Spe
 Bold Nature
 IVs: 0 Atk
-- Surf
-- Recover
-- Dragon Breath
-- Refresh
+- Wish
+- Fire Punch
+- Toxic
+- Protect
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Sassy Nature
+IVs: 30 SpD / 30 Spe
+- Zap Cannon
+- Hidden Power [Bug]
+- Spikes
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 244 HP / 252 Def / 12 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Thunder Wave
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+EVs: 240 HP / 212 Atk / 40 SpD / 16 Spe
 Adamant Nature
 - Rapid Spin
 - Earthquake
-- Psychic
-- Explosion
+- Shadow Ball
+- Rest
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 HP / 136 SpA / 120 Spe
-Modest Nature
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 Def / 248 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Wish
-- Protect
-- Fire Blast
-- Dragon Claw
+- Thunderbolt
+- Crunch
+- Roar
+- Psych Up

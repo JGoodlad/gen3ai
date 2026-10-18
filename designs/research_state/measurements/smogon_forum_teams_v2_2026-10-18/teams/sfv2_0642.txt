@@ -1,58 +1,56 @@
-Raikou @ Magnet
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Substitute
-- Toxic
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Sunny Day
-
-Alakazam @ Leftovers
-Ability: Synchronize
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Psychic
-- Fire Punch
-- Calm Mind
-- Encore
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 196 HP / 24 Atk / 176 SpA / 112 Spe
+Rash Nature
+- Fire Blast
 - Ice Beam
-- Rest
-- Sleep Talk
+- Brick Break
+- Pursuit
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 216 SpD / 40 Spe
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 196 SpD / 60 Spe
 Careful Nature
-- Thunder Wave
-- Seismic Toss
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Taunt
 - Counter
-- Explosion
+
+Lanturn @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 88 Def / 168 SpA / 84 SpD / 160 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Thunderbolt
+- Ice Beam
+- Confuse Ray
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
+EVs: 104 HP / 48 Atk / 180 SpA / 176 Spe
+Mild Nature
 IVs: 30 Atk / 30 SpA
-- Dragon Claw
 - Brick Break
-- Hidden Power [Grass]
+- Dragon Claw
 - Fire Blast
+- Hidden Power [Grass]
+
+Breloom @ Black Belt
+Ability: Effect Spore
+EVs: 76 HP / 216 Atk / 216 Spe
+Adamant Nature
+- Spore
+- Focus Punch
+- Sky Uppercut
+- Mach Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 96 Atk / 72 Def / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion

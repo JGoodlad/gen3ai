@@ -1,59 +1,57 @@
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 8 Atk / 248 SpD
-Sassy Nature
-IVs: 30 SpD / 30 Spe
-- Zap Cannon
-- Hidden Power [Bug]
-- Spikes
-- Explosion
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 240 HP / 52 Def / 196 SpD / 20 Spe
+EVs: 224 HP / 216 SpD / 68 Spe
 Careful Nature
-IVs: 30 SpD
+IVs: 0 Atk
 - Spikes
-- Roar
-- Hidden Power [Steel]
-- Protect
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 212 Def / 48 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
+- Taunt
 - Toxic
-- Refresh
-- Recover
+- Roar
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 176 Def / 52 SpA / 28 SpD
-Bold Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Hidden Power [Fire]
-- Psychic
-- Rapid Spin
-- Refresh
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
 Modest Nature
-IVs: 0 Atk
+IVs: 2 Atk / 30 SpA
+- Thunder Wave
 - Thunderbolt
-- Ice Beam
-- Soft-Boiled
-- Calm Mind
+- Hidden Power [Grass]
+- Roar
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 80 HP / 252 SpA / 176 Spe
+Mild Nature
+IVs: 30 SpA
+- Water Pulse
+- Thunder
+- Psychic
+- Dynamic Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide
+- Hydro Pump
+- Ice Beam
+- Focus Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

@@ -1,57 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 4 Atk / 252 SpA
-Quiet Nature
-IVs: 30 Def / 30 SpA
-- Brick Break
-- Flamethrower
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 156 Def / 40 SpA / 28 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Recover
+- Leech Seed
 - Hidden Power [Grass]
-- Thunder Wave
+- Shock Wave
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 SpD / 252 Spe
-Jolly Nature
-- Drill Peck
-- Roar
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
 - Spikes
-- Taunt
+- Rapid Spin
+- Hidden Power [Ghost]
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 48 Def / 208 Spe
-Naive Nature
-- Explosion
-- Ice Punch
-- Thunderbolt
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
+Hasty Nature
 - Will-O-Wisp
+- Thunder
+- Giga Drain
+- Explosion
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 220 Atk / 36 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Earthquake
-- Hidden Power [Bug]
-- Protect
-- Rock Slide
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 Spe
+Impish Nature
+- Soft-Boiled
+- Wish
+- Thunder Wave
+- Seismic Toss
 
-Lapras @ Leftovers
+Quagsire @ Leftovers
 Ability: Water Absorb
-EVs: 64 HP / 28 Def / 252 SpA / 28 SpD / 136 Spe
-Modest Nature
-IVs: 0 Atk
-- Ice Beam
-- Roar
-- Surf
-- Thunderbolt
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 80 SpA / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Calm Mind
-- Ice Punch
-- Substitute
-- Thunderbolt
+EVs: 252 HP / 180 Def / 76 SpD
+Relaxed Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Rest
+- Curse
+- Earthquake
+- Hidden Power [Rock]

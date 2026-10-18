@@ -1,57 +1,56 @@
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 196 Def / 28 SpD / 32 Spe
-Impish Nature
-- Protect
-- Earthquake
-- Rock Slide
-- Toxic
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 76 Def / 180 SpD
-Calm Nature
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Wish
-- Protect
-- Fire Punch
-- Toxic
+- Substitute
+- Hydro Pump
+- Roar
+- Endeavor
 
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 148 HP / 252 SpD / 108 Spe
+Timid Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
+Hasty Nature
+- Will-O-Wisp
+- Thunder
+- Giga Drain
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 184 HP / 148 SpD / 176 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
-- Flamethrower
+- Substitute
+- Thunderbolt
 - Hidden Power [Grass]
-- Protect
-- Roar
+- Baton Pass
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Roar
-- Toxic
-- Protect
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 SpD
-Quiet Nature
-- Pursuit
-- Crunch
-- Fire Blast
-- Focus Punch
-
-Duskull @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 24 Def / 164 SpD / 68 Spe
-Calm Nature
-IVs: 0 Atk
-- Curse
-- Will-O-Wisp
-- Pain Split
-- Night Shade
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 196 Atk / 200 SpD / 112 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Brick Break

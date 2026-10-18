@@ -1,57 +1,56 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Def / 48 SpA / 44 Spe
+Relaxed Nature
+- Protect
 - Earthquake
-- Explosion
-
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 240 Def / 176 SpA / 12 SpD / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Toxic
-- Hydro Pump
-- Baton Pass
-
-Heracross @ Salac Berry
-Ability: Guts
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 HP
-- Substitute
-- Megahorn
-- Rock Slide
-- Focus Punch
+- Surf
+- Ice Beam
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 192 HP / 8 Def / 248 SpA / 60 Spe
+EVs: 240 HP / 252 SpA / 16 Spe
 Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
+- Crunch
+- Pursuit
+- Fire Blast
+- Brick Break
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Counter
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Will-O-Wisp
+- Flamethrower
+- Hidden Power [Grass]
+- Roar
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Screech
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace

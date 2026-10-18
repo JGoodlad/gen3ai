@@ -1,60 +1,56 @@
-Salamence @ Leftovers
-Ability: Intimidate
-Shiny: Yes
-EVs: 24 HP / 240 Atk / 64 SpD / 180 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 120 HP / 252 SpA / 136 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA
+- Thunder Punch
+- Earthquake
+- Hidden Power [Grass]
 - Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Wish
-- Seismic Toss
-- Ice Beam
-
-Swampert @ Leftovers
-Ability: Torrent
-Shiny: Yes
-EVs: 240 HP / 220 Atk / 48 Spe
-Brave Nature
-- Curse
-- Earthquake
+Heracross @ Leftovers
+Ability: Guts
+EVs: 252 Atk / 60 SpD / 196 Spe
+Jolly Nature
+- Megahorn
+- Brick Break
 - Rock Slide
-- Hydro Pump
+- Swords Dance
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 56 Def / 140 SpA / 60 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Fire Punch
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+- Rock Slide
+- Focus Punch
+- Counter
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 248 HP / 152 SpA / 108 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA
+- Brick Break
+- Fire Blast
 - Hidden Power [Grass]
-- Psychic
+- Pursuit
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 32 Atk / 224 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Brick Break
+- Dragon Claw
+- Fire Blast
+- Hidden Power [Grass]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 176 Atk / 108 Def / 208 SpD / 16 Spe
+Adamant Nature
+- Body Slam
+- Focus Punch
+- Counter
+- Self-Destruct

@@ -1,56 +1,57 @@
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 96 Atk / 192 Def / 192 SpD / 28 Spe
-Adamant Nature
-- Knock Off
-- Brick Break
-- Rock Slide
-- Focus Punch
-
-Registeel @ Leftovers
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 252 HP / 212 SpD / 44 Spe
-Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Counter
+EVs: 188 HP / 252 Atk / 68 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Brick Break
 - Explosion
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
 Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
 - Rapid Spin
-- Hidden Power [Bug]
-- Counter
+- Earthquake
+- Psychic
+- Explosion
 
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
-- Will-O-Wisp
-- Roar
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Ice Beam
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 HP / 224 Def / 32 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
 Bold Nature
 IVs: 0 Atk
 - Wish
 - Protect
-- Flamethrower
 - Toxic
+- Fire Punch
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
-Modest Nature
-- Pursuit
-- Crunch
-- Thunder
-- Rock Slide
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Roar
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

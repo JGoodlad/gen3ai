@@ -1,58 +1,55 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Brick Break
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 244 HP / 48 Atk / 216 Def
+Impish Nature
+- Meteor Mash
 - Earthquake
-- Hidden Power [Bug]
-- Rock Slide
+- Protect
+- Explosion
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Hidden Power [Fire]
-- Substitute
-- Thunderbolt
-- Toxic
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Protect
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 144 SpA / 112 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Roar
+- Surf
 - Calm Mind
-- Giga Drain
-- Leech Seed
-- Hidden Power [Fire]
+- Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 16 SpA / 128 SpD
+Careful Nature
+- Explosion
+- Rapid Spin
+- Earthquake
+- Psychic
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 120 HP / 252 Def / 136 SpA
-Modest Nature
-IVs: 0 Atk
-- Ice Beam
-- Seismic Toss
-- Soft-Boiled
+EVs: 252 Def / 240 SpA / 16 Spe
+Bold Nature
 - Wish
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 68 HP / 252 Atk / 188 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Hidden Power [Flying]
-- Thunder Wave
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 136 Def / 120 SpD
-Relaxed Nature
-- Curse
-- Earthquake
+- Seismic Toss
 - Ice Beam
-- Protect
+- Soft-Boiled
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 132 HP / 8 Def / 116 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Toxic

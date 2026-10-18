@@ -1,57 +1,57 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
+- Focus Punch
+
 Tyranitar @ Choice Band
 Ability: Sand Stream
 EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
-- Focus Punch
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
+- Rock Slide
 - Hidden Power [Bug]
+- Focus Punch
 
-Sceptile @ Petaya Berry
-Ability: Overgrow
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 0 HP / 2 Atk / 30 Def
-- Leaf Blade
-- Hidden Power [Ice]
-- Pursuit
-- Endeavor
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-- Thunderbolt
-- Psychic
-- Ice Punch
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 168 SpA / 244 SpD / 96 Spe
+Modest Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
 - Explosion
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-IVs: 30 SpD
-- Spikes
-- Roar
-- Hidden Power [Steel]
-- Toxic
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 Atk / 68 SpD / 188 Spe
+Adamant Nature
+IVs: 30 SpA / 30 Spe
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
 Timid Nature
+IVs: 2 Atk / 30 SpA
 - Substitute
-- Endeavor
-- Hydro Pump
-- Roar
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Wish
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

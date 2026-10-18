@@ -1,55 +1,57 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Protect
-- Toxic
-- Roar
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 20 HP / 252 Atk / 36 SpD / 200 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Spore
+- Stun Spore
+- Hidden Power [Ghost]
+- Sky Uppercut
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Def / 40 SpD
-Relaxed Nature
+EVs: 252 HP / 100 Atk / 100 Def / 56 Spe
+Careful Nature
 - Rapid Spin
 - Earthquake
-- Psychic
+- Rock Slide
 - Explosion
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Aerial Ace
-- Hidden Power [Bug]
-- Sunny Day
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Counter
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 120 SpD / 148 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 252 Def / 16 Spe
-Bold Nature
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
 - Rest
 - Calm Mind
 - Surf
-- Roar
-
-Blissey @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
 - Ice Beam
-- Heal Bell
-- Soft-Boiled
-- Fire Blast
-
-Dusclops @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 96 Def / 160 SpD
-Impish Nature
-- Rest
-- Will-O-Wisp
-- Shadow Ball
-- Imprison

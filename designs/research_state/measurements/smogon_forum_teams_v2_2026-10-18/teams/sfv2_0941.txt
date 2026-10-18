@@ -1,61 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 216 SpD / 44 Spe
-Calm Nature
-IVs: 0 Atk
-- Toxic
-- Thunderbolt
-- Protect
-- Baton Pass
-
-Jirachi @ Lum Berry
-Ability: Serene Grace
-EVs: 80 HP / 244 SpA / 184 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Psychic
-- Calm Mind
-- Hidden Power [Grass]
-- Fire Punch
-
 Tyranitar @ Lum Berry
 Ability: Sand Stream
-Shiny: Yes
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
 - Dragon Dance
 - Rock Slide
 - Earthquake
 - Double-Edge
 
-Smeargle @ Salac Berry
-Ability: Own Tempo
-Shiny: Yes
-EVs: 80 HP / 176 SpD / 252 Spe
-Jolly Nature
-IVs: 0 Atk
-- Spore
-- Spikes
-- Will-O-Wisp
-- Whirlwind
+Ninjask
+Ability: Speed Boost
+EVs: 8 HP / 216 Atk / 244 SpD / 40 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Thief
+- Hidden Power [Bug]
+- Swords Dance
+- Hyper Beam
 
-Gengar @ Leftovers
-Ability: Levitate
-Shiny: Yes
-EVs: 168 Atk / 140 SpA / 200 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Fire Punch
-- Focus Punch
-- Hidden Power [Grass]
-- Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-Shiny: Yes
-EVs: 248 HP / 108 Def / 96 SpA / 44 SpD / 12 Spe
-Quiet Nature
-- Hydro Pump
-- Ice Beam
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 152 Atk / 212 SpD / 144 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Brick Break
 - Earthquake
-- Focus Punch
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Hydro Pump
+- Toxic
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 240 HP / 216 SpD / 52 Spe
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Explosion
+- Counter
+
+Raikou @ Lum Berry
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Calm Mind
+- Rest

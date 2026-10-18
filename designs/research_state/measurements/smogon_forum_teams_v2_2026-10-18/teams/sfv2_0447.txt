@@ -1,56 +1,57 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 232 HP / 252 Atk / 24 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Focus Punch
+- Hidden Power [Bug]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 SpA / 30 SpD
+- Spikes
+- Drill Peck
+- Hidden Power [Ground]
+- Taunt
+
 Blissey (F) @ Leftovers
 Ability: Natural Cure
 EVs: 252 Def / 252 SpA / 4 Spe
 Modest Nature
 IVs: 0 Atk
 - Soft-Boiled
-- Thunderbolt
+- Seismic Toss
 - Ice Beam
-- Calm Mind
+- Fire Blast
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 252 Def / 8 SpD
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Toxic
-- Recover
-- Refresh
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 196 Def / 60 SpD
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpA
 Relaxed Nature
-- Rapid Spin
+- Hydro Pump
+- Ice Beam
 - Earthquake
-- Psychic
-- Explosion
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Toxic
 - Protect
-- Roar
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 68 HP / 16 Atk / 248 SpD / 176 Spe
+EVs: 68 HP / 4 Atk / 248 SpD / 188 Spe
 Hasty Nature
 - Will-O-Wisp
 - Focus Punch
-- Explosion
-- Thunderbolt
+- Giga Drain
+- Ice Punch
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Hasty Nature
-- Dragon Claw
-- Fire Blast
-- Brick Break
-- Sleep Talk
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Thunderbolt
+- Psych Up

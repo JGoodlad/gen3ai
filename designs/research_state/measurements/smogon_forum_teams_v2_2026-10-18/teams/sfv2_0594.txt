@@ -1,59 +1,58 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 184 HP / 44 Atk / 252 SpA / 28 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Punch
-- Explosion
-- Meteor Mash
-- Hidden Power [Grass]
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Toxic
-- Hidden Power [Grass]
-- Thunder Wave
+EVs: 80 HP / 140 Atk / 152 SpA / 136 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
 - Thunderbolt
+- Hidden Power [Grass]
+- Drill Peck
+- Thunder Wave
 
-Starmie @ Leftovers
-Ability: Natural Cure
-Shiny: Yes
-EVs: 252 SpA / 4 SpD / 252 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 SpA
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Rock Slide
+- Hidden Power [Grass]
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 144 HP / 224 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Fire Blast
+- Brick Break
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
+- Substitute
+- Endeavor
 - Hydro Pump
-- Ice Beam
-- Psychic
-- Thunderbolt
+- Roar
 
-Aerodactyl (F) @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Double-Edge
-- Earthquake
-- Hidden Power [Flying]
-- Rock Slide
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 136 SpA / 124 SpD
+Calm Nature
+IVs: 2 Atk / 30 Def
+- Hidden Power [Ice]
+- Giga Drain
+- Leech Seed
+- Recover
 
-Tyranitar (F) @ Lum Berry
-Ability: Sand Stream
-Shiny: Yes
-EVs: 20 HP / 192 Atk / 44 SpA / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Ice Beam
-- Rock Slide
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 100 Def / 88 SpA / 64 SpD / 4 Spe
-Brave Nature
-- Body Slam
-- Earthquake
-- Fire Blast
-- Self-Destruct
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 48 Def / 244 SpD / 144 Spe
+Relaxed Nature
+- Spikes
+- Surf
+- Rapid Spin
+- Explosion

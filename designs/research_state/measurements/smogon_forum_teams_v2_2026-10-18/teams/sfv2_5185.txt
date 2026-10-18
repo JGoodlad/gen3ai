@@ -1,0 +1,55 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+- Baton Pass
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 252 Def / 4 SpA
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Protect
+- Recover
+- Sunny Day
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+IVs: 0 Atk
+- Protect
+- Wish
+- Psychic
+- Thunder
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 204 HP / 52 Atk / 252 SpA
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Refresh
+
+Blaziken @ Salac Berry
+Ability: Blaze
+EVs: 88 Atk / 168 SpA / 252 Spe
+- Fire Blast
+- Thunder Punch
+- Brick Break
+- Substitute
+
+Tangela @ Leftovers
+Ability: Chlorophyll
+EVs: 252 HP / 252 Def / 4 Spe
+Timid Nature
+IVs: 0 Atk
+- Sleep Powder
+- Leech Seed
+- Solar Beam
+- Sunny Day

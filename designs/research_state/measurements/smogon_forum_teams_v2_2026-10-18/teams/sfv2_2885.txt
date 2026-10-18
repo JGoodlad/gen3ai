@@ -1,57 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 48 Def / 164 SpA / 24 SpD / 24 Spe
-Modest Nature
-- Crunch
-- Pursuit
-- Fire Blast
-- Brick Break
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Atk / 252 SpD
-Sassy Nature
-IVs: 30 SpD / 30 Spe
-- Spikes
-- Hidden Power [Bug]
-- Zap Cannon
-- Explosion
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 248 HP / 148 Def / 68 SpD / 44 Spe
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Baton Pass
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 72 HP / 248 SpA / 188 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Giga Drain
+- Hidden Power [Fire]
+- Calm Mind
+- Baton Pass
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 176 Def / 20 SpA / 64 Spe
 Bold Nature
 IVs: 0 Atk
-- Thunderbolt
-- Toxic
+- Surf
+- Ice Beam
+- Calm Mind
 - Rest
-- Sleep Talk
 
-Claydol @ Leftovers
+Gengar @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 232 Atk / 16 SpD / 8 Spe
-Careful Nature
-- Earthquake
-- Rock Slide
-- Rapid Spin
+EVs: 252 HP / 28 Atk / 124 Def / 104 Spe
+Hasty Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
 - Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 248 HP / 176 Def / 40 SpD / 44 Spe
-Bold Nature
-IVs: 0 Atk
-- Fire Punch
-- Toxic
-- Wish
-- Protect
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 72 SpD / 180 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Rock Slide
-- Earthquake
-- Double-Edge
-- Hidden Power [Fighting]
+EVs: 252 HP / 188 SpA / 68 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Calm Mind
+- Substitute

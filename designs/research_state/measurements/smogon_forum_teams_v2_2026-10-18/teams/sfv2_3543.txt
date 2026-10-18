@@ -1,60 +1,57 @@
-Medicham @ Choice Band
-Ability: Pure Power
-Shiny: Yes
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Brick Break
-- Shadow Ball
-- Rock Slide
-- Focus Punch
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
 
-Skarmory @ Leftovers
+Skarmory
 Ability: Keen Eye
-EVs: 252 HP / 160 SpD / 96 Spe
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
 - Spikes
-- Taunt
+- Thief
 - Drill Peck
 - Roar
 
-Charizard (F) @ Leftovers
-Ability: Blaze
-Shiny: Yes
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Substitute
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 120 Atk / 136 SpD
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
+IVs: 0 Atk
+- Earthquake
+- Hydro Pump
+- Ice Beam
 - Focus Punch
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Endeavor
-- Hydro Pump
-- Toxic
-
-Jolteon (M) @ Leftovers
-Ability: Volt Absorb
-Shiny: Yes
+Moltres @ Leftovers
+Ability: Pressure
 EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Will-O-Wisp
+- Flamethrower
+- Hidden Power [Grass]
 - Roar
-
-Registeel @ Leftovers
-Ability: Clear Body
-Shiny: Yes
-EVs: 252 HP / 200 SpD / 56 Spe
-Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Counter
-- Explosion

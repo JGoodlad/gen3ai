@@ -1,0 +1,57 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
+Adamant Nature
+- Curse
+- Body Slam
+- Earthquake
+- Shadow Ball
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 160 SpA / 68 SpD / 28 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Sleep Talk
+- Calm Mind
+- Surf
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 20 HP / 252 Atk / 36 SpD / 200 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Spore
+- Stun Spore
+- Hidden Power [Ghost]
+- Sky Uppercut

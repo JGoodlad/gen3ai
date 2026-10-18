@@ -1,0 +1,57 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Ice Beam
+- Brick Break
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 196 Atk / 196 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 216 Atk / 116 Def / 32 SpA / 144 SpD
+Brave Nature
+- Self-Destruct
+- Body Slam
+- Brick Break
+- Fire Blast
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 152 SpD / 104 Spe
+Calm Nature
+- Surf
+- Explosion
+- Spikes
+- Rapid Spin
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 72 HP / 252 Atk / 184 Spe
+Adamant Nature
+IVs: 30 SpA / 30 Spe
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 68 SpA / 188 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Ice Punch
+- Thunderbolt

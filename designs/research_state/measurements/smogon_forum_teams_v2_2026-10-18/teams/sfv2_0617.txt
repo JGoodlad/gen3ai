@@ -1,55 +1,59 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Brick Break
-- Hidden Power [Grass]
-- Fire Blast
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 88 Def / 168 SpD
-Careful Nature
-- Thunder Wave
-- Explosion
-- Counter
-- Seismic Toss
-
-Medicham @ Lum Berry
-Ability: Pure Power
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-- Brick Break
-- Focus Punch
+- Dragon Dance
 - Rock Slide
-- Shadow Ball
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
 - Earthquake
-- Psychic
-- Explosion
+- Double-Edge
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 104 SpA / 152 Spe
-Modest Nature
-- Substitute
+EVs: 240 HP / 136 SpA / 124 SpD / 8 Spe
+Calm Nature
+IVs: 0 Atk
 - Calm Mind
 - Surf
 - Ice Beam
+- Rest
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 200 Def / 24 SpD / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Leech Seed
-- Recover
+Metagross @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 168 HP / 248 Atk / 92 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Agility
+
+Charizard @ Leftovers
+Ability: Blaze
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Beat Up
+- Dragon Claw
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 96 HP / 196 Atk / 136 Def / 80 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Shadow Ball
+- Self-Destruct
+
+Claydol @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 248 HP / 216 Atk / 36 SpA / 8 Spe
+Adamant Nature
+- Earthquake
 - Psychic
-- Perish Song
+- Explosion
+- Rapid Spin

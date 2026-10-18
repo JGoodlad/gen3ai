@@ -1,0 +1,55 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 76 Def / 176 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 112 Def / 144 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpA / 252 Spe
+Lonely Nature
+- Dragon Claw
+- Rock Slide
+- Brick Break
+- Fire Blast
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Crunch

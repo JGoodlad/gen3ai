@@ -1,0 +1,56 @@
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Rock Slide
+- Focus Punch
+- Curse
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 SpA / 216 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Surf
+- Thunder Wave
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 120 Def / 132 SpA / 16 Spe
+Modest Nature
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk
+
+Sceptile @ Leftovers
+Ability: Overgrow
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 Def
+- Leaf Blade
+- Leech Seed
+- Substitute
+- Hidden Power [Ice]
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 236 HP / 56 Atk / 200 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Roar
+- Thunder Wave
+- Heal Bell
+- Hidden Power [Flying]

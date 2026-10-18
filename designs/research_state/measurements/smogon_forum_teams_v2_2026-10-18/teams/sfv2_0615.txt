@@ -1,56 +1,57 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 228 SpA / 28 Spe
-Quiet Nature
-- Pursuit
-- Crunch
-- Fire Blast
-- Brick Break
+Shiny: Yes
+EVs: 220 HP / 252 Atk / 36 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Focus Punch
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 80 HP / 252 SpA / 176 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Hidden Power [Grass]
-- Flamethrower
-- Beat Up
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 44 HP / 252 Def / 212 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
+- Thunderbolt
 - Toxic
+- Baton Pass
+- Hidden Power [Grass]
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 248 SpD / 8 Spe
+Shiny: Yes
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
 - Spikes
-- Roar
 - Drill Peck
 - Toxic
+- Roar
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 44 Def / 112 SpD / 104 Spe
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Taunt
+- Hydro Pump
+- Ice Beam
 - Thunderbolt
-- Ice Punch
+- Rapid Spin
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 220 Def / 36 Spe
-Impish Nature
-- Protect
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Thunder Wave
+- Explosion
+- Toxic
+- Seismic Toss
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
 - Earthquake
 - Rock Slide
-- Toxic

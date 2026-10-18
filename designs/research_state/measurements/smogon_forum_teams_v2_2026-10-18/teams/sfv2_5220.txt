@@ -1,0 +1,56 @@
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 80 HP / 176 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 Def / 29 SpA
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+- Thunder Wave
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 36 HP / 220 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Dragon Dance
+- Earthquake
+- Taunt
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Atk / 252 SpD
+Sassy Nature
+- Sludge Bomb
+- Flamethrower
+- Will-O-Wisp
+- Pain Split
+
+Dusclops @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Night Shade
+- Will-O-Wisp
+- Protect
+- Pain Split
+
+Blaziken @ Leftovers
+Ability: Blaze
+EVs: 252 Atk / 4 SpA / 252 Spe
+Hasty Nature
+- Fire Blast
+- Sky Uppercut
+- Substitute
+- Focus Punch
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Explosion
+- Hidden Power [Bug]

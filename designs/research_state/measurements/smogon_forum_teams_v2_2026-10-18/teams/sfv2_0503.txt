@@ -1,56 +1,58 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 160 HP / 172 SpA / 176 Spe
+EVs: 60 HP / 252 SpA / 196 Spe
 Modest Nature
-IVs: 0 Atk
+IVs: 2 Atk / 30 Def
 - Thunderbolt
+- Hidden Power [Ice]
 - Toxic
-- Substitute
+- Protect
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Giga Drain
+- Hidden Power [Fire]
+- Calm Mind
 - Baton Pass
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 112 HP / 252 SpA / 144 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Psychic
-- Hidden Power [Fire]
-- Explosion
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 184 Atk / 72 Def
-Brave Nature
-- Rapid Spin
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 168 HP / 252 SpA / 88 Spe
+Modest Nature
+- Surf
+- Ice Beam
 - Earthquake
-- Psychic
-- Explosion
+- Focus Punch
 
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 160 HP / 244 Atk / 104 Spe
-Adamant Nature
-- Bulk Up
-- Brick Break
-- Shadow Ball
-- Recover
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 148 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Ice Punch
+- Thunder
+- Wish
+- Calm Mind
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 236 HP / 188 Atk / 84 Def
-Adamant Nature
-- Curse
-- Return
-- Shadow Ball
-- Self-Destruct
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
 IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
 - Rock Slide
-- Brick Break
+- Earthquake
+- Double-Edge
+- Hidden Power [Flying]

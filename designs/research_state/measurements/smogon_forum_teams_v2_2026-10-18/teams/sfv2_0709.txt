@@ -1,57 +1,56 @@
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-- Thunder
-- Ice Punch
-- Psychic
-- Dynamic Punch
-
-Machamp @ Choice Band
-Ability: Guts
-EVs: 252 HP / 252 Atk / 4 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Cross Chop
-- Sleep Talk
-- Hidden Power [Ghost]
-- Rock Slide
-
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 HP
-- Swords Dance
-- Megahorn
-- Substitute
-- Rock Slide
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
-Bold Nature
-- Surf
-- Toxic
-- Protect
-- Refresh
-
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
+EVs: 252 HP / 80 SpA / 176 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
+IVs: 0 Atk
 - Rain Dance
-- Baton Pass
-- Thunderbolt
-- Hidden Power [Grass]
+- Calm Mind
+- Substitute
+- Surf
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 76 SpD / 180 Spe
-Modest Nature
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 4 Atk / 252 SpA
+Quiet Nature
 IVs: 30 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
+- Ice Beam
+- Explosion
 - Hidden Power [Fire]
+- Thunder Wave
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 88 HP / 132 Atk / 144 Def / 144 SpD
+Adamant Nature
+- Focus Punch
+- Shadow Ball
+- Earthquake
+- Self-Destruct
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
 - Psychic
+- Explosion
+- Earthquake
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 244 HP / 252 SpA / 12 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA
+- Thunder Punch
+- Explosion
+- Hidden Power [Grass]
+- Meteor Mash
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 212 SpD / 140 Spe
+Adamant Nature
+- Dragon Dance
+- Brick Break
+- Earthquake
+- Rock Slide

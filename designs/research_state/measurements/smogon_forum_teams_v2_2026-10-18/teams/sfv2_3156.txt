@@ -1,34 +1,34 @@
-Tyranitar @ Leftovers
+Tyranitar @ Choice Band
 Ability: Sand Stream
-EVs: 184 HP / 112 Atk / 40 Def / 172 Spe
-Naughty Nature
-- Dragon Dance
-- Rock Slide
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
 - Earthquake
-- Ice Beam
+- Rock Slide
+- Hidden Power [Ghost]
+- Focus Punch
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 80 SpA / 180 Spe
-Modest Nature
-IVs: 3 Atk / 30 Spe
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
-Timid Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
 - Spikes
-- Surf
-- Rapid Spin
+- Toxic
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+- Will-O-Wisp
+- Thunderbolt
+- Giga Drain
 - Explosion
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 76 Def / 180 SpD
+EVs: 252 HP / 120 Def / 136 SpD
 Sassy Nature
 - Wish
 - Protect
@@ -37,19 +37,20 @@ Sassy Nature
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 116 Def / 100 SpA / 44 SpD
-Quiet Nature
-- Earthquake
-- Ice Beam
-- Curse
-- Hydro Pump
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Surf
+- Roar
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Double-Edge
-- Hidden Power [Bug]
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up

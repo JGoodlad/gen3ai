@@ -1,56 +1,59 @@
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 120 Def / 244 SpA / 144 Spe
-Rash Nature
-- Wish
+EVs: 252 SpA / 4 SpD / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
 - Dragon Claw
-- Flamethrower
 - Brick Break
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
+- Hidden Power [Grass]
+- Fire Blast
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 120 Atk / 136 Def
-Relaxed Nature
-- Rapid Spin
+EVs: 252 HP / 244 Atk / 12 Spe
+Impish Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Psychic
+- Hidden Power [Bug]
+- Rapid Spin
 - Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 248 SpA / 12 Spe
+Modest Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Aromatherapy
-- Seismic Toss
-- Ice Beam
+- Crunch
+- Pursuit
+- Flamethrower
+- Surf
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+Shiny: Yes
+EVs: 252 HP / 104 Atk / 152 SpD
+Sassy Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Wish
+- Hidden Power [Fighting]
+- Fire Punch
+- Body Slam
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 204 HP / 136 Atk / 148 Def / 8 SpD / 12 Spe
+EVs: 24 HP / 136 Atk / 188 Def / 160 SpD
 Adamant Nature
-- Rest
 - Curse
+- Self-Destruct
 - Body Slam
 - Earthquake
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 220 Def / 36 Spe
-Bold Nature
+EVs: 240 HP / 200 SpA / 68 Spe
+Modest Nature
 IVs: 0 Atk
-- Rest
 - Calm Mind
 - Surf
-- Roar
+- Rest
+- Sleep Talk

@@ -1,0 +1,58 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Thunder Wave
+- Thunderbolt
+- Baton Pass
+
+Rhydon (M) @ Leftovers
+Ability: Lightning Rod
+EVs: 212 HP / 168 Atk / 128 Spe
+Adamant Nature
+- Swords Dance
+- Earthquake
+- Rock Slide
+- Substitute
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+Shiny: Yes
+EVs: 68 HP / 252 SpA / 188 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Thunder Wave
+- Thunderbolt
+- Toxic
+
+Snorlax (M) @ Leftovers
+Ability: Thick Fat
+EVs: 16 HP / 124 Atk / 220 Def / 136 SpD / 12 Spe
+Careful Nature
+- Shadow Ball
+- Body Slam
+- Curse
+- Rest
+
+Flygon @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 180 HP / 176 Atk / 152 Spe
+Adamant Nature
+- Earthquake
+- Substitute
+- Fire Blast
+- Toxic
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 176 HP / 160 Atk / 172 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Hidden Power [Bug]
+- Dragon Dance
+- Earthquake
+- Rock Slide

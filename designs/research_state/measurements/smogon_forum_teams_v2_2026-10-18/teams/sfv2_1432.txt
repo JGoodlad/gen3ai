@@ -1,58 +1,58 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 96 Atk / 248 Def / 160 SpD / 4 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Knock Off
+- Brick Break
+- Hidden Power [Bug]
+- Focus Punch
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 228 SpA / 28 Spe
+Modest Nature
+IVs: 0 Atk
+- Seismic Toss
+- Ice Beam
+- Wish
+- Soft-Boiled
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 Def / 8 SpA / 32 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 196 SpA / 128 Spe
+EVs: 252 HP / 168 SpA / 88 Spe
 Modest Nature
 IVs: 0 Atk
 - Crunch
 - Pursuit
 - Flamethrower
-- Brick Break
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Surf
-- Ice Beam
-- Psychic
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
 - Ice Beam
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 56 Atk / 128 Def / 72 SpD / 4 Spe
 Adamant Nature
-- Rest
-- Curse
-- Double-Edge
-- Earthquake
+- Meteor Mash
+- Explosion
+- Toxic
+- Protect
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
-- Rain Dance
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Substitute
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]

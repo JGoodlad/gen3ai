@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 224 SpD / 32 Spe
+Calm Nature
+- Thunderbolt
+- Rest
+- Toxic
+- Roar
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 244 Def / 12 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Toxic
+- Rapid Spin
+- Spikes
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 176 HP / 252 Def / 68 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Sunny Day
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Protect
+- Counter
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Curse
+- Rest
+- Return
+- Earthquake
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 104 Def / 144 SpA / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Pursuit
+- Wish
+- Protect
+- Charm

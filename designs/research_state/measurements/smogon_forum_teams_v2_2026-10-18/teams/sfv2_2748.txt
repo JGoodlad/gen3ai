@@ -1,57 +1,61 @@
-Umbreon @ Leftovers
-Ability: Synchronize
-EVs: 248 HP / 56 Def / 188 SpA / 16 Spe
+Swampert (M) @ Leftovers
+Ability: Torrent
+Shiny: Yes
+EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
 Bold Nature
 IVs: 0 Atk
-- Wish
+- Surf
+- Toxic
 - Protect
-- Charm
-- Pursuit
+- Refresh
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Fire]
-- Rain Dance
+Jumpluff (M) @ Leftovers
+Ability: Chlorophyll
+Shiny: Yes
+EVs: 152 HP / 104 SpD / 252 Spe
+Jolly Nature
+IVs: 0 Atk
+- Encore
+- Leech Seed
+- Substitute
+- Sleep Powder
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 100 Atk / 180 Def / 8 SpD / 16 Spe
-Adamant Nature
-- Rest
-- Curse
-- Return
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
 - Earthquake
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 152 Def / 44 SpA / 28 SpD / 32 Spe
-Bold Nature
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 224 SpA / 36 Spe
+Quiet Nature
+- Crunch
+- Pursuit
+- Fire Blast
+- Brick Break
+
+Moltres @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Recover
-- Leech Seed
-- Heal Bell
+- Flamethrower
+- Toxic
+- Protect
 - Hidden Power [Grass]
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 136 Atk / 28 SpD / 92 Spe
-Adamant Nature
-- Reflect
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 40 HP / 188 Atk / 100 SpD / 180 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Hidden Power [Rock]
-- Double-Edge
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 212 Def / 12 SpA / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Thunder
+- Ice Punch
+- Wish
+- Calm Mind

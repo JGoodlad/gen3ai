@@ -1,56 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Brick Break
-- Hidden Power [Flying]
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
-- Roar
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 136 SpA / 156 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
+IVs: 30 Spe
 - Thunder Wave
 - Toxic
 - Thunderbolt
-- Hidden Power [Grass]
+- Hidden Power [Ice]
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 144 Atk / 180 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 240 SpD / 28 Spe
+Careful Nature
+- Spikes
+- Taunt
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Thunder Wave
-- Seismic Toss
+- Taunt
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Protect
+- Earthquake
+- Hydro Pump
 - Ice Beam
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP
-- Protect
-- Meteor Mash
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Explosion
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Refresh
-- Toxic
-- Surf
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

@@ -1,57 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 176 SpA / 76 SpD / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Counter
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 216 Def / 44 SpD / 8 Spe
-Relaxed Nature
-- Protect
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
 - Earthquake
-- Surf
-- Ice Beam
+- Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-- Soft-Boiled
-- Wish
-- Thunder Wave
-- Seismic Toss
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Whirlwind
+- Protect
+- Toxic
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
+- Hidden Power [Grass]
+- Hypnosis
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 28 HP / 252 SpA / 228 Spe
 Modest Nature
 IVs: 0 Atk
-- Leech Seed
 - Calm Mind
-- Giga Drain
-- Psychic
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA
-- Will-O-Wisp
-- Flamethrower
-- Hidden Power [Grass]
+- Hydro Pump
+- Ice Beam
 - Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]

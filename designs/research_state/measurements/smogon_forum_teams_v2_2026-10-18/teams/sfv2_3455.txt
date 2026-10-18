@@ -1,57 +1,55 @@
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 8 Atk / 248 SpD
-Sassy Nature
-IVs: 30 SpD / 30 Spe
-- Zap Cannon
-- Hidden Power [Bug]
-- Spikes
-- Explosion
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
 
-Skarmory @ Leftovers
+Skarmory
 Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
 - Spikes
-- Roar
+- Thief
 - Drill Peck
-- Protect
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 240 Def / 16 Spe
-Bold Nature
-IVs: 0 Atk
 - Roar
-- Surf
-- Calm Mind
-- Rest
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 176 Def / 52 SpA / 28 SpD
-Relaxed Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Metagross @ Liechi Berry
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
 - Earthquake
-- Psychic
-- Rest
-- Rapid Spin
+- Rock Slide
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Aromatherapy
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 220 SpA / 48 Spe
+Quiet Nature
+- Protect
+- Earthquake
+- Hydro Pump
 - Ice Beam
-- Soft-Boiled
-- Seismic Toss
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Screech
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

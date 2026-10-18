@@ -1,58 +1,58 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 196 Atk / 200 SpD / 112 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
 - Dragon Dance
-- Rock Slide
 - Earthquake
-- Hidden Power [Bug]
+- Rock Slide
+- Brick Break
 
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
-- Flamethrower
+- Endure
+- Thunderbolt
 - Hidden Power [Grass]
-- Will-O-Wisp
-- Roar
+- Rain Dance
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 152 SpD / 104 Spe
-Careful Nature
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 Def / 248 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Spikes
-- Roar
-- Taunt
-- Toxic
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Wish
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 116 Def / 144 SpA
-Quiet Nature
-- Earthquake
-- Ice Beam
-- Protect
-- Hydro Pump
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 80 SpA / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
 - Substitute
 - Calm Mind
-- Hidden Power [Grass]
 - Thunderbolt
+- Crunch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Rock Slide
+- Hidden Power [Grass]
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 184 HP / 148 SpA / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Rain Dance
+- Calm Mind
+- Surf
+- Ice Beam
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Substitute
+- Megahorn
+- Rock Slide
+- Focus Punch

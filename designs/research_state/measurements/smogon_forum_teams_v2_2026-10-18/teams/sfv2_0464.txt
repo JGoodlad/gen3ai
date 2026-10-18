@@ -1,57 +1,57 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 240 HP / 16 Atk / 252 SpA
-Quiet Nature
-IVs: 30 Def / 30 SpA
-- Counter
-- Flamethrower
+EVs: 40 HP / 252 SpA / 84 SpD / 132 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
 - Hidden Power [Grass]
-- Rock Slide
+- Crunch
+- Pursuit
+- Flamethrower
 
-Skarmory @ Leftovers
+Skarmory
 Ability: Keen Eye
-EVs: 252 HP / 136 SpD / 120 Spe
-Careful Nature
-- Drill Peck
-- Roar
+EVs: 240 HP / 248 SpD / 20 Spe
+Calm Nature
+IVs: 0 Atk
+- Protect
 - Spikes
-- Taunt
+- Roar
+- Thief
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 Def / 8 SpA / 32 SpD / 176 Spe
+Timid Nature
+- Thunder Wave
+- Surf
+- Rapid Spin
+- Recover
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 244 HP / 216 Def / 48 Spe
+Impish Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
 EVs: 252 Def / 252 SpA / 4 SpD
-Modest Nature
-IVs: 0 Atk
-- Flamethrower
+Bold Nature
+IVs: 22 Spe
+- Sing
 - Seismic Toss
-- Soft-Boiled
-- Toxic
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 64 Atk / 252 SpA / 192 Spe
-Rash Nature
-IVs: 30 Def / 30 SpA
-- Brick Break
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 48 Def / 24 SpA / 184 Spe
-Timid Nature
-IVs: 0 Atk
-- Destiny Bond
-- Ice Punch
-- Thunderbolt
-- Will-O-Wisp
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 Spe
-Relaxed Nature
-- Earthquake
 - Ice Beam
-- Protect
-- Surf
+- Soft-Boiled
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Screech

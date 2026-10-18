@@ -1,57 +1,58 @@
-Medicham @ Salac Berry
-Ability: Pure Power
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Brick Break
-- Focus Punch
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 184 HP / 240 Atk / 84 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
 - Rock Slide
-- Shadow Ball
+- Hidden Power [Bug]
+- Focus Punch
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Thunder Wave
-- Protect
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Refresh
+- Earthquake
+- Psychic
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 252 HP / 4 Atk / 252 Def
-Relaxed Nature
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
+IVs: 0 Atk
 - Earthquake
 - Hydro Pump
-- Roar
 - Ice Beam
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Hidden Power [Bug]
-- Earthquake
-- Rock Slide
-- Aerial Ace
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 220 HP / 252 SpA / 36 Spe
-Modest Nature
-IVs: 0 Atk
-- Giga Drain
-- Calm Mind
-- Psychic
-- Leech Seed
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 124 Atk / 132 SpA / 252 Spe
-Timid Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Fire Blast
-- Dragon Claw
 - Focus Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
 - Hidden Power [Flying]
+- Brick Break
+- Fire Blast

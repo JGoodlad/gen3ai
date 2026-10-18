@@ -1,0 +1,57 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 240 HP / 16 Def / 224 SpA / 28 Spe
+Quiet Nature
+- Meteor Mash
+- Psychic
+- Pursuit
+- Explosion
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Sunny Day
+- Protect
+
+Steelix @ Leftovers
+Ability: Rock Head
+EVs: 252 HP / 132 Atk / 124 SpD
+Impish Nature
+- Protect
+- Earthquake
+- Rock Slide
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 84 Atk / 164 SpD / 8 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Dragon Dance
+- Rest
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 48 Def / 72 SpA / 120 SpD / 20 Spe
+Calm Nature
+IVs: 0 Atk
+- Psychic
+- Leech Seed
+- Recover
+- Calm Mind
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Calm Mind
+- Rest
+- Sleep Talk

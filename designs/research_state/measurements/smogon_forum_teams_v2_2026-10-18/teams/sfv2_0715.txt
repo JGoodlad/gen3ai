@@ -1,60 +1,58 @@
-Snorlax @ Choice Band
-Ability: Immunity
-Shiny: Yes
-EVs: 92 HP / 252 Atk / 144 Def / 8 SpD / 12 Spe
-Adamant Nature
-- Self-Destruct
-- Body Slam
-- Shadow Ball
-- Focus Punch
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 148 Atk / 152 SpA / 208 Spe
+Mild Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Thunderbolt
+- Drill Peck
+- Hidden Power [Fighting]
+- Thunder Wave
 
-Grumpig @ Choice Band
-Ability: Thick Fat
-EVs: 64 HP / 252 SpA / 192 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Psychic
-- Trick
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 76 HP / 252 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Baton Pass
 - Calm Mind
-- Hidden Power [Grass]
+- Psychic
+- Hidden Power [Fire]
 
-Gengar (M) @ Leftovers
+Gengar @ Leftovers
 Ability: Levitate
-Shiny: Yes
-EVs: 112 HP / 68 Atk / 152 SpA / 176 Spe
-Naive Nature
+EVs: 76 HP / 4 Def / 252 SpA / 176 Spe
+Timid Nature
 - Thunderbolt
 - Ice Punch
 - Will-O-Wisp
 - Explosion
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 200 HP / 172 SpA / 136 Spe
-Modest Nature
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
-- Thunderbolt
+- Dragon Claw
+- Flamethrower
 - Hidden Power [Grass]
-- Baton Pass
-- Thunder Wave
+- Beat Up
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-Shiny: Yes
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
+
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 252 HP / 208 Atk / 48 Spe
+Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
 - Rock Slide
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Rapid Spin
+- Superpower
 - Hidden Power [Bug]
-- Earthquake
+- Explosion

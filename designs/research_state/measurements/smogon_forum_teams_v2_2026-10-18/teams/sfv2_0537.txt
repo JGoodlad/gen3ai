@@ -1,59 +1,58 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 136 HP / 252 Atk / 120 Spe
-Adamant Nature
-- Explosion
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 120 HP / 252 Atk / 28 Def / 108 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Rock Slide
-- Sleep Talk
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 200 HP / 252 SpD / 56 Spe
+Calm Nature
+IVs: 0 Atk
 - Thunderbolt
-- Hidden Power [Grass]
-- Toxic
-- Thunder Wave
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 8 Atk / 100 SpD / 152 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Swords Dance
-- Hidden Power [Fighting]
-- Recover
 - Baton Pass
-
-Aerodactyl @ Liechi Berry
-Ability: Rock Head
-Shiny: Yes
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rest
 - Substitute
-- Rock Slide
-- Hidden Power [Flying]
-- Earthquake
 
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-Shiny: Yes
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 124 Atk / 96 Def / 20 SpA / 16 SpD
+Sassy Nature
+- Rapid Spin
 - Earthquake
-- Double-Edge
+- Psychic
+- Explosion
 
-Swampert @ Leftovers
-Ability: Torrent
-Shiny: Yes
-EVs: 248 HP / 232 Atk / 4 Def / 12 SpA / 12 SpD
-Brave Nature
-- Earthquake
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 220 HP / 252 Def / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Thunder Wave
+- Seismic Toss
+- Aromatherapy
+- Soft-Boiled
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 228 Def / 28 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
 - Surf
-- Ice Beam
-- Refresh
+- Rest
+- Roar
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Knock Off
+- Hidden Power [Bug]
+- Rest
+- Rock Slide

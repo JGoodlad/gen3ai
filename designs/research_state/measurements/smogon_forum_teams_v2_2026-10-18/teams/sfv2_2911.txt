@@ -1,55 +1,57 @@
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Spore
-- Focus Punch
-- Mach Punch
-- Sky Uppercut
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 80 SpA / 136 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Thunderbolt
-- Ice Punch
-
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
-- Calm Mind
+EVs: 248 HP / 176 Def / 8 SpA / 76 Spe
+Bold Nature
+IVs: 0 Atk
 - Surf
+- Roar
+- Calm Mind
 - Rest
-- Sleep Talk
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 28 SpD / 12 Spe
-Brave Nature
-- Earthquake
-- Ice Beam
-- Rapid Spin
-- Explosion
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 52 Atk / 232 SpA / 40 Spe
+EVs: 248 HP / 12 Atk / 176 SpA / 72 SpD
 Quiet Nature
-- Pursuit
+- Rock Slide
+- Earthquake
 - Crunch
-- Fire Blast
-- Brick Break
+- Pursuit
 
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 20 Atk / 136 Def / 60 SpD / 44 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Rest
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 8 Def / 252 SpD
+Sassy Nature
+IVs: 30 Spe
+- Earthquake
+- Spikes
+- Rapid Spin
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 48 Def / 104 SpD / 104 Spe
 Timid Nature
-IVs: 30 Atk / 30 SpA
-- Calm Mind
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
+- Ice Punch
 - Hidden Power [Grass]
-- Substitute
+- Will-O-Wisp
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 8 HP / 252 Def / 248 SpA
+Bold Nature
+- Seismic Toss
+- Ice Beam
+- Thunder Wave
+- Soft-Boiled

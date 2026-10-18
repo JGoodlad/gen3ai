@@ -1,58 +1,57 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 216 Atk / 12 SpD / 28 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Toxic
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Pursuit
-- Crunch
-- Fire Blast
-- Counter
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 72 HP / 252 Atk / 184 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Rock]
-- Earthquake
-- Taunt
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+- Roar
 
 Starmie @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 40 Def / 216 Spe
-Timid Nature
-IVs: 0 Atk
+EVs: 4 HP / 4 Def / 248 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
 - Surf
+- Ice Beam
+- Hidden Power [Grass]
 - Rapid Spin
-- Recover
-- Thunder Wave
 
-Venusaur @ Leftovers
-Ability: Overgrow
-EVs: 8 HP / 192 SpA / 56 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Sleep Powder
-- Leech Seed
-- Giga Drain
-- Hidden Power [Ice]
-
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 60 Atk / 236 Def / 164 SpD / 48 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 224 Atk / 36 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Brick Break
-- Knock Off
-- Focus Punch
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
 - Hidden Power [Bug]
+- Focus Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 184 HP / 216 Atk / 108 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Rock Slide
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 56 Def / 240 SpA / 212 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Fire Punch
+- Ice Punch
+- Hidden Power [Grass]
+- Taunt

@@ -1,60 +1,55 @@
-Zapdos @ Lum Berry
-Ability: Pressure
-EVs: 252 Atk / 12 SpA / 244 Spe
-Lonely Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Thunderbolt
-- Drill Peck
-- Hidden Power [Fighting]
-- Thunder Wave
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 140 Def / 180 SpA / 188 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Giga Drain
-- Psychic
-- Hidden Power [Fire]
-- Calm Mind
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-Shiny: Yes
-EVs: 252 Atk / 4 Def / 252 Spe
+Gengar @ Choice Band
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-IVs: 30 SpD / 30 Spe
-- Dragon Dance
+- Will-O-Wisp
+- Shadow Ball
+- Brick Break
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Hidden Power [Bug]
+- Aerial Ace
 - Rock Slide
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-Shiny: Yes
-EVs: 176 HP / 228 SpD / 104 Spe
-Timid Nature
-- Explosion
-- Surf
+Skarmory
+Ability: Keen Eye
+EVs: 252 HP / 24 Def / 216 SpD / 16 Spe
+Careful Nature
 - Spikes
-- Rapid Spin
+- Thief
+- Roar
+- Drill Peck
 
-Swampert @ Leftovers
-Ability: Torrent
-Shiny: Yes
-EVs: 248 HP / 64 Def / 100 SpA / 44 SpD / 52 Spe
-Quiet Nature
-- Hydro Pump
+Poliwrath @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 216 Def / 40 Spe
+Relaxed Nature
+- Brick Break
 - Ice Beam
-- Earthquake
-- Protect
+- Bulk Up
+- Rest
 
-Gengar @ Leftovers
+Claydol @ Leftovers
 Ability: Levitate
-Shiny: Yes
-EVs: 48 HP / 64 SpA / 204 SpD / 192 Spe
-Hasty Nature
-- Will-O-Wisp
-- Thunderbolt
-- Giga Drain
+EVs: 252 HP / 36 SpA / 216 SpD / 4 Spe
+Sassy Nature
+- Rapid Spin
+- Rain Dance
+- Psychic
 - Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt

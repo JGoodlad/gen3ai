@@ -1,57 +1,57 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 152 Atk / 172 Spe
+EVs: 248 HP / 252 Atk / 8 Spe
 Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Ghost]
-- Roar
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
-- Roar
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Fire]
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 40 Def / 48 SpA / 136 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Recover
-- Leech Seed
-- Psychic
-- Light Screen
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 60 Atk / 120 Def / 44 SpD / 44 Spe
-Relaxed Nature
-- Protect
-- Refresh
-- Earthquake
-- Ice Beam
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 SpD / 30 Spe
 - Earthquake
 - Rock Slide
 - Hidden Power [Bug]
-- Double-Edge
+- Focus Punch
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Protect
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Hasty Nature
+IVs: 0 Atk
+- Taunt
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Surf
+- Ice Beam
+- Thunderbolt
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Toxic
+- Fire Blast
+- Ice Beam
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam

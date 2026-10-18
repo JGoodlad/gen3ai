@@ -1,57 +1,58 @@
-Tyranitar @ Lum Berry
+Tyranitar (M) @ Leftovers
 Ability: Sand Stream
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
+EVs: 252 HP / 228 SpA / 28 Spe
+Modest Nature
 IVs: 30 Atk / 30 SpA
 - Fire Blast
+- Pursuit
 - Hidden Power [Grass]
+- Crunch
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 220 Atk / 36 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Aerial Ace
+- Earthquake
+- Hidden Power [Bug]
 - Rock Slide
-- Brick Break
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 80 HP / 16 SpA / 236 SpD / 176 Spe
-Modest Nature
-IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Giga Drain
-- Thunderbolt
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 148 SpD / 112 Spe
-Careful Nature
-- Spikes
-- Taunt
-- Drill Peck
-- Roar
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
+Milotic (M) @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
 - Ice Beam
-- Seismic Toss
+- Recover
+- Surf
 - Toxic
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 132 Def / 80 SpA / 48 Spe
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Focus Punch
-- Hydro Pump
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 180 Def / 60 SpA / 16 SpD
+Bold Nature
+IVs: 30 Atk / 30 SpA
+- Hidden Power [Grass]
+- Leech Seed
+- Psychic
+- Recover
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 136 SpA / 80 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Ice Punch
-- Thunderbolt
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 56 Def / 196 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Explosion
+- Hidden Power [Bug]
+- Rapid Spin
+- Spikes
+
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]
+- Rock Slide

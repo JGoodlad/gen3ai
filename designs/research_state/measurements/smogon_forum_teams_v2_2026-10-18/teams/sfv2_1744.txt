@@ -1,59 +1,58 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
-- Ice Beam
-- Brick Break
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Careful Nature
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Spikes
-- Roar
-- Protect
-- Toxic
+- Rapid Spin
+- Surf
+- Ice Beam
+- Thunderbolt
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 120 HP / 68 Atk / 140 SpA / 180 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Ice Punch
+- Fire Punch
+- Psychic
+- Hidden Power [Fighting]
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 184 HP / 180 SpA / 144 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
 
 Charizard @ Leftovers
 Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Substitute
-- Hidden Power [Grass]
-- Flamethrower
-- Focus Punch
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 160 HP / 164 SpD / 184 Spe
-Timid Nature
-IVs: 0 Atk
-- Thunderbolt
-- Ice Punch
-- Will-O-Wisp
-- Taunt
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 212 Def / 48 Spe
-Impish Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Protect
-- Earthquake
-- Hidden Power [Rock]
-- Toxic
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
+EVs: 252 SpA / 4 SpD / 252 Spe
 Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Soft-Boiled
-- Ice Beam
-- Thunderbolt
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up

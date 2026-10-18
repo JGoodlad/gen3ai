@@ -1,56 +1,56 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 112 Atk / 32 Def / 180 Spe
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
 Adamant Nature
+IVs: 30 SpD / 30 Spe
 - Rock Slide
 - Earthquake
+- Hidden Power [Bug]
 - Focus Punch
-- Dragon Dance
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
 - Drill Peck
 - Spikes
 - Roar
-- Counter
+- Protect
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 176 Def / 8 SpA / 76 Spe
+Bold Nature
 IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
-- Recover
+- Surf
+- Roar
+- Calm Mind
+- Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 136 HP / 176 Atk / 52 SpA / 144 Spe
+Adamant Nature
+- Earthquake
+- Psychic
 - Rapid Spin
+- Refresh
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 184 SpD / 76 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Drill Peck
+- Rest
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 80 Atk / 252 SpA / 176 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
+EVs: 248 HP / 84 Def / 176 SpD
+Sassy Nature
 - Body Slam
 - Fire Punch
-- Hidden Power [Grass]
-- Dynamic Punch
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 16 Atk / 188 Def / 16 SpA / 40 Spe
-Lax Nature
-- Earthquake
-- Rock Slide
-- Fire Blast
-- Toxic
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
-- Soft-Boiled
-- Calm Mind
+- Protect
+- Wish

@@ -1,56 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
-- Sleep Talk
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 136 SpA / 80 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Calm Mind
-- Hidden Power [Grass]
-- Thunderbolt
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 72 Atk / 188 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
+- Rock Slide
+- Hidden Power [Bug]
 - Double-Edge
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
+- Counter
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 212 Atk / 32 SpA / 16 Spe
-Adamant Nature
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
 - Rapid Spin
 - Earthquake
 - Psychic
 - Explosion
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
-Adamant Nature
-- Self-Destruct
-- Body Slam
-- Shadow Ball
-- Focus Punch
+Sableye @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Psych Up
+- Seismic Toss
+- Knock Off
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
-- Earthquake
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Impish Nature
+- Soft-Boiled
+- Aromatherapy
+- Thunder Wave
+- Seismic Toss
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Roar

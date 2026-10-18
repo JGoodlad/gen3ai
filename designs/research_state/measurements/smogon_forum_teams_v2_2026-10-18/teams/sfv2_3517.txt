@@ -1,57 +1,58 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 HP / 252 SpA / 252 Spe
-Rash Nature
-- Brick Break
-- Substitute
-- Fire Blast
-- Dragon Claw
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 44 HP / 212 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Thunder Wave
-- Baton Pass
-- Hidden Power [Ice]
-
-Poliwrath @ Leftovers
-Ability: Water Absorb
-EVs: 122 HP / 112 Atk / 252 SpA / 22 Spe
-Modest Nature
-- Focus Punch
-- Surf
-- Hypnosis
-- Dynamic Punch
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 244 SpD / 12 Spe
-Careful Nature
-IVs: 0 Atk / 30 SpA / 30 SpD
-- Spikes
-- Roar
-- Taunt
-- Toxic
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 124 HP / 252 Atk / 132 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
-
-Gengar @ Leftovers
+Flygon @ Leftovers
 Ability: Levitate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
+- Protect
+- Toxic
+- Earthquake
+- Rock Slide
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Ghost]
+- Focus Punch
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
 - Fire Punch
-- Explosion
-- Ice Punch
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Sleep Talk
+- Thunderbolt
+- Roar
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Will-O-Wisp
+- Flamethrower
 - Hidden Power [Grass]
+- Overheat

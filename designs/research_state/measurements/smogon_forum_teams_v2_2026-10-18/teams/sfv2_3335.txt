@@ -1,57 +1,57 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 60 SpD / 20 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 84 Atk / 172 Spe
 Adamant Nature
-- Meteor Mash
-- Earthquake
+IVs: 30 SpD / 30 Spe
+- Substitute
 - Rock Slide
-- Explosion
+- Hidden Power [Bug]
+- Focus Punch
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Ice Punch
-- Thunderbolt
-- Hidden Power [Grass]
-- Will-O-Wisp
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA
-Bold Nature
-IVs: 0 Atk
-- Ice Beam
-- Thunderbolt
-- Toxic
-- Soft-Boiled
-
-Skarmory @ Leftovers
+Skarmory
 Ability: Keen Eye
-EVs: 252 HP / 4 Atk / 252 SpD
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
+- Spikes
+- Thief
 - Drill Peck
 - Roar
-- Spikes
-- Protect
 
-Togetic @ Leftovers
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 120 SpD / 148 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Grass]
+
+Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 72 SpA / 184 SpD
+EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
 Calm Nature
 IVs: 0 Atk
-- Flamethrower
-- Toxic
 - Wish
 - Protect
+- Toxic
+- Fire Punch
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 252 HP / 204 Def / 52 SpD
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Toxic
+EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
+Relaxed Nature
 - Protect
-- Refresh
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

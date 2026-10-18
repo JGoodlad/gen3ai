@@ -1,58 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 8 Def / 248 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Ice Beam
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 240 HP / 156 Def / 92 SpA / 20 Spe
-Modest Nature
-IVs: 3 Atk / 30 SpA
-- Leech Seed
-- Calm Mind
-- Hidden Power [Electric]
-- Baton Pass
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 176 Atk / 128 Def / 172 SpD
-Adamant Nature
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
 - Curse
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
 - Substitute
 - Thunderbolt
 - Hidden Power [Grass]
 - Baton Pass
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 160 SpA / 56 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 76 HP / 252 SpA / 180 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
+
+Snorlax @ Leftovers
+Ability: Thick Fat
+EVs: 32 HP / 96 Atk / 120 Def / 88 SpA / 172 SpD
+Brave Nature
+- Body Slam
+- Earthquake
+- Fire Blast
+- Self-Destruct
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Substitute
-- Calm Mind
-- Thunder
+- Dragon Claw
+- Flamethrower
 - Hidden Power [Grass]
+- Beat Up

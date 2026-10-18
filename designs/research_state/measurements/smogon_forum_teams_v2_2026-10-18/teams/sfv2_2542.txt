@@ -1,57 +1,58 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 96 SpA / 160 Spe
-Modest Nature
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 76 HP / 180 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 252 SpD / 16 Spe
+Careful Nature
 IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
+- Spikes
+- Protect
+- Toxic
+- Roar
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Def / 44 SpD / 48 Spe
+Relaxed Nature
+- Protect
+- Hydro Pump
+- Earthquake
 - Ice Beam
 
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Endure
-- Thunderbolt
-- Hidden Power [Grass]
-- Rain Dance
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 240 HP / 84 Def / 152 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Fire Punch
+- Toxic
+- Wish
+- Protect
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 4 Def / 244 SpA / 12 Spe
 Modest Nature
 IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
+- Crunch
+- Pursuit
+- Fire Blast
+- Roar
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 56 Def / 60 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Shadow Ball
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-- Toxic
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 40 HP / 188 Atk / 100 SpD / 180 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Hidden Power [Rock]
-- Double-Edge
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Taunt
+- Will-O-Wisp
+- Destiny Bond

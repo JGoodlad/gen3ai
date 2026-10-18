@@ -1,58 +1,57 @@
-Suicune @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
+EVs: 216 HP / 136 SpA / 156 Spe
 Modest Nature
-IVs: 0 Atk
+IVs: 30 Spe
+- Thunder Wave
 - Toxic
-- Calm Mind
+- Thunderbolt
+- Hidden Power [Ice]
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 240 Atk / 16 SpA / 252 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Grass]
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 168 SpA / 244 SpD / 96 Spe
+Modest Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 80 SpA / 44 SpD / 8 Spe
+Relaxed Nature
+- Curse
+- Earthquake
 - Hydro Pump
 - Ice Beam
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
-- Roar
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 80 HP / 252 SpA / 176 Spe
-Rash Nature
-IVs: 30 SpA
-- Water Pulse
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
 - Thunderbolt
-- Psychic
-- Dynamic Punch
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 188 HP / 140 SpA / 180 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
+- Hidden Power [Ice]
+- Roar
 - Baton Pass
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 116 SpA / 176 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Grass]
-- Roar
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 4 SpA / 252 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

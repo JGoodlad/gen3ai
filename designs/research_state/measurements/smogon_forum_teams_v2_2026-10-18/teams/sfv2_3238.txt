@@ -1,57 +1,58 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Rock Slide
-- Earthquake
-- Double-Edge
-- Brick Break
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Hidden Power [Grass]
+EVs: 144 Atk / 212 SpD / 152 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
 - Brick Break
+- Rock Slide
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 156 SpD / 100 Spe
-Careful Nature
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 52 Def / 32 SpD / 176 Spe
+Timid Nature
 IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 56 Def / 188 SpA / 16 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Crunch
+- Pursuit
+- Flamethrower
+- Hidden Power [Grass]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 156 Def / 104 SpD
+Relaxed Nature
+- Ice Beam
+- Earthquake
+- Curse
+- Protect
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Calm Nature
+IVs: 0 Atk
+- Thief
 - Spikes
 - Roar
-- Toxic
-- Taunt
+- Protect
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 236 SpA / 20 Spe
-Modest Nature
+EVs: 168 HP / 252 Def / 88 Spe
+Bold Nature
 IVs: 0 Atk
 - Soft-Boiled
-- Ice Beam
-- Thunderbolt
-- Calm Mind
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 28 HP / 252 SpA / 228 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Hydro Pump
-- Ice Beam
-- Roar
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
+- Thunder Wave
+- Seismic Toss
+- Wish

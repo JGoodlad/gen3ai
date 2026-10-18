@@ -1,58 +1,56 @@
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 8 HP / 244 Atk / 72 SpD / 184 Spe
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 20 HP / 236 Atk / 252 Spe
 Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Spore
+- Brick Break
+- Rock Slide
 - Focus Punch
-- Sky Uppercut
-- Hidden Power [Ghost]
+- Bulk Up
 
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Baton Pass
-- Hidden Power [Grass]
-- Thunder Wave
+EVs: 252 HP / 148 SpA / 100 SpD / 8 Spe
+Calm Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Calm Mind
+- Rest
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Dragon Claw
-- Focus Punch
-
-Metagross @ Leftovers
+Registeel @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 212 SpA / 44 SpD
-Quiet Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Psychic
-- Hidden Power [Fire]
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Seismic Toss
+- Toxic
+- Counter
 - Explosion
-- Pursuit
 
 Snorlax @ Leftovers
 Ability: Immunity
-Happiness: 0
-EVs: 44 HP / 176 Atk / 120 Def / 160 SpD / 8 Spe
+EVs: 244 HP / 252 Atk / 12 Spe
 Adamant Nature
-- Frustration
-- Counter
-- Focus Punch
-- Self-Destruct
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-- Hydro Pump
-- Ice Beam
+- Curse
+- Body Slam
 - Earthquake
-- Focus Punch
+- Shadow Ball
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 208 Atk / 184 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Dragon Dance
+- Brick Break
+- Fire Blast
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Substitute
+- Endeavor
+- Roar

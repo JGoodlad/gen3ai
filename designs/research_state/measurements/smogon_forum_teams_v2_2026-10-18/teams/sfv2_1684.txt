@@ -1,8 +1,16 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+- Dragon Claw
+- Rock Slide
+- Flamethrower
+- Brick Break
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 196 SpA / 128 Spe
-Modest Nature
-IVs: 30 SpD / 30 Spe
+EVs: 240 HP / 220 SpA / 48 Spe
+Quiet Nature
 - Crunch
 - Pursuit
 - Flamethrower
@@ -10,49 +18,37 @@ IVs: 30 SpD / 30 Spe
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 224 HP / 216 SpD / 68 Spe
+EVs: 240 HP / 240 SpD / 28 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
 - Taunt
 - Toxic
 - Roar
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Toxic
-- Ice Beam
-- Thunderbolt
-
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
-Relaxed Nature
-- Protect
+EVs: 240 HP / 216 SpA / 44 SpD / 8 Spe
+Quiet Nature
+- Curse
 - Earthquake
+- Hydro Pump
+- Ice Beam
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 228 SpA / 28 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
 - Surf
-- Roar
+- Ice Beam
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 120 SpA / 136 Spe
-Modest Nature
-IVs: 0 Atk
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
 - Wish
-- Calm Mind
-- Ice Punch
-- Thunder
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 12 Def / 244 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
+- Protect
+- Fire Punch
+- Body Slam

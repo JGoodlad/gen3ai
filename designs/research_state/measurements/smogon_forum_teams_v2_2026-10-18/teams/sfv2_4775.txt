@@ -1,0 +1,58 @@
+Swampert (F) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Protect
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Hidden Power: Bug
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+- Pursuit
+- Crunch
+- Fire Blast
+- Brick Break
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 72 Def / 40 SpA / 148 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Surf
+- Thunder Wave
+
+Gengar (F) @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 8 Atk / 44 Def / 12 SpA / 100 SpD / 96 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Explosion
+- Will-O-Wisp
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Screech
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 252 Def / 64 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Thunder Wave

@@ -1,0 +1,57 @@
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Brick Break
+
+Slowbro @ Leftovers
+Ability: Own Tempo
+EVs: 252 HP / 252 Def / 4 SpA
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Rest
+- Sleep Talk
+- Surf
+
+Steelix @ Leftovers
+Ability: Rock Head
+EVs: 252 HP / 92 Atk / 164 SpD
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Explosion
+- Protect
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 232 HP / 252 SpA / 24 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Sunny Day
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 212 SpA / 44 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Soft-Boiled
+- Ice Beam
+- Seismic Toss

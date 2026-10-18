@@ -1,16 +1,25 @@
 Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-IVs: 30 HP / 30 SpA
+EVs: 252 Atk / 4 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
 - Fire Blast
 - Hidden Power [Grass]
-- Ice Beam
 - Brick Break
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 168 SpA / 244 SpD / 96 Spe
+Modest Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
+- Explosion
 
 Starmie @ Leftovers
 Ability: Natural Cure
-EVs: 40 HP / 248 SpA / 220 Spe
+EVs: 8 Def / 248 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
 - Rapid Spin
@@ -18,39 +27,32 @@ IVs: 0 Atk
 - Ice Beam
 - Thunderbolt
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Roar
-- Drill Peck
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 192 HP / 8 Def / 168 SpA / 140 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Psychic
-- Giga Drain
-- Hidden Power [Fire]
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 56 Atk / 240 SpA / 188 Spe
-Mild Nature
-- Refresh
-- Dragon Claw
-- Flamethrower
-- Brick Break
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-- Agility
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

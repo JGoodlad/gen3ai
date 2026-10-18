@@ -1,57 +1,56 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 4 Atk / 252 SpA
-Quiet Nature
-- Pursuit
-- Crunch
-- Ice Beam
-- Earthquake
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Spore
-- Stun Spore
-- Sky Uppercut
-- Mach Punch
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 40 HP / 252 SpA / 216 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Protect
-
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
-
-Gyarados @ Leftovers
-Ability: Intimidate
-Hidden Power: Flying
-EVs: 216 HP / 16 Atk / 88 SpD / 188 Spe
+EVs: 240 HP / 252 Atk / 16 Spe
 Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
 - Earthquake
-- Rest
+- Hidden Power [Bug]
+- Focus Punch
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 4 Atk / 252 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-- Seismic Toss
-- Counter
+- Spikes
+- Roar
 - Toxic
+- Drill Peck
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 240 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Ice Beam
+- Fire Blast
+- Toxic
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Brave Nature
+- Rapid Spin
+- Earthquake
+- Psychic
 - Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 116 Atk / 252 SpA / 140 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Drill Peck
+- Agility

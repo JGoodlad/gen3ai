@@ -1,57 +1,55 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-- Brick Break
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 240 SpA / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Naughty Nature
-- Meteor Mash
-- Earthquake
-- Explosion
-- Agility
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 68 HP / 252 SpA / 188 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 20 Def / 188 SpA / 48 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Thunder Wave
-- Toxic
+- Flamethrower
+- Crunch
+- Pursuit
+- Brick Break
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
+EVs: 248 HP / 240 SpD / 20 Spe
 Careful Nature
-- Spikes
 - Drill Peck
-- Roar
 - Toxic
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 236 Def / 20 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
+- Spikes
 - Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 64 HP / 16 SpA / 248 SpD / 180 Spe
+Modest Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Thunderbolt
+- Giga Drain
+- Taunt
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 136 Def / 92 SpD / 28 Spe
+Impish Nature
+- Thunder Wave
+- Seismic Toss
+- Explosion
+- Counter
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 48 SpA / 208 Spe
+Lonely Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast
+- Dragon Dance
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 88 Def / 96 SpA / 32 SpD / 44 Spe
+Quiet Nature
+- Surf
+- Ice Beam
+- Earthquake
+- Refresh

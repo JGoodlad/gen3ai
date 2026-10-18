@@ -1,58 +1,58 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 56 HP / 252 Atk / 200 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-- Brick Break
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 252 SpA / 72 SpD / 184 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Substitute
-- Hidden Power [Fire]
-- Thunder Wave
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Bold Nature
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 228 SpA / 12 SpD / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Wish
+- Substitute
+- Hydro Pump
 - Ice Beam
-- Seismic Toss
-- Soft-Boiled
+- Baton Pass
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 192 HP / 8 Def / 240 SpA / 68 Spe
-Modest Nature
-IVs: 0 Atk
-- Giga Drain
-- Psychic
-- Calm Mind
-- Leech Seed
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 88 Atk / 128 Def / 40 SpD
-Impish Nature
-- Toxic
-- Earthquake
-- Meteor Mash
-- Explosion
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 180 HP / 80 Atk / 248 Spe
+Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Substitute
+- Dragon Dance
 - Rock Slide
 - Earthquake
 - Hidden Power [Bug]
+
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 208 HP / 252 Atk / 48 Spe
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Superpower
+- Explosion
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Toxic
+- Substitute
+- Surf
+- Endeavor
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
+
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 224 HP / 104 SpA / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Leech Seed
+- Sleep Powder
+- Giga Drain
+- Hidden Power [Ice]

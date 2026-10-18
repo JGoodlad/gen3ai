@@ -1,56 +1,59 @@
-Blaziken @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 164 HP / 252 SpA / 92 Spe
+Quiet Nature
 IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Sky Uppercut
+- Psychic
 - Hidden Power [Grass]
-- Toxic
+- Meteor Mash
+- Explosion
 
-Sceptile @ Petaya Berry
-Ability: Overgrow
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 88 SpA / 180 Spe
+Modest Nature
 IVs: 2 Atk / 30 Def
-- Substitute
-- Endeavor
-- Leaf Blade
+- Thunderbolt
 - Hidden Power [Ice]
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 216 Atk / 136 Def / 140 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Shadow Ball
-- Return
-- Self-Destruct
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 192 HP / 64 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Sunny Day
+- Toxic
+- Baton Pass
 
 Heracross @ Salac Berry
 Ability: Swarm
+Shiny: Yes
 EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Substitute
-- Endure
-- Reversal
+Adamant Nature
+IVs: 30 HP
+- Swords Dance
 - Megahorn
+- Substitute
+- Rock Slide
 
-Dragonite @ Leftovers
-Ability: Inner Focus
-EVs: 252 Atk / 52 SpA / 204 Spe
-Hasty Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
+Solrock @ Leftovers
+Ability: Levitate
+EVs: 244 HP / 100 Atk / 156 Def / 8 Spe
+Impish Nature
+- Explosion
+- Reflect
+- Baton Pass
+- Rock Slide
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+Shiny: Yes
+EVs: 176 Atk / 128 Def / 204 SpD
+Adamant Nature
+- Body Slam
+- Shadow Ball
 - Earthquake
-- Ice Beam
+- Self-Destruct
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect

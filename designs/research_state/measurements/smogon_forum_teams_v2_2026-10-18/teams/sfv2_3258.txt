@@ -1,57 +1,56 @@
-Machamp @ Leftovers
-Ability: Guts
-EVs: 252 Atk / 36 Def / 220 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Bulk Up
-- Cross Chop
-- Rock Slide
-- Hidden Power [Bug]
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 SpD
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Fire Blast
-- Ice Beam
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Sassy Nature
-- Spikes
-- Zap Cannon
-- Earthquake
-- Rapid Spin
-
-Suicune @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 248 Def / 20 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
+EVs: 192 SpA / 116 SpD / 200 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Toxic
 - Roar
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 40 Def / 136 SpA / 80 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Calm Mind
-- Hidden Power [Grass]
-- Thunderbolt
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 176 Atk / 164 Def / 156 SpD / 12 Spe
-Adamant Nature
+EVs: 252 HP / 72 Def / 176 SpD / 8 Spe
+Sassy Nature
 - Body Slam
-- Earthquake
+- Fire Punch
+- Protect
+- Wish
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 28 Def / 216 SpA / 16 Spe
+Modest Nature
+- Crunch
+- Flamethrower
+- Pursuit
 - Focus Punch
-- Self-Destruct
+
+Skarmory (F) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Drill Peck
+- Toxic
+- Spikes
+- Roar
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 156 Def / 104 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Protect
+- Refresh
+
+Aerodactyl (F) @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Hidden Power [Bug]
+- Earthquake
+- Double-Edge

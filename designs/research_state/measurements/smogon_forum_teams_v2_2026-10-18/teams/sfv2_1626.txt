@@ -1,57 +1,57 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 240 Atk / 16 SpA / 252 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Hidden Power [Grass]
-
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Endure
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 136 SpA / 156 Spe
+Modest Nature
+IVs: 30 Spe
+- Thunder Wave
+- Toxic
 - Thunderbolt
-- Hidden Power [Grass]
-- Rain Dance
+- Hidden Power [Ice]
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 4 SpD / 252 Spe
-Jolly Nature
-- Recover
-- Substitute
-- Leech Seed
-- Baton Pass
-
-Heracross @ Salac Berry
-Ability: Guts
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 HP
-- Substitute
-- Megahorn
-- Rock Slide
-- Focus Punch
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 228 SpA / 40 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
 - Earthquake
+- Thunder Punch
+- Hidden Power [Grass]
 - Explosion
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 48 HP / 252 Atk / 208 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 112 HP / 220 SpA / 176 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 136 Atk / 152 Def / 172 SpD / 16 Spe
 Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Thunder Wave
-- Dragon Dance
+- Body Slam
 - Earthquake
-- Hidden Power [Flying]
+- Shadow Ball
+- Self-Destruct
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 24 Atk / 252 SpA / 64 SpD / 144 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break

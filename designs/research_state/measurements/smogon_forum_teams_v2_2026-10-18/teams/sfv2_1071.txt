@@ -1,57 +1,55 @@
-Tyranitar @ Choice Band
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Earthquake
+EVs: 240 HP / 252 Atk / 16 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
 - Rock Slide
-- Brick Break
+- Earthquake
+- Hidden Power [Bug]
 - Focus Punch
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-IVs: 30 SpA / 30 SpD
-- Spikes
-- Protect
-- Drill Peck
-- Roar
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Sleep Talk
-- Toxic
 - Thunderbolt
-- Hidden Power [Fire]
+- Ice Punch
+- Will-O-Wisp
+- Explosion
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 40 Def / 196 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
+EVs: 112 HP / 220 SpA / 176 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
 - Thunderbolt
 - Hidden Power [Grass]
-- Roar
 - Baton Pass
+- Roar
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
+Timid Nature
+- Spikes
+- Surf
+- Rapid Spin
+- Explosion
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 236 Atk / 16 Def / 88 Spe
+EVs: 248 HP / 216 Atk / 20 SpD / 24 Spe
 Adamant Nature
-- Agility
 - Meteor Mash
 - Earthquake
-- Rock Slide
+- Explosion
+- Protect
 
-Starmie @ Leftovers
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Hidden Power [Grass]
-- Surf
+EVs: 44 HP / 252 Def / 212 SpA
+Bold Nature
+- Soft-Boiled
 - Ice Beam
-- Thunderbolt
+- Seismic Toss
+- Thunder Wave

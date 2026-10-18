@@ -1,56 +1,55 @@
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 224 SpA / 44 Spe
+EVs: 240 HP / 252 SpA / 16 Spe
 Quiet Nature
+- Curse
 - Earthquake
 - Hydro Pump
 - Ice Beam
-- Focus Punch
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 100 SpA / 156 Spe
+EVs: 240 HP / 252 SpA / 16 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
+- Crunch
+- Pursuit
+- Flamethrower
+- Brick Break
 
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 168 SpA / 244 SpD / 96 Spe
+Modest Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
 - Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 80 HP / 252 SpA / 176 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 216 Atk / 108 Def / 168 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Focus Punch
+- Self-Destruct
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Earthquake
 - Rock Slide
-- Hidden Power [Bug]
+- Hidden Power [Flying]
 - Double-Edge

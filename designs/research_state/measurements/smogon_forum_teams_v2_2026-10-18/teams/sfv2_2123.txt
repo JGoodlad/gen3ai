@@ -1,57 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Protect
-- Refresh
-- Toxic
-- Surf
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 152 Atk / 172 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
 Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
 - Rapid Spin
-- Recover
-- Surf
-- Ice Beam
+- Refresh
+- Earthquake
+- Psychic
 
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 248 SpD / 20 Spe
-Calm Nature
+EVs: 192 HP / 252 SpA / 64 Spe
+Modest Nature
 IVs: 0 Atk
 - Rest
 - Sleep Talk
-- Thunderbolt
-- Roar
+- Calm Mind
+- Surf
 
-Metagross @ Liechi Berry
-Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
 Adamant Nature
-- Agility
-- Meteor Mash
+IVs: 30 HP
+- Substitute
+- Megahorn
+- Rock Slide
+- Focus Punch
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Double-Edge
 - Earthquake
-- Explosion
+- Shadow Ball
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 112 SpA / 180 Spe
+Modest Nature
+IVs: 30 Spe
+- Light Screen
+- Thunderbolt
+- Hidden Power [Ice]
+- Rain Dance

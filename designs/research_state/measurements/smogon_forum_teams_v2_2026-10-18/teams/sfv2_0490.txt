@@ -1,56 +1,57 @@
-Aerodactyl @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 136 Atk / 84 SpD / 36 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
 - Rock Slide
+- Earthquake
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 200 Atk / 132 Def / 160 SpD
+Adamant Nature
+- Curse
+- Shadow Ball
+- Brick Break
+- Self-Destruct
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 252 Atk / 4 Def / 252 Spe
+Hasty Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Ice Beam
+
+Gyarados @ Leftovers
+Ability: Intimidate
+Happiness: 0
+EVs: 252 Atk / 60 SpD / 196 Spe
+Jolly Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
 - Substitute
-- Protect
 - Earthquake
+- Dragon Dance
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 176 Def / 80 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
-- Roar
-
-Blissey (F) @ Leftovers
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 252 Def / 4 SpD
-Bold Nature
-IVs: 0 Atk
-- Seismic Toss
-- Thunder Wave
-- Aromatherapy
-- Soft-Boiled
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 100 Atk / 112 Def / 32 SpA / 12 SpD
-Careful Nature
-- Earthquake
-- Psychic
-- Rapid Spin
-- Rest
-
-Skarmory
-Ability: Keen Eye
-EVs: 252 HP / 248 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Roar
-- Drill Peck
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 216 Def / 8 SpA / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
+EVs: 152 Def / 180 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
 - Calm Mind
+- Psychic
+- Hidden Power [Ice]
+- Giga Drain
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunderbolt
-- Ice Punch
+- Thunder Wave
+- Hidden Power [Fire]
+- Toxic

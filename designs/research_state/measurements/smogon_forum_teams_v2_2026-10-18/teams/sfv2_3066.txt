@@ -1,57 +1,56 @@
-Tyranitar @ Lum Berry
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 Atk / 68 SpD / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 8 Atk / 248 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Ice Beam
-- Hidden Power [Grass]
-- Fire Blast
-- Brick Break
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+IVs: 30 SpA
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 52 Atk / 232 SpA / 4 SpD / 196 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
-
-Skarmory @ Leftovers
+Skarmory
 Ability: Keen Eye
-EVs: 252 HP / 240 SpD / 16 Spe
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
 - Spikes
+- Thief
 - Drill Peck
-- Toxic
 - Roar
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
-- Ice Beam
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
 - Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 84 Atk / 128 SpA / 48 Spe
-Brave Nature
-- Hydro Pump
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
 - Earthquake
+- Hydro Pump
 - Ice Beam
-- Refresh
+- Focus Punch
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
 - Earthquake
+- Rock Slide
 - Hidden Power [Bug]
 - Double-Edge

@@ -1,58 +1,56 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 Def / 252 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
 Adamant Nature
-IVs: 30 HP
-- Substitute
-- Megahorn
-- Rock Slide
-- Focus Punch
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 244 HP / 124 Def / 140 Spe
-Impish Nature
-IVs: 0 Atk
-- Recover
-- Leech Seed
-- Swords Dance
-- Baton Pass
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
+- Protect
 - Dragon Dance
 - Earthquake
 - Rock Slide
-- Hidden Power [Flying]
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 244 HP / 36 Def / 60 SpA / 136 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Recover
+- Leech Seed
+- Heal Bell
+- Hidden Power [Grass]
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 16 HP / 96 Atk / 200 Def / 144 SpD / 52 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Brick Break
+- Hidden Power [Bug]
+- Rock Slide
+- Knock Off
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 72 Def / 8 Spe
+Adamant Nature
+- Protect
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Hidden Power [Rock]
+- Double-Edge

@@ -1,57 +1,57 @@
-Suicune @ Leftovers
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]
+
+Articuno @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+EVs: 252 HP / 232 SpD / 24 Spe
 Calm Nature
 IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
 - Ice Beam
+- Heal Bell
+- Haze
+- Rest
 
-Claydol @ Leftovers
+Flygon @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
+EVs: 252 HP / 216 Def / 40 SpD
+Impish Nature
+- Protect
 - Earthquake
-- Psychic
-- Explosion
+- Rest
+- Toxic
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Earthquake
-- Shadow Ball
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 148 SpD / 68 Spe
+Timid Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Thunderbolt
+- Destiny Bond
+- Rest
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Toxic
+- Protect
+- Roar
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
-Bold Nature
+EVs: 252 HP / 224 SpD / 32 Spe
+Calm Nature
 IVs: 0 Atk
-- Wish
-- Calm Mind
-- Fire Punch
-- Psychic
-
-Marowak @ Thick Club
-Ability: Rock Head
-EVs: 160 HP / 252 Atk / 96 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Ghost]
-- Focus Punch
+- Thunderbolt
+- Light Screen
+- Roar
+- Rest

@@ -1,57 +1,57 @@
-Metagross @ Salac Berry
-Ability: Clear Body
-EVs: 52 HP / 252 Atk / 204 Spe
-Naive Nature
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
 IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Earthquake
+- Flamethrower
 - Hidden Power [Grass]
-- Explosion
+- Ice Beam
+- Brick Break
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 156 Atk / 212 SpD / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 252 SpA / 68 SpD / 188 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Thunder Wave
-- Substitute
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Toxic
+- Roar
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 64 Def / 196 SpA
+EVs: 240 HP / 252 SpA / 16 Spe
 Quiet Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
 - Curse
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
 - Earthquake
-- Hidden Power [Bug]
+- Hydro Pump
+- Ice Beam
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 204 Atk / 96 Def / 160 SpD / 16 Spe
-Adamant Nature
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 100 HP / 44 Def / 220 SpA / 144 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
 - Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 4 SpD / 252 Spe
+Jolly Nature
+- Recover
+- Leech Seed
+- Substitute
+- Baton Pass
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
 - Earthquake
-- Shadow Ball
-- Self-Destruct
+- Rock Slide
+- Hidden Power [Flying]

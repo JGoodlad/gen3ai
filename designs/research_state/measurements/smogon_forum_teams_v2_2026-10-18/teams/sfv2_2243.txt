@@ -1,57 +1,56 @@
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 SpA
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Toxic
-- Surf
-- Ice Beam
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 252 SpA / 16 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 188 HP / 252 Atk / 68 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Earthquake
+- Crunch
+- Pursuit
+- Flamethrower
 - Brick Break
-- Explosion
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 240 SpD / 28 Spe
+Careful Nature
+- Spikes
+- Taunt
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Taunt
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
 - Brick Break
-- Fire Blast

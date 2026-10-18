@@ -1,57 +1,55 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 176 Atk / 84 Def
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 88 SpD / 168 Spe
 Adamant Nature
-- Meteor Mash
+IVs: 0 SpA
 - Earthquake
-- Protect
+- Rock Slide
+- Beat Up
+- Aerial Ace
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Toxic
+- Hidden Power [Ice]
+- Fire Blast
+- Sunny Day
+
+Exeggutor @ Leftovers
+Ability: Chlorophyll
+EVs: 32 HP / 20 Atk / 252 SpA / 204 Spe
+Modest Nature
+- Psychic
+- Sunny Day
+- Solar Beam
 - Explosion
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 120 Atk / 252 SpA / 136 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Drill Peck
-- Hidden Power [Grass]
-- Agility
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 92 Atk / 252 Def / 128 SpA / 36 Spe
+Lax Nature
+- Earthquake
+- Giga Drain
+- Fire Blast
+- Toxic
 
-Heracross @ Leftovers
-Ability: Guts
-EVs: 24 HP / 252 Atk / 4 SpD / 228 Spe
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
 Adamant Nature
-- Megahorn
-- Rock Slide
+- Curse
+- Body Slam
+- Shadow Ball
 - Brick Break
-- Swords Dance
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Thunder Wave
-
-Machamp @ Leftovers
-Ability: Guts
-EVs: 112 HP / 252 Atk / 144 Spe
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 SpD
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Focus Punch
 - Rock Slide
-- Hidden Power [Bug]
-- Low Kick
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 104 HP / 252 SpA / 152 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Hydro Pump
-- Ice Beam
-- Roar
+- Earthquake
+- Thunder Wave
+- Explosion

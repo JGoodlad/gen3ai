@@ -1,58 +1,55 @@
-Salamence @ Leftovers
+Heracross @ Choice Band
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Megahorn
+- Focus Punch
+- Rock Slide
+- Sleep Talk
+
+Gyarados @ Leftovers
 Ability: Intimidate
-EVs: 24 Atk / 232 SpA / 252 Spe
-Rash Nature
-IVs: 30 Def / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Brick Break
-- Hidden Power [Grass]
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
+EVs: 48 HP / 252 Atk / 208 Spe
+Adamant Nature
 IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Flying]
-- Whirlwind
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 244 Atk / 12 SpA / 252 Spe
-Naive Nature
-IVs: 30 Def / 30 SpA
 - Dragon Dance
-- Rock Slide
+- Hidden Power [Flying]
 - Earthquake
-- Hidden Power [Grass]
+- Double-Edge
 
-Metagross @ Leftovers
+Metagross @ Lum Berry
 Ability: Clear Body
-EVs: 184 HP / 224 SpA / 100 Spe
-Quiet Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
 - Meteor Mash
-- Hidden Power [Fire]
-- Psychic
+- Earthquake
 - Explosion
+
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Endure
+- Thunder Wave
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 16 HP / 240 Atk / 116 Def / 116 SpD / 20 Spe
+EVs: 144 Atk / 164 Def / 196 SpD / 4 Spe
 Adamant Nature
 - Body Slam
 - Shadow Ball
 - Earthquake
 - Self-Destruct
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
-- Substitute
-- Endeavor
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 224 Atk / 32 SpA
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion

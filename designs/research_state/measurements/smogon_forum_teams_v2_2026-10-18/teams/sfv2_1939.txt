@@ -1,57 +1,57 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 232 HP / 232 SpD / 44 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Toxic
+- Roar
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 96 Atk / 116 Def / 88 SpA / 176 SpD
+Brave Nature
+- Double-Edge
+- Earthquake
+- Fire Blast
+- Self-Destruct
+
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
+EVs: 4 Atk / 252 SpA / 252 Spe
 Mild Nature
 IVs: 30 Atk / 30 SpA
 - Dragon Claw
 - Flamethrower
 - Hidden Power [Grass]
 - Brick Break
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Toxic
-- Ice Beam
-- Thunderbolt
-
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 8 Def / 248 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Thunderbolt
-- Crunch
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Agility
-- Meteor Mash
-- Hidden Power [Grass]
-- Explosion

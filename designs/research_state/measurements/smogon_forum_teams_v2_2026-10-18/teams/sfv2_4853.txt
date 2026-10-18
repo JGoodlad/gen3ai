@@ -1,0 +1,57 @@
+Heracross @ Choice Band
+Ability: Guts
+Hidden Power: Ghost
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Megahorn
+- Brick Break
+- Rock Slide
+- Focus Punch
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 56 HP / 252 Atk / 200 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 236 Atk / 116 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Self-Destruct
+- Body Slam
+- Counter
+- Focus Punch
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Pursuit
+- Ice Beam
+- Flamethrower
+- Hidden Power [Grass]
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Surf
+- Roar

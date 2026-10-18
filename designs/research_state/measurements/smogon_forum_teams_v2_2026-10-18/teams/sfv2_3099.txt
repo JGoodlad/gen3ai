@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 72 Atk / 188 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
 - Earthquake
-- Hidden Power [Bug]
+- Hydro Pump
+- Ice Beam
+- Focus Punch
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 56 Atk / 236 SpA / 192 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Brick Break
-- Hidden Power [Grass]
-- Fire Blast
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Earthquake
+- Rock Slide
+- Double-Edge
+- Focus Punch
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
+EVs: 224 HP / 216 SpD / 68 Spe
 Careful Nature
-IVs: 30 SpD
-- Spikes
-- Roar
-- Protect
-- Hidden Power [Steel]
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Wish
+- Spikes
+- Taunt
+- Toxic
+- Roar
 
-Quagsire @ Leftovers
-Ability: Water Absorb
-EVs: 248 HP / 204 Def / 56 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Curse
-- Rest
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
-- Earthquake
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 76 HP / 252 SpA / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Fire Punch
+- Hidden Power [Grass]
 - Psychic
-- Explosion
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Will-O-Wisp
+- Flamethrower
+- Hidden Power [Grass]
+- Overheat

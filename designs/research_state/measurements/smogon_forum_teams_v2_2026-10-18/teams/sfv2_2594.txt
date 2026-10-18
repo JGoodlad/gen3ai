@@ -1,57 +1,57 @@
-Regirock @ Choice Band
-Ability: Clear Body
-EVs: 200 HP / 252 Atk / 56 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Rock Slide
-- Hidden Power [Ghost]
-- Superpower
-- Explosion
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 156 SpD / 104 Spe
+Jolly Nature
+- Spikes
+- Drill Peck
+- Taunt
+- Roar
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 220 SpD / 36 Spe
-Calm Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
+EVs: 144 Atk / 252 SpA / 112 Spe
+Mild Nature
+IVs: 30 Def / 30 SpA
+- Rock Slide
+- Fire Blast
 - Hidden Power [Grass]
+- Brick Break
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+- Baton Pass
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 88 HP / 232 SpA / 188 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
 - Explosion
+- Thunderbolt
+- Fire Punch
+- Hidden Power [Grass]
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 236 SpA / 32 Spe
-Quiet Nature
-- Curse
-- Earthquake
+EVs: 252 HP / 136 Def / 36 SpA / 44 SpD / 40 Spe
+Relaxed Nature
 - Hydro Pump
-- Ice Beam
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
+- Toxic
+- Protect
+
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpD
 - Rock Slide
+- Earthquake
 - Hidden Power [Bug]
-- Double-Edge
+- Substitute

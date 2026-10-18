@@ -1,59 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Protect
-- Refresh
-- Toxic
-- Surf
-
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Ice Beam
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 224 HP / 216 SpD / 68 Spe
+EVs: 240 HP / 240 SpD / 28 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
 - Taunt
-- Toxic
+- Drill Peck
 - Roar
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
-- Ice Beam
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Toxic
 - Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+IVs: 30 Atk / 30 SpA
+- Wish
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 80 SpA / 44 SpD / 8 Spe
+Relaxed Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
 Charizard @ Leftovers
 Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
+EVs: 4 HP / 252 SpA / 252 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
 - Dragon Claw
 - Flamethrower
 - Hidden Power [Grass]
 - Beat Up
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide

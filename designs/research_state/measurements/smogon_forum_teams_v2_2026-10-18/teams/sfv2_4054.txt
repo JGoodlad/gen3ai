@@ -1,0 +1,57 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Surf
+- Ice Beam
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 228 Atk / 16 Def / 12 Spe
+Relaxed Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 176 Atk / 52 Def / 60 SpD / 16 Spe
+Adamant Nature
+- Curse
+- Body Slam
+- Shadow Ball
+- Self-Destruct
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 240 SpA / 20 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Psychic
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 96 SpA / 20 SpD / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion

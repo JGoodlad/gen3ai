@@ -1,57 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 236 SpA / 20 Spe
-Modest Nature
-IVs: 0 Atk
-- Surf
-- Substitute
-- Calm Mind
-- Ice Beam
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 248 HP / 48 Def / 196 SpD / 16 Spe
-Calm Nature
-- Spikes
-- Surf
-- Rapid Spin
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 24 Def / 136 SpA / 96 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Recover
-- Psychic
-- Hidden Power [Grass]
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
 - Earthquake
 - Hidden Power [Bug]
-- Aerial Ace
+- Focus Punch
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
+- Earthquake
+- Double-Edge
+- Hidden Power [Bug]
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 80 SpA / 176 Spe
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
 Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunderbolt
-- Ice Punch
+- Hidden Power [Fire]
+- Toxic
+- Protect
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 252 Atk / 8 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Drill Peck
+- Spikes
+- Protect
+- Roar
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Refresh
+- Recover
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 24 HP / 252 Atk / 232 Spe
 Adamant Nature
-- Seismic Toss
-- Superpower
-- Thunder Wave
+- Earthquake
+- Psychic
+- Rapid Spin
 - Explosion

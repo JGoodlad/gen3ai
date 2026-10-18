@@ -1,56 +1,56 @@
-Lanturn @ Leftovers
-Ability: Volt Absorb
-EVs: 52 HP / 36 Def / 208 SpA / 84 SpD / 128 Spe
-Modest Nature
-IVs: 0 Atk
-- Surf
-- Thunderbolt
-- Substitute
-- Toxic
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 140 SpD / 116 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Taunt
-- Roar
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 120 HP / 188 Atk / 200 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Dragon Dance
-- Hidden Power [Bug]
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 140 SpD / 200 Spe
-Timid Nature
-- Explosion
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 104 HP / 48 Atk / 180 SpA / 176 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Brick Break
+EVs: 4 HP / 252 SpA / 252 Spe
+Rash Nature
 - Dragon Claw
 - Flamethrower
-- Hidden Power [Grass]
+- Brick Break
+- Roar
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 96 Atk / 72 Def / 88 Spe
-Adamant Nature
-- Meteor Mash
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
+- Rest
 - Earthquake
-- Agility
-- Explosion
+- Psychic
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Ice Beam
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Fire Punch
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam

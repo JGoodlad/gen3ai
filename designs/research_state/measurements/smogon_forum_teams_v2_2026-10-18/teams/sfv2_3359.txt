@@ -1,57 +1,57 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-IVs: 30 Def / 30 SpA
-- Brick Break
-- Flamethrower
-- Hidden Power [Grass]
-- Ice Beam
-
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 104 Atk / 252 SpA / 152 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Drill Peck
-- Hidden Power [Grass]
-- Thunderbolt
-- Thunder Wave
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-- Drill Peck
-- Roar
-- Spikes
-- Toxic
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 216 Def / 40 Spe
-Relaxed Nature
-- Earthquake
-- Focus Punch
-- Ice Beam
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
 - Surf
+- Ice Beam
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Return
+- Earthquake
+- Shadow Ball
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 240 HP / 232 SpA / 36 Spe
+EVs: 252 HP / 156 Def / 68 SpA / 32 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Giga Drain
-- Hidden Power [Fire]
+IVs: 3 Atk / 30 SpA
 - Leech Seed
-- Psychic
+- Calm Mind
+- Giga Drain
+- Hidden Power [Electric]
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Double-Edge
-- Earthquake
-- Hidden Power [Bug]
-- Rock Slide
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Pursuit
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Toxic
+- Thunder
+- Rain Dance

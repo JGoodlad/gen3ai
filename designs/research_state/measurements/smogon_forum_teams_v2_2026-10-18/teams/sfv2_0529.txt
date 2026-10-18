@@ -1,59 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 228 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Hydro Pump
-- Ice Beam
-- Toxic
-
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 252 Atk / 4 SpA / 252 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 Atk / 4 SpD
 Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
+- Substitute
+- Focus Punch
 - Rock Slide
 - Hidden Power [Bug]
-- Quick Attack
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 148 SpD / 120 Spe
+Careful Nature
+- Spikes
+- Taunt
+- Roar
+- Drill Peck
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 108 Def / 148 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Calm Mind
-- Baton Pass
+EVs: 248 HP / 224 SpA / 36 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
 - Giga Drain
-- Hidden Power [Ice]
+- Recover
+- Leech Seed
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 184 SpA / 84 SpD / 240 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Thunderbolt
+- Flamethrower
 - Hidden Power [Grass]
-- Toxic
-- Protect
+- Overheat
+- Will-O-Wisp
 
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 204 HP / 148 SpA / 156 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Calm Mind
-- Hidden Power [Ice]
-- Rest
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 4 Atk / 252 Def
-Relaxed Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 76 Def / 164 SpA / 20 Spe
+Quiet Nature
+- Hydro Pump
 - Ice Beam
-- Hidden Power [Fighting]
-- Toxic
-- Recover
+- Earthquake
+- Refresh
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Bug]

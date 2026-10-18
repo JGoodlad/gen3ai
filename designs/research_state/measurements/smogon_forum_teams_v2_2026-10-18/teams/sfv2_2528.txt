@@ -1,56 +1,57 @@
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 204 HP / 196 Atk / 108 Spe
-Adamant Nature
-- Rock Slide
-- Superpower
-- Counter
-- Explosion
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
-- Toxic
-- Crunch
-- Pursuit
-- Hidden Power [Grass]
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Toxic
 - Thunderbolt
-- Hidden Power [Fire]
+- Hidden Power [Grass]
+- Baton Pass
+- Thunder Wave
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Return
-- Earthquake
-- Self-Destruct
-
-Metagross @ Leftovers
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 168 HP / 228 Atk / 16 Def / 96 Spe
+EVs: 96 HP / 216 Atk / 196 Spe
 Adamant Nature
-- Agility
+IVs: 30 Atk / 30 Def / 30 SpD
 - Meteor Mash
 - Earthquake
-- Rock Slide
+- Hidden Power [Bug]
+- Explosion
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 40 HP / 164 Atk / 100 SpD / 204 Spe
-Jolly Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 SpA / 44 SpD
+Quiet Nature
+- Hydro Pump
+- Ice Beam
 - Earthquake
-- Hidden Power [Flying]
-- Double-Edge
+- Focus Punch
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 68 SpD / 188 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Hypnosis
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Hidden Power [Bug]
+- Earthquake
+
+Kingdra @ Petaya Berry
+Ability: Swift Swim
+EVs: 104 HP / 72 Def / 252 SpA / 80 Spe
+Modest Nature
+IVs: 0 Atk
+- Rain Dance
+- Hydro Pump
+- Ice Beam
+- Substitute

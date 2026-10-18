@@ -1,0 +1,56 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 152 Atk / 88 Def / 64 SpD / 180 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 68 Atk / 252 SpA / 188 Spe
+Timid Nature
+- Thunder Wave
+- Ice Beam
+- Thunderbolt
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 220 Atk / 60 Def / 8 SpD / 16 Spe
+Adamant Nature
+- Curse
+- Double-Edge
+- Shadow Ball
+- Self-Destruct
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 168 HP / 224 Atk / 16 Def / 100 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Brick Break
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 192 HP / 136 SpA / 180 Spe
+Modest Nature
+IVs: 0 Atk
+- Reflect
+- Calm Mind
+- Hydro Pump
+- Ice Beam

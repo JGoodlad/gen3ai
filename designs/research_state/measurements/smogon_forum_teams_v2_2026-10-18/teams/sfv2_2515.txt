@@ -1,58 +1,58 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Ghost]
-- Brick Break
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Grass]
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 160 SpA / 96 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Grass]
-- Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 136 Def / 44 SpD / 20 Spe
-Bold Nature
-IVs: 0 Atk
-- Protect
-- Toxic
-- Surf
-- Roar
-
-Aerodactyl @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
+EVs: 252 SpA / 60 SpD / 196 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
 - Substitute
-- Toxic
-- Earthquake
-- Rock Slide
+- Baton Pass
 
 Dugtrio @ Choice Band
 Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
+EVs: 40 HP / 144 Atk / 100 SpD / 224 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
+- Beat Up
 - Hidden Power [Bug]
 - Aerial Ace
-- Rock Slide
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 96 SpA / 160 Spe
+Timid Nature
+IVs: 0 Atk
+- Calm Mind
+- Ice Beam
+- Substitute
+- Surf
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 220 HP / 112 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Baton Pass
+- Hidden Power [Grass]
+- Psychic
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Earthquake
+- Explosion
+- Meteor Mash
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin

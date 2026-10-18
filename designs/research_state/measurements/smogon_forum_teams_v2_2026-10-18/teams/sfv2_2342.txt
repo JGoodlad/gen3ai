@@ -1,56 +1,57 @@
-Blaziken @ Leftovers
-Ability: Blaze
-EVs: 28 Atk / 220 SpA / 60 SpD / 200 Spe
-Mild Nature
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 240 Atk / 16 SpA / 252 Spe
+Naughty Nature
 IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Sky Uppercut
-- Hidden Power [Grass]
+- Dragon Dance
+- Earthquake
 - Rock Slide
+- Hidden Power [Grass]
 
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 200 Def / 56 SpD
-Bold Nature
-- Recover
-- Ice Beam
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Endure
 - Thunderbolt
-- Thunder Wave
+- Hidden Power [Grass]
+- Rain Dance
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 76 HP / 252 SpA / 180 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
+EVs: 252 HP / 4 SpD / 252 Spe
+Jolly Nature
+- Recover
+- Substitute
+- Leech Seed
+- Baton Pass
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 104 HP / 240 Atk / 24 SpD / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
-- Earthquake
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 120 HP / 216 Atk / 116 Def / 56 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
-Heracross @ Leftovers
+Heracross @ Salac Berry
 Ability: Guts
-EVs: 56 HP / 248 Atk / 28 Def / 176 Spe
+EVs: 252 Atk / 4 Def / 252 Spe
 Adamant Nature
-- Swords Dance
-- Brick Break
+IVs: 30 HP
+- Substitute
 - Megahorn
 - Rock Slide
+- Focus Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 48 HP / 252 Atk / 208 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Thunder Wave
+- Dragon Dance
+- Earthquake
+- Hidden Power [Flying]

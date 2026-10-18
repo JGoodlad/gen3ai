@@ -1,58 +1,58 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
-Modest Nature
-IVs: 0 Atk
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Rain Dance
-
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Toxic
-- Hydro Pump
-- Endeavor
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 176 Atk / 212 SpD / 120 Spe
+EVs: 156 Atk / 212 SpD / 140 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
 - Rock Slide
-- Brick Break
+- Earthquake
 - Hidden Power [Flying]
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Protect
+- Toxic
+- Thunderbolt
+- Hidden Power [Fire]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Sunny Day
+- Hidden Power [Grass]
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 100 SpA / 156 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Surf
+- Ice Beam
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 224 SpA / 32 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic

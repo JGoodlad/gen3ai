@@ -1,57 +1,58 @@
-Hariyama @ Leftovers
-Ability: Thick Fat
-EVs: 176 Atk / 112 Def / 160 SpD / 60 Spe
-Adamant Nature
-- Knock Off
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 196 SpA / 128 Spe
+Modest Nature
+IVs: 30 SpA
+- Crunch
+- Pursuit
+- Flamethrower
 - Brick Break
-- Focus Punch
-- Whirlwind
 
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-- Brick Break
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 SpA / 72 SpD / 184 Spe
-Timid Nature
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Psychic
+- Leech Seed
 - Giga Drain
 - Hidden Power [Fire]
+- Psychic
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 SpA / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Water Pulse
+- Psychic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
 Bold Nature
 IVs: 0 Atk
-- Wish
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
+- Protect
+- Refresh
+- Toxic
+- Surf
 
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 240 HP / 168 Atk / 80 Def / 20 Spe
-Adamant Nature
-- Meteor Mash
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
-- Explosion
-
-Starmie @ Leftovers
-Ability: Illuminate
-EVs: 252 HP / 40 Def / 60 SpA / 156 Spe
-Timid Nature
-IVs: 0 Atk
-- Surf
-- Thunder Wave
-- Rain Dance
-- Recover
+- Hidden Power [Bug]
+- Double-Edge

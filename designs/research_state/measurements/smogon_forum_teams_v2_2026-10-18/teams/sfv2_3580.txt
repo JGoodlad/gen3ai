@@ -1,55 +1,56 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 128 HP / 252 Atk / 128 Spe
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
+Relaxed Nature
+- Protect
+- Earthquake
+- Hydro Pump
+- Roar
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-- Meteor Mash
-- Explosion
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
 - Spikes
 - Rapid Spin
+- Ice Beam
 - Explosion
-- Earthquake
 
-Houndoom @ Black Glasses
-Ability: Flash Fire
-EVs: 252 SpA / 4 SpD / 252 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
+Hasty Nature
+- Will-O-Wisp
+- Ice Punch
+- Thunder
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 184 HP / 148 SpD / 176 Spe
 Timid Nature
 IVs: 0 Atk
-- Crunch
-- Pursuit
-- Overheat
-- Will-O-Wisp
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
-Careful Nature
-- Curse
-- Rest
-- Return
-- Earthquake
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Rain Dance
-
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Reversal
-- Megahorn
 - Substitute
-- Swords Dance
+- Toxic
+- Thunderbolt
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 228 SpD / 40 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar

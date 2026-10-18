@@ -1,57 +1,56 @@
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 228 HP / 216 Def / 64 Spe
-Bold Nature
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
 - Calm Mind
 - Surf
-- Roar
-- Rest
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 252 HP / 64 Atk / 192 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
-- Rest
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 236 HP / 136 Def / 92 SpA / 44 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Hidden Power [Grass]
-- Leech Seed
-- Heal Bell
-- Recover
-
-Blissey @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
 - Ice Beam
-- Thunder Wave
-- Seismic Toss
-- Soft-Boiled
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 68 HP / 252 SpA / 188 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Substitute
-- Thunderbolt
-- Hidden Power [Fire]
-- Rain Dance
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 68 Atk / 176 Def / 12 SpA
-Impish Nature
-- Psychic
-- Earthquake
-- Explosion
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
 - Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Toxic
+- Seismic Toss
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 128 Def / 172 SpD
+Adamant Nature
+- Curse
+- Return
+- Shadow Ball
+- Self-Destruct
+
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 12 Def / 244 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def / 30 SpA
+- Calm Mind
+- Hidden Power [Water]
+- Fire Punch
+- Psychic
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 192 Atk / 200 SpD / 116 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Substitute
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break

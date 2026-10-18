@@ -1,58 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 Atk / 4 SpD
+Jirachi @ Choice Band
+Ability: Serene Grace
+EVs: 248 HP / 184 Atk / 40 Def / 36 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Substitute
-- Focus Punch
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Body Slam
+- Doom Desire
+- Hidden Power [Fighting]
+- Shadow Ball
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 64 HP / 224 Atk / 20 SpD / 200 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
 - Rock Slide
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
 - Hidden Power [Bug]
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 36 Def / 8 SpA / 216 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
-IVs: 0 Atk
-- Thunder Wave
-- Surf
-- Rapid Spin
-- Recover
-
-Skarmory
-Ability: Keen Eye
-EVs: 240 HP / 248 SpD / 20 Spe
-Calm Nature
-IVs: 0 Atk
-- Protect
-- Spikes
-- Roar
-- Thief
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 252 Def / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Thunder Wave
-- Seismic Toss
-- Aromatherapy
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 136 Def / 120 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Curse
-- Protect
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 176 Def / 48 SpA / 36 Spe
-Bold Nature
 IVs: 2 Atk / 30 SpA
-- Thunderbolt
 - Calm Mind
-- Wish
+- Hydro Pump
+- Ice Beam
 - Hidden Power [Grass]
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Double-Edge
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Self-Destruct
+- Body Slam
+- Shadow Ball
+- Focus Punch

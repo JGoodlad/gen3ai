@@ -1,57 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpD / 64 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Fire]
-- Rain Dance
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Return
-- Earthquake
-- Shadow Ball
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 152 Def / 60 SpA / 28 SpD / 20 Spe
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Leech Seed
-- Calm Mind
-- Psychic
-
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 136 Atk / 28 SpD / 92 Spe
-Adamant Nature
-- Reflect
+EVs: 168 HP / 16 Def / 224 SpA / 100 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Meteor Mash
-- Earthquake
+- Hidden Power [Fire]
+- Psychic
 - Explosion
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 48 HP / 252 Atk / 208 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 244 HP / 252 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Drill Peck
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
 Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Thunder Wave
-- Dragon Dance
+- Rapid Spin
 - Earthquake
-- Hidden Power [Flying]
+- Psychic
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Screech
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 244 HP / 252 Def / 12 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Recover
+- Toxic
+- Refresh

@@ -1,57 +1,57 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
+- Focus Punch
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 220 SpA / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 220 SpD / 36 Spe
-Calm Nature
-IVs: 0 Atk
+EVs: 240 HP / 120 SpD / 148 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunder Wave
 - Thunderbolt
-- Rest
-- Toxic
+- Hidden Power [Ice]
 - Roar
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 196 Def / 28 SpD / 32 Spe
-Impish Nature
-- Rest
-- Earthquake
-- Rock Slide
-- Toxic
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 244 SpD / 16 Spe
-Careful Nature
-- Spikes
-- Roar
-- Drill Peck
-- Protect
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 76 Def / 180 SpD
-Sassy Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Fire Punch
-- Toxic
-
-Articuno @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 114 SpA / 136 SpD / 8 Spe
-Calm Nature
-IVs: 0 Atk
-- Ice Beam
-- Rest
-- Heal Bell
-- Haze
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA
-Serious Nature
-IVs: 2 Atk / 30 SpA
-- Pursuit
-- Hidden Power [Grass]
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
 - Fire Blast
-- Rest

@@ -1,56 +1,58 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Toxic
+- Protect
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+EVs: 252 HP / 252 Atk / 4 Def
 Adamant Nature
-- Dragon Dance
+IVs: 30 SpD / 30 Spe
+- Focus Punch
 - Earthquake
+- Hidden Power [Bug]
 - Rock Slide
-- Double-Edge
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Shadow Ball
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Thunder Wave
+- Roar
+- Hidden Power [Grass]
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 228 Atk / 16 Def / 96 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 40 HP / 252 SpA / 216 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Ice Punch
+- Fire Punch
+- Hidden Power [Grass]
 - Explosion
 
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 252 Def / 100 SpD / 140 Spe
-Bold Nature
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Substitute
-- Wish
 - Surf
-- Baton Pass
+- Thunderbolt
+- Ice Beam
+- Psychic

@@ -1,57 +1,56 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Protect
-- Surf
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 76 SpD / 180 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-- Recover
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 136 HP / 252 SpA / 120 Spe
-Mild Nature
-- Pursuit
-- Crunch
+EVs: 248 HP / 12 Atk / 176 SpA / 72 SpD
+Quiet Nature
 - Rock Slide
-- Focus Punch
+- Earthquake
+- Crunch
+- Pursuit
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+- Drill Peck
 - Spikes
-- Rapid Spin
+- Roar
+- Protect
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 20 Atk / 136 Def / 60 SpD / 44 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
 - Hidden Power [Bug]
-- Explosion
+- Rest
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Rest
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+EVs: 252 HP / 48 Def / 104 SpD / 104 Spe
 Timid Nature
 IVs: 0 Atk
-- Will-O-Wisp
-- Taunt
 - Thunderbolt
-- Destiny Bond
+- Ice Punch
+- Taunt
+- Will-O-Wisp
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Bug]
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 84 Def / 176 SpD
+Sassy Nature
+- Body Slam
+- Fire Punch
+- Protect
+- Wish

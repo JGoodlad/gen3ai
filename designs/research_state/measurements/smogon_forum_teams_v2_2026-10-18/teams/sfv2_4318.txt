@@ -1,0 +1,59 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Toxic
+- Baton Pass
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 80 HP / 148 Atk / 172 SpD / 108 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Beat Up
+- Hidden Power [Bug]
+- Aerial Ace
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 192 HP / 64 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Dragon Dance
+
+Golduck @ Salac Berry
+Ability: Cloud Nine
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 0 Atk
+- Endure
+- Calm Mind
+- Surf
+- Ice Beam
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 56 Atk / 16 Def / 240 SpA / 28 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Meteor Mash
+- Hidden Power [Fire]
+- Explosion

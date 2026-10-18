@@ -1,55 +1,56 @@
-Skarmory @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-- Drill Peck
-- Spikes
-- Protect
-- Toxic
+Medicham @ Choice Band
+Ability: Pure Power
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Brick Break
+- Shadow Ball
+- Rock Slide
+- Fake Out
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 84 HP / 252 Def / 160 SpA / 12 Spe
-Bold Nature
-IVs: 0 Atk
-- Seismic Toss
-- Blizzard
-- Toxic
-- Soft-Boiled
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 72 SpA / 184 Spe
-Quiet Nature
-- Crunch
-- Substitute
-- Focus Punch
-- Thunderbolt
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 52 Def / 64 SpD / 140 Spe
-Bold Nature
-IVs: 0 Atk
-- Psychic
-- Recover
-- Perish Song
-- Heal Bell
-
-Dugtrio @ Leftovers
-Ability: Arena Trap
-EVs: 4 HP / 116 Atk / 136 SpD / 252 Spe
-Jolly Nature
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 144 HP / 216 Atk / 36 SpD / 112 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
 - Earthquake
-- Substitute
-- Toxic
-- Protect
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Psychic
+- Ice Beam
+- Recover
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 192 Def / 64 Spe
-Relaxed Nature
+EVs: 236 HP / 216 Atk / 56 Def
+Brave Nature
 - Earthquake
 - Psychic
 - Rapid Spin
 - Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Ice Punch
+- Thunderbolt
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 196 HP / 8 Def / 120 SpA / 184 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic

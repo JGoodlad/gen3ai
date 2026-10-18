@@ -1,55 +1,55 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 252 Atk / 16 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-- Thunderbolt
-- Ice Punch
-- Will-O-Wisp
-- Explosion
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 112 HP / 220 SpA / 176 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-- Roar
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
-Timid Nature
-- Spikes
-- Surf
-- Rapid Spin
-- Explosion
-
-Metagross @ Leftovers
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 248 HP / 216 Atk / 20 SpD / 24 Spe
+EVs: 192 HP / 252 Atk / 64 Spe
 Adamant Nature
 - Meteor Mash
 - Earthquake
+- Brick Break
 - Explosion
-- Protect
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 44 HP / 252 Def / 212 SpA
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 228 Def / 32 Spe
 Bold Nature
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
+IVs: 0 Atk
+- Wish
+- Protect
+- Fire Punch
+- Toxic
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 156 Def / 68 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
+- Hidden Power [Grass]
+- Baton Pass
+- Recover
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 240 HP / 224 Atk / 8 SpA / 36 SpD
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 Def / 8 SpA / 32 SpD / 176 Spe
+Timid Nature
 - Thunder Wave
+- Surf
+- Rapid Spin
+- Recover
+
+Medicham (M) @ Leftovers
+Ability: Pure Power
+EVs: 252 Atk / 40 Def / 216 Spe
+Adamant Nature
+- Substitute
+- Brick Break
+- Shadow Ball
+- Focus Punch

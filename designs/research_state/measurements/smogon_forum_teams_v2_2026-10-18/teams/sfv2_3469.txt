@@ -1,55 +1,56 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-- Dragon Claw
-- Flamethrower
-- Brick Break
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 228 Def / 28 Spe
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
 - Roar
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 8 Atk / 248 SpD
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Counter
-- Hidden Power [Bug]
 - Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
 - Rapid Spin
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 136 HP / 244 SpA / 128 Spe
-Modest Nature
-- Crunch
-- Pursuit
-- Fire Blast
-- Brick Break
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 236 HP / 216 Def / 44 SpD / 12 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Ice Beam
 - Refresh
+- Psychic
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 112 SpD / 104 Spe
+Timid Nature
+- Will-O-Wisp
+- Ice Punch
+- Giga Drain
+- Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 116 SpA / 140 Spe
+EVs: 212 HP / 252 Def / 44 SpA
 Bold Nature
 IVs: 0 Atk
-- Flamethrower
-- Toxic
-- Wish
 - Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
 
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 96 Atk / 232 Def / 180 Spe
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
 Adamant Nature
-- Knock Off
-- Cross Chop
-- Focus Punch
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day

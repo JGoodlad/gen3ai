@@ -1,0 +1,57 @@
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 8 HP / 192 SpA / 56 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Sleep Powder
+- Leech Seed
+- Razor Leaf
+- Hidden Power [Ice]
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 56 HP / 252 SpA / 200 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Thunder Wave
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 240 SpD / 16 Spe
+Careful Nature
+- Spikes
+- Roar
+- Toxic
+- Drill Peck
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 8 Def / 252 SpA
+Quiet Nature
+IVs: 2 Atk / 30 SpA
+- Crunch
+- Pursuit
+- Hidden Power [Grass]
+- Counter
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 176 Def / 36 SpA / 44 Spe
+Relaxed Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Double-Edge

@@ -1,58 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 212 SpA / 120 SpD / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
 Metagross @ Leftovers
 Ability: Clear Body
-Happiness: 0
-EVs: 252 HP / 32 Atk / 196 Def / 28 SpD
-Impish Nature
-- Protect
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Protect
-- Thunderbolt
-- Hidden Power [Fire]
-- Rain Dance
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 4 Atk / 252 Def
-Relaxed Nature
-- Rapid Spin
-- Earthquake
+EVs: 168 HP / 16 Def / 248 SpA / 76 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Psychic
+- Hidden Power [Fire]
+- Meteor Mash
 - Explosion
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 60 SpD / 196 Spe
+Adamant Nature
+- Spore
+- Focus Punch
+- Stun Spore
+- Mach Punch
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 204 HP / 116 Atk / 164 Def / 12 SpD / 12 Spe
+EVs: 92 HP / 176 Atk / 144 Def / 84 SpD / 12 Spe
 Adamant Nature
-IVs: 30 SpD
-- Rest
-- Curse
+- Self-Destruct
 - Body Slam
-- Hidden Power [Steel]
+- Shadow Ball
+- Focus Punch
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Refresh
-- Toxic
-- Surf
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 248 HP / 216 Def / 44 Spe
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Wish
-- Hidden Power [Flying]
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
 - Rock Slide
-- Brick Break
+- Earthquake
+- Hidden Power [Bug]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 104 SpA / 164 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Ice Beam
+- Rest

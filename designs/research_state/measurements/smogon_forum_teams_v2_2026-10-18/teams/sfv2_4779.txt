@@ -1,0 +1,56 @@
+Marowak @ Thick Club
+Ability: Rock Head
+EVs: 148 HP / 216 Atk / 144 Spe
+Adamant Nature
+- Earthquake
+- Ancient Power
+- Focus Punch
+- Swords Dance
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 64 Def / 180 SpD / 12 Spe
+Adamant Nature
+- Curse
+- Body Slam
+- Earthquake
+- Shadow Ball
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 200 SpD / 60 Spe
+Careful Nature
+- Seismic Toss
+- Thunder Wave
+- Counter
+- Explosion
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Substitute
+- Endeavor
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 100 SpA / 136 SpD / 20 Spe
+Calm Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 196 Atk / 196 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break

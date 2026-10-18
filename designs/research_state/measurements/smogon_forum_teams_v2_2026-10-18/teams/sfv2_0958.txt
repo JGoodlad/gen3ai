@@ -1,57 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Flamethrower
-- Dragon Claw
-- Hidden Power [Grass]
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 56 SpD / 200 Spe
+Adamant Nature
+- Spore
+- Focus Punch
+- Mach Punch
 - Brick Break
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 4 SpA / 252 SpD
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
-- Thunderbolt
-- Roar
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 96 Atk / 160 SpD
+Adamant Nature
+- Spikes
+- Rapid Spin
+- Earthquake
+- Rock Slide
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 192 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 252 Def / 4 Spe
+Relaxed Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Ice Beam
-- Thunderbolt
-- Soft-Boiled
+- Thunder Wave
+- Recover
+- Hidden Power [Fighting]
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 48 Def / 40 SpA / 32 SpD / 136 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
-- Thunder Wave
-- Surf
-- Rapid Spin
+- Psychic
+- Thunderbolt
+- Calm Mind
+- Ice Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 244 HP / 84 Def / 44 SpA / 100 SpD / 36 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
 - Recover
+- Hidden Power [Grass]
+- Psychic
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 80 Def
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Protect
-- Explosion
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Careful Nature
-- Drill Peck
-- Roar
-- Protect
-- Spikes
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Substitute
+- Focus Punch

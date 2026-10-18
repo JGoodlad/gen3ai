@@ -1,57 +1,55 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 HP / 252 Def / 4 SpA
-Bold Nature
-IVs: 0 Atk
-- Flamethrower
-- Protect
-- Toxic
-- Wish
-
-Houndoom @ Leftovers
-Ability: Early Bird
-EVs: 208 SpA / 124 SpD / 176 Spe
-Modest Nature
-- Crunch
-- Flamethrower
-- Pursuit
-- Rest
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 148 SpA / 108 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Ice Punch
-- Substitute
-- Thunderbolt
-
-Machamp @ Leftovers
-Ability: Guts
-EVs: 96 HP / 252 Atk / 16 Def / 144 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Bulk Up
-- Cross Chop
-- Hidden Power [Bug]
-- Rock Slide
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 16 Atk / 240 Spe
-Jolly Nature
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 244 HP / 28 Atk / 176 Def / 60 Spe
+Impish Nature
+- Meteor Mash
 - Earthquake
+- Protect
 - Explosion
-- Ice Beam
-- Rapid Spin
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Protect
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 192 Def / 64 Spe
+EVs: 252 HP / 240 Def / 16 Spe
 Bold Nature
 IVs: 0 Atk
-- Calm Mind
-- Rest
 - Roar
 - Surf
+- Calm Mind
+- Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 16 SpA / 128 SpD
+Careful Nature
+- Explosion
+- Rapid Spin
+- Earthquake
+- Psychic
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 240 SpA / 16 Spe
+Bold Nature
+- Wish
+- Seismic Toss
+- Ice Beam
+- Soft-Boiled
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 8 Atk / 248 SpD
+Careful Nature
+IVs: 30 SpD / 30 Spe
+- Hidden Power [Bug]
+- Knock Off
+- Earthquake
+- Rock Slide

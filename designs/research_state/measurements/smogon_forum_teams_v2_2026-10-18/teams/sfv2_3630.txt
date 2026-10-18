@@ -1,56 +1,56 @@
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Substitute
-- Baton Pass
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast
 
-Medicham @ Choice Band
-Ability: Pure Power
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Toxic
+- Seismic Toss
+- Explosion
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 Def / 248 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Crunch
+
+Ludicolo @ Leftovers
+Ability: Swift Swim
+EVs: 248 HP / 144 Def / 16 SpA / 100 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Leech Seed
+- Surf
+- Rain Dance
+
+Heracross @ Leftovers
+Ability: Guts
 EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
+- Swords Dance
+- Megahorn
+- Rock Slide
 - Brick Break
-- Shadow Ball
-- Rock Slide
-- Focus Punch
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 16 HP / 200 Atk / 120 Def / 172 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 228 Atk / 20 Def / 8 SpA
-Brave Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Hidden Power [Grass]
-- Explosion
-- Earthquake
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-- Calm Mind
-- Surf
-- Ice Beam
-- Substitute
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 148 Def / 108 SpA
-Modest Nature
-- Thunderbolt
-- Ice Beam
-- Recover
-- Thunder Wave

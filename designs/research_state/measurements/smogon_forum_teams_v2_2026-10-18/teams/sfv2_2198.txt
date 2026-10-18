@@ -1,57 +1,58 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+IVs: 30 SpA
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Toxic
+- Roar
+
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
-Relaxed Nature
-- Protect
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
 - Earthquake
 - Hydro Pump
 - Ice Beam
 
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Ghost]
-- Focus Punch
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 76 HP / 252 SpA / 180 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
 - Hidden Power [Grass]
-- Baton Pass
+- Dynamic Punch
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 120 SpD / 148 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
-- Roar
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
 - Earthquake
 - Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Hidden Power [Flying]

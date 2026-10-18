@@ -1,56 +1,57 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 120 HP / 252 Atk / 136 Spe
-Adamant Nature
-- Sludge Bomb
-- Meteor Mash
-- Earthquake
-- Rock Slide
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
 - Baton Pass
-- Hidden Power [Ice]
-- Thunderbolt
-- Substitute
 
-Quagsire @ Leftovers
-Ability: Water Absorb
-EVs: 240 HP / 80 Atk / 136 Def / 52 SpD
-Relaxed Nature
-- Ice Beam
-- Earthquake
-- Yawn
-- Haze
-
-Blaziken @ Leftovers
-Ability: Blaze
-EVs: 72 Atk / 220 SpA / 216 Spe
-Hasty Nature
-- Fire Blast
-- Toxic
-- Sky Uppercut
-- Substitute
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 224 HP / 72 SpA / 112 SpD / 100 Spe
-Timid Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Taunt
-- Thunderbolt
-- Ice Punch
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 200 HP / 176 Atk / 40 SpD / 92 Spe
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 128 Def / 172 SpD
 Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
+- Curse
+- Double-Edge
+- Shadow Ball
+- Self-Destruct
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 140 SpA / 76 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Fire Punch
+- Hidden Power [Grass]
+- Psychic
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Ice Beam
+- Rain Dance
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Endure
+- Megahorn
+- Rock Slide
+- Reversal
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Taunt
-- Hidden Power [Rock]
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day

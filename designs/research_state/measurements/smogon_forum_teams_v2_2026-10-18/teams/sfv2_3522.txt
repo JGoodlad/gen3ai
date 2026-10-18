@@ -1,59 +1,56 @@
-Hypno @ Leftovers
-Ability: Insomnia
-EVs: 252 HP / 252 Def / 4 SpA
-Bold Nature
-IVs: 0 Atk
-- Psychic
-- Calm Mind
-- Baton Pass
-- Hypnosis
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 80 HP / 252 SpA / 176 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Ice Punch
-- Hidden Power [Grass]
-- Fire Punch
-
-Alakazam @ Leftovers
-Ability: Synchronize
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Encore
-- Psychic
-- Fire Punch
-- Hidden Power [Grass]
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 108 SpA / 148 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
-- Calm Mind
-- Substitute
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
+Hasty Nature
+- Will-O-Wisp
+- Thunder
+- Giga Drain
+- Explosion
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
 IVs: 2 Atk / 30 SpA
+- Rest
 - Thunderbolt
 - Hidden Power [Grass]
-- Baton Pass
 - Roar
 
-Steelix @ Choice Band
-Ability: Rock Head
-EVs: 144 HP / 228 Atk / 136 SpD
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpA / 2 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Fire Punch
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
+- Protect
+- Toxic
 - Earthquake
-- Hidden Power [Steel]
-- Double-Edge
-- Explosion
+- Rock Slide

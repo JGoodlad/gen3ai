@@ -1,57 +1,57 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
 - Brick Break
-
-Blastoise @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 252 Def / 4 SpD
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Rapid Spin
-- Roar
-- Refresh
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 232 HP / 252 Def / 24 Spe
-Bold Nature
-IVs: 0 Atk
-- Seismic Toss
-- Thunder Wave
-- Wish
-- Soft-Boiled
-
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 48 HP / 252 SpA / 208 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Sunny Day
-- Endure
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Def / 4 SpD
-Impish Nature
-- Meteor Mash
-- Earthquake
-- Toxic
-- Protect
+- Fire Blast
+- Ice Beam
+- Hidden Power [Grass]
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
+EVs: 252 HP / 244 SpD / 12 Spe
 Careful Nature
-- Drill Peck
-- Roar
 - Spikes
+- Whirlwind
+- Protect
+- Toxic
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 40 Def / 216 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
+- Explosion
+- Hidden Power [Grass]
+
+Lanturn (F) @ Leftovers
+Ability: Volt Absorb
+EVs: 208 SpA / 92 SpD / 208 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Thunderbolt
+- Ice Beam
 - Protect

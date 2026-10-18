@@ -1,56 +1,55 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 248 HP / 72 Atk / 188 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Dragon Dance
-
 Salamence @ Leftovers
 Ability: Intimidate
+EVs: 224 Atk / 12 Def / 212 SpD / 60 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Earthquake
+- Rock Slide
+- Return
+- Brick Break
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 Def / 176 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 40 Atk / 136 Def / 44 SpD / 48 Spe
+Relaxed Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
+- Roar
+
+Charizard @ Leftovers
+Ability: Blaze
 EVs: 4 Atk / 252 SpA / 252 Spe
 Mild Nature
 IVs: 30 Atk / 30 SpA
-- Dragon Claw
+- Substitute
 - Fire Blast
 - Hidden Power [Grass]
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 240 SpD / 16 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Toxic
-- Roar
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Fire Blast
-- Toxic
-
-Poliwrath @ Leftovers
-Ability: Water Absorb
-EVs: 120 HP / 104 Atk / 252 SpA / 32 Spe
-Brave Nature
-- Brick Break
-- Hydro Pump
-- Ice Beam
 - Focus Punch
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 240 HP / 216 Atk / 36 SpA / 16 Spe
-Adamant Nature
-- Earthquake
-- Psychic
-- Rapid Spin
-- Explosion

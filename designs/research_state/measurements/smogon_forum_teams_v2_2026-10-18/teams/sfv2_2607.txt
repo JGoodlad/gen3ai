@@ -1,56 +1,56 @@
-Tyranitar @ Black Glasses
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 4 Def / 216 Spe
-Brave Nature
-IVs: 30 Def / 30 SpA
+EVs: 248 HP / 252 SpA / 8 SpD
+Modest Nature
+IVs: 0 Atk
 - Crunch
-- Rock Slide
+- Pursuit
+- Ice Beam
+- Roar
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 80 SpD / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
 - Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+- Spikes
+- Zap Cannon
+- Earthquake
+- Rapid Spin
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 96 Def / 120 SpA / 44 Spe
+Relaxed Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
 - Focus Punch
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 252 Atk / 4 Spe
-Adamant Nature
-- Rapid Spin
-- Earthquake
-- Shadow Ball
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 196 SpD / 60 Spe
-Calm Nature
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 16 Atk / 240 SpA / 252 Spe
+Mild Nature
 IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
+- Flamethrower
 - Hidden Power [Grass]
-- Explosion
+- Focus Punch
+- Overheat
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Hydro Pump
-- Roar
-- Endeavor
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 176 Atk / 192 SpD / 136 Spe
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 64 SpD / 192 Spe
 Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Brick Break
+- Spore
+- Swords Dance
+- Sky Uppercut
+- Mach Punch

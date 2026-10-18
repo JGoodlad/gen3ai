@@ -1,57 +1,58 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 96 Atk / 192 Def / 192 SpD / 28 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Knock Off
+- Brick Break
+- Rock Slide
+- Hidden Power [Ghost]
+
+Medicham @ Salac Berry
+Ability: Pure Power
 EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
+- Substitute
+- Reversal
 - Focus Punch
+- Shadow Ball
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Earthquake
-- Hydro Pump
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Swords Dance
+- Megahorn
+- Substitute
+- Rock Slide
+
+Poliwrath @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 252 Def / 4 SpA
+Rash Nature
+IVs: 0 Atk
 - Ice Beam
-- Protect
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 244 SpD / 12 Spe
-Calm Nature
-IVs: 0 Atk
-- Thunderbolt
-- Roar
-- Rest
-- Sleep Talk
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Whirlwind
+- Haze
 - Toxic
 - Protect
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
-- Thunderbolt
-- Recover
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD
+- Spore
+- Focus Punch
+- Leech Seed
+- Substitute
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 80 Atk / 248 SpA / 180 Spe
-Hasty Nature
-- Ice Punch
-- Thunderbolt
-- Giga Drain
-- Explosion
+Machamp @ Leftovers
+Ability: Guts
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Bulk Up
+- Cross Chop
+- Rock Slide
+- Hidden Power [Ghost]

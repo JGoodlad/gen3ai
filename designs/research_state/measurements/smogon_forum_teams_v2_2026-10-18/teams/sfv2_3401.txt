@@ -1,57 +1,56 @@
-Heracross @ Choice Band
-Ability: Guts
-Hidden Power: Ghost
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Megahorn
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Naughty Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
 - Brick Break
-- Rock Slide
-- Focus Punch
+- Fire Blast
 
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 200 Def / 56 SpD
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Ice Beam
-- Thunderbolt
-- Toxic
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 80 Def
-Adamant Nature
-- Meteor Mash
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 100 Atk / 4 SpA / 136 SpD / 16 Spe
+Sassy Nature
+- Rapid Spin
 - Earthquake
-- Rock Slide
+- Psychic
 - Explosion
 
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-- Crunch
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Recover
-- Thunderbolt
-- Rapid Spin
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
-Modest Nature
-- Substitute
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 120 Def / 172 SpD / 8 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
 - Focus Punch
-- Fire Blast
-- Crunch
+- Self-Destruct
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Wish
+- Protect
+- Fire Punch
+- Hidden Power [Fighting]
+
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 204 HP / 252 Atk / 4 SpD / 48 Spe
+Adamant Nature
+- Thunder Wave
+- Rock Slide
+- Superpower
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 SpD / 16 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Sleep Talk
+- Calm Mind
+- Surf

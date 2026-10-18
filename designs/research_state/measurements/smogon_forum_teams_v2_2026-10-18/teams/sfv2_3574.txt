@@ -1,57 +1,58 @@
-Ludicolo (F) @ Leftovers
-Ability: Rain Dish
-EVs: 252 HP / 72 SpA / 184 SpD
-Calm Nature
-IVs: 0 Atk
-- Surf
-- Leech Seed
-- Toxic
-- Rain Dance
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Ghost]
+- Focus Punch
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 212 Def / 44 Spe
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
 Bold Nature
 IVs: 0 Atk
-- Rain Dance
-- Calm Mind
-- Psychic
-- Thunder
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
 
-Swampert (F) @ Salac Berry
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Swampert @ Leftovers
 Ability: Torrent
-EVs: 252 HP / 132 Def / 124 SpA
-Lax Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Rain Dance
-
-Kingdra (M) @ Lum Berry
-Ability: Swift Swim
-EVs: 104 HP / 252 SpA / 152 Spe
-Modest Nature
-IVs: 3 Atk / 30 SpA
-- Rain Dance
-- Surf
-- Ice Beam
-- Hidden Power [Electric]
-
-Dugtrio (M) @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Earthquake
-- Hidden Power [Flying]
-- Aerial Ace
-- Rock Slide
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 200 Def / 56 SpD
+EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
 Relaxed Nature
-- Rapid Spin
+- Protect
 - Earthquake
-- Psychic
-- Explosion
+- Hydro Pump
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

@@ -1,57 +1,57 @@
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 28 HP / 252 SpA / 228 Spe
+Modest Nature
 IVs: 0 Atk
-- Recover
-- Refresh
+- Calm Mind
 - Toxic
-- Surf
+- Hydro Pump
+- Ice Beam
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Baton Pass
+- Thunderbolt
+- Hidden Power [Grass]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 196 HP / 16 Def / 228 SpA / 68 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Meteor Mash
+- Hidden Power [Fire]
+- Explosion
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Counter
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-- Soft-Boiled
-- Wish
-- Thunder Wave
-- Seismic Toss
+EVs: 184 HP / 112 Atk / 44 Def / 168 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 252 Atk / 16 Spe
-Naughty Nature
+EVs: 248 HP / 4 Atk / 64 Def / 192 SpA
+Quiet Nature
 - Curse
-- Earthquake
-- Rock Slide
 - Hydro Pump
+- Ice Beam
+- Earthquake
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 176 Atk / 12 Def / 180 SpD / 140 Spe
-Lonely Nature
+EVs: 180 Atk / 212 SpD / 116 Spe
+Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
 - Hidden Power [Flying]
 - Brick Break
-- Fire Blast
+- Rock Slide

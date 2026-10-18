@@ -1,54 +1,57 @@
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Earthquake
-- Spikes
-- Rapid Spin
-- Explosion
-
-Venusaur @ Leftovers
-Ability: Overgrow
-EVs: 208 HP / 248 Atk / 28 SpA / 24 Spe
-Brave Nature
-- Giga Drain
-- Sludge Bomb
-- Earthquake
-- Leech Seed
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 176 HP / 136 Atk / 156 SpA / 4 SpD / 36 Spe
-Brave Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Focus Punch
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 80 HP / 176 Atk / 124 Def / 108 SpD / 20 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 208 HP / 216 Atk / 60 Def / 24 Spe
 Adamant Nature
-- Body Slam
+- Meteor Mash
 - Earthquake
-- Focus Punch
-- Self-Destruct
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 112 HP / 212 SpA / 184 Spe
-Timid Nature
-- Thunderbolt
-- Ice Punch
-- Will-O-Wisp
+- Protect
 - Explosion
 
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 8 HP / 248 SpA / 252 Spe
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 240 Def / 96 SpA / 172 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Crunch
-- Fire Blast
+IVs: 0 Atk
+- Surf
+- Wish
+- Roar
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA
 - Hidden Power [Grass]
-- Pursuit
+- Fire Blast
+- Brick Break
+- Dragon Claw
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 16 Def / 40 SpA / 176 SpD / 36 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Heal Bell
+- Psychic
+- Recover
+- Hidden Power [Grass]
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 252 Atk / 16 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch

@@ -1,56 +1,57 @@
-Medicham @ Lum Berry
-Ability: Pure Power
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-- Brick Break
-- Shadow Ball
-- Rock Slide
-- Focus Punch
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 180 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
+EVs: 248 HP / 12 Atk / 176 SpA / 72 SpD
+Quiet Nature
 - Rock Slide
 - Earthquake
-- Hidden Power [Bug]
+- Crunch
+- Pursuit
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 40 SpA / 216 Spe
-Timid Nature
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Rest
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 176 Def / 8 SpA / 76 Spe
+Bold Nature
 IVs: 0 Atk
-- Rapid Spin
-- Thunder Wave
-- Recover
 - Surf
+- Roar
+- Calm Mind
+- Rest
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+IVs: 30 Spe
+- Earthquake
+- Spikes
+- Rapid Spin
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 48 Def / 104 SpD / 104 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
+- Hidden Power [Grass]
+- Will-O-Wisp
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 76 Def / 180 SpD
+EVs: 248 HP / 84 Def / 176 SpD
 Sassy Nature
-- Wish
-- Protect
-- Fire Punch
 - Body Slam
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Baton Pass
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Grass]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 84 Atk / 128 SpA / 48 Spe
-Brave Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Refresh
+- Fire Punch
+- Protect
+- Wish

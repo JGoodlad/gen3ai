@@ -1,0 +1,58 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 200 Def / 60 SpD
+Relaxed Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Roar
+- Protect
+
+Dugtrio (F) @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Aerial Ace
+- Rock Slide
+- Hidden Power [Bug]
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Protect
+- Spikes
+- Toxic
+- Drill Peck
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 16 Def / 24 SpD / 216 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Psychic
+- Rapid Spin
+- Recover
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 244 HP / 252 Def / 12 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Flamethrower
+- Toxic
+- Soft-Boiled
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 92 Def / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Calm Mind
+- Psychic
+- Leech Seed
+- Recover

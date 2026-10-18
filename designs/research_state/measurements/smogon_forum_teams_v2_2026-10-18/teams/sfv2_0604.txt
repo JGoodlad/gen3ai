@@ -1,55 +1,58 @@
-Heracross
-Ability: Guts
-EVs: 252 Atk / 92 SpD / 164 Spe
-Adamant Nature
-- Thief
-- Brick Break
-- Megahorn
-- Rock Slide
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 188 SpD / 68 Spe
-Careful Nature
-- Seismic Toss
-- Superpower
-- Thunder Wave
-- Explosion
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 80 HP / 252 Atk / 176 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Double-Edge
-- Hidden Power [Rock]
-- Dragon Dance
-- Earthquake
-
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 132 HP / 124 Atk / 252 Spe
-Jolly Nature
-- Substitute
-- Bulk Up
-- Brick Break
-- Shadow Ball
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
-Bold Nature
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 212 HP / 188 Atk / 108 Spe
+Lonely Nature
 IVs: 30 Atk / 30 SpA
-- Leech Seed
-- Recover
-- Psychic
-- Hidden Power [Grass]
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
+- Rock Slide
 - Earthquake
-- Psychic
-- Explosion
+- Hidden Power [Grass]
+- Focus Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Roar
+- Protect
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 196 SpD / 64 Spe
+Calm Nature
+- Spikes
+- Taunt
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 68 HP / 252 SpA / 188 Spe
+Timid Nature
+IVs: 0 Atk
+- Hypnosis
+- Ice Punch
+- Thunderbolt
+- Giga Drain
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]
+
+Sceptile @ Leftovers
+Ability: Overgrow
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leaf Blade
+- Leech Seed
+- Substitute
+- Hidden Power [Fire]

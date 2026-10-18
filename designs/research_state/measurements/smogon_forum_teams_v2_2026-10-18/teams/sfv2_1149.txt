@@ -1,54 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Taunt
-- Toxic
-- Earthquake
-- Rock Slide
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 24 HP / 168 SpA / 168 SpD / 148 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
-- Spikes
-- Rapid Spin
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 192 HP / 48 Def / 180 SpA / 88 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA
+- Surf
+- Earthquake
 - Ice Beam
+- Hidden Power [Grass]
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 12 HP / 252 Atk / 80 Def / 152 SpD / 12 Spe
+Adamant Nature
+- Curse
+- Body Slam
+- Shadow Ball
+- Self-Destruct
+
+Camerupt (M) @ Choice Band
+Ability: Magma Armor
+EVs: 208 HP / 252 Atk / 48 Def
+Brave Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Flamethrower
+- Hidden Power [Rock]
 - Explosion
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 40 SpA / 44 SpD / 48 Spe
-Relaxed Nature
-- Curse
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 200 HP / 252 Atk / 56 Spe
+Adamant Nature
+- Meteor Mash
 - Earthquake
-- Hydro Pump
-- Ice Beam
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 120 Def / 136 SpD
-Sassy Nature
-- Wish
-- Protect
-- Fire Punch
-- Body Slam
-
-Heracross @ Leftovers
-Ability: Guts
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Swords Dance
-- Megahorn
-- Rock Slide
 - Brick Break
+- Explosion
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 248 HP / 4 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Dragon Dance
+- Rock Slide
 - Earthquake
-- Hidden Power [Rock]
-- Double-Edge
+- Hidden Power [Bug]

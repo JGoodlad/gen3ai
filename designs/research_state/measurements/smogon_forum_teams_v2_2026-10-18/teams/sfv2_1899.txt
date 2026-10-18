@@ -1,57 +1,58 @@
-Skarmory
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 124 Atk / 4 SpD / 196 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 224 HP / 216 SpD / 68 Spe
 Careful Nature
+IVs: 0 Atk
 - Spikes
-- Thief
-- Drill Peck
+- Taunt
+- Toxic
 - Roar
 
-Misdreavus @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 4 Def / 252 SpD
-Calm Nature
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Rest
-- Mean Look
+- Rapid Spin
+- Surf
+- Ice Beam
 - Thunderbolt
-- Perish Song
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
 IVs: 0 Atk
 - Soft-Boiled
-- Toxic
-- Seismic Toss
+- Calm Mind
 - Ice Beam
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
 - Thunderbolt
-- Roar
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 220 Def / 36 Spe
-Impish Nature
-- Protect
-- Toxic
-- Earthquake
-- Rock Slide
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
+- Dragon Claw
 - Flamethrower
 - Hidden Power [Grass]
-- Sunny Day
+- Beat Up

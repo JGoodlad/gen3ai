@@ -1,55 +1,54 @@
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 120 Def / 136 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Wish
-- Body Slam
-- Fire Punch
-- Hidden Power [Grass]
+Venusaur (M) @ Leftovers
+Ability: Overgrow
+EVs: 248 HP / 8 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Sleep Powder
+- Leech Seed
+- Hidden Power [Fire]
+- Giga Drain
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
 - Rapid Spin
 - Earthquake
 - Psychic
 - Explosion
 
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Naughty Nature
+- Substitute
+- Focus Punch
+- Crunch
+- Thunder
+
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
+EVs: 252 HP / 252 SpA / 4 Spe
 Quiet Nature
-- Curse
-- Earthquake
 - Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Bold Nature
+- Wish
+- Soft-Boiled
+- Seismic Toss
 - Ice Beam
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Earthquake
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 136 Atk / 152 Def / 172 SpD / 16 Spe
-Adamant Nature
-- Body Slam
-- Earthquake
-- Shadow Ball
-- Self-Destruct
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
-Mild Nature
-- Dragon Claw
-- Rock Slide
-- Flamethrower
-- Brick Break
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Whirlwind
+- Protect
+- Toxic

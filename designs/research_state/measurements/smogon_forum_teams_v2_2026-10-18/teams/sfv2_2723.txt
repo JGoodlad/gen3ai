@@ -1,56 +1,58 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 168 HP / 224 Atk / 16 Def / 100 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 224 Atk / 16 Def / 16 Spe
 Adamant Nature
-- Meteor Mash
-- Earthquake
-- Brick Break
-- Explosion
+IVs: 30 SpD / 30 Spe
+- Substitute
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
 
-Claydol @ Leftovers
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 244 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Toxic
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Hidden Power [Grass]
+- Flamethrower
+- Focus Punch
+
+Flygon @ Choice Band
 Ability: Levitate
-EVs: 252 HP / 120 Atk / 136 Def
-Impish Nature
-- Rapid Spin
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Shadow Ball
-- Explosion
+- Rock Slide
+- Hidden Power [Bug]
+- Quick Attack
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 SpD
-Impish Nature
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
 - Soft-Boiled
-- Aromatherapy
-- Toxic
-- Seismic Toss
-
-Umbreon @ Leftovers
-Ability: Synchronize
-EVs: 252 HP / 56 Def / 184 SpA / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Charm
-- Pursuit
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 240 Def / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Roar
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 176 Atk / 88 Def / 64 SpD / 156 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
 - Fire Blast
+- Toxic
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 SpA / 180 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Ice Punch

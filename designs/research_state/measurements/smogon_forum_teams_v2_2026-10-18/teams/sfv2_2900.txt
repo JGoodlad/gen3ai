@@ -1,57 +1,58 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 232 Atk / 160 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Substitute
-- Brick Break
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Refresh
+- Recover
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 232 SpA / 108 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Punch
-- Meteor Mash
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 120 Def / 44 SpA / 56 SpD / 40 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
 - Hidden Power [Grass]
-- Explosion
+- Perish Song
+- Leech Seed
+- Recover
 
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 200 SpA / 120 SpD / 188 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 176 SpA / 84 SpD
+Quiet Nature
+- Thunderbolt
+- Earthquake
+- Crunch
+- Pursuit
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 48 Def / 104 SpD / 104 Spe
 Timid Nature
 IVs: 0 Atk
-- Pursuit
-- Fire Blast
+- Thunderbolt
+- Ice Punch
+- Taunt
 - Will-O-Wisp
-- Beat Up
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 216 Atk / 116 Def / 176 SpD
+Steelix @ Leftovers
+Ability: Rock Head
+EVs: 248 HP / 56 Atk / 180 SpD / 24 Spe
 Adamant Nature
-- Body Slam
-- Focus Punch
-- Counter
-- Self-Destruct
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 28 SpD / 12 Spe
-Brave Nature
+IVs: 30 Def / 30 SpD / 30 Spe
 - Earthquake
-- Ice Beam
-- Rapid Spin
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 252 SpD / 16 Spe
-Calm Nature
-IVs: 0 Atk / 30 SpA
-- Calm Mind
-- Surf
-- Rest
-- Sleep Talk
+- Hidden Power [Rock]
+- Roar
+- Protect

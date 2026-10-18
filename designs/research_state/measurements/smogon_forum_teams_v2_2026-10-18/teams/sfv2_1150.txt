@@ -1,57 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 136 SpA / 156 Spe
-Modest Nature
-IVs: 30 Spe
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 176 Def / 32 SpA / 44 SpD / 16 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
+Smeargle (M) @ Salac Berry
+Ability: Own Tempo
+EVs: 68 HP / 188 SpD / 252 Spe
+Jolly Nature
+- Substitute
 - Spikes
-- Rapid Spin
-- Ice Beam
+- Spore
 - Explosion
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 20 Atk / 16 Def / 252 SpA / 52 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Earthquake
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Swampert (M) @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Ice Punch
+- Substitute
+- Surf
+- Endeavor
+- Roar
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 120 HP / 204 SpD / 184 Spe
+Timid Nature
 - Thunderbolt
+- Ice Punch
+- Giga Drain
+- Explosion
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 120 Def / 136 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Wish
-- Body Slam
-- Fire Punch
-- Hidden Power [Grass]
-
-Aerodactyl @ Choice Band
+Aerodactyl (M) @ Liechi Berry
 Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 252 Atk / 4 SpD / 252 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpD
+- Substitute
 - Rock Slide
+- Earthquake
 - Hidden Power [Bug]
-- Double-Edge
+
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 248 HP / 4 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]

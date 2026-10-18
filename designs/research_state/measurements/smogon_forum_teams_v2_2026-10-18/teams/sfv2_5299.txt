@@ -1,0 +1,56 @@
+Machamp @ Leftovers
+Ability: Guts
+EVs: 252 HP / 216 Atk / 20 Def / 20 SpD
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Bulk Up
+- Revenge
+- Focus Punch
+- Hidden Power [Rock]
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]
+
+Snorlax @ Leftovers
+Ability: Thick Fat
+EVs: 124 HP / 56 Atk / 96 Def / 56 SpA / 176 SpD
+Brave Nature
+- Double-Edge
+- Earthquake
+- Fire Blast
+- Self-Destruct
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 40 HP / 252 SpA / 216 Spe
+Timid Nature
+- Beat Up
+- Fire Blast
+- Will-O-Wisp
+- Pursuit
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 220 Def / 36 Spe
+Bold Nature
+- Wish
+- Protect
+- Fire Punch
+- Toxic
+
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 240 HP / 216 Atk / 52 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Curse
+- Explosion
+- Hidden Power [Rock]
+- Superpower

@@ -1,57 +1,56 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Protect
-- Rest
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 248 HP / 16 Atk / 148 SpD / 96 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Thunder Wave
-- Dragon Dance
-- Hidden Power [Flying]
-- Rest
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 140 Def / 44 SpA / 44 SpD / 32 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Leech Seed
-- Hidden Power [Grass]
-- Recover
-- Heal Bell
-
-Houndoom @ Leftovers
-Ability: Early Bird
-EVs: 196 SpA / 216 SpD / 96 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
 Modest Nature
 IVs: 0 Atk
+- Pursuit
 - Crunch
 - Fire Blast
-- Pursuit
-- Will-O-Wisp
+- Protect
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 96 HP / 108 Atk / 140 Def / 164 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 244 SpD / 12 Spe
 Careful Nature
-- Curse
-- Return
-- Earthquake
-- Rest
+- Protect
+- Drill Peck
+- Spikes
+- Toxic
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 252 SpA / 4 SpD / 252 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+IVs: 0 Atk
+- Wish
+- Soft-Boiled
+- Ice Beam
 - Thunderbolt
-- Hidden Power [Fire]
-- Sunny Day
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 188 Def / 68 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
 - Rest
+- Roar
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 136 HP / 196 SpD / 176 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Explosion

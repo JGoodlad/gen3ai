@@ -1,0 +1,60 @@
+Salamence @ Leftovers
+Ability: Intimidate
+Shiny: Yes
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Hidden Power [Grass]
+- Brick Break
+- Fire Blast
+
+Hariyama @ Leftovers
+Ability: Guts
+Shiny: Yes
+EVs: 252 Atk / 228 Def / 28 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Knock Off
+- Cross Chop
+- Focus Punch
+- Hidden Power [Bug]
+
+Metagross @ Lum Berry
+Ability: Clear Body
+Shiny: Yes
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Earthquake
+- Meteor Mash
+- Rock Slide
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 76 SpD / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 Def / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Ice Beam
+- Brick Break

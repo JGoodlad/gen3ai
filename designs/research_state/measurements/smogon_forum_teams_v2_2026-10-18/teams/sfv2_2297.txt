@@ -1,57 +1,58 @@
-Arcanine @ Leftovers
-Ability: Intimidate
-EVs: 176 Atk / 252 SpA / 80 Spe
-Mild Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Fire Blast
-- Hidden Power [Fighting]
-- Extreme Speed
-- Toxic
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 236 HP / 136 SpD / 136 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Roar
-- Taunt
-- Toxic
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 180 Spe
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 16 HP / 56 Atk / 220 Def / 160 SpD / 56 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
+IVs: 30 SpD / 30 Spe
+- Brick Break
 - Rock Slide
-- Earthquake
 - Hidden Power [Bug]
+- Knock Off
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Protect
-- Hydro Pump
-
-Gengar @ Leftovers
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
-Timid Nature
-- Will-O-Wisp
-- Taunt
-- Thunderbolt
-- Ice Punch
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 96 Def / 48 SpA / 76 SpD / 36 Spe
-Calm Nature
-IVs: 30 Atk / 30 SpA
-- Leech Seed
-- Recover
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
 - Psychic
-- Hidden Power [Grass]
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Thunder Wave
+- Seismic Toss
+- Ice Beam
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Fire Punch
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Roar
+
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Brick Break
+- Hidden Power [Flying]

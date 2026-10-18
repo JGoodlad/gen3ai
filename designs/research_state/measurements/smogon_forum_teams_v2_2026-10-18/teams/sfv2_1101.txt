@@ -1,57 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
+Jolteon @ Leftovers
+Ability: Volt Absorb
 EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 Def
+IVs: 0 Atk
 - Thunderbolt
-- Hidden Power [Ice]
+- Substitute
 - Baton Pass
 - Roar
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 44 HP / 236 Def / 212 SpA / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Wish
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 144 Atk / 148 SpA / 216 Spe
+Hasty Nature
+- Thunderbolt
+- Ice Punch
+- Focus Punch
+- Explosion
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
+EVs: 248 HP / 136 SpD / 124 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
+- Drill Peck
+- Taunt
 - Roar
-- Protect
-- Toxic
 
-Tyranitar @ Salac Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 16 HP / 176 Atk / 120 Def / 12 SpA / 184 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
+EVs: 184 Atk / 152 SpA / 172 Spe
+Lonely Nature
+IVs: 30 HP / 30 SpA
 - Rock Slide
-- Earthquake
+- Fire Blast
 - Hidden Power [Grass]
+- Focus Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 20 Atk / 204 SpA / 36 Spe
+Quiet Nature
+- Earthquake
+- Focus Punch
+- Ice Beam
+- Hydro Pump
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 88 HP / 248 Atk / 172 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
 - Dragon Dance
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
+- Hidden Power [Rock]
 - Earthquake
-- Psychic
-- Explosion
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 200 HP / 252 Atk / 56 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
+- Taunt

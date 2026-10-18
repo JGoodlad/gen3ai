@@ -1,56 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 4 SpA / 252 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
 Naughty Nature
 IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Fire Blast
+- Meteor Mash
+- Earthquake
 - Hidden Power [Grass]
-- Brick Break
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 152 Atk / 172 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
-- Earthquake
-- Psychic
 - Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
 - Toxic
-- Seismic Toss
+- Thunderbolt
+- Hidden Power [Grass]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 40 SpA / 44 SpD / 48 Spe
+Relaxed Nature
+- Curse
+- Earthquake
+- Hydro Pump
 - Ice Beam
 
-Golduck @ Leftovers
-Ability: Cloud Nine
-EVs: 248 HP / 232 Def / 28 Spe
-Bold Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 0 Atk / 30 Def
+- Recover
+- Substitute
+- Leech Seed
+- Baton Pass
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 112 Def / 172 SpD / 16 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Charizard @ Salac Berry
+Ability: Blaze
+EVs: 88 HP / 252 Atk / 16 SpD / 152 Spe
+Lonely Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Belly Drum
+- Hidden Power [Flying]
+- Rock Slide
+- Fire Blast

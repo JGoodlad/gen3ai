@@ -1,57 +1,57 @@
 Salamence @ Choice Band
 Ability: Intimidate
 EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
+Adamant Nature
 IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Hidden Power [Flying]
-- Rock Slide
 - Earthquake
+- Rock Slide
 - Brick Break
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 SpA
+Blastoise @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 252 Def / 4 SpD
 Bold Nature
 IVs: 0 Atk
 - Surf
-- Recover
-- Toxic
-- Ice Beam
+- Rapid Spin
+- Roar
+- Refresh
 
-Celebi @ Leftovers
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+EVs: 232 HP / 252 Def / 24 Spe
 Bold Nature
-IVs: 2 Atk / 30 SpA
-- Leech Seed
-- Recover
-- Heal Bell
-- Hidden Power [Grass]
+IVs: 0 Atk
+- Seismic Toss
+- Thunder Wave
+- Wish
+- Soft-Boiled
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
-Careful Nature
-- Curse
-- Rest
-- Body Slam
-- Shadow Ball
-
-Magneton @ Magnet
+Magneton @ Salac Berry
 Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
+EVs: 48 HP / 252 SpA / 208 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunderbolt
 - Hidden Power [Fire]
-- Thunder Wave
-- Metal Sound
+- Sunny Day
+- Endure
 
-Metagross @ Lum Berry
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Agility
+EVs: 252 HP / 252 Def / 4 SpD
+Impish Nature
 - Meteor Mash
 - Earthquake
-- Explosion
+- Toxic
+- Protect
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Drill Peck
+- Roar
+- Spikes
+- Protect

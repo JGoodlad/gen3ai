@@ -1,57 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 12 Def / 244 SpA / 252 Spe
-Hasty Nature
-- Dragon Claw
-- Flamethrower
-- Brick Break
-- Roar
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 16 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 SpD / 30 Spe
-- Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Counter
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Wish
-- Thunder Wave
-- Seismic Toss
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
-- Toxic
-- Thunderbolt
-
-Quagsire @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 248 Def / 8 Spe
-Relaxed Nature
-- Rest
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
 - Curse
 - Earthquake
+- Hydro Pump
 - Ice Beam
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Earthquake
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 112 HP / 220 SpA / 176 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- wisp
+- Ice Punch
+- Fire Punch
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Focus Punch

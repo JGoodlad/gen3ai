@@ -1,59 +1,55 @@
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 160 Atk / 112 Def / 192 SpD / 44 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Brick Break
-- Focus Punch
-- Hidden Power [Bug]
-- Rock Slide
-
-Salamence @ Choice Band
+Salamence @ Leftovers
 Ability: Intimidate
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
 - Hidden Power [Flying]
+- Brick Break
+- Fire Blast
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
 - Earthquake
 - Rock Slide
-- Brick Break
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 72 HP / 252 SpA / 184 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
 - Thunder Wave
-- Substitute
+- Toxic
+- Seismic Toss
+- Explosion
 
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 52 HP / 252 SpA / 16 SpD / 180 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Fire Blast
-- Will-O-Wisp
-
-Machamp @ Leftovers
-Ability: Guts
-EVs: 96 HP / 252 Atk / 16 Def / 144 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Bulk Up
-- Cross Chop
-- Hidden Power [Bug]
-- Rock Slide
-
-Starmie @ Leftovers
-Ability: Illuminate
-EVs: 232 HP / 24 Def / 252 Spe
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
-- Surf
-- Thunder Wave
-- Recover
-- Rapid Spin
+- Substitute
+- Toxic
+- Hydro Pump
+- Endeavor
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 40 HP / 188 Atk / 100 SpD / 180 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Hidden Power [Rock]
+- Double-Edge

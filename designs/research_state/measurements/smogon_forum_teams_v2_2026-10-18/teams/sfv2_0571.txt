@@ -1,60 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-Shiny: Yes
-EVs: 252 HP / 188 Atk / 16 Def / 52 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Focus Punch
-- Earthquake
-- Hidden Power [Bug]
-
-Starmie @ Leftovers
-Ability: Natural Cure
-Shiny: Yes
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Surf
-- Ice Beam
-- Thunderbolt
-- Rapid Spin
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-Shiny: Yes
-EVs: 240 HP / 240 SpD / 28 Spe
-Calm Nature
-- Taunt
-- Toxic
-- Drill Peck
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Brave Nature
+IVs: 30 Atk / 30 SpD
 - Spikes
-
-Swampert @ Leftovers
-Ability: Torrent
-Shiny: Yes
-EVs: 248 HP / 136 Def / 48 SpA / 44 SpD / 32 Spe
-Bold Nature
-- Surf
-- Ice Beam
-- Focus Punch
-- Protect
-
-Aerodactyl @ Liechi Berry
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Substitute
-- Rock Slide
-- Earthquake
-- Double-Edge
+- Zap Cannon
+- Hidden Power [Ghost]
+- Explosion
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 76 HP / 252 SpA / 180 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Hidden Power [Fire]
-- Psychic
+EVs: 252 HP / 4 Def / 104 SpA / 148 Spe
+Timid Nature
+IVs: 3 Atk / 30 SpA
 - Giga Drain
+- Hidden Power [Electric]
+- Calm Mind
+- Baton Pass
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 72 HP / 236 SpA / 8 SpD / 192 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Taunt
+- Thunderbolt
+- Ice Punch
+- Hidden Power [Grass]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 116 Atk / 28 Def / 112 SpA
+Brave Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
+- Curse
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 4 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Ice Punch
+- Thunderbolt
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 128 HP / 236 Atk / 4 SpD / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Brick Break

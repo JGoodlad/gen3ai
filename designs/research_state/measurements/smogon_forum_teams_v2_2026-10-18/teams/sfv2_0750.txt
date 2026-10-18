@@ -1,58 +1,57 @@
-Moltres @ Choice Band
-Ability: Pressure
-EVs: 252 Atk / 4 SpA / 252 Spe
-Naughty Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Sky Attack
-- Hidden Power [Fighting]
-- Fire Blast
-- Sleep Talk
+Wailord (M) @ Leftovers
+Ability: Water Veil
+Shiny: Yes
+EVs: 40 Atk / 252 SpA / 216 Spe
+Rash Nature
+- Water Spout
+- Hydro Pump
+- Ice Beam
+- Self-Destruct
 
-Metagross @ Leftovers
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 240 HP / 128 Atk / 92 SpA / 48 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
+EVs: 128 HP / 252 Atk / 16 Def / 112 Spe
+Adamant Nature
 - Meteor Mash
-- Earthquake
-- Hidden Power [Grass]
 - Explosion
+- Earthquake
+- Rock Slide
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 120 HP / 252 SpD / 136 Spe
-Careful Nature
-- Spikes
-- Taunt
-- Roar
-- Toxic
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 128 Atk / 144 Def / 144 SpD
+Adamant Nature
+- Self-Destruct
+- Body Slam
+- Shadow Ball
+- Focus Punch
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 40 SpA / 176 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 76 HP / 252 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Leech Seed
+
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 136 HP / 176 SpA / 196 Spe
 Modest Nature
 IVs: 0 Atk
-- Substitute
 - Calm Mind
-- Thunder
-- Ice Punch
+- Surf
+- Ice Beam
+- Roar
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 44 Def / 8 SpA / 184 Spe
-Timid Nature
-IVs: 0 Atk
-- Destiny Bond
-- Taunt
-- Thunderbolt
-- Ice Punch
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 128 HP / 252 Atk / 128 Spe
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 212 SpD / 140 Spe
 Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
+- Dragon Dance
 - Earthquake
-- Hidden Power [Bug]
-- Focus Punch
+- Rock Slide
+- Brick Break

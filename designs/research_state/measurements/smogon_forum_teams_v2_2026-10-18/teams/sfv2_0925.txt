@@ -1,54 +1,58 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 128 HP / 252 Atk / 128 Spe
-Adamant Nature
-- Meteor Mash
-- Explosion
-- Earthquake
-- Rock Slide
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 184 Atk / 72 SpA / 252 Spe
-Naive Nature
-- Thunderbolt
-- Focus Punch
-- Hypnosis
-- Explosion
-
-Charizard @ Leftovers
-Ability: Blaze
+Tyranitar @ Lum Berry
+Ability: Sand Stream
 EVs: 4 Atk / 252 SpA / 252 Spe
 Hasty Nature
-IVs: 30 Atk / 30 Def
+IVs: 30 Atk / 30 SpA
 - Fire Blast
-- Hidden Power [Ice]
-- Focus Punch
-- Substitute
+- Hidden Power [Grass]
+- Ice Beam
+- Brick Break
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
+Nidoking (M) @ Leftovers
+Ability: Poison Point
+EVs: 104 Atk / 252 SpA / 152 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Taunt
+- Sludge Bomb
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 224 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk / 30 SpA
+- Calm Mind
+- Leech Seed
+- Baton Pass
+- Giga Drain
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
-- Surf
-- Explosion
+IVs: 0 Atk
+- Thunderbolt
 - Rapid Spin
-- Spikes
+- Ice Beam
+- Psychic
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 16 HP / 156 Atk / 180 Def / 156 Spe
-Naughty Nature
-- Earthquake
-- Fire Blast
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+- Surf
+- Recover
 - Toxic
-- Protect
+- Refresh
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]

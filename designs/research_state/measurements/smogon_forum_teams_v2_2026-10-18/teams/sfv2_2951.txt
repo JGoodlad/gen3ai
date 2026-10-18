@@ -1,57 +1,55 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
+Jumpluff @ Leftovers
+Ability: Chlorophyll
+EVs: 56 Def / 200 SpD / 252 Spe
+Jolly Nature
+- Substitute
+- Leech Seed
+- Encore
+- Sleep Powder
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+IVs: 30 SpD / 2 Spe
+- Spikes
+- Rapid Spin
 - Earthquake
 - Hidden Power [Bug]
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 32 HP / 252 SpA / 224 Spe
 Modest Nature
-- Spikes
-- Rapid Spin
-- Explosion
-- Surf
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
 IVs: 2 Atk / 30 SpA
-- Thunderbolt
 - Hidden Power [Grass]
-- Baton Pass
+- Will-O-Wisp
+- Flamethrower
 - Roar
 
-Banette @ Leftovers
-Ability: Insomnia
-EVs: 24 HP / 252 Atk / 232 Spe
-Adamant Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Will-O-Wisp
-- Shadow Ball
-- Hidden Power [Fighting]
-- Thunder Wave
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 184 Def / 44 SpA / 32 Spe
+Bold Nature
+- Surf
+- Roar
+- Toxic
+- Protect
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 56 Atk / 224 SpA / 8 SpD / 196 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Brick Break
-- Hidden Power [Grass]
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 220 SpA / 40 Spe
+Quiet Nature
+- Crunch
+- Pursuit
+- Rock Slide
 - Fire Blast
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt
+- Calm Mind

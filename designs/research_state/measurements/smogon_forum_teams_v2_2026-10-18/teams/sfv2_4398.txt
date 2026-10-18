@@ -1,0 +1,56 @@
+Machamp @ Leftovers
+Ability: Guts
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Bulk Up
+- Cross Chop
+- Rock Slide
+- Hidden Power [Bug]
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+- Wish
+- Dragon Claw
+- Fire Blast
+- Brick Break
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 232 SpA / 92 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Thunder Punch
+- Earthquake
+- Hidden Power [Grass]
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Explosion
+- Earthquake
+- Psychic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 176 Atk / 128 Def / 112 SpD
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Rest
+- Sleep Talk
+- Surf

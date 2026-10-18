@@ -1,0 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Spikes
+- Earthquake
+- Rapid Spin
+- Explosion
+
+Houndoom @ Black Glasses
+Ability: Flash Fire
+EVs: 240 SpA / 76 SpD / 192 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Fire Blast
+- Will-O-Wisp
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 64 SpA / 152 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Ice Punch
+- Thunderbolt
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 240 Def / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Spore
+- Focus Punch
+- Sky Uppercut
+- Mach Punch

@@ -1,56 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 40 SpA / 44 SpD / 48 Spe
-Relaxed Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Taunt
+Milotic (F) @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk / 30 Spe
+- Surf
 - Toxic
-- Earthquake
-- Rock Slide
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
-Calm Nature
-IVs: 30 Atk / 30 SpA
-- Wish
-- Body Slam
-- Fire Punch
-- Hidden Power [Grass]
+- Refresh
+- Recover
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 120 Atk / 248 SpA / 140 Spe
-Mild Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Toxic
+EVs: 224 HP / 252 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
 - Thunderbolt
-- Drill Peck
-- Hidden Power [Fighting]
+- Roar
+- Rest
+- Sleep Talk
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Thunderbolt
+- Ice Beam
+- Soft-Boiled
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 116 Def / 140 SpD
+Calm Nature
+- Secret Power
+- Psychic
+- Rapid Spin
+- Refresh
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 28 SpD / 228 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 SpD / 30 Spe
 - Earthquake
-- Rock Slide
 - Hidden Power [Bug]
-- Double-Edge
+- Aerial Ace
+- Screech
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Protect

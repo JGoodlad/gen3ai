@@ -1,57 +1,56 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Heracross
+Ability: Swarm
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-- Toxic
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Fire]
-- Rain Dance
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Return
-- Earthquake
-- Shadow Ball
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 16 SpA / 184 SpD / 56 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
+- Megahorn
+- Rock Slide
 - Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
+- Thief
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 44 Def / 72 SpD / 140 Spe
+Timid Nature
 IVs: 0 Atk
-- Rest
-- Calm Mind
 - Surf
+- Thunder Wave
+- Recover
+- Rapid Spin
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Calm Nature
+- Spikes
+- Roar
+- Protect
+- Drill Peck
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Soft-Boiled
 - Ice Beam
+- Thunderbolt
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 192 Atk / 200 SpD / 116 Spe
+EVs: 8 HP / 140 Atk / 200 SpD / 160 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
 - Hidden Power [Flying]
+- Earthquake
 - Rock Slide
-- Brick Break
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion

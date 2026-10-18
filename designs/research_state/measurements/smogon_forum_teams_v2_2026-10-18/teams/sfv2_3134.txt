@@ -1,55 +1,57 @@
-Tyranitar (M) @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 240 SpA / 16 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Crunch
-- Pursuit
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 236 Atk / 12 Def / 200 SpD / 60 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
 - Fire Blast
-- Hidden Power [Grass]
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 160 Atk / 96 Spe
-Adamant Nature
-- Earthquake
-- Explosion
-- Rock Slide
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
 - Rapid Spin
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Def / 4 SpD
-Impish Nature
+- Earthquake
+- Psychic
 - Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Toxic
 - Seismic Toss
-- Thunder Wave
-- Counter
+- Ice Beam
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 SpA / 64 SpD / 192 Spe
-Hasty Nature
-- Dragon Claw
-- Fire Blast
-- Brick Break
-- Wish
-
-Snorlax (M) @ Leftovers
-Ability: Immunity
-EVs: 8 HP / 176 Atk / 136 Def / 176 SpD / 12 Spe
-Adamant Nature
-- Body Slam
-- Focus Punch
-- Self-Destruct
-- Shadow Ball
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 188 SpA / 68 Spe
-Modest Nature
+EVs: 252 HP / 228 Def / 28 Spe
+Bold Nature
 IVs: 0 Atk
-- Calm Mind
 - Rest
-- Sleep Talk
+- Calm Mind
 - Surf
+- Roar

@@ -1,57 +1,56 @@
-Machamp @ Leftovers
-Ability: Guts
-EVs: 128 HP / 252 Atk / 128 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Bulk Up
-- Cross Chop
-- Rock Slide
-- Hidden Power [Ghost]
-
-Slowbro @ Leftovers
-Ability: Own Tempo
-EVs: 252 HP / 212 Def / 32 SpA / 12 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 Atk / 244 SpA / 240 Spe
+Rash Nature
+- Dragon Claw
 - Fire Blast
-- Thunder Wave
+- Hydro Pump
+- Brick Break
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Crunch
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 224 Atk / 32 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Earthquake
+- Double-Edge
+- Hidden Power [Flying]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 244 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Roar
 - Toxic
+- Drill Peck
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 108 Def / 108 SpA / 44 Spe
+Quiet Nature
+- Hydro Pump
+- Earthquake
+- Refresh
+- Ice Beam
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 SpD
-Relaxed Nature
-- Wish
-- Protect
-- Fire Punch
-- Body Slam
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 136 Def / 48 SpA / 60 SpD / 12 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
+EVs: 252 HP / 48 Def / 44 SpA / 108 SpD / 56 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
 - Calm Mind
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Brick Break
+- Fire Punch
 - Hidden Power [Grass]
-- Fire Blast

@@ -1,56 +1,55 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
-Modest Nature
-- Pursuit
+EVs: 252 HP / 208 SpA / 48 Spe
+Quiet Nature
+- Substitute
 - Crunch
-- Flamethrower
-- Earthquake
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 Def
-Impish Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Curse
-- Hidden Power [Rock]
-- Earthquake
 - Focus Punch
+- Flamethrower
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 152 Def / 104 SpD
-Relaxed Nature
-- Earthquake
-- Rapid Spin
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Toxic
 - Ice Beam
+- Soft-Boiled
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 76 SpD / 184 Spe
+Timid Nature
+- Fire Punch
+- Giga Drain
+- Will-O-Wisp
 - Explosion
 
-Lapras @ Leftovers
-Ability: Water Absorb
-EVs: 252 SpA / 40 SpD / 216 Spe
-Modest Nature
-IVs: 0 Atk
-- Hydro Pump
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 16 Atk / 200 Def / 44 SpD
+Relaxed Nature
+- Curse
+- Earthquake
 - Ice Beam
-- Thunderbolt
-- Heal Bell
+- Protect
 
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-- Spore
-- Focus Punch
-- Brick Break
-- Mach Punch
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Overheat
+- Thunderbolt
 - Hidden Power [Grass]
-- Beat Up
+- Toxic
+- Thunder Wave
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 108 Def / 136 SpD / 12 Spe
+Adamant Nature
+- Body Slam
+- Earthquake
+- Curse
+- Self-Destruct

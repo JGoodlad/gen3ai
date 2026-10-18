@@ -1,56 +1,57 @@
-Tyranitar @ Leftovers
+Tyranitar (M) @ Lum Berry
 Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Toxic
-- Crunch
-- Pursuit
-- Flamethrower
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 128 Def / 40 SpA / 32 SpD / 56 Spe
-Bold Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Ice Beam
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
+EVs: 100 HP / 240 Atk / 168 Spe
 Adamant Nature
-- Curse
-- Double-Edge
+- Rock Slide
+- Taunt
 - Earthquake
-- Shadow Ball
+- Dragon Dance
+
+Skarmory (F) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 248 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Protect
+- Roar
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Ice Punch
+- Will-O-Wisp
+- Thunderbolt
+- Taunt
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 84 Def / 252 SpA / 172 Spe
+Rash Nature
+- Earthquake
+- Ice Beam
+- Hydro Pump
+- Focus Punch
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 16 SpA / 100 SpD / 140 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
+EVs: 84 Atk / 148 SpA / 132 SpD / 144 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Drill Peck
+- Hidden Power [Grass]
 - Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
+- Thunder Wave
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 228 Atk / 16 Def / 96 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-- Spore
-- Sky Uppercut
-- Mach Punch
-- Focus Punch
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Psychic
+- Ice Beam
+- Thunderbolt
+- Hydro Pump

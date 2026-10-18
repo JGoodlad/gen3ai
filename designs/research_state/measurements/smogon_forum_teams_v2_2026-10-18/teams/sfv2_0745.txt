@@ -1,56 +1,58 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Flying]
-- Brick Break
-
-Metagross @ Leftovers
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 252 HP / 24 Atk / 156 Def / 36 SpD / 40 Spe
-Impish Nature
-- Meteor Mash
-- Earthquake
-- Protect
-- Explosion
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Thunder Wave
-- Protect
-
-Miltank (F) @ Leftovers
-Ability: Thick Fat
-EVs: 252 HP / 252 Atk / 4 Def
+EVs: 252 HP / 252 Atk / 4 SpD
 Adamant Nature
-- Double-Edge
-- Thunder Wave
-- Milk Drink
-- Counter
+- Explosion
+- Earthquake
+- Meteor Mash
+- Rock Slide
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 252 Def / 16 Spe
-Bold Nature
-IVs: 0 Atk
+EVs: 84 HP / 252 SpA / 172 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
 - Calm Mind
 - Surf
-- Rest
-- Roar
+- Ice Beam
+- Hidden Power [Grass]
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
-Careful Nature
+Smeargle @ Leftovers
+Ability: Own Tempo
+EVs: 252 HP / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 0 Atk
+- Spore
+- Substitute
+- Baton Pass
+- Belly Drum
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Focus Punch
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Taunt
+- Earthquake
+- Substitute
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
 - Curse
-- Body Slam
-- Shadow Ball
-- Rest
+- Rock Slide
+- Earthquake

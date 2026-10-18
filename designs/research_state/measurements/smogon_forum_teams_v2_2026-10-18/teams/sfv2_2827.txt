@@ -1,57 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Brave Nature
-- Crunch
-- Rock Slide
-- Fire Blast
-- Brick Break
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Counter
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 36 SpA / 96 SpD / 124 Spe
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Grass]
-- Explosion
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Careful Nature
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
 IVs: 2 Atk / 30 SpA
-- Rest
 - Thunderbolt
 - Hidden Power [Grass]
 - Roar
+- Rest
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 72 Atk / 44 SpA / 144 Spe
-Naughty Nature
-IVs: 30 SpD / 30 Spe
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD
+- Drill Peck
+- Spikes
+- Hidden Power [Ground]
+- Taunt
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 216 Atk / 16 Def / 28 Spe
+Adamant Nature
+- Meteor Mash
 - Earthquake
+- Protect
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 164 Def / 40 SpD / 56 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 12 Atk / 176 SpA / 72 SpD
+Quiet Nature
 - Rock Slide
-- Hidden Power [Bug]
-- Fire Blast
+- Earthquake
+- Crunch
+- Pursuit
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 8 HP / 252 Def / 248 SpA
+Bold Nature
+- Seismic Toss
+- Ice Beam
+- Wish
+- Soft-Boiled

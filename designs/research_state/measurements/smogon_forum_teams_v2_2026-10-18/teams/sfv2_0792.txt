@@ -1,58 +1,56 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 140 Atk / 60 SpA / 60 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Explosion
-- Hidden Power [Grass]
-- Meteor Mash
-- Earthquake
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Protect
 
-Flygon @ Leftovers
+Miltank (F) @ Leftovers
+Ability: Thick Fat
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Curse
+- Body Slam
+- Milk Drink
+- Heal Bell
+
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 76 HP / 252 Atk / 180 Spe
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+- Rapid Spin
 - Earthquake
-- Rock Slide
-- Toxic
-- Hidden Power [Bug]
-
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 224 HP / 56 Atk / 180 SpA / 48 Spe
-Modest Nature
-- Ice Beam
-- Thunderbolt
-- Thunder Wave
+- Psychic
 - Explosion
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 252 Atk / 232 Spe
-Jolly Nature
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Ice Beam
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 Spe
+Careful Nature
 IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
-- Taunt
 - Hidden Power [Rock]
 - Earthquake
+- Curse
+- Rest
 
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 40 SpD / 216 Spe
-Jolly Nature
-IVs: 30 Atk / 30 SpD
-- Spore
-- Stun Spore
-- Sky Uppercut
-- Hidden Power [Ghost]
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 Def
-- Fire Blast
-- Hidden Power [Ice]
-- Brick Break
-- Beat Up
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 16 SpA / 240 Spe
+Modest Nature
+IVs: 0 Atk
+- Psychic
+- Fire Punch
+- Recover
+- Knock Off

@@ -1,58 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 252 SpA / 16 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
 Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
 - Roar
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Explosion
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 80 SpA / 32 SpD / 136 Spe
-Timid Nature
-IVs: 0 Atk
-- Recover
-- Thunder Wave
-- Surf
-- Thunderbolt
-
-Registeel @ Leftovers
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 252 HP / 200 SpD / 56 Spe
-Careful Nature
-IVs: 30 SpD
-- Toxic
-- Seismic Toss
-- Hidden Power [Steel]
+EVs: 224 HP / 252 Atk / 32 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
 - Explosion
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 224 Atk / 44 Spe
-Brave Nature
-- Curse
+EVs: 248 HP / 216 SpA / 44 Spe
+Rash Nature
 - Earthquake
+- Surf
+- Ice Beam
+- Focus Punch
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 16 HP / 116 Atk / 124 Def / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
-- Hydro Pump
+- Earthquake
+- Hidden Power [Bug]
+- Dragon Dance
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 180 Atk / 12 Def / 176 SpD / 140 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
+EVs: 32 Atk / 224 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
 - Brick Break
-- Fire Blast
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 176 Atk / 64 Def / 252 SpD / 16 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Curse
+- Self-Destruct

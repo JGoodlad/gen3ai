@@ -1,56 +1,55 @@
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+- Substitute
+- Hydro Pump
+- Focus Punch
+- Endeavor
+
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 136 HP / 252 Atk / 120 Spe
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
 Adamant Nature
 - Agility
 - Meteor Mash
 - Earthquake
 - Explosion
 
-Tyranitar @ Lum Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 64 Atk / 252 Spe
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
 - Dragon Dance
-- Rock Slide
 - Earthquake
+- Rock Slide
 - Double-Edge
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
-- Thunderbolt
-- Rapid Spin
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 136 Def / 88 SpD / 32 Spe
+EVs: 244 HP / 124 Def / 140 Spe
 Impish Nature
-- Swords Dance
+IVs: 0 Atk
 - Recover
+- Leech Seed
+- Swords Dance
 - Baton Pass
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
 - Shadow Ball
 
-Magneton @ Magnet
-Ability: Magnet Pull
+Zapdos @ Leftovers
+Ability: Pressure
 EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Thunder Wave
+Timid Nature
+IVs: 2 Atk / 30 Def
 - Substitute
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 144 HP / 216 Atk / 4 Def / 144 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass

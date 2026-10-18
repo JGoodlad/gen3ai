@@ -7,50 +7,51 @@ Adamant Nature
 - Rock Slide
 - Double-Edge
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 64 HP / 248 SpD / 196 Spe
-Timid Nature
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
 - Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 184 HP / 148 SpD / 176 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 120 SpD / 148 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
+- Thief
+- Drill Peck
 - Roar
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Calm Mind
-- Fire Punch
-- Psychic
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Surf
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Hydro Pump
-- Ice Beam
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

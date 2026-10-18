@@ -1,56 +1,57 @@
-Tyranitar (F) @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 248 SpA / 8 SpD
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 240 HP / 16 Def / 224 SpA / 28 Spe
 Quiet Nature
-- Crunch
-- Fire Blast
-- Brick Break
-- Pursuit
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Roar
-- Toxic
-- Drill Peck
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 44 Atk / 68 Def / 148 SpD
-Sassy Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Body Slam
-- Fire Punch
-- Hidden Power [Fighting]
-- Wish
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Earthquake
+- Meteor Mash
 - Psychic
-- Rapid Spin
+- Pursuit
 - Explosion
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 240 Def / 16 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 64 Def / 36 SpA / 128 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Leech Seed
+- Heal Bell
+- Recover
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 84 Atk / 164 SpD / 8 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Dragon Dance
+- Rest
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Sunny Day
+- Protect
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 252 Def / 8 Spe
 Bold Nature
 IVs: 0 Atk
 - Surf
-- Recover
-- Toxic
-- Refresh
+- Ice Beam
+- Calm Mind
+- Rest
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Double-Edge
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 156 Atk / 36 SpD / 64 Spe
+Adamant Nature
 - Earthquake
-- Hidden Power [Flying]
 - Rock Slide
+- Rapid Spin
+- Explosion

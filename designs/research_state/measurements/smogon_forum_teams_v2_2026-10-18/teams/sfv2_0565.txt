@@ -1,59 +1,56 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 160 HP / 88 SpA / 228 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Baton Pass
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-Shiny: Yes
-EVs: 232 HP / 240 Atk / 36 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
-
-Heracross @ Leftovers
-Ability: Guts
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-- Focus Punch
-- Megahorn
-- Rock Slide
-- Substitute
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
+EVs: 160 HP / 172 SpA / 176 Spe
 Modest Nature
 IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
-- Roar
-- Calm Mind
+- Thunderbolt
+- Toxic
+- Substitute
+- Baton Pass
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 72 HP / 252 SpA / 184 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 112 HP / 252 SpA / 144 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
 - Psychic
-- Hidden Power [Grass]
-- Calm Mind
-- Fire Punch
+- Hidden Power [Fire]
+- Explosion
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 24 HP / 232 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 184 Atk / 72 Def
+Brave Nature
+- Rapid Spin
 - Earthquake
-- Aerial Ace
-- Hidden Power [Bug]
-- Beat Up
+- Psychic
+- Explosion
+
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 160 HP / 244 Atk / 104 Spe
+Adamant Nature
+- Bulk Up
+- Brick Break
+- Shadow Ball
+- Recover
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 236 HP / 188 Atk / 84 Def
+Adamant Nature
+- Curse
+- Return
+- Shadow Ball
+- Self-Destruct
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break

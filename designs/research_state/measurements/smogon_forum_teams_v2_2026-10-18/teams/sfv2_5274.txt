@@ -1,0 +1,56 @@
+Armaldo @ Choice Band
+Ability: Battle Armor
+EVs: 252 HP / 252 Atk / 4 SpA
+Brave Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Knock Off
+- Rock Slide
+- Hidden Power [Bug]
+- Earthquake
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 Atk / 4 SpA
+Brave Nature
+- Rock Slide
+- Earthquake
+- Fire Blast
+- Crunch
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Thunder Wave
+- Soft-Boiled
+- Heal Bell
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Toxic
+- Spikes
+- Protect
+- Whirlwind
+
+Dusclops (F) @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 36 Atk / 20 Def / 200 SpD
+Careful Nature
+- Shadow Ball
+- Focus Punch
+- Will-O-Wisp
+- Pain Split
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 244 HP / 148 Def / 116 SpD
+Sassy Nature
+- Fire Punch
+- Body Slam
+- Wish
+- Protect

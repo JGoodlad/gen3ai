@@ -1,56 +1,58 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 196 SpA / 128 Spe
+EVs: 240 HP / 252 SpA / 16 Spe
 Modest Nature
 - Crunch
 - Pursuit
 - Flamethrower
 - Brick Break
 
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 104 Def / 20 SpA / 96 SpD / 36 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Recover
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 44 SpA / 44 SpD / 44 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
+- Spikes
+- Rapid Spin
 - Hidden Power [Bug]
-- Double-Edge
+- Counter
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Fire Punch
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Refresh
+- Toxic
+- Surf
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt

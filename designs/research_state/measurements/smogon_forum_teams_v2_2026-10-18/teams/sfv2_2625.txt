@@ -1,57 +1,58 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Protect
-- Drill Peck
-- Roar
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 28 Def / 140 SpA / 52 SpD / 40 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Baton Pass
+- Hidden Power [Grass]
+- Substitute
+- Thunderbolt
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 68 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 40 HP / 140 Atk / 100 SpD / 228 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
+- Aerial Ace
+- Beat Up
 - Earthquake
-- Rock Slide
 - Hidden Power [Bug]
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 100 HP / 180 SpA / 228 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Rest
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Fire]
+IVs: 30 SpA
+- Calm Mind
+- Hidden Power [Electric]
+- Ice Beam
+- Surf
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 108 Def / 20 SpA / 96 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Recover
-- Leech Seed
+EVs: 252 HP / 148 Def / 72 SpA / 36 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Baton Pass
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 80 HP / 252 SpA / 176 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Calm Mind
+- Fire Punch
 - Hidden Power [Grass]
-- Light Screen
+- Psychic
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 136 Atk / 80 Def / 28 SpD / 12 Spe
-Adamant Nature
-- Toxic
-- Meteor Mash
-- Earthquake
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 44 Def / 24 SpA / 188 Spe
+Timid Nature
 - Explosion
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Ice Punch
+- Thunderbolt
+- Will-O-Wisp

@@ -1,57 +1,57 @@
-Salamence @ Choice Band
+Salamence @ Leftovers
 Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Earthquake
-- Rock Slide
+EVs: 64 Atk / 252 SpA / 192 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA
 - Brick Break
-- Hidden Power [Flying]
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 240 Atk / 16 SpA / 252 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Hidden Power [Grass]
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
+EVs: 184 HP / 252 SpA / 72 SpD
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Grass]
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 136 Atk / 152 Def / 172 SpD / 16 Spe
-Adamant Nature
-- Body Slam
-- Earthquake
-- Shadow Ball
-- Self-Destruct
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 124 SpD / 8 Spe
-Relaxed Nature
-- Rest
-- Curse
-- Earthquake
+IVs: 0 Atk
+- Crunch
+- Flamethrower
 - Ice Beam
+- Pursuit
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 116 SpA / 140 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Leech Seed
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 184 HP / 128 SpD / 196 Spe
+Timid Nature
+- Explosion
+- Rapid Spin
+- Spikes
+- Surf
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Earthquake
+- Explosion
+- Meteor Mash
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 48 Def / 208 Spe
+Timid Nature
+IVs: 0 Atk
+- Destiny Bond
+- Ice Punch
+- Thunderbolt
+- Will-O-Wisp

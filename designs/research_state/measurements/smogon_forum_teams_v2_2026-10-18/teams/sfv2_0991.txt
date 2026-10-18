@@ -1,57 +1,58 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 180 Atk / 52 SpA / 108 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 8 SpA / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Toxic
+
+Steelix @ Leftovers
+Ability: Rock Head
+EVs: 248 HP / 36 Atk / 208 SpD / 16 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
 - Earthquake
-- Hidden Power [Grass]
+- Hidden Power [Rock]
+- Roar
 - Explosion
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 216 Atk / 32 SpA / 12 Spe
-Adamant Nature
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 12 Atk / 248 SpD
+Sassy Nature
+- Spikes
 - Rapid Spin
 - Earthquake
-- Psychic
-- Explosion
+- Zap Cannon
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 16 HP / 176 Atk / 108 Def / 168 SpD / 40 Spe
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 248 HP / 16 Atk / 96 Def / 140 SpD / 8 Spe
+Sassy Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Pursuit
+- Wish
+- Protect
+- Hidden Power [Fighting]
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 76 HP / 252 SpA / 180 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 64 HP / 44 Def / 16 SpA / 248 SpD / 136 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
+IVs: 0 Atk
+- Fire Punch
 - Giga Drain
-- Hidden Power [Fire]
-- Psychic
+- Will-O-Wisp
+- Hypnosis
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 2 Atk / 30 SpA
-- Toxic
-- Fire Blast
-- Hidden Power [Grass]
-- Beat Up
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 100 SpD / 156 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Hidden Power [Flying]
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 28 Atk / 232 SpD
+Gentle Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Thunderbolt
+- Drill Peck
+- Hidden Power [Fighting]
+- Rest

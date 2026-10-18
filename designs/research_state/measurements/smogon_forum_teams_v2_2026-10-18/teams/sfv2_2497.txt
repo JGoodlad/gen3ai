@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Toxic
-- Crunch
-- Pursuit
-- Flamethrower
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
 - Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Explosion
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
-Hasty Nature
-- Will-O-Wisp
-- Thunderbolt
-- Giga Drain
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 120 Def / 136 SpD
-Sassy Nature
-- Wish
+- Drill Peck
+- Roar
 - Protect
-- Fire Punch
-- Body Slam
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
+EVs: 252 HP / 224 SpD / 32 Spe
 Calm Nature
-IVs: 2 Atk / 30 SpA
-- Rest
+IVs: 0 Atk
 - Thunderbolt
-- Hidden Power [Grass]
+- Rest
+- Toxic
 - Roar
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
-Bold Nature
-IVs: 0 Atk
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 196 Def / 28 SpD / 32 Spe
+Impish Nature
 - Protect
-- Refresh
+- Earthquake
+- Rock Slide
 - Toxic
-- Surf
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 196 SpA / 128 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Crunch
+- Pursuit
+- Fire Blast
+- Hidden Power [Grass]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 52 Def / 192 SpD / 16 Spe
+Calm Nature
+IVs: 0 Atk
+- Fire Punch
+- Toxic
+- Wish
+- Protect
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Bug]

@@ -1,57 +1,57 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 184 HP / 144 Atk / 4 SpD / 176 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Brick Break
-
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
+IVs: 27 Spe
 - Spikes
-- Thief
 - Drill Peck
 - Roar
+- Protect
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Psychic
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 216 Def / 48 SpD / 4 Spe
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Roar
+- Protect
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-- Soft-Boiled
-- Aromatherapy
-- Seismic Toss
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk / 30 Spe
+- Calm Mind
+- Thunderbolt
 - Ice Beam
+- Soft-Boiled
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 188 Def / 8 SpA / 36 SpD / 28 Spe
+Timid Nature
+- Thunder Wave
+- Surf
+- Rapid Spin
+- Recover
 
-Flygon @ Choice Band
+Misdreavus @ Leftovers
 Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Toxic
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
+EVs: 252 HP / 244 SpD / 12 Spe
+Calm Nature
+IVs: 0 Atk
+- Mean Look
+- Perish Song
+- Destiny Bond
+- Rest
+
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
+- Encore

@@ -1,57 +1,56 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-Hidden Power: Bug
-EVs: 132 HP / 252 Atk / 124 Spe
-Adamant Nature
-- Rock Slide
-- Earthquake
-- Double-Edge
-- Focus Punch
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 228 SpA / 80 SpD / 200 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Roar
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 SpA / 4 SpD / 252 Spe
+Camerupt @ Leftovers
+Ability: Magma Armor
+EVs: 180 SpA / 76 SpD / 252 Spe
 Mild Nature
 IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
+- Flamethrower
+- Toxic
+- Explosion
 - Hidden Power [Grass]
-- Brick Break
 
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 252 Def / 4 SpD
-Bold Nature
-- Recover
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 64 HP / 176 Atk / 108 Def / 144 SpD / 16 Spe
+Adamant Nature
+- Body Slam
+- Self-Destruct
+- Focus Punch
+- Earthquake
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 88 Def / 96 SpA / 32 SpD / 44 Spe
+Quiet Nature
+- Hydro Pump
 - Ice Beam
-- Thunderbolt
-- Thunder Wave
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 176 Def / 24 SpA / 56 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Thunder Wave
-- Recover
-- Rapid Spin
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpD / 36 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Psychic
-- Leech Seed
-- Hidden Power [Grass]
-- Recover
+- Earthquake
+- Refresh
 
 Metagross @ Choice Band
 Ability: Clear Body
-EVs: 128 HP / 252 Atk / 128 Spe
+EVs: 200 HP / 252 Atk / 56 Spe
 Adamant Nature
 - Meteor Mash
-- Explosion
 - Earthquake
 - Rock Slide
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 144 Atk / 212 SpD / 152 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Dragon Dance

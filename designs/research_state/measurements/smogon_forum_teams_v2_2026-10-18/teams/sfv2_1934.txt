@@ -1,13 +1,3 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
 EVs: 184 HP / 72 Atk / 252 Spe
@@ -17,39 +7,50 @@ Adamant Nature
 - Rock Slide
 - Double-Edge
 
-Metagross @ Choice Band
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 240 SpD / 28 Spe
+Careful Nature
+- Spikes
+- Taunt
+- Drill Peck
+- Roar
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
-Adamant Nature
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
 - Meteor Mash
-- Earthquake
-- Rock Slide
+- Thunder Punch
+- Hidden Power [Grass]
 - Explosion
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 72 Atk / 112 Def / 36 SpA / 40 Spe
+Naive Nature
 - Toxic
-- Hydro Pump
-- Endeavor
-
-Heracross @ Leftovers
-Ability: Guts
-EVs: 76 HP / 252 Atk / 180 Spe
-Adamant Nature
-- Swords Dance
-- Megahorn
-- Rock Slide
-- Brick Break
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 196 Atk / 200 SpD / 112 Spe
-Adamant Nature
-- Dragon Dance
 - Earthquake
 - Rock Slide
-- Brick Break
+- Fire Blast
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up

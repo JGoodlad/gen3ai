@@ -1,55 +1,59 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 168 SpA / 88 Spe
-Quiet Nature
-- Crunch
-- Pursuit
-- Brick Break
-- Flamethrower
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Beat Up
-- Dragon Claw
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 16 Def / 12 SpD / 12 Spe
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Rapid Spin
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 200 Atk / 108 Def / 184 SpD / 16 Spe
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
 Adamant Nature
-- Body Slam
-- Self-Destruct
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
 - Focus Punch
-- Counter
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 56 Atk / 200 Def / 4 Spe
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 252 HP / 8 SpD / 248 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Razor Leaf
+- Sleep Powder
+- Leech Seed
+- Hidden Power [Fire]
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 248 HP / 252 Atk / 8 SpD
 Adamant Nature
-- Meteor Mash
-- Earthquake
-- Explosion
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
+- Rock Slide
+- Knock Off
 - Protect
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 192 SpA / 76 Spe
-Modest Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
 IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
-- Sleep Talk
+- Taunt
+- Spikes
+- Roar
+- Toxic
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 120 Def / 136 Spe
+Bold Nature
+IVs: 0 Atk
+- Giga Drain
+- Fire Blast
+- Toxic
+- Protect
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]

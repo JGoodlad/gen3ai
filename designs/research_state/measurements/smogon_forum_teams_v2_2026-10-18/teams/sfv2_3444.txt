@@ -1,57 +1,58 @@
-Glalie @ Salac Berry
-Ability: Inner Focus
-Shiny: Yes
-EVs: 144 HP / 132 Def / 16 SpD / 216 Spe
-Jolly Nature
-- Substitute
-- Explosion
-- Spikes
-- Ice Beam
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 76 HP / 180 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Roar
-- Thunder Wave
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 4 Def / 224 SpA / 28 Spe
-Quiet Nature
-- Ice Beam
-- Substitute
-- Thunderbolt
-- Focus Punch
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 104 Def / 252 SpA / 152 Spe
-Rash Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Focus Punch
-
-Moltres @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
-- Will-O-Wisp
-- Overheat
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
+EVs: 252 HP / 84 SpA / 20 SpD / 152 Spe
+Modest Nature
+IVs: 30 Spe
+- Substitute
 - Thunderbolt
-- Ice Punch
+- Hidden Power [Ice]
+- Baton Pass
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Protect
+- Toxic
+- Thunderbolt
+- Hidden Power [Grass]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Earthquake
 - Hidden Power [Grass]
 - Explosion
+
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 200 HP / 252 Atk / 56 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Rock Slide
+- Hidden Power [Ghost]
+- Superpower
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Brick Break

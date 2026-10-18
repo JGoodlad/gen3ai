@@ -1,58 +1,57 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 SpD
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 SpD / 30 Spe
 - Rock Slide
 - Earthquake
 - Hidden Power [Bug]
-- Focus Punch
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 52 Atk / 112 SpA / 176 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Fire Punch
-- Hidden Power [Grass]
-- Focus Punch
-- Explosion
+- Roar
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 132 SpD / 128 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Taunt
-- Toxic
-- Roar
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Roar
-- Baton Pass
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 124 Def / 88 SpA / 48 Spe
-Relaxed Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Focus Punch
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 176 Atk / 152 SpA / 180 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD
 - Drill Peck
-- Thunder Wave
+- Spikes
+- Hidden Power [Ground]
+- Taunt
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Refresh
+- Recover
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 136 HP / 176 Atk / 52 SpA / 144 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Refresh
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 56 Def / 164 SpD / 40 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
 - Hidden Power [Grass]
+- Leech Seed
+- Recover
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 124 Def / 136 SpD
+Calm Nature
+- Seismic Toss
+- Counter
+- Thunder Wave
+- Rest

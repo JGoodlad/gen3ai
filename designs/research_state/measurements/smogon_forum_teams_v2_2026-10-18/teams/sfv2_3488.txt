@@ -1,57 +1,56 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 64 HP / 172 Atk / 100 SpA / 16 SpD / 156 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
 - Thunderbolt
-- Drill Peck
 - Hidden Power [Grass]
 - Roar
 
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 148 HP / 252 Atk / 108 Spe
-Adamant Nature
-- Brick Break
-- Focus Punch
-- Rock Slide
-- Recover
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 12 Atk / 216 SpA / 32 Spe
-Quiet Nature
-- Pursuit
-- Crunch
-- Fire Blast
-- Rock Slide
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
+Hasty Nature
+- Will-O-Wisp
+- Thunder
+- Giga Drain
+- Explosion
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 248 HP / 76 Def / 132 SpD / 52 Spe
+EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
 Calm Nature
 IVs: 0 Atk
 - Wish
 - Protect
-- Thunder
-- Icy Wind
+- Toxic
+- Fire Punch
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Substitute
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 80 Def / 4 SpA / 32 SpD / 144 Spe
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 Def / 248 SpA / 252 Spe
 Timid Nature
-IVs: 0 Atk
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 84 Atk / 136 Def / 48 Spe
+Relaxed Nature
+- Protect
+- Earthquake
 - Surf
-- Rapid Spin
-- Thunder Wave
-- Recover
+- Roar

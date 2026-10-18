@@ -1,59 +1,56 @@
-Gengar (F) @ Leftovers
-Ability: Levitate
-Shiny: Yes
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-- Hypnosis
-- Ice Punch
-- Explosion
-- Will-O-Wisp
+Medicham @ Lum Berry
+Ability: Pure Power
+EVs: 4 HP / 216 Atk / 84 Def / 204 Spe
+Adamant Nature
+- Brick Break
+- Shadow Ball
+- Rock Slide
+- Baton Pass
 
-Zapdos @ Leftovers
-Ability: Pressure
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 SpA / 8 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Crunch
+- Pursuit
+- Hidden Power [Grass]
+- Ice Beam
+
+Magneton @ Magnet
+Ability: Magnet Pull
 EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
+Modest Nature
 IVs: 2 Atk / 30 SpA
 - Thunderbolt
 - Hidden Power [Grass]
-- Metal Sound
 - Toxic
+- Protect
 
-Dugtrio (F) @ Choice Band
-Ability: Arena Trap
-EVs: 32 HP / 252 Atk / 224 Spe
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Body Slam
+- Earthquake
+- Shadow Ball
+- Self-Destruct
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 SpA / 44 Spe
+Quiet Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch
+
+Flygon @ Salac Berry
+Ability: Levitate
+EVs: 252 Atk / 4 SpD / 252 Spe
 Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
 - Rock Slide
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 252 Def / 4 SpA
-Bold Nature
-IVs: 3 Atk / 30 SpA
-- Calm Mind
-- Rest
-- Surf
-- Hidden Power [Electric]
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Calm Mind
-- Psychic
-- Fire Punch
-- Hidden Power [Grass]
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 104 HP / 252 SpA / 152 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
+- Hidden Power [Bug]
+- Endure

@@ -1,57 +1,58 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 4 Def / 176 SpA / 44 SpD / 44 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 200 SpD / 56 Spe
-Careful Nature
-IVs: 30 SpD
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Steel]
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 244 HP / 36 Def / 140 SpA / 28 SpD / 60 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+Flygon (M) @ Choice Band
+Ability: Levitate
+EVs: 252 Atk / 4 SpA / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
 - Hidden Power [Bug]
-- Double-Edge
+- Fire Blast
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 104 HP / 252 SpA / 4 SpD / 148 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+- Protect
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Toxic
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 40 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Punch
+- Taunt
+- Will-O-Wisp
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 24 SpA / 136 SpD / 20 Spe
+Calm Nature
+IVs: 0 Atk
+- Toxic
+- Fire Punch
+- Wish
+- Protect
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Fire Blast
+- Roar

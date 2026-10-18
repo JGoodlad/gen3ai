@@ -1,56 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 228 Def / 28 Spe
-Bold Nature
-- Calm Mind
-- Surf
-- Rest
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Protect
+- Drill Peck
 - Roar
 
-Armaldo @ Leftovers
-Ability: Battle Armor
-EVs: 248 HP / 8 Atk / 252 SpD
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Knock Off
-- Rock Blast
-- Hidden Power [Bug]
-- Swords Dance
+Misdreavus @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Thunderbolt
+- Mean Look
+- Perish Song
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 192 HP / 252 Def / 64 Spe
+EVs: 212 HP / 252 Def / 44 SpA
 Bold Nature
 IVs: 0 Atk
 - Soft-Boiled
 - Aromatherapy
 - Seismic Toss
-- Thunder Wave
+- Ice Beam
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 248 HP / 8 Atk / 52 Def / 200 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Flying]
-- Earthquake
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
+Bold Nature
+IVs: 0 Atk
 - Wish
 - Protect
+- Toxic
+- Fire Punch
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 56 Atk / 144 Def / 60 Spe
-Impish Nature
-- Meteor Mash
-- Earthquake
-- Protect
-- Explosion
-
-Claydol @ Leftovers
+Flygon @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
+EVs: 252 HP / 224 Def / 32 Spe
+Impish Nature
+- Protect
+- Toxic
 - Earthquake
-- Psychic
-- Explosion
+- Rock Slide

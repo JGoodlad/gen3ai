@@ -1,55 +1,58 @@
-Medicham @ Lum Berry
-Ability: Pure Power
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Bulk Up
-- Brick Break
-- Shadow Ball
-- Rock Slide
-
-Heracross @ Leftovers
-Ability: Guts
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Swords Dance
-- Brick Break
-- Megahorn
-- Rock Slide
-
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Rest
-- Sleep Talk
-- Brick Break
-- Bulk Up
-
-Houndoom @ Leftovers
-Ability: Early Bird
-EVs: 252 HP / 252 SpA / 4 SpD
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Sunny Day
-- Flamethrower
-- Pursuit
-- Hidden Power [Grass]
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Aerial Ace
-
-Steelix @ Choice Band
-Ability: Rock Head
-EVs: 252 HP / 252 Atk / 4 SpD
-Adamant Nature
-IVs: 30 SpD
-- Earthquake
-- Double-Edge
-- Hidden Power [Steel]
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
 - Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 196 SpA / 128 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Flamethrower
+- Brick Break
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Surf
+- Ice Beam
+- Psychic
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Surf
+- Ice Beam
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Rest
+- Curse
+- Double-Edge
+- Earthquake
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Ice]
+- Rain Dance

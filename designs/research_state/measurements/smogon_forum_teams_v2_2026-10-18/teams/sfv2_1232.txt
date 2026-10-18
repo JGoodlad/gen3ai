@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 16 Def / 252 SpA
+Moltres @ Choice Band
+Ability: Pressure
+EVs: 248 Atk / 24 SpA / 236 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Overheat
+- Hidden Power [Fighting]
+- Aerial Ace
+- Sunny Day
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 64 HP / 176 Atk / 132 Def / 136 SpD
+Adamant Nature
+- Curse
+- Self-Destruct
+- Return
+- Earthquake
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 252 SpA / 76 SpD / 180 Spe
 Modest Nature
 IVs: 0 Atk
-- Crunch
 - Pursuit
-- Flamethrower
-- Roar
+- Crunch
+- Fire Blast
+- Sunny Day
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Counter
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Swords Dance
+- Megahorn
+- Substitute
+- Rock Slide
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 72 SpA / 44 SpD / 16 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Surf
-- Ice Beam
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 120 Atk / 252 SpA / 136 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Body Slam
-- Fire Punch
-- Hidden Power [Grass]
-- Dynamic Punch
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Toxic
-- Seismic Toss
-- Ice Beam
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-- Wish
-- Dragon Claw
-- Flamethrower
-- Brick Break
+Exeggutor @ Lum Berry
+Ability: Chlorophyll
+EVs: 48 HP / 252 SpA / 208 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Sleep Powder
+- Sunny Day
+- Solar Beam
+- Hidden Power [Ice]

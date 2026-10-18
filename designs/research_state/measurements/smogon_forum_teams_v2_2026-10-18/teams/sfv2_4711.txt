@@ -1,0 +1,59 @@
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 224 Atk / 180 Def / 104 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Screech
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 76 SpA / 36 SpD / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Leech Seed
+- Psychic
+- Recover
+
+Skarmory
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Protect
+- Thief
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Counter
+- Seismic Toss
+- Thunder Wave
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Rapid Spin
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Refresh
+- Toxic
+- Surf

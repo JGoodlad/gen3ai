@@ -1,56 +1,57 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
 - Earthquake
-- Rock Slide
-- Hidden Power [Ghost]
-- Brick Break
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
-- Spikes
-- Rapid Spin
+- Hydro Pump
 - Ice Beam
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
 - Explosion
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 - Will-O-Wisp
-- Thunderbolt
-- Giga Drain
+- Fire Punch
+- Ice Punch
 - Explosion
 
 Jolteon @ Leftovers
 Ability: Volt Absorb
 EVs: 8 HP / 248 SpA / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
+IVs: 0 Atk
 - Substitute
+- Toxic
 - Thunderbolt
-- Hidden Power [Grass]
 - Baton Pass
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 176 Def / 48 SpD / 44 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 4 Def / 136 SpA / 176 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
-- Flamethrower
-- Hidden Power [Grass]
-- Overheat
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 212 SpD / 116 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

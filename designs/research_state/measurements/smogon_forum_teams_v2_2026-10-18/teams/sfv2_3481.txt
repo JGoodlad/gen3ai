@@ -1,59 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 4 Def / 252 SpD
-Calm Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Rest
-- Sleep Talk
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Toxic
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
+Relaxed Nature
 - Protect
+- Earthquake
+- Surf
+- Ice Beam
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
 - Roar
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 124 HP / 244 SpA / 140 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Psychic
-- Hidden Power [Fire]
-- Explosion
-
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
 Timid Nature
 IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Thunder Wave
 - Surf
-- Roar
-- Substitute
-- Endeavor
 
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 104 Def / 20 SpA / 96 SpD / 36 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Recover
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 Def
+- Rest
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
-EVs: 252 Atk / 76 SpD / 180 Spe
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Rock Slide
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
+- Rock Slide
+- Hidden Power [Bug]
 - Double-Edge
-- Hidden Power [Fighting]

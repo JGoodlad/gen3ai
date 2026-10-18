@@ -1,55 +1,55 @@
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-- Calm Mind
-- Soft-Boiled
-- Ice Beam
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
 - Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-- Zap Cannon
-- Spikes
-- Rapid Spin
-- Explosion
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
-Metagross @ Leftovers
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 248 HP / 96 Atk / 152 Def / 12 Spe
+EVs: 252 Atk / 68 SpD / 188 Spe
 Adamant Nature
 - Meteor Mash
 - Earthquake
+- Rock Slide
 - Explosion
-- Protect
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
-- Rapid Spin
+- Dragon Dance
 - Earthquake
-- Psychic
-- Explosion
+- Rock Slide
+- Double-Edge
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 SpA
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Recover
-- Toxic
-- Refresh
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
 
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
-- Will-O-Wisp
-- Roar
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 212 SpD / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

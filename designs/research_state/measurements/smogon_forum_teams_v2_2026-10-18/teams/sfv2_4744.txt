@@ -1,0 +1,54 @@
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 252 Atk / 96 Def / 96 SpD / 64 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Knock Off
+- Brick Break
+- Focus Punch
+- Hidden Power [Bug]
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 12 Def / 252 SpA / 8 SpD / 212 Spe
+Mild Nature
+- Dragon Claw
+- Brick Break
+- Wish
+- Rock Slide
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Curse
+- Body Slam
+- Shadow Ball
+- Earthquake
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 204 Def / 64 Spe
+Bold Nature
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 152 HP / 216 Atk / 28 Def / 112 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion

@@ -1,57 +1,58 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 176 Atk / 192 SpD / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 236 Atk / 8 Def / 12 SpA / 252 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
 - Dragon Dance
-- Hidden Power [Flying]
 - Rock Slide
-- Brick Break
+- Earthquake
+- Hidden Power [Grass]
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
 - Thunder Wave
 - Thunderbolt
-- Hidden Power [Fire]
-- Rain Dance
+- Hidden Power [Ice]
+- Baton Pass
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
-Modest Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 120 HP / 252 SpD / 136 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Taunt
+- Roar
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 136 Def / 48 SpA / 44 SpD / 32 Spe
+Bold Nature
 IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Return
-- Earthquake
-- Shadow Ball
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
 - Toxic
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
 - Surf
-- Ice Beam
+- Refresh
+- Protect
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Thunderbolt
+- Ice Punch
+- Taunt
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 8 HP / 168 Atk / 192 SpD / 140 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide

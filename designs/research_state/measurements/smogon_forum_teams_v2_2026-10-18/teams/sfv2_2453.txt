@@ -1,57 +1,58 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 176 Atk / 48 SpA / 44 Spe
-Brave Nature
-- Curse
-- Earthquake
-- Rock Slide
-- Hydro Pump
-
-Tyranitar @ Black Glasses
-Ability: Sand Stream
-EVs: 184 HP / 108 Atk / 16 SpA / 200 Spe
-Brave Nature
-IVs: 30 Atk / 30 SpA
-- Crunch
-- Rock Slide
-- Hidden Power [Grass]
-- Focus Punch
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 72 HP / 184 SpD / 252 Spe
+Jolly Nature
+IVs: 0 Atk
+- Destiny Bond
+- Spore
 - Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
+- Encore
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 36 SpA / 220 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Grass]
-- Explosion
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 8 HP / 252 SpA / 248 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Roar
+- Surf
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 120 SpD / 148 Spe
+EVs: 132 HP / 200 SpA / 176 Spe
 Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
-- Hidden Power [Ice]
-- Roar
+- Hidden Power [Grass]
+- Substitute
+- Baton Pass
 
-Metagross @ Liechi Berry
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 8 HP / 200 Def / 112 SpA / 188 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Ice Punch
+- Explosion
+- Thunderbolt
+- Hidden Power [Grass]
+
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 228 Atk / 16 Def / 96 Spe
+EVs: 168 HP / 216 Atk / 16 Def / 108 Spe
 Adamant Nature
 - Agility
 - Meteor Mash
 - Earthquake
 - Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 88 Atk / 172 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]

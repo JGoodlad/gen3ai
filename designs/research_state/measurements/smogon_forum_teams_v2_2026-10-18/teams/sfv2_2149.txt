@@ -1,58 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 84 Atk / 172 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
+Modest Nature
+IVs: 30 Spe
+- Protect
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
 - Substitute
-- Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
+- Hydro Pump
+- Roar
+- Endeavor
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Counter
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Rest
-- Psychic
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
 - Explosion
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Refresh
-- Toxic
-- Surf
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
-- Ice Beam
-- Thunderbolt
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Sunny Day
+- Rock Slide
+- Double-Edge
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Earthquake
+- Shadow Ball
+- Self-Destruct
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Refresh
+- Dragon Dance
+- Brick Break
+- Hidden Power [Flying]

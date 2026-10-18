@@ -1,0 +1,58 @@
+Slaking @ Choice Band
+Ability: Truant
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Brick Break
+- Earthquake
+- Double-Edge
+- Encore
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 248 SpD / 8 Spe
+Careful Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Spikes
+- Rapid Spin
+- Hidden Power [Fire]
+- Toxic
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 180 HP / 252 Def / 76 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Sing
+- Seismic Toss
+- Aromatherapy
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Rest
+- Sunny Day
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Protect
+- Roar
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+IVs: 0 Atk / 0 Spe
+- Wish
+- Protect
+- Pursuit
+- Charm

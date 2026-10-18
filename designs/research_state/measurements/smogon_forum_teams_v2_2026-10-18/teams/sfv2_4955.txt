@@ -1,0 +1,55 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 72 HP / 252 Atk / 184 Spe
+Jolly Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Brick Break
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 56 Atk / 224 SpA / 44 Spe
+Quiet Nature
+- Pursuit
+- Crunch
+- Fire Blast
+- Brick Break
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Crunch
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 224 Atk / 60 Def / 8 SpD / 12 Spe
+Adamant Nature
+- Curse
+- Body Slam
+- Shadow Ball
+- Earthquake
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 40 SpD
+Brave Nature
+- Rapid Spin
+- Earthquake
+- Ice Beam
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 248 Atk / 16 Def / 52 SpA / 192 Spe
+Hasty Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Hydro Pump

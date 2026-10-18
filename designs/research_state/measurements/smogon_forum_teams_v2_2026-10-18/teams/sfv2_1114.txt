@@ -1,57 +1,57 @@
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 SpD
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 8 Spe
 Adamant Nature
-- Thunder Wave
+IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
-- Explosion
-- Superpower
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Substitute
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 64 Def / 140 SpD / 52 Spe
-Calm Nature
-IVs: 0 Atk
-- Leech Seed
-- Baton Pass
-- Recover
-- Psychic
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 232 Atk / 20 Def / 88 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
 - Earthquake
-- Explosion
+- Focus Punch
+- Hidden Power [Bug]
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 192 SpA / 76 Spe
-Modest Nature
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Fighting]
+- Double-Edge
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 52 Def / 152 SpD / 52 Spe
+Sassy Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Wish
+- Hidden Power [Grass]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Calm Mind
 - Surf
 - Ice Beam
-- Rest
+- Thunderbolt
+- Rapid Spin
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 180 Atk / 192 SpD / 136 Spe
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 60 HP / 252 Atk / 196 Spe
 Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
+- Brick Break
+- Focus Punch
+- Shadow Ball
+- Recover
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 32 SpA / 224 Spe
+Lonely Nature
+- Dynamic Punch
+- Ice Punch
+- Thunderbolt
+- Explosion

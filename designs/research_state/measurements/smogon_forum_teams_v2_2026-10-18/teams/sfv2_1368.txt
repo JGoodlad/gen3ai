@@ -1,58 +1,57 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Earthquake
-- Rock Slide
-- Brick Break
-- Hidden Power [Flying]
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 236 HP / 224 Def / 48 Spe
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Refresh
+- Toxic
+- Surf
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Brick Break
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Counter
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
-Relaxed Nature
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
 - Protect
+- Dragon Dance
 - Earthquake
-- Hydro Pump
-- Ice Beam
+- Rock Slide
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 180 Def / 44 SpA / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 112 Def / 136 SpD / 12 Spe
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
 
-Blissey (F) @ Leftovers
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
+EVs: 192 HP / 8 Def / 196 SpA / 112 Spe
 Modest Nature
 IVs: 0 Atk
-- Soft-Boiled
+- Leech Seed
 - Calm Mind
-- Ice Beam
-- Thunderbolt
+- Giga Drain
+- Psychic
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 36 Def / 220 SpD
+Careful Nature
+IVs: 30 SpD / 30 Spe
+- Rest
+- Swords Dance
+- Hidden Power [Bug]
+- Knock Off
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 248 HP / 16 Atk / 52 SpD / 192 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Rest
+- Dragon Dance
+- Earthquake
+- Hidden Power [Flying]

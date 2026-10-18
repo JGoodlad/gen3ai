@@ -1,0 +1,56 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 228 SpA / 12 SpD / 252 Spe
+Timid Nature
+- Baton Pass
+- Substitute
+- Ice Beam
+- Hydro Pump
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 HP / 3 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Dragon Claw
+- Beat Up
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 120 SpA / 136 Spe
+Rash Nature
+- Substitute
+- Surf
+- Ice Beam
+- Focus Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 196 HP / 8 Def / 124 SpA / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 108 HP / 200 SpA / 200 Spe
+Modest Nature
+IVs: 30 HP / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+- Roar

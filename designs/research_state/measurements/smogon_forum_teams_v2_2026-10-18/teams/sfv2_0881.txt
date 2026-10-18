@@ -1,58 +1,60 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 220 SpD / 36 Spe
-Calm Nature
-IVs: 0 Atk
-- Thunderbolt
-- Toxic
-- Protect
-- Rest
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 80 HP / 252 Atk / 176 Spe
+Metagross @ Choice Band
+Ability: Clear Body
+Shiny: Yes
+EVs: 96 HP / 220 Atk / 4 Def / 188 Spe
 Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Hidden Power [Ghost]
-- Substitute
-- Dragon Dance
+- Meteor Mash
 - Earthquake
+- Rock Slide
+- Explosion
+
+Blissey @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Seismic Toss
+- Ice Beam
+- Sing
+- Soft-Boiled
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 232 HP / 80 Atk / 196 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 248 HP / 4 Def / 176 SpA / 80 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Rest
+- Sleep Talk
+- Calm Mind
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 156 Atk / 100 Spe
-Adamant Nature
+EVs: 248 HP / 232 Atk / 16 Def / 12 Spe
+Relaxed Nature
 - Earthquake
 - Psychic
 - Explosion
 - Rapid Spin
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 44 Atk / 68 Def / 148 SpD
-Sassy Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Body Slam
-- Fire Punch
-- Hidden Power [Fighting]
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
 - Wish
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 68 HP / 252 SpA / 188 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Psychic
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 252 Atk / 252 Def / 4 SpD
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Focus Punch
+- Dragon Claw
+- Fire Blast
 - Brick Break
-- Knock Off
-- Hidden Power [Bug]

@@ -1,0 +1,57 @@
+Smeargle (M) @ Salac Berry
+Ability: Own Tempo
+EVs: 68 HP / 188 SpD / 252 Spe
+Jolly Nature
+- Spore
+- Spikes
+- Substitute
+- Explosion
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Hidden Power [Grass]
+- Explosion
+- Ice Punch
+- Thunderbolt
+
+Tyranitar (F) @ Lum Berry
+Ability: Sand Stream
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Ice Beam
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
+
+Swampert (M) @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Surf
+- Roar
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 196 Atk / 196 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Dragon Dance
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion

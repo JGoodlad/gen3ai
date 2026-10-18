@@ -1,54 +1,56 @@
 Metagross @ Choice Band
 Ability: Clear Body
-EVs: 152 HP / 252 Atk / 104 Spe
+EVs: 188 HP / 252 Atk / 68 Spe
 Adamant Nature
 - Meteor Mash
-- Earthquake
-- Body Slam
+- Brick Break
+- Return
 - Explosion
 
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 216 HP / 232 Atk / 60 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Earthquake
 - Rock Slide
-- Superpower
-- Thunder Wave
-- Explosion
+- Hidden Power [Bug]
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 220 SpA / 40 Spe
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 200 HP / 68 SpA / 140 SpD / 100 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Psychic
-- Hidden Power [Fire]
+- Spikes
+- Rapid Spin
+- Ice Beam
+- Explosion
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
 - Rapid Spin
 - Earthquake
 - Psychic
 - Explosion
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-- Substitute
-- Flamethrower
-- Toxic
-- Focus Punch
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Wish
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
 
-Suicune @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 252 SpA / 16 Spe
+EVs: 240 HP / 100 SpA / 20 SpD / 148 Spe
 Modest Nature
-- Calm Mind
-- Surf
+IVs: 2 Atk / 30 Def
 - Rest
-- Sleep Talk
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]

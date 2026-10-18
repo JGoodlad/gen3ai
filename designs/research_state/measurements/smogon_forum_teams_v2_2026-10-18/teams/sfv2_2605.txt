@@ -1,53 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
-Mild Nature
-- Wish
-- Dragon Claw
-- Flamethrower
-- Brick Break
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Fire Blast
+- Counter
 
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
 Sassy Nature
+- Spikes
 - Rapid Spin
 - Earthquake
-- Psychic
-- Explosion
+- Zap Cannon
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Will-O-Wisp
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 224 Def / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Fire Punch
+- Toxic
+- Wish
+- Protect
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-- Soft-Boiled
-- Aromatherapy
-- Thunder Wave
-- Seismic Toss
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 136 Atk / 28 SpD / 92 Spe
-Adamant Nature
-- Reflect
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 240 Def / 16 Spe
-Bold Nature
-- Rest
+EVs: 252 Def / 236 SpA / 20 Spe
+Modest Nature
+IVs: 0 Atk
 - Calm Mind
-- Surf
-- Roar
+- Thunderbolt
+- Ice Beam
+- Soft-Boiled
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 244 HP / 216 Def / 44 SpD / 4 Spe
+Relaxed Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Protect

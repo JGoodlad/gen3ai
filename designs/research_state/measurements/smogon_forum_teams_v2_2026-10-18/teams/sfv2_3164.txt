@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 184 HP / 196 SpA / 128 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Pursuit
-- Crunch
-- Ice Beam
+EVs: 252 Atk / 4 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Fire Blast
 - Hidden Power [Grass]
+- Brick Break
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
+EVs: 224 HP / 216 SpD / 68 Spe
 Careful Nature
+IVs: 0 Atk
 - Spikes
+- Taunt
+- Toxic
 - Roar
-- Drill Peck
-- Toxic
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Bug]
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 68 HP / 252 SpA / 188 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+- Will-O-Wisp
 - Thunderbolt
-- Hidden Power [Fire]
-- Thunder Wave
-- Toxic
+- Giga Drain
+- Explosion
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 108 SpA / 72 SpD / 80 Spe
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
-- Leech Seed
-- Recover
-- Psychic
+- Thunder Wave
+- Thunderbolt
 - Hidden Power [Grass]
+- Baton Pass
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 136 Def / 80 SpA / 44 Spe
+EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
 Relaxed Nature
-- Hydro Pump
+- Protect
 - Earthquake
+- Hydro Pump
 - Ice Beam
-- Focus Punch
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Will-O-Wisp
+- Flamethrower
+- Hidden Power [Grass]
+- Overheat

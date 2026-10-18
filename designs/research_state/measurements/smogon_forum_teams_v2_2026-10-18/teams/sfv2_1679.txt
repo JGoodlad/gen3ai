@@ -1,58 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 196 SpA / 128 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 136 SpA / 156 Spe
 Modest Nature
-IVs: 30 SpD / 30 Spe
-- Crunch
-- Pursuit
-- Flamethrower
-- Brick Break
+IVs: 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 224 HP / 216 SpD / 68 Spe
+EVs: 240 HP / 240 SpD / 28 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
 - Taunt
-- Toxic
+- Drill Peck
 - Roar
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Toxic
-- Ice Beam
-- Thunderbolt
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+IVs: 30 Atk / 30 SpA
+- Wish
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
+EVs: 240 HP / 136 Def / 72 SpA / 44 SpD / 16 Spe
 Relaxed Nature
-- Protect
-- Surf
-- Focus Punch
-- Roar
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Substitute
-- Fire Blast
-- Hidden Power [Grass]
-- Focus Punch
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Curse
 - Earthquake
+- Hydro Pump
+- Ice Beam
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 24 Atk / 252 SpA / 64 SpD / 144 Spe
+Mild Nature
+- Dragon Claw
 - Rock Slide
-- Hidden Power [Flying]
-- Double-Edge
+- Flamethrower
+- Brick Break

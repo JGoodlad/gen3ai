@@ -1,57 +1,60 @@
-Metagross @ Choice Band
-Ability: Clear Body
+Medicham (F) @ Choice Band
+Ability: Pure Power
 Shiny: Yes
-EVs: 240 Atk / 84 SpD / 184 Spe
-Adamant Nature
-- Earthquake
-- Explosion
-- Rock Slide
-- Meteor Mash
-
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 Def
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Focus Punch
-- Hidden Power [Bug]
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Earthquake
-- Hidden Power [Flying]
+- Brick Break
+- Shadow Ball
 - Rock Slide
-- Double-Edge
+- Focus Punch
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 24 Def / 188 SpA / 44 SpD / 4 Spe
-Quiet Nature
-- Hydro Pump
+Heracross (M) @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Swords Dance
+- Megahorn
+- Substitute
+- Rock Slide
+
+Kingdra (M) @ Lum Berry
+Ability: Swift Swim
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Rain Dance
+- Surf
 - Ice Beam
-- Earthquake
-- Protect
+- Hidden Power [Grass]
+
+Jolteon (M) @ Leftovers
+Ability: Volt Absorb
+EVs: 76 HP / 180 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+- Thunder Wave
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 36 HP / 252 SpA / 4 SpD / 216 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
+- Hidden Power [Grass]
+- Explosion
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 160 HP / 204 Atk / 144 Spe
-Adamant Nature
-- Earthquake
-- Explosion
-- Rock Slide
-- Rapid Spin
-
-Gengar @ Leftovers
-Ability: Levitate
 Shiny: Yes
-EVs: 72 HP / 252 SpA / 184 Spe
-Timid Nature
-- Thunderbolt
-- Ice Punch
-- Giga Drain
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
 - Explosion

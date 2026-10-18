@@ -1,58 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
-Modest Nature
-IVs: 30 Spe
-- Light Screen
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 160 SpA / 52 SpD / 48 Spe
+Quiet Nature
+- Crunch
+- Thunder
+- Focus Punch
+- Substitute
 
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Endure
-- Thunderbolt
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Fire Blast
 - Hidden Power [Grass]
-- Rain Dance
+- Brick Break
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
+EVs: 16 HP / 4 Atk / 236 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Meteor Mash
-- Earthquake
-- Hidden Power [Grass]
+- Psychic
+- Hidden Power [Fire]
 - Explosion
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 216 Def / 40 Spe
+Bold Nature
 IVs: 0 Atk
-- Substitute
+- Psychic
 - Calm Mind
-- Surf
+- Recover
+- Baton Pass
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 176 HP / 136 Atk / 156 SpA / 4 SpD / 36 Spe
+Brave Nature
+- Hydro Pump
+- Earthquake
 - Ice Beam
+- Focus Punch
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Shadow Ball
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 SpD
-- Dragon Dance
-- Earthquake
-- Hidden Power [Ghost]
-- Double-Edge
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 104 HP / 216 SpA / 188 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Explosion

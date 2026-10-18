@@ -1,55 +1,57 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Roar
-- Protect
-- Toxic
-
-Regice @ Leftovers
+Registeel @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 104 Atk / 152 SpA
-Quiet Nature
-- Ice Beam
-- Thunderbolt
-- Explosion
+EVs: 252 HP / 72 Def / 184 SpD
+Careful Nature
 - Thunder Wave
-
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 HP
-- Swords Dance
-- Megahorn
-- Substitute
-- Rock Slide
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
-- Earthquake
-- Psychic
+- Counter
+- Seismic Toss
 - Explosion
 
-Gengar @ Leftovers
-Ability: Levitate
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 88 HP / 252 Atk / 168 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Thunder Wave
+- Earthquake
+- Dragon Dance
+- Hidden Power [Flying]
+
+Raikou @ Leftovers
+Ability: Pressure
 EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Ice Punch
-- Hidden Power [Grass]
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 28 HP / 252 SpA / 228 Spe
-Modest Nature
+IVs: 2 Atk / 30 SpA
 - Calm Mind
-- Hydro Pump
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 172 Def / 84 SpD
+Relaxed Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Recover
 - Ice Beam
-- Roar
+- Agility
+- Hidden Power [Fighting]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 12 HP / 252 SpA / 244 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Hidden Power [Fire]
+- Giga Drain
+- Psychic
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 164 Atk / 204 SpD / 140 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Brick Break

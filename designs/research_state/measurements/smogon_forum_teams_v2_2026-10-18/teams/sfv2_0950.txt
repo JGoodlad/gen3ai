@@ -1,57 +1,58 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
 IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 88 SpA / 220 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Spikes
-- Roar
-- Protect
-- Toxic
+- Rapid Spin
+- Hidden Power [Bug]
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 28 HP / 216 Atk / 32 SpA / 232 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
 EVs: 252 Def / 252 SpA / 4 Spe
-Bold Nature
+Modest Nature
 IVs: 0 Atk
 - Soft-Boiled
 - Ice Beam
-- Seismic Toss
-- Sing
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Rock Slide
-- Earthquake
-- Double-Edge
-- Hidden Power [Flying]
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
-- Beat Up
-- Overheat
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-- Thunderbolt
-- Ice Punch
-- Will-O-Wisp
-- Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Protect
-- Hydro Pump
+- Wish
+- Thunder Wave

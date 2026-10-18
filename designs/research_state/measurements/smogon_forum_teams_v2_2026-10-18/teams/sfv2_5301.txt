@@ -1,0 +1,56 @@
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Fire Blast
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Psychic
+- Thunderbolt
+- Wish
+
+Cloyster @ Lum Berry
+Ability: Shell Armor
+EVs: 252 HP / 16 Def / 88 SpA / 148 SpD / 4 Spe
+Bold Nature
+- Spikes
+- Rapid Spin
+- Surf
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Thick Fat
+EVs: 144 HP / 68 Atk / 132 Def / 164 SpD
+Adamant Nature
+- Body Slam
+- Curse
+- Rest
+- Shadow Ball
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 16 HP / 200 Atk / 120 Def / 172 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Thunder Wave
+
+Heracross @ Choice Band
+Ability: Guts
+Shiny: Yes
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Megahorn
+- Focus Punch
+- Rock Slide
+- Facade

@@ -1,56 +1,58 @@
-Blissey @ Leftovers
-Ability: Natural Cure
-EVs: 200 HP / 252 Def / 56 Spe
-Bold Nature
-IVs: 0 Atk
-- Seismic Toss
-- Toxic
-- Aromatherapy
-- Soft-Boiled
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 76 Def / 112 SpD / 68 Spe
+Hasty Nature
+- Thunderbolt
+- Ice Punch
+- Hypnosis
+- Explosion
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 148 Def / 92 SpD / 16 Spe
-Impish Nature
-- Spikes
-- Drill Peck
-- Roar
-- Rest
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 72 HP / 248 SpA / 188 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Psychic
+- Giga Drain
+- Hidden Power [Fire]
+- Calm Mind
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 200 Def / 68 Spe
+EVs: 248 HP / 176 Def / 76 SpA / 8 Spe
 Bold Nature
-- Calm Mind
+IVs: 0 Atk
 - Surf
-- Roar
+- Sleep Talk
+- Calm Mind
 - Rest
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 28 Def / 12 Spe
-Adamant Nature
-- Rapid Spin
-- Earthquake
-- Shadow Ball
-- Refresh
-
-Umbreon @ Leftovers
-Ability: Synchronize
-EVs: 252 HP / 196 SpA / 52 SpD / 8 Spe
-Calm Nature
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 248 HP / 252 Def / 8 SpD
+Bold Nature
 IVs: 0 Atk
-- Pursuit
-- Tickle
-- Wish
-- Protect
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+- Recover
 
 Dugtrio @ Choice Band
 Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
+EVs: 8 HP / 248 Atk / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
 - Sunny Day
+- Aerial Ace
+- Hidden Power [Bug]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 192 SpA / 68 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
+- Calm Mind

@@ -1,56 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 124 SpD / 8 Spe
-Relaxed Nature
-- Rest
-- Curse
-- Earthquake
-- Ice Beam
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Fire]
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 20 Def / 28 SpD / 32 Spe
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 80 HP / 184 Atk / 72 Def / 172 Spe
 Adamant Nature
-- Toxic
-- Meteor Mash
+IVs: 30 SpD / 30 Spe
+- Rock Slide
 - Earthquake
-- Explosion
+- Focus Punch
+- Hidden Power [Bug]
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 192 HP / 4 Def / 136 SpA / 176 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 136 Atk / 152 Def / 172 SpD / 16 Spe
+Heracross @ Leftovers
+Ability: Guts
+EVs: 48 HP / 136 Atk / 96 SpD / 228 Spe
 Adamant Nature
-- Body Slam
+IVs: 30 Atk / 30 SpD
+- Megahorn
+- Rock Slide
+- Focus Punch
+- Hidden Power [Ghost]
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
 - Earthquake
-- Shadow Ball
-- Self-Destruct
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 252 Atk / 116 SpD / 140 Spe
+EVs: 180 Atk / 212 SpD / 116 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
-- Rock Slide
-- Brick Break
 - Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 Def / 176 SpD
+Sassy Nature
+- Wish
+- Protect
+- Body Slam
+- Fire Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Surf
+- Earthquake
+- Ice Beam
+- Protect

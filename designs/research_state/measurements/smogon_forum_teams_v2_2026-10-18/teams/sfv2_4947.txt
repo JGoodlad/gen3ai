@@ -1,0 +1,58 @@
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Surf
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 196 HP / 8 Def / 124 SpA / 180 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 Def / 248 SpA / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Crunch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 64 Atk / 192 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 Def
+- Fire Blast
+- Hidden Power [Ice]
+- Beat Up
+- Brick Break
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 232 Atk / 24 SpD
+Adamant Nature
+- Thunder Wave
+- Seismic Toss
+- Superpower
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 192 Atk / 200 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Substitute
+- Brick Break

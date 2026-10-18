@@ -1,57 +1,57 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 128 HP / 252 Atk / 128 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 8 SpD
 Adamant Nature
-- Meteor Mash
-- Explosion
-- Earthquake
+IVs: 30 SpD / 30 Spe
 - Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
 
 Skarmory @ Leftovers
 Ability: Keen Eye
 EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
-- Toxic
 - Roar
 - Protect
+- Toxic
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 28 HP / 252 Def / 228 SpA
-Bold Nature
+EVs: 252 Def / 116 SpA / 140 Spe
+Modest Nature
 IVs: 0 Atk
-- Seismic Toss
 - Soft-Boiled
-- Ice Beam
-- Wish
+- Fire Blast
+- Seismic Toss
+- Toxic
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 248 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Calm Mind
-- Roar
-- Rest
-
-Claydol @ Leftovers
+Gengar @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 232 Atk / 20 Def / 8 SpD
+EVs: 164 HP / 168 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Taunt
+- Will-O-Wisp
+- Thunderbolt
+- Ice Punch
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+- Protect
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 156 Def / 60 SpA / 44 SpD
 Relaxed Nature
 - Earthquake
-- Rapid Spin
-- Psychic
-- Explosion
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 40 HP / 244 Atk / 224 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide
+- Ice Beam
+- Protect
+- Hydro Pump

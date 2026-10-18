@@ -1,55 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-IVs: 0 Atk
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 60 SpD / 196 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Substitute
+- Baton Pass
 
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 40 HP / 144 Atk / 100 SpD / 224 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Beat Up
+- Hidden Power [Bug]
+- Aerial Ace
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 96 SpA / 160 Spe
+Timid Nature
+IVs: 0 Atk
+- Calm Mind
+- Ice Beam
+- Substitute
+- Surf
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Hidden Power [Grass]
+- Substitute
+- Thunderbolt
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Earthquake
+- Explosion
+- Meteor Mash
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
+EVs: 252 HP / 44 Def / 24 SpA / 188 Spe
 Timid Nature
 - Will-O-Wisp
+- Ice Punch
 - Thunderbolt
-- Giga Drain
 - Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 36 Atk / 220 SpD
-Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Superpower
-- Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 224 SpA / 44 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
-- Fire Blast
-- Hidden Power [Grass]
-- Roar

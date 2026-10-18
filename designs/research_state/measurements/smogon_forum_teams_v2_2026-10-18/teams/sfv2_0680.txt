@@ -1,62 +1,58 @@
-Medicham @ Leftovers
-Ability: Pure Power
-Shiny: Yes
-EVs: 4 HP / 252 Atk / 252 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Hidden Power: Bug
+EVs: 248 HP / 80 Atk / 180 Spe
 Adamant Nature
-- Bulk Up
-- Brick Break
-- Shadow Ball
-- Recover
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-Shiny: Yes
-EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
-Timid Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 236 SpD / 32 Spe
+Careful Nature
+IVs: 0 Atk
 - Spikes
-- Surf
-- Rapid Spin
-- Explosion
-
-Charizard (F) @ Leftovers
-Ability: Blaze
-Shiny: Yes
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Focus Punch
+- Roar
+- Taunt
 - Toxic
 
-Suicune @ Leftovers
-Ability: Pressure
-Shiny: Yes
-EVs: 28 HP / 252 SpA / 228 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 196 HP / 8 Def / 156 SpA / 148 Spe
 Modest Nature
-IVs: 0 Atk
-- Calm Mind
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 128 Def / 88 SpA / 44 SpD
+Quiet Nature
 - Hydro Pump
+- Earthquake
 - Ice Beam
-- Roar
+- Curse
 
-Jolteon (M) @ Leftovers
-Ability: Volt Absorb
-Shiny: Yes
-EVs: 4 HP / 252 SpA / 252 Spe
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 148 HP / 24 Def / 120 SpA / 216 Spe
 Timid Nature
-IVs: 0 Atk
+IVs: 2 Atk / 30 Def
+- Calm Mind
 - Thunderbolt
-- Wish
-- Baton Pass
-- Roar
+- Hidden Power [Ice]
+- Substitute
 
-Registeel @ Leftovers
-Ability: Clear Body
-Shiny: Yes
-EVs: 252 HP / 200 SpD / 56 Spe
-Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Counter
-- Explosion
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Bug]

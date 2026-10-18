@@ -1,57 +1,57 @@
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Mild Nature
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
 IVs: 30 Atk / 30 SpA
 - Dragon Claw
-- Fire Blast
-- Hidden Power [Grass]
+- Flamethrower
 - Brick Break
+- Hidden Power [Grass]
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-- Spikes
-- Earthquake
-- Rapid Spin
-- Explosion
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 252 Def / 4 SpD
+Relaxed Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Fire Punch
+- Hidden Power [Fighting]
+- Wish
+- Protect
 
-Houndoom @ Black Glasses
-Ability: Flash Fire
-EVs: 240 SpA / 76 SpD / 192 Spe
+Tyranitar @ Black Glasses
+Ability: Sand Stream
+EVs: 136 HP / 252 SpA / 4 SpD / 116 Spe
 Modest Nature
 IVs: 0 Atk
 - Crunch
 - Pursuit
-- Fire Blast
-- Will-O-Wisp
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 64 SpA / 152 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Ice Punch
-- Thunderbolt
+- Thunder Wave
+- Flamethrower
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 248 HP / 240 Def / 20 Spe
-Bold Nature
+EVs: 248 HP / 232 SpA / 28 Spe
+Modest Nature
 IVs: 0 Atk
 - Calm Mind
 - Surf
+- Ice Beam
 - Rest
-- Roar
 
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 4 Def / 252 Spe
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 64 HP / 176 Atk / 108 Def / 144 SpD / 16 Spe
 Adamant Nature
-- Spore
+- Curse
+- Body Slam
+- Earthquake
 - Focus Punch
-- Sky Uppercut
-- Mach Punch
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 212 Atk / 16 Def / 28 SpD
+Relaxed Nature
+- Earthquake
+- Psychic
+- Explosion
+- Rapid Spin

@@ -1,56 +1,59 @@
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 80 HP / 176 SpA / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 Def / 29 SpA
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 120 SpD / 148 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Rest
 - Thunderbolt
 - Hidden Power [Ice]
-- Baton Pass
-- Thunder Wave
+- Roar
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 36 HP / 220 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
 - Dragon Dance
 - Earthquake
-- Taunt
+- Rock Slide
+- Double-Edge
 
-Weezing @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 4 Atk / 252 SpD
-Sassy Nature
-- Sludge Bomb
-- Flamethrower
-- Will-O-Wisp
-- Pain Split
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
-Dusclops @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 4 Def / 252 SpD
-Calm Nature
-- Night Shade
-- Will-O-Wisp
-- Protect
-- Pain Split
-
-Blaziken @ Leftovers
-Ability: Blaze
-EVs: 252 Atk / 4 SpA / 252 Spe
-Hasty Nature
-- Fire Blast
-- Sky Uppercut
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 192 SpA / 28 SpD / 36 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
 - Substitute
+- Thunder
+- Hidden Power [Grass]
+- Dynamic Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+Shiny: Yes
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
+IVs: 0 Atk
+- Earthquake
+- Hydro Pump
+- Ice Beam
 - Focus Punch
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 252 Atk / 4 SpD
-Adamant Nature
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Rapid Spin
-- Explosion
+- Earthquake
+- Rock Slide
 - Hidden Power [Bug]
+- Double-Edge

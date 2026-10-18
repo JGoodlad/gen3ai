@@ -1,56 +1,57 @@
-Hitmontop (M) @ Leftovers
-Ability: Intimidate
-EVs: 252 HP / 184 Atk / 20 Def / 52 Spe
-Adamant Nature
-- Brick Break
-- Toxic
-- Protect
-- Rapid Spin
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 68 HP / 252 SpA / 188 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 SpA / 8 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Sunny Day
-- Toxic
-
-Umbreon @ Leftovers
-Ability: Synchronize
-EVs: 252 HP / 196 SpA / 52 SpD / 8 Spe
-Calm Nature
 IVs: 0 Atk
+- Crunch
 - Pursuit
-- Toxic
-- Wish
-- Protect
+- Flamethrower
+- Ice Beam
 
-Steelix @ Leftovers
-Ability: Rock Head
-EVs: 252 HP / 68 Atk / 152 SpD / 36 Spe
-Impish Nature
-- Earthquake
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
 - Roar
-- Rock Slide
-- Explosion
 
-Gyarados @ Leftovers
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 104 Def / 20 SpA / 96 SpD / 36 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Recover
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
+Relaxed Nature
+- Protect
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Salamence @ Leftovers
 Ability: Intimidate
-EVs: 184 HP / 40 Atk / 88 SpD / 196 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+EVs: 236 Atk / 12 Def / 200 SpD / 60 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
 - Hidden Power [Flying]
-- Earthquake
-- Rest
+- Brick Break
+- Fire Blast
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
-Careful Nature
-- Curse
-- Rest
-- Return
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

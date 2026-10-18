@@ -1,61 +1,58 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 192 HP / 116 SpA / 200 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Toxic
-- Roar
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-Shiny: Yes
-EVs: 248 HP / 216 SpD / 44 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Toxic
-- Taunt
-- Roar
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 224 SpA / 36 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Wish
-- Psychic
-- Fire Punch
-- Hidden Power [Grass]
-
-Swampert @ Leftovers
-Ability: Torrent
-Shiny: Yes
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Protect
-- Hydro Pump
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-Shiny: Yes
-EVs: 244 HP / 80 Atk / 184 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 252 Atk / 4 SpA / 252 Spe
 Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Rock Slide
-- Double-Edge
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Hidden Power [Flying]
+- Rock Slide
+- Hidden Power [Bug]
+- Quick Attack
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 80 SpA / 180 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Giga Drain
+- Leech Seed
+- Psychic
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 68 HP / 252 SpA / 188 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Sunny Day
+
+Snorlax @ Leftovers
+Ability: Thick Fat
+Shiny: Yes
+EVs: 44 HP / 132 Atk / 196 Def / 136 SpD
+Adamant Nature
+- Curse
+- Rest
+- Body Slam
+- Earthquake
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 68 Atk / 176 Def / 12 SpA
+Impish Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 236 Def / 24 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Recover
+- Ice Beam
+- Refresh

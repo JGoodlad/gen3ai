@@ -1,57 +1,57 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 128 HP / 244 Atk / 136 Spe
-Adamant Nature
-- Meteor Mash
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
+Relaxed Nature
+- Protect
 - Earthquake
-- Explosion
-- Double-Edge
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Soft-Boiled
+- Hydro Pump
 - Ice Beam
-- Thunderbolt
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Careful Nature
-- Spikes
-- Thief
-- Roar
-- Drill Peck
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 180 Spe
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
 - Dragon Dance
-- Rock Slide
 - Earthquake
-- Hidden Power [Bug]
+- Rock Slide
+- Double-Edge
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 160 Def / 40 SpA / 56 Spe
-Timid Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
 IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Thunder Wave
+- Spikes
+- Taunt
+- Toxic
+- Roar
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 120 SpD / 148 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
+Calm Nature
+IVs: 30 Atk / 30 SpA
+- Wish
+- Protect
+- Toxic
+- Fire Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
 - Fire Blast

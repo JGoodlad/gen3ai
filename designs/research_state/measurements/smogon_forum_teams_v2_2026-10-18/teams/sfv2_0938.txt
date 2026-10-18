@@ -1,60 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-Shiny: Yes
-EVs: 252 SpA / 4 SpD / 252 Spe
-Mild Nature
-- Wish
-- Dragon Claw
-- Fire Blast
-- Brick Break
-
-Jirachi @ Choice Band
-Ability: Serene Grace
-EVs: 252 Atk / 100 SpA / 156 Spe
-Naughty Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Doom Desire
-- Fire Punch
-- Hidden Power [Fighting]
-- Body Slam
-
-Snorlax @ Leftovers
-Ability: Immunity
-Shiny: Yes
-EVs: 24 HP / 176 Atk / 108 Def / 184 SpD / 16 Spe
-Adamant Nature
-- Body Slam
-- Earthquake
-- Self-Destruct
-- Curse
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 232 Atk / 16 Def / 12 SpD
-Relaxed Nature
-- Earthquake
-- Psychic
-- Explosion
-- Rapid Spin
-
-Suicune @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-Shiny: Yes
-EVs: 248 HP / 192 SpA / 68 Spe
-Modest Nature
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Rest
+- Toxic
+- Roar
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 248 HP / 248 Atk / 12 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
+- Rock Slide
+- Earthquake
+- Swords Dance
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Toxic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
+Bold Nature
 IVs: 0 Atk
 - Surf
-- Sleep Talk
-- Rest
-- Calm Mind
+- Toxic
+- Protect
+- Roar
 
-Metagross @ Lum Berry
-Ability: Clear Body
-Shiny: Yes
-EVs: 168 HP / 52 Atk / 16 Def / 252 SpA / 20 Spe
-Brave Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Explosion
-- Hidden Power [Fire]
-- Meteor Mash
-- Pursuit
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Ice Beam
+- Seismic Toss
+- Heal Bell
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 72 Atk / 188 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge

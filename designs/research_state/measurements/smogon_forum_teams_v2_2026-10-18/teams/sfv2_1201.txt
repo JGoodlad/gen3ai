@@ -1,57 +1,57 @@
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 196 Atk / 140 Def / 172 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Focus Punch
+- Earthquake
+- Hidden Power [Bug]
+
+Charizard @ Petaya Berry
+Ability: Blaze
+EVs: 24 Atk / 240 SpA / 244 Spe
+Rash Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Hidden Power [Grass]
+- Fire Blast
+- Sunny Day
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 44 Atk / 68 Def / 148 SpD
+Sassy Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Body Slam
+- Fire Punch
+- Hidden Power [Fighting]
+- Wish
+
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 228 SpA / 28 Spe
+EVs: 252 HP / 192 SpA / 64 Spe
 Modest Nature
-IVs: 0 Atk
 - Substitute
 - Calm Mind
 - Surf
 - Ice Beam
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 100 Atk / 112 Def / 44 SpD
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 120 HP / 68 Atk / 140 SpA / 180 Spe
-Rash Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Body Slam
-- Fire Punch
-- Ice Punch
-- Hidden Power [Fighting]
-
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Calm Mind
 - Giga Drain
-- Psychic
+- Hidden Power [Fire]
+- Baton Pass
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 176 Atk / 116 Def / 172 SpD / 12 Spe
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
 Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Substitute
-- Flamethrower
-- Hidden Power [Grass]
-- Focus Punch
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion

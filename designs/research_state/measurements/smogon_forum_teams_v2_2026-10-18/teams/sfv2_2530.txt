@@ -1,56 +1,59 @@
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 204 HP / 196 Atk / 108 Spe
-Adamant Nature
-- Rock Slide
-- Superpower
-- Counter
-- Explosion
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 132 HP / 180 SpA / 196 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 80 HP / 148 Atk / 172 SpD / 108 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Beat Up
+- Hidden Power [Bug]
+- Aerial Ace
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 SpA / 44 Spe
+Quiet Nature
+- Focus Punch
+- Hydro Pump
+- Ice Beam
+- Earthquake
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 168 SpA / 140 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Fire]
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Return
-- Earthquake
-- Shadow Ball
-
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 8 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Rest
 - Calm Mind
-- Thunderbolt
+- Psychic
+- Hidden Power [Fire]
+- Leech Seed
+
+Kingdra (F) @ Leftovers
+Ability: Swift Swim
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Rain Dance
+- Hydro Pump
+- Ice Beam
+- Substitute
+
+Ludicolo (M) @ Lum Berry
+Ability: Swift Swim
+Shiny: Yes
+EVs: 72 HP / 252 SpA / 184 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Rain Dance
+- Surf
+- Ice Beam
 - Hidden Power [Grass]
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 228 Atk / 16 Def / 96 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 40 HP / 168 Atk / 100 SpD / 200 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Earthquake
-- Hidden Power [Flying]
-- Double-Edge

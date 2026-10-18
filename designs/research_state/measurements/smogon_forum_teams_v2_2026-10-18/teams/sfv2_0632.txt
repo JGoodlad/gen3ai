@@ -1,56 +1,59 @@
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 32 HP / 144 Def / 108 SpA / 224 Spe
-Modest Nature
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 252 HP / 188 Atk / 16 Def / 52 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Focus Punch
+- Earthquake
+- Hidden Power [Bug]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
+Timid Nature
 IVs: 0 Atk
-- Hydro Pump
+- Surf
+- Thunder Wave
+- Recover
+- Rapid Spin
+
+Swampert @ Leftovers
+Ability: Torrent
+Shiny: Yes
+EVs: 168 HP / 252 SpA / 88 Spe
+Modest Nature
+- Surf
 - Ice Beam
+- Earthquake
+- Curse
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Thunderbolt
 - Baton Pass
+- Thunder Wave
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Megahorn
+- Focus Punch
+- Rock Slide
 - Substitute
 
-Breloom @ Black Belt
-Ability: Effect Spore
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-- Spore
-- Focus Punch
-- Sky Uppercut
-- Mach Punch
-
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 40 HP / 252 SpA / 24 SpD / 192 Spe
-Modest Nature
-IVs: 0 Atk
-- Fire Blast
-- Pursuit
-- Will-O-Wisp
-- Beat Up
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 196 SpD / 60 Spe
-Careful Nature
-- Seismic Toss
-- Thunder Wave
-- Counter
-- Explosion
-
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-- Crunch
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 96 HP / 168 Atk / 132 SpD / 112 Spe
-Adamant Nature
-- Dragon Dance
-- Brick Break
-- Rock Slide
-- Earthquake
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 176 Def / 80 SpD
+Relaxed Nature
+- Wish
+- Protect
+- Body Slam
+- Fire Punch

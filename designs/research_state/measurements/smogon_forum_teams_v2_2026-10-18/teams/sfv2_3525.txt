@@ -1,59 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-Shiny: Yes
-EVs: 252 Atk / 116 SpA / 140 Spe
-Naughty Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
 - Earthquake
 - Hydro Pump
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 4 Atk / 252 SpA
-Quiet Nature
-- Pursuit
-- Crunch
-- Rock Slide
-- Brick Break
-
-Venusaur @ Leftovers
-Ability: Overgrow
-Shiny: Yes
-EVs: 252 HP / 84 Def / 160 SpD / 12 Spe
-Calm Nature
-IVs: 2 Atk / 30 Def
-- Sleep Powder
-- Leech Seed
-- Hidden Power [Ice]
-- Giga Drain
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Toxic
+- Ice Beam
 - Focus Punch
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
 - Spikes
 - Rapid Spin
-- Hidden Power [Bug]
+- Ice Beam
 - Explosion
 
-Quagsire @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 4 Def / 252 SpD
-Sassy Nature
-- Ice Beam
-- Earthquake
-- Protect
-- Curse
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 220 SpA / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 120 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

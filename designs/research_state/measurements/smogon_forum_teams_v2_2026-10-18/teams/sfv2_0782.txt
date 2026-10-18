@@ -1,57 +1,58 @@
-Politoed
-Ability: Damp
-EVs: 56 HP / 12 Def / 252 SpA / 188 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
-- Hypnosis
-- Thief
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
-- Roar
-
-Tyranitar @ Choice Band
-Ability: Sand Stream
-Hidden Power: Bug
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Rock Slide
-- Focus Punch
-- Earthquake
-- Double-Edge
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 240 HP / 36 Def / 76 SpA / 120 SpD / 36 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Giga Drain
-- Hidden Power [Fire]
-- Leech Seed
-- Recover
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 216 Atk / 28 Def / 16 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Explosion
-- Protect
-
 Aerodactyl @ Choice Band
 Ability: Rock Head
-EVs: 252 Atk / 4 Def / 252 Spe
+EVs: 252 Atk / 4 SpD / 252 Spe
 Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Rock Slide
-- Double-Edge
 - Earthquake
-- Hidden Power [Flying]
+- Double-Edge
+- Sunny Day
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Ice Beam
+- Seismic Toss
+- Aromatherapy
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 SpD / 4 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Rest
+- Roar
+- Toxic
+
+Kingler @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 252 Def / 4 Spe
+Impish Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Knock Off
+- Harden
+- Rest
+- Hidden Power [Fighting]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 184 Def / 56 SpD / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Roar
+- Protect
+- Toxic
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Hidden Power [Ghost]
+- Rest
+- Spikes
+- Rapid Spin

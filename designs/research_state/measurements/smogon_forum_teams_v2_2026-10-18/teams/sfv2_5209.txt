@@ -1,0 +1,61 @@
+Gengar (M) @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+- Thunder
+- Ice Punch
+- Fire Punch
+- Explosion
+
+Porygon2 @ Leftovers
+Ability: Trace
+Shiny: Yes
+EVs: 252 HP / 200 Def / 56 SpD
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Icy Wind
+- Thunder
+- Toxic
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Substitute
+
+Swampert (M) @ Salac Berry
+Ability: Torrent
+Shiny: Yes
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Endeavor
+- Substitute
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 Def / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Perish Song
+- Leech Seed
+- Baton Pass
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Crunch
+- Hidden Power [Grass]

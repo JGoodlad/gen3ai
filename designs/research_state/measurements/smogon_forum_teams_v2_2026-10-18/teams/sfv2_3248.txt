@@ -1,56 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 244 SpA / 12 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Fire Blast
-- Roar
-
-Nidoqueen (F) @ Leftovers
-Ability: Poison Point
-EVs: 252 HP / 212 SpA / 44 Spe
-Quiet Nature
-- Ice Beam
-- Flamethrower
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 200 Def / 24 SpD / 36 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
 - Earthquake
-- Superpower
+- Hidden Power [Rock]
+- Toxic
+- Protect
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 104 HP / 252 SpA / 152 Spe
+EVs: 240 HP / 56 SpA / 212 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
+IVs: 2 Atk / 30 Def
 - Thunderbolt
-- Hidden Power [Grass]
+- Hidden Power [Ice]
+- Roar
+- Rest
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 168 Def / 88 SpD
+Impish Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
 - Thunder Wave
-- Baton Pass
+- Roar
+- Rest
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Calm Nature
 - Spikes
-- Light Screen
-- Rapid Spin
-- Earthquake
+- Roar
+- Thief
+- Drill Peck
 
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-- Spore
-- Stun Spore
-- Sky Uppercut
-- Mach Punch
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 248 Def / 20 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 212 SpA / 44 Spe
 Bold Nature
 IVs: 0 Atk
-- Calm Mind
-- Surf
+- Seismic Toss
+- Ice Beam
+- Aromatherapy
+- Soft-Boiled
+
+Misdreavus @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Mean Look
+- Perish Song
 - Rest
-- Roar

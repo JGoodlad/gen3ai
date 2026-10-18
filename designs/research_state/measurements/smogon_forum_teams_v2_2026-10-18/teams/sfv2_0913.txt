@@ -1,58 +1,58 @@
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Rock Slide
-- Aerial Ace
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 252 HP / 252 Def / 4 SpA
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
 Bold Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
+- Recover
+- Psychic
+- Hidden Power [Grass]
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+Shiny: Yes
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Self-Destruct
+- Body Slam
+- Shadow Ball
+- Earthquake
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Hydro Pump
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunderbolt
-- Toxic
-- Endure
 - Hidden Power [Fire]
+- Toxic
+- Substitute
 
-Moltres @ Leftovers
-Ability: Pressure
-Hidden Power: Grass
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
-- Will-O-Wisp
-- Roar
+Gyarados (M) @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Thunder Wave
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 252 SpA / 4 SpD
-Modest Nature
-IVs: 0 Atk
-- Rapid Spin
-- Surf
-- Recover
-- Thunderbolt
-
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Megahorn
-- Swords Dance
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 76 HP / 252 Atk / 180 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
 - Rock Slide
-- Substitute
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 68 SpA / 148 Spe
-Timid Nature
-- Substitute
-- Calm Mind
-- Psychic
-- Thunderbolt
+- Earthquake

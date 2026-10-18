@@ -1,0 +1,56 @@
+Aerodactyl @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Rock Slide
+- Substitute
+- Protect
+- Earthquake
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 184 HP / 252 Def / 72 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Toxic
+- Aromatherapy
+- Soft-Boiled
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 148 Def / 108 SpD
+Impish Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Roar
+- Protect
+
+Duskull @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 16 Def / 180 SpD / 60 Spe
+Careful Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Pain Split
+- Curse
+- Protect
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 144 SpD
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Rest
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 188 Def / 72 Spe
+Bold Nature
+- Calm Mind
+- Surf
+- Rest
+- Roar

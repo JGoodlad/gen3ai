@@ -1,55 +1,57 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Wish
+- Protect
+- Toxic
+
+Nosepass @ Pecha Berry
+Ability: Magnet Pull
+EVs: 248 HP / 8 Atk / 204 Def / 48 SpA
+Relaxed Nature
+- Taunt
+- Thunder Wave
+- Thunderbolt
+- Explosion
+
+Miltank (F) @ Leftovers
+Ability: Thick Fat
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Thunder Wave
+- Heal Bell
+- Milk Drink
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Thunderbolt
+- Ice Beam
+- Soft-Boiled
+
 Dugtrio @ Choice Band
 Ability: Arena Trap
-EVs: 172 HP / 208 Atk / 120 SpD / 8 Spe
-Adamant Nature
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Beat Up
+- Rock Slide
 - Hidden Power [Bug]
 - Aerial Ace
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 224 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Thunderbolt
-- Toxic
-- Roar
-- Rest
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-- Spikes
-- Drill Peck
-- Protect
-- Roar
-
-Gengar (M) @ Leftovers
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-- Thunderbolt
-- Ice Punch
-- Giga Drain
+EVs: 252 HP / 252 Atk / 4 SpA
+Brave Nature
+- Earthquake
+- Psychic
 - Explosion
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 220 Def / 36 Spe
-- Earthquake
-- Dragon Breath
-- Protect
-- Fire Blast
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Rock Slide
-- Earthquake
-- Double-Edge
-- Hidden Power [Flying]
+- Rapid Spin

@@ -1,56 +1,57 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 168 HP / 224 Atk / 16 Def / 100 Spe
-Adamant Nature
-- Meteor Mash
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 100 SpA / 192 Spe
+Modest Nature
+IVs: 30 Spe
+- Thunderbolt
+- Hidden Power [Ice]
+- Thunder Wave
+- Toxic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
+- Curse
+- Hydro Pump
 - Earthquake
-- Brick Break
+- Ice Beam
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
 - Explosion
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Beat Up
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Toxic
-- Crunch
-- Pursuit
-- Flamethrower
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
+EVs: 184 HP / 144 Atk / 180 Spe
 Adamant Nature
-- Curse
-- Double-Edge
+- Dragon Dance
+- Rock Slide
 - Earthquake
-- Self-Destruct
+- Double-Edge
 
-Venusaur @ Leftovers
-Ability: Overgrow
-EVs: 8 HP / 192 SpA / 56 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Sleep Powder
-- Giga Drain
-- Hidden Power [Fire]
-
-Gyarados @ Leftovers
+Salamence @ Leftovers
 Ability: Intimidate
-EVs: 120 HP / 176 Atk / 212 Spe
+EVs: 252 Atk / 114 SpD / 142 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
-- Earthquake
 - Hidden Power [Flying]
-- Double-Edge
+- Earthquake
+- Rock Slide

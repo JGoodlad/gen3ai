@@ -1,57 +1,58 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 224 SpA / 44 Spe
-Quiet Nature
-- Earthquake
-- Hydro Pump
-- Ice Beam
-- Focus Punch
-
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
-
 Metagross @ Choice Band
 Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-IVs: 30 SpA / 30 Spe
 - Meteor Mash
 - Earthquake
 - Rock Slide
 - Explosion
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
+- Calm Mind
+- Surf
+- Ice Beam
 - Hidden Power [Grass]
-- Baton Pass
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Memento
+- Flamethrower
+- Hidden Power [Grass]
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 SpD / 30 Spe
+- Dragon Dance
 - Earthquake
 - Rock Slide
 - Hidden Power [Bug]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 188 HP / 180 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Hidden Power [Rock]
 - Double-Edge

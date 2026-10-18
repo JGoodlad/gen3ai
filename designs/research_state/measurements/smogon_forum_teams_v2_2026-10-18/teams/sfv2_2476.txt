@@ -1,59 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Counter
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 220 SpD / 36 Spe
-Careful Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 148 HP / 200 SpA / 160 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Calm Mind
+- Thunderbolt
 - Hidden Power [Grass]
-- Explosion
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 136 Def / 72 SpA / 44 SpD / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Protect
-- Surf
-- Ice Beam
-- Roar
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 248 SpD / 20 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Substitute
-- Thunderbolt
-- Baton Pass
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+EVs: 248 HP / 40 Def / 176 SpA / 44 SpD
+Quiet Nature
+- Curse
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
+- Hydro Pump
+- Ice Beam
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Earthquake
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 52 HP / 4 Def / 252 SpA / 200 Spe
+Timid Nature
+- Ice Punch
+- Thunderbolt
+- Hypnosis
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
 - Rock Slide
+- Double-Edge
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 212 SpD / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

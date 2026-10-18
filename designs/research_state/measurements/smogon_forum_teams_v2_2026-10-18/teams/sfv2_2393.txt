@@ -1,50 +1,50 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 72 SpA / 44 SpD / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Protect
-- Refresh
-- Toxic
-- Surf
-
-Tyranitar @ Black Belt
-Ability: Sand Stream
-EVs: 184 HP / 108 Atk / 216 Spe
-Brave Nature
-IVs: 30 Atk / 30 SpA
-- Crunch
-- Rock Slide
-- Hidden Power [Grass]
-- Focus Punch
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 244 SpD / 192 Spe
-Timid Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
-Hasty Nature
-- Will-O-Wisp
-- Thunderbolt
-- Giga Drain
-- Explosion
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 236 HP / 96 SpA / 120 SpD / 56 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Light Screen
+- Toxic
 - Thunderbolt
-- Hidden Power [Ice]
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 16 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Flamethrower
 - Roar
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Protect
+- Drill Peck
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
+- Protect
+- Toxic
+- Earthquake
+- Rock Slide
 
 Aerodactyl @ Choice Band
 Ability: Rock Head

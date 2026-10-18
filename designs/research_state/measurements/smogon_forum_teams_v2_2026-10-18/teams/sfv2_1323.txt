@@ -1,59 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
+EVs: 248 HP / 176 Atk / 80 SpD / 4 Spe
+Adamant Nature
+- Meteor Mash
 - Earthquake
-- Thunder Punch
-- Hidden Power [Grass]
+- Rock Slide
 - Explosion
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 80 Def / 140 SpA / 36 Spe
+EVs: 248 HP / 40 Def / 112 SpA / 108 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
 - Calm Mind
-- Fire Punch
+- Psychic
 - Hidden Power [Grass]
-- Psychic
+- Fire Punch
 
-Celebi @ Leftovers
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Protect
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 216 Atk / 16 Def / 28 SpD
+Relaxed Nature
+- Earthquake
+- Psychic
+- Explosion
+- Rapid Spin
+
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 188 HP / 180 SpA / 140 Spe
+EVs: 252 Def / 252 SpA / 4 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 Def
+IVs: 0 Atk
+- Thunderbolt
+- Ice Beam
 - Toxic
-- Flamethrower
-- Hidden Power [Ice]
-- Brick Break
+- Soft-Boiled
 
 Gyarados @ Leftovers
 Ability: Intimidate
 EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Hidden Power [Ghost]
 - Dragon Dance
-- Earthquake
-- Hidden Power [Rock]
 - Double-Edge
+- Earthquake

@@ -1,59 +1,55 @@
-Jynx (F) @ Leftovers
-Ability: Oblivious
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Lovely Kiss
-- Calm Mind
-- Substitute
-- Ice Beam
-
-Dugtrio @ Salac Berry
-Ability: Arena Trap
-EVs: 40 HP / 244 Atk / 200 SpD / 24 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Swampert (F) @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 180 SpA / 44 SpD / 44 Spe
+Brave Nature
+- Hydro Pump
 - Earthquake
-- Hidden Power [Bug]
-- Beat Up
-- Endure
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 252 Atk / 52 SpD / 180 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Hidden Power [Flying]
-- Rock Slide
-
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-- Substitute
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Ice Punch
-- Hidden Power [Grass]
-- Fire Punch
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 16 Atk / 220 SpA / 88 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
 - Ice Beam
 - Focus Punch
+
+Flygon (F) @ Leftovers
+Ability: Levitate
+EVs: 16 HP / 240 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
 - Fire Blast
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 124 SpA / 104 SpD / 32 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
 - Hidden Power [Grass]
+- Rest
+- Sleep Talk
+
+Gengar (F) @ Leftovers
+Ability: Levitate
+EVs: 104 HP / 220 SpA / 184 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Explosion
+
+Skarmory (F) @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 240 SpD / 28 Spe
+Careful Nature
+- Drill Peck
+- Toxic
+- Roar
+- Spikes
+
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 12 Atk / 160 SpA / 52 SpD / 36 Spe
+Quiet Nature
+- Rock Slide
+- Crunch
+- Pursuit
+- Focus Punch

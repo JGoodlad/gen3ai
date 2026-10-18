@@ -1,53 +1,54 @@
-Metagross @ Choice Band
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Ice Beam
+- Brick Break
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Roar
+- Substitute
+- Endeavor
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 156 Atk / 120 Def / 48 SpA / 168 SpD
+Brave Nature
+- Body Slam
+- Brick Break
+- Fire Blast
+- Self-Destruct
+
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 188 HP / 252 Atk / 68 Spe
+EVs: 168 HP / 228 Atk / 16 Def / 96 Spe
 Adamant Nature
 - Meteor Mash
-- Earthquake
-- Rock Slide
 - Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
+- Agility
 - Earthquake
-- Hydro Pump
-- Ice Beam
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 36 Def / 180 SpA / 40 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Fire Punch
-- Hidden Power [Grass]
-- Psychic
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 188 HP / 140 SpA / 180 Spe
+EVs: 192 HP / 8 Def / 108 SpA / 200 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
 - Calm Mind
+- Psychic
 - Giga Drain
 - Hidden Power [Fire]
-- Psychic
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 156 Atk / 212 SpD / 140 Spe
+EVs: 176 Atk / 212 SpD / 120 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance

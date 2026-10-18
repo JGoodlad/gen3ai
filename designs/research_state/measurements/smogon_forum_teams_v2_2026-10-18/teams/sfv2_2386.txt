@@ -1,56 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 220 SpA / 48 Spe
-Quiet Nature
-- Crunch
-- Pursuit
-- Flamethrower
-- Brick Break
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 64 HP / 248 SpD / 196 Spe
-Timid Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
-
-Venusaur @ Leftovers
-Ability: Overgrow
-EVs: 8 HP / 192 SpA / 56 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Sleep Powder
-- Giga Drain
-- Hidden Power [Fire]
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 120 SpD / 148 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
-- Roar
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 160 SpA / 56 Spe
-Modest Nature
-IVs: 0 Atk / 30 SpA
-- Calm Mind
-- Water Pulse
-- Fire Punch
-- Psychic
-
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Relaxed Nature
+- Protect
 - Earthquake
 - Hydro Pump
 - Ice Beam
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 72 Atk / 184 Spe
+Adamant Nature
+- Substitute
+- Earthquake
+- Rock Slide
+- Focus Punch
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Light Screen
+- Toxic
+- Thunderbolt
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

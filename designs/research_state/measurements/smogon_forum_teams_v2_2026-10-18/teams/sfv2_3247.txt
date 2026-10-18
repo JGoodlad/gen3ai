@@ -1,58 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 SpD
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 104 SpA / 120 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Hidden Power [Grass]
-- Leech Seed
-- Psychic
-- Recover
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Toxic
-- Refresh
-- Recover
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 216 Atk / 32 SpA / 12 Spe
-Adamant Nature
-- Rapid Spin
-- Earthquake
-- Ice Beam
-- Explosion
-
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Psychic
+EVs: 252 HP / 236 Def / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
 - Fire Punch
-- Hidden Power [Grass]
+- Toxic
+- Protect
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 180 Atk / 212 SpD / 116 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 4 Def / 216 SpA / 36 Spe
+Quiet Nature
+- Substitute
+- Crunch
+- Focus Punch
+- Thunderbolt
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 200 SpA / 56 Spe
+Modest Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Beam
+- Calm Mind
+- Soft-Boiled
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Protect
+
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
+- Hidden Power [Bug]
+- Gust
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 40 SpA / 4 SpD / 216 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Psychic
+- Recover
+- Rapid Spin

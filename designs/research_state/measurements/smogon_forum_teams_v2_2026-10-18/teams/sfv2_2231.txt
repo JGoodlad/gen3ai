@@ -1,57 +1,58 @@
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Brick Break
-- Rock Slide
-- Shadow Ball
-- Focus Punch
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 196 SpA / 128 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Protect
-- Toxic
-- Thunderbolt
-- Hidden Power [Fire]
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
-Naughty Nature
 IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Earthquake
-- Hidden Power [Grass]
-- Explosion
+- Crunch
+- Pursuit
+- Flamethrower
+- Brick Break
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
 IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
+- Spikes
+- Taunt
+- Toxic
+- Roar
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
 - Ice Beam
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 196 Atk / 200 SpD / 112 Spe
-Adamant Nature
-- Dragon Dance
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 100 HP / 44 Def / 220 SpA / 144 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
-- Brick Break
+- Hidden Power [Bug]
+- Double-Edge

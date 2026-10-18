@@ -1,59 +1,58 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 60 SpD / 196 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
 - Hidden Power [Grass]
-- Substitute
-- Baton Pass
+- Brick Break
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 240 HP / 248 SpA / 20 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Psychic
-- Hidden Power [Fire]
-- Explosion
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Toxic
+- Roar
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 76 SpA / 180 Spe
+EVs: 252 HP / 220 SpA / 36 Spe
 Modest Nature
-IVs: 3 Atk / 30 SpA
-- Calm Mind
-- Baton Pass
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
 - Giga Drain
-- Hidden Power [Electric]
+- Hidden Power [Fire]
+- Psychic
 
-Pelipper @ Leftovers
-Ability: Keen Eye
-EVs: 248 SpA / 32 SpD / 228 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 SpA / 176 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Hydro Pump
-- Ice Beam
-- Hidden Power [Grass]
-- Agility
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 40 HP / 144 Atk / 100 SpD / 224 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Beat Up
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 96 SpA / 160 Spe
-Timid Nature
-IVs: 0 Atk
-- Calm Mind
 - Substitute
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
 - Surf
-- Ice Beam
+- Roar

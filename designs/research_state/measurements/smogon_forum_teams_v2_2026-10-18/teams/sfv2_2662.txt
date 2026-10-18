@@ -1,57 +1,62 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 84 Atk / 172 Spe
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 140 Atk / 252 Def / 56 SpD / 60 Spe
 Adamant Nature
 IVs: 30 SpD / 30 Spe
-- Substitute
-- Rock Slide
 - Hidden Power [Bug]
+- Knock Off
+- Brick Break
 - Focus Punch
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
 
 Starmie @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
+Shiny: Yes
+EVs: 248 HP / 40 Def / 36 SpA / 32 SpD / 152 Spe
 Timid Nature
 IVs: 0 Atk
-- Rapid Spin
-- Recover
 - Surf
-- Ice Beam
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 184 HP / 148 SpD / 176 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Wish
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 220 SpD / 36 Spe
-Careful Nature
 - Thunder Wave
-- Seismic Toss
-- Superpower
-- Explosion
+- Recover
+- Rapid Spin
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Hidden Power [Grass]
-- Beat Up
+Skarmory @ Leftovers
+Ability: Keen Eye
+Shiny: Yes
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Thief
+
+Metagross @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 248 HP / 64 Atk / 184 Def / 12 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Protect
+
+Blissey @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 252 Def / 212 SpA / 44 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Ice Beam
+- Wish
+- Soft-Boiled
+
+Gengar @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 248 HP / 8 Def / 60 SpD / 192 Spe
+Timid Nature
+IVs: 0 Atk
+- Taunt
+- Will-O-Wisp
+- Thunderbolt
+- Destiny Bond

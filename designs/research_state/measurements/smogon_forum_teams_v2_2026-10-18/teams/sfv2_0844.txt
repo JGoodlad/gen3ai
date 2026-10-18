@@ -1,58 +1,62 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 252 Atk / 16 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 252 HP / 184 Def / 72 Spe
+Bold Nature
+- Calm Mind
+- Surf
+- Rest
+- Roar
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 72 Atk / 252 SpA / 184 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Hidden Power [Grass]
-- Meteor Mash
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 208 SpD / 52 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Protect
+- Rapid Spin
 - Earthquake
-- Explosion
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Flying]
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
-Adamant Nature
-- Self-Destruct
+Shiny: Yes
+EVs: 164 HP / 192 Def / 152 SpD
+Careful Nature
+- Earthquake
 - Body Slam
-- Shadow Ball
-- Focus Punch
+- Curse
+- Rest
 
-Magneton @ Leftovers
+Magneton @ Magnet
 Ability: Magnet Pull
-EVs: 144 HP / 176 SpA / 188 Spe
-Timid Nature
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunderbolt
 - Hidden Power [Fire]
-- Thunder Wave
-- Refresh
+- Toxic
+- Reflect
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 192 HP / 220 Atk / 4 Def / 56 SpA / 36 Spe
-Brave Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Hydro Pump
+Houndoom @ Leftovers
+Ability: Flash Fire
+Shiny: Yes
+EVs: 208 SpA / 124 SpD / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Fire Blast
+- Crunch
+- Will-O-Wisp
+
+Porygon2 @ Leftovers
+Ability: Trace
+Shiny: Yes
+EVs: 252 HP / 224 Def / 32 SpD
+Bold Nature
+IVs: 0 Atk
 - Ice Beam
-- Earthquake
-- Hidden Power [Bug]
+- Recover
+- Rain Dance
+- Toxic

@@ -1,57 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Forretress @ Leftovers
+Forretress (M) @ Leftovers
 Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
+EVs: 248 HP / 8 Def / 252 SpD
 Careful Nature
-IVs: 30 Atk / 30 SpD
 - Spikes
+- Toxic
+- Earthquake
 - Rapid Spin
-- Hidden Power [Ghost]
-- Counter
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-- Soft-Boiled
-- Aromatherapy
-- Thunder Wave
-- Seismic Toss
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 60 Def / 140 SpA / 56 Spe
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 188 HP / 232 SpA / 88 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Wish
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-
-Quagsire @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 4 Def / 252 SpD
-Sassy Nature
-- Rest
-- Curse
-- Earthquake
+- Crunch
 - Ice Beam
+- Hidden Power [Grass]
+- Pursuit
 
-Flygon @ Choice Band
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 232 Def / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Roar
+- Rest
+
+Flygon (M) @ Leftovers
 Ability: Levitate
-EVs: 76 HP / 252 Atk / 180 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
+EVs: 236 HP / 32 Atk / 200 Def / 40 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Return
+- Hidden Power [Flying]
+- Toxic
+- Protect
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 72 HP / 236 SpA / 200 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Substitute
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 252 Def / 8 SpD
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Thunderbolt
+- Heal Bell
+- Soft-Boiled

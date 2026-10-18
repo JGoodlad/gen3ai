@@ -1,0 +1,59 @@
+Regirock @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Thunder Wave
+- Rock Slide
+- Earthquake
+- Body Slam
+
+Dunsparce @ Leftovers
+Ability: Serene Grace
+EVs: 156 HP / 252 Atk / 100 Spe
+Adamant Nature
+- Body Slam
+- Headbutt
+- Rock Slide
+- Earthquake
+
+Magneton @ Magnet
+Ability: Magnet Pull
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Thunder Wave
+- Rain Dance
+- Hidden Power [Fire]
+
+Gyarados @ Leftovers
+Ability: Intimidate
+Shiny: Yes
+EVs: 68 HP / 252 Atk / 188 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Hidden Power [Rock]
+- Thunder Wave
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 240 HP / 24 Atk / 92 Def / 120 SpD / 32 Spe
+Careful Nature
+- Body Slam
+- Fire Punch
+- Protect
+- Wish
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 44 HP / 252 Def / 212 SpA
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Ice Beam
+- Seismic Toss
+- Thunder Wave

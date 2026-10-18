@@ -1,57 +1,57 @@
-Salamence @ Choice Band
+Salamence @ Leftovers
 Ability: Intimidate
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Earthquake
+EVs: 252 Atk / 4 SpA / 252 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
 - Rock Slide
+- Fire Blast
+- Hidden Power [Grass]
 - Brick Break
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 60 HP / 252 SpA / 196 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Reflect
-- Toxic
-
-Skarmory @ Leftovers
+Skarmory
 Ability: Keen Eye
-EVs: 252 HP / 240 SpD / 16 Spe
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
 - Spikes
+- Thief
 - Drill Peck
 - Roar
-- Toxic
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
+- Refresh
+- Psychic
+- Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 240 SpA / 16 Spe
+EVs: 212 HP / 252 Def / 44 SpA
 Bold Nature
 IVs: 0 Atk
-- Wish
 - Soft-Boiled
-- Ice Beam
+- Toxic
 - Seismic Toss
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Naughty Nature
-- Meteor Mash
-- Earthquake
-- Explosion
-- Agility
+- Ice Beam
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 248 HP / 196 Def / 64 Spe
+EVs: 252 HP / 232 Def / 24 Spe
 Bold Nature
 IVs: 0 Atk
+- Rest
 - Calm Mind
 - Surf
-- Rest
 - Roar
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day

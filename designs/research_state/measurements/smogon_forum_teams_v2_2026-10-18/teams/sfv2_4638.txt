@@ -1,0 +1,56 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 248 Def / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Roar
+- Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 216 Atk / 36 SpA / 8 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 232 HP / 252 SpA / 24 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Rain Dance
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+- Sunny Day
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Curse
+- Return
+- Shadow Ball
+- Rest
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 24 SpD / 232 Spe
+Adamant Nature
+- Substitute
+- Swords Dance
+- Rock Slide
+- Megahorn

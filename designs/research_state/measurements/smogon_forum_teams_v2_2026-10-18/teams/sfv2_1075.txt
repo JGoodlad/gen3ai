@@ -1,55 +1,57 @@
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 156 Def / 56 SpA / 48 Spe
-Modest Nature
-IVs: 0 Atk
-- Recover
-- Toxic
-- Surf
-- Ice Beam
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 208 Atk / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 136 Atk / 152 Def / 168 SpD / 20 Spe
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
 Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Counter
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 252 Atk / 16 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Earthquake
+- Brick Break
+- Hidden Power [Grass]
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 136 Def / 56 SpA / 28 SpD / 36 Spe
-Bold Nature
+EVs: 232 HP / 20 Def / 76 SpA / 180 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
-- Recover
-- Leech Seed
+- Calm Mind
 - Giga Drain
 - Hidden Power [Fire]
+- Baton Pass
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 72 Def / 8 Spe
-Adamant Nature
-- Protect
-- Meteor Mash
-- Earthquake
-- Explosion
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Thunderbolt
+- Ice Beam
+- Rapid Spin
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 252 SpA / 252 Spe
-Naive Nature
-- Wish
-- Dragon Claw
-- Flamethrower
+EVs: 8 HP / 216 Atk / 148 SpD / 136 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Dragon Dance
+- Hidden Power [Ghost]
 - Brick Break
+- Rock Slide
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 56 Def / 124 SpA / 44 SpD / 36 Spe
+Relaxed Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Roar

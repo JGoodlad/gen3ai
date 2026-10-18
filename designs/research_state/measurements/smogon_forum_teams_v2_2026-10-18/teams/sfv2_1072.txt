@@ -1,57 +1,57 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 240 HP / 176 SpA / 76 SpD / 16 Spe
+EVs: 240 HP / 252 SpA / 16 Spe
 Modest Nature
 IVs: 0 Atk
-- Crunch
 - Pursuit
-- Flamethrower
+- Crunch
+- Fire Blast
 - Roar
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Substitute
+- Baton Pass
+
+Breloom @ Leftovers
+Ability: Effect Spore
+Hidden Power: Ghost
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Spore
+- Focus Punch
+- Sky Uppercut
+- Mach Punch
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Bug]
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 4 Def / 252 SpD / 4 Spe
+EVs: 248 HP / 120 SpD / 140 Spe
 Careful Nature
 - Spikes
-- Protect
-- Toxic
+- Drill Peck
 - Roar
+- Taunt
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Thunder Wave
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 228 SpA / 40 Spe
+Quiet Nature
 - Surf
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 240 SpA / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
-- Ice Beam
-- Thunderbolt
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 32 Atk / 196 Def / 20 SpD / 8 Spe
-Impish Nature
-- Protect
-- Toxic
-- Meteor Mash
 - Earthquake
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
+- Ice Beam
+- Roar

@@ -1,58 +1,55 @@
-Arcanine (M)
-Ability: Intimidate
-EVs: 72 Def / 252 SpA / 184 Spe
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 244 Def / 96 SpA / 12 SpD / 140 Spe
 Modest Nature
-IVs: 30 Spe
-- Flamethrower
-- Hidden Power [Ice]
-- Extreme Speed
-- Thief
-
-Breloom (M) @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 72 SpD / 184 Spe
-Adamant Nature
+IVs: 0 Atk
 - Substitute
-- Mach Punch
-- Focus Punch
-- Spore
+- Surf
+- Ice Beam
+- Baton Pass
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Claydol @ Choice Band
+Ability: Levitate
+EVs: 252 HP / 252 Atk / 4 Def
+Impish Nature
+- Rapid Spin
+- Earthquake
+- Rock Slide
+- Explosion
 
 Registeel @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 120 Def / 136 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
 - Thunder Wave
 - Seismic Toss
-- Hidden Power [Grass]
+- Counter
 - Explosion
 
-Tyranitar (M) @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 8 Def / 252 SpA / 8 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Ice Beam
-- Hidden Power [Grass]
-- Pursuit
-
-Flygon (M) @ Leftovers
-Ability: Levitate
-EVs: 252 Atk / 4 SpA / 252 Spe
-Naughty Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
+Heracross
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Thief
+- Megahorn
 - Rock Slide
-- Hidden Power [Bug]
-- Flamethrower
+- Brick Break
 
-Forretress (M) @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Spikes
-- Hidden Power [Fire]
-- Rapid Spin
-- Explosion
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

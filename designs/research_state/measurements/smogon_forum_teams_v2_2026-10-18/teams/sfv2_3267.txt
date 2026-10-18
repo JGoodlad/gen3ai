@@ -1,56 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 4 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Fire Blast
-- Ice Beam
-
-Altaria @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 96 SpA / 140 SpD / 20 Spe
-Calm Nature
-IVs: 0 Atk
-- Heal Bell
-- Rest
-- Toxic
-- Flamethrower
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 80 Atk / 252 SpA / 176 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Drill Peck
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 44 HP / 196 Atk / 132 Def / 136 SpD
-Careful Nature
-- Body Slam
-- Curse
-- Rest
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 140 HP / 252 Atk / 12 Def / 4 SpD / 100 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Aerial Ace
 
 Forretress @ Leftovers
 Ability: Sturdy
 EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
+Sassy Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Spikes
 - Explosion
-- Rapid Spin
+- Hidden Power [Bug]
 - Zap Cannon
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 40 SpA / 92 SpD
-Relaxed Nature
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 88 Atk / 112 Def / 56 SpD
+Sassy Nature
+- Rapid Spin
+- Rain Dance
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 168 HP / 252 Def / 88 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Thunder Wave
+- Aromatherapy
+- Soft-Boiled
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 176 Def / 84 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
 - Rest
+- Roar
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
 - Curse
-- Earthquake
-- Hydro Pump
+- Rest
+- Return
+- Shadow Ball

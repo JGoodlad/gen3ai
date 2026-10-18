@@ -1,57 +1,57 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 8 Atk / 252 SpA / 248 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Protect
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
+- Earthquake
+- Double-Edge
+- Hidden Power [Bug]
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
-
-Zapdos @ Leftovers
-Ability: Pressure
+Magneton @ Magnet
+Ability: Magnet Pull
 EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunderbolt
-- Hidden Power [Ice]
-- Substitute
-- Baton Pass
+- Hidden Power [Fire]
+- Thunder Wave
+- Metal Sound
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 196 HP / 252 SpA / 60 SpD
-Quiet Nature
-- Psychic
-- Pursuit
-- Earthquake
-- Explosion
-
-Blaziken @ Leftovers
-Ability: Blaze
-EVs: 60 Atk / 252 SpA / 196 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Sky Uppercut
-- Fire Blast
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 168 Def / 56 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
 - Hidden Power [Grass]
-- Thunder Punch
+- Recover
+- Perish Song
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 176 Atk / 156 Def / 176 SpD
-Adamant Nature
-- Body Slam
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 184 Def / 32 SpD / 44 Spe
+Brave Nature
+- Curse
+- Ice Beam
 - Earthquake
-- Focus Punch
-- Self-Destruct
+- Rest
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 168 HP / 252 Def / 88 Spe
+Bold Nature
+IVs: 0 Atk
+- Thunder Wave
+- Soft-Boiled
+- Seismic Toss
+- Aromatherapy

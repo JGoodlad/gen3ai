@@ -1,0 +1,56 @@
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 248 HP / 244 Def / 16 Spe
+Impish Nature
+- Recover
+- Bulk Up
+- Brick Break
+- Rock Slide
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 SpA / 8 SpD
+Modest Nature
+IVs: 0 Atk
+- Torment
+- Crunch
+- Pursuit
+- Flamethrower
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 108 Def / 40 SpA / 32 SpD / 76 Spe
+Bold Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Thunder Wave
+- Surf
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
+Adamant Nature
+- Curse
+- Return
+- Earthquake
+- Self-Destruct
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 228 Atk / 16 Def / 96 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 12 Def / 200 SpD / 140 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

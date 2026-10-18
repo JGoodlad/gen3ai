@@ -1,57 +1,59 @@
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 100 Atk / 192 Def / 168 SpD / 48 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Brick Break
+- Knock Off
+- Hidden Power [Bug]
+- Focus Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 36 Def / 20 SpA / 136 SpD / 64 Spe
+Calm Nature
 IVs: 2 Atk / 30 SpA
-- Substitute
+- Heal Bell
+- Hidden Power [Grass]
+- Leech Seed
+- Recover
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+Shiny: Yes
+EVs: 252 HP / 216 Def / 4 SpA / 36 Spe
+Bold Nature
+IVs: 0 Atk
 - Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
+- Water Pulse
+- Psychic
+- Wish
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Earthquake
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Ice Punch
-- Fire Punch
-- Hidden Power [Grass]
-- Explosion
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Salamence @ Leftovers
+Salamence (F) @ Leftovers
 Ability: Intimidate
-EVs: 156 Atk / 212 SpD / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
+EVs: 248 HP / 252 Def / 8 SpD
+Bold Nature
+IVs: 0 Atk
+- Flamethrower
+- Protect
+- Toxic
+- Wish
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 36 Atk / 136 Def / 84 SpD
+Relaxed Nature
 - Earthquake
-- Rock Slide
-- Hidden Power [Flying]
+- Ice Beam
+- Psychic
+- Rapid Spin
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 96 Def / 8 SpD / 152 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Rest
+- Roar
+- Surf

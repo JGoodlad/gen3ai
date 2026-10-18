@@ -1,58 +1,57 @@
 Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 44 Atk / 212 SpA / 252 Spe
-Naughty Nature
+EVs: 252 Atk / 4 SpA / 252 Spe
+Hasty Nature
 IVs: 30 Atk / 30 SpA
-- Ice Beam
+- Rock Slide
 - Fire Blast
 - Hidden Power [Grass]
 - Brick Break
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 104 Atk / 252 SpA / 152 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Drill Peck
-
-Skarmory @ Leftovers
+Skarmory
 Ability: Keen Eye
-EVs: 252 HP / 156 SpD / 100 Spe
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
+- Thief
+- Drill Peck
 - Roar
-- Taunt
-- Toxic
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 220 HP / 252 SpA / 36 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+- Will-O-Wisp
+- Thunderbolt
 - Giga Drain
-- Hidden Power [Fire]
-- Leech Seed
-- Psychic
+- Explosion
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 252 HP / 216 Def / 40 Spe
-Relaxed Nature
-- Earthquake
-- Focus Punch
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Surf
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Toxic
 - Ice Beam
-- Hydro Pump
+- Thunderbolt
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
 - Earthquake
+- Rock Slide
 - Hidden Power [Bug]
 - Double-Edge

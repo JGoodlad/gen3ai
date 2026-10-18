@@ -1,63 +1,55 @@
-Jynx @ Leftovers
-Ability: Oblivious
-Shiny: Yes
-EVs: 120 HP / 200 SpA / 188 Spe
-Timid Nature
-IVs: 0 Atk
-- Lovely Kiss
-- Mean Look
-- Ice Beam
-- Perish Song
-
-Dugtrio (M) @ Choice Band
-Ability: Arena Trap
-Shiny: Yes
-EVs: 252 Atk / 4 Def / 252 Spe
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 252 Atk / 16 Def / 240 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Aerial Ace
-- Hidden Power [Bug]
 - Substitute
-
-Snorlax (M) @ Lum Berry
-Ability: Immunity
-Shiny: Yes
-Happiness: 0
-EVs: 80 HP / 176 Atk / 52 Def / 200 SpD
-Adamant Nature
-- Curse
-- Frustration
+- Brick Break
 - Shadow Ball
-- Self-Destruct
+- Focus Punch
 
-Metagross @ Choice Band
-Ability: Clear Body
-Shiny: Yes
-EVs: 248 HP / 212 Atk / 48 Def
-Adamant Nature
-- Explosion
-- Meteor Mash
-- Earthquake
-- Double-Edge
-
-Zapdos @ Leftovers
-Ability: Pressure
-Shiny: Yes
-EVs: 112 HP / 236 SpA / 160 Spe
+Ludicolo @ Leftovers
+Ability: Swift Swim
+EVs: 248 HP / 144 Def / 16 SpA / 100 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Rain Dance
-- Thunder
-- Hidden Power [Grass]
-- Thunder Wave
-
-Heracross (M) @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-IVs: 30 HP
+IVs: 0 Atk
+- Surf
+- Leech Seed
 - Substitute
-- Swords Dance
-- Megahorn
-- Rock Slide
+- Rain Dance
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Careful Nature
+- Return
+- Earthquake
+- Shadow Ball
+- Curse
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 16 SpA / 32 SpD
+Careful Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Toxic
+- Seismic Toss
+- Explosion
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 Def / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Substitute
+- Calm Mind

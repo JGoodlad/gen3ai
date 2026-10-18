@@ -1,0 +1,56 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 136 Def / 24 SpA / 92 SpD / 4 Spe
+Relaxed Nature
+- Curse
+- Earthquake
+- Ice Beam
+- Protect
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 64 HP / 252 Atk / 192 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Double-Edge
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 68 SpD / 188 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Thunder Wave
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 204 HP / 216 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 40 HP / 208 Atk / 148 Def / 96 SpD / 16 Spe
+Careful Nature
+- Curse
+- Body Slam
+- Shadow Ball
+- Earthquake
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 20 Def / 100 SpA / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Recover
+- Psychic
+- Hidden Power [Grass]

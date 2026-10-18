@@ -1,57 +1,56 @@
-Swampert @ Choice Band
-Ability: Torrent
-EVs: 252 Atk / 44 SpD / 212 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Ghost]
-- Hydro Pump
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 68 HP / 252 SpA / 188 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 28 Def / 140 SpA / 52 SpD / 40 Spe
 Modest Nature
-IVs: 2 Atk / 30 Def
-- Toxic
+IVs: 30 Atk / 30 SpA
+- Baton Pass
+- Hidden Power [Grass]
 - Thunderbolt
-- Hidden Power [Ice]
-- Sunny Day
-
-Umbreon @ Leftovers
-Ability: Synchronize
-EVs: 252 HP / 144 SpA / 96 SpD / 16 Spe
-Calm Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Charm
-- Pursuit
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 152 Atk / 152 Def / 172 SpD
-Adamant Nature
-- Curse
-- Return
-- Earthquake
-- Self-Destruct
+- Thunder Wave
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 176 Atk / 20 Def / 28 SpD / 32 Spe
-Adamant Nature
-- Toxic
-- Meteor Mash
-- Earthquake
+EVs: 160 HP / 252 SpA / 96 Spe
+Quiet Nature
+IVs: 30 Def / 30 SpA / 30 Spe
 - Explosion
+- Hidden Power [Fire]
+- Meteor Mash
+- Psychic
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 252 Atk / 232 Spe
+Heracross @ Leftovers
+Ability: Guts
+EVs: 252 Atk / 4 SpD / 252 Spe
 Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
+- Brick Break
+- Megahorn
+- Rock Slide
+- Swords Dance
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Rapid Spin
+- Thunderbolt
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+- Endeavor
+- Focus Punch
+- Substitute
+- Surf
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 156 Atk / 168 Spe
+Naughty Nature
 - Dragon Dance
 - Earthquake
-- Hidden Power [Rock]
-- Return
+- Ice Beam
+- Rock Slide

@@ -1,57 +1,57 @@
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Refresh
-- Toxic
-- Surf
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Protect
-- Thunder Wave
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 212 SpA / 120 SpD / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
 - Thunderbolt
-- Hidden Power [Fire]
+- Hidden Power [Ice]
+- Toxic
+- Light Screen
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 4 Atk / 252 Def
-Relaxed Nature
-- Rapid Spin
-- Earthquake
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 248 SpA / 76 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
 - Psychic
+- Hidden Power [Fire]
 - Explosion
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 136 Def / 60 SpA / 28 SpD / 32 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Recover
-- Leech Seed
-- Heal Bell
-- Hidden Power [Grass]
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 116 Atk / 164 Def / 12 SpD / 12 Spe
-Adamant Nature
-IVs: 30 SpD
-- Rest
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 40 Def / 176 SpA / 44 SpD
+Quiet Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
 - Curse
-- Body Slam
-- Hidden Power [Steel]
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 32 Def / 228 SpA
+Quiet Nature
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 92 Atk / 168 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Dragon Dance
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 248 HP / 216 Def / 44 Spe
-Relaxed Nature
-- Wish
-- Protect
-- Dragon Claw
+EVs: 244 Atk / 84 SpD / 180 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
 - Brick Break

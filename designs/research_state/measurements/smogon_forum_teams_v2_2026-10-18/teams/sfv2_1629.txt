@@ -1,57 +1,56 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
-Adamant Nature
-IVs: 30 Def / 30 SpA / 30 Spe
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 192 HP / 140 SpA / 176 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Fire Punch
-- Hidden Power [Grass]
-- Psychic
-
-Suicune @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
+EVs: 216 HP / 136 SpA / 156 Spe
 Modest Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
+IVs: 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
 - Ice Beam
 
-Snorlax (F) @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Shadow Ball
-
-Salamence (M) @ Leftovers
-Ability: Intimidate
-EVs: 12 Def / 244 SpA / 252 Spe
-Mild Nature
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
 IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Fire Blast
+- Earthquake
+- Thunder Punch
 - Hidden Power [Grass]
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 4 Def / 136 SpA / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+- Dragon Claw
+- Rock Slide
+- Flamethrower
 - Brick Break

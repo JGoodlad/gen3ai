@@ -1,56 +1,60 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 188 HP / 68 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Hidden Power [Bug]
-- Rock Slide
-- Earthquake
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 40 HP / 216 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Brick Break
-- Dragon Claw
-- Fire Blast
-- Hidden Power [Grass]
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 120 HP / 220 SpA / 8 SpD / 160 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Roar
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
+- Counter
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 212 SpA / 44 Spe
-Modest Nature
-- Ice Beam
+EVs: 28 HP / 252 Def / 228 Spe
+Timid Nature
+IVs: 0 Atk
 - Seismic Toss
 - Toxic
 - Soft-Boiled
+- Wish
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 252 HP / 140 SpD / 116 Spe
-Timid Nature
+Starmie @ Leftovers
+Ability: Natural Cure
+Level: 97
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+IVs: 0 Atk / 0 Spe
 - Surf
-- Explosion
+- Nightmare
 - Rapid Spin
-- Spikes
+- Recover
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 88 HP / 216 Atk / 204 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Refresh
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 68 HP / 96 Def / 216 SpA / 128 Spe
-Rash Nature
-- Hydro Pump
-- Ice Beam
-- Earthquake
-- Focus Punch
+EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Protect
+- Roar
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 16 Atk / 240 SpD
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Knock Off
+- Hidden Power [Bug]
+- Rock Slide
+- Swords Dance

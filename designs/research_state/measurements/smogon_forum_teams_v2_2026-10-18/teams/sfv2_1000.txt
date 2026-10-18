@@ -1,58 +1,57 @@
-Tyranitar @ Choice Band
+Wailord @ Leftovers
+Ability: Water Veil
+EVs: 168 Def / 252 SpA / 88 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Grass]
+- Self-Destruct
+
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 252 Atk / 4 SpD
+EVs: 248 HP / 252 Atk / 4 SpD / 4 Spe
 Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Brick Break
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
 - Earthquake
 - Hidden Power [Bug]
-- Rock Slide
+- Roar
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 112 HP / 252 Def / 144 SpA
-Bold Nature
-IVs: 0 Atk
-- Ice Beam
-- Seismic Toss
-- Soft-Boiled
-- Thunder Wave
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 196 SpD / 60 Spe
+Careful Nature
+- Spikes
+- Taunt
+- Drill Peck
+- Toxic
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 184 Def / 72 Spe
-Bold Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Thunder Wave
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 120 Atk / 252 SpA / 136 Spe
+Mild Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Thunderbolt
+- Drill Peck
+- Hidden Power [Fighting]
+- Toxic
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 4 Atk / 252 SpA
-Quiet Nature
-IVs: 30 Def / 30 SpA / 30 Spe
-- Explosion
-- Hidden Power [Fire]
-- Meteor Mash
-- Psychic
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 HP / 224 SpA / 32 Spe
-Rash Nature
-IVs: 30 Def / 30 SpA
-- Brick Break
-- Flamethrower
-- Hidden Power [Grass]
-- Wish
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 8 Def / 140 SpD / 108 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Aerial Ace
+- Beat Up
+- Hidden Power [Bug]
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 216 Def / 52 Spe
-Relaxed Nature
+EVs: 108 Def / 252 SpA / 148 Spe
+Rash Nature
+- Hydro Pump
 - Earthquake
-- Focus Punch
 - Ice Beam
-- Protect
+- Focus Punch

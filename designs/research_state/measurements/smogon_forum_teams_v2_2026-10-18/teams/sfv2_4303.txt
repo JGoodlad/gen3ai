@@ -1,0 +1,57 @@
+Jirachi @ Choice Band
+Ability: Serene Grace
+EVs: 220 HP / 216 Atk / 72 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Body Slam
+- Hidden Power [Fighting]
+- Doom Desire
+- Rain Dance
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 136 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Ice Beam
+- Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 148 HP / 216 Atk / 144 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Rock Slide
+- Explosion
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 196 SpA / 120 SpD / 192 Spe
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Fire Blast
+- Will-O-Wisp
+- Beat Up
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 216 Atk / 116 Def / 176 SpD
+Adamant Nature
+- Self-Destruct
+- Body Slam
+- Counter
+- Focus Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 232 Atk / 160 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break

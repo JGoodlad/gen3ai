@@ -1,57 +1,57 @@
-Venusaur @ Leftovers
-Ability: Overgrow
-EVs: 220 SpA / 68 SpD / 220 Spe
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Refresh
+- Toxic
+- Surf
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
-- Giga Drain
+- Protect
+- Toxic
+- Thunderbolt
 - Hidden Power [Fire]
-- Sleep Powder
-- Leech Seed
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 96 HP / 252 SpA / 160 Spe
-Modest Nature
-IVs: 0 Atk
-- Surf
-- Ice Beam
-- Calm Mind
-- Substitute
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Alakazam @ Leftovers
-Ability: Synchronize
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Psychic
-- Fire Punch
-- Hidden Power [Grass]
-
-Camerupt @ Leftovers
-Ability: Magma Armor
-EVs: 252 SpA / 116 SpD / 140 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Flamethrower
-- Earthquake
-- Hidden Power [Grass]
-- Explosion
-
-Weezing @ Leftovers
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 68 Atk / 176 SpA / 16 Spe
-Rash Nature
-- Sludge Bomb
-- Will-O-Wisp
-- Fire Blast
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
 - Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
+
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Brick Break
+- Hidden Power [Flying]

@@ -1,56 +1,58 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Surf
-- Ice Beam
-- Thunderbolt
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 SpD
-Adamant Nature
-- Curse
-- Earthquake
-- Rock Slide
-- Explosion
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-IVs: 0 Atk
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+- Crunch
+- Pursuit
+- Flamethrower
+- Brick Break
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Shadow Ball
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 SpD / 30 Spe
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 196 Def / 40 SpA / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Fire Punch
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Refresh
+- Toxic
+- Surf
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 Spe
+Impish Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Thunder Wave
+- Seismic Toss
+- Counter
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Will-O-Wisp
+- Flamethrower
+- Hidden Power [Grass]
+- Roar

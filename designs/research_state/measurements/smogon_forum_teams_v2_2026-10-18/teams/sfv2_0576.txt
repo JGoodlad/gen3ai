@@ -1,57 +1,60 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 44 Def / 140 SpA / 72 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Roar
-- Thunder Wave
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 188 Atk / 12 Def / 56 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
+Swampert @ Leftovers
+Ability: Torrent
+Shiny: Yes
+EVs: 212 HP / 104 Atk / 136 SpA / 56 Spe
+Brave Nature
+- Hydro Pump
+- Ice Beam
 - Earthquake
-- Hidden Power [Bug]
-- Focus Punch
+- Curse
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
-- Protect
+- Drill Peck
 - Toxic
 - Roar
 
-Blissey @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Bold Nature
-- Seismic Toss
-- Ice Beam
-- Soft-Boiled
-- Toxic
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 24 HP / 252 SpA / 232 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Will-O-Wisp
+- Overheat
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 44 Def / 216 Spe
-Timid Nature
-IVs: 0 Atk
-- Surf
-- Psychic
-- Rapid Spin
-- Recover
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 36 Atk / 176 Def / 44 SpD / 4 Spe
-Relaxed Nature
+Salamence @ Leftovers
+Ability: Intimidate
+Shiny: Yes
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Rock Slide
 - Earthquake
-- Ice Beam
-- Protect
-- Hydro Pump
+- Dragon Dance
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 244 HP / 204 SpA / 60 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+Shiny: Yes
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Thunder Wave
+- Roar

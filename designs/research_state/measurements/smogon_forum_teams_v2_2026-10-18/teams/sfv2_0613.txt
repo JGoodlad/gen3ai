@@ -1,57 +1,57 @@
-Dodrio @ Choice Band
-Ability: Early Bird
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 184 SpA / 72 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Hydro Pump
+- Ice Beam
+- Calm Mind
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Megahorn
+- Rock Slide
+- Swords Dance
+- Brick Break
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
 EVs: 252 Atk / 4 SpD / 252 Spe
 Jolly Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Drill Peck
-- Return
-- Baton Pass
-- Hidden Power [Fighting]
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
 
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 252 SpA / 48 SpD / 208 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 4 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
-- Thunderbolt
+- Calm Mind
+- Ice Punch
+- Fire Punch
 - Hidden Power [Grass]
-- Thunder Wave
-- Endure
 
-Metagross @ Lum Berry
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Salamence @ Choice Band
+Salamence @ Leftovers
 Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
+EVs: 44 HP / 136 Atk / 212 SpD / 116 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Hidden Power [Bug]
-- Double-Edge
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Brick Break
 - Rock Slide
-- Earthquake
+- Dragon Dance
 
-Camerupt @ Leftovers
-Ability: Magma Armor
-EVs: 28 HP / 188 Atk / 136 SpA / 156 SpD
-Brave Nature
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 160 Atk / 76 Def / 20 Spe
+Adamant Nature
 - Earthquake
-- Fire Blast
-- Toxic
+- Rock Slide
+- Rapid Spin
 - Explosion
-
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 248 HP / 228 Def / 32 SpD
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Roar
-- Wish
-- Toxic

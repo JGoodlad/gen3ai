@@ -1,55 +1,57 @@
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 248 HP / 72 Atk / 188 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
+EVs: 252 Atk / 4 SpA / 252 Spe
+Naive Nature
 IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Brick Break
-- Hidden Power [Grass]
+- Rock Slide
 - Fire Blast
+- Hidden Power [Grass]
+- Brick Break
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 244 SpD / 12 Spe
-Careful Nature
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
 - Spikes
-- Drill Peck
-- Toxic
+- Rapid Spin
+- Ice Beam
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Surf
 - Roar
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-- Calm Mind
-- Soft-Boiled
-- Ice Beam
-- Thunderbolt
-
-Metagross @ Leftovers
+Metagross @ Liechi Berry
 Ability: Clear Body
-EVs: 252 HP / 176 Atk / 80 Def
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
 Adamant Nature
+- Agility
 - Meteor Mash
 - Earthquake
-- Protect
 - Explosion
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 216 Atk / 36 SpA / 8 Spe
-Adamant Nature
-- Earthquake
-- Psychic
-- Rapid Spin
-- Explosion
+Charizard @ Choice Band
+Ability: Blaze
+EVs: 4 HP / 252 Atk / 252 Spe
+Lonely Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Steel Wing
+- Rock Slide
+- Hidden Power [Flying]
+- Overheat

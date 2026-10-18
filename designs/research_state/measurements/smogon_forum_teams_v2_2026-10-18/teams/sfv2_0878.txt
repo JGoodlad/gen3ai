@@ -1,56 +1,58 @@
-Smeargle @ Salac Berry
-Ability: Own Tempo
-EVs: 4 HP / 252 SpD / 252 Spe
-Jolly Nature
-- Spore
-- Substitute
-- Explosion
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
 - Spikes
+- Roar
+- Drill Peck
+- Protect
 
-Camerupt @ Quick Claw
-Ability: Magma Armor
-EVs: 252 HP / 252 Atk / 4 SpA
-Brave Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Earthquake
-- Explosion
-- Hidden Power [Grass]
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Agility
-- Explosion
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 172 Atk / 144 SpA / 192 Spe
-Hasty Nature
-- Focus Punch
-- Explosion
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 220 SpD / 36 Spe
+Calm Nature
+IVs: 0 Atk
 - Thunderbolt
-- Giga Drain
+- Rest
+- Toxic
+- Roar
 
-Salamence @ Leftovers
+Articuno @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 104 SpA / 136 SpD / 16 Spe
+Calm Nature
+IVs: 0 Atk
+- Ice Beam
+- Rest
+- Heal Bell
+- Sleep Talk
+
+Gligar
+Ability: Hyper Cutter
+EVs: 248 HP / 24 Def / 236 Spe
+Impish Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Thief
+- Hidden Power [Flying]
+- Earthquake
+- Counter
+
+Gyarados @ Leftovers
 Ability: Intimidate
-EVs: 176 Atk / 212 SpD / 120 Spe
+EVs: 208 HP / 184 Atk / 116 Spe
 Adamant Nature
 IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Rock Slide
-- Earthquake
 - Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Taunt
 
-Jirachi @ Salac Berry
-Ability: Serene Grace
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Ice Punch
-- Thunderbolt
-- Calm Mind
-- Endure
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]

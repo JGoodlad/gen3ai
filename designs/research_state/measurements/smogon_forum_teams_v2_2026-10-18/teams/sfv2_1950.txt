@@ -1,58 +1,58 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 252 SpA / 8 SpD
-Modest Nature
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Ice Beam
+- Brick Break
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
 IVs: 0 Atk
-- Crunch
-- Fire Blast
-- Pursuit
+- Spikes
+- Taunt
+- Toxic
+- Roar
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
 - Ice Beam
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 64 HP / 252 SpA / 192 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 116 HP / 140 SpA / 252 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Fire Punch
+- Hidden Power [Grass]
+- Psychic
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
 - Thunderbolt
 - Hidden Power [Grass]
-- Toxic
-- Sunny Day
+- Baton Pass
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 28 SpA / 228 Spe
-Hasty Nature
-IVs: 30 SpD / 30 Spe
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Pursuit
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 216 HP / 16 Atk / 88 SpD / 188 Spe
-Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Hidden Power [Rock]
-- Earthquake
-- Dragon Dance
-- Rest
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 48 HP / 144 Atk / 132 Def / 184 SpD
-Careful Nature
-- Body Slam
-- Earthquake
-- Curse
-- Rest
-
-Steelix @ Leftovers
+Aerodactyl @ Choice Band
 Ability: Rock Head
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-IVs: 30 Def / 30 SpD / 30 Spe
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Hidden Power [Rock]
-- Rest
-- Roar
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

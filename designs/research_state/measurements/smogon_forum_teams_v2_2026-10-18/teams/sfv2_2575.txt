@@ -1,56 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 80 HP / 252 SpA / 176 Spe
 Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Counter
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Shadow Ball
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 120 Atk / 100 SpD / 36 Spe
-Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Superpower
-- Explosion
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Substitute
+- Baton Pass
+- Hidden Power [Ice]
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
+EVs: 252 HP / 104 SpA / 152 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Calm Mind
 - Giga Drain
-- Psychic
+- Hidden Power [Fire]
+- Baton Pass
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
 - Calm Mind
-- Surf
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 120 Def / 248 SpA / 140 Spe
-Rash Nature
-- Wish
-- Dragon Claw
-- Flamethrower
-- Brick Break
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 184 SpA / 84 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Protect
+- Toxic
+- Refresh
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Hasty Nature
+- Will-O-Wisp
+- Explosion
+- Ice Punch
+- Thunderbolt
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 40 HP / 252 Atk / 96 SpD / 120 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Beat Up

@@ -1,58 +1,57 @@
-Snorlax @ Choice Band
-Ability: Immunity
-EVs: 8 HP / 252 Atk / 48 Def / 116 SpD / 84 Spe
-Adamant Nature
-- Body Slam
-- Self-Destruct
-- Brick Break
-- Shadow Ball
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Toxic
+- Surf
 
-Regirock @ Leftovers
-Ability: Clear Body
-Shiny: Yes
-EVs: 252 HP / 192 Atk / 64 SpD
-Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Thunder Wave
-- Hidden Power [Rock]
-- Earthquake
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
 - Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 156 Def / 40 SpA / 28 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Recover
+- Leech Seed
+- Hidden Power [Grass]
+- Shock Wave
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 252 HP / 144 Atk / 112 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
+Mild Nature
+- Dragon Claw
+- Flamethrower
 - Brick Break
-- Rock Slide
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
-- Thunderbolt
-- Rapid Spin
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 28 HP / 252 SpA / 228 Spe
-Modest Nature
-IVs: 0 Atk
-- Surf
-- Sleep Talk
-- Calm Mind
-- Rest
+- Roar

@@ -1,0 +1,56 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 180 SpD / 80 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+- Thunder Wave
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Rock Slide
+- Earthquake
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 248 HP / 72 Atk / 188 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 84 Atk / 128 SpA / 48 Spe
+Brave Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Curse
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 80 SpA / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Hidden Power [Grass]
+- Fire Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 192 Atk / 200 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake

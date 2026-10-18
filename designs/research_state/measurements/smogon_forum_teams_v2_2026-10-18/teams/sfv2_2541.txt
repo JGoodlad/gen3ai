@@ -1,56 +1,55 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 Atk / 16 Spe
-Naughty Nature
-- Curse
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Ice Beam
+- Brick Break
+- Hidden Power [Grass]
+- Fire Blast
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 SpA / 252 Spe
+Mild Nature
+- Dragon Claw
+- Hydro Pump
+- Brick Break
+- Fire Blast
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
 - Earthquake
 - Rock Slide
-- Ice Beam
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Fire]
-- Sunny Day
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 52 Def / 60 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Return
-- Earthquake
-- Self-Destruct
-
-Venusaur @ Leftovers
-Ability: Overgrow
-EVs: 208 HP / 192 Atk / 108 Spe
-Adamant Nature
-- Sleep Powder
-- Swords Dance
-- Sludge Bomb
-- Earthquake
-
-Umbreon @ Leftovers
-Ability: Synchronize
-EVs: 248 HP / 56 Def / 204 SpA
-Bold Nature
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Pursuit
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 140 HP / 16 Atk / 248 SpD / 104 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Rest
-- Dragon Dance
-- Earthquake
-- Hidden Power [Flying]
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Thunder Wave
+- Explosion
+- Toxic
+- Seismic Toss

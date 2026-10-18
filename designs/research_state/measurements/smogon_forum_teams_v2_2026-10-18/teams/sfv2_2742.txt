@@ -1,56 +1,57 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 136 Atk / 28 SpD / 92 Spe
-Adamant Nature
-- Reflect
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-- Soft-Boiled
-- Aromatherapy
-- Thunder Wave
-- Seismic Toss
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
-
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 240 Def / 16 Spe
-Bold Nature
+EVs: 252 HP / 104 SpA / 152 Spe
+Modest Nature
 IVs: 0 Atk
-- Rest
+- Substitute
 - Calm Mind
-- Surf
-- Roar
+- Hydro Pump
+- Ice Beam
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 68 SpD / 188 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Thunder Wave
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 48 HP / 136 Atk / 252 Def / 60 SpD / 12 Spe
+Adamant Nature
+- Self-Destruct
+- Body Slam
+- Shadow Ball
+- Earthquake
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 28 Def / 40 SpD / 20 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 140 Atk / 12 Def / 212 SpD / 144 Spe
-Lonely Nature
+EVs: 244 Atk / 84 SpD / 180 Spe
+Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
 - Hidden Power [Flying]
 - Rock Slide
-- Fire Blast
+- Earthquake
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 4 Def / 128 SpA / 184 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Calm Mind
+- Giga Drain
+- Hidden Power [Ice]
+- Psychic

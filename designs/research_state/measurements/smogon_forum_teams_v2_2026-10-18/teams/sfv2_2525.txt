@@ -1,57 +1,58 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 176 Atk / 196 SpD / 136 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Brick Break
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 80 SpD / 176 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Toxic
+IVs: 2 Atk / 30 Def
 - Thunderbolt
-- Hidden Power [Fire]
+- Hidden Power [Ice]
+- Toxic
+- Protect
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 200 SpD / 56 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Taunt
+- Roar
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Focus Punch
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
+EVs: 252 SpA / 116 SpD / 140 Spe
 Modest Nature
-IVs: 0 Atk
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Leech Seed
-- Calm Mind
 - Giga Drain
+- Hidden Power [Fire]
 - Psychic
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 56 Atk / 100 Def / 100 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Seismic Toss
-- Hidden Power [Ghost]
-- Superpower
-- Explosion
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 40 HP / 188 Atk / 100 SpD / 180 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Rest
-- Dragon Dance
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 172 SpA / 96 Spe
+Rash Nature
+- Curse
+- Hydro Pump
+- Ice Beam
 - Earthquake
-- Hidden Power [Rock]
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 176 HP / 172 Atk / 160 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Dragon Dance

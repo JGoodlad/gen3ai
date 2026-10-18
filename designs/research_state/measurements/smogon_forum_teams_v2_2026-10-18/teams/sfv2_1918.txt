@@ -1,57 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 4 SpA / 252 Spe
-Lonely Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 136 SpA / 156 Spe
+Modest Nature
+IVs: 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
 
-Claydol @ Choice Band
-Ability: Levitate
-EVs: 252 HP / 252 Atk / 4 SpD
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
-- Rapid Spin
+- Dragon Dance
 - Earthquake
 - Rock Slide
-- Explosion
+- Double-Edge
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 200 SpA / 56 Spe
-Modest Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 240 SpD / 28 Spe
+Careful Nature
 IVs: 0 Atk
-- Substitute
-- Leech Seed
-- Psychic
-- Baton Pass
+- Spikes
+- Taunt
+- Toxic
+- Roar
 
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 176 Atk / 140 Def / 132 SpD / 60 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Cross Chop
-- Rock Slide
-- Hidden Power [Bug]
-- Knock Off
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-- Agility
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
 - Meteor Mash
-- Earthquake
+- Thunder Punch
+- Hidden Power [Grass]
 - Explosion
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Double-Edge
+- Hidden Power [Bug]

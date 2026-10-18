@@ -1,57 +1,57 @@
-Regirock @ Choice Band
-Ability: Clear Body
-EVs: 200 HP / 252 Atk / 56 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Rock Slide
-- Hidden Power [Ghost]
-- Superpower
-- Explosion
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Sleep Powder
+- Leech Seed
+- Giga Drain
+- Hidden Power [Ice]
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Shadow Ball
-- Self-Destruct
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
+- Fire Blast
 - Hidden Power [Grass]
-- Baton Pass
+- Dragon Claw
+- Beat Up
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 52 Atk / 204 Def
+Impish Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+- Pursuit
+- Crunch
+- Thunder
+- Brick Break
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
 Bold Nature
 IVs: 0 Atk
-- Wish
-- Calm Mind
-- Fire Punch
-- Psychic
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
+- Soft-Boiled
 - Ice Beam
+- Seismic Toss
+- Wish

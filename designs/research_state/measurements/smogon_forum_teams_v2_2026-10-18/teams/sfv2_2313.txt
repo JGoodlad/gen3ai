@@ -1,56 +1,58 @@
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 68 HP / 188 SpA / 252 Spe
-Timid Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 96 SpA / 36 SpD / 136 Spe
+Modest Nature
 IVs: 2 Atk / 30 Def
+- Light Screen
 - Thunderbolt
 - Hidden Power [Ice]
-- Thunder Wave
-- Baton Pass
+- Rain Dance
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Substitute
-- Focus Punch
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 236 HP / 136 SpD / 136 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Roar
-- Taunt
-- Toxic
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 156 Def / 56 SpA / 44 SpD
-Relaxed Nature
-- Protect
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
 - Earthquake
+- Psychic
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
 - Hydro Pump
 - Ice Beam
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 116 HP / 136 Atk / 56 SpA / 196 Spe
-Hasty Nature
-- Ice Punch
-- Explosion
-- Focus Punch
-- Thunderbolt
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 188 HP / 72 Atk / 248 Spe
-Adamant Nature
-- Dragon Dance
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 80 SpA / 176 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
 - Rock Slide
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Focus Punch
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day

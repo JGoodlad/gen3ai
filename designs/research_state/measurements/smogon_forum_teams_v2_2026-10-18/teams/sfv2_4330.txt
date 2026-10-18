@@ -1,0 +1,56 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 12 HP / 252 SpA / 244 Spe
+Modest Nature
+- Baton Pass
+- Substitute
+- Ice Beam
+- Hydro Pump
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpD
+Bold Nature
+- Recover
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+
+Hitmonlee (M) @ Lum Berry
+Ability: Limber
+EVs: 252 Atk / 120 SpD / 136 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Brick Break
+- Mach Punch
+- Hidden Power [Ghost]
+- Rock Slide
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 16 Atk / 240 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Substitute
+- Focus Punch

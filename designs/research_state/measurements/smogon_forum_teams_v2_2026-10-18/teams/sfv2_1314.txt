@@ -1,56 +1,58 @@
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 112 HP / 220 SpA / 176 Spe
-Rash Nature
-- Ice Punch
-- Thunderbolt
-- Fire Punch
-- Dynamic Punch
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
 - Earthquake
-- Hydro Pump
+- Rock Slide
+- Brick Break
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 224 SpA / 32 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Protect
+- Toxic
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Toxic
+- Protect
+- Spikes
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 212 SpA / 44 Spe
+Bold Nature
+IVs: 0 Atk
 - Ice Beam
+- Soft-Boiled
+- Seismic Toss
+- Sing
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
+EVs: 248 HP / 176 Atk / 80 SpD / 4 Spe
+Adamant Nature
+- Meteor Mash
 - Earthquake
-- Thunder Punch
-- Hidden Power [Grass]
 - Explosion
+- Rock Slide
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-- Will-O-Wisp
-- Thunderbolt
-- Giga Drain
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 188 HP / 140 SpA / 180 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 228 SpA / 4 SpD / 28 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+IVs: 0 Atk
 - Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 HP / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
+- Rest
+- Sleep Talk
+- Surf

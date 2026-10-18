@@ -1,58 +1,55 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 236 Atk / 12 Def / 200 SpD / 60 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
 - Earthquake
-- Psychic
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 220 SpA / 40 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
+- Hydro Pump
+- Ice Beam
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
-Naughty Nature
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
 IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Rock Slide
+- Earthquake
+- Thunder Punch
 - Hidden Power [Grass]
 - Explosion
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+- Explosion
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Taunt
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
 - Dragon Dance
 - Earthquake
-- Hidden Power [Rock]
+- Rock Slide
+- Double-Edge
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Toxic
+- Thunderbolt
+- Baton Pass
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
+Mild Nature
+- Dragon Claw
+- Rock Slide
+- Flamethrower
+- Brick Break

@@ -1,0 +1,54 @@
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Rash Nature
+- Ice Beam
+- Crunch
+- Flamethrower
+- Brick Break
+
+Dugtrio (F) @ Choice Band
+Ability: Arena Trap
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 244 Def / 16 Spe
+Bold Nature
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 168 HP / 252 Def / 88 Spe
+Bold Nature
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Thunder Wave
+
+Skarmory (F) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 136 Def / 104 SpD / 16 Spe
+Impish Nature
+- Spikes
+- Roar
+- Rest
+- Drill Peck
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 40 SpD
+Brave Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion

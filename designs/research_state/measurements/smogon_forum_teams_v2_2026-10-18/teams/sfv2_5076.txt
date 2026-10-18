@@ -1,0 +1,53 @@
+Heracross @ Choice Band
+Ability: Guts
+EVs: 240 HP / 16 Atk / 252 Spe
+Adamant Nature
+- Megahorn
+- Brick Break
+- Rock Slide
+- Focus Punch
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 Def / 176 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Snorlax (F) @ Leftovers
+Ability: Immunity
+EVs: 76 HP / 252 Atk / 180 Def
+Adamant Nature
+- Curse
+- Body Slam
+- Self-Destruct
+- Earthquake
+
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 140 SpA / 120 Spe
+Quiet Nature
+- Pursuit
+- Crunch
+- Fire Blast
+- Brick Break
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 HP / 96 Atk / 160 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide

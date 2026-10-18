@@ -1,58 +1,57 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
+Relaxed Nature
+- Protect
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Thunder Wave
+- Surf
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 108 Def / 20 SpA / 96 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Recover
+- Leech Seed
+- Hidden Power [Grass]
+- Psychic
+
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 SpA / 60 SpD / 196 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 Def
+- Rest
 - Thunderbolt
-- Hidden Power [Grass]
-- Substitute
-- Baton Pass
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 144 SpD / 112 Spe
-Jolly Nature
-IVs: 30 SpD / 30 Spe
-- Earthquake
-- Beat Up
-- Hidden Power [Bug]
-- Aerial Ace
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-- Will-O-Wisp
-- Thunderbolt
-- Ice Punch
-- Explosion
-
-Kingdra @ Leftovers
-Ability: Swift Swim
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Rain Dance
-- Surf
-- Ice Beam
-- Hydro Pump
+- Hidden Power [Ice]
+- Roar
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 80 SpA / 176 Spe
-Modest Nature
-IVs: 0 Atk
+EVs: 252 HP / 32 Atk / 140 SpA / 28 SpD / 56 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
 - Substitute
-- Calm Mind
-- Thunderbolt
-- Ice Punch
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Thunder Wave
-- Baton Pass
+- Thunder
+- Hidden Power [Grass]
+- Dynamic Punch

@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 48 HP / 252 SpA / 208 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Pursuit
-- Hidden Power [Grass]
-- Fire Blast
-- Thunder
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 192 HP / 220 Atk / 4 Def / 56 SpA / 36 Spe
-Brave Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Hydro Pump
-- Ice Beam
-- Earthquake
-- Hidden Power [Bug]
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 136 SpD / 124 Spe
-Careful Nature
-- Spikes
-- Roar
-- Drill Peck
-- Taunt
-
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
+EVs: 252 HP / 92 SpA / 164 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rain Dance
+- Substitute
+
+Claydol @ Choice Band
+Ability: Levitate
+EVs: 252 HP / 252 Atk / 4 Def
+Impish Nature
+- Earthquake
+- Rock Slide
+- Explosion
+- Rapid Spin
+
+Raikou @ Lum Berry
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
-- Thunderbolt
+- Calm Mind
 - Hidden Power [Grass]
-- Thunder Wave
-- Baton Pass
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
-Timid Nature
-- Will-O-Wisp
-- Taunt
 - Thunderbolt
-- Ice Punch
+- Crunch
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Hidden Power [Grass]
-- Wish
+EVs: 252 HP / 100 Atk / 120 SpD / 36 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Brick Break
+- Hidden Power [Flying]
+- Refresh
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 228 SpA / 28 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 76 HP / 184 Atk / 96 Def / 140 SpD / 12 Spe
+Adamant Nature
+- Focus Punch
+- Counter
+- Shadow Ball
+- Body Slam

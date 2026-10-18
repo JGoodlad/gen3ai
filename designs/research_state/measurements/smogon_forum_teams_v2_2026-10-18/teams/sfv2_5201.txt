@@ -1,0 +1,55 @@
+Raticate @ Leftovers
+Ability: Guts
+EVs: 52 HP / 252 Atk / 204 Spe
+Jolly Nature
+- Double-Edge
+- Endeavor
+- Super Fang
+- Thunder Wave
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Surf
+- Toxic
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 144 Atk / 180 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 212 SpD / 140 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Brick Break
+- Earthquake
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 224 Atk / 16 Def / 100 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Crunch

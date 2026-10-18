@@ -1,0 +1,56 @@
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 252 Atk / 20 Def / 20 SpD / 216 Spe
+Adamant Nature
+- Brick Break
+- Rock Slide
+- Shadow Ball
+- Focus Punch
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Thunderbolt
+- Toxic
+- Roar
+
+Skarmory
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Thief
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 240 Def / 248 SpA / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Ice Beam
+- Seismic Toss
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
+- Protect
+- Toxic
+- Earthquake
+- Rock Slide
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

@@ -1,57 +1,56 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
-- Crunch
-- Pursuit
-- Fire Blast
-- Roar
+EVs: 252 HP / 144 Atk / 92 SpA / 20 Spe
+Naughty Nature
+- Substitute
+- Rock Slide
+- Thunder
+- Toxic
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
 Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+- Drill Peck
 - Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Counter
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 216 Def / 44 SpD / 8 Spe
-Relaxed Nature
 - Protect
-- Earthquake
-- Surf
-- Ice Beam
+- Roar
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 252 Def / 4 SpD
-Impish Nature
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Wish
-- Thunder Wave
+- Ice Beam
 - Seismic Toss
+- Thunder Wave
+- Soft-Boiled
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Surf
+- Ice Beam
+- Protect
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 Atk / 68 SpA / 188 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Drill Peck
+- Hidden Power [Fighting]
+- Thunderbolt
+- Protect
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 48 Def / 40 SpA / 36 SpD / 136 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Recover
+- Rapid Spin

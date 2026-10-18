@@ -1,57 +1,56 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 160 SpD / 96 Spe
-Careful Nature
-- Taunt
-- Drill Peck
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 200 HP / 68 SpA / 140 SpD / 100 Spe
+Modest Nature
 - Spikes
-- Roar
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
-- Substitute
-- Focus Punch
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
+- Surf
+- Ice Beam
 - Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Atk / 208 SpD
+Hasty Nature
+- Will-O-Wisp
+- Thunder
+- Giga Drain
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 24 Atk / 88 Def / 136 SpD / 8 Spe
+Sassy Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Wish
+- Protect
+- Fire Punch
+- Hidden Power [Fighting]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Sleep Talk
+- Calm Mind
+- Surf
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 60 SpA / 196 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
 - Thunderbolt
-- Hidden Power [Ice]
-- Toxic
-- Protect
-
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Endeavor
-- Surf
-- Toxic
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
+- Hidden Power [Grass]
+- Roar

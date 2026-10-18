@@ -1,57 +1,56 @@
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 184 Atk / 16 SpD / 56 Spe
-Careful Nature
-- Superpower
-- Thunder Wave
-- Explosion
-- Seismic Toss
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 144 Atk / 180 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Double-Edge
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
+Salamence @ Leftovers
+Ability: Intimidate
 EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Flying]
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Wish
+- Brick Break
+- Hidden Power [Flying]
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 100 HP / 192 Atk / 120 Def / 96 SpD
+Careful Nature
+- Curse
+- Return
+- Earthquake
+- Rest
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 68 Atk / 160 SpA / 28 Spe
+Quiet Nature
+- Pursuit
+- Psychic
+- Explosion
+- Earthquake
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 60 Atk / 180 Def / 16 SpA
+Impish Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
 IVs: 0 Atk
-- Substitute
-- Endeavor
-- Hydro Pump
+- Soft-Boiled
+- Ice Beam
+- Seismic Toss
 - Toxic
 
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 76 HP / 252 SpA / 180 Spe
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
 Modest Nature
-IVs: 2 Atk / 30 Def
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunderbolt
-- Calm Mind
-- Rest
-- Hidden Power [Ice]
+- Sunny Day
+- Thunder Wave
+- Hidden Power [Fire]

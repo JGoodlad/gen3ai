@@ -1,55 +1,58 @@
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 SpD
-Adamant Nature
-- Explosion
-- Rock Slide
-- Earthquake
-- Thunder Wave
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 212 SpD / 44 Spe
-Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Superpower
-- Explosion
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
-Timid Nature
-- Spikes
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
 - Surf
-- Rapid Spin
-- Explosion
+- Ice Beam
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 180 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Flying]
-
-Gengar @ Leftovers
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
-Timid Nature
-- Will-O-Wisp
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
 - Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 156 Def / 92 SpA / 20 Spe
+Modest Nature
+IVs: 3 Atk / 30 SpA
+- Leech Seed
+- Calm Mind
+- Hidden Power [Electric]
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
 - Thunderbolt
-- Ice Punch
+- Hidden Power [Grass]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

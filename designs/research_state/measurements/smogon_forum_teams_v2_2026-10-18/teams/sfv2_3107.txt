@@ -1,54 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 188 SpA / 68 Spe
-Quiet Nature
-- Substitute
-- Crunch
-- Focus Punch
-- Thunder
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 12 Atk / 220 SpA / 252 Spe
-Hasty Nature
-- Dragon Claw
-- Fire Blast
-- Rock Slide
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 240 SpD / 16 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Toxic
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Ice]
 - Roar
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
-- Agility
-- Meteor Mash
+- Dragon Dance
 - Earthquake
-- Explosion
+- Rock Slide
+- Double-Edge
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Toxic
+- Surf
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 192 HP / 8 Def / 104 SpA / 52 SpD / 152 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
 - Psychic
-- Hidden Power [Grass]
-- Recover
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Psychic
-- Explosion
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

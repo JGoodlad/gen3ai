@@ -1,57 +1,56 @@
-Slaking @ Choice Band
-Ability: Truant
-EVs: 148 HP / 252 Atk / 108 Spe
-Adamant Nature
-- Return
-- Focus Punch
-- Shadow Ball
-- Earthquake
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break
 
-Skarmory @ Soft Sand
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Skarmory
 Ability: Keen Eye
-EVs: 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 SpA / 30 SpD
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
 - Spikes
+- Thief
 - Drill Peck
-- Hidden Power [Ground]
 - Roar
 
-Salamence @ Lum Berry
-Ability: Intimidate
-EVs: 148 HP / 252 Atk / 108 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
-- Double-Edge
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 48 Atk / 136 Def / 40 SpD / 44 Spe
+Relaxed Nature
+- Protect
 - Earthquake
+- Surf
+- Ice Beam
 
-Starmie @ Leftovers
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Thunderbolt
-- Ice Beam
-- Rapid Spin
-
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 4 Def / 252 SpA
+EVs: 252 Def / 248 SpA / 8 Spe
 Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Toxic
 - Ice Beam
 - Thunderbolt
-- Toxic
-- Explosion
 
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 Def
-Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Meteor Mash
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Hidden Power [Rock]
-- Sludge Bomb
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

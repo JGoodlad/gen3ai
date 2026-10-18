@@ -1,57 +1,57 @@
+Politoed
+Ability: Water Absorb
+EVs: 160 Def / 252 SpA / 96 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Thief
+- Hypnosis
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 72 HP / 184 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Fire Blast
-- Ice Beam
+EVs: 240 HP / 224 Atk / 44 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Focus Punch
+- Hidden Power [Bug]
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 36 SpA / 180 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Ice Punch
-- Thunderbolt
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Sassy Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 248 SpD / 20 Spe
+Careful Nature
+- Drill Peck
+- Toxic
 - Spikes
-- Zap Cannon
-- Earthquake
-- Rapid Spin
+- Roar
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 136 Def / 120 SpA
-Relaxed Nature
-- Curse
-- Hydro Pump
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 232 HP / 176 Atk / 100 Spe
+Adamant Nature
+- Meteor Mash
 - Earthquake
-- Ice Beam
+- Agility
+- Explosion
 
-Meganium @ Leftovers
-Ability: Overgrow
-EVs: 248 HP / 120 SpA / 80 SpD / 60 Spe
-Calm Nature
-IVs: 0 Atk
-- Leech Seed
-- Giga Drain
-- Grass Whistle
-- Light Screen
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 64 HP / 192 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Ice Punch
+- Fire Punch
+- Hidden Power [Grass]
+- Explosion

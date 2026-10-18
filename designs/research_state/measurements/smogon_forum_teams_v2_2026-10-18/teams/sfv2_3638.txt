@@ -1,55 +1,56 @@
-Snorlax (M) @ Leftovers
-Ability: Immunity
-EVs: 160 HP / 156 Atk / 136 Def / 56 SpD
-Sassy Nature
-- Fire Blast
-- Earthquake
-- Selfdestruct
-- Return
-
-Exeggutor (M) @ Leftovers
-Ability: Chlorophyll
-EVs: 28 HP / 252 SpA / 8 SpD / 220 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 16 Def / 252 SpA
 Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Sunny Day
-- Solar Beam
-- Hidden Power [Fire]
-- Explosion
-
-Gengar (M) @ Leftovers
-Ability: Levitate
-EVs: 44 HP / 188 Def / 96 SpA / 180 Spe
-Modest Nature
-- Thunderbolt
-- Ice Punch
-- Destiny Bond
-- Counter
-
-Steelix (M) @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 120 Atk / 136 SpD
-Impish Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Body Slam
-- Earthquake
-- Hidden Power [Rock]
-- Explosion
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 240 HP / 12 Atk / 16 Def / 240 SpA
-Relaxed Nature
-- Earthquake
-- Psychic
-- Ice Beam
-- Explosion
-
-Charizard (M) @ Petaya Berry
-Ability: Blaze
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-- Substitute
-- Sunny Day
+IVs: 0 Atk
+- Crunch
+- Pursuit
 - Flamethrower
-- Overheat
+- Roar
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
+Hasty Nature
+- Will-O-Wisp
+- Thunder
+- Giga Drain
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Toxic
+- Seismic Toss
+- Ice Beam
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
+Relaxed Nature
+- Protect
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

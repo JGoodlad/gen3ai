@@ -1,61 +1,54 @@
-Blaziken @ Leftovers
-Ability: Blaze
-Shiny: Yes
-EVs: 48 Atk / 252 SpA / 208 Spe
-Hasty Nature
-IVs: 30 Atk / 30 Def
-- Sky Uppercut
-- Hidden Power [Ice]
-- Toxic
-- Fire Blast
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Thunder Wave
-- Baton Pass
-- Hidden Power [Grass]
-
-Metagross @ Choice Band
-Ability: Clear Body
-Shiny: Yes
-EVs: 112 HP / 208 Atk / 188 Spe
-Adamant Nature
-- Meteor Mash
-- Explosion
-- Earthquake
-- Rock Slide
-
-Swampert @ Leftovers
-Ability: Torrent
-Shiny: Yes
-EVs: 24 Atk / 252 SpA / 232 Spe
-Rash Nature
-- Ice Beam
-- Hydro Pump
-- Earthquake
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 188 SpA / 68 Spe
+Quiet Nature
+- Substitute
 - Focus Punch
+- Crunch
+- Thunder
 
 Salamence @ Leftovers
 Ability: Intimidate
-Shiny: Yes
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
-- Earthquake
+EVs: 24 HP / 56 Atk / 248 SpA / 180 Spe
+Mild Nature
+- Dragon Claw
+- Fire Blast
+- Hydro Pump
+- Brick Break
 
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Calm Mind
-- Substitute
-- Hidden Power [Ice]
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 240 SpD / 16 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Toxic
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 156 SpA / 152 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
+- Psychic
+- Recover
+- Hidden Power [Grass]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 216 Atk / 36 SpA / 8 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion

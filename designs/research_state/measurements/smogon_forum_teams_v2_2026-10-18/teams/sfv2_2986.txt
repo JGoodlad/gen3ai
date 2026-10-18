@@ -1,56 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Double-Edge
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 12 Atk / 240 SpA / 64 SpD / 192 Spe
-Hasty Nature
-- Dragon Claw
-- Fire Blast
-- Rock Slide
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 156 SpD / 100 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Roar
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 104 Def / 120 SpD / 32 Spe
+Calm Nature
+IVs: 30 Atk / 30 SpA
+- Hidden Power [Grass]
+- Protect
+- Thunderbolt
 - Toxic
-- Taunt
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 100 SpA / 156 Spe
+Modest Nature
+- Calm Mind
+- Ice Beam
+- Mirror Coat
+- Surf
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 216 HP / 252 SpA / 40 Spe
-Rash Nature
+EVs: 48 HP / 224 Def / 88 SpA / 148 Spe
+Timid Nature
 IVs: 30 Atk / 30 SpA
-- Body Slam
+- Calm Mind
 - Fire Punch
 - Hidden Power [Grass]
-- Dynamic Punch
+- Psychic
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 48 Def / 176 SpA / 44 SpD
-Relaxed Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Curse
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 176 Atk / 136 SpA / 196 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 236 Atk / 88 SpA / 184 Spe
+Hasty Nature
+- Explosion
+- Hypnosis
+- Ice Punch
 - Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Drill Peck
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 84 Atk / 176 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Taunt
+
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 48 HP / 208 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Double-Edge
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide

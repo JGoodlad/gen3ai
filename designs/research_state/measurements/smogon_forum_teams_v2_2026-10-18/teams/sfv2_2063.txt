@@ -1,57 +1,58 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
+Modest Nature
+IVs: 30 Spe
+- Protect
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Surf
+- Ice Beam
+- Psychic
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
 IVs: 0 Atk
-- Rest
+- Substitute
 - Calm Mind
 - Surf
 - Ice Beam
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 76 SpD / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
 - Psychic
-- Explosion
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Earthquake
-- Hidden Power [Grass]
-- Explosion
-
-Regirock @ Choice Band
-Ability: Clear Body
-EVs: 200 HP / 252 Atk / 56 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Rock Slide
-- Hidden Power [Ghost]
-- Superpower
-- Explosion
-
-Salamence @ Leftovers
+Salamence @ Choice Band
 Ability: Intimidate
-EVs: 192 Atk / 200 SpD / 116 Spe
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Earthquake
 - Rock Slide
-- Brick Break
+- Hidden Power [Flying]
+- Fire Blast

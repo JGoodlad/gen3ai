@@ -1,58 +1,58 @@
-Salamence @ Leftovers
-Ability: Intimidate
-Hidden Power: Grass
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-- Fire Blast
-- Dragon Claw
-- Brick Break
-- Sunny Day
-
-Poliwrath @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 252 Atk / 4 SpD
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 8 HP / 244 Atk / 72 SpD / 184 Spe
 Adamant Nature
-- Brick Break
-- Rest
-- Sleep Talk
+IVs: 30 Atk / 30 SpD
+- Spore
 - Focus Punch
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 252 HP / 32 SpA / 88 SpD / 136 Spe
-Timid Nature
-IVs: 0 Atk
-- Toxic
-- Wish
-- Protect
-- Thunderbolt
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 252 Def / 4 SpD
-Impish Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Hidden Power [Bug]
-- Rapid Spin
-- Earthquake
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 Atk / 4 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
+- Sky Uppercut
+- Hidden Power [Ghost]
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 224 SpD / 32 Spe
-Calm Nature
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
 - Thunderbolt
-- Thunder Wave
+- Baton Pass
 - Hidden Power [Grass]
-- Roar
+- Thunder Wave
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Focus Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 212 SpA / 44 SpD
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Explosion
+- Pursuit
+
+Snorlax @ Leftovers
+Ability: Immunity
+Happiness: 0
+EVs: 44 HP / 176 Atk / 120 Def / 160 SpD / 8 Spe
+Adamant Nature
+- Frustration
+- Counter
+- Focus Punch
+- Self-Destruct
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Focus Punch

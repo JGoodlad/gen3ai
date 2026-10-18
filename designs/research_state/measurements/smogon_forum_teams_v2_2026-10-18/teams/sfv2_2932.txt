@@ -1,57 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 112 SpA / 148 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Substitute
-- Baton Pass
-- Hidden Power [Ice]
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 216 SpA / 44 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Psychic
-- Fire Punch
-- Hidden Power [Grass]
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 216 Atk / 40 SpD / 252 Spe
-Adamant Nature
-- Sky Uppercut
-- Spore
-- Focus Punch
-- Mach Punch
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
-- Ice Beam
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Drill Peck
+- Spikes
+- Roar
+- Protect
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
+EVs: 248 HP / 12 Atk / 176 SpA / 72 SpD
+Quiet Nature
 - Rock Slide
 - Earthquake
-- Double-Edge
+- Crunch
+- Pursuit
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 232 Atk / 160 Spe
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 248 HP / 216 Def / 44 SpD
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunderbolt
+- Toxic
+- Recover
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 64 Def / 32 SpD / 164 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 56 Def / 44 SpA / 120 SpD / 40 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Perish Song
+- Leech Seed
+- Recover
+
+Steelix @ Leftovers
+Ability: Rock Head
+EVs: 248 HP / 56 Atk / 180 SpD / 24 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
-- Brick Break
+- Earthquake
+- Toxic
+- Roar
+- Protect

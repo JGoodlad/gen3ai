@@ -1,56 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Brave Nature
-- Crunch
-- Rock Slide
-- Fire Blast
-- Brick Break
-
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
-- Roar
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 128 Def / 40 SpA / 32 SpD / 56 Spe
-Bold Nature
 IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Thunder Wave
-- Surf
+- Toxic
+- Spikes
+- Whirlwind
+- Protect
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 136 Def / 56 SpA / 28 SpD / 36 Spe
+EVs: 248 HP / 96 Def / 124 SpD / 40 Spe
 Bold Nature
-IVs: 2 Atk / 30 SpA
-- Recover
-- Leech Seed
-- Hidden Power [Grass]
+IVs: 0 Atk
 - Psychic
+- Calm Mind
+- Leech Seed
+- Recover
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 176 SpA / 24 SpD / 56 Spe
-Mild Nature
-- Substitute
-- Ice Punch
-- Thunder
-- Dynamic Punch
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Refresh
+- Recover
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 56 Atk / 100 Def / 44 SpA / 60 Spe
-Naughty Nature
-IVs: 30 SpD / 30 Spe
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
+- Aerial Ace
 - Hidden Power [Bug]
-- Fire Blast
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 12 Atk / 136 SpA / 112 SpD
+Quiet Nature
+- Rock Slide
+- Earthquake
+- Crunch
+- Pursuit

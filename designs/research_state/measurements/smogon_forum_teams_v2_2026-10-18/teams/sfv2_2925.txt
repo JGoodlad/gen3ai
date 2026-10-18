@@ -1,56 +1,58 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 232 Atk / 16 Def / 8 Spe
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Substitute
-- Focus Punch
+IVs: 30 SpD / 30 Spe
 - Rock Slide
+- Earthquake
 - Hidden Power [Bug]
+- Focus Punch
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 244 HP / 172 SpD / 92 Spe
-Bold Nature
-- Spikes
-- Rapid Spin
-- Surf
-- Explosion
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 60 SpA / 40 SpD / 156 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
 - Toxic
-- Hidden Power [Ice]
-- Roar
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 156 SpD / 184 Spe
-Timid Nature
-- Hypnosis
-- Giga Drain
-- Thunderbolt
-- Explosion
+- Spikes
+- Whirlwind
+- Protect
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 252 HP / 200 Def / 56 Spe
-Relaxed Nature
-- Refresh
+EVs: 248 HP / 176 Def / 84 SpD
+Bold Nature
+IVs: 0 Atk
 - Surf
-- Earthquake
-- Ice Beam
+- Refresh
+- Toxic
+- Protect
 
-Aerodactyl @ Liechi Berry
+Aerodactyl @ Choice Band
 Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
 IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Double-Edge
 - Rock Slide
-- Hidden Power [Flying]
 - Earthquake
-- Substitute
+- Hidden Power [Flying]
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 48 Def / 104 SpD / 104 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 72 HP / 248 SpA / 188 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Psychic
+- Giga Drain
+- Hidden Power [Fire]
+- Calm Mind

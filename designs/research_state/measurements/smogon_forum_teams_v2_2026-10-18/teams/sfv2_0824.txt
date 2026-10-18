@@ -1,55 +1,56 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Brick Break
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 Atk / 232 SpA / 252 Spe
-Rash Nature
-- Wish
+Blaziken @ Leftovers
+Ability: Blaze
+EVs: 12 Atk / 252 SpA / 244 Spe
+Hasty Nature
+IVs: 30 Def / 30 SpA
 - Fire Blast
-- Brick Break
-- Dragon Claw
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 128 HP / 252 Atk / 128 Spe
-Adamant Nature
-- Meteor Mash
-- Explosion
-- Earthquake
-- Rock Slide
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-- Hydro Pump
-- Thunderbolt
-- Ice Beam
-- Rapid Spin
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 252 SpD / 4 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Rest
+- Sky Uppercut
+- Hidden Power [Grass]
 - Toxic
-- Roar
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
+Sceptile @ Petaya Berry
+Ability: Overgrow
+EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
+IVs: 30 HP / 30 Def
 - Substitute
 - Endeavor
-- Hydro Pump
-- Roar
+- Leaf Blade
+- Hidden Power [Ice]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 216 Atk / 136 Def / 140 SpD / 16 Spe
+Adamant Nature
+- Curse
+- Shadow Ball
+- Return
+- Self-Destruct
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 192 HP / 64 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Sunny Day
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Substitute
+- Endure
+- Reversal
+- Megahorn
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 28 HP / 168 Def / 176 SpA / 136 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Substitute
+- Baton Pass

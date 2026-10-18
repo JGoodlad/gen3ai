@@ -1,58 +1,60 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 216 HP / 136 SpA / 156 Spe
-Modest Nature
-IVs: 1 Atk / 30 Spe
-- Protect
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
-- Spikes
-- Rapid Spin
-- Surf
-- Explosion
-
-Magneton @ Salac Berry
-Ability: Magnet Pull
 EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 Def
-- Endure
-- Toxic
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
-- Hidden Power [Ice]
+- Hidden Power [Grass]
+- Substitute
+- Baton Pass
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 64 Def / 16 Spe
-Adamant Nature
-IVs: 30 SpA / 30 Spe
-- Toxic
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 192 HP / 8 Def / 168 SpA / 140 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Leech Seed
-- Giga Drain
-- Hidden Power [Ice]
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Calm Mind
 - Psychic
+- Fire Punch
+- Hidden Power [Grass]
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+Dugtrio @ Choice Band
+Ability: Arena Trap
+Shiny: Yes
+EVs: 252 Atk / 4 SpD / 252 Spe
 Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
+
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 28 HP / 252 SpA / 228 Spe
+Modest Nature
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Metagross @ Choice Band
+Ability: Clear Body
+Shiny: Yes
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
 - Earthquake
 - Rock Slide
-- Hidden Power [Flying]
-- Double-Edge

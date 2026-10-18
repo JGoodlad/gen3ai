@@ -1,58 +1,56 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 228 SpA / 28 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 200 SpA / 56 Spe
 Modest Nature
 IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
+- Seismic Toss
 - Ice Beam
+- Aromatherapy
+- Soft-Boiled
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+Skarmory (M)
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Calm Nature
+- Spikes
+- Thief
+- Roar
+- Protect
+
+Milotic (F) @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Refresh
+- Recover
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 176 Atk / 80 SpD / 4 Spe
 Adamant Nature
-- Dragon Dance
+- Meteor Mash
 - Earthquake
-- Rock Slide
-- Double-Edge
+- Explosion
+- Rest
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 188 HP / 140 SpA / 180 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Baton Pass
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 116 Def / 140 SpD
+Sassy Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Rest
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 112 SpA / 180 Spe
-Modest Nature
-IVs: 30 Spe
-- Metal Sound
-- Thunderbolt
-- Hidden Power [Ice]
-- Sunny Day
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Beat Up
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rest

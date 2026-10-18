@@ -1,6 +1,16 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 136 SpA / 156 Spe
+Modest Nature
+IVs: 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+EVs: 184 HP / 104 Atk / 220 Spe
 Adamant Nature
 - Dragon Dance
 - Earthquake
@@ -9,50 +19,37 @@ Adamant Nature
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 224 HP / 216 SpD / 68 Spe
+EVs: 240 HP / 240 SpD / 28 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
 - Taunt
-- Toxic
+- Drill Peck
 - Roar
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
+EVs: 188 HP / 140 SpA / 180 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
+- Calm Mind
 - Giga Drain
 - Hidden Power [Fire]
 - Psychic
 
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Def / 32 SpA / 44 SpD / 16 Spe
+Relaxed Nature
+- Protect
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
 Salamence @ Leftovers
 Ability: Intimidate
 EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
+Naive Nature
 - Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
 - Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Flamethrower
+- Brick Break

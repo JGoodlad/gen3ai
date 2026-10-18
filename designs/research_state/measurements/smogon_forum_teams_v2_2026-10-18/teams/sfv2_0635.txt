@@ -1,58 +1,60 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 148 Atk / 152 SpA / 208 Spe
-Mild Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Thunderbolt
-- Drill Peck
-- Hidden Power [Fighting]
-- Thunder Wave
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 76 HP / 252 SpA / 180 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Baton Pass
-- Calm Mind
-- Psychic
-- Hidden Power [Fire]
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 252 HP / 16 Def / 136 SpA / 104 Spe
+Modest Nature
+- Substitute
+- Focus Punch
+- Flamethrower
+- Toxic
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 76 HP / 4 Def / 252 SpA / 176 Spe
+Shiny: Yes
+EVs: 248 HP / 44 Def / 112 SpD / 104 Spe
 Timid Nature
-- Thunderbolt
-- Ice Punch
 - Will-O-Wisp
 - Explosion
+- Giga Drain
+- Ice Punch
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Beat Up
+Blissey @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+- Mimic
+- Seismic Toss
+- Soft-Boiled
+- Ice Beam
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Calm Mind
-- Psychic
-- Fire Punch
-- Hidden Power [Grass]
+Swampert @ Leftovers
+Ability: Torrent
+Shiny: Yes
+EVs: 252 HP / 176 Def / 40 SpA / 40 SpD
+Bold Nature
+IVs: 0 Atk
+- Refresh
+- Surf
+- Toxic
+- Protect
 
-Regirock @ Choice Band
-Ability: Clear Body
-EVs: 252 HP / 208 Atk / 48 Spe
+Dugtrio @ Choice Band
+Ability: Arena Trap
+Shiny: Yes
+EVs: 252 Atk / 24 SpD / 232 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Superpower
+IVs: 30 SpD / 30 Spe
+- Earthquake
 - Hidden Power [Bug]
+- Aerial Ace
+- Screech
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 16 Atk / 224 Def / 16 SpD
+Careful Nature
+- Rapid Spin
 - Explosion
+- Shadow Ball
+- Refresh

@@ -1,0 +1,57 @@
+Sceptile @ Leftovers
+Ability: Overgrow
+EVs: 220 HP / 252 SpA / 36 Spe
+Modest Nature
+IVs: 3 Atk / 30 SpA
+- Substitute
+- Leech Seed
+- Leaf Blade
+- Hidden Power [Electric]
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 252 HP / 4 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Thunderbolt
+- Wish
+- Protect
+- Toxic
+
+Tyranitar @ Liechi Berry
+Ability: Sand Stream
+EVs: 252 Atk / 84 SpD / 172 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Smeargle @ Lum Berry
+Ability: Own Tempo
+EVs: 252 HP / 4 SpD / 252 Spe
+Jolly Nature
+- Spore
+- Spikes
+- Will-O-Wisp
+- Explosion
+
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 56 HP / 252 Atk / 200 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Hidden Power [Fighting]
+- Gust
+
+Blastoise @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 124 Def / 96 SpA / 40 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Haze
+- Ice Beam

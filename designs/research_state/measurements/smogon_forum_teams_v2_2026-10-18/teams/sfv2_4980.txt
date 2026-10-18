@@ -1,0 +1,55 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 240 SpD / 16 Spe
+Careful Nature
+- Spikes
+- Roar
+- Toxic
+- Drill Peck
+
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 208 HP / 108 Atk / 192 Spe
+Adamant Nature
+- Swords Dance
+- Sludge Bomb
+- Earthquake
+- Sleep Powder
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 68 Atk / 32 Def / 120 SpA / 48 Spe
+Relaxed Nature
+- Surf
+- Earthquake
+- Ice Beam
+- Curse
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]

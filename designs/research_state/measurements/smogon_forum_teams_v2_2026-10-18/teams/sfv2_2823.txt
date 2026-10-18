@@ -1,57 +1,58 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 220 SpA / 48 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Tyranitar @ Black Glasses
-Ability: Sand Stream
-EVs: 184 HP / 108 Atk / 216 Spe
-Lonely Nature
-IVs: 30 Atk / 30 SpA
-- Crunch
-- Rock Slide
-- Hidden Power [Grass]
-- Focus Punch
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 40 Atk / 216 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-IVs: 30 Atk / 30 SpD
+IVs: 0 Atk
+- Toxic
 - Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 52 Atk / 204 SpA / 252 Spe
-Hasty Nature
-- Ice Punch
-- Fire Punch
-- Giga Drain
-- Explosion
+- Whirlwind
+- Protect
 
 Jolteon @ Leftovers
 Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
+EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
-- Substitute
 - Thunderbolt
 - Hidden Power [Grass]
-- Baton Pass
+- Thunder Wave
+- Roar
 
-Moltres @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
+EVs: 248 HP / 176 Def / 20 SpA / 64 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Calm Mind
+- Rest
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 48 Def / 104 SpD / 104 Spe
+Timid Nature
+- Fire Punch
+- Ice Punch
+- Will-O-Wisp
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 188 SpA / 68 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
-- Flamethrower
+- Thunderbolt
 - Hidden Power [Grass]
-- Roar
+- Calm Mind
+- Substitute

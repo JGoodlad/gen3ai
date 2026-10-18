@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Pursuit
-- Crunch
-- Fire Blast
-- Roar
+Dodrio @ Choice Band
+Ability: Early Bird
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Drill Peck
+- Return
+- Baton Pass
+- Hidden Power [Fighting]
 
-Hariyama @ Leftovers
-Ability: Thick Fat
-EVs: 104 HP / 252 Def / 152 SpD
-Impish Nature
-- Brick Break
-- Knock Off
-- Whirlwind
-- Rest
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 252 SpA / 48 SpD / 208 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Endure
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-- Spikes
-- Rapid Spin
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
 - Earthquake
 - Explosion
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 SpA
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
+- Double-Edge
+- Rock Slide
+- Earthquake
+
+Camerupt @ Leftovers
+Ability: Magma Armor
+EVs: 28 HP / 188 Atk / 136 SpA / 156 SpD
+Brave Nature
+- Earthquake
+- Fire Blast
+- Toxic
+- Explosion
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 248 HP / 228 Def / 32 SpD
 Bold Nature
 IVs: 0 Atk
 - Surf
-- Recover
-- Toxic
-- Refresh
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 252 Def / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Counter
-- Seismic Toss
-- Aromatherapy
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 252 Def / 4 SpA
-Bold Nature
-IVs: 0 Atk
+- Roar
 - Wish
-- Calm Mind
-- Ice Punch
-- Thunder
+- Toxic

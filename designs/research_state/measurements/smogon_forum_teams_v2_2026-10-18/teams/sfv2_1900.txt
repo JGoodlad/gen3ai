@@ -1,57 +1,58 @@
-Tyranitar @ Choice Band
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 184 HP / 184 Atk / 4 SpD / 136 Spe
 Adamant Nature
-IVs: 30 Atk / 30 SpD
+IVs: 30 SpD / 30 Spe
 - Earthquake
 - Rock Slide
-- Hidden Power [Ghost]
-- Brick Break
+- Hidden Power [Bug]
+- Focus Punch
 
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 240 HP / 240 SpD / 28 Spe
 Careful Nature
+IVs: 0 Atk
 - Spikes
-- Thief
-- Drill Peck
+- Taunt
+- Toxic
 - Roar
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 4 SpD / 252 Spe
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
 Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Surf
-- Ice Beam
+IVs: 2 Atk / 30 SpA
+- Substitute
 - Thunderbolt
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Thunder Wave
-- Seismic Toss
-- Ice Beam
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 4 SpA / 252 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Fire Blast
 - Hidden Power [Grass]
-- Brick Break
+- Baton Pass
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 0 Atk
+- Recover
+- Leech Seed
+- Swords Dance
+- Baton Pass
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

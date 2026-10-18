@@ -1,0 +1,54 @@
+Heracross @ Choice Band
+Ability: Guts
+EVs: 140 HP / 216 Atk / 152 Spe
+Adamant Nature
+- Megahorn
+- Brick Break
+- Rock Slide
+- Focus Punch
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 168 HP / 252 Def / 88 Spe
+Bold Nature
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Thunder Wave
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 192 HP / 252 Atk / 64 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Dugtrio (F) @ Choice Band
+Ability: Arena Trap
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Screech

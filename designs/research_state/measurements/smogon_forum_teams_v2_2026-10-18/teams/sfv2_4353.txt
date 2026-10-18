@@ -1,0 +1,58 @@
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Baton Pass
+- Hidden Power [Grass]
+- Thunderbolt
+
+Wingull
+Ability: Keen Eye
+EVs: 40 HP / 252 SpA / 216 Spe
+Timid Nature
+IVs: 0 Atk
+- Thief
+- Ice Beam
+- Toxic
+- Protect
+
+Smeargle @ Lum Berry
+Ability: Own Tempo
+EVs: 4 HP / 252 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Spore
+- Tail Glow
+- Baton Pass
+- Taunt
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 232 SpA / 28 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 28 Atk / 228 SpA / 252 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Dragon Dance
+- Hidden Power [Grass]
+- Fire Blast
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 4 SpA / 252 Spe
+Hasty Nature
+- Substitute
+- Ice Punch
+- Thunder
+- Dynamic Punch

@@ -1,58 +1,56 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 SpA
-Brave Nature
-- Meteor Mash
-- Earthquake
-- Thunder Punch
-- Explosion
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 64 SpA / 196 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Toxic
-- Roar
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 124 SpD / 136 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Taunt
-- Toxic
-- Roar
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 72 Atk / 188 Spe
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
+IVs: 30 SpD / 30 Spe
 - Rock Slide
 - Earthquake
 - Hidden Power [Bug]
+- Focus Punch
 
-Banette @ Leftovers
-Ability: Insomnia
-EVs: 32 HP / 248 Atk / 228 Spe
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 152 HP / 252 SpD / 104 Spe
+Timid Nature
+- Surf
+- Spikes
+- Rapid Spin
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 176 Def / 8 SpA / 76 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Roar
+- Calm Mind
+- Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 176 Atk / 52 SpA / 32 Spe
 Adamant Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Will-O-Wisp
-- Shadow Ball
-- Hidden Power [Fighting]
-- Taunt
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 80 HP / 16 SpA / 236 SpD / 176 Spe
-Modest Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Taunt
-- Giga Drain
+EVs: 252 HP / 48 Def / 104 SpD / 104 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
+- Ice Punch
+- Hidden Power [Grass]
+- Will-O-Wisp
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 84 Def / 176 SpD
+Sassy Nature
+- Body Slam
+- Fire Punch
+- Protect
+- Wish

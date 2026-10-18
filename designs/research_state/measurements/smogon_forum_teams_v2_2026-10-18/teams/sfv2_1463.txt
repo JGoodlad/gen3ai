@@ -1,23 +1,3 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 152 SpA / 140 Spe
-Modest Nature
-IVs: 3 Atk / 30 Spe
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
-- Roar
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 240 HP / 232 SpD / 36 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Taunt
-- Toxic
-- Roar
-
 Swampert @ Leftovers
 Ability: Torrent
 EVs: 240 HP / 252 SpA / 16 Spe
@@ -27,32 +7,50 @@ Quiet Nature
 - Hydro Pump
 - Ice Beam
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Toxic
-- Ice Beam
-- Thunderbolt
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
 - Earthquake
 - Rock Slide
-- Hidden Power [Flying]
+- Double-Edge
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 168 SpA / 244 SpD / 96 Spe
+Modest Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 112 Atk / 220 SpA / 176 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up

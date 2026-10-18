@@ -1,57 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 224 SpA / 44 Spe
-Quiet Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
 - Earthquake
-- Hydro Pump
-- Ice Beam
+- Rock Slide
+- Double-Edge
 - Focus Punch
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 244 SpD / 192 Spe
-Timid Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
+IVs: 0 Atk
 - Spikes
-- Rapid Spin
-- Ice Beam
+- Taunt
+- Toxic
+- Roar
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
 - Explosion
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 248 HP / 220 SpA / 40 Spe
+EVs: 192 HP / 8 Def / 160 SpA / 148 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
 - Leech Seed
-- Calm Mind
 - Giga Drain
 - Hidden Power [Fire]
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 120 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
 - Psychic
-- Explosion
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
 - Brick Break
-- Fire Blast

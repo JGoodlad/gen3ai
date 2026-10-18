@@ -1,58 +1,55 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 Atk / 68 SpD / 188 Spe
 Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
+- Meteor Mash
 - Earthquake
 - Rock Slide
-- Brick Break
+- Explosion
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
+EVs: 252 Atk / 4 SpA / 252 Spe
+Jolly Nature
 - Rapid Spin
 - Earthquake
 - Psychic
 - Explosion
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 116 Atk / 164 Def / 12 SpD / 12 Spe
-Adamant Nature
-IVs: 30 SpD
-- Rest
-- Curse
-- Body Slam
-- Hidden Power [Steel]
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Calm Mind
-- Fire Punch
-- Psychic
-
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 16 HP / 56 Atk / 248 Def / 128 SpD / 60 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Brick Break
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 240 Atk / 16 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
 - Rock Slide
-- Hidden Power [Bug]
-- Knock Off
+- Earthquake
+- Hidden Power [Grass]
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 4 SpD / 252 Spe
+Jolly Nature
 - Recover
-- Refresh
-- Toxic
-- Surf
+- Leech Seed
+- Swords Dance
+- Baton Pass
+
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Curse
+- Earthquake
+- Rock Slide
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

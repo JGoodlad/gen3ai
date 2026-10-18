@@ -1,58 +1,57 @@
 Regirock @ Choice Band
 Ability: Clear Body
-Hidden Power: Rock
-EVs: 208 HP / 252 Atk / 48 Spe
+EVs: 232 HP / 252 Atk / 24 Spe
 Adamant Nature
-- Rock Slide
-- Earthquake
+IVs: 30 Def / 30 SpD / 30 Spe
 - Superpower
+- Focus Punch
+- Hidden Power [Rock]
 - Explosion
 
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 228 Def / 28 SpD
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Beat Up
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 96 Def / 96 SpA / 68 Spe
 Bold Nature
-IVs: 0 Atk
-- Toxic
-- Protect
-- Wish
-- Surf
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Baton Pass
+- Giga Drain
+- Calm Mind
+
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Encore
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 80 HP / 144 Atk / 104 Def / 164 SpD / 16 Spe
+Adamant Nature
+- Earthquake
+- Self-Destruct
+- Body Slam
+- Shadow Ball
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 192 HP / 176 Atk / 140 Spe
+EVs: 168 HP / 188 Atk / 16 Def / 136 Spe
 Adamant Nature
 - Meteor Mash
 - Earthquake
-- Rock Slide
 - Explosion
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Ice Beam
-- Thunderbolt
-- Soft-Boiled
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Brick Break
-- Hidden Power [Grass]
-- Fire Blast
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Flying]
+- Agility

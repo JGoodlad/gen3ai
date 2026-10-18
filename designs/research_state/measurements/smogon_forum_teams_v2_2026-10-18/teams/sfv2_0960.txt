@@ -1,56 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 140 SpA / 168 SpD / 200 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Substitute
-- Baton Pass
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 236 SpA / 20 Spe
-Modest Nature
-- Substitute
-- Thunder Wave
-- Crunch
-- Focus Punch
-
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 224 HP / 224 SpA / 60 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Ice Beam
-- Thunderbolt
-- Hidden Power [Fire]
-- Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 208 HP / 96 Def / 184 SpA / 20 Spe
-Rash Nature
-- Hydro Pump
-- Ice Beam
-- Earthquake
-- Focus Punch
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 152 SpA / 104 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 220 HP / 36 Def / 64 SpA / 12 SpD / 176 Spe
 Timid Nature
 IVs: 0 Atk
-- Calm Mind
-- Substitute
-- Ice Punch
-- Thunderbolt
+- Psychic
+- Recover
+- Swords Dance
+- Baton Pass
 
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 8 HP / 128 Atk / 120 Def / 252 Spe
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Rain Dance
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-- Spore
-- Stun Spore
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+- Dragon Dance
 - Brick Break
+- Rock Slide
+- Earthquake
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+IVs: 0 Atk
+- Self-Destruct
+- Body Slam
+- Shadow Ball
 - Focus Punch

@@ -1,57 +1,58 @@
-Venusaur @ Leftovers
-Ability: Overgrow
-EVs: 252 HP / 12 SpA / 244 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Sleep Powder
-- Hidden Power [Fire]
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Dragon Claw
+- Brick Break
+- Hidden Power [Grass]
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 144 Def / 84 SpD / 28 Spe
-Impish Nature
-- Spikes
-- Roar
-- Drill Peck
-- Protect
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 180 Spe
-Jolly Nature
+Poliwrath @ Leftovers
+Ability: Water Absorb
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
+- Brick Break
+- Focus Punch
+- Bulk Up
 - Hidden Power [Bug]
 
-Blissey @ Leftovers
-Ability: Natural Cure
-EVs: 106 HP / 252 Def / 152 SpA
-Modest Nature
-IVs: 0 Atk
-- Wish
-- Soft-Boiled
-- Seismic Toss
-- Ice Beam
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Hidden Power [Grass]
-- Fire Blast
-- Focus Punch
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 4 Atk / 216 SpA / 36 Spe
-Quiet Nature
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
 - Earthquake
-- Focus Punch
-- Ice Beam
-- Hydro Pump
+- Explosion
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
+Timid Nature
+IVs: 0 Atk
+- Spikes
+- Surf
+- Icy Wind
+- Rapid Spin
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 144 HP / 188 SpA / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Toxic
+- Wish
+- Protect
+- Hidden Power [Ice]
+
+Tyranitar @ Salac Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Pursuit
+- Crunch
+- Taunt
+- Fire Blast

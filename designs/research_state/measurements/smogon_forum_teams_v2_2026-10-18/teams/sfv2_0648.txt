@@ -1,57 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Brick Break
-- Hidden Power [Grass]
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 64 HP / 176 Atk / 100 Def / 168 SpD
-Adamant Nature
-- Curse
-- Earthquake
-- Return
-- Self-Destruct
-
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 176 SpA / 140 SpD / 192 Spe
-Modest Nature
-IVs: 0 Atk
-- Fire Blast
-- Pursuit
-- Will-O-Wisp
-- Crunch
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 48 Def / 40 SpA / 36 SpD / 136 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
-IVs: 0 Atk
-- Surf
-- Recover
-- Rapid Spin
-- Thunder Wave
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+- Substitute
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 96 Atk / 164 SpA
-Brave Nature
-- Hydro Pump
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 136 HP / 224 Atk / 36 SpD / 112 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Ice Beam
-- Curse
+- Beat Up
+- Aerial Ace
+- Hidden Power [Bug]
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 80 SpA / 176 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 66 SpA / 190 Spe
 Modest Nature
-IVs: 0 Atk
 - Substitute
 - Calm Mind
-- Thunderbolt
-- Ice Punch
+- Surf
+- Ice Beam
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 100 HP / 224 Atk / 184 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 16 HP / 52 Atk / 120 Def / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
+- Dragon Dance
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 180 HP / 96 Def / 52 SpA / 180 Spe
+Bold Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass

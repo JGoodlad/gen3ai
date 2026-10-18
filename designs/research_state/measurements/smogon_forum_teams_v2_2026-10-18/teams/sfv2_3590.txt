@@ -1,62 +1,56 @@
-Metagross @ Choice Band
-Ability: Clear Body
-Shiny: Yes
-EVs: 124 HP / 252 Atk / 132 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Toxic
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
+Hasty Nature
+- Will-O-Wisp
+- Thunder
+- Giga Drain
 - Explosion
 
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 244 Atk / 12 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Dance
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Fire Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Def / 48 SpA / 44 Spe
+Relaxed Nature
+- Protect
 - Earthquake
-- Rock Slide
-- Hidden Power [Grass]
-
-Suicune @ Leftovers
-Ability: Pressure
-Shiny: Yes
-EVs: 28 HP / 252 SpA / 228 Spe
-Modest Nature
-IVs: 0 Atk
+- Hydro Pump
 - Roar
-- Calm Mind
-- Surf
-- Ice Beam
 
-Porygon2 @ Leftovers
-Ability: Trace
-Shiny: Yes
-EVs: 252 HP / 200 Def / 56 SpA
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Ice Beam
-- Thunder Wave
-- Thunderbolt
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 76 SpA / 184 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Hidden Power [Fire]
-- Psychic
-- Baton Pass
-
-Charizard @ Leftovers
-Ability: Blaze
-Shiny: Yes
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 2 Atk / 30 SpA
-- Fire Blast
-- Beat Up
-- Hidden Power [Grass]
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 SpA / 252 Spe
+Naive Nature
 - Dragon Claw
+- Flamethrower
+- Brick Break
+- Roar

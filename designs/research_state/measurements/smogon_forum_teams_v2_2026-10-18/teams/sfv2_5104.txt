@@ -1,0 +1,58 @@
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 188 Atk / 68 Spe
+Adamant Nature
+- Toxic
+- Earthquake
+- Rock Slide
+- Explosion
+
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Iron Tail
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Hidden Power [Bug]
+- Swords Dance
+- Rapid Spin
+
+Magnemite @ Leftovers
+Ability: Magnet Pull
+EVs: 252 HP / 4 SpA / 192 SpD / 60 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Thunder Wave
+- Rain Dance
+- Hidden Power [Grass]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Roar
+- Calm Mind
+- Rest
+
+Chansey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 140 HP / 252 Def / 116 Spe
+Bold Nature
+IVs: 0 Atk
+- Thunder Wave
+- Aromatherapy
+- Soft-Boiled
+- Seismic Toss

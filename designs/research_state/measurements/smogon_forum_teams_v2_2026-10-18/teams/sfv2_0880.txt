@@ -1,57 +1,57 @@
-Tyranitar @ Salac Berry
-Ability: Sand Stream
-EVs: 252 Atk / 4 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Earthquake
-- Dragon Dance
-- Hidden Power [Grass]
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-- Dragon Claw
-- Fire Blast
-- Brick Break
-- Sleep Talk
-
-Skarmory @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 188 SpD / 68 Spe
-Calm Nature
-IVs: 0 Atk
-- Toxic
-- Protect
-- Spikes
-- Taunt
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Thunderbolt
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 88 SpA / 168 Spe
+Timid Nature
+IVs: 3 Atk / 30 SpA
+- Hypnosis
 - Ice Beam
-- Soft-Boiled
-- Toxic
+- Hidden Power [Electric]
+- Recover
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 12 Atk / 36 Def / 200 SpD / 8 Spe
-Impish Nature
-- Meteor Mash
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 Def / 144 SpD / 36 Spe
+Bold Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Recover
+- Swords Dance
+- Baton Pass
+
+Aerodactyl @ Leftovers
+Ability: Rock Head
+EVs: 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Protect
+- Double-Edge
+- Taunt
+- Hidden Power [Bug]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def
+Bold Nature
+IVs: 2 Atk / 30 Def
+- Calm Mind
+- Rest
+- Roar
+- Hidden Power [Ice]
+
+Nosepass @ Pecha Berry
+Ability: Magnet Pull
+EVs: 248 HP / 8 Atk / 204 Def / 48 SpA
+Relaxed Nature
+- Taunt
+- Thunder Wave
+- Thunderbolt
 - Explosion
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 72 Def / 184 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 72 HP / 252 Atk / 184 Spe
+Adamant Nature
+- Agility
 - Rock Slide
 - Earthquake
-- Roar
-- Hidden Power [Fighting]
+- Explosion

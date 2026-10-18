@@ -1,31 +1,21 @@
-Tyranitar @ Choice Band
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 152 Atk / 172 Spe
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
-IVs: 30 SpD / 30 Spe
+- Dragon Dance
 - Earthquake
 - Rock Slide
-- Hidden Power [Bug]
-- Brick Break
+- Double-Edge
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 244 SpD / 192 Spe
-Timid Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
+IVs: 0 Atk
 - Spikes
-- Rapid Spin
-- Surf
-- Explosion
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
+- Taunt
+- Toxic
 - Roar
-- Baton Pass
 
 Metagross @ Leftovers
 Ability: Clear Body
@@ -37,15 +27,25 @@ IVs: 30 Atk / 30 SpA / 30 Spe
 - Psychic
 - Explosion
 
-Charizard @ Leftovers
-Ability: Blaze
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Salamence @ Leftovers
+Ability: Intimidate
 EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
+Mild Nature
 IVs: 30 Atk / 30 SpA
-- Substitute
-- Fire Blast
+- Dragon Claw
+- Flamethrower
 - Hidden Power [Grass]
-- Focus Punch
+- Brick Break
 
 Aerodactyl @ Choice Band
 Ability: Rock Head

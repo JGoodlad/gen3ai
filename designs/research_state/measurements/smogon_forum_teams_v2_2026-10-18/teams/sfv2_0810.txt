@@ -1,56 +1,59 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Focus Punch
-- Earthquake
-- Hidden Power [Bug]
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-- Thunderbolt
-- Ice Punch
-- Will-O-Wisp
-- Explosion
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Will-O-Wisp
-- Protect
-
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 248 SpD / 8 Spe
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
 IVs: 0 Atk
 - Spikes
 - Roar
-- Protect
 - Toxic
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 16 Atk / 136 Def / 24 SpA / 44 SpD / 40 Spe
-Relaxed Nature
-- Hydro Pump
-- Ice Beam
-- Earthquake
-- Refresh
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 76 Def / 180 SpD
-Sassy Nature
-- Wish
 - Protect
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 224 Atk / 36 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
 - Fire Punch
-- Body Slam
+- Ice Punch
+- Hidden Power [Grass]
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 216 Atk / 16 Def / 108 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Rattata
+Ability: Guts
+Level: 99
+EVs: 4 SpA / 252 SpD / 252 Spe
+Timid Nature
+IVs: 0 HP / 0 Atk
+- Substitute
+- Endeavor
+- Thunder Wave
+- Thief

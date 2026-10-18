@@ -1,0 +1,58 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 220 Atk / 252 SpA / 36 Spe
+Mild Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Thunderbolt
+- Drill Peck
+- Hidden Power [Fighting]
+- Toxic
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Crunch
+- Fire Blast
+- Roar
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Rapid Spin
+- Counter
+- Zap Cannon
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Hasty Nature
+IVs: 30 SpA
+- Hypnosis
+- Explosion
+- Will-O-Wisp
+- Thunderbolt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 236 Atk / 20 SpD
+Adamant Nature
+- Earthquake
+- Focus Punch
+- Rock Slide
+- Substitute
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Ice Beam
+- Seismic Toss
+- Wish

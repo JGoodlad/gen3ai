@@ -1,58 +1,56 @@
-Regirock @ Leftovers
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 200 HP / 252 Atk / 56 Spe
-Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Thunder Wave
-- Hidden Power [Rock]
-- Superpower
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
 - Explosion
 
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Protect
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+- Recover
+- Refresh
 - Toxic
-- Thunderbolt
-- Hidden Power [Grass]
+- Surf
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 168 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
+EVs: 252 Atk / 120 Def / 136 SpD
 Adamant Nature
-- Body Slam
+- Curse
+- Double-Edge
+- Earthquake
 - Shadow Ball
-- Focus Punch
-- Self-Destruct
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 144 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Rock Slide
-- Hidden Power [Grass]
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 192 Atk / 200 SpD / 116 Spe
+EVs: 116 HP / 252 Atk / 140 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
-- Hidden Power [Flying]
 - Rock Slide
 - Brick Break
+- Hidden Power [Flying]

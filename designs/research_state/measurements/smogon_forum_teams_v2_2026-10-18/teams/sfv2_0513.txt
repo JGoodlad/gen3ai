@@ -1,56 +1,57 @@
-Tyranitar (F) @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 20 Atk / 216 SpA / 88 Spe
-Quiet Nature
-- Brick Break
-- Crunch
-- Fire Blast
-- Pursuit
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 28 Def / 208 SpD / 32 Spe
+Calm Nature
+IVs: 30 Atk / 30 SpA
+- Baton Pass
+- Hidden Power [Grass]
+- Thunderbolt
+- Thunder Wave
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 40 HP / 252 Atk / 100 SpD / 116 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Double-Edge
+IVs: 30 SpD / 30 Spe
+- Aerial Ace
+- Beat Up
 - Earthquake
 - Hidden Power [Bug]
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Toxic
-- Roar
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 48 Def / 24 SpA / 184 Spe
 Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
+- Explosion
+- Ice Punch
 - Thunderbolt
-- Rapid Spin
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 172 SpA / 16 SpD / 68 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
+- Will-O-Wisp
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 228 Atk / 16 Def / 96 Spe
+EVs: 168 HP / 236 Atk / 16 Def / 88 Spe
 Adamant Nature
-- Meteor Mash
-- Rock Slide
-- Earthquake
 - Agility
+- Earthquake
+- Explosion
+- Meteor Mash
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 48 Def / 68 SpA / 140 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Leech Seed
+
+Kingdra @ Lum Berry
+Ability: Swift Swim
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+IVs: 30 SpA
+- Hidden Power [Electric]
+- Ice Beam
+- Rain Dance
+- Surf

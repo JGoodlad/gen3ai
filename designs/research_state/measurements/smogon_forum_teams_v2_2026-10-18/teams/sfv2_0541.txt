@@ -1,55 +1,59 @@
 Tyranitar @ Black Belt
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
+EVs: 216 Atk / 112 SpA / 180 Spe
+Hasty Nature
+IVs: 30 HP / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
 - Rock Slide
 - Brick Break
-- Focus Punch
-- Earthquake
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 Atk / 212 SpA / 180 Spe
-Naughty Nature
-- Brick Break
-- Dragon Claw
-- Fire Blast
-- Refresh
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Spikes
-- Drill Peck
-- Toxic
-- Roar
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 176 Def / 84 SpA
-Relaxed Nature
-- Surf
+- Rapid Spin
+- Hidden Power [Bug]
 - Earthquake
-- Ice Beam
-- Refresh
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Beat Up
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 248 HP / 64 Def / 196 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Wish
-- Fire Punch
-- Body Slam
-- Hidden Power [Grass]
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 228 HP / 236 SpA / 44 Spe
+EVs: 252 HP / 40 Def / 80 SpA / 136 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Toxic
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Thunder
+- Ice Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Refresh
 - Protect
+- Roar
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]

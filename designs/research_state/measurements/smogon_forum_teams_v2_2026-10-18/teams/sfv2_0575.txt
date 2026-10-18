@@ -1,56 +1,56 @@
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Spore
-- Focus Punch
-- Mach Punch
-- Sky Uppercut
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 224 Atk / 32 SpD
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 220 SpA / 164 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Hydro Pump
-- Dragon Claw
-- Fire Blast
-- Hidden Power [Grass]
-
-Tyranitar @ Black Glasses
+Tyranitar (F) @ Leftovers
 Ability: Sand Stream
-EVs: 208 HP / 96 SpA / 204 Spe
+EVs: 184 HP / 20 Atk / 216 SpA / 88 Spe
 Quiet Nature
-- Pursuit
 - Brick Break
-- Fire Blast
 - Crunch
+- Fire Blast
+- Pursuit
 
-Scizor @ Salac Berry
-Ability: Swarm
+Aerodactyl @ Choice Band
+Ability: Rock Head
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Swords Dance
-- Endure
-- Reversal
+- Rock Slide
+- Double-Edge
+- Earthquake
 - Hidden Power [Bug]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Toxic
+- Roar
 
 Starmie @ Leftovers
 Ability: Natural Cure
-EVs: 148 HP / 208 SpA / 152 Spe
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
-- Ice Beam
-- Recover
-- Thunderbolt
 - Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 172 SpA / 16 SpD / 68 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 228 Atk / 16 Def / 96 Spe
+Adamant Nature
+- Meteor Mash
+- Rock Slide
+- Earthquake
+- Agility

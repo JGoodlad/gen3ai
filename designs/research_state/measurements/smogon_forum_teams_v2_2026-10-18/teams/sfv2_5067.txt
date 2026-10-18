@@ -1,0 +1,55 @@
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 168 HP / 252 Def / 88 Spe
+Bold Nature
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Thunder Wave
+
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 140 SpA / 120 Spe
+Quiet Nature
+- Pursuit
+- Crunch
+- Fire Blast
+- Brick Break
+
+Gengar (F) @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Hasty Nature
+- Will-O-Wisp
+- Taunt
+- Destiny Bond
+- Thunderbolt
+
+Swampert (F) @ Salac Berry
+Ability: Torrent
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Surf
+- Roar
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+IVs: 30 SpD / 30 Spe
+- Spikes
+- Rapid Spin
+- Explosion
+- Hidden Power [Bug]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 204 HP / 216 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion

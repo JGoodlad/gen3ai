@@ -1,0 +1,58 @@
+Suicune @ Salac Berry
+Ability: Pressure
+EVs: 24 HP / 252 SpA / 232 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rain Dance
+- Roar
+
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 40 HP / 252 Atk / 8 Def / 208 Spe
+Jolly Nature
+- Brick Break
+- Rock Slide
+- Shadow Ball
+- Baton Pass
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Calm Mind
+- Giga Drain
+- Hidden Power [Ice]
+- Baton Pass
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Hidden Power [Grass]
+- Psychic
+- Fire Punch
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpD
+Bold Nature
+IVs: 0 Atk
+- Thunder Wave
+- Ice Beam
+- Thunderbolt
+- Recover
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 228 Atk / 48 SpD / 232 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Aerial Ace

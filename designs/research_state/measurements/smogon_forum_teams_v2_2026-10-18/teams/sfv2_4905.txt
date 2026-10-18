@@ -1,0 +1,57 @@
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 36 HP / 120 Atk / 252 SpA / 100 Spe
+Naive Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Fighting]
+- Thunder
+- Body Slam
+- Fire Punch
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 72 Atk / 188 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 128 SpD / 132 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Taunt
+- Roar
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Roar
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 92 Atk / 120 SpA / 48 Spe
+Brave Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Refresh
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+- Will-O-Wisp
+- Explosion
+- Ice Punch
+- Thunderbolt

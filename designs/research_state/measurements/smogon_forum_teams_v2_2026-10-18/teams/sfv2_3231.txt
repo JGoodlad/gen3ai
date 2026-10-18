@@ -1,35 +1,34 @@
-Nidoking @ Leftovers
-Ability: Poison Point
-EVs: 120 Atk / 228 SpA / 160 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Sludge Bomb
-- Fire Blast
-- Hidden Power [Grass]
-- Earthquake
-
-Tyranitar (M) @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 88 Atk / 172 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Dragon Dance
-- Hidden Power [Bug]
-
-Skarmory (M) @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 244 SpD / 12 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 144 Def / 188 SpA / 176 Spe
+Rash Nature
+- Dragon Claw
+- Flamethrower
+- Brick Break
 - Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 32 Def / 52 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Recover
+- Rapid Spin
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 232 HP / 176 Atk / 100 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
+EVs: 252 Def / 200 SpA / 56 Spe
 Modest Nature
 IVs: 0 Atk
 - Calm Mind
@@ -37,21 +36,22 @@ IVs: 0 Atk
 - Thunderbolt
 - Soft-Boiled
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 136 Def / 80 SpA / 44 Spe
-Relaxed Nature
-- Hydro Pump
-- Ice Beam
-- Earthquake
-- Focus Punch
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+IVs: 30 SpD
+- Spikes
+- Hidden Power [Steel]
+- Roar
+- Protect
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 120 Atk / 212 SpA / 176 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
+EVs: 204 HP / 240 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
 - Thunderbolt
-- Drill Peck
-- Hidden Power [Grass]
-- Agility
+- Toxic
+- Substitute
+- Rest

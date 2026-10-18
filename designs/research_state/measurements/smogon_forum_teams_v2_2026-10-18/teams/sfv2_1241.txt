@@ -1,58 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 176 Def / 72 SpD / 20 Spe
-Bold Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 224 SpD / 32 Spe
+Calm Nature
 IVs: 0 Atk
-- Protect
-- Refresh
+- Thunderbolt
 - Toxic
-- Surf
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
+- Rest
 - Roar
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Rapid Spin
+- Earthquake
+- Sunny Day
+- Aerial Ace
 - Hidden Power [Bug]
-- Counter
 
-Blissey (F) @ Leftovers
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 252 Def / 4 SpD
+Relaxed Nature
+- Psychic
+- Earthquake
+- Rapid Spin
+- Rest
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Ice Beam
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Sunny Day
+
+Blissey @ Leftovers
 Ability: Natural Cure
-EVs: 4 HP / 252 Def / 252 SpA
-Modest Nature
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
 IVs: 0 Atk
 - Soft-Boiled
-- Toxic
-- Ice Beam
-- Thunderbolt
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 120 Def / 136 SpD
-Sassy Nature
-- Wish
-- Protect
-- Fire Punch
-- Body Slam
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
+- Counter
+- Aromatherapy
+- Seismic Toss

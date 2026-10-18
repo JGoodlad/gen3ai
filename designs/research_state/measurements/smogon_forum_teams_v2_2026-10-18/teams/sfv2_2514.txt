@@ -1,58 +1,58 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
 IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
+- Spikes
 - Roar
+- Toxic
+- Protect
 
 Jolteon @ Leftovers
 Ability: Volt Absorb
-EVs: 184 HP / 148 SpD / 176 Spe
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
-- Substitute
 - Thunderbolt
+- Thunder Wave
 - Hidden Power [Grass]
 - Baton Pass
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 244 Atk / 52 Def / 8 SpD
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 Atk / 4 Def
 Adamant Nature
-- Curse
-- Double-Edge
-- Shadow Ball
-- Self-Destruct
+IVs: 30 SpD / 30 Spe
+- Focus Punch
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 40 HP / 252 SpA / 216 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Ice Punch
+- Fire Punch
+- Hidden Power [Grass]
+- Explosion
 
 Metagross @ Choice Band
 Ability: Clear Body
-EVs: 188 HP / 252 Atk / 68 Spe
+EVs: 68 HP / 252 Atk / 188 Spe
 Adamant Nature
-IVs: 30 SpA / 30 Spe
 - Meteor Mash
+- Earthquake
 - Rock Slide
-- Brick Break
 - Explosion
 
-Machamp @ Leftovers
-Ability: Guts
-EVs: 248 HP / 176 Atk / 20 Def / 40 SpD / 24 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Bulk Up
-- Cross Chop
-- Rock Slide
-- Hidden Power [Bug]
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 192 Atk / 200 SpD / 116 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
-- Brick Break
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Thunderbolt
+- Ice Beam
+- Rapid Spin

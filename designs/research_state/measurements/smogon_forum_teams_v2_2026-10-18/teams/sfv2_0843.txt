@@ -1,58 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Pursuit
-- Crunch
-- Fire Blast
-- Counter
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 192 HP / 220 Atk / 4 Def / 56 SpA / 36 Spe
-Brave Nature
+Armaldo @ Choice Band
+Ability: Battle Armor
+EVs: 202 HP / 252 Atk / 56 SpD
+Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Hydro Pump
-- Ice Beam
+- Rock Slide
 - Earthquake
 - Hidden Power [Bug]
+- Knock Off
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 136 SpD / 124 Spe
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
 - Spikes
-- Roar
-- Drill Peck
-- Taunt
+- Explosion
+- Zap Cannon
+- Earthquake
 
-Breloom @ Leftovers
-Ability: Effect Spore
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Swords Dance
+- Megahorn
+- Substitute
+- Focus Punch
+
+Ninjask @ Choice Band
+Ability: Speed Boost
+EVs: 252 Atk / 60 Def / 196 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Silver Wind
+- Aerial Ace
+- Hidden Power [Rock]
+- Shadow Ball
+
+Scizor @ Leftovers
+Ability: Swarm
+EVs: 108 HP / 252 Atk / 148 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Swords Dance
+- Agility
+- Silver Wind
+
+Pinsir @ Leftovers
+Ability: Hyper Cutter
 EVs: 252 Atk / 4 SpD / 252 Spe
 Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Spore
-- Sky Uppercut
-- Mach Punch
-- Hidden Power [Rock]
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 232 HP / 56 Def / 8 SpA / 176 SpD / 36 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Recover
-- Giga Drain
-- Hidden Power [Fire]
-- Baton Pass
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Baton Pass
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Hidden Power [Bug]
+- Brick Break
+- Swords Dance

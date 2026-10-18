@@ -1,31 +1,20 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 196 SpA / 128 Spe
-Modest Nature
-- Crunch
-- Pursuit
-- Flamethrower
-- Brick Break
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-IVs: 30 SpD
-- Spikes
-- Toxic
-- Hidden Power [Steel]
-- Roar
-
-Gengar @ Leftovers
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Rapid Spin
+- Earthquake
+- Shadow Ball
+- Explosion
 
 Metagross @ Leftovers
 Ability: Clear Body
@@ -37,22 +26,30 @@ IVs: 30 Atk / 30 SpA / 30 Spe
 - Psychic
 - Explosion
 
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 4 Def / 136 SpA / 176 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
-- Flamethrower
-- Hidden Power [Grass]
-- Roar
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+Heracross @ Leftovers
+Ability: Guts
+EVs: 252 Atk / 4 SpD / 252 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
+- Swords Dance
+- Megahorn
+- Brick Break
 - Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
+Mild Nature
+- Dragon Claw
+- Rock Slide
+- Flamethrower
+- Brick Break

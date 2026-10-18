@@ -1,59 +1,56 @@
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 160 HP / 172 SpA / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Thunderbolt
-- Ice Punch
-- Hypnosis
-- Destiny Bond
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 76 SpA / 180 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Psychic
-- Hidden Power [Fire]
-- Baton Pass
-
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 84 Atk / 172 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
 - Substitute
+- Rock Slide
+- Hidden Power [Ghost]
+- Focus Punch
 
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 196 Def / 60 SpD
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
 Bold Nature
 IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
 - Ice Beam
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 228 SpD / 40 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Rest
 - Thunderbolt
-- Thunder Wave
-- Recover
+- Hidden Power [Grass]
+- Roar
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 112 HP / 252 Atk / 40 SpD / 104 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 216 Atk / 16 Def / 108 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
 - Earthquake
-- Beat Up
-- Hidden Power [Bug]
-- Aerial Ace
-
-Swampert @ Leftovers
-Ability: Torrent
-Shiny: Yes
-EVs: 108 Def / 252 SpA / 148 Spe
-Rash Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Focus Punch
+- Explosion

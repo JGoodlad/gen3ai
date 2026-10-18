@@ -1,58 +1,63 @@
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 240 SpA / 252 Spe
+Jynx @ Leftovers
+Ability: Oblivious
+Shiny: Yes
+EVs: 36 HP / 252 SpA / 220 Spe
 Timid Nature
 IVs: 0 Atk
-- Hydro Pump
-- Substitute
+- Mean Look
 - Ice Beam
-- Baton Pass
+- Lovely Kiss
+- Perish Song
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+Shiny: Yes
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 29 HP / 30 Atk / 30 Def / 30 SpD
+- Substitute
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+
+Golduck @ Salac Berry
+Ability: Cloud Nine
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 0 Atk
+- Endure
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
+- Hidden Power [Grass]
+- Explosion
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 76 SpA / 180 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
+EVs: 216 HP / 252 SpA / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
 - Calm Mind
 - Giga Drain
 - Hidden Power [Fire]
-- Baton Pass
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 252 SpA / 4 SpD / 252 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+Shiny: Yes
+EVs: 252 HP / 4 SpA / 252 Spe
 Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Substitute
-- Ice Beam
-- Endeavor
-
-Weezing @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 4 Def / 252 Spe
-Impish Nature
-- Will-O-Wisp
-- Pain Split
-- Explosion
-- Taunt
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Rock]
-- Earthquake
-- Taunt
-
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 252 Atk / 228 Def / 28 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Focus Punch
-- Cross Chop
-- Hidden Power [Bug]
-- Rock Slide
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Calm Mind
+- Psychic
+- Fire Punch

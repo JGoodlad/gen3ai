@@ -1,58 +1,58 @@
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 236 HP / 252 Atk / 20 Spe
-Adamant Nature
+EVs: 68 Atk / 252 SpA / 188 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Rock Slide
+- Brick Break
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 12 Def / 248 SpD
+Sassy Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Spikes
+- Rapid Spin
+- Hidden Power [Fire]
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Seismic Toss
+- Ice Beam
+- Wish
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 76 HP / 252 SpA / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Psychic
+- Giga Drain
+- Hidden Power [Fire]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpA
+Relaxed Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Sleep Talk
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
 - Earthquake
-- Focus Punch
+- Double-Edge
 - Hidden Power [Bug]
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Protect
-- Toxic
-- Roar
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 76 Def / 164 SpD / 20 Spe
-Calm Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Fire Punch
-- Toxic
-
-Heracross @ Leftovers
-Ability: Guts
-EVs: 24 HP / 252 Atk / 232 Spe
-Adamant Nature
-- Substitute
-- Megahorn
-- Focus Punch
-- Rock Slide
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 28 Def / 40 SpA / 32 SpD / 160 Spe
-Timid Nature
-IVs: 0 Atk
-- Surf
-- Psychic
-- Recover
-- Rapid Spin
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 Atk / 12 SpA / 244 Spe
-Lonely Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Thunderbolt
-- Drill Peck
-- Hidden Power [Fighting]
-- Roar

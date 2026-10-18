@@ -1,58 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 136 SpA / 156 Spe
-Modest Nature
-IVs: 1 Atk / 30 Spe
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 220 SpA / 36 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
+EVs: 228 HP / 216 Def / 64 Spe
+Bold Nature
 - Calm Mind
 - Surf
-- Ice Beam
+- Roar
+- Rest
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Fire Punch
-- Ice Punch
-- Hidden Power [Grass]
-- Explosion
-
-Salamence @ Leftovers
+Gyarados @ Leftovers
 Ability: Intimidate
-EVs: 180 Atk / 212 SpD / 116 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
+EVs: 252 HP / 64 Atk / 192 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Dragon Dance
-- Earthquake
-- Rock Slide
 - Hidden Power [Flying]
+- Earthquake
+- Rest
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 236 HP / 136 Def / 92 SpA / 44 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Leech Seed
+- Heal Bell
+- Recover
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunder Wave
+- Seismic Toss
+- Soft-Boiled
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 240 HP / 80 Def / 188 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Substitute
+- Thunderbolt
+- Hidden Power [Fire]
+- Rain Dance
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 68 Atk / 176 Def / 12 SpA
+Impish Nature
+- Psychic
+- Earthquake
+- Explosion
+- Rapid Spin

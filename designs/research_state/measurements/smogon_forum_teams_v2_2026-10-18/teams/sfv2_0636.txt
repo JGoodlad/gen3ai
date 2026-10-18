@@ -1,56 +1,62 @@
-Metagross @ Choice Band
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 248 HP / 176 SpA / 84 Spe
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Flamethrower
+- Crunch
+- Counter
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+Shiny: Yes
+EVs: 240 HP / 244 SpD / 24 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Protect
+- Toxic
+
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 4 HP / 252 Atk / 252 Spe
+Shiny: Yes
+EVs: 168 HP / 236 Atk / 12 Def / 92 Spe
 Adamant Nature
 - Meteor Mash
 - Earthquake
 - Rock Slide
-- Explosion
+- Agility
 
-Snorlax (M) @ Leftovers
-Ability: Immunity
-EVs: 232 HP / 252 Atk / 24 Spe
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 236 HP / 176 Atk / 96 Spe
 Adamant Nature
-- Body Slam
-- Self-Destruct
-- Shadow Ball
-- Focus Punch
+- Earthquake
+- Explosion
+- Rock Slide
+- Rapid Spin
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 232 HP / 252 SpA / 24 Spe
+Blissey @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 252 Def / 252 SpA / 4 Spe
 Modest Nature
 IVs: 0 Atk
-- Surf
-- Calm Mind
-- Roar
-- Rest
-
-Jolteon (F) @ Lum Berry
-Ability: Volt Absorb
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
+- Soft-Boiled
+- Ice Beam
+- Seismic Toss
 - Thunder Wave
 
-Gyarados (M) @ Leftovers
-Ability: Intimidate
-EVs: 216 HP / 188 Atk / 104 Spe
-Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Earthquake
-- Hidden Power [Rock]
-- Taunt
-- Dragon Dance
-
-Claydol @ Choice Band
-Ability: Levitate
-EVs: 236 HP / 196 Atk / 72 SpD / 4 Spe
-Adamant Nature
-- Earthquake
-- Shadow Ball
-- Rapid Spin
-- Explosion
+Ludicolo @ Leftovers
+Ability: Swift Swim
+Shiny: Yes
+EVs: 164 HP / 252 SpA / 92 Spe
+Modest Nature
+IVs: 0 Atk
+- Rain Dance
+- Surf
+- Ice Beam
+- Leech Seed

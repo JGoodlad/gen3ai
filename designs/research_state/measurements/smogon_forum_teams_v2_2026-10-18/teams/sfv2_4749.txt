@@ -1,0 +1,59 @@
+Tyranitar @ Choice Band
+Ability: Sand Stream
+Hidden Power: Bug
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Rock Slide
+- Brick Break
+- Earthquake
+- Double-Edge
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 80 HP / 16 SpA / 236 SpD / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Taunt
+- Giga Drain
+- Thunderbolt
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 124 SpD / 136 Spe
+Careful Nature
+IVs: 30 SpD
+- Spikes
+- Taunt
+- Hidden Power [Steel]
+- Counter
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Baton Pass
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Protect
+- Roar
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 16 Atk / 240 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 Def
+- Flamethrower
+- Hidden Power [Ice]
+- Toxic
+- Focus Punch

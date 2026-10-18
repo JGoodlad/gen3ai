@@ -1,56 +1,58 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Endeavor
 - Substitute
-- Calm Mind
-- Surf
 - Roar
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
-
-Metagross @ Leftovers
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+EVs: 200 HP / 252 Atk / 56 Spe
 Adamant Nature
-- Agility
 - Meteor Mash
 - Earthquake
 - Rock Slide
+- Explosion
 
-Celebi @ Leftovers
+Tyranitar @ Salac Berry
+Ability: Sand Stream
+EVs: 16 HP / 188 Atk / 120 Def / 184 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
+- Dragon Dance
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 84 HP / 252 Atk / 172 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Earthquake
+- Dragon Dance
+- Taunt
+
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 SpA / 76 SpD / 180 Spe
+EVs: 252 Def / 252 SpA / 4 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 112 SpA / 180 Spe
-Modest Nature
-IVs: 30 Spe
-- Protect
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
+IVs: 0 Atk
+- Seismic Toss
+- Soft-Boiled
+- Ice Beam
+- Sing

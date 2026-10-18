@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 176 SpA / 76 SpD / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Ice Beam
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 SpD / 30 Spe
-- Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Counter
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 24 Atk / 136 Def / 80 SpD / 28 Spe
-Impish Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Rest
-- Curse
-- Earthquake
-- Hidden Power [Rock]
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Toxic
-- Ice Beam
-- Thunderbolt
-
-Heracross @ Leftovers
-Ability: Guts
+Salamence @ Choice Band
+Ability: Intimidate
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-- Swords Dance
-- Megahorn
-- Rock Slide
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Hidden Power [Flying]
+- Fire Blast
+- Earthquake
 - Brick Break
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 24 Atk / 252 SpA / 64 SpD / 144 Spe
-Mild Nature
-- Wish
-- Dragon Claw
-- Flamethrower
-- Brick Break
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 120 Def / 28 SpA / 92 SpD / 20 Spe
+Bold Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hidden Power [Grass]
+- Perish Song
+- Leech Seed
+- Recover
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 200 Atk / 56 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Refresh
+- Rapid Spin
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 172 HP / 252 SpA / 84 Spe
+Modest Nature
+IVs: 31 HP / 2 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+- Thunder Wave
+
+Snorlax @ Leftovers
+Ability: Thick Fat
+EVs: 92 HP / 128 Atk / 124 Def / 164 SpD
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Curse
+- Rest
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 220 Def / 36 Spe
+Bold Nature
+IVs: 31 HP / 0 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Roar
+- Calm Mind
+- Rest

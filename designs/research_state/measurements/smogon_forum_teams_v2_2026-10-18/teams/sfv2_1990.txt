@@ -1,58 +1,56 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 244 Atk / 12 Def / 252 Spe
-Lonely Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+EVs: 184 HP / 104 Atk / 220 Spe
 Adamant Nature
-- Dragon Dance
+- Taunt
+- Toxic
 - Earthquake
 - Rock Slide
-- Double-Edge
 
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 240 HP / 220 SpD / 48 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
-- Thief
+- Taunt
 - Drill Peck
 - Roar
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 104 Def / 20 SpA / 96 SpD / 36 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Recover
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+EVs: 240 HP / 176 Def / 40 SpA / 44 SpD / 8 Spe
+Relaxed Nature
+- Protect
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 180 Def / 56 SpA / 20 Spe
 Bold Nature
 IVs: 0 Atk
+- Wish
 - Protect
-- Refresh
-- Surf
-- Roar
+- Toxic
+- Fire Punch
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break

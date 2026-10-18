@@ -1,57 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 224 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Thunderbolt
-- Toxic
-- Rest
-- Roar
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 128 Atk / 16 SpD / 124 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
 - Earthquake
-- Sunny Day
-- Aerial Ace
 - Hidden Power [Bug]
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 252 Def / 4 SpD
-Relaxed Nature
-- Psychic
-- Earthquake
-- Rapid Spin
-- Rest
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 252 Def / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
-- Ice Beam
+- Focus Punch
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 4 Atk / 252 SpD
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
 - Spikes
 - Roar
 - Drill Peck
-- Sunny Day
+- Toxic
 
-Blissey @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 252 Def / 4 SpD
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Counter
-- Aromatherapy
-- Seismic Toss
+Raichu @ Petaya Berry
+Ability: Static
+EVs: 48 Atk / 252 SpA / 32 SpD / 176 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Volt Tackle
+- Hidden Power [Grass]
+- Focus Punch
+- Substitute
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
+- Hidden Power [Grass]
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 28 HP / 252 SpA / 228 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Grass]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 228 Atk / 4 Def / 108 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion

@@ -1,57 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 184 SpA / 72 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Double-Edge
-- Shadow Ball
-- Self-Destruct
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 156 SpA / 168 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
+- Pursuit
+- Crunch
+- Flamethrower
 - Hidden Power [Grass]
-- Baton Pass
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 156 SpA / 60 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
 Modest Nature
 IVs: 0 Atk
-- Wish
 - Calm Mind
-- Fire Punch
-- Psychic
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt
 
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 Def
-Adamant Nature
-IVs: 30 Def / 30 SpD
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 HP / 112 SpD / 144 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 244 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Drill Peck
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 228 SpD / 28 Spe
+Timid Nature
+- Rapid Spin
+- Recover
+- Surf
 - Thunder Wave
-- Rock Slide
-- Focus Punch
-- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Protect
+- Curse

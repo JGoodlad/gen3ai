@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 176 HP / 200 Atk / 132 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
-- Focus Punch
-- Earthquake
-- Hidden Power [Bug]
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Surf
+- Ice Beam
+- Hidden Power [Fire]
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 240 HP / 92 Def / 176 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Wish
-- Fire Punch
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
 - Hidden Power [Grass]
-- Body Slam
+- Substitute
 
 Flygon @ Leftovers
 Ability: Levitate
-EVs: 236 HP / 240 Def / 32 Spe
-Impish Nature
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
 - Earthquake
+- Rock Slide
 - Toxic
 - Protect
-- Rock Slide
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Careful Nature
-- Drill Peck
-- Protect
-- Spikes
-- Roar
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Will-O-Wisp
-- Hidden Power [Grass]
-- Fire Punch
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 0 Atk
+- Hypnosis
+- Explosion
+- Ice Punch
+- Thunderbolt
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 4 Atk / 252 Def
+Lax Nature
+- Spikes
+- Surf
+- Rapid Spin
 - Explosion
 
-Starmie @ Leftovers
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Thunderbolt
-- Ice Beam
-- Rapid Spin
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Baton Pass
+- Psychic
+- Recover

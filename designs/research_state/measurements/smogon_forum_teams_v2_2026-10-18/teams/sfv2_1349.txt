@@ -1,57 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
-- Rain Dance
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+EVs: 248 HP / 216 Atk / 32 SpA / 12 Spe
 Adamant Nature
 - Rapid Spin
 - Earthquake
 - Psychic
 - Explosion
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 188 HP / 180 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
 - Hidden Power [Fire]
 - Psychic
-- Explosion
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Hydro Pump
-- Ice Beam
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
 Adamant Nature
-- Curse
-- Double-Edge
+- Agility
+- Meteor Mash
 - Earthquake
-- Shadow Ball
+- Rock Slide
 
-Charizard @ Leftovers
+Charizard @ Salac Berry
 Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Substitute
+EVs: 44 HP / 252 Atk / 72 SpD / 140 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Belly Drum
+- Rock Slide
+- Hidden Power [Flying]
 - Fire Blast
-- Hidden Power [Grass]
-- Focus Punch
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Hidden Power [Rock]
+- Double-Edge

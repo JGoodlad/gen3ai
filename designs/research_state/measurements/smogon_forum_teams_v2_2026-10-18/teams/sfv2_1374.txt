@@ -1,57 +1,59 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Protect
+- Toxic
+- Roar
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 216 SpA / 108 Spe
-Modest Nature
-- Crunch
-- Pursuit
-- Flamethrower
-- Brick Break
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Rapid Spin
+EVs: 248 HP / 240 Atk / 20 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
 - Hidden Power [Bug]
-- Counter
+- Focus Punch
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 80 HP / 252 SpA / 176 Spe
-Rash Nature
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
 IVs: 30 Atk / 30 SpA
-- Body Slam
+- Will-O-Wisp
 - Fire Punch
 - Hidden Power [Grass]
-- Dynamic Punch
+- Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
+EVs: 24 HP / 252 Def / 212 SpA / 20 Spe
+Bold Nature
 IVs: 0 Atk
 - Soft-Boiled
-- Calm Mind
+- Aromatherapy
+- Seismic Toss
 - Ice Beam
-- Thunderbolt
 
-Snorlax @ Leftovers
-Ability: Thick Fat
-EVs: 16 HP / 216 Atk / 108 Def / 168 SpD
-Adamant Nature
-- Curse
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 196 Def / 4 SpA / 44 SpD / 24 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Toxic
+- Surf
+- Roar
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Earthquake
+- Rock Slide
+- Hidden Power [Flying]
 - Double-Edge
-- Shadow Ball
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break

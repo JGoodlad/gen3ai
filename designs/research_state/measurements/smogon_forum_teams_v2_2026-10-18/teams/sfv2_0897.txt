@@ -1,59 +1,58 @@
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 100 Atk / 192 Def / 168 SpD / 48 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Brick Break
-- Knock Off
-- Hidden Power [Bug]
-- Focus Punch
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 36 Def / 20 SpA / 136 SpD / 64 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Heal Bell
-- Hidden Power [Grass]
-- Leech Seed
-- Recover
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-Shiny: Yes
-EVs: 252 HP / 216 Def / 4 SpA / 36 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Water Pulse
-- Psychic
-- Wish
-
-Salamence (F) @ Leftovers
-Ability: Intimidate
-EVs: 248 HP / 252 Def / 8 SpD
-Bold Nature
-IVs: 0 Atk
-- Flamethrower
-- Protect
-- Toxic
-- Wish
-
-Claydol @ Leftovers
+Flygon @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 36 Atk / 136 Def / 84 SpD
-Relaxed Nature
+EVs: 252 Atk / 40 Def / 32 SpA / 184 Spe
+Naive Nature
+- Substitute
 - Earthquake
-- Ice Beam
-- Psychic
-- Rapid Spin
+- Flamethrower
+- Toxic
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 96 Def / 8 SpD / 152 Spe
+EVs: 252 HP / 252 Def / 4 Spe
 Bold Nature
 IVs: 0 Atk
 - Calm Mind
+- Surf
 - Rest
 - Roar
-- Surf
+
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 4 Def / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Psychic
+- Knock Off
+- Recover
+- Fire Punch
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Swords Dance
+- Hidden Power [Bug]
+- Rock Slide
+- Rapid Spin
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Thunder Wave
+- Seismic Toss
+- Soft-Boiled
+- Aromatherapy
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Hidden Power [Bug]
+- Rapid Spin
+- Rest

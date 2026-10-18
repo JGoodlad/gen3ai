@@ -1,57 +1,57 @@
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 156 Def / 40 SpA / 32 SpD / 28 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Thunder Wave
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast
 
-Quagsire @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 216 Def / 40 SpD
-Relaxed Nature
-- Rest
-- Curse
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
 - Earthquake
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Thunder Wave
+- Seismic Toss
 - Ice Beam
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 40 SpA / 184 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Psychic
-- Leech Seed
-- Recover
-- Heal Bell
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
+Naughty Nature
 IVs: 30 Atk / 30 SpA
-- Flamethrower
+- Meteor Mash
+- Rock Slide
 - Hidden Power [Grass]
-- Focus Punch
-- Overheat
+- Explosion
 
-Dusclops (M) @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 96 Atk / 16 Def / 144 SpD
-Careful Nature
-- Mean Look
-- Will-O-Wisp
-- Rest
-- Shadow Ball
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 Atk / 4 SpD
-Adamant Nature
-IVs: 30 SpA / 30 SpD
-- Spikes
-- Drill Peck
-- Hidden Power [Ground]
-- Roar
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

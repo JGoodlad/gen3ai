@@ -6,169 +6,193 @@
  "validator": "utils.bridge.team_validator.validate_teams_locally('gen3ou'), pinned deps/pokemon-showdown",
  "rows": "manifest_teams.jsonl (one candidate per line) and manifest_unread.jsonl",
  "counts": {
-  "candidates": 7095,
-  "unread_refs": 1239,
+  "candidates": 11450,
+  "unread_refs": 143,
   "by_status": {
-   "kept": 3639,
-   "duplicate": 2386,
-   "dropped": 1070
+   "kept": 5330,
+   "duplicate": 3963,
+   "dropped": 2157
   },
   "drop_reasons": {
-   "not_6_mons": 616,
-   "validator": 425,
-   "format_tag": 28,
-   "hidden_power_type_unknown": 1
+   "not_6_mons": 1173,
+   "validator": 648,
+   "format_tag": 328,
+   "hidden_power_type_unknown": 8
   },
   "kept_by_tier": {
-   "C": 2935,
-   "A": 600,
-   "B": 104
+   "C": 4397,
+   "A": 671,
+   "B": 262
   },
   "kept_by_origin": {
-   "crawl:adv_main": 2855,
+   "crawl:adv_main": 4427,
    "v1_register": 437,
-   "crawl:adv_archive": 196,
-   "crawl:adv_rmt": 143,
-   "crawl:old_rmt": 7,
+   "crawl:adv_archive": 244,
+   "crawl:adv_rmt": 213,
+   "crawl:old_rmt": 8,
    "crawl:tours_misc": 1
   },
   "kept_by_category": {
-   "sharing": 2543,
+   "sharing": 3945,
    "curated_team_dump": 341,
-   "dump": 187,
-   "rmt": 151,
-   "discussion": 142,
-   "tournament": 93,
-   "competition": 67,
+   "dump": 311,
+   "rmt": 222,
+   "discussion": 195,
+   "tournament": 101,
+   "competition": 97,
    "sample_team": 32,
    "team_archive_history": 30,
    "sample_team_archived": 18,
-   "other": 13,
+   "other": 15,
    "resource_listed_team_analysis": 9,
-   "teambuilding_competition_winner": 7,
-   "archive": 6
+   "archive": 7,
+   "teambuilding_competition_winner": 7
   },
   "kept_by_curator_top30": {
-   "giraffefromholland": 1158,
-   "Zpanther": 498,
-   "Shitrock enjoyer": 419,
+   "giraffefromholland": 1350,
+   "Zpanther": 765,
+   "Shitrock enjoyer": 630,
+   "SPFunkM": 549,
    "thelinearcurve": 228,
+   "johnnyg2": 164,
    "Fruhdazi": 124,
    "Ibidem": 108,
    "SEA": 86,
    "Endill": 66,
-   "johnnyg2": 65,
-   "L3W": 58,
-   "Rainer24": 47,
-   "M Dragon": 38,
-   "McMeghan": 34,
+   "L3W": 63,
+   "Johnald": 51,
+   "McMeghan": 50,
+   "Rainer24": 49,
+   "M Dragon": 37,
+   "nyatalia": 35,
    "Celdanami": 33,
+   "EG Jhonx~": 32,
    "bruno": 30,
-   "EG Jhonx~": 29,
-   "Spreek": 27,
-   "CALLOUS": 23,
-   "Kollin7": 23,
-   "mikmer": 17,
-   "SchmuckNick": 14,
-   "zinc": 13,
-   "Siglut": 12,
-   "OOF_MAXIMA": 12,
-   "Jirachee": 11,
-   "airports": 11,
-   "ADV Community": 9,
-   "z0mOG": 9,
-   "SpamOn": 9,
-   "pz": 9
+   "Spreek": 28,
+   "Kollin7": 27,
+   "CALLOUS": 21,
+   "mikmer": 19,
+   "Siglut": 16,
+   "zinc": 16,
+   "berry": 14,
+   "Jirachee": 13,
+   "SchmuckNick": 13,
+   "SpamOn": 12,
+   "airports": 12
   },
   "pool_status_by_tier": {
    "A": {
-    "clean": 372,
-    "exact": 198,
-    "near": 30
+    "clean": 407,
+    "exact": 233,
+    "near": 31
    },
    "B": {
-    "clean": 102,
-    "near": 2
+    "clean": 245,
+    "near": 15,
+    "exact": 2
    },
    "C": {
-    "clean": 2545,
-    "exact": 256,
-    "near": 134
+    "clean": 3580,
+    "exact": 476,
+    "near": 341
    }
   },
   "new_vs_v1": {
-   "clean": 3123,
+   "clean": 4688,
    "exact": 437,
-   "near": 79
+   "near": 205
   },
-  "core_AB": 406,
-  "core_ABC": 2213,
-  "core_ABC_by_tier": {
-   "C": 1807,
-   "A": 310,
-   "B": 96
+  "core_AB": 559,
+  "core_ABC": 2995,
+  "core_AB_verbatim": 533,
+  "core_ABC_verbatim": 2894,
+  "kept_by_fidelity": {
+   "verbatim": 5221,
+   "transcribed": 109
   },
-  "core_ABC_by_curator_top15": {
-   "giraffefromholland": 589,
-   "Zpanther": 365,
-   "Shitrock enjoyer": 225,
-   "SEA": 69,
+  "core_AB_verbatim_by_curator_top15": {
    "thelinearcurve": 60,
    "Ibidem": 56,
    "Endill": 56,
-   "L3W": 53,
-   "Fruhdazi": 52,
-   "Rainer24": 35,
-   "M Dragon": 33,
-   "johnnyg2": 32,
-   "bruno": 30,
-   "EG Jhonx~": 25,
-   "Celdanami": 25
+   "Johnald": 34,
+   "M Dragon": 26,
+   "Spreek": 19,
+   "mikmer": 16,
+   "Siglut": 13,
+   "CALLOUS": 13,
+   "mielke": 10,
+   "L3W": 10,
+   "McMeghan": 9,
+   "Jirachee": 9,
+   "z0mOG": 9,
+   "Gilbert arenas": 8
+  },
+  "core_ABC_by_tier": {
+   "C": 2436,
+   "A": 341,
+   "B": 218
+  },
+  "core_ABC_by_curator_top15": {
+   "giraffefromholland": 593,
+   "Zpanther": 487,
+   "SPFunkM": 317,
+   "Shitrock enjoyer": 282,
+   "SEA": 68,
+   "thelinearcurve": 60,
+   "L3W": 57,
+   "Ibidem": 56,
+   "Endill": 56,
+   "johnnyg2": 51,
+   "Fruhdazi": 51,
+   "Rainer24": 37,
+   "Johnald": 34,
+   "M Dragon": 32,
+   "bruno": 29
   },
   "core_AB_by_curator_top15": {
    "thelinearcurve": 60,
    "Ibidem": 56,
    "Endill": 56,
+   "Johnald": 34,
    "M Dragon": 26,
-   "Spreek": 14,
-   "mikmer": 13,
-   "CALLOUS": 12,
-   "McMeghan": 8,
-   "Siglut": 8,
-   "z0mOG": 8,
-   "L3W": 8,
-   "Golden Sun": 6,
-   "Jirachee": 6,
-   "mielke": 5,
-   "Gilbert arenas": 5
+   "Spreek": 19,
+   "mikmer": 16,
+   "Siglut": 13,
+   "CALLOUS": 13,
+   "McMeghan": 10,
+   "mielke": 10,
+   "L3W": 10,
+   "Jirachee": 9,
+   "z0mOG": 9,
+   "Gilbert arenas": 8
   },
   "unread_reasons": {
-   "paste not fetched (missing / 404 / error: see fetch log)": 1111,
-   "host not fetched (not pokepast.es / pastebin.com)": 88,
-   "inline transcription disagreement / no text": 40
+   "paste not fetched (missing / 404 / error: see fetch log)": 68,
+   "inline transcription disagreement / no text": 47,
+   "host not fetched (not pokepast.es / pastebin.com)": 28
   }
  },
  "overlap_summary": {
   "training_pool": {
    "all": {
-    "n_read_teams": 3639,
+    "n_read_teams": 5330,
     "n_reference_teams": 719,
-    "exact_team": 454,
-    "exact_team_strict": 451,
-    "same_species6": 997,
-    "n_read_mons": 21834,
-    "mons_seen": 17657,
-    "mons_seen_strict": 8136,
+    "exact_team": 711,
+    "exact_team_strict": 707,
+    "same_species6": 1569,
+    "n_read_mons": 31980,
+    "mons_seen": 26175,
+    "mons_seen_strict": 12214,
     "max_shared_mons_hist": {
-     "0": 10,
-     "1": 353,
-     "2": 1757,
-     "3": 899,
-     "4": 142,
-     "5": 24,
-     "6": 454
+     "0": 15,
+     "1": 490,
+     "2": 2401,
+     "3": 1326,
+     "4": 301,
+     "5": 86,
+     "6": 711
     },
-    "teams_sharing_ge4": 620,
+    "teams_sharing_ge4": 1098,
     "exact_examples": [
      [
       "sfv2_0000",
@@ -193,19 +217,19 @@
     ]
    },
    "core_AB": {
-    "n_read_teams": 406,
+    "n_read_teams": 559,
     "n_reference_teams": 719,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 49,
-    "n_read_mons": 2436,
-    "mons_seen": 1809,
-    "mons_seen_strict": 568,
+    "same_species6": 63,
+    "n_read_mons": 3354,
+    "mons_seen": 2418,
+    "mons_seen_strict": 758,
     "max_shared_mons_hist": {
      "0": 3,
-     "1": 55,
-     "2": 237,
-     "3": 111,
+     "1": 95,
+     "2": 320,
+     "3": 141,
      "4": 0,
      "5": 0,
      "6": 0
@@ -214,19 +238,19 @@
     "exact_examples": []
    },
    "core_ABC": {
-    "n_read_teams": 2213,
+    "n_read_teams": 2995,
     "n_reference_teams": 719,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 315,
-    "n_read_mons": 13278,
-    "mons_seen": 10000,
-    "mons_seen_strict": 3336,
+    "same_species6": 428,
+    "n_read_mons": 17970,
+    "mons_seen": 13554,
+    "mons_seen_strict": 4418,
     "max_shared_mons_hist": {
-     "0": 10,
-     "1": 303,
-     "2": 1319,
-     "3": 581,
+     "0": 14,
+     "1": 419,
+     "2": 1749,
+     "3": 813,
      "4": 0,
      "5": 0,
      "6": 0
@@ -235,24 +259,24 @@
     "exact_examples": []
    },
    "A": {
-    "n_read_teams": 600,
+    "n_read_teams": 671,
     "n_reference_teams": 719,
-    "exact_team": 198,
-    "exact_team_strict": 197,
-    "same_species6": 273,
-    "n_read_mons": 3600,
-    "mons_seen": 3101,
-    "mons_seen_strict": 1853,
+    "exact_team": 233,
+    "exact_team_strict": 232,
+    "same_species6": 318,
+    "n_read_mons": 4026,
+    "mons_seen": 3478,
+    "mons_seen_strict": 2114,
     "max_shared_mons_hist": {
      "0": 0,
-     "1": 34,
-     "2": 218,
-     "3": 120,
+     "1": 39,
+     "2": 241,
+     "3": 127,
      "4": 24,
-     "5": 6,
-     "6": 198
+     "5": 7,
+     "6": 233
     },
-    "teams_sharing_ge4": 228,
+    "teams_sharing_ge4": 264,
     "exact_examples": [
      [
       "sfv2_0000",
@@ -277,89 +301,98 @@
     ]
    },
    "B": {
-    "n_read_teams": 104,
+    "n_read_teams": 262,
     "n_reference_teams": 719,
-    "exact_team": 0,
-    "exact_team_strict": 0,
-    "same_species6": 1,
-    "n_read_mons": 624,
-    "mons_seen": 395,
-    "mons_seen_strict": 115,
+    "exact_team": 2,
+    "exact_team_strict": 1,
+    "same_species6": 12,
+    "n_read_mons": 1572,
+    "mons_seen": 1020,
+    "mons_seen_strict": 333,
     "max_shared_mons_hist": {
-     "0": 3,
-     "1": 25,
-     "2": 60,
-     "3": 14,
-     "4": 2,
-     "5": 0,
-     "6": 0
+     "0": 4,
+     "1": 62,
+     "2": 131,
+     "3": 48,
+     "4": 13,
+     "5": 2,
+     "6": 2
     },
-    "teams_sharing_ge4": 2,
-    "exact_examples": []
-   },
-   "C": {
-    "n_read_teams": 2935,
-    "n_reference_teams": 719,
-    "exact_team": 256,
-    "exact_team_strict": 254,
-    "same_species6": 723,
-    "n_read_mons": 17610,
-    "mons_seen": 14161,
-    "mons_seen_strict": 6168,
-    "max_shared_mons_hist": {
-     "0": 7,
-     "1": 294,
-     "2": 1479,
-     "3": 765,
-     "4": 116,
-     "5": 18,
-     "6": 256
-    },
-    "teams_sharing_ge4": 390,
+    "teams_sharing_ge4": 17,
     "exact_examples": [
      [
-      "sfv2_0947",
+      "sfv2_0812",
       "pool043"
      ],
      [
-      "sfv2_0948",
+      "sfv2_0836",
+      "pool247"
+     ]
+    ]
+   },
+   "C": {
+    "n_read_teams": 4397,
+    "n_reference_teams": 719,
+    "exact_team": 476,
+    "exact_team_strict": 474,
+    "same_species6": 1239,
+    "n_read_mons": 26382,
+    "mons_seen": 21677,
+    "mons_seen_strict": 9767,
+    "max_shared_mons_hist": {
+     "0": 11,
+     "1": 389,
+     "2": 2029,
+     "3": 1151,
+     "4": 264,
+     "5": 77,
+     "6": 476
+    },
+    "teams_sharing_ge4": 817,
+    "exact_examples": [
+     [
+      "sfv2_1236",
       "pool155"
      ],
      [
-      "sfv2_0949",
-      "pool247"
+      "sfv2_1237",
+      "pool248"
      ],
      [
-      "sfv2_1080",
+      "sfv2_1388",
       "pool235"
      ],
      [
-      "sfv2_1081",
+      "sfv2_1389",
       "pool236"
+     ],
+     [
+      "sfv2_1390",
+      "pool237"
      ]
     ]
    }
   },
   "sample": {
    "all": {
-    "n_read_teams": 3639,
+    "n_read_teams": 5330,
     "n_reference_teams": 72,
-    "exact_team": 60,
-    "exact_team_strict": 60,
-    "same_species6": 247,
-    "n_read_mons": 21834,
-    "mons_seen": 13109,
-    "mons_seen_strict": 3901,
+    "exact_team": 71,
+    "exact_team_strict": 71,
+    "same_species6": 379,
+    "n_read_mons": 31980,
+    "mons_seen": 19760,
+    "mons_seen_strict": 6063,
     "max_shared_mons_hist": {
-     "0": 53,
-     "1": 1428,
-     "2": 1594,
-     "3": 418,
-     "4": 74,
-     "5": 12,
-     "6": 60
+     "0": 67,
+     "1": 1931,
+     "2": 2328,
+     "3": 718,
+     "4": 178,
+     "5": 37,
+     "6": 71
     },
-    "teams_sharing_ge4": 146,
+    "teams_sharing_ge4": 286,
     "exact_examples": [
      [
       "sfv2_0000",
@@ -384,19 +417,19 @@
     ]
    },
    "core_AB": {
-    "n_read_teams": 406,
+    "n_read_teams": 559,
     "n_reference_teams": 72,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 16,
-    "n_read_mons": 2436,
-    "mons_seen": 1305,
-    "mons_seen_strict": 263,
+    "same_species6": 19,
+    "n_read_mons": 3354,
+    "mons_seen": 1734,
+    "mons_seen_strict": 363,
     "max_shared_mons_hist": {
-     "0": 11,
-     "1": 189,
-     "2": 178,
-     "3": 28,
+     "0": 15,
+     "1": 277,
+     "2": 230,
+     "3": 37,
      "4": 0,
      "5": 0,
      "6": 0
@@ -405,19 +438,19 @@
     "exact_examples": []
    },
    "core_ABC": {
-    "n_read_teams": 2213,
+    "n_read_teams": 2995,
     "n_reference_teams": 72,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 88,
-    "n_read_mons": 13278,
-    "mons_seen": 7242,
-    "mons_seen_strict": 1709,
+    "same_species6": 123,
+    "n_read_mons": 17970,
+    "mons_seen": 9871,
+    "mons_seen_strict": 2305,
     "max_shared_mons_hist": {
-     "0": 46,
-     "1": 1026,
-     "2": 985,
-     "3": 156,
+     "0": 55,
+     "1": 1373,
+     "2": 1338,
+     "3": 229,
      "4": 0,
      "5": 0,
      "6": 0
@@ -426,24 +459,24 @@
     "exact_examples": []
    },
    "A": {
-    "n_read_teams": 600,
+    "n_read_teams": 671,
     "n_reference_teams": 72,
-    "exact_team": 41,
-    "exact_team_strict": 41,
-    "same_species6": 75,
-    "n_read_mons": 3600,
-    "mons_seen": 2297,
-    "mons_seen_strict": 713,
+    "exact_team": 43,
+    "exact_team_strict": 43,
+    "same_species6": 82,
+    "n_read_mons": 4026,
+    "mons_seen": 2541,
+    "mons_seen_strict": 798,
     "max_shared_mons_hist": {
      "0": 3,
-     "1": 222,
-     "2": 271,
-     "3": 52,
+     "1": 255,
+     "2": 300,
+     "3": 57,
      "4": 10,
-     "5": 1,
-     "6": 41
+     "5": 3,
+     "6": 43
     },
-    "teams_sharing_ge4": 52,
+    "teams_sharing_ge4": 56,
     "exact_examples": [
      [
       "sfv2_0000",
@@ -468,89 +501,94 @@
     ]
    },
    "B": {
-    "n_read_teams": 104,
+    "n_read_teams": 262,
     "n_reference_teams": 72,
-    "exact_team": 0,
-    "exact_team_strict": 0,
-    "same_species6": 0,
-    "n_read_mons": 624,
-    "mons_seen": 268,
-    "mons_seen_strict": 69,
+    "exact_team": 1,
+    "exact_team_strict": 1,
+    "same_species6": 2,
+    "n_read_mons": 1572,
+    "mons_seen": 729,
+    "mons_seen_strict": 182,
     "max_shared_mons_hist": {
-     "0": 9,
-     "1": 49,
-     "2": 43,
-     "3": 3,
-     "4": 0,
+     "0": 14,
+     "1": 132,
+     "2": 91,
+     "3": 16,
+     "4": 8,
      "5": 0,
-     "6": 0
+     "6": 1
     },
-    "teams_sharing_ge4": 0,
-    "exact_examples": []
-   },
-   "C": {
-    "n_read_teams": 2935,
-    "n_reference_teams": 72,
-    "exact_team": 19,
-    "exact_team_strict": 19,
-    "same_species6": 172,
-    "n_read_mons": 17610,
-    "mons_seen": 10544,
-    "mons_seen_strict": 3119,
-    "max_shared_mons_hist": {
-     "0": 41,
-     "1": 1157,
-     "2": 1280,
-     "3": 363,
-     "4": 64,
-     "5": 11,
-     "6": 19
-    },
-    "teams_sharing_ge4": 94,
+    "teams_sharing_ge4": 9,
     "exact_examples": [
      [
-      "sfv2_0947",
+      "sfv2_0812",
       "3650f09b2f.txt"
-     ],
+     ]
+    ]
+   },
+   "C": {
+    "n_read_teams": 4397,
+    "n_reference_teams": 72,
+    "exact_team": 27,
+    "exact_team_strict": 27,
+    "same_species6": 295,
+    "n_read_mons": 26382,
+    "mons_seen": 16490,
+    "mons_seen_strict": 5083,
+    "max_shared_mons_hist": {
+     "0": 50,
+     "1": 1544,
+     "2": 1937,
+     "3": 645,
+     "4": 160,
+     "5": 34,
+     "6": 27
+    },
+    "teams_sharing_ge4": 221,
+    "exact_examples": [
      [
-      "sfv2_1149",
+      "sfv2_1472",
       "b904dbe059.txt"
      ],
      [
-      "sfv2_1167",
+      "sfv2_1490",
       "8b81c129de.txt"
      ],
      [
-      "sfv2_1177",
+      "sfv2_1500",
       "6a634b6281.txt"
      ],
      [
-      "sfv2_1214",
+      "sfv2_1537",
       "9c44a67be3.txt"
+     ],
+     [
+      "sfv2_1538",
+      "4bb434f8ba.txt"
      ]
     ]
    }
   },
   "metamon_competitive": {
    "all": {
-    "n_read_teams": 3639,
+    "n_read_teams": 5330,
     "n_reference_teams": 20,
-    "exact_team": 18,
-    "exact_team_strict": 17,
-    "same_species6": 65,
-    "n_read_mons": 21834,
-    "mons_seen": 6710,
-    "mons_seen_strict": 587,
+    "exact_team": 19,
+    "exact_team_strict": 18,
+    "same_species6": 97,
+    "n_read_mons": 31980,
+    "mons_seen": 9836,
+    "mons_seen_strict": 873,
     "max_shared_mons_hist": {
-     "0": 513,
-     "1": 2412,
-     "2": 621,
-     "3": 64,
-     "4": 6,
-     "5": 5,
-     "6": 18
+     "0": 757,
+     "1": 3509,
+     "2": 916,
+     "3": 108,
+     "4": 11,
+     "5": 10,
+     "6": 19
     },
-    "teams_sharing_ge4": 29,
+    "teams_sharing_ge4": 40,
     "exact_examples": [
      [
       "sfv2_0001",
@@ -575,19 +613,19 @@
     ]
    },
    "core_AB": {
-    "n_read_teams": 406,
+    "n_read_teams": 559,
     "n_reference_teams": 20,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 8,
-    "n_read_mons": 2436,
-    "mons_seen": 791,
-    "mons_seen_strict": 60,
+    "same_species6": 10,
+    "n_read_mons": 3354,
+    "mons_seen": 1009,
+    "mons_seen_strict": 83,
     "max_shared_mons_hist": {
-     "0": 50,
-     "1": 263,
-     "2": 82,
-     "3": 11,
+     "0": 81,
+     "1": 367,
+     "2": 99,
+     "3": 12,
      "4": 0,
      "5": 0,
      "6": 0
@@ -596,19 +634,19 @@
     "exact_examples": []
    },
    "core_ABC": {
-    "n_read_teams": 2213,
+    "n_read_teams": 2995,
     "n_reference_teams": 20,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 22,
-    "n_read_mons": 13278,
-    "mons_seen": 3916,
-    "mons_seen_strict": 263,
+    "same_species6": 32,
+    "n_read_mons": 17970,
+    "mons_seen": 5375,
+    "mons_seen_strict": 404,
     "max_shared_mons_hist": {
-     "0": 330,
-     "1": 1487,
-     "2": 359,
-     "3": 37,
+     "0": 438,
+     "1": 1992,
+     "2": 506,
+     "3": 59,
      "4": 0,
      "5": 0,
      "6": 0
@@ -617,19 +655,19 @@
     "exact_examples": []
    },
    "A": {
-    "n_read_teams": 600,
+    "n_read_teams": 671,
     "n_reference_teams": 20,
     "exact_team": 16,
     "exact_team_strict": 15,
-    "same_species6": 36,
-    "n_read_mons": 3600,
-    "mons_seen": 1497,
-    "mons_seen_strict": 243,
+    "same_species6": 38,
+    "n_read_mons": 4026,
+    "mons_seen": 1631,
+    "mons_seen_strict": 266,
     "max_shared_mons_hist": {
-     "0": 39,
-     "1": 361,
-     "2": 153,
-     "3": 24,
+     "0": 44,
+     "1": 411,
+     "2": 168,
+     "3": 25,
      "4": 3,
      "5": 4,
      "6": 16
@@ -659,52 +697,57 @@
     ]
    },
    "B": {
-    "n_read_teams": 104,
-    "n_reference_teams": 20,
-    "exact_team": 0,
-    "exact_team_strict": 0,
-    "same_species6": 0,
-    "n_read_mons": 624,
-    "mons_seen": 175,
-    "mons_seen_strict": 24,
-    "max_shared_mons_hist": {
-     "0": 20,
-     "1": 65,
-     "2": 17,
-     "3": 1,
-     "4": 1,
-     "5": 0,
-     "6": 0
-    },
-    "teams_sharing_ge4": 1,
-    "exact_examples": []
-   },
-   "C": {
-    "n_read_teams": 2935,
+    "n_read_teams": 262,
     "n_reference_teams": 20,
     "exact_team": 2,
     "exact_team_strict": 2,
-    "same_species6": 29,
-    "n_read_mons": 17610,
-    "mons_seen": 5038,
-    "mons_seen_strict": 320,
+    "same_species6": 3,
+    "n_read_mons": 1572,
+    "mons_seen": 405,
+    "mons_seen_strict": 58,
     "max_shared_mons_hist": {
-     "0": 454,
-     "1": 1986,
-     "2": 451,
-     "3": 39,
-     "4": 2,
-     "5": 1,
+     "0": 53,
+     "1": 169,
+     "2": 34,
+     "3": 3,
+     "4": 1,
+     "5": 0,
      "6": 2
     },
-    "teams_sharing_ge4": 5,
+    "teams_sharing_ge4": 3,
     "exact_examples": [
      [
-      "sfv2_0947",
+      "sfv2_0812",
       "team_0.gen3ou_team"
      ],
      [
-      "sfv2_0948",
+      "sfv2_0912",
+      "team_23.gen3ou_team"
+     ]
+    ]
+   },
+   "C": {
+    "n_read_teams": 4397,
+    "n_reference_teams": 20,
+    "exact_team": 1,
+    "exact_team_strict": 1,
+    "same_species6": 56,
+    "n_read_mons": 26382,
+    "mons_seen": 7800,
+    "mons_seen_strict": 549,
+    "max_shared_mons_hist": {
+     "0": 660,
+     "1": 2929,
+     "2": 714,
+     "3": 80,
+     "4": 7,
+     "5": 6,
+     "6": 1
+    },
+    "teams_sharing_ge4": 14,
+    "exact_examples": [
+     [
+      "sfv2_1236",
       "team_20.gen3ou_team"
      ]
     ]
@@ -712,40 +755,40 @@
   },
   "hl_05_26": {
    "all": {
-    "n_read_teams": 3639,
+    "n_read_teams": 5330,
     "n_reference_teams": 22862,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 2001,
-    "n_read_mons": 21834,
-    "mons_seen": 18219,
-    "mons_seen_strict": 6058,
+    "same_species6": 2960,
+    "n_read_mons": 31980,
+    "mons_seen": 26628,
+    "mons_seen_strict": 8777,
     "max_shared_mons_hist": {
-     "0": 2,
-     "1": 476,
-     "2": 2145,
-     "3": 888,
-     "4": 116,
-     "5": 12,
+     "0": 4,
+     "1": 685,
+     "2": 3134,
+     "3": 1305,
+     "4": 184,
+     "5": 18,
      "6": 0
     },
-    "teams_sharing_ge4": 128,
+    "teams_sharing_ge4": 202,
     "exact_examples": []
    },
    "core_AB": {
-    "n_read_teams": 406,
+    "n_read_teams": 559,
     "n_reference_teams": 22862,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 232,
-    "n_read_mons": 2436,
-    "mons_seen": 2008,
-    "mons_seen_strict": 561,
+    "same_species6": 311,
+    "n_read_mons": 3354,
+    "mons_seen": 2705,
+    "mons_seen_strict": 846,
     "max_shared_mons_hist": {
      "0": 0,
-     "1": 76,
-     "2": 255,
-     "3": 75,
+     "1": 106,
+     "2": 344,
+     "3": 109,
      "4": 0,
      "5": 0,
      "6": 0
@@ -754,19 +797,19 @@
     "exact_examples": []
    },
    "core_ABC": {
-    "n_read_teams": 2213,
+    "n_read_teams": 2995,
     "n_reference_teams": 22862,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 1091,
-    "n_read_mons": 13278,
-    "mons_seen": 10847,
-    "mons_seen_strict": 3578,
+    "same_species6": 1484,
+    "n_read_mons": 17970,
+    "mons_seen": 14675,
+    "mons_seen_strict": 4905,
     "max_shared_mons_hist": {
-     "0": 2,
-     "1": 349,
-     "2": 1372,
-     "3": 490,
+     "0": 4,
+     "1": 475,
+     "2": 1839,
+     "3": 677,
      "4": 0,
      "5": 0,
      "6": 0
@@ -775,84 +818,84 @@
     "exact_examples": []
    },
    "A": {
-    "n_read_teams": 600,
+    "n_read_teams": 671,
     "n_reference_teams": 22862,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 406,
-    "n_read_mons": 3600,
-    "mons_seen": 3121,
-    "mons_seen_strict": 862,
+    "same_species6": 457,
+    "n_read_mons": 4026,
+    "mons_seen": 3477,
+    "mons_seen_strict": 988,
     "max_shared_mons_hist": {
      "0": 0,
-     "1": 85,
-     "2": 365,
-     "3": 124,
-     "4": 21,
+     "1": 96,
+     "2": 396,
+     "3": 148,
+     "4": 26,
      "5": 5,
      "6": 0
     },
-    "teams_sharing_ge4": 26,
+    "teams_sharing_ge4": 31,
     "exact_examples": []
    },
    "B": {
-    "n_read_teams": 104,
+    "n_read_teams": 262,
     "n_reference_teams": 22862,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 43,
-    "n_read_mons": 624,
-    "mons_seen": 466,
-    "mons_seen_strict": 178,
+    "same_species6": 123,
+    "n_read_mons": 1572,
+    "mons_seen": 1182,
+    "mons_seen_strict": 484,
     "max_shared_mons_hist": {
      "0": 0,
-     "1": 23,
-     "2": 63,
-     "3": 16,
-     "4": 2,
-     "5": 0,
+     "1": 53,
+     "2": 140,
+     "3": 52,
+     "4": 16,
+     "5": 1,
      "6": 0
     },
-    "teams_sharing_ge4": 2,
+    "teams_sharing_ge4": 17,
     "exact_examples": []
    },
    "C": {
-    "n_read_teams": 2935,
+    "n_read_teams": 4397,
     "n_reference_teams": 22862,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 1552,
-    "n_read_mons": 17610,
-    "mons_seen": 14632,
-    "mons_seen_strict": 5018,
+    "same_species6": 2380,
+    "n_read_mons": 26382,
+    "mons_seen": 21969,
+    "mons_seen_strict": 7305,
     "max_shared_mons_hist": {
-     "0": 2,
-     "1": 368,
-     "2": 1717,
-     "3": 748,
-     "4": 93,
-     "5": 7,
+     "0": 4,
+     "1": 536,
+     "2": 2598,
+     "3": 1105,
+     "4": 142,
+     "5": 12,
      "6": 0
     },
-    "teams_sharing_ge4": 100,
+    "teams_sharing_ge4": 154,
     "exact_examples": []
    }
   },
   "heldout72": {
    "all": {
-    "n_read_teams": 3639,
+    "n_read_teams": 5330,
     "n_reference_teams": 72,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 111,
-    "n_read_mons": 21834,
-    "mons_seen": 5812,
-    "mons_seen_strict": 749,
+    "same_species6": 192,
+    "n_read_mons": 31980,
+    "mons_seen": 8648,
+    "mons_seen_strict": 1157,
     "max_shared_mons_hist": {
-     "0": 555,
-     "1": 2629,
-     "2": 448,
-     "3": 7,
+     "0": 798,
+     "1": 3849,
+     "2": 670,
+     "3": 13,
      "4": 0,
      "5": 0,
      "6": 0
@@ -861,18 +904,18 @@
     "exact_examples": []
    },
    "core_AB": {
-    "n_read_teams": 406,
+    "n_read_teams": 559,
     "n_reference_teams": 72,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 7,
-    "n_read_mons": 2436,
-    "mons_seen": 565,
-    "mons_seen_strict": 66,
+    "same_species6": 9,
+    "n_read_mons": 3354,
+    "mons_seen": 769,
+    "mons_seen_strict": 99,
     "max_shared_mons_hist": {
-     "0": 78,
-     "1": 294,
-     "2": 34,
+     "0": 115,
+     "1": 396,
+     "2": 48,
      "3": 0,
      "4": 0,
      "5": 0,
@@ -882,19 +925,19 @@
     "exact_examples": []
    },
    "core_ABC": {
-    "n_read_teams": 2213,
+    "n_read_teams": 2995,
     "n_reference_teams": 72,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 55,
-    "n_read_mons": 13278,
-    "mons_seen": 3426,
-    "mons_seen_strict": 476,
+    "same_species6": 79,
+    "n_read_mons": 17970,
+    "mons_seen": 4616,
+    "mons_seen_strict": 642,
     "max_shared_mons_hist": {
-     "0": 364,
-     "1": 1609,
-     "2": 237,
-     "3": 3,
+     "0": 513,
+     "1": 2161,
+     "2": 316,
+     "3": 5,
      "4": 0,
      "5": 0,
      "6": 0
@@ -903,18 +946,18 @@
     "exact_examples": []
    },
    "A": {
-    "n_read_teams": 600,
+    "n_read_teams": 671,
     "n_reference_teams": 72,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 27,
-    "n_read_mons": 3600,
-    "mons_seen": 850,
-    "mons_seen_strict": 86,
+    "same_species6": 30,
+    "n_read_mons": 4026,
+    "mons_seen": 971,
+    "mons_seen_strict": 98,
     "max_shared_mons_hist": {
-     "0": 114,
-     "1": 427,
-     "2": 59,
+     "0": 125,
+     "1": 479,
+     "2": 67,
      "3": 0,
      "4": 0,
      "5": 0,
@@ -924,18 +967,18 @@
     "exact_examples": []
    },
    "B": {
-    "n_read_teams": 104,
+    "n_read_teams": 262,
     "n_reference_teams": 72,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 0,
-    "n_read_mons": 624,
-    "mons_seen": 127,
-    "mons_seen_strict": 23,
+    "same_species6": 2,
+    "n_read_mons": 1572,
+    "mons_seen": 360,
+    "mons_seen_strict": 68,
     "max_shared_mons_hist": {
-     "0": 27,
-     "1": 69,
-     "2": 8,
+     "0": 62,
+     "1": 169,
+     "2": 31,
      "3": 0,
      "4": 0,
      "5": 0,
@@ -945,19 +988,19 @@
     "exact_examples": []
    },
    "C": {
-    "n_read_teams": 2935,
+    "n_read_teams": 4397,
     "n_reference_teams": 72,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 84,
-    "n_read_mons": 17610,
-    "mons_seen": 4835,
-    "mons_seen_strict": 640,
+    "same_species6": 160,
+    "n_read_mons": 26382,
+    "mons_seen": 7317,
+    "mons_seen_strict": 991,
     "max_shared_mons_hist": {
-     "0": 414,
-     "1": 2133,
-     "2": 381,
-     "3": 7,
+     "0": 611,
+     "1": 3201,
+     "2": 572,
+     "3": 13,
      "4": 0,
      "5": 0,
      "6": 0
@@ -968,24 +1011,24 @@
   },
   "v1_set": {
    "all": {
-    "n_read_teams": 3639,
+    "n_read_teams": 5330,
     "n_reference_teams": 437,
     "exact_team": 437,
     "exact_team_strict": 437,
-    "same_species6": 720,
-    "n_read_mons": 21834,
-    "mons_seen": 16467,
-    "mons_seen_strict": 5997,
+    "same_species6": 970,
+    "n_read_mons": 31980,
+    "mons_seen": 24260,
+    "mons_seen_strict": 7980,
     "max_shared_mons_hist": {
-     "0": 13,
-     "1": 661,
-     "2": 1890,
-     "3": 559,
-     "4": 67,
-     "5": 12,
+     "0": 20,
+     "1": 917,
+     "2": 2771,
+     "3": 980,
+     "4": 152,
+     "5": 53,
      "6": 437
     },
-    "teams_sharing_ge4": 516,
+    "teams_sharing_ge4": 642,
     "exact_examples": [
      [
       "sfv2_0000",
@@ -1010,19 +1053,19 @@
     ]
    },
    "core_AB": {
-    "n_read_teams": 406,
+    "n_read_teams": 559,
     "n_reference_teams": 437,
     "exact_team": 166,
     "exact_team_strict": 166,
-    "same_species6": 184,
-    "n_read_mons": 2436,
-    "mons_seen": 2022,
-    "mons_seen_strict": 1248,
+    "same_species6": 191,
+    "n_read_mons": 3354,
+    "mons_seen": 2598,
+    "mons_seen_strict": 1403,
     "max_shared_mons_hist": {
-     "0": 2,
-     "1": 52,
-     "2": 145,
-     "3": 40,
+     "0": 3,
+     "1": 103,
+     "2": 227,
+     "3": 59,
      "4": 0,
      "5": 1,
      "6": 166
@@ -1052,24 +1095,24 @@
     ]
    },
    "core_ABC": {
-    "n_read_teams": 2213,
+    "n_read_teams": 2995,
     "n_reference_teams": 437,
     "exact_team": 166,
     "exact_team_strict": 166,
-    "same_species6": 309,
-    "n_read_mons": 13278,
-    "mons_seen": 9601,
-    "mons_seen_strict": 3066,
+    "same_species6": 397,
+    "n_read_mons": 17970,
+    "mons_seen": 13031,
+    "mons_seen_strict": 3950,
     "max_shared_mons_hist": {
-     "0": 12,
-     "1": 474,
-     "2": 1249,
-     "3": 309,
-     "4": 2,
-     "5": 1,
+     "0": 18,
+     "1": 629,
+     "2": 1688,
+     "3": 484,
+     "4": 6,
+     "5": 4,
      "6": 166
     },
-    "teams_sharing_ge4": 169,
+    "teams_sharing_ge4": 176,
     "exact_examples": [
      [
       "sfv2_0036",
@@ -1094,24 +1137,24 @@
     ]
    },
    "A": {
-    "n_read_teams": 600,
+    "n_read_teams": 671,
     "n_reference_teams": 437,
     "exact_team": 430,
     "exact_team_strict": 430,
-    "same_species6": 451,
-    "n_read_mons": 3600,
-    "mons_seen": 3363,
-    "mons_seen_strict": 2778,
+    "same_species6": 459,
+    "n_read_mons": 4026,
+    "mons_seen": 3665,
+    "mons_seen_strict": 2872,
     "max_shared_mons_hist": {
      "0": 0,
-     "1": 26,
-     "2": 101,
-     "3": 35,
-     "4": 6,
-     "5": 2,
+     "1": 38,
+     "2": 146,
+     "3": 47,
+     "4": 7,
+     "5": 3,
      "6": 430
     },
-    "teams_sharing_ge4": 438,
+    "teams_sharing_ge4": 440,
     "exact_examples": [
      [
       "sfv2_0000",
@@ -1136,66 +1179,66 @@
     ]
    },
    "B": {
-    "n_read_teams": 104,
+    "n_read_teams": 262,
     "n_reference_teams": 437,
     "exact_team": 7,
     "exact_team_strict": 7,
-    "same_species6": 8,
-    "n_read_mons": 624,
-    "mons_seen": 411,
-    "mons_seen_strict": 141,
+    "same_species6": 13,
+    "n_read_mons": 1572,
+    "mons_seen": 997,
+    "mons_seen_strict": 311,
     "max_shared_mons_hist": {
-     "0": 2,
-     "1": 29,
-     "2": 54,
-     "3": 10,
-     "4": 2,
-     "5": 0,
+     "0": 4,
+     "1": 82,
+     "2": 122,
+     "3": 36,
+     "4": 10,
+     "5": 1,
      "6": 7
     },
-    "teams_sharing_ge4": 9,
+    "teams_sharing_ge4": 18,
     "exact_examples": [
      [
-      "sfv2_0600",
+      "sfv2_0671",
       "sft080.txt"
      ],
      [
-      "sfv2_0601",
+      "sfv2_0672",
       "sft081.txt"
      ],
      [
-      "sfv2_0602",
+      "sfv2_0673",
       "sft082.txt"
      ],
      [
-      "sfv2_0603",
+      "sfv2_0674",
       "sft083.txt"
      ],
      [
-      "sfv2_0604",
+      "sfv2_0675",
       "sft084.txt"
      ]
     ]
    },
    "C": {
-    "n_read_teams": 2935,
+    "n_read_teams": 4397,
     "n_reference_teams": 437,
     "exact_team": 0,
     "exact_team_strict": 0,
-    "same_species6": 261,
-    "n_read_mons": 17610,
-    "mons_seen": 12693,
-    "mons_seen_strict": 3078,
+    "same_species6": 498,
+    "n_read_mons": 26382,
+    "mons_seen": 19598,
+    "mons_seen_strict": 4797,
     "max_shared_mons_hist": {
-     "0": 11,
-     "1": 606,
-     "2": 1735,
-     "3": 514,
-     "4": 59,
-     "5": 10,
+     "0": 16,
+     "1": 797,
+     "2": 2503,
+     "3": 897,
+     "4": 135,
+     "5": 49,
      "6": 0
     },
-    "teams_sharing_ge4": 69,
+    "teams_sharing_ge4": 184,
     "exact_examples": []
    }
   }

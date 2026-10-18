@@ -1,0 +1,57 @@
+Tyranitar @ Black Belt
+Ability: Sand Stream
+EVs: 64 Atk / 192 SpA / 252 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Ice Beam
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 52 Atk / 228 SpA / 4 SpD / 200 Spe
+Mild Nature
+- Dragon Claw
+- Brick Break
+- Wish
+- Flamethrower
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 92 Atk / 88 Def / 32 SpA / 48 Spe
+Brave Nature
+- Earthquake
+- Surf
+- Roar
+- Refresh
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Bug]

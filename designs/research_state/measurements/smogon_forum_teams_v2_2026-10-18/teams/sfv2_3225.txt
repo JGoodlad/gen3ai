@@ -1,58 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 184 SpD / 76 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 232 SpD / 24 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
 - Toxic
+- Protect
 - Roar
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 Def
-Adamant Nature
+EVs: 112 HP / 212 Atk / 152 SpA / 32 Spe
+Brave Nature
+- Crunch
+- Pursuit
 - Rock Slide
-- Screech
 - Focus Punch
-- Earthquake
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 8 HP / 252 Atk / 8 Def / 240 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 4 Def / 252 SpA / 252 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 64 HP / 248 SpD / 196 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Psychic
-- Hidden Power [Grass]
-- Fire Punch
+IVs: 0 Atk
+- Thunderbolt
+- Taunt
+- Will-O-Wisp
+- Destiny Bond
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 76 SpD / 180 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Rock Slide
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Recover
+- Rapid Spin
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 184 Def / 64 SpA / 20 SpD
+Relaxed Nature
+- Hydro Pump
+- Ice Beam
 - Earthquake
-- Hidden Power [Fighting]
-- Double-Edge
+- Protect
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 224 SpA / 32 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Flamethrower
+- Toxic
+- Soft-Boiled

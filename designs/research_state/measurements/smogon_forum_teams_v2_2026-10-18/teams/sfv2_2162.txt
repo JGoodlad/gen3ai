@@ -1,56 +1,57 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
-- Roar
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 0 Atk
-- Protect
-- Toxic
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunder Wave
 - Thunderbolt
+- Hidden Power [Ice]
 - Rain Dance
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
 - Rapid Spin
 - Earthquake
 - Psychic
 - Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 Spe
-Impish Nature
-- Soft-Boiled
-- Aromatherapy
-- Thunder Wave
-- Seismic Toss
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 Def
-- Rest
-- Thunderbolt
-- Hidden Power [Ice]
-- Roar
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 240 Def / 16 Spe
-Bold Nature
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
 IVs: 0 Atk
-- Rest
+- Substitute
 - Calm Mind
-- Surf
-- Roar
+- Hydro Pump
+- Ice Beam
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 168 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 216 Atk / 108 Def / 168 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball

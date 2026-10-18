@@ -1,0 +1,58 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 108 Atk / 216 Spe
+Brave Nature
+IVs: 30 Atk / 30 SpA
+- Crunch
+- Rock Slide
+- Hidden Power [Grass]
+- Focus Punch
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 128 Def / 40 SpA / 32 SpD / 56 Spe
+Bold Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Thunder Wave
+- Surf
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 36 Def / 52 SpA / 136 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Recover
+- Leech Seed
+- Hidden Power [Grass]
+- Psychic
+
+Steelix @ Leftovers
+Ability: Rock Head
+EVs: 252 HP / 100 Def / 132 SpD / 24 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Protect
+- Earthquake
+- Hidden Power [Rock]
+- Explosion
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

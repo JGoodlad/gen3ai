@@ -1,56 +1,55 @@
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 228 Def / 24 SpD / 4 Spe
+Relaxed Nature
+- Protect
+- Ice Beam
+- Surf
 - Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Gust
 
-Tyranitar @ Leftovers
+Skarmory (F) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Impish Nature
+- Drill Peck
+- Protect
+- Spikes
+- Roar
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 208 HP / 140 Atk / 156 SpD / 4 Spe
+Adamant Nature
+- Self-Destruct
+- Shadow Ball
+- Body Slam
+- Earthquake
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 68 HP / 252 SpA / 188 Spe
+Timid Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Destiny Bond
+- Ice Punch
+- Thunderbolt
+
+Tyranitar (M) @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 220 SpA / 40 Spe
-Quiet Nature
-- Crunch
-- Pursuit
+EVs: 16 HP / 200 Atk / 120 Def / 172 Spe
+Adamant Nature
+- Rock Slide
+- Dragon Dance
+- Ice Beam
+- Earthquake
+
+Salamence (F) @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Naughty Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Rock Slide
 - Fire Blast
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Protect
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 212 Def / 48 Spe
-Bold Nature
-- Surf
-- Toxic
-- Refresh
-- Recover
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 236 Def / 252 SpA / 20 Spe
-Modest Nature
-IVs: 0 Atk
-- Seismic Toss
-- Soft-Boiled
-- Ice Beam
-- Wish
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
+- Hidden Power [Flying]
 - Earthquake
-- Explosion

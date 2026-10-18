@@ -1,57 +1,61 @@
-Salamence @ Leftovers
+Gyarados @ Leftovers
 Ability: Intimidate
-Shiny: Yes
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-- Dragon Claw
-- Brick Break
-- Fire Blast
-- Wish
-
-Tyranitar @ Salac Berry
-Ability: Sand Stream
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-- Crunch
-- Rain Dance
-- Pursuit
-- Focus Punch
-
-Ludicolo @ Lum Berry
-Ability: Swift Swim
-EVs: 144 HP / 252 SpA / 112 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Hydro Pump
-- Hidden Power [Grass]
-- Rain Dance
-- Ice Beam
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 176 Atk / 20 Def / 36 SpD / 24 Spe
+Hidden Power: Flying
+EVs: 252 Atk / 48 Def / 208 Spe
 Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
 - Earthquake
-- Psychic
-- Rapid Spin
-- Explosion
+- Dragon Dance
+- Thunder Wave
 
-Magneton @ Leftovers
-Ability: Magnet Pull
-Shiny: Yes
-EVs: 224 HP / 92 Def / 120 SpA / 72 Spe
+Lanturn @ Leftovers
+Ability: Volt Absorb
+EVs: 196 Def / 252 SpA / 60 SpD
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+IVs: 0 Atk
+- Surf
 - Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Protect
+- Rest
+- Sleep Talk
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 80 HP / 112 Atk / 120 Def / 188 SpD / 8 Spe
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Psychic
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Calm Mind
+- Rest
+
+Lapras @ Leftovers
+Ability: Water Absorb
+EVs: 120 Def / 252 SpA / 136 SpD
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Thunderbolt
+- Heal Bell
+
+Swampert @ Choice Band
+Ability: Torrent
+Hidden Power: Bug
+EVs: 56 HP / 252 Atk / 100 Def / 100 SpD
 Adamant Nature
-- Return
-- Protect
-- Curse
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
 - Earthquake
+- Focus Punch
+- Hidden Power [Bug]

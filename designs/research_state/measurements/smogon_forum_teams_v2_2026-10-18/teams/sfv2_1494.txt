@@ -1,21 +1,12 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 252 Atk / 4 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 136 SpA / 156 Spe
+Modest Nature
+IVs: 30 Spe
+- Thunder Wave
 - Toxic
-- Drill Peck
-- Roar
+- Thunderbolt
+- Hidden Power [Ice]
 
 Swampert @ Leftovers
 Ability: Torrent
@@ -26,32 +17,41 @@ Quiet Nature
 - Hydro Pump
 - Ice Beam
 
-Jirachi @ Leftovers
-Ability: Serene Grace
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Earthquake
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
 EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Fire Punch
-- Hidden Power [Grass]
-- Psychic
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
+- Will-O-Wisp
+- Ice Punch
 - Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
+- Explosion
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 SpA / 36 SpD / 220 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Ice Beam
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 212 SpD / 116 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
 - Earthquake
 - Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Hidden Power [Flying]

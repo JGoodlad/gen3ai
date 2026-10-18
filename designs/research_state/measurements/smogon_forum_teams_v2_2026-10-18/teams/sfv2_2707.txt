@@ -1,57 +1,57 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Flamethrower
+- Roar
+- Pursuit
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Earthquake
+
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 176 Atk / 12 Def / 180 SpD / 140 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+- Dragon Claw
+- Flamethrower
 - Brick Break
-- Fire Blast
+- Wish
 
-Tyranitar @ Black Glasses
-Ability: Sand Stream
-EVs: 184 HP / 108 Atk / 216 Spe
-Brave Nature
-IVs: 30 Atk / 30 SpA
-- Crunch
-- Rock Slide
-- Hidden Power [Grass]
-- Focus Punch
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
 IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Thunder Wave
 - Surf
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 220 Atk / 60 Def / 8 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Earthquake
-- Self-Destruct
+- Recover
+- Toxic
+- Refresh
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-- Agility
+EVs: 252 HP / 8 Atk / 224 Def / 24 Spe
+Impish Nature
 - Meteor Mash
 - Earthquake
+- Reflect
 - Explosion
 
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 252 Def / 100 SpD / 140 Spe
-Bold Nature
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 240 SpA / 16 Spe
+Modest Nature
 IVs: 0 Atk
-- Wish
-- Substitute
-- Surf
-- Baton Pass
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+- Soft-Boiled

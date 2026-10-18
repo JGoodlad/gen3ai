@@ -1,0 +1,56 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 32 Def / 224 SpD
+Calm Nature
+IVs: 30 Atk / 30 Def
+- Rest
+- Sleep Talk
+- Thunderbolt
+- Hidden Power [Ice]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 SpA
+Bold Nature
+- Thunder
+- Rain Dance
+- Protect
+- Wish
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 216 Def / 40 SpA
+Relaxed Nature
+- Earthquake
+- Toxic
+- Hydro Pump
+- Protect
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 68 Atk / 132 Def / 164 SpD
+Adamant Nature
+- Curse
+- Body Slam
+- Shadow Ball
+- Rest
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 4 HP / 252 Atk / 252 Spe
+IVs: 30 Atk / 30 Def / 30 SpD
+Jolly Nature
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power [Bug]
+
+Ludicolo @ Leftovers
+Ability: Swift Swim
+EVs: 56 HP / 252 SpA / 200 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Grass]
+- Rain Dance

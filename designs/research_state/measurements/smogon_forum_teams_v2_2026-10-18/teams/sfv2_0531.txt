@@ -1,58 +1,57 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 156 SpD / 100 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Taunt
-- Roar
-- Toxic
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 216 SpA / 40 Spe
+Quiet Nature
+- Surf
+- Substitute
+- Ice Beam
+- Focus Punch
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 SpA / 32 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Psychic
-- Fire Punch
-- Hidden Power [Grass]
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 80 Def / 80 SpA / 96 Spe
+Timid Nature
+IVs: 3 Atk / 30 SpA
 - Calm Mind
+- Substitute
+- Hidden Power [Electric]
+- Baton Pass
 
 Jolteon @ Leftovers
 Ability: Volt Absorb
 EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
+- Substitute
 - Thunderbolt
 - Hidden Power [Grass]
-- Thunder Wave
-- Roar
+- Baton Pass
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 76 SpA / 248 SpD / 184 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Hypnosis
-- Thunderbolt
-- Hidden Power [Grass]
-- Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 124 Atk / 136 SpA
-Brave Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Refresh
-
-Tyranitar @ Lum Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 180 Spe
+EVs: 184 HP / 144 Atk / 180 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 SpA
 - Dragon Dance
 - Rock Slide
 - Earthquake
-- Hidden Power [Bug]
+- Focus Punch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Dragon Claw
+- Beat Up
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 224 Atk / 16 Def / 100 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion

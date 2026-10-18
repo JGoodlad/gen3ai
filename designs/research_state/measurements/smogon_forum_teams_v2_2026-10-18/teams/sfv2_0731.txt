@@ -1,57 +1,57 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
 Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 100 Atk / 112 Def / 16 SpA / 16 SpD / 12 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Fire Blast
+- Brick Break
+- Hidden Power [Grass]
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
+EVs: 64 HP / 176 Atk / 100 Def / 168 SpD
 Adamant Nature
 - Curse
+- Earthquake
 - Return
-- Shadow Ball
 - Self-Destruct
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 100 SpA / 12 SpD / 144 Spe
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 176 SpA / 140 SpD / 192 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
+IVs: 0 Atk
+- Fire Blast
+- Pursuit
+- Will-O-Wisp
+- Crunch
 
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 244 Def / 176 SpA / 12 SpD / 60 Spe
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 48 Def / 40 SpA / 36 SpD / 136 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Recover
+- Rapid Spin
+- Thunder Wave
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 96 Atk / 164 SpA
+Brave Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Curse
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 SpA / 176 Spe
 Modest Nature
 IVs: 0 Atk
 - Substitute
-- Wish
-- Surf
-- Baton Pass
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 8 HP / 232 Atk / 12 Def / 196 SpD / 60 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
+- Calm Mind
+- Thunderbolt
+- Ice Punch

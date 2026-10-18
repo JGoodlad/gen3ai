@@ -1,15 +1,16 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 56 Atk / 232 SpA / 196 Spe
-Mild Nature
-- Dragon Claw
-- Brick Break
-- Fire Blast
-- Hydro Pump
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 88 Def / 28 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Thunder Wave
+- Toxic
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 SpD
+EVs: 252 HP / 252 Atk / 4 Spe
 Adamant Nature
 IVs: 30 SpD / 30 Spe
 - Rock Slide
@@ -19,39 +20,39 @@ IVs: 30 SpD / 30 Spe
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 124 SpD / 136 Spe
+EVs: 252 HP / 156 SpD / 100 Spe
 Careful Nature
 IVs: 0 Atk
 - Spikes
-- Toxic
+- Roar
 - Taunt
-- Roar
+- Toxic
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
+Moltres @ Leftovers
+Ability: Pressure
 EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Thunderbolt
+- Flamethrower
 - Hidden Power [Grass]
-- Baton Pass
+- Will-O-Wisp
 - Roar
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 44 Def / 176 SpA / 48 Spe
+Quiet Nature
+- Hydro Pump
 - Earthquake
-- Explosion
+- Ice Beam
+- Focus Punch
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 80 HP / 16 SpA / 236 SpD / 176 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 196 HP / 16 Def / 224 SpA / 72 Spe
 Modest Nature
 IVs: 0 Atk
-- Will-O-Wisp
+- Calm Mind
+- Leech Seed
 - Giga Drain
-- Thunderbolt
-- Taunt
+- Psychic

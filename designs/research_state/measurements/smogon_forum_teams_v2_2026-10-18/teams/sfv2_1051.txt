@@ -1,58 +1,57 @@
-Jynx (F) @ Lum Berry
-Ability: Oblivious
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Hidden Power [Fire]
-- Ice Beam
-- Lovely Kiss
-- Substitute
-
-Tyranitar @ Lum Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 248 HP / 188 Atk / 8 Def / 32 SpD / 32 Spe
 Adamant Nature
-- Dragon Dance
-- Earthquake
+IVs: 30 Atk / 30 SpA
 - Rock Slide
-- Double-Edge
+- Earthquake
+- Focus Punch
+- Hidden Power [Grass]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Roar
+- Drill Peck
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 232 HP / 40 Def / 100 SpA / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
+EVs: 252 Atk / 44 SpA / 212 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
+- Drill Peck
+- Hidden Power [Fighting]
+- Agility
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Taunt
+- Ice Punch
+- Thunderbolt
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 100 SpD / 156 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Brick Break
-- Hidden Power [Flying]
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Soft-Boiled
+- Ice Beam
+- Toxic
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 176 Def / 44 SpD / 40 Spe
+Relaxed Nature
+- Hydro Pump
+- Ice Beam
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Beat Up
+- Protect

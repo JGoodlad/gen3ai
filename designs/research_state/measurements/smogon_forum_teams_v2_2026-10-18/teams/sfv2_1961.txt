@@ -1,55 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 20 Def / 188 SpA / 48 Spe
-Modest Nature
-- Flamethrower
-- Crunch
-- Pursuit
-- Brick Break
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 240 SpD / 20 Spe
+EVs: 224 HP / 216 SpD / 68 Spe
 Careful Nature
-- Drill Peck
-- Toxic
-- Spikes
-- Roar
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 64 HP / 16 SpA / 248 SpD / 180 Spe
-Modest Nature
 IVs: 0 Atk
-- Will-O-Wisp
-- Thunderbolt
-- Giga Drain
+- Spikes
 - Taunt
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 136 Def / 92 SpD / 28 Spe
-Impish Nature
-- Thunder Wave
-- Seismic Toss
-- Explosion
-- Counter
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 48 SpA / 208 Spe
-Lonely Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
-- Dragon Dance
+- Toxic
+- Roar
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 88 Def / 96 SpA / 32 SpD / 44 Spe
+EVs: 240 HP / 252 SpA / 16 Spe
 Quiet Nature
-- Surf
-- Ice Beam
+- Curse
 - Earthquake
-- Refresh
+- Hydro Pump
+- Ice Beam
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 216 Atk / 108 Def / 168 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

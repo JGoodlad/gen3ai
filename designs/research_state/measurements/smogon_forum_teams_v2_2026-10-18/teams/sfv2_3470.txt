@@ -1,57 +1,56 @@
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 96 Atk / 232 Def / 180 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Knock Off
-- Cross Chop
-- Focus Punch
-- Hidden Power [Ghost]
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 8 Atk / 248 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Counter
-- Hidden Power [Bug]
-- Spikes
-- Rapid Spin
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 136 HP / 244 SpA / 128 Spe
-Modest Nature
-- Crunch
-- Pursuit
-- Fire Blast
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
 - Brick Break
+- Fire Blast
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
+Hasty Nature
+- Will-O-Wisp
+- Thunder
+- Giga Drain
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 228 SpD / 40 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 236 HP / 216 Def / 44 SpD / 12 Spe
+EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
 Relaxed Nature
 - Protect
-- Earthquake
-- Ice Beam
-- Refresh
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 80 HP / 252 Def / 176 Spe
-Bold Nature
-IVs: 0 Atk
-- Seismic Toss
 - Toxic
-- Wish
-- Soft-Boiled
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 72 HP / 220 SpA / 216 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Roar
-- Flamethrower
-- Hidden Power [Grass]
-- Will-O-Wisp
+- Earthquake
+- Hydro Pump

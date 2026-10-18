@@ -1,57 +1,58 @@
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 72 Def / 184 SpD
-Careful Nature
-- Thunder Wave
-- Counter
-- Seismic Toss
-- Explosion
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 88 HP / 252 Atk / 168 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Thunder Wave
-- Earthquake
-- Dragon Dance
-- Hidden Power [Flying]
-
-Raikou @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Substitute
+IVs: 2 Atk / 30 Def
 - Thunderbolt
-- Hidden Power [Grass]
+- Baton Pass
+- Hidden Power [Ice]
+- Thunder Wave
 
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 172 Def / 84 SpD
-Relaxed Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Recover
-- Ice Beam
-- Agility
-- Hidden Power [Fighting]
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 12 HP / 252 SpA / 244 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Hidden Power [Fire]
-- Giga Drain
-- Psychic
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 164 Atk / 204 SpD / 140 Spe
+Tyranitar @ Liechi Berry
+Ability: Sand Stream
+EVs: 252 HP / 68 Atk / 28 SpD / 160 Spe
 Adamant Nature
-- Dragon Dance
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+- Dragon Dance
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 168 HP / 52 Def / 56 SpA / 232 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Roar
+- Substitute
+- Baton Pass
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 64 HP / 216 Atk / 228 Spe
+Adamant Nature
+- Megahorn
+- Focus Punch
 - Rock Slide
 - Brick Break
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 64 Def / 100 SpA / 28 SpD / 64 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Hidden Power [Grass]
+- Fire Punch
+
+Camerupt @ Quick Claw
+Ability: Magma Armor
+EVs: 252 HP / 100 SpA / 112 SpD / 44 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA
+- Explosion
+- Substitute
+- Hidden Power [Grass]
+- Overheat

@@ -1,58 +1,59 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Earthquake
+- Rock Slide
+- Brick Break
+- Hidden Power [Flying]
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
 Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Hydro Pump
-- Ice Beam
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Sleep Talk
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Fire]
+
+Snorlax @ Leftovers
+Ability: Thick Fat
+EVs: 32 HP / 80 Atk / 216 Def / 180 SpD
+Impish Nature
+IVs: 30 SpD
+- Rest
+- Curse
+- Return
+- Hidden Power [Steel]
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 192 HP / 8 Def / 248 SpA / 60 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+EVs: 252 HP / 156 Def / 40 SpA / 28 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Recover
 - Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
+- Heal Bell
+- Hidden Power [Grass]
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Shadow Ball
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Calm Mind
+- Ice Punch
+- Thunderbolt
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Sunny Day
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 228 Def / 16 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam

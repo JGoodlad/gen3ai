@@ -1,57 +1,57 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 40 Def / 196 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Toxic
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunder Wave
 - Thunderbolt
+- Hidden Power [Ice]
 - Rain Dance
 
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Rest
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
 - Psychic
 - Explosion
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 232 Def / 24 Spe
-Bold Nature
+EVs: 192 HP / 252 SpA / 64 Spe
+Modest Nature
 IVs: 0 Atk
 - Rest
+- Sleep Talk
 - Calm Mind
 - Surf
-- Roar
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Aromatherapy
-- Thunder Wave
-- Seismic Toss
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Bulk Up
+- Brick Break
+- Rock Slide
+- Shadow Ball
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+- Dragon Dance
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Sunny Day
+- Rock Slide
+- Double-Edge
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break

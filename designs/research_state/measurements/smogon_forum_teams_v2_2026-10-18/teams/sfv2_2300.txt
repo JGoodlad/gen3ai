@@ -1,56 +1,59 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 128 HP / 252 Atk / 128 Spe
-Adamant Nature
-- Meteor Mash
-- Explosion
-- Earthquake
-- Rock Slide
-
-Ampharos @ Leftovers
-Ability: Static
-EVs: 252 HP / 224 SpA / 16 SpD / 16 Spe
-Mild Nature
-IVs: 30 Atk / 30 Def
-- Focus Punch
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 100 SpA / 20 SpD / 148 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Toxic
 - Thunderbolt
-- Substitute
-- Hidden Power [Ice]
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 92 HP / 112 Atk / 144 Def / 140 SpD / 20 Spe
-Adamant Nature
-- Self-Destruct
-- Body Slam
-- Shadow Ball
-- Focus Punch
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
 - Hidden Power [Grass]
-- Substitute
-- Focus Punch
+- Baton Pass
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 28 HP / 12 Def / 252 SpA / 216 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
 Timid Nature
+IVs: 0 Atk
+- Substitute
+- Toxic
 - Hydro Pump
+- Endeavor
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
 - Ice Beam
-- Thunderbolt
-- Rapid Spin
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 92 Def / 120 SpA / 44 Spe
-Timid Nature
+EVs: 188 HP / 140 SpA / 180 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
 - Calm Mind
-- Psychic
-- Giga Drain
 - Hidden Power [Fire]
+- Psychic
+- Baton Pass
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

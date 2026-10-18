@@ -1,58 +1,58 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 252 SpA / 8 Spe
+EVs: 184 HP / 196 SpA / 128 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
 - Crunch
 - Pursuit
-- Fire Blast
-- Hidden Power [Grass]
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 220 SpD / 36 Spe
-Calm Nature
-IVs: 0 Atk
-- Thunderbolt
-- Toxic
-- Rest
-- Roar
+- Flamethrower
+- Brick Break
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
+EVs: 224 HP / 216 SpD / 68 Spe
 Careful Nature
 IVs: 0 Atk
 - Spikes
-- Roar
+- Taunt
 - Toxic
-- Protect
+- Roar
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 184 Def / 24 SpA / 32 SpD / 20 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 220 SpA / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
 Bold Nature
 IVs: 0 Atk
-- Wish
-- Fire Punch
 - Protect
-- Toxic
+- Refresh
+- Surf
+- Roar
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 196 Def / 24 SpD / 40 Spe
-Impish Nature
-- Earthquake
-- Rock Slide
-- Toxic
-- Protect
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 224 Atk / 12 Def / 212 SpD / 60 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
 - Earthquake
+- Rock Slide
 - Hidden Power [Bug]
 - Double-Edge

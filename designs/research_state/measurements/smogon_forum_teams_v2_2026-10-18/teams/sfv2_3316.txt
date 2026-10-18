@@ -1,55 +1,56 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
-
-Poliwrath @ Leftovers
-Ability: Water Absorb
-EVs: 116 HP / 132 Atk / 252 SpA / 8 Spe
-Quiet Nature
-- Hydro Pump
-- Brick Break
-- Ice Beam
-- Focus Punch
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 16 Atk / 240 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Substitute
-- Flamethrower
-- Hidden Power [Grass]
-- Focus Punch
-
-Metagross @ Leftovers
+Metagross @ Salac Berry
 Ability: Clear Body
-EVs: 248 HP / 52 Def / 188 SpA / 20 Spe
-Rash Nature
+EVs: 40 HP / 252 Atk / 216 Spe
+Jolly Nature
 - Meteor Mash
-- Ice Punch
-- Thunder Punch
-- Explosion
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 140 HP / 216 Atk / 152 Spe
-Adamant Nature
-- Psychic
 - Earthquake
-- Rapid Spin
+- Explosion
+- Endure
+
+Lunatone @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 252 Def / 8 Spe
+Relaxed Nature
+- Calm Mind
+- Ice Beam
+- Baton Pass
 - Explosion
 
 Snorlax @ Leftovers
-Ability: Immunity
-EVs: 216 Atk / 116 Def / 176 SpD
+Ability: Thick Fat
+EVs: 8 HP / 252 Atk / 108 Def / 136 SpD / 4 Spe
 Adamant Nature
-- Body Slam
-- Focus Punch
+- Curse
+- Double-Edge
+- Earthquake
 - Shadow Ball
-- Self-Destruct
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 60 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+- Roar
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Rain Dance
+- Thunder Wave
+
+Ludicolo @ Leftovers
+Ability: Swift Swim
+EVs: 160 HP / 252 SpA / 96 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Surf
+- Rain Dance
+- Ice Beam
+- Hidden Power [Grass]

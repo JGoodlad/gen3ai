@@ -1,55 +1,54 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 SpA / 80 SpD / 176 Spe
-Mild Nature
-- Dragon Claw
-- Flamethrower
-- Substitute
-- Brick Break
-
-Charizard @ Lum Berry
-Ability: Blaze
-EVs: 144 Atk / 212 SpA / 152 Spe
-Mild Nature
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 72 SpA / 16 SpD / 168 Spe
+Naughty Nature
 IVs: 30 Atk / 30 SpA
-- Dragon Dance
+- Ancient Power
+- Brick Break
 - Fire Blast
 - Hidden Power [Grass]
-- Brick Break
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Baton Pass
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 252 HP / 20 Def / 216 SpA / 20 Spe
-Modest Nature
-- Surf
-- Ice Beam
-- Focus Punch
-- Substitute
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 180 HP / 232 Atk / 96 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
+EVs: 248 HP / 124 Def / 96 SpD / 40 Spe
+Sassy Nature
 - Earthquake
+- Hydro Pump
+- Ice Beam
+- Protect
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 12 Def / 176 SpA / 72 Spe
+Modest Nature
+- Calm Mind
+- Rest
+- Surf
+- Sleep Talk
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 244 SpD / 24 Spe
+Careful Nature
+- Protect
+- Drill Peck
+- Roar
+- Spikes
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 224 HP / 216 Atk / 68 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
 - Explosion
 
-Snorlax @ Leftovers
-Ability: Thick Fat
-EVs: 136 Atk / 212 Def / 160 SpD
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Earthquake
-- Self-Destruct
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 240 SpA / 16 Spe
+Bold Nature
+- Thunder Wave
+- Seismic Toss
+- Ice Beam
+- Soft-Boiled

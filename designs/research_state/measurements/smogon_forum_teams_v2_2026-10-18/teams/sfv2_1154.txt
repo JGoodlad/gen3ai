@@ -1,56 +1,55 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 176 Def / 40 SpA / 44 SpD / 8 Spe
-Relaxed Nature
-- Toxic
+Glalie @ Leftovers
+Ability: Inner Focus
+EVs: 252 HP / 124 Def / 12 SpA / 92 SpD / 28 Spe
+Jolly Nature
 - Earthquake
-- Hydro Pump
-- Ice Beam
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
 - Spikes
-- Rapid Spin
 - Ice Beam
 - Explosion
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Brick Break
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
-Moltres @ Leftovers
-Ability: Pressure
+Magneton @ Magnet
+Ability: Magnet Pull
 EVs: 4 HP / 252 SpA / 252 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
-- Flamethrower
-- Hidden Power [Grass]
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+- Substitute
+- Endeavor
+- Hydro Pump
 - Roar
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Curse
+- Rest
+- Return
+- Shadow Ball

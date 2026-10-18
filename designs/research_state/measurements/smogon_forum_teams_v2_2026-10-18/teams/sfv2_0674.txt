@@ -1,59 +1,57 @@
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 80 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Hypnosis
-- Mean Look
-- Perish Song
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
 - Protect
+- Drill Peck
 
-Donphan @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 60 Atk / 196 Def
-Impish Nature
-IVs: 30 Def / 30 SpD / 30 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 228 Def / 28 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 240 Atk / 16 Spe
+Adamant Nature
 - Rapid Spin
 - Earthquake
+- Shadow Ball
 - Rest
-- Hidden Power [Rock]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Fire Punch
+- Toxic
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 252 Def / 4 SpA
+EVs: 180 HP / 252 Def / 76 Spe
 Bold Nature
 IVs: 0 Atk
-- Counter
-- Ice Beam
-- Soft-Boiled
+- Seismic Toss
 - Aromatherapy
+- Thunder Wave
+- Soft-Boiled
 
-Zapdos @ Leftovers
+Raikou @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 4 SpA / 252 SpD
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Rest
-- Hidden Power [Grass]
-- Thunderbolt
-- Roar
-
-Jirachi @ Choice Band
-Ability: Serene Grace
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 SpA / 30 SpD
-- Body Slam
-- Hidden Power [Ground]
-- Shadow Ball
-- Dynamic Punch
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 SpA
-Bold Nature
+EVs: 8 Def / 248 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Ice Beam
-- Surf
-- Recover
-- Toxic
+- Thunderbolt
+- Crunch
+- Roar
+- Psych Up

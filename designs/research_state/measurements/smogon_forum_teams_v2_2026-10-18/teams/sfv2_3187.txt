@@ -1,57 +1,56 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 252 SpA / 8 Spe
-Modest Nature
+EVs: 20 Def / 236 SpA / 252 Spe
+Rash Nature
 IVs: 30 Atk / 30 SpA
-- Crunch
-- Pursuit
+- Ice Beam
+- Fire Blast
 - Hidden Power [Grass]
-- Focus Punch
+- Brick Break
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 68 HP / 252 SpA / 188 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Thunder Wave
-- Toxic
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 248 HP / 108 SpA / 120 SpD / 32 Spe
+EVs: 252 HP / 104 Def / 20 SpA / 96 SpD / 36 Spe
 Calm Nature
-IVs: 2 Atk / 30 SpA
-- Leech Seed
-- Psychic
-- Hidden Power [Grass]
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Recover
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
 
-Donphan @ Leftovers
-Ability: Sturdy
-EVs: 248 HP / 204 Def / 56 Spe
-Impish Nature
-- Earthquake
-- Toxic
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+- Substitute
+- Ice Punch
+- Thunder
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 44 SpA / 44 SpD / 44 Spe
+Relaxed Nature
 - Protect
-- Rapid Spin
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Def / 248 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Toxic
-- Roar
+- Earthquake
+- Surf
+- Ice Beam
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
 - Earthquake
-- Double-Edge
+- Rock Slide
 - Hidden Power [Bug]
+- Double-Edge

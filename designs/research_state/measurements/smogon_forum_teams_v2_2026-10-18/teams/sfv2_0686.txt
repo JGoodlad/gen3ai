@@ -1,57 +1,59 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 100 HP / 252 SpA / 156 Spe
+Ludicolo (M) @ Leftovers
+Ability: Swift Swim
+EVs: 168 HP / 252 SpA / 88 Spe
 Modest Nature
-IVs: 0 Atk
-- Hydro Pump
-- Calm Mind
+- Rain Dance
+- Surf
 - Ice Beam
-- Roar
+- Leech Seed
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 16 HP / 244 Atk / 116 Def / 116 SpD / 16 Spe
-Adamant Nature
-- Body Slam
-- Earthquake
-- Shadow Ball
-- Self-Destruct
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 Def / 252 SpA / 252 Spe
+Kingdra (M) @ Lum Berry
+Ability: Swift Swim
+EVs: 28 HP / 252 SpA / 228 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Screech
-- Toxic
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
 IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
+- Rain Dance
+- Surf
+- Ice Beam
 - Hidden Power [Grass]
-- Brick Break
 
-Metagross @ Lum Berry
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Agility
-- Explosion
-
-Ninjask @ Choice Band
-Ability: Speed Boost
-EVs: 252 Atk / 48 SpD / 208 Spe
-Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Silver Wind
-- Aerial Ace
-- Hidden Power [Rock]
+Snorlax (M) @ Leftovers
+Ability: Immunity
+Shiny: Yes
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Curse
+- Rest
+- Return
 - Shadow Ball
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+Shiny: Yes
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Earthquake
+
+Sceptile (M) @ Petaya Berry
+Ability: Overgrow
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Leaf Blade
+- Hidden Power [Ice]
+- Pursuit
+- Substitute
+
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]

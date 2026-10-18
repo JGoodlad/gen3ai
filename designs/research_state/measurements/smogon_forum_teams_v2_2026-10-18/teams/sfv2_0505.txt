@@ -1,58 +1,55 @@
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 252 Atk / 4 SpA / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Medicham @ Choice Band
+Ability: Pure Power
+EVs: 252 Atk / 64 Def / 192 Spe
+Adamant Nature
+- Brick Break
+- Rock Slide
+- Shadow Ball
+- Focus Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Meteor Mash
 - Earthquake
 - Rock Slide
-- Hidden Power [Bug]
-- Quick Attack
+- Agility
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 80 SpA / 180 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Giga Drain
-- Leech Seed
-- Psychic
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 68 HP / 252 SpA / 188 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Sunny Day
-
-Snorlax @ Leftovers
-Ability: Thick Fat
-Shiny: Yes
-EVs: 44 HP / 132 Atk / 196 Def / 136 SpD
-Adamant Nature
-- Curse
-- Rest
-- Body Slam
-- Earthquake
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Drill Peck
+- Spikes
+- Protect
+- Roar
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 68 Atk / 176 Def / 12 SpA
-Impish Nature
-- Rapid Spin
+EVs: 24 HP / 252 Atk / 232 Spe
+Adamant Nature
 - Earthquake
 - Psychic
+- Rapid Spin
 - Explosion
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 236 Def / 24 Spe
-Bold Nature
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
 IVs: 0 Atk
-- Surf
-- Recover
 - Ice Beam
-- Refresh
+- Seismic Toss
+- Thunder Wave
+- Soft-Boiled
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 68 HP / 252 SpA / 188 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Ice Punch
+- Fire Punch
+- Hidden Power [Grass]
+- Explosion

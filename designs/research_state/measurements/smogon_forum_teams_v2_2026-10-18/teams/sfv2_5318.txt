@@ -1,0 +1,54 @@
+Gyarados (F) @ Leftovers
+Ability: Intimidate
+EVs: 156 HP / 252 SpA / 100 Spe
+Modest Nature
+- Hydro Pump
+- Fire Blast
+- Ice Beam
+- Thunder
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 188 HP / 184 Atk / 136 Spe
+Naughty Nature
+- Earthquake
+- Rock Slide
+- Fire Blast
+- Toxic
+
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]
+- Double-Edge
+
+Vaporeon (M) @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 228 Def / 28 SpD
+Bold Nature
+- Wish
+- Protect
+- Surf
+- Haze
+
+Venusaur (F) @ Leftovers
+Ability: Overgrow
+EVs: 252 HP / 80 Def / 176 SpD
+Sassy Nature
+- Razor Leaf
+- Sludge Bomb
+- Sleep Powder
+- Leech Seed
+
+Houndoom (F) @ Leftovers
+Ability: Early Bird
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Crunch
+- Fire Blast
+- Pursuit
+- Will-o-Wisp

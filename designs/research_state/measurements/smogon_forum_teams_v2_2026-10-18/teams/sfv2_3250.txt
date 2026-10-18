@@ -1,54 +1,58 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 168 SpA / 88 Spe
-Quiet Nature
+EVs: 248 HP / 32 Def / 188 SpA / 40 Spe
+Modest Nature
 - Crunch
 - Pursuit
-- Brick Break
-- Fire Blast
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 192 SpA / 64 SpD / 252 Spe
-Mild Nature
-- Dragon Claw
-- Fire Blast
-- Brick Break
-- Wish
+- Ice Beam
+- Earthquake
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 40 Def / 136 SpA / 80 Spe
+EVs: 252 HP / 72 Def / 148 SpD / 36 Spe
+Calm Nature
+IVs: 0 Atk
+- Fire Punch
+- Toxic
+- Wish
+- Protect
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 200 Def / 28 SpD / 32 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Toxic
+- Protect
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Protect
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 8 Def / 60 SpD / 192 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Will-O-Wisp
+- Taunt
+- Destiny Bond
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
-- Substitute
-- Calm Mind
+- Flamethrower
 - Hidden Power [Grass]
-- Thunderbolt
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-- Spore
-- Focus Punch
-- Sky Uppercut
-- Mach Punch
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 16 Def / 12 SpD / 12 Spe
-Relaxed Nature
-- Rapid Spin
-- Earthquake
-- Ice Beam
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 212 Atk / 120 Def / 176 SpD
-Adamant Nature
-- Focus Punch
-- Return
-- Earthquake
-- Self-Destruct
+- Roar
+- Will-O-Wisp

@@ -1,61 +1,57 @@
-Starmie @ Mystic Water
-Ability: Natural Cure
-Shiny: Yes
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
 IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
-- Thunderbolt
+- Surf
 - Recover
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 68 HP / 252 SpA / 188 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
 - Toxic
-- Thunder Wave
+- Refresh
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 228 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Psychic
+- Fire Punch
+- Calm Mind
+
+Skarmory
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Thief
+- Spikes
+- Roar
+- Drill Peck
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 24 Def / 232 Spe
+Impish Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 248 HP / 92 Def / 128 SpD / 40 Spe
-Timid Nature
+EVs: 248 HP / 60 Def / 168 SpD / 32 Spe
+Calm Nature
 IVs: 2 Atk / 30 SpA
-- Perish Song
-- Hidden Power [Grass]
-- Leech Seed
 - Recover
+- Leech Seed
+- Hidden Power [Grass]
+- Heal Bell
 
-Swampert @ Leftovers
-Ability: Torrent
-Shiny: Yes
-EVs: 252 HP / 188 Def / 68 SpD
-Relaxed Nature
-- Curse
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 116 Def / 140 SpA
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
 - Ice Beam
-- Earthquake
 - Rest
-
-Flygon @ Choice Band
-Ability: Levitate
-Shiny: Yes
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Toxic
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-Shiny: Yes
-EVs: 252 HP / 216 SpA / 40 Spe
-Rash Nature
-- Substitute
-- Crunch
-- Flamethrower
-- Focus Punch

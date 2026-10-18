@@ -1,26 +1,35 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
-- Sunny Day
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 124 SpA / 8 Spe
+Relaxed Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 4 HP / 252 SpA / 252 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 252 SpA / 16 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Fire Punch
-- Hidden Power [Grass]
-- Psychic
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Flamethrower
+- Roar
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
+- Counter
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
+EVs: 252 HP / 240 SpA / 16 Spe
 Modest Nature
 IVs: 0 Atk
 - Substitute
@@ -28,31 +37,21 @@ IVs: 0 Atk
 - Surf
 - Ice Beam
 
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 HP
-- Substitute
-- Megahorn
-- Rock Slide
-- Focus Punch
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Shadow Ball
-
-Camerupt @ Leftovers
-Ability: Magma Armor
-EVs: 4 HP / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Earthquake
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
 - Flamethrower
 - Hidden Power [Grass]
-- Explosion
+- Beat Up

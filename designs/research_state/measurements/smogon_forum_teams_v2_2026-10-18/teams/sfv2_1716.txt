@@ -1,57 +1,56 @@
 Tyranitar @ Choice Band
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 80 HP / 184 Atk / 76 Def / 168 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 Atk / 30 SpD
 - Earthquake
 - Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
+- Hidden Power [Ghost]
+- Return
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 224 HP / 216 SpD / 68 Spe
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
-- Taunt
+- Protect
 - Toxic
-- Roar
+- Drill Peck
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Ice Punch
-- Giga Drain
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Rest
+- Sleep Talk
+- Thunderbolt
+- Hidden Power [Fire]
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
+EVs: 240 HP / 224 Def / 44 SpD
 Relaxed Nature
 - Protect
+- Toxic
 - Earthquake
-- Hydro Pump
 - Ice Beam
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
+EVs: 4 HP / 252 Def / 252 Spe
+Impish Nature
 - Soft-Boiled
-- Toxic
-- Ice Beam
-- Thunderbolt
+- Wish
+- Thunder Wave
+- Seismic Toss
 
-Salamence @ Leftovers
+Salamence @ Choice Band
 Ability: Intimidate
-EVs: 12 Def / 244 SpA / 252 Spe
-Mild Nature
-- Dragon Claw
-- Flamethrower
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
 - Brick Break
-- Roar
+- Hidden Power [Flying]

@@ -1,57 +1,56 @@
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Hydro Pump
-- Roar
-- Endeavor
-
-Tyranitar @ Black Glasses
-Ability: Sand Stream
-EVs: 184 HP / 108 Atk / 216 Spe
-Brave Nature
-IVs: 30 Atk / 30 SpA
-- Crunch
-- Rock Slide
-- Hidden Power [Grass]
-- Focus Punch
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 164 SpA / 96 SpD
-Calm Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Spikes
-- Toxic
-- Hidden Power [Fire]
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 136 SpD
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 160 SpA / 96 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Grass]
-- Explosion
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 196 Atk / 200 SpD / 112 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
+Hidden Power: Grass
+EVs: 120 Atk / 236 SpA / 152 Spe
+Rash Nature
+- Dragon Claw
+- Wish
+- Fire Blast
 - Brick Break
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
+- Zap Cannon
+- Earthquake
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 44 HP / 96 Atk / 156 Def / 200 SpD / 12 Spe
+Careful Nature
+- Rest
+- Curse
+- Body Slam
+- Focus Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 104 SpA / 120 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
+- Hidden Power [Grass]
+- Psychic
+- Recover
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 212 SpA / 104 SpD / 192 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Fire Blast
+- Will-O-Wisp
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 136 Def / 120 SpA
+Relaxed Nature
+- Curse
+- Hydro Pump
+- Earthquake
+- Ice Beam

@@ -1,57 +1,56 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 84 Def / 108 SpA / 40 SpD / 36 Spe
-Quiet Nature
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Spore
+- Focus Punch
+- Mach Punch
+- Sky Uppercut
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 224 Atk / 32 SpD
+Adamant Nature
+- Meteor Mash
 - Earthquake
-- Ice Beam
-- Counter
-- Hydro Pump
+- Rock Slide
+- Explosion
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 120 HP / 252 Atk / 136 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Rock Slide
-- Earthquake
-- Dragon Dance
+EVs: 116 HP / 220 SpA / 164 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Hydro Pump
+- Dragon Claw
+- Fire Blast
+- Hidden Power [Grass]
 
-Walrein @ Leftovers
-Ability: Thick Fat
-EVs: 120 HP / 108 Def / 48 SpA / 232 Spe
+Tyranitar @ Black Glasses
+Ability: Sand Stream
+EVs: 208 HP / 96 SpA / 204 Spe
+Quiet Nature
+- Pursuit
+- Brick Break
+- Fire Blast
+- Crunch
+
+Scizor @ Salac Berry
+Ability: Swarm
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Swords Dance
+- Endure
+- Reversal
+- Hidden Power [Bug]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 148 HP / 208 SpA / 152 Spe
 Timid Nature
 IVs: 0 Atk
 - Ice Beam
-- Surf
-- Yawn
-- Encore
-
-Machamp @ Leftovers
-Ability: Guts
-EVs: 200 HP / 252 Atk / 56 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Cross Chop
-- Rock Slide
-- Hidden Power [Ghost]
-- Bulk Up
-
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
+- Recover
 - Thunderbolt
-- Hidden Power [Grass]
-- Crunch
-- Calm Mind
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-- Spikes
-- Rapid Spin
-- Earthquake
-- Explosion
+- Hydro Pump

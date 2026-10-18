@@ -1,56 +1,56 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Rest
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 12 Atk / 104 SpA / 208 Spe
-Rash Nature
+EVs: 248 HP / 12 Atk / 176 SpA / 72 SpD
+Quiet Nature
 - Rock Slide
-- Fire Blast
-- Ice Beam
-- Focus Punch
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 80 HP / 16 SpA / 236 SpD / 176 Spe
-Timid Nature
-- Will-O-Wisp
-- Explosion
-- Ice Punch
-- Thunderbolt
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 124 SpD / 136 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Taunt
-- Toxic
-- Roar
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 244 HP / 168 SpA / 96 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Psychic
-- Fire Punch
-- Hidden Power [Grass]
+- Earthquake
+- Crunch
+- Pursuit
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 84 Atk / 128 SpA / 48 Spe
-Brave Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Counter
+EVs: 248 HP / 176 Def / 40 SpA / 44 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Refresh
+- Toxic
+- Protect
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 176 Atk / 156 SpA / 176 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 152 HP / 252 SpD / 104 Spe
+Timid Nature
+- Surf
+- Spikes
+- Rapid Spin
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Def / 104 SpD / 104 Spe
+Timid Nature
+IVs: 0 Atk
 - Thunderbolt
-- Drill Peck
-- Hidden Power [Grass]
-- Agility
+- Ice Punch
+- Taunt
+- Will-O-Wisp
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 84 Def / 176 SpD
+Sassy Nature
+- Body Slam
+- Fire Punch
+- Protect
+- Wish

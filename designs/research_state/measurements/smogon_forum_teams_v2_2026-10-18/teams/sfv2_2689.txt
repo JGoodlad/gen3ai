@@ -1,57 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 36 SpA / 220 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Grass]
-- Explosion
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 16 SpA / 100 SpD / 140 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
 Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
 IVs: 0 Atk
-- Substitute
-- Hydro Pump
-- Roar
-- Endeavor
+- Seismic Toss
+- Ice Beam
+- Aromatherapy
+- Soft-Boiled
 
-Dragonite @ Leftovers
-Ability: Inner Focus
-EVs: 36 HP / 252 Atk / 220 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
+Milotic (F) @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Refresh
+- Recover
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 196 Atk / 200 SpD / 112 Spe
-Adamant Nature
-- Dragon Dance
+Dusclops (M) @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 96 Def / 160 SpD
+Impish Nature
+- Shadow Ball
+- Imprison
+- Will-O-Wisp
+- Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 116 Def / 140 SpD
+Sassy Nature
 - Earthquake
-- Rock Slide
-- Brick Break
+- Psychic
+- Rapid Spin
+- Rest
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Screech
+
+Skarmory (M)
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Spikes
+- Thief
+- Roar
+- Protect

@@ -1,0 +1,53 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Venusaur @ Lum Berry
+Ability: Overgrow
+EVs: 252 HP / 232 SpD / 24 Spe
+Calm Nature
+- Sleep Powder
+- Leech Seed
+- Razor Leaf
+- Synthesis
+
+Alakazam @ Twisted Spoon
+Ability: Synchronize
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Psychic
+- Fire Punch
+- Ice Punch
+- Thunder Punch
+
+Gengar @ Sitrus Berry
+Ability: Levitate
+EVs: 172 HP / 148 SpA / 188 Spe
+Modest Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Destiny Bond
+
+Blaziken @ Scope Lens
+Ability: Blaze
+EVs: 196 Atk / 80 SpA / 232 Spe
+Quirky Nature
+- Swords Dance
+- Sky Uppercut
+- Fire Blast
+- Quick Attack
+
+Tyranitar @ Shell Bell
+Ability: Sand Stream
+EVs: 248 HP / 80 Atk / 180 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Taunt

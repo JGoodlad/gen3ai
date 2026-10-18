@@ -1,0 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 232 Atk / 160 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Substitute
+- Brick Break
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 SpA / 108 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Thunder Punch
+- Meteor Mash
+- Hidden Power [Grass]
+- Explosion
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 200 SpA / 120 SpD / 188 Spe
+Timid Nature
+IVs: 0 Atk
+- Pursuit
+- Fire Blast
+- Will-O-Wisp
+- Beat Up
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 216 Atk / 116 Def / 176 SpD
+Adamant Nature
+- Body Slam
+- Focus Punch
+- Counter
+- Self-Destruct
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 28 SpD / 12 Spe
+Brave Nature
+- Earthquake
+- Ice Beam
+- Rapid Spin
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 SpD / 16 Spe
+Calm Nature
+IVs: 0 Atk / 30 SpA
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk

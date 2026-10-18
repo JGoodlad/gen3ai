@@ -1,0 +1,58 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 248 Def / 8 Spe
+Impish Nature
+- Drill Peck
+- Protect
+- Roar
+- Spikes
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 144 HP / 252 Def / 112 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Thunderbolt
+- Fire Blast
+- Toxic
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 Def / 64 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Calm Mind
+- Rest
+- Ice Beam
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 180 SpD
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Ice Punch
+- Hidden Power [Grass]
+- Wish
+- Protect
+
+Hitmontop (M) @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 60 Atk / 196 Def
+Impish Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Rapid Spin
+- Brick Break
+- Counter

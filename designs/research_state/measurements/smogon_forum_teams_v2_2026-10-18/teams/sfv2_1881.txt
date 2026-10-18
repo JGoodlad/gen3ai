@@ -1,56 +1,58 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Brick Break
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 Atk / 76 SpA / 180 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Thunderbolt
-- Ice Punch
-- Giga Drain
+- Drill Peck
+- Hidden Power [Fighting]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
 - Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 116 HP / 140 SpA / 252 Spe
 Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Toxic
-- Ice Beam
-- Thunderbolt
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Fire Punch
+- Hidden Power [Grass]
+- Psychic
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
-Bold Nature
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 244 HP / 124 Def / 140 Spe
+Impish Nature
 IVs: 0 Atk
-- Protect
-- Refresh
-- Surf
-- Roar
+- Recover
+- Leech Seed
+- Swords Dance
+- Baton Pass
+
+Snorlax @ Leftovers
+Ability: Thick Fat
+EVs: 32 HP / 96 Atk / 120 Def / 88 SpA / 172 SpD
+Brave Nature
+- Double-Edge
+- Earthquake
+- Fire Blast
+- Self-Destruct
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 4 Def / 252 SpA / 252 Spe
-Rash Nature
-- Dragon Claw
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
 - Rock Slide
-- Flamethrower
-- Brick Break
+- Hidden Power [Flying]

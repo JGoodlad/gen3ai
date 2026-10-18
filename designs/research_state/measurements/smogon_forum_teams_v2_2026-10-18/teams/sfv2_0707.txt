@@ -1,57 +1,57 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 248 HP / 228 SpD / 32 Spe
-Calm Nature
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+- Baton Pass
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Roar
+- Will-O-Wisp
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 180 SpD
+Sassy Nature
+- Body Slam
+- Fire Punch
+- Wish
+- Protect
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
 IVs: 0 Atk
 - Thunderbolt
-- Rest
-- Toxic
-- Roar
+- Ice Punch
+- Taunt
+- Will-O-Wisp
 
-Armaldo @ Leftovers
-Ability: Battle Armor
-EVs: 248 HP / 248 Atk / 12 SpD
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Hidden Power [Bug]
-- Rock Slide
+Flygon (F) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 196 Def / 28 SpD / 32 Spe
+Impish Nature
 - Earthquake
-- Swords Dance
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Roar
-- Drill Peck
-- Toxic
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
+- Fire Blast
 - Toxic
 - Protect
-- Roar
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Heal Bell
-
-Tyranitar @ Leftovers
+Tyranitar (F) @ Choice Band
 Ability: Sand Stream
-EVs: 248 HP / 72 Atk / 188 Spe
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-- Dragon Dance
+IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
+- Hidden Power [Bug]
 - Earthquake
-- Double-Edge
+- Focus Punch

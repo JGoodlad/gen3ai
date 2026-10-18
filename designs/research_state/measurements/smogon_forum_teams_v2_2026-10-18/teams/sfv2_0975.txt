@@ -1,57 +1,58 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 80 HP / 184 Atk / 72 Def / 172 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
-- Earthquake
-- Focus Punch
-- Hidden Power [Bug]
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 220 HP / 76 Def / 180 SpA / 32 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Psychic
-- Leech Seed
-- Hidden Power [Grass]
-- Recover
-
-Charizard @ Leftovers
-Ability: Blaze
+Glalie @ Salac Berry
+Ability: Inner Focus
+Shiny: Yes
 EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 Def
-- Fire Blast
-- Hidden Power [Ice]
-- Focus Punch
-- Toxic
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 196 HP / 96 Def / 160 SpA / 52 Spe
-Relaxed Nature
-- Protect
+Timid Nature
 - Ice Beam
-- Earthquake
-- Surf
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Careful Nature
 - Spikes
-- Toxic
-- Drill Peck
-- Roar
+- Explosion
+- Taunt
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
+Exeggutor @ Leftovers
+Ability: Chlorophyll
+EVs: 36 Atk / 252 SpA / 220 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Sunny Day
+- Explosion
+- Giga Drain
+- Hidden Power [Fire]
+
+Metagross @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Meteor Mash
 - Earthquake
-- Hidden Power [Bug]
-- Double-Edge
+- Protect
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 76 HP / 252 SpA / 180 Spe
+Timid Nature
+- Explosion
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 252 Atk / 96 Def / 144 SpD
+Adamant Nature
+- Curse
+- Self-Destruct
+- Earthquake
+- Shadow Ball
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 104 SpA / 152 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam

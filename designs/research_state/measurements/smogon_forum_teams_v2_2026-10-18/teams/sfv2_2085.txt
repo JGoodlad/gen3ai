@@ -1,30 +1,11 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
-Tyranitar @ Choice Band
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 Spe
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
+- Dragon Dance
 - Earthquake
 - Rock Slide
 - Double-Edge
-- Focus Punch
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
 
 Swampert @ Salac Berry
 Ability: Torrent
@@ -35,6 +16,26 @@ IVs: 0 Atk
 - Toxic
 - Hydro Pump
 - Endeavor
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 248 SpA / 60 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
 
 Charizard @ Leftovers
 Ability: Blaze
@@ -48,10 +49,10 @@ IVs: 30 Atk / 30 SpA
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 192 Atk / 200 SpD / 116 Spe
+EVs: 116 HP / 252 Atk / 140 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
-- Hidden Power [Flying]
+- Earthquake
 - Rock Slide
-- Brick Break
+- Hidden Power [Flying]

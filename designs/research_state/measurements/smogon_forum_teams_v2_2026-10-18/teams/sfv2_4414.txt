@@ -1,0 +1,55 @@
+Medicham @ Salac Berry
+Ability: Pure Power
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Bulk Up
+- Brick Break
+- Rock Slide
+- Shadow Ball
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 64 HP / 252 SpA / 192 Spe
+Modest Nature
+- Psychic
+- Thunder Punch
+- Pursuit
+- Explosion
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Megahorn
+- Rock Slide
+- Swords Dance
+- Substitute
+
+Scizor @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Reversal
+- Hidden Power [Bug]
+- Swords Dance
+- Endure
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 80 HP / 252 Atk / 136 Def / 28 SpD / 12 Spe
+Adamant Nature
+- Curse
+- Body Slam
+- Self-Destruct
+- Shadow Ball
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 200 HP / 80 Atk / 228 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]

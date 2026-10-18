@@ -1,57 +1,56 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 176 HP / 44 Atk / 196 SpA / 92 Spe
-Mild Nature
-- Crunch
-- Pursuit
-- Fire Blast
-- Brick Break
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 12 Atk / 240 SpA / 4 SpD / 252 Spe
-Mild Nature
+EVs: 252 Atk / 4 SpA / 252 Spe
+Hasty Nature
 IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Brick Break
-- Flamethrower
+- Rock Slide
+- Fire Blast
 - Hidden Power [Grass]
+- Brick Break
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-IVs: 0 Atk
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 168 SpA / 244 SpD / 96 Spe
+Modest Nature
 - Spikes
-- Roar
-- Protect
-- Toxic
+- Rapid Spin
+- Ice Beam
+- Explosion
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 76 Def / 180 SpD
-Sassy Nature
-IVs: 2 Atk / 30 SpA
-- Wish
-- Protect
-- Fire Punch
-- Body Slam
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 4 Def / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Leech Seed
+- Psychic
+- Baton Pass
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 Atk / 68 SpD / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 92 Def / 120 SpA / 48 Spe
+EVs: 240 HP / 224 SpA / 44 Spe
 Quiet Nature
+- Earthquake
 - Hydro Pump
 - Ice Beam
-- Earthquake
 - Focus Punch
 
-Zapdos @ Leftovers
+Moltres @ Leftovers
 Ability: Pressure
-EVs: 120 Atk / 212 SpA / 176 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Drill Peck
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Will-O-Wisp
+- Flamethrower
 - Hidden Power [Grass]
-- Thunder Wave
+- Overheat

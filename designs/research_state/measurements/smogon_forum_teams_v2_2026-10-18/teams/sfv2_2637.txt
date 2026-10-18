@@ -1,56 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 24 Atk / 252 SpA / 64 SpD / 144 Spe
-Mild Nature
-- Dragon Claw
-- Flamethrower
-- Brick Break
-- Roar
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+EVs: 68 HP / 252 Atk / 188 Spe
 Adamant Nature
 - Dragon Dance
-- Earthquake
 - Rock Slide
-- Double-Edge
+- Earthquake
+- Focus Punch
 
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 Def / 252 Spe
+Naughty Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Fire Blast
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 208 HP / 244 SpD / 56 Spe
+Jolly Nature
 - Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
+- Ice Beam
 - Rapid Spin
-- Recover
-- Surf
-- Psychic
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Wish
-- Seismic Toss
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
 - Ice Beam
+- Hidden Power [Grass]
+- Soft-Boiled
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Protect
-- Refresh
-- Toxic
-- Surf
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+IVs: 30 Atk / 30 SpA
+- Earthquake
+- Ice Beam
+- Hidden Power [Grass]
+- Hydro Pump

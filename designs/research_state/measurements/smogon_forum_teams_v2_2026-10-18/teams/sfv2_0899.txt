@@ -1,59 +1,62 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 24 Atk / 252 SpA / 232 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-- Meteor Mash
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 Atk / 4 Def / 252 Spe
+Medicham @ Leftovers
+Ability: Pure Power
+Shiny: Yes
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD
-- Drill Peck
-- Hidden Power [Ground]
+- Bulk Up
+- Brick Break
+- Shadow Ball
+- Recover
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+Shiny: Yes
+EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
+Timid Nature
 - Spikes
-- Roar
+- Surf
+- Rapid Spin
+- Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 48 HP / 252 Def / 200 SpA / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Thunderbolt
-- Ice Beam
-- Sing
-- Soft-Boiled
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
+Charizard (F) @ Leftovers
+Ability: Blaze
+Shiny: Yes
 EVs: 4 Atk / 252 SpA / 252 Spe
 Hasty Nature
 IVs: 30 Atk / 30 SpA
-- Brick Break
-- Ice Beam
 - Fire Blast
 - Hidden Power [Grass]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Bold Nature
-IVs: 0 Atk
-- Surf
+- Focus Punch
 - Toxic
-- Protect
+
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 28 HP / 252 SpA / 228 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Hydro Pump
+- Ice Beam
 - Roar
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Flying]
+Jolteon (M) @ Leftovers
+Ability: Volt Absorb
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Wish
+- Baton Pass
+- Roar
+
+Registeel @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 252 HP / 200 SpD / 56 Spe
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Counter
+- Explosion

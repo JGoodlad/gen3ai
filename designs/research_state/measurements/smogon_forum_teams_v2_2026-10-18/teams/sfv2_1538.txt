@@ -1,25 +1,16 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 196 SpA / 128 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 136 SpA / 156 Spe
 Modest Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Crunch
-- Pursuit
-- Flamethrower
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 240 HP / 240 SpD / 28 Spe
-Careful Nature
-- Spikes
+IVs: 30 Spe
+- Thunder Wave
 - Toxic
-- Drill Peck
-- Roar
+- Thunderbolt
+- Hidden Power [Ice]
 
 Starmie @ Leftovers
 Ability: Natural Cure
-EVs: 252 SpA / 4 SpD / 252 Spe
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
 - Rapid Spin
@@ -36,22 +27,31 @@ Quiet Nature
 - Hydro Pump
 - Ice Beam
 
-Blissey (F) @ Leftovers
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+- Explosion
+
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
+EVs: 192 HP / 4 Def / 136 SpA / 176 Spe
 Modest Nature
 IVs: 0 Atk
-- Soft-Boiled
+- Leech Seed
 - Calm Mind
-- Ice Beam
-- Thunderbolt
+- Giga Drain
+- Psychic
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Beat Up
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide

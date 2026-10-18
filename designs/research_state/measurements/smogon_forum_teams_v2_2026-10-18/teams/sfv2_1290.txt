@@ -1,58 +1,58 @@
-Heracross @ Leftovers
-Ability: Guts
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Swords Dance
-- Megahorn
-- Rock Slide
-- Brick Break
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 28 Def / 140 SpA / 52 SpD / 40 Spe
 Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Rest
-- Sleep Talk
+IVs: 30 Atk / 30 SpA
+- Baton Pass
+- Hidden Power [Grass]
 - Thunderbolt
-- Hidden Power [Fire]
+- Thunder Wave
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 176 Def / 72 SpD / 20 Spe
-Impish Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Rest
-- Curse
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 40 HP / 148 Atk / 100 SpD / 220 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
+- Aerial Ace
+- Beat Up
 - Earthquake
-- Hidden Power [Rock]
+- Hidden Power [Bug]
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
 Modest Nature
 IVs: 0 Atk
-- Leech Seed
 - Calm Mind
-- Giga Drain
-- Psychic
+- Rest
+- Sleep Talk
+- Surf
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Hidden Power [Rock]
-- Double-Edge
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 252 Def / 4 Spe
-Relaxed Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Recover
-- Toxic
-- Hidden Power [Fighting]
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 252 SpA / 72 SpD
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Flamethrower
 - Ice Beam
+- Pursuit
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 192 Atk / 64 Spe
+Jolly Nature
+- Earthquake
+- Explosion
+- Ice Beam
+- Rapid Spin
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 SpA / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Ice Punch
+- Substitute
+- Thunderbolt

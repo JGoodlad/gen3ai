@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Sunny Day
+
+Typhlosion @ Petaya Berry
+Ability: Blaze
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Fire Blast
+- Thunder Punch
+- Hidden Power [Grass]
+
+Exeggutor @ Leftovers
+Ability: Chlorophyll
+EVs: 44 HP / 252 SpA / 212 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Sleep Powder
+- Sunny Day
+- Solar Beam
+- Hidden Power [Fire]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Protect
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Brick Break
+- Hidden Power [Ghost]
+- Knock Off
+- Focus Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+- Dragon Claw
+- Brick Break
+- Wish
+- Fire Blast

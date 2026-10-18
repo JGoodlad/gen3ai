@@ -1,56 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 180 SpA / 44 SpD / 44 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Double-Edge
-- Shadow Ball
-- Self-Destruct
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 16 SpA / 100 SpD / 140 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
+EVs: 252 HP / 232 SpD / 24 Spe
+Calm Nature
+IVs: 0 Atk
+- Roar
+- Rest
+- Toxic
 - Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 140 SpA / 20 SpD / 56 Spe
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 96 SpA / 160 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Wish
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 148 Atk / 88 Def / 68 SpD / 180 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
+IVs: 0 Atk
 - Fire Blast
+- Ice Beam
+- Toxic
+- Soft-Boiled
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 240 HP / 48 SpA / 124 SpD / 96 Spe
+Timid Nature
+IVs: 0 Atk
+- Fire Punch
+- Giga Drain
+- Will-O-Wisp
+- Taunt
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 240 SpD / 20 Spe
+Careful Nature
+- Spikes
+- Protect
+- Toxic
+- Whirlwind
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 244 Atk / 24 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Focus Punch
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Def / 84 SpA / 8 Spe
+Relaxed Nature
+- Hydro Pump
+- Protect
+- Earthquake
+- Ice Beam

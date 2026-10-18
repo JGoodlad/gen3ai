@@ -1,58 +1,58 @@
 Zapdos @ Leftovers
 Ability: Pressure
-Hidden Power: Grass
 EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
+IVs: 2 Atk / 30 Def
+- Thunder Wave
 - Thunderbolt
-- Hidden Power [Grass]
-- Toxic
-- Baton Pass
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Roar
-- Protect
-- Drill Peck
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-Hidden Power: Bug
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 128 HP / 252 Atk / 128 Spe
-Adamant Nature
-- Meteor Mash
-- Explosion
-- Earthquake
-- Rock Slide
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Aromatherapy
+- Hidden Power [Ice]
+- Sunny Day
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 76 Def / 180 SpD
-Sassy Nature
-- Wish
-- Protect
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
 - Fire Punch
-- Body Slam
+- Hidden Power [Grass]
+- Psychic
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Surf
+- Ice Beam
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Substitute
+- Megahorn
+- Rock Slide
+- Focus Punch
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
+
+Camerupt @ Leftovers
+Ability: Magma Armor
+EVs: 4 HP / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Earthquake
+- Flamethrower
+- Hidden Power [Grass]
+- Explosion

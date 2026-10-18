@@ -1,49 +1,41 @@
-Tyranitar @ Choice Band
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Ghost]
+EVs: 184 HP / 196 SpA / 128 Spe
+Modest Nature
+- Crunch
+- Pursuit
+- Flamethrower
 - Brick Break
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 200 HP / 252 SpD / 56 Spe
-Calm Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+IVs: 30 SpD
 - Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
+- Toxic
+- Hidden Power [Steel]
+- Roar
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
-Hasty Nature
-- Will-O-Wisp
-- Thunderbolt
-- Giga Drain
-- Explosion
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
+EVs: 168 HP / 164 SpD / 176 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
+IVs: 0 Atk
+- Taunt
+- Will-O-Wisp
+- Ice Punch
 - Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Hydro Pump
-- Ice Beam
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
 
 Moltres @ Leftovers
 Ability: Pressure
@@ -54,3 +46,13 @@ IVs: 2 Atk / 30 SpA
 - Flamethrower
 - Hidden Power [Grass]
 - Roar
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

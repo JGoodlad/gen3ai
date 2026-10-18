@@ -1,57 +1,58 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 224 Atk / 44 Spe
-Brave Nature
-- Curse
-- Earthquake
-- Rock Slide
-- Ice Beam
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
+Suicune @ Salac Berry
+Ability: Pressure
+EVs: 32 HP / 244 SpA / 232 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Fire]
+IVs: 0 Atk
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Substitute
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 152 Def / 48 SpA / 28 SpD / 32 Spe
-Bold Nature
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 72 HP / 140 Atk / 72 SpD / 224 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Beat Up
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+- Rain Dance
+
+Kingdra @ Lum Berry
+Ability: Swift Swim
+EVs: 80 HP / 252 SpA / 176 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Recover
-- Leech Seed
-- Heal Bell
+- Rain Dance
+- Surf
+- Ice Beam
 - Hidden Power [Grass]
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 136 Atk / 152 Def / 8 SpD / 8 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 144 HP / 252 Atk / 112 Spe
 Adamant Nature
-- Rest
-- Curse
-- Return
+- Agility
+- Meteor Mash
 - Earthquake
+- Explosion
 
-Umbreon @ Leftovers
-Ability: Synchronize
-EVs: 248 HP / 56 Def / 188 SpA / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Charm
-- Pursuit
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 248 HP / 16 Atk / 144 SpD / 100 Spe
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Rest
-- Dragon Dance
-- Earthquake
-- Hidden Power [Flying]
+IVs: 30 HP
+- Megahorn
+- Rock Slide
+- Substitute
+- Swords Dance

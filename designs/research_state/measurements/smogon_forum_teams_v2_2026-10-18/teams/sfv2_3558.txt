@@ -1,57 +1,57 @@
-Tyranitar @ Lum Berry
+Tyranitar @ Choice Band
 Ability: Sand Stream
 EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-- Dragon Dance
-- Rock Slide
+IVs: 30 Atk / 30 SpD
 - Earthquake
-- Double-Edge
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 112 HP / 252 Atk / 144 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
 - Rock Slide
-- Earthquake
-- Hidden Power [Flying]
+- Hidden Power [Ghost]
+- Return
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 216 SpD / 40 Spe
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
-- Thunder Wave
-- Seismic Toss
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
 - Counter
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
 - Explosion
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Endeavor
-- Surf
-- Toxic
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
 
-Celebi @ Leftovers
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 SpA / 76 SpD / 180 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
 
-Machamp @ Choice Band
-Ability: Guts
-EVs: 252 HP / 252 Atk / 4 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Cross Chop
-- Focus Punch
-- Hidden Power [Ghost]
-- Rock Slide
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Def / 44 SpA / 48 Spe
+Relaxed Nature
+- Protect
+- Earthquake
+- Surf
+- Ice Beam

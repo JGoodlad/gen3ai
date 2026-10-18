@@ -1,58 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Tyranitar @ Black Glasses
-Ability: Sand Stream
-EVs: 184 HP / 108 Atk / 216 Spe
-Brave Nature
-IVs: 30 Atk / 30 SpA
-- Crunch
-- Rock Slide
-- Hidden Power [Grass]
-- Focus Punch
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Counter
-
-Registeel @ Leftovers
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 252 HP / 124 Def / 96 SpD / 36 Spe
-Careful Nature
-IVs: 30 SpD
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Steel]
+EVs: 252 Atk / 68 SpD / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
 - Explosion
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Ice]
+- Sunny Day
+
+Slaking @ Choice Band
+Ability: Truant
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 SpD
+- Return
+- Earthquake
+- Hidden Power [Steel]
+- Focus Punch
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
 Modest Nature
 IVs: 0 Atk
-- Leech Seed
+- Rest
 - Calm Mind
-- Giga Drain
-- Psychic
+- Surf
+- Ice Beam
 
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
-- Flamethrower
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Fire Blast
 - Hidden Power [Grass]
-- Roar
+- Focus Punch

@@ -1,57 +1,62 @@
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Endeavor
-- Hydro Pump
-- Toxic
-
-Regirock @ Choice Band
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 200 HP / 252 Atk / 56 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Rock Slide
-- Hidden Power [Ghost]
-- Superpower
+Shiny: Yes
+EVs: 252 HP / 8 Def / 220 SpA / 28 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
 - Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 120 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Shadow Ball
+- Ice Punch
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
-- Earthquake
+EVs: 252 HP / 68 Atk / 96 Def / 92 SpA
+Relaxed Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
 - Psychic
+- Rapid Spin
 - Explosion
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 168 Atk / 200 SpD / 140 Spe
+Blissey @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk / 30 Spe
+- Sing
+- Ice Beam
+- Seismic Toss
+- Soft-Boiled
+
+Snorlax @ Leftovers
+Ability: Immunity
+Shiny: Yes
+EVs: 96 HP / 56 Atk / 136 Def / 80 SpA / 140 SpD
+Brave Nature
+- Body Slam
+- Counter
+- Self-Destruct
+- Flamethrower
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+Shiny: Yes
+EVs: 252 Atk / 24 SpD / 232 Spe
 Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
 - Rock Slide
 
-Jirachi @ Salac Berry
-Ability: Serene Grace
-EVs: 112 HP / 252 SpA / 144 Spe
-Modest Nature
-IVs: 0 Atk
-- Thunderbolt
+Gengar @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 248 HP / 44 Def / 40 SpD / 176 Spe
+Timid Nature
+- Will-O-Wisp
+- Explosion
+- Giga Drain
 - Ice Punch
-- Calm Mind
-- Endure

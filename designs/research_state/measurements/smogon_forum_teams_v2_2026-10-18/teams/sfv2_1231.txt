@@ -1,57 +1,63 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 120 Atk / 248 SpA / 140 Spe
-Rash Nature
-- Dragon Claw
-- Flamethrower
-- Brick Break
-- Roar
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 176 SpA / 76 SpD / 16 Spe
-Modest Nature
+Jynx @ Leftovers
+Ability: Oblivious
+Shiny: Yes
+EVs: 120 HP / 200 SpA / 188 Spe
+Timid Nature
 IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
+- Lovely Kiss
+- Mean Look
 - Ice Beam
+- Perish Song
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+Shiny: Yes
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Counter
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 24 Atk / 176 Def / 24 SpA / 44 Spe
-Relaxed Nature
-- Protect
 - Earthquake
-- Surf
-- Ice Beam
+- Aerial Ace
+- Hidden Power [Bug]
+- Substitute
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
+Snorlax (M) @ Lum Berry
+Ability: Immunity
+Shiny: Yes
+Happiness: 0
+EVs: 80 HP / 176 Atk / 52 Def / 200 SpD
+Adamant Nature
+- Curse
+- Frustration
+- Shadow Ball
+- Self-Destruct
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
+Metagross @ Choice Band
+Ability: Clear Body
+Shiny: Yes
+EVs: 248 HP / 212 Atk / 48 Def
+Adamant Nature
+- Explosion
+- Meteor Mash
+- Earthquake
+- Double-Edge
+
+Zapdos @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 112 HP / 236 SpA / 160 Spe
 Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
-- Ice Beam
-- Thunderbolt
+IVs: 2 Atk / 30 SpA
+- Rain Dance
+- Thunder
+- Hidden Power [Grass]
+- Thunder Wave
+
+Heracross (M) @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Substitute
+- Swords Dance
+- Megahorn
+- Rock Slide

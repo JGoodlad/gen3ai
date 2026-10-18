@@ -1,60 +1,57 @@
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 56 SpA / 200 Spe
-Serious Nature
-IVs: 0 Atk
-- Thunderbolt
-- Ice Punch
-- Giga Drain
-- Taunt
-
-Skarmory @ Leftovers
-Ability: Sturdy
-Happiness: 0
-EVs: 252 HP / 6 Def / 252 Spe
-Jolly Nature
-IVs: 0 Atk
-- Spikes
-- Roar
-- Toxic
-- Taunt
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
+Medicham @ Leftovers
+Ability: Pure Power
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Double-Edge
+- Brick Break
+- Rock Slide
+- Shadow Ball
+- Focus Punch
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Protect
+- Toxic
+- Thunderbolt
+- Hidden Power [Fire]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Earthquake
+- Hidden Power [Grass]
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 196 Atk / 200 SpD / 112 Spe
+Adamant Nature
+- Dragon Dance
 - Earthquake
 - Rock Slide
-- Hidden Power [Flying]
-
-Tauros @ Choice Band
-Ability: Intimidate
-EVs: 6 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 SpD
-- Return
-- Earthquake
-- Iron Tail
-- Hidden Power [Ghost]
-
-Alakazam @ Lum Berry
-Ability: Synchronize
-EVs: 6 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 0 Atk
-- Psychic
-- Fire Punch
-- Encore
-- Calm Mind
-
-Blissey @ Leftovers
-Ability: Natural Cure
-EVs: 196 HP / 252 Def / 60 SpD
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Aromatherapy
-- Seismic Toss
-- Thunder Wave
+- Brick Break

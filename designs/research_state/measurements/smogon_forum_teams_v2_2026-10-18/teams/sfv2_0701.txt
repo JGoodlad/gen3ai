@@ -1,57 +1,57 @@
-Kingdra @ Leftovers
-Ability: Swift Swim
-EVs: 104 HP / 252 SpA / 152 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Hydro Pump
-- Ice Beam
-- Hidden Power [Grass]
-- Rain Dance
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 56 SpD / 200 Spe
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 8 HP / 252 Atk / 248 Spe
 Adamant Nature
+- Explosion
+- Meteor Mash
+- Earthquake
+- Double-Edge
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
-- Aerial Ace
 - Hidden Power [Bug]
+- Substitute
 
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 116 HP / 252 SpA / 140 Spe
+EVs: 240 HP / 216 SpA / 52 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Baton Pass
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 96 Atk / 160 SpA / 252 Spe
-Hasty Nature
-- Thunderbolt
-- Ice Punch
-- Hypnosis
-- Explosion
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 72 HP / 192 Atk / 60 Def / 4 SpA / 180 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Hidden Power [Grass]
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Mirror Coat
+- Rest
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 200 Def / 56 SpD
-Relaxed Nature
-- Body Slam
-- Fire Punch
-- Wish
-- Protect
+EVs: 252 HP / 92 Def / 72 SpD / 92 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Ice Punch
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 16 Atk / 240 SpA
+Quiet Nature
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 144 Atk / 212 SpD / 152 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Dragon Dance
+- Hidden Power [Ghost]
+- Brick Break
+- Rock Slide

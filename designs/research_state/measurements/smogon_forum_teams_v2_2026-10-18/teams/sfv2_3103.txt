@@ -1,57 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Hidden Power [Grass]
-- Wish
-- Fire Blast
-
-Skarmory @ Soft Sand
-Ability: Keen Eye
-EVs: 4 HP / 252 Atk / 204 SpD / 48 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD
-- Spikes
-- Drill Peck
-- Hidden Power [Ground]
-- Taunt
-
-Metagross @ Leftovers
+Regirock @ Choice Band
 Ability: Clear Body
-EVs: 168 HP / 252 Atk / 44 Def / 44 Spe
+EVs: 200 HP / 252 Atk / 56 Spe
 Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Meteor Mash
-- Earthquake
-- Hidden Power [Rock]
-- Agility
-
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 200 SpA / 56 Spe
-Modest Nature
-- Ice Beam
-- Thunderbolt
+IVs: 30 Atk / 30 SpD
+- Rock Slide
+- Hidden Power [Ghost]
+- Superpower
 - Explosion
-- Toxic
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 252 HP / 96 Def / 160 SpA
-Relaxed Nature
-- Hydro Pump
-- Ice Beam
-- Earthquake
-- Curse
-
-Alakazam @ Leftovers
-Ability: Synchronize
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
 IVs: 0 Atk
-- Psychic
-- Fire Punch
-- Ice Punch
-- Encore
+- Protect
+- Refresh
+- Toxic
+- Surf
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

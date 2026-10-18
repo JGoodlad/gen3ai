@@ -1,0 +1,57 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Hidden Power: Bug
+EVs: 252 HP / 216 SpA / 40 Spe
+Quiet Nature
+- Pursuit
+- Crunch
+- Fire Blast
+- Brick Break
+
+Metagross @ Leftovers
+Ability: Clear Body
+Hidden Power: Fire
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 216 Atk / 116 Def / 164 SpD / 12 Spe
+Adamant Nature
+- Self-Destruct
+- Body Slam
+- Earthquake
+- Focus Punch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 108 Atk / 220 SpA / 180 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 28 Def / 12 Spe
+Brave Nature
+- Rapid Spin
+- Earthquake
+- Ice Beam
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk

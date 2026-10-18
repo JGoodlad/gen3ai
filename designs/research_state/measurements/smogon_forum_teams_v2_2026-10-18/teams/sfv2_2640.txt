@@ -1,57 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 176 Atk / 12 Def / 180 SpD / 140 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
-
-Tyranitar @ Leftovers
+Tyranitar @ Choice Band
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-- Dragon Dance
-- Earthquake
+IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
-- Double-Edge
+- Focus Punch
+- Earthquake
+- Hidden Power [Bug]
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
-- Roar
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Beat Up
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Ice Beam
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 184 HP / 148 SpD / 176 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Substitute
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 172 Def / 24 SpA / 60 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
 - Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
+- Hidden Power [Grass]
+- Wish
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 4 Def / 4 SpA / 96 SpD / 152 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Psychic
 - Hidden Power [Fire]
+- Recover
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpD
+Bold Nature
+- Recover
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
 - Psychic
 - Explosion

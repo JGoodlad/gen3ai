@@ -1,55 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 184 Atk / 16 Def / 56 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Focus Punch
-- Substitute
-- Hidden Power [Bug]
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 56 Atk / 232 SpA / 196 Spe
-Mild Nature
-- Dragon Claw
-- Fire Blast
-- Wish
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 240 SpD / 16 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Toxic
-- Roar
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 192 HP / 8 Def / 156 SpA / 152 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Leech Seed
-- Psychic
-- Recover
-- Hidden Power [Grass]
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Agility
-- Explosion
+IVs: 3 Atk / 30 Spe
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+- Rain Dance
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 216 Atk / 36 SpA / 8 Spe
-Adamant Nature
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
 - Earthquake
 - Psychic
-- Rapid Spin
 - Explosion
+
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 8 HP / 192 SpA / 56 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Sleep Powder
+- Giga Drain
+- Hidden Power [Fire]
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 Atk / 68 SpD / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpA / 252 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break

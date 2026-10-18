@@ -1,56 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 228 HP / 216 Def / 64 Spe
+Bold Nature
 IVs: 0 Atk
-- Toxic
-- Crunch
-- Pursuit
-- Flamethrower
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 156 Def / 100 SpA
+Bold Nature
+IVs: 0 Atk / 30 SpA
+- Hidden Power [Grass]
+- Baton Pass
+- Leech Seed
+- Recover
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 160 HP / 252 SpA / 52 SpD / 44 Spe
+Modest Nature
+IVs: 0 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Rest
+- Sleep Talk
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 184 HP / 172 Def / 136 SpD / 16 Spe
+Careful Nature
+- Curse
+- Body Slam
+- Earthquake
+- Rest
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
+EVs: 252 HP / 176 Def / 80 SpD
+Relaxed Nature
 - Earthquake
+- Ice Beam
 - Psychic
-- Explosion
+- Rapid Spin
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 36 SpA / 220 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Grass]
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 180 Atk / 108 Def / 8 SpD / 8 Spe
-Adamant Nature
-- Curse
-- Return
-- Earthquake
-- Self-Destruct
-
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
 IVs: 0 Atk
-- Substitute
-- Surf
-- Roar
-- Endeavor
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 196 Atk / 200 SpD / 112 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Brick Break
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+- Soft-Boiled

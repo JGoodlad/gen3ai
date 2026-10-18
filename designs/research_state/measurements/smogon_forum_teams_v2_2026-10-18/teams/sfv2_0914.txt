@@ -1,56 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 16 HP / 216 SpA / 24 SpD / 252 Spe
-Rash Nature
-- Dragon Claw
-- Wish
-- Rock Slide
-- Fire Blast
-
-Alakazam @ Leftovers
-Ability: Synchronize
-EVs: 112 HP / 144 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Psychic
-- Encore
-- Recover
-- Light Screen
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-- Spikes
-- Rapid Spin
+Metagross @ Choice Band
+Ability: Clear Body
+Shiny: Yes
+EVs: 240 Atk / 84 SpD / 184 Spe
+Adamant Nature
+- Earthquake
 - Explosion
-- Zap Cannon
-
-Hariyama @ Leftovers
-Ability: Thick Fat
-EVs: 32 HP / 252 Def / 224 SpD
-Impish Nature
-- Whirlwind
-- Knock Off
-- Brick Break
-- Protect
+- Rock Slide
+- Meteor Mash
 
 Tyranitar @ Choice Band
 Ability: Sand Stream
-EVs: 8 HP / 248 Atk / 40 SpD / 212 Spe
+EVs: 248 HP / 252 Atk / 8 Def
 Adamant Nature
-IVs: 30 SpD / 30 Spe
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
 - Rock Slide
-- Hidden Power [Bug]
-- Earthquake
 - Focus Punch
+- Hidden Power [Bug]
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 88 HP / 240 Atk / 8 SpD / 172 Spe
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Taunt
-- Dragon Dance
-- Hidden Power [Flying]
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Earthquake
+- Hidden Power [Flying]
+- Rock Slide
+- Double-Edge
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 24 Def / 188 SpA / 44 SpD / 4 Spe
+Quiet Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Protect
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 160 HP / 204 Atk / 144 Spe
+Adamant Nature
+- Earthquake
+- Explosion
+- Rock Slide
+- Rapid Spin
+
+Gengar @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 72 HP / 252 SpA / 184 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Giga Drain
+- Explosion

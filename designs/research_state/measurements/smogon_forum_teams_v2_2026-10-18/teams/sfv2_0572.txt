@@ -1,61 +1,57 @@
-Skarmory (M) @ Leftovers
-Ability: Keen Eye
-Shiny: Yes
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-- Spikes
-- Drill Peck
-- Roar
-- Protect
-
-Flygon (M) @ Leftovers
-Ability: Levitate
-Shiny: Yes
-EVs: 248 HP / 220 Def / 40 Spe
-Impish Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Earthquake
-- Hidden Power [Rock]
-- Toxic
-- Protect
-
-Blissey @ Leftovers
+Starmie @ Leftovers
 Ability: Natural Cure
-Shiny: Yes
-EVs: 252 Def / 252 SpA / 4 SpD
-Modest Nature
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Seismic Toss
+- Hydro Pump
 - Ice Beam
-- Aromatherapy
-- Soft-Boiled
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 224 HP / 252 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
 - Thunderbolt
-- Roar
-- Rest
-- Sleep Talk
+- Rapid Spin
 
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 100 HP / 136 SpA / 56 SpD / 216 Spe
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 180 HP / 252 Atk / 76 Spe
+Adamant Nature
+- Spore
+- Focus Punch
+- Brick Break
+- Stun Spore
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 144 Atk / 116 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 224 HP / 252 SpA / 32 Spe
 Modest Nature
-IVs: 0 Atk
-- Flamethrower
-- Protect
-- Toxic
-- Rest
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
 
-Misdreavus (F) @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 4 Def / 252 SpD
-Calm Nature
-IVs: 0 Atk
-- Toxic
-- Thunderbolt
-- Perish Song
-- Rest
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Hydro Pump
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 120 HP / 252 Atk / 136 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide

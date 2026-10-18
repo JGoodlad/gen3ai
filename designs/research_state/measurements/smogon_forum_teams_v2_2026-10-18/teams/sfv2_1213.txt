@@ -1,57 +1,61 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 216 HP / 136 SpA / 156 Spe
-Modest Nature
-IVs: 30 Spe
-- Toxic
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Double-Edge
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Earthquake
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
+EVs: 248 HP / 180 SpD / 80 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
-- Toxic
-- Flamethrower
+- Thunderbolt
+- Substitute
 - Hidden Power [Grass]
+- Baton Pass
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 140 Def / 180 SpA / 188 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Psychic
+- Hidden Power [Fire]
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Ice Beam
+- Brick Break
 
 Dugtrio @ Choice Band
 Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
+Shiny: Yes
+EVs: 8 HP / 232 Atk / 152 SpD / 116 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 SpD / 30 Spe
+- Aerial Ace
 - Earthquake
 - Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide
+- Beat Up
+
+Metagross @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 168 HP / 236 Atk / 16 Def / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 52 HP / 168 Def / 100 SpA / 188 Spe
+Naive Nature
+- Hypnosis
+- Thunderbolt
+- Ice Punch
+- Explosion

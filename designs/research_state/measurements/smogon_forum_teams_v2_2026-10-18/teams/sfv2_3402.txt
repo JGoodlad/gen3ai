@@ -1,56 +1,56 @@
-Medicham @ Choice Band
-Ability: Pure Power
-EVs: 4 HP / 252 Atk / 252 Spe
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 200 HP / 252 Atk / 56 Spe
 Adamant Nature
-- Brick Break
-- Shadow Ball
+IVs: 30 Atk / 30 SpD
 - Rock Slide
-- Focus Punch
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 180 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Bug]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
-Bold Nature
-- Surf
-- Toxic
-- Protect
-- Refresh
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
-Timid Nature
-- Spikes
-- Surf
-- Rapid Spin
+- Hidden Power [Ghost]
+- Superpower
 - Explosion
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 76 SpD / 180 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
 - Psychic
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Toxic
+- Seismic Toss
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Sleep Talk
+- Calm Mind
+- Surf
+
+Heracross
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Thief
+- Megahorn
+- Rock Slide
+- Brick Break
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

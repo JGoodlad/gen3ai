@@ -1,57 +1,56 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 208 HP / 216 Atk / 60 Def / 24 Spe
+Heracross (F) @ Leftovers
+Ability: Guts
+EVs: 248 HP / 144 Atk / 88 SpD / 28 Spe
 Adamant Nature
-- Meteor Mash
-- Earthquake
-- Protect
-- Explosion
-
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 240 Def / 96 SpA / 172 Spe
-Modest Nature
-IVs: 0 Atk
-- Surf
-- Wish
-- Roar
-- Ice Beam
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
-- Will-O-Wisp
-- Roar
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 240 HP / 16 Def / 40 SpA / 176 SpD / 36 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Heal Bell
-- Psychic
-- Recover
-- Hidden Power [Grass]
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 252 Atk / 16 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
+- Megahorn
 - Rock Slide
-- Earthquake
-- Hidden Power [Bug]
 - Focus Punch
+- Toxic
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 220 HP / 252 SpA / 36 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Toxic
+
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 12 Atk / 160 SpA / 52 SpD / 36 Spe
+Quiet Nature
+- Rock Slide
+- Crunch
+- Pursuit
+- Focus Punch
+
+Swampert (F) @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 20 Atk / 160 SpA / 44 SpD / 44 Spe
+Brave Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch
+
+Flygon (F) @ Leftovers
+Ability: Levitate
+EVs: 16 HP / 240 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Substitute
+
+Gyarados (F) @ Leftovers
+Ability: Intimidate
+EVs: 60 HP / 196 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Dragon Dance
+- Substitute

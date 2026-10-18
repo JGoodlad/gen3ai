@@ -1,56 +1,57 @@
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-- Mean Look
-- Ice Punch
-- Thunderbolt
-- Explosion
-
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
+EVs: 244 Atk / 12 SpA / 252 Spe
+Naive Nature
+IVs: 30 Def / 30 SpA
 - Dragon Dance
-- Earthquake
 - Rock Slide
-- Double-Edge
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 140 SpA / 152 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Protect
-- Toxic
-- Thunderbolt
-- Hidden Power [Grass]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 72 SpA / 44 SpD / 16 Spe
-Relaxed Nature
-- Curse
 - Earthquake
-- Hydro Pump
-- Ice Beam
+- Hidden Power [Grass]
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 80 Def / 136 SpA / 40 Spe
+EVs: 252 HP / 40 Def / 152 SpA / 64 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
+IVs: 0 Atk
 - Calm Mind
+- Psychic
 - Fire Punch
-- Hidden Power [Grass]
+- Substitute
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 76 HP / 252 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
 - Psychic
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 188 HP / 216 SpA / 104 Spe
+Rash Nature
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
+- Ice Beam
+- Hydro Pump
+- Focus Punch
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]

@@ -1,57 +1,57 @@
-Salamence @ Choice Band
-Ability: Intimidate
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Substitute
+- Baton Pass
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 24 Atk / 240 SpA / 244 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Hidden Power [Grass]
+- Fire Blast
+- Focus Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 152 HP / 252 Atk / 104 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Agility
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 92 Atk / 128 Def / 40 Spe
+Relaxed Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Roar
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Rock Slide
-- Earthquake
-- Brick Break
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 224 HP / 252 Atk / 32 Spe
-Adamant Nature
-- Doom Desire
-- Body Slam
-- Wish
-- Protect
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 252 Def / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
-- Sleep Talk
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 168 Def / 40 SpA / 32 SpD / 16 Spe
-Bold Nature
-- Surf
-- Thunder Wave
-- Rapid Spin
-- Recover
-
-Blissey @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 244 SpA / 12 SpD
-Modest Nature
-IVs: 0 Atk
-- Ice Beam
-- Thunderbolt
-- Calm Mind
-- Soft-Boiled
-
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 196 Atk / 140 Def / 172 Spe
-Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
-- Focus Punch
 - Earthquake
 - Hidden Power [Bug]
+- Dragon Dance
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 104 Atk / 152 SpA
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Ice Beam
+- Thunderbolt
+- Hidden Power [Fire]
+- Explosion

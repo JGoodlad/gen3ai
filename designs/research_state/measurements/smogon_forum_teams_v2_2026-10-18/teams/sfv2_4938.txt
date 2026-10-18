@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 224 SpD / 32 Spe
+Calm Nature
+- Thunderbolt
+- Rest
+- Toxic
+- Roar
+
+Salamence @ Leftovers
+Ability: Intimidate
+Hidden Power: Grass
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+- Dragon Claw
+- Brick Break
+- Rock Slide
+- Flamethrower
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 180 SpD
+Sassy Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Fire Punch
+- Toxic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Hydro Pump
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Crunch
+- Flamethrower
+- Roar

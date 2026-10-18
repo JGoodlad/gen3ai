@@ -1,57 +1,55 @@
-Heracross @ Leftovers
-Ability: Guts
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Megahorn
-- Rock Slide
-- Swords Dance
-- Focus Punch
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 4 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Ice Punch
-- Fire Punch
-- Hidden Power [Grass]
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 184 SpA / 72 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Hydro Pump
-- Ice Beam
-- Calm Mind
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 44 HP / 136 Atk / 212 SpD / 116 Spe
+Hariyama @ Leftovers
+Ability: Thick Fat
+Shiny: Yes
+EVs: 160 Atk / 252 Def / 96 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Flying]
 - Brick Break
-- Refresh
-- Dragon Dance
+- Counter
+- Focus Punch
+- Knock Off
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Earthquake
-- Rock Slide
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
 - Rapid Spin
+- Earthquake
+- Psychic
 - Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Brick Break
+- Hidden Power [Grass]
+- Fire Blast
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 220 SpA / 40 Spe
+Quiet Nature
+- Crunch
+- Pursuit
+- Rock Slide
+- Fire Blast
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt

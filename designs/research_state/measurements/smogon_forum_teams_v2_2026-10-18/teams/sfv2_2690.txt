@@ -1,56 +1,58 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 Atk / 16 Spe
-Naughty Nature
-- Curse
-- Earthquake
-- Rock Slide
-- Ice Beam
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Brick Break
+- Hidden Power [Grass]
+- Fire Blast
+- Dragon Claw
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 44 HP / 212 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Thunder Wave
+- Baton Pass
+- Hidden Power [Ice]
+
+Poliwrath @ Leftovers
+Ability: Water Absorb
+EVs: 240 HP / 16 Atk / 252 SpA
+Quiet Nature
+- Focus Punch
+- Surf
+- Hypnosis
+- Dynamic Punch
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 244 SpD / 12 Spe
+Careful Nature
+IVs: 0 Atk / 30 SpA / 30 SpD
+- Spikes
+- Roar
+- Protect
+- Toxic
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 152 Atk / 172 Spe
+EVs: 124 HP / 252 Atk / 132 Spe
 Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Dragon Dance
+IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
+- Earthquake
 - Hidden Power [Bug]
 - Focus Punch
 
-Claydol @ Leftovers
+Gengar @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Double-Edge
-- Shadow Ball
-- Self-Destruct
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Calm Mind
+EVs: 4 HP / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Ice Punch
 - Fire Punch
-- Psychic
+- Hidden Power [Grass]
+- Explosion

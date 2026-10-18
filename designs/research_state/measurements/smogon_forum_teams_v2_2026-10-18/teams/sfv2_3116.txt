@@ -1,57 +1,57 @@
-Tyranitar (M) @ Leftovers
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 44 Atk / 240 SpA / 40 Spe
-Quiet Nature
-- Pursuit
-- Crunch
-- Fire Blast
-- Brick Break
+EVs: 252 HP / 84 Atk / 172 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Substitute
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
 
-Gengar (M) @ Leftovers
-Ability: Levitate
-EVs: 180 HP / 252 SpD / 76 Spe
-Calm Nature
-IVs: 0 Atk
-- Thunderbolt
-- Giga Drain
-- Will-O-Wisp
-- Taunt
-
-Skarmory (M) @ Leftovers
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
-- Protect
 - Toxic
+- Drill Peck
 - Roar
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
+Calm Nature
 IVs: 0 Atk
-- Calm Mind
-- Soft-Boiled
-- Ice Beam
-- Thunderbolt
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 216 Def / 8 SpA / 36 Spe
-Lax Nature
-- Toxic
-- Earthquake
+- Wish
 - Protect
-- Flamethrower
-
-Charizard (M) @ Leftovers
-Ability: Blaze
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Flamethrower
-- Hidden Power [Ice]
 - Toxic
-- Beat Up
+- Fire Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
+Relaxed Nature
+- Protect
+- Earthquake
+- Surf
+- Roar
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 224 Atk / 12 Def / 212 SpD / 60 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

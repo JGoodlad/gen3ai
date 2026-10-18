@@ -1,56 +1,58 @@
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Thunder Wave
-- Surf
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 104 Def / 20 SpA / 96 SpD / 36 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Recover
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 Def
-- Rest
+IVs: 2 Atk / 30 SpA
+- Endure
 - Thunderbolt
-- Hidden Power [Ice]
-- Roar
+- Hidden Power [Grass]
+- Rain Dance
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 176 Atk / 28 Def / 32 SpD / 20 Spe
-Adamant Nature
-- Protect
+EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
 - Meteor Mash
 - Earthquake
+- Hidden Power [Grass]
 - Explosion
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 HP / 252 SpA / 252 Spe
-Naive Nature
-- Wish
-- Dragon Claw
-- Flamethrower
-- Brick Break
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 112 SpA / 180 Spe
+Modest Nature
+IVs: 3 Atk / 30 Spe
+- Light Screen
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]

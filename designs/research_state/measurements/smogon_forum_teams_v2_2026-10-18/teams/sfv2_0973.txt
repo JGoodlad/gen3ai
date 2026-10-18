@@ -1,41 +1,31 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Protect
-- Roar
+Regirock @ Choice Band
+Ability: Clear Body
+Hidden Power: Rock
+EVs: 208 HP / 252 Atk / 48 Spe
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Superpower
+- Explosion
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 SpA
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 228 Def / 28 SpD
 Bold Nature
 IVs: 0 Atk
-- Surf
 - Toxic
-- Refresh
-- Recover
+- Protect
+- Wish
+- Surf
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 4 Def / 252 SpD
-Calm Nature
-IVs: 0 Atk
-- Thunderbolt
-- Roar
-- Rest
-- Sleep Talk
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 192 HP / 176 Atk / 140 Spe
+Adamant Nature
+- Meteor Mash
 - Earthquake
-- Hidden Power [Bug]
 - Rock Slide
-- Aerial Ace
+- Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
@@ -47,11 +37,22 @@ IVs: 0 Atk
 - Thunderbolt
 - Soft-Boiled
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 204 Atk / 8 SpA / 36 SpD / 12 Spe
-Careful Nature
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Brick Break
+- Hidden Power [Grass]
+- Fire Blast
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
 - Earthquake
-- Psychic
-- Rapid Spin
-- Explosion
+- Hidden Power [Flying]

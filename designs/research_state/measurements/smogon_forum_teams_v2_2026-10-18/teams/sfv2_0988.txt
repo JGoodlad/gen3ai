@@ -1,56 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 176 Def / 84 SpD
-Relaxed Nature
-- Curse
-- Protect
+Medicham @ Choice Band
+Ability: Pure Power
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Brick Break
+- Shadow Ball
+- Focus Punch
+- Fake Out
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
 - Earthquake
-- Ice Beam
+- Rock Slide
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk
+
+Metagross @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 168 HP / 52 Atk / 16 Def / 252 SpA / 20 Spe
+Brave Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Explosion
+- Hidden Power [Fire]
+- Meteor Mash
+- Pursuit
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 52 HP / 176 Atk / 144 Def / 136 SpD
+Adamant Nature
+- Curse
+- Body Slam
+- Earthquake
+- Self-Destruct
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 240 HP / 216 Atk / 8 SpA / 36 SpD / 8 Spe
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
 Adamant Nature
-- Earthquake
-- Explosion
-- Psychic
 - Rapid Spin
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 112 Def / 148 SpD
-Calm Nature
-IVs: 30 Atk / 30 SpA
-- Body Slam
-- Fire Punch
-- Wish
-- Hidden Power [Grass]
-
-Dragonite @ Leftovers
-Ability: Inner Focus
-EVs: 248 HP / 176 Def / 16 SpD / 68 Spe
-Impish Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Flying]
-- Thunder Wave
-- Heal Bell
-- Roar
-
-Armaldo @ Leftovers
-Ability: Battle Armor
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-- Knock Off
-- Rock Slide
-- Rest
 - Earthquake
-
-Umbreon @ Leftovers
-Ability: Synchronize
-EVs: 248 HP / 84 Def / 176 SpD
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Mean Look
-- Toxic
-- Pursuit
+- Psychic
+- Explosion

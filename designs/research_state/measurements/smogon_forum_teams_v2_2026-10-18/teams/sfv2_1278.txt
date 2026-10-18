@@ -1,57 +1,56 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 216 HP / 136 SpA / 156 Spe
-Modest Nature
-IVs: 1 Atk / 30 Spe
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Toxic
-- Thunder Wave
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 40 Def / 28 SpD / 12 Spe
-Adamant Nature
-- Toxic
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 104 SpA / 152 Spe
-Modest Nature
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
 IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
+- Rest
+- Sleep Talk
+- Thunderbolt
+- Roar
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Drill Peck
+- Roar
+- Spikes
+- Protect
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 196 Def / 44 SpD / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Fire Punch
+- Toxic
+- Wish
+- Protect
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 192 HP / 64 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
 - Ice Beam
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 136 Atk / 156 Def / 172 SpD / 12 Spe
+Heracross @ Leftovers
+Ability: Guts
+EVs: 16 HP / 16 Atk / 248 SpD / 228 Spe
 Adamant Nature
-- Body Slam
-- Earthquake
-- Shadow Ball
-- Self-Destruct
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Brick Break
+IVs: 30 Atk / 30 SpD
+- Megahorn
 - Rock Slide
-- Hidden Power [Flying]
+- Hidden Power [Ghost]
+- Focus Punch
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 224 Def / 32 Spe
+Impish Nature
+- Flamethrower
+- Toxic
+- Earthquake
+- Protect

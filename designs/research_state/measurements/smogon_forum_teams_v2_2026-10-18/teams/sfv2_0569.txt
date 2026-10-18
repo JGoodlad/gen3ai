@@ -1,59 +1,58 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 208 SpA / 120 SpD / 180 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Thunder Wave
-- Hidden Power [Grass]
-- Baton Pass
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 244 Atk / 156 SpD / 108 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Beat Up
-- Hidden Power [Bug]
-- Aerial Ace
-
-Kingdra @ Leftovers
-Ability: Swift Swim
-Shiny: Yes
-EVs: 184 HP / 252 SpA / 72 Spe
-Modest Nature
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
 IVs: 0 Atk
-- Substitute
 - Surf
-- Ice Beam
-- Rain Dance
+- Recover
+- Toxic
+- Refresh
 
-Metagross @ Choice Band
-Ability: Clear Body
-Shiny: Yes
-EVs: 248 HP / 176 Atk / 68 Def / 16 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
+- Spikes
+- Counter
+- Rapid Spin
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 216 Atk / 16 Def / 28 SpD
+EVs: 248 HP / 136 Def / 16 SpA / 108 SpD
 Relaxed Nature
-- Earthquake
 - Psychic
 - Rapid Spin
+- Rest
 - Explosion
 
-Gengar @ Leftovers
-Ability: Levitate
-Shiny: Yes
-EVs: 248 HP / 60 SpD / 200 Spe
-Timid Nature
-- Ice Punch
-- Explosion
-- Thunderbolt
-- Will-O-Wisp
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Knock Off
+- Hidden Power [Bug]
+- Rock Blast
+- Rest
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Soft-Boiled
+- Thunder Wave
+- Aromatherapy
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 32 HP / 252 Atk / 224 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Screech

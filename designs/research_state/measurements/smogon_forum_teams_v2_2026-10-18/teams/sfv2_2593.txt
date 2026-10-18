@@ -1,56 +1,58 @@
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 220 Def / 36 Spe
-Impish Nature
-- Protect
-- Toxic
-- Earthquake
-- Rock Slide
-
-Tyranitar @ Black Glasses
-Ability: Sand Stream
-EVs: 184 HP / 108 Atk / 216 Spe
-Brave Nature
-- Crunch
-- Rock Slide
-- Fire Blast
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 240 HP / 252 SpD / 16 Spe
-Careful Nature
-- Spikes
-- Taunt
-- Drill Peck
-- Roar
-
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 140 HP / 60 Atk / 252 SpA / 56 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Ice Beam
-- Hidden Power [Grass]
-- Explosion
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 232 SpD / 36 Spe
-Calm Nature
-IVs: 2 Atk / 30 Def
-- Rest
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunder Wave
 - Thunderbolt
-- Hidden Power [Ice]
+- Hidden Power [Grass]
+- Baton Pass
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 196 HP / 8 Def / 124 SpA / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Psychic
+- Hidden Power [Fire]
+- Leech Seed
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 SpA / 44 SpD
+Quiet Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
 - Roar
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 80 HP / 144 Atk / 176 SpD / 108 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Beat Up
+- Hidden Power [Bug]
+- Aerial Ace
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
+EVs: 208 HP / 124 SpA / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
 - Calm Mind
-- Fire Punch
-- Psychic
+- Ice Punch
+- Thunderbolt
+- Hidden Power [Grass]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 32 HP / 248 SpA / 228 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Grass]

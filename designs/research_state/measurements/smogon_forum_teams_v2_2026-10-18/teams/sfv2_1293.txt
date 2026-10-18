@@ -1,57 +1,58 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 252 HP / 252 Atk / 4 SpD
 Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Earthquake
-- Rock Slide
+IVs: 30 SpD / 30 Spe
 - Brick Break
-- Hidden Power [Flying]
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 24 SpD / 228 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 112 HP / 252 Def / 144 SpA
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Seismic Toss
+- Soft-Boiled
 - Thunder Wave
-- Thunderbolt
-- Hidden Power [Grass]
-- Rain Dance
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 184 Def / 72 Spe
+Bold Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Surf
+- Thunder Wave
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-- Agility
+EVs: 252 HP / 4 Atk / 252 SpA
+Quiet Nature
+IVs: 30 Def / 30 SpA / 30 Spe
+- Explosion
+- Hidden Power [Fire]
 - Meteor Mash
-- Earthquake
-- Rock Slide
+- Psychic
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 228 SpA / 28 Spe
-Modest Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 224 SpA / 32 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA
+- Brick Break
+- Flamethrower
 - Hidden Power [Grass]
-- Baton Pass
+- Wish
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 136 Atk / 132 Def / 168 SpD / 40 Spe
-Adamant Nature
-- Return
-- Shadow Ball
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 216 Def / 52 Spe
+Relaxed Nature
+- Earthquake
 - Focus Punch
-- Self-Destruct
+- Ice Beam
+- Protect

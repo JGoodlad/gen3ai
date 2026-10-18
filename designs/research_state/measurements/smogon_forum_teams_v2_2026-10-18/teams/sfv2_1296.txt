@@ -1,57 +1,57 @@
-Swampert (F) @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 132 SpD
-Relaxed Nature
-- Protect
-- Toxic
-- Earthquake
-- Ice Beam
-
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Endure
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Grass]
-
-Jolteon (F) @ Leftovers
-Ability: Volt Absorb
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
-Snorlax (F) @ Leftovers
-Ability: Thick Fat
-EVs: 80 HP / 16 Atk / 252 Def / 160 SpD
-Impish Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rest
-- Curse
-- Return
-- Hidden Power [Bug]
-
-Heracross (F) @ Leftovers
-Ability: Guts
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Swords Dance
-- Megahorn
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 228 Atk / 28 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
 - Rock Slide
 - Brick Break
+- Fire Blast
+- Hidden Power [Grass]
 
-Salamence (F) @ Choice Band
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Sing
+- Toxic
+- Soft-Boiled
+- Seismic Toss
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 52 Def / 192 SpA / 16 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Pursuit
+- Crunch
+- Hidden Power [Grass]
+- Fire Blast
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Roar
+- Protect
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 152 Atk / 96 SpA / 12 Spe
+Brave Nature
+- Earthquake
+- Ice Beam
+- Rapid Spin
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 236 Atk / 16 Def / 88 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Wish
+- Meteor Mash
 - Earthquake
 - Rock Slide
-- Hidden Power [Flying]
+- Agility

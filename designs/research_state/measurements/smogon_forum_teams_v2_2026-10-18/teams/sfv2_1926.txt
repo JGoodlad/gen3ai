@@ -1,58 +1,57 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Toxic
+- Roar
+
 Metagross @ Leftovers
 Ability: Clear Body
 EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
 Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
+IVs: 30 Atk / 30 SpA
 - Meteor Mash
-- Hidden Power [Fire]
-- Psychic
+- Thunder Punch
+- Hidden Power [Grass]
 - Explosion
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 4 Def / 252 Spe
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
 Timid Nature
-IVs: 0 Atk
+IVs: 2 Atk / 30 SpA
 - Substitute
-- Leech Seed
-- Psychic
+- Thunderbolt
+- Hidden Power [Grass]
 - Baton Pass
 
-Slaking @ Choice Band
-Ability: Truant
+Aerodactyl @ Choice Band
+Ability: Rock Head
 EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 SpD
-- Return
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Hidden Power [Steel]
-- Focus Punch
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 4 SpA / 252 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
 - Rock Slide
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
+- Hidden Power [Bug]
+- Double-Edge

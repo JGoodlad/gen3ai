@@ -1,55 +1,56 @@
-Machamp @ Choice Band
-Ability: Guts
-EVs: 252 HP / 252 Atk / 4 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Cross Chop
-- Sleep Talk
-- Hidden Power [Ghost]
-- Rock Slide
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 Atk / 232 SpA / 252 Spe
+Rash Nature
+- Dragon Claw
+- Brick Break
+- Roar
+- Fire Blast
 
-Snorlax @ Choice Band
-Ability: Immunity
-EVs: 252 HP / 252 Atk / 4 SpD
-Adamant Nature
-- Self-Destruct
-- Return
-- Earthquake
-- Shadow Ball
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 88 Def / 20 SpA / 44 SpD / 108 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Punch
+- Hidden Power [Grass]
+- Taunt
+- Will-O-Wisp
 
-Smeargle @ Focus Band
-Ability: Own Tempo
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Belly Drum
-- Explosion
-- Extreme Speed
-- Spore
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 216 Def / 40 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Refresh
+- Protect
+- Toxic
 
-Celebi @ Leftovers
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 244 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Toxic
+
+Blissey @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 100 Def / 156 SpD
-Impish Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Swords Dance
-- Baton Pass
-- Hidden Power [Rock]
-- Leech Seed
+EVs: 104 HP / 252 Def / 152 SpA
+Bold Nature
+- Ice Beam
+- Toxic
+- Seismic Toss
+- Soft-Boiled
 
-Aerodactyl @ Liechi Berry
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Substitute
-
-Metagross @ Lum Berry
-Ability: Clear Body
-EVs: 152 HP / 252 Atk / 104 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 212 Atk / 48 Spe
 Adamant Nature
-- Meteor Mash
+IVs: 30 Atk / 30 Def / 30 SpD
+- Focus Punch
+- Hidden Power [Bug]
+- Rock Slide
 - Earthquake
-- Agility
-- Explosion

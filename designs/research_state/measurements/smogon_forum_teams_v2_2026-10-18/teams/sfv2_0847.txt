@@ -1,56 +1,59 @@
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Thunderbolt
-- Substitute
-- Baton Pass
-- Roar
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 144 Atk / 148 SpA / 216 Spe
-Hasty Nature
-- Thunderbolt
-- Ice Punch
-- Focus Punch
-- Explosion
-
-Skarmory @ Leftovers
+Skarmory (M) @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 136 SpD / 124 Spe
+EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
+IVs: 0 Atk
 - Spikes
-- Drill Peck
-- Taunt
+- Toxic
+- Roar
+- Protect
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 224 HP / 252 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Roar
+- Toxic
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 224 HP / 252 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Toxic
+- Roar
+- Rest
+- Sleep Talk
+
+Articuno @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 SpD / 16 Spe
+Calm Nature
+IVs: 0 Atk
+- Haze
+- Heal Bell
+- Roar
+- Rest
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 248 Def / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Sleep Talk
+- Rest
 - Roar
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 Atk / 152 SpA / 172 Spe
-Lonely Nature
-IVs: 30 HP / 30 SpA
-- Rock Slide
-- Fire Blast
-- Hidden Power [Grass]
-- Focus Punch
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 20 Atk / 204 SpA / 36 Spe
-Quiet Nature
-- Earthquake
-- Focus Punch
-- Ice Beam
-- Hydro Pump
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 88 HP / 248 Atk / 172 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Rock]
-- Earthquake
-- Taunt
+Steelix @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 36 Atk / 220 SpD
+Impish Nature
+IVs: 0 Atk
+- Sleep Talk
+- Toxic
+- Roar
+- Rest

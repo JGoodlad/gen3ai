@@ -1,58 +1,58 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 212 SpA / 120 SpD / 176 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Rain Dance
-- Thunder Wave
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 244 Atk / 156 SpD / 108 Spe
-Jolly Nature
-IVs: 30 SpD / 30 Spe
-- Earthquake
-- Beat Up
-- Hidden Power [Bug]
-- Aerial Ace
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 44 Atk / 68 Def / 148 SpD
-Sassy Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Body Slam
-- Thunder
-- Hidden Power [Fighting]
-- Wish
-
-Kingdra @ Lum Berry
-Ability: Swift Swim
-EVs: 80 HP / 252 SpA / 176 Spe
+EVs: 116 HP / 216 SpA / 176 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Rain Dance
-- Hydro Pump
-- Ice Beam
+- Thunderbolt
+- Toxic
+- Rest
 - Hidden Power [Grass]
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 248 HP / 148 Atk / 112 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Focus Punch
+- Earthquake
+- Hidden Power [Bug]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 140 SpD / 116 Spe
+Careful Nature
+IVs: 0 Atk
+- Taunt
+- Spikes
+- Toxic
+- Roar
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 52 Def / 204 Spe
-Timid Nature
-- Ice Punch
+EVs: 248 HP / 72 SpD / 188 Spe
+Hasty Nature
 - Will-O-Wisp
-- Mean Look
+- Taunt
+- Thunderbolt
 - Explosion
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Thunder Wave
+- Roar
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
+Bold Nature
 IVs: 0 Atk
-- Calm Mind
 - Surf
+- Toxic
 - Protect
-- Substitute
+- Counter

@@ -1,0 +1,56 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 64 HP / 252 Atk / 192 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Brick Break
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Recover
+- Toxic
+- Refresh
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 116 Def / 140 SpD
+Sassy Nature
+- Explosion
+- Psychic
+- Rapid Spin
+- Rest
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Toxic
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Screech

@@ -1,57 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 204 Atk / 36 SpA / 16 Spe
-Brave Nature
-- Rapid Spin
-- Earthquake
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
 - Psychic
 - Explosion
 
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 44 HP / 252 SpA / 212 Spe
-Modest Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
 IVs: 0 Atk
-- Rest
-- Sleep Talk
-- Ice Beam
-- Thunder
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Rock Slide
-- Hidden Power [Grass]
-- Explosion
+- Spikes
+- Taunt
+- Toxic
+- Roar
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 44 Def / 112 SpD / 104 Spe
-Timid Nature
-- Thunder
-- Giga Drain
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Hypnosis
+- Brick Break
+- Shadow Ball
 - Explosion
-- Rain Dance
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 216 Def / 8 SpA / 36 Spe
+Lax Nature
+- Toxic
+- Earthquake
+- Rock Slide
+- Fire Blast
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
 - Substitute
-- Flamethrower
+- Thunderbolt
 - Hidden Power [Grass]
-- Focus Punch
+- Baton Pass
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

@@ -1,57 +1,56 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Def / 30 SpA / 30 Spe
-- Meteor Mash
-- Psychic
-- Hidden Power [Fire]
-- Explosion
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 188 HP / 232 SpA / 88 Spe
+Modest Nature
+- Rock Slide
+- Pursuit
+- Fire Blast
+- Roar
 
-Claydol @ Leftovers
+Weezing @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
-- Earthquake
-- Psychic
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
+- Sludge Bomb
 - Explosion
+- Will-O-Wisp
+- Pain Split
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Fire Punch
-- Hidden Power [Grass]
-- Psychic
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 192 HP / 252 SpA / 64 Spe
-Modest Nature
+EVs: 252 HP / 220 Def / 36 Spe
+Bold Nature
 IVs: 0 Atk
-- Rest
-- Sleep Talk
+- Psychic
+- Fire Punch
 - Calm Mind
+- Wish
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
 - Surf
+- Toxic
+- Recover
+- Refresh
 
-Snorlax (F) @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 232 Atk / 24 Spe
 Adamant Nature
-- Curse
-- Double-Edge
 - Earthquake
-- Shadow Ball
-
-Salamence (M) @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
 - Rock Slide
-- Fire Blast
+- Explosion
+- Rapid Spin
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 40 Def / 88 SpA / 76 SpD / 64 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
 - Hidden Power [Grass]
-- Brick Break
+- Leech Seed
+- Perish Song
+- Recover

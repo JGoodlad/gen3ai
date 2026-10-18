@@ -1,59 +1,57 @@
-Tyranitar @ Choice Band
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 240 HP / 240 SpD / 28 Spe
-Careful Nature
+EVs: 184 HP / 204 SpA / 120 Spe
+Modest Nature
 IVs: 0 Atk
-- Spikes
-- Taunt
-- Toxic
-- Roar
+- Crunch
+- Pursuit
+- Flamethrower
+- Ice Beam
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 24 HP / 136 SpA / 252 SpD / 96 Spe
+Modest Nature
+- Spikes
+- Surf
+- Rapid Spin
 - Explosion
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 4 SpD / 252 Spe
-Jolly Nature
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 120 HP / 16 SpA / 196 SpD / 176 Spe
+Modest Nature
 IVs: 0 Atk
-- Recover
-- Substitute
-- Leech Seed
-- Baton Pass
+- Will-O-Wisp
+- Taunt
+- Thunderbolt
+- Giga Drain
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
+
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 8 HP / 192 SpA / 56 SpD / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 Def
-- Thunder Wave
-- Thunderbolt
+- Sleep Powder
+- Leech Seed
+- Razor Leaf
 - Hidden Power [Ice]
-- Roar
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 144 Def / 36 SpA / 44 SpD / 36 Spe
+Relaxed Nature
+- Hydro Pump
+- Ice Beam
 - Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Protect

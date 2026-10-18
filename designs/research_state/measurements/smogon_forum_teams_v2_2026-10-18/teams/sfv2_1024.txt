@@ -1,58 +1,57 @@
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
-- Thunderbolt
-- Rapid Spin
-
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Endeavor
-- Substitute
-- Roar
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 60 Atk / 236 Def / 164 SpD / 48 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Brick Break
+- Knock Off
+- Focus Punch
+- Hidden Power [Bug]
 
 Metagross @ Choice Band
 Ability: Clear Body
-EVs: 200 HP / 252 Atk / 56 Spe
+EVs: 120 HP / 252 Atk / 136 Spe
 Adamant Nature
 - Meteor Mash
-- Earthquake
-- Rock Slide
 - Explosion
+- Earthquake
+- Brick Break
 
-Tyranitar @ Salac Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 16 HP / 188 Atk / 120 Def / 184 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Earthquake
+EVs: 176 HP / 248 SpA / 84 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Pursuit
+- Crunch
+- Fire Blast
 - Hidden Power [Grass]
-- Dragon Dance
 
-Gyarados @ Leftovers
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 SpA / 216 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Thunderbolt
+- Recover
+- Rapid Spin
+
+Salamence @ Leftovers
 Ability: Intimidate
-EVs: 84 HP / 252 Atk / 172 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Hidden Power [Rock]
-- Earthquake
-- Dragon Dance
-- Taunt
+EVs: 4 Def / 252 SpA / 252 Spe
+Rash Nature
+- Dragon Claw
+- Fire Blast
+- Brick Break
+- Wish
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
+EVs: 252 Def / 244 SpA / 12 Spe
 Modest Nature
 IVs: 0 Atk
-- Seismic Toss
 - Soft-Boiled
 - Ice Beam
-- Sing
+- Seismic Toss
+- Fire Blast

@@ -1,57 +1,59 @@
-Machamp @ Leftovers
-Ability: Guts
-EVs: 112 Atk / 252 SpA / 144 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 140 HP / 220 Atk / 100 Def / 48 Spe
 Naughty Nature
-- Sunny Day
-- Fire Blast
-- Cross Chop
-- Ice Punch
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Sunny Day
-- Fire Blast
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Thunderbolt
-- Soft-Boiled
+- Hidden Power [Fighting]
+- Drill Peck
+- Thunder Wave
 
-Charizard @ Petaya Berry
-Ability: Blaze
-EVs: 12 HP / 244 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Sunny Day
-- Fire Blast
-- Hidden Power [Grass]
-
-Exeggutor @ Lum Berry
-Ability: Chlorophyll
-EVs: 52 HP / 244 SpA / 212 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Sleep Powder
-- Sunny Day
-- Solar Beam
-- Hidden Power [Fire]
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 80 Def
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Protect
+Forretress @ Quick Claw
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
 - Explosion
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 144 HP / 252 Atk / 112 SpD
-Jolly Nature
-IVs: 30 SpD / 30 Spe
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
+Jirachi @ Salac Berry
+Ability: Serene Grace
+EVs: 188 HP / 120 Def / 60 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Fire Punch
+- Ice Punch
+- Hidden Power [Grass]
+- Calm Mind
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 56 HP / 252 Atk / 200 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Beat Up
-- Aerial Ace
+- Rock Slide
 - Hidden Power [Bug]
+- Substitute
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 236 SpA / 8 SpD / 12 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Substitute
+- Focus Punch
+- Hidden Power [Grass]

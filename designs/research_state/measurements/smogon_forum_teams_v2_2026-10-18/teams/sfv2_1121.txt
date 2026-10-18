@@ -1,57 +1,58 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-- Dragon Claw
-- Fire Blast
-- Wish
-- Brick Break
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-- Spikes
-- Rapid Spin
-- Earthquake
-- Zap Cannon
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 SpD
-Modest Nature
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
 IVs: 0 Atk
-- Crunch
-- Pursuit
+- Seismic Toss
+- Soft-Boiled
+- Ice Beam
+- Wish
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 248 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Protect
+- Toxic
+- Whirlwind
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
 - Flamethrower
 - Roar
+- Hidden Power [Grass]
+- Will-O-Wisp
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 192 Def / 44 SpD / 24 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 36 Atk / 204 Def / 16 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 216 Def / 40 Spe
 Bold Nature
 IVs: 0 Atk
 - Surf
-- Protect
-- Toxic
-- Refresh
+- Rapid Spin
+- Thunder Wave
+- Recover
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 160 SpA / 96 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Soft-Boiled
-- Ice Beam
-- Thunderbolt
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 120 HP / 96 SpA / 192 SpD / 100 Spe
-Modest Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Taunt
-- Giga Drain
-- Thunderbolt
+Hariyama @ Leftovers
+Ability: Thick Fat
+EVs: 192 Atk / 252 Def / 64 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Focus Punch
+- Knock Off
+- Hidden Power [Bug]
+- Brick Break

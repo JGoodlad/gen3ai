@@ -1,57 +1,55 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 124 SpA / 8 Spe
-Relaxed Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Tyranitar @ Leftovers
+Tyranitar @ Salac Berry
 Ability: Sand Stream
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
-IVs: 0 Atk
+Happiness: 0
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Brick Break
 - Crunch
 - Pursuit
 - Flamethrower
-- Roar
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Counter
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 240 SpA / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
-- Ice Beam
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 120 Def / 136 SpD
+EVs: 240 HP / 120 Def / 148 SpD
 Sassy Nature
 - Wish
 - Protect
-- Fire Punch
 - Body Slam
+- Fire Punch
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 196 HP / 252 SpD / 60 Spe
+Calm Nature
+- Explosion
+- Spikes
+- Rapid Spin
+- Surf
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 40 HP / 252 SpA / 216 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
-- Dragon Claw
+- Roar
 - Flamethrower
+- Will-O-Wisp
 - Hidden Power [Grass]
-- Beat Up
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Def / 92 SpD
+Relaxed Nature
+- Curse
+- Rest
+- Earthquake
+- Ice Beam
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 36 HP / 140 Atk / 136 Def / 4 SpA / 176 SpD / 16 Spe
+Adamant Nature
+- Focus Punch
+- Curse
+- Body Slam
+- Self-Destruct

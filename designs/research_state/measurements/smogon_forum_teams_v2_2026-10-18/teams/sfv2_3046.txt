@@ -1,59 +1,58 @@
-Kingler @ Silk Scarf
-Ability: Hyper Cutter
-EVs: 4 HP / 252 Atk / 252 Spe
-Naughty Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Double-Edge
-- Surf
-- Swords Dance
-- Hidden Power [Rock]
-
-Shelgon @ Lum Berry
-Ability: Rock Head
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 236 Atk / 12 Def / 200 SpD / 60 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
-- Double-Edge
-- Rock Slide
+- Hidden Power [Flying]
 - Brick Break
+- Fire Blast
 
-Pupitar @ Leftovers
-Ability: Shed Skin
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
 - Earthquake
-- Hidden Power [Bug]
-- Dragon Dance
+- Psychic
+- Explosion
 
-Mantine @ Leftovers
-Ability: Water Absorb
-Shiny: Yes
-EVs: 252 HP / 4 SpA / 252 SpD
-Calm Nature
-IVs: 0 Atk
-- Surf
-- Toxic
-- Icy Wind
-- Protect
-
-Magnemite @ Magnet
-Ability: Magnet Pull
-EVs: 4 Def / 252 SpA / 252 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 220 SpA / 40 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
+- Leech Seed
+- Giga Drain
 - Hidden Power [Fire]
-- Thunder Wave
-- Toxic
+- Psychic
 
-Snorlax @ Leftovers
-Ability: Immunity
-Shiny: Yes
-EVs: 108 HP / 148 Atk / 252 SpD
-Adamant Nature
-- Body Slam
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Rock Slide
+- Hidden Power [Grass]
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Taunt
+- Dragon Dance
 - Earthquake
-- Shadow Ball
-- Self-Destruct
+- Hidden Power [Rock]

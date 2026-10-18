@@ -1,57 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 156 Atk / 168 Spe
-Adamant Nature
-- Rock Slide
-- Earthquake
-- Toxic
-- Taunt
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 80 SpA / 136 Spe
-Modest Nature
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 196 HP / 252 Def / 44 SpD / 16 Spe
 IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Psychic
-- Fire Punch
+Bold Nature
+- Rest
+- Spikes
+- Whirlwind
+- Toxic
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 8 HP / 252 Atk / 20 SpD / 228 Spe
-Jolly Nature
-IVs: 30 SpD / 30 Spe
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Beat Up
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 184 SpD / 76 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+IVs: 30 Atk / 30 SpA
+Modest Nature
 - Thunder Wave
-- Baton Pass
+- Hidden Power [Grass]
+- Thunderbolt
+- Reflect
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 144 Def / 36 SpA / 44 SpD / 36 Spe
-Relaxed Nature
-- Protect
-- Hydro Pump
-- Ice Beam
+Milotic (F) @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 SpD / 4 Spe
+IVs: 0 Atk
+Calm Nature
+- Refresh
+- Recover
+- Surf
+- Toxic
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 236 HP / 20 Atk / 252 SpD
+Sassy Nature
+- Explosion
+- Light Screen
+- Psychic
 - Earthquake
 
-Salamence @ Leftovers
+Gyarados (M) @ Leftovers
 Ability: Intimidate
-EVs: 152 Atk / 216 SpD / 140 Spe
-Adamant Nature
+EVs: 48 HP / 252 Atk / 208 Spe
 IVs: 30 SpA / 30 SpD / 30 Spe
+Adamant Nature
+- Dragon Dance
+- Taunt
+- Hidden Power [Flying]
+- Earthquake
+
+Salamence (F) @ Liechi Berry
+Ability: Intimidate
+EVs: 200 HP / 252 Atk / 56 Spe
+IVs: 30 SpA / 30 SpD / 30 Spe
+Adamant Nature
 - Dragon Dance
 - Hidden Power [Flying]
-- Rock Slide
 - Earthquake
+- Toxic

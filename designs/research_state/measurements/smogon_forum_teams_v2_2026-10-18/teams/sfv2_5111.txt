@@ -1,0 +1,58 @@
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 196 HP / 252 Atk / 60 Spe
+Adamant Nature
+- Rock Slide
+- Focus Punch
+- Superpower
+- Explosion
+
+Glalie @ Leftovers
+Ability: Inner Focus
+EVs: 236 HP / 252 SpD / 20 Spe
+Sassy Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Spikes
+- Toxic
+- Explosion
+
+Lanturn @ Leftovers
+Ability: Volt Absorb
+EVs: 252 SpA / 88 SpD / 168 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Thunderbolt
+- Ice Beam
+- Thunder Wave
+
+Golduck @ Leftovers
+Ability: Cloud Nine
+EVs: 248 HP / 164 Def / 96 SpA
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Calm Mind
+- Protect
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 64 Def / 140 SpA / 56 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Recover
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Earthquake
+- Double-Edge
+- Hidden Power [Flying]

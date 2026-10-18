@@ -1,57 +1,56 @@
-Suicune @ Leftovers
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 220 Spe
+Lonely Nature
+- Will-O-Wisp
+- Thunder
+- Sludge Bomb
+- Explosion
+
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 28 HP / 252 SpA / 228 Spe
+EVs: 252 HP / 100 SpA / 156 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 SpA / 176 Spe
 Modest Nature
 IVs: 0 Atk
+- Substitute
 - Calm Mind
-- Hydro Pump
-- Ice Beam
-- Roar
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 68 HP / 252 SpA / 188 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+- Ice Punch
 - Thunderbolt
-- Hidden Power [Fire]
-- Thunder Wave
-- Toxic
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 120 HP / 252 Atk / 136 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+EVs: 224 Atk / 12 Def / 212 SpD / 60 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
 - Hidden Power [Flying]
 - Brick Break
-- Rock Slide
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 44 HP / 96 Atk / 116 Def / 252 SpD
-Careful Nature
-- Body Slam
-- Curse
-- Earthquake
-- Rest
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 168 Def / 88 SpD
-Relaxed Nature
-- Curse
-- Earthquake
-- Ice Beam
-- Rest
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 124 Def / 104 SpA / 32 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Leech Seed
-- Hidden Power [Grass]
-- Psychic
-- Calm Mind
+- Fire Blast

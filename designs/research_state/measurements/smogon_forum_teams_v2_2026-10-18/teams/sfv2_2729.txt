@@ -1,56 +1,58 @@
-Salamence @ Leftovers
+Salamence (M) @ Leftovers
 Ability: Intimidate
-EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
-Mild Nature
-- Wish
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
 - Dragon Claw
-- Flamethrower
 - Brick Break
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 220 SpA / 48 Spe
-Quiet Nature
-- Crunch
-- Pursuit
+- Hidden Power [Grass]
 - Flamethrower
-- Brick Break
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-- Soft-Boiled
-- Aromatherapy
-- Thunder Wave
-- Seismic Toss
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 56 Def / 140 SpA / 60 Spe
+EVs: 252 Def / 248 SpA / 8 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Fire Punch
-- Hidden Power [Grass]
-- Psychic
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
-Bold Nature
 IVs: 0 Atk
-- Protect
-- Toxic
-- Surf
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+IVs: 0 Atk / 30 SpA / 30 SpD
+- Spikes
 - Roar
+- Protect
+- Thief
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 224 SpA / 84 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Psychic
+- Giga Drain
+- Hidden Power [Fire]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 56 Atk / 140 Def / 60 Spe
+Impish Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 44 Def / 72 SpD / 140 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover

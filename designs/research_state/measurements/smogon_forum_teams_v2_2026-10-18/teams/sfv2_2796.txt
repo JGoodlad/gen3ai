@@ -1,56 +1,54 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Impish Nature
+IVs: 0 Atk
+- Protect
+- Toxic
 - Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
+- Whirlwind
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 44 Def / 128 SpD / 84 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
+- Giga Drain
+- Taunt
 - Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
+- Will-O-Wisp
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 56 Atk / 80 Def / 44 SpA / 44 SpD / 44 Spe
-Brave Nature
-- Curse
+Donphan (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 Def
+Impish Nature
 - Earthquake
-- Hydro Pump
+- Protect
+- Rapid Spin
+- Toxic
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 216 HP / 4 Def / 252 SpA / 16 SpD / 20 Spe
+Modest Nature
+- Crunch
+- Flamethrower
+- Roar
+- Pursuit
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
+- Seismic Toss
 - Ice Beam
+- Toxic
+- Soft-Boiled
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 8 SpD / 8 Spe
+Bold Nature
+- Surf
+- Roar
+- Rest
+- Sleep Talk

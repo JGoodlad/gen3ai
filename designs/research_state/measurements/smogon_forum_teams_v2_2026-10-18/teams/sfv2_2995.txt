@@ -1,57 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 136 SpA / 68 SpD / 64 Spe
-Calm Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Ice Beam
+Hariyama @ Leftovers
+Ability: Thick Fat
+EVs: 24 HP / 248 Def / 180 SpD / 56 Spe
+Impish Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Brick Break
+- Knock Off
+- Hidden Power [Bug]
 - Rest
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 112 HP / 252 Atk / 144 Spe
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 40 HP / 244 Def / 204 SpA / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Ice Beam
+- Thunder Wave
+- Soft-Boiled
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 244 SpD / 24 Spe
+Careful Nature
+- Protect
+- Drill Peck
+- Roar
+- Spikes
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 184 Atk / 48 Def / 28 Spe
 Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
+IVs: 30 SpD / 30 Spe
 - Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Roar
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 236 HP / 216 Atk / 56 Spe
+EVs: 248 HP / 232 Atk / 28 Spe
 Adamant Nature
 - Earthquake
+- Refresh
+- Psychic
 - Rapid Spin
-- Rock Slide
-- Explosion
 
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 196 SpA / 120 SpD / 192 Spe
-Modest Nature
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 204 Def / 8 SpD / 48 Spe
+Bold Nature
 IVs: 0 Atk
-- Pursuit
-- Fire Blast
-- Beat Up
-- Will-O-Wisp
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 24 HP / 136 Atk / 88 Def / 76 SpA / 184 SpD
-Brave Nature
-- Return
-- Fire Blast
-- Earthquake
-- Self-Destruct
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Earthquake
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
+- Surf
+- Toxic
+- Refresh
+- Recover

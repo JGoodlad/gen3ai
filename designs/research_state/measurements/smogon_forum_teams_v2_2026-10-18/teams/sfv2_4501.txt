@@ -1,0 +1,55 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 112 Atk / 40 Def / 172 Spe
+Naughty Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Ice Beam
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 80 SpA / 180 Spe
+Modest Nature
+IVs: 3 Atk / 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
+Timid Nature
+- Spikes
+- Surf
+- Rapid Spin
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 180 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 116 Def / 100 SpA / 44 SpD
+Quiet Nature
+- Earthquake
+- Ice Beam
+- Curse
+- Hydro Pump
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Double-Edge
+- Hidden Power [Bug]

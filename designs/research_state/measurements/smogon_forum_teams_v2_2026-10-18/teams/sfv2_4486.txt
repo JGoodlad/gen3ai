@@ -1,0 +1,57 @@
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 244 HP / 124 Def / 140 Spe
+Impish Nature
+- Swords Dance
+- Baton Pass
+- Leech Seed
+- Recover
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 Atk / 252 SpA
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Agility
+- Sky Attack
+- Hidden Power [Fighting]
+- Overheat
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 160 HP / 252 Atk / 96 Spe
+Impish Nature
+IVs: 30 SpA / 30 SpD
+- Agility
+- Drill Peck
+- Hidden Power [Ground]
+- Rock Slide
+
+Flygon @ Salac Berry
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Substitute
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 72 HP / 252 SpA / 184 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Toxic

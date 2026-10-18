@@ -1,58 +1,56 @@
-Metagross @ Lum Berry
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Whirlwind
-- Protect
-- Toxic
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Ice Punch
-- Hidden Power [Grass]
-- Hypnosis
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+- Dragon Claw
+- Brick Break
+- Fire Blast
+- Hydro Pump
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
+- Recover
+- Heal Bell
+- Hidden Power [Grass]
+
+Clefable @ Leftovers
+Ability: Cute Charm
+Shiny: Yes
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Encore
+- Seismic Toss
+- Thunder Wave
+- Soft-Boiled
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
+- Explosion
 - Earthquake
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 28 HP / 252 SpA / 228 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Hydro Pump
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 212 Def / 44 SpD / 4 Spe
+Relaxed Nature
+- Earthquake
 - Ice Beam
 - Roar
+- Hydro Pump
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Psychic
-- Fire Punch
-- Hidden Power [Grass]
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 248 SpA / 8 Spe
+Modest Nature
+- Pursuit
+- Crunch
+- Fire Blast
+- Focus Punch

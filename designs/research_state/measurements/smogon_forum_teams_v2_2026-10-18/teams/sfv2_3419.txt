@@ -1,58 +1,54 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Crunch
-- Thunder
-- Hidden Power [Grass]
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 252 Atk / 40 Def / 216 Spe
+Adamant Nature
+- Recover
 - Brick Break
+- Rock Slide
+- Shadow Ball
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 Spe
+Impish Nature
+- Soft-Boiled
+- Aromatherapy
+- Thunder Wave
+- Seismic Toss
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 188 HP / 252 Atk / 68 Spe
+Adamant Nature
+- Meteor Mash
+- Rock Slide
+- Brick Break
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
 IVs: 0 Atk
-- Endeavor
-- Substitute
+- Rest
+- Calm Mind
 - Surf
 - Roar
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 160 SpD / 96 Spe
-Calm Nature
-IVs: 0 Atk
-- Taunt
-- Toxic
-- Roar
-- Spikes
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 212 SpD / 44 Spe
-Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Counter
-- Explosion
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Hasty Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Taunt
-- Thunderbolt
-- Ice Punch
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 176 Atk / 216 SpD / 116 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
+EVs: 4 HP / 252 SpA / 252 Spe
+Rash Nature
+- Wish
+- Dragon Claw
+- Flamethrower
 - Brick Break
-- Hidden Power [Flying]
-- Rock Slide

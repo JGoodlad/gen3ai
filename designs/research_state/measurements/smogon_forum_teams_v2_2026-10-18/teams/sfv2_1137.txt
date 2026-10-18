@@ -1,57 +1,57 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 248 SpD / 92 Spe
-Modest Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 248 SpD / 8 Spe
+Careful Nature
 - Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
+- Roar
+- Taunt
+- Drill Peck
 
 Jolteon @ Leftovers
 Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
+EVs: 76 HP / 180 SpA / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
+IVs: 2 Atk / 30 Def
 - Thunderbolt
-- Hidden Power [Grass]
+- Hidden Power [Ice]
 - Baton Pass
+- Roar
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 228 SpA / 28 Spe
-Modest Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
-
-Charizard @ Leftovers
-Ability: Blaze
+Gengar @ Leftovers
+Ability: Levitate
 EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
 - Hidden Power [Grass]
-- Beat Up
+- Explosion
+
+Sceptile @ Leftovers
+Ability: Overgrow
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Leaf Blade
+- Hidden Power [Ice]
+- Pursuit
+- Endeavor
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Hydro Pump

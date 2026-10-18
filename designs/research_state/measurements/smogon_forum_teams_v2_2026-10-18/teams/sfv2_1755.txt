@@ -1,56 +1,58 @@
-Metagross @ Salac Berry
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 136 SpA / 156 Spe
+Modest Nature
+IVs: 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 160 HP / 252 SpA / 96 Spe
-Mild Nature
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
 IVs: 30 Atk / 30 SpA
-- Meteor Mash
+- Earthquake
 - Thunder Punch
 - Hidden Power [Grass]
 - Explosion
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Will-O-Wisp
+- Thunderbolt
+- Hidden Power [Grass]
 - Explosion
 
 Jolteon @ Leftovers
 Ability: Volt Absorb
 EVs: 8 HP / 248 SpA / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
+IVs: 0 Atk
 - Substitute
+- Toxic
 - Thunderbolt
-- Hidden Power [Grass]
 - Baton Pass
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 224 SpA / 44 Spe
-Quiet Nature
-- Earthquake
-- Hydro Pump
-- Ice Beam
-- Focus Punch
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 116 SpD / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
 - Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Brick Break
+- Hidden Power [Flying]

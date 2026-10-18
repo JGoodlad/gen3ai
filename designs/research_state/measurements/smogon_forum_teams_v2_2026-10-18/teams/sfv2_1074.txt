@@ -1,57 +1,57 @@
-Heracross @ Leftovers
-Ability: Guts
-EVs: 4 HP / 252 Atk / 252 Spe
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
 Adamant Nature
-- Swords Dance
-- Megahorn
+- Meteor Mash
+- Explosion
+- Earthquake
 - Rock Slide
-- Focus Punch
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 40 Def / 196 SpA / 32 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 240 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
 - Substitute
-- Thunderbolt
-- Hidden Power [Grass]
 - Baton Pass
+- Roar
 
-Entei @ Leftovers
-Ability: Pressure
-EVs: 80 HP / 252 SpA / 176 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Toxic
-- Calm Mind
-- Flamethrower
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA
 - Hidden Power [Grass]
+- Fire Blast
+- Brick Break
+- Dragon Claw
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 188 HP / 140 SpA / 180 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
+Snorlax @ Lum Berry
+Ability: Thick Fat
+EVs: 160 HP / 188 Atk / 120 Def / 40 SpD
+Adamant Nature
+- Counter
+- Shadow Ball
+- Curse
+- Self-Destruct
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 192 HP / 136 SpA / 180 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Ice Punch
-- Thunderbolt
-- Psychic
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-- Earthquake
-- Rock Slide
-- Double-Edge
-- Beat Up
+EVs: 136 Atk / 236 SpA / 136 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dynamic Punch
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]

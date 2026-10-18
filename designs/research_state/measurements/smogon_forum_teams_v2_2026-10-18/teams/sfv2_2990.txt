@@ -1,58 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 SpD
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 HP / 16 Atk / 220 Def / 20 SpA
+Brave Nature
+- Body Slam
+- Fire Blast
+- Self-Destruct
+- Brick Break
 
-Banette @ Leftovers
-Ability: Insomnia
-EVs: 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Shadow Ball
-- Hidden Power [Fighting]
-- Will-O-Wisp
-- Taunt
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 132 SpD / 128 Spe
-Careful Nature
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 96 Def / 24 SpA / 116 SpD / 20 Spe
+Bold Nature
 IVs: 0 Atk
-- Spikes
-- Toxic
-- Taunt
-- Roar
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Roar
+- Psychic
+- Calm Mind
+- Recover
 - Baton Pass
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Explosion
+- Rock Slide
+- Aerial Ace
+- Hidden Power [Bug]
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 52 Def / 28 SpA / 176 Spe
+Rash Nature
+- Ice Punch
 - Thunderbolt
-- Rapid Spin
+- Explosion
+- Will-O-Wisp
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Recover
+- Ice Beam
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 224 Atk / 8 SpA / 24 SpD
+Brave Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Fire Blast
+- Hidden Power [Grass]
+- Substitute

@@ -1,56 +1,56 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 68 SpA / 188 SpD
-Sassy Nature
-- Curse
-- Earthquake
-- Ice Beam
-- Rest
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Double-Edge
-- Hidden Power [Flying]
-- Rock Slide
-- Earthquake
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Earthquake
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 16 HP / 192 Atk / 120 Def / 180 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 172 HP / 148 SpA / 188 Spe
-Timid Nature
-- Thunderbolt
-- Ice Punch
-- Giga Drain
-- Hypnosis
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 Def / 36 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
 Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Roar
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Modest Nature
+IVs: 0 Atk
+- Protect
+- Toxic
+- Thunderbolt
+- Rain Dance
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
 - Psychic
-- Leech Seed
-- Heal Bell
-- Recover
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 120 Def / 172 SpD / 8 Spe
+Adamant Nature
+- Curse
+- Return
+- Shadow Ball
+- Self-Destruct
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Light Screen
+- Toxic
+- Thunderbolt
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 52 Atk / 196 Def / 8 Spe
+Impish Nature
+- Protect
+- Meteor Mash
+- Earthquake
+- Explosion

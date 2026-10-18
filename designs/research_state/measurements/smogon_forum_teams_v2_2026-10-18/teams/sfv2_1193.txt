@@ -1,56 +1,56 @@
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 24 HP / 24 Atk / 252 SpA / 64 SpD / 144 Spe
-Mild Nature
+EVs: 16 HP / 216 SpA / 24 SpD / 252 Spe
+Rash Nature
 - Dragon Claw
+- Wish
 - Rock Slide
-- Flamethrower
-- Brick Break
+- Fire Blast
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 100 Atk / 112 Def / 28 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
-- Earthquake
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 112 HP / 144 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
 - Psychic
+- Encore
+- Recover
+- Light Screen
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
 - Explosion
+- Zap Cannon
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 88 SpA / 44 SpD
-Relaxed Nature
-- Curse
-- Earthquake
-- Surf
-- Ice Beam
+Hariyama @ Leftovers
+Ability: Thick Fat
+EVs: 32 HP / 252 Def / 224 SpD
+Impish Nature
+- Whirlwind
+- Knock Off
+- Brick Break
+- Protect
 
-Machamp @ Leftovers
-Ability: Guts
-EVs: 252 HP / 176 Atk / 20 Def / 60 SpD
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 8 HP / 248 Atk / 40 SpD / 212 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Bulk Up
-- Cross Chop
+IVs: 30 SpD / 30 Spe
 - Rock Slide
 - Hidden Power [Bug]
+- Earthquake
+- Focus Punch
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 120 Def / 136 SpD
-Sassy Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Fire Punch
-- Body Slam
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 88 HP / 240 Atk / 8 SpD / 172 Spe
+Jolly Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Taunt
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake

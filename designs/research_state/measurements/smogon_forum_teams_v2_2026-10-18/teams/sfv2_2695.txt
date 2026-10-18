@@ -1,56 +1,56 @@
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 248 HP / 244 Def / 16 Spe
-Impish Nature
-- Recover
-- Bulk Up
-- Brick Break
-- Rock Slide
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
+Glalie @ Leftovers
+Ability: Inner Focus
+EVs: 40 HP / 252 SpD / 216 Spe
+Timid Nature
+- Ice Beam
 - Explosion
+- Taunt
+- Spikes
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Shadow Ball
-- Self-Destruct
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 4 HP / 252 SpA / 252 Spe
+Naive Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 156 SpA / 60 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Wish
-- Calm Mind
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 172 Atk / 144 SpA / 192 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Focus Punch
+- Explosion
 - Thunderbolt
 - Hidden Power [Grass]
 
-Suicune @ Leftovers
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Rock Slide
+- Substitute
+- Earthquake
+- Double-Edge
+
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
+EVs: 252 HP / 104 SpA / 12 SpD / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Toxic
+- Protect

@@ -1,56 +1,59 @@
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
+EVs: 252 HP / 240 Def / 16 SpD
+Relaxed Nature
+IVs: 0 Atk
 - Ice Beam
+- Surf
+- Refresh
+- Toxic
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
+EVs: 252 HP / 252 SpA / 4 SpD
 Modest Nature
-IVs: 0 Atk
-- Crunch
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Ice Beam
+- Thunder
 - Pursuit
-- Flamethrower
-- Roar
 
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
 Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rapid Spin
 - Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 220 SpD / 36 Spe
-Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Superpower
+- Hidden Power [Bug]
 - Explosion
 
-Venusaur @ Leftovers
-Ability: Overgrow
-EVs: 8 HP / 192 SpA / 56 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Sleep Powder
-- Giga Drain
-- Hidden Power [Fire]
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Soft-Boiled
+- Seismic Toss
+- Ice Beam
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Overheat
+- Roar
+- Hidden Power [Grass]
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 164 HP / 168 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Ice Punch
+- Thunderbolt
+- Will-O-Wisp
+- Taunt

@@ -1,56 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 184 HP / 144 Atk / 180 Spe
 Adamant Nature
 - Dragon Dance
 - Earthquake
 - Rock Slide
 - Double-Edge
 
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Protect
-- Toxic
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 36 Def / 216 SpA / 8 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 64 SpD / 192 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Ice Punch
 - Thunderbolt
 - Hidden Power [Grass]
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Earthquake
-- Shadow Ball
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
 - Explosion
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+IVs: 30 Atk / 30 SpA
+- Wish
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 196 HP / 156 Atk / 16 SpD / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 196 SpA / 72 Spe
+Modest Nature
 IVs: 0 Atk
-- Substitute
+- Rest
+- Calm Mind
 - Surf
-- Roar
-- Endeavor
+- Ice Beam

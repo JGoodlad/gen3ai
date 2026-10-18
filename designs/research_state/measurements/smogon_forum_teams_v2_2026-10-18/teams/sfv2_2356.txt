@@ -1,56 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
+Modest Nature
+IVs: 1 Atk / 30 Spe
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Ice]
+- Rain Dance
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Surf
+- Ice Beam
+- Thunderbolt
+
 Metagross @ Choice Band
 Ability: Clear Body
-EVs: 168 HP / 224 Atk / 16 Def / 100 Spe
+EVs: 252 Atk / 68 SpD / 188 Spe
 Adamant Nature
 - Meteor Mash
 - Earthquake
+- Rock Slide
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Heracross @ Choice Band
+Ability: Swarm
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Megahorn
+- Rock Slide
+- Hidden Power [Ghost]
 - Brick Break
-- Explosion
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 136 SpD
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 160 Def / 96 SpD
-Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Counter
-- Explosion
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 204 HP / 116 Atk / 168 Def / 8 SpD / 12 Spe
+EVs: 32 HP / 176 Atk / 128 Def / 172 SpD
 Adamant Nature
-IVs: 30 SpD
-- Rest
 - Curse
-- Body Slam
-- Hidden Power [Steel]
-
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 252 Def / 180 SpD / 60 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Haze
-- Surf
-
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+- Double-Edge
 - Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Fire Blast
+- Shadow Ball

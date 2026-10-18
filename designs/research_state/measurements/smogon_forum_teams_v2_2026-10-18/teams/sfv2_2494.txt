@@ -1,55 +1,58 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
-Mild Nature
-- Wish
-- Dragon Claw
-- Flamethrower
-- Brick Break
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
+EVs: 248 HP / 88 Atk / 172 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 232 SpD / 28 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Roar
+- Toxic
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 SpA / 176 Spe
 Modest Nature
 IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
-Hasty Nature
-- Will-O-Wisp
+- Substitute
+- Calm Mind
 - Thunderbolt
-- Giga Drain
-- Explosion
+- Ice Punch
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 220 SpD / 36 Spe
-Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Superpower
-- Explosion
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 24 Def / 252 SpA / 232 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Will-O-Wisp
+- Roar
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 252 Atk / 16 Spe
-Naughty Nature
-- Curse
+EVs: 248 HP / 84 Def / 176 SpA
+Quiet Nature
+- Hydro Pump
 - Earthquake
-- Rock Slide
-- Surf
+- Ice Beam
+- Protect
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Soft-Boiled
+- Thunderbolt
+- Toxic

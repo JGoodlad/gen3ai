@@ -1,58 +1,58 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 228 SpA / 28 Spe
-Modest Nature
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 160 SpD / 20 Spe
+Calm Nature
 IVs: 0 Atk
-- Substitute
-- Calm Mind
+- Toxic
+- Fire Punch
+- Wish
+- Protect
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 208 Def / 48 Spe
+Bold Nature
+IVs: 0 Atk
 - Surf
-- Ice Beam
+- Toxic
+- Refresh
+- Recover
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 232 Atk / 148 Def / 56 SpD / 72 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Brick Break
+- Knock Off
+- Focus Punch
+- Hidden Power [Bug]
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 208 HP / 152 Atk / 148 Spe
+Jolly Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
+EVs: 252 HP / 248 SpA / 8 SpD
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Crunch
+- Fire Blast
+- Roar
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Double-Edge
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Earthquake
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Beat Up
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 180 Atk / 212 SpD / 116 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
+- Aerial Ace
+- Hidden Power [Bug]
 - Rock Slide
-- Brick Break
-- Hidden Power [Flying]

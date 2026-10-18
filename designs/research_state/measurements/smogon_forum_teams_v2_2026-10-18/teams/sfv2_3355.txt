@@ -1,58 +1,55 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-- Thunder Wave
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 8 HP / 228 Atk / 164 SpD / 108 Spe
-Jolly Nature
-IVs: 30 SpD / 30 Spe
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Beat Up
-
 Metagross @ Choice Band
 Ability: Clear Body
-EVs: 128 HP / 252 Atk / 128 Spe
+EVs: 252 Atk / 68 SpD / 188 Spe
 Adamant Nature
 - Meteor Mash
-- Earthquake
-- Explosion
+- Rock Slide
 - Brick Break
+- Explosion
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Toxic
+- Seismic Toss
+- Explosion
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 28 HP / 252 SpA / 228 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
 - Calm Mind
-- Hydro Pump
+- Surf
 - Ice Beam
-- Hidden Power [Grass]
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 180 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 236 Atk / 12 Def / 200 SpD / 60 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 76 HP / 180 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Thunder Wave
-- Hidden Power [Ice]
-- Baton Pass
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

@@ -1,57 +1,58 @@
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 72 Atk / 44 SpA / 144 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Ghost]
-- Fire Blast
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Rest
-- Hidden Power [Ghost]
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Sleep Powder
+- Giga Drain
+- Hidden Power [Ice]
+- Leech Seed
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 120 Atk / 136 SpD
-Sassy Nature
+EVs: 252 HP / 244 Atk / 12 Spe
+Impish Nature
 - Rapid Spin
 - Earthquake
 - Psychic
 - Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Aromatherapy
-- Seismic Toss
-- Ice Beam
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Def / 30 SpA
+- Substitute
+- Hidden Power [Grass]
+- Flamethrower
+- Focus Punch
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 136 Atk / 152 Def / 8 SpD / 8 Spe
-Adamant Nature
-- Rest
-- Curse
-- Double-Edge
-- Earthquake
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 220 Def / 36 Spe
-Bold Nature
+EVs: 240 HP / 200 SpA / 68 Spe
+Modest Nature
 IVs: 0 Atk
+- Ice Beam
+- Surf
 - Rest
 - Calm Mind
-- Surf
-- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 88 Atk / 172 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]

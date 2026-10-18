@@ -1,57 +1,61 @@
-Zapdos @ Choice Band
-Ability: Pressure
-EVs: 252 Atk / 56 SpA / 200 Spe
-Lonely Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Fighting]
-- Thunder
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+Shiny: Yes
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
 - Drill Peck
-- Rain Dance
+- Roar
+- Protect
 
-Kingdra @ Petaya Berry
-Ability: Swift Swim
-EVs: 192 HP / 252 SpA / 64 Spe
+Flygon (M) @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 248 HP / 220 Def / 40 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Toxic
+- Protect
+
+Blissey @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 252 Def / 252 SpA / 4 SpD
 Modest Nature
 IVs: 0 Atk
-- Rain Dance
-- Hydro Pump
+- Seismic Toss
 - Ice Beam
-- Substitute
+- Aromatherapy
+- Soft-Boiled
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 244 Atk / 252 Def / 12 Spe
-Adamant Nature
-- Body Slam
-- Earthquake
-- Shadow Ball
-- Curse
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 4 Atk / 252 SpA
-Quiet Nature
-- Meteor Mash
-- Rain Dance
-- Psychic
-- Explosion
-
-Suicune @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Bold Nature
+EVs: 224 HP / 252 SpD / 32 Spe
+Calm Nature
 IVs: 0 Atk
-- Calm Mind
-- Hydro Pump
-- Ice Beam
-- Substitute
+- Thunderbolt
+- Roar
+- Rest
+- Sleep Talk
 
-Heracross @ Salac Berry
-Ability: Guts
-EVs: 24 HP / 252 Atk / 232 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Endure
-- Reversal
-- Swords Dance
-- Hidden Power [Ghost]
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 100 HP / 136 SpA / 56 SpD / 216 Spe
+Modest Nature
+IVs: 0 Atk
+- Flamethrower
+- Protect
+- Toxic
+- Rest
+
+Misdreavus (F) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Toxic
+- Thunderbolt
+- Perish Song
+- Rest

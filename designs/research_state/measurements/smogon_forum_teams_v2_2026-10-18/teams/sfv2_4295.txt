@@ -1,0 +1,58 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 92 SpA / 164 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Substitute
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 88 HP / 180 Atk / 120 Def / 120 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Shadow Ball
+- Self-Destruct
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 224 HP / 252 SpA / 32 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Hidden Power [Grass]
+- Thunder
+- Refresh
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Substitute
+- Focus Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 236 SpA / 20 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 184 SpA / 76 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Roar

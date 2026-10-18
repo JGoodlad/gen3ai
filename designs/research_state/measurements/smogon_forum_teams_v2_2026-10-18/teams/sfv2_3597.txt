@@ -1,59 +1,58 @@
-Vaporeon (M) @ Leftovers
-Ability: Water Absorb
-Shiny: Yes
-EVs: 252 HP / 112 SpA / 144 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Hydro Pump
-- Ice Beam
-- Baton Pass
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
+- Spore
+- Stun Spore
+- Hidden Power [Ghost]
+- Sky Uppercut
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
+IVs: 2 Atk / 30 Def
 - Substitute
 - Thunderbolt
-- Hidden Power [Grass]
+- Hidden Power [Ice]
 - Baton Pass
 
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 HP / 152 Atk / 104 Spe
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
 Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
 - Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Wish
-- Thunderbolt
+- Thunder Punch
 - Hidden Power [Grass]
-- Baton Pass
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 144 HP / 156 Atk / 112 SpD / 96 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Beat Up
-- Hidden Power [Bug]
-- Aerial Ace
+- Explosion
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
+EVs: 252 HP / 192 SpA / 64 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
+IVs: 0 Atk
 - Calm Mind
-- Hydro Pump
+- Surf
 - Ice Beam
-- Hidden Power [Grass]
+- Rain Dance
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Substitute
+- Megahorn
+- Rock Slide
+- Focus Punch

@@ -1,55 +1,58 @@
-Medicham @ Choice Band
-Ability: Pure Power
-EVs: 20 HP / 252 Atk / 236 Spe
-Adamant Nature
-- Brick Break
-- Shadow Ball
-- Rock Slide
-- Focus Punch
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 40 SpA / 216 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
-- Surf
-- Rapid Spin
-- Recover
-- Thunder Wave
+IVs: 2 Atk / 30 SpA
+- Baton Pass
+- Hidden Power [Grass]
+- Thunderbolt
+- Toxic
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 80 Atk / 252 SpA / 176 Spe
+Hasty Nature
+IVs: 30 HP / 30 SpA
+- Explosion
+- Hidden Power [Grass]
+- Ice Punch
+- Thunderbolt
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
+EVs: 240 HP / 184 Def / 40 SpA / 44 SpD
 Relaxed Nature
+- Earthquake
+- Ice Beam
 - Hydro Pump
-- Earthquake
-- Ice Beam
 - Protect
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 80 Def
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 252 Atk / 32 SpD / 216 Spe
 Adamant Nature
-- Meteor Mash
+IVs: 30 SpD / 30 Spe
+- Aerial Ace
 - Earthquake
-- Explosion
-- Protect
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 236 Def / 252 SpA / 20 Spe
-Modest Nature
-IVs: 0 Atk
-- Seismic Toss
-- Ice Beam
-- Soft-Boiled
-- Wish
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Bug]
 - Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Flying]
+
+Kingdra @ Leftovers
+Ability: Swift Swim
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def / 30 Spe
+- Hidden Power [Electric]
+- Hydro Pump
+- Ice Beam
+- Rain Dance
+
+Ludicolo @ Leftovers
+Ability: Swift Swim
+EVs: 72 HP / 252 SpA / 184 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Hydro Pump
+- Ice Beam
+- Rain Dance

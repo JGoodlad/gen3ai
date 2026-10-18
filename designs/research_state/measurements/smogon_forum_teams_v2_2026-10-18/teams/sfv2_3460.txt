@@ -1,57 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 236 Atk / 24 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Naughty Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Rock Slide
-- Earthquake
-- Focus Punch
-- Hidden Power [Bug]
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast
 
 Skarmory
 Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
-IVs: 0 Atk
-- Protect
 - Spikes
-- Roar
 - Thief
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 40 Def / 8 SpA / 32 SpD / 176 Spe
-Timid Nature
-- Thunder Wave
-- Surf
-- Rapid Spin
-- Recover
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 244 HP / 48 Atk / 216 Def
-Impish Nature
-- Meteor Mash
-- Earthquake
-- Protect
-- Explosion
+- Drill Peck
+- Roar
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 SpD
+EVs: 212 HP / 252 Def / 44 SpA
 Bold Nature
-IVs: 22 Spe
-- Sing
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
 - Seismic Toss
 - Ice Beam
-- Soft-Boiled
 
-Dugtrio (M) @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Fire Punch
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 224 Def / 32 Spe
+Impish Nature
+IVs: 30 Atk / 30 SpD
+- Protect
+- Toxic
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Screech
+- Hidden Power [Ghost]

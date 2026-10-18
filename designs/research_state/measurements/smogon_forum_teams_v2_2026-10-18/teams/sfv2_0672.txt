@@ -1,41 +1,11 @@
-Salamence @ Choice Band
-Ability: Intimidate
-Shiny: Yes
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-- Brick Break
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 4 Atk / 252 SpA
+EVs: 252 HP / 216 SpA / 40 Spe
 Quiet Nature
 - Pursuit
 - Crunch
-- Ice Beam
+- Flamethrower
 - Brick Break
-
-Venusaur @ Leftovers
-Ability: Overgrow
-Shiny: Yes
-EVs: 252 HP / 84 Def / 160 SpD / 12 Spe
-Sassy Nature
-- Sleep Powder
-- Leech Seed
-- Sludge Bomb
-- Giga Drain
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-- Fire Blast
-- Dragon Claw
-- Substitute
-- Focus Punch
 
 Forretress @ Leftovers
 Ability: Sturdy
@@ -47,11 +17,41 @@ IVs: 30 Atk / 30 Def / 30 SpD
 - Hidden Power [Bug]
 - Earthquake
 
-Quagsire @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 4 Def / 252 SpD
-Sassy Nature
-- Surf
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Protect
-- Haze
+- Rock Slide
+- Hidden Power [Bug]
+- Screech
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Recover
+- Toxic
+- Refresh
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 192 SpD / 60 Spe
+Careful Nature
+- Seismic Toss
+- Thunder Wave
+- Explosion
+- Counter
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Hasty Nature
+IVs: 22 Def / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up
+- Roar

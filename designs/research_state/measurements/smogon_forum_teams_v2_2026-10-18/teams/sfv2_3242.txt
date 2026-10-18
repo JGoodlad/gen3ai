@@ -1,58 +1,57 @@
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 136 Def / 96 SpD / 28 Spe
+Impish Nature
+- Thunder Wave
+- Counter
+- Seismic Toss
+- Explosion
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Spikes
+- Earthquake
+- Explosion
+- Rapid Spin
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 Def
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Focus Punch
-- Earthquake
-- Hidden Power [Bug]
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Hidden Power [Grass]
-- Fire Punch
-- Psychic
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 156 SpD / 100 Spe
-Careful Nature
+EVs: 248 HP / 4 Def / 216 SpA / 40 Spe
+Modest Nature
 IVs: 0 Atk
-- Spikes
-- Taunt
+- Crunch
+- Pursuit
+- Flamethrower
 - Roar
-- Toxic
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 136 Def / 80 SpA / 44 SpD
-Relaxed Nature
-- Hydro Pump
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
 - Ice Beam
-- Earthquake
-- Curse
+- Refresh
+- Recover
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 192 HP / 8 Def / 156 SpA / 152 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+EVs: 248 HP / 172 Def / 56 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
 - Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
+- Hidden Power [Grass]
+- Recover
+- Perish Song
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 244 Atk / 148 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
-- Earthquake
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 8 Def / 60 SpD / 192 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Taunt

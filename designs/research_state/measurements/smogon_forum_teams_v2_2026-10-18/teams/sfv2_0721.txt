@@ -1,56 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-- Dragon Claw
-- Brick Break
-- Fire Blast
-- Hydro Pump
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Leech Seed
-- Recover
-- Heal Bell
-- Hidden Power [Grass]
-
-Clefable @ Leftovers
-Ability: Cute Charm
-Shiny: Yes
-EVs: 252 HP / 4 Def / 252 SpD
-Calm Nature
-IVs: 0 Atk
-- Encore
-- Seismic Toss
-- Thunder Wave
-- Soft-Boiled
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-- Spikes
-- Rapid Spin
-- Explosion
-- Earthquake
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 212 Def / 44 SpD / 4 Spe
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Roar
-- Hydro Pump
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 248 SpA / 8 Spe
-Modest Nature
+EVs: 248 HP / 216 SpA / 44 Spe
+Quiet Nature
 - Pursuit
 - Crunch
 - Fire Blast
+- Brick Break
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 240 HP / 8 SpA / 208 SpD / 52 Spe
+Modest Nature
+- Surf
+- Spikes
+- Rapid Spin
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 216 SpA / 40 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Thunder
+- Ice Punch
+- Toxic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 224 HP / 80 Def / 160 SpA / 44 Spe
+Quiet Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
 - Focus Punch
+
+Raikou @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 104 HP / 236 Atk / 24 SpD / 144 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake

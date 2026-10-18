@@ -1,0 +1,58 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 SpA
+Brave Nature
+- Meteor Mash
+- Earthquake
+- Thunder Punch
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 64 SpA / 196 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Toxic
+- Roar
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 124 SpD / 136 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Toxic
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 72 Atk / 188 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Banette @ Leftovers
+Ability: Insomnia
+EVs: 32 HP / 248 Atk / 228 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Will-O-Wisp
+- Shadow Ball
+- Hidden Power [Fighting]
+- Taunt
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 80 HP / 16 SpA / 236 SpD / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Taunt
+- Giga Drain
+- Thunderbolt

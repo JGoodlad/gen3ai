@@ -1,0 +1,57 @@
+Slaking @ Choice Band
+Ability: Truant
+EVs: 148 HP / 252 Atk / 108 Spe
+Adamant Nature
+- Return
+- Focus Punch
+- Shadow Ball
+- Earthquake
+
+Skarmory @ Soft Sand
+Ability: Keen Eye
+EVs: 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 SpA / 30 SpD
+- Spikes
+- Drill Peck
+- Hidden Power [Ground]
+- Roar
+
+Salamence @ Lum Berry
+Ability: Intimidate
+EVs: 148 HP / 252 Atk / 108 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Double-Edge
+- Earthquake
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Thunderbolt
+- Ice Beam
+- Rapid Spin
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 4 Def / 252 SpA
+Modest Nature
+- Ice Beam
+- Thunderbolt
+- Toxic
+- Explosion
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Meteor Mash
+- Earthquake
+- Hidden Power [Rock]
+- Sludge Bomb

@@ -1,57 +1,58 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 136 SpA / 156 Spe
-Modest Nature
-IVs: 30 Spe
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 228 SpA / 40 Spe
-Quiet Nature
-- Curse
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 140 Atk / 212 SpD / 156 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
 - Earthquake
-- Hydro Pump
-- Ice Beam
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Earthquake
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
+- Rock Slide
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 112 HP / 220 SpA / 176 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Body Slam
+EVs: 252 HP / 236 Def / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Toxic
+- Protect
 - Fire Punch
-- Hidden Power [Grass]
-- Dynamic Punch
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 136 Atk / 152 Def / 172 SpD / 16 Spe
-Adamant Nature
-- Body Slam
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 56 Def / 188 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Thunder
+- Roar
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 SpA / 252 SpD
+Sassy Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Explosion
+- Hidden Power [Fire]
+- Spikes
+- Rapid Spin
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 SpA / 4 SpD / 88 Spe
+Quiet Nature
+- Hydro Pump
+- Ice Beam
 - Earthquake
-- Shadow Ball
-- Self-Destruct
+- Focus Punch
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 24 Atk / 252 SpA / 64 SpD / 144 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 200 HP / 252 Def / 56 Spe
+Bold Nature
+IVs: 0 Atk
+- Counter
+- Thunder Wave
+- Soft-Boiled
+- Seismic Toss

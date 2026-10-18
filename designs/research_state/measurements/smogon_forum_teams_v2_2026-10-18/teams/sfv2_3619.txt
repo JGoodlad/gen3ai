@@ -1,56 +1,55 @@
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 30 HP / 3 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Substitute
-- Baton Pass
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 16 HP / 200 Atk / 120 Def / 172 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 252 HP / 16 Def / 88 SpA / 148 SpD / 4 Spe
-Bold Nature
-- Spikes
-- Rapid Spin
-- Surf
-- Explosion
-
-Metagross @ Choice Band
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 236 Atk / 12 Def / 8 Spe
-Adamant Nature
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Meteor Mash
-- Earthquake
+- Hidden Power [Fire]
+- Psychic
 - Explosion
-- Rock Slide
 
-Flygon @ Leftovers
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 188 HP / 180 Atk / 140 Spe
-Naughty Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+EVs: 252 HP / 100 Atk / 112 Def / 44 SpD
+Careful Nature
+- Rapid Spin
 - Earthquake
-- Rock Slide
-- Fire Blast
-- Hidden Power [Bug]
+- Shadow Ball
+- Explosion
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 216 Def / 40 SpA
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Hydro Pump
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Counter
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Surf
 - Roar
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Substitute
+- Megahorn
+- Rock Slide
+- Focus Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+- Wish
+- Dragon Claw
+- Flamethrower
+- Brick Break

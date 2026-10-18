@@ -1,0 +1,58 @@
+Salamence @ Black Belt
+Ability: Intimidate
+EVs: 252 Atk / 4 SpA / 252 Spe
+Lonely Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Brick Break
+- Hidden Power [Flying]
+- Fire Blast
+- Wish
+
+Lapras @ Leftovers
+Ability: Water Absorb
+EVs: 12 HP / 180 Def / 252 SpA / 44 SpD / 20 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunder
+- Heal Bell
+- Perish Song
+
+Steelix @ Leftovers
+Ability: Rock Head
+EVs: 252 HP / 16 Atk / 220 SpD / 20 Spe
+Impish Nature
+- Earthquake
+- Roar
+- Toxic
+- Protect
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
+- Counter
+
+Ninetales @ Leftovers
+Ability: Flash Fire
+EVs: 244 HP / 68 SpA / 156 SpD / 40 Spe
+Calm Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Flamethrower
+- Roar
+- Spite
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 188 HP / 8 SpA / 136 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Giga Drain
+- Taunt
+- Will-O-Wisp

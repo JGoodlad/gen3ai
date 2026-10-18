@@ -1,57 +1,58 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 128 HP / 252 Atk / 128 Spe
-Adamant Nature
-- Meteor Mash
-- Explosion
-- Earthquake
-- Rock Slide
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 252 Atk / 16 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Earthquake
-- Brick Break
-- Hidden Power [Grass]
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 232 HP / 20 Def / 76 SpA / 180 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Baton Pass
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Thunderbolt
-- Ice Beam
-- Rapid Spin
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 8 HP / 216 Atk / 148 SpD / 136 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Dragon Dance
-- Hidden Power [Ghost]
-- Brick Break
-- Rock Slide
-
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 56 Def / 124 SpA / 44 SpD / 36 Spe
-Relaxed Nature
-- Hydro Pump
+EVs: 240 HP / 176 SpA / 4 SpD / 88 Spe
+Quiet Nature
+- Surf
 - Ice Beam
 - Earthquake
-- Roar
+- Refresh
+
+Lanturn @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 88 Def / 168 SpA / 84 SpD / 160 Spe
+Modest Nature
+IVs: 0 Atk
+- Protect
+- Ice Beam
+- Thunderbolt
+- Surf
+
+Kabutops @ Choice Band
+Ability: Swift Swim
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rapid Spin
+- Rock Slide
+- Double-Edge
+- Hidden Power [Bug]
+
+Ludicolo @ Leftovers
+Ability: Swift Swim
+EVs: 208 HP / 120 Def / 136 SpA / 44 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Surf
+- Ice Beam
+- Rain Dance
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Double-Edge
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 244 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Rest
+- Sleep Talk
+- Calm Mind

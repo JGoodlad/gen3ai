@@ -1,56 +1,59 @@
-Stantler @ Leftovers
-Ability: Intimidate
-EVs: 144 HP / 140 Atk / 4 Def / 220 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Fighting]
-- Double-Edge
-- Thunder Wave
-- Hypnosis
-
-Charizard @ Charcoal
-Ability: Blaze
-EVs: 164 Atk / 144 SpA / 200 Spe
-Rash Nature
-- Dragon Dance
-- Brick Break
-- Rock Slide
-- Fire Blast
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-- Spikes
-- Rapid Spin
+Metagross @ Choice Band
+Ability: Clear Body
+Hidden Power: Bug
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
 - Explosion
 - Earthquake
+- Rock Slide
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Hydro Pump
+- Toxic
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 124 Def / 76 SpA / 36 SpD / 20 Spe
-Bold Nature
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
+- Thunderbolt
 - Hidden Power [Grass]
-- Leech Seed
-- Psychic
-- Recover
+- Substitute
+- Baton Pass
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Protect
-- Hydro Pump
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 80 SpA / 136 Spe
 Modest Nature
 IVs: 0 Atk
-- Pursuit
-- Crunch
-- Fire Blast
-- Ice Beam
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Ice Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break

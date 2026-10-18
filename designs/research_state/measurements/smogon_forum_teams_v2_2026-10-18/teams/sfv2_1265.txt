@@ -1,55 +1,56 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 188 HP / 252 Atk / 68 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 108 Def / 160 SpA
+EVs: 240 HP / 224 Def / 44 SpD
 Relaxed Nature
+- Protect
 - Curse
 - Earthquake
-- Surf
 - Ice Beam
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Protect
+- Drill Peck
+- Roar
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 100 SpA / 156 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 152 HP / 216 Atk / 140 Spe
+Adamant Nature
+- Earthquake
 - Psychic
+- Explosion
+- Rapid Spin
 
-Heracross @ Leftovers
-Ability: Guts
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Swords Dance
-- Megahorn
-- Brick Break
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 196 SpA / 60 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Flamethrower
+- Hidden Power [Grass]
+- Soft-Boiled
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 36 Def / 220 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Protect
+- Knock Off
+- Hidden Power [Bug]
 - Rock Slide
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 156 Atk / 212 SpD / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Hidden Power [Flying]
+Articuno @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 32 SpA / 160 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Ice Beam
+- Heal Bell
+- Roar
+- Rest

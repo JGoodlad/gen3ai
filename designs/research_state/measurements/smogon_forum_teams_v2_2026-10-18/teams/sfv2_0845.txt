@@ -1,55 +1,59 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 252 Atk / 16 Spe
+Heracross (M) @ Leftovers
+Ability: Guts
+EVs: 124 HP / 184 Atk / 16 SpD / 184 Spe
+Adamant Nature
+- Brick Break
+- Swords Dance
+- Megahorn
+- Rock Slide
+
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 228 HP / 252 Atk / 28 Spe
 Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
-- Earthquake
+- Superpower
 - Hidden Power [Bug]
-- Focus Punch
+- Explosion
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Earthquake
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Calm Mind
+- Hidden Power [Grass]
+- Substitute
+- Thunderbolt
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk / 30 SpA
+- Calm Mind
+- Surf
 - Ice Beam
-- Protect
-- Hydro Pump
+- Substitute
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 116 SpA / 140 Spe
 Modest Nature
 IVs: 0 Atk
-- Blizzard
-- Soft-Boiled
 - Thunderbolt
-- Fire Blast
+- Ice Punch
+- Calm Mind
+- Substitute
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-- Dragon Claw
-- Fire Blast
-- Brick Break
-- Wish
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 240 HP / 140 SpD / 128 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Roar
-- Taunt
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 216 Atk / 40 Def / 4 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Protect
-- Explosion
+Porygon2 @ Leftovers
+Ability: Trace
+Shiny: Yes
+EVs: 252 HP / 192 Def / 64 SpD
+Bold Nature
+IVs: 0 Atk
+- Thunder Wave
+- Rain Dance
+- Ice Beam
+- Recover

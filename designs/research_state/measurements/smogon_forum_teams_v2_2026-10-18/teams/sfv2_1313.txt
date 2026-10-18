@@ -1,57 +1,56 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 232 HP / 160 Atk / 116 Spe
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Dragon Dance
+- Focus Punch
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Protect
+- Roar
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 212 SpA / 44 Spe
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Soft-Boiled
+- Seismic Toss
+- Toxic
+
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 216 HP / 136 SpA / 156 Spe
-Modest Nature
-IVs: 30 Spe
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 228 SpA / 28 Spe
+EVs: 24 HP / 232 SpA / 100 SpD / 152 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Hydro Pump
-- Ice Beam
+- Thunderbolt
 - Hidden Power [Grass]
+- Roar
+- Thunder
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 192 HP / 4 Def / 136 SpA / 176 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 16 Atk / 180 Def / 64 Spe
+Adamant Nature
+- Earthquake
+- Rock Slide
+- Toxic
+- Protect
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 120 HP / 204 SpD / 184 Spe
+Timid Nature
+- Thunderbolt
+- Will-O-Wisp
+- Explosion
 - Giga Drain
-- Psychic
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-- Dragon Dance
-- Dragon Claw
-- Flamethrower
-- Brick Break

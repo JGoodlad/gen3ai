@@ -1,56 +1,57 @@
-Hitmontop (M) @ Leftovers
+Salamence @ Leftovers
 Ability: Intimidate
-EVs: 244 HP / 216 Atk / 32 SpD / 16 Spe
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Rapid Spin
-- Brick Break
-- Hidden Power [Ghost]
-- Rock Slide
-
-Snorlax (M) @ Leftovers
-Ability: Immunity
-EVs: 12 HP / 176 Atk / 252 Def / 68 SpD
-Careful Nature
-- Body Slam
+EVs: 196 Atk / 200 SpD / 112 Spe
+Adamant Nature
+- Dragon Dance
 - Earthquake
+- Rock Slide
+- Brick Break
+
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Endure
+- Thunderbolt
+- Hidden Power [Grass]
+- Rain Dance
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
+Adamant Nature
+- Body Slam
 - Shadow Ball
+- Focus Punch
 - Self-Destruct
 
-Umbreon (M) @ Leftovers
-Ability: Synchronize
-EVs: 252 HP / 156 SpA / 100 SpD
-Calm Nature
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 Def / 248 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Wish
-- Baton Pass
-- Pursuit
-- Curse
-
-Aerodactyl @ White Herb
-Ability: Rock Head
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
 - Substitute
-- Taunt
-- Rock Slide
-- Earthquake
+- Calm Mind
+- Thunderbolt
+- Crunch
 
-Steelix @ Leftovers
-Ability: Rock Head
-EVs: 252 HP / 92 Atk / 136 SpD
-Careful Nature
-- Earthquake
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
 - Rock Slide
-- Roar
+- Hidden Power [Grass]
 - Explosion
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 252 HP / 28 Def / 216 SpA / 12 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Toxic
-- Sunny Day
-- Hidden Power [Fire]
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Ice Beam
+- Rain Dance

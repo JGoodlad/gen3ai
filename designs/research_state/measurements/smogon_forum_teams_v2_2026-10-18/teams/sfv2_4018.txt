@@ -1,0 +1,55 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Atk / 48 SpA / 44 Spe
+Brave Nature
+- Curse
+- Earthquake
+- Rock Slide
+- Hydro Pump
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 8 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Flamethrower
+- Roar
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 128 Def / 40 SpA / 32 SpD / 56 Spe
+Bold Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Surf
+- Thunderbolt
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Aerodactyl
+Ability: Rock Head
+EVs: 80 HP / 252 Atk / 176 Spe
+Jolly Nature
+- Thief
+- Earthquake
+- Rock Slide
+- Double-Edge

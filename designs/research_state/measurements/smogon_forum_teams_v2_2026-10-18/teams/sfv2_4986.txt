@@ -1,0 +1,56 @@
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 184 HP / 236 Atk / 88 Spe
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Focus Punch
+- Double-Edge
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Substitute
+- Hidden Power [Grass]
+- Focus Punch
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 8 HP / 136 SpA / 244 SpD / 120 Spe
+Modest Nature
+- Surf
+- Spikes
+- Rapid Spin
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Thunder Wave
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 8 SpD / 64 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Pursuit
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 88 Def / 124 SpA / 44 Spe
+Quiet Nature
+- Refresh
+- Hydro Pump
+- Earthquake
+- Ice Beam

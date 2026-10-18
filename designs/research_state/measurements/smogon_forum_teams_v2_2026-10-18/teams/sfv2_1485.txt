@@ -1,57 +1,56 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
+EVs: 216 HP / 136 SpA / 156 Spe
+Modest Nature
+IVs: 1 Atk / 30 Spe
+- Toxic
 - Thunderbolt
 - Hidden Power [Ice]
-- Roar
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 224 HP / 216 SpD / 68 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Taunt
-- Toxic
-- Roar
+- Baton Pass
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
+EVs: 240 HP / 228 SpA / 40 Spe
 Quiet Nature
 - Curse
 - Earthquake
 - Hydro Pump
 - Ice Beam
 
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 188 HP / 252 Atk / 68 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 76 HP / 252 SpA / 180 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Body Slam
+EVs: 252 HP / 36 Def / 180 SpA / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
 - Fire Punch
 - Hidden Power [Grass]
-- Dynamic Punch
+- Psychic
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Substitute
-- Fire Blast
-- Hidden Power [Grass]
-- Focus Punch
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 192 HP / 104 Atk / 40 Def / 172 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Return
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 116 SpD / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

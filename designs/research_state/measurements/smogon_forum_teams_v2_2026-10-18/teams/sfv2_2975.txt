@@ -1,58 +1,57 @@
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 84 SpA / 176 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Psychic
-- Fire Punch
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Ancient Power
+- Brick Break
+- Fire Blast
 - Hidden Power [Grass]
 
 Regice @ Leftovers
 Ability: Clear Body
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Thunder Wave
-- Toxic
+EVs: 252 HP / 4 Def / 252 SpA
+Quiet Nature
 - Ice Beam
 - Thunderbolt
-
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Endeavor
-- Toxic
-- Surf
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 192 SpA / 68 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Rest
-- Surf
-- Ice Beam
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 188 Atk / 16 Def / 136 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
+- Thunder Wave
 - Explosion
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Dragon Claw
-- Hidden Power [Grass]
-- Beat Up
+IVs: 0 Atk
+- Fire Blast
+- Ice Beam
+- Toxic
+- Soft-Boiled
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 156 SpD / 100 Spe
+Careful Nature
+IVs: 0 Atk
+- Roar
+- Taunt
+- Toxic
+- Spikes
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 164 HP / 168 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Taunt
+- Ice Punch
+- Thunderbolt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 48 Def / 176 SpA / 44 Spe
+Quiet Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch

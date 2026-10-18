@@ -1,55 +1,57 @@
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 SpD
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-- Rock Slide
-- Focus Punch
-- Thunder Wave
-- Explosion
-
-Qwilfish
-Ability: Swift Swim
-EVs: 104 HP / 252 Atk / 152 Spe
-Adamant Nature
-- Rain Dance
-- Spikes
-- Shadow Ball
-- Self-Destruct
-
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 52 HP / 252 SpA / 204 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Endure
-- Rain Dance
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Psychic
-- Explosion
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
 
-Ludicolo @ Leftovers
-Ability: Swift Swim
-EVs: 152 HP / 252 SpA / 104 Spe
-Modest Nature
-- Rain Dance
+Skarmory
+Ability: Keen Eye
+EVs: 220 HP / 216 SpD / 72 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Taunt
+- Will-O-Wisp
+- Thunderbolt
+- Giga Drain
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 184 HP / 148 SpD / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
+Relaxed Nature
+- Protect
+- Earthquake
 - Hydro Pump
 - Ice Beam
-- Leech Seed
 
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 Def / 252 Spe
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-IVs: 30 HP
-- Swords Dance
-- Megahorn
-- Substitute
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
 - Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

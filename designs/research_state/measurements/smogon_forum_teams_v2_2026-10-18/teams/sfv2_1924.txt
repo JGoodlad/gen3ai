@@ -1,58 +1,58 @@
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 SpD
-Bold Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
 IVs: 0 Atk
-- Recover
-- Refresh
+- Spikes
+- Taunt
 - Toxic
-- Surf
+- Roar
 
-Claydol @ Choice Band
-Ability: Levitate
-EVs: 252 HP / 252 Atk / 4 Def
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 68 Atk / 4 SpD / 252 Spe
 Adamant Nature
-- Rapid Spin
+IVs: 30 SpD / 30 Spe
+- Dragon Dance
 - Earthquake
 - Rock Slide
-- Explosion
+- Hidden Power [Bug]
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 200 SpA / 56 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Leech Seed
-- Psychic
-- Baton Pass
-
-Slaking @ Choice Band
-Ability: Truant
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-IVs: 30 SpD
-- Double-Edge
-- Earthquake
-- Hidden Power [Steel]
-- Encore
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 100 HP / 44 Def / 220 SpA / 144 Spe
 Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 216 Def / 8 SpA / 36 Spe
+Lax Nature
+- Toxic
+- Earthquake
+- Rock Slide
+- Fire Blast
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Rock Slide
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
 - Brick Break
-- Hidden Power [Flying]

@@ -1,56 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
+Medicham @ Choice Band
+Ability: Pure Power
+EVs: 244 Atk / 68 Def / 196 Spe
 Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 176 Def / 40 SpA / 44 SpD / 8 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Earthquake
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Roar
-- Baton Pass
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
+- Focus Punch
+- Brick Break
 - Rock Slide
 - Hidden Power [Bug]
-- Double-Edge
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 124 Def / 132 Spe
+Impish Nature
+- Sludge Bomb
+- Taunt
+- Haze
+- Will-O-Wisp
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 172 SpD / 84 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Light Screen
+- Rest
+- Toxic
+
+Skarmory @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 128 Def / 120 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Counter
+- Roar
+- Toxic
+- Spikes
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 180 HP / 216 Atk / 112 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Explosion
+- Rapid Spin
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Calm Mind
+- Hidden Power [Grass]
+- Soft-Boiled

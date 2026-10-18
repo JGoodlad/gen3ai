@@ -1,57 +1,55 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 208 Atk / 48 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Focus Punch
-- Substitute
-- Hidden Power [Bug]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 124 Def / 132 SpD / 4 Spe
-Calm Nature
-IVs: 0 Atk
-- Surf
-- Protect
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Impish Nature
 - Toxic
-- Refresh
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 228 SpD / 32 Spe
-Calm Nature
-- Thunderbolt
 - Rest
-- Toxic
-- Roar
+- Spikes
+- Whirlwind
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 44 Def / 128 SpD / 84 Spe
+Timid Nature
+- Giga Drain
+- Taunt
+- Thunderbolt
+- Will-O-Wisp
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+- Soft-Boiled
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 116 Def / 44 SpA / 96 SpD
+EVs: 252 HP / 100 Atk / 112 Def / 32 SpD / 12 Spe
 Relaxed Nature
-- Rapid Spin
 - Earthquake
-- Psychic
 - Explosion
+- Psychic
+- Rapid Spin
 
-Dugtrio @ Choice Band
+Dugtrio (M) @ Choice Band
 Ability: Arena Trap
-EVs: 24 HP / 252 Atk / 232 Spe
-Adamant Nature
+EVs: 220 Atk / 36 SpD / 252 Spe
 IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
+Jolly Nature
 - Aerial Ace
+- Earthquake
 - Hidden Power [Bug]
 - Rock Slide
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 100 HP / 252 SpA / 156 Spe
+IVs: 30 Atk / 30 SpA / 30 Spe
+Modest Nature
+- Hidden Power [Fire]
+- Metal Sound
+- Thunder Wave
+- Thunderbolt

@@ -1,56 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 4 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Fire Blast
-- Ice Beam
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Brick Break
 
-Weezing @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 236 Def / 20 Spe
-Impish Nature
-- Sludge Bomb
-- Haze
-- Will-O-Wisp
-- Pain Split
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 136 SpA / 80 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Hidden Power [Grass]
-- Thunderbolt
-- Substitute
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Sassy Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
 - Spikes
-- Rapid Spin
-- Earthquake
-- Zap Cannon
+- Drill Peck
+- Roar
+- Protect
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 24 HP / 188 Atk / 100 Def / 184 SpD / 12 Spe
-Adamant Nature
-- Body Slam
-- Focus Punch
-- Earthquake
-- Self-Destruct
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Metal Sound
 
-Suicune @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 252 Def / 4 SpA
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Metal Sound
+- Hidden Power [Grass]
+- Rest
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 184 Def / 32 SpD / 44 Spe
+Brave Nature
+- Roar
+- Ice Beam
+- Earthquake
+- Protect
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 168 HP / 252 Def / 88 Spe
 Bold Nature
 IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
-- Roar
+- Thunder Wave
+- Soft-Boiled
+- Seismic Toss
+- Wish

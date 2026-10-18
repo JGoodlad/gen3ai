@@ -1,58 +1,57 @@
 Tyranitar @ Choice Band
 Ability: Sand Stream
 EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Rock Slide
-- Brick Break
-- Earthquake
-- Double-Edge
-
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Endure
-- Toxic
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 160 Atk / 208 SpD / 140 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
+IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
+- Focus Punch
+- Earthquake
+- Hidden Power [Bug]
 
-Celebi @ Leftovers
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
 IVs: 0 Atk
 - Calm Mind
-- Substitute
-- Psychic
-- Giga Drain
-
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 12 HP / 244 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Hydro Pump
+- Soft-Boiled
 - Ice Beam
-- Baton Pass
+- Thunderbolt
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Recover
+- Toxic
+- Refresh
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 248 HP / 140 Atk / 60 SpA / 60 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Explosion
-- Hidden Power [Grass]
+EVs: 252 HP / 232 SpA / 24 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
 - Meteor Mash
-- Earthquake
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+- Dragon Claw
+- Brick Break
+- Wish
+- Fire Blast

@@ -1,56 +1,58 @@
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 68 HP / 188 SpD / 252 Spe
+Jolly Nature
+- Spore
 - Spikes
-- Thief
-- Drill Peck
-- Roar
+- Explosion
+- Will-O-Wisp
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
-Sassy Nature
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
 - Rapid Spin
-- Rest
-- Psychic
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 248 HP / 44 Atk / 20 Def / 196 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 96 Def / 208 SpA / 204 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Fire Punch
+- Hidden Power [Grass]
 - Explosion
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 156 Def / 40 SpA / 28 SpD / 32 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Recover
-- Leech Seed
-- Heal Bell
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Thunder Punch
 - Hidden Power [Grass]
+- Explosion
+- Meteor Mash
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Calm Mind
-- Fire Punch
-- Psychic
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-- Recover
-- Refresh
-- Toxic
-- Surf
-
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Return
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 120 Atk / 252 SpA / 136 Spe
+Mild Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Thunderbolt
+- Drill Peck
+- Hidden Power [Fighting]
+- Thunder Wave

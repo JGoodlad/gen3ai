@@ -1,57 +1,59 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 240 HP / 16 Def / 252 SpA
+Happiness: 0
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Focus Punch
+- Rock Slide
+- Hidden Power [Bug]
+- Earthquake
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 88 Def / 28 SpA / 140 Spe
 Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Toxic
+- Protect
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 252 HP / 152 SpD / 104 Spe
 Careful Nature
+IVs: 0 Atk
 - Spikes
 - Toxic
-- Drill Peck
 - Roar
+- Taunt
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 36 SpA / 220 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Grass]
-- Explosion
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Fire Blast
+- Ice Beam
+- Soft-Boiled
+- Toxic
 
-Swampert @ Salac Berry
+Swampert @ Leftovers
 Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
+EVs: 252 HP / 60 Def / 108 SpA / 44 SpD / 44 Spe
+Quiet Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Protect
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 164 HP / 168 SpD / 176 Spe
 Timid Nature
 IVs: 0 Atk
-- Substitute
-- Surf
-- Roar
-- Endeavor
-
-Dragonite @ Leftovers
-Ability: Inner Focus
-EVs: 152 Atk / 252 SpA / 36 SpD / 68 Spe
-Mild Nature
-- Substitute
-- Ice Beam
-- Thunder
-- Brick Break
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Taunt
+- Ice Punch
+- Thunderbolt
+- Will-O-Wisp

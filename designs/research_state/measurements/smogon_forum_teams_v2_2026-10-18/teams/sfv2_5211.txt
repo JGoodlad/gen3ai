@@ -1,0 +1,63 @@
+Gengar (M) @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Punch
+- Fire Punch
+- Hypnosis
+
+Metagross @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Psychic
+- Hidden Power [Fire]
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Calm Mind
+- Giga Drain
+- Hidden Power [Ice]
+- Baton Pass
+
+Salamence @ Leftovers
+Ability: Intimidate
+Shiny: Yes
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+- Dragon Claw
+- Brick Break
+- Fire Blast
+- Hydro Pump
+
+Swampert (M) @ Salac Berry
+Ability: Torrent
+Shiny: Yes
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Endeavor
+- Substitute
+
+Raikou @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Calm Mind
+- Thunder
+- Hidden Power [Ice]
+- Substitute

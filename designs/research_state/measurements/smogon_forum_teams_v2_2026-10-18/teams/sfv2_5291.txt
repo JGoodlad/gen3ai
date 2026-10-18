@@ -1,0 +1,57 @@
+Cloyster (F) @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
+Serious Nature
+- Spikes
+- Surf
+- Rapid Spin
+- Explosion
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 40 HP / 252 SpA / 216 Spe
+Timid Nature
+- Fire Punch
+- Ice Punch
+- Giga Drain
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 120 Atk / 252 SpA / 136 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Drill Peck
+- Hidden Power [Grass]
+- Roar
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 244 HP / 76 Atk / 124 Def / 64 Spe
+Impish Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Swords Dance
+- Baton Pass
+- Shadow Ball
+- Hidden Power [Fighting]
+
+Snorlax (F) @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Curse
+- Rest
+- Body Slam
+- Hidden Power [Bug]

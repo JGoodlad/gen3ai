@@ -1,55 +1,57 @@
-Metagross @ Choice Band
+Regirock @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 224 Atk / 16 Def / 100 Spe
+EVs: 248 HP / 252 Atk / 8 SpD
 Adamant Nature
-- Meteor Mash
+- Rock Slide
 - Earthquake
-- Brick Break
+- Counter
 - Explosion
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 52 Def / 60 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Shadow Ball
-- Self-Destruct
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 36 Def / 136 SpA / 28 SpD / 56 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
-
-Suicune @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 172 SpA / 68 SpD / 16 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Baton Pass
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 120 HP / 248 SpA / 140 Spe
-Rash Nature
-- Wish
-- Dragon Claw
-- Flamethrower
-- Brick Break
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Protect
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 104 HP / 152 Atk / 252 SpA
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Ice Beam
+- Thunderbolt
+- Hidden Power [Fire]
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 124 Atk / 136 SpD
+Careful Nature
+- Rock Slide
+- Earthquake
+- Curse
+- Rest

@@ -1,56 +1,56 @@
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Endeavor
-- Roar
-- Hydro Pump
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+IVs: 30 Spe
 - Earthquake
-- Double-Edge
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 188 HP / 8 Def / 156 SpA / 156 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Rest
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 8 HP / 168 Atk / 192 SpD / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
-- Brick Break
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 180 SpA / 228 SpD / 100 Spe
-Modest Nature
 - Spikes
-- Surf
 - Rapid Spin
 - Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 56 Def / 44 SpA / 120 SpD / 40 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Heal Bell
+- Leech Seed
+- Recover
+
+Hariyama @ Leftovers
+Ability: Thick Fat
+EVs: 8 HP / 252 Def / 248 SpD
+Impish Nature
+- Brick Break
+- Knock Off
+- Whirlwind
+- Rest
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 176 SpA / 84 SpD
+Quiet Nature
+- Thunderbolt
+- Earthquake
+- Crunch
+- Pursuit
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 248 HP / 36 Def / 180 SpD / 44 Spe
+Careful Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Earthquake
+- Thunder Wave
+- Rest
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 124 Def / 136 SpD
+Careful Nature
+- Seismic Toss
+- Counter
+- Thunder Wave
+- Rest

@@ -1,0 +1,56 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 Atk / 16 Spe
+Naughty Nature
+- Curse
+- Earthquake
+- Rock Slide
+- Ice Beam
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA
+- Crunch
+- Pursuit
+- Hidden Power [Grass]
+- Brick Break
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 204 HP / 252 SpA / 28 SpD / 24 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Rest
+- Sleep Talk
+- Thunderbolt
+- Hidden Power [Fire]
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 252 Def / 8 Spe
+Impish Nature
+- Soft-Boiled
+- Wish
+- Thunder Wave
+- Seismic Toss
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 176 Atk / 192 SpD / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break

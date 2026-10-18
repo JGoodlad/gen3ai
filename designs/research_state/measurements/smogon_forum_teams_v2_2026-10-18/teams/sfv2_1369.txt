@@ -1,59 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 40 Def / 196 SpD / 32 Spe
+Careful Nature
 IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
+- Rest
+- Sleep Talk
+- Thunderbolt
 - Roar
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Atk / 252 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-IVs: 30 Atk / 30 SpD / 30 Spe
 - Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Counter
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
 - Protect
-- Toxic
-- Fire Punch
+- Drill Peck
+- Roar
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
+- Rest
+- Earthquake
+- Psychic
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
 EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
+Bold Nature
 IVs: 0 Atk
 - Soft-Boiled
-- Calm Mind
+- Aromatherapy
+- Seismic Toss
 - Ice Beam
-- Thunderbolt
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 36 Def / 220 SpD
+Careful Nature
+IVs: 30 SpD / 30 Spe
+- Rest
+- Swords Dance
 - Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide
+- Knock Off
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 228 Def / 16 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Roar

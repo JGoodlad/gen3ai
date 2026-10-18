@@ -1,56 +1,57 @@
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 20 HP / 236 Atk / 252 Spe
-Adamant Nature
-- Brick Break
-- Rock Slide
-- Focus Punch
-- Bulk Up
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+- Substitute
+- Endeavor
+- Hydro Pump
+- Roar
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 88 HP / 100 SpA / 140 SpD / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Protect
+- Baton Pass
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Beat Up
+- Hidden Power [Grass]
+- Fire Blast
+- Dragon Claw
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 148 SpA / 100 SpD / 8 Spe
-Calm Nature
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
 IVs: 0 Atk
-- Surf
-- Ice Beam
 - Calm Mind
-- Rest
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 4 Def / 252 SpD
-Calm Nature
-- Seismic Toss
-- Toxic
-- Counter
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 244 HP / 252 Atk / 12 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Earthquake
-- Shadow Ball
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 208 Atk / 184 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Flying]
-- Dragon Dance
-- Brick Break
-- Fire Blast
-
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
 - Surf
-- Substitute
-- Endeavor
-- Roar
+- Rest
+- Ice Beam
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion

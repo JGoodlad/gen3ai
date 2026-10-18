@@ -1,57 +1,57 @@
-Metagross @ Charcoal
-Ability: Clear Body
-EVs: 168 HP / 140 Atk / 16 Def / 92 SpA / 92 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Agility
-- Meteor Mash
-- Hidden Power [Fire]
-- Explosion
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
 IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Psychic
+- Rest
+- Light Screen
+- Toxic
+- Thunderbolt
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 52 Def / 60 SpD / 16 Spe
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-- Curse
-- Double-Edge
-- Shadow Ball
-- Self-Destruct
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 240 SpA / 20 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Psychic
-- Baton Pass
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 160 Atk / 48 SpA / 44 SpD / 16 Spe
-Brave Nature
-- Curse
+EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
+Relaxed Nature
+- Protect
+- Earthquake
+- Surf
+- Ice Beam
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Toxic
+- Ice Beam
+- Thunderbolt
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
-- Hydro Pump
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
+- Hidden Power [Bug]
+- Double-Edge

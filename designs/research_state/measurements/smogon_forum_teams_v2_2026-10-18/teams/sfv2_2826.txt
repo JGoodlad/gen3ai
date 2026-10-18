@@ -1,58 +1,54 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Rest
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Drill Peck
+- Spikes
+- Roar
+- Protect
+
+Hariyama @ Leftovers
+Ability: Thick Fat
+EVs: 8 HP / 252 Def / 248 SpD
+Impish Nature
+- Brick Break
+- Knock Off
+- Whirlwind
+- Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 136 HP / 176 Atk / 52 SpA / 144 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
+EVs: 248 HP / 12 Atk / 176 SpA / 72 SpD
+Quiet Nature
+- Rock Slide
+- Earthquake
 - Crunch
 - Pursuit
-- Flamethrower
-- Roar
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Counter
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
-
-Blissey (F) @ Leftovers
+Blissey @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 252 Def / 4 SpD
-Impish Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Wish
-- Toxic
+EVs: 8 HP / 252 Def / 248 SpA
+Bold Nature
 - Seismic Toss
-
-Quagsire @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 216 Def / 40 SpD
-Relaxed Nature
-- Rest
-- Curse
-- Earthquake
 - Ice Beam
-
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Return
+- Aromatherapy
+- Soft-Boiled

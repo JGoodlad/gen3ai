@@ -1,57 +1,56 @@
-Zapdos @ Leftovers
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 64 HP / 224 Atk / 20 SpD / 200 Spe
+Adamant Nature
+- Earthquake
+- Explosion
+- Meteor Mash
+- Rock Slide
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpD
+Bold Nature
+- Recover
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+
+Raikou @ Leftovers
 Ability: Pressure
 EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 Def
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Hidden Power [Grass]
+- Substitute
 - Thunderbolt
-- Hidden Power [Ice]
-- Substitute
-- Baton Pass
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Protect
-- Focus Punch
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 76 SpA / 180 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Baton Pass
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 80 SpA / 136 Spe
-Modest Nature
+Skarmory
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
 IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Psychic
-- Fire Punch
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 28 HP / 252 SpA / 228 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Hydro Pump
-- Ice Beam
 - Roar
+- Spikes
+- Thief
+- Toxic
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 92 HP / 144 Def / 128 SpA / 144 SpD
-Quiet Nature
-- Self-Destruct
-- Focus Punch
-- Fire Blast
-- Ice Beam
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 228 Atk / 48 SpD / 224 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Aerial Ace
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+- Explosion
+- Ice Punch
+- Thunderbolt
+- Will-O-Wisp

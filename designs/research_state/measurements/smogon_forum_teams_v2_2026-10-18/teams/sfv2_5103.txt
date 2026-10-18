@@ -1,0 +1,57 @@
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 100 HP / 188 SpA / 220 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Sleep Powder
+- Giga Drain
+- Leech Seed
+- Hidden Power [Fire]
+
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 148 HP / 252 Atk / 108 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Superpower
+- Hidden Power [Bug]
+- Explosion
+
+Glalie @ Leftovers
+Ability: Inner Focus
+EVs: 252 HP / 4 Atk / 252 SpD
+Calm Nature
+- Ice Beam
+- Explosion
+- Toxic
+- Spikes
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 164 HP / 168 SpD / 176 Spe
+Timid Nature
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Protect
+- Toxic
+- Roar
+
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Hidden Power [Grass]
+- Fire Punch

@@ -1,0 +1,57 @@
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 8 HP / 192 SpA / 56 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Sleep Powder
+- Leech Seed
+- Razor Leaf
+- Hidden Power [Ice]
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
+- Beat Up
+
+Blastoise @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 148 Def / 108 SpA
+Quiet Nature
+- Hydro Pump
+- Ice Beam
+- Rapid Spin
+- Focus Punch
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 196 Atk / 196 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide

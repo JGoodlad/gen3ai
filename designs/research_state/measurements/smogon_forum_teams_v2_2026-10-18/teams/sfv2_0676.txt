@@ -1,57 +1,57 @@
-Jynx @ Never-Melt Ice
-Ability: Oblivious
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Ice Beam
-- Lovely Kiss
-- Perish Song
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 192 HP / 136 Atk / 180 Spe
+Adamant Nature
+IVs: 30 HP / 30 SpA
+- Dragon Dance
+- Hidden Power [Grass]
+- Rock Slide
+- Earthquake
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 252 Def / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 244 HP / 216 SpA / 48 Spe
+Quiet Nature
 - Surf
-- Rest
+- Earthquake
+- Focus Punch
 - Ice Beam
+
+Lunatone @ Leftovers
+Ability: Levitate
+EVs: 228 HP / 140 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Ice Beam
+- Hidden Power [Grass]
+- Calm Mind
+- Baton Pass
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
-Careful Nature
+EVs: 36 HP / 136 Atk / 160 Def / 156 SpD / 20 Spe
+Adamant Nature
+- Self-Destruct
 - Curse
-- Rest
-- Return
+- Body Slam
 - Shadow Ball
 
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 104 Atk / 152 SpA
-Quiet Nature
-- Ice Beam
-- Thunderbolt
-- Explosion
-- Thunder Wave
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 72 SpA / 184 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
-- Flamethrower
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Ice Punch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Focus Punch
+- Beat Up
 - Hidden Power [Grass]
-- Will-O-Wisp
-- Sunny Day

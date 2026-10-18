@@ -1,57 +1,56 @@
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 24 HP / 252 Def / 224 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Rain Dance
+- Recover
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Megahorn
+- Reversal
+- Swords Dance
+- Endure
+
+Claydol @ Choice Band
+Ability: Levitate
+EVs: 252 HP / 252 Atk / 4 Spe
+Impish Nature
+- Earthquake
+- Rock Slide
+- Explosion
+- Rapid Spin
+
 Salamence @ Leftovers
 Ability: Intimidate
-Hidden Power: Grass
-EVs: 120 Atk / 236 SpA / 152 Spe
-Rash Nature
-- Wish
-- Dragon Claw
-- Flamethrower
+EVs: 252 HP / 112 Atk / 80 SpD / 64 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Refresh
+- Dragon Dance
+- Hidden Power [Flying]
 - Brick Break
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 SpD / 30 Spe
-- Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Counter
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 228 SpA / 28 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 76 HP / 16 Atk / 252 Def / 164 SpD
-Impish Nature
-- Rest
-- Curse
-- Return
+EVs: 76 HP / 184 Atk / 96 Def / 140 SpD / 12 Spe
+Adamant Nature
 - Focus Punch
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 192 HP / 8 Def / 156 SpA / 152 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Giga Drain
-- Heal Bell
-- Psychic
-
-Houndoom @ Leftovers
-Ability: Early Bird
-EVs: 76 HP / 252 SpA / 180 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
-- Pursuit
-- Flamethrower
-- Hidden Power [Grass]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 40 SpA / 44 SpD / 48 Spe
-Relaxed Nature
-- Rest
-- Curse
-- Earthquake
-- Hydro Pump
+- Counter
+- Shadow Ball
+- Body Slam

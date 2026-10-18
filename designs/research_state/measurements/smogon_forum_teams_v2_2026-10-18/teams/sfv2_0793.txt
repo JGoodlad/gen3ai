@@ -1,58 +1,56 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 96 SpA / 160 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Ice Beam
-- Substitute
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 Atk / 76 SpA / 180 Spe
-Lonely Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Thunderbolt
-- Drill Peck
-- Hidden Power [Fighting]
-- Baton Pass
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
-Timid Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Taunt
-- Thunderbolt
-- Ice Punch
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 80 SpA / 176 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 216 SpD / 44 Spe
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
+IVs: 0 Atk
 - Spikes
 - Roar
-- Taunt
 - Drill Peck
+- Protect
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 244 SpA / 12 Spe
-Bold Nature
-IVs: 0 Atk
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Calm Mind
 - Soft-Boiled
 - Ice Beam
+- Thunderbolt
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Miltank (F) @ Leftovers
+Ability: Thick Fat
+EVs: 252 HP / 84 Def / 172 SpD
+Impish Nature
+IVs: 0 Atk
 - Seismic Toss
 - Thunder Wave
+- Heal Bell
+- Milk Drink
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day

@@ -1,57 +1,59 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 60 SpD / 196 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Baton Pass
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 SpD
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 144 Atk / 112 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
 - Rock Slide
-- Earthquake
-- Focus Punch
-- Hidden Power [Bug]
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 176 Def / 44 SpD / 40 Spe
-Relaxed Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Focus Punch
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 236 SpD / 20 Spe
-Careful Nature
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 52 Def / 32 SpD / 176 Spe
+Timid Nature
 IVs: 0 Atk
-- Spikes
-- Protect
-- Toxic
-- Roar
+- Surf
+- Thunder Wave
+- Recover
+- Rapid Spin
+
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 196 Atk / 64 SpD
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Thunder Wave
+- Explosion
+- Earthquake
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 236 SpA / 20 Spe
+EVs: 168 HP / 252 Def / 88 Spe
 Bold Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Thunder Wave
-- Seismic Toss
-- Ice Beam
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 40 Def / 32 SpD / 188 Spe
-Timid Nature
-- Ice Punch
+- Calm Mind
 - Thunderbolt
-- Will-O-Wisp
-- Explosion
+- Ice Beam
+- Soft-Boiled
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Calm Nature
+IVs: 0 Atk
+- Thief
+- Spikes
+- Roar
+- Protect
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 148 Def / 108 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Counter
+- Roar
+- Protect

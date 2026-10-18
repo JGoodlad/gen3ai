@@ -1,54 +1,57 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 72 HP / 252 Atk / 184 Spe
-Jolly Nature
-- Meteor Mash
-- Earthquake
-- Explosion
-- Brick Break
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 60 HP / 252 Atk / 196 Spe
-Naive Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
-- Hydro Pump
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 4 Def / 252 SpA
-Quiet Nature
-- Pursuit
-- Crunch
-- Fire Blast
-- Brick Break
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 100 SpA / 156 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 40 SpD
-Brave Nature
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
 - Rapid Spin
 - Earthquake
-- Ice Beam
+- Psychic
 - Explosion
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 24 HP / 188 Atk / 100 Def / 184 SpD / 12 Spe
+EVs: 252 Atk / 120 Def / 136 SpD
 Adamant Nature
-- Body Slam
+- Curse
+- Double-Edge
 - Earthquake
-- Focus Punch
-- Self-Destruct
+- Shadow Ball
 
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 60 HP / 252 Atk / 196 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
 Adamant Nature
-- Spore
-- Mach Punch
-- Focus Punch
-- Brick Break
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

@@ -1,58 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 164 Def / 92 SpD
 Adamant Nature
-IVs: 30 Atk / 30 SpD
+- Meteor Mash
 - Earthquake
-- Rock Slide
-- Hidden Power [Ghost]
-- Focus Punch
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
+- Protect
 - Explosion
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 184 HP / 148 SpD / 176 Spe
-Timid Nature
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Whirlwind
+- Protect
+- Toxic
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 56 HP / 252 SpA / 4 SpD / 196 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Thunder Wave
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 104 HP / 252 SpA / 4 SpD / 148 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Substitute
 - Thunderbolt
 - Hidden Power [Grass]
+- Toxic
+- Protect
+
+Jolteon (M) @ Leftovers
+Ability: Volt Absorb
+EVs: 252 SpA / 80 SpD / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
 - Baton Pass
+- Thunder Wave
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Substitute
-- Fire Blast
-- Hidden Power [Grass]
-- Focus Punch
-
-Aerodactyl @ Liechi Berry
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 HP
-- Substitute
-- Earthquake
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 8 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
-- Double-Edge
+- Earthquake
+- Focus Punch
+- Hidden Power [Bug]

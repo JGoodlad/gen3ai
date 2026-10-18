@@ -1,56 +1,59 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 48 HP / 248 SpA / 212 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Pursuit
-- Hidden Power [Grass]
-- Fire Blast
-- Thunder
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-- Dragon Claw
-- Fire Blast
-- Rock Slide
-- Brick Break
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 192 HP / 220 Atk / 4 Def / 56 SpA / 36 Spe
-Brave Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Hydro Pump
-- Ice Beam
-- Earthquake
-- Hidden Power [Bug]
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 112 SpD / 148 Spe
-Careful Nature
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 120 HP / 132 Def / 108 SpD / 148 Spe
+Jolly Nature
+IVs: 0 Atk
+- Spore
 - Spikes
-- Roar
-- Drill Peck
+- Endeavor
+- Whirlwind
+
+Slaking @ Choice Band
+Ability: Truant
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Earthquake
+- Shadow Ball
+- Hyper Beam
+- Double-Edge
+
+Regirock @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 248 HP / 184 Atk / 52 SpD / 24 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Explosion
+- Superpower
+- Counter
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Hidden Power [Grass]
+- Dragon Claw
+- Brick Break
+- Flamethrower
+
+Banette @ Leftovers
+Ability: Insomnia
+EVs: 112 HP / 32 Atk / 44 Def / 224 SpD / 96 Spe
+Impish Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Shadow Ball
+- Hidden Power [Fighting]
+- Will-O-Wisp
 - Taunt
 
-Zapdos @ Leftovers
+Raikou @ Leftovers
 Ability: Pressure
-EVs: 56 HP / 200 SpA / 252 Spe
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
+IVs: 2 Atk / 30 Def
+- Calm Mind
 - Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Baton Pass
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 76 Def / 180 SpD
-Sassy Nature
-- Wish
-- Protect
-- Fire Punch
-- Body Slam
+- Hidden Power [Ice]
+- Substitute

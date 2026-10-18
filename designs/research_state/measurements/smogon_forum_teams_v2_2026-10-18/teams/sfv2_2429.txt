@@ -1,57 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 192 Atk / 200 SpD / 116 Spe
-Adamant Nature
-- Dragon Dance
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Light Screen
+- Toxic
+- Thunderbolt
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 224 Def / 32 Spe
+Impish Nature
+- Protect
+- Toxic
 - Earthquake
 - Rock Slide
-- Brick Break
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 176 SpA / 148 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Crunch
-- Pursuit
+- Dragon Claw
 - Flamethrower
 - Hidden Power [Grass]
+- Beat Up
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 252 SpA / 4 SpD
-Quiet Nature
-IVs: 30 Atk / 30 SpA
-- Rapid Spin
-- Hidden Power [Grass]
-- Ice Beam
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 120 Def / 36 SpA / 100 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Grass]
-- Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 224 Atk / 44 Spe
-Brave Nature
-IVs: 30 HP
-- Curse
-- Earthquake
-- Rock Slide
-- Hydro Pump
-
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 Def
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
 Adamant Nature
-- Curse
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Rock Slide
-- Explosion
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day

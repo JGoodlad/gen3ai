@@ -1,56 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 212 SpA / 120 SpD / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Thunder Wave
+- Toxic
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 196 HP / 8 Def / 124 SpA / 180 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 40 Def / 176 SpA / 44 SpD
+Quiet Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Curse
+
 Metagross @ Leftovers
 Ability: Clear Body
-Happiness: 0
-EVs: 252 HP / 32 Atk / 196 Def / 28 SpD
-Impish Nature
-- Protect
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Protect
-- Thunderbolt
-- Hidden Power [Fire]
-- Rain Dance
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 4 Atk / 252 Def
-Relaxed Nature
-- Rapid Spin
-- Earthquake
+EVs: 168 HP / 16 Def / 248 SpA / 76 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Psychic
+- Hidden Power [Fire]
+- Meteor Mash
 - Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-- Soft-Boiled
-- Wish
-- Thunder Wave
-- Seismic Toss
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Hidden Power [Grass]
+- Fire Blast
+- Focus Punch
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 144 Atk / 180 Spe
 Adamant Nature
-- Curse
-- Return
-- Shadow Ball
-- Self-Destruct
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 240 Def / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Roar
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge

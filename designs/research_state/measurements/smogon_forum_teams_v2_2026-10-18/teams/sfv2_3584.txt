@@ -1,60 +1,58 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 188 HP / 36 Def / 252 SpA / 32 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Toxic
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
 - Roar
 
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 124 HP / 20 Def / 252 SpA / 112 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
-- Will-O-Wisp
-- Sunny Day
-
-Magneton @ Magnet
-Ability: Magnet Pull
-Shiny: Yes
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Sunny Day
-- Metal Sound
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 40 SpA / 216 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
 Timid Nature
 IVs: 0 Atk
-- Rapid Spin
+- Taunt
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 104 Def / 20 SpA / 96 SpD / 36 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Recover
-- Surf
-- Thunder Wave
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
 
-Snorlax (F) @ Leftovers
-Ability: Thick Fat
-Shiny: Yes
-EVs: 12 HP / 244 Def / 252 SpD
-Careful Nature
-- Curse
-- Body Slam
-- Shadow Ball
-- Rest
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 252 Def / 4 SpA
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
 Bold Nature
-IVs: 0 Atk / 30 SpA
-- Calm Mind
-- Rest
-- Substitute
+IVs: 0 Atk
+- Protect
+- Refresh
+- Toxic
 - Surf
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 Def
+- Rest
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar

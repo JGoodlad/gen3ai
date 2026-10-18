@@ -1,57 +1,57 @@
-Regirock @ Choice Band
-Ability: Clear Body
-EVs: 200 HP / 252 Atk / 56 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Rock Slide
-- Hidden Power [Ghost]
-- Superpower
-- Explosion
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 136 SpA / 156 Spe
+Modest Nature
+IVs: 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
-Adamant Nature
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 216 SpA / 44 SpD / 8 Spe
+Quiet Nature
 - Curse
-- Double-Edge
 - Earthquake
-- Shadow Ball
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
+- Hydro Pump
+- Ice Beam
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 192 HP / 252 SpA / 64 Spe
+EVs: 4 HP / 252 SpA / 252 Spe
 Modest Nature
-IVs: 0 Atk
-- Rest
+IVs: 2 Atk / 30 SpA
 - Calm Mind
 - Surf
 - Ice Beam
+- Hidden Power [Grass]
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 112 SpA / 180 Spe
-Modest Nature
-IVs: 30 Spe
-- Light Screen
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 200 HP / 252 SpA / 56 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA
+- Flamethrower
 - Thunderbolt
-- Hidden Power [Ice]
-- Rain Dance
+- Hidden Power [Grass]
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break

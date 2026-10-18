@@ -1,56 +1,58 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 HP / 252 Def / 4 SpA
-Bold Nature
-- Flamethrower
-- Protect
-- Toxic
-- Wish
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 200 HP / 132 Def / 176 SpD
-Careful Nature
-- Curse
-- Earthquake
-- Rest
-- Return
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 252 HP / 84 Def / 60 SpA / 112 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Hidden Power [Fire]
-- Protect
-- Thunderbolt
-- Toxic
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 152 Atk / 16 Def / 88 Spe
-Impish Nature
-- Earthquake
-- Explosion
-- Ice Beam
-- Rapid Spin
-
-Houndoom @ Leftovers
+Kangaskhan (F) @ Leftovers
 Ability: Early Bird
-EVs: 252 SpA / 80 SpD / 176 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Flamethrower
-- Pursuit
-- Rest
+EVs: 200 HP / 216 Atk / 76 SpD / 16 Spe
+Adamant Nature
+- Yawn
+- Focus Punch
+- Return
+- Shadow Ball
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 SpA
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD
+- Spikes
+- Drill Peck
+- Taunt
+- Hidden Power [Ground]
+
+Poliwrath @ Leftovers
+Ability: Water Absorb
+EVs: 8 HP / 252 Atk / 248 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Substitute
+- Hidden Power [Bug]
+- Focus Punch
+- Rock Tomb
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 240 HP / 216 Def / 16 SpD / 36 Spe
 Bold Nature
 IVs: 0 Atk
+- Wish
+- Fire Punch
+- Protect
+- Toxic
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 232 Def / 120 SpA / 156 Spe
+Modest Nature
+IVs: 0 Atk
+- Fire Blast
+- Counter
+- Soft-Boiled
 - Ice Beam
-- Recover
-- Refresh
-- Surf
+
+Articuno @ Leftovers
+Ability: Pressure
+EVs: 124 HP / 220 SpA / 164 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Ice Beam
+- Heal Bell
+- Hidden Power [Fire]
+- Roar

@@ -1,57 +1,56 @@
-Zapdos
-Ability: Pressure
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Baton Pass
-
-Regice @ Leftovers
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 252 HP / 252 SpA
-Modest Nature
-- Ice Beam
-- Thunderbolt
-- Explosion
-- Thunder Wave
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 32 SpD / 224 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+EVs: 188 HP / 252 Atk / 68 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
 - Earthquake
-- Beat Up
-- Aerial Ace
-- Hidden Power [Bug]
+- Brick Break
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 108 HP / 136 Atk / 108 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Counter
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 152 Def / 96 SpA / 20 Spe
-Modest Nature
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
 IVs: 0 Atk
+- Rest
 - Calm Mind
 - Surf
-- Rest
 - Roar
 
-Celebi
-Ability: Natural Cure
-EVs: 36 HP / 252 SpA / 76 SpD / 144 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 76 Def / 180 SpD
-Sassy Nature
-- Body Slam
-- Fire Punch
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 80 Atk / 252 SpA / 176 Spe
+Rash Nature
 - Wish
-- Protect
+- Dragon Claw
+- Fire Blast
+- Brick Break

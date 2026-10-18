@@ -1,50 +1,51 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 244 HP / 252 SpA / 12 Spe
-Quiet Nature
-- Meteor Mash
-- Ice Punch
-- Thunder Punch
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Toxic
+- Hydro Pump
+- Endeavor
+
+Claydol @ Choice Band
+Ability: Levitate
+EVs: 252 HP / 252 Atk / 4 Def
+Impish Nature
+- Rapid Spin
+- Earthquake
+- Rock Slide
 - Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 232 HP / 96 SpA / 180 Spe
+Modest Nature
+IVs: 30 Spe
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
+- Rain Dance
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 40 Def / 76 SpA / 140 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Substitute
-- Psychic
-- Fire Punch
-
-Porygon2 @ Starf Berry
-Ability: Trace
-EVs: 252 Atk / 252 SpD / 4 Spe
-Lonely Nature
-- Conversion 2
-- Recycle
-- Aerial Ace
-- Recover
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 68 HP / 252 SpA / 188 Spe
+EVs: 224 HP / 148 SpA / 136 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Substitute
-- Thunder Wave
-
-Celebi
-Ability: Natural Cure
-EVs: 248 HP / 120 Def / 52 SpA / 40 SpD / 48 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
 - Calm Mind
-- Baton Pass
-- Giga Drain
-- Hidden Power [Fire]
+- Fire Punch
+- Hidden Power [Grass]
+- Psychic
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 Def / 248 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Crunch
 
 Dugtrio @ Choice Band
 Ability: Arena Trap
@@ -54,4 +55,4 @@ IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Hidden Power [Bug]
 - Aerial Ace
-- Rock Slide
+- Sunny Day

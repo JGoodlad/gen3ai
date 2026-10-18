@@ -1,50 +1,49 @@
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 224 SpA / 44 Spe
-Quiet Nature
+EVs: 240 HP / 108 Def / 72 SpA / 44 SpD / 44 Spe
+Relaxed Nature
+- Curse
 - Earthquake
 - Hydro Pump
 - Ice Beam
-- Focus Punch
 
-Tyranitar @ Choice Band
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 184 HP / 104 Atk / 220 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
 - Earthquake
 - Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
+- Double-Edge
 
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
 - Spikes
-- Thief
+- Protect
 - Drill Peck
 - Roar
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 216 SpA / 40 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
 Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Water Pulse
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
 - Psychic
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Earthquake
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
 
 Aerodactyl @ Choice Band
 Ability: Rock Head

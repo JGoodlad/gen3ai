@@ -1,56 +1,56 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
+EVs: 252 HP / 176 Atk / 72 Def / 8 Spe
+Adamant Nature
 - Meteor Mash
-- Hidden Power [Fire]
+- Earthquake
+- Rock Slide
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 112 Def / 12 SpA / 136 SpD
+Sassy Nature
+- Rapid Spin
+- Earthquake
 - Psychic
 - Explosion
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Ice Beam
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Calm Mind
+- Ice Punch
+- Thunderbolt
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 16 HP / 96 Atk / 184 Def / 160 SpD / 52 Spe
 Adamant Nature
+- Knock Off
+- Brick Break
+- Rock Slide
+- Focus Punch
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
 - Dragon Dance
 - Earthquake
-- Rock Slide
-- Double-Edge
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 244 HP / 124 Def / 140 Spe
-Impish Nature
-- Recover
-- Leech Seed
-- Swords Dance
-- Baton Pass
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
+- Hidden Power [Rock]
+- Return

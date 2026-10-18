@@ -1,0 +1,57 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Earthquake
+- Hidden Power [Grass]
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Fire]
+- Sunny Day
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
+Adamant Nature
+- Curse
+- Return
+- Shadow Ball
+- Self-Destruct
+
+Entei @ Leftovers
+Ability: Pressure
+EVs: 140 HP / 228 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Calm Mind
+- Flamethrower
+- Hidden Power [Grass]
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 40 HP / 188 Atk / 100 SpD / 180 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Hidden Power [Rock]
+- Double-Edge

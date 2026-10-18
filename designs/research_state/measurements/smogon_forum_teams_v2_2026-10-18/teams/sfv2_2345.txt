@@ -1,23 +1,12 @@
-Suicune @ Leftovers
-Ability: Pressure
-Shiny: Yes
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Hydro Pump
-- Ice Beam
-- Hidden Power [Grass]
-
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 212 Atk / 132 Def / 164 SpD
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 Atk / 68 SpD / 188 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Bulk Up
-- Cross Chop
+IVs: 30 Def / 30 SpA / 30 Spe
+- Meteor Mash
+- Earthquake
 - Rock Slide
-- Hidden Power [Bug]
+- Explosion
 
 Claydol @ Leftovers
 Ability: Levitate
@@ -28,30 +17,41 @@ Adamant Nature
 - Psychic
 - Explosion
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 200 SpD / 56 Spe
-Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Counter
-- Explosion
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-- Dragon Dance
-- Brick Break
-- Rock Slide
-- Earthquake
-
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 204 Atk / 108 SpA / 196 Spe
+EVs: 192 HP / 140 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Fire Punch
+- Hidden Power [Grass]
+- Psychic
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Snorlax (F) @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 12 Def / 244 SpA / 252 Spe
 Mild Nature
 IVs: 30 Atk / 30 SpA
-- Thunder
-- Dynamic Punch
+- Rock Slide
+- Fire Blast
 - Hidden Power [Grass]
-- Body Slam
+- Brick Break

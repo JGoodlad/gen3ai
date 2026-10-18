@@ -1,57 +1,57 @@
-Gengar (M) @ Leftovers
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Roar
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Counter
+
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 44 Def / 20 SpD / 196 Spe
-Timid Nature
-- Thunderbolt
-- Ice Punch
-- Will-O-Wisp
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
 - Explosion
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 8 HP / 232 Atk / 40 SpD / 228 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Aerial Ace
-- Earthquake
-- Hidden Power [Bug]
-- Rock Slide
-
-Houndoom (M) @ Black Glasses
-Ability: Early Bird
-EVs: 56 HP / 252 SpA / 12 SpD / 188 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
 Hasty Nature
+- Will-O-Wisp
+- Thunder
+- Giga Drain
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
+Calm Nature
 IVs: 0 Atk
-- Pursuit
-- Fire Blast
-- Crunch
-- Beat Up
+- Wish
+- Protect
+- Toxic
+- Fire Punch
 
-Snorlax @ Leftovers
-Ability: Thick Fat
-EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
-Careful Nature
-- Curse
-- Return
-- Amnesia
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
 - Rest
-
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
+- Light Screen
+- Toxic
 - Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Endure
-
-Kingdra (F) @ Lum Berry
-Ability: Swift Swim
-EVs: 176 HP / 252 SpA / 80 Spe
-Modest Nature
-IVs: 3 Atk / 30 SpA
-- Rain Dance
-- Hydro Pump
-- Ice Beam
-- Hidden Power [Electric]

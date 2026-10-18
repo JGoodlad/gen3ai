@@ -1,57 +1,58 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
+EVs: 184 HP / 156 Atk / 168 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 SpA / 252 SpD
-Calm Nature
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 228 Def / 20 SpA / 8 SpD
+Bold Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
-- Spikes
-- Rapid Spin
-- Toxic
-- Hidden Power [Fire]
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 220 SpD / 36 Spe
-Careful Nature
+- Recover
 - Thunder Wave
-- Seismic Toss
-- Superpower
-- Explosion
+- Ice Beam
+- Hidden Power [Fire]
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 152 Def / 44 SpA / 28 SpD / 32 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Recover
-- Leech Seed
-- Heal Bell
-- Hidden Power [Grass]
-
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 252 Def / 200 SpD / 56 Spe
-Bold Nature
+EVs: 192 HP / 8 Def / 132 SpA / 176 Spe
+Modest Nature
 IVs: 0 Atk
-- Wish
-- Protect
+- Calm Mind
+- Leech Seed
+- Psychic
+- Giga Drain
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 164 Atk / 16 Def / 64 SpA / 96 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Earthquake
+- Hidden Power [Grass]
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
 - Surf
 - Ice Beam
+- Thunderbolt
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 220 Def / 36 Spe
-Lax Nature
-- Toxic
-- Earthquake
-- Rock Slide
-- Fire Blast
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Flamethrower
+- Hidden Power [Grass]
+- Focus Punch

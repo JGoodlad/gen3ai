@@ -1,55 +1,58 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
-Mild Nature
-- Wish
-- Dragon Claw
-- Flamethrower
-- Brick Break
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Toxic
+- Protect
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+EVs: 252 HP / 252 Atk / 4 Def
 Adamant Nature
-- Dragon Dance
+IVs: 30 SpD / 30 Spe
+- Focus Punch
 - Earthquake
+- Hidden Power [Bug]
 - Rock Slide
-- Double-Edge
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 104 Atk / 96 SpD / 56 Spe
-Careful Nature
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
 - Thunder Wave
-- Seismic Toss
-- Superpower
+- Roar
+- Hidden Power [Grass]
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 40 HP / 252 SpA / 216 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Ice Punch
+- Fire Punch
+- Hidden Power [Grass]
 - Explosion
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 36 Def / 104 SpA / 96 SpD / 20 Spe
-Calm Nature
-IVs: 0 Atk
-- Recover
-- Leech Seed
-- Light Screen
-- Psychic
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 56 Atk / 80 Def / 44 SpA / 44 SpD / 44 Spe
-Brave Nature
-- Curse
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+- Meteor Mash
 - Earthquake
 - Rock Slide
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
 - Hydro Pump
+- Thunderbolt
+- Ice Beam
+- Psychic

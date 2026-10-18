@@ -1,58 +1,55 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 8 Atk / 248 SpA / 252 Spe
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
 Naive Nature
 IVs: 30 Atk / 30 SpA
-- Ice Beam
+- Dragon Claw
 - Brick Break
 - Hidden Power [Grass]
 - Fire Blast
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 16 Atk / 240 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Substitute
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 216 SpA / 44 Spe
+Quiet Nature
+- Crunch
+- Pursuit
 - Fire Blast
-- Hidden Power [Grass]
-- Focus Punch
+- Earthquake
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Toxic
-- Protect
-- Roar
+Snorlax @ Leftovers
+Ability: Immunity
+Shiny: Yes
+EVs: 200 Atk / 108 Def / 184 SpD / 16 Spe
+Adamant Nature
+- Body Slam
+- Self-Destruct
+- Earthquake
+- Curse
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 196 SpA / 72 Spe
 Modest Nature
-IVs: 0 Atk
 - Calm Mind
-- Ice Beam
-- Thunderbolt
-- Soft-Boiled
+- Surf
+- Rest
+- Sleep Talk
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 136 Def / 76 SpA / 48 Spe
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 232 Atk / 16 Def / 12 SpD
 Relaxed Nature
-- Hydro Pump
+- Earthquake
 - Ice Beam
-- Earthquake
-- Focus Punch
+- Rapid Spin
+- Explosion
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Double-Edge
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+- Body Slam
+- Fire Punch
+- Wish
+- Protect

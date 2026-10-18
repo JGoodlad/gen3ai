@@ -1,0 +1,61 @@
+Medicham (F) @ Choice Band
+Ability: Pure Power
+Shiny: Yes
+EVs: 60 HP / 252 Atk / 196 Spe
+Adamant Nature
+- Brick Break
+- Shadow Ball
+- Rock Slide
+- Focus Punch
+
+Cloyster (M) @ Leftovers
+Ability: Shell Armor
+Shiny: Yes
+EVs: 64 HP / 8 SpA / 240 SpD / 196 Spe
+Timid Nature
+- Spikes
+- Surf
+- Rapid Spin
+- Explosion
+
+Charizard (F) @ Leftovers
+Ability: Blaze
+Shiny: Yes
+EVs: 24 Atk / 232 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
+- Substitute
+
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 252 HP / 104 SpA / 152 Spe
+Modest Nature
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Substitute
+
+Jolteon (M) @ Leftovers
+Ability: Volt Absorb
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Wish
+- Roar
+
+Registeel @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 252 HP / 56 Def / 180 SpD / 20 Spe
+Careful Nature
+- Seismic Toss
+- Counter
+- Thunder Wave
+- Explosion

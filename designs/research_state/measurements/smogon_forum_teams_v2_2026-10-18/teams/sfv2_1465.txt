@@ -1,32 +1,40 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
+EVs: 216 HP / 136 SpA / 156 Spe
 Modest Nature
-IVs: 3 Atk / 30 Spe
-- Protect
+IVs: 30 Spe
+- Thunder Wave
 - Toxic
 - Thunderbolt
 - Hidden Power [Ice]
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
+EVs: 36 HP / 252 SpA / 220 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Ice Beam
+- Brick Break
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 240 HP / 216 SpD / 52 Spe
-Careful Nature
-IVs: 0 Atk
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 168 SpA / 244 SpD / 96 Spe
+Modest Nature
 - Spikes
-- Taunt
-- Toxic
-- Roar
+- Rapid Spin
+- Ice Beam
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 40 SpA / 44 SpD / 48 Spe
+Relaxed Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
 Metagross @ Leftovers
 Ability: Clear Body
@@ -37,16 +45,6 @@ IVs: 30 Atk / 30 SpA / 30 Spe
 - Hidden Power [Fire]
 - Psychic
 - Explosion
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
 
 Aerodactyl @ Choice Band
 Ability: Rock Head

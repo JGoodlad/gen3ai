@@ -1,57 +1,57 @@
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 212 Def / 12 SpA / 32 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Thunderbolt
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 72 HP / 252 Atk / 184 Spe
+Adamant Nature
+- Meteor Mash
+- Rock Slide
+- Earthquake
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 32 SpA / 184 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Ice Punch
+- Will-O-Wisp
 - Hidden Power [Grass]
-- Rest
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 252 Def / 4 SpD
-Bold Nature
-IVs: 0 Atk
-- Ice Beam
-- Recover
-- Thunderbolt
-- Rain Dance
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 96 Def / 44 SpA / 116 SpD
-Bold Nature
-IVs: 30 HP / 30 SpA
-- Heal Bell
-- Hidden Power [Grass]
-- Leech Seed
-- Recover
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 Def / 64 Spe
-Bold Nature
-- Calm Mind
-- Rest
-- Roar
-- Surf
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 252 Def / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Toxic
-- Fire Punch
-- Wish
-- Protect
+- Explosion
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 120 Atk / 136 Def
-Relaxed Nature
+EVs: 248 HP / 252 Atk / 8 Spe
+Adamant Nature
 - Earthquake
 - Psychic
 - Rapid Spin
-- Refresh
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Surf
+- Ice Beam
+- Hidden Power [Grass]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 SpA / 136 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Ice Punch
+- Thunderbolt

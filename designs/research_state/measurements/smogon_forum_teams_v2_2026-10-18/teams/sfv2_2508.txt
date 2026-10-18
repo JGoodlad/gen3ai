@@ -1,55 +1,55 @@
 Metagross @ Choice Band
 Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
-Adamant Nature
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
 - Meteor Mash
-- Earthquake
-- Rock Slide
 - Explosion
+- Earthquake
+- Brick Break
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 248 HP / 80 Atk / 180 Spe
 Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Dragon Dance
-- Earthquake
 - Rock Slide
-- Double-Edge
+- Earthquake
+- Hidden Power [Bug]
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Rapid Spin
+- Earthquake
+- Shadow Ball
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 68 Def / 40 SpA / 148 Spe
+Timid Nature
+- Rapid Spin
+- Recover
+- Surf
+- Thunder Wave
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
 Adamant Nature
-- Curse
-- Double-Edge
-- Shadow Ball
 - Self-Destruct
+- Body Slam
+- Shadow Ball
+- Focus Punch
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 4 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
 - Substitute
-- Leech Seed
-- Psychic
-- Baton Pass
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 160 Atk / 48 SpA / 44 SpD / 16 Spe
-Brave Nature
-- Curse
-- Earthquake
-- Rock Slide
-- Hydro Pump
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Hidden Power [Grass]
+- Fire Blast
+- Focus Punch

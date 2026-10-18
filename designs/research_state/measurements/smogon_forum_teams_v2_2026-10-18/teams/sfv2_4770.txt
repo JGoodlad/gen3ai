@@ -1,0 +1,56 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Brick Break
+- Hidden Power [Grass]
+- Fire Blast
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 220 Def / 36 SpD
+Relaxed Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 216 Atk / 60 Def / 28 SpD
+Adamant Nature
+- Curse
+- Body Slam
+- Shadow Ball
+- Earthquake
+
+Ludicolo @ Leftovers
+Ability: Swift Swim
+EVs: 220 HP / 184 SpA / 104 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Surf
+- Rain Dance
+- Leech Seed
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 240 Atk / 36 SpA / 232 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 252 HP / 196 Atk / 60 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Superpower
+- Hidden Power [Bug]
+- Explosion

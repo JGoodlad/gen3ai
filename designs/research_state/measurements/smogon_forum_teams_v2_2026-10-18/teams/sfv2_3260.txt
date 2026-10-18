@@ -1,32 +1,31 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 104 Atk / 252 SpA / 152 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
+EVs: 232 HP / 64 SpA / 212 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
 - Thunderbolt
-- Hidden Power [Grass]
-- Drill Peck
-- Thunder Wave
+- Light Screen
+- Hidden Power [Ice]
+- Toxic
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
+EVs: 248 HP / 248 SpD / 12 Spe
 Careful Nature
-IVs: 0 Atk
-- Toxic
 - Spikes
+- Toxic
+- Drill Peck
 - Roar
-- Protect
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Ice Beam
-- Thunderbolt
-- Thunder Wave
-- Soft-Boiled
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 228 Atk / 40 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
@@ -34,25 +33,26 @@ EVs: 252 Atk / 4 SpD / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
-- Earthquake
-- Hidden Power [Bug]
 - Double-Edge
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 40 Def / 28 SpA / 192 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Ice Punch
-- Explosion
-- Hidden Power [Grass]
-- Thunderbolt
+- Hidden Power [Bug]
+- Earthquake
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 252 HP / 212 Def / 44 SpD
-Relaxed Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
+EVs: 248 HP / 156 Def / 104 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Refresh
 - Protect
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 80 HP / 16 SpA / 232 SpD / 180 Spe
+Modest Nature
+IVs: 0 Atk
+- Giga Drain
+- Taunt
+- Will-O-Wisp
+- Thunderbolt

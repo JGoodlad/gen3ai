@@ -1,57 +1,58 @@
-Blaziken @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 156 SpD / 100 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Roar
+- Toxic
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 SpA / 32 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Fire Punch
 - Hidden Power [Grass]
-- Substitute
-- Sky Uppercut
+- Calm Mind
 
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 8 HP / 252 Atk / 28 SpD / 220 Spe
-Adamant Nature
-- Spore
-- Focus Punch
-- Sky Uppercut
-- Mach Punch
-
-Snorlax @ Leftovers
-Ability: Immunity
-Happiness: 0
-EVs: 100 HP / 176 Atk / 68 Def / 152 SpD / 12 Spe
-Adamant Nature
-- Frustration
-- Earthquake
-- Focus Punch
-- Self-Destruct
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
 - Thunderbolt
 - Hidden Power [Grass]
 - Thunder Wave
-- Baton Pass
+- Roar
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 32 Def / 220 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Ice Beam
-- Fire Blast
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 76 Atk / 172 SpA / 12 Spe
-Rash Nature
-- Psychic
-- Earthquake
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 76 SpA / 248 SpD / 184 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Hypnosis
+- Thunderbolt
+- Hidden Power [Grass]
 - Explosion
-- Thunder Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 124 Atk / 136 SpA
+Brave Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Refresh
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 248 HP / 80 Atk / 180 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]

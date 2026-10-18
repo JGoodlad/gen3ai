@@ -1,58 +1,59 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Baton Pass
-- Hidden Power [Grass]
-- Thunderbolt
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 216 Def / 40 SpD
+Impish Nature
+IVs: 0 Atk
+- Spikes
 - Toxic
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 80 Atk / 252 SpA / 176 Spe
-Hasty Nature
-IVs: 30 HP / 30 SpA
-- Explosion
-- Hidden Power [Grass]
-- Ice Punch
-- Thunderbolt
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 184 Def / 40 SpA / 44 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Hydro Pump
+- Roar
 - Protect
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 8 HP / 252 Atk / 32 SpD / 216 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Aerial Ace
-- Earthquake
-- Hidden Power [Bug]
-- Rock Slide
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 220 HP / 252 Def / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Roar
+- Toxic
 
-Kingdra @ Leftovers
-Ability: Swift Swim
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def / 30 Spe
-- Hidden Power [Electric]
-- Hydro Pump
-- Ice Beam
-- Rain Dance
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 224 HP / 252 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Toxic
+- Roar
+- Rest
+- Sleep Talk
 
-Ludicolo @ Leftovers
-Ability: Swift Swim
-EVs: 72 HP / 252 SpA / 184 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Hidden Power [Grass]
-- Hydro Pump
-- Ice Beam
-- Rain Dance
+Articuno @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 SpD / 16 Spe
+Calm Nature
+IVs: 0 Atk
+- Haze
+- Heal Bell
+- Roar
+- Rest
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 248 Def / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Sleep Talk
+- Rest
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpD / 180 Spe
+Timid Nature
+IVs: 0 Atk
+- Leech Seed
+- Substitute
+- Recover
+- Baton Pass

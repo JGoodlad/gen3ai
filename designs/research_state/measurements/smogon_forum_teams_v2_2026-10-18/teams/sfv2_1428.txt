@@ -1,57 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
-- Rain Dance
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Surf
-- Ice Beam
-- Thunderbolt
-
 Metagross @ Choice Band
 Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
+EVs: 96 HP / 252 Atk / 20 Def / 140 Spe
 Adamant Nature
 - Meteor Mash
 - Earthquake
-- Rock Slide
 - Explosion
+- Rock Slide
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 192 HP / 252 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
-- Calm Mind
-- Hydro Pump
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 2 Atk / 30 Def
+- Overheat
+- Beat Up
+- Hidden Power [Ice]
+- Flamethrower
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 16 HP / 216 Atk / 108 Def / 168 SpD
-Adamant Nature
-- Curse
-- Double-Edge
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 200 HP / 36 Atk / 4 Def / 176 SpA / 92 Spe
+Quiet Nature
+- Surf
+- Ice Beam
 - Earthquake
-- Shadow Ball
+- Curse
 
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 Def / 252 Spe
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 8 HP / 192 SpA / 56 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Sleep Powder
+- Leech Seed
+- Razor Leaf
+- Hidden Power [Ice]
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 240 Atk / 16 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 176 Atk / 192 SpD / 140 Spe
 Adamant Nature
-IVs: 30 HP
-- Substitute
-- Swords Dance
-- Megahorn
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
 - Rock Slide

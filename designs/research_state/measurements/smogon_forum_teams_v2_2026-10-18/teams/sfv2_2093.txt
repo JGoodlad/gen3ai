@@ -1,57 +1,58 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 176 Def / 48 SpA / 44 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Hydro Pump
-- Roar
-
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
-Calm Nature
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
 IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
+- Substitute
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+
+Jynx (F) @ Leftovers
+Ability: Oblivious
+EVs: 216 HP / 28 SpA / 76 SpD / 188 Spe
+Timid Nature
+IVs: 0 Atk
+- Lovely Kiss
+- Ice Beam
+- Mean Look
+- Perish Song
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
-- Rest
+- Light Screen
+- Toxic
 - Thunderbolt
 - Hidden Power [Grass]
-- Roar
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Rest
+- Curse
+- Double-Edge
+- Shadow Ball
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
+- Substitute
 - Earthquake
-- Rock Slide
 - Hidden Power [Bug]
-- Double-Edge
+- Aerial Ace

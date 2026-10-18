@@ -1,60 +1,59 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-Shiny: Yes
-EVs: 252 HP / 16 Def / 136 SpA / 104 Spe
-Modest Nature
-- Substitute
-- Focus Punch
-- Flamethrower
-- Toxic
-
-Gengar @ Leftovers
-Ability: Levitate
-Shiny: Yes
-EVs: 248 HP / 44 Def / 112 SpD / 104 Spe
-Timid Nature
-- Will-O-Wisp
-- Explosion
-- Giga Drain
-- Ice Punch
-
-Blissey @ Leftovers
-Ability: Natural Cure
-Shiny: Yes
-EVs: 4 HP / 252 Def / 252 SpA
-Modest Nature
-- Mimic
-- Seismic Toss
-- Soft-Boiled
-- Ice Beam
-
 Swampert @ Leftovers
 Ability: Torrent
 Shiny: Yes
-EVs: 252 HP / 176 Def / 40 SpA / 40 SpD
-Bold Nature
-IVs: 0 Atk
-- Refresh
-- Surf
-- Toxic
-- Protect
+EVs: 212 HP / 104 Atk / 136 SpA / 56 Spe
+Brave Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Curse
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-Shiny: Yes
-EVs: 252 Atk / 24 SpD / 232 Spe
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Toxic
+- Roar
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 24 HP / 252 SpA / 232 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Will-O-Wisp
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 244 HP / 80 Atk / 184 Spe
 Adamant Nature
-IVs: 30 SpD / 30 Spe
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Dragon Dance
 - Earthquake
 - Hidden Power [Bug]
-- Aerial Ace
-- Screech
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 16 Atk / 224 Def / 16 SpD
-Careful Nature
-- Rapid Spin
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 244 HP / 204 SpA / 60 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Thunder Punch
+- Hidden Power [Grass]
 - Explosion
-- Shadow Ball
-- Refresh
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+Shiny: Yes
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Tickle
+- Thunder Wave

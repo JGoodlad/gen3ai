@@ -1,56 +1,57 @@
-Tyranitar @ Lum Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Double-Edge
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 92 HP / 176 Atk / 92 Def / 144 SpD / 4 Spe
+EVs: 252 HP / 84 Atk / 172 Spe
 Adamant Nature
-- Self-Destruct
-- Body Slam
-- Earthquake
-- Curse
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 28 HP / 252 SpA / 228 Spe
-Modest Nature
-IVs: 3 Atk / 30 SpA
-- Calm Mind
-- Hydro Pump
-- Ice Beam
-- Hidden Power [Electric]
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 Def
-- Fire Blast
-- Hidden Power [Ice]
-- Beat Up
+IVs: 30 SpD / 30 Spe
+- Substitute
+- Rock Slide
+- Hidden Power [Bug]
 - Focus Punch
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 56 Def / 252 SpA / 200 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
-Metagross @ Lum Berry
-Ability: Clear Body
-EVs: 128 HP / 244 Atk / 136 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
 - Earthquake
+- Psychic
 - Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Thunder Wave
+- Seismic Toss
+- Ice Beam
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Refresh
+- Toxic
+- Surf
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

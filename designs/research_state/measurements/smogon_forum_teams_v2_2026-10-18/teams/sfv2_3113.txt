@@ -1,56 +1,56 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 96 SpA / 160 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
-- Roar
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
+- Focus Punch
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 8 Def / 208 SpA / 40 Spe
-Quiet Nature
-IVs: 30 Def / 30 SpD
-- Pursuit
-- Crunch
-- Fire Blast
-- Brick Break
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 120 Atk / 236 SpA / 152 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
+EVs: 252 HP / 100 SpA / 156 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
 - Thunderbolt
 - Hidden Power [Grass]
-- Drill Peck
-- Thunder Wave
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 28 SpD / 12 Spe
-Brave Nature
-- Ice Beam
-- Earthquake
-- Rapid Spin
-- Explosion
+- Baton Pass
 
 Metagross @ Choice Band
 Ability: Clear Body
-EVs: 220 HP / 152 Atk / 136 Spe
+EVs: 252 Atk / 68 SpD / 188 Spe
 Adamant Nature
 - Meteor Mash
 - Earthquake
 - Rock Slide
 - Explosion
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 176 Atk / 156 Def / 176 SpD
-Adamant Nature
-- Body Slam
-- Focus Punch
-- Self-Destruct
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

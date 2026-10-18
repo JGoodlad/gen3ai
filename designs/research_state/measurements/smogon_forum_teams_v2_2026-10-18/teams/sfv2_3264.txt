@@ -1,57 +1,56 @@
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 4 Def / 252 SpA / 252 Spe
+EVs: 248 HP / 232 SpA / 28 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Baton Pass
+IVs: 0 Atk
+- Surf
+- Calm Mind
+- Rest
+- Sleep Talk
 
-Tyranitar @ Choice Band
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 80 HP / 176 Atk / 252 SpA
+Quiet Nature
+- Ice Beam
+- Thunderbolt
+- Explosion
+- Thunder Wave
+
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 248 Atk / 8 SpD / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+EVs: 224 Atk / 32 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
 - Rock Slide
 - Earthquake
-- Hidden Power [Bug]
-- Double-Edge
+- Hidden Power [Grass]
 
-Metagross @ Choice Band
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 72 HP / 252 Atk / 184 Spe
+EVs: 240 HP / 176 Atk / 92 Spe
 Adamant Nature
 - Meteor Mash
 - Earthquake
-- Rock Slide
 - Explosion
+- Agility
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 212 SpA / 44 Spe
-Bold Nature
-IVs: 0 Atk
-- Ice Beam
-- Seismic Toss
-- Thunder Wave
-- Soft-Boiled
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 16 Atk / 36 SpD / 208 Spe
+Adamant Nature
+- Earthquake
+- Explosion
 - Spikes
-- Drill Peck
-- Roar
-- Protect
+- Rapid Spin
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 40 Def / 32 SpD / 188 Spe
+EVs: 64 HP / 192 SpA / 252 Spe
 Timid Nature
-IVs: 0 Atk
+IVs: 30 Atk / 30 SpA
 - Ice Punch
-- Taunt
-- Thunderbolt
-- Will-O-Wisp
+- Fire Punch
+- Hidden Power [Grass]
+- Explosion

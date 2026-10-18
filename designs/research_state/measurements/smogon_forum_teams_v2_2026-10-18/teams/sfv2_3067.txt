@@ -1,58 +1,56 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 Atk / 68 SpD / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 112 Atk / 32 Def / 180 Spe
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
 - Dragon Dance
-- Rock Slide
 - Earthquake
-- Hidden Power [Bug]
+- Rock Slide
+- Double-Edge
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 92 HP / 220 SpA / 196 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Protect
-- Roar
-- Thunderbolt
-- Hidden Power [Grass]
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-IVs: 30 SpD
-- Spikes
-- Roar
-- Hidden Power [Steel]
-- Toxic
-
-Blissey (F) @ Leftovers
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
+EVs: 252 HP / 4 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Toxic
-- Ice Beam
-- Fire Blast
+- Substitute
+- Leech Seed
+- Psychic
+- Baton Pass
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 88 Def / 176 SpA / 4 Spe
-Quiet Nature
-- Curse
+EVs: 240 HP / 176 Def / 44 SpD / 48 Spe
+Relaxed Nature
+- Protect
+- Earthquake
 - Hydro Pump
 - Ice Beam
-- Earthquake
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Double-Edge
 - Earthquake
+- Rock Slide
 - Hidden Power [Bug]
+- Double-Edge

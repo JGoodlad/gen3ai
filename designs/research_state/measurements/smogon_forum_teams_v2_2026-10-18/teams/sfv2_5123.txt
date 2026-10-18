@@ -1,0 +1,58 @@
+Smeargle (M) @ Choice Band
+Ability: Own Tempo
+EVs: 252 HP / 4 Atk / 252 Spe
+Jolly Nature
+- Spore
+- Destiny Bond
+- Extreme Speed
+- Trick
+
+Houndoom (M) @ Black Glasses
+Ability: Early Bird
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Fire Blast
+- Beat Up
+- Pursuit
+- Will-O-Wisp
+
+Heracross (M) @ Black Belt
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Brick Break
+- Megahorn
+- Swords Dance
+
+Abra (M)
+Ability: Synchronize
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thief
+- Psychic
+- Encore
+- Hidden Power [Grass]
+
+Kadabra (M) @ Petaya Berry
+Ability: Synchronize
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def / 30 SpA
+- Endure
+- Psychic
+- Hidden Power [Water]
+- Thunder Punch
+
+Alakazam (M) @ Shell Bell
+Ability: Synchronize
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Fire Punch
+- Ice Punch
+- Thunder Punch
+- Psychic

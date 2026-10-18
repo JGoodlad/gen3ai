@@ -1,57 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 136 SpA / 156 Spe
-Modest Nature
-IVs: 30 Spe
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 216 SpA / 44 SpD / 8 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 80 Def / 140 SpA / 36 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Fire Punch
-- Hidden Power [Grass]
-- Psychic
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 228 SpA / 28 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 16 Def / 220 SpA / 20 Spe
 Modest Nature
 - Substitute
-- Calm Mind
-- Surf
-- Ice Beam
+- Focus Punch
+- Crunch
+- Fire Blast
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Will-O-Wisp
-- Thunderbolt
-- Hidden Power [Grass]
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Rapid Spin
+- Ice Beam
+- Recover
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 236 Atk / 16 Def / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
 - Explosion
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Sunny Day
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 8 HP / 204 SpA / 56 SpD / 240 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Sleep Powder
+- Leech Seed
+- Magical Leaf
+- Hidden Power [Fire]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Toxic
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 216 SpD / 44 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Roar
+- Rest
+- Sleep Talk

@@ -1,57 +1,58 @@
-Jynx (F) @ Lum Berry
-Ability: Oblivious
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Lovely Kiss
-- Substitute
-- Hidden Power [Fire]
-- Ice Beam
-
-Tyranitar @ Lum Berry
+Tyranitar @ Choice Band
 Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
-- Double-Edge
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 188 HP / 140 SpA / 180 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 96 Def / 120 SpA / 52 Spe
-Relaxed Nature
+- Brick Break
 - Earthquake
-- Surf
-- Ice Beam
-- Focus Punch
+- Hidden Power [Bug]
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder
+- Rain Dance
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 8 HP / 252 Atk / 108 SpD / 140 Spe
+EVs: 8 HP / 180 Atk / 140 SpD / 180 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
-- Rock Slide
-- Brick Break
 - Hidden Power [Flying]
-
-Dugtrio @ Leftovers
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Beat Up
+- Rock Slide
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 108 Def / 212 SpA / 188 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Hidden Power [Grass]
+- Psychic
+- Baton Pass
+
+Kingdra @ Leftovers
+Ability: Swift Swim
+EVs: 28 HP / 224 SpA / 192 SpD / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rain Dance
+- Hydro Pump
+- Ice Beam
+- Toxic
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 200 HP / 220 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion

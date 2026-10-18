@@ -1,58 +1,58 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 248 Atk / 8 SpD / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
+Medicham @ Choice Band
+Ability: Pure Power
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
 - Focus Punch
+- Brick Break
+- Shadow Ball
+- Rock Slide
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 0 Atk
-- Toxic
-- Protect
-- Spikes
-- Roar
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 212 SpA / 44 Spe
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 248 HP / 200 Def / 60 SpD
 Bold Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Toxic
-- Seismic Toss
-- Ice Beam
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 40 Def / 32 SpD / 188 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Ice Punch
 - Thunderbolt
-- Will-O-Wisp
+- Ice Beam
+- Thunder Wave
+- Recover
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 184 Def / 40 SpA / 36 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Wish
 - Hidden Power [Grass]
+- Fire Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 156 Def / 104 SpD
+Calm Nature
+IVs: 0 Atk / 27 Spe
+- Psychic
+- Leech Seed
+- Recover
+- Baton Pass
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
+EVs: 248 HP / 156 Def / 60 SpA / 44 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Roar
+- Toxic
 - Protect
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 120 Atk / 212 SpD / 176 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
 - Earthquake
-- Double-Edge
-- Hidden Power [Bug]
+- Rock Slide

@@ -1,59 +1,56 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 144 HP / 200 Atk / 164 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Flying]
-- Brick Break
-- Rock Slide
-- Dragon Dance
-
-Suicune @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 252 Def / 16 Spe
-Bold Nature
-IVs: 0 Atk
+EVs: 252 HP / 216 SpD / 40 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Rest
+- Toxic
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 8 HP / 252 Atk / 28 SpD / 220 Spe
+Adamant Nature
+- Focus Punch
+- Spore
+- Sky Uppercut
+- Mach Punch
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 192 Def / 64 SpD
+Relaxed Nature
+- Earthquake
 - Surf
 - Ice Beam
-- Rest
-- Calm Mind
+- Protect
 
-Metagross @ Leftovers
-Ability: Clear Body
-Shiny: Yes
-EVs: 248 HP / 252 SpA / 8 SpD
-Quiet Nature
-- Psychic
-- Pursuit
-- Earthquake
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+- Seismic Toss
+- Toxic
+- Wish
+- Soft-Boiled
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 8 Atk / 252 SpD
+Sassy Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
+- Spikes
+- Rapid Spin
 - Explosion
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 100 HP / 124 Atk / 172 Def / 112 SpD
-Adamant Nature
-- Return
-- Earthquake
-- Curse
-- Rest
-
-Magneton @ Magnet
-Ability: Magnet Pull
-Shiny: Yes
-EVs: 4 HP / 252 SpA / 252 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 40 Def / 216 SpA
 Modest Nature
 IVs: 0 Atk
-- Thunderbolt
-- Toxic
-- Thunder Wave
-- Rain Dance
-
-Azumarill @ Choice Band
-Ability: Huge Power
-EVs: 120 HP / 252 Atk / 136 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD
-- Double-Edge
-- Focus Punch
-- Hidden Power [Ground]
-- Brick Break
+- Crunch
+- Pursuit
+- Roar
+- Counter

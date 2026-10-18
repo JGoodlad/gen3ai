@@ -1,56 +1,57 @@
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
-Timid Nature
-- Spikes
-- Surf
-- Rapid Spin
-- Explosion
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Grass]
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 64 Def / 40 SpA / 120 SpD / 32 Spe
-Calm Nature
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
 IVs: 0 Atk
+- Rest
 - Calm Mind
-- Psychic
-- Leech Seed
-- Baton Pass
-
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 SpA / 4 Spe
-Modest Nature
-- Explosion
+- Surf
 - Ice Beam
-- Thunderbolt
-- Thunder Wave
 
-Metagross @ Lum Berry
-Ability: Clear Body
-EVs: 248 HP / 168 SpA / 92 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Psychic
-- Hidden Power [Fire]
-- Meteor Mash
-- Agility
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
-Flygon @ Leftovers
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 196 Def / 28 SpD / 32 Spe
-Impish Nature
-- Protect
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
 - Earthquake
-- Fire Blast
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Ice Beam
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
 - Toxic
+- Fire Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

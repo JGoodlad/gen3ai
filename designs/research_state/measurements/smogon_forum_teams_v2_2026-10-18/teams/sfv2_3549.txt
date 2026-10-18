@@ -1,56 +1,56 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Explosion
-- Earthquake
-- Meteor Mash
-- Rock Slide
-
-Snorlax (M) @ Leftovers
-Ability: Thick Fat
-EVs: 252 Atk / 252 Def
-Adamant Nature
-- Curse
-- Shadow Ball
-- Self-Destruct
-- Body Slam
-
-Salamence @ Lum Berry
-Ability: Intimidate
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Hidden Power [Flying]
-
-Swampert (M) @ Leftovers
-Ability: Torrent
-EVs: 156 HP / 80 Atk / 196 SpA / 76 Spe
-Brave Nature
-- Rock Slide
-- Earthquake
-- Hydro Pump
-- Roar
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 232 SpD / 24 Spe
-Careful Nature
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 Spe
+Bold Nature
 IVs: 0 Atk
-- Spikes
-- Roar
-- Protect
+- Recover
 - Toxic
+- Surf
+- Ice Beam
 
-Gengar @ Lum Berry
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 224 Atk / 4 SpD / 96 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Fire Punch
-- Hidden Power [Grass]
-- Ice Punch
+EVs: 252 HP / 100 Atk / 112 Def / 16 SpD / 28 Spe
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 252 Def / 8 SpD
+Impish Nature
+- Soft-Boiled
+- Wish
+- Thunder Wave
+- Seismic Toss
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 Def
+- Rest
 - Thunderbolt
+- Hidden Power [Ice]
+- Roar

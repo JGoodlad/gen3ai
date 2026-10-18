@@ -1,59 +1,56 @@
 Vaporeon @ Leftovers
 Ability: Water Absorb
-EVs: 12 HP / 252 Def / 64 SpA / 180 Spe
-Bold Nature
+EVs: 32 HP / 144 Def / 108 SpA / 224 Spe
+Modest Nature
 IVs: 0 Atk
-- Surf
-- Substitute
-- Baton Pass
-- Roar
-
-Lunatone @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 116 Def / 140 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Baton Pass
-- Reflect
+- Hydro Pump
 - Ice Beam
+- Baton Pass
+- Substitute
 
-Sceptile @ Leftovers
-Ability: Overgrow
-EVs: 252 SpA / 24 SpD / 232 Spe
-Timid Nature
-IVs: 30 Spe
-- Leaf Blade
-- Crunch
+Breloom @ Black Belt
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Spore
+- Focus Punch
+- Sky Uppercut
+- Mach Punch
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 40 HP / 252 SpA / 24 SpD / 192 Spe
+Modest Nature
+IVs: 0 Atk
+- Fire Blast
 - Pursuit
-- Hidden Power [Ice]
+- Will-O-Wisp
+- Beat Up
 
-Zapdos @ Leftovers
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 196 SpD / 60 Spe
+Careful Nature
+- Seismic Toss
+- Thunder Wave
+- Counter
+- Explosion
+
+Raikou @ Leftovers
 Ability: Pressure
 EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Substitute
-- Baton Pass
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 220 Def / 36 Spe
-Impish Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Body Slam
-- Hidden Power [Fighting]
-- Wish
-- Protect
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
 IVs: 2 Atk / 30 SpA
+- Calm Mind
 - Thunderbolt
 - Hidden Power [Grass]
-- Toxic
-- Thunder Wave
+- Crunch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 96 HP / 168 Atk / 132 SpD / 112 Spe
+Adamant Nature
+- Dragon Dance
+- Brick Break
+- Rock Slide
+- Earthquake

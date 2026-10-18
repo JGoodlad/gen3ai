@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Crunch
-- Pursuit
-- Flamethrower
-- Hidden Power [Grass]
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 240 SpA / 16 SpD
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
 Sassy Nature
 - Rapid Spin
-- Ice Beam
+- Refresh
+- Earthquake
 - Psychic
-- Explosion
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 36 SpA / 220 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
 - Thunder Wave
 - Seismic Toss
-- Hidden Power [Grass]
-- Explosion
+- Ice Beam
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 224 Atk / 44 Spe
-Brave Nature
-- Curse
-- Earthquake
-- Rock Slide
-- Surf
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
 
-Marowak @ Thick Club
-Ability: Rock Head
-EVs: 156 HP / 252 Atk / 100 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Rock Slide
 - Hidden Power [Bug]
-- Focus Punch
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
+- Aerial Ace
+- Sunny Day

@@ -1,57 +1,58 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Protect
-- Refresh
-- Toxic
-- Surf
-
-Tyranitar @ Leftovers
+Tyranitar @ Choice Band
 Ability: Sand Stream
-EVs: 184 HP / 216 SpA / 108 Spe
-Modest Nature
-- Crunch
-- Pursuit
-- Flamethrower
-- Brick Break
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Rapid Spin
+EVs: 80 HP / 184 Atk / 76 Def / 168 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
 - Hidden Power [Bug]
-- Counter
+- Brick Break
+- Focus Punch
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 30 SpA / 30 SpD
+- Spikes
+- Protect
+- Toxic
+- Drill Peck
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
 Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
-- Ice Beam
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Sleep Talk
+- Thunder Wave
 - Thunderbolt
+- Hidden Power [Fire]
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 32 Def / 224 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 216 Atk / 16 Def / 108 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Rock Slide
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
+EVs: 120 Atk / 252 SpA / 136 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Agility
 - Thunderbolt
-- Roar
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-- Wish
-- Dragon Claw
-- Flamethrower
-- Brick Break
+- Drill Peck
+- Hidden Power [Grass]

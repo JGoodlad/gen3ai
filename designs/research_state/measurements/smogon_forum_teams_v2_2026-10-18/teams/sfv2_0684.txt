@@ -1,18 +1,27 @@
-Heracross @ Choice Band
-Ability: Guts
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Megahorn
-- Focus Punch
-- Rock Slide
-- Hidden Power [Ghost]
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 156 HP / 252 SpA / 100 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
 
-Tyranitar @ Lum Berry
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+
+Tyranitar @ Leftovers
 Ability: Sand Stream
-Shiny: Yes
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
+EVs: 184 HP / 156 Atk / 168 Spe
+Adamant Nature
 - Dragon Dance
 - Rock Slide
 - Earthquake
@@ -20,7 +29,7 @@ Jolly Nature
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 196 Atk / 200 SpD / 112 Spe
+EVs: 116 HP / 252 Atk / 140 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
@@ -28,31 +37,22 @@ IVs: 30 SpA / 30 SpD / 30 Spe
 - Rock Slide
 - Earthquake
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 188 SpA / 68 Spe
+Modest Nature
 IVs: 0 Atk
-- Hydro Pump
-- Thunder
-- Ice Beam
-- Psychic
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 128 HP / 252 Atk / 128 Spe
-Adamant Nature
-- Meteor Mash
-- Explosion
-- Earthquake
-- Rock Slide
-
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Endeavor
+- Calm Mind
+- Rest
 - Surf
-- Toxic
+- Ice Beam
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 36 Def / 128 SpA / 96 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]

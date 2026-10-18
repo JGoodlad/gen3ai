@@ -1,56 +1,56 @@
+Jolteon (M) @ Leftovers
+Ability: Volt Absorb
+EVs: 48 HP / 208 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Baton Pass
+- Thunderbolt
+- Roar
+
+Flygon (M) @ Leftovers
+Ability: Levitate
+EVs: 208 HP / 176 Atk / 64 Def / 16 SpA / 44 Spe
+Naughty Nature
+- Earthquake
+- Fire Blast
+- Rock Slide
+- Substitute
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 16 Def / 184 SpD / 60 Spe
+Impish Nature
+IVs: 0 Atk
+- Taunt
+- Toxic
+- Spikes
+- Whirlwind
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 16 Atk / 252 SpA
+Quiet Nature
+- Pursuit
+- Crunch
+- Focus Punch
+- Rock Slide
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 176 Atk / 148 SpA / 184 Spe
+Hasty Nature
+- Hypnosis
+- Focus Punch
+- Ice Punch
+- Thunderbolt
+
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
+EVs: 240 HP / 8 Def / 96 SpA / 164 Spe
+Modest Nature
 IVs: 0 Atk
 - Rest
 - Calm Mind
-- Surf
 - Ice Beam
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 136 SpD
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 216 Atk / 60 Def / 8 SpD / 20 Spe
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Shadow Ball
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 36 SpA / 96 SpD / 124 Spe
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Grass]
-- Explosion
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 228 Atk / 16 Def / 96 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 176 Atk / 12 Def / 180 SpD / 140 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
+- Hydro Pump

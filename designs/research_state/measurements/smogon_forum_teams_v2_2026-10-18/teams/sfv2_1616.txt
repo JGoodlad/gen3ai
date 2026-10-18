@@ -1,31 +1,41 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 224 SpA / 44 Spe
-Quiet Nature
-- Earthquake
-- Hydro Pump
-- Ice Beam
-- Focus Punch
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Earthquake
+- Rock Slide
+- Brick Break
+- Hidden Power [Flying]
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 24 SpD / 228 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Grass]
+- Rain Dance
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
 - Meteor Mash
 - Earthquake
 - Rock Slide
-- Explosion
 
-Heracross @ Choice Band
-Ability: Swarm
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Megahorn
-- Rock Slide
-- Hidden Power [Ghost]
-- Brick Break
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 228 SpA / 28 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
 
 Jolteon @ Leftovers
 Ability: Volt Absorb
@@ -37,22 +47,11 @@ IVs: 2 Atk / 30 SpA
 - Hidden Power [Grass]
 - Baton Pass
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 244 HP / 124 Def / 140 Spe
-Impish Nature
-IVs: 0 Atk
-- Recover
-- Leech Seed
-- Swords Dance
-- Baton Pass
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Naughty Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Rock Slide
-- Hidden Power [Flying]
-- Fire Blast
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 136 Atk / 132 Def / 168 SpD / 40 Spe
+Adamant Nature
+- Return
+- Shadow Ball
+- Focus Punch
+- Self-Destruct

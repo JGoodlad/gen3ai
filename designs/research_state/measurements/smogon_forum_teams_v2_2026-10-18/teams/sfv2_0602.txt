@@ -1,58 +1,59 @@
-Medicham @ Choice Band
-Ability: Pure Power
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Brick Break
-- Shadow Ball
-- Rock Slide
-- Focus Punch
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 220 SpD / 40 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Roar
+- Rest
+- Sleep Talk
 
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 248 HP / 184 Def / 76 SpA
-Bold Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Recover
-- Thunder Wave
-- Ice Beam
-- Hidden Power [Fire]
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 200 SpD / 60 Spe
+Calm Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Toxic
+- Roar
 
-Machamp @ Leftovers
-Ability: Guts
-EVs: 76 HP / 216 Atk / 216 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Bulk Up
-- Cross Chop
-- Rock Slide
-- Hidden Power [Ghost]
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 140 Def / 180 SpA / 188 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 208 HP / 216 SpA / 84 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Psychic
-- Giga Drain
+- Meteor Mash
 - Hidden Power [Fire]
+- Explosion
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 64 Def / 152 SpA / 44 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Reflect
-- Thunder
-- Hidden Power [Grass]
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Hydro Pump
+- Roar
 
-Flygon @ Choice Band
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Thunder Wave
+- Soft-Boiled
+- Ice Beam
+
+Flygon @ Leftovers
 Ability: Levitate
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
+EVs: 4 HP / 252 Atk / 252 Spe
+Naughty Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
 - Hidden Power [Bug]
-- Quick Attack
+- Fire Blast

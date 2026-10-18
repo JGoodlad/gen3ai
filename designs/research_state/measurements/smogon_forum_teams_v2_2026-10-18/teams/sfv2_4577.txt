@@ -1,0 +1,56 @@
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Rock Slide
+- Earthquake
+- Focus Punch
+- Brick Break
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Dragon Dance
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 152 SpD / 104 Spe
+Calm Nature
+- Surf
+- Explosion
+- Spikes
+- Rapid Spin
+
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Psychic
+- Safeguard
+- Encore
+- Light Screen
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 68 HP / 188 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spore
+- Mach Punch
+- Focus Punch
+- Hidden Power [Bug]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 160 HP / 252 Atk / 96 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Agility

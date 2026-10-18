@@ -1,57 +1,57 @@
-Politoed (F)
-Ability: Water Absorb
-EVs: 136 HP / 188 SpA / 184 Spe
-Timid Nature
-IVs: 0 Atk
-- Hypnosis
-- Hydro Pump
-- Ice Beam
-- Thief
-
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 236 SpA / 20 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Psychic
-- Hidden Power [Fire]
+EVs: 248 HP / 152 Atk / 4 Def / 104 SpD
+Adamant Nature
 - Meteor Mash
+- Earthquake
+- Rock Slide
 - Explosion
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 120 SpA / 136 Spe
-Rash Nature
-- Substitute
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 152 Def / 40 SpA / 32 SpD / 32 Spe
+Timid Nature
+IVs: 0 Atk
 - Surf
-- Ice Beam
-- Focus Punch
+- Thunder Wave
+- Rapid Spin
+- Recover
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 4 SpA / 252 Spe
-Naive Nature
-- Substitute
-- Ice Punch
-- Thunder
-- Dynamic Punch
-
-Charizard @ Lum Berry
-Ability: Blaze
-EVs: 144 Atk / 212 SpA / 152 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Dance
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Hasty Nature
+IVs: 30 Def / 30 SpA
+- Dragon Claw
 - Fire Blast
 - Hidden Power [Grass]
 - Brick Break
 
-Celebi @ Leftovers
+Blissey @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
+EVs: 4 HP / 252 Def / 252 SpA
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Baton Pass
+- Thunder Wave
+- Seismic Toss
+- Ice Beam
+- Soft-Boiled
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 180 SpA / 76 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA
+- Thunder
+- Hidden Power [Grass]
+- Substitute
+- Focus Punch
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Double-Edge
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]

@@ -1,57 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Metal Sound
-- Thunderbolt
-- Hidden Power [Ice]
-- Sunny Day
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 176 SpA / 76 SpD / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Flamethrower
+- Roar
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Agility
-- Meteor Mash
-- Earthquake
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+IVs: 30 SpD / 30 Spe
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
 - Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Ice Beam
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Def / 40 SpD / 52 Spe
+Relaxed Nature
+- Protect
+- Earthquake
+- Surf
+- Ice Beam
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
+EVs: 248 HP / 228 Def / 16 SpA / 16 Spe
+Bold Nature
 IVs: 0 Atk
-- Substitute
+- Rest
+- Toxic
 - Calm Mind
 - Surf
-- Roar
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
-Adamant Nature
-- Curse
-- Earthquake
-- Shadow Ball
-- Self-Destruct
-
-Charizard @ Salac Berry
-Ability: Blaze
-EVs: 88 HP / 252 Atk / 16 SpD / 152 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Belly Drum
-- Hidden Power [Flying]
-- Rock Slide
-- Fire Blast
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+- Wish
+- Dragon Claw
+- Flamethrower
+- Brick Break

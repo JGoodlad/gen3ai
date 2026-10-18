@@ -1,58 +1,58 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Dragon Dance
-- Rock Slide
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
+Relaxed Nature
+- Protect
 - Earthquake
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 32 SpD / 224 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Aerial Ace
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 200 Def / 56 SpD
-Bold Nature
-IVs: 0 Atk
 - Surf
 - Ice Beam
-- Refresh
-- Recover
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Leech Seed
-- Psychic
-- Hidden Power [Grass]
-- Recover
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 196 HP / 252 SpA / 60 SpD
-Quiet Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Psychic
-- Hidden Power [Fire]
-- Meteor Mash
-- Explosion
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 216 Atk / 60 SpA / 232 Spe
-Adamant Nature
-- Earthquake
-- Psychic
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
 - Rapid Spin
-- Explosion
+- Hidden Power [Ghost]
+- Counter
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Thunder Wave
+- Surf
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 80 HP / 252 SpA / 176 Spe
+Mild Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Ice Punch
+- Thunder
+- Psychic
+- Hidden Power [Fighting]

@@ -1,56 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 Def
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Hidden Power [Bug]
-- Earthquake
-- Focus Punch
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
 Starmie @ Leftovers
 Ability: Natural Cure
-EVs: 216 HP / 40 Def / 252 Spe
+EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
 Timid Nature
 IVs: 0 Atk
-- Surf
-- Thunder Wave
-- Recover
 - Rapid Spin
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-- Spikes
-- Drill Peck
-- Roar
-- Protect
+- Recover
+- Thunder Wave
+- Surf
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
 IVs: 0 Atk
 - Soft-Boiled
-- Thunder Wave
-- Thunderbolt
+- Aromatherapy
+- Seismic Toss
 - Ice Beam
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 216 HP / 248 SpA / 44 Spe
-Quiet Nature
-- Hydro Pump
-- Ice Beam
-- Earthquake
-- Focus Punch
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 180 Def / 76 SpD
-Relaxed Nature
+EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
+Bold Nature
+IVs: 0 Atk
 - Wish
-- Fire Punch
-- Body Slam
 - Protect
+- Toxic
+- Fire Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 132 SpD
+Relaxed Nature
+- Rest
+- Curse
+- Earthquake
+- Ice Beam

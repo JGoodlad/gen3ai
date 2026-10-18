@@ -1,57 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 216 Def / 40 SpA
-Relaxed Nature
-- Earthquake
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
 - Ice Beam
-- Hydro Pump
-- Protect
 
 Magneton @ Salac Berry
 Ability: Magnet Pull
-EVs: 52 HP / 252 SpA / 204 Spe
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
+IVs: 2 Atk / 30 SpA
 - Endure
-- Screech
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 Atk / 232 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
+- Thunderbolt
 - Hidden Power [Grass]
-- Fire Blast
-- Brick Break
-- Dragon Claw
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Flying]
+- Rain Dance
 
 Snorlax @ Leftovers
-Ability: Thick Fat
-EVs: 144 HP / 68 Atk / 132 Def / 164 SpD
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
 Adamant Nature
 - Curse
-- Selfdestruct
+- Double-Edge
 - Earthquake
 - Shadow Ball
 
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 184 HP / 180 Atk / 16 SpA / 128 Spe
-Adamant Nature
+EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
+Naughty Nature
 IVs: 30 Atk / 30 SpA
 - Meteor Mash
 - Earthquake
 - Hidden Power [Grass]
 - Explosion
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Endure
+- Swords Dance
+- Megahorn
+- Rock Slide

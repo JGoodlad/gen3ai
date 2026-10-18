@@ -1,57 +1,62 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 248 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Roar
-- Taunt
-- Drill Peck
+Metagross @ Choice Band
+Ability: Clear Body
+Shiny: Yes
+EVs: 96 HP / 220 Atk / 4 Def / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Rock Slide
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 76 HP / 180 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-- Roar
+Smeargle @ Salac Berry
+Ability: Own Tempo
+Shiny: Yes
+EVs: 16 HP / 16 Def / 224 SpD / 252 Spe
+Jolly Nature
+IVs: 0 Atk
+- Memento
+- Spikes
+- Spore
+- Will-O-Wisp
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 232 HP / 80 Atk / 196 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
+Shiny: Yes
+EVs: 52 HP / 164 Def / 100 SpA / 192 Spe
+Naive Nature
 IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Ice Punch
 - Hidden Power [Grass]
+- Fire Punch
+- Ice Punch
 - Explosion
-
-Sceptile @ Leftovers
-Ability: Overgrow
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Leaf Blade
-- Hidden Power [Ice]
-- Pursuit
-- Endeavor
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Flying]
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Protect
+Shiny: Yes
+EVs: 248 HP / 108 Def / 96 SpA / 8 SpD / 48 Spe
+Quiet Nature
 - Hydro Pump
+- Ice Beam
+- Focus Punch
+- Earthquake
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 132 Atk / 220 SpA / 156 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Agility
+- Drill Peck
+- Hidden Power [Grass]

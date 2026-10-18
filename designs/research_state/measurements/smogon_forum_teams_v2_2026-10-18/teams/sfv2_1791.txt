@@ -1,58 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 16 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 SpD / 30 Spe
-- Spikes
-- Rapid Spin
-- Hidden Power [Bug]
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
 - Explosion
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Thunder Wave
-- Surf
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 240 HP / 252 Def / 16 Spe
-Impish Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Wish
-- Toxic
-- Seismic Toss
-
-Quagsire @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 184 Def / 72 SpD
-Relaxed Nature
-- Rest
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
 - Curse
 - Earthquake
+- Hydro Pump
 - Ice Beam
 
-Moltres @ Leftovers
-Ability: Pressure
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Swords Dance
+- Megahorn
+- Brick Break
+- Rock Slide
+
+Charizard @ Leftovers
+Ability: Blaze
 EVs: 252 SpA / 4 SpD / 252 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
+- Dragon Claw
 - Flamethrower
 - Hidden Power [Grass]
-- Roar
+- Beat Up

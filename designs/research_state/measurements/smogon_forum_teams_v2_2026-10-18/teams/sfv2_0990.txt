@@ -1,57 +1,59 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 176 Def / 84 SpD
-Relaxed Nature
-- Ice Beam
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 24 Def / 232 SpD
+Calm Nature
+IVs: 0 Atk
+- Seismic Toss
+- Thunder Wave
+- Rest
+- Sleep Talk
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 244 Def / 12 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 80 Def / 176 SpD
+Calm Nature
+IVs: 0 Atk
+- Recover
+- Perish Song
+- Leech Seed
+- Heal Bell
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 140 Def / 8 SpD / 108 Spe
+Bold Nature
+IVs: 0 Atk
+- Flamethrower
+- Toxic
 - Protect
+- Wish
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 160 Atk / 24 Def / 72 SpD
+Relaxed Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Psychic
 - Earthquake
-- Curse
+- Rapid Spin
+- Hidden Power [Bug]
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 4 HP / 252 Def / 252 SpA
+EVs: 224 Def / 240 SpA / 44 Spe
 Modest Nature
 IVs: 0 Atk
-- Toxic
-- Ice Beam
 - Thunderbolt
-- Soft-Boiled
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Will-O-Wisp
-- Roar
-- Hidden Power [Grass]
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 144 HP / 168 Atk / 8 SpA / 188 Spe
-Hasty Nature
-- Will-O-Wisp
-- Thunderbolt
-- Ice Punch
-- Focus Punch
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 196 Def / 40 SpA / 20 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
 - Calm Mind
-- Psychic
-- Fire Punch
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 48 Def / 40 SpA / 32 SpD / 136 Spe
-Timid Nature
-IVs: 0 Atk
-- Surf
-- Psychic
-- Rapid Spin
-- Recover
+- Ice Beam
+- Soft-Boiled

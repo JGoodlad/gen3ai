@@ -1,57 +1,57 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 120 HP / 252 Atk / 136 Spe
-Adamant Nature
-- Meteor Mash
-- Explosion
-- Earthquake
-- Double-Edge
-
-Tyranitar @ Lum Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Grass]
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 176 Atk / 212 SpD / 120 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Fire Blast
-- Rock Slide
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 64 HP / 252 SpA / 192 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 240 HP / 216 Atk / 32 SpA / 20 Spe
+EVs: 252 HP / 224 Atk / 8 Def / 24 Spe
 Adamant Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+- Substitute
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 208 HP / 252 Def / 48 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Recover
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Bug]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 32 Def / 112 SpA / 112 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 24 Atk / 76 Def / 108 SpA / 48 Spe
+Brave Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Psychic
+- Hidden Power [Fighting]
+- Body Slam
+- Fire Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 SpA / 44 SpD
+Quiet Nature
+- Hydro Pump
+- Earthquake
 - Ice Beam
-- Hypnosis
+- Curse
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 140 SpD / 116 Spe
+Calm Nature
+- Spikes
+- Roar
+- Taunt
+- Drill Peck

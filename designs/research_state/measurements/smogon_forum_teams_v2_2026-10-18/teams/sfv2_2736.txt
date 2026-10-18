@@ -1,57 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 156 Atk / 12 Def / 200 SpD / 140 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 80 HP / 176 SpD / 252 Spe
+Jolly Nature
+- Substitute
+- Spore
+- Spikes
 - Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-- Soft-Boiled
-- Aromatherapy
-- Thunder Wave
-- Seismic Toss
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Calm Mind
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 8 HP / 200 Def / 124 SpA / 176 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
 - Fire Punch
-- Psychic
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 172 Def / 52 SpA / 32 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Recover
-- Leech Seed
-- Reflect
+- Ice Punch
 - Hidden Power [Grass]
+- Explosion
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 240 Def / 16 Spe
-Bold Nature
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 8 HP / 252 SpA / 248 Spe
+Timid Nature
 IVs: 0 Atk
-- Rest
-- Calm Mind
+- Substitute
+- Endeavor
 - Surf
-- Roar
+- Ice Beam
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 216 Atk / 16 Def / 108 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Substitute
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]

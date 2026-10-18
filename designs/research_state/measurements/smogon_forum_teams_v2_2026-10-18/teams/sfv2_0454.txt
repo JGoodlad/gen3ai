@@ -1,58 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 Atk / 4 Spe
-Adamant Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 60 SpD / 196 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Baton Pass
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 144 SpD / 112 Spe
+Jolly Nature
 IVs: 30 SpD / 30 Spe
-- Rock Slide
 - Earthquake
+- Beat Up
 - Hidden Power [Bug]
-- Focus Punch
+- Aerial Ace
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+- Will-O-Wisp
+- Thunderbolt
+- Ice Punch
+- Explosion
+
+Kingdra @ Leftovers
+Ability: Swift Swim
+EVs: 248 HP / 8 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Rain Dance
+- Surf
+- Ice Beam
+- Hydro Pump
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Psychic
-- Fire Punch
-- Hidden Power [Grass]
-- Calm Mind
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Psychic
-- Giga Drain
-- Hidden Power [Fire]
-- Calm Mind
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 156 Atk / 212 SpD / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-- Dragon Dance
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 24 HP / 252 Atk / 232 Spe
-Adamant Nature
-- Earthquake
-- Psychic
-- Rapid Spin
-- Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 168 HP / 252 SpA / 88 Spe
+EVs: 252 HP / 80 SpA / 176 Spe
 Modest Nature
 IVs: 0 Atk
-- Surf
-- Ice Beam
-- Refresh
-- Protect
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Ice Punch
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Thunder Wave
+- Baton Pass

@@ -1,58 +1,58 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 236 Atk / 12 Def / 32 SpA / 60 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
+Tauros (M) @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
+- Return
 - Earthquake
-- Hidden Power [Grass]
-- Explosion
+- Hidden Power [Ghost]
+- Double-Edge
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 16 HP / 172 SpA / 144 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Thunderbolt
-- Substitute
-- Baton Pass
-- Toxic
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 64 HP / 176 Atk / 108 Def / 148 SpD / 12 Spe
+Slaking @ Choice Band
+Ability: Truant
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-- Self-Destruct
-- Body Slam
+- Return
 - Earthquake
+- Hyper Beam
 - Focus Punch
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 140 Atk / 212 SpD / 156 Spe
+Ursaring @ Leftovers
+Ability: Guts
+EVs: 100 HP / 252 Atk / 16 SpD / 140 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Rock Slide
-- Hidden Power [Flying]
+- Bulk Up
+- Return
+- Focus Punch
 - Earthquake
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Hidden Power [Ghost]
-- Earthquake
-- Double-Edge
-- Dragon Dance
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Crunch
+- Fire Blast
+- Roar
 
 Magneton @ Magnet
 Ability: Magnet Pull
-EVs: 224 SpA / 32 SpD / 252 Spe
+Hidden Power: Fire
+EVs: 4 HP / 252 SpA / 252 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunderbolt
-- Hidden Power [Grass]
+- Thunder Wave
 - Toxic
-- Protect
+- Hidden Power [Fire]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 52 Def / 204 SpD
+Calm Nature
+IVs: 0 Atk / 30 Spe
+- Baton Pass
+- Recover
+- Leech Seed
+- Psychic

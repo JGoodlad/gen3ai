@@ -1,59 +1,58 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 28 Def / 48 SpA / 8 SpD / 4 Spe
-Brave Nature
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 244 Atk / 12 Def / 252 Spe
+Lonely Nature
 IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Earthquake
+- Rock Slide
+- Fire Blast
 - Hidden Power [Grass]
-- Shadow Ball
+- Brick Break
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 80 SpD / 176 Spe
-Jolly Nature
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
 IVs: 0 Atk
 - Spikes
-- Roar
-- Torment
+- Taunt
 - Toxic
+- Roar
 
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 252 HP / 252 SpD / 4 Spe
-Calm Nature
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 224 SpA / 32 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
 IVs: 0 Atk
-- Thunderbolt
 - Protect
-- Thunder Wave
-- Rest
+- Refresh
+- Surf
+- Roar
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 160 Atk / 96 SpD
-Careful Nature
-IVs: 30 SpD
-- Curse
-- Hidden Power [Steel]
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Rest
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Dragon Dance
-- Hidden Power [Ghost]
+- Rock Slide
+- Hidden Power [Bug]
 - Double-Edge
-- Earthquake
-
-Gardevoir @ Leftovers
-Ability: Trace
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Hidden Power [Grass]
-- Thunderbolt
-- Reflect

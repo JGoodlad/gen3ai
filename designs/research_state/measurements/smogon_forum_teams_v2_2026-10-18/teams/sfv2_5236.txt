@@ -1,0 +1,59 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 92 HP / 252 SpA / 132 SpD / 32 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Thunder Wave
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 104 SpA / 152 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Psychic
+- Hidden Power [Fire]
+- Baton Pass
+
+Kingdra (F) @ Lum Berry
+Ability: Swift Swim
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+IVs: 3 Atk / 30 SpA
+- Rain Dance
+- Surf
+- Ice Beam
+- Hidden Power [Electric]
+
+Metagross @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk / 30 SpA
+- Calm Mind
+- Rest
+- Ice Beam
+- Surf
+
+Dugtrio (F) @ Choice Band
+Ability: Arena Trap
+EVs: 108 HP / 156 Atk / 148 SpD / 96 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Aerial Ace

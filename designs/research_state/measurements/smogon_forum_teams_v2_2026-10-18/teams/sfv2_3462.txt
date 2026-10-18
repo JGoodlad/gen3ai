@@ -1,58 +1,58 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 188 Atk / 32 Def / 36 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Thunder Wave
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
+EVs: 184 HP / 196 SpA / 128 Spe
+Modest Nature
+- Crunch
+- Pursuit
+- Flamethrower
+- Dynamic Punch
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 240 HP / 248 SpD / 20 Spe
+EVs: 224 HP / 216 SpD / 68 Spe
 Careful Nature
-- Drill Peck
-- Roar
-- Protect
+IVs: 0 Atk
 - Spikes
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 212 Def / 48 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
+- Taunt
 - Toxic
-- Refresh
-- Recover
+- Roar
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 176 Def / 52 SpA / 28 SpD
-Bold Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Hidden Power [Fire]
-- Psychic
-- Rapid Spin
-- Refresh
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
+Calm Nature
 IVs: 0 Atk
-- Thunderbolt
-- Ice Beam
-- Soft-Boiled
-- Calm Mind
+- Wish
+- Protect
+- Toxic
+- Fire Punch
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
+Relaxed Nature
+IVs: 0 Atk
+- Protect
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Screech
+- Hydro Pump
+- Ice Beam
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Will-O-Wisp
+- Flamethrower
+- Hidden Power [Grass]
+- Roar
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

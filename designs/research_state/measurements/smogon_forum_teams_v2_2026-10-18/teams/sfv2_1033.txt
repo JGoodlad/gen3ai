@@ -1,56 +1,57 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-Hidden Power: Bug
-EVs: 80 HP / 184 Atk / 80 Def / 164 Spe
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
 Adamant Nature
+- Meteor Mash
+- Explosion
 - Earthquake
 - Rock Slide
-- Brick Break
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 240 SpA / 16 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Flamethrower
+- Hidden Power [Grass]
+- Soft-Boiled
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 192 Def / 44 SpD / 24 Spe
+Bold Nature
 - Focus Punch
+- Ice Beam
+- Refresh
+- Hydro Pump
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 244 SpD / 192 Spe
-Timid Nature
-- Spikes
-- Toxic
-- Surf
-- Explosion
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Hasty Nature
-- Will-O-Wisp
-- Giga Drain
-- Thunderbolt
-- Explosion
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 176 Atk / 212 SpD / 120 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 188 HP / 140 SpA / 180 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+EVs: 76 HP / 252 SpA / 180 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Calm Mind
 - Giga Drain
 - Hidden Power [Fire]
 - Psychic
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 84 Atk / 136 Def / 48 Spe
-Relaxed Nature
-- Protect
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
 - Earthquake
-- Surf
-- Ice Beam
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
-- Flamethrower
-- Hidden Power [Grass]
-- Roar
+- Hidden Power [Flying]

@@ -1,59 +1,57 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
+EVs: 136 HP / 244 SpA / 128 Spe
 Modest Nature
-IVs: 0 Atk
 - Crunch
 - Pursuit
 - Fire Blast
-- Roar
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 224 Def / 36 Spe
-Bold Nature
-IVs: 0 Atk
-- Fire Punch
-- Toxic
-- Wish
-- Protect
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Fire Blast
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 204 HP / 252 Def / 4 SpD / 48 Spe
-Bold Nature
-IVs: 0 Atk
-- Seismic Toss
-- Soft-Boiled
-- Thunder Wave
-- Toxic
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 192 HP / 16 Def / 108 SpA / 192 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Psychic
-- Giga Drain
-- Hidden Power [Fire]
-- Leech Seed
+- Brick Break
 
 Forretress @ Leftovers
 Ability: Sturdy
-EVs: 252 HP / 4 SpA / 252 SpD
+EVs: 252 HP / 8 Atk / 248 SpD
+Sassy Nature
+IVs: 30 SpD / 30 Spe
+- Zap Cannon
+- Hidden Power [Bug]
+- Spikes
+- Explosion
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 212 Def / 48 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Refresh
+- Recover
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 64 Atk / 136 Def / 16 SpA / 36 SpD / 4 Spe
+Impish Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 148 SpD / 32 Spe
 Calm Nature
 IVs: 0 Atk
-- Zap Cannon
-- Spikes
-- Rapid Spin
-- Counter
+- Wish
+- Protect
+- Toxic
+- Fire Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 72 SpD / 184 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Dragon Dance

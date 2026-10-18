@@ -1,58 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Counter
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Thunder Wave
-- Seismic Toss
-- Ice Beam
-
-Quagsire @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 252 Def / 4 SpD
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 48 SpA / 44 SpD / 40 Spe
 Relaxed Nature
 - Rest
 - Curse
 - Earthquake
 - Ice Beam
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Rest
 - Toxic
-- Fire Punch
+- Thunderbolt
+- Hidden Power [Fire]
 
-Salamence @ Leftovers
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+- Toxic
+- Dragon Dance
+- Earthquake
+- Rock Slide
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 144 Atk / 152 Def / 168 SpD / 12 Spe
+Adamant Nature
+- Body Slam
+- Earthquake
+- Shadow Ball
+- Self-Destruct
+
+Gyarados @ Leftovers
 Ability: Intimidate
-EVs: 12 Def / 244 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
+EVs: 52 HP / 252 Atk / 204 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Dragon Dance
+- Earthquake
+- Hidden Power [Ghost]
+- Return

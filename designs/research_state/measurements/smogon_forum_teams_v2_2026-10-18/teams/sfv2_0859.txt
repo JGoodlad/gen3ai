@@ -1,57 +1,59 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Focus Punch
-- Hidden Power [Bug]
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+Smeargle @ Quick Claw
+Ability: Own Tempo
+EVs: 252 HP / 4 SpD / 252 Spe
 Jolly Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+IVs: 30 Atk
+- Spore
+- Spikes
+- Fake Out
+- Transform
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 196 Atk / 60 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
 - Rock Slide
 - Earthquake
-- Hidden Power [Fighting]
-- Double-Edge
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 52 Def / 152 SpD / 52 Spe
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Body Slam
-- Fire Punch
-- Wish
 - Hidden Power [Grass]
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Surf
+Omastar @ Leftovers
+Ability: Swift Swim
+EVs: 252 HP / 12 Def / 28 SpA / 216 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Spikes
+- Hydro Pump
 - Ice Beam
-- Thunderbolt
-- Rapid Spin
+- Hidden Power [Grass]
 
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 60 HP / 252 Atk / 196 Spe
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+- Substitute
+
+Aerodactyl @ Liechi Berry
+Ability: Pressure
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpD
+- Substitute
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Scizor @ Liechi Berry
+Ability: Swarm
+EVs: 108 HP / 252 Atk / 148 Spe
 Adamant Nature
-- Brick Break
-- Focus Punch
-- Shadow Ball
-- Recover
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 Atk / 32 SpA / 224 Spe
-Lonely Nature
-- Dynamic Punch
-- Ice Punch
-- Thunderbolt
-- Explosion
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Silver Wind
+- Swords Dance
+- Agility

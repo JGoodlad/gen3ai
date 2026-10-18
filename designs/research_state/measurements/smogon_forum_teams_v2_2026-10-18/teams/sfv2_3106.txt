@@ -1,54 +1,60 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 44 Atk / 240 SpA / 8 SpD / 216 Spe
-Hasty Nature
-- Dragon Claw
-- Fire Blast
-- Wish
-- Brick Break
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 28 SpA / 104 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 188 SpA / 68 Spe
-Quiet Nature
-- Substitute
-- Crunch
-- Focus Punch
-- Fire Blast
+Shiny: Yes
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
 
-Skarmory @ Leftovers
+Skarmory
 Ability: Keen Eye
-EVs: 252 HP / 240 SpD / 16 Spe
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
+IVs: 0 Atk
 - Spikes
+- Thief
 - Drill Peck
-- Toxic
 - Roar
 
-Poliwrath @ Leftovers
-Ability: Water Absorb
-EVs: 120 HP / 104 Atk / 252 SpA / 32 Spe
-Brave Nature
-- Brick Break
-- Hydro Pump
-- Ice Beam
-- Focus Punch
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 192 SpA / 28 SpD / 36 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Thunder
+- Hidden Power [Grass]
+- Dynamic Punch
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
+Swampert @ Leftovers
+Ability: Torrent
+Shiny: Yes
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Thunderbolt
-- Calm Mind
+- Protect
+- Refresh
+- Surf
+- Roar
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 220 HP / 188 Atk / 100 Spe
-Adamant Nature
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Shadow Ball
-- Rapid Spin
-- Explosion
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

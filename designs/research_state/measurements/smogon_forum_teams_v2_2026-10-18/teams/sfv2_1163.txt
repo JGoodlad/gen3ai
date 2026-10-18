@@ -1,57 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 136 SpA / 156 Spe
-Modest Nature
-IVs: 30 Spe
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 236 SpA / 32 Spe
 Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
+- Crunch
+- Pursuit
+- Fire Blast
+- Focus Punch
+
+Skarmory (F) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Drill Peck
+- Spikes
+- Protect
+- Roar
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 232 Def / 28 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Protect
+- Refresh
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 80 Def / 140 SpA / 36 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
+EVs: 248 HP / 40 Def / 200 SpD / 20 Spe
+Calm Nature
+IVs: 0 Atk
 - Fire Punch
-- Hidden Power [Grass]
-- Psychic
+- Toxic
+- Protect
+- Wish
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Ice Punch
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 220 SpA / 88 SpD / 200 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
 - Thunderbolt
-- Hidden Power [Grass]
-- Explosion
+- Hidden Power [Ice]
+- Toxic
+- Roar
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 180 Atk / 212 SpD / 116 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
+Aerodactyl (F) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Rock Slide
 - Hidden Power [Flying]
+- Earthquake
+- Double-Edge

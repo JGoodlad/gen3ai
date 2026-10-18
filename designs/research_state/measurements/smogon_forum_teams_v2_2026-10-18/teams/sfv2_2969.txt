@@ -1,58 +1,57 @@
+Snorlax @ Leftovers
+Ability: Immunity
+Shiny: Yes
+EVs: 40 HP / 176 Atk / 108 Def / 184 SpD
+Adamant Nature
+- Focus Punch
+- Substitute
+- Shadow Ball
+- Self-Destruct
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 72 Atk / 188 Spe
+EVs: 228 HP / 108 Atk / 172 Spe
 Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
 - Dragon Dance
+- Earthquake
 - Rock Slide
-- Earthquake
-- Hidden Power [Bug]
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Spikes
-- Zap Cannon
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 124 Atk / 32 SpA / 104 Spe
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 180 HP / 216 Atk / 112 Spe
 Adamant Nature
+- Meteor Mash
 - Earthquake
 - Explosion
-- Psychic
-- Rapid Spin
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 252 Def / 4 SpA
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Rest
-- Roar
-- Surf
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 40 HP / 252 Def / 216 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Seismic Toss
-- Ice Beam
-- Thunder Wave
+- Double-Edge
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 64 Atk / 252 SpA / 192 Spe
-Rash Nature
+EVs: 56 HP / 200 SpA / 252 Spe
+Naive Nature
 IVs: 30 Atk / 30 SpA
 - Dragon Claw
 - Fire Blast
 - Hidden Power [Grass]
 - Brick Break
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 20 Def / 176 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Ice Beam
+- Rest
+- Surf
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 28 Atk / 116 Def / 16 SpD / 96 Spe
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion

@@ -1,62 +1,57 @@
-Exeggutor (M) @ Leftovers
-Ability: Chlorophyll
-Shiny: Yes
-EVs: 52 HP / 252 SpA / 204 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Sleep Powder
-- Stun Spore
-- Psychic
-- Hidden Power [Ice]
+Heracross @ Choice Band
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Megahorn
+- Rock Slide
+- Hidden Power [Ghost]
+- Brick Break
 
-Cloyster (M) @ Leftovers
-Ability: Shell Armor
-Shiny: Yes
-EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
-Timid Nature
-- Spikes
-- Explosion
-- Surf
-- Rapid Spin
-
-Gengar (F) @ Leftovers
+Claydol @ Leftovers
 Ability: Levitate
-Shiny: Yes
-EVs: 248 HP / 52 Def / 112 SpD / 96 Spe
-Timid Nature
-- Will-O-Wisp
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
 - Explosion
-- Ice Punch
-- Thunderbolt
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 40 Def / 152 SpA / 68 Spe
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Toxic
+- Seismic Toss
+- Explosion
+
+Ludicolo @ Leftovers
+Ability: Swift Swim
+EVs: 248 HP / 144 Def / 16 SpA / 100 Spe
 Modest Nature
 IVs: 0 Atk
-- Calm Mind
-- Psychic
-- Thunderbolt
-- Ice Punch
-
-Dugtrio (F) @ Choice Band
-Ability: Arena Trap
-Shiny: Yes
-EVs: 136 HP / 252 Atk / 24 SpD / 96 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Beat Up
-- Hidden Power [Bug]
-- Aerial Ace
+- Leech Seed
+- Surf
+- Ice Beam
+- Rain Dance
 
 Suicune @ Leftovers
 Ability: Pressure
-Shiny: Yes
-EVs: 28 HP / 252 SpA / 228 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Sleep Talk
 - Calm Mind
-- Hydro Pump
-- Ice Beam
-- Hidden Power [Grass]
+- Surf
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

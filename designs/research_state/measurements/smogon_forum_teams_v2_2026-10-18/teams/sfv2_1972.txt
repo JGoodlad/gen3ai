@@ -1,58 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 HP / 236 Def / 20 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Flamethrower
-- Protect
-- Toxic
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 144 SpA / 112 Spe
-Modest Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Toxic
+- Roar
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Ice Punch
+- Substitute
 - Thunderbolt
 - Hidden Power [Grass]
+- Baton Pass
 
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 164 SpA / 120 SpD / 216 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
 Modest Nature
-IVs: 0 Atk
-- Flamethrower
-- Beat Up
-- Pursuit
-- Will-O-Wisp
-
-Machamp @ Leftovers
-Ability: Guts
-EVs: 152 HP / 220 Atk / 136 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Bulk Up
-- Cross Chop
-- Rock Slide
-- Hidden Power [Bug]
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 184 Def / 76 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Rest
-- Roar
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
 - Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 212 Atk / 16 Def / 28 SpD
-Relaxed Nature
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 116 Atk / 120 Def / 88 SpA / 168 SpD
+Brave Nature
+- Double-Edge
 - Earthquake
-- Ice Beam
-- Explosion
-- Rapid Spin
+- Fire Blast
+- Self-Destruct
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break

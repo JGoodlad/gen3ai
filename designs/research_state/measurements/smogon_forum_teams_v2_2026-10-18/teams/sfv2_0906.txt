@@ -1,64 +1,57 @@
-Salamence @ Choice Band
-Ability: Intimidate
-Shiny: Yes
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Earthquake
-- Brick Break
-- Rock Slide
-
-Forretress @ Leftovers
-Ability: Sturdy
-Shiny: Yes
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-- Earthquake
-- Explosion
-- Spikes
-- Rapid Spin
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-Shiny: Yes
-EVs: 208 HP / 80 Def / 216 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Fire Blast
-- Counter
-- Crunch
-- Pursuit
-
-Breloom @ Leftovers
-Ability: Effect Spore
-Shiny: Yes
-EVs: 248 HP / 16 Atk / 56 SpD / 188 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Spore
-- Focus Punch
-- Sky Uppercut
-- Hidden Power [Bug]
-
 Suicune @ Leftovers
 Ability: Pressure
-Shiny: Yes
-EVs: 248 HP / 176 Def / 16 SpA / 68 Spe
-Bold Nature
+EVs: 100 HP / 252 SpA / 156 Spe
+Modest Nature
 IVs: 0 Atk
-- Surf
-- Roar
+- Hydro Pump
 - Calm Mind
-- Rest
-
-Blissey @ Leftovers
-Ability: Natural Cure
-Shiny: Yes
-EVs: 252 Def / 248 SpA / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Thunderbolt
-- Soft-Boiled
-- Thunder Wave
 - Ice Beam
+- Roar
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 244 Atk / 116 Def / 116 SpD / 16 Spe
+Adamant Nature
+- Body Slam
+- Earthquake
+- Shadow Ball
+- Self-Destruct
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Screech
+- Toxic
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Ninjask @ Choice Band
+Ability: Speed Boost
+EVs: 252 Atk / 48 SpD / 208 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Silver Wind
+- Aerial Ace
+- Hidden Power [Rock]
+- Shadow Ball

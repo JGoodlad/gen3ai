@@ -1,58 +1,56 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 SpA / 4 Spe
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
 Quiet Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Psychic
-- Hidden Power [Fire]
-- Meteor Mash
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-Shiny: Yes
-EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
-Adamant Nature
-- Self-Destruct
-- Body Slam
-- Shadow Ball
+- Earthquake
+- Hydro Pump
+- Ice Beam
 - Focus Punch
 
-Zapdos @ Leftovers
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
+Hasty Nature
+- Will-O-Wisp
+- Thunder
+- Giga Drain
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 184 HP / 148 SpD / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Moltres @ Leftovers
 Ability: Pressure
 EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
+IVs: 2 Atk / 30 SpA
+- Will-O-Wisp
+- Flamethrower
 - Hidden Power [Grass]
-- Thunder Wave
 - Roar
-
-Regirock @ Choice Band
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 Spe
-Adamant Nature
-- Rock Slide
-- Superpower
-- Earthquake
-- Explosion
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 216 HP / 40 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Psychic
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 172 SpD / 84 Spe
-Careful Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Curse
-- Rest
-- Hidden Power [Rock]
-- Earthquake

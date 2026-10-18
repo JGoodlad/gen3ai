@@ -1,55 +1,56 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-- Dragon Claw
-- Flamethrower
-- Brick Break
-- Rock Slide
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 240 Def / 28 Spe
-Bold Nature
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 68 HP / 188 SpD / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Roar
-- Calm Mind
-- Surf
-- Rest
+- Spore
+- Spikes
+- Encore
+- Destiny Bond
 
-Metagross @ Leftovers
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 164 HP / 168 SpD / 176 Spe
+Timid Nature
+IVs: 30 HP / 30 SpA
+- Fire Punch
+- Hidden Power [Grass]
+- Will-O-Wisp
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 12 Def / 156 SpA / 88 Spe
+Modest Nature
+- Crunch
+- Thunder
+- Focus Punch
+- Substitute
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Hydro Pump
+- Roar
+
+Metagross @ Lum Berry
 Ability: Clear Body
-EVs: 248 HP / 176 Atk / 84 Def
+EVs: 168 HP / 252 Atk / 88 Spe
 Adamant Nature
+- Agility
 - Meteor Mash
 - Earthquake
-- Protect
 - Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 228 SpA / 28 Spe
-Modest Nature
-IVs: 0 Atk
-- Toxic
-- Thunderbolt
-- Ice Beam
-- Soft-Boiled
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Protect
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 204 Atk / 8 SpA / 28 SpD / 20 Spe
-Careful Nature
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Double-Edge
 - Earthquake
-- Rapid Spin
-- Psychic
-- Explosion
+- Substitute
+- Rock Slide

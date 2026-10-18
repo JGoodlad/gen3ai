@@ -1,0 +1,56 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 96 SpA / 160 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Surf
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 8 Def / 208 SpA / 40 Spe
+Quiet Nature
+IVs: 30 Def / 30 SpD
+- Pursuit
+- Crunch
+- Fire Blast
+- Brick Break
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 120 Atk / 236 SpA / 152 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Drill Peck
+- Thunder Wave
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 28 SpD / 12 Spe
+Brave Nature
+- Ice Beam
+- Earthquake
+- Rapid Spin
+- Explosion
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 220 HP / 152 Atk / 136 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 176 Atk / 156 Def / 176 SpD
+Adamant Nature
+- Body Slam
+- Focus Punch
+- Self-Destruct
+- Earthquake

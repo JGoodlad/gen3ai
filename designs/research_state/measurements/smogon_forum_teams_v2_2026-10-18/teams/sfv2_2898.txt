@@ -1,56 +1,58 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 180 SpD / 80 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Toxic
-- Thunder Wave
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 68 HP / 252 Atk / 188 Spe
-Adamant Nature
-- Meteor Mash
-- Rock Slide
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
 - Earthquake
+- Spikes
+- Rapid Spin
 - Explosion
 
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 248 HP / 72 Atk / 188 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 56 Def / 44 SpA / 120 SpD / 40 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Hidden Power [Grass]
+- Leech Seed
+- Recover
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 84 Atk / 128 SpA / 48 Spe
-Brave Nature
-- Hydro Pump
-- Ice Beam
-- Earthquake
-- Curse
+EVs: 248 HP / 176 Def / 40 SpA / 44 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Refresh
+- Toxic
+- Protect
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 80 SpA / 180 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Psychic
-- Hidden Power [Grass]
-- Fire Punch
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 192 Atk / 200 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
+IVs: 30 SpD / 30 Spe
 - Rock Slide
 - Earthquake
+- Hidden Power [Bug]
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 48 Def / 104 SpD / 104 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Punch
+- Taunt
+- Will-O-Wisp
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 248 HP / 164 SpA / 96 SpD
+Calm Nature
+IVs: 0 Atk
+- Pursuit
+- Protect
+- Toxic
+- Wish

@@ -1,56 +1,56 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Focus Punch
-- Earthquake
-- Hidden Power [Bug]
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Careful Nature
-- Spikes
-- Roar
-- Drill Peck
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
+Relaxed Nature
 - Protect
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Aromatherapy
-- Seismic Toss
-- Thunder Wave
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 200 HP / 68 SpA / 140 SpD / 100 Spe
+Modest Nature
+- Spikes
+- Rapid Spin
+- Surf
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
+Hasty Nature
+- Will-O-Wisp
+- Thunder
+- Giga Drain
+- Explosion
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 244 HP / 148 Def / 116 SpD
-Sassy Nature
+EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
+Calm Nature
 IVs: 0 Atk
 - Wish
 - Protect
-- Fire Punch
 - Toxic
+- Fire Punch
 
-Suicune @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 192 Def / 64 Spe
-Bold Nature
-- Calm Mind
-- Surf
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
 - Rest
+- Thunderbolt
+- Hidden Power [Grass]
 - Roar
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break
+- Beat Up

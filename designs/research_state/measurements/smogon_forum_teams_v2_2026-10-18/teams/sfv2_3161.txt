@@ -1,58 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 224 Atk / 12 Def / 212 SpD / 60 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 8 Def / 172 Spe
+EVs: 252 HP / 84 Atk / 172 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 SpD / 30 Spe
+- Substitute
 - Rock Slide
-- Earthquake
 - Hidden Power [Bug]
-- Dragon Dance
+- Focus Punch
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
 - Spikes
-- Drill Peck
 - Toxic
+- Drill Peck
 - Roar
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 240 SpA / 20 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Psychic
-- Hidden Power [Fire]
-- Meteor Mash
-- Explosion
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 236 SpA / 20 Spe
-Bold Nature
-IVs: 0 Atk
-- Seismic Toss
-- Ice Beam
-- Toxic
-- Soft-Boiled
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
 Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
+- Will-O-Wisp
 - Thunderbolt
-- Rapid Spin
+- Giga Drain
+- Explosion
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 40 Def / 140 SpA / 76 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Toxic
+- Surf

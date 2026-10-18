@@ -1,59 +1,56 @@
-Gengar (F) @ Leftovers
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
 Ability: Levitate
-Shiny: Yes
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-- Hypnosis
-- Ice Punch
-- Explosion
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
+Hasty Nature
 - Will-O-Wisp
+- Thunder
+- Giga Drain
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Metal Sound
-- Toxic
-
-Dugtrio (F) @ Choice Band
-Ability: Arena Trap
-EVs: 32 HP / 252 Atk / 224 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 176 HP / 220 Def / 112 SpA
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
+EVs: 240 HP / 120 SpD / 148 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
 - Rest
-- Surf
-- Ice Beam
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Calm Mind
-- Psychic
-- Ice Punch
-- Fire Punch
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 104 HP / 252 SpA / 152 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Psychic
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
 - Hidden Power [Fire]
-- Giga Drain
+- Psychic
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
+- Focus Punch

@@ -1,58 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Spikes
-- Thief
-- Drill Peck
-- Roar
+- Rapid Spin
+- Hidden Power [Bug]
+- Zap Cannon
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 128 Def / 40 SpA / 32 SpD / 56 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 252 Def / 4 SpD
 Bold Nature
 IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Thunder Wave
-- Surf
+- Wish
+- Protect
+- Fire Punch
+- Toxic
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 40 Def / 48 SpA / 136 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Recover
-- Leech Seed
-- Hidden Power [Grass]
-- Psychic
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 192 Atk / 200 SpD / 116 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 196 Def / 28 SpD / 32 Spe
+Impish Nature
+- Protect
+- Earthquake
 - Rock Slide
+- Toxic
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt
+
+Poliwrath @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 252 Def / 4 SpD
+Impish Nature
+- Bulk Up
 - Brick Break
+- Seismic Toss
+- Rest
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 4 Atk / 252 SpA
+Quiet Nature
+- Crunch
+- Pursuit
+- Earthquake
+- Ice Beam

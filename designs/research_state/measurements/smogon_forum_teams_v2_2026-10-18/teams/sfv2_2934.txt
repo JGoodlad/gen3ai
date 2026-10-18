@@ -1,56 +1,59 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 212 SpD / 44 Spe
-Calm Nature
-- Thunderbolt
-- Rest
-- Toxic
-- Roar
-
-Magcargo @ Leftovers
-Ability: Flame Body
-EVs: 252 HP / 136 SpA / 120 SpD
-Modest Nature
-IVs: 0 Atk
-- Flamethrower
-- Toxic
-- Refresh
-- Mimic
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD
+- Drill Peck
 - Spikes
-- Rapid Spin
-- Hidden Power [Bug]
+- Taunt
+- Hidden Power [Ground]
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Rest
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 248 HP / 216 Def / 44 SpD
 Bold Nature
-- Surf
-- Toxic
-- Protect
-- Refresh
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
 IVs: 0 Atk
-- Soft-Boiled
 - Ice Beam
-- Seismic Toss
-- Wish
+- Thunderbolt
+- Toxic
+- Recover
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 64 Def / 32 SpD / 164 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 96 Def / 124 SpD / 40 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Hidden Power [Grass]
+- Leech Seed
+- Recover
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
+EVs: 248 HP / 176 SpA / 84 SpD
 Modest Nature
-- Pursuit
+IVs: 0 Atk
 - Crunch
-- Fire Blast
+- Flamethrower
+- Pursuit
 - Roar

@@ -1,6 +1,6 @@
 Metagross @ Lum Berry
 Ability: Clear Body
-EVs: 120 HP / 248 SpA / 140 Spe
+EVs: 116 HP / 252 SpA / 140 Spe
 Rash Nature
 IVs: 30 Atk / 30 SpA / 30 Spe
 - Meteor Mash
@@ -12,28 +12,38 @@ Salamence @ Leftovers
 Ability: Intimidate
 EVs: 252 SpA / 4 SpD / 252 Spe
 Hasty Nature
+IVs: 30 Atk / 30 SpA
 - Dragon Claw
 - Fire Blast
+- Hidden Power [Grass]
 - Brick Break
-- Sleep Talk
+
+Camerupt @ Leftovers
+Ability: Magma Armor
+EVs: 252 SpA / 252 SpD / 4 Spe
+Mild Nature
+- Fire Blast
+- Toxic
+- Protect
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 176 Atk / 96 SpA / 236 SpD
+Brave Nature
+- Body Slam
+- Fire Blast
+- Earthquake
+- Self-Destruct
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 100 Atk / 156 Spe
+EVs: 252 HP / 104 Atk / 152 Spe
 Adamant Nature
 - Rapid Spin
 - Earthquake
 - Psychic
 - Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 12 HP / 176 Atk / 176 Def / 144 SpD
-Adamant Nature
-- Curse
-- Body Slam
-- Earthquake
-- Self-Destruct
 
 Suicune @ Leftovers
 Ability: Pressure
@@ -44,13 +54,3 @@ IVs: 0 Atk
 - Calm Mind
 - Rest
 - Sleep Talk
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 80 SpA / 176 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Thunderbolt
-- Ice Punch

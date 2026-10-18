@@ -1,0 +1,58 @@
+Magmar @ Leftovers
+Ability: Flame Body
+EVs: 52 Atk / 204 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 Def
+- Focus Punch
+- Substitute
+- Fire Blast
+- Hidden Power [Ice]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 0 Atk
+- Calm Mind
+- Giga Drain
+- Psychic
+- Baton Pass
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 160 Def / 96 SpD
+Careful Nature
+- Superpower
+- Thunder Wave
+- Seismic Toss
+- Explosion
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Surf
+- Toxic
+- Endeavor
+
+Hariyama @ Leftovers
+Ability: Thick Fat
+EVs: 252 Atk / 152 Def / 104 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Substitute
+- Focus Punch
+- Hidden Power [Ghost]
+- Earthquake

@@ -1,57 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 176 Def / 40 SpA / 44 SpD / 8 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Surf
-- Ice Beam
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 176 SpA / 76 SpD / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
 - Flamethrower
-- Ice Beam
+- Dragon Claw
+- Hidden Power [Grass]
+- Brick Break
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 SpD / 30 Spe
-- Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Earthquake
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 196 Def / 40 SpA / 20 Spe
-Bold Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
 IVs: 0 Atk
-- Wish
-- Calm Mind
-- Fire Punch
-- Psychic
+- Rest
+- Sleep Talk
+- Thunderbolt
+- Roar
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 4 HP / 252 Def / 252 Spe
-Impish Nature
-- Soft-Boiled
-- Thunder Wave
-- Toxic
-- Seismic Toss
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
+EVs: 252 Def / 192 SpA / 64 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
-- Flamethrower
-- Hidden Power [Grass]
+IVs: 0 Atk
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+- Soft-Boiled
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 48 Def / 40 SpA / 32 SpD / 136 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunder Wave
+- Surf
+- Rapid Spin
+- Recover
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Drill Peck
 - Roar
+- Protect
+- Spikes

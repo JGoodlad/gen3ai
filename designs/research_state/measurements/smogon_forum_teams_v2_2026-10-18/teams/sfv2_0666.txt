@@ -1,56 +1,58 @@
-Aerodactyl @ Liechi Berry
-Ability: Rock Head
-EVs: 160 Atk / 252 SpA / 96 Spe
-Naive Nature
-IVs: 30 Def / 30 SpA
-- Substitute
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 Atk / 152 SpA / 172 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
 - Rock Slide
 - Fire Blast
-- Hidden Power [Grass]
-
-Entei @ Leftovers
-Ability: Pressure
-EVs: 132 HP / 196 SpA / 140 SpD / 40 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Calm Mind
-- Fire Blast
-- Hidden Power [Grass]
-
-Tyranitar @ Black Belt
-Ability: Sand Stream
-EVs: 184 HP / 136 SpA / 188 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Thunder
 - Hidden Power [Grass]
 - Brick Break
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 144 Atk / 176 SpA / 188 Spe
-Naive Nature
-- Endeavor
-- Hydro Pump
-- Ice Beam
-- Earthquake
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 88 Atk / 112 SpD / 60 Spe
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 248 SpD / 8 Spe
 Careful Nature
-- Thunder Wave
-- Explosion
-- Seismic Toss
-- Superpower
+IVs: 0 Atk
+- Spikes
+- Whirlwind
+- Protect
+- Toxic
 
-Kabutops @ Salac Berry
-Ability: Battle Armor
-EVs: 252 Atk / 4 Def / 252 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 208 HP / 216 Atk / 84 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Protect
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 40 Def / 216 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
+- Explosion
+- Hidden Power [Grass]
+
+Lanturn (F) @ Leftovers
+Ability: Volt Absorb
+EVs: 252 SpA / 48 SpD / 208 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Thunderbolt
+- Ice Beam
+- Protect
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-- Swords Dance
-- Endure
-- Flail
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]

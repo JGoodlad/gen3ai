@@ -1,57 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 164 SpA / 96 SpD
-Calm Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
-- Sleep Talk
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 232 SpA / 92 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Punch
-- Earthquake
-- Hidden Power [Grass]
-- Explosion
-
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 196 SpA / 120 SpD / 192 Spe
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 244 Def / 176 SpA / 12 SpD / 60 Spe
 Modest Nature
 IVs: 0 Atk
-- Will-O-Wisp
-- Pursuit
-- Fire Blast
-- Beat Up
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 100 Def / 88 SpA / 64 SpD / 4 Spe
-Brave Nature
-- Body Slam
-- Earthquake
-- Fire Blast
-- Self-Destruct
+- Substitute
+- Hydro Pump
+- Ice Beam
+- Baton Pass
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 28 SpD / 12 Spe
-Brave Nature
-- Earthquake
-- Ice Beam
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
 - Rapid Spin
+- Earthquake
+- Psychic
 - Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Return
+- Earthquake
+- Shadow Ball
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
 
 Salamence @ Leftovers
 Ability: Intimidate
 EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
+Lonely Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
 - Hidden Power [Flying]
-- Rock Slide
-- Earthquake
+- Brick Break
+- Fire Blast

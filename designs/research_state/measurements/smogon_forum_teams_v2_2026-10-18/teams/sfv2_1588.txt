@@ -1,57 +1,55 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-IVs: 0 Atk
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Metagross @ Leftovers
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+EVs: 188 HP / 252 Atk / 68 Spe
 Adamant Nature
-- Agility
 - Meteor Mash
 - Earthquake
+- Rock Slide
 - Explosion
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Refresh
-- Toxic
-- Surf
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 176 Atk / 128 Def / 172 SpD
-Adamant Nature
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 108 Def / 160 SpA
+Relaxed Nature
 - Curse
-- Double-Edge
 - Earthquake
-- Shadow Ball
+- Surf
+- Ice Beam
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 100 SpA / 156 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Swords Dance
+- Megahorn
+- Brick Break
+- Rock Slide
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
+EVs: 156 Atk / 212 SpD / 140 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
+- Earthquake
 - Rock Slide
-- Brick Break
 - Hidden Power [Flying]

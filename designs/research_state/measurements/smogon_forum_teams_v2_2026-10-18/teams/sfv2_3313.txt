@@ -1,58 +1,58 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 248 Atk / 8 SpD / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Toxic
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 192 SpA / 116 SpD / 200 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
 - Protect
-- Roar
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 216 Def / 52 SpD
-Relaxed Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Protect
+- Baton Pass
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 96 SpA / 120 SpD / 40 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Leech Seed
-- Psychic
-- Recover
-- Hidden Power [Grass]
+EVs: 24 HP / 248 Def / 200 SpA / 36 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Hidden Power [Ice]
+- Calm Mind
+- Baton Pass
+- Giga Drain
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
-Timid Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
-- Taunt
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
+Heracross @ Salac Berry
+Ability: Swarm
 EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Rock Slide
-- Hidden Power [Flying]
-- Double-Edge
+Adamant Nature
+IVs: 30 HP
+- Megahorn
+- Focus Punch
+- Substitute
+- Swords Dance
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 88 Def / 96 SpA / 32 SpD / 44 Spe
+Quiet Nature
+- Surf
+- Ice Beam
 - Earthquake
+- Refresh
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 196 HP / 252 Atk / 60 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Meteor Mash
+- Earthquake
+- Hidden Power [Rock]
+- Explosion
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 64 Atk / 192 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Fire Blast
+- Focus Punch
+- Hidden Power [Grass]

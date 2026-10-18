@@ -1,57 +1,56 @@
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 120 SpA / 136 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Wish
-- Body Slam
-- Fire Punch
-- Hidden Power [Grass]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 176 Def / 40 SpA / 44 SpD / 8 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
+Weezing @ Lum Berry
+Ability: Levitate
+EVs: 248 HP / 176 Atk / 40 Def / 44 Spe
 Adamant Nature
-- Dragon Dance
-- Earthquake
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Fighting]
+- Sludge Bomb
+- Will-O-Wisp
+- Explosion
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 24 SpA / 232 Spe
+Timid Nature
+IVs: 0 Atk
+- Seismic Toss
+- Sing
+- Ice Beam
+- Soft-Boiled
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
 - Rock Slide
+- Earthquake
+- Dragon Dance
 - Double-Edge
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 228 SpA / 4 SpD / 28 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 252 Def / 4 Spe
-Bold Nature
 IVs: 0 Atk
-- Recover
-- Thunder Wave
-- Toxic
-- Thunderbolt
+- Surf
+- Rest
+- Sleep Talk
+- Calm Mind
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 248 HP / 176 Atk / 68 Def / 16 Spe
+Adamant Nature
+- Meteor Mash
 - Rock Slide
+- Explosion
+- Earthquake
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 16 HP / 248 Atk / 4 Def / 240 Spe
+Jolly Nature
+- Earthquake
+- Psychic
+- Explosion
+- Rapid Spin

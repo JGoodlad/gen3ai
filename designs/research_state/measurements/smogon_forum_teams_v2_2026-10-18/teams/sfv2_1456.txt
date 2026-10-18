@@ -1,51 +1,49 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Grass]
-- Roar
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 68 Atk / 252 SpA / 188 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Body Slam
+- Fire Punch
+- Ice Punch
+- Hidden Power [Fighting]
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 68 Atk / 4 SpD / 252 Spe
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
-IVs: 30 SpD / 30 Spe
 - Dragon Dance
 - Earthquake
 - Rock Slide
-- Hidden Power [Bug]
+- Double-Edge
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 240 HP / 240 SpD / 28 Spe
-Careful Nature
-IVs: 0 Atk
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 168 SpA / 244 SpD / 96 Spe
+Modest Nature
 - Spikes
-- Taunt
-- Toxic
-- Roar
+- Rapid Spin
+- Ice Beam
+- Explosion
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
+EVs: 240 HP / 108 Def / 72 SpA / 44 SpD / 44 Spe
+Relaxed Nature
+- Protect
 - Earthquake
 - Hydro Pump
 - Ice Beam
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 76 SpD / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
 - Hidden Power [Fire]
 - Psychic
-- Explosion
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
@@ -54,5 +52,5 @@ Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
-- Double-Edge
 - Hidden Power [Bug]
+- Double-Edge

@@ -1,58 +1,57 @@
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 56 Atk / 252 Def / 152 SpD / 48 Spe
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 104 Atk / 152 SpA
+Quiet Nature
+- Ice Beam
+- Thunderbolt
+- Explosion
+- Thunder Wave
+
+Heracross @ Choice Band
+Ability: Swarm
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Megahorn
 - Brick Break
-- Whirlwind
-- Knock Off
 - Rock Slide
+- Hidden Power [Ghost]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD
+- Spikes
+- Drill Peck
+- Hidden Power [Ground]
+- Taunt
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 248 HP / 104 Def / 40 SpA / 116 SpD
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Hidden Power [Grass]
-- Leech Seed
-- Recover
-- Perish Song
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 200 Def / 56 SpD
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Ice Beam
-- Thunderbolt
-- Thunder Wave
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 252 SpA / 52 SpD / 204 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Substitute
-- Thunder Wave
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 220 Def / 4 SpA / 32 Spe
-Bold Nature
-IVs: 2 Atk / 30 Def / 30 SpA
-- Psychic
-- Hidden Power [Water]
-- Wish
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 248 HP / 68 Atk / 44 SpD / 148 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Rest
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Dragon Dance
-- Hidden Power [Flying]
+- Rock Slide
 - Earthquake
+- Hidden Power [Bug]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 104 SpA / 152 Spe
+Modest Nature
+- Substitute
+- Calm Mind
+- Surf
+- Ice Beam

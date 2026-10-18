@@ -1,57 +1,59 @@
-Machamp @ Leftovers
-Ability: Guts
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Cross Chop
-- Hidden Power [Ghost]
-- Rock Slide
-- Bulk Up
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
-- Pursuit
-- Crunch
-- Fire Blast
-- Focus Punch
-
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Protect
-- Baton Pass
+EVs: 28 HP / 252 SpA / 228 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Roar
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Roar
-- Protect
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+EVs: 252 HP / 232 Def / 24 Spe
 Bold Nature
-IVs: 30 Atk / 30 SpA
-- Leech Seed
-- Recover
-- Psychic
-- Hidden Power [Grass]
+- Spikes
+- Whirlwind
+- Protect
+- Toxic
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 80 SpA / 176 Spe
-Modest Nature
-IVs: 0 Atk
+Sceptile @ Leftovers
+Ability: Overgrow
+Shiny: Yes
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 Def
+- Leaf Blade
+- Leech Seed
 - Substitute
+- Hidden Power [Ice]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Curse
+- Rest
+- Body Slam
+- Shadow Ball
+
+Machamp @ Leftovers
+Ability: Guts
+Shiny: Yes
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Bulk Up
+- Cross Chop
+- Rock Slide
+- Hidden Power [Ghost]
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 236 SpA / 16 SpD / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
 - Calm Mind
-- Ice Punch
 - Thunderbolt
+- Hidden Power [Grass]
+- Substitute

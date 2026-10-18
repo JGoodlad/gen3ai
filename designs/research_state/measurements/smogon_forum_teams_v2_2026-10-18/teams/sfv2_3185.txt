@@ -1,56 +1,57 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 8 Def / 172 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Double-Edge
+EVs: 184 HP / 196 SpA / 128 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Flamethrower
+- Brick Break
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 Spe
-Relaxed Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Focus Punch
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 120 Atk / 236 SpA / 152 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Drill Peck
-
-Roselia @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 8 SpA / 196 SpD / 56 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
 - Spikes
-- Stun Spore
-- Leech Seed
-- Hidden Power [Grass]
+- Thief
+- Drill Peck
+- Roar
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 40 Def / 32 SpD / 188 Spe
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
 Timid Nature
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Thunder Wave
+- Surf
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 104 Def / 20 SpA / 96 SpD / 36 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Recover
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 28 SpD / 52 Spe
+Adamant Nature
+- Protect
+- Meteor Mash
+- Earthquake
 - Explosion
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Double-Edge
-- Hidden Power [Bug]
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 128 Atk / 240 SpA / 140 Spe
+Rash Nature
+IVs: 0 Atk
+- Dragon Dance
+- Dragon Claw
+- Flamethrower
+- Brick Break

@@ -1,57 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 220 SpA / 48 Spe
-Quiet Nature
-- Crunch
-- Pursuit
-- Sunny Day
-- Brick Break
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 116 Atk / 140 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Beat Up
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 224 Def / 36 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Recover
-- Ice Beam
-- Hypnosis
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 76 Def / 100 SpD / 80 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Hidden Power [Grass]
-- Baton Pass
-- Recover
-- Leech Seed
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 4 Def / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Protect
-
-Heracross @ Salac Berry
-Ability: Guts
-EVs: 252 Atk / 4 Def / 252 Spe
+Medicham @ Lum Berry
+Ability: Pure Power
+EVs: 252 Atk / 56 Def / 200 Spe
 Adamant Nature
-- Reversal
+- Bulk Up
+- Brick Break
 - Rock Slide
-- Substitute
-- Sunny Day
+- Shadow Ball
+
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 8 HP / 240 SpA / 56 SpD / 204 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Sleep Powder
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 32 Def / 224 SpA
+Sassy Nature
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Agility
+
+Salamence @ Lum Berry
+Ability: Intimidate
+EVs: 252 Atk / 112 SpD / 144 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Surf
+- Thunderbolt
+- Ice Beam

@@ -1,57 +1,58 @@
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Earthquake
+- Explosion
+- Rapid Spin
+
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 Def
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Rest
+- Rapid Spin
+
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 92 SpA / 164 Spe
-Modest Nature
+EVs: 252 HP / 176 Def / 80 Spe
+Bold Nature
 IVs: 0 Atk
-- Substitute
-- Calm Mind
 - Surf
+- Calm Mind
+- Rest
 - Roar
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 200 HP / 40 Def / 252 SpA / 16 Spe
-Quiet Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Psychic
-- Meteor Mash
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 192 SpA / 56 SpD / 8 Spe
+Calm Nature
+IVs: 0 Atk
 - Pursuit
-- Hidden Power [Fire]
+- Charm
+- Wish
+- Protect
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 52 Def / 28 SpA / 176 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-
-Celebi @ Leftovers
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 76 Def / 180 Spe
+EVs: 168 HP / 252 Def / 88 Spe
+Bold Nature
+IVs: 0 Atk
+- Aromatherapy
+- Thunder Wave
+- Seismic Toss
+- Soft-Boiled
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 104 HP / 176 SpA / 228 Spe
 Timid Nature
 IVs: 0 Atk
-- Calm Mind
-- Leech Seed
-- Baton Pass
-- Recover
-
-Dragonite @ Leftovers
-Ability: Inner Focus
-EVs: 216 Atk / 236 SpA / 56 Spe
-Lonely Nature
-- Brick Break
-- Ice Beam
-- Thunderbolt
-- Agility
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 164 SpA / 92 Spe
-Rash Nature
-- Surf
-- Ice Beam
-- Substitute
-- Focus Punch
+- Flamethrower
+- Toxic
+- Sunny Day
+- Morning Sun

@@ -1,57 +1,58 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Surf
-- Ice Beam
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 192 HP / 252 SpA / 64 Spe
+Modest Nature
 IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Thunder Wave
-- Surf
+- Rest
+- Sleep Talk
+- Calm Mind
+- Hydro Pump
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Substitute
+- Megahorn
+- Rock Slide
+- Focus Punch
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 104 Def / 20 SpA / 96 SpD / 36 Spe
-Calm Nature
+EVs: 192 HP / 8 Def / 168 SpA / 140 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
-- Recover
 - Leech Seed
 - Giga Drain
 - Hidden Power [Fire]
+- Psychic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 Def
-- Rest
+EVs: 216 HP / 112 SpA / 180 Spe
+Modest Nature
+IVs: 30 Spe
+- Metal Sound
 - Thunderbolt
 - Hidden Power [Ice]
-- Roar
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Rain Dance

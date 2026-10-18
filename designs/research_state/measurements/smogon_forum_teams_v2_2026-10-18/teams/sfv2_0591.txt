@@ -1,57 +1,59 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Brick Break
-- Hidden Power [Grass]
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 228 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Toxic
 
-Claydol @ Leftovers
+Flygon @ Choice Band
 Ability: Levitate
-EVs: 252 HP / 184 Atk / 28 Def / 44 Spe
-Brave Nature
-- Earthquake
-- Psychic
-- Explosion
-- Rapid Spin
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 236 HP / 216 Atk / 40 Def / 16 Spe
+EVs: 252 Atk / 4 SpA / 252 Spe
 Adamant Nature
-- Meteor Mash
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Protect
-- Explosion
+- Rock Slide
+- Hidden Power [Bug]
+- Quick Attack
 
-Snorlax @ Leftovers
-Ability: Immunity
-Happiness: 0
-EVs: 128 HP / 144 Atk / 124 Def / 96 SpD / 16 Spe
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Rest
-- Self-Destruct
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 108 Def / 148 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Calm Mind
+- Baton Pass
+- Giga Drain
+- Hidden Power [Ice]
 
 Magneton @ Magnet
 Ability: Magnet Pull
-EVs: 252 SpA / 36 SpD / 220 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
-- Hidden Power [Fire]
+- Hidden Power [Grass]
 - Toxic
-- Thunder Wave
+- Protect
 
-Suicune @ Leftovers
+Raikou @ Leftovers
 Ability: Pressure
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Ice Beam
-- Rest
+EVs: 204 HP / 148 SpA / 156 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
 - Calm Mind
+- Hidden Power [Ice]
+- Rest
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 4 Atk / 252 Def
+Relaxed Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Ice Beam
+- Hidden Power [Fighting]
+- Toxic
+- Recover

@@ -1,58 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Toxic
-- Thunderbolt
-- Hidden Power [Grass]
-- Sunny Day
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 156 Atk / 120 Def / 48 SpA / 168 SpD
+Brave Nature
+- Body Slam
+- Brick Break
+- Fire Blast
+- Self-Destruct
 
 Metagross @ Leftovers
 Ability: Clear Body
 EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
 Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
+- Earthquake
+- Thunder Punch
+- Ice Punch
 - Explosion
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
-- Roar
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Shadow Ball
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 224 HP / 4 Def / 140 SpA / 140 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
+- Calm Mind
+- Fire Punch
 - Hidden Power [Grass]
-- Beat Up
+- Psychic
 
-Salamence @ Leftovers
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Spore
+- Stun Spore
+- Brick Break
+- Focus Punch
+
+Charizard @ Salac Berry
+Ability: Blaze
+EVs: 252 Atk / 76 SpD / 180 Spe
+Lonely Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Belly Drum
+- Hidden Power [Flying]
+- Rock Slide
+- Fire Blast
+
+Gyarados @ Leftovers
 Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
 - Dragon Dance
 - Earthquake
-- Rock Slide
-- Hidden Power [Flying]
+- Hidden Power [Rock]
+- Double-Edge

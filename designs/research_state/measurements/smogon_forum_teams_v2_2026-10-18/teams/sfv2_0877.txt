@@ -1,56 +1,56 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 88 SpA / 168 Spe
-Modest Nature
-IVs: 0 Atk
-- Hydro Pump
-- Calm Mind
-- Substitute
-- Ice Beam
-
-Exeggutor @ Quick Claw
-Ability: Chlorophyll
-EVs: 252 HP / 4 Atk / 252 SpA
-Quiet Nature
-- Psychic
-- Sleep Powder
-- Explosion
-- Wish
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunder
-- Baton Pass
-- Rain Dance
-- Hidden Power [Grass]
-
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 144 HP / 204 Atk / 80 Def / 80 SpD
-Adamant Nature
+EVs: 252 Atk / 188 Def / 4 SpA / 64 SpD
+Brave Nature
+- Focus Punch
+- Fire Blast
 - Body Slam
-- Curse
-- Self-Destruct
+- Counter
+
+Miltank (F) @ Leftovers
+Ability: Thick Fat
+EVs: 200 HP / 192 Atk / 84 Def / 32 Spe
+Impish Nature
+- Brick Break
 - Shadow Ball
+- Counter
+- Milk Drink
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 4 Atk / 252 SpA
-Quiet Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Reversal
+Smeargle @ Leftovers
+Ability: Own Tempo
+EVs: 252 HP / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Spore
+- Seismic Toss
 - Substitute
-- Swords Dance
-- Megahorn
+- Transform
+
+Swellow @ Choice Band
+Ability: Guts
+EVs: 32 HP / 252 Atk / 224 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Aerial Ace
+- Hidden Power [Fighting]
+- Double-Edge
+- Quick Attack
+
+Slaking @ Choice Band
+Ability: Truant
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Return
+- Earthquake
+- Shadow Ball
+- Focus Punch
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Ice Beam
+- Psych Up
+- Thunderbolt

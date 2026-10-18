@@ -1,57 +1,56 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 240 Def / 16 Spe
-Bold Nature
-- Rest
-- Calm Mind
-- Surf
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Rest
-- Earthquake
-- Shadow Ball
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Aromatherapy
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 32 Atk / 224 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
 - Ice Beam
-- Thunderbolt
+- Brick Break
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 240 SpD / 20 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Toxic
+Cloyster (F) @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Surf
+- Hidden Power [Grass]
+- Explosion
+- Spikes
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 76 HP / 180 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
 - Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
 - Roar
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 220 Def / 36 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Toxic
-- Fire Punch
+Gengar (F) @ Leftovers
+Ability: Levitate
+EVs: 60 HP / 176 Atk / 68 SpA / 204 Spe
+Hasty Nature
+- Focus Punch
+- Ice Punch
+- Explosion
+- Hypnosis
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 SpA / 252 Spe
+Rash Nature
+- Hydro Pump
+- Ice Beam
 - Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Aerial Ace
+- Focus Punch
+
+Metagross @ Metal Coat
+Ability: Clear Body
+EVs: 72 HP / 252 Atk / 184 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion

@@ -1,58 +1,60 @@
-Medicham (F) @ Leftovers
-Ability: Pure Power
-Shiny: Yes
+Hariyama (M) @ Leftovers
+Ability: Guts
+EVs: 96 Atk / 192 Def / 192 SpD / 28 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Knock Off
+- Cross Chop
+- Rock Slide
+- Hidden Power [Ghost]
+
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-- Focus Punch
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
 - Rock Slide
-- Brick Break
-- Shadow Ball
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 136 Def / 32 SpA / 44 SpD / 44 Spe
-Relaxed Nature
 - Earthquake
-- Hydro Pump
-- Ice Beam
-- Protect
+- Hidden Power [Bug]
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Fire Blast
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+Shiny: Yes
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
 - Roar
+- Drill Peck
+- Toxic
 
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 SpA / 4 Spe
-Quiet Nature
-- Thunderbolt
-- Ice Beam
-- Thunder Wave
-- Explosion
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
+- Baton Pass
+- Hidden Power [Grass]
+- Recover
 
-Charizard @ Leftovers
-Ability: Blaze
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]
+
+Gengar (M) @ Leftovers
+Ability: Levitate
 Shiny: Yes
 EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
-- Fire Blast
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
 - Hidden Power [Grass]
-- Dragon Claw
-- Beat Up
-
-Metagross @ Lum Berry
-Ability: Clear Body
-Shiny: Yes
-EVs: 128 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
 - Explosion
-- Agility

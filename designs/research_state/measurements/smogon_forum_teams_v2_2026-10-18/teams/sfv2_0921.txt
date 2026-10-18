@@ -1,55 +1,59 @@
-Gengar @ Leftovers
+Gengar (F) @ Leftovers
 Ability: Levitate
-EVs: 176 Atk / 144 SpA / 188 Spe
-Naive Nature
-- Focus Punch
-- Ice Punch
-- Thunderbolt
+Shiny: Yes
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
 - Hypnosis
+- Ice Punch
+- Explosion
+- Will-O-Wisp
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 224 HP / 252 Atk / 32 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Metal Sound
+- Toxic
+
+Dugtrio (F) @ Choice Band
+Ability: Arena Trap
+EVs: 32 HP / 252 Atk / 224 Spe
 Adamant Nature
-- Doom Desire
-- Body Slam
-- Fire Punch
-- Psychic
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 252 Def / 4 Spe
+EVs: 252 HP / 252 Def / 4 SpA
 Bold Nature
-IVs: 0 Atk
+IVs: 3 Atk / 30 SpA
 - Calm Mind
-- Surf
 - Rest
-- Sleep Talk
+- Surf
+- Hidden Power [Electric]
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Blissey @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 244 SpA / 12 SpD
-Modest Nature
-IVs: 0 Atk
-- Ice Beam
-- Thunderbolt
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
 - Calm Mind
-- Soft-Boiled
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Whirlwind
-- Protect
-- Toxic
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 104 HP / 252 SpA / 152 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic

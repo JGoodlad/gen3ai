@@ -1,63 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 224 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Thunderbolt
-- Toxic
-- Roar
-- Rest
-
-Salamence @ Leftovers
-Ability: Intimidate
-Shiny: Yes
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Brick Break
-- Hidden Power [Grass]
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Focus Punch
+- Hidden Power [Bug]
 
 Forretress @ Leftovers
 Ability: Sturdy
-Shiny: Yes
-EVs: 252 HP / 4 Atk / 252 SpD
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
 - Spikes
-- Hidden Power [Bug]
+- Earthquake
 - Explosion
 - Rapid Spin
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-Shiny: Yes
-EVs: 252 HP / 48 Def / 208 SpA
+Steelix @ Leftovers
+Ability: Rock Head
+EVs: 252 HP / 96 Atk / 16 Def / 124 SpD / 20 Spe
+Impish Nature
+- Explosion
+- Protect
+- Toxic
+- Earthquake
+
+Mantine @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 224 Def / 16 SpA / 16 SpD
+Calm Nature
+IVs: 0 Atk
+- Protect
+- Rest
+- Toxic
+- Surf
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 72 Def / 184 SpD
+Calm Nature
+IVs: 0 Atk
+- Pursuit
+- Rest
+- Toxic
+- Wish
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 SpA / 32 Spe
 Modest Nature
 IVs: 0 Atk
-- Crunch
-- Pursuit
-- Fire Blast
-- Counter
-
-Blissey @ Leftovers
-Ability: Natural Cure
-Shiny: Yes
-EVs: 252 Def / 252 SpA / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Toxic
-- Snatch
-- Flamethrower
-- Soft-Boiled
-
-Swampert @ Leftovers
-Ability: Torrent
-Shiny: Yes
-EVs: 248 HP / 136 Def / 68 SpA / 44 SpD / 12 Spe
-Relaxed Nature
-- Hydro Pump
-- Ice Beam
-- Earthquake
-- Protect
+- Calm Mind
+- Thunder
+- Ice Punch
+- Wish

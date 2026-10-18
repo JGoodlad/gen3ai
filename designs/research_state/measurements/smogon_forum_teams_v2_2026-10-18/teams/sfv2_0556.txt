@@ -1,61 +1,56 @@
-Swampert @ Leftovers
-Ability: Torrent
-Shiny: Yes
-EVs: 248 HP / 200 Def / 60 SpD
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Toxic
-- Roar
-- Protect
-
-Dugtrio (F) @ Choice Band
-Ability: Arena Trap
-EVs: 8 HP / 248 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Marowak @ Thick Club
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
 - Earthquake
-- Aerial Ace
-- Hidden Power [Bug]
 - Rock Slide
+- Focus Punch
+- Double-Edge
 
-Skarmory (M) @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Toxic
-- Roar
-
-Starmie @ Leftovers
-Ability: Natural Cure
-Shiny: Yes
-EVs: 252 HP / 16 Def / 52 SpA / 32 SpD / 156 Spe
-Timid Nature
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 84 SpA / 96 SpD / 76 Spe
+Calm Nature
 IVs: 0 Atk
+- Calm Mind
 - Surf
-- Rapid Spin
+- Ice Beam
+- Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 28 SpA / 12 Spe
+Adamant Nature
+- Earthquake
 - Psychic
-- Recover
+- Rapid Spin
+- Explosion
 
-Blissey @ Leftovers
-Ability: Natural Cure
-Shiny: Yes
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 176 HP / 204 SpA / 16 SpD / 112 Spe
+Calm Nature
+IVs: 30 Atk / 30 SpA
 - Seismic Toss
-- Thunder Wave
-- Toxic
-- Soft-Boiled
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 192 Def / 64 SpD
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Leech Seed
+- Thunder
 - Hidden Power [Grass]
-- Perish Song
-- Recover
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 208 HP / 136 Atk / 156 Def / 4 SpD / 4 Spe
+Adamant Nature
+- Curse
+- Body Slam
+- Shadow Ball
+- Earthquake
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 100 SpD / 156 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide

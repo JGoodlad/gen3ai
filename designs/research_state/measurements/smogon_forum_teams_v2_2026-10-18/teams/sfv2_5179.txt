@@ -1,0 +1,54 @@
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Toxic
+
+Donphan (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 184 Def / 72 SpD
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Rapid Spin
+- Protect
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 4 Def / 252 SpA
+Quiet Nature
+- Crunch
+- Pursuit
+- Fire Blast
+- Focus Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+- Leech Seed
+- Heal Bell
+- Psychic
+- Recover
+
+Dusclops (M) @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Night Shade
+- Will-O-Wisp
+- Pain Split
+- Torment
+
+Vaporeon (M) @ Leftovers
+Ability: Water Absorb
+EVs: 208 HP / 244 Def / 56 SpD
+Bold Nature
+- Surf
+- Wish
+- Protect
+- Roar

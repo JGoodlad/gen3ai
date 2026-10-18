@@ -1,57 +1,58 @@
-Jirachi @ Lum Berry
-Ability: Serene Grace
-EVs: 252 Atk / 60 SpA / 196 Spe
-Lonely Nature
-- Dynamic Punch
-- Doom Desire
-- Thunder
-- Psychic
-
-Metagross @ Leftovers
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 252 HP / 252 SpA / 4 Spe
-Quiet Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Psychic
-- Hidden Power [Fire]
+EVs: 252 Atk / 68 SpD / 188 Spe
+Adamant Nature
 - Meteor Mash
+- Earthquake
+- Rock Slide
 - Explosion
 
-Sceptile @ Petaya Berry
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 240 Atk / 16 SpA / 252 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
+
+Venusaur @ Leftovers
 Ability: Overgrow
-EVs: 252 SpA / 4 SpD / 252 Spe
+EVs: 8 HP / 196 SpA / 52 SpD / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 Def
-- Pursuit
-- Leaf Blade
-- Endeavor
+- Leech Seed
+- Sleep Powder
+- Giga Drain
 - Hidden Power [Ice]
 
-Dragonite @ Leftovers
-Ability: Inner Focus
-EVs: 148 HP / 92 Atk / 252 SpA / 16 Spe
-Mild Nature
-- Agility
-- Earthquake
-- Ice Beam
-- Thunder
-
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
 IVs: 0 Atk
 - Substitute
-- Endeavor
-- Hydro Pump
-- Roar
+- Calm Mind
+- Water Pulse
+- Psychic
 
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 184 Atk / 92 SpA / 232 Spe
-Lonely Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Sky Attack
-- Overheat
-- Hidden Power [Fighting]
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
 - Substitute
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

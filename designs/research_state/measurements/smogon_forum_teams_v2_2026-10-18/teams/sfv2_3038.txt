@@ -1,59 +1,58 @@
-Jirachi @ Lum Berry
-Ability: Serene Grace
-EVs: 200 Atk / 124 SpA / 184 Spe
-Rash Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Thunder
-- Hidden Power [Fighting]
-- Ice Punch
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 Def
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
+- Rain Dance
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
 - Psychic
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpA / 252 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
 
 Dugtrio @ Choice Band
 Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
+EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Hidden Power [Bug]
 - Aerial Ace
-- Rock Slide
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 64 Atk / 192 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Focus Punch
-- Substitute
-- Fire Blast
-- Hidden Power [Grass]
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 220 HP / 8 Def / 96 SpA / 184 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Baton Pass
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 200 Def / 56 SpD
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Ice Beam
-- Thunderbolt
-- Thunder Wave
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 184 HP / 108 Atk / 216 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
+- Sunny Day

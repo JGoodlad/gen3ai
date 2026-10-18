@@ -1,58 +1,57 @@
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Ghost]
+- Brick Break
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 104 Def / 20 SpA / 96 SpD / 36 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Recover
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 192 SpA / 28 SpD / 36 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Thunder
+- Hidden Power [Grass]
+- Dynamic Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
+- Roar
+
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 252 SpD / 4 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Rest
-- Toxic
-- Hidden Power [Grass]
-
-Misdreavus @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 192 SpD / 64 Spe
-Calm Nature
-IVs: 0 Atk
-- Mean Look
-- Perish Song
-- Thunderbolt
-- Rest
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
+EVs: 240 HP / 104 SpA / 20 SpD / 144 Spe
 Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Aromatherapy
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 196 Def / 28 SpD / 32 Spe
-Impish Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Protect
-- Earthquake
-- Hidden Power [Rock]
-- Toxic
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
+IVs: 2 Atk / 30 Def
+- Rest
+- Thunderbolt
+- Hidden Power [Ice]
 - Roar
-- Toxic
-- Thief
-
-Weezing @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 224 Def / 32 Spe
-Impish Nature
-- Will-O-Wisp
-- Haze
-- Pain Split
-- Sludge Bomb

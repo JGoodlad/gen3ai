@@ -1,0 +1,55 @@
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 68 HP / 188 SpD / 252 Spe
+Jolly Nature
+- Spikes
+- Spore
+- Explosion
+- Substitute
+
+Tyranitar @ Liechi Berry
+Ability: Sand Stream
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Agility
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Hasty Nature
+- Thunderbolt
+- Giga Drain
+- Focus Punch
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Rock]
+- Earthquake
+- Taunt
+
+Arcanine @ Leftovers
+Ability: Intimidate
+EVs: 28 HP / 8 Atk / 252 SpA / 220 Spe
+Mild Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Fire Blast
+- Extreme Speed
+- Hidden Power [Fighting]
+- Toxic

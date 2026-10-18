@@ -1,57 +1,58 @@
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 248 HP / 52 Def / 192 SpA / 16 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Pursuit
-- Crunch
-- Hidden Power [Grass]
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
 - Fire Blast
+- Hidden Power [Grass]
+- Ice Beam
+- Brick Break
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 200 HP / 252 Def / 56 Spe
-Bold Nature
-IVs: 0 Atk
-- Thunder Wave
-- Counter
-- Soft-Boiled
-- Seismic Toss
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Toxic
-- Roar
-- Protect
-
-Claydol @ Leftovers
+Weezing @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 216 Atk / 16 Def / 28 SpD
-Impish Nature
-- Earthquake
-- Rock Slide
-- Rapid Spin
+EVs: 52 HP / 252 Atk / 204 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Will-O-Wisp
+- Hidden Power [Fighting]
+- Sludge Bomb
 - Explosion
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 236 Atk / 16 Def / 88 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Agility
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 8 HP / 212 SpA / 112 SpD / 176 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Hydro Pump
-- Dragon Claw
-- Fire Blast
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Fire Punch
 - Hidden Power [Grass]
+- Ice Punch
+- Explosion
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 56 SpA / 200 Spe
+Bold Nature
+- Spikes
+- Surf
+- Ice Beam
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 76 Def / 184 SpD
+Sassy Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Fire Punch
+- Body Slam
+- Hidden Power [Fighting]
+- Wish
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Roar

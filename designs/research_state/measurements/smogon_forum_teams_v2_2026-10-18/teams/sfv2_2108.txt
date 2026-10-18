@@ -1,58 +1,58 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 196 SpA / 128 Spe
+EVs: 240 HP / 252 SpA / 16 Spe
 Modest Nature
 - Crunch
 - Pursuit
 - Flamethrower
-- Dynamic Punch
+- Brick Break
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 224 HP / 216 SpD / 68 Spe
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
-IVs: 0 Atk
+IVs: 30 Atk / 30 Def / 30 SpD
 - Spikes
-- Taunt
-- Toxic
-- Roar
+- Rapid Spin
+- Hidden Power [Bug]
+- Counter
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
-Calm Nature
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
 IVs: 0 Atk
 - Wish
 - Protect
 - Toxic
 - Fire Punch
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
-Relaxed Nature
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
 IVs: 0 Atk
-- Protect
-- Earthquake
-- Hydro Pump
+- Recover
+- Refresh
+- Surf
 - Ice Beam
 
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
-- Flamethrower
-- Hidden Power [Grass]
-- Roar
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt

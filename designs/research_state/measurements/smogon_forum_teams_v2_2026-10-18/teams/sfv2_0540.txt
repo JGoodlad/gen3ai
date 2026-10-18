@@ -1,32 +1,12 @@
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 248 HP / 220 SpD / 40 Spe
-Calm Nature
-IVs: 0 Atk
-- Thunderbolt
-- Roar
-- Rest
-- Sleep Talk
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 200 SpD / 60 Spe
-Calm Nature
-IVs: 0 Atk
-- Spikes
-- Taunt
-- Toxic
-- Roar
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 208 HP / 216 SpA / 84 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Psychic
-- Meteor Mash
-- Hidden Power [Fire]
-- Explosion
+EVs: 28 HP / 252 SpA / 228 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Grass]
 
 Swampert @ Salac Berry
 Ability: Torrent
@@ -36,24 +16,43 @@ IVs: 0 Atk
 - Substitute
 - Endeavor
 - Hydro Pump
-- Roar
+- Toxic
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 Def / 252 SpA
-Bold Nature
-IVs: 0 Atk
-- Seismic Toss
-- Thunder Wave
-- Soft-Boiled
-- Ice Beam
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Naughty Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
 - Earthquake
+- Self-Destruct
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
 - Rock Slide
+- Earthquake
 - Hidden Power [Bug]
-- Fire Blast
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Reflect

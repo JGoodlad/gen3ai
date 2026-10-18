@@ -1,59 +1,58 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Hydro Pump
-- Ice Beam
-
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Endure
-- Thunderbolt
-- Hidden Power [Grass]
-- Rain Dance
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Earthquake
-- Hidden Power [Grass]
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Counter
+- Hidden Power [Bug]
 - Explosion
 
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 HP
-- Substitute
-- Swords Dance
-- Megahorn
-- Rock Slide
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 156 Def / 44 SpD / 60 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Roar
+- Protect
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 Def / 8 SpA / 32 SpD / 176 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
+IVs: 0 Atk
+- Thunder Wave
+- Surf
+- Rapid Spin
+- Recover
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 168 SpA / 88 Spe
+Modest Nature
+- Crunch
+- Fire Blast
+- Counter
+- Focus Punch
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Seismic Toss
+- Ice Beam
+- Wish
+- Soft-Boiled
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 100 HP / 140 Atk / 80 SpA / 188 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
 - Thunderbolt
 - Hidden Power [Grass]
-- Baton Pass
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Hidden Power [Flying]
+- Drill Peck
+- Agility

@@ -1,57 +1,59 @@
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 HP / 20 Atk / 236 SpD
-Adamant Nature
-- Spore
-- Leech Seed
-- Toxic
-- Sky Uppercut
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Surf
+- Roar
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 188 HP / 240 SpA / 80 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 220 SpA / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
-- Pursuit
-- Fire Blast
-- Crunch
-- Hidden Power [Grass]
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 92 Def / 140 SpD / 24 Spe
-Calm Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Fire Punch
-- Toxic
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 248 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Whirlwind
-- Toxic
-- Protect
-
-Gardevoir @ Leftovers
-Ability: Trace
-EVs: 252 HP / 48 Def / 196 SpA / 12 Spe
-Modest Nature
-IVs: 0 Atk
-- Ice Punch
-- Will-O-Wisp
-- Fire Punch
-- Psychic
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
+- Substitute
 - Thunderbolt
-- Rapid Spin
+- Hidden Power [Grass]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Machamp @ Leftovers
+Ability: Guts
+EVs: 252 Atk / 36 SpD / 220 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Bulk Up
+- Cross Chop
+- Rock Slide
+- Hidden Power [Bug]
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 192 Atk / 200 SpD / 116 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break

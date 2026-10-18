@@ -1,0 +1,57 @@
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 248 HP / 56 Def / 188 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Charm
+- Pursuit
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Fire]
+- Rain Dance
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 100 Atk / 180 Def / 8 SpD / 16 Spe
+Adamant Nature
+- Rest
+- Curse
+- Return
+- Earthquake
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 152 Def / 44 SpA / 28 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Recover
+- Leech Seed
+- Heal Bell
+- Hidden Power [Grass]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 136 Atk / 28 SpD / 92 Spe
+Adamant Nature
+- Reflect
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 40 HP / 188 Atk / 100 SpD / 180 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Hidden Power [Rock]
+- Double-Edge

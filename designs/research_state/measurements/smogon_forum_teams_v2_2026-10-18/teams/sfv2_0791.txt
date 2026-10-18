@@ -1,57 +1,58 @@
-Tyranitar @ Salac Berry
-Ability: Sand Stream
-Hidden Power: Bug
-EVs: 4 HP / 252 Atk / 252 Spe
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
 Adamant Nature
-- Dragon Dance
-- Rock Slide
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
 - Earthquake
-- Endure
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 120 HP / 252 Atk / 136 Spe
-Adamant Nature
-- Meteor Mash
-- Explosion
 - Rock Slide
-- Brick Break
+- Leer
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Wish
-- Calm Mind
-- Psychic
-- Hidden Power [Grass]
-
-Starmie @ Leftovers
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 40 Def / 216 Spe
-Timid Nature
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
 IVs: 0 Atk
-- Surf
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
 - Thunder Wave
-- Rapid Spin
-- Recover
 
-Zapdos @ Leftovers
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
 - Roar
 
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Spore
-- Stun Spore
-- Mach Punch
-- Sky Uppercut
+Sableye @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Psych Up
+- Recover
+- Knock Off
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Counter
+- Hidden Power [Bug]

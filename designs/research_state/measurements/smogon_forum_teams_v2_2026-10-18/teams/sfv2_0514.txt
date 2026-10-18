@@ -1,60 +1,56 @@
-Swampert @ Leftovers
-Ability: Torrent
-Shiny: Yes
-EVs: 212 HP / 104 Atk / 136 SpA / 56 Spe
-Brave Nature
-- Hydro Pump
-- Ice Beam
-- Earthquake
-- Curse
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Toxic
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 80 HP / 252 SpA / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Baton Pass
+- Hidden Power [Grass]
 - Roar
+- Thunderbolt
 
 Moltres @ Leftovers
 Ability: Pressure
-EVs: 24 HP / 252 SpA / 232 Spe
+EVs: 40 HP / 252 SpA / 216 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
+IVs: 30 Atk / 30 SpA
 - Flamethrower
 - Hidden Power [Grass]
-- Will-O-Wisp
 - Overheat
+- Toxic
 
-Salamence @ Leftovers
-Ability: Intimidate
-Shiny: Yes
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Rock Slide
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Double-Edge
 - Earthquake
-- Dragon Dance
+- Hidden Power [Bug]
+- Rock Slide
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 244 HP / 204 SpA / 60 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-Shiny: Yes
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Thunder Wave
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 132 SpD / 124 Spe
+Careful Nature
+- Drill Peck
 - Roar
+- Spikes
+- Taunt
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 40 HP / 152 Atk / 100 SpD / 216 Spe
+Jolly Nature
+- Aerial Ace
+- Beat Up
+- Earthquake
+- Rock Slide
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 216 Def / 40 Spe
+Relaxed Nature
+- Earthquake
+- Focus Punch
+- Ice Beam
+- Surf

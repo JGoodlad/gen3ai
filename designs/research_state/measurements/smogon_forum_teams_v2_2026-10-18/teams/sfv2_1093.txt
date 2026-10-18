@@ -1,57 +1,58 @@
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 4 Def / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 208 HP / 80 Def / 20 SpA / 136 SpD / 64 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Razor Leaf
+- Hidden Power [Fire]
 - Roar
-- Substitute
+- Sleep Powder
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 44 HP / 104 Atk / 128 SpD / 232 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Earthquake
-- Aerial Ace
-- Hidden Power [Bug]
-- Beat Up
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 104 Def / 44 SpA / 72 SpD / 36 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
 - Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Baton Pass
+- Ice Beam
+- Rapid Spin
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 252 HP / 236 SpA / 20 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 252 SpA / 16 Spe
 Modest Nature
-- Surf
+IVs: 0 Atk
+- Pursuit
+- Crunch
+- Fire Blast
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 80 HP / 176 SpA / 252 Spe
+Rash Nature
+- Wish
+- Fire Blast
+- Brick Break
+- Dragon Claw
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Spikes
 - Rapid Spin
+- Hidden Power [Bug]
 - Explosion
 
-Machamp @ Leftovers
+Hariyama @ Leftovers
 Ability: Guts
-EVs: 252 HP / 136 Atk / 112 Def / 8 Spe
+EVs: 68 Atk / 248 Def / 164 SpD / 28 Spe
 Adamant Nature
 IVs: 30 Atk / 30 SpD
-- Low Kick
-- Earthquake
-- Rock Slide
-- Hidden Power [Ghost]
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 80 HP / 176 Atk / 124 Def / 108 SpD / 20 Spe
-Adamant Nature
-- Body Slam
-- Shadow Ball
+- Brick Break
+- Knock Off
 - Focus Punch
-- Self-Destruct
+- Hidden Power [Ghost]

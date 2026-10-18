@@ -1,0 +1,56 @@
+Articuno @ Leftovers
+Ability: Pressure
+EVs: 40 HP / 248 SpA / 220 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Ice Beam
+- Hidden Power [Fire]
+- Toxic
+- Haze
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 40 HP / 144 Atk / 100 SpD / 224 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Beat Up
+- Hidden Power [Bug]
+- Aerial Ace
+
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 224 HP / 252 SpA / 32 Spe
+Quiet Nature
+- Pursuit
+- Crunch
+- Ice Beam
+- Brick Break
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 136 SpA / 120 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Punch
+- Thunderbolt
+- Calm Mind
+- Substitute
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 228 Def / 28 Spe
+Bold Nature
+- Surf
+- Ice Beam
+- Calm Mind
+- Rest

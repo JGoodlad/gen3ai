@@ -1,56 +1,57 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
+EVs: 184 HP / 196 SpA / 128 Spe
 Modest Nature
-IVs: 0 Atk
 - Crunch
 - Pursuit
 - Flamethrower
+- Brick Break
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Taunt
+- Toxic
 - Roar
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 64 HP / 248 SpD / 196 Spe
-Timid Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 36 SpA / 220 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
+Modest Nature
+IVs: 3 Atk / 30 Spe
 - Thunder Wave
-- Seismic Toss
-- Hidden Power [Grass]
-- Explosion
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
+EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
+Relaxed Nature
+- Protect
 - Earthquake
-- Hydro Pump
-- Ice Beam
+- Surf
+- Roar
 
-Dragonite @ Leftovers
-Ability: Inner Focus
-EVs: 28 Atk / 224 SpA / 36 SpD / 220 Spe
-Lonely Nature
-- Substitute
-- Ice Beam
-- Thunder
-- Brick Break
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

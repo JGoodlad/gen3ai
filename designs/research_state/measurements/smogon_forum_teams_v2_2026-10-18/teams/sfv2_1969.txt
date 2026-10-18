@@ -1,58 +1,57 @@
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Toxic
-- Refresh
-- Recover
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 100 HP / 44 Def / 220 SpA / 144 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
 
-Misdreavus @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 4 SpA / 252 SpD
-Calm Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
 IVs: 0 Atk
-- Thunderbolt
-- Rest
-- Perish Song
-- Mean Look
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 248 HP / 8 Def / 252 SpD
-Calm Nature
-IVs: 0 Atk
-- Surf
-- Rest
-- Rapid Spin
 - Spikes
-
-Steelix @ Leftovers
-Ability: Rock Head
-EVs: 248 HP / 144 Atk / 16 Def / 100 SpD
-Impish Nature
-- Earthquake
-- Roar
+- Taunt
 - Toxic
-- Protect
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 224 HP / 252 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Thunderbolt
-- Rest
 - Roar
-- Sleep Talk
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
 - Earthquake
-- Double-Edge
-- Hidden Power [Bug]
+- Hydro Pump
+- Ice Beam
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Charizard @ Salac Berry
+Ability: Blaze
+EVs: 88 HP / 252 Atk / 16 SpD / 152 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Belly Drum
+- Hidden Power [Flying]
+- Rock Slide
+- Fire Blast

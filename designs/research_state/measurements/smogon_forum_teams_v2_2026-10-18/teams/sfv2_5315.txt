@@ -1,0 +1,53 @@
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+- Surf
+- Ice Beam
+- Recover
+- Toxic
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+- Seismic Toss
+- Soft-Boiled
+- Wish
+- Thunder Wave
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Earthquake
+- Rapid Spin
+- Spikes
+- Toxic
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 Def / 36 Spe
+Bold Nature
+- Leech Seed
+- Psychic
+- Heal Bell
+- Recover
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+- Flamethrower
+- Haze
+- Will-O-Wisp
+- Pain Split
+
+Dusclops @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 156 SpA / 100 SpD
+Bold Nature
+- Calm Mind
+- Will-O-Wisp
+- Pain Split
+- Thunder Punch

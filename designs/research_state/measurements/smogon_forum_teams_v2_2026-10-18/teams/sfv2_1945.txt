@@ -1,58 +1,57 @@
-Tyranitar @ Hard Stone
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Ice Beam
+- Brick Break
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 200 SpA / 56 Spe
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Protect
+- Toxic
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
 Modest Nature
 IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Water Pulse
-- Psychic
-
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 244 Def / 176 SpA / 12 SpD / 60 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
+- Rapid Spin
 - Hydro Pump
 - Ice Beam
-- Baton Pass
-
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
 - Thunderbolt
-- Crunch
 
-Regirock @ Choice Band
-Ability: Clear Body
-EVs: 204 HP / 252 Atk / 52 Spe
-Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Hidden Power [Rock]
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Def / 92 SpA
+Relaxed Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
 - Double-Edge
-- Superpower
-- Explosion
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 Def
-- Substitute
-- Fire Blast
-- Hidden Power [Ice]
-- Focus Punch

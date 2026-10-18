@@ -1,57 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 40 Def / 196 SpD / 32 Spe
-Calm Nature
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 240 SpA / 84 Spe
+Modest Nature
 IVs: 0 Atk
-- Rest
-- Toxic
-- Thunderbolt
-- Rain Dance
+- Crunch
+- Pursuit
+- Flamethrower
+- Ice Beam
 
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 240 HP / 240 SpD / 28 Spe
 Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Rest
-- Psychic
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 232 Def / 24 Spe
-Bold Nature
 IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
+- Spikes
+- Taunt
+- Toxic
 - Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Taunt
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 40 HP / 252 Def / 200 SpA / 16 Spe
-Bold Nature
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
 IVs: 0 Atk
 - Soft-Boiled
 - Toxic
-- Seismic Toss
+- Fire Blast
 - Ice Beam
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Def / 44 SpD / 48 Spe
+Relaxed Nature
+- Protect
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Sunny Day
+- Hydro Pump
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+- Wish
+- Dragon Claw
+- Flamethrower
+- Brick Break

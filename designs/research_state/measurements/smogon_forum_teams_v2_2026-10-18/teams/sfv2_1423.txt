@@ -1,57 +1,57 @@
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Recover
-- Brick Break
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 156 Atk / 168 Spe
+Adamant Nature
 - Rock Slide
-- Shadow Ball
+- Earthquake
+- Toxic
+- Taunt
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 192 HP / 252 SpA / 64 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 80 SpA / 136 Spe
 Modest Nature
 IVs: 0 Atk
-- Rest
-- Sleep Talk
+- Substitute
 - Calm Mind
-- Surf
+- Psychic
+- Fire Punch
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
-Adamant Nature
-- Curse
-- Double-Edge
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 252 Atk / 20 SpD / 228 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
 - Earthquake
-- Shadow Ball
+- Hidden Power [Bug]
+- Aerial Ace
+- Beat Up
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 SpA / 80 SpD / 176 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
+EVs: 248 HP / 184 SpD / 76 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
-- Hidden Power [Ice]
+- Hidden Power [Grass]
+- Thunder Wave
 - Baton Pass
 
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 252 Def / 4 SpA
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Thunder Wave
-- Toxic
-- Thunderbolt
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 144 Def / 36 SpA / 44 SpD / 36 Spe
+Relaxed Nature
+- Protect
+- Hydro Pump
+- Ice Beam
+- Earthquake
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 152 Atk / 216 SpD / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake

@@ -1,59 +1,61 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 136 SpA / 156 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Surf
-- Ice Beam
-- Thunderbolt
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 76 HP / 252 SpA / 180 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Body Slam
-- Fire Punch
-- Hidden Power [Grass]
-- Dynamic Punch
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 228 SpA / 28 Spe
-Modest Nature
-IVs: 0 Atk
-- Toxic
-- Calm Mind
-- Surf
-- Ice Beam
+Metagross @ Choice Band
+Ability: Clear Body
+Shiny: Yes
+EVs: 196 HP / 96 Atk / 32 Def / 184 Spe
+Adamant Nature
+- Meteor Mash
+- Brick Break
+- Double-Edge
+- Explosion
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 192 HP / 4 Def / 136 SpA / 176 Spe
+EVs: 248 HP / 36 Def / 72 SpA / 152 Spe
 Modest Nature
 IVs: 0 Atk
 - Leech Seed
-- Calm Mind
-- Giga Drain
 - Psychic
+- Giga Drain
+- Calm Mind
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
 EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Beat Up
+- Double-Edge
+- Rock Slide
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+Shiny: Yes
+EVs: 248 HP / 252 Def / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Hypnosis
+- Ice Beam
+- Recover
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 144 Atk / 212 SpD / 152 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Earthquake
+- Hidden Power [Flying]
+- Rock Slide
+
+Magneton @ Magnet
+Ability: Magnet Pull
+Shiny: Yes
+EVs: 240 HP / 80 Def / 188 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Protect
+- Toxic

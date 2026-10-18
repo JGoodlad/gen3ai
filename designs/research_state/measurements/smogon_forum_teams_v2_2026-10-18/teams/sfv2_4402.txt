@@ -1,0 +1,58 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 204 Def / 52 SpD
+Impish Nature
+IVs: 0 Atk
+- Spikes
+- Toxic
+- Protect
+- Roar
+
+Dragonair @ Leftovers
+Ability: Shed Skin
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Flamethrower
+- Toxic
+- Haze
+- Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 40 SpD
+Adamant Nature
+- Shadow Ball
+- Earthquake
+- Rapid Spin
+- Rest
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Ice Beam
+
+Diglett @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge
+
+Sableye @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Recover
+- Ice Punch
+- Thunder Punch

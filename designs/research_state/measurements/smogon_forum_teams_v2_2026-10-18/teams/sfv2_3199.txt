@@ -1,57 +1,57 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 184 HP / 188 Atk / 136 SpD
-Adamant Nature
-- Earthquake
-- Rock Slide
-- Meteor Mash
-- Explosion
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 252 SpA / 68 SpD / 188 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 12 Def / 244 SpA / 252 Spe
+Mild Nature
+- Dragon Claw
+- Flamethrower
+- Brick Break
 - Rain Dance
-- Thunder Wave
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 108 Def / 224 SpA / 176 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Leech Seed
-- Giga Drain
-- Hidden Power [Ice]
-- Psychic
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 168 HP / 96 Atk / 72 Def / 172 SpD
-Careful Nature
-- Curse
-- Rest
-- Body Slam
-- Shadow Ball
-
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 HP
-- Swords Dance
-- Megahorn
+EVs: 252 HP / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
 - Substitute
+- Leech Seed
+- Psychic
+- Baton Pass
+
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 200 HP / 252 Atk / 56 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
 - Rock Slide
+- Hidden Power [Ghost]
+- Superpower
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 196 HP / 136 SpA / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Ice Punch
+- Thunder
+- Psychic
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 252 Def / 16 Spe
-Bold Nature
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
 IVs: 0 Atk
+- Rest
 - Calm Mind
 - Surf
-- Rest
-- Roar
+- Ice Beam

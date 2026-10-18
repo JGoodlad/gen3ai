@@ -1,57 +1,57 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 Atk / 4 SpD / 252 Spe
+EVs: 252 HP / 252 Atk / 4 Spe
 Adamant Nature
-- Dragon Dance
-- Earthquake
+IVs: 30 Atk / 30 Def / 30 SpD
+- Substitute
+- Focus Punch
 - Rock Slide
-- Double-Edge
+- Hidden Power [Bug]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 236 HP / 96 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Thunder Wave
+- Hidden Power [Ice]
+- Toxic
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 36 Def / 84 SpA / 136 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Substitute
+- Hidden Power [Grass]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 Def / 216 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 120 HP / 252 Def / 136 Spe
+Bold Nature
+- Soft-Boiled
+- Counter
+- Seismic Toss
+- Wish
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
+EVs: 252 HP / 232 Def / 24 SpD
+Relaxed Nature
 - Earthquake
-- Hydro Pump
 - Ice Beam
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Earthquake
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 188 HP / 140 SpA / 180 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Rock Slide
-- Brick Break
-- Hidden Power [Flying]
+- Curse
+- Protect

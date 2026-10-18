@@ -1,58 +1,57 @@
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 48 HP / 176 Def / 136 SpA / 148 Spe
-Modest Nature
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 Spe
+Bold Nature
 IVs: 0 Atk
-- Substitute
-- Baton Pass
+- Recover
+- Refresh
+- Toxic
 - Surf
-- Ice Beam
 
-Machamp @ Leftovers
-Ability: Guts
-EVs: 192 HP / 252 Atk / 64 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Bulk Up
-- Cross Chop
-- Hidden Power [Ghost]
-- Rock Slide
-
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 124 Def / 136 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Counter
+- Spikes
+- Protect
+- Drill Peck
+- Roar
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Toxic
+- Thunderbolt
+- Hidden Power [Fire]
+- Rain Dance
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
 - Explosion
 
-Sceptile @ Petaya Berry
-Ability: Overgrow
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
 IVs: 0 Atk
-- Substitute
-- Endeavor
-- Leaf Blade
-- Thunder Punch
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
 
-Dragonite @ Leftovers
-Ability: Inner Focus
-EVs: 216 HP / 136 Atk / 104 Def / 52 Spe
-Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Rock]
-- Earthquake
-- Brick Break
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 152 Def / 44 SpA / 28 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Recover
+- Leech Seed
+- Reflect
+- Hidden Power [Grass]

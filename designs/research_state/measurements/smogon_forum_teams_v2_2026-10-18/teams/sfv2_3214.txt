@@ -1,55 +1,58 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 244 Def / 96 SpA / 12 SpD / 140 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Hydro Pump
+- Ice Beam
+- Baton Pass
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 32 Atk / 192 SpA / 36 Spe
-Quiet Nature
-- Pursuit
-- Crunch
-- Fire Blast
-- Brick Break
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 216 Atk / 40 SpD / 252 Spe
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
-- Spore
-- Focus Punch
-- Sky Uppercut
-- Mach Punch
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Def / 252 SpA / 252 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 220 SpA / 40 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Beat Up
-- Hidden Power [Grass]
-- Flamethrower
-- Dragon Claw
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 220 Atk / 116 Def / 172 SpD
-Adamant Nature
-- Self-Destruct
-- Body Slam
-- Earthquake
-- Focus Punch
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 28 SpD / 12 Spe
-Brave Nature
-- Rapid Spin
-- Earthquake
-- Ice Beam
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
 - Explosion
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 136 SpA / 80 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Calm Mind
-- Hidden Power [Grass]
-- Thunderbolt
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 200 HP / 252 Atk / 56 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Rock Slide
+- Hidden Power [Ghost]
+- Superpower
+- Explosion
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

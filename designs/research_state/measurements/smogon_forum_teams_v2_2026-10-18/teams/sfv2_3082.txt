@@ -1,58 +1,58 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 12 Atk / 244 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Taunt
-- Ice Punch
-- Thunderbolt
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 152 SpD / 104 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Roar
-- Taunt
-- Toxic
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Wish
-
-Swampert @ Leftovers
+Swampert @ Salac Berry
 Ability: Torrent
-EVs: 248 HP / 124 Def / 92 SpA / 44 Spe
-Relaxed Nature
-- Hydro Pump
-- Ice Beam
-- Earthquake
-- Focus Punch
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 132 SpA / 84 Spe
+EVs: 4 Def / 252 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
 - Substitute
-- Calm Mind
-- Ice Punch
+- Toxic
+- Surf
+- Endeavor
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 240 Atk / 16 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunder Wave
+- Toxic
 - Thunderbolt
+- Hidden Power [Grass]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 0 Atk
+- Substitute
+- Leech Seed
+- Psychic
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Brick Break
+- Hidden Power [Flying]

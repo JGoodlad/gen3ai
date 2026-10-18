@@ -1,0 +1,55 @@
+Heracross
+Ability: Guts
+EVs: 96 HP / 252 Atk / 160 Spe
+Adamant Nature
+- Megahorn
+- Rock Slide
+- Focus Punch
+- Thief
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Hidden Power [Grass]
+- Brick Break
+- Fire Blast
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 200 HP / 252 Def / 56 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Seismic Toss
+- Thunder Wave
+- Wish
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 56 Def / 184 SpD / 16 Spe
+Adamant Nature
+- Curse
+- Body Slam
+- Shadow Ball
+- Earthquake
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 144 Def / 28 SpA / 84 Spe
+Bold Nature
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover

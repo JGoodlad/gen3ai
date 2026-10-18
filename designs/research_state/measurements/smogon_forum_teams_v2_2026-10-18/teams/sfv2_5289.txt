@@ -1,0 +1,58 @@
+Skarmory @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 150 Def / 102 SpD / 4 Spe
+Impish Nature
+IVs: 0 Atk
+- Spikes
+- Whirlwind
+- Toxic
+- Protect
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 192 HP / 48 Def / 120 SpA / 148 SpD
+Sassy Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Hydro Pump
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 72 Def / 72 SpA / 108 SpD / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Leech Seed
+- Protect
+- Substitute
+- Giga Drain
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Protect
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 232 Def / 24 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Calm Mind
+- Sleep Talk
+- Rest
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Soft-Boiled
+- Seismic Toss
+- Heal Bell

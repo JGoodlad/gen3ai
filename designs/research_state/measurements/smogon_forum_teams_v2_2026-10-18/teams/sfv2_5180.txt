@@ -1,0 +1,59 @@
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 52 Atk / 252 SpA / 204 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Brick Break
+- Hidden Power [Grass]
+- Fire Blast
+
+Charizard (M) @ Leftovers
+Ability: Blaze
+Shiny: Yes
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 Def
+- Fire Blast
+- Focus Punch
+- Hidden Power [Ice]
+- Beat Up
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 84 Atk / 140 Def / 36 Spe
+Brave Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Refresh
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 220 SpA / 40 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 56 Def / 200 SpD
+Careful Nature
+- Thunder Wave
+- Counter
+- Seismic Toss
+- Explosion

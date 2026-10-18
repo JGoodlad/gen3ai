@@ -1,0 +1,59 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 252 Atk / 4 SpA / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Fire Blast
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
+- Recover
+- Psychic
+- Hidden Power [Grass]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 56 HP / 252 SpA / 12 SpD / 188 Spe
+Timid Nature
+IVs: 0 Atk
+- Pursuit
+- Fire Blast
+- Crunch
+- Will-O-Wisp
+
+Scizor @ Leftovers
+Ability: Swarm
+EVs: 108 HP / 252 Atk / 148 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Swords Dance
+- Silver Wind
+- Hidden Power [Rock]
+- Agility

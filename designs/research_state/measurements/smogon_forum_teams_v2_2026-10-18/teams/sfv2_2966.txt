@@ -1,56 +1,57 @@
-Jolteon (M) @ Leftovers
-Ability: Volt Absorb
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Baton Pass
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 80 SpA / 180 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Metal Sound
-- Roar
-
-Tyranitar (M) @ Liechi Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 Atk / 8 SpD / 252 Spe
+EVs: 248 HP / 252 Atk / 8 Spe
 Adamant Nature
-- Dragon Dance
+IVs: 30 SpD / 30 Spe
 - Rock Slide
 - Earthquake
-- Screech
+- Hidden Power [Bug]
+- Brick Break
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
-Timid Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 224 SpD / 32 Spe
+Careful Nature
 - Spikes
+- Toxic
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 200 Def / 120 SpA / 184 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
+- Hidden Power [Grass]
 - Explosion
-- Surf
-- Rapid Spin
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
+- Dragon Claw
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
+EVs: 252 HP / 124 Atk / 132 Def
 Adamant Nature
 - Meteor Mash
 - Earthquake
+- Protect
 - Explosion
-- Agility
 
-Gengar (M) @ Leftovers
-Ability: Levitate
-EVs: 80 HP / 16 SpA / 236 SpD / 176 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
 Modest Nature
 IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Giga Drain
+- Ice Beam
 - Thunderbolt
+- Thunder Wave
+- Soft-Boiled

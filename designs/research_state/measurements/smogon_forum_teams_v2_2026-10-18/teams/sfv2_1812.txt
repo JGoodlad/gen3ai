@@ -1,56 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 236 SpA / 64 SpD / 184 Spe
-Mild Nature
-- Dragon Claw
-- Flamethrower
-- Brick Break
-- Sunny Day
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 100 Atk / 112 Def / 16 SpD / 28 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Ice Beam
-- Explosion
-
-Snorlax
-Ability: Immunity
-EVs: 32 HP / 108 Def / 196 SpA / 172 SpD
-Quiet Nature
-- Covet
-- Earthquake
-- Fire Blast
-- Self-Destruct
-
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 8 HP / 252 SpA / 64 SpD / 184 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 136 SpA / 156 Spe
 Modest Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Pursuit
-- Fire Blast
-- Beat Up
+IVs: 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
 
-Metagross @ Salac Berry
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 216 SpA / 44 SpD / 8 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 48 Def / 252 SpA / 208 Spe
-Naive Nature
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
 IVs: 30 Atk / 30 SpA
-- Meteor Mash
+- Earthquake
 - Thunder Punch
 - Hidden Power [Grass]
 - Explosion
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 4 SpA / 252 SpD
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 80 Def / 140 SpA / 36 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
 - Calm Mind
-- Surf
+- Fire Punch
+- Hidden Power [Grass]
+- Psychic
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 108 Atk / 216 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break

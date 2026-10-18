@@ -1,56 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 16 Def / 220 SpA / 20 Spe
-Modest Nature
-- Substitute
-- Focus Punch
-- Crunch
-- Fire Blast
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Rapid Spin
-- Ice Beam
-- Recover
-
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 236 Atk / 16 Def / 88 Spe
+EVs: 248 HP / 176 Atk / 84 Def
 Adamant Nature
-- Agility
 - Meteor Mash
 - Earthquake
+- Protect
 - Explosion
-
-Venusaur @ Leftovers
-Ability: Overgrow
-EVs: 8 HP / 204 SpA / 56 SpD / 240 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Sleep Powder
-- Leech Seed
-- Magical Leaf
-- Hidden Power [Fire]
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Roar
-- Drill Peck
-- Toxic
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 248 HP / 216 SpD / 44 Spe
-Calm Nature
-IVs: 0 Atk
+EVs: 120 Atk / 252 SpA / 136 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
 - Thunderbolt
+- Drill Peck
+- Hidden Power [Grass]
+- Agility
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 24 HP / 252 Atk / 4 SpD / 228 Spe
+Adamant Nature
+- Megahorn
+- Rock Slide
+- Brick Break
+- Swords Dance
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Ice Beam
+- Seismic Toss
+- Thunder Wave
+
+Machamp @ Leftovers
+Ability: Guts
+EVs: 112 HP / 252 Atk / 144 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Focus Punch
+- Rock Slide
+- Hidden Power [Bug]
+- Low Kick
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Hydro Pump
+- Ice Beam
 - Roar
-- Rest
-- Sleep Talk

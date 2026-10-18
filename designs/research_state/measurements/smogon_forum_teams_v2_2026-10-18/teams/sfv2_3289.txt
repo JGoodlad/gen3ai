@@ -1,57 +1,56 @@
-Metagross @ Choice Band
+Starmie @ Mystic Water
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Thunderbolt
+- Ice Beam
+- Rapid Spin
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 64 HP / 176 Atk / 108 Def / 144 SpD / 16 Spe
+Adamant Nature
+- Body Slam
+- Focus Punch
+- Earthquake
+- Self-Destruct
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 192 HP / 144 Atk / 172 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 248 HP / 176 Atk / 68 SpD / 16 Spe
+EVs: 240 HP / 176 Atk / 92 Spe
 Adamant Nature
 - Meteor Mash
 - Earthquake
-- Brick Break
 - Explosion
+- Agility
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 248 Atk / 8 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Aerial Ace
-- Hidden Power [Bug]
-- Rock Slide
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 216 SpD / 44 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Roar
-- Rest
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 216 Atk / 36 SpA / 8 Spe
-Adamant Nature
-- Earthquake
-- Psychic
-- Rapid Spin
-- Explosion
-
-Charizard @ Petaya Berry
+Charizard @ Leftovers
 Ability: Blaze
-EVs: 4 Def / 252 SpA / 252 Spe
+EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Sunny Day
+IVs: 2 Atk / 30 SpA
 - Fire Blast
-- Hidden Power [Ice]
+- Hidden Power [Grass]
+- Beat Up
+- Dragon Claw
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 248 SpA / 20 Spe
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 24 HP / 4 Def / 252 SpA / 228 Spe
 Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Sleep Talk
-- Rest
+IVs: 30 Atk / 30 SpA
+- Will-O-Wisp
+- Explosion
+- Hidden Power [Grass]
+- Thunderbolt

@@ -1,57 +1,57 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
-Adamant Nature
-IVs: 30 SpA / 30 Spe
-- Meteor Mash
-- Earthquake
-- Double-Edge
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Water Pulse
-- Thunderbolt
-- Psychic
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 196 SpA / 128 Spe
+EVs: 240 HP / 252 SpA / 16 SpD
 Modest Nature
+IVs: 0 Atk
+- Protect
 - Crunch
 - Pursuit
 - Flamethrower
-- Brick Break
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
-Adamant Nature
-- Curse
-- Double-Edge
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Counter
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 216 Def / 44 SpD / 8 Spe
+Relaxed Nature
+- Protect
 - Earthquake
-- Self-Destruct
+- Surf
+- Ice Beam
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 112 SpA / 180 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 Spe
+Impish Nature
+- Soft-Boiled
+- Wish
+- Toxic
+- Seismic Toss
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 36 Def / 180 SpA / 4 SpD / 36 Spe
 Modest Nature
-IVs: 30 Spe
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
+IVs: 2 Atk / 30 SpA
+- Recover
+- Leech Seed
+- Hidden Power [Grass]
+- Psychic
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Rock Slide
-- Brick Break
-- Hidden Power [Flying]
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Will-O-Wisp
+- Flamethrower
+- Hidden Power [Grass]
+- Roar

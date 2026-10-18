@@ -1,59 +1,59 @@
-Walrein @ Leftovers
-Ability: Thick Fat
-Shiny: Yes
-EVs: 176 HP / 108 SpA / 224 Spe
-Modest Nature
-IVs: 0 Atk
-- Ice Beam
-- Surf
-- Encore
-- Substitute
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Toxic
-- Protect
-- Roar
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 52 HP / 252 SpA / 204 Spe
-Timid Nature
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 184 HP / 44 Atk / 252 SpA / 28 Spe
+Rash Nature
 IVs: 30 Atk / 30 SpA
-- Fire Punch
-- Ice Punch
-- Hidden Power [Grass]
+- Thunder Punch
 - Explosion
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 68 Atk / 188 SpA / 252 Spe
-Lonely Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Focus Punch
-- Fire Blast
+- Meteor Mash
 - Hidden Power [Grass]
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 236 HP / 136 Def / 40 SpA / 96 Spe
-Relaxed Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Toxic
+- Hidden Power [Grass]
+- Thunder Wave
+- Thunderbolt
+
+Starmie @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Psychic
+- Thunderbolt
+
+Aerodactyl (F) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]
+- Rock Slide
+
+Tyranitar (F) @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 20 HP / 192 Atk / 44 SpA / 252 Spe
+Adamant Nature
+- Dragon Dance
 - Earthquake
 - Ice Beam
-- Roar
-- Protect
+- Rock Slide
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 80 HP / 252 SpA / 176 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Toxic
-- Roar
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 100 Def / 88 SpA / 64 SpD / 4 Spe
+Brave Nature
+- Body Slam
+- Earthquake
+- Fire Blast
+- Self-Destruct

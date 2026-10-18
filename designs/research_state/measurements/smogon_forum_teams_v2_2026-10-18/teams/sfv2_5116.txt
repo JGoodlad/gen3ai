@@ -1,0 +1,58 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Fire Blast
+- Hydro Pump
+- Hidden Power [Grass]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 104 SpA / 152 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Roar
+- Rest
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 216 SpD / 44 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Whirlwind
+- Toxic
+- Protect
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 204 Atk / 52 Spe
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Substitute
+- Focus Punch
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Substitute
+- Baton Pass
+- Hidden Power [Grass]
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Taunt
+- Thunderbolt
+- Ice Punch

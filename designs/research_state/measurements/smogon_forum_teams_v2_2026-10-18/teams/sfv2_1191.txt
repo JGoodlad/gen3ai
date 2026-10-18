@@ -1,56 +1,59 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
+EVs: 188 HP / 244 Atk / 76 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Roar
 - Rock Slide
-- Double-Edge
+- Hidden Power [Grass]
+- Earthquake
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
 IVs: 0 Atk
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
+- Spikes
+- Whirlwind
+- Protect
+- Toxic
 
-Swampert @ Leftovers
+Swampert @ Salac Berry
 Ability: Torrent
-EVs: 240 HP / 208 SpA / 44 SpD / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 36 Def / 176 SpA / 44 Spe
-Modest Nature
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
+- Substitute
+- Endeavor
+- Hydro Pump
+- Roar
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 120 Def / 136 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
-- Wish
-- Body Slam
-- Fire Punch
-- Hidden Power [Grass]
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 252 Atk / 196 Def / 60 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Knock Off
+- Whirlwind
+- Cross Chop
+- Hidden Power [Bug]
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-- Dragon Claw
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 68 HP / 252 SpA / 188 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Substitute
+- Toxic
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
 - Rock Slide
-- Flamethrower
-- Brick Break
+- Aerial Ace
+- Hidden Power [Bug]

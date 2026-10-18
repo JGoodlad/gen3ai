@@ -1,56 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 60 SpD / 196 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
 - Hidden Power [Grass]
-- Thunder Wave
-- Baton Pass
+- Brick Break
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 8 Def / 172 Spe
+EVs: 184 HP / 104 Atk / 220 Spe
 Adamant Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Double-Edge
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 16 Atk / 240 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
+IVs: 30 SpD / 30 Spe
 - Substitute
-- Fire Blast
-- Hidden Power [Grass]
+- Rock Slide
+- Hidden Power [Bug]
 - Focus Punch
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 SpA / 44 Spe
-Quiet Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Focus Punch
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
-Claydol @ Leftovers
+Gengar @ Leftovers
 Ability: Levitate
-EVs: 160 HP / 216 Atk / 32 SpA / 100 Spe
-Adamant Nature
-- Earthquake
-- Psychic
-- Rapid Spin
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+- Ice Punch
+- Thunderbolt
+- Giga Drain
 - Explosion
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 4 SpA / 252 Spe
-Timid Nature
+EVs: 252 HP / 80 Def / 176 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 72 SpA / 44 SpD / 16 Spe
+Bold Nature
 IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Ice Punch
-- Thunderbolt
+- Protect
+- Refresh
+- Surf
+- Roar

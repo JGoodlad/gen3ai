@@ -1,58 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 4 Def / 252 SpD
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Rest
-- Sleep Talk
-
 Suicune @ Leftovers
 Ability: Pressure
-Shiny: Yes
-EVs: 252 HP / 4 Def / 252 SpD
+EVs: 252 HP / 216 Def / 20 SpA / 20 Spe
 Bold Nature
+IVs: 0 Atk
+- Rest
 - Calm Mind
-- Roar
-- Rest
-- Sleep Talk
-
-Skarmory (F) @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Toxic
-- Roar
-- Protect
-
-Dusclops @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 96 Def / 160 SpD
-Careful Nature
-- Night Shade
-- Will-O-Wisp
-- Sleep Talk
-- Rest
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 252 SpD / 4 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Hidden Power [Grass]
-- Thunderbolt
-- Recover
-- Rapid Spin
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
-Calm Nature
-IVs: 0 Atk
 - Surf
+- Roar
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
 - Ice Beam
-- Rest
-- Sleep Talk
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

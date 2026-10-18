@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 108 HP / 208 SpA / 192 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Baton Pass
+- Thunderbolt
+- Hidden Power [Ice]
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 68 Atk / 188 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Substitute
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 216 Atk / 40 SpD / 252 Spe
+Adamant Nature
+- Spore
+- Stun Spore
+- Mach Punch
+- Focus Punch
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 28 HP / 252 SpA / 228 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Grass]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 120 SpA / 96 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Calm Mind
+- Hidden Power [Grass]
+- Thunderbolt
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up
+- Overheat

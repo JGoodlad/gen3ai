@@ -1,57 +1,58 @@
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 Def
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 252 Atk / 4 Def / 252 Spe
 Adamant Nature
-- Thunder Wave
-- Rock Slide
-- Focus Punch
-- Explosion
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Thunder Wave
-- Surf
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 184 HP / 148 SpD / 176 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 224 SpA / 32 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
-
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Toxic
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
 - Earthquake
 - Rock Slide
-- Hidden Power [Bug]
+- Brick Break
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 148 Atk / 80 Def / 28 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 88 Def / 108 SpA / 72 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+Happiness: 0
+EVs: 252 SpA / 68 SpD / 188 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 232 Atk / 24 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Shadow Ball
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 20 HP / 252 Def / 212 SpA / 24 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Ice Beam
+- Seismic Toss
+- Wish

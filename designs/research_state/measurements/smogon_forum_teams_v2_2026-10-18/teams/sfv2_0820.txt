@@ -1,57 +1,56 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 128 HP / 252 Atk / 128 Spe
-Adamant Nature
-- Meteor Mash
-- Explosion
-- Earthquake
-- Rock Slide
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 SpD / 30 Spe
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 240 SpA / 252 Spe
+Jynx (F) @ Leftovers
+Ability: Oblivious
+EVs: 200 SpA / 56 SpD / 252 Spe
 Timid Nature
 IVs: 0 Atk
-- Hydro Pump
+- Lovely Kiss
 - Substitute
-- Baton Pass
-- Roar
+- Calm Mind
+- Ice Beam
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Def / 30 SpA
-- Hidden Power [Grass]
-- Fire Blast
-- Brick Break
-- Dragon Claw
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Aerial Ace
 
-Snorlax @ Lum Berry
-Ability: Thick Fat
-EVs: 160 HP / 188 Atk / 120 Def / 40 SpD
+Medicham @ Salac Berry
+Ability: Pure Power
+EVs: 44 HP / 252 Atk / 212 Spe
 Adamant Nature
-- Counter
+- Substitute
+- Bulk Up
+- High Jump Kick
 - Shadow Ball
-- Curse
-- Self-Destruct
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 136 Atk / 236 SpA / 136 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dynamic Punch
-- Body Slam
-- Fire Punch
-- Hidden Power [Grass]
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 64 Atk / 192 SpA
+Quiet Nature
+- Ice Beam
+- Thunderbolt
+- Explosion
+- Thunder Wave
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Rain Dance
+- Calm Mind
+- Surf
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 20 Def / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion

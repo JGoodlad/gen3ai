@@ -1,0 +1,59 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 28 Def / 48 SpA / 8 SpD / 4 Spe
+Brave Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Earthquake
+- Hidden Power [Grass]
+- Shadow Ball
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 80 SpD / 176 Spe
+Jolly Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Torment
+- Toxic
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 HP / 252 SpD / 4 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Protect
+- Thunder Wave
+- Rest
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 160 Atk / 96 SpD
+Careful Nature
+IVs: 30 SpD
+- Curse
+- Hidden Power [Steel]
+- Earthquake
+- Rest
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Dragon Dance
+- Hidden Power [Ghost]
+- Double-Edge
+- Earthquake
+
+Gardevoir @ Leftovers
+Ability: Trace
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Hidden Power [Grass]
+- Thunderbolt
+- Reflect

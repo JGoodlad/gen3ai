@@ -1,57 +1,56 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 80 Def
-Adamant Nature
-- Toxic
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 112 HP / 252 SpA / 144 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Fire]
-- Rain Dance
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 136 Def / 40 SpA / 32 SpD / 48 Spe
-Bold Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Thunder Wave
-- Surf
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 152 Def / 48 SpA / 28 SpD / 32 Spe
-Bold Nature
 IVs: 2 Atk / 30 SpA
-- Recover
-- Leech Seed
-- Heal Bell
+- Baton Pass
 - Hidden Power [Grass]
+- Thunderbolt
+- Roar
 
-Snorlax @ Leftovers
-Ability: Thick Fat
-EVs: 204 HP / 176 Atk / 60 Def / 68 SpD
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 68 HP / 252 Atk / 188 Spe
 Adamant Nature
-- Rest
-- Curse
-- Double-Edge
-- Shadow Ball
+- Focus Punch
+- Leech Seed
+- Spore
+- Substitute
 
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Toxic
+- Spikes
 - Earthquake
-- Rock Slide
 - Hidden Power [Bug]
+- Rapid Spin
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 240 Def / 16 Spe
+Relaxed Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Protect
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 248 Def / 252 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Soft-Boiled
+- Thunderbolt
+- Toxic
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+- Pursuit
+- Crunch
+- Fire Blast
+- Focus Punch

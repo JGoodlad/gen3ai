@@ -1,54 +1,57 @@
-Gyarados (F) @ Leftovers
-Ability: Intimidate
-EVs: 156 HP / 252 SpA / 100 Spe
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 252 Atk / 20 Def / 20 SpD / 216 Spe
+Adamant Nature
+- Brick Break
+- Rock Slide
+- Shadow Ball
+- Focus Punch
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
 Modest Nature
-- Hydro Pump
-- Fire Blast
-- Ice Beam
-- Thunder
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 188 HP / 184 Atk / 136 Spe
-Naughty Nature
-- Earthquake
-- Rock Slide
-- Fire Blast
-- Toxic
-
-Aerodactyl (M) @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Flying]
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
 - Double-Edge
+- Earthquake
+- Shadow Ball
 
-Vaporeon (M) @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 228 Def / 28 SpD
-Bold Nature
-- Wish
-- Protect
-- Surf
-- Haze
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Rock Slide
+- Hidden Power [Grass]
+- Explosion
 
-Venusaur (F) @ Leftovers
-Ability: Overgrow
-EVs: 252 HP / 80 Def / 176 SpD
-Sassy Nature
-- Razor Leaf
-- Sludge Bomb
-- Sleep Powder
-- Leech Seed
-
-Houndoom (F) @ Leftovers
-Ability: Early Bird
-EVs: 4 HP / 252 SpA / 252 Spe
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
 Timid Nature
-- Crunch
-- Fire Blast
-- Pursuit
-- Will-o-Wisp
+IVs: 0 Atk
+- Substitute
+- Toxic
+- Hydro Pump
+- Endeavor
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 192 Atk / 200 SpD / 116 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break

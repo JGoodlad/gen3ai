@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 12 Atk / 148 SpA / 164 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Ancient Power
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
-
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 240 SpD / 16 Spe
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
 - Spikes
-- Drill Peck
 - Toxic
+- Drill Peck
 - Roar
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Toxic
+- Thunderbolt
+- Hidden Power [Fire]
+- Rain Dance
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
+- Rest
+- Psychic
+- Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
+EVs: 252 Def / 248 SpA / 8 Spe
 Modest Nature
 IVs: 0 Atk
-- Calm Mind
-- Thunderbolt
-- Ice Beam
 - Soft-Boiled
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 136 Def / 80 SpA / 44 Spe
-Relaxed Nature
-- Hydro Pump
-- Earthquake
+- Calm Mind
 - Ice Beam
-- Focus Punch
+- Thunderbolt
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Refresh
+- Toxic
+- Surf
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Rock Slide
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Hidden Power [Flying]
-- Double-Edge
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day

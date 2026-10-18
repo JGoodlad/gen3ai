@@ -1,32 +1,22 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Toxic
+- Surf
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
+EVs: 240 HP / 16 Def / 252 SpA
 Modest Nature
 IVs: 0 Atk
 - Crunch
 - Pursuit
 - Fire Blast
-- Roar
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 192 SpA / 64 SpD / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Brick Break
-- Hidden Power [Grass]
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 80 SpA / 176 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Calm Mind
-- Hidden Power [Ice]
-- Thunderbolt
+- Ice Beam
 
 Forretress @ Leftovers
 Ability: Sturdy
@@ -38,21 +28,30 @@ IVs: 30 Atk / 30 Def / 30 SpD
 - Hidden Power [Bug]
 - Earthquake
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Protect
-
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Bold Nature
-IVs: 0 Atk
+EVs: 252 HP / 252 Def / 4 Spe
+Impish Nature
 - Soft-Boiled
 - Wish
-- Ice Beam
+- Thunder Wave
 - Seismic Toss
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 224 SpA / 32 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
+Mild Nature
+- Dragon Claw
+- Flamethrower
+- Brick Break
+- Roar

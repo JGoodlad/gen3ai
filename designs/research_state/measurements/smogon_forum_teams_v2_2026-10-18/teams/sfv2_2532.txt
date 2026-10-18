@@ -1,57 +1,58 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Earthquake
-- Hidden Power [Grass]
-- Explosion
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
 IVs: 0 Atk
-- Toxic
-- Crunch
-- Pursuit
+- Seismic Toss
 - Ice Beam
+- Soft-Boiled
+- Aromatherapy
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 248 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Protect
+- Roar
 - Toxic
-- Thunderbolt
-- Hidden Power [Fire]
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Return
-- Earthquake
-- Self-Destruct
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 Atk / 16 Spe
-Naughty Nature
-- Curse
+Dugtrio (F) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
-- Ice Beam
+- Hidden Power [Bug]
+- Aerial Ace
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 40 HP / 188 Atk / 100 SpD / 180 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 244 Atk / 12 Spe
+Impish Nature
+- Rapid Spin
 - Earthquake
-- Hidden Power [Rock]
-- Double-Edge
+- Shadow Ball
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 196 Def / 72 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 8 SpD / 24 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Psychic
+- Fire Punch
+- Wish

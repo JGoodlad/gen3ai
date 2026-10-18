@@ -1,40 +1,31 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 100 SpA / 20 SpD / 148 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 252 SpA / 16 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Grass]
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Flamethrower
 - Roar
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
+IVs: 30 Atk / 30 SpD
 - Spikes
-- Toxic
-- Drill Peck
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
 - Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
+- Hidden Power [Ghost]
+- Counter
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 216 Def / 52 SpD
+Relaxed Nature
+- Protect
+- Earthquake
+- Surf
+- Ice Beam
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
@@ -42,16 +33,25 @@ EVs: 252 Def / 248 SpA / 8 Spe
 Modest Nature
 IVs: 0 Atk
 - Soft-Boiled
-- Calm Mind
+- Toxic
 - Ice Beam
 - Thunderbolt
 
-Salamence @ Leftovers
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Gyarados @ Choice Band
 Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
+EVs: 48 HP / 252 Atk / 208 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Thunder Wave
+- Earthquake
+- Hidden Power [Flying]
+- Return

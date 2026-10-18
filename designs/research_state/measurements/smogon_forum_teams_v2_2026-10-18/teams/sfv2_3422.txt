@@ -1,57 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-Hidden Power: Grass
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-- Dragon Claw
-- Brick Break
-- Wish
-- Fire Blast
-
-Gyarados @ Choice Band
-Ability: Intimidate
-EVs: 64 HP / 252 Atk / 192 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Double-Edge
-- Earthquake
-- Rest
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Aromatherapy
-
-Metagross @ Leftovers
+Regirock @ Choice Band
 Ability: Clear Body
-EVs: 252 HP / 176 Atk / 80 Def
+EVs: 200 HP / 252 Atk / 56 Spe
 Adamant Nature
-- Meteor Mash
-- Earthquake
+IVs: 30 Atk / 30 SpD
 - Rock Slide
+- Hidden Power [Ghost]
+- Superpower
 - Explosion
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Protect
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
 Careful Nature
-- Spikes
-- Roar
-- Drill Peck
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 Def / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
 - Toxic
+- Hydro Pump
+- Endeavor
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 196 Atk / 200 SpD / 112 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Brick Break

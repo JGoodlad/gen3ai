@@ -1,56 +1,56 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 16 Atk / 252 SpA / 68 SpD / 148 Spe
-Mild Nature
-- Wish
-- Dragon Claw
-- Flamethrower
-- Brick Break
+Blaziken @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Sky Uppercut
+- Hidden Power [Grass]
+- Toxic
+
+Sceptile @ Petaya Berry
+Ability: Overgrow
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Endeavor
+- Leaf Blade
+- Hidden Power [Ice]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 216 Atk / 136 Def / 140 SpD / 16 Spe
+Adamant Nature
+- Curse
+- Shadow Ball
+- Return
+- Self-Destruct
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Naughty Nature
-- Toxic
+EVs: 192 HP / 64 Atk / 252 Spe
+Adamant Nature
 - Dragon Dance
-- Earthquake
 - Rock Slide
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Counter
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
-Careful Nature
-- Rapid Spin
 - Earthquake
-- Shadow Ball
-- Explosion
+- Sunny Day
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 176 Def / 44 SpD / 48 Spe
-Bold Nature
-IVs: 0 Atk
-- Protect
-- Refresh
-- Toxic
-- Surf
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Substitute
+- Endure
+- Reversal
+- Megahorn
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
-- Ice Beam
-- Thunderbolt
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
+- Earthquake
+- Hidden Power [Ghost]
+- Substitute
+- Dragon Dance

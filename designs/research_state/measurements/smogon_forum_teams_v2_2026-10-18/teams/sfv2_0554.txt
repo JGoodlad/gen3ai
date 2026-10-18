@@ -1,57 +1,56 @@
-Smeargle @ Salac Berry
-Ability: Own Tempo
-EVs: 4 HP / 252 SpD / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Spore
-- Spikes
-- Endeavor
-- Whirlwind
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 72 HP / 216 SpA / 220 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Ice Punch
-- Hidden Power [Grass]
-- Explosion
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 244 Atk / 96 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Agility
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Double-Edge
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 80 Atk / 252 SpA / 176 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
+EVs: 216 HP / 144 SpA / 148 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
 - Hidden Power [Grass]
-- Drill Peck
+- Thunder Wave
+- Baton Pass
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 112 Atk / 44 Def / 168 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 48 HP / 252 Atk / 20 SpD / 188 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 4 HP / 252 Atk / 28 SpD / 224 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 88 Def / 168 SpD
+Careful Nature
+- Counter
+- Explosion
+- Seismic Toss
 - Thunder Wave
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 176 HP / 80 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Wish
-- Hidden Power [Ice]
-- Thunder Wave
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 108 Def / 252 SpA / 148 Spe
+Rash Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Refresh

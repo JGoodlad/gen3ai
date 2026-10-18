@@ -1,58 +1,59 @@
-Flygon (F) @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 224 Def / 32 Spe
-Impish Nature
-- Rock Slide
-- Earthquake
-- Toxic
-- Protect
-
-Tyranitar (F) @ Leftovers
-Ability: Sand Stream
-Shiny: Yes
-EVs: 224 HP / 252 SpA / 32 Spe
-Quiet Nature
-- Pursuit
-- Crunch
-- Fire Blast
-- Earthquake
-
-Skarmory (F) @ Leftovers
-Ability: Keen Eye
-Shiny: Yes
-EVs: 252 HP / 4 Def / 220 SpD / 32 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Toxic
-- Roar
-
-Gengar (F) @ Leftovers
-Ability: Levitate
-EVs: 60 HP / 8 SpA / 252 SpD / 188 Spe
-Timid Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Taunt
+Zapdos @ Choice Band
+Ability: Pressure
+EVs: 56 HP / 252 Atk / 200 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Thunderbolt
-- Destiny Bond
+- Hidden Power [Fighting]
+- Drill Peck
+- Baton Pass
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 72 HP / 248 SpA / 188 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Giga Drain
+- Hidden Power [Fire]
+- Calm Mind
+- Baton Pass
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 176 Def / 76 SpA / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Calm Mind
+- Rest
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
+- Substitute
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 136 SpD / 116 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Beat Up
+- Aerial Ace
+- Hidden Power [Bug]
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-Shiny: Yes
-EVs: 252 HP / 76 Def / 180 SpD
-Sassy Nature
+EVs: 248 HP / 220 SpA / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
 - Fire Punch
-- Body Slam
-- Wish
-- Protect
-
-Articuno @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 16 SpA / 220 SpD / 20 Spe
-Calm Nature
-IVs: 0 Atk
-- Ice Beam
-- Rest
-- Roar
-- Heal Bell
+- Hidden Power [Grass]
+- Calm Mind

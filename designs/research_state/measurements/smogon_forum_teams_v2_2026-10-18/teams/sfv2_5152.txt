@@ -1,0 +1,56 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 12 HP / 244 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Wish
+- Surf
+- Substitute
+- Baton Pass
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 108 HP / 216 Atk / 184 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Body Slam
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 76 HP / 252 Atk / 56 Def / 112 SpD / 12 Spe
+Adamant Nature
+- Focus Punch
+- Body Slam
+- Counter
+- Shadow Ball
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 128 Atk / 128 SpA
+Sassy Nature
+IVs: 30 Atk / 30 SpA
+- Zap Cannon
+- Hidden Power [Grass]
+- Seismic Toss
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 28 HP / 252 Atk / 228 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Thunder Wave
+- Hidden Power [Flying]
+- Earthquake
+- Dragon Dance
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 252 Atk / 4 Spe
+Impish Nature
+- Explosion
+- Rock Slide
+- Earthquake
+- Rapid Spin

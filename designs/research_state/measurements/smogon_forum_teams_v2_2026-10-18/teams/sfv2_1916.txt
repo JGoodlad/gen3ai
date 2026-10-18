@@ -1,11 +1,12 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
-Mild Nature
-- Dragon Claw
-- Rock Slide
-- Flamethrower
-- Brick Break
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 136 SpA / 156 Spe
+Modest Nature
+IVs: 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
@@ -16,34 +17,34 @@ Adamant Nature
 - Rock Slide
 - Double-Edge
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Hydro Pump
-- Ice Beam
-- Thunderbolt
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 200 SpA / 56 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Leech Seed
-- Psychic
-- Baton Pass
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-- Agility
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
 - Meteor Mash
-- Earthquake
+- Thunder Punch
+- Hidden Power [Grass]
 - Explosion
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
 
 Aerodactyl @ Choice Band
 Ability: Rock Head

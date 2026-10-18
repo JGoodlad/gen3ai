@@ -1,56 +1,58 @@
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 76 HP / 180 SpA / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 Def
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
+Modest Nature
+IVs: 3 Atk / 30 Spe
+- Toxic
 - Thunderbolt
 - Hidden Power [Ice]
-- Baton Pass
-- Roar
+- Rain Dance
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 Atk / 4 SpA / 252 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Earthquake
-- Rock Slide
-- Hidden Power [Grass]
-- Fire Blast
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 252 HP / 196 SpD / 60 Spe
-Timid Nature
-- Spikes
-- Ice Beam
-- Rapid Spin
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
 - Explosion
 
-Breloom @ Leftovers
-Ability: Effect Spore
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Shadow Ball
+- Self-Destruct
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Substitute
+- Megahorn
+- Rock Slide
+- Focus Punch
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
 EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
-- Spore
-- Focus Punch
-- Sky Uppercut
-- Mach Punch
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 244 HP / 228 SpA / 12 SpD / 24 Spe
-Quiet Nature
-- Pursuit
-- Crunch
-- Fire Blast
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Dragon Claw
-- Beat Up
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day

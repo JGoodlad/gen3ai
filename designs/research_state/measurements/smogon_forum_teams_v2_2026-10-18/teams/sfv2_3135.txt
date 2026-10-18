@@ -1,58 +1,56 @@
-Tyranitar (M) @ Lum Berry
-Ability: Sand Stream
-EVs: 44 Atk / 212 SpA / 252 Spe
-Lonely Nature
-IVs: 30 Atk / 30 SpA
-- Ancient Power
-- Fire Blast
-- Hidden Power [Grass]
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 Atk / 216 SpA / 176 Spe
+Mild Nature
+- Dragon Dance
+- Dragon Claw
+- Flamethrower
 - Brick Break
 
-Skarmory (M) @ Leftovers
+Skarmory
 Ability: Keen Eye
-EVs: 252 HP / 156 SpD / 100 Spe
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
-- Toxic
-- Taunt
+- Thief
+- Drill Peck
 - Roar
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 120 Atk / 212 SpA / 176 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Drill Peck
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 224 SpA / 100 SpD / 184 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
 - Psychic
-- Hidden Power [Fire]
+- Explosion
 
-Swampert (F) @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 136 Def / 36 SpA / 44 SpD / 44 Spe
-Relaxed Nature
-- Hydro Pump
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 240 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
 - Ice Beam
-- Earthquake
-- Focus Punch
+- Thunderbolt
 
-Aerodactyl (M) @ Choice Band
-Ability: Rock Head
-EVs: 228 Atk / 28 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Double-Edge
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Fire Punch
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Refresh
+- Toxic
+- Surf

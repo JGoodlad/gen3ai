@@ -1,59 +1,57 @@
-Salamence @ Choice Band
+Salamence @ Leftovers
 Ability: Intimidate
-EVs: 252 Atk / 116 SpD / 140 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Earthquake
-- Brick Break
-- Rock Slide
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 204 HP / 176 Atk / 40 Def / 32 SpA / 56 Spe
+EVs: 252 Atk / 4 SpA / 252 Spe
 Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
+- Dragon Dance
+- Dragon Claw
+- Fire Blast
+- Brick Break
+
+Claydol @ Choice Band
+Ability: Levitate
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Rapid Spin
 - Earthquake
-- Hidden Power [Grass]
+- Shadow Ball
 - Explosion
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 236 SpA / 20 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Ice Beam
-- Seismic Toss
-- Soft-Boiled
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Toxic
-- Protect
-- Roar
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 68 HP / 252 SpA / 188 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Substitute
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 124 Def / 96 SpA / 36 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
+EVs: 252 HP / 200 SpA / 56 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
 - Leech Seed
 - Psychic
+- Baton Pass
+
+Camerupt @ Leftovers
+Ability: Magma Armor
+EVs: 252 HP / 252 SpA / 4 SpD
+Quiet Nature
+IVs: 30 Atk / 30 SpA
+- Earthquake
+- Fire Blast
 - Hidden Power [Grass]
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Sleep Talk
+- Calm Mind
+- Surf

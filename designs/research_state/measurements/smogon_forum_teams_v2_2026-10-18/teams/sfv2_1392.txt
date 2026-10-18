@@ -1,58 +1,54 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Light Screen
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
-
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Toxic
-- Hydro Pump
-- Endeavor
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Earthquake
+- Spikes
+- Rapid Spin
 - Explosion
 
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 HP
-- Substitute
-- Megahorn
-- Rock Slide
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 208 HP / 248 Atk / 28 SpA / 24 Spe
+Brave Nature
+- Giga Drain
+- Sludge Bomb
+- Earthquake
+- Leech Seed
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 176 HP / 136 Atk / 156 SpA / 4 SpD / 36 Spe
+Brave Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
 - Focus Punch
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
+EVs: 80 HP / 176 Atk / 124 Def / 108 SpD / 20 Spe
 Adamant Nature
-- Curse
-- Double-Edge
+- Body Slam
 - Earthquake
-- Shadow Ball
+- Focus Punch
+- Self-Destruct
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 176 Atk / 212 SpD / 120 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Hidden Power [Flying]
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 112 HP / 212 SpA / 184 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Explosion
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 8 HP / 248 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Crunch
+- Fire Blast
+- Hidden Power [Grass]
+- Pursuit

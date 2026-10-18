@@ -1,57 +1,57 @@
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 SpD
-Adamant Nature
-- Rock Slide
-- Counter
-- Thunder Wave
-- Explosion
-
-Blastoise @ Leftovers
+Swampert @ Salac Berry
 Ability: Torrent
-EVs: 252 HP / 148 Def / 68 SpA / 40 Spe
-Bold Nature
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Surf
-- Refresh
-- Rapid Spin
+- Substitute
+- Hydro Pump
 - Roar
+- Endeavor
 
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 236 SpD / 24 Spe
-Careful Nature
-- Spikes
-- Roar
-- Drill Peck
-- Thief
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Wish
-
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
 - Earthquake
 - Rock Slide
-- Hidden Power [Bug]
-- Gust
+- Double-Edge
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 120 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 40 Def / 136 SpA / 80 Spe
-Timid Nature
+EVs: 252 HP / 40 Def / 152 SpA / 64 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Substitute
 - Calm Mind
+- Ice Punch
+- Thunder
 - Hidden Power [Grass]
-- Thunderbolt
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break
+- Beat Up
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 196 Atk / 200 SpD / 112 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Brick Break

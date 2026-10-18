@@ -1,56 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 156 Atk / 12 Def / 200 SpD / 140 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Crunch
-- Pursuit
-- Flamethrower
+EVs: 184 HP / 108 Atk / 44 SpA / 172 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
+- Earthquake
+- Rock Slide
 - Hidden Power [Grass]
+- Focus Punch
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
 - Rapid Spin
 - Earthquake
-- Shadow Ball
+- Psychic
 - Explosion
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 180 Atk / 60 Def / 52 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Earthquake
-- Self-Destruct
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 100 SpA / 96 SpD / 60 Spe
-Calm Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
 - Seismic Toss
-- Hidden Power [Grass]
-- Explosion
+- Ice Beam
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 160 Atk / 56 SpA / 44 Spe
-Brave Nature
-- Curse
-- Earthquake
-- Rock Slide
-- Hydro Pump
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Water Pulse
+- Psychic
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 12 Def / 244 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break

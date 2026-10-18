@@ -1,53 +1,56 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 Spe
-Adamant Nature
-- Meteor Mash
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 244 Def / 96 SpA / 12 SpD / 140 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Wish
+- Surf
+- Baton Pass
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
 - Earthquake
-- Protect
+- Psychic
 - Explosion
 
-Venusaur @ Lum Berry
-Ability: Overgrow
-EVs: 252 HP / 232 SpD / 24 Spe
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Toxic
+- Seismic Toss
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
 Calm Nature
-- Sleep Powder
-- Leech Seed
-- Razor Leaf
-- Synthesis
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
 
-Alakazam @ Twisted Spoon
-Ability: Synchronize
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-- Psychic
-- Fire Punch
-- Ice Punch
-- Thunder Punch
-
-Gengar @ Sitrus Berry
-Ability: Levitate
-EVs: 172 HP / 148 SpA / 188 Spe
-Modest Nature
-- Thunderbolt
-- Ice Punch
-- Will-O-Wisp
-- Destiny Bond
-
-Blaziken @ Scope Lens
-Ability: Blaze
-EVs: 196 Atk / 80 SpA / 232 Spe
-Quirky Nature
-- Swords Dance
-- Sky Uppercut
-- Fire Blast
-- Quick Attack
-
-Tyranitar @ Shell Bell
-Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 180 Spe
+Heracross @ Choice Band
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-- Dragon Dance
+- Megahorn
 - Rock Slide
-- Earthquake
-- Taunt
+- Brick Break
+- Focus Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

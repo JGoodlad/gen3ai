@@ -1,56 +1,58 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 28 Def / 212 SpD / 28 Spe
-Calm Nature
-IVs: 0 Atk
-- Thunderbolt
-- Rain Dance
-- Toxic
-- Rest
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 252 Atk / 16 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 72 Atk / 252 SpA / 184 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Hidden Power [Grass]
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Rock Slide
-- Aerial Ace
-- Hidden Power [Bug]
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 236 SpD / 20 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Protect
-- Roar
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-- Calm Mind
-- Rest
-- Roar
-- Surf
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 12 HP / 252 Def / 244 SpA
-Bold Nature
-IVs: 0 Atk
-- Seismic Toss
-- Ice Beam
-- Aromatherapy
-- Soft-Boiled
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 144 Atk / 112 Def
-Careful Nature
+- Double-Edge
 - Earthquake
-- Psychic
-- Rapid Spin
-- Explosion
+- Hidden Power [Flying]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Self-Destruct
+- Body Slam
+- Shadow Ball
+- Focus Punch
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 144 HP / 176 SpA / 188 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Refresh
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 192 HP / 220 Atk / 4 Def / 56 SpA / 36 Spe
+Brave Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Hidden Power [Bug]

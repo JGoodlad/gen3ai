@@ -1,57 +1,55 @@
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 SpA
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Recover
-- Toxic
-- Refresh
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 156 HP / 252 Atk / 100 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 228 Def / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Psychic
-- Fire Punch
-- Calm Mind
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Double-Edge
+- Hidden Power [Bug]
 
-Skarmory
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Thief
-- Spikes
-- Roar
-- Drill Peck
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 112 Atk / 144 Def / 252 Spe
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Double-Edge
+- Dragon Dance
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 24 Def / 232 Spe
-Impish Nature
-- Rapid Spin
+EVs: 24 HP / 252 Atk / 232 Spe
+Adamant Nature
 - Earthquake
 - Psychic
+- Rapid Spin
 - Explosion
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 60 Def / 168 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Recover
-- Leech Seed
-- Hidden Power [Grass]
-- Heal Bell
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 116 Def / 140 SpA
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 168 HP / 252 SpA / 88 Spe
+Modest Nature
 - Surf
 - Ice Beam
-- Rest
+- Earthquake
+- Focus Punch
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 80 HP / 252 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+- Protect

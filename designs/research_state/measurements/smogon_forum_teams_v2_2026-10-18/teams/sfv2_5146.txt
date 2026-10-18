@@ -1,0 +1,58 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 188 HP / 104 Atk / 216 Spe
+Brave Nature
+IVs: 30 HP / 30 SpA
+- Crunch
+- Rock Slide
+- Hidden Power [Grass]
+- Focus Punch
+
+Glalie @ Leftovers
+Ability: Inner Focus
+EVs: 252 HP / 248 SpD / 8 Spe
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Earthquake
+- Spikes
+- Explosion
+- Hidden Power [Ghost]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 132 Def / 40 SpA / 32 SpD / 56 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Thunderbolt
+- Recover
+- Rapid Spin
+
+Marowak @ Thick Club
+Ability: Rock Head
+EVs: 156 HP / 252 Atk / 100 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 200 SpD / 56 Spe
+Careful Nature
+- Seismic Toss
+- Thunder Wave
+- Counter
+- Explosion
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Earthquake
+- Double-Edge
+- Hidden Power [Flying]

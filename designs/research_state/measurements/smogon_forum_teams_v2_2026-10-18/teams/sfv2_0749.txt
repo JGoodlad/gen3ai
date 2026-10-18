@@ -1,57 +1,56 @@
-Wailord @ Leftovers
-Ability: Water Veil
-EVs: 168 Def / 252 SpA / 88 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Hydro Pump
-- Ice Beam
-- Hidden Power [Grass]
-- Self-Destruct
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 4 SpD / 4 Spe
+Poliwrath @ Leftovers
+Ability: Water Absorb
+EVs: 248 HP / 240 Atk / 20 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Roar
+- Thief
+- Brick Break
+- Focus Punch
+- Hypnosis
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 196 SpD / 60 Spe
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
+IVs: 30 Atk / 30 SpD
 - Spikes
-- Taunt
-- Drill Peck
-- Toxic
+- Rapid Spin
+- Hidden Power [Ghost]
+- Explosion
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 120 Atk / 252 SpA / 136 Spe
-Mild Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Thunderbolt
-- Drill Peck
-- Hidden Power [Fighting]
-- Toxic
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 8 Def / 140 SpD / 108 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Aerial Ace
-- Beat Up
-- Hidden Power [Bug]
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 236 SpA / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Seismic Toss
+- Ice Beam
+- Wish
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 108 Def / 252 SpA / 148 Spe
-Rash Nature
-- Hydro Pump
+EVs: 240 HP / 136 Atk / 44 SpA / 44 SpD / 44 Spe
+Brave Nature
+- Curse
 - Earthquake
-- Ice Beam
+- Rock Slide
+- Hydro Pump
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 232 SpA / 24 Spe
+Modest Nature
+- Crunch
+- Substitute
+- Thunderbolt
 - Focus Punch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Beat Up
+- Dragon Claw

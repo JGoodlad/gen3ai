@@ -1,57 +1,56 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 176 Atk / 88 Def / 68 SpD / 152 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 28 Atk / 68 Def / 100 SpD / 60 Spe
-Careful Nature
-IVs: 30 SpD / 30 Spe
-- Thunder Wave
-- Seismic Toss
-- Hidden Power [Bug]
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 216 Atk / 60 Def / 8 SpD / 20 Spe
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 184 HP / 112 Atk / 40 Def / 172 Spe
 Adamant Nature
-- Curse
+- Dragon Dance
+- Rock Slide
+- Earthquake
 - Double-Edge
-- Shadow Ball
-- Self-Destruct
 
-Celebi @ Leftovers
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 104 SpD / 156 Spe
+Careful Nature
+- Spikes
+- Taunt
+- Roar
+- Drill Peck
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 48 HP / 252 Atk / 16 SpD / 192 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Fighting]
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Flamethrower
+- Hidden Power [Grass]
+- Focus Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 56 Atk / 200 Def / 4 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Blissey @ Leftovers
 Ability: Natural Cure
-EVs: 248 HP / 36 Def / 136 SpA / 28 SpD / 60 Spe
+EVs: 252 Def / 248 SpA / 8 Spe
 Modest Nature
 IVs: 0 Atk
-- Recover
-- Leech Seed
-- Calm Mind
-- Psychic
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 176 Def / 76 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Recover
-- Toxic
-- Surf
+- Soft-Boiled
 - Ice Beam
+- Thunderbolt
+- Toxic

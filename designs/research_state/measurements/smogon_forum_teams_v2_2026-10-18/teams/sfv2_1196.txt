@@ -1,57 +1,58 @@
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 252 Def / 176 SpA / 8 SpD / 56 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Hydro Pump
-- Ice Beam
-- Baton Pass
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 100 Atk / 112 Def / 28 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
 - Earthquake
+- Rock Slide
+- Focus Punch
+
+Dragonite @ Choice Band
+Ability: Inner Focus
+EVs: 56 HP / 252 Atk / 200 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Focus Punch
+- Earthquake
+- Double-Edge
+- Hidden Power [Flying]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Psychic
+- Hidden Power [Fire]
+- Pursuit
 - Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 120 HP / 68 Atk / 140 SpA / 180 Spe
-Rash Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Body Slam
-- Fire Punch
-- Ice Punch
-- Hidden Power [Fighting]
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 192 HP / 4 Def / 136 SpA / 176 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 16 HP / 216 Atk / 96 Def / 168 SpD / 12 Spe
+EVs: 72 HP / 144 Atk / 188 Def / 92 SpD / 12 Spe
 Adamant Nature
-- Return
-- Shadow Ball
-- Focus Punch
-- Counter
+- Curse
+- Earthquake
+- Body Slam
+- Self-Destruct
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 200 SpA / 56 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Beat Up
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk

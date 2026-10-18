@@ -1,56 +1,57 @@
-Aerodactyl @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Rock Slide
-- Substitute
-- Protect
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 176 SpA / 84 SpD
+Quiet Nature
+- Thunderbolt
 - Earthquake
+- Crunch
+- Pursuit
 
-Blissey (F) @ Leftovers
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 184 HP / 252 Def / 72 Spe
+EVs: 248 HP / 56 Def / 44 SpA / 120 SpD / 40 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Perish Song
+- Leech Seed
+- Recover
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 SpD
 Bold Nature
 IVs: 0 Atk
-- Seismic Toss
-- Toxic
-- Aromatherapy
-- Soft-Boiled
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 148 Def / 108 SpD
-Impish Nature
-IVs: 0 Atk
-- Spikes
-- Toxic
-- Roar
-- Protect
-
-Duskull @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 16 Def / 180 SpD / 60 Spe
-Careful Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Pain Split
-- Curse
-- Protect
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 112 Def / 144 SpD
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Rest
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 188 Def / 72 Spe
-Bold Nature
-- Calm Mind
 - Surf
+- Ice Beam
+- Refresh
+- Recover
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Double-Edge
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 124 Def / 136 SpD
+Careful Nature
+- Seismic Toss
+- Counter
+- Thunder Wave
 - Rest
-- Roar

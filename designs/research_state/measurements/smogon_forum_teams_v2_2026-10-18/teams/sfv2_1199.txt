@@ -1,57 +1,56 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 100 Atk / 112 Def / 16 SpD / 28 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 112 HP / 220 SpA / 176 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Body Slam
-- Fire Punch
-- Hidden Power [Grass]
-- Dynamic Punch
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 4 SpD / 216 Spe
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 64 HP / 224 Atk / 20 SpD / 200 Spe
 Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Dragon Dance
+- Meteor Mash
 - Earthquake
 - Rock Slide
-- Hidden Power [Bug]
+- Explosion
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 104 Atk / 152 SpA
+Quiet Nature
+- Ice Beam
+- Thunderbolt
+- Explosion
+- Thunder Wave
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 192 HP / 4 Def / 136 SpA / 176 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Calm Mind
 - Giga Drain
-- Psychic
+- Hidden Power [Fire]
+- Baton Pass
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
 IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
+- Thunderbolt
+- Ice Punch
 - Hidden Power [Grass]
-- Brick Break
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 216 Atk / 40 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power [Bug]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 176 SpA / 80 Spe
+Modest Nature
+- Substitute
+- Calm Mind
+- Surf
+- Ice Beam

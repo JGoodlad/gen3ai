@@ -1,58 +1,57 @@
-Blaziken @ Leftovers
-Ability: Blaze
-EVs: 12 Atk / 252 SpA / 44 SpD / 200 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Overheat
-- Sky Uppercut
-- Substitute
-- Hidden Power [Grass]
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 116 SpD / 140 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Giga Drain
-- Psychic
-- Hidden Power [Fire]
-- Leech Seed
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
+- Protect
+- Toxic
+- Earthquake
+- Rock Slide
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 232 SpD / 24 Spe
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
-- Whirlwind
 - Toxic
-- Protect
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 0 Atk
-- Hydro Pump
-- Thunderbolt
-- Ice Beam
-- Rapid Spin
+- Drill Peck
+- Roar
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 4 HP / 252 Def / 252 SpA
+EVs: 212 HP / 252 Def / 44 SpA
 Bold Nature
 IVs: 0 Atk
-- Fire Blast
-- Ice Beam
 - Soft-Boiled
-- Thunder Wave
+- Wish
+- Seismic Toss
+- Ice Beam
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 80 Def
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Protect
-- Explosion
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 192 SpA / 28 SpD / 36 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Thunder
+- Hidden Power [Grass]
+- Dynamic Punch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break
+- Beat Up

@@ -1,57 +1,58 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 Def
-Brave Nature
-- Meteor Mash
-- Earthquake
-- Pursuit
-- Explosion
+Zapdos @ Choice Band
+Ability: Pressure
+EVs: 252 Atk / 4 SpA / 252 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Drill Peck
+- Thunderbolt
+- Hidden Power [Fighting]
+- Rain Dance
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 SpA
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpD
 Bold Nature
 IVs: 0 Atk
-- Surf
 - Ice Beam
-- Toxic
+- Thunderbolt
+- Thunder Wave
 - Recover
 
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Spore
-- Stun Spore
-- Mach Punch
-- Brick Break
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 84 HP / 252 Atk / 172 Spe
-Jolly Nature
-IVs: 30 Atk / 30 SpD
-- Hidden Power [Ghost]
-- Dragon Dance
-- Earthquake
-- Double-Edge
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Substitute
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 176 Def / 44 SpA / 36 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Wish
+- Fire Punch
+- Hidden Power [Grass]
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 112 SpA / 144 Spe
-Modest Nature
+EVs: 252 HP / 56 Def / 164 SpD / 36 Spe
+Bold Nature
 IVs: 0 Atk
+- Psychic
 - Leech Seed
 - Calm Mind
-- Giga Drain
+- Recover
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 176 Def / 84 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Roar
+- Rest
+- Calm Mind
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 88 Atk / 112 Def / 56 SpD
+Sassy Nature
+- Earthquake
+- Rapid Spin
+- Explosion
 - Psychic

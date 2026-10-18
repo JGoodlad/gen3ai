@@ -1,61 +1,58 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Toxic
+- Surf
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Earthquake
 - Rock Slide
-- Brick Break
-- Fire Blast
-- Wish
+- Hidden Power [Bug]
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Taunt
+- Will-O-Wisp
+- Thunderbolt
+- Giga Drain
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 SpA / 120 SpD / 136 Spe
+EVs: 240 HP / 120 SpD / 148 Spe
 Modest Nature
 IVs: 2 Atk / 30 Def
+- Thunder Wave
 - Thunderbolt
 - Hidden Power [Ice]
-- Substitute
-- Baton Pass
+- Roar
 
-Metagross @ Leftovers
-Ability: Clear Body
-Shiny: Yes
-EVs: 252 HP / 252 SpA / 4 Spe
-Quiet Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 48 Def / 172 SpA / 36 Spe
-Bold Nature
-IVs: 0 Atk
-- Giga Drain
-- Psychic
-- Calm Mind
-- Baton Pass
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-Shiny: Yes
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-Shiny: Yes
+Aerodactyl @ Choice Band
+Ability: Rock Head
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Hidden Power [Grass]
-- Dragon Dance
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

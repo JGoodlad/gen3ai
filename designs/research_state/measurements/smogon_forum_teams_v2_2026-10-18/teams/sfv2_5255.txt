@@ -1,0 +1,56 @@
+Medicham @ Choice Band
+Ability: Pure Power
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Brick Break
+- Shadow Ball
+- Rock Slide
+- Focus Punch
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 56 HP / 252 SpA / 12 SpD / 188 Spe
+Timid Nature
+IVs: 0 Atk
+- Pursuit
+- Fire Blast
+- Crunch
+- Will-O-Wisp
+
+Swellow @ Choice Band
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Aerial Ace
+- Double-Edge
+- Hidden Power [Fighting]
+- Facade
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
+Bold Nature
+- Surf
+- Toxic
+- Protect
+- Refresh
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 156 SpD
+Adamant Nature
+- Self-Destruct
+- Body Slam
+- Counter
+- Focus Punch

@@ -1,56 +1,55 @@
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-- Spikes
-- Rapid Spin
-- Explosion
-- Earthquake
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Ice Punch
-- Hidden Power [Grass]
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Shadow Ball
-- Focus Punch
-
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 56 HP / 252 SpA / 12 SpD / 188 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Pursuit
-- Fire Blast
-- Hidden Power [Grass]
-- Will-O-Wisp
-
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
 - Earthquake
-- Ice Beam
-- Refresh
 - Hydro Pump
+- Ice Beam
+- Focus Punch
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
 - Rock Slide
 - Double-Edge
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 220 SpA / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
 - Earthquake
-- Hidden Power [Flying]
+- Explosion

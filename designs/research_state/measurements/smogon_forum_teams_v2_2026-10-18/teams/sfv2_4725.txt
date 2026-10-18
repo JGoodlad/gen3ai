@@ -1,0 +1,56 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 228 Def / 28 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Wish
+- Protect
+- Haze
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
+
+Skarmory
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Thief
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Seismic Toss
+- Soft-Boiled
+- Ice Beam
+- Aromatherapy
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Dusclops @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+- Will-O-Wisp
+- Seismic Toss
+- Rest
+- Shadow Ball

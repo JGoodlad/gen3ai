@@ -1,57 +1,56 @@
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Refresh
-- Toxic
-- Surf
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 168 Atk / 88 SpD
+Adamant Nature
+- Rock Slide
 - Counter
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 248 Atk / 8 Spe
-Brave Nature
-- Rapid Spin
-- Earthquake
-- Psychic
+- Thunder Wave
 - Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 136 Atk / 152 Def / 172 SpD / 16 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 196 SpA / 64 Spe
 Modest Nature
 IVs: 0 Atk
-- Soft-Boiled
+- Surf
 - Calm Mind
-- Ice Beam
-- Thunderbolt
+- Sleep Talk
+- Rest
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 136 Atk / 80 Def / 28 SpD / 12 Spe
-Adamant Nature
-- Protect
-- Meteor Mash
+EVs: 168 HP / 16 Def / 228 SpA / 96 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Thunder Punch
 - Earthquake
+- Hidden Power [Grass]
 - Explosion
 
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Will-O-Wisp
-- Flamethrower
-- Hidden Power [Grass]
-- Roar
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 244 HP / 188 Atk / 32 SpA / 36 SpD / 8 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake

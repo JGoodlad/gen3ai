@@ -1,3 +1,12 @@
+Heracross @ Choice Band
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Megahorn
+- Brick Break
+- Rock Slide
+- Focus Punch
+
 Metagross @ Leftovers
 Ability: Clear Body
 EVs: 168 HP / 16 Def / 232 SpA / 92 Spe
@@ -8,50 +17,39 @@ IVs: 30 Atk / 30 SpA
 - Hidden Power [Grass]
 - Explosion
 
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 196 SpA / 120 SpD / 192 Spe
-Modest Nature
-IVs: 0 Atk
-- Pursuit
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+- Wish
+- Dragon Claw
 - Fire Blast
-- Will-O-Wisp
-- Beat Up
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Baton Pass
-- Hidden Power [Grass]
-- Thunder Wave
+- Brick Break
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+EVs: 92 HP / 176 Atk / 128 Def / 112 SpD
 Adamant Nature
-- Self-Destruct
 - Body Slam
-- Earthquake
+- Shadow Ball
 - Focus Punch
+- Self-Destruct
 
-Hitmontop (M) @ Leftovers
-Ability: Intimidate
-EVs: 252 HP / 252 Atk / 4 Def
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
 Adamant Nature
-- Brick Break
 - Rapid Spin
-- Mach Punch
-- Rock Slide
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 60 HP / 252 Atk / 196 Spe
-Hasty Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
+- Explosion
 - Earthquake
-- Hydro Pump
+- Psychic
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Rest
+- Sleep Talk
+- Surf

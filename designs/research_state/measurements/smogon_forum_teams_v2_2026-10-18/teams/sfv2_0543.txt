@@ -1,57 +1,55 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 60 Atk / 252 SpA / 196 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Brick Break
-- Hidden Power [Grass]
-- Flamethrower
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Drill Peck
-- Roar
-- Protect
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 228 SpD / 32 Spe
-Calm Nature
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 176 Def / 4 SpA / 76 Spe
+Bold Nature
 IVs: 0 Atk
-- Thunderbolt
-- Rest
-- Toxic
-- Roar
+- Surf
+- Recover
+- Rapid Spin
+- Thunder Wave
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 228 SpA / 40 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Crunch
-- Pursuit
-- Fire Blast
-- Hidden Power [Grass]
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 64 Atk / 164 Def / 32 Spe
-Impish Nature
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 176 Atk / 120 SpD / 8 Spe
+Adamant Nature
+- Double-Edge
+- Curse
+- Shadow Ball
 - Earthquake
+
+Aerodactyl @ Leftovers
+Ability: Pressure
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
 - Rock Slide
-- Toxic
-- Protect
+- Earthquake
+- Substitute
+- Taunt
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 4 HP / 252 Def / 252 SpA
-Modest Nature
+EVs: 236 HP / 252 Def / 20 Spe
+Bold Nature
 IVs: 0 Atk
-- Calm Mind
+- Seismic Toss
+- Wish
 - Soft-Boiled
-- Ice Beam
-- Thunderbolt
+- Thunder Wave
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 240 HP / 136 Atk / 96 Def / 8 SpA / 12 SpD / 16 Spe
+Relaxed Nature
+- Meteor Mash
+- Earthquake
+- Thunder Punch
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 244 HP / 124 Def / 140 Spe
+Impish Nature
+- Swords Dance
+- Baton Pass
+- Leech Seed
+- Recover

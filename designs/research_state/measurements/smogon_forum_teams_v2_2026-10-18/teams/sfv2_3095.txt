@@ -1,58 +1,57 @@
-Tyranitar @ Leftovers
+Tyranitar @ Choice Band
 Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 SpD
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Fire Blast
-- Roar
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Return
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 48 HP / 144 Def / 108 SpA / 16 SpD / 192 Spe
-Timid Nature
-IVs: 0 Atk
-- Taunt
-- Thunderbolt
-- Giga Drain
-- Will-O-Wisp
-
-Skarmory @ Leftovers
+Skarmory
 Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
-- Toxic
-- Protect
+- Thief
+- Drill Peck
 - Roar
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 172 Def / 52 SpD / 32 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
 Bold Nature
 IVs: 0 Atk
+- Soft-Boiled
 - Wish
+- Seismic Toss
+- Ice Beam
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 232 SpD / 36 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Sleep Talk
+- Thunderbolt
+- Roar
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
 - Protect
 - Toxic
-- Fire Punch
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 48 Atk / 104 Def / 108 SpA
-Quiet Nature
-- Hydro Pump
-- Ice Beam
 - Earthquake
-- Protect
+- Rock Slide
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 16 HP / 16 Atk / 224 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

@@ -1,56 +1,58 @@
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 176 Atk / 72 Def / 8 Spe
-Adamant Nature
+EVs: 248 HP / 140 Atk / 60 SpA / 60 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Explosion
+- Hidden Power [Grass]
 - Meteor Mash
 - Earthquake
-- Rock Slide
-- Explosion
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 104 Atk / 152 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Substitute
-- Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
-
-Claydol @ Leftovers
+Flygon @ Leftovers
 Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 76 HP / 252 Atk / 180 Spe
 Adamant Nature
-- Rapid Spin
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Psychic
+- Rock Slide
+- Toxic
+- Hidden Power [Bug]
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 224 HP / 56 Atk / 180 SpA / 48 Spe
+Modest Nature
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
 - Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 16 HP / 176 Atk / 132 Def / 168 SpD / 16 Spe
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
-
-Dragonite @ Choice Band
-Ability: Inner Focus
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Heal Bell
-- Hidden Power [Flying]
-- Steel Wing
-- Focus Punch
 
 Gyarados @ Leftovers
 Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 24 HP / 252 Atk / 232 Spe
 Jolly Nature
 IVs: 30 Def / 30 SpD / 30 Spe
 - Dragon Dance
-- Earthquake
+- Taunt
 - Hidden Power [Rock]
-- Double-Edge
+- Earthquake
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 40 SpD / 216 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
+- Spore
+- Stun Spore
+- Sky Uppercut
+- Hidden Power [Ghost]
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 Def
+- Fire Blast
+- Hidden Power [Ice]
+- Brick Break
+- Beat Up

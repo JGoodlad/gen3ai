@@ -1,50 +1,30 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 8 Def / 172 Spe
+EVs: 168 HP / 160 Atk / 180 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
 - Dragon Dance
 - Rock Slide
 - Earthquake
-- Hidden Power [Bug]
+- Double-Edge
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Mild Nature
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 40 HP / 252 SpA / 216 Spe
+Timid Nature
 IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Brick Break
+- Thunderbolt
+- Ice Punch
 - Hidden Power [Grass]
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
-Calm Nature
-- Spikes
-- Surf
-- Rapid Spin
 - Explosion
-
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 216 SpA / 104 SpD / 188 Spe
-Modest Nature
-IVs: 0 Atk
-- Pursuit
-- Fire Blast
-- Will-O-Wisp
-- Beat Up
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 136 Def / 80 SpA / 44 SpD
-Relaxed Nature
+EVs: 252 HP / 54 Def / 106 SpA / 96 Spe
+Rash Nature
 - Hydro Pump
 - Earthquake
 - Ice Beam
-- Roar
+- Focus Punch
 
 Jolteon @ Leftovers
 Ability: Volt Absorb
@@ -53,5 +33,24 @@ Timid Nature
 IVs: 2 Atk / 30 SpA
 - Thunderbolt
 - Hidden Power [Grass]
-- Wish
+- Thunder Wave
 - Baton Pass
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 28 HP / 252 SpA / 228 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Will-O-Wisp
+- Roar
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 88 SpA / 244 SpD / 104 Spe
+Timid Nature
+- Surf
+- Rapid Spin
+- Spikes
+- Explosion

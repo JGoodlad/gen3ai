@@ -1,57 +1,57 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Forretress @ Leftovers
+Skarmory (M) @ Leftovers
 Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
+EVs: 252 HP / 4 Def / 248 SpD / 4 Spe
+Calm Nature
+IVs: 0 Atk
+- Protect
 - Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
+- Toxic
+- Whirlwind
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 188 HP / 240 SpA / 80 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Wish
-- Thunderbolt
+- Crunch
+- Fire Blast
 - Hidden Power [Grass]
-- Baton Pass
+- Pursuit
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Atk / 44 SpA / 44 SpD / 44 Spe
-Brave Nature
+Snorlax (M) @ Leftovers
+Ability: Thick Fat
+EVs: 88 HP / 176 Atk / 132 Def / 112 SpD
+Adamant Nature
 - Curse
-- Earthquake
-- Rock Slide
-- Hydro Pump
+- Body Slam
+- Rest
+- Sleep Talk
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 64 HP / 252 SpA / 192 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Protect
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 80 HP / 212 SpA / 216 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Psychic
+- Rapid Spin
+- Recover
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 228 Def / 32 SpD
+Relaxed Nature
+- Protect
 - Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Ice Beam
+- Mirror Coat

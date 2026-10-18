@@ -1,0 +1,59 @@
+Starmie @ Mystic Water
+Ability: Natural Cure
+EVs: 40 HP / 252 SpA / 216 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Thunder
+- Psychic
+- Recover
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Recover
+- Baton Pass
+- Rain Dance
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 252 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Calm Mind
+- Rest
+- Roar
+
+Ludicolo @ Lum Berry
+Ability: Swift Swim
+EVs: 168 HP / 252 SpA / 88 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Leech Seed
+- Rain Dance
+- Ice Beam
+
+Kingdra @ Leftovers
+Ability: Swift Swim
+EVs: 252 HP / 4 Def / 252 SpA
+Modest Nature
+IVs: 3 Atk / 30 SpA
+- Rain Dance
+- Surf
+- Hidden Power [Electric]
+- Ice Beam
+
+Omastar @ Lum Berry
+Ability: Swift Swim
+EVs: 48 HP / 252 SpA / 208 Spe
+Modest Nature
+IVs: 3 Atk / 30 SpA
+- Surf
+- Ice Beam
+- Hidden Power [Electric]
+- Rain Dance

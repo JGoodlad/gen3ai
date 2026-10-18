@@ -1,55 +1,57 @@
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 244 Def / 188 SpD / 60 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Curse
-- Surf
-- Baton Pass
-
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 240 HP / 224 SpA / 44 Spe
-Quiet Nature
-- Crunch
-- Pursuit
-- Flamethrower
-- Brick Break
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Shadow Ball
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
-Adamant Nature
-- Body Slam
-- Earthquake
-- Focus Punch
-- Self-Destruct
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 228 Atk / 16 Def / 96 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
 - Fire Blast
+- Hidden Power [Grass]
+- Ancient Power
+- Brick Break
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 120 Atk / 252 SpA / 136 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Drill Peck
+- Hidden Power [Grass]
+- Agility
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Protect
+- Toxic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 80 Def / 176 SpA / 4 Spe
+Quiet Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Surf
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 160 HP / 164 SpD / 184 Spe
+Timid Nature
+- Will-O-Wisp
+- Explosion
+- Giga Drain
+- Thunderbolt
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 244 SpA / 12 Spe
+Modest Nature
+IVs: 0 Atk
+- Fire Blast
+- Ice Beam
+- Toxic
+- Soft-Boiled

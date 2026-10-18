@@ -1,55 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 Atk / 4 Def
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Focus Punch
-- Hidden Power [Bug]
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 56 Atk / 252 SpA / 176 Spe
-Mild Nature
-- Dragon Claw
-- Fire Blast
-- Hydro Pump
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Roar
-- Drill Peck
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Grass]
+- Rain Dance
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 192 HP / 8 Def / 224 SpA / 84 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+EVs: 252 HP / 4 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
 - Leech Seed
 - Psychic
-- Giga Drain
-- Hidden Power [Fire]
+- Baton Pass
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 128 Def / 172 SpD
+Adamant Nature
+- Curse
+- Return
+- Earthquake
+- Shadow Ball
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+EVs: 252 HP / 176 Atk / 28 SpD / 52 Spe
 Adamant Nature
-- Agility
+- Toxic
 - Meteor Mash
 - Earthquake
-- Rock Slide
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 40 Def / 44 SpD / 176 Spe
-Timid Nature
-- Will-O-Wisp
 - Explosion
-- Ice Punch
-- Thunderbolt
+
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Brick Break
+- Hidden Power [Flying]

@@ -1,58 +1,57 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
 Starmie @ Leftovers
 Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Surf
-- Ice Beam
-- Thunderbolt
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 200 Def / 56 SpA
+EVs: 244 HP / 176 Def / 32 SpD / 56 Spe
 Bold Nature
 IVs: 0 Atk
+- Surf
+- Thunder Wave
 - Recover
-- Toxic
+- Rapid Spin
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Beat Up
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+
+Regice @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 248 HP / 112 Atk / 148 SpA
+Quiet Nature
 - Ice Beam
 - Thunderbolt
+- Explosion
+- Thunder Wave
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 176 Atk / 68 Def / 16 Spe
 Adamant Nature
-- Dragon Dance
+- Meteor Mash
+- Earthquake
+- Explosion
+- Protect
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 104 HP / 216 Atk / 4 SpD / 184 Spe
+Adamant Nature
+- Megahorn
+- Rock Slide
+- Substitute
+- Focus Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 136 Atk / 212 SpD / 160 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
 - Earthquake
 - Rock Slide
-- Double-Edge
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 192 HP / 176 SpA / 140 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Substitute
-- Flamethrower
-- Hidden Power [Grass]
-- Focus Punch
+- Dragon Dance

@@ -1,55 +1,56 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 172 SpA / 84 Spe
-Quiet Nature
-- Substitute
-- Crunch
-- Focus Punch
-- Fire Blast
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 120 Atk / 236 SpA / 152 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Drill Peck
-- Agility
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 100 Def / 160 SpA
-Quiet Nature
-- Hydro Pump
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
 - Earthquake
-- Ice Beam
-- Curse
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Fire Blast
-- Ice Beam
-- Toxic
+- Rock Slide
+- Double-Edge
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 244 SpD / 12 Spe
+EVs: 224 HP / 216 SpD / 68 Spe
 Careful Nature
+IVs: 0 Atk
 - Spikes
-- Drill Peck
+- Taunt
 - Toxic
 - Roar
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
+Modest Nature
+IVs: 3 Atk / 30 Spe
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 80 HP / 252 SpA / 176 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunder
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
 - Earthquake
-- Psychic
-- Explosion
+- Hydro Pump
+- Ice Beam
+- Focus Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 12 Def / 244 SpA / 252 Spe
+Mild Nature
+- Dragon Claw
+- Flamethrower
+- Brick Break
+- Roar

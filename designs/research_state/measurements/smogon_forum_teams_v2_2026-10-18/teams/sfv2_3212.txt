@@ -1,55 +1,57 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 Def
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 168 SpA / 88 Spe
-Quiet Nature
-- Crunch
-- Pursuit
-- Brick Break
-- Flamethrower
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Beat Up
-- Hidden Power [Grass]
-- Fire Blast
-- Dragon Claw
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 200 Atk / 108 Def / 184 SpD / 16 Spe
-Adamant Nature
-- Body Slam
-- Self-Destruct
-- Focus Punch
-- Counter
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 16 Def / 12 SpD / 12 Spe
-Relaxed Nature
-- Earthquake
-- Ice Beam
+EVs: 252 HP / 204 Atk / 36 SpA / 16 Spe
+Brave Nature
 - Rapid Spin
+- Earthquake
+- Psychic
 - Explosion
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 192 SpA / 76 Spe
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 44 HP / 252 SpA / 212 Spe
 Modest Nature
 IVs: 0 Atk
-- Calm Mind
-- Surf
 - Rest
 - Sleep Talk
+- Ice Beam
+- Thunder
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Rock Slide
+- Hidden Power [Grass]
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 112 SpD / 104 Spe
+Timid Nature
+- Thunder
+- Giga Drain
+- Explosion
+- Rain Dance
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Flamethrower
+- Hidden Power [Grass]
+- Focus Punch

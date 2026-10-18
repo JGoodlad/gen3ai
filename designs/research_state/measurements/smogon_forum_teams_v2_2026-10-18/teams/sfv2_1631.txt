@@ -1,35 +1,35 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 4 SpA / 252 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 136 SpA / 156 Spe
+Modest Nature
+IVs: 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 216 SpA / 44 SpD / 8 Spe
+Quiet Nature
+- Curse
 - Earthquake
-- Psychic
-- Explosion
+- Hydro Pump
+- Ice Beam
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 112 HP / 220 SpA / 176 Spe
 Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
+EVs: 252 HP / 228 SpA / 28 Spe
 Modest Nature
 IVs: 0 Atk
 - Rest
@@ -37,21 +37,20 @@ IVs: 0 Atk
 - Surf
 - Ice Beam
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 108 Atk / 216 Spe
 Adamant Nature
-- Curse
-- Double-Edge
+- Dragon Dance
 - Earthquake
-- Shadow Ball
+- Rock Slide
+- Double-Edge
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 24 Atk / 252 SpA / 64 SpD / 144 Spe
+Mild Nature
+- Wish
+- Dragon Claw
+- Flamethrower
+- Brick Break

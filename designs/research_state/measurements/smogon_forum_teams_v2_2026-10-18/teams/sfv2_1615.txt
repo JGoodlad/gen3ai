@@ -1,32 +1,31 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
-Adamant Nature
-IVs: 30 SpA / 30 Spe
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 44 Atk / 136 Def / 80 SpD / 8 Spe
+Relaxed Nature
 - Rest
-- Calm Mind
-- Surf
+- Curse
+- Earthquake
 - Ice Beam
 
-Machamp @ Leftovers
-Ability: Guts
-EVs: 248 HP / 176 Atk / 20 Def / 40 SpD / 24 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Bulk Up
-- Cross Chop
-- Rock Slide
-- Hidden Power [Bug]
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Fire]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Earthquake
+- Hidden Power [Grass]
+- Explosion
 
 Jolteon @ Leftovers
 Ability: Volt Absorb
@@ -39,13 +38,13 @@ IVs: 2 Atk / 30 SpA
 - Baton Pass
 
 Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
+Ability: Thick Fat
+EVs: 32 HP / 136 Atk / 152 Def / 172 SpD / 16 Spe
 Adamant Nature
-- Curse
-- Double-Edge
+- Body Slam
 - Earthquake
 - Shadow Ball
+- Self-Destruct
 
 Salamence @ Leftovers
 Ability: Intimidate
@@ -53,6 +52,6 @@ EVs: 116 HP / 252 Atk / 140 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
-- Earthquake
 - Rock Slide
+- Brick Break
 - Hidden Power [Flying]

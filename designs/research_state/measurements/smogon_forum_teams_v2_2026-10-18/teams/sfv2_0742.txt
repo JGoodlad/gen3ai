@@ -1,59 +1,56 @@
-Articuno @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 148 Def / 56 SpD / 52 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Heal Bell
-- Hidden Power [Fire]
-- Ice Beam
-- Toxic
-
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 84 HP / 144 Def / 252 SpD / 28 Spe
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Hidden Power [Ghost]
-- Knock Off
-- Brick Break
-- Whirlwind
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Wish
-- Ice Beam
-- Seismic Toss
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 SpD
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
-
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 4 Atk / 252 SpA
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Punch
-- Earthquake
+EVs: 100 Atk / 220 SpA / 188 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Sunny Day
 - Explosion
-- Hidden Power [Grass]
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 40 SpA / 216 Spe
-Timid Nature
-IVs: 0 Atk
-- Surf
-- Rapid Spin
-- Recover
-- Thunderbolt
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+- Fire Blast
+- Solar Beam
+- Earthquake
+- Dragon Breath
+
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 48 Atk / 208 SpD
+Careful Nature
+- Brick Break
+- Thunder Wave
+- Sunny Day
+- Explosion
+
+Exeggutor @ Leftovers
+Ability: Chlorophyll
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Solar Beam
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 4 Atk / 252 Def / 252 SpA
+Quiet Nature
+- Fire Blast
+- Sunny Day
+- Body Slam
+- Self-Destruct
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Earthquake
+- Double-Edge
+- Hidden Power [Flying]

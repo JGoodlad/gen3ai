@@ -1,57 +1,57 @@
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
-- Thunderbolt
-- Rapid Spin
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 180 HP / 252 Atk / 76 Spe
-Adamant Nature
-- Spore
-- Focus Punch
-- Brick Break
-- Stun Spore
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 144 Atk / 116 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 224 HP / 252 SpA / 32 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Psychic
-- Fire Punch
+EVs: 240 HP / 16 Atk / 252 SpA
+Quiet Nature
+IVs: 30 Def / 30 SpA
+- Counter
+- Flamethrower
 - Hidden Power [Grass]
+- Rock Slide
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 136 SpD / 120 Spe
+Careful Nature
+- Drill Peck
+- Roar
+- Spikes
+- Taunt
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 SpD
+Modest Nature
+IVs: 0 Atk
+- Flamethrower
+- Seismic Toss
+- Soft-Boiled
+- Toxic
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 64 Atk / 252 SpA / 192 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA
+- Brick Break
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 48 Def / 24 SpA / 184 Spe
+Timid Nature
+IVs: 0 Atk
+- Destiny Bond
+- Ice Punch
+- Thunderbolt
+- Will-O-Wisp
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
+EVs: 248 HP / 216 Def / 44 Spe
 Relaxed Nature
 - Earthquake
 - Ice Beam
 - Protect
-- Hydro Pump
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 120 HP / 252 Atk / 136 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
+- Surf

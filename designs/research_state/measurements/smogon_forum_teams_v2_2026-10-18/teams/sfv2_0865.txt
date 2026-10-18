@@ -1,58 +1,59 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 216 SpA / 40 Spe
-Quiet Nature
-- Crunch
-- Pursuit
-- Brick Break
-- Ice Beam
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 56 SpD / 200 Spe
-Jolly Nature
-IVs: 0 Atk
-- Spikes
-- Taunt
-- Toxic
-- Protect
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 228 SpA / 28 Spe
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 32 HP / 76 Def / 176 SpA / 224 Spe
 Modest Nature
 IVs: 0 Atk
-- Seismic Toss
+- Substitute
+- Hydro Pump
 - Ice Beam
-- Wish
-- Soft-Boiled
+- Baton Pass
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 124 HP / 116 Atk / 128 SpD / 140 Spe
+Machamp @ Leftovers
+Ability: Guts
+EVs: 80 HP / 216 Atk / 36 SpD / 176 Spe
 Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Brick Break
-- Dragon Dance
+IVs: 30 Atk / 30 SpD
+- Bulk Up
+- Cross Chop
 - Rock Slide
+- Hidden Power [Ghost]
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 96 Def / 164 SpD
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Roar
-- Protect
-- Counter
+Snorlax @ Leftovers
+Ability: Immunity
+Shiny: Yes
+EVs: 16 HP / 252 Atk / 120 Def / 120 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 220 SpA / 104 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 HP / 248 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
-- Fire Blast
-- Beat Up
+- Calm Mind
+- Thunderbolt
 - Hidden Power [Grass]
-- Overheat
+- Substitute
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 60 HP / 252 Atk / 196 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Brick Break
+- Hidden Power [Flying]

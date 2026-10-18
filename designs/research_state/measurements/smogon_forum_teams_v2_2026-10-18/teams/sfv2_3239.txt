@@ -1,56 +1,58 @@
-Tyranitar @ Choice Band
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Rock Slide
-- Earthquake
-- Focus Punch
-- Brick Break
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
+EVs: 240 HP / 228 Atk / 40 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-- Dragon Dance
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 252 HP / 152 SpD / 104 Spe
-Calm Nature
-- Surf
-- Explosion
-- Spikes
-- Rapid Spin
-
-Alakazam @ Leftovers
-Ability: Synchronize
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Psychic
-- Safeguard
-- Encore
-- Light Screen
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 68 HP / 188 Atk / 252 Spe
-Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Spore
-- Mach Punch
+- Rock Slide
+- Earthquake
 - Focus Punch
 - Hidden Power [Bug]
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 160 HP / 252 Atk / 96 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Agility
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 200 SpA / 56 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Seismic Toss
+- Wish
+- Soft-Boiled
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 156 Def / 64 SpA / 40 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Refresh
+- Protect
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Protect
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 68 HP / 16 SpA / 248 SpD / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Thunderbolt
+- Giga Drain
+- Will-O-Wisp
+- Taunt
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Protect
+- Toxic

@@ -1,57 +1,57 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Roar
-- Toxic
-- Protect
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 SpD
-IVs: 0 Atk
-- Pursuit
-- Crunch
-- Fire Blast
-- Roar
-
-Articuno @ Leftovers
-Ability: Pressure
-EVs: 24 HP / 252 SpA / 232 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Ice Beam
-- Hidden Power [Fire]
-- Toxic
-- Heal Bell
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 56 Atk / 24 Def / 176 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Protect
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
+EVs: 216 HP / 140 SpA / 152 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA
 - Thunderbolt
 - Hidden Power [Grass]
-- Baton Pass
-- Thunder Wave
+- Roar
+- Light Screen
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 220 Def / 36 SpD
-Relaxed Nature
-- Body Slam
-- Fire Punch
-- Wish
-- Protect
+Omastar @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 184 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Grass]
+- Spikes
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 48 Def / 144 SpD / 64 Spe
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Counter
+- Explosion
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 24 HP / 164 Atk / 72 Def / 248 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 212 SpD / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Rock Slide
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 144 SpA / 196 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Ice Punch
+- Explosion

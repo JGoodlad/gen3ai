@@ -1,0 +1,58 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 48 Def / 144 SpA / 64 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Rest
+- Calm Mind
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Calm Mind
+- Psychic
+- Fire Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 104 Def / 20 SpA / 96 SpD / 36 Spe
+Calm Nature
+IVs: 30 HP / 30 SpA
+- Recover
+- Leech Seed
+- Hidden Power [Grass]
+- Heal Bell
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 128 Atk / 112 Def / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Shadow Ball
+- Explosion
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 244 HP / 96 Def / 120 SpA / 48 Spe
+Relaxed Nature
+IVs: 30 Atk / 30 Def
+- Explosion
+- Will-O-Wisp
+- Fire Blast
+- Hidden Power [Ice]

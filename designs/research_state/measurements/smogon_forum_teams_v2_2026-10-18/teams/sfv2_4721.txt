@@ -1,0 +1,57 @@
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 Atk / 136 Def
+Relaxed Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Fighting]
+- Fire Punch
+- Wish
+- Thunder Wave
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 212 Def / 12 SpA / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 Def
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Ice]
+- Rest
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Recover
+- Thunderbolt
+- Rain Dance
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 96 Def / 44 SpA / 116 SpD
+Bold Nature
+IVs: 30 HP / 30 SpA
+- Heal Bell
+- Hidden Power [Grass]
+- Leech Seed
+- Recover
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 120 Atk / 136 Def
+Relaxed Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Rest
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 Def / 64 Spe
+Bold Nature
+- Calm Mind
+- Rest
+- Roar
+- Surf

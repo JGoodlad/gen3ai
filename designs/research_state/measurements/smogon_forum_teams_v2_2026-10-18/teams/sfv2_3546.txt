@@ -1,56 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 4 Def / 252 SpD
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
-- Calm Mind
-- Surf
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 84 SpA / 48 Spe
+Relaxed Nature
+- Protect
 - Earthquake
-- Psychic
-- Explosion
+- Surf
+- Roar
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 56 Atk / 68 Def / 36 SpA / 96 SpD
-Sassy Nature
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Surf
+- Ice Beam
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 108 Def / 20 SpA / 96 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Recover
+- Leech Seed
+- Hidden Power [Grass]
+- Psychic
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 228 SpD / 40 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Rest
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 32 Atk / 140 SpA / 28 SpD / 56 Spe
+Mild Nature
 IVs: 30 Atk / 30 SpA
+- Substitute
 - Thunder
 - Hidden Power [Grass]
-- Superpower
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 180 Atk / 108 Def / 8 SpD / 8 Spe
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Shadow Ball
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 20 HP / 252 Atk / 36 SpD / 200 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Spore
-- Stun Spore
-- Hidden Power [Ghost]
-- Sky Uppercut
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 120 Atk / 248 SpA / 140 Spe
-Rash Nature
-- Wish
-- Dragon Claw
-- Flamethrower
-- Brick Break
+- Dynamic Punch

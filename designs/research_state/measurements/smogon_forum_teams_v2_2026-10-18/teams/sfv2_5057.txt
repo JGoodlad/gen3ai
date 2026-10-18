@@ -1,0 +1,54 @@
+Salamence (F) @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 60 Atk / 52 Def / 144 Spe
+Adamant Nature
+- Dragon Dance
+- Brick Break
+- Earthquake
+- Rock Slide
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 216 Def / 40 SpD
+Relaxed Nature
+- Earthquake
+- Surf
+- Refresh
+- Toxic
+
+Gengar (F) @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Hasty Nature
+- Will-O-Wisp
+- Taunt
+- Destiny Bond
+- Thunderbolt
+
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 140 SpA / 120 Spe
+Quiet Nature
+- Pursuit
+- Crunch
+- Fire Blast
+- Brick Break
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+IVs: 30 SpD / 30 Spe
+- Spikes
+- Rapid Spin
+- Explosion
+- Hidden Power [Bug]
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Soft-Boiled
+- Calm Mind
+- Thunderbolt
+- Ice Beam

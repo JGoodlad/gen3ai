@@ -1,0 +1,58 @@
+Blaziken @ Leftovers
+Ability: Blaze
+EVs: 12 Atk / 252 SpA / 44 SpD / 200 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Overheat
+- Sky Uppercut
+- Substitute
+- Hidden Power [Grass]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 116 SpD / 140 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Giga Drain
+- Psychic
+- Hidden Power [Fire]
+- Leech Seed
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 232 SpD / 24 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Whirlwind
+- Toxic
+- Protect
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Thunderbolt
+- Ice Beam
+- Rapid Spin
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Bold Nature
+IVs: 0 Atk
+- Fire Blast
+- Ice Beam
+- Soft-Boiled
+- Thunder Wave
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion

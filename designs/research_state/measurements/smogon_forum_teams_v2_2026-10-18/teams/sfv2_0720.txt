@@ -1,58 +1,57 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 156 SpA / 100 SpD / 252 Spe
+EVs: 216 HP / 156 SpA / 136 Spe
 Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+- Thunder Wave
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Spore
+- Substitute
+- Focus Punch
+- Mach Punch
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 236 Atk / 16 Def / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
 - Thunderbolt
 - Hidden Power [Grass]
-- Substitute
-- Baton Pass
-
-Alakazam @ Leftovers
-Ability: Synchronize
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Psychic
-- Fire Punch
-- Hidden Power [Grass]
-- Ice Punch
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 92 Def / 64 SpA / 240 SpD / 112 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
 - Calm Mind
-- Hidden Power [Fire]
-- Baton Pass
-- Giga Drain
+- Substitute
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 120 SpA / 136 Spe
-Timid Nature
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpA
+Bold Nature
 IVs: 0 Atk
-- Calm Mind
-- Substitute
-- Surf
+- Recover
 - Ice Beam
+- Thunderbolt
+- Toxic
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 80 Def
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
 Adamant Nature
-- Meteor Mash
-- Earthquake
-- Protect
-- Explosion
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 40 HP / 252 Atk / 100 SpD / 116 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Aerial Ace
-- Hidden Power [Bug]
-- Beat Up
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Rock Slide

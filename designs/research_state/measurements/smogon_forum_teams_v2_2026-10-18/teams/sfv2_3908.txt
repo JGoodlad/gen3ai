@@ -1,0 +1,57 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 184 HP / 148 SpA / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Ice Beam
+- Roar
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 248 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Fire]
+- Rain Dance
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 136 Atk / 108 Def / 60 SpD
+Adamant Nature
+- Curse
+- Return
+- Shadow Ball
+- Self-Destruct
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 100 SpA / 8 SpD / 148 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 176 Atk / 16 Def / 148 Spe
+Adamant Nature
+- Toxic
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 212 SpD / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break

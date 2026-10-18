@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 240 HP / 252 Atk / 16 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
-Timid Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Taunt
-- Thunderbolt
-- Ice Punch
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
 - Fire Blast
+- Ice Beam
+- Brick Break
 - Hidden Power [Grass]
-- Will-O-Wisp
-- Protect
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
-Timid Nature
-- Spikes
-- Surf
-- Rapid Spin
-- Explosion
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 80 Def
+Sudowoodo @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 252 Atk / 8 Spe
 Adamant Nature
-- Meteor Mash
-- Earthquake
-- Protect
-- Explosion
+- Low Kick
+- Counter
+- Strength
+- Rock Slide
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+- Aerial Ace
+- Rock Slide
+- Metal Claw
+- Strength
+
+Ludicolo @ Leftovers
+Ability: Swift Swim
+EVs: 168 HP / 252 SpA / 88 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Thunderbolt
+- Rain Dance
+- Hydro Pump
+- Ice Beam
 - Hidden Power [Grass]
-- Baton Pass
-- Roar
+
+Golduck @ Salac Berry
+Ability: Cloud Nine
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Calm Mind
+- Endure
+- Ice Beam
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Ice Beam
+- Hidden Power [Grass]
+- Brick Break

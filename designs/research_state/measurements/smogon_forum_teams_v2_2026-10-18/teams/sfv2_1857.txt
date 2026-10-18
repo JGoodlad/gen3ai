@@ -1,57 +1,57 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Naughty Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Rock Slide
-- Hidden Power [Flying]
-- Iron Tail
-- Fire Blast
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Thunder Wave
-- Seismic Toss
-- Ice Beam
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Rock Slide
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
 - Hidden Power [Grass]
+- Baton Pass
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 Atk / 68 SpD / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
 - Explosion
 
-Aerodactyl @ Choice Band
+Marowak @ Thick Club
 Ability: Rock Head
 EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
+Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
+- Swords Dance
 - Earthquake
 - Rock Slide
 - Hidden Power [Bug]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 216 Atk / 108 Def / 168 SpD
+Adamant Nature
+- Curse
 - Double-Edge
+- Earthquake
+- Shadow Ball
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]

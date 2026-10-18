@@ -1,56 +1,55 @@
-Hariyama @ Leftovers
-Ability: Thick Fat
-Hidden Power: Bug
-EVs: 112 HP / 252 Def / 144 SpD
-Impish Nature
-- Knock Off
-- Brick Break
-- Rest
-- Rock Slide
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Aromatherapy
-- Seismic Toss
-- Thunder Wave
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 HP / 216 Def / 40 Spe
-Impish Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Wish
-- Protect
-- Hidden Power [Flying]
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
 - Earthquake
+- Hydro Pump
+- Ice Beam
+- Focus Punch
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 252 Def / 16 Spe
-Bold Nature
-- Calm Mind
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 200 HP / 68 SpA / 140 SpD / 100 Spe
+Modest Nature
+- Spikes
+- Rapid Spin
 - Surf
-- Rest
-- Roar
+- Explosion
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
 - Rapid Spin
 - Earthquake
 - Psychic
 - Explosion
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 244 SpD / 16 Spe
-Careful Nature
-- Spikes
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
+Hasty Nature
+- Will-O-Wisp
+- Thunder
+- Giga Drain
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 220 SpA / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 120 SpD / 148 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
 - Roar
-- Drill Peck
-- Toxic

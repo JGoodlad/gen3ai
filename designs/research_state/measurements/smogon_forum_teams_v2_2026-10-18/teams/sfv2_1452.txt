@@ -1,50 +1,48 @@
-Tyranitar @ Choice Band
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+IVs: 30 Atk / 30 SpA
+- Wish
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 184 HP / 104 Atk / 220 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
 - Earthquake
 - Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
+- Double-Edge
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 168 SpA / 244 SpD / 96 Spe
+Modest Nature
 - Spikes
-- Toxic
-- Drill Peck
-- Roar
+- Rapid Spin
+- Ice Beam
+- Explosion
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
+EVs: 240 HP / 108 Def / 152 SpA / 8 Spe
 Quiet Nature
-- Protect
+- Curse
 - Earthquake
 - Hydro Pump
 - Ice Beam
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Toxic
-- Fire Blast
-- Ice Beam
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 140 SpA / 16 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 188 HP / 228 Atk / 92 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
 
 Aerodactyl @ Choice Band
 Ability: Rock Head

@@ -1,57 +1,57 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Earthquake
-- Hidden Power [Grass]
-- Explosion
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Substitute
+- Endeavor
 
 Magneton @ Magnet
 Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
+EVs: 252 SpA / 68 SpD / 188 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunder Wave
-- Toxic
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunderbolt
-- Hidden Power [Grass]
+- Hidden Power [Fire]
+- Toxic
+- Thunder Wave
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 236 Atk / 16 Def / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 204 HP / 220 Atk / 60 Def / 8 SpD / 16 Spe
+EVs: 80 HP / 252 Atk / 136 Def / 28 SpD / 12 Spe
 Adamant Nature
-- Curse
-- Return
-- Earthquake
+- Body Slam
 - Shadow Ball
-
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 8 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Thunderbolt
-- Crunch
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 208 Atk / 44 SpD / 16 Spe
-Brave Nature
-- Curse
-- Earthquake
-- Rock Slide
-- Ice Beam
+- Focus Punch
+- Self-Destruct
 
 Gyarados @ Leftovers
 Ability: Intimidate
-EVs: 40 HP / 196 Atk / 100 SpD / 172 Spe
+EVs: 252 Atk / 24 Def / 232 Spe
 Jolly Nature
-IVs: 30 Atk / 30 SpD
-- Thunder Wave
+IVs: 30 Def / 30 SpD / 30 Spe
 - Dragon Dance
+- Hidden Power [Rock]
 - Earthquake
-- Hidden Power [Ghost]
+- Double-Edge
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 248 SpA / 12 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Crunch
+- Ice Beam
+- Pursuit
+- Hidden Power [Grass]

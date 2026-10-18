@@ -1,56 +1,58 @@
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-- Spore
-- Focus Punch
-- Sky Uppercut
-- Mach Punch
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 20 Def / 240 SpA / 232 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Baton Pass
+- Substitute
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 84 Def / 92 SpA / 80 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Giga Drain
+- Calm Mind
+- Hidden Power [Fire]
+- Baton Pass
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 164 HP / 252 SpA / 92 Spe
-Quiet Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Psychic
-- Hidden Power [Fire]
-- Meteor Mash
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+EVs: 240 HP / 216 Atk / 44 Def / 8 Spe
 Adamant Nature
-- Self-Destruct
-- Body Slam
-- Shadow Ball
-- Focus Punch
-
-Scizor @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Swords Dance
-- Reversal
-- Endure
-- Hidden Power [Rock]
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
-Modest Nature
-- Pursuit
-- Crunch
-- Fire Blast
-- Brick Break
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 68 HP / 252 Atk / 188 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Rock]
+EVs: 240 HP / 252 Atk / 16 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
 - Earthquake
-- Taunt
+- Hidden Power [Bug]
+- Focus Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 212 SpD / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide

@@ -1,0 +1,59 @@
+Furret @ Choice Band
+Ability: Keen Eye
+Happiness: 0
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Double-Edge
+- Shadow Ball
+- Brick Break
+- Quick Attack
+
+Minun @ Petaya Berry
+Ability: Minus
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+- Substitute
+
+Grovyle @ Petaya Berry
+Ability: Overgrow
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Leaf Blade
+- Crunch
+- Substitute
+- Hidden Power [Ice]
+
+Sealeo @ Leftovers
+Ability: Thick Fat
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Surf
+- Rest
+- Sleep Talk
+
+Gastly @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Psychic
+- Destiny Bond
+
+Yanma @ Liechi Berry
+Ability: Speed Boost
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Substitute
+- Reversal
+- Hidden Power [Flying]
+- Protect

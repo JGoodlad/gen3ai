@@ -1,57 +1,57 @@
-Machamp @ Leftovers
-Ability: Guts
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-- Bulk Up
-- Brick Break
-- Rest
-- Sleep Talk
-
-Dragonite @ Leftovers
-Ability: Inner Focus
-EVs: 96 Atk / 24 SpA / 172 SpD / 216 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
 - Dragon Dance
-- Hidden Power [Rock]
 - Earthquake
-- Ice Beam
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 196 Atk / 156 Def / 156 SpD
-Careful Nature
-- Body Slam
-- Brick Break
 - Rock Slide
-- Self-Destruct
+- Double-Edge
 
-Slowbro @ Leftovers
-Ability: Oblivious
-EVs: 248 HP / 148 Def / 112 SpA
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Thunder Wave
-- Surf
-- Ice Beam
-
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 100 HP / 252 Atk / 156 Spe
-Adamant Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Snatch
-- Will-O-Wisp
-- Hidden Power [Fighting]
-- Body Slam
-
-Misdreavus @ Leftovers
-Ability: Levitate
-EVs: 80 HP / 252 SpA / 176 Spe
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 8 Def / 248 SpA / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 Def
-- Calm Mind
+IVs: 0 Atk
+- Rapid Spin
+- Hydro Pump
+- Ice Beam
 - Thunderbolt
-- Hidden Power [Ice]
-- Taunt
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 3 Atk / 30 SpA
+- Substitute
+- Leech Seed
+- Hidden Power [Electric]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Toxic
+- Surf
+- Endeavor
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 236 Atk / 12 Def / 200 SpD / 60 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

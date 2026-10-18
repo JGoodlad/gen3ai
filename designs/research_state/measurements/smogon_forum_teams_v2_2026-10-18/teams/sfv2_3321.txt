@@ -1,54 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 188 SpA / 68 Spe
-Quiet Nature
-- Substitute
-- Crunch
-- Thunder
-- Focus Punch
-
-Registeel @ Leftovers
+Regirock @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 232 Atk / 24 SpD
+EVs: 252 HP / 188 Atk / 68 SpD
 Adamant Nature
-- Thunder Wave
-- Seismic Toss
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
 - Superpower
 - Explosion
+- Thunder Wave
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 220 HP / 200 Atk / 88 Spe
-Adamant Nature
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Thunder Wave
+- Hidden Power [Fire]
+- Sunny Day
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 168 HP / 252 Def / 88 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Seismic Toss
+- Thunder Wave
+- Counter
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 68 Atk / 176 SpA / 16 Spe
+Quiet Nature
 - Earthquake
-- Shadow Ball
-- Rapid Spin
+- Pursuit
+- Psychic
 - Explosion
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 220 HP / 104 SpA / 184 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Rock]
+- Earthquake
+- Double-Edge
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 104 Atk / 152 SpA / 252 Spe
-Lonely Nature
-- Dragon Claw
-- Fire Blast
-- Rock Slide
+EVs: 252 HP / 112 Atk / 80 SpD / 64 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
 - Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
-- Roar
+- Substitute

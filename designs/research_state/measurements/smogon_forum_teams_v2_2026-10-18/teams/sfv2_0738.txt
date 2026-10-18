@@ -1,57 +1,57 @@
-Medicham @ Choice Band
-Ability: Pure Power
+Heracross @ Choice Band
+Ability: Guts
 EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Megahorn
 - Brick Break
-- Shadow Ball
 - Focus Punch
-- Fake Out
+- Hidden Power [Rock]
 
-Salamence @ Leftovers
-Ability: Intimidate
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 HP / 236 SpD / 8 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Rain Dance
+- Thunder Wave
+
+Flygon @ Leftovers
+Ability: Levitate
 EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Substitute
 - Earthquake
 - Rock Slide
+- Hidden Power [Bug]
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 252 Def / 4 Spe
-Bold Nature
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 80 Def / 40 SpA / 136 Spe
+Timid Nature
 IVs: 0 Atk
-- Calm Mind
 - Surf
-- Rest
-- Sleep Talk
+- Recover
+- Rapid Spin
+- Thunder Wave
 
 Metagross @ Leftovers
 Ability: Clear Body
-Shiny: Yes
-EVs: 168 HP / 52 Atk / 16 Def / 252 SpA / 20 Spe
-Brave Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Explosion
-- Hidden Power [Fire]
+EVs: 220 HP / 184 Atk / 16 Def / 88 Spe
+Adamant Nature
+- Earthquake
 - Meteor Mash
-- Pursuit
+- Agility
+- Explosion
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 52 HP / 176 Atk / 144 Def / 136 SpD
-Adamant Nature
+EVs: 200 HP / 100 Atk / 116 Def / 76 SpD / 16 Spe
+Careful Nature
 - Curse
 - Body Slam
-- Earthquake
-- Self-Destruct
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
+- Shadow Ball
+- Rest

@@ -1,58 +1,57 @@
 Salamence @ Leftovers
 Ability: Intimidate
 EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
+Rash Nature
 IVs: 30 Atk / 30 SpA
-- Fire Blast
 - Dragon Claw
+- Fire Blast
 - Brick Break
 - Hidden Power [Grass]
 
-Poliwrath @ Leftovers
-Ability: Water Absorb
-EVs: 248 HP / 252 Atk / 8 SpD
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Brick Break
-- Focus Punch
-- Bulk Up
-- Hidden Power [Bug]
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 184 Atk / 28 Def / 44 Spe
+Brave Nature
+- Earthquake
+- Psychic
+- Explosion
+- Rapid Spin
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
+EVs: 236 HP / 216 Atk / 40 Def / 16 Spe
 Adamant Nature
-- Agility
 - Meteor Mash
 - Earthquake
+- Protect
 - Explosion
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
-Timid Nature
-IVs: 0 Atk
-- Spikes
-- Surf
-- Icy Wind
-- Rapid Spin
+Snorlax @ Leftovers
+Ability: Immunity
+Happiness: 0
+EVs: 128 HP / 144 Atk / 124 Def / 96 SpD / 16 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Rest
+- Self-Destruct
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 144 HP / 188 SpA / 176 Spe
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 36 SpD / 220 Spe
 Timid Nature
-IVs: 2 Atk / 30 Def
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
 - Toxic
-- Wish
-- Protect
-- Hidden Power [Ice]
+- Thunder Wave
 
-Tyranitar @ Salac Berry
-Ability: Sand Stream
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 252 Def / 8 Spe
+Bold Nature
 IVs: 0 Atk
-- Pursuit
-- Crunch
-- Taunt
-- Fire Blast
+- Surf
+- Ice Beam
+- Rest
+- Calm Mind

@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 112 Atk / 32 Def / 180 Spe
-Adamant Nature
-- Rock Slide
-- Earthquake
-- Double-Edge
-- Dragon Dance
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 76 HP / 252 SpA / 180 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Thunder Wave
-- Roar
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 224 HP / 216 SpD / 68 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Taunt
-- Toxic
-- Roar
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 216 HP / 252 SpA / 40 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Body Slam
-- Fire Punch
-- Hidden Power [Grass]
-- Dynamic Punch
-
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 88 Def / 164 SpA / 16 Spe
-Quiet Nature
-- Hydro Pump
+EVs: 240 HP / 176 Def / 48 SpD / 44 Spe
+Relaxed Nature
+- Protect
 - Earthquake
+- Hydro Pump
 - Ice Beam
-- Curse
+
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
 
 Charizard @ Leftovers
 Ability: Blaze
-EVs: 4 Def / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Flamethrower
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Fire Blast
 - Hidden Power [Grass]
-- Dragon Claw
-- Beat Up
+- Focus Punch
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]
+- Double-Edge

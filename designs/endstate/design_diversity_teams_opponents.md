@@ -306,7 +306,23 @@ the alternatives. **What decides between the two families is the 2 × 2 below, w
    - Caveats (that README's F4 / F5):
      - 116 of the 166 come from two curators;
      - 77 % of the core's mon sets appear on some pool team, so its novelty is in COMBINATIONS, not sets.
-   - Nothing is frozen yet. **The condition for using it:** its exact copies and near neighbours of `competitive` (the forum is
+   - FROZEN from it: `forum72`, 72 of the v1 independent core (curator cap 14, seed 3720), for X37a
+     stage 2 (cb0f1769c).
+   - **v2, the MEGA SWEEP (2026-10-18, owner):**
+     [`smogon_forum_teams_v2_2026-10-18/`](../research_state/measurements/smogon_forum_teams_v2_2026-10-18/README.md).
+     - It is a systematic crawl of the ADV forum and its subforums, the general RMT archives and
+       Smogon-wide tournaments: 5,330 legal teams in tiers A 671 / B 262 / C 4,397.
+     - 4,232 of them are clean against the pool.
+     - Its independent cores (clean against all five references, ≤ 3 shared mon sets) are A/B 559 and
+       A/B/C 2,995. The VERBATIM-only cores (paste text rather than a model's transcription) are 533
+       and 2,894.
+     - Caveats from its README:
+       - **711 of the pool's 719 teams are exact copies of forum teams** (F1): the pool's upstream is
+         the Set and Team Sharing thread.
+       - Four curators hold 1,679 of the A/B/C core (F4).
+       - Transcribed teams are weak evidence (F2).
+     - v1 and `forum72` are unchanged.
+   - **The condition for using it:** its exact copies and near neighbours of `competitive` (the forum is
    `competitive`'s own source) and of the pool must be excluded, or it reads `away` again. It is never used for
    training (§5.6).
 
@@ -1192,3 +1208,4 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 | 2026-10-18 | Q2, Q3 and Q5 DECIDED (orchestrator) as this doc recommended | Q2: a pin-safe `src/` corpus now, `data/` after TECH_DEBT (f) P1; Q3: a held-out near-term goal (with the Q1 revision, the proposal that it reads on L); Q5: D1 at X35 rank 2, conditional on X37 | — | §9 |
 | 2026-10-18 | smogon_forum COLLECTED (data worker, owner request: quality bar = sample / tournament / archive level) | `smogon_forum_teams_2026-10-18/`: 437 legal teams, a 166-team independent core clean against pool, `competitive`, `hl_05_26` and heldout72; tiers A/B only, provenance per team; outside `data/`. The Q4 row's PENDING is resolved | home-made or ladder-reconstructed teams (owner: quality bar); a `tools/` downloader before the set proves useful; freezing the panel in the collection unit (the freeze rule decides) | that README |
 | 2026-10-18 | H6 (the Hidden Power artifact) after the `heldout72_hpfix` re-read (HP repair worker) | NOT KILLED, NOT SUPPORTED: X26 hpfix − heldout72 +0.052 [−0.016, +0.120] (bar for KILLED: not detected AND upper bound < +5 pp); K2 +0.010; the held-out drop stays (X26 −0.127 below home72). `heldout72_hpfix` replaces heldout72 as the unfamiliar panel member (§5) | reading "not detected" as killed (the upper bound is +12 pp) | `measurements/heldout72_hpfix_kakuna_2026-10-18/`; ledger 2026-10-18 *HELD-OUT, HIDDEN POWER REPAIRED* |
+| 2026-10-18 | smogon_forum v2 MEGA SWEEP collected (data worker, owner: "one mega sweep of all the data we can possibly collect") | `smogon_forum_teams_v2_2026-10-18/`: every legal team kept with tier A/B/C, curator, fidelity (verbatim / transcribed) and overlap; cores A/B 559 and A/B/C 2,995 (verbatim 533 / 2,894); v1 and forum72 unchanged | rebuilding teams from replays (partial information, `hl_05_26`-like); circumventing the forum's browser check; fetching robots-disallowed paths (pastebin `/raw/`, Dropbox `/sh/`) | that README |

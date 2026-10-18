@@ -1,57 +1,58 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 56 Atk / 80 Def / 44 SpA / 44 SpD / 44 Spe
-Brave Nature
-- Curse
-- Earthquake
-- Rock Slide
-- Hydro Pump
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 108 Atk / 216 Spe
-Brave Nature
-IVs: 30 Atk / 30 SpA
-- Crunch
-- Rock Slide
-- Hidden Power [Grass]
-- Focus Punch
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 40 Atk / 216 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 232 SpD / 36 Spe
+EVs: 252 HP / 224 SpD / 32 Spe
 Calm Nature
 IVs: 0 Atk
+- Thunderbolt
+- Thunder Wave
+- Toxic
 - Rest
-- Sleep Talk
-- Thunderbolt
-- Roar
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 60 Def / 140 SpA / 56 Spe
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 SpA / 104 SpD / 152 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Wish
-- Calm Mind
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunderbolt
-- Hidden Power [Grass]
+- Hidden Power [Fire]
+- Thunder Wave
+- Protect
 
-Aerodactyl @ Liechi Berry
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Substitute
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 Def / 216 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
 - Earthquake
 - Rock Slide
-- Double-Edge
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 188 Def / 28 SpA / 52 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Refresh
+- Protect
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 112 Atk / 140 Def / 216 SpD / 24 Spe
+Careful Nature
+IVs: 30 SpD
+- Curse
+- Body Slam
+- Hidden Power [Steel]
+- Rest

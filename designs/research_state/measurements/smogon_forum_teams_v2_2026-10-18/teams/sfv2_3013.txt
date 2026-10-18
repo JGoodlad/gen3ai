@@ -1,56 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 192 SpA / 28 SpD / 40 Spe
-Quiet Nature
-- Pursuit
-- Crunch
-- Fire Blast
-- Brick Break
-
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 16 Def / 232 SpA / 92 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Punch
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
 - Earthquake
-- Hidden Power [Grass]
 - Explosion
 
-Muk @ Leftovers
-Ability: Sticky Hold
-EVs: 252 HP / 156 Atk / 100 SpD
-Sassy Nature
-- Curse
-- Sludge Bomb
-- Focus Punch
-- Explosion
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Toxic
+- Protect
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 16 Atk / 240 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Toxic
+- Protect
 - Hidden Power [Grass]
-- Substitute
-- Focus Punch
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 28 SpD / 12 Spe
-Brave Nature
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 160 Def / 44 SpD / 56 Spe
+Relaxed Nature
 - Earthquake
 - Ice Beam
-- Rapid Spin
-- Explosion
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 60 HP / 252 Atk / 196 Spe
-Hasty Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
+- Protect
 - Hydro Pump
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 3 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Electric]
+- Roar
+- Will-O-Wisp
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+- Will-O-Wisp
+- Explosion
+- Thunderbolt
+- Ice Punch

@@ -1,57 +1,58 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 124 Def / 68 SpD / 64 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
-- Calm Mind
-- Surf
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 136 Atk / 100 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Counter
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Fire Blast
 - Hidden Power [Grass]
-- Baton Pass
+- Brick Break
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 156 SpA / 60 Spe
-Modest Nature
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
 IVs: 0 Atk
-- Wish
-- Calm Mind
+- Taunt
+- Will-O-Wisp
 - Ice Punch
 - Thunderbolt
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Surf
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
+- Rock Slide
 - Hidden Power [Bug]
-- Aerial Ace
-- Sunny Day
+- Double-Edge

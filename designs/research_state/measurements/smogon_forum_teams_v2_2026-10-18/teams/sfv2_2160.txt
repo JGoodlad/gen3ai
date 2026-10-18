@@ -1,30 +1,11 @@
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Refresh
-- Toxic
-- Surf
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Protect
-- Drill Peck
-- Roar
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Toxic
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunder Wave
 - Thunderbolt
-- Hidden Power [Fire]
+- Hidden Power [Ice]
 - Rain Dance
 
 Claydol @ Leftovers
@@ -36,22 +17,41 @@ Careful Nature
 - Psychic
 - Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
 Modest Nature
 IVs: 0 Atk
-- Soft-Boiled
+- Substitute
 - Calm Mind
+- Surf
 - Ice Beam
-- Thunderbolt
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Fire Punch
+- Hidden Power [Grass]
+- Psychic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 152 Def / 44 SpA / 28 SpD / 32 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Recover
+EVs: 192 HP / 8 Def / 168 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Leech Seed
-- Reflect
-- Hidden Power [Grass]
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic

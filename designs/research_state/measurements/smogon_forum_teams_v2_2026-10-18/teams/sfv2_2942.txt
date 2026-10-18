@@ -1,58 +1,58 @@
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Fire Punch
-- Toxic
-
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Gust
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 20 Atk / 236 SpA / 252 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Brick Break
+- Ancient Power
+- Fire Blast
+- Hidden Power [Grass]
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
+EVs: 252 HP / 212 SpD / 44 Spe
 Careful Nature
+IVs: 0 Atk
 - Spikes
-- Roar
+- Toxic
 - Protect
-- Drill Peck
+- Roar
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Hidden Power [Grass]
+- Substitute
+- Flamethrower
+- Focus Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 192 HP / 132 Atk / 184 Spe
+Jolly Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Protect
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 48 HP / 252 Atk / 4 SpD / 204 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Fighting]
+- Double-Edge
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
 EVs: 252 Def / 252 SpA / 4 Spe
 Modest Nature
 IVs: 0 Atk
-- Calm Mind
 - Soft-Boiled
 - Ice Beam
+- Calm Mind
 - Thunderbolt
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 40 SpA / 216 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Psychic
-
-Sableye @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 Def / 4 SpD
-Bold Nature
-IVs: 0 Atk
-- Knock Off
-- Recover
-- Seismic Toss
-- Psych Up

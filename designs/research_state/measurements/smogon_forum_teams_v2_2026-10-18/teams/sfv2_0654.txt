@@ -1,56 +1,58 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 136 SpA / 124 SpD
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Fire Blast
+- Roar
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 228 HP / 32 SpA / 240 SpD / 8 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Spikes
+- Toxic
+- Hidden Power [Fire]
+- Rapid Spin
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Refresh
+- Recover
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 56 Def / 40 SpA / 132 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Leech Seed
+- Recover
+- Baton Pass
+
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 100 Atk / 220 SpA / 188 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
+EVs: 248 HP / 104 Atk / 96 Def / 12 SpD / 48 Spe
+Adamant Nature
 - Meteor Mash
-- Hidden Power [Fire]
-- Sunny Day
-- Explosion
-
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 48 Atk / 208 SpD
-Careful Nature
-- Brick Break
-- Thunder Wave
-- Sunny Day
-- Explosion
-
-Exeggutor @ Leftovers
-Ability: Chlorophyll
-EVs: 44 Atk / 252 SpA / 212 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Solar Beam
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 36 Atk / 220 SpA / 252 Spe
-Naive Nature
-- Fire Blast
-- Solar Beam
 - Earthquake
+- Protect
+- Explosion
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 4 Atk / 252 Def / 252 SpA
-Quiet Nature
-- Fire Blast
-- Sunny Day
-- Body Slam
-- Self-Destruct
-
-Starmie @ Leftovers
-Ability: Illuminate
-EVs: 252 HP / 4 Def / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Ice Beam
-- Recover
-- Rapid Spin
-- Thunder Wave
+- Earthquake
+- Double-Edge
+- Hidden Power [Bug]

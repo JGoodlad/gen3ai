@@ -1,56 +1,55 @@
-Zapdos @ Leftovers
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 188 HP / 252 Atk / 68 Spe
+Adamant Nature
+- Meteor Mash
+- Rock Slide
+- Brick Break
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 Spe
+Impish Nature
+- Soft-Boiled
+- Wish
+- Thunder Wave
+- Seismic Toss
+
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 252 SpD / 4 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Baton Pass
-- Hidden Power [Grass]
-- Roar
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Heracross
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Thief
+- Megahorn
+- Rock Slide
+- Brick Break
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
+EVs: 236 Atk / 12 Def / 200 SpD / 60 Spe
+Lonely Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
 - Hidden Power [Flying]
-- Rock Slide
-- Earthquake
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Ice Beam
-- Rapid Spin
-- Thunderbolt
-- Hydro Pump
-
-Blissey @ Leftovers
-Ability: Natural Cure
-EVs: 44 HP / 252 Def / 212 SpA
-Bold Nature
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Thunder Wave
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 128 HP / 252 Atk / 128 Spe
-Adamant Nature
-- Meteor Mash
-- Explosion
-- Earthquake
-- Rock Slide
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 108 Def / 252 SpA / 148 Spe
-Rash Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Focus Punch
+- Brick Break
+- Fire Blast

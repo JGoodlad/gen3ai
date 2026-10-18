@@ -1,56 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 12 Atk / 100 SpA / 212 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Hidden Power [Grass]
-- Fire Blast
-- Focus Punch
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 52 Atk / 232 SpA / 4 SpD / 196 Spe
-Mild Nature
-- Dragon Claw
-- Flamethrower
-- Wish
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 240 SpD / 16 Spe
-Careful Nature
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+- Earthquake
 - Spikes
-- Drill Peck
-- Toxic
-- Roar
+- Rapid Spin
+- Explosion
 
-Blissey (F) @ Leftovers
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
-- Ice Beam
-- Thunderbolt
+EVs: 248 HP / 56 Def / 160 SpD / 44 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Giga Drain
+- Hidden Power [Fire]
+- Leech Seed
+- Recover
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 92 Atk / 120 SpA / 48 Spe
-Brave Nature
+EVs: 248 HP / 176 Def / 40 SpA / 44 SpD
+Bold Nature
+IVs: 0 Atk
 - Surf
-- Earthquake
-- Ice Beam
 - Refresh
+- Toxic
+- Protect
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
 - Rock Slide
 - Earthquake
 - Hidden Power [Bug]
+- Roar
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Double-Edge
+- Rock Slide
+- Earthquake
+- Hidden Power [Flying]
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 248 HP / 164 SpA / 96 SpD
+Calm Nature
+IVs: 0 Atk
+- Pursuit
+- Protect
+- Toxic
+- Wish

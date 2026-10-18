@@ -1,56 +1,55 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 4 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Fire Blast
-- Ice Beam
-- Thunder Wave
-
-Slaking @ Leftovers
-Ability: Truant
-EVs: 252 Atk / 76 SpD / 180 Spe
-Jolly Nature
-- Return
-- Encore
-- Shadow Ball
-- Earthquake
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-- Spikes
-- Earthquake
-- Rapid Spin
-- Explosion
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
+EVs: 236 Atk / 12 Def / 200 SpD / 60 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
 - Fire Blast
-- Hidden Power [Grass]
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 196 SpA / 128 Spe
+Modest Nature
+- Crunch
+- Pursuit
+- Flamethrower
 - Brick Break
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 212 SpD / 44 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Rest
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 216 HP / 252 SpA / 40 Spe
-Quiet Nature
-- Hydro Pump
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
 - Earthquake
-- Ice Beam
+- Psychic
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Toxic
+- Seismic Toss
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 128 Def / 172 SpD
+Adamant Nature
+- Curse
+- Return
 - Focus Punch
+- Self-Destruct
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Sleep Talk
+- Calm Mind
+- Surf

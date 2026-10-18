@@ -1,57 +1,59 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Ghost]
-- Return
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
+Jynx (F) @ Leftovers
+Ability: Oblivious
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Wish
-- Seismic Toss
+- Mean Look
+- Lovely Kiss
+- Ice Beam
+- Perish Song
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 192 HP / 140 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Fire Punch
+- Hidden Power [Grass]
+- Psychic
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Hydro Pump
 - Ice Beam
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 232 SpD / 36 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
-- Thunderbolt
-- Roar
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 220 Def / 36 Spe
-Impish Nature
+EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
+Modest Nature
+IVs: 30 Spe
 - Protect
 - Toxic
-- Earthquake
-- Rock Slide
+- Thunderbolt
+- Hidden Power [Ice]
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Focus Punch
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
+- Substitute
 - Earthquake
-- Rock Slide
 - Hidden Power [Bug]
-- Double-Edge
+- Sunny Day

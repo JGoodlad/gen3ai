@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Tyranitar @ Choice Band
 Ability: Sand Stream
-EVs: 184 HP / 196 SpA / 128 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Brick Break
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Ghost]
+- Focus Punch
 
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 224 HP / 216 SpD / 68 Spe
 Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
 IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Thunder Wave
-- Surf
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 104 Def / 20 SpA / 96 SpD / 36 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Recover
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
+- Spikes
+- Taunt
+- Toxic
+- Roar
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 176 Atk / 28 SpD / 52 Spe
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
 Adamant Nature
-- Protect
+- Agility
 - Meteor Mash
 - Earthquake
 - Explosion
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 128 Atk / 240 SpA / 140 Spe
-Rash Nature
-IVs: 0 Atk
-- Dragon Dance
-- Dragon Claw
-- Flamethrower
-- Brick Break
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Charizard @ Salac Berry
+Ability: Blaze
+EVs: 88 HP / 252 Atk / 16 SpD / 152 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Belly Drum
+- Hidden Power [Flying]
+- Rock Slide
+- Fire Blast

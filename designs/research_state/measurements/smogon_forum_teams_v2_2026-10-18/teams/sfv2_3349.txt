@@ -1,57 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 60 HP / 252 SpA / 196 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Substitute
-- Baton Pass
-
-Charizard @ Petaya Berry
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Sunny Day
-- Substitute
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 236 Atk / 12 Def / 200 SpD / 60 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
 - Fire Blast
-- Hidden Power [Ice]
 
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 76 HP / 252 Atk / 40 Def / 140 Spe
-Adamant Nature
-- Meteor Mash
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
 - Earthquake
-- Double-Edge
+- Psychic
 - Explosion
 
-Exeggutor @ Leftovers
-Ability: Chlorophyll
-EVs: 40 Atk / 252 SpA / 216 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Sunny Day
-- Explosion
-- Hidden Power [Fire]
-- Psychic
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 224 SpA / 32 Spe
+Modest Nature
+IVs: 3 Atk / 30 SpA
+- Substitute
+- Leech Seed
+- Hidden Power [Electric]
+- Baton Pass
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 216 Atk / 116 Def / 156 SpD / 20 Spe
-Adamant Nature
+EVs: 32 HP / 120 Atk / 96 Def / 88 SpA / 172 SpD
+Brave Nature
 - Body Slam
-- Earthquake
-- Shadow Ball
+- Fire Blast
+- Focus Punch
 - Self-Destruct
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 144 Atk / 140 SpD / 224 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Beat Up
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 188 HP / 252 SpA / 68 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Pursuit
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam

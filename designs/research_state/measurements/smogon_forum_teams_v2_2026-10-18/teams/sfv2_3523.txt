@@ -1,62 +1,56 @@
-Metagross @ Lum Berry
-Ability: Clear Body
-Shiny: Yes
-EVs: 204 HP / 252 Atk / 52 Spe
-Adamant Nature
-- Meteor Mash
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 220 Def / 36 Spe
+Lax Nature
+- Protect
 - Earthquake
-- Explosion
-- Toxic
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 92 HP / 252 SpA / 164 Spe
-Modest Nature
-IVs: 0 Atk
-- Dragon Claw
-- Fire Blast
-- Toxic
-- Rain Dance
-
-Suicune @ Leftovers
-Ability: Pressure
-Shiny: Yes
-EVs: 248 HP / 236 SpA / 24 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Hydro Pump
-- Ice Beam
-- Mirror Coat
-
-Magneton @ Magnet
-Ability: Magnet Pull
-Shiny: Yes
-EVs: 236 HP / 216 SpA / 56 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunder
-- Hidden Power [Grass]
-- Rain Dance
-- Thunder Wave
-
-Snorlax (M) @ Leftovers
-Ability: Immunity
-Shiny: Yes
-Happiness: 0
-EVs: 80 HP / 200 Atk / 44 Def / 172 SpD / 12 Spe
-Adamant Nature
-- Block
-- Brick Break
-- Shadow Ball
-- Self-Destruct
-
-Heracross (M) @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-IVs: 30 HP
-- Substitute
-- Swords Dance
-- Megahorn
 - Rock Slide
+- Fire Blast
+
+Skarmory
+Ability: Keen Eye
+EVs: 240 HP / 252 SpD / 16 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Atk / 112 SpD / 96 Spe
+Hasty Nature
+- Will-O-Wisp
+- Thunder
+- Giga Drain
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Ice Beam
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Fire Punch

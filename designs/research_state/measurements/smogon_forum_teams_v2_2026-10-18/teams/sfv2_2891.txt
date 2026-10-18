@@ -1,58 +1,59 @@
-Tyranitar (M) @ Leftovers
-Ability: Sand Stream
-EVs: 212 HP / 252 SpA / 44 Spe
-Quiet Nature
-- Crunch
-- Brick Break
-- Flamethrower
-- Pursuit
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Baton Pass
 
-Forretress (M) @ Leftovers
-Ability: Sturdy
-EVs: 248 HP / 8 Def / 252 SpD
-Sassy Nature
-IVs: 30 SpD / 30 Spe
-- Hidden Power [Bug]
-- Spikes
-- Rapid Spin
-- Zap Cannon
-
-Blissey @ Leftovers
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 224 HP / 252 Def / 32 Spe
-Bold Nature
-IVs: 0 Atk
-- Seismic Toss
-- Thunder Wave
-- Soft-Boiled
-- Wish
+EVs: 72 HP / 248 SpA / 188 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Giga Drain
+- Hidden Power [Fire]
+- Calm Mind
+- Baton Pass
 
-Swampert (M) @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 228 Def / 32 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 176 Def / 76 SpA / 8 Spe
 Bold Nature
 IVs: 0 Atk
 - Surf
-- Toxic
-- Protect
-- Roar
+- Ice Beam
+- Calm Mind
+- Rest
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 88 SpA / 168 Spe
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
-- Thunderbolt
-- Ice Punch
+- Surf
+- Toxic
+- Endeavor
 - Substitute
-- Calm Mind
 
-Salamence (F) @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-IVs: 30 Def / 30 SpA
-- Dragon Claw
-- Brick Break
-- Flamethrower
-- Hidden Power [Grass]
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Calm Mind
+- Substitute

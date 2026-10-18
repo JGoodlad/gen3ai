@@ -1,59 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Brave Nature
-IVs: 30 SpD / 30 Spe
-- Crunch
-- Rock Slide
-- Fire Blast
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 164 SpA / 96 SpD
-Calm Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Spikes
-- Protect
-- Toxic
-- Hidden Power [Fire]
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 40 SpA / 32 SpD / 184 Spe
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 72 HP / 184 SpD / 252 Spe
 Timid Nature
 IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Hydro Pump
-- Thunderbolt
+- Spore
+- Spikes
+- Encore
+- Destiny Bond
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 200 SpA / 56 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Psychic
-- Baton Pass
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 236 HP / 216 SpA / 56 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Rest
-- Thunderbolt
-- Hidden Power [Ice]
-- Roar
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 8 HP / 140 Atk / 216 SpD / 144 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 136 Def / 72 SpA / 44 SpD / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Protect
-- Toxic
-- Surf
+EVs: 248 HP / 80 Def / 176 SpA / 4 Spe
+Quiet Nature
+- Curse
+- Earthquake
 - Ice Beam
+- Surf
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Hidden Power [Grass]
+- Fire Punch
+
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 248 HP / 76 Atk / 184 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Gengar (F) @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 32 SpD / 184 Spe
+Timid Nature
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+- Explosion

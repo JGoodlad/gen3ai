@@ -1,0 +1,56 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 52 Atk / 232 SpA / 200 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Brick Break
+- Hidden Power [Grass]
+- Fire Blast
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 136 SpA / 44 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA
+- Wish
+- Body Slam
+- Hidden Power [Grass]
+- Fire Punch
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Protect
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 88 Def / 120 SpA / 48 Spe
+Quiet Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Curse
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 248 Atk / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Shadow Ball
+- Explosion

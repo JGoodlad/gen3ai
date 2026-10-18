@@ -1,58 +1,57 @@
-Venusaur @ Leftovers
-Ability: Overgrow
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Sleep Powder
-- Giga Drain
-- Hidden Power [Ice]
-- Leech Seed
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 232 HP / 100 Atk / 8 Def / 4 SpD / 164 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Hydro Pump
-- Thunderbolt
-- Ice Beam
-- Hidden Power [Grass]
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Substitute
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 240 Atk / 20 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
+Forretress @ Leftovers
+Ability: Sturdy
+Hidden Power: Bug
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
 - Toxic
 - Explosion
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 36 SpD / 220 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk
+
+Flareon @ Leftovers
+Ability: Flash Fire
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Roar
+- Flamethrower
+- Wish
+- Protect
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 180 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
+- Rapid Spin
 - Earthquake
-- Double-Edge
+- Psychic
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 4 HP / 232 Atk / 20 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power [Bug]

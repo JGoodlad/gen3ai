@@ -1,0 +1,56 @@
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 216 Def / 40 SpA
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Roar
+
+Tyranitar (M) @ Choice Band
+Ability: Sand Stream
+EVs: 16 HP / 252 Atk / 240 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Focus Punch
+- Earthquake
+- Hidden Power [Bug]
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 172 HP / 144 SpA / 192 Spe
+Timid Nature
+- Ice Punch
+- Thunderbolt
+- Giga Drain
+- Hypnosis
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 76 Atk / 4 Def / 176 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Earthquake
+- Hidden Power [Ghost]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 SpA
+Bold Nature
+- Calm Mind
+- Psychic
+- Fire Punch
+- Wish
+
+Zapdos @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 252 HP / 32 Def / 224 SpD
+Calm Nature
+- Rest
+- Sleep Talk
+- Thunderbolt
+- Roar

@@ -1,57 +1,61 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 216 SpD / 44 Spe
+Calm Nature
+IVs: 0 Atk
+- Toxic
+- Thunderbolt
+- Protect
+- Baton Pass
+
+Jirachi @ Lum Berry
+Ability: Serene Grace
+EVs: 80 HP / 244 SpA / 184 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Calm Mind
+- Hidden Power [Grass]
+- Fire Punch
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Smeargle @ Salac Berry
+Ability: Own Tempo
+Shiny: Yes
+EVs: 80 HP / 176 SpD / 252 Spe
+Jolly Nature
+IVs: 0 Atk
+- Spore
+- Spikes
+- Will-O-Wisp
+- Whirlwind
+
+Gengar @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 168 Atk / 140 SpA / 200 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Punch
+- Focus Punch
+- Hidden Power [Grass]
+- Explosion
+
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 176 Def / 44 SpD / 48 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Surf
+Shiny: Yes
+EVs: 248 HP / 108 Def / 96 SpA / 44 SpD / 12 Spe
+Quiet Nature
+- Hydro Pump
 - Ice Beam
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 76 Def / 176 SpA / 16 Spe
-Serious Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 SpD / 30 Spe
-- Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Counter
-
-Hariyama @ Leftovers
-Ability: Thick Fat
-EVs: 20 HP / 56 Atk / 160 Def / 248 SpD / 24 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Knock Off
-- Brick Break
-- Hidden Power [Bug]
-- Rock Slide
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-- Soft-Boiled
-- Wish
-- Thunder Wave
-- Seismic Toss
-
-Gyarados @ Choice Band
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Thunder Wave
 - Earthquake
-- Return
-- Hidden Power [Flying]
+- Focus Punch

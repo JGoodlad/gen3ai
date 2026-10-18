@@ -1,0 +1,58 @@
+Omastar
+Ability: Shell Armor
+EVs: 252 HP / 200 Def / 56 SpA
+Bold Nature
+- Spikes
+- Surf
+- Ice Beam
+- Thief
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 252 HP / 200 Def / 56 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Roar
+- Dragon Claw
+- Heal Bell
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+IVs: 0 Atk / 0 Spe
+- Wish
+- Psych Up
+- Baton Pass
+- Toxic
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 160 Atk / 96 SpD
+Careful Nature
+IVs: 30 SpD
+- Curse
+- Hidden Power [Steel]
+- Earthquake
+- Rest
+
+Ludicolo @ Leftovers
+Ability: Rain Dish
+EVs: 252 HP / 36 SpA / 220 SpD
+Calm Nature
+IVs: 0 Atk
+- Surf
+- Leech Seed
+- Substitute
+- Rain Dance
+
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 44 Atk / 188 Def / 24 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Rest
+- Rapid Spin

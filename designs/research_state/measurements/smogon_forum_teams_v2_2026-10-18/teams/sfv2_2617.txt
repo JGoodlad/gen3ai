@@ -1,55 +1,57 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 136 Atk / 60 Def / 28 SpD / 32 Spe
-Adamant Nature
-- Protect
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Wish
-- Seismic Toss
-- Ice Beam
-
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 240 Def / 16 Spe
-Bold Nature
+EVs: 100 HP / 248 SpA / 160 Spe
+Modest Nature
 IVs: 0 Atk
-- Rest
 - Calm Mind
 - Surf
+- Ice Beam
 - Roar
 
-Aerodactyl
-Ability: Pressure
-EVs: 252 Atk / 80 SpD / 176 Spe
-Jolly Nature
-- Substitute
-- Thief
-- Earthquake
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 232 SpA / 36 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Psychic
+- Hidden Power [Fire]
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 216 SpD / 112 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
 - Rock Slide
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 68 HP / 252 SpA / 188 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Reflect
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 136 Atk / 156 Def / 200 SpD / 16 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Earthquake
+- Self-Destruct
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 176 Def / 40 SpA / 44 SpD
+Relaxed Nature
+- Curse
+- Earthquake
+- Surf
+- Ice Beam

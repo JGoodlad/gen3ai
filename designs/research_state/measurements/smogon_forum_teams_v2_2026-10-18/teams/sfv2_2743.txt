@@ -1,56 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 56 Atk / 120 Def / 44 SpA / 48 Spe
-Brave Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+EVs: 196 HP / 96 Atk / 216 Spe
 Adamant Nature
-- Dragon Dance
-- Earthquake
 - Rock Slide
+- Earthquake
 - Double-Edge
+- Dragon Dance
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 252 HP / 212 SpD / 44 Spe
 Careful Nature
+IVs: 0 Atk
 - Spikes
 - Toxic
-- Drill Peck
+- Protect
 - Roar
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Psychic
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 36 Def / 52 SpA / 136 SpD / 32 Spe
-Calm Nature
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Mild Nature
 IVs: 30 Atk / 30 SpA
-- Recover
-- Leech Seed
 - Hidden Power [Grass]
-- Psychic
+- Substitute
+- Flamethrower
+- Focus Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 192 HP / 132 Atk / 184 Spe
+Jolly Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Protect
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 48 HP / 252 Atk / 4 SpD / 204 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Rock Slide
-- Hidden Power [Bug]
+- Earthquake
+- Hidden Power [Fighting]
 - Double-Edge
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Ice Beam
+- Thunder Wave
+- Thunderbolt

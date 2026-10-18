@@ -1,58 +1,57 @@
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 188 Atk / 68 Spe
-Adamant Nature
-- Toxic
-- Earthquake
-- Rock Slide
-- Explosion
-
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Iron Tail
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-
-Armaldo @ Leftovers
-Ability: Battle Armor
-EVs: 248 HP / 252 Atk / 8 SpD
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
-- Hidden Power [Bug]
-- Swords Dance
-- Rapid Spin
-
-Magnemite @ Leftovers
-Ability: Magnet Pull
-EVs: 252 HP / 4 SpA / 192 SpD / 60 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Thunder Wave
-- Rain Dance
-- Hidden Power [Grass]
-
-Suicune @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 252 Def / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Roar
-- Calm Mind
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 Def
 - Rest
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
 
-Chansey (F) @ Leftovers
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Protect
+- Toxic
+- Thunderbolt
+- Hidden Power [Fire]
+
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 140 HP / 252 Def / 116 Spe
-Bold Nature
+EVs: 212 HP / 252 Def / 44 Spe
+Impish Nature
 IVs: 0 Atk
-- Thunder Wave
-- Aromatherapy
 - Soft-Boiled
+- Aromatherapy
+- Thunder Wave
 - Seismic Toss
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 132 SpD
+Relaxed Nature
+- Rest
+- Curse
+- Earthquake
+- Ice Beam
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]
+- Double-Edge

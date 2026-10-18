@@ -1,58 +1,58 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 SpA / 8 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Crunch
+- Pursuit
+- Fire Blast
+- Hidden Power [Grass]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
 IVs: 0 Atk
-- Rest
-- Sleep Talk
-- Calm Mind
-- Surf
+- Spikes
+- Roar
+- Toxic
+- Protect
 
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Endure
-- Thunderbolt
-- Hidden Power [Fire]
-- Sunny Day
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 184 Def / 24 SpA / 32 SpD / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Fire Punch
+- Protect
+- Toxic
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Return
-- Shadow Ball
-- Self-Destruct
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Double-Edge
 
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 16 SpA / 100 SpD / 140 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
+EVs: 252 HP / 220 SpD / 36 Spe
+Calm Nature
+IVs: 0 Atk
 - Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
+- Toxic
+- Rest
+- Roar
 
-Entei @ Leftovers
-Ability: Pressure
-EVs: 140 HP / 224 SpA / 144 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Calm Mind
-- Flamethrower
-- Hidden Power [Grass]
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 196 Def / 24 SpD / 40 Spe
+Impish Nature
 - Earthquake
-- Hidden Power [Grass]
-- Explosion
+- Rock Slide
+- Toxic
+- Protect

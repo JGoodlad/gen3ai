@@ -1,61 +1,57 @@
-Arcanine (M) @ Leftovers
-Ability: Intimidate
-EVs: 108 HP / 176 Atk / 148 SpA / 72 Spe
-Mild Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Fire Blast
-- Hidden Power [Fighting]
-- Toxic
-- Extreme Speed
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 236 HP / 4 Atk / 252 SpA / 16 Spe
-Quiet Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Psychic
-- Hidden Power [Fire]
-- Meteor Mash
-- Explosion
-
-Roselia (F) @ Leftovers
-Ability: Natural Cure
-Shiny: Yes
-EVs: 252 HP / 144 Def / 112 SpD
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Spikes
-- Leech Seed
-- Hidden Power [Grass]
-- Aromatherapy
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 188 HP / 176 Atk / 144 Spe
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
 Careful Nature
-- Earthquake
-- Shadow Ball
-- Explosion
-- Rapid Spin
-
-Gengar @ Leftovers
-Ability: Levitate
-Shiny: Yes
-EVs: 204 HP / 12 SpA / 116 SpD / 176 Spe
-Timid Nature
 IVs: 0 Atk
-- Will-O-Wisp
-- Taunt
-- Ice Punch
-- Thunderbolt
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
 
-Suicune @ Leftovers
-Ability: Pressure
-Shiny: Yes
-EVs: 252 HP / 176 Def / 16 SpA / 64 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 Spe
 Bold Nature
 IVs: 0 Atk
-- Calm Mind
+- Recover
+- Refresh
+- Toxic
 - Surf
-- Rest
-- Roar
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 128 Def / 172 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Brick Break
+- Hidden Power [Flying]

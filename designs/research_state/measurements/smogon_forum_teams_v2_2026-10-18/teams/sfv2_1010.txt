@@ -1,56 +1,56 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 248 HP / 176 Atk / 68 Def / 16 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Aerial Ace
-- Hidden Power [Bug]
-- Beat Up
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 248 HP / 216 SpD / 44 Spe
-IVs: 0 Atk
-- Thunderbolt
-- Rain Dance
-- Toxic
-- Rest
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 216 Atk / 16 Def / 28 SpD
-Relaxed Nature
-- Earthquake
-- Psychic
-- Explosion
-- Rapid Spin
-
-Charizard @ Petaya Berry
-Ability: Blaze
-EVs: 4 Def / 252 SpA / 252 Spe
+EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 Def
-- Fire Blast
-- Substitute
-- Sunny Day
-- Hidden Power [Ice]
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 164 Def / 84 SpA / 4 SpD / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 252 HP / 4 Atk / 252 SpA
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Meteor Mash
+- Hidden Power [Fire]
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Body Slam
+- Focus Punch
+- Shadow Ball
+- Self-Destruct
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 120 SpD / 136 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 108 Def / 252 SpA / 148 Spe
+Rash Nature
+- Hydro Pump
+- Earthquake
 - Ice Beam
-- Rest
-- Calm Mind
+- Focus Punch
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 40 HP / 100 Atk / 148 SpA / 220 Spe
+Rash Nature
+- Will-O-Wisp
+- Thunderbolt
+- Fire Blast
+- Explosion

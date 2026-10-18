@@ -1,55 +1,57 @@
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 120 Def / 136 SpD
-Sassy Nature
-IVs: 30 Atk / 30 SpA
+Salamence @ Leftovers
+Ability: Intimidate
+Shiny: Yes
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+- Dragon Claw
+- Brick Break
+- Fire Blast
 - Wish
-- Body Slam
-- Fire Punch
-- Hidden Power [Grass]
 
-Tyranitar @ Leftovers
+Tyranitar @ Salac Berry
 Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+- Crunch
+- Rain Dance
+- Pursuit
+- Focus Punch
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
+Ludicolo @ Lum Berry
+Ability: Swift Swim
+EVs: 144 HP / 252 SpA / 112 Spe
 Modest Nature
-- Spikes
-- Rapid Spin
+IVs: 2 Atk / 30 SpA
+- Hydro Pump
+- Hidden Power [Grass]
+- Rain Dance
 - Ice Beam
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 176 Atk / 20 Def / 36 SpD / 24 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
 - Explosion
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 108 Def / 152 SpA / 8 Spe
-Quiet Nature
+Magneton @ Leftovers
+Ability: Magnet Pull
+Shiny: Yes
+EVs: 224 HP / 92 Def / 120 SpA / 72 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 80 HP / 112 Atk / 120 Def / 188 SpD / 8 Spe
+Adamant Nature
+- Return
+- Protect
 - Curse
 - Earthquake
-- Hydro Pump
-- Ice Beam
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 188 HP / 228 Atk / 92 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge

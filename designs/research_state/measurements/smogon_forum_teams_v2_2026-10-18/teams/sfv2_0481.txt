@@ -1,56 +1,55 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+- Dragon Claw
+- Flamethrower
+- Brick Break
+- Roar
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 8 Atk / 248 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Counter
+- Hidden Power [Bug]
+- Spikes
+- Rapid Spin
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Taunt
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 136 SpD / 124 Spe
-Careful Nature
-- Spikes
-- Taunt
-- Drill Peck
-- Roar
+EVs: 136 HP / 244 SpA / 128 Spe
+Modest Nature
+- Crunch
+- Pursuit
+- Fire Blast
+- Brick Break
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 216 SpA / 44 Spe
-Quiet Nature
-- Hydro Pump
+EVs: 236 HP / 216 Def / 44 SpD / 12 Spe
+Relaxed Nature
+- Protect
 - Earthquake
-- Refresh
 - Ice Beam
+- Refresh
 
-Celebi @ Leftovers
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 192 HP / 8 Def / 108 SpA / 200 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Psychic
-- Giga Drain
-- Hidden Power [Fire]
-- Leech Seed
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
-- Will-O-Wisp
-- Overheat
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 76 SpA / 180 Spe
-Timid Nature
+EVs: 252 Def / 116 SpA / 140 Spe
+Bold Nature
 IVs: 0 Atk
-- Thunderbolt
-- Ice Punch
-- Calm Mind
-- Substitute
+- Flamethrower
+- Toxic
+- Wish
+- Soft-Boiled
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 96 Atk / 232 Def / 180 Spe
+Adamant Nature
+- Knock Off
+- Cross Chop
+- Focus Punch
+- Earthquake

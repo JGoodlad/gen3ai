@@ -1,56 +1,53 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 252 Atk / 16 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
-
-Skarmory @ Leftovers
+Skarmory (M) @ Leftovers
 Ability: Keen Eye
 EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
+Impish Nature
+- Rest
+- Sleep Talk
 - Spikes
-- Roar
+- Whirlwind
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 44 Def / 128 SpD / 84 Spe
+Timid Nature
+- Giga Drain
+- Taunt
+- Thunderbolt
+- Will-O-Wisp
+
+Donphan (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 Def
+Impish Nature
+- Earthquake
+- Protect
+- Rapid Spin
 - Toxic
-- Drill Peck
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 216 HP / 4 Def / 252 SpA / 16 SpD / 20 Spe
+Modest Nature
+- Crunch
+- Flamethrower
+- Roar
+- Pursuit
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 240 SpA / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
+- Seismic Toss
 - Ice Beam
-- Fire Blast
 - Toxic
+- Soft-Boiled
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Brave Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 116 Atk / 252 SpA / 140 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Drill Peck
-- Agility
+EVs: 252 HP / 240 Def / 8 SpD / 8 Spe
+Bold Nature
+- Surf
+- Roar
+- Rest
+- Sleep Talk

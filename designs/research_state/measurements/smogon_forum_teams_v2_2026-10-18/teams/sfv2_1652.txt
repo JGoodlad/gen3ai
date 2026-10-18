@@ -1,57 +1,56 @@
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
+EVs: 216 HP / 136 SpA / 156 Spe
 Modest Nature
-IVs: 3 Atk / 30 Spe
+IVs: 30 Spe
 - Thunder Wave
 - Toxic
 - Thunderbolt
 - Hidden Power [Ice]
 
-Tyranitar @ Lum Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 240 Atk / 16 SpA / 252 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
 - Dragon Dance
 - Earthquake
 - Rock Slide
-- Hidden Power [Grass]
+- Double-Edge
 
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 240 HP / 240 SpD / 28 Spe
 Careful Nature
 - Spikes
-- Thief
+- Taunt
 - Drill Peck
 - Roar
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 88 Atk / 136 Def / 44 Spe
-Relaxed Nature
-- Protect
-- Surf
-- Focus Punch
-- Roar
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
-Adamant Nature
-IVs: 30 SpA / 30 Spe
-- Meteor Mash
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
 - Earthquake
-- Rock Slide
+- Hydro Pump
+- Ice Beam
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
 - Explosion
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 180 Atk / 212 SpD / 116 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
-- Hidden Power [Flying]
+- Double-Edge
+- Hidden Power [Bug]

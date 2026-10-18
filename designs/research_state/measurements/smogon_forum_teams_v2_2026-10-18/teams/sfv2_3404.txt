@@ -1,55 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
-Modest Nature
-- Pursuit
-- Crunch
-- Fire Blast
-- Brick Break
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 212 SpD / 44 Spe
-Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Counter
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 224 Atk / 60 Def / 8 SpD / 12 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Focus Punch
-- Earthquake
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-IVs: 0 Atk
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
 - Rapid Spin
 - Earthquake
 - Psychic
 - Explosion
 
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-- Spore
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 120 HP / 136 Atk / 136 Def / 116 SpD
+Adamant Nature
+- Shadow Ball
 - Focus Punch
-- Substitute
-- Mach Punch
+- Counter
+- Self-Destruct
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 Atk / 68 SpD / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Brick Break
+- Explosion
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 176 Atk / 216 SpD / 116 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
-- Brick Break
 - Hidden Power [Flying]
-- Rock Slide
+- Brick Break
+- Fire Blast

@@ -1,60 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-- Roar
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
+Relaxed Nature
+- Protect
+- Earthquake
+- Surf
+- Ice Beam
 
-Skarmory @ Leftovers
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+
+Skarmory
 Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
 - Spikes
+- Thief
+- Drill Peck
 - Roar
-- Protect
-- Toxic
 
-Gengar @ Leftovers
-Ability: Levitate
-Shiny: Yes
-EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
-- Will-O-Wisp
-- Hidden Power [Grass]
-- Thunderbolt
-- Ice Punch
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Surf
+- Psychic
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Pursuit
-- Crunch
-- Fire Blast
-- Hidden Power [Grass]
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-Shiny: Yes
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Bug]
-
-Registeel @ Leftovers
-Ability: Clear Body
-Shiny: Yes
-EVs: 252 HP / 12 Atk / 244 SpD
-Careful Nature
-- Thunder Wave
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Toxic
 - Seismic Toss
-- Explosion
-- Earthquake
+- Ice Beam
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar

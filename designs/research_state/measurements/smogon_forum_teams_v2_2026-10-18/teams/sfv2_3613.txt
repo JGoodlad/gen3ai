@@ -1,58 +1,58 @@
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 248 Def / 8 Spe
-Impish Nature
-- Drill Peck
-- Protect
-- Roar
-- Spikes
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 144 HP / 252 Def / 112 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Thunderbolt
-- Fire Blast
-- Toxic
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Sunny Day
-
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 192 Def / 64 Spe
-Bold Nature
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
 IVs: 0 Atk
-- Surf
+- Substitute
 - Calm Mind
-- Rest
-- Ice Beam
+- Surf
+- Rain Dance
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 76 Def / 180 SpD
-Calm Nature
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 220 SpA / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Ice Punch
+- Substitute
+- Thunderbolt
 - Hidden Power [Grass]
-- Wish
-- Protect
+- Baton Pass
 
-Hitmontop (M) @ Leftovers
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Endure
+- Megahorn
+- Rock Slide
+- Reversal
+
+Salamence @ Leftovers
 Ability: Intimidate
-EVs: 252 HP / 60 Atk / 196 Def
-Impish Nature
+EVs: 192 Atk / 200 SpD / 116 Spe
+Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
 - Hidden Power [Flying]
-- Rapid Spin
+- Rock Slide
 - Brick Break
-- Counter

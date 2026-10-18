@@ -1,56 +1,59 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 124 SpD / 8 Spe
-Relaxed Nature
-- Rest
-- Curse
-- Earthquake
-- Ice Beam
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Fire]
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 28 SpD / 52 Spe
-Adamant Nature
-- Toxic
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Celebi @ Leftovers
+Starmie @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
-Modest Nature
+EVs: 240 HP / 72 Def / 40 SpA / 80 SpD / 76 Spe
+Calm Nature
 IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
+- Surf
+- Thunder Wave
+- Recover
+- Rapid Spin
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 156 Atk / 212 SpD / 140 Spe
-Adamant Nature
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 76 Def / 148 SpD / 36 Spe
+Careful Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Body Slam
+- Hidden Power [Fighting]
+- Wish
+- Protect
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 248 HP / 176 Def / 16 SpD / 68 Spe
+Impish Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
+- Hidden Power [Flying]
+- Ice Beam
+- Heal Bell
+- Roar
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 0 Atk
+- Knock Off
+- Harden
+- Rest
+- Seismic Toss
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 248 HP / 84 Def / 176 SpD
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Mean Look
+- Toxic
+- Pursuit
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Rock Slide
-- Hidden Power [Flying]
+- Aerial Ace
+- Hidden Power [Bug]

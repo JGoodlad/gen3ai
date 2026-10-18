@@ -1,58 +1,57 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-Hidden Power: Bug
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Double-Edge
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Refresh
+- Toxic
+- Surf
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 120 HP / 192 Atk / 196 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
-- Substitute
-- Brick Break
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
+- Counter
 
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 120 Def / 136 SpD
+Calm Nature
+- Rapid Spin
+- Refresh
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
 - Calm Mind
+- Ice Beam
 - Thunderbolt
-- Hidden Power [Grass]
-- Crunch
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 232 Atk / 24 SpD
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 128 Def / 172 SpD
 Adamant Nature
-- Thunder Wave
-- Seismic Toss
-- Superpower
-- Explosion
+- Rest
+- Curse
+- Double-Edge
+- Earthquake
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 140 HP / 16 Def / 232 SpA / 120 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 64 Atk / 192 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 Def
-- Fire Blast
-- Hidden Power [Ice]
-- Brick Break
-- Beat Up
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day

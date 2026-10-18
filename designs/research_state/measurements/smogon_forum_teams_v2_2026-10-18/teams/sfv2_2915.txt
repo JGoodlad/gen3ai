@@ -1,58 +1,58 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 44 Atk / 212 SpA / 68 Spe
-Quiet Nature
-IVs: 30 Atk / 30 SpA
-- Pursuit
-- Hidden Power [Grass]
+EVs: 248 HP / 176 SpA / 84 SpD
+Modest Nature
+IVs: 0 Atk
+- Crunch
 - Flamethrower
-- Brick Break
+- Pursuit
+- Roar
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 232 Atk / 160 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Double-Edge
 - Rock Slide
 - Earthquake
+- Hidden Power [Bug]
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-Shiny: Yes
-EVs: 252 HP / 104 Atk / 152 SpD
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 176 Def / 40 SpA / 44 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Refresh
+- Toxic
+- Protect
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
 Sassy Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Wish
-- Hidden Power [Fighting]
-- Fire Punch
-- Body Slam
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 24 HP / 136 Atk / 188 Def / 160 SpD
-Adamant Nature
-- Body Slam
-- Focus Punch
-- Self-Destruct
-- Counter
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 248 Atk / 12 Spe
-Brave Nature
 - Earthquake
-- Ice Beam
+- Spikes
 - Rapid Spin
 - Explosion
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 200 SpD / 68 Spe
-Calm Nature
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 48 Def / 104 SpD / 104 Spe
+Timid Nature
 IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
-- Sleep Talk
+- Thunderbolt
+- Ice Punch
+- Taunt
+- Will-O-Wisp
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 80 Def / 44 SpA / 96 SpD / 40 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Hidden Power [Grass]
+- Leech Seed
+- Recover

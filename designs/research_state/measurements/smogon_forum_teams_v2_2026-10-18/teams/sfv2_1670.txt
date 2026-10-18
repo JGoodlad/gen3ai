@@ -1,56 +1,56 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 240 SpD / 28 Spe
+Careful Nature
+- Spikes
+- Taunt
+- Drill Peck
+- Roar
+
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
-Relaxed Nature
-- Protect
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
 - Earthquake
 - Hydro Pump
 - Ice Beam
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 72 Atk / 184 Spe
-Adamant Nature
-- Substitute
-- Earthquake
-- Rock Slide
-- Focus Punch
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 112 HP / 220 SpA / 176 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
 
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 80 HP / 252 SpA / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
 - Wish
-- Seismic Toss
-- Ice Beam
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Light Screen
-- Toxic
 - Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up

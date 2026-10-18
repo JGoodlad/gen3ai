@@ -1,59 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Baton Pass
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Toxic
 
-Espeon @ Leftovers
-Ability: Synchronize
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Rock Slide
+
+Jirachi @ Leftovers
+Ability: Serene Grace
 EVs: 4 Def / 252 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
 - Calm Mind
-- Psychic
-- Hidden Power [Grass]
-- Baton Pass
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
 - Ice Punch
+- Thunderbolt
 - Hidden Power [Grass]
+
+Steelix @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 36 Atk / 220 SpD
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Roar
 - Explosion
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 40 HP / 252 Atk / 100 SpD / 116 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Beat Up
-- Aerial Ace
-- Hidden Power [Bug]
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Substitute
 
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 176 HP / 20 Atk / 24 Def / 252 SpA / 36 Spe
-Quiet Nature
-IVs: 30 Atk / 30 SpA
-- Hydro Pump
-- Ice Beam
-- Hidden Power [Grass]
-- Focus Punch
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 36 Atk / 220 SpD
+Careful Nature
+- Toxic
+- Seismic Toss
+- Thunder Wave
+- Explosion

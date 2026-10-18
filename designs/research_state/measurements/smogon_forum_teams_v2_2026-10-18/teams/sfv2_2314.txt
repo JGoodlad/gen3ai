@@ -1,58 +1,57 @@
-Snorlax @ Choice Band
-Ability: Immunity
-Shiny: Yes
-EVs: 76 HP / 252 Atk / 24 Def / 136 SpD / 20 Spe
-Adamant Nature
-- Self-Destruct
-- Body Slam
-- Shadow Ball
-- Focus Punch
-
-Metagross @ Lum Berry
-Ability: Clear Body
-EVs: 156 HP / 232 Atk / 120 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Substitute
-- Focus Punch
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-Shiny: Yes
-EVs: 244 HP / 252 SpA / 12 Spe
-Modest Nature
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Mirror Coat
+- Substitute
+- Toxic
 - Hydro Pump
-- Ice Beam
-- Recover
-
-Regice @ Leftovers
-Ability: Clear Body
-Shiny: Yes
-EVs: 252 HP / 196 SpA / 60 Spe
-Modest Nature
-- Ice Beam
-- Thunderbolt
-- Explosion
-- Thunder Wave
+- Endeavor
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
 - Rapid Spin
 - Earthquake
-- Shadow Ball
+- Psychic
 - Explosion
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 Atk / 68 SpD / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
+Modest Nature
+IVs: 0 Atk
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Rain Dance
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day

@@ -1,56 +1,56 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 144 Atk / 92 SpA / 20 Spe
-Naughty Nature
-- Substitute
-- Rock Slide
+EVs: 184 HP / 32 Atk / 252 SpA / 40 Spe
+Quiet Nature
+- Brick Break
 - Thunder
-- Toxic
+- Crunch
+- Pursuit
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 248 SpD / 12 Spe
-Careful Nature
-- Drill Peck
-- Spikes
-- Protect
+Swellow @ Leftovers
+Ability: Guts
+EVs: 44 HP / 244 Atk / 220 Spe
+Jolly Nature
+- Double-Edge
+- Substitute
+- Baton Pass
+- Endeavor
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Will-O-Wisp
 - Roar
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Ice Beam
-- Seismic Toss
-- Thunder Wave
-- Soft-Boiled
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Surf
-- Ice Beam
-- Protect
-- Earthquake
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 Atk / 68 SpA / 188 Spe
-Lonely Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Drill Peck
-- Hidden Power [Fighting]
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 248 HP / 252 SpD / 8 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunderbolt
 - Protect
+- Hidden Power [Fire]
+- Toxic
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 48 Def / 40 SpA / 36 SpD / 136 Spe
-Timid Nature
-IVs: 0 Atk
-- Surf
-- Thunder Wave
-- Recover
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 16 Atk / 184 Def / 60 Spe
+Impish Nature
 - Rapid Spin
+- Earthquake
+- Rock Slide
+- Protect
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 12 Def / 168 SpA / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Leech Seed
+- Hidden Power [Ice]
+- Giga Drain
+- Calm Mind

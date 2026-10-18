@@ -1,57 +1,58 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Toxic
+- Calm Mind
+- Hydro Pump
+- Ice Beam
 
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
 EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
 - Spikes
-- Thief
+- Toxic
 - Drill Peck
 - Roar
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
-- Earthquake
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 80 HP / 252 SpA / 176 Spe
+Rash Nature
+IVs: 30 SpA
+- Water Pulse
+- Thunderbolt
 - Psychic
-- Explosion
+- Dynamic Punch
 
-Blissey (F) @ Leftovers
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Thunder Wave
-- Seismic Toss
-- Ice Beam
+EVs: 188 HP / 140 SpA / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 116 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpA / 252 Spe
 Naughty Nature
 IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Rock Slide
+- Dragon Claw
+- Flamethrower
 - Hidden Power [Grass]
-- Explosion
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Brick Break

@@ -198,18 +198,26 @@ def main() -> int:
         r["within_set_max_shared"], r["within_set_nearest"] = best
     # independent cores: walk kept in (tier, register) order; clean vs every EXTERNAL reference and
     # <= 3 shared mon sets with every team already taken
-    def core(tiers):
+    for r in kept:  # VERBATIM = the paste site's own text; TRANSCRIBED = read off a forum page by a model
+        r["fidelity"] = "transcribed" if r.get("transcribed") else "verbatim"
+
+    def core(tiers, verbatim_only=False):
         taken = []
         for r in kept:
+            if verbatim_only and r["fidelity"] != "verbatim":
+                continue
             if r.get("tier") not in tiers or not all(r["overlap"][n]["status"] == "clean" for n in ext):
                 continue
             if all(len(parsed[r["id"]].key & parsed[c].key) <= 3 for c in taken):
                 taken.append(r["id"])
         return taken
     core_ab, core_abc = core(("A", "B")), core(("A", "B", "C"))
+    core_ab_v, core_abc_v = core(("A", "B"), True), core(("A", "B", "C"), True)
     for r in kept:
         r["independent_core_AB"] = r["id"] in set(core_ab)
         r["independent_core_ABC"] = r["id"] in set(core_abc)
+        r["independent_core_AB_verbatim"] = r["id"] in set(core_ab_v)
+        r["independent_core_ABC_verbatim"] = r["id"] in set(core_abc_v)
     for name, ref in refs.items():
         summary[name] = {"all": to.overlap(list(parsed.values()), ref),
                          "core_AB": to.overlap([parsed[i] for i in core_ab], ref),
@@ -237,6 +245,9 @@ def main() -> int:
                                 for t in "ABC"},
         "new_vs_v1": cnt(r["overlap"]["v1_set"]["status"] for r in kept),
         "core_AB": len(core_ab), "core_ABC": len(core_abc),
+        "core_AB_verbatim": len(core_ab_v), "core_ABC_verbatim": len(core_abc_v),
+        "kept_by_fidelity": cnt(r["fidelity"] for r in kept),
+        "core_AB_verbatim_by_curator_top15": dict(Counter(by_id[i].get("curator") or "?" for i in core_ab_v).most_common(15)),
         "core_ABC_by_tier": cnt(by_id[i].get("tier") for i in core_abc),
         "core_ABC_by_curator_top15": dict(Counter(by_id[i].get("curator") or "?" for i in core_abc).most_common(15)),
         "core_AB_by_curator_top15": dict(Counter(by_id[i].get("curator") or "?" for i in core_ab).most_common(15)),

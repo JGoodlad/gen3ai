@@ -1,0 +1,55 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Jolly Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Brick Break
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 216 Atk / 40 SpD / 252 Spe
+Adamant Nature
+- Spore
+- Focus Punch
+- Sky Uppercut
+- Mach Punch
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 216 Atk / 116 Def / 176 SpD
+Adamant Nature
+- Self-Destruct
+- Body Slam
+- Counter
+- Focus Punch
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 196 SpA / 120 SpD / 192 Spe
+Modest Nature
+IVs: 0 Atk
+- Fire Blast
+- Pursuit
+- Beat Up
+- Will-O-Wisp
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 40 SpD
+Brave Nature
+- Rapid Spin
+- Earthquake
+- Ice Beam
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 64 HP / 252 Atk / 192 Spe
+Hasty Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Hydro Pump
+- Dragon Dance

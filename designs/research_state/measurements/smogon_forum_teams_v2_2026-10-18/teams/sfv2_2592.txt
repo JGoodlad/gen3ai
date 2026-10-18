@@ -1,56 +1,58 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Toxic
+- Thunderbolt
+- Hidden Power [Grass]
+- Protect
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 212 Def / 48 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Protect
+- Roar
+- Refresh
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 152 SpD / 188 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Will-O-Wisp
+- Fire Punch
+- Hidden Power [Grass]
+- Explosion
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 108 Atk / 16 SpA / 200 Spe
-Brave Nature
-IVs: 30 Atk / 30 SpA
-- Crunch
+EVs: 248 HP / 88 Atk / 172 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
 - Rock Slide
-- Hidden Power [Grass]
-- Focus Punch
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
+- Earthquake
+- Hidden Power [Bug]
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
+EVs: 4 HP / 252 Def / 252 SpA
+Bold Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
+- Wish
 - Ice Beam
-- Thunderbolt
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 4 Atk / 100 Def / 96 SpD / 56 Spe
-Careful Nature
-- Protect
-- Toxic
 - Seismic Toss
-- Explosion
+- Soft-Boiled
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 112 Def / 92 SpA / 56 Spe
-Lax Nature
-- Earthquake
-- Rock Slide
-- Giga Drain
-- Fire Blast
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Beat Up
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 232 SpD / 24 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Protect
+- Roar

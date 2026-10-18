@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 176 SpA / 76 SpD / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Forretress @ Leftovers
-Ability: Sturdy
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
 EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
-IVs: 30 SpD / 30 Spe
 - Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Counter
+- Drill Peck
+- Roar
+- Protect
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 24 Atk / 140 Def / 76 SpD / 28 Spe
+Flygon (M) @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 216 Def / 12 SpD / 32 Spe
 Impish Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Rest
-- Curse
 - Earthquake
-- Hidden Power [Rock]
-
-Mantine @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 216 SpA / 20 SpD / 20 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
+- Rock Slide
 - Toxic
-- Hydro Pump
-- Ice Beam
+- Protect
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 SpD
-Impish Nature
-- Soft-Boiled
-- Toxic
-- Thunder Wave
+EVs: 252 Def / 252 SpA / 4 SpD
+Modest Nature
+IVs: 0 Atk
 - Seismic Toss
+- Ice Beam
+- Aromatherapy
+- Soft-Boiled
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 Atk / 248 SpA / 144 Spe
-Rash Nature
-- Wish
-- Dragon Claw
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 224 HP / 252 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Roar
+- Rest
+- Sleep Talk
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 244 SpA / 32 SpD / 232 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
 - Flamethrower
-- Brick Break
+- Hidden Power [Grass]
+- Will-O-Wisp
+- Rest
+
+Misdreavus (F) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Mean Look
+- Thunderbolt
+- Perish Song
+- Rest

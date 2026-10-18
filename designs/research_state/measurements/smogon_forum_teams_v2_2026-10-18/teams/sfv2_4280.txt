@@ -1,0 +1,56 @@
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 216 Def / 40 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Recover
+- Refresh
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 148 Def / 64 SpD / 48 Spe
+Impish Nature
+- Seismic Toss
+- Thunder Wave
+- Counter
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 224 Def / 252 SpA / 32 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+- Soft-Boiled
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 240 SpD / 16 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Aerial Ace
+- Rock Slide
+- Hidden Power [Bug]
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 100 Atk / 20 Def / 136 SpD
+Sassy Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion

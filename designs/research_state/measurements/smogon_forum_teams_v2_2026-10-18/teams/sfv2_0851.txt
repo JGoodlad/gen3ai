@@ -1,58 +1,57 @@
-Skarmory (M) @ Leftovers
-Ability: Keen Eye
-EVs: 196 HP / 252 Def / 44 SpD / 16 Spe
-IVs: 0 Atk
-Bold Nature
-- Rest
-- Spikes
-- Whirlwind
-- Toxic
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-IVs: 30 Atk / 30 SpA
-Modest Nature
-- Thunder Wave
-- Hidden Power [Grass]
-- Thunderbolt
-- Reflect
-
-Milotic (F) @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 SpD / 4 Spe
-IVs: 0 Atk
-Calm Nature
-- Refresh
-- Recover
-- Surf
-- Toxic
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 236 HP / 20 Atk / 252 SpD
-Sassy Nature
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 1 HP
+Adamant Nature
 - Explosion
-- Light Screen
-- Psychic
+- Meteor Mash
 - Earthquake
+- Rock Slide
 
-Gyarados (M) @ Leftovers
-Ability: Intimidate
-EVs: 48 HP / 252 Atk / 208 Spe
-IVs: 30 SpA / 30 SpD / 30 Spe
+Shedinja @ Lum Berry
+Ability: Wonder Guard
+EVs: 1 HP
 Adamant Nature
-- Dragon Dance
-- Taunt
-- Hidden Power [Flying]
-- Earthquake
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Swords Dance
+- Shadow Ball
+- Hidden Power [Fighting]
+- Toxic
 
-Salamence (F) @ Liechi Berry
-Ability: Intimidate
-EVs: 200 HP / 252 Atk / 56 Spe
-IVs: 30 SpA / 30 SpD / 30 Spe
-Adamant Nature
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 1 HP
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Toxic
+- Reflect
+- Sunny Day
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 1 HP
+Impish Nature
+- Curse
+- Amnesia
+- Rest
+- Rollout
+
+Smeargle @ Lum Berry
+Ability: Own Tempo
+EVs: 1 HP
+Timid Nature
+IVs: 0 Atk
+- Spore
+- Memento
+- Spikes
+- Encore
+
+Sceptile @ Leftovers
+Ability: Overgrow
+EVs: 1 HP
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Leech Seed
+- Leaf Blade
 - Toxic

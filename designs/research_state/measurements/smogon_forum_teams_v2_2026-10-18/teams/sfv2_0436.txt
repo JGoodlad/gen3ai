@@ -1,57 +1,57 @@
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 224 Atk / 252 Def / 32 Spe
-Adamant Nature
-- Cross Chop
-- Focus Punch
-- Knock Off
-- Rock Slide
-
-Tyranitar @ Lum Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 248 HP / 252 Atk / 8 Spe
 Adamant Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Double-Edge
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 144 SpD / 112 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Taunt
-- Toxic
-- Roar
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 SpD / 30 Spe
 - Rock Slide
 - Earthquake
 - Hidden Power [Bug]
-- Double-Edge
+- Brick Break
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 72 Def / 148 SpD / 36 Spe
-Calm Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Thunder
-- Ice Punch
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 120 SpD / 136 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Taunt
+- Roar
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 184 SpD / 76 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 200 Def / 120 SpA / 184 Spe
 Timid Nature
 IVs: 30 Atk / 30 SpA
 - Thunderbolt
+- Ice Punch
 - Hidden Power [Grass]
-- Drill Peck
-- Toxic
+- Explosion
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
+- Dragon Claw
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 124 Atk / 132 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+- Soft-Boiled

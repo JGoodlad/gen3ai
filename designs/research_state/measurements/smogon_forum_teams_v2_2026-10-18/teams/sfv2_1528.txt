@@ -1,21 +1,21 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 136 SpA / 156 Spe
+Modest Nature
+IVs: 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 196 SpA / 128 Spe
-Modest Nature
-IVs: 30 SpD / 30 Spe
-- Crunch
-- Pursuit
-- Flamethrower
-- Brick Break
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 240 HP / 240 SpD / 28 Spe
-Careful Nature
-- Spikes
-- Taunt
-- Drill Peck
-- Roar
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
 
 Swampert @ Leftovers
 Ability: Torrent
@@ -28,7 +28,7 @@ Quiet Nature
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 76 HP / 252 SpA / 180 Spe
+EVs: 80 Atk / 252 SpA / 176 Spe
 Rash Nature
 IVs: 30 Atk / 30 SpA
 - Body Slam
@@ -36,22 +36,22 @@ IVs: 30 Atk / 30 SpA
 - Hidden Power [Grass]
 - Dynamic Punch
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
-- Ice Beam
-- Thunderbolt
-
-Salamence @ Leftovers
-Ability: Intimidate
+Gengar @ Leftovers
+Ability: Levitate
 EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
+Hasty Nature
 IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
+- Ice Punch
+- Fire Punch
 - Hidden Power [Grass]
-- Brick Break
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+- Beat Up

@@ -1,55 +1,57 @@
-Tyranitar (M) @ Leftovers
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 112 Atk / 32 Def / 180 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Double-Edge
-
-Skarmory (M) @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 240 SpD / 16 Spe
-Careful Nature
-- Spikes
-- Roar
-- Drill Peck
-- Toxic
-
-Swampert (M) @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 40 Def / 216 SpA
+EVs: 248 HP / 176 SpA / 84 SpD
 Quiet Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Curse
-
-Duskull (M)
-Ability: Levitate
-EVs: 252 HP / 196 SpD / 60 Spe
-Calm Nature
-- Curse
-- Will-O-Wisp
-- Pain Split
-- Thief
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 76 SpA / 120 SpD / 96 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
 - Thunderbolt
-- Hidden Power [Grass]
-- Toxic
-- Roar
-
-Aerodactyl (M) @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Double-Edge
 - Earthquake
+- Crunch
+- Pursuit
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 56 Def / 44 SpA / 120 SpD / 40 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Perish Song
+- Leech Seed
+- Recover
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Refresh
+- Recover
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Spikes
+- Rapid Spin
 - Hidden Power [Bug]
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 48 Def / 104 SpD / 104 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Punch
+- Taunt
+- Will-O-Wisp
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 124 Def / 136 SpD
+Careful Nature
+- Seismic Toss
+- Counter
+- Thunder Wave
+- Rest

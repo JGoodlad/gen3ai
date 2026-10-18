@@ -1,58 +1,57 @@
-Metagross @ Leftovers
+Metagross @ Salac Berry
 Ability: Clear Body
-EVs: 168 HP / 16 Def / 232 SpA / 92 Spe
-Rash Nature
+EVs: 168 HP / 128 Atk / 8 Def / 204 Spe
+Naive Nature
 IVs: 30 Atk / 30 SpA
+- Meteor Mash
 - Earthquake
-- Thunder Punch
 - Hidden Power [Grass]
 - Explosion
 
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-- Substitute
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 96 SpA / 160 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Hydro Pump
-- Ice Beam
-
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 196 SpA / 120 SpD / 192 Spe
-Modest Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Pursuit
-- Fire Blast
-- Beat Up
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 216 Atk / 40 SpD / 252 Spe
-Adamant Nature
-- Spore
-- Focus Punch
-- Mach Punch
-- Sky Uppercut
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Hidden Power [Flying]
-- Rock Slide
 - Earthquake
+- Dragon Dance
+- Rock Slide
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Explosion
+- Rock Slide
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 220 Atk / 252 SpD / 36 Spe
+Adamant Nature
+- Body Slam
+- Earthquake
+- Self-Destruct
+- Shadow Ball
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Toxic
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 48 Atk / 220 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Ancient Power
+- Hidden Power [Fighting]
+- Recover
+- Swords Dance

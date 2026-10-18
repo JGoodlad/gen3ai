@@ -1,57 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 216 SpA / 40 Spe
-Quiet Nature
-- Surf
-- Substitute
-- Ice Beam
-- Focus Punch
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 80 Def / 80 SpA / 96 Spe
-Timid Nature
-IVs: 3 Atk / 30 SpA
-- Calm Mind
-- Substitute
-- Hidden Power [Electric]
-- Baton Pass
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 184 HP / 144 Atk / 180 Spe
-Adamant Nature
-IVs: 30 SpA
-- Dragon Dance
+EVs: 216 HP / 16 Def / 244 SpA / 32 Spe
+Modest Nature
+- Crunch
+- Pursuit
+- Fire Blast
+- Brick Break
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 8 Atk / 248 SpD
+Careful Nature
+IVs: 30 SpD / 30 Spe
+- Rapid Spin
+- Hidden Power [Bug]
+- Spikes
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 40 Def / 196 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Roar
+- Rest
+- Sleep Talk
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 88 Atk / 112 Def / 16 SpA / 36 SpD / 4 Spe
+Careful Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Fire Punch
+- Toxic
+- Wish
+- Protect
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 72 SpD / 180 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Rock Slide
 - Earthquake
-- Focus Punch
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
-- Dragon Claw
-- Beat Up
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 224 Atk / 16 Def / 100 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Agility
-- Explosion
+- Double-Edge
+- Hidden Power [Fighting]

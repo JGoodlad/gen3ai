@@ -1,55 +1,56 @@
-Heracross @ Choice Band
-Ability: Guts
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Megahorn
-- Brick Break
-- Rock Slide
-- Focus Punch
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 232 SpA / 92 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Punch
-- Earthquake
-- Hidden Power [Grass]
-- Explosion
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 24 HP / 232 SpA / 252 Spe
-Hasty Nature
+EVs: 12 Def / 244 SpA / 252 Spe
+Mild Nature
 - Dragon Claw
+- Flamethrower
 - Brick Break
-- Wish
-- Fire Blast
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 92 HP / 176 Atk / 128 Def / 112 SpD
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
+- Rain Dance
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
 - Rapid Spin
-- Explosion
 - Earthquake
 - Psychic
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 4 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Leech Seed
+- Psychic
+- Baton Pass
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 128 Def / 172 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 252 SpA / 16 Spe
+EVs: 252 HP / 192 SpA / 64 Spe
 Modest Nature
 IVs: 0 Atk
+- Rest
 - Calm Mind
 - Surf
-- Rest
-- Sleep Talk
+- Ice Beam

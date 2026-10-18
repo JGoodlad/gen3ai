@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 48 HP / 208 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Rain Dance
+- Baton Pass
+
+Kingdra @ Leftovers
+Ability: Swift Swim
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Surf
+- Ice Beam
+- Hidden Power [Grass]
+- Rain Dance
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 116 Atk / 180 Def / 212 SpD
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Rest
+- Curse
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Calm Mind
+- Rest
+- Sleep Talk
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 112 HP / 248 Atk / 40 SpD / 108 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Refresh

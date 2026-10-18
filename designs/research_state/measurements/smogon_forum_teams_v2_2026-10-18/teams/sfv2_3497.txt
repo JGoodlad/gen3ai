@@ -1,57 +1,57 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-Hidden Power: Bug
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Double-Edge
-
 Swampert @ Salac Berry
 Ability: Torrent
 EVs: 4 Def / 252 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
 - Substitute
+- Toxic
+- Hydro Pump
 - Endeavor
-- Surf
-- Roar
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 228 HP / 64 Atk / 68 Def / 108 SpD / 40 Spe
-Careful Nature
-- Thunder Wave
-- Seismic Toss
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
 - Earthquake
-- Explosion
+- Rock Slide
+- Double-Edge
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 128 Def / 172 SpD
+Adamant Nature
+- Curse
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 28 SpA / 104 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 160 SpA / 56 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 176 Atk / 212 SpD / 120 Spe
-Adamant Nature
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
 - Hidden Power [Flying]
-- Rock Slide
-- Earthquake
-
-Camerupt @ Leftovers
-Ability: Magma Armor
-EVs: 248 HP / 36 Atk / 108 SpA / 112 SpD / 4 Spe
-Quiet Nature
-- Earthquake
-- Flamethrower
-- Toxic
-- Explosion
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 80 HP / 252 Atk / 176 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Rock]
-- Earthquake
-- Double-Edge
+- Brick Break
+- Fire Blast

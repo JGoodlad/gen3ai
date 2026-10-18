@@ -1,56 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 176 Atk / 196 SpD / 136 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Brick Break
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+EVs: 252 HP / 64 Atk / 192 Spe
 Adamant Nature
-- Dragon Dance
-- Earthquake
+IVs: 30 SpD / 30 Spe
+- Substitute
 - Rock Slide
-- Double-Edge
+- Hidden Power [Bug]
+- Focus Punch
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 220 SpD / 36 Spe
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Superpower
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
+- Refresh
+- Psychic
 - Explosion
 
-Celebi @ Leftovers
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
+EVs: 252 Def / 248 SpA / 8 Spe
 Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
-
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 8 Def / 248 SpA / 252 Spe
-Timid Nature
 IVs: 0 Atk
-- Substitute
+- Soft-Boiled
 - Calm Mind
+- Ice Beam
 - Thunderbolt
-- Crunch
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
 IVs: 0 Atk
-- Substitute
-- Hydro Pump
-- Roar
-- Endeavor
+- Recover
+- Refresh
+- Toxic
+- Surf
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide

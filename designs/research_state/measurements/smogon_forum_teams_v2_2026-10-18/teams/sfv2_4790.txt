@@ -1,0 +1,54 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 196 Atk / 12 Def / 76 SpA / 200 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Fire Blast
+- Brick Break
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 184 HP / 96 Atk / 40 Def / 188 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 216 Atk / 116 Def / 176 SpD
+Adamant Nature
+- Curse
+- Body Slam
+- Earthquake
+- Shadow Ball
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 152 SpD / 104 Spe
+Calm Nature
+- Surf
+- Explosion
+- Spikes
+- Rapid Spin
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 140 HP / 108 Def / 84 SpA / 176 Spe
+Naive Nature
+- Hypnosis
+- Ice Punch
+- Thunderbolt
+- Explosion

@@ -1,58 +1,58 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 136 SpA / 156 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 68 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
+- Rock Slide
+- Dragon Dance
+- Earthquake
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 248 HP / 252 Def / 8 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Haze
+- Wish
+- Protect
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Hidden Power [Ghost]
+- Explosion
+- Counter
+- Spikes
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 232 Atk / 16 Def / 12 SpD
+Relaxed Nature
+- Earthquake
+- Rapid Spin
 - Psychic
 - Explosion
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 228 SpA / 28 Spe
-Modest Nature
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 212 SpA / 44 Spe
+Bold Nature
 IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
+- Aromatherapy
+- Seismic Toss
 - Ice Beam
+- Soft-Boiled
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
+EVs: 248 HP / 12 Def / 60 SpD / 188 Spe
 Timid Nature
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 192 HP / 176 SpA / 140 Spe
-Modest Nature
 IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Sunny Day
+- Will-O-Wisp
+- Taunt
+- Thunderbolt
+- Destiny Bond

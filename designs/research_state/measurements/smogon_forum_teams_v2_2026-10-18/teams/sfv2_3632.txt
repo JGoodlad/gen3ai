@@ -1,53 +1,55 @@
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 SpD
-Bold Nature
-- Surf
-- Ice Beam
-- Recover
-- Toxic
+Machamp @ Leftovers
+Ability: Guts
+EVs: 248 HP / 176 Atk / 20 Def / 40 SpD / 24 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Bulk Up
+- Cross Chop
+- Rock Slide
+- Hidden Power [Bug]
 
-Blissey @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 252 Def / 4 SpD
-Bold Nature
-- Seismic Toss
-- Soft-Boiled
-- Wish
-- Thunder Wave
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
 - Earthquake
-- Rapid Spin
-- Spikes
-- Toxic
+- Rock Slide
+- Double-Edge
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 220 Def / 36 Spe
-Bold Nature
-- Leech Seed
-- Psychic
-- Heal Bell
-- Recover
-
-Weezing @ Leftovers
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 252 Def / 4 SpD
-Bold Nature
-- Flamethrower
-- Haze
-- Will-O-Wisp
-- Pain Split
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
 
-Dusclops @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 156 SpA / 100 SpD
-Bold Nature
-- Calm Mind
-- Will-O-Wisp
-- Pain Split
-- Thunder Punch
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Toxic
+- Seismic Toss
+- Explosion
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Toxic
+- Hydro Pump
+- Endeavor
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 196 Atk / 200 SpD / 112 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Brick Break

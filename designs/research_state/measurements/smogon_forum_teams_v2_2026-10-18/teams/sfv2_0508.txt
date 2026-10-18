@@ -1,57 +1,58 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
-- Ice Beam
+Hariyama @ Leftovers
+Ability: Thick Fat
+EVs: 56 Atk / 196 Def / 196 SpD / 60 Spe
+Adamant Nature
+- Brick Break
+- Knock Off
+- Rock Slide
+- Whirlwind
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
+Salamence @ Leftovers
+Ability: Intimidate
 EVs: 252 HP / 252 Def / 4 Spe
 Bold Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Seismic Toss
-- Aromatherapy
-- Thunder Wave
+- Flamethrower
+- Protect
+- Toxic
+- Wish
 
-Alakazam @ Leftovers
-Ability: Synchronize
-EVs: 176 HP / 112 SpA / 220 Spe
-Timid Nature
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 32 HP / 252 Def / 204 SpA / 20 Spe
+Bold Nature
 IVs: 0 Atk
-- Psychic
-- Knock Off
-- Recover
+- Aromatherapy
+- Ice Beam
 - Seismic Toss
+- Soft-Boiled
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+IVs: 30 SpD / 30 Spe
 - Earthquake
 - Hidden Power [Bug]
-- Aerial Ace
-- Screech
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 88 Atk / 168 Def
-Impish Nature
 - Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
+- Spikes
 
-Heracross @ Leftovers
-Ability: Guts
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Swords Dance
-- Megahorn
-- Rock Slide
-- Brick Break
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 220 SpA / 8 SpD / 96 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Crunch
+- Flamethrower
+- Hidden Power [Grass]
+- Pursuit
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 220 HP / 252 Def / 4 SpA / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Recover
+- Surf
+- Toxic

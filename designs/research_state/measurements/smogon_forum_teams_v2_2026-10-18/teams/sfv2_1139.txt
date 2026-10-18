@@ -1,56 +1,56 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
+EVs: 240 HP / 64 Atk / 204 Spe
 Adamant Nature
-- Dragon Dance
 - Earthquake
 - Rock Slide
-- Double-Edge
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
-- Spikes
-- Rapid Spin
-- Surf
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 80 Atk / 252 SpA / 176 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Fire Punch
-- Hidden Power [Grass]
-- Dynamic Punch
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 96 Atk / 108 Def / 16 SpA / 40 Spe
-Naive Nature
+- Taunt
 - Toxic
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Double-Edge
 - Earthquake
+- Hidden Power [Flying]
 - Rock Slide
-- Fire Blast
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Wish
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Drill Peck
+- Protect
+- Roar
+- Spikes
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Beat Up
+IVs: 0 Atk
+- Ice Beam
+- Soft-Boiled
+- Thunderbolt
+- Thunder Wave
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 Def / 64 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Rest
+- Roar
+- Surf
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+- Earthquake
+- Rapid Spin
+- Shadow Ball
+- Toxic

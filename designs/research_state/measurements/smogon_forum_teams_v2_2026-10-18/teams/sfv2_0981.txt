@@ -1,57 +1,55 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 32 Def / 252 SpA / 224 Spe
-Timid Nature
-IVs: 0 Atk
-- Calm Mind
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Taunt
+- Dragon Dance
+
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Quick Attack
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 56 SpD / 200 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Psychic
+- Giga Drain
+- Hidden Power [Fire]
+- Leech Seed
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Body Slam
+- Focus Punch
+- Shadow Ball
+- Self-Destruct
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 240 SpD / 16 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Taunt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
 - Hydro Pump
 - Ice Beam
-- Substitute
-
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 240 HP / 216 SpA / 52 Spe
-Modest Nature
-- Ice Beam
-- Thunderbolt
-- Thunder Wave
-- Explosion
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 64 Def / 192 Spe
-Jolly Nature
-IVs: 30 Atk / 30 SpD
-- Spore
-- Focus Punch
-- Sky Uppercut
-- Hidden Power [Ghost]
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Fire Blast
-- Beat Up
-- Toxic
-- Hidden Power [Grass]
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 192 HP / 224 Atk / 92 Spe
-Adamant Nature
-- Meteor Mash
-- Rock Slide
 - Earthquake
-- Explosion
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 180 Atk / 212 SpD / 116 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
+- Protect

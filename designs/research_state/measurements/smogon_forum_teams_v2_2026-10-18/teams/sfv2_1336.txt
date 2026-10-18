@@ -1,56 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 240 HP / 252 SpA / 16 Spe
+EVs: 252 HP / 252 SpA / 4 Spe
 Modest Nature
-IVs: 0 Atk
-- Crunch
+IVs: 2 Atk / 30 SpA
 - Pursuit
-- Flamethrower
-- Roar
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
-- Spikes
-- Rapid Spin
-- Surf
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 80 HP / 252 SpA / 176 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Body Slam
-- Fire Punch
+- Crunch
+- Fire Blast
 - Hidden Power [Grass]
-- Dynamic Punch
 
-Snorlax @ Leftovers
-Ability: Thick Fat
-EVs: 16 HP / 216 Atk / 108 Def / 168 SpD
-Adamant Nature
-- Rest
-- Curse
-- Double-Edge
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
 - Earthquake
+- Ice Beam
+- Protect
+- Hydro Pump
 
-Aerodactyl @ Choice Band
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Protect
+- Toxic
+
+Dusclops @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 36 Atk / 20 Def / 200 SpD
+Careful Nature
+- Shadow Ball
+- Curse
+- Will-O-Wisp
+- Pain Split
+
+Smeargle @ Lansat Berry
+Ability: Own Tempo
+EVs: 36 HP / 248 SpD / 220 Spe
+Jolly Nature
+IVs: 0 Atk
+- Spore
+- Belly Drum
+- Substitute
+- Baton Pass
+
+Aerodactyl @ Scope Lens
 Ability: Rock Head
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
 IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Earthquake
 - Rock Slide
-- Hidden Power [Flying]
 - Double-Edge
+- Earthquake
+- Hidden Power [Flying]

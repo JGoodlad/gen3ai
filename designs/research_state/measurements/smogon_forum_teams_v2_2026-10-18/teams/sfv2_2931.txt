@@ -1,56 +1,56 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 232 Atk / 160 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
-- Brick Break
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 244 HP / 104 Atk / 156 SpA / 4 Spe
-Quiet Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Wish
-- Psychic
-- Fire Punch
-- Hidden Power [Fighting]
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Drill Peck
+- Spikes
+- Roar
+- Protect
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 136 Atk / 188 Spe
-Adamant Nature
-- Dragon Dance
+EVs: 248 HP / 12 Atk / 176 SpA / 72 SpD
+Quiet Nature
 - Rock Slide
 - Earthquake
-- Double-Edge
+- Crunch
+- Pursuit
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 216 Atk / 116 Def / 176 SpD
-Adamant Nature
-- Body Slam
-- Focus Punch
-- Shadow Ball
-- Self-Destruct
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 136 HP / 216 Atk / 156 Spe
-Adamant Nature
-- Earthquake
-- Rapid Spin
-- Rock Slide
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 40 HP / 248 SpA / 220 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Hydro Pump
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 248 HP / 252 Def / 8 SpD
+Relaxed Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Ice Beam
+- Thunderbolt
+- Hidden Power [Fighting]
+- Recover
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 64 Def / 32 SpD / 164 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 56 Def / 44 SpA / 120 SpD / 40 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
 - Hidden Power [Grass]
+- Perish Song
+- Leech Seed
+- Recover
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 8 Def / 252 SpD
+Calm Nature
+- Seismic Toss
+- Counter
+- Thunder Wave
+- Rest

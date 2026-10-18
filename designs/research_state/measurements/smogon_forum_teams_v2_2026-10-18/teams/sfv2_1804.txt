@@ -1,58 +1,58 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 HP / 96 Atk / 120 SpD / 40 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Refresh
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
 
-Magneton @ Salac Berry
-Ability: Magnet Pull
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 68 Atk / 252 SpA / 188 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Body Slam
+- Fire Punch
+- Ice Punch
+- Hidden Power [Fighting]
+
+Gengar @ Leftovers
+Ability: Levitate
 EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
-- Endure
+IVs: 30 Atk / 30 SpA
+- Will-O-Wisp
 - Thunderbolt
 - Hidden Power [Grass]
-- Rain Dance
+- Explosion
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 220 SpA / 36 Spe
+EVs: 188 HP / 140 SpA / 180 Spe
 Modest Nature
-IVs: 0 Atk
-- Leech Seed
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Calm Mind
 - Giga Drain
+- Hidden Power [Fire]
 - Psychic
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 32 HP / 176 Atk / 104 Def / 176 SpD / 20 Spe
+EVs: 32 HP / 136 Atk / 152 Def / 172 SpD / 16 Spe
 Adamant Nature
 - Curse
-- Double-Edge
-- Earthquake
+- Return
 - Shadow Ball
+- Self-Destruct
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Rock Slide
-- Hidden Power [Grass]
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
 Modest Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up

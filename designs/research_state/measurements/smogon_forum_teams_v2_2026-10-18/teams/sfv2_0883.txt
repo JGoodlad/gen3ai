@@ -1,56 +1,62 @@
-Skarmory (F) @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 212 SpD / 44 Spe
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 204 HP / 252 Atk / 12 SpA / 40 Spe
+Brave Nature
+IVs: 30 HP / 30 SpA
+- Rock Slide
+- Focus Punch
+- Earthquake
+- Hidden Power [Grass]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 44 Def / 152 SpA / 64 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Hidden Power [Grass]
+- Fire Punch
+- Calm Mind
+
+Flygon @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 248 HP / 16 Atk / 180 Def / 64 Spe
+Adamant Nature
+- Earthquake
+- Toxic
+- Rock Slide
+- Protect
+
+Forretress @ Leftovers
+Ability: Sturdy
+Shiny: Yes
+EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
-- Drill Peck
-- Taunt
-- Roar
+IVs: 30 Atk / 30 SpD
+- Hidden Power [Ghost]
+- Counter
+- Explosion
 - Spikes
 
-Gengar (F) @ Leftovers
-Ability: Levitate
-EVs: 68 HP / 16 Atk / 248 SpD / 176 Spe
-Hasty Nature
-- Fire Punch
-- Giga Drain
-- Focus Punch
-- Will-O-Wisp
-
-Jolteon (F) @ Leftovers
-Ability: Volt Absorb
-EVs: 76 HP / 180 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 132 Atk / 224 SpA / 152 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Drill Peck
 - Thunderbolt
 - Hidden Power [Grass]
-- Roar
-- Baton Pass
+- Agility
 
-Tyranitar (F) @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 Atk / 4 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
-
-Swampert (F) @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 Spe
-Relaxed Nature
-- Surf
-- Earthquake
-- Ice Beam
-- Focus Punch
-
-Ludicolo (F) @ Leftovers
-Ability: Swift Swim
-EVs: 76 HP / 92 Def / 252 SpA / 88 Spe
-Modest Nature
+Starmie @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Surf
+- Hydro Pump
 - Ice Beam
-- Leech Seed
-- Rain Dance
+- Recover
+- Rapid Spin

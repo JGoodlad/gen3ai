@@ -1,26 +1,16 @@
-Tyranitar @ Leftovers
+Tyranitar @ Choice Band
 Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 SpD
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
 - Earthquake
+- Rock Slide
 - Hidden Power [Bug]
 - Focus Punch
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 52 Atk / 112 SpA / 176 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Fire Punch
-- Hidden Power [Grass]
-- Focus Punch
-- Explosion
-
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 132 SpD / 128 Spe
+EVs: 224 HP / 216 SpD / 68 Spe
 Careful Nature
 IVs: 0 Atk
 - Spikes
@@ -30,29 +20,39 @@ IVs: 0 Atk
 
 Jolteon @ Leftovers
 Ability: Volt Absorb
-EVs: 252 SpA / 4 SpD / 252 Spe
+EVs: 8 HP / 248 SpA / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 Def
+IVs: 2 Atk / 30 SpA
+- Substitute
 - Thunderbolt
-- Hidden Power [Ice]
-- Roar
+- Hidden Power [Grass]
 - Baton Pass
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 124 Def / 88 SpA / 48 Spe
+EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
 Relaxed Nature
-- Hydro Pump
+- Protect
 - Earthquake
+- Hydro Pump
 - Ice Beam
-- Focus Punch
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 176 Atk / 152 SpA / 180 Spe
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
 Mild Nature
 IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Drill Peck
-- Agility
+- Dragon Claw
+- Flamethrower
 - Hidden Power [Grass]
+- Brick Break
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

@@ -1,0 +1,57 @@
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 232 HP / 216 Atk / 60 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Superpower
+- Hidden Power [Bug]
+- Explosion
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Thunder Wave
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 SpD
+- Spikes
+- Roar
+- Hidden Power [Steel]
+- Toxic
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 196 SpD / 60 Spe
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Explosion
+- Counter
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 148 HP / 216 Atk / 144 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 176 Atk / 136 SpA / 196 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Drill Peck
+- Hidden Power [Grass]
+- Thunder Wave

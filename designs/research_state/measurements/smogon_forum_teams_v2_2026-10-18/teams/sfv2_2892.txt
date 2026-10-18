@@ -1,26 +1,26 @@
-Articuno @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 40 HP / 248 SpA / 220 Spe
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+- Baton Pass
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 72 HP / 248 SpA / 188 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
-- Ice Beam
+- Giga Drain
 - Hidden Power [Fire]
-- Toxic
-- Haze
-
-Dugtrio (M) @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Aerial Ace
-- Hidden Power [Bug]
-- Earthquake
-- Rock Slide
+- Calm Mind
+- Baton Pass
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 228 Def / 28 Spe
+EVs: 248 HP / 176 Def / 76 SpA / 8 Spe
 Bold Nature
 IVs: 0 Atk
 - Surf
@@ -28,31 +28,32 @@ IVs: 0 Atk
 - Calm Mind
 - Rest
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 136 SpA / 120 Spe
-Modest Nature
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Ice Punch
-- Thunderbolt
-- Calm Mind
+- Surf
+- Toxic
+- Endeavor
 - Substitute
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
 Adamant Nature
-- Rapid Spin
+IVs: 30 SpD / 30 Spe
+- Rock Slide
 - Earthquake
-- Psychic
-- Explosion
+- Hidden Power [Bug]
+- Focus Punch
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
-Bold Nature
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
-- Leech Seed
+- Thunderbolt
 - Hidden Power [Grass]
-- Psychic
-- Recover
+- Calm Mind
+- Substitute

@@ -1,57 +1,57 @@
-Regirock @ Lum Berry
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 SpD
-Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Curse
-- Focus Punch
-- Hidden Power [Rock]
-- Explosion
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
-- Earthquake
-
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Hydro Pump
+EVs: 252 HP / 96 SpA / 160 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
 - Calm Mind
-- Ice Beam
+- Substitute
+- Roar
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Sunny Day
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 16 Def / 100 SpA / 200 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 172 HP / 204 Atk / 16 Def / 116 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 24 Atk / 232 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Dragon Claw
 - Hidden Power [Grass]
+- Focus Punch
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 252 Atk / 108 Def / 148 SpD
+EVs: 252 Atk / 120 Def / 136 SpD
 Adamant Nature
-- Curse
-- Body Slam
+- Double-Edge
 - Earthquake
 - Shadow Ball
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 252 Atk / 4 Spe
-Adamant Nature
-- Earthquake
-- Psychic
-- Rapid Spin
-- Explosion
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 64 HP / 252 Atk / 192 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Spore
-- Sky Uppercut
-- Hidden Power [Ghost]
-- Focus Punch
+- Curse

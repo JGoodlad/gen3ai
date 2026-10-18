@@ -1,57 +1,57 @@
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 40 HP / 252 Atk / 216 Spe
-Adamant Nature
-- Brick Break
-- Focus Punch
-- Rock Slide
-- Shadow Ball
-
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 28 SpA / 36 SpD / 192 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Baton Pass
-- Hidden Power [Grass]
-- Substitute
-- Thunderbolt
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 200 Def / 56 Spe
+EVs: 252 HP / 252 Def / 4 Spe
 Bold Nature
 IVs: 0 Atk
-- Rapid Spin
-- Recover
+- Rest
+- Calm Mind
 - Surf
-- Thunder Wave
+- Roar
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 SpD
-Adamant Nature
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
+- Reflect
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
 - Earthquake
+- Psychic
 - Explosion
-- Meteor Mash
-- Rock Slide
 
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 76 Atk / 192 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Hidden Power [Bug]
-- Rock Slide
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 252 Def / 4 SpA
+Sableye @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 Def / 4 SpD
 Bold Nature
 IVs: 0 Atk
-- Ice Beam
 - Recover
-- Thunderbolt
+- Psych Up
+- Seismic Toss
+- Knock Off
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Impish Nature
+- Soft-Boiled
+- Aromatherapy
 - Thunder Wave
+- Seismic Toss
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

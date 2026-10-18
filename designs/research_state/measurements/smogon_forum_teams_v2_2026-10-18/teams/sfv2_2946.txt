@@ -1,57 +1,54 @@
-Jirachi @ Choice Band
-Ability: Serene Grace
-EVs: 220 HP / 216 Atk / 72 Spe
+Hariyama @ Leftovers
+Ability: Thick Fat
+EVs: 252 Atk / 160 Def / 96 Spe
 Adamant Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Body Slam
-- Hidden Power [Fighting]
-- Doom Desire
-- Rain Dance
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 136 SpA / 68 SpD / 64 Spe
-Calm Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Ice Beam
-- Rest
+- Knock Off
+- Brick Break
+- Focus Punch
+- Rock Slide
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 148 HP / 216 Atk / 144 Spe
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
 Adamant Nature
 - Rapid Spin
 - Earthquake
-- Rock Slide
+- Psychic
 - Explosion
 
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 196 SpA / 120 SpD / 192 Spe
-Modest Nature
-IVs: 0 Atk
-- Pursuit
-- Fire Blast
-- Will-O-Wisp
-- Beat Up
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 216 Atk / 116 Def / 176 SpD
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
 Adamant Nature
-- Self-Destruct
-- Body Slam
-- Counter
-- Focus Punch
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 220 SpA / 40 Spe
+Quiet Nature
+- Crunch
+- Pursuit
+- Rock Slide
+- Fire Blast
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 116 HP / 232 Atk / 160 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
 - Brick Break
+- Hidden Power [Grass]
+- Fire Blast
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt

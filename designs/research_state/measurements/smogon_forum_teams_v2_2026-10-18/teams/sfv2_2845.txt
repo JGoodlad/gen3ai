@@ -1,54 +1,56 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 136 Atk / 60 Def / 28 SpD / 32 Spe
-Adamant Nature
-- Protect
-- Meteor Mash
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 12 Atk / 176 SpA / 72 SpD
+Quiet Nature
+- Rock Slide
 - Earthquake
-- Explosion
+- Crunch
+- Pursuit
 
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-- Spikes
-- Thief
-- Rest
 - Drill Peck
+- Spikes
+- Roar
+- Protect
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Refresh
+- Recover
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 120 Atk / 136 SpD
-Sassy Nature
-- Rapid Spin
+EVs: 248 HP / 176 Atk / 52 SpA / 32 Spe
+Adamant Nature
 - Earthquake
 - Psychic
+- Rapid Spin
 - Explosion
 
-Blissey (F) @ Leftovers
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-- Soft-Boiled
-- Aromatherapy
-- Thunder Wave
-- Seismic Toss
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 240 Def / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Roar
-
-Aerodactyl
-Ability: Pressure
-EVs: 252 Atk / 80 SpD / 176 Spe
-Jolly Nature
-- Substitute
-- Thief
-- Earthquake
-- Rock Slide
+EVs: 248 HP / 96 Def / 124 SpD / 40 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Hidden Power [Grass]
+- Leech Seed
+- Recover

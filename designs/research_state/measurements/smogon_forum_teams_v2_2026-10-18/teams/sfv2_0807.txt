@@ -1,57 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 252 Atk / 16 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
-
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 232 HP / 136 SpD / 140 Spe
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
 - Spikes
 - Roar
-- Taunt
 - Drill Peck
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Def / 30 SpA
-- Hidden Power [Grass]
-- Fire Blast
-- Brick Break
-- Dragon Claw
-
-Lanturn (F) @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 88 Def / 252 SpA / 160 Spe
-Modest Nature
-IVs: 0 Atk
-- Hydro Pump
-- Thunderbolt
-- Ice Beam
 - Protect
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Thunder Wave
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
 Adamant Nature
-- Agility
-- Meteor Mash
+- Rapid Spin
 - Earthquake
+- Psychic
 - Explosion
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 40 HP / 252 SpA / 216 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
 - Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
+- Surf
+- Rest
+- Roar
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 20 SpD / 236 Spe
+Timid Nature
+IVs: 0 Atk
+- Flamethrower
+- Sunny Day
+- Will-O-Wisp
+- Rest
+
+Chansey (F) @ Lucky Punch
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+- Soft-Boiled

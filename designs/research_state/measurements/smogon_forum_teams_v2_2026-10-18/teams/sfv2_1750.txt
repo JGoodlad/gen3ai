@@ -1,30 +1,31 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 244 Atk / 64 SpD / 176 Spe
-Lonely Nature
-- Dragon Dance
-- Dragon Claw
-- Fire Blast
-- Brick Break
-
-Claydol @ Choice Band
-Ability: Levitate
-EVs: 252 HP / 252 Atk / 4 Def
-Adamant Nature
-- Rapid Spin
-- Earthquake
-- Rock Slide
-- Explosion
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 220 SpA / 40 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 136 SpA / 156 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
+IVs: 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Surf
+- Ice Beam
+- Thunderbolt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
 Metagross @ Leftovers
 Ability: Clear Body
@@ -36,22 +37,22 @@ IVs: 30 Atk / 30 SpA / 30 Spe
 - Psychic
 - Explosion
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 4 SpA / 252 SpD
-Calm Nature
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 4 Def / 136 SpA / 176 Spe
+Modest Nature
 IVs: 0 Atk
-- Rest
-- Sleep Talk
+- Leech Seed
 - Calm Mind
-- Surf
+- Giga Drain
+- Psychic
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up

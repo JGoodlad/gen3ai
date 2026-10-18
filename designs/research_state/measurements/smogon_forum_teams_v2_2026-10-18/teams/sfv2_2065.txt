@@ -1,54 +1,58 @@
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 252 Atk / 40 Def / 216 Spe
-Adamant Nature
-- Recover
-- Brick Break
-- Rock Slide
-- Shadow Ball
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 116 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Metal Sound
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
-- Earthquake
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
 - Psychic
 - Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 Spe
-Impish Nature
-- Soft-Boiled
-- Aromatherapy
-- Thunder Wave
-- Seismic Toss
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 188 HP / 252 Atk / 68 Spe
-Adamant Nature
-- Meteor Mash
-- Rock Slide
-- Brick Break
-- Explosion
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Toxic
+- Hydro Pump
+- Endeavor
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 240 Def / 16 Spe
-Bold Nature
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
 IVs: 0 Atk
-- Rest
+- Substitute
 - Calm Mind
 - Surf
-- Roar
+- Ice Beam
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 HP / 252 SpA / 252 Spe
-Rash Nature
-- Wish
-- Dragon Claw
-- Flamethrower
-- Brick Break
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 188 HP / 140 SpA / 180 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass

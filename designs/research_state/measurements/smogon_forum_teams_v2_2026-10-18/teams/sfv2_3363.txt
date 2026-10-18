@@ -1,57 +1,58 @@
-Skarmory (M) @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
-Calm Nature
-IVs: 0 Atk
-- Spikes
-- Roar
-- Protect
-- Toxic
-
-Weezing (M) @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 240 Def / 16 Spe
-Impish Nature
-- Will-O-Wisp
-- Haze
-- Sludge Bomb
-- Pain Split
-
-Flygon (M) @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 208 Def / 16 SpD / 32 Spe
-Impish Nature
+Tyranitar @ Hard Stone
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
 - Earthquake
-- Toxic
-- Protect
 - Rock Slide
+- Double-Edge
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 200 SpA / 56 Spe
 Modest Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Toxic
-- Ice Beam
-- Seismic Toss
+- Substitute
+- Calm Mind
+- Water Pulse
+- Psychic
 
-Mantine (M) @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 252 Def / 4 SpA
-Bold Nature
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Surf
+- Substitute
 - Toxic
-- Ice Beam
-- Rest
+- Hydro Pump
+- Endeavor
 
-Misdreavus (F) @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 4 Def / 252 SpD
-Calm Nature
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Mean Look
-- Perish Song
-- Taunt
-- Protect
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Crunch
+
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 204 HP / 252 Atk / 52 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Double-Edge
+- Superpower
+- Explosion
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 Def
+- Substitute
+- Fire Blast
+- Hidden Power [Ice]
+- Focus Punch

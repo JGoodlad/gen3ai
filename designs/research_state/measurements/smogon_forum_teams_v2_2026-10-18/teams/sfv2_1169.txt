@@ -1,57 +1,55 @@
-Raikou @ Leftovers
+Moltres @ Leftovers
 Ability: Pressure
 EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Earthquake
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 188 HP / 140 SpA / 180 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
+IVs: 2 Atk / 30 SpA
+- Roar
+- Flamethrower
+- Will-O-Wisp
+- Hidden Power [Grass]
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 12 Def / 216 SpA / 32 Spe
+Quiet Nature
+- Pursuit
+- Crunch
+- Counter
+- Brick Break
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Explosion
+- Spikes
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 156 Atk / 212 SpD / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Hidden Power [Flying]
+EVs: 32 Atk / 224 SpA / 252 Spe
+Rash Nature
+- Dragon Claw
+- Fire Blast
+- Brick Break
+- Roar
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Bold Nature
+IVs: 0 Atk
+- Refresh
+- Surf
+- Protect
+- Toxic
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 56 HP / 252 Def / 200 SpA
+Bold Nature
+- Wish
+- Soft-Boiled
+- Seismic Toss
+- Ice Beam

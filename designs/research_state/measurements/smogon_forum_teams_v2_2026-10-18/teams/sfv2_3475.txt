@@ -1,57 +1,57 @@
-Metagross @ Salac Berry
-Ability: Clear Body
-EVs: 168 HP / 128 Atk / 8 Def / 204 Spe
-Jolly Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 180 Def / 44 SpD / 44 Spe
+Relaxed Nature
+- Protect
 - Earthquake
-- Hidden Power [Grass]
-- Explosion
+- Ice Beam
+- Roar
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 16 HP / 176 Atk / 120 Def / 160 SpD / 36 Spe
-Adamant Nature
-- Body Slam
-- Earthquake
-- Shadow Ball
-- Self-Destruct
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Double-Edge
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 60 SpD / 196 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Rock]
-- Double-Edge
-- Earthquake
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 76 HP / 180 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Thunder Wave
-- Wish
-- Hidden Power [Grass]
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
 
 Magneton @ Magnet
 Ability: Magnet Pull
 EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunder Wave
-- Screech
+- Thunderbolt
+- Hidden Power [Fire]
+- Rain Dance
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 152 Def / 48 SpA / 28 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Recover
+- Leech Seed
+- Hidden Power [Grass]
+- Psychic
+
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Brick Break
+- Hidden Power [Flying]

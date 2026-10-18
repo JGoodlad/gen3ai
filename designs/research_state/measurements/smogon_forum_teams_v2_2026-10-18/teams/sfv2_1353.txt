@@ -1,57 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 216 Def / 8 SpA / 32 Spe
+Bold Nature
 IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Hydro Pump
-- Ice Beam
+- Wish
+- Protect
+- Toxic
+- Fire Punch
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 216 Atk / 12 SpA / 20 SpD / 12 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
 - Psychic
-- Explosion
-
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-- Thunder Wave
-- Ice Beam
-- Thunderbolt
 - Explosion
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
+EVs: 32 HP / 136 Atk / 148 Def / 168 SpD / 24 Spe
 Adamant Nature
-- Curse
-- Double-Edge
+- Body Slam
 - Shadow Ball
-- Self-Destruct
+- Focus Punch
+- Counter
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 80 HP / 252 Atk / 176 Spe
+Machamp @ Leftovers
+Ability: Guts
+EVs: 252 HP / 216 Atk / 20 Def / 8 SpD / 12 Spe
 Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
+IVs: 30 Atk / 30 SpD
+- Bulk Up
+- Cross Chop
 - Rock Slide
-- Brick Break
-- Hidden Power [Flying]
+- Hidden Power [Ghost]
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 28 HP / 252 Atk / 228 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 Atk / 30 SpD
+- Dragon Dance
 - Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Sunny Day
+- Hidden Power [Ghost]
+- Double-Edge

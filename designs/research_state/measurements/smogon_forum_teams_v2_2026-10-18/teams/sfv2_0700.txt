@@ -1,55 +1,57 @@
-Heracross @ Choice Band
-Ability: Swarm
+Flygon @ Choice Band
+Ability: Levitate
 EVs: 252 Atk / 4 SpD / 252 Spe
 Adamant Nature
-- Megahorn
-- Focus Punch
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
 - Rock Slide
-- Sleep Talk
+- Hidden Power [Bug]
+- Return
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 48 HP / 252 Atk / 208 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
-- Earthquake
-- Double-Edge
-
-Metagross @ Lum Berry
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Endure
-- Thunder Wave
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 144 Atk / 164 Def / 196 SpD / 4 Spe
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Earthquake
-- Self-Destruct
-
-Claydol @ Leftovers
+Gengar @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 224 Atk / 32 SpA
-Adamant Nature
-- Earthquake
-- Psychic
-- Rapid Spin
+EVs: 176 HP / 156 SpD / 176 Spe
+Hasty Nature
+- Will-O-Wisp
 - Explosion
+- Thunderbolt
+- Ice Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 Spe
+- Meteor Mash
+- Mimic
+- Earthquake
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 36 Def / 192 SpD / 28 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Rapid Spin
+- Recover
+- Ice Beam
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt

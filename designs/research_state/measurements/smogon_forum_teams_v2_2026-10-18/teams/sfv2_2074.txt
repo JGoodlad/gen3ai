@@ -1,58 +1,56 @@
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 120 Atk / 248 SpA / 140 Spe
-Rash Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Ice Punch
-- Thunder
-- Fire Punch
-- Hidden Power [Fighting]
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Flamethrower
+- Roar
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 168 SpA / 244 SpD / 96 Spe
+Modest Nature
 - Spikes
 - Rapid Spin
-- Hidden Power [Ghost]
-- Counter
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 128 Atk / 112 Def / 16 SpD
-Careful Nature
-- Rapid Spin
-- Earthquake
-- Rock Slide
+- Surf
 - Explosion
 
-Blissey @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 Spe
-Impish Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Wish
-- Thunder Wave
-- Seismic Toss
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 156 Def / 40 SpA / 28 SpD / 32 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA
-- Recover
-- Leech Seed
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 80 HP / 252 SpA / 176 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
 - Hidden Power [Grass]
-- Shock Wave
+- Dynamic Punch
 
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 248 Def / 8 Spe
-Relaxed Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Recover
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Fighting]
+Snorlax @ Leftovers
+Ability: Thick Fat
+EVs: 16 HP / 216 Atk / 108 Def / 168 SpD
+Adamant Nature
+- Rest
+- Curse
+- Double-Edge
+- Earthquake
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]
+- Double-Edge

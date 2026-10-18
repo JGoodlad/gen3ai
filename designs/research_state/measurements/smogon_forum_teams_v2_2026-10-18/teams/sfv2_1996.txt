@@ -1,22 +1,11 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 224 HP / 252 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 Def
-- Rest
-- Thunderbolt
-- Hidden Power [Ice]
-- Roar
-
-Tyranitar @ Choice Band
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 144 Atk / 4 SpD / 176 Spe
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
-IVs: 30 SpD / 30 Spe
+- Dragon Dance
 - Earthquake
 - Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
+- Double-Edge
 
 Skarmory @ Leftovers
 Ability: Keen Eye
@@ -28,31 +17,41 @@ IVs: 0 Atk
 - Toxic
 - Roar
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-- Will-O-Wisp
-- Fire Punch
-- Ice Punch
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 192 SpA / 28 SpD / 36 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Substitute
-- Thunder
-- Hidden Power [Grass]
-- Dynamic Punch
-
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
-Bold Nature
-IVs: 0 Atk
+EVs: 240 HP / 136 Def / 80 SpA / 44 SpD / 8 Spe
+Relaxed Nature
 - Protect
-- Refresh
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
 - Toxic
-- Surf
+- Ice Beam
+- Thunderbolt
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Tri Attack

@@ -1,56 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 16 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Toxic
-- Crunch
-- Pursuit
-- Flamethrower
-
-Claydol @ Choice Band
-Ability: Levitate
-EVs: 252 HP / 252 Atk / 4 Def
-Impish Nature
-- Rapid Spin
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 224 HP / 252 Atk / 32 Spe
+Adamant Nature
+- Meteor Mash
 - Earthquake
 - Rock Slide
 - Explosion
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 68 Atk / 96 Def / 88 SpD / 4 Spe
-Careful Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Curse
-- Hidden Power [Rock]
-- Superpower
+Kingdra @ Leftovers
+Ability: Swift Swim
+EVs: 192 HP / 252 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Toxic
+- Rain Dance
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Megahorn
+- Rock Slide
+- Swords Dance
+- Substitute
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 28 Atk / 48 Def / 112 SpD / 68 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Hypnosis
 - Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 224 Atk / 40 SpD / 236 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power [Bug]
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 204 HP / 128 Atk / 108 Def / 56 SpD / 12 Spe
+EVs: 176 Atk / 64 Def / 252 SpD / 16 Spe
 Adamant Nature
-- Rest
+- Body Slam
+- Shadow Ball
 - Curse
-- Double-Edge
-- Earthquake
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 20 HP / 252 Atk / 36 SpD / 200 Spe
-Adamant Nature
-- Spore
-- Stun Spore
-- Sky Uppercut
-- Mach Punch
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 40 HP / 188 Atk / 100 SpD / 180 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Rest
-- Dragon Dance
-- Earthquake
-- Hidden Power [Rock]
+- Self-Destruct

@@ -1,57 +1,57 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 204 HP / 252 Atk / 52 Spe
-Adamant Nature
-- Rock Slide
-- Focus Punch
-- Earthquake
-- Brick Break
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 80 SpA / 180 Spe
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 192 HP / 16 SpA / 116 SpD / 184 Spe
 Modest Nature
 IVs: 0 Atk
-- Calm Mind
-- Giga Drain
-- Leech Seed
-- Psychic
+- Acid Armor
+- Roar
+- Surf
+- Baton Pass
 
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 68 HP / 252 SpA / 188 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Protect
-
-Snorlax @ Leftovers
-Ability: Thick Fat
-Shiny: Yes
-EVs: 44 HP / 132 Atk / 196 Def / 136 SpD
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 88 Atk / 4 SpD / 168 Spe
 Adamant Nature
-- Curse
-- Rest
-- Body Slam
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Taunt
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 160 SpA / 56 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Thunder
+- Ice Punch
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 252 HP / 16 Atk / 172 SpD / 68 Spe
+Adamant Nature
+- Megahorn
+- Swords Dance
+- Brick Break
+- Rock Slide
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 236 Atk / 156 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
 - Earthquake
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 68 Atk / 176 Def / 12 SpA
-Impish Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 236 Def / 24 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 184 HP / 252 Def / 72 Spe
 Bold Nature
 IVs: 0 Atk
-- Surf
-- Recover
-- Ice Beam
-- Refresh
+- Soft-Boiled
+- Counter
+- Thunder Wave
+- Seismic Toss

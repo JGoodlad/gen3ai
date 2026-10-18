@@ -1,56 +1,61 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Pursuit
-- Crunch
-- Fire Blast
-- Protect
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 244 SpD / 12 Spe
-Careful Nature
-- Protect
-- Drill Peck
-- Spikes
-- Toxic
-
-Blissey (F) @ Leftovers
+Starmie @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
+Shiny: Yes
+EVs: 248 HP / 156 Def / 28 SpA / 20 SpD / 56 Spe
+Timid Nature
 IVs: 0 Atk
-- Wish
-- Soft-Boiled
-- Ice Beam
-- Thunderbolt
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 188 Def / 68 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
 - Surf
-- Rest
+- Rapid Spin
+- Thunder Wave
+- Recover
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 252 HP / 220 Atk / 16 Def / 20 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+- Substitute
+
+Skarmory
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Thief
+- Protect
 - Roar
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 244 HP / 48 Atk / 216 Def
+Impish Nature
+- Meteor Mash
 - Earthquake
-- Psychic
+- Protect
 - Explosion
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 136 HP / 196 SpD / 176 Spe
-Timid Nature
-- Thunderbolt
-- Ice Punch
-- Will-O-Wisp
-- Explosion
+Blissey @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 252 Def / 252 SpA / 4 SpD
+Bold Nature
+IVs: 0 Atk / 30 Spe
+- Sing
+- Seismic Toss
+- Ice Beam
+- Soft-Boiled
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Screech

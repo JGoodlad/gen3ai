@@ -1,59 +1,57 @@
-Metagross @ Choice Band
+Machamp @ Leftovers
+Ability: Guts
+EVs: 112 Atk / 252 SpA / 144 Spe
+Naughty Nature
+- Sunny Day
+- Fire Blast
+- Cross Chop
+- Ice Punch
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Sunny Day
+- Fire Blast
+- Thunderbolt
+- Soft-Boiled
+
+Charizard @ Petaya Berry
+Ability: Blaze
+EVs: 12 HP / 244 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Sunny Day
+- Fire Blast
+- Hidden Power [Grass]
+
+Exeggutor @ Lum Berry
+Ability: Chlorophyll
+EVs: 52 HP / 244 SpA / 212 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Sleep Powder
+- Sunny Day
+- Solar Beam
+- Hidden Power [Fire]
+
+Metagross @ Leftovers
 Ability: Clear Body
-Shiny: Yes
-EVs: 96 HP / 220 Atk / 4 Def / 188 Spe
+EVs: 252 HP / 176 Atk / 80 Def
 Adamant Nature
 - Meteor Mash
-- Sleep Talk
 - Earthquake
+- Protect
 - Explosion
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 68 Def / 144 SpA / 44 Spe
-Modest Nature
-IVs: 0 Atk
-- Thunderbolt
-- Substitute
-- Calm Mind
-- Ice Punch
-
-Snorlax @ Leftovers
-Ability: Immunity
-Shiny: Yes
-EVs: 24 HP / 176 Atk / 108 Def / 184 SpD / 16 Spe
-Adamant Nature
-- Shadow Ball
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 144 HP / 252 Atk / 112 SpD
+Jolly Nature
+IVs: 30 SpD / 30 Spe
 - Earthquake
-- Curse
-- Self-Destruct
-
-Ludicolo @ Leftovers
-Ability: Swift Swim
-Shiny: Yes
-EVs: 76 HP / 92 Def / 252 SpA / 88 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Surf
-- Ice Beam
-- Rain Dance
-
-Gengar @ Leftovers
-Ability: Levitate
-Shiny: Yes
-EVs: 52 HP / 168 Def / 100 SpA / 188 Spe
-Naive Nature
-- Thunderbolt
-- Will-O-Wisp
-- Ice Punch
-- Explosion
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 232 Atk / 16 Def / 12 SpD
-Relaxed Nature
-- Earthquake
-- Rapid Spin
-- Psychic
-- Explosion
+- Beat Up
+- Aerial Ace
+- Hidden Power [Bug]

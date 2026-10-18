@@ -1,0 +1,59 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Fire Blast
+- Toxic
+
+Lapras @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 48 SpA / 208 Spe
+Modest Nature
+IVs: 0 Atk
+- Perish Song
+- Heal Bell
+- Ice Beam
+- Thunderbolt
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Counter
+- Wish
+- Soft-Boiled
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 SpA / 252 SpD
+Sassy Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Spikes
+- Rapid Spin
+- Earthquake
+- Hidden Power [Fire]
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Flamethrower
+- Wish
+- Protect
+- Toxic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Toxic
+- Protect
+- Surf
+- Roar

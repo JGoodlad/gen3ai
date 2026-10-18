@@ -1,53 +1,54 @@
-Swampert @ Salac Berry
+Swampert @ Leftovers
 Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 30 HP / 0 Atk
-- Substitute
-- Hydro Pump
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Surf
 - Roar
-- Endeavor
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
 - Dragon Dance
 - Earthquake
 - Rock Slide
 - Double-Edge
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 216 SpD / 40 Spe
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
 Careful Nature
-- Thunder Wave
-- Toxic
-- Seismic Toss
-- Explosion
+- Spikes
+- Thief
+- Drill Peck
+- Roar
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 12 Def / 220 SpA / 24 SpD / 252 Spe
 Mild Nature
 IVs: 30 Atk / 30 SpA
-- Substitute
-- Fire Blast
+- Dragon Claw
+- Flamethrower
 - Hidden Power [Grass]
-- Focus Punch
+- Brick Break
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
+EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake

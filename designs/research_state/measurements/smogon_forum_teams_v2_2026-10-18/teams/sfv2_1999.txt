@@ -1,56 +1,58 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Surf
-- Ice Beam
-
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 184 HP / 144 Atk / 180 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Ghost]
-- Focus Punch
-
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Psychic
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 248 SpD / 20 Spe
+EVs: 240 HP / 40 Def / 196 SpD / 32 Spe
 Calm Nature
 IVs: 0 Atk
 - Rest
-- Sleep Talk
+- Toxic
 - Thunderbolt
+- Roar
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Protect
+- Toxic
 - Roar
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 176 SpA / 24 SpD / 56 Spe
-Mild Nature
-- Substitute
-- Ice Punch
-- Thunder
-- Dynamic Punch
+EVs: 252 HP / 220 Def / 36 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Fire Punch
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
+- Protect
+- Toxic
+- Earthquake
+- Rock Slide
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide

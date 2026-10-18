@@ -1,58 +1,57 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 248 Atk / 12 Spe
+EVs: 248 HP / 252 Atk / 8 SpD
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 SpD / 30 Spe
 - Rock Slide
 - Earthquake
 - Hidden Power [Bug]
 - Focus Punch
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 80 HP / 16 SpA / 236 SpD / 176 Spe
-Modest Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Taunt
-- Giga Drain
-- Thunderbolt
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 156 SpD / 104 Spe
+EVs: 252 HP / 164 SpD / 92 Spe
 Careful Nature
-IVs: 0 Atk
 - Spikes
-- Taunt
-- Toxic
 - Roar
+- Drill Peck
+- Taunt
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Ice Beam
+- Seismic Toss
+- Wish
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 80 SpA / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Protect
+- Toxic
 - Thunderbolt
+- Hidden Power [Ice]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Fire Punch
 - Hidden Power [Grass]
-- Thunder Wave
-- Baton Pass
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 212 SpA / 48 Spe
-Quiet Nature
-- Hydro Pump
+EVs: 248 HP / 120 Def / 96 SpA / 44 SpD
+Relaxed Nature
 - Earthquake
 - Ice Beam
-- Focus Punch
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Bug]
+- Protect
+- Hydro Pump

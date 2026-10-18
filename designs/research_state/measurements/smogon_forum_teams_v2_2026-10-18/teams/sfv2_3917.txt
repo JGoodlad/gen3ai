@@ -1,0 +1,56 @@
+Machamp @ Leftovers
+Ability: Guts
+EVs: 248 HP / 176 Atk / 20 Def / 40 SpD / 24 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Bulk Up
+- Cross Chop
+- Rock Slide
+- Hidden Power [Bug]
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Fire]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 176 Atk / 108 Def / 8 SpD / 12 Spe
+Adamant Nature
+- Curse
+- Body Slam
+- Earthquake
+- Shadow Ball
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 20 Def / 28 SpD / 32 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 120 HP / 176 Atk / 212 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Thunder Wave
+- Dragon Dance
+- Earthquake
+- Hidden Power [Flying]

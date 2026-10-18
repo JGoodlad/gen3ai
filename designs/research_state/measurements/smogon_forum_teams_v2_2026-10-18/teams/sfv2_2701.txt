@@ -1,57 +1,55 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
 - Ice Beam
+- Brick Break
+- Hidden Power [Grass]
+- Flamethrower
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 228 Atk / 16 Def / 12 Spe
-Relaxed Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 52 Def / 60 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Shadow Ball
-- Self-Destruct
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 240 SpA / 20 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Psychic
-- Baton Pass
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 96 SpA / 20 SpD / 140 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 SpA / 252 Spe
+Mild Nature
+- Dragon Claw
+- Hydro Pump
+- Brick Break
+- Flamethrower
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
+EVs: 252 HP / 168 Atk / 88 Spe
+Adamant Nature
+- Agility
 - Meteor Mash
-- Hidden Power [Fire]
-- Psychic
+- Earthquake
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Thunder Wave
 - Explosion
+- Toxic
+- Seismic Toss

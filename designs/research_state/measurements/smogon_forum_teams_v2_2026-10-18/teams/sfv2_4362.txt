@@ -1,0 +1,58 @@
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 248 HP / 20 SpA / 240 Spe
+Timid Nature
+IVs: 0 Atk
+- Sleep Powder
+- Razor Leaf
+- Leech Seed
+- Substitute
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 184 Def / 24 SpA / 32 SpD / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Fire Punch
+- Toxic
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 248 Atk / 8 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 240 SpD / 16 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Protect
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Ice Beam
+- Toxic
+- Seismic Toss
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 SpA / 216 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Surf
+- Thunderbolt

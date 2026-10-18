@@ -1,57 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 224 HP / 252 Atk / 32 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Kingdra @ Leftovers
+Ability: Swift Swim
+EVs: 192 HP / 252 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Toxic
+- Rain Dance
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 216 Def / 36 SpA / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Sleep Talk
+- Calm Mind
+- Rest
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 28 Atk / 48 Def / 112 SpD / 68 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Hypnosis
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 224 Atk / 40 SpD / 236 Spe
 Adamant Nature
 IVs: 30 SpD / 30 Spe
 - Earthquake
 - Rock Slide
+- Aerial Ace
 - Hidden Power [Bug]
-- Focus Punch
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
-- Roar
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 68 HP / 252 SpA / 188 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Rest
-- Toxic
-- Thunderbolt
-- Hidden Power [Fire]
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Aromatherapy
-- Seismic Toss
-- Ice Beam
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Rest
-- Thunderbolt
-- Hidden Power [Grass]
-- Roar
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 56 Atk / 152 Def / 44 SpD / 16 Spe
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 176 Atk / 64 Def / 252 SpD / 16 Spe
 Adamant Nature
-- Rest
+- Body Slam
+- Shadow Ball
 - Curse
-- Earthquake
-- Rock Slide
+- Self-Destruct

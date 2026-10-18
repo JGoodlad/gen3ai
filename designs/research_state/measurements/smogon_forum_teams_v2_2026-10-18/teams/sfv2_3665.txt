@@ -1,0 +1,57 @@
+Jirachi @ Lum Berry
+Ability: Serene Grace
+EVs: 252 Atk / 60 SpA / 196 Spe
+Lonely Nature
+- Dynamic Punch
+- Doom Desire
+- Thunder
+- Psychic
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
+
+Sceptile @ Petaya Berry
+Ability: Overgrow
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Pursuit
+- Leaf Blade
+- Endeavor
+- Hidden Power [Ice]
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 148 HP / 92 Atk / 252 SpA / 16 Spe
+Mild Nature
+- Agility
+- Earthquake
+- Ice Beam
+- Thunder
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Hydro Pump
+- Roar
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 184 Atk / 92 SpA / 232 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Sky Attack
+- Overheat
+- Hidden Power [Fighting]
+- Substitute

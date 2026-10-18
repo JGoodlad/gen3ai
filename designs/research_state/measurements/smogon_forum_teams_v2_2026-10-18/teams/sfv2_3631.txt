@@ -1,59 +1,57 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Fire Blast
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 112 Def / 64 SpA / 60 SpD / 20 Spe
-Calm Nature
-IVs: 0 Atk
-- Ice Beam
-- Thunderbolt
-- Rest
-- Psych Up
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 196 Def / 60 Spe
-Bold Nature
-IVs: 0 Atk
-- Roar
-- Calm Mind
-- Surf
-- Rest
-
 Milotic @ Leftovers
 Ability: Marvel Scale
-EVs: 252 HP / 252 Def
+EVs: 252 HP / 252 Def / 4 SpA
 Bold Nature
 IVs: 0 Atk
-- Hypnosis
-- Surf
 - Recover
 - Toxic
+- Surf
+- Ice Beam
 
-Flygon @ Leftovers
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 Atk / 4 SpA / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Toxic
-- Fire Blast
-- Earthquake
-- Hidden Power [Flying]
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 224 SpD / 32 Spe
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
 Careful Nature
-IVs: 0 Atk
-- Spikes
-- Taunt
-- Whirlwind
-- Toxic
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 188 HP / 252 Atk / 68 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Earthquake
+- Brick Break
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast

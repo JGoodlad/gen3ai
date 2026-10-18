@@ -1,21 +1,50 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
-Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 120 Atk / 248 SpA / 140 Spe
+Rash Nature
+- Dragon Claw
+- Flamethrower
+- Brick Break
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 176 SpA / 76 SpD / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Flamethrower
 - Ice Beam
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 224 HP / 216 SpD / 68 Spe
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
-IVs: 0 Atk
+IVs: 30 Atk / 30 Def / 30 SpD
 - Spikes
-- Taunt
+- Rapid Spin
+- Hidden Power [Bug]
+- Counter
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 24 Atk / 176 Def / 24 SpA / 44 Spe
+Relaxed Nature
+- Protect
+- Earthquake
+- Surf
+- Ice Beam
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
 - Toxic
-- Roar
+- Fire Punch
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
@@ -26,33 +55,3 @@ IVs: 0 Atk
 - Calm Mind
 - Ice Beam
 - Thunderbolt
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide

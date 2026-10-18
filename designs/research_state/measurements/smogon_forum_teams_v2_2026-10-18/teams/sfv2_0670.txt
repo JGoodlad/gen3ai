@@ -1,60 +1,57 @@
-Dragonite @ Leftovers
-Ability: Inner Focus
-EVs: 248 HP / 64 SpD / 196 Spe
-Careful Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Focus Punch
-- Hidden Power [Flying]
-- Ice Beam
-- Substitute
-
-Altaria @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 1 Atk / 16 Def / 136 SpD / 104 Spe
-Careful Nature
-- Sing
-- Sleep Talk
-- Rest
-- Heal Bell
-
-Salamence @ Leftovers
+Salamence @ Choice Band
 Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
+EVs: 108 HP / 252 Atk / 148 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Brick Break
+- Earthquake
 - Hidden Power [Flying]
-- Earthquake
 - Rock Slide
-- Dragon Dance
 
-Shelgon @ Leftovers
-Ability: Rock Head
-Shiny: Yes
-EVs: 252 HP / 1 Atk / 252 Def / 4 Spe
-Impish Nature
-- Toxic
-- Roar
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 176 Atk / 64 Def / 20 Spe
+Brave Nature
+IVs: 30 Atk / 30 SpA
+- Earthquake
+- Explosion
+- Hidden Power [Grass]
+- Meteor Mash
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 248 HP / 140 Atk / 116 SpD / 4 Spe
+Adamant Nature
+- Body Slam
+- Earthquake
+- Selfdestruct
+- Shadow Ball
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 204 HP / 240 SpA / 64 SpD
+Modest Nature
+IVs: 30 Atk / 30 Def
+- Hidden Power [Ice]
+- Rest
+- Sleep Talk
+- Thunderbolt
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 248 HP / 252 Def / 8 Spe
+Bold Nature
 - Protect
-- Wish
-
-Flygon @ Choice Band
-Ability: Levitate
-Shiny: Yes
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 SpD
-- Earthquake
-- Double-Edge
-- Rock Slide
-- Hidden Power [Ghost]
-
-Kingdra @ Leftovers
-Ability: Swift Swim
-Shiny: Yes
-EVs: 252 HP / 100 SpD / 156 Spe
-Calm Nature
-IVs: 0 Atk
 - Surf
 - Toxic
-- Sleep Talk
-- Rest
+- Wish
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 244 Def / 12 Spe
+Bold Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Earthquake
+- Hidden Power [Fire]
+- Psychic
+- Rapid Spin

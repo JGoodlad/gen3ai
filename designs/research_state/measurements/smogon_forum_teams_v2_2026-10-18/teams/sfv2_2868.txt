@@ -1,56 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
-Calm Nature
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 176 SpA / 84 SpD
+Modest Nature
 IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
+- Crunch
+- Flamethrower
+- Pursuit
+- Roar
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 32 Atk / 224 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Brick Break
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 216 Atk / 16 Def / 28 Spe
+Adamant Nature
+- Meteor Mash
 - Earthquake
-- Psychic
+- Protect
 - Explosion
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Shadow Ball
-- Self-Destruct
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 224 Def / 32 Spe
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 164 Def / 40 SpD / 56 Spe
 Bold Nature
 IVs: 0 Atk
-- Wish
-- Calm Mind
-- Fire Punch
-- Psychic
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover
 
-Heracross @ Leftovers
-Ability: Guts
-EVs: 116 HP / 216 Atk / 176 Spe
-Adamant Nature
-- Substitute
-- Megahorn
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Double-Edge
 - Rock Slide
-- Focus Punch
+- Earthquake
+- Hidden Power [Bug]
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 8 HP / 252 Def / 248 SpA
+Modest Nature
+- Seismic Toss
+- Ice Beam
+- Thunder Wave
+- Soft-Boiled

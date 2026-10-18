@@ -1,56 +1,58 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 72 Atk / 212 SpA / 80 SpD / 144 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
+Timid Nature
+- Spikes
+- Ice Beam
+- Rapid Spin
+- Explosion
+
+Swampert @ Choice Band
+Ability: Torrent
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 112 HP / 224 SpA / 172 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Hydro Pump
-- Ice Beam
-- Roar
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 240 HP / 80 Def / 188 SpD
-Sassy Nature
-- Body Slam
-- Fire Punch
-- Wish
-- Protect
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 252 HP / 76 SpA / 180 SpD
-Calm Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
-- Explosion
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
 EVs: 240 HP / 252 SpA / 16 Spe
 Modest Nature
-- Focus Punch
-- Crunch
-- Pursuit
-- Fire Blast
+IVs: 0 Atk
+- Surf
+- Calm Mind
+- Rest
+- Sleep Talk
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Double-Edge
+Lanturn @ Leftovers
+Ability: Volt Absorb
+EVs: 40 HP / 252 SpA / 216 SpD
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Thunderbolt
+- Ice Beam
+- Rain Dance
+
+Ludicolo @ Leftovers
+Ability: Rain Dish
+EVs: 252 HP / 36 SpA / 220 SpD
+Calm Nature
+IVs: 0 Atk
+- Surf
+- Leech Seed
+- Protect
+- Toxic
+
+Kingdra @ Leftovers
+Ability: Swift Swim
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 3 Atk / 30 SpA
+- Rain Dance
+- Surf
+- Ice Beam
+- Hidden Power [Electric]

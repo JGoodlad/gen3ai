@@ -1,59 +1,61 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Focus Punch
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 180 Atk / 212 SpD / 116 Spe
+Shiny: Yes
+EVs: 8 HP / 232 SpA / 112 SpD / 156 Spe
+Mild Nature
+- Dragon Claw
+- Fire Blast
+- Brick Break
+- Wish
+
+Skarmory
+Ability: Keen Eye
+Shiny: Yes
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Thief
+- Counter
+- Protect
+
+Snorlax @ Leftovers
+Ability: Immunity
+Shiny: Yes
+EVs: 24 HP / 176 Atk / 108 Def / 184 SpD / 16 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
+- Protect
+- Return
+- Curse
 - Earthquake
 
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 252 Atk / 188 Def / 68 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Focus Punch
-- Cross Chop
-- Hidden Power [Bug]
-- Rock Slide
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 28 HP / 252 SpA / 228 Spe
-Timid Nature
-IVs: 3 Atk / 30 SpA
-- Calm Mind
-- Hydro Pump
-- Ice Beam
-- Hidden Power [Electric]
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 176 HP / 12 Def / 180 SpA / 140 Spe
+Ludicolo @ Leftovers
+Ability: Swift Swim
+Shiny: Yes
+EVs: 244 Def / 176 SpA / 88 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+IVs: 0 Atk
+- Surf
 - Leech Seed
-- Hidden Power [Fire]
-- Psychic
-- Giga Drain
+- Ice Beam
+- Rain Dance
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 156 HP / 252 SpA / 100 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 248 HP / 56 Def / 188 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Pursuit
+- Crunch
+- Rain Dance
+- Fire Blast
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 232 Atk / 16 Def / 12 SpA
+Relaxed Nature
+- Earthquake
 - Psychic
-- Hidden Power [Fire]
-- Meteor Mash
 - Explosion
+- Rapid Spin

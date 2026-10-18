@@ -1,0 +1,58 @@
+Arcanine (M)
+Ability: Intimidate
+EVs: 72 Def / 252 SpA / 184 Spe
+Modest Nature
+IVs: 30 Spe
+- Flamethrower
+- Hidden Power [Ice]
+- Extreme Speed
+- Thief
+
+Breloom (M) @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 72 SpD / 184 Spe
+Adamant Nature
+- Substitute
+- Mach Punch
+- Focus Punch
+- Spore
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+IVs: 30 Atk / 30 SpA
+- Thunder Wave
+- Seismic Toss
+- Hidden Power [Grass]
+- Explosion
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 8 Def / 252 SpA / 8 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Ice Beam
+- Hidden Power [Grass]
+- Pursuit
+
+Flygon (M) @ Leftovers
+Ability: Levitate
+EVs: 252 Atk / 4 SpA / 252 Spe
+Naughty Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Flamethrower
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Spikes
+- Hidden Power [Fire]
+- Rapid Spin
+- Explosion

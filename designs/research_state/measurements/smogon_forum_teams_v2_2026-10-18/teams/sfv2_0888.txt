@@ -1,62 +1,62 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Substitute
-- Baton Pass
-
-Dugtrio (M) @ Choice Band
-Ability: Arena Trap
+Tyranitar @ Leftovers
+Ability: Sand Stream
 Shiny: Yes
-EVs: 32 HP / 196 Atk / 108 SpD / 172 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Beat Up
+EVs: 248 HP / 56 Def / 188 SpA / 16 Spe
+Modest Nature
+- Fire Blast
+- Pursuit
+- Crunch
+- Brick Break
 
 Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 HP / 76 SpA / 180 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Giga Drain
-- Hidden Power [Fire]
-- Calm Mind
-- Baton Pass
+EVs: 244 HP / 68 Def / 40 SpA / 120 SpD / 36 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Leech Seed
+- Recover
+- Toxic
 
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 80 SpA / 136 Spe
-Modest Nature
-IVs: 0 Atk
-- Psychic
-- Fire Punch
-- Calm Mind
-- Substitute
-
-Suicune @ Leftovers
-Ability: Pressure
+Steelix @ Leftovers
+Ability: Rock Head
 Shiny: Yes
-EVs: 240 HP / 140 Def / 112 SpA / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
-- Calm Mind
-- Rest
+EVs: 248 HP / 104 Atk / 60 Def / 96 SpD
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Explosion
+- Earthquake
+- Hidden Power [Rock]
+- Protect
 
-Raikou @ Leftovers
-Ability: Pressure
+Starmie @ Leftovers
+Ability: Natural Cure
 Shiny: Yes
-EVs: 252 SpA / 4 SpD / 252 Spe
+EVs: 248 HP / 44 Def / 8 SpA / 32 SpD / 176 Spe
 Timid Nature
-IVs: 2 Atk / 30 Def
+IVs: 0 Atk
+- Surf
 - Thunderbolt
-- Hidden Power [Ice]
-- Calm Mind
-- Substitute
+- Recover
+- Rapid Spin
+
+Skarmory
+Ability: Keen Eye
+Shiny: Yes
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Thief
+- Spikes
+- Drill Peck
+- Roar
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+Shiny: Yes
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Double-Edge

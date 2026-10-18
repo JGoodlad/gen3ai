@@ -1,57 +1,55 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 184 SpA / 72 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
 - Earthquake
-- Psychic
-- Explosion
+- Hydro Pump
+- Ice Beam
 
 Metagross @ Leftovers
 Ability: Clear Body
 EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
 Rash Nature
 IVs: 30 Atk / 30 SpA
-- Meteor Mash
+- Earthquake
 - Thunder Punch
 - Hidden Power [Grass]
 - Explosion
 
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-- Ice Beam
-- Thunderbolt
-- Rain Dance
-- Explosion
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
 
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
+- Substitute
+- Thunderbolt
 - Hidden Power [Grass]
-- Beat Up
+- Baton Pass
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 140 Atk / 152 Def / 172 SpD / 12 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 196 Atk / 200 SpD / 112 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Dragon Dance
-- Hidden Power [Flying]
+EVs: 80 Atk / 252 SpA / 176 Spe
+Rash Nature
+- Dragon Claw
 - Rock Slide
+- Flamethrower
 - Brick Break

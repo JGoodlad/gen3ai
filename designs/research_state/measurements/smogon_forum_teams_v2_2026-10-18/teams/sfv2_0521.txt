@@ -1,61 +1,58 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 192 HP / 28 Atk / 252 SpA / 36 Spe
+Quiet Nature
+IVs: 30 Def / 30 SpA
+- Flamethrower
+- Focus Punch
+- Hidden Power [Grass]
+- Rock Slide
+
 Salamence @ Leftovers
 Ability: Intimidate
-Shiny: Yes
-EVs: 144 HP / 200 Atk / 164 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Flying]
+EVs: 64 Atk / 252 SpA / 192 Spe
+Rash Nature
+IVs: 30 Def / 30 SpA
 - Brick Break
-- Rock Slide
-- Dragon Dance
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
 IVs: 0 Atk
-- Surf
-- Ice Beam
-- Calm Mind
+- Protect
 - Roar
-
-Metagross @ Leftovers
-Ability: Clear Body
-Shiny: Yes
-EVs: 248 HP / 252 SpA / 8 SpD
-Quiet Nature
-- Psychic
-- Pursuit
-- Earthquake
-- Explosion
-
-Snorlax @ Leftovers
-Ability: Immunity
-Shiny: Yes
-Happiness: 0
-EVs: 100 HP / 124 Atk / 172 Def / 112 SpD
-Adamant Nature
-- Frustration
-- Earthquake
-- Curse
-- Rest
-
-Magneton @ Magnet
-Ability: Magnet Pull
-Shiny: Yes
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 0 Atk
-- Thunderbolt
+- Spikes
 - Toxic
-- Thunder Wave
-- Rain Dance
 
-Heracross @ Leftovers
-Ability: Guts
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Megahorn
-- Brick Break
-- Rock Slide
-- Swords Dance
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 216 Def / 40 Spe
+Relaxed Nature
+- Earthquake
+- Focus Punch
+- Ice Beam
+- Surf
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 112 HP / 252 Def / 144 SpA
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Seismic Toss
+- Soft-Boiled
+- Toxic
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Rapid Spin
+- Thunderbolt

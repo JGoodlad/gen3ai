@@ -1,57 +1,57 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-- Agility
-- Earthquake
-- Explosion
-- Meteor Mash
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 68 HP / 252 SpA / 188 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Explosion
-- Hidden Power [Fire]
-- Spikes
-- Surf
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 16 HP / 252 Atk / 240 Spe
-Jolly Nature
-- Earthquake
-- Explosion
-- Psychic
-- Rapid Spin
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 160 HP / 140 SpA / 208 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Explosion
-- Hidden Power [Grass]
-- Ice Punch
-- Thunderbolt
-
-Moltres @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 24 HP / 252 SpA / 232 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
-- Overheat
-- Roar
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
+EVs: 252 HP / 216 SpD / 40 Spe
+Calm Nature
 IVs: 0 Atk
-- Calm Mind
-- Ice Beam
-- Soft-Boiled
 - Thunderbolt
+- Roar
+- Sleep Talk
+- Rest
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Protect
+- Toxic
+- Roar
+- Spikes
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 40 HP / 252 SpA / 84 SpD / 132 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Crunch
+- Pursuit
+- Flamethrower
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 216 Def / 12 SpD / 32 Spe
+Impish Nature
+- Protect
+- Toxic
+- Flamethrower
+- Earthquake
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 148 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Toxic
+- Fire Punch
+
+Aerodactyl @ Choice Band
+Ability: Pressure
+EVs: 252 Atk / 4 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Hidden Power [Bug]
+- Pursuit
+- Earthquake

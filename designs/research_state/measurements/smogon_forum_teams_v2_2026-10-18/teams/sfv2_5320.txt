@@ -1,0 +1,55 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 216 Def / 40 SpA
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Hydro Pump
+- Roar
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Double-Edge
+- Rock Slide
+- Hidden Power [Flying]
+- Earthquake
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 16 HP / 200 Atk / 120 Def / 172 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Taunt
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
+IVs: 30 Atk / 30 SpA
+- Calm Mind
+- Soft-Boiled
+- Flamethrower
+- Hidden Power [Grass]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Bold Nature
+- Spikes
+- Toxic
+- Whirlwind
+- Protect
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 68 Def / 188 Spe
+Timid Nature
+- Will-O-Wisp
+- Thunderbolt
+- Ice Punch
+- Hypnosis

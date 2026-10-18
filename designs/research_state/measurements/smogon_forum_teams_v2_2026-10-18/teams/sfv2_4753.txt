@@ -1,0 +1,57 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 SpA / 108 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Thunder Punch
+- Earthquake
+- Hidden Power [Grass]
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 196 SpA / 128 Spe
+Modest Nature
+- Pursuit
+- Crunch
+- Flamethrower
+- Focus Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 196 Atk / 196 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Rock Slide
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 36 HP / 216 Atk / 248 Def / 8 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Curse
+- Body Slam
+- Earthquake
+- Hidden Power [Bug]
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 40 SpD
+Brave Nature
+- Rapid Spin
+- Earthquake
+- Ice Beam
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 SpD / 16 Spe
+Calm Nature
+IVs: 0 Atk / 30 SpA
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk

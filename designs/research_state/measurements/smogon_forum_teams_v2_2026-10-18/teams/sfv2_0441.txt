@@ -1,57 +1,57 @@
 Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 232 HP / 252 Atk / 24 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
 - Earthquake
-- Focus Punch
+- Rock Slide
 - Hidden Power [Bug]
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 SpA / 30 SpD
+EVs: 252 HP / 144 SpD / 112 Spe
+Careful Nature
 - Spikes
-- Drill Peck
-- Hidden Power [Ground]
 - Taunt
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Seismic Toss
-- Ice Beam
-- Fire Blast
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpA
-Relaxed Nature
-- Hydro Pump
-- Ice Beam
-- Earthquake
-- Protect
+- Roar
+- Drill Peck
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 68 HP / 4 Atk / 248 SpD / 188 Spe
-Hasty Nature
-- Will-O-Wisp
-- Focus Punch
-- Giga Drain
+EVs: 4 HP / 200 Def / 120 SpA / 184 Spe
+Timid Nature
+- Hypnosis
+- Explosion
+- Thunderbolt
 - Ice Punch
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Surf
-- Ice Beam
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 Atk / 80 SpA / 176 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
 - Thunderbolt
-- Psych Up
+- Hidden Power [Grass]
+- Baton Pass
+- Drill Peck
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 216 Atk / 108 SpA / 184 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Earthquake
+- Explosion
+- Hidden Power [Grass]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 60 HP / 252 SpA / 196 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass

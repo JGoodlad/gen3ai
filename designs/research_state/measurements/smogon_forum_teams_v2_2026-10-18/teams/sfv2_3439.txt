@@ -1,55 +1,57 @@
-Skarmory (F) @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 8 SpD / 252 Spe
-Jolly Nature
-- Spikes
-- Taunt
-- Drill Peck
-- Roar
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 240 HP / 228 SpD / 40 Spe
-Calm Nature
+EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
+- Substitute
 - Thunderbolt
 - Hidden Power [Grass]
-- Thunder Wave
-- Roar
+- Baton Pass
 
-Tyranitar (M) @ Lum Berry
+Tyranitar @ Choice Band
 Ability: Sand Stream
-EVs: 252 Atk / 4 SpD / 252 Spe
+EVs: 248 HP / 252 Atk / 8 Spe
 Adamant Nature
+- Earthquake
 - Rock Slide
-- Earthquake
-- Taunt
-- Dragon Dance
+- Double-Edge
+- Focus Punch
 
-Swampert (M) @ Leftovers
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Swampert @ Salac Berry
 Ability: Torrent
-EVs: 240 HP / 228 Def / 40 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Roar
-- Refresh
-
-Gengar (F) @ Lum Berry
-Ability: Levitate
-EVs: 40 HP / 216 SpA / 252 Spe
+EVs: 4 Def / 252 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
-- Thunderbolt
-- Ice Punch
-- Taunt
-- Destiny Bond
+- Substitute
+- Toxic
+- Hydro Pump
+- Endeavor
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 236 HP / 196 Atk / 72 SpD / 4 Spe
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Fire Blast
+- Hidden Power [Grass]
+- Focus Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 192 Atk / 200 SpD / 116 Spe
 Adamant Nature
-- Earthquake
-- Shadow Ball
-- Rapid Spin
-- Explosion
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break

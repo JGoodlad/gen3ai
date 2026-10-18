@@ -1,32 +1,29 @@
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Toxic
-- Hydro Pump
-- Endeavor
-
-Tyranitar @ Choice Band
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 80 HP / 160 Atk / 84 Def / 184 Spe
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
-IVs: 30 Atk / 30 SpD
+- Dragon Dance
 - Earthquake
 - Rock Slide
-- Hidden Power [Ghost]
-- Focus Punch
+- Double-Edge
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 236 HP / 236 SpD / 36 Spe
+Careful Nature
+- Spikes
+- Taunt
+- Toxic
+- Roar
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
 Metagross @ Leftovers
 Ability: Clear Body
@@ -38,22 +35,22 @@ IVs: 30 Atk / 30 SpA
 - Hidden Power [Grass]
 - Explosion
 
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 68 HP / 252 Atk / 188 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Spore
-- Stun Spore
-- Hidden Power [Ghost]
-- Sky Uppercut
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 HP / 96 Atk / 120 SpD / 40 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Refresh
-- Dragon Dance
-- Brick Break
-- Hidden Power [Flying]
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

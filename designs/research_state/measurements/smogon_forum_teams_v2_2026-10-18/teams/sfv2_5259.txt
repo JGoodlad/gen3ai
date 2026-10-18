@@ -1,0 +1,60 @@
+Hariyama @ Leftovers
+Ability: Thick Fat
+Shiny: Yes
+EVs: 4 Atk / 252 Def / 252 SpD
+Impish Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Knock Off
+- Brick Break
+- Whirlwind
+- Hidden Power [Bug]
+
+Salamence @ Leftovers
+Ability: Intimidate
+Shiny: Yes
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Dragon Claw
+- Protect
+- Toxic
+- Wish
+
+Metagross @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Earthquake
+- Meteor Mash
+- Rock Slide
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
+- Recover
+- Hidden Power [Grass]
+- Psychic
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 Def / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Rock Slide
+- Explosion
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Pursuit
+- Crunch
+- Fire Blast
+- Hidden Power [Grass]

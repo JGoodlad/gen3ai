@@ -1,57 +1,56 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 4 SpA / 252 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Rock Slide
-- Fire Blast
-- Hidden Power [Grass]
-- Brick Break
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 40 Def / 192 SpD / 36 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Thunder Wave
+- Toxic
+- Thunderbolt
 
-Skarmory
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 104 Atk / 152 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Substitute
+- Rock Slide
+- Hidden Power [Bug]
+- Focus Punch
+
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
 - Spikes
-- Thief
+- Protect
 - Drill Peck
 - Roar
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
-Sassy Nature
+EVs: 252 HP / 100 Atk / 112 Def / 28 SpA / 16 SpD
+Careful Nature
 - Rapid Spin
-- Refresh
 - Earthquake
 - Psychic
+- Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Aromatherapy
-- Seismic Toss
-- Ice Beam
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 216 Def / 44 SpD / 8 Spe
+Relaxed Nature
 - Protect
-- Toxic
-- Fire Punch
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 240 Def / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
+- Earthquake
 - Surf
 - Ice Beam
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide

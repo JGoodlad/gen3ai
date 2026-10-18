@@ -1,51 +1,51 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 148 Atk / 4 SpD / 172 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Dragon Dance
-- Rock Slide
-- Hidden Power [Bug]
-- Focus Punch
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
 
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 224 HP / 216 SpD / 68 Spe
 Careful Nature
+IVs: 0 Atk
 - Spikes
-- Thief
-- Drill Peck
+- Taunt
+- Toxic
 - Roar
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
 IVs: 0 Atk
 - Soft-Boiled
 - Toxic
-- Seismic Toss
 - Ice Beam
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Protect
-- Refresh
-- Surf
-- Roar
+- Thunderbolt
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 168 Atk / 200 SpD / 140 Spe
+EVs: 116 HP / 252 Atk / 140 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
-- Hidden Power [Flying]
+- Earthquake
 - Rock Slide
-- Brick Break
+- Hidden Power [Flying]
 
 Dugtrio @ Choice Band
 Ability: Arena Trap

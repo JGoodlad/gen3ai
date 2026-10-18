@@ -1,12 +1,32 @@
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 236 Atk / 12 Def / 200 SpD / 60 Spe
-Lonely Nature
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
+- Earthquake
+- Rock Slide
 - Hidden Power [Flying]
-- Brick Break
-- Fire Blast
+
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Endure
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Earthquake
+- Hidden Power [Grass]
+- Explosion
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
@@ -17,40 +37,22 @@ Adamant Nature
 - Rock Slide
 - Double-Edge
 
-Skarmory
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Thief
-- Drill Peck
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Blissey (F) @ Leftovers
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
-Bold Nature
+EVs: 252 HP / 4 SpD / 252 Spe
+Jolly Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Thunder Wave
-- Seismic Toss
-- Ice Beam
+- Recover
+- Leech Seed
+- Substitute
+- Baton Pass
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 144 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Rock Slide
-- Hidden Power [Grass]
-- Explosion
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
+- Dragon Dance
+- Earthquake
+- Hidden Power [Ghost]
+- Double-Edge

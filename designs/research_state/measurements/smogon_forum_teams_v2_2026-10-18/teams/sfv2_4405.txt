@@ -1,0 +1,57 @@
+Jynx (F) @ Never-Melt Ice
+Ability: Oblivious
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Lovely Kiss
+- Calm Mind
+- Ice Beam
+- Fake Out
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Grass]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Metal Sound
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 180 SpA / 76 Spe
+Quiet Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Refresh
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 144 HP / 156 Atk / 112 SpD / 96 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Beat Up
+- Hidden Power [Bug]
+- Aerial Ace

@@ -1,0 +1,59 @@
+Snorlax (F) @ Leftovers
+Ability: Immunity
+EVs: 252 HP / 104 Atk / 120 Def / 32 SpD
+Adamant Nature
+- Counter
+- Body Slam
+- Shadow Ball
+- Self-Destruct
+
+Magneton @ Magnet
+Ability: Magnet Pull
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Tyranitar (F) @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Salamence (F) @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Brick Break
+
+Metagross @ Lum Berry
+Ability: Clear Body
+Shiny: Yes
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Breloom (F) @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Spore
+- Substitute
+- Leech Seed
+- Mach Punch

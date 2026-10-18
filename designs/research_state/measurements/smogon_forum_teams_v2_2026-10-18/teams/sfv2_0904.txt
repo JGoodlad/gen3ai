@@ -1,58 +1,58 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 100 HP / 252 SpA / 156 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Thunder Wave
-- Hidden Power [Grass]
-- Baton Pass
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 8 HP / 252 Atk / 20 SpD / 228 Spe
+Heracross @ Choice Band
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Aerial Ace
-- Earthquake
-- Hidden Power [Bug]
-- Beat Up
-
-Jirachi @ Salac Berry
-Ability: Serene Grace
-EVs: 100 HP / 252 SpA / 156 Spe
-Modest Nature
-IVs: 0 Atk
-- Endure
-- Ice Punch
-- Thunder
-- Rain Dance
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 16 HP / 240 Atk / 116 Def / 116 SpD / 20 Spe
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
-
-Kingdra @ Leftovers
-Ability: Swift Swim
-EVs: 100 HP / 252 SpA / 156 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Ice Beam
-- Hydro Pump
-- Rain Dance
-
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 Atk
-- Substitute
-- Swords Dance
+IVs: 30 Atk / 30 SpD
 - Megahorn
+- Focus Punch
 - Rock Slide
+- Hidden Power [Ghost]
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 196 Atk / 200 SpD / 112 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Thunder
+- Ice Beam
+- Psychic
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Surf
+- Toxic

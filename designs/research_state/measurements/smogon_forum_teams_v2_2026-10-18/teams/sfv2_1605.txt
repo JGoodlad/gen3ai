@@ -1,58 +1,56 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 188 HP / 216 Atk / 104 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Brick Break
+- Explosion
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 24 SpD / 224 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Rest
+- Toxic
+- Thunderbolt
+- Hidden Power [Fire]
+
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 136 Def / 88 SpA / 44 Spe
-Relaxed Nature
-- Protect
-- Surf
-- Focus Punch
-- Roar
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 240 HP / 16 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Bug]
-- Counter
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
+EVs: 240 HP / 40 Def / 180 SpD / 48 Spe
+Sassy Nature
+- Rest
+- Curse
+- Earthquake
 - Ice Beam
-- Thunderbolt
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 252 Def / 4 Spe
-Bold Nature
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
 IVs: 0 Atk
-- Recover
-- Refresh
-- Toxic
-- Surf
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
 
-Salamence @ Leftovers
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 164 Atk / 140 Def / 172 SpD
+Adamant Nature
+- Return
+- Earthquake
+- Shadow Ball
+- Self-Destruct
+
+Gyarados @ Leftovers
 Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
+EVs: 60 HP / 252 Atk / 196 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
+- Dragon Dance
+- Earthquake
+- Hidden Power [Ghost]
+- Double-Edge

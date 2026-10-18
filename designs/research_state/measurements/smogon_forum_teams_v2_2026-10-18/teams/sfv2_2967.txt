@@ -1,57 +1,57 @@
-Politoed
-Ability: Water Absorb
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Thief
-- Hypnosis
-- Hydro Pump
-- Ice Beam
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 8 HP / 84 Def / 240 SpA / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Destiny Bond
-- Thunderbolt
-- Ice Punch
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 156 SpD / 100 Spe
-Careful Nature
-- Spikes
-- Roar
-- Drill Peck
-- Taunt
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-- Roar
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 212 SpA / 48 Spe
-Quiet Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Focus Punch
-
-Tyranitar @ Lum Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+EVs: 248 HP / 80 Atk / 180 Spe
 Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Dragon Dance
 - Rock Slide
 - Earthquake
 - Hidden Power [Bug]
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Fire Blast
+- Seismic Toss
+- Toxic
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 184 SpD / 72 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Taunt
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 16 Atk / 240 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Hidden Power [Grass]
+- Fire Blast
+- Focus Punch
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 116 Def / 144 SpA
+Quiet Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
+- Refresh
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 40 Def / 180 SpA / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]

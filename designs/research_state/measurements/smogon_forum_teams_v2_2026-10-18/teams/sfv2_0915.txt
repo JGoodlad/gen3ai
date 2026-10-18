@@ -1,57 +1,63 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 120 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Rain Dance
+- Thunder Wave
+
 Blaziken @ Salac Berry
 Ability: Blaze
-EVs: 252 Atk / 4 SpA / 252 Spe
-Hasty Nature
-- Endure
-- Overheat
-- Rock Slide
-- Sky Uppercut
+Shiny: Yes
+EVs: 80 HP / 252 Atk / 176 Spe
+Jolly Nature
+IVs: 30 Def
+- Substitute
+- Swords Dance
+- Reversal
+- Fire Blast
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 160 Def / 100 SpD / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Mirror Coat
+Kingdra @ Lum Berry
+Ability: Swift Swim
+Happiness: 62
+EVs: 112 HP / 240 SpA / 156 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Rain Dance
 - Surf
-- Rest
-- Calm Mind
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 108 Atk / 204 Def / 52 SpA / 144 Spe
-Naughty Nature
-- Sunny Day
-- Solar Beam
-- Rapid Spin
-- Earthquake
+- Ice Beam
+- Hidden Power [Grass]
 
 Dugtrio @ Choice Band
 Ability: Arena Trap
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
+Shiny: Yes
+Happiness: 0
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Rock Slide
-- Aerial Ace
 - Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 232 HP / 140 Def / 96 SpA / 40 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Calm Mind
-- Baton Pass
-- Hidden Power [Ice]
-- Recover
+Salamence @ Lum Berry
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 144 Def / 112 SpA / 252 Spe
-Timid Nature
-IVs: 30 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Agility
-- Roar
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Double-Edge

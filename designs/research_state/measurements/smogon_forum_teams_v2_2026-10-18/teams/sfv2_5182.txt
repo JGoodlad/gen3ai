@@ -1,0 +1,56 @@
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 72 HP / 252 Atk / 184 Spe
+Adamant Nature
+- Spore
+- Substitute
+- Leech Seed
+- Focus Punch
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 128 Def / 40 SpA / 32 SpD / 56 Spe
+Bold Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Surf
+- Ice Beam
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 160 Atk / 80 SpA / 16 SpD
+Sassy Nature
+IVs: 30 Atk / 30 SpA
+- Thunder
+- Hidden Power [Grass]
+- Superpower
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 124 Atk / 108 Def / 60 SpD / 12 Spe
+Adamant Nature
+- Curse
+- Body Slam
+- Shadow Ball
+- Self-Destruct
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 8 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Crunch

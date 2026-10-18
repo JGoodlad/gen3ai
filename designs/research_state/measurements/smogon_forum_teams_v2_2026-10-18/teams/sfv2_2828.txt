@@ -1,59 +1,57 @@
-Tyranitar @ Choice Band
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 144 Atk / 4 SpD / 176 Spe
+EVs: 248 HP / 168 Atk / 56 Def / 36 Spe
 Adamant Nature
 IVs: 30 SpD / 30 Spe
-- Earthquake
 - Rock Slide
+- Earthquake
 - Hidden Power [Bug]
 - Focus Punch
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
-Timid Nature
 IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Surf
-- Psychic
+- Toxic
+- Spikes
+- Whirlwind
+- Protect
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 216 Def / 36 SpA / 8 Spe
 Bold Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Wish
+- Surf
+- Roar
+- Calm Mind
+- Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 136 HP / 176 Atk / 52 SpA / 144 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 48 Def / 104 SpD / 104 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
+- Hidden Power [Grass]
+- Will-O-Wisp
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 8 HP / 252 Def / 248 SpA
+Bold Nature
 - Seismic Toss
 - Ice Beam
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 56 Atk / 124 Def / 44 SpA / 44 Spe
-Brave Nature
-IVs: 0 Atk
-- Curse
-- Earthquake
-- Rock Slide
-- Hydro Pump
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 176 Atk / 104 SpA / 64 SpD / 140 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
+- Aromatherapy
+- Soft-Boiled

@@ -1,57 +1,55 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Forretress @ Lum Berry
-Ability: Sturdy
-EVs: 252 HP / 72 Atk / 184 Def
-Impish Nature
-IVs: 30 Def / 30 SpD / 29 Spe
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 244 SpD / 16 Spe
+Careful Nature
+- Drill Peck
 - Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
+- Protect
+- Roar
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 32 Def / 224 SpA
+Quiet Nature
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
 - Explosion
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 68 HP / 252 SpA / 188 Spe
 Timid Nature
-- Will-O-Wisp
-- Thunderbolt
-- Giga Drain
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 200 SpD / 56 Spe
-Careful Nature
 IVs: 30 Atk / 30 SpA
-- Thunder Wave
-- Seismic Toss
+- Ice Punch
 - Hidden Power [Grass]
+- Thunderbolt
 - Explosion
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
 IVs: 0 Atk
-- Substitute
 - Surf
-- Roar
-- Endeavor
+- Calm Mind
+- Rest
+- Sleep Talk
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 180 Atk / 12 Def / 176 SpD / 140 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Brick Break
-- Fire Blast
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 16 HP / 252 Atk / 4 Def / 236 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 216 Atk / 16 Def / 108 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Agility

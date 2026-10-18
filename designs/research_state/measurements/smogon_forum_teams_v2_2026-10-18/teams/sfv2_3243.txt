@@ -1,58 +1,58 @@
-Zapdos @ Leftovers
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 176 Def / 36 SpD / 44 Spe
+Relaxed Nature
+- Ice Beam
+- Earthquake
+- Roar
+- Protect
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 192 SpA / 56 SpD / 8 Spe
+Calm Nature
+IVs: 0 Atk
+- Charm
+- Wish
+- Pursuit
+- Protect
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 112 Atk / 80 SpD / 64 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Brick Break
+- Dragon Dance
+- Refresh
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 160 Def / 96 SpA
+Relaxed Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Explosion
+- Spikes
+- Rapid Spin
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 168 HP / 252 Def / 88 Spe
+Bold Nature
+IVs: 0 Atk
+- Toxic
+- Soft-Boiled
+- Seismic Toss
+- Snatch
+
+Raikou @ Leftovers
 Ability: Pressure
-EVs: 104 HP / 224 SpA / 180 Spe
-Modest Nature
+EVs: 212 HP / 116 SpA / 4 SpD / 176 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
+- Calm Mind
 - Thunderbolt
 - Hidden Power [Grass]
-- Roar
-- Baton Pass
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Rock Slide
-- Aerial Ace
-
-Exeggutor @ Lum Berry
-Ability: Chlorophyll
-EVs: 44 Atk / 248 SpA / 216 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Sunny Day
-- Solar Beam
-- Hidden Power [Fire]
-- Explosion
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 240 HP / 248 SpA / 20 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Psychic
-- Hidden Power [Fire]
-- Explosion
-
-Lunatone @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 72 Def / 96 SpA / 92 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Baton Pass
-- Ice Beam
-- Hypnosis
-
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-- Swords Dance
-- Megahorn
-- Reversal
-- Endure
+- Substitute

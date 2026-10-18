@@ -1,58 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Substitute
+- Baton Pass
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Focus Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
+
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 76 Def / 160 SpD / 20 Spe
-Calm Nature
-IVs: 0 Atk
-- Toxic
-- Fire Punch
-- Wish
-- Protect
-
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 252 HP / 208 Def / 48 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Toxic
-- Refresh
-- Recover
-
-Hariyama @ Leftovers
-Ability: Guts
-EVs: 232 Atk / 148 Def / 56 SpD / 72 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Brick Break
-- Knock Off
-- Focus Punch
-- Hidden Power [Bug]
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 208 HP / 152 Atk / 148 Spe
-Jolly Nature
-- Earthquake
-- Psychic
-- Rapid Spin
-- Explosion
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 248 SpA / 8 SpD
+EVs: 252 HP / 40 Def / 80 SpA / 136 Spe
 Modest Nature
 IVs: 0 Atk
-- Pursuit
-- Crunch
-- Fire Blast
+- Substitute
+- Calm Mind
+- Psychic
+- Fire Punch
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 28 HP / 252 SpA / 228 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Hydro Pump
+- Ice Beam
 - Roar
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 8 HP / 248 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Aerial Ace
-- Hidden Power [Bug]
-- Rock Slide
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 144 Def / 128 SpA / 144 SpD
+Quiet Nature
+- Self-Destruct
+- Focus Punch
+- Fire Blast
+- Ice Beam

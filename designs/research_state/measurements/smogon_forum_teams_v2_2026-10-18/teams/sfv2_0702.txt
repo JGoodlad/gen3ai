@@ -1,56 +1,57 @@
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 116 Def / 144 Spe
-Impish Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Fighting]
-- Swords Dance
-- Baton Pass
-- Recover
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 248 HP / 196 Def / 64 SpD
-Bold Nature
-IVs: 0 Atk
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 4 Atk / 252 SpA
+Quiet Nature
+- Pursuit
+- Crunch
 - Ice Beam
-- Thunder Wave
-- Rain Dance
-- Recover
+- Earthquake
 
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 12 HP / 244 Atk / 252 Spe
-Adamant Nature
-- Megahorn
-- Rock Slide
-- Swords Dance
-- Substitute
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Spore
+- Stun Spore
+- Sky Uppercut
+- Mach Punch
 
 Magneton @ Magnet
 Ability: Magnet Pull
-EVs: 4 Def / 252 SpA / 252 Spe
+EVs: 40 HP / 252 SpA / 216 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunderbolt
 - Hidden Power [Fire]
-- Thunder Wave
 - Toxic
+- Protect
 
-Metagross @ Lum Berry
-Ability: Clear Body
-EVs: 252 Atk / 136 Def / 120 Spe
-Adamant Nature
-- Meteor Mash
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Explosion
-- Agility
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 8 HP / 252 Atk / 136 Def / 100 SpD / 12 Spe
+Gyarados @ Leftovers
+Ability: Intimidate
+Hidden Power: Flying
+EVs: 216 HP / 16 Atk / 88 SpD / 188 Spe
 Adamant Nature
-- Body Slam
-- Brick Break
-- Shadow Ball
-- Self-Destruct
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rest
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Seismic Toss
+- Counter
+- Toxic
+- Explosion

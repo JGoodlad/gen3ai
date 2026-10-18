@@ -1,56 +1,57 @@
-Machamp @ Leftovers
-Ability: Guts
-EVs: 248 HP / 176 Atk / 20 Def / 40 SpD / 24 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Bulk Up
-- Cross Chop
-- Rock Slide
-- Hidden Power [Bug]
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 68 Def / 160 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Fire Punch
+- Protect
+- Toxic
+- Wish
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
+EVs: 252 HP / 120 Atk / 88 Def / 32 SpA / 16 Spe
+Careful Nature
 - Psychic
-- Explosion
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-- Soft-Boiled
-- Wish
-- Thunder Wave
-- Seismic Toss
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 240 Def / 16 Spe
-Bold Nature
-- Rest
-- Calm Mind
-- Surf
-- Roar
-
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
 - Earthquake
-- Rock Slide
+- Rapid Spin
+- Explosion
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Hidden Power [Ghost]
+- Earthquake
+- Explosion
+
+Salamence (F) @ Leftovers
+Ability: Intimidate
+EVs: 28 Atk / 228 SpA / 252 Spe
+Hasty Nature
+- Dragon Claw
+- Fire Blast
+- Roar
 - Brick Break
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Recover
+- Thunderbolt
+- Hydro Pump
+- Ice Beam
+
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 244 HP / 96 Atk / 168 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]

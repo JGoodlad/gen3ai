@@ -1,57 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 184 HP / 148 SpA / 176 Spe
-Modest Nature
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Brick Break
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 240 SpA / 16 Spe
+Bold Nature
 IVs: 0 Atk
-- Calm Mind
-- Surf
+- Wish
+- Soft-Boiled
 - Ice Beam
-- Roar
+- Seismic Toss
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
 
 Magneton @ Magnet
 Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 248 Spe
+EVs: 68 HP / 252 SpA / 188 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
 - Thunderbolt
 - Hidden Power [Fire]
-- Rain Dance
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 136 Atk / 108 Def / 60 SpD
-Adamant Nature
-- Curse
-- Return
-- Shadow Ball
-- Self-Destruct
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 100 SpA / 8 SpD / 148 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 176 Atk / 16 Def / 148 Spe
-Adamant Nature
+- Thunder Wave
 - Toxic
-- Meteor Mash
-- Earthquake
-- Explosion
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 156 Atk / 212 SpD / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
-- Brick Break
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Toxic
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 248 Def / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Roar

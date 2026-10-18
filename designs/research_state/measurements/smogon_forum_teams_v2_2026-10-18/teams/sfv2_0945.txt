@@ -1,57 +1,59 @@
-Zapdos @ Choice Band
-Ability: Pressure
-EVs: 252 Atk / 76 SpA / 180 Spe
-Lonely Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Fighting]
-- Drill Peck
-- Thunderbolt
-- Thunder Wave
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 128 HP / 252 Atk / 128 Spe
-Adamant Nature
-- Meteor Mash
-- Explosion
-- Earthquake
-- Rock Slide
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 96 Atk / 92 Def / 200 SpA / 120 SpD
-Brave Nature
-- Self-Destruct
-- Body Slam
-- Ice Beam
-- Curse
-
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 56 HP / 252 SpA / 12 SpD / 188 Spe
-Timid Nature
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 12 HP / 252 Def / 64 SpA / 180 Spe
+Bold Nature
 IVs: 0 Atk
-- Crunch
-- Fire Blast
-- Pursuit
-- Sunny Day
-
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 HP
-- Swords Dance
-- Megahorn
+- Surf
 - Substitute
-- Rock Slide
+- Baton Pass
+- Roar
 
-Exeggutor @ Lum Berry
-Ability: Chlorophyll
-EVs: 44 HP / 252 SpA / 212 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Sleep Powder
-- Sunny Day
-- Solar Beam
-- Hidden Power [Fire]
+Lunatone @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 116 Def / 140 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Baton Pass
+- Reflect
+- Ice Beam
+
+Sceptile @ Leftovers
+Ability: Overgrow
+EVs: 252 SpA / 24 SpD / 232 Spe
+Timid Nature
+IVs: 30 Spe
+- Leaf Blade
+- Crunch
+- Pursuit
+- Hidden Power [Ice]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Baton Pass
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 220 Def / 36 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Wish
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 72 HP / 136 Atk / 72 SpD / 228 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Beat Up

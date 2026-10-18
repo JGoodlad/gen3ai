@@ -1,58 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Rest
-- Thunderbolt
-- Hidden Power [Grass]
-- Roar
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 4 HP / 252 Atk / 252 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 252 Atk / 40 Def / 32 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD
-- Spikes
-- Drill Peck
-- Hidden Power [Ground]
-- Roar
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Protect
-- Toxic
-- Thunderbolt
-- Hidden Power [Grass]
+- Dragon Dance
+- Focus Punch
+- Rock Slide
+- Earthquake
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 236 HP / 252 Def / 20 Spe
-Impish Nature
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Wish
 - Toxic
-- Seismic Toss
+- Fire Blast
+- Ice Beam
+- Soft-Boiled
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 220 Def / 36 Spe
-Impish Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 244 SpD / 12 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Roar
 - Protect
 - Toxic
-- Earthquake
-- Rock Slide
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 36 Def / 176 SpA / 44 SpD / 4 Spe
+Quiet Nature
+- Hydro Pump
 - Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Ice Beam
+- Protect
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 164 HP / 164 SpD / 180 Spe
+Timid Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Taunt
+- Destiny Bond
+- Thunderbolt
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Toxic
+- Protect

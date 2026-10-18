@@ -1,0 +1,55 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 32 Def / 168 SpD / 56 Spe
+Careful Nature
+- Protect
+- Rock Slide
+- Toxic
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 96 Def / 64 SpA / 64 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Baton Pass
+- Leech Seed
+- Hidden Power [Grass]
+- Recover
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 40 Atk / 80 SpA / 128 SpD / 8 Spe
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Toxic
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 180 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Drill Peck

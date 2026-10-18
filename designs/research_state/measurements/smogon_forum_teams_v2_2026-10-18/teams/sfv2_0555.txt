@@ -1,59 +1,57 @@
-Tyranitar @ Lum Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-Shiny: Yes
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Double-Edge
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 136 SpA / 124 SpD / 8 Spe
-Calm Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Ice Beam
-- Rest
-
-Metagross @ Leftovers
-Ability: Clear Body
-Shiny: Yes
-EVs: 168 HP / 248 Atk / 92 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Agility
-
-Charizard @ Leftovers
-Ability: Blaze
-Shiny: Yes
-EVs: 4 HP / 252 SpA / 252 Spe
+EVs: 248 HP / 48 Def / 164 SpA / 24 SpD / 24 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
+- Crunch
+- Pursuit
 - Fire Blast
-- Hidden Power [Grass]
-- Beat Up
-- Dragon Claw
+- Brick Break
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 96 HP / 196 Atk / 136 Def / 80 SpD
-Adamant Nature
-- Curse
-- Double-Edge
-- Shadow Ball
-- Self-Destruct
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Sassy Nature
+IVs: 30 SpD / 30 Spe
+- Spikes
+- Hidden Power [Bug]
+- Zap Cannon
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 148 Def / 68 SpD / 44 Spe
+Bold Nature
+IVs: 0 Atk
+- Thunderbolt
+- Toxic
+- Rest
+- Sleep Talk
 
 Claydol @ Leftovers
 Ability: Levitate
-Shiny: Yes
-EVs: 248 HP / 216 Atk / 36 SpA / 8 Spe
-Adamant Nature
+EVs: 252 HP / 232 Atk / 16 SpD / 8 Spe
+Careful Nature
 - Earthquake
-- Psychic
-- Explosion
+- Rock Slide
 - Rapid Spin
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 176 Def / 40 SpD / 44 Spe
+Bold Nature
+IVs: 0 Atk
+- Fire Punch
+- Toxic
+- Wish
+- Protect
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 72 SpD / 180 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Double-Edge
+- Hidden Power [Fighting]

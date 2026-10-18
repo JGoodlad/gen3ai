@@ -1,55 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 24 Atk / 252 SpA / 64 SpD / 144 Spe
-Mild Nature
-- Wish
-- Dragon Claw
-- Flamethrower
-- Brick Break
-
-Tyranitar @ Leftovers
+Tyranitar (M) @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 68 Atk / 40 SpA / 216 Spe
-Brave Nature
-IVs: 30 Atk / 30 SpA
-- Crunch
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
-- Hidden Power [Grass]
-- Focus Punch
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 56 Def / 56 SpA / 144 Spe
-Relaxed Nature
-- Toxic
-- Seismic Toss
-- Hidden Power [Dark]
-- Explosion
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-- Soft-Boiled
-- Calm Mind
-- Ice Beam
-- Thunderbolt
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 44 SpA / 44 SpD / 44 Spe
-Relaxed Nature
-- Protect
-- Surf
-- Focus Punch
+- Earthquake
+- Hidden Power [Bug]
 - Roar
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Protect
+- Spikes
+- Whirlwind
+- Toxic
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 104 SpA / 12 SpD / 16 Spe
+Relaxed Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Protect
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 40 Def / 252 SpA / 216 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Explosion
+- Ice Punch
+- Fire Punch
+- Hidden Power [Grass]
+
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]
+- Double-Edge
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 104 HP / 224 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic

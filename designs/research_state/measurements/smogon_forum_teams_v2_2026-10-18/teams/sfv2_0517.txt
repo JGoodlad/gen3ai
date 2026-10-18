@@ -1,57 +1,57 @@
-Heracross @ Choice Band
-Ability: Guts
-Hidden Power: Ghost
-EVs: 4 HP / 252 Atk / 252 Spe
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
 Adamant Nature
-- Megahorn
-- Focus Punch
-- Rock Slide
-- Sleep Talk
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 80 Atk / 252 SpA / 176 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Drill Peck
-- Thunder Wave
+- Agility
+- Earthquake
+- Explosion
+- Meteor Mash
 
 Cloyster @ Leftovers
 Ability: Shell Armor
-EVs: 248 HP / 196 SpD / 64 Spe
-Calm Nature
-- Surf
+EVs: 68 HP / 252 SpA / 188 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Explosion
+- Hidden Power [Fire]
 - Spikes
-- Rapid Spin
-- Explosion
+- Surf
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 4 Def / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Leech Seed
-- Recover
-- Baton Pass
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 160 HP / 236 Atk / 112 Spe
-Adamant Nature
-- Meteor Mash
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 16 HP / 252 Atk / 240 Spe
+Jolly Nature
 - Earthquake
-- Agility
 - Explosion
+- Psychic
+- Rapid Spin
 
-Suicune @ Leftovers
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 160 HP / 140 SpA / 208 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Explosion
+- Hidden Power [Grass]
+- Ice Punch
+- Thunderbolt
+
+Moltres @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 96 SpA / 160 Spe
+EVs: 24 HP / 252 SpA / 232 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Overheat
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
 Modest Nature
 IVs: 0 Atk
-- Surf
-- Substitute
 - Calm Mind
-- Roar
+- Ice Beam
+- Soft-Boiled
+- Thunderbolt

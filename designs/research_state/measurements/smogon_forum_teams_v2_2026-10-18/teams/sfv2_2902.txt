@@ -1,58 +1,56 @@
-Tyranitar @ Lum Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 232 Atk / 24 SpA / 252 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Dance
+EVs: 248 HP / 12 Atk / 176 SpA / 72 SpD
+Quiet Nature
 - Rock Slide
 - Earthquake
-- Hidden Power [Grass]
+- Crunch
+- Pursuit
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Agility
-- Meteor Mash
-- Earthquake
-- Rock Slide
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Sassy Nature
+IVs: 30 SpD / 30 Spe
+- Hidden Power [Bug]
+- Spikes
+- Rapid Spin
+- Explosion
 
-Raikou @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Ice]
-- Substitute
-
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-- Substitute
-- Endeavor
-- Hydro Pump
+EVs: 248 HP / 176 Def / 8 SpA / 76 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
 - Roar
+- Calm Mind
+- Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 184 HP / 180 Atk / 144 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 184 SpD / 76 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Drill Peck
+- Rest
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 220 HP / 92 SpA / 196 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Psychic
+EVs: 248 HP / 84 Def / 176 SpD
+Sassy Nature
+- Body Slam
 - Fire Punch
-- Hidden Power [Grass]
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
-- Earthquake
+- Protect
+- Wish

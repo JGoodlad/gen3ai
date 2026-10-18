@@ -1,57 +1,57 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 44 Def / 212 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Fire Blast
-- Roar
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 104 SpD / 152 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Toxic
-- Taunt
-- Roar
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 64 HP / 252 Def / 192 Spe
-Bold Nature
-IVs: 0 Atk
-- Seismic Toss
-- Toxic
-- Snatch
-- Soft-Boiled
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 124 Def / 44 SpA / 36 SpD / 56 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Rapid Spin
-- Thunder Wave
-- Recover
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Naive Nature
-- Dragon Claw
-- Fire Blast
-- Wish
-- Brick Break
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 124 Atk / 136 Def
+EVs: 236 HP / 252 Atk / 20 Spe
 Adamant Nature
-- Meteor Mash
+IVs: 30 SpD / 30 Spe
+- Rock Slide
 - Earthquake
-- Protect
+- Hidden Power [Bug]
+- Focus Punch
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 64 HP / 248 SpD / 196 Spe
+Timid Nature
+- Surf
+- Spikes
+- Ice Beam
 - Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 Atk / 80 SpA / 176 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Drill Peck
+- Thunder Wave
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 52 HP / 252 SpA / 204 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Ice Punch
+- Hidden Power [Grass]
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 48 Def / 168 SpA / 44 SpD
+Quiet Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Focus Punch

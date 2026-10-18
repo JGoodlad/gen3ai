@@ -1,0 +1,59 @@
+Regirock @ Lum Berry
+Ability: Clear Body
+Shiny: Yes
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Curse
+- Rock Slide
+- Focus Punch
+- Explosion
+
+Ludicolo (F) @ Leftovers
+Ability: Swift Swim
+Shiny: Yes
+EVs: 152 HP / 252 SpA / 104 Spe
+Modest Nature
+IVs: 0 Atk
+- Giga Drain
+- Surf
+- Ice Beam
+- Leech Seed
+
+Regice @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 252 HP / 104 Atk / 152 SpA
+Quiet Nature
+- Ice Beam
+- Thunderbolt
+- Explosion
+- Thunder Wave
+
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Brick Break
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Roar
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion

@@ -1,0 +1,54 @@
+Snorlax (F) @ Leftovers
+Ability: Immunity
+EVs: 76 HP / 252 Atk / 180 Def
+Adamant Nature
+- Curse
+- Body Slam
+- Self-Destruct
+- Earthquake
+
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+- Pursuit
+- Crunch
+- Fire Blast
+- Brick Break
+
+Salamence (F) @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 60 Atk / 52 Def / 144 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpA
+- Dragon Dance
+- Brick Break
+- Earthquake
+- Rock Slide
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 180 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
+
+Swampert (F) @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 216 Def / 40 SpD
+Relaxed Nature
+- Earthquake
+- Surf
+- Refresh
+- Toxic

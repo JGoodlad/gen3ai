@@ -1,0 +1,58 @@
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 208 SpD / 52 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Rapid Spin
+- Hidden Power [Rock]
+- Protect
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Curse
+- Rest
+- Return
+- Earthquake
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 196 SpA / 52 SpD / 8 Spe
+Calm Nature
+IVs: 0 Atk
+- Pursuit
+- Wish
+- Protect
+- Toxic
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Recover
+- Leech Seed
+- Heal Bell
+
+Gyarados (M) @ Leftovers
+Ability: Intimidate
+EVs: 184 HP / 40 Atk / 88 SpD / 196 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Dragon Dance
+- Earthquake
+- Rest
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 HP / 76 Def / 180 SpA
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Protect
+- Toxic

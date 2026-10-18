@@ -1,0 +1,58 @@
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 116 SpD / 140 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Refresh
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 208 HP / 124 Def / 96 SpA / 36 SpD / 44 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
+- Swords Dance
+- Baton Pass
+- Hidden Power [Grass]
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Refresh
+- Recover
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 232 HP / 252 SpA / 24 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Reflect
+- Thunder Wave
+
+Metagross @ Liechi Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Substitute
+- Agility

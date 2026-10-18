@@ -1,57 +1,58 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpD / 64 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
-- Calm Mind
-- Surf
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Fire]
-- Rain Dance
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Return
-- Earthquake
-- Self-Destruct
-
-Umbreon @ Leftovers
-Ability: Synchronize
-EVs: 252 HP / 56 Def / 200 SpA
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
-- Charm
-- Pursuit
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 136 Atk / 120 Spe
-Adamant Nature
-- Reflect
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 176 Atk / 192 SpD / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Ice Beam
 - Brick Break
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Protect
+- Toxic
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Hidden Power [Grass]
+- Flamethrower
+- Focus Punch
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 160 HP / 164 SpD / 184 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Taunt
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 220 Def / 40 Spe
+Impish Nature
+- Protect
+- Earthquake
+- Rock Slide
+- Toxic
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt

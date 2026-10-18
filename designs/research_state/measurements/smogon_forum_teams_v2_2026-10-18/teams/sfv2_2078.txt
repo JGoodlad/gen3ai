@@ -8,6 +8,26 @@ IVs: 0 Atk
 - Hydro Pump
 - Endeavor
 
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Substitute
+- Megahorn
+- Rock Slide
+- Focus Punch
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
 EVs: 184 HP / 72 Atk / 252 Spe
@@ -17,42 +37,22 @@ Adamant Nature
 - Rock Slide
 - Double-Edge
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 184 HP / 148 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Toxic
-- Thunderbolt
-- Baton Pass
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 152 SpA / 64 Spe
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 248 SpA / 60 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Fire Punch
-- Hidden Power [Grass]
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
 - Psychic
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
-- Beat Up
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 192 Atk / 200 SpD / 116 Spe
+EVs: 116 HP / 252 Atk / 140 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
-- Hidden Power [Flying]
+- Earthquake
 - Rock Slide
-- Brick Break
+- Hidden Power [Flying]

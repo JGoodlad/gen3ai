@@ -1,55 +1,57 @@
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
+Lanturn @ Leftovers
+Ability: Volt Absorb
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Hydro Pump
+- Toxic
+- Rest
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 232 Def / 24 Spe
+Bold Nature
+IVs: 0 Atk
+- Spikes
 - Roar
-- Flamethrower
-- Will-O-Wisp
-- Hidden Power [Grass]
+- Toxic
+- Protect
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 12 Def / 216 SpA / 32 Spe
-Quiet Nature
-- Pursuit
-- Crunch
-- Counter
-- Brick Break
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-- Rapid Spin
+EVs: 84 HP / 252 Atk / 164 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
+- Rock Slide
 - Earthquake
-- Explosion
-- Spikes
+- Dragon Dance
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 32 Atk / 224 SpA / 252 Spe
-Rash Nature
-- Dragon Claw
-- Fire Blast
-- Brick Break
-- Roar
+Dusclops @ Leftovers
+Ability: Pressure
+EVs: 156 HP / 100 Atk / 252 SpD
+Adamant Nature
+- Will-O-Wisp
+- Pain Split
+- Shadow Ball
+- Focus Punch
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Bold Nature
-IVs: 0 Atk
-- Refresh
-- Surf
-- Protect
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Atk / 252 SpD
+Sassy Nature
+- Rapid Spin
+- Psychic
 - Toxic
+- Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 56 HP / 252 Def / 200 SpA
+EVs: 252 HP / 252 Def / 4 SpA
 Bold Nature
-- Wish
-- Soft-Boiled
-- Seismic Toss
+IVs: 0 Atk
 - Ice Beam
+- Thunderbolt
+- Heal Bell
+- Soft-Boiled

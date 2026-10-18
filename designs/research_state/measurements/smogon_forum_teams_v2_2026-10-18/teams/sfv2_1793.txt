@@ -1,10 +1,21 @@
-Metagross @ Choice Band
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 228 SpA / 28 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Surf
+- Ice Beam
+
+Metagross @ Leftovers
 Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
-Adamant Nature
-- Meteor Mash
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
 - Earthquake
-- Rock Slide
+- Thunder Punch
+- Hidden Power [Grass]
 - Explosion
 
 Tyranitar @ Leftovers
@@ -16,41 +27,32 @@ Adamant Nature
 - Rock Slide
 - Double-Edge
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 4 SpA / 252 Spe
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
 Timid Nature
-IVs: 0 Atk
+IVs: 2 Atk / 30 SpA
 - Substitute
-- Leech Seed
-- Psychic
+- Thunderbolt
+- Hidden Power [Grass]
 - Baton Pass
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 176 Def / 44 SpD / 48 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Hydro Pump
-- Ice Beam
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 4 Def / 136 SpA / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
 
 Charizard @ Leftovers
 Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Substitute
-- Fire Blast
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Flamethrower
 - Hidden Power [Grass]
-- Focus Punch
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Beat Up

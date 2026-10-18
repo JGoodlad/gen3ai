@@ -1,0 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
+- Hidden Power [Grass]
+- Wish
+- Fire Blast
+
+Skarmory @ Soft Sand
+Ability: Keen Eye
+EVs: 4 HP / 252 Atk / 204 SpD / 48 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD
+- Spikes
+- Drill Peck
+- Hidden Power [Ground]
+- Taunt
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 44 Def / 44 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Meteor Mash
+- Earthquake
+- Hidden Power [Rock]
+- Agility
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 200 SpA / 56 Spe
+Modest Nature
+- Ice Beam
+- Thunderbolt
+- Explosion
+- Toxic
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 96 Def / 160 SpA
+Relaxed Nature
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Curse
+
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Psychic
+- Fire Punch
+- Ice Punch
+- Encore

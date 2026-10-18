@@ -1,57 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 104 HP / 252 SpA / 152 Spe
 Modest Nature
 IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Toxic
-- Drill Peck
-- Roar
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 128 Def / 40 SpA / 32 SpD / 56 Spe
-Bold Nature
-IVs: 0 Atk
-- Rapid Spin
-- Recover
-- Thunder Wave
+- Calm Mind
 - Surf
+- Ice Beam
+- Roar
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 136 Def / 56 SpA / 28 SpD / 36 Spe
-Bold Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Recover
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 192 SpA / 28 SpD / 36 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
+EVs: 252 HP / 52 Def / 28 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
 - Substitute
-- Thunder
+- Calm Mind
+- Thunderbolt
 - Hidden Power [Grass]
-- Dynamic Punch
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 220 Def / 36 Spe
-Impish Nature
-- Protect
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 Def / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Psychic
+- Hidden Power [Fire]
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 120 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
 - Toxic
-- Earthquake
-- Rock Slide
+- Baton Pass
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 164 SpA / 92 Spe
+Rash Nature
+- Surf
+- Ice Beam
+- Substitute
+- Focus Punch

@@ -1,0 +1,57 @@
+Salamence (M) @ Choice Band
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Brick Break
+
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Endure
+- Screech
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 220 Atk / 8 Def / 44 SpD / 236 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 200 SpA / 56 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Soft-Boiled
+- Ice Beam
+- Seismic Toss
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Spikes
+- Protect
+- Drill Peck
+- Roar
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 116 HP / 252 Atk / 52 SpD / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Rock Slide
+- Earthquake
+- Agility

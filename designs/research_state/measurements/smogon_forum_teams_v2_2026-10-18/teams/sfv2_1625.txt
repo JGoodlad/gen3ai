@@ -1,56 +1,56 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 176 Atk / 28 SpD / 56 Spe
-Adamant Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 136 SpA / 156 Spe
+Modest Nature
+IVs: 30 Spe
+- Thunder Wave
 - Toxic
-- Meteor Mash
-- Earthquake
-- Explosion
-
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Endure
 - Thunderbolt
-- Hidden Power [Grass]
-- Rain Dance
+- Hidden Power [Ice]
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 4 SpD / 252 Spe
-Jolly Nature
-- Recover
-- Substitute
-- Leech Seed
-- Baton Pass
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Curse
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 80 Atk / 252 SpA / 176 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Body Slam
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+- Explosion
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
+EVs: 32 HP / 176 Atk / 112 Def / 172 SpD / 16 Spe
 Adamant Nature
-- Body Slam
+- Return
 - Earthquake
 - Shadow Ball
 - Self-Destruct
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Rest
-- Calm Mind
-- Surf
-- Ice Beam
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
 Mild Nature
 IVs: 30 Atk / 30 SpA
-- Substitute
-- Fire Blast
+- Dragon Claw
+- Flamethrower
 - Hidden Power [Grass]
-- Focus Punch
+- Brick Break

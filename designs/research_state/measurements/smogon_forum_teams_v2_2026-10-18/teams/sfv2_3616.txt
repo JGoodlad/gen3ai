@@ -1,58 +1,57 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 244 Def / 96 SpA / 12 SpD / 140 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Wish
+- Surf
+- Baton Pass
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
 Metagross @ Choice Band
 Ability: Clear Body
-EVs: 72 HP / 252 Atk / 184 Spe
+EVs: 188 HP / 252 Atk / 68 Spe
 Adamant Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Meteor Mash
-- Explosion
 - Earthquake
-- Rock Slide
+- Brick Break
+- Explosion
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 252 Def / 4 Spe
-Bold Nature
-IVs: 0 Atk
-- Calm Mind
-- Sleep Talk
-- Rest
-- Surf
-
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 SpA / 4 SpD
+EVs: 252 HP / 192 SpA / 64 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Ice Beam
-- Thunderbolt
-- Hidden Power [Fire]
-- Thunder Wave
-
-Salamence @ Lum Berry
-Ability: Intimidate
-EVs: 76 HP / 252 Atk / 180 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Earthquake
-- Dragon Dance
-- Rock Slide
-- Hidden Power [Flying]
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
 IVs: 0 Atk
-- Thunderbolt
-- Giga Drain
-- Psychic
-- Ice Punch
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
 
-Poliwrath @ Choice Band
-Ability: Damp
-EVs: 92 HP / 60 Atk / 252 SpD / 104 Spe
-Jolly Nature
-IVs: 30 Atk / 30 SpD
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
 - Brick Break
-- Earthquake
-- Body Slam
-- Hidden Power [Ghost]
+- Fire Blast

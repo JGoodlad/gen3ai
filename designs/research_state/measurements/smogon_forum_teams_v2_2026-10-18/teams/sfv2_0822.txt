@@ -1,59 +1,57 @@
-Tyranitar @ Chesto Berry
-Ability: Sand Stream
-EVs: 252 HP / 232 SpA / 24 Spe
-Modest Nature
-IVs: 0 Atk
-- Rest
-- Counter
-- Pursuit
-- Crunch
-
-Charizard @ Leftovers
+Blaziken @ Leftovers
 Ability: Blaze
-EVs: 24 Atk / 232 SpA / 252 Spe
-Naive Nature
+EVs: 64 Atk / 252 SpA / 192 Spe
+Mild Nature
 IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Hidden Power [Grass]
 - Fire Blast
-- Focus Punch
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 76 SpA / 180 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Baton Pass
-
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 244 SpA / 248 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
 - Substitute
-- Baton Pass
-- Roar
-
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def
-- Earthquake
-- Hidden Power [Ice]
-- Rock Slide
-- Toxic
+- Hidden Power [Grass]
+- Focus Punch
 
 Hariyama @ Leftovers
 Ability: Guts
-EVs: 180 Atk / 164 Def / 116 SpD / 48 Spe
+EVs: 96 Atk / 232 Def / 180 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Focus Punch
+- Knock Off
 - Brick Break
+- Focus Punch
 - Rock Slide
-- Hidden Power [Bug]
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 4 Atk / 252 Def
+Relaxed Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Ice Beam
+- Hidden Power [Fighting]
+- Thunder Wave
+- Recover
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 204 HP / 252 Def / 52 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Wish
+- Substitute
+- Baton Pass
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 72 Atk / 252 SpA / 184 Spe
+Mild Nature
+- Thunder Wave
+- Ice Beam
+- Thunderbolt
+- Explosion
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute

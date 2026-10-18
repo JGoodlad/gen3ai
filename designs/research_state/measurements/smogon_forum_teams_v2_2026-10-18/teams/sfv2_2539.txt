@@ -1,58 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 112 SpA / 180 Spe
 Modest Nature
-IVs: 0 Atk
-- Toxic
-- Crunch
-- Pursuit
-- Ice Beam
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Toxic
+IVs: 2 Atk / 30 Def
 - Thunderbolt
-- Hidden Power [Fire]
-- Sunny Day
+- Hidden Power [Ice]
+- Thunder Wave
+- Toxic
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 136 Atk / 108 Def / 52 SpD / 8 Spe
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 144 Atk / 180 Spe
 Adamant Nature
-- Rest
-- Curse
-- Return
+- Dragon Dance
+- Rock Slide
 - Earthquake
+- Double-Edge
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
+EVs: 168 HP / 16 Def / 248 SpA / 76 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
 - Meteor Mash
-- Earthquake
-- Hidden Power [Grass]
 - Explosion
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 116 Atk / 144 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Toxic
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 SpA / 44 SpD
+Quiet Nature
+- Hydro Pump
 - Earthquake
-- Rock Slide
-- Hidden Power [Bug]
+- Ice Beam
+- Curse
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 248 HP / 16 Atk / 140 SpD / 104 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 240 HP / 200 SpA / 68 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Calm Mind
 - Rest
-- Dragon Dance
-- Earthquake
-- Hidden Power [Flying]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 196 HP / 4 Def / 132 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Psychic
+- Giga Drain
+- Hidden Power [Fire]

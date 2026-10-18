@@ -1,0 +1,59 @@
+Glalie @ Salac Berry
+Ability: Inner Focus
+EVs: 136 Atk / 168 SpD / 204 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Spikes
+- Hidden Power [Fighting]
+- Explosion
+- Taunt
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 52 Atk / 204 SpA / 252 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
+- Ancient Power
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
+
+Banette @ Leftovers
+Ability: Insomnia
+EVs: 24 HP / 252 Atk / 232 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Shadow Ball
+- Hidden Power [Fighting]
+- Will-O-Wisp
+- Taunt
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Endeavor
+- Surf
+- Roar
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide

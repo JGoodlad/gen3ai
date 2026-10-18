@@ -1,58 +1,57 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 SpD
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-- Focus Punch
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 36 HP / 252 SpA / 220 Spe
-Timid Nature
-IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
-- Thunderbolt
-- Psychic
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 96 Def / 136 SpD / 28 Spe
+Impish Nature
+- Sludge Bomb
+- Pain Split
+- Will-O-Wisp
+- Explosion
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 128 SpD / 132 Spe
-Careful Nature
-IVs: 0 Atk
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD
+- Drill Peck
 - Spikes
-- Taunt
-- Toxic
 - Roar
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-- Roar
+- Hidden Power [Ground]
 
 Flygon @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 56 Atk / 88 SpA / 112 Spe
-Naughty Nature
-- Fire Blast
-- Rock Slide
-- Toxic
+EVs: 248 HP / 20 Atk / 136 Def / 60 SpD / 44 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
 - Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Rest
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 80 HP / 16 SpA / 236 SpD / 176 Spe
-Modest Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Taunt
-- Giga Drain
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Rest
+
+Articuno @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 36 Def / 216 SpD / 8 Spe
+Calm Nature
+IVs: 0 Atk
+- Ice Beam
+- Heal Bell
+- Haze
+- Rest
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 84 Def / 176 SpD
+Sassy Nature
+- Body Slam
+- Fire Punch
+- Protect
+- Wish

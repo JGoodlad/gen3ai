@@ -1,56 +1,59 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 36 Def / 176 SpA / 28 SpD / 20 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Psychic
-- Baton Pass
-
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 Def
-- Substitute
 - Thunderbolt
 - Hidden Power [Ice]
+- Thunder Wave
 - Baton Pass
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 56 Atk / 76 Def / 44 SpA / 44 SpD / 48 Spe
-Brave Nature
-- Curse
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 80 HP / 148 Atk / 172 SpD / 108 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
 - Earthquake
-- Rock Slide
-- Hydro Pump
+- Hidden Power [Bug]
+- Aerial Ace
+- Beat Up
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 176 Atk / 196 SpD / 136 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 32 HP / 72 Def / 240 SpA / 164 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Hydro Pump
+- Ice Beam
+- Calm Mind
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 60 SpD / 196 Spe
 Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Brick Break
+IVs: 30 Atk / 30 SpD
+- Spore
+- Focus Punch
+- Hidden Power [Ghost]
+- Mach Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 248 SpA / 76 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 148 HP / 144 SpA / 216 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute

@@ -1,57 +1,59 @@
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 16 HP / 252 Def / 100 SpD / 140 Spe
+Metagross @ Choice Band
+Ability: Clear Body
+Shiny: Yes
+EVs: 168 HP / 216 Atk / 16 Def / 108 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 212 SpA / 120 SpD / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+- Thunder Wave
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 SpA / 8 SpD
 Modest Nature
 IVs: 0 Atk
-- Substitute
-- Surf
-- Ice Beam
-- Baton Pass
-
-Tyranitar @ Black Glasses
-Ability: Sand Stream
-EVs: 184 HP / 108 Atk / 216 Spe
-Brave Nature
-IVs: 30 Atk / 30 SpA
+- Pursuit
 - Crunch
-- Rock Slide
-- Hidden Power [Grass]
+- Flamethrower
+- Roar
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+Shiny: Yes
+EVs: 248 HP / 176 SpA / 44 SpD / 40 Spe
+Quiet Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
 - Focus Punch
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Explosion
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Brick Break
+- Hidden Power [Grass]
+- Fire Blast
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 220 SpD / 36 Spe
+Snorlax (F) @ Leftovers
+Ability: Immunity
+Shiny: Yes
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
 Careful Nature
-- Thunder Wave
-- Seismic Toss
-- Superpower
-- Explosion
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 176 Atk / 48 SpA / 44 Spe
-Brave Nature
 - Curse
+- Rest
+- Return
 - Earthquake
-- Rock Slide
-- Hydro Pump
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge

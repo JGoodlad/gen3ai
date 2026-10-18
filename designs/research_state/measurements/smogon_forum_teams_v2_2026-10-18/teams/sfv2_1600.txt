@@ -1,57 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
-- Rain Dance
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
-Careful Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 Atk / 68 SpD / 188 Spe
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 112 HP / 252 Atk / 144 Spe
 Adamant Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Brick Break
+- Hidden Power [Flying]
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 24 SpD / 224 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Rest
+- Toxic
+- Thunderbolt
+- Hidden Power [Fire]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 56 SpD / 24 Spe
+Adamant Nature
+- Toxic
 - Meteor Mash
 - Earthquake
-- Rock Slide
 - Explosion
 
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
+EVs: 252 HP / 228 SpA / 28 Spe
 Modest Nature
-IVs: 0 Atk
-- Rest
+- Substitute
 - Calm Mind
 - Surf
 - Ice Beam
 
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
+
 Snorlax @ Leftovers
-Ability: Thick Fat
-EVs: 252 Atk / 120 Def / 136 SpD
+Ability: Immunity
+EVs: 32 HP / 164 Atk / 140 Def / 172 SpD
 Adamant Nature
-- Curse
-- Double-Edge
+- Return
 - Earthquake
 - Shadow Ball
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 4 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Sunny Day
+- Self-Destruct

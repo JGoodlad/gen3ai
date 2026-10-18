@@ -1,0 +1,58 @@
+Glalie @ Salac Berry
+Ability: Inner Focus
+EVs: 136 Atk / 168 SpD / 204 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Spikes
+- Hidden Power [Fighting]
+- Explosion
+- Taunt
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Screech
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 80 SpA / 136 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Psychic
+- Fire Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 184 Atk / 212 SpD / 112 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break
+
+Tyranitar @ Black Belt
+Ability: Sand Stream
+EVs: 64 Atk / 192 SpA / 252 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Ice Beam
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 140 HP / 108 Def / 72 SpA / 188 Spe
+Timid Nature
+- Will-O-Wisp
+- Ice Punch
+- Thunderbolt
+- Explosion

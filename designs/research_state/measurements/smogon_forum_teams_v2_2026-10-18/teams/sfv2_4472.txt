@@ -1,0 +1,57 @@
+Hariyama @ Leftovers
+Ability: Thick Fat
+EVs: 176 Atk / 112 Def / 160 SpD / 60 Spe
+Adamant Nature
+- Knock Off
+- Brick Break
+- Focus Punch
+- Whirlwind
+
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Brick Break
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 72 SpD / 184 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Psychic
+- Giga Drain
+- Hidden Power [Fire]
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Soft-Boiled
+- Ice Beam
+- Seismic Toss
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 240 HP / 168 Atk / 80 Def / 20 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Starmie @ Leftovers
+Ability: Illuminate
+EVs: 252 HP / 40 Def / 60 SpA / 156 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Rain Dance
+- Recover

@@ -1,56 +1,56 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 124 SpA / 8 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Tyranitar @ Leftovers
+Tyranitar (M) @ Leftovers
 Ability: Sand Stream
-EVs: 4 HP / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Ice Beam
-- Hidden Power [Grass]
-- Brick Break
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
+EVs: 248 HP / 252 SpA / 8 SpD
 Modest Nature
-- Spikes
-- Rapid Spin
+IVs: 0 Atk
+- Crunch
+- Flamethrower
+- Pursuit
+- Counter
+
+Flygon (M) @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 216 Def / 12 SpD / 32 Spe
+Impish Nature
+- Earthquake
+- Rock Slide
+- Toxic
+- Protect
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 SpD
+Bold Nature
+IVs: 0 Atk / 30 Spe
+- Seismic Toss
 - Ice Beam
+- Toxic
+- Soft-Boiled
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 120 HP / 204 SpD / 184 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
 - Explosion
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Toxic
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 24 HP / 244 SpA / 100 SpD / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
 - Thunderbolt
-- Hidden Power [Ice]
+- Hidden Power [Grass]
+- Roar
 - Baton Pass
 
-Heracross @ Leftovers
-Ability: Swarm
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-- Swords Dance
-- Megahorn
-- Brick Break
-- Rock Slide
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Flying]
-- Double-Edge
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Protect

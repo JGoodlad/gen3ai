@@ -1,55 +1,55 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 Def
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Brick Break
-- Hidden Power [Grass]
-- Flamethrower
-
-Skarmory @ Leftovers
+Skarmory (F) @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
+EVs: 248 HP / 8 SpD / 252 Spe
+Jolly Nature
 - Spikes
-- Roar
-- Toxic
+- Taunt
 - Drill Peck
+- Roar
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 228 SpD / 40 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Roar
+
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Taunt
+- Dragon Dance
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 228 Def / 40 SpD
+Relaxed Nature
+- Earthquake
 - Ice Beam
-- Toxic
-- Fire Blast
+- Roar
+- Refresh
+
+Gengar (F) @ Lum Berry
+Ability: Levitate
+EVs: 40 HP / 216 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Punch
+- Taunt
+- Destiny Bond
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+EVs: 236 HP / 196 Atk / 72 SpD / 4 Spe
 Adamant Nature
-- Rapid Spin
 - Earthquake
-- Psychic
+- Shadow Ball
+- Rapid Spin
 - Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 204 Def / 64 Spe
-Bold Nature
-- Calm Mind
-- Surf
-- Rest
-- Roar

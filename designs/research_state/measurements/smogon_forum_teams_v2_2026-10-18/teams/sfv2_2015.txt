@@ -1,57 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 196 Atk / 200 SpD / 112 Spe
-Adamant Nature
-- Dragon Dance
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 132 SpD
+Relaxed Nature
+- Protect
+- Curse
 - Earthquake
-- Rock Slide
-- Brick Break
+- Ice Beam
 
-Magneton @ Salac Berry
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
+
+Magneton @ Charcoal
 Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
+EVs: 252 SpA / 32 SpD / 224 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
-- Endure
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunder Wave
+- Toxic
 - Thunderbolt
-- Hidden Power [Grass]
-- Rain Dance
+- Hidden Power [Fire]
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
-Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
-
-Raikou @ Leftovers
-Ability: Pressure
-EVs: 8 Def / 248 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Thunderbolt
-- Crunch
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Rock Slide
-- Hidden Power [Grass]
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
 Modest Nature
 IVs: 0 Atk
+- Soft-Boiled
 - Calm Mind
-- Surf
 - Ice Beam
-- Rain Dance
+- Thunderbolt
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 40 Def / 196 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Toxic
+- Thunderbolt
+- Roar
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

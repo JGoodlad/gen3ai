@@ -1,57 +1,57 @@
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 252 HP / 248 Atk / 8 SpD
+EVs: 200 HP / 132 Atk / 176 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Earthquake
-- Thunder Wave
-- Hidden Power [Bug]
-
-Smeargle @ Lum Berry
-Ability: Own Tempo
-EVs: 4 Atk / 252 SpD / 252 Spe
-Jolly Nature
-- Spore
-- Spikes
-- Thunder Wave
-- Explosion
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
 - Rock Slide
 - Earthquake
 - Double-Edge
-- Hidden Power [Flying]
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
-Timid Nature
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 152 HP / 252 Atk / 104 Spe
+Adamant Nature
+- Rock Slide
+- Superpower
+- Explosion
+- Thunder Wave
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 36 Def / 152 SpA / 68 Spe
+Modest Nature
 IVs: 2 Atk / 30 SpA
-- Taunt
-- Thunderbolt
-- Ice Punch
+- Calm Mind
+- Psychic
+- Fire Punch
 - Hidden Power [Grass]
 
-Swampert @ Leftovers
+Swampert @ Salac Berry
 Ability: Torrent
-EVs: 248 HP / 192 Def / 24 SpA / 44 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
 - Hydro Pump
-- Roar
+- Toxic
+- Substitute
+- Endeavor
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 64 Def / 152 SpA / 44 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 48 SpD / 208 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Psychic
-- Hidden Power [Fire]
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Charge
+- Thunder Wave
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 144 Atk / 212 SpD / 152 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Refresh

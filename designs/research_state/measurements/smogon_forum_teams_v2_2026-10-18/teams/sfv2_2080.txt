@@ -1,58 +1,59 @@
-Suicune @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunder Wave
+- Light Screen
+- Thunderbolt
+- Hidden Power [Ice]
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
 - Substitute
+- Toxic
+- Hydro Pump
+- Endeavor
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Hidden Power [Fire]
+- Psychic
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 192 HP / 252 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Sleep Talk
 - Calm Mind
 - Surf
-- Rain Dance
 
-Machamp @ Leftovers
-Ability: Guts
-EVs: 248 HP / 176 Atk / 20 Def / 40 SpD / 24 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 68 Atk / 4 SpD / 252 Spe
 Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Bulk Up
-- Cross Chop
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Earthquake
 - Rock Slide
 - Hidden Power [Bug]
 
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 184 HP / 148 SpD / 176 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 32 HP / 176 Atk / 128 Def / 172 SpD
-Adamant Nature
-- Curse
-- Double-Edge
-- Shadow Ball
-- Self-Destruct
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 188 HP / 252 Atk / 68 Spe
-Adamant Nature
-IVs: 30 SpA / 30 Spe
-- Meteor Mash
-- Rock Slide
-- Brick Break
-- Explosion
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 192 Atk / 200 SpD / 116 Spe
+EVs: 116 HP / 252 Atk / 140 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
-- Hidden Power [Flying]
+- Earthquake
 - Rock Slide
-- Brick Break
+- Hidden Power [Flying]

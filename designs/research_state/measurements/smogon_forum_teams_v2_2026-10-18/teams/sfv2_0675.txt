@@ -1,59 +1,55 @@
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 80 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Hypnosis
-- Mean Look
-- Perish Song
-- Protect
+Heracross
+Ability: Guts
+EVs: 252 Atk / 92 SpD / 164 Spe
+Adamant Nature
+- Thief
+- Brick Break
+- Megahorn
+- Rock Slide
 
-Donphan @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 60 Atk / 196 Def
-Impish Nature
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 188 SpD / 68 Spe
+Careful Nature
+- Seismic Toss
+- Superpower
+- Thunder Wave
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 80 HP / 252 Atk / 176 Spe
+Jolly Nature
 IVs: 30 Def / 30 SpD / 30 Spe
+- Double-Edge
+- Hidden Power [Rock]
+- Dragon Dance
+- Earthquake
+
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 132 HP / 124 Atk / 252 Spe
+Jolly Nature
+- Substitute
+- Bulk Up
+- Brick Break
+- Shadow Ball
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 30 Atk / 30 SpA
+- Leech Seed
+- Recover
+- Psychic
+- Hidden Power [Grass]
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
 - Rapid Spin
 - Earthquake
-- Rest
-- Hidden Power [Rock]
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 252 Def / 4 SpA
-Bold Nature
-IVs: 0 Atk
-- Counter
-- Ice Beam
-- Soft-Boiled
-- Aromatherapy
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 4 SpA / 252 SpD
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Rest
-- Hidden Power [Grass]
-- Thunderbolt
-- Roar
-
-Jirachi @ Choice Band
-Ability: Serene Grace
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 SpA / 30 SpD
-- Body Slam
-- Hidden Power [Ground]
-- Shadow Ball
-- Dynamic Punch
-
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 252 Def / 4 SpD
-Bold Nature
-IVs: 0 Atk
-- Haze
-- Surf
-- Toxic
-- Wish
+- Psychic
+- Explosion

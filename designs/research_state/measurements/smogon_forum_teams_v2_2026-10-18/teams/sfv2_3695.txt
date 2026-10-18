@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 64 HP / 172 Atk / 100 SpA / 16 SpD / 156 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunderbolt
+- Drill Peck
+- Hidden Power [Grass]
+- Roar
+
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 148 HP / 252 Atk / 108 Spe
+Adamant Nature
+- Brick Break
+- Focus Punch
+- Rock Slide
+- Recover
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 12 Atk / 216 SpA / 32 Spe
+Quiet Nature
+- Pursuit
+- Crunch
+- Fire Blast
+- Rock Slide
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 76 Def / 132 SpD / 52 Spe
+Calm Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Thunder
+- Icy Wind
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Substitute
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 80 Def / 4 SpA / 32 SpD / 144 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Rapid Spin
+- Thunder Wave
+- Recover

@@ -1,57 +1,56 @@
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Screech
-- Earthquake
-- Rock Slide
-- Hidden Power [Ghost]
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 SpA / 252 SpD
-Calm Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Spikes
-- Rapid Spin
-- Toxic
-- Hidden Power [Fire]
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-- Soft-Boiled
-- Wish
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 Atk / 56 SpA / 200 Spe
+Lonely Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Thunderbolt
+- Drill Peck
+- Hidden Power [Fighting]
 - Thunder Wave
-- Seismic Toss
 
-Armaldo @ Leftovers
-Ability: Battle Armor
-EVs: 252 HP / 36 Atk / 220 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rest
-- Swords Dance
-- Hidden Power [Bug]
-- Knock Off
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 196 HP / 8 Def / 124 SpA / 180 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
 
-Quagsire @ Leftovers
-Ability: Water Absorb
-EVs: 252 HP / 216 Def / 40 SpD
-Relaxed Nature
-- Rest
-- Curse
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 SpA / 44 SpD
+Quiet Nature
 - Earthquake
 - Ice Beam
+- Curse
+- Hydro Pump
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 236 Atk / 16 Def / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 Atk / 4 SpA / 252 Spe
+Hasty Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Belly Drum
+- Overheat
+- Hidden Power [Flying]
+- Rock Slide
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 24 HP / 176 Atk / 128 Def / 160 SpD / 20 Spe
+Adamant Nature
+- Self-Destruct
+- Body Slam
+- Shadow Ball
+- Curse

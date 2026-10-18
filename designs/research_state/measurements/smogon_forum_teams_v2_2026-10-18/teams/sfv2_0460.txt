@@ -1,55 +1,57 @@
-Medicham @ Choice Band
-Ability: Pure Power
-EVs: 252 Atk / 64 Def / 192 Spe
-Adamant Nature
-- Brick Break
-- Rock Slide
-- Shadow Ball
-- Focus Punch
-
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 252 Atk / 88 Spe
-Adamant Nature
+EVs: 76 HP / 252 SpA / 120 SpD / 60 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Meteor Mash
-- Earthquake
-- Rock Slide
-- Agility
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Drill Peck
-- Spikes
-- Protect
-- Roar
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 24 HP / 252 Atk / 232 Spe
-Adamant Nature
-- Earthquake
 - Psychic
-- Rapid Spin
+- Hidden Power [Fire]
 - Explosion
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Ice Beam
-- Seismic Toss
-- Thunder Wave
-- Soft-Boiled
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 248 HP / 12 Atk / 248 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Hidden Power [Ghost]
+- Counter
+- Explosion
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 80 HP / 252 SpA / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Will-O-Wisp
+- Flamethrower
+- Hidden Power [Grass]
+- Protect
 
 Gengar @ Leftovers
 Ability: Levitate
-EVs: 68 HP / 252 SpA / 188 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Ice Punch
-- Fire Punch
-- Hidden Power [Grass]
+EVs: 68 HP / 16 Atk / 248 SpD / 176 Spe
+Hasty Nature
+- Will-O-Wisp
+- Focus Punch
+- Thunderbolt
 - Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 196 Def / 60 SpD
+Relaxed Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 164 Def / 96 SpA
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Calm Mind
+- Rest
+- Sleep Talk

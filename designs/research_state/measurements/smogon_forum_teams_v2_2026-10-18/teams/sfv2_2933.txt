@@ -1,57 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 180 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 80 HP / 16 SpA / 236 SpD / 176 Spe
-Modest Nature
-IVs: 0 Atk
-- Will-O-Wisp
-- Giga Drain
-- Thunderbolt
-- Taunt
-
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 152 SpD / 108 Spe
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-IVs: 0 Atk
+- Drill Peck
 - Spikes
 - Roar
-- Taunt
-- Toxic
+- Protect
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-- Calm Mind
-- Soft-Boiled
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 216 Atk / 16 Def / 28 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Sludge Bomb
+- Explosion
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 248 HP / 216 Def / 44 SpD
+Bold Nature
+IVs: 0 Atk
 - Ice Beam
 - Thunderbolt
+- Toxic
+- Recover
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 64 Def / 32 SpD / 164 Spe
 Timid Nature
 IVs: 0 Atk
-- Substitute
-- Endeavor
-- Hydro Pump
-- Ice Beam
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 216 Def / 8 SpA / 36 Spe
-Lax Nature
-- Earthquake
-- Fire Blast
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 96 Def / 124 SpD / 40 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Hidden Power [Grass]
+- Leech Seed
+- Recover
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 12 Atk / 176 SpA / 72 SpD
+Quiet Nature
 - Rock Slide
-- Toxic
+- Earthquake
+- Crunch
+- Pursuit

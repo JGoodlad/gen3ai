@@ -1,55 +1,54 @@
-Tyranitar @ Leftovers
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 124 SpA / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+
+Tyranitar @ Choice Band
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+EVs: 80 HP / 184 Atk / 80 Def / 164 Spe
 Adamant Nature
-- Dragon Dance
 - Earthquake
 - Rock Slide
-- Double-Edge
+- Brick Break
+- Focus Punch
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Toxic
-- Hydro Pump
-- Endeavor
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 136 Atk / 160 Def / 52 SpA / 144 SpD
+Brave Nature
+- Body Slam
+- Brick Break
+- Fire Blast
+- Self-Destruct
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
+EVs: 168 HP / 16 Def / 224 SpA / 100 Spe
+Quiet Nature
 IVs: 30 Atk / 30 SpA / 30 Spe
 - Meteor Mash
 - Hidden Power [Fire]
 - Psychic
 - Explosion
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 192 HP / 8 Def / 248 SpA / 60 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
-- Hidden Power [Fire]
-- Psychic
-
 Charizard @ Leftovers
 Ability: Blaze
 EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
+Hasty Nature
 IVs: 30 Atk / 30 SpA
-- Substitute
-- Fire Blast
+- Toxic
+- Flamethrower
 - Hidden Power [Grass]
-- Focus Punch
+- Brick Break
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
+EVs: 176 Atk / 212 SpD / 120 Spe
 Adamant Nature
 IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance

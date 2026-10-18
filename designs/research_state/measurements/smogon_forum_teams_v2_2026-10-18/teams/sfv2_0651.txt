@@ -1,56 +1,58 @@
-Machamp @ Leftovers
-Ability: Guts
-EVs: 188 HP / 252 Atk / 64 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
-- Bulk Up
-- Cross Chop
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 128 HP / 144 SpA / 36 SpD / 200 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Hidden Power [Grass]
+- Baton Pass
+- Thunderbolt
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Rock Slide
-- Hidden Power [Ghost]
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 48 HP / 220 Atk / 124 SpD / 116 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Hidden Power [Bug]
+- Beat Up
+- Aerial Ace
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 60 SpA / 196 Spe
+Timid Nature
+IVs: 0 Atk
+- Ice Punch
+- Thunder
+- Substitute
+- Calm Mind
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 144 Atk / 116 Spe
-Adamant Nature
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Sunny Day
-
-Sceptile @ Petaya Berry
-Ability: Overgrow
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Endeavor
-- Leaf Blade
-- Hidden Power [Ice]
-
-Medicham @ Salac Berry
-Ability: Pure Power
-EVs: 80 HP / 252 Atk / 176 Spe
-Jolly Nature
-- Substitute
-- Endure
-- Reversal
-- Shadow Ball
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
+EVs: 252 HP / 4 Atk / 40 Def / 212 SpA
+Quiet Nature
+- Pursuit
 - Fire Blast
-- Substitute
-- Hidden Power [Grass]
 - Focus Punch
+- Crunch
 
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 144 Atk / 56 SpD / 60 Spe
-Careful Nature
-- Explosion
-- Thunder Wave
-- Counter
-- Seismic Toss
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 24 Def / 232 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Substitute
+- Calm Mind

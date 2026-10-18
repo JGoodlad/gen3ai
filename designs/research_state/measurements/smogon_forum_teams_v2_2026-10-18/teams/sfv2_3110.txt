@@ -1,58 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 60 SpD / 196 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Rain Dance
-- Baton Pass
-- Thunderbolt
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 244 Atk / 12 Def / 252 Spe
+Lonely Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Fire Blast
 - Hidden Power [Grass]
+- Brick Break
 
-Crobat @ Liechi Berry
-Ability: Inner Focus
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 SpA / 30 SpD
-- Substitute
-- Sludge Bomb
-- Hidden Power [Ground]
-- Shadow Ball
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 252 HP / 144 Atk / 92 Def / 20 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
-- Meteor Mash
+- Dragon Dance
 - Earthquake
 - Rock Slide
-- Explosion
+- Double-Edge
 
-Kingdra @ Petaya Berry
-Ability: Swift Swim
-EVs: 192 HP / 252 SpA / 64 Spe
-Modest Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
 IVs: 0 Atk
-- Rain Dance
-- Substitute
-- Hydro Pump
-- Ice Beam
+- Spikes
+- Taunt
+- Toxic
+- Roar
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 96 SpA / 20 SpD / 152 Spe
+Modest Nature
+IVs: 3 Atk / 30 Spe
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 40 Def / 40 SpA / 176 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Substitute
-- Thunderbolt
-- Hidden Power [Grass]
+EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
+Calm Nature
+IVs: 30 Atk / 30 SpA
+- Wish
+- Protect
+- Toxic
+- Fire Punch
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 8 HP / 224 Atk / 4 Def / 48 SpD / 224 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 80 SpA / 52 Spe
+Relaxed Nature
+- Protect
 - Earthquake
-- Rock Slide
-- Aerial Ace
-- Hidden Power [Bug]
+- Surf
+- Roar

@@ -1,6 +1,6 @@
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 12 Def / 220 SpA / 24 SpD / 252 Spe
+EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
 Mild Nature
 IVs: 30 Atk / 30 SpA
 - Dragon Claw
@@ -10,48 +10,47 @@ IVs: 30 Atk / 30 SpA
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+EVs: 184 HP / 104 Atk / 220 Spe
 Adamant Nature
 - Dragon Dance
 - Earthquake
 - Rock Slide
 - Double-Edge
 
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 240 HP / 240 SpD / 28 Spe
 Careful Nature
 - Spikes
-- Thief
+- Taunt
 - Drill Peck
-- Roar
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Protect
-- Refresh
-- Surf
 - Roar
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
+EVs: 4 HP / 252 Def / 252 SpA
 Modest Nature
 IVs: 0 Atk
 - Soft-Boiled
 - Toxic
+- Fire Blast
 - Ice Beam
-- Thunderbolt
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 108 Def / 100 SpA / 44 SpD / 16 Spe
+Relaxed Nature
+- Curse
 - Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Hydro Pump
+- Ice Beam
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Earthquake
+- Thunder Punch
+- Hidden Power [Grass]
+- Explosion

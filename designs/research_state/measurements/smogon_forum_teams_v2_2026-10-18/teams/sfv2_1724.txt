@@ -1,22 +1,21 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Rest
-- Light Screen
-- Toxic
-- Thunderbolt
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Roar
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 252 HP / 252 SpD / 4 Spe
 Careful Nature
-IVs: 30 SpD
 - Spikes
 - Protect
-- Hidden Power [Steel]
-- Roar
+- Toxic
+- Drill Peck
 
 Magneton @ Magnet
 Ability: Magnet Pull
@@ -24,36 +23,35 @@ EVs: 4 HP / 252 SpA / 252 Spe
 Modest Nature
 IVs: 2 Atk / 30 SpA / 30 Spe
 - Thunder Wave
+- Toxic
 - Thunderbolt
 - Hidden Power [Fire]
-- Rain Dance
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
-- Ice Beam
-- Thunderbolt
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
-Bold Nature
-IVs: 0 Atk
+EVs: 240 HP / 216 Def / 44 SpD / 8 Spe
+Relaxed Nature
 - Protect
 - Refresh
-- Surf
-- Roar
+- Earthquake
+- Ice Beam
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Wish
+- Seismic Toss
+- Ice Beam
 
 Aerodactyl @ Choice Band
 Ability: Rock Head
 EVs: 4 HP / 252 Atk / 252 Spe
 Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
 - Earthquake
 - Rock Slide
-- Hidden Power [Bug]
+- Hidden Power [Flying]
 - Double-Edge

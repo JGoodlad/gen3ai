@@ -1,0 +1,58 @@
+Forretress @ Leftovers
+Ability: Sturdy
+Hidden Power: Bug
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
+- Explosion
+- Earthquake
+
+Dusclops @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 SpD
+Impish Nature
+IVs: 0 Atk
+- Seismic Toss
+- Rest
+- Sleep Talk
+- Will-O-Wisp
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Curse
+- Rest
+- Return
+- Earthquake
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Sunny Day
+
+Houndoom @ Leftovers
+Ability: Flash Fire
+EVs: 56 HP / 252 SpA / 12 SpD / 188 Spe
+Timid Nature
+IVs: 0 Atk
+- Pursuit
+- Fire Blast
+- Sunny Day
+- Will-O-Wisp
+
+Hitmontop (M) @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 136 Atk / 112 Def / 8 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Counter
+- Brick Break
+- Hidden Power [Ghost]
+- Rapid Spin

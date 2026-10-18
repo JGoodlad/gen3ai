@@ -1,56 +1,56 @@
+Heracross @ Leftovers
+Ability: Guts
+EVs: 40 HP / 252 Atk / 216 Spe
+Jolly Nature
+- Megahorn
+- Focus Punch
+- Rock Slide
+- Swords Dance
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 184 HP / 60 Atk / 252 SpA / 12 Spe
+Brave Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Psychic
+- Hidden Power [Fire]
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 156 Def / 40 SpA / 64 Spe
+Relaxed Nature
+- Earthquake
+- Surf
+- Ice Beam
+- Protect
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 84 Atk / 176 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Dragon Dance
+
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 24 HP / 152 Atk / 88 Def / 64 SpD / 180 Spe
-Lonely Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
+EVs: 104 HP / 252 SpA / 152 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
 - Brick Break
+- Dragon Claw
 - Fire Blast
-
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 68 Atk / 252 SpA / 188 Spe
-Timid Nature
-- Thunder Wave
-- Ice Beam
-- Thunderbolt
-- Explosion
+- Hidden Power [Grass]
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 204 HP / 220 Atk / 60 Def / 8 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Double-Edge
-- Shadow Ball
-- Self-Destruct
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 168 HP / 224 Atk / 16 Def / 100 Spe
-Adamant Nature
-- Meteor Mash
+EVs: 112 HP / 68 Atk / 56 Def / 96 SpA / 176 SpD
+Brave Nature
+- Body Slam
+- Fire Blast
 - Earthquake
-- Brick Break
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 192 HP / 136 SpA / 180 Spe
-Modest Nature
-IVs: 0 Atk
-- Reflect
-- Calm Mind
-- Hydro Pump
-- Ice Beam
+- Self-Destruct

@@ -1,56 +1,55 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 136 Atk / 100 SpD / 20 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+- Thunder Wave
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
 Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
+- Spore
+- Focus Punch
+- Brick Break
+- Mach Punch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Fire Blast
+- Hidden Power [Ice]
+- Toxic
+- Beat Up
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
+EVs: 224 HP / 252 SpA / 32 Spe
+Quiet Nature
+- Crunch
+- Pursuit
+- Fire Blast
+- Brick Break
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
 Adamant Nature
-- Dragon Dance
+- Body Slam
 - Earthquake
-- Rock Slide
-- Double-Edge
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 204 HP / 252 SpA / 12 SpD / 40 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Fire]
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 4 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Leech Seed
-- Psychic
-- Baton Pass
+- Focus Punch
+- Self-Destruct
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 252 Atk / 16 Spe
-Naughty Nature
-- Curse
+EVs: 216 HP / 252 SpA / 40 Spe
+Quiet Nature
+- Hydro Pump
 - Earthquake
-- Rock Slide
 - Ice Beam
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 192 Atk / 200 SpD / 116 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
-- Brick Break
+- Focus Punch

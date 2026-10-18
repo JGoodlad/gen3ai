@@ -1,0 +1,58 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 4 Atk / 252 Def / 252 SpD
+Careful Nature
+- Brick Break
+- Knock Off
+- Rock Slide
+- Whirlwind
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 0 Atk
+- Spikes
+- Roar
+- Protect
+- Toxic
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Toxic
+- Seismic Toss
+- Wish
+
+Starmie @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 252 HP / 168 Def / 40 SpA / 32 SpD / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Hydro Pump

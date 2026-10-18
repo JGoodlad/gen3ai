@@ -1,58 +1,56 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 8 Def / 248 SpA
-Modest Nature
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 200 Def / 44 SpD / 12 Spe
+Bold Nature
 IVs: 0 Atk
-- Pursuit
-- Crunch
-- Fire Blast
-- Ice Beam
+- Surf
+- Counter
+- Roar
+- Protect
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 56 Atk / 252 SpA / 176 Spe
-Mild Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
-- Hidden Power [Grass]
-- Brick Break
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 60 SpD / 200 Spe
+Timid Nature
+- Hypnosis
+- Explosion
+- Ice Punch
+- Will-O-Wisp
 
 Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 252 HP / 240 SpD / 16 Spe
+EVs: 248 HP / 248 SpD / 12 Spe
 Careful Nature
-IVs: 0 Atk
+- Drill Peck
 - Spikes
 - Toxic
-- Protect
 - Roar
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 236 SpA / 20 Spe
-Bold Nature
+EVs: 252 Def / 200 SpA / 56 Spe
+Modest Nature
 IVs: 0 Atk
+- Thunder Wave
 - Soft-Boiled
+- Seismic Toss
 - Ice Beam
-- Thunderbolt
-- Toxic
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 180 Def / 36 SpA / 44 SpD
-Relaxed Nature
-- Hydro Pump
-- Earthquake
-- Ice Beam
-- Roar
-
-Gengar @ Leftovers
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Will-O-Wisp
-- Hidden Power [Grass]
-- Thunderbolt
+EVs: 252 HP / 212 Atk / 16 Def / 28 SpD
+Relaxed Nature
+- Earthquake
+- Psychic
 - Explosion
+- Rapid Spin
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 220 HP / 108 SpA / 4 SpD / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Calm Mind
+- Hidden Power [Grass]
+- Substitute

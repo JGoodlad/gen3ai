@@ -1,57 +1,57 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 188 SpA / 68 Spe
-Modest Nature
-IVs: 0 Atk
-- Substitute
-- Calm Mind
-- Surf
-- Ice Beam
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 24 SpD / 224 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Substitute
-- Toxic
-- Thunderbolt
+Exeggutor @ Lum Berry
+Ability: Chlorophyll
+EVs: 172 HP / 4 Atk / 60 SpA / 28 SpD / 244 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Explosion
+- Sleep Powder
 - Hidden Power [Fire]
+- Psychic
 
-Metagross @ Leftovers
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+- Rock Slide
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 216 Atk / 16 Def / 28 SpD
+Impish Nature
+- Earthquake
+- Rapid Spin
+- Shadow Ball
+- Explosion
+
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+EVs: 248 HP / 176 Atk / 68 Def / 16 Spe
 Adamant Nature
-- Agility
 - Meteor Mash
 - Earthquake
 - Rock Slide
+- Explosion
 
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 104 SpA / 152 Spe
-Modest Nature
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 216 SpD / 44 Spe
+Calm Nature
 IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Giga Drain
-- Psychic
+- Thunderbolt
+- Toxic
+- Rain Dance
+- Rest
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 52 HP / 252 Atk / 204 Spe
-Jolly Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Substitute
-- Dragon Dance
-- Earthquake
-- Hidden Power [Flying]
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 164 Def / 84 SpA / 4 SpD / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Rest
+- Calm Mind

@@ -1,56 +1,56 @@
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 68 Atk / 252 SpA / 188 Spe
-Rash Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Body Slam
-- Fire Punch
-- Ice Punch
-- Hidden Power [Fighting]
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 72 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
-- Rock Slide
-- Double-Edge
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
+Smeargle @ Salac Berry
+Ability: Own Tempo
+EVs: 4 HP / 252 SpD / 252 Spe
+Jolly Nature
+- Spore
+- Substitute
+- Explosion
 - Spikes
-- Rapid Spin
-- Ice Beam
+
+Camerupt @ Quick Claw
+Ability: Magma Armor
+EVs: 252 HP / 252 Atk / 4 SpA
+Brave Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Earthquake
+- Explosion
+- Hidden Power [Grass]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
 - Explosion
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 108 Def / 72 SpA / 44 SpD / 44 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Hydro Pump
-- Ice Beam
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 76 SpD / 180 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 172 Atk / 144 SpA / 192 Spe
+Hasty Nature
+- Focus Punch
+- Explosion
+- Thunderbolt
 - Giga Drain
-- Hidden Power [Fire]
-- Psychic
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 176 Atk / 212 SpD / 120 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
 - Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Earthquake
+- Dragon Dance
+
+Jirachi @ Salac Berry
+Ability: Serene Grace
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Ice Punch
+- Thunderbolt
+- Calm Mind
+- Endure

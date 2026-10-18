@@ -1,57 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 224 SpD / 32 Spe
-Calm Nature
-IVs: 0 Atk
-- Thunderbolt
-- Roar
-- Rest
-- Toxic
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 120 Def / 136 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam
 
-Dusclops (M) @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 40 Def / 160 SpD / 56 Spe
-Impish Nature
-- Shadow Ball
-- Will-O-Wisp
-- Rest
-- Imprison
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 248 Atk / 8 Def / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Sunny Day
-
-Skarmory @ Leftovers
-Ability: Keen Eye
+Forretress @ Leftovers
+Ability: Sturdy
 EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
-IVs: 0 Atk
+IVs: 30 Atk / 30 SpD
 - Spikes
-- Roar
-- Toxic
-- Protect
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Heal Bell
+- Rapid Spin
+- Hidden Power [Ghost]
+- Counter
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 252 HP / 116 Def / 140 SpD
-Sassy Nature
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
 - Earthquake
 - Psychic
-- Rapid Spin
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 228 SpD / 40 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
 - Rest
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Recover
+- Refresh
+- Toxic
+- Surf

@@ -1,0 +1,57 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 152 Def / 96 SpA / 20 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 180 SpD
+Sassy Nature
+- Body Slam
+- Protect
+- Fire Punch
+- Wish
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 240 HP / 216 Atk / 16 Def / 28 SpD / 8 Spe
+Adamant Nature
+- Earthquake
+- Shadow Ball
+- Rapid Spin
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 152 HP / 216 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 208 Def / 48 SpD
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+- Recover
+
+Machamp (M) @ Leftovers
+Ability: Guts
+EVs: 96 HP / 252 Atk / 16 Def / 144 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Bulk Up
+- Brick Break
+- Hidden Power [Bug]
+- Rock Slide

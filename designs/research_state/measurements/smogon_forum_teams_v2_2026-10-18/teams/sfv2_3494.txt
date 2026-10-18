@@ -1,57 +1,55 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-- Brick Break
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 252 HP / 76 Def / 168 SpA / 12 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Sunny Day
-- Toxic
-
-Metagross @ Leftovers
+Regirock @ Choice Band
 Ability: Clear Body
-EVs: 252 HP / 140 Atk / 80 Def / 36 SpA
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Hidden Power [Grass]
-- Earthquake
+EVs: 200 HP / 252 Atk / 56 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Rock Slide
+- Hidden Power [Ghost]
+- Superpower
 - Explosion
 
-Umbreon (F) @ Leftovers
-Ability: Synchronize
-EVs: 252 HP / 196 SpA / 52 SpD / 8 Spe
-Calm Nature
-IVs: 0 Atk
-- Pursuit
-- Wish
-- Protect
-- Toxic
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
-Careful Nature
-- Curse
-- Rest
-- Return
-- Earthquake
-
-Hitmontop (M) @ Leftovers
-Ability: Intimidate
-EVs: 252 HP / 232 Atk / 4 Def / 20 Spe
+EVs: 108 HP / 136 Atk / 108 Def / 144 SpD / 12 Spe
 Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Counter
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 152 Atk / 252 SpA / 36 SpD / 68 Spe
+Mild Nature
+- Substitute
+- Ice Beam
+- Thunder
+- Focus Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 196 Atk / 200 SpD / 112 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
 - Brick Break
-- Rapid Spin
-- Toxic
-- Protect

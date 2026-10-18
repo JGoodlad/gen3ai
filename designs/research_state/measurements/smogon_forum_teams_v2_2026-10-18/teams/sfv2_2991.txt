@@ -1,57 +1,57 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 140 HP / 180 SpA / 188 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Brick Break
-- Ancient Power
-- Hidden Power [Grass]
-- Fire Blast
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 56 Def / 220 SpA / 20 SpD / 212 Spe
-Modest Nature
-- Explosion
-- Giga Drain
-- Thunderbolt
-- Ice Punch
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 216 SpD / 40 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Toxic
-- Roar
-- Protect
-
-Jolteon @ Leftovers
+Jolteon (F) @ Leftovers
 Ability: Volt Absorb
-EVs: 252 SpA / 4 SpD / 252 Spe
+EVs: 72 HP / 184 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
 - Thunderbolt
 - Hidden Power [Grass]
-- Roar
+- Substitute
 - Baton Pass
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 108 Def / 252 SpA / 148 Spe
-Rash Nature
-- Hydro Pump
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 84 HP / 252 Atk / 16 Def / 156 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
 - Earthquake
-- Ice Beam
-- Focus Punch
+- Rock Slide
 
-Flygon @ Leftovers
-Ability: Levitate
+Dugtrio (F) @ Choice Band
+Ability: Arena Trap
 EVs: 252 Atk / 4 SpD / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
-- Rock Slide
 - Hidden Power [Bug]
+- Rock Slide
+- Aerial Ace
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 152 HP / 180 Atk / 160 SpA / 16 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Earthquake
+- Hidden Power [Fire]
+- Explosion
+
+Gengar (F) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 52 Def / 100 SpA / 104 Spe
+Timid Nature
+- Ice Punch
+- Giga Drain
+- Hypnosis
+- Thunderbolt
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 176 SpA / 16 SpD / 64 Spe
+Modest Nature
+- Calm Mind
+- Hydro Pump
 - Substitute
+- Ice Beam

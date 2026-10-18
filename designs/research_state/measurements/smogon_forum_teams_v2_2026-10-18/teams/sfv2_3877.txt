@@ -1,0 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 192 Atk / 200 SpD / 116 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Fire]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 204 HP / 176 Atk / 52 Def / 60 SpD / 16 Spe
+Adamant Nature
+- Curse
+- Return
+- Earthquake
+- Self-Destruct
+
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 208 HP / 192 Atk / 108 Spe
+Adamant Nature
+- Sleep Powder
+- Swords Dance
+- Sludge Bomb
+- Earthquake
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 248 HP / 56 Def / 204 SpA
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Pursuit
+- Charm
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Earthquake
+- Hidden Power [Grass]
+- Explosion

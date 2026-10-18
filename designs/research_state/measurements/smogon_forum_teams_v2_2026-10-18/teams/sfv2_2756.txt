@@ -1,57 +1,57 @@
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 56 Atk / 80 Def / 44 SpA / 44 SpD / 44 Spe
-Brave Nature
-- Curse
-- Earthquake
-- Rock Slide
-- Hydro Pump
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 220 Atk / 60 Def / 8 SpD / 16 Spe
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 116 SpD / 140 Spe
 Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+- Dragon Dance
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 36 Def / 176 SpA / 28 SpD / 20 Spe
-Modest Nature
-IVs: 0 Atk
-- Leech Seed
-- Calm Mind
-- Psychic
-- Baton Pass
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 20 SpA / 100 SpD / 136 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 60 Def / 140 SpA / 56 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Wish
-- Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
-
-Charizard @ Leftovers
-Ability: Blaze
+Houndoom @ Leftovers
+Ability: Flash Fire
 EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Flamethrower
+- Fire Blast
+- Crunch
+- Pursuit
 - Hidden Power [Grass]
-- Beat Up
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 68 HP / 252 SpA / 188 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Thunderbolt
+- Toxic
+- Thunder Wave
+
+Marowak @ Thick Club
+Ability: Rock Head
+EVs: 64 HP / 252 Atk / 192 Spe
+Adamant Nature
+- Double-Edge
+- Rock Slide
+- Earthquake
+- Swords Dance
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 24 HP / 176 Atk / 188 Def / 104 SpD / 16 Spe
+Adamant Nature
+- Body Slam
+- Counter
+- Focus Punch
+- Self-Destruct
+
+Tyranitar (M) @ Salac Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 16 HP / 188 Atk / 120 Def / 184 Spe
+Naughty Nature
+- Dragon Dance
+- Ice Beam
+- Rock Slide
+- Earthquake

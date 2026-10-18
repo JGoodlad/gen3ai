@@ -1,58 +1,57 @@
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
 - Meteor Mash
-- Earthquake
-- Hidden Power [Grass]
+- Hidden Power [Fire]
+- Psychic
 - Explosion
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
-Careful Nature
-- Spikes
-- Protect
-- Drill Peck
-- Roar
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
+Timid Nature
+- Rapid Spin
+- Recover
 - Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Grass]
+- Surf
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Substitute
+- Megahorn
+- Rock Slide
+- Focus Punch
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 212 HP / 252 Def / 44 SpA
+EVs: 252 Def / 252 SpA / 4 Spe
 Bold Nature
 IVs: 0 Atk
 - Soft-Boiled
 - Wish
 - Seismic Toss
-- Ice Beam
+- Flamethrower
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 176 Def / 44 SpA / 36 Spe
+Bold Nature
 IVs: 2 Atk / 30 SpA
-- Rest
-- Thunderbolt
+- Recover
+- Leech Seed
 - Hidden Power [Grass]
-- Roar
+- Perish Song
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 224 SpA / 44 Spe
-Quiet Nature
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 176 Def / 80 SpA
+Bold Nature
 IVs: 0 Atk
-- Earthquake
-- Hydro Pump
+- Recover
+- Thunder Wave
 - Ice Beam
-- Focus Punch
+- Thunderbolt

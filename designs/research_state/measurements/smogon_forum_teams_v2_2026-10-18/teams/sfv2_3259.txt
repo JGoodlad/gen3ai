@@ -1,57 +1,54 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 4 Def / 252 SpA
+EVs: 252 HP / 24 Def / 188 SpA / 44 Spe
 Modest Nature
-IVs: 0 Atk
-- Pursuit
 - Crunch
-- Fire Blast
-- Roar
+- Pursuit
+- Flamethrower
+- Brick Break
 
-Weezing @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 164 Def / 72 SpD / 20 Spe
-Impish Nature
-- Will-O-Wisp
-- Sludge Bomb
-- Pain Split
-- Fire Blast
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Atk / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Spikes
-- Rapid Spin
-- Earthquake
-- Hidden Power [Bug]
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
-Modest Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Toxic
-- Ice Beam
-- Thunderbolt
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Earthquake
-- Hydro Pump
-- Ice Beam
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 36 Atk / 72 Def / 148 SpD
+Sassy Nature
+- Body Slam
+- Fire Punch
+- Wish
 - Protect
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
-Bold Nature
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 212 Atk / 16 Def / 28 SpD
+Impish Nature
+- Earthquake
+- Rock Slide
+- Explosion
+- Rapid Spin
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Spore
+- Brick Break
+- Swords Dance
+- Mach Punch
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 248 SpD / 12 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Protect
+- Roar
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 120 Atk / 188 SpA / 200 Spe
+Mild Nature
 IVs: 30 Atk / 30 SpA
-- Leech Seed
-- Recover
-- Light Screen
+- Thunderbolt
+- Drill Peck
 - Hidden Power [Grass]
+- Agility

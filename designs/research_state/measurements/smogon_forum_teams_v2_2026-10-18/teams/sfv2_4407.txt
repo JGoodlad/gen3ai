@@ -1,0 +1,54 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 212 SpA / 48 Spe
+Quiet Nature
+- Crunch
+- Pursuit
+- Fire Blast
+- Brick Break
+
+Poliwrath @ Leftovers
+Ability: Water Absorb
+EVs: 120 HP / 104 Atk / 252 SpA / 32 Spe
+Brave Nature
+- Brick Break
+- Hydro Pump
+- Ice Beam
+- Focus Punch
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 240 HP / 216 Atk / 52 Spe
+Adamant Nature
+- Earthquake
+- Ice Beam
+- Rapid Spin
+- Explosion
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Beat Up
+- Dragon Claw
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 216 Atk / 116 Def / 176 SpD
+Adamant Nature
+- Body Slam
+- Earthquake
+- Focus Punch
+- Self-Destruct
+
+Sudowoodo @ Choice Band
+Ability: Rock Head
+EVs: 248 Atk / 16 SpD / 244 Spe
+Adamant Nature
+- Rock Slide
+- Brick Break
+- Double-Edge
+- Explosion

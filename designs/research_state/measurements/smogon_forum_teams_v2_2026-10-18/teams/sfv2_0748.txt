@@ -1,58 +1,59 @@
-Metagross @ Leftovers
+Regirock @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 136 Atk / 100 SpD / 20 Spe
+EVs: 252 HP / 184 Atk / 72 Spe
 Adamant Nature
-- Meteor Mash
-- Earthquake
+IVs: 30 SpD / 30 Spe
+- Curse
+- Focus Punch
 - Rock Slide
-- Explosion
+- Hidden Power [Bug]
 
-Dodrio @ Salac Berry
-Ability: Early Bird
-EVs: 252 Atk / 4 Def / 252 Spe
-Adamant Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Drill Peck
-- Hidden Power [Fighting]
-- Substitute
-- Flail
-
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Endure
-- Thunder Wave
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 252 Atk / 4 SpA / 252 Spe
-Naive Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Dance
-- Rock Slide
-- Earthquake
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 96 Def / 44 SpA / 88 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
+- Recover
 - Hidden Power [Grass]
+- Psychic
 
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 84 HP / 252 Atk / 172 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Rock]
+Lapras @ Leftovers
+Ability: Water Absorb
+EVs: 64 HP / 252 Def / 136 SpA / 24 SpD / 32 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Heal Bell
+- Perish Song
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
+- Counter
+
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 60 Def / 176 SpD / 20 Spe
+Impish Nature
+IVs: 30 Atk / 30 SpD
 - Earthquake
-- Thunder Wave
-
-Heracross @ Salac Berry
-Ability: Swarm
-EVs: 252 Atk / 4 SpD / 252 Spe
-Adamant Nature
-IVs: 30 HP
-- Swords Dance
-- Megahorn
-- Substitute
+- Hidden Power [Ghost]
 - Rock Slide
+- Rapid Spin
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 236 HP / 104 Atk / 68 Def / 100 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Earthquake
+- Focus Punch
+- Dragon Dance

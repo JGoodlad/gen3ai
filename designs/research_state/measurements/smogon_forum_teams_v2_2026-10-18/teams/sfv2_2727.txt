@@ -1,54 +1,56 @@
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 168 HP / 224 Atk / 16 Def / 100 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 192 HP / 132 Atk / 184 Spe
 Adamant Nature
-- Meteor Mash
+- Dragon Dance
+- Rock Slide
 - Earthquake
-- Brick Break
-- Explosion
+- Taunt
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 120 Atk / 112 Def / 16 SpD / 8 Spe
-Sassy Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 160 SpD / 100 Spe
+Careful Nature
+- Spikes
+- Roar
+- Taunt
+- Drill Peck
 
-Blissey (F) @ Leftovers
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 248 HP / 252 Def / 8 Spe
-Impish Nature
-- Soft-Boiled
-- Aromatherapy
-- Thunder Wave
-- Seismic Toss
+EVs: 112 HP / 96 Def / 144 SpA / 96 SpD / 60 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Psychic
+- Giga Drain
+- Leech Seed
+- Hidden Power [Ice]
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 60 Def / 52 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Double-Edge
-- Shadow Ball
-- Self-Destruct
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 124 Def / 92 SpA / 44 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Hydro Pump
+- Protect
 
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 176 Def / 76 SpA / 8 Spe
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def / 30 SpA
+- Flamethrower
+- Hidden Power [Water]
+- Overheat
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 SpA / 180 Spe
 Modest Nature
 IVs: 0 Atk
-- Recover
-- Toxic
-- Surf
-- Ice Beam
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 120 Def / 248 SpA / 140 Spe
-Rash Nature
-- Wish
-- Dragon Claw
-- Flamethrower
-- Brick Break
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Ice Punch

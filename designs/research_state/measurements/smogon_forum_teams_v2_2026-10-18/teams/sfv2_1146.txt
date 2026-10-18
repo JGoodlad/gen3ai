@@ -1,56 +1,57 @@
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 88 Def / 136 SpD / 32 Spe
-Calm Nature
-IVs: 30 Atk / 30 SpA
-- Wish
-- Body Slam
-- Fire Punch
-- Hidden Power [Grass]
-
-Tyranitar @ Leftovers
+Tyranitar (M) @ Lum Berry
 Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Taunt
-- Toxic
-- Earthquake
-- Rock Slide
+EVs: 208 HP / 24 Def / 248 SpA / 28 Spe
+Quiet Nature
+- Crunch
+- Flamethrower
+- Brick Break
+- Pursuit
 
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 168 SpA / 244 SpD / 96 Spe
-Modest Nature
-- Spikes
-- Rapid Spin
-- Ice Beam
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 192 HP / 244 Atk / 12 SpA / 52 SpD / 8 Spe
+Brave Nature
+IVs: 30 Def / 30 SpA
+- Meteor Mash
+- Earthquake
+- Hidden Power [Grass]
 - Explosion
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 240 HP / 176 Def / 44 SpD / 48 Spe
-Relaxed Nature
-- Protect
-- Earthquake
-- Hydro Pump
-- Ice Beam
+Venusaur (M) @ Leftovers
+Ability: Overgrow
+EVs: 248 HP / 12 Def / 28 SpD / 220 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Sleep Powder
 
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 216 HP / 136 SpA / 156 Spe
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 240 HP / 224 Atk / 8 SpA / 36 SpD
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Charizard (M) @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
 Modest Nature
-IVs: 30 Spe
-- Toxic
-- Thunderbolt
-- Hidden Power [Ice]
-- Baton Pass
+IVs: 2 Atk / 30 SpA
+- Overheat
+- Flamethrower
+- Hidden Power [Grass]
+- Beat Up
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+Gyarados (M) @ Leftovers
+Ability: Intimidate
+EVs: 8 HP / 252 Atk / 72 Def / 176 Spe
 Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Rock]
 - Earthquake
-- Rock Slide
-- Hidden Power [Flying]
 - Double-Edge

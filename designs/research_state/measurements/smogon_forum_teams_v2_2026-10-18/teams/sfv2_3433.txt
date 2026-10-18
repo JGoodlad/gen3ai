@@ -1,60 +1,56 @@
-Salamence @ Choice Band
-Ability: Intimidate
-Hidden Power: Flying
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
-- Brick Break
-
-Magneton @ Magnet
-Ability: Magnet Pull
-Hidden Power: Fire
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Protect
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 44 HP / 252 Def / 212 SpA
-Bold Nature
-IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Wish
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Whirlwind
-- Protect
-- Toxic
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 176 Atk / 80 Def
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Protect
-- Toxic
-
-Moltres @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-Hidden Power: Grass
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Toxic
+- Seismic Toss
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 72 SpA / 20 SpD / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]
+- Rain Dance
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Mild Nature
 IVs: 30 Atk / 30 SpA
 - Flamethrower
 - Hidden Power [Grass]
-- Will-O-Wisp
-- Roar
+- Brick Break
+- Beat Up

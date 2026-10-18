@@ -1,58 +1,57 @@
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-- Rock Slide
-- Brick Break
-- Earthquake
-- Double-Edge
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 152 SpD / 108 Spe
-Careful Nature
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 128 Atk / 240 SpA / 140 Spe
+Rash Nature
 IVs: 0 Atk
-- Spikes
-- Roar
-- Taunt
-- Toxic
+- Dragon Dance
+- Dragon Claw
+- Flamethrower
+- Brick Break
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 16 Def / 252 SpA
 Modest Nature
 IVs: 0 Atk
-- Calm Mind
-- Soft-Boiled
-- Ice Beam
-- Thunderbolt
+- Crunch
+- Pursuit
+- Flamethrower
+- Roar
 
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 8 Def / 40 SpA / 32 SpD / 176 Spe
 Timid Nature
 IVs: 0 Atk
-- Substitute
-- Endeavor
+- Rapid Spin
+- Recover
+- Thunder Wave
+- Surf
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 104 Def / 20 SpA / 96 SpD / 36 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Recover
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 44 SpA / 44 SpD / 44 Spe
+Relaxed Nature
+- Protect
+- Earthquake
 - Hydro Pump
 - Ice Beam
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Will-O-Wisp
-- Hidden Power [Grass]
-- Explosion
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Aerial Ace
-- Hidden Power [Bug]

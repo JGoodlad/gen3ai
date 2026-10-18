@@ -1,56 +1,58 @@
-Heracross @ Leftovers
-Ability: Swarm
-EVs: 252 Atk / 188 SpD / 68 Spe
-Careful Nature
-- Megahorn
-- Rock Slide
-- Focus Punch
-- Protect
-
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 252 HP / 208 Def / 48 Spe
-Relaxed Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Ice Beam
-- Hidden Power [Fighting]
-- Recover
-- Toxic
-
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 60 HP / 252 Atk / 196 Spe
-Adamant Nature
-- Brick Break
-- Focus Punch
-- Shadow Ball
-- Recover
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 120 Def / 100 SpD / 36 Spe
-Bold Nature
-IVs: 0 Atk
-- Psychic
-- Baton Pass
-- Recover
-- Leech Seed
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 SpA / 4 SpD / 252 Spe
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
 Timid Nature
 IVs: 0 Atk
-- Hydro Pump
-- Ice Beam
-- Thunderbolt
-- Rapid Spin
+- Substitute
+- Endeavor
+- Surf
+- Toxic
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 Atk / 32 SpA / 224 Spe
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Hidden Power: Bug
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 48 SpA / 208 Spe
 Lonely Nature
-- Dynamic Punch
-- Ice Punch
-- Thunderbolt
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Brick Break
+- Fire Blast
+- Hidden Power [Flying]
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 200 SpD / 60 Spe
+Careful Nature
+- Seismic Toss
+- Thunder Wave
 - Explosion
+- Counter
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Crunch
+
+Machamp @ Leftovers
+Ability: Guts
+EVs: 248 HP / 176 Atk / 20 Def / 40 SpD / 24 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Bulk Up
+- Cross Chop
+- Rock Slide
+- Hidden Power [Ghost]

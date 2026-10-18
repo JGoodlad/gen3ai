@@ -1,59 +1,56 @@
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 0 Atk
-- Substitute
-- Hydro Pump
-- Roar
-- Endeavor
-
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 248 HP / 8 Def / 252 SpA
+EVs: 184 HP / 144 Atk / 180 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 76 SpD / 184 Spe
+Jolly Nature
+- Spikes
+- Toxic
+- Drill Peck
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 232 SpA / 24 Spe
 Modest Nature
 IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Roar
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Counter
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Taunt
-- Will-O-Wisp
-- Ice Punch
+- Soft-Boiled
+- Ice Beam
 - Thunderbolt
-
-Registeel @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 36 SpA / 160 SpD / 60 Spe
-Calm Nature
-IVs: 30 Atk / 30 SpA
 - Thunder Wave
-- Seismic Toss
-- Hidden Power [Grass]
-- Explosion
 
-Flygon @ Choice Band
-Ability: Levitate
-EVs: 80 HP / 252 Atk / 176 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Brick Break
+- Hidden Power [Grass]
+- Fire Blast
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 48 HP / 252 Atk / 16 SpD / 192 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Rock Slide
-- Hidden Power [Bug]
-- Return
+- Earthquake
+- Hidden Power [Fighting]
+- Double-Edge
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 244 HP / 176 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion

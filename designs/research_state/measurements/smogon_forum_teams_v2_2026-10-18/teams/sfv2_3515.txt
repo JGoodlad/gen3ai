@@ -1,58 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Dragon Claw
-- Fire Blast
-- Hydro Pump
-- Hidden Power [Grass]
-
-Suicune @ Leftovers
+Zapdos @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 104 SpA / 152 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Roar
-- Rest
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 248 HP / 216 SpD / 44 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Whirlwind
-- Toxic
-- Protect
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 204 Atk / 52 Spe
-Adamant Nature
-- Rock Slide
-- Earthquake
-- Substitute
-- Focus Punch
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
 IVs: 2 Atk / 30 SpA
+- Rest
 - Thunderbolt
-- Substitute
-- Baton Pass
 - Hidden Power [Grass]
+- Roar
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 168 HP / 164 SpD / 176 Spe
-Timid Nature
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
 IVs: 0 Atk
-- Will-O-Wisp
-- Taunt
-- Thunderbolt
+- Soft-Boiled
+- Toxic
+- Seismic Toss
+- Ice Beam
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 116 HP / 252 SpA / 140 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
 - Ice Punch
+- Thunder
+- Hidden Power [Grass]
+- Dynamic Punch
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 220 Def / 36 Spe
+Impish Nature
+- Protect
+- Toxic
+- Earthquake
+- Rock Slide
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Double-Edge

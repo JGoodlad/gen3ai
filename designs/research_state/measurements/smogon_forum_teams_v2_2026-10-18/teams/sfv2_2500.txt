@@ -1,59 +1,57 @@
-Milotic @ Leftovers
-Ability: Marvel Scale
-EVs: 248 HP / 252 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Recover
-- Refresh
-- Toxic
-- Surf
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 28 HP / 20 Atk / 208 SpA / 252 Spe
+Rash Nature
+IVs: 30 HP / 30 SpA
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+- Brick Break
 
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-IVs: 30 Atk / 30 SpD
-- Spikes
-- Rapid Spin
-- Hidden Power [Ghost]
-- Counter
-
-Donphan @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 140 Def / 116 SpD
-Impish Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Rapid Spin
-- Protect
-- Hidden Power [Rock]
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 112 Atk / 144 Def
+Adamant Nature
+- Meteor Mash
 - Earthquake
+- Protect
+- Explosion
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
+EVs: 252 Def / 244 SpA / 12 Spe
 Modest Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Calm Mind
 - Ice Beam
 - Thunderbolt
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 236 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Rest
-- Thunderbolt
-- Hidden Power [Grass]
-- Roar
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 180 Def / 40 SpA / 36 Spe
-Bold Nature
-IVs: 0 Atk
-- Wish
-- Protect
 - Toxic
-- Fire Punch
+- Soft-Boiled
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 44 SpA / 52 SpD / 36 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Leech Seed
+- Hidden Power [Grass]
+- Recover
+- Perish Song
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 84 Def / 24 SpA / 148 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Recover
+- Rapid Spin
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Protect
+- Roar

@@ -1,57 +1,58 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 48 Atk / 212 Spe
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 96 Atk / 120 SpD / 40 Spe
 Adamant Nature
-- Rock Slide
-- Earthquake
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Refresh
 - Dragon Dance
-- Double-Edge
+- Hidden Power [Flying]
+- Brick Break
 
-Moltres @ Leftovers
-Ability: Pressure
+Magneton @ Salac Berry
+Ability: Magnet Pull
 EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Will-O-Wisp
+- Endure
+- Thunderbolt
 - Hidden Power [Grass]
-- Overheat
+- Rain Dance
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 156 SpD / 100 Spe
-Careful Nature
-IVs: 0 Atk
-- Spikes
-- Taunt
-- Toxic
-- Roar
-
-Blissey (F) @ Leftovers
+Celebi @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 236 SpA / 20 Spe
-Bold Nature
+EVs: 252 HP / 220 SpA / 36 Spe
+Modest Nature
 IVs: 0 Atk
-- Soft-Boiled
-- Ice Beam
-- Toxic
-- Seismic Toss
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
 
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 136 Def / 80 SpA / 44 SpD
-Relaxed Nature
-- Earthquake
-- Hydro Pump
-- Ice Beam
-- Protect
-
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Rock Slide
-- Earthquake
-- Hidden Power [Flying]
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 104 Def / 176 SpD / 20 Spe
+Adamant Nature
+- Curse
 - Double-Edge
+- Earthquake
+- Shadow Ball
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Rock Slide
+- Hidden Power [Grass]
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 192 SpA / 64 Spe
+Modest Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam

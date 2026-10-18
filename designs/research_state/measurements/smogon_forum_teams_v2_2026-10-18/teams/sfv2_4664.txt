@@ -1,0 +1,57 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 60 SpD / 20 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Ice Punch
+- Thunderbolt
+- Hidden Power [Grass]
+- Will-O-Wisp
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA
+Bold Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunderbolt
+- Toxic
+- Soft-Boiled
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+- Drill Peck
+- Roar
+- Spikes
+- Protect
+
+Togetic @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 72 SpA / 184 SpD
+Calm Nature
+IVs: 0 Atk
+- Flamethrower
+- Toxic
+- Wish
+- Protect
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 204 Def / 52 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Protect
+- Refresh

@@ -1,0 +1,56 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Dragon Claw
+- Hidden Power [Grass]
+- Fire Blast
+- Brick Break
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 212 SpD / 44 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Rest
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
+- Explosion
+- Counter
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 216 Atk / 116 Def / 176 SpD
+Adamant Nature
+- Yawn
+- Return
+- Focus Punch
+- Self-Destruct
+
+Houndoom @ Leftovers
+Ability: Early Bird
+EVs: 252 SpA / 76 SpD / 180 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Fire Blast
+- Will-O-Wisp
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 216 HP / 244 SpA / 48 Spe
+Quiet Nature
+- Focus Punch
+- Ice Beam
+- Earthquake
+- Hydro Pump

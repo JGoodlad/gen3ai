@@ -1,0 +1,57 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 68 SpD / 188 Spe
+Careful Nature
+IVs: 30 SpD
+- Spikes
+- Roar
+- Hidden Power [Steel]
+- Taunt
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Will-O-Wisp
+- Hidden Power [Grass]
+- Overheat
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 72 Atk / 188 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 196 SpD / 60 Spe
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Explosion
+- Counter
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Roar
+- Substitute
+- Endeavor
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 36 SpA / 180 Spe
+Timid Nature
+IVs: 0 Atk
+- Will-O-Wisp
+- Taunt
+- Thunderbolt
+- Ice Punch

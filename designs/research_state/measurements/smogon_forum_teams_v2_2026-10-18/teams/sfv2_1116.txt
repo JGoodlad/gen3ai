@@ -1,57 +1,58 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 12 Def / 192 SpA / 52 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Substitute
-- Focus Punch
-- Flamethrower
-- Hidden Power [Grass]
-
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 16 Atk / 240 SpA
-Quiet Nature
-- Ice Beam
-- Thunderbolt
-- Thunder Wave
-- Explosion
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 40 Def / 8 SpA / 32 SpD / 176 Spe
-Timid Nature
-IVs: 0 Atk
-- Surf
-- Rapid Spin
-- Recover
-- Thunder Wave
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 80 SpD / 176 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
-- Roar
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 172 Atk / 16 Def / 12 SpA / 140 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Earthquake
-- Explosion
-- Hidden Power [Grass]
-
-Rhydon @ Leftovers
-Ability: Rock Head
-EVs: 212 HP / 168 Atk / 128 Spe
+EVs: 252 HP / 216 Atk / 32 Def / 8 Spe
 Adamant Nature
-- Substitute
+IVs: 30 Atk / 30 Def / 30 SpD
 - Rock Slide
 - Earthquake
-- Megahorn
+- Focus Punch
+- Hidden Power [Bug]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 248 Def / 8 Spe
+Bold Nature
+IVs: 0 Atk
+- Fire Punch
+- Protect
+- Toxic
+- Wish
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 76 HP / 252 Def / 180 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Ice Beam
+- Soft-Boiled
+- Sing
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 148 Def / 108 Spe
+Impish Nature
+- Earthquake
+- Rapid Spin
+- Explosion
+- Psychic
+
+Skarmory @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 240 SpD / 16 Spe
+Careful Nature
+IVs: 0 Atk
+- Protect
+- Spikes
+- Toxic
+- Whirlwind
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Beat Up
+- Hidden Power [Grass]
+- Roar

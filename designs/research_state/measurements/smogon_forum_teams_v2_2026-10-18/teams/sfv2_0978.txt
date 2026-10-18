@@ -1,59 +1,57 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 56 HP / 252 Atk / 200 Spe
+Machamp @ Leftovers
+Ability: Guts
+EVs: 196 HP / 252 Atk / 60 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Hidden Power [Flying]
-- Earthquake
+IVs: 30 Atk / 30 Def / 30 SpD
+- Bulk Up
+- Cross Chop
 - Rock Slide
-- Brick Break
+- Hidden Power [Bug]
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 4 Def / 252 SpA
+Granbull
+Ability: Intimidate
+EVs: 164 HP / 252 Atk / 92 Spe
+Adamant Nature
+- Return
+- Earthquake
+- Thunder Wave
+- Thief
+
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 8 Def / 196 SpD / 52 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Rapid Spin
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
 Modest Nature
 IVs: 0 Atk
-- Surf
-- Calm Mind
-- Rest
-- Sleep Talk
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 252 SpA / 72 SpD / 184 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Substitute
-- Hidden Power [Fire]
+- Pursuit
+- Crunch
+- Fire Blast
 - Thunder Wave
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 80 Def / 180 SpA
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Hidden Power [Grass]
-- Psychic
-- Recover
-- Leech Seed
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Toxic
-- Roar
-- Protect
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Taunt
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 216 Def / 20 SpA / 20 Spe
-Bold Nature
-IVs: 0 Atk
+EVs: 252 HP / 76 Def / 180 SpD
+Sassy Nature
 - Wish
-- Calm Mind
-- Thunderbolt
-- Ice Punch
+- Protect
+- Fire Punch
+- Body Slam

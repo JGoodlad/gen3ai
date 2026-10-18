@@ -1,57 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 228 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Toxic
+- Protect
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 248 HP / 176 Atk / 68 Def / 16 Spe
 Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+IVs: 30 Atk / 30 Def / 30 SpD
+- Meteor Mash
+- Earthquake
+- Explosion
+- Hidden Power [Bug]
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 200 HP / 136 Atk / 172 Spe
+Adamant Nature
 - Dragon Dance
-- Hidden Power [Flying]
 - Rock Slide
 - Earthquake
+- Double-Edge
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 28 Atk / 216 Def / 12 Spe
-Impish Nature
-- Meteor Mash
-- Protect
-- Explosion
-- Light Screen
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 184 HP / 196 SpA / 128 Spe
-Modest Nature
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Crunch
-- Pursuit
-- Fire Blast
+- Surf
 - Ice Beam
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 72 HP / 252 SpA / 184 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Thunder Wave
 - Substitute
+- Endeavor
 
-Pinsir @ Leftovers
-Ability: Hyper Cutter
-EVs: 252 Atk / 40 SpD / 216 Spe
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 240 SpD / 20 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Toxic
+- Roar
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Swords Dance
-- Hidden Power [Bug]
 - Rock Slide
 - Earthquake
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 176 Atk / 124 Def / 196 SpD / 12 Spe
-Adamant Nature
-- Body Slam
-- Earthquake
-- Focus Punch
-- Self-Destruct
+- Hidden Power [Bug]
+- Double-Edge

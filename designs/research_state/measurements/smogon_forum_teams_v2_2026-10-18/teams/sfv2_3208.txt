@@ -1,58 +1,55 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 HP / 56 Atk / 232 SpA / 196 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Dragon Claw
-- Brick Break
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
 - Hidden Power [Grass]
-- Fire Blast
+- Baton Pass
 
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 248 SpA / 12 Spe
-Modest Nature
-IVs: 0 Atk
-- Crunch
-- Pursuit
-- Flamethrower
-- Surf
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-Shiny: Yes
-EVs: 252 HP / 104 Atk / 152 SpD
-Sassy Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Wish
-- Hidden Power [Fighting]
-- Fire Punch
-- Body Slam
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 24 HP / 136 Atk / 188 Def / 160 SpD
+EVs: 184 HP / 72 Atk / 252 Spe
 Adamant Nature
-- Curse
-- Self-Destruct
-- Body Slam
+- Dragon Dance
 - Earthquake
+- Rock Slide
+- Double-Edge
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 248 Atk / 12 Spe
-Brave Nature
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 Atk / 68 SpD / 188 Spe
+Adamant Nature
+- Meteor Mash
 - Earthquake
-- Ice Beam
-- Rapid Spin
+- Rock Slide
 - Explosion
 
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 200 SpA / 68 Spe
-Modest Nature
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
 IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
-- Sleep Talk
+- Substitute
+- Toxic
+- Hydro Pump
+- Endeavor
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 76 HP / 252 Atk / 180 Spe
+Adamant Nature
+- Swords Dance
+- Megahorn
+- Rock Slide
+- Brick Break
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 196 Atk / 200 SpD / 112 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Brick Break

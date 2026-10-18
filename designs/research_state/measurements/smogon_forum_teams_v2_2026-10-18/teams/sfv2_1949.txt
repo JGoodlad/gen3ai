@@ -1,56 +1,58 @@
-Salamence @ Choice Band
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
-- Hidden Power [Flying]
-- Earthquake
-- Rock Slide
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Ice Beam
+- Hidden Power [Grass]
 - Brick Break
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 160 Atk / 96 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
-
-Magneton @ Leftovers
-Ability: Magnet Pull
-EVs: 252 HP / 232 SpD / 24 Spe
-Calm Nature
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 224 HP / 216 SpD / 68 Spe
+Careful Nature
 IVs: 0 Atk
-- Thunderbolt
-- Thunder Wave
+- Spikes
+- Taunt
 - Toxic
-- Protect
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 156 Atk / 100 Spe
-Adamant Nature
-- Earthquake
-- Rapid Spin
-- Psychic
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 220 Def / 48 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Calm Mind
-- Rest
 - Roar
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 164 HP / 40 Atk / 136 Def / 168 SpD
-Careful Nature
-- Return
-- Shadow Ball
-- Curse
-- Rest
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 SpA / 16 Spe
+Quiet Nature
+- Protect
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Heracross @ Choice Band
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Megahorn
+- Brick Break
+- Hidden Power [Ghost]
+- Rock Slide
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Flying]
+- Double-Edge

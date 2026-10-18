@@ -1,55 +1,57 @@
-Zapdos @ Leftovers
+Raikou @ Petaya Berry
 Ability: Pressure
-EVs: 216 HP / 136 SpA / 156 Spe
+EVs: 12 HP / 164 Def / 252 SpA / 80 Spe
 Modest Nature
-IVs: 30 Spe
-- Thunder Wave
-- Toxic
+IVs: 2 Atk / 30 Def
 - Thunderbolt
 - Hidden Power [Ice]
+- Substitute
+- Toxic
 
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 252 SpA / 16 Spe
+EVs: 240 HP / 176 SpA / 4 SpD / 88 Spe
 Quiet Nature
-- Curse
-- Earthquake
-- Hydro Pump
+- Surf
 - Ice Beam
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
 - Earthquake
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
+- Refresh
 
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-- Will-O-Wisp
-- Ice Punch
-- Thunderbolt
-- Explosion
-
-Tyranitar @ Leftovers
+Tyranitar @ Lum Berry
 Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
+EVs: 200 HP / 112 Atk / 16 SpA / 180 Spe
 Adamant Nature
-- Dragon Dance
-- Earthquake
+IVs: 30 Atk / 30 SpA
 - Rock Slide
-- Double-Edge
+- Earthquake
+- Hidden Power [Grass]
+- Dragon Dance
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 248 HP / 176 Atk / 68 Def / 16 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Brick Break
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 184 SpD / 76 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Baton Pass
 
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 24 HP / 244 SpA / 64 SpD / 176 Spe
-Mild Nature
-- Dragon Claw
+EVs: 140 Atk / 212 SpD / 156 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
 - Rock Slide
-- Flamethrower
-- Brick Break

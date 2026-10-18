@@ -1,56 +1,57 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 116 HP / 252 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Rock Slide
-- Earthquake
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 188 HP / 252 Def / 68 SpA
+Modest Nature
+IVs: 0 Atk
 - Hydro Pump
+- Recover
 - Ice Beam
-- Thunderbolt
-- Rapid Spin
+- Refresh
 
-Aerodactyl @ Choice Band
-Ability: Rock Head
-EVs: 4 HP / 252 Atk / 252 Spe
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 80 HP / 4 Atk / 172 SpD / 252 Spe
 Jolly Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Rock Slide
-- Double-Edge
-- Earthquake
-- Hidden Power [Fighting]
-
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-- Spikes
-- Roar
-- Protect
-- Toxic
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 180 Spe
-Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
 - Earthquake
+- Beat Up
+- Aerial Ace
 - Hidden Power [Bug]
 
-Suicune @ Leftovers
+Raikou @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 104 SpA / 152 Spe
-Modest Nature
-- Substitute
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
 - Calm Mind
-- Surf
-- Ice Beam
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Spore
+- Focus Punch
+- Sky Uppercut
+- Mach Punch
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
+- Megahorn
+- Rock Slide
+- Focus Punch
+- Hidden Power [Ghost]
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion

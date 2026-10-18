@@ -1,56 +1,57 @@
+Suicune @ Salac Berry
+Ability: Pressure
+EVs: 16 HP / 248 SpA / 12 SpD / 232 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Toxic
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 68 SpD / 188 Spe
+Adamant Nature
+- Spore
+- Focus Punch
+- Brick Break
+- Mach Punch
+
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 216 SpA / 36 Spe
-Quiet Nature
-- Crunch
-- Substitute
-- Toxic
+EVs: 200 HP / 192 Atk / 116 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
+- Rock Slide
+- Earthquake
 - Focus Punch
 
-Smeargle @ Lum Berry
-Ability: Own Tempo
-EVs: 4 Atk / 252 SpD / 252 Spe
-Jolly Nature
-- Spore
-- Spikes
-- Taunt
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 128 HP / 252 SpA / 128 Spe
+Modest Nature
+- Thunder Punch
+- Psychic
+- Pursuit
 - Explosion
 
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Will-O-Wisp
-- Hidden Power [Grass]
-- Protect
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
-Timid Nature
-IVs: 0 Atk
-- Taunt
-- Thunderbolt
-- Ice Punch
-- Will-O-Wisp
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 192 Def / 24 SpA / 44 SpD
-Relaxed Nature
-- Earthquake
-- Ice Beam
-- Hydro Pump
-- Protect
-
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 64 Def / 152 SpA / 44 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 44 Def / 148 SpA / 64 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Leech Seed
-- Giga Drain
+IVs: 2 Atk / 30 SpA
+- Calm Mind
 - Psychic
-- Hidden Power [Fire]
+- Fire Punch
+- Hidden Power [Grass]
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 48 SpA / 208 Spe
+Lonely Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Fire Blast
+- Brick Break

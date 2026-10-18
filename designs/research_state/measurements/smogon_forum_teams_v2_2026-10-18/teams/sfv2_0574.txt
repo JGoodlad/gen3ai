@@ -1,60 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 228 SpD / 32 Spe
-Calm Nature
-IVs: 2 Atk / 30 SpA
-- Hidden Power [Grass]
-- Thunderbolt
-- Baton Pass
-- Thunder Wave
-
-Tyranitar @ Leftovers
-Ability: Sand Stream
-Shiny: Yes
-EVs: 252 HP / 188 Atk / 16 Def / 52 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Focus Punch
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 152 HP / 232 Atk / 8 Def / 116 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
 - Earthquake
 - Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day
 
-Swampert @ Salac Berry
-Ability: Torrent
-Shiny: Yes
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 228 Def / 32 Spe
+Bold Nature
 IVs: 0 Atk
-- Substitute
+- Fire Punch
+- Wish
+- Toxic
+- Protect
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 196 Def / 64 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
 - Surf
-- Ice Beam
-- Endeavor
+- Roar
+- Rest
+
+Skarmory
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Thief
+- Spikes
+- Drill Peck
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 244 HP / 252 Def / 12 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Thunder Wave
+- Soft-Boiled
+- Aromatherapy
 
 Claydol @ Leftovers
 Ability: Levitate
-EVs: 92 HP / 176 Atk / 240 Spe
-Adamant Nature
-- Explosion
-- Earthquake
-- Rapid Spin
+EVs: 248 HP / 112 Def / 12 SpA / 136 SpD
+Calm Nature
 - Psychic
-
-Metagross @ Leftovers
-Ability: Clear Body
-Shiny: Yes
-EVs: 168 HP / 236 Atk / 12 Def / 92 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Agility
-
-Snorlax @ Leftovers
-Ability: Immunity
-Shiny: Yes
-EVs: 52 HP / 252 Atk / 68 Def / 136 SpD
-Adamant Nature
-- Curse
-- Earthquake
-- Shadow Ball
-- Self-Destruct
+- Rapid Spin
+- Rest
+- Explosion

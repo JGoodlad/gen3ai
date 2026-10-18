@@ -1,60 +1,58 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 248 HP / 20 SpA / 100 SpD / 140 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Substitute
-- Baton Pass
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 248 HP / 40 Def / 152 SpA / 68 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Psychic
-- Hidden Power [Grass]
-- Calm Mind
-- Fire Punch
-
-Tyranitar @ Lum Berry
-Ability: Sand Stream
+Medicham (F) @ Leftovers
+Ability: Pure Power
 Shiny: Yes
-EVs: 16 HP / 120 Atk / 120 Def / 252 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
-- Hidden Power [Bug]
-- Earthquake
-- Dragon Dance
-
-Gengar @ Leftovers
-Ability: Levitate
-Shiny: Yes
-EVs: 48 HP / 84 Atk / 200 SpD / 176 Spe
-Hasty Nature
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
 - Focus Punch
-- Ice Punch
-- Will-O-Wisp
+- Rock Slide
+- Brick Break
+- Shadow Ball
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 136 Def / 32 SpA / 44 SpD / 44 Spe
+Relaxed Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
+- Protect
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Fire Blast
+- Roar
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+- Thunderbolt
+- Ice Beam
+- Thunder Wave
 - Explosion
 
-Breloom @ Leftovers
-Ability: Effect Spore
+Charizard @ Leftovers
+Ability: Blaze
 Shiny: Yes
-EVs: 248 HP / 16 Atk / 56 SpD / 188 Spe
-Adamant Nature
-- Spore
-- Focus Punch
-- Sky Uppercut
-- Stun Spore
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Dragon Claw
+- Beat Up
 
-Snorlax @ Leftovers
-Ability: Immunity
+Metagross @ Lum Berry
+Ability: Clear Body
 Shiny: Yes
-EVs: 24 HP / 176 Atk / 108 Def / 184 SpD / 16 Spe
+EVs: 128 HP / 252 Atk / 88 Spe
 Adamant Nature
-- Return
-- Self-Destruct
+- Meteor Mash
 - Earthquake
-- Curse
+- Explosion
+- Agility

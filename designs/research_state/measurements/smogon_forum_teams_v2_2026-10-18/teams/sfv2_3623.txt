@@ -1,53 +1,58 @@
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 32 Def / 224 SpD
+EVs: 252 HP / 124 SpA / 68 SpD / 64 Spe
 Calm Nature
-- Thunderbolt
+IVs: 0 Atk
 - Rest
-- Sleep Talk
-- Drill Peck
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 252 HP / 206 Def / 50 SpA
-Relaxed Nature
+- Calm Mind
+- Surf
 - Ice Beam
-- Earthquake
-- Protect
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Substitute
 - Toxic
+- Thunderbolt
+- Hidden Power [Fire]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 156 Def / 80 SpA / 20 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Substitute
+- Leech Seed
+- Hidden Power [Ice]
+- Baton Pass
 
 Snorlax @ Leftovers
-Ability: Thick Fat
-EVs: 88 HP / 176 Atk / 132 Def / 112 SpD
+Ability: Immunity
+EVs: 32 HP / 176 Atk / 108 Def / 172 SpD / 20 Spe
 Adamant Nature
-- Rest
-- Sleep Talk
 - Body Slam
 - Shadow Ball
+- Focus Punch
+- Self-Destruct
 
-Flygon @ Leftovers
-Ability: Levitate
-EVs: 252 Atk / 252 Spe / 4 SpA
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 180 Atk / 16 Def / 48 SpA / 96 Spe
 Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
 - Earthquake
-- Rock Slide
-- Fire Blast
-- Crunch
+- Hidden Power [Grass]
+- Explosion
 
-Aerodactyl @ Focus Band
-Ability: Rock Head
-EVs: 252 Atk / 252 Spe / 4 HP
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 168 Atk / 200 SpD / 140 Spe
 Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
 - Earthquake
-- Rock Slide
-- Double Edge
-- Aerial Ace
-
-Blissey @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 252 SpA / 4 HP
-Calm Nature
-- Thunder Wave
-- Soft Boiled
-- Thunderbolt
-- Ice Beam
+- Brick Break

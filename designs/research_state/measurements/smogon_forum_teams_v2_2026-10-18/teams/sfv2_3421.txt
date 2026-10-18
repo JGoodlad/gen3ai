@@ -1,56 +1,56 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
+Regirock @ Choice Band
+Ability: Clear Body
+EVs: 200 HP / 252 Atk / 56 Spe
 Adamant Nature
-- Dragon Dance
+IVs: 30 Atk / 30 SpD
 - Rock Slide
+- Hidden Power [Ghost]
+- Superpower
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
 - Earthquake
-- Double-Edge
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 144 HP / 224 Atk / 140 Spe
-Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Hidden Power [Flying]
-- Fire Blast
-- Brick Break
-
-Jirachi @ Choice Band
-Ability: Serene Grace
-EVs: 52 HP / 252 Atk / 204 Spe
-Adamant Nature
-IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Body Slam
-- Hidden Power [Fighting]
-- Doom Desire
-- Shadow Ball
+- Psychic
+- Explosion
 
 Registeel @ Leftovers
 Ability: Clear Body
-EVs: 252 HP / 212 SpD / 44 Spe
+EVs: 252 HP / 216 SpD / 40 Spe
 Careful Nature
 - Thunder Wave
+- Toxic
 - Seismic Toss
-- Counter
 - Explosion
 
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 4 HP / 252 SpA / 252 Spe
+Alakazam @ Leftovers
+Ability: Synchronize
+EVs: 12 Def / 244 SpA / 252 Spe
 Timid Nature
-- Hydro Pump
-- Ice Beam
-- Thunderbolt
-- Rapid Spin
+IVs: 2 Atk / 30 Def / 30 SpA
+- Calm Mind
+- Hidden Power [Water]
+- Fire Punch
+- Psychic
 
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 60 SpA / 196 Spe
-Modest Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Toxic
-- Protect
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Sleep Talk
+- Calm Mind
+- Surf
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 196 Atk / 200 SpD / 112 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Brick Break

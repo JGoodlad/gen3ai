@@ -1,57 +1,55 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 248 HP / 252 Atk / 8 Spe
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 140 HP / 252 Atk / 12 Def / 104 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Rock Slide
+IVs: 30 SpD / 30 Spe
 - Earthquake
+- Aerial Ace
 - Hidden Power [Bug]
-- Focus Punch
+- Rock Slide
 
-Skarmory @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-- Spikes
-- Roar
-- Drill Peck
-- Protect
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 204 SpA / 52 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Thunderbolt
-- Hidden Power [Grass]
-- Roar
-- Baton Pass
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 68 HP / 252 SpA / 188 Spe
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 76 HP / 252 SpA / 180 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
+- Rain Dance
+- Explosion
 - Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Reflect
+- Giga Drain
 
-Zapdos @ Leftovers
+Suicune @ Leftovers
 Ability: Pressure
-EVs: 4 Def / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunderbolt
-- Hidden Power [Ice]
-- Toxic
-- Protect
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Surf
+- Ice Beam
+- Hidden Power [Grass]
+- Calm Mind
 
-Metagross @ Leftovers
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Megahorn
+- Reversal
+- Swords Dance
+- Endure
+
+Metagross @ Choice Band
 Ability: Clear Body
-EVs: 252 HP / 36 Atk / 220 Def
-Impish Nature
+EVs: 200 HP / 252 Atk / 56 Spe
+Adamant Nature
 - Meteor Mash
 - Earthquake
-- Protect
+- Rock Slide
 - Explosion
+
+Snorlax @ Lum Berry
+Ability: Immunity
+EVs: 64 HP / 176 Atk / 108 Def / 144 SpD / 16 Spe
+Adamant Nature
+- Body Slam
+- Focus Punch
+- Shadow Ball
+- Self-Destruct

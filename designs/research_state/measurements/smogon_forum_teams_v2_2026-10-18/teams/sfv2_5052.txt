@@ -1,0 +1,61 @@
+Arbok @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Sludge Bomb
+- Earthquake
+- Refresh
+- Glare
+
+Minun @ Leftovers
+Ability: Minus
+Shiny: Yes
+EVs: 252 HP / 4 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Substitute
+- Encore
+- Baton Pass
+
+Combusken @ Leftovers
+Ability: Blaze
+Shiny: Yes
+EVs: 116 Atk / 164 SpA / 228 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Focus Punch
+- Fire Blast
+- Hidden Power [Grass]
+
+Seviper @ Leftovers
+Ability: Shed Skin
+Shiny: Yes
+EVs: 252 Atk / 4 SpA / 252 Spe
+Lonely Nature
+- Sludge Bomb
+- Earthquake
+- Giga Drain
+- Crunch
+
+Lickitung @ Leftovers
+Ability: Own Tempo
+Shiny: Yes
+EVs: 252 HP / 248 SpD / 8 Spe
+Calm Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Counter
+- Seismic Toss
+
+Tangela @ Leftovers
+Ability: Chlorophyll
+EVs: 248 HP / 196 Def / 64 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Giga Drain
+- Hidden Power [Fire]
+- Growth
+- Morning Sun

@@ -1,0 +1,57 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Drill Peck
+
+Flygon (M) @ Choice Band
+Ability: Levitate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Rest
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 76 SpA / 36 SpD / 20 Spe
+Bold Nature
+- Heal Bell
+- Leech Seed
+- Psychic
+- Recover
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 24 Atk / 240 SpA / 244 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Substitute
+- Hidden Power [Grass]
+- Fire Blast
+- Focus Punch
+
+Dusclops (M) @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 96 Atk / 16 Def / 144 SpD
+Sassy Nature
+IVs: 0 Spe
+- Pain Split
+- Will-O-Wisp
+- Rest
+- Shadow Ball
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]

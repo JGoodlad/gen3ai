@@ -1,61 +1,57 @@
-Blaziken (M) @ Lum Berry
-Ability: Blaze
-Shiny: Yes
-EVs: 16 HP / 56 Atk / 240 SpA / 196 Spe
-Rash Nature
-IVs: 30 Atk / 30 Def
-- Fire Blast
-- Thunder Punch
-- Hidden Power [Ice]
-- Sky Uppercut
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 72 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
 
-Porygon2 @ Leftovers
-Ability: Trace
-EVs: 248 HP / 196 Def / 64 SpD
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+IVs: 0 Atk
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
 Bold Nature
 IVs: 0 Atk
-- Recover
+- Soft-Boiled
+- Wish
+- Seismic Toss
 - Ice Beam
-- Thunderbolt
-- Thunder Wave
 
-Dugtrio (M) @ Choice Band
-Ability: Arena Trap
-Shiny: Yes
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Hidden Power [Bug]
-- Aerial Ace
-- Rock Slide
-
-Swampert (M) @ Leftovers
+Swampert @ Leftovers
 Ability: Torrent
-Shiny: Yes
-EVs: 108 Def / 252 SpA / 148 Spe
-Rash Nature
-- Hydro Pump
+EVs: 240 HP / 136 Def / 88 SpA / 44 SpD
+Relaxed Nature
+- Protect
 - Earthquake
+- Surf
 - Ice Beam
-- Focus Punch
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 76 SpA / 180 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Calm Mind
-- Giga Drain
-- Hidden Power [Fire]
-- Baton Pass
-
-Raikou @ Leftovers
+Moltres @ Leftovers
 Ability: Pressure
 EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Thunderbolt
+- Will-O-Wisp
+- Flamethrower
 - Hidden Power [Grass]
-- Substitute
+- Roar

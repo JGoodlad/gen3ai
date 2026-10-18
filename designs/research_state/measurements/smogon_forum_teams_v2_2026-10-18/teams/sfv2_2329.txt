@@ -1,57 +1,58 @@
-Gengar @ Leftovers
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Brick Break
+- Hidden Power [Flying]
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Ghost]
+- Counter
+
+Claydol @ Leftovers
 Ability: Levitate
-EVs: 168 HP / 8 SpA / 156 SpD / 176 Spe
-Timid Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Ice Punch
-- Hidden Power [Grass]
+EVs: 252 HP / 112 Def / 136 SpD / 8 Spe
+Sassy Nature
+- Rapid Spin
+- Rest
+- Psychic
 - Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Rest
+- Calm Mind
+- Surf
+- Ice Beam
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Toxic
+- Seismic Toss
+- Ice Beam
 
 Dugtrio @ Choice Band
 Ability: Arena Trap
-EVs: 248 Atk / 8 Def / 252 Spe
+EVs: 252 Atk / 4 Def / 252 Spe
 Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
 - Hidden Power [Bug]
 - Aerial Ace
-- Rock Slide
-
-Charizard @ Petaya Berry
-Ability: Blaze
-EVs: 24 Atk / 240 SpA / 244 Spe
-Rash Nature
-IVs: 0 Atk
-- Substitute
-- Flamethrower
-- Fire Blast
 - Sunny Day
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 228 Atk / 116 Def / 164 SpD
-Adamant Nature
-- Curse
-- Earthquake
-- Body Slam
-- Shadow Ball
-
-Metagross @ Choice Band
-Ability: Clear Body
-EVs: 148 HP / 216 Atk / 144 Spe
-Adamant Nature
-- Meteor Mash
-- Explosion
-- Earthquake
-- Rock Slide
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 240 HP / 252 SpA / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rest
-- Ice Beam

@@ -1,55 +1,56 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 248 HP / 80 Atk / 180 Spe
+EVs: 252 HP / 240 Atk / 16 Def
 Adamant Nature
 IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
+- Substitute
+- Focus Punch
 - Rock Slide
-- Earthquake
 - Hidden Power [Bug]
-
-Gengar @ Leftovers
-Ability: Levitate
-EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
-Timid Nature
-- Will-O-Wisp
-- Taunt
-- Thunderbolt
-- Ice Punch
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
-- Will-O-Wisp
-- Roar
 
 Cloyster @ Leftovers
 Ability: Shell Armor
-EVs: 72 HP / 8 SpA / 244 SpD / 184 Spe
-Timid Nature
+EVs: 200 HP / 252 SpD / 56 Spe
+Modest Nature
 - Spikes
 - Surf
 - Rapid Spin
 - Explosion
 
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+- Hypnosis
+- Giga Drain
+- Thunderbolt
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 252 SpD / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Toxic
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
 Swampert @ Leftovers
 Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
+EVs: 252 HP / 200 Def / 56 Spe
 Relaxed Nature
+- Refresh
+- Surf
 - Earthquake
 - Ice Beam
-- Protect
-- Hydro Pump
 
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 44 HP / 252 Def / 212 SpA
-Bold Nature
-- Soft-Boiled
-- Ice Beam
-- Seismic Toss
-- Thunder Wave
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Hidden Power [Flying]
+- Earthquake
+- Substitute

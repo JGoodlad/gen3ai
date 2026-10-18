@@ -1,56 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 104 SpD / 152 Spe
-Modest Nature
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 48 HP / 252 Atk / 208 Spe
+Adamant Nature
+- Brick Break
+- Substitute
+- Shadow Ball
+- Focus Punch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 Def
+- Heat Wave
+- Hidden Power [Ice]
+- Beat Up
+- Brick Break
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 SpA
 - Thunderbolt
 - Hidden Power [Grass]
 - Thunder Wave
-- Protect
+- Roar
 
 Snorlax @ Leftovers
 Ability: Immunity
-EVs: 44 HP / 164 Atk / 152 Def / 136 SpD / 12 Spe
+EVs: 48 HP / 252 Atk / 52 Def / 136 SpD / 20 Spe
 Adamant Nature
-- Body Slam
-- Earthquake
+- Double-Edge
 - Focus Punch
-- Self-Destruct
+- Shadow Ball
+- Yawn
 
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 212 SpA / 108 SpD / 188 Spe
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 200 HP / 252 SpA / 56 Spe
 Modest Nature
 IVs: 0 Atk
-- Crunch
-- Pursuit
-- Fire Blast
-- Will-O-Wisp
-
-Forretress @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 4 Atk / 252 SpD
-Sassy Nature
-- Spikes
-- Rapid Spin
-- Earthquake
-- Zap Cannon
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 252 HP / 40 Def / 136 SpA / 80 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
 - Calm Mind
-- Thunderbolt
-- Hidden Power [Grass]
+- Surf
+- Ice Beam
+- Rain Dance
 
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 68 HP / 96 Atk / 92 SpD / 252 Spe
-Jolly Nature
-- Spore
-- Leech Seed
-- Sky Uppercut
-- Substitute
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 12 Atk / 60 Def / 252 SpA / 16 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Meteor Mash
+- Pursuit
+- Explosion

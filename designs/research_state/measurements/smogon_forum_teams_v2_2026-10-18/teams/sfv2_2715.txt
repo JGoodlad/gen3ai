@@ -1,57 +1,56 @@
-Vaporeon @ Leftovers
-Ability: Water Absorb
-EVs: 12 HP / 252 Def / 100 SpD / 144 Spe
-Bold Nature
-IVs: 0 Atk
-- Substitute
-- Wish
-- Surf
-- Baton Pass
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 8 HP / 252 SpA / 28 SpD / 220 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunder Wave
-- Toxic
-- Thunderbolt
-- Hidden Power [Fire]
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 204 HP / 176 Atk / 52 Def / 60 SpD / 16 Spe
-Adamant Nature
-- Curse
-- Body Slam
-- Earthquake
-- Shadow Ball
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 120 SpA / 136 Spe
-Modest Nature
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
 IVs: 2 Atk / 30 Def
-- Substitute
-- Thunderbolt
+- Razor Leaf
 - Hidden Power [Ice]
-- Baton Pass
+- Sleep Powder
+- Leech Seed
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Overheat
+- Roar
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Drill Peck
+- Spikes
+- Protect
+- Roar
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 224 Atk / 28 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Double-Edge
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 24 HP / 252 Atk / 232 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 176 Atk / 16 Def / 148 Spe
+EVs: 248 HP / 60 Atk / 124 Def / 68 SpD / 8 Spe
 Adamant Nature
-- Toxic
 - Meteor Mash
 - Earthquake
 - Explosion
-
-Marowak @ Thick Club
-Ability: Rock Head
-EVs: 160 HP / 252 Atk / 96 Spe
-Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Earthquake
-- Rock Slide
-- Hidden Power [Bug]
-- Double-Edge
+- Protect

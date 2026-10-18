@@ -1,55 +1,58 @@
-Tyranitar @ Lum Berry
+Tyranitar @ Choice Band
 Ability: Sand Stream
 EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
+Jolly Nature
 - Rock Slide
+- Brick Break
+- Earthquake
 - Double-Edge
 
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
-Adamant Nature
-- Rapid Spin
-- Earthquake
-- Psychic
-- Explosion
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Endure
+- Toxic
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 16 HP / 176 Atk / 108 Def / 168 SpD / 40 Spe
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 160 Atk / 208 SpD / 140 Spe
 Adamant Nature
-- Body Slam
-- Shadow Ball
-- Focus Punch
-- Self-Destruct
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Calm Mind
+- Substitute
+- Psychic
+- Giga Drain
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 12 HP / 244 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Hydro Pump
+- Ice Beam
+- Baton Pass
 
 Metagross @ Leftovers
 Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
-Adamant Nature
-- Agility
+EVs: 248 HP / 140 Atk / 60 SpA / 60 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Explosion
+- Hidden Power [Grass]
 - Meteor Mash
 - Earthquake
-- Explosion
-
-Jirachi @ Leftovers
-Ability: Serene Grace
-EVs: 216 HP / 44 Def / 140 SpA / 108 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA
-- Calm Mind
-- Fire Punch
-- Hidden Power [Grass]
-- Psychic
-
-Gyarados @ Leftovers
-Ability: Intimidate
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Dragon Dance
-- Earthquake
-- Hidden Power [Rock]
-- Double-Edge

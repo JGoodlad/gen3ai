@@ -1,58 +1,58 @@
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 116 SpA / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Protect
+- Refresh
+- Surf
+- Roar
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 16 Def / 252 SpA
+Modest Nature
+- Crunch
+- Pursuit
+- Flamethrower
+- Focus Punch
+
 Forretress @ Leftovers
 Ability: Sturdy
-Hidden Power: Bug
 EVs: 252 HP / 4 Def / 252 SpD
 Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
 - Spikes
 - Rapid Spin
-- Explosion
-- Earthquake
-
-Dusclops @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 252 Def / 4 SpD
-Impish Nature
-IVs: 0 Atk
-- Seismic Toss
-- Rest
-- Sleep Talk
-- Will-O-Wisp
-
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
-Careful Nature
-- Curse
-- Rest
-- Return
-- Earthquake
-
-Magneton @ Magnet
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Modest Nature
-IVs: 2 Atk / 30 SpA / 30 Spe
-- Thunderbolt
-- Hidden Power [Fire]
-- Toxic
-- Sunny Day
-
-Houndoom @ Leftovers
-Ability: Flash Fire
-EVs: 56 HP / 252 SpA / 12 SpD / 188 Spe
-Timid Nature
-IVs: 0 Atk
-- Pursuit
-- Fire Blast
-- Sunny Day
-- Will-O-Wisp
-
-Hitmontop (M) @ Leftovers
-Ability: Intimidate
-EVs: 252 HP / 136 Atk / 112 Def / 8 Spe
-Adamant Nature
-IVs: 30 Atk / 30 SpD
+- Hidden Power [Bug]
 - Counter
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Toxic
+- Ice Beam
+- Thunderbolt
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 80 HP / 252 SpA / 176 Spe
+Rash Nature
+IVs: 30 SpA
+- Ice Punch
+- Thunder
+- Psychic
+- Dynamic Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 180 Atk / 12 Def / 200 SpD / 116 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
 - Brick Break
-- Hidden Power [Ghost]
-- Rapid Spin
+- Fire Blast

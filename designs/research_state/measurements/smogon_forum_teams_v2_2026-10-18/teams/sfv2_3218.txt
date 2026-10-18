@@ -1,57 +1,55 @@
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 92 SpA / 164 Spe
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 16 HP / 244 Def / 176 SpA / 12 SpD / 60 Spe
 Modest Nature
 IVs: 0 Atk
-- Calm Mind
-- Surf
-- Rain Dance
 - Substitute
+- Hydro Pump
+- Ice Beam
+- Baton Pass
 
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 228 SpA / 28 Spe
-Quiet Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
 - Psychic
-- Hidden Power [Fire]
-- Meteor Mash
 - Explosion
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 76 HP / 184 Atk / 96 Def / 140 SpD / 12 Spe
-Adamant Nature
-- Focus Punch
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Seismic Toss
 - Counter
-- Shadow Ball
-- Body Slam
+- Explosion
 
-Raikou @ Lum Berry
+Raikou @ Leftovers
 Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
-IVs: 2 Atk / 30 SpA
+IVs: 0 Atk
+- Substitute
 - Calm Mind
-- Hidden Power [Grass]
 - Thunderbolt
 - Crunch
 
-Claydol @ Choice Band
-Ability: Levitate
-EVs: 252 HP / 252 Atk / 4 Def
-Impish Nature
-- Earthquake
-- Rock Slide
-- Explosion
-- Rapid Spin
-
 Salamence @ Leftovers
 Ability: Intimidate
-EVs: 252 HP / 100 Atk / 120 SpD / 36 Spe
+EVs: 196 Atk / 200 SpD / 112 Spe
 Adamant Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
 - Dragon Dance
+- Earthquake
+- Rock Slide
 - Brick Break
-- Hidden Power [Flying]
-- Refresh

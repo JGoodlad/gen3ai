@@ -1,0 +1,57 @@
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 72 Atk / 44 SpA / 144 Spe
+Naughty Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Fire Blast
+
+Skarmory
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Thief
+- Drill Peck
+- Roar
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+- Will-O-Wisp
+- Thunderbolt
+- Giga Drain
+- Explosion
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 184 HP / 148 SpD / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Baton Pass
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 68 Atk / 188 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Ice Beam
+- Hidden Power [Fire]
+- Explosion
+
+Metagross @ Charcoal
+Ability: Clear Body
+EVs: 168 HP / 140 Atk / 16 Def / 92 SpA / 92 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Agility
+- Meteor Mash
+- Hidden Power [Fire]
+- Explosion

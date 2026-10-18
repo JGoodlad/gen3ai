@@ -1,57 +1,56 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 48 HP / 248 SpA / 212 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Pursuit
+- Hidden Power [Grass]
+- Fire Blast
+- Thunder
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+- Dragon Claw
+- Fire Blast
+- Rock Slide
+- Brick Break
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 192 HP / 220 Atk / 4 Def / 56 SpA / 36 Spe
+Brave Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Hidden Power [Bug]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 112 SpD / 148 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Taunt
+
 Zapdos @ Leftovers
 Ability: Pressure
-EVs: 4 Def / 252 SpA / 252 Spe
+EVs: 56 HP / 200 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
-- Thunder
+- Thunderbolt
 - Hidden Power [Grass]
-- Substitute
+- Thunder Wave
 - Baton Pass
 
-Regice @ Leftovers
-Ability: Clear Body
-EVs: 208 HP / 236 SpA / 64 Spe
-Modest Nature
-- Ice Beam
-- Thunder
-- Rain Dance
-- Explosion
-
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 44 HP / 104 Atk / 128 SpD / 232 Spe
-Adamant Nature
-IVs: 30 SpD / 30 Spe
-- Earthquake
-- Aerial Ace
-- Hidden Power [Bug]
-- Beat Up
-
-Kingdra @ Leftovers
-Ability: Swift Swim
-EVs: 248 HP / 244 SpA / 16 Spe
-Modest Nature
-IVs: 0 Atk
-- Surf
-- Ice Beam
-- Rain Dance
-- Substitute
-
-Breloom @ Leftovers
-Ability: Effect Spore
-EVs: 252 Atk / 4 SpD / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 SpD
-- Brick Break
-- Hidden Power [Ghost]
-- Focus Punch
-- Spore
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 248 HP / 136 Atk / 12 Def / 88 SpD / 24 Spe
-Adamant Nature
-- Meteor Mash
-- Earthquake
-- Rock Slide
-- Explosion
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 180 SpD
+Sassy Nature
+- Wish
+- Protect
+- Fire Punch
+- Body Slam

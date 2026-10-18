@@ -1,59 +1,56 @@
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Thunder Punch
-- Hidden Power [Grass]
-- Explosion
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 40 Def / 196 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Rest
+- Thunder Wave
+- Toxic
+- Thunderbolt
 
-Tyranitar @ Lum Berry
+Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 240 Atk / 16 SpA / 252 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
+EVs: 184 HP / 104 Atk / 220 Spe
+Adamant Nature
 - Dragon Dance
 - Earthquake
 - Rock Slide
-- Hidden Power [Grass]
+- Double-Edge
 
-Skarmory
+Skarmory @ Leftovers
 Ability: Keen Eye
-EVs: 248 HP / 252 SpD / 8 Spe
+EVs: 240 HP / 240 SpD / 28 Spe
 Careful Nature
-IVs: 30 SpD
 - Spikes
-- Thief
-- Hidden Power [Steel]
+- Taunt
+- Drill Peck
 - Roar
 
 Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 252 Def / 248 SpA / 8 Spe
+EVs: 4 HP / 252 Def / 252 SpA
 Modest Nature
 IVs: 0 Atk
 - Soft-Boiled
-- Thunder Wave
-- Ice Beam
-- Thunderbolt
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 252 Atk / 76 SpA / 180 Spe
-Naughty Nature
-IVs: 30 SpA / 30 SpD / 30 Spe
-- Dragon Dance
-- Rock Slide
-- Hidden Power [Flying]
+- Toxic
 - Fire Blast
+- Ice Beam
 
-Dugtrio @ Choice Band
-Ability: Arena Trap
-EVs: 252 Atk / 8 Def / 144 SpD / 104 Spe
-Adamant Nature
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 176 Def / 32 SpA / 44 SpD / 16 Spe
+Relaxed Nature
+- Protect
+- Earthquake
+- Hydro Pump
+- Ice Beam
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
 IVs: 30 Atk / 30 Def / 30 SpD
 - Earthquake
+- Rock Slide
 - Hidden Power [Bug]
-- Aerial Ace
-- Beat Up
+- Double-Edge

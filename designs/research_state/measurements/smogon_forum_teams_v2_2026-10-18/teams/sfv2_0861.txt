@@ -1,58 +1,62 @@
-Tyranitar @ Leftovers
-Ability: Sand Stream
-EVs: 252 HP / 216 Atk / 32 Def / 8 Spe
+Medicham @ Lum Berry
+Ability: Pure Power
+EVs: 8 HP / 252 Atk / 8 Def / 240 Spe
 Adamant Nature
-IVs: 30 Atk / 30 Def / 30 SpD
+- Brick Break
 - Rock Slide
-- Earthquake
+- Shadow Ball
 - Focus Punch
-- Hidden Power [Bug]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
 
 Jirachi @ Leftovers
 Ability: Serene Grace
-EVs: 252 HP / 248 Def / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Fire Punch
-- Protect
-- Toxic
-- Wish
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 76 HP / 252 Def / 180 Spe
-Bold Nature
-IVs: 0 Atk
-- Seismic Toss
-- Ice Beam
-- Soft-Boiled
-- Sing
-
-Claydol @ Leftovers
-Ability: Levitate
-EVs: 252 HP / 148 Def / 108 Spe
-Impish Nature
-- Earthquake
-- Rapid Spin
-- Explosion
-- Psychic
-
-Skarmory @ Leftovers
-Ability: Sturdy
-EVs: 252 HP / 240 SpD / 16 Spe
-Careful Nature
-IVs: 0 Atk
-- Protect
-- Spikes
-- Toxic
-- Whirlwind
-
-Charizard @ Leftovers
-Ability: Blaze
-EVs: 4 Def / 252 SpA / 252 Spe
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
 Timid Nature
 IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Beat Up
+- Calm Mind
+- Psychic
 - Hidden Power [Grass]
-- Roar
+- Fire Punch
+
+Starmie @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Hydro Pump
+- Thunderbolt
+- Ice Beam
+- Rapid Spin
+
+Metagross @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Psychic
+- Hidden Power [Fire]
+- Explosion
+
+Gardevoir @ Salac Berry
+Ability: Trace
+Shiny: Yes
+EVs: 104 HP / 120 Def / 108 SpA / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Endure
+- Ice Punch
+- Destiny Bond
+- Rain Dance

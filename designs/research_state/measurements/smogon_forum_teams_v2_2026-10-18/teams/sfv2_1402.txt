@@ -1,58 +1,56 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Light Screen
-- Thunderbolt
-- Hidden Power [Ice]
-- Rain Dance
-
-Magneton @ Salac Berry
-Ability: Magnet Pull
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Endure
-- Thunderbolt
-- Hidden Power [Grass]
-- Rain Dance
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 180 Atk / 16 Def / 52 SpA / 92 Spe
-Naughty Nature
-IVs: 30 Atk / 30 SpA
-- Meteor Mash
-- Earthquake
-- Hidden Power [Grass]
-- Explosion
-
 Suicune @ Leftovers
 Ability: Pressure
-EVs: 252 HP / 192 SpA / 64 Spe
-Modest Nature
+EVs: 240 HP / 236 Def / 32 Spe
+Bold Nature
 IVs: 0 Atk
-- Substitute
 - Calm Mind
 - Surf
+- Rest
 - Roar
 
-Regirock @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 252 Atk / 4 SpD
-Adamant Nature
-IVs: 30 Def / 30 SpD / 30 Spe
-- Curse
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 44 Atk / 20 Def / 192 SpD
+Impish Nature
+- Spikes
+- Protect
+- Toxic
+- Drill Peck
+
+Salamence (M) @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
 - Earthquake
-- Hidden Power [Rock]
+- Rock Slide
+- Brick Break
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 188 Atk / 68 Spe
+Jolly Nature
+- Earthquake
+- Rapid Spin
+- Psychic
 - Explosion
 
-Snorlax @ Leftovers
-Ability: Immunity
-EVs: 252 Atk / 120 Def / 136 SpD
-Adamant Nature
-- Curse
-- Double-Edge
-- Earthquake
-- Shadow Ball
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 48 HP / 252 Def / 204 SpA / 4 SpD
+Bold Nature
+- Wish
+- Soft-Boiled
+- Seismic Toss
+- Ice Beam
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 76 HP / 252 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Protect
+- Rain Dance

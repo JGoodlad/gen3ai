@@ -1,0 +1,56 @@
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 160 HP / 252 SpA / 96 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Roar
+- Wish
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 108 Def / 12 SpA / 136 Spe
+Bold Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
+- Explosion
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Dragon Claw
+- Hidden Power [Grass]
+- Beat Up
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 248 Atk / 132 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Spore
+- Stun Spore
+- Sky Uppercut
+- Hidden Power [Ghost]
+
+Miltank (F) @ Leftovers
+Ability: Thick Fat
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Milk Drink
+- Focus Punch

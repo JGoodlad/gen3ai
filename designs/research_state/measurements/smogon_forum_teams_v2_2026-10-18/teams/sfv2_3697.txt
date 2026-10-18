@@ -1,0 +1,57 @@
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Grass]
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 212 Atk / 132 Def / 164 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Bulk Up
+- Cross Chop
+- Rock Slide
+- Hidden Power [Bug]
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 200 SpD / 56 Spe
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Counter
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+- Dragon Dance
+- Brick Break
+- Rock Slide
+- Earthquake
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 204 Atk / 108 SpA / 196 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Thunder
+- Dynamic Punch
+- Hidden Power [Grass]
+- Body Slam

@@ -1,57 +1,55 @@
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 252 HP / 148 SpA / 108 Spe
-Brave Nature
-- Pursuit
-- Crunch
-- Fire Blast
-- Brick Break
+EVs: 240 HP / 252 Atk / 16 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Focus Punch
 
-Swampert (M) @ Leftovers
+Swampert @ Leftovers
 Ability: Torrent
-EVs: 240 HP / 228 Def / 32 SpD / 8 Spe
-Bold Nature
-IVs: 0 Atk
-- Surf
-- Roar
-- Toxic
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Earthquake
+- Ice Beam
 - Protect
+- Hydro Pump
 
-Blissey @ Leftovers
+Blissey (F) @ Leftovers
 Ability: Natural Cure
-EVs: 240 HP / 252 Def / 16 Spe
-Bold Nature
-IVs: 0 Atk
-- Seismic Toss
-- Thunder Wave
-- Wish
-- Soft-Boiled
-
-Moltres @ Leftovers
-Ability: Pressure
-EVs: 252 SpA / 4 SpD / 252 Spe
+EVs: 252 Def / 252 SpA / 4 Spe
 Modest Nature
-IVs: 2 Atk / 30 SpA
-- Flamethrower
-- Hidden Power [Grass]
-- Roar
-- Overheat
+IVs: 0 Atk
+- Blizzard
+- Soft-Boiled
+- Thunderbolt
+- Fire Blast
 
-Skarmory (M) @ Leftovers
-Ability: Keen Eye
-EVs: 252 HP / 4 Def / 252 SpD
-Careful Nature
-- Spikes
-- Protect
-- Toxic
-- Drill Peck
-
-Salamence (M) @ Leftovers
+Salamence @ Leftovers
 Ability: Intimidate
 EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-IVs: 30 Atk / 30 SpA
-- Fire Blast
-- Hidden Power [Grass]
+Rash Nature
 - Dragon Claw
+- Fire Blast
 - Brick Break
+- Wish
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 140 SpD / 128 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Taunt
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 216 Atk / 40 Def / 4 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Protect
+- Explosion

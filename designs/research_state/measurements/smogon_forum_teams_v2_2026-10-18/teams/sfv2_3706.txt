@@ -1,0 +1,56 @@
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 20 HP / 252 Atk / 36 SpD / 200 Spe
+Adamant Nature
+- Spore
+- Stun Spore
+- Brick Break
+- Mach Punch
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 252 SpA / 16 SpD
+Modest Nature
+IVs: 0 Atk
+- Thunder Wave
+- Crunch
+- Pursuit
+- Fire Blast
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 128 Def / 40 SpA / 32 SpD / 56 Spe
+Bold Nature
+IVs: 0 Atk
+- Rapid Spin
+- Recover
+- Thunder Wave
+- Surf
+
+Snorlax @ Leftovers
+Ability: Thick Fat
+EVs: 204 HP / 96 Atk / 140 Def / 52 SpD / 16 Spe
+Adamant Nature
+- Rest
+- Curse
+- Body Slam
+- Self-Destruct
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 Def
+- Rest
+- Toxic
+- Thunderbolt
+- Hidden Power [Ice]

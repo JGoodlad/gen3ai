@@ -1,57 +1,55 @@
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Hasty Nature
-- Substitute
-- Dragon Claw
-- Flamethrower
-- Brick Break
-
-Skarmory
-Ability: Keen Eye
-EVs: 252 HP / 252 SpD / 4 Spe
-Careful Nature
-IVs: 30 SpD
-- Spikes
-- Thief
-- Hidden Power [Steel]
-- Roar
-
-Starmie @ Leftovers
-Ability: Natural Cure
-EVs: 248 HP / 80 Def / 28 SpA / 152 Spe
-Timid Nature
-IVs: 0 Atk
-- Surf
-- Thunder Wave
-- Rapid Spin
-- Recover
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 252 HP / 64 Atk / 176 Def / 16 Spe
-Impish Nature
-- Meteor Mash
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 224 SpA / 44 Spe
+Quiet Nature
 - Earthquake
-- Explosion
-- Protect
-
-Blissey (F) @ Leftovers
-Ability: Natural Cure
-EVs: 252 Def / 228 SpA / 28 Spe
-Modest Nature
-IVs: 0 Atk
-- Calm Mind
-- Thunderbolt
+- Hydro Pump
 - Ice Beam
-- Soft-Boiled
+- Focus Punch
 
-Celebi @ Leftovers
-Ability: Natural Cure
-EVs: 252 HP / 76 Def / 44 SpA / 100 SpD / 36 Spe
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 72 HP / 244 SpD / 192 Spe
+Timid Nature
+- Spikes
+- Rapid Spin
+- Ice Beam
+- Explosion
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 96 Atk / 112 Def / 32 SpA / 16 SpD
+Careful Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 216 SpD / 40 Spe
+Careful Nature
+- Thunder Wave
+- Seismic Toss
+- Counter
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 236 SpD / 32 Spe
 Calm Nature
 IVs: 2 Atk / 30 SpA
-- Leech Seed
-- Recover
+- Rest
+- Thunderbolt
 - Hidden Power [Grass]
-- Perish Song
+- Roar
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 192 Atk / 200 SpD / 116 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Refresh
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break

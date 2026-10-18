@@ -1,57 +1,57 @@
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 4 HP / 252 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 Def
-- Thunder Wave
-- Thunderbolt
-- Hidden Power [Ice]
-- Rain Dance
-
-Metagross @ Leftovers
-Ability: Clear Body
-EVs: 168 HP / 16 Def / 252 SpA / 72 Spe
-Rash Nature
-IVs: 30 Atk / 30 SpA / 30 Spe
-- Meteor Mash
-- Hidden Power [Fire]
-- Psychic
-- Explosion
-
-Suicune @ Leftovers
-Ability: Pressure
-EVs: 192 HP / 252 SpA / 64 Spe
-Modest Nature
-IVs: 0 Atk
-- Rest
-- Sleep Talk
-- Calm Mind
-- Surf
-
-Medicham @ Leftovers
-Ability: Pure Power
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Bulk Up
-- Brick Break
-- Rock Slide
-- Shadow Ball
-
 Tyranitar @ Leftovers
 Ability: Sand Stream
-EVs: 184 HP / 104 Atk / 220 Spe
-Adamant Nature
-- Dragon Dance
-- Earthquake
+EVs: 188 HP / 192 SpA / 128 Spe
+Modest Nature
 - Rock Slide
-- Double-Edge
+- Crunch
+- Pursuit
+- Fire Blast
 
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 4 Atk / 252 SpA / 252 Spe
-Mild Nature
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 252 HP / 64 Def / 80 SpA / 56 SpD / 56 Spe
+Calm Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Razor Leaf
+- Hidden Power [Fire]
+- Leech Seed
+- Sleep Powder
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Earthquake
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 172 Def / 44 SpD / 44 Spe
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Hydro Pump
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Toxic
+- Soft-Boiled
+- Ice Beam
+- Wish
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
 IVs: 30 Atk / 30 SpA
-- Dragon Claw
 - Flamethrower
 - Hidden Power [Grass]
-- Brick Break
+- Will-O-Wisp
+- Roar

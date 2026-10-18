@@ -1,56 +1,58 @@
-Swampert @ Salac Berry
-Ability: Torrent
-EVs: 4 Def / 252 SpA / 252 Spe
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 112 HP / 220 SpA / 176 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Ice Punch
+- Fire Punch
+- Hidden Power [Grass]
+- Dynamic Punch
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 IVs: 0 Atk
-- Substitute
-- Toxic
-- Hydro Pump
-- Endeavor
-
-Tyranitar @ Choice Band
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Adamant Nature
-- Earthquake
-- Rock Slide
-- Double-Edge
-- Focus Punch
-
-Cloyster @ Leftovers
-Ability: Shell Armor
-EVs: 72 HP / 244 SpD / 192 Spe
-Timid Nature
-- Spikes
 - Rapid Spin
+- Surf
 - Ice Beam
-- Explosion
-
-Jolteon @ Leftovers
-Ability: Volt Absorb
-EVs: 8 HP / 248 SpA / 252 Spe
-Timid Nature
-IVs: 2 Atk / 30 SpA
-- Substitute
 - Thunderbolt
-- Hidden Power [Grass]
-- Baton Pass
 
-Metagross @ Liechi Berry
-Ability: Clear Body
-EVs: 168 HP / 232 Atk / 16 Def / 92 Spe
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 16 HP / 56 Atk / 160 Def / 248 SpD / 28 Spe
 Adamant Nature
-- Agility
-- Meteor Mash
-- Earthquake
-- Explosion
+IVs: 30 SpD / 30 Spe
+- Brick Break
+- Rock Slide
+- Hidden Power [Bug]
+- Knock Off
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 188 HP / 180 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 216 Atk / 96 Def / 168 SpD / 12 Spe
+Adamant Nature
+- Body Slam
+- Shadow Ball
+- Focus Punch
+- Self-Destruct
 
 Charizard @ Leftovers
 Ability: Blaze
 EVs: 252 SpA / 4 SpD / 252 Spe
-Mild Nature
-IVs: 30 Atk / 30 Def
-- Substitute
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Dragon Claw
 - Flamethrower
-- Hidden Power [Ice]
-- Focus Punch
+- Hidden Power [Grass]
+- Beat Up

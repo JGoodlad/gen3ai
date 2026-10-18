@@ -1,58 +1,57 @@
-Tyranitar @ Lum Berry
-Ability: Sand Stream
-EVs: 4 HP / 252 Atk / 252 Spe
-Jolly Nature
-IVs: 30 Atk / 30 Def / 30 SpD
-- Dragon Dance
-- Rock Slide
-- Earthquake
-- Hidden Power [Bug]
-
-Exeggutor @ Leftovers
-Ability: Chlorophyll
-EVs: 208 HP / 180 SpA / 120 Spe
-Modest Nature
-IVs: 30 Atk / 30 SpA
-- Wish
-- Explosion
-- Hidden Power [Grass]
-- Sleep Powder
-
-Salamence @ Leftovers
-Ability: Intimidate
-EVs: 24 Atk / 232 SpA / 252 Spe
-Rash Nature
-IVs: 30 Def / 30 SpA
-- Hidden Power [Grass]
-- Fire Blast
-- Brick Break
-- Dragon Claw
-
-Houndoom @ Leftovers
-Ability: Early Bird
-EVs: 252 SpA / 36 SpD / 220 Spe
+Jynx (F) @ Leftovers
+Ability: Oblivious
+EVs: 252 SpA / 4 SpD / 252 Spe
 Timid Nature
 IVs: 0 Atk
-- Fire Blast
-- Crunch
-- Beat Up
-- Pursuit
-
-Zapdos @ Leftovers
-Ability: Pressure
-EVs: 252 HP / 252 SpD / 4 Spe
-Calm Nature
-IVs: 30 Atk / 30 SpA
-- Thunderbolt
-- Rest
-- Toxic
-- Roar
-
-Swampert @ Leftovers
-Ability: Torrent
-EVs: 248 HP / 216 Def / 44 SpD
-Relaxed Nature
-- Earthquake
+- Calm Mind
 - Ice Beam
+- Lovely Kiss
+- Substitute
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
 - Protect
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
 - Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Psychic
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
