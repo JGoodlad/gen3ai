@@ -5,7 +5,7 @@
   registration.
 - **The registration** is [`PREREGISTRATION.md`](PREREGISTRATION.md), shipped with the bank's ids
   (`states_mat_x26.json`) before any trajectory output existed.
-- **The queue** crawls detached (§3). The read is `read_mat.py`, committed with the harness, before any output.
+- **The queue** crawls detached (§3), launched 2026-10-18 04:45 PDT from `826bee89`. The read is `read_mat.py`, committed with the harness, before any output.
 - **Results:** none yet. The orchestrator dispatches the read when `QUEUE_DONE` appears.
 
 **What it asks** (owner, 2026-10-17: "what does it take to enable search? Are we getting closer, not closer?"). It
@@ -65,7 +65,27 @@ $PY -I $F/read_mat_test.py && $PY -I $F/score_mat.py && $PY -I $F/read_mat.py   
 
 ## 3. The running queue
 
-Not launched yet: the launch commit fills this section (location, progress command, ETA).
+**LAUNCHED 2026-10-18 04:45 PDT** (runner pid in `~/gen3ai_archive/hidden_info_maturity/queue.pid`). It is detached
+(`setsid nohup`), so it survives the launching session.
+
+| | |
+|---|---|
+| runner | `queue_mat.py --slots 2`, launched by `launch_queue.sh` from the HEAD checkout |
+| HEAD checkout (the world builder; §12.13.7 (f)) | `~/.cache/gen3ai/hib_mat/head`, detached at `826bee89` (the registration commit). **Keep it** until the read |
+| pin checkout (bank, roots, truth, belief, playouts) | `~/.cache/gen3ai/hib_mat/pin_x26`, detached at `9c033489` (X26's pin), with its own Rust release builds. **Keep it** until the read |
+| archive | `~/gen3ai_archive/hidden_info_maturity/` (checkpoint copies, copied traces, bank, every row) |
+| progress (counts only, no outcome) | `python -I <this folder>/queue_mat.py --status` (done / wanted per anchor and unit); `tail ~/gen3ai_archive/hidden_info_maturity/logs/queue_mat.log` |
+| done marker | `~/gen3ai_archive/hidden_info_maturity/QUEUE_DONE` (it lists any PARKED unit: a FINDING) |
+| order | the shared F worlds, then 25M, 225M, 100M, 175M (roots, identity, truth, belief, F, FN worlds, FN) |
+| cost | ≈ 30 CPU-h for the four LEAN anchors, at the pilot's measured 77–92 CPU-s per state (PREREGISTRATION §5) |
+| **ETA** | **≈ 15–20 wall-hours on the 2 slots, i.e. ≈ 2026-10-18 20:00 to 2026-10-19 01:00 PDT.** It runs at SCHED_IDLE beside the live trainer, so it stretches whenever the trainer takes the cores (budget to 2026-10-19 midday). The first-vs-last pair (25M, 225M) completes first, about 60 % of the way in |
+
+- **Restart after a crash or a reboot:** `bash <this folder>/launch_queue.sh` from the HEAD checkout. Every unit is
+  resumable, and `--limit` caps only NEW work.
+- **A new anchor** (the trigger): `trigger_mat.py register --pending --mode lean`, then relaunch if `QUEUE_DONE` has
+  appeared.
+- **The read** (once `QUEUE_DONE` exists): §2's last three lines. Their outputs, `identity_mat.json` and
+  `result_mat.json`, land in this folder.
 
 ## 4. Notes fixed before any output
 
