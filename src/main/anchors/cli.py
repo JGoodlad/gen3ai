@@ -729,6 +729,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     plan.out_dir.mkdir(parents=True, exist_ok=True)
     print(render_plan(plan, cfg), flush=True)
 
+    # 🚨 THE TEAM-SET OVERLAP, a REQUIRED field of every read (2026-10-18): computed BEFORE any game,
+    # so a read whose team set cannot be measured fails here, with nothing started.
+    from main.anchors import team_overlap as team_overlap_mod
+
+    overlap = team_overlap_mod.read_overlap(plan, cfg)
+    print("\n".join(team_overlap_mod.render_lines(overlap)), flush=True)
+
     srv: Optional[server_mod.ManagedServer] = None
     rows: List[results_mod.GameRow] = []
     report: dict = {}
@@ -769,6 +776,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         failure=failure.as_dict() if failure is not None else None,
         peer_exit_notes=report.get("peer_exit_notes") or [],
         mirrored=report.get("mirrored_pairs"),
+        team_overlap=overlap,
         provenance={
             "anchors_config": str(cfg.source),
             "peer_report": {k: v for k, v in report.items() if k != "team_draws"},

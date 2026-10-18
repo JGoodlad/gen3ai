@@ -4,9 +4,16 @@
 K2 (G0′), the previous lineage's plateau, was never read against Kakuna. Is X26 a jump over K2? Put both
 models on both team sets.
 
+> 🚨 **CORRECTION (2026-10-18, `heldout_teams_kakuna_2026-10-18/`).** This read called `away` (Metamon's
+> `competitive/gen3ou`) "Metamon's own teams", as if our models had never seen them. **19 of its 20 teams are EXACT
+> copies of teams in our 719-team training pool** (119 / 120 mon sets; `main.anchors.team_overlap`,
+> `gen3_team_overlap_v1`), and `home72` is 72 pool teams. Both sets are training data for X26 and K2. The numbers
+> below stand; only the description changes. X26 − K2 stays a valid comparison, because both trained on the same
+> pool. The held-out read is `heldout72` (that README).
+
 **Answer.**
 
-- **On Metamon's own teams (away), X26 is detectably ahead of K2: +0.143 [+0.074, +0.209]** (Newcombe, n = 400
+- **On `away` (Metamon's `competitive` set; 19 / 20 teams in our pool), X26 is detectably ahead of K2: +0.143 [+0.074, +0.209]** (Newcombe, n = 400
   each). K2 LOSES to Kakuna there: 0.355 [0.310, 0.403], WORSE than even. X26 is level with it: 0.497
   [0.449, 0.546], NOT DETECTED.
 - **On our teams (home72), X26 is also detectably ahead of K2: +0.087 [+0.018, +0.155]** (n = 400 each, after
@@ -15,7 +22,7 @@ models on both team sets.
   does not. At n = 240 the gap was +0.079 [−0.010, +0.166], NOT DETECTED.
 - **The X26 away number came DOWN with more games:** 0.570 at n = 100 → **0.497 at n = 400**. The top-up's 300 new
   games read 0.473. Against the first 100 that is −0.097 [−0.205, +0.016], NOT DETECTED: the first 100 were the
-  luckier draw, not a different regime. **X26 does not beat Kakuna on Metamon's teams.**
+  luckier draw, not a different regime. **X26 does not beat Kakuna on `away`.**
 - **PROVISIONAL.** X26 is one checkpoint of a live, unplateaued run (161M of a 500M cap), one seed. K2 is a
   plateaued pre-era model read through its own pinned code (§ Comparability).
 

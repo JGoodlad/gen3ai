@@ -73,7 +73,7 @@ is an implementation fact about Metamon that could change in a release.
 | **A — per promotion** | every time a snapshot is promoted | the **dense ladder** (`<run>/snapshot_ladder/ladder.json`), greedy-vs-greedy, compared at **matched snapshot COUNT** | already paid by the run |
 | **B — per milestone** | each eval milestone | `metamon:SmallRL` **greedy, BOTH team sets, 100 games each** + **ONE t1 cell** as the distribution check | ~15 min |
 | **C — era gate** | opening or closing an era | `metamon:SyntheticRLV2` **greedy, away** — bar: **Wilson lower bound > 0.50**; and **Foul Play** at a fixed `--search-time-ms` with its realized visit count | ~2 h |
-| **goal read** | the near-term goal (X22) | `metamon:Kakuna` — Metamon's best public policy (142.8M, ckpt 34, upstream's stated gen3ou GXE ~63%). 🏁 **Standing (2026-10-17, `measurements/x26_metamon_anchor_2026-10-17/`): the goal is MET by X26 `rb_x26_s2601` @161,000,169 on home72 — **0.575 [0.526, 0.623] vs Kakuna greedy (n = 400, seeds 0–19; 0.600 at the first 240)** AND 0.600 [0.537, 0.660] vs Kakuna T = 1.0 (n = 240, paired seeds 0–11); away (Metamon's teams) **0.497 [0.449, 0.546] n = 400, NOT DETECTED** (the n = 100 read's 0.570 was a lucky first draw). K2 (G0′, `ai_v14_07_g0p_k2` @91,127,808, read 2026-10-17 through its own pin `a5b2fdba` on torch 2.5.1, `measurements/k2_x26_kakuna_both_teamsets_2026-10-17/`) reads 0.487 [0.439, 0.536] on home72 (n = 400) and **0.355 [0.310, 0.403] away (n = 400, WORSE)**; X26 − K2 = **+0.087 [+0.018, +0.155] home72** and **+0.143 [+0.074, +0.209] away**, X26 BETTER on both. PROVISIONAL: one checkpoint of a live, unplateaued run (§4).** Previous (2026-09-28, `measurements/kakuna_goal_read_2026-09-28/`, home72, N0 final greedy): Kakuna's strongest temperature by point estimate is **T = 1.0** (N0 **0.380** [0.316, 0.449], n = 200 — goal NOT met); at greedy N0 **0.460** [0.392, 0.529]; the temperature differences are NOT DETECTED, so the goal read is taken at BOTH (`--opponent-temperature 1.0` and greedy). Our side stays GREEDY: N0 sampling at T = 1.0 (`--our-temperature 1.0`) reads 0.310 vs Kakuna T = 1.0 and 0.280 vs Kakuna greedy (X22 (f)) | **~2 min / 20 games** on CPU (6 s/game, load ~25) |
+| **goal read** | the near-term goal (X22) | `metamon:Kakuna` — Metamon's best public policy (142.8M, ckpt 34, upstream's stated gen3ou GXE ~63%). 🏁 **Standing (2026-10-17, `measurements/x26_metamon_anchor_2026-10-17/`): the goal is MET by X26 `rb_x26_s2601` @161,000,169 on home72 — **0.575 [0.526, 0.623] vs Kakuna greedy (n = 400, seeds 0–19; 0.600 at the first 240)** AND 0.600 [0.537, 0.660] vs Kakuna T = 1.0 (n = 240, paired seeds 0–11); away (Metamon's `competitive` set — 🚨 **19 of its 20 teams are EXACT copies of training-pool teams**, so it is NOT a set our models never saw; §2 "The team sets") **0.497 [0.449, 0.546] n = 400, NOT DETECTED** (the n = 100 read's 0.570 was a lucky first draw). K2 (G0′, `ai_v14_07_g0p_k2` @91,127,808, read 2026-10-17 through its own pin `a5b2fdba` on torch 2.5.1, `measurements/k2_x26_kakuna_both_teamsets_2026-10-17/`) reads 0.487 [0.439, 0.536] on home72 (n = 400) and **0.355 [0.310, 0.403] away (n = 400, WORSE)**; X26 − K2 = **+0.087 [+0.018, +0.155] home72** and **+0.143 [+0.074, +0.209] away**, X26 BETTER on both. PROVISIONAL: one checkpoint of a live, unplateaued run (§4).** Previous (2026-09-28, `measurements/kakuna_goal_read_2026-09-28/`, home72, N0 final greedy): Kakuna's strongest temperature by point estimate is **T = 1.0** (N0 **0.380** [0.316, 0.449], n = 200 — goal NOT met); at greedy N0 **0.460** [0.392, 0.529]; the temperature differences are NOT DETECTED, so the goal read is taken at BOTH (`--opponent-temperature 1.0` and greedy). Our side stays GREEDY: N0 sampling at T = 1.0 (`--our-temperature 1.0`) reads 0.310 vs Kakuna T = 1.0 and 0.280 vs Kakuna greedy (X22 (f)) | **~2 min / 20 games** on CPU (6 s/game, load ~25) |
 
 ### Tier A — per promotion: the dense ladder
 
@@ -103,8 +103,10 @@ python -m main.anchors --model models/<run> --opponent metamon:SmallRL \
 ```
 
 **Report BOTH team sets, always.** They are not redundant: they disagreed in SIGN for `SmallRL`
-(−0.030 pooled, point estimate on the *away* side) and the away set is the one no dial of ours is
-set to. `SmallRL` is the recurring anchor because it is cheap (3.0 s/game, ~5 min for 100) and at
+(−0.030 pooled, point estimate on the *away* side). 🚨 **Neither set is unseen by our models** (2026-10-18): `home`
+IS the training pool, and 19 of `away`'s 20 teams are exact copies of pool teams. The two sets differ in WHICH
+teams are drawn (20 Metamon-chosen sample teams vs 719), not in whether we trained on them. The held-out set is
+`heldout72` (§2 "The team sets"). `SmallRL` is the recurring anchor because it is cheap (3.0 s/game, ~5 min for 100) and at
 0.520 home / 0.650 away it is a **live signal in both directions**, not a floor.
 
 ### Tier C — era gates: `SyntheticRLV2`, and Foul Play
@@ -352,10 +354,43 @@ login that never completes, a rejected team, a dropped socket).
 
 ### The team sets
 
-| | **home** | **away** |
-|---|---|---|
-| what | our 719-team gen3ou pool, nickname-free, with explicit Hidden Power IVs | Metamon's own 20-team `competitive` gen3ou set, each file `.strip()`ed |
-| why | it is our training distribution | it is **their** ground — the set Metamon's README names as the paper's human-ladder set and says Metamon has overfit to |
+| | **home** | **away** | **heldout72** (a config, 2026-10-18) |
+|---|---|---|---|
+| what | our 719-team gen3ou pool, nickname-free, with explicit Hidden Power IVs (or `home72`: 72 of those pool teams, sanitised) | Metamon's 20-team `competitive` gen3ou set, each file `.strip()`ed | 72 teams drawn with a fixed seed from Metamon's replay-derived `hl_05_26/gen3ou`, rejecting any with an exact team match, or ≥ 4 of 6 mon sets shared with one team, in our pool or `competitive` |
+| why | it is our training distribution | the set Metamon's README names as its human-ladder evaluation set and says Metamon has overfit to (`metamon/README.md:865`) | the one set NEITHER side trained on as a set |
+| 🚨 **in OUR training pool** (`gen3_team_overlap_v1`) | all of it | **19 / 20 teams EXACT copies** (119 / 120 mon sets) | **0 / 72** exact, 0 sharing ≥ 4 mon sets, 104 / 432 mon sets |
+| in Metamon's `competitive` | home72: 8 / 72 exact | all of it | 0 / 72 exact |
+| how to run it | `--teamset home` | `--teamset away` | `--teamset home` with `$GEN3AI_ANCHORS_CONFIG` = `measurements/heldout_teams_kakuna_2026-10-18/anchors_heldout72_kakuna.json` |
+
+🚨 **CORRECTED 2026-10-18: `away` is NOT a set our models never trained on.** It was described for a month as
+"Metamon's own teams", "their ground", "a 20-team set we have never trained on". 19 of its 20 teams are exact copies of
+teams in our 719-team training pool (23 pool entries; the pool holds four duplicates). `away` is Metamon's choice of
+teams, and Metamon's README says it has overfit to them; it is not held out from US. Every `away` number in this
+SOP and the ledger stands as a measurement; only its description changes. X26 − K2 comparisons on it stay valid,
+because both models trained on the same pool. `home72` is 72 pool teams, so it is training data too, by design.
+The held-out read is `heldout72` (`measurements/heldout_teams_kakuna_2026-10-18/`). Kakuna's own exposure to those
+teams is in that README's caveat.
+
+### The team-set overlap — a REQUIRED field of every read (2026-10-18)
+
+`main.anchors` measures how much of the read's team set our training pool and the opponent's KNOWN team sets
+already hold (`src/main/anchors/team_overlap.py`, `gen3_team_overlap_v1`), BEFORE any game, prints it in the plan
+and the result, and writes it to `summary.json["team_overlap"]`. A read whose team set cannot be measured fails
+before anything starts.
+
+* **Matched on** each mon's normalised species + sorted moves (the `mon` tier), and a `strict` tier that adds
+  item, ability, nature and EVs. Hidden Power is matched by its TYPE: a typeless `Hidden Power` takes the type its
+  IVs give (all 31 = Dark). A forme is matched by its own id, except a forme with its base's stats and types (the
+  Unown letters), which is the base. Nothing is keyed by `num`.
+* **Counted, per reference:** `exact_team` / `exact_team_strict`; `same_species6`; `mons_seen` /
+  `mons_seen_strict`; and per read team the most mon sets shared with any ONE reference team
+  (`max_shared_mons_hist`, `teams_sharing_ge4`).
+* **References:** `training_pool` (this checkout's `data/teams`) always; for a Metamon opponent, the config's
+  `opponents.metamon.reference_team_dirs` (`competitive` and the archived `hl_05_26`), or every non-`gen3ai_*` set in
+  its cache when the config names none. A configured reference that is absent on the box is listed under
+  `missing_references`, never a silent zero. Foul Play has no team set of its own.
+* **Quote it with the number.** A win rate on a team set is reported with that set's overlap with our pool,
+  exactly as it is reported with its regime (RULE 1).
 
 Both sides draw from the SAME set in a cell. The summary carries `team_source_asymmetry`, which
 goes true the moment the two sides' file counts differ; a cell that trips it mixes skill with
@@ -471,8 +506,9 @@ DETECTED, never "equal"):
 
 Two results worth carrying forward: our own **+8.9 pp** eval-regime figure is an ASYMMETRY term and
 does **not** transfer to a symmetric regime change; and our 719-team training pool buys **no
-detectable home advantage** over a 20-team set we have never trained on — a free-standing
-corroboration of *count dominates conditioning*.
+detectable home advantage** over Metamon's 20-team set. 🚨 **CORRECTED 2026-10-18:** that set is NOT one we never
+trained on (19 of its 20 teams are exact pool copies), so this is not evidence about unseen teams, and it is not
+the "count dominates conditioning" corroboration it was read as.
 
 ### Foul Play — same checkpoint
 
@@ -500,7 +536,7 @@ role-balanced units, every counted unit `status OK`, `regime_verified_decisions`
 |---|---:|---|---|---|
 | Kakuna greedy · home72 | 240 | **0.600 [0.537, 0.660]** | **BETTER** | N0: 0.460 → **+0.140 [+0.046, +0.230]** |
 | Kakuna T = 1.0 · home72 (`regime_matched = false`) | 240 | **0.600 [0.537, 0.660]** | **BETTER** | N0: 0.380 → **+0.220 [+0.127, +0.308]** |
-| Kakuna greedy · away | 400 | 0.497 [0.449, 0.546] | NOT DETECTED | K2 (G0′): 0.355 → **+0.143 [+0.074, +0.209]** X26 BETTER (seeds 0–4 of the first read + 5–19 of `k2_x26_kakuna_both_teamsets_2026-10-17`, one identical regime stamp; the first 100 read 0.570) |
+| Kakuna greedy · away (19 / 20 teams in our pool) | 400 | 0.497 [0.449, 0.546] | NOT DETECTED | K2 (G0′): 0.355 → **+0.143 [+0.074, +0.209]** X26 BETTER (seeds 0–4 of the first read + 5–19 of `k2_x26_kakuna_both_teamsets_2026-10-17`, one identical regime stamp; the first 100 read 0.570) |
 | Kakuna greedy · home72, topped up | 400 | **0.575 [0.526, 0.623]** | **BETTER** | K2 (G0′): 0.487 [0.439, 0.536] → **+0.087 [+0.018, +0.155]** X26 BETTER; N0 → +0.115 [+0.030, +0.198] (seeds 0–11 of row 1 + 12–19 of `k2_x26_kakuna_both_teamsets_2026-10-17`, one identical regime stamp) |
 | SmallRL greedy · away | 200 | 0.645 [0.577, 0.708] | BETTER | K2 (G0′): 0.625 → +0.020 [−0.058, +0.094] NOT DETECTED |
 | SmallRL greedy · home (pool) | 200 | 0.785 [0.723, 0.836] | BETTER | K2: 0.755 → +0.030 [−0.040, +0.093] NOT DETECTED |
@@ -508,11 +544,11 @@ role-balanced units, every counted unit `status OK`, `regime_verified_decisions`
 
 **The near-term goal (Kakuna on our teams at its strongest temperature, lower bound > 0.50) is MET at
 this checkpoint**, at both Kakuna settings; greedy and T = 1.0 read identically here (Δ 0.000
-[−0.087, +0.087]), so "Kakuna is strongest at T = 1.0" is not reproduced. **On Metamon's own teams it is
-NOT DETECTED** (0.497 at n = 400), and against SmallRL X26 is level with K2, the previous lineage's plateau.
+[−0.087, +0.087]), so "Kakuna is strongest at T = 1.0" is not reproduced. **On `away` (Metamon's `competitive`
+set, 19 of whose 20 teams are in our pool) it is NOT DETECTED** (0.497 at n = 400), and against SmallRL X26 is level with K2, the previous lineage's plateau.
 **K2 against Kakuna (2026-10-17, `measurements/k2_x26_kakuna_both_teamsets_2026-10-17/`):** K2 is played by its own
 training pin `a5b2fdba` on `gen3ai_stable` (torch 2.5.1, the pin's poke-env client; it does not load at HEAD), X26 by
-the X26 read's `63f97a57`, so the difference crosses two harnesses (that read's § Comparability). On Metamon's teams
+the X26 read's `63f97a57`, so the difference crosses two harnesses (that read's § Comparability). On `away`
 K2 loses to Kakuna (0.355 [0.310, 0.403], WORSE) and X26 is **+0.143 [+0.074, +0.209]** ahead of it, DETECTED. On
 home72 at n = 400 (both cells topped up on paired seeds 12–19), K2 reads 0.487 [0.439, 0.536] and X26 reads 0.575
 [0.526, 0.623]. That puts X26 **+0.087 [+0.018, +0.155]** ahead of K2, DETECTED. K2 − N0 is +0.027 (NOT DETECTED),
@@ -570,9 +606,12 @@ at the end, regime first.
    is how 31 of 84 sub-cells got flagged as unverified when nothing was wrong with them.
 3. `team_source_asymmetry == false`, and for Foul Play a non-null
    `realized_visits_per_decision_mean`.
+4. 🚨 **`team_overlap`** (2026-10-18): how much of the team set our training pool holds. A read on teams the pool
+   already contains is a read on training data, whatever the set is called. A summary without the block predates
+   `gen3_team_overlap_v1`; compute it with the module for any number you quote.
 
 **Then write it down with its regime.** A row in `designs/research_state/ledger.md` names the
-opponent, its version and commit, the regime, the team set, our checkpoint's step, n, the win rate
+opponent, its version and commit, the regime, the team set AND its overlap with our pool, our checkpoint's step, n, the win rate
 and its Wilson interval — and for a search opponent the realized visit count.
 
 ---

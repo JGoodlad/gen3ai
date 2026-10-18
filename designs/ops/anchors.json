@@ -26,6 +26,10 @@
       "team_sets": {
         "home": "gen3ai_pool",
         "away": "competitive"
+      },
+      "reference_team_dirs": {
+        "competitive": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou",
+        "hl_05_26": "/home/goodlad/gen3ai_archive/metamon_cache_2026-09-24/teams/hl_05_26/gen3ou"
       }
     },
     "foulplay": {

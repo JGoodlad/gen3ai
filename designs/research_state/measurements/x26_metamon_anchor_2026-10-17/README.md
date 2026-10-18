@@ -10,9 +10,16 @@ goal's bar is **MET at this checkpoint**. Against the same cells N0 (`ai_v14_01_
 scored 0.460 and 0.380, so X26 is **+0.140 [+0.046, +0.230]** and **+0.220 [+0.127, +0.308]** ahead of N0.
 Both gaps are DETECTED.
 
+> 🚨 **CORRECTION (2026-10-18, `heldout_teams_kakuna_2026-10-18/`).** This read called `away` (Metamon's
+> `competitive/gen3ou`) "Metamon's own teams", as if our models had never seen them. **19 of its 20 teams are EXACT
+> copies of teams in our 719-team training pool** (119 / 120 mon sets; `main.anchors.team_overlap`,
+> `gen3_team_overlap_v1`), and `home72` is 72 pool teams. Both sets are training data for X26 and K2. The numbers
+> below stand; only the description changes. X26 − K2 stays a valid comparison, because both trained on the same
+> pool. The held-out read is `heldout72` (that README).
+
 Three limits on that answer:
 
-- **On Metamon's OWN teams, X26 vs Kakuna is NOT DETECTED as better.** It reads 0.570 [0.472, 0.663] at
+- **On `away` (Metamon's `competitive` set, 19 of whose 20 teams are in our pool), X26 vs Kakuna is NOT DETECTED as better.** It reads 0.570 [0.472, 0.663] at
   n = 100. The goal is defined on our teams; the away cell is a descriptor.
 - **Against `SmallRL`, X26 is level with the previous lineage's best.** That is K2, `ai_v14_07_g0p_k2`,
   the G0′ plateau. Away: +0.020 [−0.058, +0.094]. Home: +0.030 [−0.040, +0.093]. Both NOT DETECTED.
@@ -40,7 +47,7 @@ counted unit has `peer_clean == true`; no H17 occurred.
 |---|---|---|---|---:|---|---|---|---|
 | `K_greedy_h72` | Kakuna ckpt 34 | greedy / greedy | home72 | 240 | 144–94–2 | **0.600 [0.537, 0.660]** | **BETTER** | 1.0000 |
 | `K_t10_h72` | Kakuna ckpt 34 | greedy / sample T = 1.0 (`regime_matched = false`) | home72 | 240 | 144–96–0 | **0.600 [0.537, 0.660]** | **BETTER** | 0.864–0.945 |
-| `K_greedy_away` | Kakuna ckpt 34 | greedy / greedy | away (Metamon's 20 `competitive`) | 100 | 57–43–0 | 0.570 [0.472, 0.663] | NOT DETECTED | 1.0000 |
+| `K_greedy_away` | Kakuna ckpt 34 | greedy / greedy | away (Metamon's 20 `competitive`; 19 in our pool) | 100 | 57–43–0 | 0.570 [0.472, 0.663] | NOT DETECTED | 1.0000 |
 | `S_greedy_away` | SmallRL ckpt 40 | greedy / greedy | away | 200 | 129–71–0 | **0.645 [0.577, 0.708]** | BETTER | 1.0000 |
 | `S_greedy_home` | SmallRL ckpt 40 | greedy / greedy | home (the 719-team pool) | 200 | 157–43–0 | **0.785 [0.723, 0.836]** | BETTER | 1.0000 |
 | `S_t1_away` | SmallRL ckpt 40 | t1 / t1 (tier B distribution check) | away | 100 | 73–27–0 | 0.730 [0.636, 0.807] | BETTER | 0.579–0.679 |

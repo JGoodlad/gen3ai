@@ -26823,3 +26823,52 @@ Tag: **MEASUREMENT (MAJOR) · PRE-REGISTERED (`5881ee83`) · R3 on competent-opp
 evidence: `research_state/measurements/hidden_info_e2_competent_2026-10-16/` (README §4, `result_e2.json`, `identity_e2.json`,
 `gigo_audit_e2.json` / `.py`, `pin_regate_e2_*.json`); `endstate/design_hidden_info_binding.md` §16.12; `endstate/search_ledger.md`;
 `research_state/UNDERSTANDING.md` §4.7
+
+### 2026-10-18 · CORRECTION + BUILD · **THE AWAY SET IS NOT HELD OUT: 19 of the 20 teams of `away` (Metamon's `competitive/gen3ou`), called "Metamon's own teams" / "a 20-team set we have never trained on" since 2026-09-14, are EXACT copies of teams in our 719-team training pool; `home72` is 72 pool teams. Every Kakuna and SmallRL read so far was on training data. `main.anchors` now reports every read's team-set overlap (`gen3_team_overlap_v1`, a required `summary.json` field), and `heldout72` (72 `hl_05_26` teams, 0 exact / 0 ≥ 4-shared with the pool or `competitive`) is built for the held-out read**
+
+**The finding** (orchestrator, 2026-10-18 07:30; verified and re-measured here with `main.anchors.team_overlap`, a mon
+set = normalised species + sorted moves, Hidden Power typed):
+
+| read set | vs our training pool (719) | vs `competitive` | vs `hl_05_26` (22,862) |
+|---|---|---|---|
+| `away` = `competitive` (20) | **19 exact** (19 strict), 119 / 120 mon sets | — | 0 exact, 19 same 6 species |
+| `home72` (72) | **72 exact** (it is `data/teams/sample`) | 8 exact (7 strict) | 0 exact, 57 same 6 species |
+| `heldout72` (72) | **0 exact**, 0 sharing ≥ 4 mon sets, 104 / 432 mon sets | 0 exact | 72 (its source) |
+
+The orchestrator's "19 of 21" counted `competitive`'s `index.csv` as a team; the set has 20 (the tool's
+`TEAM_FILE_GLOBS` count). The pool holds 23 entries copying 19 `competitive` teams.
+
+**What this corrects.** The description, not the numbers. `away` is not held out from us; it is Metamon's choice of
+20 sample teams, which Metamon's README says it overfit to (`metamon/README.md:865`). These statements are WITHDRAWN:
+the 2026-09-14 entry's "our 719-team pool buys no detectable home advantage over a 20-team set we have never trained
+on — a free-standing corroboration of *count dominates conditioning*" (the set is in the pool, so it corroborates
+nothing about unseen teams); "the away set is the one no dial of ours is set to" (the SOP's tier B and the
+`metamon_matched_regime_2026-09-14` / `flywheel_pair_read_2026-09-15` READMEs); and the
+2026-10-17 entries' "Metamon's own teams" for `away`. Every win rate, interval and X26 − K2 / X26 − N0 difference
+stands: both sides of each comparison trained on the same pool.
+
+**What was built.**
+1. `src/main/anchors/team_overlap.py` (`gen3_team_overlap_v1`): computed before any game of every read, printed in the
+   plan and the result, written to `summary.json["team_overlap"]`: exact team (mon tier and a strict tier with item /
+   ability / nature / EVs), same 6 species, mon sets seen, and the per-team best overlap with one reference team, against
+   our training pool and the opponent's known team sets (`designs/ops/anchors.json`
+   `opponents.metamon.reference_team_dirs`: `competitive`, the archived `hl_05_26`). A missing reference is named, not
+   zeroed. Hidden Power is matched by type (a typeless one by its IVs' type); a forme by its own id unless it has its
+   base's stats and types (Unown). Tests: `src/main/anchors/team_overlap_test.py`, each failing on revert (two revert
+   mutations checked: the CLI's `team_overlap=` and the typeless-HP rule).
+2. `heldout72` (`measurements/heldout_teams_kakuna_2026-10-18/`): the draw rule written before the draw (seed 20261018 over
+   the sorted `hl_05_26/gen3ou` file list; reject an exact match or ≥ 4 shared mon sets with any pool or `competitive`
+   team, a non-six-mon team, or a validator rejection). 80 candidates examined, 72 accepted, none rejected. Nickname-free,
+   `Hidden Power [Type]` with explicit IVs, validated by the pinned Showdown. Installed for Metamon as `gen3ai_heldout72`
+   (byte copies, sha256-checked by the read's queue before every unit). 🚨 164 of its 432 mons play **Hidden Power
+   Dark**: `hl_05_26` writes Hidden Power without a type (21,905 / 22,862 files) and all-31 IVs, which is Dark, and that is
+   what Metamon itself plays.
+3. **The Kakuna caveat.** The `hl_05_26` SET postdates Kakuna (Metamon commit `a790b624`, 2026-05-21; Kakuna "Dec 2025",
+   `README.md:288`). But Kakuna trained on `metamon-parsed-replays` + self-play (`README.md:825`), `hl_05_26` is built
+   from replays with a usage-stat fill, and Kakuna's self-play team sets are named nowhere ("various team sets",
+   `README.md:817`): whether Kakuna saw these teams' revealed parts in its replays is **UNVERIFIED**.
+
+Tag: **CORRECTION (framing; no number changes) · BUILD (`gen3_team_overlap_v1`, a required anchor field) · TEAM SET
+(`heldout72`)** · evidence: `research_state/measurements/heldout_teams_kakuna_2026-10-18/` (README, `heldout72_manifest.json`,
+`draw_log.jsonl`, `scripts/make_heldout72.py`); `ops/EXTERNAL_ANCHORS_SOP.md` §2 "The team sets" + "The team-set overlap";
+`research_state/UNDERSTANDING.md`

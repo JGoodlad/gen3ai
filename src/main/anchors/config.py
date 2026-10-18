@@ -84,6 +84,9 @@ class MetamonOpponent:
     cache_dir: Path
     agents: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     team_sets: Dict[str, str] = field(default_factory=dict)
+    #: Metamon's KNOWN team sets, ``{name: directory}``, that every read's ``team_overlap`` measures its
+    #: team set against (:mod:`main.anchors.team_overlap`). Empty: every non-``gen3ai_*`` set in the cache.
+    reference_team_dirs: Dict[str, str] = field(default_factory=dict)
 
     kind: str = "metamon"
 
@@ -228,6 +231,7 @@ def load_config(path: Optional[Path] = None) -> AnchorsConfig:
             cache_dir=Path(meta.get("cache_dir", "")),
             agents=dict(meta.get("agents", {})),
             team_sets=dict(meta.get("team_sets", {})),
+            reference_team_dirs=dict(meta.get("reference_team_dirs", {})),
         ),
         foulplay=FoulPlayOpponent(
             checkout=Path(fp.get("checkout", "")),
@@ -250,6 +254,7 @@ def describe(cfg: AnchorsConfig) -> str:
          ENV_OVERRIDES["opponents.metamon.cache_dir"]),
         ("metamon.agents", ", ".join(sorted(cfg.metamon.agents)), ""),
         ("metamon.team_sets", json.dumps(cfg.metamon.team_sets), ""),
+        ("metamon.reference_team_dirs", json.dumps(cfg.metamon.reference_team_dirs), ""),
         ("foulplay.checkout", str(cfg.foulplay.checkout),
          ENV_OVERRIDES["opponents.foulplay.checkout"]),
         ("foulplay.python", str(cfg.foulplay.python), ENV_OVERRIDES["opponents.foulplay.python"]),

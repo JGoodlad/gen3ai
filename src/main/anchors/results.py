@@ -238,7 +238,8 @@ def summarize(cell: CellSpec, rows: List[GameRow], *, status: str,
               failure: Optional[Dict[str, Any]] = None,
               peer_exit_notes: Optional[List[Dict[str, str]]] = None,
               provenance: Optional[Dict[str, Any]] = None,
-              mirrored: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+              mirrored: Optional[Dict[str, Any]] = None,
+              team_overlap: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """The cell's one number, its Wilson interval, and every integrity counter beside it.
 
     ``status`` is ``"OK"`` or ``"FAILED"``; a FAILED summary still carries whatever games did
@@ -311,6 +312,11 @@ def summarize(cell: CellSpec, rows: List[GameRow], *, status: str,
         # A RECOGNISED dirty exit, named. See `runner.classify_peer_error`: Metamon's post-game
         # recursion costs no games, and a reader should not have to re-derive that from an rc.
         "peer_exit_notes": list(peer_exit_notes or []),
+        # 🚨 A REQUIRED FIELD of every read (2026-10-18): how much of the read's team set our training
+        # pool and the opponent's known team sets already hold (`main.anchors.team_overlap`). `away` was
+        # once described as unseen by us; 19 of its 20 teams are EXACT copies of pool teams. None only
+        # for a summary built outside `main.anchors.cli` (a unit test); the CLI always computes it.
+        "team_overlap": team_overlap,
     }
     if cell.mirrored_pairs:
         # THE PAIR IS THE UNIT (T17): the pentanomial over the verified pairs and ITS interval. The
@@ -352,6 +358,11 @@ def render(summary: Dict[str, Any]) -> str:
         + (f"  ({cell['server_uri']})" if cell.get("server_uri") else ""),
         f"  our reader  {cell.get('our_transport', 'poke_env_rlplayer')}",
     ]
+    # The team set's OVERLAP with what we (and the opponent) trained on is part of the regime: a
+    # set our pool already holds is not "their teams" (2026-10-18). Printed beside the team set.
+    from main.anchors.team_overlap import render_lines
+
+    lines += render_lines(summary.get("team_overlap"))
     if cell.get("search_time_ms"):
         v = summary.get("realized_visits_per_decision_mean")
         lines.append(f"  search      {cell['search_time_ms']} ms/decision nominal, realized "

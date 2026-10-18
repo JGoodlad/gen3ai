@@ -14784,3 +14784,17 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   step is not filtered and says so; a fork earlier than every parent snapshot is the poolless-fork `FATAL_CONFIG`.
 - **Tests.** `src/agents/training/pool_seed_step_filter_test.py` (fails on revert). Docs: `designs/training/self_play_and_pool.md`
   "THE STEP FILTER", the training leaf, `TASK_BACKLOG.md` X35-1, `design_compute_efficiency.md` F18.
+
+## 2026-10-18 — anchors: the TEAM-SET OVERLAP, a required field of every read (`gen3_team_overlap_v1`; `main.anchors` only; no model / config / obs / signature change)
+
+- **The defect (a framing one).** `away` (Metamon's `competitive/gen3ou`) was described as a set our models never
+  trained on. 19 of its 20 teams are exact copies of training-pool teams. Nothing in a read said which teams it had seen.
+- **The change.** `src/main/anchors/team_overlap.py` matches teams as sets of six mon sets (species + sorted moves,
+  Hidden Power typed; a strict tier adds item / ability / nature / EVs; a forme by its own id unless it has its base's
+  stats and types). `main.anchors.cli.main` computes the read's overlap against our training pool and the opponent's
+  known team sets BEFORE any game, prints it, and writes `summary.json["team_overlap"]`; `results.render` prints it.
+  `designs/ops/anchors.json` gains `opponents.metamon.reference_team_dirs` (`competitive`, the archived `hl_05_26`);
+  without it the reference is every non-`gen3ai_*` set in Metamon's cache. A missing reference is listed, not zeroed.
+- **Tests.** `src/main/anchors/team_overlap_test.py` (fails on revert). Docs: `designs/ops/EXTERNAL_ANCHORS_SOP.md` §2
+  "The team sets" / "The team-set overlap" and §5 check 4, `UNDERSTANDING.md`, the ledger,
+  `research_state/measurements/heldout_teams_kakuna_2026-10-18/`.

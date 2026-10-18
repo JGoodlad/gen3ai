@@ -353,7 +353,7 @@ over 12M steps, and the comparator for any fold is the CONTINUATION, not the par
 exactly this span (both paths "indistinguishable" at ~0.92 while the untaught meter separated them by 9–10 pp) — a
 saturated bot row is not a competence meter at this depth. [ledger 2026-09-20 · *THE CONTINUATION CONTROL*; 2026-09-23 · *REPLICATES ON A SECOND SEED*]
 **Externally (`anchor_ab_continuation_2026-09-20/`, 8,400 greedy-vs-greedy games vs Metamon `SmallRL`, n = 1,200 per arm per
-team set): the continuation is +0.039 [−0.000, +0.079] over arm W on Metamon's teams and +0.020 [−0.019, +0.058] on ours —
+team set): the continuation is +0.039 [−0.000, +0.079] over arm W on Metamon's `competitive` set (19 of its 20 teams are in our pool) and +0.020 [−0.019, +0.058] on ours —
 NOT DETECTED on both (a post-hoc three-cell pool reads +0.032 [+0.007, +0.058]) — while the SAME games put the era-1 fold
 path 0.08 BELOW arm W on both sets, DETECTED. So the ORDER continuation > parent > fold reproduces outside; the SIZE does
 not: the untaught meter's +15.5 pp is ~3 pp on an external opponent, a ~5× scale difference. The untaught meter RANKS arms
@@ -670,15 +670,16 @@ to ±30; 720 bot games cannot establish which model is better.
 [meas: `cross_era_head_to_head/`]
 
 **An EXTERNAL anchor exists (2026-09-14, `metamon_matched_regime_2026-09-14/`, superseding the de-risk's
-unmatched numbers):** [MEASURED · pre-registered 2×2, 800 games] at GREEDY-vs-GREEDY on Metamon's own 20-team
+unmatched numbers):** [MEASURED · pre-registered 2×2, 800 games] at GREEDY-vs-GREEDY on Metamon's 20-team `competitive`
 gen3ou set (the away game, the primary row) the 75M win-prob run (`ai_v12_02_winprob_critic`) reads **0.650
 [0.553, 0.736] vs `SmallRL` (15M) — BETTER**, and **0.420 [0.328, 0.518] vs `SyntheticRLV2` (200M, the paper's best
 Gens 1–4 model, top 10 % of humans in Gen1) — NOT DETECTED as better, point on the losing side**; at home on our
 pool the 200M cell is 0.500. The de-risk's 0.742 / 0.583 were greedy-vs-sampling and do not survive (−22 / −8 pp
 like-for-like). "Temperature 1.0" is not one regime across models (SmallRL plays its argmax 65 % of the time at
 T = 1, SyntheticRLV2 88 %), so greedy-vs-greedy is the only comparable protocol and is the recurring baseline. Our
-719-team pool bought NO detectable home advantage over twenty never-trained teams (team-set effect n.d. for both
-models). Zero protocol failures either way; 3 / 6 s per game on CPU. `SmallRL` is the recurring baseline, `SyntheticRLV2` the milestone reference; both live
+719-team pool bought NO detectable home advantage over Metamon's twenty teams (team-set effect n.d. for both
+models) — 🚨 **CORRECTED 2026-10-18: those twenty are NOT never-trained teams; 19 of them are exact copies of pool
+teams** (`gen3_team_overlap_v1`, below), so the n.d. says nothing about unseen teams. Zero protocol failures either way; 3 / 6 s per game on CPU. `SmallRL` is the recurring baseline, `SyntheticRLV2` the milestone reference; both live
 outside our lineage and do not move with it. Serverless integration is blocked by the two poke-env packages (theirs
 subclasses upstream, our bridge transport subclasses the fork) — the websocket harness stays. Three hazards:
 upstream poke-env mis-parses nicknamed team entries into an empty species and the match STALLS rather than
@@ -690,7 +691,7 @@ erroring; Metamon's transformers need `VanillaAttention` on CPU; its client hard
 `x26_metamon_anchor_2026-10-17/`):** [MEASURED · one checkpoint of a live run] X26 `rb_x26_s2601` @161,000,169,
 greedy, on the home72 teams: **0.600 [0.537, 0.660] vs Kakuna greedy and 0.600 [0.537, 0.660] vs Kakuna at T = 1.0**
 (n = 240 each; the greedy cell reads 0.575 [0.526, 0.623] at n = 400, below), both lower bounds above 0.50; N0 read 0.460 / 0.380 on the same cells (X26 − N0 **+0.140
-[+0.046, +0.230]** / **+0.220 [+0.127, +0.308]**). It does NOT hold on Metamon's own teams (0.497 [0.449,
+[+0.046, +0.230]** / **+0.220 [+0.127, +0.308]**). It does NOT hold on `away`, Metamon's `competitive` set (0.497 [0.449,
 0.546] at n = 400, NOT DETECTED; the first 100 games' 0.570 was a lucky draw), and against `SmallRL` X26 is level
 with the previous lineage's plateau K2 (away +0.020 [−0.058, +0.094], home +0.030 [−0.040, +0.093]).
 **Against Kakuna, X26 IS a step over K2 on BOTH team sets (2026-10-17,
@@ -703,6 +704,15 @@ from K2's continuation of N0. [ledger 2026-10-17 · *K2 vs KAKUNA, BOTH TEAM SET
 follow-up] Kakuna's strongest temperature stays
 unresolved (greedy and T = 1.0 identical here). PROVISIONAL per the plateau rule: one checkpoint, one seed,
 161M of a 500M cap. [ledger 2026-10-17 · *X26 vs METAMON*]
+
+**🚨 Every Kakuna read so far ran on teams our models TRAINED on (2026-10-18, `heldout_teams_kakuna_2026-10-18/`):**
+[MEASURED · `gen3_team_overlap_v1`] `away` (Metamon's 20-team `competitive` set), described for a month as "Metamon's
+own teams" and "never trained on", is **19 / 20 teams EXACT copies of training-pool teams**; `home72` is 72 pool teams.
+So "X26 beats Kakuna on our teams, level on theirs" is two reads on training data that differ in WHICH teams are drawn
+(Metamon's 20 sample teams, which Metamon says it overfit to, vs 72 of ours), not in whether we saw them. X26 − K2
+stays valid (same pool). Every read now reports its team set's overlap with our pool (`summary.json["team_overlap"]`).
+The held-out set is `heldout72`: 72 replay-derived `hl_05_26` teams with 0 exact matches and 0 sharing ≥ 4 mon sets
+with any pool or `competitive` team. [ledger 2026-10-18 · *THE AWAY SET IS NOT HELD OUT*]
 
 **And a second anchor ABOVE us (2026-09-14, `foul_play_derisk_2026-09-14/`):** [MEASURED] Foul Play — MCTS with
 decoupled UCT over a hand-written evaluator on the Rust poke-engine, determinising the opponent's sets from Smogon
