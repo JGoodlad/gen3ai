@@ -1,6 +1,6 @@
 # Diversity of training: our teams, the opponents' teams, the opponents, and the evaluation sets
 
-**Status: DESIGN 2026-10-18 (owner request; planning input; nothing built, nothing launched).** §5 was REWORKED the
+**Status: DESIGN 2026-10-18 (owner request; planning input; X37a stage 1 READ 2026-10-18, §0 and §5.2).** §5 was REWORKED the
 same day into an EVALUATION MATRIX on the owner's input. Two zero-game, post-hoc, descriptive reads were run for it:
 D0a (§2.4) and the ladder resemblance with its strata weights (§5.0). ALWAYS-CURRENT (owner, 2026-09-27): a later decision,
 build or measurement that differs updates this doc in the same commit, and the Decision record (§11) says what
@@ -70,6 +70,14 @@ This doc answers them, after challenging the reading itself (§8).
   - **(v)** **THE headline is L**, always beside the sample ground, the unfamiliar panel, GEN-M and L's CORE
     sensitivity.
   - **(vi)** Freeze, then widen.
+- **X37a stage 1 READ (2026-10-18, `measurements/x37a_eval_matrix_2026-10-18/`; PROVISIONAL).**
+  - **L (ladder_weights_v1) = 0.630 [0.573, 0.686]**; L_c1 = 0.624 [0.570, 0.676]. Bringing its own sample teams,
+    X26 beats Kakuna whatever kind of team Kakuna brings (D_CORE 0.610, D_NEAR 0.623, D_FAR 0.690).
+  - **The held-out drop is PILOTING, not facing.** X26 piloting H against Kakuna on P reads 0.380. Strength-corrected
+    by K(P, H) = 0.573: PILOT_c = +0.123 [+0.039, +0.206], FACE_c = +0.017 [−0.062, +0.095].
+  - **H-PILOT is UNDECIDED** (PILOT_c − FACE_c's lower bound −0.009 misses SUPPORTED by 0.9 pp).
+    **H-PILOT-OFFMETA is SUPPORTED** (FAR − CORE −0.199 [−0.385, −0.017]).
+  - L leans toward us: Kakuna brings usage-filled reconstructions, weaker teams in anyone's hands (Δ̂ = +0.073).
 - **The first experiment: X37a, now two CPU stages, 0 GPU.**
   - **Stage 1** reads the matrix's core (≈ 3.5 lane-hours; the calibration cell needs B-D9):
     - the DEPLOYMENT cell by stratum: we pilot home72, Kakuna pilots heldout72_hpfix's CORE / NEAR / FAR teams,
@@ -747,8 +755,14 @@ H = heldout72_hpfix.
 
 | | Kakuna pilots P | Kakuna pilots H |
 |---|---|---|
-| **we pilot P** | S(P, P) = 0.575 [0.526, 0.623] (exists) | **S(P, H), the DEPLOYMENT cell**: we bring our familiar teams, the opponent brings ladder-like ones |
-| **we pilot H** | **S(H, P), the REVERSE cell** | S(H, H): the parallel `heldout72_hpfix` read, PENDING |
+| **we pilot P** | S(P, P) = 0.575 [0.526, 0.623] | **S(P, H), the DEPLOYMENT cell**: we bring our familiar teams, the opponent brings ladder-like ones. **X37a: 0.631 [0.592, 0.670]** (D_s reweighted to H's strata) |
+| **we pilot H** | **S(H, P), the REVERSE cell. X37a: 0.380 [0.334, 0.428]** | S(H, H) = 0.448 [0.400, 0.496] (`heldout72_hpfix`) |
+
+**X37a stage 1 (2026-10-18):** K(P, H) = 0.573 [0.524, 0.620] (Δ̂ = +0.073: the held-out teams are weaker for
+whoever pilots them); PILOT_c = +0.123 [+0.039, +0.206]; FACE_c = +0.017 [−0.062, +0.095]; PILOT_c − FACE_c =
++0.106 [−0.009, +0.221]; I = −0.012 [−0.104, +0.081] (additivity holds). **H-PILOT UNDECIDED** (by 0.9 pp on the
+SUPPORTED bar), **H-PILOT-OFFMETA SUPPORTED** (reverse cell, our team's stratum: CORE 0.463, NEAR 0.389, FAR 0.263;
+FAR − CORE −0.199 [−0.385, −0.017]). A-K remains UNVERIFIED.
 
 S(P, H) is read from X37a's three stratum sub-cells (§5.3), reweighted to heldout72_hpfix's OWN strata shares
 (16 / 44 / 12 of 72), so that it estimates the plain asymmetric cell. S(H, P) and K(P, H) use the full
@@ -981,7 +995,7 @@ The first D1 read lands ≈ 13 GPU-h after A1's (≈ 39 GPU-h into batch 1).
 
 | rank | id | what | GPU-h | CPU | when |
 |---|---|---|---|---|---|
-| **1** | **X37a stage 1** | **the matrix's core** (§5.2, §5.3): the DEPLOYMENT cell by stratum (we pilot home72; Kakuna pilots heldout72_hpfix's CORE 100 / NEAR 400 / FAR 100 games); the REVERSE cell (we pilot heldout72_hpfix, Kakuna pilots home72, 400); the strength calibration K(P, H) (Kakuna vs Kakuna, 400). It yields **L**, **L_c1** and **H-PILOT** / **H-PILOT-OFFMETA** | **0** | **≈ 3.5 lane-h** (1,400 games); configs ≈ 0.1 agent-day; K(P, H) needs B-D9 | **NOW**, once `heldout72_hpfix` is frozen (the parallel read) |
+| **1** | **X37a stage 1 — READ 2026-10-18** (L = 0.630 [0.573, 0.686]; H-PILOT UNDECIDED; H-PILOT-OFFMETA SUPPORTED; `measurements/x37a_eval_matrix_2026-10-18/`) | **the matrix's core** (§5.2, §5.3): the DEPLOYMENT cell by stratum (we pilot home72; Kakuna pilots heldout72_hpfix's CORE 100 / NEAR 400 / FAR 100 games); the REVERSE cell (we pilot heldout72_hpfix, Kakuna pilots home72, 400); the strength calibration K(P, H) (Kakuna vs Kakuna, 400). It yields **L**, **L_c1** and **H-PILOT** / **H-PILOT-OFFMETA** | **0** | **≈ 3.5 lane-h** (1,400 games); configs ≈ 0.1 agent-day; K(P, H) needs B-D9 | **NOW**, once `heldout72_hpfix` is frozen (the parallel read) |
 | 2 | **X37a stage 2** | the third-source rows: P72 symmetric (400) and smogon_forum symmetric (400); the §3.1 rule | 0 | ≈ 2 lane-h + B-D4 ≈ 0.25 agent-day | smogon_forum COLLECTED 2026-10-18; a panel must be frozen from it first |
 | 3 | X37b | GEN-M (§5.4) on X26's nodes every 50M (home72, heldout72_hpfix, smogon_forum, P72) + D0e's piloting / facing split (§3.2) | 0 | ≈ 5 lane-h + D0e ≈ 4–6 lane-h; B-D7 ≈ 0.5 agent-day | after B-D7 |
 | 4 | X37c | D0g toy + D0d Kakuna trajectory | 0 | ≈ 4 lane-h | now |
@@ -1148,8 +1162,10 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 - **F-DV-4.** Two HP repairs could diverge: the parallel `heldout72_hpfix` script, and T8 for the training
   corpus. They must be ONE function, or a training corpus and its evaluation panel get different HP rules.
 - **F-DV-5.** `team_source_asymmetry` compares file COUNTS, so an asymmetric 72-vs-72 cell, deliberate or
-  accidental, reads "false".
-- **F-DV-6.** Anchor rows carry no per-game peer team. The peer CSV's `Team File` does not align one-to-one with
+  accidental, reads "false". **RESOLVED 2026-10-18 (B-D6, `cb0f1769`):** summaries carry per-side content digests
+  (`gen3_team_set_digest_v1`) and `team_content_asymmetry`; `main.anchors.results.unit_counts` refuses an undeclared
+  cell whose contents differ.
+- **F-DV-6.** Anchor rows carry no per-game peer team (still true of the rows; worked around by the capture, F-DV-17). The peer CSV's `Team File` does not align one-to-one with
   `team_draws` (one unit checked: draws[0] never logged, the last repeated). Per-game facing analysis on banked
   reads is UNSAFE (GIGO).
 - **F-DV-7.** The "untaught 8" are POOL teams the generalist pilots. Only teacher pins are guarded. A read that
@@ -1176,14 +1192,19 @@ held-out gain and in-pool cost, is the right design. Three amendments:
   2.5.1). An in-house X26-vs-K2 row needs a pinned-peer player (B-D8). Until then GEN-M uses X26's own past nodes and
   the `production` baseline.
 - **F-DV-14.** The strength calibration K(P, H) assumes A-K: Kakuna's piloting and facing familiarity are equal
-  (UNVERIFIED). An anchor-vs-anchor cell also gives both peers ONE team set today (`cfg.team_set(teamset)` in
-  `main.anchors.peers`), so K(P, H) needs B-D9.
+  (UNVERIFIED, still). The one-team-set limit is RESOLVED by B-D9 (`--our-teamset`, `cb0f1769`), and K(P, H) was read in
+  X37a.
 - **F-DV-15.** The ladder strata are partly FILL-driven. `hl_05_26` fills unrevealed team MEMBERS from usage too,
   which favours common species and likely inflates CORE / NEAR (size UNVERIFIED). The literal-sample-copy share is
   unmeasurable from replays, which is why L carries the c sensitivity (§5.3).
 - **F-DV-16.** The banked anchors counting rule drops any unit with `team_source_asymmetry`, so a DECLARED
   asymmetric cell with unequal set sizes (the stratum sub-cells: 72 vs 16 / 44 / 12) would never count. X37a needs
-  B-D6 or a registration that waives the flag for declared cells only.
+  B-D6 or a registration that waives the flag for declared cells only. **RESOLVED 2026-10-18 (B-D6, `cb0f1769`):**
+  `unit_counts(…, declared_digests=…)` counts a DECLARED cell whose per-side digests equal the registered pair (a
+  pinned tree's summary uses caller-verified digests). X37a's 70 stage-1 units all counted this way.
+- **F-DV-17 (X37a).** Kakuna's team per game is recoverable from the front end's `--capture-dir` record (both packed
+  teams in the START command). X37a's aggregate uses it, which resolves F-DV-6 for any read that captures. The banked
+  reads did not capture.
 
 ---
 
@@ -1209,3 +1230,4 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 | 2026-10-18 | smogon_forum COLLECTED (data worker, owner request: quality bar = sample / tournament / archive level) | `smogon_forum_teams_2026-10-18/`: 437 legal teams, a 166-team independent core clean against pool, `competitive`, `hl_05_26` and heldout72; tiers A/B only, provenance per team; outside `data/`. The Q4 row's PENDING is resolved | home-made or ladder-reconstructed teams (owner: quality bar); a `tools/` downloader before the set proves useful; freezing the panel in the collection unit (the freeze rule decides) | that README |
 | 2026-10-18 | H6 (the Hidden Power artifact) after the `heldout72_hpfix` re-read (HP repair worker) | NOT KILLED, NOT SUPPORTED: X26 hpfix − heldout72 +0.052 [−0.016, +0.120] (bar for KILLED: not detected AND upper bound < +5 pp); K2 +0.010; the held-out drop stays (X26 −0.127 below home72). `heldout72_hpfix` replaces heldout72 as the unfamiliar panel member (§5) | reading "not detected" as killed (the upper bound is +12 pp) | `measurements/heldout72_hpfix_kakuna_2026-10-18/`; ledger 2026-10-18 *HELD-OUT, HIDDEN POWER REPAIRED* |
 | 2026-10-18 | smogon_forum v2 MEGA SWEEP collected (data worker, owner: "one mega sweep of all the data we can possibly collect") | `smogon_forum_teams_v2_2026-10-18/`: every legal team kept with tier A/B/C, curator, fidelity (verbatim / transcribed) and overlap; cores A/B 559 and A/B/C 2,995 (verbatim 533 / 2,894); v1 and forum72 unchanged | rebuilding teams from replays (partial information, `hl_05_26`-like); circumventing the forum's browser check; fetching robots-disallowed paths (pastebin `/raw/`, Dropbox `/sh/`) | that README |
+| 2026-10-18 | **X37a stage 1 READ** (eval-matrix worker; PREREG `8a2e80de`, builds B-D6 + B-D9 `cb0f1769`) | **L (ladder_weights_v1) = 0.630 [0.573, 0.686]**, L_c1 = 0.624; the held-out drop is PILOTING (PILOT_c +0.123 [+0.039, +0.206]) not facing (FACE_c +0.017 [−0.062, +0.095]); H-PILOT UNDECIDED by its rule (0.9 pp short of SUPPORTED), H-PILOT-OFFMETA SUPPORTED; K(P, H) = 0.573. `ladder_weights_v1` FROZEN. Proposal (not a decision): the piloting deficit favours own-side widening (D1) over opponent-only widening (D2), and a corpus covering FAR cores | reading the symmetric held-out drop as a facing / team-identification problem (FACE_c shows none); quoting L as a ladder win rate (Kakuna brings weaker, reconstructed teams: Δ̂ = +0.073) | `measurements/x37a_eval_matrix_2026-10-18/`; ledger 2026-10-18 *X37a STAGE 1* |

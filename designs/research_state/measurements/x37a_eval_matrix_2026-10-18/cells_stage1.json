@@ -1,0 +1,1992 @@
+{
+ "cells": {
+  "deploy_core": {
+   "n": 100,
+   "wins": 61,
+   "losses": 39,
+   "ties": 0,
+   "win_rate": 0.61,
+   "wilson95": [
+    0.5120301704353077,
+    0.6998312599554769
+   ],
+   "by_half": {
+    "ours_challenge": 0.54,
+    "peer_challenge": 0.68
+   },
+   "hit_forfeit_limit": 1,
+   "median_turns": 35,
+   "distinct_our_teams": 36,
+   "distinct_their_teams": 15,
+   "regime_stamps": [
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 161000169, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x26_metamon_anchor_2026-10-17/model/checkpoint_161000169_steps.zip\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@63f97a57+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 16}",
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 161000169, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x26_metamon_anchor_2026-10-17/model/checkpoint_161000169_steps.zip\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@63f97a575+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 16}"
+   ],
+   "units": [
+    "deploy_core_20",
+    "deploy_core_21",
+    "deploy_core_22",
+    "deploy_core_23",
+    "deploy_core_24"
+   ],
+   "team_overlap": {
+    "version": "gen3_team_overlap_v1",
+    "ours": {
+     "dir": "/home/goodlad/dev/gen3ai-reads/x37a_2026-10-18/teams_home72",
+     "training_pool": {
+      "n_read_teams": 72,
+      "n_reference_teams": 719,
+      "exact_team": 72,
+      "exact_team_strict": 72,
+      "same_species6": 72,
+      "n_read_mons": 432,
+      "mons_seen": 432,
+      "mons_seen_strict": 432,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 0,
+       "2": 0,
+       "3": 0,
+       "4": 0,
+       "5": 0,
+       "6": 72
+      },
+      "teams_sharing_ge4": 72,
+      "exact_examples": [
+       [
+        "009e3d0244.txt",
+        ""
+       ],
+       [
+        "023a2d47648b85e6.txt",
+        ""
+       ],
+       [
+        "0972146213a667c9.txt",
+        ""
+       ],
+       [
+        "0fa105ae42dc85ec.txt",
+        ""
+       ],
+       [
+        "11fb5d2fc2.txt",
+        ""
+       ]
+      ]
+     },
+     "competitive": {
+      "n_read_teams": 72,
+      "n_reference_teams": 20,
+      "exact_team": 8,
+      "exact_team_strict": 7,
+      "same_species6": 12,
+      "n_read_mons": 432,
+      "mons_seen": 173,
+      "mons_seen_strict": 61,
+      "max_shared_mons_hist": {
+       "0": 9,
+       "1": 42,
+       "2": 10,
+       "3": 3,
+       "4": 0,
+       "5": 0,
+       "6": 8
+      },
+      "teams_sharing_ge4": 8,
+      "exact_examples": [
+       [
+        "3650f09b2f.txt",
+        "team_0.gen3ou_team"
+       ],
+       [
+        "53f215cb45b7d729.txt",
+        "team_21.gen3ou_team"
+       ],
+       [
+        "63eda9d8d491d6a4.txt",
+        "team_12.gen3ou_team"
+       ],
+       [
+        "6d56d06b9fca508e.txt",
+        "team_8.gen3ou_team"
+       ],
+       [
+        "a04c29cf769e9a11.txt",
+        "team_7.gen3ou_team"
+       ]
+      ]
+     },
+     "hl_05_26": {
+      "n_read_teams": 72,
+      "n_reference_teams": 22862,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 57,
+      "n_read_mons": 432,
+      "mons_seen": 380,
+      "mons_seen_strict": 149,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 3,
+       "2": 34,
+       "3": 22,
+       "4": 10,
+       "5": 3,
+       "6": 0
+      },
+      "teams_sharing_ge4": 13,
+      "exact_examples": []
+     }
+    },
+    "theirs": {
+     "dir": "/home/goodlad/dev/metamon/cache/teams/gen3ai_x37a_hl72hp_core/gen3ou",
+     "training_pool": {
+      "n_read_teams": 16,
+      "n_reference_teams": 719,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 16,
+      "n_read_mons": 96,
+      "mons_seen": 41,
+      "mons_seen_strict": 9,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 9,
+       "2": 7,
+       "3": 0,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "competitive": {
+      "n_read_teams": 16,
+      "n_reference_teams": 20,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 9,
+      "n_read_mons": 96,
+      "mons_seen": 18,
+      "mons_seen_strict": 1,
+      "max_shared_mons_hist": {
+       "0": 3,
+       "1": 11,
+       "2": 2,
+       "3": 0,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "hl_05_26": {
+      "n_read_teams": 16,
+      "n_reference_teams": 22862,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 16,
+      "n_read_mons": 96,
+      "mons_seen": 91,
+      "mons_seen_strict": 77,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 0,
+       "2": 1,
+       "3": 4,
+       "4": 7,
+       "5": 4,
+       "6": 0
+      },
+      "teams_sharing_ge4": 11,
+      "exact_examples": []
+     }
+    }
+   }
+  },
+  "deploy_near": {
+   "n": 400,
+   "wins": 249,
+   "losses": 150,
+   "ties": 1,
+   "win_rate": 0.6225,
+   "wilson95": [
+    0.5740411128771951,
+    0.6686283750098191
+   ],
+   "by_half": {
+    "ours_challenge": 0.63,
+    "peer_challenge": 0.615
+   },
+   "hit_forfeit_limit": 2,
+   "median_turns": 34,
+   "distinct_our_teams": 68,
+   "distinct_their_teams": 44,
+   "regime_stamps": [
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 161000169, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x26_metamon_anchor_2026-10-17/model/checkpoint_161000169_steps.zip\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@63f97a57+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 44}",
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 161000169, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x26_metamon_anchor_2026-10-17/model/checkpoint_161000169_steps.zip\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@63f97a575+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 44}"
+   ],
+   "units": [
+    "deploy_near_00",
+    "deploy_near_01",
+    "deploy_near_02",
+    "deploy_near_03",
+    "deploy_near_04",
+    "deploy_near_05",
+    "deploy_near_06",
+    "deploy_near_07",
+    "deploy_near_08",
+    "deploy_near_09",
+    "deploy_near_10",
+    "deploy_near_11",
+    "deploy_near_12",
+    "deploy_near_13",
+    "deploy_near_14",
+    "deploy_near_15",
+    "deploy_near_16",
+    "deploy_near_17",
+    "deploy_near_18",
+    "deploy_near_19"
+   ],
+   "team_overlap": {
+    "version": "gen3_team_overlap_v1",
+    "ours": {
+     "dir": "/home/goodlad/dev/gen3ai-reads/x37a_2026-10-18/teams_home72",
+     "training_pool": {
+      "n_read_teams": 72,
+      "n_reference_teams": 719,
+      "exact_team": 72,
+      "exact_team_strict": 72,
+      "same_species6": 72,
+      "n_read_mons": 432,
+      "mons_seen": 432,
+      "mons_seen_strict": 432,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 0,
+       "2": 0,
+       "3": 0,
+       "4": 0,
+       "5": 0,
+       "6": 72
+      },
+      "teams_sharing_ge4": 72,
+      "exact_examples": [
+       [
+        "009e3d0244.txt",
+        ""
+       ],
+       [
+        "023a2d47648b85e6.txt",
+        ""
+       ],
+       [
+        "0972146213a667c9.txt",
+        ""
+       ],
+       [
+        "0fa105ae42dc85ec.txt",
+        ""
+       ],
+       [
+        "11fb5d2fc2.txt",
+        ""
+       ]
+      ]
+     },
+     "competitive": {
+      "n_read_teams": 72,
+      "n_reference_teams": 20,
+      "exact_team": 8,
+      "exact_team_strict": 7,
+      "same_species6": 12,
+      "n_read_mons": 432,
+      "mons_seen": 173,
+      "mons_seen_strict": 61,
+      "max_shared_mons_hist": {
+       "0": 9,
+       "1": 42,
+       "2": 10,
+       "3": 3,
+       "4": 0,
+       "5": 0,
+       "6": 8
+      },
+      "teams_sharing_ge4": 8,
+      "exact_examples": [
+       [
+        "3650f09b2f.txt",
+        "team_0.gen3ou_team"
+       ],
+       [
+        "53f215cb45b7d729.txt",
+        "team_21.gen3ou_team"
+       ],
+       [
+        "63eda9d8d491d6a4.txt",
+        "team_12.gen3ou_team"
+       ],
+       [
+        "6d56d06b9fca508e.txt",
+        "team_8.gen3ou_team"
+       ],
+       [
+        "a04c29cf769e9a11.txt",
+        "team_7.gen3ou_team"
+       ]
+      ]
+     },
+     "hl_05_26": {
+      "n_read_teams": 72,
+      "n_reference_teams": 22862,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 57,
+      "n_read_mons": 432,
+      "mons_seen": 380,
+      "mons_seen_strict": 149,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 3,
+       "2": 34,
+       "3": 22,
+       "4": 10,
+       "5": 3,
+       "6": 0
+      },
+      "teams_sharing_ge4": 13,
+      "exact_examples": []
+     }
+    },
+    "theirs": {
+     "dir": "/home/goodlad/dev/metamon/cache/teams/gen3ai_x37a_hl72hp_near/gen3ou",
+     "training_pool": {
+      "n_read_teams": 44,
+      "n_reference_teams": 719,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 5,
+      "n_read_mons": 264,
+      "mons_seen": 100,
+      "mons_seen_strict": 34,
+      "max_shared_mons_hist": {
+       "0": 2,
+       "1": 22,
+       "2": 19,
+       "3": 1,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "competitive": {
+      "n_read_teams": 44,
+      "n_reference_teams": 20,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 0,
+      "n_read_mons": 264,
+      "mons_seen": 34,
+      "mons_seen_strict": 3,
+      "max_shared_mons_hist": {
+       "0": 22,
+       "1": 20,
+       "2": 2,
+       "3": 0,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "hl_05_26": {
+      "n_read_teams": 44,
+      "n_reference_teams": 22862,
+      "exact_team": 5,
+      "exact_team_strict": 5,
+      "same_species6": 44,
+      "n_read_mons": 264,
+      "mons_seen": 240,
+      "mons_seen_strict": 209,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 1,
+       "2": 8,
+       "3": 10,
+       "4": 12,
+       "5": 8,
+       "6": 5
+      },
+      "teams_sharing_ge4": 25,
+      "exact_examples": [
+       [
+        "team_001438.gen3ou_team",
+        "team_001438.gen3ou_team"
+       ],
+       [
+        "team_003060.gen3ou_team",
+        "team_003060.gen3ou_team"
+       ],
+       [
+        "team_005081.gen3ou_team",
+        "team_005081.gen3ou_team"
+       ],
+       [
+        "team_008014.gen3ou_team",
+        "team_008014.gen3ou_team"
+       ],
+       [
+        "team_021930.gen3ou_team",
+        "team_021930.gen3ou_team"
+       ]
+      ]
+     }
+    }
+   }
+  },
+  "deploy_far": {
+   "n": 100,
+   "wins": 69,
+   "losses": 30,
+   "ties": 1,
+   "win_rate": 0.69,
+   "wilson95": [
+    0.5937394427816384,
+    0.7722030278933533
+   ],
+   "by_half": {
+    "ours_challenge": 0.68,
+    "peer_challenge": 0.7
+   },
+   "hit_forfeit_limit": 0,
+   "median_turns": 35,
+   "distinct_our_teams": 33,
+   "distinct_their_teams": 12,
+   "regime_stamps": [
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 161000169, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x26_metamon_anchor_2026-10-17/model/checkpoint_161000169_steps.zip\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@63f97a57+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 12}",
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 161000169, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x26_metamon_anchor_2026-10-17/model/checkpoint_161000169_steps.zip\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@63f97a575+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 12}"
+   ],
+   "units": [
+    "deploy_far_25",
+    "deploy_far_26",
+    "deploy_far_27",
+    "deploy_far_28",
+    "deploy_far_29"
+   ],
+   "team_overlap": {
+    "version": "gen3_team_overlap_v1",
+    "ours": {
+     "dir": "/home/goodlad/dev/gen3ai-reads/x37a_2026-10-18/teams_home72",
+     "training_pool": {
+      "n_read_teams": 72,
+      "n_reference_teams": 719,
+      "exact_team": 72,
+      "exact_team_strict": 72,
+      "same_species6": 72,
+      "n_read_mons": 432,
+      "mons_seen": 432,
+      "mons_seen_strict": 432,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 0,
+       "2": 0,
+       "3": 0,
+       "4": 0,
+       "5": 0,
+       "6": 72
+      },
+      "teams_sharing_ge4": 72,
+      "exact_examples": [
+       [
+        "009e3d0244.txt",
+        ""
+       ],
+       [
+        "023a2d47648b85e6.txt",
+        ""
+       ],
+       [
+        "0972146213a667c9.txt",
+        ""
+       ],
+       [
+        "0fa105ae42dc85ec.txt",
+        ""
+       ],
+       [
+        "11fb5d2fc2.txt",
+        ""
+       ]
+      ]
+     },
+     "competitive": {
+      "n_read_teams": 72,
+      "n_reference_teams": 20,
+      "exact_team": 8,
+      "exact_team_strict": 7,
+      "same_species6": 12,
+      "n_read_mons": 432,
+      "mons_seen": 173,
+      "mons_seen_strict": 61,
+      "max_shared_mons_hist": {
+       "0": 9,
+       "1": 42,
+       "2": 10,
+       "3": 3,
+       "4": 0,
+       "5": 0,
+       "6": 8
+      },
+      "teams_sharing_ge4": 8,
+      "exact_examples": [
+       [
+        "3650f09b2f.txt",
+        "team_0.gen3ou_team"
+       ],
+       [
+        "53f215cb45b7d729.txt",
+        "team_21.gen3ou_team"
+       ],
+       [
+        "63eda9d8d491d6a4.txt",
+        "team_12.gen3ou_team"
+       ],
+       [
+        "6d56d06b9fca508e.txt",
+        "team_8.gen3ou_team"
+       ],
+       [
+        "a04c29cf769e9a11.txt",
+        "team_7.gen3ou_team"
+       ]
+      ]
+     },
+     "hl_05_26": {
+      "n_read_teams": 72,
+      "n_reference_teams": 22862,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 57,
+      "n_read_mons": 432,
+      "mons_seen": 380,
+      "mons_seen_strict": 149,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 3,
+       "2": 34,
+       "3": 22,
+       "4": 10,
+       "5": 3,
+       "6": 0
+      },
+      "teams_sharing_ge4": 13,
+      "exact_examples": []
+     }
+    },
+    "theirs": {
+     "dir": "/home/goodlad/dev/metamon/cache/teams/gen3ai_x37a_hl72hp_far/gen3ou",
+     "training_pool": {
+      "n_read_teams": 12,
+      "n_reference_teams": 719,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 0,
+      "n_read_mons": 72,
+      "mons_seen": 23,
+      "mons_seen_strict": 2,
+      "max_shared_mons_hist": {
+       "0": 1,
+       "1": 9,
+       "2": 2,
+       "3": 0,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "competitive": {
+      "n_read_teams": 12,
+      "n_reference_teams": 20,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 0,
+      "n_read_mons": 72,
+      "mons_seen": 9,
+      "mons_seen_strict": 0,
+      "max_shared_mons_hist": {
+       "0": 5,
+       "1": 7,
+       "2": 0,
+       "3": 0,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "hl_05_26": {
+      "n_read_teams": 12,
+      "n_reference_teams": 22862,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 12,
+      "n_read_mons": 72,
+      "mons_seen": 57,
+      "mons_seen_strict": 46,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 0,
+       "2": 1,
+       "3": 5,
+       "4": 6,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 6,
+      "exact_examples": []
+     }
+    }
+   }
+  },
+  "reverse": {
+   "n": 400,
+   "wins": 152,
+   "losses": 248,
+   "ties": 0,
+   "win_rate": 0.38,
+   "wilson95": [
+    0.33378749436751276,
+    0.42849545627377983
+   ],
+   "by_half": {
+    "ours_challenge": 0.365,
+    "peer_challenge": 0.395
+   },
+   "hit_forfeit_limit": 0,
+   "median_turns": 34,
+   "distinct_our_teams": 69,
+   "distinct_their_teams": 67,
+   "regime_stamps": [
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 161000169, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x26_metamon_anchor_2026-10-17/model/checkpoint_161000169_steps.zip\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@63f97a57+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 72}",
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 161000169, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x26_metamon_anchor_2026-10-17/model/checkpoint_161000169_steps.zip\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@63f97a575+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 72}"
+   ],
+   "units": [
+    "reverse_00",
+    "reverse_01",
+    "reverse_02",
+    "reverse_03",
+    "reverse_04",
+    "reverse_05",
+    "reverse_06",
+    "reverse_07",
+    "reverse_08",
+    "reverse_09",
+    "reverse_10",
+    "reverse_11",
+    "reverse_12",
+    "reverse_13",
+    "reverse_14",
+    "reverse_15",
+    "reverse_16",
+    "reverse_17",
+    "reverse_18",
+    "reverse_19"
+   ],
+   "team_overlap": {
+    "version": "gen3_team_overlap_v1",
+    "ours": {
+     "dir": "/home/goodlad/dev/gen3ai-reads/x37a_2026-10-18/teams_heldout72_hpfix",
+     "training_pool": {
+      "n_read_teams": 72,
+      "n_reference_teams": 719,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 21,
+      "n_read_mons": 432,
+      "mons_seen": 164,
+      "mons_seen_strict": 45,
+      "max_shared_mons_hist": {
+       "0": 3,
+       "1": 40,
+       "2": 28,
+       "3": 1,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "competitive": {
+      "n_read_teams": 72,
+      "n_reference_teams": 20,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 9,
+      "n_read_mons": 432,
+      "mons_seen": 61,
+      "mons_seen_strict": 4,
+      "max_shared_mons_hist": {
+       "0": 30,
+       "1": 38,
+       "2": 4,
+       "3": 0,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "hl_05_26": {
+      "n_read_teams": 72,
+      "n_reference_teams": 22862,
+      "exact_team": 5,
+      "exact_team_strict": 5,
+      "same_species6": 72,
+      "n_read_mons": 432,
+      "mons_seen": 388,
+      "mons_seen_strict": 332,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 1,
+       "2": 10,
+       "3": 19,
+       "4": 25,
+       "5": 12,
+       "6": 5
+      },
+      "teams_sharing_ge4": 42,
+      "exact_examples": [
+       [
+        "team_001438.txt",
+        "team_001438.gen3ou_team"
+       ],
+       [
+        "team_003060.txt",
+        "team_003060.gen3ou_team"
+       ],
+       [
+        "team_005081.txt",
+        "team_005081.gen3ou_team"
+       ],
+       [
+        "team_008014.txt",
+        "team_008014.gen3ou_team"
+       ],
+       [
+        "team_021930.txt",
+        "team_021930.gen3ou_team"
+       ]
+      ]
+     }
+    },
+    "theirs": {
+     "dir": "/home/goodlad/dev/metamon/cache/teams/gen3ai_home72/gen3ou",
+     "training_pool": {
+      "n_read_teams": 72,
+      "n_reference_teams": 719,
+      "exact_team": 72,
+      "exact_team_strict": 72,
+      "same_species6": 72,
+      "n_read_mons": 432,
+      "mons_seen": 432,
+      "mons_seen_strict": 432,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 0,
+       "2": 0,
+       "3": 0,
+       "4": 0,
+       "5": 0,
+       "6": 72
+      },
+      "teams_sharing_ge4": 72,
+      "exact_examples": [
+       [
+        "009e3d0244.gen3ou_team",
+        ""
+       ],
+       [
+        "023a2d47648b85e6.gen3ou_team",
+        ""
+       ],
+       [
+        "0972146213a667c9.gen3ou_team",
+        ""
+       ],
+       [
+        "0fa105ae42dc85ec.gen3ou_team",
+        ""
+       ],
+       [
+        "11fb5d2fc2.gen3ou_team",
+        ""
+       ]
+      ]
+     },
+     "competitive": {
+      "n_read_teams": 72,
+      "n_reference_teams": 20,
+      "exact_team": 8,
+      "exact_team_strict": 7,
+      "same_species6": 12,
+      "n_read_mons": 432,
+      "mons_seen": 173,
+      "mons_seen_strict": 61,
+      "max_shared_mons_hist": {
+       "0": 9,
+       "1": 42,
+       "2": 10,
+       "3": 3,
+       "4": 0,
+       "5": 0,
+       "6": 8
+      },
+      "teams_sharing_ge4": 8,
+      "exact_examples": [
+       [
+        "3650f09b2f.gen3ou_team",
+        "team_0.gen3ou_team"
+       ],
+       [
+        "53f215cb45b7d729.gen3ou_team",
+        "team_21.gen3ou_team"
+       ],
+       [
+        "63eda9d8d491d6a4.gen3ou_team",
+        "team_12.gen3ou_team"
+       ],
+       [
+        "6d56d06b9fca508e.gen3ou_team",
+        "team_8.gen3ou_team"
+       ],
+       [
+        "a04c29cf769e9a11.gen3ou_team",
+        "team_7.gen3ou_team"
+       ]
+      ]
+     },
+     "hl_05_26": {
+      "n_read_teams": 72,
+      "n_reference_teams": 22862,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 57,
+      "n_read_mons": 432,
+      "mons_seen": 380,
+      "mons_seen_strict": 149,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 3,
+       "2": 34,
+       "3": 22,
+       "4": 10,
+       "5": 3,
+       "6": 0
+      },
+      "teams_sharing_ge4": 13,
+      "exact_examples": []
+     }
+    }
+   }
+  },
+  "kcal": {
+   "n": 400,
+   "wins": 229,
+   "losses": 171,
+   "ties": 0,
+   "win_rate": 0.5725,
+   "wilson95": [
+    0.5235553051143222,
+    0.6200654122065636
+   ],
+   "by_half": {
+    "ours_challenge": 0.55,
+    "peer_challenge": 0.595
+   },
+   "hit_forfeit_limit": 0,
+   "median_turns": 42,
+   "distinct_our_teams": 67,
+   "distinct_their_teams": 0,
+   "regime_stamps": [
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 0, \"mirrored_pairs\": false, \"model_loader\": \"\", \"model_step\": null, \"model_zip\": \"\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy (metamon:Kakuna)\", \"our_side\": \"metamon:Kakuna\", \"our_team_count\": 72, \"our_transport\": \"peer\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend@cb0f1769c+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 72}"
+   ],
+   "units": [
+    "kcal_00",
+    "kcal_01",
+    "kcal_02",
+    "kcal_03",
+    "kcal_04",
+    "kcal_05",
+    "kcal_06",
+    "kcal_07",
+    "kcal_08",
+    "kcal_09",
+    "kcal_10",
+    "kcal_11",
+    "kcal_12",
+    "kcal_13",
+    "kcal_14",
+    "kcal_15",
+    "kcal_16",
+    "kcal_17",
+    "kcal_18",
+    "kcal_19"
+   ],
+   "team_overlap": {
+    "version": "gen3_team_overlap_v1",
+    "ours": {
+     "dir": "/home/goodlad/dev/metamon/cache/teams/gen3ai_home72/gen3ou",
+     "training_pool": {
+      "n_read_teams": 72,
+      "n_reference_teams": 719,
+      "exact_team": 72,
+      "exact_team_strict": 72,
+      "same_species6": 72,
+      "n_read_mons": 432,
+      "mons_seen": 432,
+      "mons_seen_strict": 432,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 0,
+       "2": 0,
+       "3": 0,
+       "4": 0,
+       "5": 0,
+       "6": 72
+      },
+      "teams_sharing_ge4": 72,
+      "exact_examples": [
+       [
+        "009e3d0244.gen3ou_team",
+        ""
+       ],
+       [
+        "023a2d47648b85e6.gen3ou_team",
+        ""
+       ],
+       [
+        "0972146213a667c9.gen3ou_team",
+        ""
+       ],
+       [
+        "0fa105ae42dc85ec.gen3ou_team",
+        ""
+       ],
+       [
+        "11fb5d2fc2.gen3ou_team",
+        ""
+       ]
+      ]
+     },
+     "competitive": {
+      "n_read_teams": 72,
+      "n_reference_teams": 20,
+      "exact_team": 8,
+      "exact_team_strict": 7,
+      "same_species6": 12,
+      "n_read_mons": 432,
+      "mons_seen": 173,
+      "mons_seen_strict": 61,
+      "max_shared_mons_hist": {
+       "0": 9,
+       "1": 42,
+       "2": 10,
+       "3": 3,
+       "4": 0,
+       "5": 0,
+       "6": 8
+      },
+      "teams_sharing_ge4": 8,
+      "exact_examples": [
+       [
+        "3650f09b2f.gen3ou_team",
+        "team_0.gen3ou_team"
+       ],
+       [
+        "53f215cb45b7d729.gen3ou_team",
+        "team_21.gen3ou_team"
+       ],
+       [
+        "63eda9d8d491d6a4.gen3ou_team",
+        "team_12.gen3ou_team"
+       ],
+       [
+        "6d56d06b9fca508e.gen3ou_team",
+        "team_8.gen3ou_team"
+       ],
+       [
+        "a04c29cf769e9a11.gen3ou_team",
+        "team_7.gen3ou_team"
+       ]
+      ]
+     },
+     "hl_05_26": {
+      "n_read_teams": 72,
+      "n_reference_teams": 22862,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 57,
+      "n_read_mons": 432,
+      "mons_seen": 380,
+      "mons_seen_strict": 149,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 3,
+       "2": 34,
+       "3": 22,
+       "4": 10,
+       "5": 3,
+       "6": 0
+      },
+      "teams_sharing_ge4": 13,
+      "exact_examples": []
+     }
+    },
+    "theirs": {
+     "dir": "/home/goodlad/dev/metamon/cache/teams/gen3ai_heldout72_hpfix/gen3ou",
+     "training_pool": {
+      "n_read_teams": 72,
+      "n_reference_teams": 719,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 21,
+      "n_read_mons": 432,
+      "mons_seen": 164,
+      "mons_seen_strict": 45,
+      "max_shared_mons_hist": {
+       "0": 3,
+       "1": 40,
+       "2": 28,
+       "3": 1,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "competitive": {
+      "n_read_teams": 72,
+      "n_reference_teams": 20,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 9,
+      "n_read_mons": 432,
+      "mons_seen": 61,
+      "mons_seen_strict": 4,
+      "max_shared_mons_hist": {
+       "0": 30,
+       "1": 38,
+       "2": 4,
+       "3": 0,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "hl_05_26": {
+      "n_read_teams": 72,
+      "n_reference_teams": 22862,
+      "exact_team": 5,
+      "exact_team_strict": 5,
+      "same_species6": 72,
+      "n_read_mons": 432,
+      "mons_seen": 388,
+      "mons_seen_strict": 332,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 1,
+       "2": 10,
+       "3": 19,
+       "4": 25,
+       "5": 12,
+       "6": 5
+      },
+      "teams_sharing_ge4": 42,
+      "exact_examples": [
+       [
+        "team_001438.gen3ou_team",
+        "team_001438.gen3ou_team"
+       ],
+       [
+        "team_003060.gen3ou_team",
+        "team_003060.gen3ou_team"
+       ],
+       [
+        "team_005081.gen3ou_team",
+        "team_005081.gen3ou_team"
+       ],
+       [
+        "team_008014.gen3ou_team",
+        "team_008014.gen3ou_team"
+       ],
+       [
+        "team_021930.gen3ou_team",
+        "team_021930.gen3ou_team"
+       ]
+      ]
+     }
+    }
+   }
+  }
+ },
+ "units": [
+  {
+   "unit": "deploy_near_00",
+   "cell": "deploy_near",
+   "seed": 0,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_00",
+   "cell": "kcal",
+   "seed": 0,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_00",
+   "cell": "reverse",
+   "seed": 0,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_01",
+   "cell": "deploy_near",
+   "seed": 1,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_01",
+   "cell": "kcal",
+   "seed": 1,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_01",
+   "cell": "reverse",
+   "seed": 1,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_core_20",
+   "cell": "deploy_core",
+   "seed": 20,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_far_25",
+   "cell": "deploy_far",
+   "seed": 25,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_02",
+   "cell": "deploy_near",
+   "seed": 2,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_02",
+   "cell": "kcal",
+   "seed": 2,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_02",
+   "cell": "reverse",
+   "seed": 2,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_03",
+   "cell": "deploy_near",
+   "seed": 3,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_03",
+   "cell": "kcal",
+   "seed": 3,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_03",
+   "cell": "reverse",
+   "seed": 3,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_04",
+   "cell": "deploy_near",
+   "seed": 4,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_04",
+   "cell": "kcal",
+   "seed": 4,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_04",
+   "cell": "reverse",
+   "seed": 4,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_05",
+   "cell": "deploy_near",
+   "seed": 5,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_05",
+   "cell": "kcal",
+   "seed": 5,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_05",
+   "cell": "reverse",
+   "seed": 5,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_core_21",
+   "cell": "deploy_core",
+   "seed": 21,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_far_26",
+   "cell": "deploy_far",
+   "seed": 26,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_06",
+   "cell": "deploy_near",
+   "seed": 6,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_06",
+   "cell": "kcal",
+   "seed": 6,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_06",
+   "cell": "reverse",
+   "seed": 6,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_07",
+   "cell": "deploy_near",
+   "seed": 7,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_07",
+   "cell": "kcal",
+   "seed": 7,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_07",
+   "cell": "reverse",
+   "seed": 7,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_08",
+   "cell": "deploy_near",
+   "seed": 8,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_08",
+   "cell": "kcal",
+   "seed": 8,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_08",
+   "cell": "reverse",
+   "seed": 8,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_09",
+   "cell": "deploy_near",
+   "seed": 9,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_09",
+   "cell": "kcal",
+   "seed": 9,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_09",
+   "cell": "reverse",
+   "seed": 9,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_core_22",
+   "cell": "deploy_core",
+   "seed": 22,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_far_27",
+   "cell": "deploy_far",
+   "seed": 27,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_10",
+   "cell": "deploy_near",
+   "seed": 10,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_10",
+   "cell": "kcal",
+   "seed": 10,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_10",
+   "cell": "reverse",
+   "seed": 10,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_11",
+   "cell": "deploy_near",
+   "seed": 11,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_11",
+   "cell": "kcal",
+   "seed": 11,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_11",
+   "cell": "reverse",
+   "seed": 11,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_12",
+   "cell": "deploy_near",
+   "seed": 12,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_12",
+   "cell": "kcal",
+   "seed": 12,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_12",
+   "cell": "reverse",
+   "seed": 12,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_13",
+   "cell": "deploy_near",
+   "seed": 13,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_13",
+   "cell": "kcal",
+   "seed": 13,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_13",
+   "cell": "reverse",
+   "seed": 13,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_core_23",
+   "cell": "deploy_core",
+   "seed": 23,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_far_28",
+   "cell": "deploy_far",
+   "seed": 28,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_14",
+   "cell": "deploy_near",
+   "seed": 14,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_14",
+   "cell": "kcal",
+   "seed": 14,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_14",
+   "cell": "reverse",
+   "seed": 14,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_15",
+   "cell": "deploy_near",
+   "seed": 15,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_15",
+   "cell": "kcal",
+   "seed": 15,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_15",
+   "cell": "reverse",
+   "seed": 15,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_16",
+   "cell": "deploy_near",
+   "seed": 16,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_16",
+   "cell": "kcal",
+   "seed": 16,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_16",
+   "cell": "reverse",
+   "seed": 16,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_17",
+   "cell": "deploy_near",
+   "seed": 17,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_17",
+   "cell": "kcal",
+   "seed": 17,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_17",
+   "cell": "reverse",
+   "seed": 17,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_core_24",
+   "cell": "deploy_core",
+   "seed": 24,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_far_29",
+   "cell": "deploy_far",
+   "seed": 29,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_18",
+   "cell": "deploy_near",
+   "seed": 18,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_18",
+   "cell": "kcal",
+   "seed": 18,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_18",
+   "cell": "reverse",
+   "seed": 18,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "deploy_near_19",
+   "cell": "deploy_near",
+   "seed": 19,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "kcal_19",
+   "cell": "kcal",
+   "seed": 19,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "reverse_19",
+   "cell": "reverse",
+   "seed": 19,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  }
+ ],
+ "skipped_units": [],
+ "stage1": {
+  "weights": {
+   "CORE": 0.176056338028169,
+   "NEAR": 0.6746566354649637,
+   "FAR": 0.1492870265068673
+  },
+  "D": {
+   "CORE": {
+    "n": 100,
+    "p": 0.61,
+    "wilson95": [
+     0.5120301704353077,
+     0.6998312599554769
+    ]
+   },
+   "NEAR": {
+    "n": 400,
+    "p": 0.6225,
+    "wilson95": [
+     0.5740411128771951,
+     0.6686283750098191
+    ]
+   },
+   "FAR": {
+    "n": 100,
+    "p": 0.69,
+    "wilson95": [
+     0.5937394427816384,
+     0.7722030278933533
+    ]
+   }
+  },
+  "S_PP": {
+   "n": 400,
+   "p": 0.575
+  },
+  "S_HH": {
+   "n": 400,
+   "p": 0.4475
+  },
+  "S_HP_reverse": {
+   "n": 400,
+   "p": 0.38
+  },
+  "K_PH": {
+   "n": 400,
+   "p": 0.5725
+  },
+  "L": {
+   "est": 0.6303761700638615,
+   "boot95": [
+    0.5726539757586788,
+    0.6855293122948948
+   ],
+   "wald95": [
+    0.5917290556243289,
+    0.6690232845033941
+   ]
+  },
+  "L_c1": {
+   "est": 0.6242141982328755,
+   "boot95": [
+    0.5704922475495781,
+    0.676098555013479
+   ],
+   "wald95": [
+    0.5883941252647304,
+    0.6600342712010205
+   ]
+  },
+  "S_PH_reweighted": {
+   "est": 0.6309722222222223,
+   "wald95": [
+    0.5919547498284576,
+    0.6699896946159869
+   ]
+  },
+  "PILOT": 0.19499999999999995,
+  "FACE": -0.05597222222222231,
+  "Delta_hat": 0.07250000000000001,
+  "PILOT_c": {
+   "est": 0.12249999999999994,
+   "ci95": [
+    0.03907372598172025,
+    0.20592627401827962
+   ]
+  },
+  "FACE_c": {
+   "est": 0.016527777777777697,
+   "ci95": [
+    -0.06233721488365562,
+    0.09539277043921102
+   ]
+  },
+  "PILOT_c_minus_FACE_c": {
+   "est": 0.10597222222222225,
+   "ci95": [
+    -0.008861191703661744,
+    0.22080563614810622
+   ]
+  },
+  "I": {
+   "est": -0.011527777777777803,
+   "ci95": [
+    -0.10375746641749607,
+    0.08070191086194047
+   ]
+  },
+  "H_PILOT": "UNDECIDED",
+  "H_PILOT_OFFMETA": {
+   "FAR_minus_CORE": -0.19934210526315793,
+   "boot95": [
+    -0.3846153846153847,
+    -0.017368617578221224
+   ],
+   "verdict": "SUPPORTED",
+   "reverse_by_our_stratum": {
+    "CORE": {
+     "games": 80,
+     "teams": 16,
+     "score": 0.4625
+    },
+    "FAR": {
+     "games": 76,
+     "teams": 12,
+     "score": 0.2631578947368421
+    },
+    "NEAR": {
+     "games": 244,
+     "teams": 41,
+     "score": 0.38934426229508196
+    }
+   }
+  },
+  "bootstrap": {
+   "B": 20000,
+   "seeds": [
+    3700,
+    3701
+   ],
+   "clusters": "Kakuna's team (from the capture) within stratum; S(P, P) by our piloted team"
+  }
+ }
+}

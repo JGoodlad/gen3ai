@@ -27031,3 +27031,60 @@ Kakuna · the HP repair NOT DETECTED for either · X26 − K2 DETECTED (+0.080) 
 `research_state/measurements/heldout72_hpfix_kakuna_2026-10-18/` (README, `heldout72_hpfix_manifest.json`, `cells.json`,
 `rows.jsonl`, `paired.json`); `src/agents/gen3_data/hp_repair.py`; `ops/EXTERNAL_ANCHORS_SOP.md` §2 and the goal row;
 `ops/TECH_DEBT_BACKLOG.md`; `research_state/UNDERSTANDING.md`; `endstate/design_diversity_teams_opponents.md` H6
+
+### 2026-10-18 · MEASUREMENT · BUILD · **X37a STAGE 1 — THE EVALUATION MATRIX'S CORE: THE ladder-weighted headline L (ladder_weights_v1) = 0.630 [0.573, 0.686] for X26 @161,000,169 vs `metamon:Kakuna` greedy (we bring home72, Kakuna brings `heldout72_hpfix` teams by species stratum; L_c1 0.624 [0.570, 0.676]); the held-out drop is PILOTING (strength-corrected +0.123 [+0.039, +0.206]) not FACING (+0.017 [−0.062, +0.095]); H-PILOT UNDECIDED by its registered rule (0.9 pp short), H-PILOT-OFFMETA SUPPORTED (FAR − CORE −0.199 [−0.385, −0.017]); PROVISIONAL**
+
+**Preregistered** (`measurements/x37a_eval_matrix_2026-10-18/PREREG.md`, commit `8a2e80de`, before any game):
+`ladder_weights_v1` FROZEN (CORE 4025 / NEAR 15424 / FAR 3413 of 22,862 `hl_05_26` teams), heldout72_hpfix's strata
+re-derived and frozen (16 / 44 / 12), the cells, seeds, counting rule, estimators and decision rules. Builds B-D6
+(per-side content digests + `main.anchors.results.unit_counts`, the one counting rule, which counts DECLARED asymmetric
+cells; F-DV-5 / F-DV-16) and B-D9 (`--our-teamset`, an asymmetric Kakuna-vs-Kakuna cell; F-DV-14) landed in `cb0f1769`.
+
+**The read.** Kakuna ckpt 34 greedy vs greedy, CPU. X26 @161,000,169 at `63f97a57` through the core slot (the earlier
+reads' stamp); `kcal` at `cb0f1769`. All 70 units counted on their first try. Every X26 game's teams were verified from
+the front end's capture record, which also gives Kakuna's team per game.
+
+| cell | n | win rate [Wilson 95 %] |
+|---|---:|---|
+| S(P, P) home72 vs home72 (banked) | 400 | 0.575 [0.526, 0.623] |
+| D_CORE / D_NEAR / D_FAR: X26 on home72 vs Kakuna on H's 16 / 44 / 12 teams | 100 / 400 / 100 | 0.610 [0.512, 0.700] / 0.623 [0.574, 0.669] / 0.690 [0.594, 0.772] |
+| S(H, P) REVERSE: X26 on H vs Kakuna on home72 | 400 | **0.380 [0.334, 0.428]** |
+| S(H, H) (banked) | 400 | 0.448 [0.400, 0.496] |
+| K(P, H): Kakuna on home72 vs Kakuna on H | 400 | 0.573 [0.524, 0.620] |
+
+**L = 0.630 [0.573, 0.686]** (stratified team-clustered bootstrap, B = 20,000; Wald [0.592, 0.669]). The derived
+quantities:
+
+- Δ̂ = +0.073;
+- PILOT_c = +0.123 [+0.039, +0.206];
+- FACE_c = +0.017 [−0.062, +0.095];
+- PILOT_c − FACE_c = +0.106 [−0.009, +0.221] ⇒ **H-PILOT UNDECIDED**;
+- the interaction −0.012 [−0.104, +0.081], not detected;
+- in the reverse cell, by our team's stratum: CORE 0.463, NEAR 0.389, FAR 0.263; FAR − CORE −0.199
+  [−0.385, −0.017] ⇒ **H-PILOT-OFFMETA SUPPORTED**.
+
+**Reading.**
+- Bringing its own teams, X26 beats Kakuna whatever Kakuna brings.
+- The symmetric held-out loss comes from X26 PILOTING unfamiliar teams, worst on off-meta (FAR) cores. Facing them
+  costs nothing measurable, so implicit team identification shows no facing cost here; D0e is H2's real test.
+- Lever implication (a proposal): own-side widening (D1) over opponent-only widening (D2), with FAR cores in the corpus.
+- L leans toward us: Kakuna's deployment teams are usage-filled reconstructions, weaker in anyone's hands. L is
+  "vs Kakuna", never a ladder win rate.
+- The correction rests on A-K (UNVERIFIED).
+- PROVISIONAL: one checkpoint of a live, unplateaued run, one seed.
+
+**FINDINGS.**
+1. `server_version` carries two spellings of one commit (`63f97a57` / `63f97a575`): git's abbreviation grew
+   mid-read.
+2. `kcal` crosses a harness boundary (a pair cell: no 250-turn forfeit, Metamon's CSV as the record, 0 ties).
+3. One early glance at two game results of the first unit, while checking it was alive; no decision taken.
+4. The `not slow` anchors tier plays a real local Metamon game (`test_one_capped_real_game_against_metamon_smallrl`).
+5. The B-D6 digest reads the directory, while Metamon draws from `index.csv` when present (only `competitive` has
+   one).
+6. No hazard hit: T28 clear before every unit, the tool's server on 9537, nothing under `models/` or `data/`, no GPU.
+
+Tag: **MEASUREMENT · BUILD (B-D6 `gen3_team_set_digest_v1` + `unit_counts`; B-D9 `--our-teamset`) · L (ladder_weights_v1) =
+0.630 [0.573, 0.686] · PILOTING not facing · H-PILOT UNDECIDED · H-PILOT-OFFMETA SUPPORTED · PROVISIONAL** · evidence:
+`research_state/measurements/x37a_eval_matrix_2026-10-18/` (README, PREREG, `cells_stage1.json`, `rows_stage1.jsonl`);
+`src/main/anchors/results.py` (`unit_counts`); `endstate/design_diversity_teams_opponents.md` §0, §5.2, §10, §11;
+`ops/EXTERNAL_ANCHORS_SOP.md`; `research_state/UNDERSTANDING.md`

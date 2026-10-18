@@ -751,6 +751,19 @@ X26's lead over K2 on held-out teams is probably real and smaller than on traini
 unseen-vs-population remains confounded. This is the kill test of the Hidden Power hypothesis (H6) in the D0a list above:
 NOT supported, and NOT killed (its rule needs an upper bound < +5 pp; this one is +12 pp). [ledger 2026-10-18 · *HELD-OUT, HIDDEN POWER REPAIRED*]
 
+**The held-out drop is in PILOTING, and the deployment headline is ahead (2026-10-18, X37a stage 1,
+`measurements/x37a_eval_matrix_2026-10-18/`):** [MEASURED · PROVISIONAL · preregistered, 1,400 games] When X26 brings
+home72 and Kakuna brings `heldout72_hpfix` teams, X26 wins in every species stratum, and THE ladder-weighted headline
+reads **L (ladder_weights_v1) = 0.630 [0.573, 0.686]** (L_c1 0.624). When X26 PILOTS the held-out teams against Kakuna
+on home72 it reads **0.380 [0.334, 0.428]**. A Kakuna-vs-Kakuna cell says the held-out teams are weaker for whoever
+pilots them (K = 0.573, Δ̂ = +0.073). With that correction, piloting costs **+0.123 [+0.039, +0.206]** and facing
+costs +0.017 [−0.062, +0.095], which is not detected. The two add up (interaction −0.012, not detected). The
+preregistered H-PILOT is formally UNDECIDED: the piloting-minus-facing interval's lower bound is −0.009, 0.9 pp short
+of SUPPORTED. The off-meta form is SUPPORTED: X26 pilots held-out FAR teams 0.199 [0.017, 0.385] below CORE ones.
+So "we lose on unseen teams" means "we pilot unseen teams badly", and worse the further they sit from the sample
+cores. The UNVERIFIED assumption A-K (Kakuna's own piloting and facing familiarity equal) carries the correction.
+L is not a ladder win rate: Kakuna's deployment teams are usage-filled reconstructions. [ledger 2026-10-18 · *X37a STAGE 1*]
+
 **And a second anchor ABOVE us (2026-09-14, `foul_play_derisk_2026-09-14/`):** [MEASURED] Foul Play — MCTS with
 decoupled UCT over a hand-written evaluator on the Rust poke-engine, determinising the opponent's sets from Smogon
 usage — beats the same 75M policy: our win rate **0.388 [0.288, 0.497]** over 80 games, at ~1.4M visits and 2.1 s

@@ -430,7 +430,15 @@ near-neutral and P72 is unclear.
   FAR 0.149, from 22,862 `hl_05_26` teams).
 - **Beside it, always:** the sample ground (home72, `away`), the unfamiliar panel (heldout72_hpfix, smogon_forum,
   P72), the in-house meter GEN-M, and L_c1.
-- The design is `endstate/design_diversity_teams_opponents.md` §5. L does not exist until X37a stage 1 reads.
+- The design is `endstate/design_diversity_teams_opponents.md` §5.
+- 🏁 **Standing (X37a stage 1, 2026-10-18, `measurements/x37a_eval_matrix_2026-10-18/`, PROVISIONAL): L
+  (ladder_weights_v1) = 0.630 [0.573, 0.686]** for X26 @161,000,169 vs Kakuna greedy (D_CORE 0.610, D_NEAR 0.623,
+  D_FAR 0.690; stratified team-clustered bootstrap); L_c1 = 0.624 [0.570, 0.676]. L leans toward us: Kakuna's
+  deployment teams are usage-filled replay reconstructions, weaker in anyone's hands (K(P, H) = 0.573).
+- **The asymmetric cells and how to run them:** a per-cell config whose `our_team_sources.home` and Metamon
+  `team_sets.home` name DIFFERENT sets, declared in a registration and counted by `unit_counts` against the
+  registered per-side digests; the Kakuna-vs-Kakuna calibration with `--opponent-a/-b metamon:Kakuna --our-teamset away
+  --declare-asymmetric-teams`. Pass `--capture-dir` to keep the opponent's team per game (the rows do not carry it).
 
 ### The team-set overlap — a REQUIRED field of every read (2026-10-18)
 
@@ -601,6 +609,8 @@ role-balanced units, every counted unit `status OK`, `regime_verified_decisions`
 | Kakuna greedy · home72, topped up | 400 | **0.575 [0.526, 0.623]** | **BETTER** | K2 (G0′): 0.487 [0.439, 0.536] → **+0.087 [+0.018, +0.155]** X26 BETTER; N0 → +0.115 [+0.030, +0.198] (seeds 0–11 of row 1 + 12–19 of `k2_x26_kakuna_both_teamsets_2026-10-17`, one identical regime stamp) |
 | **Kakuna greedy · heldout72 (0 / 72 teams in our pool; 2026-10-18)** | 400 | **0.395 [0.348, 0.444]** | **WORSE** | K2 (G0′): 0.357 [0.312, 0.406] WORSE → **+0.038 [−0.030, +0.104] NOT DETECTED**; X26 heldout72 − home72 **−0.180 [−0.247, −0.111]**, − away −0.102 [−0.170, −0.034] (`heldout_teams_kakuna_2026-10-18`, same regime stamp as the 10-17 cells except the team set) |
 | **Kakuna greedy · heldout72_hpfix (the held-out set of record; HP repaired; 2026-10-18)** | 400 | **0.448 [0.400, 0.496]** | **WORSE** | K2 (G0′): 0.367 [0.322, 0.416] WORSE → **+0.080 [+0.012, +0.147] X26 BETTER**; vs heldout72 (HP Dark): X26 +0.052 [−0.016, +0.120], K2 +0.010, both NOT DETECTED; X26 hpfix − home72 **−0.127 [−0.195, −0.058]** (`heldout72_hpfix_kakuna_2026-10-18`, same regime stamp) |
+| **Kakuna greedy · DEPLOYMENT, X26 pilots home72, Kakuna pilots heldout72_hpfix by stratum (X37a, 2026-10-18)** | 600 | **L (ladder_weights_v1) = 0.630 [0.573, 0.686]** (CORE 0.610 n = 100, NEAR 0.623 n = 400, FAR 0.690 n = 100) | **BETTER** | L_c1 0.624 [0.570, 0.676]; the reweighted cell S(P, H) 0.631 [0.592, 0.670] (`x37a_eval_matrix_2026-10-18`, same regime stamp; declared asymmetric) |
+| **Kakuna greedy · REVERSE, X26 pilots heldout72_hpfix, Kakuna pilots home72 (X37a)** | 400 | **0.380 [0.334, 0.428]** | **WORSE** | Kakuna vs Kakuna K(home72, heldout72_hpfix) 0.573 [0.524, 0.620]; PILOT_c +0.123 [+0.039, +0.206], FACE_c +0.017 [−0.062, +0.095]: the held-out drop is PILOTING; H-PILOT UNDECIDED, H-PILOT-OFFMETA SUPPORTED |
 | SmallRL greedy · away | 200 | 0.645 [0.577, 0.708] | BETTER | K2 (G0′): 0.625 → +0.020 [−0.058, +0.094] NOT DETECTED |
 | SmallRL greedy · home (pool) | 200 | 0.785 [0.723, 0.836] | BETTER | K2: 0.755 → +0.030 [−0.040, +0.093] NOT DETECTED |
 | SmallRL t1 · away | 100 | 0.730 [0.636, 0.807] | BETTER | `ai_v12_02`: 0.560 → +0.170 [+0.037, +0.295] |
