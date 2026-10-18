@@ -690,10 +690,16 @@ erroring; Metamon's transformers need `VanillaAttention` on CPU; its client hard
 `x26_metamon_anchor_2026-10-17/`):** [MEASURED · one checkpoint of a live run] X26 `rb_x26_s2601` @161,000,169,
 greedy, on the home72 teams: **0.600 [0.537, 0.660] vs Kakuna greedy and 0.600 [0.537, 0.660] vs Kakuna at T = 1.0**
 (n = 240 each), both lower bounds above 0.50; N0 read 0.460 / 0.380 on the same cells (X26 − N0 **+0.140
-[+0.046, +0.230]** / **+0.220 [+0.127, +0.308]**). It does NOT yet hold on Metamon's own teams (0.570 [0.472,
-0.663], n = 100, NOT DETECTED), and against `SmallRL` X26 is level with the previous lineage's plateau K2
-(away +0.020 [−0.058, +0.094], home +0.030 [−0.040, +0.093]) — K2 was never read against Kakuna, so WHEN the gap
-to Kakuna closed (K2's lineage or X26's end-state architecture) is UNKNOWN. Kakuna's strongest temperature stays
+[+0.046, +0.230]** / **+0.220 [+0.127, +0.308]**). It does NOT hold on Metamon's own teams (0.497 [0.449,
+0.546] at n = 400, NOT DETECTED; the first 100 games' 0.570 was a lucky draw), and against `SmallRL` X26 is level
+with the previous lineage's plateau K2 (away +0.020 [−0.058, +0.094], home +0.030 [−0.040, +0.093]).
+**Against Kakuna, X26 IS a step over K2 on Metamon's teams, and not resolved on ours (2026-10-17,
+`k2_x26_kakuna_both_teamsets_2026-10-17/`):** [MEASURED · PROVISIONAL · two harnesses] K2 (G0′, read through its own
+pin `a5b2fdba` on torch 2.5.1) loses to Kakuna away, 0.355 [0.310, 0.403] (n = 400, WORSE), and reads 0.521 [0.458,
+0.583] on home72 (n = 240). X26 − K2 = **+0.143 [+0.074, +0.209] away (DETECTED)** and +0.079 [−0.010, +0.166]
+home72 (NOT DETECTED). So the end-state lineage gained against Kakuna on teams neither model trained on. On our
+teams, N0 0.460 → K2 0.521 → X26 0.600: neither step is detected alone, so WHICH lineage banked the home72 gain is
+still UNKNOWN. [ledger 2026-10-17 · *K2 vs KAKUNA, BOTH TEAM SETS*] Kakuna's strongest temperature stays
 unresolved (greedy and T = 1.0 identical here). PROVISIONAL per the plateau rule: one checkpoint, one seed,
 161M of a 500M cap. [ledger 2026-10-17 · *X26 vs METAMON*]
 

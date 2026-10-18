@@ -73,7 +73,7 @@ is an implementation fact about Metamon that could change in a release.
 | **A — per promotion** | every time a snapshot is promoted | the **dense ladder** (`<run>/snapshot_ladder/ladder.json`), greedy-vs-greedy, compared at **matched snapshot COUNT** | already paid by the run |
 | **B — per milestone** | each eval milestone | `metamon:SmallRL` **greedy, BOTH team sets, 100 games each** + **ONE t1 cell** as the distribution check | ~15 min |
 | **C — era gate** | opening or closing an era | `metamon:SyntheticRLV2` **greedy, away** — bar: **Wilson lower bound > 0.50**; and **Foul Play** at a fixed `--search-time-ms` with its realized visit count | ~2 h |
-| **goal read** | the near-term goal (X22) | `metamon:Kakuna` — Metamon's best public policy (142.8M, ckpt 34, upstream's stated gen3ou GXE ~63%). 🏁 **Standing (2026-10-17, `measurements/x26_metamon_anchor_2026-10-17/`): the goal is MET by X26 `rb_x26_s2601` @161,000,169 on home72 — 0.600 [0.537, 0.660] vs Kakuna greedy AND 0.600 [0.537, 0.660] vs Kakuna T = 1.0 (n = 240 each, paired seeds); away (Metamon's teams) 0.570 [0.472, 0.663] n = 100, NOT DETECTED. PROVISIONAL: one checkpoint of a live, unplateaued run (§4).** Previous (2026-09-28, `measurements/kakuna_goal_read_2026-09-28/`, home72, N0 final greedy): Kakuna's strongest temperature by point estimate is **T = 1.0** (N0 **0.380** [0.316, 0.449], n = 200 — goal NOT met); at greedy N0 **0.460** [0.392, 0.529]; the temperature differences are NOT DETECTED, so the goal read is taken at BOTH (`--opponent-temperature 1.0` and greedy). Our side stays GREEDY: N0 sampling at T = 1.0 (`--our-temperature 1.0`) reads 0.310 vs Kakuna T = 1.0 and 0.280 vs Kakuna greedy (X22 (f)) | **~2 min / 20 games** on CPU (6 s/game, load ~25) |
+| **goal read** | the near-term goal (X22) | `metamon:Kakuna` — Metamon's best public policy (142.8M, ckpt 34, upstream's stated gen3ou GXE ~63%). 🏁 **Standing (2026-10-17, `measurements/x26_metamon_anchor_2026-10-17/`): the goal is MET by X26 `rb_x26_s2601` @161,000,169 on home72 — 0.600 [0.537, 0.660] vs Kakuna greedy AND 0.600 [0.537, 0.660] vs Kakuna T = 1.0 (n = 240 each, paired seeds); away (Metamon's teams) **0.497 [0.449, 0.546] n = 400, NOT DETECTED** (the n = 100 read's 0.570 was a lucky first draw). K2 (G0′, `ai_v14_07_g0p_k2` @91,127,808, read 2026-10-17 through its own pin `a5b2fdba` on torch 2.5.1, `measurements/k2_x26_kakuna_both_teamsets_2026-10-17/`) reads 0.521 [0.458, 0.583] on home72 (n = 240) and **0.355 [0.310, 0.403] away (n = 400, WORSE)**; X26 − K2 = +0.079 [−0.010, +0.166] home72 (NOT DETECTED), **+0.143 [+0.074, +0.209] away (X26 BETTER)**. PROVISIONAL: one checkpoint of a live, unplateaued run (§4).** Previous (2026-09-28, `measurements/kakuna_goal_read_2026-09-28/`, home72, N0 final greedy): Kakuna's strongest temperature by point estimate is **T = 1.0** (N0 **0.380** [0.316, 0.449], n = 200 — goal NOT met); at greedy N0 **0.460** [0.392, 0.529]; the temperature differences are NOT DETECTED, so the goal read is taken at BOTH (`--opponent-temperature 1.0` and greedy). Our side stays GREEDY: N0 sampling at T = 1.0 (`--our-temperature 1.0`) reads 0.310 vs Kakuna T = 1.0 and 0.280 vs Kakuna greedy (X22 (f)) | **~2 min / 20 games** on CPU (6 s/game, load ~25) |
 
 ### Tier A — per promotion: the dense ladder
 
@@ -500,7 +500,8 @@ role-balanced units, every counted unit `status OK`, `regime_verified_decisions`
 |---|---:|---|---|---|
 | Kakuna greedy · home72 | 240 | **0.600 [0.537, 0.660]** | **BETTER** | N0: 0.460 → **+0.140 [+0.046, +0.230]** |
 | Kakuna T = 1.0 · home72 (`regime_matched = false`) | 240 | **0.600 [0.537, 0.660]** | **BETTER** | N0: 0.380 → **+0.220 [+0.127, +0.308]** |
-| Kakuna greedy · away | 100 | 0.570 [0.472, 0.663] | NOT DETECTED | — (first read) |
+| Kakuna greedy · away | 400 | 0.497 [0.449, 0.546] | NOT DETECTED | K2 (G0′): 0.355 → **+0.143 [+0.074, +0.209]** X26 BETTER (seeds 0–4 of the first read + 5–19 of `k2_x26_kakuna_both_teamsets_2026-10-17`, one identical regime stamp; the first 100 read 0.570) |
+| *(Kakuna greedy · home72, vs K2)* | 240 | 0.600 (row 1) | — | K2: 0.521 [0.458, 0.583] → +0.079 [−0.010, +0.166] NOT DETECTED (paired seeds 0–11) |
 | SmallRL greedy · away | 200 | 0.645 [0.577, 0.708] | BETTER | K2 (G0′): 0.625 → +0.020 [−0.058, +0.094] NOT DETECTED |
 | SmallRL greedy · home (pool) | 200 | 0.785 [0.723, 0.836] | BETTER | K2: 0.755 → +0.030 [−0.040, +0.093] NOT DETECTED |
 | SmallRL t1 · away | 100 | 0.730 [0.636, 0.807] | BETTER | `ai_v12_02`: 0.560 → +0.170 [+0.037, +0.295] |
@@ -508,8 +509,13 @@ role-balanced units, every counted unit `status OK`, `regime_verified_decisions`
 **The near-term goal (Kakuna on our teams at its strongest temperature, lower bound > 0.50) is MET at
 this checkpoint**, at both Kakuna settings; greedy and T = 1.0 read identically here (Δ 0.000
 [−0.087, +0.087]), so "Kakuna is strongest at T = 1.0" is not reproduced. **On Metamon's own teams it is
-NOT DETECTED**, and against SmallRL X26 is level with K2, the previous lineage's plateau — K2 was never
-read against Kakuna, so how much of the +0.14 / +0.22 over N0 K2 had already banked is UNKNOWN.
+NOT DETECTED** (0.497 at n = 400), and against SmallRL X26 is level with K2, the previous lineage's plateau.
+**K2 against Kakuna (2026-10-17, `measurements/k2_x26_kakuna_both_teamsets_2026-10-17/`):** K2 is played by its own
+training pin `a5b2fdba` on `gen3ai_stable` (torch 2.5.1, the pin's poke-env client; it does not load at HEAD), X26 by
+the X26 read's `63f97a57`, so the difference crosses two harnesses (that read's § Comparability). On Metamon's teams
+K2 loses to Kakuna (0.355 [0.310, 0.403], WORSE) and X26 is **+0.143 [+0.074, +0.209]** ahead of it, DETECTED. On
+home72, K2 reads 0.521 and X26 − K2 = +0.079 [−0.010, +0.166], NOT DETECTED at n = 240, so whether N0 → K2 (+0.061)
+or K2 → X26 banked the home72 gain over N0 is still unresolved.
 PROVISIONAL (one checkpoint, one seed, a run 161M into a 500M cap). 🚨 **Run `main.anchors` from the
 checkout ROOT**: the pool (`home`) source resolves `data/teams` against the CWD and, from `src/`,
 finds 0 teams and dies as `our_side_error: IndexError` (the read's FINDING 1).

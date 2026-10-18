@@ -1,0 +1,356 @@
+{
+ "cells": {
+  "K2_greedy_h72": {
+   "units": 12,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "reads": [
+    "k2_x26_kakuna_both_teamsets_2026-10-17"
+   ],
+   "n": 240,
+   "wins": 125,
+   "losses": 115,
+   "ties": 0,
+   "win_rate": 0.5208333333333334,
+   "wilson95": [
+    0.4578014579715731,
+    0.5832087953638921
+   ],
+   "vs_0.50": "NOT DETECTED",
+   "by_half": {
+    "ours_challenge": {
+     "wins": 66,
+     "n": 120,
+     "rate": 0.55
+    },
+    "peer_challenge": {
+     "wins": 59,
+     "n": 120,
+     "rate": 0.49166666666666664
+    }
+   },
+   "hit_forfeit_limit": 1,
+   "their_argmax_min": 1.0,
+   "their_argmax_max": 1.0,
+   "median_turns": 33,
+   "max_turns": 250,
+   "distinct_our_teams": 59,
+   "regime_stamps": [
+    {
+     "rows": 240,
+     "battle_format": "gen3ou",
+     "forfeit_turn_limit": 250,
+     "mirrored_pairs": null,
+     "model_loader": "bare",
+     "model_step": 91127808,
+     "model_zip": "/home/goodlad/dev/gen3ai-reads/k2_x26_kakuna_both_teamsets_2026-10-17/model_k2/final_model.zip",
+     "opponent": "metamon:Kakuna",
+     "opponent_commit": "0a00a759",
+     "opponent_version": "Kakuna@ckpt34",
+     "our_regime": "greedy",
+     "our_side": "model",
+     "our_team_count": 72,
+     "our_team_source": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/n0_endofrun_2026-09-27/teams_home72",
+     "our_transport": null,
+     "regime_matched": true,
+     "server_impl": "rust",
+     "server_version": "ws_frontend@a5b2fdba+rust:cargo:src/rust_sim",
+     "showdown_pin": "e0551883f",
+     "teamset": "home",
+     "their_regime": "greedy",
+     "their_team_count": 72
+    }
+   ],
+   "stamp_identical": true
+  },
+  "K2_greedy_away": {
+   "units": 20,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "reads": [
+    "k2_x26_kakuna_both_teamsets_2026-10-17"
+   ],
+   "n": 400,
+   "wins": 142,
+   "losses": 257,
+   "ties": 1,
+   "win_rate": 0.355,
+   "wilson95": [
+    0.30968902655519703,
+    0.4030695388030314
+   ],
+   "vs_0.50": "WORSE",
+   "by_half": {
+    "ours_challenge": {
+     "wins": 66,
+     "n": 200,
+     "rate": 0.33
+    },
+    "peer_challenge": {
+     "wins": 76,
+     "n": 200,
+     "rate": 0.38
+    }
+   },
+   "hit_forfeit_limit": 0,
+   "their_argmax_min": 1.0,
+   "their_argmax_max": 1.0,
+   "median_turns": 36,
+   "max_turns": 208,
+   "distinct_our_teams": 19,
+   "regime_stamps": [
+    {
+     "rows": 400,
+     "battle_format": "gen3ou",
+     "forfeit_turn_limit": 250,
+     "mirrored_pairs": null,
+     "model_loader": "bare",
+     "model_step": 91127808,
+     "model_zip": "/home/goodlad/dev/gen3ai-reads/k2_x26_kakuna_both_teamsets_2026-10-17/model_k2/final_model.zip",
+     "opponent": "metamon:Kakuna",
+     "opponent_commit": "0a00a759",
+     "opponent_version": "Kakuna@ckpt34",
+     "our_regime": "greedy",
+     "our_side": "model",
+     "our_team_count": 20,
+     "our_team_source": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou",
+     "our_transport": null,
+     "regime_matched": true,
+     "server_impl": "rust",
+     "server_version": "ws_frontend@a5b2fdba+rust:cargo:src/rust_sim",
+     "showdown_pin": "e0551883f",
+     "teamset": "away",
+     "their_regime": "greedy",
+     "their_team_count": 20
+    }
+   ],
+   "stamp_identical": true
+  },
+  "X26_greedy_away": {
+   "units": 20,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "reads": [
+    "k2_x26_kakuna_both_teamsets_2026-10-17",
+    "x26_metamon_anchor_2026-10-17"
+   ],
+   "n": 400,
+   "wins": 199,
+   "losses": 201,
+   "ties": 0,
+   "win_rate": 0.4975,
+   "wilson95": [
+    0.44875888866825975,
+    0.546288672803434
+   ],
+   "vs_0.50": "NOT DETECTED",
+   "by_half": {
+    "ours_challenge": {
+     "wins": 100,
+     "n": 200,
+     "rate": 0.5
+    },
+    "peer_challenge": {
+     "wins": 99,
+     "n": 200,
+     "rate": 0.495
+    }
+   },
+   "hit_forfeit_limit": 4,
+   "their_argmax_min": 1.0,
+   "their_argmax_max": 1.0,
+   "median_turns": 37,
+   "max_turns": 250,
+   "distinct_our_teams": 19,
+   "regime_stamps": [
+    {
+     "rows": 400,
+     "battle_format": "gen3ou",
+     "forfeit_turn_limit": 250,
+     "mirrored_pairs": false,
+     "model_loader": "bare",
+     "model_step": 161000169,
+     "model_zip": "/home/goodlad/dev/gen3ai-reads/x26_metamon_anchor_2026-10-17/model/checkpoint_161000169_steps.zip",
+     "opponent": "metamon:Kakuna",
+     "opponent_commit": "0a00a759",
+     "opponent_version": "Kakuna@ckpt34",
+     "our_regime": "greedy",
+     "our_side": "model",
+     "our_team_count": 20,
+     "our_team_source": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou",
+     "our_transport": "rust_core_slot",
+     "regime_matched": true,
+     "server_impl": "rust",
+     "server_version": "ws_frontend[in-process]@63f97a57+rust:cargo:src/rust_sim",
+     "showdown_pin": "e0551883f",
+     "teamset": "away",
+     "their_regime": "greedy",
+     "their_team_count": 20
+    }
+   ],
+   "stamp_identical": true
+  },
+  "X26_greedy_h72": {
+   "units": 12,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "reads": [
+    "x26_metamon_anchor_2026-10-17"
+   ],
+   "n": 240,
+   "wins": 144,
+   "losses": 94,
+   "ties": 2,
+   "win_rate": 0.6,
+   "wilson95": [
+    0.5369150750231609,
+    0.6599341409870717
+   ],
+   "vs_0.50": "BETTER",
+   "by_half": {
+    "ours_challenge": {
+     "wins": 67,
+     "n": 120,
+     "rate": 0.5583333333333333
+    },
+    "peer_challenge": {
+     "wins": 77,
+     "n": 120,
+     "rate": 0.6416666666666667
+    }
+   },
+   "hit_forfeit_limit": 0,
+   "their_argmax_min": 1.0,
+   "their_argmax_max": 1.0,
+   "median_turns": 30,
+   "max_turns": 204,
+   "distinct_our_teams": 59,
+   "regime_stamps": [
+    {
+     "rows": 240,
+     "battle_format": "gen3ou",
+     "forfeit_turn_limit": 250,
+     "mirrored_pairs": false,
+     "model_loader": "bare",
+     "model_step": 161000169,
+     "model_zip": "/home/goodlad/dev/gen3ai-reads/x26_metamon_anchor_2026-10-17/model/checkpoint_161000169_steps.zip",
+     "opponent": "metamon:Kakuna",
+     "opponent_commit": "0a00a759",
+     "opponent_version": "Kakuna@ckpt34",
+     "our_regime": "greedy",
+     "our_side": "model",
+     "our_team_count": 72,
+     "our_team_source": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/n0_endofrun_2026-09-27/teams_home72",
+     "our_transport": "rust_core_slot",
+     "regime_matched": true,
+     "server_impl": "rust",
+     "server_version": "ws_frontend[in-process]@63f97a57+rust:cargo:src/rust_sim",
+     "showdown_pin": "e0551883f",
+     "teamset": "home",
+     "their_regime": "greedy",
+     "their_team_count": 72
+    }
+   ],
+   "stamp_identical": true
+  }
+ },
+ "x26_minus_k2": {
+  "home72": {
+   "x26": [
+    144,
+    240
+   ],
+   "k2": [
+    125,
+    240
+   ],
+   "x26_minus_k2": [
+    0.07916666666666661,
+    -0.009548642174925612,
+    0.16614435672267275
+   ],
+   "verdict": "NOT DETECTED"
+  },
+  "away": {
+   "x26": [
+    199,
+    400
+   ],
+   "k2": [
+    142,
+    400
+   ],
+   "x26_minus_k2": [
+    0.14250000000000002,
+    0.07404288572698056,
+    0.20908392379873822
+   ],
+   "verdict": "X26 BETTER"
+  }
+ },
+ "skipped_units": []
+}

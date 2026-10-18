@@ -26614,3 +26614,62 @@ dominated mass / greedy regret fall DETECTED (pre-era 3/3) · honest one-ply can
 checkpoints)** · evidence: `research_state/measurements/collapse_pilot_2026-10-17/` (README, `starvation_readout.py`,
 `readout_x26truth.json`, `readout_oldtruth_bankv1.json`, `honest_vs_oracle_starvation.{py,json}`,
 `spectrum_x26bank.md`, `strategic_series.json`); `endstate/design_collapse_and_counterfactuals.md`
+
+### 2026-10-17 · MEASUREMENT · **K2 vs KAKUNA, BOTH TEAM SETS — on Metamon's teams X26 IS a step over K2 (G0′): K2 loses to `metamon:Kakuna` 0.355 [0.310, 0.403] (n = 400, WORSE), X26 @161,000,169 reads 0.497 [0.449, 0.546] (n = 400, NOT DETECTED), X26 − K2 +0.143 [+0.074, +0.209] DETECTED. On our teams (home72) K2 0.521 [0.458, 0.583] vs X26 0.600 (n = 240 each), X26 − K2 +0.079 [−0.010, +0.166] NOT DETECTED. X26's away 0.570 at n = 100 was a lucky first draw**
+
+**Question (owner, 2026-10-17).** X26 beat Kakuna on home72, but K2, the previous lineage's plateau, was never read
+against Kakuna. Is X26 a jump over K2? Both models on both team sets.
+
+**Protocol.** Kakuna ckpt 34 (metamon `0a00a759`), greedy vs greedy on CPU, role-balanced 20-game units with
+`--team-seed = --seed-base = unit seed`, the 250-turn forfeit, Showdown pin `e0551883f`. A unit counts iff status OK,
+n = 20, `regime_verified_decisions`, no `team_source_asymmetry` and `peer_clean`. All 47 new units passed on their
+first try, as did the 17 banked X26 units the read pools.
+
+- **K2** = `ai_v14_07_g0p_k2/final_model.zip` @91,127,808, sha256 `cc5d5502…07c4`. This is the file the G0′
+  entry (2026-09-29) and K2's SmallRL read name. It was copied read-only. It does not load at HEAD (arch
+  `gen3_event_record_v2`), so it was played by its own training pin `a5b2fdba` (`pin_history`) on `gen3ai_stable`
+  (torch 2.5.1+cu121, the build its zip records), through the pin's poke-env client, with the `bare` loader. No
+  model or config was edited.
+- **X26** = the X26 read's copy, sha256 `bc6050d1…2992`, played at that read's commit `63f97a57` on torch 2.8,
+  through the core slot.
+- **The X26 away top-up.** Seeds 5–19 were added to the banked seeds 0–4. All 400 rows carry one identical regime
+  stamp.
+- **home72.** Seeds 0–11 pair with X26's banked cell. The T55 manifest was re-verified (72/72 files on both sides).
+  In every twin game, both sides' team draws are identical (32/32 units).
+
+| model | team set | n | win rate [Wilson 95%] | vs 0.50 |
+|---|---|---:|---|---|
+| K2 | home72 | 240 | 0.521 [0.458, 0.583] | NOT DETECTED |
+| X26 | home72 | 240 | 0.600 [0.537, 0.660] | BETTER |
+| K2 | away | 400 | 0.355 [0.310, 0.403] | WORSE |
+| X26 | away | 400 | 0.497 [0.449, 0.546] | NOT DETECTED |
+
+**X26 − K2 (Newcombe).**
+
+- home72: +0.079 [−0.010, +0.166], NOT DETECTED.
+- away: **+0.143 [+0.074, +0.209], X26 BETTER**.
+- The paired descriptor (same teams, same seeds) reads +0.079 [+0.002, +0.157] and +0.142 [+0.080, +0.205]. The
+  home72 lower bound sits within rounding of zero, so it decides nothing (rule 8).
+
+**Context.** On home72, K2 − N0 = +0.061 [−0.033, +0.153], NOT DETECTED. The N0 → K2 → X26 ordering (0.460 →
+0.521 → 0.600) holds by point estimate only. X26's 300 new away games read 0.473, against 0.570 for the first 100
+(−0.097 [−0.205, +0.016], NOT DETECTED).
+
+**What it means.** Against Metamon's best on teams neither model trained on, the end-state lineage is detectably
+stronger than the v14 plateau: K2 lost to Kakuna there and X26 is level with it. On our own teams the data cannot
+yet split the N0 → X26 gain between the two lineages. X26 does NOT beat Kakuna on Metamon's teams.
+
+**Comparability (FINDING).** The difference crosses two harnesses: our transport (the poke-env client vs the core
+slot) and the torch build (2.5.1 vs 2.8). P3's byte-identity of the two transports was shown for a
+current-architecture checkpoint only, so it is UNVERIFIED for K2. The Kakuna peer, the team draws, the team files
+and the regime are identical.
+
+**FINDINGS.**
+
+- The pin's rows carry no `our_transport` field and write `mirrored_pairs = null`.
+- n = 240 does not resolve home72. Topping both cells up to 400 (seeds 12–19) is ~1 h on one lane.
+- **Cost.** One rule-5b lane, 1 h 38 min for 940 games: K2 5.3–5.5 s/game, X26 8.2 s/game, load1 mean 5.1.
+
+Tag: **MEASUREMENT · PROVISIONAL (X26 one checkpoint of a live run; two harnesses) · X26 − K2 away DETECTED · home72
+NOT DETECTED · K2 vs Kakuna away WORSE** · evidence: `research_state/measurements/k2_x26_kakuna_both_teamsets_2026-10-17/`
+(README, `cells.json`, `rows.jsonl`, `paired.json`, `scripts/`); `designs/ops/EXTERNAL_ANCHORS_SOP.md` §1 goal row, §4 "X26".

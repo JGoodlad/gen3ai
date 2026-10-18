@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-26,617-line file. **The ledger itself is append-only and is never edited by this**;
+26,676-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**893 headings · 838 dated · 2026-08-01 → 2026-10-17 · ledger 26,617 lines.**
+**894 headings · 839 dated · 2026-08-01 → 2026-10-17 · ledger 26,676 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -913,3 +913,4 @@ rename.
   - `L26465` · `2026-10-17` · FINDING (MAJOR for X26 ops) · **X26's K9(b) stop at update 13,900 (max |Δ log π| 1.0109e-4 on ONE row of 982 judged) is NUMERICAL, not a fault: the row is the most fp32-ill-conditioned of the scan's worst 32, EVERY fp32 evaluation of it misses the exact (float64) value by 0.6–1.65e-4, and the stored behaviour log-prob is the CLOSEST of them. No checkpoint is void. At today's scale a recurrence comes every ≈ 26M steps, rising to ≈ 1.5M by the 500M cap (≈ 110 stops in all), so the recommendation is a `warn` resume under monitored ceilings (judged max < 1e-3, p99 < 1e-4) by a new Amendment 3**
   - `L26499` · `2026-10-17` · MEASUREMENT · **X26 vs METAMON — the near-term goal is MET, PROVISIONALLY: X26 `rb_x26_s2601` @161,000,169 (greedy) beats `metamon:Kakuna` (ckpt 34, Metamon's best) on OUR teams (home72) at BOTH Kakuna settings, 0.600 [0.537, 0.660] greedy and 0.600 [0.537, 0.660] at T = 1.0 (n = 240 each), +0.140 [+0.046, +0.230] and +0.220 [+0.127, +0.308] over N0; on Metamon's own teams 0.570 [0.472, 0.663] (n = 100) NOT DETECTED; against `SmallRL` level with K2 (the v14 plateau)**
   - `L26555` · `2026-10-17` · MEASUREMENT (PILOT, DESCRIPTIVE) · **COLLAPSE PILOT: X26 shows NO entropy collapse and NO growing starvation. About 0.3 of decisive turns starve a near-best move at every checkpoint from 10M to 160M (own truth −0.011 [−0.090, +0.061]; pre-era truth +0.013 to +0.023, not detected 3/3), while dominated mass and greedy regret FALL. About 3/4 of it is MISRANK, not tie-collapse. The starved moves are worth +0.35 to +0.39 per starved decisive turn, but only in the TRUE world: an honest one-ply read flags them at 1.35× chance and acting on its flag loses −0.068**
+  - `L26618` · `2026-10-17` · MEASUREMENT · **K2 vs KAKUNA, BOTH TEAM SETS — on Metamon's teams X26 IS a step over K2 (G0′): K2 loses to `metamon:Kakuna` 0.355 [0.310, 0.403] (n = 400, WORSE), X26 @161,000,169 reads 0.497 [0.449, 0.546] (n = 400, NOT DETECTED), X26 − K2 +0.143 [+0.074, +0.209] DETECTED. On our teams (home72) K2 0.521 [0.458, 0.583] vs X26 0.600 (n = 240 each), X26 − K2 +0.079 [−0.010, +0.166] NOT DETECTED. X26's away 0.570 at n = 100 was a lucky first draw**
