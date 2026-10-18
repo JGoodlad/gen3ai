@@ -1,7 +1,7 @@
 {
  "cells": {
   "K2_greedy_h72": {
-   "units": 12,
+   "units": 20,
    "seeds": [
     0,
     1,
@@ -14,31 +14,39 @@
     8,
     9,
     10,
-    11
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
    ],
    "reads": [
     "k2_x26_kakuna_both_teamsets_2026-10-17"
    ],
-   "n": 240,
-   "wins": 125,
-   "losses": 115,
-   "ties": 0,
-   "win_rate": 0.5208333333333334,
+   "n": 400,
+   "wins": 195,
+   "losses": 204,
+   "ties": 1,
+   "win_rate": 0.4875,
    "wilson95": [
-    0.4578014579715731,
-    0.5832087953638921
+    0.4388685044319033,
+    0.5363693029265648
    ],
    "vs_0.50": "NOT DETECTED",
    "by_half": {
     "ours_challenge": {
-     "wins": 66,
-     "n": 120,
-     "rate": 0.55
+     "wins": 103,
+     "n": 200,
+     "rate": 0.515
     },
     "peer_challenge": {
-     "wins": 59,
-     "n": 120,
-     "rate": 0.49166666666666664
+     "wins": 92,
+     "n": 200,
+     "rate": 0.46
     }
    },
    "hit_forfeit_limit": 1,
@@ -46,10 +54,10 @@
    "their_argmax_max": 1.0,
    "median_turns": 33,
    "max_turns": 250,
-   "distinct_our_teams": 59,
+   "distinct_our_teams": 68,
    "regime_stamps": [
     {
-     "rows": 240,
+     "rows": 400,
      "battle_format": "gen3ou",
      "forfeit_turn_limit": 250,
      "mirrored_pairs": null,
@@ -243,7 +251,7 @@
    "stamp_identical": true
   },
   "X26_greedy_h72": {
-   "units": 12,
+   "units": 20,
    "seeds": [
     0,
     1,
@@ -256,42 +264,51 @@
     8,
     9,
     10,
-    11
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
    ],
    "reads": [
+    "k2_x26_kakuna_both_teamsets_2026-10-17",
     "x26_metamon_anchor_2026-10-17"
    ],
-   "n": 240,
-   "wins": 144,
-   "losses": 94,
+   "n": 400,
+   "wins": 230,
+   "losses": 168,
    "ties": 2,
-   "win_rate": 0.6,
+   "win_rate": 0.575,
    "wilson95": [
-    0.5369150750231609,
-    0.6599341409870717
+    0.5260675370788677,
+    0.6225056187703244
    ],
    "vs_0.50": "BETTER",
    "by_half": {
     "ours_challenge": {
-     "wins": 67,
-     "n": 120,
-     "rate": 0.5583333333333333
+     "wins": 107,
+     "n": 200,
+     "rate": 0.535
     },
     "peer_challenge": {
-     "wins": 77,
-     "n": 120,
-     "rate": 0.6416666666666667
+     "wins": 123,
+     "n": 200,
+     "rate": 0.615
     }
    },
-   "hit_forfeit_limit": 0,
+   "hit_forfeit_limit": 1,
    "their_argmax_min": 1.0,
    "their_argmax_max": 1.0,
    "median_turns": 30,
-   "max_turns": 204,
-   "distinct_our_teams": 59,
+   "max_turns": 250,
+   "distinct_our_teams": 68,
    "regime_stamps": [
     {
-     "rows": 240,
+     "rows": 400,
      "battle_format": "gen3ou",
      "forfeit_turn_limit": 250,
      "mirrored_pairs": false,
@@ -321,19 +338,19 @@
  "x26_minus_k2": {
   "home72": {
    "x26": [
-    144,
-    240
+    230,
+    400
    ],
    "k2": [
-    125,
-    240
+    195,
+    400
    ],
    "x26_minus_k2": [
-    0.07916666666666661,
-    -0.009548642174925612,
-    0.16614435672267275
+    0.08749999999999997,
+    0.0183436937361722,
+    0.15548386702697342
    ],
-   "verdict": "NOT DETECTED"
+   "verdict": "X26 BETTER"
   },
   "away": {
    "x26": [

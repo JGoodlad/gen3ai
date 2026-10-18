@@ -26673,3 +26673,46 @@ and the regime are identical.
 Tag: **MEASUREMENT · PROVISIONAL (X26 one checkpoint of a live run; two harnesses) · X26 − K2 away DETECTED · home72
 NOT DETECTED · K2 vs Kakuna away WORSE** · evidence: `research_state/measurements/k2_x26_kakuna_both_teamsets_2026-10-17/`
 (README, `cells.json`, `rows.jsonl`, `paired.json`, `scripts/`); `designs/ops/EXTERNAL_ANCHORS_SOP.md` §1 goal row, §4 "X26".
+
+### 2026-10-17 · MEASUREMENT · **K2 vs KAKUNA — home72 n = 400 follow-up: X26 − K2 on our teams is DETECTED, +0.087 [+0.018, +0.155]. K2 reads 0.487 [0.439, 0.536] and X26 @161,000,169 reads 0.575 [0.526, 0.623]; the goal bar still holds. The gain over N0 against Kakuna belongs to the K2 → X26 step (K2 − N0 +0.027, NOT DETECTED)**
+
+**Why.** In the entry above, home72 did not resolve at n = 240 (+0.079 [−0.010, +0.166], with the paired lower bound
+at zero, inside rule 8's rounding band). The coordinator approved topping BOTH home72 cells up to n = 400 on paired
+seeds 12–19.
+
+**Protocol.** Unchanged from the entry above: the same pinned checkouts (K2 at `a5b2fdba` on torch 2.5.1, X26 at
+`63f97a57` on torch 2.8), the same model files (sha256 re-checked before every unit), the same home72 config
+(`e8a064db…`), and one rule-5b lane. All 16 units passed on their first try (status OK, n = 20, regime verified, no
+asymmetry, `peer_clean`), at 23:14–23:49 PT. The X26 home72 cell pools the X26 read's seeds 0–11 with these seeds
+12–19, and all 400 rows carry ONE identical regime stamp. Both sides' team draws are identical in every twin (40/40
+units, both team sets).
+
+| model | team set | n | win rate [Wilson 95%] | vs 0.50 |
+|---|---|---:|---|---|
+| K2 | home72 | 400 | 0.487 [0.439, 0.536] | NOT DETECTED |
+| X26 | home72 | 400 | 0.575 [0.526, 0.623] | BETTER |
+| K2 | away | 400 | 0.355 [0.310, 0.403] | WORSE |
+| X26 | away | 400 | 0.497 [0.449, 0.546] | NOT DETECTED |
+
+**X26 − K2 (Newcombe).**
+
+- home72: **+0.087 [+0.018, +0.155], X26 BETTER**.
+- away: **+0.143 [+0.074, +0.209], X26 BETTER** (unchanged).
+- The paired test agrees on both: home72 +0.087 [+0.024, +0.151] (seed bootstrap [+0.035, +0.140]); away +0.142
+  [+0.080, +0.205].
+
+**Context.**
+
+- X26 − N0 on home72 at n = 400: +0.115 [+0.030, +0.198].
+- K2 − N0: +0.027 [−0.057, +0.111], NOT DETECTED.
+- X26's new home72 seeds read 0.538 against 0.600 for the first 240 (−0.062 [−0.160, +0.036], NOT DETECTED).
+  X26's home72 headline is now 0.575, and the goal bar (lower bound > 0.50) still holds.
+
+**What it means.** X26 is a detected step over the v14 plateau against Metamon's best on BOTH team sets. The
+improvement over N0 on our teams came with the end-state lineage, not with K2's continuation of N0. The same caveats
+apply as in the entry above: X26 is PROVISIONAL (one checkpoint of a live run, one seed), and the model difference
+crosses two harnesses.
+
+Tag: **MEASUREMENT · PROVISIONAL · X26 − K2 home72 DETECTED (n = 400) · X26 vs Kakuna home72 0.575, goal bar holds** ·
+evidence: `research_state/measurements/k2_x26_kakuna_both_teamsets_2026-10-17/` (README, `cells.json`, `rows.jsonl`,
+`paired.json`, `scripts/`); `designs/ops/EXTERNAL_ANCHORS_SOP.md` §1 goal row, §4 "X26".

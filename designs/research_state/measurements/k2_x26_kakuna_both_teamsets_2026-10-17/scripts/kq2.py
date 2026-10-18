@@ -46,10 +46,13 @@ GAMES = 20
 
 # cell -> (tree, python, model, teamset, config or None, seeds)
 CELLS = {
-    "K2_greedy_h72": (PIN_K2, PY_STABLE, K2, "home", HOME72, list(range(0, 12))),   # = X26's seeds 0-11
+    "K2_greedy_h72": (PIN_K2, PY_STABLE, K2, "home", HOME72, list(range(0, 20))),   # 0-11 = X26's banked seeds
     "K2_greedy_away": (PIN_K2, PY_STABLE, K2, "away", None, list(range(0, 20))),
     # X26 away already holds seeds 0-4 (K_greedy_away_00..04); the top-up takes 5-19, disjoint.
     "X26_greedy_away": (PIN_X26, PY_T28, X26, "away", None, list(range(5, 20))),
+    # FOLLOW-UP (coordinator-approved, 2026-10-17 23:15): both home72 cells to n = 400 on paired
+    # seeds 12-19. X26 home72 already holds seeds 0-11 (K_greedy_h72_00..11 of the X26 read).
+    "X26_greedy_h72": (PIN_X26, PY_T28, X26, "home", HOME72, list(range(12, 20))),
 }
 
 

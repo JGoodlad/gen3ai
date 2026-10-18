@@ -2,7 +2,7 @@
 
 Every K2 game has an X26 twin with the same unit seed, half and index, and both sides' team
 draws are identical in each twin (checked here for our side; the peer's team_draws were compared
-per unit when the read was written, 32/32 units equal). The paired difference is the mean of
+per unit when the read was written, 40/40 units equal after the home72 follow-up). The paired difference is the mean of
 (X26 won) - (K2 won) over the twins (a tie is not a win, as in the Wilson cells), with a normal
 interval and a seed-cluster bootstrap (20,000 resamples, Random(0)). DESCRIPTOR only.
 

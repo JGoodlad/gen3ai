@@ -689,17 +689,18 @@ erroring; Metamon's transformers need `VanillaAttention` on CPU; its client hard
 **The near-term goal — beat Metamon's BEST (`Kakuna`) on OUR teams — is MET, PROVISIONALLY (2026-10-17,
 `x26_metamon_anchor_2026-10-17/`):** [MEASURED · one checkpoint of a live run] X26 `rb_x26_s2601` @161,000,169,
 greedy, on the home72 teams: **0.600 [0.537, 0.660] vs Kakuna greedy and 0.600 [0.537, 0.660] vs Kakuna at T = 1.0**
-(n = 240 each), both lower bounds above 0.50; N0 read 0.460 / 0.380 on the same cells (X26 − N0 **+0.140
+(n = 240 each; the greedy cell reads 0.575 [0.526, 0.623] at n = 400, below), both lower bounds above 0.50; N0 read 0.460 / 0.380 on the same cells (X26 − N0 **+0.140
 [+0.046, +0.230]** / **+0.220 [+0.127, +0.308]**). It does NOT hold on Metamon's own teams (0.497 [0.449,
 0.546] at n = 400, NOT DETECTED; the first 100 games' 0.570 was a lucky draw), and against `SmallRL` X26 is level
 with the previous lineage's plateau K2 (away +0.020 [−0.058, +0.094], home +0.030 [−0.040, +0.093]).
-**Against Kakuna, X26 IS a step over K2 on Metamon's teams, and not resolved on ours (2026-10-17,
+**Against Kakuna, X26 IS a step over K2 on BOTH team sets (2026-10-17,
 `k2_x26_kakuna_both_teamsets_2026-10-17/`):** [MEASURED · PROVISIONAL · two harnesses] K2 (G0′, read through its own
-pin `a5b2fdba` on torch 2.5.1) loses to Kakuna away, 0.355 [0.310, 0.403] (n = 400, WORSE), and reads 0.521 [0.458,
-0.583] on home72 (n = 240). X26 − K2 = **+0.143 [+0.074, +0.209] away (DETECTED)** and +0.079 [−0.010, +0.166]
-home72 (NOT DETECTED). So the end-state lineage gained against Kakuna on teams neither model trained on. On our
-teams, N0 0.460 → K2 0.521 → X26 0.600: neither step is detected alone, so WHICH lineage banked the home72 gain is
-still UNKNOWN. [ledger 2026-10-17 · *K2 vs KAKUNA, BOTH TEAM SETS*] Kakuna's strongest temperature stays
+pin `a5b2fdba` on torch 2.5.1) loses to Kakuna away, 0.355 [0.310, 0.403] (n = 400, WORSE), and reads 0.487 [0.439,
+0.536] on home72 (n = 400). X26 − K2 = **+0.143 [+0.074, +0.209] away** and **+0.087 [+0.018, +0.155] home72**, both
+DETECTED. At n = 400, X26 itself reads 0.575 [0.526, 0.623] on home72 (0.600 at the first 240): the goal still
+holds. K2 − N0 on home72 is +0.027, NOT DETECTED. So the gain against Kakuna came from the end-state lineage, not
+from K2's continuation of N0. [ledger 2026-10-17 · *K2 vs KAKUNA, BOTH TEAM SETS* + its *home72 n = 400*
+follow-up] Kakuna's strongest temperature stays
 unresolved (greedy and T = 1.0 identical here). PROVISIONAL per the plateau rule: one checkpoint, one seed,
 161M of a 500M cap. [ledger 2026-10-17 · *X26 vs METAMON*]
 

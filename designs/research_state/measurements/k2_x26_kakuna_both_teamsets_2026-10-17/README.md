@@ -9,9 +9,10 @@ models on both team sets.
 - **On Metamon's own teams (away), X26 is detectably ahead of K2: +0.143 [+0.074, +0.209]** (Newcombe, n = 400
   each). K2 LOSES to Kakuna there: 0.355 [0.310, 0.403], WORSE than even. X26 is level with it: 0.497
   [0.449, 0.546], NOT DETECTED.
-- **On our teams (home72), the X26 − K2 gap is NOT DETECTED: +0.079 [−0.010, +0.166]** (n = 240 each). K2 reads
-  0.521 [0.458, 0.583] (NOT DETECTED vs 0.50). X26 stays at 0.600 [0.537, 0.660] (BETTER). So X26 meets the goal
-  bar there and K2 does not, but the difference between them is not resolved at n = 240.
+- **On our teams (home72), X26 is also detectably ahead of K2: +0.087 [+0.018, +0.155]** (n = 400 each, after
+  the follow-up top-up on paired seeds 12–19). K2 reads 0.487 [0.439, 0.536] (NOT DETECTED vs 0.50). X26 reads
+  **0.575 [0.526, 0.623]** (BETTER), down from 0.600 at n = 240. So X26 still meets the goal bar on our teams and K2
+  does not. At n = 240 the gap was +0.079 [−0.010, +0.166], NOT DETECTED.
 - **The X26 away number came DOWN with more games:** 0.570 at n = 100 → **0.497 at n = 400**. The top-up's 300 new
   games read 0.473. Against the first 100 that is −0.097 [−0.205, +0.016], NOT DETECTED: the first 100 were the
   luckier draw, not a different regime. **X26 does not beat Kakuna on Metamon's teams.**
@@ -22,30 +23,35 @@ models on both team sets.
 
 | model | team set | n | W–L–T | win rate [Wilson 95%] | vs 0.50 | source |
 |---|---|---:|---|---|---|---|
-| K2 `ai_v14_07_g0p_k2` @91,127,808 | home72 | 240 | 125–115–0 | 0.521 [0.458, 0.583] | NOT DETECTED | this read, seeds 0–11 |
-| X26 `rb_x26_s2601` @161,000,169 | home72 | 240 | 144–94–2 | **0.600 [0.537, 0.660]** | **BETTER** | `x26_metamon_anchor_2026-10-17` `K_greedy_h72`, seeds 0–11 (unchanged) |
+| K2 `ai_v14_07_g0p_k2` @91,127,808 | home72 | 400 | 195–204–1 | 0.487 [0.439, 0.536] | NOT DETECTED | this read, seeds 0–19 (12–19 the follow-up) |
+| X26 `rb_x26_s2601` @161,000,169 | home72 | 400 | 230–168–2 | **0.575 [0.526, 0.623]** | **BETTER** | seeds 0–11 from `x26_metamon_anchor_2026-10-17` `K_greedy_h72` + seeds 12–19 here (stamps identical) |
 | K2 | away | 400 | 142–257–1 | **0.355 [0.310, 0.403]** | **WORSE** | this read, seeds 0–19 |
 | X26 | away | 400 | 199–201–0 | 0.497 [0.449, 0.546] | NOT DETECTED | seeds 0–4 from the X26 read + seeds 5–19 here (stamps identical, below) |
 
 | team set | X26 − K2, Newcombe 95% (headline) | verdict | paired descriptor (same teams, same seed, `paired.json`) |
 |---|---|---|---|
-| home72 | **+0.079 [−0.010, +0.166]** | NOT DETECTED | +0.079; normal [+0.002, +0.157], seed bootstrap [+0.000, +0.158]; 55 / 36 discordant |
+| home72 | **+0.087 [+0.018, +0.155]** | **X26 BETTER** | +0.087; normal [+0.024, +0.151], seed bootstrap [+0.035, +0.140]; 102 / 67 discordant |
 | away | **+0.143 [+0.074, +0.209]** | **X26 BETTER** | +0.142; normal [+0.080, +0.205], seed bootstrap [+0.075, +0.210]; 114 / 57 discordant |
 
 The paired descriptor uses the design's pairing. Every K2 game has an X26 twin with the same unit seed, half and
 index, and BOTH sides' team draws are identical in every twin (32 / 32 units, checked for our side and the peer's
-`team_draws`). On home72 its lower bound sits AT zero, inside a rounding error of the decision boundary. Under
-root rule 8 it decides nothing, and the headline stays the Newcombe NOT DETECTED.
+`team_draws`; 40 / 40 units after the follow-up). It agrees with the Newcombe headline on both team sets. At
+n = 240 the home72 paired lower bound sat at zero (+0.000 / +0.002), within rounding of the decision boundary. Under
+root rule 8 it decided nothing then; that is why the follow-up was run.
 
-Per role (our challenge / theirs): K2 home72 0.550 / 0.492; K2 away 0.330 / 0.380; X26 away 0.500 / 0.495. The
-250-turn forfeit fired 1 (K2 home72), 0 (K2 away) and 4 (X26 away) times. Median length was 33 / 36 / 37 turns.
+Per role (our challenge / theirs): K2 home72 0.515 / 0.460; X26 home72 0.535 / 0.615; K2 away 0.330 / 0.380; X26
+away 0.500 / 0.495. The 250-turn forfeit fired 1 (K2 home72), 1 (X26 home72), 0 (K2 away) and 4 (X26 away) times.
+Median length was 33 / 30 / 36 / 37 turns.
 Kakuna's argmax rate was 1.0000 in every unit.
 
-**Context (Newcombe, same cell):** K2 − N0 on home72 = 0.521 − 0.460 = +0.061 [−0.033, +0.153], NOT DETECTED. The
-N0 number is from `kakuna_goal_read_2026-09-28`, on the same pre-era harness as K2 here. The ordering is
-N0 0.460 → K2 0.521 → X26 0.600. Neither step is detected alone; the whole N0 → X26 step is (+0.140
-[+0.046, +0.230]). So on our teams the data cannot yet say which lineage banked the gain. On Metamon's teams the
-X26-over-K2 step IS detected.
+**Context (Newcombe, same cell):**
+
+- K2 − N0 on home72 = 0.487 − 0.460 = +0.027 [−0.057, +0.111], NOT DETECTED. The N0 number is from
+  `kakuna_goal_read_2026-09-28`, on the same pre-era harness as K2 here.
+- X26 − N0 at n = 400 = **+0.115 [+0.030, +0.198]**.
+- So on our teams the gain over N0 against Kakuna belongs to the K2 → X26 step, not to K2's own lineage.
+- X26's home72 top-up (seeds 12–19) read 86/160 = 0.538 against 0.600 for the first 240: −0.062 [−0.160, +0.036],
+  NOT DETECTED.
 
 ## Regime stamp
 
@@ -65,8 +71,9 @@ forfeit, Showdown pin, server impl and version, our side and transport, mirrored
 top-up ran at `63f97a57` and not HEAD. The new seeds 5–19 are disjoint from the banked 0–4.
 
 **Counting rule.** A unit counts iff `status == OK`, `n == 20`, `regime_verified_decisions`, no
-`team_source_asymmetry` AND `peer_clean`. **All 47 units of this read passed on their first try**, and so did
-the 17 banked X26 units it pools. No unit was skipped, no unit was retried, and no H17 occurred.
+`team_source_asymmetry` AND `peer_clean`. **All 63 units of this read (47 + the follow-up's 16) passed on their
+first try**, and so did the 17 banked X26 units it pools. The X26 home72 cell (12 banked + 8 new units) also
+carries ONE identical regime stamp over its 400 rows. No unit was skipped, no unit was retried, and no H17 occurred.
 
 ## Comparability
 
@@ -86,17 +93,19 @@ mirrored-pairs path (unused) and comments.
 ## Cost
 
 One lane on rule 5b's cores (`nice -n 19 taskset -c 5-7,13-15`, `mem_cap.sh 12`), next to the live X26 trainer
-and the P0.1 E2 runner. Load1 had a mean of 5.1 and a max of 9.5. K2 took **5.3–5.5 s/game** and X26 took
-**8.2 s/game**: the end-state network on one torch thread is the slower side. The wall time was 21:30–23:08 PT
-(1 h 38 min) for 940 games. Peak memory per unit was 2.3 GB.
+and the P0.1 E2 runner. Load1 had a mean of 5.1 and a max of 9.5. K2 took **4.5–5.8 s/game** and X26 took
+**7.0–8.2 s/game**: the end-state network on one torch thread is the slower side. The wall time was
+21:30–23:08 PT (1 h 38 min, 940 games), plus the follow-up at 23:14–23:49 PT (35 min, 320 games). Peak memory per
+unit was 2.3 GB.
 
 ## FINDINGS
 
 1. **X26's away 0.570 (n = 100) was a lucky first draw.** At n = 400 it reads 0.497, so "X26 vs Kakuna away" is
    level, not leaning ahead. The SOP's X26 row is updated.
-2. **On home72, n = 240 does not resolve X26 − K2.** The headline is +0.079 [−0.010, +0.166], and the paired
-   descriptor's lower bound sits at 0.000 / +0.002. A top-up of BOTH home72 cells to n = 400 (seeds 12–19,
-   ~16 units ≈ 1 h on one lane) would sharpen it. It was not run: the brief fixed n = 240 for this cell.
+2. **At n = 240, home72 did not resolve X26 − K2** (+0.079 [−0.010, +0.166], with the paired lower bound at zero).
+   The coordinator then approved a top-up of BOTH home72 cells to n = 400 on paired seeds 12–19 (16 units, all
+   OK on the first try, 23:14–23:49 PT). It resolves: +0.087 [+0.018, +0.155]. X26's home72 headline moves from
+   0.600 (n = 240) to 0.575 [0.526, 0.623] (n = 400), and its lower bound still clears 0.50.
 3. **The harness is confounded with the model** (§ Comparability). The P3 transport equivalence is UNVERIFIED for a
    pre-era checkpoint.
 4. **K2's rows lack `our_transport` and write `mirrored_pairs = null`**, because the pin's tool predates both
@@ -109,7 +118,7 @@ and the P0.1 E2 runner. Load1 had a mean of 5.1 and a max of 9.5. K2 took **5.3�
 
 - `cells.json`: every cell pooled, with Wilson intervals, per-half splits, integrity counters, the distinct regime
   stamps with their row counts, the X26 − K2 Newcombe intervals and `skipped_units` (empty).
-- `rows.jsonl`: every game row of every counted unit (1,280: the tool's full row plus `read_cell`, `unit`,
+- `rows.jsonl`: every game row of every counted unit (1,600: the tool's full row plus `read_cell`, `unit`,
   `unit_seed`, `source_read`). It includes the X26 read's 240 home72 rows and its 100 away rows.
 - `paired.json`: the paired descriptor.
 - `scripts/kq2.py`: the detached, resumable, one-lane queue. `scripts/aggregate.py` pools the units, and

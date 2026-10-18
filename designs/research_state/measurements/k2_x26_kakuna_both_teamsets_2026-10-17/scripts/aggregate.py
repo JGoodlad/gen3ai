@@ -5,12 +5,13 @@ false AND peer_clean true (the brief's rule; stricter than the X26 read's, which
 dirty peers). Every other unit is listed under `skipped_units`, never counted.
 
 Cells:
-  K2_greedy_h72    K2 vs Kakuna greedy, home72, seeds 0-11 (this read)
+  K2_greedy_h72    K2 vs Kakuna greedy, home72, seeds 0-19 (this read; 12-19 the follow-up top-up)
   K2_greedy_away   K2 vs Kakuna greedy, away, seeds 0-19 (this read)
   X26_greedy_away  X26 vs Kakuna greedy, away: seeds 0-4 from x26_metamon_anchor_2026-10-17
                    (K_greedy_away_00..04) + seeds 5-19 from this read, pooled ONLY if every row's
                    regime stamp (STAMP below) is identical across the two reads.
-  X26_greedy_h72   the X26 read's K_greedy_h72 (seeds 0-11), unchanged, for the K2 comparison.
+  X26_greedy_h72   the X26 read's K_greedy_h72 (seeds 0-11) + seeds 12-19 from this read's follow-up,
+                   pooled ONLY if every row's regime stamp is identical.
 
 Differences X26 - K2 per team set are independent-sample Newcombe intervals
 (`main.anchors.results.newcombe`), as the SOP's history columns are.
