@@ -687,7 +687,7 @@ erroring; Metamon's transformers need `VanillaAttention` on CPU; its client hard
 `production` registry name resolves to a v9 checkpoint that does not load at HEAD. [ledger 2026-09-14 ·
 *MEASUREMENT · METAMON DE-RISKED*]
 
-**The near-term goal — beat Metamon's BEST (`Kakuna`) on OUR teams — is MET, PROVISIONALLY (2026-10-17,
+**The near-term goal — beat Metamon's BEST (`Kakuna`) on OUR teams — is MET, PROVISIONALLY, on our TRAINING teams only (held-out teams: LOST, below) (2026-10-17,
 `x26_metamon_anchor_2026-10-17/`):** [MEASURED · one checkpoint of a live run] X26 `rb_x26_s2601` @161,000,169,
 greedy, on the home72 teams: **0.600 [0.537, 0.660] vs Kakuna greedy and 0.600 [0.537, 0.660] vs Kakuna at T = 1.0**
 (n = 240 each; the greedy cell reads 0.575 [0.526, 0.623] at n = 400, below), both lower bounds above 0.50; N0 read 0.460 / 0.380 on the same cells (X26 − N0 **+0.140
@@ -713,6 +713,12 @@ So "X26 beats Kakuna on our teams, level on theirs" is two reads on training dat
 stays valid (same pool). Every read now reports its team set's overlap with our pool (`summary.json["team_overlap"]`).
 The held-out set is `heldout72`: 72 replay-derived `hl_05_26` teams with 0 exact matches and 0 sharing ≥ 4 mon sets
 with any pool or `competitive` team. [ledger 2026-10-18 · *THE AWAY SET IS NOT HELD OUT*]
+**On heldout72 BOTH models LOSE to Kakuna (2026-10-18):** [MEASURED · PROVISIONAL · n = 400 each, paired seeds] X26
+**0.395 [0.348, 0.444]**, K2 **0.357 [0.312, 0.406]**, both WORSE; X26 − K2 = +0.038 [−0.030, +0.104], NOT DETECTED
+(+0.087 / +0.143 on the two training-team sets). X26 drops −0.180 [−0.247, −0.111] from home72. So **the near-term goal
+is met only on our training teams**, and the K2 → X26 gain against Kakuna is at least partly a gain on the pool's own
+teams. Unseen-by-us and a different (replay-derived, Kakuna-kind) team population are confounded in this read.
+[ledger 2026-10-18 · *X26 / K2 vs KAKUNA ON HELD-OUT TEAMS*]
 
 **And a second anchor ABOVE us (2026-09-14, `foul_play_derisk_2026-09-14/`):** [MEASURED] Foul Play — MCTS with
 decoupled UCT over a hand-written evaluator on the Rust poke-engine, determinising the opponent's sets from Smogon

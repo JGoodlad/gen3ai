@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-26,875-line file. **The ledger itself is append-only and is never edited by this**;
+26,911-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**897 headings · 842 dated · 2026-08-01 → 2026-10-18 · ledger 26,875 lines.**
+**898 headings · 843 dated · 2026-08-01 → 2026-10-18 · ledger 26,911 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -917,3 +917,4 @@ rename.
   - `L26677` · `2026-10-17` · MEASUREMENT · **K2 vs KAKUNA — home72 n = 400 follow-up: X26 − K2 on our teams is DETECTED, +0.087 [+0.018, +0.155]. K2 reads 0.487 [0.439, 0.536] and X26 @161,000,169 reads 0.575 [0.526, 0.623]; the goal bar still holds. The gain over N0 against Kakuna belongs to the K2 → X26 step (K2 − N0 +0.027, NOT DETECTED)**
   - `L26720` · `2026-10-18` · MEASUREMENT (MAJOR) · **HIDDEN-INFO STUDY: E2, the COMPETENT-OPPONENT bank, READ under its pre-registration (`5881ee83`). On 1,200 FRESH states from games against the network's own snapshots, R3 reads U-FIRST by the registered pooled LEAF-K8 primary: reveal-only IMP(F+U) − IMP(F+M) +0.0169 [+0.0065, +0.0268] (MATERIAL), hide-only IMP(O−M) − IMP(O−U) +0.0114 [+0.0010, +0.0220]. Printed SCORER-DEPENDENT (tie-free LEAF-K8|RAND: SHARED, hide-only lower −0.0002) and SHARED on end2 and on prod alone. The red team's population attack splits: its reveal-only half does NOT replicate, its hide-only half does (n_M 0.58, B4 holds). GIGO audit clean. PROVISIONAL at 15M**
   - `L26827` · `2026-10-18` · CORRECTION + BUILD · **THE AWAY SET IS NOT HELD OUT: 19 of the 20 teams of `away` (Metamon's `competitive/gen3ou`), called "Metamon's own teams" / "a 20-team set we have never trained on" since 2026-09-14, are EXACT copies of teams in our 719-team training pool; `home72` is 72 pool teams. Every Kakuna and SmallRL read so far was on training data. `main.anchors` now reports every read's team-set overlap (`gen3_team_overlap_v1`, a required `summary.json` field), and `heldout72` (72 `hl_05_26` teams, 0 exact / 0 ≥ 4-shared with the pool or `competitive`) is built for the held-out read**
+  - `L26876` · `2026-10-18` · MEASUREMENT (MAJOR) · **X26 / K2 vs KAKUNA ON HELD-OUT TEAMS: on `heldout72` (0 / 72 teams in our pool) BOTH LOSE to `metamon:Kakuna` — X26 @161,000,169 0.395 [0.348, 0.444], K2 (G0′) 0.357 [0.312, 0.406], both WORSE (n = 400 each); X26 − K2 +0.038 [−0.030, +0.104] NOT DETECTED. X26 drops −0.180 [−0.247, −0.111] from home72. The near-term goal is met only on our TRAINING teams. PROVISIONAL**

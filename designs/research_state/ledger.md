@@ -26872,3 +26872,39 @@ Tag: **CORRECTION (framing; no number changes) · BUILD (`gen3_team_overlap_v1`,
 (`heldout72`)** · evidence: `research_state/measurements/heldout_teams_kakuna_2026-10-18/` (README, `heldout72_manifest.json`,
 `draw_log.jsonl`, `scripts/make_heldout72.py`); `ops/EXTERNAL_ANCHORS_SOP.md` §2 "The team sets" + "The team-set overlap";
 `research_state/UNDERSTANDING.md`
+
+### 2026-10-18 · MEASUREMENT (MAJOR) · **X26 / K2 vs KAKUNA ON HELD-OUT TEAMS: on `heldout72` (0 / 72 teams in our pool) BOTH LOSE to `metamon:Kakuna` — X26 @161,000,169 0.395 [0.348, 0.444], K2 (G0′) 0.357 [0.312, 0.406], both WORSE (n = 400 each); X26 − K2 +0.038 [−0.030, +0.104] NOT DETECTED. X26 drops −0.180 [−0.247, −0.111] from home72. The near-term goal is met only on our TRAINING teams. PROVISIONAL**
+
+**Setup.** Kakuna ckpt 34, greedy vs greedy, CPU, 20-game role-balanced units on paired seeds 0–19, the 10-17 reads'
+regime stamp except the team set: X26 at `63f97a57` through the core slot, K2 at its training pin `a5b2fdba` on
+`gen3ai_stable` (torch 2.5.1). Team set `heldout72` (the CORRECTION entry above; sha256-checked on both sides before
+every unit). All 40 units counted on their first try; Kakuna's argmax 1.0000 in every unit; our team and the peer's
+`team_draws` equal in every twin.
+
+| model | home72 (72 / 72 in pool) | away (19 / 20 in pool) | **heldout72 (0 / 72)** | heldout72 − home72 |
+|---|---|---|---|---|
+| X26 | 0.575 [0.526, 0.623] | 0.497 [0.449, 0.546] | **0.395 [0.348, 0.444] WORSE** | **−0.180 [−0.247, −0.111]** |
+| K2 | 0.487 [0.439, 0.536] | 0.355 [0.310, 0.403] | **0.357 [0.312, 0.406] WORSE** | **−0.130 [−0.197, −0.062]** |
+| X26 − K2 | +0.087 [+0.018, +0.155] | +0.143 [+0.074, +0.209] | **+0.038 [−0.030, +0.104] n.d.** | |
+
+Paired descriptor on heldout72: +0.037, normal [−0.024, +0.099], seed bootstrap [−0.020, +0.095]; 87 / 72 discordant.
+
+**Reading.**
+- "X26 beats Kakuna" is a statement about our training teams. On teams our models never saw, X26 loses to Kakuna by
+  ~10 pp, and its lead over K2 is not detected. The K2 → X26 gain against Kakuna is at least partly a gain on the
+  pool's own teams.
+- **Confounded:** heldout72 is unseen by us AND a different team population (high-ladder replays with usage-sampled
+  fills, Hidden Power Dark on 164 / 432 mons), possibly of the kind Kakuna's replay data covers (UNVERIFIED). This read
+  does not separate "unseen" from "Kakuna's kind of team". A held-out set from a third source would.
+- PROVISIONAL: one checkpoint of a live, unplateaued run (161M of 500M), one seed; K2 vs X26 crosses two harnesses
+  (the 10-17 read's § Comparability).
+
+**FINDINGS.** (1) The pinned trees predate `gen3_team_overlap_v1`, so these units' `summary.json` carry no overlap block;
+`aggregate.py` computed it into `cells.json`. (2) No hazard hit: T28 marker clear before every unit, the tool's server on
+9574, nothing under `models/` or `data/` written, no GPU.
+
+Tag: **MEASUREMENT (MAJOR) · held-out team set · X26 and K2 BOTH WORSE vs Kakuna · X26 − K2 NOT DETECTED · the goal holds
+only on training teams · CONFOUNDED (unseen vs population) · PROVISIONAL** · evidence:
+`research_state/measurements/heldout_teams_kakuna_2026-10-18/` (README § The read, `cells.json`, `rows.jsonl`,
+`paired.json`); `ops/EXTERNAL_ANCHORS_SOP.md` goal row + X26 section; `research_state/UNDERSTANDING.md`;
+`research_state/EXPERIMENT_BACKLOG.md` GOALS status

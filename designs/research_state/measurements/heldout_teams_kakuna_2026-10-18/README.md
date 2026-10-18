@@ -4,6 +4,11 @@
 "Metamon's teams", a set our models never trained on. It is not. Every Kakuna read so far ran on teams our training
 pool already holds, so none of them says how X26 plays a team it has not seen. `heldout72` is the set that can.
 
+**Answer (n = 400 each, Kakuna greedy, our side greedy).** On heldout72 **X26 reads 0.395 [0.348, 0.444] and K2 0.357
+[0.312, 0.406]: both LOSE to Kakuna** (WORSE). X26 − K2 = +0.038 [−0.030, +0.104], NOT DETECTED. X26 drops 18 pp from
+home72 (0.575) and 10 pp from away (0.497), both DETECTED. **The goal "beat Kakuna" is met only on teams we trained
+on.** The read cannot tell "unseen by us" from "a different, replay-derived team population" (§ The read). PROVISIONAL.
+
 ## The team sets, overlapped (`main.anchors.team_overlap`, `gen3_team_overlap_v1`)
 
 A mon set = normalised species + sorted moves, Hidden Power typed (a typeless one takes its IVs' type); the strict tier
@@ -93,7 +98,68 @@ to the original players' teams. 4 mons carry a typed Hidden Power (Bug 1, Fire 1
 - **So:** heldout72 is held out from US by construction (0 exact, 0 sharing ≥ 4 mon sets). From Kakuna it is held out as
   a SET, and its teams are of the kind (high-ladder, replay-derived, usage-filled) Kakuna's data is built from.
 
-## The read — X26 and K2 vs Kakuna on heldout72
+## The read — X26 and K2 vs Kakuna on heldout72 (2026-10-18 07:45–09:30 PT)
 
-RUNNING at the set's commit (the queue `scripts/hq.py`, 40 units: X26 and K2 on paired seeds 0–19, round-robin). The
-results land in this section in the read's own commit.
+**Answer.** On teams neither model trained on, **BOTH lose to Kakuna**, and X26 is not detectably ahead of K2:
+
+| model | n | W–L–T | win rate [Wilson 95%] | vs 0.50 |
+|---|---:|---|---|---|
+| X26 `rb_x26_s2601` @161,000,169 | 400 | 158–242–0 | **0.395 [0.348, 0.444]** | **WORSE** |
+| K2 `ai_v14_07_g0p_k2` @91,127,808 | 400 | 143–257–0 | **0.357 [0.312, 0.406]** | **WORSE** |
+
+| | Newcombe 95% (headline) | paired descriptor (`paired.json`) |
+|---|---|---|
+| X26 − K2 | **+0.038 [−0.030, +0.104] NOT DETECTED** | +0.037; normal [−0.024, +0.099], seed bootstrap [−0.020, +0.095]; 87 / 72 discordant |
+
+**Beside the 10-17 cells** (Newcombe, independent samples: the team sets differ, so nothing here is paired):
+
+| model | home72 (72 / 72 teams in our pool) | away (19 / 20 in our pool) | **heldout72 (0 / 72)** | heldout72 − home72 | heldout72 − away |
+|---|---|---|---|---|---|
+| X26 | 0.575 [0.526, 0.623] | 0.497 [0.449, 0.546] | **0.395 [0.348, 0.444]** | **−0.180 [−0.247, −0.111] LOWER** | **−0.102 [−0.170, −0.034] LOWER** |
+| K2 | 0.487 [0.439, 0.536] | 0.355 [0.310, 0.403] | **0.357 [0.312, 0.406]** | **−0.130 [−0.197, −0.062] LOWER** | +0.003 [−0.064, +0.069] NOT DETECTED |
+| X26 − K2 | +0.087 [+0.018, +0.155] | +0.143 [+0.074, +0.209] | +0.038 [−0.030, +0.104] | | |
+
+**Reading.**
+
+- **The goal "X26 beats Kakuna" holds only on teams we trained on.** On heldout72 X26 loses to Kakuna by about 10 pp, and
+  its interval excludes 0.50.
+- **X26's lead over K2 shrinks from +0.09 / +0.14 on training teams to +0.04, NOT DETECTED, on held-out teams.** The
+  K2 → X26 gain we measured is at least partly a gain on the pool's own teams.
+- **What this read cannot separate.** heldout72 differs from home72 in TWO ways at once: it is unseen by our models,
+  AND it is a different population (high-ladder, replay-derived teams with usage-sampled fills, and Hidden Power Dark on
+  164 of 432 mons, above) whose kind Kakuna's data may cover (the caveat above). The drop is "our models on unseen
+  teams of Kakuna's kind", not "unseen teams" alone. A read on a held-out set from a third source (neither our pool nor
+  Metamon's replays) would split the two; none exists on this box.
+- **PROVISIONAL.** X26 is one checkpoint of a live, unplateaued run (161M of a 500M cap), one seed.
+
+**Integrity.** All 40 units counted on their first try (`status OK`, `n == 20`, `regime_verified_decisions`, no
+`team_source_asymmetry`, `peer_clean`; no H17; `skipped_units` empty). Kakuna's argmax rate was 1.0000 in every unit. One
+regime stamp per cell over its 400 rows (`cells.json` `regime_stamps`). Every K2 game has an X26 twin with the same unit
+seed, half and index: our side's team is equal in all 400 twins, and the peer's `team_draws` are equal in 20 / 20 unit
+pairs (`paired.py` checks both). Per role (our challenge / theirs): X26 0.395 / 0.395, K2 0.350 / 0.365. The 250-turn
+forfeit fired 4 (X26) and 1 (K2) times. Median length was 40 / 41 turns (30–37 on home72 / away). Both sides drew 69 of
+the 72 teams.
+
+**Regime stamp.** Identical to the 10-17 read's, except the team set: Kakuna ckpt 34, Metamon `0a00a759`, CPU,
+`OMP_NUM_THREADS=1`, greedy / greedy, Showdown pin `e0551883f`, 250-turn forfeit, 20-game role-balanced units with
+`--team-seed = --seed-base = unit seed` (paired seeds 0–19). X26: `checkpoint_161000169_steps.zip` sha256
+`bc6050d1…2992` (re-hashed before every unit), commit `63f97a57` in a detached checkout, `gen3ai_torch28`, `bare`,
+`rust_core_slot`, `ws_frontend[in-process]@63f97a57`. K2: `final_model.zip` sha256 `cc5d5502…07c4`, copied read-only from
+`models/ai_v14_07_g0p_k2/`, its training pin `a5b2fdba` in a detached checkout, `gen3ai_stable` (torch 2.5.1), `bare`, the
+pin's websocket client (rows carry no `our_transport`), `ws_frontend@a5b2fdba` (port 9574). The 10-17 read's
+§ Comparability (two harnesses for K2 vs X26) applies unchanged. The pinned trees predate `gen3_team_overlap_v1`, so the
+units' `summary.json` carry no overlap block; `aggregate.py` computes it with the current module into `cells.json`
+(`team_overlap`).
+
+**Cost.** One lane on rule 5b's cores (`nice -n 19 taskset -c 5-7,13-15`, `mem_cap.sh 12`, peak 2.3 GB), beside the
+live X26 trainer and the maturity battery. X26 9.2 s/game, K2 6.5 s/game; load1 mean 7.2 (max 13.6); 800 games in
+1 h 45 min wall.
+
+## Files
+
+- `teams_heldout72/`, `heldout72_manifest.json`, `draw_log.jsonl`, `anchors_heldout72_kakuna.json`: the set.
+- `cells.json` (both cells, the 10-17 comparisons, the overlap block), `rows.jsonl` (800 game rows + `read_cell`, `unit`,
+  `unit_seed`, `source_read`), `paired.json`.
+- `scripts/make_heldout72.py` (the draw), `scripts/hq.py` (the detached one-lane queue), `scripts/aggregate.py`,
+  `scripts/paired.py`. Raw unit dirs, logs, `units.jsonl` and the read-only K2 copy live in
+  `/home/goodlad/dev/gen3ai-reads/heldout72_kakuna_2026-10-18/`.

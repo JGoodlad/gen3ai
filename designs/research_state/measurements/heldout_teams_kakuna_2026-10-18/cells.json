@@ -1,0 +1,322 @@
+{
+ "cells": {
+  "X26_greedy_hl72": {
+   "units": 20,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "reads": [
+    "heldout_teams_kakuna_2026-10-18"
+   ],
+   "n": 400,
+   "wins": 158,
+   "losses": 242,
+   "ties": 0,
+   "win_rate": 0.395,
+   "wilson95": [
+    0.3483102375319486,
+    0.4436873442791824
+   ],
+   "vs_0.50": "WORSE",
+   "by_half": {
+    "ours_challenge": {
+     "wins": 79,
+     "n": 200,
+     "rate": 0.395
+    },
+    "peer_challenge": {
+     "wins": 79,
+     "n": 200,
+     "rate": 0.395
+    }
+   },
+   "hit_forfeit_limit": 4,
+   "their_argmax_min": 1.0,
+   "their_argmax_max": 1.0,
+   "median_turns": 40,
+   "max_turns": 250,
+   "distinct_our_teams": 69,
+   "regime_stamps": [
+    {
+     "rows": 400,
+     "battle_format": "gen3ou",
+     "forfeit_turn_limit": 250,
+     "mirrored_pairs": false,
+     "model_loader": "bare",
+     "model_step": 161000169,
+     "model_zip": "/home/goodlad/dev/gen3ai-reads/x26_metamon_anchor_2026-10-17/model/checkpoint_161000169_steps.zip",
+     "opponent": "metamon:Kakuna",
+     "opponent_commit": "0a00a759",
+     "opponent_version": "Kakuna@ckpt34",
+     "our_regime": "greedy",
+     "our_side": "model",
+     "our_team_count": 72,
+     "our_team_source": "/home/goodlad/dev/gen3ai-reads/heldout72_kakuna_2026-10-18/teams_heldout72",
+     "our_transport": "rust_core_slot",
+     "regime_matched": true,
+     "server_impl": "rust",
+     "server_version": "ws_frontend[in-process]@63f97a57+rust:cargo:src/rust_sim",
+     "showdown_pin": "e0551883f",
+     "teamset": "home",
+     "their_regime": "greedy",
+     "their_team_count": 72
+    }
+   ],
+   "stamp_identical": true
+  },
+  "K2_greedy_hl72": {
+   "units": 20,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "reads": [
+    "heldout_teams_kakuna_2026-10-18"
+   ],
+   "n": 400,
+   "wins": 143,
+   "losses": 257,
+   "ties": 0,
+   "win_rate": 0.3575,
+   "wilson95": [
+    0.31209278235509297,
+    0.4056182215314419
+   ],
+   "vs_0.50": "WORSE",
+   "by_half": {
+    "ours_challenge": {
+     "wins": 70,
+     "n": 200,
+     "rate": 0.35
+    },
+    "peer_challenge": {
+     "wins": 73,
+     "n": 200,
+     "rate": 0.365
+    }
+   },
+   "hit_forfeit_limit": 1,
+   "their_argmax_min": 1.0,
+   "their_argmax_max": 1.0,
+   "median_turns": 41,
+   "max_turns": 250,
+   "distinct_our_teams": 69,
+   "regime_stamps": [
+    {
+     "rows": 400,
+     "battle_format": "gen3ou",
+     "forfeit_turn_limit": 250,
+     "mirrored_pairs": null,
+     "model_loader": "bare",
+     "model_step": 91127808,
+     "model_zip": "/home/goodlad/dev/gen3ai-reads/heldout72_kakuna_2026-10-18/model_k2/final_model.zip",
+     "opponent": "metamon:Kakuna",
+     "opponent_commit": "0a00a759",
+     "opponent_version": "Kakuna@ckpt34",
+     "our_regime": "greedy",
+     "our_side": "model",
+     "our_team_count": 72,
+     "our_team_source": "/home/goodlad/dev/gen3ai-reads/heldout72_kakuna_2026-10-18/teams_heldout72",
+     "our_transport": null,
+     "regime_matched": true,
+     "server_impl": "rust",
+     "server_version": "ws_frontend@a5b2fdba+rust:cargo:src/rust_sim",
+     "showdown_pin": "e0551883f",
+     "teamset": "home",
+     "their_regime": "greedy",
+     "their_team_count": 72
+    }
+   ],
+   "stamp_identical": true
+  }
+ },
+ "x26_minus_k2": {
+  "heldout72": {
+   "x26": [
+    158,
+    400
+   ],
+   "k2": [
+    143,
+    400
+   ],
+   "x26_minus_k2": [
+    0.03750000000000003,
+    -0.02954697728214134,
+    0.10407531755246527
+   ],
+   "verdict": "NOT DETECTED"
+  }
+ },
+ "vs_10_17_cells": {
+  "X26: heldout72 - home72": {
+   "heldout72": [
+    158,
+    400
+   ],
+   "home72": [
+    230,
+    400,
+    0.575,
+    [
+     0.5260675370788677,
+     0.6225056187703244
+    ]
+   ],
+   "diff": [
+    -0.17999999999999994,
+    -0.2466086911301705,
+    -0.11097215474543895
+   ],
+   "verdict": "LOWER"
+  },
+  "X26: heldout72 - away": {
+   "heldout72": [
+    158,
+    400
+   ],
+   "away": [
+    199,
+    400,
+    0.4975,
+    [
+     0.44875888866825975,
+     0.546288672803434
+    ]
+   ],
+   "diff": [
+    -0.10249999999999998,
+    -0.17002976020425065,
+    -0.033607667866353
+   ],
+   "verdict": "LOWER"
+  },
+  "K2: heldout72 - home72": {
+   "heldout72": [
+    143,
+    400
+   ],
+   "home72": [
+    195,
+    400,
+    0.4875,
+    [
+     0.4388685044319033,
+     0.5363693029265648
+    ]
+   ],
+   "diff": [
+    -0.13,
+    -0.19670850157798714,
+    -0.061586656239161
+   ],
+   "verdict": "LOWER"
+  },
+  "K2: heldout72 - away": {
+   "heldout72": [
+    143,
+    400
+   ],
+   "away": [
+    142,
+    400,
+    0.355,
+    [
+     0.30968902655519703,
+     0.4030695388030314
+    ]
+   ],
+   "diff": [
+    0.0025000000000000022,
+    -0.06362485141751247,
+    0.06859423240998082
+   ],
+   "verdict": "NOT DETECTED"
+  }
+ },
+ "team_overlap": {
+  "version": "gen3_team_overlap_v1",
+  "ours": {
+   "training_pool": {
+    "n_read_teams": 72,
+    "n_reference_teams": 719,
+    "exact_team": 0,
+    "exact_team_strict": 0,
+    "same_species6": 21,
+    "n_read_mons": 432,
+    "mons_seen": 104,
+    "mons_seen_strict": 27,
+    "max_shared_mons_hist": {
+     "0": 14,
+     "1": 42,
+     "2": 16,
+     "3": 0,
+     "4": 0,
+     "5": 0,
+     "6": 0
+    },
+    "teams_sharing_ge4": 0,
+    "exact_examples": []
+   },
+   "metamon:competitive": {
+    "n_read_teams": 72,
+    "n_reference_teams": 20,
+    "exact_team": 0,
+    "exact_team_strict": 0,
+    "same_species6": 9,
+    "n_read_mons": 432,
+    "mons_seen": 39,
+    "mons_seen_strict": 3,
+    "max_shared_mons_hist": {
+     "0": 42,
+     "1": 27,
+     "2": 3,
+     "3": 0,
+     "4": 0,
+     "5": 0,
+     "6": 0
+    },
+    "teams_sharing_ge4": 0,
+    "exact_examples": []
+   }
+  }
+ },
+ "skipped_units": []
+}

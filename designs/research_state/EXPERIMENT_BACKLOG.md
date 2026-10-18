@@ -25,7 +25,7 @@ boundary. Q (X4) is NOT built yet; instead **A and B ride along for free** (X4a:
 on-policy labels, BUILT 2026-09-30 as part of X26) to give the baseline a later Q must beat. **Next: search enablement**, on the main
 agent only if need be — gated on the leaf (X1's N0 leaf read, X3).
 
-**GOALS (owner, 2026-09-27; `design_ladder_campaign.md` §0a).** Near term: beat Metamon's BEST model (`Kakuna`) on OUR teams at Metamon's strongest sampling temperature (lower CI bound > 0.50). Long term: beat Foul Play on shared teams.
+**GOALS (owner, 2026-09-27; `design_ladder_campaign.md` §0a).** Near term: beat Metamon's BEST model (`Kakuna`) on OUR teams at Metamon's strongest sampling temperature (lower CI bound > 0.50). Long term: beat Foul Play on shared teams. 🚨 **Status 2026-10-18:** the near-term bar is met only on OUR TRAINING teams (X26 0.575 on home72, all 72 teams in the pool). On the held-out `heldout72` (0 / 72 in the pool) X26 LOSES to Kakuna, 0.395 [0.348, 0.444], and K2 0.357 (`measurements/heldout_teams_kakuna_2026-10-18/`). `away` is not held out either (19 / 20 teams in the pool).
 
 ---
 
