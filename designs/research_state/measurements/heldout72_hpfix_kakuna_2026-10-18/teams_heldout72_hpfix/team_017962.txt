@@ -1,0 +1,59 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 0 Atk / 0 Def / 60 SpA / 0 SpD / 196 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Baton Pass
+- Hidden Power [Ice]
+- Toxic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 0 SpA / 136 SpD / 0 Spe
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Focus Punch
+- Body Slam
+- Self-Destruct
+- Sleep Talk
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 0 Atk / 252 Def / 0 SpA / 0 SpD / 4 Spe
+Impish Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Will-O-Wisp
+- Thunderbolt
+- Explosion
+- Pain Split
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 144 Atk / 24 Def / 0 SpA / 0 SpD / 88 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 30 SpD / 31 Spe
+- Explosion
+- Earthquake
+- Hidden Power [Steel]
+- Agility
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 0 Atk / 216 Def / 0 SpA / 44 SpD / 0 Spe
+Relaxed Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Earthquake
+- Roar
+- Protect
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 0 HP / 156 Atk / 0 Def / 0 SpA / 140 SpD / 212 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Brick Break

@@ -1,0 +1,59 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 0 Def / 0 SpA / 8 SpD / 0 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Dragon Dance
+- Earthquake
+- Hidden Power [Bug]
+- Crunch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Brick Break
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 0 Atk / 0 Def / 252 SpA / 0 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hidden Power [Grass]
+- Dragon Claw
+- Substitute
+- Fire Blast
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 68 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 188 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Meteor Mash
+- Earthquake
+- Explosion
+- Agility
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 0 Atk / 0 Def / 252 SpA / 0 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Baton Pass
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 0 HP / 0 Atk / 0 Def / 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Punch
+- Thunderbolt
+- Focus Punch
+- Fire Punch

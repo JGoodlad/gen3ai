@@ -26982,3 +26982,52 @@ sample-core-heavy, heldout72 matches it · H-PILOT named · Q1–Q5 decided · P
 `endstate/design_diversity_teams_opponents.md` §5, §6.3, §8.7, §9; `research_state/measurements/ladder_weights_2026-10-18/`
 (README, `ladder_weights_v1.json`, `scripts/ladder_weights.py`); `ops/EXTERNAL_ANCHORS_SOP.md` § The evaluation MATRIX;
 `research_state/EXPERIMENT_BACKLOG.md` DV-1, DV-2, DV-5
+### 2026-10-18 · MEASUREMENT · BUILD · **HELD-OUT, HIDDEN POWER REPAIRED: `heldout72_hpfix` (heldout72 with the replay archive's HP Dark fill on 164 / 432 mons re-sampled from Smogon's species usage on each set's side) — X26 0.448 [0.400, 0.496] and K2 0.367 [0.322, 0.416], both still WORSE vs Kakuna (n = 400 each); the repair moves neither detectably (X26 +0.052, K2 +0.010); X26 − K2 +0.080 [+0.012, +0.147] DETECTED, its change from heldout72 NOT DETECTED. Repairing the artifact does not close the held-out gap; its own effect is neither detected nor excluded (H6 NOT killed). PROVISIONAL**
+
+**Build.** `agents.gen3_data.hp_repair` (`gen3_hp_repair_v1`), the owner's 2026-09-25 spec: only an untyped Hidden Power
+with all-31 / absent IVs is re-sampled; the set's side is the sign of three votes (EVs Atk vs SpA, nature, the other
+attacking moves by the gen-3 type rule), the real Atk vs SpA stat on a tie; the type is drawn from
+`priors.hidden_power` (Smogon chaos typed-HP usage, already in `data/`) restricted to that side; the IVs are the
+validator's `fillStats(HPivs, 31)` (power 70); one seed per team id, every draw recorded. Pinned at source in
+`deps/pokemon-showdown` (the gen-3 special types, `HPivs`, the variable-power attacks) and through the pinned validator
+for every type, with the speed-tie pin (HP Fire's 30 Speed: a Jolly 252 Salamence is 327, not 328).
+
+**The set.** The same 72 teams by id; only the HP move line and IVs line of the 164 HP Dark sets change (checked line
+by line against heldout72); 72 / 72 validator-valid; every HP set plays its written type at power 70. After: Grass 64,
+Bug 39, Flying 16, Ice 15, Fire 14, Ghost 6, Rock 6, Fighting 5, Electric / Ground / Steel 1, Dark 0. **71 of the 164
+(43 %) changed side** (special Dark → physical). Still held out (0 exact, 0 sharing ≥ 4 mon sets with the pool or
+`competitive`; mon sets seen in the pool 104 → 164 / 432, as the pool's HPs are real types).
+
+**The read.** heldout72's regime exactly (Kakuna ckpt 34, greedy vs greedy, CPU, paired seeds 0–19; X26 @161,000,169 at
+`63f97a57` through the core slot, K2 at its pin `a5b2fdba` on torch 2.5.1), only the team set changed. All 40 units OK
+on the first try; Kakuna argmax 1.0000 in every unit; one regime stamp per cell; every cross-set twin draws the same
+team ids on both sides.
+
+| model | heldout72 (HP Dark) | **heldout72_hpfix** | hpfix − heldout72 | hpfix − home72 |
+|---|---|---|---|---|
+| X26 | 0.395 [0.348, 0.444] | **0.448 [0.400, 0.496] WORSE** | +0.052 [−0.016, +0.120] n.d. (paired [−0.008, +0.113]) | **−0.127 [−0.195, −0.058]** |
+| K2 | 0.357 [0.312, 0.406] | **0.367 [0.322, 0.416] WORSE** | +0.010 [−0.056, +0.076] n.d. | **−0.120 [−0.187, −0.051]** |
+| X26 − K2 | +0.038 [−0.030, +0.104] n.d. | **+0.080 [+0.012, +0.147] X26 BETTER** | change +0.043, paired [−0.040, +0.125] n.d. | |
+
+**Reading.**
+- The HP Dark fill does not explain most of the held-out drop: X26 is still below even against Kakuna and 13 pp below
+  home72. Its own effect (+0.052, upper bound +0.120) is not excluded: `endstate/design_diversity_teams_opponents.md`
+  H6 (killed iff not detected AND upper bound < +5 pp) is NOT killed, and not supported.
+- X26's lead over K2 on held-out teams is now detected but small, and the change from heldout72 is not detected; read
+  it as "probably real, smaller than on training teams (+0.087 / +0.143)", not as something the repair revealed.
+- `heldout72_hpfix` is the held-out set of record (`ops/EXTERNAL_ANCHORS_SOP.md` §2). Still confounded: unseen by us AND a
+  replay-derived, usage-filled population; EVs and natures are still the predictor's fill.
+- PROVISIONAL: one checkpoint of a live, unplateaued run, one seed; K2 vs X26 crosses two harnesses.
+
+**FINDINGS.** (1) Every `hl_05_26` set carries an explicit all-31 `IVs:` line, so "a set with explicit IVs is left alone"
+is read as "any IV below 31" (all-31 is the default fill). (2) `utils.gen3_utils.GEN3_HP_IVS`'s Ghost row (30 Atk / 30 SpD)
+is not Showdown's (30 Def / 30 SpD): the teambuilder applies ours first, so 37 pool HP Ghost sets with no IV line play
+1 Atk low; a TECH_DEBT row, not fixed while X26 is live. (3) The server-side HP type was not observed in a battle stream
+(no protocol log kept); it rests on the validator check and both clients' identical packing. (4) No hazard hit: T28
+clear before every unit, the tool's server on 9576, nothing under `models/` or `data/` written, no GPU.
+
+Tag: **MEASUREMENT · BUILD (`gen3_hp_repair_v1`) · held-out set of record = `heldout72_hpfix` · X26 and K2 BOTH WORSE vs
+Kakuna · the HP repair NOT DETECTED for either · X26 − K2 DETECTED (+0.080) · PROVISIONAL** · evidence:
+`research_state/measurements/heldout72_hpfix_kakuna_2026-10-18/` (README, `heldout72_hpfix_manifest.json`, `cells.json`,
+`rows.jsonl`, `paired.json`); `src/agents/gen3_data/hp_repair.py`; `ops/EXTERNAL_ANCHORS_SOP.md` §2 and the goal row;
+`ops/TECH_DEBT_BACKLOG.md`; `research_state/UNDERSTANDING.md`; `endstate/design_diversity_teams_opponents.md` H6

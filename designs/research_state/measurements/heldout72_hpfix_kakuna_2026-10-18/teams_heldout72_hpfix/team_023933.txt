@@ -1,0 +1,59 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Dragon Claw
+- Brick Break
+- Rock Slide
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 224 Atk / 16 Def / 0 SpA / 0 SpD / 100 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 30 Spe
+- Hidden Power [Rock]
+- Earthquake
+- Rock Slide
+- Agility
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 0 Atk / 112 Def / 0 SpA / 136 SpD / 8 Spe
+Sassy Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rock Slide
+- Explosion
+- Earthquake
+- Rapid Spin
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 244 Atk / 116 Def / 0 SpA / 116 SpD / 16 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Shadow Ball
+- Curse
+- Body Slam
+- Self-Destruct
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 0 Atk / 0 Def / 252 SpA / 0 SpD / 252 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Beam
+- Hydro Pump
+- Surf
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 0 Atk / 0 Def / 252 SpA / 0 SpD / 252 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Beam
+- Surf
+- Thunder Wave
+- Recover

@@ -1,0 +1,55 @@
+{
+ "_README": [
+  "heldout72_hpfix_kakuna_2026-10-18: the heldout72 Kakuna config with `home` = heldout72_hpfix (heldout72 with Hidden Power repaired, gen3_hp_repair_v1) on every side: ours = the read's byte copy at /home/goodlad/dev/gen3ai-reads/heldout72hp_kakuna_2026-10-18/teams_heldout72_hpfix (sha256-checked against heldout72_hpfix_manifest.json before every unit), Metamon = its cache set gen3ai_heldout72_hpfix (the same bytes, also checked), Foul Play = ours. `away` unchanged."
+ ],
+ "showdown": {
+  "node": "node",
+  "port_range": [
+   9500,
+   9599
+  ]
+ },
+ "opponents": {
+  "metamon": {
+   "checkout": "/home/goodlad/dev/metamon",
+   "python": "/home/goodlad/miniconda3/envs/metamon/bin/python",
+   "cache_dir": "/home/goodlad/dev/metamon/cache",
+   "agents": {
+    "SmallRL": {
+     "checkpoint": 40,
+     "params": 13938567
+    },
+    "SyntheticRLV2": {
+     "checkpoint": 48,
+     "params": 200894911
+    },
+    "Kakuna": {
+     "checkpoint": 34,
+     "params": 142832563
+    }
+   },
+   "team_sets": {
+    "home": "gen3ai_heldout72_hpfix",
+    "away": "competitive"
+   }
+  },
+  "foulplay": {
+   "checkout": "/home/goodlad/dev/foul-play",
+   "python": "/home/goodlad/dev/foul-play/.conda/bin/python",
+   "team_dirs": {
+    "home": "/home/goodlad/dev/gen3ai-reads/heldout72hp_kakuna_2026-10-18/teams_heldout72_hpfix",
+    "away": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou"
+   }
+  }
+ },
+ "our_team_sources": {
+  "home": {
+   "kind": "dir",
+   "path": "/home/goodlad/dev/gen3ai-reads/heldout72hp_kakuna_2026-10-18/teams_heldout72_hpfix"
+  },
+  "away": {
+   "kind": "dir",
+   "path": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou"
+  }
+ }
+}

@@ -1,0 +1,59 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Fire Blast
+- Hidden Power [Bug]
+- Ice Beam
+- Double-Edge
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 0 Atk / 0 Def / 76 SpA / 0 SpD / 180 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Leech Seed
+- Baton Pass
+- Giga Drain
+- Recover
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 0 Atk / 216 Def / 0 SpA / 12 SpD / 32 Spe
+Impish Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 30 Spe
+- Substitute
+- Hidden Power [Rock]
+- Rock Slide
+- Earthquake
+
+Heracross @ Salac Berry
+Ability: Guts
+EVs: 4 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Megahorn
+- Rock Slide
+- Reversal
+- Swords Dance
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 0 Atk / 252 Def / 0 SpA / 4 SpD / 0 Spe
+Bold Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Beam
+- Surf
+- Toxic
+- Recover
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 80 HP / 0 Atk / 0 Def / 16 SpA / 236 SpD / 176 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Will-O-Wisp
+- Taunt
+- Explosion
+- Thunderbolt

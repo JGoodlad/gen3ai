@@ -1,0 +1,59 @@
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 0 HP / 252 Atk / 0 Def / 0 SpA / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+- Aerial Ace
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rock Slide
+- Earthquake
+- Dragon Claw
+- Brick Break
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 0 SpA / 136 SpD / 0 Spe
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Focus Punch
+- Shadow Ball
+- Earthquake
+- Self-Destruct
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 0 Atk / 0 Def / 180 SpA / 68 SpD / 8 Spe
+Calm Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Calm Mind
+- Rest
+- Sleep Talk
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 0 Atk / 40 Def / 80 SpA / 0 SpD / 136 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Punch
+- Calm Mind
+- Substitute
+- Fire Punch
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 140 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 116 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Explosion
+- Earthquake
+- Rapid Spin
+- Psychic

@@ -1,5 +1,8 @@
 # heldout72 — a held-out gen3ou team set, and X26 / K2 vs Kakuna on it — 2026-10-18
 
+> **Superseded as the read target (2026-10-18):** held-out reads use `heldout72_hpfix`, the same 72 teams with the
+> Hidden Power Dark fill below repaired (`../heldout72_hpfix_kakuna_2026-10-18/`). This record and its numbers stand.
+
 **Why (orchestrator FINDING, 2026-10-18 07:30).** The Kakuna reads called `away` (Metamon's `competitive/gen3ou`)
 "Metamon's teams", a set our models never trained on. It is not. Every Kakuna read so far ran on teams our training
 pool already holds, so none of them says how X26 plays a team it has not seen. `heldout72` is the set that can.

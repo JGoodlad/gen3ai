@@ -1,0 +1,59 @@
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 0 Atk / 0 Def / 0 SpA / 164 SpD / 176 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Will-O-Wisp
+- Taunt
+- Ice Punch
+- Thunderbolt
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 0 Atk / 0 Def / 0 SpA / 252 SpD / 8 Spe
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Spikes
+- Toxic
+- Protect
+- Roar
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 16 Atk / 56 Def / 0 SpA / 184 SpD / 0 Spe
+Sassy Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Punch
+- Protect
+- Body Slam
+- Calm Mind
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 0 Atk / 172 Def / 0 SpA / 32 SpD / 56 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rapid Spin
+- Ice Beam
+- Thunderbolt
+- Hydro Pump
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Focus Punch
+- Rock Slide
+- Substitute
+- Flamethrower
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Hidden Power [Fighting]
+- Earthquake
+- Double-Edge

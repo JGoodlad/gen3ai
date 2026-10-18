@@ -1,0 +1,59 @@
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 248 HP / 0 Atk / 204 Def / 0 SpA / 44 SpD / 12 Spe
+Bold Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Substitute
+- Hydro Pump
+- Endeavor
+- Roar
+
+Machamp @ Leftovers
+Ability: Guts
+EVs: 76 HP / 216 Atk / 0 Def / 0 SpA / 0 SpD / 216 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Rock Slide
+- Hidden Power [Ghost]
+- Sleep Talk
+- Cross Chop
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 0 HP / 4 Atk / 0 Def / 252 SpA / 0 SpD / 252 Spe
+Rash Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Rock Slide
+- Dragon Dance
+- Hidden Power [Grass]
+- Dragon Claw
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 0 Atk / 0 Def / 252 SpA / 0 SpD / 252 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 31 SpD / 31 Spe
+- Hidden Power [Ice]
+- Crunch
+- Thunderbolt
+- Calm Mind
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+Adamant Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+- Focus Punch
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def / 0 SpA / 0 SpD / 0 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Hidden Power [Rock]
+- Meteor Mash

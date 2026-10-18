@@ -1,0 +1,59 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 0 Atk / 0 Def / 0 SpA / 252 SpD / 4 Spe
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Spikes
+- Roar
+- Protect
+- Drill Peck
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 0 Atk / 0 Def / 76 SpA / 0 SpD / 180 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Leech Seed
+- Baton Pass
+- Calm Mind
+- Hidden Power [Fire]
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 0 HP / 0 Atk / 0 Def / 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Roar
+- Flamethrower
+- Hidden Power [Grass]
+- Will-O-Wisp
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 0 HP / 0 Atk / 252 Def / 252 SpA / 0 SpD / 4 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Seismic Toss
+- Calm Mind
+- Thunderbolt
+- Ice Beam
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 0 Atk / 224 Def / 0 SpA / 0 SpD / 32 Spe
+Impish Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Substitute
+- Rock Slide
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 0 Atk / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Ice Punch
+- Will-O-Wisp
+- Hidden Power [Grass]
+- Destiny Bond

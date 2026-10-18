@@ -1,0 +1,59 @@
+Medicham @ Lum Berry
+Ability: Pure Power
+EVs: 0 HP / 252 Atk / 0 Def / 0 SpA / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Shadow Ball
+- Brick Break
+- Bulk Up
+- Rock Slide
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 216 HP / 16 Atk / 0 Def / 0 SpA / 88 SpD / 188 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Thunder Wave
+- Dragon Dance
+- Earthquake
+- Hidden Power [Flying]
+
+Blastoise @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 0 Atk / 148 Def / 68 SpA / 0 SpD / 40 Spe
+Bold Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Roar
+- Surf
+- Rapid Spin
+- Refresh
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 128 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Meteor Mash
+- Rock Slide
+- Explosion
+- Earthquake
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 HP / 252 Atk / 0 Def / 4 SpA / 0 SpD / 0 Spe
+Brave Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Body Slam
+- Shadow Ball
+- Brick Break
+
+Tauros @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Return
+- Rock Tomb
+- Hidden Power [Ghost]
+- Earthquake

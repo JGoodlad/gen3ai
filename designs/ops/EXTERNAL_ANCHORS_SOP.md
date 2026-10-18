@@ -73,7 +73,7 @@ is an implementation fact about Metamon that could change in a release.
 | **A — per promotion** | every time a snapshot is promoted | the **dense ladder** (`<run>/snapshot_ladder/ladder.json`), greedy-vs-greedy, compared at **matched snapshot COUNT** | already paid by the run |
 | **B — per milestone** | each eval milestone | `metamon:SmallRL` **greedy, BOTH team sets, 100 games each** + **ONE t1 cell** as the distribution check | ~15 min |
 | **C — era gate** | opening or closing an era | `metamon:SyntheticRLV2` **greedy, away** — bar: **Wilson lower bound > 0.50**; and **Foul Play** at a fixed `--search-time-ms` with its realized visit count | ~2 h |
-| **goal read** | the near-term goal (X22) | `metamon:Kakuna` — Metamon's best public policy (142.8M, ckpt 34, upstream's stated gen3ou GXE ~63%). 🏁 **Standing (2026-10-17, `measurements/x26_metamon_anchor_2026-10-17/`): the goal is MET by X26 `rb_x26_s2601` @161,000,169 on home72 — **0.575 [0.526, 0.623] vs Kakuna greedy (n = 400, seeds 0–19; 0.600 at the first 240)** AND 0.600 [0.537, 0.660] vs Kakuna T = 1.0 (n = 240, paired seeds 0–11); away (Metamon's `competitive` set — 🚨 **19 of its 20 teams are EXACT copies of training-pool teams**, so it is NOT a set our models never saw; §2 "The team sets") **0.497 [0.449, 0.546] n = 400, NOT DETECTED** (the n = 100 read's 0.570 was a lucky first draw). K2 (G0′, `ai_v14_07_g0p_k2` @91,127,808, read 2026-10-17 through its own pin `a5b2fdba` on torch 2.5.1, `measurements/k2_x26_kakuna_both_teamsets_2026-10-17/`) reads 0.487 [0.439, 0.536] on home72 (n = 400) and **0.355 [0.310, 0.403] away (n = 400, WORSE)**; X26 − K2 = **+0.087 [+0.018, +0.155] home72** and **+0.143 [+0.074, +0.209] away**, X26 BETTER on both. 🚨 **Both of those sets are training data. On the HELD-OUT `heldout72` (2026-10-18, `measurements/heldout_teams_kakuna_2026-10-18/`, 0 / 72 teams in our pool) X26 LOSES to Kakuna: 0.395 [0.348, 0.444] (n = 400, WORSE); K2 0.357 [0.312, 0.406] (WORSE); X26 − K2 +0.038 [−0.030, +0.104] NOT DETECTED. The goal is met only on teams we trained on.** PROVISIONAL: one checkpoint of a live, unplateaued run (§4).** Previous (2026-09-28, `measurements/kakuna_goal_read_2026-09-28/`, home72, N0 final greedy): Kakuna's strongest temperature by point estimate is **T = 1.0** (N0 **0.380** [0.316, 0.449], n = 200 — goal NOT met); at greedy N0 **0.460** [0.392, 0.529]; the temperature differences are NOT DETECTED, so the goal read is taken at BOTH (`--opponent-temperature 1.0` and greedy). Our side stays GREEDY: N0 sampling at T = 1.0 (`--our-temperature 1.0`) reads 0.310 vs Kakuna T = 1.0 and 0.280 vs Kakuna greedy (X22 (f)) | **~2 min / 20 games** on CPU (6 s/game, load ~25) |
+| **goal read** | the near-term goal (X22) | `metamon:Kakuna` — Metamon's best public policy (142.8M, ckpt 34, upstream's stated gen3ou GXE ~63%). 🏁 **Standing (2026-10-17, `measurements/x26_metamon_anchor_2026-10-17/`): the goal is MET by X26 `rb_x26_s2601` @161,000,169 on home72 — **0.575 [0.526, 0.623] vs Kakuna greedy (n = 400, seeds 0–19; 0.600 at the first 240)** AND 0.600 [0.537, 0.660] vs Kakuna T = 1.0 (n = 240, paired seeds 0–11); away (Metamon's `competitive` set — 🚨 **19 of its 20 teams are EXACT copies of training-pool teams**, so it is NOT a set our models never saw; §2 "The team sets") **0.497 [0.449, 0.546] n = 400, NOT DETECTED** (the n = 100 read's 0.570 was a lucky first draw). K2 (G0′, `ai_v14_07_g0p_k2` @91,127,808, read 2026-10-17 through its own pin `a5b2fdba` on torch 2.5.1, `measurements/k2_x26_kakuna_both_teamsets_2026-10-17/`) reads 0.487 [0.439, 0.536] on home72 (n = 400) and **0.355 [0.310, 0.403] away (n = 400, WORSE)**; X26 − K2 = **+0.087 [+0.018, +0.155] home72** and **+0.143 [+0.074, +0.209] away**, X26 BETTER on both. 🚨 **Both of those sets are training data. On the HELD-OUT `heldout72` (2026-10-18, `measurements/heldout_teams_kakuna_2026-10-18/`, 0 / 72 teams in our pool) X26 LOSES to Kakuna: 0.395 [0.348, 0.444] (n = 400, WORSE); K2 0.357 [0.312, 0.406] (WORSE); X26 − K2 +0.038 [−0.030, +0.104] NOT DETECTED. On the set of record `heldout72_hpfix` (the same teams, Hidden Power repaired; `measurements/heldout72_hpfix_kakuna_2026-10-18/`): X26 **0.448 [0.400, 0.496]** WORSE, K2 0.367 [0.322, 0.416] WORSE, X26 − K2 **+0.080 [+0.012, +0.147]** BETTER. The goal is met only on teams we trained on.** PROVISIONAL: one checkpoint of a live, unplateaued run (§4).** Previous (2026-09-28, `measurements/kakuna_goal_read_2026-09-28/`, home72, N0 final greedy): Kakuna's strongest temperature by point estimate is **T = 1.0** (N0 **0.380** [0.316, 0.449], n = 200 — goal NOT met); at greedy N0 **0.460** [0.392, 0.529]; the temperature differences are NOT DETECTED, so the goal read is taken at BOTH (`--opponent-temperature 1.0` and greedy). Our side stays GREEDY: N0 sampling at T = 1.0 (`--our-temperature 1.0`) reads 0.310 vs Kakuna T = 1.0 and 0.280 vs Kakuna greedy (X22 (f)) | **~2 min / 20 games** on CPU (6 s/game, load ~25) |
 
 ### Tier A — per promotion: the dense ladder
 
@@ -106,7 +106,7 @@ python -m main.anchors --model models/<run> --opponent metamon:SmallRL \
 (−0.030 pooled, point estimate on the *away* side). 🚨 **Neither set is unseen by our models** (2026-10-18): `home`
 IS the training pool, and 19 of `away`'s 20 teams are exact copies of pool teams. The two sets differ in WHICH
 teams are drawn (20 Metamon-chosen sample teams vs 719), not in whether we trained on them. The held-out set is
-`heldout72` (§2 "The team sets"). `SmallRL` is the recurring anchor because it is cheap (3.0 s/game, ~5 min for 100) and at
+`heldout72_hpfix` (§2 "The team sets"). `SmallRL` is the recurring anchor because it is cheap (3.0 s/game, ~5 min for 100) and at
 0.520 home / 0.650 away it is a **live signal in both directions**, not a floor.
 
 ### Tier C — era gates: `SyntheticRLV2`, and Foul Play
@@ -354,13 +354,13 @@ login that never completes, a rejected team, a dropped socket).
 
 ### The team sets
 
-| | **home** | **away** | **heldout72** (a config, 2026-10-18) |
+| | **home** | **away** | **heldout72_hpfix** (a config, 2026-10-18; the held-out set of record) |
 |---|---|---|---|
-| what | our 719-team gen3ou pool, nickname-free, with explicit Hidden Power IVs (or `home72`: 72 of those pool teams, sanitised) | Metamon's 20-team `competitive` gen3ou set, each file `.strip()`ed | 72 teams drawn with a fixed seed from Metamon's replay-derived `hl_05_26/gen3ou`, rejecting any with an exact team match, or ≥ 4 of 6 mon sets shared with one team, in our pool or `competitive` |
+| what | our 719-team gen3ou pool, nickname-free, with explicit Hidden Power IVs (or `home72`: 72 of those pool teams, sanitised) | Metamon's 20-team `competitive` gen3ou set, each file `.strip()`ed | 72 teams drawn with a fixed seed from Metamon's replay-derived `hl_05_26/gen3ou`, rejecting any with an exact team match, or ≥ 4 of 6 mon sets shared with one team, in our pool or `competitive` (`heldout72`); then each untyped all-31 Hidden Power (= HP Dark, the replay artifact, 164 / 432 mons) re-sampled by `agents.gen3_data.hp_repair` (Smogon species usage on the set's side, the validator's IVs) |
 | why | it is our training distribution | the set Metamon's README names as its human-ladder evaluation set and says Metamon has overfit to (`metamon/README.md:865`) | the one set NEITHER side trained on as a set |
-| 🚨 **in OUR training pool** (`gen3_team_overlap_v1`) | all of it | **19 / 20 teams EXACT copies** (119 / 120 mon sets) | **0 / 72** exact, 0 sharing ≥ 4 mon sets, 104 / 432 mon sets |
+| 🚨 **in OUR training pool** (`gen3_team_overlap_v1`) | all of it | **19 / 20 teams EXACT copies** (119 / 120 mon sets) | **0 / 72** exact, 0 sharing ≥ 4 mon sets, 164 / 432 mon sets (heldout72: 104) |
 | in Metamon's `competitive` | home72: 8 / 72 exact | all of it | 0 / 72 exact |
-| how to run it | `--teamset home` | `--teamset away` | `--teamset home` with `$GEN3AI_ANCHORS_CONFIG` = `measurements/heldout_teams_kakuna_2026-10-18/anchors_heldout72_kakuna.json` |
+| how to run it | `--teamset home` | `--teamset away` | `--teamset home` with `$GEN3AI_ANCHORS_CONFIG` = `measurements/heldout72_hpfix_kakuna_2026-10-18/anchors_heldout72_hpfix_kakuna.json` (Metamon's cache set `gen3ai_heldout72_hpfix`) |
 
 🚨 **CORRECTED 2026-10-18: `away` is NOT a set our models never trained on.** It was described for a month as
 "Metamon's own teams", "their ground", "a 20-team set we have never trained on". 19 of its 20 teams are exact copies of
@@ -368,8 +368,12 @@ teams in our 719-team training pool (23 pool entries; the pool holds four duplic
 teams, and Metamon's README says it has overfit to them; it is not held out from US. Every `away` number in this
 SOP and the ledger stands as a measurement; only its description changes. X26 − K2 comparisons on it stay valid,
 because both models trained on the same pool. `home72` is 72 pool teams, so it is training data too, by design.
-The held-out read is `heldout72` (`measurements/heldout_teams_kakuna_2026-10-18/`). Kakuna's own exposure to those
-teams is in that README's caveat.
+The held-out read is `heldout72_hpfix` (`measurements/heldout72_hpfix_kakuna_2026-10-18/`). 🚨 **A held-out read uses the
+HP-REPAIRED set** (2026-10-18): `heldout72` (`measurements/heldout_teams_kakuna_2026-10-18/`) is the same 72 teams with
+the archive's Hidden Power Dark fill on 164 / 432 mons, a known-wrong move on 71 of them (the wrong side of the set); it
+stays as a record, not a read target. A NEW held-out set from replay-derived teams is repaired the same way
+(`hp_repair.repair_team`, a seed per team id, recorded) before any game. Kakuna's own exposure to those teams is in the
+heldout72 README's caveat.
 
 ### The evaluation MATRIX and THE external headline (ADOPTED 2026-10-18, the orchestrator; Q1 revised)
 
@@ -552,6 +556,7 @@ role-balanced units, every counted unit `status OK`, `regime_verified_decisions`
 | Kakuna greedy · away (19 / 20 teams in our pool) | 400 | 0.497 [0.449, 0.546] | NOT DETECTED | K2 (G0′): 0.355 → **+0.143 [+0.074, +0.209]** X26 BETTER (seeds 0–4 of the first read + 5–19 of `k2_x26_kakuna_both_teamsets_2026-10-17`, one identical regime stamp; the first 100 read 0.570) |
 | Kakuna greedy · home72, topped up | 400 | **0.575 [0.526, 0.623]** | **BETTER** | K2 (G0′): 0.487 [0.439, 0.536] → **+0.087 [+0.018, +0.155]** X26 BETTER; N0 → +0.115 [+0.030, +0.198] (seeds 0–11 of row 1 + 12–19 of `k2_x26_kakuna_both_teamsets_2026-10-17`, one identical regime stamp) |
 | **Kakuna greedy · heldout72 (0 / 72 teams in our pool; 2026-10-18)** | 400 | **0.395 [0.348, 0.444]** | **WORSE** | K2 (G0′): 0.357 [0.312, 0.406] WORSE → **+0.038 [−0.030, +0.104] NOT DETECTED**; X26 heldout72 − home72 **−0.180 [−0.247, −0.111]**, − away −0.102 [−0.170, −0.034] (`heldout_teams_kakuna_2026-10-18`, same regime stamp as the 10-17 cells except the team set) |
+| **Kakuna greedy · heldout72_hpfix (the held-out set of record; HP repaired; 2026-10-18)** | 400 | **0.448 [0.400, 0.496]** | **WORSE** | K2 (G0′): 0.367 [0.322, 0.416] WORSE → **+0.080 [+0.012, +0.147] X26 BETTER**; vs heldout72 (HP Dark): X26 +0.052 [−0.016, +0.120], K2 +0.010, both NOT DETECTED; X26 hpfix − home72 **−0.127 [−0.195, −0.058]** (`heldout72_hpfix_kakuna_2026-10-18`, same regime stamp) |
 | SmallRL greedy · away | 200 | 0.645 [0.577, 0.708] | BETTER | K2 (G0′): 0.625 → +0.020 [−0.058, +0.094] NOT DETECTED |
 | SmallRL greedy · home (pool) | 200 | 0.785 [0.723, 0.836] | BETTER | K2: 0.755 → +0.030 [−0.040, +0.093] NOT DETECTED |
 | SmallRL t1 · away | 100 | 0.730 [0.636, 0.807] | BETTER | `ai_v12_02`: 0.560 → +0.170 [+0.037, +0.295] |
@@ -572,7 +577,11 @@ replay-derived `hl_05_26` teams with 0 exact matches and 0 sharing ≥ 4 mon set
 reads **0.395 [0.348, 0.444]** and K2 **0.357 [0.312, 0.406]**, both WORSE than even, and X26 − K2 is +0.038 [−0.030,
 +0.104], NOT DETECTED. X26 loses 18 pp from home72. The set is both unseen by us and a different population (high-ladder
 replays, usage-sampled fills, Hidden Power Dark on 164 / 432 mons), possibly of the kind Kakuna's replay data covers;
-this read does not separate the two. **Quote the goal as "met on our training teams", never as "met".**
+this read does not separate the two. **With Hidden Power repaired (`heldout72_hpfix`, `measurements/heldout72_hpfix_kakuna_2026-10-18/`)**
+X26 reads **0.448 [0.400, 0.496]** and K2 **0.367 [0.322, 0.416]**, both still WORSE; the repair moves neither detectably
+(X26 +0.052, K2 +0.010), X26 stays −0.127 below home72, and X26 − K2 is **+0.080 [+0.012, +0.147]**, DETECTED (its change
+from heldout72's +0.038 is not). Repairing the HP Dark fill does not close the held-out gap (its own effect is neither
+detected nor excluded). **Quote the goal as "met on our training teams", never as "met".**
 PROVISIONAL (one checkpoint, one seed, a run 161M into a 500M cap). 🚨 **Run `main.anchors` from the
 checkout ROOT**: the pool (`home`) source resolves `data/teams` against the CWD and, from `src/`,
 finds 0 teams and dies as `our_side_error: IndexError` (the read's FINDING 1).

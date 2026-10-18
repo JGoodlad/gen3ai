@@ -1,0 +1,59 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 0 HP / 252 Atk / 0 Def / 0 SpA / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Focus Punch
+- Rock Slide
+- Earthquake
+- Brick Break
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 0 Atk / 0 Def / 0 SpA / 252 SpD / 4 Spe
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Spikes
+- Protect
+- Drill Peck
+- Toxic
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 0 Atk / 252 Def / 252 SpA / 0 SpD / 0 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Wish
+- Seismic Toss
+- Soft-Boiled
+- Ice Beam
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 140 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 0 Atk / 168 Def / 0 SpA / 88 SpD / 0 Spe
+Bold Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Roar
+- Earthquake
+- Toxic
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 0 HP / 0 Atk / 0 Def / 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Ice Punch
+- Fire Punch
+- Hidden Power [Grass]
+- Explosion

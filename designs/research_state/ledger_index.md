@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-26,985-line file. **The ledger itself is append-only and is never edited by this**;
+27,034-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**900 headings · 845 dated · 2026-08-01 → 2026-10-18 · ledger 26,985 lines.**
+**901 headings · 846 dated · 2026-08-01 → 2026-10-18 · ledger 27,034 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -920,3 +920,4 @@ rename.
   - `L26876` · `2026-10-18` · MEASUREMENT (MAJOR) · **X26 / K2 vs KAKUNA ON HELD-OUT TEAMS: on `heldout72` (0 / 72 teams in our pool) BOTH LOSE to `metamon:Kakuna` — X26 @161,000,169 0.395 [0.348, 0.444], K2 (G0′) 0.357 [0.312, 0.406], both WORSE (n = 400 each); X26 − K2 +0.038 [−0.030, +0.104] NOT DETECTED. X26 drops −0.180 [−0.247, −0.111] from home72. The near-term goal is met only on our TRAINING teams. PROVISIONAL**
   - `L26912` · `2026-10-18` · DESIGN + MEASUREMENT (descriptive) · **DIVERSITY OF TEAMS AND OPPONENTS: the held-out gap as eleven competing hypotheses with kill tests, the THIRD-SOURCE 2 × 2, frozen held-out panels with a refusing guard, and the WIDEN fork (D1) proposed at rank 2 in X35 after A1. D0a (zero games): heldout72 is NOT stall-heavy (4 / 72 stall vs 90 / 719 in the pool), only 9 / 72 teams carry an entity the pool never had, 160 of its 203 unseen species-move pairs are Hidden Power, and its games run longer (median 40–41 turns vs 30–37)**
   - `L26947` · `2026-10-18` · DESIGN + MEASUREMENT (descriptive) · **THE EVALUATION MATRIX: no team set is neutral, so every Kakuna number travels with its bias; THE external headline becomes L, a LADDER-WEIGHTED deployment estimate (we bring sample teams; the opponent's team weighted CORE 0.176 / NEAR 0.675 / FAR 0.149 by `ladder_weights_v1`); the ladder is sample-CORE-heavy (85 % of 22,862 `hl_05_26` teams share ≥ 4 species with one sample team) and heldout72's strata MATCH it (22 / 61 / 17 % vs 18 / 67 / 15 %); X26 pilots off-meta (FAR) held-out teams at 0.250 vs 0.425–0.430 on sample-like cores (descriptive)**
+  - `L26985` · `2026-10-18` · MEASUREMENT · BUILD · **HELD-OUT, HIDDEN POWER REPAIRED: `heldout72_hpfix` (heldout72 with the replay archive's HP Dark fill on 164 / 432 mons re-sampled from Smogon's species usage on each set's side) — X26 0.448 [0.400, 0.496] and K2 0.367 [0.322, 0.416], both still WORSE vs Kakuna (n = 400 each); the repair moves neither detectably (X26 +0.052, K2 +0.010); X26 − K2 +0.080 [+0.012, +0.147] DETECTED, its change from heldout72 NOT DETECTED. Repairing the artifact does not close the held-out gap; its own effect is neither detected nor excluded (H6 NOT killed). PROVISIONAL**

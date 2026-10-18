@@ -1,0 +1,131 @@
+{
+ "heldout72_hpfix X26-K2": {
+  "pairs": 400,
+  "seeds": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "a_minus_b": 0.08,
+  "a": "X26_greedy_hl72hp",
+  "b": "K2_greedy_hl72hp",
+  "normal95": [
+   0.016515276046606242,
+   0.14348472395339376
+  ],
+  "seed_bootstrap95": [
+   0.0075,
+   0.155
+  ],
+  "a_only_wins": 101,
+  "b_only_wins": 69,
+  "units_with_equal_peer_draws": 20
+ },
+ "X26 hpfix-hl72": {
+  "pairs": 400,
+  "seeds": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "a_minus_b": 0.0525,
+  "a": "X26_greedy_hl72hp",
+  "b": "X26_greedy_hl72",
+  "normal95": [
+   -0.007966515309584518,
+   0.11296651530958451
+  ],
+  "seed_bootstrap95": [
+   -0.01,
+   0.1125
+  ],
+  "a_only_wins": 87,
+  "b_only_wins": 66,
+  "units_with_equal_peer_draws": 20
+ },
+ "K2 hpfix-hl72": {
+  "pairs": 400,
+  "seeds": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "a_minus_b": 0.01,
+  "a": "K2_greedy_hl72hp",
+  "b": "K2_greedy_hl72",
+  "normal95": [
+   -0.045497924728072646,
+   0.06549792472807264
+  ],
+  "seed_bootstrap95": [
+   -0.035,
+   0.055
+  ],
+  "a_only_wins": 66,
+  "b_only_wins": 62,
+  "units_with_equal_peer_draws": 20
+ },
+ "change of X26-K2 (hpfix - hl72)": {
+  "quads": 400,
+  "mean": 0.0425,
+  "normal95": [
+   -0.04022006587428218,
+   0.1252200658742822
+  ],
+  "seed_bootstrap95": [
+   -0.045,
+   0.125
+  ]
+ }
+}

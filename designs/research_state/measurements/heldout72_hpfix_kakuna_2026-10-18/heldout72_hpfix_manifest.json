@@ -1,0 +1,6285 @@
+{
+ "derived_from": "heldout_teams_kakuna_2026-10-18/heldout72_manifest.json",
+ "matcher": "gen3_team_overlap_v1",
+ "n": 72,
+ "overlap_check": {
+  "competitive": {
+   "exact_examples": [],
+   "exact_team": 0,
+   "exact_team_strict": 0,
+   "max_shared_mons_hist": {
+    "0": 30,
+    "1": 38,
+    "2": 4,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "mons_seen": 61,
+   "mons_seen_strict": 4,
+   "n_read_mons": 432,
+   "n_read_teams": 72,
+   "n_reference_teams": 20,
+   "same_species6": 9,
+   "teams_sharing_ge4": 0
+  },
+  "training_pool": {
+   "exact_examples": [],
+   "exact_team": 0,
+   "exact_team_strict": 0,
+   "max_shared_mons_hist": {
+    "0": 3,
+    "1": 40,
+    "2": 28,
+    "3": 1,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "mons_seen": 164,
+   "mons_seen_strict": 45,
+   "n_read_mons": 432,
+   "n_read_teams": 72,
+   "n_reference_teams": 719,
+   "same_species6": 21,
+   "teams_sharing_ge4": 0
+  }
+ },
+ "repair": "gen3_hp_repair_v1",
+ "schema": "heldout72_hpfix_manifest_v1",
+ "seed": 20261018,
+ "seed_rule": "team_seed = int(sha256(f'{repair}|{seed}|{team_id}')[:8 bytes], big-endian)",
+ "source_dir": "/home/goodlad/gen3ai_archive/metamon_cache_2026-09-24/teams/hl_05_26/gen3ou",
+ "summary": {
+  "hp_sets": 168,
+  "hp_type_after": {
+   "Bug": 39,
+   "Electric": 1,
+   "Fighting": 5,
+   "Fire": 14,
+   "Flying": 16,
+   "Ghost": 6,
+   "Grass": 64,
+   "Ground": 1,
+   "Ice": 15,
+   "Rock": 6,
+   "Steel": 1
+  },
+  "hp_type_before": {
+   "Bug": 1,
+   "Dark": 164,
+   "Fire": 1,
+   "Flying": 2
+  },
+  "prior_source": {
+   "species": 164
+  },
+  "repaired": 164,
+  "repaired_side_changed": 71,
+  "side": {
+   "physical": 71,
+   "special": 93
+  },
+  "side_decided_by": {
+   "stat": 4,
+   "votes": 160
+  },
+  "validator": "validate_teams_locally gen3ou + utils.bridge.hp_set_check: 72 / 72 valid; every HP set power 70, IVs unchanged by the validator, played type == written type"
+ },
+ "teams": {
+  "team_000389": {
+   "heldout72_sha256": "207dff187f4d667fae20a8cccc47cdfb33292c547810bd4048f8b42761f0929c",
+   "repairs": [
+    {
+     "atk_stat": 319,
+     "decided_by": "votes",
+     "hp_type": "Flying",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 30,
+      "spa": 30,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.000614735,
+      "fighting": 0.003783812,
+      "flying": 0.654852166,
+      "ghost": 0.087977935,
+      "ground": 2.0229e-05,
+      "poison": 3.0669e-05,
+      "rock": 0.250418651,
+      "steel": 0.002301804
+     },
+     "side": "physical",
+     "slot": 1,
+     "spa_stat": 140,
+     "species": "gyarados",
+     "u": 0.5559868639070854,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 328,
+     "decided_by": "votes",
+     "hp_type": "Ghost",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.016787618,
+      "fighting": 0.042823043,
+      "flying": 0.009943165,
+      "ghost": 0.892530696,
+      "poison": 2.5545e-05,
+      "rock": 0.037752745,
+      "steel": 0.000137188
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 104,
+     "species": "tauros",
+     "u": 0.3561123469512407,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "ca831a8bf13d55949a49cb4dd14c2c62d7462aad95340c70b1afa82a1b819c31",
+   "source_file": "team_000389.gen3ou_team",
+   "source_sha256": "ea21d553540c1bdc81f30b90ca2520a733d9f8494ee4c6dc7c688d376a295c6f",
+   "team_seed": 8250535987058484940
+  },
+  "team_000877": {
+   "heldout72_sha256": "3cb01f9daeecf99ca2eb34c1d1a00c256e238dff20814f46045f60c4a984048f",
+   "repairs": [
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000282668,
+      "dragon": 6.6799e-05,
+      "electric": 0.002800483,
+      "fire": 1.9391e-05,
+      "grass": 0.974303768,
+      "ice": 0.018226706,
+      "water": 0.004300185
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 349,
+     "species": "moltres",
+     "u": 0.9049015136720552,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "b852e74cf3470de7ee676c20cb1fd95f6db289f1a0dfe4611558b300cf4075f5",
+   "source_file": "team_000877.gen3ou_team",
+   "source_sha256": "dce8c945e3fc3c0bd0b2ecaa8e2149c3c49dc17ba5c247b62d5413ad6bb60d23",
+   "team_seed": 2470332281804478157
+  },
+  "team_001427": {
+   "heldout72_sha256": "90d5892d354a67c24c5ab7836019fffb258a574c7879cb8baf9a0532bed366a0",
+   "repairs": [
+    {
+     "atk_stat": 194,
+     "decided_by": "votes",
+     "hp_type": "Ice",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 6.8031e-05,
+      "dragon": 7.482e-05,
+      "electric": 1.6918e-05,
+      "fire": 0.002971862,
+      "grass": 0.628600487,
+      "ice": 0.36764155,
+      "psychic": 2.026e-06,
+      "water": 0.000624306
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 286,
+     "species": "zapdos",
+     "u": 0.8495341336064857,
+     "votes": {
+      "evs": 0,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "bb2e16d5295636ac9fe8d224d95521a87205bc903a88024673d44d37c8cf0435",
+   "source_file": "team_001427.gen3ou_team",
+   "source_sha256": "6c4a8cc78bfc57e823d7bf9defcfa49153d4e39204a04ce3101b347c548defc5",
+   "team_seed": 17926827254788990471
+  },
+  "team_001438": {
+   "heldout72_sha256": "29e572125136db1a2ab24137b6ab43eede16d3940ae48d855c7011c1e87ab642",
+   "repairs": [],
+   "sha256": "29e572125136db1a2ab24137b6ab43eede16d3940ae48d855c7011c1e87ab642",
+   "source_file": "team_001438.gen3ou_team",
+   "source_sha256": "461b57d720c0a238554816888d0991b965279859718e7762eb3744b3424b4327",
+   "team_seed": 4632250479411727564
+  },
+  "team_001563": {
+   "heldout72_sha256": "662bc3ae7564bb8368567b6920a065321ec812a49d88f069af482df4953ed9fc",
+   "repairs": [
+    {
+     "atk_stat": 259,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.986024625,
+      "fighting": 0.003360612,
+      "flying": 0.006739517,
+      "ghost": 0.003424108,
+      "ground": 4.629e-06,
+      "poison": 2.8603e-05,
+      "rock": 0.000399042,
+      "steel": 1.8864e-05
+     },
+     "side": "physical",
+     "slot": 0,
+     "spa_stat": 122,
+     "species": "dugtrio",
+     "u": 0.1732235777431982,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "9feed6946ebf810458fdebf430303afdb339e1fa3c14ed643d8d994f92ac3099",
+   "source_file": "team_001563.gen3ou_team",
+   "source_sha256": "190801613ffbbe50cc4c60d4a99014aa76f455491b3bbfc680ddd82e7b6731cb",
+   "team_seed": 3738646072581047160
+  },
+  "team_002014": {
+   "heldout72_sha256": "4e1a2eb0e7f4446d96aa19f8273f8656ed19d0667ea6db3586473c6ad8fdbae8",
+   "repairs": [
+    {
+     "atk_stat": 273,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000501103,
+      "dragon": 5.2576e-05,
+      "electric": 7.6307e-05,
+      "fire": 7.0124e-05,
+      "grass": 0.998773872,
+      "ice": 0.000468192,
+      "psychic": 5.4609e-05,
+      "water": 3.217e-06
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 311,
+     "species": "tyranitar",
+     "u": 0.19404174991627376,
+     "votes": {
+      "evs": -1,
+      "moves": 1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 183,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000185261,
+      "dragon": 5.4461e-05,
+      "electric": 0.008041041,
+      "fire": 1.2956e-05,
+      "grass": 0.860465691,
+      "ice": 0.130831752,
+      "psychic": 1.1838e-05,
+      "water": 0.000397
+     },
+     "side": "special",
+     "slot": 3,
+     "spa_stat": 317,
+     "species": "charizard",
+     "u": 0.4639176916213663,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 309,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.436544973,
+      "fighting": 0.05435279,
+      "flying": 0.505168618,
+      "ghost": 0.001671646,
+      "ground": 1.0533e-05,
+      "poison": 3.7708e-05,
+      "rock": 0.002200262,
+      "steel": 1.3469e-05
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 140,
+     "species": "aerodactyl",
+     "u": 0.2609383540534025,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "432069ee66d482bb7c1ea8274e574e96e2e89489ff1614b14e32391a9f5240af",
+   "source_file": "team_002014.gen3ou_team",
+   "source_sha256": "b188299580107ed8dde8206be5b78d888ba138836b583071626c31954d3be74d",
+   "team_seed": 8480260589694593039
+  },
+  "team_002163": {
+   "heldout72_sha256": "a75e837b06122e4c5dae09ad207fa0ef05ac5c99883a504aaa79017485b0f64a",
+   "repairs": [
+    {
+     "atk_stat": 339,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.436544973,
+      "fighting": 0.05435279,
+      "flying": 0.505168618,
+      "ghost": 0.001671646,
+      "ground": 1.0533e-05,
+      "poison": 3.7708e-05,
+      "rock": 0.002200262,
+      "steel": 1.3469e-05
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 140,
+     "species": "aerodactyl",
+     "u": 0.26355407459116464,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "c4b5affc22ca457e062ea1c994411fe6d4ae34c7baa927b9e750bec7f6a7c014",
+   "source_file": "team_002163.gen3ou_team",
+   "source_sha256": "ee56eb1977d99d2aadff77cb450cf4a7adfdb4add01833bd36f083a6e220a7c8",
+   "team_seed": 17533409633589010221
+  },
+  "team_002661": {
+   "heldout72_sha256": "b1642a39702e329f00e9afc14744b2c1ff095e9f6e18c5a25cdb62ca9f9ecfb4",
+   "repairs": [
+    {
+     "atk_stat": 149,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000782981,
+      "dragon": 0.000152983,
+      "electric": 6.7e-06,
+      "fire": 0.001289661,
+      "grass": 0.995667354,
+      "ice": 0.001180791,
+      "psychic": 1.0949e-05,
+      "water": 0.00090858
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 298,
+     "species": "gengar",
+     "u": 0.47666103505616986,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 203,
+     "decided_by": "votes",
+     "hp_type": "Electric",
+     "ivs": {
+      "atk": 31,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000632146,
+      "dragon": 0.006156496,
+      "electric": 0.421540066,
+      "fire": 0.003501236,
+      "grass": 0.56804738,
+      "ice": 8.6818e-05,
+      "psychic": 2.6365e-05,
+      "water": 9.492e-06
+     },
+     "side": "special",
+     "slot": 4,
+     "spa_stat": 317,
+     "species": "kingdra",
+     "u": 0.3444831638565128,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 259,
+     "decided_by": "votes",
+     "hp_type": "Ghost",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.986024625,
+      "fighting": 0.003360612,
+      "flying": 0.006739517,
+      "ghost": 0.003424108,
+      "ground": 4.629e-06,
+      "poison": 2.8603e-05,
+      "rock": 0.000399042,
+      "steel": 1.8864e-05
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 122,
+     "species": "dugtrio",
+     "u": 0.9970780467937419,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "0dac865a56ffded232b3ed07660520a3114c2aba7d157499aaac9bb06bb441e8",
+   "source_file": "team_002661.gen3ou_team",
+   "source_sha256": "209a6e26501b0f837954cccc2417b5b34efc98eec2c228364d4d42610fe4b0e6",
+   "team_seed": 5662670754765950549
+  },
+  "team_002884": {
+   "heldout72_sha256": "bfd36fa07ebd3feaa5bc6f7eec05e7d372ab05d8acf8b1645effb2317955eb97",
+   "repairs": [
+    {
+     "atk_stat": 176,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000102342,
+      "dragon": 0.000824069,
+      "fire": 0.365417407,
+      "grass": 0.632374999,
+      "ice": 0.000277687,
+      "psychic": 2.8061e-05,
+      "water": 0.000975435
+     },
+     "side": "special",
+     "slot": 1,
+     "spa_stat": 265,
+     "species": "porygon2",
+     "u": 0.7669680747166187,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 394,
+     "decided_by": "votes",
+     "hp_type": "Ghost",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.379033485,
+      "fighting": 2.0184e-05,
+      "flying": 0.006256761,
+      "ghost": 0.594827334,
+      "ground": 1.347e-05,
+      "poison": 2.0046e-05,
+      "rock": 0.019791773,
+      "steel": 3.6947e-05
+     },
+     "side": "physical",
+     "slot": 2,
+     "spa_stat": 149,
+     "species": "machamp",
+     "u": 0.5438018018172972,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000186651,
+      "dragon": 4.8734e-05,
+      "electric": 1.0777e-05,
+      "fire": 0.000367629,
+      "grass": 0.975319884,
+      "ice": 0.000570166,
+      "psychic": 8.566e-06,
+      "water": 0.023487593
+     },
+     "side": "special",
+     "slot": 3,
+     "spa_stat": 236,
+     "species": "jirachi",
+     "u": 0.5293120867309724,
+     "votes": {
+      "evs": 0,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Fire",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 8.837e-05,
+      "dragon": 4.3542e-05,
+      "electric": 0.008190828,
+      "fire": 0.645332585,
+      "grass": 0.288175459,
+      "ice": 0.058080483,
+      "psychic": 1.3065e-05,
+      "water": 7.5667e-05
+     },
+     "side": "special",
+     "slot": 4,
+     "spa_stat": 246,
+     "species": "celebi",
+     "u": 0.39826280501780775,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "ef0fb10473f10cf74ff4756fcb40dd67db815a6ca94c6ea52a0e9ec53e7d5b32",
+   "source_file": "team_002884.gen3ou_team",
+   "source_sha256": "71025c2416a70b2729ee923ec6536f1ab156101d8a70a05d7e621fe56a1604c6",
+   "team_seed": 8047998468817570441
+  },
+  "team_003019": {
+   "heldout72_sha256": "d1c1ece618fd78567fc8718a02c7010ca7dffca78c2336c1f3e294eff1d4233c",
+   "repairs": [
+    {
+     "atk_stat": 405,
+     "decided_by": "votes",
+     "hp_type": "Flying",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 30,
+      "spa": 30,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.00308985,
+      "fighting": 0.000109799,
+      "flying": 0.986503804,
+      "ghost": 0.008480662,
+      "ground": 3.365e-05,
+      "poison": 1.3229e-05,
+      "rock": 0.00175425,
+      "steel": 1.4756e-05
+     },
+     "side": "physical",
+     "slot": 3,
+     "spa_stat": 230,
+     "species": "salamence",
+     "u": 0.40575048633472466,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 149,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000782981,
+      "dragon": 0.000152983,
+      "electric": 6.7e-06,
+      "fire": 0.001289661,
+      "grass": 0.995667354,
+      "ice": 0.001180791,
+      "psychic": 1.0949e-05,
+      "water": 0.00090858
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 359,
+     "species": "gengar",
+     "u": 0.870087091702901,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "dbed0b5a6a81cf11d2a5d1f84a8e5c6dfb1f84bde9b62b2b36ba807468bb2f43",
+   "source_file": "team_003019.gen3ou_team",
+   "source_sha256": "9580d6997f203459935e0b8afad04e7f187ffe37d5f66882bf24c2dc6b298dd3",
+   "team_seed": 413727826102003288
+  },
+  "team_003060": {
+   "heldout72_sha256": "54e8f837d179eded4e386e73fd2033a2c73c9d16c8a5f6cb164b5b0ccf80c830",
+   "repairs": [],
+   "sha256": "54e8f837d179eded4e386e73fd2033a2c73c9d16c8a5f6cb164b5b0ccf80c830",
+   "source_file": "team_003060.gen3ou_team",
+   "source_sha256": "106e6f4f03deecf016597feafbf3c7be0aa024d5df982e38615ab923c51463a7",
+   "team_seed": 16412097533124335172
+  },
+  "team_003172": {
+   "heldout72_sha256": "3439e2459431192d622c17f66267c8a8a48c611dce742f08067ef04c1e35d7fd",
+   "repairs": [
+    {
+     "atk_stat": 273,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000501103,
+      "dragon": 5.2576e-05,
+      "electric": 7.6307e-05,
+      "fire": 7.0124e-05,
+      "grass": 0.998773872,
+      "ice": 0.000468192,
+      "psychic": 5.4609e-05,
+      "water": 3.217e-06
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 317,
+     "species": "tyranitar",
+     "u": 0.8040924942758417,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 309,
+     "decided_by": "votes",
+     "hp_type": "Flying",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 30,
+      "spa": 30,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.436544973,
+      "fighting": 0.05435279,
+      "flying": 0.505168618,
+      "ghost": 0.001671646,
+      "ground": 1.0533e-05,
+      "poison": 3.7708e-05,
+      "rock": 0.002200262,
+      "steel": 1.3469e-05
+     },
+     "side": "physical",
+     "slot": 4,
+     "spa_stat": 140,
+     "species": "aerodactyl",
+     "u": 0.8947741917349196,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "a5e14c1670263130392e0e6bd2a048694ae198ae06f2f245cce751dced4af40f",
+   "source_file": "team_003172.gen3ou_team",
+   "source_sha256": "4a5e02edfacb359d365bad9c95dcfe94478644ed96e6e7d45326cbe9f0575861",
+   "team_seed": 8382076846881761858
+  },
+  "team_003193": {
+   "heldout72_sha256": "00c6365df0fb4e024b2cc38a841a11a66febcf2e9428aa053aa201ed3853d94c",
+   "repairs": [
+    {
+     "atk_stat": 196,
+     "decided_by": "votes",
+     "hp_type": "Ground",
+     "ivs": {
+      "atk": 31,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.002602658,
+      "fighting": 0.105649865,
+      "flying": 0.01776251,
+      "ghost": 0.00142378,
+      "ground": 0.717020148,
+      "poison": 1.3128e-05,
+      "rock": 0.000750481,
+      "steel": 0.15477743
+     },
+     "side": "physical",
+     "slot": 3,
+     "spa_stat": 104,
+     "species": "skarmory",
+     "u": 0.7671302324645193,
+     "votes": {
+      "evs": 0,
+      "moves": 0,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Fire",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 8.837e-05,
+      "dragon": 4.3542e-05,
+      "electric": 0.008190828,
+      "fire": 0.645332585,
+      "grass": 0.288175459,
+      "ice": 0.058080483,
+      "psychic": 1.3065e-05,
+      "water": 7.5667e-05
+     },
+     "side": "special",
+     "slot": 4,
+     "spa_stat": 328,
+     "species": "celebi",
+     "u": 0.025946884345807608,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 259,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.986024625,
+      "fighting": 0.003360612,
+      "flying": 0.006739517,
+      "ghost": 0.003424108,
+      "ground": 4.629e-06,
+      "poison": 2.8603e-05,
+      "rock": 0.000399042,
+      "steel": 1.8864e-05
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 122,
+     "species": "dugtrio",
+     "u": 0.8328772004041898,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "9547e644696a3256f5a75f92159f2e8d13b02bda0e0225c95d330b2d67f302e6",
+   "source_file": "team_003193.gen3ou_team",
+   "source_sha256": "04119cc48e36000527ec1d0d07d0d98d09c5ed352e08bb2481df1ae9922b8316",
+   "team_seed": 7314272622336703956
+  },
+  "team_003500": {
+   "heldout72_sha256": "e076a127329a1cddf83d4eca8e26effd5325e9e8a1e4ec86d8eb17e58a1a91f0",
+   "repairs": [
+    {
+     "atk_stat": 403,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.988505951,
+      "fighting": 0.000122643,
+      "flying": 0.002870093,
+      "ghost": 0.003431782,
+      "ground": 4.77e-06,
+      "poison": 1.1884e-05,
+      "rock": 0.005039982,
+      "steel": 1.2896e-05
+     },
+     "side": "physical",
+     "slot": 0,
+     "spa_stat": 203,
+     "species": "tyranitar",
+     "u": 0.8502191791730306,
+     "votes": {
+      "evs": 1,
+      "moves": -1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 236,
+     "decided_by": "votes",
+     "hp_type": "Rock",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.865435838,
+      "fighting": 0.00399617,
+      "flying": 0.010175762,
+      "ghost": 0.023403254,
+      "ground": 2.3377e-05,
+      "poison": 2.5392e-05,
+      "rock": 0.096880274,
+      "steel": 5.9933e-05
+     },
+     "side": "physical",
+     "slot": 2,
+     "spa_stat": 176,
+     "species": "flygon",
+     "u": 0.9479968552964911,
+     "votes": {
+      "evs": 0,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "6f732c4c3c65f98da6a86d4020028fd5e8d5c34ec8571237fe1ff425366349e7",
+   "source_file": "team_003500.gen3ou_team",
+   "source_sha256": "7727cefc00313cd7946e7fcfc7af11b2325fa198ee9f817805b3bb9d7f32cee4",
+   "team_seed": 2420045142976899877
+  },
+  "team_004203": {
+   "heldout72_sha256": "3e16d310d454b9f5ed4cd14308494a67623a5988ba871a35788826c17ddac82b",
+   "repairs": [
+    {
+     "atk_stat": 194,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 6.8031e-05,
+      "dragon": 7.482e-05,
+      "electric": 1.6918e-05,
+      "fire": 0.002971862,
+      "grass": 0.628600487,
+      "ice": 0.36764155,
+      "psychic": 2.026e-06,
+      "water": 0.000624306
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 349,
+     "species": "zapdos",
+     "u": 0.008010718256330707,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 140,
+     "decided_by": "votes",
+     "hp_type": "Ice",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.00230035,
+      "electric": 0.066115661,
+      "fire": 0.398430069,
+      "grass": 0.39274536,
+      "ice": 0.139061713,
+      "psychic": 0.000748896,
+      "water": 0.000597951
+     },
+     "side": "special",
+     "slot": 1,
+     "spa_stat": 236,
+     "species": "roselia",
+     "u": 0.9098497542579497,
+     "votes": {
+      "evs": 0,
+      "moves": 0,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 307,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000188936,
+      "dragon": 7.3292e-05,
+      "electric": 0.001100121,
+      "fire": 7.3556e-05,
+      "grass": 0.993999196,
+      "ice": 0.004490226,
+      "psychic": 1.7034e-05,
+      "water": 5.764e-05
+     },
+     "side": "special",
+     "slot": 3,
+     "spa_stat": 350,
+     "species": "salamence",
+     "u": 0.5256132550004817,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 183,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000185261,
+      "dragon": 5.4461e-05,
+      "electric": 0.008041041,
+      "fire": 1.2956e-05,
+      "grass": 0.860465691,
+      "ice": 0.130831752,
+      "psychic": 1.1838e-05,
+      "water": 0.000397
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 348,
+     "species": "charizard",
+     "u": 0.7357896619501472,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "a4a56b9330b185fbb2b0f0d389899c680ec8b4d948b21f0f23cdb69ab5cdf9fe",
+   "source_file": "team_004203.gen3ou_team",
+   "source_sha256": "25fe8e91ffa65dfe4548605e2ca9079aba7f444e933e325a804bc87a9e3db141",
+   "team_seed": 18142748432274843506
+  },
+  "team_004582": {
+   "heldout72_sha256": "92586bd0ec0d9065177db635a540d0d917e606116041bc486d02d6e3f7e4a1fe",
+   "repairs": [
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Fire",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 8.837e-05,
+      "dragon": 4.3542e-05,
+      "electric": 0.008190828,
+      "fire": 0.645332585,
+      "grass": 0.288175459,
+      "ice": 0.058080483,
+      "psychic": 1.3065e-05,
+      "water": 7.5667e-05
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 321,
+     "species": "celebi",
+     "u": 0.06359808704790282,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 258,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.986024625,
+      "fighting": 0.003360612,
+      "flying": 0.006739517,
+      "ghost": 0.003424108,
+      "ground": 4.629e-06,
+      "poison": 2.8603e-05,
+      "rock": 0.000399042,
+      "steel": 1.8864e-05
+     },
+     "side": "physical",
+     "slot": 3,
+     "spa_stat": 122,
+     "species": "dugtrio",
+     "u": 0.4139948281236667,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 185,
+     "decided_by": "votes",
+     "hp_type": "Ice",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 3.5994e-05,
+      "dragon": 8.4754e-05,
+      "electric": 2.9382e-05,
+      "fire": 0.000366132,
+      "grass": 0.706604533,
+      "ice": 0.292150609,
+      "water": 0.000728596
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 329,
+     "species": "raikou",
+     "u": 0.9074306392573611,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "a90a78a60e02eb6c195cf1aaba812bd3a039ceeb52800b28092f6031838ebcc4",
+   "source_file": "team_004582.gen3ou_team",
+   "source_sha256": "2b1dd9d617670c703b7a725a8013f0c91afa0965726e6f981287d59b564a87bd",
+   "team_seed": 17532910062422766216
+  },
+  "team_004796": {
+   "heldout72_sha256": "3b1b1ebb3bb9802cdeacbd1393f6b9cfc060a5f8213d7bc81bb869fa27e6d0fc",
+   "repairs": [
+    {
+     "atk_stat": 309,
+     "decided_by": "votes",
+     "hp_type": "Flying",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 30,
+      "spa": 30,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.436544973,
+      "fighting": 0.05435279,
+      "flying": 0.505168618,
+      "ghost": 0.001671646,
+      "ground": 1.0533e-05,
+      "poison": 3.7708e-05,
+      "rock": 0.002200262,
+      "steel": 1.3469e-05
+     },
+     "side": "physical",
+     "slot": 0,
+     "spa_stat": 140,
+     "species": "aerodactyl",
+     "u": 0.5492438228179607,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "f71cf9ea897f7bed98b9d5e6abc6988156e1ac45be5cbb7cd180806ba90ac96c",
+   "source_file": "team_004796.gen3ou_team",
+   "source_sha256": "19c398d4d1923529ed9f52cb3665740b393ce324f39ffcb14ed9d6e976984be3",
+   "team_seed": 2529600647424749140
+  },
+  "team_004921": {
+   "heldout72_sha256": "5774e6da76085a6f78ced81f684fe6d4fc285d52be745160fc1c264e8139d284",
+   "repairs": [
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Fire",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 8.837e-05,
+      "dragon": 4.3542e-05,
+      "electric": 0.008190828,
+      "fire": 0.645332585,
+      "grass": 0.288175459,
+      "ice": 0.058080483,
+      "psychic": 1.3065e-05,
+      "water": 7.5667e-05
+     },
+     "side": "special",
+     "slot": 1,
+     "spa_stat": 255,
+     "species": "celebi",
+     "u": 0.06887068040754996,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000282668,
+      "dragon": 6.6799e-05,
+      "electric": 0.002800483,
+      "fire": 1.9391e-05,
+      "grass": 0.974303768,
+      "ice": 0.018226706,
+      "water": 0.004300185
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 349,
+     "species": "moltres",
+     "u": 0.6529667205011617,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 236,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.865435838,
+      "fighting": 0.00399617,
+      "flying": 0.010175762,
+      "ghost": 0.023403254,
+      "ground": 2.3377e-05,
+      "poison": 2.5392e-05,
+      "rock": 0.096880274,
+      "steel": 5.9933e-05
+     },
+     "side": "physical",
+     "slot": 4,
+     "spa_stat": 176,
+     "species": "flygon",
+     "u": 0.13360798388941986,
+     "votes": {
+      "evs": 0,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 149,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000782981,
+      "dragon": 0.000152983,
+      "electric": 6.7e-06,
+      "fire": 0.001289661,
+      "grass": 0.995667354,
+      "ice": 0.001180791,
+      "psychic": 1.0949e-05,
+      "water": 0.00090858
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 298,
+     "species": "gengar",
+     "u": 0.7915671568929499,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "e2f99ca574590023d55b7e08ddcb2141b2f76d996a0b888fe0008f3bd1293dc2",
+   "source_file": "team_004921.gen3ou_team",
+   "source_sha256": "3a58ed644ce522824bc76485e1f6ef691dbcb60bb89c3814e33af0ef43c3faab",
+   "team_seed": 702031424249518902
+  },
+  "team_005081": {
+   "heldout72_sha256": "3907be5ec479d104a9aaffef8dc6f7266bcbaf0e2844897b361a17a27613e0e0",
+   "repairs": [],
+   "sha256": "3907be5ec479d104a9aaffef8dc6f7266bcbaf0e2844897b361a17a27613e0e0",
+   "source_file": "team_005081.gen3ou_team",
+   "source_sha256": "00aaa2c58be5b7119ab6385f8608381c13fc3b3142f5f49a9ca4368ea2dbda3d",
+   "team_seed": 13843037231998680256
+  },
+  "team_005093": {
+   "heldout72_sha256": "1cffded289e00b57a02d0256477dad2fd5082813e9a44188dfc73987abb9b8b7",
+   "repairs": [
+    {
+     "atk_stat": 140,
+     "decided_by": "votes",
+     "hp_type": "Fire",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000268919,
+      "dragon": 8.36e-05,
+      "electric": 1.6283e-05,
+      "fire": 0.640640017,
+      "grass": 0.321399439,
+      "ice": 0.03715795,
+      "psychic": 7.7242e-05,
+      "water": 0.00035655
+     },
+     "side": "special",
+     "slot": 1,
+     "spa_stat": 372,
+     "species": "magneton",
+     "u": 0.5313393430606281,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 405,
+     "decided_by": "votes",
+     "hp_type": "Flying",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 30,
+      "spa": 30,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.00308985,
+      "fighting": 0.000109799,
+      "flying": 0.986503804,
+      "ghost": 0.008480662,
+      "ground": 3.365e-05,
+      "poison": 1.3229e-05,
+      "rock": 0.00175425,
+      "steel": 1.4756e-05
+     },
+     "side": "physical",
+     "slot": 4,
+     "spa_stat": 230,
+     "species": "salamence",
+     "u": 0.128234047366251,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "735ee6e7deb38db82a4bc4caf18a6ff1b891119464a8ddee71b1f410a3627ac1",
+   "source_file": "team_005093.gen3ou_team",
+   "source_sha256": "db519e2ff25443a134a4f2572cf360696efb92dd9b79d435025edb1b8a875f9c",
+   "team_seed": 14675167399445514535
+  },
+  "team_005213": {
+   "heldout72_sha256": "8d2b1944cb2345fc7d3fe89b6e0c090c51ced78125088cc985e8f2a4da0676b2",
+   "repairs": [
+    {
+     "atk_stat": 194,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 6.8031e-05,
+      "dragon": 7.482e-05,
+      "electric": 1.6918e-05,
+      "fire": 0.002971862,
+      "grass": 0.628600487,
+      "ice": 0.36764155,
+      "psychic": 2.026e-06,
+      "water": 0.000624306
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 331,
+     "species": "zapdos",
+     "u": 0.5598488360966197,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 304,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000501103,
+      "dragon": 5.2576e-05,
+      "electric": 7.6307e-05,
+      "fire": 7.0124e-05,
+      "grass": 0.998773872,
+      "ice": 0.000468192,
+      "psychic": 5.4609e-05,
+      "water": 3.217e-06
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 306,
+     "species": "tyranitar",
+     "u": 0.9834129239658022,
+     "votes": {
+      "evs": -1,
+      "moves": 1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 259,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.986024625,
+      "fighting": 0.003360612,
+      "flying": 0.006739517,
+      "ghost": 0.003424108,
+      "ground": 4.629e-06,
+      "poison": 2.8603e-05,
+      "rock": 0.000399042,
+      "steel": 1.8864e-05
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 122,
+     "species": "dugtrio",
+     "u": 0.9389176291493114,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "7df8d76b75e76197f9061d5f436b781ed194bb318a71553db89aa97eed9ed3ad",
+   "source_file": "team_005213.gen3ou_team",
+   "source_sha256": "093f018693179ae0352e5ad90f5830e81ac1495e73c74918edb70f57aac09e40",
+   "team_seed": 10618954237845028777
+  },
+  "team_005234": {
+   "heldout72_sha256": "80657e6cc9b5c86bf94a717331a00e073d593bf41c6a079aae7ed9dd59c86527",
+   "repairs": [
+    {
+     "atk_stat": 140,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000268919,
+      "dragon": 8.36e-05,
+      "electric": 1.6283e-05,
+      "fire": 0.640640017,
+      "grass": 0.321399439,
+      "ice": 0.03715795,
+      "psychic": 7.7242e-05,
+      "water": 0.00035655
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 372,
+     "species": "magneton",
+     "u": 0.9463800258952071,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 307,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000188936,
+      "dragon": 7.3292e-05,
+      "electric": 0.001100121,
+      "fire": 7.3556e-05,
+      "grass": 0.993999196,
+      "ice": 0.004490226,
+      "psychic": 1.7034e-05,
+      "water": 5.764e-05
+     },
+     "side": "special",
+     "slot": 3,
+     "spa_stat": 350,
+     "species": "salamence",
+     "u": 0.3693517664361493,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "88335e9c0235f8432aa7ffcc87054efda466ee77c9b24a3962c6f54f4b4abccc",
+   "source_file": "team_005234.gen3ou_team",
+   "source_sha256": "9a22682f91017be071eb334839b7d33896784fd22f14e3f1636b384e99d192ff",
+   "team_seed": 7253370680366972960
+  },
+  "team_005788": {
+   "heldout72_sha256": "76fd9a011f9aac1356186564b62ce6d618cd63d9ea0bad66db6b0515bdf38faf",
+   "repairs": [
+    {
+     "atk_stat": 167,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 7.314e-05,
+      "dragon": 0.000211318,
+      "electric": 0.199048081,
+      "fire": 0.00509546,
+      "grass": 0.795429099,
+      "ice": 0.000134991,
+      "psychic": 7.39e-07,
+      "water": 7.172e-06
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 216,
+     "species": "suicune",
+     "u": 0.9724910028476931,
+     "votes": {
+      "evs": 0,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 307,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000188936,
+      "dragon": 7.3292e-05,
+      "electric": 0.001100121,
+      "fire": 7.3556e-05,
+      "grass": 0.993999196,
+      "ice": 0.004490226,
+      "psychic": 1.7034e-05,
+      "water": 5.764e-05
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 319,
+     "species": "salamence",
+     "u": 0.6286364167701961,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": 0
+     }
+    }
+   ],
+   "sha256": "c97541dba92827477731287f4150d439a91e87d371d62a0b2d2a80e77b01069b",
+   "source_file": "team_005788.gen3ou_team",
+   "source_sha256": "9fd61bc47a58a4828fbd5a02b9cbe3335f9598e6fc8233b4defc7aad368cfe08",
+   "team_seed": 2939036261915754612
+  },
+  "team_006457": {
+   "heldout72_sha256": "48af42172b5a4d7ebcb1123d6f5a85b869969bb576422801d531aad6c9502771",
+   "repairs": [
+    {
+     "atk_stat": 149,
+     "decided_by": "votes",
+     "hp_type": "Ice",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000297106,
+      "dragon": 0.00014814,
+      "electric": 2.2578e-05,
+      "fire": 0.002625113,
+      "grass": 0.535190241,
+      "ice": 0.461241683,
+      "psychic": 2.4181e-05,
+      "water": 0.000450957
+     },
+     "side": "special",
+     "slot": 1,
+     "spa_stat": 319,
+     "species": "jolteon",
+     "u": 0.7789211061376148,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 259,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.986024625,
+      "fighting": 0.003360612,
+      "flying": 0.006739517,
+      "ghost": 0.003424108,
+      "ground": 4.629e-06,
+      "poison": 2.8603e-05,
+      "rock": 0.000399042,
+      "steel": 1.8864e-05
+     },
+     "side": "physical",
+     "slot": 4,
+     "spa_stat": 122,
+     "species": "dugtrio",
+     "u": 0.05210674410162708,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "605a5dfb102e933f7b1bfee5268da2e80b670517631d7878d6b322403514a3a2",
+   "source_file": "team_006457.gen3ou_team",
+   "source_sha256": "c1f08231f4265d99a31fdfeaa8817846cece7e688f4bfe8a4b32074f5939bcdd",
+   "team_seed": 2289399792459373637
+  },
+  "team_006707": {
+   "heldout72_sha256": "150e098a2491a95e885207d1932ea84efc351f45eac61bd606a6d9ec7b9cb90b",
+   "repairs": [
+    {
+     "atk_stat": 403,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.988505951,
+      "fighting": 0.000122643,
+      "flying": 0.002870093,
+      "ghost": 0.003431782,
+      "ground": 4.77e-06,
+      "poison": 1.1884e-05,
+      "rock": 0.005039982,
+      "steel": 1.2896e-05
+     },
+     "side": "physical",
+     "slot": 2,
+     "spa_stat": 203,
+     "species": "tyranitar",
+     "u": 0.4763774768276039,
+     "votes": {
+      "evs": 1,
+      "moves": -1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 306,
+     "decided_by": "votes",
+     "hp_type": "Ghost",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.712540891,
+      "fighting": 0.003305524,
+      "flying": 0.00636104,
+      "ghost": 0.261234933,
+      "ground": 0.000557886,
+      "poison": 1.969e-06,
+      "rock": 0.006446527,
+      "steel": 0.009551229
+     },
+     "side": "physical",
+     "slot": 3,
+     "spa_stat": 140,
+     "species": "forretress",
+     "u": 0.8896162094998148,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "eac7c4ec00498134d0e9fc5492db3b834f670b7eed5b238a243666fafd0a5e6b",
+   "source_file": "team_006707.gen3ou_team",
+   "source_sha256": "77f3b2ff9f859eda3495e5139064f86c80f207e2e4d303f4ae9c0b3841cbc7ce",
+   "team_seed": 17031246268555817452
+  },
+  "team_007108": {
+   "heldout72_sha256": "81b221a4e211e7fb144e466a31926535dd98642a0449ae6698714ae63365ad67",
+   "repairs": [
+    {
+     "atk_stat": 149,
+     "decided_by": "votes",
+     "hp_type": "Ice",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000297106,
+      "dragon": 0.00014814,
+      "electric": 2.2578e-05,
+      "fire": 0.002625113,
+      "grass": 0.535190241,
+      "ice": 0.461241683,
+      "psychic": 2.4181e-05,
+      "water": 0.000450957
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 319,
+     "species": "jolteon",
+     "u": 0.9329884315755052,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "63698ecc74634020010138488f1cba2ca848462097c239628851b322ecc94c7a",
+   "source_file": "team_007108.gen3ou_team",
+   "source_sha256": "581c0cfd99fd5598c9306764415c2bed2b6e1becada6dd294039de57d4c64d67",
+   "team_seed": 2778221208283981289
+  },
+  "team_007621": {
+   "heldout72_sha256": "ae318a503b2fa13aefb2cc35a4c3124dd418de4d3fb60a10d3d4b14e624e50e4",
+   "repairs": [
+    {
+     "atk_stat": 306,
+     "decided_by": "votes",
+     "hp_type": "Fighting",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 30,
+      "spd": 30,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.010713859,
+      "fighting": 0.978321454,
+      "flying": 0.000766307,
+      "ghost": 0.003760352,
+      "ground": 0.006213639,
+      "poison": 2.0016e-05,
+      "rock": 0.000157785,
+      "steel": 4.6587e-05
+     },
+     "side": "physical",
+     "slot": 2,
+     "spa_stat": 286,
+     "species": "zapdos",
+     "u": 0.908988930433311,
+     "votes": {
+      "evs": 1,
+      "moves": -1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 307,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.436544973,
+      "fighting": 0.05435279,
+      "flying": 0.505168618,
+      "ghost": 0.001671646,
+      "ground": 1.0533e-05,
+      "poison": 3.7708e-05,
+      "rock": 0.002200262,
+      "steel": 1.3469e-05
+     },
+     "side": "physical",
+     "slot": 3,
+     "spa_stat": 140,
+     "species": "aerodactyl",
+     "u": 0.11402800091809728,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 259,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.986024625,
+      "fighting": 0.003360612,
+      "flying": 0.006739517,
+      "ghost": 0.003424108,
+      "ground": 4.629e-06,
+      "poison": 2.8603e-05,
+      "rock": 0.000399042,
+      "steel": 1.8864e-05
+     },
+     "side": "physical",
+     "slot": 4,
+     "spa_stat": 122,
+     "species": "dugtrio",
+     "u": 0.810476481199593,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "8be0ed01663765320583cbc49db5726fab67d6bf5a8f613cbc7ac89b3d97a405",
+   "source_file": "team_007621.gen3ou_team",
+   "source_sha256": "fd6c98366702c50b2f5bbbd68c7e960030acb434fc0f693197c5f9042d03dca5",
+   "team_seed": 12268573167363202333
+  },
+  "team_007656": {
+   "heldout72_sha256": "17319d9b3e91a32796f92e82f6962841fa249910acba34690363985426373eff",
+   "repairs": [
+    {
+     "atk_stat": 405,
+     "decided_by": "votes",
+     "hp_type": "Flying",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 30,
+      "spa": 30,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.00308985,
+      "fighting": 0.000109799,
+      "flying": 0.986503804,
+      "ghost": 0.008480662,
+      "ground": 3.365e-05,
+      "poison": 1.3229e-05,
+      "rock": 0.00175425,
+      "steel": 1.4756e-05
+     },
+     "side": "physical",
+     "slot": 2,
+     "spa_stat": 230,
+     "species": "salamence",
+     "u": 0.7315062220741894,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 185,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 3.5994e-05,
+      "dragon": 8.4754e-05,
+      "electric": 2.9382e-05,
+      "fire": 0.000366132,
+      "grass": 0.706604533,
+      "ice": 0.292150609,
+      "water": 0.000728596
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 328,
+     "species": "raikou",
+     "u": 0.5971828430337591,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "e4383688d37884ac2238b73d5a10473c28f05bca44f94865457e353cf223901b",
+   "source_file": "team_007656.gen3ou_team",
+   "source_sha256": "725db908d324fda406c1fe544920290cc56c0eb94085a0ce8df1ff7aca62829f",
+   "team_seed": 8561504843500926462
+  },
+  "team_008014": {
+   "heldout72_sha256": "689b3fb27facc3fd99f18ea040ddcc8cb83cfc2d77fc9c52560a04c722ca6a10",
+   "repairs": [],
+   "sha256": "689b3fb27facc3fd99f18ea040ddcc8cb83cfc2d77fc9c52560a04c722ca6a10",
+   "source_file": "team_008014.gen3ou_team",
+   "source_sha256": "61b895f19a3786578a33d388ca7aaddb149d5c4269e2f89025f686945c4c302e",
+   "team_seed": 7178648036120349517
+  },
+  "team_008663": {
+   "heldout72_sha256": "d61a7b8c87fafba7097200c12b4af8ab4711cd0d299c00a556b2908ab8a0ea08",
+   "repairs": [
+    {
+     "atk_stat": 304,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000501103,
+      "dragon": 5.2576e-05,
+      "electric": 7.6307e-05,
+      "fire": 7.0124e-05,
+      "grass": 0.998773872,
+      "ice": 0.000468192,
+      "psychic": 5.4609e-05,
+      "water": 3.217e-06
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 306,
+     "species": "tyranitar",
+     "u": 0.22062727163263252,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 149,
+     "decided_by": "votes",
+     "hp_type": "Ice",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000297106,
+      "dragon": 0.00014814,
+      "electric": 2.2578e-05,
+      "fire": 0.002625113,
+      "grass": 0.535190241,
+      "ice": 0.461241683,
+      "psychic": 2.4181e-05,
+      "water": 0.000450957
+     },
+     "side": "special",
+     "slot": 1,
+     "spa_stat": 319,
+     "species": "jolteon",
+     "u": 0.9566381234909139,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 405,
+     "decided_by": "votes",
+     "hp_type": "Flying",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 30,
+      "spa": 30,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.00308985,
+      "fighting": 0.000109799,
+      "flying": 0.986503804,
+      "ghost": 0.008480662,
+      "ground": 3.365e-05,
+      "poison": 1.3229e-05,
+      "rock": 0.00175425,
+      "steel": 1.4756e-05
+     },
+     "side": "physical",
+     "slot": 3,
+     "spa_stat": 230,
+     "species": "salamence",
+     "u": 0.1193433011893299,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "fe70f9d31b0d2fd2ad1a0deb151f02abc273128612777b42fe9832d115d2d37d",
+   "source_file": "team_008663.gen3ou_team",
+   "source_sha256": "97d4e9c2169680d56ec4f9d5ea4ac292207a81ffa43e480804fc6b6026bd2e4b",
+   "team_seed": 7088085183037499456
+  },
+  "team_008696": {
+   "heldout72_sha256": "51a611fef5b64c3ee1a687d2ef377c9f30b1c744fe96405aa1588fd70b0c17f9",
+   "repairs": [
+    {
+     "atk_stat": 309,
+     "decided_by": "votes",
+     "hp_type": "Fighting",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 30,
+      "spd": 30,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.436544973,
+      "fighting": 0.05435279,
+      "flying": 0.505168618,
+      "ghost": 0.001671646,
+      "ground": 1.0533e-05,
+      "poison": 3.7708e-05,
+      "rock": 0.002200262,
+      "steel": 1.3469e-05
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 140,
+     "species": "aerodactyl",
+     "u": 0.47452312170926225,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "30da8c59ef2b1f22db0951a56d501dfdf570f60f5e2af72088ccd1f15b22d824",
+   "source_file": "team_008696.gen3ou_team",
+   "source_sha256": "34781a4d48d857219bc10ae53cf26bfb85fa4790d66a13b6c3e095bd1cde1ea7",
+   "team_seed": 9192989819239427207
+  },
+  "team_008783": {
+   "heldout72_sha256": "d3d5c3763bc45eed592b1f405b380b24b9035ddf64cd458698991d665377ee8a",
+   "repairs": [
+    {
+     "atk_stat": 140,
+     "decided_by": "votes",
+     "hp_type": "Fire",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000268919,
+      "dragon": 8.36e-05,
+      "electric": 1.6283e-05,
+      "fire": 0.640640017,
+      "grass": 0.321399439,
+      "ice": 0.03715795,
+      "psychic": 7.7242e-05,
+      "water": 0.00035655
+     },
+     "side": "special",
+     "slot": 3,
+     "spa_stat": 372,
+     "species": "magneton",
+     "u": 0.5737460170719896,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 307,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000188936,
+      "dragon": 7.3292e-05,
+      "electric": 0.001100121,
+      "fire": 7.3556e-05,
+      "grass": 0.993999196,
+      "ice": 0.004490226,
+      "psychic": 1.7034e-05,
+      "water": 5.764e-05
+     },
+     "side": "special",
+     "slot": 4,
+     "spa_stat": 319,
+     "species": "salamence",
+     "u": 0.0991058358246526,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": 0
+     }
+    }
+   ],
+   "sha256": "f9c05b9247628140437793aa18534676d2e9dcb331ae41916300de8b0feb1c97",
+   "source_file": "team_008783.gen3ou_team",
+   "source_sha256": "d05c0c26a312c29e4b4de696f5cf7a8ce4ab8e23311788da1ae4cb5f5209a143",
+   "team_seed": 7547113280969409268
+  },
+  "team_009065": {
+   "heldout72_sha256": "61ef787f11b51ec49cd4827fca1fe3dd57f426ec0d7b3feb3252164092394084",
+   "repairs": [
+    {
+     "atk_stat": 149,
+     "decided_by": "votes",
+     "hp_type": "Ice",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000297106,
+      "dragon": 0.00014814,
+      "electric": 2.2578e-05,
+      "fire": 0.002625113,
+      "grass": 0.535190241,
+      "ice": 0.461241683,
+      "psychic": 2.4181e-05,
+      "water": 0.000450957
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 319,
+     "species": "jolteon",
+     "u": 0.7177042425173776,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "10bbbad79c910ddcad87df04b54bfd84e3c9ec136b877768c2b62ba8692c45f1",
+   "source_file": "team_009065.gen3ou_team",
+   "source_sha256": "fec50feba0ed30e88c4ae34aeba9ae0f7cc1507f740f9d75854bfe3dba636e26",
+   "team_seed": 4924075471768164777
+  },
+  "team_009243": {
+   "heldout72_sha256": "684514972b072389e72fa3e1906965ef4c8c7a29a8a9435d628148a08c30a1b1",
+   "repairs": [
+    {
+     "atk_stat": 307,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000188936,
+      "dragon": 7.3292e-05,
+      "electric": 0.001100121,
+      "fire": 7.3556e-05,
+      "grass": 0.993999196,
+      "ice": 0.004490226,
+      "psychic": 1.7034e-05,
+      "water": 5.764e-05
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 350,
+     "species": "salamence",
+     "u": 0.6058956055964341,
+     "votes": {
+      "evs": -1,
+      "moves": 1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 273,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000501103,
+      "dragon": 5.2576e-05,
+      "electric": 7.6307e-05,
+      "fire": 7.0124e-05,
+      "grass": 0.998773872,
+      "ice": 0.000468192,
+      "psychic": 5.4609e-05,
+      "water": 3.217e-06
+     },
+     "side": "special",
+     "slot": 4,
+     "spa_stat": 317,
+     "species": "tyranitar",
+     "u": 0.05775538542644365,
+     "votes": {
+      "evs": -1,
+      "moves": 1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 140,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000268919,
+      "dragon": 8.36e-05,
+      "electric": 1.6283e-05,
+      "fire": 0.640640017,
+      "grass": 0.321399439,
+      "ice": 0.03715795,
+      "psychic": 7.7242e-05,
+      "water": 0.00035655
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 372,
+     "species": "magneton",
+     "u": 0.7613935851748278,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "1cb24a6f0f9b8be3c4084368c9d076efc8bc6ad889a2869af0e1def4c4e5f5d1",
+   "source_file": "team_009243.gen3ou_team",
+   "source_sha256": "b39889fb1e72246817c84566707d5bd0f87c5765dfdd5831495080be44ff08df",
+   "team_seed": 2435143850524501116
+  },
+  "team_009374": {
+   "heldout72_sha256": "181414414f5446181121433a72b2991cf76e124c3d6c2f812e60cdec8f4e7e3a",
+   "repairs": [
+    {
+     "atk_stat": 194,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 6.8031e-05,
+      "dragon": 7.482e-05,
+      "electric": 1.6918e-05,
+      "fire": 0.002971862,
+      "grass": 0.628600487,
+      "ice": 0.36764155,
+      "psychic": 2.026e-06,
+      "water": 0.000624306
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 349,
+     "species": "zapdos",
+     "u": 0.3664023779985873,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Fire",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 8.837e-05,
+      "dragon": 4.3542e-05,
+      "electric": 0.008190828,
+      "fire": 0.645332585,
+      "grass": 0.288175459,
+      "ice": 0.058080483,
+      "psychic": 1.3065e-05,
+      "water": 7.5667e-05
+     },
+     "side": "special",
+     "slot": 1,
+     "spa_stat": 236,
+     "species": "celebi",
+     "u": 0.6419372164483049,
+     "votes": {
+      "evs": 0,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 259,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.986024625,
+      "fighting": 0.003360612,
+      "flying": 0.006739517,
+      "ghost": 0.003424108,
+      "ground": 4.629e-06,
+      "poison": 2.8603e-05,
+      "rock": 0.000399042,
+      "steel": 1.8864e-05
+     },
+     "side": "physical",
+     "slot": 4,
+     "spa_stat": 122,
+     "species": "dugtrio",
+     "u": 0.08213148027465289,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "4995c6eb9c73a591c70c2d9e0ece2221760b1f3fea30f486b862e8d82b58bf61",
+   "source_file": "team_009374.gen3ou_team",
+   "source_sha256": "7a5b528727aa5268fa553c7b7bf2ccf915c29163bc03b614c5b9f06b35680e32",
+   "team_seed": 5342519621215658100
+  },
+  "team_009733": {
+   "heldout72_sha256": "b019bab627d9cfff52d23b746e9449952913b4838d5c6b204cca4617b463fc2b",
+   "repairs": [
+    {
+     "atk_stat": 405,
+     "decided_by": "votes",
+     "hp_type": "Flying",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 30,
+      "spa": 30,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.00308985,
+      "fighting": 0.000109799,
+      "flying": 0.986503804,
+      "ghost": 0.008480662,
+      "ground": 3.365e-05,
+      "poison": 1.3229e-05,
+      "rock": 0.00175425,
+      "steel": 1.4756e-05
+     },
+     "side": "physical",
+     "slot": 0,
+     "spa_stat": 230,
+     "species": "salamence",
+     "u": 0.957035257445954,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 356,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.988505951,
+      "fighting": 0.000122643,
+      "flying": 0.002870093,
+      "ghost": 0.003431782,
+      "ground": 4.77e-06,
+      "poison": 1.1884e-05,
+      "rock": 0.005039982,
+      "steel": 1.2896e-05
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 203,
+     "species": "tyranitar",
+     "u": 0.1877916977772266,
+     "votes": {
+      "evs": 1,
+      "moves": 0,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "6ebf49e32531c88042766e5c85f9d36dc85cdb983f96749787f115d5a8ccd69e",
+   "source_file": "team_009733.gen3ou_team",
+   "source_sha256": "600867123a862afe40027b2b9f7a3c6c91da44a13e5662b6dd20a11775f33a29",
+   "team_seed": 1915518343112990801
+  },
+  "team_010056": {
+   "heldout72_sha256": "502ef411284aed0bf55e5eddf6ffebfd6c818689aee563f1f67cf1dbefc2f85b",
+   "repairs": [
+    {
+     "atk_stat": 403,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.988505951,
+      "fighting": 0.000122643,
+      "flying": 0.002870093,
+      "ghost": 0.003431782,
+      "ground": 4.77e-06,
+      "poison": 1.1884e-05,
+      "rock": 0.005039982,
+      "steel": 1.2896e-05
+     },
+     "side": "physical",
+     "slot": 0,
+     "spa_stat": 203,
+     "species": "tyranitar",
+     "u": 0.1451288713227521,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 309,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.436544973,
+      "fighting": 0.05435279,
+      "flying": 0.505168618,
+      "ghost": 0.001671646,
+      "ground": 1.0533e-05,
+      "poison": 3.7708e-05,
+      "rock": 0.002200262,
+      "steel": 1.3469e-05
+     },
+     "side": "physical",
+     "slot": 3,
+     "spa_stat": 140,
+     "species": "aerodactyl",
+     "u": 0.3935608255433949,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 194,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 6.8031e-05,
+      "dragon": 7.482e-05,
+      "electric": 1.6918e-05,
+      "fire": 0.002971862,
+      "grass": 0.628600487,
+      "ice": 0.36764155,
+      "psychic": 2.026e-06,
+      "water": 0.000624306
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 349,
+     "species": "zapdos",
+     "u": 0.5199996666020914,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "769ccc75852d1be5552ce271e4a60295f531eb9ff74a8ec1cf68e8366bc33671",
+   "source_file": "team_010056.gen3ou_team",
+   "source_sha256": "ad4f88d3a5fb9ceabc034e998f8d5ef271075de748b9b769ba168c6c703f3e95",
+   "team_seed": 3741447089015571272
+  },
+  "team_010314": {
+   "heldout72_sha256": "1e93f135c7ae75cbebe809d40838fcac98aabb68150f6743cd4eebfedda50ef3",
+   "repairs": [
+    {
+     "atk_stat": 307,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000188936,
+      "dragon": 7.3292e-05,
+      "electric": 0.001100121,
+      "fire": 7.3556e-05,
+      "grass": 0.993999196,
+      "ice": 0.004490226,
+      "psychic": 1.7034e-05,
+      "water": 5.764e-05
+     },
+     "side": "special",
+     "slot": 4,
+     "spa_stat": 319,
+     "species": "salamence",
+     "u": 0.420512877290824,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": 0
+     }
+    },
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Fire",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 8.837e-05,
+      "dragon": 4.3542e-05,
+      "electric": 0.008190828,
+      "fire": 0.645332585,
+      "grass": 0.288175459,
+      "ice": 0.058080483,
+      "psychic": 1.3065e-05,
+      "water": 7.5667e-05
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 289,
+     "species": "celebi",
+     "u": 0.12659656478713277,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "69cf9f8f1f77ae9c2b9702bc736c4085d0b46de7df3dce9702a6b671fbc5ffe8",
+   "source_file": "team_010314.gen3ou_team",
+   "source_sha256": "4b3eb90415c143ea35a929e2358f3e94b93917eb1573e663686b18b174ae896f",
+   "team_seed": 13182298496462995998
+  },
+  "team_011393": {
+   "heldout72_sha256": "fc378791ef95f7dfec81c4076a603228803e4171be776991c41c904e27c1b067",
+   "repairs": [
+    {
+     "atk_stat": 194,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 6.8031e-05,
+      "dragon": 7.482e-05,
+      "electric": 1.6918e-05,
+      "fire": 0.002971862,
+      "grass": 0.628600487,
+      "ice": 0.36764155,
+      "psychic": 2.026e-06,
+      "water": 0.000624306
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 349,
+     "species": "zapdos",
+     "u": 0.5430294526507442,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 162,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000738791,
+      "electric": 0.000160842,
+      "fire": 0.562630961,
+      "grass": 0.43204962,
+      "ice": 0.000254619,
+      "psychic": 0.001399855,
+      "water": 0.002765312
+     },
+     "side": "special",
+     "slot": 1,
+     "spa_stat": 301,
+     "species": "regice",
+     "u": 0.8043319627310961,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "825bcae6aec2ee85922adff10b9318e10c695b54d3de0c662633d2d1c6da12ad",
+   "source_file": "team_011393.gen3ou_team",
+   "source_sha256": "e3ea7975e437c24541f80f617e828352d90c17a94c95dbffb5a04232b25cedbb",
+   "team_seed": 2496693012001917913
+  },
+  "team_011708": {
+   "heldout72_sha256": "1cfe03cdf71e216a6694868a18a05ca52fce2cb51ef1b23931e1d908588ad727",
+   "repairs": [
+    {
+     "atk_stat": 307,
+     "decided_by": "stat",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000188936,
+      "dragon": 7.3292e-05,
+      "electric": 0.001100121,
+      "fire": 7.3556e-05,
+      "grass": 0.993999196,
+      "ice": 0.004490226,
+      "psychic": 1.7034e-05,
+      "water": 5.764e-05
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 319,
+     "species": "salamence",
+     "u": 0.5457080827336286,
+     "votes": {
+      "evs": -1,
+      "moves": 1,
+      "nature": 0
+     }
+    }
+   ],
+   "sha256": "09e4cd721d80987613d5fb817b8ea2c5712e847fbe72c22c549fb97edf31d81c",
+   "source_file": "team_011708.gen3ou_team",
+   "source_sha256": "eb58aa70f31545631493b6f6c8a82a77390c1c436dd43d202508c4315a0ab164",
+   "team_seed": 2985622038051601676
+  },
+  "team_011729": {
+   "heldout72_sha256": "32297d62d25189df58e7e0fa513f735bf682b1c14f39176993e2f26b66216485",
+   "repairs": [
+    {
+     "atk_stat": 403,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.988505951,
+      "fighting": 0.000122643,
+      "flying": 0.002870093,
+      "ghost": 0.003431782,
+      "ground": 4.77e-06,
+      "poison": 1.1884e-05,
+      "rock": 0.005039982,
+      "steel": 1.2896e-05
+     },
+     "side": "physical",
+     "slot": 0,
+     "spa_stat": 203,
+     "species": "tyranitar",
+     "u": 0.37450206858426216,
+     "votes": {
+      "evs": 1,
+      "moves": 0,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 405,
+     "decided_by": "votes",
+     "hp_type": "Flying",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 30,
+      "spa": 30,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.00308985,
+      "fighting": 0.000109799,
+      "flying": 0.986503804,
+      "ghost": 0.008480662,
+      "ground": 3.365e-05,
+      "poison": 1.3229e-05,
+      "rock": 0.00175425,
+      "steel": 1.4756e-05
+     },
+     "side": "physical",
+     "slot": 1,
+     "spa_stat": 230,
+     "species": "salamence",
+     "u": 0.15925701063675635,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 183,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000185261,
+      "dragon": 5.4461e-05,
+      "electric": 0.008041041,
+      "fire": 1.2956e-05,
+      "grass": 0.860465691,
+      "ice": 0.130831752,
+      "psychic": 1.1838e-05,
+      "water": 0.000397
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 317,
+     "species": "charizard",
+     "u": 0.3202711631226973,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 149,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000297106,
+      "dragon": 0.00014814,
+      "electric": 2.2578e-05,
+      "fire": 0.002625113,
+      "grass": 0.535190241,
+      "ice": 0.461241683,
+      "psychic": 2.4181e-05,
+      "water": 0.000450957
+     },
+     "side": "special",
+     "slot": 4,
+     "spa_stat": 319,
+     "species": "jolteon",
+     "u": 0.2686126742145012,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "0a0c9d5de68d83c7a008a05efde2e5fb5a75fb7f152dc6b6844f01f318a000b6",
+   "source_file": "team_011729.gen3ou_team",
+   "source_sha256": "94edaca177509649f99afb30a6859acb0a31f35b6a926442a7e7a207bbf3cc9d",
+   "team_seed": 1581268403538206002
+  },
+  "team_012630": {
+   "heldout72_sha256": "c6e3b18e94714c88470056345cd002f3f6c62473d29c76109d2abf96702345a5",
+   "repairs": [
+    {
+     "atk_stat": 356,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.988505951,
+      "fighting": 0.000122643,
+      "flying": 0.002870093,
+      "ghost": 0.003431782,
+      "ground": 4.77e-06,
+      "poison": 1.1884e-05,
+      "rock": 0.005039982,
+      "steel": 1.2896e-05
+     },
+     "side": "physical",
+     "slot": 1,
+     "spa_stat": 203,
+     "species": "tyranitar",
+     "u": 0.3729897056904522,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 149,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000297106,
+      "dragon": 0.00014814,
+      "electric": 2.2578e-05,
+      "fire": 0.002625113,
+      "grass": 0.535190241,
+      "ice": 0.461241683,
+      "psychic": 2.4181e-05,
+      "water": 0.000450957
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 319,
+     "species": "jolteon",
+     "u": 0.021871037579416552,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "1a8a81c60653575e288d96b2d7732d5da76b42677d34094ede267e18ee8cbdf7",
+   "source_file": "team_012630.gen3ou_team",
+   "source_sha256": "e005a830ea7dc8393c10c12dba01ecf56444f28a05c37179c422c71eb7ccd0d8",
+   "team_seed": 3923230551301566918
+  },
+  "team_012837": {
+   "heldout72_sha256": "9c2dfeafea6088f62cce3568d9203220e9ca7a94a255c849ecc2f297600491c4",
+   "repairs": [
+    {
+     "atk_stat": 307,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000188936,
+      "dragon": 7.3292e-05,
+      "electric": 0.001100121,
+      "fire": 7.3556e-05,
+      "grass": 0.993999196,
+      "ice": 0.004490226,
+      "psychic": 1.7034e-05,
+      "water": 5.764e-05
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 350,
+     "species": "salamence",
+     "u": 0.08380347395038501,
+     "votes": {
+      "evs": -1,
+      "moves": 1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 140,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000268919,
+      "dragon": 8.36e-05,
+      "electric": 1.6283e-05,
+      "fire": 0.640640017,
+      "grass": 0.321399439,
+      "ice": 0.03715795,
+      "psychic": 7.7242e-05,
+      "water": 0.00035655
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 372,
+     "species": "magneton",
+     "u": 0.7023762792138444,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 397,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.988505951,
+      "fighting": 0.000122643,
+      "flying": 0.002870093,
+      "ghost": 0.003431782,
+      "ground": 4.77e-06,
+      "poison": 1.1884e-05,
+      "rock": 0.005039982,
+      "steel": 1.2896e-05
+     },
+     "side": "physical",
+     "slot": 3,
+     "spa_stat": 233,
+     "species": "tyranitar",
+     "u": 0.2807994815917543,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 309,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.436544973,
+      "fighting": 0.05435279,
+      "flying": 0.505168618,
+      "ghost": 0.001671646,
+      "ground": 1.0533e-05,
+      "poison": 3.7708e-05,
+      "rock": 0.002200262,
+      "steel": 1.3469e-05
+     },
+     "side": "physical",
+     "slot": 4,
+     "spa_stat": 140,
+     "species": "aerodactyl",
+     "u": 0.3610165251433919,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "9b4afd854aa1c2494ab8ba13566063d1406dd4b5e02d7aa1af363a7cce1c414d",
+   "source_file": "team_012837.gen3ou_team",
+   "source_sha256": "e5e61ced5fe74dd804747ecb86cca23c234b43c95c3a8aefdf946ef654987ecd",
+   "team_seed": 5029608180080939115
+  },
+  "team_013464": {
+   "heldout72_sha256": "298dbcaaa2344bfb84616d660d94ccbc5b390e2c8f7c2fe4f61062c4596b7654",
+   "repairs": [
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 8.837e-05,
+      "dragon": 4.3542e-05,
+      "electric": 0.008190828,
+      "fire": 0.645332585,
+      "grass": 0.288175459,
+      "ice": 0.058080483,
+      "psychic": 1.3065e-05,
+      "water": 7.5667e-05
+     },
+     "side": "special",
+     "slot": 3,
+     "spa_stat": 246,
+     "species": "celebi",
+     "u": 0.8293678727706887,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "f093ac02ba957edf330dd31f0ce897879d2f36a70a7167473319dee2d29bb1e9",
+   "source_file": "team_013464.gen3ou_team",
+   "source_sha256": "cb645c518ff0ae193f5acbf9e74a5b418feaf34b4e3a95a8b743f9211b00660f",
+   "team_seed": 11121370593844688894
+  },
+  "team_013515": {
+   "heldout72_sha256": "e73d99dfac2748c6baa5bf499aa68d14624e81770b27cd425c0d91c3876970a8",
+   "repairs": [
+    {
+     "atk_stat": 236,
+     "decided_by": "votes",
+     "hp_type": "Rock",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.865435838,
+      "fighting": 0.00399617,
+      "flying": 0.010175762,
+      "ghost": 0.023403254,
+      "ground": 2.3377e-05,
+      "poison": 2.5392e-05,
+      "rock": 0.096880274,
+      "steel": 5.9933e-05
+     },
+     "side": "physical",
+     "slot": 1,
+     "spa_stat": 176,
+     "species": "flygon",
+     "u": 0.9073442738229768,
+     "votes": {
+      "evs": 0,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000282668,
+      "dragon": 6.6799e-05,
+      "electric": 0.002800483,
+      "fire": 1.9391e-05,
+      "grass": 0.974303768,
+      "ice": 0.018226706,
+      "water": 0.004300185
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 349,
+     "species": "moltres",
+     "u": 0.9449292686311366,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 216,
+     "decided_by": "votes",
+     "hp_type": "Fighting",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 30,
+      "spd": 30,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.016077365,
+      "fighting": 0.856996837,
+      "flying": 0.029124206,
+      "ghost": 0.01198123,
+      "ground": 0.080273757,
+      "poison": 0.000829766,
+      "rock": 0.004716838,
+      "steel": 2e-09
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 185,
+     "species": "weezing",
+     "u": 0.7555650679356247,
+     "votes": {
+      "evs": 0,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "38f1af3f3901cad775745b6430e60d60e45b756fc86096f8e3eefaf921585cdb",
+   "source_file": "team_013515.gen3ou_team",
+   "source_sha256": "eb3ef5b4f4914235bfa0105037307be615b70617d4ba86a1a6b4956934236a22",
+   "team_seed": 18160053367889517112
+  },
+  "team_013522": {
+   "heldout72_sha256": "13cc3181a6e67b85f2474dbf1d503ad7f7087a1634620d75cd2230320123e99d",
+   "repairs": [
+    {
+     "atk_stat": 306,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000188936,
+      "dragon": 7.3292e-05,
+      "electric": 0.001100121,
+      "fire": 7.3556e-05,
+      "grass": 0.993999196,
+      "ice": 0.004490226,
+      "psychic": 1.7034e-05,
+      "water": 5.764e-05
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 350,
+     "species": "salamence",
+     "u": 0.8830549000255596,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 194,
+     "decided_by": "votes",
+     "hp_type": "Ice",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 6.8031e-05,
+      "dragon": 7.482e-05,
+      "electric": 1.6918e-05,
+      "fire": 0.002971862,
+      "grass": 0.628600487,
+      "ice": 0.36764155,
+      "psychic": 2.026e-06,
+      "water": 0.000624306
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 349,
+     "species": "zapdos",
+     "u": 0.7509372374230973,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "bc04387cc7facd7c3778e678ca1373b4a4b11b31c99f102bf4c005db3bb0f267",
+   "source_file": "team_013522.gen3ou_team",
+   "source_sha256": "930932022d1aa4339e4f065d83f99d28baf923ac493cc28d549c406ed66a7b34",
+   "team_seed": 10163802404640205252
+  },
+  "team_014188": {
+   "heldout72_sha256": "282a8736cb1736578373b938fc285cb7d445c83f5a66dd0f409657f4f04401e6",
+   "repairs": [
+    {
+     "atk_stat": 304,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000501103,
+      "dragon": 5.2576e-05,
+      "electric": 7.6307e-05,
+      "fire": 7.0124e-05,
+      "grass": 0.998773872,
+      "ice": 0.000468192,
+      "psychic": 5.4609e-05,
+      "water": 3.217e-06
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 313,
+     "species": "tyranitar",
+     "u": 0.5698563070255637,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 216,
+     "decided_by": "stat",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.712540891,
+      "fighting": 0.003305524,
+      "flying": 0.00636104,
+      "ghost": 0.261234933,
+      "ground": 0.000557886,
+      "poison": 1.969e-06,
+      "rock": 0.006446527,
+      "steel": 0.009551229
+     },
+     "side": "physical",
+     "slot": 1,
+     "spa_stat": 156,
+     "species": "forretress",
+     "u": 0.38778470926486486,
+     "votes": {
+      "evs": 0,
+      "moves": 0,
+      "nature": 0
+     }
+    },
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000282668,
+      "dragon": 6.6799e-05,
+      "electric": 0.002800483,
+      "fire": 1.9391e-05,
+      "grass": 0.974303768,
+      "ice": 0.018226706,
+      "water": 0.004300185
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 342,
+     "species": "moltres",
+     "u": 0.4049921446269179,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "7dc89ae3528dd2839bc39e5d4567dfca089d18f3f94a6b9d7abd767fb7735c08",
+   "source_file": "team_014188.gen3ou_team",
+   "source_sha256": "8508b0d9ec11633b2b80ac9752d5fa3e9144507ce0e1729258cc002afd75992c",
+   "team_seed": 5707098663091822519
+  },
+  "team_014353": {
+   "heldout72_sha256": "332b285112bb7771931e9d8725b580518ea68a58d1067487c173070bc41027cd",
+   "repairs": [
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Fire",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 8.837e-05,
+      "dragon": 4.3542e-05,
+      "electric": 0.008190828,
+      "fire": 0.645332585,
+      "grass": 0.288175459,
+      "ice": 0.058080483,
+      "psychic": 1.3065e-05,
+      "water": 7.5667e-05
+     },
+     "side": "special",
+     "slot": 4,
+     "spa_stat": 255,
+     "species": "celebi",
+     "u": 0.3597045441283958,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 403,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.988505951,
+      "fighting": 0.000122643,
+      "flying": 0.002870093,
+      "ghost": 0.003431782,
+      "ground": 4.77e-06,
+      "poison": 1.1884e-05,
+      "rock": 0.005039982,
+      "steel": 1.2896e-05
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 203,
+     "species": "tyranitar",
+     "u": 0.6176908433054356,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "1e5aa24d132cb536ccc84b94789d0f9d991f49a021fbc5aed40aa7d2fce4c847",
+   "source_file": "team_014353.gen3ou_team",
+   "source_sha256": "cc158c29c431ad651c6bdb4ac4379fdc850dad6c7b5e73e9e0297fccebae55ab",
+   "team_seed": 14020452463737169498
+  },
+  "team_014595": {
+   "heldout72_sha256": "27c11a69b3052a01f6b0c47dba86414d5f258845737cf18e171e084c56035011",
+   "repairs": [
+    {
+     "atk_stat": 394,
+     "decided_by": "votes",
+     "hp_type": "Ghost",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.105151948,
+      "fighting": 0.000220909,
+      "flying": 0.022193002,
+      "ghost": 0.762536446,
+      "ground": 0.000463679,
+      "poison": 1.1039e-05,
+      "rock": 0.109379871,
+      "steel": 4.3106e-05
+     },
+     "side": "physical",
+     "slot": 1,
+     "spa_stat": 140,
+     "species": "breloom",
+     "u": 0.5757814943253333,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 236,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.865435838,
+      "fighting": 0.00399617,
+      "flying": 0.010175762,
+      "ghost": 0.023403254,
+      "ground": 2.3377e-05,
+      "poison": 2.5392e-05,
+      "rock": 0.096880274,
+      "steel": 5.9933e-05
+     },
+     "side": "physical",
+     "slot": 2,
+     "spa_stat": 176,
+     "species": "flygon",
+     "u": 0.8283756156302287,
+     "votes": {
+      "evs": 0,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 140,
+     "decided_by": "votes",
+     "hp_type": "Fire",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000268919,
+      "dragon": 8.36e-05,
+      "electric": 1.6283e-05,
+      "fire": 0.640640017,
+      "grass": 0.321399439,
+      "ice": 0.03715795,
+      "psychic": 7.7242e-05,
+      "water": 0.00035655
+     },
+     "side": "special",
+     "slot": 3,
+     "spa_stat": 372,
+     "species": "magneton",
+     "u": 0.11847646973834547,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 349,
+     "decided_by": "votes",
+     "hp_type": "Rock",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.000614735,
+      "fighting": 0.003783812,
+      "flying": 0.654852166,
+      "ghost": 0.087977935,
+      "ground": 2.0229e-05,
+      "poison": 3.0669e-05,
+      "rock": 0.250418651,
+      "steel": 0.002301804
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 140,
+     "species": "gyarados",
+     "u": 0.8942231616699633,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "21d8b9ff1b7f07ee5525738e3076b13b8f213ad91aecbd345c7a70d19b1d0786",
+   "source_file": "team_014595.gen3ou_team",
+   "source_sha256": "a32b770f8eeefc5c23ceff288556edc01c25c0c5aafd64027d8e9324b9e6ba2a",
+   "team_seed": 3973059882278492041
+  },
+  "team_014665": {
+   "heldout72_sha256": "a8beb4c3ea15139100fa7a8d3665fb0e35c85fc9927a64d914d518087f775079",
+   "repairs": [
+    {
+     "atk_stat": 185,
+     "decided_by": "votes",
+     "hp_type": "Ice",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 3.5994e-05,
+      "dragon": 8.4754e-05,
+      "electric": 2.9382e-05,
+      "fire": 0.000366132,
+      "grass": 0.706604533,
+      "ice": 0.292150609,
+      "water": 0.000728596
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 329,
+     "species": "raikou",
+     "u": 0.8859519838638512,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 307,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000188936,
+      "dragon": 7.3292e-05,
+      "electric": 0.001100121,
+      "fire": 7.3556e-05,
+      "grass": 0.993999196,
+      "ice": 0.004490226,
+      "psychic": 1.7034e-05,
+      "water": 5.764e-05
+     },
+     "side": "special",
+     "slot": 4,
+     "spa_stat": 350,
+     "species": "salamence",
+     "u": 0.7459084743331811,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "4e1cc0ac536f1920a4bd145e728e794bd682db8b4bb2a9fa3934a94705913240",
+   "source_file": "team_014665.gen3ou_team",
+   "source_sha256": "7dba354d40141fc7eedb934a9e891526f11f308bfdfbce4f73394ba5f637f2b5",
+   "team_seed": 15776929684413164679
+  },
+  "team_014715": {
+   "heldout72_sha256": "4de999fc1ea27c9553762360da4b200e59ced5ed745f62aeb501450050d7e283",
+   "repairs": [
+    {
+     "atk_stat": 306,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000188936,
+      "dragon": 7.3292e-05,
+      "electric": 0.001100121,
+      "fire": 7.3556e-05,
+      "grass": 0.993999196,
+      "ice": 0.004490226,
+      "psychic": 1.7034e-05,
+      "water": 5.764e-05
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 350,
+     "species": "salamence",
+     "u": 0.09325808671531954,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 367,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.988505951,
+      "fighting": 0.000122643,
+      "flying": 0.002870093,
+      "ghost": 0.003431782,
+      "ground": 4.77e-06,
+      "poison": 1.1884e-05,
+      "rock": 0.005039982,
+      "steel": 1.2896e-05
+     },
+     "side": "physical",
+     "slot": 4,
+     "spa_stat": 203,
+     "species": "tyranitar",
+     "u": 0.09813687142614713,
+     "votes": {
+      "evs": 1,
+      "moves": -1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "86a68f4a1561cb63d2269aeea9b52d91e61e5f30934cc6e13d6235258220cced",
+   "source_file": "team_014715.gen3ou_team",
+   "source_sha256": "2d25ba28f6d5d89bd4b237bf221007c47d9ac65060e7b8b5f1f0917ab853a518",
+   "team_seed": 9504506771672773288
+  },
+  "team_015131": {
+   "heldout72_sha256": "707894d64bb0dd84ba42f85215017f0646f981369a0000796fc184eb6d146ee7",
+   "repairs": [
+    {
+     "atk_stat": 194,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 6.8031e-05,
+      "dragon": 7.482e-05,
+      "electric": 1.6918e-05,
+      "fire": 0.002971862,
+      "grass": 0.628600487,
+      "ice": 0.36764155,
+      "psychic": 2.026e-06,
+      "water": 0.000624306
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 286,
+     "species": "zapdos",
+     "u": 0.009047920136869503,
+     "votes": {
+      "evs": 0,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 204,
+     "decided_by": "stat",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000185261,
+      "dragon": 5.4461e-05,
+      "electric": 0.008041041,
+      "fire": 1.2956e-05,
+      "grass": 0.860465691,
+      "ice": 0.130831752,
+      "psychic": 1.1838e-05,
+      "water": 0.000397
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 317,
+     "species": "charizard",
+     "u": 0.14602374669480978,
+     "votes": {
+      "evs": -1,
+      "moves": 1,
+      "nature": 0
+     }
+    },
+    {
+     "atk_stat": 236,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.865435838,
+      "fighting": 0.00399617,
+      "flying": 0.010175762,
+      "ghost": 0.023403254,
+      "ground": 2.3377e-05,
+      "poison": 2.5392e-05,
+      "rock": 0.096880274,
+      "steel": 5.9933e-05
+     },
+     "side": "physical",
+     "slot": 3,
+     "spa_stat": 176,
+     "species": "flygon",
+     "u": 0.34462267260951607,
+     "votes": {
+      "evs": 0,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "978d066602ff998f129651fc2231b612534c02a74a1e8d38aa3f35cd626044d6",
+   "source_file": "team_015131.gen3ou_team",
+   "source_sha256": "bec7a54be44ab66397a59ef2bf6b123507bfb31871a9d272e590e216927382f0",
+   "team_seed": 6211174811552235452
+  },
+  "team_015684": {
+   "heldout72_sha256": "99bf93d6edca9ccf91dd390fb9429521ed3ccf8902c47777f5ff64c3fdfceea5",
+   "repairs": [
+    {
+     "atk_stat": 405,
+     "decided_by": "votes",
+     "hp_type": "Flying",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 30,
+      "spa": 30,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.00308985,
+      "fighting": 0.000109799,
+      "flying": 0.986503804,
+      "ghost": 0.008480662,
+      "ground": 3.365e-05,
+      "poison": 1.3229e-05,
+      "rock": 0.00175425,
+      "steel": 1.4756e-05
+     },
+     "side": "physical",
+     "slot": 3,
+     "spa_stat": 230,
+     "species": "salamence",
+     "u": 0.9176659435392198,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "81c75e9d40a4a6fb0fcd8297f686932bf1e83b89f8c910c1e62f27948ab7e38f",
+   "source_file": "team_015684.gen3ou_team",
+   "source_sha256": "05c5df6c80dd4267cf46f89411eaae5a2dfafd3663d1b812f198b7a39917b5cf",
+   "team_seed": 685131005772159155
+  },
+  "team_016264": {
+   "heldout72_sha256": "d40b06092aa24a2f049b498642fd6c507e40b11a6c14d398998f62fe023f44c6",
+   "repairs": [
+    {
+     "atk_stat": 307,
+     "decided_by": "stat",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000188936,
+      "dragon": 7.3292e-05,
+      "electric": 0.001100121,
+      "fire": 7.3556e-05,
+      "grass": 0.993999196,
+      "ice": 0.004490226,
+      "psychic": 1.7034e-05,
+      "water": 5.764e-05
+     },
+     "side": "special",
+     "slot": 1,
+     "spa_stat": 319,
+     "species": "salamence",
+     "u": 0.6015623544028629,
+     "votes": {
+      "evs": -1,
+      "moves": 1,
+      "nature": 0
+     }
+    },
+    {
+     "atk_stat": 140,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000268919,
+      "dragon": 8.36e-05,
+      "electric": 1.6283e-05,
+      "fire": 0.640640017,
+      "grass": 0.321399439,
+      "ice": 0.03715795,
+      "psychic": 7.7242e-05,
+      "water": 0.00035655
+     },
+     "side": "special",
+     "slot": 3,
+     "spa_stat": 372,
+     "species": "magneton",
+     "u": 0.9077323110601708,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 366,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.529267946,
+      "flying": 0.013536451,
+      "ghost": 0.416811231,
+      "ground": 1.9817e-05,
+      "poison": 0.0,
+      "rock": 0.040363677,
+      "steel": 8.78e-07
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 104,
+     "species": "hariyama",
+     "u": 0.06150634015697598,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "d3cc4251cc6c08f741c5ebf31e71895ae2767875b0edb1bb5cfb803c750ed23e",
+   "source_file": "team_016264.gen3ou_team",
+   "source_sha256": "a0e2caaf3afad4901e078d20ea2f8c122e0f5bb8f49be2f657593fc3ddce3a43",
+   "team_seed": 3474447896806108292
+  },
+  "team_016671": {
+   "heldout72_sha256": "4df8f48fa979ffe7adf9b321c46222fcb5782e1880cdb9ea18efa3a8b3204f9c",
+   "repairs": [
+    {
+     "atk_stat": 356,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.988505951,
+      "fighting": 0.000122643,
+      "flying": 0.002870093,
+      "ghost": 0.003431782,
+      "ground": 4.77e-06,
+      "poison": 1.1884e-05,
+      "rock": 0.005039982,
+      "steel": 1.2896e-05
+     },
+     "side": "physical",
+     "slot": 0,
+     "spa_stat": 203,
+     "species": "tyranitar",
+     "u": 0.4359848738968045,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 8.837e-05,
+      "dragon": 4.3542e-05,
+      "electric": 0.008190828,
+      "fire": 0.645332585,
+      "grass": 0.288175459,
+      "ice": 0.058080483,
+      "psychic": 1.3065e-05,
+      "water": 7.5667e-05
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 328,
+     "species": "celebi",
+     "u": 0.920033753686845,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 307,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000188936,
+      "dragon": 7.3292e-05,
+      "electric": 0.001100121,
+      "fire": 7.3556e-05,
+      "grass": 0.993999196,
+      "ice": 0.004490226,
+      "psychic": 1.7034e-05,
+      "water": 5.764e-05
+     },
+     "side": "special",
+     "slot": 4,
+     "spa_stat": 350,
+     "species": "salamence",
+     "u": 0.24194217851157895,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 185,
+     "decided_by": "votes",
+     "hp_type": "Ice",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 3.5994e-05,
+      "dragon": 8.4754e-05,
+      "electric": 2.9382e-05,
+      "fire": 0.000366132,
+      "grass": 0.706604533,
+      "ice": 0.292150609,
+      "water": 0.000728596
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 361,
+     "species": "raikou",
+     "u": 0.973929492422745,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "01c71c3225c55903b70ee5068453719deca8f5c7e961ea48a555b2c2c55b9eda",
+   "source_file": "team_016671.gen3ou_team",
+   "source_sha256": "e0b2f6965847dfff4824c4f6bc08e11ce2b6ba1d6f51984999f407c5d18b02ac",
+   "team_seed": 16980189972763727446
+  },
+  "team_017350": {
+   "heldout72_sha256": "6fafa8c4360966494b69f465e4cfff974b15909c1fa197631a2dc66d7a1f5379",
+   "repairs": [
+    {
+     "atk_stat": 194,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 6.8031e-05,
+      "dragon": 7.482e-05,
+      "electric": 1.6918e-05,
+      "fire": 0.002971862,
+      "grass": 0.628600487,
+      "ice": 0.36764155,
+      "psychic": 2.026e-06,
+      "water": 0.000624306
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 349,
+     "species": "zapdos",
+     "u": 0.3618307960971422,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 273,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000501103,
+      "dragon": 5.2576e-05,
+      "electric": 7.6307e-05,
+      "fire": 7.0124e-05,
+      "grass": 0.998773872,
+      "ice": 0.000468192,
+      "psychic": 5.4609e-05,
+      "water": 3.217e-06
+     },
+     "side": "special",
+     "slot": 4,
+     "spa_stat": 317,
+     "species": "tyranitar",
+     "u": 0.8096012120119586,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 140,
+     "decided_by": "votes",
+     "hp_type": "Fire",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000268919,
+      "dragon": 8.36e-05,
+      "electric": 1.6283e-05,
+      "fire": 0.640640017,
+      "grass": 0.321399439,
+      "ice": 0.03715795,
+      "psychic": 7.7242e-05,
+      "water": 0.00035655
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 372,
+     "species": "magneton",
+     "u": 0.5662753700234869,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "99eed721d70a42abf5244c7d6f0af219a89af3f5e5d8ad00fa7e4f5401595a24",
+   "source_file": "team_017350.gen3ou_team",
+   "source_sha256": "42ca868dcef4758988ce4973c6dd39365cd6e25cd8b9d18c2b840cd2d41332d8",
+   "team_seed": 3804329003897803684
+  },
+  "team_017962": {
+   "heldout72_sha256": "8ca0370a0f04d9129cfc91cc598f7e233658a8405eb51c1f0ea699e2cb6d69ea",
+   "repairs": [
+    {
+     "atk_stat": 194,
+     "decided_by": "votes",
+     "hp_type": "Ice",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 6.8031e-05,
+      "dragon": 7.482e-05,
+      "electric": 1.6918e-05,
+      "fire": 0.002971862,
+      "grass": 0.628600487,
+      "ice": 0.36764155,
+      "psychic": 2.026e-06,
+      "water": 0.000624306
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 331,
+     "species": "zapdos",
+     "u": 0.6827633367872683,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 376,
+     "decided_by": "votes",
+     "hp_type": "Steel",
+     "ivs": {
+      "atk": 31,
+      "def": 31,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.434418077,
+      "fighting": 0.001580014,
+      "flying": 0.014326202,
+      "ghost": 0.011740526,
+      "ground": 0.000464283,
+      "rock": 0.524513374,
+      "steel": 0.012957524
+     },
+     "side": "physical",
+     "slot": 3,
+     "spa_stat": 203,
+     "species": "metagross",
+     "u": 0.9927712059634174,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 379,
+     "decided_by": "votes",
+     "hp_type": "Flying",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 30,
+      "spa": 30,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.00308985,
+      "fighting": 0.000109799,
+      "flying": 0.986503804,
+      "ghost": 0.008480662,
+      "ground": 3.365e-05,
+      "poison": 1.3229e-05,
+      "rock": 0.00175425,
+      "steel": 1.4756e-05
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 230,
+     "species": "salamence",
+     "u": 0.7445735976857277,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "1819068b90b5b3a15de1abddf32ed7093b59c4e8476df9c7351d18d0257dc713",
+   "source_file": "team_017962.gen3ou_team",
+   "source_sha256": "d88cc5db5fb964d592d21869aaed31b53bc19e89bc6412f15aad8e0db00c10ea",
+   "team_seed": 9039014101498833647
+  },
+  "team_018679": {
+   "heldout72_sha256": "6552366ddbc1e9211d319e5dad676dc7f08540a4cebe0f9748bfbfb162f32d14",
+   "repairs": [
+    {
+     "atk_stat": 194,
+     "decided_by": "votes",
+     "hp_type": "Ice",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 6.8031e-05,
+      "dragon": 7.482e-05,
+      "electric": 1.6918e-05,
+      "fire": 0.002971862,
+      "grass": 0.628600487,
+      "ice": 0.36764155,
+      "psychic": 2.026e-06,
+      "water": 0.000624306
+     },
+     "side": "special",
+     "slot": 3,
+     "spa_stat": 349,
+     "species": "zapdos",
+     "u": 0.7327585073605368,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 185,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 3.5994e-05,
+      "dragon": 8.4754e-05,
+      "electric": 2.9382e-05,
+      "fire": 0.000366132,
+      "grass": 0.706604533,
+      "ice": 0.292150609,
+      "water": 0.000728596
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 329,
+     "species": "raikou",
+     "u": 0.6302422135813965,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "6d79dafc072f70018776c5cb6b1c7a205ebf2a62e810919be3c708047129c4cc",
+   "source_file": "team_018679.gen3ou_team",
+   "source_sha256": "1498e14b1441ccf37111ba5a2a06b63f581a5d8f9f1a107026ef81510dbd1b46",
+   "team_seed": 17794748529542304208
+  },
+  "team_019541": {
+   "heldout72_sha256": "6c12b5fd5f0667d92533278ac8342c611ebbcfd5cdf727726010deea08f9df7a",
+   "repairs": [
+    {
+     "atk_stat": 306,
+     "decided_by": "votes",
+     "hp_type": "Fighting",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 30,
+      "spd": 30,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.010713859,
+      "fighting": 0.978321454,
+      "flying": 0.000766307,
+      "ghost": 0.003760352,
+      "ground": 0.006213639,
+      "poison": 2.0016e-05,
+      "rock": 0.000157785,
+      "steel": 4.6587e-05
+     },
+     "side": "physical",
+     "slot": 0,
+     "spa_stat": 299,
+     "species": "zapdos",
+     "u": 0.5891037165446756,
+     "votes": {
+      "evs": 1,
+      "moves": -1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 304,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000501103,
+      "dragon": 5.2576e-05,
+      "electric": 7.6307e-05,
+      "fire": 7.0124e-05,
+      "grass": 0.998773872,
+      "ice": 0.000468192,
+      "psychic": 5.4609e-05,
+      "water": 3.217e-06
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 306,
+     "species": "tyranitar",
+     "u": 0.06226783980677053,
+     "votes": {
+      "evs": -1,
+      "moves": 1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000186651,
+      "dragon": 4.8734e-05,
+      "electric": 1.0777e-05,
+      "fire": 0.000367629,
+      "grass": 0.975319884,
+      "ice": 0.000570166,
+      "psychic": 8.566e-06,
+      "water": 0.023487593
+     },
+     "side": "special",
+     "slot": 4,
+     "spa_stat": 252,
+     "species": "jirachi",
+     "u": 0.7326011778649372,
+     "votes": {
+      "evs": -1,
+      "moves": 1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 309,
+     "decided_by": "votes",
+     "hp_type": "Fighting",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 30,
+      "spd": 30,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.436544973,
+      "fighting": 0.05435279,
+      "flying": 0.505168618,
+      "ghost": 0.001671646,
+      "ground": 1.0533e-05,
+      "poison": 3.7708e-05,
+      "rock": 0.002200262,
+      "steel": 1.3469e-05
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 140,
+     "species": "aerodactyl",
+     "u": 0.47899670934061456,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "b0a489bc67287485d32a65794dbfb5b3b440a507430794800d1651647fa8da91",
+   "source_file": "team_019541.gen3ou_team",
+   "source_sha256": "91ceb8b92911d240c7b254dbba9aa208b024d9861ccfcb8359ce87aeb3782d0d",
+   "team_seed": 9374048572424285917
+  },
+  "team_019922": {
+   "heldout72_sha256": "79c893da03bb7f627ad1a0d3aaaafc7f7d135076e4d692c43732cd6084e50915",
+   "repairs": [
+    {
+     "atk_stat": 194,
+     "decided_by": "votes",
+     "hp_type": "Ice",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 6.8031e-05,
+      "dragon": 7.482e-05,
+      "electric": 1.6918e-05,
+      "fire": 0.002971862,
+      "grass": 0.628600487,
+      "ice": 0.36764155,
+      "psychic": 2.026e-06,
+      "water": 0.000624306
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 286,
+     "species": "zapdos",
+     "u": 0.8499315420569483,
+     "votes": {
+      "evs": 0,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 216,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.712540891,
+      "fighting": 0.003305524,
+      "flying": 0.00636104,
+      "ghost": 0.261234933,
+      "ground": 0.000557886,
+      "poison": 1.969e-06,
+      "rock": 0.006446527,
+      "steel": 0.009551229
+     },
+     "side": "physical",
+     "slot": 1,
+     "spa_stat": 156,
+     "species": "forretress",
+     "u": 0.4856414445342533,
+     "votes": {
+      "evs": 0,
+      "moves": 1,
+      "nature": 0
+     }
+    },
+    {
+     "atk_stat": 236,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.865435838,
+      "fighting": 0.00399617,
+      "flying": 0.010175762,
+      "ghost": 0.023403254,
+      "ground": 2.3377e-05,
+      "poison": 2.5392e-05,
+      "rock": 0.096880274,
+      "steel": 5.9933e-05
+     },
+     "side": "physical",
+     "slot": 4,
+     "spa_stat": 176,
+     "species": "flygon",
+     "u": 0.41439325414323314,
+     "votes": {
+      "evs": 0,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "fd2381908adc15912aa74a7b0906ab1a4b121006f860bd2b9712915197cbe753",
+   "source_file": "team_019922.gen3ou_team",
+   "source_sha256": "5f052c0d4c0ee2f09499cb3ebc9c10277039bbbfc5e99ce1e402e8b18bda0751",
+   "team_seed": 2957528021000205752
+  },
+  "team_020017": {
+   "heldout72_sha256": "fbb33baf4bc9a97757be9ef81f83261043127ccb81378df4f8f86fef5e16d3c9",
+   "repairs": [
+    {
+     "atk_stat": 149,
+     "decided_by": "votes",
+     "hp_type": "Ice",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000297106,
+      "dragon": 0.00014814,
+      "electric": 2.2578e-05,
+      "fire": 0.002625113,
+      "grass": 0.535190241,
+      "ice": 0.461241683,
+      "psychic": 2.4181e-05,
+      "water": 0.000450957
+     },
+     "side": "special",
+     "slot": 1,
+     "spa_stat": 319,
+     "species": "jolteon",
+     "u": 0.6611556817647397,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 149,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000782981,
+      "dragon": 0.000152983,
+      "electric": 6.7e-06,
+      "fire": 0.001289661,
+      "grass": 0.995667354,
+      "ice": 0.001180791,
+      "psychic": 1.0949e-05,
+      "water": 0.00090858
+     },
+     "side": "special",
+     "slot": 3,
+     "spa_stat": 298,
+     "species": "gengar",
+     "u": 0.8977629127059793,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 367,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.988505951,
+      "fighting": 0.000122643,
+      "flying": 0.002870093,
+      "ghost": 0.003431782,
+      "ground": 4.77e-06,
+      "poison": 1.1884e-05,
+      "rock": 0.005039982,
+      "steel": 1.2896e-05
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 203,
+     "species": "tyranitar",
+     "u": 0.28720334027860106,
+     "votes": {
+      "evs": 1,
+      "moves": 0,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "b8baab4b61db329e181c71b5f898a10a6b9ad8c0d415539a2bbb5eafd37ea3a3",
+   "source_file": "team_020017.gen3ou_team",
+   "source_sha256": "43fc0d22012361d585a6c34e62f2b1dbfd08974ed849e2b7ebabdc0ee67b4978",
+   "team_seed": 13141002643694046769
+  },
+  "team_020024": {
+   "heldout72_sha256": "a91f31e46a74954f2665e1b86d6f0906714e081596cac132e5cfe5909a5c38dd",
+   "repairs": [
+    {
+     "atk_stat": 194,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 6.8031e-05,
+      "dragon": 7.482e-05,
+      "electric": 1.6918e-05,
+      "fire": 0.002971862,
+      "grass": 0.628600487,
+      "ice": 0.36764155,
+      "psychic": 2.026e-06,
+      "water": 0.000624306
+     },
+     "side": "special",
+     "slot": 3,
+     "spa_stat": 331,
+     "species": "zapdos",
+     "u": 0.3939868186314395,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 405,
+     "decided_by": "votes",
+     "hp_type": "Rock",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.434418077,
+      "fighting": 0.001580014,
+      "flying": 0.014326202,
+      "ghost": 0.011740526,
+      "ground": 0.000464283,
+      "rock": 0.524513374,
+      "steel": 0.012957524
+     },
+     "side": "physical",
+     "slot": 4,
+     "spa_stat": 203,
+     "species": "metagross",
+     "u": 0.6300599523588073,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 273,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000501103,
+      "dragon": 5.2576e-05,
+      "electric": 7.6307e-05,
+      "fire": 7.0124e-05,
+      "grass": 0.998773872,
+      "ice": 0.000468192,
+      "psychic": 5.4609e-05,
+      "water": 3.217e-06
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 317,
+     "species": "tyranitar",
+     "u": 0.026537428430649657,
+     "votes": {
+      "evs": -1,
+      "moves": 1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "159e7e48bd9cbd1cf728d423e445becfdb0833a3938e0a4ee0d105b5e2897deb",
+   "source_file": "team_020024.gen3ou_team",
+   "source_sha256": "ae82304f676370aa85bf06e92db752e3207f284383247419695628630fe0a7ba",
+   "team_seed": 18076234343475857778
+  },
+  "team_020973": {
+   "heldout72_sha256": "61be294c720782f9a3983cdc6514b3757451124ca964adef67df14438218457c",
+   "repairs": [
+    {
+     "atk_stat": 302,
+     "decided_by": "votes",
+     "hp_type": "Flying",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 30,
+      "spa": 30,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.436544973,
+      "fighting": 0.05435279,
+      "flying": 0.505168618,
+      "ghost": 0.001671646,
+      "ground": 1.0533e-05,
+      "poison": 3.7708e-05,
+      "rock": 0.002200262,
+      "steel": 1.3469e-05
+     },
+     "side": "physical",
+     "slot": 0,
+     "spa_stat": 140,
+     "species": "aerodactyl",
+     "u": 0.6495058092561046,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 216,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.712540891,
+      "fighting": 0.003305524,
+      "flying": 0.00636104,
+      "ghost": 0.261234933,
+      "ground": 0.000557886,
+      "poison": 1.969e-06,
+      "rock": 0.006446527,
+      "steel": 0.009551229
+     },
+     "side": "physical",
+     "slot": 2,
+     "spa_stat": 140,
+     "species": "forretress",
+     "u": 0.02897577628039938,
+     "votes": {
+      "evs": 0,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "4ca8353717a1ebaca787de17b358618527615db5e11e1d425a5f34d65e35639b",
+   "source_file": "team_020973.gen3ou_team",
+   "source_sha256": "13aea51b8b7c87f348dacfecac56946796b272e70056bb1b5d151818f6e6de8a",
+   "team_seed": 3267606315409880113
+  },
+  "team_021256": {
+   "heldout72_sha256": "2e2e3044c9ebc55a4f24de6809cfde1c8dfc35d3ed596d41e73c85a72d6eae90",
+   "repairs": [
+    {
+     "atk_stat": 385,
+     "decided_by": "votes",
+     "hp_type": "Ghost",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.379033485,
+      "fighting": 2.0184e-05,
+      "flying": 0.006256761,
+      "ghost": 0.594827334,
+      "ground": 1.347e-05,
+      "poison": 2.0046e-05,
+      "rock": 0.019791773,
+      "steel": 3.6947e-05
+     },
+     "side": "physical",
+     "slot": 1,
+     "spa_stat": 149,
+     "species": "machamp",
+     "u": 0.7309146120482639,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 307,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000188936,
+      "dragon": 7.3292e-05,
+      "electric": 0.001100121,
+      "fire": 7.3556e-05,
+      "grass": 0.993999196,
+      "ice": 0.004490226,
+      "psychic": 1.7034e-05,
+      "water": 5.764e-05
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 350,
+     "species": "salamence",
+     "u": 0.6795835119823342,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 185,
+     "decided_by": "votes",
+     "hp_type": "Ice",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 3.5994e-05,
+      "dragon": 8.4754e-05,
+      "electric": 2.9382e-05,
+      "fire": 0.000366132,
+      "grass": 0.706604533,
+      "ice": 0.292150609,
+      "water": 0.000728596
+     },
+     "side": "special",
+     "slot": 3,
+     "spa_stat": 361,
+     "species": "raikou",
+     "u": 0.7652080209015785,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 403,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.988505951,
+      "fighting": 0.000122643,
+      "flying": 0.002870093,
+      "ghost": 0.003431782,
+      "ground": 4.77e-06,
+      "poison": 1.1884e-05,
+      "rock": 0.005039982,
+      "steel": 1.2896e-05
+     },
+     "side": "physical",
+     "slot": 4,
+     "spa_stat": 203,
+     "species": "tyranitar",
+     "u": 0.9739249097770125,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 385,
+     "decided_by": "votes",
+     "hp_type": "Rock",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.434418077,
+      "fighting": 0.001580014,
+      "flying": 0.014326202,
+      "ghost": 0.011740526,
+      "ground": 0.000464283,
+      "rock": 0.524513374,
+      "steel": 0.012957524
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 203,
+     "species": "metagross",
+     "u": 0.8444762440949668,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "4d2e25ed95a849d06e62aa0fe7fb46a3d0f0a9b511de1502642427958e889980",
+   "source_file": "team_021256.gen3ou_team",
+   "source_sha256": "8791d407cc34e89305b9f43ae9c91d464e7dc4fa3d2bc162c7a62cce4fc2109a",
+   "team_seed": 3604218740654523967
+  },
+  "team_021267": {
+   "heldout72_sha256": "8c2c9d0d29e2de582ac5f1f90c0ddd94cb27a8e7d0e4d3b16843098ea71358e2",
+   "repairs": [
+    {
+     "atk_stat": 140,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000268919,
+      "dragon": 8.36e-05,
+      "electric": 1.6283e-05,
+      "fire": 0.640640017,
+      "grass": 0.321399439,
+      "ice": 0.03715795,
+      "psychic": 7.7242e-05,
+      "water": 0.00035655
+     },
+     "side": "special",
+     "slot": 1,
+     "spa_stat": 339,
+     "species": "magneton",
+     "u": 0.6458842638140241,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 405,
+     "decided_by": "votes",
+     "hp_type": "Flying",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 30,
+      "spa": 30,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.00308985,
+      "fighting": 0.000109799,
+      "flying": 0.986503804,
+      "ghost": 0.008480662,
+      "ground": 3.365e-05,
+      "poison": 1.3229e-05,
+      "rock": 0.00175425,
+      "steel": 1.4756e-05
+     },
+     "side": "physical",
+     "slot": 5,
+     "spa_stat": 230,
+     "species": "salamence",
+     "u": 0.23465639827619833,
+     "votes": {
+      "evs": 1,
+      "moves": 0,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "ac9f027ca97d35f47565f842480e8a34791d662ca087f6ebcd22a01f7702cab2",
+   "source_file": "team_021267.gen3ou_team",
+   "source_sha256": "4f25b6b28035059e9b08eec17402ceb12d134c8bb45767295a2fb0af57c3b300",
+   "team_seed": 10679236541254391372
+  },
+  "team_021930": {
+   "heldout72_sha256": "bf42a654ad2663413bbbba6f8ae437bc55ef5928b7c072d1dc9e599849d49f5d",
+   "repairs": [],
+   "sha256": "bf42a654ad2663413bbbba6f8ae437bc55ef5928b7c072d1dc9e599849d49f5d",
+   "source_file": "team_021930.gen3ou_team",
+   "source_sha256": "acf5ed9ec5990e950d320accb0cd6bbad238b58d3765badbd4cd50f517405119",
+   "team_seed": 10664825450225969317
+  },
+  "team_022531": {
+   "heldout72_sha256": "92d0d23966ab125cb8f33022b4dddeae0ebd77c4d03daa63d59a39b4f20a1e42",
+   "repairs": [
+    {
+     "atk_stat": 403,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.988505951,
+      "fighting": 0.000122643,
+      "flying": 0.002870093,
+      "ghost": 0.003431782,
+      "ground": 4.77e-06,
+      "poison": 1.1884e-05,
+      "rock": 0.005039982,
+      "steel": 1.2896e-05
+     },
+     "side": "physical",
+     "slot": 0,
+     "spa_stat": 203,
+     "species": "tyranitar",
+     "u": 0.1692460227384296,
+     "votes": {
+      "evs": 1,
+      "moves": 0,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 194,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 6.8031e-05,
+      "dragon": 7.482e-05,
+      "electric": 1.6918e-05,
+      "fire": 0.002971862,
+      "grass": 0.628600487,
+      "ice": 0.36764155,
+      "psychic": 2.026e-06,
+      "water": 0.000624306
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 349,
+     "species": "zapdos",
+     "u": 0.028466728646444395,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "f313308196081191b2912a5cd51c8584964f5846df0d7aec401e3d236aaf814e",
+   "source_file": "team_022531.gen3ou_team",
+   "source_sha256": "80ce4fad8935da9f32ed064df0c722700778b89f8defd07832f901dc83f065eb",
+   "team_seed": 5326910511773197891
+  },
+  "team_022770": {
+   "heldout72_sha256": "2eecb824a80b80a0f962c55c923e5c8d2916e2393b844a5f3f06d7da4cd7653f",
+   "repairs": [
+    {
+     "atk_stat": 328,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.262651081,
+      "fighting": 0.000591525,
+      "flying": 0.001627161,
+      "ghost": 0.043413054,
+      "ground": 6.109e-06,
+      "rock": 0.691710426,
+      "steel": 6.45e-07
+     },
+     "side": "physical",
+     "slot": 1,
+     "spa_stat": 122,
+     "species": "regirock",
+     "u": 0.11995119502298379,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 236,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000186651,
+      "dragon": 4.8734e-05,
+      "electric": 1.0777e-05,
+      "fire": 0.000367629,
+      "grass": 0.975319884,
+      "ice": 0.000570166,
+      "psychic": 8.566e-06,
+      "water": 0.023487593
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 236,
+     "species": "jirachi",
+     "u": 0.4181269016156608,
+     "votes": {
+      "evs": 0,
+      "moves": -1,
+      "nature": 0
+     }
+    },
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Fire",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 8.837e-05,
+      "dragon": 4.3542e-05,
+      "electric": 0.008190828,
+      "fire": 0.645332585,
+      "grass": 0.288175459,
+      "ice": 0.058080483,
+      "psychic": 1.3065e-05,
+      "water": 7.5667e-05
+     },
+     "side": "special",
+     "slot": 3,
+     "spa_stat": 246,
+     "species": "celebi",
+     "u": 0.5278700636383071,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 307,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000188936,
+      "dragon": 7.3292e-05,
+      "electric": 0.001100121,
+      "fire": 7.3556e-05,
+      "grass": 0.993999196,
+      "ice": 0.004490226,
+      "psychic": 1.7034e-05,
+      "water": 5.764e-05
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 319,
+     "species": "salamence",
+     "u": 0.10344375613609857,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": 0
+     }
+    }
+   ],
+   "sha256": "ca76ccde9fdb77114e342d4f7548ea703f5b9a534ec8fb40fbcf8d2aa24be2ea",
+   "source_file": "team_022770.gen3ou_team",
+   "source_sha256": "81aed4f292e61e4a9623b3c60807f6321242eceae6c9295070be788ca1326a56",
+   "team_seed": 2153702333637477061
+  },
+  "team_022854": {
+   "heldout72_sha256": "01f1b19e11ca34e84750be7bb5260488ea45e84513405c2d52e687466a7e371f",
+   "repairs": [
+    {
+     "atk_stat": 328,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.977461521,
+      "fighting": 0.005660988,
+      "flying": 0.006189294,
+      "ghost": 0.006426125,
+      "ground": 0.002418081,
+      "rock": 0.001843991
+     },
+     "side": "physical",
+     "slot": 2,
+     "spa_stat": 113,
+     "species": "trapinch",
+     "u": 0.7423464828221882,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 403,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.988505951,
+      "fighting": 0.000122643,
+      "flying": 0.002870093,
+      "ghost": 0.003431782,
+      "ground": 4.77e-06,
+      "poison": 1.1884e-05,
+      "rock": 0.005039982,
+      "steel": 1.2896e-05
+     },
+     "side": "physical",
+     "slot": 3,
+     "spa_stat": 203,
+     "species": "tyranitar",
+     "u": 0.03274349082199657,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "f0ece567945c21e7cee6885e1f0ff3904b4be5523764334dc28230ff404b13e1",
+   "source_file": "team_022854.gen3ou_team",
+   "source_sha256": "0e28b597bd708244d67511b18d591341438b5d849a399012ecf448a056c55aaf",
+   "team_seed": 14856752074289127862
+  },
+  "team_023007": {
+   "heldout72_sha256": "5ad07ca887942ad3c7cae7c2c6c2b730a99eaf8c66626db67388ba37cdbbbc2c",
+   "repairs": [
+    {
+     "atk_stat": 122,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.001642873,
+      "dragon": 6.139e-06,
+      "electric": 0.028491078,
+      "fire": 0.790708857,
+      "grass": 0.175470586,
+      "psychic": 0.000393345,
+      "water": 0.003287122
+     },
+     "side": "special",
+     "slot": 0,
+     "spa_stat": 329,
+     "species": "jynx",
+     "u": 0.9827275488501105,
+     "votes": {
+      "evs": -1,
+      "moves": 0,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 403,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.988505951,
+      "fighting": 0.000122643,
+      "flying": 0.002870093,
+      "ghost": 0.003431782,
+      "ground": 4.77e-06,
+      "poison": 1.1884e-05,
+      "rock": 0.005039982,
+      "steel": 1.2896e-05
+     },
+     "side": "physical",
+     "slot": 3,
+     "spa_stat": 203,
+     "species": "tyranitar",
+     "u": 0.41786285937545653,
+     "votes": {
+      "evs": 1,
+      "moves": 0,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "9bb8fa4848035b297ae95090b98d24870bb3f9b0650db236fa1d8937565cc3c3",
+   "source_file": "team_023007.gen3ou_team",
+   "source_sha256": "3d6349c1bb05064135b8fa4b521a8653e466f949bef1d3e79054d974478f8c8e",
+   "team_seed": 14133949214136442972
+  },
+  "team_023627": {
+   "heldout72_sha256": "3f6ff565698e11053c93020e627481bf665c1dcdbe03de9e2c7ad3774ab8022a",
+   "repairs": [
+    {
+     "atk_stat": 242,
+     "decided_by": "votes",
+     "hp_type": "Flying",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 30,
+      "spa": 30,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.034000715,
+      "flying": 0.532542237,
+      "ghost": 0.262158169,
+      "poison": 0.090013787,
+      "rock": 0.081285091
+     },
+     "side": "physical",
+     "slot": 0,
+     "spa_stat": 206,
+     "species": "nidoking",
+     "u": 0.3678324283256994,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 0
+     }
+    },
+    {
+     "atk_stat": 140,
+     "decided_by": "votes",
+     "hp_type": "Grass",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 0.000268919,
+      "dragon": 8.36e-05,
+      "electric": 1.6283e-05,
+      "fire": 0.640640017,
+      "grass": 0.321399439,
+      "ice": 0.03715795,
+      "psychic": 7.7242e-05,
+      "water": 0.00035655
+     },
+     "side": "special",
+     "slot": 2,
+     "spa_stat": 372,
+     "species": "magneton",
+     "u": 0.7180473098933291,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    },
+    {
+     "atk_stat": 309,
+     "decided_by": "votes",
+     "hp_type": "Bug",
+     "ivs": {
+      "atk": 30,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 31
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.436544973,
+      "fighting": 0.05435279,
+      "flying": 0.505168618,
+      "ghost": 0.001671646,
+      "ground": 1.0533e-05,
+      "poison": 3.7708e-05,
+      "rock": 0.002200262,
+      "steel": 1.3469e-05
+     },
+     "side": "physical",
+     "slot": 3,
+     "spa_stat": 140,
+     "species": "aerodactyl",
+     "u": 0.027696830406949702,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    },
+    {
+     "atk_stat": 212,
+     "decided_by": "votes",
+     "hp_type": "Fire",
+     "ivs": {
+      "atk": 30,
+      "def": 31,
+      "hp": 31,
+      "spa": 30,
+      "spd": 31,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "dark": 8.837e-05,
+      "dragon": 4.3542e-05,
+      "electric": 0.008190828,
+      "fire": 0.645332585,
+      "grass": 0.288175459,
+      "ice": 0.058080483,
+      "psychic": 1.3065e-05,
+      "water": 7.5667e-05
+     },
+     "side": "special",
+     "slot": 5,
+     "spa_stat": 328,
+     "species": "celebi",
+     "u": 0.13901999508961482,
+     "votes": {
+      "evs": -1,
+      "moves": -1,
+      "nature": -1
+     }
+    }
+   ],
+   "sha256": "b9eadbc5798c9a488cc48933ba40c463a62fc4c2c8b4b7930a3b76b289062e6c",
+   "source_file": "team_023627.gen3ou_team",
+   "source_sha256": "fa0b5f7aedc3e179c27abdf0318b367b01be66fce43e40b01a2023a7ce0c4e79",
+   "team_seed": 9667109456681942644
+  },
+  "team_023933": {
+   "heldout72_sha256": "2650ac55ccace7811ad8467b5c5dea109a8890712a396c29e3f3d8f99d4cada2",
+   "repairs": [
+    {
+     "atk_stat": 398,
+     "decided_by": "votes",
+     "hp_type": "Rock",
+     "ivs": {
+      "atk": 31,
+      "def": 30,
+      "hp": 31,
+      "spa": 31,
+      "spd": 30,
+      "spe": 30
+     },
+     "prior_source": "species",
+     "restricted": {
+      "bug": 0.434418077,
+      "fighting": 0.001580014,
+      "flying": 0.014326202,
+      "ghost": 0.011740526,
+      "ground": 0.000464283,
+      "rock": 0.524513374,
+      "steel": 0.012957524
+     },
+     "side": "physical",
+     "slot": 1,
+     "spa_stat": 203,
+     "species": "metagross",
+     "u": 0.780949939177171,
+     "votes": {
+      "evs": 1,
+      "moves": 1,
+      "nature": 1
+     }
+    }
+   ],
+   "sha256": "dec5973d94e736203ac876ce542475f98ed32a918847dafff301cc659109419a",
+   "source_file": "team_023933.gen3ou_team",
+   "source_sha256": "a177f7103a49ef6f1afba1c155feab128553c337296f7903745ba826305845a6",
+   "team_seed": 4465146763733038280
+  }
+ }
+}

@@ -1,0 +1,59 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 0 Def / 0 SpA / 8 SpD / 0 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Double-Edge
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 0 Atk / 0 Def / 252 SpA / 4 SpD / 0 Spe
+Modest Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Beam
+- Calm Mind
+- Hydro Pump
+- Surf
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 0 Atk / 0 Def / 0 SpA / 216 SpD / 40 Spe
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunder Wave
+- Counter
+- Seismic Toss
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Dragon Dance
+- Brick Break
+- Hidden Power [Flying]
+- Rock Slide
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 0 HP / 0 Atk / 4 Def / 252 SpA / 0 SpD / 252 Spe
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Body Slam
+- Fire Punch
+- Thunderbolt
+- Ice Punch
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 248 HP / 0 Atk / 216 Def / 0 SpA / 44 SpD / 0 Spe
+Relaxed Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Substitute
+- Endeavor
+- Earthquake
+- Protect

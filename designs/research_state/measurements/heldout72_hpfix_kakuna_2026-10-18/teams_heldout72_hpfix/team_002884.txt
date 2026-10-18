@@ -1,0 +1,59 @@
+Medicham @ Choice Band
+Ability: Pure Power
+EVs: 0 HP / 252 Atk / 0 Def / 0 SpA / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rock Slide
+- Shadow Ball
+- Fake Out
+- Focus Punch
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 248 HP / 0 Atk / 184 Def / 76 SpA / 0 SpD / 0 Spe
+Bold Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Thunder Wave
+- Hidden Power [Grass]
+- Recover
+- Toxic
+
+Machamp @ Leftovers
+Ability: Guts
+EVs: 128 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 128 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Bulk Up
+- Cross Chop
+- Rock Slide
+- Hidden Power [Ghost]
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 0 Atk / 224 Def / 0 SpA / 0 SpD / 32 Spe
+Bold Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Calm Mind
+- Thunder
+- Hidden Power [Grass]
+- Fire Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 0 Atk / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Hidden Power [Fire]
+- Calm Mind
+- Giga Drain
+- Baton Pass
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 128 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Meteor Mash
+- Earthquake
+- Explosion
+- Psychic

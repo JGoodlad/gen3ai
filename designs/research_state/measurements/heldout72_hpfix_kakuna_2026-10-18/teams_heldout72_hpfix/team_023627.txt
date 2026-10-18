@@ -1,0 +1,59 @@
+Nidoking @ Salac Berry
+Ability: Poison Point
+EVs: 200 HP / 88 Atk / 44 Def / 0 SpA / 0 SpD / 176 Spe
+Naive Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 31 Spe
+- Sludge Bomb
+- Earthquake
+- Hidden Power [Flying]
+- Megahorn
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 0 SpA / 144 SpD / 12 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Counter
+- Focus Punch
+- Body Slam
+- Curse
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 0 Atk / 0 Def / 252 SpA / 0 SpD / 252 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Hidden Power [Grass]
+- Thunderbolt
+- Protect
+- Substitute
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 0 HP / 252 Atk / 0 Def / 0 SpA / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 31 HP / 30 Atk / 30 Def / 31 SpA / 30 SpD / 31 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Double-Edge
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 0 Atk / 4 Def / 0 SpA / 252 SpD / 0 Spe
+Careful Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Spikes
+- Protect
+- Drill Peck
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 0 HP / 0 Atk / 0 Def / 252 SpA / 76 SpD / 180 Spe
+Modest Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Baton Pass
+- Calm Mind

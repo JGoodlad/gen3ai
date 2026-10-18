@@ -1,0 +1,59 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 152 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 104 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Earthquake
+- Explosion
+- Meteor Mash
+- Agility
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 0 Atk / 0 Def / 212 SpA / 0 SpD / 48 Spe
+Quiet Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Earthquake
+- Fire Blast
+- Focus Punch
+- Pursuit
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 0 Atk / 252 Def / 0 SpA / 0 SpD / 16 Spe
+Bold Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Calm Mind
+- Ice Beam
+- Hidden Power [Grass]
+- Substitute
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 240 Atk / 16 Def / 0 SpA / 0 SpD / 0 Spe
+Relaxed Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Earthquake
+- Explosion
+- Shadow Ball
+- Psychic
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 112 HP / 96 Atk / 184 Def / 0 SpA / 116 SpD / 0 Spe
+Adamant Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Focus Punch
+- Self-Destruct
+- Shadow Ball
+- Curse
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 0 HP / 4 Atk / 0 Def / 252 SpA / 0 SpD / 252 Spe
+Naive Nature
+IVs: 31 HP / 30 Atk / 31 Def / 30 SpA / 31 SpD / 31 Spe
+- Dragon Dance
+- Hidden Power [Grass]
+- Earthquake
+- Dragon Claw

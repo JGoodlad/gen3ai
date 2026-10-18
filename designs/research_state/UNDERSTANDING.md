@@ -741,6 +741,15 @@ artifact. Each has a kill test, and the cheapest discriminator, a THIRD-SOURCE s
   familiarity matrix (`endstate/design_diversity_teams_opponents.md` §5).
 
 [ledger 2026-10-18 · *THE EVALUATION MATRIX*]
+**Repairing the HP Dark artifact does NOT close the gap (2026-10-18, `heldout72_hpfix_kakuna_2026-10-18/`):** [MEASURED · PROVISIONAL · n = 400
+each, paired seeds] heldout72 carried the replay archive's Hidden Power Dark fill on 164 / 432 mons (71 on the wrong side
+of their set). With it repaired from Smogon's species usage (`heldout72_hpfix`, now the held-out set of record) X26 reads
+**0.448 [0.400, 0.496]** and K2 **0.367 [0.322, 0.416]**, both still WORSE than even; the repair moves neither detectably
+(X26 +0.052 [−0.016, +0.120], K2 +0.010), and X26 stays **−0.127 [−0.195, −0.058]** below home72. X26 − K2 there is
+**+0.080 [+0.012, +0.147]**, DETECTED, but its change from heldout72's +0.038 is not (+0.043, paired [−0.040, +0.125]):
+X26's lead over K2 on held-out teams is probably real and smaller than on training teams. The held-out drop stands;
+unseen-vs-population remains confounded. This is the kill test of the Hidden Power hypothesis (H6) in the D0a list above:
+NOT supported, and NOT killed (its rule needs an upper bound < +5 pp; this one is +12 pp). [ledger 2026-10-18 · *HELD-OUT, HIDDEN POWER REPAIRED*]
 
 **And a second anchor ABOVE us (2026-09-14, `foul_play_derisk_2026-09-14/`):** [MEASURED] Foul Play — MCTS with
 decoupled UCT over a hand-written evaluator on the Rust poke-engine, determinising the opponent's sets from Smogon
