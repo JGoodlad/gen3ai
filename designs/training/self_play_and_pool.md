@@ -178,6 +178,26 @@ the run already records one (immutable, so it names the ORIGINAL parent even aft
 `--model`), else the `--model` path's own run dir — which is the only answer available on a fork's
 first process, before any save has written a lineage block.
 
+**THE STEP FILTER (T54, `gen3_pool_seed_step_filter_v1`, 2026-10-17; F18 of
+`designs/endstate/design_compute_efficiency.md`).** A parent can still be TRAINING when a fork is cut
+from one of its checkpoints (X26 trains on while its plateau checks run), so its pool may hold snapshots
+from AFTER the fork point; copying them makes the fork train against its parent's FUTURE selves. The
+seed copies only `snapshot_<step>.zip` with **`step <= fork_step`**, where `fork_step` is the fork
+checkpoint's own `num_timesteps` (`pool_seed.fork_step_of` → `lineage.checkpoint_num_timesteps`: the
+zip's `data` member, else the `checkpoint_<N>_steps.zip` name), compared as exact integers. **A snapshot
+AT the fork step is KEPT** (it is the fork point's own weights); one step later is dropped. The pool's
+per-snapshot state — `summary.json`'s `pfsp_win_rates`, keyed by step (`pool_seed.PER_SNAPSHOT_SUMMARY_KEYS`)
+— is pruned to the same boundary (non-step keys kept, the rest of the summary unchanged, rewritten in
+`persist_summary`'s own format). The startup line ends with `[step filter <= N: DROPPED k later
+snapshot(s) at steps [...]]` (or `none later`), and `pool_seed.json` (schema 2) records `fork_step`,
+`dropped_steps` and `pruned_summary_keys`. **When nothing is later** (a FINISHED parent, or a fork from
+the parent's newest snapshot) every file the loader reads is a byte-for-byte copy, exactly as before the
+filter. A fork checkpoint whose step is UNREADABLE is not filtered, and the line says `step filter OFF`
+(`fork_step: null`). A fork EARLIER than every parent snapshot (the window slid past it) seeds nothing
+and takes the refusal below. ⚠️ Not filtered (scalars, not per-snapshot): `win_rate_vs_bots`,
+`self_play_fraction`, `last_eval_step`, `pool_generation`, and the kept snapshots' PFSP EMA VALUES, are
+the parent's LATEST, not their values at the fork step. Tests: `src/agents/training/pool_seed_step_filter_test.py`.
+
 **THE REFUSAL.** If `--self-play` is on, the run is a FORK, and the pool is STILL empty after that
 step — the parent has no pool, or `--no-fork-pool-seed` was passed — the launch exits
 **`FATAL_CONFIG`** naming the three ways out (seed by hand, `--allow-empty-pool`, drop `--self-play`)

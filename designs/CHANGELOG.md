@@ -14771,3 +14771,16 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
 - **X26 (pin `9c033489`) does not take it**. Its operational response is in `design_x26_readiness.md` R8 / F37 / §4.2.
 - Docs: `designs/training/compile_flags.md` "bf16 drift on a sharpening policy", `learner_lifecycle.md`, the training
   leaf, `ARCHITECTURE.md`, `design_x26_readiness.md`, the ledger, `research_state/measurements/x26_bf16_drift_2026-10-17/`.
+
+## 2026-10-17 — X35 T54: the fork pool seed's STEP FILTER (`gen3_pool_seed_step_filter_v1`; fork startup's pool copy only; no model / config / obs / signature change, no training-math change)
+
+- **The defect (F18, `designs/endstate/design_compute_efficiency.md` §5.6.7).** `agents.training.pool_seed.seed_pool`
+  copied the parent's WHOLE `snapshots/` pool. A fork cut from a checkpoint of a parent that is still training (X26
+  during its plateau checks) inherited snapshots from AFTER the fork point and trained against its parent's future selves.
+- **The fix.** The seed copies only `snapshot_<step>.zip` with `step <= fork_step` (the fork checkpoint's
+  `num_timesteps`, exact integers; equality KEPT), and prunes `summary.json`'s `pfsp_win_rates` to the same boundary.
+  The startup line names the dropped steps; `pool_seed.json` (schema 2) records `fork_step`, `dropped_steps` and
+  `pruned_summary_keys`. A fork with nothing later (a finished parent) copies byte-for-byte as before. An unreadable fork
+  step is not filtered and says so; a fork earlier than every parent snapshot is the poolless-fork `FATAL_CONFIG`.
+- **Tests.** `src/agents/training/pool_seed_step_filter_test.py` (fails on revert). Docs: `designs/training/self_play_and_pool.md`
+  "THE STEP FILTER", the training leaf, `TASK_BACKLOG.md` X35-1, `design_compute_efficiency.md` F18.

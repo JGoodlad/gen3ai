@@ -178,7 +178,8 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
 - 🚨 **`MatchupSpec.spec_hash()` is a measurement-regime tag**: built ONCE from the args, consumed, never re-derived;
   two hashes are not metric-comparable; a `--model` launch whose matchup differs prints `⚠️ [MATCHUP DRIFT]`.
 - 🚨 **A FORK starts with an EMPTY self-play pool, which falls back to the BOT pool**; a genuine fork auto-seeds its
-  parent's (`pool_seed.py`) or exits `FATAL_CONFIG`. `max_snapshots` holds on EVERY path (a scan included,
+  parent's (`pool_seed.py`) — only the snapshots at or below the fork checkpoint's `num_timesteps`, `pfsp_win_rates`
+  pruned to match (T54) — or exits `FATAL_CONFIG`. `max_snapshots` holds on EVERY path (a scan included,
   `PoolOverCapError`); the pool's `model_config.json` is a WRITE-ONCE arch record checked before every add.
 - 🚨 **Every live lever's SUPPLY is declared** (`lever_supply.py`): live but delivering zero for its floor →
   `FATAL_SUPPLY` (5); a mis-wiring → `FATAL_CONFIG` (3); neither restarts. Every supply line goes through

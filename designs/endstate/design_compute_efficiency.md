@@ -826,6 +826,10 @@ Everything else here is the orchestrator's tactical call (GPU order, seeds, the 
   pool holds snapshots from AFTER P\*. Every fork would train against future selves, unlike X26 at P\*. It is matched
   between b-ON and b-OFF, but it is not "plain continuation from P\*". T54 fixes it. Without T54 the leak must be
   declared in the read.
+  **RESOLVED 2026-10-17 (T54 BUILT, `gen3_pool_seed_step_filter_v1`):** a fork seeds only the parent snapshots at
+  or below the fork checkpoint's `num_timesteps` (equality kept), prunes `pfsp_win_rates` to match and records
+  `dropped_steps` in `pool_seed.json`; a pin carrying it has no leak. Still the parent's LATEST, not P\*'s: the
+  pool's scalar `win_rate_vs_bots` (the ramp's start) and the kept snapshots' PFSP EMA values.
 - **F19. Power at 3 seeds per side is low.** With a seed-mean SD of ≈ 2 pp per side (an ASSUMPTION; the plateau noise
   floor G5 is unmeasured), a two-sample t at df ≈ 4 needs Δ̂ ≳ +6 pp for a GAIN wholly above +2.0. The second look (5
   seeds) is registered for that reason. C0's first seeds measure the SD.

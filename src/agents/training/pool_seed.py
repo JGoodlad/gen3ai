@@ -57,6 +57,19 @@ NEVER touched, so a hand-seeded arm that later syncs this code keeps exactly the
 A FRESH run keeps today's behaviour exactly — a fresh run legitimately starts poolless and grows
 one, and the win-rate gate is what keeps it from seeding a random-weights opponent.
 
+THE STEP FILTER (T54, `gen3_pool_seed_step_filter_v1`). A parent can still be TRAINING when a fork
+is cut from one of its checkpoints (X26 trains on while its plateau checks run), so its pool may hold
+snapshots from AFTER the fork point — a fork seeded with them trains against its parent's FUTURE
+selves. The seed therefore copies only ``snapshot_<step>.zip`` with ``step <= fork_step``, where
+``fork_step`` is the fork checkpoint's own ``num_timesteps`` (``lineage.checkpoint_num_timesteps``,
+exact integers; a snapshot AT the fork step is the fork point's own weights and is KEPT). The
+per-snapshot pool state — ``summary.json``'s ``pfsp_win_rates``, keyed by snapshot step — is pruned
+to the same boundary. The dropped steps are printed and recorded in ``pool_seed.json``. When nothing
+is dropped (a FINISHED parent, or a fork from its latest snapshot) every file the pool's loader reads
+is copied byte-for-byte, exactly as before the filter. A fork checkpoint whose step cannot be read
+is not filtered, and the startup line and the record say so (``fork_step: null``). A fork EARLIER
+than every parent snapshot seeds no zip and takes THE REFUSAL below (``--allow-empty-pool`` consents).
+
 THE REFUSAL. If, after all of that, `--self-play` is on and the pool is still empty on a FORK, the
 run exits ``FATAL_CONFIG`` instead of quietly training on bots. The three ways out are printed.
 """
@@ -83,8 +96,15 @@ SNAPSHOT_GLOB = "snapshot_*.zip"
 #: checkpoint would make a crashed pre-save fork un-relaunchable under its own name.
 SEED_RECORD_FILE = "pool_seed.json"
 
-#: Bumped if the record's shape changes.
-SEED_RECORD_SCHEMA = 1
+#: Bumped if the record's shape changes. 2: `fork_step`, `dropped_steps`, `pruned_summary_keys` (the step
+#: filter, T54).
+SEED_RECORD_SCHEMA = 2
+
+#: The per-snapshot keys of ``summary.json`` — maps keyed by a snapshot's STEP (as a string). Pruned
+#: to the step filter's boundary. ``pfsp_win_rates`` is written by ``SelfPlayCallback`` (the PFSP
+#: EMA); it is the only per-snapshot state the pool directory holds (audited 2026-10-17: the other
+#: summary keys are scalars, and ``supply_guard`` is keyed by RUN, so a fork never inherits it).
+PER_SNAPSHOT_SUMMARY_KEYS = ("pfsp_win_rates",)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -206,38 +226,112 @@ def decide(*, self_play: bool, model_path: Optional[str], model_dir: str, pool_d
 # --------------------------------------------------------------------------------------------
 # the copy
 # --------------------------------------------------------------------------------------------
-def seed_pool(parent_run_dir: str, pool_dir: str) -> Dict[str, Any]:
-    """Copy the parent's pool — every ``snapshot_*.zip`` PLUS every metadata file that exists.
+def snapshot_step(path: str) -> Optional[int]:
+    """The training step a ``snapshot_<step>.zip`` names, parsed the way ``SnapshotPool._scan`` parses
+    it (``int(stem.split("_")[1])``), or None for a name the pool itself ignores."""
+    stem = os.path.basename(path)
+    if stem.endswith(".zip"):
+        stem = stem[:-len(".zip")]
+    try:
+        return int(stem.split("_")[1])
+    except (IndexError, ValueError):
+        return None
 
-    Returns the record (also written into the pool dir as ``pool_seed.json``). A metadata file the
-    parent does not have is simply absent from ``files``; only ``snapshot_*.zip`` is mandatory, and
-    ``decide`` has already established that the parent has some.
+
+def _prune_summary(src_summary: str, fork_step: int) -> Optional[Dict[str, Any]]:
+    """``summary.json`` with every per-snapshot map pruned to steps ``<= fork_step``, or None when
+    nothing needs pruning (the caller then copies the file byte-for-byte). A summary we cannot parse
+    is copied as-is (the pool's own loader treats it as ``{}``)."""
+    try:
+        data = json.loads(open(src_summary, encoding="utf-8").read())
+    except (ValueError, OSError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    changed = False
+    for key in PER_SNAPSHOT_SUMMARY_KEYS:
+        m = data.get(key)
+        if not isinstance(m, dict):
+            continue
+        kept = {}
+        for k, v in m.items():
+            try:
+                later = int(k) > fork_step
+            except (ValueError, TypeError):
+                later = False          # not a step key: the callback's own reader skips it too
+            if later:
+                changed = True
+            else:
+                kept[k] = v
+        data[key] = kept
+    return data if changed else None
+
+
+def seed_pool(parent_run_dir: str, pool_dir: str, *, fork_step: Optional[int] = None) -> Dict[str, Any]:
+    """Copy the parent's pool — every ``snapshot_*.zip`` at or below ``fork_step`` PLUS every
+    metadata file that exists (``summary.json``'s per-snapshot maps pruned to the same boundary).
+
+    ``fork_step`` is the fork checkpoint's ``num_timesteps``; None means UNKNOWN and copies every
+    snapshot (recorded as ``fork_step: null``). Returns the record (also written into the pool dir as
+    ``pool_seed.json``). A metadata file the parent does not have is simply absent from ``files``;
+    only ``snapshot_*.zip`` is mandatory, and ``decide`` has already established that the parent
+    has some — though the step filter may leave none (``n_snapshots == 0``; the caller refuses).
     """
     src = os.path.join(parent_run_dir, "snapshots")
     os.makedirs(pool_dir, exist_ok=True)
     copied: List[str] = []
+    dropped: List[int] = []
     zips = snapshot_zips(src)
     for z in zips:
+        step = snapshot_step(z)
+        if fork_step is not None and step is not None and step > fork_step:
+            dropped.append(step)
+            continue
         shutil.copy2(z, os.path.join(pool_dir, os.path.basename(z)))
         copied.append(os.path.basename(z))
     metadata: List[str] = []
+    pruned_keys: List[str] = []
     for name in POOL_METADATA_FILES:
         p = os.path.join(src, name)
-        if os.path.isfile(p):
+        if not os.path.isfile(p):
+            continue
+        pruned = (_prune_summary(p, fork_step)
+                  if name == "summary.json" and fork_step is not None else None)
+        if pruned is None:
             shutil.copy2(p, os.path.join(pool_dir, name))
-            metadata.append(name)
+        else:
+            # The same serialisation SnapshotPool.persist_summary writes.
+            with open(os.path.join(pool_dir, name), "w", encoding="utf-8") as f:
+                f.write(json.dumps(pruned, indent=2))
+            pruned_keys = [k for k in PER_SNAPSHOT_SUMMARY_KEYS if k in pruned]
+        metadata.append(name)
     record: Dict[str, Any] = {
         "schema": SEED_RECORD_SCHEMA,
         "parent_run_dir": os.path.abspath(parent_run_dir),
         "parent_run_name": os.path.basename(os.path.normpath(parent_run_dir)),
         "parent_pool_dir": os.path.abspath(src),
+        "fork_step": fork_step,
         "n_snapshots": len(copied),
         "snapshots": copied,
+        "dropped_steps": sorted(dropped),
+        "pruned_summary_keys": pruned_keys,
         "files": metadata,
         "win_rate_vs_bots": _read_win_rate(pool_dir),
     }
     write_seed_record(pool_dir, record)
     return record
+
+
+def fork_step_of(model_path: Optional[str]) -> Optional[int]:
+    """The fork checkpoint's ``num_timesteps`` (exact integer), or None when it cannot be read."""
+    if not model_path:
+        return None
+    from agents.training import lineage
+
+    try:
+        return lineage.checkpoint_num_timesteps(lineage.resolve_model_path(model_path))
+    except Exception:  # noqa: BLE001 — an unreadable step is reported, never a crash
+        return None
 
 
 def _read_win_rate(pool_dir: str) -> Optional[float]:
@@ -343,12 +437,31 @@ def prepare_pool(args, model_dir: str, *, emit_fn=None, exit_fn=None) -> Optiona
         return None
     if not decision.seed:
         return None
-    record = seed_pool(str(decision.parent_run_dir), pool_dir)
+    fork_step = fork_step_of(getattr(args, "model", None))
+    record = seed_pool(str(decision.parent_run_dir), pool_dir, fork_step=fork_step)
     wr = record.get("win_rate_vs_bots")
     wr_txt = f"{wr:.2%}" if isinstance(wr, float) else "UNKNOWN (no pool metadata on the parent)"
+    dropped = record["dropped_steps"]
+    if fork_step is None:
+        filt = ("step filter OFF: the fork checkpoint's num_timesteps is UNREADABLE, so snapshots "
+                "later than the fork point may be in the pool")
+    elif dropped:
+        filt = (f"step filter <= {fork_step}: DROPPED {len(dropped)} later snapshot(s) at steps "
+                f"{dropped}" + (f", pruned {record['pruned_summary_keys']}"
+                                if record["pruned_summary_keys"] else ""))
+    else:
+        filt = f"step filter <= {fork_step}: none later"
     emit_fn(
         f"🌱 [SELFPLAY] [pool] seeded {record['n_snapshots']} snapshots + metadata from "
         f"{record['parent_run_name']} (win_rate_vs_bots={wr_txt}) "
-        f"[files: {', '.join(record['files']) or 'none'}]"
+        f"[files: {', '.join(record['files']) or 'none'}] [{filt}]"
     )
+    if record["n_snapshots"] == 0 and not bool(getattr(args, "allow_empty_pool", False)):
+        empty = dataclasses.replace(
+            decision, seed=False, refuse=True,
+            reason=(f"fork with an EMPTY pool: every parent snapshot is LATER than the fork "
+                    f"checkpoint (step {fork_step}; dropped {dropped})"))
+        print(refusal_message(empty), file=sys.stderr, flush=True)
+        exit_fn(int(TrainExitCode.FATAL_CONFIG))
+        return None
     return record
