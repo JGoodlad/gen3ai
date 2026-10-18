@@ -1,0 +1,56 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+- Explosion
+- Meteor Mash
+- Earthquake
+- Rock Slide
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 252 Def / 4 SpD
+Adamant Nature
+- Focus Punch
+- Earthquake
+- Body Slam
+- Self-Destruct
+
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Hidden Power [Bug]
+- Fire Blast
+- Crunch
+- Brick Break
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Thunder Wave
+- Toxic
+- Hidden Power [Fire]
+- Substitute
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Thunderbolt
+- Baton Pass
+- Drill Peck
+- Thunder Wave
+
+Dugtrio (M) @ Soft Sand
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Beat Up
+- Hidden Power [Bug]
+- Aerial Ace
+- Substitute

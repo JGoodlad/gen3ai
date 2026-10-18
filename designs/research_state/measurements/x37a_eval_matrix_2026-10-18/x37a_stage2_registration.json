@@ -1,0 +1,36 @@
+{
+ "schema": "x37a_stage2_registration_v1",
+ "rules": "PREREG.md \u00a74 (commit 8a2e80de)",
+ "configs": {
+  "forum72": {
+   "path": "configs/anchors_x37a_forum72.json",
+   "sha256": "0546e7c34c8083503dfae7dab2c45b3826b801e45cdc5a90e02e711fa2d15ea6"
+  },
+  "p72": {
+   "path": "configs/anchors_x37a_p72.json",
+   "sha256": "71bd9bad2d69cdc51649c345428cb6b6605db7f262ab6c16f31a1934f88072ac"
+  }
+ },
+ "panels": {
+  "forum72": {
+   "n": 72,
+   "content_digest": "efa72e52ce56bedb94e1281290c0e398e657bdab396647a99586168be9011159",
+   "strata_counts": {
+    "CORE": 4,
+    "NEAR": 54,
+    "FAR": 14
+   },
+   "manifest_sha256": "f1ef6349b0839ef5e5e384a9eafdea86cccf3679b79d721213bd5295ee9a9ad4"
+  },
+  "p72": {
+   "n": 72,
+   "content_digest": "e59d2f4843c01659112f3edd1c2c33baa340604b622a44c5500baedd9e974795",
+   "strata_counts": {
+    "CORE": 0,
+    "NEAR": 43,
+    "FAR": 29
+   },
+   "manifest_sha256": "95feb873349e07085bb2d69c92bdc0c58b5b8fd697737cbf5a0821e4762af4f2"
+  }
+ }
+}

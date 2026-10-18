@@ -1,0 +1,56 @@
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Rock Slide
+- Hidden Power [Bug]
+- Earthquake
+- Toxic
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpA
+Bold Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Thunderbolt
+- Ice Beam
+- Thunder Wave
+- Hidden Power [Grass]
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Drill Peck
+- Rest
+- Thunderbolt
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 SpA / 216 Spe
+Timid Nature
+- Rapid Spin
+- Hydro Pump
+- Thunder Wave
+- Ice Beam
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 80 Def / 176 SpD
+Careful Nature
+- Thunder Wave
+- Counter
+- Rest
+- Explosion
+
+Houndoom (M) @ Leftovers
+Ability: Flash Fire
+EVs: 16 HP / 252 SpA / 240 Spe
+Modest Nature
+- Fire Blast
+- Crunch
+- Pursuit
+- Roar

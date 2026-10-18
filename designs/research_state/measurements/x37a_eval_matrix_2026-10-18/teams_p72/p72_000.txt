@@ -1,0 +1,55 @@
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Rapid Spin
+- Spikes
+- Earthquake
+- Counter
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Thunderbolt
+- Thunder Wave
+- Baton Pass
+- Rest
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+- Seismic Toss
+- Thunderbolt
+- Soft-Boiled
+- Ice Beam
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Rest
+- Roar
+- Surf
+- Hidden Power [Grass]
+
+Houndoom (M) @ Leftovers
+Ability: Flash Fire
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Crunch
+- Beat Up
+- Fire Blast
+- Hidden Power [Grass]
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+- Dragon Dance
+- Fire Blast
+- Hydro Pump
+- Brick Break

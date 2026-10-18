@@ -1,0 +1,55 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 28 HP / 252 SpA / 228 Spe
+Modest Nature
+IVs: 30 SpA
+- Ice Beam
+- Surf
+- Calm Mind
+- Hidden Power [Electric]
+
+Rhydon (M) @ Lum Berry
+Ability: Rock Head
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+- Substitute
+- Megahorn
+- Swords Dance
+- Rock Slide
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Rock Slide
+- Earthquake
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Drill Peck
+- Spikes
+- Roar
+- Protect
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Ice Punch
+- Thunderbolt
+- Taunt
+- Hidden Power [Grass]
+
+Milotic (M) @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Toxic
+- Recover
+- Surf
+- Refresh

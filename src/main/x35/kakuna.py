@@ -138,10 +138,12 @@ def plan_units(finals: Sequence[Mapping[str, Any]], *, hash_models: bool = True)
 
 
 def counts(summary: Mapping[str, Any], games: int) -> bool:
-    """§5.6.6's rule: a unit COUNTS iff OK, complete, regime-verified, symmetric-sourced and peer-clean."""
-    return (summary.get("status") == "OK" and summary.get("n") == games
-            and summary.get("regime_verified_decisions") is True and summary.get("team_source_asymmetry") is False
-            and summary.get("peer_clean") is True)
+    """§5.6.6's rule: a unit COUNTS iff OK, complete, regime-verified, symmetric-sourced and peer-clean — THE ONE
+    rule, :func:`main.anchors.results.unit_counts`, undeclared (these cells are symmetric home72 / away reads; a
+    summary whose two sides' content digests differ no longer counts on equal file counts alone, F-DV-5)."""
+    from main.anchors.results import unit_counts
+
+    return unit_counts(summary, games=games).counts
 
 
 def read_summary(state: Path, name: str) -> Optional[Dict[str, Any]]:

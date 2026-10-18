@@ -1,0 +1,56 @@
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Toxic
+- Wish
+- Fire Punch
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Double-Edge
+- Hidden Power [Bug]
+- Rock Slide
+- Earthquake
+
+Breloom (M) @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Brick Break
+- Spore
+- Leech Seed
+- Sky Uppercut
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Rapid Spin
+- Ice Beam
+- Recover
+- Surf
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 28 HP / 252 SpA / 228 Spe
+Modest Nature
+- Ice Beam
+- Calm Mind
+- Surf
+- Rest
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Rock Slide
+- Fire Blast
+- Double-Edge
+- Hidden Power [Bug]

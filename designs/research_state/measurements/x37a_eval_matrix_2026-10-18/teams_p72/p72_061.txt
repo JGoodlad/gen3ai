@@ -1,0 +1,55 @@
+Flygon (M) @ Salac Berry
+Ability: Levitate
+EVs: 4 HP / 220 Atk / 32 Def / 252 Spe
+Naive Nature
+- Rest
+- Rock Slide
+- Protect
+- Fire Blast
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 80 Atk / 176 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Rock Slide
+- Hidden Power [Bug]
+- Brick Break
+- Toxic
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Aerial Ace
+- Earthquake
+- Rock Slide
+- Screech
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 252 SpA / 52 SpD / 204 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Metal Sound
+- Thunder Wave
+- Thunderbolt
+
+Milotic (M) @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+- Toxic
+- Refresh
+- Recover
+- Surf
+
+Houndoom (M) @ Leftovers
+Ability: Flash Fire
+EVs: 56 HP / 252 SpA / 12 SpD / 188 Spe
+Timid Nature
+- Pursuit
+- Will-O-Wisp
+- Crunch
+- Fire Blast

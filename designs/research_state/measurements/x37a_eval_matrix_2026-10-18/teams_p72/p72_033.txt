@@ -1,0 +1,58 @@
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+- Sunny Day
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+- Aromatherapy
+- Fire Blast
+- Thunder Wave
+- Soft-Boiled
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 224 SpA / 84 Spe
+Modest Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Heal Bell
+- Hidden Power [Fire]
+- Swords Dance
+- Psychic
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Focus Punch
+- Explosion
+- Hidden Power [Grass]
+- Thunderbolt
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Explosion
+- Psychic
+- Agility
+- Hidden Power [Fire]
+
+Charizard (M) @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Substitute
+- Beat Up
+- Focus Punch

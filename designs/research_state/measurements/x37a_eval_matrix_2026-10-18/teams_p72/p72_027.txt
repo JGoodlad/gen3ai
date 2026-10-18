@@ -1,0 +1,54 @@
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 244 SpD / 16 Spe
+Careful Nature
+- Roar
+- Toxic
+- Protect
+- Spikes
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 164 HP / 168 SpD / 176 Spe
+Timid Nature
+- Giga Drain
+- Explosion
+- Thunderbolt
+- Destiny Bond
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+- Rock Slide
+- Meteor Mash
+- Explosion
+- Psychic
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Soft-Boiled
+- Seismic Toss
+- Toxic
+- Ice Beam
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpD / 36 Spe
+Calm Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Giga Drain
+- Recover
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Ice Beam
+- Toxic
+- Surf
+- Earthquake

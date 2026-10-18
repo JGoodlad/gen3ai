@@ -1,0 +1,58 @@
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 96 Def / 108 SpD / 56 Spe
+Timid Nature
+IVs: 0 Atk
+- Psychic
+- Baton Pass
+- Leech Seed
+- Recover
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+Shiny: Yes
+EVs: 144 HP / 112 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Protect
+- Toxic
+- Hidden Power [Fire]
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Aerial Ace
+- Earthquake
+- Hidden Power [Bug]
+- Beat Up
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Drill Peck
+- Spikes
+- Roar
+- Protect
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 240 Def / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Toxic
+- Recover
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Return
+- Shadow Ball
+- Curse
+- Rest

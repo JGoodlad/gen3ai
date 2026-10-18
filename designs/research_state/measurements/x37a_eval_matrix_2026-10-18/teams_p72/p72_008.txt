@@ -1,0 +1,56 @@
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 Def
+Impish Nature
+- Spikes
+- Rapid Spin
+- Explosion
+- Earthquake
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 Def / 36 Spe
+Bold Nature
+IVs: 30 Atk / 30 Def / 30 SpD / 30 Spe
+- Psychic
+- Hidden Power [Rock]
+- Leech Seed
+- Baton Pass
+
+Umbreon (M) @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Charm
+- Protect
+- Wish
+- Pursuit
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+- Surf
+- Ice Beam
+- Calm Mind
+- Roar
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+- Fire Blast
+
+Houndoom (M) @ Leftovers
+Ability: Flash Fire
+EVs: 56 HP / 252 SpA / 12 SpD / 188 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Counter
+- Fire Blast
+- Pursuit
+- Hidden Power [Grass]

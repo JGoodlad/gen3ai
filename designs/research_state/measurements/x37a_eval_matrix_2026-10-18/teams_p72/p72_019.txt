@@ -1,0 +1,55 @@
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 8 HP / 200 Def / 116 SpA / 184 Spe
+Timid Nature
+- Thunderbolt
+- Giga Drain
+- Ice Punch
+- Will-O-Wisp
+
+Charizard (M) @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Toxic
+- Focus Punch
+- Fire Blast
+- Flamethrower
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Counter
+- Explosion
+- Earthquake
+- Rapid Spin
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Substitute
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Ice Beam
+- Protect
+- Earthquake
+- Roar
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 48 HP / 252 SpA / 208 Spe
+Modest Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Thunder Wave
+- Endure
+- Toxic

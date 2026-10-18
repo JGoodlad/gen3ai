@@ -1,0 +1,55 @@
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Soft-Boiled
+- Ice Beam
+- Seismic Toss
+- Thunder Wave
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 224 HP / 252 SpA / 32 Spe
+Modest Nature
+- Ice Punch
+- Shadow Ball
+- Doom Desire
+- Thunderbolt
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Thunderbolt
+- Recover
+- Rapid Spin
+- Surf
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 24 HP / 252 SpA / 232 Spe
+Modest Nature
+- Flamethrower
+- Roar
+- Rest
+- Sunny Day
+
+Charizard (M) @ Leftovers
+Ability: Blaze
+EVs: 4 HP / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Substitute
+- Hidden Power [Grass]
+- Overheat
+- Fire Blast
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 20 Def / 236 SpD
+Calm Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Roar
+- Thunder Wave
+- Toxic

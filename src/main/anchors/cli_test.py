@@ -786,3 +786,83 @@ def test_a_lowered_forfeit_turn_is_refused_for_a_peer_our_side(cfg) -> None:
     with pytest.raises(SystemExit):
         build_plan(_args("--our-side", "metamon:SmallRL", "--opponent", "metamon:Kakuna",
                          "--forfeit-turn-limit", "10", "--dry-run"), cfg)
+
+
+# ------------------------------------- B-D9: an ASYMMETRIC pair cell (K(P, H): Kakuna vs Kakuna)
+_KK = ("--opponent-a", "metamon:Kakuna", "--opponent-b", "metamon:Kakuna", "--teamset", "home")
+
+
+def _argv_value(pplan, flag: str) -> str:
+    return pplan.argv[pplan.argv.index(flag) + 1]
+
+
+def test_kakuna_vs_kakuna_on_DIFFERENT_team_sets_is_a_declared_calibration_cell(cfg) -> None:
+    """The self-pair refusal is lifted ONLY when --our-teamset names another set: our peer draws the
+    away set, the opponent the home set, under two DISTINCT names inside Showdown's 18 chars."""
+    from main.anchors.peers import MAX_USERNAME_LEN, check_username
+
+    plan = build_plan(_pair(*_KK, "--our-teamset", "away", "--declare-asymmetric-teams",
+                            "--dry-run"), cfg)
+    assert plan.our_side == plan.opponent == "metamon:Kakuna"
+    assert (plan.teamset, plan.our_teamset, plan.our_set) == ("home", "away", "away")
+    assert plan.declared_team_cell == "asymmetric"
+    for half, their_role in (("ours_challenge", "acceptor"), ("peer_challenge", "challenger")):
+        ours = runner_mod.our_peer_plan(plan, cfg, their_role, 2, half)
+        theirs = runner_mod.peer_plan(plan, cfg, their_role, 2, half)
+        assert _argv_value(ours, "--team-set") == cfg.metamon.team_set("away")
+        assert _argv_value(theirs, "--team-set") == cfg.metamon.team_set("home")
+        assert ours.team_dir != theirs.team_dir
+        our_name, peer_name = runner_mod.half_usernames(plan, half)
+        assert our_name.lower() != peer_name.lower()
+        for name in (our_name, peer_name):
+            assert len(name) <= MAX_USERNAME_LEN
+            check_username(name, "test")
+        assert _argv_value(ours, "--username") == our_name
+        assert _argv_value(theirs, "--username") == peer_name
+        # Metamon keys its CSV by username: OUR record is read from OUR peer's own results dir.
+        assert _argv_value(ours, "--results-dir") != _argv_value(theirs, "--results-dir")
+    text = render_plan(plan, cfg)
+    assert "OUR peer draws away" in text and "declared cell     asymmetric" in text
+
+
+@pytest.mark.parametrize("extra", [(), ("--our-teamset", "home")])
+def test_kakuna_vs_kakuna_on_ONE_team_set_is_still_refused(cfg, extra) -> None:
+    with pytest.raises(SystemExit) as exc:
+        build_plan(_pair(*_KK, *extra, "--dry-run"), cfg)
+    assert "against ITSELF" in str(exc.value)
+
+
+@pytest.mark.parametrize("argv", [
+    ("--model", "", "--opponent", "metamon:Kakuna"),                       # a checkpoint our-side
+    ("--our-side", "bot:random", "--opponent", "metamon:Kakuna"),         # a bot our-side
+])
+def test_our_teamset_is_refused_outside_a_pair_cell(cfg, argv) -> None:
+    with pytest.raises(SystemExit) as exc:
+        build_plan(_pair(*argv, "--our-teamset", "away", "--dry-run"), cfg)
+    assert "--our-teamset" in str(exc.value)
+
+
+def test_our_teamset_reaches_the_rows_and_the_default_out_dir(cfg, monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv(cli_mod.OUT_ROOT_ENV_VAR, str(tmp_path))
+    plan = build_plan(_pair(*_KK, "--our-teamset", "away", "--dry-run"), cfg)
+    assert "ours-away" in plan.out_dir.name
+    cell = runner_mod.cell_spec(plan, {"team_digest": "h" * 64, "our_team_digest": "p" * 64}, 72)
+    assert (cell.our_teamset, cell.our_team_digest, cell.their_team_digest) == ("away", "p" * 64, "h" * 64)
+    for field in ("our_teamset", "our_team_digest", "their_team_digest"):
+        assert field in REQUIRED_ROW_FIELDS
+    # a symmetric read stamps our_teamset = teamset, and declares nothing
+    sym = build_plan(_args("--opponent", "metamon:Kakuna", "--dry-run"), cfg)
+    assert sym.our_teamset == sym.teamset and sym.declared_team_cell == "symmetric"
+
+
+def test_our_peer_side_counts_and_digests_the_set_it_DRAWS_from(cfg) -> None:
+    """`our_team_count` / `our_team_digest` of an asymmetric pair cell are OUR peer's (--our-teamset)
+    set, not --teamset's — or the counting rule would compare the wrong content."""
+    from main.anchors.session import load_team_texts, team_set_digest
+
+    away = cfg.metamon.team_dir("away", "gen3ou")
+    if not load_team_texts(away):
+        pytest.skip(f"no Metamon away team set on this box ({away})")
+    plan = build_plan(_pair(*_KK, "--our-teamset", "away", "--dry-run"), cfg)
+    count, source, digest = runner_mod.our_team_facts(plan, cfg)
+    assert (count, source, digest) == (len(load_team_texts(away)), str(away), team_set_digest(away))

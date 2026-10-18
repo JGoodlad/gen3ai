@@ -34,6 +34,7 @@ from main.anchors.session import (
     await_peer_ready,
     read_peer_battles,
     start_peer,
+    team_set_digest_or_none,
     stop_peer,
     watch,
     watch_peer_pair,
@@ -141,6 +142,17 @@ class SeriesPlan:
     #: `--bot-seed`: a `bot:` our-side's declared stream seed (the env core's bot-route seed): half h's bot
     #: draws `random.Random(stream_seed(bot_seed, h, k))` (`main.anchors.live_side.bot_streams`).
     bot_seed: Optional[int] = None
+    #: B-D9 `--our-teamset`: the team set OUR side draws from in a PAIR cell (a peer our-side). None
+    #: = the same as `teamset`; the CLI always resolves it. Read through :attr:`our_set`.
+    our_teamset: Optional[str] = None
+    #: B-D6 `--declare-asymmetric-teams`: "asymmetric" or "symmetric". Changes no play; stamped on
+    #: the summary so a registration reads the unit under `results.unit_counts`' declared branch.
+    declared_team_cell: str = "symmetric"
+
+    @property
+    def our_set(self) -> str:
+        """The team set OUR side draws from (``our_teamset``, else ``teamset``)."""
+        return self.our_teamset or self.teamset
 
     @property
     def our_side_is_bot(self) -> bool:
@@ -196,7 +208,8 @@ def our_peer_plan(plan: SeriesPlan, cfg: Any, role: str, n_games: int, half: str
         cfg=cfg.opponent(kind),
         agent=agent,
         regime=plan.regime,
-        teamset=plan.teamset,
+        # B-D9: our peer draws from ITS OWN declared set (an asymmetric pair cell, e.g. K(P, H)).
+        teamset=plan.our_set,
         battle_format=plan.battle_format,
         server_uri=plan.server_uri,
         username=our_name,
@@ -266,6 +279,7 @@ async def run_peer_pair_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int
     our_report = our_adapter.read_report(ours)
     report["peer_rc"] = procs[-1].returncode if procs else None
     report["team_count"] = peers_mod.team_source_count(theirs)
+    report["team_digest"] = team_set_digest_or_none(theirs.team_dir)
     report["version"] = theirs.version
     report["commit"] = theirs.commit
     report["their_regime"] = theirs.their_regime
@@ -447,6 +461,7 @@ def _half_report(plan: SeriesPlan, half: str, n_games: int, pplan: Any, proc: An
     report = adapter.read_report(pplan)
     report["peer_rc"] = proc.returncode if proc is not None else None
     report["team_count"] = peers_mod.team_source_count(pplan)
+    report["team_digest"] = team_set_digest_or_none(pplan.team_dir)
     report["version"] = pplan.version
     report["commit"] = pplan.commit
     report["their_regime"] = pplan.their_regime
@@ -500,7 +515,9 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         their_regime=str(report.get("their_regime") or plan.regime),
         regime_matched=plan.regime_matched and not plan.our_side_is_bot,
         teamset=plan.teamset,
-        our_team_source=str(plan.our_team_spec.get("path", plan.our_team_spec.get("kind"))),
+        # A PEER our-side draws through its own team set, so ITS directory is our source (run_series).
+        our_team_source=str(report.get("our_team_source")
+                            or plan.our_team_spec.get("path", plan.our_team_spec.get("kind"))),
         our_team_count=our_team_count,
         their_team_source=str(report.get("team_source") or ""),
         their_team_count=int(report.get("team_count") or 0),
@@ -521,6 +538,9 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         mirrored_pairs=bool(plan.mirrored_pairs),
         our_transport=_row_transport(plan),
         our_bot_seed=(plan.bot_seed if plan.our_side_is_bot and plan.our_transport == "live" else None),
+        our_teamset=plan.our_set,
+        our_team_digest=report.get("our_team_digest"),
+        their_team_digest=report.get("team_digest"),
     )
 
 
@@ -639,19 +659,9 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
                                                           Optional[SeriesFailure]]:
     """Both halves, in order. A failure in the first half STOPS the read — a half-series against a
     dead peer is not a cheaper measurement, it is a different one."""
-    from main.anchors.session import load_team_texts, pool_team_texts
-
     # Counted through the SAME allowlist both sides use, so `team_source_asymmetry` in the summary
     # means a real difference in what the two sides draw from and not a stray bookkeeping file.
-    if plan.our_side_is_peer:
-        # Our side draws through the PEER's own team set, not our team source — count what it
-        # will actually draw from, so `team_source_asymmetry` stays a real check.
-        our_team_count = peers_mod.team_source_count(
-            our_peer_plan(plan, cfg, "acceptor", 1, "ours_challenge"))
-    else:
-        our_team_count = (len(pool_team_texts())
-                          if plan.our_team_spec.get("kind") == "pool"
-                          else len(load_team_texts(Path(plan.our_team_spec["path"]))))
+    our_team_count, our_team_source, our_team_digest = our_team_facts(plan, cfg)
 
     all_rows: List[GameRow] = []
     half_reports: List[Dict[str, Any]] = []
@@ -680,6 +690,8 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
                   flush=True)
             records, report, failure = await run_half(
                 plan, cfg, half, n_games, front=in_process.front if in_process else None)
+            report.update(our_team_count=our_team_count, our_team_source=our_team_source,
+                          our_team_digest=our_team_digest)
             last_report = report
             half_reports.append(report)
             cell = cell_spec(plan, report, our_team_count)
@@ -712,6 +724,29 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
         last_report["mirrored_pairs"] = mirrored_mod.summary(
             [r["mirrored_half"] for r in half_reports if r.get("mirrored_half")])
     return all_rows, last_report, failure
+
+
+def our_team_facts(plan: SeriesPlan, cfg: Any) -> Tuple[int, Optional[str], Optional[str]]:
+    """``(count, source, gen3_team_set_digest_v1)`` of the team set OUR side DRAWS FROM.
+
+    Counted and digested through the SAME allowlist both sides use, so `team_source_asymmetry`
+    (counts) and `team_content_asymmetry` (digests) in the summary mean a real difference in what
+    the two sides draw from — not a stray bookkeeping file. ``source`` is None for a non-peer side
+    (the plan's `our_team_spec` names it).
+    """
+    from main.anchors.session import load_team_texts, pool_team_texts
+
+    if plan.our_side_is_peer:
+        # Our side draws through the PEER's own team set (`--our-teamset` in a pair cell), not our
+        # team source — count and digest what it will actually draw from.
+        ours = our_peer_plan(plan, cfg, "acceptor", 1, "ours_challenge")
+        return (peers_mod.team_source_count(ours), str(ours.team_dir) if ours.team_dir else None,
+                team_set_digest_or_none(ours.team_dir))
+    if plan.our_team_spec.get("kind") == "pool":
+        texts = pool_team_texts()
+        return len(texts), None, team_set_digest_or_none(texts)
+    directory = Path(plan.our_team_spec["path"])
+    return len(load_team_texts(directory)), None, team_set_digest_or_none(directory)
 
 
 def our_team_items(spec: Dict[str, Any]) -> List[Tuple[str, str]]:

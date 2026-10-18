@@ -1,0 +1,55 @@
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Crunch
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Shadow Ball
+- Rest
+- Earthquake
+- Self-Destruct
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpA
+Bold Nature
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+- Recover
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 212 SpD / 140 Spe
+Adamant Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Dragon Dance
+- Hidden Power [Grass]
+- Earthquake
+- Brick Break
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Toxic
+- Roar
+- Protect
+- Spikes
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 40 HP / 244 Def / 208 SpA / 16 Spe
+Bold Nature
+- Soft-Boiled
+- Thunderbolt
+- Thunder Wave
+- Ice Beam

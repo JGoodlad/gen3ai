@@ -1,0 +1,56 @@
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Rock Slide
+- Ice Beam
+- Focus Punch
+- Hidden Power [Bug]
+
+Jynx (F) @ Leftovers
+Ability: Oblivious
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Lovely Kiss
+- Substitute
+- Calm Mind
+- Ice Beam
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+- Leech Seed
+- Giga Drain
+- Calm Mind
+- Baton Pass
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 8 Def / 248 SpD
+Careful Nature
+- Toxic
+- Spikes
+- Protect
+- Roar
+
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 240 HP / 252 SpA / 16 Spe
+Modest Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Rain Dance
+- Protect
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Thunderbolt
+- Baton Pass
+- Drill Peck

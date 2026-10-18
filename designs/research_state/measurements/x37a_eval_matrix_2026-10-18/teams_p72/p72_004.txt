@@ -1,0 +1,55 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+- Roar
+- Ice Beam
+- Calm Mind
+- Surf
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+- Shadow Ball
+- Body Slam
+- Curse
+- Self-Destruct
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+- Explosion
+- Earthquake
+- Thunder Punch
+- Protect
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 220 Def / 36 SpD
+Sassy Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Ice Beam
+- Thunder Wave
+- Hidden Power [Fire]
+- Explosion
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 8 Def / 248 SpD
+Careful Nature
+- Roar
+- Thief
+- Toxic
+- Spikes
+
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Endure
+- Protect
+- Toxic

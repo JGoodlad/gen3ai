@@ -1,0 +1,58 @@
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 252 Atk / 4 SpA / 252 Spe
+Lonely Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Earthquake
+- Hidden Power [Flying]
+- Fire Blast
+- Rock Slide
+
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Surf
+- Haze
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 60 Atk / 196 Def
+Relaxed Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Earthquake
+- Hidden Power [Bug]
+- Rapid Spin
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+IVs: 0 Atk
+- Aromatherapy
+- Ice Beam
+- Counter
+- Soft-Boiled
+
+Medicham @ Choice Band
+Ability: Pure Power
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Brick Break
+- Fake Out
+- Rock Slide
+- Shadow Ball
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Hasty Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]
+- Rock Slide

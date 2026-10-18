@@ -1,0 +1,55 @@
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 108 Def / 252 SpA / 148 Spe
+Rash Nature
+- Focus Punch
+- Substitute
+- Earthquake
+- Hydro Pump
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Self-Destruct
+- Shadow Ball
+- Curse
+- Earthquake
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 4 SpA / 252 SpD
+Calm Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Roar
+- Rain Dance
+- Baton Pass
+
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Rock Slide
+- Hidden Power [Bug]
+- Earthquake
+- Brick Break
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+- Seismic Toss
+- Wish
+- Soft-Boiled
+- Thunder Wave
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 80 HP / 148 Atk / 176 SpD / 104 Spe
+Jolly Nature
+- Aerial Ace
+- Earthquake
+- Beat Up
+- Rock Slide

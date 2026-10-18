@@ -1,0 +1,54 @@
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Soft-Boiled
+- Thunderbolt
+- Flamethrower
+- Fire Blast
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 240 SpD / 16 Spe
+Careful Nature
+- Toxic
+- Spikes
+- Roar
+- Taunt
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Earthquake
+- Screech
+- Aerial Ace
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 SpA / 216 Spe
+Timid Nature
+- Surf
+- Psychic
+- Hydro Pump
+- Rapid Spin
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Ice Beam
+- Earthquake
+- Focus Punch
+- Counter
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Wish
+- Light Screen
+- Calm Mind

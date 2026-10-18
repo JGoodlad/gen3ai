@@ -1,0 +1,56 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Meteor Mash
+- Protect
+- Explosion
+- Hidden Power [Fire]
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 148 Def / 64 SpA / 4 SpD / 44 Spe
+Relaxed Nature
+- Surf
+- Curse
+- Roar
+- Ice Beam
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Earthquake
+- Beat Up
+- Aerial Ace
+- Sunny Day
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+- Return
+- Focus Punch
+- Earthquake
+- Shadow Ball
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 140 SpD / 212 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Brick Break
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Thunder Wave
+- Toxic
+- Thunderbolt

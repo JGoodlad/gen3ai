@@ -1,0 +1,56 @@
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 252 HP / 108 Atk / 36 Def / 112 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Hidden Power [Bug]
+- Dragon Dance
+- Earthquake
+- Ice Beam
+
+Heracross (M) @ Leftovers
+Ability: Swarm
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Megahorn
+- Reversal
+- Substitute
+- Swords Dance
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Roar
+- Spikes
+- Toxic
+- Protect
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Dragon Dance
+- Hidden Power [Grass]
+- Hydro Pump
+- Dragon Claw
+
+Jolteon (M) @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Thunder Wave
+
+Jirachi @ Lum Berry
+Ability: Serene Grace
+EVs: 236 HP / 52 Def / 180 SpA / 40 Spe
+Modest Nature
+- Body Slam
+- Thunder
+- Thunderbolt
+- Substitute

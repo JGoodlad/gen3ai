@@ -1,0 +1,54 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Thunderbolt
+- Baton Pass
+- Thunder Wave
+- Drill Peck
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 224 Atk / 68 SpD / 216 Spe
+Jolly Nature
+- Meteor Mash
+- Explosion
+- Psychic
+- Rock Slide
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 56 Atk / 64 Def / 140 SpA
+Quiet Nature
+- Protect
+- Hydro Pump
+- Ice Beam
+- Surf
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Protect
+- Roar
+- Spikes
+- Toxic
+
+Flygon (M) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 196 Def / 28 SpD / 32 Spe
+Impish Nature
+- Rock Slide
+- Earthquake
+- Protect
+- Toxic
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Psychic
+- Substitute
+- Protect

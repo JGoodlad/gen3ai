@@ -1,0 +1,56 @@
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Earthquake
+- Hidden Power [Grass]
+- Flamethrower
+- Fire Blast
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Agility
+- Explosion
+- Hidden Power [Grass]
+- Meteor Mash
+
+Snorlax (M) @ Leftovers
+Ability: Thick Fat
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Body Slam
+- Counter
+- Return
+- Fire Blast
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 68 HP / 252 SpA / 188 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Ice Punch
+- Thunderbolt
+- Sludge Bomb
+- Hidden Power [Grass]
+
+Swampert (M) @ Salac Berry
+Ability: Torrent
+EVs: 248 HP / 56 Atk / 64 Def / 140 SpA
+Quiet Nature
+- Toxic
+- Substitute
+- Blizzard
+- Ice Beam
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 SpA / 4 SpD
+Modest Nature
+- Ice Beam
+- Substitute
+- Calm Mind
+- Roar

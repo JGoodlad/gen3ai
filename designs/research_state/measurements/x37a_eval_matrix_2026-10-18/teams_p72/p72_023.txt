@@ -1,0 +1,53 @@
+Jolteon (M) @ Leftovers
+Ability: Volt Absorb
+EVs: 204 HP / 128 SpA / 176 Spe
+Timid Nature
+- Baton Pass
+- Roar
+- Substitute
+- Thunderbolt
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Toxic
+- Protect
+- Spikes
+- Drill Peck
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Surf
+- Rapid Spin
+- Ice Beam
+- Hydro Pump
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpD
+Bold Nature
+- Ice Beam
+- Recover
+- Toxic
+- Thunder Wave
+
+Smeargle (M) @ Salac Berry
+Ability: Own Tempo
+EVs: 96 HP / 52 Def / 108 SpD / 252 Spe
+Jolly Nature
+- Spikes
+- Belly Drum
+- Spore
+- Destiny Bond
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+- Earthquake
+- Fire Blast
+- Rock Slide
+- Crunch

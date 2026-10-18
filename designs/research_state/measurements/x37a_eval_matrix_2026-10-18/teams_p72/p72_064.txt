@@ -1,0 +1,55 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 SpA
+Bold Nature
+- Ice Beam
+- Calm Mind
+- Rest
+- Hydro Pump
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Brick Break
+- Hidden Power [Flying]
+- Dragon Claw
+- Dragon Dance
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Hidden Power [Bug]
+- Sunny Day
+- Aerial Ace
+- Rock Slide
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Substitute
+- Wish
+- Ice Punch
+- Thunder
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Explosion
+- Agility
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Psychic
+- Explosion
+- Refresh
+- Rapid Spin

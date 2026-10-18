@@ -1,0 +1,54 @@
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Explosion
+- Taunt
+- Will-O-Wisp
+- Hidden Power [Grass]
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Ice Beam
+- Toxic
+- Surf
+- Hydro Pump
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Substitute
+- Flamethrower
+- Rock Slide
+- Crunch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 220 SpD / 36 Spe
+Calm Nature
+- Leech Seed
+- Baton Pass
+- Calm Mind
+- Light Screen
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Surf
+- Hydro Pump
+- Thunderbolt
+- Rapid Spin
+
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Double-Edge
+- Substitute
+- Earthquake
+- Rock Slide

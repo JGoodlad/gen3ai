@@ -1,0 +1,57 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+- Calm Mind
+- Rest
+- Surf
+- Roar
+
+Exeggutor (M) @ Leftovers
+Ability: Chlorophyll
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 30 Atk / 30 SpA
+- Wish
+- Leech Seed
+- Protect
+- Hidden Power [Grass]
+
+Tyranitar (M) @ Choice Band
+Ability: Sand Stream
+EVs: 44 HP / 252 Atk / 212 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Hidden Power [Bug]
+- Earthquake
+- Rock Slide
+- Focus Punch
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Impish Nature
+IVs: 30 SpD
+- Hidden Power [Steel]
+- Rest
+- Reflect
+- Rapid Spin
+
+Hariyama (F) @ Leftovers
+Ability: Thick Fat
+EVs: 204 HP / 152 Def / 152 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Knock Off
+- Hidden Power [Ghost]
+- Brick Break
+- Rest
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Impish Nature
+- Toxic
+- Aromatherapy
+- Seismic Toss
+- Soft-Boiled

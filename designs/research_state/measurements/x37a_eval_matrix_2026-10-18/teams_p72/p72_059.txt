@@ -1,0 +1,58 @@
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Hidden Power [Bug]
+- Focus Punch
+- Pursuit
+- Earthquake
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Toxic
+- Spikes
+- Taunt
+- Drill Peck
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 200 SpD / 56 Spe
+Careful Nature
+IVs: 30 HP / 30 SpD
+- Seismic Toss
+- Hidden Power [Steel]
+- Superpower
+- Thunder Wave
+
+Charizard (M) @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Earthquake
+- Belly Drum
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 Def / 4 SpD
+Impish Nature
+IVs: 30 HP / 30 Def / 30 SpD
+- Hidden Power [Ghost]
+- Earthquake
+- Toxic
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Rock Slide
+- Meteor Mash
+- Hidden Power [Fire]
+- Agility

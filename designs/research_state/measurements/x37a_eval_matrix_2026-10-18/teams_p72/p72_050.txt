@@ -1,0 +1,58 @@
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 76 HP / 252 SpA / 180 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Psychic
+- Baton Pass
+- Hidden Power [Fire]
+- Calm Mind
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+- Hydro Pump
+- Calm Mind
+- Rain Dance
+- Roar
+
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Double-Edge
+- Earthquake
+- Rock Slide
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+- Rock Slide
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Hidden Power [Bug]
+- Earthquake
+- Crunch
+- Brick Break
+
+Charizard (M) @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Fire Blast
+- Hidden Power [Flying]
+- Substitute
+- Flamethrower

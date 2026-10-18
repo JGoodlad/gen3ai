@@ -1,0 +1,57 @@
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Will-O-Wisp
+- Hidden Power [Grass]
+- Roar
+- Sunny Day
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 Def / 180 SpD
+Calm Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Toxic
+- Calm Mind
+- Substitute
+
+Flygon (M) @ Choice Band
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Hidden Power [Bug]
+- Earthquake
+- Substitute
+- Rock Slide
+
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Fire Blast
+- Taunt
+- Hidden Power [Grass]
+- Brick Break
+
+Kingdra (M) @ Leftovers
+Ability: Swift Swim
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+- Ice Beam
+- Rain Dance
+- Substitute
+- Surf
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Protect

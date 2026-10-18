@@ -1,0 +1,57 @@
+Tyranitar (F) @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 230 SpA / 40 Spe
+Quiet Nature
+- Brick Break
+- Crunch
+- Fire Blast
+- Pursuit
+
+Swampert (F) @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 252 Atk / 16 Def
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Curse
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+
+Gyarados (F) @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Double-Edge
+- Dragon Dance
+- Earthquake
+- Hidden Power [Flying]
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 Def
+- Hidden Power [Ice]
+- Substitute
+- Thunderbolt
+- Toxic
+
+Scizor (F) @ Salac Berry
+Ability: Swarm
+EVs: 120 HP / 252 Atk / 136 Spe
+Adamant Nature
+- Agility
+- Endure
+- Reversal
+- Swords Dance

@@ -1,0 +1,54 @@
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+- Curse
+- Focus Punch
+- Protect
+- Ice Beam
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
+- Earthquake
+- Explosion
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 80 HP / 16 SpA / 236 SpD / 176 Spe
+Modest Nature
+- Taunt
+- Fire Punch
+- Ice Punch
+- Will-O-Wisp
+
+Medicham (M) @ Salac Berry
+Ability: Pure Power
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Brick Break
+- Shadow Ball
+- Focus Punch
+- Fake Out
+
+Aerodactyl (M) @ Choice Band
+Ability: Pressure
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Flying]
+- Double-Edge
+- Earthquake
+- Substitute
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 208 HP / 84 Def / 36 SpA / 180 Spe
+Timid Nature
+- Psychic
+- Recover
+- Heal Bell
+- Giga Drain

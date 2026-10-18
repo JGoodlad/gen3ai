@@ -1,0 +1,57 @@
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 248 HP / 80 Atk / 180 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Dragon Dance
+- Hidden Power [Bug]
+
+Salamence (M) @ Choice Band
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Toxic
+- Hidden Power [Flying]
+- Brick Break
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD
+Careful Nature
+- Protect
+- Roar
+- Drill Peck
+- Spikes
+
+Snorlax (M) @ Leftovers
+Ability: Thick Fat
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Shadow Ball
+- Rest
+- Body Slam
+- Curse
+
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Double-Edge
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Leech Seed
+- Baton Pass
+- Light Screen

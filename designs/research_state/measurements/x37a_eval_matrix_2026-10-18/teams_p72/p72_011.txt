@@ -1,0 +1,55 @@
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Fire Punch
+
+Charizard (M) @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Spe
+- Flamethrower
+- Focus Punch
+- Hidden Power [Ice]
+- Substitute
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Focus Punch
+- Earthquake
+- Body Slam
+- Shadow Ball
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Pursuit
+- Hidden Power [Bug]
+- Rock Slide
+- Earthquake
+
+Heracross (M) @ Choice Band
+Ability: Swarm
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Megahorn
+- Focus Punch
+- Rock Slide
+- Earthquake
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Aromatherapy
+- Toxic
+- Counter
+- Soft-Boiled

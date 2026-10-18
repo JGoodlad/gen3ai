@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 116 SpD / 140 Spe
+IVs: 30 HP / 30 Def
+Modest Nature
+- Thunderbolt
+- Hidden Power [Ice]
+- Rest
+- Sleep Talk
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 Atk / 252 SpA / 4 SpD
+IVs: 30 Atk / 30 SpA / 30 Spe
+Quiet Nature
+- Ice Beam
+- Thunderbolt
+- Hidden Power [Fire]
+- Explosion
+
+Flygon (M) @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+IVs: 30 Atk / 30 Def / 30 SpD
+Jolly Nature
+- Earthquake
+- Rock Slide
+- Toxic
+- Hidden Power [Bug]
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 216 Def / 52 SpA
+Relaxed Nature
+- Earthquake
+- Protect
+- Ice Beam
+- Hydro Pump
+
+Tyranitar (M) @ Choice Band
+Ability: Sand Stream
+EVs: 80 HP / 252 Atk / 176 Spe
+Adamant Nature
+- Rock Slide
+- Focus Punch
+- Earthquake
+- Double-Edge
+
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+Adamant Nature
+- Double-Edge
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide

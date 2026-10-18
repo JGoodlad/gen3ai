@@ -1,0 +1,54 @@
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 4 Atk / 252 SpA
+Quiet Nature
+- Rock Slide
+- Earthquake
+- Brick Break
+- Double-Edge
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Explosion
+- Meteor Mash
+- Earthquake
+- Rock Slide
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 140 SpA / 32 SpD / 84 Spe
+Modest Nature
+- Thunderbolt
+- Baton Pass
+- Protect
+- Toxic
+
+Breloom (M) @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Mach Punch
+- Focus Punch
+- Sludge Bomb
+- Spore
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Earthquake
+- Curse
+- Rest
+- Self-Destruct
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Explosion
+- Hidden Power [Grass]
+- Ice Punch
+- Will-O-Wisp

@@ -1,0 +1,57 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 28 HP / 252 SpA / 228 Spe
+Modest Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Grass]
+- Surf
+
+Charizard (M) @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Flamethrower
+- Substitute
+- Dragon Claw
+
+Gyarados (M) @ Leftovers
+Ability: Intimidate
+EVs: 28 HP / 252 Atk / 228 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Thunder Wave
+- Earthquake
+
+Jolteon (M) @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Spe
+- Thunder Wave
+- Thunderbolt
+- Hidden Power [Ice]
+- Baton Pass
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 244 HP / 204 Atk / 32 SpA / 20 SpD / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Ice Beam
+- Earthquake
+- Psychic
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Body Slam
+- Curse
+- Self-Destruct
+- Return

@@ -1,0 +1,54 @@
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Toxic
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 224 HP / 228 Atk / 36 SpA / 20 Spe
+Adamant Nature
+- Rapid Spin
+- Explosion
+- Psychic
+- Earthquake
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Wish
+- Thunder Wave
+- Soft-Boiled
+- Seismic Toss
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 140 SpD / 212 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Brick Break
+- Dragon Claw
+- Hydro Pump
+- Hidden Power [Flying]
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Ice Beam
+- Focus Punch
+- Rock Slide
+- Surf
+
+Starmie @ Mystic Water
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Recover
+- Thunder
+- Thunder Wave
+- Rapid Spin

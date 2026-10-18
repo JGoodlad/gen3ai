@@ -1,0 +1,57 @@
+Milotic (M) @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+- Surf
+- Toxic
+- Ice Beam
+- Refresh
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 112 SpA / 180 Spe
+Modest Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Thunderbolt
+- Roar
+- Substitute
+- Hidden Power [Grass]
+
+Smeargle (M) @ Lum Berry
+Ability: Own Tempo
+EVs: 252 HP / 4 SpD / 252 Spe
+Timid Nature
+- Thunder Wave
+- Whirlwind
+- Explosion
+- Destiny Bond
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 252 Atk / 4 Def
+Impish Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Rapid Spin
+- Explosion
+- Rest
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 SpA / 76 SpD / 180 Spe
+Modest Nature
+IVs: 30 Spe
+- Recover
+- Psychic
+- Baton Pass
+- Hidden Power [Ice]
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 8 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Crunch
+- Focus Punch

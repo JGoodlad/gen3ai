@@ -1,0 +1,56 @@
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Fire Blast
+- Brick Break
+- Rock Slide
+- Pursuit
+
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Hidden Power [Bug]
+- Rock Slide
+- Double-Edge
+- Earthquake
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 128 SpA / 180 Spe
+Modest Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Giga Drain
+- Hidden Power [Grass]
+- Psychic
+- Substitute
+
+Jolteon (M) @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Thunderbolt
+- Thunder Wave
+- Hidden Power [Grass]
+- Wish
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Focus Punch
+- Double-Edge
+- Body Slam
+- Thunderbolt
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 88 Def / 168 SpD
+Careful Nature
+- Thunder Wave
+- Toxic
+- Superpower
+- Seismic Toss

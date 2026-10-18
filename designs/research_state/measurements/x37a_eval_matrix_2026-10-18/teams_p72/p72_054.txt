@@ -1,0 +1,53 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Earthquake
+- Agility
+- Meteor Mash
+- Explosion
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Focus Punch
+- Will-O-Wisp
+- Hypnosis
+- Fire Punch
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 16 HP / 244 Atk / 116 Def / 116 SpD / 16 Spe
+Adamant Nature
+- Shadow Ball
+- Earthquake
+- Self-Destruct
+- Body Slam
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Rapid Spin
+- Psychic
+- Ice Beam
+- Thunder Wave
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+- Calm Mind
+- Roar
+- Surf
+- Rest
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+- Earthquake
+- Hydro Pump
+- Ice Beam
+- Roar

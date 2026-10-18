@@ -1,0 +1,56 @@
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Rapid Spin
+- Hidden Power [Bug]
+- Earthquake
+- Zap Cannon
+
+Heracross (M) @ Salac Berry
+Ability: Guts
+EVs: 56 HP / 248 Atk / 28 Def / 176 Spe
+Adamant Nature
+- Swords Dance
+- Brick Break
+- Reversal
+- Substitute
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 140 SpA / 32 SpD / 84 Spe
+Modest Nature
+IVs: 30 Spe
+- Baton Pass
+- Thunderbolt
+- Hidden Power [Ice]
+- Thunder Wave
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Atk / 252 SpD
+Sassy Nature
+- Earthquake
+- Rest
+- Rapid Spin
+- Explosion
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Beat Up
+- Aerial Ace
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Surf
+- Substitute
+- Focus Punch
+- Ice Beam

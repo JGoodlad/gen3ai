@@ -1,0 +1,54 @@
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 232 Def / 24 Spe
+Bold Nature
+- Spikes
+- Roar
+- Taunt
+- Toxic
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Taunt
+- Will-O-Wisp
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Crunch
+- Flamethrower
+- Rock Slide
+- Hidden Power [Bug]
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Ice Beam
+- Hydro Pump
+- Surf
+- Refresh
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+- Explosion
+- Rock Slide
+- Earthquake
+- Protect
+
+Sableye (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 Def / 4 Spe
+Impish Nature
+- Seismic Toss
+- Recover
+- Knock Off
+- Confuse Ray

@@ -1,0 +1,56 @@
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 168 Atk / 200 SpD / 140 Spe
+Adamant Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Rock Slide
+- Fire Blast
+- Brick Break
+
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 248 HP / 196 Atk / 12 Def / 52 SpD
+Adamant Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Pursuit
+- Crunch
+- Earthquake
+- Hidden Power [Bug]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Surf
+- Recover
+- Ice Beam
+- Psychic
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 80 SpA / 136 Spe
+Modest Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Ice Punch
+- Fire Punch
+- Psychic
+- Hidden Power [Grass]
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 136 Def / 92 SpD / 28 Spe
+Impish Nature
+- Thunder Wave
+- Seismic Toss
+- Explosion
+- Curse
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 128 Atk / 144 Def / 144 SpD
+Adamant Nature
+- Rest
+- Shadow Ball
+- Body Slam
+- Self-Destruct

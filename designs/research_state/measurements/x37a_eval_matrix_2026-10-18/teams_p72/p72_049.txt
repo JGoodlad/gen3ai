@@ -1,0 +1,55 @@
+Heracross (M) @ Choice Band
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Def / 30 SpD
+- Hidden Power [Ghost]
+- Brick Break
+- Rock Slide
+- Swords Dance
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Earthquake
+- Explosion
+- Rock Slide
+- Meteor Mash
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Return
+- Self-Destruct
+- Earthquake
+- Curse
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Toxic
+- Roar
+- Taunt
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Explosion
+- Destiny Bond
+- Protect
+- Will-O-Wisp
+
+Gyarados (M) @ Lum Berry
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Thunder Wave
+- Earthquake
+- Hidden Power [Flying]
+- Taunt

@@ -1,0 +1,56 @@
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Atk / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Explosion
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Earthquake
+- Agility
+- Explosion
+- Rock Slide
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 100 HP / 252 SpA / 156 Spe
+Modest Nature
+- Calm Mind
+- Ice Beam
+- Rest
+- Surf
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+- Seismic Toss
+- Soft-Boiled
+- Ice Beam
+- Toxic
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Wish
+- Toxic
+- Fire Punch
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 140 Def / 180 SpA / 188 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Calm Mind
+- Hidden Power [Fire]
+- Psychic
+- Recover

@@ -1,0 +1,54 @@
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 216 Def / 44 SpD
+Relaxed Nature
+- Focus Punch
+- Earthquake
+- Protect
+- Counter
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Rest
+- Baton Pass
+- Thunder Wave
+- Roar
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 140 SpD / 212 Spe
+Adamant Nature
+- Dragon Dance
+- Brick Break
+- Earthquake
+- Rock Slide
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
+Modest Nature
+- Roar
+- Will-O-Wisp
+- Sunny Day
+- Flamethrower
+
+Aerodactyl (M) @ Liechi Berry
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Double-Edge
+- Hidden Power [Flying]
+- Rock Slide
+- Substitute
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Protect
+- Drill Peck
+- Roar
+- Spikes

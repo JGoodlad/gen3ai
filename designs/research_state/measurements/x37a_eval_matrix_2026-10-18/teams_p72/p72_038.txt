@@ -1,0 +1,54 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 SpA / 4 Spe
+Quiet Nature
+- Rock Slide
+- Earthquake
+- Meteor Mash
+- Agility
+
+Aerodactyl (M) @ Liechi Berry
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Double-Edge
+- Rock Slide
+- Hidden Power [Bug]
+- Earthquake
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+- Substitute
+- Rest
+- Calm Mind
+- Surf
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+- Ice Beam
+- Toxic
+- Hydro Pump
+- Substitute
+
+Primeape (M) @ Leftovers
+Ability: Vital Spirit
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Earthquake
+- Cross Chop
+- Rock Slide
+- Brick Break
+
+Kingdra (M) @ Leftovers
+Ability: Swift Swim
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+- Surf
+- Ice Beam
+- Rest
+- Blizzard

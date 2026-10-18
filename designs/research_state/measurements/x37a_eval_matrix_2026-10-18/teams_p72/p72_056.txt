@@ -1,0 +1,55 @@
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 244 HP / 148 Def / 116 SpD
+Sassy Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Protect
+- Wish
+- Hidden Power [Grass]
+- Fire Punch
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 8 HP / 200 Def / 116 SpA / 184 Spe
+Timid Nature
+- Ice Punch
+- Explosion
+- Will-O-Wisp
+- Thunderbolt
+
+Snorlax (M) @ Leftovers
+Ability: Thick Fat
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+- Self-Destruct
+- Shadow Ball
+- Body Slam
+- Curse
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Explosion
+- Earthquake
+- Rapid Spin
+- Spikes
+
+Flygon (M) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 196 Def / 28 SpD / 32 Spe
+Impish Nature
+- Substitute
+- Toxic
+- Rock Slide
+- Quick Attack
+
+Tyranitar (M) @ Lum Berry
+Ability: Sand Stream
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Crunch
+- Hidden Power [Grass]
+- Pursuit
+- Rock Slide

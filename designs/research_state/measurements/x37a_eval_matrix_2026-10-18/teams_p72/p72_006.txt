@@ -1,0 +1,55 @@
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 164 HP / 168 SpD / 176 Spe
+Timid Nature
+- Thunderbolt
+- Giga Drain
+- Taunt
+- Ice Punch
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Explosion
+- Counter
+- Earthquake
+- Rapid Spin
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 36 Atk / 252 SpA / 220 Spe
+Rash Nature
+- Meteor Mash
+- Agility
+- Explosion
+- Protect
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 76 HP / 252 SpA / 180 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Baton Pass
+- Leech Seed
+- Hidden Power [Grass]
+- Light Screen
+
+Umbreon (M) @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 120 Def / 136 SpD
+Calm Nature
+- Wish
+- Baton Pass
+- Pursuit
+- Toxic
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 40 HP / 144 Atk / 100 SpD / 224 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Hidden Power [Bug]
+- Aerial Ace
+- Earthquake
+- Rock Slide

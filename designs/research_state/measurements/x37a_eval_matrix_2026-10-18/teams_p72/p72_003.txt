@@ -1,0 +1,57 @@
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Earthquake
+- Fire Blast
+- Dragon Dance
+- Hidden Power [Flying]
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Curse
+- Earthquake
+- Body Slam
+- Shadow Ball
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+- Ice Beam
+- Recover
+- Thunderbolt
+- Thunder Wave
+
+Tyranitar (M) @ Choice Band
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Counter
+- Hidden Power [Bug]
+- Dragon Dance
+- Focus Punch
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Perish Song
+- Hypnosis
+- Ice Punch
+- Hidden Power [Grass]
+
+Typhlosion (M) @ Petaya Berry
+Ability: Blaze
+EVs: 32 HP / 16 Atk / 252 SpA / 208 Spe
+Rash Nature
+IVs: 30 Spe
+- Hidden Power [Ice]
+- Thunder Punch
+- Substitute
+- Focus Punch

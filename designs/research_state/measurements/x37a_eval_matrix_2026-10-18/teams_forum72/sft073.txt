@@ -1,0 +1,55 @@
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 176 HP / 4 Def / 252 SpA / 76 SpD
+IVs: 30 HP / 30 SpA
+Modest Nature
+- Crunch
+- Flamethrower
+- Hidden Power [Grass]
+- Pursuit
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 48 HP / 244 Def / 216 Spe
+Timid Nature
+- Rapid Spin
+- Recover
+- Surf
+- Thunder Wave
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 208 Atk / 40 SpD / 252 Spe
+IVs: 30 Atk / 30 Def / 30 SpD
+Jolly Nature
+- Aerial Ace
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 244 HP / 176 Def / 88 SpA
+Bold Nature
+- Calm Mind
+- Leech Seed
+- Psychic
+- Recover
+
+Snorlax (M) @ Leftovers
+Ability: Thick Fat
+EVs: 144 HP / 68 Atk / 120 Def / 176 SpD
+Adamant Nature
+- Curse
+- Return
+- Rest
+- Sleep Talk
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 136 Def / 40 SpA / 56 SpD / 24 Spe
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Rest
+- Sleep Talk

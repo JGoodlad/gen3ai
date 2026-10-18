@@ -1,0 +1,54 @@
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Curse
+- Earthquake
+- Shadow Ball
+- Focus Punch
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 236 Def / 20 Spe
+Bold Nature
+- Calm Mind
+- Ice Beam
+- Surf
+- Rest
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 28 Atk / 252 SpA / 228 Spe
+Rash Nature
+- Surf
+- Earthquake
+- Protect
+- Ice Beam
+
+Heracross (M) @ Salac Berry
+Ability: Guts
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Brick Break
+- Megahorn
+- Rock Slide
+- Substitute
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 24 HP / 252 Atk / 232 Spe
+Adamant Nature
+- Explosion
+- Earthquake
+- Psychic
+- Rapid Spin
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 148 HP / 252 Atk / 108 Spe
+Adamant Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Meteor Mash
+- Agility
+- Earthquake
+- Hidden Power [Grass]

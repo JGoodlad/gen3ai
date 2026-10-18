@@ -1,0 +1,57 @@
+Breloom (M) @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Focus Punch
+- Spore
+- Leech Seed
+- Substitute
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 60 SpA / 196 Spe
+Modest Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Rest
+- Hidden Power [Grass]
+- Baton Pass
+- Thunder
+
+Gyarados (M) @ Leftovers
+Ability: Intimidate
+EVs: 68 HP / 252 Atk / 188 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Thunder Wave
+- Earthquake
+
+Regirock @ Leftovers
+Ability: Clear Body
+EVs: 4 HP / 252 Atk / 252 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD / 30 Spe
+- Rock Slide
+- Hidden Power [Rock]
+- Explosion
+- Counter
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 232 HP / 60 Def / 216 SpA
+Modest Nature
+- Earthquake
+- Taunt
+- Thunderbolt
+- Dragon Dance
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Meteor Mash
+- Earthquake
+- Agility
+- Hidden Power [Fire]

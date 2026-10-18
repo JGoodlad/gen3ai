@@ -1,0 +1,57 @@
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+- Dragon Dance
+- Flamethrower
+- Dragon Claw
+- Rock Slide
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 30 Atk / 30 SpA / 30 SpD
+- Hidden Power [Ground]
+- Spikes
+- Toxic
+- Roar
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Earthquake
+- Rest
+- Self-Destruct
+- Curse
+
+Breloom (M) @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Spore
+- Brick Break
+- Hidden Power [Bug]
+- Leech Seed
+
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Thunder Wave
+- Toxic
+- Thunderbolt
+- Hidden Power [Fire]
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 8 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Hidden Power [Bug]
+- Dragon Dance
+- Focus Punch
+- Crunch

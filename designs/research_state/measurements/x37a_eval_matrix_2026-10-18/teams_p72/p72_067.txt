@@ -1,0 +1,55 @@
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Protect
+- Drill Peck
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 SpA / 216 Spe
+Timid Nature
+- Recover
+- Psychic
+- Rapid Spin
+- Ice Beam
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
+Bold Nature
+- Earthquake
+- Ice Beam
+- Protect
+- Focus Punch
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Beat Up
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Crunch
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 72 HP / 252 Atk / 184 Spe
+Adamant Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Earthquake
+- Meteor Mash
+- Hidden Power [Grass]
+- Psychic

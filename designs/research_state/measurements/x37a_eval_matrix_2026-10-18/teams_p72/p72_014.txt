@@ -1,0 +1,56 @@
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD
+Careful Nature
+- Taunt
+- Toxic
+- Spikes
+- Protect
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Body Slam
+- Fire Punch
+- Calm Mind
+
+Jolteon (M) @ Leftovers
+Ability: Volt Absorb
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 30 Spe
+- Thunderbolt
+- Thunder Wave
+- Hidden Power [Ice]
+- Substitute
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 220 SpA / 48 SpD / 240 Spe
+Modest Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Baton Pass
+- Toxic
+- Substitute
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 92 Def / 176 Spe
+Timid Nature
+- Giga Drain
+- Leech Seed
+- Baton Pass
+- Recover
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 SpA / 216 Spe
+Timid Nature
+- Rapid Spin
+- Hydro Pump
+- Thunder Wave
+- Ice Beam

@@ -1,0 +1,56 @@
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Crunch
+- Hidden Power [Bug]
+- Earthquake
+- Rock Slide
+
+Umbreon (M) @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 120 Def / 136 SpD
+Calm Nature
+- Wish
+- Curse
+- Pursuit
+- Toxic
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Earthquake
+- Meteor Mash
+- Explosion
+- Rock Slide
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+- Substitute
+- Baton Pass
+- Metal Sound
+- Thunderbolt
+
+Flygon (M) @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 216 Def / 8 SpA / 36 Spe
+Lax Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Earthquake
+- Protect
+- Hidden Power [Bug]
+- Fire Blast
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 80 Def / 4 SpA / 32 SpD / 144 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Psychic
+- Hydro Pump

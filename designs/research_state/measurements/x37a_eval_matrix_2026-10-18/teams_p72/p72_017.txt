@@ -1,0 +1,54 @@
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Rash Nature
+- Brick Break
+- Fire Blast
+- Dragon Dance
+- Earthquake
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Def / 12 SpA / 100 SpD / 96 Spe
+Timid Nature
+- Ice Punch
+- Giga Drain
+- Explosion
+- Thunderbolt
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Shadow Ball
+- Body Slam
+- Earthquake
+- Self-Destruct
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 248 SpA / 8 Spe
+Modest Nature
+- Flamethrower
+- Aromatherapy
+- Thunder Wave
+- Soft-Boiled
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 232 Atk / 24 SpD
+Adamant Nature
+- Explosion
+- Superpower
+- Counter
+- Seismic Toss

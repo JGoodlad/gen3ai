@@ -39,7 +39,7 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from main.anchors.peers import TEAM_FILE_GLOBS, PeerPlan
 
@@ -101,6 +101,45 @@ def pool_team_texts() -> List[str]:
     if not teams:
         raise SeriesFailure("no_teams", f"our pool at {base} holds no teams")
     return teams
+
+
+#: The schema of :func:`team_set_digest`, stamped beside every digest a summary carries.
+TEAM_SET_DIGEST_SCHEMA = "gen3_team_set_digest_v1"
+
+
+def team_set_digest(source: "Path | Sequence[str]") -> str:
+    """``gen3_team_set_digest_v1`` — the CONTENT of the team set one side DRAWS FROM.
+
+    ``h_i = sha256(text.strip())`` for every team file, then ``sha256("\\n".join(sorted(h_i)))``,
+    both as lowercase hex over UTF-8. ``source`` is a DIRECTORY (read through the same allowlist the
+    side draws through, :func:`load_team_texts` / :data:`TEAM_FILE_GLOBS`) or a sequence of team
+    TEXTS (e.g. :func:`pool_team_texts`). File names and order never enter it, so a byte copy of a set
+    under ``.txt`` on our side and ``.gen3ou_team`` in Metamon's cache digests the same (F-DV-5: a
+    72-vs-72 cell of DIFFERENT teams is no longer read as symmetric because the counts agree).
+
+    🚨 An EMPTY set raises ``ValueError``: a side with no team files has no content to verify, and a
+    shared "empty" digest would make two missing directories look like agreement.
+    """
+    import hashlib
+
+    if isinstance(source, (str, bytes)):
+        raise TypeError("team_set_digest takes a directory Path or a sequence of team texts, not a str")
+    texts = ([t for _, t in load_team_texts(source)] if isinstance(source, Path) else list(source))
+    if not texts:
+        raise ValueError(f"team_set_digest: {source} holds no team files matching {TEAM_FILE_GLOBS}")
+    per_file = sorted(hashlib.sha256(t.strip().encode()).hexdigest() for t in texts)
+    return hashlib.sha256("\n".join(per_file).encode()).hexdigest()
+
+
+def team_set_digest_or_none(source: "Path | Sequence[str] | None") -> Optional[str]:
+    """:func:`team_set_digest`, or ``None`` when the set is absent, empty or unreadable — recorded as
+    UNKNOWN, which no counting rule reads as agreement (:func:`main.anchors.results.unit_counts`)."""
+    if source is None:
+        return None
+    try:
+        return team_set_digest(source)
+    except (OSError, ValueError, UnicodeDecodeError):
+        return None
 
 
 def build_team_source(spec: Dict[str, Any], seed: Optional[int], draw_log: List[Optional[str]]):

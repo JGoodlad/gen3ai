@@ -171,6 +171,22 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--teamset", choices=("home", "away"), default="home",
                    help="home = OUR pool (nickname-free, explicit Hidden Power IVs); "
                         "away = Metamon's own 20-team `competitive` gen3ou set. Report BOTH.")
+    p.add_argument("--our-teamset", dest="our_teamset", choices=("home", "away"), default=None,
+                   help="PAIR CELLS ONLY (a metamon our-side / --opponent-a/-b): OUR peer draws from "
+                        "the Metamon config's team_sets[OUR_TEAMSET] while the opponent keeps "
+                        "--teamset — an ASYMMETRIC pair cell (B-D9). Naming a DIFFERENT set than "
+                        "--teamset also lifts the self-pair refusal (one agent piloting set P against "
+                        "itself piloting set H: the strength calibration K(P, H)), with distinct "
+                        "usernames. Default: the same as --teamset. Refused for any other our-side. "
+                        "Stamped as our_teamset on every row.")
+    p.add_argument("--declare-asymmetric-teams", dest="declare_asymmetric_teams",
+                   action="store_true",
+                   help="DECLARE this cell's two sides draw from different team sets on purpose "
+                        "(B-D6): stamps declared_team_cell='asymmetric' on the plan and summary. "
+                        "Changes NO play; it decides which branch of "
+                        "main.anchors.results.unit_counts a registration reads the unit under (a "
+                        "declared cell counts when both sides' content digests equal the "
+                        "registered ones).")
     p.add_argument("--games", type=int, default=100,
                    help="total games, split evenly across the two challenge roles")
     p.add_argument("--forfeit-turn-limit", dest="forfeit_turn_limit", type=int, default=None,
@@ -330,7 +346,11 @@ def default_out_dir(args: argparse.Namespace, now: Optional[float] = None) -> Pa
     wrote it.
     """
     stamp = time.strftime("%Y%m%d_%H%M%S", time.localtime(now if now is not None else time.time()))
-    cell = "_".join((_slug(args.opponent), _slug(args.regime), _slug(args.teamset)))
+    parts = [_slug(args.opponent), _slug(args.regime), _slug(args.teamset)]
+    our_teamset = getattr(args, "our_teamset", None)
+    if our_teamset is not None:
+        parts.append("ours-" + _slug(our_teamset))      # B-D9: an asymmetric pair cell
+    cell = "_".join(parts)
     return default_out_root() / f"{stamp}_{cell}"
 
 
@@ -367,13 +387,28 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
     kind, agent = parse_opponent(args.opponent)
     our_side = parse_our_side(args.our_side)
 
-    # A bot plays its own fixed policy and there is no temperature to turn down, so `t1` against
-    # a bot our-side would name a regime that only one side is at while pretending both are.
-    if our_side == args.opponent:
+    # B-D9 `--our-teamset`: only a PEER our-side (a pair cell) draws from a Metamon team set of its
+    # own; a checkpoint / bot our-side draws from `our_team_sources`, so the flag would be ignored.
+    our_teamset = getattr(args, "our_teamset", None)
+    if our_teamset is not None and not our_side.startswith("metamon:"):
+        raise SystemExit(
+            f"--our-teamset {our_teamset} needs a PAIR cell (--our-side metamon:<Agent>, or "
+            "--opponent-a/--opponent-b): only a Metamon peer on our side draws from a Metamon team "
+            f"set of its own; our side here ({our_side}) draws from our_team_sources[--teamset], "
+            "so the flag would be stamped and never applied.")
+    # 🚨 A DECLARED asymmetric calibration cell (K(P, H)): one agent piloting a DIFFERENT team set
+    # on each side. Decided on the RESOLVED directory names, so two keys naming one set stay refused.
+    self_pair = our_side == args.opponent
+    asym_self = False
+    if self_pair and our_teamset is not None:
+        meta = cfg.opponent(kind)
+        asym_self = meta.team_set(our_teamset) != meta.team_set(args.teamset)
+    if self_pair and not asym_self:
         raise SystemExit(
             f"--our-side {our_side} equals --opponent: a cell of a policy against ITSELF measures "
             "nothing about the scale, and both sides would try to log in under names derived "
-            "from the same agent.")
+            "from the same agent. (An ASYMMETRIC calibration cell — the same agent piloting a "
+            "DIFFERENT team set on each side — is --our-teamset naming another set than --teamset.)")
     # WHO BUILDS OUR OBSERVATION (P3 + P6). The core slot needs the front end in THIS process (so a
     # `--server rust` this tool starts) and a checkpoint; anything else is the live client.
     is_peer = our_side.startswith("metamon:") or our_side == "foulplay"
@@ -535,6 +570,27 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
                              f"trainer's {DEFAULT_FORFEIT_TURN_LIMIT} is allowed (1..{DEFAULT_FORFEIT_TURN_LIMIT})")
         forfeit_limit = args.forfeit_turn_limit
 
+    # A peer our-side is named after ITS OWN agent: Metamon keys its per-battle CSV by the player's
+    # username, and "Gen3AIAnchor" on an anchor-vs-anchor row would name a client that is not ours
+    # at all. 18 characters is Showdown's ceiling and the per-half suffix costs one.
+    if our_side.startswith("metamon:"):
+        our_username = _default_peer_username("metamon", our_side.partition(":")[2])[:17]
+    else:
+        our_username = args.username
+    peer_username = args.peer_username or _default_peer_username(kind, agent)
+    if asym_self:
+        # B-D9: ONE agent on both sides — each name carries the team set it pilots, so the two
+        # logins differ (13 + 4 + the per-half suffix = 18 at most) and each CSV names its side.
+        stem = _default_peer_username("metamon", agent)[:13]
+        our_username = stem + our_teamset.capitalize()[:4]
+        if not args.peer_username:
+            peer_username = stem + args.teamset.capitalize()[:4]
+    if re.sub(r"[^a-z0-9]", "", our_username.lower()) == re.sub(r"[^a-z0-9]", "", peer_username.lower()):
+        raise SystemExit(f"our username {our_username!r} and the peer's {peer_username!r} are ONE "
+                         "Showdown user id: the second login would be a GUEST and the half would "
+                         "hang. Pass --peer-username.")
+    declared = "asymmetric" if getattr(args, "declare_asymmetric_teams", False) else "symmetric"
+
     # 🚨 NEVER the calling directory. See `default_out_root`.
     out_dir = Path(args.out).expanduser() if args.out else default_out_dir(args)
     return runner_mod.SeriesPlan(
@@ -544,6 +600,8 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         regime=args.regime,
         regime_matched=matched,
         teamset=args.teamset,
+        our_teamset=(our_teamset or args.teamset),
+        declared_team_cell=declared,
         games=args.games,
         battle_format=args.battle_format,
         model_spec=args.model or "",
@@ -565,9 +623,8 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         # A peer our-side is named after ITS OWN agent: Metamon keys its per-battle CSV by the
         # player's username, and "Gen3AIAnchor" on an anchor-vs-anchor row would name a client
         # that is not ours at all. 18 characters is Showdown's ceiling and the suffix costs one.
-        our_username=(_default_peer_username("metamon", our_side.partition(":")[2])[:17]
-                      if our_side.startswith("metamon:") else args.username),
-        peer_username=args.peer_username or _default_peer_username(kind, agent),
+        our_username=our_username,
+        peer_username=peer_username,
         team_seed=args.team_seed,
         search_time_ms=args.search_time_ms if kind == "foulplay" else None,
         search_parallelism=args.search_parallelism if kind == "foulplay" else None,
@@ -602,7 +659,12 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
            if plan.opponent_temperature is not None else "")
         + (f"  OUR side samples at T={plan.our_temperature}"
            if plan.our_temperature is not None else ""),
-        f"  team set          {plan.teamset}  ours={plan.our_team_spec}",
+        f"  team set          {plan.teamset}  ours={plan.our_team_spec}"
+        + (f"  🚨 OUR peer draws {plan.our_set} (ASYMMETRIC pair cell, --our-teamset)"
+           if plan.our_set != plan.teamset else ""),
+        f"  declared cell     {plan.declared_team_cell}"
+        + ("  (--declare-asymmetric-teams: counted by results.unit_counts' DECLARED branch)"
+           if plan.declared_team_cell == "asymmetric" else ""),
         f"  games             {plan.games}  ->  {plan.half_sizes()}",
         "  pairing           "
         + ("MIRRORED TEAM PAIRS (T17): battle 2k+1 hands battle 2k's teams over, one seed per pair "
@@ -757,7 +819,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             srv.stop()
             print(f"[anchors] {srv.label} stopped (pid was {srv.pid})", flush=True)
 
-    cell = runner_mod.cell_spec(plan, report, rows[0].cell.our_team_count if rows else 0)
+    cell = runner_mod.cell_spec(plan, report, rows[0].cell.our_team_count if rows
+                                else int(report.get("our_team_count") or 0))
     if rows:
         cell = rows[0].cell
     status = "FAILED" if failure is not None else "OK"
@@ -777,6 +840,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         peer_exit_notes=report.get("peer_exit_notes") or [],
         mirrored=report.get("mirrored_pairs"),
         team_overlap=overlap,
+        declared_team_cell=plan.declared_team_cell,
         provenance={
             "anchors_config": str(cfg.source),
             "peer_report": {k: v for k, v in report.items() if k != "team_draws"},

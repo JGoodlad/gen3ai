@@ -1,0 +1,55 @@
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 SpA
+Bold Nature
+- Toxic
+- Seismic Toss
+- Thunderbolt
+- Counter
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Meteor Mash
+- Explosion
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Roar
+- Spikes
+- Protect
+- Toxic
+
+Scizor (M) @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 52 Def / 72 SpD / 132 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD / 30 Spe
+- Steel Wing
+- Swords Dance
+- Hidden Power [Rock]
+- Endure
+
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Earthquake
+- Double-Edge
+- Rock Slide
+- Hidden Power [Bug]
+
+Solrock @ Choice Band
+Ability: Levitate
+EVs: 80 SpA / 176 SpD / 252 Spe
+Hasty Nature
+- Shadow Ball
+- Baton Pass
+- Explosion
+- Cosmic Power

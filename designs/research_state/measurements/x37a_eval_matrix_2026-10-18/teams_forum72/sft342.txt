@@ -1,0 +1,57 @@
+Heracross @ Leftovers
+Ability: Guts
+EVs: 40 HP / 252 Atk / 216 Spe
+Jolly Nature
+- Megahorn
+- Focus Punch
+- Rock Slide
+- Swords Dance
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 184 HP / 60 Atk / 252 SpA / 12 Spe
+Brave Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Psychic
+- Hidden Power [Fire]
+- Explosion
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 180 Def / 56 SpA / 24 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Roar
+- Toxic
+- Protect
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 16 HP / 156 Atk / 120 Def / 40 SpA / 176 Spe
+Naughty Nature
+IVs: 30 Atk / 30 SpA
+- Rock Slide
+- Earthquake
+- Hidden Power [Grass]
+- Dragon Dance
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Double-Edge
+- Rock Slide
+- Earthquake
+- Hidden Power [Flying]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 112 HP / 68 Atk / 56 Def / 96 SpA / 176 SpD
+Brave Nature
+- Body Slam
+- Fire Blast
+- Earthquake
+- Self-Destruct

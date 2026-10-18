@@ -1,0 +1,58 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Dragon Claw
+- Roar
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 SpD / 4 Spe
+Impish Nature
+IVs: 30 SpD
+- Hidden Power [Steel]
+- Rapid Spin
+- Spikes
+- Rest
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 200 Def / 56 SpD
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Curse
+- Earthquake
+- Hidden Power [Rock]
+- Rest
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Toxic
+- Seismic Toss
+- Aromatherapy
+- Soft-Boiled
+
+Ursaring @ Leftovers
+Ability: Guts
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Swords Dance
+- Return
+- Earthquake
+- Hidden Power [Ghost]
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 200 Atk / 252 SpA / 56 Spe
+Mild Nature
+- Thunderbolt
+- Ice Punch
+- Focus Punch
+- Hypnosis

@@ -200,3 +200,90 @@ def test_render_names_a_failure_rather_than_printing_a_bare_rate() -> None:
     text = render(summarize(cell, [_row(cell, "win", index=1)], status="FAILED",
                             failure={"cause": "no_progress", "detail": "0 games in 900s"}))
     assert "FAILURE" in text and "no_progress" in text
+
+
+# ------------------------------------------------- B-D6: THE ONE counting rule, `unit_counts`
+_P, _H, _X = "p" * 64, "h" * 64, "x" * 64
+
+
+def _summary(*, ours: int, theirs: int, our_digest=None, their_digest=None, games: int = 4,
+             declared: str = "symmetric"):
+    cell = _cell(our_team_count=ours, their_team_count=theirs,
+                 our_team_digest=our_digest, their_team_digest=their_digest)
+    rows = [_row(cell, "win", index=i, regime_verified_decisions=True, peer_clean=True)
+            for i in range(1, games + 1)]
+    return summarize(cell, rows, status="OK", declared_team_cell=declared)
+
+
+def test_the_summary_stamps_both_digests_the_content_check_and_the_declaration() -> None:
+    s = _summary(ours=72, theirs=16, our_digest=_P, their_digest=_H, declared="asymmetric")
+    assert (s["our_team_digest"], s["their_team_digest"]) == (_P, _H)
+    assert s["team_content_asymmetry"] is True and s["team_source_asymmetry"] is True
+    assert s["declared_team_cell"] == "asymmetric"
+    assert s["team_digest_schema"] == "gen3_team_set_digest_v1"
+    assert _summary(ours=4, theirs=4)["team_content_asymmetry"] is None     # unknown, never "equal"
+    assert _summary(ours=4, theirs=4)["declared_team_cell"] == "symmetric"
+    assert "declared=asymmetric" in render(s)
+
+
+def test_a_DECLARED_72_vs_16_cell_with_matching_digests_COUNTS() -> None:
+    from main.anchors.results import unit_counts
+
+    s = _summary(ours=72, theirs=16, our_digest=_P, their_digest=_H, declared="asymmetric")
+    got = unit_counts(s, games=4, declared_digests=(_P, _H))
+    assert got.counts is True and got.reasons == ()
+
+
+def test_the_same_72_vs_16_cell_UNDECLARED_does_not_count() -> None:
+    from main.anchors.results import unit_counts
+
+    s = _summary(ours=72, theirs=16, our_digest=_P, their_digest=_H)
+    got = unit_counts(s, games=4)
+    assert got.counts is False
+    assert any("team_source_asymmetry" in r for r in got.reasons)
+    assert any("team_content_asymmetry" in r for r in got.reasons)
+
+
+def test_a_declared_cell_with_a_WRONG_digest_does_not_count() -> None:
+    from main.anchors.results import unit_counts
+
+    s = _summary(ours=72, theirs=16, our_digest=_P, their_digest=_X)
+    got = unit_counts(s, games=4, declared_digests=(_P, _H))
+    assert got.counts is False and len(got.reasons) == 1 and "declared digests" in got.reasons[0]
+    # the summary's OWN digests win over a caller's pair: a wrong own digest is not rescued
+    assert not unit_counts(s, games=4, declared_digests=(_P, _H), verified_digests=(_P, _H)).counts
+
+
+def test_a_declared_cell_from_an_OLDER_tree_counts_on_the_callers_verified_digests() -> None:
+    from main.anchors.results import unit_counts
+
+    old = _summary(ours=72, theirs=16)                     # no digest of its own
+    assert unit_counts(old, games=4, declared_digests=(_P, _H), verified_digests=(_P, _H)).counts
+    assert not unit_counts(old, games=4, declared_digests=(_P, _H), verified_digests=(_P, _X)).counts
+    none = unit_counts(old, games=4, declared_digests=(_P, _H))
+    assert not none.counts and "NO team digest" in none.reasons[0]
+
+
+def test_an_UNDECLARED_72_vs_72_cell_of_DIFFERENT_teams_does_NOT_count() -> None:
+    """THE F-DV-5 fix: equal file COUNTS used to read as a symmetric cell whatever the teams were."""
+    from main.anchors.results import unit_counts
+
+    s = _summary(ours=72, theirs=72, our_digest=_P, their_digest=_H)
+    assert s["team_source_asymmetry"] is False
+    got = unit_counts(s, games=4)
+    assert got.counts is False and got.reasons == (
+        "team_content_asymmetry=True in an UNDECLARED cell (the two sides drew from different team content)",)
+    same = _summary(ours=72, theirs=72, our_digest=_P, their_digest=_P)
+    assert unit_counts(same, games=4).counts
+
+
+def test_every_failing_reason_is_listed_in_a_fixed_order() -> None:
+    from main.anchors.results import unit_counts
+
+    bad = {**_summary(ours=72, theirs=72, our_digest=_P, their_digest=_H),
+           "status": "FAILED", "n": 3, "regime_verified_decisions": False, "peer_clean": None}
+    got = unit_counts(bad, games=4)
+    assert not got.counts
+    assert [r.split("=")[0] for r in got.reasons] == [
+        "status", "n", "regime_verified_decisions", "peer_clean", "team_content_asymmetry"]
+    assert unit_counts(bad, games=4) == got                # deterministic

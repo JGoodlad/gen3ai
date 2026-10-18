@@ -1,0 +1,55 @@
+Vaporeon (M) @ Leftovers
+Ability: Water Absorb
+EVs: 12 HP / 252 SpA / 180 SpD / 64 Spe
+Modest Nature
+- Wish
+- Hydro Pump
+- Substitute
+- Baton Pass
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 80 HP / 252 Atk / 172 SpD / 4 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Hidden Power [Bug]
+- Aerial Ace
+- Earthquake
+- Sunny Day
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 176 Atk / 80 Def
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Meteor Mash
+- Agility
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Bold Nature
+- Soft-Boiled
+- Ice Beam
+- Seismic Toss
+- Aromatherapy
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 40 SpA / 48 SpD / 44 Spe
+Relaxed Nature
+- Protect
+- Ice Beam
+- Refresh
+- Endeavor
+
+Dragonite (M) @ Leftovers
+Ability: Inner Focus
+EVs: 120 HP / 64 Atk / 252 SpA / 68 SpD / 4 Spe
+Brave Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Hidden Power [Grass]
+- Brick Break
+- Wing Attack
+- Earthquake

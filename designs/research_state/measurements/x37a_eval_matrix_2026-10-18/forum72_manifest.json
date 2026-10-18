@@ -1,0 +1,1706 @@
+{
+ "schema": "x37a_forum72_manifest_v1",
+ "cap": 14,
+ "seed": 3720,
+ "per_curator": {
+  "Golden Sun": 6,
+  "Ibidem": 14,
+  "[M Dragon]": 14,
+  "thelinearcurve": 14,
+  "Dinozzo": 1,
+  "L3W": 1,
+  "Zetsu91": 1,
+  "make": 1,
+  "HeyYa!_Forte": 1,
+  "McMeghan": 2,
+  "g_f": 2,
+  "Foggi": 2,
+  "Loki (as recalled)": 1,
+  "Johnald": 2,
+  "UD": 1,
+  "Peter Pan": 1,
+  "Sharingan": 1,
+  "Undisputed": 1,
+  "Vertigo": 1,
+  "Smurf.": 1,
+  "eden": 1,
+  "Shitrock enjoyer": 2,
+  "EG Jhonx~": 1
+ },
+ "hp_check_failures": [],
+ "draw_log": [
+  {
+   "id": "sft435",
+   "curator": "Golden Sun",
+   "accepted": 1
+  },
+  {
+   "id": "sft429",
+   "curator": "Ibidem",
+   "accepted": 2
+  },
+  {
+   "id": "sft071",
+   "curator": "[M Dragon]",
+   "accepted": 3
+  },
+  {
+   "id": "sft110",
+   "curator": "thelinearcurve",
+   "accepted": 4
+  },
+  {
+   "id": "sft057",
+   "curator": "Dinozzo",
+   "accepted": 5
+  },
+  {
+   "id": "sft342",
+   "curator": "Ibidem",
+   "accepted": 6
+  },
+  {
+   "id": "sft153",
+   "curator": "thelinearcurve",
+   "accepted": 7
+  },
+  {
+   "id": "sft180",
+   "curator": "thelinearcurve",
+   "accepted": 8
+  },
+  {
+   "id": "sft434",
+   "curator": "Golden Sun",
+   "accepted": 9
+  },
+  {
+   "id": "sft085",
+   "curator": "L3W",
+   "accepted": 10
+  },
+  {
+   "id": "sft376",
+   "curator": "Ibidem",
+   "accepted": 11
+  },
+  {
+   "id": "sft323",
+   "curator": "Ibidem",
+   "accepted": 12
+  },
+  {
+   "id": "sft352",
+   "curator": "Ibidem",
+   "accepted": 13
+  },
+  {
+   "id": "sft387",
+   "curator": "Ibidem",
+   "accepted": 14
+  },
+  {
+   "id": "sft116",
+   "curator": "thelinearcurve",
+   "accepted": 15
+  },
+  {
+   "id": "sft109",
+   "curator": "thelinearcurve",
+   "accepted": 16
+  },
+  {
+   "id": "sft061",
+   "curator": "[M Dragon]",
+   "accepted": 17
+  },
+  {
+   "id": "sft104",
+   "curator": "thelinearcurve",
+   "accepted": 18
+  },
+  {
+   "id": "sft127",
+   "curator": "thelinearcurve",
+   "accepted": 19
+  },
+  {
+   "id": "sft384",
+   "curator": "Ibidem",
+   "accepted": 20
+  },
+  {
+   "id": "sft368",
+   "curator": "Ibidem",
+   "accepted": 21
+  },
+  {
+   "id": "sft056",
+   "curator": "Zetsu91",
+   "accepted": 22
+  },
+  {
+   "id": "sft369",
+   "curator": "Ibidem",
+   "accepted": 23
+  },
+  {
+   "id": "sft077",
+   "curator": "[M Dragon]",
+   "accepted": 24
+  },
+  {
+   "id": "sft067",
+   "curator": "make",
+   "accepted": 25
+  },
+  {
+   "id": "sft073",
+   "curator": "[M Dragon]",
+   "accepted": 26
+  },
+  {
+   "id": "sft413",
+   "curator": "Ibidem",
+   "accepted": 27
+  },
+  {
+   "id": "sft121",
+   "curator": "thelinearcurve",
+   "accepted": 28
+  },
+  {
+   "id": "sft080",
+   "curator": "HeyYa!_Forte",
+   "accepted": 29
+  },
+  {
+   "id": "sft089",
+   "curator": "McMeghan",
+   "accepted": 30
+  },
+  {
+   "id": "sft053",
+   "curator": "g_f",
+   "accepted": 31
+  },
+  {
+   "id": "sft419",
+   "curator": "Ibidem",
+   "accepted": 32
+  },
+  {
+   "id": "sft128",
+   "curator": "thelinearcurve",
+   "accepted": 33
+  },
+  {
+   "id": "sft157",
+   "curator": "thelinearcurve",
+   "accepted": 34
+  },
+  {
+   "id": "sft105",
+   "curator": "thelinearcurve",
+   "accepted": 35
+  },
+  {
+   "id": "sft433",
+   "curator": "Golden Sun",
+   "accepted": 36
+  },
+  {
+   "id": "sft365",
+   "curator": "Ibidem",
+   "accepted": 37
+  },
+  {
+   "id": "sft123",
+   "curator": "thelinearcurve",
+   "accepted": 38
+  },
+  {
+   "id": "sft386",
+   "curator": "Ibidem",
+   "accepted": 39
+  },
+  {
+   "id": "sft144",
+   "curator": "thelinearcurve",
+   "accepted": 40
+  },
+  {
+   "id": "sft361",
+   "curator": "Ibidem",
+   "accepted": 41
+  },
+  {
+   "id": "sft360",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft428",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft108",
+   "curator": "thelinearcurve",
+   "accepted": 42
+  },
+  {
+   "id": "sft431",
+   "curator": "Golden Sun",
+   "accepted": 43
+  },
+  {
+   "id": "sft074",
+   "curator": "[M Dragon]",
+   "accepted": 44
+  },
+  {
+   "id": "sft156",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft137",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft166",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft112",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft358",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft383",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft160",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft092",
+   "curator": "Foggi",
+   "accepted": 45
+  },
+  {
+   "id": "sft396",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft102",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft145",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft163",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft066",
+   "curator": "[M Dragon]",
+   "accepted": 46
+  },
+  {
+   "id": "sft079",
+   "curator": "Loki (as recalled)",
+   "accepted": 47
+  },
+  {
+   "id": "sft364",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft169",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft172",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft072",
+   "curator": "[M Dragon]",
+   "accepted": 48
+  },
+  {
+   "id": "sft081",
+   "curator": "Johnald",
+   "accepted": 49
+  },
+  {
+   "id": "sft095",
+   "curator": "UD",
+   "accepted": 50
+  },
+  {
+   "id": "sft367",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft348",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft138",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft140",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft182",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft405",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft115",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft094",
+   "curator": "McMeghan",
+   "accepted": 51
+  },
+  {
+   "id": "sft059",
+   "curator": "Peter Pan",
+   "accepted": 52
+  },
+  {
+   "id": "sft410",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft136",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft432",
+   "curator": "Golden Sun",
+   "accepted": 53
+  },
+  {
+   "id": "sft065",
+   "curator": "[M Dragon]",
+   "accepted": 54
+  },
+  {
+   "id": "sft373",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft415",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft436",
+   "curator": "Golden Sun",
+   "accepted": 55
+  },
+  {
+   "id": "sft100",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft402",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft131",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft186",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft371",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft096",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft187",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft398",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft052",
+   "curator": "Sharingan",
+   "accepted": 56
+  },
+  {
+   "id": "sft427",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft353",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft097",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft162",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft357",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft389",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft124",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft063",
+   "curator": "[M Dragon]",
+   "accepted": 57
+  },
+  {
+   "id": "sft090",
+   "curator": "Foggi",
+   "accepted": 58
+  },
+  {
+   "id": "sft408",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft388",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft399",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft188",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft055",
+   "curator": "[M Dragon]",
+   "accepted": 59
+  },
+  {
+   "id": "sft420",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft155",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft150",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft099",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft407",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft064",
+   "curator": "[M Dragon]",
+   "accepted": 60
+  },
+  {
+   "id": "sft394",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft076",
+   "curator": "Undisputed",
+   "accepted": 61
+  },
+  {
+   "id": "sft058",
+   "curator": "Vertigo",
+   "accepted": 62
+  },
+  {
+   "id": "sft171",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft422",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft098",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft344",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft118",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft101",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft159",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft380",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft093",
+   "curator": "Smurf.",
+   "accepted": 63
+  },
+  {
+   "id": "sft054",
+   "curator": "g_f",
+   "accepted": 64
+  },
+  {
+   "id": "sft426",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft392",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft117",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft167",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft170",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft355",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft078",
+   "curator": "[M Dragon]",
+   "accepted": 65
+  },
+  {
+   "id": "sft154",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft091",
+   "curator": "eden",
+   "accepted": 66
+  },
+  {
+   "id": "sft161",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft332",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft337",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft060",
+   "curator": "[M Dragon]",
+   "accepted": 67
+  },
+  {
+   "id": "sft050",
+   "curator": "[M Dragon]",
+   "accepted": 68
+  },
+  {
+   "id": "sft351",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft143",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft082",
+   "curator": "Shitrock enjoyer",
+   "accepted": 69
+  },
+  {
+   "id": "sft075",
+   "curator": "[M Dragon]",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft119",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft165",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft148",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft404",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft340",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft068",
+   "curator": "[M Dragon]",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft149",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft051",
+   "curator": "[M Dragon]",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft125",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft036",
+   "curator": "Shitrock enjoyer",
+   "accepted": 70
+  },
+  {
+   "id": "sft363",
+   "curator": "Ibidem",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft087",
+   "curator": "EG Jhonx~",
+   "accepted": 71
+  },
+  {
+   "id": "sft183",
+   "curator": "thelinearcurve",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft070",
+   "curator": "[M Dragon]",
+   "skipped": "curator cap"
+  },
+  {
+   "id": "sft086",
+   "curator": "Johnald",
+   "accepted": 72
+  }
+ ],
+ "teams": {
+  "sft435": {
+   "sha256": "a7f3cd6c93c00f2eeb6511d5ad8928c9c88f85810db7785fe97338fe2625aeb4",
+   "curator": "Golden Sun",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "",
+   "source_url": "https://pastebin.com/fmDC1uNc",
+   "post_date": "2016-07-03",
+   "forum_sha256": "a7f3cd6c93c00f2eeb6511d5ad8928c9c88f85810db7785fe97338fe2625aeb4"
+  },
+  "sft429": {
+   "sha256": "bc48cf3f0f8d6bf093f05b16898e3c1c87dbe93fa41483aa7daf48bb43778e7c",
+   "curator": "Ibidem",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2017 Ibidem",
+   "source_url": "https://pastebin.com/i7HzJQmC",
+   "post_date": "2021-07-16",
+   "forum_sha256": "bc48cf3f0f8d6bf093f05b16898e3c1c87dbe93fa41483aa7daf48bb43778e7c"
+  },
+  "sft071": {
+   "sha256": "4b547eec8254fc73605b7e6912171b7d80f94fd3424ba7a63ebf104218eb0131",
+   "curator": "[M Dragon]",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Magneton Physical Offense",
+   "source_url": "https://pokepast.es/cb36ecfd36a833b0",
+   "post_date": "2021-07-04",
+   "forum_sha256": "4b547eec8254fc73605b7e6912171b7d80f94fd3424ba7a63ebf104218eb0131"
+  },
+  "sft110": {
+   "sha256": "e4863f4e859482b9d62a973767dd41ca30075413a53d620a1581ad7501d579b0",
+   "curator": "thelinearcurve",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2020 thelinearcurve (all)",
+   "source_url": "https://pastebin.com/tUytkX29",
+   "post_date": "2021-07-16",
+   "forum_sha256": "e4863f4e859482b9d62a973767dd41ca30075413a53d620a1581ad7501d579b0"
+  },
+  "sft057": {
+   "sha256": "07d908755447ff15026d42f2e1c69c76d7348d888af277d655299636c849038b",
+   "curator": "Dinozzo",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Team by Dinozzo",
+   "source_url": "https://pokepast.es/ba64de736ca6e345",
+   "post_date": "2021-07-04",
+   "forum_sha256": "07d908755447ff15026d42f2e1c69c76d7348d888af277d655299636c849038b"
+  },
+  "sft342": {
+   "sha256": "ed648bc1f92c69af8d21bcf6795fdb0c58452299df2e2a5e212f1a77b60efda2",
+   "curator": "Ibidem",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2017 Ibidem",
+   "source_url": "https://pastebin.com/i7HzJQmC",
+   "post_date": "2021-07-16",
+   "forum_sha256": "ed648bc1f92c69af8d21bcf6795fdb0c58452299df2e2a5e212f1a77b60efda2"
+  },
+  "sft153": {
+   "sha256": "20fa795164af937781176b461be49d042271184f24df67afe45dc76bb32b67be",
+   "curator": "thelinearcurve",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2020 thelinearcurve (all)",
+   "source_url": "https://pastebin.com/tUytkX29",
+   "post_date": "2021-07-16",
+   "forum_sha256": "20fa795164af937781176b461be49d042271184f24df67afe45dc76bb32b67be"
+  },
+  "sft180": {
+   "sha256": "74ceca504dd9176f766088e4b517b43a75c8d5b4746e3ab634e6574c204b0c07",
+   "curator": "thelinearcurve",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2020 thelinearcurve (all)",
+   "source_url": "https://pastebin.com/tUytkX29",
+   "post_date": "2021-07-16",
+   "forum_sha256": "74ceca504dd9176f766088e4b517b43a75c8d5b4746e3ab634e6574c204b0c07"
+  },
+  "sft434": {
+   "sha256": "8e096b33a382bb300b3be9710debbd8aa822d00f72c4a205ecdf31a06d5859dd",
+   "curator": "Golden Sun",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "",
+   "source_url": "https://pastebin.com/JG307Jin",
+   "post_date": "2016-07-03",
+   "forum_sha256": "8e096b33a382bb300b3be9710debbd8aa822d00f72c4a205ecdf31a06d5859dd"
+  },
+  "sft085": {
+   "sha256": "1ae2ae53cc81873ba53be95cd0a3d5236f2a04b503a1f389c6f9edb0c06cc45d",
+   "curator": "L3W",
+   "category": "teambuilding_competition_winner",
+   "tier": "B",
+   "team_name": "R6 Statpass no Statpass Celebi: Thing (winner)",
+   "source_url": "https://pokepast.es/69527e1d2cc2e98b",
+   "post_date": "2025-09..2026",
+   "forum_sha256": "1ae2ae53cc81873ba53be95cd0a3d5236f2a04b503a1f389c6f9edb0c06cc45d"
+  },
+  "sft376": {
+   "sha256": "49c7cb07a3375d085e2e3a8f8dc1de2cf15fb3c2777d70e4ed17c259a6fc8044",
+   "curator": "Ibidem",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2017 Ibidem",
+   "source_url": "https://pastebin.com/i7HzJQmC",
+   "post_date": "2021-07-16",
+   "forum_sha256": "49c7cb07a3375d085e2e3a8f8dc1de2cf15fb3c2777d70e4ed17c259a6fc8044"
+  },
+  "sft323": {
+   "sha256": "027216b52ee8ae43e9c1dc45d6a86b639996d8f19e270055e7791c3c4f6af9c9",
+   "curator": "Ibidem",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2017 Ibidem",
+   "source_url": "https://pastebin.com/i7HzJQmC",
+   "post_date": "2021-07-16",
+   "forum_sha256": "027216b52ee8ae43e9c1dc45d6a86b639996d8f19e270055e7791c3c4f6af9c9"
+  },
+  "sft352": {
+   "sha256": "3f6e1a87f6d36a5a1c438399ee1f3147cabbee772e1569e32697184a837c1af2",
+   "curator": "Ibidem",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2017 Ibidem",
+   "source_url": "https://pastebin.com/i7HzJQmC",
+   "post_date": "2021-07-16",
+   "forum_sha256": "3f6e1a87f6d36a5a1c438399ee1f3147cabbee772e1569e32697184a837c1af2"
+  },
+  "sft387": {
+   "sha256": "a8ebc5f5b85e5bd1803533d1daaa97293c79c5de2fc3d4153fcc70bdf49bc870",
+   "curator": "Ibidem",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2017 Ibidem",
+   "source_url": "https://pastebin.com/i7HzJQmC",
+   "post_date": "2021-07-16",
+   "forum_sha256": "a8ebc5f5b85e5bd1803533d1daaa97293c79c5de2fc3d4153fcc70bdf49bc870"
+  },
+  "sft116": {
+   "sha256": "5cbfcacd9942bed8d579020d61df847334c7c7e4e066f545a4fa25937cca0ec4",
+   "curator": "thelinearcurve",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2020 thelinearcurve (all)",
+   "source_url": "https://pastebin.com/tUytkX29",
+   "post_date": "2021-07-16",
+   "forum_sha256": "5cbfcacd9942bed8d579020d61df847334c7c7e4e066f545a4fa25937cca0ec4"
+  },
+  "sft109": {
+   "sha256": "0431aac0cc82fc6e59d70ea6ac3b34e6a781fa761b2d740ee13743c8f625fb44",
+   "curator": "thelinearcurve",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2020 thelinearcurve (all)",
+   "source_url": "https://pastebin.com/tUytkX29",
+   "post_date": "2021-07-16",
+   "forum_sha256": "0431aac0cc82fc6e59d70ea6ac3b34e6a781fa761b2d740ee13743c8f625fb44"
+  },
+  "sft061": {
+   "sha256": "e97e7395bdd5f4e046a691256e0fd825b6983c2296c506f941acef1b25c32361",
+   "curator": "[M Dragon]",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "CM BP Celebi (German metagame)",
+   "source_url": "https://pokepast.es/5340ec33b6a73295",
+   "post_date": "2021-07-04",
+   "forum_sha256": "e97e7395bdd5f4e046a691256e0fd825b6983c2296c506f941acef1b25c32361"
+  },
+  "sft104": {
+   "sha256": "d30c23d9298ebf2e0315e1375956bdd79d7a75a840be361ad89c28f81ac391fc",
+   "curator": "thelinearcurve",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2021 thelinearcurve",
+   "source_url": "https://pastebin.com/6xCb1crp",
+   "post_date": "2021-07-16",
+   "forum_sha256": "d30c23d9298ebf2e0315e1375956bdd79d7a75a840be361ad89c28f81ac391fc"
+  },
+  "sft127": {
+   "sha256": "8af4f5a3ff10c85c5c070197c2202670dc9effd3314a35ac4767aef9375d8faa",
+   "curator": "thelinearcurve",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2020 thelinearcurve (all)",
+   "source_url": "https://pastebin.com/tUytkX29",
+   "post_date": "2021-07-16",
+   "forum_sha256": "8af4f5a3ff10c85c5c070197c2202670dc9effd3314a35ac4767aef9375d8faa"
+  },
+  "sft384": {
+   "sha256": "6adfa5c37013be388cbbda95a2c22cd10f450df0d25aa9bedf69fd350affea2b",
+   "curator": "Ibidem",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2017 Ibidem",
+   "source_url": "https://pastebin.com/i7HzJQmC",
+   "post_date": "2021-07-16",
+   "forum_sha256": "6adfa5c37013be388cbbda95a2c22cd10f450df0d25aa9bedf69fd350affea2b"
+  },
+  "sft368": {
+   "sha256": "16c555112ecb86db3706b95d3fc1eca8385d513629ce24e1daee063045d3dde5",
+   "curator": "Ibidem",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2017 Ibidem",
+   "source_url": "https://pastebin.com/i7HzJQmC",
+   "post_date": "2021-07-16",
+   "forum_sha256": "16c555112ecb86db3706b95d3fc1eca8385d513629ce24e1daee063045d3dde5"
+  },
+  "sft056": {
+   "sha256": "a4cbad18e7c4880a9482ead6981f9ce21b130b89d87b5672b72b80ee913f0792",
+   "curator": "Zetsu91",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Ivan Drago",
+   "source_url": "https://pokepast.es/fca1f5218e2381eb",
+   "post_date": "2021-07-04",
+   "forum_sha256": "a4cbad18e7c4880a9482ead6981f9ce21b130b89d87b5672b72b80ee913f0792"
+  },
+  "sft369": {
+   "sha256": "296a3c464367a7aebafbd59069748435750a75065a8b1f36fdda92e34dc21b07",
+   "curator": "Ibidem",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2017 Ibidem",
+   "source_url": "https://pastebin.com/i7HzJQmC",
+   "post_date": "2021-07-16",
+   "forum_sha256": "296a3c464367a7aebafbd59069748435750a75065a8b1f36fdda92e34dc21b07"
+  },
+  "sft077": {
+   "sha256": "cde8de35802e6568969fd61f382326ce160b48b4fcfa3d23f414087d165fa6a5",
+   "curator": "[M Dragon]",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "SD Heracross Offense",
+   "source_url": "https://pokepast.es/5c32d4db5d666eaa",
+   "post_date": "2021-07-04",
+   "forum_sha256": "cde8de35802e6568969fd61f382326ce160b48b4fcfa3d23f414087d165fa6a5"
+  },
+  "sft067": {
+   "sha256": "538402d81dacb1961c433292f167e8b12973b471df2827a6f7e4a328fcacd33d",
+   "curator": "make",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Suicune Spikes",
+   "source_url": "https://pokepast.es/d64ad6336ce9b754",
+   "post_date": "2021-07-04",
+   "forum_sha256": "538402d81dacb1961c433292f167e8b12973b471df2827a6f7e4a328fcacd33d"
+  },
+  "sft073": {
+   "sha256": "fe0db05ab78e6407c6cf7b0105b0e75cac94220d9b8279c9b88a267cbce95055",
+   "curator": "[M Dragon]",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Majin Quadruple CM Balance",
+   "source_url": "https://pokepast.es/7b1f4039ba774246",
+   "post_date": "2021-07-04",
+   "forum_sha256": "fe0db05ab78e6407c6cf7b0105b0e75cac94220d9b8279c9b88a267cbce95055"
+  },
+  "sft413": {
+   "sha256": "dfa063c2c750a8db60af20b14180fb8d4684b86bcb631115e706e4de3e704093",
+   "curator": "Ibidem",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2017 Ibidem",
+   "source_url": "https://pastebin.com/i7HzJQmC",
+   "post_date": "2021-07-16",
+   "forum_sha256": "dfa063c2c750a8db60af20b14180fb8d4684b86bcb631115e706e4de3e704093"
+  },
+  "sft121": {
+   "sha256": "7818c701efb7ae8d136286ca066da5005aad25d63edf206ad077fc0451a95965",
+   "curator": "thelinearcurve",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2020 thelinearcurve (all)",
+   "source_url": "https://pastebin.com/tUytkX29",
+   "post_date": "2021-07-16",
+   "forum_sha256": "7818c701efb7ae8d136286ca066da5005aad25d63edf206ad077fc0451a95965"
+  },
+  "sft080": {
+   "sha256": "34a1c19975104a50e39a1bac074dd4041a571b6cbe758efa7078546b49ab9ef7",
+   "curator": "HeyYa!_Forte",
+   "category": "teambuilding_competition_winner",
+   "tier": "B",
+   "team_name": "R1 Medicham: Bulk Up Pass Medicham + Triple Trappers (winner)",
+   "source_url": "https://pokepast.es/aef2f2d61002a81f",
+   "post_date": "2025-09..2026",
+   "forum_sha256": "34a1c19975104a50e39a1bac074dd4041a571b6cbe758efa7078546b49ab9ef7"
+  },
+  "sft089": {
+   "sha256": "2a31fb85cc4f3167fa9de22ae37feb7bb106280a9fdad1a5eee3a6780c99c920",
+   "curator": "McMeghan",
+   "category": "resource_listed_team_analysis",
+   "tier": "A",
+   "team_name": "Dragon Dance Tyranitar Offense",
+   "source_url": "https://pokepast.es/9d85a630a2f9c12c",
+   "post_date": "2019-08-14",
+   "forum_sha256": "2a31fb85cc4f3167fa9de22ae37feb7bb106280a9fdad1a5eee3a6780c99c920"
+  },
+  "sft053": {
+   "sha256": "6f6f136cbcb4a75de409b67d8a13ce6b6aef6817a54561c3ea589a8961429ee4",
+   "curator": "g_f",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Did ya know RSE aer Fat",
+   "source_url": "https://pokepast.es/ec23705ddd7f14a1",
+   "post_date": "2021-07-04",
+   "forum_sha256": "6f6f136cbcb4a75de409b67d8a13ce6b6aef6817a54561c3ea589a8961429ee4"
+  },
+  "sft419": {
+   "sha256": "288bfcb137e8a6132ba1b9280b7b9f8da5f90a8d37cd0daab8b917d8d0aa531c",
+   "curator": "Ibidem",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2017 Ibidem",
+   "source_url": "https://pastebin.com/i7HzJQmC",
+   "post_date": "2021-07-16",
+   "forum_sha256": "288bfcb137e8a6132ba1b9280b7b9f8da5f90a8d37cd0daab8b917d8d0aa531c"
+  },
+  "sft128": {
+   "sha256": "a1cdfeaa2cbccd0b9e8e7b4df4842ca263d2dad23e420b9202169b58201abab5",
+   "curator": "thelinearcurve",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2020 thelinearcurve (all)",
+   "source_url": "https://pastebin.com/tUytkX29",
+   "post_date": "2021-07-16",
+   "forum_sha256": "a1cdfeaa2cbccd0b9e8e7b4df4842ca263d2dad23e420b9202169b58201abab5"
+  },
+  "sft157": {
+   "sha256": "5662646d3ecb80692cbee0beba2f0efbc72b7640f145edb1e89d52f10e39bf63",
+   "curator": "thelinearcurve",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2020 thelinearcurve (all)",
+   "source_url": "https://pastebin.com/tUytkX29",
+   "post_date": "2021-07-16",
+   "forum_sha256": "5662646d3ecb80692cbee0beba2f0efbc72b7640f145edb1e89d52f10e39bf63"
+  },
+  "sft105": {
+   "sha256": "cafd0b6b3764864a50dd3b4f497be9bc789e9e2a5a845278e2f300e9b0236dcd",
+   "curator": "thelinearcurve",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2021 thelinearcurve",
+   "source_url": "https://pastebin.com/6xCb1crp",
+   "post_date": "2021-07-16",
+   "forum_sha256": "cafd0b6b3764864a50dd3b4f497be9bc789e9e2a5a845278e2f300e9b0236dcd"
+  },
+  "sft433": {
+   "sha256": "a88ee79b662d37d78857d95eb87cfba51a8e6099c5175ad2b638062aa4ea65d2",
+   "curator": "Golden Sun",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "",
+   "source_url": "https://pastebin.com/qNspHuRe",
+   "post_date": "2016-07-03",
+   "forum_sha256": "a88ee79b662d37d78857d95eb87cfba51a8e6099c5175ad2b638062aa4ea65d2"
+  },
+  "sft365": {
+   "sha256": "29fb293a1aeb27adaa6a7a5301bb8a3c720a9dddcb1f30d257ca0b159f51ca79",
+   "curator": "Ibidem",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2017 Ibidem",
+   "source_url": "https://pastebin.com/i7HzJQmC",
+   "post_date": "2021-07-16",
+   "forum_sha256": "29fb293a1aeb27adaa6a7a5301bb8a3c720a9dddcb1f30d257ca0b159f51ca79"
+  },
+  "sft123": {
+   "sha256": "4c1be6bec0d010e4af31dce383ff99d3fb467ae827c508785ecf25551a0079f6",
+   "curator": "thelinearcurve",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2020 thelinearcurve (all)",
+   "source_url": "https://pastebin.com/tUytkX29",
+   "post_date": "2021-07-16",
+   "forum_sha256": "4c1be6bec0d010e4af31dce383ff99d3fb467ae827c508785ecf25551a0079f6"
+  },
+  "sft386": {
+   "sha256": "3da6c565d95be59258a34b72d25eab0c191c052c1e68d13da0d7607b0134f1b3",
+   "curator": "Ibidem",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2017 Ibidem",
+   "source_url": "https://pastebin.com/i7HzJQmC",
+   "post_date": "2021-07-16",
+   "forum_sha256": "3da6c565d95be59258a34b72d25eab0c191c052c1e68d13da0d7607b0134f1b3"
+  },
+  "sft144": {
+   "sha256": "98230837e97702c51cd6c5129e6a0b0744ebf224feadde51a4843144199361c2",
+   "curator": "thelinearcurve",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2020 thelinearcurve (all)",
+   "source_url": "https://pastebin.com/tUytkX29",
+   "post_date": "2021-07-16",
+   "forum_sha256": "98230837e97702c51cd6c5129e6a0b0744ebf224feadde51a4843144199361c2"
+  },
+  "sft361": {
+   "sha256": "0f59d63adb585664efa4397d2210222b71839fd70a652e07731adf5da70e2161",
+   "curator": "Ibidem",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2017 Ibidem",
+   "source_url": "https://pastebin.com/i7HzJQmC",
+   "post_date": "2021-07-16",
+   "forum_sha256": "0f59d63adb585664efa4397d2210222b71839fd70a652e07731adf5da70e2161"
+  },
+  "sft108": {
+   "sha256": "19560239a76e0255924521377a8b9020284e413a91eae4240340d1660bfb1c83",
+   "curator": "thelinearcurve",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "2020 thelinearcurve (all)",
+   "source_url": "https://pastebin.com/tUytkX29",
+   "post_date": "2021-07-16",
+   "forum_sha256": "19560239a76e0255924521377a8b9020284e413a91eae4240340d1660bfb1c83"
+  },
+  "sft431": {
+   "sha256": "0d42a073cf69f3072869fbeaee8e6f2ee49e9bf23e7a9170d4a670c64d105dcb",
+   "curator": "Golden Sun",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "",
+   "source_url": "https://pastebin.com/7kNkVWxP",
+   "post_date": "2016-07-03",
+   "forum_sha256": "0d42a073cf69f3072869fbeaee8e6f2ee49e9bf23e7a9170d4a670c64d105dcb"
+  },
+  "sft074": {
+   "sha256": "2028b4c9d21a3881b4e4a136bcdd226a59c7559826754b9fa2ec2b4fb4428037",
+   "curator": "[M Dragon]",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "balanced Mixmence Aero",
+   "source_url": "https://pokepast.es/191f2b915ab31468",
+   "post_date": "2021-07-04",
+   "forum_sha256": "2028b4c9d21a3881b4e4a136bcdd226a59c7559826754b9fa2ec2b4fb4428037"
+  },
+  "sft092": {
+   "sha256": "982f09f52df789e947333900e163e33534098cd775324af0e0959b6fcb2fb8ce",
+   "curator": "Foggi",
+   "category": "resource_listed_team_analysis",
+   "tier": "A",
+   "team_name": "Explosion is an art (Boom Spam)",
+   "source_url": "https://www.smogon.com/forums/threads/explosion-is-an-art.3583380/",
+   "post_date": "2016-09-27",
+   "forum_sha256": "982f09f52df789e947333900e163e33534098cd775324af0e0959b6fcb2fb8ce"
+  },
+  "sft066": {
+   "sha256": "917728e9ec731755720ab62148c254c51e723efbddb565391eb06cc1ef5b047a",
+   "curator": "[M Dragon]",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Steelix TSS",
+   "source_url": "https://pokepast.es/17ae394678500b9a",
+   "post_date": "2021-07-04",
+   "forum_sha256": "917728e9ec731755720ab62148c254c51e723efbddb565391eb06cc1ef5b047a"
+  },
+  "sft079": {
+   "sha256": "11b07a8e450c982a79722410b2b01cf28b874e828a7c6e62f8c7ae081e337f2a",
+   "curator": "Loki (as recalled)",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Loki-style Gengar Zapdos Flygon Skarmory Swampert",
+   "source_url": "https://pokepast.es/c280810585fcc2b4",
+   "post_date": "2022-06-05",
+   "forum_sha256": "11b07a8e450c982a79722410b2b01cf28b874e828a7c6e62f8c7ae081e337f2a"
+  },
+  "sft072": {
+   "sha256": "d7afba2fcec80cd6e225bfa3a52d45ab29245444886ea53802bfdd5b66d49a15",
+   "curator": "[M Dragon]",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Zapdos + Dugtrio + Gengar",
+   "source_url": "https://pokepast.es/b3007308b34e6fcb",
+   "post_date": "2021-07-04",
+   "forum_sha256": "d7afba2fcec80cd6e225bfa3a52d45ab29245444886ea53802bfdd5b66d49a15"
+  },
+  "sft081": {
+   "sha256": "016a17a8abecce73cc552d1eb5056572ca948ace17813c9f32465cb3fc01266a",
+   "curator": "Johnald",
+   "category": "teambuilding_competition_winner",
+   "tier": "B",
+   "team_name": "R2 Flygon no Skarmory: Forre OffGon + Charizard (winner)",
+   "source_url": "https://pokepast.es/558007e4ed74293c",
+   "post_date": "2025-09..2026",
+   "forum_sha256": "016a17a8abecce73cc552d1eb5056572ca948ace17813c9f32465cb3fc01266a"
+  },
+  "sft095": {
+   "sha256": "f93e9da6e509faf5ca084de4a3a85abb763b5cd7804e99114fedc15ad08cb4e7",
+   "curator": "UD",
+   "category": "resource_listed_team_analysis",
+   "tier": "A",
+   "team_name": "Special Offense + Spikes",
+   "source_url": "https://www.smogon.com/forums/threads/special-offense-spikes.3632230/",
+   "post_date": "2018-04-10",
+   "forum_sha256": "f93e9da6e509faf5ca084de4a3a85abb763b5cd7804e99114fedc15ad08cb4e7"
+  },
+  "sft094": {
+   "sha256": "297468dee657beab0e7b67c5664aaac9dca35e51a08e3a6b11b0706cfb23f71a",
+   "curator": "McMeghan",
+   "category": "resource_listed_team_analysis",
+   "tier": "A",
+   "team_name": "querencia (OffStar Mag)",
+   "source_url": "https://www.smogon.com/forums/threads/querencia.3521102/",
+   "post_date": "2014-11-01",
+   "forum_sha256": "297468dee657beab0e7b67c5664aaac9dca35e51a08e3a6b11b0706cfb23f71a"
+  },
+  "sft059": {
+   "sha256": "32855ef556ad05886196cb76b72e8a4a19f067e3e67bdab0ee530ac26d5abc5c",
+   "curator": "Peter Pan",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Peter Pan's main team (German metagame)",
+   "source_url": "https://pokepast.es/35d237136a776484",
+   "post_date": "2021-07-04",
+   "forum_sha256": "32855ef556ad05886196cb76b72e8a4a19f067e3e67bdab0ee530ac26d5abc5c"
+  },
+  "sft432": {
+   "sha256": "50c8592c615ec805266eea9e8e8b347006b20066ea8fa9ad4b04729a1997f61f",
+   "curator": "Golden Sun",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "",
+   "source_url": "https://pastebin.com/MfEzJsH3",
+   "post_date": "2016-07-03",
+   "forum_sha256": "50c8592c615ec805266eea9e8e8b347006b20066ea8fa9ad4b04729a1997f61f"
+  },
+  "sft065": {
+   "sha256": "2b236dae54198e05717065a3b46755335385dcc4ea6b9a6f169b40d4dfe4b993",
+   "curator": "[M Dragon]",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "physical offense team",
+   "source_url": "https://pokepast.es/b1c6278b15d9fe9d",
+   "post_date": "2021-07-04",
+   "forum_sha256": "2b236dae54198e05717065a3b46755335385dcc4ea6b9a6f169b40d4dfe4b993"
+  },
+  "sft436": {
+   "sha256": "fa551e7f629781f6a9aa34d6cabf0edd62fb827cd494177174b4245f381b36ea",
+   "curator": "Golden Sun",
+   "category": "curated_team_dump",
+   "tier": "A",
+   "team_name": "",
+   "source_url": "https://pastebin.com/UpruJpjr",
+   "post_date": "2016-07-03",
+   "forum_sha256": "fa551e7f629781f6a9aa34d6cabf0edd62fb827cd494177174b4245f381b36ea"
+  },
+  "sft052": {
+   "sha256": "a959c2c24912ddc25227e6e8b88e174e4bcadd7c45a7b78141205dd952eebe56",
+   "curator": "Sharingan",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Revengezard",
+   "source_url": "https://pokepast.es/a1020c590086af16",
+   "post_date": "2021-07-04",
+   "forum_sha256": "a959c2c24912ddc25227e6e8b88e174e4bcadd7c45a7b78141205dd952eebe56"
+  },
+  "sft063": {
+   "sha256": "32a5d2740801e3b2c129661bcc008dfe0c8e1016fc91aeb3567a27b99edd768e",
+   "curator": "[M Dragon]",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Two example teams (French metagame)",
+   "source_url": "https://pokepast.es/a6217617cb089a26",
+   "post_date": "2021-07-04",
+   "forum_sha256": "32a5d2740801e3b2c129661bcc008dfe0c8e1016fc91aeb3567a27b99edd768e"
+  },
+  "sft090": {
+   "sha256": "9926f5092695a829b50a1eb5c4ead4f8ed3e03feb7f9422cb82cfb626e97144d",
+   "curator": "Foggi",
+   "category": "resource_listed_team_analysis",
+   "tier": "A",
+   "team_name": "Steelwork (Jirachi + sand TSS, Aerodactyl)",
+   "source_url": "https://www.smogon.com/forums/threads/steelwork.3609872/",
+   "post_date": "2017-07-19",
+   "forum_sha256": "9926f5092695a829b50a1eb5c4ead4f8ed3e03feb7f9422cb82cfb626e97144d"
+  },
+  "sft055": {
+   "sha256": "41adf40e2738ab305cb348f8af2697be16772e5f840bce54340ac50b6dbc89e4",
+   "curator": "[M Dragon]",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Stall Breaker 2009",
+   "source_url": "https://pokepast.es/77b9107ec90cdb6f",
+   "post_date": "2021-07-04",
+   "forum_sha256": "41adf40e2738ab305cb348f8af2697be16772e5f840bce54340ac50b6dbc89e4"
+  },
+  "sft064": {
+   "sha256": "c9b59b717ce961d8267e368a13c415c4bc46bd12646858955df6cd31bcb2a241",
+   "curator": "[M Dragon]",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Two example teams (French metagame)",
+   "source_url": "https://pokepast.es/a6217617cb089a26",
+   "post_date": "2021-07-04",
+   "forum_sha256": "c9b59b717ce961d8267e368a13c415c4bc46bd12646858955df6cd31bcb2a241"
+  },
+  "sft076": {
+   "sha256": "9eb508669b96e50ebe0556697151af14501e2f2c68cc399811061db9e6c76ea4",
+   "curator": "Undisputed",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Undisputed TTar + Flygon + Aero",
+   "source_url": "https://pokepast.es/33e5289413855275",
+   "post_date": "2021-07-04",
+   "forum_sha256": "9eb508669b96e50ebe0556697151af14501e2f2c68cc399811061db9e6c76ea4"
+  },
+  "sft058": {
+   "sha256": "a58c18fa72268c092e9c6f68d8839083e102109becebec50355d810480276447",
+   "curator": "Vertigo",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Vertigo's CM Bliss TSS (German metagame)",
+   "source_url": "https://pokepast.es/a375da3005e8b7d0",
+   "post_date": "2021-07-04",
+   "forum_sha256": "a58c18fa72268c092e9c6f68d8839083e102109becebec50355d810480276447"
+  },
+  "sft093": {
+   "sha256": "7f247aec785517af10e8aad487cf0cd9628589e6a4be26a3e111a8395e2fb208",
+   "curator": "Smurf.",
+   "category": "resource_listed_team_analysis",
+   "tier": "A",
+   "team_name": "Ozymandias (Smurf Rain)",
+   "source_url": "https://www.smogon.com/forums/threads/ozymandias.3533733/",
+   "post_date": "2015-03-27",
+   "forum_sha256": "7f247aec785517af10e8aad487cf0cd9628589e6a4be26a3e111a8395e2fb208"
+  },
+  "sft054": {
+   "sha256": "a204237d77a2099bfef9b0e8734d0004a50fd159e506e51bc93e3fab736212b5",
+   "curator": "g_f",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "PursuiTar",
+   "source_url": "https://pokepast.es/bab822d3a6a24816",
+   "post_date": "2021-07-04",
+   "forum_sha256": "a204237d77a2099bfef9b0e8734d0004a50fd159e506e51bc93e3fab736212b5"
+  },
+  "sft078": {
+   "sha256": "79ae74d8b9262f4f8cf747fdff1311d57d05e1d06610c1c87e91c61f2ac37893",
+   "curator": "[M Dragon]",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "Milotic Flygon Balance",
+   "source_url": "https://pokepast.es/9f896614e5de2646",
+   "post_date": "2021-07-04",
+   "forum_sha256": "79ae74d8b9262f4f8cf747fdff1311d57d05e1d06610c1c87e91c61f2ac37893"
+  },
+  "sft091": {
+   "sha256": "c0ef1e0473fb1e654673f520ce3423aa940c97de4cdedadc44c161566c726261",
+   "curator": "eden",
+   "category": "resource_listed_team_analysis",
+   "tier": "A",
+   "team_name": "VenuPert (Venusaur + Swampert Spikes + Aerodactyl)",
+   "source_url": "https://www.smogon.com/forums/threads/komm-s\u00fc\u00dfer-tod-a-guide-to-venupert.3611254/",
+   "post_date": "2017-08-04",
+   "forum_sha256": "c0ef1e0473fb1e654673f520ce3423aa940c97de4cdedadc44c161566c726261"
+  },
+  "sft060": {
+   "sha256": "bec2ed4ff753752e17e39790c8d842135c6af8ae36738fcf493fb0bb1cde206b",
+   "curator": "[M Dragon]",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "SD Celebi team (German metagame)",
+   "source_url": "https://pokepast.es/c6dcfd9407abf63c",
+   "post_date": "2021-07-04",
+   "forum_sha256": "bec2ed4ff753752e17e39790c8d842135c6af8ae36738fcf493fb0bb1cde206b"
+  },
+  "sft050": {
+   "sha256": "61873f83b0ec3b86c17ef19ebe39cf5e433498a2dbaddec8e2d8b63aa22c3f9a",
+   "curator": "[M Dragon]",
+   "category": "team_archive_history",
+   "tier": "A",
+   "team_name": "MT offensive team (Italian metagame)",
+   "source_url": "https://pokepast.es/448f1b81ebee106e",
+   "post_date": "2021-07-04",
+   "forum_sha256": "61873f83b0ec3b86c17ef19ebe39cf5e433498a2dbaddec8e2d8b63aa22c3f9a"
+  },
+  "sft082": {
+   "sha256": "7327fe7826150860a28d9f5348972bfdb6a1745ac8bff791b49a11b805c05938",
+   "curator": "Shitrock enjoyer",
+   "category": "teambuilding_competition_winner",
+   "tier": "B",
+   "team_name": "R3 no Spikes/Sand/Trappers: MACONHA FESTA (winner)",
+   "source_url": "https://pokepast.es/fea738831a609237",
+   "post_date": "2025-09..2026",
+   "forum_sha256": "7327fe7826150860a28d9f5348972bfdb6a1745ac8bff791b49a11b805c05938"
+  },
+  "sft036": {
+   "sha256": "1cdd895dd678d298e06d746812f2acd7fec087e098823299fcbce5e20b6565f0",
+   "curator": "Shitrock enjoyer",
+   "category": "sample_team_archived",
+   "tier": "A",
+   "team_name": "MixMence + BKCTar Spikes Offense (2023)",
+   "source_url": "https://pokepast.es/1fc6068e9111e80b",
+   "post_date": "2021-07-16",
+   "forum_sha256": "1cdd895dd678d298e06d746812f2acd7fec087e098823299fcbce5e20b6565f0"
+  },
+  "sft087": {
+   "sha256": "9d681a5c079ebfb5be1febb2fe5edb74a6a3eb3610ea55a29d0caf27a1f9880c",
+   "curator": "EG Jhonx~",
+   "category": "resource_listed_team_analysis",
+   "tier": "A",
+   "team_name": "Indestructible (Camerupt offense)",
+   "source_url": "https://pokepast.es/01cd432a1779a56c",
+   "post_date": "2021-12-13",
+   "forum_sha256": "9d681a5c079ebfb5be1febb2fe5edb74a6a3eb3610ea55a29d0caf27a1f9880c"
+  },
+  "sft086": {
+   "sha256": "c05e8c9ee52cb0354d6ba16f60e4a8d729bb072e734f3bd13e6d09728f528f05",
+   "curator": "Johnald",
+   "category": "teambuilding_competition_winner",
+   "tier": "B",
+   "team_name": "R7 UU-or-below Water type: Lapras Loom Mixoff (winner)",
+   "source_url": "https://pokepast.es/8abd56103f32fe49",
+   "post_date": "2025-09..2026",
+   "forum_sha256": "c05e8c9ee52cb0354d6ba16f60e4a8d729bb072e734f3bd13e6d09728f528f05"
+  }
+ },
+ "strata": {
+  "CORE": [
+   "sft352",
+   "sft361",
+   "sft376",
+   "sft387"
+  ],
+  "NEAR": [
+   "sft036",
+   "sft050",
+   "sft052",
+   "sft053",
+   "sft054",
+   "sft058",
+   "sft059",
+   "sft060",
+   "sft061",
+   "sft063",
+   "sft065",
+   "sft066",
+   "sft067",
+   "sft071",
+   "sft072",
+   "sft073",
+   "sft074",
+   "sft076",
+   "sft077",
+   "sft079",
+   "sft080",
+   "sft085",
+   "sft087",
+   "sft089",
+   "sft090",
+   "sft091",
+   "sft093",
+   "sft094",
+   "sft095",
+   "sft104",
+   "sft105",
+   "sft109",
+   "sft110",
+   "sft116",
+   "sft121",
+   "sft127",
+   "sft128",
+   "sft144",
+   "sft153",
+   "sft157",
+   "sft180",
+   "sft323",
+   "sft342",
+   "sft365",
+   "sft368",
+   "sft369",
+   "sft384",
+   "sft413",
+   "sft419",
+   "sft429",
+   "sft431",
+   "sft432",
+   "sft434",
+   "sft435"
+  ],
+  "FAR": [
+   "sft055",
+   "sft056",
+   "sft057",
+   "sft064",
+   "sft078",
+   "sft081",
+   "sft082",
+   "sft086",
+   "sft092",
+   "sft108",
+   "sft123",
+   "sft386",
+   "sft433",
+   "sft436"
+  ]
+ },
+ "overlap": {
+  "pool": {
+   "n_read_teams": 72,
+   "n_reference_teams": 719,
+   "exact_team": 0,
+   "exact_team_strict": 0,
+   "same_species6": 6,
+   "n_read_mons": 432,
+   "mons_seen": 303,
+   "mons_seen_strict": 100,
+   "max_shared_mons_hist": {
+    "0": 0,
+    "1": 14,
+    "2": 42,
+    "3": 16,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "teams_sharing_ge4": 0,
+   "exact_examples": []
+  },
+  "competitive": {
+   "n_read_teams": 72,
+   "n_reference_teams": 20,
+   "exact_team": 0,
+   "exact_team_strict": 0,
+   "same_species6": 2,
+   "n_read_mons": 432,
+   "mons_seen": 131,
+   "mons_seen_strict": 8,
+   "max_shared_mons_hist": {
+    "0": 10,
+    "1": 45,
+    "2": 14,
+    "3": 3,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "teams_sharing_ge4": 0,
+   "exact_examples": []
+  },
+  "home72": {
+   "n_read_teams": 72,
+   "n_reference_teams": 72,
+   "exact_team": 0,
+   "exact_team_strict": 0,
+   "same_species6": 4,
+   "n_read_mons": 432,
+   "mons_seen": 211,
+   "mons_seen_strict": 40,
+   "max_shared_mons_hist": {
+    "0": 4,
+    "1": 38,
+    "2": 22,
+    "3": 8,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "teams_sharing_ge4": 0,
+   "exact_examples": []
+  },
+  "heldout72_hpfix": {
+   "n_read_teams": 72,
+   "n_reference_teams": 72,
+   "exact_team": 0,
+   "exact_team_strict": 0,
+   "same_species6": 0,
+   "n_read_mons": 432,
+   "mons_seen": 153,
+   "mons_seen_strict": 17,
+   "max_shared_mons_hist": {
+    "0": 7,
+    "1": 53,
+    "2": 12,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "teams_sharing_ge4": 0,
+   "exact_examples": []
+  }
+ }
+}

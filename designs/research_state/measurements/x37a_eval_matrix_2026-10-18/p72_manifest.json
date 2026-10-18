@@ -1,0 +1,844 @@
+{
+ "schema": "x37a_p72_manifest_v1",
+ "seed": 3721,
+ "n_emit": 200,
+ "generator": "src/rust_sim/harness/ou_random_teams.js",
+ "draw_log": [
+  {
+   "id": "p72_000",
+   "accepted": 1
+  },
+  {
+   "id": "p72_001",
+   "accepted": 2
+  },
+  {
+   "id": "p72_002",
+   "accepted": 3
+  },
+  {
+   "id": "p72_003",
+   "accepted": 4
+  },
+  {
+   "id": "p72_004",
+   "accepted": 5
+  },
+  {
+   "id": "p72_005",
+   "accepted": 6
+  },
+  {
+   "id": "p72_006",
+   "accepted": 7
+  },
+  {
+   "id": "p72_007",
+   "accepted": 8
+  },
+  {
+   "id": "p72_008",
+   "accepted": 9
+  },
+  {
+   "id": "p72_009",
+   "accepted": 10
+  },
+  {
+   "id": "p72_010",
+   "accepted": 11
+  },
+  {
+   "id": "p72_011",
+   "accepted": 12
+  },
+  {
+   "id": "p72_012",
+   "accepted": 13
+  },
+  {
+   "id": "p72_013",
+   "accepted": 14
+  },
+  {
+   "id": "p72_014",
+   "accepted": 15
+  },
+  {
+   "id": "p72_015",
+   "accepted": 16
+  },
+  {
+   "id": "p72_016",
+   "accepted": 17
+  },
+  {
+   "id": "p72_017",
+   "accepted": 18
+  },
+  {
+   "id": "p72_018",
+   "accepted": 19
+  },
+  {
+   "id": "p72_019",
+   "accepted": 20
+  },
+  {
+   "id": "p72_020",
+   "accepted": 21
+  },
+  {
+   "id": "p72_021",
+   "accepted": 22
+  },
+  {
+   "id": "p72_022",
+   "accepted": 23
+  },
+  {
+   "id": "p72_023",
+   "accepted": 24
+  },
+  {
+   "id": "p72_024",
+   "accepted": 25
+  },
+  {
+   "id": "p72_025",
+   "accepted": 26
+  },
+  {
+   "id": "p72_026",
+   "accepted": 27
+  },
+  {
+   "id": "p72_027",
+   "accepted": 28
+  },
+  {
+   "id": "p72_028",
+   "accepted": 29
+  },
+  {
+   "id": "p72_029",
+   "accepted": 30
+  },
+  {
+   "id": "p72_030",
+   "accepted": 31
+  },
+  {
+   "id": "p72_031",
+   "accepted": 32
+  },
+  {
+   "id": "p72_032",
+   "accepted": 33
+  },
+  {
+   "id": "p72_033",
+   "accepted": 34
+  },
+  {
+   "id": "p72_034",
+   "accepted": 35
+  },
+  {
+   "id": "p72_035",
+   "accepted": 36
+  },
+  {
+   "id": "p72_036",
+   "accepted": 37
+  },
+  {
+   "id": "p72_037",
+   "accepted": 38
+  },
+  {
+   "id": "p72_038",
+   "accepted": 39
+  },
+  {
+   "id": "p72_039",
+   "accepted": 40
+  },
+  {
+   "id": "p72_040",
+   "accepted": 41
+  },
+  {
+   "id": "p72_041",
+   "accepted": 42
+  },
+  {
+   "id": "p72_042",
+   "accepted": 43
+  },
+  {
+   "id": "p72_043",
+   "accepted": 44
+  },
+  {
+   "id": "p72_044",
+   "accepted": 45
+  },
+  {
+   "id": "p72_045",
+   "accepted": 46
+  },
+  {
+   "id": "p72_046",
+   "accepted": 47
+  },
+  {
+   "id": "p72_047",
+   "accepted": 48
+  },
+  {
+   "id": "p72_048",
+   "accepted": 49
+  },
+  {
+   "id": "p72_049",
+   "accepted": 50
+  },
+  {
+   "id": "p72_050",
+   "accepted": 51
+  },
+  {
+   "id": "p72_051",
+   "accepted": 52
+  },
+  {
+   "id": "p72_052",
+   "accepted": 53
+  },
+  {
+   "id": "p72_053",
+   "accepted": 54
+  },
+  {
+   "id": "p72_054",
+   "accepted": 55
+  },
+  {
+   "id": "p72_055",
+   "accepted": 56
+  },
+  {
+   "id": "p72_056",
+   "accepted": 57
+  },
+  {
+   "id": "p72_057",
+   "accepted": 58
+  },
+  {
+   "id": "p72_058",
+   "accepted": 59
+  },
+  {
+   "id": "p72_059",
+   "accepted": 60
+  },
+  {
+   "id": "p72_060",
+   "accepted": 61
+  },
+  {
+   "id": "p72_061",
+   "accepted": 62
+  },
+  {
+   "id": "p72_062",
+   "accepted": 63
+  },
+  {
+   "id": "p72_063",
+   "accepted": 64
+  },
+  {
+   "id": "p72_064",
+   "accepted": 65
+  },
+  {
+   "id": "p72_065",
+   "accepted": 66
+  },
+  {
+   "id": "p72_066",
+   "accepted": 67
+  },
+  {
+   "id": "p72_067",
+   "accepted": 68
+  },
+  {
+   "id": "p72_068",
+   "accepted": 69
+  },
+  {
+   "id": "p72_069",
+   "accepted": 70
+  },
+  {
+   "id": "p72_070",
+   "accepted": 71
+  },
+  {
+   "id": "p72_071",
+   "accepted": 72
+  }
+ ],
+ "teams": {
+  "p72_000": {
+   "sha256": "960bef8f0c474c82aad7b521f38e450a7201ea2b74acad4f15fbea7024682222",
+   "emit_index": 0,
+   "packed": "Forretress||leftovers|sturdy|rapidspin,spikes,earthquake,counter|Careful|252,,,,252,4|M||||]Zapdos||leftovers|pressure|thunderbolt,thunderwave,batonpass,rest|Timid|4,,,252,,252|N||||]Blissey||leftovers|naturalcure|seismictoss,thunderbolt,softboiled,icebeam|Bold|252,,252,,4,|F||||]Suicune||leftovers|pressure|rest,roar,surf,hiddenpowergrass|Bold|240,,252,,,16|N|30,,30,30,,|||]Houndoom||leftovers|flashfire|crunch,beatup,fireblast,hiddenpowergrass|Timid|4,,,252,,252|M|30,,30,30,,|||]Salamence||leftovers|intimidate|dragondance,fireblast,hydropump,brickbreak|Adamant|116,252,,,,140|M||||"
+  },
+  "p72_001": {
+   "sha256": "306ac4b9fb690c661f5318d43401d6294ae55c903609ec945745c7de05da8547",
+   "emit_index": 1,
+   "packed": "Heracross||salacberry|swarm|rockslide,hiddenpowerghost,substitute,swordsdance|Jolly|,252,,,4,252|M|30,,30,,30,|||]Snorlax||leftovers|immunity|counter,earthquake,bodyslam,rest|Careful|144,96,132,,136,|M||||]Salamence||leftovers|intimidate|protect,fireblast,flamethrower,hiddenpowerflying|Naive|,4,,252,,252|M|,30,,30,30,30|||]Magneton||magnet|magnetpull|substitute,toxic,protect,reflect|Modest|4,,,252,,252|N||||]Metagross||choiceband|clearbody|earthquake,rockslide,meteormash,agility|Adamant|128,252,,,,128|N||||]Forretress||leftovers|sturdy|rapidspin,earthquake,hiddenpowerbug,spikes|Careful|252,,4,,252,|M|,30,,,30,30|||"
+  },
+  "p72_002": {
+   "sha256": "2257c5dc9da79d5e3308e036fdefaf44ede354b6a1ded90f9498d352cba39f62",
+   "emit_index": 2,
+   "packed": "Snorlax||leftovers|immunity|bodyslam,selfdestruct,curse,shadowball|Adamant|92,116,144,,144,12|M||||]Tyranitar||lumberry|sandstream|rockslide,flamethrower,hiddenpowergrass,substitute|Modest|232,,60,216,,|M|30,,30,30,,|||]Metagross||lumberry|clearbody|meteormash,agility,hiddenpowerfire,earthquake|Adamant|128,252,,,,128|N|30,,30,30,,30|||]Magneton||magnet|magnetpull|protect,thunderbolt,sunnyday,hiddenpowerice|Modest|,,,252,4,252|N|,,,,,30|||]Medicham||salacberry|purepower|focuspunch,fakeout,brickbreak,rockslide|Jolly|4,252,,,,252|M||||]Houndoom||leftovers|flashfire|willowisp,pursuit,fireblast,crunch|Modest|4,,,252,,252|M||||"
+  },
+  "p72_003": {
+   "sha256": "56a442c1a9ed933a87a402eb0a12dd8a0faabd3108804d76a243685f931acab1",
+   "emit_index": 3,
+   "packed": "Salamence||leftovers|intimidate|earthquake,fireblast,dragondance,hiddenpowerflying|Rash|,4,,252,,252|M|,30,,30,30,30|||]Snorlax||leftovers|immunity|curse,earthquake,bodyslam,shadowball|Adamant|92,116,144,,144,12|M||||]Starmie||leftovers|naturalcure|icebeam,recover,thunderbolt,thunderwave|Timid|4,,,252,,252|N||||]Tyranitar||choiceband|sandstream|counter,hiddenpowerbug,dragondance,focuspunch|Adamant|248,252,,,8,|M|,30,,,30,30|||]Gengar||leftovers|levitate|perishsong,hypnosis,icepunch,hiddenpowergrass|Timid|168,,,,164,176|M|30,,30,30,,|||]Typhlosion||petayaberry|blaze|hiddenpowerice,thunderpunch,substitute,focuspunch|Rash|32,16,,252,,208|M|,,,,,30|||"
+  },
+  "p72_004": {
+   "sha256": "9772af97bb08a8c5b3581697bd390ee02a8c5c09c05f7090b3012cea294f1974",
+   "emit_index": 4,
+   "packed": "Suicune||leftovers|pressure|roar,icebeam,calmmind,surf|Bold|252,,252,4,,|N||||]Snorlax||leftovers|immunity|shadowball,bodyslam,curse,selfdestruct|Adamant|252,252,,,,4|M||||]Metagross||leftovers|clearbody|explosion,earthquake,thunderpunch,protect|Quiet|252,,,252,,4|N||||]Regice||leftovers|clearbody|icebeam,thunderwave,hiddenpowerfire,explosion|Sassy|252,,220,,36,|N|30,,30,30,,30|||]Skarmory||leftovers|keeneye|roar,thief,toxic,spikes|Careful|252,,8,,248,|M||||]Magneton||salacberry|magnetpull|hiddenpowergrass,endure,protect,toxic|Timid|4,,,252,,252|N|30,,30,30,,|||"
+  },
+  "p72_005": {
+   "sha256": "557e36b158fe2b0a5954d5e3f58444d9d67d8894ae27e97fa5f2ae9b93476d91",
+   "emit_index": 5,
+   "packed": "Blissey||leftovers|naturalcure|aromatherapy,icebeam,seismictoss,softboiled|Modest|4,,252,252,,|F||||]Magneton||magnet|magnetpull|hiddenpowergrass,thunderbolt,toxic,screech|Modest|4,,,252,,252|N|30,,30,30,,|||]Flygon||leftovers|levitate|toxic,earthquake,rockslide,substitute|Jolly|4,252,,,,252|M||||]Skarmory||leftovers|keeneye|roar,drillpeck,spikes,protect|Careful|248,,,,248,12|M||||]Kingdra||leftovers|swiftswim|hiddenpowergrass,surf,flail,hydropump|Modest|104,,,252,,152|M|30,,30,30,,|||]Tyranitar||leftovers|sandstream|hiddenpowerbug,earthquake,dragondance,focuspunch|Modest|232,,60,216,,|M|,30,,,30,30|||"
+  },
+  "p72_006": {
+   "sha256": "6a9a14b3e9b1f4577130d8348bb2b57d92a4c9401c4594caa935cb2d8bbb60d1",
+   "emit_index": 6,
+   "packed": "Gengar||leftovers|levitate|thunderbolt,gigadrain,taunt,icepunch|Timid|164,,,,168,176|M||||]Forretress||leftovers|sturdy|explosion,counter,earthquake,rapidspin|Careful|252,,4,,252,|M||||]Metagross||leftovers|clearbody|meteormash,agility,explosion,protect|Rash|,36,,252,,220|N||||]Celebi||leftovers|naturalcure|batonpass,leechseed,hiddenpowergrass,lightscreen|Timid|76,,,252,,180|N|30,,30,30,,|||]Umbreon||leftovers|synchronize|wish,batonpass,pursuit,toxic|Calm|252,,120,,136,|M||||]Dugtrio||choiceband|arenatrap|hiddenpowerbug,aerialace,earthquake,rockslide|Jolly|40,144,,,100,224|M|,30,,,30,30|||"
+  },
+  "p72_007": {
+   "sha256": "5d0fb6869bac27713504136de4b3c0f3c37438aa3688a775342a30ec2cdbec3f",
+   "emit_index": 7,
+   "packed": "Skarmory||leftovers|keeneye|spikes,roar,taunt,toxic|Bold|252,,232,,,24|M||||]Gengar||leftovers|levitate|thunderbolt,icepunch,taunt,willowisp|Timid|168,,,,164,176|M||||]Tyranitar||leftovers|sandstream|crunch,flamethrower,rockslide,hiddenpowerbug|Modest|252,,,252,,4|M|,30,,,30,30|||]Swampert||leftovers|torrent|icebeam,hydropump,surf,refresh|Relaxed|248,,216,,44,|M||||]Metagross||choiceband|clearbody|explosion,rockslide,earthquake,protect|Adamant|4,252,,,,252|N||||]Sableye||leftovers|keeneye|seismictoss,recover,knockoff,confuseray|Impish|252,,252,,,4|M||||"
+  },
+  "p72_008": {
+   "sha256": "9207119d30311da8a6015aa91fdefa70bc91d96abf207036cad58bc6a36f919b",
+   "emit_index": 8,
+   "packed": "Forretress||leftovers|sturdy|spikes,rapidspin,explosion,earthquake|Impish|252,,252,,,|M||||]Celebi||leftovers|naturalcure|psychic,hiddenpowerrock,leechseed,batonpass|Bold|252,,220,,,36|N|,30,30,,30,30|||]Umbreon||leftovers|synchronize|charm,protect,wish,pursuit|Calm|252,,4,,252,|M||||]Suicune||leftovers|pressure|surf,icebeam,calmmind,roar|Modest|240,,,252,,16|N||||]Tyranitar||leftovers|sandstream|earthquake,hiddenpowerbug,rockslide,fireblast|Jolly|,252,4,,,252|M|,30,,,30,30|||]Houndoom||leftovers|flashfire|counter,fireblast,pursuit,hiddenpowergrass|Timid|56,,,252,12,188|M|30,,30,30,,|||"
+  },
+  "p72_009": {
+   "sha256": "8e3a11e2c0e343ab5a6e0e90f0a2a0ff4afa9bea902adf3f8309c7a170dc3e66",
+   "emit_index": 9,
+   "packed": "Gengar||leftovers|levitate|gigadrain,curse,thunderbolt,firepunch|Timid|4,,,252,,252|M||||]Dugtrio||choiceband|arenatrap|earthquake,rockslide,hiddenpowerbug,aerialace|Adamant|,252,,,4,252|M|,30,,,30,30|||]Heracross||salacberry|swarm|megahorn,swordsdance,rockslide,reversal|Adamant|4,252,,,,252|M||||]Skarmory||leftovers|keeneye|spikes,toxic,roar,drillpeck|Careful|252,4,,,252,|M||||]Zapdos||leftovers|pressure|toxic,thunderbolt,thunderwave,hiddenpowergrass|Modest|4,,,252,,252|N|30,,30,30,,|||]Swampert||leftovers|torrent|hydropump,earthquake,focuspunch,surf|Relaxed|248,,216,,44,|M||||"
+  },
+  "p72_010": {
+   "sha256": "845117a3a91534e44e27fb42c59947728a6bb5140e4634597ce7dc329f207bd5",
+   "emit_index": 10,
+   "packed": "Moltres||leftovers|pressure|willowisp,hiddenpowergrass,roar,sunnyday|Timid|,,,252,4,252|N|30,,30,30,,|||]Jirachi||leftovers|serenegrace|hiddenpowergrass,toxic,calmmind,substitute|Calm|252,,76,,180,|N|30,,30,30,,|||]Flygon||choiceband|levitate|hiddenpowerbug,earthquake,substitute,rockslide|Jolly|4,252,,,,252|M|,30,,,30,30|||]Tyranitar||lumberry|sandstream|fireblast,taunt,hiddenpowergrass,brickbreak|Jolly|,252,,,4,252|M|30,,30,30,,|||]Kingdra||leftovers|swiftswim|icebeam,raindance,substitute,surf|Modest|104,,,252,,152|M||||]Skarmory||leftovers|keeneye|spikes,drillpeck,roar,protect|Careful|252,,,,252,4|M||||"
+  },
+  "p72_011": {
+   "sha256": "ca53ca717cd36878363f096886a1d9a68feef58195c71065d4315f0819eec1f2",
+   "emit_index": 11,
+   "packed": "Gengar||leftovers|levitate|thunderbolt,icepunch,willowisp,firepunch|Timid|,,,252,4,252|M||||]Charizard||leftovers|blaze|flamethrower,focuspunch,hiddenpowerice,substitute|Hasty|,4,,252,,252|M|,,,,,30|||]Snorlax||leftovers|immunity|focuspunch,earthquake,bodyslam,shadowball|Adamant|92,116,144,,144,12|M||||]Tyranitar||leftovers|sandstream|pursuit,hiddenpowerbug,rockslide,earthquake|Adamant|252,252,,,4,|M|,30,,,30,30|||]Heracross||choiceband|swarm|megahorn,focuspunch,rockslide,earthquake|Jolly|4,252,,,,252|M||||]Blissey||leftovers|naturalcure|aromatherapy,toxic,counter,softboiled|Modest|,,252,252,,4|F||||"
+  },
+  "p72_012": {
+   "sha256": "2a41561d6163eed15491723102b5ceb7ec82fa645bf4d68785d49d06cceb1f29",
+   "emit_index": 12,
+   "packed": "Zapdos||leftovers|pressure|thunderbolt,drillpeck,batonpass,hiddenpowerice|Modest|,,,220,48,240|N|,,,,,30|||]Salamence||leftovers|intimidate|rockslide,brickbreak,hiddenpowergrass,earthquake|Rash|,4,,252,,252|M|30,,30,30,,|||]Tyranitar||lumberry|sandstream|earthquake,dragondance,rockslide,hiddenpowerbug|Modest|248,,,252,,8|M|,30,,,30,30|||]Charizard||leftovers|blaze|hiddenpowergrass,focuspunch,flamethrower,fireblast|Hasty|,4,,252,,252|M|30,,30,30,,|||]Gengar||leftovers|levitate|icepunch,destinybond,firepunch,gigadrain|Timid|248,,44,8,112,96|M||||]Starmie||leftovers|naturalcure|surf,icebeam,thunderbolt,psychic|Timid|252,,,40,,216|N||||"
+  },
+  "p72_013": {
+   "sha256": "98989169474d25de60d2661afa0dd8b6712528457c7ddf874b135681c99ae41d",
+   "emit_index": 13,
+   "packed": "Zapdos||leftovers|pressure|thunderbolt,batonpass,thunderwave,drillpeck|Timid|,,,252,4,252|N||||]Metagross||leftovers|clearbody|meteormash,explosion,psychic,rockslide|Jolly|,224,,,68,216|N||||]Swampert||leftovers|torrent|protect,hydropump,icebeam,surf|Quiet|248,56,64,140,,|M||||]Skarmory||leftovers|keeneye|protect,roar,spikes,toxic|Careful|252,,,,252,4|M||||]Flygon||leftovers|levitate|rockslide,earthquake,protect,toxic|Impish|252,,196,,28,32|M||||]Jirachi||leftovers|serenegrace|hiddenpowergrass,psychic,substitute,protect|Bold|252,,224,,,32|N|30,,30,30,,|||"
+  },
+  "p72_014": {
+   "sha256": "75332dc90d34d5626a8194c118cbd3bddbf299b1fe68401caf38c7e842f72e2f",
+   "emit_index": 14,
+   "packed": "Skarmory||leftovers|keeneye|taunt,toxic,spikes,protect|Careful|252,,,,252,|M||||]Jirachi||leftovers|serenegrace|hiddenpowergrass,bodyslam,firepunch,calmmind|Bold|252,,224,,,32|N|30,,30,30,,|||]Jolteon||leftovers|voltabsorb|thunderbolt,thunderwave,hiddenpowerice,substitute|Timid|,,,252,4,252|M|,,,,,30|||]Zapdos||leftovers|pressure|hiddenpowergrass,batonpass,toxic,substitute|Modest|,,,220,48,240|N|30,,30,30,,|||]Celebi||leftovers|naturalcure|gigadrain,leechseed,batonpass,recover|Timid|240,,92,,,176|N||||]Starmie||leftovers|naturalcure|rapidspin,hydropump,thunderwave,icebeam|Timid|252,,,40,,216|N||||"
+  },
+  "p72_015": {
+   "sha256": "3406aa4629d223274b4ae0338c7a42a2f14958c0a2ed47307a6b643756c2fe26",
+   "emit_index": 15,
+   "packed": "Milotic||leftovers|marvelscale|surf,toxic,icebeam,refresh|Bold|252,,252,,4,|M||||]Zapdos||leftovers|pressure|thunderbolt,roar,substitute,hiddenpowergrass|Modest|216,,,112,,180|N|30,,30,30,,|||]Smeargle||lumberry|owntempo|thunderwave,whirlwind,explosion,destinybond|Timid|252,,,,4,252|M||||]Claydol||leftovers|levitate|hiddenpowerfire,rapidspin,explosion,rest|Impish|252,252,4,,,|N|30,,30,30,,30|||]Celebi||leftovers|naturalcure|recover,psychic,batonpass,hiddenpowerice|Modest|,,,252,76,180|N|,,,,,30|||]Tyranitar||leftovers|sandstream|earthquake,hiddenpowerbug,crunch,focuspunch|Adamant|248,252,,,,8|M|,30,,,30,30|||"
+  },
+  "p72_016": {
+   "sha256": "0467301c2c474def725d2cc81635b6b6e75f6e39b55e4ad5f96e0b6597b01d9a",
+   "emit_index": 16,
+   "packed": "Swampert||salacberry|torrent|endeavor,hydropump,surf,icebeam|Relaxed|248,,216,,44,|M||||]Celebi||leftovers|naturalcure|leechseed,batonpass,hiddenpowerfire,calmmind|Modest|192,,8,224,,84|N|30,,30,30,,30|||]Snorlax||leftovers|immunity|curse,shadowball,selfdestruct,focuspunch|Adamant|92,116,144,,144,12|M||||]Zapdos||leftovers|pressure|substitute,hiddenpowergrass,protect,thunderbolt|Calm|252,,,,252,4|N|30,,30,30,,|||]Tyranitar||leftovers|sandstream|crunch,hiddenpowerbug,dragondance,fireblast|Adamant|248,80,,,,180|M|,30,,,30,30|||]Registeel||leftovers|clearbody|counter,seismictoss,thunderwave,earthquake|Careful|252,,,,216,40|N||||"
+  },
+  "p72_017": {
+   "sha256": "12b0ddfae462381593e5d618321f2012210e5c8380b73c1ccbf175f6502b70e6",
+   "emit_index": 17,
+   "packed": "Salamence||leftovers|intimidate|brickbreak,fireblast,dragondance,earthquake|Rash|,4,,252,,252|M||||]Magneton||leftovers|magnetpull|thunderbolt,hiddenpowerfire,toxic,protect|Modest|4,,,252,,252|N|30,,30,30,,30|||]Gengar||leftovers|levitate|icepunch,gigadrain,explosion,thunderbolt|Timid|248,,52,12,100,96|M||||]Snorlax||leftovers|immunity|shadowball,bodyslam,earthquake,selfdestruct|Careful|144,96,132,,136,|M||||]Blissey||leftovers|naturalcure|flamethrower,aromatherapy,thunderwave,softboiled|Modest|,,252,248,,8|F||||]Registeel||leftovers|clearbody|explosion,superpower,counter,seismictoss|Adamant|252,232,,,24,|N||||"
+  },
+  "p72_018": {
+   "sha256": "51d785817ba3f99a750f5e223c1a208e62716f358177fff8d329ddcf964d0aea",
+   "emit_index": 18,
+   "packed": "Blissey||leftovers|naturalcure|softboiled,icebeam,seismictoss,thunderwave|Modest|,,252,252,,4|F||||]Jirachi||leftovers|serenegrace|icepunch,shadowball,doomdesire,thunderbolt|Modest|224,,,252,,32|N||||]Starmie||leftovers|naturalcure|thunderbolt,recover,rapidspin,surf|Timid|4,,,252,,252|N||||]Moltres||leftovers|pressure|flamethrower,roar,rest,sunnyday|Modest|24,,,252,,232|N||||]Charizard||leftovers|blaze|substitute,hiddenpowergrass,overheat,fireblast|Hasty|4,,,252,,252|M|30,,30,30,,|||]Zapdos||leftovers|pressure|hiddenpowergrass,roar,thunderwave,toxic|Calm|252,,20,,236,|N|30,,30,30,,|||"
+  },
+  "p72_019": {
+   "sha256": "dd1b20576715a8d4b4d6a39da32103c1d87674e71b45f8bc5fe53fb004b75a60",
+   "emit_index": 19,
+   "packed": "Gengar||leftovers|levitate|thunderbolt,gigadrain,icepunch,willowisp|Timid|8,,200,116,,184|M||||]Charizard||leftovers|blaze|toxic,focuspunch,fireblast,flamethrower|Timid|4,,,252,,252|M||||]Forretress||leftovers|sturdy|counter,explosion,earthquake,rapidspin|Careful|252,,4,,252,|M||||]Zapdos||leftovers|pressure|thunderbolt,hiddenpowergrass,thunderwave,substitute|Timid|,,,252,4,252|N|30,,30,30,,|||]Swampert||leftovers|torrent|icebeam,protect,earthquake,roar|Relaxed|248,,216,,44,|M||||]Magneton||magnet|magnetpull|hiddenpowergrass,thunderwave,endure,toxic|Modest|48,,,252,,208|N|30,,30,30,,|||"
+  },
+  "p72_020": {
+   "sha256": "ae8bb0f3c3e0d051a1eece6d19e496823e49acc15edb68c2d256d2aa84006543",
+   "emit_index": 20,
+   "packed": "Magneton||magnet|magnetpull|reflect,hiddenpowergrass,toxic,thunderbolt|Modest|4,,,252,,252|N|30,,30,30,,|||]Metagross||choiceband|clearbody|explosion,rockslide,meteormash,earthquake|Adamant|128,252,,,,128|N||||]Tyranitar||lumberry|sandstream|pursuit,earthquake,crunch,rockslide|Modest|252,,,252,,4|M||||]Ninjask||choiceband|speedboost|substitute,protect,hiddenpowerrock,silverwind|Calm|252,,252,,4,|M|,30,30,,30,30|||]Celebi||leftovers|naturalcure|perishsong,gigadrain,batonpass,substitute|Timid|4,,,252,,252|N||||]Snorlax||leftovers|thickfat|brickbreak,focuspunch,selfdestruct,bodyslam|Impish|252,,252,,4,|M||||"
+  },
+  "p72_021": {
+   "sha256": "f19926f13e178dbf862f5a9199fa3876c329b3c560f87194d7152b29f8d9d754",
+   "emit_index": 21,
+   "packed": "Metagross||leftovers|clearbody|meteormash,protect,explosion,hiddenpowerfire|Adamant|,252,,,4,252|N|30,,30,30,,30|||]Swampert||leftovers|torrent|surf,curse,roar,icebeam|Relaxed|248,,148,64,4,44|M||||]Dugtrio||choiceband|arenatrap|earthquake,beatup,aerialace,sunnyday|Adamant|,252,,,4,252|M||||]Snorlax||leftovers|immunity|return,focuspunch,earthquake,shadowball|Adamant|252,252,,,,4|M||||]Salamence||leftovers|intimidate|brickbreak,hiddenpowerflying,earthquake,rockslide|Adamant|,156,,,140,212|M|,30,,30,30,30|||]Magneton||leftovers|magnetpull|hiddenpowerfire,thunderwave,toxic,thunderbolt|Modest|4,,,252,,252|N|30,,30,30,,30|||"
+  },
+  "p72_022": {
+   "sha256": "c7225d4203d161210a15949cac5e42eb84cea5eef789f1ae7807b5af3b828c66",
+   "emit_index": 22,
+   "packed": "Breloom||leftovers|effectspore|focuspunch,spore,leechseed,substitute|Jolly|,252,4,,,252|M||||]Zapdos||leftovers|pressure|rest,hiddenpowergrass,batonpass,thunder|Modest|252,,,60,,196|N|30,,30,30,,|||]Gyarados||leftovers|intimidate|dragondance,hiddenpowerflying,thunderwave,earthquake|Adamant|68,252,,,,188|M|,30,,30,30,30|||]Regirock||leftovers|clearbody|rockslide,hiddenpowerrock,explosion,counter|Adamant|4,252,,,252,|N|,30,30,,30,30|||]Tyranitar||leftovers|sandstream|earthquake,taunt,thunderbolt,dragondance|Modest|232,,60,216,,|M||||]Metagross||choiceband|clearbody|meteormash,earthquake,agility,hiddenpowerfire|Adamant|168,252,,,,88|N|30,,30,30,,30|||"
+  },
+  "p72_023": {
+   "sha256": "5ed79a5d515f5455e8f140391048e06fd8ae4065da6dbd8bdc2f12e01fb5f256",
+   "emit_index": 23,
+   "packed": "Jolteon||leftovers|voltabsorb|batonpass,roar,substitute,thunderbolt|Timid|204,,,128,,176|M||||]Skarmory||leftovers|keeneye|toxic,protect,spikes,drillpeck|Careful|252,,,,252,4|M||||]Starmie||leftovers|naturalcure|surf,rapidspin,icebeam,hydropump|Timid|4,,,252,,252|N||||]Porygon2||leftovers|trace|icebeam,recover,toxic,thunderwave|Bold|252,,200,,56,|N||||]Smeargle||salacberry|owntempo|spikes,bellydrum,spore,destinybond|Jolly|96,,52,,108,252|M||||]Tyranitar||leftovers|sandstream|earthquake,fireblast,rockslide,crunch|Modest|252,,,252,,4|M||||"
+  },
+  "p72_024": {
+   "sha256": "f0b85f2fcd7ed9f1756b87e80ceed3e636a6ef4ef976e42771bb544aba8e1ccb",
+   "emit_index": 24,
+   "packed": "Tyranitar||lumberry|sandstream|focuspunch,flamethrower,earthquake,dragondance|Modest|252,,,252,,4|M||||]Aerodactyl||choiceband|rockhead|substitute,rockslide,earthquake,doubleedge|Jolly|12,244,,,,252|M||||]Gengar||leftovers|levitate|gigadrain,thunderbolt,icepunch,hiddenpowergrass|Timid|248,,44,8,112,96|M|30,,30,30,,|||]Skarmory||leftovers|keeneye|protect,spikes,toxic,drillpeck|Careful|248,,,,248,12|M||||]Swampert||leftovers|torrent|rockslide,icebeam,refresh,earthquake|Relaxed|248,,216,,44,|M||||]Metagross||leftovers|clearbody|meteormash,brickbreak,protect,earthquake|Adamant|168,196,16,,,128|N||||"
+  },
+  "p72_025": {
+   "sha256": "919279b9f22eb513c8bf9b92c4a3a7b3a60f7f0f02fee9dbd869b7ec808591dd",
+   "emit_index": 25,
+   "packed": "Blissey||leftovers|naturalcure|softboiled,thunderbolt,flamethrower,fireblast|Modest|,,252,252,,4|F||||]Skarmory||leftovers|keeneye|toxic,spikes,roar,taunt|Careful|252,,,,240,16|M||||]Dugtrio||choiceband|arenatrap|earthquake,screech,aerialace,rockslide|Jolly|,252,,,4,252|M||||]Starmie||leftovers|naturalcure|surf,psychic,hydropump,rapidspin|Timid|252,,,40,,216|N||||]Tyranitar||leftovers|sandstream|icebeam,earthquake,focuspunch,counter|Adamant|4,252,,,,252|M||||]Jirachi||leftovers|serenegrace|hiddenpowergrass,wish,lightscreen,calmmind|Timid|,,4,252,,252|N|30,,30,30,,|||"
+  },
+  "p72_026": {
+   "sha256": "fcd16bfb4f9b9a8a001ce291912d6eaff912462de283b5378d0c05e4f4727725",
+   "emit_index": 26,
+   "packed": "Starmie||leftovers|naturalcure|thunderbolt,thunderwave,surf,recover|Modest|4,,,252,,252|N||||]Metagross||choiceband|clearbody|meteormash,agility,explosion,earthquake|Adamant|,252,,,4,252|N||||]Swampert||salacberry|torrent|endeavor,earthquake,surf,protect|Timid|,,4,252,,252|M||||]Skarmory||leftovers|keeneye|protect,spikes,taunt,drillpeck|Careful|252,,,,252,4|M||||]Marowak||thickclub|rockhead|swordsdance,rockslide,bonemerang,earthquake|Adamant|148,252,,,,108|M||||]Salamence||leftovers|intimidate|earthquake,hiddenpowerflying,rockslide,brickbreak|Adamant|116,252,,,,140|M|,30,,30,30,30|||"
+  },
+  "p72_027": {
+   "sha256": "b2ac0230a53b8dec6092e1b39ee9df8fd68881a56ed1f84b1d561c9ac2870f9d",
+   "emit_index": 27,
+   "packed": "Skarmory||leftovers|keeneye|roar,toxic,protect,spikes|Careful|248,,,,244,16|M||||]Gengar||leftovers|levitate|gigadrain,explosion,thunderbolt,destinybond|Timid|164,,,,168,176|M||||]Metagross||choiceband|clearbody|rockslide,meteormash,explosion,psychic|Adamant|68,252,,,,188|N||||]Blissey||leftovers|naturalcure|softboiled,seismictoss,toxic,icebeam|Modest|,,252,252,,4|F||||]Celebi||leftovers|naturalcure|psychic,hiddenpowerfire,gigadrain,recover|Calm|252,,,,220,36|N|30,,30,30,,30|||]Swampert||leftovers|torrent|icebeam,toxic,surf,earthquake|Relaxed|248,,216,,44,|M||||"
+  },
+  "p72_028": {
+   "sha256": "f26574e84df1898042cc65badd6c9f44ee5546d001522b6867880c5374442b93",
+   "emit_index": 28,
+   "packed": "Tyranitar||leftovers|sandstream|fireblast,brickbreak,rockslide,pursuit|Adamant|,252,,,4,252|M||||]Aerodactyl||choiceband|rockhead|hiddenpowerbug,rockslide,doubleedge,earthquake|Jolly|4,252,,,,252|M|,30,,,30,30|||]Celebi||leftovers|naturalcure|gigadrain,hiddenpowergrass,psychic,substitute|Modest|192,,8,128,,180|N|30,,30,30,,|||]Jolteon||leftovers|voltabsorb|thunderbolt,thunderwave,hiddenpowergrass,wish|Timid|4,,,252,,252|M|30,,30,30,,|||]Snorlax||leftovers|immunity|focuspunch,doubleedge,bodyslam,thunderbolt|Adamant|92,116,144,,144,12|M||||]Registeel||leftovers|clearbody|thunderwave,toxic,superpower,seismictoss|Careful|252,,88,,168,|N||||"
+  },
+  "p72_029": {
+   "sha256": "6eb1c541994f5c910d9fa22d68b2b5067a25697d5514270438a0b7cf1add3ddf",
+   "emit_index": 29,
+   "packed": "Gengar||leftovers|levitate|explosion,taunt,willowisp,hiddenpowergrass|Timid|,,,252,4,252|M|30,,30,30,,|||]Swampert||leftovers|torrent|icebeam,toxic,surf,hydropump|Relaxed|248,,216,,44,|M||||]Tyranitar||leftovers|sandstream|substitute,flamethrower,rockslide,crunch|Jolly|4,252,,,,252|M||||]Celebi||leftovers|naturalcure|leechseed,batonpass,calmmind,lightscreen|Calm|252,,,,220,36|N||||]Starmie||leftovers|naturalcure|surf,hydropump,thunderbolt,rapidspin|Timid|4,,,252,,252|N||||]Aerodactyl||choiceband|rockhead|doubleedge,substitute,earthquake,rockslide|Jolly|4,252,,,,252|M||||"
+  },
+  "p72_030": {
+   "sha256": "e6ab62cb87572bd7e6100f3cb24577d81ab1f43429ec72e4143c8d4a5e1cd07c",
+   "emit_index": 30,
+   "packed": "Tyranitar||lumberry|sandstream|hiddenpowerbug,dragondance,earthquake,icebeam|Adamant|252,108,36,,,112|M|,30,,,30,30|||]Heracross||leftovers|swarm|megahorn,reversal,substitute,swordsdance|Jolly|4,252,,,,252|M||||]Skarmory||leftovers|keeneye|roar,spikes,toxic,protect|Careful|252,,,,252,4|M||||]Salamence||leftovers|intimidate|dragondance,hiddenpowergrass,hydropump,dragonclaw|Adamant|116,252,,,,140|M|30,,30,30,,|||]Jolteon||leftovers|voltabsorb|thunderbolt,hiddenpowergrass,substitute,thunderwave|Timid|4,,,252,,252|M|30,,30,30,,|||]Jirachi||lumberry|serenegrace|bodyslam,thunder,thunderbolt,substitute|Modest|236,,52,180,,40|N||||"
+  },
+  "p72_031": {
+   "sha256": "86578624335863027a009d49ece1e25897a58e4df9bf03af76ff3d40491f7dab",
+   "emit_index": 31,
+   "packed": "Lapras||leftovers|waterabsorb|surf,icebeam,perishsong,psychic|Bold|252,,128,128,,|M||||]Magneton||magnet|magnetpull|hiddenpowerfire,thunderbolt,raindance,toxic|Modest|,,4,252,,252|N|30,,30,30,,30|||]Registeel||leftovers|clearbody|seismictoss,thunderwave,counter,explosion|Careful|252,,,,196,60|N||||]Starmie||leftovers|naturalcure|surf,thunderbolt,rapidspin,hydropump|Timid|,,,252,4,252|N||||]Steelix||choiceband|rockhead|rockslide,toxic,explosion,earthquake|Impish|252,36,,,220,|M||||]Hariyama||leftovers|thickfat|fakeout,brickbreak,whirlwind,rockslide|Adamant|,228,160,,60,60|M||||"
+  },
+  "p72_032": {
+   "sha256": "3835c26c972c9887affd75fd97c79273ffe19cc0100dcf2ea264bb0c74c0d09d",
+   "emit_index": 32,
+   "packed": "Swampert||leftovers|torrent|focuspunch,substitute,earthquake,hydropump|Rash|,,108,252,,148|M||||]Snorlax||leftovers|immunity|selfdestruct,shadowball,curse,earthquake|Adamant|92,116,144,,144,12|M||||]Zapdos||leftovers|pressure|hiddenpowergrass,roar,raindance,batonpass|Calm|252,,,4,252,|N|30,,30,30,,|||]Tyranitar||lumberry|sandstream|rockslide,hiddenpowerbug,earthquake,brickbreak|Jolly|4,252,,,,252|M|,30,,,30,30|||]Blissey||leftovers|naturalcure|seismictoss,wish,softboiled,thunderwave|Bold|252,,252,,4,|F||||]Dugtrio||choiceband|arenatrap|aerialace,earthquake,beatup,rockslide|Jolly|80,148,,,176,104|M||||"
+  },
+  "p72_033": {
+   "sha256": "fff88c49544e5123452ce4d2450a3f1fd8c41ec3a06a6204f61f0e75cf97899f",
+   "emit_index": 33,
+   "packed": "Dugtrio||choiceband|arenatrap|earthquake,hiddenpowerbug,rockslide,sunnyday|Jolly|,252,,,4,252|M|,30,,,30,30|||]Blissey||leftovers|naturalcure|aromatherapy,fireblast,thunderwave,softboiled|Bold|252,,252,4,,|F||||]Celebi||leftovers|naturalcure|healbell,hiddenpowerfire,swordsdance,psychic|Modest|192,,8,224,,84|N|30,,30,30,,30|||]Gengar||leftovers|levitate|focuspunch,explosion,hiddenpowergrass,thunderbolt|Timid|248,,44,8,112,96|M|30,,30,30,,|||]Metagross||choiceband|clearbody|explosion,psychic,agility,hiddenpowerfire|Adamant|168,252,,,,88|N|30,,30,30,,30|||]Charizard||leftovers|blaze|hiddenpowergrass,substitute,beatup,focuspunch|Timid|,,,252,4,252|M|30,,30,30,,|||"
+  },
+  "p72_034": {
+   "sha256": "f5713fb85f2415280fe4e399253f3d1a9b608b87f39fdceaa2c24850ac9e92cf",
+   "emit_index": 34,
+   "packed": "Tyranitar||leftovers|sandstream|crunch,hiddenpowerbug,earthquake,rockslide|Jolly|4,252,,,,252|M|,30,,,30,30|||]Umbreon||leftovers|synchronize|wish,curse,pursuit,toxic|Calm|252,,120,,136,|M||||]Metagross||lumberry|clearbody|earthquake,meteormash,explosion,rockslide|Adamant|168,252,,,,88|N||||]Zapdos||leftovers|pressure|substitute,batonpass,metalsound,thunderbolt|Timid|,,4,252,,252|N||||]Flygon||leftovers|levitate|earthquake,protect,hiddenpowerbug,fireblast|Lax|248,,216,8,,36|M|,30,,,30,30|||]Starmie||leftovers|naturalcure|thunderbolt,hiddenpowergrass,psychic,hydropump|Timid|248,,80,4,32,144|N|30,,30,30,,|||"
+  },
+  "p72_035": {
+   "sha256": "67002a8c58d2a834880cbe98de544972623e10dc2e4e430a64bb1e2d9f23d178",
+   "emit_index": 35,
+   "packed": "Tyranitar||leftovers|sandstream|rockslide,icebeam,focuspunch,hiddenpowerbug|Modest|252,,,252,,4|M|,30,,,30,30|||]Jynx||leftovers|oblivious|lovelykiss,substitute,calmmind,icebeam|Timid|,,,252,4,252|F||||]Celebi||leftovers|naturalcure|leechseed,gigadrain,calmmind,batonpass|Bold|252,,124,40,60,32|N||||]Skarmory||leftovers|keeneye|toxic,spikes,protect,roar|Careful|252,,8,,248,|M||||]Magneton||salacberry|magnetpull|thunderbolt,hiddenpowerfire,raindance,protect|Modest|240,,,252,,16|N|30,,30,30,,30|||]Zapdos||leftovers|pressure|hiddenpowergrass,thunderbolt,batonpass,drillpeck|Timid|,,,252,4,252|N|30,,30,30,,|||"
+  },
+  "p72_036": {
+   "sha256": "5328c1a6481f6cfef0c6f7b29fa0e7ad16378b5910991333d52e2f904aea84dc",
+   "emit_index": 36,
+   "packed": "Breloom||leftovers|effectspore|machpunch,skyuppercut,spore,substitute|Jolly|4,252,,,,252|M||||]Suicune||leftovers|pressure|calmmind,icebeam,surf,roar|Bold|240,,252,,,16|N||||]Celebi||leftovers|naturalcure|calmmind,gigadrain,leechseed,psychic|Bold|252,,124,40,60,32|N||||]Swampert||leftovers|torrent|icebeam,surf,curse,hydropump|Relaxed|240,,136,40,48,44|M||||]Magneton||salacberry|magnetpull|thunderwave,hiddenpowerfire,toxic,thunderbolt|Modest|,,,252,4,252|N|30,,30,30,,30|||]Zapdos||leftovers|pressure|thunderbolt,hiddenpowergrass,toxic,roar|Timid|4,,,252,,252|N|30,,30,30,,|||"
+  },
+  "p72_037": {
+   "sha256": "36930cdf66048afea414538d894eab4a5ece421382037af91ce656c72f663b58",
+   "emit_index": 37,
+   "packed": "Swampert||leftovers|torrent|curse,focuspunch,protect,icebeam|Rash|,4,,252,,252|M||||]Forretress||leftovers|sturdy|spikes,rapidspin,earthquake,explosion|Careful|252,,4,,252,|M||||]Gengar||leftovers|levitate|taunt,firepunch,icepunch,willowisp|Modest|80,,,16,236,176|M||||]Medicham||salacberry|purepower|brickbreak,shadowball,focuspunch,fakeout|Jolly|,252,4,,,252|M||||]Aerodactyl||choiceband|pressure|hiddenpowerflying,doubleedge,earthquake,substitute|Jolly|,252,,,4,252|M|,30,,30,30,30|||]Celebi||leftovers|naturalcure|psychic,recover,healbell,gigadrain|Timid|208,,84,36,,180|N||||"
+  },
+  "p72_038": {
+   "sha256": "eb105065fbd07c7436dd46aa111f8379b616d7ad059117452e072623ca5e0221",
+   "emit_index": 38,
+   "packed": "Metagross||leftovers|clearbody|rockslide,earthquake,meteormash,agility|Quiet|252,,,252,,4|N||||]Aerodactyl||liechiberry|rockhead|doubleedge,rockslide,hiddenpowerbug,earthquake|Jolly|,252,,,4,252|M|,30,,,30,30|||]Suicune||leftovers|pressure|substitute,rest,calmmind,surf|Bold|252,,252,,,4|N||||]Swampert||leftovers|torrent|icebeam,toxic,hydropump,substitute|Timid|,,4,252,,252|M||||]Primeape||leftovers|vitalspirit|earthquake,crosschop,rockslide,brickbreak|Jolly|4,252,,,,252|M||||]Kingdra||leftovers|swiftswim|surf,icebeam,rest,blizzard|Modest|104,,,252,,152|M||||"
+  },
+  "p72_039": {
+   "sha256": "97a7273cf6d399d542214fd7cc338f9a9d7e338468dd4331e780ec794b2e4aa8",
+   "emit_index": 39,
+   "packed": "Zapdos||leftovers|pressure|substitute,thunderbolt,roar,hiddenpowerfire|Calm|252,,20,,236,|N|30,,30,30,,30|||]Swampert||leftovers|torrent|roar,substitute,hydropump,earthquake|Bold|248,,204,,44,12|M||||]Raikou||leftovers|pressure|calmmind,hiddenpowergrass,thunderbolt,substitute|Timid|4,,,252,,252|N|30,,30,30,,|||]Heracross||salacberry|swarm|brickbreak,megahorn,swordsdance,bulkup|Jolly|,252,,,4,252|M||||]Gyarados||leftovers|intimidate|earthquake,hiddenpowerrock,dragondance,taunt|Jolly|,252,4,,,252|M|,30,30,,30,30|||]Gengar||leftovers|levitate|thunderbolt,icepunch,hiddenpowergrass,explosion|Timid|248,,,,8,252|M|30,,30,30,,|||"
+  },
+  "p72_040": {
+   "sha256": "3d44e843159cad7f0ef686151378ceb44fe03db9d09f6f14760141acf6474d7c",
+   "emit_index": 40,
+   "packed": "Tyranitar||lumberry|sandstream|rockslide,earthquake,dragondance,hiddenpowerbug|Adamant|248,80,,,,180|M|,30,,,30,30|||]Salamence||choiceband|intimidate|dragondance,toxic,hiddenpowerflying,brickbreak|Rash|,4,,252,,252|M|,30,,30,30,30|||]Skarmory||leftovers|keeneye|protect,roar,drillpeck,spikes|Careful|252,,,,252,|M||||]Snorlax||leftovers|thickfat|shadowball,rest,bodyslam,curse|Careful|144,96,132,,136,|M||||]Aerodactyl||choiceband|rockhead|doubleedge,hiddenpowerflying,earthquake,rockslide|Jolly|4,252,,,,252|M|,30,,30,30,30|||]Celebi||leftovers|naturalcure|hiddenpowerfire,leechseed,batonpass,lightscreen|Bold|252,,124,40,60,32|N|30,,30,30,,30|||"
+  },
+  "p72_041": {
+   "sha256": "485439f58fc6e268108efeab2f0072abcf516988681b34a888124766b22de1f0",
+   "emit_index": 41,
+   "packed": "Snorlax||leftovers|immunity|curse,earthquake,shadowball,focuspunch|Careful|144,96,132,,136,|M||||]Suicune||leftovers|pressure|calmmind,icebeam,surf,rest|Bold|252,,236,,,20|N||||]Swampert||leftovers|torrent|surf,earthquake,protect,icebeam|Rash|,28,,252,,228|M||||]Heracross||salacberry|guts|brickbreak,megahorn,rockslide,substitute|Jolly|,252,,,4,252|M||||]Claydol||leftovers|levitate|explosion,earthquake,psychic,rapidspin|Adamant|24,252,,,,232|N||||]Metagross||leftovers|clearbody|meteormash,agility,earthquake,hiddenpowergrass|Adamant|148,252,,,,108|N|30,,30,30,,|||"
+  },
+  "p72_042": {
+   "sha256": "1bd900e79dbea14c9dcf0227918f22fe9e6ca30077c70e84d088e1922445659c",
+   "emit_index": 42,
+   "packed": "Jolteon||leftovers|voltabsorb|substitute,thunderbolt,hiddenpowergrass,thunderwave|Timid|4,,,252,,252|M|30,,30,30,,|||]Celebi||leftovers|naturalcure|hiddenpowerfire,psychic,leechseed,recover|Timid|104,,,252,,152|N|30,,30,30,,30|||]Moltres||leftovers|pressure|roar,flamethrower,hiddenpowergrass,willowisp|Modest|,,,252,4,252|N|30,,30,30,,|||]Suicune||leftovers|pressure|rest,surf,icebeam,roar|Bold|248,,184,,,76|N||||]Forretress||leftovers|sturdy|spikes,rapidspin,lightscreen,earthquake|Careful|252,,4,,252,|M||||]Gengar||leftovers|levitate|taunt,meanlook,thunderbolt,icepunch|Timid|248,,44,8,112,96|M||||"
+  },
+  "p72_043": {
+   "sha256": "040268f31f6fc0971e2fb55a7335789597471fd18a79cfe0639e59dcf2235a5e",
+   "emit_index": 43,
+   "packed": "Suicune||leftovers|pressure|hydropump,icebeam,hiddenpowergrass,surf|Modest|28,,,252,,228|N|30,,30,30,,|||]Charizard||leftovers|blaze|hiddenpowergrass,flamethrower,substitute,dragonclaw|Hasty|,4,,252,,252|M|30,,30,30,,|||]Gyarados||leftovers|intimidate|dragondance,hiddenpowerflying,thunderwave,earthquake|Jolly|28,252,,,,228|M|,30,,30,30,30|||]Jolteon||leftovers|voltabsorb|thunderwave,thunderbolt,hiddenpowerice,batonpass|Timid|4,,,252,,252|M|,,,,,30|||]Claydol||leftovers|levitate|rapidspin,icebeam,earthquake,psychic|Adamant|244,204,,32,20,8|N||||]Snorlax||leftovers|immunity|bodyslam,curse,selfdestruct,return|Adamant|92,116,144,,144,12|M||||"
+  },
+  "p72_044": {
+   "sha256": "3523c44665c02ef9c769f8febcbd34708fad05d1eb7900b8331be001d8311e62",
+   "emit_index": 44,
+   "packed": "Misdreavus||leftovers|levitate|perishsong,toxic,rest,calmmind|Calm|252,,4,,252,|M||||]Skarmory||leftovers|keeneye|drillpeck,taunt,thief,toxic|Careful|252,,,,252,4|M||||]Dugtrio||choiceband|arenatrap|aerialace,hiddenpowerbug,rockslide,sunnyday|Jolly|,252,,,4,252|M|,30,,,30,30|||]Flygon||leftovers|levitate|dragonbreath,gust,fireblast,protect|Impish|252,,224,,,32|M||||]Blissey||leftovers|naturalcure|softboiled,toxic,aromatherapy,icebeam|Modest|,,252,252,,4|F||||]Raikou||leftovers|pressure|substitute,thunderbolt,calmmind,hiddenpowerice|Timid|4,,,252,,252|N|,,,,,30|||"
+  },
+  "p72_045": {
+   "sha256": "10dc335e20c5facdd686d9d269ea74b93d01eb2115f71b453e7d10a40ffa3523",
+   "emit_index": 45,
+   "packed": "Forretress||leftovers|sturdy|rapidspin,hiddenpowerbug,earthquake,zapcannon|Careful|252,,4,,252,|M|,30,,,30,30|||]Heracross||salacberry|guts|swordsdance,brickbreak,reversal,substitute|Adamant|56,248,28,,,176|M||||]Zapdos||leftovers|pressure|batonpass,thunderbolt,hiddenpowerice,thunderwave|Modest|252,,,140,32,84|N|,,,,,30|||]Claydol||leftovers|levitate|earthquake,rest,rapidspin,explosion|Sassy|252,4,,,252,|N||||]Dugtrio||choiceband|arenatrap|earthquake,hiddenpowerbug,beatup,aerialace|Adamant|,252,4,,,252|M|,30,,,30,30|||]Swampert||leftovers|torrent|surf,substitute,focuspunch,icebeam|Relaxed|248,,216,,44,|M||||"
+  },
+  "p72_046": {
+   "sha256": "03f3f1991d865845d3c557f0057d464f9d976a8f50ce3a35dc33497305d1d583",
+   "emit_index": 46,
+   "packed": "Suicune||leftovers|pressure|icebeam,surf,calmmind,hiddenpowerelectric|Modest|28,,,252,,228|N|,,,30,,|||]Rhydon||lumberry|rockhead|substitute,megahorn,swordsdance,rockslide|Adamant|252,252,,,4,|M||||]Metagross||choiceband|clearbody|meteormash,explosion,rockslide,earthquake|Adamant|68,252,,,,188|N||||]Skarmory||leftovers|keeneye|drillpeck,spikes,roar,protect|Careful|252,,,,252,4|M||||]Gengar||leftovers|levitate|icepunch,thunderbolt,taunt,hiddenpowergrass|Hasty|,4,,252,,252|M|30,,30,30,,|||]Milotic||leftovers|marvelscale|toxic,recover,surf,refresh|Calm|252,,4,,252,|M||||"
+  },
+  "p72_047": {
+   "sha256": "5adcfcb57a0810a216060a54eeb76660d18394ba04cba4eeb68d0e5db8257674",
+   "emit_index": 47,
+   "packed": "Raikou||leftovers|pressure|crunch,calmmind,thunderbolt,hiddenpowergrass|Timid|,,,252,4,252|N|30,,30,30,,|||]Snorlax||leftovers|immunity|shadowball,rest,earthquake,selfdestruct|Adamant|92,116,144,,144,12|M||||]Porygon2||leftovers|trace|icebeam,thunderbolt,thunderwave,recover|Bold|252,,200,56,,|N||||]Salamence||leftovers|intimidate|dragondance,hiddenpowergrass,earthquake,brickbreak|Adamant|,156,,,212,140|M|30,,30,30,,|||]Skarmory||leftovers|keeneye|toxic,roar,protect,spikes|Careful|252,,4,,252,|M||||]Blissey||leftovers|naturalcure|softboiled,thunderbolt,thunderwave,icebeam|Bold|40,,244,208,,16|F||||"
+  },
+  "p72_048": {
+   "sha256": "966befb3ad7ec48ab013f20746ee2c1b7e113c788f2c4d097aa2113bf4a70a6b",
+   "emit_index": 48,
+   "packed": "Salamence||leftovers|intimidate|hiddenpowergrass,rockslide,fireblast,brickbreak|Adamant|,168,,,200,140|M|30,,30,30,,|||]Tyranitar||lumberry|sandstream|pursuit,crunch,earthquake,hiddenpowerbug|Adamant|248,196,12,,52,|M|,30,,,30,30|||]Starmie||leftovers|naturalcure|surf,recover,icebeam,psychic|Timid|4,,,252,,252|N||||]Jirachi||leftovers|serenegrace|icepunch,firepunch,psychic,hiddenpowergrass|Modest|252,,40,80,,136|N|30,,30,30,,|||]Registeel||leftovers|clearbody|thunderwave,seismictoss,explosion,curse|Impish|252,,136,,92,28|N||||]Snorlax||leftovers|immunity|rest,shadowball,bodyslam,selfdestruct|Adamant|92,128,144,,144,|M||||"
+  },
+  "p72_049": {
+   "sha256": "7915206e5fcaf7103e19d72220a2971e3433188ca0e3dffa43e88000e03f64e7",
+   "emit_index": 49,
+   "packed": "Heracross||choiceband|swarm|hiddenpowerghost,brickbreak,rockslide,swordsdance|Adamant|,252,4,,,252|M|30,,30,,30,|||]Metagross||lumberry|clearbody|earthquake,explosion,rockslide,meteormash|Adamant|168,252,,,,88|N||||]Snorlax||leftovers|immunity|return,selfdestruct,earthquake,curse|Adamant|92,116,144,,144,12|M||||]Skarmory||leftovers|keeneye|spikes,toxic,roar,taunt|Careful|252,,4,,252,|M||||]Gengar||leftovers|levitate|explosion,destinybond,protect,willowisp|Timid|,,,252,4,252|M||||]Gyarados||lumberry|intimidate|thunderwave,earthquake,hiddenpowerflying,taunt|Adamant|68,252,,,,188|M|,30,,30,30,30|||"
+  },
+  "p72_050": {
+   "sha256": "f737d43da656929bb49afe6054b2794be7a8554da96194116ad491651d9363bb",
+   "emit_index": 50,
+   "packed": "Celebi||leftovers|naturalcure|psychic,batonpass,hiddenpowerfire,calmmind|Timid|76,,,252,,180|N|30,,30,30,,30|||]Suicune||leftovers|pressure|hydropump,calmmind,raindance,roar|Bold|240,,252,,,16|N||||]Aerodactyl||choiceband|rockhead|hiddenpowerflying,doubleedge,earthquake,rockslide|Jolly|4,252,,,,252|M|,30,,30,30,30|||]Dugtrio||choiceband|arenatrap|earthquake,aerialace,hiddenpowerbug,rockslide|Jolly|,252,4,,,252|M|,30,,,30,30|||]Tyranitar||leftovers|sandstream|hiddenpowerbug,earthquake,crunch,brickbreak|Modest|252,,,252,,4|M|,30,,,30,30|||]Charizard||leftovers|blaze|fireblast,hiddenpowerflying,substitute,flamethrower|Timid|,,,252,4,252|M|,30,,30,30,30|||"
+  },
+  "p72_051": {
+   "sha256": "f8a0155d6ffa901cc1da3160e33401dcd3f8c02231fa9a51914dd291dbbdb754",
+   "emit_index": 51,
+   "packed": "Salamence||leftovers|intimidate|earthquake,hiddenpowergrass,flamethrower,fireblast|Rash|,4,,252,,252|M|30,,30,30,,|||]Metagross||leftovers|clearbody|agility,explosion,hiddenpowergrass,meteormash|Adamant|128,252,,,,128|N|30,,30,30,,|||]Snorlax||leftovers|thickfat|bodyslam,counter,return,fireblast|Adamant|92,116,144,,144,12|M||||]Gengar||leftovers|levitate|icepunch,thunderbolt,sludgebomb,hiddenpowergrass|Timid|68,,,252,,188|M|30,,30,30,,|||]Swampert||salacberry|torrent|toxic,substitute,blizzard,icebeam|Quiet|248,56,64,140,,|M||||]Suicune||leftovers|pressure|icebeam,substitute,calmmind,roar|Modest|252,,,252,4,|N||||"
+  },
+  "p72_052": {
+   "sha256": "8477850fbb9696da5a9210baaccc578c947c43b78635df6f040843e6e39ea9ae",
+   "emit_index": 52,
+   "packed": "Jirachi||leftovers|serenegrace|hiddenpowergrass,toxic,wish,firepunch|Timid|,,4,252,,252|N|30,,30,30,,|||]Dugtrio||choiceband|arenatrap|doubleedge,hiddenpowerbug,rockslide,earthquake|Jolly|8,248,,,,252|M|,30,,,30,30|||]Breloom||leftovers|effectspore|brickbreak,spore,leechseed,skyuppercut|Jolly|,252,4,,,252|M||||]Starmie||leftovers|naturalcure|rapidspin,icebeam,recover,surf|Timid|4,,,252,,252|N||||]Suicune||leftovers|pressure|icebeam,calmmind,surf,rest|Modest|28,,,252,,228|N||||]Tyranitar||leftovers|sandstream|rockslide,fireblast,doubleedge,hiddenpowerbug|Jolly|,252,,,4,252|M|,30,,,30,30|||"
+  },
+  "p72_053": {
+   "sha256": "2ec7114dd5e38e55635db34677f224d68b23fe15e4fec028d7409a01a11f6bac",
+   "emit_index": 53,
+   "packed": "Forretress||leftovers|sturdy|spikes,rapidspin,hiddenpowerbug,explosion|Careful|252,4,,,252,|M|,30,,,30,30|||]Metagross||lumberry|clearbody|earthquake,agility,explosion,rockslide|Adamant|,252,,,4,252|N||||]Suicune||leftovers|pressure|calmmind,icebeam,rest,surf|Modest|100,,,252,,156|N||||]Blissey||leftovers|naturalcure|seismictoss,softboiled,icebeam,toxic|Bold|212,,252,44,,|F||||]Jirachi||leftovers|serenegrace|hiddenpowergrass,wish,toxic,firepunch|Bold|252,,224,,,32|N|30,,30,30,,|||]Celebi||leftovers|naturalcure|calmmind,hiddenpowerfire,psychic,recover|Timid|,,140,180,,188|N|30,,30,30,,30|||"
+  },
+  "p72_054": {
+   "sha256": "db0d834a9986b886c823bb4318cd389e06ccb087cca6b8bb73427bff050aac34",
+   "emit_index": 54,
+   "packed": "Metagross||leftovers|clearbody|earthquake,agility,meteormash,explosion|Adamant|168,252,,,,88|N||||]Gengar||leftovers|levitate|focuspunch,willowisp,hypnosis,firepunch|Timid|,,,252,4,252|M||||]Snorlax||leftovers|immunity|shadowball,earthquake,selfdestruct,bodyslam|Adamant|16,244,116,,116,16|M||||]Starmie||leftovers|naturalcure|rapidspin,psychic,icebeam,thunderwave|Timid|4,,,252,,252|N||||]Suicune||leftovers|pressure|calmmind,roar,surf,rest|Bold|240,,252,,,16|N||||]Swampert||leftovers|torrent|earthquake,hydropump,icebeam,roar|Rash|,4,,252,,252|M||||"
+  },
+  "p72_055": {
+   "sha256": "304493c6c7084059f3f76880961771778770bc1b4db582e75750cccc4bd08bcf",
+   "emit_index": 55,
+   "packed": "Blissey||leftovers|naturalcure|toxic,seismictoss,thunderbolt,counter|Bold|212,,252,44,,|F||||]Metagross||leftovers|clearbody|rockslide,earthquake,meteormash,explosion|Adamant|168,252,,,,88|N||||]Skarmory||leftovers|keeneye|roar,spikes,protect,toxic|Careful|252,,,,252,4|M||||]Scizor||salacberry|swarm|steelwing,swordsdance,hiddenpowerrock,endure|Adamant|,252,52,,72,132|M|,30,30,,30,30|||]Aerodactyl||choiceband|rockhead|earthquake,doubleedge,rockslide,hiddenpowerbug|Jolly|4,252,,,,252|M|,30,,,30,30|||]Solrock||choiceband|levitate|shadowball,batonpass,explosion,cosmicpower|Hasty|,,,80,176,252|N||||"
+  },
+  "p72_056": {
+   "sha256": "51242ec9981e8f963b378fc5b168bfa474a83a97c314dae48718a602702c8f5c",
+   "emit_index": 56,
+   "packed": "Jirachi||leftovers|serenegrace|protect,wish,hiddenpowergrass,firepunch|Sassy|244,,148,,116,|N|30,,30,30,,|||]Gengar||leftovers|levitate|icepunch,explosion,willowisp,thunderbolt|Timid|8,,200,116,,184|M||||]Snorlax||leftovers|thickfat|selfdestruct,shadowball,bodyslam,curse|Adamant|252,252,4,,,|M||||]Forretress||leftovers|sturdy|explosion,earthquake,rapidspin,spikes|Careful|252,,4,,252,|M||||]Flygon||leftovers|levitate|substitute,toxic,rockslide,quickattack|Impish|252,,196,,28,32|M||||]Tyranitar||lumberry|sandstream|crunch,hiddenpowergrass,pursuit,rockslide|Adamant|252,252,4,,,|M|30,,30,30,,|||"
+  },
+  "p72_057": {
+   "sha256": "446e1cbd84b8f14ae43e5ce68cee8e41a0e9490c9e4d07a23c85477f7337287f",
+   "emit_index": 57,
+   "packed": "Salamence||leftovers|intimidate|dragondance,flamethrower,dragonclaw,rockslide|Adamant|116,252,,,,140|M||||]Skarmory||leftovers|keeneye|hiddenpowerground,spikes,toxic,roar|Careful|252,,,,252,4|M|,30,,30,30,|||]Snorlax||leftovers|immunity|earthquake,rest,selfdestruct,curse|Careful|144,96,132,,136,|M||||]Breloom||leftovers|effectspore|spore,brickbreak,hiddenpowerbug,leechseed|Jolly|,252,4,,,252|M|,30,,,30,30|||]Magneton||salacberry|magnetpull|thunderwave,toxic,thunderbolt,hiddenpowerfire|Hasty|,,,252,,252|N|30,,30,30,,30|||]Tyranitar||leftovers|sandstream|hiddenpowerbug,dragondance,focuspunch,crunch|Adamant|248,252,,,,8|M|,30,,,30,30|||"
+  },
+  "p72_058": {
+   "sha256": "e23ecfde492cc5cc702b1d7dec55a54b8831408ea89bb6ddd17e07c221bb75d2",
+   "emit_index": 58,
+   "packed": "Starmie||leftovers|naturalcure|recover,rapidspin,icebeam,surf|Modest|4,,,252,,252|N||||]Salamence||leftovers|intimidate|dragondance,earthquake,rockslide,brickbreak|Adamant|116,252,,,,140|M||||]Charizard||salacberry|blaze|hiddenpowergrass,substitute,beatup,fireblast|Timid|,,,252,4,252|M|30,,30,30,,|||]Breloom||leftovers|effectspore|hiddenpowerghost,focuspunch,skyuppercut,machpunch|Jolly|,252,4,,,252|M|30,,30,,30,|||]Shedinja||lumberry|wonderguard|hiddenpowerfighting,return,protect,batonpass|Naive|,252,,4,,252|N|30,30,30,30,30,30|||]Dugtrio||choiceband|arenatrap|aerialace,hiddenpowerbug,rockslide,earthquake|Jolly|80,148,,,176,104|M|,30,,,30,30|||"
+  },
+  "p72_059": {
+   "sha256": "301f69573decab62913648ab65ea5987dbff22fbcefa5d1c690f2009950b1b00",
+   "emit_index": 59,
+   "packed": "Tyranitar||leftovers|sandstream|hiddenpowerbug,focuspunch,pursuit,earthquake|Modest|252,,,252,,4|M|,30,,,30,30|||]Skarmory||leftovers|keeneye|toxic,spikes,taunt,drillpeck|Careful|248,,,,252,8|M||||]Registeel||leftovers|clearbody|seismictoss,hiddenpowersteel,superpower,thunderwave|Careful|252,,,,200,56|N|30,,,,30,|||]Charizard||leftovers|blaze|fireblast,hiddenpowergrass,earthquake,bellydrum|Modest|,,,252,4,252|M|30,,30,30,,|||]Forretress||leftovers|sturdy|hiddenpowerghost,earthquake,toxic,explosion|Impish|252,,252,,4,|M|30,,30,,30,|||]Metagross||leftovers|clearbody|rockslide,meteormash,hiddenpowerfire,agility|Adamant|168,252,,,,88|N|30,,30,30,,30|||"
+  },
+  "p72_060": {
+   "sha256": "f504bcf54f84e26715de92381eb2c2c9dcdf15d556cca62fb0e5766cbf0f86ad",
+   "emit_index": 60,
+   "packed": "Jirachi||leftovers|serenegrace|icepunch,firepunch,hiddenpowergrass,psychic|Timid|4,,,252,,252|N|30,,30,30,,|||]Swampert||leftovers|torrent|earthquake,endeavor,hydropump,refresh|Relaxed|248,,216,,44,|M||||]Celebi||leftovers|naturalcure|recover,calmmind,leechseed,hiddenpowerrock|Timid|76,,,252,,180|N|,30,30,,30,30|||]Starmie||leftovers|naturalcure|icebeam,recover,surf,rapidspin|Timid|4,,,252,,252|N||||]Dugtrio||choiceband|arenatrap|rockslide,hiddenpowerbug,beatup,aerialace|Adamant|,252,,,4,252|M|,30,,,30,30|||]Metagross||choiceband|clearbody|agility,thunderpunch,earthquake,rockslide|Adamant|168,236,16,,,88|N||||"
+  },
+  "p72_061": {
+   "sha256": "7548b01fdfbe1f28a4f97bc69e409c458747c4b3deb4b0efa62c9280e3602ebd",
+   "emit_index": 61,
+   "packed": "Flygon||salacberry|levitate|rest,rockslide,protect,fireblast|Naive|4,220,32,,,252|M||||]Tyranitar||leftovers|sandstream|rockslide,hiddenpowerbug,brickbreak,toxic|Adamant|252,80,,,,176|M|,30,,,30,30|||]Dugtrio||choiceband|arenatrap|aerialace,earthquake,rockslide,screech|Jolly|,252,,,4,252|M||||]Magneton||magnet|magnetpull|hiddenpowerfire,metalsound,thunderwave,thunderbolt|Timid|,,,252,52,204|N|30,,30,30,,30|||]Milotic||leftovers|marvelscale|toxic,refresh,recover,surf|Bold|252,,252,4,,|M||||]Houndoom||leftovers|flashfire|pursuit,willowisp,crunch,fireblast|Timid|56,,,252,12,188|M||||"
+  },
+  "p72_062": {
+   "sha256": "5fac2ad8c989f8da7eb6ec93a7e3af4d07b2a402530b3065e4b514d890f91f6d",
+   "emit_index": 62,
+   "packed": "Vaporeon||leftovers|waterabsorb|wish,hydropump,substitute,batonpass|Modest|12,,,252,180,64|M||||]Dugtrio||choiceband|arenatrap|hiddenpowerbug,aerialace,earthquake,sunnyday|Jolly|80,252,,,172,4|M|,30,,,30,30|||]Metagross||leftovers|clearbody|rockslide,earthquake,meteormash,agility|Adamant|252,176,80,,,|N||||]Blissey||leftovers|naturalcure|softboiled,icebeam,seismictoss,aromatherapy|Bold|,,252,252,,4|F||||]Swampert||leftovers|torrent|protect,icebeam,refresh,endeavor|Relaxed|240,,136,40,48,44|M||||]Dragonite||leftovers|innerfocus|hiddenpowergrass,brickbreak,wingattack,earthquake|Brave|120,64,,252,68,4|M|30,,30,30,,|||"
+  },
+  "p72_063": {
+   "sha256": "b78d17278bc2afebccf24e60bfdae917bc4441692d92524de0189a527e5016b2",
+   "emit_index": 63,
+   "packed": "Dugtrio||choiceband|arenatrap|rockslide,hiddenpowerbug,earthquake,toxic|Jolly|,252,,,4,252|M|,30,,,30,30|||]Porygon2||leftovers|trace|thunderbolt,icebeam,thunderwave,hiddenpowergrass|Bold|252,,200,56,,|N|30,,30,30,,|||]Zapdos||leftovers|pressure|hiddenpowergrass,drillpeck,rest,thunderbolt|Timid|4,,,252,,252|N|30,,30,30,,|||]Starmie||leftovers|naturalcure|rapidspin,hydropump,thunderwave,icebeam|Timid|252,,,40,,216|N||||]Registeel||leftovers|clearbody|thunderwave,counter,rest,explosion|Careful|252,,80,,176,|N||||]Houndoom||leftovers|flashfire|fireblast,crunch,pursuit,roar|Modest|16,,,252,,240|M||||"
+  },
+  "p72_064": {
+   "sha256": "e5549a50f7be61f9bb4fdfa2d3b186cbdca22fa2a2a5dbdbee9799084fbcf81e",
+   "emit_index": 64,
+   "packed": "Suicune||leftovers|pressure|icebeam,calmmind,rest,hydropump|Bold|252,,252,4,,|N||||]Salamence||leftovers|intimidate|brickbreak,hiddenpowerflying,dragonclaw,dragondance|Jolly|4,252,,,,252|M|,30,,30,30,30|||]Dugtrio||choiceband|arenatrap|hiddenpowerbug,sunnyday,aerialace,rockslide|Jolly|,252,,,4,252|M|,30,,,30,30|||]Jirachi||leftovers|serenegrace|substitute,wish,icepunch,thunder|Timid|,,,252,4,252|N||||]Metagross||lumberry|clearbody|earthquake,psychic,explosion,agility|Adamant|128,252,,,,128|N||||]Claydol||leftovers|levitate|psychic,explosion,refresh,rapidspin|Adamant|252,216,,32,,8|N||||"
+  },
+  "p72_065": {
+   "sha256": "65261f9740378399d0e16b056402f0c300732dbc5d3f456b66f8aa7d9cdc63ac",
+   "emit_index": 65,
+   "packed": "Raikou||leftovers|pressure|thunderbolt,hiddenpowergrass,substitute,crunch|Timid|4,,,252,,252|N|30,,30,30,,|||]Dugtrio||choiceband|arenatrap|aerialace,earthquake,hiddenpowerbug,screech|Jolly|136,252,,,24,96|M|,30,,,30,30|||]Exeggutor||charcoal|chlorophyll|sunnyday,psychic,gigadrain,hiddenpowerfire|Modest|44,,,252,,212|M|30,,30,30,,30|||]Celebi||leftovers|naturalcure|batonpass,calmmind,healbell,leechseed|Modest|248,,,220,,40|N||||]Suicune||leftovers|pressure|hydropump,surf,calmmind,roar|Bold|252,,252,,4,|N||||]Breloom||leftovers|effectspore|focuspunch,hiddenpowerghost,skyuppercut,spore|Jolly|,252,68,,188,|M|30,,30,,30,|||"
+  },
+  "p72_066": {
+   "sha256": "68138a406faad96a34c74a0f6ca57fcaa74373204660998deb51e2137a2ab387",
+   "emit_index": 66,
+   "packed": "Tyranitar||leftovers|sandstream|rockslide,earthquake,brickbreak,doubleedge|Quiet|252,4,,252,,|M||||]Metagross||choiceband|clearbody|explosion,meteormash,earthquake,rockslide|Adamant|168,252,,,,88|N||||]Zapdos||leftovers|pressure|thunderbolt,batonpass,protect,toxic|Modest|252,,,140,32,84|N||||]Breloom||leftovers|effectspore|machpunch,focuspunch,sludgebomb,spore|Jolly|,252,4,,,252|M||||]Snorlax||leftovers|immunity|earthquake,curse,rest,selfdestruct|Adamant|92,116,144,,144,12|M||||]Gengar||leftovers|levitate|explosion,hiddenpowergrass,icepunch,willowisp|Timid|,,,252,4,252|M|30,,30,30,,|||"
+  },
+  "p72_067": {
+   "sha256": "67119b082a782af868d89a261ee3b1c9a6b73ab34567b0257eb1e9c89cfeab9b",
+   "emit_index": 67,
+   "packed": "Skarmory||leftovers|keeneye|spikes,protect,drillpeck,roar|Careful|252,,,,252,4|M||||]Starmie||leftovers|naturalcure|recover,psychic,rapidspin,icebeam|Timid|252,,,40,,216|N||||]Swampert||leftovers|torrent|earthquake,icebeam,protect,focuspunch|Bold|248,,204,,44,12|M||||]Dugtrio||choiceband|arenatrap|earthquake,hiddenpowerbug,aerialace,beatup|Jolly|,252,4,,,252|M|,30,,,30,30|||]Tyranitar||leftovers|sandstream|dragondance,earthquake,rockslide,crunch|Jolly|4,252,,,,252|M||||]Metagross||lumberry|clearbody|earthquake,meteormash,hiddenpowergrass,psychic|Adamant|72,252,,,,184|N|30,,30,30,,|||"
+  },
+  "p72_068": {
+   "sha256": "a83a61c807b3e4a33addaf81cbe075ead2e618739f826928a9f07bfe6549f619",
+   "emit_index": 68,
+   "packed": "Skarmory||leftovers|keeneye|spikes,drillpeck,roar,toxic|Careful|252,,,,252,4|M||||]Claydol||leftovers|levitate|rapidspin,explosion,psychic,earthquake|Adamant|224,228,,36,,20|N||||]Blissey||leftovers|naturalcure|wish,thunderwave,softboiled,seismictoss|Modest|,,252,252,,4|F||||]Salamence||leftovers|intimidate|brickbreak,dragonclaw,hydropump,hiddenpowerflying|Adamant|,156,,,140,212|M|,30,,30,30,30|||]Swampert||leftovers|torrent|icebeam,focuspunch,rockslide,surf|Relaxed|248,,216,,44,|M||||]Starmie||mysticwater|naturalcure|recover,thunder,thunderwave,rapidspin|Timid|4,,,252,,252|N||||"
+  },
+  "p72_069": {
+   "sha256": "fced80a955807833b283ccd2e8ca08490025d318a8c3cb466bb266d9fd2a7bed",
+   "emit_index": 69,
+   "packed": "Metagross||leftovers|clearbody|explosion,meteormash,earthquake,rockslide|Adamant|252,252,4,,,|N||||]Snorlax||leftovers|immunity|focuspunch,earthquake,bodyslam,selfdestruct|Adamant|,252,252,,4,|M||||]Tyranitar||lumberry|sandstream|hiddenpowerbug,fireblast,crunch,brickbreak|Jolly|4,252,,,,252|M|,30,,,30,30|||]Magneton||magnet|magnetpull|thunderwave,toxic,hiddenpowerfire,substitute|Modest|4,,,252,,252|N|30,,30,30,,30|||]Zapdos||leftovers|pressure|thunderbolt,batonpass,drillpeck,thunderwave|Timid|4,,,252,,252|N||||]Dugtrio||softsand|arenatrap|beatup,hiddenpowerbug,aerialace,substitute|Jolly|,252,4,,,252|M|,30,,,30,30|||"
+  },
+  "p72_070": {
+   "sha256": "d2bf855a18fe22f7cecf9d51413482809391ad4871f0015bfea7efcc89b87916",
+   "emit_index": 70,
+   "packed": "Swampert||leftovers|torrent|focuspunch,earthquake,protect,counter|Relaxed|248,,216,,44,|M||||]Zapdos||leftovers|pressure|rest,batonpass,thunderwave,roar|Timid|4,,,252,,252|N||||]Salamence||leftovers|intimidate|dragondance,brickbreak,earthquake,rockslide|Adamant|,156,,,140,212|M||||]Moltres||leftovers|pressure|roar,willowisp,sunnyday,flamethrower|Modest|,,4,252,,252|N||||]Aerodactyl||liechiberry|rockhead|doubleedge,hiddenpowerflying,rockslide,substitute|Jolly|4,252,,,,252|M|,30,,30,30,30|||]Skarmory||leftovers|keeneye|protect,drillpeck,roar,spikes|Careful|252,,,,252,4|M||||"
+  },
+  "p72_071": {
+   "sha256": "c7234d7e2c0c45482868b92011dc4d48f0f13d7125c3f1d0fb0ade4ee3dc7bea",
+   "emit_index": 71,
+   "packed": "Umbreon||leftovers|synchronize|charm,wish,protect,toxic|Bold|252,,104,88,56,8|M||||]Tyranitar||leftovers|sandstream|ancientpower,focuspunch,fireblast,hiddenpowerbug|Adamant|248,252,,,8,|M|,30,,,30,30|||]Heracross||salacberry|swarm|megahorn,swordsdance,hiddenpowerghost,rockslide|Adamant|,252,,,4,252|M|30,,30,,30,|||]Aerodactyl||choiceband|rockhead|substitute,doubleedge,rockslide,hiddenpowerbug|Jolly|4,252,,,,252|M|,30,,,30,30|||]Forretress||leftovers|sturdy|spikes,rapidspin,earthquake,explosion|Careful|252,,4,,252,|M||||]Celebi||leftovers|naturalcure|hiddenpowerfire,psychic,leechseed,batonpass|Modest|192,,8,224,,84|N|30,,30,30,,30|||"
+  }
+ },
+ "strata": {
+  "CORE": [],
+  "NEAR": [
+   "p72_000",
+   "p72_001",
+   "p72_002",
+   "p72_004",
+   "p72_005",
+   "p72_007",
+   "p72_009",
+   "p72_010",
+   "p72_013",
+   "p72_014",
+   "p72_016",
+   "p72_019",
+   "p72_020",
+   "p72_021",
+   "p72_022",
+   "p72_023",
+   "p72_024",
+   "p72_025",
+   "p72_026",
+   "p72_027",
+   "p72_029",
+   "p72_032",
+   "p72_034",
+   "p72_035",
+   "p72_036",
+   "p72_040",
+   "p72_041",
+   "p72_046",
+   "p72_048",
+   "p72_050",
+   "p72_051",
+   "p72_053",
+   "p72_054",
+   "p72_056",
+   "p72_057",
+   "p72_060",
+   "p72_064",
+   "p72_065",
+   "p72_066",
+   "p72_067",
+   "p72_068",
+   "p72_069",
+   "p72_070"
+  ],
+  "FAR": [
+   "p72_003",
+   "p72_006",
+   "p72_008",
+   "p72_011",
+   "p72_012",
+   "p72_015",
+   "p72_017",
+   "p72_018",
+   "p72_028",
+   "p72_030",
+   "p72_031",
+   "p72_033",
+   "p72_037",
+   "p72_038",
+   "p72_039",
+   "p72_042",
+   "p72_043",
+   "p72_044",
+   "p72_045",
+   "p72_047",
+   "p72_049",
+   "p72_052",
+   "p72_055",
+   "p72_058",
+   "p72_059",
+   "p72_061",
+   "p72_062",
+   "p72_063",
+   "p72_071"
+  ]
+ },
+ "overlap": {
+  "pool": {
+   "n_read_teams": 72,
+   "n_reference_teams": 719,
+   "exact_team": 0,
+   "exact_team_strict": 0,
+   "same_species6": 0,
+   "n_read_mons": 432,
+   "mons_seen": 133,
+   "mons_seen_strict": 35,
+   "max_shared_mons_hist": {
+    "0": 7,
+    "1": 42,
+    "2": 23,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "teams_sharing_ge4": 0,
+   "exact_examples": []
+  },
+  "competitive": {
+   "n_read_teams": 72,
+   "n_reference_teams": 20,
+   "exact_team": 0,
+   "exact_team_strict": 0,
+   "same_species6": 0,
+   "n_read_mons": 432,
+   "mons_seen": 53,
+   "mons_seen_strict": 7,
+   "max_shared_mons_hist": {
+    "0": 29,
+    "1": 40,
+    "2": 3,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "teams_sharing_ge4": 0,
+   "exact_examples": []
+  },
+  "home72": {
+   "n_read_teams": 72,
+   "n_reference_teams": 72,
+   "exact_team": 0,
+   "exact_team_strict": 0,
+   "same_species6": 0,
+   "n_read_mons": 432,
+   "mons_seen": 91,
+   "mons_seen_strict": 22,
+   "max_shared_mons_hist": {
+    "0": 20,
+    "1": 43,
+    "2": 9,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "teams_sharing_ge4": 0,
+   "exact_examples": []
+  },
+  "heldout72_hpfix": {
+   "n_read_teams": 72,
+   "n_reference_teams": 72,
+   "exact_team": 0,
+   "exact_team_strict": 0,
+   "same_species6": 0,
+   "n_read_mons": 432,
+   "mons_seen": 106,
+   "mons_seen_strict": 26,
+   "max_shared_mons_hist": {
+    "0": 11,
+    "1": 56,
+    "2": 5,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "teams_sharing_ge4": 0,
+   "exact_examples": []
+  },
+  "forum72": {
+   "n_read_teams": 72,
+   "n_reference_teams": 72,
+   "exact_team": 0,
+   "exact_team_strict": 0,
+   "same_species6": 0,
+   "n_read_mons": 432,
+   "mons_seen": 84,
+   "mons_seen_strict": 8,
+   "max_shared_mons_hist": {
+    "0": 18,
+    "1": 50,
+    "2": 4,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "teams_sharing_ge4": 0,
+   "exact_examples": []
+  }
+ }
+}

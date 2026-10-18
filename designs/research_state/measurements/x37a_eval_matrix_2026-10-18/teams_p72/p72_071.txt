@@ -1,0 +1,57 @@
+Umbreon (M) @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 104 Def / 88 SpA / 56 SpD / 8 Spe
+Bold Nature
+- Charm
+- Wish
+- Protect
+- Toxic
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 8 SpD
+Adamant Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Ancient Power
+- Focus Punch
+- Fire Blast
+- Hidden Power [Bug]
+
+Heracross (M) @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Def / 30 SpD
+- Megahorn
+- Swords Dance
+- Hidden Power [Ghost]
+- Rock Slide
+
+Aerodactyl (M) @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Substitute
+- Double-Edge
+- Rock Slide
+- Hidden Power [Bug]
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
+- Earthquake
+- Explosion
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 8 Def / 224 SpA / 84 Spe
+Modest Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Psychic
+- Leech Seed
+- Baton Pass

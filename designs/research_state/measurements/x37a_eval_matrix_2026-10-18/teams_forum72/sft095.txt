@@ -1,0 +1,57 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 Atk / 4 SpD / 4 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Focus Punch
+- Hidden Power [Bug]
+- Rock Slide
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Drill Peck
+- Spikes
+- Toxic
+- Roar
+
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Baton Pass
+- Hidden Power [Ice]
+- Roar
+- Thunderbolt
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 40 Atk / 252 SpA / 216 Spe
+Hasty Nature
+IVs: 30 Def / 30 SpA
+- Dynamic Punch
+- Hidden Power [Grass]
+- Ice Punch
+- Fire Punch
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 228 Atk / 140 SpA / 140 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Agility
+- Drill Peck
+- Hidden Power [Grass]
+- Thunderbolt
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 208 HP / 136 Atk / 144 Def / 20 Spe
+Adamant Nature
+- Earthquake
+- Protect
+- Rock Slide
+- Toxic

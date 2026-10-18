@@ -1,0 +1,56 @@
+Heracross (M) @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Def / 30 SpD
+- Rock Slide
+- Hidden Power [Ghost]
+- Substitute
+- Swords Dance
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Counter
+- Earthquake
+- Body Slam
+- Rest
+
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA / 30 SpD / 30 Spe
+- Protect
+- Fire Blast
+- Flamethrower
+- Hidden Power [Flying]
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+- Substitute
+- Toxic
+- Protect
+- Reflect
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 128 HP / 252 Atk / 128 Spe
+Adamant Nature
+- Earthquake
+- Rock Slide
+- Meteor Mash
+- Agility
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Rapid Spin
+- Earthquake
+- Hidden Power [Bug]
+- Spikes

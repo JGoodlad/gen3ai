@@ -334,3 +334,54 @@ async def test_a_peer_pair_making_progress_does_NOT_trip_the_progress_deadline(
                           first_game_timeout_s=5.0, progress_timeout_s=0.12, poll_s=0.01)
     await task
     assert len(state.records) == 5
+
+
+# ------------------------------------------------------- B-D6: the team-set CONTENT digest (F-DV-5)
+_PIKA = "Pikachu @ Light Ball\nAbility: Static"
+_SNOR = "Snorlax @ Leftovers\nAbility: Thick Fat"
+#: gen3_team_set_digest_v1 of {_PIKA, _SNOR}, computed once by hand from the recipe — a registration
+#: already writes digests by this recipe, so the BYTES are pinned, not just the function's self-consistency.
+_PINNED_TWO_TEAM_DIGEST = "f0550877a173cbd27a07fb3265625ddc1521219d9f0b697ec4b3f6e16c3a4946"
+
+
+def test_the_team_set_digest_is_the_registered_byte_recipe(tmp_path: Path) -> None:
+    from main.anchors.session import TEAM_SET_DIGEST_SCHEMA, team_set_digest
+    from main.anchors.results import TEAM_SET_DIGEST_SCHEMA as RESULTS_SCHEMA
+
+    (tmp_path / "a.txt").write_text(_PIKA + "\n\n\n")
+    (tmp_path / "b.gen3ou_team").write_text(_SNOR)
+    (tmp_path / "index.csv").write_text("team file\na.txt\n")          # bookkeeping, not a team
+    assert team_set_digest(tmp_path) == _PINNED_TWO_TEAM_DIGEST
+    assert team_set_digest([_SNOR, _PIKA]) == _PINNED_TWO_TEAM_DIGEST  # the pool form: texts
+    assert TEAM_SET_DIGEST_SCHEMA == RESULTS_SCHEMA == "gen3_team_set_digest_v1"
+
+
+def test_byte_copies_under_txt_and_gen3ou_team_digest_equal_and_order_is_irrelevant(tmp_path: Path) -> None:
+    from main.anchors.session import team_set_digest
+
+    ours, theirs = tmp_path / "ours", tmp_path / "theirs"
+    ours.mkdir()
+    theirs.mkdir()
+    (ours / "home_01.txt").write_text(_PIKA + "\n")
+    (ours / "home_02.txt").write_text(_SNOR + "\n")
+    # Metamon's cache: the same bytes, other names, other extension, the other order
+    (theirs / "team_0.gen3ou_team").write_text(_SNOR + "\n")
+    (theirs / "team_1.gen3ou_team").write_text(_PIKA + "\n")
+    assert team_set_digest(ours) == team_set_digest(theirs)
+    assert team_set_digest([_PIKA, _SNOR]) == team_set_digest([_SNOR, _PIKA])
+
+
+def test_a_one_byte_change_moves_the_digest(tmp_path: Path) -> None:
+    from main.anchors.session import team_set_digest
+
+    assert team_set_digest([_PIKA, _SNOR]) != team_set_digest([_PIKA, _SNOR.replace("Thick Fat", "Thick Fau")])
+
+
+def test_an_empty_or_absent_set_has_NO_digest_rather_than_a_shared_one(tmp_path: Path) -> None:
+    from main.anchors.session import team_set_digest, team_set_digest_or_none
+
+    with pytest.raises(ValueError):
+        team_set_digest(tmp_path)
+    assert team_set_digest_or_none(tmp_path) is None
+    assert team_set_digest_or_none(tmp_path / "missing") is None
+    assert team_set_digest_or_none(None) is None

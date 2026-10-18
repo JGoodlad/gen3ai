@@ -267,22 +267,24 @@ def read_team_sets(plan: Any, cfg: Any) -> Dict[str, Tuple[str, List[Tuple[str, 
     from main.anchors.runner import our_team_items
 
     out: Dict[str, Tuple[str, List[Tuple[str, str]]]] = {}
-    def peer_dir(kind: str) -> Optional[Path]:
+    def peer_dir(kind: str, teamset: str) -> Optional[Path]:
         if kind not in ("metamon", "foulplay"):
             return None
-        d = Path(cfg.opponent(kind).team_dir(plan.teamset, plan.battle_format))
+        d = Path(cfg.opponent(kind).team_dir(teamset, plan.battle_format))
         return d if d.is_dir() else None
 
     spec = getattr(plan, "our_team_spec", None) or {}
     our_side = str(getattr(plan, "our_side", "model"))
     if getattr(plan, "our_side_is_peer", False):
         # A peer on our side draws through ITS OWN team set (runner.our_peer_plan), not our source.
-        d = peer_dir("metamon" if our_side.startswith("metamon:") else our_side)
+        # B-D9: in an ASYMMETRIC pair cell that is `--our-teamset`, not `--teamset`.
+        our_set = getattr(plan, "our_teamset", None) or plan.teamset
+        d = peer_dir("metamon" if our_side.startswith("metamon:") else our_side, our_set)
         if d is not None:
             out["ours"] = (str(d), _dir_items(d))
     elif spec:
         out["ours"] = (str(spec.get("path", spec.get("kind"))), our_team_items(spec))
-    d = peer_dir(getattr(plan, "opponent_kind", ""))
+    d = peer_dir(getattr(plan, "opponent_kind", ""), plan.teamset)
     if d is not None:
         out["theirs"] = (str(d), _dir_items(d))
     return out

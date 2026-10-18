@@ -1,0 +1,55 @@
+Misdreavus (M) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+- Perish Song
+- Toxic
+- Rest
+- Calm Mind
+
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Drill Peck
+- Taunt
+- Thief
+- Toxic
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD / 30 Spe
+- Aerial Ace
+- Hidden Power [Bug]
+- Rock Slide
+- Sunny Day
+
+Flygon (M) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 224 Def / 32 Spe
+Impish Nature
+- Dragon Breath
+- Gust
+- Fire Blast
+- Protect
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+- Soft-Boiled
+- Toxic
+- Aromatherapy
+- Ice Beam
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Spe
+- Substitute
+- Thunderbolt
+- Calm Mind
+- Hidden Power [Ice]

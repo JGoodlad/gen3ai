@@ -63,6 +63,13 @@ def test_a_unit_counts_only_under_every_condition_of_the_rule(bad):
     assert not KA.counts({**GOOD, **bad}, 20)
 
 
+def test_equal_counts_of_DIFFERENT_team_content_no_longer_count():
+    """F-DV-5: the rule is `main.anchors.results.unit_counts` (undeclared) — a 72-vs-72 unit whose two sides' content
+    digests differ used to count on its equal file counts alone."""
+    assert KA.counts({**GOOD, "team_content_asymmetry": False}, 20)
+    assert not KA.counts({**GOOD, "team_content_asymmetry": True}, 20)
+
+
 def test_the_unit_argv_is_rule_5b_wrapped_and_greedy_from_the_root():
     u = KA.Unit(name="n", label="l", arm="A1", seed=3501, teamset="away", unit_seed=4, model="/m.zip",
                 model_sha256="")

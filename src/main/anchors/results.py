@@ -28,9 +28,12 @@ import json
 import math
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
 Z95 = 1.959963985
+
+#: Mirrors :data:`main.anchors.session.TEAM_SET_DIGEST_SCHEMA` (kept import-free here; a test pins both).
+TEAM_SET_DIGEST_SCHEMA = "gen3_team_set_digest_v1"
 
 
 def wilson(k: int, n: int, z: float = Z95) -> "tuple[float, float, float]":
@@ -132,6 +135,14 @@ class CellSpec:
     #: draws `random.Random(stream_seed(seed, h, k))` — the env core's bot-route rule. None for a checkpoint, a
     #: peer, and every `poke_env_bot` row (that Python bot drew from the process-wide, UNSEEDED `random`).
     our_bot_seed: Optional[int] = None
+    #: B-D9: the team set OUR side draws from (``--our-teamset``; = ``teamset`` unless a pair cell
+    #: declared another). "" only on a row written before the field existed (it was ``teamset`` then).
+    our_teamset: str = ""
+    #: B-D6 (F-DV-5 / F-DV-16): ``gen3_team_set_digest_v1`` of the team set each side DRAWS FROM
+    #: (:func:`main.anchors.session.team_set_digest`). None = unknown (an unreadable set, or a row
+    #: written before the field existed) — never read as agreement.
+    our_team_digest: Optional[str] = None
+    their_team_digest: Optional[str] = None
 
     def stamp(self) -> Dict[str, Any]:
         return asdict(self)
@@ -221,6 +232,8 @@ REQUIRED_ROW_FIELDS = (
     "regime_verified_decisions", "peer_clean", "regime_verified",
     "result", "turns", "half", "index",
     "mirrored_pairs",
+    # B-D9 / B-D6: which set OUR side drew from, and each side's CONTENT digest.
+    "our_teamset", "our_team_digest", "their_team_digest",
 )
 
 
@@ -239,7 +252,8 @@ def summarize(cell: CellSpec, rows: List[GameRow], *, status: str,
               peer_exit_notes: Optional[List[Dict[str, str]]] = None,
               provenance: Optional[Dict[str, Any]] = None,
               mirrored: Optional[Dict[str, Any]] = None,
-              team_overlap: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+              team_overlap: Optional[Dict[str, Any]] = None,
+              declared_team_cell: str = "symmetric") -> Dict[str, Any]:
     """The cell's one number, its Wilson interval, and every integrity counter beside it.
 
     ``status`` is ``"OK"`` or ``"FAILED"``; a FAILED summary still carries whatever games did
@@ -308,7 +322,18 @@ def summarize(cell: CellSpec, rows: List[GameRow], *, status: str,
         # sub-cells on the 2026-09-20 campaign. Read `regime_verified_decisions`.
         "regime_verified": (bool(rows) and all(bool(r.regime_verified_decisions) for r in rows)
                             and all(bool(r.peer_clean) for r in rows)),
+        # COUNT-based, unchanged in meaning: the two sides' team-file COUNTS differ. A 72-vs-72 cell
+        # of DIFFERENT teams reads False here — `team_content_asymmetry` is the check that sees it.
         "team_source_asymmetry": cell.our_team_count != cell.their_team_count,
+        # 🚨 CONTENT-based (B-D6, F-DV-5): the two sides' `gen3_team_set_digest_v1` differ. None when
+        # either digest is unknown — and `unit_counts` never reads None as agreement in a declared cell.
+        "our_team_digest": cell.our_team_digest,
+        "their_team_digest": cell.their_team_digest,
+        "team_digest_schema": TEAM_SET_DIGEST_SCHEMA,
+        "team_content_asymmetry": content_asymmetry(cell.our_team_digest, cell.their_team_digest),
+        # `--declare-asymmetric-teams`: "asymmetric" = a DECLARED asymmetric cell (e.g. K(P, H)); it
+        # changes no play, only which branch of `unit_counts` a registration reads it under.
+        "declared_team_cell": declared_team_cell,
         # A RECOGNISED dirty exit, named. See `runner.classify_peer_error`: Metamon's post-game
         # recursion costs no games, and a reader should not have to re-derive that from an rc.
         "peer_exit_notes": list(peer_exit_notes or []),
@@ -329,6 +354,74 @@ def summarize(cell: CellSpec, rows: List[GameRow], *, status: str,
     return out
 
 
+def content_asymmetry(ours: Optional[str], theirs: Optional[str]) -> Optional[bool]:
+    """Do the two sides draw from DIFFERENT team content? None when either digest is unknown."""
+    if not ours or not theirs:
+        return None
+    return ours != theirs
+
+
+@dataclass(frozen=True)
+class UnitCount:
+    """The verdict of :func:`unit_counts`: does this unit COUNT, and EVERY reason it does not."""
+
+    counts: bool
+    reasons: Tuple[str, ...] = ()
+
+
+def unit_counts(summary: Mapping[str, Any], *, games: int,
+                declared_digests: Optional[Tuple[str, str]] = None,
+                verified_digests: Optional[Tuple[str, str]] = None) -> UnitCount:
+    """🚨 THE ONE COUNTING RULE for an anchor unit (B-D6; design_diversity_teams_opponents.md §5.6).
+
+    A unit counts iff ``status == "OK"``, ``n == games``, ``regime_verified_decisions is True``,
+    ``peer_clean is True``, AND its team condition holds:
+
+    * **undeclared** (``declared_digests is None``): ``team_source_asymmetry is False`` (the counts
+      agree) and ``team_content_asymmetry`` is not True (the CONTENT agrees, where it is known — a
+      summary from an older tree carries no digest and is judged on its counts alone, as before);
+    * **declared** (``declared_digests = (ours, theirs)``, written in a registration): the digests
+      compared are the summary's own ``our_team_digest`` / ``their_team_digest`` when BOTH are present,
+      else ``verified_digests`` (a pair the CALLER computed from file sets it sha-checked itself — a
+      summary from an older pinned tree carries none); they must EQUAL ``declared_digests`` exactly.
+      Neither present ⇒ the unit does NOT count. ``team_source_asymmetry`` is not a reason here: a
+      declared 72-vs-16 cell has unequal counts by design.
+
+    Every failing reason is listed, in a fixed order, so the verdict is deterministic.
+    """
+    reasons: List[str] = []
+    if summary.get("status") != "OK":
+        reasons.append(f"status={summary.get('status')!r} (needs 'OK')")
+    if summary.get("n") != games:
+        reasons.append(f"n={summary.get('n')!r} (needs {games})")
+    if summary.get("regime_verified_decisions") is not True:
+        reasons.append(f"regime_verified_decisions={summary.get('regime_verified_decisions')!r}")
+    if summary.get("peer_clean") is not True:
+        reasons.append(f"peer_clean={summary.get('peer_clean')!r}")
+    if declared_digests is None:
+        if summary.get("team_source_asymmetry") is not False:
+            reasons.append(f"team_source_asymmetry={summary.get('team_source_asymmetry')!r} "
+                           "in an UNDECLARED cell")
+        if summary.get("team_content_asymmetry") is True:
+            reasons.append("team_content_asymmetry=True in an UNDECLARED cell (the two sides drew "
+                           "from different team content)")
+    else:
+        own = (summary.get("our_team_digest"), summary.get("their_team_digest"))
+        if own[0] and own[1]:
+            got: Optional[Tuple[Any, Any]] = (own[0], own[1])
+            where = "the summary's own digests"
+        elif verified_digests is not None:
+            got, where = (verified_digests[0], verified_digests[1]), "the caller's verified digests"
+        else:
+            got, where = None, ""
+        if got is None:
+            reasons.append("declared cell with NO team digest: the summary carries none and no "
+                           "verified_digests were supplied")
+        elif tuple(got) != tuple(declared_digests):
+            reasons.append(f"declared digests {tuple(declared_digests)} != {where} {tuple(got)}")
+    return UnitCount(counts=not reasons, reasons=tuple(reasons))
+
+
 def write_summary(path: Path, summary: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(summary, indent=1, sort_keys=True, default=str) + "\n")
@@ -345,7 +438,13 @@ def render(summary: Dict[str, Any]) -> str:
         f"  regime      ours={cell['our_regime']}  theirs={cell['their_regime']}  "
         f"matched={cell['regime_matched']}",
         f"  team set    {cell['teamset']}  (ours {cell['our_team_count']} teams / "
-        f"theirs {cell['their_team_count']})",
+        f"theirs {cell['their_team_count']})"
+        + (f"  OUR side draws {cell['our_teamset']}" if cell.get("our_teamset")
+           and cell["our_teamset"] != cell["teamset"] else ""),
+        f"  team digest ours={(cell.get('our_team_digest') or 'unknown')[:12]} "
+        f"theirs={(cell.get('their_team_digest') or 'unknown')[:12]}  "
+        f"content_asymmetry={summary.get('team_content_asymmetry')}  "
+        f"declared={summary.get('declared_team_cell', 'symmetric')}",
         f"  our side    {cell.get('our_side', 'model')}"
         + (f"  loader={cell['model_loader']}" if cell.get("model_loader") else ""),
         f"  our model   {cell['model_zip'] or '(none — our side is not a checkpoint)'}"

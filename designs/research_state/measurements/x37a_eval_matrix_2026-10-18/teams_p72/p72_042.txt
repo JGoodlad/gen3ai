@@ -1,0 +1,56 @@
+Jolteon (M) @ Leftovers
+Ability: Volt Absorb
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Substitute
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 104 HP / 252 SpA / 152 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Psychic
+- Leech Seed
+- Recover
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Roar
+- Flamethrower
+- Hidden Power [Grass]
+- Will-O-Wisp
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 184 Def / 76 Spe
+Bold Nature
+- Rest
+- Surf
+- Ice Beam
+- Roar
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Rapid Spin
+- Light Screen
+- Earthquake
+
+Gengar (M) @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 44 Def / 8 SpA / 112 SpD / 96 Spe
+Timid Nature
+- Taunt
+- Mean Look
+- Thunderbolt
+- Ice Punch

@@ -1,0 +1,55 @@
+Breloom (M) @ Leftovers
+Ability: Effect Spore
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Mach Punch
+- Sky Uppercut
+- Spore
+- Substitute
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+- Calm Mind
+- Ice Beam
+- Surf
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+- Calm Mind
+- Giga Drain
+- Leech Seed
+- Psychic
+
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 136 Def / 40 SpA / 48 SpD / 44 Spe
+Relaxed Nature
+- Ice Beam
+- Surf
+- Curse
+- Hydro Pump
+
+Magneton @ Salac Berry
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 30 HP / 30 Def / 30 SpA / 30 Spe
+- Thunder Wave
+- Hidden Power [Fire]
+- Toxic
+- Thunderbolt
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 HP / 30 Def / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+- Roar

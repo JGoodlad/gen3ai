@@ -194,6 +194,50 @@ named for whichever Metamon process challenged in that half. Three facts a reade
 * A Foul Play pair cell's `team_source_asymmetry` compares the two PEERS' directories — both must
   be the same files (see **H19**).
 
+### `--our-teamset {home,away}` — an ASYMMETRIC pair cell (B-D9, 2026-10-18)
+
+PAIR CELLS ONLY (a `metamon:` our-side, or `--opponent-a/-b`): our peer draws from the Metamon
+config's `team_sets[--our-teamset]` while the opponent peer keeps `--teamset`. Default: the same as
+`--teamset`. Refused, with its reason, for a checkpoint or `bot:` our-side (those draw from
+`our_team_sources[--teamset]`, so the flag would be stamped and never applied).
+
+* 🚨 **It is the one way to play a policy against ITSELF**: the self-pair refusal is lifted only
+  when `--our-teamset` resolves to a DIFFERENT Metamon team-set directory than `--teamset` — the
+  strength calibration K(P, H), e.g. `--opponent-a metamon:Kakuna --opponent-b metamon:Kakuna
+  --teamset home --our-teamset away --declare-asymmetric-teams`. The same agent on one set stays
+  refused. The two sides then log in under DISTINCT names, each carrying the set it pilots
+  (`MetaKakunaAway1` / `MetaKakunaHome1`, ≤ 18 characters with the per-half suffix); each peer writes
+  its own battle CSV under its own `--results-dir`, and the cell reads OUR peer's.
+* Stamped on the plan (`--dry-run` prints `OUR peer draws <set>`), on every row (`our_teamset`), and
+  in the default out-dir slug (`…_ours-<set>`).
+
+### `--declare-asymmetric-teams` — a DECLARED asymmetric cell (B-D6)
+
+Stamps `declared_team_cell: "asymmetric"` on the plan and the summary (default `"symmetric"`). It
+changes NO play: it says the two sides draw from different team sets ON PURPOSE, which decides how
+the unit is counted.
+
+### Counting a unit — `main.anchors.results.unit_counts` (THE one rule, B-D6)
+
+Every summary stamps each side's team-set CONTENT digest, `our_team_digest` / `their_team_digest`
+(`gen3_team_set_digest_v1`, `main.anchors.session.team_set_digest`: sha256 over the sorted
+sha256s of every allowlisted team file's `.strip()`ed text — names, extensions and order never
+enter it, so a `.txt` copy and a `.gen3ou_team` copy of one set digest the same), and
+`team_content_asymmetry` (the digests differ; null when either is unknown) beside the count-based
+`team_source_asymmetry` (unchanged). `unit_counts(summary, *, games, declared_digests=None,
+verified_digests=None) -> UnitCount(counts, reasons)` counts a unit iff `status == "OK"`,
+`n == games`, `regime_verified_decisions is True`, `peer_clean is True`, and:
+
+* **undeclared** (`declared_digests=None`): `team_source_asymmetry is False` and
+  `team_content_asymmetry` is not true — a 72-vs-72 cell of DIFFERENT teams no longer counts on its
+  equal counts (F-DV-5);
+* **declared** (`declared_digests=(ours, theirs)` from a registration): the summary's own digests
+  (else the caller's `verified_digests`, computed from file sets it sha-checked itself — a summary
+  from an older pinned tree carries none) must EQUAL the declared pair; no digest at all ⇒ it does
+  NOT count. `team_source_asymmetry` is not a reason here, so a declared 72-vs-16 cell CAN count.
+
+Every failing reason is listed. `main.x35.kakuna` counts through it (undeclared).
+
 ### `--opponent-temperature T` — the Metamon peer SAMPLES, our side stays greedy
 
 The one sanctioned MIXED Metamon cell (added 2026-09-28 for X22(b), "at which temperature is
@@ -633,8 +677,12 @@ at the end, regime first.
    is a measurement. A dirty exit with NO note is one nobody has diagnosed — read the log.
    ⚠️ **`regime_verified` is DEPRECATED (one release)**: it is the AND of the two, and reading it
    is how 31 of 84 sub-cells got flagged as unverified when nothing was wrong with them.
-3. `team_source_asymmetry == false`, and for Foul Play a non-null
-   `realized_visits_per_decision_mean`.
+3. The TEAM condition, and for Foul Play a non-null `realized_visits_per_decision_mean`.
+   `team_source_asymmetry` compares only the two sides' file COUNTS; `team_content_asymmetry`
+   compares their CONTENT digests (`our_team_digest` / `their_team_digest`, null = unknown). An
+   UNDECLARED cell needs `team_source_asymmetry == false` and `team_content_asymmetry` not true; a
+   cell with `declared_team_cell == "asymmetric"` needs instead its two digests to equal the ones
+   its registration declared. Decide it with `main.anchors.results.unit_counts` (§2), never by eye.
 4. 🚨 **`team_overlap`** (2026-10-18): how much of the team set our training pool holds. A read on teams the pool
    already contains is a read on training data, whatever the set is called. A summary without the block predates
    `gen3_team_overlap_v1`; compute it with the module for any number you quote.
