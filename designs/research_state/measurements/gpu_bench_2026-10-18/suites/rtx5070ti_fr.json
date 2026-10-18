@@ -1,0 +1,1144 @@
+{
+ "schema": "gen3_gpu_bench_suite_v1",
+ "suite_version": 1,
+ "quick": false,
+ "device": "cuda",
+ "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+ "live_cycle": {
+  "train_s": 42.24,
+  "collect_s": 26.97,
+  "other_s": 5.6,
+  "gpu_wait_s": 15.572935,
+  "source": "rb_x26_s2601 tb_read last 20 rollouts @258.6M, 2026-10-18 (RTX 3080 Ti, torch 2.8.0+cu126)"
+ },
+ "geometry": {
+  "n_steps": 384,
+  "n_envs": 256,
+  "epochs": [
+   1,
+   3
+  ],
+  "warm": 1,
+  "reps": 2,
+  "headroom": [
+   [
+    4096,
+    16
+   ],
+   [
+    8192,
+    8
+   ]
+  ],
+  "collect_warm": 1,
+  "collect_timed": 3,
+  "pool_snapshots": 20,
+  "pool_win_rate": 0.94,
+  "seed": 2601
+ },
+ "tag": "RTX 5070 Ti / FR (cu128)",
+ "meta": {
+  "dph": 0.407,
+  "geo": "FR",
+  "offer": 51938696.0,
+  "instance": 56604645.0
+ },
+ "phases": {
+  "host": {
+   "phase": "host",
+   "status": "ok",
+   "config": {
+    "name": "host",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all"
+   },
+   "cpu_model": "AMD Ryzen Threadripper 9970X 32-Cores",
+   "cpu_logical": 64,
+   "cpu_physical": 32,
+   "cpu_affinity": 64,
+   "ram_gib": 125.1282730102539,
+   "kernel": "6.17.0-35-generic",
+   "python": "3.11.15",
+   "torch": "2.8.0+cu128",
+   "torch_cuda": "12.8",
+   "cudnn": 91002,
+   "cuda_available": true,
+   "commit": "97616f5e7d208703df9ed9c195428d0ac7d02f18",
+   "hostname_hash": null,
+   "load1": 2.64501953125,
+   "gpu_name": "NVIDIA GeForce RTX 5070 Ti",
+   "capability": "sm_120",
+   "vram_gib": 15.470458984375,
+   "sm_count": 70,
+   "arch_list": [
+    "sm_70",
+    "sm_75",
+    "sm_80",
+    "sm_86",
+    "sm_90",
+    "sm_100",
+    "sm_120"
+   ],
+   "arch_ok": true,
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 5070 Ti",
+    "driver_version": "595.71.05",
+    "memory.total": "16303",
+    "memory.used": "16",
+    "utilization.gpu": "0",
+    "power.draw": "10.73",
+    "power.limit": "250.00",
+    "clocks.sm": "180",
+    "clocks.max.sm": "3090",
+    "clocks.mem": "405",
+    "temperature.gpu": "26",
+    "pstate": "P8",
+    "pcie.link.gen.current": "1",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792350858.1230743
+   },
+   "gpu_sampler": {
+    "samples": 1,
+    "utilization.gpu": {
+     "mean": 0.0,
+     "max": 0.0
+    },
+    "memory.used": {
+     "mean": 16.0,
+     "max": 16.0
+    },
+    "power.draw": {
+     "mean": 10.73,
+     "max": 10.73
+    },
+    "clocks.sm": {
+     "mean": 180.0,
+     "max": 180.0
+    },
+    "temperature.gpu": {
+     "mean": 26.0,
+     "max": 26.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 5070 Ti",
+    "driver_version": "595.71.05",
+    "memory.total": "16303",
+    "memory.used": "16",
+    "utilization.gpu": "0",
+    "power.draw": "11.51",
+    "power.limit": "250.00",
+    "clocks.sm": "180",
+    "clocks.max.sm": "3090",
+    "clocks.mem": "405",
+    "temperature.gpu": "26",
+    "pstate": "P8",
+    "pcie.link.gen.current": "1",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792350859.2116318
+   },
+   "wall_s": 1.0885581970214844,
+   "rc": 0
+  },
+  "update_bf16": {
+   "phase": "update_bf16",
+   "status": "ok",
+   "config": {
+    "name": "update_bf16",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "n_steps": 384,
+    "n_envs": 256,
+    "epochs": [
+     1,
+     3
+    ],
+    "warm": 1,
+    "reps": 2,
+    "gate": "on",
+    "batch_size": null,
+    "grad_accum": null,
+    "trunk_precision": "bf16"
+   },
+   "load1_start": 2.59326171875,
+   "gpu_others_start": [],
+   "phases_s": {
+    "build": 5.1347521770512685,
+    "compile_gate_prewarm": 231.95583294995595
+   },
+   "optimizers_moved": 6,
+   "shape": {
+    "rows": 98304,
+    "n_steps": 384,
+    "n_envs": 256,
+    "batch_size": 2048,
+    "grad_accum": 32,
+    "effective_batch": 65536,
+    "micro_batches_per_epoch": 48,
+    "n_epochs_full": 10,
+    "params": 5624179,
+    "diagnostics_every": 10
+   },
+   "grad_checkpointing": false,
+   "peak_after_build_mib": 66.0,
+   "gate": {
+    "verdict": "PASS",
+    "lines": [
+     "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+     "[CompileRegions] parity PASS (bf16 trunk: the bf16 rule) \u2014 R1 [trained weights] bf16 rule: drift loss 1.15e-03 <= 0.014, grad 2.01e-02 <= 0.68; envelope loss 6.72e-04 (eager 1.15e-03) [loss on the golden's own rows; relocated rows: drift 5.42e-04, envelope 2.82e-04], grad 2.15e-02 (eager 2.01e-02); per-param worst ratio 2.09 <= 12 (features_extractor.history_events.entry_emb.weight: compiled 2.07e-02 vs eager 7.56e-03) over 233 params; clip margin: 2048/2048 boundary rows relocated (M 0.720 = 4 x shift_max 0.18 [default]; nearest unmoved -); max |dlogp| compiled 4.44e-03, eager 3.19e-03, fp32 reference 0.00e+00 <= 0.720, 0 clip-branch switches [the K9 learner golden's real labelled buffer]",
+     "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+     "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 230.0s",
+     "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+    ]
+   },
+   "peak_after_compile_mib": 5928.0,
+   "fixture_source": "the K9 learner golden's real labelled buffer",
+   "peak_reserved_mib": 6282.0,
+   "peak_alloc_mib": 5480.80322265625,
+   "calls": [
+    {
+     "call": 0,
+     "epochs": 1,
+     "kind": "warm",
+     "wall_s": 11.531466484011617,
+     "scalar_reads": 15335,
+     "scalar_read_s": 0.002916789730079472,
+     "peak_reserved_mib": 6278.0,
+     "peak_alloc_mib": 5465.18408203125
+    },
+    {
+     "call": 1,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 4.545612046960741,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.0035229173954576254,
+     "peak_reserved_mib": 6278.0,
+     "peak_alloc_mib": 3662.29150390625
+    },
+    {
+     "call": 2,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 4.372827188984957,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.0035007527912966907,
+     "peak_reserved_mib": 6278.0,
+     "peak_alloc_mib": 3665.40380859375
+    },
+    {
+     "call": 3,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 11.253418908978347,
+     "scalar_reads": 17568,
+     "scalar_read_s": 0.004001338209491223,
+     "peak_reserved_mib": 6278.0,
+     "peak_alloc_mib": 3663.31689453125
+    },
+    {
+     "call": 4,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 11.41801994596608,
+     "scalar_reads": 17568,
+     "scalar_read_s": 0.004019497195258737,
+     "peak_reserved_mib": 6278.0,
+     "peak_alloc_mib": 3663.48486328125
+    },
+    {
+     "call": 5,
+     "epochs": 1,
+     "kind": "diag",
+     "wall_s": 9.963826478051487,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.003430392884183675,
+     "peak_reserved_mib": 6282.0,
+     "peak_alloc_mib": 5480.80322265625
+    }
+   ],
+   "diag_1ep_s": 9.963826478051487,
+   "train": {
+    "walls_s": {
+     "1": [
+      4.545612046960741,
+      4.372827188984957
+     ],
+     "3": [
+      11.253418908978347,
+      11.41801994596608
+     ]
+    },
+    "median_s": {
+     "1": 4.459219617972849,
+     "3": 11.335719427472213
+    },
+    "marginal_epoch_s": 3.438249904749682,
+    "update_s_est": 35.40346876071999,
+    "first_epoch_overhead_s": 1.0209697132231668,
+    "per_micro_ms_marginal": 71.63020634895172,
+    "spread_rel": {
+     "1": 0.03874777938260244,
+     "3": 0.014520563784317127
+    }
+   },
+   "load1_end": 5.63916015625,
+   "gpu_others_end": [],
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 5070 Ti",
+    "driver_version": "595.71.05",
+    "memory.total": "16303",
+    "memory.used": "16",
+    "utilization.gpu": "0",
+    "power.draw": "11.51",
+    "power.limit": "250.00",
+    "clocks.sm": "180",
+    "clocks.max.sm": "3090",
+    "clocks.mem": "405",
+    "temperature.gpu": "26",
+    "pstate": "P8",
+    "pcie.link.gen.current": "1",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792350859.2581413
+   },
+   "gpu_sampler": {
+    "samples": 301,
+    "utilization.gpu": {
+     "mean": 30.242524916943523,
+     "max": 100.0
+    },
+    "memory.used": {
+     "mean": 3908.139534883721,
+     "max": 6690.0
+    },
+    "power.draw": {
+     "mean": 74.45129568106313,
+     "max": 201.15
+    },
+    "clocks.sm": {
+     "mean": 2172.65780730897,
+     "max": 2857.0
+    },
+    "temperature.gpu": {
+     "mean": 35.2093023255814,
+     "max": 53.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 5070 Ti",
+    "driver_version": "595.71.05",
+    "memory.total": "16303",
+    "memory.used": "16",
+    "utilization.gpu": "12",
+    "power.draw": "41.71",
+    "power.limit": "250.00",
+    "clocks.sm": "2475",
+    "clocks.max.sm": "3090",
+    "clocks.mem": "14001",
+    "temperature.gpu": "41",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792351160.392406
+   },
+   "wall_s": 301.13426423072815,
+   "rc": 0
+  },
+  "update_fp32": {
+   "phase": "update_fp32",
+   "status": "ok",
+   "config": {
+    "name": "update_fp32",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "n_steps": 384,
+    "n_envs": 256,
+    "epochs": [
+     1,
+     3
+    ],
+    "warm": 1,
+    "reps": 2,
+    "gate": "on",
+    "batch_size": null,
+    "grad_accum": null,
+    "trunk_precision": "fp32"
+   },
+   "load1_start": 5.2392578125,
+   "gpu_others_start": [],
+   "phases_s": {
+    "build": 4.034447609039489,
+    "compile_gate_prewarm": 229.17041430302197
+   },
+   "optimizers_moved": 6,
+   "shape": {
+    "rows": 98304,
+    "n_steps": 384,
+    "n_envs": 256,
+    "batch_size": 2048,
+    "grad_accum": 32,
+    "effective_batch": 65536,
+    "micro_batches_per_epoch": 48,
+    "n_epochs_full": 10,
+    "params": 5624179,
+    "diagnostics_every": 10
+   },
+   "grad_checkpointing": false,
+   "peak_after_build_mib": 66.0,
+   "gate": {
+    "verdict": "PASS",
+    "lines": [
+     "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+     "[CompileRegions] parity PASS (fp32) \u2014 R1 [trained weights] loss rel 6.26e-08 <= 0.0001; train features: fp32 max|compiled-eager| 1.19e-07 < 0.0001; grad cosine 1.000000 >= 0.9999; per-param grad rel err max 8.65e-06 (features_extractor.history_events.entry_emb.weight) over 233 params <= 0.00988; clip margin: 2048/2048 boundary rows relocated (M 0.720 = 4 x shift_max 0.18 [default]; nearest unmoved -); max |dlogp| compiled 7.15e-07, eager 0.00e+00 <= 0.720, 0 clip-branch switches [the K9 learner golden's real labelled buffer]",
+     "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+     "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 224.1s",
+     "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+    ]
+   },
+   "peak_after_compile_mib": 5850.0,
+   "fixture_source": "the K9 learner golden's real labelled buffer",
+   "peak_reserved_mib": 7000.0,
+   "peak_alloc_mib": 5820.349609375,
+   "calls": [
+    {
+     "call": 0,
+     "epochs": 1,
+     "kind": "warm",
+     "wall_s": 12.710101336007938,
+     "scalar_reads": 15335,
+     "scalar_read_s": 0.0027342128450982273,
+     "peak_reserved_mib": 6988.0,
+     "peak_alloc_mib": 5800.76953125
+    },
+    {
+     "call": 1,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 5.169917444989551,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.0033934309612959623,
+     "peak_reserved_mib": 6988.0,
+     "peak_alloc_mib": 4528.58740234375
+    },
+    {
+     "call": 2,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 5.076541594986338,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.0033449604525230825,
+     "peak_reserved_mib": 6988.0,
+     "peak_alloc_mib": 4530.42041015625
+    },
+    {
+     "call": 3,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 13.510032385995146,
+     "scalar_reads": 17568,
+     "scalar_read_s": 0.0038340341416187584,
+     "peak_reserved_mib": 6988.0,
+     "peak_alloc_mib": 4529.74365234375
+    },
+    {
+     "call": 4,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 13.496243018016685,
+     "scalar_reads": 17568,
+     "scalar_read_s": 0.0037953147548250854,
+     "peak_reserved_mib": 6988.0,
+     "peak_alloc_mib": 4529.58447265625
+    },
+    {
+     "call": 5,
+     "epochs": 1,
+     "kind": "diag",
+     "wall_s": 12.396483098971657,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.003291337168775499,
+     "peak_reserved_mib": 7000.0,
+     "peak_alloc_mib": 5820.349609375
+    }
+   ],
+   "diag_1ep_s": 12.396483098971657,
+   "train": {
+    "walls_s": {
+     "1": [
+      5.169917444989551,
+      5.076541594986338
+     ],
+     "3": [
+      13.510032385995146,
+      13.496243018016685
+     ]
+    },
+    "median_s": {
+     "1": 5.1232295199879445,
+     "3": 13.503137702005915
+    },
+    "marginal_epoch_s": 4.189954091008985,
+    "update_s_est": 42.83281633906881,
+    "first_epoch_overhead_s": 0.9332754289789591,
+    "per_micro_ms_marginal": 87.29071022935386,
+    "spread_rel": {
+     "1": 0.018225974385670782,
+     "3": 0.0010211973159699505
+    }
+   },
+   "load1_end": 3.0810546875,
+   "gpu_others_end": [],
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 5070 Ti",
+    "driver_version": "595.71.05",
+    "memory.total": "16303",
+    "memory.used": "16",
+    "utilization.gpu": "12",
+    "power.draw": "41.71",
+    "power.limit": "250.00",
+    "clocks.sm": "2475",
+    "clocks.max.sm": "3090",
+    "clocks.mem": "14001",
+    "temperature.gpu": "41",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792351160.4285293
+   },
+   "gpu_sampler": {
+    "samples": 306,
+    "utilization.gpu": {
+     "mean": 32.99673202614379,
+     "max": 100.0
+    },
+    "memory.used": {
+     "mean": 4370.130718954249,
+     "max": 7408.0
+    },
+    "power.draw": {
+     "mean": 82.53823529411765,
+     "max": 212.4
+    },
+    "clocks.sm": {
+     "mean": 2201.5849673202615,
+     "max": 2850.0
+    },
+    "temperature.gpu": {
+     "mean": 38.48039215686274,
+     "max": 56.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 5070 Ti",
+    "driver_version": "595.71.05",
+    "memory.total": "16303",
+    "memory.used": "16",
+    "utilization.gpu": "0",
+    "power.draw": "42.17",
+    "power.limit": "250.00",
+    "clocks.sm": "2475",
+    "clocks.max.sm": "3090",
+    "clocks.mem": "14001",
+    "temperature.gpu": "43",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792351466.5657685
+   },
+   "wall_s": 306.1372401714325,
+   "rc": 0
+  },
+  "headroom_b4096": {
+   "phase": "headroom_b4096",
+   "status": "ok",
+   "config": {
+    "name": "headroom_b4096",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "n_steps": 384,
+    "n_envs": 256,
+    "epochs": [
+     1,
+     3
+    ],
+    "warm": 1,
+    "reps": 2,
+    "gate": "on",
+    "batch_size": 4096,
+    "grad_accum": 16,
+    "trunk_precision": "bf16"
+   },
+   "load1_start": 2.98779296875,
+   "gpu_others_start": [],
+   "phases_s": {
+    "build": 3.948595021967776,
+    "compile_gate_prewarm": 236.69605779001722
+   },
+   "optimizers_moved": 6,
+   "shape": {
+    "rows": 98304,
+    "n_steps": 384,
+    "n_envs": 256,
+    "batch_size": 4096,
+    "grad_accum": 16,
+    "effective_batch": 65536,
+    "micro_batches_per_epoch": 24,
+    "n_epochs_full": 10,
+    "params": 5624179,
+    "diagnostics_every": 10
+   },
+   "grad_checkpointing": false,
+   "peak_after_build_mib": 66.0,
+   "gate": {
+    "verdict": "PASS",
+    "lines": [
+     "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+     "[CompileRegions] parity PASS (bf16 trunk: the bf16 rule) \u2014 R1 [trained weights] bf16 rule: drift loss 1.14e-03 <= 0.014, grad 2.01e-02 <= 0.68; envelope loss 6.48e-04 (eager 1.14e-03) [loss on the golden's own rows; relocated rows: drift 5.38e-04, envelope 2.73e-04], grad 2.16e-02 (eager 2.01e-02); per-param worst ratio 2.15 <= 12 (features_extractor.history_events.entry_emb.weight: compiled 2.12e-02 vs eager 6.66e-03) over 233 params; clip margin: 4096/4096 boundary rows relocated (M 0.720 = 4 x shift_max 0.18 [default]; nearest unmoved -); max |dlogp| compiled 4.44e-03, eager 3.19e-03, fp32 reference 0.00e+00 <= 0.720, 0 clip-branch switches [the K9 learner golden's real labelled buffer]",
+     "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+     "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=4096]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 231.5s",
+     "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=4096), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+    ]
+   },
+   "peak_after_compile_mib": 11800.0,
+   "fixture_source": "the K9 learner golden's real labelled buffer",
+   "peak_reserved_mib": 12358.0,
+   "peak_alloc_mib": 10754.1943359375,
+   "calls": [
+    {
+     "call": 0,
+     "epochs": 1,
+     "kind": "warm",
+     "wall_s": 10.304851669992786,
+     "scalar_reads": 8231,
+     "scalar_read_s": 0.001621528877876699,
+     "peak_reserved_mib": 12358.0,
+     "peak_alloc_mib": 10733.5986328125
+    },
+    {
+     "call": 1,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 4.0848557380377315,
+     "scalar_reads": 8224,
+     "scalar_read_s": 0.0017775932792574167,
+     "peak_reserved_mib": 12358.0,
+     "peak_alloc_mib": 7167.1669921875
+    },
+    {
+     "call": 2,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 4.0795266819768585,
+     "scalar_reads": 8224,
+     "scalar_read_s": 0.0017931016627699137,
+     "peak_reserved_mib": 12358.0,
+     "peak_alloc_mib": 7171.5888671875
+    },
+    {
+     "call": 3,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 10.96271465101745,
+     "scalar_reads": 10464,
+     "scalar_read_s": 0.002275903709232807,
+     "peak_reserved_mib": 12358.0,
+     "peak_alloc_mib": 7164.900390625
+    },
+    {
+     "call": 4,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 10.989202802011278,
+     "scalar_reads": 10464,
+     "scalar_read_s": 0.002316466416232288,
+     "peak_reserved_mib": 12358.0,
+     "peak_alloc_mib": 7164.4013671875
+    },
+    {
+     "call": 5,
+     "epochs": 1,
+     "kind": "diag",
+     "wall_s": 9.9648745279992,
+     "scalar_reads": 8224,
+     "scalar_read_s": 0.0017987117171287537,
+     "peak_reserved_mib": 12358.0,
+     "peak_alloc_mib": 10754.1943359375
+    }
+   ],
+   "diag_1ep_s": 9.9648745279992,
+   "train": {
+    "walls_s": {
+     "1": [
+      4.0848557380377315,
+      4.0795266819768585
+     ],
+     "3": [
+      10.96271465101745,
+      10.989202802011278
+     ]
+    },
+    "median_s": {
+     "1": 4.082191210007295,
+     "3": 10.975958726514364
+    },
+    "marginal_epoch_s": 3.4468837582535343,
+    "update_s_est": 35.104145034289104,
+    "first_epoch_overhead_s": 0.6353074517537607,
+    "per_micro_ms_marginal": 143.62015659389726,
+    "spread_rel": {
+     "1": 0.0013054400900695312,
+     "3": 0.002413288137631288
+    }
+   },
+   "load1_end": 3.25341796875,
+   "gpu_others_end": [],
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 5070 Ti",
+    "driver_version": "595.71.05",
+    "memory.total": "16303",
+    "memory.used": "16",
+    "utilization.gpu": "0",
+    "power.draw": "42.17",
+    "power.limit": "250.00",
+    "clocks.sm": "2475",
+    "clocks.max.sm": "3090",
+    "clocks.mem": "14001",
+    "temperature.gpu": "43",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792351466.6016228
+   },
+   "gpu_sampler": {
+    "samples": 301,
+    "utilization.gpu": {
+     "mean": 30.960132890365447,
+     "max": 100.0
+    },
+    "memory.used": {
+     "mean": 7337.940199335548,
+     "max": 12768.0
+    },
+    "power.draw": {
+     "mean": 78.14285714285711,
+     "max": 201.29
+    },
+    "clocks.sm": {
+     "mean": 2161.667774086379,
+     "max": 2850.0
+    },
+    "temperature.gpu": {
+     "mean": 38.35880398671096,
+     "max": 54.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 5070 Ti",
+    "driver_version": "595.71.05",
+    "memory.total": "16303",
+    "memory.used": "16",
+    "utilization.gpu": "0",
+    "power.draw": "42.37",
+    "power.limit": "250.00",
+    "clocks.sm": "2475",
+    "clocks.max.sm": "3090",
+    "clocks.mem": "14001",
+    "temperature.gpu": "41",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792351767.7927327
+   },
+   "wall_s": 301.19110894203186,
+   "rc": 0
+  },
+  "headroom_b8192": {
+   "phase": "headroom_b8192",
+   "status": "oom",
+   "config": {
+    "name": "headroom_b8192",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "n_steps": 384,
+    "n_envs": 256,
+    "epochs": [
+     1,
+     3
+    ],
+    "warm": 1,
+    "reps": 2,
+    "gate": "on",
+    "batch_size": 8192,
+    "grad_accum": 8,
+    "trunk_precision": "bf16"
+   },
+   "_stage": "compile",
+   "load1_start": 3.23291015625,
+   "gpu_others_start": [],
+   "phases_s": {
+    "build": 3.900442505022511
+   },
+   "optimizers_moved": 6,
+   "shape": {
+    "rows": 98304,
+    "n_steps": 384,
+    "n_envs": 256,
+    "batch_size": 8192,
+    "grad_accum": 8,
+    "effective_batch": 65536,
+    "micro_batches_per_epoch": 12,
+    "n_epochs_full": 10,
+    "params": 5624179,
+    "diagnostics_every": 10
+   },
+   "grad_checkpointing": false,
+   "peak_after_build_mib": 66.0,
+   "oom": {
+    "where": "compile",
+    "error": "OutOfMemoryError: CUDA out of memory. Tried to allocate 512.00 MiB. GPU 0 has a total capacity of 15.47 GiB of which 222.62 MiB is free. Including non-PyTorch memory, this process has 15.23 GiB memory in use. Of the allocated memory 12.37 GiB is allocated by PyTorch, and 2.55 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)",
+    "peak_reserved_mib": 15312.0
+   },
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 5070 Ti",
+    "driver_version": "595.71.05",
+    "memory.total": "16303",
+    "memory.used": "16",
+    "utilization.gpu": "0",
+    "power.draw": "42.37",
+    "power.limit": "250.00",
+    "clocks.sm": "2475",
+    "clocks.max.sm": "3090",
+    "clocks.mem": "14001",
+    "temperature.gpu": "41",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792351767.827745
+   },
+   "gpu_sampler": {
+    "samples": 253,
+    "utilization.gpu": {
+     "mean": 18.91304347826087,
+     "max": 100.0
+    },
+    "memory.used": {
+     "mean": 11274.166007905138,
+     "max": 15654.0
+    },
+    "power.draw": {
+     "mean": 56.50450592885377,
+     "max": 191.4
+    },
+    "clocks.sm": {
+     "mean": 2028.9723320158103,
+     "max": 2850.0
+    },
+    "temperature.gpu": {
+     "mean": 35.58893280632411,
+     "max": 47.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 5070 Ti",
+    "driver_version": "595.71.05",
+    "memory.total": "16303",
+    "memory.used": "16",
+    "utilization.gpu": "0",
+    "power.draw": "39.77",
+    "power.limit": "250.00",
+    "clocks.sm": "2475",
+    "clocks.max.sm": "3090",
+    "clocks.mem": "14001",
+    "temperature.gpu": "34",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792352020.9627671
+   },
+   "wall_s": 253.135023355484,
+   "rc": 0
+  },
+  "collect": {
+   "phase": "collect",
+   "status": "ok",
+   "config": {
+    "name": "collect",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "warm": 1,
+    "timed": 3,
+    "steps": 589824,
+    "seed": 2601,
+    "pool_snapshots": 20,
+    "pool_win_rate": 0.94,
+    "extra": [],
+    "scratch": "/root/prov/results/suite/scratch/collect_run"
+   },
+   "pool": {
+    "pool_dir": "/root/prov/results/suite/scratch/collect_run/snapshots",
+    "n_snapshots": 20,
+    "win_rate_vs_bots": 0.94,
+    "expected_self_play_fraction": 0.9,
+    "perturb_scale": 0.001,
+    "build_s": 4.696403559995815
+   },
+   "started": "2026-10-18T19:33:47",
+   "trainer_argv": [
+    "--arch",
+    "production",
+    "--ridealong-ensemble",
+    "5",
+    "--ridealong-rnd",
+    "--ridealong-adv",
+    "5",
+    "--ridealong-opp",
+    "5",
+    "--ridealong-rnd-variants",
+    "all",
+    "--device",
+    "cuda",
+    "--no-compile-trainer",
+    "--run-dir",
+    "/root/prov/results/suite/scratch/collect_run",
+    "--steps",
+    "589824",
+    "--eval-freq",
+    "1000000000000",
+    "--checkpoint-every-steps",
+    "5898240",
+    "--seed",
+    "2601"
+   ],
+   "rollouts": [
+    {
+     "index": 0,
+     "timed": false,
+     "wall_s": 24.17807545600226,
+     "env_steps": 110949,
+     "env_steps_per_s": 4588.82677415322,
+     "host_steps": 459.0,
+     "trainee_decisions": 110949.0,
+     "p2_policy_decisions": 106657.0,
+     "p2_external_decisions": 0.0,
+     "games_ended": 1478.0,
+     "games_cut": 0.0,
+     "trainee_rows_per_host_step": 241.718954248366,
+     "fill_ms": 2907.9229639610276,
+     "submit_ms_per_host_step": 1.514663784115419,
+     "flush_ms_per_host_step": 2.8046852893049956,
+     "gpu_wait_ms_per_host_step": 28.857287613615142,
+     "opp_draw_ms_per_host_step": 0.405326463821829,
+     "draw_ms_per_host_step": 0.1467939591530329,
+     "write_ms_per_host_step": 1.6150958584986774,
+     "core_ms_per_host_step": 10.191954309141064,
+     "post_ms_per_host_step": 0.6019775696100833,
+     "p2_policy_share": 0.9613155594011663,
+     "peak_reserved_mib": 2736.0,
+     "ep_len_mean_window": 65.19
+    },
+    {
+     "index": 1,
+     "timed": true,
+     "wall_s": 22.978608750971034,
+     "env_steps": 97701,
+     "env_steps_per_s": 4251.823992428233,
+     "host_steps": 404.0,
+     "trainee_decisions": 97701.0,
+     "p2_policy_decisions": 93780.0,
+     "p2_external_decisions": 0.0,
+     "games_ended": 1421.0,
+     "games_cut": 0.0,
+     "trainee_rows_per_host_step": 241.83415841584159,
+     "fill_ms": 2799.0587949752808,
+     "submit_ms_per_host_step": 1.4809222549308405,
+     "flush_ms_per_host_step": 2.742711956887091,
+     "gpu_wait_ms_per_host_step": 29.0119148369263,
+     "opp_draw_ms_per_host_step": 0.3915564523027786,
+     "draw_ms_per_host_step": 0.13983985875954502,
+     "write_ms_per_host_step": 0.5478678328229465,
+     "core_ms_per_host_step": 10.304001371617115,
+     "post_ms_per_host_step": 0.6646732086520919,
+     "p2_policy_share": 0.9598673503853594,
+     "peak_reserved_mib": 2736.0,
+     "ep_len_mean_window": 72.75
+    },
+    {
+     "index": 2,
+     "timed": true,
+     "wall_s": 21.331388293008786,
+     "env_steps": 98112,
+     "env_steps_per_s": 4599.419346379604,
+     "host_steps": 405.0,
+     "trainee_decisions": 98112.0,
+     "p2_policy_decisions": 94231.0,
+     "p2_external_decisions": 0.0,
+     "games_ended": 1380.0,
+     "games_cut": 0.0,
+     "trainee_rows_per_host_step": 242.25185185185185,
+     "fill_ms": 1213.3401249884628,
+     "submit_ms_per_host_step": 1.4701498392107035,
+     "flush_ms_per_host_step": 2.7088491614034145,
+     "gpu_wait_ms_per_host_step": 28.869020109018887,
+     "opp_draw_ms_per_host_step": 0.3803563548573925,
+     "draw_ms_per_host_step": 0.13688827525640343,
+     "write_ms_per_host_step": 0.5455136645504813,
+     "core_ms_per_host_step": 10.198059662555655,
+     "post_ms_per_host_step": 0.6702203488977695,
+     "p2_policy_share": 0.9604431669928245,
+     "peak_reserved_mib": 2736.0,
+     "ep_len_mean_window": 74.46
+    },
+    {
+     "index": 3,
+     "timed": true,
+     "wall_s": 20.95063618099084,
+     "env_steps": 99253,
+     "env_steps_per_s": 4737.469504150681,
+     "host_steps": 409.0,
+     "trainee_decisions": 99253.0,
+     "p2_policy_decisions": 94068.0,
+     "p2_external_decisions": 0.0,
+     "games_ended": 1380.0,
+     "games_cut": 0.0,
+     "trainee_rows_per_host_step": 242.6723716381418,
+     "fill_ms": 329.1754450183362,
+     "submit_ms_per_host_step": 1.5220110152943702,
+     "flush_ms_per_host_step": 2.817371255441507,
+     "gpu_wait_ms_per_host_step": 28.663392156228188,
+     "opp_draw_ms_per_host_step": 0.40465360037722875,
+     "draw_ms_per_host_step": 0.14927306353094053,
+     "write_ms_per_host_step": 0.5902036283595583,
+     "core_ms_per_host_step": 11.019831712296218,
+     "post_ms_per_host_step": 0.6767638851114274,
+     "p2_policy_share": 0.9477597654478958,
+     "peak_reserved_mib": 2736.0,
+     "ep_len_mean_window": 81.69
+    }
+   ],
+   "buffer_shape": {
+    "n_steps": 384,
+    "n_envs": 256,
+    "rows": 98304,
+    "n_envs_model": 256
+   },
+   "stubbed": [
+    "learn-loop train() -> counter only",
+    "update_fit.check_update_fits",
+    "learner compile (--no-compile-trainer)"
+   ],
+   "summary": {
+    "n_timed": 3,
+    "wall_s_median": 21.331388293008786,
+    "env_steps_per_s_median": 4599.419346379604,
+    "trainee_decisions_median": 98112.0,
+    "host_steps_median": 405.0,
+    "p2_policy_share_median": 0.9598673503853594,
+    "submit_ms_per_host_step_median": 1.4809222549308405,
+    "flush_ms_per_host_step_median": 2.742711956887091,
+    "gpu_wait_ms_per_host_step_median": 28.869020109018887,
+    "opp_draw_ms_per_host_step_median": 0.3915564523027786,
+    "draw_ms_per_host_step_median": 0.13983985875954502,
+    "write_ms_per_host_step_median": 0.5478678328229465,
+    "core_ms_per_host_step_median": 10.304001371617115,
+    "post_ms_per_host_step_median": 0.6702203488977695,
+    "gpu_wait_s_per_rollout_median": 11.691953144152649,
+    "wall_spread_rel": 0.0950698820969307
+   },
+   "finished": "2026-10-18T19:49:06",
+   "worker_rc": 0,
+   "scratch_removed": true,
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 5070 Ti",
+    "driver_version": "595.71.05",
+    "memory.total": "16303",
+    "memory.used": "16",
+    "utilization.gpu": "0",
+    "power.draw": "39.77",
+    "power.limit": "250.00",
+    "clocks.sm": "2475",
+    "clocks.max.sm": "3090",
+    "clocks.mem": "14001",
+    "temperature.gpu": "34",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792352020.9978673
+   },
+   "gpu_sampler": {
+    "samples": 932,
+    "utilization.gpu": {
+     "mean": 14.354077253218884,
+     "max": 99.0
+    },
+    "memory.used": {
+     "mean": 2312.502145922747,
+     "max": 3454.0
+    },
+    "power.draw": {
+     "mean": 49.08817596566525,
+     "max": 161.68
+    },
+    "clocks.sm": {
+     "mean": 2036.989270386266,
+     "max": 2865.0
+    },
+    "temperature.gpu": {
+     "mean": 32.82081545064378,
+     "max": 50.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 5070 Ti",
+    "driver_version": "595.71.05",
+    "memory.total": "16303",
+    "memory.used": "16",
+    "utilization.gpu": "0",
+    "power.draw": "39.42",
+    "power.limit": "250.00",
+    "clocks.sm": "2475",
+    "clocks.max.sm": "3090",
+    "clocks.mem": "14001",
+    "temperature.gpu": "39",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792352953.2884736
+   },
+   "wall_s": 932.2906057834625,
+   "rc": 0
+  }
+ },
+ "started": "2026-10-18T19:14:17+0000",
+ "updated": "2026-10-18T19:49:13+0000",
+ "validation": []
+}

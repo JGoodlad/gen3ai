@@ -148,7 +148,8 @@ def cmd_create(a: argparse.Namespace) -> int:
     # So `--offer auto` searches afresh and tries the ranked survivors in order; a typed id is looked up BY ID.
     if a.offer == "auto":
         cands, _why = O.select(api.search_offers(O.search_query(crit)), crit)
-        cands = cands[:a.tries]
+        skip = {int(m) for m in str(a.exclude_machines or "").split(",") if m.strip()}
+        cands = [o for o in cands if int(o.get("machine_id") or 0) not in skip][:a.tries]
     else:
         q = dict(O.search_query(crit), id={"eq": int(a.offer)})
         cands = [o for o in api.search_offers(q) if int(o["id"]) == int(a.offer)]
@@ -321,6 +322,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     c = sub.add_parser("create")
     c.add_argument("--offer", required=True, help="an offer id, or 'auto' (fresh search, best ranked first)")
     c.add_argument("--tries", type=int, default=3, help="with --offer auto: how many ranked offers to try")
+    c.add_argument("--exclude-machines", default="", metavar="ID[,ID]",
+                   help="with --offer auto: never these machine ids (a host that misbehaved this session)")
     c.add_argument("--gpu", default="RTX 5090")
     c.add_argument("--max-dph", type=float, default=1.0)
     c.add_argument("--min-cuda", type=float, default=12.8)

@@ -1,0 +1,42 @@
+{
+ "torch": "2.8.0+cu128",
+ "cuda_build": "12.8",
+ "cuda_available": true,
+ "checks": {
+  "build_arch": {
+   "device": "NVIDIA GeForce RTX 5090",
+   "capability": "sm_120",
+   "arch_list": [
+    "sm_70",
+    "sm_75",
+    "sm_80",
+    "sm_86",
+    "sm_90",
+    "sm_100",
+    "sm_120"
+   ],
+   "cudnn": 91002,
+   "compiled_cuda": 12080,
+   "vram_gib": 31.4,
+   "pass": true,
+   "seconds": 0.013
+  },
+  "matmul_fp32": {
+   "max_rel_diff": 1.0137197250514873e-06,
+   "pass": true,
+   "seconds": 0.431
+  },
+  "compile_inductor": {
+   "first_call_s": 0.72,
+   "max_abs_diff_vs_eager": 5.960464477539063e-08,
+   "pass": true,
+   "seconds": 3.42
+  },
+  "matmul_bf16": {
+   "finite": true,
+   "pass": true,
+   "seconds": 0.075
+  }
+ },
+ "pass": true
+}

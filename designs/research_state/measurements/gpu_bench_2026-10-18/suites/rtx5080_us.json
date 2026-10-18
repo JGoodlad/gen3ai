@@ -1,0 +1,1144 @@
+{
+ "schema": "gen3_gpu_bench_suite_v1",
+ "suite_version": 1,
+ "quick": false,
+ "device": "cuda",
+ "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+ "live_cycle": {
+  "train_s": 42.24,
+  "collect_s": 26.97,
+  "other_s": 5.6,
+  "gpu_wait_s": 15.572935,
+  "source": "rb_x26_s2601 tb_read last 20 rollouts @258.6M, 2026-10-18 (RTX 3080 Ti, torch 2.8.0+cu126)"
+ },
+ "geometry": {
+  "n_steps": 384,
+  "n_envs": 256,
+  "epochs": [
+   1,
+   3
+  ],
+  "warm": 1,
+  "reps": 2,
+  "headroom": [
+   [
+    4096,
+    16
+   ],
+   [
+    8192,
+    8
+   ]
+  ],
+  "collect_warm": 1,
+  "collect_timed": 3,
+  "pool_snapshots": 20,
+  "pool_win_rate": 0.94,
+  "seed": 2601
+ },
+ "tag": "RTX 5080 / US (cu128)",
+ "meta": {
+  "dph": 0.344,
+  "geo": "US",
+  "offer": 45305430.0,
+  "instance": 56613372.0
+ },
+ "phases": {
+  "host": {
+   "phase": "host",
+   "status": "ok",
+   "config": {
+    "name": "host",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all"
+   },
+   "cpu_model": "AMD Ryzen 9 9950X 16-Core Processor",
+   "cpu_logical": 32,
+   "cpu_physical": 16,
+   "cpu_affinity": 32,
+   "ram_gib": 60.34239959716797,
+   "kernel": "6.8.0-136-generic",
+   "python": "3.11.15",
+   "torch": "2.8.0+cu128",
+   "torch_cuda": "12.8",
+   "cudnn": 91002,
+   "cuda_available": true,
+   "commit": "97616f5e7d208703df9ed9c195428d0ac7d02f18",
+   "hostname_hash": null,
+   "load1": 2.11572265625,
+   "gpu_name": "NVIDIA GeForce RTX 5080",
+   "capability": "sm_120",
+   "vram_gib": 15.5084228515625,
+   "sm_count": 84,
+   "arch_list": [
+    "sm_70",
+    "sm_75",
+    "sm_80",
+    "sm_86",
+    "sm_90",
+    "sm_100",
+    "sm_120"
+   ],
+   "arch_ok": true,
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 5080",
+    "driver_version": "610.43.02",
+    "memory.total": "16303",
+    "memory.used": "2",
+    "utilization.gpu": "0",
+    "power.draw": "17.72",
+    "power.limit": "300.00",
+    "clocks.sm": "210",
+    "clocks.max.sm": "3120",
+    "clocks.mem": "405",
+    "temperature.gpu": "38",
+    "pstate": "P8",
+    "pcie.link.gen.current": "1",
+    "pcie.link.width.current": "8",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792355147.17694
+   },
+   "gpu_sampler": {
+    "samples": 1,
+    "utilization.gpu": {
+     "mean": 0.0,
+     "max": 0.0
+    },
+    "memory.used": {
+     "mean": 2.0,
+     "max": 2.0
+    },
+    "power.draw": {
+     "mean": 17.72,
+     "max": 17.72
+    },
+    "clocks.sm": {
+     "mean": 210.0,
+     "max": 210.0
+    },
+    "temperature.gpu": {
+     "mean": 38.0,
+     "max": 38.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 5080",
+    "driver_version": "610.43.02",
+    "memory.total": "16303",
+    "memory.used": "2",
+    "utilization.gpu": "0",
+    "power.draw": "18.51",
+    "power.limit": "300.00",
+    "clocks.sm": "210",
+    "clocks.max.sm": "3120",
+    "clocks.mem": "405",
+    "temperature.gpu": "38",
+    "pstate": "P8",
+    "pcie.link.gen.current": "1",
+    "pcie.link.width.current": "8",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792355148.2720287
+   },
+   "wall_s": 1.0950875282287598,
+   "rc": 0
+  },
+  "update_bf16": {
+   "phase": "update_bf16",
+   "status": "ok",
+   "config": {
+    "name": "update_bf16",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "n_steps": 384,
+    "n_envs": 256,
+    "epochs": [
+     1,
+     3
+    ],
+    "warm": 1,
+    "reps": 2,
+    "gate": "on",
+    "batch_size": null,
+    "grad_accum": null,
+    "trunk_precision": "bf16"
+   },
+   "load1_start": 2.11572265625,
+   "gpu_others_start": [],
+   "phases_s": {
+    "build": 4.660471911076456,
+    "compile_gate_prewarm": 223.01987213268876
+   },
+   "optimizers_moved": 6,
+   "shape": {
+    "rows": 98304,
+    "n_steps": 384,
+    "n_envs": 256,
+    "batch_size": 2048,
+    "grad_accum": 32,
+    "effective_batch": 65536,
+    "micro_batches_per_epoch": 48,
+    "n_epochs_full": 10,
+    "params": 5624179,
+    "diagnostics_every": 10
+   },
+   "grad_checkpointing": false,
+   "peak_after_build_mib": 66.0,
+   "gate": {
+    "verdict": "PASS",
+    "lines": [
+     "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+     "[CompileRegions] parity PASS (bf16 trunk: the bf16 rule) \u2014 R1 [trained weights] bf16 rule: drift loss 1.15e-03 <= 0.014, grad 2.02e-02 <= 0.68; envelope loss 6.72e-04 (eager 1.15e-03) [loss on the golden's own rows; relocated rows: drift 5.41e-04, envelope 2.81e-04], grad 2.13e-02 (eager 2.02e-02); per-param worst ratio 2.02 <= 12 (features_extractor.history_events.entry_emb.weight: compiled 2.00e-02 vs eager 7.77e-03) over 233 params; clip margin: 2048/2048 boundary rows relocated (M 0.720 = 4 x shift_max 0.18 [default]; nearest unmoved -); max |dlogp| compiled 4.44e-03, eager 3.19e-03, fp32 reference 0.00e+00 <= 0.720, 0 clip-branch switches [the K9 learner golden's real labelled buffer]",
+     "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+     "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 221.8s",
+     "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+    ]
+   },
+   "peak_after_compile_mib": 5922.0,
+   "fixture_source": "the K9 learner golden's real labelled buffer",
+   "peak_reserved_mib": 6284.0,
+   "peak_alloc_mib": 5483.85888671875,
+   "calls": [
+    {
+     "call": 0,
+     "epochs": 1,
+     "kind": "warm",
+     "wall_s": 9.634978730697185,
+     "scalar_reads": 15335,
+     "scalar_read_s": 0.0028416914865374565,
+     "peak_reserved_mib": 6284.0,
+     "peak_alloc_mib": 5465.34814453125
+    },
+    {
+     "call": 1,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 3.8289971170015633,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.003235958982259035,
+     "peak_reserved_mib": 6284.0,
+     "peak_alloc_mib": 3659.6630859375
+    },
+    {
+     "call": 2,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 3.835324845276773,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.003226805478334427,
+     "peak_reserved_mib": 6284.0,
+     "peak_alloc_mib": 3668.8662109375
+    },
+    {
+     "call": 3,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 9.974917605984956,
+     "scalar_reads": 17568,
+     "scalar_read_s": 0.003694553393870592,
+     "peak_reserved_mib": 6284.0,
+     "peak_alloc_mib": 3662.0771484375
+    },
+    {
+     "call": 4,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 9.979560212697834,
+     "scalar_reads": 17568,
+     "scalar_read_s": 0.00367174856364727,
+     "peak_reserved_mib": 6284.0,
+     "peak_alloc_mib": 3661.736328125
+    },
+    {
+     "call": 5,
+     "epochs": 1,
+     "kind": "diag",
+     "wall_s": 8.755466551985592,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.003234771080315113,
+     "peak_reserved_mib": 6284.0,
+     "peak_alloc_mib": 5483.85888671875
+    }
+   ],
+   "diag_1ep_s": 8.755466551985592,
+   "train": {
+    "walls_s": {
+     "1": [
+      3.8289971170015633,
+      3.835324845276773
+     ],
+     "3": [
+      9.974917605984956,
+      9.979560212697834
+     ]
+    },
+    "median_s": {
+     "1": 3.832160981139168,
+     "3": 9.977238909341395
+    },
+    "marginal_epoch_s": 3.0725389641011134,
+    "update_s_est": 31.48501165804919,
+    "first_epoch_overhead_s": 0.7596220170380548,
+    "per_micro_ms_marginal": 64.0112284187732,
+    "spread_rel": {
+     "1": 0.001651216717239434,
+     "3": 0.00046531978988004533
+    }
+   },
+   "load1_end": 1.6630859375,
+   "gpu_others_end": [],
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 5080",
+    "driver_version": "610.43.02",
+    "memory.total": "16303",
+    "memory.used": "2",
+    "utilization.gpu": "0",
+    "power.draw": "18.51",
+    "power.limit": "300.00",
+    "clocks.sm": "210",
+    "clocks.max.sm": "3120",
+    "clocks.mem": "405",
+    "temperature.gpu": "38",
+    "pstate": "P8",
+    "pcie.link.gen.current": "1",
+    "pcie.link.width.current": "8",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792355148.312661
+   },
+   "gpu_sampler": {
+    "samples": 281,
+    "utilization.gpu": {
+     "mean": 32.80782918149466,
+     "max": 100.0
+    },
+    "memory.used": {
+     "mean": 3885.7010676156583,
+     "max": 6726.0
+    },
+    "power.draw": {
+     "mean": 92.95185053380783,
+     "max": 235.87
+    },
+    "clocks.sm": {
+     "mean": 2286.9252669039147,
+     "max": 2910.0
+    },
+    "temperature.gpu": {
+     "mean": 47.263345195729535,
+     "max": 63.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 5080",
+    "driver_version": "610.43.02",
+    "memory.total": "16303",
+    "memory.used": "2",
+    "utilization.gpu": "0",
+    "power.draw": "51.22",
+    "power.limit": "300.00",
+    "clocks.sm": "2632",
+    "clocks.max.sm": "3120",
+    "clocks.mem": "15001",
+    "temperature.gpu": "50",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "8",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792355429.4142764
+   },
+   "wall_s": 281.101615190506,
+   "rc": 0
+  },
+  "update_fp32": {
+   "phase": "update_fp32",
+   "status": "ok",
+   "config": {
+    "name": "update_fp32",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "n_steps": 384,
+    "n_envs": 256,
+    "epochs": [
+     1,
+     3
+    ],
+    "warm": 1,
+    "reps": 2,
+    "gate": "on",
+    "batch_size": null,
+    "grad_accum": null,
+    "trunk_precision": "fp32"
+   },
+   "load1_start": 1.60986328125,
+   "gpu_others_start": [],
+   "phases_s": {
+    "build": 3.5033626607619226,
+    "compile_gate_prewarm": 220.4075648440048
+   },
+   "optimizers_moved": 6,
+   "shape": {
+    "rows": 98304,
+    "n_steps": 384,
+    "n_envs": 256,
+    "batch_size": 2048,
+    "grad_accum": 32,
+    "effective_batch": 65536,
+    "micro_batches_per_epoch": 48,
+    "n_epochs_full": 10,
+    "params": 5624179,
+    "diagnostics_every": 10
+   },
+   "grad_checkpointing": false,
+   "peak_after_build_mib": 66.0,
+   "gate": {
+    "verdict": "PASS",
+    "lines": [
+     "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+     "[CompileRegions] parity PASS (fp32) \u2014 R1 [trained weights] loss rel 0.00e+00 <= 0.0001; train features: fp32 max|compiled-eager| 0.00e+00 < 0.0001; grad cosine 1.000000 >= 0.9999; per-param grad rel err max 8.61e-06 (features_extractor.history_events.status_emb.weight) over 233 params <= 0.00988; clip margin: 2048/2048 boundary rows relocated (M 0.720 = 4 x shift_max 0.18 [default]; nearest unmoved -); max |dlogp| compiled 4.77e-07, eager 0.00e+00 <= 0.720, 0 clip-branch switches [the K9 learner golden's real labelled buffer]",
+     "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+     "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 217.1s",
+     "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+    ]
+   },
+   "peak_after_compile_mib": 5794.0,
+   "fixture_source": "the K9 learner golden's real labelled buffer",
+   "peak_reserved_mib": 7060.0,
+   "peak_alloc_mib": 5820.8193359375,
+   "calls": [
+    {
+     "call": 0,
+     "epochs": 1,
+     "kind": "warm",
+     "wall_s": 11.109590434003621,
+     "scalar_reads": 15335,
+     "scalar_read_s": 0.0027573457919061184,
+     "peak_reserved_mib": 6918.0,
+     "peak_alloc_mib": 5798.857421875
+    },
+    {
+     "call": 1,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 4.461353919934481,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.003133161924779415,
+     "peak_reserved_mib": 6918.0,
+     "peak_alloc_mib": 4533.18798828125
+    },
+    {
+     "call": 2,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 4.461931738071144,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.0031391815282404423,
+     "peak_reserved_mib": 6918.0,
+     "peak_alloc_mib": 4533.80224609375
+    },
+    {
+     "call": 3,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 11.909698526840657,
+     "scalar_reads": 17568,
+     "scalar_read_s": 0.0036175111308693886,
+     "peak_reserved_mib": 6918.0,
+     "peak_alloc_mib": 4530.61767578125
+    },
+    {
+     "call": 4,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 11.927651596721262,
+     "scalar_reads": 17568,
+     "scalar_read_s": 0.0036402279511094093,
+     "peak_reserved_mib": 6918.0,
+     "peak_alloc_mib": 4531.75537109375
+    },
+    {
+     "call": 5,
+     "epochs": 1,
+     "kind": "diag",
+     "wall_s": 10.821834316011518,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.003173043020069599,
+     "peak_reserved_mib": 7060.0,
+     "peak_alloc_mib": 5820.8193359375
+    }
+   ],
+   "diag_1ep_s": 10.821834316011518,
+   "train": {
+    "walls_s": {
+     "1": [
+      4.461353919934481,
+      4.461931738071144
+     ],
+     "3": [
+      11.909698526840657,
+      11.927651596721262
+     ]
+    },
+    "median_s": {
+     "1": 4.4616428290028125,
+     "3": 11.91867506178096
+    },
+    "marginal_epoch_s": 3.7285161163890734,
+    "update_s_est": 38.01828787650447,
+    "first_epoch_overhead_s": 0.7331267126137391,
+    "per_micro_ms_marginal": 77.67741909143903,
+    "spread_rel": {
+     "1": 0.00012950793212449695,
+     "3": 0.0015062974523211885
+    }
+   },
+   "load1_end": 1.43701171875,
+   "gpu_others_end": [],
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 5080",
+    "driver_version": "610.43.02",
+    "memory.total": "16303",
+    "memory.used": "2",
+    "utilization.gpu": "0",
+    "power.draw": "51.22",
+    "power.limit": "300.00",
+    "clocks.sm": "2632",
+    "clocks.max.sm": "3120",
+    "clocks.mem": "15001",
+    "temperature.gpu": "50",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "8",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792355429.4451032
+   },
+   "gpu_sampler": {
+    "samples": 286,
+    "utilization.gpu": {
+     "mean": 34.75874125874126,
+     "max": 100.0
+    },
+    "memory.used": {
+     "mean": 4329.622377622378,
+     "max": 7502.0
+    },
+    "power.draw": {
+     "mean": 101.18622377622374,
+     "max": 250.16
+    },
+    "clocks.sm": {
+     "mean": 2320.1083916083917,
+     "max": 2895.0
+    },
+    "temperature.gpu": {
+     "mean": 48.49650349650349,
+     "max": 64.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 5080",
+    "driver_version": "610.43.02",
+    "memory.total": "16303",
+    "memory.used": "2",
+    "utilization.gpu": "0",
+    "power.draw": "51.24",
+    "power.limit": "300.00",
+    "clocks.sm": "2632",
+    "clocks.max.sm": "3120",
+    "clocks.mem": "15001",
+    "temperature.gpu": "50",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "8",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792355715.5768764
+   },
+   "wall_s": 286.1317720413208,
+   "rc": 0
+  },
+  "headroom_b4096": {
+   "phase": "headroom_b4096",
+   "status": "ok",
+   "config": {
+    "name": "headroom_b4096",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "n_steps": 384,
+    "n_envs": 256,
+    "epochs": [
+     1,
+     3
+    ],
+    "warm": 1,
+    "reps": 2,
+    "gate": "on",
+    "batch_size": 4096,
+    "grad_accum": 16,
+    "trunk_precision": "bf16"
+   },
+   "load1_start": 1.36962890625,
+   "gpu_others_start": [],
+   "phases_s": {
+    "build": 3.4855253980495036,
+    "compile_gate_prewarm": 224.2890467029065
+   },
+   "optimizers_moved": 6,
+   "shape": {
+    "rows": 98304,
+    "n_steps": 384,
+    "n_envs": 256,
+    "batch_size": 4096,
+    "grad_accum": 16,
+    "effective_batch": 65536,
+    "micro_batches_per_epoch": 24,
+    "n_epochs_full": 10,
+    "params": 5624179,
+    "diagnostics_every": 10
+   },
+   "grad_checkpointing": false,
+   "peak_after_build_mib": 66.0,
+   "gate": {
+    "verdict": "PASS",
+    "lines": [
+     "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+     "[CompileRegions] parity PASS (bf16 trunk: the bf16 rule) \u2014 R1 [trained weights] bf16 rule: drift loss 1.14e-03 <= 0.014, grad 2.01e-02 <= 0.68; envelope loss 6.64e-04 (eager 1.14e-03) [loss on the golden's own rows; relocated rows: drift 5.38e-04, envelope 2.60e-04], grad 2.15e-02 (eager 2.01e-02); per-param worst ratio 2.01 <= 12 (features_extractor.history_events.entry_emb.weight: compiled 1.99e-02 vs eager 6.65e-03) over 233 params; clip margin: 4096/4096 boundary rows relocated (M 0.720 = 4 x shift_max 0.18 [default]; nearest unmoved -); max |dlogp| compiled 4.44e-03, eager 3.19e-03, fp32 reference 0.00e+00 <= 0.720, 0 clip-branch switches [the K9 learner golden's real labelled buffer]",
+     "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+     "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=4096]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 221.0s",
+     "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=4096), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+    ]
+   },
+   "peak_after_compile_mib": 11798.0,
+   "fixture_source": "the K9 learner golden's real labelled buffer",
+   "peak_reserved_mib": 12292.0,
+   "peak_alloc_mib": 10745.8046875,
+   "calls": [
+    {
+     "call": 0,
+     "epochs": 1,
+     "kind": "warm",
+     "wall_s": 9.222408435773104,
+     "scalar_reads": 8231,
+     "scalar_read_s": 0.001577963586896658,
+     "peak_reserved_mib": 12288.0,
+     "peak_alloc_mib": 10724.2265625
+    },
+    {
+     "call": 1,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 3.6568057048134506,
+     "scalar_reads": 8224,
+     "scalar_read_s": 0.0016879737377166748,
+     "peak_reserved_mib": 12288.0,
+     "peak_alloc_mib": 7165.4814453125
+    },
+    {
+     "call": 2,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 3.660306958016008,
+     "scalar_reads": 8224,
+     "scalar_read_s": 0.0016837469302117825,
+     "peak_reserved_mib": 12288.0,
+     "peak_alloc_mib": 7162.08984375
+    },
+    {
+     "call": 3,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 9.858359631150961,
+     "scalar_reads": 10464,
+     "scalar_read_s": 0.002145379316061735,
+     "peak_reserved_mib": 12288.0,
+     "peak_alloc_mib": 7161.6826171875
+    },
+    {
+     "call": 4,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 9.897505082655698,
+     "scalar_reads": 10464,
+     "scalar_read_s": 0.002157116774469614,
+     "peak_reserved_mib": 12288.0,
+     "peak_alloc_mib": 7157.4501953125
+    },
+    {
+     "call": 5,
+     "epochs": 1,
+     "kind": "diag",
+     "wall_s": 8.909085493069142,
+     "scalar_reads": 8224,
+     "scalar_read_s": 0.0016868622042238712,
+     "peak_reserved_mib": 12292.0,
+     "peak_alloc_mib": 10745.8046875
+    }
+   ],
+   "diag_1ep_s": 8.909085493069142,
+   "train": {
+    "walls_s": {
+     "1": [
+      3.6568057048134506,
+      3.660306958016008
+     ],
+     "3": [
+      9.858359631150961,
+      9.897505082655698
+     ]
+    },
+    "median_s": {
+     "1": 3.6585563314147294,
+     "3": 9.87793235690333
+    },
+    "marginal_epoch_s": 3.1096880127443,
+    "update_s_est": 31.64574844611343,
+    "first_epoch_overhead_s": 0.5488683186704293,
+    "per_micro_ms_marginal": 129.57033386434583,
+    "spread_rel": {
+     "1": 0.0009570040435057787,
+     "3": 0.003962919575712603
+    }
+   },
+   "load1_end": 1.9296875,
+   "gpu_others_end": [],
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 5080",
+    "driver_version": "610.43.02",
+    "memory.total": "16303",
+    "memory.used": "2",
+    "utilization.gpu": "0",
+    "power.draw": "51.24",
+    "power.limit": "300.00",
+    "clocks.sm": "2632",
+    "clocks.max.sm": "3120",
+    "clocks.mem": "15001",
+    "temperature.gpu": "50",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "8",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792355715.6076217
+   },
+   "gpu_sampler": {
+    "samples": 280,
+    "utilization.gpu": {
+     "mean": 34.92857142857143,
+     "max": 100.0
+    },
+    "memory.used": {
+     "mean": 7270.878571428571,
+     "max": 12736.0
+    },
+    "power.draw": {
+     "mean": 97.63567857142857,
+     "max": 236.94
+    },
+    "clocks.sm": {
+     "mean": 2324.0392857142856,
+     "max": 2895.0
+    },
+    "temperature.gpu": {
+     "mean": 48.167857142857144,
+     "max": 63.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 5080",
+    "driver_version": "610.43.02",
+    "memory.total": "16303",
+    "memory.used": "2",
+    "utilization.gpu": "0",
+    "power.draw": "52.02",
+    "power.limit": "300.00",
+    "clocks.sm": "2632",
+    "clocks.max.sm": "3120",
+    "clocks.mem": "15001",
+    "temperature.gpu": "50",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "8",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792355995.7131088
+   },
+   "wall_s": 280.10548877716064,
+   "rc": 0
+  },
+  "headroom_b8192": {
+   "phase": "headroom_b8192",
+   "status": "oom",
+   "config": {
+    "name": "headroom_b8192",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "n_steps": 384,
+    "n_envs": 256,
+    "epochs": [
+     1,
+     3
+    ],
+    "warm": 1,
+    "reps": 2,
+    "gate": "on",
+    "batch_size": 8192,
+    "grad_accum": 8,
+    "trunk_precision": "bf16"
+   },
+   "_stage": "compile",
+   "load1_start": 4.26904296875,
+   "gpu_others_start": [],
+   "phases_s": {
+    "build": 3.4859797582030296
+   },
+   "optimizers_moved": 6,
+   "shape": {
+    "rows": 98304,
+    "n_steps": 384,
+    "n_envs": 256,
+    "batch_size": 8192,
+    "grad_accum": 8,
+    "effective_batch": 65536,
+    "micro_batches_per_epoch": 12,
+    "n_epochs_full": 10,
+    "params": 5624179,
+    "diagnostics_every": 10
+   },
+   "grad_checkpointing": false,
+   "peak_after_build_mib": 66.0,
+   "oom": {
+    "where": "compile",
+    "error": "OutOfMemoryError: CUDA out of memory. Tried to allocate 512.00 MiB. GPU 0 has a total capacity of 15.51 GiB of which 117.38 MiB is free. Including non-PyTorch memory, this process has 15.38 GiB memory in use. Of the allocated memory 11.37 GiB is allocated by PyTorch, and 3.65 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)",
+    "peak_reserved_mib": 15398.0
+   },
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 5080",
+    "driver_version": "610.43.02",
+    "memory.total": "16303",
+    "memory.used": "2",
+    "utilization.gpu": "0",
+    "power.draw": "52.02",
+    "power.limit": "300.00",
+    "clocks.sm": "2632",
+    "clocks.max.sm": "3120",
+    "clocks.mem": "15001",
+    "temperature.gpu": "50",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "8",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792355995.7438853
+   },
+   "gpu_sampler": {
+    "samples": 234,
+    "utilization.gpu": {
+     "mean": 22.965811965811966,
+     "max": 100.0
+    },
+    "memory.used": {
+     "mean": 11278.435897435897,
+     "max": 15764.0
+    },
+    "power.draw": {
+     "mean": 74.64653846153847,
+     "max": 222.22
+    },
+    "clocks.sm": {
+     "mean": 2181.405982905983,
+     "max": 2895.0
+    },
+    "temperature.gpu": {
+     "mean": 46.4059829059829,
+     "max": 56.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 5080",
+    "driver_version": "610.43.02",
+    "memory.total": "16303",
+    "memory.used": "2",
+    "utilization.gpu": "0",
+    "power.draw": "49.99",
+    "power.limit": "300.00",
+    "clocks.sm": "2632",
+    "clocks.max.sm": "3120",
+    "clocks.mem": "15001",
+    "temperature.gpu": "46",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "8",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792356229.8402503
+   },
+   "wall_s": 234.09636402130127,
+   "rc": 0
+  },
+  "collect": {
+   "phase": "collect",
+   "status": "ok",
+   "config": {
+    "name": "collect",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "warm": 1,
+    "timed": 3,
+    "steps": 589824,
+    "seed": 2601,
+    "pool_snapshots": 20,
+    "pool_win_rate": 0.94,
+    "extra": [],
+    "scratch": "/root/prov/results/suite/scratch/collect_run"
+   },
+   "pool": {
+    "pool_dir": "/root/prov/results/suite/scratch/collect_run/snapshots",
+    "n_snapshots": 20,
+    "win_rate_vs_bots": 0.94,
+    "expected_self_play_fraction": 0.9,
+    "perturb_scale": 0.001,
+    "build_s": 4.004535044077784
+   },
+   "started": "2026-10-18T20:43:55",
+   "trainer_argv": [
+    "--arch",
+    "production",
+    "--ridealong-ensemble",
+    "5",
+    "--ridealong-rnd",
+    "--ridealong-adv",
+    "5",
+    "--ridealong-opp",
+    "5",
+    "--ridealong-rnd-variants",
+    "all",
+    "--device",
+    "cuda",
+    "--no-compile-trainer",
+    "--run-dir",
+    "/root/prov/results/suite/scratch/collect_run",
+    "--steps",
+    "589824",
+    "--eval-freq",
+    "1000000000000",
+    "--checkpoint-every-steps",
+    "5898240",
+    "--seed",
+    "2601"
+   ],
+   "rollouts": [
+    {
+     "index": 0,
+     "timed": false,
+     "wall_s": 18.190593671053648,
+     "env_steps": 110949,
+     "env_steps_per_s": 6099.251184778596,
+     "host_steps": 459.0,
+     "trainee_decisions": 110949.0,
+     "p2_policy_decisions": 106657.0,
+     "p2_external_decisions": 0.0,
+     "games_ended": 1478.0,
+     "games_cut": 0.0,
+     "trainee_rows_per_host_step": 241.718954248366,
+     "fill_ms": 221.50074178352952,
+     "submit_ms_per_host_step": 1.295315261021224,
+     "flush_ms_per_host_step": 2.1885502221131765,
+     "gpu_wait_ms_per_host_step": 25.50788011913206,
+     "opp_draw_ms_per_host_step": 0.30176629249436665,
+     "draw_ms_per_host_step": 0.12607455521432404,
+     "write_ms_per_host_step": 0.436098753091167,
+     "core_ms_per_host_step": 8.663073557475684,
+     "post_ms_per_host_step": 0.4810544384201108,
+     "p2_policy_share": 0.9613155594011663,
+     "peak_reserved_mib": 2820.0,
+     "ep_len_mean_window": 65.19
+    },
+    {
+     "index": 1,
+     "timed": true,
+     "wall_s": 17.73030007723719,
+     "env_steps": 97701,
+     "env_steps_per_s": 5510.397431199269,
+     "host_steps": 404.0,
+     "trainee_decisions": 97701.0,
+     "p2_policy_decisions": 93780.0,
+     "p2_external_decisions": 0.0,
+     "games_ended": 1421.0,
+     "games_cut": 0.0,
+     "trainee_rows_per_host_step": 241.83415841584159,
+     "fill_ms": 211.80918300524354,
+     "submit_ms_per_host_step": 1.2789441798214276,
+     "flush_ms_per_host_step": 2.191552095862087,
+     "gpu_wait_ms_per_host_step": 25.603617693638743,
+     "opp_draw_ms_per_host_step": 0.2983090338656808,
+     "draw_ms_per_host_step": 0.12687755988375976,
+     "write_ms_per_host_step": 0.41337466065652007,
+     "core_ms_per_host_step": 8.702638386149365,
+     "post_ms_per_host_step": 0.5259723391033487,
+     "p2_policy_share": 0.9598673503853594,
+     "peak_reserved_mib": 2820.0,
+     "ep_len_mean_window": 72.75
+    },
+    {
+     "index": 2,
+     "timed": true,
+     "wall_s": 17.839137099217623,
+     "env_steps": 98112,
+     "env_steps_per_s": 5499.817589512383,
+     "host_steps": 405.0,
+     "trainee_decisions": 98112.0,
+     "p2_policy_decisions": 94231.0,
+     "p2_external_decisions": 0.0,
+     "games_ended": 1380.0,
+     "games_cut": 0.0,
+     "trainee_rows_per_host_step": 242.25185185185185,
+     "fill_ms": 212.23095385357738,
+     "submit_ms_per_host_step": 1.2881343597891155,
+     "flush_ms_per_host_step": 2.1970275904477377,
+     "gpu_wait_ms_per_host_step": 25.47217991065096,
+     "opp_draw_ms_per_host_step": 0.3005610284521992,
+     "draw_ms_per_host_step": 0.12522549195973962,
+     "write_ms_per_host_step": 0.4273696952028039,
+     "core_ms_per_host_step": 8.93683841245042,
+     "post_ms_per_host_step": 0.5173630299575535,
+     "p2_policy_share": 0.9604431669928245,
+     "peak_reserved_mib": 2820.0,
+     "ep_len_mean_window": 74.46
+    },
+    {
+     "index": 3,
+     "timed": true,
+     "wall_s": 17.902663136832416,
+     "env_steps": 99253,
+     "env_steps_per_s": 5544.035501388605,
+     "host_steps": 409.0,
+     "trainee_decisions": 99253.0,
+     "p2_policy_decisions": 94068.0,
+     "p2_external_decisions": 0.0,
+     "games_ended": 1380.0,
+     "games_cut": 0.0,
+     "trainee_rows_per_host_step": 242.6723716381418,
+     "fill_ms": 211.2145870923996,
+     "submit_ms_per_host_step": 1.2852502645227903,
+     "flush_ms_per_host_step": 2.196365830768583,
+     "gpu_wait_ms_per_host_step": 25.34467314226521,
+     "opp_draw_ms_per_host_step": 0.30601943540216076,
+     "draw_ms_per_host_step": 0.12820163709828789,
+     "write_ms_per_host_step": 0.43514243516078205,
+     "core_ms_per_host_step": 8.841378580150366,
+     "post_ms_per_host_step": 0.535549162169759,
+     "p2_policy_share": 0.9477597654478958,
+     "peak_reserved_mib": 2820.0,
+     "ep_len_mean_window": 81.69
+    }
+   ],
+   "buffer_shape": {
+    "n_steps": 384,
+    "n_envs": 256,
+    "rows": 98304,
+    "n_envs_model": 256
+   },
+   "stubbed": [
+    "learn-loop train() -> counter only",
+    "update_fit.check_update_fits",
+    "learner compile (--no-compile-trainer)"
+   ],
+   "summary": {
+    "n_timed": 3,
+    "wall_s_median": 17.839137099217623,
+    "env_steps_per_s_median": 5510.397431199269,
+    "trainee_decisions_median": 98112.0,
+    "host_steps_median": 405.0,
+    "p2_policy_share_median": 0.9598673503853594,
+    "submit_ms_per_host_step_median": 1.2852502645227903,
+    "flush_ms_per_host_step_median": 2.196365830768583,
+    "gpu_wait_ms_per_host_step_median": 25.47217991065096,
+    "opp_draw_ms_per_host_step_median": 0.3005610284521992,
+    "draw_ms_per_host_step_median": 0.12687755988375976,
+    "write_ms_per_host_step_median": 0.4273696952028039,
+    "core_ms_per_host_step_median": 8.841378580150366,
+    "post_ms_per_host_step_median": 0.5259723391033487,
+    "gpu_wait_s_per_rollout_median": 10.316232863813639,
+    "wall_spread_rel": 0.00966207382322246
+   },
+   "finished": "2026-10-18T20:56:52",
+   "worker_rc": 0,
+   "scratch_removed": true,
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 5080",
+    "driver_version": "610.43.02",
+    "memory.total": "16303",
+    "memory.used": "2",
+    "utilization.gpu": "0",
+    "power.draw": "49.99",
+    "power.limit": "300.00",
+    "clocks.sm": "2632",
+    "clocks.max.sm": "3120",
+    "clocks.mem": "15001",
+    "temperature.gpu": "46",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "8",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792356229.8725848
+   },
+   "gpu_sampler": {
+    "samples": 789,
+    "utilization.gpu": {
+     "mean": 17.518377693282638,
+     "max": 99.0
+    },
+    "memory.used": {
+     "mean": 2370.615969581749,
+     "max": 3572.0
+    },
+    "power.draw": {
+     "mean": 63.76154626108999,
+     "max": 190.09
+    },
+    "clocks.sm": {
+     "mean": 2105.7363751584285,
+     "max": 2910.0
+    },
+    "temperature.gpu": {
+     "mean": 43.651457541191384,
+     "max": 60.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 5080",
+    "driver_version": "610.43.02",
+    "memory.total": "16303",
+    "memory.used": "2",
+    "utilization.gpu": "0",
+    "power.draw": "49.79",
+    "power.limit": "300.00",
+    "clocks.sm": "2632",
+    "clocks.max.sm": "3120",
+    "clocks.mem": "15001",
+    "temperature.gpu": "48",
+    "pstate": "P0",
+    "pcie.link.gen.current": "5",
+    "pcie.link.width.current": "8",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792357019.07762
+   },
+   "wall_s": 789.2050352096558,
+   "rc": 0
+  }
+ },
+ "started": "2026-10-18T20:25:47+0000",
+ "updated": "2026-10-18T20:56:59+0000",
+ "validation": []
+}

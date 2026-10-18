@@ -59,6 +59,11 @@ s_pip() {
 }
 s_torch_sanity() { "$VENV/bin/python" "$HERE/remote_sanity.py" --out "$PROV/results/torch_sanity.json"; }
 s_clone() {   # a SHALLOW fetch of the pinned commit (the repo's history is not needed to train)
+    # GitHub serves a FULL 40-hex SHA (or a ref) to `fetch --depth 1`, never an abbreviation: a short SHA failed with
+    # "couldn't find remote ref" on the 2026-10-18 ladder's first box. Refuse it up front with the reason.
+    if [[ "$COMMIT" =~ ^[0-9a-f]{7,39}$ ]]; then
+        echo "REFUSED: '$COMMIT' is an abbreviated SHA; pass the full 40-hex commit (git rev-parse HEAD)"; return 2
+    fi
     rm -rf "$REPO" && git init -q "$REPO" && git -C "$REPO" remote add origin "$REPO_URL" &&
         git -C "$REPO" fetch -q --depth 1 origin "$COMMIT" && git -C "$REPO" checkout -q FETCH_HEAD &&
         git -C "$REPO" log --oneline -1

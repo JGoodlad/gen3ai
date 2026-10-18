@@ -1,0 +1,42 @@
+{
+ "torch": "2.8.0+cu126",
+ "cuda_build": "12.6",
+ "cuda_available": true,
+ "checks": {
+  "build_arch": {
+   "device": "NVIDIA GeForce RTX 4090",
+   "capability": "sm_89",
+   "arch_list": [
+    "sm_50",
+    "sm_60",
+    "sm_70",
+    "sm_75",
+    "sm_80",
+    "sm_86",
+    "sm_90"
+   ],
+   "cudnn": 91002,
+   "compiled_cuda": 12060,
+   "vram_gib": 23.5,
+   "pass": true,
+   "seconds": 0.015
+  },
+  "matmul_fp32": {
+   "max_rel_diff": 1.2354709042483591e-06,
+   "pass": true,
+   "seconds": 0.39
+  },
+  "compile_inductor": {
+   "first_call_s": 0.37,
+   "max_abs_diff_vs_eager": 5.960464477539063e-08,
+   "pass": true,
+   "seconds": 1.442
+  },
+  "matmul_bf16": {
+   "finite": true,
+   "pass": true,
+   "seconds": 0.098
+  }
+ },
+ "pass": true
+}

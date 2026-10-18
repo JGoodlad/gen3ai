@@ -81,8 +81,10 @@ PHASE_ORDER = ("host", "update_bf16", "update_fp32", "headroom", "collect")
 PHASE_TIMEOUT_MIN = {"host": 5, "update": 40, "headroom": 40, "collect": 45}
 DONE_STATUSES = ("ok", "oom")
 
+#: `power.default_limit` beside `power.limit`: a rented host may CAP the card (2026-10-18: one 5090 ran at 420 W of a
+#: 575-600 W board, 9 % slower on the bf16 update than a 600 W one) — a row is read at the limit it ran.
 NVSMI_FIELDS = ("name", "driver_version", "memory.total", "memory.used", "utilization.gpu", "power.draw",
-                "power.limit", "clocks.sm", "clocks.max.sm", "clocks.mem", "temperature.gpu", "pstate",
+                "power.limit", "power.default_limit", "clocks.sm", "clocks.max.sm", "clocks.mem", "temperature.gpu", "pstate",
                 "pcie.link.gen.current", "pcie.link.width.current")
 SAMPLER_FIELDS = ("utilization.gpu", "memory.used", "power.draw", "clocks.sm", "temperature.gpu")
 
@@ -580,7 +582,10 @@ def card_row(suite: Dict[str, Any]) -> Dict[str, Any]:
                                "peak_reserved_mib": b.get("peak_reserved_mib")} if b.get("status") == "ok"
                               else b.get("status"))
     meta = suite.get("meta", {})
-    return {"tag": suite.get("tag") or host.get("gpu_name"), "gpu": host.get("gpu_name"), "torch": host.get("torch"),
+    ub = ph.get("update_bf16", {})
+    power_limit = _num(str((ub.get("nvidia_smi_before") or {}).get("power.limit")))
+    max_clk = ((ub.get("gpu_sampler") or {}).get("clocks.sm") or {}).get("max")
+    return {"tag": suite.get("tag") or host.get("gpu_name"), "power_limit_w": power_limit, "max_sm_clock_mhz": max_clk, "gpu": host.get("gpu_name"), "torch": host.get("torch"),
             "cpu": host.get("cpu_model"), "update_bf16_s": upd("update_bf16"), "update_fp32_s": upd("update_fp32"),
             "peak_bf16_mib": pk, "peak_fp32_mib": peak("update_fp32"), "vram_mib": vram_mib,
             "headroom_mib": (vram_mib - pk) if (vram_mib and pk) else None, "headroom_points": headroom,
@@ -599,9 +604,12 @@ def amdahl(row: Dict[str, Any], ref: Dict[str, Any], live: Dict[str, Any] = LIVE
                                                                           collect is the host CPU's and stays OURS)
         cycle_c   = train_c + collect_c + live.other_s
         speedup   = cycle_ref / cycle_c   with cycle_ref = live train + collect + other
+        speedup_train_only = cycle_ref / (train_c + live.collect_s + live.other_s)     (the CONSERVATIVE bound)
 
     The reference stands in for the local 3080 Ti (the live numbers are the 3080 Ti's), so a card's ratios are taken
-    against it. ``None`` when a needed number is missing."""
+    against it. ``None`` when a needed number is missing. The GPU-wait ratio is read on RENTED hosts whose CPUs differ
+    (T2's launches are host work), so it is not a pure card ratio: ``speedup_train_only`` (collection unchanged) is the
+    floor, ``speedup`` the estimate with the measured wait."""
     u, ur = row.get("update_bf16_s"), ref.get("update_bf16_s")
     w, wr = row.get("gpu_wait_ms_per_host_step"), ref.get("gpu_wait_ms_per_host_step")
     if not all(isinstance(x, (int, float)) and x > 0 for x in (u, ur, w, wr)):
@@ -613,13 +621,55 @@ def amdahl(row: Dict[str, Any], ref: Dict[str, Any], live: Dict[str, Any] = LIVE
     cycle_ref = live["train_s"] + live["collect_s"] + live["other_s"]
     return {"train_s": train_c, "collect_s": collect_c, "other_s": live["other_s"], "cycle_s": cycle_c,
             "cycle_ref_s": cycle_ref, "speedup": cycle_ref / cycle_c, "update_ratio": ur / u, "gpu_wait_ratio": wr / w,
+            "speedup_train_only": cycle_ref / (train_c + live["collect_s"] + live["other_s"]),
             "steps_per_s": 98304.0 / cycle_c}
+
+
+def _f(x: Any, fmt: str = "{:.1f}", none: str = "—") -> str:
+    return none if not isinstance(x, (int, float)) else fmt.format(x)
+
+
+def _headroom_cell(v: Any) -> str:
+    if v == "OOM":
+        return "OOM"
+    if isinstance(v, dict):
+        return f"{_f(v.get('update_s_est'))} s @ {_f((v.get('peak_reserved_mib') or 0) / 1024, '{:.1f}')} GiB"
+    return str(v) if v is not None else "—"
+
+
+def render_markdown(rows: List[Dict[str, Any]], ref: Dict[str, Any]) -> str:
+    """The comparison table + the per-card Amdahl estimate as markdown (pure; every number from the suite JSONs)."""
+    hdr = ("| card | build | power limit W | peak SM MHz | update bf16 s | update fp32 s | env steps/s | peak bf16 GiB "
+           "| VRAM GiB | headroom GiB "
+           "| 4,096 x 16 | 8,192 x 8 | $/h | update speedup vs ref | cycle s (est) | cycle speedup (est) "
+           "| cycle speedup, update only |")
+    out = [hdr, "|" + "|".join(["---"] * (hdr.count("|") - 1)) + "|"]
+    for r in rows:
+        a = amdahl(r, ref)
+        hp = r.get("headroom_points") or {}
+        u, ur = r.get("update_bf16_s"), ref.get("update_bf16_s")
+        upd_ratio = ur / u if isinstance(u, (int, float)) and isinstance(ur, (int, float)) and u > 0 else None
+        out.append("| " + " | ".join([
+            str(r.get("tag")), str(r.get("torch")), _f(r.get("power_limit_w"), "{:.0f}"),
+            _f(r.get("max_sm_clock_mhz"), "{:.0f}"), _f(r.get("update_bf16_s"), "{:.2f}"),
+            _f(r.get("update_fp32_s"), "{:.2f}"), _f(r.get("env_steps_per_s"), "{:.0f}"),
+            _f((r.get("peak_bf16_mib") or 0) / 1024 if r.get("peak_bf16_mib") else None, "{:.1f}"),
+            _f((r.get("vram_mib") or 0) / 1024 if r.get("vram_mib") else None, "{:.0f}"),
+            _f((r.get("headroom_mib") or 0) / 1024 if r.get("headroom_mib") else None, "{:.1f}"),
+            _headroom_cell(hp.get("headroom_b4096")), _headroom_cell(hp.get("headroom_b8192")),
+            _f(r.get("dph"), "{:.3f}"), _f(upd_ratio, "{:.2f}x"),
+            _f(a["cycle_s"] if a else None, "{:.1f}"), _f(a["speedup"] if a else None, "{:.2f}x"),
+            _f(a["speedup_train_only"] if a else None, "{:.2f}x")]) + " |")
+    return "\n".join(out)
 
 
 def compare_main(a: argparse.Namespace) -> int:
     suites = [json.loads(Path(p).read_text()) for p in a.files]
     rows = [card_row(s) for s in suites]
     ref = next((r for r in rows if r["tag"] == a.reference), rows[0] if rows else None)
+    if a.markdown and ref is not None:
+        print(render_markdown(rows, ref))
+        return 0
     out = {"rows": rows, "reference": ref["tag"] if ref else None, "live_cycle": LIVE_CYCLE,
            "amdahl": {r["tag"]: amdahl(r, ref) for r in rows} if ref else {}}
     print(json.dumps(out, indent=1, default=str))
@@ -661,6 +711,7 @@ def build_parser() -> argparse.ArgumentParser:
     c = sub.add_parser("compare")
     c.add_argument("files", nargs="+")
     c.add_argument("--reference", default="")
+    c.add_argument("--markdown", action="store_true", help="the table + Amdahl columns as markdown")
     c.set_defaults(fn=compare_main)
     return p
 

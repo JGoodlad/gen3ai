@@ -1,8 +1,10 @@
 """The torch / CUDA SANITY on a rented GPU (runs ON the box). SANITY, NOT A BENCHMARK: it proves the stack works.
 
 Checks (each recorded with its wall time in the --out JSON; the process exits 1 if any FAILS):
-- the build: torch version, CUDA build, cuDNN, ``torch.cuda.get_arch_list()`` and that the device's own
-  ``sm_<major><minor>`` is in it (a 5090 is sm_120 — the cu126 wheels stop at sm_90, so this is THE check);
+- the build: torch version, CUDA build, cuDNN, ``torch.cuda.get_arch_list()`` and that it holds a kernel the device
+  can RUN (``arch_runs``): the device's own ``sm_<major><minor>``, or a cubin of the SAME major and a lower-or-equal
+  minor (CUDA's binary compatibility: an RTX 4090 is sm_89 and runs the cu126 wheel's sm_86 cubins). A 5090 is
+  sm_120 and the cu126 wheels stop at sm_90 (major 9), so for Blackwell this is still THE check;
 - an fp32 4096^2 matmul on the GPU against the CPU result (max abs diff, relative to the CPU norm);
 - a tiny ``torch.compile`` (Inductor -> Triton) of an MLP, its output against eager, first-call (compile) time;
 - a bf16 matmul (the future speed lever) runs.
@@ -13,6 +15,20 @@ import argparse
 import json
 import sys
 import time
+
+
+def arch_runs(cap: tuple, arches: list) -> bool:
+    """True when ``arches`` (``torch.cuda.get_arch_list()``) holds a kernel a device of compute capability ``cap`` runs:
+    its own ``sm_XY`` or an ``sm_`` cubin of the same major with minor <= the device's (pure)."""
+    major, minor = int(cap[0]), int(cap[1])
+    for a in arches:
+        if not a.startswith("sm_"):
+            continue
+        digits = a[3:]
+        am, an = int(digits[:-1]), int(digits[-1])
+        if am == major and an <= minor:
+            return True
+    return False
 
 
 def main() -> int:
@@ -45,7 +61,7 @@ def main() -> int:
         return {"device": torch.cuda.get_device_name(0), "capability": sm, "arch_list": arches,
                 "cudnn": torch.backends.cudnn.version(), "compiled_cuda": torch._C._cuda_getCompiledVersion(),
                 "vram_gib": round(torch.cuda.get_device_properties(0).total_memory / 2**30, 1),
-                "pass": sm in arches}
+                "pass": arch_runs(cap, arches)}
 
     def matmul():
         torch.manual_seed(0)

@@ -1,0 +1,573 @@
+{
+ "schema": "gen3_gpu_bench_suite_v1",
+ "suite_version": 1,
+ "quick": false,
+ "device": "cuda",
+ "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+ "live_cycle": {
+  "train_s": 42.24,
+  "collect_s": 26.97,
+  "other_s": 5.6,
+  "gpu_wait_s": 15.572935,
+  "source": "rb_x26_s2601 tb_read last 20 rollouts @258.6M, 2026-10-18 (RTX 3080 Ti, torch 2.8.0+cu126)"
+ },
+ "geometry": {
+  "n_steps": 384,
+  "n_envs": 256,
+  "epochs": [
+   1,
+   3
+  ],
+  "warm": 1,
+  "reps": 2,
+  "headroom": [
+   [
+    4096,
+    16
+   ],
+   [
+    8192,
+    8
+   ]
+  ],
+  "collect_warm": 1,
+  "collect_timed": 3,
+  "pool_snapshots": 20,
+  "pool_win_rate": 0.94,
+  "seed": 2601
+ },
+ "tag": "A100 SXM4 / US (cu126)",
+ "meta": {
+  "dph": 0.656,
+  "geo": "US",
+  "offer": 48716609.0,
+  "instance": 56609402.0
+ },
+ "phases": {
+  "host": {
+   "phase": "host",
+   "status": "ok",
+   "config": {
+    "name": "host",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all"
+   },
+   "cpu_model": "AMD EPYC 7532 32-Core Processor",
+   "cpu_logical": 128,
+   "cpu_physical": 64,
+   "cpu_affinity": 128,
+   "ram_gib": 503.701904296875,
+   "kernel": "6.8.0-124-generic",
+   "python": "3.11.15",
+   "torch": "2.8.0+cu126",
+   "torch_cuda": "12.6",
+   "cudnn": 91002,
+   "cuda_available": true,
+   "commit": "97616f5e7d208703df9ed9c195428d0ac7d02f18",
+   "hostname_hash": null,
+   "load1": 6.18505859375,
+   "gpu_name": "NVIDIA A100-SXM4-40GB",
+   "capability": "sm_80",
+   "vram_gib": 39.4925537109375,
+   "sm_count": 108,
+   "arch_list": [
+    "sm_50",
+    "sm_60",
+    "sm_70",
+    "sm_75",
+    "sm_80",
+    "sm_86",
+    "sm_90"
+   ],
+   "arch_ok": true,
+   "nvidia_smi_before": {
+    "name": "NVIDIA A100-SXM4-40GB",
+    "driver_version": "580.159.03",
+    "memory.total": "40960",
+    "memory.used": "0",
+    "utilization.gpu": "0",
+    "power.draw": "43.03",
+    "power.limit": "380.00",
+    "clocks.sm": "210",
+    "clocks.max.sm": "1410",
+    "clocks.mem": "1215",
+    "temperature.gpu": "19",
+    "pstate": "P0",
+    "pcie.link.gen.current": "4",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792353432.720269
+   },
+   "gpu_sampler": {
+    "samples": 3,
+    "utilization.gpu": {
+     "mean": 0.0,
+     "max": 0.0
+    },
+    "memory.used": {
+     "mean": 0.3333333333333333,
+     "max": 1.0
+    },
+    "power.draw": {
+     "mean": 43.53333333333333,
+     "max": 44.5
+    },
+    "clocks.sm": {
+     "mean": 380.0,
+     "max": 720.0
+    },
+    "temperature.gpu": {
+     "mean": 19.0,
+     "max": 19.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA A100-SXM4-40GB",
+    "driver_version": "580.159.03",
+    "memory.total": "40960",
+    "memory.used": "0",
+    "utilization.gpu": "0",
+    "power.draw": "44.54",
+    "power.limit": "380.00",
+    "clocks.sm": "720",
+    "clocks.max.sm": "1410",
+    "clocks.mem": "1215",
+    "temperature.gpu": "19",
+    "pstate": "P0",
+    "pcie.link.gen.current": "4",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792353435.888291
+   },
+   "wall_s": 3.168022632598877,
+   "rc": 0
+  },
+  "update_bf16": {
+   "phase": "update_bf16",
+   "status": "ok",
+   "config": {
+    "name": "update_bf16",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "n_steps": 384,
+    "n_envs": 256,
+    "epochs": [
+     1,
+     3
+    ],
+    "warm": 1,
+    "reps": 2,
+    "gate": "on",
+    "batch_size": null,
+    "grad_accum": null,
+    "trunk_precision": "bf16"
+   },
+   "load1_start": 6.08984375,
+   "gpu_others_start": [],
+   "phases_s": {
+    "build": 14.31160245416686,
+    "compile_gate_prewarm": 539.9740258958191
+   },
+   "optimizers_moved": 6,
+   "shape": {
+    "rows": 98304,
+    "n_steps": 384,
+    "n_envs": 256,
+    "batch_size": 2048,
+    "grad_accum": 32,
+    "effective_batch": 65536,
+    "micro_batches_per_epoch": 48,
+    "n_epochs_full": 10,
+    "params": 5624179,
+    "diagnostics_every": 10
+   },
+   "grad_checkpointing": false,
+   "peak_after_build_mib": 66.0,
+   "gate": {
+    "verdict": "PASS",
+    "lines": [
+     "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+     "[CompileRegions] parity PASS (bf16 trunk: the bf16 rule) \u2014 R1 [trained weights] bf16 rule: drift loss 1.18e-03 <= 0.014, grad 2.01e-02 <= 0.68; envelope loss 6.16e-04 (eager 1.18e-03) [loss on the golden's own rows; relocated rows: drift 5.65e-04, envelope 1.84e-04], grad 2.16e-02 (eager 2.01e-02); per-param worst ratio 1.88 <= 12 (features_extractor.history_events.entry_emb.weight: compiled 1.85e-02 vs eager 7.87e-03) over 233 params; clip margin: 2048/2048 boundary rows relocated (M 0.720 = 4 x shift_max 0.18 [default]; nearest unmoved -); max |dlogp| compiled 4.44e-03, eager 3.19e-03, fp32 reference 0.00e+00 <= 0.720, 0 clip-branch switches [the K9 learner golden's real labelled buffer]",
+     "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+     "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 536.3s",
+     "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+    ]
+   },
+   "peak_after_compile_mib": 5882.0,
+   "fixture_source": "the K9 learner golden's real labelled buffer",
+   "peak_reserved_mib": 6398.0,
+   "peak_alloc_mib": 5481.748046875,
+   "calls": [
+    {
+     "call": 0,
+     "epochs": 1,
+     "kind": "warm",
+     "wall_s": 16.548089805059135,
+     "scalar_reads": 15335,
+     "scalar_read_s": 0.009478837717324495,
+     "peak_reserved_mib": 6390.0,
+     "peak_alloc_mib": 5460.869140625
+    },
+    {
+     "call": 1,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 8.07929369667545,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.010524083860218525,
+     "peak_reserved_mib": 6390.0,
+     "peak_alloc_mib": 3660.568359375
+    },
+    {
+     "call": 2,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 8.095861489884555,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.01068022521212697,
+     "peak_reserved_mib": 6390.0,
+     "peak_alloc_mib": 3659.5185546875
+    },
+    {
+     "call": 3,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 16.679750414565206,
+     "scalar_reads": 17568,
+     "scalar_read_s": 0.012372050434350967,
+     "peak_reserved_mib": 6390.0,
+     "peak_alloc_mib": 3658.66015625
+    },
+    {
+     "call": 4,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 17.14995314599946,
+     "scalar_reads": 17568,
+     "scalar_read_s": 0.012060574255883694,
+     "peak_reserved_mib": 6390.0,
+     "peak_alloc_mib": 3661.9248046875
+    },
+    {
+     "call": 5,
+     "epochs": 1,
+     "kind": "diag",
+     "wall_s": 13.994273914024234,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.011003711260855198,
+     "peak_reserved_mib": 6398.0,
+     "peak_alloc_mib": 5481.748046875
+    }
+   ],
+   "diag_1ep_s": 13.994273914024234,
+   "train": {
+    "walls_s": {
+     "1": [
+      8.07929369667545,
+      8.095861489884555
+     ],
+     "3": [
+      16.679750414565206,
+      17.14995314599946
+     ]
+    },
+    "median_s": {
+     "1": 8.087577593280002,
+     "3": 16.914851780282333
+    },
+    "marginal_epoch_s": 4.4136370935011655,
+    "update_s_est": 47.81031143479049,
+    "first_epoch_overhead_s": 3.673940499778837,
+    "per_micro_ms_marginal": 91.95077278127428,
+    "spread_rel": {
+     "1": 0.002048548285072649,
+     "3": 0.027798217657595548
+    }
+   },
+   "load1_end": 4.4462890625,
+   "gpu_others_end": [
+    "531480, 6982 MiB"
+   ],
+   "nvidia_smi_before": {
+    "name": "NVIDIA A100-SXM4-40GB",
+    "driver_version": "580.159.03",
+    "memory.total": "40960",
+    "memory.used": "0",
+    "utilization.gpu": "0",
+    "power.draw": "44.81",
+    "power.limit": "380.00",
+    "clocks.sm": "720",
+    "clocks.max.sm": "1410",
+    "clocks.mem": "1215",
+    "temperature.gpu": "19",
+    "pstate": "P0",
+    "pcie.link.gen.current": "4",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792353435.9697917
+   },
+   "gpu_sampler": {
+    "samples": 651,
+    "utilization.gpu": {
+     "mean": 11.45468509984639,
+     "max": 98.0
+    },
+    "memory.used": {
+     "mean": 3813.9723502304146,
+     "max": 6994.0
+    },
+    "power.draw": {
+     "mean": 64.63251920122869,
+     "max": 221.65
+    },
+    "clocks.sm": {
+     "mean": 1155.0,
+     "max": 1410.0
+    },
+    "temperature.gpu": {
+     "mean": 21.612903225806452,
+     "max": 31.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA A100-SXM4-40GB",
+    "driver_version": "580.159.03",
+    "memory.total": "40960",
+    "memory.used": "0",
+    "utilization.gpu": "0",
+    "power.draw": "64.17",
+    "power.limit": "380.00",
+    "clocks.sm": "1410",
+    "clocks.max.sm": "1410",
+    "clocks.mem": "1215",
+    "temperature.gpu": "24",
+    "pstate": "P0",
+    "pcie.link.gen.current": "4",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792354087.3297997
+   },
+   "wall_s": 651.3600091934204,
+   "rc": 0
+  },
+  "update_fp32": {
+   "phase": "update_fp32",
+   "status": "ok",
+   "config": {
+    "name": "update_fp32",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "n_steps": 384,
+    "n_envs": 256,
+    "epochs": [
+     1,
+     3
+    ],
+    "warm": 1,
+    "reps": 2,
+    "gate": "on",
+    "batch_size": null,
+    "grad_accum": null,
+    "trunk_precision": "fp32"
+   },
+   "load1_start": 4.125,
+   "gpu_others_start": [],
+   "phases_s": {
+    "build": 11.443697556853294,
+    "compile_gate_prewarm": 530.5019901297055
+   },
+   "optimizers_moved": 6,
+   "shape": {
+    "rows": 98304,
+    "n_steps": 384,
+    "n_envs": 256,
+    "batch_size": 2048,
+    "grad_accum": 32,
+    "effective_batch": 65536,
+    "micro_batches_per_epoch": 48,
+    "n_epochs_full": 10,
+    "params": 5624179,
+    "diagnostics_every": 10
+   },
+   "grad_checkpointing": false,
+   "peak_after_build_mib": 66.0,
+   "gate": {
+    "verdict": "PASS",
+    "lines": [
+     "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+     "[CompileRegions] parity PASS (fp32) \u2014 R1 [trained weights] loss rel 1.25e-07 <= 0.0001; train features: fp32 max|compiled-eager| 2.38e-07 < 0.0001; grad cosine 1.000000 >= 0.9999; per-param grad rel err max 1.01e-05 (features_extractor.history_events.entry_emb.weight) over 233 params <= 0.00988; clip margin: 2048/2048 boundary rows relocated (M 0.720 = 4 x shift_max 0.18 [default]; nearest unmoved -); max |dlogp| compiled 4.77e-07, eager 0.00e+00 <= 0.720, 0 clip-branch switches [the K9 learner golden's real labelled buffer]",
+     "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+     "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 524.9s",
+     "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+    ]
+   },
+   "peak_after_compile_mib": 5746.0,
+   "fixture_source": "the K9 learner golden's real labelled buffer",
+   "peak_reserved_mib": 6804.0,
+   "peak_alloc_mib": 5823.18359375,
+   "calls": [
+    {
+     "call": 0,
+     "epochs": 1,
+     "kind": "warm",
+     "wall_s": 15.285921754781157,
+     "scalar_reads": 15335,
+     "scalar_read_s": 0.009355297312140465,
+     "peak_reserved_mib": 6796.0,
+     "peak_alloc_mib": 5802.7373046875
+    },
+    {
+     "call": 1,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 7.3673939518630505,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.010229906067252159,
+     "peak_reserved_mib": 6796.0,
+     "peak_alloc_mib": 4534.64599609375
+    },
+    {
+     "call": 2,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 7.475294823758304,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.010219646152108908,
+     "peak_reserved_mib": 6796.0,
+     "peak_alloc_mib": 4533.44091796875
+    },
+    {
+     "call": 3,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 16.282444251235574,
+     "scalar_reads": 17568,
+     "scalar_read_s": 0.01190644595772028,
+     "peak_reserved_mib": 6796.0,
+     "peak_alloc_mib": 4531.28955078125
+    },
+    {
+     "call": 4,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 16.556859514210373,
+     "scalar_reads": 17568,
+     "scalar_read_s": 0.011960376054048538,
+     "peak_reserved_mib": 6796.0,
+     "peak_alloc_mib": 4533.45068359375
+    },
+    {
+     "call": 5,
+     "epochs": 1,
+     "kind": "diag",
+     "wall_s": 14.284078758675605,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.010680632200092077,
+     "peak_reserved_mib": 6804.0,
+     "peak_alloc_mib": 5823.18359375
+    }
+   ],
+   "diag_1ep_s": 14.284078758675605,
+   "train": {
+    "walls_s": {
+     "1": [
+      7.3673939518630505,
+      7.475294823758304
+     ],
+     "3": [
+      16.282444251235574,
+      16.556859514210373
+     ]
+    },
+    "median_s": {
+     "1": 7.421344387810677,
+     "3": 16.419651882722974
+    },
+    "marginal_epoch_s": 4.499153747456148,
+    "update_s_est": 47.91372811491601,
+    "first_epoch_overhead_s": 2.922190640354529,
+    "per_micro_ms_marginal": 93.73236973866976,
+    "spread_rel": {
+     "1": 0.014539262195199756,
+     "3": 0.016712611505700855
+    }
+   },
+   "load1_end": 4.953125,
+   "gpu_others_end": [
+    "580499, 7380 MiB"
+   ],
+   "nvidia_smi_before": {
+    "name": "NVIDIA A100-SXM4-40GB",
+    "driver_version": "580.159.03",
+    "memory.total": "40960",
+    "memory.used": "0",
+    "utilization.gpu": "0",
+    "power.draw": "64.17",
+    "power.limit": "380.00",
+    "clocks.sm": "1410",
+    "clocks.max.sm": "1410",
+    "clocks.mem": "1215",
+    "temperature.gpu": "24",
+    "pstate": "P0",
+    "pcie.link.gen.current": "4",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792354087.4101067
+   },
+   "gpu_sampler": {
+    "samples": 634,
+    "utilization.gpu": {
+     "mean": 14.0,
+     "max": 100.0
+    },
+    "memory.used": {
+     "mean": 3978.242902208202,
+     "max": 7392.0
+    },
+    "power.draw": {
+     "mean": 69.82589905362755,
+     "max": 271.33
+    },
+    "clocks.sm": {
+     "mean": 1159.4952681388013,
+     "max": 1410.0
+    },
+    "temperature.gpu": {
+     "mean": 22.397476340694006,
+     "max": 36.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA A100-SXM4-40GB",
+    "driver_version": "580.159.03",
+    "memory.total": "40960",
+    "memory.used": "0",
+    "utilization.gpu": "94",
+    "power.draw": "51.25",
+    "power.limit": "380.00",
+    "clocks.sm": "1410",
+    "clocks.max.sm": "1410",
+    "clocks.mem": "1215",
+    "temperature.gpu": "25",
+    "pstate": "P0",
+    "pcie.link.gen.current": "4",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792354721.7477894
+   },
+   "wall_s": 634.337685585022,
+   "rc": 0
+  }
+ },
+ "started": "2026-10-18T19:57:12+0000",
+ "updated": "2026-10-18T20:18:41+0000"
+}

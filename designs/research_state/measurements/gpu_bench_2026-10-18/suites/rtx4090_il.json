@@ -1,0 +1,1242 @@
+{
+ "schema": "gen3_gpu_bench_suite_v1",
+ "suite_version": 1,
+ "quick": false,
+ "device": "cuda",
+ "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+ "live_cycle": {
+  "train_s": 42.24,
+  "collect_s": 26.97,
+  "other_s": 5.6,
+  "gpu_wait_s": 15.572935,
+  "source": "rb_x26_s2601 tb_read last 20 rollouts @258.6M, 2026-10-18 (RTX 3080 Ti, torch 2.8.0+cu126)"
+ },
+ "geometry": {
+  "n_steps": 384,
+  "n_envs": 256,
+  "epochs": [
+   1,
+   3
+  ],
+  "warm": 1,
+  "reps": 2,
+  "headroom": [
+   [
+    4096,
+    16
+   ],
+   [
+    8192,
+    8
+   ]
+  ],
+  "collect_warm": 1,
+  "collect_timed": 3,
+  "pool_snapshots": 20,
+  "pool_win_rate": 0.94,
+  "seed": 2601
+ },
+ "tag": "RTX 4090 / IL (cu126)",
+ "meta": {
+  "dph": 0.656,
+  "geo": "IL",
+  "offer": 56302983.0,
+  "instance": 56590769.0
+ },
+ "phases": {
+  "host": {
+   "phase": "host",
+   "status": "ok",
+   "config": {
+    "name": "host",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all"
+   },
+   "cpu_model": "AMD Ryzen 9 7950X 16-Core Processor",
+   "cpu_logical": 32,
+   "cpu_physical": 16,
+   "cpu_affinity": 32,
+   "ram_gib": 61.90366744995117,
+   "kernel": "6.8.0-136-generic",
+   "python": "3.11.15",
+   "torch": "2.8.0+cu126",
+   "torch_cuda": "12.6",
+   "cudnn": 91002,
+   "cuda_available": true,
+   "commit": "97616f5e7d208703df9ed9c195428d0ac7d02f18",
+   "hostname_hash": null,
+   "load1": 2.14453125,
+   "gpu_name": "NVIDIA GeForce RTX 4090",
+   "capability": "sm_89",
+   "vram_gib": 23.5184326171875,
+   "sm_count": 128,
+   "arch_list": [
+    "sm_50",
+    "sm_60",
+    "sm_70",
+    "sm_75",
+    "sm_80",
+    "sm_86",
+    "sm_90"
+   ],
+   "arch_ok": false,
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "driver_version": "595.71.05",
+    "memory.total": "24564",
+    "memory.used": "1",
+    "utilization.gpu": "0",
+    "power.draw": "10.19",
+    "power.limit": "500.00",
+    "clocks.sm": "210",
+    "clocks.max.sm": "3150",
+    "clocks.mem": "405",
+    "temperature.gpu": "34",
+    "pstate": "P8",
+    "pcie.link.gen.current": "1",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792345058.1707723
+   },
+   "gpu_sampler": {
+    "samples": 1,
+    "utilization.gpu": {
+     "mean": 0.0,
+     "max": 0.0
+    },
+    "memory.used": {
+     "mean": 1.0,
+     "max": 1.0
+    },
+    "power.draw": {
+     "mean": 10.19,
+     "max": 10.19
+    },
+    "clocks.sm": {
+     "mean": 210.0,
+     "max": 210.0
+    },
+    "temperature.gpu": {
+     "mean": 34.0,
+     "max": 34.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "driver_version": "595.71.05",
+    "memory.total": "24564",
+    "memory.used": "1",
+    "utilization.gpu": "0",
+    "power.draw": "10.32",
+    "power.limit": "500.00",
+    "clocks.sm": "210",
+    "clocks.max.sm": "3150",
+    "clocks.mem": "405",
+    "temperature.gpu": "34",
+    "pstate": "P8",
+    "pcie.link.gen.current": "1",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792345059.2463439
+   },
+   "wall_s": 1.0755717754364014,
+   "rc": 0
+  },
+  "update_bf16": {
+   "phase": "update_bf16",
+   "status": "ok",
+   "config": {
+    "name": "update_bf16",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "n_steps": 384,
+    "n_envs": 256,
+    "epochs": [
+     1,
+     3
+    ],
+    "warm": 1,
+    "reps": 2,
+    "gate": "on",
+    "batch_size": null,
+    "grad_accum": null,
+    "trunk_precision": "bf16"
+   },
+   "load1_start": 2.14453125,
+   "gpu_others_start": [],
+   "phases_s": {
+    "build": 5.767741820018273,
+    "compile_gate_prewarm": 276.8549773740233
+   },
+   "optimizers_moved": 6,
+   "shape": {
+    "rows": 98304,
+    "n_steps": 384,
+    "n_envs": 256,
+    "batch_size": 2048,
+    "grad_accum": 32,
+    "effective_batch": 65536,
+    "micro_batches_per_epoch": 48,
+    "n_epochs_full": 10,
+    "params": 5624179,
+    "diagnostics_every": 10
+   },
+   "grad_checkpointing": false,
+   "peak_after_build_mib": 66.0,
+   "gate": {
+    "verdict": "PASS",
+    "lines": [
+     "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+     "[CompileRegions] parity PASS (bf16 trunk: the bf16 rule) \u2014 R1 [trained weights] bf16 rule: drift loss 1.10e-03 <= 0.014, grad 1.99e-02 <= 0.68; envelope loss 6.31e-04 (eager 1.10e-03) [loss on the golden's own rows; relocated rows: drift 4.82e-04, envelope 2.07e-04], grad 2.14e-02 (eager 1.99e-02); per-param worst ratio 1.93 <= 12 (features_extractor.history_events.entry_emb.weight: compiled 1.91e-02 vs eager 9.39e-03) over 233 params; clip margin: 2048/2048 boundary rows relocated (M 0.720 = 4 x shift_max 0.18 [default]; nearest unmoved -); max |dlogp| compiled 4.44e-03, eager 3.66e-03, fp32 reference 0.00e+00 <= 0.720, 0 clip-branch switches [the K9 learner golden's real labelled buffer]",
+     "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+     "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 275.5s",
+     "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+    ]
+   },
+   "peak_after_compile_mib": 5970.0,
+   "fixture_source": "the K9 learner golden's real labelled buffer",
+   "peak_reserved_mib": 6320.0,
+   "peak_alloc_mib": 5483.19970703125,
+   "calls": [
+    {
+     "call": 0,
+     "epochs": 1,
+     "kind": "warm",
+     "wall_s": 8.757487677969038,
+     "scalar_reads": 15335,
+     "scalar_read_s": 0.003211178758647293,
+     "peak_reserved_mib": 6308.0,
+     "peak_alloc_mib": 5464.09130859375
+    },
+    {
+     "call": 1,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 3.464613805990666,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.0037904540658928454,
+     "peak_reserved_mib": 6308.0,
+     "peak_alloc_mib": 3666.16845703125
+    },
+    {
+     "call": 2,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 3.475085153011605,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.003786163520999253,
+     "peak_reserved_mib": 6308.0,
+     "peak_alloc_mib": 3668.01123046875
+    },
+    {
+     "call": 3,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 8.751725694048218,
+     "scalar_reads": 17568,
+     "scalar_read_s": 0.004265712457709014,
+     "peak_reserved_mib": 6308.0,
+     "peak_alloc_mib": 3667.04248046875
+    },
+    {
+     "call": 4,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 8.752117905009072,
+     "scalar_reads": 17568,
+     "scalar_read_s": 0.004342727886978537,
+     "peak_reserved_mib": 6308.0,
+     "peak_alloc_mib": 3669.60498046875
+    },
+    {
+     "call": 5,
+     "epochs": 1,
+     "kind": "diag",
+     "wall_s": 7.750572380027734,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.0038114672643132508,
+     "peak_reserved_mib": 6320.0,
+     "peak_alloc_mib": 5483.19970703125
+    }
+   ],
+   "diag_1ep_s": 7.750572380027734,
+   "train": {
+    "walls_s": {
+     "1": [
+      3.464613805990666,
+      3.475085153011605
+     ],
+     "3": [
+      8.751725694048218,
+      8.752117905009072
+     ]
+    },
+    "median_s": {
+     "1": 3.4698494795011356,
+     "3": 8.751921799528645
+    },
+    "marginal_epoch_s": 2.641036160013755,
+    "update_s_est": 27.23917491962493,
+    "first_epoch_overhead_s": 0.8288133194873808,
+    "per_micro_ms_marginal": 55.021586666953226,
+    "spread_rel": {
+     "1": 0.0030178101623141505,
+     "3": 4.4814267064745517e-05
+    }
+   },
+   "load1_end": 1.94091796875,
+   "gpu_others_end": [],
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "driver_version": "595.71.05",
+    "memory.total": "24564",
+    "memory.used": "1",
+    "utilization.gpu": "0",
+    "power.draw": "10.32",
+    "power.limit": "500.00",
+    "clocks.sm": "210",
+    "clocks.max.sm": "3150",
+    "clocks.mem": "405",
+    "temperature.gpu": "34",
+    "pstate": "P8",
+    "pcie.link.gen.current": "1",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792345059.290631
+   },
+   "gpu_sampler": {
+    "samples": 331,
+    "utilization.gpu": {
+     "mean": 27.30211480362538,
+     "max": 100.0
+    },
+    "memory.used": {
+     "mean": 3824.262839879154,
+     "max": 6868.0
+    },
+    "power.draw": {
+     "mean": 87.98172205438067,
+     "max": 284.37
+    },
+    "clocks.sm": {
+     "mean": 2058.3987915407856,
+     "max": 2865.0
+    },
+    "temperature.gpu": {
+     "mean": 40.105740181268885,
+     "max": 56.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "driver_version": "595.71.05",
+    "memory.total": "24564",
+    "memory.used": "1",
+    "utilization.gpu": "0",
+    "power.draw": "46.75",
+    "power.limit": "500.00",
+    "clocks.sm": "2850",
+    "clocks.max.sm": "3150",
+    "clocks.mem": "10501",
+    "temperature.gpu": "42",
+    "pstate": "P0",
+    "pcie.link.gen.current": "4",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792345390.4259284
+   },
+   "wall_s": 331.1352982521057,
+   "rc": 0
+  },
+  "update_fp32": {
+   "phase": "update_fp32",
+   "status": "ok",
+   "config": {
+    "name": "update_fp32",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "n_steps": 384,
+    "n_envs": 256,
+    "epochs": [
+     1,
+     3
+    ],
+    "warm": 1,
+    "reps": 2,
+    "gate": "on",
+    "batch_size": null,
+    "grad_accum": null,
+    "trunk_precision": "fp32"
+   },
+   "load1_start": 1.865234375,
+   "gpu_others_start": [],
+   "phases_s": {
+    "build": 4.0758922200184315,
+    "compile_gate_prewarm": 280.1487066610134
+   },
+   "optimizers_moved": 6,
+   "shape": {
+    "rows": 98304,
+    "n_steps": 384,
+    "n_envs": 256,
+    "batch_size": 2048,
+    "grad_accum": 32,
+    "effective_batch": 65536,
+    "micro_batches_per_epoch": 48,
+    "n_epochs_full": 10,
+    "params": 5624179,
+    "diagnostics_every": 10
+   },
+   "grad_checkpointing": false,
+   "peak_after_build_mib": 66.0,
+   "gate": {
+    "verdict": "PASS",
+    "lines": [
+     "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+     "[CompileRegions] parity PASS (fp32) \u2014 R1 [trained weights] loss rel 1.88e-07 <= 0.0001; train features: fp32 max|compiled-eager| 3.58e-07 < 0.0001; grad cosine 1.000000 >= 0.9999; per-param grad rel err max 1.05e-05 (features_extractor.history_events.entry_emb.weight) over 233 params <= 0.00988; clip margin: 2048/2048 boundary rows relocated (M 0.720 = 4 x shift_max 0.18 [default]; nearest unmoved -); max |dlogp| compiled 4.77e-07, eager 0.00e+00 <= 0.720, 0 clip-branch switches [the K9 learner golden's real labelled buffer]",
+     "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+     "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=2048]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 276.8s",
+     "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=2048), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+    ]
+   },
+   "peak_after_compile_mib": 5722.0,
+   "fixture_source": "the K9 learner golden's real labelled buffer",
+   "peak_reserved_mib": 6774.0,
+   "peak_alloc_mib": 5825.7783203125,
+   "calls": [
+    {
+     "call": 0,
+     "epochs": 1,
+     "kind": "warm",
+     "wall_s": 9.882394332031254,
+     "scalar_reads": 15335,
+     "scalar_read_s": 0.0033850081963464618,
+     "peak_reserved_mib": 6768.0,
+     "peak_alloc_mib": 5803.623046875
+    },
+    {
+     "call": 1,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 4.074179838993587,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.0035650612553581595,
+     "peak_reserved_mib": 6768.0,
+     "peak_alloc_mib": 4530.80322265625
+    },
+    {
+     "call": 2,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 4.071119288972113,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.003631076484452933,
+     "peak_reserved_mib": 6768.0,
+     "peak_alloc_mib": 4532.68603515625
+    },
+    {
+     "call": 3,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 10.542820798989851,
+     "scalar_reads": 17568,
+     "scalar_read_s": 0.004127981490455568,
+     "peak_reserved_mib": 6768.0,
+     "peak_alloc_mib": 4530.58740234375
+    },
+    {
+     "call": 4,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 10.552172975963913,
+     "scalar_reads": 17568,
+     "scalar_read_s": 0.004109401430469006,
+     "peak_reserved_mib": 6768.0,
+     "peak_alloc_mib": 4531.19677734375
+    },
+    {
+     "call": 5,
+     "epochs": 1,
+     "kind": "diag",
+     "wall_s": 9.522639571048785,
+     "scalar_reads": 15328,
+     "scalar_read_s": 0.0038091419846750796,
+     "peak_reserved_mib": 6774.0,
+     "peak_alloc_mib": 5825.7783203125
+    }
+   ],
+   "diag_1ep_s": 9.522639571048785,
+   "train": {
+    "walls_s": {
+     "1": [
+      4.074179838993587,
+      4.071119288972113
+     ],
+     "3": [
+      10.542820798989851,
+      10.552172975963913
+     ]
+    },
+    "median_s": {
+     "1": 4.07264956398285,
+     "3": 10.547496887476882
+    },
+    "marginal_epoch_s": 3.237423661747016,
+    "update_s_est": 33.209462519705994,
+    "first_epoch_overhead_s": 0.8352259022358339,
+    "per_micro_ms_marginal": 67.44632628639617,
+    "spread_rel": {
+     "1": 0.00075148867423797,
+     "3": 0.0008866726460157369
+    }
+   },
+   "load1_end": 1.982421875,
+   "gpu_others_end": [],
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "driver_version": "595.71.05",
+    "memory.total": "24564",
+    "memory.used": "1",
+    "utilization.gpu": "0",
+    "power.draw": "47.27",
+    "power.limit": "500.00",
+    "clocks.sm": "2850",
+    "clocks.max.sm": "3150",
+    "clocks.mem": "10501",
+    "temperature.gpu": "42",
+    "pstate": "P0",
+    "pcie.link.gen.current": "4",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792345390.465424
+   },
+   "gpu_sampler": {
+    "samples": 340,
+    "utilization.gpu": {
+     "mean": 29.24705882352941,
+     "max": 100.0
+    },
+    "memory.used": {
+     "mean": 4076.05,
+     "max": 7316.0
+    },
+    "power.draw": {
+     "mean": 97.18358823529414,
+     "max": 319.66
+    },
+    "clocks.sm": {
+     "mean": 2080.1911764705883,
+     "max": 2865.0
+    },
+    "temperature.gpu": {
+     "mean": 41.93529411764706,
+     "max": 60.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "driver_version": "595.71.05",
+    "memory.total": "24564",
+    "memory.used": "1",
+    "utilization.gpu": "48",
+    "power.draw": "47.17",
+    "power.limit": "500.00",
+    "clocks.sm": "2610",
+    "clocks.max.sm": "3150",
+    "clocks.mem": "10501",
+    "temperature.gpu": "43",
+    "pstate": "P0",
+    "pcie.link.gen.current": "4",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792345730.6087189
+   },
+   "wall_s": 340.1432948112488,
+   "rc": 0
+  },
+  "headroom_b4096": {
+   "phase": "headroom_b4096",
+   "status": "ok",
+   "config": {
+    "name": "headroom_b4096",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "n_steps": 384,
+    "n_envs": 256,
+    "epochs": [
+     1,
+     3
+    ],
+    "warm": 1,
+    "reps": 2,
+    "gate": "on",
+    "batch_size": 4096,
+    "grad_accum": 16,
+    "trunk_precision": "bf16"
+   },
+   "load1_start": 1.9033203125,
+   "gpu_others_start": [],
+   "phases_s": {
+    "build": 4.071382994996384,
+    "compile_gate_prewarm": 284.0377899199957
+   },
+   "optimizers_moved": 6,
+   "shape": {
+    "rows": 98304,
+    "n_steps": 384,
+    "n_envs": 256,
+    "batch_size": 4096,
+    "grad_accum": 16,
+    "effective_batch": 65536,
+    "micro_batches_per_epoch": 24,
+    "n_epochs_full": 10,
+    "params": 5624179,
+    "diagnostics_every": 10
+   },
+   "grad_checkpointing": false,
+   "peak_after_build_mib": 66.0,
+   "gate": {
+    "verdict": "PASS",
+    "lines": [
+     "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+     "[CompileRegions] parity PASS (bf16 trunk: the bf16 rule) \u2014 R1 [trained weights] bf16 rule: drift loss 1.16e-03 <= 0.014, grad 2.03e-02 <= 0.68; envelope loss 6.03e-04 (eager 1.16e-03) [loss on the golden's own rows; relocated rows: drift 5.50e-04, envelope 1.90e-04], grad 2.16e-02 (eager 2.03e-02); per-param worst ratio 1.96 <= 12 (features_extractor.history_events.entry_emb.weight: compiled 1.94e-02 vs eager 8.21e-03) over 233 params; clip margin: 4096/4096 boundary rows relocated (M 0.720 = 4 x shift_max 0.18 [default]; nearest unmoved -); max |dlogp| compiled 4.44e-03, eager 3.19e-03, fp32 reference 0.00e+00 <= 0.720, 0 clip-branch switches [the K9 learner golden's real labelled buffer]",
+     "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+     "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=4096]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 280.6s",
+     "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=4096), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+    ]
+   },
+   "peak_after_compile_mib": 11874.0,
+   "fixture_source": "the K9 learner golden's real labelled buffer",
+   "peak_reserved_mib": 12358.0,
+   "peak_alloc_mib": 10748.0478515625,
+   "calls": [
+    {
+     "call": 0,
+     "epochs": 1,
+     "kind": "warm",
+     "wall_s": 7.951626595982816,
+     "scalar_reads": 8231,
+     "scalar_read_s": 0.0017748262034729123,
+     "peak_reserved_mib": 12358.0,
+     "peak_alloc_mib": 10731.6533203125
+    },
+    {
+     "call": 1,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 3.2282394010107964,
+     "scalar_reads": 8224,
+     "scalar_read_s": 0.0019763954915106297,
+     "peak_reserved_mib": 12358.0,
+     "peak_alloc_mib": 7163.9873046875
+    },
+    {
+     "call": 2,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 3.230508439010009,
+     "scalar_reads": 8224,
+     "scalar_read_s": 0.001940689457114786,
+     "peak_reserved_mib": 12358.0,
+     "peak_alloc_mib": 7164.158203125
+    },
+    {
+     "call": 3,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 8.457627373980358,
+     "scalar_reads": 10464,
+     "scalar_read_s": 0.002472892520017922,
+     "peak_reserved_mib": 12358.0,
+     "peak_alloc_mib": 7166.533203125
+    },
+    {
+     "call": 4,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 8.462458160007372,
+     "scalar_reads": 10464,
+     "scalar_read_s": 0.002544444869272411,
+     "peak_reserved_mib": 12358.0,
+     "peak_alloc_mib": 7169.642578125
+    },
+    {
+     "call": 5,
+     "epochs": 1,
+     "kind": "diag",
+     "wall_s": 7.583231337019242,
+     "scalar_reads": 8224,
+     "scalar_read_s": 0.0019519508932717144,
+     "peak_reserved_mib": 12358.0,
+     "peak_alloc_mib": 10748.0478515625
+    }
+   ],
+   "diag_1ep_s": 7.583231337019242,
+   "train": {
+    "walls_s": {
+     "1": [
+      3.2282394010107964,
+      3.230508439010009
+     ],
+     "3": [
+      8.457627373980358,
+      8.462458160007372
+     ]
+    },
+    "median_s": {
+     "1": 3.229373920010403,
+     "3": 8.460042766993865
+    },
+    "marginal_epoch_s": 2.6153344234917313,
+    "update_s_est": 26.767383731435984,
+    "first_epoch_overhead_s": 0.6140394965186715,
+    "per_micro_ms_marginal": 108.9722676454888,
+    "spread_rel": {
+     "1": 0.0007026247363778279,
+     "3": 0.0005710120102301557
+    }
+   },
+   "load1_end": 1.53857421875,
+   "gpu_others_end": [],
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "driver_version": "595.71.05",
+    "memory.total": "24564",
+    "memory.used": "1",
+    "utilization.gpu": "48",
+    "power.draw": "47.17",
+    "power.limit": "500.00",
+    "clocks.sm": "2610",
+    "clocks.max.sm": "3150",
+    "clocks.mem": "10501",
+    "temperature.gpu": "43",
+    "pstate": "P0",
+    "pcie.link.gen.current": "4",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792345730.6475651
+   },
+   "gpu_sampler": {
+    "samples": 335,
+    "utilization.gpu": {
+     "mean": 27.582089552238806,
+     "max": 100.0
+    },
+    "memory.used": {
+     "mean": 6978.253731343284,
+     "max": 12906.0
+    },
+    "power.draw": {
+     "mean": 91.82588059701489,
+     "max": 292.79
+    },
+    "clocks.sm": {
+     "mean": 2080.2537313432836,
+     "max": 2865.0
+    },
+    "temperature.gpu": {
+     "mean": 42.017910447761196,
+     "max": 58.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "driver_version": "595.71.05",
+    "memory.total": "24564",
+    "memory.used": "1",
+    "utilization.gpu": "0",
+    "power.draw": "54.90",
+    "power.limit": "500.00",
+    "clocks.sm": "2850",
+    "clocks.max.sm": "3150",
+    "clocks.mem": "10501",
+    "temperature.gpu": "43",
+    "pstate": "P0",
+    "pcie.link.gen.current": "4",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792346065.7713647
+   },
+   "wall_s": 335.1238000392914,
+   "rc": 0
+  },
+  "headroom_b8192": {
+   "phase": "headroom_b8192",
+   "status": "ok",
+   "config": {
+    "name": "headroom_b8192",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "n_steps": 384,
+    "n_envs": 256,
+    "epochs": [
+     1,
+     3
+    ],
+    "warm": 1,
+    "reps": 2,
+    "gate": "on",
+    "batch_size": 8192,
+    "grad_accum": 8,
+    "trunk_precision": "bf16"
+   },
+   "load1_start": 1.4951171875,
+   "gpu_others_start": [],
+   "phases_s": {
+    "build": 4.094034106994513,
+    "compile_gate_prewarm": 292.82086795696523
+   },
+   "optimizers_moved": 6,
+   "shape": {
+    "rows": 98304,
+    "n_steps": 384,
+    "n_envs": 256,
+    "batch_size": 8192,
+    "grad_accum": 8,
+    "effective_batch": 65536,
+    "micro_batches_per_epoch": 12,
+    "n_epochs_full": 10,
+    "params": 5624179,
+    "diagnostics_every": 10
+   },
+   "grad_checkpointing": false,
+   "peak_after_build_mib": 66.0,
+   "gate": {
+    "verdict": "PASS",
+    "lines": [
+     "[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True, static shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)",
+     "[CompileRegions] parity PASS (bf16 trunk: the bf16 rule) \u2014 R1 [trained weights] bf16 rule: drift loss 1.15e-03 <= 0.014, grad 1.99e-02 <= 0.68; envelope loss 6.20e-04 (eager 1.15e-03) [loss on the golden's own rows; relocated rows: drift 5.47e-04, envelope 2.08e-04], grad 2.15e-02 (eager 1.99e-02); per-param worst ratio 1.94 <= 12 (features_extractor.history_events.entry_emb.weight: compiled 1.92e-02 vs eager 7.35e-03) over 233 params; clip margin: 8192/8192 boundary rows relocated (M 0.720 = 4 x shift_max 0.18 [default]; nearest unmoved -); max |dlogp| compiled 4.44e-03, eager 3.19e-03, fp32 reference 0.00e+00 <= 0.720, 0 clip-branch switches [the K9 learner golden's real labelled buffer]",
+     "[CompileRegions] inventory == declaration: R1 1 graph (fullgraph=True)",
+     "[CompileControl] prewarmed 1 production signature(s) [R1 learner_micro_step train/grad B=8192]: 1 graphs in process, max 1 cache entries per code object (limit 8) \u2014 reset + prewarm took 289.3s",
+     "\ud83d\udc24 [CompileCanary] armed: R1 (the learner micro-step) compiled vs eager on the K9 learner golden's real labelled rows at update 10, then every 100 updates (loss + every policy gradient, B=8192), at the startup gate's bars; a disagreement is confirmed before it FATALs"
+    ]
+   },
+   "peak_after_compile_mib": 23004.0,
+   "fixture_source": "the K9 learner golden's real labelled buffer",
+   "peak_reserved_mib": 23462.0,
+   "peak_alloc_mib": 21274.8125,
+   "calls": [
+    {
+     "call": 0,
+     "epochs": 1,
+     "kind": "warm",
+     "wall_s": 8.542638637009077,
+     "scalar_reads": 4679,
+     "scalar_read_s": 0.0012064657057635486,
+     "peak_reserved_mib": 23462.0,
+     "peak_alloc_mib": 21250.994140625
+    },
+    {
+     "call": 1,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 3.168950376973953,
+     "scalar_reads": 4672,
+     "scalar_read_s": 0.0010810067178681493,
+     "peak_reserved_mib": 23378.0,
+     "peak_alloc_mib": 14141.59619140625
+    },
+    {
+     "call": 2,
+     "epochs": 1,
+     "kind": "timed",
+     "wall_s": 3.1711902060196735,
+     "scalar_reads": 4672,
+     "scalar_read_s": 0.0010891494457609951,
+     "peak_reserved_mib": 23378.0,
+     "peak_alloc_mib": 14147.68701171875
+    },
+    {
+     "call": 3,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 8.425709938979708,
+     "scalar_reads": 6912,
+     "scalar_read_s": 0.0016407064395025373,
+     "peak_reserved_mib": 23378.0,
+     "peak_alloc_mib": 14142.21826171875
+    },
+    {
+     "call": 4,
+     "epochs": 3,
+     "kind": "timed",
+     "wall_s": 8.420571965980344,
+     "scalar_reads": 6912,
+     "scalar_read_s": 0.0016475911252200603,
+     "peak_reserved_mib": 23378.0,
+     "peak_alloc_mib": 14147.59619140625
+    },
+    {
+     "call": 5,
+     "epochs": 1,
+     "kind": "diag",
+     "wall_s": 8.069673453981522,
+     "scalar_reads": 4672,
+     "scalar_read_s": 0.0010929199634119868,
+     "peak_reserved_mib": 23384.0,
+     "peak_alloc_mib": 21274.8125
+    }
+   ],
+   "diag_1ep_s": 8.069673453981522,
+   "train": {
+    "walls_s": {
+     "1": [
+      3.168950376973953,
+      3.1711902060196735
+     ],
+     "3": [
+      8.425709938979708,
+      8.420571965980344
+     ]
+    },
+    "median_s": {
+     "1": 3.1700702914968133,
+     "3": 8.423140952480026
+    },
+    "marginal_epoch_s": 2.626535330491606,
+    "update_s_est": 26.80888826592127,
+    "first_epoch_overhead_s": 0.5435349610052072,
+    "per_micro_ms_marginal": 218.87794420763385,
+    "spread_rel": {
+     "1": 0.0007065550097511616,
+     "3": 0.0006099830251387832
+    }
+   },
+   "load1_end": 1.69775390625,
+   "gpu_others_end": [],
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "driver_version": "595.71.05",
+    "memory.total": "24564",
+    "memory.used": "1",
+    "utilization.gpu": "0",
+    "power.draw": "54.90",
+    "power.limit": "500.00",
+    "clocks.sm": "2850",
+    "clocks.max.sm": "3150",
+    "clocks.mem": "10501",
+    "temperature.gpu": "43",
+    "pstate": "P0",
+    "pcie.link.gen.current": "4",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792346065.8109233
+   },
+   "gpu_sampler": {
+    "samples": 345,
+    "utilization.gpu": {
+     "mean": 29.588405797101448,
+     "max": 100.0
+    },
+    "memory.used": {
+     "mean": 13158.56811594203,
+     "max": 23934.0
+    },
+    "power.draw": {
+     "mean": 96.44765217391306,
+     "max": 295.34
+    },
+    "clocks.sm": {
+     "mean": 2090.782608695652,
+     "max": 2865.0
+    },
+    "temperature.gpu": {
+     "mean": 41.12753623188406,
+     "max": 57.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "driver_version": "595.71.05",
+    "memory.total": "24564",
+    "memory.used": "1",
+    "utilization.gpu": "0",
+    "power.draw": "57.99",
+    "power.limit": "500.00",
+    "clocks.sm": "2850",
+    "clocks.max.sm": "3150",
+    "clocks.mem": "10501",
+    "temperature.gpu": "42",
+    "pstate": "P0",
+    "pcie.link.gen.current": "4",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792346410.9873838
+   },
+   "wall_s": 345.17646074295044,
+   "rc": 0
+  },
+  "collect": {
+   "phase": "collect",
+   "status": "ok",
+   "config": {
+    "name": "collect",
+    "device": "cuda",
+    "quick": false,
+    "argv": "--arch production --ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5 --ridealong-opp 5 --ridealong-rnd-variants all",
+    "warm": 1,
+    "timed": 3,
+    "steps": 589824,
+    "seed": 2601,
+    "pool_snapshots": 20,
+    "pool_win_rate": 0.94,
+    "extra": [],
+    "scratch": "/root/prov/results/suite/scratch/collect_run"
+   },
+   "pool": {
+    "pool_dir": "/root/prov/results/suite/scratch/collect_run/snapshots",
+    "n_snapshots": 20,
+    "win_rate_vs_bots": 0.94,
+    "expected_self_play_fraction": 0.9,
+    "perturb_scale": 0.001,
+    "build_s": 4.694053359038662
+   },
+   "started": "2026-10-18T18:00:17",
+   "trainer_argv": [
+    "--arch",
+    "production",
+    "--ridealong-ensemble",
+    "5",
+    "--ridealong-rnd",
+    "--ridealong-adv",
+    "5",
+    "--ridealong-opp",
+    "5",
+    "--ridealong-rnd-variants",
+    "all",
+    "--device",
+    "cuda",
+    "--no-compile-trainer",
+    "--run-dir",
+    "/root/prov/results/suite/scratch/collect_run",
+    "--steps",
+    "589824",
+    "--eval-freq",
+    "1000000000000",
+    "--checkpoint-every-steps",
+    "5898240",
+    "--seed",
+    "2601"
+   ],
+   "rollouts": [
+    {
+     "index": 0,
+     "timed": false,
+     "wall_s": 18.6259853070369,
+     "env_steps": 110949,
+     "env_steps_per_s": 5956.678166071754,
+     "host_steps": 459.0,
+     "trainee_decisions": 110949.0,
+     "p2_policy_decisions": 106657.0,
+     "p2_external_decisions": 0.0,
+     "games_ended": 1478.0,
+     "games_cut": 0.0,
+     "trainee_rows_per_host_step": 241.718954248366,
+     "fill_ms": 264.7020500153303,
+     "submit_ms_per_host_step": 1.603695818614661,
+     "flush_ms_per_host_step": 2.271466535056509,
+     "gpu_wait_ms_per_host_step": 25.04259250928244,
+     "opp_draw_ms_per_host_step": 0.3099084513724532,
+     "draw_ms_per_host_step": 0.13947462097970945,
+     "write_ms_per_host_step": 0.5296084664362302,
+     "core_ms_per_host_step": 9.44674365736812,
+     "post_ms_per_host_step": 0.4955203283054669,
+     "p2_policy_share": 0.9613155594011663,
+     "peak_reserved_mib": 2812.0,
+     "ep_len_mean_window": 65.19
+    },
+    {
+     "index": 1,
+     "timed": true,
+     "wall_s": 18.584756171971094,
+     "env_steps": 97701,
+     "env_steps_per_s": 5257.050407115342,
+     "host_steps": 404.0,
+     "trainee_decisions": 97701.0,
+     "p2_policy_decisions": 93780.0,
+     "p2_external_decisions": 0.0,
+     "games_ended": 1421.0,
+     "games_cut": 0.0,
+     "trainee_rows_per_host_step": 241.83415841584159,
+     "fill_ms": 239.89078297745436,
+     "submit_ms_per_host_step": 1.5689054258239206,
+     "flush_ms_per_host_step": 2.244275949070101,
+     "gpu_wait_ms_per_host_step": 25.09663565707333,
+     "opp_draw_ms_per_host_step": 0.3082491817658232,
+     "draw_ms_per_host_step": 0.1388853616115757,
+     "write_ms_per_host_step": 0.5540998080874434,
+     "core_ms_per_host_step": 9.624159987958258,
+     "post_ms_per_host_step": 0.5389405803473685,
+     "p2_policy_share": 0.9598673503853594,
+     "peak_reserved_mib": 2812.0,
+     "ep_len_mean_window": 72.75
+    },
+    {
+     "index": 2,
+     "timed": true,
+     "wall_s": 18.781240047013853,
+     "env_steps": 98112,
+     "env_steps_per_s": 5223.936212646377,
+     "host_steps": 405.0,
+     "trainee_decisions": 98112.0,
+     "p2_policy_decisions": 94231.0,
+     "p2_external_decisions": 0.0,
+     "games_ended": 1380.0,
+     "games_cut": 0.0,
+     "trainee_rows_per_host_step": 242.25185185185185,
+     "fill_ms": 239.3642229726538,
+     "submit_ms_per_host_step": 1.977834202648129,
+     "flush_ms_per_host_step": 2.2531324460021693,
+     "gpu_wait_ms_per_host_step": 24.993836694759214,
+     "opp_draw_ms_per_host_step": 0.3082900631448461,
+     "draw_ms_per_host_step": 0.13900003094157135,
+     "write_ms_per_host_step": 0.5714999948754723,
+     "core_ms_per_host_step": 9.587284183578083,
+     "post_ms_per_host_step": 0.5347836091482069,
+     "p2_policy_share": 0.9604431669928245,
+     "peak_reserved_mib": 2812.0,
+     "ep_len_mean_window": 74.46
+    },
+    {
+     "index": 3,
+     "timed": true,
+     "wall_s": 18.90648374101147,
+     "env_steps": 99253,
+     "env_steps_per_s": 5249.680551899922,
+     "host_steps": 409.0,
+     "trainee_decisions": 99253.0,
+     "p2_policy_decisions": 94068.0,
+     "p2_external_decisions": 0.0,
+     "games_ended": 1380.0,
+     "games_cut": 0.0,
+     "trainee_rows_per_host_step": 242.6723716381418,
+     "fill_ms": 240.16743199899793,
+     "submit_ms_per_host_step": 1.9776046126375024,
+     "flush_ms_per_host_step": 2.2591792378907063,
+     "gpu_wait_ms_per_host_step": 24.904291325819184,
+     "opp_draw_ms_per_host_step": 0.3086559525417724,
+     "draw_ms_per_host_step": 0.14146471345993009,
+     "write_ms_per_host_step": 0.5794335854032548,
+     "core_ms_per_host_step": 9.603600617165707,
+     "post_ms_per_host_step": 0.5272808414997765,
+     "p2_policy_share": 0.9477597654478958,
+     "peak_reserved_mib": 2812.0,
+     "ep_len_mean_window": 81.69
+    }
+   ],
+   "buffer_shape": {
+    "n_steps": 384,
+    "n_envs": 256,
+    "rows": 98304,
+    "n_envs_model": 256
+   },
+   "stubbed": [
+    "learn-loop train() -> counter only",
+    "update_fit.check_update_fits",
+    "learner compile (--no-compile-trainer)"
+   ],
+   "summary": {
+    "n_timed": 3,
+    "wall_s_median": 18.781240047013853,
+    "env_steps_per_s_median": 5249.680551899922,
+    "trainee_decisions_median": 98112.0,
+    "host_steps_median": 405.0,
+    "p2_policy_share_median": 0.9598673503853594,
+    "submit_ms_per_host_step_median": 1.9776046126375024,
+    "flush_ms_per_host_step_median": 2.2531324460021693,
+    "gpu_wait_ms_per_host_step_median": 24.993836694759214,
+    "opp_draw_ms_per_host_step_median": 0.3082900631448461,
+    "draw_ms_per_host_step_median": 0.13900003094157135,
+    "write_ms_per_host_step_median": 0.5714999948754723,
+    "core_ms_per_host_step_median": 9.603600617165707,
+    "post_ms_per_host_step_median": 0.5347836091482069,
+    "gpu_wait_s_per_rollout_median": 10.122503861377481,
+    "wall_spread_rel": 0.01713026233811064
+   },
+   "finished": "2026-10-18T18:15:23",
+   "worker_rc": 0,
+   "scratch_removed": true,
+   "nvidia_smi_before": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "driver_version": "595.71.05",
+    "memory.total": "24564",
+    "memory.used": "1",
+    "utilization.gpu": "0",
+    "power.draw": "58.29",
+    "power.limit": "500.00",
+    "clocks.sm": "2850",
+    "clocks.max.sm": "3150",
+    "clocks.mem": "10501",
+    "temperature.gpu": "42",
+    "pstate": "P0",
+    "pcie.link.gen.current": "4",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792346411.0273402
+   },
+   "gpu_sampler": {
+    "samples": 919,
+    "utilization.gpu": {
+     "mean": 15.374319912948858,
+     "max": 99.0
+    },
+    "memory.used": {
+     "mean": 2662.001088139282,
+     "max": 4002.0
+    },
+    "power.draw": {
+     "mean": 61.687584330794344,
+     "max": 222.37
+    },
+    "clocks.sm": {
+     "mean": 2051.8008705114253,
+     "max": 2850.0
+    },
+    "temperature.gpu": {
+     "mean": 38.947769314472254,
+     "max": 54.0
+    }
+   },
+   "nvidia_smi_after": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "driver_version": "595.71.05",
+    "memory.total": "24564",
+    "memory.used": "1",
+    "utilization.gpu": "0",
+    "power.draw": "45.76",
+    "power.limit": "500.00",
+    "clocks.sm": "2610",
+    "clocks.max.sm": "3150",
+    "clocks.mem": "10501",
+    "temperature.gpu": "40",
+    "pstate": "P0",
+    "pcie.link.gen.current": "4",
+    "pcie.link.width.current": "16",
+    "n_gpus": 1,
+    "compute_apps": [],
+    "t": 1792347330.255297
+   },
+   "wall_s": 919.2279567718506,
+   "rc": 0
+  }
+ },
+ "started": "2026-10-18T17:37:38+0000",
+ "updated": "2026-10-18T18:15:30+0000",
+ "validation": []
+}

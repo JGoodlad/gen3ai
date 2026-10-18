@@ -237,6 +237,7 @@ def test_amdahl_reference_is_one_and_the_arithmetic_is_shown():
     assert a["collect_s"] == pytest.approx(12.0 + 7.5)
     assert a["cycle_s"] == pytest.approx(21.0 + 19.5 + 5.0)
     assert a["speedup"] == pytest.approx(74.0 / 45.5)
+    assert a["speedup_train_only"] == pytest.approx(74.0 / (21.0 + 27.0 + 5.0))
     broken = dict(fast, update_bf16_s=None)
     assert S.amdahl(broken, ref, live) is None
 
@@ -247,3 +248,21 @@ def test_live_cycle_adds_up_to_the_live_fps():
     cycle = c["train_s"] + c["collect_s"] + c["other_s"]
     assert math.isclose(cycle, 98_304 / 1314.0, rel_tol=0.01)
     assert 0 < c["gpu_wait_s"] < c["collect_s"]
+
+
+def test_render_markdown_one_row_per_card_and_reference_reads_one():
+    ref_suite = _ok_suite(40.0, 37.0)
+    fast = _ok_suite(20.0, 18.5)
+    fast["tag"] = "fast"
+    fast["meta"] = {"dph": 0.5}
+    rows = [S.card_row(ref_suite), S.card_row(fast)]
+    md = S.render_markdown(rows, rows[0]).splitlines()
+    assert len(md) == 4 and md[1].startswith("|---|")
+    assert md[0].count("|") == md[1].count("|") == md[2].count("|") == md[3].count("|")
+    assert "| 1.00x |" in md[2] and "| 2.00x |" in md[3] and "| 0.500 |" in md[3]
+    assert md[3].rstrip().endswith("x |")
+    no_collect = S.card_row(fast)
+    no_collect.update(gpu_wait_ms_per_host_step=None, tag="nocol")
+    md2 = S.render_markdown([rows[0], no_collect], rows[0]).splitlines()
+    assert "| 2.00x |" in md2[3] and md2[3].rstrip().endswith("| — |")     # the update ratio needs no collect read
+    assert "OOM" in md[2]

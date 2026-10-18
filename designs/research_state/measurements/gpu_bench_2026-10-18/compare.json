@@ -1,0 +1,332 @@
+{
+ "rows": [
+  {
+   "tag": "RTX 3090 / HU (cu126) control",
+   "power_limit_w": 390.0,
+   "max_sm_clock_mhz": 1995.0,
+   "gpu": "NVIDIA GeForce RTX 3090",
+   "torch": "2.8.0+cu126",
+   "cpu": "AMD Ryzen 9 7900X 12-Core Processor",
+   "update_bf16_s": 40.023703752842266,
+   "update_fp32_s": 51.18602573891985,
+   "peak_bf16_mib": 6258.0,
+   "peak_fp32_mib": 6792.0,
+   "vram_mib": 24125.6875,
+   "headroom_mib": 17867.6875,
+   "headroom_points": {
+    "headroom_b4096": {
+     "update_s_est": 37.781999557628296,
+     "peak_reserved_mib": 12364.0
+    },
+    "headroom_b8192": {
+     "update_s_est": 37.10132919784519,
+     "peak_reserved_mib": 23704.0
+    }
+   },
+   "env_steps_per_s": 3455.7439744877743,
+   "collect_s": 28.39099213492591,
+   "gpu_wait_ms_per_host_step": 40.04919420335626,
+   "core_ms_per_host_step": 10.602671660812534,
+   "dph": 0.336,
+   "suite_version": 1,
+   "commit": "97616f5e7d208703df9ed9c195428d0ac7d02f18"
+  },
+  {
+   "tag": "RTX 3090 / CA (cu126)",
+   "power_limit_w": 330.0,
+   "max_sm_clock_mhz": 1950.0,
+   "gpu": "NVIDIA GeForce RTX 3090",
+   "torch": "2.8.0+cu126",
+   "cpu": "AMD Ryzen 7 5700X 8-Core Processor",
+   "update_bf16_s": 40.126445088735636,
+   "update_fp32_s": 54.387312479017055,
+   "peak_bf16_mib": 6258.0,
+   "peak_fp32_mib": 6796.0,
+   "vram_mib": 24124.1875,
+   "headroom_mib": 17866.1875,
+   "headroom_points": {
+    "headroom_b4096": {
+     "update_s_est": 39.05380665925986,
+     "peak_reserved_mib": 12366.0
+    },
+    "headroom_b8192": {
+     "update_s_est": 37.77344463476402,
+     "peak_reserved_mib": 23704.0
+    }
+   },
+   "env_steps_per_s": 3228.4809132012015,
+   "collect_s": 30.389524559002894,
+   "gpu_wait_ms_per_host_step": 41.016672459487765,
+   "core_ms_per_host_step": 15.396163921176605,
+   "dph": 0.242,
+   "suite_version": 1,
+   "commit": "97616f5e7d208703df9ed9c195428d0ac7d02f18"
+  },
+  {
+   "tag": "RTX 4090 / IL (cu126)",
+   "power_limit_w": 500.0,
+   "max_sm_clock_mhz": 2865.0,
+   "gpu": "NVIDIA GeForce RTX 4090",
+   "torch": "2.8.0+cu126",
+   "cpu": "AMD Ryzen 9 7950X 16-Core Processor",
+   "update_bf16_s": 27.23917491962493,
+   "update_fp32_s": 33.209462519705994,
+   "peak_bf16_mib": 6320.0,
+   "peak_fp32_mib": 6774.0,
+   "vram_mib": 24082.875,
+   "headroom_mib": 17762.875,
+   "headroom_points": {
+    "headroom_b4096": {
+     "update_s_est": 26.767383731435984,
+     "peak_reserved_mib": 12358.0
+    },
+    "headroom_b8192": {
+     "update_s_est": 26.80888826592127,
+     "peak_reserved_mib": 23462.0
+    }
+   },
+   "env_steps_per_s": 5249.680551899922,
+   "collect_s": 18.781240047013853,
+   "gpu_wait_ms_per_host_step": 24.993836694759214,
+   "core_ms_per_host_step": 9.603600617165707,
+   "dph": 0.656,
+   "suite_version": 1,
+   "commit": "97616f5e7d208703df9ed9c195428d0ac7d02f18"
+  },
+  {
+   "tag": "RTX 5090 / MX (cu128) replicate",
+   "power_limit_w": 600.0,
+   "max_sm_clock_mhz": 2947.0,
+   "gpu": "NVIDIA GeForce RTX 5090",
+   "torch": "2.8.0+cu128",
+   "cpu": "AMD Ryzen 9 9900X 12-Core Processor",
+   "update_bf16_s": 18.63530913478462,
+   "update_fp32_s": 25.037234489951516,
+   "peak_bf16_mib": 6330.0,
+   "peak_fp32_mib": 6718.0,
+   "vram_mib": 32149.8125,
+   "headroom_mib": 25819.8125,
+   "headroom_points": {
+    "headroom_b4096": {
+     "update_s_est": 19.29077241770574,
+     "peak_reserved_mib": 12300.0
+    },
+    "headroom_b8192": {
+     "update_s_est": 20.21860722670681,
+     "peak_reserved_mib": 24300.0
+    }
+   },
+   "env_steps_per_s": 5763.564824639469,
+   "collect_s": 17.061035425052978,
+   "gpu_wait_ms_per_host_step": 18.809684482690546,
+   "core_ms_per_host_step": 10.626429456780539,
+   "dph": 0.736,
+   "suite_version": 1,
+   "commit": "97616f5e7d208703df9ed9c195428d0ac7d02f18"
+  },
+  {
+   "tag": "RTX 5090 / NL (cu128)",
+   "power_limit_w": 420.0,
+   "max_sm_clock_mhz": 2977.0,
+   "gpu": "NVIDIA GeForce RTX 5090",
+   "torch": "2.8.0+cu128",
+   "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+   "update_bf16_s": 20.442330303525523,
+   "update_fp32_s": 25.20935346128681,
+   "peak_bf16_mib": 6290.0,
+   "peak_fp32_mib": 6760.0,
+   "vram_mib": 32110.9375,
+   "headroom_mib": 25820.9375,
+   "headroom_points": {
+    "headroom_b4096": {
+     "update_s_est": 19.74812182099413,
+     "peak_reserved_mib": 12324.0
+    },
+    "headroom_b8192": {
+     "update_s_est": 20.128098426757788,
+     "peak_reserved_mib": 24106.0
+    }
+   },
+   "env_steps_per_s": 5837.720462936667,
+   "collect_s": 16.8385145200009,
+   "gpu_wait_ms_per_host_step": 18.6725193280353,
+   "core_ms_per_host_step": 10.91704628884156,
+   "dph": 0.944,
+   "suite_version": 1,
+   "commit": "97616f5e7d208703df9ed9c195428d0ac7d02f18"
+  },
+  {
+   "tag": "RTX 5080 / US (cu128)",
+   "power_limit_w": 300.0,
+   "max_sm_clock_mhz": 2910.0,
+   "gpu": "NVIDIA GeForce RTX 5080",
+   "torch": "2.8.0+cu128",
+   "cpu": "AMD Ryzen 9 9950X 16-Core Processor",
+   "update_bf16_s": 31.48501165804919,
+   "update_fp32_s": 38.01828787650447,
+   "peak_bf16_mib": 6284.0,
+   "peak_fp32_mib": 7060.0,
+   "vram_mib": 15880.625,
+   "headroom_mib": 9596.625,
+   "headroom_points": {
+    "headroom_b4096": {
+     "update_s_est": 31.64574844611343,
+     "peak_reserved_mib": 12292.0
+    },
+    "headroom_b8192": "OOM"
+   },
+   "env_steps_per_s": 5510.397431199269,
+   "collect_s": 17.839137099217623,
+   "gpu_wait_ms_per_host_step": 25.47217991065096,
+   "core_ms_per_host_step": 8.841378580150366,
+   "dph": 0.344,
+   "suite_version": 1,
+   "commit": "97616f5e7d208703df9ed9c195428d0ac7d02f18"
+  },
+  {
+   "tag": "RTX 5070 Ti / FR (cu128)",
+   "power_limit_w": 250.0,
+   "max_sm_clock_mhz": 2857.0,
+   "gpu": "NVIDIA GeForce RTX 5070 Ti",
+   "torch": "2.8.0+cu128",
+   "cpu": "AMD Ryzen Threadripper 9970X 32-Cores",
+   "update_bf16_s": 35.40346876071999,
+   "update_fp32_s": 42.83281633906881,
+   "peak_bf16_mib": 6282.0,
+   "peak_fp32_mib": 7000.0,
+   "vram_mib": 15841.75,
+   "headroom_mib": 9559.75,
+   "headroom_points": {
+    "headroom_b4096": {
+     "update_s_est": 35.104145034289104,
+     "peak_reserved_mib": 12358.0
+    },
+    "headroom_b8192": "OOM"
+   },
+   "env_steps_per_s": 4599.419346379604,
+   "collect_s": 21.331388293008786,
+   "gpu_wait_ms_per_host_step": 28.869020109018887,
+   "core_ms_per_host_step": 10.304001371617115,
+   "dph": 0.407,
+   "suite_version": 1,
+   "commit": "97616f5e7d208703df9ed9c195428d0ac7d02f18"
+  },
+  {
+   "tag": "A100 SXM4 / US (cu126)",
+   "power_limit_w": 380.0,
+   "max_sm_clock_mhz": 1410.0,
+   "gpu": "NVIDIA A100-SXM4-40GB",
+   "torch": "2.8.0+cu126",
+   "cpu": "AMD EPYC 7532 32-Core Processor",
+   "update_bf16_s": 47.81031143479049,
+   "update_fp32_s": 47.91372811491601,
+   "peak_bf16_mib": 6398.0,
+   "peak_fp32_mib": 6804.0,
+   "vram_mib": 40440.375,
+   "headroom_mib": 34042.375,
+   "headroom_points": {},
+   "env_steps_per_s": null,
+   "collect_s": null,
+   "gpu_wait_ms_per_host_step": null,
+   "core_ms_per_host_step": null,
+   "dph": 0.656,
+   "suite_version": 1,
+   "commit": "97616f5e7d208703df9ed9c195428d0ac7d02f18"
+  }
+ ],
+ "reference": "RTX 3090 / HU (cu126) control",
+ "live_cycle": {
+  "train_s": 42.24,
+  "collect_s": 26.97,
+  "other_s": 5.6,
+  "gpu_wait_s": 15.572935,
+  "source": "rb_x26_s2601 tb_read last 20 rollouts @258.6M, 2026-10-18 (RTX 3080 Ti, torch 2.8.0+cu126)"
+ },
+ "amdahl": {
+  "RTX 3090 / HU (cu126) control": {
+   "train_s": 42.24,
+   "collect_s": 26.97,
+   "other_s": 5.6,
+   "cycle_s": 74.81,
+   "cycle_ref_s": 74.81,
+   "speedup": 1.0,
+   "update_ratio": 1.0,
+   "gpu_wait_ratio": 1.0,
+   "speedup_train_only": 1.0,
+   "steps_per_s": 1314.0489239406495
+  },
+  "RTX 3090 / CA (cu126)": {
+   "train_s": 42.34843059540255,
+   "collect_s": 27.346199229381416,
+   "other_s": 5.6,
+   "cycle_s": 75.29462982478395,
+   "cycle_ref_s": 74.81,
+   "speedup": 0.9935635539226141,
+   "update_ratio": 0.9974395604777306,
+   "gpu_wait_ratio": 0.9764125610850786,
+   "speedup_train_only": 0.9985526846392696,
+   "steps_per_s": 1305.5911188986588
+  },
+  "RTX 4090 / IL (cu126)": {
+   "train_s": 28.747533104635497,
+   "collect_s": 21.11579722396773,
+   "other_s": 5.6,
+   "cycle_s": 55.46333032860323,
+   "cycle_ref_s": 74.81,
+   "speedup": 1.3488191126781188,
+   "update_ratio": 1.4693434684031677,
+   "gpu_wait_ratio": 1.6023628021765022,
+   "speedup_train_only": 1.2200425589910842,
+   "steps_per_s": 1772.414303605264
+  },
+  "RTX 5090 / MX (cu128) replicate": {
+   "train_s": 19.667231766310557,
+   "collect_s": 18.71111961823001,
+   "other_s": 5.6,
+   "cycle_s": 43.97835138454057,
+   "cycle_ref_s": 74.81,
+   "speedup": 1.7010642201175712,
+   "update_ratio": 2.1477348974122528,
+   "gpu_wait_ratio": 2.129179478805782,
+   "speedup_train_only": 1.4321202994575095,
+   "steps_per_s": 2235.2816079994345
+  },
+  "RTX 5090 / NL (cu128)": {
+   "train_s": 21.574315994171283,
+   "collect_s": 18.65778361284461,
+   "other_s": 5.6,
+   "cycle_s": 45.8320996070159,
+   "cycle_ref_s": 74.81,
+   "speedup": 1.6322621185032558,
+   "update_ratio": 1.9578836247421216,
+   "gpu_wait_ratio": 2.144820069524608,
+   "speedup_train_only": 1.3816778109830292,
+   "steps_per_s": 2144.872280408288
+  },
+  "RTX 5080 / US (cu128)": {
+   "train_s": 33.22848131818769,
+   "collect_s": 21.301798664369965,
+   "other_s": 5.6,
+   "cycle_s": 60.13027998255766,
+   "cycle_ref_s": 74.81,
+   "speedup": 1.2441319086107794,
+   "update_ratio": 1.2711986321469297,
+   "gpu_wait_ratio": 1.572271958812997,
+   "speedup_train_only": 1.1369563324453418,
+   "steps_per_s": 1634.8501957502212
+  },
+  "RTX 5070 Ti / FR (cu128)": {
+   "train_s": 37.36392138237867,
+   "collect_s": 22.62264350698949,
+   "other_s": 5.6,
+   "cycle_s": 65.58656488936816,
+   "cycle_ref_s": 74.81,
+   "speedup": 1.1406299464866012,
+   "update_ratio": 1.1305023251633584,
+   "gpu_wait_ratio": 1.3872723789071248,
+   "speedup_train_only": 1.069724084124503,
+   "steps_per_s": 1498.843553795199
+  },
+  "A100 SXM4 / US (cu126)": null
+ }
+}

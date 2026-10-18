@@ -1,0 +1,42 @@
+{
+ "torch": "2.8.0+cu128",
+ "cuda_build": "12.8",
+ "cuda_available": true,
+ "checks": {
+  "build_arch": {
+   "device": "NVIDIA GeForce RTX 5080",
+   "capability": "sm_120",
+   "arch_list": [
+    "sm_70",
+    "sm_75",
+    "sm_80",
+    "sm_86",
+    "sm_90",
+    "sm_100",
+    "sm_120"
+   ],
+   "cudnn": 91002,
+   "compiled_cuda": 12080,
+   "vram_gib": 15.5,
+   "pass": true,
+   "seconds": 0.018
+  },
+  "matmul_fp32": {
+   "max_rel_diff": 1.2354709042483591e-06,
+   "pass": true,
+   "seconds": 0.337
+  },
+  "compile_inductor": {
+   "first_call_s": 0.72,
+   "max_abs_diff_vs_eager": 8.940696716308594e-08,
+   "pass": true,
+   "seconds": 3.354
+  },
+  "matmul_bf16": {
+   "finite": true,
+   "pass": true,
+   "seconds": 0.07
+  }
+ },
+ "pass": true
+}
