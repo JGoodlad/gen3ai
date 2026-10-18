@@ -714,3 +714,25 @@ ceilings are UNCHANGED: a stop still needs judged max ≥ 1e-3, p99 ≥ 1e-4 or 
 - **A4-F2 (correction to §A3.3):** the live child resumed from `checkpoint_136000153`, not `final_model_exception.zip`.
   That is the startup-gate refusal recorded in readiness §4.2. TensorBoard therefore holds two lineages over
   136.2–137.0M, and u13900 is on the abandoned one.
+
+## Amendment 5 (2026-10-18, X26 at ≈ 272M) — the OWNER's stop rule replaces §A2.6's interim rule
+
+**Owner, 2026-10-18 ≈ 12:05 PDT:** "I would like 100M extra steps after a plateau or 500M, whichever occurs first."
+**Disclosed timing:** this was decided AFTER the 270M tick read FLAT_ONCE (49.4 %, 720 pairs), and after the orchestrator
+reported that §A2.6's Hodge clause (b) had read CONTINUE at every tick (p 0.005), so the interim rule would run to the
+cap. It is the owner's decision, recorded as made with that data in view, not a pre-registered rule.
+
+### A5.1 The rule
+
+- **The plateau** = the FIRST Tier-1 `TIER1_PLATEAU` call, i.e. two consecutive FLATs under the registered Δ 10M / W 50M
+  GSPRT. Its step P is the tick's node step, e.g. 280,000,000 if the 280M tick is the second FLAT.
+- **X26 stops at the first periodic checkpoint at or after P + 100,000,000 steps, or at 500M, whichever comes first.**
+  The run is stopped by PID at that checkpoint; the launcher's `--steps` cap is unchanged.
+- **The clock is not reset.** A later GAIN at a Tier-1 tick neither moves P nor the stop.
+- **Superseded:** §A2.6's clauses (b) Hodge and (c) bots + SmallRL no longer gate the stop. They are still read at every
+  tick and reported, descriptive only.
+- **Unchanged:** the Amendment-3 GIGO ceilings, the Amendment-4 watch, and every registered read.
+- **The stop checkpoint is FINAL; the read at it is the verdict.** The checkpoint at P is also retained and named
+  `x26_plateau` for the plateau-drawn bank and the X35 forks (P* = P, unless the orchestrator records otherwise before
+  any fork).
+- Tier-1 ticks continue after P, under the 6,000-pair ops cap, as a trajectory.
