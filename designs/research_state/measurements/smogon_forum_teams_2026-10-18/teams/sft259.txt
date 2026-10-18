@@ -1,0 +1,56 @@
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Focus Punch
+- Hidden Power [Bug]
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD
+- Hidden Power [Ground]
+- Drill Peck
+- Spikes
+- Taunt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 124 Def / 40 SpA / 96 Spe
+Relaxed Nature
+- Earthquake
+- Ice Beam
+- Hydro Pump
+- Protect
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 120 HP / 252 Atk / 136 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Hypnosis
+- Ice Punch
+- Fire Punch
+- Hidden Power [Grass]
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 20 HP / 252 Def / 216 SpA / 20 Spe
+Modest Nature
+- Thunder Wave
+- Seismic Toss
+- Ice Beam
+- Soft-Boiled

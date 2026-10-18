@@ -1,0 +1,57 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 200 HP / 252 SpA / 56 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Crunch
+- Pursuit
+- Roar
+- Hidden Power [Grass]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 112 HP / 244 Atk / 152 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 240 HP / 212 SpA / 56 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Thunder Wave
+
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Gust
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 212 Def / 48 Spe
+Bold Nature
+- Surf
+- Toxic
+- Refresh
+- Recover
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 36 Def / 92 SpA / 100 SpD / 32 Spe
+Calm Nature
+IVs: 2 Atk / 30 SpA
+- Hidden Power [Grass]
+- Baton Pass
+- Leech Seed
+- Recover

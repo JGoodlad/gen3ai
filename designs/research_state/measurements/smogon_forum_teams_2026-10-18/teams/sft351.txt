@@ -1,0 +1,58 @@
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 104 HP / 152 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+- Baton Pass
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Calm Nature
+IVs: 0 Atk
+- Toxic
+- Spikes
+- Whirlwind
+- Protect
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 176 Def / 40 SpA / 44 Spe
+Relaxed Nature
+- Earthquake
+- Toxic
+- Ice Beam
+- Protect
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 56 HP / 252 SpA / 200 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Double-Edge
+- Rock Slide
+- Earthquake
+- Hidden Power [Flying]
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 84 Atk / 176 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Dragon Dance

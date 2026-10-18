@@ -1,0 +1,58 @@
+Heracross (F) @ Chesto Berry
+Ability: Guts
+EVs: 180 HP / 252 Atk / 76 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Megahorn
+- Focus Punch
+- Rock Slide
+- Hidden Power [Ghost]
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Flygon @ Choice Band
+Ability: Levitate
+EVs: 92 HP / 252 Atk / 164 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Ghost]
+- Toxic
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 72 Atk / 184 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 244 Def / 12 Spe
+Bold Nature
+- Recover
+- Toxic
+- Thunder Wave
+- Ice Beam
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 184 Def / 72 Spe
+Bold Nature
+IVs: 30 Atk / 30 SpA
+- Leech Seed
+- Hidden Power [Grass]
+- Recover
+- Baton Pass

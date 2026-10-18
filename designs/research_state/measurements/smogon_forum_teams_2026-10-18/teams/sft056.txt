@@ -1,0 +1,55 @@
+Cloyster (M) @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 16 Def / 240 SpD
+Relaxed Nature
+- Explosion
+- Ice Beam
+- Spikes
+- Surf
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 236 HP / 176 Atk / 96 SpA
+Relaxed Nature
+- Earthquake
+- Explosion
+- Psychic
+- Rapid Spin
+
+Weezing (M) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 176 Def / 80 SpA
+Relaxed Nature
+- Explosion
+- Flamethrower
+- Thunderbolt
+- Will-O-Wisp
+
+Camerupt (M) @ Leftovers
+Ability: Magma Armor
+EVs: 4 HP / 148 Atk / 216 SpA / 140 Spe
+Lonely Nature
+IVs: 30 Atk / 30 Def
+- Earthquake
+- Explosion
+- Hidden Power [Ice]
+- Overheat
+
+Exeggutor (M) @ Leftovers
+Ability: Chlorophyll
+EVs: 216 HP / 16 Atk / 68 SpA / 136 SpD / 72 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA
+- Explosion
+- Hidden Power [Grass]
+- Psychic
+- Sleep Powder
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 28 Def / 80 SpA / 148 Spe
+Bold Nature
+- Calm Mind
+- Ice Beam
+- Substitute
+- Surf

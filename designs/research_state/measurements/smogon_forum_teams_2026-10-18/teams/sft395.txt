@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 240 SpD / 20 Spe
+Calm Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Toxic
+- Rest
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 208 Atk / 40 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power [Bug]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 192 Def / 68 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Roar
+- Calm Mind
+- Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 56 Atk / 108 Def / 96 SpD
+Relaxed Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 172 Def / 64 SpD / 24 Spe
+Impish Nature
+- Sludge Bomb
+- Haze
+- Will-O-Wisp
+- Pain Split
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 148 Def / 92 SpA / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Psychic
+- Fire Punch
+- Calm Mind
+- Wish

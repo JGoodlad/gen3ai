@@ -1,0 +1,58 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 92 Def / 156 SpD / 8 Spe
+Impish Nature
+IVs: 30 SpD
+- Toxic
+- Spikes
+- Hidden Power [Steel]
+- Protect
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 188 Atk / 48 Def / 24 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Roar
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 244 Atk / 156 SpD / 108 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Beat Up
+- Hidden Power [Bug]
+- Aerial Ace
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 168 Def / 40 SpA / 32 SpD / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 4 Atk / 52 Def / 204 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Will-O-Wisp
+- Explosion
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Ice Beam
+- Thunderbolt
+- Soft-Boiled

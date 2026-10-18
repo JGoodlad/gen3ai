@@ -1,0 +1,56 @@
+Swampert (M) @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 136 Def / 120 SpA
+Relaxed Nature
+IVs: 30 SpA
+- Earthquake
+- Hidden Power [Electric]
+- Ice Beam
+- Surf
+
+Gengar (F) @ Leftovers
+Ability: Levitate
+EVs: 20 HP / 252 Atk / 40 SpA / 196 Spe
+Naive Nature
+- Explosion
+- Giga Drain
+- Sludge Bomb
+- Thunder
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 60 Def / 196 SpA
+Bold Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Rapid Spin
+- Spikes
+- Toxic
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 144 Atk / 124 SpD
+Adamant Nature
+- Counter
+- Curse
+- Earthquake
+- Rock Slide
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 76 HP / 216 SpA / 216 Spe
+Modest Nature
+- Flamethrower
+- Rest
+- Sleep Talk
+- Toxic
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 116 Def / 84 SpA / 56 SpD
+Calm Nature
+IVs: 30 Atk / 30 SpA
+- Heal Bell
+- Hidden Power [Grass]
+- Leech Seed
+- Recover

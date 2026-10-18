@@ -1,0 +1,57 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Drill Peck
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 228 Def / 28 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 240 Atk / 16 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Shadow Ball
+- Rest
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Fire Punch
+- Toxic
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 180 HP / 252 Def / 76 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Aromatherapy
+- Thunder Wave
+- Soft-Boiled
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 Def / 248 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Crunch
+- Roar
+- Psych Up

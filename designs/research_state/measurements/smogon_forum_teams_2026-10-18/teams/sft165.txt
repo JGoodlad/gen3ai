@@ -1,0 +1,56 @@
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 224 Atk / 252 Def / 32 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Cross Chop
+- Knock Off
+- Hidden Power [Bug]
+- Focus Punch
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Drill Peck
+- Spikes
+- Protect
+- Toxic
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 200 Atk / 48 Def / 12 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Roar
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 204 Def / 40 SpD / 16 Spe
+Relaxed Nature
+- Refresh
+- Rapid Spin
+- Earthquake
+- Psychic
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 152 SpD / 108 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Roar
+- Toxic
+- Rest
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 40 HP / 252 Def / 216 SpA
+Bold Nature
+- Wish
+- Seismic Toss
+- Ice Beam
+- Soft-Boiled

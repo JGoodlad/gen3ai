@@ -1,0 +1,55 @@
+Heracross
+Ability: Guts
+EVs: 252 Atk / 92 SpD / 164 Spe
+Adamant Nature
+- Thief
+- Brick Break
+- Megahorn
+- Rock Slide
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 188 SpD / 68 Spe
+Careful Nature
+- Seismic Toss
+- Superpower
+- Thunder Wave
+- Explosion
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 80 HP / 252 Atk / 176 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Double-Edge
+- Hidden Power [Rock]
+- Dragon Dance
+- Earthquake
+
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 132 HP / 124 Atk / 252 Spe
+Jolly Nature
+- Substitute
+- Bulk Up
+- Brick Break
+- Shadow Ball
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 124 Def / 40 SpA / 60 SpD / 32 Spe
+Bold Nature
+IVs: 30 Atk / 30 SpA
+- Leech Seed
+- Recover
+- Psychic
+- Hidden Power [Grass]
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 216 Atk / 32 SpA / 8 Spe
+Adamant Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion

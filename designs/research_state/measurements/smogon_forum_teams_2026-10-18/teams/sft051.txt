@@ -1,0 +1,55 @@
+Jolteon (M) @ Leftovers
+Ability: Volt Absorb
+EVs: 252 HP / 80 SpD / 176 Spe
+Timid Nature
+- Baton Pass
+- Substitute
+- Thunderbolt
+- Wish
+
+Cloyster (M) @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 16 Def / 80 SpA / 156 SpD / 4 Spe
+Bold Nature
+- Ice Beam
+- Rapid Spin
+- Spikes
+- Surf
+
+Gyarados (M) @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 240 Atk / 16 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Earthquake
+- Hidden Power [Flying]
+- Taunt
+
+Flygon (M) @ Choice Band
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Fire Blast
+- Hidden Power [Bug]
+- Rock Slide
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+- Earthquake
+- Meteor Mash
+- Rest
+- Sleep Talk
+
+Snorlax (M) @ Leftovers
+Ability: Immunity
+EVs: 160 HP / 116 Atk / 56 Def / 176 SpD
+Careful Nature
+- Counter
+- Return
+- Self-Destruct
+- Shadow Ball

@@ -1,0 +1,57 @@
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 128 HP / 148 Atk / 140 Def / 72 SpD / 20 Spe
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Body Slam
+- Hidden Power [Bug]
+- Curse
+- Rest
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 172 Def / 64 SpD / 24 Spe
+Impish Nature
+- Sludge Bomb
+- Haze
+- Will-O-Wisp
+- Pain Split
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 192 Def / 68 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Roar
+- Calm Mind
+- Rest
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 56 Atk / 108 Def / 96 SpD
+Relaxed Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 56 HP / 252 SpA / 200 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 224 SpA / 32 Spe
+Modest Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Beam
+- Calm Mind
+- Soft-Boiled

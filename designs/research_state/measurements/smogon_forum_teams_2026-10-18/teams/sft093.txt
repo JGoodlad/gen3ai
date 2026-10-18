@@ -1,0 +1,55 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 64 HP / 252 Atk / 192 Spe
+Adamant Nature
+- Earthquake
+- Meteor Mash
+- Explosion
+- Rock Slide
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 76 Atk / 180 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
+- Dragon Dance
+- Earthquake
+- Rock Slide
+
+Snorlax @ Lum Berry
+Ability: Thick Fat
+EVs: 160 HP / 188 Atk / 120 Def / 40 SpD
+Adamant Nature
+- Counter
+- Shadow Ball
+- Curse
+- Self-Destruct
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 124 Atk / 200 SpA / 184 Spe
+Hasty Nature
+- Thunderbolt
+- Explosion
+- Ice Punch
+- Will-O-Wisp
+
+Kingdra @ Leftovers
+Ability: Swift Swim
+EVs: 160 HP / 252 SpA / 96 Spe
+Modest Nature
+IVs: 30 SpA
+- Rain Dance
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Electric]
+
+Swampert @ Salac Berry
+Ability: Torrent
+EVs: 4 Def / 252 SpA / 252 Spe
+Timid Nature
+- Substitute
+- Hydro Pump
+- Ice Beam
+- Endeavor

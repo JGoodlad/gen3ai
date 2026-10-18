@@ -295,8 +295,17 @@ the alternatives. **What decides between the two families is the 2 × 2 below, w
    - its sets ARE the Smogon usage our belief priors encode;
    - Metamon's `paper_variety` set is also usage-generated, and whether Kakuna trained on it is UNVERIFIED.
 2. **smogon_forum**, a Smogon-forum ADV OU team collection, built by another agent into
-   `designs/research_state/measurements/smogon_forum_teams_2026-10-18/` (**PENDING**). It is human-built and unseen
-   by us. **The condition for using it:** its exact copies and near neighbours of `competitive` (the forum is
+   [`designs/research_state/measurements/smogon_forum_teams_2026-10-18/`](../research_state/measurements/smogon_forum_teams_2026-10-18/README.md)
+   (**COLLECTED 2026-10-18**). It is human-built and unseen by us.
+   - It holds 437 validator-legal teams: sample teams, curated dumps, the Teams-Through-the-Ages archive,
+     team analyses and competition winners, each with its provenance and a tier.
+   - 219 tier-A/B teams are clean against the pool.
+   - A 166-team INDEPENDENT CORE is clean (no exact copy, no ≥ 4-shared neighbour) against the pool,
+     `competitive`, `hl_05_26` and heldout72, and shares ≤ 3 mon sets with every other team in the core.
+   - Caveats (that README's F4 / F5):
+     - 116 of the 166 come from two curators;
+     - 77 % of the core's mon sets appear on some pool team, so its novelty is in COMBINATIONS, not sets.
+   - Nothing is frozen yet. **The condition for using it:** its exact copies and near neighbours of `competitive` (the forum is
    `competitive`'s own source) and of the pool must be excluded, or it reads `away` again. It is never used for
    training (§5.6).
 
@@ -705,7 +714,7 @@ row**, because Metamon's README names no training team set for Kakuna.
 | **home72** (our `data/teams/sample`) | exact teams, ≈ 2.1× a pool team (the 10 % sample bias) | exact teams, 1× | 432 / 432 | 72 / 0 / 0 (it IS the reference) | the cores are common on the ladder (85 % of ladder teams share ≥ 4 species with a sample team); 8 / 72 are exact `competitive` copies | **toward US**: we trained on the exact sets |
 | **away** (Metamon `competitive`) | 19 / 20 exact, ≈ 1.2× | ≈ 1.2× | 119 / 120 | 20 / 0 / 0 | its evaluation set; "Metamon has overfit to them" (`metamon/README.md:865`) | **both familiar**; the most balanced cell we have, leaning to Kakuna by its own README |
 | **heldout72_hpfix** (`hl_05_26`, HP repaired; PENDING, the parallel agent) | 0 (0 exact, 0 near neighbours) | 0 | 104 / 432 | 16 / 44 / 12 (ladder-like) | the SET postdates Kakuna (dates); its POPULATION is the kind its replay data is built from | **toward KAKUNA** (population), reduced by the repair (Kakuna's data may share the HP-Dark fill) |
-| **smogon_forum** (`measurements/smogon_forum_teams_2026-10-18/`, PENDING, another agent) | 0 by construction (overlap-checked) | 0 | measured at build | measured at build | forum teams are `competitive`'s own source ("human-made sample teams, usually from the Smogon forums", `metamon/env/wrappers.py:40`); popular ones get laddered | **near-neutral**: human-built and unseen by us. Its near neighbours of `competitive` must be excluded, or it is `away` again |
+| **smogon_forum** (`measurements/smogon_forum_teams_2026-10-18/`, COLLECTED; the 166-team independent core) | 0 by construction (overlap-checked) | 0 | 764 / 996 (77 %) species+moves; 289 / 996 strict | not yet run (the `ladder_weights` stratifier) | forum teams are `competitive`'s own source ("human-made sample teams, usually from the Smogon forums", `metamon/env/wrappers.py:40`); popular ones get laddered | **near-neutral**: human-built and unseen by us. Its near neighbours of `competitive` must be excluded, or it is `away` again |
 | **P72** (procedural, Smogon-only; X37a's build) | 0 as teams | 0 | measured at build | measured at build | Metamon's `paper_variety` is also usage-generated; whether Kakuna trained on it is UNVERIFIED | **unclear, leaning to US**: its sets ARE the Smogon usage our belief PRIORS encode. Low team quality compresses toward 0.50 |
 
 **How to read it.** No row is neutral. Each number is quoted WITH its row's bias, the way RULE 1 makes a number
@@ -954,7 +963,7 @@ The first D1 read lands ≈ 13 GPU-h after A1's (≈ 39 GPU-h into batch 1).
 | rank | id | what | GPU-h | CPU | when |
 |---|---|---|---|---|---|
 | **1** | **X37a stage 1** | **the matrix's core** (§5.2, §5.3): the DEPLOYMENT cell by stratum (we pilot home72; Kakuna pilots heldout72_hpfix's CORE 100 / NEAR 400 / FAR 100 games); the REVERSE cell (we pilot heldout72_hpfix, Kakuna pilots home72, 400); the strength calibration K(P, H) (Kakuna vs Kakuna, 400). It yields **L**, **L_c1** and **H-PILOT** / **H-PILOT-OFFMETA** | **0** | **≈ 3.5 lane-h** (1,400 games); configs ≈ 0.1 agent-day; K(P, H) needs B-D9 | **NOW**, once `heldout72_hpfix` is frozen (the parallel read) |
-| 2 | **X37a stage 2** | the third-source rows: P72 symmetric (400) and smogon_forum symmetric (400); the §3.1 rule | 0 | ≈ 2 lane-h + B-D4 ≈ 0.25 agent-day | when smogon_forum lands (PENDING) |
+| 2 | **X37a stage 2** | the third-source rows: P72 symmetric (400) and smogon_forum symmetric (400); the §3.1 rule | 0 | ≈ 2 lane-h + B-D4 ≈ 0.25 agent-day | smogon_forum COLLECTED 2026-10-18; a panel must be frozen from it first |
 | 3 | X37b | GEN-M (§5.4) on X26's nodes every 50M (home72, heldout72_hpfix, smogon_forum, P72) + D0e's piloting / facing split (§3.2) | 0 | ≈ 5 lane-h + D0e ≈ 4–6 lane-h; B-D7 ≈ 0.5 agent-day | after B-D7 |
 | 4 | X37c | D0g toy + D0d Kakuna trajectory | 0 | ≈ 4 lane-h | now |
 | 5 | X37d | D0f prior-only DiD (with its surgery build) | 0 | ≈ 2 lane-h + 0.5 agent-day | now |
@@ -1102,7 +1111,7 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 | Q1 | The external HEADLINE | **DECIDED (orchestrator, 2026-10-18)** as "the held-out panel, with the sample-team ground beside it"; **REVISED the same day at the orchestrator's request, in light of the matrix (§5):** THE headline is **L**, the ladder-weighted deployment estimate vs Kakuna (`ladder_weights_vN`). Beside it, always: the sample ground (home72, `away`), the unfamiliar panel (heldout72_hpfix, smogon_forum, P72), GEN-M's class and L_c1 (§5.5) |
 | Q2 | Where the widening corpus lives | **DECIDED (orchestrator):** a pin-safe `src/` corpus now; `data/` once TECH_DEBT (f) P1's fix (pinned children resolve `data/` through the pin tree) lands |
 | Q3 | A held-out near-term goal | **DECIDED (orchestrator):** added; the Wilson lower bound > 0.50 on the held-out panel, at the plateau. **Proposed consequence of the Q1 revision (not decided here):** the goal reads on L's 95 % lower bound > 0.50, so the goal and the headline are the same number |
-| Q4 | The third source | **DECIDED (owner):** NO owner or friends' teams (quality too low). The third sources are P72 (X37a stage 2) and smogon_forum (another agent; PENDING) |
+| Q4 | The third source | **DECIDED (owner):** NO owner or friends' teams (quality too low). The third sources are P72 (X37a stage 2) and smogon_forum (COLLECTED 2026-10-18: `measurements/smogon_forum_teams_2026-10-18/`) |
 | Q5 | D1 at rank 2 in X35 batch 1 | **DECIDED (orchestrator):** yes, conditional on X37 (§6.1) |
 
 ---
@@ -1178,3 +1187,4 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 | 2026-10-18 | X37a REVISED into two CPU stages | stage 1, the matrix's core: the deployment cell by stratum (600), the reverse cell (400), K(P, H) (400), ≈ 3.5 lane-h, 0 GPU; stage 2, the third-source rows (P72, smogon_forum; 800) | the first X37a (P72 + the unstratified deployment and reverse cells: it gave neither L nor the strength calibration) | §6.3 |
 | 2026-10-18 | Widening arms' readout (amends §4.2) | PRIMARY = the pooled UNFAMILIAR cells (heldout72_hpfix, smogon_forum, P72); CO-PRIMARY = no loss worse than −2.0 pp on SAMPLE-TEAM ground, measured in-house (home72 panel); L, L_c1 and GEN-M reported | X35's R1 on the full pool as the co-primary (it is not the sample ground); the Kakuna sample ground as the co-primary (it cannot resolve −2.0 pp, F-DV-12) | §4.2, §5.6 |
 | 2026-10-18 | Q2, Q3 and Q5 DECIDED (orchestrator) as this doc recommended | Q2: a pin-safe `src/` corpus now, `data/` after TECH_DEBT (f) P1; Q3: a held-out near-term goal (with the Q1 revision, the proposal that it reads on L); Q5: D1 at X35 rank 2, conditional on X37 | — | §9 |
+| 2026-10-18 | smogon_forum COLLECTED (data worker, owner request: quality bar = sample / tournament / archive level) | `smogon_forum_teams_2026-10-18/`: 437 legal teams, a 166-team independent core clean against pool, `competitive`, `hl_05_26` and heldout72; tiers A/B only, provenance per team; outside `data/`. The Q4 row's PENDING is resolved | home-made or ladder-reconstructed teams (owner: quality bar); a `tools/` downloader before the set proves useful; freezing the panel in the collection unit (the freeze rule decides) | that README |

@@ -1,0 +1,55 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 240 HP / 252 Atk / 16 Def
+Adamant Nature
+- Earthquake
+- Toxic
+- Meteor Mash
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 52 HP / 252 Def / 204 SpA
+Modest Nature
+- Seismic Toss
+- Flamethrower
+- Ice Beam
+- Soft-Boiled
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 56 HP / 228 Atk / 48 Def / 176 Spe
+IVs: 30 SpD / 30 Spe
+Adamant Nature
+- Dragon Dance
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 156 HP / 136 SpA / 216 Spe
+Timid Nature
+- Surf
+- Psychic
+- Recover
+- Rapid Spin
+
+Milotic (M) @ Leftovers
+Ability: Marvel Scale
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+- Hypnosis
+- Recover
+- Surf
+- Toxic
+
+Salamence (M) @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+Adamant Nature
+- Brick Break
+- Earthquake
+- Hidden Power [Flying]
+- Rock Slide

@@ -1,0 +1,58 @@
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 80 SpD / 176 Spe
+Timid Nature
+IVs: 0 Atk
+- Baton Pass
+- Substitute
+- Leech Seed
+- Recover
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Toxic
+- Spikes
+- Whirlwind
+- Protect
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 192 Def / 44 SpA / 24 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Roar
+- Toxic
+- Protect
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 56 HP / 252 SpA / 200 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Double-Edge
+- Rock Slide
+- Earthquake
+- Hidden Power [Flying]
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 200 HP / 12 Atk / 252 SpA / 44 Spe
+Quiet Nature
+- Rock Slide
+- Earthquake
+- Crunch
+- Pursuit

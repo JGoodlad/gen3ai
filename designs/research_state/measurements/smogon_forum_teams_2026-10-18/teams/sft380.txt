@@ -1,0 +1,56 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 104 HP / 252 SpA / 152 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA
+- Brick Break
+- Dragon Claw
+- Flamethrower
+- Hidden Power [Grass]
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 SpA / 8 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Crunch
+- Flamethrower
+- Pursuit
+- Hidden Power [Grass]
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 220 Atk / 16 Def / 24 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Sludge Bomb
+- Explosion
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 248 HP / 236 SpD / 24 Spe
+Bold Nature
+- Ice Beam
+- Spikes
+- Rapid Spin
+- Explosion
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 56 HP / 252 SpA / 200 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 140 Atk / 136 Def / 68 SpD / 20 Spe
+Careful Nature
+- Body Slam
+- Earthquake
+- Curse
+- Rest

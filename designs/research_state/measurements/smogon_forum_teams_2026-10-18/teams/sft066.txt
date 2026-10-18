@@ -1,0 +1,55 @@
+Salamence (M) @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 180 Def / 76 SpD
+Bold Nature
+- Toxic
+- Flamethrower
+- Protect
+- Wish
+
+Steelix (M) @ Leftovers
+Ability: Rock Head
+EVs: 252 HP / 36 Def / 220 SpD
+Impish Nature
+- Toxic
+- Protect
+- Earthquake
+- Roar
+
+Tyranitar (M) @ Leftovers
+Ability: Sand Stream
+EVs: 240 HP / 232 SpA / 4 SpD / 32 Spe
+Modest Nature
+- Fire Blast
+- Pursuit
+- Ice Beam
+- Crunch
+
+Forretress (M) @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 96 SpA / 160 SpD
+IVs: 30 Atk / 30 SpA / 30 Spe
+Calm Nature
+- Spikes
+- Hidden Power [Fire]
+- Rapid Spin
+- Toxic
+
+Gyarados (M) @ Leftovers
+Ability: Intimidate
+EVs: 252 HP / 32 Atk / 164 Def / 60 SpD
+IVs: 30 SpA / 30 SpD / 30 Spe
+Careful Nature
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rest
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+- Ice Beam
+- Seismic Toss
+- Soft-Boiled
+- Toxic

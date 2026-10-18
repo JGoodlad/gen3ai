@@ -1,0 +1,55 @@
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Def / 208 Spe
+Timid Nature
+- Will-O-Wisp
+- Hypnosis
+- Ice Punch
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 248 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Aerial Ace
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 148 Def / 88 SpA / 24 Spe
+Bold Nature
+- Psychic
+- Fire Punch
+- Calm Mind
+- Wish
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 108 Def / 44 SpA / 44 SpD / 64 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Hidden Power [Grass]
+- Leech Seed
+- Recover
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 112 Def / 128 SpD / 16 Spe
+Sassy Nature
+- Explosion
+- Rapid Spin
+- Earthquake
+- Psychic
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 244 Def / 16 Spe
+Bold Nature
+- Calm Mind
+- Rest
+- Roar
+- Surf

@@ -1,0 +1,57 @@
+Articuno @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 120 Def / 136 SpD
+Calm Nature
+IVs: 0 Atk
+- Ice Beam
+- Roar
+- Rest
+- Sleep Talk
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 216 SpD / 40 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Roar
+- Rest
+- Sleep Talk
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 4 Def / 252 Spe
+Jolly Nature
+IVs: 0 Atk
+- Rest
+- Sleep Talk
+- Spikes
+- Whirlwind
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Def / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Perish Song
+- Mean Look
+- Substitute
+- Taunt
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 136 Def / 96 SpA / 24 SpD
+Relaxed Nature
+- Rest
+- Sleep Talk
+- Earthquake
+- Ice Beam
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 12 HP / 244 Atk / 252 Spe
+Hasty Nature
+- Earthquake
+- Fire Blast
+- Substitute
+- Toxic

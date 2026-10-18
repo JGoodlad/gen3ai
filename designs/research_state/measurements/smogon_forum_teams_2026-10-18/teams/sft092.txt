@@ -1,0 +1,55 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 208 HP / 252 SpA / 48 SpD
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Meteor Mash
+- Psychic
+- Hidden Power [Fire]
+- Explosion
+
+Cloyster (M) @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 40 SpA / 204 SpD / 12 Spe
+Relaxed Nature
+- Explosion
+- Ice Beam
+- Rapid Spin
+- Spikes
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 112 HP / 84 Atk / 124 Def / 188 Spe
+Naive Nature
+- Thunderbolt
+- Ice Punch
+- Hypnosis
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 80 SpA / 176 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Substitute
+- Roar
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 96 HP / 56 Atk / 136 Def / 80 SpA / 140 SpD
+Brave Nature
+- Body Slam
+- Brick Break
+- Self-Destruct
+- Fire Blast
+
+Camerupt @ Leftovers
+Ability: Magma Armor
+EVs: 252 HP / 20 Atk / 124 SpA / 112 SpD
+Quiet Nature
+- Fire Blast
+- Earthquake
+- Toxic
+- Protect

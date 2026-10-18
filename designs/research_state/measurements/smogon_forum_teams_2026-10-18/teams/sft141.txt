@@ -1,0 +1,57 @@
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 44 Atk / 68 Def / 148 SpD
+Sassy Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Body Slam
+- Thunder
+- Hidden Power [Fighting]
+- Wish
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Rapid Spin
+- Earthquake
+- Explosion
+
+Umbreon (F) @ Leftovers
+Ability: Synchronize
+Shiny: Yes
+EVs: 252 HP / 196 SpA / 52 SpD / 8 Spe
+Calm Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Pursuit
+- Toxic
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 20 HP / 236 Atk / 252 Spe
+Jolly Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 4 Atk / 252 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Beat Up
+- Focus Punch
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Spore
+- Swords Dance
+- Sky Uppercut
+- Mach Punch

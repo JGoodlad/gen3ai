@@ -1,0 +1,58 @@
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 56 Atk / 24 Def / 112 SpD / 68 Spe
+Timid Nature
+- Thunderbolt
+- Ice Punch
+- Hypnosis
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 8 HP / 228 Atk / 40 SpD / 232 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Rock Slide
+- Aerial Ace
+- Hidden Power [Bug]
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 112 HP / 252 SpA / 144 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Surf
+- Ice Beam
+- Hidden Power [Grass]
+- Calm Mind
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 80 HP / 248 SpA / 180 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Psychic
+- Giga Drain
+- Hidden Power [Fire]
+- Calm Mind
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 248 HP / 192 Def / 68 SpD
+Bold Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Beam
+- Toxic
+- Recover
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 40 Def / 152 SpA / 68 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
+- Calm Mind

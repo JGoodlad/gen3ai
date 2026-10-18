@@ -1,0 +1,56 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 24 Atk / 232 SpA / 252 Spe
+Rash Nature
+- Dragon Claw
+- Fire Blast
+- Brick Break
+- Roar
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Calm Mind
+- Rest
+- Sleep Talk
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Agility
+- Earthquake
+- Explosion
+
+Camerupt @ Leftovers
+Ability: Magma Armor
+EVs: 12 Atk / 244 SpA / 252 Spe
+Hasty Nature
+IVs: 30 Atk / 30 SpA
+- Earthquake
+- Fire Blast
+- Hidden Power [Grass]
+- Explosion
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 92 HP / 116 Atk / 144 Def / 144 SpD / 12 Spe
+Adamant Nature
+- Self-Destruct
+- Body Slam
+- Shadow Ball
+- Focus Punch
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Bug]

@@ -1,0 +1,57 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Drill Peck
+- Spikes
+- Roar
+- Protect
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 236 HP / 244 Def / 28 Spe
+Bold Nature
+- Calm Mind
+- Rest
+- Roar
+- Surf
+
+Magneton @ Magnet
+Ability: Magnet Pull
+Shiny: Yes
+EVs: 240 HP / 212 SpA / 56 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Rain Dance
+- Thunder Wave
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 192 Def / 48 SpD / 20 Spe
+Bold Nature
+IVs: 0 Atk
+- Leech Seed
+- Psychic
+- Heal Bell
+- Recover
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Aerial Ace
+- Earthquake
+- Hidden Power [Bug]
+- Sunny Day
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 144 HP / 96 Atk / 132 Def / 136 SpD
+Careful Nature
+- Curse
+- Return
+- Shadow Ball
+- Rest

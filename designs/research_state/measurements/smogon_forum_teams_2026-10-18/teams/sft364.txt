@@ -1,0 +1,57 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 148 Atk / 112 Spe
+Adamant Nature
+- Rock Slide
+- Earthquake
+- Taunt
+- Toxic
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Double-Edge
+- Rock Slide
+- Earthquake
+- Hidden Power [Flying]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 176 Def / 40 SpA / 44 Spe
+Relaxed Nature
+- Earthquake
+- Surf
+- Ice Beam
+- Protect
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+IVs: 0 Atk
+- Toxic
+- Spikes
+- Whirlwind
+- Protect
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 52 Def / 112 SpD / 96 Spe
+Timid Nature
+IVs: 0 Atk
+- Thunderbolt
+- Ice Punch
+- Taunt
+- Will-O-Wisp
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 224 SpA / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Flamethrower
+- Toxic
+- Soft-Boiled

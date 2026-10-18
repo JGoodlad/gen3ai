@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 40 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Thunder Wave
+- Roar
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 76 Def / 104 SpA / 48 SpD / 32 Spe
+Bold Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Hidden Power [Grass]
+- Leech Seed
+- Recover
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 248 HP / 252 SpD / 8 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Protect
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 20 Atk / 216 SpA / 88 Spe
+Quiet Nature
+- Crunch
+- Pursuit
+- Ice Beam
+- Brick Break
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Thunder Wave
+
+Flygon @ Leftovers
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Substitute
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]

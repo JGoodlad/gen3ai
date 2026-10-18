@@ -1,0 +1,56 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 SpA / 4 Spe
+Modest Nature
+- Pursuit
+- Crunch
+- Flamethrower
+- Earthquake
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 Def
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Curse
+- Hidden Power [Rock]
+- Earthquake
+- Focus Punch
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 152 Def / 104 SpD
+Relaxed Nature
+- Earthquake
+- Rapid Spin
+- Ice Beam
+- Explosion
+
+Lapras @ Leftovers
+Ability: Water Absorb
+EVs: 252 SpA / 40 SpD / 216 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Heal Bell
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Spore
+- Focus Punch
+- Brick Break
+- Mach Punch
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Flamethrower
+- Overheat
+- Hidden Power [Grass]
+- Beat Up
