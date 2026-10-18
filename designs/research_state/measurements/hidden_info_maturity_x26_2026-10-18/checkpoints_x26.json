@@ -1,0 +1,49 @@
+{
+ "anchors": {
+  "x26_025M": {
+   "bytes": 57371783,
+   "file": "/home/goodlad/gen3ai_archive/hidden_info_maturity/ckpt/x26_025M/checkpoint_25000027_steps.zip",
+   "mode": "lean",
+   "priority": 1,
+   "registered_at": "2026-10-18 04:16:11 -0700",
+   "sha256": "26fda38d0ca68f066187adc469d22ddac65f1910360f2ea9986e6ff270eb5072",
+   "src": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_25000027_steps.zip",
+   "step": 25000027
+  },
+  "x26_100M": {
+   "bytes": 57379613,
+   "file": "/home/goodlad/gen3ai_archive/hidden_info_maturity/ckpt/x26_100M/checkpoint_100000037_steps.zip",
+   "mode": "lean",
+   "priority": 3,
+   "registered_at": "2026-10-18 04:16:11 -0700",
+   "sha256": "e1858ffe8a7d95fe053395721c8422dd56b194b1a8f9092aea17ad1961efccb2",
+   "src": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_100000037_steps.zip",
+   "step": 100000037
+  },
+  "x26_175M": {
+   "bytes": 57379143,
+   "file": "/home/goodlad/gen3ai_archive/hidden_info_maturity/ckpt/x26_175M/checkpoint_175000114_steps.zip",
+   "mode": "lean",
+   "priority": 4,
+   "registered_at": "2026-10-18 04:16:11 -0700",
+   "sha256": "20af225e57b1cc847966d939281aa2c88ec35b99985d55225968a9f273113302",
+   "src": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_175000114_steps.zip",
+   "step": 175000114
+  },
+  "x26_225M": {
+   "bytes": 57379240,
+   "file": "/home/goodlad/gen3ai_archive/hidden_info_maturity/ckpt/x26_225M/checkpoint_225000152_steps.zip",
+   "mode": "lean",
+   "priority": 2,
+   "registered_at": "2026-10-18 04:16:11 -0700",
+   "sha256": "bc93a321bf1d4c6a83bc80910e8bbc81673a157f71e6cb2cbd7ca7b5427819ce",
+   "src": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_225000152_steps.zip",
+   "step": 225000152
+  }
+ },
+ "model_config_sha256": "df71eea63809d630629e59455cf599ebb202b50b3cbcd3e795a65d06b30e801c",
+ "pin": "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b",
+ "play_commit": "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b",
+ "run": "rb_x26_s2601",
+ "series": "x26"
+}
