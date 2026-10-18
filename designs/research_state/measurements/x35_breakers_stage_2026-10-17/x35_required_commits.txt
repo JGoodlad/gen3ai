@@ -1,0 +1,4 @@
+# X35's REQUIRED COMMITS: every X35_PIN_k must carry each commit listed here (launch_x35.sh pre-check 2).
+# Format: <sha> <name> [note]. A T54 line is REQUIRED (F18: the fork pool seed's step filter); until T54 lands
+# and its commit is written here, every launch HOLDs. Add T56 / T57 when an arm that needs them joins a batch.
+cdab9cfe1e68312915e4f8f99c6f26c1bb7fa6b4 T54 the fork pool seed's step filter (gen3_pool_seed_step_filter_v1), shipped 2026-10-17

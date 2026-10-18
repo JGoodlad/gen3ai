@@ -1,0 +1,60 @@
+# T55 kit validation, 2026-10-17: launch_x35.sh's pre-checks 2-8 on a STAND-IN R (P* = checkpoint_180000055, frozen to /tmp,
+# band cell synthetic), pin acb99527, a TEST COPY of the script with pre-check 1 removed (X26 is LIVE: the real script HOLDs
+# there, as it must), a T54 stand-in line naming acb99527 itself, --thinning. Nothing was created under models/.
+
+## rb_x35_a1arch_s3501
+  role        : FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601
+  steps       : --steps 200,000,055 vs checkpoint at 180,000,055 (sidecar) → +20,000,000 steps
+  disk space  : ✓ 316.33 GiB free on /home/goodlad/dev/gen3ai/models vs 20.68 GiB REQUIRED (checkpoint the fork source checkpoint_180000055_steps.zip)
+  ✓ DRY RUN — this command would launch. Nothing was created or modified.
+  accepted by the trainer parser : 9
+  unrecognized                   : 0
+  ✓ this command still launches
+[x35 kit] disk: 316.3 GiB free; 18 batch-1 fork(s) to create x 20.68 = 372.2 GiB -- short for the whole batch, THINNING declared (F22): this launch alone fits
+
+## rb_x35_c0_s3502
+  role        : FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601
+  steps       : --steps 200,000,055 vs checkpoint at 180,000,055 (sidecar) → +20,000,000 steps
+  disk space  : ✓ 316.33 GiB free on /home/goodlad/dev/gen3ai/models vs 20.68 GiB REQUIRED (checkpoint the fork source checkpoint_180000055_steps.zip)
+  ✓ DRY RUN — this command would launch. Nothing was created or modified.
+  accepted by the trainer parser : 7
+  unrecognized                   : 0
+  ✓ this command still launches
+[x35 kit] disk: 316.3 GiB free; 18 batch-1 fork(s) to create x 20.68 = 372.2 GiB -- short for the whole batch, THINNING declared (F22): this launch alone fits
+
+## rb_x35_a2pfsp_s3503
+  role        : FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601
+  steps       : --steps 200,000,055 vs checkpoint at 180,000,055 (sidecar) → +20,000,000 steps
+  disk space  : ✓ 316.33 GiB free on /home/goodlad/dev/gen3ai/models vs 20.68 GiB REQUIRED (checkpoint the fork source checkpoint_180000055_steps.zip)
+  ✓ DRY RUN — this command would launch. Nothing was created or modified.
+  accepted by the trainer parser : 9
+  unrecognized                   : 0
+  ✓ this command still launches
+[x35 kit] disk: 316.3 GiB free; 18 batch-1 fork(s) to create x 20.68 = 372.2 GiB -- short for the whole batch, THINNING declared (F22): this launch alone fits
+
+## rb_x35_mx_s3511
+  role        : FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601
+  steps       : --steps 185,000,055 vs checkpoint at 180,000,055 (sidecar) → +5,000,000 steps
+  disk space  : ✓ 316.33 GiB free on /home/goodlad/dev/gen3ai/models vs 17.62 GiB REQUIRED (checkpoint the fork source checkpoint_180000055_steps.zip)
+  ✓ DRY RUN — this command would launch. Nothing was created or modified.
+  accepted by the trainer parser : 9
+  unrecognized                   : 0
+  ✓ this command still launches
+[x35 kit] disk: 316.3 GiB free; 18 batch-1 fork(s) to create x 17.62 = 317.2 GiB -- short for the whole batch, THINNING declared (F22): this launch alone fits
+
+## rb_x35_lx_s3521
+  role        : FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601
+  steps       : --steps 185,000,055 vs checkpoint at 180,000,055 (sidecar) → +5,000,000 steps
+  disk space  : ✓ 316.33 GiB free on /home/goodlad/dev/gen3ai/models vs 18.96 GiB REQUIRED (checkpoint the fork source checkpoint_180000055_steps.zip)
+  ✓ DRY RUN — this command would launch. Nothing was created or modified.
+  accepted by the trainer parser : 10
+  unrecognized                   : 0
+  ✓ this command still launches
+[x35 kit] disk: 316.3 GiB free; 18 batch-1 fork(s) to create x 18.96 = 341.3 GiB -- short for the whole batch, THINNING declared (F22): this launch alone fits
+
+## the real script, same stand-in, pre-check 1 in place:
+[2026-10-17T17:49:57-07:00] a1 s3501: HOLD: a training run is LIVE: LIVE /home/goodlad/dev/gen3ai/models/rb_x26_s2601 pid 1541154 
+
+## after T54 shipped (cdab9cfe, registered in x35_required_commits.txt), same test copy, a1 s3501:
+#   --pin acb99527 -> HOLD: pin acb99527 lacks T54 (cdab9cfe...)
+#   --pin cdab9cfe -> DRY RUN PASS (checkargs + dry-run at the T54 pin)

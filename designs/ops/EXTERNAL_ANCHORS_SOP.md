@@ -514,6 +514,14 @@ PROVISIONAL (one checkpoint, one seed, a run 161M into a 500M cap). 🚨 **Run `
 checkout ROOT**: the pool (`home`) source resolves `data/teams` against the CWD and, from `src/`,
 finds 0 teams and dies as `our_side_error: IndexError` (the read's FINDING 1).
 
+**The home72 config is COMMITTED** (2026-10-17, T55, F21): `measurements/x35_breakers_stage_2026-10-17/anchors_home72_kakuna.json`
+is byte-identical to the one this read used (sha256 `e8a064db…`), and `home72_manifest.json` beside it pins all 72
+team files on BOTH sides (our committed pastes and Metamon's cache copy, byte-identical to each other). X35's G-K
+read runs through `python -m main.x35.kakuna` (plan / run / status / gk / smoke), which re-checks that manifest, the
+T28 halt marker and the model's sha256 before every unit, runs from the checkout root under rule 5b, picks its own
+95xx port, and counts a unit only on `status OK`, `n == 20`, `regime_verified_decisions`, no
+`team_source_asymmetry` and `peer_clean`.
+
 ### 🚨 Numbers that must NOT be quoted without their regime
 
 `0.742` (vs `SmallRL`) and `0.583` (vs `SyntheticRLV2`) are **mixed-regime reads on home teams** —

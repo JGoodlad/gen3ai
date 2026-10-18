@@ -1,0 +1,40 @@
+{
+ "what": "T55's ONE smoke unit of main.x35.kakuna (2026-10-17): proves the runner end to end; the 2-game score is NOT a measurement",
+ "state_dir": "/home/goodlad/dev/gen3ai-reads/x35_kakuna_smoke_2026-10-17",
+ "command": "python -m main.x35.kakuna smoke --state <state> --model <X26 @161,000,169 copy> --games 2",
+ "model": "/home/goodlad/dev/gen3ai-reads/x26_metamon_anchor_2026-10-17/model/checkpoint_161000169_steps.zip (sha256 bc6050d1..., read-only copy of rb_x26_s2601 @161,000,169)",
+ "port": 9540,
+ "wall_s": 72.8,
+ "counted": true,
+ "summary": {
+  "status": "OK",
+  "n": 2,
+  "wins": 0,
+  "losses": 2,
+  "ties": 0,
+  "regime_verified_decisions": true,
+  "team_source_asymmetry": false,
+  "peer_clean": true,
+  "our_argmax_match_rate": 1.0,
+  "their_argmax_match_rates": [
+   1.0
+  ]
+ },
+ "cell": {
+  "opponent": "metamon:SmallRL",
+  "opponent_version": "SmallRL@ckpt40",
+  "opponent_commit": "0a00a759",
+  "our_regime": "greedy",
+  "their_regime": "greedy",
+  "teamset": "home",
+  "our_team_source": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/n0_endofrun_2026-09-27/teams_home72",
+  "our_team_count": 72,
+  "their_team_count": 72,
+  "server_impl": "rust",
+  "server_version": "ws_frontend[in-process]@acb99527+rust:cargo:src/rust_sim",
+  "showdown_pin": "e0551883f",
+  "our_transport": "rust_core_slot",
+  "model_step": 161000169,
+  "model_loader": "bare"
+ }
+}

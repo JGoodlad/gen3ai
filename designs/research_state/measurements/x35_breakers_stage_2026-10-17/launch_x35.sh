@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+# X35 — THE PLATEAU-BREAKERS LAUNCH KIT (T55, 2026-10-17). ONE arm × seed per invocation.
+# It NEVER launches on its own: the DEFAULT is a DRY RUN (every pre-check, then the launch line printed); only the
+# literal argument GO launches, and GO needs the orchestrator's go (STAGED_PLAN; a design block is not a command).
+# Run it from the Training session that holds the GPU lease (its token in the environment), after the plateau call.
+#
+#   usage: launch_x35.sh <arm> <seed> --pin <X35_PIN_k> [--lease-owner NAME] [--phase1 FILE] [--thinning]
+#                        [--at-epoch EPOCH] [--max-load L] [GO]
+#   arms:  c0 a1 a2 (production, +20M) · a3_mx a6_lx (phase 1: exploiters, +5M) · a3 a6 (phase 2, +20M, read
+#          the phase-1 record) · toy_c0 toy_a1 toy_a2 (+70M)          (main.x35.kit holds every argv)
+#   phase 1 → 2:  after the three exploiters END,
+#          python -m main.x35.kit phase1-record --arm a3 --call <R> --out <stage>/phase1_a3.json   (write-once)
+#
+# PRE-CHECKS (STAGED_PLAN §3; ALL run before anything is created; the FIRST failure HOLDs, exit 7):
+#   1. no training run is LIVE (X26 and X34 stopped); the GPU lease is FREE or held by --lease-owner; load1 <= max
+#   2. the pin carries every commit in x35_required_commits.txt, which must name T54 (F18)
+#   3. models/<run> does not exist (a restart RESUMES through the launcher, never through this script)
+#   4. the frozen R file verifies: its content hash and the sha256 of P*, every archive node and every member
+#      (phase 2: the phase-1 record's exploiter sha256s too)
+#   5. checkargs --pin <pin> exits 0
+#   6. launcher --dry-run says "would launch", FORK of the start node's run, and the arm's +steps
+#   7. R was frozen BEFORE every existing rb_x35* run directory was created
+#   8. the disk covers the remaining batch-1 forks at the dry-run's REQUIRED GiB each, or --thinning (F22)
+# GO with --at-epoch E: E is checked at arming (now <= E <= now + 24 h, an ABSOLUTE epoch, never a clock string),
+# the script sleeps to E, then RE-RUNS every pre-check; a failure then is a HOLD. A launcher that dies within 180 s
+# is a HOLD (a mid-window failure is the orchestrator's decision, never this script's). After the spawn, T54's
+# pool-seed record is checked (main.x35.kit pool-seed-check); a failure SIGTERMs the launcher by its PID and HOLDs.
+set -u
+STAGE=${X35_STAGE:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}   # X35_STAGE: tests only
+REPO=${X35_REPO:-/home/goodlad/dev/gen3ai}
+J=${X35_JOB_DIR:-/home/goodlad/.claude/jobs/x35}; ST=$J/status.txt
+PY=${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3}; OPS=$REPO/scripts/ops
+ARM=""; SEED=""; PIN=""; OWNER=""; PHASE1=""; THIN=""; AT=""; MAXLOAD=12; GO=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --pin) PIN=$2; shift 2;; --lease-owner) OWNER=$2; shift 2;; --phase1) PHASE1=$2; shift 2;;
+    --thinning) THIN=--thinning; shift;; --at-epoch) AT=$2; shift 2;; --max-load) MAXLOAD=$2; shift 2;;
+    GO) GO=1; shift;;
+    -*) echo "unknown flag $1" >&2; exit 2;;
+    *) if [ -z "$ARM" ]; then ARM=$1; elif [ -z "$SEED" ]; then SEED=$1; else echo "extra argument $1" >&2; exit 2; fi
+       shift;;
+  esac
+done
+[ -n "$ARM" ] && [ -n "$SEED" ] && [ -n "$PIN" ] || { sed -n 2,12p "$0" >&2; exit 2; }
+mkdir -p "$J"; log() { echo "[$(date -Is)] $ARM s$SEED: $1" >> "$ST"; }
+hold() { log "HOLD: $1"; echo "HOLD: $1" >&2; exit 7; }
+kit() { ( cd "$REPO" && PYTHONPATH="$REPO/src" CUDA_VISIBLE_DEVICES="" "$PY" -m main.x35.kit "$@" ); }
+PIN=$(git -C "$REPO" rev-parse --verify "$PIN^{commit}" 2>/dev/null) || hold "the pin does not name a commit"
+case "$ARM" in toy_*) SIDE=toy;; *) SIDE=production;; esac
+R=$STAGE/reference_population_$SIDE.json
+case "$ARM" in a3|a6) PHASE1=${PHASE1:-$STAGE/phase1_$ARM.json};; esac
+P1ARG=(); [ -n "$PHASE1" ] && P1ARG=(--phase1 "$PHASE1")
+MODELS=$(cd "$REPO" && PYTHONPATH="$REPO/src" "$PY" -c 'from utils.paths import main_models_dir as m; print(m() or "")')
+[ -n "$MODELS" ] && [ -d "$MODELS" ] || hold "no models/ archive resolves from $REPO"
+
+prechecks() {
+  local tag=$1; local out=$J/${RUN:-pending}.$tag
+  # 1. nothing live; the lease; the CPU
+  kit live > "$out.live.txt" 2>&1 || hold "a training run is LIVE: $(tr '\n' ' ' < "$out.live.txt")"
+  local lease; lease=$("$OPS/gpu_lease.sh" status 2>&1 | head -1)
+  case "$lease" in
+    FREE*) ;;
+    "LEASED: lease owner '$OWNER',"*) [ -n "$OWNER" ] || hold "the GPU is leased and no --lease-owner was named: $lease";;
+    *) hold "the GPU is not FREE nor leased to '${OWNER:-<none named>}': $lease";;
+  esac
+  local load; load=$(cut -d' ' -f1 /proc/loadavg)
+  awk -v l="$load" -v m="$MAXLOAD" 'BEGIN{exit !(l <= m)}' || hold "load1 $load > $MAXLOAD (the CPU check)"
+  # 2. the pin's required commits (T54 first of all)
+  local req=$STAGE/x35_required_commits.txt
+  grep -Eq '^[0-9a-f]{7,40}[[:space:]]+T54([[:space:]]|$)' "$req" 2>/dev/null \
+    || hold "x35_required_commits.txt names no T54 commit (F18: the pool seed's step filter must be in the pin)"
+  local sha name
+  while read -r sha name _; do
+    case "$sha" in ''|'#'*) continue;; esac
+    git -C "$REPO" merge-base --is-ancestor "$sha" "$PIN" 2>/dev/null || hold "pin ${PIN:0:8} lacks $name ($sha)"
+  done < "$req"
+  # 3. the run dir
+  [ -e "$MODELS/$RUN" ] && hold "$MODELS/$RUN exists (a restart RESUMES through the launcher, not this script)"
+  # 4. R and (phase 2) the phase-1 record
+  ( cd "$REPO" && PYTHONPATH="$REPO/src" "$PY" -m main.x35.refpop verify "$R" ) > "$out.verify.txt" 2>&1 \
+    || hold "the frozen R does not verify (see $out.verify.txt)"
+  if [ -n "$PHASE1" ]; then kit verify-phase1 "$PHASE1" > "$out.phase1.txt" 2>&1 \
+    || hold "the phase-1 record does not verify (see $out.phase1.txt)"; fi
+  # 7. R predates every X35 run directory
+  local frozen d born; frozen=$("$PY" -c 'import json,sys; print(json.load(open(sys.argv[1]))["frozen_at_epoch"])' "$R")
+  for d in "$MODELS"/rb_x35*; do
+    [ -d "$d" ] || continue
+    born=$(stat -c %W "$d"); [ "$born" -gt 0 ] 2>/dev/null || born=$(stat -c %Y "$d")
+    [ "$born" -ge "$frozen" ] || hold "$d was created before R was frozen (§5.6.4: R is frozen before any arm)"
+  done
+  # 5. checkargs
+  ( cd "$REPO" && PYTHONPATH="$REPO/src" CUDA_VISIBLE_DEVICES="" timeout 600 "$PY" -m main.checkargs --pin "$PIN" \
+    --argv "${A[*]}" ) > "$out.checkargs.txt" 2>&1 || hold "checkargs refused (see $out.checkargs.txt)"
+  # 6. the dry-run
+  ( cd "$REPO" && PYTHONPATH="$REPO/src" CUDA_VISIBLE_DEVICES="" timeout 900 "$PY" -m main.launcher --dry-run \
+    --restart-interval-hours 24 --pin-commit "$PIN" "${A[@]}" ) > "$out.dryrun.txt" 2>&1 \
+    || hold "launcher --dry-run refused (see $out.dryrun.txt)"
+  grep -q "this command would launch" "$out.dryrun.txt" || hold "the dry-run did not say 'would launch'"
+  grep -Fq "role        : FORK of $PARENT" "$out.dryrun.txt" || hold "the dry-run role is not FORK of $PARENT"
+  grep -Fq "$DELTA" "$out.dryrun.txt" || hold "the dry-run step arithmetic is not $DELTA"
+  # 8. the disk
+  local gib; gib=$(grep -oE '[0-9.]+ GiB REQUIRED' "$out.dryrun.txt" | head -1 | cut -d' ' -f1)
+  [ -n "$gib" ] || hold "the dry-run printed no REQUIRED GiB"
+  kit disk --required-gib "$gib" --models-dir "$MODELS" $THIN > "$out.disk.txt" 2>&1 \
+    || hold "disk: $(cat "$out.disk.txt")"
+  log "pre-checks PASS ($tag): pin ${PIN:0:8}, $(cat "$out.disk.txt"), lease: ${lease%%,*}"
+}
+
+kit describe --arm "$ARM" --seed "$SEED" --call "$R" "${P1ARG[@]}" > "$J/describe.$ARM.$SEED.json" \
+  2> "$J/describe.err" || hold "main.x35.kit describe refused: $(cat "$J/describe.err")"
+field() { "$PY" -c 'import json,sys; d=json.load(open(sys.argv[1])); v=d[sys.argv[2]]
+print("\n".join(v) if isinstance(v, list) else v)' "$J/describe.$ARM.$SEED.json" "$1"; }
+RUN=$(field run_name); PARENT=$(field parent_run_dir); DELTA=$(field delta_text)
+mapfile -t A < <(field argv)
+[ "${#A[@]}" -gt 4 ] || hold "no argv built"
+
+if [ "$GO" -ne 1 ]; then
+  prechecks dry
+  echo "DRY RUN PASS — every pre-check passed; nothing was created. To launch (NEEDS the orchestrator's GO):"
+  echo "  $0 $ARM $SEED --pin $PIN ${OWNER:+--lease-owner '$OWNER'} ${PHASE1:+--phase1 $PHASE1} $THIN GO"
+  echo "  (runs: python -m main.launcher --restart-interval-hours 24 --pin-commit $PIN ${A[*]})"
+  exit 0
+fi
+
+if [ -n "$AT" ]; then
+  NOW=$(date +%s)
+  [[ "$AT" =~ ^[0-9]+$ ]] && [ "$AT" -ge "$NOW" ] && [ "$AT" -le $((NOW + 86400)) ] \
+    || hold "--at-epoch $AT is not an epoch in [now, now + 24 h] (now $NOW)"
+  prechecks armed
+  log "ARMED for epoch $AT ($(date -d "@$AT" -Is))"
+  while [ "$(date +%s)" -lt "$AT" ]; do sleep $(( AT - $(date +%s) > 300 ? 300 : AT - $(date +%s) )); done
+fi
+prechecks go
+
+# ---- launch -----------------------------------------------------------------------------------------------------
+log "START $RUN: ${A[*]} (pin ${PIN:0:8}, restart 24 h)"
+( cd "$REPO" && export PYTHONPATH="$REPO/src"; exec taskset -c 0-4,8-12 "$PY" -m main.launcher \
+  --restart-interval-hours 24 --pin-commit "$PIN" "${A[@]}" ) >> "$J/$RUN.launcher.log" 2>&1 < /dev/null &
+LP=$!; echo "$LP" > "$J/$RUN.pid"
+for _ in $(seq 36); do kill -0 "$LP" 2>/dev/null || break; sleep 5; done
+if ! kill -0 "$LP" 2>/dev/null; then wait "$LP"; hold "the launcher exited (rc $?) within 180 s (see $J/$RUN.launcher.log)"; fi
+# POST-SPAWN (T54's findings): the pool seed runs in the CHILD, so no dry-run can preview it. Read the fork's
+# snapshots/pool_seed.json (schema 2): fork_step non-null and == P*'s num_timesteps, every seeded snapshot <= it,
+# and the startup "[step filter <= N: …]" line agreeing. A FAIL (a null fork_step included) or no record within
+# 30 min: SIGTERM the launcher BY ITS PID (it saves and stops its child), then HOLD.
+PS_T0=$(date +%s); PS=3
+while [ $(( $(date +%s) - PS_T0 )) -lt 1800 ]; do
+  kill -0 "$LP" 2>/dev/null || { wait "$LP"; hold "the launcher exited (rc $?) before the pool-seed check passed"; }
+  kit pool-seed-check --arm "$ARM" --run-dir "$MODELS/$RUN" --call "$R" --log "$J/$RUN.launcher.log" \
+    --log "$MODELS/$RUN/launcher_child.full.log" > "$J/$RUN.pool_seed_check.txt" 2>&1; PS=$?
+  [ "$PS" -eq 3 ] || break
+  sleep 15
+done
+if [ "$PS" -ne 0 ]; then
+  kill -TERM "$LP" 2>/dev/null; log "killed launcher pid $LP (SIGTERM) on the pool-seed check"
+  hold "the post-spawn pool-seed check did not PASS (rc $PS): $(cat "$J/$RUN.pool_seed_check.txt")"
+fi
+log "post-spawn pool-seed check PASS: $(cat "$J/$RUN.pool_seed_check.txt")"
+( "$OPS/watch_run.sh" "$MODELS/$RUN" --pid-file "$J/$RUN.pid" --launcher-log "$J/$RUN.launcher.log" \
+    --status-file "$J/$RUN.repo.watch.txt" ) >> "$J/$RUN.repo.watch.out" 2>&1 < /dev/null &
+wait "$LP"; RC=$?
+log "END $RUN launcher_rc=$RC"

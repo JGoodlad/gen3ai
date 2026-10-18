@@ -1,0 +1,19 @@
+# main.x35 readout self-check, run 2026-10-17 BEFORE any real read (T40's discipline).
+# tree: T55 worktree on base acb99527 (the commit that ships main.x35); python -m main.x35.readout self-check
+# CPU, CUDA_VISIBLE_DEVICES='', nice -n 19 taskset -c 5-7,13-15
+PASS  Welch by hand (Δ 10, df 4, q t_.9875,4)  -- ci (7.146013007145836, 12.853986992854164), df 4.0, q 3.4954059325164417 vs 3.4954059325164417
+PASS  Welch = scipy's (3 unequal-variance cases)  -- max |Δbound| 6.39e-14
+PASS  Welch 97.5 % coverage >= 0.96 (4000 draws each)  -- 3v3 sd 2:2 0.9812; 3v3 sd 1:3 0.9770; 5v5 sd 2:2 0.9835; 5v5 sd 1:3 0.9715
+PASS  R1 class table (7 constructed rows)  -- all rows as registered
+PASS  R1 rule 8 at ±2.0 and the look-2 rule at 0  -- at UNDECIDED ('lower 1.999999999999989 within 1e-09 of +2.0',); past GAIN; LOSS edge UNDECIDED; NULL edge UNDECIDED; Δ̂ 0 → UNDECIDED
+PASS  R1 INCONCLUSIVE inputs (5 cases)  -- 2 ON / 2 OFF seed finals; look 1 registers 3 per side; b-ON seeds ['3501', '3502', '3503'] != b-OFF seeds ['3601', '3602', '3603'] (they share seed i, §5.6.1); ON seed 3502: no population score; zero variance on both sides: Welch's t is undefined; 3 ON / 3 OFF seed finals; look 2 registers 5 per side
+PASS  Newcombe = the 1998 table (6 rows), both implementations  -- max |Δ| vs published: R2 5.1e-05, G-K 5e-05; same-z cross 5.6e-17
+PASS  R2 falls / G-E fail, rule 8 at 0  -- falls -0.0917, flat False, G-E FAIL/PASS, edges False/PASS
+PASS  G-F (additive 3 x 3: Δ −10 FAIL, Δ 0 PASS, wrong size INCONCLUSIVE)  -- [-11.792187609015025, -8.207812390984975] / [-1.7921876090150255, 1.7921876090150255]
+PASS  G-C (5 constructed rows)  -- all rows as registered
+PASS  G-K (4 constructed rows)  -- all rows as registered
+PASS  verdict table (12 rows)  -- all rows as registered
+PASS  population score (exact mean; 5 INCONCLUSIVE inputs)  -- S 55.0 vs 55.0
+PASS  read() JSON round trip (A3 ADOPT via R2; flat gap NULL)  -- ADOPT-CANDIDATE / NULL
+self-check: 14 / 14 PASS
+# exit 0

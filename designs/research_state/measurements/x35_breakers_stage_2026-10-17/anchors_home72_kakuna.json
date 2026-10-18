@@ -1,0 +1,55 @@
+{
+ "_README": [
+  "kakuna_goal_read_2026-09-28 (X22 b-e): the n0_endofrun_2026-09-27 home72 convention verbatim (`home` = the sanitized 72 for ours, Foul Play and Metamon alike), plus metamon:Kakuna at ckpt 34 as in designs/ops/anchors.json. Team dir = main's COMMITTED copy of teams_home72 (byte-identical to the pin's, diff -rq checked 2026-09-28)."
+ ],
+ "showdown": {
+  "node": "node",
+  "port_range": [
+   9500,
+   9599
+  ]
+ },
+ "opponents": {
+  "metamon": {
+   "checkout": "/home/goodlad/dev/metamon",
+   "python": "/home/goodlad/miniconda3/envs/metamon/bin/python",
+   "cache_dir": "/home/goodlad/dev/metamon/cache",
+   "agents": {
+    "SmallRL": {
+     "checkpoint": 40,
+     "params": 13938567
+    },
+    "SyntheticRLV2": {
+     "checkpoint": 48,
+     "params": 200894911
+    },
+    "Kakuna": {
+     "checkpoint": 34,
+     "params": 142832563
+    }
+   },
+   "team_sets": {
+    "home": "gen3ai_home72",
+    "away": "competitive"
+   }
+  },
+  "foulplay": {
+   "checkout": "/home/goodlad/dev/foul-play",
+   "python": "/home/goodlad/dev/foul-play/.conda/bin/python",
+   "team_dirs": {
+    "home": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/n0_endofrun_2026-09-27/teams_home72",
+    "away": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou"
+   }
+  }
+ },
+ "our_team_sources": {
+  "home": {
+   "kind": "dir",
+   "path": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/n0_endofrun_2026-09-27/teams_home72"
+  },
+  "away": {
+   "kind": "dir",
+   "path": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou"
+  }
+ }
+}

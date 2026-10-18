@@ -574,14 +574,17 @@ lever.
 #### 5.6.4 The readout and its PRE-REGISTERED decision rule
 
 **The reference population R** is frozen at the plateau call, before any arm runs. It is written to the staging
-directory with each file's sha256.
+directory with each file's sha256, by `python -m main.x35.refpop freeze` (T55; write-once, `verify` re-hashes every
+file). Two choices the rule left open are declared there (F25): a midpoint that is not a 10M multiple rounds to the
+nearest one, ties down, and an A-block node that lands on an archive node is a typed refusal.
 - **A-block, our own archive:** P\*, P\* − 10M, and the midpoints between A1's adjacent pairs (N_2 | N_3, N_4 | N_5,
   N_6 | N_7). For P\* = 180M that is 180, 170, 130, 90 and 50M. It is disjoint by FILE from A1's training nodes but
   ADJACENT to them, so the A-block read leans toward A1 by construction (F20). The X-block, G-F and G-K are the
   unbiased checks.
 - **X-block, another lineage that no arm trains against:** T\* (a cross-architecture cell, which `main.h2h play-many`
   supports) and the registry baseline `production`. Each is kept iff P\*'s score against it, at 500 mirrored pairs,
-  lies in [0.20, 0.80]. That is Dota's 15–85 % band (`design_evaluation.md` §0a), with a rule-8 margin.
+  lies in [0.20, 0.80]. That is Dota's 15–85 % band (`design_evaluation.md` §0a), with a rule-8 margin: a score within
+  1e-9 of either edge is EXCLUDED, and a candidate without an OK 500-pair cell makes the freeze refuse.
 - The toy side mirrors this: T\*'s own archive, with P\* in its X-block.
 
 **The population score** S(final) is the equal-weight mean, over R's members, of the mirrored-pair score: 500 pairs
@@ -680,7 +683,7 @@ rule 5b. Nothing was created. The transcripts are in the staging directory.
 | A5 | uniform stable sampling and stable PFSP; `=<weight>` is refused at parse; no Nash solver in `src/` (scipy 1.17.1 is in the env) | — | **T57** |
 | A6 | the same flags as A1 at share 1.0 + `--stable-opponent-pfsp` | phase 1 dry-run "would launch" (share 1.0 is inside the parser's [0, 1]) | a two-phase launch kit (T55) |
 | toy C0 | the fork path from `rb_toy_ent_s4002` | dry-run "would launch" (X34 proved the toy at HEAD, §4.2) | — |
-| readout | `main.h2h play-many` (two architectures per engine), `cross_stat` (square), `main.best_response_gap` (pinned archetypes) | — | the population-score estimator and decision function, the reference-freeze tool, the Kakuna runner (T55); the arm-vs-arm / full-pool reader mode is optional (T58) |
+| readout | `main.h2h play-many` (two architectures per engine), `cross_stat` (square), `main.best_response_gap` (pinned archetypes); **T55 (2026-10-17): `src/main/x35/`** — the estimator and decision function (`readout`), the freeze (`refpop`), the argv kit + `launch_x35.sh` (`kit`), the Kakuna runner (`kakuna`) | `main.x35.readout self-check` 14 / 14 on constructed cases BEFORE any real read; every argv equal to its validated stand-in; A2 and both phase-1 exploiter argvs `checkargs` + dry-run at `acb99527` (STAGED_PLAN §6) | the arm-vs-arm / full-pool reader mode is optional (T58); R0 / reader argvs (F27) |
 
 **No arm on this list needs a Rust or engine change.** A4 is learner-side and A5 lives in the Python opponent sampler
 (`rust_env_opponents.EpisodeOpponentSampler._pick_stable`). Search breakers would need one; they are not on the list.
@@ -689,7 +692,7 @@ rule 5b. Nothing was created. The transcripts are in the staging directory.
 1. **T54 — the pool seed's STEP FILTER** (opus-medium, ≈ 0.3 agent-day). A fork seeds only the parent's snapshots at
    or below the fork step, and prints and records the ones it dropped. Without it every arm, C0 included, trains
    against X26's post-P\* selves (F18). It must land before batch 1's pin, and it must fail on revert.
-2. **T55 — the X35 stage kit** (opus-high, ≈ 1–1.5 agent-days).
+2. **T55 — the X35 stage kit** (opus-high, ≈ 1–1.5 agent-days). **BUILT 2026-10-17** (`src/main/x35/`, STAGED_PLAN §6).
    - `launch_x35.sh`, which re-checks P\*, the pin, the sha256s, `checkargs` and the dry-run before anything is
      created; the two-phase kits for A3 and A6.
    - The reference-freeze tool, with the band rule.
@@ -715,8 +718,9 @@ rule 5b. Nothing was created. The transcripts are in the staging directory.
 
 #### 5.6.8 The first arm's launch block (A1, seed 3501), dry-run validated, NEEDS THE ORCHESTRATOR'S GO
 
-The validated stand-in is in STAGED_PLAN §2. At the plateau call `launch_x35.sh` (T55) substitutes P\*, the 8 archive
-nodes and `X35_PIN_1`, and re-runs `checkargs` and the dry-run. Until T55 lands, the operator does that by hand.
+The validated stand-in is in STAGED_PLAN §2. At the plateau call `launch_x35.sh` (T55, built) builds the argv from the
+frozen R file (P\*, the 8 archive nodes) and the typed `--pin <X35_PIN_1>`, and runs STAGED_PLAN §3's pre-checks,
+`checkargs` and the dry-run included; its default is a dry run and only `GO` launches (STAGED_PLAN §6).
 
 ```
 # NEEDS GO. A design block is not a launch command. Stand-in values: P* = 180,000,055, pin 9ebda190.
@@ -838,7 +842,10 @@ Everything else here is the orchestrator's tactical call (GPU order, seeds, the 
   why A1 cannot be adopted on R alone when they fail.
 - **F21. The home72 team config is not in the repo.** The X26 read used `anchors_home72_kakuna.json` from
   `/home/goodlad/dev/gen3ai-reads/…`, regenerated by `n0_endofrun_2026-09-27/scripts/make_home72.py`. T55 must commit
-  it, or regenerate it under a recorded sha256, before any X35 Kakuna read.
+  it, or regenerate it under a recorded sha256, before any X35 Kakuna read. **RESOLVED by T55 (2026-10-17):** the
+  config is committed byte-identical (`x35_breakers_stage_2026-10-17/anchors_home72_kakuna.json`, sha256 `e8a064db…`)
+  with `home72_manifest.json` pinning all 72 team files on both sides; `main.x35.kakuna` re-checks it before every
+  unit. No `data/` file was needed: the teams are the committed `n0_endofrun_2026-09-27/teams_home72/`.
 - **F22. Disk.** The launcher requires ≈ 20.7 GiB of headroom per 20M production fork (13.35 GiB before margins).
   Batch 1 is 9 production forks + 9 toy forks + ≈ 7 exploiter and reader runs, against 318 GiB free today (X34 needs 48
   GiB). Finished arms must be thinned to their 10M nodes + final under the retention policy as they finish, or a later
@@ -848,6 +855,33 @@ Everything else here is the orchestrator's tactical call (GPU order, seeds, the 
   `design_learner_recipe.md` §3.9).
 - **F24. Our "main exploiter" targets a FROZEN P\*.** AlphaStar's track the moving main agent (UNVERIFIED). A
   co-trained exploiter would need two learners sharing one GPU, which is neither designed nor costed.
+
+The T55 build (2026-10-17) adds:
+- **F25 (HAZARD, the toy side). The A-block rule is undefined for a start node at or below 150M.** There, two archive
+  nodes sit 10M apart, their midpoint ties down onto one of them, and the A-block would not be disjoint from the
+  archive. `main.x35.refpop` REFUSES such a freeze by name (P\* = 100–150M all refuse; 160M and up pass). X26's P\*
+  is past 180M, so production is unaffected. T\* is X34's plateau node, which may be ≤ 150M: the toy freeze then
+  needs an orchestrator rule first (no rule was invented here).
+- **F26. The two Newcombe intervals differ by their z** (`best_response_gap`: 1.96; `main.anchors.results`:
+  1.959963985), by ≈ 1e-5 at the bounds. At one z they agree to 1e-12 (the self-check). R2 / G-E use the R2 meter's
+  interval, G-K the anchors' one, so each read quotes the interval its meter prints.
+- **F27. R0 and the R2 readers have no registered argv.** The pinned offense-archetype best responder (§5.6.4) was
+  never dry-run, so `launch_x35.sh` does not cover R0 (batch-1 queue #0) or the readers.
+- **F28 (HAZARD, batch 1). Pre-check 8 HOLDs at today's disk:** 18 batch-1 forks × 20.68 GiB = 372 GiB against
+  316 GiB free. A launch then needs `--thinning`, which declares that finished arms are being thinned (F22). Toy
+  forks are counted at the production figure, so the check is conservative.
+- **F29. The readout's declared choices** (`main.x35.readout` docstring): b-ON and b-OFF must have EQUAL seed sets of
+  the look's size; zero variance on both sides is INCONCLUSIVE; G-K needs ≥ 400 counted games per team set per side,
+  and a tie is a non-win; a guard whose bound sits within 1e-9 of its fail boundary does not FAIL (`main.h2h.cross`'s
+  convention) but is recorded; a guard that was not read blocks only a verdict that needs it (R1 qualifying).
+- **F30. Not exercised:** the `GO` path (the launch, the 180 s liveness HOLD, the watcher), because nothing may
+  launch. While X26 is live pre-check 1 HOLDs, as it must, so checks 2–8 ran on a test copy of the script without
+  check 1, on a stand-in R in `/tmp` (`kit_validation_acb99527.txt`). The A6 stand-in typed `--behaviour-check warn`
+  twice; the kit types it once (argparse reads the same value).
+- **F31 (A2, a KNOWN BIAS, not fixed; from T54 `cdab9cfe`).** The fork's pool scalars are the parent's LATEST, not their
+  values at P\*: `win_rate_vs_bots`, the `pfsp_win_rates` of the KEPT snapshots and `pool_generation`. A2's early PFSP
+  weights start from post-P\* rates; A2's read declares it. T54's seed runs in the child, so `launch_x35.sh` checks
+  `pool_seed.json` AFTER the spawn (a null `fork_step` is a HOLD) and kills the fork by its PID on a failure.
 
 ## 7. Decision record
 
@@ -864,3 +898,4 @@ Everything else here is the orchestrator's tactical call (GPU order, seeds, the 
 | 2026-10-17 | **X35's shared frame** | forks from P\* at ONE pin per batch, with ONE shared control set per (start, pin); X26's own recipe (not `recipe.fork`); `--behaviour-check warn` typed; L_P 20M / L_T 70M; seeds 3501–3505 / 3601–3605; ABBA order, A1's seeds first | a control per breaker (doubles the cost for no information at a shared pin); `recipe.fork`'s 5 epochs and frozen LR (a second lever); the fork default `fatal` (≈ 6 rounding stops per arm, F14) | §5.6.1 |
 | 2026-10-17 | **X35's readout (amends §5.1)** | the PRIMARY R1 = Δ_pop against a FROZEN reference population (own archive + another lineage, band-filtered), Welch over seed finals at 97.5 % per look, looks at 3 and 5 seeds, the ±2.0 bar; the co-primary R2 (the best-response gap falls) for A3 / A4 / A6; guards G-F (head-to-head), G-E (exploitability), G-C (collapse battery), G-K (Kakuna, both team sets) | §5.1's b-ON × b-OFF head-to-head as the primary (a single-opponent read, which league §0 rules out in a cyclic regime); the archive Nash mixture as the primary (not built, and unstable on our data, F-ED-3) | §5.6.4–§5.6.6; `design_league_decisions.md` §0 |
 | 2026-10-17 | **The fork cost** | ≈ 4.4 GPU-h per 20M production seed (MEASURED from X26's late-run checkpoints) | 3.4 (assumed ≈ 1,600 fps) | F13 |
+| 2026-10-17 | **T55, the stage kit** (build worker) | `src/main/x35/`: the readout as pure functions with a constructed-case self-check committed BEFORE any real read; R frozen write-once with every sha256 and re-verified before each launch; every argv built from the frozen R (never typed) and equal to its validated stand-in; a launch script whose default is a dry run, HOLDs (exit 7) on the first failed pre-check and launches only on a literal `GO`; the home72 config committed byte-identical with a 72-team manifest | hand-substituted argvs at the call (the drift F18 / F14 came from); a decision function reading the ledger itself (the readout takes declared cells or numbers); regenerating home72 (a second team set to prove identical) | §5.6.4, §5.6.7; F25–F31; STAGED_PLAN §6 |
