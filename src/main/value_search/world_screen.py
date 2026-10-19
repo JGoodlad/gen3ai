@@ -31,7 +31,7 @@ from typing import Callable, Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 from agents.info_levers import mixture as MX
-from agents.info_levers.packed import (HP_TYPES, Spread, ability_id, hp_iv_masks, hp_type_of, item_id, toid,
+from agents.info_levers.packed import (HP_TYPES, Spread, ability_id, hp_iv_masks, hp_type_of, item_id, set_ivs, toid,
                                        typed_moves)
 
 EPS = 0.25
@@ -339,10 +339,27 @@ class MonSampler:
             if typed_moves(self.f_true)[rev_hp_slot] != want:
                 mv[rev_hp_slot] = want
             f[4] = ",".join(mv)
+        if self._fixed("spread") != "TRUE":
+            clear_stale_hp_type(f)
         return "|".join(f)
 
     def done(self) -> bool:
         return self.failed or len(self.samples) >= self.needed
+
+
+def clear_stale_hp_type(f: List[str]) -> None:
+    """Empty the packed set's explicit Hidden Power TYPE field (``misc``: happiness, hpType, …) when it disagrees with the
+    set's IVs. Three pool sets carry one (Salamence ``Flying``, Salamence ``Grass``, Tyranitar ``Bug``); a world that
+    copies the true set and draws another spread kept the TRUTH's field, so its set named two Hidden Power types:
+    Showdown's validator rejects it (28 of F2's 581 illegal worlds) and Showdown's battle would play the FIELD's type
+    (``pokemon.ts``: ``hpType = set.hpType || ivs``), where our Rust core plays the IVs'. The type is a SPREAD fact
+    (§7.2 of the levers spec): the IVs decide it, so the stale field goes."""
+    while len(f) < 12:
+        f.append("")
+    misc = f[11].split(",")
+    if len(misc) > 1 and misc[1] and toid(misc[1]) != hp_type_of(set_ivs(f)):
+        misc[1] = ""
+        f[11] = ",".join(misc).rstrip(",")
 
 
 def hp_split(hpt: Optional[str]) -> Tuple[Optional[str], int]:

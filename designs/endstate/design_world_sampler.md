@@ -49,8 +49,9 @@ The zero-playout screen (§6.1) already changes the picture:
     most 3.5 % under any candidate.
   - So a world right about the never-seen species AND the moves is drawn at most a quarter of a percent of the time,
     about 100× short of the target. That is why a species belief this sharp is still worth only 1 % of the true world.
-- **One honest world in twenty is an impossible team.** Drawing each move slot independently gives sets Showdown's own
-  validator rejects (egg-move and event combinations), in a third of the states.
+- **One honest world in twenty WAS an impossible team (F2, FIXED 2026-10-19).** Drawing each move slot independently
+  gave sets Showdown's own validator rejects (egg-move and event combinations), in a third of the states. The builder
+  now redraws every set until the validator accepts it (0 illegal worlds in a 316-state rebuild, no new exclusion).
 - **So the first target is the moves of the seen Pokémon, kept consistent with the rest of the team**: real teams and
   sets (team-level and set-level models), the legality of move combinations, and the opponent's own choices as
   evidence. A better species guess alone will not do it. Stage 1 (§6.2) then asks the open question: do worlds that are
@@ -132,7 +133,7 @@ three steps:
 | **speed order** | Speed inequalities (priority bracket, paralysis, Quick Claw, which rolls battle-wide each turn in gen 3) | the replay gate (who moved first is printed) | partly: a speed TIE spends a die without printing a line, so under the true seed the gate pins the tie | MEASURED: a seen mon's Speed ±1 is rejected for 5.0 % of seen mons, in 20.1 % of decisions (`design_information_levers.md` §7.5) |
 | **abilities** | the ability of a two-ability species | announced → kept; otherwise drawn ∝ Smogon, and the gate rejects one whose effect would have printed (Intimidate on entry, an immunity line) | partly: a dice-rolling ability that did NOT trigger (Static, Flame Body, Effect Spore, Cute Charm, Shed Skin) is visible to the gate through the dice | MEASURED: negligible on this pool |
 | **PP use** | the number of uses of each revealed move; Struggle implies no usable move | the replay consumes PP exactly as the truth did; a never-used move has full PP; `playout_open` refuses a Struggle the world does not force | yes (the opponent's PP is never shown to us in gen 3; only our count of uses) | a Struggle / Taunt / Disable / Choice-lock history is a strong constraint on the UNREVEALED moves, honoured by rejection only (rare, unmeasured) |
-| **Smogon legality** | team clauses; bans; learnsets; event and egg-move combinations; EV total ≤ 510 | `team_legality` clauses (a world that breaks a rule the truth does not is rejected); only engine-runnable moves and items are drawn; Smogon usage pairs are each learnset-legal (`learnset_test.py`); the screen's IVs stay at 30 / 31 | **no, for move combinations** | **F2** (§7), MEASURED: worlds are never run through Showdown's `TeamValidator('gen3ou')`; 5.2 % of stored F worlds are illegal (incompatible egg / event moves), in 32 % of states |
+| **Smogon legality** | team clauses; bans; learnsets; event and egg-move combinations; EV total ≤ 510 | `team_legality` clauses (a world that breaks a rule the truth does not is rejected); only engine-runnable moves and items are drawn; and, since 2026-10-19, every drawn set and returned world passes Showdown's `TeamValidator('gen3ou')` (rejection: a set is redrawn until accepted; the truth must pass the same rule or the build raises) | **yes** (F2 RESOLVED) | none known. Before: 5.2 % of stored F worlds illegal, in 32 % of states (§6.1, §7 F2) |
 | exact HP of a seen mon | from its spread and the replayed history | follows from the screened spread | as honest as the spread (see damage) | 70 / 124 seen mons' exact HP equal the truth's (`design_information_levers.md` §7.1) |
 | **hidden counters** | sleep / confusion / Encore / Disable / lock turns left | NOT drawn: rolled before the root on the true seed, so every world holds the truth's | **no** (the builder's declared residual) | cure: a root-state resample (not built) |
 | gender | the turn-0 gender draws | the engine's gender pad places the drawn never-seen mons on the true draw slots | yes (one residual coin, unobservable) | — |
@@ -173,7 +174,38 @@ TRUTH from the feasible set.
    use that weight directly (§3.6).
 4. **A throwing guard, per the owner's GIGO rule:** the TRUTH must pass every propagation rule on every bank decision.
    A rule that excludes the truth anywhere is a defect and raises; it is never an exclusion. That is the test that
-   catches a mis-ported mechanic such as §3.4's.
+   catches a mis-ported mechanic such as §3.4's. The legality rule (F2, BUILT 2026-10-19) is the first rule that
+   carries it: `world_legality.Legality.require_true_team` raises before any world is drawn.
+
+#### 3.3.1 What the VERIFY step needs to accept any dice outcome consistent with the log (F1; design note, NOT built)
+
+**Why today's replay is too sharp.** The world replays the prefix on the TRUTH's seed. The Rust core's dice are one
+`Prng` stream (`src/rust_sim/src/prng/mod.rs`), consumed in a fixed order, so the world's k-th draw IS the truth's k-th
+draw. A seen mon's hit then reproduces the printed HP only with the truth's own damage ROLL. An honest player knows only
+that the roll was one of 16 (and the printed crit flag). The screen keeps the spreads that fit ONE roll, not the
+spreads that fit ANY roll: its posterior on Atk / SpA / HP / Def / SpD is narrower than honest, and a mon whose spread
+fits only another roll is an exclusion (§3.5 cause 3).
+
+**What the engine already has.** `Prng` is `Clone` (the clone-and-branch search primitive); the damage function builds
+the full 16-roll table (`damage.rs`, `rolls[r]`); every draw is counted (`POKESIM_PRNG_TRACE`, `TRACE_DRAW_N`).
+
+**Two tiers, cheapest first.**
+
+| tier | what changes | cures | does not cure | cost (UNVERIFIED) |
+|---|---|---|---|---|
+| **A: the damage roll's VALUE, stream kept aligned** | At each damage-roll draw the PRNG call is consumed as today (so every later die stays the truth's and the stream never desyncs), but its VALUE is replaced by a roll from the CONSISTENT set: the rolls whose damage prints the observed HP line (our mon: the exact HP from our request; theirs: the shown fraction). The world's weight is multiplied by k / 16 (k consistent rolls), and k = 0 rejects. Built as a per-draw override list (keyed by draw index) fed by a first pass that records each damage site's 16 candidates and its target | the damage leg of F1 (the main one for spreads), and the exclusions it causes | speed ties, dice abilities that did not trigger, crit-rate differences, the hidden counters (F6): all still the truth's dice | ≈ 1–2 agent-days: an override channel in the core + two replays per candidate |
+| **B: constrained dice (§3.3's VERIFY)** | Every draw site is TYPED (damage roll, crit, accuracy, secondary, speed tie, Quick Claw, sleep / confusion turns, ability procs). A printed outcome is FORCED, weight × its prior probability; an outcome the protocol never prints (a silent speed tie, a Static that did not trigger, a pre-root sleep counter) is SAMPLED from its prior. Lookahead uses `Prng`'s clone: at a site, branch the outcomes to the next printed line and keep the consistent ones (sequential importance sampling: one sampled ∝ prior, the weight × their mass). The verdict becomes a log-LIKELIHOOD per world | F1 whole, the speed-tie and dice-ability leaks (§7.5 of the levers doc), and F6 (counters drawn, not inherited) | nothing in this list; it changes the screen from 0 / 1 to weighted | several agent-days: typed sites across the core, an in-core resolver fed the viewer's line stream, the gate in Python weighted |
+
+**The guards either tier must carry.**
+- The truth-passes guard: the TRUE team has weight > 0 at every bank decision, and with every site forced to the
+  truth's realized draw the constrained replay is BYTE-identical to today's seeded replay (the oracle identity; run
+  in the emission self-check build).
+- A Counter / Mirror Coat / Hidden Power regression (§3.4) for any rule that reads a move's category.
+- The weight is a likelihood, not a probability of the world: a search that uses it must normalise over the J worlds.
+
+**Measure before building.** Without any engine change: for each screened seen mon on the banks, count the spreads the
+screen REJECTED whose only failing line is a damage line an analytic 16-roll check would accept (the replay's 16-roll
+table makes this exact). That bounds tier A's widening and the share of §3.5's exclusions it would recover.
 
 ### 3.4 A checked edge case every propagation rule must honour: Counter, Mirror Coat and Hidden Power (gen 3)
 
@@ -232,7 +264,7 @@ Why this matters beyond the 10 %:
 | 3 | the opponent's own choices are not used as evidence | M, U | unmeasured; candidate (f) |
 | 4 | the true-dice replay over-sharpens spreads and causes exclusions | I / S (+0.019 once U is known) | F1; §3.5 |
 | 5 | the hidden counters are the truth's | a leak (optimistic) | the builder's residual |
-| 6 | no full-validator legality check | M (impossible sets) | F2, MEASURED: 5.2 % of worlds, 32 % of states |
+| 6 | ~~no full-validator legality check~~ RESOLVED 2026-10-19 | M (impossible sets) | F2: 5.2 % of worlds, 32 % of states before; 0 after (§7) |
 
 ### 3.6 How determinization meets search
 
@@ -367,10 +399,10 @@ stated.
 ### (e) Set-level inference from observed facts: rank 4 (a CORRECTNESS requirement, not a lift lever)
 
 - **Method.**
-  - **First, the cheapest fact and the one measured broken: the set must be LEGAL.** Draw moves only in combinations
-    Showdown's validator accepts, using a per-species table of incompatible egg / event combinations DERIVED from the
-    validator (never hand-written), and validate every returned world. Today 5.2 % of worlds are illegal (F2). Fixing it
-    also sharpens M slightly, because the impossible combinations' mass goes back to possible ones.
+  - **First, the cheapest fact and the one measured broken: the set must be LEGAL. BUILT 2026-10-19 (F2):** every set
+    is drawn from the prior conditioned on Showdown's validator accepting it, by rejection through the validator itself
+    (no table; §7 F2), and every returned world is re-validated. Before, 5.2 % of worlds were illegal. The impossible
+    combinations' mass went back to possible ones (Tyranitar Pursuit 0.22 → 0.16 of its sets).
   - Then §3.3's dice-marginalised check and conservative propagation over damage, speed, item and ability events.
 - **What it buys.** For the SEEN mons' items, abilities and spreads, today's screen already performs this inference
   (sharper than honest, F1). Making it honest WIDENS the posterior (value small: I / A / S ≈ 0.003 alone, but +0.019
@@ -413,7 +445,7 @@ stated.
   - species hit 0.149, exact never-seen species set 0.020;
   - one seen mon's hidden moves all right 0.123, every seen mon's 0.011;
   - exact-world mass < 0.0001;
-  - 5.2 % of its worlds are illegal (F2).
+  - 5.2 % of its stored worlds are illegal (F2). F at HEAD (since 2026-10-19) is legal: 0 illegal worlds.
 - **Cost.** About 4 CPU-s per state to build (network-free; the maturity battery's cost table), more when the screen is
   hard (§3.5).
 
@@ -583,7 +615,43 @@ was run on F's stored world teams:
    (b) on mean log p: when the corpus misses, the truth keeps only (1 − λ) of (b)'s mass. Stage 1 fixes λ on a held-out
    population before any read (§6.2).
 5. **One in three states carries an illegal world.** Impossible sets in the worlds are a determinization defect,
-   independent of which sampler is used (§3.2, F2).
+   independent of which sampler is used (§3.2, F2). FIXED 2026-10-19 (§7 F2): the read below.
+
+*After the fix (F2, `measurements/world_legality_f2_2026-10-19/`, `result_f2.json`; world BUILDS only, no playout).*
+F was rebuilt at HEAD with the rule (`on`) on a uniform random 316 of the 1,520 stage-0 states (e2_end2 138, e2_prod
+105, mat_lean 73; the contended box stopped the rest). Without the rule (`off`), it was rebuilt on the 113 states
+where the rule rejected any draw, plus controls.
+
+| | stored F (the studies' pins) | F at HEAD, `on` |
+|---|---|---|
+| illegal worlds (Showdown's validator) | 130 / 2,288 (5.7 %) | **0 / 2,272** |
+| states holding an illegal world | 95 / 316 (30 %) | **0** |
+| excluded states | 30 (9.5 %) | 32 (10.1 %) |
+| builder defects (a guard raised) | 0 | 0 |
+
+- **The rule's own effect on exclusions is nil.** On the 113 touched states, `on` excludes 5 and `off` 6: 0 newly
+  excluded, 1 rescued. (The rejected draws spent rng, so that state's later tries differed.) The stored-vs-HEAD gap
+  of 30 → 32 is the OTHER builder change since the pins: the one Hidden Power fill of 2026-10-19
+  (`design_information_levers.md`, Decision record). `off` and the stored rows agree on 128 / 132 exclusion
+  verdicts, and on 0 / 132 world texts: every world holding a Hidden Power moved by an IV point.
+- **The rule spends no randomness until it rejects.** 19 / 19 control states (no rejected draw) rebuilt `off` are
+  byte-identical to `on`. Where `off` was rebuilt, 127 of its 856 worlds are illegal, so `on` changed what it had to.
+- **Cost.** 193 rejected draws over 316 states (`illegal_set`). Each validation is a few milliseconds through one
+  persistent Node child, memoised per set. The per-state build cost with and without the rule was not compared under
+  equal load (**UNVERIFIED**: expected negligible beside the screen's replays).
+- **The world distribution.** The species marginal is unmoved (total variation 0.0028 over 13,248 sets on the 276
+  states OK in both). The pairs the validator forbids are gone:
+  - Tyranitar Dragon Dance + Pursuit: 90 / 1,177 sets → 0 / 1,172;
+  - Blissey Wish + Aromatherapy: 7 → 0;
+  - Skarmory Whirlwind + Drill Peck: 5 → 0;
+  - Gengar Will-O-Wisp + Perish Song: 6 → 0;
+  - Salamence Dragon Dance + Wish: 9 → 0.
+
+  Their mass went to legal moves: Tyranitar's Pursuit rate fell from 0.222 to 0.163 of its sets. The other large move
+  shifts are Hidden Power TYPES on small-n species (Regice, n ≈ 60), confounded with the Hidden Power fill change.
+- **Worlds built before 2026-10-19 are NOT comparable with worlds built after**, for both reasons: the legality rule
+  and the Hidden Power fill. Every stored honest read (Tier 1, E2, the maturity battery at its pins) used the
+  illegal-capable builder.
 
 **Not read here, and why.** The PLATEAU bank's states are not read: they belong to the plateau step's pending
 registered read (`design_hidden_info_binding.md` §12.13.7), so reading even their inputs before it would muddy it.
@@ -603,7 +671,7 @@ referee rows):
 
 | arm | worlds |
 |---|---|
-| **F_legal** (the baseline of record) | F's own draws, with every world Showdown's validator rejects redrawn (F2). F_legal − F is itself a read: what the illegal worlds cost IMP |
+| **F_legal** (the baseline of record) | F at HEAD (F2 BUILT 2026-10-19: every set redrawn until Showdown's validator accepts it). F_legal − F (F's banked worlds) is itself a read: what the illegal worlds cost IMP, confounded with the Hidden Power fill change of the same day unless F is also rebuilt at HEAD without the rule (`world_legality_f2_2026-10-19/rebuild_worlds.py --mode off`) |
 | **B** | (b): never-seen species by joint Smogon teammates; everything else F's |
 | **C_forum_strict** | (c) on `w_forum_v1` ABC, minus every team sharing ≥ 4 mon sets with the state's true team; backoff to B |
 | **C_ladder** | (c) on the `hl_05_26` ladder corpus; backoff to B |
@@ -665,7 +733,7 @@ teams are public.
 
 | arm | build (CPU-s per state) | playouts | 287 states |
 |---|---|---|---|
-| F_legal | ≈ 4 + the validator (≈ 0.015 s per team in stage 0) on the 32 % of states with an illegal world | ≈ 13 | ≈ 1.5 CPU-h |
+| F_legal | ≈ 4 (the builder's own validation is ms per set, measured in the F2 rebuild) | ≈ 13 | ≈ 1.5 CPU-h |
 | B | ≈ 4 | ≈ 13 | ≈ 1.4 CPU-h |
 | C_forum_strict, C_ladder | ≈ 20–60 each (UNVERIFIED: POOL-style gating of up to `MAX_GATED` candidates) | ≈ 13 each | ≈ 5–12 CPU-h |
 | C_pool | ≈ 20–60 | ≈ 13 | ≈ 2.5–6 CPU-h |
@@ -675,10 +743,10 @@ teams are public.
 | stage 1b (E2, 1,108 states, end2 + prod pins) | | | ≈ 40–75 CPU-h, conditional |
 | stage 1c: (f) re-weighting over 64 proposed worlds | + the opponent-side replay and forwards | resample to 8, ≈ 13 | ≈ 1 agent-day of driver + ≈ 10 CPU-h, after 1a |
 
-**Build needed (none in this unit):** one measurement driver beside `pool_worlds.py` (`load_pool` swapped for a
-corpus, a backoff to B, the strict filter), B's weight function, and the validator-redraw hook (`validate_worlds.py`'s
-call, in the driver). Both are measurement-folder code: no change to
-`src/main/value_search/`.
+**Build needed:** one measurement driver beside `pool_worlds.py` (`load_pool` swapped for a corpus, a backoff to B,
+the strict filter), and B's weight function: measurement-folder code. The validator redraw is BUILT into the builder
+itself (F2, 2026-10-19, `world_legality`): every arm through `WorldSampler` gets it, and a corpus arm's worlds pass
+`world_guard.check_legal`.
 
 ---
 
@@ -689,17 +757,42 @@ call, in the driver). Both are measurement-folder code: no change to
   rolls), beyond the measured speed-tie and dice-ability legs. Its size is UNMEASURED. It makes F optimistic on items,
   abilities and spreads, and it is a likely cause of the exclusions (§3.5). Cure: the constrained-dice replay (§3.3).
   It can be measured without that cure: count the seen-mon spreads the screen REJECTS that an analytic 16-roll check
-  would accept.
-- **F2, the honest builder makes ILLEGAL worlds (MEASURED, §6.1).** Worlds pass the format clauses and the
-  engine-runnable checks, never Showdown's `TeamValidator('gen3ou')`.
-  - **581 of 11,160 stored F worlds (5.2 %) fail it**, in 445 of 1,395 states (32 %). The true teams: 0 of 1,395.
-  - The causes are egg-move and event-move COMBINATIONS that independent per-slot draws cannot see.
-  - These worlds give the opponent sets it cannot hold. That is a GIGO defect in every honest read so far (Tier 1, E2,
-    the maturity battery) and in FN, POOLSETS and every D / W / MAP arm that draws moves the same way. Its effect on
-    IMP is UNMEASURED.
-  - The cure: a per-species table of incompatible move combinations, derived from the validator itself (never written
-    by hand), applied in the move draw, plus the validator as a throwing check on every returned world. That is a
-    build for the owner of `world_draws` / `world_guard`, not this unit.
+  would accept. **What the verify step needs (design note, 2026-10-19, §3.3.1):** tier A replaces only the damage
+  roll's VALUE with one of the consistent rolls, keeping the dice stream aligned (weight k / 16); tier B types every
+  draw site and forces printed outcomes / samples silent ones (weight = the likelihood). Neither is built.
+- **F2, the honest builder made ILLEGAL worlds: RESOLVED 2026-10-19** (`main.value_search.world_legality`; the read in
+  §6.1, after the fix).
+  - **Before:** worlds passed the format clauses and the engine-runnable checks, never Showdown's
+    `TeamValidator('gen3ou')`. **581 of 11,160 stored F worlds (5.2 %) failed it, in 445 of 1,395 states (32 %).**
+    The true teams: 0 of 1,395. The causes were egg- and event-move COMBINATIONS that independent per-slot draws
+    cannot see (all but 31 of the 587 failing set instances), plus 28 with a stale Hidden Power type field (below)
+    and 3 with 0 EVs (a rule the validator holds; such draws are now redrawn too).
+  - **The method: rejection through the validator itself, not a derived table.** A table would be a second copy of
+    the breeding / event rules that can drift. Rejection is EXACT for the conditional draw (the prior restricted to
+    legal sets and renormalised) and costs milliseconds per set. Details:
+    - every never-seen mon's whole set is redrawn until accepted (`SET_REDRAWS` 25; its lever coins flipped once);
+    - a seen mon's unrevealed moves are redrawn after the screen (`MOVE_REDRAWS` 25);
+    - a never-seen set the gender placement made illegal, and a world team the validator rejects, are redrawn;
+    - the throwing guard re-validates every returned world (`world_guard.check_legal`);
+    - the audit's `legality` check counts `showdown_invalid`.
+
+    The species and the screened spreads are NOT re-weighted by their sets' legality rate: that rate is an artefact
+    of the independent draw, not evidence about the species.
+  - **The true-team guard (§3.3 point 4):** the TRUTH must pass the same rule, or the build raises `LegalityRuleError`
+    before any draw (a defect, never an exclusion). It is tested with a deliberately broken rule.
+  - **A second defect found and fixed with it: a STALE Hidden Power type field.** Three pool sets name their type in
+    the packed `misc` field (Salamence `Flying`, Salamence `Grass`, Tyranitar `Bug`). A seen mon's world kept the
+    truth's field beside its own drawn IVs. Showdown's battle would play the FIELD's type
+    (`pokemon.ts`: `hpType = set.hpType || ivs`), while our Rust core plays the IVs'. The core's request names the IVs'
+    type, so search was unaffected; only the text and Showdown's verdict were. The entry now drops a field that
+    disagrees with its IVs (`world_screen.clear_stale_hp_type`).
+  - **After** (316 random states rebuilt): 0 illegal worlds, 0 new exclusions caused by the rule, and the species
+    marginal unmoved. Its effect on IMP is UNMEASURED: stage 1's F_legal − F reads it (§6.2).
+  - **Not comparable:** worlds built before 2026-10-19 and worlds built after differ (this rule and the same day's
+    Hidden Power fill). The studies in flight run on their own pins (the maturity queue `826bee89` / `198fa91e`,
+    X37b) and keep the old builder.
+  - **A new runtime dependency:** the world builder now needs `node` and the built submodule (the validator), still
+    under Node's one runtime job, team validation. A LIVE search would carry it to play time.
 - **F3, forum-pool leakage.** 711 of the 719 training-pool teams appear verbatim in the forum collection, and 1,569 of
   its 5,330 teams share all six species with a pool team. `w_forum_v1` removes exact copies only. Any corpus sampler read
   on pool opponents must drop near copies of the TRUE team (stage 0 / 1's STRICT filter) and report the leak.
@@ -745,3 +838,4 @@ call, in the driver). Both are measurement-folder code: no change to
 | date | decision | chosen | rejected / alternatives | evidence |
 |---|---|---|---|---|
 | 2026-10-19 | **This doc CREATED** (orchestrator brief after the maturity battery's first LEAN read; the owner added DETERMINIZATION the same day) | One always-current doc for the world sampler and determinization. The TARGET in four levels (the truth's likelihood, recall, the exact-world mass q_SM, and the existing value meters TODAY / G / r); the facts a world must honour and how each is enforced today (rejection on a true-dice replay); PROPOSE → PROPAGATE → VERIFY with dice marginalised and a truth-passes guard; the Counter / Mirror Coat / Hidden Power rule as a named test; six candidates ranked (c) team-level corpus model > (f) opponent-choice likelihood > (b) joint Smogon teammates > (e) fact-based inference (correctness) > (d) the network's belief, against the baseline (a); the one-turn matrix in its Bayesian (opponent-type-per-world) form; stage 0 (zero playouts) READ and stage 1 designed | a species-first programme (stage 0: the network already holds the species; the sets are missing); the doubles bots' shared-column matrix (invalid when the opponent's moves differ by world); Foul Play's per-world Nash average (strategy fusion); pure constraint propagation (re-implementing mechanics is a GIGO class, §3.4); fitting any sampler on the evaluated population | §1's pointers; `measurements/world_sampler_screen_2026-10-19/`; `deps/pokemon-showdown/data/mods/gen3/moves.ts` Counter / Mirror Coat; `design_value_discrimination.md` §14.4; `showdown_bots_landscape_2026-10-18.md` |
+| 2026-10-19 | **F2 RESOLVED: the honest builder's worlds are LEGAL** (orchestrator brief; `main.value_search.world_legality`) | Rejection through Showdown's pinned `TeamValidator('gen3ou')` (one persistent Node child, `utils/bridge/validate_stream.js`, memoised): each never-seen set and each seen mon's unrevealed moves are redrawn until accepted, so the draw is the prior conditioned on legality; gender-made and team-level failures are redrawn; the TRUE team must pass the same rule or `LegalityRuleError` raises; `world_guard.check_legal` re-validates every returned world; the audit's `legality` reads `showdown_invalid`; the stale Hidden Power type field of three pool sets is dropped from a seen mon's world. Read on 316 random stage-0 states: 0 / 2,272 illegal worlds (stored 130 / 2,288), 0 new exclusions caused by the rule (5 vs 6 on the 113 touched states), species marginal unmoved (TV 0.0028); the F1 verify step's two tiers written down (§3.3.1), not built | a per-species incompatible-combination table derived from the validator (the doc's first proposal: a second copy of the breeding / event rules that can drift, and only a pairwise approximation of a triple or event rule); re-weighting the species or the screened spread by their sets' legality rate (an artefact of the independent draw); whole-world rejection (the same artefact on the species) | §6.1 (after the fix), §7 F2, §3.3.1; `measurements/world_legality_f2_2026-10-19/` (`result_f2.json`); `world_legality_test.py`, `world_legality_integration_test.py`, `info_audit_integration_test.py` |

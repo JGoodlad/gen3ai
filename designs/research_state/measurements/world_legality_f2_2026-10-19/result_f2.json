@@ -1,0 +1,303 @@
+{
+ "analysed": 316,
+ "by_pop": {
+  "e2_end2": 138,
+  "e2_prod": 105,
+  "mat_lean": 73
+ },
+ "marginals": {
+  "common_ok_states": 276,
+  "illegal_pairs": [
+   {
+    "on": "0/1172",
+    "pair": [
+     "dragondance",
+     "pursuit"
+    ],
+    "species": "tyranitar",
+    "stored": "90/1177"
+   },
+   {
+    "on": "0/1242",
+    "pair": [
+     "wish",
+     "aromatherapy"
+    ],
+    "species": "blissey",
+    "stored": "7/1242"
+   },
+   {
+    "on": "0/1242",
+    "pair": [
+     "aromatherapy",
+     "healbell"
+    ],
+    "species": "blissey",
+    "stored": "0/1242"
+   },
+   {
+    "on": "0/657",
+    "pair": [
+     "whirlwind",
+     "drillpeck"
+    ],
+    "species": "skarmory",
+    "stored": "5/658"
+   },
+   {
+    "on": "0/648",
+    "pair": [
+     "willowisp",
+     "perishsong"
+    ],
+    "species": "gengar",
+    "stored": "6/647"
+   },
+   {
+    "on": "0/758",
+    "pair": [
+     "dragondance",
+     "wish"
+    ],
+    "species": "salamence",
+    "stored": "9/763"
+   }
+  ],
+  "species_sets": {
+   "on": 13248,
+   "stored": 13248
+  },
+  "species_tvd": 0.0028,
+  "top_move_shifts": [
+   {
+    "delta": -0.1192,
+    "move": "hiddenpowergrass",
+    "n_on": 61,
+    "n_stored": 59,
+    "on": 0.0164,
+    "species": "regice",
+    "stored": 0.1356
+   },
+   {
+    "delta": 0.0892,
+    "move": "explosion",
+    "n_on": 61,
+    "n_stored": 59,
+    "on": 0.8689,
+    "species": "regice",
+    "stored": 0.7797
+   },
+   {
+    "delta": 0.0803,
+    "move": "explosion",
+    "n_on": 49,
+    "n_stored": 45,
+    "on": 0.3469,
+    "species": "smeargle",
+    "stored": 0.2667
+   },
+   {
+    "delta": 0.0766,
+    "move": "hiddenpowergrass",
+    "n_on": 95,
+    "n_stored": 94,
+    "on": 0.8,
+    "species": "raikou",
+    "stored": 0.7234
+   },
+   {
+    "delta": -0.0755,
+    "move": "hiddenpowerice",
+    "n_on": 95,
+    "n_stored": 94,
+    "on": 0.0947,
+    "species": "raikou",
+    "stored": 0.1702
+   },
+   {
+    "delta": 0.069,
+    "move": "hiddenpowerbug",
+    "n_on": 58,
+    "n_stored": 58,
+    "on": 0.3793,
+    "species": "hariyama",
+    "stored": 0.3103
+   },
+   {
+    "delta": -0.069,
+    "move": "hiddenpowerghost",
+    "n_on": 58,
+    "n_stored": 58,
+    "on": 0.3621,
+    "species": "hariyama",
+    "stored": 0.431
+   },
+   {
+    "delta": -0.061,
+    "move": "hiddenpowersteel",
+    "n_on": 380,
+    "n_stored": 377,
+    "on": 0.0,
+    "species": "snorlax",
+    "stored": 0.061
+   },
+   {
+    "delta": -0.0589,
+    "move": "hiddenpowerflying",
+    "n_on": 158,
+    "n_stored": 161,
+    "on": 0.5063,
+    "species": "gyarados",
+    "stored": 0.5652
+   },
+   {
+    "delta": -0.0588,
+    "move": "pursuit",
+    "n_on": 1172,
+    "n_stored": 1177,
+    "on": 0.163,
+    "species": "tyranitar",
+    "stored": 0.2218
+   },
+   {
+    "delta": 0.0531,
+    "move": "thunderbolt",
+    "n_on": 61,
+    "n_stored": 59,
+    "on": 0.9344,
+    "species": "regice",
+    "stored": 0.8814
+   },
+   {
+    "delta": 0.0502,
+    "move": "hiddenpowerrock",
+    "n_on": 158,
+    "n_stored": 161,
+    "on": 0.3608,
+    "species": "gyarados",
+    "stored": 0.3106
+   },
+   {
+    "delta": -0.0494,
+    "move": "substitute",
+    "n_on": 49,
+    "n_stored": 45,
+    "on": 0.3061,
+    "species": "smeargle",
+    "stored": 0.3556
+   },
+   {
+    "delta": -0.0493,
+    "move": "dragondance",
+    "n_on": 1172,
+    "n_stored": 1177,
+    "on": 0.4036,
+    "species": "tyranitar",
+    "stored": 0.4528
+   },
+   {
+    "delta": 0.0485,
+    "move": "batonpass",
+    "n_on": 49,
+    "n_stored": 45,
+    "on": 0.2041,
+    "species": "smeargle",
+    "stored": 0.1556
+   },
+   {
+    "delta": -0.0457,
+    "move": "hiddenpowergrass",
+    "n_on": 511,
+    "n_stored": 513,
+    "on": 0.2681,
+    "species": "jirachi",
+    "stored": 0.3138
+   },
+   {
+    "delta": -0.0444,
+    "move": "hiddenpowerice",
+    "n_on": 218,
+    "n_stored": 219,
+    "on": 0.2661,
+    "species": "jolteon",
+    "stored": 0.3105
+   },
+   {
+    "delta": -0.0425,
+    "move": "thunderwave",
+    "n_on": 61,
+    "n_stored": 59,
+    "on": 0.7541,
+    "species": "regice",
+    "stored": 0.7966
+   },
+   {
+    "delta": 0.0393,
+    "move": "hiddenpowerbug",
+    "n_on": 380,
+    "n_stored": 377,
+    "on": 0.0632,
+    "species": "snorlax",
+    "stored": 0.0239
+   },
+   {
+    "delta": 0.0369,
+    "move": "hiddenpowerwater",
+    "n_on": 218,
+    "n_stored": 219,
+    "on": 0.0734,
+    "species": "jolteon",
+    "stored": 0.0365
+   }
+  ]
+ },
+ "off_vs_stored": {
+  "identical_worlds": 0,
+  "same_verdict": 128,
+  "states": 132
+ },
+ "on": {
+  "defect_examples": [],
+  "defects": 0,
+  "excluded": 32,
+  "excluded_reasons": {
+   "illegal": 5,
+   "other": 27
+  },
+  "fails": {
+   "illegal_set": 193,
+   "joint": 27
+  },
+  "illegal_worlds": 0,
+  "ok": 284,
+  "states": 316,
+  "states_touched": 113,
+  "states_with_an_illegal_world": 0,
+  "worlds": 2272
+ },
+ "on_vs_off": {
+  "control_identical": 19,
+  "control_states": 19,
+  "excluded_off": 6,
+  "excluded_on": 5,
+  "newly_excluded_by_the_rule": [],
+  "off_illegal_worlds": 127,
+  "off_worlds": 856,
+  "rescued_by_the_rule": [
+   "e2_prod_10000002/step_10000002/sentinel_2/loss_s4_010#p1#34"
+  ],
+  "touched_missing_off": 0,
+  "touched_rebuilt_off": 113
+ },
+ "population": 1520,
+ "schema": "world_legality_f2_v1",
+ "stored": {
+  "defects": 0,
+  "excluded": 30,
+  "illegal_worlds": 130,
+  "ok": 286,
+  "states": 316,
+  "states_with_an_illegal_world": 95,
+  "worlds": 2288
+ }
+}

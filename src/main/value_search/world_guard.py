@@ -28,6 +28,11 @@ The checks, per world and opponent slot ``i`` (:func:`world_problems`):
 
 The engine view is ONE batched ``core_events`` replay of the worlds with no command (team construction and the first
 requests only): cheap beside the screen.
+
+* LEGALITY (F2, 2026-10-19) — every world team passes Showdown's own ``TeamValidator('gen3ou')`` (the builder's rule,
+  ``world_legality``; memoised, so re-checking what the builder already accepted is free). A returned world it rejects
+  raises :class:`~main.value_search.world_legality.IllegalWorldError`: a builder path that skipped the rejection is a
+  defect, never an exclusion.
 """
 from __future__ import annotations
 
@@ -188,12 +193,32 @@ def problems(root: "Root", teams: Sequence[str], facts: Sequence[Sequence[dict]]
     return out
 
 
-def check_worlds(root: "Root", teams: Sequence[str], facts: Sequence[Sequence[dict]], key: str = "") -> None:
-    """THROWING: raise :class:`WorldConsistencyError` naming the first problems when any world is inconsistent."""
+def check_worlds(root: "Root", teams: Sequence[str], facts: Sequence[Sequence[dict]], key: str = "",
+                 legality=None) -> None:
+    """THROWING: raise :class:`WorldConsistencyError` naming the first problems when any world is inconsistent, and
+    :class:`~main.value_search.world_legality.IllegalWorldError` when any fails the legality rule (``legality``: the
+    builder's ``world_legality.Legality``; default the pinned Showdown validator)."""
     bad = problems(root, teams, facts)
     if bad:
         first = "; ".join(f"world {j}: {', '.join(p[:3])}" for j, p in list(bad.items())[:3])
         raise WorldConsistencyError(f"{key}: {len(bad)} of {len(teams)} worlds inconsistent ({first})")
+    check_legal(teams, key, legality)
+
+
+def check_legal(teams: Sequence[str], key: str = "", legality=None) -> None:
+    """THROWING (F2): every world team passes the legality rule (default: Showdown's pinned validator)."""
+    from main.value_search import world_legality as WL
+
+    if legality is None:
+        from main.value_search.worlds import _gender_pad
+
+        legality = WL.Legality(pad=_gender_pad())
+    probs = legality.team_problems([str(t) for t in teams])
+    bad = {j: p for j, p in enumerate(probs) if p}
+    if bad:
+        first = "; ".join(f"world {j}: {' / '.join(p[:2])}" for j, p in list(bad.items())[:3])
+        raise WL.IllegalWorldError(f"{key}: {len(bad)} of {len(teams)} returned worlds fail Showdown's validator "
+                                   f"({first})")
 
 
 # ---- a builder with no provenance records of its own (POOL: a world IS a pool team) --------------------------------

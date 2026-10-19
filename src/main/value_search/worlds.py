@@ -37,7 +37,13 @@ slots (`place_genders`); a mon pinned to its slot by a lever keeps it. Without t
 needs at least as many ratio'd never-seen mons as the true draws (else rejected: ``gender_count``, the residual).
 
 LEGALITY: a world team breaking a gen3ou rule (`agents.gen3_data.team_legality`) that the true team does not break is
-rejected (``clause``). Only moves and items the engine runs are drawn (``BANNED_MOVES`` / ``BANNED_ITEMS``).
+rejected (``clause``). Only moves and items the engine runs are drawn (``BANNED_MOVES`` / ``BANNED_ITEMS``). And every
+drawn SET, and every returned world team, passes Showdown's own ``TeamValidator('gen3ou')`` (``world_legality``, F2 of
+``design_world_sampler.md``, 2026-10-19): a never-seen mon's set and a seen mon's unrevealed moves are REDRAWN until the
+validator accepts them (rejection: the prior conditioned on legality; learnset, egg- and event-move COMBINATIONS, EVs,
+IVs), a world team it rejects is redrawn (``illegal_team``), the TRUE team must pass the same rule or the build RAISES
+(``world_legality.LegalityRuleError``: a defect, never an exclusion), and the throwing guard re-validates every
+returned world (``world_guard.check_worlds``). Worlds built before this are not comparable with worlds built after.
 """
 from __future__ import annotations
 
@@ -56,11 +62,12 @@ from main.value_search.world_draws import (  # noqa: F401  (re-exported: the sam
     is_hp, item_id, never_seen_species, new_set, parse_set, require_known, set_ivs, species_id, toid, typed_moves)
 from main.value_search import world_draws as WD
 from main.value_search import world_guard as WG
+from main.value_search import world_legality as WL
 from main.value_search import world_screen as WS
 
 MAX_TRIES = 30
-#: move draws per seen mon before a world's try fails on a set the format bans
-MOVE_REDRAWS = 10
+#: move draws per seen mon before a world's try fails on a set the format bans or the validator rejects
+MOVE_REDRAWS = 25
 
 
 def log_commands(log: dict, upto: Optional[int] = None) -> List[List[str]]:
@@ -458,11 +465,14 @@ class WorldSampler:
     validated against the SEARCH consumer); ``off`` is honest. ``key`` seeds every draw (deterministic)."""
 
     def __init__(self, prior: Optional[Prior] = None, max_tries: int = MAX_TRIES, reveal="off",
-                 playout_check: bool = True, playout_lib=None):
+                 playout_check: bool = True, playout_lib=None, legality: Optional[WL.Legality] = None):
         self.P = prior or Prior()
         self.max_tries = max_tries
         self.spec: InfoReveal = SEARCH.validate(reveal)
         self.pad = _gender_pad()
+        #: F2: every drawn set and returned world passes Showdown's validator (the pinned one by default; a test or a
+        #: measurement may inject another rule — the true-team guard binds whatever rule is injected)
+        self.legality: WL.Legality = legality if legality is not None else WL.Legality(pad=self.pad)
         self._spreads: Dict[str, WS.SpreadPrior] = {}
         #: every world is also OPENED by the playout tool (``rust_env_playout_open``) before it is returned: the
         #: core_events replay the gate runs accepts some choice logs the playout tool refuses (a numeric ``move k``, a
@@ -510,6 +520,10 @@ class WorldSampler:
 
         spec = self.spec
         root = prepare_root(log, at, side, key, root_choice_in_log)
+        legal = self.legality
+        # THE TRUE-TEAM GUARD (F2): the truth must pass the very rule every world is held to; a rule that rejects it
+        # would remove the truth from the support, so it RAISES (``LegalityRuleError``), never excludes
+        legal.require_true_team(root.team, key)
         viewer, oi, n = root.viewer, root.oi, root.n
         rec, rv, ref, ref_proto, ref_cond = root.rec, root.rv, root.ref, root.ref_proto, root.ref_cond
         team, entries, sets, sids, moves_of = root.team, root.entries, root.sets, root.sids, root.moves_of
@@ -595,7 +609,8 @@ class WorldSampler:
                     rng=np.random.default_rng(int(hashlib.sha256(f"world_screen_v1:{key}:{k}".encode())
                                                   .hexdigest()[:16], 16)), needed=0)
                 if k.moves_told:
-                    samplers[k].legal = (lambda e, i=i: not (mon_problems(e) - mon_problems(entries[i])))
+                    samplers[k].legal = (lambda e, i=i: not (mon_problems(e) - mon_problems(entries[i]))
+                                         and legal.set_ok(e))
             return samplers[k]
 
         def build_base(j: int, attempt: int):
@@ -672,9 +687,13 @@ class WorldSampler:
             for i in never:
                 s = picks[i]
                 f_true = sets[true_never[s]] if s in true_never else None
-                got2 = new_set(rng, self.P, s, f_true, spec)
+                tally: Dict[str, int] = {}
+                got2 = new_set(rng, self.P, s, f_true, spec, legal=legal.set_ok, tally=tally)
+                fails["illegal_set"] = fails.get("illegal_set", 0) + tally.get("illegal_set", 0)
+                if not fails["illegal_set"]:
+                    del fails["illegal_set"]
                 if got2 is None:
-                    return None, "sample"
+                    return None, ("illegal_exhausted" if tally.get("illegal_exhausted") else "sample")
                 ent, nf = got2
                 if f_true is not None and s == sids[i] and all(v["match"] for v in nf.values()):
                     ent = entries[i]                 # every fact the truth's: the true entry verbatim
@@ -700,6 +719,9 @@ class WorldSampler:
                 facts[slot] = fa
             if team_problems("]".join(placed)) - true_problems:
                 return None, "clause"
+            # the placement NAMED genders: a never-seen set legal with no gender may not be with the one it now names
+            if any(legal.set_problems([placed[i] for i in never])):
+                return None, "illegal_gender"
             return (rng, placed, facts, keys, need_hp, pinned), None
 
         rev_hp: Dict[int, Optional[int]] = {}
@@ -737,6 +759,7 @@ class WorldSampler:
             final: Dict[int, Tuple[str, List[dict], Set[str]]] = {}
             for j, (rng, out, facts, keys, need_hp, pinned) in base.items():
                 ok_all = True
+                why_bad = "screen"            # a try's failure reason: no screened draw left, or no legal moves for one
                 for i, k in keys.items():
                     m = samplers[k]
                     if used.get(k, 0) >= len(m.samples):
@@ -748,7 +771,9 @@ class WorldSampler:
                     keep, mv_lv = facts[i].pop("_plan")
                     hpt = WS.hp_split(st[4])[0]                  # the Hidden Power TYPE the screened IVs carry
                     e_w = None
-                    for _r in range(MOVE_REDRAWS):         # a set the format bans (Speed Pass, …) is redrawn
+                    # a set the format bans (Speed Pass, …) or Showdown's validator rejects (an egg / event move
+                    # COMBINATION, F2) is redrawn: the unrevealed moves are drawn from the prior conditioned on legality
+                    for _r in range(MOVE_REDRAWS):
                         got = WD.draw_moves(rng, self.P.moves(sids[i]), keep, len(moves_of[i]), mv_lv, moves_of[i],
                                             hpt, hp_rule="force" if hpt is not None else "none")
                         if got is None:
@@ -758,7 +783,10 @@ class WorldSampler:
                         f_w[4] = ",".join(WD.align_to_truth(mv, moves_of[i], set(keep)))
                         e_w = m.entry(st, rev_hp.get(i), f_w)
                         if not (mon_problems(e_w) - mon_problems(entries[i])):
-                            break
+                            if legal.set_ok(e_w):
+                                break
+                            fails["illegal_set"] = fails.get("illegal_set", 0) + 1
+                            why_bad = "illegal_exhausted"
                         e_w = None
                     if e_w is None:
                         ok_all = False
@@ -766,11 +794,14 @@ class WorldSampler:
                     out[i] = e_w
                     facts[i].update(WS.facts_of(st, sets[i], facts[i].pop("_how")))
                 if not ok_all:
-                    fails["screen"] = fails.get("screen", 0) + 1
+                    fails[why_bad] = fails.get(why_bad, 0) + 1
                     continue
                 tw = "]".join(out)
                 if team_problems(tw) - true_problems:
                     fails["clause"] = fails.get("clause", 0) + 1
+                    continue
+                if legal.team_problems([tw])[0]:           # the whole team, by the validator (F2's fallback)
+                    fails["illegal_team"] = fails.get("illegal_team", 0) + 1
                     continue
                 final[j] = (tw, [facts[i] for i in range(len(entries))], need_hp)
             oks = run_gate([(t, frozenset(c)) for t, _, c in final.values()])
@@ -806,7 +837,7 @@ class WorldSampler:
             raise WorldError(f"{key}: {sum(t is None for t in teams)} of {J} worlds not built in {self.max_tries} "
                              f"tries ({fails})")
         # THE THROWING GUARD: slot <-> species <-> facts <-> the engine's view of every returned world
-        WG.check_worlds(root, [str(t) for t in teams], wfacts, key)
+        WG.check_worlds(root, [str(t) for t in teams], wfacts, key, legality=legal)
         logs = []
         for t in teams:
             tw = list(log["teams"])

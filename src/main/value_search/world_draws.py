@@ -19,7 +19,7 @@ equals the truth, for the leak audit.
 """
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Sequence, Set, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Set, Tuple
 
 import numpy as np
 
@@ -246,15 +246,44 @@ def never_seen_species(rng: np.random.Generator, P: Prior, slots: Sequence[int],
     return out, prov
 
 
+#: draws of a never-seen mon's whole set before its try fails on legality (F2: the prior conditioned on legality)
+SET_REDRAWS = 25
+
+
 def new_set(rng: np.random.Generator, P: Prior, sid: str, f_true: Optional[List[str]],
-            spec: InfoReveal) -> Optional[Tuple[str, dict]]:
+            spec: InfoReveal, legal: Optional[Callable[[str], bool]] = None,
+            tally: Optional[Dict[str, int]] = None) -> Optional[Tuple[str, dict]]:
     """A never-seen slot's whole set for species ``sid``. ``f_true``: the TRUE set when ``sid`` is one of the true
-    team's never-seen mons (an ``unseen`` lever applies to it then), else None (every fact drawn)."""
-    facts: Dict[str, dict] = {}
+    team's never-seen mons (an ``unseen`` lever applies to it then), else None (every fact drawn).
+
+    ``legal`` (F2, ``world_legality``): the set is REDRAWN until ``legal(entry)`` holds, up to ``SET_REDRAWS`` draws
+    (then None, ``tally["illegal_exhausted"]``): the draw is P(set | species, legal), rejection on Showdown's own
+    validator. Each lever's coin is flipped ONCE per mon, before the first draw (in the order the draw reads it), so a
+    redraw never re-flips a lever and a lever's mass stays exact; a set legal at its first draw consumes the rng
+    exactly as without the check. ``tally["illegal_set"]`` counts the rejected draws."""
+    coins: Dict[str, Optional[Lever]] = {}
 
     def lever(cls: str) -> Optional[Lever]:
-        lv = spec.lever(cls, "unseen") if f_true is not None else None
-        return lv if fires(rng, lv) else None
+        if cls not in coins:
+            lv = spec.lever(cls, "unseen") if f_true is not None else None
+            coins[cls] = lv if fires(rng, lv) else None
+        return coins[cls]
+
+    for _ in range(SET_REDRAWS if legal is not None else 1):
+        got = _one_set(rng, P, sid, f_true, spec, lever)
+        if got is None or legal is None or legal(got[0]):
+            return got
+        if tally is not None:
+            tally["illegal_set"] = tally.get("illegal_set", 0) + 1
+    if tally is not None:
+        tally["illegal_exhausted"] = tally.get("illegal_exhausted", 0) + 1
+    return None
+
+
+def _one_set(rng: np.random.Generator, P: Prior, sid: str, f_true: Optional[List[str]], spec: InfoReveal,
+             lever: Callable[[str], Optional[Lever]]) -> Optional[Tuple[str, dict]]:
+    """One draw of :func:`new_set` (``lever``: the mon's once-flipped lever coins)."""
+    facts: Dict[str, dict] = {}
 
     lv_s = lever("spread")
     true_sp = Spread.of(f_true) if f_true is not None else None

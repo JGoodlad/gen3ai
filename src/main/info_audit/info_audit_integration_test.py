@@ -122,6 +122,18 @@ def test_teeth_regate_legality_and_genders_catch_a_tampered_world(corpus):
     ents[ratio[0]] = "|".join(g)
     bad2 = type(w)(logs=w.logs, teams=["]".join(ents)], tries=w.tries, leak=w.leak, revealed=w.revealed)
     assert not C.genders(root, bad2)["pass"]
+    ents = w.teams[0].split("]")
+    k = never[0]
+    h = W.parse_set(ents[k])
+    # PLANT: an egg-move pair no father passes on (F2), on a species the team does not hold (no species-clause error)
+    sp, ab, mv = next(c for c in (("Tyranitar", "sandstream", "dragondance,pursuit,rockslide,earthquake"),
+                                  ("Skarmory", "keeneye", "whirlwind,drillpeck,spikes,rest"))
+                      if W.toid(c[0]) not in {W.species_id(W.parse_set(e)) for e in ents})
+    h[0], h[1], h[2], h[3], h[4] = sp, "", "leftovers", ab, mv
+    ents[k] = "|".join(h)
+    bad3 = type(w)(logs=w.logs, teams=["]".join(ents)], tries=w.tries, leak=w.leak, revealed=w.revealed)
+    v = C.legality(root, bad3)
+    assert not v["pass"] and v["showdown_invalid"] == 1 and "egg move" in " ".join(v["examples"][0]["showdown"])
 
 
 def test_teeth_log_consistency_catches_an_over_reveal(corpus, monkeypatch):

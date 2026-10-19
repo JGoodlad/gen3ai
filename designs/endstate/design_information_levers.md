@@ -369,6 +369,27 @@ Under `pilot` the seen mons' item, ability and spread are TOLD (the truth, every
 - **Legality**: a world breaking a gen3ou rule the true team does not break is rejected (`clause`); the never-seen
   draws and the genders are checked BEFORE the screen (cheap), each seen mon's set after its moves are drawn (a banned
   set — e.g. a Baton Passer drawn a Salac Berry — is redrawn up to `MOVE_REDRAWS` times), the whole team last.
+- **Showdown's validator** (F2 of `design_world_sampler.md`, BUILT 2026-10-19: `main.value_search.world_legality`):
+  every drawn SET and every returned world passes the pinned `TeamValidator('gen3ou')` — learnset, egg- and
+  event-move COMBINATIONS, EVs, IVs, Hidden Power — which `team_legality` (clauses and bans) never checked; 5.2 % of
+  the stored F worlds failed it. The method is REJECTION through the validator itself (never a hand-written table): a
+  never-seen mon's whole set is redrawn until accepted (`world_draws.SET_REDRAWS`; its lever coins flipped ONCE per
+  mon, so a lever's mass stays exact), a seen mon's unrevealed moves are redrawn after the screen (`MOVE_REDRAWS`), a
+  never-seen set the gender placement made illegal and a world team the validator rejects are redrawn. The draw is
+  then the prior CONDITIONED on legality, P(set | species, the fixed facts, legal); the species and the screened spread
+  are not re-weighted by how often their sets are legal (that rate is an artefact of the independent per-slot draw,
+  not evidence about the species). The validator is ONE persistent Node child per process
+  (`utils/bridge/validate_stream.js`), memoised per set. **The TRUE-TEAM GUARD:** the truth must pass the same rule
+  or the build RAISES `LegalityRuleError` before any draw (a defect, never an exclusion); the throwing guard
+  re-validates every returned world (`world_guard.check_legal`, `IllegalWorldError`). Fails are counted:
+  `illegal_set` (a rejected draw), `illegal_exhausted` (no legal draw in the redraw budget), `illegal_gender`,
+  `illegal_team`. **Worlds built before this are not comparable with worlds built after.**
+- **A stale Hidden Power TYPE field** (fixed with F2): three pool sets name their Hidden Power type in the packed
+  `misc` field (Salamence `Flying`, Salamence `Grass`, Tyranitar `Bug`). A seen mon's world copied the true set and
+  drew another spread, so it kept the truth's field beside another type's IVs: Showdown's validator rejects it (28 of
+  F2's 581 illegal worlds), and Showdown's battle would play the FIELD's type where our Rust core plays the IVs'. The
+  seen-mon entry now drops a field that disagrees with its IVs (`world_screen.clear_stale_hp_type`), unless the spread
+  is TOLD true.
 - **The playout tool opens it** (the blind replica's finding 3): a world that passed the gate is also opened by
   `rust_env_playout_open`, the search's own replay, before it is returned. The gate's `core_events` replay accepts
   some choice logs the playout tool refuses (a numeric `move k`; a Struggle the world does not force); such a world is
@@ -408,8 +429,9 @@ Under `pilot` the seen mons' item, ability and spread are TOLD (the truth, every
   for is skipped, so a wrong candidate still yields the protocol its score reads); the world returned is STRICT.
   A sampler that never fits the log in `MAX_STEPS` makes the decision unbuildable (a `WorldError`: an EXCLUSION).
 - **Legality inside the screen**: when a seen mon's moves are TOLD (a mass-1 truth lever), a drawn item or ability
-  that breaks a clause with them is refused without a replay; never for drawn moves (it would filter by the truth's
-  unrevealed moves).
+  that breaks a clause with them, or that Showdown's validator rejects with them, is refused without a replay; never
+  for drawn moves (the screening world holds the truth's unrevealed moves, so it would filter by them). A drawn
+  seen mon's moves are held to the validator AFTER the screen (§7.2).
 
 ### 7.4 Cost and exclusions (measured, §10.3)
 
@@ -628,7 +650,7 @@ fixed seeds; a statistical bound only where its planted defect sits far beyond i
 | search | `oracle_identity` | the `oracle` preset builds exactly the true team and prefix | `checks.py` |
 | search | `regate` | every returned world replays STRICTLY to the searched side's byte-equal rows and protocol (+ the seen mons' exact-HP match, descriptive) | `checks.py` |
 | search | `consistency` | each slot's fact record names the mon the ENGINE built there and every match flag is that mon's (the builder's own throwing guard, §7.6, as a verdict) | `checks.py`, `value_search/world_guard.py` |
-| search | `legality` | no world breaks a gen3ou rule the true team does not | `checks.py` |
+| search | `legality` | no world breaks a gen3ou rule the true team does not, and every world passes Showdown's validator (`showdown_invalid`, F2) | `checks.py`, `value_search/world_legality.py` |
 | search | `genders` | the never-seen slots that draw (or pad) are exactly the true team's draw slots | `checks.py` |
 | search | `gender_independence` | no world was rejected on its turn-0 gender-draw count (seed reuse through the gender dice; the pad closes it) | `checks.py` |
 | search | `playout_open` | every returned world opens in the playout tool (`rust_env_playout_open`), not only in the gate's `core_events` replay | `checks.py` |
@@ -650,7 +672,8 @@ and the builder's guard raises); a source that claims a move play never named (`
 move channel off (the reach check); provenance violations of each kind (unit); the builder without the gender pad
 (`gender_independence`); a numeric choice token `core_events` gates green (`playout_open`'s refusal); a control gate
 that rejects everything (`seed_reuse`); an injection's Hidden Power type moved by the moves lever (§1.1; the
-injection's `the_hidden_power_type_is_a_spread_fact` test). Plus the hidden-info study's six A1–A3
+injection's `the_hidden_power_type_is_a_spread_fact` test); a never-seen set planted with an egg-move pair no father
+passes on (`legality`'s `showdown_invalid`, F2). Plus the hidden-info study's six A1–A3
 plants and its gender plants, which these generalise.
 
 ### 10.2 The tiers
@@ -769,3 +792,4 @@ For a decision-level score IMP (the study's: win probability per decision over t
 | 2026-10-15 | **The world CONSISTENCY GUARD BUILT, after a GIGO in `Worlds.facts` (§7.6)**: the gender placement permuted the drawn never-seen mons but their provenance records stayed at the slot each was DRAWN for (46 % of the never-seen records of the stored Tier-1 worlds named another slot's mon), and the never-seen species `match` compared a species with the truth of its draw slot | Each record moves with its mon (`place_genders(src_of=…)`, `drawn_slot`; the worlds byte-identical); the species flags read at the returned slot (`match` = a TRUE never-seen species, set-based; `slot_match` = the truth's species at this slot); every returned world checked slot ↔ species ↔ facts ↔ the ENGINE's view (item, ability, moves with aliases resolved and none twice, exact stats, every match flag recomputed) and a mismatch RAISES `WorldConsistencyError`; the audit's `consistency` verdict | keeping slot-based `match` (it measures neither the slot the mon holds nor whether the team holds a true species); matching records by species in each READER (the Tier-1 FN provenance does; every other reader would have to know); an exclusion instead of a raise (a record that is not its world is a defect) | `main/value_search/world_guard.py` (+ `_test.py`, `_integration_test.py`); impact: no world, playout or registered verdict changed; the Tier-1 Amendment-3 U hit-rate proxy and the FN species hit move (ledger 2026-10-15) |
 | 2026-10-15 | **The PACKED-TOKEN READER BUILT, a GIGO class fix (§7.7)**: `packed.typed_moves` compared a packed team's RAW move token with ids from play, so the one pool team that spells Will-O-Wisp `wisp` (team 555) made a TRUE `wisp` slot unrecognised as revealed and POOLSETS' move table hold `wisp` beside `willowisp` (7 of its 9,112 Tier-1 worlds ran the move twice) | ONE reader: `gen3_data.moves.canonical_id` (the Showdown id through the variant table the Rust dex uses) behind `packed.move_id` / `typed_moves`, with `species_id` / `item_id` / `ability_id` and `to_id_str` as the one normaliser, used by every packed-field read of `info_levers`, `value_search`, `info_audit` and `team_legality`; THROWING guards: `packed.require_known` (an id the data cannot resolve, on the TRUE team in `prepare_root` and `TrueTeam.of`), `draw_moves` refuses a prior that names a move by a variant, `world_guard` compares the reader with the engine; `world_guard.check_teams` / `derived_facts` for a builder with no provenance records (POOL) | canonicalising at load / pack time in `utils.team_packing` (it changes the pool's packed bytes and sha256 that POOL's `true_indices` and the identity checks rest on, to repair a spelling the engine already reads); resolving variants in `world_guard` only (the reader stays wrong everywhere else); editing `data/` (rule 6: the team file stays as contributed) | `agents/info_levers/packed.py`, `agents/gen3_data/moves.py`, `main/value_search/{world_draws,worlds,world_guard,world_screen}.py` (+ `packed_test.py`, `inject_true_team_test.py`, `name_variant_integration_test.py`, `world_guard_test.py`, `worlds_test.py`, `moves_test.py`); impact: 0 states with a variant in the TRUE team (F / FN / O−* / D* / W90 / MAP100 unmoved), POOL unmoved, POOLSETS 7 worlds + a 1-set Gengar table shift, exact leave-one-out arm-mean IMP change ≤ 3.3e-4 (ledger 2026-10-15) |
 | 2026-10-19 | **ONE Hidden Power impl** (owner: "Fix it so we only have 1 impl for the HP determinization") | `agents.gen3_data.hidden_power` is THE table (Showdown's validator fill, `fillStats(typechart.ts HPivs, 31)`) and THE formula (IVs → type / power); `packed.hp_type_of` / `hp_ivs` / `hp_iv_masks` delegate to it. The world screen's CANONICAL pattern (index 0, `HP_CANON` 0.8) is now Showdown's fill, not the most-31s pattern, which differed for Bug, Dragon, Fire, Flying, Grass, Ice, Psychic and Water; `world_draws`' never-seen Hidden Power spreads take the same fill. A world built after this commit can differ from one built before by a point of a stat on those 8 types | Keep the most-31s choice (rejected: a set a human builds through Showdown's teambuilder, and every pool set our teambuilder fills, carries the validator's fill, so it is the more likely pattern; and two tables had already drifted once, the Ghost row of `GEN3_HP_IVS`) | `hidden_power_test.py` (the table equals `typechart.ts`, the reverse formula on hand-worked spreads, every former copy IS the one table); `hidden_power_single_impl_test.py` (a grep guard over `src/` .py and .rs); the crate's `tests/hidden_power_fill_test.rs` (the Rust formula reads every `typechart.ts` fill back at 70 power). Runs pinned before this commit (X26 `9c033489`, the maturity queue `826bee89` / `198fa91e`) are unaffected |
+| 2026-10-19 | **Showdown's VALIDATOR in the search world builder (F2 of `design_world_sampler.md`)**: 5.2 % of the stored honest worlds held sets no player can hold (egg / event move combinations) | §7.2: every drawn set and returned world passes the pinned `TeamValidator('gen3ou')` by REJECTION (`main.value_search.world_legality`; never-seen sets redrawn with their lever coins flipped once, seen mons' unrevealed moves redrawn after the screen, gender-made and team-level failures redrawn); the TRUE team must pass or `LegalityRuleError` raises; `world_guard.check_legal` and the audit's `legality` (`showdown_invalid`) re-check; a seen mon's stale Hidden Power type FIELD dropped (`world_screen.clear_stale_hp_type`). 316-state rebuild: 0 illegal worlds, no exclusion caused by the rule. Worlds before / after are not comparable | a derived per-species combination table (a second copy of the rules); re-weighting species or spreads by their sets' legality rate | `design_world_sampler.md` §6.1 / §7 F2; `measurements/world_legality_f2_2026-10-19/` |

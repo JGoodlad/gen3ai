@@ -9,7 +9,8 @@ SEARCH (the world builder, ``main.value_search.worlds``):
 * ``regate`` — every returned world replays to the searched side's byte-equal rows and protocol (A3);
 * ``consistency`` — each slot's fact record names the mon the ENGINE built at that slot, and every match flag is that
   mon's (``main.value_search.world_guard``; the 2026-10-15 never-seen record mis-pairing);
-* ``legality`` — no world team breaks a gen3ou rule the true team does not (A4);
+* ``legality`` — no world team breaks a gen3ou rule the true team does not (A4), and every world passes Showdown's own
+  validator (F2 of ``design_world_sampler.md``);
 * ``genders`` — the never-seen slots that draw a gender at construction are exactly the true team's (A6's leak);
 * ``provenance`` — every fact is revealed / told / drawn exactly as the spec says (a fact told without a lever, or a
   mass-1 truth lever whose world value is not the truth, fails);
@@ -103,10 +104,16 @@ def consistency(root: "W.Root", worlds: "W.Worlds") -> dict:
 
 
 def legality(root: "W.Root", worlds: "W.Worlds") -> dict:
+    """No world breaks a gen3ou clause / ban the true team does not (``team_legality``), and every world passes
+    Showdown's own validator (F2: learnset, egg- and event-move combinations, EVs, IVs; ``world_legality``)."""
+    from main.value_search import world_legality as WL
+
     base = W.team_problems(root.team)
-    bad = [{"world": j, "new": sorted(W.team_problems(t) - base)} for j, t in enumerate(worlds.teams)
-           if W.team_problems(t) - base]
-    return _verdict("legality", not bad, worlds=len(worlds.teams), violations=len(bad), examples=bad[:10])
+    shown = WL.Legality(pad=W._gender_pad()).team_problems(worlds.teams)
+    bad = [{"world": j, "new": sorted(W.team_problems(t) - base), "showdown": list(p[:3])}
+           for j, (t, p) in enumerate(zip(worlds.teams, shown)) if (W.team_problems(t) - base) or p]
+    return _verdict("legality", not bad, worlds=len(worlds.teams), violations=len(bad),
+                    showdown_invalid=sum(1 for p in shown if p), examples=bad[:10])
 
 
 def _draws_or_pads(team: str) -> set:
