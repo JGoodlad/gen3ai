@@ -988,7 +988,7 @@ assembler / Baton Pass / reading-fixes checks), `battle/event_log_fuzz_test.py`,
 `training/obs_roundtrip_fuzz_test.py`, `training/hidden_power_tracker_fuzz_test.py` and the rest of the scripts that
 drove a poke-env `Player` through the in-process bridge: their subject (the Python battle layer, trackers and encoder)
 is gone. What holds the Rust core is `designs/rust_sim/encoder.md` §6a and the rust_sim fuzzers
-(`src/rust_sim/CLAUDE.md` — the A/B fuzzers, the byte fuzz, the core corpus). The constructed-scenario DamageOperator
+(`designs/rust_sim/fuzzers.md` — the A/B fuzzers, the byte fuzz; the core corpus is `src/agents/battle/core_corpus_test.py`). The constructed-scenario DamageOperator
 physics probe that lived beside them (`damage_op_probe_fuzz_test.py`, the OMNISCIENT `utils/bridge/damage_probe.js`)
 went with the directory; its three helpers live on in `agents/model/beatup_sim_parity_test.py`.
 

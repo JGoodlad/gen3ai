@@ -145,7 +145,7 @@ ruff check src/agents src/main src/utils --select F,E9            # real-bug lin
 
 **Fuzz tests** run real battles and validate against ground truth (the protocol stream or the omniscient
 engine) — on the Rust core since the poke-env retirement; the rust_sim fuzzers are listed in
-`src/rust_sim/CLAUDE.md`, e.g.:
+`designs/rust_sim/fuzzers.md`, e.g.:
 
 ```bash
 node src/rust_sim/harness/ab_fuzz.js --battles 200

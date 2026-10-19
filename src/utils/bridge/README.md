@@ -321,23 +321,11 @@ construction. The 16 silent-desync moves that audit found (`fakeout`, `rollout`,
 EMPTY list; what keeps that seam honest is its negative controls
 (`a_ditto_without_transform_builds_fine`, `transform_carriers_build_now_that_transform_is_modeled`),
 which fail if an over-broad guard silently returns. The rest fail loud at RUNTIME instead (the
-`run_status_move` / fixed-damage / charge guards). Full-universe census, re-run **2026-09-08** with
-the ENGINE as the oracle (`src/rust_sim/src/bin/scan_move_probe.rs`): **369 gen3-legal moves → 312
-modeled, 57 fail-loud, 0 MISMODELED**; **abilities 76/76** and **species 392/392** CLOSED;
-**items 102/106**. Pool report: **762/762** teams fully engine-playable, out of 813 `.txt` files —
-the 719-team TRAINING pool `TeamLoader` returns is a DIFFERENT filter and the two must not be
-reconciled. The ranked remaining gap:
-`designs/rust_sim/gen3_coverage_census_2026-09-08.md`. ⚠️ **Recount rather than quote** — the modeled
-count moves with every coverage round, and this line has already gone stale three times (281/88 from
-2026-08-04 while the tree was at 309/60; then 309/60 while the tree was at 312/57). 🚨 **Recount with
-the PROBE, not the JS scan** — the JS scan's universe verdict is a hand-mirrored copy of `turn.rs`
-and it is what went stale by 3 in 2026-09; the JS scan's own jobs are the pool report and the
-invariant gate: `SCAN_UNIVERSE=1 SCAN_UNIVERSE_LIST=1 node src/rust_sim/harness/scan_move_coverage.js`
-(exits non-zero if any silent desync reappears). **The load-bearing half is the invariant, not the split**: 0 MISMODELED is what
-makes an unmodeled move a loud construction failure instead of a silent desync, and that has held
-across every round. Measured exposure of the guarded sets is ZERO on both surfaces — they are
-latent-hazard guards, not live failures. (An earlier note here named *Aromatherapy* and *Wish* as
-unmodeled examples — both are in fact MODELED; the pool carries nothing unmodeled at all.)
+`run_status_move` / fixed-damage / charge guards). The full-universe census is **recounted, never quoted** here: the ENGINE is the oracle
+(`src/rust_sim/src/bin/scan_move_probe.rs`), and `src/rust_sim/harness/scan_move_coverage.js` gives the pool
+report and the 0-MISMODELED invariant gate; commands and the dated snapshots:
+`designs/rust_sim/move_census.md`. **The load-bearing half is the invariant, not the split**: 0
+MISMODELED is what makes an unmodeled move a loud construction failure instead of a silent desync.
 - **Turn-0 construction — MODELED (`gen3_turn0_construction_v1`).** The bridge builds via
   `BridgeSession::new_construct_turn0`, which runs the sim's full turn-0 construction window from the
   RAW `>start` seed — the per-mon gender `sample(['M','F'])` + the speed-tie insertChoice/eachEvent

@@ -3,8 +3,8 @@
 <!-- Lifted verbatim out of `src/rust_sim/CLAUDE.md` on 2026-09-08 (the leaf split: 2,659 -> a command card). This tree is ALWAYS-CURRENT: state the truth, never narrate a change. The leaf keeps the rule, the command and the hazard; this file keeps the detail. -->
 
 One row per module of the Rust Showdown port: what it is, what state it is in, and the exact
-types / functions / feature signatures it carries. `src/rust_sim/CLAUDE.md` carries the same
-table with the Responsibility column reduced to one line; this is the unabridged column.
+types / functions / feature signatures it carries. This is the module map; the leaf
+`src/rust_sim/CLAUDE.md` holds none.
 
 ---
 
@@ -40,7 +40,7 @@ table with the Responsibility column reduced to one line; this is the unabridged
 
 ## Moved from the leaf (2026-10-10) — the leaf's one-line table, as it stood
 
-> Moved VERBATIM from `src/rust_sim/CLAUDE.md` in the 2026-10-10 leaf cleanup; the leaf now carries a shorter row per module. Where a row here says more than the table above, this is the newer text.
+> Moved VERBATIM from `src/rust_sim/CLAUDE.md` in the 2026-10-10 leaf cleanup. Where a row here says more than the table above, this is the newer text.
 
 | Module | State | In one line |
 |---|---|---|
@@ -69,3 +69,5 @@ table with the Responsibility column reduced to one line; this is the unabridged
 | `encoder/` | M4 BUILT; SEARCH reads it (`expand_many`'s `rows`); `sim_bridge` ships it under the opt-in `core_obs` — the Rust env core reads it | THE ENCODER (`gen3_core_encoder_v1`): `BattleVersion::encode(side, &mut [f32; OBS_DIM])` — the `OBS_DIM`-dim row (2845 since the X5 version break's part 3: its LAST block is the OBS-FACTS block `encoder/facts.rs`, written over the `trackers::facts` fold, held to the ENGINE by `tests/obs_facts_truth_test.rs`; `BattleVersion::encode_facts` computes the block alone) of one side from its reading, view, legality and TRACKERS, byte-equal to `Gen3ObservationEncoder` until P6 slice 6c deleted that comparison (slice O; the row is now held by the obs golden and `designs/rust_sim/encoder.md` §6a); `layout.rs` GENERATED from `agents/observation/constants.py`; the dex / prior tables read from `data/`; NaN-prefilled in test / fuzz builds; the row on the wire as a `<f4` frame (`wire.rs`); `oracle.rs` is the DIAGNOSTIC ORACLE REVEAL — the opponent block's unseen tail under `--oracle-reveal {species,full}` (`full` also overlays the true set on the seen mons), built per chain by the Rust env core, absent (`Inputs.oracle = None`) everywhere else, so `sim_bridge`'s `core_obs` and search build `off` rows. Detail: [`designs/rust_sim/encoder.md`](encoder.md). |
 | `core_error.rs` | BUILT | `CoreError` (`gen3_core_error_v1`): the core's error — a `Refusal` carrying the Python exception class poke-env raised on the same input (the parity gate that compared it was deleted in P6 slice 6c), `Malformed` input, or a core `Fault`. Never a bare `String` inside the core; the message converts unchanged at the transport boundary. Detail: [`designs/rust_sim/present.md`](present.md) §2. |
 | `engine.rs` | BUILT | The ENGINE half of a bridge session (`gen3_core_engine_split_v1`): the battle, the turn loop, the open boundary and the TYPED requests, advancing over a caller-owned command queue into an `EngineSink`. `bridge::BridgeSession` is the TRANSPORT around it (what `sim_bridge` writes, byte-identical); a version owns the engine alone. Detail: [`designs/rust_sim/present.md`](present.md) §2. |
+| `bin/ab_replay.rs`, `bin/bridge_replay.rs` | BUILT | The A/B fuzzers' replayers + their known-residual classifiers (`fuzzers.md`). |
+| `bin/scan_move_probe.rs` | BUILT | The move-census oracle: the ENGINE's verdict per id (`move_census.md`). |

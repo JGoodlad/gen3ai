@@ -194,7 +194,7 @@ disabled-by-default guarantee; this is the unabridged bullet.)*
   correctness point), `Cause` (`[from] item: <Item>` / `[from] ability: <A>` / `[from] move: <M>` /
   `[from] <bare>`), `STAT_TOKENS` (the `-boost`/`-unboost` stat names). Move display names come
   from the dex (`MoveData.name` — Title-Case spaced). A `MonRef`'s IDENT name is the mon's ON-FIELD
-  NICKNAME (`turn.rs::display_name` = the packed set's `set.name`, ← `SpeciesData.name` only when the
+  NICKNAME (`display_name` in `src/turn/helpers.rs` = the packed set's `set.name`, ← `SpeciesData.name` only when the
   set has no nickname — mirroring Showdown's `Pokemon.name = set.name || species.name`), NOT the
   species: poke-env keys each mon by this `p<N>a: <nick>` token, so rendering the species there
   (e.g. `p1a: Zapdos` for a Zapdos nicknamed `Electhor`) makes poke-env fail to match the mon it
@@ -230,7 +230,7 @@ bit-for-bit RNG+state faithful; this layer is a **side output** of events that A
   inventory is in
   [`designs/rust_sim/protocol_emission.md`](protocol_emission.md).
   🚨 **A `MonRef`'s IDENT name is the mon's on-field NICKNAME, never the species**
-  (`turn.rs::display_name` = the packed set's `set.name`, falling back to the species only when the
+  (`display_name` in `src/turn/helpers.rs` = the packed set's `set.name`, falling back to the species only when the
   set has no nickname — mirroring `Pokemon.name = set.name || species.name`). A reader keys each mon
   by that `p<N>a: <nick>` token, so rendering the species there made the reader of the day (poke-env)
   fail to match the mon it already tracked and try to ADD a 7th — the localized/nicknamed-team overflow CRASH

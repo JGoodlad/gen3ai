@@ -1,8 +1,8 @@
 # The launcher's flags
 
 > Lifted out of `src/main/launcher/CLAUDE.md` (2026-10-10). Always-current: update it with the code.
-> The leaf keeps a one-line-per-flag table (and the `--restart-interval-hours` row that
-> `restart_interval_default_test.py` reads); this is the full table. `designs/ops/flag_census.md` names each flag's live user.
+> This is the launcher's one flag table (the leaf keeps none); `restart_interval_default_test.py`
+> reads its `--restart-interval-hours` row. `designs/ops/flag_census.md` names each flag's live user.
 
 ## The table
 

@@ -7,7 +7,7 @@ self-contained real gen3ou/gen3customgame battle in the fuzzer's chunk golden fo
 (`run_full_battle_logged`): all but the two tagged allowlist fixtures (`21_*`, `27_*`)
 **replay byte-clean today**, and each **guards a specific `|...|` emission form** that the
 omniscient-byte fuzzer once surfaced as a divergence and the engine now emits
-bit-for-bit (see `gen3_omniscient_byte_fuzz_v1` in `src/rust_sim/CLAUDE.md`).
+bit-for-bit (see `gen3_omniscient_byte_fuzz_v1` in `designs/rust_sim/fuzzers.md`).
 
 The fixtures are named by the form they guard, e.g.:
 

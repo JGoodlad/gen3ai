@@ -299,7 +299,7 @@ and the win label run on the complete game (every row `win_mask` 1), and an upda
   and is refused by name (`NOT IN PINNED TREE`, for the collector flags the argv types). The trainer builds its checkout's env core at startup
   (`utils.rust_env.build`), because a pin worktree has no `target/`. A `--model` launch is judged off
   the checkpoint's RECORDED core (`metadata.json` / the sidecar's `env_core` stamp). Detail:
-  `src/main/launcher/CLAUDE.md` → "A Rust-core run under the launcher".
+  `designs/launcher/restarts_and_resume.md` → "A Rust-core run under the launcher".
 - **EVAL runs on the core too** (M5 Lane H, `rust_eval/`): both eval callbacks write the same plan and
   manifest, then play the cycle IN PROCESS and BLOCKING on a declared eval core (`--rust-eval-envs`) and
   declared eval T2 slots, publish the workers' own shard records, and collect them with the unchanged

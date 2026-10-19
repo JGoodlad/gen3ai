@@ -169,7 +169,7 @@ held to the `pytest.mark.static` declarations by `src/utils/static_gates_test.py
 **Fuzz tests are not parametrized unit tests.** Here a fuzzer plays *real battles* and checks them
 against ground truth. The main one is the Rust engine's A/B differential fuzzer: it drives the real
 Showdown sim and the Rust port side by side and saves a standalone repro for every divergence
-(`src/rust_sim/CLAUDE.md`, "A/B fuzzer"):
+(`designs/rust_sim/fuzzers.md`):
 
 ```bash
 node src/rust_sim/harness/ab_fuzz.js --mode random --battles 200

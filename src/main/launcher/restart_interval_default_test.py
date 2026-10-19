@@ -31,8 +31,8 @@ def test_a_typed_value_wins_and_zero_still_means_no_restart():
 
 def test_the_flag_table_and_the_census_state_the_same_default():
     """The two docs that carry the default as a number say what the parser says."""
-    leaf = repo_path("src", "main", "launcher", "CLAUDE.md").read_text(encoding="utf-8")
-    row = next(ln for ln in leaf.splitlines() if ln.startswith("| `--restart-interval-hours` |"))
+    flags = repo_path("designs", "launcher", "flags.md").read_text(encoding="utf-8")
+    row = next(ln for ln in flags.splitlines() if ln.startswith("| `--restart-interval-hours` |"))
     assert row.split("|")[2].strip() == "`6.0`", row
     census = repo_path("designs", "ops", "flag_census.md").read_text(encoding="utf-8")
     crow = next(ln for ln in census.splitlines() if ln.startswith("| `--restart-interval-hours` |"))

@@ -299,11 +299,11 @@
 | flag | default | typed (all / last 40) | live user | verdict |
 |---|---|---|---|---|
 | `--restart-interval-hours` | 6.0 | — | the periodic full-process restart (`TRAINING_RUN_SOP.md`, root `CLAUDE.md`) | **KEEP** |
-| `--restart-grace-minutes` | 20.0 | — | the scheduled restart's fallback window (`src/main/launcher/CLAUDE.md`) | **KEEP** |
-| `--max-crash-restarts` | 3 | — | the crash auto-restart breaker (`src/main/launcher/CLAUDE.md`) | **KEEP** |
+| `--restart-grace-minutes` | 20.0 | — | the scheduled restart's fallback window (`designs/launcher/flags.md`) | **KEEP** |
+| `--max-crash-restarts` | 3 | — | the crash auto-restart breaker (`designs/launcher/flags.md`) | **KEEP** |
 | `--nice` | 10 | — | every run is niced (root `CLAUDE.md`) | **KEEP** |
-| `--no-pin` | False | — | documented: skip worktree pinning (`src/main/launcher/CLAUDE.md`) | **KEEP** |
+| `--no-pin` | False | — | documented: skip worktree pinning (`designs/launcher/flags.md`) | **KEEP** |
 | `--dry-run` | False | — | THE offline resolve of a launch (root `CLAUDE.md`, `training_runbook.md`) | **KEEP** |
-| `--sync-to-main` | False | — | documented: pin a resume to HEAD (`src/main/launcher/CLAUDE.md`) | **KEEP** |
+| `--sync-to-main` | False | — | documented: pin a resume to HEAD (`designs/launcher/flags.md`) | **KEEP** |
 | `--pin-commit` | None | — | documented: pin a batch to one commit (`--pin-to-hash` is its legacy spelling) | **KEEP** |
 | `--allow-torch-switch` | False | — | the consent for a resume under another torch (root `CLAUDE.md`) | **KEEP** |

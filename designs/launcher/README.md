@@ -2,8 +2,8 @@
 
 Detail lifted out of `src/main/launcher/CLAUDE.md` on 2026-10-10. **Always-current**: each doc OWNS
 its topic and is updated in the same pass as the launcher code, exactly like the leaf. The leaf keeps
-the rules, the module map, the hazards and one line per flag; these hold the mechanism, the evidence
-and the gates. The operator's chapter (how to launch, resume, fork) is
+only the rules for changing the code; these hold the mechanism, the evidence, the gates, the flag and
+exit-code tables and the module map (below). The operator's chapter (how to launch, resume, fork) is
 `designs/ops/training_runbook.md` → *Launcher*; the frozen pre-cleanup leaf is
 `designs/research_state/claude_md_archive/src_main_launcher_CLAUDE_2026-10-10.md` (history).
 
@@ -16,3 +16,19 @@ and the gates. The operator's chapter (how to launch, resume, fork) is
 | [`launch_guards.md`](launch_guards.md) | `--dry-run`, the ARCH-SURFACE and RECIPE-SURFACE guards, the desktop-GPU, disk-space and Showdown-submodule preflights |
 | [`interpreter.md`](interpreter.md) | which interpreter (and torch) the child runs |
 | [`tui_and_session.md`](tui_and_session.md) | how the supervisor rides beside Textual's event loop, quit / SIGHUP / SIGTERM teardown, HEADLESS mode, stdout discipline, the dashboard, keys and metrics layout |
+
+## Module map (`src/main/launcher/`)
+
+| file | does |
+|---|---|
+| `__init__.py` / `__main__.py` | entry point `main()` (`python -m main.launcher`); `tui.py` is the back-compat alias (`python -m main.launcher.tui`) |
+| `run.py` | the run loop / supervisor (`_prepare_session`, `_supervise`, `_reap`), `build_launcher_parser()`, the module constants (`DEFAULT_RESTART_INTERVAL_HOURS`, `DEFAULT_NICE`, `KILL_GRACE_SECONDS`, `_FAST_CRASH_SECONDS`), `headless_mode()`, `_arch_surface_gate` |
+| `checkpoint.py` | run-dir resolution, `find_latest_checkpoint`, `run_dir_for_checkpoint`, the RESUME-role argv (`resume_child_args`), the idempotent-fork swap, the fresh-into-progress refusal, `_strip_launcher_args` |
+| `worktree.py` | the pin (`resolve_pin` → `PinDecision` / `PinRefused`), `_create_run_worktree` + its ownership record, the startup prune, the Showdown-submodule link |
+| `child.py` | spawning the child (`_launch_child`, `resolve_child_python`), the log sinks (ring + rotating full copy), checkpoint events |
+| `torch_runtime.py` | which interpreter / torch a resume or fork runs (`resolve_for_launch`, `KNOWN_ENVS`) |
+| `pinned_argv.py` + `pinned_argv_probe.py` | validate the child argv against the PINNED commit's parser, not this tree's |
+| `dry_run.py` | `--dry-run`: resolve and print the launch, create nothing |
+| `disk_gate.py` / `submodule_gate.py` | the launcher halves of the disk-space and Showdown-submodule preflights |
+| `state.py`, `ipc.py`, `input.py`, `format.py` | the lock-protected state snapshot, child IPC, key dispatch, pure formatters |
+| `app.py` + `launcher.tcss` | the Textual UI (a `Gen3App` on the shared `src/main/tui/` base) |

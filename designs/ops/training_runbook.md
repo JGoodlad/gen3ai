@@ -2,7 +2,7 @@
 
 Moved verbatim out of the root `CLAUDE.md` on **2026-09-07** (see `designs/ops/testing.md` for the
 same note). **The root keeps the launch commands, the resume/fork hazards and the flag names; this
-file is the detail behind them**, and `src/main/launcher/CLAUDE.md` +
+file is the detail behind them**, and `designs/launcher/flags.md` +
 `src/agents/training/CLAUDE.md` own the per-flag semantics.
 
 Covers: the launcher and its restart loop, `main.checkargs` and the arch-surface guard, fresh /
@@ -31,7 +31,7 @@ streaming** to `<run_dir>/launcher_child.log`.
 `--arch production` launch survives its first restart (`ai_v14_01_base` did not: exit 2 ×3, ~40
 GPU-min). A FRESH launch (no `--model`) whose run dir holds a checkpoint or `model_config.json` is
 REFUSED `FATAL_CONFIG` — pass `--model` to continue it, or use a new `--run-name`. `--dry-run` shows
-both (`on restart :` line; `REFUSED (run dir)`). Detail: `src/main/launcher/CLAUDE.md`.
+both (`on restart :` line; `REFUSED (run dir)`). Detail: `designs/launcher/restarts_and_resume.md`.
 
 🚨 **ERA label (owner, 2026-10-03): `utils/era.py` is the one table** (Rustboro `rb`, Dewford `dw`, Slateport `sp`, Mauville `mv`, Verdanturf `vt`, Fallarbor `fb`, Lavaridge `lv`, Fortree `ft`, Lilycove `lc`, Mossdeep `md`, Sootopolis `st`, Pacifidlog `pd`, Ever Grande `eg` — Hoenn's journey order), `CURRENT_ERA` = Rustboro. Name a run `<code>_<what>` (`rb_x26_s1001`). The DEFAULT names are minted prefixed (`rb_run_<ts>`, `rb_exploiter_vs_<target>`); an explicit `--run-name` is accepted AS TYPED (a silent prefix would make the directory differ from the name quoted in scripts, `--model models/<name>` refs and the ledger; a refusal would break every convention) and the trainer prints `[Era] …` when the name lacks the current era's prefix or carries another's. The RECORD is `metadata.json`'s `era` block (`{code, name, order}`), written ONCE at the run's creation save beside `original_command` and carried verbatim by every later save — a resume or restart never changes it, and a run with no block is **pre-era** (a resume never stamps one onto it). `main.lineage` prints `era=`, `main.elo`'s headline tags `[era: …]`, and the critic gate's ladder section warns `CROSS-ERA COMPARISON` when the two runs' eras differ. The Rustboro era starts with the X5 A/B and X26; earlier runs are pre-era history.
 
@@ -55,7 +55,7 @@ quit/ctrl-c/SIGHUP teardown, crash reporting + auto-restart, exit codes
 (`COMPLETE`/`INTERRUPTED`/`CRASH`/`FATAL_CONFIG` — the last gives up without restarting on an
 arch/config mismatch instead of looping), the full flag table (`--restart-interval-hours`,
 `--restart-grace-minutes`, `--max-crash-restarts`, `--nice`, `--no-pin`, `--sync-to-main`) and the
-resume contract — are the rules in `src/main/launcher/CLAUDE.md` and the detail in `designs/launcher/`.** (The launcher has no Showdown port: `--showdown-port` is deleted, `designs/deleted_flags.md`.)
+resume contract — are in `designs/launcher/` (`flags.md`, `crashes_and_exit_codes.md`, `restarts_and_resume.md`); the rules for changing the launcher are `src/main/launcher/CLAUDE.md`.** (The launcher has no Showdown port: `--showdown-port` is deleted, `designs/deleted_flags.md`.)
 
 **The launcher and everything it spawns run at `--nice 10` by default** (`0` disables). A run holds
 ~940 processes; at nice 0 it competes on equal terms with interactive work sharing the box.
@@ -151,8 +151,8 @@ inherited config, pool) and exits without creating anything. Reach for it instea
 real command and kill it" — that habit is harmless on a fork and DESTRUCTIVE on a restart.
 
 Full detail — the four incident narratives behind these guards, the flag tables, and the parser
-mechanics — is in `src/main/launcher/CLAUDE.md` (§ *Validating a launch without launching*, § *the
-ARCH-SURFACE guard*, § *An argv is validated by the parser of the tree that will RUN it*) and
+mechanics — is in `designs/launcher/launch_guards.md` (`--dry-run`, the ARCH-SURFACE guard),
+`designs/launcher/pinning_and_worktrees.md` (the argv is validated by the PINNED tree's parser) and
 `designs/research_state/claude_md_archive/checkargs_incidents.md`.
 ### Starting a fresh run via launcher
 `--arch production` supplies the architecture AND the production training recipe (the mirror's
@@ -395,7 +395,7 @@ launches because the fuzz drives only masked-LEGAL tokens. A related trap: **an 
 outlive its own fix and then mislead every reader after it**, including a subagent briefed from it.
 
 Detail — the (all FIXED) seed and CHOOSE-path defects, the parity-gate inventory, the coverage
-census and the throughput tables — is in `src/utils/bridge/README.md`, `src/rust_sim/CLAUDE.md`,
+census and the throughput tables — is in `src/utils/bridge/README.md`, `designs/rust_sim/move_census.md`,
 `designs/ai_v5/design_local_sim_bridge_transport.md`, and
 `designs/research_state/claude_md_archive/bridge_transport_history.md`.
 ### The compile flag — `--compile-trainer` (GPU learner)
@@ -426,7 +426,7 @@ altogether — the split, the extractor-only compile and every 2.5.1 branch are 
 compiles only as its declared regions, and the trainer REFUSES torch < 2.8 (`src/utils/torch_floor.py`).
 A resume or fork runs on the torch its run recorded — the launcher selects `gen3ai_stable` for a 2.5.1
 (or unrecorded) run, which therefore resumes only PINNED to its own commit, and refuses a mismatch
-`FATAL_CONFIG` unless `--allow-torch-switch` (`src/main/launcher/CLAUDE.md`). Detail:
+`FATAL_CONFIG` unless `--allow-torch-switch` (`designs/launcher/interpreter.md`). Detail:
 `designs/training/compile_flags.md` → "The single-graph CUDA miscompile". And `--device cpu` is
 refused up front: the compiled learner is gated on CUDA only.
 
@@ -501,7 +501,7 @@ startup (`🦀 [ENV CORE BUILD]`, about 7 s cold in the launcher's fresh pin wor
 (N = 256 with the X26 heads, 2026-10-01: T2 ~240 s, LOCK 7.8 min; a same-run resume reuses the compile
 cache, T2 ~40 s, LOCK 1.8 min).
 The interval and crash restarts re-declare the core, T2 and the eval core. A pin before
-the Rust env core's flags existed is refused by name. Detail: `src/main/launcher/CLAUDE.md` → "A Rust-core
+the Rust env core's flags existed is refused by name. Detail: `designs/launcher/restarts_and_resume.md` → "A Rust-core
 run under the launcher"; design, gates and measurements in `designs/training/rust_collector.md`
 and `designs/research_state/measurements/m5_laneG/PROGRESS.md`.
 

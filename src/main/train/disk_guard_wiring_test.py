@@ -18,7 +18,7 @@ from main.train.deferred_abort import DeferredAbort
 from main.train.run_io import _TrackingCheckpointCallback
 from utils import disk_guard as dg
 from utils.disk_guard import GiB, MiB
-from utils.paths import src_path
+from utils.paths import repo_path, src_path
 
 SAVE = 60 * MiB
 
@@ -177,8 +177,9 @@ def test_the_runs_signal_wiring_gives_the_stop_a_body_that_never_saves(tmp_path,
 def test_the_exit_code_is_distinct_and_documented():
     assert int(TrainExitCode.FATAL_DISK) == 8
     assert len({int(c) for c in TrainExitCode}) == len(TrainExitCode)
-    doc = src_path("main", "launcher", "CLAUDE.md").read_text()
-    assert "FATAL_DISK" in doc and "--allow-low-disk" in doc
+    doc = repo_path("designs", "launcher", "crashes_and_exit_codes.md").read_text(encoding="utf-8")
+    row = next(ln for ln in doc.splitlines() if ln.startswith("| 8 |"))
+    assert "FATAL_DISK" in row and "--allow-low-disk" in row, row
 
 
 def test_model_build_wires_the_stop_at_both_construction_sites():
