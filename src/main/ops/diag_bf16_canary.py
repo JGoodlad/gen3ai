@@ -714,6 +714,8 @@ class Context:
                 self.say(f"[diag] compiled arms {compiled} on the CPU: Inductor's C++ backend, NOT the CUDA (Triton) "
                          "kernels the run trained on — it reads the graph-level path (dynamo, AOTAutograd, the "
                          "partitioner, decompositions), not the GPU codegen")
+            from agents.model.compile_cache import ensure_hermetic_cache
+            ensure_hermetic_cache("diag_bf16_canary")   # K3: never torch's shared default dir
             from agents.model import compile_control as cc
             from agents.model import compile_regions as cr
             cc.control().install()

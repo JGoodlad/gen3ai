@@ -557,7 +557,10 @@ def test_the_learner_startup_gate_and_the_canary_are_ARMED_on_a_hit(a_shared_HIT
     monkeypatch.setattr(compile_regions, "assert_inventory", lambda model: "inventory")
     monkeypatch.setattr(compile_canary.CompileCanary, "run",
                         lambda self: calls.append(("canary", self.updates)) or {"canary": 1.0})
-    model = SimpleNamespace(policy=SimpleNamespace(features_extractor=object()), _micro_static=object())
+    # `modules` : the startup gate now releases its stashed autograd graphs (gen3_gate_releases_memory_v1,
+    # `release_gate_memory` walks `policy.modules()`); a fake policy with no modules has none to release
+    model = SimpleNamespace(policy=SimpleNamespace(features_extractor=object(), modules=lambda: []),
+                            _micro_static=object())
     arm_compile_sentinel(model, batch_size=64)
     assert ("gate", 64) in calls, "the R1 startup parity gate did not run on a cache HIT"
     assert calls.index(("gate", 64)) < calls.index("lock")
