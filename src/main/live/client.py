@@ -505,7 +505,7 @@ class LiveClient:
         from main.ladder_guard import check_ladder_policy
         out: List[BattleResult] = []
         for _ in range(n):
-            check_ladder_policy(battle_format=self.cfg.battle_format)
+            check_ladder_policy(battle_format=self.cfg.battle_format, account=self.cfg.username)
             await self._set_team()
             self._searching = True
             try:

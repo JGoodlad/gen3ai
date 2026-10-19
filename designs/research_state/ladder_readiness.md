@@ -32,8 +32,9 @@ The policy lives in `src/main/ladder_guard.py`; `LiveClient.ladder` (`main.live.
 - **Agents need the owner's token.** Claude Code's `CLAUDECODE` / `CLAUDE_CODE_ENTRYPOINT` / `CLAUDE_CODE_SESSION_ID`,
   in the process's environment or any ancestor's (`/proc/<pid>/environ`, so `env -u CLAUDECODE` does not escape), make a
   session an agent's; it then refuses unless `~/.local/state/gen3ai/ladder_owner_approval.json`
-  (`$GEN3AI_LADDER_APPROVAL_FILE`) holds a `purpose` and an `expires` at most 24 h ahead, written BY THE OWNER. Agents
-  never create it.
+  (`$GEN3AI_LADDER_APPROVAL_FILE`) holds a `purpose`, an `expires` at most 24 h ahead and the Showdown BOT-REGISTRY
+  registration (`"bot_registered": true` plus the registered `"account"`, which must be the session's account; Smogon
+  policy 2026-10-09, T63), written BY THE OWNER. Agents never create it.
 - **Honest limits.** The agent guard is a tripwire, not a security boundary (a process on a box without `/proc` that
   clears its markers, or an agent that writes the token itself, is not stopped). The `/search` path (`/utm`, `/search
   <format>`, `|updatesearch|`, the match's `|init|battle`, `/cancelsearch` on a timeout, a popup read as the server's

@@ -20,8 +20,10 @@ that skips ``main.play`` is guarded too, and a guard that lapses mid-session sto
 4. **NEVER for OUR agents without the owner's explicit approval.** A session Claude Code runs in (``CLAUDECODE`` /
    ``CLAUDE_CODE_ENTRYPOINT`` / ``CLAUDE_CODE_SESSION_ID`` in the environment, or in any ANCESTOR process's, so
    ``env -u CLAUDECODE python …`` does not escape it) REFUSES unless the OWNER has written the approval token
-   (:func:`approval_path`) — a JSON file with a ``purpose`` and an ``expires`` at most :data:`APPROVAL_MAX_HOURS`
-   ahead. Agents must never create it. A revoked or expired token stops the session at the next game boundary.
+   (:func:`approval_path`) — a JSON file with a ``purpose``, an ``expires`` at most :data:`APPROVAL_MAX_HOURS`
+   ahead and, since Smogon's bot policy (2026-10-09), the Showdown BOT REGISTRY registration: ``"bot_registered":
+   true`` plus the registered ``"account"`` (the session's account must be that one). Agents must never create it.
+   A revoked or expired token stops the session at the next game boundary.
 
 THE HONEST LIMIT. Guard 4 is a TRIPWIRE against an agent doing this by accident or on its own initiative — not a
 security boundary. Nothing here stops a process that deliberately forges the markers' absence in a way the ancestor
@@ -162,23 +164,26 @@ class OwnerApproval:
     purpose: str
     expires: _dt.datetime
     path: Path
+    account: str = ""
 
 
 def read_owner_approval(now: Optional[_dt.datetime] = None, path: Optional[Path] = None, *,
-                        why: Tuple[str, ...] = ()) -> OwnerApproval:
+                        why: Tuple[str, ...] = (), account: Optional[str] = None) -> OwnerApproval:
     """The owner's token, or :class:`LadderRefused` saying exactly what is wrong with it (``why`` = the markers that
-    made this an agent session, named in the refusal)."""
+    made this an agent session, named in the refusal). ``account`` = the session's Showdown account: when given, the
+    token's registered ``account`` must be the same one."""
     now = now or _utcnow()
     p = path or approval_path()
     who = f" ({', '.join(why)})" if why else ""
     example = ('{"purpose": "<what this ladder session is for>", '
-               f'"expires": "{(now + _dt.timedelta(hours=4)).isoformat(timespec="seconds")}"}}')
+               f'"expires": "{(now + _dt.timedelta(hours=4)).isoformat(timespec="seconds")}", '
+               '"bot_registered": true, "account": "<the bot-registered Showdown account>"}')
     if not p.exists():
         raise LadderRefused(
             f"ladder REFUSED in an agent session{who}: agent sessions need the owner's explicit approval; the owner creates "
             "the token; agents must never create it. "
             f"No approval token at {p}. (The owner writes it by hand, e.g. {example} — an expiry at most "
-            f"{APPROVAL_MAX_HOURS} h ahead and a purpose.)")
+            f"{APPROVAL_MAX_HOURS} h ahead, a purpose, and the account's BOT REGISTRY registration.)")
     try:
         obj = json.loads(p.read_text())
         if not isinstance(obj, dict):
@@ -201,7 +206,23 @@ def read_owner_approval(now: Optional[_dt.datetime] = None, path: Optional[Path]
             f"ladder REFUSED in an agent session{who}: the owner's approval token at {p} expires at "
             f"{expires.isoformat(timespec='seconds')}, more than {APPROVAL_MAX_HOURS} h ahead; an approval is for a "
             f"day at most. The owner rewrites it, e.g. {example}.")
-    return OwnerApproval(purpose.strip(), expires, p)
+    # Smogon's bot policy (2026-10-09): a bot account is registered with Showdown's bot registry BEFORE it plays rated
+    # games. Nothing here can query the registry, so the OWNER attests it in the token, naming the account.
+    registered, token_account = obj.get("bot_registered"), obj.get("account")
+    if registered is not True or not isinstance(token_account, str) or not token_account.strip():
+        raise LadderRefused(
+            f"ladder REFUSED in an agent session{who}: the owner's approval token at {p} does not carry the Showdown "
+            'BOT REGISTRY registration (Smogon policy, 2026-10-09): it needs `"bot_registered": true` and the '
+            '`"account"` that is registered as a bot. The owner registers the account and rewrites the token, e.g. '
+            f"{example}. Agents must never create it.")
+    if account is not None:
+        from utils.showdown_id import to_id_str
+        if to_id_str(account) != to_id_str(token_account):
+            raise LadderRefused(
+                f"ladder REFUSED in an agent session{who}: this session plays as {account!r}, but the owner's approval "
+                f"token at {p} registers {token_account!r} as the bot account. Play as that account, or the owner "
+                "registers this one and rewrites the token.")
+    return OwnerApproval(purpose.strip(), expires, p, token_account.strip())
 
 
 # -- guard 3: the drift gate ----------------------------------------------------------------------------------------
@@ -276,14 +297,16 @@ class LadderPermit:
     drift: Dict[str, Any]
 
 
-def check_ladder_policy(*, battle_format: str, now: Optional[_dt.datetime] = None) -> LadderPermit:
-    """All the ladder guards, in order: the T28 halt (:class:`main.live.halt.HaltActive`), the agent-session approval,
-    the drift record (both :class:`LadderRefused`). Raises, never prints — callable before every ``/search``."""
+def check_ladder_policy(*, battle_format: str, account: Optional[str] = None,
+                        now: Optional[_dt.datetime] = None) -> LadderPermit:
+    """All the ladder guards, in order: the T28 halt (:class:`main.live.halt.HaltActive`), the agent-session approval
+    (with its bot-registry registration, for ``account`` when given), the drift record (both :class:`LadderRefused`).
+    Raises, never prints — callable before every ``/search``."""
     from main.live.halt import refuse_if_halted
     now = now or _utcnow()
     refuse_if_halted("ladder")
     reasons = agent_session_reasons()
-    approval = read_owner_approval(now, why=tuple(reasons)) if reasons else None
+    approval = read_owner_approval(now, why=tuple(reasons), account=account) if reasons else None
     drift = check_drift_fresh(battle_format, now)
     return LadderPermit(LADDER_CONCURRENCY, battle_format, tuple(reasons), approval, drift)
 
@@ -300,5 +323,6 @@ def respect_notice(permit: LadderPermit, *, forfeit_turn_limit: int) -> str:
     ]
     if permit.approval is not None:
         lines.append(f"[ladder] AGENT SESSION ({', '.join(permit.agent_reasons)}) running under the OWNER'S approval: "
-                     f"{permit.approval.purpose!r}, expires {permit.approval.expires.isoformat(timespec='seconds')}.")
+                     f"{permit.approval.purpose!r}, expires {permit.approval.expires.isoformat(timespec='seconds')}; "
+                     f"bot-registered account {permit.approval.account!r}.")
     return "\n".join(lines)

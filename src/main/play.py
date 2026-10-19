@@ -164,7 +164,7 @@ def check_ladder(args):
         raise SystemExit("--mode ladder queues for whoever the ladder matches: it never names an --opponent and is "
                          "not a --public-acceptance series")
     try:
-        return check_ladder_policy(battle_format=args.format)
+        return check_ladder_policy(battle_format=args.format, account=args.username)
     except LadderRefused as exc:
         raise SystemExit(str(exc)) from exc
 
@@ -327,8 +327,8 @@ def build_parser() -> argparse.ArgumentParser:
                         "--username, while no T28 halt marker exists and python src/main/ladder_drift_scan.py has "
                         f"passed in the last {DRIFT_MAX_AGE_DAYS} days; in an AI-agent session (Claude Code's "
                         "CLAUDECODE environment) it is REFUSED unless the OWNER has written the approval token "
-                        "(~/.local/state/gen3ai/ladder_owner_approval.json) - agents must never create it "
-                        "(owner ruling 2026-10-09)")
+                        "(~/.local/state/gen3ai/ladder_owner_approval.json, carrying the Showdown bot-registry "
+                        "registration of --username) - agents must never create it (owner ruling 2026-10-09)")
     p.add_argument("--server", choices=("local", "official"), default="local",
                    help="'official' = wss://sim3.psim.us — for --mode ladder, or REFUSED unless --public-acceptance "
                         "(owner 2026-10-07)")

@@ -39,9 +39,13 @@ def iso(t: dt.datetime) -> str:
     return t.isoformat(timespec="seconds")
 
 
-def write_token(path: Path, *, hours: float = 4.0, purpose: str = "owner-approved smoke") -> None:
-    path.write_text(json.dumps({"purpose": purpose, "expires": iso(dt.datetime.now(dt.timezone.utc)
-                                                                   + dt.timedelta(hours=hours))}))
+def write_token(path: Path, *, hours: float = 4.0, purpose: str = "owner-approved smoke",
+                account: str = "someone", **overrides) -> None:
+    """The owner's approval token, bot registration included; ``overrides`` replace a field (``None`` drops it)."""
+    body = {"purpose": purpose, "expires": iso(dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=hours)),
+            "bot_registered": True, "account": account}
+    body.update(overrides)
+    path.write_text(json.dumps({k: v for k, v in body.items() if v is not None}))
 
 
 @pytest.fixture
@@ -176,8 +180,50 @@ def test_a_malformed_token_refuses(env, monkeypatch, body):
 def test_no_token_file_refuses_and_says_how_the_owner_writes_one(env, monkeypatch):
     monkeypatch.setenv("CLAUDECODE", "1")
     assert not env.approval.exists()
-    with pytest.raises(G.LadderRefused, match='"purpose"'):
+    with pytest.raises(G.LadderRefused, match='"purpose"') as exc:
         G.check_ladder_policy(battle_format="gen3ou")
+    assert '"bot_registered": true' in str(exc.value) and "BOT REGISTRY" in str(exc.value)
+
+
+# -- T63: the Showdown BOT REGISTRY registration rides in the owner's token ---------------------------------------------
+
+@pytest.mark.parametrize("overrides", [
+    {"bot_registered": None},                 # the field is missing
+    {"bot_registered": False},                # the owner says it is NOT registered
+    {"bot_registered": "true"},               # a string is not the owner's attestation
+    {"bot_registered": 1},                    # nor is a number
+    {"account": None},                        # registered, but no account named
+    {"account": "  "},
+    {"account": 7},
+])
+def test_a_token_without_the_bot_registry_registration_refuses(env, monkeypatch, overrides):
+    """Smogon's bot policy (2026-10-09): the token must say the account is bot-registered, and which account."""
+    monkeypatch.setenv("CLAUDECODE", "1")
+    write_token(env.approval, **overrides)
+    with pytest.raises(G.LadderRefused, match="BOT REGISTRY") as exc:
+        G.check_ladder_policy(battle_format="gen3ou", account="someone")
+    assert "bot_registered" in str(exc.value) and "Agents must never create it" in str(exc.value)
+
+
+def test_the_token_with_the_registration_clears_and_names_the_account(env, monkeypatch):
+    monkeypatch.setenv("CLAUDECODE", "1")
+    write_token(env.approval, account="Some One")
+    permit = G.check_ladder_policy(battle_format="gen3ou", account="someone")   # ids compare, not spellings
+    assert permit.approval is not None and permit.approval.account == "Some One"
+    assert "bot-registered account 'Some One'" in G.respect_notice(permit, forfeit_turn_limit=250)
+
+
+def test_a_session_account_that_is_not_the_registered_one_refuses(env, monkeypatch):
+    monkeypatch.setenv("CLAUDECODE", "1")
+    write_token(env.approval, account="registeredbot")
+    with pytest.raises(G.LadderRefused, match="registers 'registeredbot'"):
+        G.check_ladder_policy(battle_format="gen3ou", account="someone")
+
+
+def test_a_human_session_needs_no_registration_field(env):
+    """The registration rides in the OWNER's token for agent sessions; a user's own session reads no token."""
+    write_token(env.approval, bot_registered=None, account=None)
+    assert G.check_ladder_policy(battle_format="gen3ou", account="someone").approval is None
 
 
 def test_a_human_is_not_asked_for_a_token(env):
@@ -414,7 +460,8 @@ def test_a_custom_game_mode_is_not_a_ladder_client(monkeypatch):
 
 def test_the_help_text_states_the_ladder_policy():
     text = play.build_parser().format_help()
-    for needle in ("concurrency 1", "ladder_owner_approval.json", "agents must never create it", "2026-10-09"):
+    for needle in ("concurrency 1", "ladder_owner_approval.json", "agents must never create it", "2026-10-09",
+                   "bot-registry"):
         assert needle in " ".join(text.split())
 
 
@@ -504,6 +551,16 @@ async def test_the_clients_own_ladder_seam_refuses_an_agent_without_the_token(en
     monkeypatch.setenv("CLAUDECODE", "1")
     c = ladder_client()
     with pytest.raises(G.LadderRefused, match="agents must never create it"):
+        await c.ladder(1)
+    assert drain(c) == []
+
+
+async def test_the_clients_own_ladder_seam_refuses_an_unregistered_account(env, monkeypatch):
+    """The per-search recheck carries the session's account, so a token registering ANOTHER account stops it."""
+    monkeypatch.setenv("CLAUDECODE", "1")
+    write_token(env.approval, account="registeredbot")
+    c = ladder_client()
+    with pytest.raises(G.LadderRefused, match="registers 'registeredbot'"):
         await c.ladder(1)
     assert drain(c) == []
 
