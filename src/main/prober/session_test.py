@@ -466,6 +466,23 @@ def test_scan_refuses_a_stored_count_that_disagrees_with_the_trace(tmp_path):
         ProbeSession(run).scan(opponent="liar", limit=1)
 
 
+def test_the_summary_cache_is_a_bounded_lru(tmp_path, monkeypatch):
+    """REGRESSION (2026-10-19): `ProbeSession._summaries` was an unbounded dict — one expanded core
+    trace is ~334 KB, so a run-wide read of rb_x26_s2601 (41,345 traces) held ~14 GB in the web
+    service. It must evict least-recently-used past `_MAX_CACHED_SUMMARIES`, and a hit refreshes."""
+    import main.prober.session.core as core_mod
+    monkeypatch.setattr(core_mod, "_MAX_CACHED_SUMMARIES", 2, raising=False)
+    sess = ProbeSession(_build_scan_run(tmp_path))
+    a, b, c = sess.tree.all_battles()[:3]
+    sess._summary(a)
+    sess._summary(b)
+    sess._summary(a)                                   # a is now the most recent
+    sess._summary(c)                                   # evicts b, the least recent
+    assert list(sess._summaries) == [a.summary_path, c.summary_path]
+    assert sess._summary(b)["invocations"] == sess._summary(b)["invocations"]   # re-expands cleanly
+    assert len(sess._summaries) == 2
+
+
 def test_scan_limit_and_bad_metric(tmp_path):
     run = _build_scan_run(tmp_path)
     assert len(ProbeSession(run).scan(outcome="loss", limit=1)) == 1

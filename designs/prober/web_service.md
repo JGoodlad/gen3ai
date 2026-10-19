@@ -191,6 +191,12 @@ training. So `app.state.sessions` is an LRU bounded at `_MAX_CACHED_SESSIONS`, a
 gets `.close()` called (dropping its `_summaries` / `_models` caches). Same class as the auth failure
 map: *anything an anonymous request can make grow must have a bound*.
 
+**Each session's summary cache is bounded too** (`session/core._MAX_CACHED_SUMMARIES` = 512, an LRU
+behind a lock). The ~430 MB figure above was measured on pre-era Python traces; a core-trace
+expansion is ~334 KB of Python objects (rb_x26_s2601, 2026-10-19), so an unbounded per-session dict
+let ONE run-wide read of X26's 41,345 traces hold ~14 GB. 512 covers one eval step's whole trace set
+(≤ 221 on X26), so a per-step read never re-expands; a session now tops out near 170 MB.
+
 ## 6. Background jobs (`jobs.py`)
 
 `falsify_scan` and `calibration` spawn a re-roll child per seed per arm (the Rust `search_driver`

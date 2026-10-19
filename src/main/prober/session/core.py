@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import json
 import os
+import threading
+from collections import OrderedDict
 
 import numpy as np
 
@@ -32,6 +34,12 @@ from main.prober.session.trace_io import _TraceIOMixin
 # neighbour" walk stay instant without pinning a whole run's worth of checkpoints in RAM; a third
 # would cost ~27 MB more for a pattern nobody performs.
 _MAX_CACHED_MODELS = 2
+
+# How many EXPANDED summaries one session keeps (`ProbeSession._summary`, an LRU). One is ~334 KB
+# (rb_x26_s2601's core traces, 2026-10-19), so 512 is ~170 MB per session — above one eval step's
+# whole trace set (≤ 221 battles on X26), so a per-step read never re-expands, and bounded however
+# many battles a run-wide read walks. The web app keeps 3 sessions (`web/app._MAX_CACHED_SESSIONS`).
+_MAX_CACHED_SUMMARIES = 512
 
 _DEFAULT_GAMMA = 0.99
 
@@ -58,7 +66,11 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
         self._compile_extractor = bool(compile_extractor)
         # The re-roll-backed probes (falsify / lookahead / better-line) run on the Rust
         # `search_driver` — the only offline driver since the Node one was deleted (2026-10-10).
-        self._summaries: "dict[str, dict]" = {}
+        # Expanded summaries, a BOUNDED LRU (`_MAX_CACHED_SUMMARIES`): one core-trace expansion is
+        # ~334 KB of Python objects (rb_x26_s2601, 2026-10-19), so an unbounded dict let one run-wide
+        # read of X26's 41,345 traces hold ~14 GB in the web service.
+        self._summaries: "OrderedDict[str, dict]" = OrderedDict()
+        self._summaries_lock = threading.Lock()
         self._by_path = {b.summary_path: b for b in self.tree.all_battles()}
         self._by_short = {_short_id(b): b for b in self.tree.all_battles()}
         self._gamma = self._read_gamma()
@@ -222,15 +234,24 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
         """The battle's summary — a Rust-eval CORE TRACE (meta only on disk) EXPANDED to the full
         legacy shape by `main.prober.core_trace` (replayed + cross-checked; a disagreement RAISES
         `CoreTraceMismatch`), so every view reads one shape."""
-        s = self._summaries.get(battle.summary_path)
-        if s is None:
-            s = load_summary(battle.summary_path, run_dir=self.run_dir)
-            self._summaries[battle.summary_path] = s
+        key = battle.summary_path
+        with self._summaries_lock:
+            s = self._summaries.get(key)
+            if s is not None:
+                self._summaries.move_to_end(key)
+                return s
+        s = load_summary(key, run_dir=self.run_dir)          # outside the lock: it is the slow part
+        with self._summaries_lock:
+            self._summaries[key] = s
+            self._summaries.move_to_end(key)
+            while len(self._summaries) > _MAX_CACHED_SUMMARIES:
+                self._summaries.popitem(last=False)
         return s
 
     def _meta(self, battle: BattleTrace) -> dict:
         """The stored ``meta`` alone — never expands a core trace (a meta read stays instant)."""
-        s = self._summaries.get(battle.summary_path)
+        with self._summaries_lock:
+            s = self._summaries.get(battle.summary_path)
         if s is None:
             return load_summary_meta(battle.summary_path)
         return s.get("meta") or {}

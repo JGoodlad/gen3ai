@@ -188,19 +188,18 @@ class _AggregateMixin:
         if limit:
             jobs = jobs[:limit]
 
-        # Pre-warm the summary cache on THIS thread so the worker threads only ever
-        # READ the (now-populated) `self._summaries` dict — the parallel work is the
-        # Node re-roll, not the JSON load, and this removes the only shared write.
-        for b, _ in jobs:
-            self._summary(b)
+        # Expand each summary on THIS thread and hand it to its job, so the worker threads never
+        # touch the session's (bounded, evicting) summary cache — the parallel work is the Rust
+        # re-roll, not the expansion.
+        jobs = [(b, recon, self._summary(b)) for b, recon in jobs]
 
         # 2. falsify each (its time is spent in the re-roll driver subprocess, so
         #    threads overlap real work — bounded by `concurrency`).
         def _run_job(job):
-            b, recon = job
+            b, recon, summary = job
             try:
                 fb = falsify_battle(
-                    ReconstructionRecord.load(recon), self._summary(b), self._npz(b),
+                    ReconstructionRecord.load(recon), summary, self._npz(b),
                     worst=worst, gamma=self._gamma, n_seeds=n_seeds,
                     n_alts=n_alts, followup=followup)
                 return (b, fb, None)

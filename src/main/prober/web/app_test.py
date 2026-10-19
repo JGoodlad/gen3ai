@@ -777,10 +777,10 @@ def test_the_probe_engine_is_rust_and_not_a_choice(run):
 
 
 def test_the_session_cache_is_bounded_and_closes_what_it_evicts(tmp_path_factory):
-    """A `scan` of one run leaves ~430 MB of cached summaries behind (measured on the real
-    models/: 6 runs -> 3.0 GB, monotonic), and the picker offers 81 runs. Unbounded, that is an
-    anonymous visitor's lever on ~35 GB of a box that is training — the same defect class as the
-    auth failure map.
+    """Each cached session holds up to ~170 MB of expanded summaries (`_MAX_CACHED_SUMMARIES`;
+    pre-era runs measured ~430 MB per scanned run before that bound), and the picker offers every
+    run. Unbounded, that is an anonymous visitor's lever on many GB of a box that is training — the
+    same defect class as the auth failure map.
     """
     import shutil
     from main.prober.web.app import _MAX_CACHED_SESSIONS

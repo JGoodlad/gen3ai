@@ -197,8 +197,8 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     app.state.root = root
     app.state.runs = RunStore(root) if root else None
     app.state.auth = Auth(password, open_access=open_access, key_file=cookie_key_file)
-    # LRU, NOT a plain dict — see _MAX_CACHED_SESSIONS. A scan of one run caches ~430 MB, and an
-    # anonymous visitor can walk every run in the picker.
+    # LRU, NOT a plain dict — see _MAX_CACHED_SESSIONS: an anonymous visitor can walk every run
+    # in the picker.
     app.state.sessions = OrderedDict()            # resolved run path -> ProbeSession
     app.state.session_lock = threading.Lock()
     app.state.jobs = JobRegistry(max_workers=max_job_workers)
@@ -244,10 +244,9 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         """The cached `ProbeSession` for one resolved run, as a BOUNDED LRU.
 
         Built lazily and once per run — constructing it walks the trace tree, and every page would
-        otherwise pay that walk. But the cache must also be bounded: a `scan` of one run leaves
-        ~430 MB of cached summaries and value arrays behind (measured on the real `models/`:
-        6 runs → 3.0 GB, monotonic), and the picker offers 81 runs, so an unbounded dict hands an
-        anonymous visitor a ~35 GB lever on a box that is training. Evicting closes the session so
+        otherwise pay that walk. But the cache must also be bounded: each session holds up to
+        `_MAX_CACHED_SUMMARIES` expanded summaries (~170 MB), and the picker offers every run, so
+        an unbounded dict hands an anonymous visitor a many-GB lever on a box that is training. Evicting closes the session so
         its caches are dropped now rather than whenever the collector notices.
         """
         sessions = app.state.sessions
@@ -1246,10 +1245,11 @@ def _picker_rows(rows: "list[dict]", selected: dict) -> "list[dict]":
     return shown
 
 
-# How many runs' `ProbeSession`s stay cached. MEASURED: a scan of one run leaves ~430 MB behind
-# (real `models/`: 1→466 MB, 6→3.0 GB RSS, monotonic), and the picker offers 81 runs — so an
-# unbounded cache is an anonymous-visitor lever on ~35 GB, next to a live trainer. Three keeps
-# "compare two runs" instant at roughly 1.3 GB worst case.
+# How many runs' `ProbeSession`s stay cached. MEASURED (pre-era runs): a scan of one run left ~430 MB
+# behind (real `models/`: 1→466 MB, 6→3.0 GB RSS, monotonic), and the picker offers every run — so
+# an unbounded cache is an anonymous-visitor lever next to a live trainer. Each session's own
+# summary cache is now bounded too (`session/core._MAX_CACHED_SUMMARIES`, ~170 MB), which a
+# core-trace run needs: unbounded, one run-wide read of rb_x26_s2601 would hold ~14 GB.
 _MAX_CACHED_SESSIONS = 3
 
 
