@@ -4,8 +4,14 @@
 [`design_compute_efficiency.md`](../../../endstate/design_compute_efficiency.md) §5.6. Its backlog rows are
 `EXPERIMENT_BACKLOG.md` CE-3 to CE-3g, and its builds are `TASK_BACKLOG.md` T54–T59. X35 starts when X26 (`rb_x26_s2601`)
 and X34 (`rb_toy_ent_s4002_deep`) have both reached their Tier-1 plateau and the GPU is free. **The stage kit (T55)
-is BUILT (2026-10-17, §6):** the launch script, the R freeze, the readout and the Kakuna runner. Nothing was launched,
-frozen or read with it.
+is BUILT (2026-10-17, §6):** the launch script, the R freeze, the readout and the Kakuna runner.
+
+**R (production) is FROZEN (2026-10-19)** at P\* = X26 @ 280,000,170 (Amendment 5's `TIER1_PLATEAU` call, sha256
+`814823c5…91ed`): [`reference_population_production.json`](reference_population_production.json), content sha256
+`39bae18f…5bec0`, `refpop verify` OK. Six members: A-block 280 / 270 / 80 / 140 / 210M, and X-block `production`
+(band score 0.6935 at 500 pairs, KEPT). **T\* is ABSENT** (X34 not launched): the X-block has one member, the toy
+side's R is not frozen, and adding T\* needs a new freeze (F-R1). Write-up:
+[`../x35_refpop_freeze_2026-10-19/README.md`](../x35_refpop_freeze_2026-10-19/README.md). Nothing was launched.
 
 **How this was staged.** Everything ran at `9ebda190` with `CUDA_VISIBLE_DEVICES=""`, under `nice -n 19 taskset -c
 5-7,13-15`, with no GPU lease. It used only `main.checkargs`, `main.launcher --dry-run` and one offline call to
@@ -63,7 +69,7 @@ python -m main.launcher --restart-interval-hours 24 --pin-commit 9ebda1904da7a77
 4. The sha256 of P\* and of every archive node is unchanged since the call.
 5. `checkargs --pin X35_PIN_1` exits 0.
 6. The dry-run says "would launch", FORK of `rb_x26_s2601`, +20,000,000.
-7. The reference population R is frozen and its file is written before the first arm launches (§5.6.4).
+7. The reference population R is frozen and its file is written before the first arm launches (§5.6.4). **Production: DONE 2026-10-19** (`reference_population_production.json`; toy: pending T\*).
 8. The disk has room for the whole batch, or finished arms are being thinned (F22).
 
 ## 4. The batch-1 queue (production first, then the toy calibration)

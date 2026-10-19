@@ -1,0 +1,74 @@
+{
+    "cells": [
+        {
+            "batches": 10,
+            "d": 7,
+            "devices": [
+                "cpu/eager"
+            ],
+            "games": 1000,
+            "games_per_s": 1.2341793632868663,
+            "l": 303,
+            "near_tie_decisions": 2,
+            "near_tie_games": 2,
+            "opponent": "rb_es_end2_s2005@15047521",
+            "opponent_sha256": "4047f43806619825bb4054590662c7e47b16e67f69e59c3156a5da561c367c0b",
+            "pair_counts": [
+                36,
+                2,
+                229,
+                5,
+                228
+            ],
+            "pair_sd": 0.30923130177262453,
+            "pairs": 500,
+            "player": "rb_x26_s2601@280000170",
+            "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+            "purpose": [
+                "ab"
+            ],
+            "regime_id": "adfdbee824c9eb0a",
+            "score": 0.6935,
+            "score_ci95": [
+                0.666421800192775,
+                0.720578199807225
+            ],
+            "se_pp": 1.3829244230686792,
+            "w": 690,
+            "wall_s": 810.2550000000001,
+            "win_rate": 0.69
+        }
+    ],
+    "engine": {
+        "cells": [
+            {
+                "cell": "rb_x26_s2601@280000170 vs rb_es_end2_s2005@15047521",
+                "load_s": 23.255,
+                "play_s": 810.502,
+                "rows": 10,
+                "set_cell_s": 0.0
+            }
+        ],
+        "decl": {
+            "combos": [
+                [
+                    0,
+                    0
+                ]
+            ],
+            "groups": [
+                {
+                    "fingerprint": "18ba1ba0b8e5",
+                    "name": "eval",
+                    "roles": [
+                        "player",
+                        "opponent"
+                    ],
+                    "source": "rb_x26_s2601@280000170"
+                }
+            ]
+        },
+        "preflight_s": 7.69,
+        "startup_s": 13.119
+    }
+}

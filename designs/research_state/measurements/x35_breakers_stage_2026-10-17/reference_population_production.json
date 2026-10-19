@@ -1,0 +1,192 @@
+{
+ "a_block": [
+  {
+   "label": "x26_pstar",
+   "nominal": 280000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+   "role": "pstar",
+   "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+   "step": 280000170
+  },
+  {
+   "label": "x26_270m",
+   "nominal": 270000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_270000128_steps.zip",
+   "role": "pstar-10M",
+   "sha256": "091979cd61bb9f26d58431d6db8a0ecc26c1c305249db8b0e95f61ebe607cb17",
+   "step": 270000128
+  },
+  {
+   "label": "x26_080m",
+   "nominal": 80000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_80000111_steps.zip",
+   "role": "mid(N2,N3)",
+   "sha256": "52cebba08e3884fe94aa06d9b670e6ea151ab2fd1888f4b893c04668e58a96e9",
+   "step": 80000111
+  },
+  {
+   "label": "x26_140m",
+   "nominal": 140000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_140000062_steps.zip",
+   "role": "mid(N4,N5)",
+   "sha256": "70d515b8c65c68f59d003a6c99b934d92c228bce446a7822abcde04a7bfb7709",
+   "step": 140000062
+  },
+  {
+   "label": "x26_210m",
+   "nominal": 210000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_210000149_steps.zip",
+   "role": "mid(N6,N7)",
+   "sha256": "b379a47b3d840224c9513aa21b54ea08b409b7236eda502e68899cbe40552f07",
+   "step": 210000149
+  }
+ ],
+ "archive": [
+  {
+   "k": 1,
+   "label": "x26_030m",
+   "nominal": 30000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_30000045_steps.zip",
+   "role": "N_1",
+   "sha256": "3bd8b64bc90f39e7d164797f4ea935f7ec433df1ac4ec6aaf6468f260535bd46",
+   "step": 30000045
+  },
+  {
+   "k": 2,
+   "label": "x26_060m",
+   "nominal": 60000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_60000135_steps.zip",
+   "role": "N_2",
+   "sha256": "413dd63fae5761125f3457e6c229a94af029f43575d0bfd4328fd9306e6f5159",
+   "step": 60000135
+  },
+  {
+   "k": 3,
+   "label": "x26_100m",
+   "nominal": 100000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_100000037_steps.zip",
+   "role": "N_3",
+   "sha256": "e1858ffe8a7d95fe053395721c8422dd56b194b1a8f9092aea17ad1961efccb2",
+   "step": 100000037
+  },
+  {
+   "k": 4,
+   "label": "x26_130m",
+   "nominal": 130000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_130000065_steps.zip",
+   "role": "N_4",
+   "sha256": "93180dd781122f1a67f6a5c178a852ccddc0c80fc65f4f40de9a0e1412b71dec",
+   "step": 130000065
+  },
+  {
+   "k": 5,
+   "label": "x26_160m",
+   "nominal": 160000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_160000085_steps.zip",
+   "role": "N_5",
+   "sha256": "fde1749ebdaa354b96ae3d9492daef77c843855382b24c1f079650dbe145bd7d",
+   "step": 160000085
+  },
+  {
+   "k": 6,
+   "label": "x26_190m",
+   "nominal": 190000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_190000228_steps.zip",
+   "role": "N_6",
+   "sha256": "03e43c7e63afd61d9df57cfa5490e36ab6c96b42081e1e98e7fad28a40c215db",
+   "step": 190000228
+  },
+  {
+   "k": 7,
+   "label": "x26_230m",
+   "nominal": 230000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_230000074_steps.zip",
+   "role": "N_7",
+   "sha256": "d84714fca1d0f088c8b65ffc650ffdea1fcfcee0ade5bd99f31411221d48a40c",
+   "step": 230000074
+  },
+  {
+   "k": 8,
+   "label": "x26_260m",
+   "nominal": 260000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_260000235_steps.zip",
+   "role": "N_8",
+   "sha256": "c539bcefce496b8450bc6e2cfb8232c2a365c7f0aa582c3dad9d53d5a99d7687",
+   "step": 260000235
+  }
+ ],
+ "content_sha256": "39bae18f9c0473372e0d3061f89201b6da0374c9788c2620b864924aa615bec0",
+ "frozen_at": "2026-10-19T08:22:55.571317+00:00",
+ "frozen_at_epoch": 1792398175,
+ "members": [
+  {
+   "block": "A",
+   "label": "x26_pstar",
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+   "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+  },
+  {
+   "block": "A",
+   "label": "x26_270m",
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_270000128_steps.zip",
+   "sha256": "091979cd61bb9f26d58431d6db8a0ecc26c1c305249db8b0e95f61ebe607cb17"
+  },
+  {
+   "block": "A",
+   "label": "x26_080m",
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_80000111_steps.zip",
+   "sha256": "52cebba08e3884fe94aa06d9b670e6ea151ab2fd1888f4b893c04668e58a96e9"
+  },
+  {
+   "block": "A",
+   "label": "x26_140m",
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_140000062_steps.zip",
+   "sha256": "70d515b8c65c68f59d003a6c99b934d92c228bce446a7822abcde04a7bfb7709"
+  },
+  {
+   "block": "A",
+   "label": "x26_210m",
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_210000149_steps.zip",
+   "sha256": "b379a47b3d840224c9513aa21b54ea08b409b7236eda502e68899cbe40552f07"
+  },
+  {
+   "block": "X",
+   "label": "production",
+   "path": "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2005/final_model.zip",
+   "sha256": "4047f43806619825bb4054590662c7e47b16e67f69e59c3156a5da561c367c0b"
+  }
+ ],
+ "pstar": {
+  "label": "x26_pstar",
+  "nominal": 280000000,
+  "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+  "role": "pstar",
+  "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "step": 280000170
+ },
+ "rule": {
+  "archive_k": 8,
+  "band": [
+   0.2,
+   0.8
+  ],
+  "midpoint_rounding": "nearest 10M, ties down",
+  "min_pairs": 500,
+  "rule8_eps": 1e-09,
+  "stride": 10000000
+ },
+ "schema": "x35_reference_population_v1",
+ "side": "production",
+ "tool_commit": "82858f43393695c97412480c7e0aad57be502b9a",
+ "x_block": [
+  {
+   "band_n_pairs": 500,
+   "band_score": 0.6935,
+   "excluded_because": null,
+   "kept": true,
+   "label": "production",
+   "path": "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2005/final_model.zip",
+   "sha256": "4047f43806619825bb4054590662c7e47b16e67f69e59c3156a5da561c367c0b"
+  }
+ ]
+}
