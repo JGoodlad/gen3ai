@@ -111,8 +111,17 @@ def _upd_cmd(py: str, upd: str, name: str, tau: str) -> Callable[[Path], list[st
     return lambda out: [py, "-u", upd, "--tau", tau, str(_t62_update_cfg(out, name))]
 
 
-def _x45_cmd(py: str, pool: int, name: str) -> Callable[[Path], list[str]]:
-    return lambda out: [py, "-u", str(ROOT / X45_BENCH), "--opp-slots", str(pool),
+X45_CUDA_TEST = "src/agents/inference/service/grouped_cuda_test.py"
+X45_POOLS = (20, 5)
+X45_BUCKETS = ("8,64,256", "8,16,32,64,256")
+
+
+def x45_name(pool: int, buckets: str) -> str:
+    return f"x45_p{pool}_b{len(buckets.split(','))}"
+
+
+def _x45_cmd(py: str, pool: int, buckets: str, name: str) -> Callable[[Path], list[str]]:
+    return lambda out: [py, "-u", str(ROOT / X45_BENCH), "--opp-slots", str(pool), "--buckets", buckets,
                         "--json", str(out / "cells" / f"{name}.json")]
 
 
@@ -154,17 +163,26 @@ def cells() -> list[Cell]:
             check=lambda out: _run_check([py, upd, "--check"]),
             result=_json_result(name),
             prepare=_t62_update_prepare(name)))
-    # 4. X45 (in build): grouped vs per-slot opponent forwards at pool 20 / 5
-    for pool in (20, 5):
-        nm = f"x45_pool{pool}"
-        # TODO(X45): confirm this command against X45's report before the window (the defaults are its
-        # docstring's production shape at N = 256). The cell SKIPs while the benchmark or the flag is absent here.
-        cs.append(Cell(
-            nm, f"X45: grouped (vmapped) vs per-slot opponent forward, {pool} active pool slots (OFF/ON interleaved)",
-            mem_gb=16, wall_min=45, eta_min=15,
-            cmd=_x45_cmd(py, pool, nm),
-            check=lambda out: _check_x45(py),
-            result=_written_result(nm)))
+    # 4. X45 (landed ad821b615): the CUDA test first (it must PASS, not skip), then the sweep
+    xjunit = "x45_cuda_test.junit.xml"
+    cs.append(Cell(
+        "x45_cuda_test", "X45: grouped_cuda_test.py -- graph-backend parity, weight swap, frozen steady state (GPU)",
+        mem_gb=24, wall_min=30, eta_min=5,
+        cmd=lambda out: ["env", "GEN3AI_TEST_ALLOW_GPU=1", py, "-m", "pytest", str(ROOT / X45_CUDA_TEST), "-q", "-rs",
+                         "-p", "no:cacheprovider", f"--junitxml={out / 'cells' / xjunit}"],
+        check=lambda out: _check_x45(py, cuda_test=True),
+        result=lambda out: _junit_all_passed(out / "cells" / xjunit, expect=1)))
+    # X45's own command (design_compute_efficiency.md 1.6): grouped_benchmark.py --opp-slots P --buckets B --json
+    for pool in X45_POOLS:
+        for buckets in X45_BUCKETS:
+            nm = x45_name(pool, buckets)
+            cs.append(Cell(
+                nm, f"X45: grouped (vmapped) vs per-slot opponent forward, {pool} active pool slots, buckets {buckets} "
+                    "(OFF/ON interleaved)",
+                mem_gb=24, wall_min=30, eta_min=10 if buckets.count(",") > 2 else 7,
+                cmd=_x45_cmd(py, pool, buckets, nm),
+                check=lambda out: _check_x45(py),
+                result=_written_result(nm)))
     # 5. X14 (optional, in build): a hook file the X14 unit supplies
     cs.append(Cell(
         "x14_ab", "X14 (optional): off-policy overlap GPU A/B -- the X14 unit supplies x14_cell.sh <out-json>",
@@ -185,13 +203,19 @@ def _check_frozen_guard(py: str) -> tuple[str, str]:
     return "ok", "2 parametrised tests collect (they SKIP without GEN3AI_TEST_ALLOW_GPU=1; a SKIP on the GPU is a HOLD)"
 
 
-def _check_x45(py: str) -> tuple[str, str]:
+def _check_x45(py: str, cuda_test: bool = False) -> tuple[str, str]:
+    """SKIP at an older commit (no benchmark / flag); the CUDA test cell collects its test, the others run --help."""
     bench = ROOT / X45_BENCH
     parser_src = SRC / "main" / "train" / "parser" / "env_core.py"
     if not bench.is_file():
         return "skip", f"X45 not landed at this commit: {X45_BENCH} absent"
     if not parser_src.is_file() or X45_FLAG not in parser_src.read_text():
         return "skip", f"X45 not landed at this commit: {X45_FLAG} absent from the trainer parser"
+    if cuda_test:
+        if not (ROOT / X45_CUDA_TEST).is_file():
+            return "skip", f"X45 not landed at this commit: {X45_CUDA_TEST} absent"
+        st, d = _run_check([py, "-m", "pytest", str(ROOT / X45_CUDA_TEST), "--collect-only", "-q", "-p", "no:cacheprovider"])
+        return (st, d) if st != "ok" else ("ok", "1 test collects (it SKIPs without GEN3AI_TEST_ALLOW_GPU=1; a SKIP on the GPU is a HOLD)")
     return _run_check([py, str(bench), "--help"])
 
 

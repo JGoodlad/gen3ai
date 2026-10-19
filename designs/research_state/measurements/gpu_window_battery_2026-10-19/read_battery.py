@@ -30,7 +30,8 @@ OPP_SLOTS = 20
 #: X26's live cycle (gpu_bench_suite.LIVE_CYCLE, 2026-10-18 tb_read at 258.6M): copied so the reader runs anywhere.
 LIVE_CYCLE = {"train_s": 42.24, "collect_s": 26.97, "other_s": 5.6, "host_steps": 416.5}
 T62_UPD = ("t62_u_old_a", "t62_u_new_a", "t62_u_new_b", "t62_u_old_b")
-ORDER = ("t62_dec", "frozen_guard") + T62_UPD + ("x45_pool20", "x45_pool5", "x14_ab")
+X45 = tuple(f"x45_p{p}_b{b}" for p in (20, 5) for b in (3, 5))
+ORDER = ("t62_dec", "frozen_guard") + T62_UPD + ("x45_cuda_test",) + X45 + ("x14_ab",)
 
 
 def _load(p: Path) -> dict[str, Any] | None:
@@ -77,9 +78,20 @@ def _headline(name: str, d: dict[str, Any] | None, cells: Path) -> str:
     if name.startswith("t62_u_") and "train" in d:
         return f"update_s_est {d['train']['update_s_est']:.2f} s; gate {(d.get('gate') or {}).get('verdict')}"
     if name.startswith("x45_"):
-        keys = [k for k in ("ratio", "on_off_ratio", "step_ms") if k in d]
-        return json.dumps({k: d[k] for k in keys})[:120] if keys else "see the cell json"
+        x = x45_row(d)
+        return (f"per-slot {x['off_ms']} ms/step, grouped {x['on_ms']} ms/step, ratio {x['ratio']}"
+                if x else "see the cell json")
     return ""
+
+
+def x45_row(d: dict[str, Any]) -> dict[str, Any] | None:
+    """One X45 cell: per-slot (OFF) vs grouped (ON) median ms/step, ON/OFF ratio, peak allocated MiB."""
+    try:
+        arm = d["per_arm_ms"]
+        return {"off_ms": arm["off"]["step_median"], "on_ms": arm["on"]["step_median"],
+                "ratio": d["on_over_off_ratio_median"], "peak_mib": d.get("max_memory_allocated_mib")}
+    except (KeyError, TypeError):
+        return None
 
 
 def table(out: Path) -> list[dict[str, Any]]:
@@ -88,7 +100,7 @@ def table(out: Path) -> list[dict[str, Any]]:
     for n in ORDER:
         st = _load(cells / f"{n}.state.json") or {}
         res = _load(cells / f"{n}.json")
-        peak = (res or {}).get("peak_reserved_mib")
+        peak = (res or {}).get("peak_reserved_mib", (res or {}).get("max_memory_allocated_mib"))
         rows.append({"cell": n, "status": st.get("status", "not run"), "wall_min": st.get("wall_min"),
                      "peak_gpu_mib": round(peak) if isinstance(peak, (int, float)) else None,
                      "headline": _headline(n, res, cells) or st.get("reason") or st.get("detail") or ""})
@@ -112,6 +124,11 @@ def main(argv: list[str] | None = None) -> int:
         w = "" if r["wall_min"] is None else f"{r['wall_min']:.1f}"
         g = "" if r["peak_gpu_mib"] is None else str(r["peak_gpu_mib"])
         print(f"{r['cell']:14s} {r['status']:8s} {w:>8s} {g:>8s}  {r['headline']}")
+    print("\nX45 grouped vs per-slot opponent forward (ms per host step; ratio = grouped / per-slot, <1 is a win):")
+    print(f"{'cell':14s} {'per-slot':>9s} {'grouped':>9s} {'ratio':>7s} {'peak MiB':>9s}")
+    for n in X45:
+        x = x45_row(_load(out / "cells" / f"{n}.json") or {})
+        print(f"{n:14s} " + (f"{x['off_ms']:9.3f} {x['on_ms']:9.3f} {x['ratio']:7.3f} {x['peak_mib'] or '':>9}" if x else "not run / no result"))
     print()
     if dec["verdict"] == "INCOMPLETE":
         print(f"T62 GATE: INCOMPLETE -- cells not ok: {', '.join(dec['missing'])}")
