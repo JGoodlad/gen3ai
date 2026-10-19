@@ -37,6 +37,7 @@ def cross(tmp_path_factory):
     return [resolve_player(x) for x in (e1, e2, p1)]
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 48 s beside a live run
 def test_an_endstate_checkpoint_is_its_own_groups_architecture(cross):
     from main.h2h.arch import EngineArch, _load_host
 
@@ -47,6 +48,7 @@ def test_an_endstate_checkpoint_is_its_own_groups_architecture(cross):
     assert arch.differs(e2, m2) is None              # another end-state seed: the SAME architecture
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 52 s beside a live run
 @pytest.mark.parametrize("end_side", ["player", "opponent"])
 def test_the_endstate_x_another_architecture_cross_declares_two_groups(cross, end_side):
     from main.h2h.arch import _load_host, declare_engine

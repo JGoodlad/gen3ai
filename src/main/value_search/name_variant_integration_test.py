@@ -42,6 +42,7 @@ def test_the_variant_team_is_read_exactly_as_the_canonical_one(decision):
     assert b.tmpl == a.tmpl
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 33 s beside a live run
 def test_no_world_of_the_variant_team_holds_a_move_twice_and_the_revealed_one_sits_in_its_true_slot(decision):
     log, variant, at, side = decision
     root = W.prepare_root(variant, at, side, DECISION)

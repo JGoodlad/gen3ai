@@ -82,6 +82,7 @@ def test_off_does_nothing():
     assert K.behaviour_probe(m) is None
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 8 s beside a live run
 def test_current_rows_match_on_cpu_to_float_rounding():
     m = _model()
     m.behaviour_check = "fatal"
@@ -93,6 +94,7 @@ def test_current_rows_match_on_cpu_to_float_rounding():
     assert out["staleness/probe_age_0_clip_frac"] == 0.0
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 11 s beside a live run
 def test_one_current_row_off_by_1e_3_fails_fatal_and_warns_under_warn(capsys):
     m = _model()
     m.behaviour_check = "fatal"
@@ -130,6 +132,7 @@ def test_the_row_choice_takes_current_rows_first_and_every_present_age():
     assert K.choose_rows(np.zeros(5, int), 32, rng).tolist() == [0, 1, 2, 3, 4]
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 16 s beside a live run
 def test_the_probe_reads_the_one_fp32_gate_and_refuses_any_other_precision():
     """Lane G's probe and the python-core in-loop gate share ONE table (K9, M5 Lane K): fp32 'highest'
     (the only precision — TF32 retired, deletion pass K2) = max < 1e-4 over the judged rows. A shift
@@ -347,6 +350,7 @@ def _restored_logp(m):
     return _with_provenance(m)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 12 s beside a live run
 def test_with_zero_scorers_no_selection_reaches_log_pi_the_certificates_premise():
     """`selection_free`'s premise, on real rows: with the action head's scorer WEIGHTS zero, perturbing every
     other parameter (the whole extractor, every MARGIN site's operands) leaves the full masked log-probs
@@ -385,6 +389,7 @@ def test_with_zero_scorers_no_selection_reaches_log_pi_the_certificates_premise(
     assert not np.array_equal(logits(), before_live, equal_nan=True)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 10 s beside a live run
 def test_under_zero_scorers_every_row_is_judged_and_a_planted_mismatch_on_a_tied_row_is_FATAL(monkeypatch):
     """At a fresh run's first update (zero-init scorers) a tie provably cannot move log pi, so NO row is
     excluded: the row nearest a cutoff — excluded by the margin rule — is judged, and a 3e-4 jump on it
@@ -405,6 +410,7 @@ def test_under_zero_scorers_every_row_is_judged_and_a_planted_mismatch_on_a_tied
         K.behaviour_probe(m)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 13 s beside a live run
 def test_the_warn_scan_is_a_bounded_sample_and_the_fatal_scan_reads_every_row(tmp_path, monkeypatch):
     """Under `warn` a violation recurs every update, so its full-buffer scan is bounded to
     `SCAN_WARN_MAX_ROWS` seeded rows (it cost ≈ 6.5 s of a ≈ 41 s update); the FATAL path scans every row,
@@ -481,6 +487,7 @@ def _flip_fixture(monkeypatch):
     return m, t, e, new, alt, int(moves[0]), flippable.size, excluded
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 8 s beside a live run
 def test_a_tied_row_whose_behaviour_took_the_OTHER_resolution_is_judged_by_the_flip_and_passes(monkeypatch):
     """The static-screen class (F-ST-10): T2 resolved a near-tied cut pair the other way, so the stored log mu
     is the OTHER resolution's. The row is JUDGED (not excluded) and passes on that resolution; the excluded

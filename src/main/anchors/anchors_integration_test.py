@@ -1,5 +1,5 @@
-"""THE END-TO-END TESTS: real gen3ou games against `metamon:SmallRL` — a capped one-game SMOKE in the
-routine gate, and the full two-game read on BOTH transports in the `slow` tier.
+"""THE END-TO-END TESTS: real gen3ou games against `metamon:SmallRL` — a capped one-game SMOKE and the
+full two-game read on BOTH transports, ALL in the `slow` tier (none starts a peer in the routine gate).
 
 Everything else in this package is exercised in isolation — the plan, the schema, the watchdog, the
 refusals. None of that proves the pieces FIT: that the server — the RUST websocket front end by
@@ -7,8 +7,11 @@ default, the Node server under `--server node` — starts on a 9XXX port and sto
 our vendored fork both accept the same team files, that a regime set in one process is verified in
 the other, and that a row lands carrying its regime. Two games is the smallest thing that does.
 
-**Tiers — the split (2026-09-30).** The failure these catch — the pieces not fitting — is exactly the
-kind a routine gate should see, so the ROUTINE gate keeps one: ``test_one_capped_real_game_...``, ONE
+**Tiers — every real game is ``slow`` (2026-10-19, the ship gate).** No routine-gate test may start an
+EXTERNAL peer (Metamon's own interpreter and checkout) or play a real game against it: that smoke ran
+30.7 s per gate and put a third-party process in every agent's pre-ship run. The pieces' unit seams
+(plan, schema, watchdog, refusals, the server lifecycle) stay routine in this package's other files.
+**The earlier split (2026-09-30)**, kept for the record: the ROUTINE gate kept one: ``test_one_capped_real_game_...``, ONE
 game on the default ``rust`` transport with our client's forfeit turn LOWERED to
 :data:`SMOKE_FORFEIT_TURN` (``--forfeit-turn-limit``, a deliberately shorter series — never a strength
 read). It still starts the server and stops it by PID, brings the peer online before the challenger,
@@ -257,8 +260,9 @@ def _assert_the_pieces_fit(summary: dict, rows: list, out: Path, server: str, n_
     assert 9500 <= int(port) <= 9599
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): it starts the EXTERNAL Metamon peer + a server — never in the routine gate
 def test_one_capped_real_game_against_metamon_smallrl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """THE ROUTINE SMOKE: the whole tool end to end on the default transport, one game, our forfeit
+    """THE CAPPED SMOKE (``slow`` since 2026-10-19; it was the routine one): the whole tool end to end on the default transport, one game, our forfeit
     turn lowered so the game is bounded. It proves the path works, it measures nothing.
 
     The lowered turn makes OUR side forfeit, which is hazard H5's trigger (EXTERNAL_ANCHORS_SOP.md:

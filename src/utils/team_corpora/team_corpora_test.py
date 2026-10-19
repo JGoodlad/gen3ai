@@ -101,6 +101,7 @@ def test_an_unknown_corpus_or_tier_is_refused():
         TC.load_corpus("w_forum_v1", "ABCD")
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 20 s beside a live run
 @pytest.mark.integration
 def test_the_committed_corpus_reproduces_from_its_source():
     """Node (the pinned validator) + the engine's coverage oracle: the build is deterministic."""

@@ -47,6 +47,7 @@ def _train(model):
         model.train()
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 11 s beside a live run
 def test_the_normal_path_passes_the_behaviour_probe():
     model = _learner("fatal")
     assert G.behaviour_gate_mode(model) == "probe"
@@ -340,6 +341,7 @@ def _fill(m, rows, corrupt):
     m._current_progress_remaining = 1.0
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 18 s beside a live run
 def test_a_localized_fault_on_the_real_buffer_is_fatal_on_the_first_update_before_any_step():
     """Real rows through the REAL `train()`: 2 of 256 rows (0.8 %) point their action at the least likely
     other legal action (a wrong action index — the fault a percentile statistic cannot see under 1 %).

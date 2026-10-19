@@ -208,6 +208,7 @@ def check(n_battles: int) -> Dict[str, Any]:
     return {"decisions": len(meta), "gates": dict(gates), "certain": certain, "violations": violations}
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 12 s beside a live run
 def test_a_stated_zero_is_never_contradicted_on_real_battles():
     r = check(N_BATTLES)
     assert r["decisions"] > 0, "no played move reached the check"

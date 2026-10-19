@@ -57,6 +57,7 @@ def _with_bars(monkeypatch, bars=None, k=None):
     monkeypatch.setattr(cr, "BF16_ENVELOPE_K", dict(k or _K))
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 23 s beside a live run
 def test_a_bf16_R1_is_REFUSED_while_the_rule_has_no_measured_bars(learner, monkeypatch):
     monkeypatch.setattr(cr, "BF16_DRIFT_BARS", None)
     _install(learner)
@@ -64,6 +65,7 @@ def test_a_bf16_R1_is_REFUSED_while_the_rule_has_no_measured_bars(learner, monke
         cr.gate_regions(learner, batch_size=BATCH, say=lambda _m: None)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 26 s beside a live run
 def test_a_healthy_bf16_R1_PASSES_under_the_bf16_rule_and_the_reference_arm_is_the_fp32_function(
         learner, monkeypatch):
     _with_bars(monkeypatch)
@@ -105,6 +107,7 @@ def _plant(scale_compiled=None, scale_eager=None):
     return arm
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 26 s beside a live run
 def test_a_COMPILED_error_beyond_K_x_eager_bf16s_own_error_is_the_typed_FATAL(learner, monkeypatch):
     # K for the global gradient is set out of the way, so the PER-PARAMETER envelope is the rule under test
     _with_bars(monkeypatch, k={"loss": 4.0, "grad_rel_l2": 1e6, "param": 4.0})
@@ -116,6 +119,7 @@ def test_a_COMPILED_error_beyond_K_x_eager_bf16s_own_error_is_the_typed_FATAL(le
         cr.gate_regions(learner, batch_size=BATCH, say=lambda _m: None)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 26 s beside a live run
 def test_the_GLOBAL_gradient_envelope_bites_on_its_own(learner, monkeypatch):
     _with_bars(monkeypatch, k={"loss": 4.0, "grad_rel_l2": 4.0, "param": 1e6})
     _install(learner)
@@ -124,6 +128,7 @@ def test_the_GLOBAL_gradient_envelope_bites_on_its_own(learner, monkeypatch):
         cr.gate_regions(learner, batch_size=BATCH, say=lambda _m: None)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 27 s beside a live run
 def test_an_eager_bf16_arm_that_DRIFTED_from_the_fp32_function_is_the_typed_FATAL(learner, monkeypatch):
     _with_bars(monkeypatch, bars={"loss": 1.0, "grad_rel_l2": 0.5})
     _install(learner)
@@ -133,6 +138,7 @@ def test_an_eager_bf16_arm_that_DRIFTED_from_the_fp32_function_is_the_typed_FATA
         cr.gate_regions(learner, batch_size=BATCH, say=lambda _m: None)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 52 s beside a live run
 def test_the_reference_arm_must_be_EAGER(learner, monkeypatch):
     _with_bars(monkeypatch)
     _install(learner)
@@ -149,6 +155,7 @@ def test_the_reference_arm_must_be_EAGER(learner, monkeypatch):
         cr.gate_regions(learner, batch_size=BATCH, say=lambda _m: None)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 26 s beside a live run
 def test_an_fp32_learner_keeps_the_fp32_rule_and_runs_no_reference_arm(learner, monkeypatch):
     TP.set_trunk_precision(learner.policy, "fp32")
     monkeypatch.setattr(cr, "BF16_DRIFT_BARS", None)          # the bf16 rule is never consulted

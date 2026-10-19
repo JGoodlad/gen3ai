@@ -97,6 +97,7 @@ def learner() -> Any:
         return _learner()
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 34 s beside a live run
 def test_learn_opens_the_declared_points_in_their_nesting() -> None:
     with LG._one_thread():
         model = _learner()
@@ -111,6 +112,7 @@ def test_learn_opens_the_declared_points_in_their_nesting() -> None:
     assert model._loop_hooks.frozen_at is not None
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 27 s beside a live run
 def test_the_real_freeze_guard_registers_into_the_table(learner: Any) -> None:
     from agents.training import learner_lifecycle as LL
 
@@ -136,6 +138,7 @@ def test_the_compile_sentinel_registers_into_the_table() -> None:
     assert model._compile_control is not None
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 24 s beside a live run
 def test_the_per_update_region_call_window_is_reset_by_the_update_hook() -> None:
     """gen3_no_silent_eager_v1's contract on the hook table: `CompileControl.record` — which TAKES the
     per-update route window — runs once per update through the `update` hook, after `train()`. Here

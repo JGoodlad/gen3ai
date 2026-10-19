@@ -134,6 +134,7 @@ def test_the_relocation_uses_the_models_margin_and_a_larger_one_moves_a_SUPERSET
     assert int(fix1.moved.sum()) >= int(fix0.moved.sum())
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 26 s beside a live run
 def test_every_R1_rule_line_of_the_startup_gate_prints_the_raised_shift_its_source_and_the_margin(learner):
     """The gate end to end (both fresh/perturbed or trained rungs): each R1 line carries the value, and the raised margin
     still passes with no clip-branch switch."""
@@ -168,6 +169,7 @@ def _records(tmp):
     return [json.loads(x) for x in (tmp / cc_.VERDICTS_FILE).read_text().splitlines()]
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 25 s beside a live run
 @pytest.mark.parametrize("flag, value, source, margin", [(None, 0.18, "default", 0.72),
                                                          (0.3, 0.3, "--canary-shift-max", 1.2)])
 def test_a_PASS_record_carries_the_shift_its_source_and_the_margin(regions_learner, tmp_path, flag, value, source, margin):
@@ -181,6 +183,7 @@ def test_a_PASS_record_carries_the_shift_its_source_and_the_margin(regions_learn
     assert cm["margin"] == pytest.approx(margin, rel=1e-3)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 28 s beside a live run
 def test_a_FATAL_record_carries_it_too(regions_learner, tmp_path):
     from agents.model.compile_canary_test import _plant_r1
     regions_learner._canary_shift_max = 0.3

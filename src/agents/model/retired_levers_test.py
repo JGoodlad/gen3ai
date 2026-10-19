@@ -469,6 +469,7 @@ def _pre_deletion_zip(tmp_path):
     return str(zip_path) + ".zip"
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 31 s beside a live run
 def test_a_checkpoint_written_before_the_deletion_still_loads_through_the_loaders(tmp_path):
     from sb3_contrib import MaskablePPO
 
@@ -493,6 +494,7 @@ def test_a_checkpoint_written_before_the_deletion_still_loads_through_the_loader
     assert getattr(model, "search_teacher_coef", 0.0) == 0.0
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 33 s beside a live run
 def test_a_pre_deletion_checkpoint_loads_as_an_OPPONENT(tmp_path):
     """The path a self-play pool / an eval sentinel / a stable opponent takes."""
     from agents.model.snapshot import current_model_version, load_foreign_opponent

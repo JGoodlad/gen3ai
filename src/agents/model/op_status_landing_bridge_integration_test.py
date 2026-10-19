@@ -253,6 +253,7 @@ def check(n_battles: int) -> Dict[str, Any]:
             "old_contradicted": old_contradicted}
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 58 s beside a live run
 def test_a_certain_zero_status_landing_is_never_contradicted_on_real_battles():
     r = check(N_BATTLES)
     assert r["decisions"] > 0, "no decision reached the check"

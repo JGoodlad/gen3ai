@@ -309,8 +309,8 @@ or fails DETERMINISTICALLY):
 | When | Command | Count (2026-08-23) · duration (2026-08-14) |
 |---|---|---|
 | **inner loop** — you want the fastest true/false | `-m "not slow and not e2e and not sim and not integration"` | 6570 tests, **127 s** (~56 s at `-n 4`) |
-| **THE ROUTINE GATE** — before a commit | `-m "not slow and not e2e"` | 12,782 tests, **4 m 19 s at `-n 6`** on a quiet box (2026-10-01; table below) |
-| **before a `/gen3ai-ship`** | the routine gate, OR a TARGETED set you choose (owner, 2026-10-05: "I prefer more targeted test suites") — see "Targeted sets before a ship" below | — |
+| **THE ROUTINE GATE** — before a commit | `-m "not slow and not e2e"` | 12,782 tests, **4 m 19 s at `-n 6`** on a quiet box (2026-10-01, BEFORE the 2026-10-19 re-tier; table below) |
+| **before a `/gen3ai-ship`** | **THE SHIP GATE: `scripts/ops/ship_gate.sh run`** — the routine gate in the shape the box affords (§ "The SHIP GATE" below); a TARGETED set only with high confidence (owner, 2026-10-05) — see "Targeted sets before a ship" below | 12,021 tests, **15 min 21 s** (2 failed: other units' reds, fixed on main by `98e73741`) beside a live run (2026-10-19) |
 | **in CI, or on demand** | `pytest src/` (everything) | 11,578 tests, **~47 m** serial (2026-09-29, nice 19, load ~3; the browser tier is ~19 s of it — the rest is corpus growth since 2026-08) |
 | just the bridge | `-m sim` | ~100 s |
 | just the browser views | `-m browser` | **~19 s** (2026-09-29) |
@@ -318,6 +318,8 @@ or fails DETERMINISTICALLY):
 | **any exploratory or one-off HEAVY job** (a trace, a benchmark, a measurement driver, anything that loads many checkpoints) | `scripts/ops/mem_cap.sh <GB> <cmd>` (Python: `utils.mem_cap`), a timeout INSIDE (`mem_cap.sh 24 timeout 2h python …`), composes with `gpu_lock.sh` in either order. The job gets its OWN scope (`MemoryMax=<GB>G`, swap 0, `OOMPolicy=stop`) inside `gen3ai-heavy.slice` (aggregate cap, default 64 GB of 89) at `oom_score_adj` +500, so an overrun kills only that job (exit 86). 2026-09-30: three global OOM kills of a 74-82 GB python3 each tore down the whole tmux scope (Claude + every agent) | — |
 
 ```bash
+# THE SHIP GATE — the routine gate below, in the shape the box affords (rule 5b when a run is live), one command:
+scripts/ops/ship_gate.sh run              # --dry-run prints the resolved command; pytest options after --
 # THE ROUTINE GATE — everything cheap, whatever it needs; -n 6 on a quiet box, under THE gate slot
 # (one gate at a time).
 export PYTHONPATH=$PYTHONPATH:src && scripts/ops/gate_lock.sh \
@@ -357,6 +359,61 @@ sample: a tree under 0.05 cores is flagged IDLE — a possible deadlock to `py-s
 kill someone else's gate), OVERDUE past 1.5x the ETA, and every blocked taker with its wait (flock wakes
 waiters in no guaranteed order, so the list is not a promise). `--json` for agents. The waiting log line
 every 60 s carries the holder's age and ETA. The records only REPORT: the flock alone is the lock.
+
+### The SHIP GATE — the routine gate in the shape the box affords (2026-10-19)
+
+**One command before every `/gen3ai-ship`: `scripts/ops/ship_gate.sh run`** (`src/utils/ship_gate.py`;
+`--dry-run` prints the resolved command, extra pytest options go after `--`, no argument refuses). It RUNS
+EVERYTHING the routine gate runs — `-m "not slow and not e2e"` over all of `src/`, the static gates included
+(they deselect nothing) — and chooses only the SHAPE from the box: a live training run
+(`utils.procfs.live_training_runs`) ⇒ rule 5b, `nice -n 19`, pinned to every cpu the trainer is NOT pinned to,
+`-n` = 0.5 x those cpus (3 on this box); no live run ⇒ `-n 6`, normal priority. Always through `gate_lock.sh`
+(one gate at a time) and `mem_cap.sh 24`, always with `CUDA_VISIBLE_DEVICES=""`. It never selects tests by the
+change (owner, 2026-09-30); it is fast because the routine set was RE-TIERED by measured cost.
+
+**Measured beside a live training run** (rule 5b shape, `nice 19 taskset -c 5-7,13-15 -n 3`, trainer on
+0-4,8-12, other agents' nice-19 jobs and the maturity queue's SCHED_IDLE slots on the same agent cores; walls
+are the gate-lock HELD time, queue wait excluded):
+
+| tree | tests | Σ test time | wall |
+|---|---|---|---|
+| before (`c6a14d16`, the routine gate as it stood) | 12,416 | 19,830 s | **1 h 50 min 35 s** (4 failed, all pre-existing reds) |
+| round 1: speed-mix fix + every test ≥ 20 s `slow` | 12,304 | 4,503 s | 25 min 38 s |
+| round 2 (shipped): + every test ≥ 8 s `slow`, whole files where a module fixture moves | 12,021 | 2,656 s | **15 min 21 s** (2 failed: other units' reds, fixed on main by `98e73741`) |
+
+**The tiering rule (what `slow` means now).** A test is `slow` when its setup + call + teardown costs **≥ 8 s
+in the ship-gate shape beside a live run** (≈ 2-3 s on a quiet box: the factor there is x2.7-x4.9 by the
+windowed meter). Where a test's cost is a MODULE / CLASS / SESSION fixture's setup, marking only the first
+test moves the setup onto the next one (round 1 moved `r1_graphed_route_test`'s 95 s fixture onto a 0.2 s
+test, which then read 196 s), so such a file is marked `slow` WHOLE (`pytestmark`). Every mark carries its
+measured cost in a `# ship gate (2026-10-19): N s beside a live run` comment. The 30 s quiet-box tier-budget
+guard (above) stays as the backstop; this rule is tighter because the budget is the ship gate's WALL.
+Static gates (`static`) are never `slow` — they run in every tier by definition.
+
+**LINCHPINS — kept routine at any cost** (each carries a `# LINCHPIN` comment; add one only with a reason a
+whole-repo red must block every ship): `learner_golden_test::test_the_production_golden_is_the_bf16_update_…`
+(the production update, bit for bit), `paths_test::test_no_module_hardcodes_an_absolute_home_path` (a
+`/home/…` literal makes a test skip forever everywhere else) and `env_files_test::test_every_third_party_import_is_declared_by_the_env_file`.
+
+**What moved, and why it is safe.** The re-tier moved ~500 test ids (~80 % of the routine gate's test time) to
+`slow`: the h2h / eval / ladder PLAY files (module-fixture plays of 24-160 games each, the 2026-10-12
+"one torch thread" table above), the production-learner compile gates (`compile_canary`, `compile_regions*`,
+`r1_*`, ~25-70 s each), the inference-service slot gates, the real-subprocess integration reads, and every
+test that STARTS AN EXTERNAL PROCESS of a third party (the Metamon peer smoke
+`anchors_integration_test::test_one_capped_real_game_…` and `windowed_attention_integration_test`, which run
+Metamon's own interpreter): no routine-gate test starts a Metamon peer. Their verdicts are BANKED by the slow
+tier in `slow_tier_status.json`, and a recorded red fails the ship gate (§ "The SLOW-TIER LAST-KNOWN-STATUS
+gate" below). ⚠️ **The cost of the speed: a slow test that broke since its last banked run reads green here.**
+So (a) a change to code a `slow` test covers runs THOSE tests too, chosen by judgment and named in the commit
+body (e.g. a compile change ⇒ `pytest src/agents/model/compile_*_test.py -m slow`); (b) the slow tier needs a
+cadence (it is ~an hour or more (UNVERIFIED until the banking run below) beside a live run at `-n 3`) — the orchestrator's call, not a cron (owner, 2026-10-05).
+
+**The one speed fix that was not a re-tier** (`belief_tables.build_species_speed_mix`): it accumulated with
+~220,000 per-element `tensor[s, v] += w` calls — **~5 s of EVERY `DamageOperator` build** on a contended core
+(17.7 s cold, ~1.5 s quiet), paid by every production-model test and every model build in production. It now
+accumulates the same float64 adds in the same order in Python floats and builds the tensor once: bit-identical
+(`belief_tables_test::test_the_speed_mix_is_bit_identical_to_the_per_element_tensor_reference`), 0.2 s warm.
+`damage_op_test` alone went 460 s -> 57 s of test time.
 
 ### Routine-gate wall time and the `-n` × gate_lock policy (measured 2026-09-30 / 10-01)
 
@@ -968,11 +1025,11 @@ measurement (none was possible) — and the 2-thread barrier waits grow faster t
 plays in MODULE fixtures, so the cost lands in a SETUP phase (the reveal file: one 1,735 s setup, four calls under
 0.03 s) and the 30 s guard, which reads `call` durations only, never fires. At 1 thread the reveal file is still
 ~1,000 CPU-seconds on a contended box; it plays 160 games (5 cells x 24 plus 5 ledger requests x 8) and every one of
-its four tests reads its OFF play, so no split cuts its pole without replaying that play in a second file. Whether
-these belong in `slow` is the owner's call; the numbers are here.
+its four tests reads its OFF play, so no split cuts its pole without replaying that play in a second file. **They
+are `slow` since 2026-10-19** (the owner's direction for a practical ship gate; § "The SHIP GATE" above).
 
 ### Targeted sets before a ship (owner, 2026-10-05)
-The full serial suite is NOT required before every `/gen3ai-ship` — **"I prefer more targeted test suites."** An agent ships on the routine gate, or on a TARGETED set it chooses by judgment (the tests that cover what it changed, plus the static gates), **naming the scope and the reason in the commit body**. Shared infrastructure (conftest, the model, the training loop, compile, `data/`, the Rust core, the launcher) or any doubt means the full routine gate. The owner's 2026-09-30 rule still holds: the choice is the agent's, never an AUTOMATED test-selection framework.
+The full serial suite is NOT required before every `/gen3ai-ship` — **"I prefer more targeted test suites."** Since 2026-10-19 the default is **the SHIP GATE** (`scripts/ops/ship_gate.sh run`, above: the whole routine set, ~15 min beside a live run). A TARGETED set the agent chooses by judgment (the tests that cover what it changed, plus the static gates) remains allowed when the agent has HIGH confidence the change is contained, **naming the scope and the reason in the commit body**; shared infrastructure (conftest, the model, the training loop, compile, `data/`, the Rust core, the launcher) or any doubt means the ship gate — plus the `slow` tests of the code it touched. The owner's 2026-09-30 rule still holds: the choice is the agent's, never an AUTOMATED test-selection framework.
 
 ### Everything, including the slow tiers (requires symlinked deps/pokemon-showdown + chrome)
 **Run this in CI, or when a unit's blast radius warrants it** (not required before every `/gen3ai-ship`; see above). ~47 minutes serial (2026-09-29); the browser suite is ~19 s of it.

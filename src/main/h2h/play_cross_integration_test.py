@@ -24,7 +24,7 @@ from agents.training import eval_ledger as L
 from main.h2h import many as MANY
 from main.h2h import play as PL
 
-pytestmark = [pytest.mark.sim, pytest.mark.integration]
+pytestmark = [pytest.mark.sim, pytest.mark.integration, pytest.mark.slow]  # ship gate (2026-10-19): 1593 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 #: ONE intra-op torch thread: the played bits are the 2-thread bits (the reveal file's recorded OFF_BITS reproduce
 #: at both), and a 2-thread eager CPU forward on a busy box waits in OpenMP barriers — designs/ops/testing.md

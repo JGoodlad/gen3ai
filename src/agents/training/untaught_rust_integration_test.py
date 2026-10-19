@@ -25,7 +25,7 @@ import pytest
 
 from agents.training import untaught_meter as um
 
-pytestmark = [pytest.mark.sim, pytest.mark.integration]
+pytestmark = [pytest.mark.sim, pytest.mark.integration, pytest.mark.slow]  # ship gate (2026-10-19): 259 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 GAMES = 6
 SEED = 3

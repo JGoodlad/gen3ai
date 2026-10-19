@@ -87,6 +87,7 @@ async def _one_seeded_battle(impl: str) -> BattleCapture:
         await server.wait_closed()
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 30 s beside a live run
 async def test_the_front_ends_protocol_is_byte_identical_to_the_node_bridges():
     capture = await _one_seeded_battle("node")
     assert capture.is_seeded, "an unseeded battle cannot be replayed, so it cannot be compared"
@@ -95,6 +96,7 @@ async def test_the_front_ends_protocol_is_byte_identical_to_the_node_bridges():
     assert verdict is None, verdict
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 27 s beside a live run
 async def test_the_rust_backed_front_end_is_byte_identical_to_the_node_bridge():
     if not _prebuilt_rust_available():
         pytest.skip(f"no pre-built rust sim_bridge (set {_ENV_OVERRIDE} or build src/rust_sim); "

@@ -286,6 +286,7 @@ def test_THIS_pytest_process_compiles_into_a_fresh_private_dir():
     assert CC.fs_type(os.environ[CC.ENV_ROOT]) not in ("tmpfs", "ramfs")
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 18 s beside a live run
 def test_a_real_compile_lands_in_the_run_cache(tmp_path):
     """End to end in a child: declare a run's cache, `torch.compile` a function on CPU, and Inductor's
     own `cache_dir()` is the run's — with its artifacts inside `<run>/compile_cache/inductor`."""

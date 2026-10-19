@@ -76,6 +76,7 @@ def test_a_fork_shaped_space_is_judged_on_the_golden_rows_with_its_mask_at_the_d
     assert list(b.obs) == list(fork.policy.observation_space.spaces)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 21 s beside a live run
 def test_a_fork_shaped_space_judges_the_FULL_golden_parameter_set(production, fork):
     """Same seeds, same weights: the fork learner's judged set on its filled rows must cover every
     parameter the production learner judges clearly on the golden rows (and the counts agree up to
@@ -101,6 +102,7 @@ def _ratios(arm):
     return [n / top for n in norms]
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 71 s beside a live run
 def test_the_gate_REFUSES_a_placeholder_that_shrinks_the_judged_set(fork, monkeypatch):
     """A placeholder that BLANKS a term (the fork mask at 0 deletes the policy gradient) must be the
     typed startup FATAL, not a quieter gate. The positive half: the declared placeholder passes."""

@@ -44,6 +44,7 @@ def _build_at(threads: int) -> dict:
     return json.loads(r.stdout.strip().splitlines()[-1])
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 40 s beside a live run
 def test_the_init_is_byte_identical_at_1_and_8_threads_and_is_the_recorded_one():
     one, eight = _build_at(1), _build_at(8)
     assert eight["after"] == 8 and one["after"] == 1, "build_learner must restore the caller's thread count"
@@ -67,6 +68,7 @@ print(json.dumps({"after": th.get_num_threads(), "init": fp["init_params_sha256"
 """
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 48 s beside a live run
 def test_the_golden_is_identical_across_processes_hash_seeds_and_thread_counts():
     """X5 U6 / design §6.2: two processes with different ``PYTHONHASHSEED`` (one at 1 BLAS thread, one at
     8) compute the SAME golden (X5's fixed-mass surface) — initial and post-update bytes and every pinned loss — and it is

@@ -56,6 +56,7 @@ def _check(sub):
     return rows, masks, gate
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 9 s beside a live run
 def test_gate_one_on_a_slice_of_the_committed_bank():
     bank = B.load_bank(BANK_V1)
     sub = _subset(bank, per_source=4)
@@ -94,6 +95,7 @@ def test_gate_one_has_teeth():
         B.check_recorded(b, ds, wrong)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 67 s beside a live run
 def test_the_reader_is_deterministic_on_an_x5_checkpoint(tmp_path, restore_torch_globals):
     """Two reads of one fresh production (X5) checkpoint on a slice of the bank are byte-identical (the
     recording policies in the archive predate the X5 version break, so the reader cannot load them at HEAD)."""

@@ -137,6 +137,7 @@ def test_unmoved_is_BIT_IDENTICAL_to_the_init_record_or_exactly_zero(tmp_path):
     assert cr.init_record(m) is None and cr.unmoved_parameters(m) == [MB]
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 29 s beside a live run
 def test_the_GATE_passes_a_dead_ortho_heads_noise_and_FATALs_its_miscompile(dead_ortho_head, monkeypatch):
     """Noise between the bars on the dead non-zero head passes (fails on revert: the zero rule alone
     judged it at the trained bar). The same error on every call is FATAL through the unmoved rung."""
@@ -152,6 +153,7 @@ def test_the_GATE_passes_a_dead_ortho_heads_noise_and_FATALs_its_miscompile(dead
         cr.gate_regions(dead_ortho_head, batch_size=BATCH, say=lambda _m: None)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 28 s beside a live run
 def test_a_MOVED_parameter_is_judged_exactly_as_before(dead_ortho_head, monkeypatch):
     """With a record present, a parameter training moved is not unmoved and keeps the TRAINED bar on
     the live weights: the same between-the-bars error on it is FATAL."""
@@ -162,6 +164,7 @@ def test_a_MOVED_parameter_is_judged_exactly_as_before(dead_ortho_head, monkeypa
         cr.gate_regions(dead_ortho_head, batch_size=BATCH, say=lambda _m: None)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 32 s beside a live run
 def test_a_RESUME_reads_the_record_from_the_checkpoint_and_without_one_falls_back_to_the_zero_rule(
         dead_ortho_head, monkeypatch, tmp_path):
     """The record is plain checkpoint data: save then load returns it unchanged, and the loaded model
@@ -182,6 +185,7 @@ def test_a_RESUME_reads_the_record_from_the_checkpoint_and_without_one_falls_bac
         cr.gate_regions(m, batch_size=BATCH, say=lambda _m: None)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 33 s beside a live run
 def test_the_CANARY_passes_a_dead_ortho_heads_noise_and_FATALs_its_miscompile(dead_ortho_head, monkeypatch):
     from agents.model.compile_canary import CompileCanary, CompileCanaryError
     assert _judged(dead_ortho_head, MW)

@@ -259,6 +259,7 @@ def test_trunk_masked_action_handling_and_the_T2_decision_forward():
 
 
 # ------------------------------------------------------------------------------- one update
+@pytest.mark.slow  # ship gate (2026-10-19): 9 s beside a live run
 def test_trunk_fresh_build_one_cpu_update_under_the_K6_freeze():
     from agents.training.learner_lifecycle import LearnerFreeze, declare_learner_startup
     model = L.build_learner(args=_args("trunk"), perturb_keyed=True)

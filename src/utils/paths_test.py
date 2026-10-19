@@ -178,6 +178,7 @@ def _string_values(path: pathlib.Path):
             yield node.lineno, node.value
 
 
+# LINCHPIN (ship gate, 2026-10-19): kept in the routine gate at any cost — designs/ops/testing.md "The SHIP GATE"
 def test_no_module_hardcodes_an_absolute_home_path():
     """THE CLASS. Four tests read `models/` through a `/home/goodlad/...` literal and therefore
     skipped forever on every other machine — invisible coverage loss, because a skip that is

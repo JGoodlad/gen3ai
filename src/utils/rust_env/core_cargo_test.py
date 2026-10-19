@@ -54,6 +54,7 @@ def _cargo_test(extra_env=None, args=()):
     )
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 49 s beside a live run
 def test_the_rust_env_core_suite_passes():
     r = _cargo_test()
     tail = (r.stdout + r.stderr)[-6000:]
@@ -97,6 +98,7 @@ def _gate_1(tmp_path, name: str, teams, n: int, steps: int, seed: int) -> str:
     return line
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 10 s beside a live run
 def test_gate_1_on_the_ladder_commit_tier(tmp_path):
     """COMMIT tier: the 16-team ladder slice (owner 2026-09-24: the Metamon ladder-usage corpus joins
     every parity gate), 8 envs x 600 steps (~5 s warm)."""

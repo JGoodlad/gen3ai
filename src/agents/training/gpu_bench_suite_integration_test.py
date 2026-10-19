@@ -29,6 +29,7 @@ def _env() -> dict:
     return env
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 17 s beside a live run
 def test_update_cell_quick(tmp_path: Path) -> None:
     (tmp_path / "phases").mkdir()
     cfg = S.phase_config("update_fp32", True, "cpu", str(tmp_path))

@@ -173,6 +173,7 @@ def fresh_learner(monkeypatch):
         torch._dynamo.reset()
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 34 s beside a live run
 @pytest.mark.parametrize("precision", ["bf16", "fp32"])
 def test_the_gate_RELOCATES_on_every_rungs_own_weights_and_says_so(fresh_learner, monkeypatch, precision):
     """Fails on revert: every R1 rung's line names its relocation and its margin check, and the relocation runs once
@@ -194,6 +195,7 @@ def test_the_gate_RELOCATES_on_every_rungs_own_weights_and_says_so(fresh_learner
     assert len(seen) == 2 and seen[0] != seen[1]                       # the perturbed rung relocated on ITS weights
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 28 s beside a live run
 def test_a_planted_10pct_POINTER_HEAD_miscompile_is_still_refused_at_the_fp32_rule(learner, monkeypatch):
     """Teeth intact on the relocated rows: the fp32 rule refuses a 10 % backward error on the pointer head's move
     projection (the parameter the s4001 FATAL named)."""

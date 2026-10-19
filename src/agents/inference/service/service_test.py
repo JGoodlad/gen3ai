@@ -23,6 +23,7 @@ from agents.inference.service.decision import _refuse_extra_obs_keys
 from agents.inference.service.fixtures import perturbed_fresh_policy as _perturbed_policy
 from agents.inference.service.parity import fixture_rows, judge
 from utils.torch_state_guard import torch_globals
+pytestmark = pytest.mark.slow  # ship gate (2026-10-19): 224 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 
 @pytest.fixture(scope="module")
@@ -142,6 +143,7 @@ def test_a_matmul_precision_change_after_the_freeze_is_a_violation(policies):
 
 
 # ---------------------------------------------------------------- serving
+@pytest.mark.slow  # ship gate (2026-10-19): 34 s beside a live run
 def test_slots_serve_their_own_weights_and_a_load_is_verified(policies):
     a, b = policies
     svc = _service(a, n_slots=2, buckets=(2, 8))
@@ -397,6 +399,7 @@ def test_a_submitted_row_is_copied_so_a_caller_buffer_rewrite_cannot_reach_it(po
     _close(t.result(), _ref(a, obs, mask))
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 24 s beside a live run
 def test_host_results_equal_device_results_across_flushes_of_both_buffers(policies):
     a, b = policies
     svc = _service(a, n_slots=2, buckets=(2, 8))
@@ -414,6 +417,7 @@ def test_host_results_equal_device_results_across_flushes_of_both_buffers(polici
             _close(d, _ref(pol, o, m))
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 34 s beside a live run
 def test_a_slot_never_holds_the_ride_along_heads(policies):
     """gen3_slot_served_state_v1: the DETACHED ride-along heads are left out of every replica (never
     copied, not stacked) — 18.2 MiB per slot at the X26 surface — and a heads-carrying weight set still

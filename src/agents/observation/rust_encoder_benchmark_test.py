@@ -7,6 +7,7 @@ import pytest
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 9 s beside a live run
 def test_the_encoder_benchmark_runs(tmp_path, capsys):
     from agents.observation import rust_encoder_benchmark as B
 

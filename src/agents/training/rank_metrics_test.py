@@ -1,3 +1,4 @@
+import pytest
 """Unit tests for the effective-rank probe (rank_metrics.py)."""
 import numpy as np
 
@@ -107,6 +108,7 @@ def test_the_hook_free_probe_reads_the_same_tensors_the_hooks_did():
     del th
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 48 s beside a live run
 def test_the_probe_reaches_no_new_compiled_signature_after_the_lock():
     """THE iteration-1 signature `8fc297a2` absorbed: the hooked probe recompiled the learner's
     train/no-grad graph on torch 2.5.1 (`len(_forward_hooks) != 0`, on the resume frame after the
@@ -159,6 +161,7 @@ def test_the_device_spectrum_equals_the_numpy_reference():
         assert ref["pr"] == 0.0 or got[0] > 0
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 29 s beside a live run
 def test_the_learner_reads_the_micro_steps_own_forward_no_second_forward():
     """K8: the rank probe used to run its OWN no-grad extractor forward every update (the
     `--rank-tripwire` default keeps it every update) — a second forward of a 2,048-row micro-batch and

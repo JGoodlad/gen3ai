@@ -233,6 +233,7 @@ def core_run(tmp_path_factory):
     pytest.fail("no core trace with a usable move_selection decision")
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 10 s beside a live run
 @pytest.mark.sim
 @pytest.mark.integration
 def test_search_replay_and_the_prober_run_with_node_impossible(core_run, tmp_path):

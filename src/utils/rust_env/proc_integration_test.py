@@ -168,6 +168,7 @@ def test_gate_1_the_bridge_corpus_ffi_equals_process(lib, tmp_path):
     _gate_1(lib, tmp_path, "bridge", {}, 401)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 8 s beside a live run
 def test_gate_1_the_ladder_commit_tier_ffi_equals_process(lib, tmp_path):
     from utils.ladder_corpus import teams
 

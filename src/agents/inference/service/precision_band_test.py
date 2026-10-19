@@ -138,6 +138,7 @@ def _service(template, **kw):
     return InferenceService(spec).startup()
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 11 s beside a live run
 def test_a_service_started_at_a_non_fp32_precision_is_refused_at_startup(policy):
     """A TF32 service cannot start: the startup parity gate refuses the precision. Revert the refusal
     ⇒ the 'high' startup succeeds on a gate whose bars were never measured there."""

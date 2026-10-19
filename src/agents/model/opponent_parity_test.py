@@ -55,6 +55,7 @@ def _pointer_cell_miscompile(fe):
     return factory
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 44 s beside a live run
 def test_a_correct_compile_PASSES_parity_on_fresh_weights_and_says_so(monkeypatch, fresh, capsys):
     fe = fresh.policy.features_extractor
     before = {k: v.clone() for k, v in fresh.policy.state_dict().items()}
@@ -69,6 +70,7 @@ def test_a_correct_compile_PASSES_parity_on_fresh_weights_and_says_so(monkeypatc
     assert all(torch.equal(before[k], v) for k, v in fresh.policy.state_dict().items())
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 47 s beside a live run
 def test_a_pointer_only_miscompile_is_REFUSED_with_the_typed_error(monkeypatch, fresh):
     fe = fresh.policy.features_extractor
     before = {k: v.clone() for k, v in fresh.policy.state_dict().items()}
@@ -83,6 +85,7 @@ def test_a_pointer_only_miscompile_is_REFUSED_with_the_typed_error(monkeypatch, 
     assert all(torch.equal(before[k], v) for k, v in fresh.policy.state_dict().items())
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 18 s beside a live run
 def test_it_is_refused_on_INFORMATIVE_weights_too(monkeypatch, fresh):
     fe = fresh.policy.features_extractor
     monkeypatch.setattr(torch, "compile", _pointer_cell_miscompile(fe))
@@ -115,6 +118,7 @@ def test_a_stand_in_policy_is_REFUSED_not_installed_unvalidated():
         check_opponent_parity(m, fe.forward, fe.forward)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 75 s beside a live run
 def test_a_PASS_is_cached_per_distinct_weights_and_a_weight_change_is_rechecked(monkeypatch, fresh):
     """Once per distinct weights, not per load: the eval worker re-loads its opponent
     every game. The same weights hit the cache; ANY weight change is a new key and is judged."""
@@ -139,6 +143,7 @@ def test_a_PASS_is_cached_per_distinct_weights_and_a_weight_change_is_rechecked(
     assert calls["n"] > n1
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 49 s beside a live run
 def test_a_COLLAPSED_critic_opponent_passes_parity_above_the_first_rung(monkeypatch, fresh, capsys):
     """gen3_parity_perturb_ladder_v1: a pool snapshot whose win-prob critic collapsed (saturated at
     logit −10; −9 until X5 became production, where −9's first rung is informative) is vacuous on V at the fresh-weights scale; the gate climbs the declared ladder. Revert

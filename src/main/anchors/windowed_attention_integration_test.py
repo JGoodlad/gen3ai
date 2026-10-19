@@ -57,6 +57,7 @@ def _run(cfg, body: str) -> dict:
     return json.loads(proc.stdout.strip().splitlines()[-1])
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 8 s beside a live run
 def test_windowed_attention_matches_a_naive_sliding_window_reference() -> None:
     cfg = _metamon_or_skip()
     out = _run(cfg, """
@@ -84,6 +85,7 @@ def test_windowed_attention_matches_a_naive_sliding_window_reference() -> None:
     assert out["full"] < 1e-5 and out["cached"] < 1e-5, out
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 14 s beside a live run
 @pytest.mark.parametrize("agent, want_class, want_window", [
     ("Kakuna", "WindowedVanillaAttention", [96, 0]),
     ("SyntheticRLV2", "VanillaAttention", [-1, -1]),

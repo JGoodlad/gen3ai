@@ -278,6 +278,7 @@ def fresh_bf16() -> Iterator[Any]:
         torch._dynamo.reset()
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 71 s beside a live run
 @pytest.mark.integration
 def test_the_honest_bf16_gate_PASSES_under_the_bf16_rule(fresh_bf16):
     """PRECONDITION for every plant below (and the file's one dynamo trace)."""
@@ -285,6 +286,7 @@ def test_the_honest_bf16_gate_PASSES_under_the_bf16_rule(fresh_bf16):
     assert any("bf16 rule:" in r for r in rules), rules
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 38 s beside a live run
 @pytest.mark.integration
 def test_the_bf16_gates_resolution_is_what_its_arithmetic_says_planted_both_sides(fresh_bf16, monkeypatch):
     """The computed resolution of the representative parameters (the encoder the fp32 test plants on, a Linear
@@ -298,6 +300,7 @@ def test_the_bf16_gates_resolution_is_what_its_arithmetic_says_planted_both_side
         assert r["same_precision"]["d_compiled_vs_eager_bf16"]["max"] == 0.0
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 65 s beside a live run
 @pytest.mark.integration
 def test_a_10pc_encoder_miscompile_is_BELOW_the_bf16_gates_resolution_on_fresh_weights(fresh_bf16, monkeypatch):
     """The known limit, pinned (not a target): under the bf16 rule a 10 % backward error on
@@ -311,6 +314,7 @@ def test_a_10pc_encoder_miscompile_is_BELOW_the_bf16_gates_resolution_on_fresh_w
         cr.gate_regions(fresh_bf16, batch_size=BATCH, say=lambda _m: None)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 48 s beside a live run
 @pytest.mark.integration
 def test_a_planted_NaN_is_still_NAMED_under_the_bf16_rule(fresh_bf16, monkeypatch):
     plant(monkeypatch, REPRESENTATIVE[0], nan=True)

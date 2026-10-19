@@ -110,6 +110,7 @@ def _importers() -> dict:
     return found
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 13 s beside a live run
 def test_no_module_imports_the_deleted_python_env_core():
     found = _importers()
     assert not found, (f"module(s) import the deleted Python env core: {sorted(found)} — the Rust env core "

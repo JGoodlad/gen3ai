@@ -29,7 +29,7 @@ from utils.paths import src_path
 from utils.rust_env import bot_corpus as BC
 from utils.rust_env import bot_inventory as BI
 
-pytestmark = [pytest.mark.sim, pytest.mark.integration]
+pytestmark = [pytest.mark.sim, pytest.mark.integration, pytest.mark.slow]  # ship gate (2026-10-19): 30 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 FEATURES = ("--profile", "selfcheck", "--features", "emission-selfcheck")
 DRAWING = ("random", "staller", "staller_v2")   # the bots whose streams must be exercised

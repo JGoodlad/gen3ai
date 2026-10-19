@@ -9,7 +9,7 @@ import math
 
 import pytest
 
-pytestmark = [pytest.mark.sim, pytest.mark.integration]
+pytestmark = [pytest.mark.sim, pytest.mark.integration, pytest.mark.slow]  # ship gate (2026-10-19): 10 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 #: A blob run's named set as the X5 A/B's look-3 read banked it (the full bank v1, 20,712 rows).
 BANKED_BLOB_EROW = ("designs", "research_state", "measurements", "x5ab_look3_2026-10-07", "purpose",
@@ -69,6 +69,7 @@ def _read(br, path, label, **kw):
     return read_one(br, derive(), path, label, threads=2, commit="test", reencode_s=0.0, **kw)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 63 s beside a live run
 def test_an_x5_checkpoint_reads_on_the_bank(bank_slice, ckpts):
     br, _ = bank_slice
     assert br.n > 100 and (br.event >= 0).any() and (br.event >= 1000).any()
@@ -101,6 +102,7 @@ def test_an_x5_checkpoint_reads_on_the_bank(bank_slice, ckpts):
     assert abs(hot["arm"]["presence"]["brier"] - hot["prior"]["presence"]["brier"]) > 1e-4
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 27 s beside a live run
 def test_the_conditional_metric_on_a_banked_blob_set(bank_slice, ckpts):
     """Amendment 3(b) end to end on a BANKED blob named set (the X5 A/B's look-3 read of blob_s1001; the
     blob read arm itself was deleted at the version break), sliced to the test bank's rows: the X5 read is

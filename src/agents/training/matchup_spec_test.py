@@ -64,6 +64,7 @@ def test_pin_multi_exploiter_sample_gate(teams):
 
 # ── builder parity: the spec must reproduce the legacy constructions byte-for-byte ─
 
+@pytest.mark.slow  # ship gate (2026-10-19): 19 s beside a live run
 def test_default_spec_builders_match_legacy(teams):
     all_teams, sample_teams = teams
     spec = MatchupSpec.from_args(_args())

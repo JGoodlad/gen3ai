@@ -112,6 +112,7 @@ def _build_recon_tree(lib, run_dir: str, n: int) -> str:
     return run_dir
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 10 s beside a live run
 @pytest.mark.integration
 def test_falsify_scan_end_to_end(lib, tmp_path):
     """The RUN-LEVEL scan over a real discoverable tree: every battle (``outcome=None``) is

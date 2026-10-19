@@ -131,6 +131,7 @@ def test_the_cross_era_comparison_refuses_on_dose(repo_cwd):
     assert "budget" not in str(exc.value).lower().split("dose")[0]
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 9 s beside a live run
 def test_within_an_era_the_exploiters_are_matched(repo_cwd):
     assert brg.check_matched([_read(n) for n, *_ in ERA1]) == []
     assert brg.check_matched([_read(n) for n, *_ in ERA2]) == []
@@ -170,6 +171,7 @@ def test_endpoint_stat_reproduces_the_quoted_gaps(repo_cwd):
     assert r2["stall"] == pytest.approx(-0.05)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 15 s beside a live run
 def test_cli_refuses_then_prints(repo_cwd, tmp_path, capsys):
     from main import best_response_gap as cli
     names = [n for n, *_ in ERA1 + ERA2]

@@ -38,9 +38,10 @@ _ALL_SCRIPTS = sorted(_OPS_DIR.glob("*.sh"))
 _HOME_LITERAL_EXEMPT = {"_common.sh"}
 
 #: Entry points that act on no RUN, so they have no run to resolve (they still source `_common.sh`
-#: for the interpreter and the checkout root). `gpu_lock.sh`, `gate_lock.sh` and `mem_cap.sh` wrap an arbitrary command, `gpu_lease.sh` a lock.
+#: for the interpreter and the checkout root). `gpu_lock.sh`, `gate_lock.sh` and `mem_cap.sh` wrap an arbitrary command, `gpu_lease.sh` a lock,
+#: `ship_gate.sh` the test suite.
 _RUN_AGNOSTIC = {"gpu_lock.sh", "gpu_lease.sh", "gate_lock.sh", "mem_cap.sh", "cuda_build_validate.sh",
-                 "verify_compile_gate_cuda.sh"}
+                 "verify_compile_gate_cuda.sh", "ship_gate.sh"}
 
 
 def test_there_are_scripts_to_check() -> None:

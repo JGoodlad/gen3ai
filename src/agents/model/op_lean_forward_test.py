@@ -64,6 +64,7 @@ def test_drop_renders_shrinks_the_block_and_keeps_every_offset():
     assert on.damage_op.out_gain_keys == off.damage_op.out_gain_keys[:on.damage_op.out_gain.numel()]
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 20 s beside a live run
 def test_drop_renders_is_bit_identical_at_init():
     """The step-3 claim as an executable fact: the renders had no forward consumer, so removing
     them changes NOTHING the heads see — pi/vf bitwise equal between the two modes at init

@@ -262,6 +262,7 @@ def _fork_load(parent, run_archive):
     return args, version, model, child
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 20 s beside a live run
 def test_a_fork_of_a_plain_parent_with_a_reveal_records_it_everywhere(parent, run_archive):
     from agents.model.snapshot import record_checkpoint, save_model_snapshot
     from main import sidecar_audit as SA

@@ -22,6 +22,7 @@ import numpy as np
 import pytest
 
 from main.hidden_info_study import hand_eval as H
+pytestmark = pytest.mark.slow  # ship gate (2026-10-19): 14 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 
 @pytest.fixture(scope="module")

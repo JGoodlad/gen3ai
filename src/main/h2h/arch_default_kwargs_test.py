@@ -16,6 +16,7 @@ import pytest
 
 from main.h2h import play as PL
 from main.h2h.arch import _load_host, declare_engine
+pytestmark = pytest.mark.slow  # ship gate (2026-10-19): 31 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 DEFAULTED = ("policy_readout", "oracle_reveal")
 

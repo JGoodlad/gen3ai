@@ -21,6 +21,7 @@ import pytest
 
 from agents.training.eval_sharding import BOT, FIXED, SENTINEL
 from agents.training.rust_eval.executor import RustEvalCore
+pytestmark = pytest.mark.slow  # ship gate (2026-10-19): 358 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 
 def _core():

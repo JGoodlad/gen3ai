@@ -237,6 +237,7 @@ def check(n_battles: int, ckpt: Optional[str] = None) -> Dict[str, Any]:
     return out
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 22 s beside a live run
 def test_the_priority_bracket_is_never_contradicted_and_the_physics_is_calibrated() -> None:
     r = check(N_BATTLES)
     assert r["bracket"]["rows"] > 0, f"NOT EXERCISED: no unequal-priority turn ({r['skipped']})"

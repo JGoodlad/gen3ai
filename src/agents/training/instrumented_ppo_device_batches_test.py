@@ -66,6 +66,7 @@ def test_install_replaces_a_stale_gather_and_a_cpu_buffer_keeps_the_host_path():
     assert "_get_samples" not in buf.__dict__
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 26 s beside a live run
 def test_a_whole_update_through_device_batches_equals_the_host_path(monkeypatch):
     """The learner golden's update, the gather forced on (CPU): post-update parameters bit-equal to
     the host path's — the batches are the same tensors, so the program is the same."""
@@ -228,6 +229,7 @@ def test_staged_survives_an_early_break_and_host_mode_installs_nothing():
         DB.install(buf, force=True, mode="nope")
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 55 s beside a live run
 def test_a_whole_update_staged_equals_the_resident_and_host_paths(monkeypatch):
     """The learner golden's update in each mode (forced on the CPU): post-update parameters bit-equal."""
     from agents.training.instrumented_ppo import ppo as ppo_mod

@@ -29,6 +29,7 @@ from typing import Any, Dict, Tuple
 import numpy as np
 import pytest
 import torch as th
+pytestmark = pytest.mark.slow  # ship gate (2026-10-19): 108 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 RIDEALONG_ON = {"ridealong_ensemble": 2, "ridealong_rnd": True, "ridealong_adv": 2,
                 "ridealong_opp": 2, "ridealong_rnd_variants": "all"}
@@ -111,6 +112,7 @@ def _assert_inference_only(m: Any) -> None:
 
 
 # ---------------------------------------------------------------- after the freeze: acquires nothing
+@pytest.mark.slow  # ship gate (2026-10-19): 22 s beside a live run
 def test_a_POOL_load_after_the_freeze_builds_no_optimizer_and_trips_nothing(world: Dict[str, Any]) -> None:
     """The X26 chain, in miniature: the trainee (heads ON) seeds its pool, FREEZES, and the pool loads
     the snapshot. Before the fix the load pre-stepped a ride-along Adam and the step hook raised."""

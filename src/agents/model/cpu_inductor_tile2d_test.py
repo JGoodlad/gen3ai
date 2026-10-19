@@ -143,6 +143,7 @@ def test_a_backend_codegen_failure_is_not_reported_as_a_graph_break(message, nam
 
 
 # ------------------------------------------------------------------------------ the real compile
+@pytest.mark.slow  # ship gate (2026-10-19): 21 s beside a live run
 @_skip_compile
 def test_the_smallest_repro_compiles_and_matches_eager_with_the_cpu_option(one_thread):
     """Compiles (no `was not declared`), vectorisation and tiling are OFF in the emitted C++, and the numbers are

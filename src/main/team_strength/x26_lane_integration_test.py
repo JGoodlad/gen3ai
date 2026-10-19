@@ -13,7 +13,7 @@ from main.team_strength import register as RG
 from main.team_strength import x26_lane as XL
 from utils.paths import repo_path
 
-pytestmark = [pytest.mark.sim, pytest.mark.integration]
+pytestmark = [pytest.mark.sim, pytest.mark.integration, pytest.mark.slow]  # ship gate (2026-10-19): 285 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 HOME72 = repo_path("designs/research_state/measurements/n0_endofrun_2026-09-27/teams_home72")
 COMPUTE = dict(device="cpu", backend="eager", n_envs=4, threads=2, torch_threads=1, front="ffi", profile="selfcheck")

@@ -35,6 +35,7 @@ def _update(model, seed=True):
     return LG.params_sha256(model), losses
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 20 s beside a live run
 def test_a_dry_update_leaves_the_learner_bit_identical():
     from agents.training import learner_golden as LG
     ref = _update(_learner())

@@ -50,6 +50,7 @@ def test_the_reader_refuses_an_unknown_keyword_and_stays_dead():
         assert r.feed(["|t:|1"]) is None
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 10 s beside a live run
 def test_gate_a_two_roads_one_row_in_miniature(tmp_path):
     from main.live import two_roads as TR
     port = _free_port()

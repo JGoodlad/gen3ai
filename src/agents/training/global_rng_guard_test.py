@@ -169,6 +169,7 @@ def test_the_FREEZE_arms_the_guard_and_a_swallowed_seed_still_fails_the_check(wo
 
 
 # -------------------------------------------------------------------- the load touches no stream
+@pytest.mark.slow  # ship gate (2026-10-19): 31 s beside a live run
 @pytest.mark.parametrize("which", ["zip_off", "zip_on"])
 def test_an_OPPONENT_load_leaves_every_global_stream_bit_identical(world: Dict[str, Any], which: str,
                                                                    restore_rng: Any) -> None:

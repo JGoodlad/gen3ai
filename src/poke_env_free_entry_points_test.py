@@ -249,6 +249,7 @@ def h2h_edge_blocked():
     return _run(_EDGE, cwd=repo_root(), timeout=900)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 122 s beside a live run
 @pytest.mark.sim
 @pytest.mark.integration
 def test_a_head_to_head_edge_plays_with_poke_env_blocked(h2h_edge_blocked):
@@ -300,6 +301,7 @@ _BOT_SLOT = """
 """
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 11 s beside a live run
 @pytest.mark.sim
 @pytest.mark.integration
 def test_a_rust_bot_our_side_plays_a_battle_with_poke_env_blocked():

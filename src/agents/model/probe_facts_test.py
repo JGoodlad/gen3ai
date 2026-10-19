@@ -161,6 +161,7 @@ def test_the_move_target_is_their_active_and_nothing_without_one(rows: torch.Ten
         assert float(move_target_features(dataclasses.replace(ctx, hp_and_active=hp)).abs().max()) == 0.0
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 23 s beside a live run
 @pytest.mark.parametrize("flag,extra", [("move_target_state", "move_target_proj")])
 @pytest.mark.parametrize("encoding", ["legacy", "static"])
 def test_one_lever_init_and_the_fact_reaches_the_trunk(rows: torch.Tensor, flag: str, extra: str,

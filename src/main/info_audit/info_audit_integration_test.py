@@ -7,7 +7,7 @@ import pytest
 from main.info_audit import __main__ as A
 from main.info_audit import checks as C
 
-pytestmark = [pytest.mark.sim, pytest.mark.integration]
+pytestmark = [pytest.mark.sim, pytest.mark.integration, pytest.mark.slow]  # ship gate (2026-10-19): 53 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 SPECS = ("oracle", "pilot", "off", "F+M")
 

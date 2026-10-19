@@ -76,6 +76,7 @@ def _assert_green(cen: SP.Census) -> None:
 # ------------------------------------------------------------------ gate 1
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 24 s beside a live run
 def test_gate_1_the_depth_3_successor_slice_commit(lib, logs):
     _assert_green(SP.run(logs, seed=5, lib=lib, n_turns=2))
 

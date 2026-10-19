@@ -58,6 +58,7 @@ def test_the_declaration_table_is_well_formed():
     assert cr.declared_signature_count() == 1
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 32 s beside a live run
 def test_the_compiled_inventory_EQUALS_the_declaration_table(learner):
     model = learner
     ctl = cc.control()
@@ -96,6 +97,7 @@ def test_the_compiled_inventory_EQUALS_the_declaration_table(learner):
     assert _graphs() - g0 == cr.declared_signature_count()
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 22 s beside a live run
 def test_a_graph_break_INSIDE_a_region_is_the_typed_startup_FATAL(learner, monkeypatch):
     """`fullgraph=True` is the mechanism: a host read inside R1 must refuse at startup, naming
     dynamo's reason — never a silent split into two graphs. Fails if the region is compiled without
@@ -115,6 +117,7 @@ def test_a_graph_break_INSIDE_a_region_is_the_typed_startup_FATAL(learner, monke
         cr.gate_regions(learner, batch_size=BATCH, say=lambda _m: None)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 24 s beside a live run
 def test_an_UNDECLARED_signature_after_the_lock_names_the_failing_guard(learner):
     ctl = cc.control()
     ctl.install()
@@ -128,6 +131,7 @@ def test_an_UNDECLARED_signature_after_the_lock_names_the_failing_guard(learner)
     assert "size mismatch" in str(ei.value) or "expected 16" in str(ei.value), str(ei.value)[-800:]
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 27 s beside a live run
 def test_a_RAGGED_micro_batch_is_REFUSED_by_R1s_dispatcher_and_compiles_nothing(learner):
     """R1 has ONE declared row count (`gen3_r1_no_ragged_v1`): the collector refuses an update that does
     not divide by the micro-batch, so the former declared EAGER route for the last micro-batch of an
@@ -205,6 +209,7 @@ def test_weights_regime_reads_a_fresh_launch_as_fresh_and_moved_weights_as_train
     assert cr.weights_regime(_fresh_learner(monkeypatch)) == "fresh"
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 25 s beside a live run
 def test_the_GATE_judges_trained_weights_at_the_trained_bar(learner, monkeypatch):
     """Through `gate_regions` (CPU, dynamo `eager` backend, so compiled == eager and the only error is
     the planted one): C's healthy reading planted on one parameter of R1's compiled arm PASSES on
@@ -234,6 +239,7 @@ def test_the_GATE_judges_trained_weights_at_the_trained_bar(learner, monkeypatch
         cr.gate_regions(learner, batch_size=BATCH, say=lambda _m: None)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 27 s beside a live run
 def test_a_FRESH_launch_is_ALSO_judged_on_a_perturbation_at_the_TRAINED_bar(monkeypatch):
     """On fresh weights R1 runs twice: on the weights at the fresh bar, and on the declared ladder's
     first perturbation rung at the trained bar — so an error the fresh bar would absorb (between the
@@ -285,6 +291,7 @@ def _gate(model):
     return cr.gate_regions(model, batch_size=BATCH, say=lambda _m: None)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 26 s beside a live run
 def test_a_COLLAPSED_critic_is_judged_by_R1_like_any_other_weights(learner, monkeypatch):
     """The saturated critic (win logit -12) that the old R0 readout REFUSED ("vacuous on every perturbation
     rung") passes the gate now, judged by R1's loss and gradients — and a gradient fault planted on it is
@@ -325,6 +332,7 @@ def _locked(learner):
     return ctl
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 24 s beside a live run
 def test_a_region_that_runs_EAGER_on_its_COMPILED_route_is_FATAL(learner):
     """Owner, 2026-10-01: no silent performance regression from a partly uncompiled learner. Under
     the `force_eager` stance the compiled callable silently runs its Python body; the dispatcher sees
@@ -357,6 +365,7 @@ def test_dynamo_DISABLED_at_startup_is_the_gates_FATAL_not_an_eager_run(learner)
         torch._dynamo.config.disable = prev
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 25 s beside a live run
 def test_the_lock_refuses_every_switch_that_makes_dynamo_run_eager_silently(learner):
     ctl = _locked(learner)
     ctl.check("healthy")
@@ -377,6 +386,7 @@ def test_the_lock_refuses_every_switch_that_makes_dynamo_run_eager_silently(lear
     ctl.check("restored")
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 49 s beside a live run
 def test_the_run_asserts_the_compiled_inventory_equals_the_declaration(learner):
     _locked(learner)
     assert "inventory == declaration" in cr.assert_inventory(learner)
@@ -390,6 +400,7 @@ def test_the_run_asserts_the_compiled_inventory_equals_the_declaration(learner):
         cr.assert_inventory(learner)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 26 s beside a live run
 def test_each_update_records_its_compiled_and_eager_region_calls(learner):
     """The per-update window: every R1 micro-batch is a compiled-route call; there is NO declared eager
     route any more, so `eager_fallback_calls` / `eager_share` read 0 — and a future declared route

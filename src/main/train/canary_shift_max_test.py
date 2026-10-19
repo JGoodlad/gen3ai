@@ -185,6 +185,7 @@ def _fingerprint(value):
     return LG.compute(model)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 57 s beside a live run
 def test_one_update_is_BIT_IDENTICAL_with_the_flag_at_two_values():
     """Same seeds, same rows, one `train()`: the post-update weights (every parameter's bytes), the per-group hashes and
     every pinned loss / KL / clip scalar are identical with the margin input at the code's default, at a RAISED value
@@ -194,6 +195,7 @@ def test_one_update_is_BIT_IDENTICAL_with_the_flag_at_two_values():
         assert _fingerprint(v) == base, f"--canary-shift-max {v} moved the update"
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 34 s beside a live run
 def test_the_fingerprint_has_teeth_a_real_hyperparameter_change_moves_it():
     """The control for the test above: the SAME harness distinguishes a different learning-rate-class change, so
     'identical' is a finding, not a blind spot."""

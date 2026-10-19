@@ -17,6 +17,7 @@ from agents.training.rust_eval import offline as PAR
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 986 s beside a live run
 def test_the_eval_core_calls_the_safe_point_at_every_host_step(built, tmp_path):
     from agents.training.eval_callback import eval_opponent_names
 

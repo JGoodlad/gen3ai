@@ -80,6 +80,7 @@ def _mid_anchor(summary, npz):
     return cand[len(cand) // 2] if cand else None
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 10 s beside a live run
 @pytest.mark.integration
 def test_better_line_depth1_chosen_value_matches_recorded_next_obs(lib):
     with tempfile.TemporaryDirectory(prefix="better_line_d1_") as out_dir:
@@ -109,6 +110,7 @@ def test_better_line_depth1_chosen_value_matches_recorded_next_obs(lib):
             assert (c["value"] is not None) or (c["terminal"] is not None)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 9 s beside a live run
 @pytest.mark.integration
 def test_better_line_depth2_beam_produces_principal_variation(lib):
     with tempfile.TemporaryDirectory(prefix="better_line_d2_") as out_dir:
@@ -131,6 +133,7 @@ def test_better_line_depth2_beam_produces_principal_variation(lib):
         assert pv[0]["action"] == best["action"]
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 12 s beside a live run
 @pytest.mark.integration
 def test_better_line_is_deterministic(lib):
     with tempfile.TemporaryDirectory(prefix="better_line_det_") as out_dir:

@@ -138,6 +138,7 @@ def test_PREMISE_the_collapsed_critic_is_vacuous_on_V_even_at_the_first_rung(col
 # ---------------------------------------------------------------- the fix
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 17 s beside a live run
 def test_a_FRESH_production_slot_passes_startup_through_the_first_rung_and_records_the_path(
         fresh_policy):
     """What a fresh `--arch production` launch does at T2 startup. Revert the perturbed path ⇒
@@ -152,6 +153,7 @@ def test_a_FRESH_production_slot_passes_startup_through_the_first_rung_and_recor
     assert all(torch.equal(before[k], after[k].cpu()) for k in before), "weights not restored"
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 20 s beside a live run
 def test_a_COLLAPSED_critic_passes_startup_AND_load_by_climbing_the_ladder(fresh_policy,
                                                                           collapsed_policy):
     """fresh3's refusal, fixed. Revert the ladder to the single 0.05 rung ⇒ `VacuousParity` here —
@@ -180,6 +182,7 @@ def test_the_vacuity_guard_still_REFUSES_when_the_perturbed_path_is_disabled(fre
         _service(fresh_policy, perturb_ladder=())
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 18 s beside a live run
 def test_a_DEEPLY_saturated_critic_is_REFUSED_by_the_full_ladder_never_passed(deep_collapsed_policy):
     """The capped ladder's honest limit: a critic no rung at scale <= 0.1 can move is REFUSED (a
     `FATAL_CONFIG` exit for the trainer), with every rung's spread named — never passed."""
@@ -206,6 +209,7 @@ def test_a_ladder_is_validated_at_declaration():
 # ---------------------------------------------------------------- the teeth
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 17 s beside a live run
 def test_TEETH_a_value_miscompile_invisible_on_the_collapsed_critic_is_CAUGHT_on_a_higher_rung(
         monkeypatch, collapsed_policy):
     """The defect a flat critic hides: the served path couples the rows' value logits. On the REAL
@@ -235,6 +239,7 @@ def test_TEETH_a_value_miscompile_invisible_on_the_collapsed_critic_is_CAUGHT_on
 # ---------------------------------------------------------------- broken weights
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 24 s beside a live run
 def test_NaN_weights_are_REFUSED_at_load_before_the_slot_is_touched(fresh_policy):
     svc = _service(fresh_policy)
     held = _state(svc.groups[0].policies[0])

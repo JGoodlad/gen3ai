@@ -158,6 +158,7 @@ def test_family_requirement_gates():
 
 
 # ------------------------------------------------------- compile
+@pytest.mark.slow  # ship gate (2026-10-19): 21 s beside a live run
 def test_biased_layer_compiles_fullgraph():
     layer = BiasedEncoderLayer().eval()
     compiled = torch.compile(layer, fullgraph=True, dynamic=False)

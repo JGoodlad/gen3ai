@@ -81,6 +81,7 @@ def test_a_save_writes_no_ride_along_optimizer_state(world: Dict[str, Any]) -> N
     assert not set(SL.NEVER_UNPICKLED) & set(data), sorted(set(SL.NEVER_UNPICKLED) & set(data))
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 50 s beside a live run
 def test_no_loader_unpickles_an_old_checkpoints_training_state(world: Dict[str, Any]) -> None:
     from agents.model.snapshot import (historical_load_kwargs, load_checkpoint_strict, load_foreign_opponent,
                                        load_model_snapshot, load_opponent_snapshot)
@@ -99,6 +100,7 @@ def test_no_loader_unpickles_an_old_checkpoints_training_state(world: Dict[str, 
     assert t._ridealong_vopts and t._ridealong_vopts_owner is t.policy.ridealong
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 33 s beside a live run
 def test_a_cpu_load_that_creates_a_cuda_context_is_refused(world: Dict[str, Any], tmp_path: Path,
                                                            monkeypatch: Any) -> None:
     """Any OTHER pickled CUDA state a future save adds: the load raises rather than leaving a context behind."""

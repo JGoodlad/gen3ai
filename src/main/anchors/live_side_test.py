@@ -190,6 +190,7 @@ async def _bot_series(bot: str, bot_seed: int, n: int = 2, seed_base: int = 61_0
     return state, choices
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 35 s beside a live run
 @pytest.mark.sim
 @pytest.mark.integration
 def test_a_rust_bot_plays_our_side_on_its_own_reading_and_its_streams_are_seeded(tmp_path, monkeypatch) -> None:

@@ -66,6 +66,7 @@ def _child(tmp_path, *, keep: bool):
                           cwd=str(d), env=env, capture_output=True, text=True, timeout=600)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 32 s beside a live run
 @pytest.mark.skipif((os.cpu_count() or 1) < 2, reason="one cpu: Inductor never starts a compile pool")
 def test_the_compile_pool_is_gone_after_its_module_and_the_check_sees_a_live_one(tmp_path):
     r = _child(tmp_path, keep=False)

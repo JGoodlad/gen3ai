@@ -120,6 +120,7 @@ def test_worlds_pass_the_observation_gate_and_a_wrong_world_does_not(lib, turns)
     assert rows_of(bad) != ref
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 103 s beside a live run
 def test_honest_search_runs_on_sampled_worlds(lib, turns):
     eng = LeafEngine(_stub, n_cores=4, lib=lib)
     try:

@@ -39,6 +39,7 @@ def _first_legal(rows, masks, who):
     return np.array([int(np.flatnonzero(m)[0]) for m in masks], dtype=np.int32)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 13 s beside a live run
 def test_branch_turns_are_crn_deterministic_and_token_checked(core_factory, tmp_path):
     bank = B.load_bank(BANK_V1)
     ids = T.select_subset(bank)[:3]

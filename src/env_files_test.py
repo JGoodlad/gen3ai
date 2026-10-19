@@ -118,6 +118,7 @@ def _closure(declared: Set[str]) -> Set[str]:
     return seen
 
 
+# LINCHPIN (ship gate, 2026-10-19): kept in the routine gate at any cost — designs/ops/testing.md "The SHIP GATE"
 @pytest.mark.parametrize("env_file", [_MAIN, _TWIN])
 def test_every_third_party_import_is_declared_by_the_env_file(env_file):
     declared = {n for n, _, _ in ef.pip_pins(_text(env_file))} | {n for n, _, _ in ef.conda_pins(_text(env_file))}

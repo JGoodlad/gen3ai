@@ -35,7 +35,7 @@ import pytest
 
 from utils.paths import src_path
 
-pytestmark = [pytest.mark.sim, pytest.mark.integration]
+pytestmark = [pytest.mark.sim, pytest.mark.integration, pytest.mark.slow]  # ship gate (2026-10-19): 23 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 FEATURES = ("--profile", "selfcheck", "--features", "emission-selfcheck")
 NAMES = ("coreone", "coretwo")

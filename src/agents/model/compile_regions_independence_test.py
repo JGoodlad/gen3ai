@@ -25,6 +25,7 @@ import torch
 from agents.model import compile_control as cc
 from agents.model import compile_regions as cr
 from agents.model import compile_trainer as ct
+pytestmark = pytest.mark.slow  # ship gate (2026-10-19), WHOLE FILE: its module `fixed_mass` learner moves onto whichever test runs first (2026-10-19: 41-58 s each)
 
 BATCH = 16
 #: a parameter on the fixed_mass path whose gradient the golden rows judge (the encoder the hypothesis

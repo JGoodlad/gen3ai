@@ -109,6 +109,7 @@ def _one_lever(off: Any, on: Any, extra_prefixes: Tuple[str, ...]) -> List[str]:
 
 
 # ===================================================================================================== TRUNK DEPTH
+@pytest.mark.slow  # ship gate (2026-10-19): 41 s beside a live run
 @pytest.mark.parametrize("encoding", ["static", "legacy"])
 def test_trunk_depth_3_at_init_is_the_2_round_network_bit_for_bit(rows: torch.Tensor, encoding: str) -> None:
     two, three = _policy(encoding), _policy(encoding, trunk_layers=3)
@@ -550,6 +551,7 @@ def test_the_residual_reaches_the_trunk_through_its_zero_init_projection(rows: t
 
 
 # ============================================================================== THE COMBINED ARM'S LEVERS TOGETHER
+@pytest.mark.slow  # ship gate (2026-10-19): 24 s beside a live run
 def test_all_levers_together_start_as_the_static_network(rows: torch.Tensor) -> None:
     """The static-recovery levers that still have an OFF value (the two static facts and the trunk depth; the hazard
     block and the residual are built with the op since U1), on together, at init equal `static` with them off — each

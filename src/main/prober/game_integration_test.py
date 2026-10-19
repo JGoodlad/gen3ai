@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-pytestmark = [pytest.mark.sim, pytest.mark.integration]
+pytestmark = [pytest.mark.sim, pytest.mark.integration, pytest.mark.slow]  # ship gate (2026-10-19): 75 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 SEED = 5
 

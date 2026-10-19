@@ -25,6 +25,7 @@ import torch as th
 from agents.training import learner_benchmark as lb
 from agents.training.instrumented_ppo import diagnostics_cadence as dc
 from main.train.parser import build_parser
+pytestmark = pytest.mark.slow  # ship gate (2026-10-19): 42 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 GATED_PREFIXES = ("grad/", "rank/", "edge/", "cell/")
 PER_TERM_TAGS = ("train/noise_scale_ratio_policy", "train/noise_scale_policy",

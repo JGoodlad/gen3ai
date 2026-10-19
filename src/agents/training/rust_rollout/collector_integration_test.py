@@ -93,6 +93,7 @@ def _run(front: str, spaces) -> Dict[str, Any]:
     return out
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 27 s beside a live run
 @pytest.mark.parametrize("front", ["ffi", "proc"])
 def test_the_complete_game_collector_keeps_every_row_and_labels_it(spaces, front):
     r = _run(front, spaces)
@@ -117,6 +118,7 @@ def test_the_complete_game_collector_keeps_every_row_and_labels_it(spaces, front
     assert all(v == 0 for v in r["life"].values()), r["life"]
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 27 s beside a live run
 def test_the_trainees_keyed_draw_replays_from_its_key(spaces):
     r = _run("ffi", spaces)
     seed = r["col"].cfg.run_seed
@@ -138,6 +140,7 @@ def test_the_trainees_keyed_draw_replays_from_its_key(spaces):
     assert len(set(a.tolist())) > 3
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 18 s beside a live run
 def test_a_core_child_death_is_a_counted_budgeted_respawn(spaces):
     """The process front end's child is SIGKILLed mid-rollout: the collector recovers (F-LB-1 / F-LB-2) —
     the games in progress are CUT and counted, the run seed moves to a new segment, the core is RESET,

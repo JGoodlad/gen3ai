@@ -129,6 +129,7 @@ def test_perturbed_parameters_ONLY_moves_the_named_and_restores_bit_exactly():
             pass
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 25 s beside a live run
 def test_the_GATE_judges_an_unmoved_head_at_the_FRESH_bar_and_on_its_own_perturbed_rung(oracle_like, monkeypatch):
     """A resume of an oracle run: the head's fresh-weights noise passes the startup gate (fails on
     revert — the trained bar refused it), and the rule line names the unmoved rung."""
@@ -139,6 +140,7 @@ def test_the_GATE_judges_an_unmoved_head_at_the_FRESH_bar_and_on_its_own_perturb
     assert any("unmoved param(s) perturbed" in r for r in rules), rules
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 23 s beside a live run
 def test_the_GATE_still_catches_a_REAL_miscompile_on_the_unmoved_head(oracle_like, monkeypatch):
     """The same error on EVERY call is a miscompile: the live rung's fresh bar absorbs it, the unmoved
     rung's trained bar refuses it. Fails if the unmoved rung is dropped or the head excluded."""
@@ -148,6 +150,7 @@ def test_the_GATE_still_catches_a_REAL_miscompile_on_the_unmoved_head(oracle_lik
         cr.gate_regions(oracle_like, batch_size=BATCH, say=lambda _m: None)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 35 s beside a live run
 def test_the_CANARY_passes_the_unmoved_heads_noise_and_FATALs_its_miscompile(oracle_like, monkeypatch):
     """The 2026-10-04 FATAL's class, through the in-run canary: noise passes (fails on revert), a
     persistent miscompile is CONFIRMED and FATAL."""

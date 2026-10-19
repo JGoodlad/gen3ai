@@ -25,6 +25,7 @@ import torch
 from agents.model import compile_control as cc
 from agents.model import compile_regions as cr
 from agents.model import compile_trainer as ct
+pytestmark = pytest.mark.slow  # ship gate (2026-10-19): 220 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 BATCH = 16                       # the K9 golden learner's micro-batch (64 rows, accumulation 3)
 
@@ -239,6 +240,7 @@ def test_the_flag_refuses_a_preset_that_already_graphs_R1(bare):
 
 
 # -------------------------------------------------------------- the lifecycle, flag ON (CPU)
+@pytest.mark.slow  # ship gate (2026-10-19): 95 s beside a live run
 def test_flag_on_startup_gates_prewarms_and_inventories_BOTH_routes(arms):
     on, off = arms["on"], arms["off"]
     assert on["names"] == ["R1_learner_micro_step", "R1_learner_micro_step[graphed]"]
@@ -287,6 +289,7 @@ def test_the_canary_judges_every_declared_route(arms):
 
 
 # ----------------------------------------------------------------- teeth: the stand-in and the rung
+@pytest.mark.slow  # ship gate (2026-10-19): 26 s beside a live run
 def test_the_stand_in_has_teeth_a_probe_on_the_graphed_route_raises(bare, monkeypatch):
     """Revert proof for the routing test above: route EVERY micro-step graphed and the diagnostic update dies in
     the stand-in, exactly as F-PB-2 died on the GPU."""
@@ -298,6 +301,7 @@ def test_the_stand_in_has_teeth_a_probe_on_the_graphed_route_raises(bare, monkey
         _update(model, diagnostic=True)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 30 s beside a live run
 def test_the_accumulation_rung_refuses_a_graphed_route_that_corrupts_an_accumulated_grad(bare):
     """A graphed route whose SECOND accumulated backward lands wrong (the `.grad`-aliases-the-pool hazard) passes
     every single-step rung and is refused by the accumulation rung."""

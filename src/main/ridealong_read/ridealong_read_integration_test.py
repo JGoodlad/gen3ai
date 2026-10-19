@@ -48,6 +48,7 @@ def ckpt(tmp_path_factory) -> Path:
     return p
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 83 s beside a live run
 def test_reader_smoke_end_to_end(ckpt, tmp_path):
     from main.ridealong_read.__main__ import main
 
@@ -104,6 +105,7 @@ def test_reader_smoke_end_to_end(ckpt, tmp_path):
         assert np.isfinite(z["rndv_feat_err"]).all() and np.isfinite(z["rndv_small_z"]).all()
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 42 s beside a live run
 def test_v_matches_the_policy_spectrum_critic_read(ckpt):
     from main.policy_spectrum.bank import load_bank
     from main.policy_spectrum.qhat import logits_and_values

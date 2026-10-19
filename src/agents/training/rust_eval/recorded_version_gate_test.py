@@ -83,6 +83,7 @@ def write_snapshot(dst: Any, args: Any, seed: int) -> Tuple[Any, str]:
     return model, str(path)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 9 s beside a live run
 @pytest.mark.parametrize("arm", ["endstate", "production"])     # `static_recovery` was deleted (legacy deletion U0)
 def test_a_pool_eval_loads_the_runs_own_sentinel_under_every_named_arm(tmp_path, arm):
     from agents.model.model_version import ModelVersion

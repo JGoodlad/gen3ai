@@ -71,6 +71,7 @@ def _build_at(site: str, threads: int) -> dict:
     return json.loads(r.stdout.strip().splitlines()[-1])
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 52 s beside a live run
 @pytest.mark.parametrize("site", ["trainer", "fixture"])
 def test_a_fresh_production_build_is_byte_identical_at_1_and_8_threads(site: str) -> None:
     one, eight = _build_at(site, 1), _build_at(site, 8)

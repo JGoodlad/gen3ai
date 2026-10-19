@@ -586,6 +586,7 @@ def test_the_learner_startup_gate_and_the_canary_are_ARMED_on_a_hit(a_shared_HIT
     assert ("canary", compile_canary.CANARY_FIRST) in calls, "the update-10 canary did not run on a HIT"
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 52 s beside a live run
 def test_T2s_startup_parity_gate_runs_every_slot_x_bucket_on_a_hit(a_shared_HIT):
     import torch
 
@@ -618,6 +619,7 @@ def test_no_gate_module_reads_the_cache_decision():
 
 
 # --------------------------------------------------------------------------- a real compile, shared
+@pytest.mark.slow  # ship gate (2026-10-19): 52 s beside a live run
 def test_two_real_processes_share_one_compile(tmp_path):
     """End to end on CPU: a first process compiles into a shared entry; a second one, with the same
     key, is served from it (Inductor's FX-graph cache HIT) instead of recompiling."""

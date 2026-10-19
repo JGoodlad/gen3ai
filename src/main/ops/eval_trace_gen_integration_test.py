@@ -24,7 +24,7 @@ import pytest
 
 from main.ops import eval_trace_gen as ETG
 
-pytestmark = [pytest.mark.sim, pytest.mark.integration]
+pytestmark = [pytest.mark.sim, pytest.mark.integration, pytest.mark.slow]  # ship gate (2026-10-19): 234 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 STEP = 8_192
 SENTINEL_STEP = 4_096

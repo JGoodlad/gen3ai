@@ -72,6 +72,7 @@ def _verdicts(tmp):
     return [json.loads(x)["verdict"] for x in p.read_text().splitlines()] if p.exists() else []
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 29 s beside a live run
 def test_a_healthy_compiled_learner_passes_with_the_gradient_checked(regions_learner):
     can = CompileCanary(regions_learner, batch_size=16, every=1)
     out = can.after_update()
@@ -79,6 +80,7 @@ def test_a_healthy_compiled_learner_passes_with_the_gradient_checked(regions_lea
     assert out["compile/canary_grad_cosine"] > 0.9999
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 29 s beside a live run
 def test_a_backward_only_drift_is_caught_on_EVERY_canary_including_the_first(regions_learner):
     """A region whose forward matches but whose gradient is wrong: only the train-graph check sees it.
     There is no decision-only canary to pass it (the old cadence ran the gradient every K-th canary and
@@ -91,6 +93,7 @@ def test_a_backward_only_drift_is_caught_on_EVERY_canary_including_the_first(reg
         can.after_update()                                            # the first scheduled canary
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 28 s beside a live run
 def test_the_cadence_runs_every_N_updates_and_writes_nothing_between(regions_learner):
     can = CompileCanary(regions_learner, batch_size=16, every=3)
     got = [can.after_update() for _ in range(6)]
@@ -99,6 +102,7 @@ def test_the_cadence_runs_every_N_updates_and_writes_nothing_between(regions_lea
                for i in (2, 5))
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 27 s beside a live run
 def test_the_canary_changes_nothing_about_training(regions_learner):
     model = regions_learner
     model.policy.set_training_mode(True)
@@ -113,6 +117,7 @@ def test_the_canary_changes_nothing_about_training(regions_learner):
     assert all(torch.equal(a, b) for a, b in zip(before, model.policy.parameters()))
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 29 s beside a live run
 def test_a_PERSISTENT_fault_is_CONFIRMED_and_FATAL_in_the_SAME_update_with_a_checkpoint(regions_learner, tmp_path):
     saved = []
     _plant_r1(regions_learner, {"on": True})
@@ -125,6 +130,7 @@ def test_a_PERSISTENT_fault_is_CONFIRMED_and_FATAL_in_the_SAME_update_with_a_che
     assert _verdicts(tmp_path) == ["fatal"]
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 30 s beside a live run
 def test_a_one_shot_BLIP_warns_counts_and_training_continues(regions_learner, tmp_path):
     _plant_r1(regions_learner, {"on": True, "once": True})
     can = CompileCanary(regions_learner, batch_size=16, every=1, saver=lambda p: None)
@@ -136,6 +142,7 @@ def test_a_one_shot_BLIP_warns_counts_and_training_continues(regions_learner, tm
     assert _verdicts(tmp_path) == ["unconfirmed", "pass"]
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 33 s beside a live run
 def test_TWO_CONSECUTIVE_unconfirmed_disagreements_are_FATAL(regions_learner, tmp_path):
     armed = {"on": True, "once": True}
     _plant_r1(regions_learner, armed)
@@ -181,6 +188,7 @@ def _records(tmp):
     return [json.loads(x) for x in (tmp / VERDICTS_FILE).read_text().splitlines()]
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 26 s beside a live run
 def test_a_PASS_record_carries_the_watch_lists_per_parameter_numbers(regions_learner, tmp_path):
     """The `rb_toy_ent_s4001` FATAL named the pointer head at update 700, but a pass logged only each check's WORST
     parameter, so the pointer head's ratio at the six passing canaries before it is unrecoverable. Every record now
@@ -205,6 +213,7 @@ def test_a_PASS_record_carries_the_watch_lists_per_parameter_numbers(regions_lea
     assert {"drift_loss", "drift_grad", "envelope_loss", "envelope_grad"} <= set(w["global"])
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 29 s beside a live run
 def test_a_FATAL_record_carries_the_watch_of_the_scheduled_check_and_of_BOTH_confirmations(regions_learner, tmp_path):
     _plant_r1(regions_learner, {"on": True})
     can = CompileCanary(regions_learner, batch_size=16, every=1, saver=lambda p: None)
@@ -302,6 +311,7 @@ def _n_rows():
         return int(z["actions"].reshape(-1).shape[0])
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 39 s beside a live run
 def test_a_disagreement_carried_by_ONE_row_does_NOT_confirm_itself(full_rows_learner, tmp_path):
     """The `rb_toy_ent_s4001` shape: a disagreement carried by ONE second-half row (row 35 there). The scheduled
     check (every row) and the second half see it; the first half does not, so it is NOT confirmed — training

@@ -116,6 +116,7 @@ def test_the_release_changes_no_number(learner, monkeypatch):
         assert torch.equal(e1[k], e2[k]), k
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 66 s beside a live run
 def test_the_gate_leaves_no_graph_behind_and_says_where_its_memory_went(learner, monkeypatch):
     """The whole gate (both rungs of a fresh launch) ends with no stash holding a graph. Its memory line is a CUDA
     read (a no-op here: no row, no line)."""
@@ -176,6 +177,7 @@ def regions_learner(learner):
     return learner
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 52 s beside a live run
 def test_the_canary_check_leaves_no_graph_and_measure_changes_nothing(regions_learner, tmp_path):
     """`CompileCanary.measure` (the update-fit check's dry canary) runs the scheduled check's arms once and records
     nothing: no verdict file, no count, the weights and `.grad` as found, no stash holding a graph."""

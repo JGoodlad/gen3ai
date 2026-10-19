@@ -34,6 +34,7 @@ import pytest
 from main.ops import conditioning_meters as CM
 from main.ops import critic_read as CR
 from main.ops import quota_match as QM
+pytestmark = pytest.mark.slow  # ship gate (2026-10-19), WHOLE FILE: its module `artefact` moves onto whichever test runs first (2026-10-19: 17-29 s each)
 
 STEP = 500
 _TURNS = (1, 2, 3, 8, 20)

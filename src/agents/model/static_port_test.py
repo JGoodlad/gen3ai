@@ -143,6 +143,7 @@ def _constructed_board(fe: Any, rows: torch.Tensor) -> Tuple[ExtractorContext, t
     return dataclasses.replace(ctx, spikes_feature=layers / 3.0), grounded
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 22 s beside a live run
 def test_the_spikes_entry_cost_on_constructed_boards(rows: torch.Tensor) -> None:
     fe = _policy(mon_hazard_cost="on")[0].policy.features_extractor
     ctx, grounded = _constructed_board(fe, rows)
@@ -383,6 +384,7 @@ def _production_levers() -> Dict[str, Any]:
 
 #: `production` (added at the END STATE's adoption, 2026-10-12): the same equivariance on the deployed network, every
 #: end-state lever on (the four legacy-base cells pin each fact alone).
+@pytest.mark.slow  # ship gate (2026-10-19): 23 s beside a live run
 @pytest.mark.parametrize("flags", [{}, {"mon_hazard_cost": "on"}, {"move_actor_state": "on"},
                                    {"mon_hazard_cost": "on", "move_actor_state": "on"}, _production_levers()],
                          ids=["static", "hazard", "actor", "both", "production"])

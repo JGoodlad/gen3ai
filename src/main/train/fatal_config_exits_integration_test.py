@@ -43,6 +43,7 @@ def _trainer(tmp_path, *args, timeout=600):
 
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 13 s beside a live run
 def test_a_bot_weights_typo_exits_FATAL_CONFIG_not_CRASH(tmp_path):
     rc, text = _trainer(tmp_path, "--steps", "1000", "--bot-weights", "stallr=3",
                         "--run-dir", str(tmp_path / "run"), timeout=180)

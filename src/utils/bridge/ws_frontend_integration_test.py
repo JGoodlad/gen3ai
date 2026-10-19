@@ -85,6 +85,7 @@ def pool_teams():
     return [t.strip() for t in TeamLoader().get_all_teams()][:12]
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 40 s beside a live run
 async def test_two_clients_complete_a_two_battle_series_over_the_websocket(pool_teams):
     front = ShowdownFrontEnd(impl="node", seed_base=20260914, validate_teams=False)
     server, uri = await _serve(front)
@@ -104,6 +105,7 @@ async def test_two_clients_complete_a_two_battle_series_over_the_websocket(pool_
         assert ra.turns > 0, "a battle that finished on turn 0 never actually played"
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 40 s beside a live run
 async def test_a_battle_is_backed_by_exactly_one_bridge_child_that_is_reaped(pool_teams):
     """One battle = one child, and the child is gone when the battle is. A leaked child is the
     failure a long series would only reveal as a box that has run out of processes."""

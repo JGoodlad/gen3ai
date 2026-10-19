@@ -118,6 +118,7 @@ def _matched_points(pair, v_column):
 
 # ── THE REGRESSION ────────────────────────────────────────────────────────────────────────────
 
+@pytest.mark.slow  # ship gate (2026-10-19): 9 s beside a live run
 def test_the_matched_rows_CHANGE_when_the_v_column_does(pair):
     """🚨 On the reverted code these two are byte-identical: `build_quota_match` extracted both
     frames at the default `win_probs` whatever the flag said."""

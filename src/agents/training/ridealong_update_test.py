@@ -48,6 +48,7 @@ import random
 import numpy as np
 import pytest
 import torch as th
+pytestmark = pytest.mark.slow  # ship gate (2026-10-19): 39 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 RIDEALONG_CORE = {"ridealong_ensemble": 3, "ridealong_rnd": True, "ridealong_adv": 2,
                   "ridealong_opp": 2}
@@ -189,6 +190,7 @@ def fm_arms():
     return _build({}), _build({"ridealong_opp": 2})
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 25 s beside a live run
 def test_fixed_mass_B_on_the_FLAT_pointer_is_BIT_IDENTICAL_to_learning(fm_arms):
     """X5 U4 (design §3.7): B's columns are the flat pointer's (K seats, OTHER_move, six switch targets,
     OTHER_species), its labels `flat_intent_targets`' — and heads ON learns exactly what heads OFF
@@ -271,6 +273,7 @@ def _core(sd):
     return {k: v for k, v in sd.items() if not k.startswith("ridealong.")}
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 28 s beside a live run
 def test_building_the_heads_draws_nothing_from_the_global_rng(arms):
     off, on = arms
     assert th.equal(off["built_rng"][0], on["built_rng"][0]), "building the heads moved torch RNG"
@@ -329,6 +332,7 @@ def bf16_arms():
     return _build({}, precision="bf16"), _build(RIDEALONG_ON, precision="bf16")
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 44 s beside a live run
 def test_BF16_one_update_is_BIT_IDENTICAL_with_the_heads_on_and_off(bf16_arms, arms):
     """The guarantee under the production trunk precision (bf16 autocast over the trunk rounds, R1 only).
     Not vacuous: both arms' rounds are the bf16 classes, the rollout is the fp32 arms' (T2 serves fp32), and

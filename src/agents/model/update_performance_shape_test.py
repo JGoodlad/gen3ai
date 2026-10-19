@@ -95,6 +95,7 @@ def _micro_batches(model: Any) -> int:
 
 
 # ---------------------------------------------------------------- 1. every micro-batch runs R1 compiled
+@pytest.mark.slow  # ship gate (2026-10-19): 33 s beside a live run
 def test_a_real_update_runs_every_micro_batch_through_R1_compiled_and_none_eager(learner, monkeypatch):
     """The golden's 64 rows / micro-batch 16 / 2 epochs = 8 micro-batches, ALL through R1's compiled
     route, none through the declared eager route (the rows divide evenly: no ragged tail).
@@ -141,6 +142,7 @@ def test_a_real_update_runs_every_micro_batch_through_R1_compiled_and_none_eager
 GOLDEN_UPDATE_HOST_SCALAR_READS = 1120
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 32 s beside a live run
 def test_a_real_update_makes_a_bounded_number_of_host_scalar_reads(learner, monkeypatch):
     meter = {"s": 0.0, "n": 0}
     _real_update(learner, meter)
@@ -233,6 +235,7 @@ def r1_cpu_forward_ops() -> Iterator[List[str]]:
         torch._dynamo.reset()
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 78 s beside a live run
 def test_R1s_attention_profile_on_cpu_is_pinned(r1_cpu_forward_ops):
     ops = r1_cpu_forward_ops
     got = {"fused": sum(_FUSED in o for o in ops), "math": sum(o == _MATH_SOFTMAX for o in ops)}

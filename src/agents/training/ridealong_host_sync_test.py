@@ -494,6 +494,7 @@ ON = {"ridealong_ensemble": 3, "ridealong_rnd": True, "ridealong_adv": 2, "ridea
       "ridealong_rnd_variants": "all"}
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 13 s beside a live run
 @pytest.mark.parametrize("case", ["clean", "no_win_labels_in_one_micro_batch", "nan_observation"])
 def test_the_new_micro_batch_path_equals_HEADs_bit_for_bit(case, monkeypatch):
     """Heads, buffers (the RND running statistics), both Adam states, every `ridealong/*` scalar, the
@@ -516,6 +517,7 @@ def test_the_new_micro_batch_path_equals_HEADs_bit_for_bit(case, monkeypatch):
         assert new["metrics"]["ens_loss"] > 0.0 and new["metrics"]["grad_norm"] > 0.0
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 11 s beside a live run
 def test_the_RARE_path_really_skips_the_ensemble_for_that_micro_batch(monkeypatch):
     """The case above is not vacuous: with the win labels masked in micro-batch 1, the `ens_loss` series
     holds 3 values, not 4, and the ensemble's parameters took no step in that micro-batch — in HEAD and
@@ -540,6 +542,7 @@ def test_the_RARE_path_really_skips_the_ensemble_for_that_micro_batch(monkeypatc
     assert got["old"] == got["new"] == (3, [True, False, True, True]), got
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 8 s beside a live run
 def test_a_head_with_NO_label_at_all_takes_no_step_and_logs_no_grad_norm(monkeypatch):
     """`losses` empty (the ensemble-only surface, every label masked): nothing is stepped and no
     ``grad_norm`` is logged — HEAD's ``if losses:`` guard — though the new path has already enqueued a
@@ -577,6 +580,7 @@ def _trace_micro_batches(old, monkeypatch, n_micro=3):
         return per_micro, fold, acc
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 10 s beside a live run
 def test_a_ride_along_micro_batch_makes_ONE_host_read_and_HEAD_made_over_a_hundred(monkeypatch):
     old, _, _ = _trace_micro_batches(True, monkeypatch)
     new, fold, acc = _trace_micro_batches(False, monkeypatch)
@@ -593,6 +597,7 @@ def test_a_ride_along_micro_batch_makes_ONE_host_read_and_HEAD_made_over_a_hundr
     assert not acc._pending
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 10 s beside a live run
 def test_on_a_real_train_every_meter_read_comes_after_the_last_micro_batch_read():
     """The structural claim on the golden learner's ``train()`` with every head on: exactly ONE
     ride-along transfer per epoch-0 micro-batch, the mirrors' priming reads before them, and the whole
@@ -644,6 +649,7 @@ def _golden_with_heads(plain=True):
 
 
 # ====================== D. a real train(): the PPO side and the ride-along side, end to end
+@pytest.mark.slow  # ship gate (2026-10-19): 21 s beside a live run
 def test_a_real_update_is_BIT_IDENTICAL_to_HEADs_ride_along_and_PPO_side(monkeypatch):
     """``InstrumentedMaskablePPO.train()`` on the production surface (the committed real-obs rows, the
     flat-pointer labels, B ON, every variant): HEAD's ride-along path (and RND methods) installed on the

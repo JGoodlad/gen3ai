@@ -110,7 +110,8 @@ marker `slow` says what it **costs**. Cut on cost, never on capability:
 | When | Command | ~Time |
 |---|---|---|
 | Inner loop: fastest true/false | `pytest src/ -m "not slow and not e2e and not sim and not integration" -q -n 2` | ~1.5 min |
-| **The routine gate: before any commit** | `pytest src/ -m "not slow and not e2e" -q -n 6` | ~4.3 min (one at a time; `-n 4` beside a training run) |
+| **The routine gate: before any commit** | `pytest src/ -m "not slow and not e2e" -q -n 6` | ~4.3 min quiet (2026-10-01, before the 2026-10-19 re-tier; one at a time) |
+| **The ship gate: before `/gen3ai-ship`** | `scripts/ops/ship_gate.sh run` — the routine gate in the shape the box affords (rule 5b beside a live run), through the gate lock | ~15 min beside a live training run (2026-10-19) |
 | Everything: before a release | `pytest src/ -q` | ~47 min |
 
 The routine gate's ~4.3 min at `-n 6` was measured on a quiet box on 2026-10-01
@@ -125,7 +126,7 @@ gate, 10,633 in the inner loop. `-n` is `pytest-xdist`; run serial when you need
 | `sim` | plays real battles in-process through the bridge (no server) |
 | `browser` | needs headless chrome |
 | `e2e` | needs a live Showdown server |
-| **`slow`** | minutes, not seconds: the one marker that decides routine cost |
+| **`slow`** | ≥ 8 s beside a live run (≈ 2-3 s quiet), whole files where a module fixture carries the cost: the one marker that decides routine cost; its verdicts are banked in `designs/ops/slow_tier_status.json` (`designs/ops/testing.md` "The SHIP GATE") |
 | `benchmark` | a measurement, not a pass/fail gate; its bounds are never scaled |
 
 Don't use the old `-m "not integration and not e2e"` cut. `integration` now spans a ~100x cost

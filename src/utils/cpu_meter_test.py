@@ -197,8 +197,9 @@ def test_REAL_busy_workers_read_contended_and_self_attribution_subtracts_them():
     CONTENTION-PROOF BY CONSTRUCTION (Lane K, 2026-09-30: the first version failed ~1 in 2 at load
     ~36). Every assertion is a relation that holds at ANY background load, because a test of the
     contention meter must not itself depend on contention:
-      * the box is >= 12 cpus busy: 12 spinning processes either get 12 cpus, or are starved because
-        the box is FULL (16) — either way the SMT term must fire;
+      * the cpus this process may use are >= 12 busy, or ALL busy when it is pinned to fewer (rule 5b's six
+        agent cpus): 12 spinning processes either get 12 cpus, or are starved because the cpus are FULL —
+        either way the SMT term must fire;
       * self-attribution equals an INDEPENDENT reading of the workers' own /proc/<pid>/stat CPU (at
         load 36 they get ~4 cpus, not 12 — so the old `>= 0.5 * k` was a claim about the box);
       * subtracting self can only shrink the SMT term (`g(U) / g(mine) <= g(U)`).
@@ -223,7 +224,12 @@ def test_REAL_busy_workers_read_contended_and_self_attribution_subtracts_them():
     workers_cpus = (c1 - c0) / dt
     external = reading_between(a, b)                     # nothing attributed to self
     ours = reading_between(a, b, self_root=os.getpid())
-    assert external.busy_cpus is not None and external.busy_cpus >= 0.9 * k, external.describe()
+    # The meter reads the cpus THIS process may run on (its affinity), so a gate pinned to rule 5b's six agent
+    # cpus reads at most 6 busy however many workers spin: 12 workers FILL whatever the affinity holds
+    # (2026-10-19: `>= 0.9 * k` failed every gate run on the agent cores, 6.0 of 6 busy).
+    assert external.logical >= 2, external.describe()
+    assert external.busy_cpus is not None and external.busy_cpus >= 0.9 * min(k, external.logical), (
+        external.describe())
     assert external.smt == pytest.approx(smt_slowdown(external.busy_cpus, cpu_meter.topology()))
     assert external.factor >= external.smt >= 1.3, (
         f"{k} busy workers did not read as contention: {external.describe()}")

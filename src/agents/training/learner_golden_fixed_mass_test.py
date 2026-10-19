@@ -32,6 +32,7 @@ import torch as th
 
 from agents.training import learner_golden as L
 from agents.training import learner_golden_fp64 as F64
+pytestmark = pytest.mark.slow  # ship gate (2026-10-19): 84 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 #: X5's own parameter groups (depth-2 names, `group_sha256`).
 X5_GROUPS = ("features_extractor.hypothesis_builder", "features_extractor.flat_intent_head")

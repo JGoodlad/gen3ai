@@ -118,6 +118,7 @@ def _locked_learner(name: str, made: List[Any]) -> Any:
     return model
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 38 s beside a live run
 @pytest.mark.parametrize("name", list(LEVERS))
 def test_the_startup_declaration_COVERS_every_update_the_lever_reaches(name, lifecycle):
     model = _locked_learner(name, lifecycle)
@@ -140,6 +141,7 @@ def test_the_startup_declaration_COVERS_every_update_the_lever_reaches(name, lif
         assert want["key"] in decl.obs_keys, (name, decl.obs_keys)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 26 s beside a live run
 def test_an_UNDECLARED_lever_or_key_after_the_lock_is_the_typed_FATAL(lifecycle):
     """A lever turned on after startup, or a key that appears in the buffer, is a typed
     `CompileSentinelError` naming it — never a silent recompile. Fails if `check_r1_declared` is not

@@ -11,7 +11,7 @@ from main import heldout_panels as HP
 from main.h2h import panel as PN
 from main.h2h import play as PL
 
-pytestmark = [pytest.mark.sim, pytest.mark.integration]
+pytestmark = [pytest.mark.sim, pytest.mark.integration, pytest.mark.slow]  # ship gate (2026-10-19): 87 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 #: one intra-op torch thread (designs/ops/testing.md "One torch thread for the CPU plays")
 COMPUTE = PL.Compute(device="cpu", backend="eager", n_envs=4, threads=2, torch_threads=1, front="ffi",

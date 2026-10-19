@@ -253,6 +253,7 @@ def test_production_arch_compiles_without_suppression(restore_torch_globals):
     assert err < 1e-5, f"compiled output diverged from eager: {err:.2e}"
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 27 s beside a live run
 @_skip_compile
 def test_production_arch_compiles_to_one_graph():
     """Graph breaks are how a 6.5x quietly becomes a 1.2x — the win depends on ONE fused graph."""
@@ -265,6 +266,7 @@ def test_production_arch_compiles_to_one_graph():
     assert explained.graph_count == 1
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 24 s beside a live run
 @_skip_compile
 def test_x5_fixed_mass_arch_compiles_to_one_graph():
     """X5 U2 (`--belief-tokens fixed_mass`): the hypothesis builder — the 64-step bisection unrolled,
@@ -308,6 +310,7 @@ def test_h_tier_arch_compiles_without_suppression(restore_torch_globals):
     assert err < 1e-5, f"compiled H-tier output diverged from eager: {err:.2e}"
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 27 s beside a live run
 @_skip_compile
 def test_h_tier_arch_compiles_to_one_graph():
     """The seats and the r cells must not break the one-graph property the 6.5x depends on."""

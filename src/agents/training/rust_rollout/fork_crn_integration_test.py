@@ -26,7 +26,7 @@ from agents.training.rust_rollout import testkit as TK
 from agents.training.rust_rollout.build import RustEnvDecl
 from agents.training.rust_vec_env import RustVecEnv
 
-pytestmark = [pytest.mark.sim, pytest.mark.integration]
+pytestmark = [pytest.mark.sim, pytest.mark.integration, pytest.mark.slow]  # ship gate (2026-10-19): 39 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 N = 4
 
@@ -123,6 +123,7 @@ def _release(col: Any, f: Any) -> None:
         b.slots = []
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 44 s beside a live run
 def test_the_parent_action_with_the_parents_keys_IS_the_parent(played):
     col = played
     st = col.store
@@ -147,6 +148,7 @@ def test_the_parent_action_with_the_parents_keys_IS_the_parent(played):
         _release(col, f)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 26 s beside a live run
 def test_the_same_dice_with_other_draw_streams_DIVERGES(played):
     col = played
     diverged = 0
@@ -158,6 +160,7 @@ def test_the_same_dice_with_other_draw_streams_DIVERGES(played):
     assert diverged >= 1, "unpaired draws never moved a line: the comparison cannot see the draws"
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 27 s beside a live run
 def test_a_reseeded_dice_stream_DIVERGES(played):
     col = played
     diverged = 0

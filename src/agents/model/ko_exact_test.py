@@ -171,6 +171,7 @@ def test_the_closed_form_equals_the_16_roll_sum_in_float64_within_the_rounding_b
     assert float(err[dom].max()) <= 1e-12
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 10 s beside a live run
 def test_both_spellings_meet_the_exact_rational_value(grid64: Grid) -> None:
     """Against the EXACT value (Fraction arithmetic on the float inputs), over every adversarial input and a
     deterministic stride of the random ones: each spelling within 6 eps k1 — the closed form is as accurate as the

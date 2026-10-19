@@ -25,7 +25,7 @@ from agents.model import selection_sites as SS
 from agents.training.rust_rollout import consistency as K
 from agents.training.rust_rollout import tie_margins as TM
 
-pytestmark = [pytest.mark.sim, pytest.mark.integration]
+pytestmark = [pytest.mark.sim, pytest.mark.integration, pytest.mark.slow]  # ship gate (2026-10-19): 46 s of routine-gate time beside a live run (designs/ops/testing.md 'The SHIP GATE')
 
 #: The production surface (X5's fixed-mass hypothesis tokens — the blob arm was DELETED at the version break)
 #: and the two oracle-reveal arms on top of it.
@@ -102,6 +102,7 @@ def oracle_full():
     return _rollout("oracle_full", fresh=False)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 50 s beside a live run
 @pytest.mark.parametrize("arm", sorted(ARMS))
 @pytest.mark.parametrize("fresh", [False, True], ids=["perturbed", "zero_scorers"])
 def test_a_planted_behaviour_mismatch_on_a_judged_row_is_FATAL_at_every_arm(arm, fresh, oracle_full):
@@ -196,6 +197,7 @@ def _max_abs_dlogp(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.abs(a[real] - b[real]).max())
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 26 s beside a live run
 def test_a_set_read_prefix_is_order_free_on_real_rows_and_its_cut_is_not(fixed_mass):
     """The declaration's premise, on every row: permuting the first K = the cut of EVERY per-mon order
     moves the full masked log-probs by float-sum rounding at most (`SET_ORDER_ROUNDING`; so a tie inside the set cannot

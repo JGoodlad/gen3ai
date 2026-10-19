@@ -15,6 +15,7 @@ def lib():
     return ffi.load(ffi.default_path("selfcheck"), nan_poison=True)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 14 s beside a live run
 def test_two_calls_play_byte_identical_rows(lib):
     from utils.rust_env.fixture_battles import play_rows
 
@@ -53,6 +54,7 @@ def test_the_compile_parity_fixture_rebuilds_from_the_core(lib, monkeypatch):
         assert z["obs"].shape[1] == obs.shape[1], "the committed fixture's width differs from the core's rows"
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 10 s beside a live run
 def test_self_play_answers_both_sides_with_the_policy(lib):
     """`self_play` (what `churn_probe.collect_probe_states` uses: a checkpoint against itself): p2 is EXTERNAL and the
     policy answers it — a policy that sees p2's decisions too, battles that end, and the same rows every call."""

@@ -90,6 +90,7 @@ def test_the_ACCUMULATION_rung_sums_its_two_micro_batches_on_their_own_rows(lear
     assert abs(got - want) <= 1e-5 * max(1.0, abs(want)), (got, want)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 71 s beside a live run
 def test_the_gate_hands_the_bf16_rule_the_GOLDEN_row_losses(learner, monkeypatch):
     monkeypatch.setattr(cr, "BF16_DRIFT_BARS", {"loss": 1.0, "grad_rel_l2": 5.0})
     monkeypatch.setattr(cr, "BF16_ENVELOPE_K", {"loss": 4.0, "grad_rel_l2": 4.0, "param": 4.0})

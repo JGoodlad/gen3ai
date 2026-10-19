@@ -59,6 +59,7 @@ def _optimizer_steps(model) -> int:
     return model.n_epochs * math.ceil(micros / model.grad_accum_steps)
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 14 s beside a live run
 @pytest.mark.parametrize("batch_size", [16, 8])
 def test_a_plain_update_reads_once_per_optimizer_step(batch_size):
     """One transfer per optimizer step + the two once-per-update reads — and NOT one per micro-batch:
@@ -72,6 +73,7 @@ def test_a_plain_update_reads_once_per_optimizer_step(batch_size):
     assert not retired, f"a retired per-micro-batch read is back:\n{tr.table()}"
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 12 s beside a live run
 def test_a_diagnostics_update_batches_every_probe_read():
     model = _learner(plain=False)
     tr = _traced_update(model)

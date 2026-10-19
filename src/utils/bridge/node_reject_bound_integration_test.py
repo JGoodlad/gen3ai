@@ -239,6 +239,7 @@ def test_a_legal_choice_after_refusals_still_commits() -> None:
         b.close()
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 13 s beside a live run
 def test_refusals_reset_across_committed_decisions() -> None:
     """THE RESET-CONDITION PIN: the streak resets on PROGRESS, not on a re-request.
 

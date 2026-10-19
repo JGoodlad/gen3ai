@@ -87,6 +87,7 @@ def _serve(svc, b, rows):
     return order, tickets
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 57 s beside a live run
 def test_ON_launches_the_lead_slot_first_and_serves_bit_identical_decisions(policies):
     a, b = policies
     rows = (3, 5, 11)                           # slot 2 (the lead) needs two batches: 8 + 3 -> bucket 8
@@ -106,6 +107,7 @@ def test_ON_launches_the_lead_slot_first_and_serves_bit_identical_decisions(poli
     assert "lead_slots" not in _service(a).stats()                    # OFF: the stats are unchanged
 
 
+@pytest.mark.slow  # ship gate (2026-10-19): 19 s beside a live run
 def test_the_engine_reads_the_lane_plan(policies):
     a, _ = policies
     svc = _service(a, lead=(2,))
