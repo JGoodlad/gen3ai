@@ -40,7 +40,9 @@ log "START X34 $RUN: fork of rb_toy_ent_s4002/final_model.zip @100,081,428 → 5
 ( cd "$REPO" && export PYTHONPATH="$REPO/src"; exec taskset -c 0-4,8-12 "$PY" -m main.launcher \
   --restart-interval-hours 24 --pin-commit "$PIN" $A ) >> "$J/$RUN.launcher.log" 2>&1 < /dev/null &
 LP=$!; echo "$LP" > "$J/$RUN.pid"
-( for _ in $(seq 20); do kill -0 "$LP" 2>/dev/null && break; sleep 3; done
+( # wait (<= 10 min) for the TRAINER to create the run dir: the watcher refuses a missing dir (2026-10-19 race)
+  for _ in $(seq 200); do [ -d "$REPO/models/$RUN" ] && break; kill -0 "$LP" 2>/dev/null || break; sleep 3; done
+  [ -d "$REPO/models/$RUN" ] || { log "watcher NOT started: $RUN dir never appeared in 10 min"; exit 0; }
   "$OPS/watch_run.sh" "$REPO/models/$RUN" --pid-file "$J/$RUN.pid" --launcher-log "$J/$RUN.launcher.log" \
     --status-file "$J/$RUN.repo.watch.txt" ) >> "$J/$RUN.repo.watch.out" 2>&1 < /dev/null &
 wait "$LP"; RC=$?

@@ -44,6 +44,8 @@ SoT is the module-level constants in `features_extractor.py`; `ARCH_SIGNATURE`/`
 
 Each is OFF-byte-identical unless noted; only an obs-vector change bumps `ARCH_SIGNATURE`.
 
+> **Correction (2026-10-19):** the "bumps only on an obs-vector change" wording here and in the table above is superseded: a change in what an obs cell MEANS bumps `OBS_SEMANTICS_VERSION`; see `designs/model/versioning.md`.
+
 | v | tag / flag | what it added |
 |---|---|---|
 | 16 | `opp_belief_slots` (`--opp-belief-aux-coef`) | hidden-opp **belief slots** + species/moves aux head |
