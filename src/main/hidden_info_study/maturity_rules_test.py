@@ -225,3 +225,20 @@ def test_bank_dependent_is_the_registered_disagreement():
     assert not R.bank_dependent("FRONTIER", "NOT READ (LEAN)", "FRONTIER-RECEDES")
     with pytest.raises(ValueError):
         R.bank_dependent("TODAY", "a", "b")
+
+
+def test_a1_bucket_gap_also_read_at_the_bonferroni_level():
+    battles = _bank()
+    bt = R.Boot(battles)
+    rng = np.random.default_rng(9)
+    g0 = 0.07 + rng.normal(0, 0.18, size=len(battles))
+    half = np.arange(len(battles)) < len(battles) // 2
+
+    def rd(lab, step, g):
+        return R.CheckpointRead(label=lab, step=step, g={"all": bt.mean(g), "k:6": bt.mean(g, half)})
+
+    out = R.r_maturity([rd("a", 25, g0), rd("b", 225, g0 - 0.03 + rng.normal(0, 0.05, len(g0)))])
+    assert set(out["GAP_BONFERRONI"]) == {"k:6"}                         # buckets only, never the primary cell
+    lo95 = out["GAP"]["k:6"]["change"]["ci"]
+    lo996 = out["GAP_BONFERRONI"]["k:6"]["change"]["ci"]
+    assert lo996[0] < lo95[0] and lo996[1] > lo95[1]                     # the wider interval

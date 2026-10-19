@@ -1,9 +1,35 @@
 {
  "anchors": {
   "x26_025M": {
+   "banks": {
+    "interim": {
+     "mode": "full",
+     "priority": 20
+    },
+    "plateau": {
+     "mode": "full",
+     "priority": 40
+    }
+   },
    "bytes": 57371783,
    "file": "/home/goodlad/gen3ai_archive/hidden_info_maturity/ckpt/x26_025M/checkpoint_25000027_steps.zip",
    "mode": "lean",
+   "mode_history": [
+    {
+     "at": "2026-10-19 05:15:17 -0700",
+     "bank": "interim",
+     "from": "lean",
+     "priority": 20,
+     "to": "full"
+    },
+    {
+     "at": "2026-10-19 05:15:17 -0700",
+     "bank": "plateau",
+     "from": null,
+     "priority": 40,
+     "to": "full"
+    }
+   ],
    "priority": 1,
    "registered_at": "2026-10-18 04:16:11 -0700",
    "sha256": "26fda38d0ca68f066187adc469d22ddac65f1910360f2ea9986e6ff270eb5072",
@@ -39,6 +65,36 @@
    "sha256": "bc93a321bf1d4c6a83bc80910e8bbc81673a157f71e6cb2cbd7ca7b5427819ce",
    "src": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_225000152_steps.zip",
    "step": 225000152
+  },
+  "x26_P280M": {
+   "banks": {
+    "interim": {
+     "mode": "full_hide",
+     "priority": 10
+    },
+    "plateau": {
+     "mode": "full_hide",
+     "priority": 30
+    }
+   },
+   "bytes": 57379342,
+   "file": "/home/goodlad/gen3ai_archive/hidden_info_maturity/ckpt/x26_P280M/checkpoint_280000170_steps.zip",
+   "mode": "full_hide",
+   "mode_history": [
+    {
+     "at": "2026-10-19 05:15:17 -0700",
+     "bank": "plateau",
+     "from": null,
+     "priority": 30,
+     "to": "full_hide"
+    }
+   ],
+   "plateau": true,
+   "priority": 10,
+   "registered_at": "2026-10-19 05:15:17 -0700",
+   "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+   "src": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+   "step": 280000170
   }
  },
  "model_config_sha256": "df71eea63809d630629e59455cf599ebb202b50b3cbcd3e795a65d06b30e801c",

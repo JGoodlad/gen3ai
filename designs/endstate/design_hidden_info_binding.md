@@ -1262,6 +1262,38 @@ states are common (all 33 drops are F exclusions, 10.3 %), in 248 battles.
   - The plateau step's cost (≈ 150–165 CPU-h with O−M / O−U at the plateau) and its prerequisite build are in the
     README's §5.6.
 
+**THE PLATEAU STEP: REGISTERED 2026-10-19 (amendment A1, `PREREGISTRATION.md` §9) and RUNNING
+(`measurements/hidden_info_maturity_x26_2026-10-18/README.md` §6).** These are the orchestrator's decisions on the
+recommended plateau step. No output of it existed when it was registered.
+
+- **P\* = 280M** (`checkpoint_280000170`, sha256 `814823c5…`) is DECLARED as the plateau anchor `x26_P280M`. It is a
+  named anchor off the 25M grid, checked by its sha.
+- **The PLATEAU bank** is (b)'s draw on P\*'s three newest cycles (276M / 278M / 280M), with the salt
+  `hib_maturity_x26_plateau_v1:` and the interim battles excluded.
+  - 800 states, LEAN 320, 500 battles; half own-snapshot.
+  - ids sha256 `728dcdd4…`, content `25d2e83c…`.
+  - Gate ① 634 / 634, with 0 failures.
+  - Every copied trace file equals the run's own.
+- **What runs** (steps 1, 2, 3 and 5):
+  - P\* FULL on both banks;
+  - 25M upgraded to FULL on the interim bank and FULL on the plateau bank;
+  - the **hide-only O−M / O−U arms at P\* on both banks**, added to (e) by amendment. They carry R3 to the plateau
+    with both halves on the same states, as E2 asked (§16.12).
+- **What is deferred:** the plateau bank at 100M / 175M / 225M. It enters no verdict of record once the one-bank
+  CONVERGED is not read.
+- **The world builder stays `826bee89`** ((f)). New drivers run beside it, and every row is stamped with its driver
+  and bank.
+- **The rule changes,** each answering a FINDING of the LEAN read and fixed before any output it touches:
+  - **CONVERGED** on one bank is NOT READ, because ±0.01 is unreachable there. It is read only POOLED over both banks
+    when both hold P\* and 225M, which this step does not run. The reachable STILL-MOVING (a detection on the last
+    pair) replaces it.
+  - **FRONTIER** is read only when every anchor named is FULL.
+  - **Every bucket's GAP** is also read at the Bonferroni 99.6 %.
+  - **R3 at P\*** is E2's rule, tested equal to `read_e2`.
+- **The verdict of record** is the plateau bank's [25M, P\*] FULL pair. The interim bank's FULL pair is its
+  replication, and a direction that differs is BANK-DEPENDENT.
+- **Cost:** ≈ 150 CPU-h, ≈ 4–5 days on 2 SCHED_IDLE slots beside the live run.
+
 #### 12.13.8 How the per-stage view connects to credit and to maturity
 
 - **Shapley-style credit.** With classes M, U, I, A, S the knock-in σ_X (reveal X on the empty coalition F) and the
@@ -2189,3 +2221,4 @@ Next come E3 (the second referee: what both builds share), the M side's residual
 | 2026-10-18 | **THE MATURITY-BATTERY HARNESS BUILT (T35), and the INTERIM BANK + the first LEAN trajectory on X26 REGISTERED (§12.13.7)** | A generic series / trigger / read-only copy / cap-new-work layer, the frozen (k bin x stratum) bank sampler and R-MATURITY as tested code in `src/main/hidden_info_study/`; an INTERIM 800-state bank (LEAN 320 nested) drawn network-free from X26's newest three cycles, half own-snapshot states (E2's recommendation), registered before any trajectory output; the plateau bank, when it exists, SUPPLEMENTS it and becomes the verdict of record (the interim bank its replication; a differing direction = BANK-DEPENDENT); LEAN at 25M / 100M / 175M / 225M (FULL at the first anchor deferred, disclosed; the LEAN states nest in FULL); the frontier NOT READ in LEAN (< 150 states per bucket) | waiting for X26's plateau before any read (no trajectory until then, and §12.13.7's question unanswered for weeks); a per-checkpoint re-drawn bank (confounds maturity with the state distribution); a bank drawn by one network's logits (it would not be the same object at every anchor); adding O-M / O-U for R3's hide-only half (outside §12.13.7's arm list: a finding, not this unit's call) | `measurements/hidden_info_maturity_x26_2026-10-18/PREREGISTRATION.md`; the engineering pilot on 12 states outside the bank (identity PASS, 0 defects, the measured cost) |
 | 2026-10-18 | **The first LEAN trajectory LAUNCHED (§12.13.7)** | the detached queue from the registration commit `826bee89` (the world builder of record), the pin checkout at `9c033489`, 2 single-thread slots under rule 5b; ETA ≈ 15–20 wall-hours | waiting for a quieter box (the cores are free now; SCHED_IDLE yields to the trainer) | `measurements/hidden_info_maturity_x26_2026-10-18/README.md` §3 |
 | 2026-10-19 | **The first LEAN trajectory READ (§12.13.7): GAP-SHRINKS NOT DETECTED (G_F +0.075 → +0.053, change −0.022 [−0.049, +0.004]); BELIEF-RISES NOT DETECTED (TODAY ≈ 0.01 at every anchor); NOT CONVERGED; FRONTIER NOT READ (LEAN); every gate CLOSED; PROVISIONAL (interim bank)** | The registered scripts run unchanged after `QUEUE_DONE` (`read_mat_test.py` 3 / 3, `identity_mat.py` PASS × 4, `score_mat.py`, `read_mat.py`), behind a GIGO audit written for the read (`gigo_audit_mat.py`, 200 / 200); post-hoc descriptive companions in `posthoc_mat.py` (the decline is IMP_O falling, not IMP_F rising; flat at TRUNC-4-K8). Recommended next: P\* = 280M FULL on the interim bank, 25M upgraded to FULL, the plateau bank (FULL at 25M and P\*, LEAN back-fill), and the hide-only O−M / O−U arms at P\* by amendment (≈ 150–165 CPU-h, after a small build); not started | quoting the turn ≥ 22 bucket's GAP-SHRINKS as a finding (1 of 13 reads at 95 %, no multiplicity correction); amending CONVERGED now (it is unreachable at the registered sizes: a FINDING for the orchestrator, and any change is a dated amendment before the outputs it touches) | `measurements/hidden_info_maturity_x26_2026-10-18/README.md` §5 (`result_mat.json`, `gigo_audit_mat.json`, `identity_mat.json`, `posthoc_mat.json`); ledger 2026-10-19 MEASUREMENT "the MATURITY BATTERY's first LEAN trajectory" |
+| 2026-10-19 | **THE PLATEAU STEP REGISTERED (§12.13.7; the battery's amendment A1) and LAUNCHED: P\* = 280M declared; the PLATEAU bank drawn (800 / LEAN 320, 500 battles, ids `728dcdd4…`); P\* FULL + hide-only O−M / O−U on both banks, 25M FULL on both; the one-bank CONVERGED not read** | the orchestrator's 2026-10-19 decisions (steps 1, 2, 3, 5 of README §5.6). P\* is a named, sha-checked anchor. The plateau bank is (b)'s draw on P\*'s cycles, with the interim battles excluded (vacuously: battle ids carry their cycle). O−M / O−U are added to (e), network-free and shared, built at the registered builder `826bee89` with the CRN tooth. FINDING 2's answer: the one-bank CONVERGED (±0.01) is NOT READ; it is read only pooled over both banks when both hold P\* and 225M, and STILL-MOVING (a detection, reachable) replaces it. FINDING 4: FRONTIER only when every anchor named is FULL. FINDING 1: every bucket's GAP is also read at the Bonferroni 99.6 %. R3 at P\* is E2's rule, tested equal to `read_e2`. The record is the plateau bank's [25M, P\*]; the interim FULL pair is its replication (BANK-DEPENDENT on opposite directions) | the plateau bank's LEAN back-fill at 100M / 175M (step 4, ≈ 15 CPU-h; it enters no verdict of record once the one-bank CONVERGED is not read; deferred, can be added later); 225M FULL (step 6, ≈ 43 CPU-h, which pooled CONVERGED would need; declined); a wider CONVERGED margin (it would be chosen after seeing the LEAN change, −0.002 [−0.024, +0.019]); a new builder commit (a changed builder starts a new series); hide-only at 25M | `measurements/hidden_info_maturity_x26_2026-10-18/PREREGISTRATION.md` §9, `states_mat_x26_plateau.json`, README §6; `src/main/hidden_info_study/maturity_{series,bank,rules}.py` |

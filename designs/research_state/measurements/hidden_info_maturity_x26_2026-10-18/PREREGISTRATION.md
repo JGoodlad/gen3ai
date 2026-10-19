@@ -222,3 +222,209 @@ both ways.
 - harness (T35): `src/main/hidden_info_study/maturity_series.py` (series, trigger, copies, cap-new-work),
   `maturity_bank.py` (the draw), `maturity_rules.py` (R-MATURITY), each with its test; this folder's drivers (README).
 - the design: `designs/endstate/design_hidden_info_binding.md` §12.13.7 (the amendment registering this bank).
+
+## 9. AMENDMENT A1 (2026-10-19): THE PLATEAU STEP, registered before any of its outputs
+
+**Status.** This amendment is committed with the PLATEAU bank's ids (`states_mat_x26_plateau.json`) before any output
+of the plateau step exists. None of these rows had been computed when it was committed:
+- any root, truth, belief, world or playout row at P\* (either bank);
+- any row on 25M's 480 non-LEAN states;
+- any row on the plateau bank, at any anchor;
+- any O−M or O−U world or row.
+
+**What the author had seen** (disclosed): the interim LEAN trajectory's read, README §5. Every rule change below
+answers one of that read's FINDINGS, and none of them changes a threshold that read was judged by.
+
+The decisions are the orchestrator's (2026-10-19): run steps 1, 2, 3 and 5 of README §5.6; defer step 4 unless the
+verdict of record strictly needs it; no 225M FULL; no hide-only at 25M. The harness is the commit just before this
+one ("feat(hib-maturity): the PLATEAU STEP's harness"; its sha is in README §6).
+
+### 9.1 The plateau checkpoint P\* (DECLARED)
+
+| | |
+|---|---|
+| anchor | **`x26_P280M`** = `rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip`, sha256 `814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed` (the sidecar: `60432d42…`) |
+| declared by | the orchestrator, 2026-10-19. This registration does not re-derive §10.5's criterion |
+| registration | `maturity_series.SERIES["x26"].plateau` (the exact step and sha256). `trigger_mat.py register --plateau` copies the file read-only and refuses any other sha. It is a NAMED anchor off the 25M grid, labelled `P` so it can never collide with a grid label |
+| at the pin | its sidecar `git_hash` is `9c033489`, and its three newest eval cycles are recorded there |
+| the copy | `<archive>/ckpt/x26_P280M/`, sha256 = the declaration = the run's own file = `~/.cache/gen3ai/x26_plateau/`'s verified copy |
+
+### 9.2 The PLATEAU bank (§2.5, executed)
+
+**Source.** P\*'s three newest cycles: `step_276000077`, `step_278000056`, `step_280000170`.
+- They were copied (`trigger_mat.py traces --bank plateau --from ~/gen3ai_archive/x26_eval_traces_plateau`) from the
+  orchestrator's copy, with per-file sha256: `traces_manifest_plateau.json` and `<cycle>.sha256.json`.
+- **Every file equals the run's own file:** 1,056 + 1,071 + 1,046 = 3,173 of 3,173. None is missing from the copy, and
+  none is absent from the run.
+
+**The draw.** It is §2.2–§2.4's rule, unchanged:
+- 80 per (k bin × stratum) cell, LEAN = the first 32;
+- salt `hib_maturity_x26_plateau_v1:`;
+- run by `make_mat_bank.py --bank plateau` at the pin, with the harness commit's drivers.
+
+**The exclusion.** Every battle of the interim bank (513 battles) was excluded before the draw
+(`maturity_bank.draw(exclude_battles=…)`). It removed **0** candidates: a battle id carries its cycle, and the two
+banks' cycles are disjoint. So the rule held, but vacuously. The two banks share 0 ids and 0 battles.
+
+| | FULL (800) | LEAN (320) |
+|---|---|---|
+| ids hash (sha256 of the sorted ids) | `728dcdd44feff8ee240b7bd0285f2e5857e063f6584f2089a29007fd9f92da85` | `4b63651ddc94256aa5992afc9f9f4c44d2af4a74ed520390a121c907a4ac544d` |
+| battles | 500 | 272 |
+| per k bin (1–2 / 3 / 4 / 5 / 6) | 160 each | 64 each |
+| stratum snapshot / bot | 400 / 400 | 160 / 160 |
+| turn ≤ 7 / 8–14 / 15–21 / ≥ 22 | 202 / 242 / 187 / 169 | 86 / 88 / 72 / 74 |
+| material ≤ 7 / 8–9 / 10–11 / 12 | 214 / 210 / 225 / 151 | 87 / 82 / 92 / 59 |
+| the traced side's outcome, snapshot (loss / win / draw) | 241 / 153 / 6 | — |
+| … bot (loss / win / draw) | 129 / 259 / 12 | — |
+| cycle 276M / 278M / 280M | 260 / 269 / 271 | — |
+
+- **Hashes.** The bank directory's content sha256 is `25d2e83ce0ce9a52f7e5af29fde9fd95393472703321c5d50e391f721b738a56`
+  (`<archive>/plateau/bank/`, verified on every load). `census.npz` sha256 is `c19bc87c…32fd`.
+- **The pool:** 634 traces, 15,690 eligible decisions.
+- **Gate ①:** 634 / 634 battles, 21,434 decisions, 0 failures. The clock-decode turn gate agrees on 21,434 / 21,434.
+- **Candidates per cell:** 1,099 (k = 5, bot) to 2,362 (k = 6, snapshot). Every cell filled, so the extension
+  (`step_274000392`) was not used.
+
+### 9.3 What runs: the per-(anchor, bank) modes (`ckpts.json` `banks`; `checkpoints_x26.json` here = it at registration)
+
+| anchor | interim bank | plateau bank |
+|---|---|---|
+| x26_025M | **FULL** (step 2: its 320 LEAN rows are reused; 480 new states, plus F+M / F+U on all 800) | **FULL** (step 3) |
+| x26_100M, x26_175M, x26_225M | LEAN (done, README §5) | — (step 4, DEFERRED: §9.4) |
+| **x26_P280M** | **FULL + hide-only** (steps 1 and 5) | **FULL + hide-only** (steps 3 and 5) |
+
+- **FULL** = every bank state, arms O, F, FN, F+M and F+U.
+- **+ hide-only** adds **O−M** and **O−U**, E2's arms. They are `agents.info_levers.spec.PRESETS` at the builder, and
+  network-free: built ONCE per bank (`worlds/shared/OmM`, `OmU`) and played at the pin like every arm.
+  - They are built after F has been re-sampled into each state's screen cache. A re-sample that does not reproduce the
+    stored F worlds is a DEFECT row (the CRN tooth, §3.5).
+- **The queue order is 1 → 2 → 3 → 5:**
+  - the interim bank's shared F / F+U / F+M worlds;
+  - P\* on interim, then 25M on interim;
+  - the plateau bank's shared worlds, then P\* and 25M on it;
+  - last, the hide-only worlds and plays.
+- **The identity (§3.8)** is per ANCHOR. It is read on the interim bank's 12 fixed states at P\*, as at every earlier
+  anchor.
+
+### 9.4 Deviations from §2.5 (disclosed)
+
+- **The plateau bank is scored at 25M and P\* only, not at every anchor.** The back-fill at 100M and 175M (README §5.6
+  step 4, ≈ 15 CPU-h LEAN), and at 225M, is DEFERRED. Under this amendment it enters NO verdict of record:
+  - GAP, BELIEF and FRONTIER read the first anchor against the last;
+  - the one-bank CONVERGED is NOT READ (§9.6).
+  So the middle anchors on the plateau bank would be descriptive points only. They may be added later
+  (`trigger_mat.py set-mode … --bank plateau`): that adds points and changes no rule.
+- **225M stays LEAN on the interim bank** (the orchestrator: no 225M FULL).
+
+### 9.5 The world builder and the drivers
+
+- **The builder stays the registration commit `826bee89`** (§12.13.7 (f): "a changed builder starts a new series";
+  `mat_common.BUILDER_SHA`):
+  - `launch_queue.sh` refuses a builder checkout at any other commit;
+  - `build_mat_worlds.py` refuses one too;
+  - every world row records it as `head`.
+- **The drivers run from a NEW checkout** at the commit that ships this amendment. Every row they write is stamped
+  `driver` and `bank`. The folders the drivers import (Tier 1's, the pilot's, by-reveal-count's) are byte-identical
+  to `826bee89`'s (`git diff --stat 826bee89 HEAD` on them is empty). So no world or playout computation changes, only
+  the bookkeeping around it.
+- **The pin side is unchanged:** `~/.cache/gen3ai/hib_mat/pin_x26` at `9c033489`, with its own Rust release builds.
+
+### 9.6 The rules (as code, committed here: `maturity_rules.py`, `read_mat.py plateau`; the planted tests are `maturity_rules_test.py`, `read_mat_test.py`, `queue_mat_test.py`)
+
+**CONVERGED (README FINDING 2).**
+- **The problem.** As registered (§4: one bank, the last two anchors, the whole 95 % interval inside ±0.01) it is
+  unreachable on either bank:
+  - LEAN measured ±0.021 between adjacent anchors on 287 common states;
+  - FULL's ≈ ±0.017 is also above 0.01;
+  - ±0.01 needs ≈ 1,450 common states.
+- **The amendment.**
+  - **The one-bank CONVERGED is NOT READ.** It is reported with that reason, never as "NOT CONVERGED".
+  - **CONVERGED is read only POOLED over both banks** (`read_mat.converged_pooled`: each bank's common states for the
+    pair, concatenated, ONE battle-clustered bootstrap over both banks' battles). The pair is P\* and the interim
+    anchor immediately before it (225M), and it is read only when BOTH banks hold both anchors.
+  - In this step the plateau bank does not hold 225M, so pooled CONVERGED is **NOT READ**.
+  - Holding it would need 225M on the plateau bank: LEAN gives ≈ 570 pooled common states (≈ ±0.015, still
+    unreachable); FULL on both banks gives ≈ 1,440, which is just reachable. That is README §5.6's step 6 (≈ 43 CPU-h),
+    which the orchestrator declined.
+- **Why not a wider margin instead.** The LEAN data already show the 175M → 225M change, −0.002 [−0.024, +0.019]. A
+  margin chosen after seeing it would be tuned to it.
+- **What replaces it, reachable at these sizes: STILL-MOVING** (every R-MATURITY read).
+  - The all-state change of G_F between the last two anchors reads STILL-SHRINKING iff its upper 95 % bound is
+    < −0.0005, and STILL-GROWING iff its lower bound is > +0.0005.
+  - Otherwise it reads NOT DETECTED, which is **not** evidence of convergence.
+
+**FRONTIER (README FINDING 4).** It is read only when EVERY anchor named is FULL, not just the first and the last. A
+LEAN anchor between two FULL ones makes the common set the LEAN 320, where no bucket can reach n ≥ 150. The registered
+first-and-last rule would then read a FRONTIER-STATIC that holds by construction. No earlier read is affected: the
+LEAN read named no FULL anchor.
+
+**Bucket GAP multiplicity (README FINDING 1).**
+- Every stage bucket's GAP verdict is ALSO read at the 99.6 % level (`GAP_BONFERRONI`: Bonferroni over the 13
+  buckets, the gate's own level).
+- The 95 % bucket verdicts stay as registered and are quoted, but only a bucket verdict that also holds at 99.6 % is
+  reported as a finding.
+- The all-state PRIMARY is unchanged.
+
+**R3 at P\*** (`maturity_rules.r3_read`). This is E2's registered R3 (`read_e2.verdict` / `read_frame`). A planted
+test shows it equal to `read_e2.read_frame` on the same IMPs: verdict, qualifiers, and both numerators and their
+intervals.
+- The reads, at LEAF-K8:
+  - Δs = IMP(F+U) − IMP(F+M), the reveal-only side;
+  - Δn = IMP(O−M) − IMP(O−U), the hide-only side.
+- The verdict is U-FIRST / M-FIRST / SHARED / NOT DETECTED.
+- The qualifiers: MATERIAL at 0.005, CLOSE at ±0.01, SIDES-DISAGREE.
+- The descriptive shares are s_X and n_X.
+- **The states:** P\*'s own valid states on each bank (truth ok, no root tie), with one bootstrap over their battles.
+  - PRIMARY: all states.
+  - SECONDARY: each stratum on the same draws. The snapshot stratum is E2's competent-opponent population.
+
+**THE READ OF THE PLATEAU STEP** (`read_mat.py plateau` → `result_mat_plateau.json`, from the two tables
+`score_mat.py --bank <b> --tag plateau_step`):
+
+| # | read | standing |
+|---|---|---|
+| 1 | the PLATEAU bank, R-MATURITY over [25M, P\*], both FULL (800): GAP (all + buckets + `GAP_BONFERRONI`), BELIEF, FRONTIER, the per-anchor gates, STILL-MOVING (here = the pair) | **THE VERDICT OF RECORD** (§2.5) |
+| 2 | the INTERIM bank, the same FULL pair [25M, P\*] | its registered REPLICATION |
+| 3 | the interim LEAN trajectory [25M, 100M, 175M, 225M, P\*] on the LEAN states (STILL-MOVING = 225M → P\*; no FRONTIER, by the rule above) | the trajectory's shape; quoted beside 1, never instead |
+| 4 | R3 at P\*, on each bank | plateau = record, interim = replication |
+| 5 | BANK-DEPENDENT (`maturity_rules.bank_dependent`): each verdict of 1 against its twin in 2, and R3's plateau against interim | a disagreement is quoted BANK-DEPENDENT. **Rule:** opposite directions (SHRINKS vs GROWS; U-FIRST vs M-FIRST; MOVES-EARLIER vs RECEDES), or one RISES where the other does not |
+| 6 | CONVERGED pooled (P\* vs 225M) | NOT READ in this step (above) |
+
+**PROVISIONAL / plateau labels.** A verdict of 1 is the plateau replication the owner's rule asks for (a research-path
+claim needs a PLATEAUED model). It is quoted with P\*'s declaration date and its BANK-DEPENDENT flag.
+
+### 9.7 Validity, registered now (the GIGO audit is written for the read, as in README §5.1; counts only)
+
+- **Coverage:** per (bank, anchor, unit), exactly one row per wanted id, with 0 duplicates, 0 foreign ids and 0 torn
+  lines.
+- **Provenance:** every world row's `head` is `826bee89`; every new row's `driver` is the launch commit and its `bank`
+  its namespace; every pin row is at `9c033489`.
+- **Defects:** 0 in every world arm and every playout. The CRN tooth reproduces F in every sibling build (F+U, F+M,
+  O−M, O−U, FN).
+- **The identities:**
+  - the cross-commit identity at every anchor, P\* included;
+  - **O−U ≡ O** and **F+U ≡ F** at k = 6, outcome for outcome (E2's: with all six opponent Pokémon seen, nothing of the
+    never-seen class is left to hide or reveal).
+- **Exclusion flags:** an arm's exclusions above 10 % of a bank are flagged; any defect above 1 % is flagged.
+
+### 9.8 Cost and the queue (README §6)
+
+From this battery's MEASURED per-state CPU (LEAN rows' `cost`, one thread):
+- O 49–56 s;
+- one 8-world arm played 16–18 s;
+- an F world build 13.7 s.
+
+The step is **≈ 150 CPU-h**:
+
+| part | CPU-h |
+|---|---|
+| shared worlds | ≈ 8 interim + ≈ 9 plateau |
+| P\* FULL | ≈ 27 per bank |
+| 25M's FULL upgrade on interim | ≈ 20 |
+| 25M FULL on plateau | ≈ 29 |
+| hide-only at P\* on both banks | ≈ 27 |
+
+The LEAN queue made ≈ 1.26 CPU-h per wall-hour on its 2 SCHED_IDLE slots beside the live run. At that rate the step
+takes **≈ 4–5 days**.
+
+§7 binds every item above once outputs exist.

@@ -27,6 +27,8 @@ R-MATURITY (first = the series' first anchor, last = its last; per-draw vectors 
   at the registered sizes (README FINDING 2: ±0.021 adjacent on 287 LEAN states, ≈ 1,450 common states needed), so a
   read made with ``converged=False`` reports CONVERGED as NOT READ, and CONVERGED is read only POOLED over both banks
   (:func:`converged` on one bootstrap over both banks' battles) when both banks hold the last two anchors.
+* GAP_BONFERRONI (A1, README FINDING 1): every stage bucket's GAP verdict again at the 99.6 % level (Bonferroni over
+  the 13 buckets); the 95 % bucket verdicts stay as registered, and only one that also holds at 99.6 % is a finding.
 * STILL-MOVING (A1, every read): the change G_F(last) − G_F(previous anchor) on the all-state cell; STILL-SHRINKING
   iff upper95 < −0.0005, STILL-GROWING iff lower95 > +0.0005, else NOT DETECTED (which is NOT evidence of convergence).
 
@@ -245,12 +247,12 @@ class CheckpointRead:
     gates: dict[str, dict[str, str]] = field(default_factory=dict)
 
 
-def gap_change(first: tuple[float, np.ndarray], last: tuple[float, np.ndarray]) -> dict:
+def gap_change(first: tuple[float, np.ndarray], last: tuple[float, np.ndarray], level: float = 95.0) -> dict:
     d_est = last[0] - first[0]
     d_vec = np.asarray(last[1]) - np.asarray(first[1])
-    lo, hi = ci(d_vec)
+    lo, hi = ci(d_vec, level)
     v = "GAP-SHRINKS" if lt(hi, -EDGE) else "GAP-GROWS" if gt(lo, EDGE) else "NOT DETECTED"
-    return {"change": summary(d_est, d_vec), "verdict": v}
+    return {"change": summary(d_est, d_vec, level=level), "verdict": v}
 
 
 def belief_change(first: tuple[float | None, np.ndarray], last: tuple[float | None, np.ndarray]) -> dict:
@@ -290,7 +292,10 @@ def r_maturity(reads: Sequence[CheckpointRead], converged_on_this_bank: bool = T
     first, last, prev = rs[0], rs[-1], rs[-2]
     cells = sorted(set(first.g) & set(last.g))
     out: dict = {"first": first.label, "last": last.label, "anchors": [r.label for r in rs],
-                 "GAP": {c: gap_change(first.g[c], last.g[c]) for c in cells}}
+                 "GAP": {c: gap_change(first.g[c], last.g[c]) for c in cells},
+                 # A1 (README FINDING 1): every BUCKET's GAP also at the Bonferroni level over the 13 buckets; only a
+                 # bucket verdict that holds here is quoted as a finding
+                 "GAP_BONFERRONI": {c: gap_change(first.g[c], last.g[c], BONF_LEVEL) for c in cells if c != "all"}}
     out["BELIEF"] = (belief_change(first.today, last.today) if first.today is not None and last.today is not None
                      else {"verdict": "NOT READ"})
     out["FRONTIER"] = (frontier_change(first.gates, last.gates) if first.gates and last.gates

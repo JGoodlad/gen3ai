@@ -8,6 +8,11 @@
 - **The queue** crawls detached (§3), launched 2026-10-18 04:45 PDT from `826bee89`. The read is `read_mat.py`, committed with the harness, before any output.
 - **Results:** READ 2026-10-19 (§5), after `QUEUE_DONE` (2026-10-19 04:30 PDT, nothing parked). GAP-SHRINKS NOT
   DETECTED, BELIEF-RISES NOT DETECTED, NOT CONVERGED, FRONTIER NOT READ (LEAN). PROVISIONAL: the interim bank.
+- **THE PLATEAU STEP** (§6): REGISTERED 2026-10-19 as amendment A1 (PREREGISTRATION §9), before any of its outputs.
+  - P\* = 280M is declared.
+  - The PLATEAU bank is drawn (`states_mat_x26_plateau.json`).
+  - P\* runs FULL + O−M / O−U on both banks, and 25M FULL on both.
+  - It is crawling in a detached queue (§6.3).
 
 **What it asks** (owner, 2026-10-17: "what does it take to enable search? Are we getting closer, not closer?"). It
 re-runs §12.13.7's stage and dose reads at X26's 25M, 100M, 175M and 225M checkpoints on ONE frozen bank, and reads the
@@ -44,6 +49,11 @@ scripts, the committed ids, the anchors' sha256 (`checkpoints_x26.json`) and, la
 | read | `read_mat.py` (+ `read_mat_test.py`, planted effects; rules in `maturity_rules.py`) | pure | `result_mat.json` |
 | GIGO audit (written for the read, 2026-10-19) | `gigo_audit_mat.py` (coverage, duplicates, provenance, defects, CRN, exclusions, non-finites; counts only) | pure | `gigo_audit_mat.json` |
 | post-hoc companions (after the read; descriptive) | `posthoc_mat.py` (the gap's change split into IMP_O / IMP_F, per stratum, FN − F, the dose curves and P-STAR) | pure | `posthoc_mat.json` |
+| **A1 (the plateau step):** the plateau anchor, modes | `trigger_mat.py register --plateau`, `set-mode --labels L --bank B --mode M` | any Python | `ckpt/x26_P280M/`, `ckpts.json` `banks` |
+| A1: the plateau bank | `trigger_mat.py traces --bank plateau --from …`, then `make_mat_bank.py --bank plateau` | `pin` | `plateau/bank/`, `plateau/census.npz`, `states_mat_x26_plateau.json` |
+| A1: every driver | `--bank interim\|plateau` (default interim); mode `full_hide` adds O−M / O−U | as above | `plateau/…` for the plateau bank |
+| A1: the read | `score_mat.py --bank <b> --tag plateau_step` (both banks), then `read_mat.py plateau` | pure | `<bank>/score/plateau_step.pkl`, `result_mat_plateau.json` |
+| A1: the tests | `read_mat_test.py` (7), `queue_mat_test.py` (5): planted, no archive | pure | — |
 
 **CPU (root rule 5b):**
 - every worker runs one thread, under `nice -n 19` and SCHED_IDLE;
@@ -226,7 +236,7 @@ pooled) and E2's +0.072 [+0.060, +0.083]. X26's 25M reads +0.075, the same size.
 6. No hazard hit: CPU only (`CUDA_VISIBLE_DEVICES=""`, the 3-core pin, `nice -n 19`, `mem_cap`), nothing written under
    `models/` or `data/`, both checkouts kept.
 
-### 5.6 The recommended plateau step (NOT started; the orchestrator decides)
+### 5.6 The recommended plateau step (DECIDED 2026-10-19: steps 1, 2, 3 and 5 run, 4 deferred, 6 declined; §6)
 
 **The plateau checkpoint P\*** = `rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip` (sha256 `814823c5…`). It is
 at the series' pin `9c033489` (its sidecar `git_hash`; `pin_history` covers 0 → 320M). Its three newest eval cycles,
@@ -263,3 +273,49 @@ at the series' pin `9c033489` (its sidecar `git_hash`; `pin_history` covers 0 �
 - **Copy P\*'s three cycles into the archive now** (read-only, with the per-file sha256 that `trigger_mat.copy_traces`
   makes; its CLI copies only the interim cycles today): the plateau bank depends on them surviving the run's end and
   any retention pass.
+
+## 6. THE PLATEAU STEP (amendment A1, registered 2026-10-19; RUNNING)
+
+### 6.1 What was decided and registered
+
+The orchestrator decided on 2026-10-19:
+- **Run** §5.6's steps 1, 2, 3 and 5:
+  - P\* FULL on the interim bank;
+  - 25M upgraded to FULL;
+  - the plateau bank, FULL at 25M and P\*;
+  - the hide-only O−M / O−U arms at P\* on both banks.
+- **Step 4** (the plateau bank at 100M / 175M) only if the verdict of record strictly needs it. It does not: the
+  verdicts read the first anchor against the last, and the one-bank CONVERGED is not read. So step 4 is **DEFERRED**
+  (PREREGISTRATION §9.4).
+- **No 225M FULL; no hide-only at 25M.**
+
+The registration is PREREGISTRATION §9 (A1). It was committed with the plateau bank's ids before any plateau-step output
+existed. In short:
+
+| | |
+|---|---|
+| P\* | `x26_P280M` = `checkpoint_280000170`, sha256 `814823c5…` (a named anchor, sha-checked; `maturity_series.plateau_anchor`) |
+| the PLATEAU bank | P\*'s cycles 276M / 278M / 280M (3,173 copied files, each = the run's own); salt `hib_maturity_x26_plateau_v1:`; the interim battles excluded; **800 states (LEAN 320), 500 battles**, 160 per k bin, 400 / 400 snapshot / bot; ids sha256 `728dcdd4…`, LEAN `4b63651d…`, content `25d2e83c…`; gate ① 634 / 634, 0 failures; no extension |
+| modes | interim: 25M FULL, P\* FULL + O−M / O−U (100M–225M LEAN, done). Plateau: 25M FULL, P\* FULL + O−M / O−U |
+| the builder | still `826bee89` (refused otherwise). The drivers come from a new checkout (§6.3), and every new row carries `driver` and `bank` |
+| CONVERGED (FINDING 2) | the one-bank CONVERGED is NOT READ. It is read only pooled over both banks when both hold P\* and 225M (not this step). STILL-MOVING (a detection on the last pair) replaces it |
+| FRONTIER (FINDING 4) | read only when every anchor named is FULL |
+| bucket GAP (FINDING 1) | also at the Bonferroni 99.6 %; only a bucket verdict that holds there is a finding |
+| R3 at P\* (FINDING 5) | E2's rule (`maturity_rules.r3_read`, tested equal to `read_e2.read_frame`), on each bank; all states PRIMARY, each stratum secondary |
+| the record | the plateau bank's [25M, P\*] FULL pair. The interim FULL pair is its replication (BANK-DEPENDENT on opposite directions), and the interim LEAN 5-anchor trajectory is quoted beside it |
+
+### 6.2 Operate
+
+```bash
+F=designs/research_state/measurements/hidden_info_maturity_x26_2026-10-18
+PY=/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3
+$PY -I $F/queue_mat.py --status                     # PROGRESS: per bank / anchor / unit, done / wanted (no outcome)
+tail -f ~/gen3ai_archive/hidden_info_maturity/logs/queue_mat.log
+bash $F/launch_queue.sh                             # (re)start, from the DRIVER checkout (§6.3); every unit resumes
+# the read, once QUEUE_DONE exists (PREREGISTRATION §9.6):
+$PY -I $F/read_mat_test.py && $PY -I $F/queue_mat_test.py
+$PY -I $F/identity_mat.py --out identity_mat_plateau.json
+$PY -I $F/score_mat.py --bank interim --tag plateau_step && $PY -I $F/score_mat.py --bank plateau --tag plateau_step
+$PY -I $F/read_mat.py plateau                       # -> result_mat_plateau.json
+```
+
