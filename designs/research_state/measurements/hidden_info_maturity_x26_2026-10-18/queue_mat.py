@@ -1,30 +1,33 @@
 """THE BATTERY's RUNNER: one long-lived, detached, resumable job that keeps at most ``--slots`` capped worker processes
 busy (root rule 5b: <= 2 heavy jobs beside the live run; each worker one thread, its own `mem_cap` scope via
-`run_mat.sh`) until every registered anchor (``<archive>/ckpts.json``; `trigger_mat.py register` appends) has every row
-its mode needs. It reads NO outcome: it counts ids.
+`run_mat.sh`) until every registered (anchor, bank) pair (``<archive>/ckpts.json``; `trigger_mat.py register` /
+`set-mode` write it) has every row its mode needs. It reads NO outcome: it counts ids.
 
-    python -I queue_mat.py [--slots 2]           (from the HEAD checkout; detached: `launch_queue.sh`)
-    python -I queue_mat.py --status              (progress: per anchor and unit, done / wanted; no outcome)
+    python -I queue_mat.py [--slots 2]           (from the DRIVER checkout; detached: `launch_queue.sh`)
+    python -I queue_mat.py --status              (progress: per bank, anchor and unit, done / wanted; no outcome)
 
-Units (each a resumable script call, minutes to an hour; every ``--limit`` caps NEW work):
-  build(shared)        build_mat_worlds.py --shared F[,F+M,F+U]  (HEAD; network-free; once for every anchor)
-  vbuild               build_mat_worlds.py --validation oracle   (HEAD; the 12 identity states)
-  roots(a)             roots_mat.py                              (pin)
-  vplay(a)             play_mat_worlds.py --arm V:oracle         (pin; the cross-commit identity)
-  truth(a)             phase1_mat.py, <= 20 states per unit       (pin)
-  belief(a)            fn_belief_mat.py, <= 100 per unit          (pin)
-  fnbuild(a)           build_mat_worlds.py --fn a, <= 100         (HEAD)
-  play(a, arm)         play_mat_worlds.py, <= 60 per unit         (pin)
-Priority: anchors by their registered ``priority`` (x26: 25M, 225M, 100M, 175M), and within an anchor roots, vplay,
-truth, belief, play F, fnbuild, play FN (+ FULL's F+M, F+U). At most ONE HEAD builder at a time; a slot never takes a
-unit another slot is running. A unit that fails 3 times in a row is PARKED and logged (a FINDING); the rest continue.
-Writes ``<archive>/QUEUE_DONE`` when nothing is pending or running (a later `trigger_mat.py register` + relaunch
-resumes). Log: ``<archive>/logs/queue_mat.log`` (+ one log per unit under ``<archive>/logs/``).
+Units (each a resumable script call, minutes to an hour; every ``--limit`` caps NEW work; every unit names its bank):
+  build(b, base)       build_mat_worlds.py --shared F[,F+U,F+M] --bank b   (HEAD = the builder; network-free; once)
+  build(b, hide)       build_mat_worlds.py --shared O-M,O-U --bank b      (A1: the hide-only arms, after every base unit)
+  vbuild               build_mat_worlds.py --validation oracle            (HEAD; the 12 identity states, interim)
+  roots(b, a)          roots_mat.py                                       (pin)
+  vplay(interim, a)    play_mat_worlds.py --arm V:oracle                  (pin; the cross-commit identity, per anchor)
+  truth(b, a)          phase1_mat.py, <= 20 states per unit                (pin)
+  belief(b, a)         fn_belief_mat.py, <= 100 per unit                   (pin)
+  fnbuild(b, a)        build_mat_worlds.py --fn a, <= 100                  (HEAD)
+  play(b, a, arm)      play_mat_worlds.py, <= 60 per unit                  (pin)
+Priority (:func:`units`): per bank (interim first) its base build, then its (anchor) jobs by the pair's registered
+priority (roots, vplay, truth, belief, play F, fnbuild, play FN, F+M, F+U); then every bank's hide-only build and
+O−M / O−U plays. At most ONE HEAD builder at a time; a slot never takes a unit another slot is running. A unit that
+fails 3 times in a row is PARKED and logged (a FINDING); the rest continue. Writes ``<archive>/QUEUE_DONE`` when
+nothing is pending or running (a previous run's marker is renamed aside at start). Log:
+``<archive>/logs/queue_mat.log`` (+ one log per unit under ``<archive>/logs/``).
 """
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -64,127 +67,203 @@ def anchors() -> list:
     return sorted(reg, key=lambda x: (reg[x]["priority"], reg[x]["step"]))
 
 
-def mode(a: str) -> str:
-    return E.registered_ckpts()[a]["mode"]
+def jobs() -> list:
+    """[(bank, anchor)] of every registered (anchor, bank) pair, by the pair's priority, then the step (A1)."""
+    reg = E.registered_ckpts()
+    out = [(int(e["priority"]), reg[a]["step"], b, a) for a in reg for b, e in E.anchor_banks(a).items()]
+    return [(b, a) for _p, _s, b, a in sorted(out)]
 
 
-def shared_arms() -> tuple:
-    return ("F", "F+U", "F+M") if any(mode(a) == "full" for a in anchors()) else ("F",)
+def banks() -> list:
+    """The banks with at least one job, interim first."""
+    used = {b for b, _a in jobs()}
+    return [b for b in E.BANKS if b in used]
 
 
-def want_ids(m: str) -> set:
-    return set(E.mode_ids(m))
+def mode(b: str, a: str) -> str:
+    return E.anchor_mode(a, b)
 
 
-def all_ids() -> set:
+def bank_modes(b: str) -> set:
+    return {mode(b, a) for bb, a in jobs() if bb == b}
+
+
+def base_arms(b: str) -> tuple:
+    return ("F", "F+U", "F+M") if bank_modes(b) & {"full", "full_hide"} else ("F",)
+
+
+def want_ids(b: str, m: str) -> set:
+    with E.using_bank(b):
+        return set(E.mode_ids(m))
+
+
+def all_ids(b: str) -> set:
     out: set = set()
-    for a in anchors():
-        out |= want_ids(mode(a))
+    for bb, a in jobs():
+        if bb == b:
+            out |= want_ids(b, mode(b, a))
     return out
 
 
+def _arms_of(m: str) -> tuple:
+    return E.MODE_ARMS[m]
+
+
+def _shared_need(b: str, arms_fn) -> dict:
+    """{id: arms it needs} over every job of bank b (``arms_fn(mode)`` = the shared arms a mode needs)."""
+    need: dict = {}
+    for bb, a in jobs():
+        if bb != b:
+            continue
+        m = mode(b, a)
+        for x in want_ids(b, m):
+            need.setdefault(x, set()).update(arms_fn(m))
+    return need
+
+
+def _base_of(m: str) -> set:
+    return {x for x in _arms_of(m) if x in ("F", "F+U", "F+M")}
+
+
+def _hide_of(m: str) -> set:
+    return {x for x in _arms_of(m) if x in E.HIDE_ARMS}
+
+
 def pending(u: tuple) -> int:
-    kind = u[0]
-    if kind == "build":
-        built = {arm: ids_in(E.worlds_dir(None, arm), "worlds_*.jsonl") for arm in shared_arms()}
-        full = set(E.mode_ids("full")) if any(mode(a) == "full" for a in anchors()) else set()
-        return sum(1 for x in all_ids()
-                   if x not in built["F"] or (x in full and any(x not in built[arm] for arm in ("F+U", "F+M"))))
-    if kind == "vbuild":
-        return len(set(E.identity_ids()) - ids_in(E.worlds_dir(None, "V:oracle"), "worlds_*.jsonl"))
-    a = u[1]
-    ids = want_ids(mode(a))
-    if kind == "roots":
-        return 0 if (E.d("roots") / f"{a}.jsonl").exists() and ids <= ids_in(E.d("roots"), f"{a}.jsonl") else 1
-    if kind == "truth":
-        return len(ids - ids_in(E.rows_dir(a, "O"), "shard_*.jsonl"))
-    if kind == "belief":
-        return len(ids - ids_in(E.d("fn_belief"), f"{a}.jsonl"))
-    if kind == "fnbuild":
-        have = ids_in(E.d("fn_belief"), f"{a}.jsonl") & ids
-        return len(have - ids_in(E.worlds_dir(a, "FN"), "worlds_*.jsonl"))
-    if kind == "vplay":
-        w = ids_in(E.worlds_dir(None, "V:oracle"), "worlds_*.jsonl") & set(E.identity_ids())
-        return len(w - ids_in(E.rows_dir(a, "V:oracle"), "rows_*.jsonl"))
-    if kind == "play":
-        w = ids_in(E.worlds_dir(a, u[2]), "worlds_*.jsonl") & ids
-        return len(w - ids_in(E.rows_dir(a, u[2]), "rows_*.jsonl"))
+    kind, b = u[0], u[1]
+    with E.using_bank(b):
+        if kind == "build":
+            need = _shared_need(b, _base_of if u[2] == "base" else _hide_of)
+            arms = sorted({x for v in need.values() for x in v})
+            built = {arm: ids_in(E.worlds_dir(None, arm), "worlds_*.jsonl") for arm in arms}
+            return sum(1 for x, v in need.items() if any(x not in built[arm] for arm in v))
+        if kind == "vbuild":
+            return len(set(E.identity_ids()) - ids_in(E.worlds_dir(None, "V:oracle"), "worlds_*.jsonl"))
+        a = u[2]
+        ids = want_ids(b, mode(b, a))
+        if kind == "roots":
+            return 0 if (E.d("roots") / f"{a}.jsonl").exists() and ids <= ids_in(E.d("roots"), f"{a}.jsonl") else 1
+        if kind == "truth":
+            return len(ids - ids_in(E.rows_dir(a, "O"), "shard_*.jsonl"))
+        if kind == "belief":
+            return len(ids - ids_in(E.d("fn_belief"), f"{a}.jsonl"))
+        if kind == "fnbuild":
+            have = ids_in(E.d("fn_belief"), f"{a}.jsonl") & ids
+            return len(have - ids_in(E.worlds_dir(a, "FN"), "worlds_*.jsonl"))
+        if kind == "vplay":
+            w = ids_in(E.worlds_dir(None, "V:oracle"), "worlds_*.jsonl") & set(E.identity_ids())
+            return len(w - ids_in(E.rows_dir(a, "V:oracle"), "rows_*.jsonl"))
+        if kind == "play":
+            w = ids_in(E.worlds_dir(a, u[3]), "worlds_*.jsonl") & ids
+            return len(w - ids_in(E.rows_dir(a, u[3]), "rows_*.jsonl"))
     raise ValueError(u)
 
 
 def upstream(u: tuple):
     """The unit whose output this one consumes while it is still being produced (None = none)."""
     if u[0] == "play":
-        return ("fnbuild", u[1]) if u[2] == "FN" else ("build", "shared")
+        if u[3] == "FN":
+            return ("fnbuild", u[1], u[2])
+        return ("build", u[1], "hide" if u[3] in E.HIDE_ARMS else "base")
     if u[0] == "vplay":
-        return ("vbuild", "shared")
+        return ("vbuild", "interim")
     if u[0] == "fnbuild":
-        return ("belief", u[1])
+        return ("belief", u[1], u[2])
     return None
 
 
 def command(u: tuple) -> list:
-    kind = u[0]
+    kind, b = u[0], u[1]
+    bank = ["--bank", b]
     if kind == "build":
-        return ["bash", str(RUN), "head", "1", "8", "12h", "build_mat_worlds.py", "--shared", ",".join(shared_arms()),
-                "--mode", "full" if any(mode(a) == "full" for a in anchors()) else "lean", "--limit", "100"]
+        need = _shared_need(b, _base_of if u[2] == "base" else _hide_of)
+        arms = [x for x in E.SHARED_BUILD_ORDER if any(x in v for v in need.values())]
+        m = "lean" if not bank_modes(b) & {"full", "full_hide"} else "full_hide" if u[2] == "hide" else "full"
+        return ["bash", str(RUN), "head", "1", "8", "12h", "build_mat_worlds.py", "--shared", ",".join(arms),
+                "--mode", m, "--limit", "100"] + bank
     if kind == "vbuild":
         return ["bash", str(RUN), "head", "1", "8", "2h", "build_mat_worlds.py", "--validation", "oracle"]
-    a = u[1]
-    m = mode(a)
+    a = u[2]
+    m = mode(b, a)
     if kind == "roots":
-        return ["bash", str(RUN), "pin", "1", "8", "2h", "roots_mat.py", "--cp", a]
+        return ["bash", str(RUN), "pin", "1", "8", "2h", "roots_mat.py", "--cp", a] + bank
     if kind == "truth":
-        return ["bash", str(RUN), "pin", "1", "6", "6h", "phase1_mat.py", "--cp", a, "--mode", m, "--limit", "20"]
+        return ["bash", str(RUN), "pin", "1", "6", "6h", "phase1_mat.py", "--cp", a, "--mode", m, "--limit", "20"] + bank
     if kind == "belief":
-        return ["bash", str(RUN), "pin", "1", "8", "2h", "fn_belief_mat.py", "--cp", a, "--mode", m, "--limit", "100"]
+        return ["bash", str(RUN), "pin", "1", "8", "2h", "fn_belief_mat.py", "--cp", a, "--mode", m,
+                "--limit", "100"] + bank
     if kind == "fnbuild":
         return ["bash", str(RUN), "head", "1", "8", "6h", "build_mat_worlds.py", "--fn", a, "--mode", m,
-                "--limit", "100"]
+                "--limit", "100"] + bank
     if kind == "vplay":
         return ["bash", str(RUN), "pin", "1", "8", "2h", "play_mat_worlds.py", "--cp", a, "--arm", "V:oracle",
                 "--mode", m]
-    return ["bash", str(RUN), "pin", "1", "8", "6h", "play_mat_worlds.py", "--cp", a, "--arm", u[2], "--mode", m,
-            "--limit", "60"]
+    return ["bash", str(RUN), "pin", "1", "8", "6h", "play_mat_worlds.py", "--cp", a, "--arm", u[3], "--mode", m,
+            "--limit", "60"] + bank
 
 
 def units() -> list:
-    out = [("build", "shared"), ("vbuild", "shared")]
-    for a in anchors():
-        arms = E.MODE_ARMS[mode(a)]
-        out += [("roots", a), ("vplay", a), ("truth", a), ("belief", a), ("play", a, "F"), ("fnbuild", a),
-                ("play", a, "FN")] + [("play", a, x) for x in arms if x not in ("F", "FN")]
+    """Every unit in PRIORITY order (A1): per bank (interim first) its base world build, then its jobs by priority
+    (roots, [the identity on interim], truth, belief, F, FN worlds, FN, F+M, F+U); after every bank's base units, the
+    hide-only builds and the O−M / O−U plays (the plateau step's order 1 → 2 → 3 → 5)."""
+    out: list = []
+    for b in banks():
+        out.append(("build", b, "base"))
+        if b == "interim":
+            out.append(("vbuild", "interim"))
+        for bb, a in jobs():
+            if bb != b:
+                continue
+            arms = E.MODE_ARMS[mode(b, a)]
+            out += [("roots", b, a)] + ([("vplay", b, a)] if b == "interim" else []) + [
+                ("truth", b, a), ("belief", b, a), ("play", b, a, "F"), ("fnbuild", b, a), ("play", b, a, "FN")]
+            out += [("play", b, a, x) for x in arms if x not in ("F", "FN") and x not in E.HIDE_ARMS]
+    for b in banks():
+        if "full_hide" not in bank_modes(b):
+            continue
+        out.append(("build", b, "hide"))
+        for bb, a in jobs():
+            if bb == b and mode(b, a) == "full_hide":
+                out += [("play", b, a, x) for x in E.HIDE_ARMS]
     return out
 
 
 def wanted(u: tuple) -> int:
-    kind = u[0]
-    if kind in ("build",):
-        return len(all_ids())
+    kind, b = u[0], u[1]
+    if kind == "build":
+        return len(_shared_need(b, _base_of if u[2] == "base" else _hide_of))
     if kind in ("vbuild", "vplay"):
         return len(E.identity_ids())
     if kind == "roots":
         return 1
-    return len(want_ids(mode(u[1])))
+    return len(want_ids(b, mode(b, u[2])))
 
 
 def done_count(u: tuple) -> int:
     """How many of the unit's wanted ids have their output row (any status)."""
-    kind = u[0]
-    if kind == "build":
-        return len(all_ids() & ids_in(E.worlds_dir(None, "F"), "worlds_*.jsonl"))
-    if kind == "vbuild":
-        return len(set(E.identity_ids()) & ids_in(E.worlds_dir(None, "V:oracle"), "worlds_*.jsonl"))
-    a = u[1]
-    ids = set(E.identity_ids()) if kind == "vplay" else want_ids(mode(a))
-    if kind == "roots":
-        return int(ids <= ids_in(E.d("roots"), f"{a}.jsonl"))
-    src = {"truth": (E.rows_dir(a, "O"), "shard_*.jsonl"), "belief": (E.d("fn_belief"), f"{a}.jsonl"),
-           "fnbuild": (E.worlds_dir(a, "FN"), "worlds_*.jsonl"),
-           "vplay": (E.rows_dir(a, "V:oracle"), "rows_*.jsonl")}.get(kind)
-    if src is None:
-        src = (E.rows_dir(a, u[2]), "rows_*.jsonl")
-    return len(ids & ids_in(*src))
+    kind, b = u[0], u[1]
+    with E.using_bank(b):
+        if kind == "build":
+            need = _shared_need(b, _base_of if u[2] == "base" else _hide_of)
+            arms = sorted({x for v in need.values() for x in v})
+            built = {arm: ids_in(E.worlds_dir(None, arm), "worlds_*.jsonl") for arm in arms}
+            return sum(1 for x, v in need.items() if all(x in built[arm] for arm in v))
+        if kind == "vbuild":
+            return len(set(E.identity_ids()) & ids_in(E.worlds_dir(None, "V:oracle"), "worlds_*.jsonl"))
+        a = u[2]
+        ids = set(E.identity_ids()) if kind == "vplay" else want_ids(b, mode(b, a))
+        if kind == "roots":
+            return int(ids <= ids_in(E.d("roots"), f"{a}.jsonl"))
+        src = {"truth": (E.rows_dir(a, "O"), "shard_*.jsonl"), "belief": (E.d("fn_belief"), f"{a}.jsonl"),
+               "fnbuild": (E.worlds_dir(a, "FN"), "worlds_*.jsonl"),
+               "vplay": (E.rows_dir(a, "V:oracle"), "rows_*.jsonl")}.get(kind)
+        if src is None:
+            src = (E.rows_dir(a, u[3]), "rows_*.jsonl")
+        return len(ids & ids_in(*src))
+
+
+def unit_tag(u: tuple) -> str:
+    return "_".join(u).replace("+", "p").replace("-", "m")
 
 
 def status() -> dict:
@@ -207,10 +286,17 @@ def main():
         return
     if E.PILOT_MODE:
         raise SystemExit("the queue never runs in pilot mode")
-    if not E.bank_states() or not anchors():
-        raise SystemExit("no bank (states_mat_x26.json) or no registered anchor (ckpts.json)")
+    if not anchors():
+        raise SystemExit("no registered anchor (ckpts.json)")
+    for b in banks():
+        with E.using_bank(b):
+            if not E.bank_states():
+                raise SystemExit(f"the {b} bank has a job but no states file ({E.states_path()})")
     LOG.mkdir(parents=True, exist_ok=True)
     qlog = open(LOG / "queue_mat.log", "a")
+    done_marker = E.ARCH / "QUEUE_DONE"
+    if done_marker.exists():                      # a previous run's marker: kept, renamed aside
+        done_marker.rename(E.ARCH / f"QUEUE_DONE.{time.strftime('%Y%m%dT%H%M%S')}")
 
     def say(msg):
         qlog.write(f"{ts()} {msg}\n")
@@ -219,7 +305,8 @@ def main():
     running: dict = {}
     fails: dict = {}
     parked: set = set()
-    say(f"queue up: {a.slots} slots, anchors {anchors()}, HERE {E.HERE}")
+    say(f"queue up: {a.slots} slots, jobs {jobs()}, HERE {E.HERE}, driver {os.environ.get('HIB_MAT_DRIVER_SHA')}, "
+        f"builder {os.environ.get('HIB_MAT_HEAD')} @ {os.environ.get('HIB_MAT_HEAD_SHA')}")
     while True:
         for s, (u, p, fh) in list(running.items()):
             rc = p.poll()
@@ -254,8 +341,7 @@ def main():
                     break
             if pick is None:
                 continue
-            tag = "_".join(pick).replace("+", "p").replace("-", "m")
-            fh = open(LOG / f"{tag}.log", "a")
+            fh = open(LOG / f"{unit_tag(pick)}.log", "a")
             p = subprocess.Popen(command(pick), stdout=fh, stderr=subprocess.STDOUT, cwd=str(E.HERE))
             running[s] = (pick, p, fh)
             busy.add(pick)

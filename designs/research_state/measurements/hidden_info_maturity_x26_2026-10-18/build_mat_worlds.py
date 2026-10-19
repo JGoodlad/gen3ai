@@ -4,7 +4,7 @@ world consistency guard inside every sample; FN = Tier 1's ``fn_worlds.fn_sample
 (`fn_belief_mat.py`). ``key`` = the decision id for every arm, so the seen-mon screen is deterministic per (decision,
 constraint).
 
-    run_mat.sh head 1 8 12h build_mat_worlds.py --shared F[,F+M,F+U] --mode lean [--limit N]
+    run_mat.sh head 1 8 12h build_mat_worlds.py --shared F[,F+M,F+U] --mode lean [--limit N] [--bank interim|plateau]
     run_mat.sh head 1 8 12h build_mat_worlds.py --fn x26_025M --mode lean [--limit N]
     run_mat.sh head 1 8 2h  build_mat_worlds.py --validation oracle                       # the identity worlds
 
@@ -44,12 +44,16 @@ def cpu_seconds() -> float:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--shared", default=None, help="comma list of shared arms (F, F+M, F+U)")
+    ap.add_argument("--shared", default=None, help="comma list of shared arms (F, F+M, F+U, O-M, O-U)")
     ap.add_argument("--fn", default=None, help="an anchor label: build its FN worlds")
     ap.add_argument("--validation", default=None, help="an information-lever spec (e.g. oracle) for the identity check")
-    ap.add_argument("--mode", choices=("lean", "full"), default="lean")
+    ap.add_argument("--mode", choices=tuple(E.MODE_RANK), default="lean")
+    ap.add_argument("--bank", default="interim", choices=sorted(E.BANKS))
     ap.add_argument("--limit", type=int, default=None)
     a = ap.parse_args()
+    E.set_bank(a.bank)
+    if a.validation and a.bank != "interim":
+        raise SystemExit("the identity worlds are built on the interim bank only (A1)")
     if sum(x is not None for x in (a.shared, a.fn, a.validation)) != 1:
         raise SystemExit("name exactly one of --shared, --fn, --validation")
     E.check_head()
@@ -60,6 +64,8 @@ def main():
     from main.value_search.worlds import WorldError, WorldSampler
 
     sha = os.environ["HIB_MAT_CHECKOUT_HEAD"]
+    if not E.PILOT_MODE and not sha.startswith(E.BUILDER_SHA):
+        raise SystemExit(f"the builder checkout is at {sha}, not the registered builder {E.BUILDER_SHA} (§12.13.7 (f))")
     bank = load_bank(E.bank_path())
     dec = {d["id"]: d for d in bank.decisions}
     f_sampler = WorldSampler(reveal="off", max_tries=60)
@@ -81,7 +87,7 @@ def main():
         ids = [x for x in E.mode_ids(a.mode) if x in beliefs]          # a state builds once its belief row exists
         label = a.fn
     else:
-        want = [x for x in ("F", "F+U", "F+M") if x in a.shared.split(",")]
+        want = [x for x in E.SHARED_BUILD_ORDER if x in a.shared.split(",")]
         if set(a.shared.split(",")) - set(want):
             raise SystemExit(f"unknown shared arms {sorted(set(a.shared.split(',')) - set(want))}")
         samplers = {lab: (f_sampler if lab == "F" else WorldSampler(reveal=E.ARMS[lab][0], max_tries=60)) for lab in want}

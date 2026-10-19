@@ -2,7 +2,7 @@
 (the pilot's Phase 2c read, `det_worlds.root_belief(moves=True)` + `move_belief.py`, IMPORTED; Tier 1's `fn_belief.py`
 row format, so Tier 1's `fn_worlds.fn_sampler` reads it unchanged on the HEAD side).
 
-    run_mat.sh pin 1 8 2h fn_belief_mat.py --cp x26_025M --mode lean [--limit N]
+    run_mat.sh pin 1 8 2h fn_belief_mat.py --cp x26_025M --mode lean [--limit N] [--bank interim|plateau]
 
 Rows: ``<archive>/fn_belief/<label>.jsonl``: ``{"id", "cp", "pin", "species": {species id: π}, "moves": {"seen": {num:
 {move id: π}}, "hyp": {num: {move id: π}}}}``. Resumable; ``--limit`` caps NEW work.
@@ -21,9 +21,11 @@ E.add_paths()
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cp", required=True)
-    ap.add_argument("--mode", choices=("lean", "full"), required=True)
+    ap.add_argument("--mode", choices=tuple(E.MODE_RANK), required=True)
+    ap.add_argument("--bank", default="interim", choices=sorted(E.BANKS))
     ap.add_argument("--limit", type=int, default=None)
     a = ap.parse_args()
+    E.set_bank(a.bank)
     E.check_pin()
     if a.cp not in E.registered_ckpts():
         raise SystemExit(f"{a.cp}: not a registered anchor")

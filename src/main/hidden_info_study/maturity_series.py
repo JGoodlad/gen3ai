@@ -11,6 +11,9 @@ whose pin already holds the gender draw pad `98146ddb` plays its worlds at the p
                          checkpoint file whose step lies in ``[m, m + every)``. A multiple with no file in that window
                          has no anchor (reported, never filled from a neighbour).
 - :func:`pending_anchors`   the anchors the series has not registered yet (the trigger's "new work").
+- :func:`plateau_anchor`    the series' DECLARED plateau checkpoint (§10.5's criterion; a NAMED anchor off the 25M
+                         grid, labelled ``<series>_P<step in M>M``): the exact file at the declared step, its sha256 checked
+                         against the declaration (PREREGISTRATION amendment A1 of the X26 battery).
 - :func:`copy_checkpoint`   a READ-ONLY copy out of the run dir, sha256 of the source before and after and of the copy,
                          the copy made read-only; refuses a destination under the run archive.
 - :func:`select_new_work`   ``--limit`` caps NEW work only (the E2 fix `6a1cf301`: capping the id list first re-picks
@@ -44,6 +47,9 @@ class Series:
     pad: str | None = None
     first: int = ANCHOR_EVERY
     every: int = ANCHOR_EVERY
+    #: the DECLARED plateau checkpoint's exact step and sha256 (None = no plateau declared)
+    plateau: int | None = None
+    plateau_sha256: str | None = None
 
     def play_commit(self) -> str:
         return self.pad or self.pin
@@ -51,7 +57,10 @@ class Series:
 
 #: the registered series (a new run is one entry; its pin is the commit every one of its checkpoints was saved at)
 SERIES: dict[str, Series] = {
-    "x26": Series(name="x26", run="rb_x26_s2601", pin="9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"),
+    # P* = 280M, declared by the orchestrator 2026-10-19 (the plateau step; PREREGISTRATION amendment A1)
+    "x26": Series(name="x26", run="rb_x26_s2601", pin="9c0334890d05785bbfadcb2ecbe3fe2d548efe9b",
+                  plateau=280_000_170,
+                  plateau_sha256="814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"),
 }
 
 
@@ -95,6 +104,27 @@ def anchors(files: Sequence[tuple[int, Path]], every: int = ANCHOR_EVERY,
             out[m] = hit
         m += every
     return out
+
+
+def plateau_label(series: Series) -> str:
+    """``x26_P280M``: the series and the plateau step in whole millions (rounded down), marked ``P`` so it never
+    collides with a 25M-grid label."""
+    if series.plateau is None:
+        raise SeriesError(f"{series.name}: no plateau declared")
+    return f"{series.name}_P{series.plateau // 1_000_000:03d}M"
+
+
+def plateau_anchor(files: Sequence[tuple[int, Path]], series: Series) -> tuple[str, tuple[int, Path]]:
+    """(label, (step, path)) of the series' DECLARED plateau checkpoint: the file at EXACTLY the declared step (never
+    the nearest one) whose sha256 equals the declaration."""
+    lab = plateau_label(series)
+    hit = next(((s, p) for s, p in files if s == series.plateau), None)
+    if hit is None:
+        raise SeriesError(f"{series.name}: no checkpoint file at the declared plateau step {series.plateau}")
+    got = sha256_file(hit[1])
+    if got != series.plateau_sha256:
+        raise SeriesError(f"{hit[1]}: sha256 {got} is not the declared plateau's {series.plateau_sha256}")
+    return lab, hit
 
 
 def pending_anchors(files: Sequence[tuple[int, Path]], series: Series,

@@ -136,3 +136,92 @@ def test_r_maturity_needs_two_distinct_anchors():
         R.r_maturity([_read("a", 25, bt, g), _read("b", 25, bt, g)])
     out = R.r_maturity([_read("a", 25, bt, g), _read("b", 50, bt, g)])
     assert out["BELIEF"]["verdict"] == "NOT READ" and out["FRONTIER"]["verdict"] == "NOT READ"
+
+
+# ------------------------------------------------------------------------------------------------
+# amendment A1 (2026-10-19): CONVERGED NOT READ on one bank, STILL-MOVING, R3 at one anchor, BANK-DEPENDENT
+# ------------------------------------------------------------------------------------------------
+
+def test_a1_converged_not_read_on_one_bank_and_still_moving():
+    battles = _bank()
+    bt = R.Boot(battles)
+    g0 = 0.07 + np.random.default_rng(7).normal(0, 0.18, size=len(battles))
+    reads = [_read("a", 25, bt, g0), _read("b", 100, bt, g0 + 1e-4), _read("c", 225, bt, g0)]
+    same = R.r_maturity(reads, converged_on_this_bank=False)
+    assert same["CONVERGED"]["verdict"].startswith("NOT READ (amendment A1")       # the registered rule would say CONVERGED
+    assert R.r_maturity(reads)["CONVERGED"]["verdict"] == "CONVERGED"
+    assert same["STILL-MOVING"]["verdict"] == "NOT DETECTED" and same["STILL-MOVING"]["between"] == ["b", "c"]
+    moving = R.r_maturity([_read("a", 25, bt, g0), _read("b", 100, bt, g0), _read("c", 225, bt, g0 - 0.05)],
+                          converged_on_this_bank=False)
+    assert moving["STILL-MOVING"]["verdict"] == "STILL-SHRINKING"
+    up = R.r_maturity([_read("b", 100, bt, g0), _read("c", 225, bt, g0 + 0.05)])
+    assert up["STILL-MOVING"]["verdict"] == "STILL-GROWING"
+
+
+def _r3_imps(n, rng, u_rev, u_hide):
+    """Per-state IMPs with a planted reveal-only (Δs) and hide-only (Δn) U margin."""
+    f = rng.normal(0.0, 0.1, n)
+    o = f + 0.07 + rng.normal(0, 0.02, n)
+    return {"O": o, "F": f, "F+M": f + 0.01 + rng.normal(0, 0.01, n), "F+U": f + 0.01 + u_rev + rng.normal(0, 0.01, n),
+            "O-U": o - 0.03 - u_hide + rng.normal(0, 0.01, n), "O-M": o - 0.03 + rng.normal(0, 0.01, n)}
+
+
+def test_r3_read_verdicts_on_planted_margins():
+    battles = _bank(150, 2)
+    bt = R.Boot(battles)
+    rng = np.random.default_rng(3)
+    assert R.r3_read(bt, _r3_imps(len(battles), rng, 0.02, 0.02))["verdict"] == "U-FIRST"
+    assert R.r3_read(bt, _r3_imps(len(battles), rng, -0.02, -0.02))["verdict"] == "M-FIRST"
+    shared = R.r3_read(bt, _r3_imps(len(battles), rng, 0.02, -0.02))
+    assert shared["verdict"] == "SHARED" and shared["label"] == "SHARED (SIDES-DISAGREE)"
+    x = _r3_imps(len(battles), rng, 0.0, 0.0)
+    x = {k: (v if k in ("O", "F") else x["F"] if k.startswith("F") else x["O"]) for k, v in x.items()}
+    assert R.r3_read(bt, x)["verdict"] == "NOT DETECTED"                 # no class detected, no margin
+    sel = np.arange(len(battles)) % 2 == 0
+    assert R.r3_read(bt, _r3_imps(len(battles), rng, 0.02, 0.02), sel)["reveal_only Δs = IMP(F+U) - IMP(F+M)"]["n"] \
+        == int(sel.sum())
+
+
+def test_r3_read_equals_e2s_registered_read():
+    """The plateau battery's R3 is E2's: on the same per-state IMPs, E2's ``read_frame`` (one checkpoint, Tier 1's
+    unstratified Boot) gives the same verdict, qualifiers and numerators."""
+    import sys
+
+    e2 = repo_path("designs", "research_state", "measurements", "hidden_info_e2_competent_2026-10-16")
+    sys.path.insert(0, str(e2))
+    try:
+        spec = importlib.util.spec_from_file_location("read_e2_for_rules_test", e2 / "read_e2.py")
+        RE = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(RE)
+    finally:
+        sys.path.remove(str(e2))
+    battles = _bank(150, 2)
+    rng = np.random.default_rng(11)
+    for u_rev, u_hide in ((0.02, 0.02), (0.012, -0.002), (-0.015, 0.0)):
+        x = _r3_imps(len(battles), rng, u_rev, u_hide)
+        x["O-M"][4] = np.nan                                              # a hide-only arm not ok on one state
+        recs = [{"battle": b, "cp": "c", "src": {s: ({"status": "ok", "imp": {"Z": float(v[i])}}
+                                                     if np.isfinite(v[i]) else {"status": "excluded"})
+                                                 for s, v in x.items()}} for i, b in enumerate(battles)]
+        e2r = RE.read_frame(recs, False, "Z")
+        ours = R.r3_read(R.Boot(battles), x)
+        assert ours["verdict"] == e2r["verdict"] and ours["label"] == e2r["label"]
+        assert ours["qualifiers"] == e2r["qualifiers"]
+        for a, b in (("reveal_only Δs = IMP(F+U) - IMP(F+M)", "reveal_only Δs = IMP(F+U) − IMP(F+M)"),
+                     ("hide_only Δn = IMP(O-M) - IMP(O-U)", "hide_only Δn = IMP(O−M) − IMP(O−U)")):
+            assert ours[a]["mean"] == pytest.approx(e2r[b]["mean"], abs=1e-5)
+            assert ours[a]["ci"] == pytest.approx(e2r[b]["ci"], abs=1e-5)
+
+
+def test_bank_dependent_is_the_registered_disagreement():
+    assert R.bank_dependent("GAP", "GAP-SHRINKS", "GAP-GROWS")
+    assert not R.bank_dependent("GAP", "GAP-SHRINKS", "NOT DETECTED")
+    assert not R.bank_dependent("GAP", "GAP-SHRINKS", "GAP-SHRINKS")
+    assert R.bank_dependent("BELIEF", "BELIEF-RISES", "NOT DETECTED")
+    assert R.bank_dependent("BELIEF", "NOT DETECTED", "BELIEF-RISES")
+    assert not R.bank_dependent("BELIEF", "NOT DETECTED", "NOT DETECTED")
+    assert R.bank_dependent("R3", "U-FIRST", "M-FIRST") and not R.bank_dependent("R3", "U-FIRST", "SHARED")
+    assert R.bank_dependent("FRONTIER", "FRONTIER-MOVES-EARLIER", "FRONTIER-RECEDES")
+    assert not R.bank_dependent("FRONTIER", "NOT READ (LEAN)", "FRONTIER-RECEDES")
+    with pytest.raises(ValueError):
+        R.bank_dependent("TODAY", "a", "b")

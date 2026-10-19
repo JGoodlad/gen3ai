@@ -80,3 +80,15 @@ def test_lean_is_nested_in_full():
     assert MB.ids_sha(MB.flat(lean)) == MB.ids_sha(reversed(MB.flat(lean)))
     with pytest.raises(MB.BankShort):
         MB.nested_subset(full, 17)
+
+
+def test_draw_never_takes_an_excluded_battle():
+    cands = _cands(80)
+    targets = {(b, s): 4 for b in MB.K_BINS for s in ("snap", "bot")}
+    base = MB.draw(cands, targets, SALT, ("snap", "bot"))
+    taken = {c.battle for c in cands if c.id in set(MB.flat(base))}
+    sup = MB.draw(cands, targets, SALT, ("snap", "bot"), exclude_battles=taken)
+    sup_battles = {c.battle for c in cands if c.id in set(MB.flat(sup))}
+    assert sup_battles and not (sup_battles & taken)            # the supplement shares no battle with the first bank
+    with pytest.raises(MB.BankShort):                            # exclusion is never relaxed to fill a cell
+        MB.draw(cands, targets, SALT, ("snap", "bot"), exclude_battles={c.battle for c in cands[: 8 * 75]})

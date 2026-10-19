@@ -4,7 +4,8 @@ with a built world row: every legal action played to the END in each of the 8 wo
 checkpoint GREEDY on both sides, with the searched side's value trace, plus the honest one-ply critic (world j, critic
 seed 40 + j).
 
-    run_mat.sh pin 1 8 6h play_mat_worlds.py --cp x26_025M --arm F|FN|F+M|F+U|V:oracle --mode lean [--limit N]
+    run_mat.sh pin 1 8 6h play_mat_worlds.py --cp x26_025M --arm F|FN|F+M|F+U|O-M|O-U|V:oracle \
+        --mode lean [--limit N] [--bank interim|plateau]
 
 One fsync'd JSONL row per state in ``<archive>/rows/<label>/<arm>/rows_0_of_1.jsonl``; resumable; ``--limit`` caps NEW
 work. A state whose world row is an exclusion or a defect gets an ``ok: false`` row carrying the builder's reason. No
@@ -25,14 +26,18 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cp", required=True)
     ap.add_argument("--arm", required=True)
-    ap.add_argument("--mode", choices=("lean", "full"), required=True)
+    ap.add_argument("--mode", choices=tuple(E.MODE_RANK), required=True)
+    ap.add_argument("--bank", default="interim", choices=sorted(E.BANKS))
     ap.add_argument("--limit", type=int, default=None)
     a = ap.parse_args()
+    E.set_bank(a.bank)
     E.check_pin()
     if a.cp not in E.registered_ckpts():
         raise SystemExit(f"{a.cp}: not a registered anchor")
     if a.arm not in E.ARMS and not a.arm.startswith("V:"):
         raise SystemExit(f"unknown arm {a.arm}")
+    if a.arm.startswith("V:") and a.bank != "interim":
+        raise SystemExit("the identity is played on the interim bank only (A1)")
     import common as C  # the pilot's: clock, cpu seconds
     from run_det_playouts import J as PILOT_J, one_state
     from run_playouts import Fwd

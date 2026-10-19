@@ -4,7 +4,7 @@ the pilot's 40 shared seeds (`truth.turn_seeds(id, 48)`: leaf 0..15, referee 16.
 greedy on both sides in the true world, the searched side's value trace, and the critic's one-ply successors on seeds
 40..47.
 
-    run_mat.sh pin 1 6 6h phase1_mat.py --cp x26_025M --mode lean [--limit N] [--ids FILE]
+    run_mat.sh pin 1 6 6h phase1_mat.py --cp x26_025M --mode lean [--limit N] [--bank interim|plateau] [--ids FILE]
 
 Rows: ``<archive>/rows/<label>/O/shard_0_of_1.jsonl``, one fsync'd row per state; resumable; ``--limit`` caps NEW work
 (``maturity_series.select_new_work``). No outcome is printed (progress counts only).
@@ -23,10 +23,12 @@ E.add_paths()
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cp", required=True)
-    ap.add_argument("--mode", choices=("lean", "full"), required=True)
+    ap.add_argument("--mode", choices=tuple(E.MODE_RANK), required=True)
+    ap.add_argument("--bank", default="interim", choices=sorted(E.BANKS))
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--ids", default=None)
     a = ap.parse_args()
+    E.set_bank(a.bank)
     E.check_pin()
     if a.cp not in E.registered_ckpts():
         raise SystemExit(f"{a.cp}: not a registered anchor")

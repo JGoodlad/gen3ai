@@ -94,3 +94,27 @@ def test_select_new_work_caps_new_work_not_the_id_list():
     assert [x for x in ids[:3] if x not in done] == []      # what the defective order would have worked on
     assert M.select_new_work(ids, done, None) == ids[3:]
     assert M.select_new_work(ids, {x: 1 for x in ids}, 5) == []
+
+
+def test_plateau_anchor_is_the_exact_declared_file_with_its_sha(tmp_path):
+    import dataclasses
+
+    run = _ckpts(tmp_path, [275000010, 280000170, 281000000])
+    files = M.checkpoint_files(run)
+    p = run / "checkpoints" / "checkpoint_280000170_steps.zip"
+    s = dataclasses.replace(M.SERIES["x26"], plateau=280000170, plateau_sha256=M.sha256_file(p))
+    lab, (step, path) = M.plateau_anchor(files, s)
+    assert lab == "x26_P280M" and step == 280000170 and path == p
+    assert lab not in {M.anchor_label("x26", m) for m in M.anchors(files)}      # never a 25M-grid label
+    with pytest.raises(M.SeriesError, match="not the declared"):
+        M.plateau_anchor(files, dataclasses.replace(s, plateau_sha256="0" * 64))
+    with pytest.raises(M.SeriesError, match="no checkpoint file at the declared"):
+        M.plateau_anchor(files, dataclasses.replace(s, plateau=280000171))       # never the nearest file
+    with pytest.raises(M.SeriesError, match="no plateau declared"):
+        M.plateau_label(dataclasses.replace(s, plateau=None))
+
+
+def test_x26_declares_its_plateau_checkpoint():
+    s = M.SERIES["x26"]
+    assert s.plateau == 280000170 and M.plateau_label(s) == "x26_P280M"
+    assert s.plateau_sha256 == "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"

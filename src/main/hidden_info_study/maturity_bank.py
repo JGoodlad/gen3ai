@@ -10,6 +10,9 @@ battle already holds ``per_battle_per_bin`` state(s) in this k bin or ``per_batt
 cells processed so far), until the cell holds its target. A cell that cannot be filled REFUSES (:class:`BankShort`);
 the rule is never relaxed. A battle belongs to one stratum (its opponent), so strata never compete for a battle.
 
+A SUPPLEMENTARY bank (the plateau bank, PREREGISTRATION §2.5 of the X26 battery) names ``exclude_battles``: every
+candidate of an excluded battle (another bank's) is dropped BEFORE the draw, so the two banks share no battle.
+
 The LEAN subset is the FIRST ``n`` states of each cell in that same selection order (:func:`nested_subset`), so a LEAN
 bank is a subset of the FULL one and a later FULL read re-uses every LEAN row.
 
@@ -61,10 +64,12 @@ def order_key(salt: str, did: str) -> str:
 
 
 def draw(cands: Iterable[Candidate], targets: Mapping[Cell, int], salt: str, strata: Sequence[str],
-         per_battle_per_bin: int = 1, per_battle: int = 3) -> dict[Cell, list[str]]:
+         per_battle_per_bin: int = 1, per_battle: int = 3,
+         exclude_battles: Iterable[str] = ()) -> dict[Cell, list[str]]:
     """{(k bin, stratum): [ids in SELECTION order]} under the module's rule. ``targets`` names every cell drawn;
-    ``strata`` fixes their order within a k bin."""
-    cs = list(cands)
+    ``strata`` fixes their order within a k bin; a candidate of a battle in ``exclude_battles`` is never drawn."""
+    ex = set(exclude_battles)
+    cs = [c for c in cands if c.battle not in ex]
     ids = [c.id for c in cs]
     if len(ids) != len(set(ids)):
         raise ValueError("duplicate candidate ids")

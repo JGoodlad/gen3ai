@@ -5,6 +5,11 @@ each scorer's IMP; for F, the M8 belief-dose curves (§6.9) that TODAY reads. Pu
 copied, so every number is computed exactly as Tier 1 computed it.
 
     python -I score_mat.py [--partial]      -> <archive>/score/table.pkl (+ its sha256 in table.sha256)
+    python -I score_mat.py --bank plateau --tag plateau_step   -> <archive>/plateau/score/plateau_step.pkl (A1)
+
+A1 (2026-10-19): ``--bank`` scores one bank (its namespace; each anchor at ITS mode on that bank, every anchor that
+holds the bank by default), the hide-only arms O−M / O−U are scored like every arm, and ``--tag`` names the table so
+the LEAN read's frozen ``table.pkl`` is never overwritten.
 
 ``--partial`` prints counts only (a progress read; writes nothing). No outcome is printed in either mode.
 """
@@ -33,10 +38,13 @@ KEEP_SCORERS = ("LEAF-K8", "LEAF-K4", "TRUNC-4-K8", "CRITIC")
 def score_anchor(label: str, partial: bool) -> dict:
     meta = E.bank_states()
     reg = E.registered_ckpts()[label]
+    mode = E.anchor_mode(label)
+    if mode is None:
+        raise SystemExit(f"{label} is not scored on the {E.bank().name} bank")
     roots = E.read_dir(E.d("roots"), f"{label}.jsonl")
-    ids = E.mode_ids(reg["mode"])
+    ids = E.mode_ids(mode)
     truth = E.read_dir(E.rows_dir(label, "O"), "shard_*.jsonl")
-    arms = E.MODE_ARMS[reg["mode"]]
+    arms = E.MODE_ARMS[mode]
     rows = {arm: E.read_dir(E.rows_dir(label, arm), "rows_*.jsonl") for arm in arms}
     recs = []
     cnt = {"states": len(ids), "no_root": 0, "tie": 0, "no_truth": 0, "truth_refused": 0,
@@ -91,25 +99,28 @@ def score_anchor(label: str, partial: bool) -> dict:
     if not partial and (cnt["no_root"] or cnt["no_truth"]):
         raise SystemExit(f"{label}: {cnt['no_root']} states without a root, {cnt['no_truth']} without a truth row "
                          "(use --partial)")
-    return {"label": label, "step": reg["step"], "mode": reg["mode"], "recs": recs, "counts": cnt}
+    return {"label": label, "step": reg["step"], "mode": mode, "bank": E.bank().name, "recs": recs, "counts": cnt}
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--partial", action="store_true")
-    ap.add_argument("--cp", default=None, help="comma list of anchors (default: every registered anchor)")
+    ap.add_argument("--cp", default=None, help="comma list of anchors (default: every anchor that holds the bank)")
+    ap.add_argument("--bank", default="interim", choices=sorted(E.BANKS))
+    ap.add_argument("--tag", default="table", help="the table's name under <bank>/score/ (default: the LEAN read's)")
     a = ap.parse_args()
-    labels = a.cp.split(",") if a.cp else sorted(E.registered_ckpts())
+    E.set_bank(a.bank)
+    labels = a.cp.split(",") if a.cp else sorted(x for x in E.registered_ckpts() if E.anchor_mode(x) is not None)
     tab = {lab: score_anchor(lab, a.partial) for lab in labels}
     if a.partial:
         print(json.dumps({lab: {"scored": len(t["recs"]), **t["counts"]} for lab, t in tab.items()}, indent=1,
                          sort_keys=True))
         return
     b = pickle.dumps(tab, protocol=4)
-    out = E.d("score") / "table.pkl"
+    out = E.d("score") / f"{a.tag}.pkl"
     out.write_bytes(b)
     sha = hashlib.sha256(b).hexdigest()
-    (E.d("score") / "table.sha256").write_text(sha + "  table.pkl\n")
+    (E.d("score") / f"{a.tag}.sha256").write_text(f"{sha}  {a.tag}.pkl\n")
     print("table:", out, sha)
 
 

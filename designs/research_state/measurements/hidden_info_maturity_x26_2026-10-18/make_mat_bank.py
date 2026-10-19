@@ -3,7 +3,11 @@ playout: the draw is k- and opponent-stratified (``maturity_bank.draw``), never 
 same object for every checkpoint it is scored at. No outcome of any branch is read (each trace's own recorded outcome
 is stamped, as the pilot's `make_states.py` stamps it).
 
-    run_mat.sh pin 1 14 3h make_mat_bank.py [--extension] [--pilot N]
+    run_mat.sh pin 1 14 3h make_mat_bank.py [--bank interim|plateau] [--extension] [--pilot N]
+
+``--bank plateau`` (amendment A1; PREREGISTRATION §2.5): the SAME rule on P*'s three newest cycles
+(``mat_common.BANKS["plateau"]``) with its own salt, every battle of the interim bank EXCLUDED before the draw, written
+to ``<archive>/plateau/`` and ``states_mat_x26_plateau.json``.
 
 Steps:
   1. POOL: every trace of every roster opponent (bots and own-snapshot sentinels; never ``ext_``) of the COPIED eval
@@ -38,7 +42,7 @@ RULE = ("PREREGISTRATION §2 (design_hidden_info_binding.md §12.13.2 / §12.13.
         "cycles {cycles} (every non-ext opponent; free move round, turn 2-40, >= 3 legal, gate ① passed); per k bin in the "
         "order 1-2, 3, 4, 5, 6 and within it per stratum (snapshot, then bot), candidates in sha256('{salt}' + id) order, "
         "at most 1 state per battle per k bin and 3 per battle in all, until the cell holds {full}; LEAN = the first "
-        "{lean} of each cell in selection order")
+        "{lean} of each cell in selection order{exclusion}")
 
 
 def patch_categories() -> None:
@@ -88,7 +92,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--extension", action="store_true")
     ap.add_argument("--pilot", type=int, default=0)
+    ap.add_argument("--bank", default="interim", choices=sorted(E.BANKS))
     a = ap.parse_args()
+    bk = E.set_bank(a.bank)
+    if a.pilot and bk.name != "interim":
+        raise SystemExit("the pilot draws beside the interim bank only")
+    if E.states_path().exists():
+        raise SystemExit(f"{E.states_path()} exists: a frozen bank is never redrawn")
     E.check_pin()
     t_wall = time.monotonic()
     import common as C  # the pilot's (clock decode, cpu seconds)
@@ -100,7 +110,10 @@ def main():
     from main.policy_spectrum.replay import _viewer_decisions, core_events_identity
 
     patch_categories()
-    cycles = E.DRAW_CYCLES + ((E.EXTENSION_CYCLE,) if a.extension else ())
+    cycles = bk.cycles + ((bk.extension,) if a.extension else ())
+    excluded_battles = set()
+    for other in bk.exclude:                    # §2.5: every battle of an earlier bank is excluded
+        excluded_battles |= {e["battle"] for e in json.loads(E.states_path(other).read_text())["states"].values()}
     pk, capture = picks(cycles)
     print(f"[mat bank] {len(pk)} traces from {list(cycles)}", flush=True)
     battles, arrays, strata = [], [], []
@@ -153,8 +166,10 @@ def main():
 
     cands = [MB.Candidate(id=r["id"], battle=r["battle"], k=k, stratum=strata[bi]) for bi, r, k, _st in pool]
     targets = {(kb, s): E.FULL_PER_CELL for kb in MB.K_BINS for s in E.STRATA}
+    n_excluded = sum(1 for c in cands if c.battle in excluded_battles)
     try:
-        full = MB.draw(cands, targets, E.STATES_SALT, E.STRATA, E.PER_BATTLE_PER_BIN, E.PER_BATTLE)
+        full = MB.draw(cands, targets, bk.salt, E.STRATA, E.PER_BATTLE_PER_BIN, E.PER_BATTLE,
+                       exclude_battles=excluded_battles)
     except MB.BankShort as exc:
         avail = Counter((MB.k_bin(c.k), c.stratum) for c in cands)
         print(json.dumps({"short": str(exc), "candidates_per_cell": {f"{k}|{s}": n for (k, s), n in avail.items()}}),
@@ -178,9 +193,14 @@ def main():
     dec_rows.sort(key=lambda r: r["id"])
     keep_b = sorted({pool[pos[x]][0] for x in extra})
     kept = [battles[i] for i in keep_b]
-    rule = RULE.format(cycles=list(cycles), salt=E.STATES_SALT, full=E.FULL_PER_CELL, lean=E.LEAN_PER_CELL)
+    excl = (f"; every battle of the {', '.join(bk.exclude)} bank ({len(excluded_battles)} battles) excluded before the "
+            "draw" if bk.exclude else "")
+    rule = RULE.format(cycles=list(cycles), salt=bk.salt, full=E.FULL_PER_CELL, lean=E.LEAN_PER_CELL, exclusion=excl)
+    if set(extra) & {x for o in bk.exclude for x in json.loads(E.states_path(o).read_text())["states"]} or \
+            {extra[x]["battle"] for x in extra} & excluded_battles:
+        raise SystemExit("the drawn bank shares a state or a battle with an excluded bank")
     manifest = {"schema": B.BANK_SCHEMA, "built_at_commit": E.series().pin,
-                "study": "hidden_info_maturity_x26_2026-10-18", "selection_rule": rule,
+                "study": "hidden_info_maturity_x26_2026-10-18" + ("" if bk.name == "interim" else f" ({bk.name} bank)"), "selection_rule": rule,
                 "gate1": {**{k_: v_ for k_, v_ in gate.items() if k_ != "failures"}, "failures": len(gate["failures"]),
                           "encoder": core_events_identity()},
                 "counts": B.summarize(dec_rows), "content_sha256": B.content_sha(kept, dec_rows)}
@@ -190,17 +210,19 @@ def main():
            "k": np.array([k for _, _, k, _ in pool]), "turn": np.array([int(r["turn"]) for _, r, _, _ in pool]),
            "material": np.array([int(st["alive_ours"] + st["alive_theirs"]) for _, _, _, st in pool]),
            "stratum": np.array([strata[bi] for bi, _, _, _ in pool])}
-    np.savez_compressed(E.ARCH / "census.npz", **cen)
+    np.savez_compressed(E.census_path(), **cen)
     avail = Counter((MB.k_bin(c.k), c.stratum) for c in cands)
     by = lambda key, ids=None: dict(sorted(Counter(str(extra[x][key]) for x in (ids or extra)).items()))  # noqa: E731
-    doc = {"series": E.SERIES_NAME, "run": E.series().run, "pin": E.series().pin, "rule": rule,
+    doc = {"series": E.SERIES_NAME, "run": E.series().run, "pin": E.series().pin, "rule": rule, "bank_name": bk.name,
+           "salt": bk.salt, "excluded_banks": list(bk.exclude), "excluded_battles": len(excluded_battles),
+           "excluded_candidates": n_excluded,
            "extension": a.extension, "cycles": list(cycles), "capture": capture, "traces": len(pk),
            "gate1": manifest["gate1"], "turn_decode_gate": turn_gate, "eligible_pool": len(pool),
            "candidates_per_cell": {f"{k}|{s}": avail[(k, s)] for k in MB.K_BINS for s in E.STRATA},
            "per_cell_full": E.FULL_PER_CELL, "per_cell_lean": E.LEAN_PER_CELL,
            "sampled": len(extra), "lean": len(lean_ids), "battles": len(kept),
            "bank": str(E.bank_path()), "bank_content_sha256": manifest["content_sha256"],
-           "census_sha256": E.src_module("maturity_series").sha256_file(E.ARCH / "census.npz"),
+           "census_sha256": E.src_module("maturity_series").sha256_file(E.census_path()),
            "states_sha256": MB.ids_sha(extra), "lean_states_sha256": MB.ids_sha(lean_ids),
            "descriptive": {"full": {f: by(f) for f in ("stratum", "k_bin", "turn_bin", "mat_bin", "outcome")},
                            "lean": {f: by(f, sorted(lean_ids)) for f in ("stratum", "k_bin", "turn_bin", "mat_bin",

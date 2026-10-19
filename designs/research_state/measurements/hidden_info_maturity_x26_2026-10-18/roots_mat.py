@@ -46,7 +46,9 @@ def roots(bank, run_core, viewer_decisions):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cp", required=True)
+    ap.add_argument("--bank", default="interim", choices=sorted(E.BANKS))
     a = ap.parse_args()
+    E.set_bank(a.bank)
     E.check_pin()
     if a.cp not in E.registered_ckpts():
         raise SystemExit(f"{a.cp}: not a registered anchor")
