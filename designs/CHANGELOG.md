@@ -14899,3 +14899,18 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
 - **Docs.** `designs/endstate/program_rust_core.md` T2 DESIGN "GROUPED SLOTS" + decision row;
   `designs/endstate/design_compute_efficiency.md` §1.6 + decision row; `designs/training/rust_collector.md`;
   `designs/ops/flag_census.md`; `EXPERIMENT_BACKLOG.md` X45.
+
+## 2026-10-19 — the collector's and eval executor's lifecycle checks SEE T2's reserved growth (`gen3_t2_reserved_after_freeze_v1`, downstream; no model / config / obs / signature change)
+
+- **The defect (TECH-DEBT P1, item 2).** `RustCollector.check_lifecycle` and `RustEvalCore.check_lifecycle` read only T2's
+  three original counters, so T2's reserved-byte growth (the one acquisition visible under `expandable_segments:True`)
+  never reached them.
+- **The change.** ONE implementation, `agents.inference.service.reserved_growth`: `note_growth` (count, warn at growths
+  1, 2, 4, 8, …, or return the violation when armed) is called by T2's `_frozen_guard`, and `ReservedGrowthWatch` (the
+  bytes T2 counted since the last check) by both `check_lifecycle`s. The switch `RESERVED_GROWTH_POISONS` moved there from
+  `service.py` and stays OFF: a growth is counted, warned and returned (`cuda_reserved_bytes_after_freeze`,
+  `cuda_reserved_growths_after_freeze` in each check's dict), never fatal. The segment / compile / capture checks are unchanged.
+- **Tests.** `rust_rollout/lifecycle_reserved_test.py` (CPU, mocked counters): the helper's doubling schedule and armed
+  return, the watch's deltas, and for both sites warn-not-raise, raise-once-armed, and a segment still raising; the
+  four site tests fail on revert. Docs: `endstate/program_rust_core.md`, `training/rust_collector.md`,
+  `training/learner_gates.md`, the `TECH_DEBT_BACKLOG.md` row.

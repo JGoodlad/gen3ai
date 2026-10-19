@@ -16,7 +16,6 @@ the arenas, valid until the next ``flush()`` (a later read is a `CallerError`, n
 from __future__ import annotations
 
 import contextlib
-import sys
 import time
 from dataclasses import dataclass
 import re
@@ -26,6 +25,7 @@ import numpy as np
 import torch
 
 from agents.action.ordering_integrity import check_obs_move_order
+from agents.inference.service import reserved_growth as RG
 from agents.inference.service.engine import Engine, PlanItem
 from agents.inference.service.parity import ParityReport, fixture_rows, gate_slot, judge
 from agents.inference.service.slots import SlotGroup
@@ -113,14 +113,6 @@ def _alloc_marks(device: torch.device) -> Tuple[int, int]:
     return int(st.get("segment.all.allocated", 0)), int(st.get("reserved_bytes.all.allocated", 0))
 
 
-#: ``gen3_t2_reserved_after_freeze_v1``: reserved-byte growth across a frozen call is COUNTED and
-#: WARNED, never poisoned — it has not yet been verified on a leased GPU that a healthy flush leaves
-#: ``reserved_bytes.all.allocated`` unchanged on the ``graph``, ``aot`` and ``eager`` backends under
-#: ``expandable_segments:True`` (``service_cuda_test``'s expandable test is that check). Arm it (a
-#: ``LifecycleViolation`` like the segment count) only after that test passes on the card.
-RESERVED_GROWTH_POISONS = False
-
-
 def _dynamo_graphs() -> int:
     from agents.model.compile_control import dynamo_graphs_total
 
@@ -169,7 +161,7 @@ class InferenceService:
     def _frozen_guard(self, where: str) -> Iterator[None]:
         """Count what a steady-state call acquired; a compile, a capture or a new segment poisons the
         service. RESERVED-byte growth (the only acquisition visible under ``expandable_segments``)
-        is counted and warned — `RESERVED_GROWTH_POISONS` says why it does not poison yet."""
+        is counted and warned — ``reserved_growth.RESERVED_GROWTH_POISONS`` says why it does not poison yet."""
         g0, c0 = _dynamo_graphs(), self.engine.captures
         s0, r0 = _alloc_marks(self.device)
         yield
@@ -179,20 +171,10 @@ class InferenceService:
         self.counters["compiles_after_freeze"] += max(dg, 0)
         self.counters["cuda_segments_after_freeze"] += max(ds, 0)
         self.counters["captures_after_freeze"] += max(dc, 0)
-        if dr > 0:
-            self.counters["cuda_reserved_bytes_after_freeze"] += dr
-            self.counters["cuda_reserved_growths_after_freeze"] += 1
-            if RESERVED_GROWTH_POISONS and ds <= 0:
-                why = (f"{where} grew the CUDA reservation by {dr} bytes after the freeze "
-                       f"(the declared lifecycle allows none)")
-                self._die(why)
-                raise LifecycleViolation(why)
-            n = self.counters["cuda_reserved_growths_after_freeze"]
-            if n & (n - 1) == 0:                      # the 1st, 2nd, 4th, 8th, ... growth
-                print(f"[T2] WARN {where} grew the CUDA reservation by {dr / 2**20:.1f} MiB after the "
-                      f"freeze (growth #{n}, {self.counters['cuda_reserved_bytes_after_freeze'] / 2**20:.1f}"
-                      f" MiB in all; counted, not fatal: gen3_t2_reserved_after_freeze_v1)",
-                      file=sys.stderr, flush=True)
+        why = RG.note_growth(self.counters, where, dr)      # counted + warned; fatal only once armed
+        if why is not None and ds <= 0:
+            self._die(why)
+            raise LifecycleViolation(why)
         if dg > 0 or ds > 0 or dc > 0:
             why = (f"{where} acquired after the freeze: {dg} dynamo graphs, {ds} CUDA segments, "
                    f"{dc} graph captures (the declared lifecycle allows none)")

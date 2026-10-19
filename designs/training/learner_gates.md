@@ -620,7 +620,8 @@ the card).
   stranded +1.86 GiB of reserved with every segment count at 0. K6's own counters now take a segment
   CENSUS from `memory_snapshot()` and read `reserved_after_freeze` / `streams_after_freeze`
   (`gen3_reserved_after_freeze_v1`, `learner_lifecycle.md` "The staged batch's stream"); T2's per-flush
-  guard is still blind (a TECH-DEBT row).
+  guard and the collector / eval `check_lifecycle` read the cumulative `reserved_bytes.all.allocated` too,
+  counted and warned but not yet fatal (`gen3_t2_reserved_after_freeze_v1`, a TECH-DEBT row).
 - **Update time:** not separable from box contention (load1 7–19; one unit's plain update ranged
   9.9–20.9 s).
 - **Fragmentation** under the default allocator is already a plateau.

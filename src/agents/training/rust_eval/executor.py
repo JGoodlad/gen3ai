@@ -183,7 +183,10 @@ class RustEvalCore:
     def __init__(self, *, core: Any, svc: Any, lib: Any, table: EvalTable, team_table: Any, turn_limit: int,
                  trainee_builder: Any, opp_builder: Any, fixed_builders: Mapping[str, Any], names: Sequence[str],
                  commit: str = "", emit: Callable[[str], None] = print):
+        from agents.inference.service.reserved_growth import ReservedGrowthWatch
+
         self.core, self.svc, self.lib, self.table = core, svc, lib, table
+        self._t2_reserved = ReservedGrowthWatch("the eval core's lifecycle check: T2")
         self.cols = core.cols
         self.n = int(core.n)
         self.team_table = team_table
@@ -555,16 +558,20 @@ class RustEvalCore:
     # ------------------------------------------------------------------ the declared lifecycle
     def check_lifecycle(self) -> Dict[str, int]:
         after = dict(self.core.after_freeze())
-        svc_c = {k: int(self.svc.counters.get(k, 0)) for k in
-                 ("compiles_after_freeze", "captures_after_freeze", "cuda_segments_after_freeze")}
+        from agents.training.rust_rollout.collector import (
+            T2_LIFECYCLE_KEYS, T2_RESERVED_KEYS, LifecycleViolation)
+
+        svc_c = {k: int(self.svc.counters.get(k, 0)) for k in T2_LIFECYCLE_KEYS}
         bad = {k: v for k, v in after.items() if v and k != "PROC_SPAWNS_AFTER_FREEZE"}
         spawns = int(after.get("PROC_SPAWNS_AFTER_FREEZE", 0))
         if bad or spawns or any(svc_c.values()):
-            from agents.training.rust_rollout.collector import LifecycleViolation
-
             raise LifecycleViolation(f"eval core: resources acquired after the freeze: core {bad}, "
                                      f"respawns {spawns}, T2 {svc_c}")
-        return {**after, **svc_c}
+        # T2's reserved-byte growth: counted and warned, fatal only once armed (``reserved_growth``)
+        why = self._t2_reserved.check(self.svc.counters)
+        if why is not None:
+            raise LifecycleViolation(f"eval core: {why}")
+        return {**after, **svc_c, **{k: int(self.svc.counters.get(k, 0)) for k in T2_RESERVED_KEYS}}
 
     def close(self) -> None:
         try:

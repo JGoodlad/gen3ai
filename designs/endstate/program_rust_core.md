@@ -441,7 +441,9 @@ the bucket set should be COARSE.
   `cuda_reserved_bytes_after_freeze` / `cuda_reserved_growths_after_freeze` count it and a
   rate-limited `[T2] WARN` names it. It is WARN-FIRST, not a violation, until a leased GPU run of
   `service_cuda_test`'s expandable test shows that a healthy flush grows the reservation by 0 bytes
-  (`service.RESERVED_GROWTH_POISONS`; TECH-DEBT §2, the T2 row). Nothing is lazily compiled: an undeclared bucket
+  (`reserved_growth.RESERVED_GROWTH_POISONS`; TECH-DEBT §2, the T2 row). The rollout collector's and the eval
+  executor's `check_lifecycle` read the same counter through the same helper (`reserved_growth.ReservedGrowthWatch`:
+  the bytes T2 counted since the last check, warned at checks 1, 2, 4, 8, …), and the ONE switch arms all three sites. Nothing is lazily compiled: an undeclared bucket
   cannot be reached (rows are packed into declared buckets), and a new slot cannot be added.
 * **Validation — the same bars as the compile gate.** At startup, for EVERY slot × bucket, the
   committed real-obs fixture (`compile_parity_obs.npz`; full bucket AND a partially-filled one)

@@ -541,11 +541,11 @@ def test_reserved_growth_with_zero_segments_is_counted_and_warned_not_poisoned(p
 
 
 def test_reserved_growth_poisons_once_armed(policies, monkeypatch):
-    from agents.inference.service import service as svc_mod
+    from agents.inference.service import reserved_growth as RG
 
     svc = _service(policies[0], n_slots=1, buckets=(2,))
     _scripted_marks(monkeypatch, [(0, 0), (0, 2**20)])
-    monkeypatch.setattr(svc_mod, "RESERVED_GROWTH_POISONS", True)
+    monkeypatch.setattr(RG, "RESERVED_GROWTH_POISONS", True)
     with pytest.raises(LifecycleViolation, match="grew the CUDA reservation by 1048576 bytes"):
         with svc._frozen_guard("test"):
             pass

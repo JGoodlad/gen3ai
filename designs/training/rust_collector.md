@@ -150,7 +150,10 @@ and BEFORE `--compile-trainer` — T2 deep-copies the policy as its slot templat
 the compile would carry the patched `forward` bound to the learner's extractor) acquires the core
 (`Core::new` validates every team of the table by use), T2 (compiles, captures, parity), the arena and
 the opponents; then nothing. After every update `check_lifecycle` reads every `*_after_freeze` counter
-(core + T2) and raises on a non-zero one. A process-front-end RESPAWN is the one counted steady-state
+(core + T2) and raises on a non-zero one; T2's reserved-byte growth (the one acquisition visible under
+`expandable_segments:True`) is read too, through `agents.inference.service.reserved_growth`, and COUNTED and
+WARNED (`[T2] WARN the rollout collector's lifecycle check: T2 grew …`, at checks 1, 2, 4, 8, …), never fatal
+until `RESERVED_GROWTH_POISONS` is armed (`gen3_t2_reserved_after_freeze_v1`; the eval executor does the same). A process-front-end RESPAWN is the one counted steady-state
 event, allowed up to a declared budget (F-LB-1): its games are cut and the core is RESET (F-LB-2).
 The recovery (`RustCollector.recover_respawn`) checks the budget, cuts every live game (rows released,
 counted), derives a NEW segment seed (so the reset never replays a draw), forgets every env's staged

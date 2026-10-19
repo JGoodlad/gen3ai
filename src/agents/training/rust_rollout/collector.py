@@ -33,7 +33,8 @@ keeps the slot — the version — it started with.
 THE DECLARED LIFECYCLE: ``startup`` (the caller) builds the core (``Core::new`` validates every team
 of the table by use), T2 (compiles, captures, parity) and the arena; then nothing is acquired.
 ``check_lifecycle`` reads every ``*_after_freeze`` counter (core + T2) after each update and raises
-`LifecycleViolation` on a non-zero one; a process-front-end RESPAWN is the one counted steady-state
+`LifecycleViolation` on a non-zero one (T2's reserved-byte growth, the one acquisition visible
+under ``expandable_segments``, is counted and warned instead — ``reserved_growth``); a process-front-end RESPAWN is the one counted steady-state
 event, allowed up to a DECLARED budget (F-LB-1) — its games are cut, the core is RESET.
 """
 from __future__ import annotations
@@ -54,6 +55,12 @@ from agents.training.rust_rollout.trigger import TriggerError
 #: (``--fork-fraction > 0``, ``rust_rollout/fork.py``; ``designs/training/forks.md`` §14.2): it runs AFTER the
 #: trigger fires and BEFORE the fill, because a branch game joins the completed-game FIFO beside its parent.
 COLLECT_PHASES = ("play", "fork", "fill")
+
+
+#: T2's FATAL lifecycle counters (any non-zero one raises) and its COUNTED reserved-growth pair
+#: (``gen3_t2_reserved_after_freeze_v1``; reported, fatal only once armed).
+T2_LIFECYCLE_KEYS = ("compiles_after_freeze", "captures_after_freeze", "cuda_segments_after_freeze")
+T2_RESERVED_KEYS = ("cuda_reserved_bytes_after_freeze", "cuda_reserved_growths_after_freeze")
 
 
 class LifecycleViolation(S.CollectorError):
@@ -104,9 +111,11 @@ class RustCollector:
     def __init__(self, cfg: CollectorConfig, *, core: Any, obs_space: Any, svc: Any, trainee_slots: Sequence[int],
                  opponents: Any, server: Any, stager: TeamStager,
                  external_p2: Optional[Callable[[Mapping[str, np.ndarray], np.ndarray], np.ndarray]] = None):
+        from agents.inference.service.reserved_growth import ReservedGrowthWatch
         from agents.training.reward_term_stats import RewardTermAccumulator
 
         self.cfg = cfg
+        self._t2_reserved = ReservedGrowthWatch("the rollout collector's lifecycle check: T2")
         self.n = int(cfg.n_envs)
         self.core, self.svc = core, svc
         self.cols = core.cols
@@ -460,8 +469,13 @@ class RustCollector:
             raise LifecycleViolation(f"resources acquired after the freeze: core {bad}, T2 {svc_bad}")
         if spawns > self.cfg.respawn_budget:
             raise LifecycleViolation(f"{spawns} core respawns exceed the declared budget {self.cfg.respawn_budget}")
+        # T2's reserved-byte growth (the one acquisition visible under expandable_segments): counted and
+        # warned, fatal only once `reserved_growth.RESERVED_GROWTH_POISONS` is armed
+        why = self._t2_reserved.check(self.svc.counters)
+        if why is not None:
+            raise LifecycleViolation(why)
         return {**after, "PROC_SPAWNS_AFTER_FREEZE": spawns, **{k: int(self.svc.counters.get(k, 0)) for k in
-                ("compiles_after_freeze", "captures_after_freeze", "cuda_segments_after_freeze")}}
+                (*T2_LIFECYCLE_KEYS, *T2_RESERVED_KEYS)}}
 
     # ------------------------------------------------------------------ a dead core child
     @staticmethod
