@@ -1,0 +1,802 @@
+{
+ "cells": {
+  "forum72": {
+   "n": 400,
+   "wins": 188,
+   "losses": 212,
+   "ties": 0,
+   "win_rate": 0.47,
+   "wilson95": [
+    0.421606893554697,
+    0.5189638441056262
+   ],
+   "by_half": {
+    "ours_challenge": 0.47,
+    "peer_challenge": 0.47
+   },
+   "hit_forfeit_limit": 2,
+   "median_turns": 37,
+   "distinct_our_teams": 69,
+   "distinct_their_teams": 68,
+   "regime_stamps": [
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 161000169, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x26_metamon_anchor_2026-10-17/model/checkpoint_161000169_steps.zip\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@63f97a575+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 72}"
+   ],
+   "units": [
+    "forum72_00",
+    "forum72_01",
+    "forum72_02",
+    "forum72_03",
+    "forum72_04",
+    "forum72_05",
+    "forum72_06",
+    "forum72_07",
+    "forum72_08",
+    "forum72_09",
+    "forum72_10",
+    "forum72_11",
+    "forum72_12",
+    "forum72_13",
+    "forum72_14",
+    "forum72_15",
+    "forum72_16",
+    "forum72_17",
+    "forum72_18",
+    "forum72_19"
+   ],
+   "team_overlap": {
+    "version": "gen3_team_overlap_v1",
+    "ours": {
+     "dir": "/home/goodlad/dev/gen3ai-reads/x37a_2026-10-18/teams_forum72",
+     "training_pool": {
+      "n_read_teams": 72,
+      "n_reference_teams": 719,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 6,
+      "n_read_mons": 432,
+      "mons_seen": 303,
+      "mons_seen_strict": 100,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 14,
+       "2": 42,
+       "3": 16,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "competitive": {
+      "n_read_teams": 72,
+      "n_reference_teams": 20,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 2,
+      "n_read_mons": 432,
+      "mons_seen": 131,
+      "mons_seen_strict": 8,
+      "max_shared_mons_hist": {
+       "0": 10,
+       "1": 45,
+       "2": 14,
+       "3": 3,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "hl_05_26": {
+      "n_read_teams": 72,
+      "n_reference_teams": 22862,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 44,
+      "n_read_mons": 432,
+      "mons_seen": 350,
+      "mons_seen_strict": 77,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 16,
+       "2": 41,
+       "3": 15,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     }
+    },
+    "theirs": {
+     "dir": "/home/goodlad/dev/metamon/cache/teams/gen3ai_forum72/gen3ou",
+     "training_pool": {
+      "n_read_teams": 72,
+      "n_reference_teams": 719,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 6,
+      "n_read_mons": 432,
+      "mons_seen": 303,
+      "mons_seen_strict": 100,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 14,
+       "2": 42,
+       "3": 16,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "competitive": {
+      "n_read_teams": 72,
+      "n_reference_teams": 20,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 2,
+      "n_read_mons": 432,
+      "mons_seen": 131,
+      "mons_seen_strict": 8,
+      "max_shared_mons_hist": {
+       "0": 10,
+       "1": 45,
+       "2": 14,
+       "3": 3,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "hl_05_26": {
+      "n_read_teams": 72,
+      "n_reference_teams": 22862,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 44,
+      "n_read_mons": 432,
+      "mons_seen": 350,
+      "mons_seen_strict": 77,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 16,
+       "2": 41,
+       "3": 15,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     }
+    }
+   }
+  },
+  "p72": {
+   "n": 400,
+   "wins": 181,
+   "losses": 218,
+   "ties": 1,
+   "win_rate": 0.4525,
+   "wilson95": [
+    0.404404788504311,
+    0.5014988794578674
+   ],
+   "by_half": {
+    "ours_challenge": 0.47,
+    "peer_challenge": 0.435
+   },
+   "hit_forfeit_limit": 3,
+   "median_turns": 38,
+   "distinct_our_teams": 69,
+   "distinct_their_teams": 68,
+   "regime_stamps": [
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 161000169, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x26_metamon_anchor_2026-10-17/model/checkpoint_161000169_steps.zip\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@63f97a575+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 72}"
+   ],
+   "units": [
+    "p72_00",
+    "p72_01",
+    "p72_02",
+    "p72_03",
+    "p72_04",
+    "p72_05",
+    "p72_06",
+    "p72_07",
+    "p72_08",
+    "p72_09",
+    "p72_10",
+    "p72_11",
+    "p72_12",
+    "p72_13",
+    "p72_14",
+    "p72_15",
+    "p72_16",
+    "p72_17",
+    "p72_18",
+    "p72_19"
+   ],
+   "team_overlap": {
+    "version": "gen3_team_overlap_v1",
+    "ours": {
+     "dir": "/home/goodlad/dev/gen3ai-reads/x37a_2026-10-18/teams_p72",
+     "training_pool": {
+      "n_read_teams": 72,
+      "n_reference_teams": 719,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 0,
+      "n_read_mons": 432,
+      "mons_seen": 133,
+      "mons_seen_strict": 35,
+      "max_shared_mons_hist": {
+       "0": 7,
+       "1": 42,
+       "2": 23,
+       "3": 0,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "competitive": {
+      "n_read_teams": 72,
+      "n_reference_teams": 20,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 0,
+      "n_read_mons": 432,
+      "mons_seen": 53,
+      "mons_seen_strict": 7,
+      "max_shared_mons_hist": {
+       "0": 29,
+       "1": 40,
+       "2": 3,
+       "3": 0,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "hl_05_26": {
+      "n_read_teams": 72,
+      "n_reference_teams": 22862,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 5,
+      "n_read_mons": 432,
+      "mons_seen": 319,
+      "mons_seen_strict": 184,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 30,
+       "2": 38,
+       "3": 4,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     }
+    },
+    "theirs": {
+     "dir": "/home/goodlad/dev/metamon/cache/teams/gen3ai_p72/gen3ou",
+     "training_pool": {
+      "n_read_teams": 72,
+      "n_reference_teams": 719,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 0,
+      "n_read_mons": 432,
+      "mons_seen": 133,
+      "mons_seen_strict": 35,
+      "max_shared_mons_hist": {
+       "0": 7,
+       "1": 42,
+       "2": 23,
+       "3": 0,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "competitive": {
+      "n_read_teams": 72,
+      "n_reference_teams": 20,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 0,
+      "n_read_mons": 432,
+      "mons_seen": 53,
+      "mons_seen_strict": 7,
+      "max_shared_mons_hist": {
+       "0": 29,
+       "1": 40,
+       "2": 3,
+       "3": 0,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     },
+     "hl_05_26": {
+      "n_read_teams": 72,
+      "n_reference_teams": 22862,
+      "exact_team": 0,
+      "exact_team_strict": 0,
+      "same_species6": 5,
+      "n_read_mons": 432,
+      "mons_seen": 319,
+      "mons_seen_strict": 184,
+      "max_shared_mons_hist": {
+       "0": 0,
+       "1": 30,
+       "2": 38,
+       "3": 4,
+       "4": 0,
+       "5": 0,
+       "6": 0
+      },
+      "teams_sharing_ge4": 0,
+      "exact_examples": []
+     }
+    }
+   }
+  }
+ },
+ "units": [
+  {
+   "unit": "forum72_00",
+   "cell": "forum72",
+   "seed": 0,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_00",
+   "cell": "p72",
+   "seed": 0,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_01",
+   "cell": "forum72",
+   "seed": 1,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_01",
+   "cell": "p72",
+   "seed": 1,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_02",
+   "cell": "forum72",
+   "seed": 2,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_02",
+   "cell": "p72",
+   "seed": 2,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_03",
+   "cell": "forum72",
+   "seed": 3,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_03",
+   "cell": "p72",
+   "seed": 3,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_04",
+   "cell": "forum72",
+   "seed": 4,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_04",
+   "cell": "p72",
+   "seed": 4,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_05",
+   "cell": "forum72",
+   "seed": 5,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_05",
+   "cell": "p72",
+   "seed": 5,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_06",
+   "cell": "forum72",
+   "seed": 6,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_06",
+   "cell": "p72",
+   "seed": 6,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_07",
+   "cell": "forum72",
+   "seed": 7,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_07",
+   "cell": "p72",
+   "seed": 7,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_08",
+   "cell": "forum72",
+   "seed": 8,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_08",
+   "cell": "p72",
+   "seed": 8,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_09",
+   "cell": "forum72",
+   "seed": 9,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_09",
+   "cell": "p72",
+   "seed": 9,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_10",
+   "cell": "forum72",
+   "seed": 10,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_10",
+   "cell": "p72",
+   "seed": 10,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_11",
+   "cell": "forum72",
+   "seed": 11,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_11",
+   "cell": "p72",
+   "seed": 11,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_12",
+   "cell": "forum72",
+   "seed": 12,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_12",
+   "cell": "p72",
+   "seed": 12,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_13",
+   "cell": "forum72",
+   "seed": 13,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_13",
+   "cell": "p72",
+   "seed": 13,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_14",
+   "cell": "forum72",
+   "seed": 14,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_14",
+   "cell": "p72",
+   "seed": 14,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_15",
+   "cell": "forum72",
+   "seed": 15,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_15",
+   "cell": "p72",
+   "seed": 15,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_16",
+   "cell": "forum72",
+   "seed": 16,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_16",
+   "cell": "p72",
+   "seed": 16,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_17",
+   "cell": "forum72",
+   "seed": 17,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_17",
+   "cell": "p72",
+   "seed": 17,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_18",
+   "cell": "forum72",
+   "seed": 18,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_18",
+   "cell": "p72",
+   "seed": 18,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "forum72_19",
+   "cell": "forum72",
+   "seed": 19,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "p72_19",
+   "cell": "p72",
+   "seed": 19,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  }
+ ],
+ "skipped_units": [],
+ "stage2": {
+  "forum72": {
+   "n": 400,
+   "wins": 188,
+   "d1_vs_hpfix": [
+    0.022499999999999964,
+    -0.04636716728194433,
+    0.09106655366632717
+   ],
+   "d2_vs_home72": [
+    -0.10499999999999998,
+    -0.17281354264583015,
+    -0.0357768538917216
+   ],
+   "class": "UNSEEN-DRIVEN"
+  },
+  "p72": {
+   "n": 400,
+   "wins": 181,
+   "d1_vs_hpfix": [
+    0.0050000000000000044,
+    -0.06365816300213639,
+    0.07359157703540485
+   ],
+   "d2_vs_home72": [
+    -0.12249999999999994,
+    -0.19010128093140286,
+    -0.05325206778787821
+   ],
+   "class": "UNSEEN-DRIVEN"
+  },
+  "governing": {
+   "source": "forum72",
+   "class": "UNSEEN-DRIVEN",
+   "agree": true
+  }
+ }
+}

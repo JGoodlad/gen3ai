@@ -27088,3 +27088,45 @@ Tag: **MEASUREMENT · BUILD (B-D6 `gen3_team_set_digest_v1` + `unit_counts`; B-D
 `research_state/measurements/x37a_eval_matrix_2026-10-18/` (README, PREREG, `cells_stage1.json`, `rows_stage1.jsonl`);
 `src/main/anchors/results.py` (`unit_counts`); `endstate/design_diversity_teams_opponents.md` §0, §5.2, §10, §11;
 `ops/EXTERNAL_ANCHORS_SOP.md`; `research_state/UNDERSTANDING.md`
+
+### 2026-10-18 · MEASUREMENT · **X37a STAGE 2 — THE THIRD SOURCES: X26 @161,000,169 vs `metamon:Kakuna` greedy reads 0.470 [0.422, 0.519] on forum72 (72 human-built Smogon-forum teams) and 0.453 [0.404, 0.501] on P72 (72 procedural Smogon-usage teams), both at heldout72_hpfix's level (0.448) and below home72 (0.575): the preregistered third-source rule reads UNSEEN-DRIVEN for BOTH (forum72 governs; they agree). The held-out drop is about teams UNSEEN BY US, not the replay population; H4 KILLED. PROVISIONAL**
+
+**Preregistered** (PREREG §4 in `8a2e80de`; the panels frozen in `cb0f1769` before any stage-2 game).
+
+- **forum72:** the smogon_forum **v1** 166-team independent core, curator cap 14, `random.Random(3720)`, 0 rejections.
+- **P72:** `ou_random_teams.js --emit 200 --seed 3721` (Smogon-derived priors only), Showdown `Teams.export`, the first
+  72 accepted, 0 rejections.
+- Both panels: 0 exact and 0 teams sharing ≥ 4 mon sets with our pool, `competitive`, `hl_05_26`, home72 or
+  heldout72_hpfix; validator-legal; every Hidden Power plays its named type at 70.
+
+**The read.** Stage 1's X26 regime (`63f97a57`, core slot, paired seeds 0–19), symmetric cells, n = 400 each. All 40
+units counted; the capture check passed on every game.
+
+| T | X26(T) | d1 = X26(T) − X26(heldout72_hpfix) | d2 = X26(T) − X26(home72) | class |
+|---|---|---|---|---|
+| forum72 | 0.470 [0.422, 0.519] | +0.022 [−0.046, +0.091] n.d. | −0.105 [−0.173, −0.036] | UNSEEN-DRIVEN |
+| P72 | 0.453 [0.404, 0.501] | +0.005 [−0.064, +0.074] n.d. | −0.123 [−0.190, −0.053] | UNSEEN-DRIVEN |
+
+**Reading.** Unseen teams of two other populations cost X26 as much as the replay-derived ones. The drop is not
+Kakuna's home turf (H5 as the sole cause) and not a population shift (H4, killed by its own test).
+
+- With stage 1 (PILOTING, worse on FAR cores), the memorisation family (H1–H3) leads.
+- Widening the pool, own side included (D1), is the lever; D1 keeps X35 rank 2.
+- A symmetric cell mixes piloting and facing; stage 1 put nearly all of the drop in piloting.
+- PROVISIONAL: one checkpoint of a live, unplateaued run, one seed.
+
+**FINDINGS.**
+
+1. H4's written test names heldout72; the registration read it against heldout72_hpfix (stated before the games).
+   Against heldout72 d1 would read +0.075 / +0.058.
+2. forum72 draws 42 of 72 teams from three capped sources (thelinearcurve, Ibidem, the Teams-Through-the-Ages archive).
+3. P72's lower team quality compresses toward 0.50, so its drop is, if anything, understated.
+4. The forum v2 sweep landed mid-read and was not used. Its F1 (711 / 719 pool teams are exact forum copies) means
+   forum72 is held out from us as TEAMS, not as a population.
+5. Every stage-2 unit's stamp reads `@63f97a575` (stage 1 FINDING 1).
+6. No hazard hit: T28 clear before every unit, the tool's server on 9537, nothing under `models/` or `data/`, no GPU.
+
+Tag: **MEASUREMENT · third-source class UNSEEN-DRIVEN (forum72 governs, P72 agrees) · H4 KILLED · PROVISIONAL** · evidence:
+`research_state/measurements/x37a_eval_matrix_2026-10-18/` (README stage 2, `forum72_manifest.json`, `p72_manifest.json`,
+`cells_stage2.json`, `rows_stage2.jsonl`); `endstate/design_diversity_teams_opponents.md` §0, §3, §3.1, §6.3, §11;
+`ops/EXTERNAL_ANCHORS_SOP.md`; `research_state/UNDERSTANDING.md`

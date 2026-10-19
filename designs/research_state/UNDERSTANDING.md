@@ -764,6 +764,15 @@ So "we lose on unseen teams" means "we pilot unseen teams badly", and worse the 
 cores. The UNVERIFIED assumption A-K (Kakuna's own piloting and facing familiarity equal) carries the correction.
 L is not a ladder win rate: Kakuna's deployment teams are usage-filled reconstructions. [ledger 2026-10-18 · *X37a STAGE 1*]
 
+**…and it is about teams UNSEEN BY US, not the replay population (2026-10-18, X37a stage 2):** [MEASURED · PROVISIONAL ·
+preregistered, n = 400 each] On two third sources, neither our pool's teams nor Kakuna's replay population, X26 drops as
+far as on heldout72_hpfix: **forum72** (human-built Smogon-forum teams) **0.470 [0.422, 0.519]**, **P72** (procedural
+teams from Smogon usage) **0.453 [0.404, 0.501]**, against home72 0.575 and heldout72_hpfix 0.448. Both read
+UNSEEN-DRIVEN under the preregistered third-source rule. The population-shift hypothesis (H4) is killed by its own test,
+and Kakuna's home turf is not needed to explain the drop. With stage 1: our models pilot teams they never trained on
+about 10–12 pp worse, and worse still on off-meta cores. That is a memorisation-family result (H1–H3), and widening the
+pool (D1) is the lever it points at. [ledger 2026-10-18 · *X37a STAGE 2*]
+
 **And a second anchor ABOVE us (2026-09-14, `foul_play_derisk_2026-09-14/`):** [MEASURED] Foul Play — MCTS with
 decoupled UCT over a hand-written evaluator on the Rust poke-engine, determinising the opponent's sets from Smogon
 usage — beats the same 75M policy: our win rate **0.388 [0.288, 0.497]** over 80 games, at ~1.4M visits and 2.1 s

@@ -439,6 +439,10 @@ near-neutral and P72 is unclear.
   `team_sets.home` name DIFFERENT sets, declared in a registration and counted by `unit_counts` against the
   registered per-side digests; the Kakuna-vs-Kakuna calibration with `--opponent-a/-b metamon:Kakuna --our-teamset away
   --declare-asymmetric-teams`. Pass `--capture-dir` to keep the opponent's team per game (the rows do not carry it).
+- **The unfamiliar panel's other two members are frozen** (X37a stage 2, `measurements/x37a_eval_matrix_2026-10-18/`):
+  `forum72` (Metamon set `gen3ai_forum72`, `forum72_manifest.json`) and `P72` (`gen3ai_p72`, `p72_manifest.json`), each
+  run like heldout72_hpfix with its own config in that directory's `configs/`. X26 reads 0.470 and 0.453 on them:
+  the held-out drop is about teams unseen by us, not about the replay population.
 
 ### The team-set overlap — a REQUIRED field of every read (2026-10-18)
 
@@ -611,6 +615,8 @@ role-balanced units, every counted unit `status OK`, `regime_verified_decisions`
 | **Kakuna greedy · heldout72_hpfix (the held-out set of record; HP repaired; 2026-10-18)** | 400 | **0.448 [0.400, 0.496]** | **WORSE** | K2 (G0′): 0.367 [0.322, 0.416] WORSE → **+0.080 [+0.012, +0.147] X26 BETTER**; vs heldout72 (HP Dark): X26 +0.052 [−0.016, +0.120], K2 +0.010, both NOT DETECTED; X26 hpfix − home72 **−0.127 [−0.195, −0.058]** (`heldout72_hpfix_kakuna_2026-10-18`, same regime stamp) |
 | **Kakuna greedy · DEPLOYMENT, X26 pilots home72, Kakuna pilots heldout72_hpfix by stratum (X37a, 2026-10-18)** | 600 | **L (ladder_weights_v1) = 0.630 [0.573, 0.686]** (CORE 0.610 n = 100, NEAR 0.623 n = 400, FAR 0.690 n = 100) | **BETTER** | L_c1 0.624 [0.570, 0.676]; the reweighted cell S(P, H) 0.631 [0.592, 0.670] (`x37a_eval_matrix_2026-10-18`, same regime stamp; declared asymmetric) |
 | **Kakuna greedy · REVERSE, X26 pilots heldout72_hpfix, Kakuna pilots home72 (X37a)** | 400 | **0.380 [0.334, 0.428]** | **WORSE** | Kakuna vs Kakuna K(home72, heldout72_hpfix) 0.573 [0.524, 0.620]; PILOT_c +0.123 [+0.039, +0.206], FACE_c +0.017 [−0.062, +0.095]: the held-out drop is PILOTING; H-PILOT UNDECIDED, H-PILOT-OFFMETA SUPPORTED |
+| **Kakuna greedy · forum72 (72 human-built Smogon-forum teams, 0 / 72 in our pool; X37a stage 2)** | 400 | **0.470 [0.422, 0.519]** | NOT DETECTED | − heldout72_hpfix +0.022 n.d.; − home72 **−0.105 [−0.173, −0.036]** ⇒ third-source class **UNSEEN-DRIVEN** (forum72 governs) |
+| **Kakuna greedy · P72 (72 procedural Smogon-usage teams, 0 / 72 in our pool; X37a stage 2)** | 400 | **0.453 [0.404, 0.501]** | NOT DETECTED | − heldout72_hpfix +0.005 n.d.; − home72 **−0.123 [−0.190, −0.053]** ⇒ **UNSEEN-DRIVEN** (agrees) |
 | SmallRL greedy · away | 200 | 0.645 [0.577, 0.708] | BETTER | K2 (G0′): 0.625 → +0.020 [−0.058, +0.094] NOT DETECTED |
 | SmallRL greedy · home (pool) | 200 | 0.785 [0.723, 0.836] | BETTER | K2: 0.755 → +0.030 [−0.040, +0.093] NOT DETECTED |
 | SmallRL t1 · away | 100 | 0.730 [0.636, 0.807] | BETTER | `ai_v12_02`: 0.560 → +0.170 [+0.037, +0.295] |

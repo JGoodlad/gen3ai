@@ -151,15 +151,81 @@ and the maturity battery. The X26 cells took about 200 s per 20-game unit (≈ 1
 
 ## STAGE 2 — the third-source rows
 
-PENDING (registered: PREREG §4; panels frozen in `cb0f1769`).
+**Answer.**
+
+- **On unseen teams from two OTHER populations, X26 drops just as far.** The preregistered third-source
+  rule (§3.1) reads **UNSEEN-DRIVEN for BOTH sources, and they agree**:
+  - **forum72** (72 human-built Smogon-forum teams, unseen by us): X26 **0.470 [0.422, 0.519]**;
+  - **P72** (72 procedural Smogon-usage teams): X26 **0.453 [0.404, 0.501]**.
+  - Both sit at heldout72_hpfix's level (0.448) and well below home72 (0.575).
+- **So the held-out drop is about teams UNSEEN BY US, not about the replay population or Kakuna's home turf.** The
+  memorisation family (H1–H3) leads, and H4 (population shift) and H5 (Kakuna's turf as the sole cause) lose their
+  support.
+- **With stage 1:** the deficit is in PILOTING unfamiliar teams. Widening the pool (D1, own side included) is the lever
+  this read points at, and D1 stays at X35 rank 2 (§6.1's demotion condition, POPULATION / KAKUNA-DRIVEN, is not met).
+- **H4's kill test (§3) fires on P72.** That test is written against heldout72, and the registration reads it against
+  heldout72_hpfix (PREREG §4): X26(P72) − X26(H) is not detected AND X26(P72) − X26(home72) is detected below 0, so
+  H4 is KILLED as the explanation of the drop. forum72, which governs, reads the same.
+- PROVISIONAL: one checkpoint, one seed. A symmetric cell mixes piloting and facing; stage 1 puts nearly all of it in
+  piloting.
+
+| third source T | n | W–L–T | X26(T) [Wilson 95 %] | d1 = X26(T) − X26(H) (Newcombe) | d2 = X26(T) − X26(home72) | class |
+|---|---:|---|---|---|---|---|
+| **forum72** (governs) | 400 | 188–212–0 | **0.470 [0.422, 0.519]** | +0.022 [−0.046, +0.091] n.d. | **−0.105 [−0.173, −0.036]** | **UNSEEN-DRIVEN** |
+| **P72** | 400 | 181–218–1 | **0.453 [0.404, 0.501]** | +0.005 [−0.064, +0.074] n.d. | **−0.123 [−0.190, −0.053]** | **UNSEEN-DRIVEN** |
+
+### The panels (frozen in `cb0f1769` by PREREG §4's rules, before any stage-2 game)
+
+- **forum72:** the smogon_forum **v1** independent core (166), shuffled with `random.Random(3720)`, curator cap 14.
+  - Curators: thelinearcurve 14, Ibidem 14, the uncredited Teams-Through-the-Ages archive `[M Dragon]` 14, Golden Sun
+    6; the other 24 teams come from 19 curators.
+  - 0 rejections; the pinned validator accepted all 72; every Hidden Power plays its named type at 70.
+  - Strata (the frozen `ladder_weights_v1` rule): 4 CORE / 54 NEAR / 14 FAR.
+- **P72:** `ou_random_teams.js --emit 200 --seed 3721` (Smogon-derived `data/pokemon/` priors only), exported by
+  Showdown's `Teams.export`. The first 72 were accepted; there were 0 rejections. Strata 0 CORE / 43 NEAR / 29 FAR.
+- **Overlap** (`gen3_team_overlap_v1`): every reference shows 0 exact teams and 0 teams sharing ≥ 4 mon sets.
+
+  | panel | pool: same 6 species | pool: mon sets seen (strict) | `hl_05_26`: same 6 species | `hl_05_26`: mon sets seen (strict) |
+  |---|---:|---|---:|---|
+  | forum72 | 6 | 303 / 432 (100) | 44 | 350 (77) |
+  | P72 | 0 | 133 / 432 (35) | 5 | 319 (184) |
+
+  The other references (`competitive`, home72, heldout72_hpfix, and forum72 for P72) are in the manifests.
+- Installed as `gen3ai_forum72` / `gen3ai_p72` (byte copies). Every file on both sides, and the config, was
+  sha256-checked before every unit.
+
+**Integrity.**
+
+- All 40 units counted on their first try: symmetric cells, both sides' content digests equal and equal to the
+  registration's.
+- The capture check passed on every game.
+- The 250-turn forfeit fired 2 times (forum72) and 3 times (P72).
+- Median length 37 / 38 turns.
+- By role (we challenge / they challenge): forum72 0.47 / 0.47, P72 0.47 / 0.435.
+- Regime stamp: stage 1's X26 stamp. All 40 units read `@63f97a575`, the lengthened abbreviation of FINDING 1.
+- Cost: 800 games in 2 h 15 min on the one rule-5b lane.
+
+### Stage 2 FINDINGS
+
+1. **H4's registered kill test names heldout72; the registration reads it against heldout72_hpfix**, the set of record.
+   Against heldout72 (0.395), d1 would read +0.075 (forum72) and +0.058 (P72), so the reading depends on the HP-repaired
+   set. This is stated in PREREG §4 and not changed after the games.
+2. **forum72 is two curators' work plus a history archive:** 42 of its 72 teams come from three sources capped at 14.
+   F4 of the forum README applies.
+3. **P72's teams are not human-built.** Low team quality compresses a symmetric cell toward 0.50, so P72's drop, if
+   anything, understates the unseen-team effect.
+4. **forum v1 only.** The v2 mega sweep (`smogon_forum_teams_v2_2026-10-18/`) landed during this read and was not
+   used. Its F1 says 711 of our pool's 719 teams are exact forum copies, so the forum IS our pool's source population.
+   forum72 is held out from us as TEAMS (0 exact, 0 sharing ≥ 4), not as a population. This is the read's intent (a
+   human-built population unseen as teams).
 
 ## Files
 
 - `PREREG.md`, `x37a_stage1_registration.json`, `x37a_stage2_registration.json`, `configs/`: the registration.
 - `forum72_manifest.json`, `teams_forum72/`, `p72_manifest.json`, `teams_p72/`: the stage-2 panels.
-- `cells_stage1.json`: every cell, every unit's counting verdict, the overlap blocks and the stage-1 analysis.
-  `rows_stage1.jsonl` holds 1,400 game rows, with `read_cell`, `unit`, `unit_seed` and, from the capture,
-  `their_team`.
+- `cells_stage1.json` / `cells_stage2.json`: every cell, every unit's counting verdict, the overlap blocks and each
+  stage's analysis. `rows_stage1.jsonl` / `rows_stage2.jsonl` hold 1,400 + 800 game rows, with `read_cell`, `unit`,
+  `unit_seed` and, from the capture, `their_team`.
 - `scripts/`:
   - `setup_stage1.py`: strata, copies, Metamon sub-sets, configs, registration;
   - `make_stage2_panels.py`: the forum72 draw and the P72 build;
