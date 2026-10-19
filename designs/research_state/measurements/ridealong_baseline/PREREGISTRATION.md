@@ -814,3 +814,5 @@ shift τ (`hypothesis_set.fixed_size_tau`) solves an almost flat equation (slope
   and restored on resume. A fix for future pins is backlogged; nothing changes at this pin.
 - **A6-F2:** `selection_sites.py` describes the τ bisection as an ulp-scale change; on k = 1 rows it reaches ≈ 1.5e-2. For
   future pins (X34 / X35), compute τ's constraint in float64 (backlogged; not at this pin).
+
+- **A6 erratum (same day):** the violation step is u32180 @ 316,796,508 (probe) / 316,895,546 (TensorBoard read), not "316,795,546" as typed above.
