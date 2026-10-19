@@ -88,7 +88,7 @@ session (`_READOUT_CACHE_CAP`), dropped by `close()`. Nothing is written anywher
 ### Access: the story is open, the model panels need the shared password
 
 `/game` is public at prober.g5d.io, so the split above is also the access split (`web/gate.py`,
-`web/CLAUDE.md` "Access"): the turn story (`/api/game/story`, the page's story half) is model-free
+`web_service.md` §4 "Access"): the turn story (`/api/game/story`, the page's story half) is model-free
 and stays anonymous — measured 2026-10-09 on a real 1,448-battle run, ~20 ms of Python plus ~30 ms of
 the `core_events --walk` child per UNCACHED battle (~50 ms CPU, under the 100 ms bar), 4 ms warm. Every
 route that loads the checkpoint or runs the forward (`/api/game/readout`, `/api/game/attention`,

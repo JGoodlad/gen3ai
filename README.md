@@ -92,7 +92,7 @@ see what we think it saw? A lot of that needs Pokémon knowledge more than ML kn
 | **play competitively** | Send a "the model got this wrong" report: a `/game` link, the turn, and what you'd have clicked. Teams and set corrections are welcome too. | [prober.g5d.io](https://prober.g5d.io), `data/teams/others/` |
 | **want a small model change** | Add one game FACT from the ranked list, e.g. Freeze Clause per side, or Future Sight pending on the target's side. Open an issue first. | [hand-computed features §4](designs/endstate/design_hand_computed_features.md) |
 | **write Rust** | Run the A/B fuzzer against Showdown and turn each divergence into a regression test. | `node src/rust_sim/harness/ab_fuzz.js --mode random --battles 200`, [regression pins](designs/rust_sim/regression_pins.md) |
-| **build web UIs** | Make the prober work well on a phone (task T29). | [`src/main/prober/web/CLAUDE.md`](src/main/prober/web/CLAUDE.md) |
+| **build web UIs** | Make the prober work well on a phone (task T29). | [`src/main/prober/web/CLAUDE.md`](src/main/prober/web/CLAUDE.md), then [`designs/prober/web_tests.md`](designs/prober/web_tests.md) §3 |
 | **found a doc confusing** | Fix it. A confusing doc is a bug. | any `README.md` or `CLAUDE.md` |
 
 ### Proposing an experiment

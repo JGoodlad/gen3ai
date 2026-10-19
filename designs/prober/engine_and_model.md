@@ -1,8 +1,9 @@
 # The prober's torch boundary and its trace-discovery layer
 
 Owned by this tree (always current, per the root `CLAUDE.md`). The rules an agent needs before
-touching either — the engine/app seam, the module map, the per-battle resolution ladder — stay in
-`src/main/prober/CLAUDE.md`; this file is the detail those two modules hold.
+touching either — the engine/surface seam and the per-battle resolution ladder — stay in
+`src/main/prober/CLAUDE.md`; each module's role is its first docstring line; this file is the detail
+those two modules hold.
 
 ## `model.py` — `ProbeModel`, the only place torch is called
 
@@ -252,7 +253,7 @@ Moved verbatim-ish out of `src/main/prober/CLAUDE.md` when that leaf was cut to 
   and the decoded CPU obs regions they subsume tagged `📋 CPU-obs` render dimmed, because the
   operator's physics supersede the older type-effectiveness decode and a reader must be able to see
   which is which. **Beliefs** is the model's world-model vs ground truth; **Threats** leads with the
-  DamageOperator. See `web/CLAUDE.md`, and `designs/prober/beliefs_and_threats.md` for
+  DamageOperator. See `web_pages.md` §4, and `designs/prober/beliefs_and_threats.md` for
   what those panels MEAN.
 
 ### Per-battle model resolution (exact → nearest → most recent)

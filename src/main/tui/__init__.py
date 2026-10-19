@@ -1,4 +1,4 @@
-"""Shared Textual base for the Gen3AI UIs (prober now; launcher port later).
+"""Shared Textual base for the Gen3AI UIs (its one consumer: the launcher's UI).
 
 Public API:
     Gen3App     — base App with shared chrome/theme/quit binding

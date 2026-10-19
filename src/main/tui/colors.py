@@ -1,8 +1,7 @@
 """Shared color helpers for the Gen3AI Textual UIs.
 
-Pulled out of ``launcher/ui.py``'s inline ``_gradient_color`` so both the
-launcher (win-rate / reward cells) and the prober (faithfulness-drift cells)
-draw from one definition. Returns a ``#rrggbb`` hex string usable in both Rich
+Pulled out of the launcher's inline ``_gradient_color`` so every Textual UI
+(today the launcher's win-rate / reward cells) draws from one definition. Returns a ``#rrggbb`` hex string usable in both Rich
 markup (``[bold {col}]``) and Textual styles.
 """
 

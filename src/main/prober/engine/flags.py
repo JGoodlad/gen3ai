@@ -2,7 +2,7 @@
 
 Model-free: everything here reads the recorded summary dict. The cure helpers are data-driven off
 the `gen3_data` facade rather than a hardcoded move-id list — see the "heal ≠ cure" trap in
-`main/prober/CLAUDE.md`.
+`designs/prober/analyze_panels.md`.
 """
 
 from __future__ import annotations

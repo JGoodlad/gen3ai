@@ -2,7 +2,7 @@
 
 `run_summary` / `battles` / `decision_table` / `battle_overview` / `battle_turns`. None of these
 loads a checkpoint, which is why they work on every archived run forever (see the model-free vs
-model-loading tier table in `main/prober/CLAUDE.md`).
+model-loading tier table in `designs/prober/arch_drift.md`).
 """
 
 from __future__ import annotations

@@ -1,7 +1,7 @@
 # `ProbeSession` model-free reading — `battles` · `scan` · `switch_vs_info` · `battle_turns` · `battle_overview` · `find` · `probe_model` · `decision_table`
 
-Owned by this tree. The facade contract and the CLI invocations stay in
-`src/main/prober/CLAUDE.md`; this file is the per-method reference for the model-free surface —
+Owned by this tree. The facade contract is in `src/main/prober/CLAUDE.md` and the CLI invocations
+in `python -m main.prober.query --help`; this file is the per-method reference for the model-free surface —
 the tier that works on every run, forever.
 
 - `battles(outcome=, opponent=, step=)` — list/filter battles (each carries an

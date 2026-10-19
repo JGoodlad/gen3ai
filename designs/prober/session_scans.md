@@ -1,7 +1,7 @@
 # `ProbeSession` run-level scans — `loops` · `triage` · `probe`
 
-Owned by this tree. The facade contract and the CLI invocations stay in
-`src/main/prober/CLAUDE.md`; this file is the per-method reference for the three run-level folds.
+Owned by this tree. The facade contract is in `src/main/prober/CLAUDE.md` and the CLI invocations
+in `python -m main.prober.query --help`; this file is the per-method reference for the three run-level folds.
 
 - `loops(outcome=, opponent=, step=, max_battles=, near_zero_frac=0.01, top=12)` — **model-free
   BAIT-LOOP scan**: *the opponent voluntarily pivots a mon our attack cannot touch, and we fire

@@ -1,8 +1,8 @@
 """Thin shared Textual base for the Gen3AI UIs.
 
-``Gen3App`` carries only the *presentation* concerns that the prober (now) and a
-future launcher Textual port (later) genuinely share: the shared theme, a
-Header/Footer chrome convention, and a quit binding. It deliberately does NOT
+``Gen3App`` carries only the *presentation* concerns of the project's Textual UIs
+(today the launcher's): the shared theme, a Header/Footer chrome convention, and
+a quit binding. It deliberately does NOT
 model the launcher's live-subprocess / IPC / threaded-state machinery — that is
 launcher-specific and stays in ``src/main/launcher/``.
 
@@ -46,7 +46,7 @@ class Gen3App(App):
         # terminal (so native click-drag selection works again) and freezes live updates
         # (so a repaint can't wipe the selection mid-drag) — then you copy with the
         # terminal's OWN selection + copy, no app/clipboard-escape support required. Same
-        # key resumes. See src/main/tui/CLAUDE.md → Copy mode.
+        # key resumes. See src/main/tui/CLAUDE.md → Copying text.
         Binding("v", "toggle_copy_mode", "Copy mode"),
         # Escape is a one-key EXIT from copy mode (beside the `v` toggle). No-op when copy mode is
         # off, so it never steals Escape from anything else (no current Gen3App uses it otherwise).

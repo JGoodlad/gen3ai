@@ -672,7 +672,7 @@ def test_a_pinned_run_with_an_awkward_name_still_opens(tmp_path):
 # flow at all." Each test pins one link in the chain from question -> answer -> next step.
 
 def test_the_nav_follows_the_documented_investigation_recipe(client):
-    """src/main/prober/CLAUDE.md says of triage: "start here for 'what next'". Six equal tabs in
+    """designs/prober/session_scans.md says of triage: "start here for 'what next'". Six equal tabs in
     an arbitrary order is the flow complaint restated."""
     from main.prober.web.app import _NAV
     labels = [label for _, label in _NAV]

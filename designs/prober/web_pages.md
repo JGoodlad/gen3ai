@@ -16,7 +16,7 @@ The TUI's standing complaint was that *the information didn't flow*. The deliber
 pinned in `app_test.py` → "usability / information flow":
 
 - **The nav follows the investigation recipe**: `_NAV` = `run → triage → scan → battles → game →
-  falsify → calibration` (triage is "start here for 'what next'", `src/main/prober/CLAUDE.md`).
+  falsify → calibration` (triage is "start here for 'what next'", `session_scans.md`).
 - **`/` carries a "where to start" card** — the views in recipe order, each with the QUESTION it answers
   (`VIEW_QUESTIONS` in `app.py`).
 - **A context strip on every page** names the run, its step count and its W/L, so a screenshot of a
@@ -51,7 +51,7 @@ pinned in `app_test.py` → "usability / information flow":
 The win-prob critic (the only critic) makes V a **probability in [0,1]** instead of a shaped return of
 roughly ±30, and `values` then EQUALS `win_probs`. `ProbeSession.critic_currency()` computes it (riding
 `run_summary()`, `battle_turns()`, `analyze()`, `calibration()`); this package only has to stop
-CONTRADICTING it. Archived runs with no `critic` key read as shaped (`src/main/prober/CLAUDE.md`).
+CONTRADICTING it. A run with no `critic` key reads as shaped (`session_reading.md` § `critic_currency`).
 
 **A "default" typed into a handler is not a default.** `/api/triage` once declared
 `v_even: float = Query(0.0)` and `/calibration` `overvalue_tau = Form("5.0")`, so both reached the
@@ -79,7 +79,9 @@ does not (a Bradley-Terry ladder, a cluster bootstrap, a selection reweighting t
 re-deriving one in a handler breaks *the one rule*. So `/` carries a card with the commands
 (`critic_gate` only on a winprob run). ⚠ **A command in a template is a command someone will paste** —
 they were checked against the live parsers (which caught `main.untaught_meter` taking its refs
-POSITIONALLY), and the leaf keeps them so the `CLAUDE.md` freshness gate resolves their flags.
+POSITIONALLY; all four re-checked against `--help` 2026-10-19). **No gate checks them** — the
+`CLAUDE.md` freshness gate reads only `CLAUDE.md` files — so re-run each one's `--help` when you edit
+the card; a web test that resolves each against its parser is an open build decision.
 
 ## 3. `/game` — THE battle viewer
 
@@ -133,7 +135,7 @@ The operator's `incoming_matrix` is a real **heatmap table** (opp candidate move
 (`#beliefs-exclusive`, `a.exclusive_belief`): the raw per-slot marginals first — what the model actually
 believes — and the **species-clause reading** below it, QUIET when the belief was already coherent and
 saying in its own copy that it changes nothing (gen-15: **14.2%** of decisions displayed two hidden slots
-naming the same mon). See `src/main/prober/CLAUDE.md` → *The SPECIES-CLAUSE reading*.
+naming the same mon). See `beliefs_and_threats.md` → *The SPECIES-CLAUSE reading*.
 
 **The counterfactual tier rides `/analyze`** — `lookahead`, `better_line` and `replay_counterfactual`
 launch from the bottom of the page pre-filled with the battle + inv, through the **job registry** (submit

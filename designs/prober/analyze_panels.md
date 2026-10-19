@@ -3,7 +3,7 @@
 Owned by this tree. `src/main/prober/CLAUDE.md` keeps the rule this file serves: everything here
 renders purely from one `InvocationAnalysis`, so this is about what the FIELDS mean; where the text
 describes a terminal (glyphs, colour ramps, fixed-width columns), read that as the SEMANTIC it
-encodes — `/analyze` renders the same distinction in HTML, and `web/CLAUDE.md` says how.
+encodes — `/analyze` renders the same distinction in HTML, and `web_pages.md` §4 says how.
 
 ## The Summary panel — SITUATION · DECISION · OUTCOME
 

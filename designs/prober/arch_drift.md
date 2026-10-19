@@ -1,6 +1,6 @@
 # Architecture drift — every way a run can be incompatible with HEAD is ONE typed diagnosis
 
-Owned by this tree. The RULE is in `src/main/prober/CLAUDE.md`: a model-loading probe works only on a
+Owned by this tree. The RULE is in the root `CLAUDE.md` § Prober and `src/main/prober/CLAUDE.md`: a model-loading probe works only on a
 run at the CURRENT architecture (owner decision), the failure is an `ArchDriftError`, and a surface that
 loads a model renders its **plain sentence** with the diagnosis folded under it rather than collapsing it
 to "analysis failed". This file holds what the diagnosis is made of and where each kind is decided.
@@ -144,7 +144,7 @@ a raw `FileNotFoundError`. Now `ArchDriftError.kind` is one of `arch_signature �
 state_dict · config_value · newer_than_code · no_checkpoint · unreadable · load_failed`, its `plain` is one sentence
 ("This run's architecture (config vN, signature S) is older than the code (config vM…); model views need a
 current-architecture checkpoint."), and `/game` / `/analyze` render that reason on first paint from
-`ProbeSession.model_status` (model-free). The picker is the same classification (`web/CLAUDE.md`).
+`ProbeSession.model_status` (model-free). The picker is the same classification (`web_service.md` §3).
 
 **The three walls behind the diagnosis** — a deleted flag still baked into the zip's
 `features_extractor_kwargs` (recovered by dropping unknown kwargs, and *which* ones is reported),

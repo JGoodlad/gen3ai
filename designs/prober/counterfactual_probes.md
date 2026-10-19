@@ -1,8 +1,9 @@
 # The counterfactual tier — `lookahead` · `better_line` · `replay_counterfactual` · `falsify` · `falsify_scan` · `calibration`
 
-Owned by this tree. `src/main/prober/CLAUDE.md` keeps what the tier IS (three re-roll/clone-powered
-probes, bridge-eval traces only, each spawning a sim child), the quota rule `calibration` reports,
-and the currency rule for `overvalue_tau`. This file is the per-method reference.
+Owned by this tree. `src/main/prober/CLAUDE.md` keeps the two flags every surface must show (the
+interior opponent, one rollout is not a probability) and the trace-quota rule; the currency rule for
+`overvalue_tau` is § *`overvalue_tau` in the critic's own units* below. This file is the per-method
+reference.
 
 - `lookahead(battle_id, inv=, invs=, worst=, n_seeds=0, followup=)` — **one-ply VALUE-DELTA**
   (`lookahead.py`): for an anchored `move_selection` decision, RE-ROLL the turn under each LEGAL action

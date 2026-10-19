@@ -528,7 +528,7 @@ client string is ever joined to a path, so traversal is unrepresentable rather t
 The one asymmetry worth knowing: **a direct child of `models/` may be a symlink** and is followed
 (resolved once, at enumeration) — that is how the launcher's worktree runs appear, and on this box
 the five newest runs are exactly that. A symlink **inside** a run refuses the whole run. Details
-and the attack list: `src/main/prober/web/CLAUDE.md` and `runs_test.py`.
+and the attack list: `designs/prober/web_service.md` §3 and `runs_test.py`.
 
 ### Access posture, and the deploy's own guards
 

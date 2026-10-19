@@ -103,8 +103,8 @@ SOURCE_REVISION = _source_revision()
 
 # --- response models -------------------------------------------------------------------
 # Only the shapes this module actually OWNS are modelled. The session's results are deep,
-# heterogeneous dicts documented by `src/main/prober/CLAUDE.md`; declaring a Pydantic model for
-# them would put a second, drifting spec of the engine's output in the contract. `dict` is the
+# heterogeneous dicts documented in `designs/prober/` (one doc per method family); a Pydantic
+# model for them would put a second, drifting spec of the engine's output in the contract. `dict` is the
 # honest annotation, and the snapshot still pins routes, parameters and status codes.
 
 class Health(BaseModel):
@@ -1066,8 +1066,8 @@ def _unlock_next(current_url: "str | None", default: str) -> str:
     return default
 
 
-# Ordered by the investigation recipe in src/main/prober/CLAUDE.md — "triage: start here for
-# 'what next'" — not by when each view happened to be written. Six equal tabs in an arbitrary
+# Ordered by the investigation recipe in designs/prober/session_scans.md — "triage: start here
+# for 'what next'" — not by when each view happened to be written. Six equal tabs in an arbitrary
 # order is exactly the "information doesn't flow" complaint the TUI earned.
 # `/game` is THE battle viewer: the classic `/battle` replay was MERGED into it (2026-10-09) and now
 # redirects there. `analyze` has no tab: it is a per-DECISION page, opened from every decision in the

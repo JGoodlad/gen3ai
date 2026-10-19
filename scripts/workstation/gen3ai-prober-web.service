@@ -3,7 +3,7 @@
 # The origin behind https://prober.g5d.io (the cloudflared tunnel forwards to
 # localhost:6008). Serves the prober's read-only forensic views over models/ —
 # see the "Prober web views" section of GCP_INFRASTRUCTURE.md and
-# src/main/prober/web/CLAUDE.md.
+# designs/prober/web_service.md.
 #
 # Install:
 #   cp scripts/workstation/gen3ai-prober-web.service ~/.config/systemd/user/
