@@ -174,3 +174,21 @@ The default PIN is the validated `6dcc769c`. A newer main is fine once the same 
   lever (`obs_facts v1`, `drop_progress_clock on`, `move_target_state on`, `token_encoding static`,
   `move_actor_state on`). Its two OFF values, `mon_hazard_cost off` and `move_set_closure off`, are vacuous (they
   need `damage_op` and `opp_intent`). The structure test above fails if a later unit moves the toy network anyway.
+
+## 7. LAUNCH DECISION + K9(b) amendment (orchestrator, 2026-10-19 ≈ 02:00; registered BEFORE launch)
+
+- **X34 is the NEXT GPU run.** It launches after X26's Amendment-5 stop at 380M (≈ 10-19 11:30–12:30). The order follows
+  the owner's 10-16 plan: X26 plateau → toy plateau → breakers on both. X34's plateau checkpoint T\* is also the
+  missing second X-block member of X35's frozen R (`d172c10e` F1).
+- **K9(b) (resolves F3):** X34 runs `--behaviour-check warn`, with Amendment-3-style GIGO ceilings read at full precision
+  at every Tier-1 tick, restart and daily read:
+  - **STOP** on any update with judged max ≥ 1e-3, or p99 ≥ 1e-4, or any non-finite value.
+  - Rule 8: within 1e-9 relative of a ceiling = recorded, no fire.
+  - X26's Amendment 6 (STOP at 1e-2 for the τ class) does NOT apply. The toy has no belief tokens
+    (`--move-belief-mode off --no-t0-species-prior --opp-belief-cls-k 0`), so the τ mechanism cannot occur. A crossing
+    is a §A2.7(3)-style HOLD + diagnosis.
+- **Pin:** `--pin-commit` = main at launch (≥ `d172c10e`; it contains T36 `5236eb22`, memfix `9c033489`, T54
+  `cdab9cfe`).
+- **Restart interval:** 24 h, with the VmRSS guard.
+- **F2 handling:** if the inherited 90M / 100M nodes both read FLAT at the first tick, that is a FINDING to the
+  orchestrator, not a stop.
