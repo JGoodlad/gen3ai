@@ -27,8 +27,7 @@ corpus HP users). This module re-samples that one hidden field by the owner's sp
    are Smogon only (owner rule), never our pool.
 4. **The IVs** are written the way Showdown's validator does (``sim/team-validator.ts`` ~1154-1164:
    ``fillStats(dex.types.get(hpType).HPivs, 31)``) — :data:`HP_IVS`, pinned to ``data/typechart.ts`` by a
-   test, so the power stays 70. NOT ``utils.gen3_utils.GEN3_HP_IVS``: that table's Ghost row is
-   30 Atk / 30 SpD where Showdown's is 30 Def / 30 SpD (both Ghost, power 70; FINDING 2026-10-18). The 30 Speed IV of Fire / Psychic / Rock /
+   test, so the power stays 70. ``utils.gen3_utils.GEN3_HP_IVS`` is the same table (its Ghost row was fixed 2026-10-19; pinned by ``gen3_utils_test.py``). The 30 Speed IV of Fire / Psychic / Rock /
    Fighting lowers the Speed stat by 1 (a speed-tie change, pinned by a test).
 5. **Deterministic.** One ``random.Random`` per team, seeded by :func:`team_seed` (base seed + team id),
    drawn once per target mon in slot order over the types in alphabetical order.

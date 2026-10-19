@@ -58,7 +58,9 @@ class SwitchDetection:
         return has_changed, is_real, voluntary
 
 
-# Single source of truth for Gen 3 Hidden Power IVs (ensures 70 Power)
+# Single source of truth for Gen 3 Hidden Power IVs (ensures 70 Power). Equal to Showdown's validator fill,
+# fillStats(typechart.ts HPivs, 31), for all 16 types (pinned by gen3_utils_test.py; Ghost was 30 Atk / 30 SpD
+# until 2026-10-19, Showdown's is 30 Def / 30 SpD).
 GEN3_HP_IVS = {
     "Fighting": {"hp": 31, "atk": 31, "def": 30, "spa": 30, "spd": 30, "spe": 30},
     "Rock":     {"hp": 31, "atk": 31, "def": 30, "spa": 31, "spd": 30, "spe": 30},
@@ -68,7 +70,7 @@ GEN3_HP_IVS = {
     "Poison":   {"hp": 31, "atk": 31, "def": 30, "spa": 30, "spd": 30, "spe": 31},
     "Ground":   {"hp": 31, "atk": 31, "def": 31, "spa": 30, "spd": 30, "spe": 31},
     "Bug":      {"hp": 31, "atk": 30, "def": 30, "spa": 31, "spd": 30, "spe": 31},
-    "Ghost":    {"hp": 31, "atk": 30, "def": 31, "spa": 31, "spd": 30, "spe": 31},
+    "Ghost":    {"hp": 31, "atk": 31, "def": 30, "spa": 31, "spd": 30, "spe": 31},
     "Steel":    {"hp": 31, "atk": 31, "def": 31, "spa": 31, "spd": 30, "spe": 31},
     "Water":    {"hp": 31, "atk": 30, "def": 30, "spa": 30, "spd": 31, "spe": 31},
     "Grass":    {"hp": 31, "atk": 30, "def": 31, "spa": 30, "spd": 31, "spe": 31},

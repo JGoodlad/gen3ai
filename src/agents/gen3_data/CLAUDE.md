@@ -55,9 +55,8 @@ gen-3 TYPE rule (`SPECIAL_TYPES`, pinned to `deps/pokemon-showdown/data/mods/gen
 tie-break; the TYPE is drawn from Smogon's species HP usage (`priors.hidden_power`) restricted to that side (the
 format-wide Smogon usage if the species has none there); the IVs are the validator's `fillStats(HPivs, 31)`
 (`hp_repair.HP_IVS`, pinned to `deps/pokemon-showdown/data/typechart.ts`; power 70). One RNG per team (`team_seed(base, team_id)`), every
-draw returned as a record. Only the HP move line and the IVs line change. 🚨 **`utils.gen3_utils.GEN3_HP_IVS` is
-NOT the validator's table** — its Ghost row is 30 Atk / 30 SpD, Showdown's 30 Def / 30 SpD (both Ghost, power 70;
-`designs/ops/TECH_DEBT_BACKLOG.md`). Tests: `hp_repair_test.py` (unit) and
+draw returned as a record. Only the HP move line and the IVs line change. `utils.gen3_utils.GEN3_HP_IVS` (the teambuilder's fill) is the SAME table for all 16 types since 2026-10-19 (its Ghost row
+was 30 Atk / 30 SpD, Showdown's is 30 Def / 30 SpD; `gen3_utils_test.py` pins it to `typechart.ts`). Tests: `hp_repair_test.py` (unit) and
 `hp_repair_showdown_integration_test.py` (every type through the pinned validator and `getHiddenPower`, the
 variable-power attack list re-derived from Showdown, and the speed-tie pin: HP Fire's 30 Speed IV makes a Jolly 252
 Salamence 327, not 328). First use: `heldout72_hpfix`
