@@ -35,7 +35,7 @@ def setup(built, checkpoints, tmp_path_factory):
             "reference": {"quota": {"a": 1, "b": 1}, "seed": 1},
             "pilots": {"x26": {"model": zip_a, "sha256": PL.file_sha256(zip_a), "pairs_per_team": 1,
                                "unit_pairs": 2, "seed": 9}},
-            "fit": {"prior_sd": 2.0, "B": 20, "seed": 5}}
+            "fit": {"prior_sd": 2.0, "B": 20, "seed": 5, "competitive_margin_elo": 35.0, "comparisons": [["a", "b"]]}}
     reg = RG.build(spec)
     p = tmp / "reg.json"
     p.write_text(json.dumps(reg))
@@ -77,3 +77,14 @@ def test_a_unit_from_another_registration_is_refused(setup, tmp_path):
     other = dict(reg, digest="0" * 64)
     with pytest.raises(XL.LaneError):
         XL.load_games(other, state)
+
+
+def test_the_fit_reads_the_lane_into_per_team_and_per_set_ratings(setup):
+    from main.team_strength import cli
+
+    reg, state, *_ = setup
+    out, ratings = cli.compute(reg, state)
+    assert set(ratings) == {"x26"} and out["pilots"]["x26"]["n_games"] == 8
+    assert set(out["pilots"]["x26"]["sets"]) == {"a", "b"}
+    assert "a-b" in out["pilots"]["x26"]["comparisons"]
+    assert sorted(r["team_id"] for r in out["pilots"]["x26"]["teams"]) == sorted(ratings["x26"].ids)

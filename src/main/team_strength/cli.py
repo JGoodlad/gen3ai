@@ -85,12 +85,27 @@ def cmd_install(a: argparse.Namespace) -> int:
 
 
 def _port_free(port: int) -> bool:
+    """Can a server bind ``port``? SO_REUSEADDR, as a server sets it: the previous unit's closed connections linger in
+    TIME_WAIT for up to a minute, and a bind without it failed right after the first unit (2026-10-18)."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             s.bind(("127.0.0.1", port))
             return True
         except OSError:
             return False
+
+
+def wait_port_free(port: int, timeout_s: float = 120.0, poll_s: float = 5.0) -> bool:
+    """True once ``port`` is bindable, False if it is still busy after ``timeout_s`` (the previous unit's server may
+    take a few seconds to exit)."""
+    t_end = time.monotonic() + timeout_s
+    while True:
+        if _port_free(port):
+            return True
+        if time.monotonic() >= t_end:
+            return False
+        time.sleep(poll_s)
 
 
 def kakuna_plan(reg: Mapping[str, Any]) -> List[Any]:
@@ -117,7 +132,7 @@ def run_kakuna(reg: Mapping[str, Any], state: Path, tree: Path, py: str, stop_at
             if team_set_digest(KL.metamon_set_dir(teams_root, k["ref_set"])) != want["ref"] or \
                     team_set_digest(KL.metamon_set_dir(teams_root, k["subset_sets"][s])) != want[s]:
                 raise SystemExit(f"[tsr] a Metamon set moved since install ({s})")
-            if not _port_free(port):
+            if not wait_port_free(port):
                 raise SystemExit(f"[tsr] port {port} is busy — never another process's server")
             KL.run_unit(py=py, tree=tree, state=state, unit=unit, config=config_path(state, s), seed=seed,
                         port=port)
@@ -161,10 +176,22 @@ def cmd_status(a: argparse.Namespace) -> int:
     return 0
 
 
-def load_kakuna(reg: Mapping[str, Any], state: Path, showdown_sim: Path) -> Dict[str, Any]:
+#: How pilot-B games are CLUSTERED for the bootstrap. ``matchup`` (the default): the games of one unit with the same
+#: (side A team, side B team) are ONE cluster — the anchors' two role halves draw the SAME team sequence from one
+#: ``--team-seed`` (measured on the first TSR unit, 2026-10-18: game ``10 + i`` replays game ``i``'s two teams with the
+#: seats swapped on another battle seed), so they are a seat-swapped pair, not two independent draws. ``game``: each
+#: game its own cluster (PREREG §3 as written, before that was seen).
+KAKUNA_CLUSTERS = ("matchup", "game")
+
+
+def load_kakuna(reg: Mapping[str, Any], state: Path, showdown_sim: Path, cluster: str = "matchup") -> Dict[str, Any]:
     """Every COUNTING pilot-B unit's games (``F.Game``, from side A = the subset team) and every unit's verdict."""
     from main.anchors.results import unit_counts
 
+    if cluster not in KAKUNA_CLUSTERS:
+        raise ValueError(f"cluster {cluster!r} not in {KAKUNA_CLUSTERS}")
+    if "kakuna" not in reg["pilots"]:
+        return {"games": [], "verdicts": [], "self_games": 0}
     k = reg["pilots"]["kakuna"]
     want = kakuna_digests(reg)
     sets = PN.load_registered(reg)
@@ -189,15 +216,15 @@ def load_kakuna(reg: Mapping[str, Any], state: Path, showdown_sim: Path) -> Dict
             if r["a"] == r["b"]:
                 self_games += 1
                 continue
-            games.append(F.Game(a=r["a"], b=r["b"], s=float(r["s"]), owner=r["a"], cluster=f"{unit}:{r['tag']}"))
+            cl = f"{unit}:{r['a']}:{r['b']}" if cluster == "matchup" else f"{unit}:{r['tag']}"
+            games.append(F.Game(a=r["a"], b=r["b"], s=float(r["s"]), owner=r["a"], cluster=cl))
     return {"games": games, "verdicts": verdicts, "self_games": self_games}
 
 
-def cmd_fit(a: argparse.Namespace) -> int:
+def compute(reg: Mapping[str, Any], state: Path, kakuna_cluster: str = "matchup") -> Any:
+    """``(results, {pilot: Rating})`` — both pilots' fits, set means, comparisons and agreement (PREREG §3-§4)."""
     from utils.paths import repo_path
 
-    reg = RG.load(Path(a.reg))
-    state = Path(a.state)
     fz = reg["fit"]
     refs = [m["team_id"] for m in reg["reference"]["members"]]
     out: Dict[str, Any] = {"schema": RP.SCHEMA, "registration_digest": reg["digest"], "pilots": {}}
@@ -205,7 +232,8 @@ def cmd_fit(a: argparse.Namespace) -> int:
     xg = XL.load_games(reg, state)
     if xg:
         ratings["x26"] = F.rate(xg, prior_sd=float(fz["prior_sd"]), anchor=refs, B=int(fz["B"]), seed=int(fz["seed"]))
-    kk = load_kakuna(reg, state, repo_path("deps", "pokemon-showdown", "dist", "sim"))
+    kk = load_kakuna(reg, state, repo_path("deps", "pokemon-showdown", "dist", "sim"), cluster=kakuna_cluster)
+    out["kakuna_cluster"] = kakuna_cluster
     if kk["games"]:
         ratings["kakuna"] = F.rate(kk["games"], prior_sd=float(fz["prior_sd"]), anchor=refs, B=int(fz["B"]),
                                    seed=int(fz["seed"]) + 1)
@@ -235,6 +263,12 @@ def cmd_fit(a: argparse.Namespace) -> int:
         ag = F.agreement(ratings["x26"], ratings["kakuna"], common, seed=int(fz["seed"]) + 20)
         ag["class"] = RP.agreement_class(ag["ci"])
         out["agreement"] = ag
+    return out, ratings
+
+
+def cmd_fit(a: argparse.Namespace) -> int:
+    reg = RG.load(Path(a.reg))
+    out, ratings = compute(reg, Path(a.state))
     Path(a.out).write_text(json.dumps(out, indent=1, sort_keys=True, default=float) + "\n")
     if a.ratings_npz:
         import numpy as np

@@ -106,3 +106,50 @@ def test_the_registration_is_frozen_by_its_digest(tmp_path):
     p.write_text(json.dumps(reg))
     with pytest.raises(PN.PanelError):
         RG.load(p)
+
+
+def test_pilot_b_games_cluster_by_matchup_and_self_games_are_dropped(tmp_path, monkeypatch):
+    """The anchors' two role halves replay one team sequence, so a unit's games with the same two teams are ONE
+    cluster (a seat-swapped pair); a team drawn on both sides carries no information and is dropped, counted."""
+    from types import SimpleNamespace
+
+    from main.anchors import results as AR
+    from main.team_strength import cli
+    from main.team_strength import kakuna_lane as KL
+
+    reg = {"pilots": {"kakuna": {"subset_sets": {"s": "mm_s"}, "subsets": {"s": ["a1", "a2"]}, "units_per_set": 1,
+                                 "seed": 1}},
+           "reference": {"members": [{"team_id": "b1"}, {"team_id": "a2"}]}}
+    unit = PLN.kakuna_units(["s"], 1, 1)[0][0]
+    (KL.unit_dir(tmp_path, unit)).mkdir(parents=True)
+    (KL.unit_dir(tmp_path, unit) / "summary.json").write_text("{}")
+    rows = [{"tag": "t1", "a": "a1", "b": "b1", "s": 1.0}, {"tag": "t2", "a": "a1", "b": "b1", "s": 0.0},
+            {"tag": "t3", "a": "a2", "b": "a2", "s": 1.0}, {"tag": "t4", "a": "a2", "b": "b1", "s": 1.0}]
+    monkeypatch.setattr(cli, "kakuna_digests", lambda _reg: {"s": "x", "ref": "y"})
+    monkeypatch.setattr(PN, "load_registered", lambda _reg: {})
+    monkeypatch.setattr(KL, "parse_unit", lambda *a, **k: (rows, []))
+    monkeypatch.setattr(AR, "unit_counts", lambda *a, **k: SimpleNamespace(reasons=[]))
+    kk = cli.load_kakuna(reg, tmp_path, tmp_path)
+    assert kk["self_games"] == 1 and len(kk["games"]) == 3
+    assert len({g.cluster for g in kk["games"]}) == 2                       # (a1, b1) twice = one cluster
+    assert len({g.cluster for g in cli.load_kakuna(reg, tmp_path, tmp_path, cluster="game")["games"]}) == 3
+    with pytest.raises(ValueError):
+        cli.load_kakuna(reg, tmp_path, tmp_path, cluster="pair")
+
+
+def test_a_port_in_use_is_busy_and_a_closed_one_frees():
+    import socket
+
+    from main.team_strength import cli
+
+    srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(1)
+    port = srv.getsockname()[1]
+    try:
+        assert not cli._port_free(port)
+        assert not cli.wait_port_free(port, timeout_s=0.2, poll_s=0.1)
+    finally:
+        srv.close()
+    assert cli.wait_port_free(port, timeout_s=5.0, poll_s=0.1)
