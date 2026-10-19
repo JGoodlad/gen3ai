@@ -380,6 +380,7 @@ are the gate-lock HELD time, queue wait excluded):
 | before (`c6a14d16`, the routine gate as it stood) | 12,416 | 19,830 s | **1 h 50 min 35 s** (4 failed, all pre-existing reds) |
 | round 1: speed-mix fix + every test ≥ 20 s `slow` | 12,304 | 4,503 s | 25 min 38 s |
 | round 2 (shipped): + every test ≥ 8 s `slow`, whole files where a module fixture moves | 12,021 | 2,656 s | **15 min 21 s** (2 failed: other units' reds, fixed on main by `98e73741`) |
+| final (`b0f5dc13`, shipped): + two more moving-fixture files whole | 12,009 | — | **14 min 19 s**, green |
 
 **The tiering rule (what `slow` means now).** A test is `slow` when its setup + call + teardown costs **≥ 8 s
 in the ship-gate shape beside a live run** (≈ 2-3 s on a quiet box: the factor there is x2.7-x4.9 by the
@@ -403,10 +404,12 @@ test that STARTS AN EXTERNAL PROCESS of a third party (the Metamon peer smoke
 `anchors_integration_test::test_one_capped_real_game_…` and `windowed_attention_integration_test`, which run
 Metamon's own interpreter): no routine-gate test starts a Metamon peer. Their verdicts are BANKED by the slow
 tier in `slow_tier_status.json`, and a recorded red fails the ship gate (§ "The SLOW-TIER LAST-KNOWN-STATUS
-gate" below). ⚠️ **The cost of the speed: a slow test that broke since its last banked run reads green here.**
+gate" below; on 2026-10-19 373 of the re-tiered ids were still UNBANKED — the slow-tier gate lists them as
+"unrecorded" — and two `play_reveal_integration_test` FAIL rows measured at `b0f5dc13` were HELD pending a
+bisect, orchestrator ruling). ⚠️ **The cost of the speed: a slow test that broke since its last banked run reads green here.**
 So (a) a change to code a `slow` test covers runs THOSE tests too, chosen by judgment and named in the commit
 body (e.g. a compile change ⇒ `pytest src/agents/model/compile_*_test.py -m slow`); (b) the slow tier needs a
-cadence (it is ~an hour or more (UNVERIFIED until the banking run below) beside a live run at `-n 3`) — the orchestrator's call, not a cron (owner, 2026-10-05).
+cadence (it is ~hours beside a live run: the 2026-10-19 banking of the ~525 re-tiered ids banked 152 PASS in ~2 h at `-n 3` before it was stopped for the GPU-blocking work on the agent cores, and its long poles (the play files) run first beside a live run at `-n 3`) — the orchestrator's call, not a cron (owner, 2026-10-05).
 
 **The one speed fix that was not a re-tier** (`belief_tables.build_species_speed_mix`): it accumulated with
 ~220,000 per-element `tensor[s, v] += w` calls — **~5 s of EVERY `DamageOperator` build** on a contended core
