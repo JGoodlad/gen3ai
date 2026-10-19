@@ -1,0 +1,36 @@
+{
+ "battles_finished": 24150,
+ "battles_planned": 24150,
+ "core_errors": [],
+ "corpus": {
+  "corpus": "w_forum_v1",
+  "data_sha256": "7790fd06850e1e244ddb8e0ce57a1fd370d654ef5cd43da8edf779811db55576",
+  "manifest_sha256": "d46c8fc36e68c4bdb66dff63f7c11621f54685355078fb5111a9c8a455e303aa",
+  "n": 2415,
+  "schema": "gen3_team_corpus_v1",
+  "tier": "ABC",
+  "tier_sha256": "65465d25252e3cf30d50e761c2b9f73749e8033d811114c62b2295b3ec777fc5"
+ },
+ "decisions_p1": 801342,
+ "end_turn": {
+  "max": 250,
+  "median": 23
+ },
+ "forfeits": 50,
+ "n_envs": 8,
+ "opponent": {
+  "bot": "heuristic",
+  "kind": "bot",
+  "seed": 3,
+  "streams": "episode"
+ },
+ "profile": "selfcheck",
+ "rounds": 10,
+ "schema": "gen3_team_corpus_soak_v1",
+ "seats": "per round, every team once as p1 (uniform over its mask) and once as p2 (the heuristic bot); round r pairs team i with team i + 1 + r",
+ "seed": 3802,
+ "threads": 3,
+ "turn_limit": 250,
+ "verdict": "PASS",
+ "wall_s": 141.6
+}

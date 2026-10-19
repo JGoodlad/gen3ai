@@ -462,7 +462,34 @@ neighbours (the panel stays clean; v2 is ~70× its size).
   teams low partly because it pilots them badly (H's FAR teams: −236 under X26, −52 under Kakuna), and FAR cores are
   what the off-meta result (H-PILOT-OFFMETA) says the widening needs.
 
-**How many.** All of W_hl that survives the exclusions (≈ 22.7k, UNVERIFIED until built). It is mixed at a DRAW
+**ADOPTED 2026-10-19 (orchestrator, X38 launch-ready brief): X38 widens from the FORUM corpus, `w_forum_v1`, BUILT.**
+W_hl moves to a later dose / population step. The owner's rules hold: teams used as training DATA are fine, priors stay
+Smogon-only; widen OUR side (X37a: the gap is PILOTING unfamiliar teams); no owner or friend teams.
+- **Where:** `src/utils/team_corpora/w_forum_v1/` (`gen3_team_corpus_v1`; loader `utils.team_corpora.load_corpus`,
+  build `python -m utils.team_corpora.build_w_forum [--check]`, deterministic). Pin-safe by construction (F-DV-2).
+- **The build, rule by rule** (each drop counted per tier in its manifest): forum v2's 5,221 VERBATIM kept teams (the
+  109 transcriptions are not used, v2 F2) → the HP repair only where HP is untyped (`gen3_hp_repair_v1`, the
+  heldout72_hpfix function: **0 teams needed it**; v2 had dropped the 8 typeless-HP pastes with no IVs line) → minus
+  our pool's exact teams (711) → minus every REGISTERED panel's teams and near neighbours (≥ 4 shared mon sets, the
+  in-pool home72 / away included: 249) → minus the open crash classes, Transform and Imprison (8) → the pinned
+  validator on the repaired text (0 fail) → the engine's coverage oracle (9: Shell Bell, Blast Burn, Mud Sport,
+  Nightmare, Psywave, Sky Attack, Spite) → the lenient TSR cut (drop iff a Kakuna rating < −170 Elo; **0 rated**:
+  every TSR-rated forum team is a forum72 panel team, so the cut is a no-op and all 4,244 survivors are UNRATED) →
+  a CURATOR CAP (F4): the largest c with c ≤ 10 % of the capped total, c = **241**; each curator keeps its first c in
+  tier order A, B, C (1,829 tier-C teams of the four mass curators dropped).
+- **Result:** **2,415 teams** in nested tiers `A` 332 ⊂ `AB` 555 ⊂ `ABC` 2,415 (the default); 262 curators, four at
+  the cap (giraffefromholland, Zpanther, Shitrock enjoyer, SPFunkM; 10 % each). Against our pool: max shared mon sets
+  0–3 for 2,300, 4–5 for 115 (pool near neighbours are kept: they are new teams). Ladder strata (descriptive, the
+  `ladder_weights_v1` species rule): CORE 123 / NEAR 1,925 / FAR 367, i.e. it carries off-meta FAR cores.
+- **Crash soak** (`python -m utils.team_corpora.soak w_forum_v1 --rounds 10`, the emission self-check env core): 24,150
+  battles, every team 10× in each seat (p1 uniform over its mask, p2 the heuristic bot), **0 core errors**, 50 stall
+  forfeits (`w_forum_v1/soak_selfcheck.json`). It does NOT check sim-vs-port agreement (the Node differential gates
+  were not run on this corpus: F-DV-21).
+- **Exposure at s = 0.5:** a 20M fork plays ≈ 570k games, so each corpus team is drawn ≈ 118 times per side against
+  each pool team's ≈ 400. That is 3.4× the pool's team count at ~30 % of a pool team's exposure, not W_hl's ≈ 13
+  draws per team: memorising the corpus is possible in a way it was not for W_hl (F-DV-22).
+
+**How many (the W_hl design, superseded for X38 by `w_forum_v1` above).** All of W_hl that survives the exclusions (≈ 22.7k, UNVERIFIED until built). It is mixed at a DRAW
 SHARE s = 0.5 per side: each draw comes from W_hl with probability 0.5, else from the pool with today's 10 %
 sample bias on the trainee side.
 
@@ -1068,7 +1095,7 @@ The first D1 read lands ≈ 13 GPU-h after A1's (≈ 39 GPU-h into batch 1).
 
 | build | what | size | must land before |
 |---|---|---|---|
-| B-D1 | the W_hl corpus: T8's HP repair (one function with `heldout72_hpfix`'s), validation, the exclusions (every frozen panel and its near neighbours, smogon_forum and P72 included; the crash classes), the manifest, a full-tier soak | opus-high, ≈ 1–1.5 agent-days | `X35_PIN_k` |
+| B-D1 | the W_hl corpus: T8's HP repair (one function with `heldout72_hpfix`'s), validation, the exclusions (every frozen panel and its near neighbours, smogon_forum and P72 included; the crash classes), the manifest, a full-tier soak | **BUILT 2026-10-19 as `w_forum_v1`** (the forum corpus replaces W_hl for X38, §4.1): 2,415 teams, crash soak 0 errors; the Node differential soak not run (F-DV-21) | `X35_PIN_k` |
 | B-D2 | `--team-mix <corpus>:<share>`: a `MatchupSpec` source kind for both builders, recorded in `metadata.json` (spec hash), restored on resume; byte-identical when absent; a pin-safe corpus path | opus-medium, ≈ 0.5 agent-day | `X35_PIN_k` |
 | B-D3 | the held-out panel registry (pointing at `ladder_weights_vN`) + the refusing startup guard (exact + near neighbour, by content) + `--team-exclude` | **REGISTRY BUILT 2026-10-19** (`heldout_panels.json`, `main.heldout_panels`); the guard rides `--team-mix` (B-D2); `--team-exclude` not built (no arm needs it) | B-D1, `X35_PIN_k` (and D5) |
 | B-D4 | P72: generate, sanitise, validate, overlap-check (pool, `competitive`, `hl_05_26`, smogon_forum), assign strata, install for Metamon; the X37a configs (per-stratum Metamon sub-sets of heldout72_hpfix; the asymmetric cells' per-side sources) | opus-medium, ≈ 0.25 agent-day | X37a |
@@ -1299,6 +1326,16 @@ held-out gain and in-pool cost, is the right design. Three amendments:
     intervals are somewhat optimistic.
 - **F-DV-19 (TSR, hypothesis).** A same-family opponent may under-punish unfamiliar-team piloting (§5.4's caution).
   GEN-M could under-measure the deficit. UNVERIFIED.
+- **F-DV-21 (X38 build).** `w_forum_v1`'s soak ran on the Rust env core only (0 core errors in 24,150 battles); the
+  sim-vs-port differential gates (`ab_fuzz` / `gen_sim_bridge_diff`) have no team source for it and were not run.
+  A divergence would not crash a run; it would train on a slightly wrong game for the affected teams.
+- **F-DV-22 (X38 build).** The forum corpus is ~10× smaller than W_hl (2,415 vs ≈ 22.7k), so at s = 0.5 each corpus
+  team is drawn ≈ 118 times per side in 20M steps (W_hl's design: ≈ 13). Identification-by-memorisation is weaker
+  than for the pool (≈ 400) but not ruled out; a GAIN on forum72 alone (same population) with none on
+  heldout72_hpfix / P72 would read as "learned this population", not "generalises".
+- **F-DV-23 (X38 build).** The lenient strength cut removed nothing because no corpus team has a TSR rating (every
+  rated forum team is a forum72 panel member). Tier C is 77 % of the corpus and entirely unscreened; forum72's tier-B
+  competition entries rated −166. A TSR screen of a corpus sample (~30 lane-minutes per 150 teams) would measure it.
 - **F-DV-20 (TSR).** P72 is MATERIALLY WEAKER than human-built teams (−146 Elo vs forum72), and heldout72_hpfix ~70
   Elo weaker. Symmetric cells cancel this on average; an asymmetric cell with either set must carry its strength term.
 
@@ -1330,3 +1367,4 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 | 2026-10-18 | **X37a stage 2 READ** (eval-matrix worker; panels frozen in `cb0f1769` by PREREG §4) | **UNSEEN-DRIVEN, both third sources agree**: forum72 (v1 core, curator cap 14) 0.470 [0.422, 0.519], d1 +0.022 n.d., d2 −0.105 [−0.173, −0.036]; P72 (procedural, Smogon-only) 0.453 [0.404, 0.501], d1 +0.005 n.d., d2 −0.123 [−0.190, −0.053]. H4 KILLED; D1 stays at X35 rank 2 (§6.1's demotion condition not met); with stage 1, the deficit is PILOTING unseen teams | POPULATION / KAKUNA-DRIVEN (d1 not above 0 for either source); reading P72 alone (forum72 governs; they agree) | `measurements/x37a_eval_matrix_2026-10-18/` README stage 2; ledger 2026-10-18 *X37a STAGE 2* |
 | 2026-10-19 | **TSR READ: team strength per set** (team-strength worker; PREREG `119313b9`, tool `main.team_strength`) | heldout72_hpfix is ~70 Elo weaker than forum72 in BOTH pilots' hands (X26 −71 [−147, −2], Kakuna −69 [−188, +43]; D1 UNDECIDED at the 35-Elo bar, X26 detects it marginally); P72 MATERIALLY WEAKER (−146); forum72 ≈ home72; cross-pilot ρ 0.33 (NOT SHOWN by the registered, 0-biased interval); X37a's piloting gap SURVIVES strength matching (+0.28 [+0.12, +0.44] on Kakuna-rated teams; +0.11 set-level). PROPOSED (not adopted): forum v2 tier A ahead of W_hl as the widening source, screened leniently and never by X26's rating alone | reading H's weakness as the cause of the reverse-cell loss (matching removes 3–9 pp of 20–31); screening a widening pool by X26's own rating (it drops off-meta teams X26 pilots badly) | `measurements/team_strength_2026-10-18/`; ledger 2026-10-19 *TEAM STRENGTH* |
 | 2026-10-19 | **B-D3: the held-out panel registry FROZEN before any widening corpus** (X38 launch-ready worker) | `designs/research_state/heldout_panels.json` (`gen3_heldout_panels_v1`): home72, away (in-pool), heldout72 (retired), heldout72_hpfix, forum72, p72 (held out from training), each by content digest + manifest sha256 + draw rule + seed; one near-neighbour radius (≥ 4 shared mon sets); `ladder_weights_v1` by sha256. Reader `main.heldout_panels` (verify, `hits`, `contamination`) | the registry with per-panel radii (one rule is easier to audit); registering D5's leave-out now (not carved; private to D5) | `main/heldout_panels_test.py`; the pool reads 0 hits against every held-out panel |
+| 2026-10-19 | **B-D1 as `w_forum_v1`: X38's widening corpus BUILT from the forum v2 VERBATIM teams** (X38 launch-ready worker, orchestrator brief) | `src/utils/team_corpora/w_forum_v1/` (pin-safe `src/`, Q2): 2,415 teams, tiers A 332 ⊂ AB 555 ⊂ ABC 2,415; excludes our pool's exact teams, every registered panel and its near neighbours (≥ 4 shared mon sets), Transform / Imprison, engine-unplayable ids; HP repair where untyped (0 needed); the lenient TSR cut (0 rated, a no-op); curator cap c = 241 (≤ 10 %); crash soak 24,150 battles, 0 core errors | W_hl first (the TSR read: replay reconstructions ~70 Elo weaker than forum teams); tier A only (332 teams: under half the pool's size); no curator cap (four curators would hold 3,294 of 5,330); screening by X26's rating (it drops the off-meta teams the widening needs) | `w_forum_v1/manifest.json`, `soak_selfcheck.json`; `utils/team_corpora/team_corpora_test.py` |

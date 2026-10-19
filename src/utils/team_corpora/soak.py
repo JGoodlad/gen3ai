@@ -1,0 +1,137 @@
+"""A CRASH SOAK of a team corpus on the Rust ENV core — the core training plays (§4.1 step 5 of
+``designs/endstate/design_diversity_teams_opponents.md``).
+
+    python -m utils.team_corpora.soak w_forum_v1 [--tier ABC] [--profile selfcheck] [--out FILE]
+
+Every team of the tier plays TWO battles per round (``--rounds``) on the env core training uses: once in seat p1 against the next team (p2,
+piloted by the Rust ``heuristic`` bot), once in seat p2 (piloted by the bot) against the previous team. p1 draws
+uniformly over its legal mask from a seeded generator, so the battles reach moves a strong policy would not choose.
+The teams are packed by the TRAINING teambuilder (``Gen3Teambuilder``: validated, the gen-3 Hidden Power IV fix), and
+the ``selfcheck`` profile is the emission self-check build. The battle seeds are a function of ``--seed`` alone.
+
+What it proves: 0 core errors (an encoder raise, a belief-tracker contradiction, a rejected choice the core cannot
+recover from: each kills a training run, not one battle) over every team, in both seats. What it does NOT prove: sim
+vs port agreement (the Node differential gates), or a crash a stronger policy reaches. A core error stops the soak
+and names the in-flight battles' teams.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+import time
+from typing import Any, Dict, List, Optional
+
+import numpy as np
+
+SOAK_SCHEMA = "gen3_team_corpus_soak_v1"
+BOT = {"kind": "bot", "bot": "heuristic", "seed": 3, "streams": "episode"}
+
+
+def soak(name: str, tier: str = "", *, profile: str = "selfcheck", seed: int = 3802, rounds: int = 1,
+         n_envs: int = 8, threads: int = 3, turn_limit: int = 250) -> Dict[str, Any]:
+    from utils.rust_env import ffi
+    from utils.rust_env import protocol as P
+    from utils.rust_env.build import ensure_built
+    from utils.team_corpora import load_corpus
+    from utils.teambuilder import Gen3Teambuilder
+
+    corpus = load_corpus(name, tier)
+    packed = Gen3Teambuilder(list(corpus.texts)).packed_teams
+    if len(packed) != len(corpus):
+        raise RuntimeError(f"{len(corpus) - len(packed)} corpus teams failed the training teambuilder's validation")
+    n_teams = len(packed)
+    # round r pairs team i (p1) with team i + 1 + r (p2): every team plays 2 x rounds games, each against new teams
+    pairs = [(i, (i + 1 + r) % n_teams) for r in range(int(rounds)) for i in range(n_teams)]
+    n = len(pairs)
+    ensure_built(profile)
+    spec = P.spec_json(n=n_envs, threads=threads, teams=list(packed), names=("soakone", "soaktwo"),
+                       turn_limit=turn_limit, refusal_budget=4, bank_dir=None, opponents=[dict(BOT)])
+    core = ffi.FfiCore(spec, lib=ffi.load(ffi.default_path(profile)))
+    c = core.cols
+    rng = np.random.default_rng(seed)
+    nxt = 0
+    in_flight: Dict[int, Optional[int]] = {e: None for e in range(n_envs)}
+    staged: Dict[int, Optional[int]] = {e: None for e in range(n_envs)}
+    finished = 0
+    decisions = 0
+    stall_forfeits = 0
+    end_turns: List[int] = []
+    errors: List[Dict[str, Any]] = []
+    t0 = time.time()
+
+    def stage(envs) -> None:
+        nonlocal nxt
+        for e in envs:
+            k = nxt if nxt < n else n + int(rng.integers(0, n))   # past the end: filler games, not counted
+            i, j = pairs[k % n]
+            c["ep_team"][e] = (i, j)
+            c["ep_seed"][e] = rng.integers(0, 65536, 4)
+            c["ep_opp"][e] = 0
+            staged[e] = k
+            nxt += 1
+
+    stage(range(n_envs))
+    core.reset()
+    for e in range(n_envs):
+        in_flight[e] = staged[e]
+    stage(range(n_envs))
+    try:
+        while finished < n:
+            pend = [e for e in range(n_envs) if c["need"][e, 0] and int(c["turn"][e]) < turn_limit]
+            for e in pend:
+                m = np.flatnonzero(c["mask"][e, 0].astype(bool))
+                c["action"][e, 0] = int(rng.choice(m))
+            decisions += len(pend)
+            try:
+                core.step()
+            except Exception as exc:  # a core error: name the in-flight battles and stop
+                errors.append({"error": f"{type(exc).__name__}: {exc}"[:2000],
+                               "in_flight": [{"env": e, "pair": pairs[k % n], "ids": [corpus.ids[pairs[k % n][0]],
+                                                                                         corpus.ids[pairs[k % n][1]]]}
+                                             for e, k in in_flight.items() if k is not None]})
+                break
+            for f in core.finished():
+                e = int(f["env"])
+                k = in_flight[e]
+                if k is not None and k < n:
+                    finished += 1
+                    if int(f.get("forfeit", 0) or 0):
+                        stall_forfeits += 1
+                    end_turns.append(int(f["end_turn"]))
+                in_flight[e] = staged[e]
+                stage([e])
+    finally:
+        close = getattr(core, "close", None)
+        if close is not None:
+            close()
+    return {"schema": SOAK_SCHEMA, "corpus": corpus.ident(), "profile": profile, "seed": seed, "n_envs": n_envs,
+            "threads": threads, "turn_limit": turn_limit, "opponent": BOT, "rounds": int(rounds),
+            "battles_planned": n, "battles_finished": finished, "decisions_p1": decisions,
+            "seats": "per round, every team once as p1 (uniform over its mask) and once as p2 (the heuristic bot); "
+                     "round r pairs team i with team i + 1 + r",
+            "forfeits": stall_forfeits,
+            "end_turn": ({"median": int(np.median(end_turns)), "max": int(max(end_turns))} if end_turns else None), "core_errors": errors, "wall_s": round(time.time() - t0, 1),
+            "verdict": "PASS" if not errors and finished == n else "FAIL"}
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("name")
+    ap.add_argument("--tier", default="")
+    ap.add_argument("--profile", default="selfcheck", choices=("selfcheck", "release"))
+    ap.add_argument("--seed", type=int, default=3802)
+    ap.add_argument("--rounds", type=int, default=1)
+    ap.add_argument("--out", default=None)
+    a = ap.parse_args(argv)
+    res = soak(a.name, a.tier, profile=a.profile, seed=a.seed, rounds=a.rounds)
+    text = json.dumps(res, indent=1, sort_keys=True)
+    if a.out:
+        with open(a.out, "w") as f:
+            f.write(text + "\n")
+    print(text if len(text) < 4000 else text[:4000])
+    return 0 if res["verdict"] == "PASS" else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
