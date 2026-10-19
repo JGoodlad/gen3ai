@@ -282,3 +282,41 @@ def test_species_usage_prior_holds_the_BASE_forme():
     assert sunny is not None and sunny.num == castform.num
     assert float(prior[castform.num]) > 0.0
     assert abs(float(prior.sum()) - 1.0) < 1e-5                # normalized over base forms only
+
+
+def test_the_speed_mix_is_bit_identical_to_the_per_element_tensor_reference() -> None:
+    """`build_species_speed_mix` accumulates in Python floats (2026-10-19: the per-element tensor `+=` was ~5 s of
+    every DamageOperator build). The float64 adds run in the same order, so every row must be BIT-identical to
+    the original tensor-indexed accumulation — checked here on a spread of real species (the reference is the
+    slow path, so a subset), on the unknown num 0, and on the 'no chaos record' uniform fallback."""
+    from typing import cast
+
+    from agents import gen3_data
+    from agents.gen3_data.species import SpeciesData
+    from agents.model.belief_tables import _SPREAD_BASE_IDX, SPEED_LATTICE, build_species_speed_mix
+
+    ids = list(gen3_data.species.base_form_ids())
+    n = 1 + max(cast(SpeciesData, gen3_data.species.get(s)).num for s in ids)
+    mix = build_species_speed_mix(n)
+    nature_spe = [float(m.get("spe", 1.0)) for m in gen3_data.natures.multipliers().values()]
+    checked = 0
+    no_record = 0
+    for sid in ids[:: max(1, len(ids) // 40)] + ["blissey"]:
+        sd = cast(SpeciesData, gen3_data.species.get(sid))
+        ref = torch.zeros(SPEED_LATTICE, dtype=torch.float64)
+        rows = []
+        for nat, evs, w in gen3_data.priors.all_spreads(sid):
+            nd = gen3_data.natures.get(str(nat).lower())
+            rows.append((nd.multipliers.get("spe", 1.0) if nd is not None else 1.0,
+                         int(evs[_SPREAD_BASE_IDX["spe"]]), float(w)))
+        if not rows:
+            no_record += 1
+            rows = [(m, ev, 1.0) for m in nature_spe for ev in range(0, 253, 4)]
+        tot = sum(w for _, _, w in rows)
+        for mult, ev, w in rows:
+            ref[int(gen3_data.priors.gen3_stat(int(sd.base_stats.get("spe", 0)), ev, mult))] += w / tot
+        assert torch.equal(mix[sd.num], ref.to(torch.float32)), sid
+        checked += 1
+    assert checked >= 20
+    assert no_record >= 1, "the subset must exercise the no-chaos-record uniform fallback"
+    assert mix[0, 0].item() == 1.0 and mix[0, 1:].sum().item() == 0.0      # num 0: a point mass at speed 0

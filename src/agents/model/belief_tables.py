@@ -72,8 +72,11 @@ def build_species_speed_mix(n_species: int) -> torch.Tensor:
     natures × Speed EVs 0, 4, …, 252) — no usage, so no preference. A num no species owns (0 = unknown / pad):
     a point mass at speed 0 — the step the Gaussian's zero row gave (we are faster than an unknown).
     Non-persistent, zero params; registered only under the speed rule."""
-    mix = torch.zeros(n_species, SPEED_LATTICE, dtype=torch.float64)
-    filled = torch.zeros(n_species, dtype=torch.bool)
+    # Accumulated in PYTHON floats and turned into a tensor ONCE: the same float64 adds in the same order as a
+    # per-element `mix[snum, v] += …` on the tensor (bit-identical), without ~220k tensor-index calls — those
+    # were ~5 s of EVERY DamageOperator build on a contended core (2026-10-19, the ship gate's profile).
+    acc = [[0.0] * SPEED_LATTICE for _ in range(n_species)]
+    filled = [False] * n_species
     nature_spe = [float(m.get("spe", 1.0)) for m in gen3_data.natures.multipliers().values()]
     for sid in gen3_data.species.base_form_ids():
         sd = cast(SpeciesData, gen3_data.species.get(sid))
@@ -94,10 +97,12 @@ def build_species_speed_mix(n_species: int) -> torch.Tensor:
             if not (0 <= v < SPEED_LATTICE):
                 raise ValueError(f"build_species_speed_mix: {sid}'s speed {v} is outside the lattice "
                                  f"[0, {SPEED_LATTICE}) — widen SPEED_LATTICE")
-            mix[snum, v] += w / tot
+            acc[snum][v] += w / tot
         filled[snum] = True
-    mix[~filled, 0] = 1.0
-    return mix.to(torch.float32)
+    for snum, f in enumerate(filled):
+        if not f:
+            acc[snum][0] = 1.0
+    return torch.tensor(acc, dtype=torch.float64).to(torch.float32)
 
 
 def build_opp_spread_prior(n_species: int) -> torch.Tensor:
