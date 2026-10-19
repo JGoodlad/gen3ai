@@ -1,0 +1,140 @@
+{
+ "box": "contention: load average 11.98/11.36/11.03 on 6 cpus (CPU-STARVED, expect ~2.0x slower). If this is a timeout and a training run is live, it is probably starvation, not a bug \u2014 confirm with: ps -eo pcpu,pid,args --sort=-pcpu | head",
+ "load1_start": 11.98,
+ "cpu_affinity": [
+  5,
+  6,
+  7,
+  13,
+  14,
+  15
+ ],
+ "teams": 42,
+ "shapes": [
+  {
+   "n": 48,
+   "threads": 1,
+   "blocks": [
+    {
+     "rows": 27293,
+     "battles": 183,
+     "core_s": 3.961360426,
+     "wall_s": 3.967914841,
+     "block_s": 4.003260591,
+     "load1": 12.06
+    },
+    {
+     "rows": 27351,
+     "battles": 169,
+     "core_s": 4.511251967,
+     "wall_s": 4.515112278,
+     "block_s": 4.555574101,
+     "load1": 12.06
+    },
+    {
+     "rows": 27247,
+     "battles": 179,
+     "core_s": 3.892243677,
+     "wall_s": 3.89535719,
+     "block_s": 3.926193226,
+     "load1": 12.05
+    },
+    {
+     "rows": 27267,
+     "battles": 177,
+     "core_s": 4.39076896,
+     "wall_s": 4.394172025,
+     "block_s": 4.425368365,
+     "load1": 12.05
+    },
+    {
+     "rows": 27333,
+     "battles": 174,
+     "core_s": 4.12388585,
+     "wall_s": 4.127017396,
+     "block_s": 4.165014874,
+     "load1": 12.04
+    },
+    {
+     "rows": 27496,
+     "battles": 150,
+     "core_s": 4.11337361,
+     "wall_s": 4.116569964,
+     "block_s": 4.153012605,
+     "load1": 12.04
+    }
+   ],
+   "core_us_per_row": 150.23734727121973,
+   "wall_us_per_row": 150.3527563295371,
+   "host_us_per_row": 1.310213954406334,
+   "rows_per_s_core": 6656.254738732876,
+   "battles_per_s_core": 41.291752475106165,
+   "rows_per_battle": 158.90213178294573,
+   "battles": 1032,
+   "rows": 163987
+  },
+  {
+   "n": 48,
+   "threads": 3,
+   "blocks": [
+    {
+     "rows": 27293,
+     "battles": 183,
+     "core_s": 2.987929889,
+     "wall_s": 2.990914559,
+     "block_s": 3.015618612,
+     "load1": 12.2
+    },
+    {
+     "rows": 27351,
+     "battles": 169,
+     "core_s": 3.076100224,
+     "wall_s": 3.079463753,
+     "block_s": 3.106882684,
+     "load1": 12.2
+    },
+    {
+     "rows": 27247,
+     "battles": 179,
+     "core_s": 2.918048564,
+     "wall_s": 2.921111437,
+     "block_s": 2.947866692,
+     "load1": 12.82
+    },
+    {
+     "rows": 27267,
+     "battles": 177,
+     "core_s": 2.909108134,
+     "wall_s": 2.912110577,
+     "block_s": 2.936914976,
+     "load1": 13.48
+    },
+    {
+     "rows": 27333,
+     "battles": 174,
+     "core_s": 3.017627246,
+     "wall_s": 3.020867539,
+     "block_s": 3.046239678,
+     "load1": 13.48
+    },
+    {
+     "rows": 27496,
+     "battles": 150,
+     "core_s": 3.000644101,
+     "wall_s": 3.003778064,
+     "block_s": 3.028318209,
+     "load1": 13.44
+    }
+   ],
+   "core_us_per_row": 109.3031282471836,
+   "wall_us_per_row": 109.41479598780319,
+   "host_us_per_row": 0.9189729860209894,
+   "rows_per_s_core": 9148.891883956589,
+   "battles_per_s_core": 57.623183844845386,
+   "rows_per_battle": 158.90213178294573,
+   "battles": 1032,
+   "rows": 163987
+  }
+ ],
+ "load1_end": 13.44
+}

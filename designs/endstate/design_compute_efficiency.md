@@ -54,6 +54,10 @@ meaningful difference there. **This doc therefore makes NO "replace or slim prod
      Launch-ready on paper since 2026-10-17 (§5.6): seven arms ranked, the archive opponent pool (A1) first, the
      readout scored against the POPULATION with the collapse battery and a Kakuna read as guards.
   5. **X36 — the toy + 1 component ladder.** DEFERRED.
+- **Against the published bots (§1.6, 2026-10-18):** the ~75× steps/s gap to mikumiku37 is the card (×1.75), 10 PPO
+  epochs against their ≈ 1–2, low GPU utilisation of a many-small-op network, and opponent inference fanned over ~21
+  small replays per host step. It is NOT model size and NOT the env core (7.6 % of the cycle). The levers are ranked
+  there: fewer epochs (X44), the fan-out cut (X45), overlap (X14).
 - **One owner question (§6.4):** run X34 on a rented cloud GPU in parallel with X26, or after X26 on ours.
 
 ## 1. The COST ledger
@@ -215,6 +219,34 @@ the toy's, and why every offline CPU meter (crosses, Tier-1 plateau checks) pays
 - the damage op's own rows: 0.5 % of FLOPs, though CPU-heavy;
 - move resolution: ≈ 0;
 - the pointer head and the critic.
+
+### 1.6 Against the published bots: the throughput audit (2026-10-18)
+
+The owner asked what separates us from the Gen 9 VGC bots of October 2026 (mikumiku37: ~100k env steps/s on one RTX
+5090; X26: ~1,350 on our 3080 Ti). The full audit, its arithmetic and tomorrow's GPU cells are in
+[`../research_state/measurements/throughput_audit_2026-10-18/README.md`](../research_state/measurements/throughput_audit_2026-10-18/README.md).
+In short:
+
+- **The card is ×1.75.** On the same card, the gap is two stacked gaps.
+- **The UPDATE costs ≈ 28× theirs per sample.** Mostly that is **10 PPO epochs**, where their published budget fits only
+  ≈ 1–2. The rest is our GPU utilisation: 6–8 % of peak on the counted arithmetic, because the op, edges and beliefs
+  are many small memory-bound kernels (§1.4). It is not model size: they have 3.3× our parameters and a forward
+  probably 1–3× ours.
+- **COLLECTION + overheads cost ≈ 75× theirs per sample.** About half is inference fanned over ~21 small replays per
+  host step (the trainee + up to 20 opponent snapshots): 88 µs of GPU wait per row against ≈ 14 µs for the same
+  forward inside the learner.
+- **The env core is only 7.6 % of X26's cycle.** Its per-decision time is ≈ 90 % protocol-text round trip, allocation
+  and encoding, and ≈ 2–3 % simulation (self time, BUSY box).
+- **Their figures are not one unit** (330M games / 48.3 h and 100k steps/s imply 52.7 steps per game). So the true
+  per-decision gap is ≈ 15–75×.
+- **Levers, ranked by expected gain × risk:**
+  1. fewer epochs at a held optimizer-step count: ×1.39 (E5) to ×1.81 (E2); risk = sample efficiency (**X44**);
+  2. cut the opponent fan-out: est. ×1.08–1.20, low risk (**X45**, sized by tomorrow's `c_pool*` cells);
+  3. overlap collection with the update: est. ×1.15–1.3, more after 1 (**X14**).
+
+  Together on our card ≈ ×2.4–3. These are RECIPE and PERF levers. Nothing here slims production (the owner's
+  2026-10-16 framing, §6); the residual ≈ 15× is the architecture's per-row GPU cost, which X36 would attribute if
+  ever needed.
 
 ## 2. The VALUE ledger
 
@@ -911,3 +943,4 @@ The T55 build (2026-10-17) adds:
 | 2026-10-17 | **T55, the stage kit** (build worker) | `src/main/x35/`: the readout as pure functions with a constructed-case self-check committed BEFORE any real read; R frozen write-once with every sha256 and re-verified before each launch; every argv built from the frozen R (never typed) and equal to its validated stand-in; a launch script whose default is a dry run, HOLDs (exit 7) on the first failed pre-check and launches only on a literal `GO`; the home72 config committed byte-identical with a 72-team manifest | hand-substituted argvs at the call (the drift F18 / F14 came from); a decision function reading the ledger itself (the readout takes declared cells or numbers); regenerating home72 (a second team set to prove identical) | §5.6.4, §5.6.7; F25–F31; STAGED_PLAN §6 |
 | 2026-10-18 | **Cross-references to the diversity design (design worker; no change to X35)** | §5.6.2 and §5.6.6 point at `design_diversity_teams_opponents.md`. Its arm D1 is PROPOSED at rank 2, and adding a held-out panel to G-K is PROPOSED, both pending the orchestrator's GO. §5.6.6's "P\* against X26 @161M" reference values were updated from the n = 100 / 240 reads (0.600 / 0.570) to the n = 400 reads (0.575 home72 / 0.497 away; 0.395 heldout72) | editing the arm list or the readout here before adoption | `design_diversity_teams_opponents.md` §6, F-DV-1; ledger 2026-10-17 / 2026-10-18 |
 | 2026-10-18 | **D1 ADOPTED at rank 2, conditional on X37** (orchestrator, Q5 of `design_diversity_teams_opponents.md`); its readout follows that doc's evaluation matrix (§5.6) | the §5.6.2 pointer updated from PROPOSED to ADOPTED-CONDITIONAL; the arm table itself unchanged until X37 reads | adding D1 to the table before X37 (its rank depends on X37's verdict) | `design_diversity_teams_opponents.md` §5.6, §6.1, §9 |
+| 2026-10-18 | **The throughput audit against the published bots (§1.6; performance-analysis worker)** | rank the THROUGHPUT levers by expected gain × risk: (1) fewer PPO epochs at a held optimizer-step count, read at MATCHED GPU WALL (X44, ≈ 10 GPU-h pilot); (2) cut the opponent inference fan-out (X45, sized first by the GPU cells `c_pool1` / `c_pool5`); (3) overlap collection with the update (X14, as registered); GPU cells for the 10-19 gap written (`run_gpu_gap.sh`), not run | slimming the network (history seats, depth) as a throughput lever (the owner's 2026-10-16 framing; X36 stays deferred); env-core speed work (≤ ×1.08 by Amdahl: 7.6 % of the cycle); larger micro-batches (measured ≤ 7 %, slower on a 5090, 4,096 does not fit 12 GB); reading the 75× as a firm number (the source's units disagree by ≈ 5×, F1) | `../research_state/measurements/throughput_audit_2026-10-18/README.md`; X26 TensorBoard @312M; `gpu_bench_2026-10-18/suites/`; the 2026-10-18 literature survey |

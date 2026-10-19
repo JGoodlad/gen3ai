@@ -1,0 +1,60 @@
+     5.40%  libpokesim_env.so                                  [.] pokesim::encoder::encode
+     5.37%  libc.so.6                                          [.] _int_free_merge_chunk
+     5.35%  libc.so.6                                          [.] _int_malloc
+     4.09%  libc.so.6                                          [.] cfree@GLIBC_2.2.5
+     3.85%  libpokesim_env.so                                  [.] <alloc::string::String as core::iter::traits::collect::FromIterator<char>>::from_iter
+     3.81%  libc.so.6                                          [.] __memcmp_evex_movbe
+     3.59%  libc.so.6                                          [.] __memmove_avx512_unaligned_erms
+     3.02%  libpokesim_env.so                                  [.] pokesim::core_events::jsonval::Val::string
+     2.69%  libpokesim_env.so                                  [.] pokesim::encoder::slot::populated_slot
+     2.44%  libc.so.6                                          [.] malloc
+     2.18%  libpokesim_env.so                                  [.] alloc::raw_vec::RawVecInner<A>::finish_grow
+     2.09%  libpokesim_env.so                                  [.] pokesim::core_events::jsonval::Val::value
+     1.85%  libpokesim_env.so                                  [.] pokesim::bridge::json_escape
+     1.79%  libpokesim_env.so                                  [.] core::fmt::write
+     1.76%  libc.so.6                                          [.] _int_free_chunk
+     1.57%  libc.so.6                                          [.] _int_free_maybe_trim
+     1.33%  libpokesim_env.so                                  [.] <alloc::string::String as core::clone::Clone>::clone
+     1.32%  libpokesim_env.so                                  [.] alloc::fmt::format::format_inner
+     1.13%  libpokesim_env.so                                  [.] <alloc::string::String as core::fmt::Write>::write_str
+     0.97%  libc.so.6                                          [.] realloc
+     0.96%  libpokesim_env.so                                  [.] pokesim::present::view::mon_view
+     0.86%  libpokesim_env.so                                  [.] core::ptr::drop_in_place<pokesim::present::view::MonView>
+     0.83%  libpokesim_env.so                                  [.] <core::iter::adapters::map::Map<I,F> as core::iter::traits::iterator::Iterator>::try_fold
+     0.78%  libpokesim_env.so                                  [.] alloc::raw_vec::RawVecInner<A>::reserve::do_reserve_and_handle
+     0.75%  libpokesim_env.so                                  [.] <core::str::iter::Split<P> as core::iter::traits::iterator::Iterator>::next
+     0.75%  libpokesim_env.so                                  [.] core::ptr::drop_in_place<pokesim::core_events::jsonval::Val>
+     0.74%  libpokesim_env.so                                  [.] pokesim::encoder::slot::squash_key
+     0.71%  libpokesim_env.so                                  [.] pokesim::present::dex::retrieve_id_of
+     0.69%  libpokesim_env.so                                  [.] pokesim::present::board_reading::BoardReading::parse_message_split
+     0.63%  libpokesim_env.so                                  [.] pokesim::present::legal::legal_actions
+     0.61%  libpokesim_env.so                                  [.] __rustc::__rust_dealloc
+     0.61%  libpokesim_env.so                                  [.] pokesim::present::dex::move_row
+     0.59%  libpokesim_env.so                                  [.] pokesim::bridge::serialize_mon
+     0.57%  libpokesim_env.so                                  [.] <alloc::raw_vec::RawVecInner>::finish_grow
+     0.53%  libpokesim_env.so                                  [.] pokesim::version::SideStream::fold_inner
+     0.52%  libpokesim_env.so                                  [.] pokesim::trackers::history::EventWindow::update
+     0.52%  libpokesim_env.so                                  [.] <alloc::collections::btree::map::Iter<K,V> as core::iter::traits::iterator::Iterator>::next
+     0.50%  libc.so.6                                          [.] _int_realloc
+     0.48%  libpokesim_env.so                                  [.] pokesim::present::board_reading::BoardReading::parse_request_val
+     0.47%  libpokesim_env.so                                  [.] __rustc::__rdl_dealloc
+     0.45%  libpokesim_env.so                                  [.] pokesim::core_events::to_id
+     0.40%  libpokesim_env.so                                  [.] __rustc::__rdl_alloc
+     0.39%  libpokesim_env.so                                  [.] core::slice::memchr::memchr_aligned
+     0.36%  libpokesim_env.so                                  [.] pokesim::present::mon::PMove::entry
+     0.36%  libc.so.6                                          [.] __memset_avx512_unaligned_erms
+     0.35%  libpokesim_env.so                                  [.] pokesim::core_events::line::classify
+     0.34%  libpokesim_env.so                                  [.] alloc::vec::in_place_collect::<impl alloc::vec::spec_from_iter::SpecFromIter<T,I> for alloc::vec::Vec<T>>::from_iter
+     0.34%  libpokesim_env.so                                  [.] <core::hash::sip::Hasher<S> as core::hash::Hasher>::write
+     0.34%  libpokesim_env.so                                  [.] <core::iter::adapters::map::Map<I,F> as core::iter::traits::iterator::Iterator>::try_fold
+     0.33%  libpokesim_env.so                                  [.] core::ptr::drop_in_place<pokesim::present::board_reading::ReqMon>
+     0.33%  libpokesim_env.so                                  [.] alloc::raw_vec::RawVecInner<A>::try_allocate_in
+     0.33%  libpokesim_env.so                                  [.] pokesim::trackers::history::PairHistory::observe_pairing
+     0.33%  libpokesim_env.so                                  [.] __rustc::__rust_no_alloc_shim_is_unstable_v2
+     0.33%  libpokesim_env.so                                  [.] pokesim::turn::moves::<impl pokesim::state::BattleState>::run_move
+     0.33%  libpokesim_env.so                                  [.] pokesim::present::board_reading::ReqMon::from_val
+     0.33%  libpokesim_env.so                                  [.] pokesim::trackers::delta::Ctx::build
+     0.33%  libpokesim_env.so                                  [.] pokesim::present::board_reading::BoardReading::get_pokemon
+     0.32%  libc.so.6                                          [.] unlink_chunk.isra.0
+     0.31%  libpokesim_env.so                                  [.] pokesim::present::mon::PMon::update_from_request_owned
+     0.31%  libpokesim_env.so                                  [.] <core::iter::adapters::map::Map<I,F> as core::iter::traits::iterator::Iterator>::fold

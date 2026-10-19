@@ -1,0 +1,46 @@
+OUR CYCLE (X26 @312M): 73.03 s / 98,304 steps = 1,346 steps/s
+
+| part of the cycle | s per 98,304-step cycle | µs per step | share |
+|---|---|---|---|
+| update | 41.96 | 426.9 | 57.5 % |
+| gpu_wait | 16.72 | 170.1 | 22.9 % |
+| env_core | 5.55 | 56.4 | 7.6 % |
+| python_glue | 2.53 | 25.8 | 3.5 % |
+| collect_rest | 1.26 | 12.8 | 1.7 % |
+| other | 5.01 | 50.9 | 6.9 % |
+| **total** | **73.03** | **742.9** | 100 % |
+
+5090 (600 W) on our cycle: 41.75 s -> 2,355 steps/s, x1.75
+  update        19.54 s   198.8 µs/step
+  gpu_wait       7.85 s    79.9 µs/step
+  env_core       5.55 s    56.4 µs/step
+  python_glue    2.53 s    25.8 µs/step
+  collect_rest   1.26 s    12.8 µs/step
+  other          5.01 s    50.9 µs/step
+
+mikumiku37 as stated: 10.0 µs/step, of it 7.0 µs PPO gradient
+face-value gap: x74.3   after the card: x42.5
+their games/s 1,898 => 52.7 'steps' per game (a Bo1 VGC game is ~6-12 turns: the stated figures are not one unit)
+our games/s 30.5 (44.1 trainee steps / game); games/s gap x62
+
+UPDATE on a 5090: ours 198.8 µs/step vs theirs 7.0: x28.4
+our learner work per sample: 10 epochs x 244.6 = 2,446 counted MFLOP
+our achieved (counted) learner rate: 5.7 TFLOP/s on the 3080 Ti (8 % of 68.2), 12.9 on the 5090 (6.2 % of 209.5)
+  their per-sample learner work at 100 % utilisation: <= 1,466 MFLOP (ours is x1.7)
+  their per-sample learner work at 50 % utilisation: <= 733 MFLOP (ours is x3.3)
+  their per-sample learner work at 30 % utilisation: <= 440 MFLOP (ours is x5.6)
+
+their per-forward FLOPs, a d=256 x 8-layer transformer (Wolfe_Alt6767's stated shape, 6.29M layer params):
+  T =  8 tokens: ~101 MFLOP forward (ours 94.8)
+  T = 16 tokens: ~201 MFLOP forward (ours 94.8)
+  T = 24 tokens: ~302 MFLOP forward (ours 94.8)
+
+THE EPOCH LEVER on our cycle (3090 suite fixed + marginal, scaled to X26's E10):
+  E10: update  42.0 s, cycle  73.0 s, 1,346 steps/s, x1.00
+  E 5: update  21.6 s, cycle  52.7 s, 1,867 steps/s, x1.39
+  E 3: update  13.4 s, cycle  44.5 s, 2,208 steps/s, x1.64
+  E 2: update   9.4 s, cycle  40.4 s, 2,431 steps/s, x1.81
+  E 1: update   5.3 s, cycle  36.4 s, 2,703 steps/s, x2.01
+
+params: ours 2,609,183 vs theirs 8,700,000 (x3.3)
+inference rows per cycle 189,344 (1.93 per trainee step) in 16.7 s of GPU wait = 88 µs/row; the learner's per-row-epoch fwd+bwd is 42.7 µs
