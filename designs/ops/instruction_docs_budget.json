@@ -15,7 +15,6 @@
     "agent": 1500
   },
   "grandfathered": {
-    ".claude/commands/gen3ai-ship.md": 12881,
     "CLAUDE.md": 38556,
     "~/.claude/agents/opus-high.md": 2797,
     "~/.claude/agents/opus-medium.md": 2688,

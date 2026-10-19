@@ -4,72 +4,21 @@ description: Teach a concept in the context of *our* Gen3 models, then capture i
 
 # /gen3ai-learning
 
-Turn an explanation into a **durable, growing knowledge base**. Two jobs, always both:
+Two jobs, always both: explain the concept now, then capture it in `designs/learning/`. These notes teach (the owner's "explain to teach" preference), so unlike instruction files they may explain at length.
 
-1. **Explain well, right now** — intuitive level first, then technical, **no code** (unless the
-   user explicitly asks). Ground every concept in *our* models (the `DamageOperator`, belief
-   heads, `ValueDistHead`, obs blocks, reward registry, the version map) — not generic
-   textbook framing. Cite the real flags / `ARCH_SIGNATURE` / file names so the note stays
-   connected to the codebase.
-2. **Capture it** — write or update a markdown file under `designs/learning/`, **one file per
-   major concept**. A whole conversation usually maps to **one** file. Prefer **updating an
-   existing file** over creating a near-duplicate.
+## 1. Explain, in the chat response
 
-## The explanation pattern (what "good" looks like)
+- **Intuitive first**: a plain-language model and a concrete toy example that makes it click, showing why it matters for a decision.
+- **Then technical**: the formal statement (inequality, loss, estimator), why it holds, the mechanism. No code unless asked.
+- **Then where it lives in our architecture**: ground it in the real models (damage operator, belief heads, value heads, obs blocks, rewards) and cite the actual flags, `ARCH_SIGNATURE` and file names; read live values from the code, never from memory.
+- A TL;DR at the top and a one-paragraph synthesis at the end.
 
-Follow the shape the user asked for and that the seed note (`marginalization_and_uncertainty.md`)
-demonstrates:
+## 2. Capture
 
-- **Intuitive level first.** A plain-language mental model + a concrete toy example that makes
-  the idea *click* (e.g. the 50/50 Choice-Band example for marginalization). Show *why it
-  matters for a decision*, not just what it is.
-- **Then technical.** The formal statement (the inequality, the loss, the estimator), *why*
-  it's true, and the precise mechanism — still no code.
-- **Then "where this lives in our architecture."** Name the flags, versions, obs blocks, and
-  files. This is what separates a learning note from a blog post.
-- **A TL;DR at the top and a one-paragraph synthesis at the end.** The reader should get the
-  gist from the first screen and the closure from the last.
+- File: `designs/learning/<concept>.md`, kebab-case and concept-named. One file per major concept cluster; a conversation usually maps to one.
+- Run `ls designs/learning/` and read any overlapping note first; extend it in place (keep TL;DR and synthesis current) rather than spawning a near-duplicate.
+- Shape: TL;DR, intuitive, technical, where-it-lives, synthesis, See also (the relevant `CLAUDE.md` sections and design docs). Distil what was discussed; no code, link the file or flag so the note cannot rot. State what is unverified about our code as a short caveat.
+- Add a row for a new note to `designs/learning/README.md`, and keep an existing row accurate. When an architecture change makes a note wrong, fix it in the same pass.
+- Do not commit unless the user's current message contains `/gen3ai-ship`.
 
-Match the seed file's structure unless the user wants something different.
-
-## File conventions
-
-- Location: `designs/learning/<concept>.md` (kebab-case, concept-named, not date-named).
-- **One file per *major concept*** — a cluster of tightly-related ideas the user explored in
-  one sitting. Marginalization + Jensen + "how a model carries uncertainty" is **one** concept
-  cluster → one file. A genuinely separate concept (e.g. PBRS reward shaping, PopArt, GAE) →
-  its own file.
-- **Update in place.** Before writing a new file, list `designs/learning/` and read any file
-  whose topic overlaps. If the new material extends an existing concept, **edit that file**
-  (add a section, refine, append to "See also") rather than spawning a duplicate. Keep the
-  TL;DR and synthesis current when you do.
-- **Always-current, like the CLAUDE.md docs.** If the architecture changes such that a
-  learning note is now wrong (a flag renamed, a version bumped, a mechanism replaced), fix the
-  affected note in the same pass — these are reference docs, not a dated transcript. Do NOT
-  reproduce code; link to the file/flag instead so the note can't rot against an implementation
-  detail.
-- **Each file is self-contained but cross-linked.** End with a **See also** section pointing at
-  the relevant root/leaf `CLAUDE.md` sections, `designs/ai_vN/design_*.md`, and memory files.
-
-## Recipe
-
-1. **Explain** the concept to the user in the two-level pattern above. This is the primary
-   deliverable — do it in the chat response, in full.
-2. **Find the home.** `ls designs/learning/` and skim any overlapping file. Decide: extend an
-   existing file, or create a new concept file?
-3. **Write / update** the markdown to match the seed file's shape (TL;DR → intuitive →
-   technical → where-it-lives → synthesis → see-also). Capture what was actually discussed,
-   distilled into a durable explainer — not a verbatim chat log.
-4. **Register if new.** Add a row for a new note to the index, `designs/learning/README.md`
-   (and keep an existing row accurate when a note's scope changes).
-5. **Ship only on request.** Do NOT commit unless the user's current message contains
-   `/gen3ai-ship` (per the project git rule). Finishing the note is not permission to commit.
-
-## Notes
-
-- This skill is for *understanding*, not changing behaviour. If the user actually wants a code
-  change, drop the skill and do the work (or use the relevant build/probe skill).
-- If the concept is best understood by probing the live model, pair with `/gen3ai-probe` —
-  capture the *insight* here, run the investigation there.
-- Honesty: if an explanation rests on something unverified about our code, say so in the note
-  (a short "open / unverified" caveat) rather than asserting it as fact.
+This command is for understanding, not changing behaviour. To investigate the live model, use `/gen3ai-probe` and capture the insight here.
