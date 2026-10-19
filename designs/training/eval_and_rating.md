@@ -861,7 +861,8 @@ STORAGE-ONLY: the same seeded batches play byte-identical games before and after
 **The regime — on every row, and readers refuse to mix it.** BOTH sides GREEDY (the eval regime); MIRRORED pairs
 (`rust_eval.seeds.pair_game`, `gen3_mirrored_pairs_v1`); the turn limit is `StallConfig().threshold` (a timeout is a
 DRAW); BOTH sides draw their teams from the PLAYER's eval team builder — the default pool with its 10 % sample-team
-bias, what `eval_builders(None, [])` builds and what a greedy sentinel draws from in the in-loop eval. A player whose
+bias, what `eval_builders(None, [])` builds and what a greedy sentinel draws from in the in-loop eval — UNLESS `--panel
+<name>` names a REGISTERED frozen team panel (below). A player whose
 run pinned its eval trainee team (`metadata.json` `matchup_history`) is REFUSED, as is a player whose
 `model_config.json` records `progress_decision_tense` / `progress_switch_freeze` ON (the env core no longer has those
 variants, P11d, so such a checkpoint cannot be played as it was trained). Both players
@@ -928,6 +929,22 @@ gates), but the ENGINE START is 114–167 s per edge (the T2 graphs compile agai
 ~17 s of play after ~2.5 min of start; T2 `eager` on the CPU — 4.77 games/s (8 torch threads, load average 6–10), a
 2,000-game cell ≈ 7 min. CPU eager and GPU graph played identical games (200 games: the same W/L/D, pentanomial and per-team
 counters). The engine start is what the multi-cell engine below removes from every cell after the first.
+
+**On a REGISTERED team panel (`--panel <name>`, `main/h2h/panel.py` — B-D7, 2026-10-19, GEN-M's engine and X38 / D1's
+co-primary P).** `main.h2h play | play-many --panel home72` makes BOTH sides of every mirrored pair draw from ONE panel of
+`designs/research_state/heldout_panels.json` (`main.heldout_panels`) instead of the pool: a plain `Gen3Teambuilder` over the
+panel's teams, no bias, re-seeded per (game key, side) by the eval core as the pool builder is, so a re-run reproduces
+game for game and the mirror is unchanged. The regime's `team_set` is `ts:` over `{registered_panel, panel name, its
+gen3_team_set_digest_v1 content digest, the registry schema, the draw rule}` — the panel's CONTENT is identity, so its rows
+never pool with the pool's or another panel's (readers key on `regime_id`, and the ledger's seed block includes it) — and
+the `team_source` label names the panel and its full content digest. The protocol stays `gen3_eval_protocol_v1_h2h` (the
+team set is a regime field, as the team-strength meter's scheduled builder already uses it). REFUSED, before any request is
+opened or any player hashed: an unregistered name, a panel whose files no longer match the registry (count, content
+digest), and a panel the gen3ou validator does not pack WHOLE. Without `--panel` every regime, engine and game is the pool
+path's, unchanged (`panel_test.py`). Proved on the real engine (`play_panel_integration_test.py`, 2 pairs): the row carries
+the panel's regime and every team either side piloted is a home72 team. D1's P reads it as `python -m main.x35.d1 p-input`
+(one registered `--purpose ab` family look, played `play-many --panel home72` against the frozen reference population;
+a look whose rows are on another team set is INCONCLUSIVE).
 
 **Many cells on ONE engine (`main.h2h play-many`, `main/h2h/many.py` — eval U6 / X5 U0, 2026-10-04).** `python -m main.h2h
 play-many --cells <cells.json> | --players P1 P2 … --opponents O1 O2 … --pairs N [the play flags]` plays every cell

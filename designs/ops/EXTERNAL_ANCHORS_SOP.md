@@ -662,6 +662,19 @@ T28 halt marker and the model's sha256 before every unit, runs from the checkout
 95xx port, and counts a unit only on `status OK`, `n == 20`, `regime_verified_decisions`, no
 `team_source_asymmetry` and `peer_clean`.
 
+**The UNFAMILIAR panels (X38 / D1's PRIMARY H, 2026-10-19).** `python -m main.x35.kakuna plan --teamsets unfamiliar`
+plans the same 7 shared-seed 20-game units per seed final on each of `heldout72_hpfix`, `forum72` and `p72` (any comma
+list of `home72`, `away` and those panels is accepted; the default stays `home72,away`, G-K's cell, unchanged). Each
+panel unit runs on that panel's COMMITTED symmetric config (`anchors_heldout72_hpfix_kakuna.json`,
+`x37a_eval_matrix_2026-10-18/configs/anchors_x37a_forum72.json`, `…_p72.json`, each pinned by sha256), and before EVERY
+unit the runner checks the config's sha256, the panel's registry entry and committed copy, and BOTH sides' team dirs
+(our byte copy outside the repo and Metamon's cache set) by count and `gen3_team_set_digest_v1` content digest against
+`heldout_panels.json`; `python -m main.x35.kakuna panels` runs that check alone (all three OK on 2026-10-19). A panel unit
+also passes `--capture-dir <unit>/capture`, so each game's two teams are on record (F-DV-17). `python -m main.x35.kakuna
+d1h --on <arm> --off C0` writes D1's H input (per seed final and panel, wins / n, ties beside); `python -m
+main.x35.readout decide-d1` reads it (module `main.x35.d1`: the equal-weight panel mean, its stratified variance, the
+effective-size Newcombe interval and the registered classes).
+
 ### 🚨 Numbers that must NOT be quoted without their regime
 
 `0.742` (vs `SmallRL`) and `0.583` (vs `SyntheticRLV2`) are **mixed-regime reads on home teams** —

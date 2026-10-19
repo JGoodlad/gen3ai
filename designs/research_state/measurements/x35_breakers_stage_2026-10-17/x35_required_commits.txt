@@ -2,3 +2,4 @@
 # Format: <sha> <name> [note]. A T54 line is REQUIRED (F18: the fork pool seed's step filter); until T54 lands
 # and its commit is written here, every launch HOLDs. Add T56 / T57 when an arm that needs them joins a batch.
 cdab9cfe1e68312915e4f8f99c6f26c1bb7fa6b4 T54 the fork pool seed's step filter (gen3_pool_seed_step_filter_v1), shipped 2026-10-17
+c1b0c1f0c747e628cc53c72274755990c49af844 B-D2 --team-mix + the w_forum_v1 corpus (fc467f1f is its ancestor): D1 / X38 needs both in the pin; required while D1 is in the batch

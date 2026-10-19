@@ -7,7 +7,9 @@ stand-ins (``argv_*_standin.txt``, each ``checkargs`` / ``launcher --dry-run`` c
 canonical flag order (the order carries no meaning to the trainer's parser):
 
 * production (``--behaviour-check warn``, F14; +20M): ``c0``; ``a1`` (the 8 archive nodes, share 0.5);
-  ``a2`` (``--pfsp-scale 2.5 --n-sentinels 10``);
+  ``a2`` (``--pfsp-scale 2.5 --n-sentinels 10``); ``d1`` (X38, the pool WIDENING arm of
+  ``design_diversity_teams_opponents.md`` §4.2: ``--team-mix w_forum_v1@ABC:0.5 --team-mix-sides both``, read
+  against C0 by ``main.x35.d1``'s own rule, not R1);
 * the TWO-PHASE kits. Phase 1 (+5M, F16's ``--no-self-play`` where the parent self-plays): ``a3_mx`` -- a main
   exploiter of P* (seeds 3511-3513) -- and ``a6_lx`` -- a league exploiter of P* + the archive, share 1.0, stable
   PFSP (seeds 3521-3523). Between the phases, ``phase1-record`` writes ONE write-once record of the three
@@ -47,6 +49,9 @@ CKPT_EVERY = "1000000"
 FORK_GIB = 20.68
 PHASE1_SCHEMA = "x35_phase1_exploiters_v1"
 TOY_EXTRAS = ["--snapshot-ladder-games", "0", "--supply-starve-cycles", "self_play_pool=0"]
+#: D1 / X38's ONE lever (``design_diversity_teams_opponents.md`` §4.2): half of each side's draws from the pin-safe
+#: forum corpus (``utils.team_corpora``, tier ABC = 2,415 teams), both sides; eval stays on the pool.
+D1_LEVER = ("--team-mix", "w_forum_v1@ABC:0.5", "--team-mix-sides", "both")
 
 
 @dataclass(frozen=True)
@@ -67,6 +72,7 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("c0", "production", L_PROD, PROD_SEEDS, "rb_x35_c0_s{seed}", 0, "warn"),
     Arm("a1", "production", L_PROD, PROD_SEEDS, "rb_x35_a1arch_s{seed}", 0, "warn"),
     Arm("a2", "production", L_PROD, PROD_SEEDS, "rb_x35_a2pfsp_s{seed}", 0, "warn"),
+    Arm("d1", "production", L_PROD, PROD_SEEDS, "rb_x35_d1wide_s{seed}", 0, "warn"),
     Arm("a3_mx", "production", L_EXPLOITER, (3511, 3512, 3513), "rb_x35_mx_s{seed}", 1, "warn"),
     Arm("a3", "production", L_PROD, PROD_SEEDS, "rb_x35_a3mx_s{seed}", 2, "warn", phase1_of="a3_mx"),
     Arm("a6_lx", "production", L_EXPLOITER, (3521, 3522, 3523), "rb_x35_lx_s{seed}", 1, "warn"),
@@ -78,6 +84,7 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
 #: STAGED_PLAN §4's batch-1 forks (R0 and the readers have no registered argv yet: a T55 FINDING).
 BATCH1: Tuple[Tuple[str, int], ...] = (
     ("a1", 3501), ("c0", 3501), ("c0", 3502), ("a1", 3502), ("a1", 3503), ("c0", 3503),
+    ("d1", 3501), ("d1", 3502), ("d1", 3503),
     ("a2", 3501), ("a2", 3502), ("a2", 3503),
     ("toy_a1", 3601), ("toy_c0", 3601), ("toy_c0", 3602), ("toy_a1", 3602), ("toy_a1", 3603), ("toy_c0", 3603),
     ("toy_a2", 3601), ("toy_a2", 3602), ("toy_a2", 3603),
@@ -126,6 +133,8 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
         lever = ["--stable-opponents", archive_spec(call), "--stable-opponent-selfplay-share", "0.5"]
     elif arm in ("a2", "toy_a2"):
         lever = ["--pfsp-scale", "2.5", "--n-sentinels", "10"]
+    elif arm == "d1":
+        lever = list(D1_LEVER)
     elif a.phase == 2:
         if phase1 is None:
             raise KitError(f"arm {arm} is phase 2: it needs the {a.phase1_of} phase-1 record")

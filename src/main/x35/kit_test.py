@@ -48,7 +48,7 @@ def standin(name: str) -> List[str]:
 
 @pytest.mark.parametrize("arm,seed,name", [("c0", 3501, "c0_s3501"), ("a1", 3501, "a1_s3501"),
                                            ("a2", 3501, "a2_s3501"), ("a3_mx", 3511, "a3_main_exploiter"),
-                                           ("a6_lx", 3521, "a6_league_exploiter")])
+                                           ("a6_lx", 3521, "a6_league_exploiter"), ("d1", 3501, "d1_s3501")])
 def test_every_production_argv_equals_its_validated_stand_in(arm, seed, name):
     assert flags(K.build_argv(arm, seed, standin_call())) == flags(standin(name))
 
@@ -119,10 +119,10 @@ def test_a_missing_exploiter_final_is_refused(tmp_path):
 
 def test_the_disk_check_counts_the_whole_remaining_batch():
     ok, msg = K.disk_check("/nonexistent", 20.68, thinning=False, existing=[], free_gib=318.0)
-    assert not ok and "18 batch-1 fork(s)" in msg
+    assert not ok and "21 batch-1 fork(s)" in msg
     ok, _ = K.disk_check("/nonexistent", 20.68, thinning=True, existing=[], free_gib=318.0)
     assert ok
-    done = [K.run_name(a, s) for a, s in K.BATCH1[:4]]
+    done = [K.run_name(a, s) for a, s in K.BATCH1[:7]]
     ok, msg = K.disk_check("/nonexistent", 20.68, thinning=False, existing=done, free_gib=318.0)
     assert ok and "14 batch-1" in msg
     ok, msg = K.disk_check("/nonexistent", 20.68, thinning=True, existing=[], free_gib=10.0)
@@ -180,3 +180,15 @@ def test_a_none_later_seed_passes(tmp_path):
     run = _seeded(tmp_path, dropped_steps=[])
     line = "🌱 [SELFPLAY] [pool] seeded 2 snapshots + metadata from x [files: ] [step filter <= 180000055: none later]"
     assert K.check_pool_seed("a2", str(run), standin_call(), line, 180000055) == ("PASS", [])
+
+
+def test_d1_is_c0_plus_the_team_mix_and_nothing_else():
+    """X38 / D1 (§4.2 of the diversity doc): b-ON = C0's argv + the ONE lever, both sides, the same P*, seed, steps."""
+    call = standin_call()
+    on, off = flags(K.build_argv("d1", 3502, call)), flags(K.build_argv("c0", 3502, call))
+    assert set(on) - set(off) == {"--team-mix", "--team-mix-sides"}
+    assert on["--team-mix"] == "w_forum_v1@ABC:0.5" and on["--team-mix-sides"] == "both"
+    assert {k: v for k, v in on.items() if k not in {"--team-mix", "--team-mix-sides", "--run-name"}} == \
+        {k: v for k, v in off.items() if k != "--run-name"}
+    assert on["--run-name"] == "rb_x35_d1wide_s3502"
+    assert [s for a, s in K.BATCH1 if a == "d1"] == [3501, 3502, 3503]

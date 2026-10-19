@@ -1,0 +1,14 @@
+# python -m main.x35.readout self-check --suite d1  (main.x35.d1, X38 / D1's readout; run BEFORE any real read)
+# 2026-10-19T09:27Z, branch x38-readout, base 8989c1372
+PASS  [d1] D1 K = 1 is Newcombe (1998 table, 3 rows; anchors' newcombe)  -- max |Δ| published 5e-05, anchors 0
+PASS  [d1] D1 equal strata = pooled Newcombe (3 cases)  -- max |Δ| 1.4e-16
+PASS  [d1] D1 equal-weight mean, variance, n_eff by hand  -- mean 0.39999999999999997, var 0.00018518518518518518, n_eff 1296.0000000000002
+PASS  [d1] D1 H 95 % coverage >= 0.94 (10000 draws each)  -- Δ +3.0 pp 0.9503; Δ +0.0 pp 0.9487; Δ +3.3 pp 0.9527
+PASS  [d1] D1 H class table (9 constructed rows)  -- all rows as registered (the sign-rule rows have lower > 0)
+PASS  [d1] D1 rule 8 at 0 / ±3.0, and the sign rule at 0  -- tie seeds +2
+PASS  [d1] D1 H INCONCLUSIVE inputs (8 cases) and the floor  -- H: 2 ON / 2 OFF seed finals; look 1 registers 3 per side; H: ON seeds ['3501', '3502', '3503'] != OFF seeds ['3601', '3602', '3603'] (they share seed i); on seed 3502: no forum72 counts; on seed 3501: panels ['home72'] are not D1's ['heldout72_hpfix', 'forum72', 'p72']; on seed 3501 heldout72_hpfix: invalid counts 141/140; on p72: 380 counted games < 400 (at most one uncounted unit); zero variance (every panel's score is 0 or 1): the effective size is undefined; H: 3 ON / 3 OFF seed finals; look 2 registers 5 per side
+PASS  [d1] D1 P non-inferiority at −2.0 (rule 8) and its INCONCLUSIVE inputs  -- NON-INFERIOR / INFERIORITY-NOT-EXCLUDED / at INFERIORITY-NOT-EXCLUDED ('lower -1.9999999999999973 within 1e-09 of -2.0',) / past NON-INFERIOR / ('P ON seed 3502: no population score',) / ('P: 3 ON / 3 OFF seed finals; look 2 registers 5 per side',)
+PASS  [d1] D1 verdict table (11 rows) and the exchange rate  -- rate 3.333333333333331 = Δ̂_H 9.999999999999993 / 3
+PASS  [d1] D1 read_d1 JSON round trip (ADOPT; P seeds not H's INCONCLUSIVE)  -- ADOPT-CANDIDATE / INCONCLUSIVE
+self-check d1: 10 / 10 PASS
+self-check: 10 / 10 PASS

@@ -101,9 +101,11 @@ This doc answers them, after challenging the reading itself (§8).
     smogon_forum symmetric, 400 games each.
   - The parallel `heldout72_hpfix` read supplies S(H, H).
 - **The levers (§4), ranked by expected information per GPU-hour:**
-  - **D1 WIDEN fork at the plateau.** The pool plus about 22.7k HP-repaired `hl_05_26` teams, minus every frozen
-    panel and its near neighbours, at a 50 % draw share on both sides, against X35's shared control C0
-    (**≈ 13 GPU-h**).
+  - **D1 WIDEN fork at the plateau (X38; LAUNCH-READY 2026-10-19, NEEDS GO).** The pool plus `w_forum_v1`, 2,415
+    human-built Smogon forum teams minus every registered panel and its near neighbours (the forum corpus replaced
+    the ≈ 22.7k `hl_05_26` design, §4.1), at a 50 % draw share on both sides (`--team-mix w_forum_v1@ABC:0.5`), a fork
+    of P\* = X26 @ 280M against X35's shared control C0 (**≈ 13 GPU-h**); dry-run validated at pin `c1b0c1f0`
+    (x35 STAGED_PLAN §7).
     - **Primary:** gain on the UNFAMILIAR cells.
     - **Co-primary:** no loss worse than −2.0 pp on sample-team ground, measured in-house.
   - **D5 LEAVE-OUT** (**≈ 5.6 GPU-h**) is the clean memorisation test.
@@ -565,7 +567,12 @@ tree), landed BEFORE X34 launches. **Owner / orchestrator choice (Q2, §9).**
 - 20M steps;
 - seeds 3501–3503, then 3504–3505 at look 2.
 
-b-ON adds `--team-mix <W_hl corpus>:0.5`. b-OFF is X35's shared control **C0**, the same P\*, pin and seeds.
+b-ON adds `--team-mix w_forum_v1@ABC:0.5 --team-mix-sides both` (**amended 2026-10-19**: the forum corpus, §4.1, not
+W_hl; both sides as designed, so OUR side is widened, the owner's ask, and the opponent's with it). The fork does not
+inherit it from P\*, C0 must not type it, and the eval stays on the pool. The startup line `🧬 [TEAM-MIX] … 0 hits`
+is the launch check. b-OFF is X35's shared control **C0**, the same P\*, pin and seeds. The validated block, at the
+real P\* (X26 @ 280,000,170, R's frozen call) and pin `c1b0c1f0`, is x35 STAGED_PLAN §7 (`launch_x35.sh d1`;
+`main.x35.kit` arm `d1`, run names `rb_x35_d1wide_s350k`). **It NEEDS THE ORCHESTRATOR'S GO.**
 Nothing else changes.
 
 **The readout. Its primary is NOT X35's R1**, because R1 scores pool teams only and would call a successful
@@ -587,6 +594,22 @@ generalisation lever a small LOSS.
   decides.
 - **NULL / LOSS / UNDECIDED** after look 2.
 - Nothing is adopted by this rule alone.
+
+**Implemented as `main.x35.d1`** (`python -m main.x35.readout decide-d1`), self-checked 10 / 10 before any read
+(`x35_breakers_stage_2026-10-17/readout_selfcheck_d1.txt`). Declared choices:
+- H pools each arm's wins / n per panel over its seed finals, then takes the EQUAL-WEIGHT mean of the three panel
+  scores, with stratified variance V = (1/9)·Σ p(1−p)/n and Kish effective size n_eff = m(1−m)/V. Wilson at n_eff,
+  combined by Newcombe's method 10. Ties count as non-wins. With equal n and p per panel it equals pooled Newcombe.
+- Look 2's sign rule is a strict majority, 3 of 5 (**not registered before: the orchestrator confirms**). H is at
+  95 % at both looks, with no look correction (R1 uses 97.5 % per look: **the orchestrator confirms**).
+- At most one uncounted 20-game unit per arm and panel, else INCONCLUSIVE.
+- P: Welch two-sided 97.5 % on seed-final population scores; a bound ON −2.0 does not pass.
+- TRADE also covers H GAIN with a failing guard; the exchange rate Δ̂_H / −Δ̂_P is "none" when Δ̂_P ≥ 0.
+- With the forum corpus, forum72 is "own population, unseen teams" for this arm (the corpus excludes forum72 and its
+  near neighbours by construction); heldout72_hpfix and p72 are populations it does not train on. The pooled primary
+  is unchanged; each panel's own row is reported, and no rule reads it.
+- Inputs: H from `kakuna plan --teamsets unfamiliar` + `kakuna d1h`; P from `main.h2h play-many --panel home72` (B-D7)
+  + `main.x35.d1 p-input`.
 
 **Power.** At p ≈ 0.40 and 1,260 games per arm (three panels), the Newcombe half-width is ≈ 3.9 pp. That is enough
 for a recovery of a quarter of the 18-pp drop. More games cost CPU only.
@@ -1067,7 +1090,7 @@ target a different deficit:** the largest one measured against the external refe
 | rank in X35 | arm | GPU-h (production) | built? | condition |
 |---|---|---|---|---|
 | 1 | A1 archive pool | ≈ 13 + 1.4 | yes | — |
-| **2** | **D1 WIDEN (both sides, s = 0.5)** | **≈ 13** + the Kakuna panel on CPU | **no** (§6.2) | rank 2 UNLESS X37a reads POPULATION / KAKUNA-DRIVEN AND X37b reads TRANSFERS (then below A2, §7); the §6.2 builds in `X35_PIN_k` |
+| **2** | **D1 WIDEN (both sides, s = 0.5)** | **≈ 13** + the Kakuna panel on CPU | **YES, 2026-10-19** (B-D1 as `w_forum_v1`, B-D2, B-D3, B-D7; x35 STAGED_PLAN §7) | rank 2 UNLESS X37a reads POPULATION / KAKUNA-DRIVEN AND X37b reads TRANSFERS (then below A2, §7); the §6.2 builds in `X35_PIN_k` |
 | 3 | A2 PFSP | ≈ 13 + 1.4 | yes | — |
 | 4 | A3 main exploiters | ≈ 18 | yes | — |
 | 5 | A4 trailing magnet | ≈ 13.4 + 1.4 | T56 | — |
@@ -1101,7 +1124,7 @@ The first D1 read lands ≈ 13 GPU-h after A1's (≈ 39 GPU-h into batch 1).
 | B-D4 | P72: generate, sanitise, validate, overlap-check (pool, `competitive`, `hl_05_26`, smogon_forum), assign strata, install for Metamon; the X37a configs (per-stratum Metamon sub-sets of heldout72_hpfix; the asymmetric cells' per-side sources) | opus-medium, ≈ 0.25 agent-day | X37a |
 | B-D5 | an in-run held-out eval cell (future runs; subsumed by GEN-M) | opus-medium, ≈ 0.5 agent-day | optional |
 | B-D6 | `their_team` per anchors row (F-DV-6); a per-side content-digest asymmetry check, so a DECLARED asymmetric cell counts (F-DV-5) | opus-medium, ≈ 0.25 agent-day | X37a's asymmetric cells count only with it, or with a registration that waives the count-based flag for declared cells |
-| B-D7 | `main.h2h --panel <registered panel>`: mirrored pairs on a frozen team panel, the panel digest in the regime, a refusal for an unregistered panel (GEN-M's engine) | opus-medium, ≈ 0.5 agent-day | GEN-M |
+| B-D7 | `main.h2h --panel <registered panel>`: mirrored pairs on a frozen team panel, the panel digest in the regime, a refusal for an unregistered panel (GEN-M's engine) | **BUILT 2026-10-19**: both sides draw from the panel; its content digest is identity in the regime `team_set`; an unregistered, moved or partly-packable panel is refused; the pool path is unchanged (`src/main/h2h/panel.py`) | GEN-M; D1's co-primary P |
 | B-D8 | a pinned-peer player: a checkpoint that loads only at its own pin (K2) plays over the websocket front end against an in-process HEAD side, regime-stamped (F-DV-13) | opus-high, ≈ 1 agent-day | optional (GEN-M's K2 rows) |
 | B-D9 | an ASYMMETRIC Metamon pair cell: each peer of an anchor-vs-anchor cell takes its own team set (today one `team_sets[<teamset>]` serves both peers) | opus-medium, ≈ 0.25 agent-day | X37a stage 1's K(P, H) |
 
@@ -1279,7 +1302,8 @@ held-out gain and in-pool cost, is the right design. Three amendments:
   accidental, reads "false". **RESOLVED 2026-10-18 (B-D6, `cb0f1769`):** summaries carry per-side content digests
   (`gen3_team_set_digest_v1`) and `team_content_asymmetry`; `main.anchors.results.unit_counts` refuses an undeclared
   cell whose contents differ.
-- **F-DV-6.** Anchor rows carry no per-game peer team (still true of the rows; worked around by the capture, F-DV-17). The peer CSV's `Team File` does not align one-to-one with
+- **F-DV-6.** Anchor rows carry no per-game peer team (still true of the rows; worked around by the capture, F-DV-17;
+  since 2026-10-19 the X35 runner's PANEL units pass `--capture-dir`, so D1's unfamiliar-panel reads record per-game teams). The peer CSV's `Team File` does not align one-to-one with
   `team_draws` (one unit checked: draws[0] never logged, the last repeated). Per-game facing analysis on banked
   reads is UNSAFE (GIGO).
 - **F-DV-7.** The "untaught 8" are POOL teams the generalist pilots. Only teacher pins are guarded. A read that
@@ -1368,3 +1392,4 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 | 2026-10-19 | **TSR READ: team strength per set** (team-strength worker; PREREG `119313b9`, tool `main.team_strength`) | heldout72_hpfix is ~70 Elo weaker than forum72 in BOTH pilots' hands (X26 −71 [−147, −2], Kakuna −69 [−188, +43]; D1 UNDECIDED at the 35-Elo bar, X26 detects it marginally); P72 MATERIALLY WEAKER (−146); forum72 ≈ home72; cross-pilot ρ 0.33 (NOT SHOWN by the registered, 0-biased interval); X37a's piloting gap SURVIVES strength matching (+0.28 [+0.12, +0.44] on Kakuna-rated teams; +0.11 set-level). PROPOSED (not adopted): forum v2 tier A ahead of W_hl as the widening source, screened leniently and never by X26's rating alone | reading H's weakness as the cause of the reverse-cell loss (matching removes 3–9 pp of 20–31); screening a widening pool by X26's own rating (it drops off-meta teams X26 pilots badly) | `measurements/team_strength_2026-10-18/`; ledger 2026-10-19 *TEAM STRENGTH* |
 | 2026-10-19 | **B-D3: the held-out panel registry FROZEN before any widening corpus** (X38 launch-ready worker) | `designs/research_state/heldout_panels.json` (`gen3_heldout_panels_v1`): home72, away (in-pool), heldout72 (retired), heldout72_hpfix, forum72, p72 (held out from training), each by content digest + manifest sha256 + draw rule + seed; one near-neighbour radius (≥ 4 shared mon sets); `ladder_weights_v1` by sha256. Reader `main.heldout_panels` (verify, `hits`, `contamination`) | the registry with per-panel radii (one rule is easier to audit); registering D5's leave-out now (not carved; private to D5) | `main/heldout_panels_test.py`; the pool reads 0 hits against every held-out panel |
 | 2026-10-19 | **B-D1 as `w_forum_v1`: X38's widening corpus BUILT from the forum v2 VERBATIM teams** (X38 launch-ready worker, orchestrator brief) | `src/utils/team_corpora/w_forum_v1/` (pin-safe `src/`, Q2): 2,415 teams, tiers A 332 ⊂ AB 555 ⊂ ABC 2,415; excludes our pool's exact teams, every registered panel and its near neighbours (≥ 4 shared mon sets), Transform / Imprison, engine-unplayable ids; HP repair where untyped (0 needed); the lenient TSR cut (0 rated, a no-op); curator cap c = 241 (≤ 10 %); crash soak 24,150 battles, 0 core errors | W_hl first (the TSR read: replay reconstructions ~70 Elo weaker than forum teams); tier A only (332 teams: under half the pool's size); no curator cap (four curators would hold 3,294 of 5,330); screening by X26's rating (it drops the off-meta teams the widening needs) | `w_forum_v1/manifest.json`, `soak_selfcheck.json`; `utils/team_corpora/team_corpora_test.py` |
+| 2026-10-19 | **X38 / D1 LAUNCH-READY on paper** (X38 launch-ready worker; NEEDS the orchestrator's GO) | b-ON = C0 + `--team-mix w_forum_v1@ABC:0.5 --team-mix-sides both` (B-D2 `c1b0c1f0`): BOTH sides, the doc's D1 (own side widened per the owner, opponent side with it; D2 stays the opponent-only follow-up); eval on the pool; `main.x35.kit` arm `d1` in BATCH1 after the A1 / C0 ABBA; `checkargs --pin c1b0c1f0` exit 0 and `launcher --dry-run` "would launch", FORK of `rb_x26_s2601`, +20M from the real P\* (280,000,170); B-D7 `main.h2h --panel` and the D1 decision function `main.x35.d1` (self-check 10 / 10) built | trainee-only widening (the owner's words allow it; it is one token, `--team-mix-sides trainee`, and would be a different arm than the registered D1); `hl_05_26` (superseded by the forum corpus for X38) | x35 STAGED_PLAN §7; `main/x35/kit_test.py`, `main/x35/d1_test.py` |

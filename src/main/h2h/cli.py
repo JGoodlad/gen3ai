@@ -42,6 +42,10 @@ def _common(p: argparse.ArgumentParser, request_help: Optional[str] = None) -> N
     p.add_argument("--torch-threads", type=int, default=4, help="intra-op threads of a CPU forward")
     p.add_argument("--front", default="proc", choices=("proc", "ffi"))
     p.add_argument("--profile", default="release", choices=("release", "selfcheck"))
+    p.add_argument("--panel", default=None,
+                   help="a REGISTERED team panel (designs/research_state/heldout_panels.json, e.g. home72) BOTH sides "
+                        "draw from, instead of the player's eval team builder (B-D7, module main.h2h.panel); its content "
+                        "digest is in the regime (team_set / team_source); an unregistered or moved panel is REFUSED")
     p.add_argument("--oracle-reveal-mode", default="off", choices=RV.MODES,
                    help="the PER-SIDE oracle reveal (X5 A/B §7.7(a); module main.h2h.reveal): off = no reveal (an "
                         "oracle checkpoint is REFUSED); one_sided = the oracle side told the other team at its own "
@@ -106,14 +110,17 @@ H2H_READ_WITHHELD = L.ReaderDecl(
 
 
 def cmd_play(a: argparse.Namespace) -> int:
+    from main.h2h import panel as PN
+
     if a.out is not None:
         L.check_write_root(a.out)
+    PN.check_panel(a.panel)                       # an unregistered / moved panel is refused before any hashing
     player, opponent = PL.resolve_player(a.player), PL.resolve_player(a.opponent)
     compute = _compute(a)
     summ = PL.play_edge(a.out, player, opponent, pairs=a.pairs, batch_pairs=a.batch_pairs, schedule_seed=a.seed,
                         schedule_key=a.schedule_key, purpose=a.purpose, run_label=a.label, compute=compute,
                         request_id=a.request, family=a.family, request_kind=a.request_kind,
-                        reveal_mode=a.oracle_reveal_mode)
+                        reveal_mode=a.oracle_reveal_mode, panel=a.panel)
     print(ST.format_edge(summ))
     print(json.dumps(summ, sort_keys=True))
     return 0
@@ -121,9 +128,11 @@ def cmd_play(a: argparse.Namespace) -> int:
 
 def cmd_play_many(a: argparse.Namespace) -> int:
     from main.h2h import many as MANY
+    from main.h2h import panel as PN
 
     if a.out is not None:
         L.check_write_root(a.out)
+    PN.check_panel(a.panel)
     if a.players is not None and not a.opponents:
         raise SystemExit("[h2h] --players needs --opponents (the cross)")
     if a.cells is not None and a.opponents:
@@ -132,7 +141,7 @@ def cmd_play_many(a: argparse.Namespace) -> int:
     out = MANY.play_cells(a.out, MANY.resolve_cells(specs), pairs=a.pairs, batch_pairs=a.batch_pairs,
                           schedule_seed=a.seed, schedule_key=a.schedule_key, purpose=a.purpose, run_label=a.label,
                           compute=_compute(a), request_id=a.request, family=a.family, request_kind=a.request_kind,
-                          reveal_mode=a.oracle_reveal_mode)
+                          reveal_mode=a.oracle_reveal_mode, panel=a.panel)
     for summ in out["cells"]:
         print(ST.format_edge(summ))
     print(json.dumps(out, sort_keys=True))

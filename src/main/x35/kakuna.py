@@ -21,6 +21,20 @@ A unit COUNTS iff ``status == OK``, ``n == 20``, ``regime_verified_decisions``, 
     python -m main.x35.kakuna gk     --state DIR --on A1 --off C0       # G-K's input for main.x35.readout
     python -m main.x35.kakuna smoke  --state DIR --model ZIP [--games 2] # ONE unit vs metamon:SmallRL, home72
     python -m main.x35.kakuna manifest --check | --write
+    python -m main.x35.kakuna panels                                     # check the unfamiliar panels' cells
+    python -m main.x35.kakuna d1h    --state DIR --on X38 --off C0       # D1's PRIMARY H input (main.x35.d1)
+
+THE UNFAMILIAR PANELS (X38 / D1's PRIMARY H, ``design_diversity_teams_opponents.md`` §4.2, §5.6). ``plan
+--teamsets unfamiliar`` (= ``heldout72_hpfix,forum72,p72``; any comma list of :data:`TEAMSETS` and
+:data:`PANEL_CELLS` names) plans the same 7 shared-seed 20-game units per final on each named panel. A panel unit
+runs on that panel's COMMITTED anchors config (:data:`PANEL_CELLS`: X37a's ``anchors_x37a_forum72.json`` /
+``anchors_x37a_p72.json`` and ``anchors_heldout72_hpfix_kakuna.json``, each pinned by sha256), whose ``home`` team
+set is the panel on BOTH sides (a SYMMETRIC cell). Before EVERY panel unit (:func:`check_panel_cell`): the config's
+sha256, the panel's registry entry and its committed copy (:func:`main.heldout_panels.panel_team_texts`), and the
+CONTENT digest (``gen3_team_set_digest_v1``) and count of BOTH sides' team dirs the config names (our byte copy,
+Metamon's cache set) against the registry -- a moved team is a refusal, never a different read. ``home72`` / ``away``
+units are exactly as before (the home72 manifest; :data:`CONFIG`), and G-K reads only them. A panel unit also passes
+``--capture-dir <unit>/capture`` (both packed teams of every game, F-DV-17), which changes no stamp and no play.
 """
 from __future__ import annotations
 
@@ -35,7 +49,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from utils.paths import repo_path, repo_root
 
@@ -47,6 +61,36 @@ OUR_TEAMS = repo_path("designs/research_state/measurements/n0_endofrun_2026-09-2
 OPPONENT = "metamon:Kakuna"
 SMOKE_OPPONENT = "metamon:SmallRL"
 TEAMSETS = {"home72": "home", "away": "away"}
+#: The plan's default team sets (X35's G-K cell: home72 and away, through :data:`CONFIG`).
+DEFAULT_TEAMSETS = ("home72", "away")
+_MEAS = "designs/research_state/measurements"
+
+
+@dataclass(frozen=True)
+class PanelCell:
+    """A registered panel's SYMMETRIC Kakuna cell: the committed anchors config whose ``teamset`` side pilots the
+    panel on both sides, pinned by sha256."""
+
+    config: str
+    sha256: str
+    teamset: str = "home"
+
+    @property
+    def path(self) -> Path:
+        return repo_path(self.config)
+
+
+#: D1's UNFAMILIAR cells (X37a's committed configs; registry ``heldout_panels.json``).
+PANEL_CELLS: Dict[str, PanelCell] = {
+    "heldout72_hpfix": PanelCell(f"{_MEAS}/heldout72_hpfix_kakuna_2026-10-18/anchors_heldout72_hpfix_kakuna.json",
+                                 "dcd993083c46764415dad7fec04ca8efe778403726ee1bdbaf78a5aa742c3916"),
+    "forum72": PanelCell(f"{_MEAS}/x37a_eval_matrix_2026-10-18/configs/anchors_x37a_forum72.json",
+                         "0546e7c34c8083503dfae7dab2c45b3826b801e45cdc5a90e02e711fa2d15ea6"),
+    "p72": PanelCell(f"{_MEAS}/x37a_eval_matrix_2026-10-18/configs/anchors_x37a_p72.json",
+                     "71bd9bad2d69cdc51649c345428cb6b6605db7f262ab6c16f31a1934f88072ac"),
+}
+#: D1's PRIMARY H panels, in the registered order.
+UNFAMILIAR = ("heldout72_hpfix", "forum72", "p72")
 UNIT_SEEDS = tuple(range(7))
 UNIT_GAMES = 20
 CORES = "5-7,13-15"
@@ -123,9 +167,27 @@ class Unit:
     games: int = UNIT_GAMES
 
 
-def plan_units(finals: Sequence[Mapping[str, Any]], *, hash_models: bool = True) -> List[Unit]:
+def parse_teamsets(spec: str) -> Tuple[str, ...]:
+    """``--teamsets``: a comma list of :data:`TEAMSETS` / :data:`PANEL_CELLS` names; ``unfamiliar`` = D1's three."""
+    out: List[str] = []
+    for tok in (t.strip() for t in spec.split(",") if t.strip()):
+        for ts in (UNFAMILIAR if tok == "unfamiliar" else (tok,)):
+            if ts not in TEAMSETS and ts not in PANEL_CELLS:
+                raise KakunaError(f"team set {ts!r} is none of {sorted(TEAMSETS) + sorted(PANEL_CELLS)}")
+            if ts in out:
+                raise KakunaError(f"team set {ts!r} named twice")
+            out.append(ts)
+    if not out:
+        raise KakunaError("no team set named")
+    return tuple(out)
+
+
+def plan_units(finals: Sequence[Mapping[str, Any]], *, hash_models: bool = True,
+               teamsets: Sequence[str] = DEFAULT_TEAMSETS) -> List[Unit]:
     """Every (final × team set × unit seed) unit, unit seeds outermost so a stopped queue is role- and seed-balanced
-    across finals."""
+    across finals. ``teamsets`` defaults to X35's G-K cell (home72, away); D1's PRIMARY H names the unfamiliar
+    panels (:data:`UNFAMILIAR`)."""
+    teamsets = parse_teamsets(",".join(teamsets))
     seen = set()
     for f in finals:
         if f["label"] in seen:
@@ -134,7 +196,7 @@ def plan_units(finals: Sequence[Mapping[str, Any]], *, hash_models: bool = True)
     shas = {f["label"]: (_sha(f["path"]) if hash_models else "") for f in finals}
     return [Unit(name=f"{f['label']}__{ts}__{s:02d}", label=str(f["label"]), arm=str(f["arm"]), seed=int(f["seed"]),
                  teamset=ts, unit_seed=s, model=str(f["path"]), model_sha256=shas[f["label"]])
-            for s in UNIT_SEEDS for ts in TEAMSETS for f in finals]
+            for s in UNIT_SEEDS for ts in teamsets for f in finals]
 
 
 def counts(summary: Mapping[str, Any], games: int) -> bool:
@@ -171,31 +233,92 @@ def choose_port(lo: int = PORT_RANGE[0], hi: int = PORT_RANGE[1]) -> int:
     raise KakunaError(f"no free port in {lo}-{hi}")
 
 
+def config_of(teamset: str) -> Path:
+    """The anchors config a unit on ``teamset`` runs under (:data:`CONFIG` for home72 / away)."""
+    return PANEL_CELLS[teamset].path if teamset in PANEL_CELLS else CONFIG
+
+
+def config_side(teamset: str) -> str:
+    """The config's team-set key a unit on ``teamset`` passes as ``--teamset``."""
+    return PANEL_CELLS[teamset].teamset if teamset in PANEL_CELLS else TEAMSETS[teamset]
+
+
 def unit_argv(u: Unit, out: Path, port: int, py: str = sys.executable) -> List[str]:
     a = [py, "-m", "main.anchors", "--model", u.model, "--opponent", u.opponent, "--regime", "greedy",
-         "--teamset", TEAMSETS[u.teamset], "--games", str(u.games), "--team-seed", str(u.unit_seed),
+         "--teamset", config_side(u.teamset), "--games", str(u.games), "--team-seed", str(u.unit_seed),
          "--seed-base", str(u.unit_seed), "--device", "cpu", "--port", str(port), "--nice", "19", "--out", str(out)]
+    if u.teamset in PANEL_CELLS:
+        # the front end's per-battle repro record (its START command carries BOTH packed teams): which team each side
+        # piloted in each game (F-DV-6 / F-DV-17), so a matchup-clustered sensitivity read stays possible (F-DV-18).
+        # It changes no stamp and no play (the seed comes from --seed-base); home72 / away units are unchanged.
+        a += ["--capture-dir", str(out / "capture")]
     return ["nice", "-n", "19", "taskset", "-c", CORES, str(repo_path("scripts/ops/mem_cap.sh")), "--name",
             "x35kakuna", MEM_GB, *a]
 
 
-def unit_env(base: Optional[Mapping[str, str]] = None) -> Dict[str, str]:
+def unit_env(base: Optional[Mapping[str, str]] = None, config: Path = CONFIG) -> Dict[str, str]:
     env = dict(os.environ if base is None else base)
-    env.update({"PYTHONPATH": str(repo_path("src")), "CUDA_VISIBLE_DEVICES": "", "GEN3AI_ANCHORS_CONFIG": str(CONFIG),
+    env.update({"PYTHONPATH": str(repo_path("src")), "CUDA_VISIBLE_DEVICES": "", "GEN3AI_ANCHORS_CONFIG": str(config),
                 "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1",
                 "NUMEXPR_NUM_THREADS": "1", "PYTHONUNBUFFERED": "1"})
     return env
 
 
+def check_panel_cell(teamset: str, *, config: Optional[Path] = None, want_sha256: Optional[str] = None) -> List[str]:
+    """Every way a registered panel's Kakuna cell on disk differs from its registration (empty = it holds): the
+    config's sha256, the panel's committed copy against the registry, and BOTH sides' team dirs (our byte copy, and
+    Metamon's cache set) by count and ``gen3_team_set_digest_v1`` content digest against the registry."""
+    from main import heldout_panels as HP
+    from main.anchors.session import load_team_texts, team_set_digest
+
+    cell = PANEL_CELLS[teamset]
+    cfg_path = config or cell.path
+    probs: List[str] = []
+    want = want_sha256 or cell.sha256
+    if _sha(cfg_path) != want:
+        probs.append(f"{cfg_path}: sha256 is not the registered {want[:12]}")
+    try:
+        ent = HP.panel_entry(teamset)
+        HP.panel_team_texts(teamset)
+    except (KeyError, HP.PanelRegistryError) as exc:
+        return probs + [f"panel {teamset}: {exc}"]
+    cfg = json.loads(cfg_path.read_text())
+    mm = cfg["opponents"]["metamon"]
+    sides = {"our": Path(cfg["our_team_sources"][cell.teamset]["path"]),
+             "Metamon's": Path(mm["cache_dir"]) / "teams" / mm["team_sets"][cell.teamset] / "gen3ou"}
+    for name, d in sides.items():
+        if not d.is_dir():
+            probs.append(f"{name} {teamset} team dir {d} is missing")
+            continue
+        n = len(load_team_texts(d))
+        if n != int(ent["n"]):
+            probs.append(f"{name} {teamset} team dir {d}: {n} teams, registered {ent['n']}")
+        try:
+            got = team_set_digest(d)
+        except (OSError, ValueError, UnicodeDecodeError) as exc:
+            probs.append(f"{name} {teamset} team dir {d}: unreadable ({exc})")
+            continue
+        if got != ent["content_digest"]:
+            probs.append(f"{name} {teamset} team dir {d}: content digest {got[:12]} != registered "
+                         f"{ent['content_digest'][:12]}")
+    return probs
+
+
 def preflight(u: Unit) -> None:
-    """Refuse a unit on a T28 halt, a moved home72 set, or a model whose bytes changed since the plan."""
+    """Refuse a unit on a T28 halt, a moved home72 set (or panel cell), or a model whose bytes changed since the
+    plan."""
     from main.live.halt import read_halt
 
     if read_halt() is not None:
         raise KakunaError("a T28 live-parse HALT marker is set (python -m main.live.halt status): no play")
-    probs = check_manifest()
-    if probs:
-        raise KakunaError(f"the home72 manifest does not hold: {probs}")
+    if u.teamset in PANEL_CELLS:
+        probs = check_panel_cell(u.teamset)
+        if probs:
+            raise KakunaError(f"the {u.teamset} panel cell does not hold: {probs}")
+    else:
+        probs = check_manifest()
+        if probs:
+            raise KakunaError(f"the home72 manifest does not hold: {probs}")
     if u.model_sha256 and _sha(u.model) != u.model_sha256:
         raise KakunaError(f"{u.model}: sha256 changed since the plan")
 
@@ -216,7 +339,7 @@ def run_unit(state: Path, u: Unit) -> int:
     (state / "logs").mkdir(parents=True, exist_ok=True)
     t0 = time.time()
     with open(state / "logs" / f"{u.name}.log", "ab") as log:
-        proc = subprocess.Popen(argv, cwd=str(repo_root()), env=unit_env(), stdout=log, stderr=subprocess.STDOUT,
+        proc = subprocess.Popen(argv, cwd=str(repo_root()), env=unit_env(config=config_of(u.teamset)), stdout=log, stderr=subprocess.STDOUT,
                                 stdin=subprocess.DEVNULL, start_new_session=True)
         _jl(state, {"event": "pid", "unit": u.name, "pid": proc.pid})
         rc = proc.wait()
@@ -263,8 +386,8 @@ def pool(state: Path, units: Sequence[Unit]) -> Dict[str, Dict[str, Dict[str, An
     """``{label: {teamset: {wins, ties, n, units, skipped}}}`` over COUNTED units only."""
     out: Dict[str, Dict[str, Dict[str, Any]]] = {}
     for u in units:
-        c = out.setdefault(u.label, {}).setdefault(u.teamset, {"arm": u.arm, "wins": 0, "ties": 0, "n": 0,
-                                                               "units": 0, "skipped": []})
+        c = out.setdefault(u.label, {}).setdefault(u.teamset, {"arm": u.arm, "seed": u.seed, "wins": 0, "ties": 0,
+                                                               "n": 0, "units": 0, "skipped": []})
         s = read_summary(state, u.name)
         if s is None:
             continue
@@ -295,22 +418,49 @@ def gk_input(pooled: Mapping[str, Mapping[str, Mapping[str, Any]]], on: str, off
     return out
 
 
+def d1h_input(pooled: Mapping[str, Mapping[str, Mapping[str, Any]]], on: str, off: str,
+              panels: Sequence[str] = UNFAMILIAR) -> Dict[str, Any]:
+    """D1's PRIMARY H input (:func:`main.x35.d1.read_d1`'s ``h``): ``{"on": {seed: {panel: [wins, n]}}, "off":
+    ...}`` over COUNTED units, each seed final's own counts per panel (a WIN is the success; ties are listed beside,
+    never scored), plus the units counted and skipped per cell."""
+    out: Dict[str, Any] = {"on": {}, "off": {}, "ties": {"on": {}, "off": {}}, "units": {"on": {}, "off": {}}}
+    for lab, cells in sorted(pooled.items()):
+        for ts in panels:
+            c = cells.get(ts)
+            if c is None:
+                continue
+            key = "on" if c["arm"] == on else "off" if c["arm"] == off else None
+            if key is None:
+                continue
+            seed = str(c["seed"])
+            if ts in out[key].get(seed, {}):
+                raise KakunaError(f"two finals of arm {c['arm']} share seed {seed} on {ts} ({lab})")
+            out[key].setdefault(seed, {})[ts] = [int(c["wins"]), int(c["n"])]
+            out["ties"][key].setdefault(seed, {})[ts] = int(c["ties"])
+            out["units"][key].setdefault(seed, {})[ts] = {"counted": int(c["units"]), "skipped": list(c["skipped"])}
+    return out
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m main.x35.kakuna", description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for n in ("plan", "run", "status", "gk", "smoke"):
+    for n in ("plan", "run", "status", "gk", "d1h", "smoke"):
         sp = sub.add_parser(n)
         sp.add_argument("--state", required=True, help="the read's state dir (outside the repo and models/)")
         if n == "plan":
             sp.add_argument("--finals", required=True, help="JSON [{label, arm, seed, path}]")
+            sp.add_argument("--teamsets", default=",".join(DEFAULT_TEAMSETS),
+                            help="comma list of team sets / registered panels (default home72,away = G-K's cell); "
+                                 "'unfamiliar' = D1's heldout72_hpfix,forum72,p72")
         if n == "run":
             sp.add_argument("--stop-at-epoch", type=int, default=None)
-        if n == "gk":
+        if n in ("gk", "d1h"):
             sp.add_argument("--on", required=True)
             sp.add_argument("--off", required=True)
         if n == "smoke":
             sp.add_argument("--model", required=True)
             sp.add_argument("--games", type=int, default=2)
+    sub.add_parser("panels", help="check every unfamiliar panel cell (config sha256, both sides' content)")
     m = sub.add_parser("manifest")
     m.add_argument("--write", action="store_true", help="(re)write the committed manifest from the files on disk")
     a = ap.parse_args(argv)
@@ -321,12 +471,19 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             probs = check_manifest()
             print(f"[x35 kakuna] manifest: {'OK' if not probs else probs}")
             return 0 if not probs else 1
+        if a.cmd == "panels":
+            bad = 0
+            for ts in PANEL_CELLS:
+                probs = check_panel_cell(ts)
+                bad += bool(probs)
+                print(f"[x35 kakuna] panel {ts}: {'OK' if not probs else probs}")
+            return 0 if not bad else 1
         state = Path(a.state)
         state.mkdir(parents=True, exist_ok=True)
         if a.cmd == "plan":
             if (state / "plan.json").exists():
                 raise KakunaError(f"{state / 'plan.json'} exists: a plan is written once per read")
-            units = plan_units(json.loads(Path(a.finals).read_text()))
+            units = plan_units(json.loads(Path(a.finals).read_text()), teamsets=parse_teamsets(a.teamsets))
             (state / "plan.json").write_text(json.dumps({"units": [u.__dict__ for u in units]}, indent=1) + "\n")
             print(f"[x35 kakuna] planned {len(units)} units")
             return 0
@@ -348,6 +505,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 for ts, c in cells.items():
                     print(f"{lab:24s} {ts:7s} {c['units']}/{len(UNIT_SEEDS)} units  {c['wins']}/{c['n']} wins  "
                           f"skipped {len(c['skipped'])}")
+            return 0
+        if a.cmd == "d1h":
+            print(json.dumps(d1h_input(pooled, a.on, a.off), sort_keys=True))
             return 0
         print(json.dumps(gk_input(pooled, a.on, a.off)))
         return 0

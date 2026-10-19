@@ -520,14 +520,24 @@ def _main(argv: Optional[Sequence[str]] = None) -> int:
     sub = p.add_subparsers(dest="cmd", required=True)
     d = sub.add_parser("decide", help="the verdict of one read JSON (see main.x35.readout.read)")
     d.add_argument("input")
-    sub.add_parser("self-check", help="the constructed-case self-check (main.x35.selfcheck); exit 1 on any FAIL")
+    d1 = sub.add_parser("decide-d1", help="D1's (X38's) verdict of one read JSON (see main.x35.d1.read_d1)")
+    d1.add_argument("input")
+    sc = sub.add_parser("self-check", help="the constructed-case self-check (main.x35.selfcheck); exit 1 on any FAIL")
+    sc.add_argument("--suite", default="all", choices=("all", "x35", "d1"))
     a = p.parse_args(argv)
     if a.cmd == "self-check":
         from main.x35 import selfcheck
 
-        return selfcheck.main()
+        return selfcheck.main(a.suite)
     with open(a.input) as f:
-        v = read(json.load(f))
+        doc = json.load(f)
+    if a.cmd == "decide-d1":
+        from main.x35 import d1 as D1
+
+        json.dump(D1.read_d1(doc).as_dict(), sys.stdout, indent=1, default=str)
+        print()
+        return 0
+    v = read(doc)
     json.dump(v.as_dict(), sys.stdout, indent=1, default=str)
     print()
     return 0

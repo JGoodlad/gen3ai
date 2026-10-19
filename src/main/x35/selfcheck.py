@@ -16,6 +16,7 @@ from dataclasses import replace
 from typing import Any, Callable, Dict, List, Sequence, Tuple
 
 from agents.training.eval_ledger.cells import Cell
+from main.x35 import d1 as D1
 from main.x35 import readout as R
 
 #: The Monte-Carlo coverage floor of the 97.5 % Welch interval (declared before the draws were run).
@@ -321,17 +322,265 @@ CHECKS: Tuple[Callable[[], Check], ...] = (
 )
 
 
-def run() -> List[Check]:
-    return [c() for c in CHECKS]
+# ================================================================================ D1 (X38): main.x35.d1
+#: D1's H coverage floor (nominal 95 %), declared before the draws were run.
+D1_COVERAGE_FLOOR = 0.94
+D1_COVERAGE_DRAWS = 10000
+D1_COVERAGE_SEED = 20261019
 
 
-def main() -> int:
-    results = run()
-    for name, ok, detail in results:
-        print(f"{'PASS' if ok else 'FAIL'}  {name}  -- {detail}")
-    n_ok = sum(ok for _, ok, _ in results)
-    print(f"self-check: {n_ok} / {len(results)} PASS")
-    return 0 if n_ok == len(results) else 1
+def _hc(per_seed: Sequence[Sequence[int]], n: int = 140, base: int = 3501) -> Dict[str, Dict[str, List[int]]]:
+    """``{seed: {panel: [wins, n]}}`` from one ``(x_hpfix, x_forum, x_p72)`` triple per seed (``n`` games each)."""
+    return {str(base + i): {k: [int(x), n] for k, x in zip(D1.PANELS, xs)} for i, xs in enumerate(per_seed)}
+
+
+def _flat(x: int, seeds: int = 3, n: int = 140) -> Dict[str, Dict[str, List[int]]]:
+    return _hc([(x, x, x)] * seeds, n)
+
+
+def check_d1_k1_is_newcombe_published() -> Check:
+    """With ONE panel the effective size is n itself, so the D1 interval IS Newcombe's method 10: the published 1998
+    table's rows with no zero cell (a zero cell has no variance), and ``main.anchors.results.newcombe`` to 1e-12."""
+    from main.anchors.results import newcombe
+
+    worst_pub = worst_k = 0.0
+    for (w1, n1, w2, n2), (lo, hi) in NEWCOMBE_1998_METHOD10[:3]:
+        a = D1.strat_score({"a": (w1, n1)}, ("a",))
+        b = D1.strat_score({"a": (w2, n2)}, ("a",))
+        d, l1, h1 = D1.newcombe_strat(a, b)
+        worst_pub = max(worst_pub, abs(l1 - lo), abs(h1 - hi))
+        d2, l2, h2 = newcombe(w1, n1, w2, n2)
+        worst_k = max(worst_k, abs(d - d2), abs(l1 - l2), abs(h1 - h2))
+    ok = worst_pub < 6e-5 and worst_k < 1e-12
+    return "D1 K = 1 is Newcombe (1998 table, 3 rows; anchors' newcombe)", ok, \
+        f"max |Δ| published {worst_pub:.2g}, anchors {worst_k:.2g}"
+
+
+def check_d1_equal_strata_is_pooled() -> Check:
+    """Equal panel n AND equal panel p: p̄ = Σx / Σn, n_eff = Σn, so the interval equals Newcombe on the pooled
+    counts (``main.anchors.results.newcombe``) to 1e-12."""
+    from main.anchors.results import newcombe
+
+    worst = 0.0
+    for x_on, x_off, n in ((231, 168, 420), (70, 56, 140), (300, 310, 700)):
+        a = D1.strat_score({k: (x_on, n) for k in D1.PANELS})
+        b = D1.strat_score({k: (x_off, n) for k in D1.PANELS})
+        d, lo, hi = D1.newcombe_strat(a, b)
+        d2, lo2, hi2 = newcombe(3 * x_on, 3 * n, 3 * x_off, 3 * n)
+        worst = max(worst, abs(d - d2), abs(lo - lo2), abs(hi - hi2), abs(a.n_eff - 3 * n) / (3 * n))
+    return "D1 equal strata = pooled Newcombe (3 cases)", worst < 1e-12, f"max |Δ| {worst:.2g}"
+
+
+def check_d1_variance_by_hand() -> Check:
+    """p = .30 / .40 / .50 at n = 420 each: p̄ = .40, V = (.21 + .24 + .25) / (9 · 420), n_eff = .24 / V = 1296
+    (> 1260: the strata are fixed, so the mean is MORE precise than a pooled proportion's)."""
+    a = D1.strat_score({"heldout72_hpfix": (126, 420), "forum72": (168, 420), "p72": (210, 420)})
+    v = 0.70 / (9 * 420)
+    ok = abs(a.mean - 0.40) < 1e-15 and abs(a.var - v) < 1e-18 and abs(a.n_eff - 1296.0) < 1e-9
+    return "D1 equal-weight mean, variance, n_eff by hand", ok, f"mean {a.mean}, var {a.var}, n_eff {a.n_eff}"
+
+
+def check_d1_coverage() -> Check:
+    """Monte-Carlo coverage of Δ_H's 95 % interval, heterogeneous panels, n = 420 per panel per arm (one at 400),
+    from one private generator. Floor :data:`D1_COVERAGE_FLOOR`."""
+    import numpy as np
+
+    rng = np.random.default_rng(D1_COVERAGE_SEED)
+    out, ok = [], True
+    cases = ((0.33, 0.43, 0.53), (0.30, 0.40, 0.50)), ((0.25, 0.40, 0.60), (0.25, 0.40, 0.60)), \
+        ((0.45, 0.20, 0.70), (0.40, 0.25, 0.60))
+    ns = (420, 420, 400)
+    for p_on, p_off in cases:
+        true = (sum(p_on) - sum(p_off)) / 3.0
+        hit = 0
+        for _ in range(D1_COVERAGE_DRAWS):
+            xo = rng.binomial(ns, p_on)
+            xf = rng.binomial(ns, p_off)
+            a = D1.strat_score({k: (int(x), n) for k, x, n in zip(D1.PANELS, xo, ns)})
+            b = D1.strat_score({k: (int(x), n) for k, x, n in zip(D1.PANELS, xf, ns)})
+            _, lo, hi = D1.newcombe_strat(a, b)
+            hit += lo <= true <= hi
+        cov = hit / D1_COVERAGE_DRAWS
+        ok = ok and cov >= D1_COVERAGE_FLOOR
+        out.append(f"Δ {100 * true:+.1f} pp {cov:.4f}")
+    return f"D1 H 95 % coverage >= {D1_COVERAGE_FLOOR} ({D1_COVERAGE_DRAWS} draws each)", ok, "; ".join(out)
+
+
+def check_d1_h_classes() -> Check:
+    """One constructed case per row of H's class table, at both looks (140 games per seed final and panel)."""
+    big = 1400
+    rows = [
+        ("GAIN look 1 (3 / 3 seeds up)", D1.d1_primary(1, _flat(70), _flat(56)), (D1.GAIN, D1.GAIN, True)),
+        ("lower > 0 but 1 / 3 seeds up -> UNDECIDED, CONTINUE",
+         D1.d1_primary(1, _hc([(140, 140, 140), (55, 55, 55), (55, 55, 55)]), _flat(56)),
+         (D1.UNDECIDED, D1.CONTINUE, False)),
+        ("LOSS look 1", D1.d1_primary(1, _flat(56), _flat(70)), (D1.LOSS, D1.LOSS, True)),
+        ("NULL look 1 (large n)", D1.d1_primary(1, _flat(700, n=big), _flat(700, n=big)), (D1.NULL, D1.NULL, True)),
+        ("UNDECIDED Δ̂ > 0 look 1 -> CONTINUE", D1.d1_primary(1, _flat(58), _flat(56)),
+         (D1.UNDECIDED, D1.CONTINUE, False)),
+        ("UNDECIDED Δ̂ < 0 look 1 -> final", D1.d1_primary(1, _flat(54), _flat(56)),
+         (D1.UNDECIDED, D1.UNDECIDED, True)),
+        ("UNDECIDED Δ̂ > 0 look 2 -> final", D1.d1_primary(2, _flat(58, 5), _flat(56, 5)),
+         (D1.UNDECIDED, D1.UNDECIDED, True)),
+        ("GAIN look 2 (3 / 5 seeds up)",
+         D1.d1_primary(2, _hc([(80, 80, 80)] * 3 + [(55, 55, 55)] * 2), _flat(56, 5)), (D1.GAIN, D1.GAIN, True)),
+        ("lower > 0, 2 / 5 seeds up at look 2 -> UNDECIDED final",
+         D1.d1_primary(2, _hc([(110, 110, 110)] * 2 + [(55, 55, 55)] * 3), _flat(56, 5)),
+         (D1.UNDECIDED, D1.UNDECIDED, True)),
+    ]
+    bad = [f"{n}: got {(d.cls, d.outcome, d.final)} {d.ci_pp} +{d.positive_seeds}" for n, d, want in rows
+           if (d.cls, d.outcome, d.final) != want]
+    lo_pos = rows[1][1].ci_pp is not None and rows[1][1].ci_pp[0] > 0 and rows[8][1].ci_pp is not None \
+        and rows[8][1].ci_pp[0] > 0
+    return f"D1 H class table ({len(rows)} constructed rows)", not bad and lo_pos, \
+        "; ".join(bad) or "all rows as registered (the sign-rule rows have lower > 0)"
+
+
+def check_d1_rule8() -> Check:
+    """A bound within 1e-9 of 0, −3.0 or +3.0 is UNDECIDED (1e-6 past it is the class); Δ_i or Δ̂ within 1e-9 of 0
+    is not "> 0"; equal seed counts give Δ_i = 0 exactly, which is not a positive seed."""
+    rows = [((5e-10, 9.0), D1.UNDECIDED), ((1e-6, 9.0), D1.GAIN), ((-9.0, -3e-10), D1.UNDECIDED),
+            ((-9.0, -1e-6), D1.LOSS), ((-2.0, 3.0 - 1e-10), D1.UNDECIDED), ((-2.0, 3.0 - 1e-6), D1.NULL),
+            ((-3.0 + 1e-10, 2.0), D1.UNDECIDED), ((-3.0 + 1e-6, 2.0), D1.NULL), ((-9.0, 3.0 + 5e-10), D1.UNDECIDED)]
+    bad = [f"{ci}: {D1.classify_h(ci, True)[0]} != {w}" for ci, w in rows if D1.classify_h(ci, True)[0] != w]
+    near_ok = all(bool(D1.classify_h(ci, True)[1]) == (w == D1.UNDECIDED) for ci, w in rows)
+    signs = (not D1.positive(5e-10)) and D1.positive(2e-9) and not D1.positive(0.0)
+    tie = D1.d1_primary(1, _hc([(70, 70, 70), (70, 70, 70), (56, 56, 56)]), _flat(56))
+    ok = not bad and near_ok and signs and tie.positive_seeds == 2 and dict(tie.seed_deltas_pp)["3503"] == 0.0
+    return "D1 rule 8 at 0 / ±3.0, and the sign rule at 0", ok, "; ".join(bad) or f"tie seeds +{tie.positive_seeds}"
+
+
+def check_d1_h_inconclusive() -> Check:
+    """Wrong seed count, unequal seed sets, a missing panel, a stray panel, invalid counts, under the floor and zero
+    variance are INCONCLUSIVE; exactly the floor (one uncounted unit) is read."""
+    short = _flat(56)
+    short["3501"]["p72"] = [48, 120]
+    short["3502"]["p72"] = [48, 120]                       # 380 < 400: two units missing on p72
+    floor = _flat(56)
+    floor["3501"]["p72"] = [48, 120]                       # 400: one unit missing -- read
+    missing = _flat(56)
+    del missing["3502"]["forum72"]
+    stray = _flat(56)
+    stray["3501"]["home72"] = [70, 140]
+    cases = [
+        D1.d1_primary(1, _flat(70, 2), _flat(56, 2)),
+        D1.d1_primary(1, _flat(70), _hc([(56, 56, 56)] * 3, base=3601)),
+        D1.d1_primary(1, missing, _flat(56)),
+        D1.d1_primary(1, stray, _flat(56)),
+        D1.d1_primary(1, _hc([(141, 70, 70)] * 3), _flat(56)),
+        D1.d1_primary(1, short, _flat(56)),
+        D1.d1_primary(1, _hc([(0, 140, 0)] * 3), _hc([(140, 0, 140)] * 3)),
+        D1.d1_primary(2, _flat(70), _flat(56)),
+    ]
+    read = D1.d1_primary(1, floor, _flat(56))
+    ok = all(c.outcome == D1.INCONCLUSIVE and c.reasons for c in cases) and read.outcome != D1.INCONCLUSIVE \
+        and D1.min_games(3) == 400 and D1.min_games(5) == 680
+    return f"D1 H INCONCLUSIVE inputs ({len(cases)} cases) and the floor", ok, \
+        "; ".join(c.reasons[0] if c.reasons else "READ" for c in cases)
+
+
+def check_d1_p() -> Check:
+    """P: NON-INFERIOR iff Welch 97.5 % lower > −2.0; a lower bound on −2.0 (float error) is NOT non-inferior and is
+    recorded; 1e-6 above is; a missing S or a wrong seed count is INCONCLUSIVE."""
+    off = [50.0, 50.1, 49.9]
+    ni = D1.d1_coprimary(1, _seeds([50.1, 50.2, 50.0]), _seeds(off))
+    wide = D1.d1_coprimary(1, _seeds([44.0, 52.0, 48.0]), _seeds(off))
+    lo = R.welch_interval([50.1, 50.2, 50.0], off).ci[0]
+    at_on = _shift([50.1, 50.2, 50.0], -2.0 - lo)
+    at = D1.d1_coprimary(1, _seeds(at_on), _seeds(off))
+    past = D1.d1_coprimary(1, _seeds(_shift(at_on, 1e-6)), _seeds(off))
+    miss = D1.d1_coprimary(1, {"3501": 50.0, "3502": None, "3503": 49.0}, _seeds(off))
+    count = D1.d1_coprimary(2, _seeds([50.1, 50.2, 50.0]), _seeds(off))
+    ok = (ni.cls == D1.NON_INFERIOR and wide.cls == D1.NOT_EXCLUDED and at.cls == D1.NOT_EXCLUDED and bool(at.near)
+          and past.cls == D1.NON_INFERIOR and miss.cls is None and count.cls is None)
+    return "D1 P non-inferiority at −2.0 (rule 8) and its INCONCLUSIVE inputs", ok, \
+        f"{ni.cls} / {wide.cls} / at {at.cls} {at.near} / past {past.cls} / {miss.reasons} / {count.reasons}"
+
+
+def _d1_guards(**over: str) -> List[R.GuardResult]:
+    return [R.GuardResult(n, over.get(n.replace("-", "_"), R.PASS)) for n in D1.D1_GUARDS]
+
+
+def check_d1_verdict_table() -> Check:
+    """Every row of D1's verdict table, and TRADE's exchange rate exactly (Δ̂_H / −Δ̂_P)."""
+    gain = D1.d1_primary(1, _flat(70), _flat(56))
+    null = D1.d1_primary(1, _flat(700, n=1400), _flat(700, n=1400))
+    loss = D1.d1_primary(1, _flat(56), _flat(70))
+    cont = D1.d1_primary(1, _flat(58), _flat(56))
+    und = D1.d1_primary(2, _flat(58, 5), _flat(56, 5))
+    bad_h = D1.d1_primary(1, _flat(70, 2), _flat(56, 2))
+    off = [50.0, 50.1, 49.9]
+    p_ni = D1.d1_coprimary(1, _seeds([50.1, 50.2, 50.0]), _seeds(off))
+    p_loss = D1.d1_coprimary(1, _seeds([47.0, 47.1, 46.9]), _seeds(off))          # Δ̂_P = −3 exactly
+    p_wide = D1.d1_coprimary(1, _seeds([44.0, 58.0, 49.0]), _seeds(off))         # Δ̂_P > 0, lower < −2
+    p_none = D1.d1_coprimary(1, {}, {})
+    rows = [
+        ("H GAIN, P NI, guards pass", D1.d1_verdict("X38", gain, p_ni, _d1_guards()), D1.ADOPT),
+        ("H GAIN, P not excluded", D1.d1_verdict("X38", gain, p_loss, _d1_guards()), D1.TRADE),
+        ("H GAIN, P NI, G-F fails", D1.d1_verdict("X38", gain, p_ni, _d1_guards(G_F=R.FAIL)), D1.TRADE),
+        ("H GAIN, P wide (no point loss)", D1.d1_verdict("X38", gain, p_wide, _d1_guards()), D1.TRADE),
+        ("H GAIN, P INCONCLUSIVE", D1.d1_verdict("X38", gain, p_none, _d1_guards()), D1.INCONCLUSIVE),
+        ("H GAIN, G-C not read", D1.d1_verdict("X38", gain, p_ni, _d1_guards()[:2]), D1.INCONCLUSIVE),
+        ("H NULL", D1.d1_verdict("X38", null, p_ni, _d1_guards()), D1.NULL),
+        ("H LOSS (P NI does not rescue it)", D1.d1_verdict("X38", loss, p_ni, _d1_guards()), D1.LOSS),
+        ("H look-1 CONTINUE", D1.d1_verdict("X38", cont, p_ni, _d1_guards()), D1.CONTINUE),
+        ("H look-2 UNDECIDED", D1.d1_verdict("X38", und, D1.d1_coprimary(2, _seeds([50.0] * 4 + [50.5]),
+                                                                       _seeds([50.0] * 4 + [49.5])),
+                                           _d1_guards()), D1.UNDECIDED),
+        ("H INCONCLUSIVE", D1.d1_verdict("X38", bad_h, p_ni, _d1_guards()), D1.INCONCLUSIVE),
+    ]
+    bad = [f"{n}: {v.verdict} != {w}" for n, v, w in rows if v.verdict != w]
+    rate = rows[1][1].reported.get("exchange_rate", {})
+    rate_ok = gain.delta_pp is not None and abs(rate.get("rate", 0.0) - gain.delta_pp / 3.0) < 1e-9
+    wide_ok = rows[3][1].reported.get("exchange_rate", {}).get("rate", "x") is None
+    return f"D1 verdict table ({len(rows)} rows) and the exchange rate", not bad and rate_ok and wide_ok, \
+        "; ".join(bad) or f"rate {rate.get('rate')} = Δ̂_H {gain.delta_pp} / 3"
+
+
+def check_d1_read_roundtrip() -> Check:
+    """``read_d1`` (the ``decide-d1`` JSON) reaches the same verdict as the functions it composes; P's seeds must be
+    H's."""
+    doc: Dict[str, Any] = {
+        "arm": "X38", "look": 1,
+        "h": {"on": _flat(70), "off": _flat(56)},
+        "p": {"on": _seeds([50.1, 50.2, 50.0]), "off": _seeds([50.0, 50.1, 49.9])},
+        "r2": {"on": [250, 400], "off": [264, 400]},
+        "g_f": {"h_pp": _additive(0.0, [1.0, -1.0, 0.0], [0.5, -0.5, 0.0])},
+        "g_c": {"b1": [0.01, -0.03, 0.05], "b2": [0.0, -0.05, 0.05]},
+        "kakuna_in_pool": {"home72": {"on": [252, 420], "off": [250, 420]},
+                           "away": {"on": [228, 400], "off": [226, 400]}},
+    }
+    v = D1.read_d1(doc)
+    v2 = D1.read_d1(dict(doc, p={"on": _seeds([50.1, 50.2, 50.0], base=3601), "off": _seeds([50.0, 50.1, 49.9],
+                                                                                          base=3601)}))
+    ok = v.verdict == D1.ADOPT and v2.verdict == D1.INCONCLUSIVE and "kakuna_in_pool" in v.reported
+    return "D1 read_d1 JSON round trip (ADOPT; P seeds not H's INCONCLUSIVE)", ok, f"{v.verdict} / {v2.verdict}"
+
+
+D1_CHECKS: Tuple[Callable[[], Check], ...] = (
+    check_d1_k1_is_newcombe_published, check_d1_equal_strata_is_pooled, check_d1_variance_by_hand,
+    check_d1_coverage, check_d1_h_classes, check_d1_rule8, check_d1_h_inconclusive, check_d1_p,
+    check_d1_verdict_table, check_d1_read_roundtrip,
+)
+SUITES: Dict[str, Tuple[Callable[[], Check], ...]] = {"x35": CHECKS, "d1": D1_CHECKS}
+
+
+def run(suite: str = "x35") -> List[Check]:
+    return [c() for c in SUITES[suite]]
+
+
+def main(suite: str = "all") -> int:
+    names = list(SUITES) if suite == "all" else [suite]
+    total = n_ok = 0
+    for name in names:
+        results = run(name)
+        for title, ok, detail in results:
+            print(f"{'PASS' if ok else 'FAIL'}  [{name}] {title}  -- {detail}")
+        k = sum(ok for _, ok, _ in results)
+        print(f"self-check {name}: {k} / {len(results)} PASS")
+        total, n_ok = total + len(results), n_ok + k
+    print(f"self-check: {n_ok} / {total} PASS")
+    return 0 if n_ok == total else 1
 
 
 if __name__ == "__main__":

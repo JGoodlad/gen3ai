@@ -414,6 +414,34 @@ def regime_for(turn_limit: int, team_set: Optional[str] = None, mode: str = "off
         "team_set": team_set or eval_team_set()})
 
 
+def builder_regime(turn_limit: int, team_builder: Any, mode: str = "off") -> Dict[str, Any]:
+    """The regime of an engine whose BOTH sides draw from ``team_builder`` (``H2HEngine(team_builder=...)``): its
+    ``team_set_id`` is the identity, its ``team_source`` the label (the team-strength meter's scheduled builder, a
+    registered panel's ``main.h2h.panel.PanelTeams``)."""
+    return L.with_regime_id({**regime_for(turn_limit, team_set=str(team_builder.team_set_id), mode=mode),
+                             "team_source": str(team_builder.team_source)})
+
+
+def plan_regime(turn_limit: int, mode: str = "off", panel: Optional[str] = None) -> Dict[str, Any]:
+    """The regime a plan is opened under: :func:`regime_for` (the player's eval team builder) when ``panel`` is
+    ``None`` -- byte for byte the block of before --, else the REGISTERED panel's (``main.h2h.panel.panel_regime``,
+    B-D7; an unregistered or moved panel is refused here, before any request is opened)."""
+    if panel is None:
+        return regime_for(turn_limit, mode=mode)
+    from main.h2h import panel as PN
+
+    return PN.panel_regime(turn_limit, panel, mode)
+
+
+def panel_builder(panel: Optional[str]) -> Optional[Any]:
+    """The engine's ``team_builder`` for ``panel`` (``None`` = the player's eval team builder, unchanged)."""
+    if panel is None:
+        return None
+    from main.h2h import panel as PN
+
+    return PN.PanelTeams(panel)
+
+
 def check_team_pool() -> Path:
     """REFUSE unless the WORKING DIRECTORY's ``data/teams`` is this checkout's (``utils.paths.repo_path``). The team
     pool loader (``utils.team_loader.TeamLoader``, shared with training) reads ``./data/teams`` and resolves every
@@ -510,9 +538,7 @@ class H2HEngine:
         if team_builder is None:
             self.regime = regime_for(self.turn_limit, team_set=eval_team_set(team_pool), mode=self.mode)
         else:
-            self.regime = L.with_regime_id({**regime_for(self.turn_limit, team_set=str(team_builder.team_set_id),
-                                                         mode=self.mode),
-                                            "team_source": str(team_builder.team_source)})
+            self.regime = builder_regime(self.turn_limit, team_builder, self.mode)
         self._threads0 = torch.get_num_threads()
         #: host copies of the checkpoints this engine has loaded, by content hash (a cross reuses each run's snapshot
         #: across a row and a column); bounded by :attr:`host_cache` entries, least recently used evicted
@@ -1029,17 +1055,19 @@ def play_edge(out_dir: Optional[str], player: PlayerRef, opponent: PlayerRef, *,
               batch_pairs: int = DEFAULT_BATCH_PAIRS, schedule_seed: int = 0, schedule_key: Optional[str] = None,
               purpose: str = DEFAULT_PURPOSE, run_label: str, compute: Compute, request_id: Optional[str] = None,
               family: Optional[str] = None, request_kind: Optional[str] = None, reveal_mode: str = "off",
+              panel: Optional[str] = None,
               emit: Callable[[str], None] = lambda m: print(m, file=sys.stderr, flush=True)) -> Dict[str, Any]:
     """Play ``pairs`` mirrored pairs of ``player`` vs ``opponent`` in batches, one §0b row per batch appended under
     its claim to the ledger root ``out_dir`` (``None`` = the run archive's ``_ledger``; any other root under
     ``models/`` is refused), for the request ``request_id`` (default: :func:`default_request_id`). Skips the batches
     the request already holds. Returns the edge's pooled summary (``main.h2h.stats.edge_summary``). Many cells on
-    ONE engine: ``main.h2h.many.play_cells``."""
+    ONE engine: ``main.h2h.many.play_cells``. ``panel`` = a REGISTERED team panel both sides draw from
+    (``main.h2h.panel``, B-D7); ``None`` = the player's eval team builder, unchanged."""
     from main.h2h import stats as ST
     from utils.rust_env import episode as EP
 
     root, writer = open_writer(out_dir, purpose)
-    regime = regime_for(EP.stall_threshold(), mode=reveal_mode)
+    regime = plan_regime(EP.stall_threshold(), reveal_mode, panel)
     ep = plan_edge(writer, root, regime, player, opponent, pairs=pairs, batch_pairs=batch_pairs,
                    schedule_seed=schedule_seed, schedule_key=schedule_key, purpose=purpose, request_id=request_id,
                    family=family, request_kind=request_kind)
@@ -1049,7 +1077,8 @@ def play_edge(out_dir: Optional[str], player: PlayerRef, opponent: PlayerRef, *,
     if ep.todo:
         commit = current_commit()
         with engine_lock(compute):
-            eng = H2HEngine(player, opponent, compute, emit, reveal_mode=reveal_mode)
+            eng = H2HEngine(player, opponent, compute, emit, reveal_mode=reveal_mode,
+                            team_builder=panel_builder(panel))
             try:
                 if eng.regime["regime_id"] != regime["regime_id"]:
                     raise H2HError("the engine's regime differs from the one planned")

@@ -173,19 +173,20 @@ def play_cells(out_dir: Optional[str], cells: Sequence[Cell], *, pairs: int,
                batch_pairs: int = PL.DEFAULT_BATCH_PAIRS, schedule_seed: int = 0, schedule_key: Optional[str] = None,
                purpose: str = PL.DEFAULT_PURPOSE, run_label: str, compute: PL.Compute,
                request_id: Optional[str] = None, family: Optional[str] = None, request_kind: Optional[str] = None,
-               reveal_mode: str = "off",
+               reveal_mode: str = "off", panel: Optional[str] = None,
                emit: Callable[[str], None] = lambda m: print(m, file=sys.stderr, flush=True)) -> Dict[str, Any]:
     """Play ``pairs`` mirrored pairs of every cell on ONE engine, each cell exactly as :func:`main.h2h.play.play_edge`
     plays it (module docs). ``request_id`` = ONE request for every cell (an X5 LOOK: ``--purpose ab --family F
     --request <look>``); ``None`` = each cell its own default request (a re-run of single-cell ``play`` on the
-    same arguments resumes the same rows). Returns ``{"cells": [edge summary per cell], "engine": timings}``."""
+    same arguments resumes the same rows). ``panel`` = a REGISTERED team panel both sides of every cell draw from
+    (``main.h2h.panel``, B-D7). Returns ``{"cells": [edge summary per cell], "engine": timings}``."""
     from main.h2h import stats as ST
     from utils.rust_env import episode as EP
 
     if not cells:
         raise PL.H2HError("no cells")
     root, writer = PL.open_writer(out_dir, purpose)
-    regime = PL.regime_for(EP.stall_threshold(), mode=reveal_mode)
+    regime = PL.plan_regime(EP.stall_threshold(), reveal_mode, panel)
     plans = [PL.plan_edge(writer, root, regime, p, o, pairs=pairs, batch_pairs=batch_pairs,
                           schedule_seed=schedule_seed, schedule_key=schedule_key, purpose=purpose,
                           request_id=request_id, family=family, request_kind=request_kind) for p, o in cells]
@@ -193,7 +194,8 @@ def play_cells(out_dir: Optional[str], cells: Sequence[Cell], *, pairs: int,
     emit(f"[h2h] play-many: {len(plans)} cell(s) x {pairs} pairs in batches of {batch_pairs}; {len(todo)} with "
          f"batches to play ({sum(len(ep.todo) for ep in plans)} batch(es)), "
          f"{sum(len(ep.done) for ep in plans)} already recorded; purpose {purpose}"
-         f"{f', family {family}' if family else ''}{f', request {request_id}' if request_id else ''} under {root}")
+         f"{f', family {family}' if family else ''}{f', request {request_id}' if request_id else ''}"
+         f"{f', panel {panel}' if panel else ''} under {root}")
     rep = EngineReport()
     if todo:
         t0 = time.perf_counter()
@@ -202,7 +204,8 @@ def play_cells(out_dir: Optional[str], cells: Sequence[Cell], *, pairs: int,
         rep.decl = decl.block()
         commit = PL.current_commit()
         with PL.engine_lock(compute):
-            eng = PL.H2HEngine(todo[0].player, todo[0].opponent, compute, emit, decl=decl)
+            eng = PL.H2HEngine(todo[0].player, todo[0].opponent, compute, emit, decl=decl,
+                               team_builder=PL.panel_builder(panel))
             rep.startup_s = round(eng.startup_s, 3)
             try:
                 if eng.regime["regime_id"] != regime["regime_id"]:

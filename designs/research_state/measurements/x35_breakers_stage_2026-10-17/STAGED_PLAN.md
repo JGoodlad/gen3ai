@@ -6,6 +6,9 @@
 and X34 (`rb_toy_ent_s4002_deep`) have both reached their Tier-1 plateau and the GPU is free. **The stage kit (T55)
 is BUILT (2026-10-17, §6):** the launch script, the R freeze, the readout and the Kakuna runner.
 
+**D1 (X38, the pool-widening arm) is staged too (2026-10-19, §7):** its argv is `main.x35.kit` arm `d1`, dry-run
+validated on the REAL P\* at pin `c1b0c1f0`; it NEEDS GO like every arm.
+
 **R (production) is FROZEN (2026-10-19)** at P\* = X26 @ 280,000,170 (Amendment 5's `TIER1_PLATEAU` call, sha256
 `814823c5…91ed`): [`reference_population_production.json`](reference_population_production.json), content sha256
 `39bae18f…5bec0`, `refpop verify` OK. Six members: A-block 280 / 270 / 80 / 140 / 210M, and X-block `production`
@@ -162,3 +165,53 @@ Nothing below has been run on a real P\*: P\* is not called yet.
 - **The smoke** ([`kakuna_smoke_2026-10-17.json`](kakuna_smoke_2026-10-17.json)): ONE 2-game unit, X26 @161,000,169's
   read-only copy against `metamon:SmallRL`, greedy vs greedy, on home72, port 9540, in 73 s. It came back `status OK`,
   `n 2`, `regime_verified_decisions`, `peer_clean`, no asymmetry: COUNTED. Its 0–2 is not a measurement.
+
+**(e) The D1 / X38 readout kit (2026-10-19, B-D7 + the D1 rule; `design_diversity_teams_opponents.md` §4.2).**
+- `python -m main.x35.kakuna plan --teamsets unfamiliar | panels | d1h --on X38 --off C0`: the Kakuna runner on the
+  three unfamiliar panels (heldout72_hpfix, forum72, p72; 7 units × 20 games per panel per seed final), every panel
+  checked against `heldout_panels.json` by content before each unit; panel units record per-game teams
+  (`--capture-dir`). `home72` / `away` and G-K are unchanged.
+- `python -m main.h2h play | play-many --panel home72 …`: mirrored pairs on a REGISTERED panel (B-D7), the panel's
+  content digest in the regime's `team_set`; the input of D1's co-primary P (`python -m main.x35.d1 p-input`).
+- `python -m main.x35.readout decide-d1 <read.json>` and `self-check --suite d1`: **10 / 10 PASS before any read**
+  ([`readout_selfcheck_d1.txt`](readout_selfcheck_d1.txt)).
+
+## 7. The D1 arm (X38, the pool-WIDENING fork), dry-run validated on the REAL P\*, NEEDS THE ORCHESTRATOR'S GO
+
+**Status: LAUNCH-READY ON PAPER (2026-10-19), nothing launched.** D1 is X35 rank 2 (after A1, before A2;
+`design_diversity_teams_opponents.md` §4.2, §6.1). Its ONE lever, b-ON vs C0: `--team-mix w_forum_v1@ABC:0.5
+--team-mix-sides both`, i.e. half of each side's draws come from the pin-safe forum corpus
+(`src/utils/team_corpora/w_forum_v1/`, 2,415 human-built teams, minus every registered panel and its near neighbours);
+the in-loop eval stays on the pool. Its verdict is D1's OWN rule (`main.x35.d1`), not R1.
+
+| item | value |
+|---|---|
+| P\* | `models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip`, sha256 `814823c5…91ed` (R's frozen call) |
+| pin | a main commit carrying `c1b0c1f0` (B-D2, `--team-mix`) and so `fc467f1f` (the corpus) and `cdab9cfe` (T54): both are in [`x35_required_commits.txt`](x35_required_commits.txt), so pre-check 2 HOLDs a pin without them. **Validated at pin `c1b0c1f0`** |
+| seeds | 3501–3503 (look 1), 3504–3505 (look 2); shared with C0 |
+| argv (s3501) | [`argv_d1_s3501.txt`](argv_d1_s3501.txt), built by `python -m main.x35.kit describe --arm d1 --seed 3501 --call reference_population_production.json` |
+| `checkargs --pin c1b0c1f0` | exit 0, 9 flags accepted by the PINNED parser ([`checkargs_d1_c1b0c1f0.txt`](checkargs_d1_c1b0c1f0.txt)) |
+| `launcher --dry-run` | "would launch", FORK of `rb_x26_s2601`, +20,000,000 steps (280,000,170 → 300,000,170), 13.53 GiB required vs 296.59 GiB free, Showdown deps present ([`dryrun_d1_c1b0c1f0.txt`](dryrun_d1_c1b0c1f0.txt)) |
+| batch-1 order | `main.x35.kit` `BATCH1`: A1 / C0 ABBA (6), then **d1 s3501, s3502, s3503**, then A2 × 3 |
+
+```
+# NEEDS GO. A design block is not a launch command. Pin: any main commit carrying c1b0c1f0 (validated AT c1b0c1f0).
+launch_x35.sh d1 3501 --pin <X35_PIN_k>          # dry run: every pre-check, then the line below; add GO only on the orchestrator's go
+python -m main.launcher --restart-interval-hours 24 --pin-commit <X35_PIN_k> \
+  --model models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip --behaviour-check warn \
+  --steps 300000170 --checkpoint-every-steps 1000000 --device cuda \
+  --team-mix w_forum_v1@ABC:0.5 --team-mix-sides both --seed 3501 --run-name rb_x35_d1wide_s3501
+```
+
+The control is C0 s3501 (the same line without the two `--team-mix` flags, `--run-name rb_x35_c0_s3501`), at the SAME
+pin. Startup banners to expect beyond §5.6.8's: `🧬 [TEAM-MIX] w_forum_v1@ABC (2415 teams, tier sha 65465d25252e)
+share 0.50 on both sides; eval stays on the pool` with **0 panel hits** and 0 pool copies, and a `🧭 [MATCHUP]` hash
+that differs from C0's while the eval line still reads "full pool + 10% sample-team bias". A dry run cannot show either
+(they are child-side): read them in the first minute. A corpus that fails verification, a held-out panel hit or a
+validator drop is a startup `FATAL_CONFIG`.
+
+**The readout (§6 (e)), and what it still needs at read time:** H = `kakuna plan --teamsets unfamiliar` + `run` on
+each D1 and C0 seed final (≈ 2,520 games per arm, ≈ 6.3 lane-hours); P = an ab family registered, then `main.h2h
+play-many --panel home72` each final vs R's 6 members (500 pairs each: ≈ 18k games per arm, ≈ 10 GPU-minutes or
+≈ 8.6 CPU-hours), then `main.x35.d1 p-input`; the guards G-F / G-E / G-C from X35's tools, assembled into the read
+JSON by hand (no assembler exists). L / L_c1, GEN-M and the D0e transfer read are reported-only and not built.
