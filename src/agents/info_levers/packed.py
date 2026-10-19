@@ -13,13 +13,12 @@ a token the gen-3 data does not know is a THROWING defect (:func:`require_known`
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Sequence, Tuple
 
-from agents.gen3_data import abilities, items, moves, species
+from agents.gen3_data import abilities, hidden_power, items, moves, species
 from utils.showdown_id import to_id_str
 
-HP_TYPES = ("fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water",
-            "grass", "electric", "psychic", "ice", "dragon", "dark")
+HP_TYPES = hidden_power.FORMULA_TYPES                   # the gen-3 formula's type order (THE one table's)
 STATS = ("hp", "atk", "def", "spa", "spd", "spe")       # the packed-team order
 
 
@@ -38,39 +37,25 @@ def move_id(m: str) -> str:
 
 
 def hp_type_of(ivs: Sequence[int]) -> str:
-    """Gen-3 Hidden Power type from IVs given in the packed order (HP, Atk, Def, SpA, SpD, Spe)."""
-    iv = dict(zip(STATS, ivs))
-    v = sum((iv[k] & 1) << i for i, k in enumerate(("hp", "atk", "def", "spe", "spa", "spd")))
-    return HP_TYPES[v * 15 // 63]
+    """Gen-3 Hidden Power type from IVs given in the packed order (HP, Atk, Def, SpA, SpD, Spe) —
+    ``agents.gen3_data.hidden_power.type_of``, THE one formula."""
+    return hidden_power.type_of(list(ivs))
 
 
 def hp_ivs(t: str) -> List[int]:
-    """30/31 IVs (Hidden Power at 70 power) giving type ``t``, with the most 31s, in the packed order."""
-    best: Optional[List[int]] = None
-    for mask in range(64):
-        b = [(mask >> i) & 1 for i in range(6)]          # hp, atk, def, spe, spa, spd
-        v = sum(x << i for i, x in enumerate(b))
-        if HP_TYPES[v * 15 // 63] == t and (best is None or sum(b) > sum(best)):
-            best = b
-    if best is None:
-        raise PackedError(f"no Hidden Power IVs for type {t!r}")
-    iv = dict(zip(("hp", "atk", "def", "spe", "spa", "spd"), (30 + x for x in best)))
-    return [iv[k] for k in STATS]
+    """The IVs (packed order) a Hidden Power of type ``t`` is filled with: Showdown's validator fill
+    (``agents.gen3_data.hidden_power``, THE one table; power 70). Until 2026-10-19 this picked the pattern with the
+    most 31s, which differed from Showdown's for Bug, Dragon, Fire, Flying, Grass, Ice, Psychic and Water."""
+    try:
+        return hidden_power.ivs_packed(t)
+    except KeyError as e:
+        raise PackedError(f"no Hidden Power IVs for type {t!r}") from e
 
 
 def hp_iv_masks(t: str) -> List[List[int]]:
     """EVERY 30/31 IV pattern (packed order) giving Hidden Power type ``t`` at 70 power — the canonical one
-    (:func:`hp_ivs`, the most 31s) first, then by fewer 31s; a pool set may use any of them."""
-    out: List[Tuple[int, List[int]]] = []
-    for mask in range(64):
-        b = [(mask >> i) & 1 for i in range(6)]          # hp, atk, def, spe, spa, spd
-        v = sum(x << i for i, x in enumerate(b))
-        if HP_TYPES[v * 15 // 63] == t:
-            iv = dict(zip(("hp", "atk", "def", "spe", "spa", "spd"), (30 + x for x in b)))
-            out.append((-sum(b), [iv[k] for k in STATS]))
-    out.sort(key=lambda x: (x[0], x[1][::-1]))
-    canon = hp_ivs(t)
-    return [canon] + [m for _, m in out if m != canon]
+    (:func:`hp_ivs`, Showdown's fill) first, then by fewer 31s; a pool set may use any of them."""
+    return hidden_power.iv_patterns(t)
 
 
 def parse_set(entry: str) -> List[str]:

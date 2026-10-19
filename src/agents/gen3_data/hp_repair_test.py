@@ -121,17 +121,11 @@ def test_gen3_stat_formula_and_the_speed_tie_change():
     assert all(h.HP_IVS[t]["spe"] == 31 for t in h.HP_IVS if t not in ("Fire", "Psychic", "Rock", "Fighting"))
 
 
-def test_hp_ivs_equal_showdowns_fillstats_of_typechart_hpivs():
-    src = repo_path("deps", "pokemon-showdown", "data", "typechart.ts").read_text()
-    found = {}
-    for name, body in re.findall(r"^\t(\w+): \{(.*?)^\t\},", src, re.MULTILINE | re.DOTALL):
-        m = re.search(r"HPivs: \{([^}]*)\}", body)
-        if m is None or name in ("normal", "fairy", "stellar"):
-            continue
-        ivs = {k: 31 for k in h.STAT_KEYS}
-        ivs.update({k: int(v) for k, v in re.findall(r"(\w+): (\d+)", m.group(1))})
-        found[name.capitalize()] = ivs
-    assert found == h.HP_IVS
+def test_hp_ivs_is_the_one_table():
+    # Pinned to typechart.ts's HPivs (fillStats, 31) in hidden_power_test.py.
+    from agents.gen3_data import hidden_power
+
+    assert h.HP_IVS is hidden_power.HP_IVS
 
 
 def test_special_types_are_showdowns_gen3_list():

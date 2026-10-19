@@ -27,7 +27,7 @@ corpus HP users). This module re-samples that one hidden field by the owner's sp
    are Smogon only (owner rule), never our pool.
 4. **The IVs** are written the way Showdown's validator does (``sim/team-validator.ts`` ~1154-1164:
    ``fillStats(dex.types.get(hpType).HPivs, 31)``) — :data:`HP_IVS`, pinned to ``data/typechart.ts`` by a
-   test, so the power stays 70. ``utils.gen3_utils.GEN3_HP_IVS`` is the same table (its Ghost row was fixed 2026-10-19; pinned by ``gen3_utils_test.py``). The 30 Speed IV of Fire / Psychic / Rock /
+   test, so the power stays 70. It is ``hidden_power.HP_IVS``, the ONE table (``utils.gen3_utils.GEN3_HP_IVS`` is that object). The 30 Speed IV of Fire / Psychic / Rock /
    Fighting lowers the Speed stat by 1 (a speed-tie change, pinned by a test).
 5. **Deterministic.** One ``random.Random`` per team, seeded by :func:`team_seed` (base seed + team id),
    drawn once per target mon in slot order over the types in alphabetical order.
@@ -46,6 +46,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 from utils.showdown_id import to_id_str
 
+from . import hidden_power as _hidden_power
 from . import moves as moves_dex
 from . import natures as natures_dex
 from . import priors
@@ -55,17 +56,8 @@ REPAIR_VERSION = "gen3_hp_repair_v1"
 
 #: Gen 3: a damaging move's category follows its TYPE (``data/mods/gen3/scripts.ts`` ``specialTypes``).
 SPECIAL_TYPES = frozenset({"fire", "water", "grass", "ice", "electric", "dark", "psychic", "dragon"})
-_STAT_KEYS6 = ("hp", "atk", "def", "spa", "spd", "spe")
-#: ``data/typechart.ts`` ``HPivs`` per type (the stats set to 30; the rest are 31), as the validator fills them.
-_HPIVS_SPARSE = {
-    "Bug": ("atk", "def", "spd"), "Dark": (), "Dragon": ("atk",), "Electric": ("spa",),
-    "Fighting": ("def", "spa", "spd", "spe"), "Fire": ("atk", "spa", "spe"), "Flying": ("hp", "atk", "def", "spa", "spd"),
-    "Ghost": ("def", "spd"), "Grass": ("atk", "spa"), "Ground": ("spa", "spd"), "Ice": ("atk", "def"),
-    "Poison": ("def", "spa", "spd"), "Psychic": ("atk", "spe"), "Rock": ("def", "spd", "spe"), "Steel": ("spd",),
-    "Water": ("atk", "def", "spa"),
-}
-HP_IVS: Dict[str, Dict[str, int]] = {t: {k: (30 if k in low else 31) for k in _STAT_KEYS6}
-                                     for t, low in _HPIVS_SPARSE.items()}
+#: The validator's fill per type (``hidden_power.HP_IVS``, THE one table; Hidden Power at 70 power).
+HP_IVS = _hidden_power.HP_IVS
 HP_TYPES = tuple(sorted(t.lower() for t in HP_IVS))               # the 16 types, alphabetical
 PHYSICAL, SPECIAL = "physical", "special"
 #: Gen-3 attacks with base power 0 in the dex whose damage still uses the attacking stat
@@ -337,7 +329,4 @@ def hidden_power_type_of(block: str) -> Optional[str]:
         return None
     if hp[1]:
         return hp[1].capitalize()
-    order = ("Fighting", "Flying", "Poison", "Ground", "Rock", "Bug", "Ghost", "Steel",
-             "Fire", "Water", "Grass", "Electric", "Psychic", "Ice", "Dragon", "Dark")
-    x = sum((1 << i) * (st.ivs[k] % 2) for i, k in enumerate(("hp", "atk", "def", "spe", "spa", "spd")))
-    return order[x * 15 // 63]
+    return _hidden_power.type_of(st.ivs).capitalize()

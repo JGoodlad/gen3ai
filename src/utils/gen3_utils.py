@@ -1,6 +1,7 @@
 import re
 import numpy as np
 from typing import Optional, Tuple
+from agents.gen3_data.hidden_power import HP_IVS
 
 class SwitchDetection:
     """
@@ -58,27 +59,9 @@ class SwitchDetection:
         return has_changed, is_real, voluntary
 
 
-# Single source of truth for Gen 3 Hidden Power IVs (ensures 70 Power). Equal to Showdown's validator fill,
-# fillStats(typechart.ts HPivs, 31), for all 16 types (pinned by gen3_utils_test.py; Ghost was 30 Atk / 30 SpD
-# until 2026-10-19, Showdown's is 30 Def / 30 SpD).
-GEN3_HP_IVS = {
-    "Fighting": {"hp": 31, "atk": 31, "def": 30, "spa": 30, "spd": 30, "spe": 30},
-    "Rock":     {"hp": 31, "atk": 31, "def": 30, "spa": 31, "spd": 30, "spe": 30},
-    "Fire":     {"hp": 31, "atk": 30, "def": 31, "spa": 30, "spd": 31, "spe": 30},
-    "Psychic":  {"hp": 31, "atk": 30, "def": 31, "spa": 31, "spd": 31, "spe": 30},
-    "Flying":   {"hp": 30, "atk": 30, "def": 30, "spa": 30, "spd": 30, "spe": 31},
-    "Poison":   {"hp": 31, "atk": 31, "def": 30, "spa": 30, "spd": 30, "spe": 31},
-    "Ground":   {"hp": 31, "atk": 31, "def": 31, "spa": 30, "spd": 30, "spe": 31},
-    "Bug":      {"hp": 31, "atk": 30, "def": 30, "spa": 31, "spd": 30, "spe": 31},
-    "Ghost":    {"hp": 31, "atk": 31, "def": 30, "spa": 31, "spd": 30, "spe": 31},
-    "Steel":    {"hp": 31, "atk": 31, "def": 31, "spa": 31, "spd": 30, "spe": 31},
-    "Water":    {"hp": 31, "atk": 30, "def": 30, "spa": 30, "spd": 31, "spe": 31},
-    "Grass":    {"hp": 31, "atk": 30, "def": 31, "spa": 30, "spd": 31, "spe": 31},
-    "Electric": {"hp": 31, "atk": 31, "def": 31, "spa": 30, "spd": 31, "spe": 31},
-    "Ice":      {"hp": 31, "atk": 30, "def": 30, "spa": 31, "spd": 31, "spe": 31},
-    "Dragon":   {"hp": 31, "atk": 30, "def": 31, "spa": 31, "spd": 31, "spe": 31},
-    "Dark":     {"hp": 31, "atk": 31, "def": 31, "spa": 31, "spd": 31, "spe": 31},
-}
+# The teambuilder's Hidden Power fill: THE one table, agents.gen3_data.hidden_power.HP_IVS (Showdown's validator
+# fill, fillStats(typechart.ts HPivs, 31); power 70). A name kept for the teambuilder's callers, not a copy.
+GEN3_HP_IVS = HP_IVS
 
 def fix_gen3_hp_ivs(pokemon_list):
     """Detects Hidden Power and applies the correct Gen 3 IVs ONLY if they are all 31."""

@@ -37,24 +37,6 @@ STATS_TO_IDX = {
 
 
 class TeambuilderPokemon:
-    HP_TO_IVS = {
-        "bug": [31, 31, 31, 30, 31, 30],
-        "dark": [31, 31, 31, 31, 31, 31],
-        "dragon": [30, 31, 31, 31, 31, 31],
-        "electric": [31, 31, 31, 31, 30, 31],
-        "fighting": [31, 31, 30, 30, 30, 30],
-        "fire": [31, 30, 31, 30, 31, 30],
-        "flying": [31, 31, 31, 30, 30, 30],
-        "ghost": [31, 30, 31, 31, 31, 30],
-        "grass": [30, 31, 31, 31, 30, 31],
-        "ground": [31, 31, 31, 31, 30, 30],
-        "ice": [31, 30, 30, 31, 31, 31],
-        "poison": [31, 31, 30, 31, 30, 30],
-        "psychic": [30, 31, 31, 30, 31, 31],
-        "rock": [31, 31, 30, 30, 31, 30],
-        "steel": [31, 31, 31, 31, 31, 30],
-        "water": [31, 31, 31, 30, 30, 31],
-    }
     evs: List[int]
     ivs: List[int]
     moves: List[str]
@@ -162,7 +144,12 @@ class TeambuilderPokemon:
                 and len(move) > 11
                 and all([iv == 31 for iv in self.ivs])
             ):
-                self.ivs = list(self.HP_TO_IVS[move[11:]])
+                # THE one table (Showdown's validator fill). Until 2026-10-19 this was poke-env's own table, whose
+                # IVs gave a DIFFERENT gen-3 type for 12 of the 16 (Bug's read Water); the teambuilder's
+                # fix_gen3_hp_ivs runs first on the training path, so only the other packers reached it.
+                from agents.gen3_data import hidden_power
+
+                self.ivs = hidden_power.ivs_packed(move[11:])
 
     @staticmethod
     def from_packed(packed_mon: str) -> "TeambuilderPokemon":

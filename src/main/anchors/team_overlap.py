@@ -46,13 +46,8 @@ from utils.showdown_id import to_id_str
 
 OVERLAP_VERSION = "gen3_team_overlap_v1"
 
-#: The gen-3 Hidden Power type order (index = the formula's result).
-HP_TYPES = ("fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel",
-            "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark")
 _STATS = ("hp", "atk", "def", "spa", "spd", "spe")
 _STAT_ALIASES = {"hp": "hp", "atk": "atk", "def": "def", "spa": "spa", "spd": "spd", "spe": "spe"}
-#: The bit order the Hidden Power type formula reads the IVs in (HP, Atk, Def, Spe, SpA, SpD).
-_HP_BIT_ORDER = ("hp", "atk", "def", "spe", "spa", "spd")
 
 _NICK_RE = re.compile(r"^(?P<nick>.*?)\s*\((?P<species>[^()]+)\)\s*$")
 _GENDER_RE = re.compile(r"\s*\((?:M|F)\)\s*$")
@@ -99,9 +94,10 @@ class Team:
 
 
 def hidden_power_type(ivs: Dict[str, int]) -> str:
-    """The gen-3 Hidden Power type of a spread (missing IVs read 31)."""
-    bits = sum(((ivs.get(s, 31) & 1) << i) for i, s in enumerate(_HP_BIT_ORDER))
-    return HP_TYPES[bits * 15 // 63]
+    """The gen-3 Hidden Power type of a spread (missing IVs read 31) — ``agents.gen3_data.hidden_power.type_of``."""
+    from agents.gen3_data import hidden_power
+
+    return hidden_power.type_of(ivs)
 
 
 def _species_id(name: str) -> str:

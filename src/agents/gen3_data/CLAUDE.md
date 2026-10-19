@@ -43,6 +43,7 @@ gen3_data.learnset.is_legal(species, move_id)      # gen3 legal-movepool gate (h
 gen3_data.learnset.get_legal_moves(species)        # frozenset|None (None = unknown → no constraint)
 from agents.gen3_data import format_spec          # gen3ou's rules + bans, ONE story each (below)
 from agents.gen3_data import hp_repair            # replay-derived teams' Hidden Power artifact, repaired (below)
+from agents.gen3_data import hidden_power         # THE one Hidden Power table + formula (below)
 ```
 
 ## The HIDDEN POWER REPAIR (`hp_repair.py`, `gen3_hp_repair_v1`)
@@ -54,13 +55,29 @@ for byte): the set's SIDE is the sign of three votes — EVs (Atk vs SpA), natur
 gen-3 TYPE rule (`SPECIAL_TYPES`, pinned to `deps/pokemon-showdown/data/mods/gen3/scripts.ts`) — with the real Atk vs SpA stat as the
 tie-break; the TYPE is drawn from Smogon's species HP usage (`priors.hidden_power`) restricted to that side (the
 format-wide Smogon usage if the species has none there); the IVs are the validator's `fillStats(HPivs, 31)`
-(`hp_repair.HP_IVS`, pinned to `deps/pokemon-showdown/data/typechart.ts`; power 70). One RNG per team (`team_seed(base, team_id)`), every
-draw returned as a record. Only the HP move line and the IVs line change. `utils.gen3_utils.GEN3_HP_IVS` (the teambuilder's fill) is the SAME table for all 16 types since 2026-10-19 (its Ghost row
-was 30 Atk / 30 SpD, Showdown's is 30 Def / 30 SpD; `gen3_utils_test.py` pins it to `typechart.ts`). Tests: `hp_repair_test.py` (unit) and
+(`hidden_power.HP_IVS`; power 70). One RNG per team (`team_seed(base, team_id)`), every
+draw returned as a record. Only the HP move line and the IVs line change. Tests: `hp_repair_test.py` (unit) and
 `hp_repair_showdown_integration_test.py` (every type through the pinned validator and `getHiddenPower`, the
 variable-power attack list re-derived from Showdown, and the speed-tie pin: HP Fire's 30 Speed IV makes a Jolly 252
 Salamence 327, not 328). First use: `heldout72_hpfix`
 (`designs/research_state/measurements/heldout72_hpfix_kakuna_2026-10-18/`).
+
+## THE ONE HIDDEN POWER TABLE (`hidden_power.py`)
+
+Every "HP type → IVs" and "IVs → HP type / power" in Python reads this module (owner 2026-10-19: "only 1 impl for the
+HP determinization"): `HP_IVS` (capitalised type → `{stat: iv}`, Showdown's validator fill `fillStats(typechart.ts
+HPivs, 31)`, power 70), `ivs_of` / `ivs_packed` (packed order), `type_of` / `power_of` (`Dex.getHiddenPower`'s gen-3
+formula; Speed weighs 8, before SpA and SpD), `iv_patterns` (every 30/31 pattern of a type, the fill first) and
+`FORMULA_TYPES` (the formula's type order). `hp_repair.HP_IVS`, `utils.gen3_utils.GEN3_HP_IVS`,
+`info_levers.packed.hp_*`, `team_overlap.hidden_power_type` and `team_packing`'s typed-HP fill are this object or
+call it. Before 2026-10-19 there were five copies: `packed.hp_ivs` took the most-31s pattern (8 types differed from
+Showdown), and `team_packing.TeambuilderPokemon.HP_TO_IVS` was poke-env's table, whose IVs gave ANOTHER type for 12
+of 16 (only on packers that skip `fix_gen3_hp_ivs`; the training pool packs byte-identically). The Rust engine keeps
+its own `getHiddenPower` (`src/rust_sim/src/state.rs`), pinned by `tests/hidden_power_fill_test.rs` (every
+`typechart.ts` fill reads back as its type at 70) and by `hidden_power_test.py` (its type list).
+🚨 **`hidden_power_single_impl_test.py` FAILS on a second table, formula or formula-order type list in any `.py` or
+`.rs` under `src/`** — import the module. Out of its scope: the JS harness `ou_random_teams.js` keeps its own solver
+(the lowest-mask pattern), because its seeded output is the frozen P72 panel's provenance.
 
 ## The FORMAT SPEC (`format_spec.py`, `team_legality.py`) — gen3ou's rules, declared once
 
