@@ -1,0 +1,120 @@
+{
+ "schema": "gen3_heldout_panels_v1",
+ "registered": "2026-10-19, BEFORE any pool-widening corpus existed (B-D3, design_diversity_teams_opponents.md §5.6)",
+ "reader": "src/main/heldout_panels.py (python -m main.heldout_panels verify)",
+ "identity": "content_digest = gen3_team_set_digest_v1 (main.anchors.session.team_set_digest): sha256 over the sorted sha256s of each team text .strip()ed; names and order never enter it",
+ "near_neighbour": {
+  "min_shared_mon_sets": 4,
+  "matcher": "gen3_team_overlap_v1",
+  "rule": "a team is a NEAR NEIGHBOUR of a panel iff it shares >= 4 of its 6 mon sets (species + sorted moves, Hidden Power typed) with ONE panel team; an exact copy shares 6. A widening corpus excludes every panel's teams and near neighbours (in-pool panels included); a training source that hits a panel whose held_out_from names 'training' is a startup FATAL"
+ },
+ "ladder_weights": {
+  "version": "ladder_weights_v1",
+  "path": "designs/research_state/measurements/ladder_weights_2026-10-18/ladder_weights_v1.json",
+  "sha256": "9f57c4d553c54d4ad784e32347bc1976d63dbba4011fd4c72375e875dab594e4"
+ },
+ "panels": {
+  "home72": {
+   "role": "IN-POOL reference: the SAMPLE-TEAM ground (all 72 are training-pool teams)",
+   "source": "our curated sample teams (`data/teams/sample`), the committed byte copy the Kakuna reads use",
+   "team_dir": "designs/research_state/measurements/n0_endofrun_2026-09-27/teams_home72",
+   "n": 72,
+   "content_digest": "e7f90019ed48029aa811a410c1993cc3288c03e0018c7c1ee2b35e787afa10d2",
+   "draw_rule": "all 72 sample teams (no draw); the copy's content digest is the one every X35 / X37a / TSR registration names",
+   "seed": null,
+   "manifest": {
+    "path": "designs/research_state/measurements/x35_breakers_stage_2026-10-17/home72_manifest.json",
+    "sha256": "abaf351649af370309522587d8372442760a74c2778762f1444ac4caea78b30f"
+   },
+   "frozen_since": "2026-10-17 (the X26 Kakuna read; x35 home72_manifest)",
+   "held_out_from": []
+  },
+  "away": {
+   "role": "IN-POOL reference (19 of 20 are training-pool copies, F-DV-5): Kakuna's home turf",
+   "source": "Metamon `competitive/gen3ou` (Metamon's README says it overfit to this set)",
+   "team_dir": "designs/research_state/measurements/team_strength_2026-10-18/teams_away",
+   "n": 20,
+   "content_digest": "bc1dad40ebb6d922984dc373a60bd25e9abf4fff6b70625500e0716116800be1",
+   "draw_rule": "all 20 files of Metamon's `competitive/gen3ou` (no draw); byte-equal in content to Metamon's cache (digest checked 2026-10-19)",
+   "seed": null,
+   "manifest": null,
+   "frozen_since": "2026-10-17 (the X26 / K2 Kakuna reads)",
+   "held_out_from": []
+  },
+  "heldout72": {
+   "role": "RETIRED as a read panel (superseded by heldout72_hpfix); kept registered so its HP-as-filled mon sets stay excluded",
+   "source": "72 `hl_05_26` replay-derived teams (Metamon's ladder archive), Hidden Power AS FILLED (the HP-Dark artifact)",
+   "team_dir": "designs/research_state/measurements/heldout_teams_kakuna_2026-10-18/teams_heldout72",
+   "n": 72,
+   "content_digest": "4a9aa52253f4df2e03b6b97d011b48dbcadd6230013dbea366d5e833f373d9ba",
+   "draw_rule": "heldout_teams_kakuna_2026-10-18/README.md 'The draw rule' (written before the draw): seeded shuffle of hl_05_26, rejecting exact / >= 4 shared mon sets with the pool, `competitive` or an earlier draw",
+   "seed": 20261018,
+   "manifest": {
+    "path": "designs/research_state/measurements/heldout_teams_kakuna_2026-10-18/heldout72_manifest.json",
+    "sha256": "78c5f345e00e8afaab19ac99659bd8dddd32fd07c7f91db68330ba691a5161dc"
+   },
+   "frozen_since": "2026-10-18",
+   "held_out_from": [
+    "training"
+   ]
+  },
+  "heldout72_hpfix": {
+   "role": "UNFAMILIAR panel: the replay (ladder) population, unseen teams",
+   "source": "heldout72 with Hidden Power repaired by `agents.gen3_data.hp_repair.repair_team` (gen3_hp_repair_v1)",
+   "team_dir": "designs/research_state/measurements/heldout72_hpfix_kakuna_2026-10-18/teams_heldout72_hpfix",
+   "n": 72,
+   "content_digest": "f7604f01a330b48821fa5bb4f3d5c07dd773b1b6f5fdf11f1ae99713abd5c36a",
+   "draw_rule": "heldout72's 72 teams, each repaired with team_seed(20261018, team_id) (heldout72_hpfix_manifest.json seed_rule)",
+   "seed": 20261018,
+   "manifest": {
+    "path": "designs/research_state/measurements/heldout72_hpfix_kakuna_2026-10-18/heldout72_hpfix_manifest.json",
+    "sha256": "b98e723e298891fa011735a8575fe26428386e85b8a567f8b2d9809778b9c007"
+   },
+   "frozen_since": "2026-10-18 (X37a stage 1 registration)",
+   "held_out_from": [
+    "training"
+   ]
+  },
+  "forum72": {
+   "role": "UNFAMILIAR panel: human-built forum teams (the near-neutral source)",
+   "source": "72 of the smogon_forum v1 independent core (human-built forum teams)",
+   "team_dir": "designs/research_state/measurements/x37a_eval_matrix_2026-10-18/teams_forum72",
+   "n": 72,
+   "content_digest": "efa72e52ce56bedb94e1281290c0e398e657bdab396647a99586168be9011159",
+   "draw_rule": "x37a_eval_matrix_2026-10-18/PREREG.md §4: core ids sorted, shuffled once with random.Random(3720), curator cap 14, rejecting validator failures and exact / >= 4 shared with the pool, `competitive`, home72, H or an earlier draw",
+   "seed": 3720,
+   "manifest": {
+    "path": "designs/research_state/measurements/x37a_eval_matrix_2026-10-18/forum72_manifest.json",
+    "sha256": "f1ef6349b0839ef5e5e384a9eafdea86cccf3679b79d721213bd5295ee9a9ad4"
+   },
+   "frozen_since": "2026-10-18 (X37a stage 2 registration, cb0f1769)",
+   "held_out_from": [
+    "training"
+   ]
+  },
+  "p72": {
+   "role": "UNFAMILIAR panel: procedural teams no arm trains on (MATERIALLY WEAKER, F-DV-20)",
+   "source": "procedural Smogon-usage teams (`ou_random_teams.js`, Smogon-derived data/pokemon inputs only)",
+   "team_dir": "designs/research_state/measurements/x37a_eval_matrix_2026-10-18/teams_p72",
+   "n": 72,
+   "content_digest": "e59d2f4843c01659112f3edd1c2c33baa340604b622a44c5500baedd9e974795",
+   "draw_rule": "x37a_eval_matrix_2026-10-18/PREREG.md §4: `ou_random_teams.js --emit 200 --seed 3721`, first 72 accepted (validator; exact / >= 4 shared with pool, `competitive`, home72, H, forum72 or an earlier P72; HP plays its named type)",
+   "seed": 3721,
+   "manifest": {
+    "path": "designs/research_state/measurements/x37a_eval_matrix_2026-10-18/p72_manifest.json",
+    "sha256": "95feb873349e07085bb2d69c92bdc0c58b5b8fd697737cbf5a0821e4762af4f2"
+   },
+   "frozen_since": "2026-10-18 (X37a stage 2 registration, cb0f1769)",
+   "held_out_from": [
+    "training"
+   ]
+  }
+ },
+ "subsets_covered_by_parents": {
+  "tsr_reference24": "the TSR reference panel (8 home72 + 8 away + 8 forum72, team_strength_2026-10-18/tsr_registration.json); covered by its three parents",
+  "x37a_hl72hp_core/near/far": "X37a's per-stratum Metamon sub-sets of heldout72_hpfix; covered by heldout72_hpfix"
+ },
+ "not_yet_registered": {
+  "d5_leaveout72": "D5's leave-out 72 is PRIVATE to D5 (§4.8) and is not carved yet; it must be registered here BEFORE D5's corpus or any later widening corpus is built"
+ }
+}
