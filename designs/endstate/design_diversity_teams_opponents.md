@@ -83,6 +83,14 @@ This doc answers them, after challenging the reading itself (§8).
     0.453 [0.404, 0.501], both at heldout72_hpfix's level (0.448) and below home72 (0.575).
   - The third-source rule reads **UNSEEN-DRIVEN** for both. H4 is KILLED and H5 loses its support; the memorisation
     family H1–H3 leads, and D1 (widen, own side included) is the lever. D1 keeps X35 rank 2.
+- **TEAM STRENGTH (TSR, 2026-10-19, `measurements/team_strength_2026-10-18/`; PROVISIONAL).** A per-team rating with
+  ONE pilot on both sides (X26 vs X26 on every team; Kakuna vs Kakuna on 24-team subsets), anchored on a frozen
+  24-team reference panel (§5.7).
+  - **The held-out teams are weaker than human-built ones by ~70 Elo (≈ 10 pp a game at even), in both pilots' hands**
+    (H − forum72: X26 −71 [−147, −2], Kakuna −69 [−188, +43]; UNDECIDED against the registered 35-Elo bar).
+    P72 is the weakest set (−146 vs forum72, MATERIALLY WEAKER); forum72 ≈ home72.
+  - **X37a's piloting gap survives matching on team strength:** +0.28 [+0.12, +0.44] on Kakuna-rated teams (DETECTED);
+    +0.11 with the slope-1 set-level correction. Team strength is NOT what makes X26 lose with unfamiliar teams.
 - **The first experiment: X37a, now two CPU stages, 0 GPU.**
   - **Stage 1** reads the matrix's core (≈ 3.5 lane-hours; the calibration cell needs B-D9):
     - the DEPLOYMENT cell by stratum: we pilot home72, Kakuna pilots heldout72_hpfix's CORE / NEAR / FAR teams,
@@ -443,6 +451,17 @@ CPU reads at ≈ 9 s per Kakuna game on one rule-5b lane.
 4. **NOT smogon_forum or P72.** They are evaluation panels (§5.6), and smogon_forum is the matrix's only
    human-built, near-neutral source.
 
+**PROPOSED by the TSR read (2026-10-19, §5.7; the orchestrator's call, not adopted):** rank the human-built forum v2
+corpus (`smogon_forum_teams_v2_2026-10-18/`, 5,330 teams) ABOVE W_hl, minus the frozen forum72 panel and its near
+neighbours (the panel stays clean; v2 is ~70× its size).
+- Why: forum teams rate as strong as our sample teams. Replay reconstructions (heldout72_hpfix, drawn from
+  `hl_05_26`) rate ~70 Elo lower, and procedural P72 ~146 lower.
+- How: tier A first. Tier B / C only after a TSR strength screen (forum72's 5 tier-B competition entries rated
+  −166 Elo).
+- The screen is lenient (drop only below ≈ −170 Elo, the P72 mean) and is not X26's rating alone. X26 rates off-meta
+  teams low partly because it pilots them badly (H's FAR teams: −236 under X26, −52 under Kakuna), and FAR cores are
+  what the off-meta result (H-PILOT-OFFMETA) says the widening needs.
+
 **How many.** All of W_hl that survives the exclusions (≈ 22.7k, UNVERIFIED until built). It is mixed at a DRAW
 SHARE s = 0.5 per side: each draw comes from W_hl with probability 0.5, else from the pool with today's 10 %
 sample bias on the trainee side.
@@ -769,6 +788,16 @@ whoever pilots them); PILOT_c = +0.123 [+0.039, +0.206]; FACE_c = +0.017 [−0.0
 SUPPORTED bar), **H-PILOT-OFFMETA SUPPORTED** (reverse cell, our team's stratum: CORE 0.463, NEAR 0.389, FAR 0.263;
 FAR − CORE −0.199 [−0.385, −0.017]). A-K remains UNVERIFIED.
 
+**At MATCHED team strength (TSR, 2026-10-19, §5.7; no new games).** The same S(P, P) and reverse games, with each
+piloted team's strength from the team-strength meter. P(win) = sigmoid(a + g·U + b·z), and the gap is averaged at each
+game's strength:
+- **PRIMARY** (z = Kakuna's rating, the 24 + 23 subset teams): **+0.282 [+0.117, +0.443], DETECTED**. The raw gap on
+  the same 266 games is +0.310, so strength explains ~3 pp.
+- Secondary (z = X26's own rating, all 800 games): +0.172 [+0.075, +0.276].
+- The set-level slope-1 correction (raw − Kakuna's home72 − H, +0.088): **+0.107**, against X37a's PILOT_c +0.123.
+- The per-team match under-corrects (the ratings' reliability ≈ 0.4), and the slope-1 correction may over-correct.
+  Every variant is ≥ +0.10 and detected: **the piloting gap is not a team-strength artifact.**
+
 S(P, H) is read from X37a's three stratum sub-cells (§5.3), reweighted to heldout72_hpfix's OWN strata shares
 (16 / 44 / 12 of 72), so that it estimates the plain asymmetric cell. S(H, P) and K(P, H) use the full
 heldout72_hpfix set.
@@ -893,6 +922,16 @@ panel, the panel digest in the regime).
 standing total, read beside every plateau check, so a plateau on the pool can never again be read without its
 transfer.
 
+**B-D7 is partly built (2026-10-18):** `H2HEngine(team_builder=…)` with the team-strength meter's scheduled panel
+builder plays NAMED team pairs, mirrored, on any registered panel (`main.team_strength`). The CLI flag and the panel
+digest in the ledger regime are not built.
+
+🚨 **A caution from TSR (F-DV-19, a hypothesis, UNVERIFIED).** Rated in X26-vs-X26 games, X26 puts heldout72_hpfix
+only ~36 Elo (≈ 5 pp) further below home72 than Kakuna does. Yet against Kakuna it loses ~11–28 pp more piloting the
+held-out teams. A same-family opponent may not punish the unfamiliar-team piloting errors Kakuna punishes, so GEN-M
+could under-measure exactly the deficit X37a found. The same-team comparison is −18 Elo [−104, +72], not resolved.
+Read GEN-M beside the Kakuna reverse cell until this is settled.
+
 ### 5.5 (v) THE headline, and the numbers that always sit beside it
 
 **THE headline: L.** It is the ladder-weighted deployment estimate vs Kakuna greedy (§5.3), quoted as
@@ -944,6 +983,42 @@ No number leaves without its row of the matrix (§5.1), its regime (SOP RULE 1) 
 
 **An in-run held-out meter (B-D5)** is for FUTURE runs only, since X26 is pinned: an eval-cycle cell piloting
 held-out-panel teams, 100 games per cycle. It is subsumed by GEN-M once B-D7 exists, and stays optional.
+
+### 5.7 (vii) Team STRENGTH per set: the team-strength rating (TSR)
+
+**Why.** Every asymmetric cell carries a team-strength term. X37a corrected it with one set-level number, K(P, H). The
+team-strength meter (`python -m main.team_strength`) rates EACH team: a fixed pilot on both sides, Bradley-Terry on
+team identity, anchored on a frozen 24-team reference panel (8 home72 + 8 `away` + 8 forum72).
+- Pilot A = X26 (10 mirrored pairs per team, 6,000 games).
+- Pilot B = Kakuna (24-team subsets, 1,494 games).
+
+PREREG before any game; read in `measurements/team_strength_2026-10-18/`.
+
+| set | X26 pilots both sides (Elo, panel = 0) | Kakuna pilots both sides |
+|---|---|---|
+| away | +1 [−81, +83] | +19 [−37, +80] |
+| home72 | 0 [−50, +50] | −17 [−84, +52] |
+| forum72 | −27 [−81, +18] | −10 [−94, +70] |
+| **heldout72_hpfix** | **−98 [−165, −51]** | **−79 [−173, +5]** |
+| P72 | −173 [−245, −137] | −138 [−227, −60] |
+
+- **"Is heldout72_hpfix competitive?"** H − forum72 = −71 [−147, −2] (X26, primary) and −69 [−188, +43] (Kakuna).
+  The registered class is **UNDECIDED** for both. X26 detects H as weaker, marginally, but neither pilot resolves
+  whether the gap exceeds 35 Elo.
+  - In plain terms: the reconstructed ladder teams are ~10 pp per game weaker than human-built teams, and stronger
+    than procedural ones (H − P72 +75 [+6, +164], COMPETITIVE).
+  - Every asymmetric cell with H on one side carries a ~60–100 Elo term. Every symmetric cell cancels it on average.
+- **P72 is MATERIALLY WEAKER** than forum72 (−146 [−236, −84]). A P72 asymmetric cell needs its own strength
+  correction (F-DV-20).
+- **The pilots agree on the sets, and weakly on single teams:** Spearman ρ = 0.33 over 98 teams. The registered
+  interval [−0.06, +0.44] reads NOT SHOWN, but it is biased toward 0; a teams-only interval is [+0.13, +0.50].
+  Reliabilities are 0.41 / 0.44, and corrected ρ ≈ 0.77.
+- **The matched-strength piloting gap** is in §5.2: it survives.
+- **Off-meta inside the ratings:** H's FAR teams rate −236 under X26 against −52 under Kakuna (4 teams). X26's own
+  ratings carry its off-meta piloting deficit, so **a pool screened by X26's rating would drop the very teams the
+  widening needs** (§4.1's proposal).
+- **Cost:** ~0.8 games/s on rule 5b's cores for pilot A (150 teams × 20 games ≈ 1 lane-hour); pilot B ~2–5 min per
+  20 games.
 
 ---
 
@@ -1210,6 +1285,15 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 - **F-DV-17 (X37a).** Kakuna's team per game is recoverable from the front end's `--capture-dir` record (both packed
   teams in the START command). X37a's aggregate uses it, which resolves F-DV-6 for any read that captures. The banked
   reads did not capture.
+- **F-DV-18 (TSR).** The anchors' two role halves REPLAY one team sequence: with one `--team-seed`, game 10 + i plays
+  game i's two teams with the seats swapped (another battle seed). A 20-game Metamon unit is 10 matchups × 2 seats.
+  - Any per-team or per-matchup bootstrap over anchor rows must cluster by matchup.
+  - X37a's `kcal` and every Kakuna cell have this shape. Set-level win rates are unaffected; their game-only
+    intervals are somewhat optimistic.
+- **F-DV-19 (TSR, hypothesis).** A same-family opponent may under-punish unfamiliar-team piloting (§5.4's caution).
+  GEN-M could under-measure the deficit. UNVERIFIED.
+- **F-DV-20 (TSR).** P72 is MATERIALLY WEAKER than human-built teams (−146 Elo vs forum72), and heldout72_hpfix ~70
+  Elo weaker. Symmetric cells cancel this on average; an asymmetric cell with either set must carry its strength term.
 
 ---
 
@@ -1237,3 +1321,4 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 | 2026-10-18 | smogon_forum v2 MEGA SWEEP collected (data worker, owner: "one mega sweep of all the data we can possibly collect") | `smogon_forum_teams_v2_2026-10-18/`: every legal team kept with tier A/B/C, curator, fidelity (verbatim / transcribed) and overlap; cores A/B 559 and A/B/C 2,995 (verbatim 533 / 2,894); v1 and forum72 unchanged | rebuilding teams from replays (partial information, `hl_05_26`-like); circumventing the forum's browser check; fetching robots-disallowed paths (pastebin `/raw/`, Dropbox `/sh/`) | that README |
 | 2026-10-18 | **X37a stage 1 READ** (eval-matrix worker; PREREG `8a2e80de`, builds B-D6 + B-D9 `cb0f1769`) | **L (ladder_weights_v1) = 0.630 [0.573, 0.686]**, L_c1 = 0.624; the held-out drop is PILOTING (PILOT_c +0.123 [+0.039, +0.206]) not facing (FACE_c +0.017 [−0.062, +0.095]); H-PILOT UNDECIDED by its rule (0.9 pp short of SUPPORTED), H-PILOT-OFFMETA SUPPORTED; K(P, H) = 0.573. `ladder_weights_v1` FROZEN. Proposal (not a decision): the piloting deficit favours own-side widening (D1) over opponent-only widening (D2), and a corpus covering FAR cores | reading the symmetric held-out drop as a facing / team-identification problem (FACE_c shows none); quoting L as a ladder win rate (Kakuna brings weaker, reconstructed teams: Δ̂ = +0.073) | `measurements/x37a_eval_matrix_2026-10-18/`; ledger 2026-10-18 *X37a STAGE 1* |
 | 2026-10-18 | **X37a stage 2 READ** (eval-matrix worker; panels frozen in `cb0f1769` by PREREG §4) | **UNSEEN-DRIVEN, both third sources agree**: forum72 (v1 core, curator cap 14) 0.470 [0.422, 0.519], d1 +0.022 n.d., d2 −0.105 [−0.173, −0.036]; P72 (procedural, Smogon-only) 0.453 [0.404, 0.501], d1 +0.005 n.d., d2 −0.123 [−0.190, −0.053]. H4 KILLED; D1 stays at X35 rank 2 (§6.1's demotion condition not met); with stage 1, the deficit is PILOTING unseen teams | POPULATION / KAKUNA-DRIVEN (d1 not above 0 for either source); reading P72 alone (forum72 governs; they agree) | `measurements/x37a_eval_matrix_2026-10-18/` README stage 2; ledger 2026-10-18 *X37a STAGE 2* |
+| 2026-10-19 | **TSR READ: team strength per set** (team-strength worker; PREREG `119313b9`, tool `main.team_strength`) | heldout72_hpfix is ~70 Elo weaker than forum72 in BOTH pilots' hands (X26 −71 [−147, −2], Kakuna −69 [−188, +43]; D1 UNDECIDED at the 35-Elo bar, X26 detects it marginally); P72 MATERIALLY WEAKER (−146); forum72 ≈ home72; cross-pilot ρ 0.33 (NOT SHOWN by the registered, 0-biased interval); X37a's piloting gap SURVIVES strength matching (+0.28 [+0.12, +0.44] on Kakuna-rated teams; +0.11 set-level). PROPOSED (not adopted): forum v2 tier A ahead of W_hl as the widening source, screened leniently and never by X26's rating alone | reading H's weakness as the cause of the reverse-cell loss (matching removes 3–9 pp of 20–31); screening a widening pool by X26's own rating (it drops off-meta teams X26 pilots badly) | `measurements/team_strength_2026-10-18/`; ledger 2026-10-19 *TEAM STRENGTH* |

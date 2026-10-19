@@ -82,18 +82,30 @@ class Games:
                    cluster_games=[np.array(clusters[c]) for c in cnames])
 
 
+def log_posterior(gs: Games, r: np.ndarray, w: np.ndarray, lam: float) -> float:
+    d = r[gs.a] - r[gs.b]
+    # s log sigmoid(d) + (1 - s) log sigmoid(-d), stably
+    ll = gs.s * -np.logaddexp(0.0, -d) + (1.0 - gs.s) * -np.logaddexp(0.0, d)
+    return float(np.sum(w * ll) - 0.5 * lam * np.dot(r, r))
+
+
 def fit(gs: Games, *, prior_sd: float, anchor: Sequence[str], w: Optional[np.ndarray] = None,
         r0: Optional[np.ndarray] = None) -> np.ndarray:
-    """The MAP ratings (logits), shifted so the mean over ``anchor`` is 0 (module docs)."""
+    """The MAP ratings (logits), shifted so the mean over ``anchor`` is 0 (module docs). DAMPED Newton: a step is
+    halved until the log posterior does not fall (a full Newton step from a warm start can overshoot and cycle — a
+    bootstrap replicate did, 2026-10-19); converged when the step or the gradient is below :data:`STEP_TOL`."""
     n = len(gs.ids)
     lam = 1.0 / float(prior_sd) ** 2
     w = np.ones(len(gs.s)) if w is None else np.asarray(w, dtype=float)
     r = np.zeros(n) if r0 is None else np.array(r0, dtype=float)
     a, b, s = gs.a, gs.b, gs.s
+    cur = log_posterior(gs, r, w, lam)
     for _ in range(MAX_ITERS):
         p = 1.0 / (1.0 + np.exp(-(r[a] - r[b])))
         resid = w * (s - p)
         grad = np.bincount(a, resid, n) - np.bincount(b, resid, n) - lam * r
+        if float(np.max(np.abs(grad))) < STEP_TOL:
+            break
         h = w * p * (1.0 - p)
         H = np.zeros((n, n))
         np.add.at(H, (a, a), h)
@@ -102,8 +114,14 @@ def fit(gs: Games, *, prior_sd: float, anchor: Sequence[str], w: Optional[np.nda
         np.add.at(H, (b, a), -h)
         H[np.diag_indices(n)] += lam
         step = np.linalg.solve(H, grad)
-        r = r + step
-        if float(np.max(np.abs(step))) < STEP_TOL:
+        t = 1.0
+        while True:
+            nxt = log_posterior(gs, r + t * step, w, lam)
+            if nxt >= cur - 1e-12 * max(1.0, abs(cur)) or t < 1e-6:
+                break
+            t *= 0.5
+        r, cur = r + t * step, nxt
+        if float(np.max(np.abs(t * step))) < STEP_TOL:
             break
     else:
         raise FitError(f"Newton did not converge in {MAX_ITERS} steps")

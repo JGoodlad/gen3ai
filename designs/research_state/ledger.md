@@ -27201,3 +27201,77 @@ row dumps + neighbour checkpoints, exact weights absent · T2's GPU program NOT 
 `research_state/measurements/x26_a3_stop_316M_2026-10-18/` (README, `replay_neighbours`, `control_neighbours`,
 `flip_test`, `locate*`, `tau_programs`, `surprise`, `forecast.json`); `measurements/ridealong_baseline/PREREGISTRATION.md`
 (the A3 event record); `endstate/design_x26_readiness.md` §8
+
+### 2026-10-19 · MEASUREMENT · BUILD · **TEAM STRENGTH: a per-team rating with ONE pilot on both sides (`main.team_strength`, TSR) says the held-out replay-reconstructed teams (heldout72_hpfix) are ~70 Elo (≈ 10 pp a game at even) WEAKER than human-built forum teams in BOTH pilots' hands (X26 −71 [−147, −2], Kakuna −69 [−188, +43]; UNDECIDED at the registered 35-Elo bar), procedural P72 is MATERIALLY WEAKER (−146), forum72 ≈ home72; and X37a's piloting gap SURVIVES matching on team strength (+0.28 [+0.12, +0.44] on Kakuna-rated teams, DETECTED; +0.11 set-level). PROVISIONAL**
+
+**Question** (owner, 2026-10-18): "Can we get a team strength? … Kakuna's unseen teams might not be competitive … should
+we increase diversity? How do we understand?" X37a corrected its piloting gap with ONE set-level number, K(P, H) = 0.573.
+
+**Build.** `python -m main.team_strength`: Bradley-Terry on team IDENTITY (the six strict mon sets) against a frozen
+24-team reference panel (8 home72 + 8 `away` + 8 forum72), with a two-stage bootstrap (teams, then pairs / matchups).
+- Pilot A: one checkpoint on `main.h2h`'s engine, mirrored pairs. `H2HEngine` gains an opt-in `team_builder`, and a
+  SCHEDULED panel builder names every game's two teams.
+- Pilot B: Kakuna on the anchors' B-D9 pair cell, its teams read from the capture.
+- Commits `119313b9` (build + PREREG), `f40e6bf3` (lane fix, matchup clustering).
+
+**Measurement** (PREREG committed before any game; registration digest `336b8221…`).
+- Pilot A = X26 @161,000,169 on both sides, 300 teams × 10 mirrored pairs = 6,000 games.
+- Pilot B = Kakuna ckpt 34 on both sides, 24-team subsets of each set, 1,494 games.
+
+| set | X26 pilots both (Elo, panel = 0) | Kakuna pilots both |
+|---|---|---|
+| away | +1 [−81, +83] | +19 [−37, +80] |
+| home72 | 0 [−50, +50] | −17 [−84, +52] |
+| forum72 | −27 [−81, +18] | −10 [−94, +70] |
+| heldout72_hpfix | −98 [−165, −51] | −79 [−173, +5] |
+| P72 | −173 [−245, −137] | −138 [−227, −60] |
+
+- **D1** (H − forum72; COMPETITIVE iff lower > −35 Elo, MATERIALLY WEAKER iff upper < −35): X26 −71 [−147, −2]
+  **UNDECIDED** (detected weaker, marginally); Kakuna −69 [−188, +43] **UNDECIDED**. P72 − forum72 −146 [−236, −84]
+  **MATERIALLY WEAKER** (X26). H − P72 +75 [+6, +164] COMPETITIVE.
+- **D2** (cross-pilot Spearman over 98 teams): ρ = 0.33, registered interval [−0.06, +0.44] ⇒ **NOT SHOWN**. That
+  interval is biased toward 0; teams-only it is [+0.13, +0.50]. Reliabilities 0.41 / 0.44, corrected ρ ≈ 0.77. The
+  pilots agree on the SET order.
+- **D3** (X37a's S(P, P) and reverse games, no new games; P(win) = sigmoid(a + g·U + b·z)):
+  - **PRIMARY** (z = Kakuna's rating): PILOT_m **+0.282 [+0.117, +0.443], DETECTED**; the raw gap on the same 266 games
+    is +0.310.
+  - Secondary (z = X26's own rating): +0.172 [+0.075, +0.276].
+  - Set-level slope-1 correction: **+0.107**, against X37a's PILOT_c +0.123.
+  - Strength K(P, H) cross-check: Kakuna's home72 − H = +62 Elo, against X37a's +51.
+
+**Reading.**
+- The owner is right that the held-out teams are weaker: ~10 pp a game in anyone's hands. But that is not why X26
+  loses with them. Matched on strength, piloting an unfamiliar team still costs X26 10–28 pp against Kakuna.
+- X26's own ratings put H's off-meta FAR teams at −236 Elo, against Kakuna's −52: X26's off-meta piloting deficit,
+  visible inside its own ratings.
+- Self-play shows a much smaller familiarity premium (~36 Elo) than the Kakuna reverse cell implies. That is a
+  HYPOTHESIS (F-DV-19): a same-family meter (GEN-M) may under-measure the piloting deficit.
+- **Pool widening (PROPOSED, not adopted):**
+  - human-built forum v2 teams, tier A first, ahead of replay reconstructions (W_hl, ~70 Elo weaker) and procedural
+    teams;
+  - tier B / C strength-screened (the 5 tier-B competition entries rated −166);
+  - the screen lenient, and never X26's rating alone (it drops the off-meta teams X26 pilots badly).
+
+**FINDINGS.**
+1. Pilot B's lane stopped after unit 1: a port probe without `SO_REUSEADDR` read TIME_WAIT as busy. Fixed in
+   `f40e6bf3`; resumed; no game lost.
+2. **The anchors' two role halves replay ONE team sequence (F-DV-18).** A 20-game Metamon unit is 10 matchups × 2
+   seats. TSR clusters pilot B by matchup, a deviation from PREREG §3; the as-written clustering changes no class.
+   X37a's `kcal` and every Kakuna cell share this shape.
+3. The registered D2 interval is biased toward 0 (replicate ratings carry the game noise twice).
+4. D3's per-team match under-corrects (the covariate's reliability ≈ 0.4); the set-level read is reported beside it.
+5. Undamped Newton failed to converge on a bootstrap replicate in a descriptive refit; it is now damped (tested). The
+   registered read moves < 1e-10 Elo.
+6. X26's "detected weaker" for H vs forum72 is marginal (upper bound −1.7 Elo; −0.005 without the 7 near-tie pairs).
+7. One early glance at a pilot-B unit's win rate in a log tail; no decision taken.
+8. No hazard hit:
+   - T28 clear before every unit; our server on 9563 only;
+   - nothing under `models/` or `data/`; no GPU;
+   - new `gen3ai_tsr_*` Metamon sets only;
+   - games started after X37a stage 2's done marker.
+
+Tag: **MEASUREMENT · BUILD (`main.team_strength`; `H2HEngine(team_builder=…)`) · H vs forum72 −70 Elo (UNDECIDED at
+35) · P72 MATERIALLY WEAKER · cross-pilot ρ NOT SHOWN (0.33) · piloting gap SURVIVES strength matching (DETECTED) ·
+PROVISIONAL** · evidence: `research_state/measurements/team_strength_2026-10-18/` (README, PREREG, `results.json`,
+`supplement.json`, `teams.tsv`, rows); `src/main/team_strength/`; `endstate/design_diversity_teams_opponents.md` §0,
+§4.1, §5.2, §5.4, §5.7, §10, §11; `research_state/UNDERSTANDING.md`

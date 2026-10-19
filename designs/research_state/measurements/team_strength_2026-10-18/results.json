@@ -1,0 +1,6580 @@
+{
+ "agreement": {
+  "ci": [
+   -0.0564984653493922,
+   0.4406831389730891
+  ],
+  "class": "NOT SHOWN",
+  "n_teams": 98,
+  "pearson_elo": 0.25111481875455866,
+  "reliability_a": 0.41351893842535703,
+  "reliability_b": 0.4404963247976541,
+  "rho": 0.32657524115550624,
+  "rho_disattenuated": 0.7651814084084653
+ },
+ "d3": {
+  "primary_kakuna": {
+   "B": 2000,
+   "class": "DETECTED",
+   "explained_by_strength": 0.02768975441152033,
+   "matched": 0.28186640500876947,
+   "matched_ci": [
+    0.11735154358797857,
+    0.44252248403525085
+   ],
+   "n_games": 266,
+   "n_teams": {
+    "familiar": 24,
+    "unfamiliar": 23
+   },
+   "raw": 0.3095561594202898,
+   "raw_ci": [
+    0.1460300723948513,
+    0.4554682272520754
+   ],
+   "seed": 3805
+  },
+  "secondary_x26_circular": {
+   "B": 2000,
+   "class": "DETECTED",
+   "explained_by_strength": 0.022753839512682034,
+   "matched": 0.17224616048731792,
+   "matched_ci": [
+    0.07452797562721665,
+    0.2761864883143406
+   ],
+   "n_games": 800,
+   "n_teams": {
+    "familiar": 68,
+    "unfamiliar": 69
+   },
+   "raw": 0.19499999999999995,
+   "raw_ci": [
+    0.09142074213840021,
+    0.2846653741247353
+   ],
+   "seed": 3805
+  },
+  "strength_term_check": {
+   "comparison": {
+    "ci": [
+     -178.00549206405276,
+     43.993755564709964
+    ],
+    "class": "UNDECIDED",
+    "detected_weaker": false,
+    "est": -61.667367521682664,
+    "margin_elo": 35.0
+   },
+   "kakuna_home72_minus_H_elo": 61.667367521682664,
+   "x37a_K_PH": 0.5725,
+   "x37a_K_PH_elo": 50.73574877909367
+  }
+ },
+ "d4": {
+  "kakuna": {
+   "forum72_by_category": {
+    "curated_team_dump": {
+     "mean_elo": 24.125659448105832,
+     "n_teams": 13
+    },
+    "resource_listed_team_analysis": {
+     "mean_elo": 41.10621994341833,
+     "n_teams": 5
+    },
+    "team_archive_history": {
+     "mean_elo": -62.85473446612695,
+     "n_teams": 11
+    },
+    "teambuilding_competition_winner": {
+     "mean_elo": -160.63935291346274,
+     "n_teams": 1
+    }
+   },
+   "forum72_by_tier": {
+    "A": {
+     "mean_elo": -5.939220916721684,
+     "n_teams": 29
+    },
+    "B": {
+     "mean_elo": -160.63935291346274,
+     "n_teams": 1
+    }
+   },
+   "heldout_by_stratum": {
+    "CORE": {
+     "mean_elo": 67.17520611233415,
+     "n_teams": 4
+    },
+    "FAR": {
+     "mean_elo": -51.60000483413182,
+     "n_teams": 4
+    },
+    "NEAR": {
+     "mean_elo": -121.74003866638742,
+     "n_teams": 16
+    }
+   }
+  },
+  "x26": {
+   "forum72_by_category": {
+    "curated_team_dump": {
+     "mean_elo": -17.35008349055041,
+     "n_teams": 34
+    },
+    "resource_listed_team_analysis": {
+     "mean_elo": 11.137866822661342,
+     "n_teams": 8
+    },
+    "sample_team_archived": {
+     "mean_elo": 97.29033882781331,
+     "n_teams": 1
+    },
+    "team_archive_history": {
+     "mean_elo": -29.681259746026683,
+     "n_teams": 24
+    },
+    "teambuilding_competition_winner": {
+     "mean_elo": -165.74502684982048,
+     "n_teams": 5
+    }
+   },
+   "forum72_by_tier": {
+    "A": {
+     "mean_elo": -16.6546238682724,
+     "n_teams": 67
+    },
+    "B": {
+     "mean_elo": -165.74502684982048,
+     "n_teams": 5
+    }
+   },
+   "heldout_by_stratum": {
+    "CORE": {
+     "mean_elo": -16.951490427467323,
+     "n_teams": 16
+    },
+    "FAR": {
+     "mean_elo": -236.25997315608083,
+     "n_teams": 12
+    },
+    "NEAR": {
+     "mean_elo": -89.33622547367308,
+     "n_teams": 44
+    }
+   }
+  },
+  "x26_minus_kakuna_by_set": {
+   "away": -17.130560800419968,
+   "forum72": -17.29619587289496,
+   "heldout72_hpfix": -19.17386117924856,
+   "home72": 16.982519933897567,
+   "p72": -35.51132740652929
+  },
+  "x26_minus_kakuna_on_subsets": {
+   "away": -17.13056080041997,
+   "forum72": -26.238682207007535,
+   "heldout72_hpfix": -9.284580763512551,
+   "home72": -26.91513959694434,
+   "p72": -37.9624794384373
+  }
+ },
+ "kakuna_cluster": "matchup",
+ "kakuna_prereg_game_clusters": {
+  "agreement": {
+   "ci": [
+    -0.05515307011751678,
+    0.42119344562039246
+   ],
+   "class": "NOT SHOWN",
+   "n_teams": 98,
+   "pearson_elo": 0.25111481875455866,
+   "reliability_a": 0.41351893842535703,
+   "reliability_b": 0.4426102992651737,
+   "rho": 0.32657524115550624,
+   "rho_disattenuated": 0.763351909598246
+  },
+  "comparisons": {
+   "away-home72": {
+    "ci": [
+     -50.599016321100414,
+     128.5928376863234
+    ],
+    "class": "UNDECIDED",
+    "detected_weaker": false,
+    "est": 35.443141598327685,
+    "margin_elo": 35.0
+   },
+   "forum72-home72": {
+    "ci": [
+     -103.82903383844179,
+     114.70440957123277
+    ],
+    "class": "UNDECIDED",
+    "detected_weaker": false,
+    "est": 7.18486317377916,
+    "margin_elo": 35.0
+   },
+   "heldout72_hpfix-away": {
+    "ci": [
+     -214.20602497948406,
+     -8.04126987193249
+    ],
+    "class": "UNDECIDED",
+    "detected_weaker": true,
+    "est": -97.11050912001035,
+    "margin_elo": 35.0
+   },
+   "heldout72_hpfix-forum72": {
+    "ci": [
+     -191.1878887480136,
+     41.122360667106314
+    ],
+    "class": "UNDECIDED",
+    "detected_weaker": false,
+    "est": -68.85223069546183,
+    "margin_elo": 35.0
+   },
+   "heldout72_hpfix-home72": {
+    "ci": [
+     -176.79891329878657,
+     38.770709830108025
+    ],
+    "class": "UNDECIDED",
+    "detected_weaker": false,
+    "est": -61.667367521682664,
+    "margin_elo": 35.0
+   },
+   "heldout72_hpfix-p72": {
+    "ci": [
+     -55.79927349963903,
+     178.7268865721241
+    ],
+    "class": "UNDECIDED",
+    "detected_weaker": false,
+    "est": 58.94828072244604,
+    "margin_elo": 35.0
+   },
+   "p72-forum72": {
+    "ci": [
+     -251.05401782988494,
+     -18.58907953866951
+    ],
+    "class": "UNDECIDED",
+    "detected_weaker": true,
+    "est": -127.80051141790787,
+    "margin_elo": 35.0
+   }
+  },
+  "sets": {
+   "away": {
+    "ci": [
+     -35.489651697245414,
+     79.35478312955746
+    ],
+    "ci_games_only": [
+     -15.180087719692123,
+     55.31118086992784
+    ],
+    "mean_elo": 18.546350222119134,
+    "n_teams": 19,
+    "sd_elo": 65.87610004771987
+   },
+   "forum72": {
+    "ci": [
+     -96.95877005561098,
+     72.53168013232033
+    ],
+    "ci_games_only": [
+     -54.24165830197469,
+     34.15252294202722
+    ],
+    "mean_elo": -9.711928202429391,
+    "n_teams": 24,
+    "sd_elo": 143.3497159954262
+   },
+   "heldout72_hpfix": {
+    "ci": [
+     -170.95872369741122,
+     -1.4283847263702658
+    ],
+    "ci_games_only": [
+     -127.90483172672862,
+     -43.18012381123068
+    ],
+    "mean_elo": -78.56415889789122,
+    "n_teams": 24,
+    "sd_elo": 153.53013760913868
+   },
+   "home72": {
+    "ci": [
+     -86.8872143011697,
+     50.97779756138361
+    ],
+    "ci_games_only": [
+     -56.26419262998876,
+     19.26109283914808
+    ],
+    "mean_elo": -16.89679137620855,
+    "n_teams": 24,
+    "sd_elo": 95.70737792071267
+   },
+   "p72": {
+    "ci": [
+     -224.90757375853858,
+     -63.69280638473012
+    ],
+    "ci_games_only": [
+     -192.7907588544129,
+     -104.09950444907321
+    ],
+    "mean_elo": -137.51243962033726,
+    "n_teams": 24,
+    "sd_elo": 131.09363301769255
+   }
+  }
+ },
+ "kakuna_self_games_dropped": 6,
+ "kakuna_units": [
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "away",
+   "unit": "kak_away_000"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "forum72",
+   "unit": "kak_forum72_000"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "heldout72_hpfix",
+   "unit": "kak_heldout72_hpfix_000"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "home72",
+   "unit": "kak_home72_000"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "p72",
+   "unit": "kak_p72_000"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "away",
+   "unit": "kak_away_001"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "forum72",
+   "unit": "kak_forum72_001"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "heldout72_hpfix",
+   "unit": "kak_heldout72_hpfix_001"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "home72",
+   "unit": "kak_home72_001"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "p72",
+   "unit": "kak_p72_001"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "away",
+   "unit": "kak_away_002"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "forum72",
+   "unit": "kak_forum72_002"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "heldout72_hpfix",
+   "unit": "kak_heldout72_hpfix_002"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "home72",
+   "unit": "kak_home72_002"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "p72",
+   "unit": "kak_p72_002"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "away",
+   "unit": "kak_away_003"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "forum72",
+   "unit": "kak_forum72_003"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "heldout72_hpfix",
+   "unit": "kak_heldout72_hpfix_003"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "home72",
+   "unit": "kak_home72_003"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "p72",
+   "unit": "kak_p72_003"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "away",
+   "unit": "kak_away_004"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "forum72",
+   "unit": "kak_forum72_004"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "heldout72_hpfix",
+   "unit": "kak_heldout72_hpfix_004"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "home72",
+   "unit": "kak_home72_004"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "p72",
+   "unit": "kak_p72_004"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "away",
+   "unit": "kak_away_005"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "forum72",
+   "unit": "kak_forum72_005"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "heldout72_hpfix",
+   "unit": "kak_heldout72_hpfix_005"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "home72",
+   "unit": "kak_home72_005"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "p72",
+   "unit": "kak_p72_005"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "away",
+   "unit": "kak_away_006"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "forum72",
+   "unit": "kak_forum72_006"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "heldout72_hpfix",
+   "unit": "kak_heldout72_hpfix_006"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "home72",
+   "unit": "kak_home72_006"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "p72",
+   "unit": "kak_p72_006"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "away",
+   "unit": "kak_away_007"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "forum72",
+   "unit": "kak_forum72_007"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "heldout72_hpfix",
+   "unit": "kak_heldout72_hpfix_007"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "home72",
+   "unit": "kak_home72_007"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "p72",
+   "unit": "kak_p72_007"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "away",
+   "unit": "kak_away_008"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "forum72",
+   "unit": "kak_forum72_008"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "heldout72_hpfix",
+   "unit": "kak_heldout72_hpfix_008"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "home72",
+   "unit": "kak_home72_008"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "p72",
+   "unit": "kak_p72_008"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "away",
+   "unit": "kak_away_009"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "forum72",
+   "unit": "kak_forum72_009"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "heldout72_hpfix",
+   "unit": "kak_heldout72_hpfix_009"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "home72",
+   "unit": "kak_home72_009"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "p72",
+   "unit": "kak_p72_009"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "away",
+   "unit": "kak_away_010"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "forum72",
+   "unit": "kak_forum72_010"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "heldout72_hpfix",
+   "unit": "kak_heldout72_hpfix_010"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "home72",
+   "unit": "kak_home72_010"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "p72",
+   "unit": "kak_p72_010"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "away",
+   "unit": "kak_away_011"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "forum72",
+   "unit": "kak_forum72_011"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "heldout72_hpfix",
+   "unit": "kak_heldout72_hpfix_011"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "home72",
+   "unit": "kak_home72_011"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "p72",
+   "unit": "kak_p72_011"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "away",
+   "unit": "kak_away_012"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "forum72",
+   "unit": "kak_forum72_012"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "heldout72_hpfix",
+   "unit": "kak_heldout72_hpfix_012"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "home72",
+   "unit": "kak_home72_012"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "p72",
+   "unit": "kak_p72_012"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "away",
+   "unit": "kak_away_013"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "forum72",
+   "unit": "kak_forum72_013"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "heldout72_hpfix",
+   "unit": "kak_heldout72_hpfix_013"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "home72",
+   "unit": "kak_home72_013"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "p72",
+   "unit": "kak_p72_013"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "away",
+   "unit": "kak_away_014"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "forum72",
+   "unit": "kak_forum72_014"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "heldout72_hpfix",
+   "unit": "kak_heldout72_hpfix_014"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "home72",
+   "unit": "kak_home72_014"
+  },
+  {
+   "counts": true,
+   "reasons": [],
+   "set": "p72",
+   "unit": "kak_p72_014"
+  }
+ ],
+ "pilots": {
+  "kakuna": {
+   "comparisons": {
+    "away-home72": {
+     "ci": [
+      -48.62471113789714,
+      122.30199146757168
+     ],
+     "class": "UNDECIDED",
+     "detected_weaker": false,
+     "est": 35.443141598327685,
+     "margin_elo": 35.0
+    },
+    "forum72-home72": {
+     "ci": [
+      -97.84146146018414,
+      109.90574080444159
+     ],
+     "class": "UNDECIDED",
+     "detected_weaker": false,
+     "est": 7.18486317377916,
+     "margin_elo": 35.0
+    },
+    "heldout72_hpfix-away": {
+     "ci": [
+      -208.78023636962865,
+      -0.8080123342337596
+     ],
+     "class": "UNDECIDED",
+     "detected_weaker": true,
+     "est": -97.11050912001035,
+     "margin_elo": 35.0
+    },
+    "heldout72_hpfix-forum72": {
+     "ci": [
+      -188.22987346526017,
+      43.006660935517516
+     ],
+     "class": "UNDECIDED",
+     "detected_weaker": false,
+     "est": -68.85223069546183,
+     "margin_elo": 35.0
+    },
+    "heldout72_hpfix-home72": {
+     "ci": [
+      -178.00549206405276,
+      43.993755564709964
+     ],
+     "class": "UNDECIDED",
+     "detected_weaker": false,
+     "est": -61.667367521682664,
+     "margin_elo": 35.0
+    },
+    "heldout72_hpfix-p72": {
+     "ci": [
+      -60.17663842968602,
+      177.20327362640643
+     ],
+     "class": "UNDECIDED",
+     "detected_weaker": false,
+     "est": 58.94828072244604,
+     "margin_elo": 35.0
+    },
+    "p72-forum72": {
+     "ci": [
+      -249.31908059027901,
+      -13.151248723185697
+     ],
+     "class": "UNDECIDED",
+     "detected_weaker": true,
+     "est": -127.80051141790787,
+     "margin_elo": 35.0
+    }
+   },
+   "n_games": 1494,
+   "sets": {
+    "away": {
+     "ci": [
+      -37.190213230455534,
+      79.88258160207636
+     ],
+     "ci_games_only": [
+      -14.354735953890435,
+      57.445042019074165
+     ],
+     "mean_elo": 18.546350222119134,
+     "n_teams": 19,
+     "sd_elo": 65.87610004771987
+    },
+    "forum72": {
+     "ci": [
+      -93.47276653507059,
+      69.94784336842255
+     ],
+     "ci_games_only": [
+      -48.18475665719951,
+      34.500614595901865
+     ],
+     "mean_elo": -9.711928202429391,
+     "n_teams": 24,
+     "sd_elo": 143.3497159954262
+    },
+    "heldout72_hpfix": {
+     "ci": [
+      -172.50404779298202,
+      5.174637363001614
+     ],
+     "ci_games_only": [
+      -127.87845142161845,
+      -39.08975896330431
+     ],
+     "mean_elo": -78.56415889789122,
+     "n_teams": 24,
+     "sd_elo": 153.53013760913868
+    },
+    "home72": {
+     "ci": [
+      -84.06135637556173,
+      51.66526662987784
+     ],
+     "ci_games_only": [
+      -54.99321536256919,
+      19.21576869476567
+     ],
+     "mean_elo": -16.89679137620855,
+     "n_teams": 24,
+     "sd_elo": 95.70737792071267
+    },
+    "p72": {
+     "ci": [
+      -227.06956848797714,
+      -59.99473165036448
+     ],
+     "ci_games_only": [
+      -191.28606078857743,
+      -98.75302439444728
+     ],
+     "mean_elo": -137.51243962033726,
+     "n_teams": 24,
+     "sd_elo": 131.09363301769255
+    }
+   },
+   "teams": [
+    {
+     "ci": [
+      53.79765167120833,
+      456.3100968189587
+     ],
+     "elo": 223.6447483810675,
+     "games": 16,
+     "score": 0.8125,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:915e8985133ca15b"
+    },
+    {
+     "ci": [
+      11.467202313380524,
+      386.86333431935145
+     ],
+     "elo": 186.93242983289622,
+     "games": 6,
+     "score": 0.8333333333333334,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:5e9c244e33f301f5"
+    },
+    {
+     "ci": [
+      21.253644259856365,
+      388.44358077939785
+     ],
+     "elo": 166.55282465874714,
+     "games": 18,
+     "score": 0.7222222222222222,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:67e3531f17fe4f2a"
+    },
+    {
+     "ci": [
+      16.763100924417728,
+      417.4210544639983
+     ],
+     "elo": 165.95156563536975,
+     "games": 8,
+     "score": 0.75,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:0d11315fb37eb264"
+    },
+    {
+     "ci": [
+      -64.06262481493985,
+      372.1824830104578
+     ],
+     "elo": 143.76149585230758,
+     "games": 4,
+     "score": 0.75,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:f383670cb0ac0641"
+    },
+    {
+     "ci": [
+      -99.26610876674148,
+      455.8579647048525
+     ],
+     "elo": 136.95724882531198,
+     "games": 10,
+     "score": 0.7,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:8cb64d421f3cce98"
+    },
+    {
+     "ci": [
+      -144.95953487419158,
+      475.2820799998207
+     ],
+     "elo": 128.13948013119494,
+     "games": 10,
+     "score": 0.7,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:81e3e5d98cf4d12d"
+    },
+    {
+     "ci": [
+      -24.28513860933944,
+      325.77624459832896
+     ],
+     "elo": 125.93720818932371,
+     "games": 18,
+     "score": 0.6666666666666666,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:f38e41e9f5f6da8b"
+    },
+    {
+     "ci": [
+      -80.57240850061378,
+      372.4821798642653
+     ],
+     "elo": 121.00806023350866,
+     "games": 12,
+     "score": 0.6666666666666666,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:0ed8755645451c3e"
+    },
+    {
+     "ci": [
+      -17.81928821432759,
+      386.7445192123333
+     ],
+     "elo": 119.97044535384308,
+     "games": 6,
+     "score": 0.6666666666666666,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:237576a54b183d54"
+    },
+    {
+     "ci": [
+      -98.8591120572953,
+      366.8774298685788
+     ],
+     "elo": 117.28295702540457,
+     "games": 12,
+     "score": 0.6666666666666666,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:aa8d4970247e4f7b"
+    },
+    {
+     "ci": [
+      -50.86365704104656,
+      338.872660490814
+     ],
+     "elo": 117.24066907352234,
+     "games": 10,
+     "score": 0.7,
+     "sets": [
+      "home72",
+      "away"
+     ],
+     "team_id": "tsr:00676cc884fde57c"
+    },
+    {
+     "ci": [
+      -75.23335876180764,
+      345.22075738367505
+     ],
+     "elo": 114.58179969701254,
+     "games": 4,
+     "score": 0.75,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:953070aa19d12678"
+    },
+    {
+     "ci": [
+      8.382196873881245,
+      238.22381973628242
+     ],
+     "elo": 108.68377162173738,
+     "games": 20,
+     "score": 0.65,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:7bbabc829494a74c"
+    },
+    {
+     "ci": [
+      -344.4141186869953,
+      411.56059631507736
+     ],
+     "elo": 98.50673235790656,
+     "games": 6,
+     "score": 0.6666666666666666,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:e28f422bfdf775fe"
+    },
+    {
+     "ci": [
+      -99.53159580604093,
+      305.98716521244404
+     ],
+     "elo": 95.16691563009853,
+     "games": 14,
+     "score": 0.6428571428571429,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:5ec93414231857f7"
+    },
+    {
+     "ci": [
+      -68.86251374937275,
+      273.05813283838006
+     ],
+     "elo": 85.89802083888172,
+     "games": 24,
+     "score": 0.6666666666666666,
+     "sets": [
+      "home72",
+      "away"
+     ],
+     "team_id": "tsr:79ca35537ea969d1"
+    },
+    {
+     "ci": [
+      -99.49089411478406,
+      295.3643985955049
+     ],
+     "elo": 80.41020987542524,
+     "games": 18,
+     "score": 0.6111111111111112,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:50e1a14e12d70681"
+    },
+    {
+     "ci": [
+      -48.117759319314914,
+      270.3332384428303
+     ],
+     "elo": 79.84080193160328,
+     "games": 8,
+     "score": 0.625,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:c6932e03e62a7e32"
+    },
+    {
+     "ci": [
+      -112.9246072440805,
+      315.11327632877146
+     ],
+     "elo": 78.10704249878987,
+     "games": 16,
+     "score": 0.625,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:c8d704215afd83b1"
+    },
+    {
+     "ci": [
+      -87.31072128703237,
+      249.7883233396211
+     ],
+     "elo": 75.83475744541698,
+     "games": 16,
+     "score": 0.625,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:35f9febbdc636f20"
+    },
+    {
+     "ci": [
+      -36.8856264221988,
+      192.11612721968223
+     ],
+     "elo": 71.13942086830119,
+     "games": 58,
+     "score": 0.6379310344827587,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:63484bb2479fa668"
+    },
+    {
+     "ci": [
+      -104.08762635368147,
+      253.67030627018138
+     ],
+     "elo": 65.9707697924307,
+     "games": 14,
+     "score": 0.6428571428571429,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:c72043fa101bbce7"
+    },
+    {
+     "ci": [
+      -10.379278905491184,
+      156.82912854842112
+     ],
+     "elo": 63.00825271335046,
+     "games": 84,
+     "score": 0.6547619047619048,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:cfc1fa7e1db29adf"
+    },
+    {
+     "ci": [
+      -119.2657843205006,
+      263.6563416761781
+     ],
+     "elo": 60.20463356563202,
+     "games": 18,
+     "score": 0.6111111111111112,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:8e999819170c3526"
+    },
+    {
+     "ci": [
+      -140.62525179274317,
+      239.94753631291368
+     ],
+     "elo": 50.33494564432548,
+     "games": 16,
+     "score": 0.625,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:7b422fa11973e87b"
+    },
+    {
+     "ci": [
+      -170.59878499913702,
+      288.54042826572885
+     ],
+     "elo": 47.633287251196734,
+     "games": 10,
+     "score": 0.6,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:154eaa8e8c454389"
+    },
+    {
+     "ci": [
+      -39.79806930306026,
+      140.9158264385716
+     ],
+     "elo": 45.49047102989054,
+     "games": 74,
+     "score": 0.5945945945945946,
+     "sets": [
+      "home72",
+      "away"
+     ],
+     "team_id": "tsr:07f33e7b75e92887"
+    },
+    {
+     "ci": [
+      -50.01550200088091,
+      150.60111852012497
+     ],
+     "elo": 41.90160434182088,
+     "games": 58,
+     "score": 0.6379310344827587,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:f6fff7869f461477"
+    },
+    {
+     "ci": [
+      -37.0073074933508,
+      129.11993768451813
+     ],
+     "elo": 40.797014613729054,
+     "games": 86,
+     "score": 0.6046511627906976,
+     "sets": [
+      "home72",
+      "away"
+     ],
+     "team_id": "tsr:6191aa7c156b8b98"
+    },
+    {
+     "ci": [
+      -141.28538531751315,
+      247.35869309832037
+     ],
+     "elo": 40.563492559979316,
+     "games": 12,
+     "score": 0.5833333333333334,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:4cd800b01999ad8a"
+    },
+    {
+     "ci": [
+      -77.04070320886399,
+      152.6564172648599
+     ],
+     "elo": 37.227041058437806,
+     "games": 22,
+     "score": 0.5454545454545454,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:499aaef6ade07e60"
+    },
+    {
+     "ci": [
+      -49.58409433415486,
+      112.28305081881373
+     ],
+     "elo": 31.805032021477178,
+     "games": 86,
+     "score": 0.5930232558139535,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:db9f77dea8fbeb3e"
+    },
+    {
+     "ci": [
+      -205.1766920948491,
+      282.3214385817783
+     ],
+     "elo": 30.795969514591366,
+     "games": 14,
+     "score": 0.5714285714285714,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:3c607b55e6c78a02"
+    },
+    {
+     "ci": [
+      -269.7008245940898,
+      288.63629271439004
+     ],
+     "elo": 30.6191347360462,
+     "games": 14,
+     "score": 0.5714285714285714,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:9138119c27e546bd"
+    },
+    {
+     "ci": [
+      -173.44096112377707,
+      268.65327162710804
+     ],
+     "elo": 30.606876288981912,
+     "games": 14,
+     "score": 0.5714285714285714,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:df1c1743d2b14c30"
+    },
+    {
+     "ci": [
+      -109.7714589152691,
+      182.16505090261361
+     ],
+     "elo": 29.8784872575971,
+     "games": 18,
+     "score": 0.5555555555555556,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:580ea0b4a5b996bf"
+    },
+    {
+     "ci": [
+      -65.0598617244541,
+      126.09266819362796
+     ],
+     "elo": 29.318199197549962,
+     "games": 66,
+     "score": 0.5606060606060606,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:966532bf44cb9737"
+    },
+    {
+     "ci": [
+      -49.28279036077366,
+      113.4165745038667
+     ],
+     "elo": 27.988044404035243,
+     "games": 76,
+     "score": 0.6052631578947368,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:20e6291abc01753a"
+    },
+    {
+     "ci": [
+      -75.01489842373674,
+      109.57173632269819
+     ],
+     "elo": 26.94298902960581,
+     "games": 74,
+     "score": 0.5540540540540541,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:a6d8936345cc0918"
+    },
+    {
+     "ci": [
+      -198.62248346310247,
+      241.19158840704213
+     ],
+     "elo": 24.79239389817958,
+     "games": 16,
+     "score": 0.5,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:97a670acc833f3ed"
+    },
+    {
+     "ci": [
+      -62.80433307334361,
+      111.60305312035862
+     ],
+     "elo": 22.94865819601783,
+     "games": 72,
+     "score": 0.5972222222222222,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:3a8a7753a3d7f7b6"
+    },
+    {
+     "ci": [
+      -108.03057093639222,
+      155.37594411727738
+     ],
+     "elo": 21.07920199822818,
+     "games": 16,
+     "score": 0.5,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:300f188377bf580f"
+    },
+    {
+     "ci": [
+      -59.0762132916173,
+      108.72044297925072
+     ],
+     "elo": 19.201097925532558,
+     "games": 84,
+     "score": 0.5952380952380952,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:48b44b7450e4d3b1"
+    },
+    {
+     "ci": [
+      -131.2465794869351,
+      161.786021327295
+     ],
+     "elo": 14.855762525148716,
+     "games": 14,
+     "score": 0.5,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:8a4cd6844eb9b634"
+    },
+    {
+     "ci": [
+      -60.637509117268245,
+      104.48069673089202
+     ],
+     "elo": 12.63766879483856,
+     "games": 80,
+     "score": 0.5625,
+     "sets": [
+      "home72",
+      "away"
+     ],
+     "team_id": "tsr:b5e0b46ab4837dbf"
+    },
+    {
+     "ci": [
+      -106.5340963953027,
+      125.14385849773262
+     ],
+     "elo": 10.15646973430427,
+     "games": 36,
+     "score": 0.6111111111111112,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:59e1b904667e5706"
+    },
+    {
+     "ci": [
+      -74.77258584907639,
+      90.76386452787092
+     ],
+     "elo": 9.656316348565042,
+     "games": 92,
+     "score": 0.5760869565217391,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:75692416ee3a7e41"
+    },
+    {
+     "ci": [
+      -105.040437686992,
+      128.84073364419407
+     ],
+     "elo": 5.577144423563481,
+     "games": 54,
+     "score": 0.5462962962962963,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:aad922fb81323fc7"
+    },
+    {
+     "ci": [
+      -53.633162922890484,
+      63.353260552049775
+     ],
+     "elo": 2.363573519986738,
+     "games": 4,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:270e3a856bf5a74f"
+    },
+    {
+     "ci": [
+      -289.73813757693557,
+      291.3541259089076
+     ],
+     "elo": -0.17071291647322492,
+     "games": 10,
+     "score": 0.5,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:f95eb6392f30ad4e"
+    },
+    {
+     "ci": [
+      -136.97628067611515,
+      147.55250551640708
+     ],
+     "elo": -5.838960725603911,
+     "games": 22,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:34f402e9b002ba5b"
+    },
+    {
+     "ci": [
+      -223.26139029936704,
+      392.6715878618011
+     ],
+     "elo": -6.970050120098728,
+     "games": 8,
+     "score": 0.5,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:566b3ae1b1123b13"
+    },
+    {
+     "ci": [
+      -229.5588380040296,
+      229.65408807851387
+     ],
+     "elo": -11.052227967940578,
+     "games": 12,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:07dbf1267673ff34"
+    },
+    {
+     "ci": [
+      -199.522300344211,
+      182.9226862257395
+     ],
+     "elo": -14.279656929618554,
+     "games": 14,
+     "score": 0.5,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:e673a31108da2d7e"
+    },
+    {
+     "ci": [
+      -104.35344168340049,
+      67.70739039499995
+     ],
+     "elo": -15.985188347137816,
+     "games": 60,
+     "score": 0.48333333333333334,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:5d872294cc11c5c6"
+    },
+    {
+     "ci": [
+      -230.89746730741928,
+      200.72940532477543
+     ],
+     "elo": -19.04568046097833,
+     "games": 14,
+     "score": 0.5,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:a0bfc290ea550848"
+    },
+    {
+     "ci": [
+      -122.08421914997486,
+      69.5457438881483
+     ],
+     "elo": -23.88118750313128,
+     "games": 72,
+     "score": 0.4861111111111111,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:5f79a003ba928f5a"
+    },
+    {
+     "ci": [
+      -176.2492587050603,
+      131.45040031509268
+     ],
+     "elo": -25.28694738331701,
+     "games": 18,
+     "score": 0.4444444444444444,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:b0e28f5e26b229a7"
+    },
+    {
+     "ci": [
+      -185.538943677263,
+      125.97907343092628
+     ],
+     "elo": -25.67964345799143,
+     "games": 16,
+     "score": 0.4375,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:d4476f7d9aa1dac5"
+    },
+    {
+     "ci": [
+      -205.2136651339543,
+      133.01212369829454
+     ],
+     "elo": -26.547744130468125,
+     "games": 26,
+     "score": 0.46153846153846156,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:6716c193a1a4f22f"
+    },
+    {
+     "ci": [
+      -284.74533357224794,
+      198.03860022453833
+     ],
+     "elo": -28.085052483108036,
+     "games": 10,
+     "score": 0.4,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:36aba11d810491b4"
+    },
+    {
+     "ci": [
+      -106.90282337538984,
+      51.53646649497585
+     ],
+     "elo": -28.6578780459317,
+     "games": 96,
+     "score": 0.4791666666666667,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:d5261df767bcb14d"
+    },
+    {
+     "ci": [
+      -148.4373294214778,
+      78.73752290380047
+     ],
+     "elo": -29.317231274410048,
+     "games": 50,
+     "score": 0.52,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:d422f17a8d85fc11"
+    },
+    {
+     "ci": [
+      -254.14970561070086,
+      206.74732124256724
+     ],
+     "elo": -30.58196744274793,
+     "games": 18,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:6c492f50aa9bf552"
+    },
+    {
+     "ci": [
+      -184.96721792013253,
+      116.67708322683849
+     ],
+     "elo": -31.33226619446654,
+     "games": 16,
+     "score": 0.4375,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:00d44aad360cc7a2"
+    },
+    {
+     "ci": [
+      -135.8593440176765,
+      76.20151269838996
+     ],
+     "elo": -32.61083387111006,
+     "games": 56,
+     "score": 0.5178571428571429,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:d42534190aee0132"
+    },
+    {
+     "ci": [
+      -146.54637434938368,
+      50.51585756323243
+     ],
+     "elo": -38.77757285811411,
+     "games": 14,
+     "score": 0.42857142857142855,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:329c4f87d87cab54"
+    },
+    {
+     "ci": [
+      -255.60028456735466,
+      94.06164007287049
+     ],
+     "elo": -40.84152412186747,
+     "games": 8,
+     "score": 0.375,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:448c5d0a7f6be495"
+    },
+    {
+     "ci": [
+      -135.37594817279185,
+      23.239698216590867
+     ],
+     "elo": -47.056851358148194,
+     "games": 70,
+     "score": 0.4714285714285714,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:d18261ed692be101"
+    },
+    {
+     "ci": [
+      -289.3076257669851,
+      140.1532624200408
+     ],
+     "elo": -50.732035080739514,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:044f8397bd9fec32"
+    },
+    {
+     "ci": [
+      -198.08049577121216,
+      99.39909688282275
+     ],
+     "elo": -52.45654030463717,
+     "games": 18,
+     "score": 0.3888888888888889,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:baf5b1e201f85c25"
+    },
+    {
+     "ci": [
+      -136.84083817573526,
+      37.87053762370054
+     ],
+     "elo": -52.49409123463697,
+     "games": 88,
+     "score": 0.45454545454545453,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:04248d783ec9c464"
+    },
+    {
+     "ci": [
+      -251.73043115985323,
+      115.81881014517216
+     ],
+     "elo": -53.49505006829105,
+     "games": 20,
+     "score": 0.45,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:fd5414d9e4aa2cfd"
+    },
+    {
+     "ci": [
+      -433.28886576957365,
+      209.01979961142627
+     ],
+     "elo": -58.99946006511024,
+     "games": 8,
+     "score": 0.375,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:985a0329e9b249bf"
+    },
+    {
+     "ci": [
+      -261.5927169406966,
+      108.95531106028528
+     ],
+     "elo": -60.9253591304383,
+     "games": 22,
+     "score": 0.4090909090909091,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:b75ec94f5f2d3606"
+    },
+    {
+     "ci": [
+      -463.91771906256184,
+      236.85825419899956
+     ],
+     "elo": -63.13017183861173,
+     "games": 8,
+     "score": 0.375,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:b758f0569c408a00"
+    },
+    {
+     "ci": [
+      -291.4331306594238,
+      145.46270572426542
+     ],
+     "elo": -63.87260758245962,
+     "games": 12,
+     "score": 0.375,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:96a8ef5f5091324a"
+    },
+    {
+     "ci": [
+      -215.70920313929213,
+      32.44093121734047
+     ],
+     "elo": -64.69548849687865,
+     "games": 10,
+     "score": 0.4,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:06c41964b8b5d989"
+    },
+    {
+     "ci": [
+      -277.8474599443416,
+      122.611698675701
+     ],
+     "elo": -66.12801861903863,
+     "games": 16,
+     "score": 0.4375,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:d943e0fb7323eadb"
+    },
+    {
+     "ci": [
+      -242.78299759805014,
+      87.52259491772004
+     ],
+     "elo": -70.7212741011399,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:2f7b1a8e3d3d012e"
+    },
+    {
+     "ci": [
+      -440.98493675901466,
+      205.1691226305284
+     ],
+     "elo": -72.93212777014912,
+     "games": 8,
+     "score": 0.375,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:67addcf862ee7839"
+    },
+    {
+     "ci": [
+      -268.33522656168293,
+      80.32718139613755
+     ],
+     "elo": -82.54492867335,
+     "games": 16,
+     "score": 0.375,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:58ab1198098babdc"
+    },
+    {
+     "ci": [
+      -329.1813707667227,
+      58.883387149844694
+     ],
+     "elo": -95.08205298688053,
+     "games": 14,
+     "score": 0.35714285714285715,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:d87171422e7b0207"
+    },
+    {
+     "ci": [
+      -234.82993649357914,
+      10.545309009455979
+     ],
+     "elo": -98.48880243596383,
+     "games": 40,
+     "score": 0.375,
+     "sets": [
+      "home72",
+      "away"
+     ],
+     "team_id": "tsr:36ed78e39b30cae1"
+    },
+    {
+     "ci": [
+      -321.83820285031186,
+      80.63535270139135
+     ],
+     "elo": -99.01571635957723,
+     "games": 14,
+     "score": 0.35714285714285715,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:9824a7212a69a6de"
+    },
+    {
+     "ci": [
+      -217.81881676463962,
+      -0.23762687403299473
+     ],
+     "elo": -100.34238911848544,
+     "games": 60,
+     "score": 0.4166666666666667,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:70db6c7a5d9243fb"
+    },
+    {
+     "ci": [
+      -357.7368676056804,
+      95.76669926163302
+     ],
+     "elo": -104.4022486137715,
+     "games": 12,
+     "score": 0.3333333333333333,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:cd79ba260bd3698b"
+    },
+    {
+     "ci": [
+      -297.197196238645,
+      37.78831551735131
+     ],
+     "elo": -109.51172709941804,
+     "games": 16,
+     "score": 0.3125,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:6339d0f57595ac06"
+    },
+    {
+     "ci": [
+      -382.5768147876083,
+      17.527136949785124
+     ],
+     "elo": -113.72736554100473,
+     "games": 6,
+     "score": 0.3333333333333333,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:43f56cb9068f9dad"
+    },
+    {
+     "ci": [
+      -318.1814144988856,
+      57.23306884456093
+     ],
+     "elo": -115.8642389404306,
+     "games": 16,
+     "score": 0.3125,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:0ffb157a677e08b7"
+    },
+    {
+     "ci": [
+      -346.7954156231104,
+      48.41546467098547
+     ],
+     "elo": -124.48075923434781,
+     "games": 16,
+     "score": 0.3125,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:8f4b05490ea06e3a"
+    },
+    {
+     "ci": [
+      -344.54610992151873,
+      57.55613950376619
+     ],
+     "elo": -127.03781389051424,
+     "games": 14,
+     "score": 0.35714285714285715,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:7cd0394a0f8a3a95"
+    },
+    {
+     "ci": [
+      -256.26417890930344,
+      -20.038260235406394
+     ],
+     "elo": -128.22273288959065,
+     "games": 58,
+     "score": 0.3793103448275862,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:a33239afa8b09aa4"
+    },
+    {
+     "ci": [
+      -439.0488222222836,
+      113.67467173639939
+     ],
+     "elo": -137.59503724459793,
+     "games": 8,
+     "score": 0.375,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:e4558b0f57facaf5"
+    },
+    {
+     "ci": [
+      -336.137003285707,
+      -0.5448835052051115
+     ],
+     "elo": -139.10843827552847,
+     "games": 14,
+     "score": 0.2857142857142857,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:9770315e41f3da6d"
+    },
+    {
+     "ci": [
+      -395.1261794140718,
+      15.461489679604062
+     ],
+     "elo": -143.00432718517845,
+     "games": 6,
+     "score": 0.3333333333333333,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:1ec44ad709905e19"
+    },
+    {
+     "ci": [
+      -481.5634187131956,
+      96.25355016021493
+     ],
+     "elo": -147.33185732963935,
+     "games": 10,
+     "score": 0.3,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:0622f550670dfb84"
+    },
+    {
+     "ci": [
+      -361.5126410529198,
+      -21.464330079223597
+     ],
+     "elo": -153.7220259090792,
+     "games": 16,
+     "score": 0.25,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:5dffb8d864fcda1e"
+    },
+    {
+     "ci": [
+      -399.546712558049,
+      26.069206727121873
+     ],
+     "elo": -157.6908643622456,
+     "games": 14,
+     "score": 0.2857142857142857,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:3074ecf386a98d36"
+    },
+    {
+     "ci": [
+      -365.10079032621223,
+      -23.976529305541046
+     ],
+     "elo": -160.63935291346274,
+     "games": 12,
+     "score": 0.25,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:bb27712ccb70dbc0"
+    },
+    {
+     "ci": [
+      -473.0105625381545,
+      51.478018302814256
+     ],
+     "elo": -164.2069209787528,
+     "games": 8,
+     "score": 0.25,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:88e83ec1f0d29ca5"
+    },
+    {
+     "ci": [
+      -383.0449043461695,
+      -6.419446629352219
+     ],
+     "elo": -166.55999602227826,
+     "games": 12,
+     "score": 0.25,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:328bbd131764194b"
+    },
+    {
+     "ci": [
+      -398.76660427553486,
+      -32.43922324828627
+     ],
+     "elo": -185.17480813551,
+     "games": 24,
+     "score": 0.25,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:6c565354f02db598"
+    },
+    {
+     "ci": [
+      -370.9949152787128,
+      -46.17001815888212
+     ],
+     "elo": -185.80586363359066,
+     "games": 12,
+     "score": 0.25,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:0068517d7aa6a40a"
+    },
+    {
+     "ci": [
+      -471.22684932190276,
+      -18.867591617202855
+     ],
+     "elo": -193.0656614961955,
+     "games": 10,
+     "score": 0.2,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:15fd215919c632ff"
+    },
+    {
+     "ci": [
+      -541.7446230159693,
+      78.80010893614593
+     ],
+     "elo": -195.18413514389394,
+     "games": 12,
+     "score": 0.25,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:b40df223461c070f"
+    },
+    {
+     "ci": [
+      -446.7619327427541,
+      -9.420492581992807
+     ],
+     "elo": -223.37218567259325,
+     "games": 6,
+     "score": 0.16666666666666666,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:437755b8c12faea5"
+    },
+    {
+     "ci": [
+      -459.79824975194384,
+      31.268461673585293
+     ],
+     "elo": -227.58876940012433,
+     "games": 6,
+     "score": 0.16666666666666666,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:ff960c0507891130"
+    },
+    {
+     "ci": [
+      -506.3588375646561,
+      -46.79611959801878
+     ],
+     "elo": -231.37713328876117,
+     "games": 12,
+     "score": 0.16666666666666666,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:7569c813be222e81"
+    },
+    {
+     "ci": [
+      -427.88010640143,
+      -53.316536384376555
+     ],
+     "elo": -231.97490604942521,
+     "games": 6,
+     "score": 0.16666666666666666,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:52913ab67a87e613"
+    },
+    {
+     "ci": [
+      -518.1718689739896,
+      -48.44705863314924
+     ],
+     "elo": -238.22432757309528,
+     "games": 12,
+     "score": 0.16666666666666666,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:79972f0137fd2c00"
+    },
+    {
+     "ci": [
+      -486.5131504711564,
+      -86.74700104896543
+     ],
+     "elo": -245.36211480543847,
+     "games": 12,
+     "score": 0.16666666666666666,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:c2dcd256e713a65a"
+    },
+    {
+     "ci": [
+      -561.9594339861794,
+      -106.80047031402734
+     ],
+     "elo": -284.01813632115284,
+     "games": 12,
+     "score": 0.16666666666666666,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:302c85bf08d34201"
+    },
+    {
+     "ci": [
+      -545.9359278225548,
+      -123.92233074085613
+     ],
+     "elo": -288.82249730391857,
+     "games": 12,
+     "score": 0.16666666666666666,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:5317aa4778d6788b"
+    },
+    {
+     "ci": [
+      -493.3552980829335,
+      -125.9848701075028
+     ],
+     "elo": -305.4742425239328,
+     "games": 10,
+     "score": 0.1,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:067cba6a2c68f247"
+    },
+    {
+     "ci": [
+      -507.280736807002,
+      -117.53663642021577
+     ],
+     "elo": -310.33150869428,
+     "games": 10,
+     "score": 0.1,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:c66c1b90103de97b"
+    },
+    {
+     "ci": [
+      -381.1738658065627,
+      -282.1664929691708
+     ],
+     "elo": -334.4341659941911,
+     "games": 4,
+     "score": 0.0,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:34e06258a673e0bf"
+    },
+    {
+     "ci": [
+      -534.1686433747201,
+      -170.46640559477612
+     ],
+     "elo": -355.47039457307625,
+     "games": 14,
+     "score": 0.07142857142857142,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:efff5202c65730da"
+    },
+    {
+     "ci": [
+      -605.1596715905721,
+      -187.99378921981133
+     ],
+     "elo": -361.3049986464829,
+     "games": 22,
+     "score": 0.09090909090909091,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:a9ddb796b15163ef"
+    },
+    {
+     "ci": [
+      -471.11187304574395,
+      -352.2034980533254
+     ],
+     "elo": -410.16025875343604,
+     "games": 6,
+     "score": 0.0,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:0552948fe64a0c43"
+    },
+    {
+     "ci": [
+      -475.94100966882803,
+      -370.7901220947084
+     ],
+     "elo": -423.5507145449654,
+     "games": 6,
+     "score": 0.0,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:1f1475bdae339819"
+    }
+   ]
+  },
+  "x26": {
+   "comparisons": {
+    "away-home72": {
+     "ci": [
+      -94.26402780353884,
+      94.54122347237238
+     ],
+     "class": "UNDECIDED",
+     "detected_weaker": false,
+     "est": 1.3300608640101481,
+     "margin_elo": 35.0
+    },
+    "forum72-home72": {
+     "ci": [
+      -98.07548203878885,
+      38.12184116702095
+     ],
+     "class": "UNDECIDED",
+     "detected_weaker": false,
+     "est": -27.093852633013366,
+     "margin_elo": 35.0
+    },
+    "heldout72_hpfix-away": {
+     "ci": [
+      -207.57928060943155,
+      -15.581076458978577
+     ],
+     "class": "UNDECIDED",
+     "detected_weaker": true,
+     "est": -99.15380949883894,
+     "margin_elo": 35.0
+    },
+    "heldout72_hpfix-forum72": {
+     "ci": [
+      -146.64800760846867,
+      -1.719220376387869
+     ],
+     "class": "UNDECIDED",
+     "detected_weaker": true,
+     "est": -70.72989600181543,
+     "margin_elo": 35.0
+    },
+    "heldout72_hpfix-home72": {
+     "ci": [
+      -183.87416145846453,
+      -32.946513388305746
+     ],
+     "class": "UNDECIDED",
+     "detected_weaker": true,
+     "est": -97.8237486348288,
+     "margin_elo": 35.0
+    },
+    "heldout72_hpfix-p72": {
+     "ci": [
+      6.253077488807166,
+      164.14161851403108
+     ],
+     "class": "COMPETITIVE",
+     "detected_weaker": false,
+     "est": 75.28574694972677,
+     "margin_elo": 35.0
+    },
+    "p72-forum72": {
+     "ci": [
+      -236.13959117570926,
+      -84.32749129233488
+     ],
+     "class": "MATERIALLY WEAKER",
+     "detected_weaker": true,
+     "est": -146.0156429515422,
+     "margin_elo": 35.0
+    }
+   },
+   "n_games": 6000,
+   "sets": {
+    "away": {
+     "ci": [
+      -80.89815243010247,
+      83.17284814750013
+     ],
+     "ci_games_only": [
+      -40.26916320212685,
+      39.96002571689301
+     ],
+     "mean_elo": 1.4157894216991649,
+     "n_teams": 19,
+     "sd_elo": 117.91266889486069
+    },
+    "forum72": {
+     "ci": [
+      -81.32125468969433,
+      17.73937607870167
+     ],
+     "ci_games_only": [
+      -59.45742592367695,
+      -2.2509625600304957
+     ],
+     "mean_elo": -27.00812407532435,
+     "n_teams": 72,
+     "sd_elo": 119.6386154300888
+    },
+    "heldout72_hpfix": {
+     "ci": [
+      -165.1365349391501,
+      -50.99919941552018
+     ],
+     "ci_games_only": [
+      -138.56565142339497,
+      -78.61933357290347
+     ],
+     "mean_elo": -97.73802007713978,
+     "n_teams": 72,
+     "sd_elo": 161.9831728406009
+    },
+    "home72": {
+     "ci": [
+      -50.365672176850985,
+      50.137071892222465
+     ],
+     "ci_games_only": [
+      -27.009070918220118,
+      25.879275430732488
+     ],
+     "mean_elo": 0.08572855768901683,
+     "n_teams": 71,
+     "sd_elo": 130.5205711226101
+    },
+    "p72": {
+     "ci": [
+      -244.94196417752065,
+      -136.56294950306236
+     ],
+     "ci_games_only": [
+      -221.1087804582809,
+      -159.82512405929447
+     ],
+     "mean_elo": -173.02376702686655,
+     "n_teams": 72,
+     "sd_elo": 144.46306606554162
+    }
+   },
+   "teams": [
+    {
+     "ci": [
+      127.21447540859279,
+      570.8635173319577
+     ],
+     "elo": 340.93239191301075,
+     "games": 20,
+     "score": 0.9,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:c6932e03e62a7e32"
+    },
+    {
+     "ci": [
+      88.95930378860518,
+      540.2390935458117
+     ],
+     "elo": 270.2737048874735,
+     "games": 20,
+     "score": 0.85,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:f7414ddaffafef2e"
+    },
+    {
+     "ci": [
+      31.335400060288034,
+      569.1904964595321
+     ],
+     "elo": 242.1382862390375,
+     "games": 20,
+     "score": 0.8,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:89da0e159e7dfc0f"
+    },
+    {
+     "ci": [
+      34.75701531065967,
+      558.6309094154864
+     ],
+     "elo": 237.83527693131936,
+     "games": 20,
+     "score": 0.8,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:efff5202c65730da"
+    },
+    {
+     "ci": [
+      18.17348495250923,
+      566.3043653883726
+     ],
+     "elo": 230.17469769910227,
+     "games": 20,
+     "score": 0.8,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:c4a7ab5b6d95acd1"
+    },
+    {
+     "ci": [
+      37.54759657920648,
+      493.1998328848601
+     ],
+     "elo": 216.99728341409684,
+     "games": 20,
+     "score": 0.8,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:9770315e41f3da6d"
+    },
+    {
+     "ci": [
+      0.6194878870391134,
+      538.2528533089666
+     ],
+     "elo": 204.15788598267952,
+     "games": 20,
+     "score": 0.8,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:44922de031277652"
+    },
+    {
+     "ci": [
+      32.2234616522051,
+      521.8057903920394
+     ],
+     "elo": 199.13003625635397,
+     "games": 20,
+     "score": 0.75,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:0d11315fb37eb264"
+    },
+    {
+     "ci": [
+      -2.3580600349438496,
+      488.07723928197737
+     ],
+     "elo": 195.96383143418632,
+     "games": 20,
+     "score": 0.75,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:18a54f5e37faa66c"
+    },
+    {
+     "ci": [
+      8.169450211171885,
+      520.6893112611541
+     ],
+     "elo": 192.83300259337688,
+     "games": 20,
+     "score": 0.75,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:667c758eb2536d90"
+    },
+    {
+     "ci": [
+      -34.04001013712129,
+      535.263412214882
+     ],
+     "elo": 166.00966564129408,
+     "games": 20,
+     "score": 0.7,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:ae1975e8e34a7ee9"
+    },
+    {
+     "ci": [
+      -38.0908425121289,
+      501.12673586268124
+     ],
+     "elo": 156.28140309729744,
+     "games": 20,
+     "score": 0.7,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:0612316776610c1b"
+    },
+    {
+     "ci": [
+      -69.32227315337914,
+      547.6746487040177
+     ],
+     "elo": 153.99953998812384,
+     "games": 20,
+     "score": 0.7,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:5b2971aea399b0c8"
+    },
+    {
+     "ci": [
+      -65.49387905401939,
+      534.0037057151179
+     ],
+     "elo": 151.0398752258264,
+     "games": 20,
+     "score": 0.7,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:5ba8e22e59ee8cc2"
+    },
+    {
+     "ci": [
+      -60.714684293354175,
+      510.17558335764323
+     ],
+     "elo": 142.2107897546507,
+     "games": 20,
+     "score": 0.7,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:d94d3c579bb02316"
+    },
+    {
+     "ci": [
+      -85.82229303227703,
+      525.8642036303739
+     ],
+     "elo": 137.55912823886277,
+     "games": 20,
+     "score": 0.7,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:29eaada490adc519"
+    },
+    {
+     "ci": [
+      -87.12222850443024,
+      380.33610035809477
+     ],
+     "elo": 135.97330687984308,
+     "games": 20,
+     "score": 0.7,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:386b0c4af442ea97"
+    },
+    {
+     "ci": [
+      -102.09010218512897,
+      522.8611327448435
+     ],
+     "elo": 129.13464800143464,
+     "games": 20,
+     "score": 0.7,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:54bd6e3c645f677f"
+    },
+    {
+     "ci": [
+      -86.58163103816096,
+      502.6582805338597
+     ],
+     "elo": 127.78394890656337,
+     "games": 20,
+     "score": 0.7,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:ca7e5e0df351e552"
+    },
+    {
+     "ci": [
+      -74.43737890612638,
+      490.4147042497106
+     ],
+     "elo": 124.8113550635589,
+     "games": 20,
+     "score": 0.7,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:baf5b1e201f85c25"
+    },
+    {
+     "ci": [
+      -76.05468554842737,
+      365.8598436768409
+     ],
+     "elo": 122.54141728889316,
+     "games": 20,
+     "score": 0.65,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:6262082773c3d4a4"
+    },
+    {
+     "ci": [
+      -53.45581739219967,
+      361.26222665650204
+     ],
+     "elo": 121.86664081675805,
+     "games": 20,
+     "score": 0.65,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:2c65f5124caa5655"
+    },
+    {
+     "ci": [
+      -86.4909100276137,
+      493.7374528290839
+     ],
+     "elo": 121.40737218778997,
+     "games": 20,
+     "score": 0.7,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:a4e0754dd472f607"
+    },
+    {
+     "ci": [
+      -100.49799886713117,
+      505.84850425424764
+     ],
+     "elo": 116.27460555464017,
+     "games": 20,
+     "score": 0.7,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:36aba11d810491b4"
+    },
+    {
+     "ci": [
+      -81.9733257042424,
+      372.3038583304419
+     ],
+     "elo": 113.56295596107864,
+     "games": 20,
+     "score": 0.65,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:28cf6bf2b13af74c"
+    },
+    {
+     "ci": [
+      -107.73567084663922,
+      394.52438168439
+     ],
+     "elo": 108.58219911492384,
+     "games": 20,
+     "score": 0.675,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:ed5bf20923ea80f8"
+    },
+    {
+     "ci": [
+      -120.32806517987868,
+      391.4693777824976
+     ],
+     "elo": 103.8866543591272,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:b0e28f5e26b229a7"
+    },
+    {
+     "ci": [
+      -104.94667105469512,
+      374.56614689911606
+     ],
+     "elo": 100.03525146275275,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:b98474d6bebd7ae8"
+    },
+    {
+     "ci": [
+      41.229576925083165,
+      176.88352139901423
+     ],
+     "elo": 99.28407722121568,
+     "games": 272,
+     "score": 0.7058823529411765,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:59e1b904667e5706"
+    },
+    {
+     "ci": [
+      -116.67434793091284,
+      347.6794841886104
+     ],
+     "elo": 97.847274093562,
+     "games": 20,
+     "score": 0.65,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:67e3531f17fe4f2a"
+    },
+    {
+     "ci": [
+      -117.19804481698063,
+      468.87198561712717
+     ],
+     "elo": 97.29033882781331,
+     "games": 20,
+     "score": 0.7,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:1df8008c18133430"
+    },
+    {
+     "ci": [
+      -130.66991119102758,
+      363.1788986648934
+     ],
+     "elo": 95.43832894617965,
+     "games": 20,
+     "score": 0.65,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:df1c1743d2b14c30"
+    },
+    {
+     "ci": [
+      -128.92137522332038,
+      361.87598201933815
+     ],
+     "elo": 91.19456623768409,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:6311047685194f15"
+    },
+    {
+     "ci": [
+      36.79593107351093,
+      162.29000655140854
+     ],
+     "elo": 88.72018261385728,
+     "games": 298,
+     "score": 0.6778523489932886,
+     "sets": [
+      "home72",
+      "away"
+     ],
+     "team_id": "tsr:6191aa7c156b8b98"
+    },
+    {
+     "ci": [
+      -143.30043728789204,
+      370.9885205613234
+     ],
+     "elo": 88.70087871154084,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:9824a7212a69a6de"
+    },
+    {
+     "ci": [
+      -125.23137667779983,
+      365.75198205860397
+     ],
+     "elo": 88.64928779332544,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:e908a803cdc55c27"
+    },
+    {
+     "ci": [
+      -137.29193567647664,
+      360.61733979252136
+     ],
+     "elo": 82.50321049287014,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:7bbabc829494a74c"
+    },
+    {
+     "ci": [
+      -146.58334187117245,
+      369.60127393888774
+     ],
+     "elo": 82.18077265234665,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:5bfd708662bfd25d"
+    },
+    {
+     "ci": [
+      -108.31621155976583,
+      333.41373345253635
+     ],
+     "elo": 81.27873943085974,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:fea966f14f9cbc31"
+    },
+    {
+     "ci": [
+      21.43577019911079,
+      153.08454038725313
+     ],
+     "elo": 80.54499929797883,
+     "games": 288,
+     "score": 0.6736111111111112,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:f6fff7869f461477"
+    },
+    {
+     "ci": [
+      -171.41845111471048,
+      369.15195177425386
+     ],
+     "elo": 76.34122445180418,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:15fd215919c632ff"
+    },
+    {
+     "ci": [
+      -155.03019747219207,
+      362.6349238912228
+     ],
+     "elo": 75.83619061145404,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:ac21dd164f723849"
+    },
+    {
+     "ci": [
+      -147.589036744754,
+      325.13458909673324
+     ],
+     "elo": 74.142474644669,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:0db85efc3f0b229e"
+    },
+    {
+     "ci": [
+      -139.63395952224198,
+      331.8609044277926
+     ],
+     "elo": 71.46312141903383,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:21b3f0ba0bfdfb22"
+    },
+    {
+     "ci": [
+      -157.10790267521386,
+      352.4326273221668
+     ],
+     "elo": 70.51645045111316,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:a6fbb024f7b5d64d"
+    },
+    {
+     "ci": [
+      -147.89072010059346,
+      343.58758272528445
+     ],
+     "elo": 70.47661367535434,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:9c2590e6ae1a981a"
+    },
+    {
+     "ci": [
+      -162.05686809102258,
+      343.20380521302883
+     ],
+     "elo": 68.79819625004959,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:915e8985133ca15b"
+    },
+    {
+     "ci": [
+      8.790786861121967,
+      132.85612747048452
+     ],
+     "elo": 68.26654365981197,
+     "games": 294,
+     "score": 0.6445578231292517,
+     "sets": [
+      "home72",
+      "away"
+     ],
+     "team_id": "tsr:b5e0b46ab4837dbf"
+    },
+    {
+     "ci": [
+      10.805144585935167,
+      139.38302160744155
+     ],
+     "elo": 66.85340049190997,
+     "games": 262,
+     "score": 0.6450381679389313,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:d18261ed692be101"
+    },
+    {
+     "ci": [
+      -126.18458972214134,
+      320.114902996006
+     ],
+     "elo": 65.4625932622507,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:0ed8755645451c3e"
+    },
+    {
+     "ci": [
+      -129.73190039198266,
+      314.39522864132135
+     ],
+     "elo": 64.64788270193063,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:bbd65a7807cfbcf5"
+    },
+    {
+     "ci": [
+      -155.21035054826336,
+      305.87286523873547
+     ],
+     "elo": 63.71279039107341,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:6716c193a1a4f22f"
+    },
+    {
+     "ci": [
+      -154.19981919810346,
+      341.9651661999129
+     ],
+     "elo": 61.564189934005675,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:8bd0182cc9838270"
+    },
+    {
+     "ci": [
+      7.41352229433199,
+      130.8049958505022
+     ],
+     "elo": 59.99723878224149,
+     "games": 306,
+     "score": 0.6503267973856209,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:75692416ee3a7e41"
+    },
+    {
+     "ci": [
+      -150.8350081616964,
+      325.2228027460975
+     ],
+     "elo": 58.99955426092377,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:b63e1548cfdaa49f"
+    },
+    {
+     "ci": [
+      -194.09236296676403,
+      332.4773198283878
+     ],
+     "elo": 58.07814660307817,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:81e3e5d98cf4d12d"
+    },
+    {
+     "ci": [
+      -139.53044277600677,
+      292.62542699972545
+     ],
+     "elo": 57.27788306063484,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:18ef5c2accc04617"
+    },
+    {
+     "ci": [
+      -175.6457733569727,
+      308.9721616484463
+     ],
+     "elo": 54.26643373074019,
+     "games": 20,
+     "score": 0.575,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:e4558b0f57facaf5"
+    },
+    {
+     "ci": [
+      -123.83376089285373,
+      235.27482134017515
+     ],
+     "elo": 53.06225383186107,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "home72",
+      "away"
+     ],
+     "team_id": "tsr:00676cc884fde57c"
+    },
+    {
+     "ci": [
+      -132.54347198019985,
+      263.69339450918983
+     ],
+     "elo": 52.91746810773605,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:50e1a14e12d70681"
+    },
+    {
+     "ci": [
+      -152.3493423193351,
+      276.8817204331743
+     ],
+     "elo": 52.34600729658104,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:481b6d12fbe5833b"
+    },
+    {
+     "ci": [
+      -145.9861642159158,
+      305.1278714741855
+     ],
+     "elo": 52.3391345459834,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:5835392ea7a9c283"
+    },
+    {
+     "ci": [
+      -148.10049503348154,
+      314.77351801949305
+     ],
+     "elo": 50.69132359414001,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:3c1c950177fb01e1"
+    },
+    {
+     "ci": [
+      -9.372755141241505,
+      119.98314724907571
+     ],
+     "elo": 49.64927842042166,
+     "games": 272,
+     "score": 0.6286764705882353,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:a6d8936345cc0918"
+    },
+    {
+     "ci": [
+      -183.3982072204576,
+      324.8126689501431
+     ],
+     "elo": 45.74273736031668,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:2f1429b19a0c6ac5"
+    },
+    {
+     "ci": [
+      -165.90309856899242,
+      302.2229976634447
+     ],
+     "elo": 45.16908028093307,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:e7519a69a6ad8976"
+    },
+    {
+     "ci": [
+      -186.64931950330606,
+      285.8409281681999
+     ],
+     "elo": 42.89856514691963,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:300f188377bf580f"
+    },
+    {
+     "ci": [
+      -194.00335459145674,
+      287.0592200716462
+     ],
+     "elo": 41.68241685665805,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:a915da849a36c471"
+    },
+    {
+     "ci": [
+      -156.49100762029846,
+      230.85451766448668
+     ],
+     "elo": 40.97307360397816,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:f95eb6392f30ad4e"
+    },
+    {
+     "ci": [
+      -170.6065948640227,
+      275.1401851949648
+     ],
+     "elo": 40.41071603221172,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:24434e3f98daf66d"
+    },
+    {
+     "ci": [
+      -185.10028020449684,
+      279.8130283303018
+     ],
+     "elo": 39.48974153599574,
+     "games": 20,
+     "score": 0.575,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:dd0b811c7ab10240"
+    },
+    {
+     "ci": [
+      -165.52968547912937,
+      263.1341104114534
+     ],
+     "elo": 39.0382749620686,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:ca31b9a2dbf856d4"
+    },
+    {
+     "ci": [
+      -165.39610937915805,
+      264.20172814633594
+     ],
+     "elo": 38.39711865390051,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:ce412f2390f14d79"
+    },
+    {
+     "ci": [
+      -194.48393294486903,
+      308.1809490549572
+     ],
+     "elo": 36.050121735240175,
+     "games": 20,
+     "score": 0.6,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:771febdc92625e2b"
+    },
+    {
+     "ci": [
+      -144.79041294492154,
+      265.262622066803
+     ],
+     "elo": 35.92625074975906,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:eb424738c6155b47"
+    },
+    {
+     "ci": [
+      -187.06467251397876,
+      256.82597562930425
+     ],
+     "elo": 34.99920970058371,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:3c607b55e6c78a02"
+    },
+    {
+     "ci": [
+      -182.41136427690432,
+      237.0189920511978
+     ],
+     "elo": 34.23799234437727,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:f6a52e8e918dae9b"
+    },
+    {
+     "ci": [
+      -187.9174170454749,
+      281.4193487570891
+     ],
+     "elo": 33.9475065602946,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:21d82f6779d3d721"
+    },
+    {
+     "ci": [
+      -36.433354317928284,
+      98.77091635080508
+     ],
+     "elo": 27.41729289895066,
+     "games": 294,
+     "score": 0.6156462585034014,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:db9f77dea8fbeb3e"
+    },
+    {
+     "ci": [
+      -205.26307623889358,
+      249.7117517008142
+     ],
+     "elo": 23.238828057809084,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:ec197ca2fdef7ab7"
+    },
+    {
+     "ci": [
+      -206.56595321666393,
+      263.3100088029646
+     ],
+     "elo": 22.27760240245452,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:bdf83d453ce1e758"
+    },
+    {
+     "ci": [
+      -178.64090630418954,
+      232.0638145785946
+     ],
+     "elo": 21.886475443309212,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:f38e41e9f5f6da8b"
+    },
+    {
+     "ci": [
+      -205.39792998989032,
+      248.3488332749387
+     ],
+     "elo": 16.607744973716112,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:5e9c244e33f301f5"
+    },
+    {
+     "ci": [
+      -47.3128568726558,
+      82.83197888439142
+     ],
+     "elo": 16.197800808435957,
+     "games": 292,
+     "score": 0.5993150684931506,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:5f79a003ba928f5a"
+    },
+    {
+     "ci": [
+      -231.96207528275832,
+      248.72960373275453
+     ],
+     "elo": 16.035805264744315,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:463611b5bf532ed0"
+    },
+    {
+     "ci": [
+      -237.59113093717144,
+      244.48072679110663
+     ],
+     "elo": 15.422521261315923,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:f019b05724818ad7"
+    },
+    {
+     "ci": [
+      -45.18633788438579,
+      84.84661782312617
+     ],
+     "elo": 13.345397025465585,
+     "games": 282,
+     "score": 0.6347517730496454,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:20e6291abc01753a"
+    },
+    {
+     "ci": [
+      -222.9699982458901,
+      248.03254406483248
+     ],
+     "elo": 13.324495161091471,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:539a6d5781457c04"
+    },
+    {
+     "ci": [
+      -60.26419475931506,
+      86.76132563418346
+     ],
+     "elo": 13.272920105134224,
+     "games": 224,
+     "score": 0.5758928571428571,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:aad922fb81323fc7"
+    },
+    {
+     "ci": [
+      -65.4479970739104,
+      86.20223317984619
+     ],
+     "elo": 11.390425881188559,
+     "games": 228,
+     "score": 0.5964912280701754,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:70db6c7a5d9243fb"
+    },
+    {
+     "ci": [
+      -243.89248215808647,
+      262.04053481307136
+     ],
+     "elo": 11.292785364102704,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:a8eb63b751a8475d"
+    },
+    {
+     "ci": [
+      -242.43317363112905,
+      257.4222913669167
+     ],
+     "elo": 10.575662817743275,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:2f37930ed964cf93"
+    },
+    {
+     "ci": [
+      -199.91838783067834,
+      229.09469234370894
+     ],
+     "elo": 10.302430501677767,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:e28f422bfdf775fe"
+    },
+    {
+     "ci": [
+      -56.62896405956221,
+      72.39867047877173
+     ],
+     "elo": 9.27648305121551,
+     "games": 268,
+     "score": 0.5970149253731343,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:966532bf44cb9737"
+    },
+    {
+     "ci": [
+      -213.07147848368155,
+      225.48345818901998
+     ],
+     "elo": 8.943190186877198,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:26e3dcdb38567005"
+    },
+    {
+     "ci": [
+      -243.79025420681452,
+      256.84871724304276
+     ],
+     "elo": 8.823244579995242,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:07d4048422719044"
+    },
+    {
+     "ci": [
+      -214.63383732403258,
+      221.19762677305044
+     ],
+     "elo": 7.653531327249163,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:6204d6984c1e1b7e"
+    },
+    {
+     "ci": [
+      -57.0836836069384,
+      74.03166345226361
+     ],
+     "elo": 6.909822485274548,
+     "games": 258,
+     "score": 0.5775193798449613,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:63484bb2479fa668"
+    },
+    {
+     "ci": [
+      -222.15807107986132,
+      223.0881064777462
+     ],
+     "elo": 4.449420453536196,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:6c492f50aa9bf552"
+    },
+    {
+     "ci": [
+      -236.70340150888376,
+      240.56174284498275
+     ],
+     "elo": 3.612892185360848,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:1283e35b6dbdc4a7"
+    },
+    {
+     "ci": [
+      -68.03553372564433,
+      68.77385988875233
+     ],
+     "elo": 2.1764194657143205,
+     "games": 252,
+     "score": 0.5654761904761905,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:cfc1fa7e1db29adf"
+    },
+    {
+     "ci": [
+      -238.51528757171963,
+      244.68875391463752
+     ],
+     "elo": 1.240364485184142,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:35f9febbdc636f20"
+    },
+    {
+     "ci": [
+      -217.90710054717263,
+      223.87816634362807
+     ],
+     "elo": 0.5604361731060035,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:6339d0f57595ac06"
+    },
+    {
+     "ci": [
+      -248.63479810656844,
+      249.9789710709394
+     ],
+     "elo": -0.3588286455389762,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:8e999819170c3526"
+    },
+    {
+     "ci": [
+      -263.86208268657055,
+      249.2883224012994
+     ],
+     "elo": -1.273091183793384,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:4ed9f4e2f6589a14"
+    },
+    {
+     "ci": [
+      -220.55653643380546,
+      207.4512847205587
+     ],
+     "elo": -2.4038939950338745,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:5ec93414231857f7"
+    },
+    {
+     "ci": [
+      -279.84150269048104,
+      260.78684277880495
+     ],
+     "elo": -3.1920940364281063,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:437755b8c12faea5"
+    },
+    {
+     "ci": [
+      -248.16468067890554,
+      236.39711473494415
+     ],
+     "elo": -3.38285983778427,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:ba1004d59aa20b09"
+    },
+    {
+     "ci": [
+      -237.59896436692452,
+      234.88050068925122
+     ],
+     "elo": -3.7922843725061903,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:5d60d7fdae42da0a"
+    },
+    {
+     "ci": [
+      -238.44530920868345,
+      226.45009944926647
+     ],
+     "elo": -5.517773292317297,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:a9ddb796b15163ef"
+    },
+    {
+     "ci": [
+      -207.40580043361325,
+      193.0163772312446
+     ],
+     "elo": -10.877570564011467,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:1ec44ad709905e19"
+    },
+    {
+     "ci": [
+      -233.07197357901427,
+      216.3178659989481
+     ],
+     "elo": -11.88026669882539,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:53429b7471a7ee0a"
+    },
+    {
+     "ci": [
+      -231.32658055304915,
+      225.06737311621856
+     ],
+     "elo": -11.993784239728027,
+     "games": 20,
+     "score": 0.55,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:8f4b05490ea06e3a"
+    },
+    {
+     "ci": [
+      -252.532381927327,
+      209.38329202899178
+     ],
+     "elo": -12.071899910393977,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:abc396deaa7b0720"
+    },
+    {
+     "ci": [
+      -80.02752466155167,
+      52.2035807489534
+     ],
+     "elo": -13.097958299914604,
+     "games": 238,
+     "score": 0.542016806722689,
+     "sets": [
+      "home72",
+      "away"
+     ],
+     "team_id": "tsr:07f33e7b75e92887"
+    },
+    {
+     "ci": [
+      -237.74042791127667,
+      200.83444155542395
+     ],
+     "elo": -13.508172381093445,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:5a61b3a19579a1cd"
+    },
+    {
+     "ci": [
+      -249.87037303604285,
+      209.83405626824504
+     ],
+     "elo": -13.839664174788773,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "home72",
+      "away"
+     ],
+     "team_id": "tsr:79ca35537ea969d1"
+    },
+    {
+     "ci": [
+      -252.11561216312967,
+      203.57039588960646
+     ],
+     "elo": -14.595272265518167,
+     "games": 20,
+     "score": 0.45,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:aa8cd891fa43bb14"
+    },
+    {
+     "ci": [
+      -247.8379030138001,
+      201.02849036151548
+     ],
+     "elo": -18.08443416695083,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:c6816a02511ba920"
+    },
+    {
+     "ci": [
+      -294.79164507826636,
+      253.8408213957231
+     ],
+     "elo": -18.53960141071095,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:4da9b8405c74c83f"
+    },
+    {
+     "ci": [
+      -272.52676582157324,
+      234.66675190494473
+     ],
+     "elo": -18.580265158542016,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:270e3a856bf5a74f"
+    },
+    {
+     "ci": [
+      -244.73663686556145,
+      198.260171568189
+     ],
+     "elo": -20.225807036710233,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:d87171422e7b0207"
+    },
+    {
+     "ci": [
+      -262.83136556673,
+      223.15277613898894
+     ],
+     "elo": -20.733042944379346,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:c8d704215afd83b1"
+    },
+    {
+     "ci": [
+      -230.04773498477084,
+      189.92392662883435
+     ],
+     "elo": -20.991739331933896,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:aa6c63ad137ff262"
+    },
+    {
+     "ci": [
+      -246.9044881115449,
+      206.91761906962745
+     ],
+     "elo": -21.111578484736793,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:499aaef6ade07e60"
+    },
+    {
+     "ci": [
+      -255.58850296612707,
+      198.63788846667217
+     ],
+     "elo": -23.049857868625526,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:154eaa8e8c454389"
+    },
+    {
+     "ci": [
+      -226.4085312613344,
+      166.19672862600387
+     ],
+     "elo": -23.87992134114674,
+     "games": 20,
+     "score": 0.45,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:fea645c3021e373c"
+    },
+    {
+     "ci": [
+      -266.22314980190856,
+      184.78883058010325
+     ],
+     "elo": -26.89756616053468,
+     "games": 20,
+     "score": 0.45,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:fd5414d9e4aa2cfd"
+    },
+    {
+     "ci": [
+      -284.4587245240667,
+      194.92482752662835
+     ],
+     "elo": -27.181595284752444,
+     "games": 20,
+     "score": 0.45,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:29a5218a36472e59"
+    },
+    {
+     "ci": [
+      -271.1080749351069,
+      175.19568997124284
+     ],
+     "elo": -27.21595807114336,
+     "games": 20,
+     "score": 0.45,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:958fc12108c9d1a0"
+    },
+    {
+     "ci": [
+      -99.96460721829517,
+      37.170568579195816
+     ],
+     "elo": -28.34473773190952,
+     "games": 260,
+     "score": 0.5230769230769231,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:04248d783ec9c464"
+    },
+    {
+     "ci": [
+      -268.27308572238917,
+      191.38337189833874
+     ],
+     "elo": -29.918693149029767,
+     "games": 20,
+     "score": 0.45,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:67addcf862ee7839"
+    },
+    {
+     "ci": [
+      -254.17984865597046,
+      195.3445070374256
+     ],
+     "elo": -31.255799355964182,
+     "games": 20,
+     "score": 0.5,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:36cdac0157a88bd4"
+    },
+    {
+     "ci": [
+      -97.68845088119183,
+      30.09623153265052
+     ],
+     "elo": -31.67892716063363,
+     "games": 274,
+     "score": 0.5583941605839416,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:3a8a7753a3d7f7b6"
+    },
+    {
+     "ci": [
+      -260.54682610384407,
+      178.41048367684186
+     ],
+     "elo": -33.57956734578054,
+     "games": 20,
+     "score": 0.45,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:5be8360e7427f3e4"
+    },
+    {
+     "ci": [
+      -268.982544242828,
+      170.12010142228968
+     ],
+     "elo": -33.86309985301949,
+     "games": 20,
+     "score": 0.45,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:38862333b00f6fe1"
+    },
+    {
+     "ci": [
+      -244.56980439673015,
+      155.44180212374292
+     ],
+     "elo": -37.94353779825539,
+     "games": 20,
+     "score": 0.45,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:6c565354f02db598"
+    },
+    {
+     "ci": [
+      -249.14944350808244,
+      155.33475431763043
+     ],
+     "elo": -38.80835123762345,
+     "games": 20,
+     "score": 0.45,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:8a4cd6844eb9b634"
+    },
+    {
+     "ci": [
+      -262.73257784021337,
+      174.07417848024258
+     ],
+     "elo": -41.70914649706087,
+     "games": 20,
+     "score": 0.45,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:817a0eadc5de71e8"
+    },
+    {
+     "ci": [
+      -321.02928427100267,
+      173.01094683170106
+     ],
+     "elo": -41.78777172209306,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:76a03e0df9d9563a"
+    },
+    {
+     "ci": [
+      -301.021390688918,
+      181.46180701279158
+     ],
+     "elo": -41.80103156159727,
+     "games": 20,
+     "score": 0.45,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:0552948fe64a0c43"
+    },
+    {
+     "ci": [
+      -319.9564222665274,
+      175.73121333297752
+     ],
+     "elo": -41.92937696240933,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:583d58d54d642a16"
+    },
+    {
+     "ci": [
+      -308.41500803376346,
+      160.19937128759287
+     ],
+     "elo": -43.87370505428858,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:14172213cc09adcd"
+    },
+    {
+     "ci": [
+      -305.55321065010486,
+      165.0878811307098
+     ],
+     "elo": -44.16544287017632,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:7bd82016e4269b7b"
+    },
+    {
+     "ci": [
+      -298.72224102334167,
+      181.56220950730258
+     ],
+     "elo": -44.36420437863626,
+     "games": 20,
+     "score": 0.45,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:6bc0ff79a7f44a43"
+    },
+    {
+     "ci": [
+      -329.3223754165254,
+      175.06415475992537
+     ],
+     "elo": -45.23993842088976,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:9a320aca15562dd0"
+    },
+    {
+     "ci": [
+      -341.6253920670297,
+      182.7867418397959
+     ],
+     "elo": -46.85625232317108,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:3d5ee1426dac7ed5"
+    },
+    {
+     "ci": [
+      -334.73751907161005,
+      179.70004316653007
+     ],
+     "elo": -48.05610526218054,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:5317aa4778d6788b"
+    },
+    {
+     "ci": [
+      -312.3999478864701,
+      153.3287223644743
+     ],
+     "elo": -48.490116635200685,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:ea6fe51eca24ac5e"
+    },
+    {
+     "ci": [
+      -315.90024597400856,
+      149.14199279799706
+     ],
+     "elo": -50.4059440126295,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:52913ab67a87e613"
+    },
+    {
+     "ci": [
+      -340.2849718786433,
+      185.13352682158018
+     ],
+     "elo": -51.22366272450419,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:3e838c210664a457"
+    },
+    {
+     "ci": [
+      -317.9413061514177,
+      158.33694767356576
+     ],
+     "elo": -52.06807768730959,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:953070aa19d12678"
+    },
+    {
+     "ci": [
+      -122.0666295802377,
+      4.878627161931281
+     ],
+     "elo": -55.178224749010994,
+     "games": 284,
+     "score": 0.49119718309859156,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:48b44b7450e4d3b1"
+    },
+    {
+     "ci": [
+      -123.80459565304729,
+      10.173802987107232
+     ],
+     "elo": -56.2245212833557,
+     "games": 282,
+     "score": 0.5177304964539007,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:d422f17a8d85fc11"
+    },
+    {
+     "ci": [
+      -335.22284514291147,
+      157.19803016715963
+     ],
+     "elo": -56.62152978154416,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:0ffb157a677e08b7"
+    },
+    {
+     "ci": [
+      -335.28621225735395,
+      164.62268441981817
+     ],
+     "elo": -58.47795793634671,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:702c470c6c8ef92c"
+    },
+    {
+     "ci": [
+      -326.15505913907595,
+      147.08107820189818
+     ],
+     "elo": -59.51976888395179,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:93d52c7aec95faee"
+    },
+    {
+     "ci": [
+      -349.8624198236324,
+      170.43790724409544
+     ],
+     "elo": -60.24794194926118,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:43f56cb9068f9dad"
+    },
+    {
+     "ci": [
+      -317.4159996129279,
+      134.14610689701703
+     ],
+     "elo": -61.04955115497777,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:e7b7af3d0bc0b644"
+    },
+    {
+     "ci": [
+      -348.0334449232714,
+      160.86474982819607
+     ],
+     "elo": -63.857055147502884,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:9abf9edeb01f8fb3"
+    },
+    {
+     "ci": [
+      -352.93171181654026,
+      165.6159577160868
+     ],
+     "elo": -65.76467855276915,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:17dec62874c0f8e0"
+    },
+    {
+     "ci": [
+      -347.2718026200492,
+      169.25145827408136
+     ],
+     "elo": -66.9473425979797,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:fd7c2ec9e562c6fb"
+    },
+    {
+     "ci": [
+      -138.53206325975728,
+      -3.3870035443796453
+     ],
+     "elo": -67.7003414861526,
+     "games": 270,
+     "score": 0.5074074074074074,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:d5261df767bcb14d"
+    },
+    {
+     "ci": [
+      -326.6470217936101,
+      126.20440717154013
+     ],
+     "elo": -68.71248052080647,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:d27268dcd6105dcd"
+    },
+    {
+     "ci": [
+      -361.0605630778767,
+      139.73389834519813
+     ],
+     "elo": -68.99564898615935,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:33be96ad162303f1"
+    },
+    {
+     "ci": [
+      -359.3095254234725,
+      148.48849694332526
+     ],
+     "elo": -69.55684398244279,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:0622f550670dfb84"
+    },
+    {
+     "ci": [
+      -354.5894783498514,
+      143.3706299619825
+     ],
+     "elo": -71.25073110581845,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:6ae25de5662ffd39"
+    },
+    {
+     "ci": [
+      -345.4098377373968,
+      138.80207310120122
+     ],
+     "elo": -73.35409396141812,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:252930d85c9f0d4b"
+    },
+    {
+     "ci": [
+      -279.0523993533347,
+      104.4094737541602
+     ],
+     "elo": -73.51824474748653,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:19e3486edcbd1fe6"
+    },
+    {
+     "ci": [
+      -357.2559688675352,
+      134.52803127552318
+     ],
+     "elo": -74.13559075043817,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:566b3ae1b1123b13"
+    },
+    {
+     "ci": [
+      -339.0686076483617,
+      121.57050205283136
+     ],
+     "elo": -74.9522459643084,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:5a4d5951ac49773d"
+    },
+    {
+     "ci": [
+      -367.8398383452989,
+      159.33184161673978
+     ],
+     "elo": -76.71574715210988,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:f8db01b5a17f8d3b"
+    },
+    {
+     "ci": [
+      -384.3090600872202,
+      165.96562572631296
+     ],
+     "elo": -77.8164693882858,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:c186949d743eaf64"
+    },
+    {
+     "ci": [
+      -373.369799280929,
+      137.5083964903886
+     ],
+     "elo": -78.70358381535986,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:dcd6089d0c67dfff"
+    },
+    {
+     "ci": [
+      -352.3695480090819,
+      123.93372349239004
+     ],
+     "elo": -79.81468524650333,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:3b3def7ea87abf1d"
+    },
+    {
+     "ci": [
+      -338.30208590253415,
+      123.86180849394573
+     ],
+     "elo": -79.92664652249734,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:ccd596faa90b7db2"
+    },
+    {
+     "ci": [
+      -353.81653758707023,
+      119.55526357406534
+     ],
+     "elo": -80.39269536564986,
+     "games": 20,
+     "score": 0.35,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:97a670acc833f3ed"
+    },
+    {
+     "ci": [
+      -156.99456374309437,
+      -20.422083496640692
+     ],
+     "elo": -81.34962078264246,
+     "games": 240,
+     "score": 0.48125,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:d42534190aee0132"
+    },
+    {
+     "ci": [
+      -377.7013192583984,
+      152.11020957588903
+     ],
+     "elo": -84.65568944645555,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:ff960c0507891130"
+    },
+    {
+     "ci": [
+      -362.9212073424328,
+      138.2176275117026
+     ],
+     "elo": -84.84726726186776,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:448c5d0a7f6be495"
+    },
+    {
+     "ci": [
+      -354.5344227905971,
+      119.53172685144924
+     ],
+     "elo": -84.90752937355617,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:aa8d4970247e4f7b"
+    },
+    {
+     "ci": [
+      -399.1095070830506,
+      160.540759867084
+     ],
+     "elo": -85.56603393214962,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:1ba07835056f0c09"
+    },
+    {
+     "ci": [
+      -340.7515683496169,
+      100.69051911229218
+     ],
+     "elo": -88.60402946436251,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:93bcb0e2de4ff244"
+    },
+    {
+     "ci": [
+      -165.37193583729527,
+      -31.852442076643637
+     ],
+     "elo": -89.89696715222853,
+     "games": 276,
+     "score": 0.47101449275362317,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:a33239afa8b09aa4"
+    },
+    {
+     "ci": [
+      -323.8825804322161,
+      93.97770970160322
+     ],
+     "elo": -90.059374179669,
+     "games": 20,
+     "score": 0.375,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:6102fae342b8eff0"
+    },
+    {
+     "ci": [
+      -349.2359780256202,
+      92.17970387516338
+     ],
+     "elo": -96.48249027225464,
+     "games": 20,
+     "score": 0.35,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:00d44aad360cc7a2"
+    },
+    {
+     "ci": [
+      -533.5179464581893,
+      130.18606941393844
+     ],
+     "elo": -96.90741048699091,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:856bb79529d03fc0"
+    },
+    {
+     "ci": [
+      -340.1989546121275,
+      94.0341036241536
+     ],
+     "elo": -97.08391255957564,
+     "games": 20,
+     "score": 0.35,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:feb290c10216ef13"
+    },
+    {
+     "ci": [
+      -360.4227127867105,
+      114.62061430190676
+     ],
+     "elo": -97.20111930529036,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:199736fd08034546"
+    },
+    {
+     "ci": [
+      -344.5290706953681,
+      88.41698669635936
+     ],
+     "elo": -98.19483479393573,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:6e993e99f52c7062"
+    },
+    {
+     "ci": [
+      -307.6751240978806,
+      80.12403114473497
+     ],
+     "elo": -98.29516154411023,
+     "games": 20,
+     "score": 0.4,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:6accc35d10ddbe21"
+    },
+    {
+     "ci": [
+      -352.1190188432854,
+      85.18578839007147
+     ],
+     "elo": -111.92443464662405,
+     "games": 20,
+     "score": 0.35,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:83d2829ab94fc40e"
+    },
+    {
+     "ci": [
+      -394.54630484169235,
+      76.55066096613108
+     ],
+     "elo": -114.9879174364376,
+     "games": 20,
+     "score": 0.35,
+     "sets": [
+      "home72",
+      "away"
+     ],
+     "team_id": "tsr:36ed78e39b30cae1"
+    },
+    {
+     "ci": [
+      -358.78684648670287,
+      68.85882956562862
+     ],
+     "elo": -115.88626879429496,
+     "games": 20,
+     "score": 0.35,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:c72043fa101bbce7"
+    },
+    {
+     "ci": [
+      -314.9117578716214,
+      42.552709974907394
+     ],
+     "elo": -116.64351462565436,
+     "games": 20,
+     "score": 0.35,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:2f7b1a8e3d3d012e"
+    },
+    {
+     "ci": [
+      -530.8329888984651,
+      92.15883417107123
+     ],
+     "elo": -117.27449564414343,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:03099085c989a680"
+    },
+    {
+     "ci": [
+      -519.0717436796593,
+      86.27039241891208
+     ],
+     "elo": -117.54539167609867,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:c2dcd256e713a65a"
+    },
+    {
+     "ci": [
+      -524.816940476417,
+      93.28925610698764
+     ],
+     "elo": -120.24535773582464,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:7b422fa11973e87b"
+    },
+    {
+     "ci": [
+      -384.26273293804906,
+      83.39158318411607
+     ],
+     "elo": -124.26266333807415,
+     "games": 20,
+     "score": 0.35,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:067cba6a2c68f247"
+    },
+    {
+     "ci": [
+      -397.1980306062491,
+      45.732151623908806
+     ],
+     "elo": -124.41528812626834,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:72463381340cf5cf"
+    },
+    {
+     "ci": [
+      -388.4275203310355,
+      88.99940604478306
+     ],
+     "elo": -125.2025107825631,
+     "games": 20,
+     "score": 0.35,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:b109ed9471df4bd8"
+    },
+    {
+     "ci": [
+      -506.53962320692193,
+      59.177347387961625
+     ],
+     "elo": -126.90509365652265,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:25f45006514ea137"
+    },
+    {
+     "ci": [
+      -544.4500171406033,
+      75.37724607743395
+     ],
+     "elo": -129.46871236554827,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:f383670cb0ac0641"
+    },
+    {
+     "ci": [
+      -375.1109080977319,
+      77.74079918244016
+     ],
+     "elo": -130.2050947349407,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:7569c813be222e81"
+    },
+    {
+     "ci": [
+      -551.8837669745695,
+      85.64631913558274
+     ],
+     "elo": -130.54627606980736,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:448b327a3ff589a7"
+    },
+    {
+     "ci": [
+      -571.6960259656232,
+      104.23310635145175
+     ],
+     "elo": -133.49557458238573,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:0dc594d7d03226ca"
+    },
+    {
+     "ci": [
+      -395.66650887261795,
+      47.06139045043833
+     ],
+     "elo": -133.65330041883004,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:34f402e9b002ba5b"
+    },
+    {
+     "ci": [
+      -514.5831690039201,
+      62.022342347345564
+     ],
+     "elo": -133.7077638256941,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:50be85bebca9dbb5"
+    },
+    {
+     "ci": [
+      -556.8748835346705,
+      83.85662105175862
+     ],
+     "elo": -136.40562862621877,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:9f8585031fa905e6"
+    },
+    {
+     "ci": [
+      -544.3417497011698,
+      70.44179065633897
+     ],
+     "elo": -136.49599954303415,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:424f8c17a12fb66d"
+    },
+    {
+     "ci": [
+      -565.0831297865717,
+      72.42843682513443
+     ],
+     "elo": -137.88769396329067,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:f2567183b3f368ab"
+    },
+    {
+     "ci": [
+      -567.4095284328686,
+      84.20224755793534
+     ],
+     "elo": -138.10134416005317,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:7b65b30b30331718"
+    },
+    {
+     "ci": [
+      -547.2837474854327,
+      58.57714499658262
+     ],
+     "elo": -141.61804721809503,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:a41df4943ef13788"
+    },
+    {
+     "ci": [
+      -557.7866287183356,
+      76.32285664987891
+     ],
+     "elo": -142.1280717249427,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:c66c1b90103de97b"
+    },
+    {
+     "ci": [
+      -471.0271533675757,
+      83.78823796093856
+     ],
+     "elo": -142.16784546584657,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:44ff92a03cd975fc"
+    },
+    {
+     "ci": [
+      -391.42022090910285,
+      46.885021617894026
+     ],
+     "elo": -142.67644901585712,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:4894dd8f977d8f54"
+    },
+    {
+     "ci": [
+      -405.8993667677025,
+      75.1074759855635
+     ],
+     "elo": -143.39462521839909,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:25c56d1e6a798494"
+    },
+    {
+     "ci": [
+      -413.8557687778102,
+      80.86211024011146
+     ],
+     "elo": -143.82378624908281,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:4cd800b01999ad8a"
+    },
+    {
+     "ci": [
+      -425.0492125908554,
+      67.48459290759128
+     ],
+     "elo": -145.16649871963932,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:a947c06c1d8822a2"
+    },
+    {
+     "ci": [
+      -383.2484782019626,
+      43.85871921218927
+     ],
+     "elo": -146.48031401212407,
+     "games": 20,
+     "score": 0.35,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:06c41964b8b5d989"
+    },
+    {
+     "ci": [
+      -540.0268920879263,
+      33.44348046582978
+     ],
+     "elo": -146.71204392288024,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:21b3c38e98e092aa"
+    },
+    {
+     "ci": [
+      -565.631186719865,
+      65.32193361292425
+     ],
+     "elo": -148.5104497529738,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:2f003c4bdaad9bb8"
+    },
+    {
+     "ci": [
+      -538.4468718170922,
+      75.9947827976696
+     ],
+     "elo": -148.59900258953698,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:c4a86b8472a6e8b7"
+    },
+    {
+     "ci": [
+      -411.0743202363699,
+      82.26238235355619
+     ],
+     "elo": -149.20709188054678,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:985a0329e9b249bf"
+    },
+    {
+     "ci": [
+      -542.3099825107303,
+      44.73637753220949
+     ],
+     "elo": -150.1017145682299,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:e673a31108da2d7e"
+    },
+    {
+     "ci": [
+      -561.8662236818715,
+      70.00856320757474
+     ],
+     "elo": -150.1145622043283,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:e73bc52f22e24400"
+    },
+    {
+     "ci": [
+      -549.7076388277806,
+      67.0703750474182
+     ],
+     "elo": -150.84655259642912,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:1d016101f7a7ef53"
+    },
+    {
+     "ci": [
+      -561.3803199545034,
+      59.45409674238778
+     ],
+     "elo": -151.10821987674026,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:d8681cfdd76df09e"
+    },
+    {
+     "ci": [
+      -554.4602845097826,
+      45.897198156417076
+     ],
+     "elo": -151.52409962749007,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:540f1e24c5f23914"
+    },
+    {
+     "ci": [
+      -573.5400898939773,
+      74.42731245785724
+     ],
+     "elo": -152.47975601732102,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:98358336c26720a5"
+    },
+    {
+     "ci": [
+      -561.1942856499268,
+      38.198455152368645
+     ],
+     "elo": -156.55333398652914,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:2487f4c9e7248f97"
+    },
+    {
+     "ci": [
+      -582.2816292661033,
+      68.38406946041238
+     ],
+     "elo": -160.445893589025,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:66637eadc15f2f09"
+    },
+    {
+     "ci": [
+      -546.5716011008955,
+      51.35045835202473
+     ],
+     "elo": -160.497532836966,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:07dbf1267673ff34"
+    },
+    {
+     "ci": [
+      -556.4253989731664,
+      31.865794329597225
+     ],
+     "elo": -161.95990002935417,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:3074ecf386a98d36"
+    },
+    {
+     "ci": [
+      -553.598130774577,
+      71.97483411382524
+     ],
+     "elo": -162.787789098853,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:96a8ef5f5091324a"
+    },
+    {
+     "ci": [
+      -409.28304099948423,
+      20.397394684783087
+     ],
+     "elo": -166.4498105023146,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:88e83ec1f0d29ca5"
+    },
+    {
+     "ci": [
+      -553.1543586154258,
+      36.968070772127696
+     ],
+     "elo": -169.82391869830536,
+     "games": 20,
+     "score": 0.25,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:fd20770535931162"
+    },
+    {
+     "ci": [
+      -596.9771901833961,
+      65.34085314817709
+     ],
+     "elo": -170.1729748331395,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:4267647bf601e94c"
+    },
+    {
+     "ci": [
+      -458.49827677433797,
+      56.28053497953245
+     ],
+     "elo": -171.23923825031355,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:00b7634a3b5e4cc1"
+    },
+    {
+     "ci": [
+      -584.0898460227257,
+      38.16796070814712
+     ],
+     "elo": -172.80426359224575,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:f21be6cfe887dc52"
+    },
+    {
+     "ci": [
+      -597.4160447923111,
+      47.86005568818584
+     ],
+     "elo": -173.99443283012127,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:5dffb8d864fcda1e"
+    },
+    {
+     "ci": [
+      -574.6019017031631,
+      20.867224852078028
+     ],
+     "elo": -174.66648847152945,
+     "games": 20,
+     "score": 0.3,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:08dc160f275d312b"
+    },
+    {
+     "ci": [
+      -276.9029627803518,
+      -138.47847339969982
+     ],
+     "elo": -189.830983562968,
+     "games": 266,
+     "score": 0.34962406015037595,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:5d872294cc11c5c6"
+    },
+    {
+     "ci": [
+      -595.2655303750662,
+      12.016048474906533
+     ],
+     "elo": -201.0359579623061,
+     "games": 20,
+     "score": 0.25,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:0cef9ba637c5eab0"
+    },
+    {
+     "ci": [
+      -550.4925010584374,
+      -23.298894925417326
+     ],
+     "elo": -204.47874682355342,
+     "games": 20,
+     "score": 0.25,
+     "sets": [
+      "away"
+     ],
+     "team_id": "tsr:d4476f7d9aa1dac5"
+    },
+    {
+     "ci": [
+      -559.3508448558014,
+      8.6494137895361
+     ],
+     "elo": -204.80902219447566,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:d943e0fb7323eadb"
+    },
+    {
+     "ci": [
+      -563.1912649745233,
+      30.76411200956504
+     ],
+     "elo": -206.26070206706484,
+     "games": 20,
+     "score": 0.25,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:551696918707cf4a"
+    },
+    {
+     "ci": [
+      -557.3706875862608,
+      -24.73755223192769
+     ],
+     "elo": -210.92301524207699,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:58ab1198098babdc"
+    },
+    {
+     "ci": [
+      -556.922811407321,
+      -53.392927173924114
+     ],
+     "elo": -215.87888670374406,
+     "games": 20,
+     "score": 0.25,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:580ea0b4a5b996bf"
+    },
+    {
+     "ci": [
+      -590.8709070431817,
+      19.16087473812326
+     ],
+     "elo": -217.2201940843507,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:2b3d04fee7fd27df"
+    },
+    {
+     "ci": [
+      -572.1948024938494,
+      -11.804217396606095
+     ],
+     "elo": -221.29819329084853,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:1f1475bdae339819"
+    },
+    {
+     "ci": [
+      -578.8763120372006,
+      -24.499585129886892
+     ],
+     "elo": -223.08860674996941,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:9138119c27e546bd"
+    },
+    {
+     "ci": [
+      -592.5815689932051,
+      -12.742900570861286
+     ],
+     "elo": -224.66835908882646,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:a0bfc290ea550848"
+    },
+    {
+     "ci": [
+      -564.1023551190631,
+      -39.003319292779565
+     ],
+     "elo": -228.07223572056404,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:90f2cadbb53d3fc3"
+    },
+    {
+     "ci": [
+      -609.5190282554197,
+      14.021895937070912
+     ],
+     "elo": -230.6271151696126,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:57ad1a1ff91512c2"
+    },
+    {
+     "ci": [
+      -593.1240726273473,
+      -13.606023827581742
+     ],
+     "elo": -230.63260222517266,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:1549cdaacb8f73dd"
+    },
+    {
+     "ci": [
+      -601.2267685208317,
+      -3.831155667532099
+     ],
+     "elo": -231.57128170874205,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:bdfc7217d5b58d36"
+    },
+    {
+     "ci": [
+      -584.0449392191189,
+      -34.943065685306394
+     ],
+     "elo": -232.37040279971416,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:b40df223461c070f"
+    },
+    {
+     "ci": [
+      -588.4509802986687,
+      -31.403760377841714
+     ],
+     "elo": -232.9488385627518,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:cd79ba260bd3698b"
+    },
+    {
+     "ci": [
+      -590.2547313443175,
+      -23.811348181533596
+     ],
+     "elo": -235.34178885566715,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:d81d0e8523b62fb9"
+    },
+    {
+     "ci": [
+      -605.0338809684811,
+      -5.260905658897744
+     ],
+     "elo": -236.07792505545314,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:202099a673535991"
+    },
+    {
+     "ci": [
+      -554.055283808461,
+      -76.66733679392746
+     ],
+     "elo": -237.7395081418217,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:e929c9c1ae3213f8"
+    },
+    {
+     "ci": [
+      -622.6436215848796,
+      9.799129583730778
+     ],
+     "elo": -237.85989116032476,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:329c4f87d87cab54"
+    },
+    {
+     "ci": [
+      -604.582130118031,
+      -5.074010655232762
+     ],
+     "elo": -237.88941447864482,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:bb27712ccb70dbc0"
+    },
+    {
+     "ci": [
+      -620.6578474251149,
+      -6.014986598939957
+     ],
+     "elo": -241.95199390721842,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:4faa7f2dd26152da"
+    },
+    {
+     "ci": [
+      -613.3784197407628,
+      -4.6722933539268015
+     ],
+     "elo": -242.07311383062267,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:2eca53762120062c"
+    },
+    {
+     "ci": [
+      -619.1465388895487,
+      -38.18359733094803
+     ],
+     "elo": -244.29396568673525,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:4a5993b8d72b01c7"
+    },
+    {
+     "ci": [
+      -623.8019531380743,
+      -19.45788815169698
+     ],
+     "elo": -245.27510357155066,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:5e798292387d3717"
+    },
+    {
+     "ci": [
+      -604.600229345609,
+      -40.542466077257096
+     ],
+     "elo": -248.27722639224348,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:2cbc4265a8ec6d81"
+    },
+    {
+     "ci": [
+      -620.999313880957,
+      -18.977417895049154
+     ],
+     "elo": -250.45072579664787,
+     "games": 20,
+     "score": 0.2,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:237576a54b183d54"
+    },
+    {
+     "ci": [
+      -562.0005878604727,
+      -59.81470855475937
+     ],
+     "elo": -260.8719981516512,
+     "games": 20,
+     "score": 0.15,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:34e06258a673e0bf"
+    },
+    {
+     "ci": [
+      -592.3598751955333,
+      -85.19560264446183
+     ],
+     "elo": -285.0011383157001,
+     "games": 20,
+     "score": 0.15,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:80b3c254d942a5ca"
+    },
+    {
+     "ci": [
+      -560.4537470953773,
+      -135.93780379480054
+     ],
+     "elo": -289.74134930389374,
+     "games": 20,
+     "score": 0.15,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:4252b7aeba30a324"
+    },
+    {
+     "ci": [
+      -565.4210828225607,
+      -149.45960397882155
+     ],
+     "elo": -291.8551659932685,
+     "games": 20,
+     "score": 0.15,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:726886d28ef532fc"
+    },
+    {
+     "ci": [
+      -556.7716606889751,
+      -81.92604277537158
+     ],
+     "elo": -300.2580408570838,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:fcc5d401467c0346"
+    },
+    {
+     "ci": [
+      -627.5751307091577,
+      -117.6153764977969
+     ],
+     "elo": -310.26535668990493,
+     "games": 20,
+     "score": 0.15,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:044f8397bd9fec32"
+    },
+    {
+     "ci": [
+      -630.9963319747633,
+      -127.94319490801851
+     ],
+     "elo": -316.97866440669105,
+     "games": 20,
+     "score": 0.15,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:33e0a66e12618eb1"
+    },
+    {
+     "ci": [
+      -574.8691879597362,
+      -116.39810919961552
+     ],
+     "elo": -326.31436728113283,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:3e0af159e9edb968"
+    },
+    {
+     "ci": [
+      -592.1250882720675,
+      -117.23883228250631
+     ],
+     "elo": -335.6231411331487,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:7cd0394a0f8a3a95"
+    },
+    {
+     "ci": [
+      -597.1574612775171,
+      -102.02842878111815
+     ],
+     "elo": -335.8798245596625,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:52892db43c774324"
+    },
+    {
+     "ci": [
+      -584.1564284325697,
+      -140.50751261801642
+     ],
+     "elo": -338.84769088340784,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:328bbd131764194b"
+    },
+    {
+     "ci": [
+      -593.0627130511987,
+      -117.53454439181331
+     ],
+     "elo": -340.705959680761,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:4fb198744536d33a"
+    },
+    {
+     "ci": [
+      -601.3606399674267,
+      -128.13942874006776
+     ],
+     "elo": -343.7772481472532,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:a24e3b18c048a1b0"
+    },
+    {
+     "ci": [
+      -606.4569733670868,
+      -116.34731483309224
+     ],
+     "elo": -347.1383383882498,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:302c85bf08d34201"
+    },
+    {
+     "ci": [
+      -606.7434345963651,
+      -119.20580670185113
+     ],
+     "elo": -349.11867327533054,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "forum72"
+     ],
+     "team_id": "tsr:b75ec94f5f2d3606"
+    },
+    {
+     "ci": [
+      -602.4118731944089,
+      -130.4987934514001
+     ],
+     "elo": -349.6987642765652,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:ce5fa5e1d5c882af"
+    },
+    {
+     "ci": [
+      -606.9364436520253,
+      -146.6069791479764
+     ],
+     "elo": -355.6368734179511,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:b758f0569c408a00"
+    },
+    {
+     "ci": [
+      -615.3458441966229,
+      -143.2945320576213
+     ],
+     "elo": -360.8749319481967,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:de4523b3b7ceecbb"
+    },
+    {
+     "ci": [
+      -633.857999286744,
+      -149.16694733032537
+     ],
+     "elo": -364.6010499884323,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:c12442341d06ac97"
+    },
+    {
+     "ci": [
+      -619.0015326280259,
+      -138.90576671708024
+     ],
+     "elo": -366.6619778402837,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:f8811725e0b17fc5"
+    },
+    {
+     "ci": [
+      -647.1113501484584,
+      -139.30169310784797
+     ],
+     "elo": -372.30292691919533,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:5f860094e02d077e"
+    },
+    {
+     "ci": [
+      -642.3577928530484,
+      -162.03670194951408
+     ],
+     "elo": -377.29621346401825,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:59185e2ad6c88adf"
+    },
+    {
+     "ci": [
+      -660.0020361128928,
+      -160.33583830327598
+     ],
+     "elo": -395.4577282446411,
+     "games": 20,
+     "score": 0.1,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:5ad7ebaa6f87df00"
+    },
+    {
+     "ci": [
+      -607.2997284429656,
+      -272.5422595857198
+     ],
+     "elo": -434.5448661188158,
+     "games": 20,
+     "score": 0.05,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:dad9f88c80bf8a1b"
+    },
+    {
+     "ci": [
+      -572.9342472267793,
+      -526.3520489214351
+     ],
+     "elo": -546.5931801213891,
+     "games": 20,
+     "score": 0.0,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:338c3c08a60681cd"
+    },
+    {
+     "ci": [
+      -586.2997734275643,
+      -529.843372853936
+     ],
+     "elo": -555.5827476961897,
+     "games": 20,
+     "score": 0.0,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:d1d23a2875d86242"
+    },
+    {
+     "ci": [
+      -602.5705769030405,
+      -539.5055791399178
+     ],
+     "elo": -569.3185322095658,
+     "games": 20,
+     "score": 0.0,
+     "sets": [
+      "home72"
+     ],
+     "team_id": "tsr:8cb64d421f3cce98"
+    },
+    {
+     "ci": [
+      -650.0727443281462,
+      -535.1610787132521
+     ],
+     "elo": -586.4472976337547,
+     "games": 20,
+     "score": 0.0,
+     "sets": [
+      "p72"
+     ],
+     "team_id": "tsr:0068517d7aa6a40a"
+    },
+    {
+     "ci": [
+      -649.9516852180961,
+      -541.3218972331957
+     ],
+     "elo": -586.9420689362676,
+     "games": 20,
+     "score": 0.0,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:8fb1916cfe91757d"
+    },
+    {
+     "ci": [
+      -662.1095719304268,
+      -566.9315042014456
+     ],
+     "elo": -604.7800404369973,
+     "games": 20,
+     "score": 0.0,
+     "sets": [
+      "heldout72_hpfix"
+     ],
+     "team_id": "tsr:79972f0137fd2c00"
+    }
+   ]
+  }
+ },
+ "registration_digest": "336b8221c4b4704355c9cca51c37ad83f91ed5e5d1c4afbcc23f4dc5d5736e6a",
+ "schema": "gen3_tsr_report_v1"
+}

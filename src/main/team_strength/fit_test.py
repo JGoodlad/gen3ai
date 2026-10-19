@@ -101,3 +101,18 @@ def test_agreement_of_two_pilots_who_see_the_same_strengths_is_high_and_reliabil
 def test_elo_scale():
     assert abs(F.elo_to_p(F.ELO * 1.0) - 1.0 / (1.0 + math.exp(-1.0))) < 1e-12
     assert abs(F.elo_to_p(0.0) - 0.5) < 1e-15
+
+
+def test_a_far_warm_start_and_a_lopsided_replicate_still_converge_to_the_cold_fit():
+    """A full Newton step from a FAR warm start overshoots on a logistic likelihood; the damped step must land on the
+    same optimum as the cold fit (a bootstrap replicate cycled for 200 steps under the undamped one, 2026-10-19)."""
+    truth = {r: 0.0 for r in REFS}
+    truth.update({f"s{i}": (i - 5) * 0.6 for i in range(11)})
+    games = simulate(truth, pairs=10, seed=9)
+    gs = F.Games.of(games, REFS)
+    cold = F.fit(gs, prior_sd=2.0, anchor=REFS)
+    far = F.fit(gs, prior_sd=2.0, anchor=REFS, r0=np.where(np.arange(len(gs.ids)) % 2, 12.0, -12.0))
+    assert np.max(np.abs(cold - far)) < 1e-8
+    rng = np.random.default_rng(0)
+    for _ in range(50):
+        F.fit(gs, prior_sd=2.0, anchor=REFS, w=F.replicate_weights(gs, rng), r0=far)

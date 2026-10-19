@@ -773,6 +773,16 @@ and Kakuna's home turf is not needed to explain the drop. With stage 1: our mode
 about 10–12 pp worse, and worse still on off-meta cores. That is a memorisation-family result (H1–H3), and widening the
 pool (D1) is the lever it points at. [ledger 2026-10-18 · *X37a STAGE 2*]
 
+**…and not because the unfamiliar teams are weak (2026-10-19, TSR, `measurements/team_strength_2026-10-18/`):**
+[MEASURED · PROVISIONAL · preregistered, 7,494 games] Rated with ONE pilot on both sides, the held-out replay-reconstructed
+teams ARE weaker: about 70 Elo (≈ 10 pp a game) below human-built forum teams, whether X26 or Kakuna pilots them, and
+procedural P72 teams weaker still (−146). Forum teams rate about as strong as our sample teams. But matching X26's
+reverse-cell games on each team's (Kakuna-rated) strength leaves the piloting gap in place: **+0.28 [+0.12, +0.44]**
+per team, +0.11 with a set-level correction. So the drop on unseen teams is X26 piloting them badly, not the teams.
+X26's own ratings also put off-meta (FAR) held-out teams far lower than Kakuna does (−236 vs −52 Elo), the off-meta
+piloting deficit seen from inside. Self-play may under-measure that deficit (hypothesis). A widening pool should draw
+human-built teams first, screened for strength but not by X26's own rating. [ledger 2026-10-19 · *TEAM STRENGTH*]
+
 **And a second anchor ABOVE us (2026-09-14, `foul_play_derisk_2026-09-14/`):** [MEASURED] Foul Play — MCTS with
 decoupled UCT over a hand-written evaluator on the Rust poke-engine, determinising the opponent's sets from Smogon
 usage — beats the same 75M policy: our win rate **0.388 [0.288, 0.497]** over 80 games, at ~1.4M visits and 2.1 s

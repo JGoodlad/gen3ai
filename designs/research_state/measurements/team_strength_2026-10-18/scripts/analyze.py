@@ -16,7 +16,6 @@ from pathlib import Path
 import numpy as np
 
 from main.team_strength import cli
-from main.team_strength import fit as F
 from main.team_strength import register as RG
 from main.team_strength import report as RP
 

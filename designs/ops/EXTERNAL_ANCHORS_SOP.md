@@ -210,6 +210,14 @@ config's `team_sets[--our-teamset]` while the opponent peer keeps `--teamset`. D
   its own battle CSV under its own `--results-dir`, and the cell reads OUR peer's.
 * Stamped on the plan (`--dry-run` prints `OUR peer draws <set>`), on every row (`our_teamset`), and
   in the default out-dir slug (`…_ours-<set>`).
+* 🚨 **The two role halves REPLAY ONE team sequence** (measured 2026-10-18, the team-strength read's first unit):
+  with one `--team-seed`, battle `10 + i` plays battle `i`'s two teams again with the SEATS swapped, on another
+  battle seed. A 20-game unit is 10 matchups × 2 seats, not 20 independent draws. A set-level win rate is unaffected;
+  a per-team or per-matchup bootstrap must cluster by (unit, matchup), and a game-only interval is optimistic.
+  `main.team_strength` clusters this way (F-DV-18 of `design_diversity_teams_opponents.md`).
+* **Which team each side played** comes from `--capture-dir`: each battle's START command carries both packed teams
+  and both names (`…Away…` = `--our-teamset`, `…Home…` = `--teamset`), and its log names the winner.
+  `main.team_strength.kakuna_lane.parse_unit` reads it and cross-checks every winner against `games.jsonl`.
 
 ### `--declare-asymmetric-teams` — a DECLARED asymmetric cell (B-D6)
 

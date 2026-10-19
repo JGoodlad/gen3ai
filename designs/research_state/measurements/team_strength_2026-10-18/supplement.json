@@ -1,0 +1,201 @@
+{
+ "a_rho_teams_only": {
+  "rho": 0.32657524115550624,
+  "ci_teams_only": [
+   0.1312800241915819,
+   0.5019861345983498
+  ]
+ },
+ "b_calibrated": {
+  "kakuna": {
+   "reliability": {
+    "familiar": 0.0,
+    "unfamiliar": 0.48637690824265467
+   },
+   "n_games": 266,
+   "n_teams": {
+    "familiar": 24,
+    "unfamiliar": 23
+   },
+   "matched": 0.2806628555087521,
+   "matched_ci": [
+    0.08684626468243192,
+    0.4473701781456528
+   ],
+   "class": "DETECTED",
+   "raw": 0.3095561594202898,
+   "raw_ci": [
+    0.1460300723948513,
+    0.4554682272520754
+   ],
+   "explained_by_strength": 0.028893303911537715,
+   "B": 2000,
+   "seed": 3805
+  },
+  "x26": {
+   "reliability": {
+    "familiar": 0.2644410211355892,
+    "unfamiliar": 0.43124517858237377
+   },
+   "n_games": 800,
+   "n_teams": {
+    "familiar": 68,
+    "unfamiliar": 69
+   },
+   "matched": 0.13031611187901984,
+   "matched_ci": [
+    0.020342624267832572,
+    0.27378762167277887
+   ],
+   "class": "DETECTED",
+   "raw": 0.19499999999999995,
+   "raw_ci": [
+    0.09142074213840021,
+    0.2846653741247353
+   ],
+   "explained_by_strength": 0.06468388812098011,
+   "B": 2000,
+   "seed": 3805
+  }
+ },
+ "c_coefficients": {
+  "kakuna_primary": {
+   "a": 0.5863820284484705,
+   "g_unfamiliar": -1.1781227504623855,
+   "b_strength_per_logit": 0.3371536197742344
+  },
+  "x26_secondary": {
+   "a": 0.3001333261671173,
+   "g_unfamiliar": -0.700864557243244,
+   "b_strength_per_logit": 0.16736608624018184
+  }
+ },
+ "d_set_level": {
+  "raw_gap_all_800": 0.19499999999999995,
+  "kakuna_strength_term_elo": 61.667367521682664,
+  "kakuna_strength_term_p": 0.08782612296058345,
+  "corrected": 0.1071738770394165,
+  "x37a_pilot_c": 0.123,
+  "x37a_delta_hat": 0.0725
+ },
+ "e_x26_familiarity_premium_elo": {
+  "est": -17.630558833431785,
+  "ci_games_only": [
+   -103.68307785654615,
+   72.19512812667278
+  ]
+ },
+ "f_rule8_x26_without_near_tie_pairs": {
+  "pairs_dropped": 7,
+  "games_kept": 5986,
+  "sets": {
+   "away": {
+    "mean_elo": 1.3108492577164113,
+    "ci": [
+     -76.82954382194946,
+     86.83734233356662
+    ]
+   },
+   "forum72": {
+    "mean_elo": -28.18510696113634,
+    "ci": [
+     -81.28160200199895,
+     18.666959359525915
+    ]
+   },
+   "heldout72_hpfix": {
+    "mean_elo": -97.45299217666955,
+    "ci": [
+     -163.75398432341214,
+     -51.15741366034139
+    ]
+   },
+   "home72": {
+    "mean_elo": -0.7179492096848183,
+    "ci": [
+     -51.752400133891896,
+     51.76053241669917
+    ]
+   },
+   "p72": {
+    "mean_elo": -172.47457457600683,
+    "ci": [
+     -246.97705387011612,
+     -137.55555555766597
+    ]
+   }
+  },
+  "comparisons": {
+   "heldout72_hpfix-forum72": {
+    "est": -69.26788521553321,
+    "ci": [
+     -150.95606113451467,
+     -0.004900313727918603
+    ],
+    "class": "UNDECIDED",
+    "margin_elo": 35.0,
+    "detected_weaker": true
+   },
+   "heldout72_hpfix-home72": {
+    "est": -96.73504296698474,
+    "ci": [
+     -182.55777660200346,
+     -30.506443218238246
+    ],
+    "class": "UNDECIDED",
+    "margin_elo": 35.0,
+    "detected_weaker": true
+   },
+   "heldout72_hpfix-away": {
+    "est": -98.76384143438597,
+    "ci": [
+     -205.17064210012097,
+     -10.096927663527861
+    ],
+    "class": "UNDECIDED",
+    "margin_elo": 35.0,
+    "detected_weaker": true
+   },
+   "heldout72_hpfix-p72": {
+    "est": 75.02158239933728,
+    "ci": [
+     5.290429214666016,
+     160.00102250113153
+    ],
+    "class": "COMPETITIVE",
+    "margin_elo": 35.0,
+    "detected_weaker": false
+   },
+   "p72-forum72": {
+    "est": -144.2894676148705,
+    "ci": [
+     -232.41744119729623,
+     -86.3617132356184
+    ],
+    "class": "MATERIALLY WEAKER",
+    "margin_elo": 35.0,
+    "detected_weaker": true
+   },
+   "forum72-home72": {
+    "est": -27.467157751451523,
+    "ci": [
+     -101.57824052741736,
+     37.84847858017708
+    ],
+    "class": "UNDECIDED",
+    "margin_elo": 35.0,
+    "detected_weaker": false
+   },
+   "away-home72": {
+    "est": 2.02879846740123,
+    "ci": [
+     -86.50965377956584,
+     96.47257221379793
+    ],
+    "class": "UNDECIDED",
+    "margin_elo": 35.0,
+    "detected_weaker": false
+   }
+  }
+ }
+}
