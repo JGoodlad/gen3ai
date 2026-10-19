@@ -475,7 +475,7 @@ class H2HEngine:
     def __init__(self, player: PlayerRef, opponent: PlayerRef, compute: Compute,
                  emit: Callable[[str], None] = lambda m: print(m, file=sys.stderr, flush=True),
                  decl: Optional[EngineDecl] = None, reveal_mode: str = "off", *,
-                 team_source_check: bool = True, team_pool: str = "repo"):
+                 team_source_check: bool = True, team_pool: str = "repo", team_builder: Optional[Any] = None):
         import torch
 
         from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec
@@ -488,6 +488,11 @@ class H2HEngine:
         # did), and it runs inside a pinned run's tree, whose data/ is the working directory's
         self.team_source_check, self.team_pool = bool(team_source_check), team_pool
         team_pool_check(team_pool)
+        # `team_builder` (opt-in; None = the player's eval team builder, today's engine byte for byte) is the builder
+        # BOTH sides draw from: the trainee's, which a greedy sentinel draws from too (`RustEvalCore.opponent_builder`).
+        # Its teams are declared into the team table at startup; its `team_set_id` / `team_source` replace the regime's.
+        # The team-strength meter's SCHEDULED panel builder (`main.team_strength.scheduled`) is the one caller.
+        self.team_builder = team_builder
         check_core_flags(player)
         check_core_flags(opponent)
         # THIS checkout's env core, built (incrementally) before anything loads — the trainer's own startup step
@@ -502,7 +507,12 @@ class H2HEngine:
         self.mode = decl.mode if decl is not None else RV.check_mode(reveal_mode)
         if decl is not None and reveal_mode not in ("off", decl.mode):
             raise H2HError(f"reveal mode {reveal_mode!r} differs from the declaration's {decl.mode!r}")
-        self.regime = regime_for(self.turn_limit, team_set=eval_team_set(team_pool), mode=self.mode)
+        if team_builder is None:
+            self.regime = regime_for(self.turn_limit, team_set=eval_team_set(team_pool), mode=self.mode)
+        else:
+            self.regime = L.with_regime_id({**regime_for(self.turn_limit, team_set=str(team_builder.team_set_id),
+                                                         mode=self.mode),
+                                            "team_source": str(team_builder.team_source)})
         self._threads0 = torch.get_num_threads()
         #: host copies of the checkpoints this engine has loaded, by content hash (a cross reuses each run's snapshot
         #: across a row and a column); bounded by :attr:`host_cache` entries, least recently used evicted
@@ -534,6 +544,8 @@ class H2HEngine:
                 backend=compute.resolved_backend, buckets=buckets, lanes=lanes,
                 max_rows_per_flush=max(1024, n_slots * max(buckets), 4 * n))).startup()
             tb, flat, fixed = eval_builders(None, [])
+            if team_builder is not None:
+                tb = team_builder
             for gp, go, lv in self.decl.cores:
                 # the reveal reaches the core's startup declaration per SEAT (the player is p1); `off` on both seats
                 # passes nothing, so the spec is exactly the engine's of before the reveal

@@ -975,6 +975,7 @@ and builds no engine when nothing is left.
 - 🚨 **THE TEAM POOL IS READ FROM THE WORKING DIRECTORY** (`utils.team_loader.TeamLoader`: `./data/teams`), so `main.h2h`
   REFUSES any cwd whose `data/teams` is not this checkout's (`play.check_team_pool`) — before, it loaded NO team, recorded
   the empty pool's team-set id and died on an `IndexError` in the eval core. Run it from the repo root.
+- **A SCHEDULED team source (`H2HEngine(team_builder=...)`, opt-in, 2026-10-18).** `None` (every CLI path) is the engine of before. Given a builder, BOTH sides draw from it (it is the trainee builder, and a greedy sentinel draws from the trainee builder), its teams join the core's team table at startup, and its `team_set_id` / `team_source` replace the regime's. The one caller is the team-strength meter (`main.team_strength.scheduled.ScheduledTeams`), which names every game's two teams in advance by keying the draw the seed rule will make; a draw it did not plan is a typed `ScheduleMiss`, and the lane checks every played game's teams against the plan (`src/main/team_strength/x26_lane_integration_test.py`).
 - 🚨 **HOT-SWAP SAFETY (each slot group alike).** Every cycle loads the cell's two slots through `InferenceService.load` (an in-place copy, the bit-exact copy
   check, the parity gate at every bucket, the copy check again; a failure POISONS the service, so no later cell is served),
   and after every cycle the engine checks both slots bit-exact against THIS cell's checkpoints (`H2HEngine.verify_slots`):
