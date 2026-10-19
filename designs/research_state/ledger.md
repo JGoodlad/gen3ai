@@ -27130,3 +27130,74 @@ Tag: **MEASUREMENT · third-source class UNSEEN-DRIVEN (forum72 governs, P72 agr
 `research_state/measurements/x37a_eval_matrix_2026-10-18/` (README stage 2, `forum72_manifest.json`, `p72_manifest.json`,
 `cells_stage2.json`, `rows_stage2.jsonl`); `endstate/design_diversity_teams_opponents.md` §0, §3, §3.1, §6.3, §11;
 `ops/EXTERNAL_ANCHORS_SOP.md`; `research_state/UNDERSTANDING.md`
+
+### 2026-10-18 · FINDING (MAJOR for X26 ops) · **X26's Amendment-3 ceiling stop (u32180 @ 316,796,508, judged max 2.974e-3 on ONE row; with u32320 @ 318,171,536, 8.12e-4) is NUMERICAL, and nothing is void. The mechanism is NEW and named: on a k = 1 state with a near-certain species hypothesis, X5's fixed-size shift τ sits on a nearly flat constraint (slope ≈ 1e-5), so fp32 resolves it only to 7e-3 – 1.5e-2, and T2's and the learner's fp32 programs land at different points of that band. The verdict is drawn from the row dumps plus the nearest checkpoints, because no weights were dumped: the dump cap is per LINEAGE**
+
+Both events have row dumps only. The replay ran CPU-only at the pin `9c033489`, on the bracketing checkpoints (316000231,
+317000041, 320000071) and their step-linear interpolations. It was calibrated on the four weight-carrying NUMERICAL dumps
+(u13900, u19300, u20490, u20630), replayed the same way on their own neighbours.
+
+1. **The record level: no fault signature.** In each dump the stored log μ, the action, the mask and the buffer
+   coordinates match the record. The legal set and the argmax are equal on both sides, and the version is current. The
+   p99 is normal (2.30e-5 / 2.52e-5), and nothing is non-finite. The whole row shifts coherently, by 3e-3 / 8e-4.
+   - A wrong row, a stale version or torn weights would move the row by ≥ 1e-2. One update moves this row by ≈ 0.12
+     nats.
+   - A read-only code trace of the pinned tree rules out torn weights, a stale tag, a t = 0 obs carry-over and bf16 on
+     T2. buffer_t = 0 is a probe-selection artefact.
+   - In u32320 the elevation decays over three consecutive decisions of one game (8.1e-4, 9.3e-5, 1.2e-5). These are
+     separate T2 calls, so it is a property of the state.
+   - Whole-row shifts of 1e-3 had already shown on NON-taken actions (1.38e-3 at 309.4M, 9.4e-4 at 304.0M).
+2. **The conditioning, under neighbour weights.** In all six weight sets, both violators rank 1st of 33 on fp32 error
+   against float64, at 7–274× the other rows' median. Every fp32 path agrees with the others and misses float64 by the
+   same amount: the error is systematic.
+   - The one-ulp weight dither, d29f781c's class test, does NOT flag them (ranks 10–28). Their error is born in
+     activation arithmetic, which a weight dither barely moves. So the class test is extended, not failed.
+   - A flip of the nearest declared selection element does not reproduce the gap: it moves the row by 3–5e-6
+     (u32180), or by 7e-3 – 1.3e-2 in another direction (u32320).
+3. **The origin.** The error is already in the attention bias entering `edge_bias` (the family maps are clean). It sits
+   in one hypothesis key's log-presence (≈ −12), with an fp32 error of 2–5.6e-3; other rows show ~1e-6.
+   - That log-presence comes from call 0 of `fixed_size_tau` (the species presence over 400 candidates). There
+     |τ| ≈ 19–20 and k = 1, and the slope Σπ(1−π) is 8e-6 – 1.7e-5 against an other-row median of ≈ 0.6. The fp32
+     resolution of the root, ulp(1) / slope, is 7e-3 – 1.5e-2 (rank 1–2 of 33), stable across the neighbours.
+   - Reordering the constraint's sum alone (64 orders) moves the violator's τ by 4.4e-3 – 1.4e-2; other rows' τ moves
+     by about 1e-6.
+   - Multiplied by d log π / d τ (0.023–0.335), that predicts gaps of 2.5e-4 – 1.9e-3, ranking the violator 1st of 33
+     in every weight set. The observed gaps are 1.6–3.4× the prediction.
+   - The observed mismatch points along the τ direction (|cos| 0.62–0.94). At the event-step interpolation the
+     implied τ difference is 1.25e-2, equal to the band.
+   - Other saturated rows exist, but log π barely reads τ on them. An event needs both conditions.
+4. **Against the fitted tail.** Refitted on the probes before u32180, the event is 7.5× the earlier max (3.95e-4 at
+   285.3M, not the ≤ 2.6e-4 the brief stated) and lies beyond the fitted GPD endpoint (P ≤ 3e-18 per probe).
+   - The earlier tail came from weight- and logit-conditioning ≤ 5e-5. This is a new, stronger amplifier.
+   - The 320M forecast refresh: the p99 is flat at 2.2e-5 since 290M, and P(p99 ≥ 1e-4 before 500M) ≤ 0.06. With
+     the events in, P(judged max ≥ 1e-3 before 500M) is 0.31–0.52, and the event count runs 2.6× ahead of 177f61c0's
+     table.
+5. **Recommendation (the orchestrator decides).**
+   - Resume from `final_model_interrupted.zip` (320,139,480; else `checkpoint_320000071` under readiness §4.2), at the
+     pin and argv, toward the Amendment-5 stop. The void range is EMPTY.
+   - Before the resume, register a judged-max STOP at 1e-2 (2× this mechanism's reach of ≈ 5e-3), with 1e-3 – 1e-2
+     sent to a re-diagnosis by this directory's `locate_tau.py` / `tau_programs.py` (≈ 3 CPU-min). p99 and non-finite
+     stay unchanged.
+   - Leave the dump cap unchanged at the pin.
+   - The conservative fallback: resume from `checkpoint_316000231`, voiding (316,000,231, 320,139,480], 4.14M steps.
+6. **Limits.** The exact weights are gone, so the gap is bounded, not reproduced. d log π / d τ varies 5× across the
+   neighbours. u32320's implied τ difference is 2–4× its neighbour band. T2's CUDA program was not run (no GPU lease).
+
+**FINDINGS.**
+- **A4-F1 is FALSE.** `_behaviour_weight_dumps` (= 3) is saved in every checkpoint, so the weight-dump cap is per
+  LINEAGE and no restart resets it. No event since u20630 (203M) has dumped weights.
+- **`selection_sites.REASONS["BISECT"]` is wrong on these rows** (also at HEAD). The claim "a continuous, ulp-scale
+  change" fails: it is continuous, but up to 1.5e-2. Fix for a future pin: run the τ constraint in float64, or solve
+  the complement when the mass saturates.
+- **The refresh's F4 (the tail's growth driver) has a candidate.** The species belief saturates as the model sharpens.
+  UNVERIFIED as the driver of the whole tail.
+- The pinned tree shows a modified `designs/ops/slow_tier_status.json` and `__pycache__`. These were pre-existing and
+  were not touched.
+- No hazard hit: no GPU; nothing written under `models/`, `data/` or the `x26_plateau` / `x26_a3_stop` caches; X26
+  was not relaunched.
+
+Tag: **FINDING (MAJOR for X26 ops) · NUMERICAL (new class: the saturated k = 1 τ root) · nothing void · classified from
+row dumps + neighbour checkpoints, exact weights absent · T2's GPU program NOT re-run** · evidence:
+`research_state/measurements/x26_a3_stop_316M_2026-10-18/` (README, `replay_neighbours`, `control_neighbours`,
+`flip_test`, `locate*`, `tau_programs`, `surprise`, `forecast.json`); `measurements/ridealong_baseline/PREREGISTRATION.md`
+(the A3 event record); `endstate/design_x26_readiness.md` §8

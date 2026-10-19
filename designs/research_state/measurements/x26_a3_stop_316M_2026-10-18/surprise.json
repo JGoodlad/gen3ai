@@ -1,0 +1,98 @@
+{
+ "event_steps": {
+  "u32180": 316895546,
+  "u32320": 318270821
+ },
+ "n_fit": 2213,
+ "fit_range": [
+  100004739.0,
+  316796508.0
+ ],
+ "n_probes_300M_to_stop": 206,
+ "forms": {
+  "linear": {
+   "aic": -4289.342127611277,
+   "tail": {
+    "u": 0.6840736202977084,
+    "xi": -0.10241262418826627,
+    "sigma": 0.30436082495490957,
+    "endpoint": 3.655980915587786,
+    "r_max_before": 2.012492591534861
+   },
+   "u32180": {
+    "trend_median_at_event": 5.583405827215229e-05,
+    "residual": 3.9224379074302442,
+    "residual_minus_endpoint": 0.2664569918424582,
+    "residual_minus_r_max_before": 1.9099453158953832,
+    "P_at_event_probe": 0.0,
+    "expected_probes_at_or_above_300M_to_stop": 0.0,
+    "ratio_to_largest_judged_max_before": 7.52473604826546
+   },
+   "u32320": {
+    "trend_median_at_event": 5.6084491223430944e-05,
+    "residual": 2.619407662648338,
+    "residual_minus_endpoint": -1.0365732529394482,
+    "residual_minus_r_max_before": 0.6069150711134768,
+    "P_at_event_probe": 1.7129749510555739e-06,
+    "expected_probes_at_or_above_300M_to_stop": 0.0002773990330453436,
+    "ratio_to_largest_judged_max_before": 2.0536953242835594
+   }
+  },
+  "exponential": {
+   "aic": -4310.642071403191,
+   "tail": {
+    "u": 0.690743128128608,
+    "xi": -0.08814844795394272,
+    "sigma": 0.2852373201403189,
+    "endpoint": 3.926617687024466,
+    "r_max_before": 1.9650019496213096
+   },
+   "u32180": {
+    "trend_median_at_event": 6.317266656072283e-05,
+    "residual": 3.8071509031510784,
+    "residual_minus_endpoint": -0.1194667838733876,
+    "residual_minus_r_max_before": 1.8421489535297688,
+    "P_at_event_probe": 2.79622830922166e-18,
+    "expected_probes_at_or_above_300M_to_stop": 3.0294070696703603e-16,
+    "ratio_to_largest_judged_max_before": 7.52473604826546
+   },
+   "u32320": {
+    "trend_median_at_event": 6.366074155508422e-05,
+    "residual": 2.500899583412882,
+    "residual_minus_endpoint": -1.425718103611584,
+    "residual_minus_r_max_before": 0.5358976337915724,
+    "P_at_event_probe": 4.593843092666089e-06,
+    "expected_probes_at_or_above_300M_to_stop": 0.0006773588230519231,
+    "ratio_to_largest_judged_max_before": 2.0536953242835594
+   }
+  },
+  "power": {
+   "aic": -4293.862203794251,
+   "tail": {
+    "u": 0.6858510059281276,
+    "xi": -0.09434666321856126,
+    "sigma": 0.2980808383937887,
+    "endpoint": 3.845272104936808,
+    "r_max_before": 2.00227332144678
+   },
+   "u32180": {
+    "trend_median_at_event": 5.677165974432252e-05,
+    "residual": 3.9073208879856525,
+    "residual_minus_endpoint": 0.062048783048844314,
+    "residual_minus_r_max_before": 1.9050475665388724,
+    "P_at_event_probe": 0.0,
+    "expected_probes_at_or_above_300M_to_stop": 0.0,
+    "ratio_to_largest_judged_max_before": 7.52473604826546
+   },
+   "u32320": {
+    "trend_median_at_event": 5.70383509150002e-05,
+    "residual": 2.6040793106285767,
+    "residual_minus_endpoint": -1.2411927943082315,
+    "residual_minus_r_max_before": 0.6018059891817966,
+    "P_at_event_probe": 2.509105313656236e-06,
+    "expected_probes_at_or_above_300M_to_stop": 0.0004112280934654748,
+    "ratio_to_largest_judged_max_before": 2.0536953242835594
+   }
+  }
+ }
+}

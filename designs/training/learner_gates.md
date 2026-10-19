@@ -198,7 +198,10 @@ The record also carries:
 Two artifacts are written beside it:
 - `behaviour_violation_u<n>_rows.npz`: the violating rows' observations;
 - `behaviour_violation_u<n>_policy.pt`: the weights that played them, for the first 3 violations of a
-  process.
+  model LINEAGE. The code comment says "per process", but the counter `_behaviour_weight_dumps` is a model
+  attribute and is not in `_excluded_save_params`. Every checkpoint therefore saves it, and a resume restores it,
+  so a restart does NOT reset it. On X26 it reads 3 from 203M on (`measurements/x26_a3_stop_316M_2026-10-18/`
+  F1). Excluding it from the save is an open fix, not made yet.
 
 A clean update pays nothing.
 

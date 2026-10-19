@@ -736,3 +736,42 @@ cap. It is the owner's decision, recorded as made with that data in view, not a 
   `x26_plateau` for the plateau-drawn bank and the X35 forks (P* = P, unless the orchestrator records otherwise before
   any fork).
 - Tier-1 ticks continue after P, under the 6,000-pair ops cap, as a trajectory.
+
+## A3 event record (2026-10-18) — the u32180 ceiling stop: NUMERICAL, nothing void
+
+**Appended after the fact, as an EVENT RECORD; no registered text above is changed.**
+
+**The event.** The 320M full-precision A3 read (2026-10-18 21:43 PDT) found:
+- **u32180 @ 316,796,508:** judged max **2.974e-3**, at or above the 1e-3 ceiling of §A3.1 item 2.1 (p99 2.30e-5;
+  974 of 1,024 rows judged; policy_version 646). It is ONE row, and the seeded 4,096-row scan read 8.38e-5.
+- **u32320 @ 318,171,536:** 8.12e-4, the A4 W2 trigger.
+
+X26 was stopped by its launcher's PID at 320,139,480, as a GIGO stop under §A2.7 item 3. The A4 watch also fired.
+Neither event dumped weights (the dump counter is per lineage: the diagnosis's F1).
+
+**The diagnosis** (CPU, at the pin): [`x26_a3_stop_316M_2026-10-18/README.md`](../x26_a3_stop_316M_2026-10-18/README.md).
+- **Verdict: NUMERICAL** (§A2.7(3); A3-F2 / A4.2).
+- **Where the error is born:** both violators' states have k = 1 with a near-certain species hypothesis. X5's
+  fixed-size shift τ then sits on a nearly flat constraint (slope ≈ 1e-5), so fp32 resolves it only to 7e-3 –
+  1.5e-2.
+- **How the gap arises:** T2's and the learner's fp32 programs land at different points of that band. Reordering the
+  sum alone reproduces τ differences of the band's size.
+- **Ranking:** the violators rank first of 33 on fp32 error and on the predicted gap, in all six neighbour-weight
+  sets.
+- **Faults ruled out:** a wrong row, a wrong action, a mask fault, a stale version, torn weights, an obs carry-over
+  and a flip of the nearest declared selection site are each ruled out, by the record or by the code.
+- **Limit:** the exact weights are gone, so the gap is bounded, not reproduced.
+
+**Consequence under the registered rules.**
+- A NUMERICAL stop voids nothing (A3.3's precedent). The recommended resume is from the newest state
+  (`final_model_interrupted.zip`, 320,139,480) at the pin and argv, toward the Amendment-5 stop.
+- The ceilings above are UNCHANGED by this record. The diagnosis recommends that the orchestrator register their
+  handling of this class BEFORE the resume (its §6: a judged-max STOP at 1e-2, with 1e-3 – 1e-2 sent to a
+  re-diagnosis), because the mechanism reaches ≈ 5e-3 and will cross 1e-3 again.
+- The resume decision, and any such amendment, belong to the orchestrator.
+
+**Corrections recorded, not applied to the text above:**
+- **A4-F1:** its "the next restart resets the count" is FALSE. `_behaviour_weight_dumps` = 3 is saved in every
+  checkpoint, so the cap is per lineage.
+- **`selection_sites.REASONS["BISECT"]`:** its "ulp-scale change" is false on saturated k = 1 rows (the diagnosis's
+  F2).
