@@ -342,8 +342,14 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     if not model:
         _critic()
         ns._saved_config_present = False
+        from main.train.grow_fork import GrowForkRefused, apply_to_namespace
+        try:
+            apply_to_namespace(ns, None)
+            grow_refusal = None
+        except GrowForkRefused as e:
+            grow_refusal = str(e)
         return {"ns": ns, "model": None, "config_path": None, "tried": [], "inherited": {},
-                "same_run": False, "no_parent": True}
+                "same_run": False, "no_parent": True, "grow_refusal": grow_refusal}
     # BOTH sides through the same resolver, or a resolved checkpoint would sit "outside" an
     # unresolved run dir and every launcher RESTART would be mislabelled a FORK.
     run_dir = resolve_models_path(effective_run_dir(ns))
@@ -425,9 +431,18 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
                 continue
             if inherit_saved_flag(ns, saved, dest, getattr(ns, dest)):
                 inherited[dest] = getattr(ns, dest)
+    # B-GROW: the launch's own step (`main.train.grow_fork.apply_to_namespace`, right after its sweep) — a declared
+    # growth sets each grown field to the CHILD's value, so the reports below judge the architecture the child builds.
+    from main.train.grow_fork import GrowForkRefused, apply_to_namespace
+    grow_refusal = None
+    try:
+        for _f in apply_to_namespace(ns, saved):
+            inherited.pop(_f, None)
+    except GrowForkRefused as e:
+        grow_refusal = str(e)
     return {"ns": ns, "model": model, "config_path": config_path, "tried": tried,
             "inherited": inherited, "same_run": same_run, "derived_refusal": derived_refusal,
-            "recipe_refusal": recipe_refusal, "env_core_refusal": env_core_refusal}
+            "recipe_refusal": recipe_refusal, "env_core_refusal": env_core_refusal, "grow_refusal": grow_refusal}
 
 
 def unsatisfiable_from_namespace(ns) -> List[Tuple[str, str, str]]:
@@ -997,6 +1012,7 @@ def main(raw: List[str] | None = None) -> int:
     _print_oracle_reveal(res.get("ns"))
     _print_behaviour_check(res.get("ns"))
     fork_fatal = _print_diagnostic_fork(res.get("ns"))
+    fork_fatal = _print_grow_fork(res) or fork_fatal
     _print_fork_lr_inheritance(res["resolution"])
     shaped_fatal = _print_shaped_reward(res.get("shaped_reward"), argv, a.pin)
     shaped_fatal = _print_retired_levers(res.get("retired_levers"), argv, a.pin) or shaped_fatal
@@ -1320,6 +1336,38 @@ def _print_diagnostic_fork(ns) -> str | None:
     print(f"  diagnostic fork                : {DF.describe(stamp)}")
     print("      STAMPED in the child's metadata.json lineage (immutable); the child can never be registered as a "
           "baseline")
+    return None
+
+
+def _print_grow_fork(res: dict) -> str | None:
+    """THE DECLARED GROWTH the launch would decide (`main.train.grow_fork`: the namespace step, then `decide`, the
+    trainer's own calls, over the effective namespace and run dir): the growth it would stamp, or the refusal
+    (returned, so the verdict below says the launch would fail). Silent without `--grow`."""
+    from main.train import grow_fork as GF
+
+    resolution = res.get("resolution") or {}
+    ns = res.get("ns") or resolution.get("ns")
+    if ns is None or not getattr(ns, "grow", None):
+        return None
+    if resolution.get("grow_refusal"):
+        print(f"  declared growth (--grow)       : ✗ REFUSED — {resolution['grow_refusal']}")
+        return str(resolution["grow_refusal"])
+    grown = getattr(ns, "_grow_declared", None) or {}
+    run_dir = resolve_models_path(effective_run_dir(ns))
+    model = resolve_models_path(getattr(ns, "model", None))
+    try:
+        stamp = GF.decide(grown=grown, model_path=model, model_dir=run_dir)
+    except GF.GrowForkRefused as e:
+        print(f"  declared growth (--grow)       : ✗ REFUSED — {e}")
+        return str(e)
+    if stamp is None:
+        print("  declared growth (--grow)       : a RESTART of a grown fork (its lineage records the growth) — no-op")
+        return None
+    print(f"  declared growth (--grow)       : {GF.describe_declared(grown)}  (parent from its model_config.json)")
+    print("      the parent loads STRICTLY at its own architecture, then identity-init parameters are appended; the "
+          "child's optimizer carries the parent's AdamW state, new parameters start fresh")
+    print("      child-only: the fork-time gate (bit-identical logits + values on real rows, fp32 eager CPU) and the "
+          "seeded pool's growth; STAMPED in the lineage (grow) and model_config.json (growth)")
     return None
 
 

@@ -38,6 +38,9 @@ The live `MODEL_CONFIG_VERSION`, `ARCH_SIGNATURE` and `OBS_SEMANTICS_VERSION` ar
   `versioning.md`. A lever the legacy deletion removes is judged by `model_version/adopted_levers.py`.
 - A `resume_immutable` flag the extractor carries is re-applied after every `--model` load
   (`resume_reapply.SETTERS`).
+- 🚨 **A FORK grows the network only DECLARED** (`--grow trunk_layers=N`, `growth.py`): the parent loads strictly, the
+  new parameters must start as the identity (the fork-time gate refuses anything not bit-identical), and a new growable
+  field joins `growth.GROWABLE` with its own init and gate (`designs/model/versioning.md` "Declared growth at a fork").
 
 ## Hazards in the forward
 

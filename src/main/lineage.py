@@ -81,6 +81,7 @@ def read_run(run_dir: str) -> Dict[str, Any]:
         "fork_step": None, "num_timesteps": None, "fork_parent": None, "teachers": [],
         "exploiter_target": None,
         "ancestry": [], "ancestry_stop": None, "checks": [], "error": None, "diagnostic_fork": [],
+        "grow": None,
     }
     if not os.path.isdir(run_dir):
         out["error"] = "no such run directory"
@@ -137,6 +138,9 @@ def read_run(run_dir: str) -> Dict[str, Any]:
     out["checks"] = check_links(run_dir)
     # THE DIAGNOSTIC-FORK CONSENT(S) in this lineage (its own block's and every ancestor's)
     out["diagnostic_fork"] = diagnostic_fork_stamps(run_dir)
+    # B-GROW: the network GROWN at this run's fork (`main.train.grow_fork`), from its own immutable block
+    _grow = (read_block(run_dir) or {}).get("grow")
+    out["grow"] = _grow if isinstance(_grow, dict) else None
     # THE REVEAL MODE, from `model_config.json` (gen3_reveal_provenance_v1): `metadata.json` of a fork written before
     # the fix names its PARENT's mode, so a mismatch is reported as a KNOWN-BAD record, never read as the mode
     from agents.model.oracle_reveal import run_provenance
@@ -241,6 +245,9 @@ def render(row: Dict[str, Any]) -> str:
         from main.train.diagnostic_fork import describe as _describe_fork
         where = "this run" if stamp.get("self") else f"ancestor {stamp.get('run')}"
         lines.append(f"    🧪 DIAGNOSTIC FORK ({where}): {_describe_fork(stamp)} — never a baseline")
+    if row.get("grow"):
+        from main.train.grow_fork import describe as _describe_grow
+        lines.append(f"    🌱 GROWN AT ITS FORK: {_describe_grow(row['grow'])}")
     reveal = row.get("reveal") or {}
     if reveal.get("label") not in (None, "off") or reveal.get("known_bad"):
         lines.append(f"    🔭 reveal mode: {reveal.get('label')}  (from {reveal.get('source')})")

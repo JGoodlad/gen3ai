@@ -227,6 +227,19 @@ same verdict offline, before the GPU is touched. Every metadata write records a 
 `kl_controller`), and `train/dose_rate` + `train/effective_batch` ride TensorBoard every rollout.
 Read a run's dose — including every run already on disk — with **`python -m main.dose <run>…`**.
 
+🌱 **A FORK THAT GROWS THE NETWORK DECLARES IT: `--grow trunk_layers=N`** (B-GROW; detail:
+`designs/model/versioning.md` "Declared growth at a fork"). Typing `--trunk-layers N` on a `--model` launch at a depth
+the checkpoint does not record dies at the child's load (`trunk_layers mismatch`). With `--grow`, the parent
+loads strictly at its own depth, identity-init rounds are appended, its AdamW state carries (the new parameters start
+fresh), the seeded pool grows the same way, and the child refuses to start unless it is the parent's function BIT FOR
+BIT on 64 real rows (the `🌱 [GrowFork] grown: …` line). `main.checkargs` / `--dry-run` print the declared growth; the
+gate itself is child-only. The X47-shaped line (toy, 2 → 4, from T*):
+
+```bash
+python -m main.launcher --dry-run --model models/<toy run>/checkpoints/<T*>.zip --run-name <child> \
+    --steps <total> --grow trunk_layers=4 --device cuda      # then the same without --dry-run
+```
+
 ---
 
 ## Training

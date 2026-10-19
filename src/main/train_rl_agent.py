@@ -210,6 +210,14 @@ async def main():
     # behind; the stamp rides on `args._diagnostic_fork` to the loader's gate and the lineage block.
     from main.train.diagnostic_fork import enforce as _enforce_diagnostic_fork
     _enforce_diagnostic_fork(args, model_dir)
+    # B-GROW (`main.train.grow_fork`): a FORK's declared growth is decided HERE too (model_dir known, not yet created):
+    # a genuine fork stamps it (`args._grow_fork`, to the loader's gate, the growth itself and the lineage block); a
+    # same-run restart of a grown fork is a no-op; a refusal is FATAL_CONFIG and leaves nothing behind.
+    from main.train.grow_fork import describe as _describe_grow
+    from main.train.grow_fork import enforce as _enforce_grow
+    if _enforce_grow(args, model_dir):
+        emit(f"🌱 [GrowFork] {_describe_grow(args._grow_fork)} — FUNCTION-PRESERVING growth at this fork (identity-init "
+             f"parameters; proven bit-identical on real rows at load); stamped in this run's lineage (grow)")
     # THE DISK-SPACE PREFLIGHT (`utils.disk_guard`): the free space on the archive's filesystem must cover
     # what THIS run still writes (checkpoints, eval traces, compile cache, logs + a margin). The arithmetic
     # is printed; a refusal is FATAL_CONFIG (the launcher must not restart into it) and — placed before
@@ -317,6 +325,19 @@ async def main():
         _snapshot_dir = _Path(_pool_dir_for(model_dir))
         _cv = _current_model_version(mappings, **_run_arch_toggles(args))
         _opp_version = _cv
+        # B-GROW: the pool seeded from the parent holds PARENT-architecture snapshots, and a pool is single-architecture
+        # (its arch record, the slot groups) — grow each one the same way, BEFORE the pool is constructed or scanned.
+        if getattr(args, "_grow_fork", None):
+            from agents.model.model_version import ModelVersionError as _MVE
+            from main.train.grow_fork import grow_seeded_pool as _grow_seeded_pool
+            try:
+                _pg = _grow_seeded_pool(str(_snapshot_dir), args._grow_fork["fields"], _cv, emit_fn=emit)
+            except _MVE as _e:
+                print(f"\n🛑 [GrowFork] FATAL: the seeded pool could not be grown: {_e}", flush=True)
+                os._exit(int(TrainExitCode.FATAL_CONFIG))
+            if _pg is not None:
+                emit(f"🌱 [GrowFork] seeded pool grown: {len(_pg['snapshots'])} snapshot(s) "
+                     f"({len(_pg['skipped'])} already grown); its arch record is now the child's")
         # owns_dir=True: THIS is the pool that writes the directory (seed / promote), so it is the one
         # whose startup scan may DELETE snapshots outside the declared window (gen3_pool_cap_every_path_v1)
         # — before any env worker scans it. Every other pool over this dir is a reader.

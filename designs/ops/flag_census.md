@@ -116,6 +116,7 @@
 | `--n-epochs` | 5 | 265 / 35 | `--arch production`: `recipe.fresh,recipe.fork.n_epochs` = `10` | **KEEP** |
 | `--lr` | 0.0003 | 264 / 34 | `--arch production`: `recipe.fresh.lr` = `0.0003` | **KEEP** |
 | `--fork-lr` | — | 46 / 30 | `--arch production`: `recipe.fork.fork_lr` = `5.6e-05` | **KEEP** |
+| `--grow` | — | 0 / 0 | B-GROW (`main.train.grow_fork`, `agents.model.growth`; `designs/model/versioning.md` "Declared growth at a fork"): a FORK's declared, function-preserving growth (`--grow trunk_layers=4`) — X47 / X47b in `design_bot_ideas_screen.md` | **KEEP** |
 | `--fork-lr-freeze` | false | 46 / 30 | `--arch production`: `recipe.fork.fork_lr_freeze` = `true` | **KEEP** |
 | `--allow-inherited-fork-lr` | false | 0 / 0 | the documented escape of the fork-LR guard (`training_runbook.md`, root `CLAUDE.md` `--fork-lr` hazard) | **KEEP** |
 | `--min-lr` | 1e-05 | 260 / 34 | `--arch production`: `recipe.fresh.min_lr` = `1e-05` | **KEEP** |

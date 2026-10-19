@@ -51,6 +51,7 @@ class ModelVersionConstruction(ModelVersionFields):
         promotion_sprt: bool = False,
         trunk_precision: str = "fp32",
         canary_shift_max: Optional[float] = None,
+        growth: Optional[Dict[str, Any]] = None,
     ) -> Self:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -262,6 +263,7 @@ class ModelVersionConstruction(ModelVersionFields):
             promotion_sprt=bool(promotion_sprt),
             trunk_precision=str(trunk_precision or "fp32"),
             canary_shift_max=None if canary_shift_max is None else float(canary_shift_max),
+            growth=None if not growth else dict(growth),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
             move_belief_coef=float(move_belief_coef),
             move_belief_latent_coef=float(move_belief_latent_coef),

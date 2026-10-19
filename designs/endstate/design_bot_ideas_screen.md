@@ -3,7 +3,9 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision, build or read that differs from
 this doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-19): DESIGN.** Nothing here is built, registered or launched. Each candidate has its cheapest A/B,
+**Status (2026-10-19): DESIGN; B-GROW BUILT.** Nothing here is registered or launched. **B-GROW** (§4) is built
+(`--grow trunk_layers=N`, `gen3_grow_fork_v1`, config v159; `TASK_BACKLOG` T64), so X47 / X47b need only their GO and
+a pin at or after it; B-KFFN and B-INT are not built. Each candidate has its cheapest A/B,
 its decision rule, its risks and its build, written so the orchestrator can adopt it into an X35 batch. Launches need
 the orchestrator's GO, and a design block is not a launch command.
 
@@ -57,7 +59,7 @@ shares its batch's control C0.
   1. **First new candidate after X34 plateaus: X47, DEPTH GROWTH ON THE TOY.** T\* gets two more identity-init rounds
      (2 → 4). This is the largest structural gap to the bots: they use about 8 layers, the toy 2, production 3, and
      production's third round was never screened on its own. It costs ≈ 17 GPU-h for 3 seeds and needs one build,
-     B-GROW (≈ 1.5–2 agent-days).
+     B-GROW (✅ BUILT 2026-10-19: `--grow trunk_layers=4`).
   2. **X48: per-token-kind feed-forward weights on PRODUCTION**, upcycled at P\*, ≈ 15 GPU-h. It cannot run on the
      toy, which has none of the token kinds the idea separates.
   3. **X47b: production depth 3 → 4**, only if X47 reads GAIN. ≈ 16 GPU-h.
@@ -72,7 +74,8 @@ shares its batch's control C0.
 - **Against the queue:** X45(b)'s 0.5 GPU-h read and X35's staged arms (A1, C0, D1, A2, A3) stay AHEAD of every
   candidate here. X44 (≈ 10.4 GPU-h, ×1.4–1.8 per fresh run) also ranks ahead. X14 stays deferred behind X44.
 - **Timing hazard (F-BI-1):** an arm shares C0 only at its batch's pin. B-GROW must land before the toy batch's pin.
-  If it lands later, X47 needs its own toy C0, at +12.6 GPU-h.
+  If it lands later, X47 needs its own toy C0, at +12.6 GPU-h. **B-GROW landed 2026-10-19**: the toy batch's pin must be
+  at or after its commit.
 
 ---
 
@@ -153,7 +156,7 @@ shares its batch's control C0.
   - more compute per step, which is why the primary is at equal time;
   - pre-LN extra rounds on top of post-LN base rounds is the mixed stack production already runs, so there is no new
     risk class;
-  - the optimizer state of the new parameters (§4, B-GROW);
+  - the optimizer state of the new parameters (§4, B-GROW: they start with NO AdamW state, the parent's carries);
   - a deeper trunk makes the CPU meters slower (T41 territory).
 - **Code.** The module exists. A fresh `--trunk-layers 4` toy argv already PARSES at HEAD: `checkargs` exit 0,
   "27 of 39 ARCH-surface keys differ … ✓ this command still launches", on the X34 staging argv with depth 4. The fork
@@ -382,7 +385,7 @@ candidates into it.
 **The first experiment and its cost.** **X47**: T\* + 2 identity-init rounds, seeds 3601–3603, 70M each, ABBA with the
 toy C0, in the toy batch at one pin.
 - ≈ 17 GPU-h, plus ≈ 0.3 GPU-h for the read.
-- Its prerequisite is B-GROW (≈ 1.5–2 agent-days, opus-high), landed before the toy batch's pin.
+- Its prerequisite is B-GROW (✅ BUILT 2026-10-19), landed before the toy batch's pin.
 - The first R1 look lands ≈ 17 GPU-h after its first seed launches.
 
 ---
@@ -391,7 +394,7 @@ toy C0, in the toy batch at one pin.
 
 | build | what | effort | needed by |
 |---|---|---|---|
-| **B-GROW** | **Declared growth at a fork.** A typed `--grow <field>=<value>` list, limited to `trunk_layers`, `trunk_ffn_by_kind` and `opp_intent_grad_mode`, lets exactly those fields differ from the parent's `model_config.json` in `check_compatible`. Parent parameters load STRICTLY. New parameters are initialised function-preservingly: identity rounds as today; experts as copies of the shared FFN. **At fork time, the child's fp32 forward must match the parent's on real rows** (bit-identical for rounds and the grad switch; ≤ 1e-6 for experts, or a typed refusal). New parameters' Adam moments start at zero, and the existing ones carry over (how a fork carries the optimizer state today is UNVERIFIED, F-BI-3). A `grow` block in `metadata.json`'s lineage. Tests that fail on revert | opus-high, ≈ 1.5–2 agent-days | X47, X47b, X48, X49 |
+| **B-GROW** ✅ **BUILT 2026-10-19** (T64; as built: `--grow trunk_layers=N` only — the other two fields are declared and refused until B-KFFN / B-INT; the parent loads strictly at its own architecture and the growth is applied in place; the gate runs on fresh CPU builds; the seeded pool grows too; `designs/model/versioning.md` "Declared growth at a fork") | **Declared growth at a fork.** A typed `--grow <field>=<value>` list, limited to `trunk_layers`, `trunk_ffn_by_kind` and `opp_intent_grad_mode`, lets exactly those fields differ from the parent's `model_config.json` in `check_compatible`. Parent parameters load STRICTLY. New parameters are initialised function-preservingly: identity rounds as today; experts as copies of the shared FFN. **At fork time, the child's fp32 forward must match the parent's on real rows** (bit-identical for rounds and the grad switch; ≤ 1e-6 for experts, or a typed refusal). New parameters' Adam moments start at zero, and the existing ones carry over (how a fork carries the optimizer state today is UNVERIFIED, F-BI-3). A `grow` block in `metadata.json`'s lineage. Tests that fail on revert | opus-high, ≈ 1.5–2 agent-days | X47, X47b, X48, X49 |
 | B-KFFN | per-kind FFN experts (§2.2), its flag and config version | opus-high, ≈ 1 agent-day | X48 |
 | B-INT | `--opp-intent-grad-mode` back on the CLI | opus-medium, ≈ 0.25 agent-day | X49 |
 | B-DEPTH8 | widen `TRUNK_LAYERS_CHOICES` | ≈ 0.25 agent-day | an 8-layer dose arm, only after X47 GAIN |
@@ -419,11 +422,14 @@ labels, offline, feeding search's opponent model. Re-open **rung 3**, the BC war
   `check_compatible` (`main.train.fork_arch`), and refuse a mismatch FATAL_CONFIG with the child's own reason (a toy
   fork typing `--trunk-layers 4` reads `trunk_layers mismatch: saved=2, current=4`). It is ADVISORY when the child is
   pinned to another commit, so a growth fork should be dry-run at a pin that IS the checked tree. A growth argv
-  passes only through a declared option: `fork_arch.DECLARED_GROWTH` is B-GROW's seam (empty until
-  `--grow-trunk-layers` lands; B-GROW adds its row and makes the trainer honour it). Detail:
-  `designs/launcher/launch_guards.md`.
-- **F-BI-3 (UNVERIFIED).** How a fork carries the optimizer state (Adam moments) was not read. B-GROW must establish
-  it before a new parameter gets a moment.
+  passes only through a declared option: `fork_arch.DECLARED_GROWTH` is B-GROW's seam, and since B-GROW
+  (2026-10-19) its row is `--grow` (dest `grow`; the fields are `agents.model.growth.GROWABLE`'s BUILT ones): a
+  `--grow` argv is judged by `ModelVersion.check_compatible_grown`, the very gate the trainer's load runs
+  (`load_model_snapshot(grow=…)`), so the dry run and the child agree. Detail: `designs/launcher/launch_guards.md`.
+- **F-BI-3 (RESOLVED 2026-10-19, B-GROW).** A fork carries the parent's WHOLE policy AdamW state: SB3 loads it and
+  `checkpoint_state._validate_or_reset_optimizer_state` realigns every entry by NAME, param group and LR included
+  (`--fork-lr` pins the LR). A growth rebuilds the optimizer over the grown policy, carries each parent parameter's
+  state object unchanged and gives the new parameters none (zero moments and their own step at their first update).
 - **F-BI-4 (a reading hazard for X50).** Kakuna (Metamon) learned from human ladder replays. A BC-initialised model
   shares its training population, so the Kakuna anchor stops being an independent opponent for that arm. The
   in-house cross is the primary for that reason.
@@ -448,3 +454,4 @@ labels, offline, feeding search's opponent model. Re-open **rung 3**, the BC war
 |---|---|---|---|---|
 | 2026-10-19 | **This doc CREATED** (design worker, orchestrator brief after the bot survey) | Five bot ideas costed as X35-frame arms. **Growth forks** at the plateau checkpoints share X35's C0, with equal effective learn time as the primary for capacity levers. Ranked: X47 toy depth growth FIRST after X34 plateaus (≈ 17 GPU-h, B-GROW), then X48 per-kind FFN on production, X47b (conditional), X49 intent shaping, and X50 human data (S0 now, the GPU part on the owner's Q1). C-MUTATE folded into X41. All of them after X45(b), X35 batch 1, X44 and the toy calibration | fresh-from-scratch A/Bs (pre-plateau, own controls); experts on the toy (no move / event tokens); a toy intent head (a different lever); 8 layers before 4; a BC warm start before ai_v11's rung 1 (the owner punted ai_v11 on 2026-08-18, and its census shows 16.7 % tier-A, 3.9 % own items known); a new set-mutation row (X41 exists) | `trunk_depth.py`, `model_version/compat.py`, `flag_registry.py` (`opp_intent_grad_mode`), `team_transformer.py`; `checkargs` exit 0 on a fresh depth-4 toy argv at HEAD; the fork refusal path (F-BI-2); `../ai_v11/design_human_replay_objectives.md` §5; the survey |
 | 2026-10-19 | **F-BI-2 fixed** (build worker) | The dry-run tools check a `--model` argv's architecture with the trainer's own code; growth only through `fork_arch.DECLARED_GROWTH` | a second comparator in the launcher; refusing a pinned-other-commit fork (that commit's check is the authority) | `src/main/launcher/fork_arch_dry_run_test.py` (refusals fail on revert) |
+| 2026-10-19 | **B-GROW BUILT** (build worker; `TASK_BACKLOG` T64) | `--grow trunk_layers=N`, fork-only: strict parent load at its own architecture, then in-place identity-round growth (a fresh depth-N build's modules), the optimizer rule above (F-BI-3 RESOLVED), the fork-time gate on fresh CPU builds (bit-identical logits + values on 64 real rows, else FATAL_CONFIG), the seeded pool grown the same way, the `grow` lineage stamp and `model_config.json` `growth` (config v159); `checkargs` / `--dry-run` resolve and print a `--grow` argv | non-strict loading of the parent into the child architecture (would need an exception to the strict-load mechanism); the gate on the learner's own device (a GPU need not reproduce itself bit for bit); building `trunk_ffn_by_kind` / `opp_intent_grad_mode` growth now (B-KFFN / B-INT, out of scope: declared and refused) | `growth_test.py` (toy 2 → 4 after one AdamW step: max \|Δ\| 0.0, 264,960 new parameters; compiled child = compiled parent 0.0, 2.4e-7 from eager), `grow_fork_test.py`, a CPU `--debug` parent + grow-fork smoke |

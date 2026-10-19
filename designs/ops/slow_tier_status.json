@@ -826,6 +826,14 @@
    "contention": 1.54,
    "detail": ""
   },
+  "src/agents/model/growth_test.py::test_under_compile_the_grown_toy_matches_the_parent_within_compile_noise": {
+   "status": "pass",
+   "commit": "a580afc7bd70917b03a4ba517ca198a1355e4003",
+   "at": "2026-10-19T21:56:14Z",
+   "duration_s": 64.85,
+   "contention": 2.87,
+   "detail": ""
+  },
   "src/agents/model/move_resolution_x5_test.py::test_debug_smoke_under_fixed_mass_with_the_family_on": {
    "status": "pass",
    "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",

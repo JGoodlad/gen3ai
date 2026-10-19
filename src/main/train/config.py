@@ -648,6 +648,17 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("hp_belief_mode", "composed")     # v53 STRUCTURAL (version-checked, fresh-only)
     _resolve("hp_type_belief_coef", 0.05)      # training-only (inherited like spread_belief_coef)
     _resolve("item_belief_coef", 0.05)         # training-only (inherited like hp_type_belief_coef)
+    # B-GROW (`main.train.grow_fork`, gen3_grow_fork_v1): a FORK's DECLARED growth (`--grow trunk_layers=4`) sets each
+    # grown field to the CHILD's value AFTER the sweep above inherited the parent's, so the child builds, version-checks
+    # (`check_compatible_grown`) and records the grown architecture. Whether it grows here (a fork) or is a no-op (a
+    # restart of a grown fork) is decided once the run dir is known (`grow_fork.enforce`, train_rl_agent).
+    from main.train.grow_fork import GrowForkRefused, apply_to_namespace, describe_declared
+    try:
+        _grown = apply_to_namespace(args, _saved_ver)
+    except GrowForkRefused as e:
+        parser.error(str(e))
+    if _grown:
+        emit(f"🌱 [GrowFork] declared growth: {describe_declared(_grown)} (the parent's value from its model_config.json)")
     # Friendly belief-resume notes (inheriting vs an explicit flip).
     if args.model and _saved_ver is not None:
         _sc = getattr(_saved_ver, "opp_belief_aux_coef", 0.0) or 0.0

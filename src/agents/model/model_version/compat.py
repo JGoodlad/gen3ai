@@ -13,7 +13,7 @@ to whichever module defines it -- so the move keeps that scan pointed at the rea
 from __future__ import annotations
 
 from dataclasses import asdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from agents.model.model_version.constants import ModelVersionError
 from agents.model.model_version.fields import ModelVersionFields
@@ -475,7 +475,8 @@ class ModelVersionCompatibility(ModelVersionFields):
                 f"trunk_layers mismatch: saved={saved.trunk_layers!r}, current={self.trunk_layers!r}.\n"
                 "The trunk's depth is fixed for a run's lifetime (each extra round is its own parameters).\n"
                 "Resume with the matching --trunk-layers setting (a flagless resume inherits it), or start a fresh "
-                "training run.")
+                "training run. A FORK that means to GROW the trunk declares it: --grow trunk_layers=N (B-GROW, "
+                "`agents.model.growth`: identity-init rounds, the parent's function bit for bit).")
         # gen3_probe_facts_v1 (v153): it builds a projection and adds a fact to every forward.
         if self.move_target_state != saved.move_target_state:
             raise ModelVersionError(
@@ -557,6 +558,19 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "projection widths), so toggling it is incompatible with a saved checkpoint.\n"
                 "Resume with the matching --damage-matrices setting, or start a fresh training run."
             )
+
+    def check_compatible_grown(self, saved: ModelVersion, growth: Any) -> None:
+        """`check_compatible` for a FORK that DECLARES growth (B-GROW, `gen3_grow_fork_v1`, `agents.model.growth`):
+        exactly the declared fields may differ from the parent's recorded config, each by the declared step
+        (``growth`` = ``{field: {"parent": p, "child": c}}``, the lineage stamp's ``fields`` block, validated by
+        `growth.validate_declared`); EVERY other field is gated exactly as `check_compatible` gates it. The parent's
+        parameters then load STRICTLY at the parent's own architecture and `growth.apply_growth` appends the new ones."""
+        from dataclasses import replace
+
+        from agents.model.growth import validate_declared
+
+        validate_declared(saved, self, growth)
+        self.check_compatible(replace(saved, **{f: getattr(self, f) for f in growth}))
 
     def check_opponent_snapshot_compatible(self, saved: ModelVersion) -> None:
         """`check_compatible` for an OPPONENT load of a snapshot (F-MEM, `gen3_opponent_inference_load_v1`):

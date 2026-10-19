@@ -10,7 +10,7 @@ positional order and `asdict()`'s key order -- so this block is a verbatim move.
 from __future__ import annotations   # field annotations stay STRINGS, as in the pre-split file
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -561,3 +561,12 @@ class ModelVersionFields:
     # lower one). RECORDED (which bar a run's gate judged by) and `_resolve`-inherited, so a launcher restart, a
     # flagless resume and a fork all keep the value a same-run resume once typed. A pre-v158 config migrates to None.
     canary_shift_max: Optional[float] = None
+    # ---- gen3_grow_fork_v1 (config v159) — THIS RUN'S DECLARED GROWTH AT ITS FORK (B-GROW) -------------------------
+    # PROVENANCE-only (the `arch_source` class): `--grow trunk_layers=N` on a fork records here what grew and how the
+    # child was proven to start as its parent's function — ``{"schema", "parent_model", "date", "fields": {field:
+    # {"parent", "child"}}, "optimizer", "function_check", "optimizer_state", "new_parameters"}``
+    # (`agents.model.growth`, `main.train.grow_fork`). Never read by the forward, a loss or an optimizer, never
+    # compared by check_compatible (the grown FIELDS themselves are, e.g. `trunk_layers`). A same-run restart keeps the
+    # recorded block; a plain fork of a grown run records None (its lineage names the grown ancestor). A pre-v159
+    # config migrates to None — no run grew before v159.
+    growth: Optional[Dict[str, Any]] = None

@@ -721,6 +721,13 @@ The concrete steps:
    it is `.contiguous()` (a no-op here). Without the pin, Inductor can lay the bias out head-innermost
    whenever the token count is a multiple of 8, and CUDA's efficient-attention kernel refuses that layout
    (`gen3_dense_attn_bias_v1`, F-ST-8). Values are unchanged.
+   **A FORK may GROW the depth** with `--grow trunk_layers=N` (B-GROW, `growth.py` + `main/train/grow_fork.py`,
+   `gen3_grow_fork_v1`, config v159): the parent loads STRICTLY at its own depth, the missing `IdentityInitRound`s are
+   appended in place (the same modules a fresh depth-N build constructs at those positions), its AdamW state carries
+   and the new parameters start with none, and the fork refuses to start unless the grown network's logits and values
+   are BIT-IDENTICAL to the parent's on 64 real rows (fresh CPU builds, fp32 eager; measured on the toy 2 → 4: max
+   |Δ| 0.0, +264,960 parameters). The seeded self-play pool is grown the same way. Detail:
+   [`model/versioning.md`](model/versioning.md) "Declared growth at a fork".
 10. **`CLSPool`** — three learned queries: `our_cls` over our 6 refined tokens, `their_cls` over
     theirs, `value_cls` over **all 12**. Also extracts `our_active_refined`.
 11. **`ProjectionAssembler`** → `pre_proj_norm`/`projection`/ReLU (policy), emitting `PROJECTION_DIM` =

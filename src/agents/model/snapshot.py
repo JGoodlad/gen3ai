@@ -913,6 +913,7 @@ def load_model_snapshot(
     allow_belief_grad_mode_change: bool = False,
     enforce_oracle_reveal: Optional[str] = None,
     oracle_reveal_fork: Optional[Dict[str, Any]] = None,
+    grow: Optional[Dict[str, Any]] = None,
 ) -> MaskablePPO:
     """Load a model with a compatibility check against the current architecture.
 
@@ -935,6 +936,12 @@ def load_model_snapshot(
                          for a run's lifetime. Left None on every other load (the roundtrip
                          smoke, the offline meters), where the value-loss coefficient is
                          irrelevant to the forward.
+        grow:            A FORK's DECLARED growth (B-GROW: the lineage stamp's ``fields`` block,
+                         ``{field: {"parent": p, "child": c}}``). The gate is then
+                         ``check_compatible_grown``: exactly those fields may differ, by exactly
+                         that step. The zip still loads STRICTLY at the PARENT's architecture
+                         (SB3 rebuilds from the zip's own policy_kwargs); the caller grows it
+                         (``agents.model.growth.apply_growth``) after the optimizer realignment.
 
     Raises:
         ModelVersionError:  If saved config is incompatible with current_version, or (when
@@ -946,7 +953,10 @@ def load_model_snapshot(
     arch_validated = False
     if os.path.exists(config_path):
         saved_version = ModelVersion.from_json_file(config_path)
-        current_version.check_compatible(saved_version)
+        if grow:
+            current_version.check_compatible_grown(saved_version, grow)
+        else:
+            current_version.check_compatible(saved_version)
         if enforce_vf_coef is not None:
             saved_version.check_vf_coef(enforce_vf_coef)
         if enforce_reward_config is not None:

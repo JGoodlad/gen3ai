@@ -290,6 +290,67 @@ and casts only τ back (`TAU_SOLVE_DTYPE`; `designs/endstate/design_x5_belief_to
   its saturated k = 1 rows a few 1e-3 nats differently at most. Whether an X35 FORK of X26 adopting T62 is the
   "same network" is an experiment-design question (the identity read in that directory), not a version question.
 
+## Declared growth at a fork (`--grow`, B-GROW, `gen3_grow_fork_v1`, config v159)
+
+A FORK may declare that named fields of its parent's network GROW — `--grow trunk_layers=4` — and start as the
+parent's FUNCTION, bit for bit. Model side: `agents/model/growth.py`; launch side: `main/train/grow_fork.py`. Design:
+[`../endstate/design_bot_ideas_screen.md`](../endstate/design_bot_ideas_screen.md) §4 (B-GROW), for X47 (toy depth
+2 → 4), X47b (production 3 → 4) and, once B-KFFN / B-INT land, X48 / X49.
+
+* **The growable fields** are ONE table, `growth.GROWABLE`. BUILT: `trunk_layers` (append
+  `trunk_depth.IdentityInitRound`s; `TRUNK_LAYERS_CHOICES` bounds the child, so 2 → 3 / 4 and 3 → 4 today). DECLARED,
+  NOT BUILT: `trunk_ffn_by_kind` (B-KFFN) and `opp_intent_grad_mode` (B-INT) — the parser refuses them naming the build.
+* **The flag** is fork-only: `--grow FIELD=VALUE`, VALUE the CHILD's; the PARENT's is read from the `--model`
+  checkpoint's `model_config.json`. `resolve_config` sets the field to the child value AFTER the inheritance sweep (so
+  the child builds, checks and records the grown architecture). Refused (exit 2): no `--model`, an unreadable parent
+  config, the field's own flag typed beside it (`--trunk-layers`), a shrink, a field named twice.
+* **The decision** (`grow_fork.decide`, at the moment the run dir is known — `train_rl_agent`, `main.checkargs`,
+  `--dry-run`): only a genuine FORK grows (`fork_lr.is_same_run_checkpoint`, the one predicate). A fork whose parent
+  already records the child value is MEANINGLESS (refused); a same-run resume NEVER grows (refused); a same-run RESTART
+  of a grown fork — the launcher re-launches the original argv, which still says `--grow` — is a no-op when the run's
+  OWN lineage block records the growth. Refusals at launch are `FATAL_CONFIG`.
+* **The gate on load** is `ModelVersion.check_compatible_grown(saved, fields)` (`compat.py`), reached through
+  `load_model_snapshot(..., grow=fields)`: `growth.validate_declared` (each declared field built, the saved config at the
+  declared parent value, the current version at the child value, the step a growth), then `check_compatible` with
+  exactly those fields set to the child's — every OTHER field is gated as on any load. `check_compatible` itself is
+  unchanged (the flag-registry scan reads its source); its `trunk_layers` refusal now names `--grow`.
+* **The load stays STRICT.** SB3 rebuilds the zip at the PARENT's architecture from its own pickled kwargs and loads
+  every key (`StrictCheckpointLoad` has no non-strict exception, and B-GROW adds none). `growth.apply_growth` then grows
+  the live model IN PLACE: the new rounds are `trunk_depth.build_extra_rounds(child)`'s modules at the new positions
+  (the same private seed a fresh child build uses), appended to `team_transformer.extra_rounds`; the extractor's,
+  the policy's and the algorithm's recorded `trunk_layers` follow, so every later save pickles the child's kwargs. The
+  grown state dict is EXACTLY a fresh child build's: the same keys, in the same order, the same shapes (tested).
+* **THE OPTIMIZER RULE (F-BI-3, established here).** A fork carries the parent's WHOLE policy optimizer: SB3 loads
+  `policy.optimizer.pth` and `checkpoint_state._validate_or_reset_optimizer_state` realigns every AdamW entry
+  (`exp_avg`, `exp_avg_sq`, `step`) BY NAME, with the param group (the LR the parent's controller had reached included;
+  `--fork-lr` pins it). Growth runs after that realignment: `growth.regrow_optimizer` builds a new optimizer of the
+  same class over the policy's parameters in module order (a fresh child's order), copies every param-group key, and
+  carries each PARENT parameter's state object unchanged; a NEW parameter has NO state, so AdamW zero-initialises its
+  moments at its first step, with its own step count (its own bias correction). The ride-along heads keep their own
+  optimizers (re-acquired on every load, as always).
+* **THE FORK-TIME GATE.** `apply_growth` evaluates the parent and the grown child on the 64 REAL rows of the
+  compile-parity fixture (`compile_parity_obs.npz`, reproducible Rust-core battles; a stale fixture is its typed
+  refusal) on FRESH CPU builds — the parent's kwargs, then the child's, each loaded STRICTLY with the live weights —
+  fp32, eager, and refuses (`GrowthError`, a `ModelVersionError`: `FATAL_CONFIG`) unless every action logit and value is
+  BIT-IDENTICAL. CPU is what makes bit-identity deterministic on a CUDA learner. Measured on the toy (2 → 4, after one
+  AdamW step): max |Δ| 0.0 for logits and values; 24 new tensors, 264,960 parameters; under CPU Inductor the compiled
+  child equals the compiled parent (max |Δ| 0.0) and sits 2.4e-7 from the eager parent (`growth_test.py`, slow).
+* **The seeded pool.** A fork's self-play pool is seeded from its parent's, at the PARENT's architecture, and a pool is
+  single-architecture (its write-once arch record; the inference service's slot groups). `grow_fork.grow_seeded_pool`
+  (in `train_rl_agent`, after the pool is seeded and before it is constructed) grows each snapshot the same way (a strict
+  load at the record's version, `apply_growth` with its gate, an atomic replace) and then rewrites the record as the
+  child's version JSON — byte-identical to what `SnapshotPool._record_arch` compares. A relaunch that died mid-pool skips
+  the snapshots already grown; `pool_seed.json` gains a `grown` block.
+* **The records.** The stamp — `{schema, date, parent_model, fields: {f: {parent, child}}, optimizer}` plus the gate's
+  `function_check`, `optimizer_state` counts and `new_parameters` — is the `grow` key of the child's IMMUTABLE
+  `metadata.json` lineage block (`run_io._run_lineage`) and the `growth` field of its `model_config.json`
+  (`ModelVersion.growth`, config v159, PROVENANCE-only like `arch_source`: never compared, a run-record-only key for the
+  baselines mirror). A same-run restart keeps the recorded `growth`; a plain fork of a grown run records None (its
+  lineage names the grown ancestor).
+* **What the dry-run tools can and cannot say.** `main.checkargs` and `main.launcher --dry-run` run the trainer's own
+  namespace step and `decide`, print the declared growth (`trunk_layers 2 -> 4`), and refuse what the launch refuses.
+  The fork-time gate and the pool's growth are CHILD-ONLY (they need torch and the weights) and are listed as such.
+
 ## The LEGACY + JUDGMENT DELETION's refusal rule (`model_version/adopted_levers.py`, U0 2026-10-15)
 
 The end state's adoption (2026-10-12) leaves every lever of the `--arch endstate` overlay with ONE value; the units

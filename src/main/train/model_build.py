@@ -233,6 +233,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         # is a fork this load accepts.
         current_version, _load_layout, _load_policy_kwargs = resume_version_build(
             args, mappings=mappings, reward_config=reward_config)
+        _grow_stamp = getattr(args, "_grow_fork", None)   # B-GROW: the declared growth (`main.train.grow_fork`)
 
         print(f"Loading existing model from {model_path}")
         try:
@@ -248,6 +249,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                 enforce_oracle_reveal=args.oracle_reveal,  # FATAL if the observation mode drifts (v137)
                 # ... unless a DIAGNOSTIC-FORK consent decided this fork's change (`main.train.diagnostic_fork`)
                 oracle_reveal_fork=getattr(args, "_diagnostic_fork", None),
+                # ... and a declared GROWTH lets exactly its fields differ (`check_compatible_grown`)
+                grow=_grow_stamp["fields"] if _grow_stamp else None,
             )
             # gen3_belief_grad_mode_v1 MIGRATION FIX: SB3 reconstructs the extractor from the ZIP's
             # saved policy_kwargs, so the requested mode must be APPLIED to the live extractor
@@ -270,6 +273,25 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         # gen3_nature_ev_belief_v1 SpreadBelief crash) — is corrected instead of scrambled. Before any
         # LR read. model_path is the resolved checkpoint zip used for the load just above.
         _validate_or_reset_optimizer_state(model, model_path)
+        if _grow_stamp:
+            # B-GROW (`agents.model.growth.apply_growth`): AFTER the by-name optimizer realignment, so the parent's
+            # state is first aligned exactly as on any fork, then carried; the new parameters start with none. The
+            # gate refuses unless the grown network is the parent's function BIT FOR BIT on real rows (CPU fp32).
+            import dataclasses as _dc
+            from agents.model.growth import apply_growth
+            try:
+                _grow_stamp.update(apply_growth(model, _grow_stamp["fields"]))
+            except ModelVersionError as e:
+                print(f"\n[ModelVersion] FATAL: {e}")
+                sys.stdout.flush()
+                os._exit(int(TrainExitCode.FATAL_CONFIG))
+            current_version = _dc.replace(current_version, growth=dict(_grow_stamp))
+            _fc, _os_ = _grow_stamp["function_check"], _grow_stamp["optimizer_state"]
+            print(f"🌱 [GrowFork] grown: {_grow_stamp['new_parameters']['tensors']} new tensors "
+                  f"({_grow_stamp['new_parameters']['elements']:,} parameters); optimizer state carried for "
+                  f"{_os_['carried']}, fresh for {_os_['fresh']}; the parent's function BIT FOR BIT on "
+                  f"{_fc['rows']} real rows (fp32 eager CPU, max |d logits| {_fc['max_abs_d_logits']:g}, "
+                  f"max |d value| {_fc['max_abs_d_value']:g})", flush=True)
         model.ent_coef = args.ent_coef          # resume-only: the fresh path passes it to the ctor
         # Every training-only hparam, from the one table shared with the fresh path below.
         apply_training_hparams(model, args, mappings=mappings)

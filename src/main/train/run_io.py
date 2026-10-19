@@ -110,6 +110,10 @@ def _run_lineage(args, model_dir: str, *, model_path, fork_step) -> "dict | None
         # THE DIAGNOSTIC-FORK CONSENT (`main.train.diagnostic_fork`): a sibling key of the immutable block, written
         # once at fork creation — the parent's spec, the child's, the reason, the date.
         block["diagnostic_fork"] = dict(args._diagnostic_fork)
+    if block is not None and getattr(args, "_grow_fork", None):
+        # B-GROW (`main.train.grow_fork`): the fork's DECLARED growth — the fields (parent -> child), the optimizer rule,
+        # and the fork-time gate's report (`agents.model.growth.apply_growth` ran before this block is built).
+        block["grow"] = dict(args._grow_fork)
     if block is not None:
         from agents.training.pool_seed import pool_dir_for, read_seed_record
         record = read_seed_record(pool_dir_for(model_dir))

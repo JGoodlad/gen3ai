@@ -14942,3 +14942,38 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   `research_state/measurements/x14_overlap_2026-10-19/`. Docs: `designs/training/rust_collector.md` "Overlap (X14)",
   `learner_gates.md`, `ppo_step.md`, `design_compute_efficiency.md` §1.6 + Decision record, `EXPERIMENT_BACKLOG.md` X14,
   `flag_census.md`.
+## 2026-10-19 — B-GROW: `--grow FIELD=VALUE`, a FORK's DECLARED, FUNCTION-PRESERVING growth (`gen3_grow_fork_v1`; config v159, one provenance field; no ARCH_SIGNATURE / MIGRATION_FLOOR / obs change)
+
+- **Why.** `designs/endstate/design_bot_ideas_screen.md` §4: X47 grows the toy's trunk 2 → 4 at its plateau checkpoint
+  (and X47b production 3 → 4). Before this a fork typing `--trunk-layers 4` passed `checkargs` and died at the child's
+  load (`ModelVersionError: trunk_layers mismatch`, F-BI-2).
+- **What.** `--grow trunk_layers=N` (repeatable `FIELD=VALUE`, fork-only; `trunk_ffn_by_kind` / `opp_intent_grad_mode`
+  are declared growable but refused until B-KFFN / B-INT). `agents/model/growth.py`: the growable table, the loader's
+  half (`ModelVersion.check_compatible_grown`: exactly the declared fields differ, by the declared step), the in-place
+  growth (`IdentityInitRound`s appended — the modules a fresh depth-N build constructs there), the optimizer rule and
+  the fork-time gate. `main/train/grow_fork.py`: the flag, the namespace step in `resolve_config` (the child value after
+  the inheritance sweep), the decision (a genuine fork stamps; a same-run resume never grows; a fork that grows nothing
+  is refused; a same-run restart of a grown fork is a no-op), the records, and the seeded pool's growth. The trunk
+  depth's `check_compatible` refusal now names `--grow`.
+- **The optimizer rule (F-BI-3).** A fork carries the parent's whole AdamW state, realigned BY NAME
+  (`_validate_or_reset_optimizer_state`), param group and LR included. Growth then rebuilds the optimizer over the
+  grown policy in module order, carries every parent parameter's state object unchanged, and gives the new parameters
+  none (AdamW zero-initialises their moments and their own step at their first update).
+- **The gate.** The parent and the grown child on the 64 real rows of `compile_parity_obs.npz`, on fresh CPU builds
+  (fp32 eager, each loaded strictly with the live weights): every logit and value BIT-IDENTICAL, else `FATAL_CONFIG`.
+  Toy 2 → 4 after one AdamW step: max |Δ| 0.0; 24 new tensors, 264,960 parameters; under CPU Inductor compiled child =
+  compiled parent (0.0), 2.4e-7 from eager.
+- **The pool.** The seeded parent pool (parent-architecture snapshots; a pool is single-architecture) is grown the same
+  way at the child's start, and its arch record becomes the child's version.
+- **Records.** The lineage block's `grow` stamp (fields, parent, optimizer rule, gate report) and `model_config.json`'s
+  `growth` (config v159, provenance only like `arch_source`; a pre-v159 config migrates to None; a run-record-only key
+  for the baselines mirror). `main.checkargs` and `main.launcher --dry-run` print the declared growth.
+- **Tests.** `src/agents/model/growth_test.py` (bit-identity on the live policy and the gate; the grown state dict is a
+  fresh depth-4 build's, keys in order; the optimizer rule by object identity and one more step; the gate refuses a
+  non-identity init; refusals; `check_compatible_grown`; slow: the compiled child within compile noise).
+  `src/main/train/grow_fork_test.py` (parser; resolution; refusals; decide / enforce / a restart; the
+  lineage block; checkargs; the dry run; end to end: the trainee loader sequence and a strict reload of the grown save;
+  the seeded pool grown and played through `load_opponent_snapshot`).
+- **Docs.** `designs/model/versioning.md` "Declared growth at a fork"; `ARCHITECTURE.md` §2.1 step 9;
+  `design_bot_ideas_screen.md` (status, F-BI-3, decision row); `TASK_BACKLOG.md` B-GROW;
+  `designs/ops/flag_census.md`; `designs/ops/training_runbook.md`; the training leaf's table.

@@ -605,7 +605,12 @@ from typing import Any, Dict
 #   so a code change cannot reach it; readiness F28); it can never lower it. Never read by the forward, a loss or an
 #   optimizer, never compared by check_compatible; RECORDED and `_resolve`-inherited. A pre-v158 config migrates to None.
 #   No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 158
+# v159 (gen3_grow_fork_v1, B-GROW): one PROVENANCE-only field, `growth` (Optional dict): a FORK that declared growth
+#   (`--grow trunk_layers=N`, `agents.model.growth` / `main.train.grow_fork`) records what grew, the parent, the optimizer
+#   rule and the fork-time function check; a same-run restart keeps it; None otherwise. Never compared by
+#   check_compatible (the grown fields are; a declared growth passes `check_compatible_grown`). A pre-v159 config
+#   migrates to None. No ARCH_SIGNATURE bump (the forward and every module are unchanged), no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 159
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every

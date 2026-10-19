@@ -557,6 +557,11 @@ def _migrate_config(data: dict) -> dict:
     if version < 158:
         data.setdefault("canary_shift_max", None)
         data["config_version"] = 158
+    # v159 (gen3_grow_fork_v1, B-GROW) — the run's DECLARED GROWTH at its fork, provenance only: no run grew before
+    # v159, so every earlier config records None.
+    if version < 159:
+        data.setdefault("growth", None)
+        data["config_version"] = 159
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

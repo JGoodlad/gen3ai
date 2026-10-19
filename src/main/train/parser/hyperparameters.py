@@ -91,6 +91,19 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                              "resume like --batch-size.")
     parser.add_argument("--n-epochs", type=int, default=5, help="PPO optimization epochs")
     parser.add_argument("--lr", type=float, default=3e-4, help="Initial learning rate (AdaptiveLRCallback adjusts from here)")
+    from main.train.grow_fork import grow_spec as _grow_spec
+    parser.add_argument("--grow", dest="grow", type=_grow_spec, action="append", default=None,
+                        metavar="FIELD=VALUE",
+                        help="FORK-ONLY (B-GROW, gen3_grow_fork_v1): DECLARE a function-preserving growth of the "
+                             "parent's network — VALUE is the child's, the parent's is read from the --model "
+                             "checkpoint's model_config.json. Built today: trunk_layers (e.g. --grow trunk_layers=4 "
+                             "appends identity-init trunk rounds; the child is the parent's function bit for bit at "
+                             "the fork, proven on real rows before training). The parent's weights load strictly, "
+                             "its optimizer state carries, the new parameters start with fresh Adam moments; the "
+                             "seeded self-play pool grows the same way. Recorded in the lineage block (grow) and "
+                             "model_config.json (growth). Refused on a fresh run, a same-run resume, a shrink, or "
+                             "beside the field's own flag. trunk_ffn_by_kind / opp_intent_grad_mode are declared "
+                             "but not built (B-KFFN / B-INT). See agents.model.growth.")
     parser.add_argument("--fork-lr", "--fork_lr", dest="fork_lr", type=float, default=None,
                         help="RESUME-ONLY: pin the step size of a FORK. On a resume the optimizer's "
                              "saved LR wins and --lr is INERT, so a fork silently "

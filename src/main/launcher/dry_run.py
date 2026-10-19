@@ -82,6 +82,8 @@ REPORTED_DESTS = (
 #: Lines the dry run structurally cannot compute: each needs torch, a built model, or a spawned
 #: child. Printed as gaps rather than guessed at.
 CHILD_ONLY = (
+    "a declared growth's fork-time gate (--grow: the grown network's logits + values bit-identical to the parent's on "
+    "real rows) and the seeded pool's growth",
     "the ModelVersion round-trip smoke test",
     "the resolved --compile-trainer / --compile-opponents decisions (they read the device)",
     "self-play pool SEEDING from a fork parent (agents.training.pool_seed runs in the child)",
@@ -382,6 +384,30 @@ def dry_run(
         from main.train.rust_env_setup import behaviour_check_line
         out(f"  K9(b) check : {behaviour_check_line(ns)}")
 
+    # 6c. B-GROW, THE DECLARED GROWTH — `main.train.grow_fork`, the trainer's own namespace step (already applied by
+    #     `resolve_against_parent`) and its own `decide`, over the resolved namespace and run dir.
+    grow_refusal = None
+    if ns is not None and getattr(ns, "grow", None):
+        from main.train import grow_fork as GF
+        grow_refusal = resolution.get("grow_refusal")
+        grown = getattr(ns, "_grow_declared", None) or {}
+        stamp = None
+        if grow_refusal is None:
+            try:
+                stamp = GF.decide(grown=grown, model_path=model_path, model_dir=run_dir)
+            except GF.GrowForkRefused as e:
+                grow_refusal = str(e)
+        if grow_refusal is not None:
+            out(f"  ✗ REFUSED (--grow): {grow_refusal}")
+        elif stamp is None:
+            out("  grow        : a RESTART of a grown fork (its lineage records the growth) — no-op")
+        else:
+            out(f"  grow        : DECLARED {GF.describe_declared(grown)} (parent from its model_config.json) — the "
+                "parent loads strictly, identity-init parameters are appended, its AdamW state carries, new "
+                "parameters start fresh")
+            for line in GF.pool_lines(stamp, self_play=bool(getattr(ns, "self_play", False))):
+                out(f"                {line}")
+
     # 7. Pool drift, when there is a directory to look in.
     if exists:
         pool = _pool_line(run_dir, child_args)
@@ -524,6 +550,8 @@ def dry_run(
     if desktop.refused and not _dg_advisory:      # printed at 7d
         failed = True
     if disk.refused:                              # printed at 7e
+        failed = True
+    if grow_refusal is not None and not (pinned is not None and pinned.available):   # printed at 6c
         failed = True
     if deps.refused:                              # printed at 7f
         failed = True

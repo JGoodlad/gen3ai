@@ -995,6 +995,9 @@ _RUN_RECORD_ONLY_KEYS = frozenset({
     # the compile gate's / canary's CHECK-ONLY margin input (config v158, T37): a per-run record (None = the code's
     # constant) that a same-run resume may raise; the mirror never carries it
     "canary_shift_max",
+    # this run's DECLARED GROWTH at its fork (config v159, B-GROW): provenance of how the run's network was grown
+    # from its parent; a production mirror never carries it
+    "growth",
 })
 
 

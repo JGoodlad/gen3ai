@@ -25,6 +25,7 @@ commit as the code.
 | the value sidecar | `designs/training/value_sidecar.md` |
 | a supervised belief loss | `designs/training/belief_losses.md` |
 | the recipe surface, gradient accumulation, the noise scale, the dose, `--fork-lr` | `designs/training/step_size_and_batch.md` |
+| a fork that GROWS the network (`--grow trunk_layers=N`: identity-init growth, the optimizer rule, the fork-time gate) | `designs/model/versioning.md` "Declared growth at a fork" |
 | the `MatchupSpec`, which file a run spec names, lineage, TB inheritance | `designs/training/matchup_and_lineage.md` |
 | TensorBoard: the census, the currencies, the WIN-PROB dashboard, capacity telemetry | `designs/training/telemetry_scalars.md` |
 | a supply guard (`FATAL_SUPPLY`) | `designs/training/supply_guards.md` |
