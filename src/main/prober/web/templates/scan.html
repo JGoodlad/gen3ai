@@ -9,6 +9,8 @@
   globally. Model-free: this reads the recorded critic values, it does not re-run a checkpoint.
   <code>value_drop</code> ranks by the most negative ΔV(s→s′); <code>td_residual</code> by the
   most negative critic surprise δ = r + γV(s′) − V(s).
+  It reads the <strong>newest eval step</strong> holding a matching battle unless you pick another; a read that would replay
+  more than {{ "{:,}".format(cap) }} battles is refused here and named as a shell command instead.
 </p>
 
 <section class="card">
@@ -24,7 +26,7 @@
       <select name="opponent">{{ m.opponent_options(opponents) }}</select>
     </label>
     <label>step
-      <select name="step">{{ m.step_options(summary) }}</select>
+      <select name="step">{{ m.step_options(summary, newest_default=True) }}</select>
     </label>
     <label>metric
       <select name="metric">
@@ -35,7 +37,7 @@
     <label>limit
       <select name="limit"><option>25</option><option>50</option><option>100</option></select>
     </label>
-    <span id="scan-busy" class="htmx-indicator muted">scanning every battle…</span>
+    <span id="scan-busy" class="htmx-indicator muted">scanning…</span>
   </form>
 </section>
 
@@ -45,7 +47,7 @@
   <div id="scan">
     <p class="empty">
       <span class="spinner" style="display:inline-block;vertical-align:-1px"></span>
-      Reading the recorded critic values for every captured battle — a second or two.
+      Reading the recorded critic values for the newest eval step — a few seconds.
     </p>
   </div>
 </section>

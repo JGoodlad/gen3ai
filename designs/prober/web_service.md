@@ -213,6 +213,28 @@ normally trains.
 an async one *on the event loop*; the read-only session calls do real file IO (every trace's npz), so
 making them async would let a slow `scan` stall a poll.
 
+## 6b. Run-level reads are BOUNDED (`_MAX_EXPANDED_BATTLES`, `_HEAVY_READ_SLOTS`)
+
+`scan` and `triage` are model-free and anonymous, but on a Rust-eval run each battle they read is a
+core-trace EXPANSION (a replay, ~0.1-0.2 s, ~334 KB). Measured on `rb_x26_s2601` (41,345 traces,
+2026-10-19): a run-wide `/scan` with `td_residual`, or `/api/scan` with no limit, replayed every trace in
+the request thread — hours of the training box's CPU for one anonymous GET. The smallest safe change, not
+a job system:
+
+- **The step defaults to the newest** eval step holding a battle that passes the filters (as `triage`
+  already did for losses). Every step is explicit: `all_steps=true` on `/api/scan`, `step=all` on
+  `/partials/scan` (the page's "all steps" option; its empty option is "newest step").
+- **A per-request cap**, `ProbeSession.scan(..., max_expand=)`: a call that would expand more than
+  `_MAX_EXPANDED_BATTLES` (256) battles raises `ScanTooBroad` BEFORE the first expansion, naming the
+  `python -m main.prober.query scan …` command, which has no cap (400 on `/api`, an error fragment on the
+  page). 256 sits above one step's whole trace set (≤ 221 on X26), so a one-step read is never refused,
+  and below the summary LRU (512), so its expansions stay cached: a request costs at most ~50 s of a core.
+  A `value_drop` scan with a `limit` ranks from stored values and expands only its rows (plus any battle
+  with no recorded decision count), so it is judged on that count.
+- **A concurrency bound**, `_HEAVY_READ_SLOTS` (2): the cap bounds one request, not a burst, so every
+  such read runs under `heavy(...)`, a non-blocking semaphore; a read past the slots is told the server is
+  busy (503 / an error fragment), never queued.
+
 ## 7. Which sim the probes spawn (one engine)
 
 `falsify_scan` and `calibration` re-roll turns through the offline replay/search driver, which is the

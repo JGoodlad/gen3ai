@@ -37,7 +37,10 @@ python -m main.prober.web --check-openapi    # exit 1 if openapi.json is stale; 
 6. A model-view failure renders the `ArchDriftError` diagnosis on first paint, instead of a loader or a
    password prompt (JSON: 400 `{error, kind, plain}`), and the `obs_mismatch` and `model_resolution.dropped_kwargs` banners are never dropped.
 7. **Long work never runs in a request**: `falsify_scan`, `calibration` and the counterfactual tier go
-   through `jobs.py`. Handlers are `def`, not `async def` (the session does blocking file IO).
+   through `jobs.py`. Handlers are `def`, not `async def` (the session does blocking file IO). A run-level
+   read that EXPANDS battles (`scan`, `triage`; a core-trace replay each) defaults to the newest step, passes
+   `max_expand=_MAX_EXPANDED_BATTLES` (past it: refused, naming the CLI) and runs under `heavy(...)`
+   (`_HEAVY_READ_SLOTS` at once, else busy) — `designs/prober/web_service.md` §6b.
 8. `/game` and `/analyze` are plain GETs that work with JavaScript off; the model half is an HTMX
    fragment. A run with no traces is an empty state, not a 404. The information perspective is applied
    only through `engine/perspective.shown` via the `fv` macro (`perspective_guard_test.py`).

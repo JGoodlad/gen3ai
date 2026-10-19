@@ -87,9 +87,63 @@ def test_api_battles_rejects_a_bogus_outcome(client):
 
 def test_api_scan_matches_the_session_and_honours_the_metric(client, run):
     sess = ProbeSession(run)
-    assert client.get("/api/scan", params={"outcome": "loss"}).json() == sess.scan(outcome="loss")
-    by_td = client.get("/api/scan", params={"outcome": "loss", "metric": "td_residual"}).json()
+    newest_loss = max(b["step"] for b in sess.battles(outcome="loss"))
+    assert client.get("/api/scan", params={"outcome": "loss"}).json() == \
+        sess.scan(outcome="loss", step=newest_loss)
+    every = client.get("/api/scan", params={"outcome": "loss", "all_steps": "true"}).json()
+    assert every == sess.scan(outcome="loss")
+    assert {r["step"] for r in every} != {newest_loss}, "the fixture must have losses at two steps"
+    by_td = client.get("/api/scan", params={"outcome": "loss", "metric": "td_residual",
+                                            "all_steps": "true"}).json()
     assert by_td == sess.scan(outcome="loss", metric="td_residual")
+    assert client.get("/api/scan", params={"step": newest_loss, "all_steps": "true"}).status_code == 400
+
+
+def test_a_scan_broader_than_the_cap_is_refused_not_replayed(client, run, monkeypatch):
+    """REGRESSION (audit 2026-10-19): run-wide `/scan` with `td_residual`, and `/api/scan` with no
+    limit, replayed every matching battle in the PUBLIC service's request thread — hours of the
+    training box's CPU for one anonymous GET on rb_x26_s2601. Past `_MAX_EXPANDED_BATTLES` a request
+    is REFUSED before any expansion (400 / an error fragment) and names the CLI to run it from."""
+    import main.prober.session.core as core_mod
+    import main.prober.web.app as app_mod
+    monkeypatch.setattr(app_mod, "_MAX_EXPANDED_BATTLES", 1)
+    expanded = []
+    monkeypatch.setattr(core_mod, "load_summary", lambda path, **kw: expanded.append(path))
+    r = client.get("/api/scan", params={"metric": "td_residual", "all_steps": "true"})
+    assert r.status_code == 400 and "python -m main.prober.query scan" in r.json()["error"]
+    body = client.get("/partials/scan", params={"step": "all", "metric": "td_residual"}).text
+    assert "ScanTooBroad" in body and "python -m main.prober.query scan" in body
+    assert client.get("/api/scan", params={"all_steps": "true"}).status_code == 400   # no limit
+    assert expanded == [], "a refused scan must not expand a single battle"
+
+
+def test_the_scan_fragment_defaults_to_the_newest_step_and_all_is_explicit(client, run):
+    sess = ProbeSession(run)
+    newest_loss = max(b["step"] for b in sess.battles(outcome="loss"))
+    older = [r for r in sess.scan(outcome="loss") if r["step"] != newest_loss]
+    assert older, "the fixture must have a loss at an older step"
+    for params in ({"outcome": "loss"}, {"outcome": "loss", "step": ""}):
+        body = client.get("/partials/scan", params=params).text
+        assert older[0]["short_id"] not in body
+    assert older[0]["short_id"] in client.get(
+        "/partials/scan", params={"outcome": "loss", "step": "all"}).text
+    page = client.get("/scan").text
+    assert '<option value="">newest step</option>' in page and '<option value="all">all steps</option>' in page
+
+
+def test_heavy_reads_beyond_the_slots_are_told_busy(client):
+    _the_session(client)
+    sem = client.app_state.heavy_reads
+    held = 0
+    while sem.acquire(blocking=False):
+        held += 1
+    try:
+        assert client.get("/api/scan").status_code == 503
+        assert "busy" in client.get("/partials/scan").text
+    finally:
+        for _ in range(held):
+            sem.release()
+    assert client.get("/api/scan").status_code == 200
 
 
 def test_api_triage_matches_the_session(client, run):
@@ -257,7 +311,7 @@ def test_the_api_stays_strict_where_the_fragments_are_lenient(client):
 
 
 def test_scan_fragment_carries_the_table_and_its_chart(client, run):
-    body = client.get("/partials/scan", params={"outcome": "loss"}).text
+    body = client.get("/partials/scan", params={"outcome": "loss", "step": "all"}).text
     worst = ProbeSession(run).scan(outcome="loss")[0]
     assert worst["short_id"] in body
     assert worst["worst"]["chosen"] in body
@@ -721,7 +775,7 @@ def test_scan_stays_async_but_says_what_it_is_doing(client):
     reader nothing about why."""
     html = client.get("/scan").text
     assert "<table" not in html, "scan should not block the first paint"
-    assert "every captured battle" in html, "the waiting state must explain the wait"
+    assert "the newest eval step" in html, "the waiting state must explain the wait"
 
 
 def test_a_scan_row_can_be_taken_onward(client):

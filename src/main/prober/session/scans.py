@@ -20,6 +20,21 @@ from main.prober.session.serialize import _active_str, _r, _short_id
 from main.prober.session.stats import _loop_aggregate
 
 
+class ScanTooBroad(ValueError):
+    """A run-level read would EXPAND (core-trace replay, ~0.1-0.2 s each on rb_x26_s2601) more battles than
+    the caller's ``max_expand`` allows. Refused BEFORE any expansion; the message names the count, the cap
+    and the CLI to run it from. The web service passes its cap (``web/app._MAX_EXPANDED_BATTLES``); the CLI
+    passes none."""
+
+    def __init__(self, what: str, n: int, cap: int, cli: str) -> None:
+        super().__init__(
+            f"{what} would expand {n:,} battles (a core-trace replay each, ~0.1-0.2 s) — over this "
+            f"server's cap of {cap:,} per request. Narrow it (one step, an opponent, an outcome; a "
+            f"value_drop scan with a limit of at most {cap:,} reads only stored values), or run it from a "
+            f"shell, where there is no cap: {cli}")
+        self.n, self.cap = n, cap
+
+
 class _ScansMixin:
     def loops(self, *, outcome: "str | None" = None, opponent: "str | None" = None,
               step: "int | None" = None, max_battles: "int | None" = None,
@@ -125,7 +140,7 @@ class _ScansMixin:
 
     def scan(self, *, outcome: "str | None" = None, opponent: "str | None" = None,
              step: "int | None" = None, limit: "int | None" = None,
-             metric: str = "value_drop") -> "list[dict]":
+             metric: str = "value_drop", max_expand: "int | None" = None) -> "list[dict]":
         """Cross-battle, MODEL-FREE turning-point scan. For every matching battle,
         find its single worst decision and return them **ranked globally** — the
         one-call version of "list losses → overview each → rank by the biggest
@@ -137,6 +152,11 @@ class _ScansMixin:
         across a whole run. Each row is ``{id, short_id, opponent, step, outcome,
         turns, worst:{inv, turn, phase, chosen, our_active, opp_active, delta_v,
         td_residual, reward_total, events, flags}}``.
+
+        ``max_expand`` bounds how many battles the call may EXPAND (a core-trace replay each); a call
+        that would expand more raises `ScanTooBroad` before expanding any. ``None`` (the CLI) is
+        unbounded. A ``value_drop`` scan with a ``limit`` expands only the rows it returns (plus any
+        battle with no recorded decision count); every other scan expands every matching battle.
         """
         if metric not in ("value_drop", "td_residual"):
             raise ValueError(f"metric must be 'value_drop' or 'td_residual', got {metric!r}")
@@ -144,8 +164,11 @@ class _ScansMixin:
                    if not (outcome and b.outcome != outcome)
                    and not (opponent and b.opponent != opponent)
                    and not (step is not None and b.step != step)]
+        cli = self._scan_cli(outcome=outcome, opponent=opponent, step=step, limit=limit, metric=metric)
         if metric == "value_drop" and limit:
-            return self._scan_value_drop_top(battles, limit)
+            return self._scan_value_drop_top(battles, limit, max_expand=max_expand, cli=cli)
+        if max_expand is not None and len(battles) > max_expand:
+            raise ScanTooBroad(f"this {metric} scan", len(battles), max_expand, cli)
         rows = []
         for b in battles:
             tp = self._worst_turning_point(b, metric)
@@ -155,7 +178,13 @@ class _ScansMixin:
         rows.sort(key=lambda r: (r["worst"][key] if r["worst"][key] is not None else float("inf")))
         return rows[:limit] if limit else rows
 
-    def _scan_value_drop_top(self, battles: "list[BattleTrace]", limit: int) -> "list[dict]":
+    def _scan_cli(self, **kw) -> str:
+        """The shell command that runs the same scan with no cap (named in `ScanTooBroad`)."""
+        flags = "".join(f" --{k} {v}" for k, v in kw.items() if v is not None and v != "")
+        return f"python -m main.prober.query scan {self.run_dir or '<run_dir>'}{flags}"
+
+    def _scan_value_drop_top(self, battles: "list[BattleTrace]", limit: int, *,
+                             max_expand: "int | None" = None, cli: str = "") -> "list[dict]":
         """`scan(metric="value_drop", limit=N)` without expanding every battle.
 
         A battle's worst ΔV needs only its recorded `values` and its decision COUNT — both on disk
@@ -165,10 +194,19 @@ class _ScansMixin:
         expansion is ~0.1-0.2 s, so the full path was hours for a run-wide `/scan`; this reads two
         small files per battle. The rows, and their order, are exactly the full path's: the same
         stable sort on the same ΔV, then the same `_worst_turning_point` builds each row."""
-        ranked = []
-        for order, b in enumerate(battles):
+        counts = []
+        for b in battles:
             n = (self._meta(b) or {}).get("invocations")
-            if not isinstance(n, int) or isinstance(n, bool):
+            counts.append(n if isinstance(n, int) and not isinstance(n, bool) else None)
+        if max_expand is not None:
+            # Every battle with no recorded count is ranked the full way; of the rest only `limit` expand.
+            n_uncounted = sum(1 for n in counts if n is None)
+            would = n_uncounted + min(limit, len(battles) - n_uncounted)
+            if would > max_expand:
+                raise ScanTooBroad("this value_drop scan", would, max_expand, cli)
+        ranked = []
+        for order, (b, n) in enumerate(zip(battles, counts)):
+            if n is None:
                 # No recorded decision count: rank it the full way (a stored trace, not a replay).
                 tp = self._worst_turning_point(b, "value_drop")
                 if tp is not None:

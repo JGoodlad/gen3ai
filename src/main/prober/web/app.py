@@ -201,6 +201,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     # in the picker.
     app.state.sessions = OrderedDict()            # resolved run path -> ProbeSession
     app.state.session_lock = threading.Lock()
+    app.state.heavy_reads = threading.BoundedSemaphore(_HEAVY_READ_SLOTS)   # see _HEAVY_READ_SLOTS
     app.state.jobs = JobRegistry(max_workers=max_job_workers)
     app.mount("/static", StaticFiles(directory=_STATIC), name="static")
     templates = Jinja2Templates(directory=_TEMPLATES)
@@ -339,6 +340,25 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     def fragment(request: Request, template: str, **ctx) -> HTMLResponse:
         return templates.TemplateResponse(request=request, name=template, context=ctx)
 
+    def heavy(fn):
+        """Run a run-level read that may expand battles, holding one of `_HEAVY_READ_SLOTS`."""
+        if not app.state.heavy_reads.acquire(blocking=False):
+            raise ProberBusy("the prober is busy with other run-level reads; retry in a minute")
+        try:
+            return fn()
+        finally:
+            app.state.heavy_reads.release()
+
+    def heavy_api(fn):
+        """`heavy` for a JSON route: a refusal is a typed status, not a 500."""
+        from main.prober.session.scans import ScanTooBroad
+        try:
+            return heavy(fn)
+        except ScanTooBroad as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except ProberBusy as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
     def guarded(fn):
         """Run a session call, turning its failure into a rendered message rather than a 500.
 
@@ -418,18 +438,26 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         except Exception as exc:                  # noqa: BLE001 — see model_http_error: a typed 400, not a 500
             raise model_http_error(exc) from exc
 
-    @app.get("/api/scan", tags=["read-only"], response_model=list,
+    @app.get("/api/scan", tags=["read-only"], response_model=list, responses=_HEAVY_READ_RESPONSES,
              summary="ProbeSession.scan() — each battle's worst turning point, ranked (model-free)")
     def api_scan(
         run: "str | None" = Query(None),
         outcome: "str | None" = Query(None, pattern=_OUTCOME_PATTERN),
         opponent: "str | None" = Query(None),
-        step: "int | None" = Query(None),
+        step: "int | None" = Query(None, description="eval step; default = the newest step holding a "
+                                                   "battle that passes the filters"),
+        all_steps: bool = Query(False, description="scan every step (refused if it would expand "
+                                                   "more battles than the server's cap)"),
         metric: str = Query("value_drop", pattern="^(value_drop|td_residual)$"),
         limit: "int | None" = Query(None, ge=1, le=1000),
     ) -> list:
-        return session(pick(run)).scan(outcome=outcome, opponent=opponent, step=step,
-                                       metric=metric, limit=limit)
+        if all_steps and step is not None:
+            raise HTTPException(status_code=400, detail="pass step or all_steps, not both")
+        sess = session(pick(run))
+        step = None if all_steps else (step if step is not None else _latest_step(sess, outcome, opponent))
+        return heavy_api(lambda: sess.scan(outcome=outcome, opponent=opponent, step=step,
+                                           metric=metric, limit=limit,
+                                           max_expand=_MAX_EXPANDED_BATTLES))
 
     @app.get("/api/triage", tags=["read-only"], response_model=dict,
              summary="ProbeSession.triage() — failure categories ranked by recoverable win-rate")
@@ -705,7 +733,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     def page_scan(request: Request, run: "str | None" = Query(None)) -> HTMLResponse:
         name, data, err = _load(pick, session, guarded, run, store, lambda s: s.run_summary())
         return page(request, "scan.html", "scan", name, summary=data, error=err,
-                    opponents=_opponents(data))
+                    opponents=_opponents(data), cap=_MAX_EXPANDED_BATTLES)
 
     @app.get("/triage", response_class=HTMLResponse, tags=["pages"],
              summary="Loss-lever triage: failure categories ranked by recoverable win-rate")
@@ -769,14 +797,17 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         run: "str | None" = Query(None),
         outcome: "str | None" = Query("loss"),
         opponent: "str | None" = Query(None),
-        step: "str | None" = Query(None),
+        step: "str | None" = Query(None, description="an eval step, `all`, or empty for the newest"),
         metric: str = Query("value_drop", pattern="^(value_drop|td_residual)$"),
         limit: "str | None" = Query("25"),
     ) -> HTMLResponse:
         sess = session(pick(run))
-        rows, err = guarded(lambda: sess.scan(
-            outcome=outcome or None, opponent=opponent or None, step=_form_int(step),
-            metric=metric, limit=_form_int(limit, 25)))
+        # The step DEFAULTS to the newest (an absent or empty field); every step is the explicit `all`.
+        step_n = (None if step == "all" else _form_int(step) if step
+                  else _latest_step(sess, outcome or None, opponent or None))
+        rows, err = guarded(lambda: heavy(lambda: sess.scan(
+            outcome=outcome or None, opponent=opponent or None, step=step_n,
+            metric=metric, limit=_form_int(limit, 25), max_expand=_MAX_EXPANDED_BATTLES)))
         spec = charts.scan_drop_spec(rows, metric=metric) if rows else None
         return fragment(request, "partials/scan_table.html", rows=rows or [], error=err,
                         spec=spec, metric=metric, run=run)
@@ -1251,6 +1282,37 @@ def _picker_rows(rows: "list[dict]", selected: dict) -> "list[dict]":
 # summary cache is now bounded too (`session/core._MAX_CACHED_SUMMARIES`, ~170 MB), which a
 # core-trace run needs: unbounded, one run-wide read of rb_x26_s2601 would hold ~14 GB.
 _MAX_CACHED_SESSIONS = 3
+
+# How many battles ONE anonymous run-level read (`scan`, `triage`) may EXPAND — a core-trace replay each,
+# ~0.1-0.2 s on rb_x26_s2601 (2026-10-19), where a run-wide `td_residual` scan, or `/api/scan` with no
+# limit, replayed all 41,345 traces inside a request thread: hours of a training box's CPU for one GET.
+# 256 is above one eval step's whole trace set (<= 221 on X26), so a one-step read is never refused, and
+# below the session's summary LRU (512), so a request's expansions stay cached; one request then costs at
+# most ~50 s of one core. Broader reads are REFUSED (`ScanTooBroad`) with the CLI command, which has no cap.
+_MAX_EXPANDED_BATTLES = 256
+
+# How many of those reads may run AT ONCE. The per-request cap bounds one request, not a burst of them;
+# a request beyond this is told the server is busy (503 / an error fragment) rather than queued.
+_HEAVY_READ_SLOTS = 2
+
+
+_HEAVY_READ_RESPONSES: dict = {
+    400: {"description": "refused: the read would expand more battles than _MAX_EXPANDED_BATTLES "
+                         "(the error names the CLI command, which has no cap)"},
+    503: {"description": "busy: every heavy-read slot is taken; retry"},
+}
+
+
+class ProberBusy(RuntimeError):
+    """Every heavy-read slot is taken (`_HEAVY_READ_SLOTS`)."""
+
+
+def _latest_step(sess, outcome: "str | None" = None, opponent: "str | None" = None) -> "int | None":
+    """The default step of a run-level read: the newest eval step holding a battle that passes the
+    filters (as `triage` picks the newest step with a loss), else None. Reads the in-memory tree only."""
+    return max((b.step for b in sess.tree.all_battles()
+                if not (outcome and b.outcome != outcome) and not (opponent and b.opponent != opponent)),
+               default=None)
 
 
 def _cap(rows, limit):

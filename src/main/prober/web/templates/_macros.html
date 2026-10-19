@@ -32,9 +32,14 @@
 {# A step is MARKED only when its model views differ from the run's NEWEST step's (a run that resumed across
    an architecture change): when every step reads the same, the context strip says it once and the list stays
    clean. #}
-{% macro step_options(summary, selected=None) %}
+{% macro step_options(summary, selected=None, newest_default=False) %}
   {% set newest_ok = (summary.model_views.model_views if (summary and summary.model_views) else true) %}
+  {% if newest_default %}{# a run-level read: empty = the newest step with a match; every step is explicit #}
+  <option value="">newest step</option>
+  <option value="all">all steps</option>
+  {% else %}
   <option value="">all steps</option>
+  {% endif %}
   {% for s in (summary.steps if summary else []) %}
   <option value="{{ s.step }}" {% if selected == s.step %}selected{% endif %}>{{ "{:,}".format(s.step) }}{% if s.model_views and s.model_views.model_views != newest_ok %} · {{ 'model views run' if s.model_views.model_views else 'story only' }}{% endif %}</option>
   {% endfor %}

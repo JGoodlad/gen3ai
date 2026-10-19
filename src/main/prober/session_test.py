@@ -451,6 +451,33 @@ def test_scan_value_drop_with_a_limit_expands_only_the_rows_it_returns(tmp_path,
     assert {r["short_id"].split("/")[-1] for r in full[:2]} == {"loss_006", "loss_100"}   # the tie
 
 
+def test_scan_max_expand_refuses_before_expanding_anything(tmp_path, monkeypatch):
+    """REGRESSION (audit 2026-10-19): a run-wide `td_residual` scan (or one with no limit) replayed
+    EVERY matching battle inside the public web service's request thread — hours on rb_x26_s2601.
+    `max_expand` must refuse such a call BEFORE the first expansion, naming the CLI that has no cap,
+    and must let a call within the bound through unchanged."""
+    import main.prober.session.core as core_mod
+    from main.prober.session.scans import ScanTooBroad
+    run = _build_scan_run(tmp_path)                      # 2 losses + 1 win, every one with a count
+    expanded = []
+    real = core_mod.load_summary
+
+    def counting(path, **kw):
+        expanded.append(path)
+        return real(path, **kw)
+
+    monkeypatch.setattr(core_mod, "load_summary", counting)
+    for kw in ({"metric": "td_residual"}, {"metric": "value_drop"},
+               {"metric": "value_drop", "limit": 3}):
+        with pytest.raises(ScanTooBroad, match="python -m main.prober.query scan") as ctx:
+            ProbeSession(run).scan(max_expand=2, **kw)
+        assert (ctx.value.n, ctx.value.cap) == (3, 2) and expanded == [], kw
+    full = ProbeSession(run).scan(outcome="loss", metric="td_residual")
+    expanded.clear()
+    assert ProbeSession(run).scan(outcome="loss", metric="td_residual", max_expand=2) == full
+    assert ProbeSession(run).scan(limit=2, max_expand=2) == ProbeSession(run).scan()[:2]   # ranks 3, expands 2
+
+
 def test_scan_refuses_a_stored_count_that_disagrees_with_the_trace(tmp_path):
     """The limited ranking trusts `meta.invocations`; a trace whose stored count hides a decision
     (here the -4 cliff at inv 1) must be REFUSED when its row is built, never ranked at -1."""

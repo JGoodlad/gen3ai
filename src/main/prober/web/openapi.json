@@ -2529,6 +2529,7 @@
             }
           },
           {
+            "description": "eval step; default = the newest step holding a battle that passes the filters",
             "in": "query",
             "name": "step",
             "required": false,
@@ -2541,7 +2542,20 @@
                   "type": "null"
                 }
               ],
+              "description": "eval step; default = the newest step holding a battle that passes the filters",
               "title": "Step"
+            }
+          },
+          {
+            "description": "scan every step (refused if it would expand more battles than the server's cap)",
+            "in": "query",
+            "name": "all_steps",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "scan every step (refused if it would expand more battles than the server's cap)",
+              "title": "All Steps",
+              "type": "boolean"
             }
           },
           {
@@ -2587,6 +2601,9 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "description": "refused: the read would expand more battles than _MAX_EXPANDED_BATTLES (the error names the CLI command, which has no cap)"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2596,6 +2613,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "description": "busy: every heavy-read slot is taken; retry"
           }
         },
         "summary": "ProbeSession.scan() \u2014 each battle's worst turning point, ranked (model-free)",
@@ -3904,6 +3924,7 @@
             }
           },
           {
+            "description": "an eval step, `all`, or empty for the newest",
             "in": "query",
             "name": "step",
             "required": false,
@@ -3916,6 +3937,7 @@
                   "type": "null"
                 }
               ],
+              "description": "an eval step, `all`, or empty for the newest",
               "title": "Step"
             }
           },

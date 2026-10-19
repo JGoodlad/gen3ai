@@ -90,7 +90,7 @@ def test_query_parameters_are_documented_with_their_constraints():
     """The parameter list IS the contract for an agent driving this API."""
     doc = openapi_document()
     params = {p["name"]: p for p in doc["paths"]["/api/scan"]["get"]["parameters"]}
-    assert set(params) == {"run", "outcome", "opponent", "step", "metric", "limit"}
+    assert set(params) == {"run", "outcome", "opponent", "step", "all_steps", "metric", "limit"}
     assert params["metric"]["schema"].get("default") == "value_drop"
     assert "value_drop|td_residual" in json.dumps(params["metric"]["schema"])
 
