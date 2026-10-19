@@ -2,7 +2,7 @@
 
 Lifted out of `tools/CLAUDE.md` on 2026-10-10 (always-current: update it in the same pass as a builder
 change). The leaf keeps the commands and the rules; this doc holds WHY each builder emits what it emits.
-The per-FILE schema the runtime reads is `src/agents/gen3_data/CLAUDE.md`'s, not this doc's.
+The per-FILE schema the runtime reads is [`data_files.md`](data_files.md), not this doc.
 
 **Upstreams:** the FROZEN poke-env static JSON under `tools/pokemon_data_extractor/upstream/poke_env_static/`
 (copied byte-for-byte before the vendored fork was deleted, P6 of the poke-env retirement — read with plain
@@ -214,8 +214,9 @@ ignores them and they exist for the `src/rust_sim` port. The exceptions that ARE
   — a flat `{alias_id: canonical_move_id}` map parsed from Showdown's `deps/pokemon-showdown/data/aliases.ts`
   (`wisp`→`willowisp`, `sd`→`swordsdance`, `twave`→`thunderwave`, the typed `hpice`→`hiddenpowerice`, …),
   kept only for aliases whose CANONICAL id is a gen-3 move and EXCLUDING the bare `hp`→`hiddenpower`
-  (the `src/rust_sim` port represents Hidden Power by its distinct typed move name). It is consumed
-  **ONLY by the `src/rust_sim` port** — its dex's `moves()` resolves a packed-team alias exactly like
-  Showdown's `dex.moves.get()`, so a team carrying a shorthand token (the sample pool's Gengar writes
-  `wisp`) runs the SAME move the sim runs (the e2e_86 draw-count cascade fix). **Obs-neutral**: the
-  `agents.gen3_data` facade names its files explicitly and never loads it, so the RL obs is unchanged.
+  (the `src/rust_sim` port represents Hidden Power by its distinct typed move name). The
+  `src/rust_sim` port's dex `moves()` resolves a packed-team alias with it exactly like Showdown's
+  `dex.moves.get()`, so a team carrying a shorthand token (the sample pool's Gengar writes `wisp`) runs the
+  SAME move the sim runs (the e2e_86 draw-count cascade fix); the facade reads it too, through
+  `gen3_data.moves.move_aliases()` / `canonical_id()`, for packed-team decodes. **Obs-neutral**: the
+  observation path never reads it.

@@ -2033,5 +2033,5 @@ not re-derive them.
 | Hypothesis status / what has been killed | `designs/research_state/ledger.md` |
 | **The raw audit outputs behind every measured number here** | `designs/research_state/measurements/` (+ its README for how to read one) |
 | Delivery-channel theory (edge vs content vs cell) | `designs/learning/shortcut_learning_and_feature_delivery.md` |
-| Event-sourced battle layer + read-models | `src/agents/battle/CLAUDE.md` |
+| Battle read-models (the Python side of the Rust core) | `src/agents/battle/CLAUDE.md` |
 | Training loop, eval sharding, ELO | `src/agents/training/CLAUDE.md` |

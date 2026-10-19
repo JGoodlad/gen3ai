@@ -78,9 +78,9 @@ Keep docs in sync **automatically, as part of the same change** — no need to b
 | Directory | Leaf covers |
 |---|---|
 | `src/agents/model/` | Feature-extractor phase contract, dual-head policy, architecture-constant rules, model versioning |
-| `src/agents/gen3_data/` | The data facade over `data/`, the acquisition-vs-access split, every per-file schema |
+| `src/agents/gen3_data/` | The data facade over `data/`: its conventions and hazards (schemas: `designs/tools/data_files.md`) |
 | `src/agents/observation/` | The observation LAYOUT (constants, `get_layout()`, vocabularies), the Rust-encoder benchmark mandate, the per-block meaning table |
-| `src/agents/battle/` | The battle read-models (LiveView / LegalActions, built from the Rust core by `core_view`), core-obs frames, corpus replay |
+| `src/agents/battle/` | The battle read-models (LiveView / LegalActions, built from the Rust core by `core_view`), corpus replay |
 | `src/agents/training/` | The training hub — each topic's summary, its detail in `designs/training/<topic>.md` |
 | `src/rust_sim/` | The Rust Showdown port: module map, conventions, the differential-gate ladder, the A/B fuzzers, the search/replay drivers |
 | `src/main/launcher/` | Launcher internals: restarts, crash reporting, exit codes, flags, which interpreter the child runs |
@@ -299,4 +299,4 @@ deps/           the pokemon-showdown submodule   models/   saved runs (NOT commi
 - 🚨 **ALL priors must be Smogon-derived; only the MODEL gets bias against the pool** (owner, 2026-08-15). Anything the network READS traces to Smogon, ground-truth labels or ladder replays; the team pool may MEASURE structure but **never ships as a prior**.
 - 🚨 **A forme SHARES its base species' `num`**: num-indexed consumers MUST iterate `gen3_data.species.base_form_ids()`.
 
-Per-file schemas: `src/agents/gen3_data/CLAUDE.md`. Acquisition: `tools/CLAUDE.md`.
+Per-file schemas: `designs/tools/data_files.md`. Acquisition: `tools/CLAUDE.md`.

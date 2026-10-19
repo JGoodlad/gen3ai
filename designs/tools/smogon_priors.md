@@ -1,8 +1,7 @@
 # `smogon_stats_downloader` — the priors' acquisition contract
 
 Lifted out of `tools/CLAUDE.md` on 2026-10-10 (always-current). The CONSUMER side — what each prior
-file holds and the load-time checks the facade runs — is `src/agents/gen3_data/CLAUDE.md` ("The files
-in `data/pokemon/`"); this doc is the PRODUCER side: `smogon_stats_downloader/sync.py` (12 monthly
+file holds and the load-time checks the facade runs — is [`data_files.md`](data_files.md); this doc is the PRODUCER side: `smogon_stats_downloader/sync.py` (12 monthly
 chaos JSONs → `data/pokemon/gen3_smogon_stats.json`) and `compute_priors.py` (→ the six
 `gen3_{ability,hidden_power,move,item,spread,teammate}_priors.json`).
 

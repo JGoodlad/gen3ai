@@ -1,305 +1,56 @@
-# CLAUDE.md — Data facade (`src/agents/gen3_data/`)
+# CLAUDE.md — the data facade (`src/agents/gen3_data/`)
 
-`gen3_data` is the **single, domain-facing interface over the project's Pokémon data**. The
-runtime reads **only** `data/` through it and is blind to where the data originally came from.
+`gen3_data` is the runtime's only reader of `data/`: typed lookups by concept (`moves`, `species`,
+`items`, `abilities`, `natures`, `type_chart`, `priors`, `learnset`, `format_spec`, `hidden_power`,
+`hp_repair`). It knows no upstream; `tools/` derives `data/` (`tools/CLAUDE.md`). What each file holds,
+field by field, is `designs/tools/data_files.md`.
 
-## Acquisition vs. access (the governing split)
+## Module conventions
 
-| Layer | Knows about | Job |
-|---|---|---|
-| **Acquisition** (`tools/`) | poke-env static data, the Showdown `.ts` source tree, Smogon usage stats | derive + normalize → write files to `data/pokemon/` |
-| **`data/pokemon/`** | nothing | normalized, committed JSON — the contract between the layers |
-| **Access** (`gen3_data`) | only `data/` | typed, domain-organized lookups for the runtime |
+Each concept module follows `moves.py`: a frozen dataclass keyed by id, parsed once through a `_base`
+singleton (`_base` owns path resolution; a missing or empty file raises). `get(id)` returns `None` for an
+unknown id; `*_data(id)` raises `KeyError`. `.raw()` is the parsed dict. The value enums (`PokemonType`,
+`MoveCategory`, defined in `agents/enums.py`) are keys only and never carry data. Every dex file loads
+through `_base.load_dex_json`, which refuses a row without a numeric `num` (it would alias index 0).
 
-Every DEX file (species / moves / items / abilities) loads through `_base.load_dex_json`, which refuses a row with no numeric `num` at load — it used to read as `get("num", 0)` and silently encode as index 0 (F-X5-5; the Rust encoder tables refuse the same rows, `src/rust_sim/src/encoder/data.rs`).
+## Hazards
 
-The three upstreams collapse to **one place that knows them** (`tools/`, see `tools/CLAUDE.md`).
-Everything downstream asks by *concept*, never by *source*.
+- **A forme shares its base species' `num`.** `raw()` / `get()` include the 33 gen-3 formes; anything
+  indexed by `species.num` (model buffers, num → id decodes) must iterate `species.base_form_ids()`, or a
+  forme's stats and types overwrite its base's. Guards: `species_test.py`, `damage_tables_test.py`.
+- **Read a move's dex `category` only for Status vs damaging** (`MoveData.dex_category` /
+  `is_dex_damaging`). Gen 3 splits physical / special by TYPE: `MoveData.category` derives that, and calls
+  every BP-0 move Status (Seismic Toss, Super Fang, Return).
+- **Hidden Power ids:** our known typed HP is its distinct num, 355–370; the opponent's unrevealed HP is
+  the bare `hiddenpower`, 237.
+- **A packed team's move token is not an id until resolved** through `moves.canonical_id` (`wisp` →
+  `willowisp`). A packed species / item / ability the facade does not know is a throwing defect
+  (`info_levers.packed.require_known`), never a silent miss.
+- **`learnset` answers `None` / `True` for an unknown species: no constraint, never "no moves"**, so the
+  move prior's legality prune (`belief_tables.build_move_prior_logits`) cannot wrongly prune.
+- **Priors divide by W, the rating-weighted set total, never `Raw count`.** Banned entities are removed
+  at acquisition, not at load, because the Rust encoder reads the same files; every prior load throws
+  `PriorInvariantError` on a broken distribution or a banned entity (`priors._checked_*`).
+- **gen3ou's rules come from `format_spec`, never a constant** (`format_spec.active()`, `is_banned(…)`, the
+  clause accessors; a test plants a spec by swapping `format_spec._ACTIVE`). A new ban or clause is a
+  spec edit with its source: `python -m main.format_drift check` fails on any difference from master.
+  The doc of record is `designs/endstate/design_format_spec.md`.
 
-## The facade
+## Hidden Power has one implementation (`hidden_power.py`)
 
-```python
-from agents import gen3_data
-gen3_data.moves.get(move_id)            # MoveData(num, base_power, type, category, accuracy,
-                                        #   priority, drain_fraction, recoil_fraction,
-                                        #   secondary_effects + .secondary_chance(col),      # v24
-                                        #   self_boosts — the pure-setup (stat, stages) map  # C1
-                                        #   [gen3_setup_moves_v1; empty for Belly Drum/Curse/
-                                        #    Defense Curl by the pure-setup gates],
-                                        #   target — the dex target class, verbatim (R4), …)
-gen3_data.species.get(species_id)       # SpeciesData(num, base_stats, types, base_species, battle_only)
-gen3_data.species.base_form_ids()       # BASE forms only — one id per national-dex num
-gen3_data.moves.canonical_id(token)     # a move NAME / packed token as its canonical id ("wisp" -> "willowisp"; below)
-gen3_data.items.get(item_id)            # ItemData(num, name)
-gen3_data.abilities.get(ability_id)     # AbilityData(num, name)
-gen3_data.natures.get(nature_name)      # NatureData(multipliers); .multipliers() for the dict form
-gen3_data.type_chart.chart()            # {DEF: {ATT: multiplier}}; .multiplier(def, att)
-gen3_data.priors.ability(species)       # {ability_id: probability}     (Smogon)
-gen3_data.priors.hidden_power(species)  # {hp_type: probability}         (Smogon)
-gen3_data.priors.teammates(species)     # {teammate_id: P(teammate|species)} (Smogon chaos
-                                        #  Teammates — the one species×species JOINT published;
-                                        #  the hidden-team belief's coupling prior)
-gen3_data.learnset.is_legal(species, move_id)      # gen3 legal-movepool gate (hard legality)
-gen3_data.learnset.get_legal_moves(species)        # frozenset|None (None = unknown → no constraint)
-from agents.gen3_data import format_spec          # gen3ou's rules + bans, ONE story each (below)
-from agents.gen3_data import hp_repair            # replay-derived teams' Hidden Power artifact, repaired (below)
-from agents.gen3_data import hidden_power         # THE one Hidden Power table + formula (below)
-```
+Every HP type → IVs and IVs → type / power in Python reads this module: `HP_IVS` (the validator's fill,
+power 70), `ivs_of` / `ivs_packed`, `type_of` / `power_of` (the gen-3 formula), `iv_patterns` and
+`FORMULA_TYPES`. `utils.gen3_utils.GEN3_HP_IVS` and `hp_repair.HP_IVS` are this object.
+`hidden_power_single_impl_test.py` fails on a second table, formula or formula-order type list in any
+`.py` or `.rs` under `src/`, so import the module. Two copies stay outside it: the Rust engine's own
+`getHiddenPower` (`src/rust_sim/src/state.rs`, pinned by `tests/hidden_power_fill_test.rs` and
+`hidden_power_test.py`), and the JS harness `ou_random_teams.js`, whose seeded output is the frozen P72
+panel's provenance. `hp_repair.py` re-samples the typeless all-31 Hidden Power of replay-derived teams;
+its docstring is the spec.
 
-## The HIDDEN POWER REPAIR (`hp_repair.py`, `gen3_hp_repair_v1`)
+## Changing the data
 
-Replay-derived teams (Metamon's `hl_05_26`, `utils.ladder_corpus`) write `Hidden Power` with no type and all-31 (or no)
-IVs, which is HP **Dark** under the gen-3 formula — an artifact, since a gen-3 replay never reveals the type.
-`hp_repair.repair_team(paste, seed)` re-samples ONLY such a set (a typed HP, or one with any IV below 31, stays byte
-for byte): the set's SIDE is the sign of three votes — EVs (Atk vs SpA), nature, the other attacking moves by the
-gen-3 TYPE rule (`SPECIAL_TYPES`, pinned to `deps/pokemon-showdown/data/mods/gen3/scripts.ts`) — with the real Atk vs SpA stat as the
-tie-break; the TYPE is drawn from Smogon's species HP usage (`priors.hidden_power`) restricted to that side (the
-format-wide Smogon usage if the species has none there); the IVs are the validator's `fillStats(HPivs, 31)`
-(`hidden_power.HP_IVS`; power 70). One RNG per team (`team_seed(base, team_id)`), every
-draw returned as a record. Only the HP move line and the IVs line change. Tests: `hp_repair_test.py` (unit) and
-`hp_repair_showdown_integration_test.py` (every type through the pinned validator and `getHiddenPower`, the
-variable-power attack list re-derived from Showdown, and the speed-tie pin: HP Fire's 30 Speed IV makes a Jolly 252
-Salamence 327, not 328). First use: `heldout72_hpfix`
-(`designs/research_state/measurements/heldout72_hpfix_kakuna_2026-10-18/`).
-
-## THE ONE HIDDEN POWER TABLE (`hidden_power.py`)
-
-Every "HP type → IVs" and "IVs → HP type / power" in Python reads this module (owner 2026-10-19: "only 1 impl for the
-HP determinization"): `HP_IVS` (capitalised type → `{stat: iv}`, Showdown's validator fill `fillStats(typechart.ts
-HPivs, 31)`, power 70), `ivs_of` / `ivs_packed` (packed order), `type_of` / `power_of` (`Dex.getHiddenPower`'s gen-3
-formula; Speed weighs 8, before SpA and SpD), `iv_patterns` (every 30/31 pattern of a type, the fill first) and
-`FORMULA_TYPES` (the formula's type order). `hp_repair.HP_IVS`, `utils.gen3_utils.GEN3_HP_IVS`,
-`info_levers.packed.hp_*`, `team_overlap.hidden_power_type` and `team_packing`'s typed-HP fill are this object or
-call it. Before 2026-10-19 there were five copies: `packed.hp_ivs` took the most-31s pattern (8 types differed from
-Showdown), and `team_packing.TeambuilderPokemon.HP_TO_IVS` was poke-env's table, whose IVs gave ANOTHER type for 12
-of 16 (only on packers that skip `fix_gen3_hp_ivs`; the training pool packs byte-identically). The Rust engine keeps
-its own `getHiddenPower` (`src/rust_sim/src/state.rs`), pinned by `tests/hidden_power_fill_test.rs` (every
-`typechart.ts` fill reads back as its type at 70) and by `hidden_power_test.py` (its type list).
-🚨 **`hidden_power_single_impl_test.py` FAILS on a second table, formula or formula-order type list in any `.py` or
-`.rs` under `src/`** — import the module. Out of its scope: the JS harness `ou_random_teams.js` keeps its own solver
-(the lowest-mask pattern), because its seeded output is the frozen P72 panel's provenance.
-
-## The FORMAT SPEC (`format_spec.py`, `team_legality.py`) — gen3ou's rules, declared once
-
-`format_spec` declares the gen3ou format every game is played under — the LADDER's rules (Showdown master),
-each rule with ONE handling story and each ban with its source (pinned file:line, master, or a derivation);
-`designs/endstate/design_format_spec.md` is the always-current doc. Readers ask it, never a constant:
-`format_spec.active()`, `sleep_clause_mod()` / `freeze_clause_mod()` (the op and move-resolution sleep /
-freeze gates), `GEN3OU.banned_{species,items,moves,abilities}`, `species_move_bans()` (Smeargle + Ingrain),
-`is_banned(kind, id, species=)`. `PINNED_DIFFERENCES` names where the pinned engine differs from the ladder
-(Quick Claw banned on master; Recycle in master's One Boost Passer list). A test plants a spec by swapping
-`format_spec._ACTIVE` (`without_rule`). `team_legality` parses a paste / packed team and validates it
-against the spec (bans, per-set combos, Accuracy Trap, Species Clause, One Boost Passer, Speed Pass —
-not learnsets / EVs, which Showdown's validator owns); `python -m main.team_legality` reports every pool,
-`python -m main.format_drift check` compares the spec with master (a committed snapshot, offline).
-🚨 **Adding a ban or clause is a SPEC edit with its source and its story** — the drift gate fails on any
-ban or clause master has and the spec lacks (and the reverse); `format_spec_test.py` re-derives the Uber
-tier, the OHKO moves, Accuracy Trap's moves and the ability-locked species from `deps/pokemon-showdown`.
-🚨 **A banned entity carries NO prior** (`gen3_format_spec_priors_v1`): the acquisition tool removes banned mass and
-renormalises (`compute_priors.py`; the Rust encoder reads the same files, so the filter is NEVER load-time only), and
-every prior load THROWS `PriorInvariantError` on a banned ability / item / move (or a species-banned move) / teammate
-(`priors._checked_format_legal`); `species_usage()` excludes banned species. The model tables give banned entries the
-ILLEGAL value (`belief_tables.format_banned_move_cells`, `dex_ids.format_banned_species_nums`). Tests:
-`format_spec_priors_test.py`.
-
-`learnset` is the **legality** primitive (which moves a species can LEGALLY learn in gen3) — distinct
-from `priors.moves` (how OFTEN a legal move is run). The move-belief prior uses it to PRUNE impossible
-candidate moves (`damage_tables.build_move_prior_logits`) — **unconditionally**, since a move a species
-cannot learn carrying belief mass is a correctness bug, not a tunable. Its tolerance contract is that an
-unknown species yields `None`/`True` ("no constraint", never "no moves"), so the gate can never wrongly
-prune; the builder honours that by flattening any row it never wrote (national-dex num 0, dex gaps) to
-the legal-unobserved floor rather than the impossible default.
-
-🚨 **A species' movepool is the UNION over its whole PRE-EVOLUTION chain** (`gen3_learnset_prevo_chain_v1`),
-as Showdown's own validator resolves it (`checkCanLearn` → `getFullLearnset`): a Tyranitar hatches as a Larvitar,
-so Larvitar's gen-3 egg (`3E`) / event (`3S`) / level-up moves are Tyranitar's (Dragon Dance: Tyranitar's own entry
-is `["9M","8M"]`, Larvitar's carries `3E` + `3S0`). The chain stops at a pre-evolution newer than gen 3 (Munchlax,
-Happiny), and a Sketch learner (Smeargle) can carry every move without the `nosketch` flag. The table was once built
-from each species' OWN entry alone: 1500 (species, move) pairs over 183 species were missing (1151 through a
-pre-evolution, 349 Smeargle's Sketch pool) — 9 % of the training pools' move uses and 928 Smogon usage pairs read as
-illegal. Guards: `learnset_test.py` (the named Dragon Dance Tyranitar regression + a scan that EVERY training-pool
-team move and EVERY Smogon usage move is legal for its species), `pokemon_data_extractor_test.py` (the chain and the
-Sketch pool), and the oracle `node src/rust_sim/harness/dump_gen3_learnset.js --check` (the table EQUALS Showdown's
-validator for every base species × every gen-3 move; `learnset_showdown_integration_test.py`). A recorded Smogon
-usage already overrides the prior's legality gate (`build_move_prior_logits`), so the belief survived the gap
-except for the legal-but-never-seen cells.
-
-## Species FORMES — `raw()` vs `base_form_ids()` (`gen3_species_formes_v1`)
-
-`gen3_species.json` carries **419** rows: the 386 base forms **plus 33 gen-3 alternate/cosmetic
-FORMES** — Deoxys-Attack/-Defense/-Speed (their own base stats), the 27 Unown letters (cosmetic
-clones of Unown), and Castform-Sunny/-Rainy/-Snowy (`battle_only`, retyped). They are there because
-a battle genuinely fields them: without the rows the `src/rust_sim` port could not construct **6.6%
-of gen3 random-battle teams** (`unknown species "Deoxys-Speed"`), and the obs `SpeciesEncoder` would
-raise on the same species.
-
-**A forme SHARES its base's national-dex `num`** — and `num` is what the obs species channel and
-every model buffer (`table[species.num] = …` in `agents/model/damage_tables.py`) are keyed by. So a
-forme is *observationally* its base, and:
-
-| use | iterate |
-|---|---|
-| id → facts (`get`, encoding a mon, the port's stat calc) | `raw()` / `get()` — formes included |
-| anything indexed by `species.num` (GPU buffers, num→id decode) | **`base_form_ids()`** |
-
-Iterating `raw()` into a num-indexed table is last-write-wins: it would put Deoxys-Speed's
-95/90/95/90/180 on num 386 and Castform-Sunny's FIRE on num 351 — a plausible-but-false value no
-shape check catches. `SpeciesData.base_species` (the base id, `None` for a base form) is the flag;
-`base_form_ids()` is the bijection onto the nums. Guards: `species_test.py`
-(coverage + the num bijection), `damage_tables_test.py` (the tables hold the BASE forme),
-`src/rust_sim/tests/species_formes_test.rs` (a packed forme team constructs), and the producer-side
-oracle gate `node src/rust_sim/harness/dump_gen3_mechanics.js --check`.
-
-## Concept-module discipline (per submodule)
-
-Each submodule mirrors `moves.py` (the original `gen3_movedex`, the template):
-- an immutable `@dataclass(frozen=True)` keyed by id;
-- parsed **once** via a lazy singleton from `_base` (`load_json` + `singleton`) — no file is
-  re-read or re-parsed;
-- `get(id)` is tolerant (returns `None` for an unknown/unrevealed id), `*_data(id)` is
-  crash-don't-drop (raises `KeyError`);
-- the value-enums (`PokemonType`, `MoveCategory`) are used as **keys/names only** — never called, never made to
-  carry data. The data is ours; the enums are just the keys. 🚨 **They are OURS too (P1 of the poke-env
-  retirement, 2026-10-07): `agents/enums.py` DEFINES them (standard library only); the vendored fork's four enum
-  modules re-exported them until the fork was deleted (T27 P6)**, so `import agents.gen3_data` loads no `poke_env` module (it used to load six, and the
-  trainer 36 — survey A-F1). `src/poke_env_free_entry_points_test.py` is the gate.
-- `.raw()` returns the parsed JSON dict; `state_encoder.load_mappings` assembles the encoder
-  mappings from `.raw()` so each file is parsed once and shared.
-
-`_base.py` owns the only path resolution (`data/pokemon/`, repo-root-relative so CWD doesn't
-matter), validation (missing/empty → raise), and the singleton idiom.
-
-## Who reads through it
-
-`state_encoder.load_mappings()` (assembles the encoder's species/moves/items/abilities/priors/
-natures + reverse maps), `gen3_mechanics` (`type_chart`), `hidden_power_tracker` (`priors`). All
-poke-env *static-data* reads have been removed from the runtime; the data layer is poke-env-free — at IMPORT and at RUN
-time (`utils/poke_env_blocker.py` makes `import poke_env` impossible in a test interpreter).
-
-## Performance note (why we own the data)
-
-Owning the data as plain dataclasses lets us control lookup cost instead of inheriting poke-env's
-property machinery (`move.entry`, `GenData.from_gen`, …) on the hot obs path. **Caveats that must
-stay live, not become dex lookups:** current/max PP is battle *state*, not reference data; and
-`move.category` has a fixed-power disagreement vs a movedex re-derivation — the obs encoder keeps
-the live-`move.category` memoization (`moves._category_val`). See `observation/CLAUDE.md`. Any
-swap of a live poke-env property for a facade lookup is gated by the obs-build benchmark and must
-be proven value-neutral (or it's a retrain-class change).
-
-## Value-neutrality (changing the data layer)
-
-Reorganizing *where/through-what* data loads must not change any observed value. The guards:
-- **`training/golden_obs_core_test.py`** — the linchpin: the Rust core replays a fixed battle set (banked as input
-  logs, `golden_obs_battles.json`) and every per-decision obs row must hash to the golden fixture
-  (`golden_obs_fixture.json`); `python -m agents.training.golden_obs_core --check | --write`. (Until P6 slice 6c the
-  linchpin was `gen3_data_obs_parity_integration_test.py`, which replayed the set through the Python capture,
-  `golden_obs_capture.py` — both deleted.)
-- **`extractor_parity_test.py`** — committed files == upstream; builders reproduce committed.
-- **per-dex + facade tests** here; **`gen3_mechanics_test.py`** pins the effectiveness chart.
-
-A *value* change to the data is retrain-class: bump `ARCH_SIGNATURE` and regenerate the golden
-fixture. (Example: `gen3_item_num_fix_v1` switched the item id from Showdown's spritenum to the
-true item-dex `num` — same obs dim, but every item id re-meaned, so old item embeddings are
-invalid.)
-
-## The files in `data/pokemon/` — what each one holds
-
-*(Moved here from the root `CLAUDE.md` on 2026-09-07: the root states the governing rules, this leaf owns the per-file schema. Regenerate every reference file with `tools/pokemon_data_extractor/sync.py`; the priors with `tools/smogon_stats_downloader/`.)*
-
-Reference data (deterministic) under `data/pokemon/`, all regenerable via
-`tools/pokemon_data_extractor/sync.py`:
-- `gen3_species.json` — species id → `{num, baseStats, name, types, gender}` (`gender`: a fixed "M" / "F", "N"
-  genderless, absent = a gender-ratio species the engine draws uniformly at construction; `SpeciesData.gender`)
-  (`types` UPPERCASED to the TypeEncoder
-  axis — `gen3_bidir_threat_trunk_v1`, for the op's expected-latent read; the obs still reads revealed types live).
-  **419 rows** = the 386 base forms + the 33 gen-3 ALTERNATE/COSMETIC FORMES (`gen3_species_formes_v1`:
-  Deoxys-Attack/-Defense/-Speed with their own base stats, the 27 Unown letters, Castform's 3 weather
-  formes), each carrying `baseSpecies`. Formes were missing before and cost the `src/rust_sim` port
-  **6.6% of gen3 random-battle teams / ~14% of battles** at construction. A forme SHARES its base's
-  `num`, and the obs species channel + every `table[species.num]` model buffer are num-keyed — so
-  num-indexed consumers MUST iterate `gen3_data.species.base_form_ids()` (see
-  `src/agents/gen3_data/CLAUDE.md`)
-- `gen3_moves.json` — move id → `{num, basePower, type, accuracy, never_miss, hasSecondary, hasRecoil,
-  priority, secondaryEffects {col: percent}, drainFraction, recoilFraction, …}` (the structured
-  secondary/priority/drain fields are `gen3_unified_move_system_v1` — GPU-side only, NOT in the obs vector).
-  `category` is the DEX category verbatim (`MoveData.dex_category` / `is_dex_damaging`,
-  `gen3_nonformula_damage_v1`) — read it ONLY for Status-vs-damaging, never for phys/spec (gen 3 splits
-  by TYPE; `MoveData.category` derives that, and calls every BP-0 move STATUS, so Seismic Toss / Super
-  Fang / Return read STATUS there). The damage op's table build refuses a damaging BP-0 move it has no
-  declared model for (`damage_tables.DAMAGE_MODELS`).
-  **Typed Hidden Power has distinct nums** (`gen3_typed_hidden_power_ids_v1`): bare `hiddenpower`=237,
-  the 16 typed variants=355-370 (Showdown ships them all at 237; the extractor tool overrides — see
-  `designs/tools/pokemon_data_extractor.md`). OUR known HP uses the distinct num; the opponent's unrevealed HP is the bare 237.
-- `gen3_items.json` — item id → `{num, name}` (`num` is the item-dex number; cross-gen aliases share one num)
-- `gen3_abilities.json` — ability id → `{num, name}`
-- `gen3_type_chart.json` — `{DEF: {ATT: multiplier}}` effectiveness chart (was live `GenData`)
-- `gen3_natures.json` — nature → `{num, stat multipliers}` (was live `poke_env/.../natures.json`)
-- `gen3_learnset.json` — species id → `[move_id, ...]` gen3 legal movepool, the union over the species'
-  pre-evolution chain + Sketch's pool for Smeargle (the hard legality gate the move-belief prior uses to prune
-  impossible candidate moves; via `gen3_data.learnset`; bare `hiddenpower` only)
-- `gen3_move_aliases.json` — `{alias_id: canonical_move_id}` from Showdown's `aliases.ts`
-  (`wisp`→`willowisp`, `sd`→`swordsdance`, …). Consumed by the `src/rust_sim` port (its dex resolves a
-  packed-team move alias like the RL runtime never touches) and, through `gen3_data.moves.move_aliases()`,
-  by review tooling's packed-team decode (`utils.bridge.reconstruction.decode_packed_team`, the prober's
-  `team_details`; it replaced a live `node -e` dump of Showdown's alias table, 2026-10-10). The
-  observation path never reads it, so it is obs-neutral. `gen3_move_alias_resolution_v1`.
-  🚨 **A packed team's move token is NOT an id until it is resolved** (GIGO 2026-10-15: one of the 719 pool teams packs
-  Will-O-Wisp as `wisp`; a reader that compared the raw token with an id from play saw another move, and 7 Tier-1 POOLSETS
-  worlds ran the move twice): read every packed move through **`gen3_data.moves.canonical_id`** (the Showdown id, then
-  this table) — `agents.info_levers.packed.typed_moves` and `team_legality` do. The table is MOVES only: Showdown also
-  has species / item / ability name variants (`deon`, `cb`, `intim`, …) that the data does not carry and the Rust dex
-  does not resolve, so a packed species / item / ability the facade does not know is a THROWING defect
-  (`packed.require_known`), never a silent miss. Measured 2026-10-15: every id in the prior / learnset / archetype /
-  usage files of `data/` is canonical, and the pool's only variant is that one `wisp` (a census test over the 719 teams,
-  `info_levers/packed_test.py`).
-
-Smogon-derived priors (probabilistic), via `tools/smogon_stats_downloader/` (`sync.py` merges 12
-months of chaos JSONs → `compute_priors.py` derives six committed artifacts). **ALL priors must be
-Smogon-derived; only the MODEL gets bias against the pool** (owner rule 2026-08-15): anything the
-network READS must trace to Smogon (or ground-truth labels / ladder replays) — pool structure may
-enter only implicitly, through training against pool opponents (team sampling / league targeting
-are the sanctioned pool consumers). The 719-team pool may MEASURE structure (it is the only
-set-level joint we own) but never ships as a prior:
-- `gen3_smogon_stats.json` (raw aggregated chaos stats; per-species `Moves`/`Items`/`Spreads`/
-  `Teammates` are 12-month summed counts) → `gen3_ability_priors.json`,
-  `gen3_hidden_power_priors.json`, `gen3_move_priors.json`, `gen3_item_priors.json`,
-  `gen3_spread_priors.json`, and `gen3_teammate_priors.json` — the chaos `Teammates` field
-  normalized per species: the ONE species×species JOINT Smogon publishes (the hidden-team
-  belief's coupling prior; `gen3_data.priors.teammates`). Note chaos `Moves` are per-species
-  MARGINALS — within-species move-pair couplings exist in the data we can measure (pool) but
-  have no Smogon source, so they stay with in-battle evidence + learning.
-  🚨 **`gen3_move_priors.json` is `P(m in set)` = `Moves[m] / W`, W the RATING-WEIGHTED set total
-  (`Σ Abilities`), never the UNWEIGHTED `Raw count`** (`gen3_smogon_prior_denominator_v1`; F-X5-41:
-  the `Raw count` table was deflated ×0.10–0.94). Per species `Σ_m P + Moves[""] / W == 4` exactly;
-  the load THROWS `PriorInvariantError` otherwise (`priors._checked_moves`), and every other prior
-  file must load as a distribution (sum 1) or THROWS the same way.
-  `priors.all_spreads(species)` is EVERY chaos `Spreads` entry of a species (weights sum 1), parsed as
-  `compute_spread_priors` parses them but WITHOUT its top-25 cut (`gen3_spread_priors.json` /
-  `priors.spreads`): the cut suits the moment-matched stat beliefs and drops a LUMPY tail (a Timid 252-Speed
-  Blissey, 0.03 % of its sets). Read from `gen3_smogon_stats.json` at call time, no file of its own; its one
-  consumer is the speed physics' discrete mixture (`agents.model.belief_tables.build_species_speed_mix`,
-  gen3_speed_mixture_v1).
-  🚨 **`priors.species_usage()` is each species' W (`_weighted_count`), never `Raw count`**
-  (`gen3_smogon_species_usage_weighted_v1`; F-X5-47: the `Raw count` share was off ×0.19–×1.75 by
-  species — the co-occurrence lift divided a WEIGHTED teammate conditional by an UNWEIGHTED share).
-  It is computed from `gen3_smogon_stats.json` at call time (no file of its own) and THROWS
-  `PriorInvariantError` (`priors._checked_species_usage`) unless every entry equals both `Σ Abilities`
-  and `Σ Moves / 4` of its record. W is read ONE way on this side (`_weighted_count`); the tool's
-  `weighted_count` is its acquisition-side twin and additionally refuses an inconsistent record.
-
-Pool-derived (a committed calibration artifact, same pattern):
-- `data/teams/gen3_team_archetypes.json` — every pool team labeled by PACE class
-  (hyper_offense/offense/balance/semi_stall/stall via a transparent composition rubric) + style
-  TAGS (sand/spikes/spin/spinblock/phaze/**trap**/**trap_core**/wish/boom/choice/…), keyed by
-  `sha1(team_str)[:10]` (the MatchupSpec `pin_sha` convention, so labels join every provenance
-  record). Derived by `python -m agents.training.team_archetypes` (a k-means cross-tab prints as
-  the unsupervised sanity check); consumed by league targeting (the `trap_core` exploiter
-  shortlist) and future archetype-aware team sampling. Loader:
-  `agents.training.team_archetypes.load_team_archetypes`.
-
-All are loaded once (lazy singletons) and raise `FileNotFoundError` / `ValueError` if missing or
-empty. The data layer is poke-env-free, and so is the whole tree since T27 P6 deleted the vendored fork: the
-`to_id_str` string util lives in `utils/showdown_id.py`. The ACQUISITION layer (`tools/pokemon_data_extractor/sync.py`)
-reads poke-env's STATIC DATA on purpose — that is where `data/pokemon/` comes from — from a frozen copy under
-`tools/pokemon_data_extractor/upstream/poke_env_static/` (byte-identical to the fork's at its deletion; regenerating
-`data/pokemon/` from it is byte-identical, 8 of 8 files, 2026-10-08).
+A VALUE change in `data/` (a re-numbered id, a changed stat) is retrain-class: version it per
+`designs/model/versioning.md` and re-record the obs golden (`python -m agents.training.golden_obs_core`).
+A change to how data loads must change no value: `golden_obs_core_test.py` and
+`extractor_parity_test.py` (the committed files equal the builders' output) are the gates.
