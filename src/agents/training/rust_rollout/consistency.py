@@ -256,7 +256,10 @@ def _dump(model: Any, abs_d: np.ndarray, judged: Tuple[Judged, ...], where: str,
 
 #: Per violation: the observations of at most this many violating rows (an ``.npz``), and the policy
 #: weights for at most `_DUMP_WEIGHTS_MAX` violations per process (``.pt``, ~40 MB each) — together they
-#: make a dumped row re-evaluable offline on exactly the weights that played it.
+#: make a dumped row re-evaluable offline on exactly the weights that played it. The count
+#: (``model._behaviour_weight_dumps``) is PER PROCESS because no checkpoint carries it: the save
+#: excludes it and a load of an older checkpoint that saved it resets it to 0
+#: (`strict_load.RESET_ON_LOAD`, T61 — saved, it had capped the dumps per lineage).
 _DUMP_OBS_ROWS, _DUMP_WEIGHTS_MAX = 32, 3
 
 

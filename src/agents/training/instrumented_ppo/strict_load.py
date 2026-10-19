@@ -56,12 +56,22 @@ class CudaContextOnCpuLoad(RuntimeError):
 NEVER_UNPICKLED = ("_ridealong_opt", "_ridealong_opt_owner", "_ridealong_vopts", "_ridealong_vopts_owner",
                    "_ridealong_variant_disabled")
 
+#: PER-PROCESS counters that older checkpoints SAVED and a resume RESTORED, each with the value a load
+#: resets it to (sb3 substitutes a ``custom_objects`` value for a ``data`` key instead of unpickling it).
+#: ``_behaviour_weight_dumps`` (K9(b)'s weight-dump count, `rust_rollout.consistency._dump_artifacts`):
+#: saved, it capped the dumps per LINEAGE — X26 dumped no weights after 203M across every restart
+#: (T61; `measurements/x26_a3_stop_316M_2026-10-18/` F1). Saves stop writing it
+#: (`hparams._excluded_save_params`); this keeps a checkpoint that already carries it loading with the
+#: count back at zero, so every process dumps the weights of its own first violations.
+RESET_ON_LOAD: Dict[str, Any] = {"_behaviour_weight_dumps": 0}
+
 
 def never_unpickled(custom_objects: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """``custom_objects`` for sb3's ``load`` / ``load_from_zip_file`` with every `NEVER_UNPICKLED`
-    attribute replaced by None (sb3 substitutes a custom object for a ``data`` key INSTEAD of
-    unpickling it); the caller's own entries win."""
+    attribute replaced by None and every `RESET_ON_LOAD` counter by its reset value (sb3 substitutes a
+    custom object for a ``data`` key INSTEAD of unpickling it); the caller's own entries win."""
     out: Dict[str, Any] = {k: None for k in NEVER_UNPICKLED}
+    out.update(RESET_ON_LOAD)
     out.update(custom_objects or {})
     return out
 
@@ -136,5 +146,5 @@ class StrictMaskablePPO(StrictCheckpointLoad, MaskablePPO):
     reader of a checkpoint builds through ``agents.model.snapshot.load_checkpoint_strict``."""
 
 
-__all__ = ["CudaContextOnCpuLoad", "NEVER_UNPICKLED", "StrictCheckpointLoad", "StrictLoadError", "StrictMaskablePPO",
+__all__ = ["CudaContextOnCpuLoad", "NEVER_UNPICKLED", "RESET_ON_LOAD", "StrictCheckpointLoad", "StrictLoadError", "StrictMaskablePPO",
            "never_unpickled"]

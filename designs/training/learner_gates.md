@@ -197,11 +197,13 @@ The record also carries:
 
 Two artifacts are written beside it:
 - `behaviour_violation_u<n>_rows.npz`: the violating rows' observations;
-- `behaviour_violation_u<n>_policy.pt`: the weights that played them, for the first 3 violations of a
-  model LINEAGE. The code comment says "per process", but the counter `_behaviour_weight_dumps` is a model
-  attribute and is not in `_excluded_save_params`. Every checkpoint therefore saves it, and a resume restores it,
-  so a restart does NOT reset it. On X26 it reads 3 from 203M on (`measurements/x26_a3_stop_316M_2026-10-18/`
-  F1). Excluding it from the save is an open fix, not made yet.
+- `behaviour_violation_u<n>_policy.pt`: the weights that played them, for the first 3 violations of each
+  PROCESS. The counter `_behaviour_weight_dumps` is a model attribute that no checkpoint carries: the save
+  excludes it (`_excluded_save_params`), and a load of an older checkpoint that saved it resets it to 0
+  (`strict_load.RESET_ON_LOAD`), so every restart dumps its own first 3. Before T61 (2026-10-19) it was saved and
+  restored, so the cap was per LINEAGE: X26 dumped no weights after 203M
+  (`measurements/x26_a3_stop_316M_2026-10-18/` F1). X26's pin predates the fix. Test:
+  `src/agents/training/weight_dump_per_process_test.py`.
 
 A clean update pays nothing.
 

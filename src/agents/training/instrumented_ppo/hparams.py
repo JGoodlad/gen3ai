@@ -180,9 +180,12 @@ class PpoHyperparameters:
         # The ride-along optimizers and their owner handles (`strict_load.NEVER_UNPICKLED`,
         # gen3_cpu_load_no_cuda_v1) are re-acquired by every `_setup_model`, so a restart never restored
         # them; pickled, they were ~100 MB of CUDA state a CPU reader's load put on the GPU.
-        from agents.training.instrumented_ppo.strict_load import NEVER_UNPICKLED
+        # `_behaviour_weight_dumps` (K9(b)'s weight-dump count, `strict_load.RESET_ON_LOAD`, T61) is
+        # PER PROCESS: pickled, a resume restored it and the 3-dump cap became per LINEAGE (X26: no
+        # weights after 203M).
+        from agents.training.instrumented_ppo.strict_load import NEVER_UNPICKLED, RESET_ON_LOAD
 
-        return super()._excluded_save_params() + list(NEVER_UNPICKLED) + ["_rust_collector", "_rust_fill", "_rust_row_versions",
+        return super()._excluded_save_params() + list(NEVER_UNPICKLED) + list(RESET_ON_LOAD) + ["_rust_collector", "_rust_fill", "_rust_row_versions",
                                                   "_rust_row_provenance",
                                                   "_rust_version", "_behaviour_probe_metrics", "_env_core_stamp",
                                                   "_capacity_state",

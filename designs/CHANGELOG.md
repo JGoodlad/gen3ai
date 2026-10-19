@@ -14798,3 +14798,15 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
 - **Tests.** `src/main/anchors/team_overlap_test.py` (fails on revert). Docs: `designs/ops/EXTERNAL_ANCHORS_SOP.md` §2
   "The team sets" / "The team-set overlap" and §5 check 4, `UNDERSTANDING.md`, the ledger,
   `research_state/measurements/heldout_teams_kakuna_2026-10-18/`.
+
+## 2026-10-19 — T61: K9(b)'s weight-dump cap is PER PROCESS again (save / load of one counter only; no model / config / obs / signature change, no training-math change)
+
+- **The defect (X26 A6-F1; `research_state/measurements/x26_a3_stop_316M_2026-10-18/` F1).** `_dump_artifacts`
+  counts its policy-weight dumps on the model (`_behaviour_weight_dumps`, cap 3), and the attribute was not in
+  `_excluded_save_params`: every checkpoint saved it and every resume restored it, so the cap was per LINEAGE. X26
+  dumped no weights after 203M across every restart.
+- **The fix.** Saves exclude it (`hparams._excluded_save_params`); `strict_load.RESET_ON_LOAD` resets it to 0 when
+  an older checkpoint that carries it is loaded (through `never_unpickled`, so every strict, trainee, opponent and
+  prober load), so each process dumps the weights of its own first 3 violations. The code comment is corrected.
+- **Tests.** `src/agents/training/weight_dump_per_process_test.py` (fails on revert). Docs:
+  `designs/training/learner_gates.md`, `TASK_BACKLOG.md` OPS-11.
