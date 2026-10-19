@@ -422,6 +422,50 @@ def test_scan_metric_td_reorders(tmp_path):
     assert abs(by_td[0]["worst"]["td_residual"] - (-10.0 + 0.95 * 1.0 - 5.0)) < 1e-9
 
 
+def test_scan_value_drop_with_a_limit_expands_only_the_rows_it_returns(tmp_path, monkeypatch):
+    """REGRESSION (2026-10-19): `scan` expanded EVERY matching battle (a core-trace replay each,
+    ~0.1-0.2 s) before cutting to `limit` — hours for `/scan` on rb_x26_s2601's 41,345 traces. The
+    ranking needs only the stored values + decision count, so only the returned rows may expand,
+    and they must be exactly the full path's rows in the full path's order."""
+    import main.prober.session.core as core_mod
+    run = _build_scan_run(tmp_path)
+    for k in range(4):   # more losses, one tying loss_006's -8 to pin the stable tie order
+        vals = [10.0, 2.0] if k == 0 else [5.0, 5.0 - k]
+        _write_battle(tmp_path / "run", "heuristic", f"loss_10{k}",
+                      [_inv(1, "surf", 0.0)], vals)
+    full = ProbeSession(run).scan(outcome="loss")
+    expanded = []
+    real = core_mod.load_summary
+
+    def counting(path, **kw):
+        expanded.append(path)
+        return real(path, **kw)
+
+    monkeypatch.setattr(core_mod, "load_summary", counting)
+    for limit in (1, 2, 3, len(full), len(full) + 5):
+        expanded.clear()
+        rows = ProbeSession(run).scan(outcome="loss", limit=limit)
+        assert rows == full[:limit]
+        assert sorted(expanded) == sorted(r["id"] for r in rows), \
+            "only the returned rows may be expanded"
+    assert {r["short_id"].split("/")[-1] for r in full[:2]} == {"loss_006", "loss_100"}   # the tie
+
+
+def test_scan_refuses_a_stored_count_that_disagrees_with_the_trace(tmp_path):
+    """The limited ranking trusts `meta.invocations`; a trace whose stored count hides a decision
+    (here the -4 cliff at inv 1) must be REFUSED when its row is built, never ranked at -1."""
+    run = _build_scan_run(tmp_path)
+    _write_battle(tmp_path / "run", "liar", "loss_200",
+                  [_inv(1, "surf", 0.0), _inv(2, "surf", 0.0)], [5.0, 4.0, 0.0])
+    p = tmp_path / "run" / "eval_traces" / "step_2000000" / "liar" / "loss_200_summary.json"
+    d = json.loads(p.read_text())
+    d["meta"]["invocations"] = 1
+    p.write_text(json.dumps(d))
+    assert ProbeSession(run).scan(opponent="liar")[0]["worst"]["delta_v"] == -4.0   # the full path
+    with pytest.raises(ValueError, match="decision count disagrees"):
+        ProbeSession(run).scan(opponent="liar", limit=1)
+
+
 def test_scan_limit_and_bad_metric(tmp_path):
     run = _build_scan_run(tmp_path)
     assert len(ProbeSession(run).scan(outcome="loss", limit=1)) == 1

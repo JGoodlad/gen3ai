@@ -140,20 +140,59 @@ class _ScansMixin:
         """
         if metric not in ("value_drop", "td_residual"):
             raise ValueError(f"metric must be 'value_drop' or 'td_residual', got {metric!r}")
+        battles = [b for b in self.tree.all_battles()
+                   if not (outcome and b.outcome != outcome)
+                   and not (opponent and b.opponent != opponent)
+                   and not (step is not None and b.step != step)]
+        if metric == "value_drop" and limit:
+            return self._scan_value_drop_top(battles, limit)
         rows = []
-        for b in self.tree.all_battles():
-            if outcome and b.outcome != outcome:
-                continue
-            if opponent and b.opponent != opponent:
-                continue
-            if step is not None and b.step != step:
-                continue
+        for b in battles:
             tp = self._worst_turning_point(b, metric)
             if tp is not None:
                 rows.append(tp)
         key = "delta_v" if metric == "value_drop" else "td_residual"
         rows.sort(key=lambda r: (r["worst"][key] if r["worst"][key] is not None else float("inf")))
         return rows[:limit] if limit else rows
+
+    def _scan_value_drop_top(self, battles: "list[BattleTrace]", limit: int) -> "list[dict]":
+        """`scan(metric="value_drop", limit=N)` without expanding every battle.
+
+        A battle's worst ΔV needs only its recorded `values` and its decision COUNT — both on disk
+        without the core-trace replay (`meta.invocations`, which the expansion itself asserts equals
+        the npz row count). So every candidate is RANKED from those, and only the N it returns are
+        expanded into rows. Measured on `rb_x26_s2601` (41,345 core traces, 2026-10-19): one
+        expansion is ~0.1-0.2 s, so the full path was hours for a run-wide `/scan`; this reads two
+        small files per battle. The rows, and their order, are exactly the full path's: the same
+        stable sort on the same ΔV, then the same `_worst_turning_point` builds each row."""
+        ranked = []
+        for order, b in enumerate(battles):
+            n = (self._meta(b) or {}).get("invocations")
+            if not isinstance(n, int) or isinstance(n, bool):
+                # No recorded decision count: rank it the full way (a stored trace, not a replay).
+                tp = self._worst_turning_point(b, "value_drop")
+                if tp is not None:
+                    ranked.append((tp["worst"]["delta_v"], order, b, tp))
+                continue
+            values = self._npz_values(b)
+            best = None
+            for i in range(n):
+                v, v_next = self._v(values, i), self._v(values, i + 1)
+                if v is not None and v_next is not None and (best is None or v_next - v < best):
+                    best = v_next - v
+            if best is not None:
+                ranked.append((best, order, b, None))
+        ranked.sort(key=lambda t: (t[0], t[1]))
+        rows = []
+        for dv, _, b, tp in ranked[:limit]:
+            tp = tp if tp is not None else self._worst_turning_point(b, "value_drop")
+            if tp is None or tp["worst"]["delta_v"] != dv:
+                raise ValueError(
+                    f"scan: {b.summary_path} ranked at ΔV {dv} from its stored values but its "
+                    f"expanded row reads {None if tp is None else tp['worst']['delta_v']} — the "
+                    "recorded decision count disagrees with the trace; refused rather than ranked")
+            rows.append(tp)
+        return rows
 
     def _worst_turning_point(self, battle: BattleTrace, metric: str) -> "dict | None":
         """The single worst decision in one battle by `metric` (model-free).

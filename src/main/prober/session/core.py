@@ -235,6 +235,14 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
             return load_summary_meta(battle.summary_path)
         return s.get("meta") or {}
 
+    def _npz_values(self, battle: BattleTrace):
+        """The recorded ``values`` array alone (None when absent) — reads that one npz member, not
+        the obs states beside it."""
+        if battle.npz_path is None:
+            return None
+        with np.load(battle.npz_path) as z:
+            return z["values"] if "values" in z.files else None
+
     def _npz(self, battle: BattleTrace) -> dict:
         if battle.npz_path is None:
             return {}

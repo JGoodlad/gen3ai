@@ -20,6 +20,12 @@ the tier that works on every run, forever.
   policy/critic usage); a low one where our active then faints means the belief is
   mis-calibrated (an encoder gap). The one-call form of "list losses → overview each
   → rank by the biggest drop" — the usual first move of a loss sweep. No model loaded.
+  **Cost:** every row needs its battle's core-trace EXPANSION (a Rust replay, ~0.1-0.2 s each),
+  so `value_drop` WITH a `limit` ranks every candidate from its stored `values` and
+  `meta.invocations` alone and expands only the rows it returns (rb_x26_s2601, 2026-10-19: a
+  run-wide `outcome=loss, limit=25` over 41,345 traces in ~17 s, where the full path took
+  hours); a stored count that disagrees with the trace is refused. `td_residual`, or no `limit`,
+  still expands every matching battle — filter by `step` on a big run.
 - `switch_vs_info(step=, opponent=, outcome=, max_battles=)` — **model-free behavioural
   probe** of OUR policy: voluntary switch-rate bucketed by how many opponent mons we'd
   revealed (the information level), a correlation, and the double-switch rate (switch the
