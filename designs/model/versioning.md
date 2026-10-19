@@ -275,6 +275,21 @@ deletion). No run recorded it.
   byte-identical. A checkpoint trained under the 16-roll `exact` (the closing test's end-state arm, pinned at
   `b132b099`) loads here and evaluates its KO cells to that rounding bound.
 
+**τ in float64 (T62, `gen3_tau_fp64_solve_v1`, 2026-10-19): NO config, obs-semantics, signature or floor bump —
+the same judgment as the closed-form P(KO) above.** `hypothesis_set.fixed_size_tau` solves its constraint in float64
+and casts only τ back (`TAU_SOLVE_DTYPE`; `designs/endstate/design_x5_belief_tokens.md` §3.2):
+
+* **`MODEL_CONFIG_VERSION`: no bump.** No field, no flag, no parameter; nothing to record or migrate.
+* **`OBS_SEMANTICS_VERSION`: no bump.** No observation cell moved.
+* **`ARCH_SIGNATURE`: no bump, against the letter of "any forward-math change bumps it".** The real function is
+  unchanged (τ is the same root of the same equation); only its floating-point evaluation is, and it moves TOWARD the
+  exact function: on the X26 τ-class rows the fp32 forward's max |Δ log π| against a float64 forward fell from
+  2.2e-3 to 7.9e-5 (`research_state/measurements/t62_tau_fp64_2026-10-19/`, `equivalence.json`). Away from saturated
+  rows the change is the size of a compile or a device change. A bump would refuse X26 and every fork of it, whose
+  weights fit and whose forward is the same real function. A checkpoint trained before T62 loads here and evaluates
+  its saturated k = 1 rows a few 1e-3 nats differently at most. Whether an X35 FORK of X26 adopting T62 is the
+  "same network" is an experiment-design question (the identity read in that directory), not a version question.
+
 ## The LEGACY + JUDGMENT DELETION's refusal rule (`model_version/adopted_levers.py`, U0 2026-10-15)
 
 The end state's adoption (2026-10-12) leaves every lever of the `--arch endstate` overlay with ONE value; the units

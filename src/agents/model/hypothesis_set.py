@@ -41,11 +41,21 @@ THE FIXED-SIZE CONSTRUCTION (`fixed_size_tau`).
 * **Bracket (provable).** With ``n = |V|``: at ``τ_lo = log(k/(n−k)) − a_max`` every term is at most
   ``k/n`` so ``Σ ≤ k``; at ``τ_hi = log(k/(n−k)) − a_min`` every term is at least ``k/n`` so ``Σ ≥ k``.
   ``Σσ(a + τ)`` is strictly increasing in ``τ``, so the root is unique and inside.
-* **Bisection: ``BISECTION_ITERS`` = 64 fixed iterations**, the same count in every dtype, under
-  ``no_grad``, no data-dependent exit: a static graph and a deterministic result. 64 halvings of a
-  bracket of width ``a_max − a_min`` reach ``width · 2^-64`` — below fp64's resolution of ``τ`` for
-  any realistic width (the prior's is ≤ 45.2 nats, MEASURED), and fp32 stops moving at its own
-  resolution after ~25 halvings.
+* **Bisection: ``BISECTION_ITERS`` = 64 fixed iterations**, under ``no_grad``, no data-dependent
+  exit: a static graph and a deterministic result. 64 halvings of a bracket of width ``a_max − a_min``
+  reach ``width · 2^-64`` — below fp64's resolution of ``τ`` for any realistic width (the prior's is
+  ≤ 45.2 nats, MEASURED).
+* **The constraint is SOLVED IN FLOAT64 whatever the scores' dtype** (``TAU_SOLVE_DTYPE``; T62,
+  ``gen3_tau_fp64_solve_v1``): the bracket, the sums and the bisection run on a float64 copy of the
+  scores, and only ``τ`` is cast back to the scores' dtype. WHY: ``τ``'s accuracy is the constraint
+  sum's resolution divided by its slope, ``ulp(k) / S'(τ)`` with ``S'(τ) = Σ π(1 − π)``. On a row with
+  ``k = 1`` and one near-certain candidate (π ≈ 1 − 1e-5) the slope is ~1e-5, so an fp32 sum fixes
+  ``τ`` only to 7e-3 – 1.5e-2, and two valid fp32 programs (the compiled rollout, the eager learner)
+  summing in different orders land at different points of that band — the K9(b) τ-class tail (X26
+  A3 / A6 diagnosis, `designs/research_state/measurements/x26_a3_stop_316M_2026-10-18/`). In float64
+  the band is ~1e-11, so every program lands on the same fp32 ``τ`` (to its own final rounding).
+  ``τ`` itself is WELL-conditioned in the scores (``∂τ/∂a`` is a π(1 − π)-weighted average, magnitude
+  ≤ 1): only the fp32 EVALUATION of the sum was ill-conditioned, so the fix changes no real function.
 * **Structural cases.** ``k = 0``: ``π ≡ 0``, nothing is read from the bisection, every seat and
   OTHER are masked. ``k = n``: ``π ≡ 1`` on ``V`` and the row is EXCLUDED from the BCE (it carries no
   information). The bisection runs on a SAFE stand-in (``k`` clamped into ``[1, n−1]``) for those
@@ -90,8 +100,11 @@ from agents.model.arch_constants import D_MODEL, HYPOTHESIS_DELTA_HIDDEN, HYPOTH
 from agents.observation.constants import TEAM_SIZE
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 
-#: The bisection's FIXED iteration count (§3.2): the same in every dtype, no data-dependent exit.
+#: The bisection's FIXED iteration count (§3.2): no data-dependent exit.
 BISECTION_ITERS = 64
+#: The dtype `fixed_size_tau` SOLVES its constraint in, whatever the scores' dtype (T62; module docstring):
+#: an fp32 sum fixes τ only to ulp(k) / S'(τ), up to 1.5e-2 on a saturated k = 1 row.
+TAU_SOLVE_DTYPE = torch.float64
 #: §3.1's rule-8 exclusion: a row whose π at a selection boundary differs by less than this
 #: (ABSOLUTE, π ∈ (0, 1)) across the boundary is excluded from every two-computation comparison.
 SELECTION_TIE_EPS = 1e-6
@@ -117,9 +130,11 @@ def fixed_size_tau(scores: torch.Tensor, cand: torch.Tensor, k: torch.Tensor,
     provable bracket in the module docstring. ``scores`` [B, N] float; ``cand`` [B, N] bool; ``k`` [B]
     integer. NO gradient (the exact implicit gradient is zero, module docstring). Rows with
     ``k == 0`` or ``k >= n`` (the structural cases) get a finite, MEANINGLESS ``τ`` — callers mask
-    them; nothing here forms a NaN or an inf for them."""
+    them; nothing here forms a NaN or an inf for them. The solve runs in ``TAU_SOLVE_DTYPE``
+    (float64); ``τ`` is returned in ``scores.dtype``."""
     with torch.no_grad():
-        s = scores.detach()
+        out_dt = scores.dtype
+        s = scores.detach().to(TAU_SOLVE_DTYPE)
         dt = s.dtype
         n = cand.sum(-1)                                                        # [B]
         # The SAFE stand-in for the structural rows: k into [1, n-1] (n >= 2), else a dummy row.
@@ -141,7 +156,7 @@ def fixed_size_tau(scores: torch.Tensor, cand: torch.Tensor, k: torch.Tensor,
             above = total > k_t
             hi = torch.where(above, mid, hi)
             lo = torch.where(above, lo, mid)
-        return 0.5 * (lo + hi)
+        return (0.5 * (lo + hi)).to(out_dt)
 
 
 @dataclass(frozen=True)

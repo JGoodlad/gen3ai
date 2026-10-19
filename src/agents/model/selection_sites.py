@@ -171,10 +171,16 @@ REASONS: Dict[str, str] = {
                  "gen3_fm_index_max_v1; every value-reduction max since the version break, audit F6a): the gathered value is the operand's maximum, bit-identical to `amax` "
                  "of it in every forward, so which near-tied candidate wins never reaches log pi — the site "
                  "is exactly as continuous as the `amax` it spells (`selection_sites_test` pins the gather)",
-    "BISECT": "a fixed-step bisection's direction test under no_grad (X5's fixed-size construction): "
-              "either branch keeps the root inside the bracket, so a flip at a rounding error moves the "
-              "converged root by at most the final bracket width — a continuous, ulp-scale change, never a "
-              "log pi jump",
+    "BISECT": "a fixed-step bisection's direction test under no_grad (X5's fixed-size construction, "
+              "`hypothesis_set.fixed_size_tau`): either branch keeps the root inside the bracket, so a flip "
+              "at a rounding error moves the converged root by at most the final bracket width — continuous, "
+              "never a log pi jump. HOW FAR the root can sit from the true one is the constraint sum's "
+              "resolution over its slope, ulp(k) / S'(tau) with S' = sum pi (1 - pi): the sum is evaluated in "
+              "FLOAT64 (T62, `TAU_SOLVE_DTYPE`), so that is <= ~1e-10 even on a saturated k = 1 row "
+              "(S' ~ 1e-5), and tau is then rounded once to the scores' dtype — every program lands on the same "
+              "tau. (Before T62 the sum was fp32: 7e-3 - 1.5e-2 on such rows, continuous but NOT ulp-scale — "
+              "the X26 A3 / A6 K9(b) tau class, `designs/research_state/measurements/"
+              "x26_a3_stop_316M_2026-10-18/`)",
     "COUNT_CONTINUOUS": "a floor / ceil that COUNTS the terms of an arithmetic sequence on one side of a clamp "
                         "edge, read only by the closed-form sum over the counted runs (`ko_exact.roll_ko_prob`, "
                         "the exact P(KO)): the term that changes class at the count's step sits ON the edge "
@@ -354,7 +360,8 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     # argsort as a MARGIN rule on the k-th / (k+1)-th π gap (§3.1's rule-8 exclusion,
     # `hypothesis_set.near_tie_rows`, including OTHER's tail-mean cutoff and the move seats); the
     # bisection's `total > k_t` is NOT a discontinuity (τ converges to the same root either way, to the
-    # dtype's resolution) and needs a reason of its own; `denom > 0` is a structural-count gate.
+    # resolution of the float64 sum since T62 — fp32's was up to 1.5e-2 on a saturated k = 1 row) and needs a
+    # reason of its own; `denom > 0` is a structural-count gate.
     "hypothesis_set": {
         "BISECT": ("total > k_t",),
         "TABLE": ("logits > cut",),

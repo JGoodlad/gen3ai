@@ -1,0 +1,55 @@
+{
+ "threads": 3,
+ "torch": "2.8.0+cu126",
+ "micro_species": {
+  "shape": [
+   512,
+   400
+  ],
+  "compile_s_old": 15.0,
+  "compiled_ms_old": 2.6050801388919353,
+  "eager_ms_old": 14.644555980339646,
+  "compile_s_new": 13.0,
+  "compiled_ms_new": 8.14637984149158,
+  "eager_ms_new": 17.714318120852113
+ },
+ "micro_moves": {
+  "shape": [
+   512,
+   6,
+   371
+  ],
+  "compile_s_old": 11.3,
+  "compiled_ms_old": 17.58211897686124,
+  "eager_ms_old": 75.11514099314809,
+  "compile_s_new": 13.6,
+  "compiled_ms_new": 36.72536788508296,
+  "eager_ms_new": 397.0153119880706
+ },
+ "forward_B64": {
+  "batch": 64,
+  "eager_ms": {
+   "old": 262.2778690420091,
+   "new": 270.4841911327094
+  },
+  "compile_s_old": 263.9,
+  "compile_s_new": 254.0,
+  "compiled_ms": {
+   "old": 148.3279310632497,
+   "new": 244.48114703409374
+  }
+ },
+ "forward_B256": {
+  "batch": 256,
+  "eager_ms": {
+   "old": 1912.9839041270316,
+   "new": 3354.643588885665
+  },
+  "compile_s_old": 276.5,
+  "compile_s_new": 245.8,
+  "compiled_ms": {
+   "old": 791.5194290690124,
+   "new": 590.3662829659879
+  }
+ }
+}

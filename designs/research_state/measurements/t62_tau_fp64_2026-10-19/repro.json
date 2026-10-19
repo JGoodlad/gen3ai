@@ -1,0 +1,166 @@
+{
+ "perms": 64,
+ "torch": "2.8.0+cu126",
+ "u32180@316000231": {
+  "k_violator": 1,
+  "slope_violator": 8.093553587810307e-06,
+  "fp32_band_violator": 0.0147289182999075,
+  "tau_fp64_violator": -19.2103104484069,
+  "old_fp32_solve": {
+   "order_spread_violator": 0.0159912109375,
+   "order_spread_others_max": 0.04722785949707031,
+   "order_spread_others_median": 0.0,
+   "compiled_vs_eager_violator": 0.009090423583984375,
+   "compiled_vs_eager_others_max": 0.0065631866455078125,
+   "err_vs_fp64_violator": 0.0041680228697913435,
+   "err_vs_fp64_max_over_orders_violator": 0.013258446453775719,
+   "err_vs_fp64_others_max": 0.005094009622265361
+  },
+  "new_fp64_solve": {
+   "order_spread_violator": 0.0,
+   "order_spread_others_max": 0.0,
+   "order_spread_others_median": 0.0,
+   "compiled_vs_eager_violator": 0.0,
+   "compiled_vs_eager_others_max": 0.0,
+   "err_vs_fp64_violator": 4.6610709603100986e-07,
+   "err_vs_fp64_max_over_orders_violator": 4.6610709603100986e-07,
+   "err_vs_fp64_others_max": 5.274695951129615e-07
+  },
+  "seconds": 33.2
+ },
+ "u32180@317000041": {
+  "k_violator": 1,
+  "slope_violator": 1.0424578143140645e-05,
+  "fp32_band_violator": 0.01143540658565841,
+  "tau_fp64_violator": -19.973507180316354,
+  "old_fp32_solve": {
+   "order_spread_violator": 0.0014190673828125,
+   "order_spread_others_max": 0.05557060241699219,
+   "order_spread_others_median": 9.5367431640625e-07,
+   "compiled_vs_eager_violator": 0.0,
+   "compiled_vs_eager_others_max": 0.00064849853515625,
+   "err_vs_fp64_violator": 0.0051424647401816515,
+   "err_vs_fp64_max_over_orders_violator": 0.0065615321229941515,
+   "err_vs_fp64_others_max": 0.004550331316707457
+  },
+  "new_fp64_solve": {
+   "order_spread_violator": 0.0,
+   "order_spread_others_max": 0.0,
+   "order_spread_others_median": 0.0,
+   "compiled_vs_eager_violator": 0.0,
+   "compiled_vs_eager_others_max": 0.0,
+   "err_vs_fp64_violator": 2.5282611915145026e-07,
+   "err_vs_fp64_max_over_orders_violator": 2.5282611915145026e-07,
+   "err_vs_fp64_others_max": 6.329527622028763e-07
+  },
+  "seconds": 1.3
+ },
+ "u32320@317000041": {
+  "k_violator": 1,
+  "slope_violator": 1.6854554065229262e-05,
+  "fp32_band_violator": 0.007072823706247355,
+  "tau_fp64_violator": -19.222724052800963,
+  "old_fp32_solve": {
+   "order_spread_violator": 0.008388519287109375,
+   "order_spread_others_max": 0.000690460205078125,
+   "order_spread_others_median": 9.5367431640625e-07,
+   "compiled_vs_eager_violator": 0.000274658203125,
+   "compiled_vs_eager_others_max": 3.814697265625e-06,
+   "err_vs_fp64_violator": 0.0030241931818224543,
+   "err_vs_fp64_max_over_orders_violator": 0.01113805426580683,
+   "err_vs_fp64_others_max": 0.0010811217504382853
+  },
+  "new_fp64_solve": {
+   "order_spread_violator": 0.0,
+   "order_spread_others_max": 0.0,
+   "order_spread_others_median": 0.0,
+   "compiled_vs_eager_violator": 0.0,
+   "compiled_vs_eager_others_max": 0.0,
+   "err_vs_fp64_violator": 8.617498181706651e-07,
+   "err_vs_fp64_max_over_orders_violator": 8.617498181706651e-07,
+   "err_vs_fp64_others_max": 4.0502257192542857e-07
+  },
+  "seconds": 1.4
+ },
+ "u32320@320000071": {
+  "k_violator": 1,
+  "slope_violator": 1.6009098461500863e-05,
+  "fp32_band_violator": 0.007446346203532894,
+  "tau_fp64_violator": -19.42793505778475,
+  "old_fp32_solve": {
+   "order_spread_violator": 0.0096282958984375,
+   "order_spread_others_max": 0.002201080322265625,
+   "order_spread_others_median": 9.5367431640625e-07,
+   "compiled_vs_eager_violator": 0.005535125732421875,
+   "compiled_vs_eager_others_max": 1.9073486328125e-06,
+   "err_vs_fp64_violator": 0.0041603385464696885,
+   "err_vs_fp64_max_over_orders_violator": 0.009695464278891563,
+   "err_vs_fp64_others_max": 0.000980249584131343
+  },
+  "new_fp64_solve": {
+   "order_spread_violator": 0.0,
+   "order_spread_others_max": 0.0,
+   "order_spread_others_median": 0.0,
+   "compiled_vs_eager_violator": 0.0,
+   "compiled_vs_eager_others_max": 0.0,
+   "err_vs_fp64_violator": 4.11178305625981e-07,
+   "err_vs_fp64_max_over_orders_violator": 4.11178305625981e-07,
+   "err_vs_fp64_others_max": 4.665261705838475e-07
+  },
+  "seconds": 2.0
+ },
+ "u35950@353000151": {
+  "k_violator": 1,
+  "slope_violator": 4.242555654541691e-06,
+  "fp32_band_violator": 0.028098462167058837,
+  "tau_fp64_violator": -21.22744388444879,
+  "old_fp32_solve": {
+   "order_spread_violator": 0.005275726318359375,
+   "order_spread_others_max": 0.00476837158203125,
+   "order_spread_others_median": 7.450580596923828e-07,
+   "compiled_vs_eager_violator": 0.0,
+   "compiled_vs_eager_others_max": 0.002506256103515625,
+   "err_vs_fp64_violator": 0.016697119312070186,
+   "err_vs_fp64_max_over_orders_violator": 0.02197284563042956,
+   "err_vs_fp64_others_max": 0.0043965145485884705
+  },
+  "new_fp64_solve": {
+   "order_spread_violator": 0.0,
+   "order_spread_others_max": 0.0,
+   "order_spread_others_median": 0.0,
+   "compiled_vs_eager_violator": 0.0,
+   "compiled_vs_eager_others_max": 0.0,
+   "err_vs_fp64_violator": 1.8938042956051504e-07,
+   "err_vs_fp64_max_over_orders_violator": 1.8938042956051504e-07,
+   "err_vs_fp64_others_max": 7.755541346909922e-07
+  },
+  "seconds": 1.3
+ },
+ "u35950@354000424": {
+  "k_violator": 1,
+  "slope_violator": 6.477373173288613e-06,
+  "fp32_band_violator": 0.01840395579528696,
+  "tau_fp64_violator": -21.56988397195225,
+  "old_fp32_solve": {
+   "order_spread_violator": 0.02663421630859375,
+   "order_spread_others_max": 0.01149749755859375,
+   "order_spread_others_median": 9.5367431640625e-07,
+   "compiled_vs_eager_violator": 0.01703643798828125,
+   "compiled_vs_eager_others_max": 0.00041961669921875,
+   "err_vs_fp64_violator": 0.02490487649326667,
+   "err_vs_fp64_max_over_orders_violator": 0.02490487649326667,
+   "err_vs_fp64_others_max": 0.016627033328880714
+  },
+  "new_fp64_solve": {
+   "order_spread_violator": 0.0,
+   "order_spread_others_max": 0.0,
+   "order_spread_others_median": 0.0,
+   "compiled_vs_eager_violator": 0.0,
+   "compiled_vs_eager_others_max": 0.0,
+   "err_vs_fp64_violator": 6.253946338574679e-07,
+   "err_vs_fp64_max_over_orders_violator": 6.253946338574679e-07,
+   "err_vs_fp64_others_max": 7.4003209959983e-07
+  },
+  "seconds": 1.4
+ }
+}

@@ -101,6 +101,10 @@ def test_the_default_slot_is_the_break_s_one_deliberate_re_record():
     identical under +cu126 and +cu128), and the buffer was rebuilt (`448715cc…` -> `a782af44…`) because its behaviour
     log-probs follow the seeded learner — at RUN SEED 22 (`RECORD_RUN_SEED`'s comment: 19 / 20 missed the
     OTHER_move-dead coverage under the new learner, 21 failed K9(b)).
+    Then T62 (`gen3_tau_fp64_solve_v1`, 2026-10-19: `hypothesis_set.fixed_size_tau` solves its constraint in float64
+    and casts only τ back) kept the init (`c44c7e52…`) and the buffer (`a782af44…`) and moved the update by τ's fp32
+    rounding (post `25debac1…` -> `bd79d729…`, fp32 opt-out `3375befb…` -> `d614ec22…`, identical under +cu126 and
+    +cu128; the fp32 losses move ~1e-8 relative, the bf16 ones ~1e-5).
     FAILS if anyone re-records the golden without a new reason row, or restores an arm block."""
     g = L.load_golden()
     e = g["entries"]["2.8.0+cu126"]
@@ -109,33 +113,35 @@ def test_the_default_slot_is_the_break_s_one_deliberate_re_record():
     hist = [h for h in g["history"] if h["torch"] == "2.8.0+cu126"]
     cu128 = g["entries"].get("2.8.0+cu128")
     if cu128 is not None:
-        assert [h["torch"] for h in g["history"]].count("2.8.0+cu128") == 4   # adoption + learnset + bf16 + U3
+        assert [h["torch"] for h in g["history"]].count("2.8.0+cu128") == 5   # adoption + learnset + bf16 + U3 + T62
         assert cu128["post_params_sha256"] == e["post_params_sha256"] and cu128["init_params_sha256"] == e["init_params_sha256"], \
             "the CPU update is byte-identical across the two CUDA builds (verified 2026-10-12, bf16 2026-10-14): it no longer is"
         assert cu128["fp32_opt_out"]["post_params_sha256"] == e["fp32_opt_out"]["post_params_sha256"]
     assert e["init_params_sha256"] == "c44c7e52301adc82d3070fecc7b21c88e053aa351070811ea1ae43c46f775e3d"
-    assert e["post_params_sha256"] == "25debac10d077eb14e87d87b27b709c193ed00106178a941ab351dd138028213"
-    assert e["fp32_opt_out"]["post_params_sha256"] == "3375befb5b4ec8690f8c73237b859735c7336f35c16afc599b99fdea3ba99cec"
+    assert e["post_params_sha256"] == "bd79d7291ea9cb8693f9dea6f0611441b31d636452bf746eabdfdae742979d84"
+    assert e["fp32_opt_out"]["post_params_sha256"] == "d614ec22cbcd15b911674bffa42bab34ac1af2e00f4f43a2257b4120eeb1f215"
     assert e["fp32_opt_out"]["init_params_sha256"] == e["init_params_sha256"]
     assert g["buffer_sha256"] == "a782af4451acec3f9403098980844493ba9f9df589501cfd60c3dea00e25cfd0"
     assert g["perturb"] == "name_keyed" and "arms" not in g
     assert L.RECORD_RUN_SEED == 22
-    assert "MOVED VERBATIM" in hist[-8]["reason"]
-    brk = hist[-7]["reason"]
+    assert "MOVED VERBATIM" in hist[-9]["reason"]
+    brk = hist[-8]["reason"]
     assert brk.startswith("gen3_x5_version_break_v1 (config v144)") and "obs-facts appended (2845)" in brk
     assert sum("gen3_x5_version_break_v1 (config v144)" in h["reason"] for h in hist) == 1
-    assert hist[-6]["reason"].startswith("gen3_mon_tied_gain_v1 (config v145)")
+    assert hist[-7]["reason"].startswith("gen3_mon_tied_gain_v1 (config v145)")
     assert sum(h["reason"].startswith("gen3_mon_tied_gain_v1") for h in hist) == 1
-    assert hist[-5]["reason"].startswith("gen3_toxic_stage_scale_v1 (config v151)")
+    assert hist[-6]["reason"].startswith("gen3_toxic_stage_scale_v1 (config v151)")
     assert sum(h["reason"].startswith("gen3_toxic_stage_scale_v1") for h in hist) == 1
-    assert hist[-4]["reason"].startswith("the END STATE adopted as production (closing test PASS 2026-10-12)")
+    assert hist[-5]["reason"].startswith("the END STATE adopted as production (closing test PASS 2026-10-12)")
     assert sum(h["reason"].startswith("the END STATE adopted as production") for h in hist) == 1
-    assert hist[-3]["reason"].startswith("gen3_learnset_prevo_chain_v1")
+    assert hist[-4]["reason"].startswith("gen3_learnset_prevo_chain_v1")
     assert sum(h["reason"].startswith("gen3_learnset_prevo_chain_v1") for h in hist) == 1
-    assert hist[-2]["reason"].startswith("the bf16 trunk adopted as production")
+    assert hist[-3]["reason"].startswith("the bf16 trunk adopted as production")
     assert sum(h["reason"].startswith("the bf16 trunk adopted as production") for h in hist) == 1
-    assert hist[-1]["reason"].startswith("legacy deletion U3 (D-LD7, config v157)")
+    assert hist[-2]["reason"].startswith("legacy deletion U3 (D-LD7, config v157)")
     assert sum(h["reason"].startswith("legacy deletion U3") for h in hist) == 1
+    assert hist[-1]["reason"].startswith("T62 (gen3_tau_fp64_solve_v1)")
+    assert sum(h["reason"].startswith("T62 (gen3_tau_fp64_solve_v1)") for h in hist) == 1
     assert hist[-1]["fp32_opt_out_post_params_sha256"] == e["fp32_opt_out"]["post_params_sha256"]
 
 

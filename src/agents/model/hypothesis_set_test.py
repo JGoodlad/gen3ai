@@ -2,6 +2,8 @@
 
 What each test pins, and what reverting it would break:
 
+* T62: τ's constraint is SOLVED in float64 whatever the scores' dtype — one τ under any summation order on a
+  saturated k = 1 row (the X26 A3 / A6 τ class), fp32 in → fp32 out, and one compiled graph;
 * the fixed-size construction: Σπ = k (fp64 1e-12 / fp32 1e-5, measured 2.7e-15 / 1.4e-6), π strictly
   inside (0, 1), the provable bracket, the k = 0 / k = n structural branches, an independent fp64
   root-find, the BCE finite on extreme scores, ∂BCE/∂τ = 0 (the autograd gradient with τ under
@@ -25,6 +27,7 @@ import numpy as np
 import pytest
 import torch
 
+from agents.model import hypothesis_set as HS
 from agents.model.hypothesis_set import (BISECTION_ITERS, MASKED_LOG_PRESENCE,
                                          MOVE_GROUP_MASS, SELECTION_TIE_EPS, TYPED_HP_NUMS,
                                          HypothesisBuilder, belief_head_team_scores,
@@ -158,6 +161,74 @@ def test_the_bisection_needs_its_iterations(builder, prior_batch):
     s = torch.where(cand, torch.sigmoid(logp.double() + tau.unsqueeze(-1)), torch.zeros(())).sum(-1)
     assert float((s - k.double())[k > 0].abs().max()) > 1e-3
     assert BISECTION_ITERS == 64
+
+
+# ----------------------------------------------------------------------------------- T62: τ solved in float64
+def _near_flat_k1_scores() -> torch.Tensor:
+    """[1,400] fp32 scores of a SATURATED k = 1 row (the X26 A3 / A6 τ class): one candidate the model is all
+    but certain of (π ≈ 1 − 2.3e-5 at the root) and 399 far below it, so the constraint's slope at the root is
+    ~5e-5 and an fp32 sum fixes τ only to ~2.5e-3."""
+    g = torch.Generator().manual_seed(62)
+    a = -29.0 + 2.0 * torch.randn(400, generator=g, dtype=torch.float64)
+    a[17] = 0.0
+    return a.float().unsqueeze(0)
+
+
+def test_tau_is_solved_in_float64_and_returned_in_the_scores_dtype(builder, prior_batch):
+    """The solve upcasts (exactly) and casts only τ back, so fp32 scores give the fp64 solve's τ rounded once —
+    bit for bit. Reverting to the in-dtype solve breaks the equality (an fp32 bisection lands elsewhere)."""
+    ids, bel, logp = prior_batch
+    cand, k = species_candidates(builder.species_valid, ids, bel)
+    for s32, c, kk in ((logp.float(), cand, k),
+                       (_near_flat_k1_scores(), torch.ones(1, 400, dtype=torch.bool), torch.tensor([1]))):
+        t32 = fixed_size_tau(s32, c, kk)
+        assert t32.dtype == torch.float32
+        assert torch.equal(t32, fixed_size_tau(s32.double(), c, kk).float())
+    assert HS.TAU_SOLVE_DTYPE == torch.float64
+
+
+def test_a_near_flat_k1_constraint_gives_one_tau_under_any_summation_order(monkeypatch):
+    """THE τ-class mechanism (X26 A3 / A6, T62): two valid programs that sum the constraint in different orders
+    (the compiled rollout, the eager learner) — emulated by permuting the candidate axis — must land on the same
+    τ. PRECONDITION (asserted, not assumed): the row IS ill-conditioned — its fp32 band ulp(1) / S'(τ) exceeds
+    1e-3, and the in-dtype fp32 solve (`TAU_SOLVE_DTYPE` patched to float32, the pre-T62 arithmetic) really does
+    spread over the orders by > 1e-3. After the fix every order gives the fp64 root rounded once: the spread is at
+    most one fp32 ulp of τ (the final cast can straddle a rounding midpoint — rule 8 bounds it, never by chance)."""
+    s32 = _near_flat_k1_scores()
+    cand, k = torch.ones(1, 400, dtype=torch.bool), torch.tensor([1])
+    t64 = fixed_size_tau(s32.double(), cand, k)
+    pi = torch.sigmoid(s32.double() + t64.unsqueeze(-1))
+    slope = float((pi * (1 - pi)).sum())
+    assert torch.finfo(torch.float32).eps / slope > 1e-3                        # the fp32 band
+    perms = [torch.randperm(400, generator=torch.Generator().manual_seed(i)) for i in range(32)]
+
+    def spread() -> float:
+        taus = torch.cat([fixed_size_tau(s32[:, p], cand, k) for p in perms])
+        return float(taus.max() - taus.min())
+
+    with monkeypatch.context() as m:
+        m.setattr(HS, "TAU_SOLVE_DTYPE", torch.float32)
+        assert spread() > 1e-3                                                   # the pre-T62 solve
+    ulp = float(torch.finfo(torch.float32).eps) * 2.0 ** math.floor(math.log2(abs(float(t64))))
+    assert spread() <= ulp
+    assert abs(float(fixed_size_tau(s32, cand, k)) - float(t64)) <= ulp
+
+
+def test_the_float64_solve_traces_as_one_graph_and_matches_eager():
+    """`--compile-trainer` compiles the forward with `fixed_size_tau` inside: the float64 upcast and the cast
+    back must not break the graph (fullgraph=True raises on a break). aot_eager: the trace, without codegen
+    (the inductor read is the T62 measurement's)."""
+    import torch._dynamo as dynamo
+    s32 = _near_flat_k1_scores().repeat(3, 1)
+    s32[1] = s32[1].flip(-1)
+    cand, k = torch.ones(3, 400, dtype=torch.bool), torch.tensor([1, 1, 5])
+    fn = torch.compile(fixed_size_tau, fullgraph=True, backend="aot_eager", dynamic=False)
+    try:
+        got = fn(s32, cand, k)
+    finally:
+        dynamo.reset()
+    assert got.dtype == torch.float32
+    assert torch.equal(got, fixed_size_tau(s32, cand, k))
 
 
 def test_k_zero_is_structural_pi_zero_everything_masked(builder, layout):

@@ -1,0 +1,24 @@
+[mem_cap] cap 20.00 GB (swap 0) · unit gen3ai-capped-t62eqc-3831280.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[toy] checkpoint_99000010_steps.zip: fixed_size_tau calls 0, hypothesis_builder None
+[A fixture@280M] rows 915 saturated 0 (k=1 24) band max 1.33e-05 | new-vs-old all {'rows': 915, 'max_dlogp': 3.8623809814453125e-05, 'p99_dlogp': 2.282142639160157e-05, 'median_dlogp': 3.814697265625e-06, 'max_dvalue': 5.960464477539062e-07, 'argmax_agree': 915, 'argmax_agree_decisive': '915/915', 'near_tied_greedy_rows': 0} | sat {'rows': 0}
+   old_vs_ref: all max 0.030475600789422685 p99 2.9048386395080805e-05 | sat max None
+   new_vs_ref: all max 0.03048418385827034 p99 2.7558045173874396e-05 | sat max None
+   oldcompiled_vs_old (the program floor, pre-T62): all max 5.7697296142578125e-05 p99 3.068923950195313e-05 | sat max None
+   newcompiled_vs_new (the program floor, T62): all max 6.365776062011719e-05 p99 3.331184387207032e-05 | sat max None
+   newcompiled_vs_oldcompiled: all max 3.838539123535156e-05 p99 2.4595260620117207e-05 | sat max None
+[B event rows@280M] rows 99 saturated 9 (k=1 23) band max 1.97e-02 | new-vs-old all {'rows': 99, 'max_dlogp': 0.0022077560424804688, 'p99_dlogp': 0.00033855438232421116, 'median_dlogp': 5.7220458984375e-06, 'max_dvalue': 2.6971101760864258e-06, 'argmax_agree': 99, 'argmax_agree_decisive': '99/99', 'near_tied_greedy_rows': 0} | sat {'rows': 9, 'max_dlogp': 0.0022077560424804688, 'p99_dlogp': 0.0020551681518554688, 'median_dlogp': 8.106231689453125e-06, 'max_dvalue': 2.6971101760864258e-06, 'argmax_agree': 9, 'argmax_agree_decisive': '9/9', 'near_tied_greedy_rows': 0}
+   old_vs_ref: all max 0.002215971073118439 p99 0.00035075490395753436 | sat max 0.002215971073118439
+   new_vs_ref: all max 7.90968141823889e-05 p99 7.217518788427133e-05 | sat max 1.5338039982992768e-05
+   oldcompiled_vs_old (the program floor, pre-T62): all max 0.0013895034790039062 p99 0.0001439142227172801 | sat max 0.0013895034790039062
+   newcompiled_vs_new (the program floor, T62): all max 7.152557373046875e-05 p99 5.353450775146477e-05 | sat max 1.5020370483398438e-05
+   newcompiled_vs_oldcompiled: all max 0.0008144378662109375 p99 0.0002064800262451147 | sat max 0.0008144378662109375
+[C u32180@316000231] rows 33 saturated 3 (k=1 6) band max 2.72e-02 | new-vs-old all {'rows': 33, 'max_dlogp': 0.00027120113372802734, 'p99_dlogp': 0.00020997524261474605, 'median_dlogp': 1.0728836059570312e-05, 'max_dvalue': 1.4528632164001465e-06, 'argmax_agree': 33, 'argmax_agree_decisive': '33/33', 'near_tied_greedy_rows': 0} | sat {'rows': 3, 'max_dlogp': 0.00027120113372802734, 'p99_dlogp': 0.0002673745155334473, 'median_dlogp': 7.987022399902344e-05, 'max_dvalue': 1.4528632164001465e-06, 'argmax_agree': 3, 'argmax_agree_decisive': '3/3', 'near_tied_greedy_rows': 0}
+   old_vs_ref: all max 0.00026651872652827535 p99 0.00020752312924521727 | sat max 0.00026651872652827535
+   new_vs_ref: all max 8.168064786051588e-05 p99 6.903565273798761e-05 | sat max 1.259381487628275e-05
+[C u32320@317000041] rows 33 saturated 2 (k=1 8) band max 7.07e-03 | new-vs-old all {'rows': 33, 'max_dlogp': 0.00012159347534179688, 'p99_dlogp': 0.00010519027709960936, 'median_dlogp': 8.58306884765625e-06, 'max_dvalue': 4.76837158203125e-07, 'argmax_agree': 33, 'argmax_agree_decisive': '33/33', 'near_tied_greedy_rows': 0} | sat {'rows': 2, 'max_dlogp': 0.00012159347534179688, 'p99_dlogp': 0.0001204395294189453, 'median_dlogp': 6.389617919921875e-05, 'max_dvalue': 8.940696716308594e-08, 'argmax_agree': 2, 'argmax_agree_decisive': '2/2', 'near_tied_greedy_rows': 0}
+   old_vs_ref: all max 0.00011520619233529317 p99 9.661623810636397e-05 | sat max 0.00011520619233529317
+   new_vs_ref: all max 5.234421378785825e-05 p99 5.2330781913507705e-05 | sat max 7.301988003582949e-06
+[C u35950@353000151] rows 33 saturated 5 (k=1 9) band max 2.81e-02 | new-vs-old all {'rows': 33, 'max_dlogp': 0.0011496543884277344, 'p99_dlogp': 0.0008012962341308591, 'median_dlogp': 8.106231689453125e-06, 'max_dvalue': 1.3709068298339844e-06, 'argmax_agree': 33, 'argmax_agree_decisive': '33/33', 'near_tied_greedy_rows': 0} | sat {'rows': 5, 'max_dlogp': 0.0011496543884277344, 'p99_dlogp': 0.001106109619140625, 'median_dlogp': 7.62939453125e-06, 'max_dvalue': 1.3709068298339844e-06, 'argmax_agree': 5, 'argmax_agree_decisive': '5/5', 'near_tied_greedy_rows': 0}
+   old_vs_ref: all max 0.001157282296622597 p99 0.0008309899157755038 | sat max 0.001157282296622597
+   new_vs_ref: all max 0.00014858586111410332 p99 0.00012183414970062143 | sat max 2.7929069583265687e-05
+[mem_cap] done: gen3ai-capped-t62eqc-3831280.scope exit 0 · peak 3.86 GB of cap 20.00 GB (19%) · not OOM-killed

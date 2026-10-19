@@ -14835,3 +14835,32 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   0 core errors, 42 stall forfeits. A run reads the corpus only through `--team-mix`; X34 and X26 do not pass it.
 - **Docs.** `designs/endstate/design_diversity_teams_opponents.md` (§4.1, F-DV-8, F-DV-21, the change log), `design_compute_efficiency.md`,
   `design_world_sampler.md`, `designs/training/team_curriculum.md`, `EXPERIMENT_BACKLOG.md` DV-5, X35 `STAGED_PLAN.md` §7.
+## 2026-10-19 — T62: the species-presence τ constraint SOLVED IN FLOAT64 (`gen3_tau_fp64_solve_v1`; no config / obs / signature / floor change; the forward's numerics move by τ's fp32 rounding, the K9 learner golden re-recorded)
+
+- **The defect (X26 A6-F2; `research_state/measurements/x26_a3_stop_316M_2026-10-18/` F2).** `hypothesis_set.fixed_size_tau`
+  solved Σσ(a + τ) = k in the scores' dtype. τ's accuracy is ulp(k) / S'(τ), S'(τ) = Σπ(1 − π). On a saturated
+  k = 1 row (one candidate at π ≈ 1 − 1e-5) the slope is ~1e-5, so fp32 fixed τ only to 7e-3 – 2.8e-2, and T2's
+  compiled rollout and the eager learner, summing in different orders, landed at different points of that band: the
+  K9(b) τ class (u32180 2.97e-3, u32320 8.1e-4, u35950). `selection_sites.REASONS["BISECT"]` called it "ulp-scale".
+- **The change.** `fixed_size_tau` upcasts the scores to `TAU_SOLVE_DTYPE` (float64; exact), runs the bracket, the
+  sums and the 64-step bisection there, and casts only τ back. Every caller gets it (species, move group, per-slot move
+  presence, the belief bank, `main.belief_roles`). The BISECT reason and the hypothesis_set declaration comment are
+  corrected. No graph break: `torch.compile(..., fullgraph=True)` traces it (aot_eager in the test; inductor CPU in the
+  measurement).
+- **Reproduction** (`research_state/measurements/t62_tau_fp64_2026-10-19/repro.py`, the three events × two neighbour
+  checkpoints, violator row): the pre-T62 fp32 solve's spread over 64 summation orders 1.4e-3 – 2.7e-2 and its
+  inductor-CPU-vs-eager gap 0 – 1.7e-2; after, both EXACTLY 0 on every row, |τ − τ_fp64| ≤ 8.6e-7 (τ's own fp32 rounding).
+- **Network equivalence** (`equivalence.py`, X26 `checkpoint_280000170`, CPU): see that directory's `equivalence.json`
+  and the ledger entry; summary — on 915 fixture rows the change (max |Δ log π| 3.9e-5) is BELOW the eager-vs-compiled
+  program floor of the same code (5.8e-5), every greedy action agrees; on the τ-class rows it moves log π by up to
+  2.2e-3, TOWARD the float64 function (fp32 error 2.2e-3 → 7.9e-5).
+- **Cost.** CPU eager decision forward at one thread +0 to +6.4 % (B 1 – 256); GPU UNMEASURED (no lease) — each row
+  runs ≈ 6,000 candidates × 64 fp64 sigmoids per forward and sm_86's fp64 is 1/64 of fp32: ESTIMATE ≈ 7 ms per T2
+  decision at B 256, ≈ 55 ms per learner forward at 2,048, UNVERIFIED.
+- **Versioning:** no bump, by the closed-form P(KO) precedent (`designs/model/versioning.md` "τ in float64"). The K9
+  learner golden is re-recorded under +cu126 and +cu128 (post `25debac1…` → `bd79d729…`, fp32 opt-out `3375befb…` →
+  `d614ec22…`, init and buffer unchanged).
+- **Tests.** `hypothesis_set_test.py`: τ fp32-in = the fp64 solve rounded once (bit-exact), a near-flat k = 1 row gives
+  one τ under 32 summation orders (the fp32 solve's spread > 1e-3 asserted as the precondition), one compiled graph —
+  each fails on revert. `learner_golden_test.py`'s history pin gains the T62 row. Docs: `ARCHITECTURE.md`,
+  `design_x5_belief_tokens.md` §3.2 + Decision record, `designs/model/versioning.md` (the model leaf is at its byte cap; the rule lives in the design doc and the test).

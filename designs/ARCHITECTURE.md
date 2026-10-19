@@ -468,8 +468,11 @@ the X5 version break, config v144 / `gen3_x5_version_break_v1`, deleted `--belie
 `blob` path: [`endstate/design_x5_belief_tokens.md`](endstate/design_x5_belief_tokens.md)). The
 opponent-belief family (`opp_belief_slots` + `opp_intent`, both on in production) builds
 `HypothesisBuilder` (`agents/model/hypothesis_set.py`, T0) — concrete species hypotheses with
-logistic fixed-size presence (Σπ = 6 − revealed), a learned delta on the T0 prior, OTHER and the
-opponent active's move group — and READS it (`gen3_x5_belief_tokens_v1`,
+logistic fixed-size presence (Σπ = 6 − revealed; the shift τ solved by a 64-step bisection IN FLOAT64 whatever the
+forward's dtype, only τ cast back — T62, `gen3_tau_fp64_solve_v1`: an fp32 sum fixes τ only to ulp(k) / Σπ(1 − π),
+7e-3 – 2.8e-2 on a saturated k = 1 row, where the compiled rollout and the eager learner then disagreed — the K9(b) τ
+class; MEASURED identical τ across programs after, `research_state/measurements/t62_tau_fp64_2026-10-19/`), a learned
+delta on the T0 prior, OTHER and the opponent active's move group — and READS it (`gen3_x5_belief_tokens_v1`,
 `agents/model/hypothesis_tokens.py`): each hidden opponent slot holds its hypothesis's dex row encoded
 by THE mon encoder + a learned `hypothesis_marker` (the deleted blob path's constant per-position
 `BeliefSlots` token no longer exists — not even constructed). In production that is the static encoder: the dex table

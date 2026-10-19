@@ -1,0 +1,14 @@
+[mem_cap] cap 16.00 GB (swap 0) · unit gen3ai-capped-t62repro-3805944.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+u32180 ckpt 316000231 old_fp32_solve: k=1 slope 8.09e-06 band 1.47e-02 | order spread v 1.60e-02 (others max 4.7e-02) | compiled-eager v 9.09e-03 (others max 6.6e-03) | |tau-tau64| v 4.17e-03 (max over orders 1.33e-02)
+u32180 ckpt 316000231 new_fp64_solve: k=1 slope 8.09e-06 band 1.47e-02 | order spread v 0.00e+00 (others max 0.0e+00) | compiled-eager v 0.00e+00 (others max 0.0e+00) | |tau-tau64| v 4.66e-07 (max over orders 4.66e-07)
+u32180 ckpt 317000041 old_fp32_solve: k=1 slope 1.04e-05 band 1.14e-02 | order spread v 1.42e-03 (others max 5.6e-02) | compiled-eager v 0.00e+00 (others max 6.5e-04) | |tau-tau64| v 5.14e-03 (max over orders 6.56e-03)
+u32180 ckpt 317000041 new_fp64_solve: k=1 slope 1.04e-05 band 1.14e-02 | order spread v 0.00e+00 (others max 0.0e+00) | compiled-eager v 0.00e+00 (others max 0.0e+00) | |tau-tau64| v 2.53e-07 (max over orders 2.53e-07)
+u32320 ckpt 317000041 old_fp32_solve: k=1 slope 1.69e-05 band 7.07e-03 | order spread v 8.39e-03 (others max 6.9e-04) | compiled-eager v 2.75e-04 (others max 3.8e-06) | |tau-tau64| v 3.02e-03 (max over orders 1.11e-02)
+u32320 ckpt 317000041 new_fp64_solve: k=1 slope 1.69e-05 band 7.07e-03 | order spread v 0.00e+00 (others max 0.0e+00) | compiled-eager v 0.00e+00 (others max 0.0e+00) | |tau-tau64| v 8.62e-07 (max over orders 8.62e-07)
+u32320 ckpt 320000071 old_fp32_solve: k=1 slope 1.60e-05 band 7.45e-03 | order spread v 9.63e-03 (others max 2.2e-03) | compiled-eager v 5.54e-03 (others max 1.9e-06) | |tau-tau64| v 4.16e-03 (max over orders 9.70e-03)
+u32320 ckpt 320000071 new_fp64_solve: k=1 slope 1.60e-05 band 7.45e-03 | order spread v 0.00e+00 (others max 0.0e+00) | compiled-eager v 0.00e+00 (others max 0.0e+00) | |tau-tau64| v 4.11e-07 (max over orders 4.11e-07)
+u35950 ckpt 353000151 old_fp32_solve: k=1 slope 4.24e-06 band 2.81e-02 | order spread v 5.28e-03 (others max 4.8e-03) | compiled-eager v 0.00e+00 (others max 2.5e-03) | |tau-tau64| v 1.67e-02 (max over orders 2.20e-02)
+u35950 ckpt 353000151 new_fp64_solve: k=1 slope 4.24e-06 band 2.81e-02 | order spread v 0.00e+00 (others max 0.0e+00) | compiled-eager v 0.00e+00 (others max 0.0e+00) | |tau-tau64| v 1.89e-07 (max over orders 1.89e-07)
+u35950 ckpt 354000424 old_fp32_solve: k=1 slope 6.48e-06 band 1.84e-02 | order spread v 2.66e-02 (others max 1.1e-02) | compiled-eager v 1.70e-02 (others max 4.2e-04) | |tau-tau64| v 2.49e-02 (max over orders 2.49e-02)
+u35950 ckpt 354000424 new_fp64_solve: k=1 slope 6.48e-06 band 1.84e-02 | order spread v 0.00e+00 (others max 0.0e+00) | compiled-eager v 0.00e+00 (others max 0.0e+00) | |tau-tau64| v 6.25e-07 (max over orders 6.25e-07)
+[mem_cap] done: gen3ai-capped-t62repro-3805944.scope exit 0 · peak 1.63 GB of cap 16.00 GB (10%) · not OOM-killed

@@ -27349,3 +27349,36 @@ GIGO audit clean · PROVISIONAL (interim bank; the plateau bank governs)** · ev
 `research_state/measurements/hidden_info_maturity_x26_2026-10-18/` (README §5, `result_mat.json`, `gigo_audit_mat.json`,
 `identity_mat.json`, `posthoc_mat.json`); `endstate/design_hidden_info_binding.md` §12.13.7; `endstate/search_ledger.md`
 §1, §5.1, §7 Q4; `research_state/UNDERSTANDING.md`
+
+### 2026-10-19 · BUILT · **T62: the species-presence τ constraint SOLVED IN FLOAT64 (`gen3_tau_fp64_solve_v1`) — the K9(b) τ class removed for future pins; on the event rows the compiled-vs-eager log π gap falls 1.39e-3 → 1.5e-5; an X26 fork adopting it moves log π by less than the eager-vs-compiled floor except on saturated k = 1 rows (≤ 2.2e-3, toward the exact function); GPU cost UNMEASURED**
+
+- **Built.** `hypothesis_set.fixed_size_tau` solves Σσ(a + τ) = k in float64 (`TAU_SOLVE_DTYPE`) and casts only τ back;
+  no config / obs / signature / floor change (`designs/model/versioning.md` "τ in float64"); the K9 learner golden
+  re-recorded (+cu126 and +cu128 identical). Mechanism and alternatives: `design_x5_belief_tokens.md` §3.2 + Decision
+  record. Fixes X26 A6-F2 (`ridealong_baseline/PREREGISTRATION.md` Amendment 6) for FUTURE pins; X26's pin is unchanged.
+- **Reproduction** (`measurements/t62_tau_fp64_2026-10-19/repro.py`, CPU, the u32180 / u32320 / u35950 dumps × two
+  neighbour checkpoints each, violator row; call 0's scores from a float64 forward, cast to fp32). Pre-T62 fp32 solve:
+  spread over 64 summation orders 1.4e-3 – 2.7e-2, inductor-CPU vs eager 0 – 1.7e-2, |τ − τ_fp64| 3.0e-3 – 2.5e-2
+  (bands 7.1e-3 – 2.8e-2; u35950's 2.8e-2 exceeds the A3 diagnosis's 1.5e-2). After: spread 0 and compiled-vs-eager
+  0 on EVERY row of every set, |τ − τ_fp64| ≤ 8.6e-7 (τ's own fp32 rounding).
+- **Network equivalence** (`equivalence.py`, X26 `checkpoint_280000170`, CPU fp32, masked log π over legal actions).
+  (A) 915 fixture rows (`play_rows(24, seed=6201)`; 24 k = 1, none saturated, band ≤ 1.3e-5): NEW vs OLD max 3.9e-5
+  (p99 2.3e-5), value 6e-7, greedy 915 / 915; the program floor of the SAME code, inductor-CPU vs eager: 5.8e-5 (p99
+  3.1e-5) pre-T62, 6.4e-5 after. (B) the 99 event-dump rows at the same weights (9 saturated): NEW vs OLD max 2.2e-3,
+  all on saturated rows, greedy 99 / 99; OLD's error against the float64 forward 2.2e-3, NEW's 7.9e-5 (saturated
+  1.5e-5); the compiled-vs-eager floor 1.39e-3 pre-T62 → 7.2e-5 after (saturated 1.39e-3 → 1.5e-5) — the K9(b) τ class
+  reproduced and removed at the network level on CPU. (C) the same rows at each event's neighbour checkpoint: NEW vs
+  OLD ≤ 1.1e-3, greedy 33 / 33 each. The toy (`rb_toy_ent_s4002`, X34's parent) calls `fixed_size_tau` 0 times
+  (`hypothesis_builder` None): X34 is unaffected.
+- **Reading for X35 (the orchestrator's call).** Away from saturated k = 1 rows the change is smaller than the gap K9(b)
+  already tolerates between T2's compiled program and the learner's eager one, and no greedy action moves; on
+  saturated rows it moves log π by ≤ 2.2e-3, which is the OLD code's own fp32 error there (the new forward is 28×
+  closer to the exact function). By the tolerance "≤ the program-to-program floor of the parent's own code" a fork
+  adopting T62 is the SAME NETWORK. It is not a lever: no parameter, no information, no recipe change. One caveat: a
+  fork's K9(b) record would no longer be comparable with the parent's on the τ class (it disappears).
+- **Cost.** CPU eager decision forward at one thread: +0 to +6.4 % (B 1 – 256, `perf_eager_1thread.json`). Micro,
+  `fixed_size_tau` alone at B 512, vectorised inductor CPU: species 2.6 → 8.1 ms, per-slot moves 17.6 → 36.7 ms; no
+  graph break (fullgraph=True). Contended multi-thread runs (`perf.json`) are noise-dominated and not read. **GPU
+  UNMEASURED (no lease):** each row runs ≈ 6,000 candidate elements × 64 fp64 sigmoids per forward (species 400 ×
+  3 calls + the per-slot move call [6, 400] TWICE); on the sm_86 card fp64 is 1/64 of fp32, so the ESTIMATE is
+  ≈ 7 ms per T2 decision at B 256 and ≈ 55 ms per learner forward at 2,048 — possibly NOTABLE; **UNVERIFIED**.
