@@ -124,7 +124,7 @@ def test_maskable_ppo_stays_last_in_the_mro():
 
 
 def test_the_fold_sequence_is_two_straight_lines_R1_then_the_eager_tail():
-    """The fold order is a contract (`ppo.py`; the training leaf's FOLD ORDER section). Since K8
+    """The fold order is a contract (`ppo.py`; `designs/training/ppo_step.md`). Since K8
     (`gen3_learner_micro_step_v1`) it is TWO straight lines, read in sequence: steps 1-3a are the body
     of `micro_step.micro_step` (the compile region R1), and `train()` folds the eager tail (3b onward)
     onto R1's loss, after calling it. Each line is checkable by reading, and this pins both orders:

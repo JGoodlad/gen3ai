@@ -22,8 +22,8 @@ WHAT IT RUNS (one process, from FIXTURES only — no run data, no `models/`):
    per-phase seconds); the LEARN-LOOP `train()` is a STUB that only advances the update counter, so after every
    rollout the collector reloads the (unchanged) weights into T2 exactly as production does after an update. The
    startup update-fit check (`update_fit.check_update_fits`) is skipped and the learner is not compiled: neither
-   touches the collection path (T2 holds its own copies of the policy, built before any learner compile — root
-   training leaf "Startup runs BEFORE --compile-trainer"), and both cost minutes of rented time;
+   touches the collection path (T2 holds its own copies of the policy, built before any learner compile —
+   `designs/training/rust_collector.md`), and both cost minutes of rented time;
 4. ``warm`` untimed rollouts (T2 graph capture, pool loads, the first games' cold start), then ``timed`` rollouts;
    the result is written and the worker leaves by explicit PID (`learner_benchmark._exit_worker`).
 

@@ -4,18 +4,17 @@ Moved verbatim out of `src/agents/training/CLAUDE.md` on **2026-09-07**, when th
 split by topic (it was 8,219 lines / 676 KB, loaded in full for any session touching the
 training package). Each section below is unchanged, including its dated measurements.
 
-`src/agents/training/CLAUDE.md` keeps the heading and the opening paragraph of each, and
-points here. **This file is the owner of the detail.** The census detail, the gradient-balance
+**This file is the owner of the detail**; the training leaf keeps one-line rules and points here. The census detail, the gradient-balance
 probe and the per-edge/per-cell liveness families were added in the **2026-09-08** second pass.
 
 ---
 
 > **Note:** the census's *currency table*, its `gen3_tb_relevance_v1` headline and the 28-tag
-> WIN-PROB dashboard stay in `src/agents/training/CLAUDE.md` — `tb_relevance_test.py::
-> test_the_census_table_carries_an_era_column` pins both anchors there. Everything under them —
-> the site/tag counts, the group table, the NOISE/REDUNDANT/CONDITIONAL classification and the
-> five per-group tag tables — is in this file, together with the capacity telemetry, the
-> gradient-balance probe, the `signal/` group and the scaffolding gauge.
+> WIN-PROB dashboard live in this file (the training leaf held them until the 2026-10-19 sweep);
+> `tb_relevance_test.py::test_the_census_table_carries_an_era_column` pins both anchors HERE. The
+> file also holds the site/tag counts, the group table, the NOISE/REDUNDANT/CONDITIONAL
+> classification, the five per-group tag tables, the capacity telemetry, the gradient-balance
+> probe, the `signal/` group and the scaffolding gauge.
 
 ## Live capacity telemetry (`--capacity-telemetry`, `capacity_telemetry.py`)
 
@@ -476,10 +475,10 @@ reading the code; all three are fixed, and the class is now guarded in the logge
 
 ## TensorBoard export census — the counts, the group table and the ERA-RELEVANCE classification
 
-> The census's currency table, its `gen3_tb_relevance_v1` headline and the 28-tag WIN-PROB dashboard
-> stay in `src/agents/training/CLAUDE.md` (pinned there by
-> `tb_relevance_test.py::test_the_census_table_carries_an_era_column`). What follows is the detail
-> underneath them.
+> The census's currency table and its `gen3_tb_relevance_v1` headline are in "From the training leaf"
+> below, and the 28-tag WIN-PROB dashboard is the section "What to watch on a WIN-PROB run" (both
+> pinned in this file by `tb_relevance_test.py::test_the_census_table_carries_an_era_column`). What
+> follows is the detail underneath them.
 
 **Counts, measured 2026-09-06** — 153 static `logger.record(` sites across `src/agents/training`,
 `src/main/train`, `src/main/eval_worker.py` and `src/main/elo.py`; 185 distinct tags observed
@@ -755,7 +754,7 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
     swamp). The legible gauge for **watching a `vf_coef` fix land** — it moves linearly toward 0
     where `value_share` would crawl. `vf_coef` is **fixed per run** (recorded in `model_config.json`,
     FATAL to change on resume — it rescales this very gradient; tune on a fresh run; see
-    `src/agents/model/CLAUDE.md` → resume-immutable training hparams).
+    `designs/model/versioning.md` → resume-immutable training hparams).
   - `grad/policy_value_cosine` — scale-invariant (hence `vf_coef`-independent) structural-conflict
     signal: <0 ⟹ the two RL heads pull the trunk in opposing directions.
   - `grad/policy_norm_shared` / `grad/value_norm_shared` — the weighted norms, for absolute context.
@@ -824,8 +823,8 @@ is unaffected since it hashes only `sb3_contrib.MaskablePPO.train`.)
 
 ## What to watch on a WIN-PROB run — the 28-tag dashboard, annotated
 
-> The leaf carries this heading (it is pinned there) with a one-line-per-tag form. The
-> annotated version, with each tag's currency and reading rule, is below.
+> This heading is pinned here by `tb_relevance_test.py`. The training leaf carried a
+> one-line-per-tag form until 2026-10-19; the annotated version below is the one home.
 
 PROBABILITY units, which is the era's whole point: the critic, the returns and the head finally share
 one scale. Read the run's `🎯 [CRITIC]` startup line first — a `shaped` run's `train/*` value tags are
@@ -884,12 +883,9 @@ degenerate margin AND, if it also predates the gate, the duplicate tags — read
 
 ### TensorBoard export census — every scalar, and its CURRENCY
 
-> 🔒 **Two anchors here are PINNED to this file** by
+> 🔒 **Two anchors in this file are PINNED** by
 > `tb_relevance_test.py::test_the_census_table_carries_an_era_column`: the string
-> `gen3_tb_relevance_v1` and the heading *What to watch on a WIN-PROB run*. Keep both. Everything
-> beneath them — the site/tag counts, the group table, the NOISE / REDUNDANT / CONDITIONAL
-> classification, the five per-group tag tables and the annotated dashboard — is in
-> [`designs/training/telemetry_scalars.md`](telemetry_scalars.md).
+> `gen3_tb_relevance_v1` and the heading *What to watch on a WIN-PROB run*. Keep both.
 
 **THE FIRST QUESTION ABOUT ANY SCALAR HERE IS WHAT UNIT IT IS IN**, because this trainer runs
 value quantities in **three different currencies at once** (a fourth, PopArt-normalized, left with PopArt) and two of them look like floats:

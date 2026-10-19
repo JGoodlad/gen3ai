@@ -340,7 +340,10 @@ def test_a_winprob_run_emits_no_noise_tag_and_every_live_tag(tmp_path):
 
 
 def test_the_census_table_carries_an_era_column():
-    """The training leaf's census is the list this pass classified; the column must survive."""
-    leaf = repo_path("src", "agents", "training", "CLAUDE.md").read_text()
-    assert "gen3_tb_relevance_v1" in leaf
-    assert "What to watch on a WIN-PROB run" in leaf
+    """The census's home doc is the list this pass classified; its anchors must survive.
+
+    The anchors lived in the training leaf until the 2026-10-19 instruction-docs sweep (U3) moved
+    them to their one home, `designs/training/telemetry_scalars.md`."""
+    doc = repo_path("designs", "training", "telemetry_scalars.md").read_text()
+    assert "gen3_tb_relevance_v1" in doc
+    assert "What to watch on a WIN-PROB run" in doc

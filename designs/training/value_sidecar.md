@@ -1,6 +1,6 @@
 # The training-side VALUE SIDECAR (`gen3_value_sidecar_v1`)
 
-> Owned by `src/agents/training/CLAUDE.md` → *The training-side value sidecar*. Always current;
+> The training leaf (`src/agents/training/CLAUDE.md`) keeps its one-line rule and points here. Always current;
 > update it in the same pass as `value_sidecar.py`, `value_sidecar_read.py` or either gate.
 
 Code: `src/agents/training/value_sidecar.py` (writer) · `src/main/ops/value_sidecar_read.py`

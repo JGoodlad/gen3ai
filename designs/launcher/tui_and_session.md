@@ -26,7 +26,7 @@ render loop. `LauncherState` (a lock-protected snapshot) is the bridge.
   an off-cadence eval cycle. **The accept-vs-reject decision is the child's** (it owns the
   authoritative "eval already running" state, `_pending`): a request that lands mid-cycle is
   REJECTED and reported back to the Events panel, mirroring the normal cadence's skip-while-running
-  rule. See `src/agents/training/CLAUDE.md` → Bot evaluation.
+  rule. See `designs/training/eval_rules.md`.
 - `_supervise()` runs in a `@work(thread=True)` worker, drives `LauncherState`, and **returns**
   an exit code; it then asks the app to exit via `call_from_thread`. A render fault in the timer
   is swallowed (surfaced once as an event) so a cosmetic bug can never crash the app — which, via
@@ -95,7 +95,7 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   cycle, from `eval/elo_vs_<opp>` recorded by `eval_record._record_opponent_elos`). This is the
   at-a-glance "is it going well?" number during self-play pool play — anchored Bradley-Terry over
   the fixed bots, so it rises with strength even while `win_rate_vs_pool` sits pinned near 50% (see
-  `src/agents/training/CLAUDE.md` → ELO / skill rating). *(The per-sentinel ELO is a noisy
+  `designs/training/eval_and_rating.md`). *(The per-sentinel ELO is a noisy
   single-cycle estimate — `python -m main.elo … --source tb` is the well-anchored canonical fit.)*
   **Metrics layout** — the dashboard's metrics row is **three side-by-side tables** so a metric-rich
   run stays readable instead of one over-long column: a **left misc column** (rollout / time, then the

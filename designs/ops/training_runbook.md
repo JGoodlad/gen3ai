@@ -135,7 +135,7 @@ replicate of a pre-U3 seed is pinned before U3 or it is not "same pin + seed".)
 Three resolution rules the tool applies, each of which has burned a launch:
 - 🚨 **A BARE RUN DIRECTORY MEANS THE RUN'S LAST SNAPSHOT** (`gen3_last_snapshot_resolution_v1`) —
   through the one choke point `fixed_opponent_pool.resolve_model_ref`. Name the `.zip` or `@step`
-  to pin a file. Detail: `src/agents/training/CLAUDE.md` → *WHICH FILE a run spec names*.
+  to pin a file. Detail: `designs/training/matchup_and_lineage.md`.
 - 🚨 **AN ARGV IS NOT A CONFIG** — with `--model`, every unnamed flag is INHERITED from the
   checkpoint's `model_config.json`, so the thing that launches is the argv OVERLAID ON THE PARENT. The
   TRAINING RECIPE knobs `model_config.json` does not record (`--n-envs`, `--self-play`, `--grad-accum-steps`,
@@ -268,7 +268,7 @@ itself — never `--batch-size`, so every forward shape and the activation peak 
 `--compile-trainer` never notices — with the moved K persisted in the checkpoint sidecar. It is the
 SLOW controller of the two; at fixed `target_kl` a bigger K makes the KL lr loop raise lr, so the
 dose is a product of both and `train/dose_rate` is what the operator watches. Details:
-`src/agents/training/CLAUDE.md` → Gradient accumulation, and → `--adaptive-batch`.
+`designs/training/step_size_and_batch.md` (gradient accumulation, `--adaptive-batch`).
 
 Checkpoints are saved automatically into `models/rb_run_<timestamp>/checkpoints/` (each `.zip`
 beside its per-checkpoint `.json` sidecar); the run-level `model_config.json` / `metadata.json`
@@ -440,8 +440,7 @@ so; an explicit flag refuses.**
 **With the default ON, every plain cuda run compiles the learner without anyone typing a flag**,
 which is why it announces itself at startup when the auto default resolves to on;
 `--no-compile-trainer` opts out. Full detail — the four refusals, the
-`state_dict` hazard, the measurement table — is in `src/agents/training/CLAUDE.md` → Compiled GPU
-trainer.
+`state_dict` hazard, the measurement table — is in `designs/training/compile_flags.md`.
 
 **The compile cache line — read it at every start** (`gen3_shared_compile_cache_v1`, owner 2026-10-10:
 "Shared cache is fine as long as we check the git hash and the workspace is clean"). A run whose code
@@ -477,7 +476,7 @@ rest; `--rollout-target-samples` must be a multiple of lcm(`--batch-size`, `--n-
 micro-batch is full). Measured at the production mix (N = 48, 95 % self-play): 5.1× the Python
 path's trainee decisions/s at 0.04× the CPU per decision, the step 74 % T2 forward. It needs
 the win-prob critic (the only critic) and refuses, by name at startup, every flag whose path it does not serve yet
-(`src/agents/training/CLAUDE.md` → "The env core"). Validate an argv with `checkargs` first.
+(`designs/training/rust_collector.md`). Validate an argv with `checkargs` first.
 
 **THE SWITCH (`gen3_env_core_switch_v1`, 2026-10-02, ledger *THE M5 SWITCH*; production N\* = 256 since the SIZING verdict, 2026-10-02).** The production core and
 every SIZE a run declares at startup live in ONE block, `designs/production_config.json`'s
@@ -553,7 +552,7 @@ concurrency 3, two runs of the same measurement differed by up to +0.043 in leve
 over TEAMS into single-concurrency processes; a cell is a pure function of (ref, team, battle), and
 two `--workers 2` runs being byte-identical is a standing `sim`+`slow` gate. Timeouts are their own
 bucket and a run above 25% is INCONCLUSIVE. The recipe, the seed table and the sharding rule are in
-`src/agents/training/CLAUDE.md` → *The untaught meter*.
+`designs/training/eval_and_rating.md` → *The untaught meter*.
 
 ### The TRAINING-SIDE VALUE SIDECAR (`--value-sidecar`, `gen3_value_sidecar_v1`)
 
@@ -630,7 +629,7 @@ ladder and plots an Elo-vs-step curve (and can backfill a running run from Tenso
 **HodgeRank spine/width split** (`agents/training/hodge.py`) — the cyclic content a scalar ELO is
 structurally blind to, tested against the binomial noise floor its own game counts imply, with two
 weak per-cycle companions on TensorBoard (`eval/hodge_width_elo`, `eval/hodge_cyclic_fraction`).
-Full design: `src/agents/training/CLAUDE.md` → ELO / skill rating.
+Full design: `designs/training/eval_and_rating.md`.
 
 🚨 **Reporting an ELO has FOUR rules — read them before quoting a number** (the fourth, the fitter's
 `recipe` block, and the transport boundary are in "Reporting an ELO — the FOUR rules" at the end of this file). The headline is

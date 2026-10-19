@@ -713,7 +713,7 @@ matches its control at the SAME dose is its secondary read.
   incident. The old parser's 5-epoch default was one of those silent divergences, not evidence for
   5 epochs.
 - **What is built** (`src/main/train/recipe_surface.py`; per-flag mechanics in
-  `src/agents/training/CLAUDE.md` "The recipe surface"):
+  `designs/training/step_size_and_batch.md`):
   - a `recipe` block in `designs/production_config.json` with two parts. `recipe.fresh` is N0's
     MEASURED fresh recipe: every training knob `models/ai_v14_01_base` launched with, including
     the doses and the KL controller's constants. `recipe.fork` is

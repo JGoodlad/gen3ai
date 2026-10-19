@@ -150,7 +150,7 @@ def build_callbacks(*, args, model_dir, annealing_mode, _pool,
     # (`info["win_outcome"]` / `info["opponent_class"]`), split by opponent kind. ALWAYS ON and
     # flagless: it plays no battles, touches no env, and costs a handful of numpy means over ≤200-
     # element deques per rollout. Its partner `signal/adv_*` is recorded inside `train()`; the two
-    # are only readable together (see agents/training/CLAUDE.md → the `signal/` group).
+    # are only readable together (see designs/training/telemetry_scalars.md, the `signal/` group).
     signal_callback = SignalMetricsCallback()
     # REWARD TERM EXPORT (gen3_reward_term_export_v1): the `reward/` group — every ACTIVE reward
     # term's per-decision mean and its |·|-weighted share of the reward stream's movement, pulled
