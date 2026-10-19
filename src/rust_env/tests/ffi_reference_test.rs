@@ -11,9 +11,11 @@
 //!   then every OUTPUT column's bytes after it (table order, `counters` included);
 //! * `bank.json` — the refusal bank (`Banked::json`, a JSON array).
 //!
-//! A second recorder replays Lane 0's banked F-M5-1 refusal (`hp_tracker_env46.script`, the battle
-//! `lifecycle_refusal_test.rs` quarantines) and plays on after it, so a real QUARANTINE — `done`,
-//! `refused`, the auto-reset and the bank — crosses the FFI too.
+//! A second recorder replays Lane 0's banked F-M5-1 battle (`hp_tracker_env46.script`, the battle
+//! `lifecycle_refusal_test.rs` quarantines) and plays on after it, so a QUARANTINE — `done`,
+//! `refused`, the auto-reset and the bank — crosses the FFI too. F-M5-1 itself no longer refuses
+//! (`gen3_hp_fire_time_target_v1`), so the refusal is the TEST-INJECTED one at the decision it used to
+//! refuse at (`common::F_M5_1_DECISION`; the replaying front end sets `POKESIM_ENV_TEST_REFUSE_AT`).
 
 mod common;
 
@@ -103,7 +105,7 @@ fn record_the_quarantine_run_for_the_ffi_front_end() {
     let mut spec = common::spec(1, 1, vec![team("p1"), team("p2")]);
     spec.refusal_budget = 4;
     std::fs::write(out.join("spec.json"), spec.to_json()).unwrap();
-    let mut core = Core::new(spec).unwrap();
+    let mut core = Core::new_refusing_at(spec, common::F_M5_1_DECISION).unwrap();
     let mut cols = OwnedCols::new(1);
     cols.slice_mut::<u32>(col::EP_TEAM).copy_from_slice(&[0, 1]);
     cols.slice_mut::<u32>(col::EP_SEED).copy_from_slice(&seed);
@@ -142,5 +144,6 @@ fn record_the_quarantine_run_for_the_ffi_front_end() {
     let bank: Vec<String> = core.bank().items().iter().map(|b| b.json()).collect();
     assert_eq!(bank.len(), 1, "the repro must quarantine exactly once");
     std::fs::write(out.join("bank.json"), format!("[{}]", bank.join(","))).unwrap();
+    std::fs::write(out.join("refuse_at.txt"), common::F_M5_1_DECISION.to_string()).unwrap();
     eprintln!("ffi quarantine reference: 1 quarantine banked");
 }

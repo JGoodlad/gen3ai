@@ -4,7 +4,8 @@ Builds THIS checkout's self-check ``cdylib`` AND ``rust_env_proc`` into ``src/ru
 main's; the 09-09 incident) and spawns the child by absolute path through ``proc.ProcCore``.
 
 * GATE ① FFI == PROCESS, byte for byte: Lane A's recorded in-Rust runs (``tests/ffi_reference_test.rs``
-  — the bridge corpus 6 x 400, the ladder COMMIT tier 8 x 600, F-M5-1's real quarantine + 60 steps)
+  — the bridge corpus 6 x 400, the ladder COMMIT tier 8 x 600, F-M5-1's battle quarantined by the TEST-INJECTED
+  refusal + 60 steps)
   are replayed through BOTH front ends side by side at threads = 3: after every op every output
   column of the process front end equals the FFI's AND the recording, the counters too (the
   wall-clock ``CORE_NS_*`` cells masked, F-LA-2), and the refusal bank; a typed failure (a bad spec,
@@ -176,13 +177,16 @@ def test_gate_1_the_ladder_commit_tier_ffi_equals_process(lib, tmp_path):
                                       "RUST_ENV_PARITY_STEPS": "600", "RUST_ENV_PARITY_SEED": "11"}, 601)
 
 
-def test_gate_1_a_quarantine_ffi_equals_process(lib, tmp_path):
+def test_gate_1_a_quarantine_ffi_equals_process(lib, tmp_path, monkeypatch):
+    """F-M5-1's battle with the TEST-INJECTED refusal (``POKESIM_ENV_TEST_REFUSE_AT``, inherited by the
+    process child; F-M5-1 itself plays through since ``gen3_hp_fire_time_target_v1``)."""
     out = tmp_path / "quarantine"
     _record(out, test="record_the_quarantine_run_for_the_ffi_front_end")
+    monkeypatch.setenv("POKESIM_ENV_TEST_REFUSE_AT", (out / "refuse_at.txt").read_text().strip())
     pc, fc, _ = _replay_both(lib, out, threads=1)
     try:
         bank = pc.bank()
-        assert len(bank) == 1 and "all candidates eliminated" in json.dumps(bank), bank
+        assert len(bank) == 1 and "TEST-INJECTED refusal" in json.dumps(bank), bank
         assert pc.counters()["REFUSALS"] == 1
         assert pc.after_freeze() == ZERO
     finally:

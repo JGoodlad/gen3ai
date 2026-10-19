@@ -20,6 +20,29 @@ pub struct DamagingMove {
     pub target_status: Option<String>,
     pub move_id: Option<String>,
     pub effectiveness: Option<f64>,
+    /// The target's types / ability WHEN THE MOVE FIRED (`gen3_hp_fire_time_target_v1`) — carried
+    /// only by the reading's PROMOTED move ([`DamagingMove::from_read`]); `None` on this fold.
+    pub target_types: Option<Vec<String>>,
+    pub target_ability: Option<String>,
+    /// The user was transformed when it fired (its Hidden Power is the copied mon's type).
+    pub user_transformed: bool,
+}
+
+impl DamagingMove {
+    /// `battle.{our,opp}_last_damaging_move` — the reading's promoted move, with its fire-time
+    /// snapshot of the target.
+    pub fn from_read(d: &crate::present::board_reading::DamagingMoveRead) -> DamagingMove {
+        DamagingMove {
+            user_species: Some(d.user_species.clone()),
+            target_species: Some(d.target_species.clone()),
+            target_status: d.target_status.map(|s| s.live().to_uppercase()),
+            move_id: Some(d.move_id.clone()),
+            effectiveness: Some(d.effectiveness),
+            target_types: Some(d.target_types.clone()),
+            target_ability: d.target_ability.clone(),
+            user_transformed: d.user_transformed,
+        }
+    }
 }
 
 /// `SideTurn`.
@@ -246,6 +269,9 @@ impl<'a> TurnView<'a> {
                     target_status: ev::s(p, "target_status").map(str::to_string),
                     move_id: ev::move_id(p).map(str::to_string),
                     effectiveness: st.effectiveness.or(if dealt < 0.0 { Some(1.0) } else { None }),
+                    target_types: None,
+                    target_ability: None,
+                    user_transformed: false,
                 });
             }
         }

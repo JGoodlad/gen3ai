@@ -42,6 +42,29 @@ use crate::episode::Banked;
 pub struct Ctx {
     pub dex: Dex,
     pub spec: Spec,
+    /// The TEST-ONLY injected refusal ([`TEST_REFUSE_AT_ENV`]): `Some(k)` refuses every env's FIRST
+    /// episode (a `fault`) when its k-th decision opens. Always `None` in a production build.
+    pub test_refuse_at: Option<u32>,
+}
+
+/// The TEST-ONLY injected refusal, for the QUARANTINE machinery's gates (`lifecycle_refusal_test.rs`,
+/// `ffi_reference_test.rs`, `utils/rust_env/{ffi,proc}_integration_test.py`): the core refuses no
+/// real battle any more (F-M5-1, the last natural refusal, was FIXED by `gen3_hp_fire_time_target_v1`;
+/// 0 quarantines over 384k random-policy env-steps on a 4,000-team ladder-corpus sample, 2026-10-19), so the gates
+/// INJECT one — a `fault` at the k-th decision of every env's first episode. Read from the
+/// environment only in a TEST build (`debug_assertions` or the `emission-selfcheck` feature: what
+/// `cargo test` and the FFI / process gates build); a release build — the one training links — never
+/// reads it. A Rust test passes it to [`Pool::new_with`] instead (no process-global state).
+pub const TEST_REFUSE_AT_ENV: &str = "POKESIM_ENV_TEST_REFUSE_AT";
+
+fn test_refuse_at_from_env() -> Result<Option<u32>, String> {
+    #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+    {
+        if let Ok(v) = std::env::var(TEST_REFUSE_AT_ENV) {
+            return v.parse::<u32>().map(Some).map_err(|_| format!("{TEST_REFUSE_AT_ENV}={v:?} is not a decision count"));
+        }
+    }
+    Ok(None)
 }
 
 /// An open decision: the real mapper's token per legal action index, and its frame index `n`.
@@ -121,6 +144,11 @@ impl Env {
     /// the mask (a harness writes an input log's `CHOOSE` lines from it).
     pub fn open_tokens(&self, side: usize) -> Option<&[(usize, String)]> {
         self.open[side].as_ref().map(|o| o.tokens.as_slice())
+    }
+
+    /// Side `side`'s parse chain (harness access: its trackers, view, reading).
+    pub fn chain(&self, side: usize) -> Option<&BattleVersion> {
+        self.chains.get(side).and_then(Option::as_ref)
     }
 
     /// The episode ordinal of the battle in progress.
@@ -314,6 +342,17 @@ impl Env {
             self.open[side] = Some(Open { tokens, n });
             t.decisions += 1;
         }
+        if let Some(k) = ctx.test_refuse_at {
+            if self.started == 1 && self.decided[0] + self.decided[1] >= k {
+                // A PORT fault, as F-M5-1's was: it QUARANTINES (`EnvError::from_core`), kind `fault`.
+                return Err(EnvError::from_core(
+                    pokesim::core_error::fault(format!(
+                        "TEST-INJECTED refusal at decision {k} of the first episode ({TEST_REFUSE_AT_ENV}; a test build only)"
+                    )),
+                    "test",
+                ));
+            }
+        }
         self.emitted = self.sess.as_ref().map_or(0, |s| s.chunks().chunks.len());
         Ok(())
     }
@@ -439,6 +478,12 @@ impl Pool {
     /// STARTUP: acquire everything. Every team of the table is unpacked here, so a bad team fails
     /// now rather than at its first draw mid-run.
     pub fn new(spec: Spec) -> Result<Pool, String> {
+        let at = test_refuse_at_from_env()?;
+        Pool::new_with(spec, at)
+    }
+
+    /// [`Pool::new`] with the TEST-ONLY injected refusal ([`TEST_REFUSE_AT_ENV`]) given directly.
+    pub fn new_with(spec: Spec, test_refuse_at: Option<u32>) -> Result<Pool, String> {
         spec.validate()?;
         let dex = Dex::for_gen(3);
         // Every team is VALIDATED by use, at startup: it unpacks, the engine constructs a battle
@@ -478,7 +523,7 @@ impl Pool {
         }
         let n = spec.n;
         let t = spec.effective_threads();
-        let ctx = Arc::new(Ctx { dex, spec });
+        let ctx = Arc::new(Ctx { dex, spec, test_refuse_at });
         let envs: Vec<Env> = (0..n).map(|i| Env::new(i, &ctx.spec)).collect();
         let mut pool = Pool {
             ctx: Arc::clone(&ctx),

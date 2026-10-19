@@ -112,7 +112,12 @@ fn corpus_digest(level: OracleSpec, n: usize, threads: usize, seed: u64, steps: 
 /// `min(stage, 15) / 15`, the board Wish flag "lands at the next residual"; was [0x7f9bf4ea31d01298, 0x169d6ad36d423b4c,
 /// 0xe231223f78fea4e1]). CENSUS: hashing the OBS column with those 12 toxic cells and the 2 Wish cells zeroed, the old and
 /// the new encoder give IDENTICAL digests on all three seeds (27,333 decisions) — no other cell moved.
-const PRE_REVEAL_DIGEST: [u64; 3] = [0xd5d10be9eb125686, 0x386a181259d9af48, 0x8c65480b0f5a52d3];
+/// RE-RECORDED 2026-10-19 for `gen3_hp_fire_time_target_v1` (F-M5-1: the Hidden-Power belief under TRANSFORM; the corpus
+/// holds the `25_transform_foe` pair; was [0xd5d10be9eb125686, 0x386a181259d9af48, 0x8c65480b0f5a52d3]). CENSUS, every
+/// column of the three seeds dumped per op before / after: 116 of 28,848 side-rows moved, ONLY in the opponent slots'
+/// Hidden-Power block (116 `hp_revealed` cells, 24 Fire and 24 Ground `hp_probs` cells); mask, need, done and every label
+/// column byte-identical.
+const PRE_REVEAL_DIGEST: [u64; 3] = [0x41d0a43d3a4c0a8a, 0x04cd44475055f915, 0x10706c60a40548c2];
 
 #[test]
 fn off_is_inert() {
@@ -126,7 +131,9 @@ fn off_is_inert() {
 /// [0x60eeb3f53cc2c6fb, 0x653d80b821978e8b, 0x0f0e923713e27880]), and again for the OBS-FACTS append (prefix
 /// reproduced; was [0x13e5366e75f675d1, 0x04d13a7d55a999ad, 0x4b108c1abd8c97be]). RE-RECORDED 2026-10-09 with `PRE_REVEAL_DIGEST`
 /// (the toxic cell's scale and the Wish flag's phase; was [0x891cf763e4a2a136, 0x052ba1c32a90dad9, 0x691a5b236ccac9ff]).
-const SPECIES_DIGEST: [u64; 3] = [0x71246ab6e7a116b8, 0x696f20607029b1c5, 0x18223e1ed7797e41];
+/// RE-RECORDED 2026-10-19 with `PRE_REVEAL_DIGEST` (`gen3_hp_fire_time_target_v1`; `species_differs_from_off_only_in_the_declared_cells`
+/// still passes, so the move is OFF's Hidden-Power-block move; was [0x71246ab6e7a116b8, 0x696f20607029b1c5, 0x18223e1ed7797e41]).
+const SPECIES_DIGEST: [u64; 3] = [0xb4f2cf73fd76d3b0, 0x525e3ba9366f6948, 0x03e146e2ace1db1c];
 
 #[test]
 fn species_bytes_are_pinned() {

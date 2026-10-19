@@ -143,6 +143,16 @@ pub struct DamagingMoveRead {
     pub target_status: Option<super::dex::Status>,
     pub move_id: String,
     pub effectiveness: f64,
+    /// The target's TYPES (lower-cased `PokemonType` names) and ABILITY as this reading held them
+    /// WHEN THE MOVE FIRED (`gen3_hp_fire_time_target_v1`, F-M5-1): a Transform overlay, a Color
+    /// Change or a switch-out after the hit must not re-type the target the effectiveness was
+    /// computed against (a transformed mon KO'd by Hidden Power read back as its base species).
+    pub target_types: Vec<String>,
+    pub target_ability: Option<String>,
+    /// The user was TRANSFORMED when it fired: in gen 3 Transform copies `hpType`
+    /// (`sim/pokemon.ts` `transformInto`: `this.hpType = gen >= 5 ? this.hpType : pokemon.hpType`),
+    /// so its Hidden Power's type is the COPIED mon's, not its own species' (`gen3_hp_fire_time_target_v1`).
+    pub user_transformed: bool,
 }
 
 fn ident_side(tok: &str) -> Option<u8> {
@@ -1131,18 +1141,32 @@ impl BoardReading {
         // Physical / Special move — a lookup that CREATES an unseen mon, so its order matters to
         // the reveal order (rule V2).
         if dex::move_row(&dex::to_id(&mv)).is_some_and(|r| r.damaging) {
-            let user_species = self.mon(&pokemon)?.species.clone();
-            let (target_species, target_status) = match presumed.as_deref() {
+            let um = self.mon(&pokemon)?;
+            let (user_species, user_transformed) = (um.species.clone(), um.transformed());
+            let snap = |m: &super::mon::PMon| -> (Vec<String>, Option<String>) {
+                (m.types().iter().map(|t| t.to_ascii_lowercase()).collect(), m.ability().map(str::to_string))
+            };
+            let user_snap = snap(um);
+            let (target_species, target_status, (target_types, target_ability)) = match presumed.as_deref() {
                 Some(t) => {
                     let tm = self.mon(t)?;
-                    (tm.species.clone(), tm.status)
+                    (tm.species.clone(), tm.status, snap(tm))
                 }
-                None => (user_species.clone(), None),
+                None => (user_species.clone(), None, user_snap),
             };
             let mover = usize::from(ident_side(&pokemon) != Some(self.role));
             self.pending_damaging[mover] = Some((
                 self.turn,
-                DamagingMoveRead { user_species, target_species, target_status, move_id: dex::to_id(&mv), effectiveness: 1.0 },
+                DamagingMoveRead {
+                    user_species,
+                    target_species,
+                    target_status,
+                    move_id: dex::to_id(&mv),
+                    effectiveness: 1.0,
+                    target_types,
+                    target_ability,
+                    user_transformed,
+                },
             ));
         }
         Ok(())

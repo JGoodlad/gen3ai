@@ -45,6 +45,10 @@ pub struct MonView {
     pub status: Option<&'static str>,
     /// Lower-cased `PokemonType` names.
     pub types: Vec<String>,
+    /// `Pokemon.transformed`: `moves` / `types` / `ability` are the Transform overlay (rule V14).
+    /// Rust-side only — not in [`OneSidedView::json`] (the Python `LivePokemon` shape is unchanged);
+    /// the Hidden-Power belief reads it (`gen3_hp_fire_time_target_v1`).
+    pub transformed: bool,
     pub moves: Vec<MoveView>,
     pub item: Option<String>,
     pub ability: Option<String>,
@@ -179,6 +183,7 @@ pub(crate) fn mon_view(m: &PMon, active: bool, own: bool) -> R<MonView> {
         hp_fraction: m.hp_fraction(),
         status: m.status.map(|s| s.live()),
         types: m.types().iter().map(|t| t.to_ascii_lowercase()).collect(),
+        transformed: m.transformed(),
         moves,
         item,
         ability: m.ability().map(str::to_string),

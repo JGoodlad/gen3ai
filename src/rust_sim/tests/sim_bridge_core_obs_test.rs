@@ -951,13 +951,7 @@ fn bench_core_obs_stages() {
                         let legal = present::legal_actions(br).expect("legal");
                         black_box(present::mask(&legal));
                         st.add("legal", false, t0.elapsed());
-                        let dm = br.last_damaging_move(1).map(|d| DamagingMove {
-                            user_species: Some(d.user_species.clone()),
-                            target_species: Some(d.target_species.clone()),
-                            target_status: d.target_status.map(|s| s.live().to_uppercase()),
-                            move_id: Some(d.move_id.clone()),
-                            effectiveness: Some(d.effectiveness),
-                        });
+                        let dm = br.last_damaging_move(1).map(DamagingMove::from_read);
                         let mut tr = pre[side].take().unwrap();
                         let pend = std::mem::take(&mut pending[side]);
                         let t0 = Instant::now();

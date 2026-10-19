@@ -72,6 +72,23 @@ impl Core {
         })
     }
 
+    /// TEST ONLY: [`Core::new`] whose every env refuses its first episode at decision `k`
+    /// (`pool::TEST_REFUSE_AT_ENV`) — the quarantine gates' refusal now that no real battle refuses.
+    #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+    pub fn new_refusing_at(spec: Spec, k: u32) -> Result<Core, String> {
+        let budget = spec.refusal_budget;
+        let n = spec.n;
+        Ok(Core {
+            pool: Pool::new_with(spec, Some(k))?,
+            bank: Bank::new(budget),
+            counters: [0; NCOUNTERS],
+            reset_done: false,
+            poisoned: None,
+            last_error: None,
+            finished: Vec::with_capacity(n),
+        })
+    }
+
     pub fn spec(&self) -> &Spec {
         &self.pool.ctx.spec
     }

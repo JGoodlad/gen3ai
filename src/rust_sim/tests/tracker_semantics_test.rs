@@ -17,6 +17,9 @@
 //! * `gen3_hp_prior_support_v1` — the Hidden-Power belief: a usage prior's zero is not an
 //!   impossibility; a species whose own observations refute its prior row restarts from the flat
 //!   prior and replays them (the 2026-09-25 cutover-stress refusal `ladderA_3459`).
+//! * `gen3_hp_fire_time_target_v1` — the Hidden-Power belief under TRANSFORM (F-M5-1): the target is
+//!   read as it was when the move fired, a transformed user's (copied) Hidden Power is not filed under
+//!   its species, and a transformed opponent's copied moveset rules nothing out.
 
 use std::sync::Arc;
 
@@ -321,6 +324,61 @@ fn a_hidden_power_type_its_usage_prior_excludes_falls_back_to_the_flat_prior() {
     assert!(hp.prior_discarded.contains("lunatone"), "the refuted prior row is counted: {hp:?}");
     // p2 (the Hidden Power user's side) observes nothing: p1 carries no Hidden Power.
     assert!(d[1].last().unwrap().hp.state.is_empty());
+}
+
+/// A set with IVs (`hp,atk,def,spa,spd,spe`, blank = 31) — a Hidden Power's type is its IVs'.
+fn set_ivs(species: &str, moves: &str, ivs: &str, level: u32) -> String {
+    format!("{species}||||{moves}|Hardy|||{ivs}||{level}|")
+}
+
+/// p1's Swampert carries Hidden Power GRASS (30 Atk / 30 SpA); p2's level-30 Smeargle Transforms into
+/// it on turn 1 (p1 Splashes). `gen3_hp_fire_time_target_v1` (F-M5-1).
+fn swampert_vs_smeargle(p1_moves: &str, script: &[(usize, &str)]) -> Decisions {
+    let p1 = team(&[set_ivs("swampert", p1_moves, ",30,,30,,", 100), set("snorlax", "", "immunity", "rest", 100)]);
+    let p2 = team(&[set("smeargle", "", "owntempo", "transform", 30), set("snorlax", "", "immunity", "rest", 100)]);
+    play(&p1, &p2, "1,2,3,4", script)
+}
+
+/// F-M5-1, constructed (`gen3_hp_fire_time_target_v1`): p2's Smeargle, Transformed into p1's Swampert
+/// (Water / Ground), is KO'd by its Hidden Power Grass (4x). The belief must read the target as it was
+/// WHEN THE MOVE FIRED. WRONG on revert: the faint clears the Transform overlay, the next decision
+/// re-read the LIVE board's Smeargle (Normal), where only Fighting is super-effective — the belief
+/// kept Fighting (Swampert's usage row gives it mass) and zeroed the true Grass (in the M5 repro a
+/// second observation then refuted every type and the core REFUSED the battle).
+#[test]
+fn a_transformed_target_kod_by_hidden_power_is_read_as_it_was_when_hit() {
+    let d = swampert_vs_smeargle(
+        "splash,hiddenpower",
+        &[(0, "move 1"), (1, "move 1"), (0, "move 2"), (1, "move 1"), (1, "switch 2"), (0, "move 1"), (1, "move 1")],
+    );
+    let hp = &d[1].last().expect("a p2 decision after the replacement").hp;
+    let v = hp.state.get("swampert").expect("p2 observed Swampert's Hidden Power");
+    let survivors: Vec<&str> =
+        pokesim::trackers::hp_belief::HP_TYPES.iter().zip(v).filter(|(_, p)| **p != 0.0).map(|(n, _)| *n).collect();
+    assert_eq!(survivors, vec!["grass"], "the only type 2x+ on Water / Ground: {v:?}");
+}
+
+/// A TRANSFORMED user's Hidden Power is the COPIED mon's type (gen 3 copies `hpType`, `sim/pokemon.ts`
+/// `transformInto`) — here p1's own Swampert's Grass — so p1 files NOTHING under Smeargle. WRONG on
+/// revert: Smeargle's belief narrowed to Grass (its usage row has no Grass; the flat fallback kept it).
+#[test]
+fn a_transformed_users_hidden_power_is_not_its_own_species() {
+    let d = swampert_vs_smeargle(
+        "splash,hiddenpower",
+        &[(0, "move 1"), (1, "move 1"), (0, "move 1"), (1, "move 2"), (0, "move 1"), (1, "move 1")],
+    );
+    let last = d[0].last().expect("a p1 decision after the transformed Hidden Power");
+    assert!(!last.hp.state.contains_key("smeargle"), "{:?}", last.hp);
+    assert_eq!(last.hp.transformed_user_skipped, 1, "the copied Hidden Power is counted as skipped");
+}
+
+/// A TRANSFORMED opponent's moveset is the COPIED one (rule V14): four copied moves without Hidden
+/// Power say nothing about its own set. WRONG on revert: p1 ruled Smeargle out of Hidden Power.
+#[test]
+fn a_transformed_opponents_copied_moveset_does_not_rule_out_hidden_power() {
+    let d = swampert_vs_smeargle("splash,tackle,growl,leer", &[(0, "move 1"), (1, "move 1"), (0, "move 1"), (1, "move 1")]);
+    let last = d[0].last().expect("a p1 decision while Smeargle is transformed");
+    assert!(!last.hp.ruled_out.contains("smeargle"), "{:?}", last.hp);
 }
 
 /// `gen3_event_record_v2` (E12) on the Rust fold: a faster KO leaves a DENIED(fainted first) row

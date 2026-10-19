@@ -89,6 +89,9 @@ pub struct HpBelief {
     /// `_prior_discarded` (`gen3_hp_prior_support_v1`): species whose usage-prior row their own
     /// observations refuted, restarted from the flat prior.
     pub prior_discarded: BTreeSet<String>,
+    /// Hidden Powers a TRANSFORMED opponent fired (its copied type, not its species'), not observed
+    /// (`gen3_hp_fire_time_target_v1`). Not serialized: slice T's `hp` shape is unchanged.
+    pub transformed_user_skipped: u32,
     /// `_obs_targets`: every observation of a species, replayable against the flat prior.
     log: BTreeMap<String, Vec<(f64, Target)>>,
 }
@@ -154,7 +157,17 @@ impl HpBelief {
         )))
     }
 
-    /// `_maybe_observe_hidden_power(live, ctx)`.
+    /// `_maybe_observe_hidden_power(live, ctx)`, on the target AS IT WAS WHEN THE MOVE FIRED
+    /// (`gen3_hp_fire_time_target_v1`, F-M5-1). Two Transform cases were wrong before:
+    ///
+    /// * the TARGET's types / ability were re-read from the LIVE board at the next decision, so a
+    ///   transformed mon KO'd by Hidden Power (its overlay cleared on the faint / switch-out) read
+    ///   back as its base species — Smeargle's Normal where the copied Rock / Dark took a 2x — and
+    ///   the log refuted every type ("all candidates eliminated", the M5 benchmark's quarantine).
+    ///   The reading's fire-time snapshot is the input now;
+    /// * a TRANSFORMED USER's Hidden Power is the COPIED mon's (gen 3 copies `hpType`, `sim/pokemon.ts`
+    ///   `transformInto`) — in singles OUR active's, which we know — so it says nothing about the
+    ///   user's own species and is not observed (`transformed_user_skipped` counts it).
     pub fn maybe_observe(&mut self, dex: &Dex, live: &OneSidedView, forced_switch: bool,
                          dm: Option<&DamagingMove>) -> CoreResult<()> {
         if forced_switch {
@@ -165,14 +178,23 @@ impl HpBelief {
             return Ok(());
         }
         let target_species = dm.target_species.as_deref().unwrap_or("");
-        let Some(m) = live.ours.mons.iter().find(|m| m.species == target_species) else { return Ok(()) };
-        if m.types.is_empty() {
+        if !live.ours.mons.iter().any(|m| m.species == target_species) {
+            return Ok(());
+        }
+        if dm.user_transformed {
+            self.transformed_user_skipped += 1;
+            return Ok(());
+        }
+        let types = dm.target_types.as_ref().ok_or_else(|| {
+            fault("HiddenPowerTracker: a promoted damaging move without its fire-time target snapshot")
+        })?;
+        if types.is_empty() {
             return Ok(());
         }
         let t = Target {
-            t1: Type::from_name(&m.types[0]),
-            t2: m.types.get(1).and_then(|x| Type::from_name(x)),
-            ability: m.ability.clone().unwrap_or_default().to_lowercase(),
+            t1: Type::from_name(&types[0]),
+            t2: types.get(1).and_then(|x| Type::from_name(x)),
+            ability: dm.target_ability.clone().unwrap_or_default().to_lowercase(),
             frozen: dm.target_status.as_deref() == Some("FRZ"),
         };
         let eff = dm.effectiveness.unwrap_or(1.0);
@@ -184,10 +206,12 @@ impl HpBelief {
         self.observe(dex, user, eff, &t)
     }
 
-    /// `_scan_opp_movesets_for_no_hp(live)`.
+    /// `_scan_opp_movesets_for_no_hp(live)`. A TRANSFORMED mon's moveset is the COPIED one (rule
+    /// V14), not its species' — four copied moves without Hidden Power say nothing about its own
+    /// set, so it is skipped while transformed (`gen3_hp_fire_time_target_v1`).
     pub fn scan_no_hp(&mut self, live: &OneSidedView) {
         for m in &live.opp.mons {
-            if m.species.is_empty() {
+            if m.species.is_empty() || m.transformed {
                 continue;
             }
             if m.moves.len() >= 4 && !m.moves.iter().any(|mv| mv.id.starts_with("hiddenpower")) && self.ruled_out.insert(m.species.clone()) {

@@ -383,13 +383,7 @@ impl TrackerState {
         }
         let view = crate::present::present(br)?;
         let pending = std::mem::take(&mut self.pending);
-        let dm = br.last_damaging_move(1).map(|d| turnview::DamagingMove {
-            user_species: Some(d.user_species.clone()),
-            target_species: Some(d.target_species.clone()),
-            target_status: d.target_status.map(|s| s.live().to_uppercase()),
-            move_id: Some(d.move_id.clone()),
-            effectiveness: Some(d.effectiveness),
-        });
+        let dm = br.last_damaging_move(1).map(turnview::DamagingMove::from_read);
         // E4 (gen3_event_record_v2): the species our previous choice tried to switch to — the target
         // a refused switch aimed at, which the server's `|error|` does not name.
         let attempted = self.last_choice.as_deref().and_then(|t| attempted_switch_species(br, t));

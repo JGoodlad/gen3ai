@@ -178,6 +178,13 @@ neither reads as a reveal), and `BoardReading.upkeep_turn` (an `|upkeep|`, read 
 `BATTLE_IGNORED`); the view carries `MoveView.seen`, `MonView.item_public` / `ability_public` and
 `OneSidedView.residual_done`.
 
+**What the move fired against** (`gen3_hp_fire_time_target_v1`, F-M5-1): the `|move|` handler's damaging-move capture
+(`DamagingMoveRead`, poke-env's `DamagingMoveEvent`) also snapshots the target's TYPES and ABILITY and whether the USER
+is transformed, at the line — a later faint / switch-out clears a Transform overlay, so the next decision's board is
+not the board the hit landed on. `MonView.transformed` (`Pokemon.transformed`) is on the Rust view only — not in
+`OneSidedView::json`, so the Python `LivePokemon` shape is unchanged; the Hidden-Power belief reads both
+(`designs/rust_sim/trackers.md` §5).
+
 `legal_actions()` is `LegalActions.from_battle` over the raw `|request|` (the `BoardReading` keeps its
 text) and `mask()` the 11-dim mask; until P6 slice 6c slice V compared both to `Gen3ActionMasker` on every decision (deleted; the cargo `present::tests` pin the legality rules).
 

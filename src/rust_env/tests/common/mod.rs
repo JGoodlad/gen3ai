@@ -7,6 +7,13 @@ use pokesim_env::core::{Core, OwnedCols, Spec};
 
 pub const NAMES: [&str; 2] = ["m5p1", "m5p2"];
 
+/// The decision of `hp_tracker_env46.script`'s first episode at which F-M5-1 REFUSED (the HP
+/// belief's "all candidates eliminated", before `gen3_hp_fire_time_target_v1`): the quarantine gates
+/// INJECT their test refusal there (`Core::new_refusing_at`; the Python front-end gates set
+/// `POKESIM_ENV_TEST_REFUSE_AT` to it). Pinned by `lifecycle_refusal_test.rs`
+/// `f_m5_1_the_transformed_hidden_power_ko_plays_through`.
+pub const F_M5_1_DECISION: u32 = 87;
+
 /// Every team of the port's bridge corpus (real gen3ou teams, packed), in file order, deduplicated.
 pub fn corpus_teams() -> Vec<String> {
     let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/../rust_sim/tests/vectors/bridge_corpus");

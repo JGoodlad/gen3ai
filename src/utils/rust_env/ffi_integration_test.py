@@ -142,15 +142,19 @@ def test_gate_1_the_ladder_commit_tier_through_ffi_is_byte_equal(lib, tmp_path):
                                       "RUST_ENV_PARITY_STEPS": "600", "RUST_ENV_PARITY_SEED": "11"}, 601)
 
 
-def test_gate_1_a_quarantine_through_ffi_is_byte_equal(lib, tmp_path):
-    """Lane 0's banked F-M5-1 refusal replayed, then 60 more steps: the quarantine's `done` /
-    `refused` / auto-reset and the BANK (kind, class, input log) are byte-equal through the FFI."""
+def test_gate_1_a_quarantine_through_ffi_is_byte_equal(lib, tmp_path, monkeypatch):
+    """Lane 0's banked F-M5-1 battle replayed with the TEST-INJECTED refusal at the decision F-M5-1
+    used to refuse at (it plays through since ``gen3_hp_fire_time_target_v1``; the recorder injects it
+    with ``Core::new_refusing_at``, this replay with ``POKESIM_ENV_TEST_REFUSE_AT``), then 60 more
+    steps: the quarantine's `done` / `refused` / auto-reset and the BANK (kind, class, input log) are
+    byte-equal through the FFI."""
     out = tmp_path / "quarantine"
     _record(out, test="record_the_quarantine_run_for_the_ffi_front_end")
+    monkeypatch.setenv("POKESIM_ENV_TEST_REFUSE_AT", (out / "refuse_at.txt").read_text().strip())
     core, ops = _replay(lib, out, threads=1)
     try:
         bank = core.bank()
-        assert len(bank) == 1 and "all candidates eliminated" in json.dumps(bank), bank
+        assert len(bank) == 1 and "TEST-INJECTED refusal" in json.dumps(bank), bank
         assert core.counters()["REFUSALS"] == 1
         assert core.after_freeze() == {c.name: 0 for c in P.COUNTERS if c.after_freeze}
     finally:

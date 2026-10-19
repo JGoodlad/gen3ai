@@ -8,9 +8,14 @@
 //!   log (also written to `bank_dir`), `done = refused = 1`, `reward = 0`, the env already in its
 //!   next episode — and the batch succeeds; over the declared budget it is `BUDGET`.
 //!
-//! The refusal is a real one: the Phase-A benchmark's banked battle
+//! The refused battle is the Phase-A benchmark's banked one
 //! (`rust_core_m5_transport_2026-09-26/repro/hp_tracker_env46.script`, finding F-M5-1 — a
-//! transformed mon KO'd by Hidden Power; both the Python and the Rust HP tracker refuse it).
+//! transformed mon KO'd by Hidden Power). The HP belief REFUSED it until `gen3_hp_fire_time_target_v1`
+//! fixed the tracker (2026-10-19); it now plays through (`f_m5_1_*` below, which FAILS on a revert of
+//! that fix). No real battle the core plays refuses any more, so the quarantine gates INJECT the
+//! refusal at the decision F-M5-1 used to refuse at (`Core::new_refusing_at`, a test build only,
+//! `pool::TEST_REFUSE_AT_ENV`), on the same battle, so the bank / replay / budget / thread-count
+//! semantics are held on the same input log as before.
 
 mod common;
 
@@ -123,14 +128,18 @@ fn repro() -> Repro {
     }
 }
 
+use common::F_M5_1_DECISION;
+
 /// Drive a one-env inline core through the repro's commands; returns the status of the step that
-/// consumed the last command, the core and its columns.
-fn replay_repro(budget: usize, bank_dir: Option<std::path::PathBuf>) -> (i32, Core, OwnedCols, Vec<String>, Vec<[i32; 2]>) {
+/// consumed the last command, the core and its columns. `refuse` injects the test refusal at
+/// [`F_M5_1_DECISION`].
+fn replay_repro_with(budget: usize, bank_dir: Option<std::path::PathBuf>, refuse: bool)
+                     -> (i32, Core, OwnedCols, Vec<String>, Vec<[i32; 2]>) {
     let r = repro();
     let mut spec = common::spec(1, 1, vec![r.teams[0].clone(), r.teams[1].clone()]);
     spec.refusal_budget = budget;
     spec.bank_dir = bank_dir;
-    let mut core = Core::new(spec).unwrap();
+    let mut core = if refuse { Core::new_refusing_at(spec, F_M5_1_DECISION).unwrap() } else { Core::new(spec).unwrap() };
     let mut cols = OwnedCols::new(1);
     cols.slice_mut::<u32>(col::EP_TEAM).copy_from_slice(&[0, 1]);
     cols.slice_mut::<u32>(col::EP_SEED).copy_from_slice(&r.seed);
@@ -161,6 +170,33 @@ fn replay_repro(budget: usize, bank_dir: Option<std::path::PathBuf>) -> (i32, Co
     }
 }
 
+fn replay_repro(budget: usize, bank_dir: Option<std::path::PathBuf>) -> (i32, Core, OwnedCols, Vec<String>, Vec<[i32; 2]>) {
+    replay_repro_with(budget, bank_dir, true)
+}
+
+/// F-M5-1 REGRESSION PIN (`gen3_hp_fire_time_target_v1`): the transformed Smeargle KO'd by Hidden
+/// Power no longer refuses — the whole banked script is consumed, nothing is quarantined, the battle
+/// plays on — and p2's belief about p1's Tyranitar keeps GRASS (its true type; the 2x hits landed on
+/// the Smeargle while it was Transformed into a Tyranitar, Rock / Dark). FAILS on a revert of the fix:
+/// the step consuming the last command quarantines ("all candidates eliminated").
+#[test]
+fn f_m5_1_the_transformed_hidden_power_ko_plays_through() {
+    let (st, core, cols, fed, _) = replay_repro_with(4, None, false);
+    assert_eq!(st, status::OK, "{:?}", core.last_error());
+    assert_eq!(core.bank().len(), 0, "F-M5-1 is quarantined again: {:?}", core.bank().items().first().map(|b| &b.error));
+    assert_eq!(cols.slice::<u8>(col::REFUSED)[0], 0);
+    assert_eq!(cols.slice::<u8>(col::DONE)[0], 0, "the battle is still running after the script");
+    assert_eq!(fed.len(), repro().cmds.len(), "every banked command was fed");
+    assert!(cols.slice::<u8>(col::NEED).contains(&1), "a decision is open after the old refusal point");
+    assert_eq!(core.counters()[counter::DECISIONS] as u32, F_M5_1_DECISION,
+               "the injected test refusal must land where F-M5-1 refused (re-pin F_M5_1_DECISION)");
+    let env = core.inline_env(0).unwrap();
+    let hp = &env.chain(1).expect("p2's chain").trackers(1).expect("p2's trackers").hp;
+    let v = hp.state.get("tyranitar").expect("p2 observed p1's Tyranitar's Hidden Power");
+    let grass = pokesim::trackers::hp_belief::HP_TYPES.iter().position(|t| *t == "grass").unwrap();
+    assert!(v[grass] > 0.0, "the true type (Grass) survives: {v:?}");
+}
+
 #[test]
 fn a_refused_battle_is_quarantined_banked_and_replayable() {
     let dir = std::env::temp_dir().join(format!("rust_env_bank_{}", std::process::id()));
@@ -174,10 +210,10 @@ fn a_refused_battle_is_quarantined_banked_and_replayable() {
     assert_eq!(cols.slice::<u64>(col::COUNTERS)[counter::REFUSALS], 1);
     assert_eq!(core.bank().len(), 1);
     let b = &core.bank().items()[0];
-    // F-M5-1: the port types this elimination a `CoreError::Fault` (Python raises ValueError) —
-    // banked with kind `fault`, so a port bug stays distinguishable from a poke-env-class refusal.
+    // The injected refusal is a `fault` (as F-M5-1's was: a port invariant, banked with kind
+    // `fault`, so a port bug stays distinguishable from a poke-env-class refusal).
     assert_eq!(b.error.kind, "fault", "{:?}", b.error);
-    assert!(b.error.message.contains("all candidates eliminated"), "{:?}", b.error);
+    assert!(b.error.message.contains("TEST-INJECTED refusal"), "{:?}", b.error);
     // The banked input log IS the battle up to the refusal: the same START and the same commands.
     let script = b.log.script("");
     let banked_cmds: Vec<&str> = script.lines().skip(1).collect();
@@ -207,7 +243,7 @@ fn quarantines_are_thread_count_invariant() {
         let n = 6;
         let mut spec = common::spec(n, threads, vec![r.teams[0].clone(), r.teams[1].clone()]);
         spec.refusal_budget = 2 * n;
-        let mut core = Core::new(spec).unwrap();
+        let mut core = Core::new_refusing_at(spec, F_M5_1_DECISION).unwrap();
         let mut cols = OwnedCols::new(n);
         for i in 0..n {
             cols.slice_mut::<u32>(col::EP_TEAM)[2 * i..2 * i + 2].copy_from_slice(&[0, 1]);
