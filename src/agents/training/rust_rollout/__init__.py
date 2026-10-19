@@ -16,6 +16,8 @@ resume point: ``designs/research_state/measurements/m5_laneG/PROGRESS.md``.
                     opponents in ONE flush) + Lane E's routing + the keyed draw
     consistency.py  the learner-side K9(b) BEHAVIOUR-POLICY CONSISTENCY check and the STALENESS probe
                     (ratio / clip fraction / KL by row age), before any optimizer step
+    overlap.py      X14 (``--overlap-collect``, OFF): the next rollout played on a worker thread during the
+                    update, K9(b) on a behaviour snapshot, the decoupled-PPO buffer rewrite
     parity.py       THE GATE: slice N at the ROLLOUT level (the learner's buffer vs today's Python path)
                     and the learner-level check (one update on each buffer)
 

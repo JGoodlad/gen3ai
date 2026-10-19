@@ -104,6 +104,20 @@ class TrainSetup:
             from agents.training.rust_rollout.consistency import behaviour_probe
             behaviour_probe(self)
 
+    def _overlap_prepare(self) -> None:
+        # +X14 OVERLAP (`--overlap-collect`, gen3_overlap_collect_v1; `rust_rollout/overlap.py`): a no-op when OFF.
+        # When ON, every update: K9(b) on the rows played at version current - 1, judged under that version's
+        # BEHAVIOUR SNAPSHOT (the weights T2 served them with), then the DECOUPLED-PPO buffer rewrite (the
+        # proximal log-probs become `old_log_prob`, the truncated importance weight scales the advantage) — after
+        # the learner's own probe (both read the stored behaviour log-prob) and before any optimizer step.
+        from agents.training.rust_rollout.overlap import judge_snapshot, proximal_transform, runner_of
+
+        ov = runner_of(self)
+        if ov is None:
+            return
+        judge_snapshot(self, ov)
+        proximal_transform(self)
+
     def _resolve_fold_flags(self) -> FoldFlags:
         """WHICH terms are live this call. Pure resolution."""
         # Compute once: the aux path is fully skipped when off → loss stays byte-identical to upstream.

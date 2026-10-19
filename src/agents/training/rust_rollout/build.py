@@ -90,6 +90,9 @@ class RustEnvDecl:
     #: at: the run's RECORDED mode, shared by the training pool and the eval core (``build_eval_core`` reads its
     #: ``collector_decl``). ``off`` = the production observation, byte-identical.
     oracle_reveal: str = "off"
+    #: X14 (``--overlap-collect``, gen3_overlap_collect_v1; default OFF): the next rollout is played on a worker
+    #: thread while the learner updates (``overlap.OverlapRunner``, built here at startup). OFF builds none of it.
+    overlap: bool = False
 
     def __post_init__(self) -> None:
         if self.front not in FRONTS:
@@ -101,6 +104,8 @@ class RustEnvDecl:
         if self.oracle_reveal != "off" and self.fork is not None:
             raise ValueError("RustEnvDecl: the fork arm's successor rows are encoded by chains WITHOUT the oracle reveal, "
                              "so --oracle-reveal != off cannot combine with --fork-fraction > 0")
+        from agents.training.rust_rollout.overlap import validate_decl
+        validate_decl(overlap=bool(self.overlap), fork=self.fork, device=str(self.device), backend=str(self.backend))
 
     @property
     def resolved_buckets(self) -> Tuple[int, ...]:
@@ -410,6 +415,13 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
                                    obs_dim=int(obs_space.spaces[S.KEY_OBSERVATION].shape[0]), emit=emit)
     col.decl = decl
     col.extra_slots = extra_ids      # M5 Lane H: the declared eval slots (``extra_slots``' order)
+    if decl.overlap:                 # X14: the worker thread, its CUDA stream and the behaviour snapshots, at startup
+        from agents.training.rust_rollout.overlap import OverlapRunner
+
+        col.overlap = OverlapRunner(col, trainee_policy)
+        emit(f"🦀 [RUST ENV] OVERLAP ON (--overlap-collect, X14): the next rollout plays on a worker thread during "
+             f"each update from the process's 2nd update on (rows one version stale; decoupled-PPO objective; K9(b) on "
+             f"a behaviour snapshot, {col.overlap.snapshots.nbytes / 2**20:.1f} MiB)")
     emit(f"🦀 [RUST ENV] collector: {trig.describe()}; arena {cfg.capacity:,} rows; opponent sampling "
          "keyed (gen3_keyed_draw_v1)")
     return col

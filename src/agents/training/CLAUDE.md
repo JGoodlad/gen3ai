@@ -87,6 +87,9 @@ reason, and a checkpoint that recorded one is refused by `model_version/retired_
 ## The collector, compile, value
 
 - **A step-counted cadence counts total env steps** (`num_timesteps`), never `n_calls`.
+- 🚨 **Under `--overlap-collect` (X14) the host loop runs on a WORKER THREAD during `train()`**: code reached from
+  `RustCollector.host_step` must never touch the learner, the logger, a callback or `num_timesteps` (the
+  main thread replays those after the join). `designs/training/rust_collector.md` "Overlap (X14)".
 - A fresh model is built under `utils.torch_state_guard.single_thread_build`; the spaces have one builder,
   `agents.training.trainee_spaces`.
 - 🚨 **`src/agents/model/compile_control.py` is the only runtime module that touches `torch._dynamo`.** A new

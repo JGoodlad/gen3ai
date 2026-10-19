@@ -169,7 +169,8 @@ class PpoHyperparameters:
         # `_rust_collector` (M5 Lane G, the Rust env core) is the live env core + inference service
         # + row arena (locks, a child process, GPU slot storage): process-local by construction and
         # rebuilt by every process's startup. `_rust_fill` / `_rust_row_versions` / `_rust_version` /
-        # `_behaviour_probe_metrics` are the last update's staleness record — transient like the buffer.
+        # `_behaviour_probe_metrics` are the last update's staleness record — transient like the buffer; so are X14's
+        # `_behaviour_snapshot_metrics` and `_overlap_prox` (the fill's proximal log-probs, `rust_rollout/overlap.py`).
         # `_env_core_stamp` is written to metadata.json by `_model_hparams` on every save instead.
         # `rollout_buffer_class` (gen3_owned_rollout_buffer_v1) is FORCED to the owned buffer by every
         # `_setup_model` (`OwnedLoop`), so a `.zip` never needs to name one — and a reader that loads with
@@ -188,6 +189,7 @@ class PpoHyperparameters:
         return super()._excluded_save_params() + list(NEVER_UNPICKLED) + list(RESET_ON_LOAD) + ["_rust_collector", "_rust_fill", "_rust_row_versions",
                                                   "_rust_row_provenance",
                                                   "_rust_version", "_behaviour_probe_metrics", "_env_core_stamp",
+                                                  "_behaviour_snapshot_metrics", "_overlap_prox",
                                                   "_capacity_state",
                                                   "_vf_scale_announced", "_diagnostics_ran_in_process",
                                                   "collect_rollouts",

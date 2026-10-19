@@ -40,6 +40,11 @@ Four properties are CONTRACTS, each load-bearing for something outside this file
   only env core; the loop calls it through the attribute and never steps an env itself. The env the
   learner holds is a `TrainerVecEnv` (`_wrap_env` refuses anything else).
 
+**X14 (`--overlap-collect`, default OFF; `rust_rollout/overlap.py`).** When ON, the collector's worker BEGINS
+playing the next rollout right before an `update` (never before a process's first update, never before the last)
+and the next `collect` JOINS it before the new weights reach T2; an exception out of `train()` ABORTS it. The
+phase table is unchanged — the worker's host steps are delivered to the callbacks inside the next `collect`.
+
 **Drift.** Each vendored upstream source is hash-pinned (`UPSTREAM_SOURCE_SHA256`) and checked at
 import, like `train()`'s pin in the hub: the sb3 constructor that still builds the learner sets the
 attributes these methods read, so an sb3 upgrade that changes one of them is a loud error naming the
@@ -183,9 +188,19 @@ class OwnedLoop(StrictCheckpointLoad):
                 if log_interval is not None and iteration % log_interval == 0:
                     self.dump_logs(iteration)
 
-                # update (the hook point, then the method through the attribute)
-                with self._loop_hooks.around("update"):
-                    self.train()
+                # update (the hook point, then the method through the attribute). X14 (--overlap-collect,
+                # `rust_rollout/overlap.py`): the collector's worker plays the NEXT rollout during it, and the next
+                # `collect` joins it; never on the last iteration (nothing would train on it).
+                ov = self._overlap_runner() if self.num_timesteps < total_timesteps else None
+                if ov is not None:
+                    ov.begin()
+                try:
+                    with self._loop_hooks.around("update"):
+                        self.train()
+                except BaseException:
+                    if ov is not None:
+                        ov.abort()
+                    raise
 
             # training_end
             callback.on_training_end()
@@ -194,6 +209,12 @@ class OwnedLoop(StrictCheckpointLoad):
             self._final_dump()
 
             return self
+
+    def _overlap_runner(self) -> Any:
+        """X14's runner when ``--overlap-collect`` is ON and this process has done its first update (the first
+        runs alone: `overlap.OverlapRunner`), else None — the serial loop, unchanged."""
+        ov = getattr(getattr(self, "_rust_collector", None), "overlap", None)
+        return ov if ov is not None and ov.warm else None
 
     def _final_dump(self) -> None:
         """Dump whatever is still pending — the last `train()`'s scalars and anything recorded after the

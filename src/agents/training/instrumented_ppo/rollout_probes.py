@@ -47,12 +47,20 @@ class RolloutProbes:
     def _collect_rust(self, rc, callback, rollout_buffer):
         """M5 Lane G: the learner's weights are LOADED into the inference service after every update
         (`after_update`, detected by the update counter moving), then the complete-game (or window)
-        fill replaces the model's buffer contents. `rust_rollout/collector.py`."""
+        fill replaces the model's buffer contents. `rust_rollout/collector.py`.
+
+        X14 (``--overlap-collect``, `rust_rollout/overlap.py`): when the worker played this rollout during the
+        update, it is JOINED first — before ``after_update`` loads the new weights into the T2 slot it played
+        from — and its rollout is then delivered on this thread (``collect_after_overlap``)."""
+        ov = getattr(rc, "overlap", None)
+        played = ov.join() if ov is not None and ov.active else None
         if getattr(rc, "seen_updates", None) is None:
             rc.seen_updates = self._n_updates
         elif self._n_updates != rc.seen_updates:
             rc.after_update(self)
             rc.seen_updates = self._n_updates
+        if played is not None:
+            return rc.collect_after_overlap(self, callback, rollout_buffer, played)
         return rc.collect(self, callback, rollout_buffer)
 
     def _record_collect(self, t0: float, n0: int) -> None:

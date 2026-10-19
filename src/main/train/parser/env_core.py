@@ -122,6 +122,15 @@ def add_env_core_flags(parser: argparse.ArgumentParser) -> None:
                              "of one forward per snapshot; the pool size and the opponent mix are unchanged. "
                              "Decisions equal the per-slot path at fp32-reassociation tolerance (gated at "
                              "startup and on every load). Backend eager or graph.")
+    parser.add_argument("--overlap-collect", "--overlap_collect", dest="overlap_collect", action=BoolFlag,
+                        default=None,
+                        help="(X14, default OFF; gen3_overlap_collect_v1) play the NEXT rollout on a worker thread "
+                             "while the learner updates on the current one, from the process's 2nd update on: every "
+                             "row is then one policy version stale. The update runs DECOUPLED PPO (the clip and the "
+                             "KL centred on the update's starting policy, a truncated importance weight on the "
+                             "advantage) and K9(b) judges the stale rows against a snapshot of the weights that "
+                             "played them. Refused with the fork arm, and on CUDA with a T2 backend other than "
+                             "'graph'. designs/training/rust_collector.md \"Overlap (X14)\".")
     parser.add_argument("--t2-backend", "--t2_backend", dest="t2_backend", choices=("graph", "eager", "aot"),
                         default=None,
                         help="Inference backend; default 'graph' on CUDA, 'eager' on CPU.")

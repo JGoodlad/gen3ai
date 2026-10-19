@@ -14914,3 +14914,31 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   return, the watch's deltas, and for both sites warn-not-raise, raise-once-armed, and a segment still raising; the
   four site tests fail on revert. Docs: `endstate/program_rust_core.md`, `training/rust_collector.md`,
   `training/learner_gates.md`, the `TECH_DEBT_BACKLOG.md` row.
+## 2026-10-19 — X14: OVERLAP the next rollout's collection with the PPO update (`--overlap-collect`, `gen3_overlap_collect_v1`; default OFF; no model / config / obs / signature change; flag OFF trains the same bytes)
+
+- **What.** With the flag ON, from a process's 2nd update on, the Rust collector plays the NEXT rollout on a worker
+  thread (`rust_rollout/overlap.py`, `OverlapRunner`, built at startup with its own CUDA stream) while the main thread
+  runs `train()`. T2 is not reloaded under it, so every row is one policy version stale; the worker stops at the
+  trigger, so no timing reaches a row (ON runs are deterministic). It never touches the learner, the logger, a
+  callback or `num_timesteps`: the main thread REPLAYS its host steps' decisions and infos after the join
+  (`RustCollector.collect_after_overlap`), so callbacks fire at the same `num_timesteps` with the learner at k + 1.
+- **The objective under overlap is DECOUPLED PPO** (Hilton et al. 2021), as a buffer rewrite before the first
+  optimizer step (`proximal_transform`): `old_log_prob := log π_prox` (computed at the fill by T2's trainee slot,
+  which then holds the learner's weights — the learner's eager forward would cost ≈ 16 s an update on X26) and
+  `advantage *= min(π_prox / μ, 2)`. Why: X26's own one-version-old rows start an update at approx-KL 0.016
+  vs μ and 22.5 % outside the 0.15 clip band (`staleness/probe_age_1_*`, last 30 updates at ~380M); plain PPO's clip
+  and the KL→LR controller (target 0.01) are centred on μ.
+- **K9(b) under overlap** judges the stale rows on a 2-slot BEHAVIOUR SNAPSHOT of the weights each `after_update`
+  loaded into T2, swapped into the policy for one probe forward and back bit-exactly (`judge_snapshot`;
+  `behaviour_snapshot/*`). `consistency.behaviour_probe` gains keyword arguments (ages, tag prefix, staleness off,
+  the violation's wording, the metrics attribute) whose defaults are the learner's probe, unchanged.
+- **Refused:** with the fork arm; on CUDA with a T2 backend other than `graph`.
+- **Recorded:** `metadata.json` `env_core.overlap_collect` (ON only). Tags `overlap/*`, `behaviour_snapshot/*`.
+- **Tests.** `overlap_integration_test.py` (real core, CPU): the overlapped rollout holds only version-k rows (a no-op
+  worker fails it); K9(b) judges them on the snapshot and a perturbed snapshot is a `BehaviourMismatch`; flag OFF
+  trains the hash RECORDED AT THE PRE-X14 COMMIT (2939cc96); an ON `learn()` is deterministic (slow). `overlap_test.py`:
+  the snapshots, the decoupled rewrite, the loop's begin / abort order, the decl refusals, the flag and the stamp.
+- **Not measured on the GPU** (no lease): the throughput A/B command and the CPU mechanics read are in
+  `research_state/measurements/x14_overlap_2026-10-19/`. Docs: `designs/training/rust_collector.md` "Overlap (X14)",
+  `learner_gates.md`, `ppo_step.md`, `design_compute_efficiency.md` §1.6 + Decision record, `EXPERIMENT_BACKLOG.md` X14,
+  `flag_census.md`.

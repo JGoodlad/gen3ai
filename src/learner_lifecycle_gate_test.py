@@ -109,6 +109,9 @@ STEP_MODULES: Dict[str, str] = {
     "agents/training/scaffolding.py": "`reliability_table`, the win-prob calibration read's statistic "
                                       "(`instrumented_ppo/calibration.py`), computed per update",
     "agents/training/rust_rollout/consistency.py": "the behaviour-policy consistency gate, per update",
+    "agents/training/rust_rollout/overlap.py": "X14 (--overlap-collect): the snapshot K9(b) judge and the "
+                                               "decoupled-PPO buffer rewrite per update; its worker, stream and "
+                                               "snapshot tensors are built in a @startup_builder __init__",
     "agents/training/rust_rollout/tie_margins.py": "K9(b)'s tie-margin recorder around the probe forward, "
                                                    "per update (a TorchFunctionMode; no learner object)",
     "agents/model/opp_intent.py": "the opponent-intent loss functions + label matching, per minibatch",

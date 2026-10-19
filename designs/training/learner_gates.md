@@ -146,6 +146,16 @@ first micro-batch's own forward in the loop for a buffer with no versions, which
 produced; with that core gone, keeping it meant a second K9(b) implementation that only tests reached.
 Its tests now judge through the probe and the shared enforcement (`learner_gates_test`).
 
+**Under `--overlap-collect` (X14) the stale rows are judged on a BEHAVIOUR SNAPSHOT** (`rust_rollout/overlap.py`,
+`judge_snapshot`): the rows of an overlapped rollout were played by version k while the learner is at k + 1, so the
+learner's probe has (almost) no current rows. A second pass of the SAME probe (`behaviour_probe(model, ages=…,
+prefix="behaviour_snapshot/", staleness=False)`) runs with the version-k weights — copied at the `after_update`
+that loaded them into T2 — swapped into the policy, judges the rows played at k as its current rows under the same
+gate, bar and tie rule, and swaps the learner back bit-exactly (also on a `BehaviourMismatch`). Its tags are the
+`behaviour/*` set under `behaviour_snapshot/*`; it writes no `staleness/*`. A snapshot that is not the weights that
+played the rows FAILS it (`overlap_integration_test`), so it is what checks them; it also catches T2 serving the
+wrong weights during the overlap, as the learner's probe does serially. `rust_collector.md` "Overlap (X14)".
+
 It logs `behaviour/max_abs_dlogp_current`, `behaviour/p99_abs_dlogp_current`, `rows_current`,
 `rows_probed`, one `behaviour/bar_<statistic>` per condition and
 `behaviour/excluded_frac`, `rows_excluded`, `rows_judged`, `max_abs_dlogp_judged`,

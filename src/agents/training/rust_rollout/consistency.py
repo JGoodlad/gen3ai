@@ -744,9 +744,17 @@ def flip_judge(model: Any, rec: Any, obs: Dict[str, np.ndarray], acts: Any, mask
             "metrics": metrics}
 
 
-def behaviour_probe(model: Any) -> Optional[Dict[str, float]]:
+def behaviour_probe(model: Any, *, ages: Optional[np.ndarray] = None, prefix: str = "behaviour/",
+                    staleness: bool = True, where: str = "the CURRENT policy version",
+                    metrics_attr: str = "_behaviour_probe_metrics") -> Optional[Dict[str, float]]:
     """Run the probe on ``model.rollout_buffer`` (module docs); record ``behaviour/*`` and ``staleness/*``;
-    raise `BehaviourMismatch` under ``fatal``. Returns the metrics (None when off)."""
+    raise `BehaviourMismatch` under ``fatal``. Returns the metrics (None when off).
+
+    The keywords serve X14's BEHAVIOUR-SNAPSHOT judge (`overlap.judge_snapshot`; their defaults are the learner's
+    own probe, unchanged): ``ages`` replaces the ages derived from the rows' versions (age 0 = the rows the
+    weights now in the policy played), ``prefix`` renames every ``behaviour/`` tag, ``staleness`` False skips the
+    ``staleness/*`` block, ``where`` names the judged rows in a violation, ``metrics_attr`` is where the metrics
+    are kept on the model."""
     mode = str(getattr(model, "behaviour_check", "off") or "off")
     if mode == "off":
         return None
@@ -759,7 +767,9 @@ def behaviour_probe(model: Any) -> Optional[Dict[str, float]]:
     buf = model.rollout_buffer
     n_steps, n_envs = int(buf.buffer_size), int(buf.n_envs)
     versions = getattr(model, "_rust_row_versions", None)
-    if versions is not None and np.asarray(versions).shape == (n_steps, n_envs):
+    if ages is not None:
+        ages = np.asarray(ages, dtype=np.int64).reshape(n_steps, n_envs)
+    elif versions is not None and np.asarray(versions).shape == (n_steps, n_envs):
         ages = int(getattr(model, "_rust_version", 0)) - np.asarray(versions, dtype=np.int64)
     else:
         ages = np.zeros((n_steps, n_envs), dtype=np.int64)
@@ -804,7 +814,7 @@ def behaviour_probe(model: Any) -> Optional[Dict[str, float]]:
     out["behaviour/max_abs_dlogp_current"] = worst
     clip = model.clip_range(model._current_progress_remaining) if callable(model.clip_range) else float(model.clip_range)
     ratio = np.exp(d)
-    for lo, hi in AGE_BUCKETS:
+    for lo, hi in (AGE_BUCKETS if staleness else ()):
         m = (age >= lo) & (age <= hi)
         if not m.any():
             continue
@@ -815,7 +825,7 @@ def behaviour_probe(model: Any) -> Optional[Dict[str, float]]:
         out[f"staleness/probe_age_{name}_ratio_absdev"] = float(np.abs(r - 1.0).mean())
         out[f"staleness/probe_age_{name}_clip_frac"] = float((np.abs(r - 1.0) > float(clip)).mean())
         out[f"staleness/probe_age_{name}_approx_kl"] = float(((r - 1.0) - d[m]).mean())
-    fill = getattr(model, "_rust_fill", None)
+    fill = getattr(model, "_rust_fill", None) if staleness else None
     if fill is not None:
         tot = max(1, sum(fill.age_hist.values()))
         out["staleness/age_mean"] = float(fill.mean_age)
@@ -852,13 +862,15 @@ def behaviour_probe(model: Any) -> Optional[Dict[str, float]]:
                 out["behaviour/scan_rows_over_bar"] = float(details["scan"]["over_bar"])
                 out["behaviour/scan_max_abs_dlogp"] = float(details["scan"]["max"])
             out.update(enforce_behaviour(
-                model, absd[cur], where=f"{int(cur.sum())} rows played at the CURRENT policy version",
+                model, absd[cur], where=f"{int(cur.sum())} rows played at {where}",
                 actions=acts[ci], masks=masks[ci], details=details, margins=mc,
                 sites=None if sites is None else [sites[int(i)] for i in ci],
                 flip=None if flip is None else {k: flip[k][ci] for k in ("judged", "as_is", "flipped")}))
     finally:
+        if prefix != "behaviour/":
+            out = {(prefix + k[len("behaviour/"):] if k.startswith("behaviour/") else k): v for k, v in out.items()}
         if logger is not None:
             for k, v in out.items():
                 logger.record(k, v)
-        model._behaviour_probe_metrics = out
+        setattr(model, metrics_attr, out)
     return out

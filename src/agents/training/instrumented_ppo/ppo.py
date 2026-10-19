@@ -289,6 +289,9 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # (`learner_gates.behaviour_gate_mode`; the python core's in-loop variant went with it, U4).
         if behaviour_gate_mode(self) == "probe":
             self._behaviour_probe()
+        # +X14 OVERLAP (gen3_overlap_collect_v1): K9(b) on the overlapped rows under their behaviour snapshot, then
+        # the decoupled-PPO buffer rewrite — a no-op unless --overlap-collect (`train_setup._overlap_prepare`).
+        self._overlap_prepare()
 
         # Compute current clip range
         clip_range = self.clip_range(self._current_progress_remaining)  # type: ignore[operator]

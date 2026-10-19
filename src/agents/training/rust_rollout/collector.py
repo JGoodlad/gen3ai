@@ -153,6 +153,8 @@ class RustCollector:
         self._started = False
         #: the fork arm (``fork.RustForkPass``), attached by ``build_collector`` when declared; None = OFF
         self.fork: Any = None
+        #: X14's overlap runner (``overlap.OverlapRunner``), attached by ``build_collector`` when declared; None = OFF
+        self.overlap: Any = None
         self.cur_route = np.zeros(self.n, dtype=np.int64)
         self.cur_model_id: List[Optional[str]] = [None] * self.n
 
@@ -363,6 +365,16 @@ class RustCollector:
             raise S.CollectorError("collect before start(): the declared startup has not run")
         snap = self._snapshot()
         callback.on_rollout_start()
+        if not self._play_until_ready(model, callback):
+            return False
+        if self.fork is not None:                       # COLLECT_PHASES: play -> FORK -> fill
+            self.fork.run(self, model)
+        self._fill(model, callback, snap)
+        return True
+
+    def _play_until_ready(self, model: Any, callback: Any) -> bool:
+        """Host steps until the trigger is ready, each one's decisions delivered to the callbacks at once.
+        False iff a callback stopped training."""
         while not self.ready():
             try:
                 k = self.host_step()
@@ -371,18 +383,57 @@ class RustCollector:
                     raise
                 self.recover_respawn()
                 k = 0
-            model.num_timesteps += k
-            self._pending_decisions += k
-            while self._pending_decisions >= self.n:
-                self._pending_decisions -= self.n
-                infos, self._infos = self._infos, []
-                dones = np.ones(len(infos), dtype=bool)
-                callback.update_locals({"infos": infos, "dones": dones})   # loop_callbacks.STEP_LOCALS
-                if not callback.on_step():
-                    return False
-                model._update_info_buffer(infos, dones)
-        if self.fork is not None:                       # COLLECT_PHASES: play -> FORK -> fill
-            self.fork.run(self, model)
+            if not self._deliver(model, callback, k):
+                return False
+        return True
+
+    def _deliver(self, model: Any, callback: Any, k: int) -> bool:
+        """One host step's ``k`` trainee decisions into ``num_timesteps``, and the callbacks' ``step`` event
+        once per ``n_envs`` decisions, each with the infos accumulated since the last one. False iff a callback
+        stopped training."""
+        model.num_timesteps += k
+        self._pending_decisions += k
+        while self._pending_decisions >= self.n:
+            self._pending_decisions -= self.n
+            infos, self._infos = self._infos, []
+            dones = np.ones(len(infos), dtype=bool)
+            callback.update_locals({"infos": infos, "dones": dones})   # loop_callbacks.STEP_LOCALS
+            if not callback.on_step():
+                return False
+            model._update_info_buffer(infos, dones)
+        return True
+
+    def collect_after_overlap(self, model: Any, callback: Any, rollout_buffer: Any, played: Any) -> bool:
+        """X14 (`overlap.py`): the rollout the WORKER played during the last update, delivered on the learner's
+        thread — ``on_rollout_start``, then every host step's decisions and infos REPLAYED through `_deliver` in
+        the order played (the same ``step`` events at the same ``num_timesteps`` as a serial collection), then
+        any host steps still needed (none when the worker reached the trigger), the fill and ``on_rollout_end``.
+        Called after ``after_update`` (T2 already holds the new weights). False iff a callback stopped
+        training."""
+        callback.on_rollout_start()
+        played_infos, self._infos = self._infos, []
+        taken = 0
+        for k, upto in played.steps:
+            self._infos.extend(played_infos[taken:upto])
+            taken = upto
+            if not self._deliver(model, callback, k):
+                self._infos.extend(played_infos[taken:])
+                return False
+        self._infos.extend(played_infos[taken:])
+        tail0 = self.stats.host_steps
+        if not self._play_until_ready(model, callback):
+            return False
+        self._fill(model, callback, played.snap)
+        logger = getattr(model, "_logger", None)
+        if logger is not None:
+            logger.record("overlap/play_ms", 1000.0 * max(0.0, played.t_done - played.t_begin))
+            logger.record("overlap/join_wait_ms", 1000.0 * played.join_wait_s)
+            logger.record("overlap/host_steps_overlapped", float(len(played.steps)))
+            logger.record("overlap/host_steps_tail", float(self.stats.host_steps - tail0))
+        return True
+
+    def _fill(self, model: Any, callback: Any, snap: Dict[str, float]) -> None:
+        """The trigger fired: fill the learner's buffer, publish the fill's records, ``on_rollout_end``."""
         t0 = time.perf_counter()
         self._ensure_buffer(model)
         rep, versions = S.fill_complete(model.rollout_buffer, self.log, self.cfg.trigger.take(),
@@ -393,9 +444,14 @@ class RustCollector:
         model._rust_row_versions = versions
         model._rust_row_provenance = rep.provenance       # K9(b)'s violation dump (consistency._dump)
         model._rust_version = self.version
+        if self.overlap is not None:          # X14: the decoupled update's proximal log-probs, by T2 (= the learner now)
+            t1 = time.perf_counter()
+            model._overlap_prox = self.overlap.proximal_logp(model.rollout_buffer)
+            logger = getattr(model, "_logger", None)
+            if logger is not None:
+                logger.record("overlap/prox_forward_ms", 1000.0 * (time.perf_counter() - t1))
         self._record(model, snap)
         callback.on_rollout_end()
-        return True
 
     def _snapshot(self) -> Dict[str, float]:
         st = self.stats
@@ -456,6 +512,9 @@ class RustCollector:
         self.svc.load(target, model.policy, f"trainee:v{self.version}")
         self.slot_version[target] = self.version
         self.env_slot[:] = target
+        if self.overlap is not None:          # X14: the weights T2 now serves, kept for K9(b) on the stale rows
+            self.overlap.snapshots.take(model.policy, self.version)
+            self.overlap.warm = True
         self.check_lifecycle()
 
     def check_lifecycle(self) -> Dict[str, int]:
@@ -520,6 +579,8 @@ class RustCollector:
         return cut
 
     def close(self) -> None:
+        if self.overlap is not None:
+            self.overlap.close()
         if self.fork is not None:
             self.fork.close()
         try:

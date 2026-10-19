@@ -83,7 +83,73 @@ optimizer step of every update, `consistency.behaviour_probe` runs the learner's
 micro-batch and logs, per age bucket (0, 1, 2, 3–4, 5–8, 9+): rows, the ratio π/μ (mean and mean
 |r − 1|), the share outside the clip band, and sb3's approx-KL — the `staleness/*` tags.
 
-The measurements above are the whole staleness read: no remedy is built (per-game version pinning was deleted), so a row is trained on at whatever age the `staleness/*` tags show, corrected by PPO's own per-row ratio.
+The measurements above are the whole staleness read: no remedy is built (per-game version pinning was deleted), so a row is trained on at whatever age the `staleness/*` tags show, corrected by PPO's own per-row ratio. Under `--overlap-collect` (X14, below) almost every row is age ≥ 1 by design, and the update runs the decoupled objective instead.
+
+## Overlap (X14) — `--overlap-collect`, default OFF (`gen3_overlap_collect_v1`)
+
+Code: `rust_rollout/overlap.py` (`OverlapRunner`, `BehaviourSnapshots`, `judge_snapshot`, `proximal_transform`); the
+loop's two call sites are `instrumented_ppo/loop.py` (begin before the update, abort on an exception) and
+`rollout_probes._collect_rust` (join before `after_update`). Pins: `overlap_test.py`, `overlap_integration_test.py`.
+Measurement folder: [`../research_state/measurements/x14_overlap_2026-10-19/`](../research_state/measurements/x14_overlap_2026-10-19/README.md).
+
+**What it does.** With the flag ON, from the process's SECOND update on, the collector plays the NEXT rollout on a
+worker thread while the main thread runs `train()` on the current one. T2 is not reloaded under it, so every row of
+that rollout is played by version k and trained on by the learner at k + 1 — ONE version stale (a game that
+straddles two updates, as in a serial run, is older). The worker plays until the trigger is ready and STOPS: it
+never plays past the target and never reloads T2 mid-rollout, so no wall-clock timing reaches a row and an ON run
+is deterministic (`overlap_integration_test`: two learns, same bytes). The first update of every process runs
+alone, so the learner's CUDA reservation reaches its peak before a flush runs beside it (T2's frozen guard reads
+process-wide allocator counters, `gen3_t2_reserved_after_freeze_v1`).
+
+**The worker touches the collector's side only** (the core, T2, the opponent server, the stager, the arena, the
+counters) — never the learner, the logger, a callback or `num_timesteps`. Each host step's decision count and the
+infos are logged and REPLAYED on the main thread after the join (`RustCollector.collect_after_overlap`): the same
+`on_step` events at the same `num_timesteps`, with the same infos, as a serial collection. Callbacks therefore run
+with the learner at k + 1 exactly as before; only their side effects on the env (a pool push, an opponent refresh,
+a team pull) land one rollout later. 🚨 Anything new in `host_step` must keep to the collector's side.
+
+**The objective under overlap is DECOUPLED PPO** (Hilton, Cobbe & Schulman 2021). PPO's ratio π/μ against the stored
+μ keeps the gradient unbiased for any behaviour policy, but it also centres the CLIP and the KL→LR controller's
+`train/approx_kl` on μ. X26's own probe reads one-version-old rows at the START of an update at approx-KL 0.016
+vs μ (target 0.01) and 22.5 % outside the 0.15 clip band (`staleness/probe_age_1_*`, median of the last 30 updates
+at ~380M). With every row stale, plain PPO would make the controller cut the rate for a lag it cannot remove and
+anchor the clip to the stale policy. So every FILL also computes the PROXIMAL log-prob log π_prox(a|s) of every row — the learner's weights at the next update's start — with T2's trainee slot, which holds exactly those weights then (`after_update` loaded them; the worker is idle) and is the very function μ was served by (`OverlapRunner.proximal_logp`; `overlap/prox_forward_ms`). The learner's own eager fp32 forward would cost ≈ 0.34 s per 2,048 rows on X26 (`behaviour/probe_forward_ms`), ≈ 16 s a 98,304-row update. `train()`, after the K9(b) probes and before any optimizer step, rewrites the buffer (`proximal_transform`): `old_log_prob := log π_prox` (the update's starting policy) and `advantage := w · advantage`, `w = min(π_prox / μ, 2.0)` (`IS_WEIGHT_CAP`, a declared constant, unmeasured as a lever). The micro-step is unchanged: since w > 0,
+`−min(w·A·r, w·A·clip(r)) = −w·min(A·r, A·clip(r))`. On a fresh row π_prox = μ to fp32 rounding and w = 1, which is
+plain PPO. Tags: `overlap/is_weight_mean`, `is_weight_max_raw`, `is_weight_truncated_frac`, `is_ess` (normalised
+effective sample size), `behaviour_kl` (μ → π_prox), and the fill's `prox_forward_ms`. ⚠️ `normalize_advantage` then normalises
+w·A per micro-batch instead of A: a small rescale and baseline shift at w ≈ 1 ± 0.1 (FINDING).
+
+**K9(b) under overlap judges the stale rows on a BEHAVIOUR SNAPSHOT.** The learner's probe judges the rows at the
+current version, and under overlap there are none. Every `after_update` copies the weights it loads into T2 into one
+of two version-keyed slots (`BehaviourSnapshots`, allocated at startup), and `train()` swaps the version-(k) snapshot
+into the policy for one probe forward on the rows played at k, then swaps the learner back bit-exactly
+(`judge_snapshot`; the same gate, bar and tie rule; tags `behaviour_snapshot/*`, no `staleness/*`). The learner's
+own probe still writes `staleness/*` against μ — the lag read.
+
+**CUDA.** T2's `execute` orders its copies on the CALLING thread's current stream; on the main thread that is the
+default stream the learner fills during `train()`. The worker runs under its OWN stream (acquired at startup) with
+explicit joins at `begin` and `join`. ⚠️ UNVERIFIED on the card (no GPU lease when it was built). 🚨 T2's frozen
+guard reads PROCESS-WIDE allocator counters, so a learner reservation growth inside a worker flush is booked as T2's:
+counted and warned today, a `LifecycleViolation` once `reserved_growth.RESERVED_GROWTH_POISONS` is armed — arming it
+needs per-stream attribution first, or overlap stays off.
+
+**Refused:** with the fork arm (its pass runs between the trigger and the fill on the learner's thread), and on CUDA
+with a T2 backend other than `graph` (an eager / AOT forward from a second thread opens a second cuBLAS handle and
+workspace after the freeze).
+
+**Memory.** No second row buffer: the buffer being trained and the arena being filled both exist in a serial run
+(the arena is target + 2 games per env either way). Added: the two snapshot slots + one swap scratch = 3 copies of
+the policy's state dict (`BehaviourSnapshots.nbytes`; the X26 policy with its ride-along heads is 11.67M values =
+44.5 MiB, so 134 MiB; the toy's 11.9 MiB, so 36 MiB) and one float64 per buffer row on the host (π_prox). X26's update peak
+reserves 8,304 MiB of the 12 GB card, the toy's 1,880 MiB (`lifecycle/cuda_update_peak_reserved_mib`).
+
+**Tags that change meaning when ON:** `rollout/collect_ms` is the EXPOSED collection (the join wait, the replay and
+the fill); `overlap/play_ms` is the worker's play wall, `overlap/join_wait_ms` the main thread's wait after `train()`
+returned, `overlap/host_steps_overlapped` / `host_steps_tail` the host steps played on each side.
+`rust_env/trainee_decisions_per_s` divides by the whole overlapped window.
+
+**Recorded:** `metadata.json`'s `env_core.overlap_collect` (present only when ON). A launcher restart replays the
+typed argv; a FORK does not inherit it — type it on the fork.
 
 ## K9(b) — behaviour-policy consistency
 
