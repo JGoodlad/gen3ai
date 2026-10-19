@@ -531,7 +531,7 @@ orchestrator decides (F18).
 - **F9 — tui leaf:**
   - It says the prober uses `main.tui` (in three places), but the prober's TUI is retired.
   - The same stale claim is in `src/main/tui/__init__.py:1`, `app_base.py:3` and `colors.py:4`. These are code docstrings; fixing them is a code-file edit, so it needs its own approval in phase 2.
-- **F10 — Web leaf, false premise.** The section "Commands a template prints (kept here so the freshness gate resolves their flags)" assumes the gate checks the template. The gate reads only `CLAUDE.md` files, so `templates/index.html:130-138` is unguarded. A real guard is a web test that resolves each printed command against its parser; that is a build decision.
+- **F10 — Web leaf, false premise.** The section "Commands a template prints (kept here so the freshness gate resolves their flags)" assumes the gate checks the template. The gate reads only `CLAUDE.md` files, so `templates/index.html:130-138` is unguarded. A real guard is a web test that resolves each printed command against its parser (DONE 2026-10-19: `src/main/prober/web/index_commands_test.py`).
 - **F11 — rust_sim leaf:**
   - Quoted census figures contradict its own never-quote rule.
   - The `display_name` location is wrong.
