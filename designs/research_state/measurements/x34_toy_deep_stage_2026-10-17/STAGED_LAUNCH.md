@@ -192,3 +192,4 @@ The default PIN is the validated `6dcc769c`. A newer main is fine once the same 
 - **Restart interval:** 24 h, with the VmRSS guard.
 - **F2 handling:** if the inherited 90M / 100M nodes both read FLAT at the first tick, that is a FINDING to the
   orchestrator, not a stop.
+- **launch_x34.sh passes `--behaviour-check warn`** (line 13, added 2026-10-19). Without it the fork would inherit the parent's recorded `fatal` (`metadata.json` `behaviour_check`), as Training Oct found at staging.

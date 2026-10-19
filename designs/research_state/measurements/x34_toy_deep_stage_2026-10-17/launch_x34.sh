@@ -10,7 +10,7 @@ REPO=/home/goodlad/dev/gen3ai; J=/home/goodlad/.claude/jobs/x34; ST=$J/status.tx
 STAGE=$REPO/designs/research_state/measurements/x34_toy_deep_stage_2026-10-17
 PY=/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3; OPS=$REPO/scripts/ops
 PIN=$(git -C "$REPO" rev-parse "${1:-6dcc769c4539096d6544683fa262ecc980b60029}") || exit 7
-A=$(cat "$STAGE/fork_argv_minimal.txt")
+A="$(cat "$STAGE/fork_argv_minimal.txt") --behaviour-check warn"   # §7 (2026-10-19): warn + registered ceilings; a fork otherwise inherits the parent's fatal
 mkdir -p "$J"; log() { echo "[$(date -Is)] $1" >> "$ST"; }
 hold() { log "HOLD: $1"; echo "HOLD: $1" >&2; exit 7; }
 
