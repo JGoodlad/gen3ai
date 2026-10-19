@@ -56,7 +56,11 @@ class TeamTable:
         return i
 
     def add_builder(self, builder: Any) -> None:
-        for t in list(getattr(builder, "packed_teams", ())) + list(getattr(builder, "bias_packed_teams", ()) or ()):
+        # The pool, the bias teams and the `--team-mix` corpus (`gen3_team_mix_v1`): a corpus draw missing from the
+        # table would be a TeamTableMiss at its first corpus episode. No mix = the empty class default, nothing added,
+        # so a no-mix run's table (and every index in it) is unchanged.
+        for t in (list(getattr(builder, "packed_teams", ())) + list(getattr(builder, "bias_packed_teams", ()) or ())
+                  + list(getattr(builder, "mix_packed_teams", ()) or ())):
             self.add(t)
 
     def index(self, packed: str, where: str) -> int:

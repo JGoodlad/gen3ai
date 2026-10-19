@@ -133,10 +133,17 @@ def bot_sha256(name: str) -> str:
 
 
 def builder_ident(builder: Any) -> Dict[str, Any]:
-    """What defines a ``Gen3Teambuilder``'s draws: its ordered team list, its bias teams and bias probability."""
-    return {"teams": list(getattr(builder, "packed_teams", ()) or ()),
-            "bias_teams": list(getattr(builder, "bias_packed_teams", ()) or ()),
-            "bias_prob": float(getattr(builder, "bias_prob", 0.0) or 0.0)}
+    """What defines a ``Gen3Teambuilder``'s draws: its ordered team list, its bias teams and bias probability — and,
+    ONLY when it carries one, its ``--team-mix`` corpus and draw share (``gen3_team_mix_v1``; absent ⇒ the keys are
+    absent, so every existing team-set id is unchanged)."""
+    out = {"teams": list(getattr(builder, "packed_teams", ()) or ()),
+           "bias_teams": list(getattr(builder, "bias_packed_teams", ()) or ()),
+           "bias_prob": float(getattr(builder, "bias_prob", 0.0) or 0.0)}
+    mix = list(getattr(builder, "mix_packed_teams", ()) or ())
+    if mix:
+        out["mix_teams"] = mix
+        out["mix_prob"] = float(getattr(builder, "mix_prob", 0.0) or 0.0)
+    return out
 
 
 def opponent_play(kind: str, *, sentinel_greedy: bool, self_play_temp: float) -> Tuple[str, Any]:

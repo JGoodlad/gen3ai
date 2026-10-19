@@ -551,8 +551,8 @@ tree), landed BEFORE X34 launches. **Owner / orchestrator choice (Q2, §9).**
 - Fill artifacts (EVs / natures) taught as truth.
 - Crash classes off-pool.
 - A pin hazard if the corpus is placed wrong.
-- Validation time at startup for ~23k teams: `validate_teams_locally` through Node, UNVERIFIED. Pre-validate in
-  the build and assert the stamp.
+- Validation time at startup: MEASURED 2026-10-19, 2,415 corpus teams validate in ≈ 5 s per side through Node (the
+  pool × 5 = 3,595 teams in 7.4 s); the corpus is also verified by sha256 against its manifest.
 
 ### 4.2 L2 — the FORK at the plateau that widens the pool: D1
 
@@ -1096,7 +1096,7 @@ The first D1 read lands ≈ 13 GPU-h after A1's (≈ 39 GPU-h into batch 1).
 | build | what | size | must land before |
 |---|---|---|---|
 | B-D1 | the W_hl corpus: T8's HP repair (one function with `heldout72_hpfix`'s), validation, the exclusions (every frozen panel and its near neighbours, smogon_forum and P72 included; the crash classes), the manifest, a full-tier soak | **BUILT 2026-10-19 as `w_forum_v1`** (the forum corpus replaces W_hl for X38, §4.1): 2,415 teams, crash soak 0 errors; the Node differential soak not run (F-DV-21) | `X35_PIN_k` |
-| B-D2 | `--team-mix <corpus>:<share>`: a `MatchupSpec` source kind for both builders, recorded in `metadata.json` (spec hash), restored on resume; byte-identical when absent; a pin-safe corpus path | opus-medium, ≈ 0.5 agent-day | `X35_PIN_k` |
+| B-D2 | `--team-mix <corpus>:<share>`: a `MatchupSpec` source kind for both builders, recorded in `metadata.json` (spec hash), restored on resume; byte-identical when absent; a pin-safe corpus path | **BUILT 2026-10-19**: `--team-mix <corpus>[@<tier>]:<share>` + `--team-mix-sides {both,trainee,opponent}` (D1 = both, D2 = opponent); `TeamSource.mix` with the corpus ident in the spec hash ONLY when declared (flagless hashes pinned); eval stays on the pool; startup FATAL_CONFIG on an unverifiable corpus, a held-out panel hit or a validator drop; a same-run resume restores it, a FORK does not inherit it; ≈ 11 s startup on `w_forum_v1@ABC`, both sides. Detail: `designs/training/team_curriculum.md` "The team mix" | `X35_PIN_k` |
 | B-D3 | the held-out panel registry (pointing at `ladder_weights_vN`) + the refusing startup guard (exact + near neighbour, by content) + `--team-exclude` | **REGISTRY BUILT 2026-10-19** (`heldout_panels.json`, `main.heldout_panels`); the guard rides `--team-mix` (B-D2); `--team-exclude` not built (no arm needs it) | B-D1, `X35_PIN_k` (and D5) |
 | B-D4 | P72: generate, sanitise, validate, overlap-check (pool, `competitive`, `hl_05_26`, smogon_forum), assign strata, install for Metamon; the X37a configs (per-stratum Metamon sub-sets of heldout72_hpfix; the asymmetric cells' per-side sources) | opus-medium, ≈ 0.25 agent-day | X37a |
 | B-D5 | an in-run held-out eval cell (future runs; subsumed by GEN-M) | opus-medium, ≈ 0.5 agent-day | optional |

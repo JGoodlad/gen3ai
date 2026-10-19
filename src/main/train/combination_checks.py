@@ -129,6 +129,11 @@ def _val(args, dest: str, default: Any) -> Any:
     return default if value is None else value
 
 
+def _team_mix_sides(args) -> str:
+    """`--team-mix-sides`, with its effective default (`both`) when untyped."""
+    return getattr(args, "team_mix_sides", None) or "both"
+
+
 def _belief_mode(args) -> str:
     return _val(args, "move_belief_mode", "off")
 
@@ -273,6 +278,32 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         lambda a: bool(a.exploiter_keep_bots) and not a.exploiter,
         "--exploiter-keep-bots only applies in exploiter mode — pass --exploiter <target> "
         "too (it mixes the bots in ALONGSIDE that target)."),
+
+    # ---- the TEAM MIX (gen3_team_mix_v1, `--team-mix`; designs/training/team_curriculum.md) ----------
+    CombinationCheck(
+        "team_mix_sides_needs_team_mix", ("team_mix_sides", "team_mix"),
+        lambda a: getattr(a, "team_mix_sides", None) is not None and not getattr(a, "team_mix", None),
+        "--team-mix-sides only says WHICH side --team-mix widens — pass --team-mix <corpus>[@<tier>]:<share> "
+        "too (alone it would be silently inert).",
+        exit_style="fatal_config"),
+    CombinationCheck(
+        # F-DV-3: an exploiter pilots VETTED sample teams only (`validate_exploiter_trainee_is_sample` refuses the
+        # same spec at startup; this is the offline half, so checkargs reports it).
+        "team_mix_trainee_side_vs_exploiter", ("team_mix", "team_mix_sides", "exploiter"),
+        lambda a: bool(getattr(a, "team_mix", None)) and bool(getattr(a, "exploiter", None))
+        and _team_mix_sides(a) in ("both", "trainee"),
+        lambda a: (f"--team-mix on the TRAINEE side ({_team_mix_sides(a)}) cannot combine with --exploiter: an "
+                   "exploiter pilots vetted sample teams only. Pass --team-mix-sides opponent to widen only the "
+                   "opponents' teams."),
+        exit_style="fatal_config"),
+    CombinationCheck(
+        "team_mix_trainee_side_vs_pinned_trainee", ("team_mix", "team_mix_sides", "trainee_team", "trainee_teams"),
+        lambda a: bool(getattr(a, "team_mix", None)) and _team_mix_sides(a) in ("both", "trainee")
+        and bool(getattr(a, "trainee_team", None) or getattr(a, "trainee_teams", None)),
+        lambda a: (f"--team-mix on the TRAINEE side ({_team_mix_sides(a)}) cannot combine with a pinned "
+                   "--trainee-team(s): a specialist pilots its pin, and a corpus mix on that side would silently "
+                   "un-pin it. Pass --team-mix-sides opponent to widen only the opponents' teams."),
+        exit_style="fatal_config"),
 
     # ---- gen3_fork_lr_pin_v1 ---------------------------------------------------------------
     CombinationCheck(

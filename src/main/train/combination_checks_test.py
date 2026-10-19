@@ -154,6 +154,10 @@ ARGVS: dict[str, list[str]] = {
     "pfsp_scale_needs_self_play": ["--pfsp-scale", "1.0"],
     "supply_starve_cycles_parses": ["--supply-starve-cycles", "no_such_lever=3"],
     "exploiter_keep_bots_needs_exploiter": ["--exploiter-keep-bots"],
+    # gen3_team_mix_v1 (`--team-mix`): parse-time syntax only, so no corpus is read here
+    "team_mix_sides_needs_team_mix": ["--team-mix-sides", "opponent"],
+    "team_mix_trainee_side_vs_exploiter": ["--team-mix", "w_forum_v1:0.5", "--exploiter", "models/t"],
+    "team_mix_trainee_side_vs_pinned_trainee": ["--team-mix", "w_forum_v1:0.5", "--trainee-team", "t.txt"],
     "fork_lr_is_resume_only": ["--fork-lr", "1e-5"],
     "fork_lr_freeze_needs_fork_lr": ["--fork-lr-freeze"],
     # ---- gen3_winprob_critic_mode_v1. The bare argv IS the win-prob composition (the critic is a

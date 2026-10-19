@@ -24,7 +24,7 @@ poke-env are DELETED (T27 P6): every fold, label, reward and trace record is the
 | the in-loop eval, the eval COUNT ledger, `main.h2h`, `main.plateau`, `main.belief_roles`, the baseline registry, ELO / the ladder, the forensic trace | `designs/training/eval_rules.md`, then `designs/training/eval_and_rating.md` |
 | self-play, the snapshot pool, stable opponents | `designs/training/self_play_and_pool.md` |
 | exploiter mode, the best-response gap, the rank tripwire (distillation / search-as-teacher are DELETED) | `designs/training/exploiter_and_distillation.md` |
-| per-team win-rate tracking, team blocking | `designs/training/team_curriculum.md` |
+| the TEAM MIX (`--team-mix`, a pin-safe corpus widening the team draw), per-team win-rate tracking, team blocking | `designs/training/team_curriculum.md` |
 | the win-prob critic, the 250-turn cap, `--vf-coef` | `designs/training/critic_and_value_losses.md` |
 | the win-prob head (`--win-prob-mode`) | `designs/training/winprob_head_and_pbrs.md` |
 | the detached ride-along heads; strict checkpoint loading; opponent (inference-only) loads | `designs/training/ridealong_heads.md` |
@@ -187,6 +187,11 @@ the `win_margin` label rule (the label itself is the Rust core's `labels/margin.
 - 🚨 **An exploiter's gain is TARGET-SPECIFIC** — read it as an opponent for the pool, measured by `python -m
   main.best_response_gap`, which refuses unmatched budget / dose / regime. Two exploiters of one archetype against one
   target are REPLICATES (each keeps its row).
+- 🚨 **`--team-mix <corpus>[@<tier>]:<share>` WIDENS a side's team draw** (`gen3_team_mix_v1`; X38 / D1): the corpus
+  lives under `src/utils/team_corpora/` (never `data/teams/` — a pinned run reads `data/` from MAIN), its spec block
+  appears ONLY when declared (flagless spec hashes unchanged), EVAL stays on the pool, startup refuses a corpus that
+  hits a held-out panel or loses a team to the validator, and a FORK does NOT inherit it (a same-run resume does).
+  Detail: `designs/training/team_curriculum.md` "The team mix".
 - ⚠️ **A raw per-team win rate conflates pilot competence with team strength** — normalise first. Per-team series
   have **NO TensorBoard emission** (owner rule, pinned); the tracker RAISES on a pool-ORDER disagreement.
 

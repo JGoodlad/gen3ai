@@ -68,13 +68,25 @@ class Gen3Teambuilder(Teambuilder):
     #: `gen3_team_draw_rng_v1` above.
     _rng = random
 
-    def __init__(self, teams, bias_teams=None, bias_prob=0.0, rng_seed=None):
+    #: THE TEAM MIX (``--team-mix``, ``gen3_team_mix_v1``; ``designs/training/team_curriculum.md``). CLASS
+    #: defaults, so a builder WITHOUT a mix carries no instance attribute for it: its ``__dict__`` (and so its
+    #: pickle, and every env worker's unpickled copy) is byte-identical to the pre-mix builder's, and
+    #: ``_draw_team``'s ``if self.mix_packed_teams`` test is False and consumes NO RNG call.
+    mix_packed_teams: "tuple[str, ...]" = ()
+    mix_prob: float = 0.0
+    mix_dropped: "tuple | list" = ()
+
+    def __init__(self, teams, bias_teams=None, bias_prob=0.0, rng_seed=None, mix_teams=None, mix_prob=0.0):
         """
         Initialize with a single team string or a list of team strings.
 
         bias_teams: optional secondary pool; when provided, yield_team picks from
                     it with probability bias_prob (and from the main pool otherwise).
         bias_prob:  float in [0, 1].  0.0 = always use main pool (default).
+        mix_teams:  optional corpus (``--team-mix``): each fresh draw comes from it with probability
+                    ``mix_prob`` BEFORE anything else, else the draw above runs unchanged. A corpus
+                    draw is untracked (``_last_pool_idx`` None), like a bias draw. Its validation drops
+                    land in ``mix_dropped`` (the trainer refuses a corpus with any drop).
         """
         if isinstance(teams, str):
             teams = [teams]
@@ -168,6 +180,9 @@ class Gen3Teambuilder(Teambuilder):
                       + "; ".join(f"{i}: {str((e or ['?'])[0])[:120]}"
                                   for i, e in self.bias_dropped[:5]), flush=True)
 
+        if mix_teams and mix_prob > 0.0:
+            self._install_mix(mix_teams, mix_prob)
+
         # The pool index yielded for the CURRENT battle (None → not a pool team, i.e. a bias
         # draw). Set on EVERY branch of ``_draw_team`` — it is the "which team did I just hand
         # out" index the per-team win-rate tracker below reads.
@@ -196,6 +211,46 @@ class Gen3Teambuilder(Teambuilder):
         self._block_left = 0            # remaining yields before redraw
         _install_team_rng(self, rng_seed)
 
+    def _install_mix(self, mix_teams, mix_prob) -> None:
+        """Validate, pack and install the ``--team-mix`` corpus (``gen3_team_mix_v1``) — the ONE writer of the
+        mix's instance attributes, called only when a mix is declared (the class defaults answer otherwise).
+
+        The corpus goes through the SAME ``validate_teams_locally`` + parse + Hidden-Power fix + pack as the
+        pool, and the same >6-mon pack guard. A team the validator rejects is DROPPED and listed in
+        ``mix_dropped`` (index, first error); the trainer's startup guard refuses any drop, because the run
+        records the corpus's identity (its tier sha256) and a silently smaller draw set would make that
+        record a lie."""
+        from utils.bridge.team_validator import validate_teams_locally
+
+        p = float(mix_prob)
+        if not 0.0 < p <= 1.0:
+            raise ValueError(f"mix_prob must be in (0, 1], got {mix_prob!r}")
+        if isinstance(mix_teams, str):
+            mix_teams = [mix_teams]
+        res = validate_teams_locally("gen3ou", list(mix_teams))
+        packed: "list[str]" = []
+        dropped: "list[tuple[int, object]]" = []
+        for i, r in enumerate(res):
+            if r.get("valid"):
+                packed.append(self.join_team(fix_gen3_hp_ivs(self.parse_showdown_team(mix_teams[i]))))
+            else:
+                dropped.append((i, r.get("errors")))
+        oversize = [i for i, t in enumerate(packed) if len(t.split("]")) > 6]
+        if oversize:
+            raise ValueError(f"--team-mix: {len(oversize)} packed corpus team(s) carry more than 6 Pokemon "
+                             f"(first indices {oversize[:5]}) — Showdown would REJECT them and the match HANG")
+        if not packed:
+            raise ValueError(f"--team-mix: no corpus team passes gen3ou validation (first error: "
+                             f"{(dropped[0][1] if dropped else None)})")
+        self.mix_packed_teams = tuple(packed)
+        self.mix_prob = p
+        self.mix_dropped = dropped
+
+    def mix_pool_copies(self) -> int:
+        """How many corpus teams PACK identically to a pool team of this builder (0 = disjoint; the startup
+        echo reports it). Packed equality is content equality after the Hidden-Power fix, not text."""
+        return sum(1 for t in self.mix_packed_teams if t in self._pool_index_by_packed)
+
     def set_block_episodes(self, k: int) -> None:
         """Set the team-block length (K consecutive episodes per draw; 1 = off). Resets any
         in-flight block so a mid-run push takes effect at the next yield."""
@@ -223,7 +278,15 @@ class Gen3Teambuilder(Teambuilder):
         """One fresh draw from the pool, biased toward bias_packed_teams if configured.
 
         A bias-team battle is never tracked (it uses a pinned bias team, not a pool team). The
-        pool draw is the uniform ``random.choice`` — one RNG call."""
+        pool draw is the uniform ``random.choice`` — one RNG call.
+
+        THE TEAM MIX (``--team-mix``) comes FIRST: with probability ``mix_prob`` the draw is a uniform
+        corpus team (untracked, ``_last_pool_idx`` None); otherwise the draw below runs UNCHANGED (bias,
+        then pool). Without a mix ``mix_packed_teams`` is the empty class default and no RNG is consumed,
+        so every existing builder draws the identical sequence."""
+        if self.mix_packed_teams and self._rng.random() < self.mix_prob:
+            self._last_pool_idx = None
+            return self._rng.choice(self.mix_packed_teams)
         if self.bias_packed_teams and self._rng.random() < self.bias_prob:
             self._last_pool_idx = None
             return self._rng.choice(self.bias_packed_teams)

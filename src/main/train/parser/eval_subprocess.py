@@ -17,6 +17,19 @@ from agents.training.opponent_classes import STABLE_CHALLENGE_SHARE
 from main.train.parser.base import BoolFlag
 
 
+def _team_mix_value(value: str) -> str:
+    """``--team-mix``'s ``type=``: the SYNTAX check (``agents.training.matchup_spec.parse_team_mix``) at parse time,
+    so a bad value is refused by every surface that parses (the trainer, ``main.checkargs``, the launcher's pinned
+    parser check). Returns the value AS TYPED — that string is what ``metadata.json:cli_args`` records."""
+    from agents.training.matchup_spec import parse_team_mix
+
+    try:
+        parse_team_mix(value)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e)) from None
+    return value
+
+
 def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
     """Add this family's flags to `parser`, in their original order."""
     # --- Subprocess eval ---
@@ -338,6 +351,23 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "1-vs-3-team A/B). Opponents still draw the full pool. Mutually exclusive "
                              "with --trainee-team; under --exploiter EVERY member must be a sample team. "
                              "Default None.")
+    parser.add_argument("--team-mix", dest="team_mix", type=_team_mix_value, default=None,
+                        metavar="CORPUS[@TIER]:SHARE",
+                        help="WIDEN the team draw with a pin-safe corpus (gen3_team_mix_v1; "
+                             "designs/training/team_curriculum.md 'The team mix'): on each declared side "
+                             "(--team-mix-sides) every fresh team draw comes from the corpus tier with "
+                             "probability SHARE, else the side's usual draw UNCHANGED (trainee: the pool + its "
+                             "10%% sample bias; opponent: the uniform pool). E.g. w_forum_v1@ABC:0.5; no @TIER = "
+                             "the manifest's default tier. EVAL stays on the pool. Startup verifies the corpus "
+                             "(sha256s) and REFUSES (FATAL_CONFIG) one that hits a held-out panel "
+                             "(designs/research_state/heldout_panels.json) or loses a team to the validator. "
+                             "Recorded in the MatchupSpec (spec hash); a same-run restart keeps it, a FORK does "
+                             "NOT inherit it (type it). Default None = no mix (byte-identical).")
+    parser.add_argument("--team-mix-sides", dest="team_mix_sides", default=None,
+                        choices=("both", "trainee", "opponent"),
+                        help="Which side(s) --team-mix widens: both (the default when --team-mix is set; D1), "
+                             "trainee, or opponent (D2). Requires --team-mix; an --exploiter run or a pinned "
+                             "--trainee-team(s) takes 'opponent' only.")
     parser.add_argument("--allow-untaught-teacher", dest="allow_untaught_teacher",
                         action="store_true",
                         help="RESEARCH override: allow --trainee-team(s) to pin a team that is a "

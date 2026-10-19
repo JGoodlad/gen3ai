@@ -14,8 +14,8 @@
 |---|---|---|---|
 | STARTING (main `87d3a623`) | 202 | 9 | 211 |
 | DELETED by P11 (the whole census: B1-B5, P11b, P11c, P11d) | 37 | 0 | 37 |
-| NOW (**CENSUS CLOSED**, P11d; +1 trainer flag, `--allow-desktop-gpu`, T23 2026-10-05; +1, `--policy-readout`, audit F2 2026-10-06; +1, `--move-resolution`, audit F11 2026-10-06; −1, `--belief-tokens`, DELETED at the X5 version break 2026-10-07, `designs/deleted_flags.md`; −1, `--beta-setvalued-coef`, DELETED at the X5 version break's part 2 2026-10-07 — it scaled the deleted blob β's set-valued credit, `designs/deleted_flags.md`; +1, `--obs-facts`, the X5 version break's part 3 2026-10-07; +1, `--allow-low-disk`, the disk guard 2026-10-09; +1, `--t2-lead-trainee`, T25 perf lever 4 2026-10-10; −8, the op levers `--speed-physics` / `--op-reduction` / `--switch-hazard-cost` / `--eot-residual` / `--status-facts` / `--ko-ramp` / `--g-ledger` / `--effective-stats`, DELETED by the legacy deletion's U1 2026-10-15; RE-MEASURED from the parsers that day, which also counts the flags added since without a line here; −10, `--move-resolution` / `--move-resolution-facts` / `--value-threat-inject` and the seven per-action block flags, DELETED by the legacy deletion's U3 2026-10-15; +1, `--canary-shift-max`, T37 2026-10-15) | 173 | 9 | 182 |
-| verdicts NOW | KEEP 173 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 0 | KEEP 9 | |
+| NOW (**CENSUS CLOSED**, P11d; +1 trainer flag, `--allow-desktop-gpu`, T23 2026-10-05; +1, `--policy-readout`, audit F2 2026-10-06; +1, `--move-resolution`, audit F11 2026-10-06; −1, `--belief-tokens`, DELETED at the X5 version break 2026-10-07, `designs/deleted_flags.md`; −1, `--beta-setvalued-coef`, DELETED at the X5 version break's part 2 2026-10-07 — it scaled the deleted blob β's set-valued credit, `designs/deleted_flags.md`; +1, `--obs-facts`, the X5 version break's part 3 2026-10-07; +1, `--allow-low-disk`, the disk guard 2026-10-09; +1, `--t2-lead-trainee`, T25 perf lever 4 2026-10-10; −8, the op levers `--speed-physics` / `--op-reduction` / `--switch-hazard-cost` / `--eot-residual` / `--status-facts` / `--ko-ramp` / `--g-ledger` / `--effective-stats`, DELETED by the legacy deletion's U1 2026-10-15; RE-MEASURED from the parsers that day, which also counts the flags added since without a line here; −10, `--move-resolution` / `--move-resolution-facts` / `--value-threat-inject` and the seven per-action block flags, DELETED by the legacy deletion's U3 2026-10-15; +1, `--canary-shift-max`, T37 2026-10-15; +2, `--team-mix` / `--team-mix-sides`, B-D2 2026-10-19) | 175 | 9 | 184 |
+| verdicts NOW | KEEP 175 · DELETE 0 · ONE-VALUED 0 · NEEDS-OWNER 0 | KEEP 9 | |
 | ENDING of this run (the P11 hand-off is the end of `deletion_pass_manifest.md`) | same as NOW | | |
 
 ## 1. The deletions this pass makes
@@ -271,6 +271,8 @@
 | `--exploiter-bot-fraction` | 0.5 | 114 / 34 | the exploiter's bot-mix fraction | **KEEP** |
 | `--trainee-team` | — | 17 / 0 | SPECIALIST mode (`TECH_DEBT_BACKLOG.md` P1, `eval_trace_gen`, `promote_teams`) | **KEEP** |
 | `--trainee-teams` | — | 83 / 14 | MULTI-SPECIALIST mode (`main.promote_teams`) | **KEEP** |
+| `--team-mix` | — | 0 / 0 (new 2026-10-19) | X38 / D1's lever: widen the team draw with a pin-safe corpus (`design_diversity_teams_opponents.md` §4.2, §6.2 B-D2; `designs/training/team_curriculum.md` "The team mix") | **KEEP** |
+| `--team-mix-sides` | both | 0 / 0 (new 2026-10-19) | which side `--team-mix` widens (D1 = both, D2 = opponent; same design doc §4.2) | **KEEP** |
 | `--allow-untaught-teacher` | false | 0 / 0 | the documented override of the untaught-slice guard (`matchup_setup`); the untaught meter is live | **KEEP** |
 
 ### env_core

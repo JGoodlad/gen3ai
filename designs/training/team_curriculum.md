@@ -1,4 +1,4 @@
-# Training — team curriculum — per-team win-rate tracking and team-blocked episodes
+# Training — team curriculum — the team mix, per-team win-rate tracking and team-blocked episodes
 
 Moved verbatim out of `src/agents/training/CLAUDE.md` on **2026-09-08**, in the second pass of the
 topic split (that leaf was 3,183 lines / 264 KB, loaded in full for any session touching the
@@ -29,6 +29,57 @@ the old text: `git show cbd20111:designs/training/team_curriculum.md`.
 **What stays.** The two instruments below: per-team win-rate TRACKING (default on) and team-blocked
 episodes. The team-PFSP finding that survives is the CONFOUND they both carry: a per-team win rate
 conflates pilot competence with team strength (see the tracking section).
+
+## The team mix (`--team-mix <corpus>[@<tier>]:<share>`, `--team-mix-sides`; `gen3_team_mix_v1`)
+
+**What it is.** The pool-WIDENING lever of X38 / D1 (`designs/endstate/design_diversity_teams_opponents.md`
+§4.1 "Where it lives", §4.2, §6.2 row B-D2). Default absent = no mix, byte-identical.
+
+- **Semantics.** On each declared side, every FRESH team draw comes from the corpus tier with probability
+  `share`, else the side's usual draw runs UNCHANGED — trainee: the pool with its 10 % sample bias; opponent: the
+  uniform pool. So at `share` 0.5 the trainee draws 50 % corpus / 45 % pool / 5 % sample-bias teams.
+  `Gen3Teambuilder._draw_team` draws the mix branch FIRST (one `random()`, then one `choice`); a corpus draw sets
+  `_last_pool_idx = None`, so the per-team win-rate tracker ignores it, and `--team-block-episodes` holds a corpus
+  draw like any other. Without a mix the builder carries NO mix attribute (class defaults: `mix_packed_teams = ()`),
+  consumes no extra RNG call and pickles as before (`src/utils/teambuilder_mix_test.py`).
+- **Sides.** `--team-mix-sides both` (the default when `--team-mix` is set; D1), `trainee`, or `opponent` (D2).
+  Refused offline (`combination_checks`, FATAL_CONFIG; `main.checkargs` reports them): `--team-mix-sides`
+  without `--team-mix`; a TRAINEE-side mix with `--exploiter` (F-DV-3: an exploiter pilots vetted sample teams
+  only — `validate_exploiter_trainee_is_sample` refuses the same spec at startup); a TRAINEE-side mix with a pinned
+  `--trainee-team(s)` (it would un-pin the specialist).
+- **The corpus** is a pin-safe `gen3_team_corpus_v1` corpus under `src/utils/team_corpora/<name>/` (never
+  `data/teams/`: `TeamLoader` walks that tree, and a pinned run reads `data/` from MAIN — F-DV-2). A tier is a
+  PREFIX (`A` ⊂ `AB` ⊂ `ABC`); no `@tier` = the manifest's `default_tier`. The parser checks the SYNTAX (registered
+  corpus, share in (0, 1]); startup loads and VERIFIES it (sha256s — `CorpusError` → FATAL_CONFIG).
+- **The startup guard** (`main.train.matchup_setup.team_mix_guard`, FATAL_CONFIG on any failure): the held-out
+  panel registry verifies; `main.heldout_panels.contamination` finds NO corpus team that is an exact copy or near
+  neighbour (≥ 4 shared mon sets) of a HELD-OUT panel; the validator dropped NO corpus team (corpus teams go through
+  the builder's own `validate_teams_locally` + Hidden-Power fix + pack — the corpus is pre-validated in its build,
+  so a drop means the validator or the pin moved and the recorded identity would lie). It then echoes
+  `🧬 [TEAM-MIX] <corpus>@<tier> (N teams, tier sha …) share 0.50 on both sides; eval stays on the pool` and the
+  count of corpus teams that PACK identically to a pool team (0 expected).
+- **Eval stays on the pool.** `MatchupSpec.eval_trainee_teams` is the trainee source WITHOUT the mix, and the eval
+  core builds its own pool builders (`rust_eval.build.eval_builders`), so a mix arm and its no-mix control (X35's
+  C0) evaluate on the same teams; `main.h2h`'s `check_team_source` accepts a mix run's players unchanged.
+- **The Rust core's team table** (`rust_rollout/teams.TeamTable.add_builder`) declares the corpus teams beside the
+  pool's, so a corpus draw is never a `TeamTableMiss`; the core validates every table team by use at startup.
+  The eval ledger's team-set id (`cycle_ledger.builder_ident`) carries `mix_teams` / `mix_prob` only when a builder
+  has a mix (every existing id is unchanged).
+- **Recorded.** `metadata.json:cli_args` holds `team_mix` / `team_mix_sides` as typed; the MatchupSpec record
+  (`cli_args._matchup_spec`, `matchup_history`) holds each side's `mix` block — `schema`, `corpus`, `tier`,
+  `share`, `n`, `tier_sha256`, `data_sha256`, `manifest_sha256` — and the spec hash changes with any of them.
+- **Restart vs fork.** A launcher RESTART re-launches the argv verbatim (only fresh-only flags are stripped), so it
+  keeps the flag. A hand-typed SAME-RUN resume that omits `--team-mix` RESTORES the run's recorded value, announced
+  (`matchup_setup.inherit_team_mix`); a typed `--team-mix` always wins (and prints `⚠️ [MATCHUP DRIFT]` if it
+  differs). **A FORK does NOT inherit it** (announced when the parent had one): the mix is an arm's LEVER, not a
+  recipe knob (`designs/production_config.json` declares none), and a fork declares its own matchup — so a fork of
+  X26 never picks one up, and a fork of a mix arm trains on the pool unless it TYPES the flag.
+- **Startup cost, measured** (2026-10-19, rule-5b cores): the real `w_forum_v1@ABC` (2,415 teams) at both sides —
+  corpus load + verify 0.03 s, trainee builder 6.0 s, opponent builder 5.1 s (each validates the pool AND the corpus
+  through Node; 0 drops), the guard 0.18 s (0 panel hits, 0 pool copies). A 3,595-team stand-in (the pool × 5)
+  validated in 7.4 s. The Rust core's startup validation of the larger table is bounded by the corpus soak's
+  141.6 s wall (24,150 battles, selfcheck build, `w_forum_v1/soak_selfcheck.json`); not measured separately
+  (**UNVERIFIED** in isolation).
 
 ## Team-blocked episodes (`--team-block-episodes`)
 

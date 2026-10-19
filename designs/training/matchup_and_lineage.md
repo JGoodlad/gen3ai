@@ -31,11 +31,19 @@ CONSUMED — never re-derived — by the consumers (the `plan.json` pattern).
   construction (pinned by `matchup_spec_test.py`). **The two sides are independent BY CONSTRUCTION**
   (`trainee_teams` / `opponent_teams` → the env's `team=` / `opponent_team=`; the Python `Gen3Env` that took them was deleted in U3) — the mirror-bug class is
   structurally closed.
+  A source may also carry a **team MIX** (`TeamSource.mix`, a `TeamMix`; `--team-mix`, `gen3_team_mix_v1`):
+  the side's builder draws a uniform team of a verified corpus tier with probability `share` BEFORE its usual
+  draw. `to_dict()` carries a `mix` block (the corpus `ident()` + the share) ONLY when one is declared, so the
+  spec hash of every run without the flag is unchanged (pinned: `7cdbc69447` flagless, `fb823b7177` with
+  `--self-play` = X26's record; `src/agents/training/team_mix_test.py`). `eval_trainee_teams` is the trainee
+  source WITHOUT the mix (`TeamSource.without_mix`): eval stays on the pool. Detail:
+  `designs/training/team_curriculum.md` "The team mix".
 - **`PlayMode`** — how the frozen-NN opponents select actions (greedy | stochastic@temp, schedule
   fixed | anneal | ratchet). Descriptive in P0 — the executors (the sampler temperature, the anneal/ratchet
   callbacks; `RLPlayer`'s was deleted in T27 P6) already exist; the spec records the intent so echo/provenance say what a metric was
   measured under. `eval_opponent_play` defaults greedy; `eval_trainee_teams` defaults to
-  `trainee_teams` (**the eval-OOD fix made structural**: eval pilots what training pilots).
+  `trainee_teams` (**the eval-OOD fix made structural**: eval pilots what training pilots) — except a
+  `--team-mix`, which eval never pilots (a mix arm and its no-mix control evaluate on the same pool).
 - **Provenance** — `to_dict()` (pin fingerprints via sha1, not full text) + `spec_hash()` (a 10-hex
   **measurement-regime tag**: two runs/eras with different hashes are NOT metric-comparable) are
   stamped into `metadata.json` beside `cli_args` (`_matchup_spec` / `_matchup_spec_hash`).

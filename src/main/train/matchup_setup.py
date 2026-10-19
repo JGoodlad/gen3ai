@@ -21,6 +21,7 @@ from agents.training.snapshot_pool import HEURISTIC_FLOOR, SELF_PLAY_FULL, SELF_
 from main.exit_codes import FatalConfigError, TrainExitCode
 from main.launcher.ipc import emit
 from main.train.run_io import _run_arch_toggles
+from utils.team_corpora import CorpusError
 from utils.team_loader import TeamLoader
 
 
@@ -147,6 +148,87 @@ def matchup_drift_header(model_path: str, run_dir: "str | None", new_hash: str, 
             f"distribution than its parent did. " + tail)
 
 
+class TeamMixRefused(FatalConfigError):
+    """A ``--team-mix`` the trainer will not train on (``gen3_team_mix_v1``) → ``FATAL_CONFIG`` (3): an unverifiable
+    corpus, a corpus that hits a held-out panel, or one the validator shrinks. A restart would hit it identically."""
+
+
+def inherit_team_mix(args, emit=emit) -> "str | None":
+    """THE TEAM MIX ACROSS A ``--model`` LAUNCH (``gen3_team_mix_v1``): a typed ``--team-mix`` always wins; an
+    UNTYPED one is restored from the run's ``metadata.json:cli_args`` on a SAME-RUN resume (announced), and NEVER
+    on a FORK (announced when the parent had one). Returns what happened (``"restored"`` / ``"fork_not_inherited"``)
+    or None.
+
+    Why a same-run resume restores it: the launcher's restart forwards the argv verbatim (so it already carries the
+    flag), but a hand-typed resume that forgets it would otherwise train the rest of a mix arm on the pool behind
+    nothing louder than a MATCHUP DRIFT line ("an argv is not a config"). Why a fork does NOT: the mix is an arm's
+    LEVER, not a recipe knob (``designs/production_config.json`` declares no mix), and a fork is a new experiment
+    that declares its own matchup — so a fork of X26 (no mix) and a control forked from a mix arm both train on
+    the pool unless they TYPE the flag."""
+    model = getattr(args, "model", None)
+    if not model or getattr(args, "team_mix", None):
+        return None
+    from main.train.config import _recorded_cli_arg
+    from main.train.fork_lr import is_same_run_checkpoint
+
+    rec = _recorded_cli_arg(model, "team_mix")
+    if not rec:
+        return None
+    rec_sides = _recorded_cli_arg(model, "team_mix_sides")
+    if is_same_run_checkpoint(model, _planned_run_dir(args)):
+        args.team_mix = rec
+        if getattr(args, "team_mix_sides", None) is None:
+            args.team_mix_sides = rec_sides
+        emit(f"🧬 [TEAM-MIX] same-run resume: restoring the run's recorded --team-mix {rec} "
+             f"--team-mix-sides {args.team_mix_sides or 'both'} (metadata.json:cli_args)")
+        return "restored"
+    emit(f"🧬 [TEAM-MIX] this FORK does NOT inherit its parent's --team-mix {rec} (sides {rec_sides or 'both'}) — "
+         "it trains on the pool unless --team-mix is typed")
+    return "fork_not_inherited"
+
+
+def team_mix_guard(matchup, trainee_teambuilder, opponent_teambuilder) -> "list[str]":
+    """THE ``--team-mix`` STARTUP GUARD (``gen3_team_mix_v1``): refuse (:class:`TeamMixRefused`) a mix whose corpus
+    hits a HELD-OUT panel (``main.heldout_panels.contamination``: exact copies and near neighbours, by content) or
+    lost a team to the validator; return the startup echo lines. ``[]`` when no side declares a mix."""
+    mixes = [(side, ts.mix, tb) for side, ts, tb in (("trainee", matchup.trainee_teams, trainee_teambuilder),
+                                                     ("opponent", matchup.opponent_teams, opponent_teambuilder))
+             if ts.mix is not None]
+    if not mixes:
+        return []
+    mix = mixes[0][1]
+    from main import heldout_panels as HP
+
+    try:
+        HP.verify()
+    except Exception as e:  # noqa: BLE001 — a registry that does not verify cannot clear a corpus
+        raise TeamMixRefused(f"[TEAM-MIX] FATAL: the held-out panel registry does not verify ({e}); "
+                             "it cannot clear the corpus") from e
+    hits = HP.contamination(list(zip(mix.ids, mix.texts)))
+    if hits:
+        named = "; ".join(f"{h.label} ~ {h.panel}:{h.nearest} ({h.shared}/6)" for h in hits[:10])
+        raise TeamMixRefused(
+            f"[TEAM-MIX] FATAL: {len({h.label for h in hits})} corpus team(s) of {mix.corpus}@{mix.tier} hit a "
+            f"HELD-OUT panel ({len(hits)} team x panel hit(s); exact copy or near neighbour, >= "
+            f"{HP.NEAR_NEIGHBOUR_MIN_SHARED} shared mon sets): {named}"
+            + (f" (+{len(hits) - 10} more)" if len(hits) > 10 else "")
+            + ". Training on them would make every read on that panel partly a read of trained teams.")
+    for side, _m, tb in mixes:
+        dropped = list(getattr(tb, "mix_dropped", ()) or ())
+        if dropped:
+            raise TeamMixRefused(
+                f"[TEAM-MIX] FATAL: the validator DROPPED {len(dropped)} of {mix.n} corpus team(s) on the {side} "
+                f"side (first: index {dropped[0][0]}: {str((dropped[0][1] or ['?'])[0])[:160]}). The corpus is "
+                "validated in its build; a drop here means the validator or the pin moved, and the run would record "
+                "a corpus identity it does not draw from.")
+    sides = "both sides" if len(mixes) == 2 else f"the {mixes[0][0]} side only"
+    copies = mixes[0][2].mix_pool_copies()
+    return [f"🧬 [TEAM-MIX] {mix.corpus}@{mix.tier} ({mix.n} teams, tier sha {mix.tier_sha256[:12]}) share "
+            f"{mix.share:.2f} on {sides}; eval stays on the pool",
+            f"   held-out panels: 0 hits over {len(HP.panel_names(held_out_only=True))} panel(s) "
+            f"(registry sha {HP.registry_sha256()[:12]}); {copies} corpus team(s) pack identically to a pool team"]
+
+
 def build_matchup_and_opponents(args) -> MatchupSetup:
     """Load the team pool, declare the matchup, and resolve every opponent source."""
     # Load all teams using the new TeamLoader
@@ -161,7 +243,11 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
     # CONSTRUCTION — the mirror-bug class), the eval callbacks get the trainee pin from it, the
     # Events panel echoes it, and metadata.json records it (+ spec_hash, the measurement-regime tag).
     # SPECIALIST MODE (--trainee-team) pins ONLY the trainee source; opponents keep the full pool.
-    matchup = MatchupSpec.from_args(args)
+    inherit_team_mix(args)
+    try:
+        matchup = MatchupSpec.from_args(args)
+    except CorpusError as e:
+        raise TeamMixRefused(f"[TEAM-MIX] FATAL: --team-mix {args.team_mix!r}: {e}") from e
     # EXPLOITER team-source guarantee: an exploiter may ONLY EVER pilot a vetted sample team (the
     # curated, tournament-proven set) — never a bulk-downloaded `other` team. FATAL otherwise (a
     # deliberate startup gate, like the stable-opponent arch check). Non-exploiter / unpinned runs
@@ -204,6 +290,8 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
         trainee_teambuilder.set_block_episodes(args.team_block_episodes)
     opponent_teambuilder = matchup.opponent_teams.build(all_teams, sample_teams)
     for _ln in matchup.summary_lines():
+        emit(_ln)
+    for _ln in team_mix_guard(matchup, trainee_teambuilder, opponent_teambuilder):
         emit(_ln)
     if matchup.trainee_teams.kind == "pin_multi":
         _tt = matchup.trainee_teams

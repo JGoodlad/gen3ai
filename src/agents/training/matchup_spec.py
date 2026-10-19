@@ -17,13 +17,82 @@ P1+ (not built): controllers keyed on eval play modes, per-row regime tags, per-
 """
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import json
+import math
+import re
 from dataclasses import dataclass, field
 
 # The default trainee mix (the historical behavior): full pool with a 10% bias draw from the
 # curated sample teams. Kept as named constants so the spec and the legacy construction can't drift.
 DEFAULT_TRAINEE_BIAS_PROB = 0.1
+
+# ── THE TEAM MIX (``--team-mix <corpus>[@<tier>]:<share>``, ``gen3_team_mix_v1``) ──────────────────────────────
+# Design: designs/endstate/design_diversity_teams_opponents.md §4.1 ("Where it lives") / §4.2 (D1) / §6.2 (B-D2);
+# operator detail: designs/training/team_curriculum.md "The team mix". A declared side's builder draws a uniform
+# team of the corpus tier with probability ``share`` BEFORE its usual draw, else its usual draw unchanged.
+TEAM_MIX_SCHEMA = "gen3_team_mix_v1"
+#: ``--team-mix-sides`` values. ``both`` is D1 (the default when ``--team-mix`` is set), ``opponent`` is D2.
+TEAM_MIX_SIDES = ("both", "trainee", "opponent")
+TEAM_MIX_DEFAULT_SIDES = "both"
+_TEAM_MIX_RE = re.compile(r"^(?P<corpus>[A-Za-z0-9_]+)(?:@(?P<tier>[A-Za-z]+))?:(?P<share>[^:@\s]+)$")
+
+
+def parse_team_mix(value: str) -> "tuple[str, str, float]":
+    """``<corpus>[@<tier>]:<share>`` → ``(corpus, tier, share)`` (``tier`` ``""`` = the manifest's default tier).
+
+    The SYNTAX check every surface shares (the parser's ``type=``, so ``main.checkargs`` and the pinned-parser
+    check refuse a bad value offline): the corpus must be REGISTERED (``utils.team_corpora.CORPORA`` — no file is
+    read), the share a finite number in (0, 1]. Whether the tier EXISTS and the files match their manifest is the
+    startup guard's (``load_corpus`` → ``CorpusError`` → ``FATAL_CONFIG``), because it reads the corpus."""
+    from utils.team_corpora import CORPORA
+
+    m = _TEAM_MIX_RE.match(str(value).strip())
+    if not m:
+        raise ValueError(f"--team-mix {value!r}: expected <corpus>[@<tier>]:<share>, e.g. w_forum_v1@ABC:0.5")
+    corpus, tier, raw = m.group("corpus"), m.group("tier") or "", m.group("share")
+    if corpus not in CORPORA:
+        raise ValueError(f"--team-mix {value!r}: unknown team corpus {corpus!r} (registered: "
+                         f"{', '.join(sorted(CORPORA))})")
+    try:
+        share = float(raw)
+    except ValueError:
+        raise ValueError(f"--team-mix {value!r}: the share {raw!r} is not a number") from None
+    if not math.isfinite(share) or not 0.0 < share <= 1.0:
+        raise ValueError(f"--team-mix {value!r}: the share must be in (0, 1], got {raw}")
+    return corpus, tier, share
+
+
+@dataclass(frozen=True)
+class TeamMix:
+    """One side's ``--team-mix``: the verified corpus tier it draws from and the draw share. Built ONLY from a
+    verified :class:`utils.team_corpora.Corpus` (:meth:`from_corpus`), so the identity it records IS the teams'."""
+
+    corpus: str
+    tier: str
+    share: float
+    n: int
+    tier_sha256: str
+    data_sha256: str
+    manifest_sha256: str
+    texts: "tuple[str, ...]" = field(default=(), repr=False, compare=False)
+    ids: "tuple[str, ...]" = field(default=(), repr=False, compare=False)
+
+    @classmethod
+    def from_corpus(cls, corpus, share: float) -> "TeamMix":
+        return cls(corpus=corpus.name, tier=corpus.tier, share=float(share), n=len(corpus.texts),
+                   tier_sha256=corpus.tier_sha256, data_sha256=corpus.data_sha256,
+                   manifest_sha256=corpus.manifest_sha256, texts=tuple(corpus.texts), ids=tuple(corpus.ids))
+
+    def to_dict(self) -> dict:
+        """The provenance block (``_matchup_spec`` / ``matchup_history``): the corpus ``ident()`` plus the share."""
+        return {"schema": TEAM_MIX_SCHEMA, "corpus": self.corpus, "tier": self.tier, "share": self.share,
+                "n": self.n, "tier_sha256": self.tier_sha256, "data_sha256": self.data_sha256,
+                "manifest_sha256": self.manifest_sha256}
+
+    def describe(self) -> str:
+        return f"{self.share:.0%} corpus {self.corpus}@{self.tier} ({self.n} teams, tier sha {self.tier_sha256[:12]})"
 
 
 @dataclass(frozen=True)
@@ -50,6 +119,9 @@ class TeamSource:
     bias_prob: float = 0.0
     pin_strs: "tuple[str, ...] | None" = None
     pin_files: "tuple[str, ...] | None" = None
+    #: ``--team-mix`` on this side (None = no mix: ``to_dict`` then carries no ``mix`` key, so the spec hash of
+    #: every run without the flag is unchanged).
+    mix: "TeamMix | None" = None
 
     def __post_init__(self):
         if self.kind not in ("pool", "default_biased", "pinned", "pin_biased", "pin_multi"):
@@ -70,19 +142,30 @@ class TeamSource:
         builder, ``default_biased`` == the historical trainee builder, ``pinned`` == the
         --trainee-team builder — each byte-for-byte (pinned by matchup_spec_test)."""
         from utils.teambuilder import Gen3Teambuilder
+        # The team mix rides as two extra kwargs ONLY when declared, so a no-mix side calls the constructor
+        # exactly as it always did.
+        mx = ({"mix_teams": list(self.mix.texts), "mix_prob": self.mix.share} if self.mix is not None else {})
         if self.kind == "pool":
-            return Gen3Teambuilder(all_teams)
+            return Gen3Teambuilder(all_teams, **mx)
         if self.kind == "default_biased":
-            return Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=self.bias_prob)
+            return Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=self.bias_prob, **mx)
         if self.kind == "pinned":
-            return Gen3Teambuilder([self.pin_str])
+            return Gen3Teambuilder([self.pin_str], **mx)
         if self.kind == "pin_multi":
             # the fixed set, sampled uniformly per episode (like a mini-pool of just these teams)
-            return Gen3Teambuilder(list(self.pin_strs))
+            return Gen3Teambuilder(list(self.pin_strs), **mx)
         # pin_biased: the pinned team bias_prob of the time, else the full pool.
-        return Gen3Teambuilder(all_teams, bias_teams=[self.pin_str], bias_prob=self.bias_prob)
+        return Gen3Teambuilder(all_teams, bias_teams=[self.pin_str], bias_prob=self.bias_prob, **mx)
+
+    def without_mix(self) -> "TeamSource":
+        """This source with no team mix — what EVAL pilots (eval stays on the pool)."""
+        return self if self.mix is None else dataclasses.replace(self, mix=None)
 
     def describe(self) -> str:
+        base = self._describe_base()
+        return base if self.mix is None else f"{self.mix.describe()}, else {base}"
+
+    def _describe_base(self) -> str:
         if self.kind == "pool":
             return "full pool"
         if self.kind == "default_biased":
@@ -139,6 +222,9 @@ class MatchupSpec:
                              if t.pin_str else None)}
             if t.kind == "pin_multi":
                 d["pin_shas"] = [hashlib.sha1(s.encode()).hexdigest()[:10] for s in t.pin_strs]
+            if t.mix is not None:
+                # ONLY when declared: a run without --team-mix keeps its exact dict, hence its spec hash.
+                d["mix"] = t.mix.to_dict()
             return d
         return {
             "trainee_teams": ts(self.trainee_teams),
@@ -195,6 +281,17 @@ class MatchupSpec:
         else:
             trainee = TeamSource(kind="default_biased", bias_prob=DEFAULT_TRAINEE_BIAS_PROB)
         opponents = TeamSource(kind="pool")
+        # THE TEAM MIX: the declared side(s) draw from the verified corpus tier with prob `share`. EVAL keeps the
+        # side's source WITHOUT the mix, so a mix arm and its no-mix control evaluate on the same teams.
+        eval_trainee = None
+        mix = team_mix_from_args(args)
+        if mix is not None:
+            sides = getattr(args, "team_mix_sides", None) or TEAM_MIX_DEFAULT_SIDES
+            eval_trainee = trainee
+            if sides in ("both", "trainee"):
+                trainee = dataclasses.replace(trainee, mix=mix)
+            if sides in ("both", "opponent"):
+                opponents = dataclasses.replace(opponents, mix=mix)
 
         if getattr(args, "exploiter", None):
             mix_kind = "exploiter"
@@ -217,7 +314,21 @@ class MatchupSpec:
             exploiter_keep_bots=bool(getattr(args, "exploiter_keep_bots", False)),
             exploiter_bot_fraction=float(getattr(args, "exploiter_bot_fraction", 0.5)),
             opponent_play=play,
+            eval_trainee_teams=eval_trainee,
         )
+
+
+def team_mix_from_args(args) -> "TeamMix | None":
+    """``args.team_mix`` → the verified :class:`TeamMix`, or None when the flag is absent. Loads and VERIFIES the
+    corpus tier (``utils.team_corpora.load_corpus``): a ``CorpusError`` propagates (the trainer's startup guard
+    turns it into ``FATAL_CONFIG``)."""
+    raw = getattr(args, "team_mix", None)
+    if not raw:
+        return None
+    from utils.team_corpora import load_corpus
+
+    corpus, tier, share = parse_team_mix(raw)
+    return TeamMix.from_corpus(load_corpus(corpus, tier), share)
 
 
 def sample_team_shas(sample_teams) -> "set[str]":
@@ -239,6 +350,13 @@ def validate_exploiter_trainee_is_sample(spec: "MatchupSpec", sample_teams) -> N
     if spec.mix_kind != "exploiter":
         return
     ts = spec.trainee_teams
+    if ts.mix is not None:
+        # F-DV-3's rule: an exploiter pilots VETTED sample teams only — a corpus mix on its TRAINEE side breaks
+        # that by construction. `--team-mix-sides opponent` keeps the corpus on the opponent side only.
+        raise ValueError(
+            f"an exploiter's TRAINEE may not draw from a --team-mix corpus ({ts.mix.corpus}@{ts.mix.tier}): "
+            "exploiters pilot vetted sample teams only. Use --team-mix-sides opponent to widen only the "
+            "opponents' teams.")
     shas = sample_team_shas(sample_teams)
     # each pinned member (single or multi) must be a vetted sample team
     if ts.kind == "pin_multi":
