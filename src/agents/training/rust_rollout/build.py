@@ -79,6 +79,10 @@ class RustEnvDecl:
     #: are the service's LEAD slots — launched first in every flush, each on a lane of its own
     #: (``ServiceSpec.lead_slots``). Launch order and lane binding only; every decision is the same forward.
     lead_trainee: bool = False
+    #: X45 gen3_t2_grouped_forward_v1 (``--t2-grouped-opponents``; default OFF): every slot group's OPPONENT slots
+    #: (the policy routes: pool, stables, exploiter — never the trainee's or eval's) are T2 GROUPED slots, served by
+    #: ONE grouped forward per host step (``ServiceSpec.grouped_slots``). A group with one opponent slot stays per-slot.
+    grouped_opponents: bool = False
     #: the fork arm's declaration (``fork.ForkDecl``; ``designs/training/forks.md`` §14). None = OFF —
     #: nothing of the arm is built, and the arena, the obs keys and the FIFO are exactly as without it.
     fork: Any = None
@@ -110,6 +114,20 @@ class RustEnvDecl:
     def lead_slots(self, trainee_slots: Sequence[int]) -> Tuple[int, ...]:
         """gen3_t2_lead_lanes_v1: T2's LEAD slots — the trainee's, with ``lead_trainee``; else none (OFF)."""
         return tuple(int(s) for s in trainee_slots) if self.lead_trainee else ()
+
+    def grouped_slots(self, group_sizes: Sequence[int], n_opponent_slots: int) -> Tuple[int, ...]:
+        """X45: T2's GROUPED slots — per slot group (``group_sizes``, in slot order), its opponent slots (global ids
+        below ``n_opponent_slots``: the policy routes come first) when there are at least two; else none (OFF)."""
+        if not self.grouped_opponents:
+            return ()
+        out: List[int] = []
+        start = 0
+        for n in group_sizes:
+            members = [s for s in range(start, start + int(n)) if s < int(n_opponent_slots)]
+            if len(members) >= 2:
+                out.extend(members)
+            start += int(n)
+        return tuple(out)
 
     def slot_bucket_caps(self, n_slots: int, trainee_slots: Sequence[int]) -> Tuple[int, ...]:
         """gen3_slot_bucket_caps_v1: one cap per global slot — the trainee's slots every bucket, every
@@ -327,13 +345,15 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
         backend=decl.backend, buckets=buckets, lanes=lanes,
         slot_bucket_caps=decl.slot_bucket_caps(n_slots, trainee_slots),
         lead_slots=decl.lead_slots(trainee_slots),
+        grouped_slots=decl.grouped_slots([g[1] for g in groups], int(plan.n_policy_slots)),
         # T2's startup CONCURRENT gate puts one full chunk of the largest bucket per slot into ONE flush,
         # so the declared arena must hold n_slots x the largest bucket (F-LG-4: T2 does not check it).
         max_rows_per_flush=max(1024, 4 * n, buckets[-1] * 4, n_slots * buckets[-1]))).startup()
     emit(f"🦀 [RUST ENV] T2 {'SHARED' if shared else 'up'} in {time.perf_counter() - t0:.1f}s: {len(groups)} slot group(s) "
          f"{[(g[0], g[1]) for g in groups]}, trainee slot(s) {trainee_slots}, buckets {buckets} (non-trainee "
          f"slots <= {decl.opponent_bucket_cap or 'uncapped'}), lanes {lanes}"
-         f"{', the trainee LEADS (own lane, launched first)' if decl.lead_trainee else ''}, "
+         f"{', the trainee LEADS (own lane, launched first)' if decl.lead_trainee else ''}"
+         f"{', opponents GROUPED (one vmapped forward per group, X45)' if decl.grouped_opponents else ''}, "
          f"backend {decl.backend} on {decl.device}")
 
     # ---- the opponents (Lane E)

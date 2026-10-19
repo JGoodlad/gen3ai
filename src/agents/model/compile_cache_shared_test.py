@@ -351,7 +351,23 @@ def test_every_compile_flag_is_keyed_or_declared_irrelevant():
             return 0.0 if name.endswith("_coef") else None
     fields = SH.run_fields(Resolved(compile_trainer=True, device="cuda"))
     assert fields["compile_args"]["compile_trainer"] is True
-    assert set(fields["compile_args"]) == set(SH.COMPILE_ARG_KEYS) and fields["arch"]
+    assert set(fields["compile_args"]) == set(SH.COMPILE_ARG_KEYS) - set(SH.COMPILE_ARG_KEYS_WHEN_SET) \
+        and fields["arch"]
+    assert set(SH.COMPILE_ARG_KEYS_WHEN_SET) <= set(SH.COMPILE_ARG_KEYS)
+
+
+def test_a_when_set_compile_key_keys_only_when_set():
+    """X45 (`--t2-grouped-opponents`): a compile key added after entries existed enters the key only when SET, so a
+    run that leaves it off keeps the key it had before the flag existed — and one that sets it gets its own."""
+    class Resolved(SimpleNamespace):
+        def __getattr__(self, name):
+            return 0.0 if name.endswith("_coef") else None
+    for k in SH.COMPILE_ARG_KEYS_WHEN_SET:
+        off = SH.run_fields(Resolved(compile_trainer=True, device="cuda", **{k: False}))
+        unset = SH.run_fields(Resolved(compile_trainer=True, device="cuda"))
+        on = SH.run_fields(Resolved(compile_trainer=True, device="cuda", **{k: True}))
+        assert k not in off["compile_args"] and SH.key_of(off) == SH.key_of(unset)
+        assert on["compile_args"][k] is True and SH.key_of(on) != SH.key_of(off)
 
 
 def test_the_real_platform_fields_name_the_versions(monkeypatch):

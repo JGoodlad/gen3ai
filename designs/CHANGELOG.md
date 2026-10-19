@@ -14864,3 +14864,38 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   one τ under 32 summation orders (the fp32 solve's spread > 1e-3 asserted as the precondition), one compiled graph —
   each fails on revert. `learner_golden_test.py`'s history pin gains the T62 row. Docs: `ARCHITECTURE.md`,
   `design_x5_belief_tokens.md` §3.2 + Decision record, `designs/model/versioning.md` (the model leaf is at its byte cap; the rule lives in the design doc and the test).
+## 2026-10-19 — X45 (b): T2's GROUPED FORWARD — every opponent slot in ONE vmapped forward over the stacked weights (`--t2-grouped-opponents`, `gen3_t2_grouped_forward_v1`; default OFF; no model / config / obs / signature change)
+
+- **Why.** A collection host step serves the trainee plus up to 20 opponent snapshots, ~11 rows each: ~21 small,
+  latency-bound forwards. The 2026-10-19 GPU cells read collection at 5,453 env steps/s with a 5-snapshot pool against
+  3,507 with 20 (GPU wait 18.1 vs 41.4 ms per host step; a 1-snapshot pool was slower than 5, so the cost is the
+  fan-out, not the slot count). `design_compute_efficiency.md` §1.6; `EXPERIMENT_BACKLOG.md` X45.
+- **What.** `ServiceSpec.grouped_slots` (default `()`): per slot group one contiguous range of slots served by
+  `grouped.GroupedForward` — `torch.func.vmap` over a `[lo:hi]` VIEW of the group's stacked weights through
+  `torch.func.functional_call` (a load is what the next call reads, eager or captured). The model is untouched: the
+  2026-09-29 vmap NO-GO (in-place writes of slot-batched values into fresh tensors, 34 sites) is handled by a
+  `TorchFunctionMode` active only in the vmapped body that makes every FACTORY output slot-batched by adding a
+  slot-batched `-0.0` (`x + (-0.0) == x` bit for bit); the forward's stashes are reset at the end of the body (else
+  slot-batched tensors escape, and under compile become graph outputs AOT cannot read); `prims.inductor_force_stride_order`
+  gets a vmap rule. The engine plans ROUNDS in the flush's step 2 (one more H2D of indices, double-buffered), gathers
+  each slot's chunk into `[S × b]` static inputs (pads repeat a real row), runs the forward (eager, or one captured
+  graph per range × bucket on the range's lane) and scatters only the real rows' outputs; packing and every output
+  offset are unchanged. The CONCURRENT startup gate now also runs for a grouped range on one lane. `RustEnvDecl.grouped_opponents`
+  → the policy-route slots of each group (≥ 2; never the trainee's or eval's), the trainer flag `--t2-grouped-opponents`
+  (BoolFlag, default OFF), `env_core.t2.grouped_opponents` in `metadata.json` and `stats()["grouped_slots"]` /
+  `["grouped_rounds"]` when ON only. The shared compile-cache key carries the flag only when SET
+  (`COMPILE_ARG_KEYS_WHEN_SET`), so an OFF run keeps the key it had. Typed refusals: a non-contiguous range, a lead
+  slot grouped, grouped slots with different bucket caps, backend `aot`.
+- **Parity.** fp32 reassociation, not bit-identity: CPU max|Δlogp| ≤ 9.6e-7, max|ΔV| ≤ 6.3e-7, greedy identical on
+  every decisive row. **CPU read** (eager, busy box — WARN only): pool 5, 6,118 → 5,625 ms per host step (median ratio
+  1.10 over noisy blocks); pool 20, 5,241 → 3,179 ms (every block below 1, median ratio 0.61); grouped startup 237 s vs 56 s
+  (every gate of a grouped slot runs the whole range). Not a GPU proxy (the eager path is Python-dispatch-bound).
+- **Tests.** `src/agents/inference/service/grouped_test.py` (CPU): grouped decisions vs the per-slot service within
+  1e-5 on padded / two-round / idle-slot rows; the grouped path really serves the grouped slots (fails on revert); the
+  gate REFUSES a grouped forward that reads the wrong slot's weights; a load is served next flush; no slot-batched
+  stash escapes; the declaration, the decl and the flag. `compile_cache_shared_test` pins the when-set key.
+  `grouped_cuda_test.py` (GPU, `slow`): the graph backend — UNVERIFIED until a GPU window. Paired read:
+  `grouped_benchmark.py` (the command is §1.6's).
+- **Docs.** `designs/endstate/program_rust_core.md` T2 DESIGN "GROUPED SLOTS" + decision row;
+  `designs/endstate/design_compute_efficiency.md` §1.6 + decision row; `designs/training/rust_collector.md`;
+  `designs/ops/flag_census.md`; `EXPERIMENT_BACKLOG.md` X45.

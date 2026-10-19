@@ -43,7 +43,7 @@ def resolve_env_core_args(args: Any) -> None:
         "rollout_target_samples": 0, "rust_env_front": "proc",
         "rust_env_threads": 8, "rust_env_profile": "release", "rust_env_refusal_budget": 64,
         "rust_env_respawn_budget": 2, "t2_lanes": 0, "t2_opponent_bucket_cap": 64,
-        "trainee_slots": 1, "rust_eval_envs": 64, "t2_lead_trainee": False,
+        "trainee_slots": 1, "rust_eval_envs": 64, "t2_lead_trainee": False, "t2_grouped_opponents": False,
     }
     for k, v in defaults.items():
         if getattr(args, k, None) is None:
@@ -232,6 +232,7 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
             refusal_budget=int(args.rust_env_refusal_budget), respawn_budget=int(args.rust_env_respawn_budget),
             device=device, backend=backend, buckets=buckets, lanes=int(args.t2_lanes or 0),
             opponent_bucket_cap=int(args.t2_opponent_bucket_cap), lead_trainee=bool(args.t2_lead_trainee),
+            grouped_opponents=bool(args.t2_grouped_opponents),
             trainee_slots=int(args.trainee_slots), policy_seed=run_seed, fork=fork_decl_from_args(args),
             oracle_reveal=str(getattr(args, "oracle_reveal", None) or "off"))
         sources = OpponentSources(self_play_fraction=float(self_play_fraction))
@@ -320,7 +321,8 @@ def env_core_stamp(decl: Any, col: Any) -> Dict[str, Any]:
         "target_samples": int(getattr(col.cfg.trigger, "target", 0) or 0),
         "trainee_slots": decl.trainee_slots,
         "t2": {"backend": decl.backend, "device": decl.device, "buckets": list(decl.resolved_buckets),
-               **({"lead_trainee": True} if decl.lead_trainee else {})},     # gen3_t2_lead_lanes_v1: ON only
+               **({"lead_trainee": True} if decl.lead_trainee else {}),      # gen3_t2_lead_lanes_v1: ON only
+               **({"grouped_opponents": True} if decl.grouped_opponents else {})},  # X45: ON only
         "opponent_sampling": "keyed", "keyed_draw": "gen3_keyed_draw_v1",
         "run_seed": decl.run_seed,
         # gen3_reveal_provenance_v1: the reveal the ENV CORE was DECLARED at (`RustEnvDecl.oracle_reveal`, resolved from

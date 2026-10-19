@@ -114,6 +114,14 @@ def add_env_core_flags(parser: argparse.ArgumentParser) -> None:
                              "round-robin over the remaining lanes. Launch order and lane binding only — every "
                              "decision is the same forward on the same rows. Needs more lanes than trainee slots "
                              "on CUDA; on CPU (one lane) only the order changes.")
+    parser.add_argument("--t2-grouped-opponents", "--t2_grouped_opponents", dest="t2_grouped_opponents",
+                        action=BoolFlag, default=None,
+                        help="(X45, default OFF; gen3_t2_grouped_forward_v1) serve every OPPONENT slot of a T2 "
+                             "slot group (pool, stables, exploiter of the same architecture) with ONE grouped "
+                             "forward per host step — torch.func.vmap over the group's stacked weights — instead "
+                             "of one forward per snapshot; the pool size and the opponent mix are unchanged. "
+                             "Decisions equal the per-slot path at fp32-reassociation tolerance (gated at "
+                             "startup and on every load). Backend eager or graph.")
     parser.add_argument("--t2-backend", "--t2_backend", dest="t2_backend", choices=("graph", "eager", "aot"),
                         default=None,
                         help="Inference backend; default 'graph' on CUDA, 'eager' on CPU.")

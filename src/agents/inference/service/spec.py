@@ -132,6 +132,12 @@ class ServiceSpec:
     #: packing (so every output offset) is unchanged. EMPTY = the default plan, byte-identical. With
     #: more than one lane it needs MORE lanes than lead slots; on one lane (CPU) only the order changes.
     lead_slots: Tuple[int, ...] = ()
+    #: GROUPED SLOTS (X45, ``gen3_t2_grouped_forward_v1``; default EMPTY = OFF, byte-identical): global slot
+    #: ids served by ONE grouped forward per slot group instead of one forward each — ``torch.func.vmap``
+    #: over the group's stacked weights (``grouped.py`` says how, and what its parity is). Per group they
+    #: must be ONE contiguous range sharing one bucket set, never a lead slot; backend ``eager`` or
+    #: ``graph`` (one captured graph per range x bucket), never ``aot``. Meant for the opponent slots.
+    grouped_slots: Tuple[int, ...] = ()
 
     def validate(self) -> None:
         if not self.groups:
@@ -182,3 +188,16 @@ class ServiceSpec:
         if caps and (len(caps) != n_slots or min(caps) < b[0]):
             raise ValueError(f"ServiceSpec: slot_bucket_caps must name one cap >= the smallest bucket "
                              f"{b[0]} per declared slot ({n_slots}), got {self.slot_bucket_caps}")
+        grouped = tuple(int(x) for x in self.grouped_slots)
+        if grouped:
+            if len(set(grouped)) != len(grouped) or min(grouped) < 0 or max(grouped) >= n_slots:
+                raise ValueError(f"ServiceSpec: grouped_slots must be distinct declared slot ids (0..{n_slots - 1}), "
+                                 f"got {self.grouped_slots}")
+            if self.backend == "aot":
+                raise ValueError("ServiceSpec: grouped_slots need backend 'eager' or 'graph' (an AOT package is "
+                                 "one slot's forward)")
+            if set(grouped) & set(lead):
+                raise ValueError(f"ServiceSpec: a lead slot cannot be grouped (lead {lead}, grouped {grouped})")
+            if caps and len({caps[s] for s in grouped}) != 1:
+                raise ValueError("ServiceSpec: grouped slots must share one bucket cap (one grouped forward serves "
+                                 f"them at one bucket), got caps {sorted({caps[s] for s in grouped})}")

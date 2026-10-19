@@ -112,9 +112,14 @@ SUBMODULE_PATHS = ("deps/pokemon-showdown",)
 #: flag forces a decision rather than slipping past the key.
 COMPILE_ARG_KEYS = ("batch_size", "compile_trainer", "device", "device_batch", "grad_checkpointing",
                     "learner_cudagraphs",
-                    "t2_backend", "t2_buckets", "t2_lanes", "t2_lead_trainee", "t2_opponent_bucket_cap",
+                    "t2_backend", "t2_buckets", "t2_grouped_opponents", "t2_lanes", "t2_lead_trainee",
+                    "t2_opponent_bucket_cap",
                     "trunk_precision")      # R1 traces the trunk rounds' bf16 / fp32 classes (T25 lever A)
 NOT_COMPILE_ARG_KEYS = ("checkpoint_every_steps",)     # matched by the regex; a save cadence
+#: Compile keys added AFTER entries were already keyed: each enters the key only when SET (truthy), so a run
+#: that leaves it off keeps the key it had before the flag existed (X45, 2026-10-19: no cold compile for
+#: every live run's next restart).
+COMPILE_ARG_KEYS_WHEN_SET = ("t2_grouped_opponents",)
 _ENV_PREFIXES = ("TORCHINDUCTOR_", "TORCHDYNAMO_", "TORCH_COMPILE", "TRITON_", "PYTORCH_",
                  "TORCH_CUDA_ARCH_LIST", "INDUCTOR_")
 _ENV_EXCLUDED = ("TORCHINDUCTOR_CACHE_DIR", "TRITON_CACHE_DIR")
@@ -303,7 +308,8 @@ def run_fields(args: Any) -> Dict[str, Any]:
     the trainer flags that shape what is compiled."""
     from agents.model.extractor_arch import arch_toggles_from_args
     return {"arch": arch_toggles_from_args(args),
-            "compile_args": {k: getattr(args, k, None) for k in COMPILE_ARG_KEYS}}
+            "compile_args": {k: getattr(args, k, None) for k in COMPILE_ARG_KEYS
+                             if k not in COMPILE_ARG_KEYS_WHEN_SET or getattr(args, k, None)}}
 
 
 def canonical(obj: Any) -> str:

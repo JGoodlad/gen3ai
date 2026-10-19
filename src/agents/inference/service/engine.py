@@ -18,15 +18,26 @@ Everything here is allocated in ``__init__`` / ``build()`` (startup) and only re
 LANES (M5 T2 unit 3). A lane is a CUDA stream with its OWN graph memory pool and its OWN static
 inputs; slot ``s`` is bound to lane ``s % lanes``. Graphs sharing a pool must never run
 concurrently (they share intermediate buffers) — one pool per lane, graphs within a lane run in
-order on its stream, so the rule holds by construction. Different lanes run concurrently, which
-is the only way several SMALL per-slot batches can share the GPU without changing the model (a
-single multi-slot forward over the stacked weights — ``torch.func.vmap`` — is blocked by the
-extractor's in-place writes into freshly created tensors; measured 2026-09-29, T2 PROGRESS).
+order on its stream, so the rule holds by construction. Different lanes run concurrently, so several
+SMALL per-slot batches share the GPU without changing the model. (A single multi-slot forward over the
+stacked weights — ``torch.func.vmap`` — was blocked by the extractor's in-place writes into freshly
+created tensors, measured 2026-09-29, T2 PROGRESS; X45's GROUPED SLOTS below get past it without touching
+the model, ``grouped.py``.)
 
 LEAD SLOTS (gen3_t2_lead_lanes_v1, ``ServiceSpec.lead_slots``; default EMPTY = the plan above). The
 declared lead slots (the trainee's) each get a lane of their own (lanes 0..k-1), every other slot
 round-robins over the rest in slot order, and step 3 LAUNCHES the lead slots' runs first. Packing (step
 1) is unchanged, so every output offset is too; each graph computes the same forward on the same rows.
+
+GROUPED SLOTS (X45, gen3_t2_grouped_forward_v1, ``ServiceSpec.grouped_slots``; default EMPTY = the plan
+above). Each slot group's declared grouped slots (one contiguous range) are served by ONE grouped forward
+(``grouped.GroupedForward``: vmap over the stacked weights) per ROUND instead of one forward per slot.
+Packing (step 1) is unchanged, so every output offset is too. In step 2 every round's row indices are
+computed on the host and copied with ONE further host-to-device transfer: a round gathers each slot's
+next chunk (<= the range's largest bucket) into the range's static ``[S x b]`` inputs — a slot with fewer
+rows repeats its chunk's first row, a slot with none repeats the range's first real row — runs the grouped
+forward (eager, or one captured graph per range x bucket on the range's lane), and scatters only the REAL
+rows' outputs into the output arenas. Rounds repeat while any slot has rows left.
 """
 from __future__ import annotations
 
@@ -88,7 +99,8 @@ class Engine:
     def __init__(self, *, groups: List[SlotGroup], slots: List[Tuple[int, int]],
                  device: torch.device, buckets: Tuple[int, ...], backend: str, max_rows: int,
                  lanes: int, obs_dim: int, n_actions: int, artifact_dir: Optional[str] = None,
-                 slot_caps: Sequence[int] = (), lead_slots: Sequence[int] = ()):
+                 slot_caps: Sequence[int] = (), lead_slots: Sequence[int] = (),
+                 grouped: Sequence[int] = ()):
         self.groups, self.slots, self.device = groups, slots, device
         self.buckets, self.backend, self.R = buckets, backend, int(max_rows)
         # gen3_slot_bucket_caps_v1: the buckets each slot captures and serves (<= its cap, at least the
@@ -133,6 +145,30 @@ class Engine:
         self.artifact_dir = artifact_dir
         self.packages: Dict[Tuple[int, int], Any] = {}
         self.slot_weights: Dict[Tuple[int, int], List[torch.Tensor]] = {}
+        # --- grouped slots (X45, gen3_t2_grouped_forward_v1; module docs). EMPTY = OFF: nothing below is used.
+        from agents.inference.service.grouped import grouped_ranges
+        self.ranges = grouped_ranges(slots, grouped) if grouped else []
+        self.grouped_of: Dict[int, int] = {s: r for r, rng in enumerate(self.ranges) for s in rng[3]}
+        self.gfwd: List[Any] = []                                   # GroupedForward per range, at build
+        self.gstatic: Dict[Tuple[int, int], Tuple[torch.Tensor, torch.Tensor]] = {}
+        self.ggraphs: Dict[Tuple[int, int], Tuple[Any, Tuple[torch.Tensor, ...]]] = {}
+        self.grouped_rounds = 0
+        for r, (gi, lo, hi, ss) in enumerate(self.ranges):
+            if len({self.slot_buckets[x] for x in ss}) != 1:
+                raise ValueError(f"grouped range {r}: its slots serve different bucket sets")
+            n = hi - lo
+            for b in self.slot_buckets[ss[0]]:
+                o, m = fixture_rows(D, b)
+                self.gstatic[(r, b)] = (torch.as_tensor(np.tile(o, (n, 1))).to(device).clone(),
+                                        torch.as_tensor(np.tile(m, (n, 1))).to(device).clone())
+        # one flush's grouped indices (gather [S x b] per round, then dst / src of the real rows): bounded by
+        # (R + cap) x S per range (every round but the last is full) plus 2 R; DOUBLE-BUFFERED like host_in
+        n_idx = sum((R + self.slot_buckets[rng[3][0]][-1]) * (rng[2] - rng[1]) for rng in self.ranges) + 2 * R
+        self.g_host_idx = [torch.empty(n_idx, dtype=torch.int64, pin_memory=pin) for _ in range(2)
+                           ] if self.ranges else []
+        self.g_idx_events: List[Optional[Any]] = [None, None]
+        self.g_dev_idx = torch.empty(n_idx, dtype=torch.int64, device=device) if self.ranges else None
+        self._gflip = 0
 
     # ------------------------------------------------------------------ build
     def lane_of(self, slot: int) -> int:
@@ -143,7 +179,27 @@ class Engine:
 
         return torch.cuda.stream(self.streams[lane]) if self.cuda else contextlib.nullcontext()
 
+    def range_lane(self, r: int) -> int:
+        """A grouped range runs on its FIRST slot's lane."""
+        return self.lane_of(self.ranges[r][3][0])
+
+    def range_buckets(self, r: int) -> Tuple[int, ...]:
+        return self.slot_buckets[self.ranges[r][3][0]]
+
+    def _build_grouped(self) -> None:
+        from agents.inference.service.grouped import GroupedForward
+
+        for r, (gi, lo, hi, _ss) in enumerate(self.ranges):
+            go, gm = self.gstatic[(r, self.range_buckets(r)[0])]
+            self.gfwd.append(GroupedForward(self.groups[gi], lo, hi, obs=go, mask=gm))
+
+    def _grouped_inputs(self, r: int, b: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        n = self.ranges[r][2] - self.ranges[r][1]
+        go, gm = self.gstatic[(r, b)]
+        return go.view(n, b, self.D), gm.view(n, b, self.A)
+
     def build(self) -> None:
+        self._build_grouped()
         if self.backend == "graph":
             self._build_graphs()
             return
@@ -152,10 +208,16 @@ class Engine:
             return
         with torch.no_grad():               # warm every slot x bucket ON ITS LANE'S STREAM (the
             for s, (gi, i) in enumerate(self.slots):          # allocator caches per stream)
+                if s in self.grouped_of:
+                    continue
                 lane = self.lane_of(s)
                 with self._on(lane):
                     for b in self.slot_buckets[s]:
                         decide(self.groups[gi].modules[i], *self.static[(lane, b)])
+            for r, gf in enumerate(self.gfwd):
+                with self._on(self.range_lane(r)):
+                    for b in self.range_buckets(r):
+                        gf(*self._grouped_inputs(r, b), gf.zeros)
         if self.cuda:
             torch.cuda.synchronize(self.device)
 
@@ -166,7 +228,7 @@ class Engine:
         compiled = torch.compile(decide, dynamic=False)
         pools = [torch.cuda.graph_pool_handle() for _ in range(self.n_lanes)]
         limit = max(int(torch._dynamo.config.cache_size_limit),
-                    len(self.buckets) * len(self.groups) + 4)
+                    len(self.buckets) * (len(self.groups) + len(self.ranges)) + 4)
         main = torch.cuda.current_stream(self.device)
         # suppress_errors=False: a compile failure RAISES rather than silently running eager (the
         # eager forward would then fail capture anyway — it makes 24 host syncs — but the typed
@@ -175,7 +237,7 @@ class Engine:
                 suppress_errors=False, cache_size_limit=limit), torch.no_grad():
             for b in self.buckets:
                 for s, (gi, i) in enumerate(self.slots):
-                    if b not in self.slot_buckets[s]:
+                    if b not in self.slot_buckets[s] or s in self.grouped_of:
                         continue
                     lane = self.lane_of(s)
                     so, sm = self.static[(lane, b)]
@@ -196,6 +258,25 @@ class Engine:
                         outs = compiled(mod, so, sm)
                     self.captures += 1
                     self.graphs[(gi, i, b)] = (graph, tuple(outs))
+            # X45: one graph per grouped range x bucket — the compiled grouped forward, the weight VIEWS as
+            # graph inputs (a load copies into the same storage), captured on the range's lane like the rest
+            for r, gf in enumerate(self.gfwd):
+                gcomp = torch.compile(gf.call_with, dynamic=False, fullgraph=True)
+                lane = self.range_lane(r)
+                ls = self.streams[lane]
+                for b in self.range_buckets(r):
+                    go, gm = self._grouped_inputs(r, b)
+                    args = (gf.batched, gf.consts, go, gm, gf.zeros)
+                    ls.wait_stream(main)
+                    with torch.cuda.stream(ls):
+                        for _ in range(2):
+                            gcomp(*args)
+                    main.wait_stream(ls)
+                    graph = torch.cuda.CUDAGraph()
+                    with torch.cuda.graph(graph, pool=pools[lane], stream=ls):
+                        outs = gcomp(*args)
+                    self.captures += 1
+                    self.ggraphs[(r, b)] = (graph, tuple(outs))
         torch.cuda.synchronize(self.device)
 
     def _build_packages(self) -> None:
@@ -266,11 +347,15 @@ class Engine:
             ev = torch.cuda.Event()
             ev.record(main)
             self.in_events[k] = ev
-        # 3. per slot, per chunk, on the slot's lane (the lead slots' runs launched first)
         ends = [r[3] for r in runs[1:]] + [rows]
+        # 2b. X45: every grouped round's indices, one more H2D (before any lane waits on the main stream)
+        gwork = self._stage_grouped(runs, ends, main) if self.ranges else []
+        # 3. per slot, per chunk, on the slot's lane (the lead slots' runs launched first)
         per_bucket: Dict[int, int] = {}
         used = set()
         for (s, gi, i, start), end in launch_order(runs, ends, self.lead):
+            if s in self.grouped_of:
+                continue                              # served by its range's grouped rounds (3b)
             lane = self.lane_of(s)
             if self.cuda and lane not in used:
                 self.streams[lane].wait_stream(main)
@@ -281,6 +366,17 @@ class Engine:
                     self._batch(gi, i, lane, b, a, n)
                     per_bucket[b] = per_bucket.get(b, 0) + 1
                     a += n
+        # 3b. X45: the grouped rounds, each on its range's lane
+        for r, b, g_off, d_off, s_off, n_real in gwork:
+            lane = self.range_lane(r)
+            if self.cuda and lane not in used:
+                self.streams[lane].wait_stream(main)
+                used.add(lane)
+            with self._on(lane):
+                self._grouped_round(r, b, g_off, d_off, s_off, n_real)
+            n_s = self.ranges[r][2] - self.ranges[r][1]
+            per_bucket[b] = per_bucket.get(b, 0) + n_s     # S slots x b rows computed (rows_padded stays honest)
+            self.grouped_rounds += 1
         # 4. join the lanes, one D2H of the outputs
         if self.cuda:
             for lane in used:
@@ -291,6 +387,87 @@ class Engine:
             assert self.out_event is not None
             self.out_event.record(main)
         return offsets, per_bucket
+
+    def _stage_grouped(self, runs: Sequence[Tuple[int, int, int, int]], ends: Sequence[int], main: Any
+                       ) -> List[Tuple[int, int, int, int, int, int]]:
+        """Plan every grouped round of this flush and copy its indices to the device in ONE transfer.
+        Returns ``(range, bucket, gather offset, dst offset, src offset, real rows)`` per round, offsets into
+        ``g_dev_idx``: the gather is ``[S x b]`` arena rows (pads repeat a real row), dst the arena rows of the
+        round's REAL rows, src their positions in the round's flat ``[S x b]`` output."""
+        span: Dict[int, Tuple[int, int]] = {}
+        for (s, _gi, _i, start), end in zip(runs, ends):
+            if s in self.grouped_of:
+                span[s] = (start, end)
+        if not span:
+            return []
+        k = self._gflip
+        self._gflip ^= 1
+        ev = self.g_idx_events[k]
+        if ev is not None:
+            ev.synchronize()                   # buffer k's previous H2D has finished reading it
+        h = self.g_host_idx[k].numpy()
+        plan: List[Tuple[int, int, int, np.ndarray, np.ndarray]] = []
+        pos = 0
+        for r, (_gi, lo, hi, ss) in enumerate(self.ranges):
+            have = [(j, span[s]) for j, s in enumerate(ss) if s in span]
+            if not have:
+                continue
+            bs = self.range_buckets(r)
+            cap, n = bs[-1], hi - lo
+            pad = have[0][1][0]                # the range's first real row: an idle slot's input
+            longest = max(e - a for _, (a, e) in have)
+            for rd in range((longest + cap - 1) // cap):
+                cnt = {j: min(max(e - a - rd * cap, 0), cap) for j, (a, e) in have}
+                b = next(x for x in bs if x >= max(cnt.values()))
+                g = h[pos:pos + n * b].reshape(n, b)
+                g[:] = pad
+                dst, src = [], []
+                for j, (a, _e) in have:
+                    c = cnt[j]
+                    if c <= 0:
+                        continue
+                    first = a + rd * cap
+                    g[j, :c] = np.arange(first, first + c)
+                    g[j, c:] = first             # pad rows repeat the chunk's first row
+                    dst.append(np.arange(first, first + c))
+                    src.append(j * b + np.arange(c))
+                plan.append((r, b, pos, np.concatenate(dst), np.concatenate(src)))
+                pos += n * b
+        out = []
+        for r, b, g_off, dst, src in plan:
+            m = len(dst)
+            h[pos:pos + m], h[pos + m:pos + 2 * m] = dst, src
+            out.append((r, b, g_off, pos, pos + m, m))
+            pos += 2 * m
+        assert self.g_dev_idx is not None
+        self.g_dev_idx[:pos].copy_(self.g_host_idx[k][:pos], non_blocking=self.cuda)
+        if self.cuda:
+            e = torch.cuda.Event()
+            e.record(main)
+            self.g_idx_events[k] = e
+        return out
+
+    def _grouped_round(self, r: int, b: int, g_off: int, d_off: int, s_off: int, n_real: int) -> None:
+        """Gather the round's ``[S x b]`` rows into the range's static inputs, run the grouped forward, scatter
+        the REAL rows' outputs into the arenas."""
+        assert self.g_dev_idx is not None
+        n = self.ranges[r][2] - self.ranges[r][1]
+        go, gm = self.gstatic[(r, b)]
+        gidx = self.g_dev_idx[g_off:g_off + n * b]
+        torch.index_select(self.dev_obs, 0, gidx, out=go)
+        torch.index_select(self.dev_mask, 0, gidx, out=gm)
+        if self.backend == "graph":
+            graph, outs = self.ggraphs[(r, b)]
+            graph.replay()
+        else:
+            gf = self.gfwd[r]
+            with torch.no_grad():
+                outs = gf(go.view(n, b, self.D), gm.view(n, b, self.A), gf.zeros)
+        dst = self.g_dev_idx[d_off:d_off + n_real]
+        src = self.g_dev_idx[s_off:s_off + n_real]
+        self.out_logp.index_copy_(0, dst, outs[0].reshape(n * b, self.A).index_select(0, src))
+        self.out_value.index_copy_(0, dst, outs[1].reshape(n * b).index_select(0, src))
+        self.out_greedy.index_copy_(0, dst, outs[2].reshape(n * b).index_select(0, src))
 
     def _batch(self, gi: int, i: int, lane: int, b: int, a: int, n: int) -> None:
         so, sm = self.static[(lane, b)]

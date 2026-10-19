@@ -232,7 +232,8 @@ class InferenceService:
                              obs_dim=self.obs_dim, n_actions=self.n_actions,
                              artifact_dir=self.spec.artifact_dir,
                              slot_caps=tuple(int(c) for c in self.spec.slot_bucket_caps),
-                             lead_slots=tuple(int(x) for x in self.spec.lead_slots))
+                             lead_slots=tuple(int(x) for x in self.spec.lead_slots),
+                             grouped=tuple(int(x) for x in self.spec.grouped_slots))
         if self.spec.backend == "aot":
             from agents.inference.service import aot
 
@@ -327,7 +328,11 @@ class InferenceService:
         one rung is informative, then once more on the real weights with the vacuity guard waived;
         the real reports come first."""
         on_b = [s for s in range(len(self._slots)) if b in self.engine.slot_buckets[s]]
-        if self.engine.n_lanes < 2 or len(on_b) < 2 or len({self.engine.lane_of(s) for s in on_b}) < 2:
+        # X45: a grouped range serves its slots in ONE forward, so one flush carrying every slot's rows is
+        # also the only gate that judges each slot's decision taken TOGETHER with the others (lanes or not)
+        grouped = any(sum(1 for s in on_b if s in rng[3]) >= 2 for rng in self.engine.ranges)
+        lanes = self.engine.n_lanes >= 2 and len(on_b) >= 2 and len({self.engine.lane_of(s) for s in on_b}) >= 2
+        if not (lanes or grouped):
             return []
         try:
             return self._concurrent_once(b, tag="", allow_vacuous=False, path="real")
@@ -383,7 +388,8 @@ class InferenceService:
         for (s, gi, i, _, _), off in zip(plan, offsets):
             sl = slice(off, off + b)
             reports.append(judge(
-                where=f"{self.spec.backend} CONCURRENT lanes={e.n_lanes} slot={s} bucket={b}{tag}",
+                where=f"{self.spec.backend} CONCURRENT lanes={e.n_lanes}{' grouped' if s in e.grouped_of else ''} "
+                  f"slot={s} bucket={b}{tag}",
                 policy=self.groups[gi].policies[i], obs=o, mask=m,
                 served=(e.out_logp[sl].clone(), e.out_value[sl].clone(), e.out_greedy[sl].clone()),
                 allow_vacuous=allow_vacuous, path=path))
@@ -560,6 +566,9 @@ class InferenceService:
         out["lanes"] = eng.n_lanes if eng is not None else 0
         if self.spec.lead_slots:                # gen3_t2_lead_lanes_v1 (absent when OFF)
             out["lead_slots"] = [int(x) for x in self.spec.lead_slots]
+        if self.spec.grouped_slots:             # X45 gen3_t2_grouped_forward_v1 (absent when OFF)
+            out["grouped_slots"] = [int(x) for x in self.spec.grouped_slots]
+            out["grouped_rounds"] = int(eng.grouped_rounds) if eng is not None else 0
         out["startup_seconds"] = dict(self.startup_seconds)
         out["load_seconds"] = float(self.load_seconds)
         out["parity_paths"] = dict(self.parity_paths)

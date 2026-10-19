@@ -247,6 +247,50 @@ In short:
   Together on our card ≈ ×2.4–3. These are RECIPE and PERF levers. Nothing here slims production (the owner's
   2026-10-16 framing, §6); the residual ≈ 15× is the architecture's per-row GPU cost, which X36 would attribute if
   ever needed.
+- **The fan-out's ceiling, MEASURED (the 2026-10-19 GPU gap, `~/gen3ai_archive/gpu_gap_2026-10-19/`):** collection at
+  256 envs ran **5,453 env steps/s with a 5-snapshot pool against 3,507 with 20** (GPU wait 18.1 vs 41.4 ms per host
+  step; `cells/phases/c_pool5.json`, `suite_3080ti/phases/collect.json`). A 1-snapshot pool was SLOWER than 5 (4,719;
+  24.5 ms): all opponent rows on one slot replay as serial 64-row chunks on one lane. So the lever is "one forward for
+  many slots", not "fewer slots".
+- **X45 (b), the GROUPED FORWARD — BUILT 2026-10-19 behind `--t2-grouped-opponents` (default OFF), GPU effect
+  UNMEASURED.** Every opponent slot of the trainee's slot group is served by ONE `torch.func.vmap` forward over the
+  group's stacked weights per host step (`src/agents/inference/service/grouped.py`; the program doc's T2 DESIGN
+  "GROUPED SLOTS"); the pool size and the opponent mix are unchanged. The 2026-09-29 blocker (the extractor's in-place
+  writes into fresh tensors; 34 sites in 15 files today) is handled inside the vmapped body, the model untouched.
+  **Parity:** fp32 reassociation, not bit-identity — CPU max|Δlogp| ≤ 9.6e-7, max|ΔV| ≤ 6.3e-7, greedy identical on
+  every decisive row; every grouped slot is gated against its own eager reference at startup and on every load
+  (`grouped_test.py` pins it at 1e-5 and fails on a weight mix-up or a revert). **CPU read** (eager, busy box: load
+  ≈ 23 on 16 threads, so WARN-only; buckets 4 / 16, opponents only, 212 rows a step, `grouped_benchmark.py`):
+  pool 5 — per-slot 6,118 ms vs grouped 5,625 ms per host step (block ratios 0.65–2.19, median 1.10);
+  pool 20 — per-slot 5,241 ms vs grouped 3,179 ms (every block below 1: 0.55–0.84, median 0.61). Startup is slower
+  grouped (237 s vs 56 s on CPU): every per-slot parity gate of a grouped slot runs the whole range (on the GPU, one
+  replay each). The CPU eager path is dominated by Python dispatch (the factory mode intercepts every op), so it says
+  nothing about the GPU, where the grouped forward is compiled and captured. **Costs to watch on the GPU:**
+  an idle declared slot computes `b` pad rows per round (production: 24 declared × b, against the per-slot path's
+  Σ bucket(rows) = ~20 × 64 at the default buckets 8 / 64 / 256 — so finer buckets 16 / 32 matter); three ops have no
+  vmap batching rule and fall back to a per-slot loop (`scatter_`, `index_copy_`, CPU flash SDPA — whether CUDA's
+  SDPA does is UNVERIFIED); the range's graph pool holds `S × b` rows of activations (24 × 64 = 1,536 rows, ≈ 6× the
+  trainee's 256-row pool — memory UNVERIFIED on the 12 GB card); Inductor's lowering of the vmapped forward is
+  UNVERIFIED (CPU `aot_eager` traces it `fullgraph`; CPU Inductor did not finish in 15 / 45 min at nice 19).
+  **The GPU read (next window; needs the lease, root CLAUDE.md rule 5; ≈ 0.5 GPU-h):**
+
+  ```bash
+  # in a worktree at the X45 commit or later; OUT a new dir under ~/gen3ai_archive/
+  export PYTHONPATH=$PWD/src OUT=~/gen3ai_archive/x45_grouped_$(date +%F) && mkdir -p "$OUT"
+  scripts/ops/gpu_lease.sh acquire --owner <agent> --token-file "$OUT/.lease"
+  GEN3AI_GPU_LEASE_TOKEN_FILE="$OUT/.lease" GEN3AI_TEST_ALLOW_GPU=1 scripts/ops/gpu_lock.sh \
+      python3 -m pytest src/agents/inference/service/grouped_cuda_test.py -q 2>&1 | tee "$OUT/cuda_test.log"
+  for P in 20 5; do for B in 8,64,256 8,16,32,64,256; do
+    GEN3AI_GPU_LEASE_TOKEN_FILE="$OUT/.lease" scripts/ops/gpu_lock.sh scripts/ops/mem_cap.sh 24 \
+      python3 src/agents/inference/service/grouped_benchmark.py --opp-slots $P --buckets $B \
+      --json "$OUT/pool${P}_b${B//,/-}.json" 2>&1 | tee "$OUT/pool${P}_b${B//,/-}.log"
+  done; done
+  GEN3AI_GPU_LEASE_TOKEN_FILE="$OUT/.lease" scripts/ops/gpu_lease.sh release
+  ```
+
+  ADOPT (the flag's default ON, a separate unit) if pool 20's ON / OFF step-median ratio is below 1 in every block at
+  the chosen buckets, the CUDA test passes, and the trainer's startup fit check still passes at production's shape;
+  then the 10-19 `collect` cell re-run with `--t2-grouped-opponents` in its trainer argv confirms the env steps/s.
 
 ## 2. The VALUE ledger
 
@@ -951,3 +995,4 @@ The T55 build (2026-10-17) adds:
 | 2026-10-18 | **D1 ADOPTED at rank 2, conditional on X37** (orchestrator, Q5 of `design_diversity_teams_opponents.md`); its readout follows that doc's evaluation matrix (§5.6) | the §5.6.2 pointer updated from PROPOSED to ADOPTED-CONDITIONAL; the arm table itself unchanged until X37 reads | adding D1 to the table before X37 (its rank depends on X37's verdict) | `design_diversity_teams_opponents.md` §5.6, §6.1, §9 |
 | 2026-10-18 | **The throughput audit against the published bots (§1.6; performance-analysis worker)** | rank the THROUGHPUT levers by expected gain × risk: (1) fewer PPO epochs at a held optimizer-step count, read at MATCHED GPU WALL (X44, ≈ 10 GPU-h pilot); (2) cut the opponent inference fan-out (X45, sized first by the GPU cells `c_pool1` / `c_pool5`); (3) overlap collection with the update (X14, as registered); GPU cells for the 10-19 gap written (`run_gpu_gap.sh`), not run | slimming the network (history seats, depth) as a throughput lever (the owner's 2026-10-16 framing; X36 stays deferred); env-core speed work (≤ ×1.08 by Amdahl: 7.6 % of the cycle); larger micro-batches (measured ≤ 7 %, slower on a 5090, 4,096 does not fit 12 GB); reading the 75× as a firm number (the source's units disagree by ≈ 5×, F1) | `../research_state/measurements/throughput_audit_2026-10-18/README.md`; X26 TensorBoard @312M; `gpu_bench_2026-10-18/suites/`; the 2026-10-18 literature survey |
 | 2026-10-19 | **X35's R FROZEN (production side)** (measurement worker) | R at P\* = X26 @ 280,000,170: A-block 280 / 270 / 80 / 140 / 210M (mid(N_4, N_5) = 145M is a tie → 140M by F25), X-block `production` KEPT at 0.6935 [0.666, 0.721] (500 pairs, CPU); archive N = 30, 60, 100, 130, 160, 190, 230, 260M; frozen with every sha256, `verify` OK. T\* ABSENT (X34 not launched): ONE X member, the toy side not frozen; adding T\* is a NEW freeze, an orchestrator call (F-R1). R's paths stay in X26's run dir because the kit forks from R's P\* path (F-R3) | waiting for T\* before any production arm (X34 runs after X26); a stand-in T\* (`rb_toy_ent_s4002`'s 100M final is X34's start, not its plateau) | `../research_state/measurements/x35_refpop_freeze_2026-10-19/README.md`; `reference_population_production.json` |
+| 2026-10-19 | **X45 (b): the GROUPED FORWARD built behind a flag (build worker)** | `--t2-grouped-opponents` (default OFF, `gen3_t2_grouped_forward_v1`): every opponent slot of a slot group in ONE `torch.func.vmap` forward over the stacked weights per host step, the model UNTOUCHED (a factory-batching `TorchFunctionMode` with an exact `-0.0` identity, the stashes reset in the body, a vmap rule for the SDPA-bias prim); adoption is a PARITY gate + the paired GPU read (§1.6), no learning A/B | the model-wide out-of-place rewrite the 2026-09-29 NO-GO named (34 sites in 15 files on the trainee's hot path, with X34 launching from main the same morning); `torch.func.functionalize` + vmap (a torch view-replay bug on an open slice); a per-call GATHER of the live slots' weights (a weight copy per flush); (a) the live-snapshot cap first (it changes the within-rollout mix; the GPU cells show the cost is the fan-out, not the slot count: pool 1 is slower than pool 5) | §1.6; `src/agents/inference/service/grouped.py`, `grouped_test.py`; `~/gen3ai_archive/gpu_gap_2026-10-19/` |

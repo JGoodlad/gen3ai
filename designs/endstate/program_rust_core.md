@@ -350,10 +350,11 @@ the bucket set should be COARSE.
   rungs restored the slot). So every weight set served has passed the gate at every shape it is
   served at. Measured cost (RTX 3080 Ti, buckets 8 / 64 / 256, 2026-10-03): ~150–230 ms for an
   opponent slot (8, 64), ~235–320 ms for the trainee's (all three) — once per update. A single MULTI-SLOT forward over
-  the stack (`torch.func.vmap`) is **NO-GO today** (measured): the extractor writes in place into
+  the stack (`torch.func.vmap`) was **NO-GO** as the model stood (measured 2026-09-29): the extractor writes in place into
   tensors it creates inside the forward (`t0_species.species_team_prior_logits`'s
   `zeros(...).scatter_(src)` is the first of many such sites), which vmap refuses; making it
-  vmappable is a model-wide out-of-place rewrite, not a T2 change. Several small slots share the
+  vmappable is a model-wide out-of-place rewrite (34 sites in 15 files at 2026-10-19's HEAD), not a T2 change — **X45's
+  GROUPED SLOTS (2026-10-19, below) serve it WITHOUT that rewrite**. Several small slots share the
   GPU through LANES instead (below).
 * **Buckets.** A declared ascending tuple of batch sizes, **minimum 2** (torch 2.8 cannot lower a
   batch-1 CUDA graph of this extractor — K1 finding; and a batch dim of 1 is a degenerate
@@ -398,6 +399,26 @@ the bucket set should be COARSE.
   order and the lane binding change: the packing (every output offset), the compiled graphs and the
   rows are the same, so decisions are bit-identical by construction (CPU: max |Δ| 0.0; the paired GPU
   read is `lead_lanes_benchmark.py`). It needs more lanes than lead slots on CUDA (a typed refusal).
+  **GROUPED SLOTS** (`ServiceSpec.grouped_slots`, `gen3_t2_grouped_forward_v1`, the trainer's
+  `--t2-grouped-opponents`; X45, **default OFF**, BUILT 2026-10-19, its GPU effect NOT yet measured): each slot
+  group's declared grouped slots (one contiguous range; production: every opponent slot of the trainee's group)
+  are served by ONE forward per ROUND instead of one per slot — `torch.func.vmap` over the group's stacked
+  weights (a `[lo:hi]` VIEW, so a load is what the next call reads) through `torch.func.functional_call`
+  (`src/agents/inference/service/grouped.py`). Three measured blockers are handled inside the vmapped body, the
+  model untouched: every FACTORY output (`zeros` / `ones` / `full` / `empty`, `*_like`, `new_*`) is made
+  slot-batched by adding a slot-batched `-0.0` (an exact identity) so the extractor's in-place writes are legal;
+  the forward's stashes are reset at the end of the body (else slot-batched tensors escape — under compile as
+  graph outputs AOT cannot read); `prims.inductor_force_stride_order` gets a vmap rule. A round gathers each
+  slot's next chunk into `[S × b]` static inputs (b = the smallest bucket holding the round's largest chunk; a
+  slot with fewer rows repeats its chunk's first row, an idle slot the range's first real row), runs the forward
+  (eager, or one captured graph per range × bucket on the range's lane), and scatters only the real rows' outputs
+  (packing and every output offset unchanged). Decisions equal the per-slot path at fp32 REASSOCIATION tolerance,
+  not bit for bit (CPU: max |Δlogp| ≤ 9.6e-7, |ΔV| ≤ 4.8e-7); every grouped slot is gated against its own eager
+  reference at startup (the CONCURRENT gate now runs for a grouped range on one lane too), at every bucket, on
+  every load. COST: an idle declared slot still computes `b` pad rows per round, so the grouped compute is
+  `S_declared × b_max` (production: 24 × 64 at the default buckets) against the per-slot path's Σ bucket(rows);
+  finer buckets (16 / 32) cut it. `dynamo` + AOT trace it `fullgraph` on CPU (`aot_eager`); the Inductor lowering
+  and the CUDA-graph capture are UNVERIFIED until a GPU window (`grouped_cuda_test.py`, `grouped_benchmark.py`).
   v1 is an in-process object driven by the caller's loop (the M5 core is in-process over FFI); a
   timer-flushed thread or process front end is added only when a consumer needs one.
 * **Priority.** `ROLLOUT` > `EVAL` > `FILLER`. `flush()` serves EVERY pending `ROLLOUT` row, then at
@@ -1314,3 +1335,4 @@ Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_ind
 | 2026-10-08 | **The vendored poke-env FORK is DELETED; the poke-env retirement (T27) is FINISHED** (P6 slice 6e) | `src/poke_env/` (80 modules + 13 tests + the static data, which moved to `tools/pokemon_data_extractor/upstream/poke_env_static/`, byte-identical, so `sync.py` regenerates all 8 `data/pokemon/` files with no `data/` change), `src/poke_env_fork_gate_test.py` (replaced by `src/poke_env_absent_gate_test.py`), the importer allowlist (now EMPTY, frozen counts 0 / 0), the fork-oracle tests (retargeted onto frozen values / the Rust reader's `tables.rs` / two `main.live` clients); `src/poke_env_enum_str_compare_gate_test.py` renamed `src/enum_str_compare_gate_test.py` (scope: `agents.enums`). The one process that still runs poke-env is the Metamon peer, upstream, in its own interpreter | keeping the fork as a standing oracle (rule 4 above, "Named oracles survive") | the whole `src/` / `tools/` / `scripts/` import surface (1,200+ modules, tests included) loads under the blocker with 0 attempts, 0 failures; `designs/ops/deletion_pass_manifest.md` §8.6 |
 | 2026-10-10 | T2 opponent FAN-OUT (T25 perf lever 4, PLAN.md §1 row 6): what to build first | **LEAD SLOTS built behind `--t2-lead-trainee`, default OFF** (`gen3_t2_lead_lanes_v1`): the trainee's slot launched first on a lane of its own — bit-identical decisions, CPU-testable, a small change; expected −0.4 to −1.6 s a production cycle (ESTIMATE, critical-path argument; UNVERIFIED until its paired GPU read). Ranked behind it, NOT built: the GROUPED FORWARD (the largest, −4 to −6 s ESTIMATE; still the model-wide out-of-place rewrite), TIGHTER OPPONENT BUCKETS (`--t2-buckets 8,16,32,64,256`, zero code, ~−2 s ESTIMATE; 70 % of pool slot-steps replay 9–16 real rows at bucket 64), a T2 Inductor fusion preset (after window B's R1 presets read) | A multi-slot CUDA graph (kernel count unchanged, graph-launch host cost scales with nodes; a slot × bucket assignment that changes every step); the env-step / inference OVERLAP (0.855× at 256, the 2026-10-02 O5 row); merging pool slots that share weights (20 distinct snapshots in steady state) | `designs/research_state/measurements/perf_phase_2026-10-10/PLAN.md` §1 row 6; `designs/CHANGELOG.md` 2026-10-10 |
 | 2026-10-10 | **The OFFLINE search / replay driver is RUST ONLY; the Node drivers are DELETED** **(owner: "delete node", scoped the same day)** | `src/utils/bridge/search_driver.js`, `replay_driver.js`, `replay_kernels.js` and the node-vs-rust differentials `harness/search_impl_parity.py` / `replay_impl_parity.py` deleted; `sim_bridge_bin.search_driver_spawn_argv()` takes no argument (the Rust `search_driver` binary); `SearchSession`, the replay primitives and every prober probe lost `impl`; a typed `--impl` on `main.prober.query` / `main.prober.web` / `main.harvest` and `ws_frontend --impl node` are refused WITH the reason; the packed-team decode reads move aliases from `data/pokemon/gen3_move_aliases.json` (`gen3_data.moves.move_aliases()`) instead of a `node -e` child; `src/node_free_search_integration_test.py` runs the offline paths with Node impossible (`utils/node_blocker.py`) | Keeping the Node drivers as a second engine (the differentials had NO obtainable golden since P6 slice 6c deleted their generators, so they guarded nothing; Node was the DEFAULT, so every prober probe ran on the engine nobody trains on). Node STAYS, by the owner's scope ruling, for runtime TEAM VALIDATION (`validate_team.js`) and the dev / test oracles (the differential gate ladder, the A/B fuzzers, the drift scan, `main.live.master_series`, `tools/`, the anchors' `--server node`, the front end's byte-identity test) | `designs/rust_sim/search_and_replay_drivers.md`, `designs/prober/sim_impl.md` |
+| 2026-10-19 | T2 GROUPED FORWARD (X45 (b); the 2026-09-30 / 10-02 GROUPED FORWARD rows' build) | **GROUPED SLOTS built behind `--t2-grouped-opponents`, default OFF** (`gen3_t2_grouped_forward_v1`, `ServiceSpec.grouped_slots`): vmap over the stacked weights with the model untouched — the in-place blocker handled in the vmapped body (T2 DESIGN "GROUPED SLOTS"); parity at fp32-reassociation tolerance, gated per slot at startup and on every load | the out-of-place model rewrite (34 sites, the trainee's hot path); a hand-grouped per-row-weight layer path | `src/agents/inference/service/grouped.py`, `grouped_test.py`; `design_compute_efficiency.md` §1.6 |

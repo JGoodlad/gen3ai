@@ -192,6 +192,15 @@ remaining lanes (`RustEnvDecl.lead_trainee` → `ServiceSpec.lead_slots`; the st
 `metadata.json`'s `env_core.t2.lead_trainee` is present only when ON). Launch order and lane binding only — the same
 forward on the same rows, bit-identical decisions. Its GPU effect is UNMEASURED: the paired read is
 `src/agents/inference/service/lead_lanes_benchmark.py` (the program doc's Decision record, 2026-10-10).
+GROUPED OPPONENTS (`--t2-grouped-opponents`, `gen3_t2_grouped_forward_v1`, X45, default OFF): every slot group's
+OPPONENT slots (the policy routes: pool, stables, exploiter — never the trainee's or eval's; a group with one opponent
+slot stays per-slot) are T2 GROUPED slots, served by ONE vmapped forward over the stacked weights per host step instead
+of one forward per snapshot (`RustEnvDecl.grouped_opponents` → `ServiceSpec.grouped_slots`; the startup line says
+"opponents GROUPED"; `metadata.json`'s `env_core.t2.grouped_opponents` is present only when ON; the shared
+compile-cache key carries it only when ON). The pool size and the opponent mix are unchanged; decisions equal the
+per-slot path at fp32-reassociation tolerance, gated at startup and on every load. Its GPU effect is UNMEASURED: the
+paired read is `src/agents/inference/service/grouped_benchmark.py` (`designs/endstate/design_compute_efficiency.md`
+§1.6; the program doc's T2 DESIGN "GROUPED SLOTS").
 EVAL's slots (M5 Lane H) are appended after the trainee's (`build_collector(extra_slots=)`: the trainee's
 eval slot, the sentinel slots, fixed opponents the plan does not already serve) — in the trainee's group
 when the architecture matches, so they reuse its compiled buckets; `col.extra_slots` names them and
