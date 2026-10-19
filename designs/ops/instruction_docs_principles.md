@@ -38,9 +38,9 @@ replacing rather than appending, do.
    gate, a guard that refuses with its reason, or a hook. Once it is enforced, the doc keeps one
    line, and keeps even that only if hitting the refusal would be expensive (a lost run, an
    hours-long gate).
-7. **Budgets.** Every file type has a byte budget (§3), and a static gate enforces its cap (to be
-   built: audit unit U1). A file over budget may only shrink: the next edit removes more than it
-   adds.
+7. **Budgets.** Every file type has a byte budget (§3), and a static gate enforces its cap
+   (`src/claude_md_freshness_gate_test.py`). A file over budget may only shrink: the next edit
+   removes more than it adds.
 8. **Replace, don't append.** When a fact changes, rewrite the sentence and delete the old one.
    A new rule names what it replaces or retires. The past lives in git and the history files.
 9. **Write for current models.** Plain, specific, checkable sentences ("run X before Y"). State the
@@ -48,8 +48,8 @@ replacing rather than appending, do.
    Emphasis (🚨, bold, CAPS) on at most five lines per file: if everything is emphasised, nothing
    is. Do not explain standard tools (git, pytest, argparse) that the model already knows.
 10. **Mechanically fresh.** Every path, flag, module and command a doc names must exist. The
-    freshness gate checks paths and flags today; modules are audit unit U1 and `§ section`
-    pointers audit §5. Words like "now", "currently" or "live" about volatile state are a smell:
+    freshness gate checks paths, flags and `python -m` modules; `§ section` pointers are
+    audit §5 (not yet checked). Words like "now", "currently" or "live" about volatile state are a smell:
     that state belongs in `MEMORY.md` or an SOP, not in a `CLAUDE.md`.
 
 ---
@@ -109,8 +109,18 @@ they may explain at length. These principles govern what agents load automatical
 ## 3. Budgets
 
 Bytes, because our lines are long (the root averages 128 bytes a line, so "200 lines" would allow
-26 KB). One token ≈ 4 bytes for this prose. The **cap** is what the budget gate enforces (audit
-U1; until then, review enforces it); the **target** is what a sweep aims for.
+26 KB). 1 KB = 1,000 bytes; one token ≈ 4 bytes for this prose. The **cap** is what the budget
+gate enforces; the **target** is what a sweep aims for.
+
+**The ratchet** (the freshness gate; numbers in
+[`instruction_docs_budget.json`](instruction_docs_budget.json), rules in `utils.instruction_budget`,
+census `python -m utils.instruction_budget`). A file over its type cap when the ratchet landed
+(2026-10-19) is grandfathered at its size then. A file may not grow past its cap. A sweep that
+shrinks a grandfathered file lowers its entry to the new size in the same commit (the gate fails at
+more than 1,000 bytes of headroom), and removes the entry once the file is within its type cap.
+A cap is never raised. Audit U11 ends with the grandfathered list empty. `MEMORY.md` and the
+subagent definitions are machine-local: checked only where they exist, and only against their cap
+(their owner lowers their entries; U9). The gate checks this table against the budget file.
 
 | file | target | cap |
 |---|---:|---:|
@@ -118,7 +128,7 @@ U1; until then, review enforces it); the **target** is what a sweep aims for.
 | `MEMORY.md` | 8 KB | 10 KB (the owner's own ceiling; the platform drops past 25 KB) |
 | a code leaf `CLAUDE.md` | 8 KB (≈ 2k tokens) | 12 KB |
 | `designs/CLAUDE.md` (a map) | 8 KB | 12 KB |
-| a subagent definition body | 1.5 KB | 2.5 KB |
+| a subagent definition file | 1.5 KB | 2.5 KB |
 | a slash command | 8 KB | 12 KB |
 
 **Always-loaded total** (root + `MEMORY.md` + one agent definition): today ≈ 54 KB ≈ 13.5k tokens;
@@ -130,9 +140,9 @@ target ≤ 21.5 KB ≈ 5.4k tokens.
 
 - **The ALWAYS-CURRENT rule** (root § Documentation Maintenance) stands unchanged. These principles
   make it cheaper to honour: fewer facts per file means fewer facts to keep current.
-- **`src/claude_md_freshness_gate_test.py`** checks that every path under the five owned prefixes
-  and every `--flag` resolves. It stays green through every sweep. The proposed extensions
-  (audit §4, unit U1): `python -m <module>` targets must resolve, and a byte budget per file.
+- **`src/claude_md_freshness_gate_test.py`** checks that every path under the five owned prefixes,
+  every `--flag` and every `python -m <module>` resolves, and enforces the byte-budget ratchet
+  (§3). It stays green through every sweep.
 - **Tests that pin doc text.** A few tests assert that a `CLAUDE.md` still contains a sentence:
   `src/utils/static_gates_test.py` (the root's "**Seventeen static gates**" count),
   `src/agents/training/tb_relevance_test.py` (two training-leaf anchors),

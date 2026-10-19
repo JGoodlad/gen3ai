@@ -327,7 +327,7 @@ nice -n 19 taskset -c 5-7,13-15 scripts/ops/gate_lock.sh \
   /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m pytest src/ -m "not slow and not e2e" -q -n 3
 # Who holds the gate, since when, its ETA, and who is queued (no lock taken):
 scripts/ops/gate_lock.sh --status            # --json for an agent deciding whether to wait
-# THE STATIC TIER, fast form (no gate lock; the same 240 tests as `-m static` without collecting the tree):
+# THE STATIC TIER, fast form (no gate lock; the same tests as `-m static` without collecting the tree):
 pytest $(python -m utils.static_gates --paths) -q -n 2
 ```
 
@@ -544,6 +544,21 @@ live surface fails too. External tools' flags (`pytest`, `ruff`, `pip`, `cargo`,
 in the test's own allowlist, **each named with its tool**, so it cannot quietly absorb one of ours.
 The census behind it — what each big `CLAUDE.md` is made of and what size is right — is
 `designs/research_state/claude_md_census_2026-09-06.md`.
+
+**Two more checks ride in the same file** (audit U1, 2026-10-19; folded in so the static-gate count
+the root pins does not move). **Every `python -m <module>` a `CLAUDE.md` names must be runnable**
+(a `<module>.py`, or a package with a `__main__.py`, under `src/` or the repo root; third-party
+tools in the test's `_EXTERNAL_MODULES`, each named with what it is). **Every instruction file
+stays within its BYTE BUDGET**: the type caps of `designs/ops/instruction_docs_principles.md` §3,
+or, for a file that was already over its type cap, its `grandfathered` entry in
+`designs/ops/instruction_docs_budget.json`. A file may not grow past its cap; a grandfathered file
+that shrinks more than 1,000 bytes below its entry fails until the entry is lowered to its size,
+and one back within its type cap must leave the list (`utils.instruction_budget.check`; the census:
+`python -m utils.instruction_budget`). A cap is never raised. `MEMORY.md` and `~/.claude/agents/`
+are machine-local, outside git: checked only where they exist, and only against their cap. **The
+cost:** while one sits at its cap, the next addition to it turns this gate red in EVERY worktree on
+the box until its owner (the orchestrator) trims it; that is the ratchet working, never the diff
+under test's fault (`GEN3AI_SKIP_USER_DOC_BUDGET=1` skips only that check, after reporting it).
 
 ### The POKE-ENV IMPORT ratchet (`src/poke_env_import_gate_test.py`) — a static gate, shrink-only (T27 / P0, 2026-10-06)
 

@@ -1,7 +1,7 @@
-"""Do the CLAUDE.md files still describe THIS tree? The static gate for DOCUMENTATION.
+"""Do the instruction docs still describe THIS tree, within their budget? The static gate for DOCUMENTATION.
 
-Sits beside `ruff_gate_test.py`, `file_size_gate_test.py` and `strict_api_lock_test.py` at the
-`src/` root because, like those, its subject is the whole tree rather than any one package.
+Sits beside `ruff_gate_test.py` and `file_size_gate_test.py` at the `src/` root because, like those, its subject
+is the whole tree rather than any one package.
 
 **Why it exists.** Every `CLAUDE.md` in this repo is loaded into an agent's context and read as
 fact. A path that has moved and a flag that has been deleted do not merely go stale — they are
@@ -11,7 +11,7 @@ recorded argv costs a launch-crash-fix loop, and the root `CLAUDE.md`'s own c-fa
 that an allowlist entry can outlive its own fix and mislead every reader after it. Prose has no
 compiler, so it needs a gate.
 
-**Two checks, both mechanical.** Neither is a judgement about writing.
+**Four checks, all mechanical.** None is a judgement about writing.
 
 1. **Every repo-relative path a CLAUDE.md names must EXIST.** Scope is the five owned prefixes
    (`src/`, `designs/`, `data/`, `tools/`, `scripts/`) — `deps/` is a submodule plus untracked
@@ -19,6 +19,11 @@ compiler, so it needs a gate.
 2. **Every `--flag` a CLAUDE.md names must RESOLVE somewhere in the tree's own CLI surface** —
    or be listed in `designs/deleted_flags.md`, the history file for flags a document names on
    purpose because it is telling you what used to be true.
+3. **Every `python -m <module>` a CLAUDE.md names must be RUNNABLE**: `<module>.py`, or a package
+   with a `__main__.py`, under `src/` or the repo root — or a third-party tool in `_EXTERNAL_MODULES`.
+4. **Every instruction file stays within its BYTE BUDGET** — the ratchet of `utils.instruction_budget`
+   (rules there; numbers in `designs/ops/instruction_docs_budget.json`). Folded into this gate, not
+   a gate of its own, so the root's pinned static-gate count does not move (audit U1).
 
 **Why the flag surface is an AST scan and not `build_parser()`.** Three reasons, in order of
 weight. (a) `import main.train_rl_agent` pulls torch and the whole training stack — measured
@@ -40,12 +45,13 @@ literal table the scan can see.
 **What is NOT checked, deliberately.** Whether a document's *claims* are true. A measured number,
 a design rationale, a "this is 22% of worker CPU" — none of that has a mechanical referent, and a
 gate that pretended otherwise would either pass everything or block on prose review. This gate
-checks the two things that have a referent in the filesystem: names of files, and names of flags.
+checks the things that have a referent in the filesystem: names of files, flags and modules, and sizes.
 
-**Cost: well under a second** — it reads ~13 markdown files and AST-parses the tree once. No cost
-marker, runs in the fast inner loop. Opt out explicitly:
+**Cost: about a second of work** (a few seconds of pytest start-up) — it reads ~20 markdown files and
+AST-parses the tree once. No cost marker, runs in the fast inner loop. Opt out explicitly:
 
-    GEN3AI_SKIP_CLAUDE_MD_GATE=1 pytest src/ -q
+    GEN3AI_SKIP_CLAUDE_MD_GATE=1 pytest src/ -q     # the whole gate
+    GEN3AI_SKIP_USER_DOC_BUDGET=1 pytest src/ -q    # only the machine-local files' budget (see that test)
 """
 from __future__ import annotations
 
@@ -58,6 +64,7 @@ from typing import Dict, List, Set, Tuple
 
 import pytest
 
+from utils import instruction_budget as budget
 from utils.paths import repo_root
 
 pytestmark = pytest.mark.static   # the `static` budget tier (conftest._STATIC_BUDGET_BASE_S)
@@ -73,20 +80,8 @@ _SKIP = pytest.mark.skipif(
 # Which documents are in scope
 # --------------------------------------------------------------------------------------------
 
-# `deps/` is a git submodule whose working tree may be empty, and `.claude/worktrees/` holds other
-# agents' checkouts of this same repo — scanning either would report another tree's state as this
-# one's.
-_EXCLUDED_DIR_PARTS = ("deps", ".claude", "node_modules", "target")
-
-
 def claude_md_files() -> List[pathlib.Path]:
-    out = []
-    for p in _REPO_ROOT.rglob("CLAUDE.md"):
-        rel = p.relative_to(_REPO_ROOT)
-        if any(part in _EXCLUDED_DIR_PARTS for part in rel.parts[:-1]):
-            continue
-        out.append(p)
-    return sorted(out)
+    return budget.claude_md_files(_REPO_ROOT)
 
 
 # --------------------------------------------------------------------------------------------
@@ -477,3 +472,212 @@ def test_the_history_doc_may_only_shrink():
         + f"\n\nRemove their rows from {_DELETED_FLAGS_DOC} — while they are listed, the gate "
         "cannot notice if they are deleted a second time."
     )
+
+
+# --------------------------------------------------------------------------------------------
+# (c) MODULES — every `python -m <module>` must be runnable
+# --------------------------------------------------------------------------------------------
+
+# Third-party modules a CLAUDE.md runs with `-m`. Each names what it is, so the list cannot quietly absorb one of
+# our own dead modules.
+_EXTERNAL_MODULES: Dict[str, str] = {
+    "pytest": "the test runner",
+    "mypy": "the type checker (the mypy gate)",
+}
+
+# `python -m x`, `python3.11 -u -m x`, `"$PY" -m x`, `${GEN3AI_PYTHON} -m x`. The trailing group catches a
+# placeholder (`main.<meter>`); `…` never matches the name at all. There is no history escape (unlike paths
+# and flags): a sentence about a deleted module names it without `python -m`.
+_MODULE_RE = re.compile(r"(?:\bpython3?(?:\.\d+)?|\$\{?(?:PY|GEN3AI_PYTHON)\}?\"?)(?:\s+-[A-Za-z]+)*?\s+-m\s+"
+                        r"([A-Za-z_][\w.]*)([<{*]?)")
+
+_MODULE_BASES = ("src", "")   # `src/` (the package root) and the repo root (`tools.…`, run from it)
+
+
+def collect_module_claims(docs: List[pathlib.Path]) -> List[Tuple[str, int, str]]:
+    claims = []
+    for doc in docs:
+        rel = doc.relative_to(_REPO_ROOT).as_posix() if doc.is_relative_to(_REPO_ROOT) else str(doc)
+        for lineno, line in enumerate(doc.read_text().splitlines(), 1):
+            for m in _MODULE_RE.finditer(line):
+                if m.group(2) or m.group(1).endswith("."):   # a placeholder, not a module claim
+                    continue
+                claims.append((rel, lineno, m.group(1)))
+    return claims
+
+
+def module_resolves(module: str, root: pathlib.Path = _REPO_ROOT) -> bool:
+    """Is `python -m module` runnable from `root`? A plain module file, or a package WITH a `__main__.py`."""
+    if module.split(".")[0] in _EXTERNAL_MODULES:
+        return True
+    for base in _MODULE_BASES:
+        target = root / base / pathlib.Path(*module.split("."))
+        if target.with_suffix(".py").is_file() or (target / "__main__.py").is_file():
+            return True
+    return False
+
+
+@_SKIP
+def test_every_claude_md_python_module_resolves():
+    claims = collect_module_claims(claude_md_files())
+    assert len(claims) > 20, f"only {len(claims)} `python -m` claims found: the scan is broken"
+    misses = [f"  {rel}:{lineno}  python -m {mod}" for rel, lineno, mod in claims if not module_resolves(mod)]
+    assert not misses, (
+        "A CLAUDE.md runs a `python -m` target that is not runnable in this tree (no `<module>.py`, and no "
+        "package with a `__main__.py`):\n\n" + "\n".join(misses)
+        + "\n\nFix by correcting the module path. A third-party tool goes in `_EXTERNAL_MODULES` NAMED WITH "
+        "WHAT IT IS."
+    )
+
+
+def test_meta_the_module_check_has_teeth(tmp_path):
+    """Revert-proof: a missing module, and a package with no `__main__.py`, FAIL; a placeholder is not a claim."""
+    (tmp_path / "src" / "pkg" / "sub").mkdir(parents=True)
+    (tmp_path / "src" / "pkg" / "__init__.py").write_text("")
+    (tmp_path / "src" / "pkg" / "tool.py").write_text("")
+    (tmp_path / "src" / "pkg" / "sub" / "__init__.py").write_text("")
+    assert module_resolves("pkg.tool", tmp_path)
+    assert not module_resolves("pkg.gone", tmp_path)
+    assert not module_resolves("pkg.sub", tmp_path), "a package without __main__.py cannot be run with -m"
+    (tmp_path / "src" / "pkg" / "sub" / "__main__.py").write_text("")
+    assert module_resolves("pkg.sub", tmp_path)
+    assert module_resolves("pytest", tmp_path)
+    (tmp_path / "tools").mkdir()
+    (tmp_path / "tools" / "fetch.py").write_text("")
+    assert module_resolves("tools.fetch", tmp_path), "the repo root is a base too"
+
+    doc = tmp_path / "CLAUDE.md"
+    doc.write_text('run `python -m pkg.tool`, `"$PY" -m pkg.gone --x`, `python3 -m main.<meter>`, '
+                   "`python -m …`, `pytest -m slow`, `${PY} -m pkg.sub`, `python -m main.ops.*`, "
+                   "`python -m a.{b,c}`, `python3.11 -u -m tools.fetch`, `$GEN3AI_PYTHON -m pkg.tool`.\n")
+    assert [c[2] for c in collect_module_claims([doc])] == [
+        "pkg.tool", "pkg.gone", "pkg.sub", "tools.fetch", "pkg.tool"]
+
+
+# --------------------------------------------------------------------------------------------
+# (d) BYTE BUDGETS — the ratchet (rules: `utils.instruction_budget`)
+# --------------------------------------------------------------------------------------------
+
+def _fix_hint(problems: List[str]) -> str:
+    return (
+        "\n".join("  " + p for p in problems)
+        + f"\n\nThe budget is principles §3 (`designs/ops/instruction_docs_principles.md`); the numbers are "
+        f"`{budget.BUDGET_FILE}`. A grown file must SHRINK (replace, don't append: the deletion test is "
+        "principle 1). `python -m utils.instruction_budget` prints the census."
+    )
+
+
+@_SKIP
+def test_repo_instruction_docs_respect_the_byte_budget():
+    b = budget.load_budget()
+    docs = budget.repo_docs(_REPO_ROOT)
+    assert {"CLAUDE.md", ".claude/commands/gen3ai-ship.md"} <= set(docs), f"the doc scan is broken: {sorted(docs)}"
+    problems = budget.check(docs, b["type_caps"], b["grandfathered"])
+    assert not problems, "An instruction doc broke its byte budget:\n\n" + _fix_hint(problems)
+
+
+@_SKIP
+def test_user_instruction_files_respect_the_byte_budget():
+    """`MEMORY.md` and `~/.claude/agents/*.md` are machine-local (outside git): checked only where they exist.
+    A failure here is NOT your diff — the orchestrator owns these files: report it as a FINDING, and only then
+    opt this one check out with `GEN3AI_SKIP_USER_DOC_BUDGET=1`."""
+    if os.environ.get("GEN3AI_SKIP_USER_DOC_BUDGET") == "1":
+        pytest.skip("GEN3AI_SKIP_USER_DOC_BUDGET=1 (a machine-local file is over budget and its owner knows)")
+    docs = budget.user_docs()
+    if not docs:
+        pytest.skip(f"no user instruction files on this machine (looked for the auto-memory index and "
+                    f"{budget.claude_config_dir() / 'agents'}/*.md)")
+    b = budget.load_budget()
+    problems = budget.check(docs, b["type_caps"], b["grandfathered"], user_scope=True)
+    assert not problems, ("A machine-local instruction file broke its byte budget (its owner is the orchestrator "
+                          "or the owner, not this diff):\n\n" + _fix_hint(problems))
+
+
+#: The caps the meta tests below use (any consistent set would do).
+_CAPS = {"root": 16000, "leaf": 12000, "command": 12000, "memory": 10000, "agent": 2500}
+
+#: The rows of principles §3's table, by kind (`designs/CLAUDE.md` is a leaf).
+_PRINCIPLES_ROWS = {"root `CLAUDE.md`": "root", "`MEMORY.md`": "memory", "a code leaf `CLAUDE.md`": "leaf",
+                    "`designs/CLAUDE.md` (a map)": "leaf", "a subagent definition file": "agent",
+                    "a slash command": "command"}
+
+
+def test_the_budget_file_matches_the_principles_table():
+    """The budget file's type caps and targets are principles §3's table, row by row (1 KB = 1,000 bytes)."""
+    b = budget.load_budget()
+    text = (_REPO_ROOT / "designs" / "ops" / "instruction_docs_principles.md").read_text()
+    section = text[text.index("## 3. Budgets"):text.index("## 4.")]
+    rows = {}
+    for line in section.splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) == 3 and cells[0] in _PRINCIPLES_ROWS:
+            target, cap = (int(float(re.match(r"[\d.]+", c).group()) * 1000) for c in cells[1:])
+            rows[cells[0]] = (target, cap)
+    assert set(rows) == set(_PRINCIPLES_ROWS), f"principles §3's table rows changed: {sorted(rows)}"
+    for label, (target, cap) in rows.items():
+        kind = _PRINCIPLES_ROWS[label]
+        assert (b["type_targets"][kind], b["type_caps"][kind]) == (target, cap), label
+    assert set(b["type_caps"]) == set(b["type_targets"]) == set(_PRINCIPLES_ROWS.values())
+
+
+def _leaf(size: int) -> "budget.Doc":
+    return budget.Doc("leaf", size)
+
+
+def test_meta_a_new_file_over_its_type_cap_fails_and_one_at_it_passes():
+    assert budget.check({"a/CLAUDE.md": _leaf(12001)}, _CAPS, {})[0].startswith("OVER BUDGET")
+    assert budget.check({"a/CLAUDE.md": _leaf(12000)}, _CAPS, {}) == []
+    assert budget.check({"CLAUDE.md": budget.Doc("root", 16001)}, _CAPS, {})[0].startswith("OVER BUDGET")
+
+
+def test_meta_a_grandfathered_file_may_not_grow_a_byte():
+    assert budget.check({"a/CLAUDE.md": _leaf(20000)}, _CAPS, {"a/CLAUDE.md": 20000}) == []
+    assert budget.check({"a/CLAUDE.md": _leaf(20001)}, _CAPS, {"a/CLAUDE.md": 20000})[0].startswith("OVER BUDGET")
+
+
+def test_meta_a_shrunk_grandfathered_file_must_lower_its_cap():
+    g = {"a/CLAUDE.md": 20000}
+    assert budget.check({"a/CLAUDE.md": _leaf(20000 - budget.LOWER_SLACK)}, _CAPS, g) == []
+    assert budget.check({"a/CLAUDE.md": _leaf(20000 - budget.LOWER_SLACK - 1)}, _CAPS, g)[0].startswith("LOWER")
+
+
+def test_meta_a_grandfathered_file_back_under_its_type_cap_must_leave_the_list():
+    assert budget.check({"a/CLAUDE.md": _leaf(12000)}, _CAPS, {"a/CLAUDE.md": 12500})[0].startswith("STALE")
+
+
+def test_meta_a_user_file_is_held_to_its_cap_only():
+    g = {budget.MEMORY_KEY: 12000}
+    over = budget.check({budget.MEMORY_KEY: budget.Doc("memory", 12001)}, _CAPS, g, user_scope=True)
+    assert over and over[0].startswith("OVER BUDGET")
+    assert budget.check({budget.MEMORY_KEY: budget.Doc("memory", 9000)}, _CAPS, g, user_scope=True) == []
+    assert budget.check({budget.MEMORY_KEY: budget.Doc("memory", 10001)}, _CAPS, {}, user_scope=True)
+
+
+def test_meta_a_grandfathered_repo_entry_for_a_missing_file_fails_but_a_user_one_does_not():
+    g = {"gone/CLAUDE.md": 20000, budget.MEMORY_KEY: 12000}
+    assert budget.check({}, _CAPS, g) == [
+        f"MISSING FILE: {budget.BUDGET_FILE} grandfathers gone/CLAUDE.md, which does not exist. Remove the entry."]
+    assert budget.check({}, _CAPS, g, user_scope=True) == []
+
+
+def test_meta_the_scans_find_each_kind(tmp_path):
+    (tmp_path / "x" / "deps").mkdir(parents=True)
+    (tmp_path / ".claude" / "commands").mkdir(parents=True)
+    (tmp_path / ".claude" / "worktrees" / "w").mkdir(parents=True)
+    for rel in ("CLAUDE.md", "x/CLAUDE.md", "x/deps/CLAUDE.md", ".claude/commands/c.md",
+                ".claude/worktrees/w/CLAUDE.md"):
+        (tmp_path / rel).write_text("abc")
+    assert budget.repo_docs(tmp_path) == {"CLAUDE.md": budget.Doc("root", 3), "x/CLAUDE.md": budget.Doc("leaf", 3),
+                                          ".claude/commands/c.md": budget.Doc("command", 3)}
+
+    main = pathlib.Path("/w/my.repo")
+    config = tmp_path / "cfg"
+    assert budget.user_docs(main, config) == {}
+    memory = budget.memory_index_path(main, config)
+    assert memory == config / "projects" / "-w-my-repo" / "memory" / "MEMORY.md"
+    memory.parent.mkdir(parents=True)
+    memory.write_text("12345")
+    (config / "agents").mkdir()
+    (config / "agents" / "a.md").write_text("12")
+    assert budget.user_docs(main, config) == {budget.MEMORY_KEY: budget.Doc("memory", 5),
+                                              budget.AGENT_KEY_PREFIX + "a.md": budget.Doc("agent", 2)}

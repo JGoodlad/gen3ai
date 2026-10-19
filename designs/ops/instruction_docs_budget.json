@@ -1,0 +1,32 @@
+{
+  "_doc": "The byte-budget ratchet for the instruction docs. Type caps and targets: designs/ops/instruction_docs_principles.md §3 (1 KB = 1,000 bytes). `grandfathered` holds each file that was over its type cap when the ratchet landed (2026-10-19), at its size then; a sweep lowers an entry as it shrinks the file, and removes it once the file is within its type cap (audit U11 empties the list). Never raise a cap. Enforced by src/claude_md_freshness_gate_test.py; the census: python -m utils.instruction_budget. Kinds: root = the root CLAUDE.md, leaf = every other CLAUDE.md, command = .claude/commands/*.md, memory = the user auto-memory MEMORY.md, agent = ~/.claude/agents/*.md (whole file). The two user kinds are machine-local and checked only where present.",
+  "type_caps": {
+    "root": 16000,
+    "leaf": 12000,
+    "command": 12000,
+    "memory": 10000,
+    "agent": 2500
+  },
+  "type_targets": {
+    "root": 12000,
+    "leaf": 8000,
+    "command": 8000,
+    "memory": 8000,
+    "agent": 1500
+  },
+  "grandfathered": {
+    ".claude/commands/gen3ai-ship.md": 12881,
+    "CLAUDE.md": 38556,
+    "designs/CLAUDE.md": 15591,
+    "src/agents/gen3_data/CLAUDE.md": 25237,
+    "src/agents/model/CLAUDE.md": 21507,
+    "src/agents/training/CLAUDE.md": 35505,
+    "~/.claude/agents/opus-high.md": 2797,
+    "~/.claude/agents/opus-medium.md": 2688,
+    "~/.claude/agents/opus-xhigh.md": 2769,
+    "~/.claude/agents/sonnet-high.md": 2866,
+    "~/.claude/agents/sonnet-medium.md": 2884,
+    "~/.claude/agents/sonnet-xhigh.md": 2941,
+    "~/.claude/projects/<main checkout>/memory/MEMORY.md": 12393
+  }
+}
