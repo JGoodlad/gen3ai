@@ -1,0 +1,49 @@
+{
+ "control_true_teams": {
+  "examples": [],
+  "invalid": 0,
+  "n": 1395
+ },
+ "schema": "world_sampler_validate_v1",
+ "worlds": {
+  "error_kinds": {
+   "egg": 444,
+   "evs": 3,
+   "hidden power": 28,
+   "ivs": 28,
+   "move": 112,
+   "other": 444
+  },
+  "examples": [
+   "Skarmory can't get its egg move combination (whirlwind, drillpeck) from any possible father.",
+   "(Is this incorrect? If so, post the chainbreeding instructions in Bug Reports)",
+   "Shedinja's moves Slash, Baton Pass are incompatible.",
+   "Tyranitar can't get its egg move combination (pursuit, dragondance) from any possible father.",
+   "(Is this incorrect? If so, post the chainbreeding instructions in Bug Reports)",
+   "Tyranitar can't get its egg move combination (dragondance, pursuit) from any possible father.",
+   "(Is this incorrect? If so, post the chainbreeding instructions in Bug Reports)",
+   "Tyranitar can't get its egg move combination (pursuit, dragondance) from any possible father.",
+   "(Is this incorrect? If so, post the chainbreeding instructions in Bug Reports)",
+   "Tyranitar can't get its egg move combination (pursuit, dragondance) from any possible father.",
+   "(Is this incorrect? If so, post the chainbreeding instructions in Bug Reports)",
+   "Blissey's moves Wish, Aromatherapy are incompatible.",
+   "Blissey can't get its egg move combination (aromatherapy, healbell) from any possible father.",
+   "(Is this incorrect? If so, post the chainbreeding instructions in Bug Reports)",
+   "Tyranitar can't get its egg move combination (dragondance, pursuit) from any possible father.",
+   "(Is this incorrect? If so, post the chainbreeding instructions in Bug Reports)",
+   "Tyranitar can't get its egg move combination (dragondance, pursuit) from any possible father.",
+   "(Is this incorrect? If so, post the chainbreeding instructions in Bug Reports)",
+   "Tyranitar can't get its egg move combination (dragondance, pursuit) from any possible father.",
+   "(Is this incorrect? If so, post the chainbreeding instructions in Bug Reports)",
+   "Tyranitar can't get its egg move combination (dragondance, pursuit) from any possible father.",
+   "(Is this incorrect? If so, post the chainbreeding instructions in Bug Reports)",
+   "Tyranitar can't get its egg move combination (dragondance, ancientpower, pursuit) from any possible father.",
+   "(Is this incorrect? If so, post the chainbreeding instructions in Bug Reports)",
+   "Tyranitar can't get its egg move combination (dragondance, pursuit) from any possible father."
+  ],
+  "invalid": 581,
+  "n": 11160,
+  "states": 1395,
+  "states_with_an_invalid_world": 445
+ }
+}
