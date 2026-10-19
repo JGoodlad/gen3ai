@@ -1963,7 +1963,7 @@ async function main() {
   // all FILTERED_TARGET battles. The former residual-vs-faint-under-weather ordering gap
   // is FIXED in turn.rs (per-handler faintMessages + the cached `pokemon.speed` model).
   taxLines.push('# ── ENGINE divergence cause among MODELED-mechanics battles (the gate) ──');
-  taxLines.push('ENGINE_GAP\tnone\t(bit-for-bit; the prior weather residual-vs-faint gap is FIXED — see CLAUDE.md "## E2E capstone")');
+  taxLines.push('ENGINE_GAP\tnone\t(bit-for-bit; the prior weather residual-vs-faint gap is FIXED — see designs/rust_sim/e2e_capstone.md)');
 
   fs.writeFileSync(OUT_TAXONOMY, taxLines.join('\n') + '\n');
 

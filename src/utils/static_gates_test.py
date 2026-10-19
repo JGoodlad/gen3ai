@@ -1,8 +1,8 @@
 """The static-gate count in the prose, and every gate's row in the tables, equal the declared inventory.
 
 The inventory is ``utils.static_gates.static_gate_files()`` (every ``*_test.py`` declaring
-``pytest.mark.static``). Before this test the counts disagreed three ways ("Eleven" in ``docs/RUNNING.md`` and
-``CONTRIBUTING.md``, "eight" in ``README.md``, "Seventeen" in the root ``CLAUDE.md``) and
+``pytest.mark.static``). Before this test the counts disagreed three ways (``docs/RUNNING.md``, ``CONTRIBUTING.md``, ``README.md`` and
+the root ``CLAUDE.md`` each carried a different one) and
 ``tier_budget_guard_test._STATIC_GATES`` omitted two gates. The detailed count sentence and gate table moved
 from ``CONTRIBUTING.md`` to ``docs/DEVELOPING.md`` on 2026-10-09 (``CONTRIBUTING.md`` is now the short human
 page and states no count).

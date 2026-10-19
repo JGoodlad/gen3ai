@@ -28,11 +28,10 @@ extend-exclude = ["src/rust_sim"]
 #
 # `features_extractor.py` IS the model package's documented import surface. It imports ~42 names
 # it never uses itself, purely so `from agents.model.features_extractor import D_MODEL /
-# N_HISTORY_TURNS / DamageOperator / …` keeps resolving. This is stated three times in the tree:
+# N_HISTORY_TURNS / DamageOperator / …` keeps resolving. This is stated twice in the tree:
 # by the file's own module docstring ("THE documented import surface for the whole model
-# package"), by the `# noqa: F401 (re-export)` markers already on its individual import blocks,
-# and by the root CLAUDE.md ("re-exports the whole block, so historical import paths still
-# resolve"). MEASURED: `N_HISTORY_TURNS` alone is imported through it by 13 modules across
+# package") and by the `# noqa: F401 (re-export)` markers already on its individual import
+# blocks. MEASURED: `N_HISTORY_TURNS` alone is imported through it by 13 modules across
 # `agents/` and `main/`. `__all__` cannot stand in for this — the re-exported set is far larger
 # than the public-star set.
 #

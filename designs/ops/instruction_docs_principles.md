@@ -48,8 +48,8 @@ replacing rather than appending, do.
    Emphasis (🚨, bold, CAPS) on at most five lines per file: if everything is emphasised, nothing
    is. Do not explain standard tools (git, pytest, argparse) that the model already knows.
 10. **Mechanically fresh.** Every path, flag, module and command a doc names must exist. The
-    freshness gate checks paths, flags and `python -m` modules; `§ section` pointers are
-    audit §5 (not yet checked). Words like "now", "currently" or "live" about volatile state are a smell:
+    freshness gate checks paths, flags, `python -m` modules and `file § section` pointers
+    (`utils.section_refs`). Words like "now", "currently" or "live" about volatile state are a smell:
     that state belongs in `MEMORY.md` or an SOP, not in a `CLAUDE.md`.
 
 ---
@@ -194,7 +194,7 @@ Fetched 2026-10-19. Quotations are from these pages; anything not quoted is our 
   <https://code.claude.com/docs/en/memory>. The 200-line target; on-demand subdirectory loading;
   `MEMORY.md`'s 200-line / 25 KB window; "Imports … don't reduce its context cost"; "if two
   instructions contradict each other, Claude may pick one arbitrarily"; "Write instructions that
-  are concrete enough to verify"; Claude treats `CLAUDE.md` "as context, not enforced
+  are concrete enough to verify"; Claude treats `CLAUDE.md` as "context, not enforced
   configuration" (use a hook to block an action); `/doctor prompt-audit` finds "instructions
   written for older models, references to files or commands that don't exist, and files that
   contradict each other" (Claude Code ≥ 2.1.283; this box runs 2.1.292).

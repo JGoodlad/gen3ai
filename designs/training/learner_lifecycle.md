@@ -169,7 +169,7 @@ graph, so a disagreement is confirmed IN THE SAME UPDATE:
 - **Every check runs on the fixture moved off the PPO clip boundary** (`compile_regions.relocate_clip_boundary`,
   the startup gate's rows exactly; standing rule 8): a row within `R1_CLIP_MARGIN` of the clip bound that switches
   its gradient is moved 2 × the margin inside its active side, and an arm that moves a log-prob past the margin is
-  refused by name (`compile_flags.md` "The fix (T36)"). The bf16 rule's LOSS comparisons (drift and envelope) read each
+  refused by name (`compile_flags.md` "The bf16 canary FATAL on trained weights"). The bf16 rule's LOSS comparisons (drift and envelope) read each
   arm's loss on the golden's OWN rows instead (`compile_regions.golden_row_loss`, `gen3_r1_loss_on_golden_rows_v1`): the
   loss is continuous in the ratio, and the relocation multiplied a moved row's weight in it ≈ 4×, which the bars were
   never derived on (`compile_flags.md` "bf16 drift on a sharpening policy").

@@ -4,7 +4,7 @@ THE BUG THIS REPLACES (`gen3_audit_state_sampler_v1`): both `edge_ablation_audit
 `op_block_split_audit.py` collected states with `sorted(glob.glob(...))` + break-at-cap. Step
 directories sort LEXICALLY — `step_10000032` < `step_2000016` — so every committed measurement
 drew its whole sample from ONE mid-run trace dir while presenting itself as a pool average
-(design_op_tensors.md §2.5.1). The concat-deletion acceptance clause explicitly requires
+(design_op_tensors.md §2.5, caveat 1). The concat-deletion acceptance clause explicitly requires
 stratified sampling, and these probes are its instruments — there is no re-run after the fact.
 
 The sampler here:

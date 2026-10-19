@@ -61,7 +61,7 @@ def _collect_states(patterns: Sequence[str], max_states: int, seed: int = 0,
     # `audit_states.collect_states` — two-level round-robin over step dirs × opponents +
     # a seeded row subsample). The old sorted-glob + break-at-cap drew every state from ONE
     # lexically-first step dir (step_10000032 < step_2000016) while labelling itself a pool
-    # average — design_op_tensors.md §2.5.1. Returns (obs, masks, coverage); callers write
+    # average — design_op_tensors.md §2.5, caveat 1. Returns (obs, masks, coverage); callers write
     # `coverage` into the report so a reader can VERIFY the spread instead of trusting it.
     from agents.model.audit_states import collect_states
 

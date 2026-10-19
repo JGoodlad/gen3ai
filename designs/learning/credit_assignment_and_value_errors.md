@@ -136,5 +136,5 @@ recovers it (it does, at 0.845). It is a target/readout problem, and the cure is
 the boundary with more samples, not a wider head.
 
 See also: `distillation_flywheel_lessons.md` (the policy side of the same campaign),
-`win_prob_decomposition.md` (the error taxonomy this refines), root `CLAUDE.md` → *Exploitability*,
+`win_prob_decomposition.md` (the error taxonomy this refines), `designs/ops/training_runbook.md` → *Exploitability*,
 `designs/research_state/measurements/ko_boundary_decodability_2026-08-31.md`.

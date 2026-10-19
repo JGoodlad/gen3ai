@@ -1066,8 +1066,7 @@ def _unlock_next(current_url: "str | None", default: str) -> str:
     return default
 
 
-# Ordered by the investigation recipe in designs/prober/session_scans.md — "triage: start here
-# for 'what next'" — not by when each view happened to be written. Six equal tabs in an arbitrary
+# Ordered by the investigation recipe in designs/prober/session_scans.md — "The investigation recipe" — not by when each view happened to be written. Six equal tabs in an arbitrary
 # order is exactly the "information doesn't flow" complaint the TUI earned.
 # `/game` is THE battle viewer: the classic `/battle` replay was MERGED into it (2026-10-09) and now
 # redirects there. `analyze` has no tab: it is a per-DECISION page, opened from every decision in the

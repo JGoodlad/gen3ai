@@ -468,7 +468,7 @@ src/rust_sim/
                           #   fields (typeBoost/statMods/onlySpecies/choice/isBerry) + accMod;
                           #   abilities.rs: AbilityData (dmgMod + accMod); accmod.rs: the shared
                           #   AccMod (gen3_accuracy_pipeline_v1 — the to-hit fold reads it). See
-                          #   CLAUDE.md "## Data-driven mechanics"
+                          #   `designs/rust_sim/data_driven_mechanics.md`
       mod.rs              #   Dex: species/moves/item/ability/nature/chart/learnset
       types.rs            #   Type / MoveCategory / BaseStats
       species.rs moves.rs type_chart.rs   #   per-table parsers

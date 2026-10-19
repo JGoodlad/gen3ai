@@ -289,7 +289,7 @@ static rebuild would lose unless §6's layout carries them.
 |---|---|---|---|---|---|
 | 1 | Spikes chip / end-of-turn ledger / outgoing damage as per-mon AMOUNTS after the broadcast goes (A3) | rebuild hazard | HIGH (switch choice under Spikes) | S: the cells exist, only a content projection is new | arch audit F4 / §4 |
 | 2 | fainted / alive counts and "my side" after G is reshaped (A1, A2) | rebuild hazard | HIGH if lost | XS: the scalars exist | arch audit F4 |
-| 3 | status landing ignores Safeguard (both ways), incoming Sleep Clause, our Substitute, Freeze Clause, Yawn | WRONG physics (GIGO) | MEDIUM (wrong P(lands) in `s1`, `s3`, `c2`, `pair_outcome`); Safeguard usage UNVERIFIED | XS-S: the Sleep-Clause code is the template | `damage_op_blocks.py` "v2 residual"; owner's GIGO rule |
+| 3 | status landing ignores Safeguard (both ways), incoming Sleep Clause, our Substitute, Freeze Clause, Yawn | WRONG physics (GIGO) | MEDIUM (wrong P(lands) in `s1`, `s3`, `c2`, `pair_outcome`); Safeguard usage UNVERIFIED | XS-S: the Sleep-Clause code is the template | `damage_op_blocks.py` (its status-landing blocks: `already_block`, `sleep_block`, `sub_block`, `sg_block`); owner's GIGO rule |
 | 4 | what the opponent has seen of our team (#64) | never seen | MEDIUM-HIGH (information play) | S | backlog E1, X18 |
 | 5 | the opponent's Choice-lock (#35) | never seen as a fact | MEDIUM (Choice Band is common in ADV OU, UNVERIFIED share) | S: P(Band) × their last move | — |
 | 6 | turns left on Reflect / Light Screen / Safeguard / Mist (#45-47) | never seen | MEDIUM-LOW (screen and Safeguard timing) | XS: poke-env holds the start turn | — |

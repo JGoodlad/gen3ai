@@ -7,7 +7,7 @@ offset) is [`../ARCHITECTURE.md`](../ARCHITECTURE.md) §1, which wins any disagr
 
 ## Moved from the leaf (2026-10-10)
 
-`designs/ARCHITECTURE.md` § Observation carries the top-level block table (block → dims → offset)
+`designs/ARCHITECTURE.md` § 1 Observation carries the top-level block table (block → dims → offset)
 and the per-mon slot layout, derived from the live constants. **This** is the per-block detail:
 what each field MEANS and where it is sourced from. All offsets are computed from named constants
 — never hardcode indices.
@@ -247,7 +247,7 @@ Their long descriptions moved verbatim to `designs/CHANGELOG.md` §5. Where the 
 engine imports (`main/prober/engine/{switch_in,util}.py`); `incoming_damage_test.py` pins it. Its encoder half
 (`incoming_damage_encoder.py`: `encode_block` over a `LiveView`, the content-keyed `IncomingBeliefMemo`) is DELETED
 (T27 P6 slice 6d-2) — its last callers (the deleted reward PBRS, then nothing) were gone; the record is
-`designs/training/reward.md` → *The belief-block memo*.
+the research ledger, "The belief-block memo LANDED" (2026-08-23).
 
 > **Downstream reader:** the prober engine (`src/main/prober/engine/`) resolves its obs
 > offsets at runtime from `get_layout()` (`ObsOffsets`), with `0 = absent` for deleted blocks

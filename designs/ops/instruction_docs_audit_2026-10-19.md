@@ -626,8 +626,9 @@ subagent.
    retires, or why the budget has room. The budget gate backs this up.
 3. **One line in the root's § Documentation Maintenance:** apply the deletion test and point at the
    principles. This lands in U10.
-4. **A section-reference check (backlog).** A `path § heading` reference into a `CLAUDE.md` or
-   `designs/` doc must resolve. This prevents F3. It is a build unit, not part of the sweep.
+4. **A section-reference check (DONE 2026-10-19, `utils.section_refs`, fifth check of the freshness gate).** A
+   `file § section` pointer in any doc or code comment must resolve; it found and fixed ~65 dangling pointers
+   (F3).
 5. **Revisit after each major model release**, as Anthropic advises (principles §6, [CC-LARGE]). Claude Code's
    `/doctor prompt-audit` (≥ 2.1.283; this box runs 2.1.292) finds outdated or conflicting
    instructions and missing references, and is a cheap owner-run second opinion.

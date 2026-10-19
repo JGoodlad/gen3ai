@@ -8,7 +8,7 @@ drop-in behind the existing bridge (`src/utils/bridge/local_sim_bridge.js`).
 (`tests/protocol_test.rs`: 114 battles / 16115 lines byte-equal, `gen3_protocol_phase3_v1`),
 and the endgame `BattleStream::write_line` streaming surface is built + per-write byte-gated
 (`tests/writeline_test.rs` vs `harness/gen_writeline_capture.js`, `gen3_writeline_stream_v1`).
-The as-built record lives in `CLAUDE.md` → "Protocol emission"; this doc is the original plan
+The as-built record lives in `designs/rust_sim/protocol_emission.md`; this doc is the original plan
 (kept for the rationale — the phase numbering below is the PLAN's, not the shipped phase names).
 It is **observation-only** — it must NOT change PRNG consumption (see §e).
 
@@ -278,7 +278,7 @@ row + its hook when the engine layer for that mechanic is built. (Team-preview
 ## (e) Interaction with the bit-for-bit SEED work — emission is OBSERVATION-ONLY
 
 **Emission must NOT change PRNG consumption.** The whole port's value is the
-RNG-consumption-order equivalence (`CLAUDE.md` §"Why bit-for-bit is the hard part"). A
+RNG-consumption-order equivalence (`src/rust_sim/CLAUDE.md` → "What bit-for-bit means"). A
 protocol line is a *side output* of an event that ALREADY happened — pushing a formatted
 string draws NO randomness and reads only already-computed state.
 

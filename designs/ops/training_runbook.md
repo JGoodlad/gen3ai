@@ -194,7 +194,7 @@ and prints `🌱 [SELFPLAY] [pool] seeded N snapshots + metadata from <parent>`;
 no pool exits `FATAL_CONFIG` naming the three ways out rather than silently training against bots.
 A launcher RESTART never re-seeds, a non-empty pool is never touched, and a FRESH run is unchanged.
 `--no-fork-pool-seed` opts out of the seeding; `--allow-empty-pool` consents to the bot fallback.
-Detail: `src/agents/training/CLAUDE.md` → *A FORK starts POOLLESS*.
+Detail: `designs/training/self_play_and_pool.md` → *A FORK starts POOLLESS*.
 
 🚨 **`--lr`, `--batch-size` and `--n-steps` are INERT on a resume** — the resume path restores the
 checkpoint's own optimizer LR and prints `(arg --lr=… ignored on resume)`, so a FORK inherits
@@ -352,7 +352,7 @@ there; `dice` is the control (the regime of the since-deleted `cf_q_labels` fact
 
 Design of record:
 [`designs/ai_v12/design_winprob_only_critic.md`](designs/ai_v12/design_winprob_only_critic.md);
-flag mechanics in `src/agents/model/CLAUDE.md` → *The CRITIC MODE*.
+flag mechanics in `designs/model/versioning.md` → *The CRITIC MODE*.
 
 **`gamma` is not a flag** (`--gamma` was DELETED, P11b batch (c)): the discount is `WINPROB_GAMMA` = 1.0, a constant of the namespace, and SB3 restores a checkpoint's own gamma on a resume like `--lr`.
 ### In-process bridge transport (the Rust bridge — the ONLY training transport)
@@ -638,7 +638,7 @@ Full design: `src/agents/training/CLAUDE.md` → ELO / skill rating.
 final once the run is, because BT re-solves every node on every add and the newest one is
 **systematically inflated** (gen-10's 12M fell 2089 → 2021 over 12 refits); and a cross-run
 comparison must be at matched snapshot COUNT, not matched step. The measured drift table and the
-worked example are in `src/agents/training/CLAUDE.md` → *Reading an ELO*.
+worked example are in `designs/training/eval_and_rating.md` → *Reading an ELO*.
 
 ### Exploitability — the meter a weak opponent cannot inflate (`python -m main.exploitability`)
 

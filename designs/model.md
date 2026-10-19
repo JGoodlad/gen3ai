@@ -151,8 +151,7 @@ training cost). What landed (all in `src/main/prober/` + a small capture in `pla
   multiset (was set-membership → could over-count a revealed/duplicate guess), (b) the captured
   `move_logits`/`spread_belief` npz arrays (were written-but-unread) are now consumed by the trajectory's
   `Hmv`/`bAtk` sparklines (capture switched to the opp-active row). Design:
-  `designs/ai_v6/design_gpu_obs_observability.md`; prober internals: `src/main/prober/CLAUDE.md` →
-  *Beliefs / Threats (GPU-first observability)*.
+  `designs/ai_v6/design_gpu_obs_observability.md`; prober internals: `designs/prober/beliefs_and_threats.md`.
 
 ### 2026-06-17 — v37 status-landing into the trunk (`gen3_status_trunk_v1`, shipped)
 **The last CPU-obs deprecation gap.** The move-effect block's board-conditional `status_will_land` was

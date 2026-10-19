@@ -13,9 +13,8 @@
 //!
 //! The Node driver clones a paused mid-battle state with `State.serializeBattle`;
 //! the port's equivalent is [`BridgeSession::snapshot`] — a derived `Clone`, because
-//! everything under a session is plain owned data (see "The offline drivers (search +
-//! replay) and the clone-and-branch primitive" in `src/rust_sim/CLAUDE.md`, and
-//! `designs/rust_sim/search_and_replay_drivers.md`). So the whole per-arm dance Node needs
+//! everything under a session is plain owned data (see `designs/rust_sim/search_and_replay_drivers.md` and
+//! `src/rust_sim/CLAUDE.md` "Search and replay"). So the whole per-arm dance Node needs
 //! (deserialize → `restart()` a fresh `BattleStream` → `sendUpdates()` → mark a
 //! baseline so the re-emitted historical log is not returned) collapses to
 //! `snapshot()` + [`BridgeSession::clear_chunks`], and the chunks a branch reports

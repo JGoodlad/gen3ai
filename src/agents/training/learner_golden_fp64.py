@@ -1,4 +1,4 @@
-"""The K9 learner golden's fp64 REFERENCE (X5 U6; `designs/endstate/design_x5_belief_tokens.md` §6.3).
+"""The K9 learner golden's fp64 REFERENCE (X5 U6; `designs/endstate/design_x5_belief_tokens.md` §6, the K9 learner golden re-bake).
 
 WHY. The golden pins what one fp32 update computes, EXACTLY — so it proves an update UNCHANGED, never
 CORRECT. A re-bake is only trustworthy if the fp32 numbers it banks are also close to what the same

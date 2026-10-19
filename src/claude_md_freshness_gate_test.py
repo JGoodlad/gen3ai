@@ -11,7 +11,7 @@ recorded argv costs a launch-crash-fix loop, and the root `CLAUDE.md`'s own c-fa
 that an allowlist entry can outlive its own fix and mislead every reader after it. Prose has no
 compiler, so it needs a gate.
 
-**Four checks, all mechanical.** None is a judgement about writing.
+**Five checks, all mechanical.** None is a judgement about writing.
 
 1. **Every repo-relative path a CLAUDE.md names must EXIST.** Scope is the five owned prefixes
    (`src/`, `designs/`, `data/`, `tools/`, `scripts/`) — `deps/` is a submodule plus untracked
@@ -24,6 +24,9 @@ compiler, so it needs a gate.
 4. **Every instruction file stays within its BYTE BUDGET** — the ratchet of `utils.instruction_budget`
    (rules there; numbers in `designs/ops/instruction_docs_budget.json`). Folded into this gate, not
    a gate of its own, so the root's pinned static-gate count does not move (audit U1).
+5. **Every `<file> § <section>` pointer in any doc or code comment must land on a section** of the file it names
+   (`utils.section_refs`: the forms, what resolves one and what is skipped are its docstring; `python -m
+   utils.section_refs` lists the dangling ones). Scope is the whole tree, not only the `CLAUDE.md` files.
 
 **Why the flag surface is an AST scan and not `build_parser()`.** Three reasons, in order of
 weight. (a) `import main.train_rl_agent` pulls torch and the whole training stack — measured
@@ -65,6 +68,7 @@ from typing import Dict, List, Set, Tuple
 import pytest
 
 from utils import instruction_budget as budget
+from utils import section_refs
 from utils.paths import repo_root
 
 pytestmark = pytest.mark.static   # the `static` budget tier (conftest._STATIC_BUDGET_BASE_S)
@@ -681,3 +685,61 @@ def test_meta_the_scans_find_each_kind(tmp_path):
     (config / "agents" / "a.md").write_text("12")
     assert budget.user_docs(main, config) == {budget.MEMORY_KEY: budget.Doc("memory", 5),
                                               budget.AGENT_KEY_PREFIX + "a.md": budget.Doc("agent", 2)}
+
+
+# --------------------------------------------------------------------------------------------
+# (e) SECTION POINTERS — `<file> § <section>` must land on a section (`utils.section_refs`)
+# --------------------------------------------------------------------------------------------
+
+@_SKIP
+def test_every_section_pointer_resolves():
+    bad, counts = section_refs.scan(_REPO_ROOT)
+    assert counts["checked"] > 500, f"only {counts['checked']} section pointers checked: the scan is broken"
+    assert not bad, (
+        "A doc or code comment points at a section that does not exist (`python -m utils.section_refs` lists "
+        "them):\n\n"
+        + "\n".join(f"  {r.source}:{r.line}  {r.target} § {r.what}  -- {why}" for r, why in bad)
+        + "\n\nRepoint the pointer to the section's NEW home (grep the heading's words; a section that moved to "
+        "`designs/<tree>/` is cited there), or state the fact instead of citing a section that is gone."
+    )
+
+
+def _scan(files):
+    return section_refs.scan_files(sorted(files), files.__getitem__)
+
+
+_REF_DOC = "# Top\n\n## 4. The four\n\n### 4.2 Sub\n\n## Copying text\n\nA **bold lead phrase here.** line\n\n## (c) The byte test\n"
+
+
+def test_meta_the_section_pointer_check_has_teeth():
+    """Revert-proof: each pointer form FAILS when its section is missing and PASSES when it exists."""
+    files = {"d/target.md": _REF_DOC, "d/js/probe.js": "// B. The CATEGORY FLIP\n// body\n"}
+    good = ("`d/target.md` §4.2, `target.md` § 4, `target.md` §c, `target.md` § \"Copying text\", "
+            "`target.md` → \"Copying text\", the \"Copying text\" section of `d/target.md`, "
+            "\"Copying text\" in `target.md`, `target.md` § Copying, `d/js/probe.js` section B, "
+            "`target.md` § \"bold lead phrase\" (a phrase in the body)")
+    bad = ("`d/target.md` §5.1, `target.md` § 9, `target.md` §z, `target.md` § \"Gone away\", "
+           "`target.md` → \"Gone away\", \"Gone away\" in `target.md`, `d/js/probe.js` section Q")
+    dangling, counts = _scan({**files, "d/good.md": good, "d/bad.md": bad})
+    assert [(r.source, r.what) for r, _ in dangling if r.source == "d/good.md"] == []
+    got = sorted(r.what for r, _ in dangling if r.source == "d/bad.md")
+    assert got == sorted(["5.1", "9", "z", '"Gone away"', "Q"]), got   # one row per distinct pointer
+    assert counts["checked"] >= 12
+
+
+def test_meta_the_section_pointer_check_skips_what_it_cannot_judge():
+    files = {
+        "d/target.md": _REF_DOC,
+        "d/amb/target.md": "## Other\n",
+        # a bare name with two homes passes when ANY has the section; a missing file FAILS
+        "d/a.md": "`target.md` § 4 and `nowhere.md` § 4",
+        # a hard-wrapped comment is joined, so a title that wraps still resolves
+        "d/c.rs": '//! see "Copying\n//! text" in `d/target.md`\n',
+        # history as a SOURCE is not checked; a `§` in a code string literal is not a pointer
+        "designs/CHANGELOG.md": "`target.md` § 99",
+        "d/t.py": 'x = f"{name}.md § " + y\n',
+        # the section belongs to the file named AFTER it
+        "d/b.md": "`target.md`, §2.1 of `d/amb/target.md` and \"Other\" in `d/amb/target.md`",
+    }
+    dangling, _ = _scan(files)
+    assert [(r.source, r.target) for r, _ in dangling] == [("d/a.md", "nowhere.md")], dangling

@@ -39,8 +39,8 @@ import traceback
 # lever.
 #
 # `launcher/child.py` already exports these for production, so runs under the launcher were never
-# affected — but `python src/main/train_rl_agent.py …` is a DOCUMENTED entry point (root CLAUDE.md
-# "Training — run directly") and had no such protection. Setting them here covers both paths; child
+# affected — but `python src/main/train_rl_agent.py …` is a DOCUMENTED entry point (root CLAUDE.md,
+# "Training + the Launcher") and had no such protection. Setting them here covers both paths; child
 # processes inherit them through `spawn`. `setdefault` so an explicit override still wins.
 for _v in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
     _os.environ.setdefault(_v, "1")

@@ -2383,7 +2383,7 @@ integration sweep found that seam RED since the end state became production (`ed
   option.
 - **The CUDA twin is UNREAD at the end-state graph.** The production CUDA smoke passed with compile on (2026-10-15) and the
   CUDA row of `compiled_first_update_test` holds a PASS from 2026-10-04 (88 s) — a graph older than the end state, i.e. a
-  stale PASS (testing.md "the slow-tier honesty rule"). Its read, for the training session's next GPU window:
+  stale PASS (testing.md "The SLOW-TIER LAST-KNOWN-STATUS gate"). Its read, for the training session's next GPU window:
   `GEN3AI_GPU_LEASE_TOKEN=<token> GEN3AI_TEST_ALLOW_GPU=1 scripts/ops/gpu_lock.sh timeout 1200 "$PY" -m pytest
   src/agents/model/compiled_first_update_test.py -m slow -k on_cuda -q -p no:cacheprovider` (~2-3 min: the 2026-10-04 run
   took 88 s; the end-state R1 compiles larger). It records its row in `slow_tier_status.json`.

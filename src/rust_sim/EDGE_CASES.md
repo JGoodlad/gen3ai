@@ -189,7 +189,7 @@ CRIT_ITEMs (Scope Lens family), Shell Bell, White Herb, Mental Herb, Macho Brace
 Forecast; the gen-2 berry twins stay unmodeled (gen3ou-unobtainable).
 
 Edge cases to model + **pin with a named regression test** when implemented (see the
-`tests/regression_test.rs` practice + CLAUDE.md "Regression tests"). Not yet built.
+`tests/regression_test.rs` practice + `designs/rust_sim/regression_pins.md`). Not yet built.
 
 > **User-noted 2026-06-28** (the first batch below). The common thread of most of these is
 > **TRAPPING + choice/request VALIDATION**, which the e2e fuzz currently *sidesteps* — the fuzz
@@ -954,7 +954,7 @@ takes `floor(maxhp/8)`, no heal) + add a named deterministic regression pin + re
 no-op set. ["liquid ooze reverses leech"]
 
 ## A/B-fuzz smoke findings (2026-07-03, master seed 20260703) — KNOWN UNFIXED, repro'd
-The first bounded A/B-fuzz smoke (`harness/ab_fuzz.js` — see CLAUDE.md "## A/B fuzzer") saved
+The first bounded A/B-fuzz smoke (`harness/ab_fuzz.js` — see `designs/rust_sim/fuzzers.md`) saved
 standalone repros under `harness/ab_fuzz_out/smoke_{randbats,random}/divergences/` (pool: 100/100
 clean). None of these touch the strict e2e gate (its corpus never exercises them). Replay any
 repro with `target/release/ab_replay <repro-dir>`; a fix must flip it to `ok` + get a named
@@ -993,7 +993,7 @@ deterministic regression pin. Triaged clusters:
 2. ✅ **FIXED (2026-07-03, `gen3_item_mechanics_v1`) — Pink Bow / Polkadot Bow + odd/rock/rose/
    wave incense** — were in the harness `MODELED_ITEMS` as "×1.1 type-boosters" but ABSENT from
    the port's hardcoded `resolve_atk_stat_mods` match-arm (the motivating drift bug of the
-   DATA-DRIVEN MECHANICS FRAMEWORK — see CLAUDE.md "## Data-driven mechanics"). The probe
+   DATA-DRIVEN MECHANICS FRAMEWORK — see `designs/rust_sim/data_driven_mechanics.md`). The probe
    settled the REAL math: the bows are a DIRECT `basePower * 1.1` float replace; the incenses
    are `chainModify([4915,4096])` ≈ **×1.2, NOT ×1.1**. The whole item-modifier class is now a
    dex-data lookup (`ItemData.type_boost`/`stat_mods`/`choice`), the species items (Thick Club /
@@ -1242,7 +1242,7 @@ auto_0710_1305 run's fresh repros.
 
 ## ✅ FIXED ×2 — the HANDLER-COMPLETENESS AUDIT's first run (`gen3_handler_audit_v1`, 2026-07-10)
 
-The audit (CLAUDE.md "## Data-driven mechanics" → "### Handler-completeness audit":
+The audit (`designs/rust_sim/data_driven_mechanics.md` → "Handler-completeness audit":
 `harness/dump_gen3_handlers.js --audit` + the committed manifest
 `tests/vectors/gen3_handler_audit.json`, wired into cargo via `tests/handler_audit_test.rs`)
 enumerated every resolved handler key on the 664-row reachable surface (74 abilities / 59 items /

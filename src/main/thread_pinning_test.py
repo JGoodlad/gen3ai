@@ -8,7 +8,7 @@ THE MEASUREMENT THIS DEFENDS (2026-08-02, 16-core box, 8 neural-opponent envs, i
 Each SubprocVecEnv worker runs a full CPU opponent forward; at the library default of one thread per
 core, N workers spawn N×cores competing threads and the box thrashes. `launcher/child.py` has always
 exported OMP/MKL=1, so production under the launcher was fine — but `python src/main/train_rl_agent.py`
-is a documented entry point (root CLAUDE.md, "Training — run directly") and had no protection, so the
+is a documented entry point (root CLAUDE.md, "Training + the Launcher") and had no protection, so the
 ~38× cliff was one forgotten `export` away on any direct run.
 
 The module-level env vars in train_rl_agent (inherited by `spawn`ed children) are the guard. (The second,

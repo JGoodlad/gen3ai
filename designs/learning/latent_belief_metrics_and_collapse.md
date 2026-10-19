@@ -167,8 +167,8 @@ better-targeted** at once. The same sharpening that shrinks total spread is what
 
 - **Healthy (current state):** `above_chance` ↑ (or holds) while `latent_std` ↓ → sharpening. Fine.
 - **Collapse:** `latent_std` → ~0 **AND** `above_chance` → 0 (or turns *down*) → everything mashing
-  to one point / one centroid. That pairing is the NO-GO (`src/agents/model/CLAUDE.md`: "std→0
-  while cosine→1 = collapse").
+  to one point / one centroid. That pairing is the NO-GO (the rule the model leaf
+  used to carry: std→0 while cosine→1 = collapse).
 - **Structural backstop:** the VICReg hinge re-engages the moment per-dim std drops below the 1.0
   target, so a *hard* collapse to 0 is actively prevented by design. At a mean std of 1.57 and
   falling, there's ~0.5 of headroom before the floor starts pushing back. If you ever see `latent_std`

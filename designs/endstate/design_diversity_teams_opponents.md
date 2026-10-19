@@ -172,7 +172,7 @@ draws". Evaluation is the fourth axis. The fifth axis is the coupling between th
 - Count dominates conditioning: fewer teams at the same budget made a STRONGER exploiter (+7.7 pp, pre-era).
 - Fine-tuning on five teams came out level, then worse at 1.78× the dose (stage A, `design_ladder_campaign.md`
   §2a).
-- The strength/piloting split of `design_ladder_campaign.md` §5.1 was never run.
+- The strength/piloting split of `design_ladder_campaign.md` §5 (item 1) was never run.
 - The exposure ordering matches X26's Kakuna scores. Trainee exposure runs home72 (≈ 2.1×) > away (19 teams that
   appear as 23 pool entries, ≈ 1.2×) > heldout72 (0). X26 scores 0.575 > 0.497 > 0.395. This is DESCRIPTIVE:
   the sets also differ in population and in Kakuna's familiarity (§3).
@@ -672,7 +672,7 @@ manifest that the gate accepts by content sha: a build, ≈ 0.25 agent-day.
 4. **The external panel is FIXED:** Kakuna on the frozen held-out panel plus in-pool. Its opponent and team
    distribution do not move with the treatment, so ON − OFF is interpretable.
 5. **Every number carries its `team_overlap` block and its CELL tag** (our source × opponent role × opponent
-   source; `design_ladder_campaign.md` §6.3, not built). Most of September's confounds were two cells averaged
+   source; `design_ladder_campaign.md` §6 (item 3), not built). Most of September's confounds were two cells averaged
    unseen.
 
 **Cost.** ≈ 18 GPU-h (A3's shape: 3 exploiters × 1.1 + 13 + 1.4). It is CONDITIONAL (§6). It is the existing

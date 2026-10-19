@@ -15,7 +15,7 @@ training package). Each section below is unchanged, including its dated measurem
 the aux-BCE coefficient were DELETED with the shaped critic's levers (deletion pass L1, config v131 —
 `designs/deleted_flags.md`); the sections below that describe them are gone. Design of record:
 `designs/ai_v12/design_winprob_only_critic.md`. The model-side half (the route, the version gate)
-is `src/agents/model/CLAUDE.md` → *The CRITIC MODE*; this is what `train()` does about it.
+is `designs/model/versioning.md` → *The CRITIC MODE*; this is what `train()` does about it.
 
 | | `shaped` | `winprob` |
 |---|---|---|
@@ -217,7 +217,7 @@ deleted. A resume or fork of a run that recorded a non-zero value is refused by
 ### THE VALUE LOSS has a MODE — the win-prob critic (`gen3_winprob_critic_mode_v1`)
 
 **`winprob` is the ONLY trainable critic** (a CONSTANT of every trainer namespace — `src/main/train/parser/objective.py`, `parser.set_defaults`; the `--critic` flag is DELETED, P11b batch (b), and a typed one is refused with its reason from `designs/deleted_flags.md`; `CRITIC_TRAINABLE_MODES` is deleted). `shaped` is the historical critic (`CRITIC_SHAPED`, still in `CRITIC_MODES` and the meaning of an ABSENT record, so an old shaped checkpoint still LOADS as an opponent, in meters and in the prober); a resume or fork of one is refused `FATAL_CONFIG` (D4) — run it pinned to its own commit. The `shaped` column below is the historical contrast. Design of record:
-`designs/ai_v12/design_winprob_only_critic.md`; the model-side half is `src/agents/model/CLAUDE.md`
+`designs/ai_v12/design_winprob_only_critic.md`; the model-side half is `designs/model/versioning.md`
 → *The CRITIC MODE*.
 
 | | `shaped` | `winprob` |

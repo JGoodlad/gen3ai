@@ -209,7 +209,7 @@ def _families() -> Dict[str, Dict[str, Any]]:
 # is a property of the trained model, not of the audit date — see `_load_overlays`.
 _GIGO_GENERATIONS = ("gen-1", "gen-2")
 
-# ARCHITECTURE.md section per node kind / id prefix. Small and verified by `--check`; a wrong link
+# The ARCHITECTURE.md section for each node kind / id prefix. Small and verified by `--check`; a wrong link
 # is worse than none, so anything unmapped stays null.
 DOC_SECTION = {
     "damage_op": "4. The `DamageOperator` output block",

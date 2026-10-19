@@ -193,5 +193,5 @@ a one-week run as its test.
 - `generalist_specialist_amortization_gap.md` — why the generalist needs tutors at all.
 - `on_policy_self_distillation.md` — the search-as-teacher variant of the same loss.
 - `credit_assignment_and_value_errors.md` §4 — what the same campaign taught about the critic.
-- `designs/research_state/critic_calibration_plan.md`, `ladder_readiness.md`; root `CLAUDE.md`
+- `designs/research_state/critic_calibration_plan.md`, `ladder_readiness.md`; `designs/ops/training_runbook.md`
   → *Exploitability*; `src/agents/training/CLAUDE.md` → distillation and fork flags.

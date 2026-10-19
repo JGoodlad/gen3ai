@@ -209,7 +209,7 @@ orthogonal re-init (extractor, then mlp extractor, gain √2), the retire hooks,
 optimizer, and `action_net` / `value_net` are RAISING stubs (`_NoFlatActionNet` / `_NoValueNet`). A stock SB3
 policy expects a single-tensor extractor and will break — doubly so under the pointer-native action head
 (`gen3_pointer_native_v1`): the action logits come from the `PointerNativeActionHead` over
-the extractor's `last_pointer_inputs` stash (per-logit inputs: `designs/ARCHITECTURE.md` § Heads). The startup `_run_roundtrip_test` and the snapshot/feature tests all
+the extractor's `last_pointer_inputs` stash (per-logit inputs: `designs/ARCHITECTURE.md` § 3 Heads). The startup `_run_roundtrip_test` and the snapshot/feature tests all
 unpack the tuple — keep that in mind when touching the extractor's return shape.
 
 **`value_pooled` is vf-only by construction.** `vf_combined` IS `value_pooled` and `pi_combined`

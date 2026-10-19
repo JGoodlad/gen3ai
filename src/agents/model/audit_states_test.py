@@ -3,7 +3,7 @@ ablation probes' state sampler and its LEGAL-MASK recovery.
 
 Bug 1 (sampler): `sorted(glob)` + break-at-cap sampled every state from the LEXICALLY first
 step dir (`step_10000032` < `step_2000016`), so every committed probe measurement was one
-mid-run trace dir silently labelled a pool average (design_op_tensors.md §2.5.1). The
+mid-run trace dir silently labelled a pool average (design_op_tensors.md §2.5, caveat 1). The
 concat-deletion acceptance clause requires stratified sampling; these tests fail if the sampler
 ever collapses to a single step dir again, and pin determinism (the outputs are committed
 measurement artifacts — no wall-clock, no unseeded RNG).

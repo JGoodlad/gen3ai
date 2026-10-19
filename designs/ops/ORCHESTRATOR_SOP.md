@@ -153,8 +153,8 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
 - **GIGO is the standing threat, because the code is written agentically** (owner, 2026-09-06): an
   incorrect metric, an un-fuzzed edge case, or a "byte-identical" that was not, costs days (the exploiter
   evals once ran against the WRONG team set and survived two rounds of push-back). So every brief asks
-  for edge-case tests; a FUZZ test (real bridge battles, intercepted protocol — root `CLAUDE.md`
-  → *What "fuzz test" means*) wherever a protocol or data pipeline is touched; a byte-identity check
+  for edge-case tests; a FUZZ test (real bridge battles, intercepted protocol — `designs/ops/testing.md`
+  → *What "fuzz test" means in this project*) wherever a protocol or data pipeline is touched; a byte-identity check
   (hash the artifact) wherever "unchanged" is claimed; and a THROWING producer+consumer guard for any
   order or key contract. A GIGO risk found in passing is flagged and addressed in the same pass, never
   deferred. When the owner says a result looks impossible, that is a GIGO alarm to VERIFY at the

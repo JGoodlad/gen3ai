@@ -530,6 +530,11 @@ things a scanner CAN check are checked, over every `CLAUDE.md` in the tree: **ev
 path must exist**, and **every `--flag` must resolve in some parser in this tree**. Unmarked,
 **0.84 s**, opt out with `GEN3AI_SKIP_CLAUDE_MD_GATE=1`.
 
+**Section pointers (a fifth check, same gate).** Any doc or code comment that writes `<file> § <section>`,
+`<file> → "Title"` or `"Title" in <file>` must land on a section of that file; `utils.section_refs` holds the
+forms and the rules (`python -m utils.section_refs` lists what dangles). A section that moved is cited at its new
+home; a pointer into a source file is checked only for comment labels (`// L. …`) and quoted phrases.
+
 The flag surface is an AST scan of `add_argument` literals (plus hand-rolled `sys.argv` flags)
 across `src/`, `tools/`, the Rust binaries, the Node harness and `scripts/*.sh` — **not**
 `build_parser()`, because importing the training parser alone costs 1.15 s across ~30 parsers and
@@ -1246,7 +1251,7 @@ kwargs. Every default is unchanged (unseeded, the RNG *is* the shared module), a
 design over battles should set all five. Measured: under the **same fixed sim seed**, unseeded arms
 played different games (84/145 turns vs 212/233, different winners); seeded they were identical.
 The table, the four seams, and the census that found them are in
-`src/agents/training/CLAUDE.md` → *GLOBAL-RANDOM COUPLING* and
+`designs/training/eval_and_rating.md` → *GLOBAL-RANDOM COUPLING* and
 `designs/research_state/measurements/global_random_sweep_2026-08-30.md`.
 
 ---

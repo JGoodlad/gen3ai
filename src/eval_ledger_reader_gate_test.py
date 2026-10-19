@@ -289,8 +289,8 @@ def test_every_ledger_reader_declares_its_scope():
     hits = [h for h in scan_tree(src_root()) if h.split(":")[0] not in ALLOWLIST]
     assert not hits, (
         f"{len(hits)} undeclared / raw ledger read(s). Every read goes through eval_ledger.read (or read_by_regime) "
-        "with a spelled-out ReaderDecl — purposes, regime, requests, selection, flags_ok, inference (design_"
-        "evaluation.md §0b.7). The allowlist is EMPTY:\n  " + "\n  ".join(hits))
+        "with a spelled-out ReaderDecl — purposes, regime, requests, selection, flags_ok, inference (designs/"
+        "endstate/design_evaluation.md §0b.7). The allowlist is EMPTY:\n  " + "\n  ".join(hits))
 
 
 @_SKIP
