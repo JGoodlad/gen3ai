@@ -27,6 +27,7 @@
    "4lowray": 1,
    "ABR": 2,
    "Aeonfa": 1,
+   "Archduck": 1,
    "Aroww": 1,
    "Arty224": 1,
    "Astamatitos": 1,
@@ -39,7 +40,7 @@
    "Dastardlydwarf": 3,
    "Dawn Dreams": 1,
    "DepressionCherry": 1,
-   "Derpy Monkey": 2,
+   "Derpy Monkey": 3,
    "EG Jhonx~": 1,
    "EarthTraveler413": 1,
    "FJ2K": 2,
@@ -55,7 +56,7 @@
    "I Click Things": 2,
    "Jimtastic": 1,
    "JoJ": 1,
-   "Johnald": 38,
+   "Johnald": 39,
    "Kalaveet": 1,
    "Kaleb1233": 1,
    "Kappa Kore": 2,
@@ -124,6 +125,7 @@
    "mrsunsmash": 3,
    "pixie909": 1,
    "pz": 1,
+   "retron5": 1,
    "roro": 2,
    "shinjey": 1,
    "starro433": 2,
@@ -209,7 +211,7 @@
    "Kappa Kore": 1,
    "King of Iron Frisk/xXBootyPopperXx": 1,
    "Kollin7": 26,
-   "L3W": 50,
+   "L3W": 51,
    "Lernaea": 1,
    "Livingbookshelf": 1,
    "LoD Shiddo": 1,
@@ -241,14 +243,14 @@
    "Rezzo": 1,
    "Ryan5374": 2,
    "SEA": 79,
-   "SPFunkM": 241,
+   "SPFunkM": 242,
    "Sapherion1": 1,
    "Scally_Wagon": 1,
    "Schachmatt490": 1,
    "Sepulo": 1,
    "Sevenor3": 1,
    "Shamankingaursu": 1,
-   "Shitrock enjoyer": 239,
+   "Shitrock enjoyer": 240,
    "Siglut": 1,
    "SirBananington": 1,
    "Slowpoke Fan": 1,
@@ -271,7 +273,7 @@
    "ZPanther": 1,
    "Zac": 4,
    "Zacpz": 1,
-   "Zpanther": 240,
+   "Zpanther": 241,
    "airports": 7,
    "arcery": 1,
    "austinxhensl": 1,
@@ -285,7 +287,7 @@
    "eternallywandering": 11,
    "genexys": 1,
    "giove97": 2,
-   "giraffefromholland": 241,
+   "giraffefromholland": 242,
    "goldyn_": 2,
    "greenapricotttss": 2,
    "henchanted": 1,
@@ -329,15 +331,12 @@
    "zmath": 3
   }
  },
- "crash_class_moves": [
-  "transform",
-  "imprison"
- ],
+ "crash_class_moves": [],
  "curator_cap": {
-  "cap": 241,
-  "curators": 262,
+  "cap": 242,
+  "curators": 263,
   "dropped_by_tier": {
-   "C": 1829
+   "C": 1828
   },
   "rule": "the largest c with c <= share x sum_k min(n_k, c); each curator keeps its first c teams in tier order (A, B, C), seeded order inside a tier",
   "share": 0.1,
@@ -346,21 +345,21 @@
    "Endill": 63,
    "Fruhdazi": 122,
    "Ibidem": 75,
-   "Johnald": 40,
-   "L3W": 59,
+   "Johnald": 41,
+   "L3W": 60,
    "Rainer24": 47,
    "SEA": 82,
-   "SPFunkM": 241,
-   "Shitrock enjoyer": 241,
-   "Zpanther": 241,
-   "giraffefromholland": 241,
+   "SPFunkM": 242,
+   "Shitrock enjoyer": 242,
+   "Zpanther": 242,
+   "giraffefromholland": 242,
    "johnnyg2": 70,
    "nyatalia": 35,
    "thelinearcurve": 57
   }
  },
  "data_file": "teams.jsonl.gz",
- "data_sha256": "7790fd06850e1e244ddb8e0ce57a1fd370d654ef5cd43da8edf779811db55576",
+ "data_sha256": "4af495c49a2df0266c8fe10c2691cea274e683da0f58c4e82d2a0124b7a17469",
  "default_tier": "ABC",
  "describe": {
   "ladder_strata_by_tier": {
@@ -371,37 +370,28 @@
    },
    "B": {
     "CORE": 1,
-    "FAR": 97,
+    "FAR": 101,
     "NEAR": 125
    },
    "C": {
-    "CORE": 105,
-    "FAR": 240,
-    "NEAR": 1515
+    "CORE": 96,
+    "FAR": 241,
+    "NEAR": 1528
    }
   },
   "pool_max_shared_mon_sets_hist": {
-   "0": 8,
-   "1": 287,
-   "2": 1290,
-   "3": 715,
-   "4": 91,
-   "5": 24,
+   "0": 9,
+   "1": 277,
+   "2": 1301,
+   "3": 712,
+   "4": 98,
+   "5": 27,
    "6": 0
   },
   "strata_rule": "ladder_weights_v1's rule: best SPECIES overlap with one sample team (home72 + away): CORE 6, NEAR 4-5, FAR <= 3 (descriptive)"
  },
  "dropped_ids": {
-  "crash_class": [
-   "sfv2_0772",
-   "sfv2_0859",
-   "sfv2_0877",
-   "sfv2_0903",
-   "sfv2_0962",
-   "sfv2_4484",
-   "sfv2_4691",
-   "sfv2_4989"
-  ],
+  "crash_class": [],
   "duplicate": [],
   "engine_unplayable": [
    "sfv2_0809",
@@ -1383,11 +1373,8 @@
  },
  "drops": {
   "crash_class": {
-   "by_tier": {
-    "B": 4,
-    "C": 4
-   },
-   "n": 8
+   "by_tier": {},
+   "n": 0
   },
   "duplicate": {
    "by_tier": {},
@@ -1496,7 +1483,7 @@
   "rule": "drop iff a Kakuna-pilot TSR rating < -170.0 Elo; an X26-only rating never drops; an unrated team is KEPT",
   "table": "designs/research_state/measurements/team_strength_2026-10-18/teams.tsv",
   "table_sha256": "574a9f46149d5970de93aa0de334fd913438597b1e95664074c2dcef382c551c",
-  "unrated_kept": 4244
+  "unrated_kept": 4252
  },
  "tiers": {
   "A": {
@@ -1507,16 +1494,16 @@
    ]
   },
   "AB": {
-   "n": 555,
-   "sha256": "e5bb6b70dd8225e646271e4a5252c348bee18e9fad1adc7463ebacbca7b5d09e",
+   "n": 559,
+   "sha256": "fa1219f6799f0d4ab93383b93d2d12b0e5b8c9a054419f629680f0c45b681095",
    "source_tiers": [
     "A",
     "B"
    ]
   },
   "ABC": {
-   "n": 2415,
-   "sha256": "65465d25252e3cf30d50e761c2b9f73749e8033d811114c62b2295b3ec777fc5",
+   "n": 2424,
+   "sha256": "7bcdc835c1077fb8a5fee3c972b9703e45b419f4d46199d86f8bca1408abf83d",
    "source_tiers": [
     "A",
     "B",

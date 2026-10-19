@@ -14824,3 +14824,14 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
 - **Tests.** `service_test.py`: four CPU tests with mocked stats, which fail on revert. `service_cuda_test.py`: the arming
   check (slow, GPU, a subprocess under `expandable_segments:True`), NOT YET RUN because no lease was held. Docs:
   `endstate/program_rust_core.md` (the T2 lifecycle paragraph) and the `TECH_DEBT_BACKLOG.md` row.
+
+## 2026-10-19 — `w_forum_v1`: the Transform / Imprison exclusion LIFTED (corpus rebuild only; no model / config / obs / signature change, no training code change)
+- **What.** `utils.team_corpora.build_w_forum.CRASH_MOVES` is empty: the Transform + Hidden Power belief crash (`0cef9320a`) and
+  the Imprison "livelock" (verified not one, `752aaf16a`) are closed, so no crash class is open. The `crash_class` rule and
+  the manifest's `crash_class_moves` stay, so a newly opened class is re-added there.
+- **Result.** 2,415 → **2,424 teams** (A 332 / AB 555 → 559 / ABC 2,415 → 2,424); data sha256 `4af495c4…7469`, ABC tier sha256
+  `7bcdc835…83d`; curator cap 241 → 242. The C tier was RE-SHUFFLED (580 teams new, 571 left): a pin at `c1b0c1f0` still
+  reads the old corpus. Re-soaked on the whole ABC tier (the self-check env core, every team 10x per seat): 24,240 battles,
+  0 core errors, 42 stall forfeits. A run reads the corpus only through `--team-mix`; X34 and X26 do not pass it.
+- **Docs.** `designs/endstate/design_diversity_teams_opponents.md` (§4.1, F-DV-8, F-DV-21, the change log), `design_compute_efficiency.md`,
+  `design_world_sampler.md`, `designs/training/team_curriculum.md`, `EXPERIMENT_BACKLOG.md` DV-5, X35 `STAGED_PLAN.md` §7.

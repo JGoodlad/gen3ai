@@ -18,8 +18,9 @@ manifest counts each rule per tier:
 3. ``pool_exact``: the same six MON SETS (``gen3_team_overlap_v1``) as a team of our current 719-team pool.
 4. ``panel``: an exact copy or a NEAR NEIGHBOUR (≥ 4 shared mon sets with one team) of ANY registered panel
    (``main.heldout_panels.hits``; the in-pool home72 / away panels included).
-5. ``crash_class``: a team carrying Transform or Imprison (TECH_DEBT (a) P1: the Transform + Hidden Power tracker crash;
-   the UNVERIFIED Imprison livelock), excluded until fixed (§4.1 step 4(b), F-DV-8).
+5. ``crash_class``: a team carrying a move of an OPEN crash class (``CRASH_MOVES``). EMPTY since 2026-10-19: Transform +
+   Hidden Power (the tracker crash, ``0cef9320a``) and Imprison (verified NOT a livelock, ``752aaf16a``) are closed, so
+   the 8 teams they excluded are IN; the rule stays so a newly opened class can be re-added (§4.1 step 4(b), F-DV-8).
 6. ``validator``: the pinned ``TeamValidator('gen3ou')`` rejects the REPAIRED text, or Showdown cannot import it as six
    Pokemon (``src/rust_sim/harness/ladder_corpus_filter.js``, the ladder corpus's own filter).
 7. ``engine_unplayable``: a species / move / item / ability the Rust ENGINE does not run (``scan_move_probe``).
@@ -62,7 +63,10 @@ HP_SEED = 20261019
 ORDER_SEED = 3801
 CURATOR_SHARE_CAP = 0.10
 STRENGTH_CUT_ELO = -170.0
-CRASH_MOVES = ("transform", "imprison")
+#: Moves of an OPEN crash class: a team carrying one is dropped (rule ``crash_class``). EMPTY since 2026-10-19: the two
+#: classes that stood here are closed (Transform + Hidden Power belief crash, ``0cef9320a``; Imprison verified NOT a
+#: livelock and pinned, ``752aaf16a``). Re-add a move here if a crash class is ever opened again, and rebuild.
+CRASH_MOVES: Tuple[str, ...] = ()
 TIER_ORDER = ("A", "B", "C")
 TIERS = {"A": ("A",), "AB": ("A", "B"), "ABC": ("A", "B", "C")}
 DEFAULT_TIER = "ABC"

@@ -101,7 +101,7 @@ This doc answers them, after challenging the reading itself (§8).
     smogon_forum symmetric, 400 games each.
   - The parallel `heldout72_hpfix` read supplies S(H, H).
 - **The levers (§4), ranked by expected information per GPU-hour:**
-  - **D1 WIDEN fork at the plateau (X38; LAUNCH-READY 2026-10-19, NEEDS GO).** The pool plus `w_forum_v1`, 2,415
+  - **D1 WIDEN fork at the plateau (X38; LAUNCH-READY 2026-10-19, NEEDS GO).** The pool plus `w_forum_v1`, 2,424
     human-built Smogon forum teams minus every registered panel and its near neighbours (the forum corpus replaced
     the ≈ 22.7k `hl_05_26` design, §4.1), at a 50 % draw share on both sides (`--team-mix w_forum_v1@ABC:0.5`), a fork
     of P\* = X26 @ 280M against X35's shared control C0 (**≈ 13 GPU-h**); dry-run validated at pin `c1b0c1f0`
@@ -473,18 +473,20 @@ Smogon-only; widen OUR side (X37a: the gap is PILOTING unfamiliar teams); no own
   109 transcriptions are not used, v2 F2) → the HP repair only where HP is untyped (`gen3_hp_repair_v1`, the
   heldout72_hpfix function: **0 teams needed it**; v2 had dropped the 8 typeless-HP pastes with no IVs line) → minus
   our pool's exact teams (711) → minus every REGISTERED panel's teams and near neighbours (≥ 4 shared mon sets, the
-  in-pool home72 / away included: 249) → minus the open crash classes, Transform and Imprison (8) → the pinned
+  in-pool home72 / away included: 249) → minus the open crash classes (0 now: Transform and Imprison, 8 teams, were excluded until their classes closed and
+  became eligible 2026-10-19; 6 of them are in the final ABC after the curator cap) → the pinned
   validator on the repaired text (0 fail) → the engine's coverage oracle (9: Shell Bell, Blast Burn, Mud Sport,
   Nightmare, Psywave, Sky Attack, Spite) → the lenient TSR cut (drop iff a Kakuna rating < −170 Elo; **0 rated**:
   every TSR-rated forum team is a forum72 panel team, so the cut is a no-op and all 4,244 survivors are UNRATED) →
-  a CURATOR CAP (F4): the largest c with c ≤ 10 % of the capped total, c = **241**; each curator keeps its first c in
-  tier order A, B, C (1,829 tier-C teams of the four mass curators dropped).
-- **Result:** **2,415 teams** in nested tiers `A` 332 ⊂ `AB` 555 ⊂ `ABC` 2,415 (the default); 262 curators, four at
+  a CURATOR CAP (F4): the largest c with c ≤ 10 % of the capped total, c = **242**; each curator keeps its first c in
+  tier order A, B, C (1,828 tier-C teams of the four mass curators dropped).
+- **Result:** **2,424 teams** in nested tiers `A` 332 ⊂ `AB` 559 ⊂ `ABC` 2,424 (the default; data sha256 `4af495c4…7469`, tier
+  ABC sha256 `7bcdc835…83d`); 263 curators, four at
   the cap (giraffefromholland, Zpanther, Shitrock enjoyer, SPFunkM; 10 % each). Against our pool: max shared mon sets
   0–3 for 2,300, 4–5 for 115 (pool near neighbours are kept: they are new teams). Ladder strata (descriptive, the
   `ladder_weights_v1` species rule): CORE 123 / NEAR 1,925 / FAR 367, i.e. it carries off-meta FAR cores.
-- **Crash soak** (`python -m utils.team_corpora.soak w_forum_v1 --rounds 10`, the emission self-check env core): 24,150
-  battles, every team 10× in each seat (p1 uniform over its mask, p2 the heuristic bot), **0 core errors**, 50 stall
+- **Crash soak** (`python -m utils.team_corpora.soak w_forum_v1 --rounds 10`, the emission self-check env core): 24,240
+  battles, every team 10× in each seat (p1 uniform over its mask, p2 the heuristic bot), **0 core errors**, 42 stall
   forfeits (`w_forum_v1/soak_selfcheck.json`). It does NOT check sim-vs-port agreement (the Node differential gates
   were not run on this corpus: F-DV-21).
 - **Exposure at s = 0.5:** a 20M fork plays ≈ 570k games, so each corpus team is drawn ≈ 118 times per side against
@@ -523,8 +525,9 @@ manifest and sha256s, like `src/utils/ladder_corpus`.
    - (a) every team of every registered held-out panel (§5.6), and every NEAR NEIGHBOUR of one (≥ 4 shared mon
      sets): `hl_05_26` holds repeat teams from the same players, so an exact-only exclusion leaks;
    - (b) teams that reach OPEN off-pool crash classes: Transform + Hidden Power (TECH_DEBT (a) P1: 20 corpus teams;
-     a training crash, not a skipped battle) and Imprison (a possible livelock, UNVERIFIED). They are excluded
-     until fixed.
+     a training crash, not a skipped battle) and Imprison (a possible livelock, UNVERIFIED) were excluded until fixed.
+     **Both are CLOSED (2026-10-19: `0cef9320a`, `752aaf16a`), so `w_forum_v1` no longer excludes them**
+     (`build_w_forum.CRASH_MOVES` is empty; a newly opened class is re-added there).
 5. A full-tier soak through the Rust env, in the emission self-check build, before any launch: 0 crashes, 0
    divergences.
 
@@ -553,7 +556,7 @@ tree), landed BEFORE X34 launches. **Owner / orchestrator choice (Q2, §9).**
 - Fill artifacts (EVs / natures) taught as truth.
 - Crash classes off-pool.
 - A pin hazard if the corpus is placed wrong.
-- Validation time at startup: MEASURED 2026-10-19, 2,415 corpus teams validate in ≈ 5 s per side through Node (the
+- Validation time at startup: MEASURED 2026-10-19, 2,415 corpus teams (the pre-lift size; 2,424 now) validate in ≈ 5 s per side through Node (the
   pool × 5 = 3,595 teams in 7.4 s); the corpus is also verified by sha256 against its manifest.
 
 ### 4.2 L2 — the FORK at the plateau that widens the pool: D1
@@ -1118,7 +1121,7 @@ The first D1 read lands ≈ 13 GPU-h after A1's (≈ 39 GPU-h into batch 1).
 
 | build | what | size | must land before |
 |---|---|---|---|
-| B-D1 | the W_hl corpus: T8's HP repair (one function with `heldout72_hpfix`'s), validation, the exclusions (every frozen panel and its near neighbours, smogon_forum and P72 included; the crash classes), the manifest, a full-tier soak | **BUILT 2026-10-19 as `w_forum_v1`** (the forum corpus replaces W_hl for X38, §4.1): 2,415 teams, crash soak 0 errors; the Node differential soak not run (F-DV-21) | `X35_PIN_k` |
+| B-D1 | the W_hl corpus: T8's HP repair (one function with `heldout72_hpfix`'s), validation, the exclusions (every frozen panel and its near neighbours, smogon_forum and P72 included; the crash classes), the manifest, a full-tier soak | **BUILT 2026-10-19 as `w_forum_v1`** (the forum corpus replaces W_hl for X38, §4.1): 2,424 teams (2,415 before the crash-class lift, same day), crash soak 0 errors; the Node differential soak not run (F-DV-21) | `X35_PIN_k` |
 | B-D2 | `--team-mix <corpus>:<share>`: a `MatchupSpec` source kind for both builders, recorded in `metadata.json` (spec hash), restored on resume; byte-identical when absent; a pin-safe corpus path | **BUILT 2026-10-19**: `--team-mix <corpus>[@<tier>]:<share>` + `--team-mix-sides {both,trainee,opponent}` (D1 = both, D2 = opponent); `TeamSource.mix` with the corpus ident in the spec hash ONLY when declared (flagless hashes pinned); eval stays on the pool; startup FATAL_CONFIG on an unverifiable corpus, a held-out panel hit or a validator drop; a same-run resume restores it, a FORK does not inherit it; ≈ 11 s startup on `w_forum_v1@ABC`, both sides. Detail: `designs/training/team_curriculum.md` "The team mix" | `X35_PIN_k` |
 | B-D3 | the held-out panel registry (pointing at `ladder_weights_vN`) + the refusing startup guard (exact + near neighbour, by content) + `--team-exclude` | **REGISTRY BUILT 2026-10-19** (`heldout_panels.json`, `main.heldout_panels`); the guard rides `--team-mix` (B-D2); `--team-exclude` not built (no arm needs it) | B-D1, `X35_PIN_k` (and D5) |
 | B-D4 | P72: generate, sanitise, validate, overlap-check (pool, `competitive`, `hl_05_26`, smogon_forum), assign strata, install for Metamon; the X37a configs (per-stratum Metamon sub-sets of heldout72_hpfix; the asymmetric cells' per-side sources) | opus-medium, ≈ 0.25 agent-day | X37a |
@@ -1308,9 +1311,10 @@ held-out gain and in-pool cost, is the right design. Three amendments:
   reads is UNSAFE (GIGO).
 - **F-DV-7.** The "untaught 8" are POOL teams the generalist pilots. Only teacher pins are guarded. A read that
   calls them unseen for X26-era models is wrong.
-- **F-DV-8.** Off-pool crash classes are open and reachable from W_hl (TECH_DEBT (a) P1, Transform + Hidden
+- **F-DV-8.** Off-pool crash classes were open and reachable from W_hl (TECH_DEBT (a) P1, Transform + Hidden
   Power: 20 corpus teams) and possibly from Imprison (UNVERIFIED livelock). In training these become run
-  crashes, not skipped battles.
+  crashes, not skipped battles. **CLOSED 2026-10-19** (`0cef9320a`: the Transform + Hidden Power belief; `752aaf16a`:
+  Imprison is not a livelock): `w_forum_v1` no longer excludes either; no open crash class remains.
 - **F-DV-9.** D0a's per-team splits are post hoc, many-way and confounded with team strength. They are cited
   only as description. The HP-Dark gradient appears in BOTH models.
 - **F-DV-10.** Not verified here:
@@ -1350,7 +1354,7 @@ held-out gain and in-pool cost, is the right design. Three amendments:
     intervals are somewhat optimistic.
 - **F-DV-19 (TSR, hypothesis).** A same-family opponent may under-punish unfamiliar-team piloting (§5.4's caution).
   GEN-M could under-measure the deficit. UNVERIFIED.
-- **F-DV-21 (X38 build).** `w_forum_v1`'s soak ran on the Rust env core only (0 core errors in 24,150 battles); the
+- **F-DV-21 (X38 build).** `w_forum_v1`'s soak ran on the Rust env core only (0 core errors in 24,240 battles, re-run after the crash-class lift); the
   sim-vs-port differential gates (`ab_fuzz` / `gen_sim_bridge_diff`) have no team source for it and were not run.
   A divergence would not crash a run; it would train on a slightly wrong game for the affected teams.
 - **F-DV-22 (X38 build).** The forum corpus is ~10× smaller than W_hl (2,415 vs ≈ 22.7k), so at s = 0.5 each corpus
@@ -1392,4 +1396,5 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 | 2026-10-19 | **TSR READ: team strength per set** (team-strength worker; PREREG `119313b9`, tool `main.team_strength`) | heldout72_hpfix is ~70 Elo weaker than forum72 in BOTH pilots' hands (X26 −71 [−147, −2], Kakuna −69 [−188, +43]; D1 UNDECIDED at the 35-Elo bar, X26 detects it marginally); P72 MATERIALLY WEAKER (−146); forum72 ≈ home72; cross-pilot ρ 0.33 (NOT SHOWN by the registered, 0-biased interval); X37a's piloting gap SURVIVES strength matching (+0.28 [+0.12, +0.44] on Kakuna-rated teams; +0.11 set-level). PROPOSED (not adopted): forum v2 tier A ahead of W_hl as the widening source, screened leniently and never by X26's rating alone | reading H's weakness as the cause of the reverse-cell loss (matching removes 3–9 pp of 20–31); screening a widening pool by X26's own rating (it drops off-meta teams X26 pilots badly) | `measurements/team_strength_2026-10-18/`; ledger 2026-10-19 *TEAM STRENGTH* |
 | 2026-10-19 | **B-D3: the held-out panel registry FROZEN before any widening corpus** (X38 launch-ready worker) | `designs/research_state/heldout_panels.json` (`gen3_heldout_panels_v1`): home72, away (in-pool), heldout72 (retired), heldout72_hpfix, forum72, p72 (held out from training), each by content digest + manifest sha256 + draw rule + seed; one near-neighbour radius (≥ 4 shared mon sets); `ladder_weights_v1` by sha256. Reader `main.heldout_panels` (verify, `hits`, `contamination`) | the registry with per-panel radii (one rule is easier to audit); registering D5's leave-out now (not carved; private to D5) | `main/heldout_panels_test.py`; the pool reads 0 hits against every held-out panel |
 | 2026-10-19 | **B-D1 as `w_forum_v1`: X38's widening corpus BUILT from the forum v2 VERBATIM teams** (X38 launch-ready worker, orchestrator brief) | `src/utils/team_corpora/w_forum_v1/` (pin-safe `src/`, Q2): 2,415 teams, tiers A 332 ⊂ AB 555 ⊂ ABC 2,415; excludes our pool's exact teams, every registered panel and its near neighbours (≥ 4 shared mon sets), Transform / Imprison, engine-unplayable ids; HP repair where untyped (0 needed); the lenient TSR cut (0 rated, a no-op); curator cap c = 241 (≤ 10 %); crash soak 24,150 battles, 0 core errors | W_hl first (the TSR read: replay reconstructions ~70 Elo weaker than forum teams); tier A only (332 teams: under half the pool's size); no curator cap (four curators would hold 3,294 of 5,330); screening by X26's rating (it drops the off-meta teams the widening needs) | `w_forum_v1/manifest.json`, `soak_selfcheck.json`; `utils/team_corpora/team_corpora_test.py` |
+| 2026-10-19 | **`w_forum_v1` crash-class exclusion LIFTED** (corpus-lift worker, orchestrator brief) | `build_w_forum.CRASH_MOVES` is EMPTY (Transform + Hidden Power closed by `0cef9320a`; Imprison verified not a livelock, `752aaf16a`); rebuilt: **2,424 teams**, tiers A 332 ⊂ AB 559 ⊂ ABC 2,424, data sha256 `4af495c4…7469`, ABC tier sha256 `7bcdc835…83d`, curator cap c = 242 (263 curators); soak re-run on the whole ABC tier, 24,240 battles, 0 core errors, 42 stall forfeits; **the C tier was RE-SHUFFLED, not just extended** (the seeded within-tier order and the curator cap move with the exclusion set: 580 teams are new and 571 left vs the 2,415 corpus; tier A unchanged), and a run pinned at `c1b0c1f0` / `fc467f1f` still reads the 2,415 corpus (tier sha `65465d25…7fc5`) | none (a rebuild is the corpus's own recipe) | `w_forum_v1/manifest.json`, `soak_selfcheck.json` |
 | 2026-10-19 | **X38 / D1 LAUNCH-READY on paper** (X38 launch-ready worker; NEEDS the orchestrator's GO) | b-ON = C0 + `--team-mix w_forum_v1@ABC:0.5 --team-mix-sides both` (B-D2 `c1b0c1f0`): BOTH sides, the doc's D1 (own side widened per the owner, opponent side with it; D2 stays the opponent-only follow-up); eval on the pool; `main.x35.kit` arm `d1` in BATCH1 after the A1 / C0 ABBA; `checkargs --pin c1b0c1f0` exit 0 and `launcher --dry-run` "would launch", FORK of `rb_x26_s2601`, +20M from the real P\* (280,000,170); B-D7 `main.h2h --panel` and the D1 decision function `main.x35.d1` (self-check 10 / 10) built | trainee-only widening (the owner's words allow it; it is one token, `--team-mix-sides trainee`, and would be a different arm than the registered D1); `hl_05_26` (superseded by the forum corpus for X38) | x35 STAGED_PLAN §7; `main/x35/kit_test.py`, `main/x35/d1_test.py` |

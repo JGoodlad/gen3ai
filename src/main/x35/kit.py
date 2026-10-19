@@ -50,7 +50,7 @@ FORK_GIB = 20.68
 PHASE1_SCHEMA = "x35_phase1_exploiters_v1"
 TOY_EXTRAS = ["--snapshot-ladder-games", "0", "--supply-starve-cycles", "self_play_pool=0"]
 #: D1 / X38's ONE lever (``design_diversity_teams_opponents.md`` §4.2): half of each side's draws from the pin-safe
-#: forum corpus (``utils.team_corpora``, tier ABC = 2,415 teams), both sides; eval stays on the pool.
+#: forum corpus (``utils.team_corpora``, tier ABC = 2,424 teams), both sides; eval stays on the pool.
 D1_LEVER = ("--team-mix", "w_forum_v1@ABC:0.5", "--team-mix-sides", "both")
 
 

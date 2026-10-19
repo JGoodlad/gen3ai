@@ -283,7 +283,7 @@ stated.
   with F's honest screen, so a corpus team never has to fit the log's damage numbers. This is Tier 1's POOL arm
   (`measurements/hidden_info_tier1_2026-10-13/pool_worlds.py`) with an OPEN corpus and a backoff.
 - **Data.**
-  - The forum collection: `utils.team_corpora` `w_forum_v1`, 2,415 teams with the pool's exact copies removed (the full
+  - The forum collection: `utils.team_corpora` `w_forum_v1`, 2,424 teams (2,415 when the screen ran, before the crash-class lift) with the pool's exact copies removed (the full
     collection is 5,330, `measurements/smogon_forum_teams_v2_2026-10-18/`).
   - The ladder-replay corpus: `utils.ladder_corpus`, 22,813 `hl_05_26` teams. Their unrevealed parts were filled by
     Metamon's reconstruction, by a method UNVERIFIED here.

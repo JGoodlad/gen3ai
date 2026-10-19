@@ -44,7 +44,11 @@ def test_the_corpus_holds_no_exact_pool_team_and_no_open_crash_class():
     ref = Reference(parse_items([(str(i), t) for i, t in enumerate(pool)]))
     c = TC.load_corpus("w_forum_v1", "ABC")
     assert not [i for i, t in zip(c.ids, c.texts) if ref.keys[parse_team(t).key]]
+    # no OPEN crash class remains (CRASH_MOVES is empty since the Transform/HP and Imprison classes closed, 2026-10-19);
+    # the filter stays: were a class opened again, a move re-added to CRASH_MOVES must leave the corpus free of it
     assert not [i for i, t in zip(c.ids, c.texts) if set(B.moves_of(t)) & set(B.CRASH_MOVES)]
+    assert B.CRASH_MOVES == (), "an open crash class is registered: the corpus must be rebuilt without its teams"
+    assert _manifest()["crash_class_moves"] == list(B.CRASH_MOVES) and _manifest()["drops"]["crash_class"]["n"] == 0
     assert len({parse_team(t).key for t in c.texts}) == len(c), "no two corpus teams share all six mon sets"
 
 

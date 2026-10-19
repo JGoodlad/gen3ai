@@ -74,11 +74,11 @@ conflates pilot competence with team strength (see the tracking section).
   differs). **A FORK does NOT inherit it** (announced when the parent had one): the mix is an arm's LEVER, not a
   recipe knob (`designs/production_config.json` declares none), and a fork declares its own matchup — so a fork of
   X26 never picks one up, and a fork of a mix arm trains on the pool unless it TYPES the flag.
-- **Startup cost, measured** (2026-10-19, rule-5b cores): the real `w_forum_v1@ABC` (2,415 teams) at both sides —
+- **Startup cost, measured** (2026-10-19, rule-5b cores): the real `w_forum_v1@ABC` (2,415 teams at the time; 2,424 after the 2026-10-19 crash-class lift) at both sides —
   corpus load + verify 0.03 s, trainee builder 6.0 s, opponent builder 5.1 s (each validates the pool AND the corpus
   through Node; 0 drops), the guard 0.18 s (0 panel hits, 0 pool copies). A 3,595-team stand-in (the pool × 5)
   validated in 7.4 s. The Rust core's startup validation of the larger table is bounded by the corpus soak's
-  141.6 s wall (24,150 battles, selfcheck build, `w_forum_v1/soak_selfcheck.json`); not measured separately
+  141.6 s wall (24,150 battles, selfcheck build, quiet box; the 24,240-battle re-soak of the 2,424-team corpus took 382.5 s at nice 19 on 3 cores beside a live run); not measured separately
   (**UNVERIFIED** in isolation).
 
 ## Team-blocked episodes (`--team-block-episodes`)
