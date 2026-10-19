@@ -105,6 +105,43 @@ class TestBuildDecisionTable(unittest.TestCase):
         self.assertIsNone(r1["dV"])                      # last decision has no next value
         self.assertTrue(r1["faint_opp"])
 
+    def _with_broken(self, td, n_broken):
+        """The good fixture battle plus `n_broken` battles whose `_states.npz` is missing."""
+        import pathlib
+        sess = self._make(pathlib.Path(td))
+        good = sess._battles[0]
+        for k in range(n_broken):
+            smf = pathlib.Path(td) / f"loss_s0_9{k:02d}_summary.json"
+            smf.write_text(json.dumps({"meta": {"result": "LOSS"}, "invocations": []}))
+            sess._battles.append({**good, "id": str(smf), "short_id": f"step_100/heuristic/loss_9{k:02d}"})
+        return sess
+
+    def test_a_battle_that_fails_to_load_is_counted_and_named_never_dropped_silently(self):
+        """REGRESSION (audit 2026-10-19): a bare `except Exception: continue` skipped any battle
+        that failed to load and changed the counts with nothing said. A skip within the bar is
+        COUNTED in `coverage` (and the digest), with its reason; past the bar the table is refused."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            sess = self._with_broken(td, 1)
+            rows = forensics.build_decision_table(sess, max_skipped_share=0.5)
+            cov = rows.coverage
+            self.assertEqual(len(rows), 2)                       # the good battle's two decisions
+            self.assertEqual((cov["n_battles_matched"], cov["n_battles_loaded"], cov["n_battles_skipped"]),
+                             (2, 1, 1))
+            self.assertEqual(cov["skipped"][0]["battle"], "step_100/heuristic/loss_900")
+            self.assertIn("FileNotFoundError", cov["skipped"][0]["reason"])
+            self.assertEqual(forensics.decision_table_digest(rows)["coverage"], cov)
+            with self.assertRaises(forensics.DecisionTableSkips) as ctx:
+                forensics.build_decision_table(sess)             # 50 % > the default 1 % bar
+            self.assertEqual(ctx.exception.coverage["n_battles_skipped"], 1)
+
+    def test_a_clean_table_reports_full_coverage(self):
+        import tempfile, pathlib
+        with tempfile.TemporaryDirectory() as td:
+            rows = forensics.build_decision_table(self._make(pathlib.Path(td)))
+        self.assertEqual(rows.coverage["n_battles_skipped"], 0)
+        self.assertEqual(rows.coverage["n_battles_loaded"], 1)
+
     def test_category_filter(self):
         import tempfile, pathlib
         with tempfile.TemporaryDirectory() as td:

@@ -166,15 +166,17 @@ class _ReadingMixin:
     # -- consolidated forensic exports (forensics.py) -----------------------
 
     def decision_table(self, *, steps=None, opponents=None, outcomes=None,
-                       categories=None, max_battles=None) -> "list[dict]":
+                       categories=None, max_battles=None, max_skipped_share=None) -> "list[dict]":
         """MODEL-FREE per-decision forensic table over the matching battles (one row each:
         move-category, our/opp species+HP, policy ``conf``, ``reward``, critic ``dV``,
         incoming-KO ``pko`` belief, faint flags, outcome). The single source for the
-        softmax/dV/belief-decode plumbing every behavioural-hypothesis check reuses."""
+        softmax/dV/belief-decode plumbing every behavioural-hypothesis check reuses. The returned
+        table's ``coverage`` counts the battles that failed to load (above ``max_skipped_share``,
+        default `forensics.MAX_SKIPPED_SHARE`, it raises `forensics.DecisionTableSkips`)."""
         from main.prober import forensics
         return forensics.build_decision_table(
             self, steps=steps, opponents=opponents, outcomes=outcomes,
-            categories=categories, max_battles=max_battles)
+            categories=categories, max_battles=max_battles, max_skipped_share=max_skipped_share)
 
     # -- model-free battle digest -------------------------------------------
 

@@ -83,6 +83,32 @@ def _softmax_chosen(logits_row: np.ndarray, chosen_idx: int) -> float:
 # --------------------------------------------------------------------------- #
 # Decision table
 # --------------------------------------------------------------------------- #
+# A battle that fails to load (a missing / corrupt `_states.npz`, an unexpandable trace) was once a bare
+# `continue`: the counts shrank and nothing said so (GIGO). Nothing in the pipeline deletes a battle's npz
+# while keeping its summary (`designs/prober/retention.md`), so a skip is an ANOMALY, not a state of the data,
+# and it is not random: the trace quota prefers losses and a recording that broke is likelier a long or odd
+# game. The digest reports shares and medians to 0.001; a non-random 1 % hole can move a category share or
+# the cure uptake by a full point, which is the size of effect these checks read. So above 1 % the table is
+# refused; at or below it, every skip is counted and listed in `coverage`.
+MAX_SKIPPED_SHARE = 0.01
+_SKIPPED_LISTED = 50                 # how many skipped battles `coverage["skipped"]` lists by name
+
+
+class DecisionTableSkips(ValueError):
+    """More than the allowed share of the matched battles failed to load. ``.coverage`` carries the count."""
+
+    def __init__(self, message: str, coverage: dict) -> None:
+        super().__init__(message)
+        self.coverage = coverage
+
+
+class DecisionTable(list):
+    """The decision rows (a plain ``list`` of dicts) plus ``coverage``: how many matched battles loaded,
+    how many were skipped and why. A slice is a plain list — read ``coverage`` off the table itself."""
+
+    coverage: dict = {}
+
+
 def build_decision_table(
     session,
     *,
@@ -91,22 +117,29 @@ def build_decision_table(
     outcomes: Optional[Sequence[str]] = None,
     categories: Optional[Sequence[str]] = None,
     max_battles: Optional[int] = None,
-) -> "list[dict]":
+    max_skipped_share: Optional[float] = None,       # None = MAX_SKIPPED_SHARE
+) -> "DecisionTable":
     """One forensic row per captured decision (``has_state==1``) across the matching battles.
 
     Reuses ``session.battles()`` for resolution (the discovery shard-prefix fix makes ``outcome``
     reliable), then loads summary+npz from each battle's path. ``dV`` is the raw critic value change
     ``V[i+1]-V[i]`` (NOT γ-discounted — the per-step critic move, the self-KO mechanism signal).
     ``conf`` is the softmax probability the policy put on the chosen action.
+
+    A battle that fails to LOAD is never silently dropped: it is counted, with its reason, in the
+    returned table's ``coverage``, and more than ``max_skipped_share`` (default `MAX_SKIPPED_SHARE`)
+    of the matched battles skipped RAISES `DecisionTableSkips` (see the constant for why).
     """
+    limit_share = MAX_SKIPPED_SHARE if max_skipped_share is None else float(max_skipped_share)
     off = ObsOffsets.resolve()
     steps_s = set(steps) if steps else None
     opps_s = set(opponents) if opponents else None
     outs_s = set(outcomes) if outcomes else None
     cats_s = set(categories) if categories else None
 
-    rows: "list[dict]" = []
+    rows = DecisionTable()
     n_battles = 0
+    skipped: "list[dict]" = []
     for b in session.battles():
         if steps_s is not None and b["step"] not in steps_s:
             continue
@@ -123,7 +156,8 @@ def build_decision_table(
             d = np.load(smf.replace("_summary.json", "_states.npz"))
         except CoreTraceMismatch:
             raise                          # a core trace that disagrees with its record is REFUSED
-        except Exception:
+        except Exception as exc:           # noqa: BLE001 — COUNTED and reported, never dropped silently
+            skipped.append({"battle": b.get("short_id") or smf, "reason": f"{type(exc).__name__}: {exc}"})
             continue
         invs = s.get("invocations", [])
         V, HS, L, A, OB = d["values"], d["has_state"], d["logits"], d["actions"], d["obs"]
@@ -163,6 +197,21 @@ def build_decision_table(
                 faint_us=("our:" in ev and "fainted" in ev),
                 faint_opp=("opp:" in ev and "fainted" in ev),
             ))
+    share = len(skipped) / n_battles if n_battles else 0.0
+    rows.coverage = {
+        "n_battles_matched": n_battles, "n_battles_loaded": n_battles - len(skipped),
+        "n_battles_skipped": len(skipped), "skipped_share": round(share, 4),
+        "max_skipped_share": limit_share,
+        "skipped_reasons": dict(Counter(r["reason"].split(":")[0] for r in skipped)),
+        "skipped": skipped[:_SKIPPED_LISTED],
+    }
+    if share > limit_share:
+        raise DecisionTableSkips(
+            f"decision table: {len(skipped)} of {n_battles} matched battles failed to load "
+            f"({share:.1%} > the {limit_share:.1%} bar) — the table would describe a different battle set "
+            f"than the one asked for. Reasons: {rows.coverage['skipped_reasons']}; first: "
+            f"{skipped[0]['battle']}: {skipped[0]['reason']}. Fix the traces, narrow the filter, or pass "
+            "max_skipped_share explicitly.", rows.coverage)
     return rows
 
 
@@ -195,6 +244,7 @@ def decision_table_digest(rows: "list[dict]") -> dict:
             instead=dict(Counter(r["chosen"] for r in offered if not r.get("chose_cure")).most_common(8)),
         )
     return dict(
+        coverage=getattr(rows, "coverage", None),
         n_decisions=len(rows),
         outcomes=dict(Counter(r["outcome"] for r in rows)),
         by_category=by_cat,

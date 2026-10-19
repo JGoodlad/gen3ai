@@ -117,6 +117,11 @@ the tier that works on every run, forever.
   `ai_v9_09 @16M`: uptake **32/474 = 6.8%** (median P(cure) 0.036, `instead` led by `recover` ×127)
   while **104 of 136** cure uses (76%) had nothing to cure — the policy is picking these moves close
   to independently of whether it is statused. See `designs/research_state/` for the hypothesis ledger.
+- **No battle is dropped silently** (2026-10-19; it was a bare `except: continue`). A battle that fails to
+  LOAD (a missing / corrupt `_states.npz`, an unexpandable trace) is counted in the table's `coverage`
+  (`n_battles_matched` / `_loaded` / `_skipped`, `skipped_reasons`, the first 50 `skipped` by name), which the
+  digest carries; more than `forensics.MAX_SKIPPED_SHARE` (1 %) skipped RAISES `DecisionTableSkips` — the
+  reasoning is at the constant. `max_skipped_share=` moves the bar per call. A `CoreTraceMismatch` still raises.
 
 ## From the prober leaf (moved 2026-10-10)
 
