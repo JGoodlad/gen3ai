@@ -24,9 +24,12 @@ pinned in `app_test.py` → "usability / information flow":
 - **Scan rows are not dead ends.** Each row links to `/analyze` for its worst decision, carries
   `data-battle-id` and copy buttons for the id and for the exact `python -m main.prober.query analyze
   <id> <inv>` line (the CLI stays offered as a real second surface).
-- **First paint is populated where that is cheap.** Measured on a real run: battles **119 ms**, triage
-  **436 ms**, scan **2006 ms**. Battles and triage render server-side; scan stays async (2 s of white
-  page is worse than a page that fills in) and its waiting state says what it is doing.
+- **First paint is populated where that is cheap.** Measured on a pre-era run: battles **119 ms**, triage
+  **436 ms**, scan **2006 ms**. Battles render server-side; scan stays async (2 s of white page is worse
+  than a page that fills in) and its waiting state says what it is doing. **Triage renders server-side
+  only when WARM** (`ProbeSession.triage_cached`): on a core-trace run every loss is a replay, and a cold
+  step of `rb_x26_s2601` measured **47-55 s** (106 losses, 2026-10-19), so a cold `/triage` arrives at once
+  and fetches its table (`load`), bounded like `/scan` (`web_service.md` §6b); the result is cached.
 - **The battles table is capped at `_BATTLE_PAGE` (200) and says so.** Uncapped it emitted 2397 rows /
   545 KB.
 - **`/battles` preselects the NEWEST eval step, and its rows open the viewer.** "All steps" stays one

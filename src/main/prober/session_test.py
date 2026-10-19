@@ -616,6 +616,53 @@ def test_triage_categorizes_and_ranks_by_recoverable(tmp_path):
     assert cats["positional_grind"]["by_opponent"] == {"sentinel_0": 1}
 
 
+def test_triage_is_cached_and_a_rewritten_trace_invalidates_it(tmp_path, monkeypatch):
+    """REGRESSION (audit 2026-10-19): `/triage` re-replayed every loss of the step on each load (a
+    core-trace expansion each; 47 s cold on rb_x26_s2601). The result is cached per (step, opponent,
+    thresholds) and a changed summary / npz / eval_results mtime is a miss."""
+    import main.prober.session.core as core_mod
+    run = _build_triage_run(tmp_path)
+    expanded = []
+    real = core_mod.load_summary
+
+    def counting(path, **kw):
+        expanded.append(path)
+        return real(path, **kw)
+
+    monkeypatch.setattr(core_mod, "load_summary", counting)
+    monkeypatch.setattr(core_mod, "_MAX_CACHED_SUMMARIES", 0, raising=False)   # isolate the triage cache
+    sess = ProbeSession(run)
+    assert sess.triage_cached() is None
+    first = sess.triage()
+    n_cold = len(expanded)
+    assert n_cold == first["n_losses_analyzed"] == 4
+    assert sess.triage() == first and sess.triage_cached() == first and len(expanded) == n_cold
+    first["categories"].clear()                                   # a hit is a copy, not the cache
+    assert sess.triage()["categories"]
+    assert sess.triage(opponent="heuristic")["n_losses_analyzed"] == 2 and len(expanded) == n_cold + 2
+    touched = sess.tree.all_battles()[0] if sess.tree.all_battles()[0].outcome == "loss" else \
+        next(b for b in sess.tree.all_battles() if b.outcome == "loss")
+    st = os.stat(touched.summary_path)
+    os.utime(touched.summary_path, ns=(st.st_atime_ns, st.st_mtime_ns + 10_000_000_000))
+    assert sess.triage_cached() is None
+    sess.triage()
+    assert len(expanded) == n_cold + 2 + 4
+
+
+def test_triage_max_expand_refuses_a_cold_call_and_serves_a_warm_one(tmp_path, monkeypatch):
+    import main.prober.session.core as core_mod
+    from main.prober.session.scans import ScanTooBroad
+    sess = ProbeSession(_build_triage_run(tmp_path))
+    real = core_mod.load_summary
+    expanded = []
+    monkeypatch.setattr(core_mod, "load_summary", lambda p, **kw: expanded.append(p) or real(p, **kw))
+    with pytest.raises(ScanTooBroad, match="python -m main.prober.query triage"):
+        sess.triage(max_expand=3)
+    assert expanded == []
+    full = sess.triage()
+    assert sess.triage(max_expand=3) == full
+
+
 def test_triage_opponent_filter_and_levers(tmp_path):
     run = _build_triage_run(tmp_path)
     out = ProbeSession(run).triage(opponent="heuristic")

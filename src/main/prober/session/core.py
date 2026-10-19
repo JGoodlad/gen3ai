@@ -37,7 +37,7 @@ _MAX_CACHED_MODELS = 2
 
 # How many EXPANDED summaries one session keeps (`ProbeSession._summary`, an LRU). One is ~334 KB
 # (rb_x26_s2601's core traces, 2026-10-19), so 512 is ~170 MB per session — above one eval step's
-# whole trace set (≤ 221 battles on X26), so a per-step read never re-expands, and bounded however
+# whole trace set (≤ 250 battles on X26, 2026-10-19), so a per-step read never re-expands, and bounded however
 # many battles a run-wide read walks. The web app keeps 3 sessions (`web/app._MAX_CACHED_SESSIONS`).
 _MAX_CACHED_SUMMARIES = 512
 
@@ -71,6 +71,7 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
         # read of X26's 41,345 traces hold ~14 GB in the web service.
         self._summaries: "OrderedDict[str, dict]" = OrderedDict()
         self._summaries_lock = threading.Lock()
+        self._triage_cache: "OrderedDict[tuple, dict]" = OrderedDict()   # `triage` results (session/scans.py)
         self._by_path = {b.summary_path: b for b in self.tree.all_battles()}
         self._by_short = {_short_id(b): b for b in self.tree.all_battles()}
         self._gamma = self._read_gamma()
@@ -83,6 +84,7 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
         self._models.clear()
         self._play_models.clear()
         self._summaries.clear()
+        self._triage_cache.clear()
         self.__dict__.get("_readout_cache", {}).clear()      # `/game`'s battle captures (session/game.py)
         self.__dict__.get("_story_cache", {}).clear()        # `/game`'s protocol folds (session/story.py)
 

@@ -2720,6 +2720,9 @@
             },
             "description": "Successful Response"
           },
+          "400": {
+            "description": "refused: the read would expand more battles than _MAX_EXPANDED_BATTLES (the error names the CLI command, which has no cap)"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2729,6 +2732,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "description": "busy: every heavy-read slot is taken; retry"
           }
         },
         "summary": "ProbeSession.triage() \u2014 failure categories ranked by recoverable win-rate",

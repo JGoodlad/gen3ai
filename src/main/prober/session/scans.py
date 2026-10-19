@@ -7,6 +7,7 @@ on disk, so they answer on any run regardless of architecture drift.
 from __future__ import annotations
 
 import collections
+import copy
 import json
 import os
 
@@ -18,6 +19,11 @@ from main.prober.engine import (SETUP_MOVES, WP_EVEN_DEFAULT, _npz_win_prob,
     attribute_turning_point, build_board, parse_pct, summary_flags)
 from main.prober.session.serialize import _active_str, _r, _short_id
 from main.prober.session.stats import _loop_aggregate
+
+
+# How many triage results one session keeps (`_triage_cache`, an LRU). A result is a few KB; 16 covers a
+# reader walking the step and opponent filters of one run without letting an anonymous walk grow it.
+_MAX_CACHED_TRIAGES = 16
 
 
 class ScanTooBroad(ValueError):
@@ -361,8 +367,45 @@ class _ScansMixin:
         row = (min(rows, key=lambda r: abs(r.get("step", 0) - step)) if step is not None else rows[-1])
         return dict(row.get("bots") or {})
 
+    def _triage_select(self, step: "int | None", opponent: "str | None", wp_even: float,
+                       v_even: "float | None"):
+        """`(step, losses, v_even, currency, key)` for a triage call: the step resolved (the newest
+        with a loss when None), the losses it reads, the even-point resolved from the critic
+        currency, and the CACHE KEY — the arguments plus each loss's summary + npz mtime and
+        `eval_results.jsonl`'s, so a re-written trace or a new win-rate row is a miss. Stats only."""
+        currency = self.critic_currency()
+        if v_even is None:
+            v_even = float(currency["even"])
+        losses = [b for b in self.tree.all_battles() if b.outcome == "loss"]
+        if step is None:
+            steps = sorted({b.step for b in losses})
+            step = steps[-1] if steps else None
+        losses = [b for b in losses
+                  if (step is None or b.step == step) and (not opponent or b.opponent == opponent)]
+
+        def mtime(path):
+            try:
+                return os.stat(path).st_mtime_ns if path else None
+            except OSError:
+                return None
+
+        key = (step, opponent, float(wp_even), float(v_even),
+               mtime(os.path.join(self.run_dir or "", "eval_results.jsonl")),
+               tuple((b.summary_path, mtime(b.summary_path), mtime(b.npz_path)) for b in losses))
+        return step, losses, v_even, currency, key
+
+    def triage_cached(self, *, step: "int | None" = None, opponent: "str | None" = None,
+                      wp_even: float = WP_EVEN_DEFAULT, v_even: "float | None" = None) -> "dict | None":
+        """`triage(...)`'s result if it is already cached and still current, else None — never computes.
+        Lets a surface render a warm triage at once and fetch a cold one lazily."""
+        key = self._triage_select(step, opponent, wp_even, v_even)[4]
+        with self._summaries_lock:
+            hit = self._triage_cache.get(key)
+        return copy.deepcopy(hit) if hit is not None else None
+
     def triage(self, *, step: "int | None" = None, opponent: "str | None" = None,
-               wp_even: float = WP_EVEN_DEFAULT, v_even: "float | None" = None) -> dict:
+               wp_even: float = WP_EVEN_DEFAULT, v_even: "float | None" = None,
+               max_expand: "int | None" = None) -> dict:
         """Loss attribution: categorize every loss's decisive turning point into the engine taxonomy,
         aggregate, and RANK the failure categories by estimated recoverable win-rate (the lever
         prioritization). Model-free. Defaults to the latest step that has loss traces.
@@ -380,17 +423,33 @@ class _ScansMixin:
         the win-prob critic**, where V *is* P(win) and 0.0 is not "even" but a certain loss. On a
         winprob run the fallback is also unreachable in practice (``values`` equals ``win_probs``,
         so the primary split always has its input), but a threshold that is wrong only where it is
-        currently unused is still wrong, and the next reader will not know that."""
+        currently unused is still wrong, and the next reader will not know that.
+
+        CACHED per (step, opponent, thresholds), invalidated by any read loss's summary / npz mtime
+        or `eval_results.jsonl`'s (`_triage_select`); a hit is a copy. Each loss is a core-trace
+        expansion, so on rb_x26_s2601 a cold step measured ~47 s. ``max_expand`` refuses a cold call
+        that would expand more losses (`ScanTooBroad`, naming the CLI) before expanding any."""
+        step, losses, v_even, currency, key = self._triage_select(step, opponent, wp_even, v_even)
+        with self._summaries_lock:
+            hit = self._triage_cache.get(key)
+            if hit is not None:
+                self._triage_cache.move_to_end(key)
+        if hit is not None:
+            return copy.deepcopy(hit)
+        if max_expand is not None and len(losses) > max_expand:
+            flags = "".join(f" --{k} {v}" for k, v in (("step", step), ("opponent", opponent)) if v)
+            raise ScanTooBroad("this triage", len(losses), max_expand,
+                               f"python -m main.prober.query triage {self.run_dir or '<run_dir>'}{flags}")
+        out = self._triage_compute(step, opponent, wp_even, v_even, currency, losses)
+        with self._summaries_lock:
+            self._triage_cache[key] = copy.deepcopy(out)
+            while len(self._triage_cache) > _MAX_CACHED_TRIAGES:
+                self._triage_cache.popitem(last=False)
+        return out
+
+    def _triage_compute(self, step: "int | None", opponent: "str | None", wp_even: float, v_even: float,
+                        currency: dict, losses: "list[BattleTrace]") -> dict:
         from collections import defaultdict
-        currency = self.critic_currency()
-        if v_even is None:
-            v_even = float(currency["even"])
-        losses = [b for b in self.tree.all_battles() if b.outcome == "loss"]
-        if step is None:
-            steps = sorted({b.step for b in losses})
-            step = steps[-1] if steps else None
-        losses = [b for b in losses
-                  if (step is None or b.step == step) and (not opponent or b.opponent == opponent)]
         wr = self._win_rates(step)
 
         per_opp = defaultdict(lambda: {"n": 0, "cats": defaultdict(list)})

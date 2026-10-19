@@ -354,9 +354,11 @@ def test_the_scan_page_fetches_its_table_and_chart_over_htmx(server, browser):
 
 
 def test_the_triage_page_arrives_already_populated(server, browser):
-    """Triage renders SERVER-SIDE on first paint (measured 436 ms on a real run) rather than
-    landing empty and fetching, so the assertion inverts: the rows and the chart must be there
-    with NO swap having happened."""
+    """A WARM triage renders SERVER-SIDE on first paint rather than landing empty and fetching, so the
+    assertion inverts: the rows and the chart must be there with NO swap having happened. (A COLD one
+    is fetched lazily — ~47 s on rb_x26_s2601 — so the session's cache is warmed first.)"""
+    import urllib.request
+    urllib.request.urlopen(server + "/api/triage", timeout=60).read()
     data = _probe(browser, server, "/triage")
     assert int(data["rows"]) > 0, "the triage table did not render on first paint"
     assert int(data["chart-marks"]) > 0, "the lever chart drew nothing on first paint"

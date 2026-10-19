@@ -758,16 +758,37 @@ def test_every_page_names_the_run_it_is_showing(client, run):
         assert "eval steps" in html and "battles captured" in html
 
 
-def test_battles_and_triage_arrive_populated_rather_than_empty(client):
-    """Measured: battles 119 ms, triage 436 ms — cheap enough that landing on an empty page and
-    waiting for a round trip is a pure loss. (Scan stays async at ~2 s; see below.)"""
+def test_battles_and_a_warm_triage_arrive_populated_rather_than_empty(client):
+    """Measured: battles 119 ms — cheap enough that landing on an empty page and waiting for a round
+    trip is a pure loss. Triage is server-rendered only when WARM: a cold one is every loss of the
+    step replayed (~47 s on rb_x26_s2601, 2026-10-19), so the page arrives at once and fetches it
+    (`load`), exactly as `/scan` does; once computed it is cached and the page arrives populated."""
     battles = client.get("/battles").text
     assert "<table" in battles and "data-row" in battles
     assert 'hx-trigger="change"' in battles and "load" not in battles.split("hx-trigger")[1][:30]
 
+    cold = client.get("/triage").text
+    assert "data-row" not in cold and 'hx-trigger="change, load"' in cold
+    assert "Replaying every loss" in cold
+    assert 'data-chart="triage"' in client.get("/partials/triage").text
     triage = client.get("/triage").text
     assert "<table" in triage and "data-row" in triage
-    assert 'data-chart="triage"' in triage
+    assert 'data-chart="triage"' in triage and 'hx-trigger="change"' in triage
+
+
+def test_a_triage_broader_than_the_cap_is_refused_not_replayed(client, monkeypatch):
+    """REGRESSION (audit 2026-10-19): `/triage` replayed every loss of the step synchronously for an
+    anonymous visitor (47 s on X26). It is bounded like `/scan`: past `_MAX_EXPANDED_BATTLES` a COLD
+    triage is refused before any expansion, naming the CLI."""
+    import main.prober.session.core as core_mod
+    import main.prober.web.app as app_mod
+    monkeypatch.setattr(app_mod, "_MAX_EXPANDED_BATTLES", 0)
+    expanded = []
+    monkeypatch.setattr(core_mod, "load_summary", lambda path, **kw: expanded.append(path))
+    r = client.get("/api/triage")
+    assert r.status_code == 400 and "python -m main.prober.query triage" in r.json()["error"]
+    assert "ScanTooBroad" in client.get("/partials/triage").text
+    assert expanded == []
 
 
 def test_scan_stays_async_but_says_what_it_is_doing(client):

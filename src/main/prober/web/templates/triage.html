@@ -13,7 +13,7 @@
 
 <section class="card">
   <form class="filters" hx-get="/partials/triage" hx-target="#triage"
-        hx-trigger="change" hx-indicator="#triage-busy">
+        hx-trigger="{{ 'change, load' if cold else 'change' }}" hx-indicator="#triage-busy">
     <input type="hidden" name="run" value="{{ run or '' }}">
     <label>step
       <select name="step">{{ m.step_options(summary) }}</select>
@@ -26,6 +26,15 @@
 </section>
 
 <section class="card">
-  <div id="triage">{% include "partials/triage_table.html" %}</div>
+  {# Server-rendered when the session already holds this triage; a COLD one (every loss of the newest
+     step is a core-trace replay: ~47 s on rb_x26_s2601) is fetched by the form's `load` trigger. #}
+  <div id="triage">
+  {% if cold %}
+    <p class="empty">
+      <span class="spinner" style="display:inline-block;vertical-align:-1px"></span>
+      Replaying every loss of the newest eval step — up to a minute the first time, instant after.
+    </p>
+  {% else %}{% include "partials/triage_table.html" %}{% endif %}
+  </div>
 </section>
 {% endblock %}

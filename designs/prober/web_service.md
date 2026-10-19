@@ -195,7 +195,7 @@ map: *anything an anonymous request can make grow must have a bound*.
 behind a lock). The ~430 MB figure above was measured on pre-era Python traces; a core-trace
 expansion is ~334 KB of Python objects (rb_x26_s2601, 2026-10-19), so an unbounded per-session dict
 let ONE run-wide read of X26's 41,345 traces hold ~14 GB. 512 covers one eval step's whole trace set
-(≤ 221 on X26), so a per-step read never re-expands; a session now tops out near 170 MB.
+(≤ 250 on X26: 188 steps, measured 2026-10-19), so a per-step read never re-expands; a session now tops out near 170 MB.
 
 ## 6. Background jobs (`jobs.py`)
 
@@ -227,10 +227,17 @@ a job system:
 - **A per-request cap**, `ProbeSession.scan(..., max_expand=)`: a call that would expand more than
   `_MAX_EXPANDED_BATTLES` (256) battles raises `ScanTooBroad` BEFORE the first expansion, naming the
   `python -m main.prober.query scan …` command, which has no cap (400 on `/api`, an error fragment on the
-  page). 256 sits above one step's whole trace set (≤ 221 on X26), so a one-step read is never refused,
+  page). 256 sits above one step's whole trace set (≤ 250 on X26's 188 steps, 2026-10-19 — a thin margin:
+  a quota above 256 battles a step would refuse an all-outcome one-step read), so a one-step read is not refused,
   and below the summary LRU (512), so its expansions stay cached: a request costs at most ~50 s of a core.
   A `value_drop` scan with a `limit` ranks from stored values and expands only its rows (plus any battle
   with no recorded decision count), so it is judged on that count.
+- **Triage is CACHED and LAZY when cold.** `ProbeSession.triage` keeps its results in a per-session LRU
+  (`_MAX_CACHED_TRIAGES` = 16) keyed on (step, opponent, thresholds) plus every read loss's summary / npz
+  mtime and `eval_results.jsonl`'s, so a rewritten trace or a new win-rate row is a miss; it takes the same
+  `max_expand` (a cold call over the cap is refused, naming `python -m main.prober.query triage …`). Cold on
+  X26: 55 s for 106 losses; warm: 8 ms. `/triage` renders a warm result on first paint and fetches a cold
+  one with the form's `load` trigger (`web_pages.md`).
 - **A concurrency bound**, `_HEAVY_READ_SLOTS` (2): the cap bounds one request, not a burst, so every
   such read runs under `heavy(...)`, a non-blocking semaphore; a read past the slots is told the server is
   busy (503 / an error fragment), never queued.

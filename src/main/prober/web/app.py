@@ -459,7 +459,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                                            metric=metric, limit=limit,
                                            max_expand=_MAX_EXPANDED_BATTLES))
 
-    @app.get("/api/triage", tags=["read-only"], response_model=dict,
+    @app.get("/api/triage", tags=["read-only"], response_model=dict, responses=_HEAVY_READ_RESPONSES,
              summary="ProbeSession.triage() — failure categories ranked by recoverable win-rate")
     def api_triage(
         run: "str | None" = Query(None),
@@ -473,8 +473,9 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     ) -> dict:
         # v_even stays None unless the caller names one: `triage` resolves it from the run's
         # critic currency, and passing a shaped 0.0 here would defeat that for every winprob run.
-        return session(pick(run)).triage(step=step, opponent=opponent,
-                                         wp_even=wp_even, v_even=v_even)
+        sess = session(pick(run))
+        return heavy_api(lambda: sess.triage(step=step, opponent=opponent, wp_even=wp_even,
+                                             v_even=v_even, max_expand=_MAX_EXPANDED_BATTLES))
 
     # -- JSON API: the expensive probes, as jobs (PASSWORD REQUIRED) ----------------------
 
@@ -739,10 +740,12 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
              summary="Loss-lever triage: failure categories ranked by recoverable win-rate")
     def page_triage(request: Request, run: "str | None" = Query(None)) -> HTMLResponse:
         name, data, err = _load(pick, session, guarded, run, store, lambda s: s.run_summary())
-        tri, terr = guarded(lambda: session(pick(run)).triage())
+        # WARM: rendered on first paint (a cache hit is instant). COLD: the page arrives at once and the
+        # table is fetched lazily (`/partials/triage`, bounded like `/scan`) — a cold X26 step is ~47 s.
+        tri, terr = guarded(lambda: session(pick(run)).triage_cached())
         cats = (tri or {}).get("categories") or []
         return page(request, "triage.html", "triage", name, summary=data,
-                    error=err or terr, opponents=_opponents(data),
+                    error=err or terr, opponents=_opponents(data), cold=(tri is None and not terr),
                     data=tri, spec=charts.triage_lever_spec(cats) if cats else None)
 
     @app.get("/falsify", response_class=HTMLResponse, tags=["pages"],
@@ -853,7 +856,8 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         opponent: "str | None" = Query(None),
     ) -> HTMLResponse:
         sess = session(pick(run))
-        data, err = guarded(lambda: sess.triage(step=_form_int(step), opponent=opponent or None))
+        data, err = guarded(lambda: heavy(lambda: sess.triage(
+            step=_form_int(step), opponent=opponent or None, max_expand=_MAX_EXPANDED_BATTLES)))
         cats = (data or {}).get("categories") or []
         spec = charts.triage_lever_spec(cats) if cats else None
         return fragment(request, "partials/triage_table.html", data=data, error=err, spec=spec)
@@ -1286,7 +1290,7 @@ _MAX_CACHED_SESSIONS = 3
 # How many battles ONE anonymous run-level read (`scan`, `triage`) may EXPAND — a core-trace replay each,
 # ~0.1-0.2 s on rb_x26_s2601 (2026-10-19), where a run-wide `td_residual` scan, or `/api/scan` with no
 # limit, replayed all 41,345 traces inside a request thread: hours of a training box's CPU for one GET.
-# 256 is above one eval step's whole trace set (<= 221 on X26), so a one-step read is never refused, and
+# 256 is above one eval step's whole trace set (<= 250 on X26's 188 steps, 2026-10-19), so a one-step read is not refused, and
 # below the session's summary LRU (512), so a request's expansions stay cached; one request then costs at
 # most ~50 s of one core. Broader reads are REFUSED (`ScanTooBroad`) with the CLI command, which has no cap.
 _MAX_EXPANDED_BATTLES = 256
