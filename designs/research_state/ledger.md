@@ -27275,3 +27275,77 @@ Tag: **MEASUREMENT · BUILD (`main.team_strength`; `H2HEngine(team_builder=…)`
 PROVISIONAL** · evidence: `research_state/measurements/team_strength_2026-10-18/` (README, PREREG, `results.json`,
 `supplement.json`, `teams.tsv`, rows); `src/main/team_strength/`; `endstate/design_diversity_teams_opponents.md` §0,
 §4.1, §5.2, §5.4, §5.7, §10, §11; `research_state/UNDERSTANDING.md`
+
+### 2026-10-19 · MEASUREMENT · **the MATURITY BATTERY's first LEAN trajectory on X26, READ under its pre-registration (`826bee89`): on 287 frozen states at 25M / 100M / 175M / 225M the oracle − honest gap G_F falls +0.075 → +0.062 → +0.055 → +0.053, but GAP-SHRINKS is NOT DETECTED (−0.022 [−0.049, +0.004]); BELIEF-RISES NOT DETECTED (TODAY ≈ 0.01 at every anchor); NOT CONVERGED; FRONTIER NOT READ (LEAN); every gate CLOSED. Post hoc: the decline is the oracle's edge over the policy falling, not honest search rising. PROVISIONAL (interim bank)**
+
+**What ran.** T35's harness (`4c906a9c`) on the INTERIM frozen bank (800 states drawn network-free from X26's 230M–234M
+eval cycles, half from games against our own snapshots; LEAN = 320 nested), registered at `826bee89` before any trajectory
+output. The LEAN queue (`c155b92b`) ran the truth (O), the fully honest worlds (F) and the network-belief worlds (FN) at
+X26's 25M, 100M, 175M and 225M checkpoints. All four are at the run's pin `9c033489`, so only the weights differ. It
+finished 2026-10-19 04:30 PDT with nothing parked.
+
+**How it was read.** The registered scripts ran unchanged: `read_mat_test.py` 3 / 3 (planted effects), `identity_mat.py`,
+`score_mat.py`, `read_mat.py`. Before them ran a GIGO audit written for the read (`gigo_audit_mat.py`, 200 / 200 checks):
+- one row per id in every unit; 0 duplicates, 0 foreign, 0 missing, 0 torn;
+- the `--limit` cap applied after the done ids (E2's bug class), with every file in sorted-id order;
+- every world built at `826bee89` and every playout at `9c033489`;
+- 0 defects, 0 non-finite values, 0 root ties;
+- the common-random-numbers tooth live and clean;
+- the cross-commit identity exact at all four anchors (12 / 12 states, 87 actions, max |ΔV| 1e-5);
+- honest-world exclusions 33 / 320 = 10.3 %, the same states at every anchor.
+
+287 states are common, in 248 battles.
+
+| anchor | G_F (LEAF-K8) | IMP_O | IMP_F | TODAY |
+|---|---|---|---|---|
+| 25M | +0.0747 [+0.0547, +0.0959] | +0.063 | −0.012 | 0.00 [0, 0.04] |
+| 100M | +0.0618 [+0.0418, +0.0813] | +0.040 | −0.022 | 0.01 [0, 0.11] |
+| 175M | +0.0549 [+0.0332, +0.0761] | +0.051 | −0.004 | 0.00 [0, 0.05] |
+| 225M | +0.0528 [+0.0335, +0.0710] | +0.042 | −0.011 | 0.01 [0, 0.18] |
+
+**The registered verdicts (R-MATURITY):**
+- **GAP-SHRINKS: NOT DETECTED** on the PRIMARY all-state cell. In every k bin and material bucket, NOT DETECTED. In the
+  turn buckets, GAP-SHRINKS at turn ≥ 22 only (−0.050 [−0.102, −0.002]): 1 of 13 bucket reads at 95 %, with no
+  multiplicity correction.
+- **BELIEF-RISES: NOT DETECTED** (+0.011 [−0.034, +0.178]).
+- **NOT CONVERGED** (175M → 225M −0.002 [−0.024, +0.019]).
+- **FRONTIER: NOT READ** in LEAN, as registered. No bucket is even GATE-WEAK at any anchor.
+- **Per stratum** (descriptive, as registered): the snapshot and bot states move together (−0.023 vs −0.021).
+- **The t₀ references** are unpaired: Tier 1's 15M G +0.070, E2's +0.072.
+
+**Post hoc, descriptive** (`posthoc_mat.py`, written after the read; same table and bootstrap):
+- The gap's point decline is ΔIMP_O −0.021 [−0.046, +0.006], with ΔIMP_F +0.001 [−0.023, +0.026]. So the oracle's edge
+  over the policy falls; honest search does not rise.
+- At the continuous TRUNC-4-K8 leaf the gap is flat: +0.005 [−0.020, +0.032].
+- P-STAR against the policy (R-DOSE's definition, LEAF-K8) is 0.25 / 0.30 / 0.20 / 0.30. TODAY is ≈ 0.01.
+- The network belief's value over Smogon (IMP_FN − IMP_F) is not clear at any anchor; the largest is +0.018
+  [−0.0002, +0.038] at TRUNC-4-K8, 225M, a boundary.
+
+**Reading.** On the owner's question ("are we getting closer?"), the registered answer is UNDECIDED, and the descriptive
+answer is NOT CLOSER in the sense that matters:
+- the policy's own pick moved closer in true value to the oracle's (a point estimate, not clear of zero);
+- it did not make honest one-ply search useful (IMP_F ≤ 0 at every anchor; every gate closed);
+- it did not move the network's belief toward the ≈ 0.2–0.3 weight on the true world a search needs.
+
+Enabling search still needs a far better world sampler. Maturity alone has not supplied one.
+
+**FINDINGS.**
+1. The turn ≥ 22 GAP-SHRINKS is a multiplicity hazard, not a result.
+2. **CONVERGED is unreachable at the registered sizes.** It needs a whole interval inside ±0.01. The measured
+   half-widths are ±0.021 (adjacent anchors, LEAN) and ±0.027 (first to last; the registration's precision claim, now
+   verified). FULL's ±0.017 is also above 0.01. It needs ≈ 1,450 common states, i.e. both banks pooled.
+3. The LEAF-K8 decline is scorer-dependent (flat at TRUNC-4-K8).
+4. A read mixing LEAN and FULL anchors runs on the LEAN 320.
+5. R3's hide-only arms (O−M / O−U) are still outside the battery.
+6. No hazard hit: CPU only, nothing under `models/` or `data/`.
+
+**Next (recommended, not started).** P\* = 280M (sha `814823c5…`, at the pin) FULL on the interim bank; 25M upgraded to
+FULL; the plateau bank (P\*'s 276M–280M cycles), FULL at 25M and P\*, LEAN back-fill; and the hide-only O−M / O−U arms at
+P\* by a registered amendment. Together ≈ 150–165 CPU-h, after a small harness build (a named plateau anchor, a second
+bank namespace, the new arms).
+
+Tag: **MEASUREMENT · GAP-SHRINKS NOT DETECTED · BELIEF-RISES NOT DETECTED · NOT CONVERGED · FRONTIER NOT READ (LEAN) ·
+GIGO audit clean · PROVISIONAL (interim bank; the plateau bank governs)** · evidence:
+`research_state/measurements/hidden_info_maturity_x26_2026-10-18/` (README §5, `result_mat.json`, `gigo_audit_mat.json`,
+`identity_mat.json`, `posthoc_mat.json`); `endstate/design_hidden_info_binding.md` §12.13.7; `endstate/search_ledger.md`
+§1, §5.1, §7 Q4; `research_state/UNDERSTANDING.md`

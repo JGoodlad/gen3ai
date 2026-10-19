@@ -6,7 +6,8 @@
 - **The registration** is [`PREREGISTRATION.md`](PREREGISTRATION.md), shipped with the bank's ids
   (`states_mat_x26.json`) before any trajectory output existed.
 - **The queue** crawls detached (§3), launched 2026-10-18 04:45 PDT from `826bee89`. The read is `read_mat.py`, committed with the harness, before any output.
-- **Results:** none yet. The orchestrator dispatches the read when `QUEUE_DONE` appears.
+- **Results:** READ 2026-10-19 (§5), after `QUEUE_DONE` (2026-10-19 04:30 PDT, nothing parked). GAP-SHRINKS NOT
+  DETECTED, BELIEF-RISES NOT DETECTED, NOT CONVERGED, FRONTIER NOT READ (LEAN). PROVISIONAL: the interim bank.
 
 **What it asks** (owner, 2026-10-17: "what does it take to enable search? Are we getting closer, not closer?"). It
 re-runs §12.13.7's stage and dose reads at X26's 25M, 100M, 175M and 225M checkpoints on ONE frozen bank, and reads the
@@ -41,6 +42,8 @@ scripts, the committed ids, the anchors' sha256 (`checkpoints_x26.json`) and, la
 | identity | `identity_mat.py` (oracle worlds at HEAD, played at the pin = Phase 1) | pure | `identity_mat.json` |
 | table | `score_mat.py` (Tier 1's `t1_data` + `score_blind.dk_family`) | pure | `score/table.pkl` (+ sha256) |
 | read | `read_mat.py` (+ `read_mat_test.py`, planted effects; rules in `maturity_rules.py`) | pure | `result_mat.json` |
+| GIGO audit (written for the read, 2026-10-19) | `gigo_audit_mat.py` (coverage, duplicates, provenance, defects, CRN, exclusions, non-finites; counts only) | pure | `gigo_audit_mat.json` |
+| post-hoc companions (after the read; descriptive) | `posthoc_mat.py` (the gap's change split into IMP_O / IMP_F, per stratum, FN − F, the dose curves and P-STAR) | pure | `posthoc_mat.json` |
 
 **CPU (root rule 5b):**
 - every worker runs one thread, under `nice -n 19` and SCHED_IDLE;
@@ -63,7 +66,7 @@ $PY -I $F/identity_mat.py --out identity_mat.json             # after QUEUE_DONE
 $PY -I $F/read_mat_test.py && $PY -I $F/score_mat.py && $PY -I $F/read_mat.py   # the registered read
 ```
 
-## 3. The running queue
+## 3. The queue (DONE 2026-10-19 04:30 PDT, nothing parked)
 
 **LAUNCHED 2026-10-18 04:45 PDT** (runner pid in `~/gen3ai_archive/hidden_info_maturity/queue.pid`). It is detached
 (`setsid nohup`), so it survives the launching session.
@@ -98,3 +101,165 @@ $PY -I $F/read_mat_test.py && $PY -I $F/score_mat.py && $PY -I $F/read_mat.py   
   FN is built per anchor from that anchor's own belief.
 - **The pilot** ran on 12 eligible states outside the bank (`<archive>/pilot/`). It is engineering only: GIGO and
   cost, never read as trajectory output.
+
+## 5. RESULTS: the first LEAN trajectory, READ 2026-10-19 (PROVISIONAL: the interim bank)
+
+**How it was read.** Exactly as registered, after `QUEUE_DONE` (2026-10-19 04:30 PDT, `parked = []`), in this order:
+1. `read_mat_test.py`, the planted-effect self-test: 3 / 3 pass (a planted shrink and belief rise are found; a null
+   series reads nothing; LEAN never reads a frontier).
+2. `gigo_audit_mat.py` (written for this read, counts and provenance only; `gigo_audit_mat.json`): 200 / 200 checks pass.
+3. `identity_mat.py` (`identity_mat.json`): PASS at every anchor.
+4. `score_mat.py` (the frozen table, `<archive>/score/table.pkl`, sha256 `43db5719…46ddee`), then `read_mat.py`
+   (`result_mat.json`).
+
+No rule, threshold, arm or seed was changed, and no arm was re-run. `posthoc_mat.py` (`posthoc_mat.json`) was written
+AFTER the read. It holds DESCRIPTIVE companions on the same table and the same bootstrap, and it carries no verdict.
+
+### 5.1 The GIGO audit (first)
+
+| check | result |
+|---|---|
+| the bank | LEAN 320 / FULL 800 ids hashes = PREREGISTRATION §6; the bank's content sha256 `8da1613d…` recomputed on load; every LEAN id a bank decision |
+| the anchors | each copy's sha256 = `ckpts.json` = this folder's `checkpoints_x26.json` = the run's own file (read only); all four LEAN |
+| coverage | every unit holds EXACTLY one row per wanted id: roots 800 per anchor; belief, truth (O), F and FN 320 per anchor; the identity's 12 per anchor; F worlds 320 (once), FN worlds 320 per anchor. **0 duplicates, 0 foreign ids, 0 missing, 0 torn lines** |
+| the `--limit`-before-done class (E2's) | every driver caps NEW work after dropping done ids (`maturity_series.select_new_work`, or the builder's own after-done slice); every row file is in sorted-id order with no id twice, so no id was re-picked or skipped |
+| provenance | every world row built at the registration commit `826bee89`; every root, belief, truth and playout row at the pin `9c033489`; every playout row's `cp`, `step`, `arm` and `world_head` its own |
+| defects | **0** in every world arm and every playout (the guard's included) |
+| common random numbers | the F re-sample reproduced the stored F worlds on every FN build (0 "CRN broken" rows). The tooth was live: the shared F build finished (06:00) before the first FN build (07:40) |
+| honest-world exclusions | F: **33 / 320 = 10.3 %** (`WorldError`: no honest draw fits what our side saw), below the early batches' 12.5 %; FN: 32 / 320 at each anchor. **The same 287 F states play at every anchor** (F is network-free and built once) |
+| the identity (oracle worlds built at HEAD and played at the pin = Phase 1) | 12 / 12 states, 87 actions, 0 outcome / trace / critic mismatches, max \|ΔV\| 1e-5, at each of the four anchors |
+| root ties (rule 8's exclusion) | 0 at every anchor |
+| non-finite values | 0 in every row |
+
+**Common states:** 287 of 320 (all 33 drops are F exclusions), in 248 battles; 286 also hold FN at every anchor (the
+TODAY read). Common-ids sha256 `cf8d8c6f…`.
+
+### 5.2 The registered read (`result_mat.json`; LEAF-K8; paired; 2,000 battle-clustered draws, seed 20261011)
+
+| anchor | G_F = IMP_O − IMP_F | IMP_O (oracle) | IMP_F (honest) | IMP_FN (network belief) | TODAY (p on the true world) |
+|---|---|---|---|---|---|
+| 25M | **+0.0747** [+0.0547, +0.0959] | +0.063 [+0.044, +0.082] | −0.012 [−0.031, +0.005] | −0.018 [−0.038, +0.002] | 0.000 [0, 0.039] |
+| 100M | **+0.0618** [+0.0418, +0.0813] | +0.040 [+0.023, +0.058] | −0.022 [−0.039, −0.005] | −0.017 [−0.032, −0.002] | 0.011 [0, 0.107] |
+| 175M | **+0.0549** [+0.0332, +0.0761] | +0.051 [+0.032, +0.072] | −0.004 [−0.021, +0.014] | −0.006 [−0.024, +0.011] | 0.000 [0, 0.045] |
+| 225M | **+0.0528** [+0.0335, +0.0710] | +0.042 [+0.023, +0.061] | −0.011 [−0.026, +0.003] | −0.007 [−0.023, +0.009] | 0.011 [0, 0.181] |
+
+| rule (R-MATURITY, §12.13.4) | the contrast | verdict |
+|---|---|---|
+| **GAP-SHRINKS** (all states, PRIMARY) | G_F(225M) − G_F(25M) = **−0.0219 [−0.0494, +0.0045]** | **NOT DETECTED** (the upper bound is not below −0.0005) |
+| GAP per k bin (k = opponent Pokémon seen) 1–2 / 3 / 4 / 5 / 6 | −0.062 [−0.130, +0.004] / −0.020 [−0.088, +0.047] / −0.013 [−0.052, +0.027] / +0.006 [−0.052, +0.067] / −0.017 [−0.060, +0.027] | NOT DETECTED in every bin |
+| GAP per turn bucket ≤ 7 / 8–14 / 15–21 / ≥ 22 | −0.019 / −0.022 / +0.001 / **−0.050 [−0.102, −0.002]** | **GAP-SHRINKS at turn ≥ 22 only**; NOT DETECTED elsewhere |
+| GAP per material bucket (mons alive) 12 / 10–11 / 8–9 / ≤ 7 | −0.005 / −0.043 / −0.041 / +0.006 | NOT DETECTED in every bucket |
+| **BELIEF-RISES** | TODAY(225M) − TODAY(25M) = **+0.011 [−0.034, +0.178]** | **NOT DETECTED** |
+| **CONVERGED** (175M → 225M) | −0.0022 [−0.0236, +0.0190] | **NOT CONVERGED** (the interval is not inside ±0.01; see FINDING 2) |
+| **FRONTIER** | — | **NOT READ** (LEAN: every bucket holds < 150 states), as registered |
+| the per-bucket GATE (descriptive in LEAN) | all 13 buckets at all 4 anchors | **GATE-CLOSED everywhere**: no bucket is even GATE-WEAK |
+
+**Per opponent type (stratum), descriptive as registered.** G_F at 25M / 225M: snapshot (competent play) +0.078 / +0.055,
+bot +0.071 / +0.050. Change: snapshot −0.023 [−0.064, +0.017], bot −0.021 [−0.057, +0.016]; their difference −0.001
+[−0.055, +0.052]. The two populations move together.
+
+**The t₀ references** (different states and networks, unpaired): Tier 1's 15M G +0.070 [+0.060, +0.081] (end2 + prod,
+pooled) and E2's +0.072 [+0.060, +0.083]. X26's 25M reads +0.075, the same size.
+
+### 5.3 Descriptive companions (POST HOC, `posthoc_mat.py`; no verdict)
+
+- **Where the gap's change comes from.** G_F = IMP_O − IMP_F, so its change splits into the two:
+  - 25M → 225M at LEAF-K8: ΔIMP_O **−0.021 [−0.046, +0.006]**, ΔIMP_F **+0.001 [−0.023, +0.026]**.
+  - So the point decline of the gap is the ORACLE's edge over the policy falling, not honest search rising. The
+    policy's own pick moves closer in true value to the oracle's pick. Honest one-ply search stays at or below the
+    policy at every anchor (IMP_F −0.012 / −0.022 / −0.004 / −0.011).
+  - **On the continuous 4-turn leaf (TRUNC-4-K8) the gap does not move at all:** ΔG_F +0.005 [−0.020, +0.032]. The
+    LEAF-K8 decline is scorer-dependent.
+- **The network belief's value over Smogon usage (IMP_FN − IMP_F)**, LEAF-K8: −0.006 / +0.005 / −0.002 / +0.004, none
+  clear. At TRUNC-4-K8: +0.003 / +0.006 / +0.005 / **+0.018 [−0.0002, +0.038]** at 225M, a boundary, not clear.
+- **The belief-dose curve and p\*** (M8: the true world at weight p, F's worlds at 1 − p; on the 286 FN-common states).
+  P-STAR here is the R-DOSE definition against the POLICY only: the smallest 0.05-grid p whose lower bound clears 0 at p
+  and at every larger p.
+
+  | anchor | LEAF-K8: IMP at p = 0 / 0.2 / 0.35 / 1 | P-STAR (LEAF-K8) | TODAY (LEAF-K8) | P-STAR (TRUNC-4-K8) | TODAY on the TRUNC-4-K8 curve (not registered) |
+  |---|---|---|---|---|---|
+  | 25M | −0.012 / +0.011 / +0.035 / +0.063 | 0.25 | 0.00 [0, 0.04] | 0.35 | 0.02 [0, 0.26] |
+  | 100M | −0.022 / +0.009 / +0.025 / +0.040 | 0.30 | 0.01 [0, 0.11] | 0.35 | 0.10 [0, 0.30] |
+  | 175M | −0.004 / +0.026 / +0.046 / +0.051 | 0.20 | 0.00 [0, 0.05] | 0.30 | 0.08 [0, 0.21] |
+  | 225M | −0.011 / +0.014 / +0.028 / +0.042 | 0.30 | 0.01 [0, 0.18] | 0.50 | 0.18 [0, 0.36] |
+
+  - The p 0 → 0.05 step is again Tier 1's tie-breaking step (the 8-rollout leaf ties).
+  - At LEAF-K8, today's belief sits at ≈ 0.01, below that step, at every anchor. p\* stays at 0.2–0.3: a gap of
+    ≈ 0.2–0.3 in "weight on the true world" units that does not close.
+  - On the continuous leaf, TODAY's point drifts up (0.02 → 0.18) while p\* drifts out (0.35 → 0.50), because the
+    oracle's ceiling falls. The intervals are wide (upper bounds 0.21–0.36) and nothing is registered on this curve.
+
+### 5.4 What it says ("are we getting closer?")
+
+- **Registered answer: UNDECIDED.** The gap's point estimate falls monotonically, +0.075 → +0.062 → +0.055 → +0.053
+  (−29 %), but the 25M → 225M change is not clear of zero: −0.022 [−0.049, +0.004]. The belief does not rise
+  detectably, and nothing has converged.
+- **Descriptively, "closer" is the wrong frame for what moved.** The policy became stronger relative to the oracle
+  (IMP_O fell by about a third). Honest one-ply search did NOT become more useful: it is at or below the policy at every
+  anchor, and the per-bucket gate is closed everywhere. On the continuous leaf the oracle-honest gap is flat. The prize
+  that perfect information would buy is shrinking slowly. What honest search captures of it is still ≈ none.
+- **What enables search is unchanged by maturity so far:** a world sampler whose belief puts ≈ 0.2–0.3 of weight on the
+  true world (at the 8-rollout leaf). The network's belief is worth ≈ 0.01 of that at every anchor. Training the policy
+  for another 200M steps did not move it there.
+- **PROVISIONAL.** The interim bank (PREREGISTRATION §2.5). The plateau bank, when scored, is the read of record, and a
+  direction that differs between the two is quoted BANK-DEPENDENT.
+
+### 5.5 FINDINGS
+
+1. **The one bucket verdict is a multiplicity hazard.** GAP-SHRINKS at turn ≥ 22 (−0.050 [−0.102, −0.002]) is the only
+   clear cell among 13 bucket reads at 95 %, where chance alone gives ≈ 0.65 false positives. The registration has no
+   multiplicity correction on the bucket GAP reads (the gate has its Bonferroni level, the GAP does not). It is quoted
+   as read and should steer nothing alone.
+2. **CONVERGED cannot be reached at the registered sizes.** The rule needs the change's whole 95 % interval inside
+   ±0.01. On the 287 common states the measured half-widths are ±0.021 between adjacent anchors (175M → 225M) and
+   ±0.027 between the first and the last (the registration's LEAN precision claim, now VERIFIED for X26). FULL's
+   claimed ±0.017 is also above 0.01. An interval inside ±0.01 needs ≈ 1,450 common states (≈ 1,600 bank states at
+   10 % exclusion): the interim and the plateau banks together, which the registration reads separately. As
+   registered, CONVERGED is unreachable in either mode. That is a design defect for the orchestrator, not a result.
+3. **The LEAF-K8 gap decline is scorer-dependent** (§5.3: flat at TRUNC-4-K8). R-MATURITY is registered on LEAF-K8
+   only, so this changes no verdict.
+4. **Mixing modes shrinks the common set.** `read_mat.py` reads the states valid at EVERY anchor named. A read over a
+   LEAN anchor and a FULL anchor therefore runs on the 320 LEAN states. A FULL-precision trajectory needs every anchor
+   in it to be FULL, or an explicit `--cp` list of FULL anchors.
+5. **R3's hide-only half (O−M / O−U) is still not in the battery's arms** (PREREGISTRATION §4, as registered). The
+   competent-opponent states are in the bank (144 of the 287 common states).
+6. No hazard hit: CPU only (`CUDA_VISIBLE_DEVICES=""`, the 3-core pin, `nice -n 19`, `mem_cap`), nothing written under
+   `models/` or `data/`, both checkouts kept.
+
+### 5.6 The recommended plateau step (NOT started; the orchestrator decides)
+
+**The plateau checkpoint P\*** = `rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip` (sha256 `814823c5…`). It is
+at the series' pin `9c033489` (its sidecar `git_hash`; `pin_history` covers 0 → 320M). Its three newest eval cycles,
+`step_276000077`, `step_278000056` and `step_280000170`, are all recorded at the pin.
+
+**Costs,** from this run's MEASURED per-state CPU seconds (the rows' own `cost`; one thread; contended box):
+- O ≈ 49–56 s;
+- one 8-world arm played ≈ 15 s;
+- an F world build ≈ 14 s, assumed the same for F+M, F+U, O−M and O−U (UNVERIFIED);
+- a FULL anchor (800 states; O, F, FN, F+M, F+U) ≈ **25 CPU-h**, plus the shared worlds once per bank (≈ 9 CPU-h);
+- a LEAN anchor ≈ 7.5 CPU-h.
+
+| step | why | CPU-h |
+|---|---|---|
+| **1. P\* FULL on the interim bank** | the plateau point; first-vs-plateau on 800 states | ≈ 25 |
+| **2. 25M upgraded to FULL on the interim bank** (480 new states × O / F / FN, F+M / F+U on all 800, the shared worlds) | FULL at the first and last anchors makes FRONTIER readable (§12.13.7 (a) asks FULL there) | ≈ 26 |
+| **3. The PLATEAU BANK** (PREREGISTRATION §2.5: P\*'s three cycles, salt `hib_maturity_x26_plateau_v1:`, the interim battles excluded; it SUPPLEMENTS the interim bank and is the verdict of record): drawn, then FULL at 25M and P\*, its shared worlds | the read of record | ≈ 59 |
+| 4. The plateau bank, LEAN back-fill at 100M and 175M | registered (§2.5: both banks at every anchor) | ≈ 15 |
+| 5. **Hide-only O−M / O−U** at P\* (and 25M) on both banks | carries R3 to the plateau with BOTH halves on the same states, as E2 asked (§16.12). Not in §12.13.7 (e): an AMENDMENT registered before its outputs | ≈ 26 at P\* only; ≈ 39 with 25M |
+| 6. (optional) 225M upgraded to FULL on both banks | only a middle point: CONVERGED is unreachable at these sizes (FINDING 2) | ≈ 43 |
+
+- **Recommended: steps 1–5, ≈ 150–165 CPU-h** (≈ 75–80 wall-hours on 2 slots at SCHED_IDLE, i.e. 3–4 days beside a live run).
+  Order: 1 → 2 (a FULL first-vs-plateau read on the interim bank inside ≈ 1 day), then 3, 5, 4. Step 6 only if
+  CONVERGED is amended to read pooled over both banks (≈ 1,430 common states would make ±0.01 just reachable).
+- **The YES on the hide-only arms** is cheap (≈ 15 % of the step), and without them R3's plateau replication has only
+  its reveal-only half (F+M vs F+U).
+- **A small build comes first (≈ a few agent-hours):**
+  - the harness registers anchors only at 25M multiples (`trigger_mat.py register --labels`), so P\* needs a named
+    plateau anchor;
+  - the bank draw is hardwired to the interim cycles and salt (`mat_common.DRAW_CYCLES`, `STATES_SALT`);
+  - the archive holds ONE bank (`bank/`, `states_mat_x26.json`), so the plateau bank needs its own namespace;
+  - O−M / O−U need adding to `ARMS` / `MODE_ARMS` and the reader.
+  Each is an AMENDMENT to PREREGISTRATION, registered before its outputs exist.
+- **Copy P\*'s three cycles into the archive now** (read-only, with the per-file sha256 that `trigger_mat.copy_traces`
+  makes; its CLI copies only the interim cycles today): the plateau bank depends on them surviving the run's end and
+  any retention pass.

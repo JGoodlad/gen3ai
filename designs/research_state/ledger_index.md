@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-27,278-line file. **The ledger itself is append-only and is never edited by this**;
+27,352-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**905 headings · 850 dated · 2026-08-01 → 2026-10-19 · ledger 27,278 lines.**
+**906 headings · 851 dated · 2026-08-01 → 2026-10-19 · ledger 27,352 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -925,3 +925,4 @@ rename.
   - `L27092` · `2026-10-18` · MEASUREMENT · **X37a STAGE 2 — THE THIRD SOURCES: X26 @161,000,169 vs `metamon:Kakuna` greedy reads 0.470 [0.422, 0.519] on forum72 (72 human-built Smogon-forum teams) and 0.453 [0.404, 0.501] on P72 (72 procedural Smogon-usage teams), both at heldout72_hpfix's level (0.448) and below home72 (0.575): the preregistered third-source rule reads UNSEEN-DRIVEN for BOTH (forum72 governs; they agree). The held-out drop is about teams UNSEEN BY US, not the replay population; H4 KILLED. PROVISIONAL**
   - `L27134` · `2026-10-18` · FINDING (MAJOR for X26 ops) · **X26's Amendment-3 ceiling stop (u32180 @ 316,796,508, judged max 2.974e-3 on ONE row; with u32320 @ 318,171,536, 8.12e-4) is NUMERICAL, and nothing is void. The mechanism is NEW and named: on a k = 1 state with a near-certain species hypothesis, X5's fixed-size shift τ sits on a nearly flat constraint (slope ≈ 1e-5), so fp32 resolves it only to 7e-3 – 1.5e-2, and T2's and the learner's fp32 programs land at different points of that band. The verdict is drawn from the row dumps plus the nearest checkpoints, because no weights were dumped: the dump cap is per LINEAGE**
   - `L27205` · `2026-10-19` · MEASUREMENT · BUILD · **TEAM STRENGTH: a per-team rating with ONE pilot on both sides (`main.team_strength`, TSR) says the held-out replay-reconstructed teams (heldout72_hpfix) are ~70 Elo (≈ 10 pp a game at even) WEAKER than human-built forum teams in BOTH pilots' hands (X26 −71 [−147, −2], Kakuna −69 [−188, +43]; UNDECIDED at the registered 35-Elo bar), procedural P72 is MATERIALLY WEAKER (−146), forum72 ≈ home72; and X37a's piloting gap SURVIVES matching on team strength (+0.28 [+0.12, +0.44] on Kakuna-rated teams, DETECTED; +0.11 set-level). PROVISIONAL**
+  - `L27279` · `2026-10-19` · MEASUREMENT · **the MATURITY BATTERY's first LEAN trajectory on X26, READ under its pre-registration (`826bee89`): on 287 frozen states at 25M / 100M / 175M / 225M the oracle − honest gap G_F falls +0.075 → +0.062 → +0.055 → +0.053, but GAP-SHRINKS is NOT DETECTED (−0.022 [−0.049, +0.004]); BELIEF-RISES NOT DETECTED (TODAY ≈ 0.01 at every anchor); NOT CONVERGED; FRONTIER NOT READ (LEAN); every gate CLOSED. Post hoc: the decline is the oracle's edge over the policy falling, not honest search rising. PROVISIONAL (interim bank)**

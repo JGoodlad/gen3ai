@@ -1230,6 +1230,38 @@ plateau checkpoint existed for (b).
 - **R3's hide-only half** needs O−M / O−U, which are not in (e). That is out of scope for this battery and is a
   finding for the orchestrator.
 
+**THE FIRST LEAN TRAJECTORY, READ 2026-10-19 (PROVISIONAL: the interim bank;
+`measurements/hidden_info_maturity_x26_2026-10-18/README.md` §5).** The registered reader ran unchanged after
+`QUEUE_DONE` (self-test 3 / 3; GIGO audit 200 / 200 checks; the identity exact at every anchor). 287 of the 320 LEAN
+states are common (all 33 drops are F exclusions, 10.3 %), in 248 battles.
+
+| anchor | G_F (LEAF-K8) | IMP_O | IMP_F | TODAY |
+|---|---|---|---|---|
+| 25M | +0.075 [+0.055, +0.096] | +0.063 | −0.012 | 0.00 [0, 0.04] |
+| 100M | +0.062 [+0.042, +0.081] | +0.040 | −0.022 | 0.01 [0, 0.11] |
+| 175M | +0.055 [+0.033, +0.076] | +0.051 | −0.004 | 0.00 [0, 0.05] |
+| 225M | +0.053 [+0.034, +0.071] | +0.042 | −0.011 | 0.01 [0, 0.18] |
+
+- **GAP-SHRINKS: NOT DETECTED.** G_F(225M) − G_F(25M) = −0.022 [−0.049, +0.004]. The point estimate falls
+  monotonically. Every k bin, material bucket and turn bucket reads NOT DETECTED, except turn ≥ 22: GAP-SHRINKS,
+  −0.050 [−0.102, −0.002]. That is 1 of 13 bucket reads at 95 % with no multiplicity correction, so it steers nothing
+  alone.
+- **BELIEF-RISES: NOT DETECTED** (+0.011 [−0.034, +0.178]). **NOT CONVERGED** (175M → 225M −0.002 [−0.024, +0.019]).
+  **FRONTIER: NOT READ** (LEAN). Every bucket's gate is CLOSED at every anchor; none is even WEAK.
+- **Per stratum** (descriptive): the snapshot and bot states move together (difference of changes −0.001
+  [−0.055, +0.052]).
+- **Post hoc, descriptive** (`posthoc_mat.py`):
+  - The gap's point decline is the oracle's edge over the policy falling (ΔIMP_O −0.021 [−0.046, +0.006]), not honest
+    search rising (ΔIMP_F +0.001 [−0.023, +0.026]).
+  - At the continuous TRUNC-4-K8 leaf the gap is flat (+0.005 [−0.020, +0.032]).
+  - P-STAR against the policy stays 0.2–0.3 at LEAF-K8, while TODAY stays ≈ 0.01.
+- **FINDINGS for the protocol:**
+  - CONVERGED needs a whole interval inside ±0.01. At the registered sizes (LEAN ±0.021 adjacent, FULL ±0.017) it is
+    unreachable. It needs ≈ 1,450 common states, both banks pooled.
+  - A read that mixes LEAN and FULL anchors runs on the LEAN 320.
+  - The plateau step's cost (≈ 150–165 CPU-h with O−M / O−U at the plateau) and its prerequisite build are in the
+    README's §5.6.
+
 #### 12.13.8 How the per-stage view connects to credit and to maturity
 
 - **Shapley-style credit.** With classes M, U, I, A, S the knock-in σ_X (reveal X on the empty coalition F) and the
@@ -2156,3 +2188,4 @@ Next come E3 (the second referee: what both builds share), the M side's residual
 | 2026-10-18 | **E2 READ (§16.12): R3 on the competent-opponent bank = U-FIRST by the registered pooled LEAF-K8 primary, printed SCORER-DEPENDENT; SHARED on each checkpoint alone and tie-free; "U > M in competent play" HOLDS, PROVISIONAL** | The registered scripts run unchanged after `QUEUE_DONE` (`read_e2_test.py` 7 / 7, `identity_e2.py`, `read_e2.py`), behind a GIGO audit written for the read (`gigo_audit_e2.py`: one row per bank id in the truth and every arm, 0 duplicates, 0 guard defects, 0 non-finite values, provenance heads as registered, the 10 pin re-gates PASS on their recomputed criterion; the truth rows' sorted-id order proves the `--limit` fix `6a1cf301` re-picked and skipped nothing). Δs +0.0169 [+0.0065, +0.0268] (MATERIAL), Δn +0.0114 [+0.0010, +0.0220]; G +0.0718; s_M 0.16, n_M 0.58 (B4 holds, B3 fails), s_U 0.40, n_U 0.73. The red team's population attack splits: its reveal-only half does not replicate (E2 − Tier-1 snapshot +0.021 [+0.002, +0.038]), its hide-only half does (E2 − Tier-1 bot −0.028 [−0.044, −0.013]). Confidence that U is the largest class on competent play at LEAF-K8 ≈ 65 % (was ≈ 30 %). Roadmap direction unchanged (no move-inference programme; the never-seen class is the first belief target for search if any; nothing opens search). The world builder's latent `--limit` twin fixed with a test that fails on revert | quoting U-FIRST without SCORER-DEPENDENT and the per-checkpoint SHARED (both registered qualifiers); patching the reader's vacuous k-adjustment in this unit (a reader change needs its own test and a named deviation; the read is descriptive there, so it is a FINDING); re-running any arm or extending the bank (§5: no size rule, no re-run after outcomes); treating the reveal-only population difference as composition-adjusted (it is not) | `measurements/hidden_info_e2_competent_2026-10-16/` (README §4, `result_e2.json`, `identity_e2.json`, `gigo_audit_e2.json`, `pin_regate_e2_*.json`); ledger 2026-10-18 MEASUREMENT (MAJOR) "E2" |
 | 2026-10-18 | **THE MATURITY-BATTERY HARNESS BUILT (T35), and the INTERIM BANK + the first LEAN trajectory on X26 REGISTERED (§12.13.7)** | A generic series / trigger / read-only copy / cap-new-work layer, the frozen (k bin x stratum) bank sampler and R-MATURITY as tested code in `src/main/hidden_info_study/`; an INTERIM 800-state bank (LEAN 320 nested) drawn network-free from X26's newest three cycles, half own-snapshot states (E2's recommendation), registered before any trajectory output; the plateau bank, when it exists, SUPPLEMENTS it and becomes the verdict of record (the interim bank its replication; a differing direction = BANK-DEPENDENT); LEAN at 25M / 100M / 175M / 225M (FULL at the first anchor deferred, disclosed; the LEAN states nest in FULL); the frontier NOT READ in LEAN (< 150 states per bucket) | waiting for X26's plateau before any read (no trajectory until then, and §12.13.7's question unanswered for weeks); a per-checkpoint re-drawn bank (confounds maturity with the state distribution); a bank drawn by one network's logits (it would not be the same object at every anchor); adding O-M / O-U for R3's hide-only half (outside §12.13.7's arm list: a finding, not this unit's call) | `measurements/hidden_info_maturity_x26_2026-10-18/PREREGISTRATION.md`; the engineering pilot on 12 states outside the bank (identity PASS, 0 defects, the measured cost) |
 | 2026-10-18 | **The first LEAN trajectory LAUNCHED (§12.13.7)** | the detached queue from the registration commit `826bee89` (the world builder of record), the pin checkout at `9c033489`, 2 single-thread slots under rule 5b; ETA ≈ 15–20 wall-hours | waiting for a quieter box (the cores are free now; SCHED_IDLE yields to the trainer) | `measurements/hidden_info_maturity_x26_2026-10-18/README.md` §3 |
+| 2026-10-19 | **The first LEAN trajectory READ (§12.13.7): GAP-SHRINKS NOT DETECTED (G_F +0.075 → +0.053, change −0.022 [−0.049, +0.004]); BELIEF-RISES NOT DETECTED (TODAY ≈ 0.01 at every anchor); NOT CONVERGED; FRONTIER NOT READ (LEAN); every gate CLOSED; PROVISIONAL (interim bank)** | The registered scripts run unchanged after `QUEUE_DONE` (`read_mat_test.py` 3 / 3, `identity_mat.py` PASS × 4, `score_mat.py`, `read_mat.py`), behind a GIGO audit written for the read (`gigo_audit_mat.py`, 200 / 200); post-hoc descriptive companions in `posthoc_mat.py` (the decline is IMP_O falling, not IMP_F rising; flat at TRUNC-4-K8). Recommended next: P\* = 280M FULL on the interim bank, 25M upgraded to FULL, the plateau bank (FULL at 25M and P\*, LEAN back-fill), and the hide-only O−M / O−U arms at P\* by amendment (≈ 150–165 CPU-h, after a small build); not started | quoting the turn ≥ 22 bucket's GAP-SHRINKS as a finding (1 of 13 reads at 95 %, no multiplicity correction); amending CONVERGED now (it is unreachable at the registered sizes: a FINDING for the orchestrator, and any change is a dated amendment before the outputs it touches) | `measurements/hidden_info_maturity_x26_2026-10-18/README.md` §5 (`result_mat.json`, `gigo_audit_mat.json`, `identity_mat.json`, `posthoc_mat.json`); ledger 2026-10-19 MEASUREMENT "the MATURITY BATTERY's first LEAN trajectory" |

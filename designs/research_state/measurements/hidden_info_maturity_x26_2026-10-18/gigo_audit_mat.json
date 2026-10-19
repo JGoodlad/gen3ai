@@ -1,0 +1,2385 @@
+{
+ "F_exclusion_rate": 0.103125,
+ "checks": {
+  "F playout ok-set = F world ok-set": {
+   "detail": 287,
+   "pass": true
+  },
+  "F playout ok-set identical at every anchor": {
+   "detail": {
+    "x26_025M": 287,
+    "x26_100M": 287,
+    "x26_175M": 287,
+    "x26_225M": 287
+   },
+   "pass": true
+  },
+  "LEAN subset of FULL, 320 / 800": {
+   "detail": null,
+   "pass": true
+  },
+  "bank content sha256 (recomputed on load)": {
+   "detail": "8da1613d1e28f412",
+   "pass": true
+  },
+  "checkpoints_x26.json = the archive's ckpts.json (anchors)": {
+   "detail": [
+    "x26_025M",
+    "x26_100M",
+    "x26_175M",
+    "x26_225M"
+   ],
+   "pass": true
+  },
+  "every LEAN id is a bank decision": {
+   "detail": null,
+   "pass": true
+  },
+  "full ids sha = PREREGISTRATION \u00a76": {
+   "detail": 800,
+   "pass": true
+  },
+  "lean ids sha = PREREGISTRATION \u00a76": {
+   "detail": 320,
+   "pass": true
+  },
+  "worlds F: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "worlds F: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "worlds F: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "worlds F: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "worlds FN@x26_025M: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "worlds FN@x26_025M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "worlds FN@x26_025M: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "worlds FN@x26_025M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "worlds FN@x26_100M: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "worlds FN@x26_100M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "worlds FN@x26_100M: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "worlds FN@x26_100M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "worlds FN@x26_175M: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "worlds FN@x26_175M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "worlds FN@x26_175M: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "worlds FN@x26_175M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "worlds FN@x26_225M: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "worlds FN@x26_225M: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "worlds FN@x26_225M: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "worlds FN@x26_225M: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "worlds V:oracle: 0 defects (CRN tooth included)": {
+   "detail": {
+    "crn_broken": 0,
+    "defect": 0
+   },
+   "pass": true
+  },
+  "worlds V:oracle: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "worlds V:oracle: builder head = 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "worlds V:oracle: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 12,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 12
+   },
+   "pass": true
+  },
+  "x26_025M F: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_025M F: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_025M F: arm field": {
+   "detail": [
+    "F"
+   ],
+   "pass": true
+  },
+  "x26_025M F: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "x26_025M F: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "x26_025M F: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_025M F: step = 25000027": {
+   "detail": [
+    25000027
+   ],
+   "pass": true
+  },
+  "x26_025M F: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "x26_025M FN: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_025M FN: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_025M FN: arm field": {
+   "detail": [
+    "FN"
+   ],
+   "pass": true
+  },
+  "x26_025M FN: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "x26_025M FN: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "x26_025M FN: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_025M FN: step = 25000027": {
+   "detail": [
+    25000027
+   ],
+   "pass": true
+  },
+  "x26_025M FN: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "x26_025M O: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_025M O: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_025M O: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "x26_025M O: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "x26_025M O: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_025M O: step = 25000027": {
+   "detail": [
+    25000027
+   ],
+   "pass": true
+  },
+  "x26_025M V:oracle: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_025M V:oracle: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_025M V:oracle: arm field": {
+   "detail": [
+    "V:oracle"
+   ],
+   "pass": true
+  },
+  "x26_025M V:oracle: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "x26_025M V:oracle: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 12,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 12
+   },
+   "pass": true
+  },
+  "x26_025M V:oracle: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_025M V:oracle: step = 25000027": {
+   "detail": [
+    25000027
+   ],
+   "pass": true
+  },
+  "x26_025M V:oracle: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "x26_025M belief: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_025M belief: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_025M belief: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "x26_025M belief: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "x26_025M belief: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_025M roots: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_025M roots: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_025M roots: cp field = x26_025M": {
+   "detail": [
+    "x26_025M"
+   ],
+   "pass": true
+  },
+  "x26_025M roots: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "x26_025M roots: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_025M: copy sha = ckpts.json = the run's file": {
+   "detail": "26fda38d0ca68f06",
+   "pass": true
+  },
+  "x26_025M: mode LEAN": {
+   "detail": null,
+   "pass": true
+  },
+  "x26_100M F: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_100M F: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_100M F: arm field": {
+   "detail": [
+    "F"
+   ],
+   "pass": true
+  },
+  "x26_100M F: cp field = x26_100M": {
+   "detail": [
+    "x26_100M"
+   ],
+   "pass": true
+  },
+  "x26_100M F: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "x26_100M F: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_100M F: step = 100000037": {
+   "detail": [
+    100000037
+   ],
+   "pass": true
+  },
+  "x26_100M F: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "x26_100M FN: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_100M FN: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_100M FN: arm field": {
+   "detail": [
+    "FN"
+   ],
+   "pass": true
+  },
+  "x26_100M FN: cp field = x26_100M": {
+   "detail": [
+    "x26_100M"
+   ],
+   "pass": true
+  },
+  "x26_100M FN: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "x26_100M FN: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_100M FN: step = 100000037": {
+   "detail": [
+    100000037
+   ],
+   "pass": true
+  },
+  "x26_100M FN: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "x26_100M O: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_100M O: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_100M O: cp field = x26_100M": {
+   "detail": [
+    "x26_100M"
+   ],
+   "pass": true
+  },
+  "x26_100M O: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "x26_100M O: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_100M O: step = 100000037": {
+   "detail": [
+    100000037
+   ],
+   "pass": true
+  },
+  "x26_100M V:oracle: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_100M V:oracle: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_100M V:oracle: arm field": {
+   "detail": [
+    "V:oracle"
+   ],
+   "pass": true
+  },
+  "x26_100M V:oracle: cp field = x26_100M": {
+   "detail": [
+    "x26_100M"
+   ],
+   "pass": true
+  },
+  "x26_100M V:oracle: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 12,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 12
+   },
+   "pass": true
+  },
+  "x26_100M V:oracle: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_100M V:oracle: step = 100000037": {
+   "detail": [
+    100000037
+   ],
+   "pass": true
+  },
+  "x26_100M V:oracle: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "x26_100M belief: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_100M belief: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_100M belief: cp field = x26_100M": {
+   "detail": [
+    "x26_100M"
+   ],
+   "pass": true
+  },
+  "x26_100M belief: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "x26_100M belief: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_100M roots: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_100M roots: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_100M roots: cp field = x26_100M": {
+   "detail": [
+    "x26_100M"
+   ],
+   "pass": true
+  },
+  "x26_100M roots: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "x26_100M roots: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_100M: copy sha = ckpts.json = the run's file": {
+   "detail": "e1858ffe8a7d95fe",
+   "pass": true
+  },
+  "x26_100M: mode LEAN": {
+   "detail": null,
+   "pass": true
+  },
+  "x26_175M F: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_175M F: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_175M F: arm field": {
+   "detail": [
+    "F"
+   ],
+   "pass": true
+  },
+  "x26_175M F: cp field = x26_175M": {
+   "detail": [
+    "x26_175M"
+   ],
+   "pass": true
+  },
+  "x26_175M F: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "x26_175M F: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_175M F: step = 175000114": {
+   "detail": [
+    175000114
+   ],
+   "pass": true
+  },
+  "x26_175M F: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "x26_175M FN: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_175M FN: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_175M FN: arm field": {
+   "detail": [
+    "FN"
+   ],
+   "pass": true
+  },
+  "x26_175M FN: cp field = x26_175M": {
+   "detail": [
+    "x26_175M"
+   ],
+   "pass": true
+  },
+  "x26_175M FN: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "x26_175M FN: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_175M FN: step = 175000114": {
+   "detail": [
+    175000114
+   ],
+   "pass": true
+  },
+  "x26_175M FN: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "x26_175M O: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_175M O: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_175M O: cp field = x26_175M": {
+   "detail": [
+    "x26_175M"
+   ],
+   "pass": true
+  },
+  "x26_175M O: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "x26_175M O: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_175M O: step = 175000114": {
+   "detail": [
+    175000114
+   ],
+   "pass": true
+  },
+  "x26_175M V:oracle: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_175M V:oracle: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_175M V:oracle: arm field": {
+   "detail": [
+    "V:oracle"
+   ],
+   "pass": true
+  },
+  "x26_175M V:oracle: cp field = x26_175M": {
+   "detail": [
+    "x26_175M"
+   ],
+   "pass": true
+  },
+  "x26_175M V:oracle: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 12,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 12
+   },
+   "pass": true
+  },
+  "x26_175M V:oracle: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_175M V:oracle: step = 175000114": {
+   "detail": [
+    175000114
+   ],
+   "pass": true
+  },
+  "x26_175M V:oracle: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "x26_175M belief: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_175M belief: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_175M belief: cp field = x26_175M": {
+   "detail": [
+    "x26_175M"
+   ],
+   "pass": true
+  },
+  "x26_175M belief: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "x26_175M belief: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_175M roots: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_175M roots: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_175M roots: cp field = x26_175M": {
+   "detail": [
+    "x26_175M"
+   ],
+   "pass": true
+  },
+  "x26_175M roots: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "x26_175M roots: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_175M: copy sha = ckpts.json = the run's file": {
+   "detail": "20af225e57b1cc84",
+   "pass": true
+  },
+  "x26_175M: mode LEAN": {
+   "detail": null,
+   "pass": true
+  },
+  "x26_225M F: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_225M F: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_225M F: arm field": {
+   "detail": [
+    "F"
+   ],
+   "pass": true
+  },
+  "x26_225M F: cp field = x26_225M": {
+   "detail": [
+    "x26_225M"
+   ],
+   "pass": true
+  },
+  "x26_225M F: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "x26_225M F: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_225M F: step = 225000152": {
+   "detail": [
+    225000152
+   ],
+   "pass": true
+  },
+  "x26_225M F: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "x26_225M FN: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_225M FN: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_225M FN: arm field": {
+   "detail": [
+    "FN"
+   ],
+   "pass": true
+  },
+  "x26_225M FN: cp field = x26_225M": {
+   "detail": [
+    "x26_225M"
+   ],
+   "pass": true
+  },
+  "x26_225M FN: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "x26_225M FN: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_225M FN: step = 225000152": {
+   "detail": [
+    225000152
+   ],
+   "pass": true
+  },
+  "x26_225M FN: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "x26_225M O: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_225M O: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_225M O: cp field = x26_225M": {
+   "detail": [
+    "x26_225M"
+   ],
+   "pass": true
+  },
+  "x26_225M O: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "x26_225M O: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_225M O: step = 225000152": {
+   "detail": [
+    225000152
+   ],
+   "pass": true
+  },
+  "x26_225M V:oracle: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_225M V:oracle: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_225M V:oracle: arm field": {
+   "detail": [
+    "V:oracle"
+   ],
+   "pass": true
+  },
+  "x26_225M V:oracle: cp field = x26_225M": {
+   "detail": [
+    "x26_225M"
+   ],
+   "pass": true
+  },
+  "x26_225M V:oracle: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 12,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 12
+   },
+   "pass": true
+  },
+  "x26_225M V:oracle: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_225M V:oracle: step = 225000152": {
+   "detail": [
+    225000152
+   ],
+   "pass": true
+  },
+  "x26_225M V:oracle: world head 826bee89": {
+   "detail": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "pass": true
+  },
+  "x26_225M belief: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_225M belief: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_225M belief: cp field = x26_225M": {
+   "detail": [
+    "x26_225M"
+   ],
+   "pass": true
+  },
+  "x26_225M belief: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 320
+   },
+   "pass": true
+  },
+  "x26_225M belief: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_225M roots: 0 defects": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_225M roots: 0 non-finite": {
+   "detail": 0,
+   "pass": true
+  },
+  "x26_225M roots: cp field = x26_225M": {
+   "detail": [
+    "x26_225M"
+   ],
+   "pass": true
+  },
+  "x26_225M roots: one row per wanted id": {
+   "detail": {
+    "duplicates": 0,
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "torn": 0,
+    "unique": 800
+   },
+   "pass": true
+  },
+  "x26_225M roots: pin 9c033489": {
+   "detail": [
+    "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+   ],
+   "pass": true
+  },
+  "x26_225M: copy sha = ckpts.json = the run's file": {
+   "detail": "bc93a321bf1d4c6a",
+   "pass": true
+  },
+  "x26_225M: mode LEAN": {
+   "detail": null,
+   "pass": true
+  }
+ },
+ "fails": [],
+ "per_anchor": {
+  "x26_025M": {
+   "F": {
+    "arms": [
+     "F"
+    ],
+    "cps": [
+     "x26_025M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 33,
+    "file_order_is_sorted": true,
+    "files": [
+     "rows_0_of_1.jsonl"
+    ],
+    "foreign": [],
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 33,
+    "not_ok_reasons": [
+     "world build: WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1",
+     "world build: WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2:",
+     "world build: WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11:",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#2",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_1/loss_s2_004#p1#3",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_2/win_s2_001#p1#8:"
+    ],
+    "ok": 287,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "steps": [
+     25000027
+    ],
+    "torn": 0,
+    "unique": 320,
+    "world_heads": [
+     "826bee8919c0986fd3733d3d06f03803822a929a"
+    ]
+   },
+   "FN": {
+    "arms": [
+     "FN"
+    ],
+    "cps": [
+     "x26_025M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 32,
+    "file_order_is_sorted": true,
+    "files": [
+     "rows_0_of_1.jsonl"
+    ],
+    "foreign": [],
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 32,
+    "not_ok_reasons": [
+     "world build: WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1",
+     "world build: WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2:",
+     "world build: WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11:",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#2",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_1/win_s1_005#p1#40",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_4/win_s2_001#p1#35"
+    ],
+    "ok": 288,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "steps": [
+     25000027
+    ],
+    "torn": 0,
+    "unique": 320,
+    "world_heads": [
+     "826bee8919c0986fd3733d3d06f03803822a929a"
+    ]
+   },
+   "O": {
+    "cps": [
+     "x26_025M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 0,
+    "file_order_is_sorted": true,
+    "files": [
+     "shard_0_of_1.jsonl"
+    ],
+    "foreign": [],
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 0,
+    "not_ok_reasons": [],
+    "ok": 320,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "steps": [
+     25000027
+    ],
+    "torn": 0,
+    "unique": 320
+   },
+   "V:oracle": {
+    "arms": [
+     "V:oracle"
+    ],
+    "cps": [
+     "x26_025M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 0,
+    "file_order_is_sorted": true,
+    "files": [
+     "rows_0_of_1.jsonl"
+    ],
+    "foreign": [],
+    "lines": 12,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 0,
+    "not_ok_reasons": [],
+    "ok": 12,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "steps": [
+     25000027
+    ],
+    "torn": 0,
+    "unique": 12,
+    "world_heads": [
+     "826bee8919c0986fd3733d3d06f03803822a929a"
+    ]
+   },
+   "belief": {
+    "cps": [
+     "x26_025M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 0,
+    "file_order_is_sorted": true,
+    "files": [
+     "x26_025M.jsonl"
+    ],
+    "foreign": [],
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 0,
+    "not_ok_reasons": [],
+    "ok": 320,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "torn": 0,
+    "unique": 320
+   },
+   "roots": {
+    "cps": [
+     "x26_025M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 0,
+    "file_order_is_sorted": true,
+    "files": [
+     "x26_025M.jsonl"
+    ],
+    "foreign": [],
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 0,
+    "not_ok_reasons": [],
+    "ok": 800,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "ties_full": 0,
+    "ties_lean": 0,
+    "torn": 0,
+    "unique": 800
+   }
+  },
+  "x26_100M": {
+   "F": {
+    "arms": [
+     "F"
+    ],
+    "cps": [
+     "x26_100M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 33,
+    "file_order_is_sorted": true,
+    "files": [
+     "rows_0_of_1.jsonl"
+    ],
+    "foreign": [],
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 33,
+    "not_ok_reasons": [
+     "world build: WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1",
+     "world build: WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2:",
+     "world build: WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11:",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#2",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_1/loss_s2_004#p1#3",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_2/win_s2_001#p1#8:"
+    ],
+    "ok": 287,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "steps": [
+     100000037
+    ],
+    "torn": 0,
+    "unique": 320,
+    "world_heads": [
+     "826bee8919c0986fd3733d3d06f03803822a929a"
+    ]
+   },
+   "FN": {
+    "arms": [
+     "FN"
+    ],
+    "cps": [
+     "x26_100M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 32,
+    "file_order_is_sorted": true,
+    "files": [
+     "rows_0_of_1.jsonl"
+    ],
+    "foreign": [],
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 32,
+    "not_ok_reasons": [
+     "world build: WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1",
+     "world build: WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2:",
+     "world build: WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11:",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#2",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_1/win_s1_005#p1#40",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_4/win_s2_001#p1#35"
+    ],
+    "ok": 288,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "steps": [
+     100000037
+    ],
+    "torn": 0,
+    "unique": 320,
+    "world_heads": [
+     "826bee8919c0986fd3733d3d06f03803822a929a"
+    ]
+   },
+   "O": {
+    "cps": [
+     "x26_100M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 0,
+    "file_order_is_sorted": true,
+    "files": [
+     "shard_0_of_1.jsonl"
+    ],
+    "foreign": [],
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 0,
+    "not_ok_reasons": [],
+    "ok": 320,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "steps": [
+     100000037
+    ],
+    "torn": 0,
+    "unique": 320
+   },
+   "V:oracle": {
+    "arms": [
+     "V:oracle"
+    ],
+    "cps": [
+     "x26_100M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 0,
+    "file_order_is_sorted": true,
+    "files": [
+     "rows_0_of_1.jsonl"
+    ],
+    "foreign": [],
+    "lines": 12,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 0,
+    "not_ok_reasons": [],
+    "ok": 12,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "steps": [
+     100000037
+    ],
+    "torn": 0,
+    "unique": 12,
+    "world_heads": [
+     "826bee8919c0986fd3733d3d06f03803822a929a"
+    ]
+   },
+   "belief": {
+    "cps": [
+     "x26_100M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 0,
+    "file_order_is_sorted": true,
+    "files": [
+     "x26_100M.jsonl"
+    ],
+    "foreign": [],
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 0,
+    "not_ok_reasons": [],
+    "ok": 320,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "torn": 0,
+    "unique": 320
+   },
+   "roots": {
+    "cps": [
+     "x26_100M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 0,
+    "file_order_is_sorted": true,
+    "files": [
+     "x26_100M.jsonl"
+    ],
+    "foreign": [],
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 0,
+    "not_ok_reasons": [],
+    "ok": 800,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "ties_full": 0,
+    "ties_lean": 0,
+    "torn": 0,
+    "unique": 800
+   }
+  },
+  "x26_175M": {
+   "F": {
+    "arms": [
+     "F"
+    ],
+    "cps": [
+     "x26_175M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 33,
+    "file_order_is_sorted": true,
+    "files": [
+     "rows_0_of_1.jsonl"
+    ],
+    "foreign": [],
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 33,
+    "not_ok_reasons": [
+     "world build: WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1",
+     "world build: WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2:",
+     "world build: WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11:",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#2",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_1/loss_s2_004#p1#3",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_2/win_s2_001#p1#8:"
+    ],
+    "ok": 287,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "steps": [
+     175000114
+    ],
+    "torn": 0,
+    "unique": 320,
+    "world_heads": [
+     "826bee8919c0986fd3733d3d06f03803822a929a"
+    ]
+   },
+   "FN": {
+    "arms": [
+     "FN"
+    ],
+    "cps": [
+     "x26_175M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 32,
+    "file_order_is_sorted": true,
+    "files": [
+     "rows_0_of_1.jsonl"
+    ],
+    "foreign": [],
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 32,
+    "not_ok_reasons": [
+     "world build: WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1",
+     "world build: WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2:",
+     "world build: WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11:",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#2",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_1/win_s1_005#p1#40",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_4/win_s2_001#p1#35"
+    ],
+    "ok": 288,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "steps": [
+     175000114
+    ],
+    "torn": 0,
+    "unique": 320,
+    "world_heads": [
+     "826bee8919c0986fd3733d3d06f03803822a929a"
+    ]
+   },
+   "O": {
+    "cps": [
+     "x26_175M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 0,
+    "file_order_is_sorted": true,
+    "files": [
+     "shard_0_of_1.jsonl"
+    ],
+    "foreign": [],
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 0,
+    "not_ok_reasons": [],
+    "ok": 320,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "steps": [
+     175000114
+    ],
+    "torn": 0,
+    "unique": 320
+   },
+   "V:oracle": {
+    "arms": [
+     "V:oracle"
+    ],
+    "cps": [
+     "x26_175M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 0,
+    "file_order_is_sorted": true,
+    "files": [
+     "rows_0_of_1.jsonl"
+    ],
+    "foreign": [],
+    "lines": 12,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 0,
+    "not_ok_reasons": [],
+    "ok": 12,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "steps": [
+     175000114
+    ],
+    "torn": 0,
+    "unique": 12,
+    "world_heads": [
+     "826bee8919c0986fd3733d3d06f03803822a929a"
+    ]
+   },
+   "belief": {
+    "cps": [
+     "x26_175M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 0,
+    "file_order_is_sorted": true,
+    "files": [
+     "x26_175M.jsonl"
+    ],
+    "foreign": [],
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 0,
+    "not_ok_reasons": [],
+    "ok": 320,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "torn": 0,
+    "unique": 320
+   },
+   "roots": {
+    "cps": [
+     "x26_175M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 0,
+    "file_order_is_sorted": true,
+    "files": [
+     "x26_175M.jsonl"
+    ],
+    "foreign": [],
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 0,
+    "not_ok_reasons": [],
+    "ok": 800,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "ties_full": 0,
+    "ties_lean": 0,
+    "torn": 0,
+    "unique": 800
+   }
+  },
+  "x26_225M": {
+   "F": {
+    "arms": [
+     "F"
+    ],
+    "cps": [
+     "x26_225M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 33,
+    "file_order_is_sorted": true,
+    "files": [
+     "rows_0_of_1.jsonl"
+    ],
+    "foreign": [],
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 33,
+    "not_ok_reasons": [
+     "world build: WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1",
+     "world build: WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2:",
+     "world build: WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11:",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#2",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_1/loss_s2_004#p1#3",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_2/win_s2_001#p1#8:"
+    ],
+    "ok": 287,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "steps": [
+     225000152
+    ],
+    "torn": 0,
+    "unique": 320,
+    "world_heads": [
+     "826bee8919c0986fd3733d3d06f03803822a929a"
+    ]
+   },
+   "FN": {
+    "arms": [
+     "FN"
+    ],
+    "cps": [
+     "x26_225M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 32,
+    "file_order_is_sorted": true,
+    "files": [
+     "rows_0_of_1.jsonl"
+    ],
+    "foreign": [],
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 32,
+    "not_ok_reasons": [
+     "world build: WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1",
+     "world build: WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2:",
+     "world build: WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11:",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#2",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_1/win_s1_005#p1#40",
+     "world build: WorldError: rb_x26_s2601/step_230000074/sentinel_4/win_s2_001#p1#35"
+    ],
+    "ok": 288,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "steps": [
+     225000152
+    ],
+    "torn": 0,
+    "unique": 320,
+    "world_heads": [
+     "826bee8919c0986fd3733d3d06f03803822a929a"
+    ]
+   },
+   "O": {
+    "cps": [
+     "x26_225M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 0,
+    "file_order_is_sorted": true,
+    "files": [
+     "shard_0_of_1.jsonl"
+    ],
+    "foreign": [],
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 0,
+    "not_ok_reasons": [],
+    "ok": 320,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "steps": [
+     225000152
+    ],
+    "torn": 0,
+    "unique": 320
+   },
+   "V:oracle": {
+    "arms": [
+     "V:oracle"
+    ],
+    "cps": [
+     "x26_225M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 0,
+    "file_order_is_sorted": true,
+    "files": [
+     "rows_0_of_1.jsonl"
+    ],
+    "foreign": [],
+    "lines": 12,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 0,
+    "not_ok_reasons": [],
+    "ok": 12,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "steps": [
+     225000152
+    ],
+    "torn": 0,
+    "unique": 12,
+    "world_heads": [
+     "826bee8919c0986fd3733d3d06f03803822a929a"
+    ]
+   },
+   "belief": {
+    "cps": [
+     "x26_225M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 0,
+    "file_order_is_sorted": true,
+    "files": [
+     "x26_225M.jsonl"
+    ],
+    "foreign": [],
+    "lines": 320,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 0,
+    "not_ok_reasons": [],
+    "ok": 320,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "torn": 0,
+    "unique": 320
+   },
+   "roots": {
+    "cps": [
+     "x26_225M"
+    ],
+    "defect": 0,
+    "duplicates": 0,
+    "excluded": 0,
+    "file_order_is_sorted": true,
+    "files": [
+     "x26_225M.jsonl"
+    ],
+    "foreign": [],
+    "lines": 800,
+    "missing": 0,
+    "n_foreign": 0,
+    "nonfinite": 0,
+    "not_ok": 0,
+    "not_ok_reasons": [],
+    "ok": 800,
+    "pins": [
+     "9c0334890d05785bbfadcb2ecbe3fe2d548efe9b"
+    ],
+    "ties_full": 0,
+    "ties_lean": 0,
+    "torn": 0,
+    "unique": 800
+   }
+  }
+ },
+ "worlds": {
+  "F": {
+   "cp_field": [
+    "None"
+   ],
+   "crn_broken": 0,
+   "defect": 0,
+   "duplicates": 0,
+   "excluded": 33,
+   "excluded_ids": [
+    "rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15",
+    "rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19",
+    "rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2",
+    "rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11",
+    "rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#28",
+    "rb_x26_s2601/step_230000074/sentinel_1/loss_s2_004#p1#34",
+    "rb_x26_s2601/step_230000074/sentinel_2/win_s2_001#p1#8",
+    "rb_x26_s2601/step_230000074/sentinel_4/win_s2_001#p1#35",
+    "rb_x26_s2601/step_230000074/setup_sweep/loss_s2_005#p1#12",
+    "rb_x26_s2601/step_230000074/setup_sweep/win_s1_001#p1#9",
+    "rb_x26_s2601/step_230000074/staller_v2/win_s2_001#p1#13",
+    "rb_x26_s2601/step_232000091/aggressive_v2/win_s0_002#p1#21",
+    "rb_x26_s2601/step_232000091/heuristic/win_s2_001#p1#38",
+    "rb_x26_s2601/step_232000091/heuristic2/win_s3_002#p1#4",
+    "rb_x26_s2601/step_232000091/sentinel_0/loss_s1_001#p1#34",
+    "rb_x26_s2601/step_232000091/sentinel_0/loss_s2_002#p1#26",
+    "rb_x26_s2601/step_232000091/sentinel_1/loss_s0_004#p1#8",
+    "rb_x26_s2601/step_232000091/sentinel_1/loss_s1_002#p1#23",
+    "rb_x26_s2601/step_232000091/sentinel_1/win_s3_004#p1#37",
+    "rb_x26_s2601/step_232000091/sentinel_2/win_s0_003#p1#20",
+    "rb_x26_s2601/step_232000091/sentinel_3/loss_s1_005#p1#17",
+    "rb_x26_s2601/step_232000091/sentinel_4/draw_s0_006#p1#32",
+    "rb_x26_s2601/step_234000025/aggressive/win_s2_002#p1#19",
+    "rb_x26_s2601/step_234000025/aggressive_v2/draw_s2_004#p1#9",
+    "rb_x26_s2601/step_234000025/aggressive_v2/win_s1_001#p1#26",
+    "rb_x26_s2601/step_234000025/heuristic2/loss_s0_003#p1#25",
+    "rb_x26_s2601/step_234000025/random/win_s2_001#p1#31",
+    "rb_x26_s2601/step_234000025/sentinel_0/loss_s1_001#p1#21",
+    "rb_x26_s2601/step_234000025/sentinel_1/loss_s2_002#p1#8",
+    "rb_x26_s2601/step_234000025/sentinel_3/win_s0_001#p1#22",
+    "rb_x26_s2601/step_234000025/sentinel_4/loss_s3_004#p1#24",
+    "rb_x26_s2601/step_234000025/setup_sweep/win_s0_002#p1#15",
+    "rb_x26_s2601/step_234000025/staller_v2/win_s2_002#p1#18"
+   ],
+   "exclusion_reasons": [
+    "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15: no hones",
+    "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19: no hones",
+    "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2: no honest dr",
+    "WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11: no honest dr",
+    "WorldError: rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#28: no honest ",
+    "WorldError: rb_x26_s2601/step_230000074/sentinel_1/loss_s2_004#p1#34: 4 of 8 wor"
+   ],
+   "file_order_is_sorted": true,
+   "files": [
+    "worlds_0_of_1.jsonl"
+   ],
+   "foreign": [],
+   "heads": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "lines": 320,
+   "missing": 0,
+   "n_foreign": 0,
+   "nonfinite": 0,
+   "ok": 287,
+   "torn": 0,
+   "unique": 320
+  },
+  "FN@x26_025M": {
+   "cp_field": [
+    "x26_025M"
+   ],
+   "crn_broken": 0,
+   "defect": 0,
+   "duplicates": 0,
+   "excluded": 32,
+   "excluded_ids": [
+    "rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15",
+    "rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19",
+    "rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2",
+    "rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11",
+    "rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#28",
+    "rb_x26_s2601/step_230000074/sentinel_1/win_s1_005#p1#40",
+    "rb_x26_s2601/step_230000074/sentinel_4/win_s2_001#p1#35",
+    "rb_x26_s2601/step_230000074/setup_sweep/loss_s2_005#p1#12",
+    "rb_x26_s2601/step_230000074/setup_sweep/win_s1_001#p1#9",
+    "rb_x26_s2601/step_230000074/staller_v2/win_s2_001#p1#13",
+    "rb_x26_s2601/step_232000091/aggressive_v2/win_s0_002#p1#21",
+    "rb_x26_s2601/step_232000091/heuristic/win_s2_001#p1#38",
+    "rb_x26_s2601/step_232000091/heuristic2/win_s3_002#p1#4",
+    "rb_x26_s2601/step_232000091/sentinel_0/loss_s1_001#p1#34",
+    "rb_x26_s2601/step_232000091/sentinel_0/loss_s2_002#p1#26",
+    "rb_x26_s2601/step_232000091/sentinel_1/loss_s0_004#p1#8",
+    "rb_x26_s2601/step_232000091/sentinel_1/loss_s1_002#p1#23",
+    "rb_x26_s2601/step_232000091/sentinel_1/win_s3_004#p1#37",
+    "rb_x26_s2601/step_232000091/sentinel_2/win_s0_003#p1#20",
+    "rb_x26_s2601/step_232000091/sentinel_3/loss_s1_005#p1#17",
+    "rb_x26_s2601/step_232000091/sentinel_4/draw_s0_006#p1#32",
+    "rb_x26_s2601/step_234000025/aggressive/win_s2_002#p1#19",
+    "rb_x26_s2601/step_234000025/aggressive_v2/draw_s2_004#p1#9",
+    "rb_x26_s2601/step_234000025/aggressive_v2/win_s1_001#p1#26",
+    "rb_x26_s2601/step_234000025/heuristic2/loss_s0_003#p1#25",
+    "rb_x26_s2601/step_234000025/random/win_s2_001#p1#31",
+    "rb_x26_s2601/step_234000025/sentinel_0/loss_s1_001#p1#21",
+    "rb_x26_s2601/step_234000025/sentinel_1/loss_s2_002#p1#8",
+    "rb_x26_s2601/step_234000025/sentinel_3/win_s0_001#p1#22",
+    "rb_x26_s2601/step_234000025/sentinel_4/loss_s3_004#p1#24",
+    "rb_x26_s2601/step_234000025/setup_sweep/win_s0_002#p1#15",
+    "rb_x26_s2601/step_234000025/staller_v2/win_s2_002#p1#18"
+   ],
+   "exclusion_reasons": [
+    "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15: no hones",
+    "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19: no hones",
+    "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2: no honest dr",
+    "WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11: no honest dr",
+    "WorldError: rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#28: no honest ",
+    "WorldError: rb_x26_s2601/step_230000074/sentinel_1/win_s1_005#p1#40: 5 of 8 worl"
+   ],
+   "file_order_is_sorted": true,
+   "files": [
+    "worlds_0_of_1.jsonl"
+   ],
+   "foreign": [],
+   "heads": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "lines": 320,
+   "missing": 0,
+   "n_foreign": 0,
+   "nonfinite": 0,
+   "ok": 288,
+   "torn": 0,
+   "unique": 320
+  },
+  "FN@x26_100M": {
+   "cp_field": [
+    "x26_100M"
+   ],
+   "crn_broken": 0,
+   "defect": 0,
+   "duplicates": 0,
+   "excluded": 32,
+   "excluded_ids": [
+    "rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15",
+    "rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19",
+    "rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2",
+    "rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11",
+    "rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#28",
+    "rb_x26_s2601/step_230000074/sentinel_1/win_s1_005#p1#40",
+    "rb_x26_s2601/step_230000074/sentinel_4/win_s2_001#p1#35",
+    "rb_x26_s2601/step_230000074/setup_sweep/loss_s2_005#p1#12",
+    "rb_x26_s2601/step_230000074/setup_sweep/win_s1_001#p1#9",
+    "rb_x26_s2601/step_230000074/staller_v2/win_s2_001#p1#13",
+    "rb_x26_s2601/step_232000091/aggressive_v2/win_s0_002#p1#21",
+    "rb_x26_s2601/step_232000091/heuristic/win_s2_001#p1#38",
+    "rb_x26_s2601/step_232000091/heuristic2/win_s3_002#p1#4",
+    "rb_x26_s2601/step_232000091/sentinel_0/loss_s1_001#p1#34",
+    "rb_x26_s2601/step_232000091/sentinel_0/loss_s2_002#p1#26",
+    "rb_x26_s2601/step_232000091/sentinel_1/loss_s0_004#p1#8",
+    "rb_x26_s2601/step_232000091/sentinel_1/loss_s1_002#p1#23",
+    "rb_x26_s2601/step_232000091/sentinel_1/win_s3_004#p1#37",
+    "rb_x26_s2601/step_232000091/sentinel_2/win_s0_003#p1#20",
+    "rb_x26_s2601/step_232000091/sentinel_3/loss_s1_005#p1#17",
+    "rb_x26_s2601/step_232000091/sentinel_4/draw_s0_006#p1#32",
+    "rb_x26_s2601/step_234000025/aggressive/win_s2_002#p1#19",
+    "rb_x26_s2601/step_234000025/aggressive_v2/draw_s2_004#p1#9",
+    "rb_x26_s2601/step_234000025/aggressive_v2/win_s1_001#p1#26",
+    "rb_x26_s2601/step_234000025/heuristic2/loss_s0_003#p1#25",
+    "rb_x26_s2601/step_234000025/random/win_s2_001#p1#31",
+    "rb_x26_s2601/step_234000025/sentinel_0/loss_s1_001#p1#21",
+    "rb_x26_s2601/step_234000025/sentinel_1/loss_s2_002#p1#8",
+    "rb_x26_s2601/step_234000025/sentinel_3/win_s0_001#p1#22",
+    "rb_x26_s2601/step_234000025/sentinel_4/loss_s3_004#p1#24",
+    "rb_x26_s2601/step_234000025/setup_sweep/win_s0_002#p1#15",
+    "rb_x26_s2601/step_234000025/staller_v2/win_s2_002#p1#18"
+   ],
+   "exclusion_reasons": [
+    "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15: no hones",
+    "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19: no hones",
+    "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2: no honest dr",
+    "WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11: no honest dr",
+    "WorldError: rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#28: no honest ",
+    "WorldError: rb_x26_s2601/step_230000074/sentinel_1/win_s1_005#p1#40: 2 of 8 worl"
+   ],
+   "file_order_is_sorted": true,
+   "files": [
+    "worlds_0_of_1.jsonl"
+   ],
+   "foreign": [],
+   "heads": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "lines": 320,
+   "missing": 0,
+   "n_foreign": 0,
+   "nonfinite": 0,
+   "ok": 288,
+   "torn": 0,
+   "unique": 320
+  },
+  "FN@x26_175M": {
+   "cp_field": [
+    "x26_175M"
+   ],
+   "crn_broken": 0,
+   "defect": 0,
+   "duplicates": 0,
+   "excluded": 32,
+   "excluded_ids": [
+    "rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15",
+    "rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19",
+    "rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2",
+    "rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11",
+    "rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#28",
+    "rb_x26_s2601/step_230000074/sentinel_1/win_s1_005#p1#40",
+    "rb_x26_s2601/step_230000074/sentinel_4/win_s2_001#p1#35",
+    "rb_x26_s2601/step_230000074/setup_sweep/loss_s2_005#p1#12",
+    "rb_x26_s2601/step_230000074/setup_sweep/win_s1_001#p1#9",
+    "rb_x26_s2601/step_230000074/staller_v2/win_s2_001#p1#13",
+    "rb_x26_s2601/step_232000091/aggressive_v2/win_s0_002#p1#21",
+    "rb_x26_s2601/step_232000091/heuristic/win_s2_001#p1#38",
+    "rb_x26_s2601/step_232000091/heuristic2/win_s3_002#p1#4",
+    "rb_x26_s2601/step_232000091/sentinel_0/loss_s1_001#p1#34",
+    "rb_x26_s2601/step_232000091/sentinel_0/loss_s2_002#p1#26",
+    "rb_x26_s2601/step_232000091/sentinel_1/loss_s0_004#p1#8",
+    "rb_x26_s2601/step_232000091/sentinel_1/loss_s1_002#p1#23",
+    "rb_x26_s2601/step_232000091/sentinel_1/win_s3_004#p1#37",
+    "rb_x26_s2601/step_232000091/sentinel_2/win_s0_003#p1#20",
+    "rb_x26_s2601/step_232000091/sentinel_3/loss_s1_005#p1#17",
+    "rb_x26_s2601/step_232000091/sentinel_4/draw_s0_006#p1#32",
+    "rb_x26_s2601/step_234000025/aggressive/win_s2_002#p1#19",
+    "rb_x26_s2601/step_234000025/aggressive_v2/draw_s2_004#p1#9",
+    "rb_x26_s2601/step_234000025/aggressive_v2/win_s1_001#p1#26",
+    "rb_x26_s2601/step_234000025/heuristic2/loss_s0_003#p1#25",
+    "rb_x26_s2601/step_234000025/random/win_s2_001#p1#31",
+    "rb_x26_s2601/step_234000025/sentinel_0/loss_s1_001#p1#21",
+    "rb_x26_s2601/step_234000025/sentinel_1/loss_s2_002#p1#8",
+    "rb_x26_s2601/step_234000025/sentinel_3/win_s0_001#p1#22",
+    "rb_x26_s2601/step_234000025/sentinel_4/loss_s3_004#p1#24",
+    "rb_x26_s2601/step_234000025/setup_sweep/win_s0_002#p1#15",
+    "rb_x26_s2601/step_234000025/staller_v2/win_s2_002#p1#18"
+   ],
+   "exclusion_reasons": [
+    "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15: no hones",
+    "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19: no hones",
+    "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2: no honest dr",
+    "WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11: no honest dr",
+    "WorldError: rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#28: no honest ",
+    "WorldError: rb_x26_s2601/step_230000074/sentinel_1/win_s1_005#p1#40: 5 of 8 worl"
+   ],
+   "file_order_is_sorted": true,
+   "files": [
+    "worlds_0_of_1.jsonl"
+   ],
+   "foreign": [],
+   "heads": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "lines": 320,
+   "missing": 0,
+   "n_foreign": 0,
+   "nonfinite": 0,
+   "ok": 288,
+   "torn": 0,
+   "unique": 320
+  },
+  "FN@x26_225M": {
+   "cp_field": [
+    "x26_225M"
+   ],
+   "crn_broken": 0,
+   "defect": 0,
+   "duplicates": 0,
+   "excluded": 32,
+   "excluded_ids": [
+    "rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15",
+    "rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19",
+    "rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2",
+    "rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11",
+    "rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#28",
+    "rb_x26_s2601/step_230000074/sentinel_1/win_s1_005#p1#40",
+    "rb_x26_s2601/step_230000074/sentinel_4/win_s2_001#p1#35",
+    "rb_x26_s2601/step_230000074/setup_sweep/loss_s2_005#p1#12",
+    "rb_x26_s2601/step_230000074/setup_sweep/win_s1_001#p1#9",
+    "rb_x26_s2601/step_230000074/staller_v2/win_s2_001#p1#13",
+    "rb_x26_s2601/step_232000091/aggressive_v2/win_s0_002#p1#21",
+    "rb_x26_s2601/step_232000091/heuristic/win_s2_001#p1#38",
+    "rb_x26_s2601/step_232000091/heuristic2/win_s3_002#p1#4",
+    "rb_x26_s2601/step_232000091/sentinel_0/loss_s1_001#p1#34",
+    "rb_x26_s2601/step_232000091/sentinel_0/loss_s2_002#p1#26",
+    "rb_x26_s2601/step_232000091/sentinel_1/loss_s0_004#p1#8",
+    "rb_x26_s2601/step_232000091/sentinel_1/loss_s1_002#p1#23",
+    "rb_x26_s2601/step_232000091/sentinel_1/win_s3_004#p1#37",
+    "rb_x26_s2601/step_232000091/sentinel_2/win_s0_003#p1#20",
+    "rb_x26_s2601/step_232000091/sentinel_3/loss_s1_005#p1#17",
+    "rb_x26_s2601/step_232000091/sentinel_4/draw_s0_006#p1#32",
+    "rb_x26_s2601/step_234000025/aggressive/win_s2_002#p1#19",
+    "rb_x26_s2601/step_234000025/aggressive_v2/draw_s2_004#p1#9",
+    "rb_x26_s2601/step_234000025/aggressive_v2/win_s1_001#p1#26",
+    "rb_x26_s2601/step_234000025/heuristic2/loss_s0_003#p1#25",
+    "rb_x26_s2601/step_234000025/random/win_s2_001#p1#31",
+    "rb_x26_s2601/step_234000025/sentinel_0/loss_s1_001#p1#21",
+    "rb_x26_s2601/step_234000025/sentinel_1/loss_s2_002#p1#8",
+    "rb_x26_s2601/step_234000025/sentinel_3/win_s0_001#p1#22",
+    "rb_x26_s2601/step_234000025/sentinel_4/loss_s3_004#p1#24",
+    "rb_x26_s2601/step_234000025/setup_sweep/win_s0_002#p1#15",
+    "rb_x26_s2601/step_234000025/staller_v2/win_s2_002#p1#18"
+   ],
+   "exclusion_reasons": [
+    "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#15: no hones",
+    "WorldError: rb_x26_s2601/step_230000074/aggressive_v2/win_s3_001#p1#19: no hones",
+    "WorldError: rb_x26_s2601/step_230000074/heuristic/loss_s1_004#p1#2: no honest dr",
+    "WorldError: rb_x26_s2601/step_230000074/heuristic/win_s2_002#p1#11: no honest dr",
+    "WorldError: rb_x26_s2601/step_230000074/sentinel_0/loss_s0_004#p1#28: no honest ",
+    "WorldError: rb_x26_s2601/step_230000074/sentinel_1/win_s1_005#p1#40: 2 of 8 worl"
+   ],
+   "file_order_is_sorted": true,
+   "files": [
+    "worlds_0_of_1.jsonl"
+   ],
+   "foreign": [],
+   "heads": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "lines": 320,
+   "missing": 0,
+   "n_foreign": 0,
+   "nonfinite": 0,
+   "ok": 288,
+   "torn": 0,
+   "unique": 320
+  },
+  "V:oracle": {
+   "cp_field": [
+    "None"
+   ],
+   "crn_broken": 0,
+   "defect": 0,
+   "duplicates": 0,
+   "excluded": 0,
+   "excluded_ids": [],
+   "exclusion_reasons": [],
+   "file_order_is_sorted": false,
+   "files": [
+    "worlds_0_of_1.jsonl"
+   ],
+   "foreign": [],
+   "heads": [
+    "826bee8919c0986fd3733d3d06f03803822a929a"
+   ],
+   "lines": 12,
+   "missing": 0,
+   "n_foreign": 0,
+   "nonfinite": 0,
+   "ok": 12,
+   "torn": 0,
+   "unique": 12
+  }
+ }
+}

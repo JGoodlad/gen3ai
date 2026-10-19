@@ -1,0 +1,66 @@
+{
+ "x26_025M": {
+  "identity_states_played": 12,
+  "oracle = Phase 1": {
+   "actions": 87,
+   "both_not_ok": 0,
+   "crit_mismatch": 0,
+   "examples": [],
+   "max_dq": 1.0000000000287557e-06,
+   "max_dv": 1.0000000000065512e-05,
+   "out_mismatch": 0,
+   "refused": 0,
+   "states": 12,
+   "trace_mismatch": 0,
+   "verdict": "PASS"
+  }
+ },
+ "x26_100M": {
+  "identity_states_played": 12,
+  "oracle = Phase 1": {
+   "actions": 87,
+   "both_not_ok": 0,
+   "crit_mismatch": 0,
+   "examples": [],
+   "max_dq": 1.0000000000287557e-06,
+   "max_dv": 1.0000000000065512e-05,
+   "out_mismatch": 0,
+   "refused": 0,
+   "states": 12,
+   "trace_mismatch": 0,
+   "verdict": "PASS"
+  }
+ },
+ "x26_175M": {
+  "identity_states_played": 12,
+  "oracle = Phase 1": {
+   "actions": 87,
+   "both_not_ok": 0,
+   "crit_mismatch": 0,
+   "examples": [],
+   "max_dq": 1.0000000000287557e-06,
+   "max_dv": 1.0000000000065512e-05,
+   "out_mismatch": 0,
+   "refused": 0,
+   "states": 12,
+   "trace_mismatch": 0,
+   "verdict": "PASS"
+  }
+ },
+ "x26_225M": {
+  "identity_states_played": 12,
+  "oracle = Phase 1": {
+   "actions": 87,
+   "both_not_ok": 0,
+   "crit_mismatch": 0,
+   "examples": [],
+   "max_dq": 1.0000000000287557e-06,
+   "max_dv": 1.0000000000065512e-05,
+   "out_mismatch": 0,
+   "refused": 0,
+   "states": 12,
+   "trace_mismatch": 0,
+   "verdict": "PASS"
+  }
+ }
+}
