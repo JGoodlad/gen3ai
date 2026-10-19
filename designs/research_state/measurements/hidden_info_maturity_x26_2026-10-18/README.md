@@ -319,3 +319,26 @@ $PY -I $F/score_mat.py --bank interim --tag plateau_step && $PY -I $F/score_mat.
 $PY -I $F/read_mat.py plateau                       # -> result_mat_plateau.json
 ```
 
+
+### 6.3 The queue (LAUNCHED 2026-10-19 05:20 PDT; RUNNING)
+
+| | |
+|---|---|
+| runner | `queue_mat.py --slots 2` (pid in `~/gen3ai_archive/hidden_info_maturity/queue.pid`; the first was 3627258), launched by `launch_queue.sh` from the DRIVER checkout. Detached (`setsid nohup`) |
+| DRIVER checkout | `~/.cache/gen3ai/hib_mat/driver_198fa91e`, detached at **`198fa91e`** (the A1 registration commit; the harness is `154dcc73`). Every new row is stamped `driver` = `198fa91e…`. **Keep it** until the read |
+| BUILDER checkout | `~/.cache/gen3ai/hib_mat/head`, detached at `826bee89` (the registered builder; every world row's `head`). **Keep it** |
+| pin checkout | `~/.cache/gen3ai/hib_mat/pin_x26` at `9c033489` (bank, roots, truth, belief, every playout). **Keep it** |
+| archive | `~/gen3ai_archive/hidden_info_maturity/`. The interim bank is at the root, the plateau bank under `plateau/`. The LEAN run's `QUEUE_DONE` was kept as `QUEUE_DONE.20261019T052018` |
+| CPU (rule 5b) | ≤ 2 single-thread workers, each `chrt --idle` + `nice -n 19` + `taskset -c 5-7,13-15` + its own `mem_cap` scope; `CUDA_VISIBLE_DEVICES=""`. **No GPU** |
+| progress (counts only) | `python -I <this folder>/queue_mat.py --status`; `tail ~/gen3ai_archive/hidden_info_maturity/logs/queue_mat.log` |
+| done marker | `~/gen3ai_archive/hidden_info_maturity/QUEUE_DONE`. It lists any PARKED unit, and a parked unit is a FINDING |
+| order | interim shared worlds (F for the 480 new states, F+U / F+M on all 800) → P\* on interim → 25M's FULL upgrade on interim → the plateau bank's shared worlds → P\* and 25M on the plateau bank → the hide-only O−M / O−U worlds and plays at P\* (interim, then plateau) |
+| cost | ≈ 150 CPU-h (PREREGISTRATION §9.8, from this battery's measured per-state costs) |
+| **ETA** | **≈ 4–5 days:** `QUEUE_DONE` around **2026-10-23 to 2026-10-24**. This assumes the LEAN queue's measured ≈ 1.26 CPU-h per wall-hour on 2 SCHED_IDLE slots beside a live run (X26, then X34). The interim bank's FULL pair (steps 1–2, ≈ 55 CPU-h) completes first, around **2026-10-21**. A quieter box shortens all of it |
+
+- **Restart after a crash or a reboot:** `bash ~/.cache/gen3ai/hib_mat/driver_198fa91e/designs/research_state/measurements/hidden_info_maturity_x26_2026-10-18/launch_queue.sh`.
+  - It refuses a builder checkout that is not at `826bee89`, and a driver checkout that is not detached and clean.
+  - Every unit resumes, and `--limit` caps only NEW work.
+- **The read** (once `QUEUE_DONE` exists): §6.2's last block. Before it, a GIGO audit for PREREGISTRATION §9.7 is
+  written. It checks coverage per (bank, anchor, unit), provenance (`head`, `driver`, `bank`), defects and the CRN
+  tooth, the identity at P\*, the k = 6 identities O−U ≡ O and F+U ≡ F, and the exclusion flags.
