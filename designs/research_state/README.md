@@ -115,6 +115,11 @@ disagree, **the ledger wins and the view is wrong** — fix the view.
   — two smaller standing plans (critic reliability; the GIGO/order-mismatch tripwire).
 - **[metamon_replay_feasibility.md](metamon_replay_feasibility.md)** — the external-corpus feasibility
   study behind the (owner-PUNTED) human-replay chapter.
+- **[literature/](literature/)** — dated external-literature surveys (web research, every claim
+  cited and marked primary / secondary / UNVERIFIED); a snapshot as of its date, not a live view.
+  [`showdown_bots_landscape_2026-10-18.md`](literature/showdown_bots_landscape_2026-10-18.md): the
+  autumn-2026 wave of Showdown ladder bots (the Gen 9 Champions VGC Reg M-C #1 bots, Jaxcalibur,
+  Metamon, VGC-Bench), the new Smogon bot registry policy, and what transfers to us.
 - **[week_plan_2026-09-07.md](week_plan_2026-09-07.md)** — THE WEEK'S REGISTRATION (draft for the owner):
   arms A (SPARSE) and B (self-head bootstrap), decisions D1–D5 with their bars and dates.
 - **[`../ops/TRAINING_RUN_SOP.md`](../ops/TRAINING_RUN_SOP.md)** — the era-independent operating
