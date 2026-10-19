@@ -47,10 +47,13 @@ def test_every_key_the_arch_umbrella_writes_is_a_recorded_ModelVersion_field():
 
 
 def test_the_field_is_recorded_by_every_launch_save_site():
+    import main.train.fork_arch as fa
     import main.train.lifecycle as lc
     import main.train.model_build as mb
 
-    assert inspect.getsource(mb).count("opp_intent_coef=float(args.opp_intent_coef or 0.0)") == 2
+    # the fresh build (model_build) and the resume build (`fork_arch.resume_version_build` since F-BI-2)
+    src = inspect.getsource(mb) + inspect.getsource(fa)
+    assert src.count("opp_intent_coef=float(args.opp_intent_coef or 0.0)") == 2
     assert "opp_intent_coef=float(getattr(model, \"opp_intent_coef\", 0.0) or 0.0)" in inspect.getsource(lc)
 
 

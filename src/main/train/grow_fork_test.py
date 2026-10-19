@@ -29,8 +29,9 @@ from main.train import grow_fork as GF
 from main.train.derived_toggle_resume_test import _resolve, _saved_version
 from main.train.parser import build_parser
 from main.exit_codes import TrainExitCode
-# the dry run's fixtures (a temp repo + archive), `isolated` under the name `dry_isolated` (it needs `repo` by name)
-from main.launcher.dry_run_test import isolated as dry_isolated, repo  # noqa: F401
+# the dry run's fixtures (a temp repo + archive) and F-BI-2's toy parent, requested by name (`getfixturevalue`)
+from main.launcher.dry_run_test import isolated, repo  # noqa: F401
+from main.launcher.fork_arch_dry_run_test import X34_FORK, toy_parent  # noqa: F401
 
 _FRESH = ["--arch", "production", "--steps", "1000"]
 
@@ -177,7 +178,7 @@ def test_checkargs_resolves_the_grow_fork_and_prints_the_declared_growth(tmp_pat
 def test_the_launcher_dry_run_prints_the_declared_growth(request, monkeypatch, capsys):
     from main.launcher.dry_run_test import _dry_run, _make_run
 
-    _root, (first, _second), work = request.getfixturevalue("dry_isolated")
+    _root, (first, _second), work = request.getfixturevalue("isolated")
     _parent_dir, ckpt = _make_run(work, first, name="parent")
     (work / "models" / "parent" / "model_config.json").write_text(json.dumps(dataclasses.asdict(_version(2))))
     _dry_run(["--model", ckpt, "--run-name", "grow_x", "--steps", "1000", "--grow", "trunk_layers=4"], monkeypatch)
@@ -288,3 +289,22 @@ def test_the_seeded_pool_grows_to_the_childs_architecture_and_plays_the_parents_
             got = G.forward_record(opp.policy, obs, mask)
             assert np.array_equal(got["logits"], ref["logits"]) and np.array_equal(got["values"], ref["values"])
         assert GF.grow_seeded_pool(str(pool), fields, child_version) is None              # idempotent
+
+
+# ── F-BI-2's fork-architecture verdict (`main.train.fork_arch`) honours the declared growth ──────────
+
+
+def test_the_fork_arch_verdict_passes_a_declared_growth_and_judges_it_with_the_trainers_gate(request):
+    """`fork_arch.check_against_saved` routes a `--grow` argv through `check_compatible_grown` (the load's gate): the
+    declared depth passes; an UNDECLARED typed depth and any OTHER arch difference beside `--grow` stay refused."""
+    from main.checkargs import check
+    from main.train import fork_arch
+
+    parent = request.getfixturevalue("toy_parent")
+    assert fork_arch.DECLARED_GROWTH == {"grow": ("trunk_layers",)}
+    ok = check(["--model", parent, "--grow", "trunk_layers=4", *X34_FORK])["fork_arch"]
+    assert ok.checked and not ok.refused, ok
+    typed = check(["--model", parent, "--trunk-layers", "4", *X34_FORK])["fork_arch"]
+    assert typed.refused and "trunk_layers mismatch" in typed.reason
+    other = check(["--model", parent, "--grow", "trunk_layers=4", "--mon-hazard-cost", "on", *X34_FORK])["fork_arch"]
+    assert other.refused and "mon_hazard_cost mismatch" in other.reason, other

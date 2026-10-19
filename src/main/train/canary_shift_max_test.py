@@ -159,10 +159,12 @@ def test_a_TYPED_value_on_a_launch_with_no_compiled_cuda_learner_is_refused_but_
 
 # ── recorded at both save sites ─────────────────────────────────────────────────────────────────
 def test_the_value_is_recorded_by_both_launch_save_sites_and_reaches_the_model():
+    import main.train.fork_arch as fa
     import main.train.model_build as mb
 
-    src = inspect.getsource(mb)
-    assert src.count("canary_shift_max=args.canary_shift_max") == 2           # the resume build and the fresh build
+    # the resume build (`fork_arch.resume_version_build` since F-BI-2) and the fresh build (model_build)
+    src = inspect.getsource(mb) + inspect.getsource(fa)
+    assert src.count("canary_shift_max=args.canary_shift_max") == 2
     assert "model._canary_shift_max = getattr(args, \"canary_shift_max\", None)" in inspect.getsource(
         mb.apply_training_hparams)
 

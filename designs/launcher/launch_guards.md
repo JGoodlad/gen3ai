@@ -58,9 +58,10 @@ this, a toy fork typing `--trunk-layers 4` read "✓ this command still launches
 It is ADVISORY when the child runs a PINNED other commit (that commit's `check_compatible` is the authority —
 the arch-surface rule below), and `⚠️ NOT checked here` (never a refusal) when the parent's config is absent,
 unreadable under this tree, or the argv is refused by `resolve_config` first (those have their own findings).
-**Declared changes:** a growth option (B-GROW's `--grow-trunk-layers`, not yet on main) is allowed through
-`fork_arch.DECLARED_GROWTH` (option dest → the `ModelVersion` fields it may change), EMPTY today; the unit that
-adds an option adds its row AND makes the trainer's load honour the same table. Tests:
+**Declared changes:** a growth option is allowed through `fork_arch.DECLARED_GROWTH` (option dest → the
+`ModelVersion` fields it may change). Its row is B-GROW's `--grow FIELD=VALUE` (dest `grow`, the BUILT fields of
+`agents.model.growth.GROWABLE`), judged by `ModelVersion.check_compatible_grown` — the very gate the trainer's
+load runs (`load_model_snapshot(grow=…)`; `designs/model/versioning.md` "Declared growth at a fork"). Tests:
 `src/main/launcher/fork_arch_dry_run_test.py` (a mismatched toy / production fork refused; the X26- and
 X34-style fork lines pass; the seam; each refusal fails on revert).
 

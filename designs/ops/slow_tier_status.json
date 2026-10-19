@@ -2086,6 +2086,22 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/main/train/canary_shift_max_test.py::test_one_update_is_BIT_IDENTICAL_with_the_flag_at_two_values": {
+   "status": "pass",
+   "commit": "77ada5042c4c8c5083db7316793c03ac3fc5be6f",
+   "at": "2026-10-19T23:56:11Z",
+   "duration_s": 15.58,
+   "contention": 1.77,
+   "detail": ""
+  },
+  "src/main/train/canary_shift_max_test.py::test_the_fingerprint_has_teeth_a_real_hyperparameter_change_moves_it": {
+   "status": "pass",
+   "commit": "77ada5042c4c8c5083db7316793c03ac3fc5be6f",
+   "at": "2026-10-19T23:56:11Z",
+   "duration_s": 8.92,
+   "contention": 1.76,
+   "detail": ""
+  },
   "src/main/train/debug_shape_smoke_integration_test.py::test_arch_debug_smoke_reaches_an_update_and_exits_0[endstate]": {
    "status": "pass",
    "commit": "a9d6fd7969ed1f856433589684152c67ed3d1241",
@@ -2207,5 +2223,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-19T23:04:04Z"
+ "last_written": "2026-10-19T23:56:11Z"
 }

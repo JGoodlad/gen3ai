@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import types
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -102,6 +103,14 @@ def apply_to_namespace(ns: Any, saved: Any) -> Dict[str, Tuple[Any, Any]]:
     return out
 
 
+def growth_fields(ns: Any) -> Dict[str, Dict[str, Any]]:
+    """``{field: {"parent": p, "child": c}}`` for every declared field that CHANGES (``ns._grow_declared``, set by
+    :func:`apply_to_namespace`) — the lineage stamp's ``fields`` block and the argument of
+    ``ModelVersion.check_compatible_grown``, for the trainer's load and `main.train.fork_arch` alike."""
+    return {f: {"parent": p, "child": c} for f, (p, c) in (getattr(ns, "_grow_declared", None) or {}).items()
+            if p != c}
+
+
 def _own_stamp(model_dir: Optional[str]) -> Optional[Dict[str, Any]]:
     from agents.training.lineage import read_block
 
@@ -140,7 +149,7 @@ def decide(*, grown: Dict[str, Tuple[Any, Any]], model_path: Optional[str], mode
         "schema": SCHEMA,
         "date": now or datetime.now(timezone.utc).isoformat(),
         "parent_model": os.path.abspath(model_path or ""),
-        "fields": {f: {"parent": p, "child": c} for f, (p, c) in grown.items()},
+        "fields": growth_fields(types.SimpleNamespace(_grow_declared=grown)),
         "optimizer": OPTIMIZER_RULE,
     }
 

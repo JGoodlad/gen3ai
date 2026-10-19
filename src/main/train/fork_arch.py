@@ -11,13 +11,15 @@ verdict calls the trainer's own `ModelVersion.check_compatible` on the parent's 
 `model_config.json`, found the way `agents.model.snapshot.load_model_snapshot` finds it. Nothing here
 compares a field by hand, so the dry-run refusal text IS the child's FATAL text.
 
-DECLARED CHANGES (the seam for B-GROW, `--grow-trunk-layers`). A fork may change an architecture
-field on purpose only through a declared growth option. `DECLARED_GROWTH` maps such an option's
-namespace dest to the `ModelVersion` fields it is allowed to change; when the option is set, those
-fields are taken from the current version before `check_compatible` runs (the same `replace` move
-`check_opponent_snapshot_compatible` makes for the ride-along heads). It is EMPTY today: no growth
-option exists on main. The unit that adds one adds its row here AND makes the trainer's load path
-honour the same table, or the dry run and the child disagree again.
+DECLARED CHANGES. A fork may change an architecture field on purpose only through a declared growth
+option. `DECLARED_GROWTH` maps such an option's namespace dest to the `ModelVersion` fields it is
+allowed to change. Its one row is B-GROW's `--grow FIELD=VALUE` (dest `grow`; the fields are the BUILT
+rows of `agents.model.growth.GROWABLE`), and a `--grow` growth is judged by
+`ModelVersion.check_compatible_grown` over the declared `{field: {parent, child}}` — the gate the
+trainer's load runs (`load_model_snapshot(grow=…)`), so the dry run and the child agree by
+construction. Any other row (a test's) takes its fields from the current version before
+`check_compatible` (the `replace` move `check_opponent_snapshot_compatible` makes for the ride-along
+heads).
 """
 
 from __future__ import annotations
@@ -26,9 +28,15 @@ import os
 from dataclasses import dataclass, replace
 from typing import Any, Optional
 
+def _built_growable() -> tuple[str, ...]:
+    from agents.model.growth import GROWABLE
+    return tuple(sorted(f for f, row in GROWABLE.items() if row.built))
+
+
 #: namespace dest of a declared growth option -> the ModelVersion fields it may change on a fork.
-#: EMPTY until B-GROW lands (see the module docstring). Never a hand list of arch keys otherwise.
-DECLARED_GROWTH: dict[str, tuple[str, ...]] = {}
+#: B-GROW (2026-10-19): `--grow FIELD=VALUE` (dest `grow`), its fields the BUILT rows of the ONE growable table
+#: (`agents.model.growth.GROWABLE`). Never a hand list of arch keys.
+DECLARED_GROWTH: dict[str, tuple[str, ...]] = {"grow": _built_growable()}
 
 
 def resume_model_version(args: Any, *, mappings: Any = None, reward_config: Any = None) -> Any:
@@ -99,6 +107,8 @@ def resume_version_build(args: Any, *, mappings: Any = None,
         promotion_sprt=args.promotion_sprt,
         trunk_precision=args.trunk_precision,
         canary_shift_max=args.canary_shift_max,
+        # B-GROW (config v159): the run's declared growth record (`grow_fork.enforce`; None outside a launch)
+        growth=getattr(args, "_grow_record", None),
         capacity_telemetry=args.capacity_telemetry,
         canary_reset_steps=args.canary_reset_steps,
         capacity_cosine_every=args.capacity_cosine_every,
@@ -120,7 +130,18 @@ def declared_changes(ns: Any) -> tuple[str, ...]:
 
 def check_against_saved(current: Any, saved: Any, ns: Any) -> None:
     """`current.check_compatible(saved)`, after the declared growth fields are taken as current.
-    Raises the trainer's own `ModelVersionError`."""
+    Raises the trainer's own `ModelVersionError`.
+
+    A `--grow` growth (B-GROW) is judged by `ModelVersion.check_compatible_grown` over the namespace's declared
+    `{field: {parent, child}}` (`grow_fork.growth_fields`, the block the trainer's lineage stamp carries), which is
+    EXACTLY the gate the trainer's load runs (`load_model_snapshot(grow=…)`): only the declared fields may differ, by
+    the declared step, and a field outside the growable table never opens."""
+    from main.train.grow_fork import growth_fields
+
+    grown = growth_fields(ns)
+    if grown:
+        current.check_compatible_grown(saved, grown)
+        return
     allowed = declared_changes(ns)
     if allowed:
         saved = replace(saved, **{k: getattr(current, k) for k in allowed})

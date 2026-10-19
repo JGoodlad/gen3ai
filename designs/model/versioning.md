@@ -349,7 +349,10 @@ parent's FUNCTION, bit for bit. Model side: `agents/model/growth.py`; launch sid
   lineage names the grown ancestor).
 * **What the dry-run tools can and cannot say.** `main.checkargs` and `main.launcher --dry-run` run the trainer's own
   namespace step and `decide`, print the declared growth (`trunk_layers 2 -> 4`), and refuse what the launch refuses.
-  The fork-time gate and the pool's growth are CHILD-ONLY (they need torch and the weights) and are listed as such.
+  Their F-BI-2 architecture verdict (`main.train.fork_arch`) judges a `--grow` argv with `check_compatible_grown` — its
+  `DECLARED_GROWTH` row is `grow`, the fields `GROWABLE`'s built ones — so the dry run and the child's load agree; an
+  UNDECLARED typed depth change stays refused there. The fork-time gate and the pool's growth are CHILD-ONLY (they
+  need torch and the weights) and are listed as such.
 
 ## The LEGACY + JUDGMENT DELETION's refusal rule (`model_version/adopted_levers.py`, U0 2026-10-15)
 

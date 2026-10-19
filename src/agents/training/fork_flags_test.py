@@ -103,9 +103,11 @@ def test_all_six_are_TRAINING_HPARAMS_so_both_build_paths_put_them_on_the_model(
 def test_both_build_and_train_kwarg_blocks_carry_every_field():
     """The classic bug this family invites: `build_and_train` spells the block TWICE — once on the
     fresh path and once on the resume — and a field missing from one records as its default on
-    exactly the runs that resumed."""
+    exactly the runs that resumed. (Since F-BI-2 the RESUME block is `main.train.fork_arch.resume_version_build`,
+    the one construction `model_build`, `checkargs` and `--dry-run` share; the fresh block stays in `model_build`.)"""
+    import main.train.fork_arch as fa
     import main.train.model_build as mb
-    src = inspect.getsource(mb)
+    src = inspect.getsource(mb) + inspect.getsource(fa)
     for f in FORK_FIELDS:
         assert src.count(f"{f}=args.{f},") == 2, f
 

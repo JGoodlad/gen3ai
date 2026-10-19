@@ -14965,6 +14965,9 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   compiled parent (0.0), 2.4e-7 from eager.
 - **The pool.** The seeded parent pool (parent-architecture snapshots; a pool is single-architecture) is grown the same
   way at the child's start, and its arch record becomes the child's version.
+- **F-BI-2's verdict.** `main.train.fork_arch.DECLARED_GROWTH` = `{"grow": <GROWABLE's built fields>}`, and a `--grow`
+  argv is judged by `check_compatible_grown` (the trainer load's gate), so `checkargs` / `--dry-run` pass a declared
+  growth and still refuse an undeclared `--trunk-layers` change or any other arch difference beside `--grow`.
 - **Records.** The lineage block's `grow` stamp (fields, parent, optimizer rule, gate report) and `model_config.json`'s
   `growth` (config v159, provenance only like `arch_source`; a pre-v159 config migrates to None; a run-record-only key
   for the baselines mirror). `main.checkargs` and `main.launcher --dry-run` print the declared growth.

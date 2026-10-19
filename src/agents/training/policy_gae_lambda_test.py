@@ -115,8 +115,10 @@ def test_both_model_build_sites_read_the_flag_and_neither_hardcodes_0_80():
     assert len(sites) == 2, sites
     for s in sites:
         assert "args.policy_gae_lambda" in s, sites
-    # ...and both ModelVersion constructions RECORD it, plus the save-path one in lifecycle.
-    assert src.count("policy_gae_lambda=args.policy_gae_lambda") == 2
+    # ...and both ModelVersion constructions RECORD it (the fresh one here, the resume one in
+    # `main.train.fork_arch.resume_version_build` since F-BI-2), plus the save-path one in lifecycle.
+    import main.train.fork_arch as fa
+    assert (src + inspect.getsource(fa)).count("policy_gae_lambda=args.policy_gae_lambda") == 2
     import main.train.lifecycle as lc
     assert "policy_gae_lambda=float(model.gae_lambda)" in inspect.getsource(lc)
 
