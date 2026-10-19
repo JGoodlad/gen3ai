@@ -116,7 +116,7 @@ def test_the_archive_cant_vocabulary_is_FROZEN():
 # gen3_event_col_names_v1 — the 22-column contract as a NAMED declaration
 # ---------------------------------------------------------------------------
 # `EventCol` is imported by BOTH `state_encoder` (the producer) and
-# `team_transformer.EventSeats` (the consumer), plus the feature-coverage probes and every
+# `team_transformer.EventSeats` (the consumer, through the plain-int `EVENT_COL` mirror), plus the feature-coverage probes and every
 # oracle. Before it existed the contract was a comment plus ~30 bare integers spread over five
 # files, which is the shape the positional-binding sweep convicted five times: two ends bound to
 # the same subject by POSITION, with nothing relating them. These tests are what make the

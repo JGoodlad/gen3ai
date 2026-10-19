@@ -1207,8 +1207,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--meter-timeout", type=float, default=None, metavar="SEC")
     ap.add_argument("--meter-opponent", default=None, metavar="REF|BASELINE",
                     help="the untaught meter's fixed opponent (passed as its --opponent). REQUIRED at HEAD "
-                         "since the X5 version break (v144): the meter's default opponent is era_checkout_only and "
-                         "a bare meter refuses at it, so the gate's endpoint 3 needs a v144+ checkpoint here")
+                         "since the X5 version break (v144; the migration floor is now v145): the meter's default opponent is era_checkout_only and "
+                         "a bare meter refuses at it, so the gate's endpoint 3 needs a v145+ checkpoint here")
     ap.add_argument("--skip-meter", action="store_true",
                     help="omit endpoint 3 entirely (the report says so in print)")
     ap.add_argument("--json", dest="json_out", default=None, metavar="PATH")
