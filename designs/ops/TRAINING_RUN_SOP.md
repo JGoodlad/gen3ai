@@ -531,6 +531,9 @@ Each rule is a thing that went wrong once; follow the pointer when you build the
 3. **A multi-step window script HOLDS on any mid-window failure or refusal**: it stops where it is, leaves the run paused with the state on disk, writes the reason to its status file and pages the orchestrator, instead of continuing to the next step (or auto-resuming) over a failed one. A window that cannot finish cleanly is a decision for the orchestrator, not for the script.
 4. **Read a tool's usage text and preconditions before arming it.** `--help`, the script header and the leaf `CLAUDE.md` come first (its default arguments, what it assumes about the run, which flags it cannot take: e.g. `diag_bf16_canary`'s default `--ckpts` assume a FATAL zip, TASK_BACKLOG T51); arm it on a throwaway input before a live window, never first inside one.
 5. **A `--canary-shift-max` raise of 0.5 or less needs the orchestrator's approval** (the flag has no code ceiling yet: a typo of 18 disables every canary refusal; TASK_BACKLOG T52). Type it in the dry-run first and read the value back on the R1 rule line.
+6. **A trigger never matches its own log, nor a line written before it was armed** (2026-10-19: the X34 chain's "armed" line QUOTED its trigger text `X26STOP: X26 STOPPED`, and a whole-file grep fired on it at once; a second guard held). Count only lines past an offset taken at arming, anchor the match (`^[<ts>] TAG: …`), and never echo the trigger string in the script's own output. Test on a synthetic file: a real line matches, a line quoting the text does not.
+7. **Every signal to a process goes through an identity gate** (`kill_if.sh <pid> <ERE>`: signal only if `/proc/<pid>/cmdline` matches, exit 2 otherwise), never a bare `kill` after an unchecked echo (2026-10-18 A3 stop: the identity line did not print and the signal went anyway).
+
 
 ---
 
