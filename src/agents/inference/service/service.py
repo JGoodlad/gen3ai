@@ -7,7 +7,8 @@ one CUDA graph per slot x bucket — backend ``graph`` — or one AOT package pe
 parity-gates EVERY slot x bucket (and, with lanes, every slot at once) on the committed real-obs
 fixture, and FREEZES. After the freeze a ``flush()`` only packs, copies, replays and copies out —
 it compiles, captures and allocates nothing, and three ``*_after_freeze`` counters prove it on
-every call. This module is the API, the scheduling and the lifecycle; ``engine.py`` executes.
+every call (plus a counted, warned reserved-byte growth, the one acquisition visible under
+``expandable_segments:True``). This module is the API, the scheduling and the lifecycle; ``engine.py`` executes.
 
 Not thread-safe: one caller loop drives it (the M5 env core is in-process). Results are views into
 the arenas, valid until the next ``flush()`` (a later read is a `CallerError`, never stale data).
@@ -15,6 +16,7 @@ the arenas, valid until the next ``flush()`` (a later read is a `CallerError`, n
 from __future__ import annotations
 
 import contextlib
+import sys
 import time
 from dataclasses import dataclass
 import re
@@ -95,10 +97,28 @@ class Ticket:
         return e.host_out[0][sl].numpy(), e.host_out[1][sl].numpy(), e.host_out[2][sl].numpy()
 
 
-def _segments(device: torch.device) -> int:
+def _alloc_marks(device: torch.device) -> Tuple[int, int]:
+    """``(segments ever allocated, bytes ever reserved)`` on ``device`` — two CUMULATIVE
+    ``torch.cuda.memory_stats`` counters read from ONE call (``(0, 0)`` off CUDA).
+
+    ``segment.all.allocated`` counts the default caching allocator's ``cudaMalloc`` segments; under
+    ``expandable_segments:True`` (the launcher's setting for every child) it reads 0 forever.
+    ``reserved_bytes.all.allocated`` counts every byte the allocator ever added to its reservation,
+    an expandable segment's newly MAPPED pages included (K6 measured reserved steps of +36 / +120 MiB
+    under ``expandable_segments`` while the segment counters read 0) — cumulative, so a release
+    (``empty_cache``) inside the window can never cancel a growth."""
     if device.type != "cuda":
-        return 0
-    return int(torch.cuda.memory_stats(device).get("segment.all.allocated", 0))
+        return 0, 0
+    st = torch.cuda.memory_stats(device)
+    return int(st.get("segment.all.allocated", 0)), int(st.get("reserved_bytes.all.allocated", 0))
+
+
+#: ``gen3_t2_reserved_after_freeze_v1``: reserved-byte growth across a frozen call is COUNTED and
+#: WARNED, never poisoned — it has not yet been verified on a leased GPU that a healthy flush leaves
+#: ``reserved_bytes.all.allocated`` unchanged on the ``graph``, ``aot`` and ``eager`` backends under
+#: ``expandable_segments:True`` (``service_cuda_test``'s expandable test is that check). Arm it (a
+#: ``LifecycleViolation`` like the segment count) only after that test passes on the card.
+RESERVED_GROWTH_POISONS = False
 
 
 def _dynamo_graphs() -> int:
@@ -116,7 +136,8 @@ class InferenceService:
         self.state = "DECLARED"
         self.counters: Dict[str, int] = {
             "compiles_after_freeze": 0, "captures_after_freeze": 0,
-            "cuda_segments_after_freeze": 0, "rows_served": 0, "rows_padded": 0, "batches": 0,
+            "cuda_segments_after_freeze": 0, "cuda_reserved_bytes_after_freeze": 0,
+            "cuda_reserved_growths_after_freeze": 0, "rows_served": 0, "rows_padded": 0, "batches": 0,
             "loads": 0, "flushes": 0}
         self.batches_by_bucket: Dict[int, int] = {b: 0 for b in self.buckets}
         self.startup_reports: List[ParityReport] = []
@@ -146,14 +167,32 @@ class InferenceService:
 
     @contextlib.contextmanager
     def _frozen_guard(self, where: str) -> Iterator[None]:
-        """Count what a steady-state call acquired; any acquisition poisons the service."""
-        g0, s0, c0 = _dynamo_graphs(), _segments(self.device), self.engine.captures
+        """Count what a steady-state call acquired; a compile, a capture or a new segment poisons the
+        service. RESERVED-byte growth (the only acquisition visible under ``expandable_segments``)
+        is counted and warned — `RESERVED_GROWTH_POISONS` says why it does not poison yet."""
+        g0, c0 = _dynamo_graphs(), self.engine.captures
+        s0, r0 = _alloc_marks(self.device)
         yield
-        dg, ds = _dynamo_graphs() - g0, _segments(self.device) - s0
+        s1, r1 = _alloc_marks(self.device)
+        dg, ds, dr = _dynamo_graphs() - g0, s1 - s0, r1 - r0
         dc = self.engine.captures - c0
         self.counters["compiles_after_freeze"] += max(dg, 0)
         self.counters["cuda_segments_after_freeze"] += max(ds, 0)
         self.counters["captures_after_freeze"] += max(dc, 0)
+        if dr > 0:
+            self.counters["cuda_reserved_bytes_after_freeze"] += dr
+            self.counters["cuda_reserved_growths_after_freeze"] += 1
+            if RESERVED_GROWTH_POISONS and ds <= 0:
+                why = (f"{where} grew the CUDA reservation by {dr} bytes after the freeze "
+                       f"(the declared lifecycle allows none)")
+                self._die(why)
+                raise LifecycleViolation(why)
+            n = self.counters["cuda_reserved_growths_after_freeze"]
+            if n & (n - 1) == 0:                      # the 1st, 2nd, 4th, 8th, ... growth
+                print(f"[T2] WARN {where} grew the CUDA reservation by {dr / 2**20:.1f} MiB after the "
+                      f"freeze (growth #{n}, {self.counters['cuda_reserved_bytes_after_freeze'] / 2**20:.1f}"
+                      f" MiB in all; counted, not fatal: gen3_t2_reserved_after_freeze_v1)",
+                      file=sys.stderr, flush=True)
         if dg > 0 or ds > 0 or dc > 0:
             why = (f"{where} acquired after the freeze: {dg} dynamo graphs, {ds} CUDA segments, "
                    f"{dc} graph captures (the declared lifecycle allows none)")

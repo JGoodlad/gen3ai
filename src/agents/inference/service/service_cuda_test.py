@@ -201,3 +201,53 @@ def test_aot_backend_one_package_per_bucket_serves_every_slot(fresh_compile_cach
         assert float((t.result().logp - ref[0])[fin].abs().max()) < 1e-3
         assert float((t.result().value - ref[1]).abs().max()) < 1e-4
     assert svc.stats()["cuda_segments_after_freeze"] == 0
+
+
+_EXPANDABLE_PROBE = r"""
+import json, sys, torch
+from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec
+from agents.inference.service.parity import fixture_rows
+from agents.inference.service.fixtures import perturbed_fresh_policy
+svc = InferenceService(ServiceSpec(groups=(SlotGroupSpec("pool", 1, perturbed_fresh_policy(0)),),
+                                   device="cuda", backend=sys.argv[1], buckets=(4, 8))).startup()
+obs, mask = fixture_rows(svc.obs_dim, 8)
+for _ in range(3):
+    for n in (8, 3, 5, 8, 1):
+        svc.score(0, obs[:n], mask[:n])
+healthy = dict(svc.stats())
+with svc._frozen_guard("probe"):
+    hold = torch.empty(64 * 2**20, dtype=torch.float32, device="cuda")   # 256 MiB, new
+    del hold
+st = svc.stats()
+print(json.dumps({"healthy": {k: healthy[k] for k in ("cuda_segments_after_freeze",
+    "cuda_reserved_bytes_after_freeze", "cuda_reserved_growths_after_freeze")},
+    "after": {k: st[k] for k in ("cuda_segments_after_freeze", "cuda_reserved_bytes_after_freeze")},
+    "state": st["state"], "segments_now": torch.cuda.memory_stats().get("segment.all.current", 0)}))
+"""
+
+
+@pytest.mark.parametrize("backend", ["eager", "graph"])
+def test_expandable_segments_steady_state_reserves_nothing_and_a_new_mapping_is_seen(backend, tmp_path):
+    """gen3_t2_reserved_after_freeze_v1 — THE ARMING CHECK for `RESERVED_GROWTH_POISONS`, in a fresh
+    process under the launcher's ``PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True``: (1) 15 healthy
+    flushes grow ``reserved_bytes.all.allocated`` by 0 bytes (else arming would poison a healthy
+    run); (2) a 256 MiB allocation inside the guard is SEEN by the reserved counter while the
+    segment counter reads 0 (the blindness this unit fixes). Not yet run on a card (no lease)."""
+    import json
+    import os
+    import subprocess
+    import sys
+
+    env = {**os.environ, "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+           "TORCHINDUCTOR_CACHE_DIR": str(tmp_path / "inductor"),
+           "TRITON_CACHE_DIR": str(tmp_path / "triton")}
+    out = subprocess.run([sys.executable, "-c", _EXPANDABLE_PROBE, backend], env=env,
+                         capture_output=True, text=True, timeout=1800)
+    assert out.returncode == 0, out.stderr[-4000:]
+    r = json.loads(out.stdout.strip().splitlines()[-1])
+    assert r["segments_now"] == 0, "precondition: the allocator is NOT in expandable mode"
+    assert r["healthy"] == {"cuda_segments_after_freeze": 0, "cuda_reserved_bytes_after_freeze": 0,
+                            "cuda_reserved_growths_after_freeze": 0}, r
+    assert r["after"]["cuda_segments_after_freeze"] == 0          # the old counter: blind
+    assert r["after"]["cuda_reserved_bytes_after_freeze"] >= 256 * 2**20, r
+    assert r["state"] == "FROZEN"                                 # warn-first until armed

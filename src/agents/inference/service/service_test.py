@@ -481,3 +481,79 @@ def test_the_rust_env_declares_caps_on_every_slot_but_the_trainees():
     assert RustEnvDecl(n_envs=256, opponent_bucket_cap=0).resolved_buckets == (8, 256)
     typed = RustEnvDecl(n_envs=256, buckets=(8, 16, 32, 256), opponent_bucket_cap=64)
     assert typed.resolved_buckets == (8, 16, 32, 256) and typed.slot_bucket_caps(2, [0]) == (256, 64)
+
+
+# ---- gen3_t2_reserved_after_freeze_v1: the guard's view under ``expandable_segments:True`` ---------
+def test_alloc_marks_reads_the_cumulative_segment_and_reserved_counters(monkeypatch):
+    """ONE ``memory_stats`` call, the two CUMULATIVE keys; off CUDA nothing is read. (No card needed:
+    ``memory_stats`` is replaced, and ``torch.device("cuda")`` builds without one.)"""
+    from agents.inference.service import service as svc_mod
+
+    calls = []
+
+    def fake_stats(device):
+        calls.append(device)
+        return {"segment.all.allocated": 7, "segment.all.current": 3,
+                "reserved_bytes.all.allocated": 5 * 2**20, "reserved_bytes.all.current": 2**20}
+
+    monkeypatch.setattr(svc_mod.torch.cuda, "memory_stats", fake_stats)
+    assert svc_mod._alloc_marks(torch.device("cuda")) == (7, 5 * 2**20)
+    assert len(calls) == 1
+    assert svc_mod._alloc_marks(torch.device("cpu")) == (0, 0) and len(calls) == 1
+
+
+def _scripted_marks(monkeypatch, marks):
+    from agents.inference.service import service as svc_mod
+
+    it = iter(marks)
+    monkeypatch.setattr(svc_mod, "_alloc_marks", lambda device: next(it))
+
+
+def test_reserved_growth_with_zero_segments_is_counted_and_warned_not_poisoned(policies, monkeypatch,
+                                                                               capsys):
+    """The ``expandable_segments`` shape: the reservation grows while the segment counter reads 0.
+    The guard used to see NOTHING here; now it counts the bytes and the event and warns (the 1st,
+    2nd, 4th growth), and the service stays FROZEN (`RESERVED_GROWTH_POISONS` is off until the
+    leased GPU check)."""
+    svc = _service(policies[0], n_slots=1, buckets=(2,))
+    mib = 2**20
+    _scripted_marks(monkeypatch, [(0, 0), (0, 64 * mib), (0, 64 * mib), (0, 64 * mib),
+                                  (0, 64 * mib), (0, 66 * mib), (0, 66 * mib), (0, 67 * mib),
+                                  (0, 67 * mib), (0, 71 * mib)])
+    for _ in range(5):
+        with svc._frozen_guard("test"):
+            pass
+    assert svc.state == "FROZEN"
+    st = svc.stats()
+    assert st["cuda_reserved_bytes_after_freeze"] == 64 * mib + 2 * mib + 1 * mib + 4 * mib
+    assert st["cuda_reserved_growths_after_freeze"] == 4      # the 2nd window grew nothing
+    assert st["cuda_segments_after_freeze"] == 0
+    err = capsys.readouterr().err
+    assert err.count("[T2] WARN test grew the CUDA reservation") == 3      # growths #1, #2, #4
+    assert "growth #3" not in err and "64.0 MiB" in err
+    obs, mask = fixture_rows(svc.obs_dim, 2)
+    monkeypatch.undo()
+    svc.score(0, obs, mask)                                   # still serves
+
+
+def test_reserved_growth_poisons_once_armed(policies, monkeypatch):
+    from agents.inference.service import service as svc_mod
+
+    svc = _service(policies[0], n_slots=1, buckets=(2,))
+    _scripted_marks(monkeypatch, [(0, 0), (0, 2**20)])
+    monkeypatch.setattr(svc_mod, "RESERVED_GROWTH_POISONS", True)
+    with pytest.raises(LifecycleViolation, match="grew the CUDA reservation by 1048576 bytes"):
+        with svc._frozen_guard("test"):
+            pass
+    assert svc.state == "POISONED"
+
+
+def test_a_new_segment_still_poisons_through_the_marks(policies, monkeypatch):
+    """The default-allocator path is unchanged: a new segment (and its reservation) poisons."""
+    svc = _service(policies[0], n_slots=1, buckets=(2,))
+    _scripted_marks(monkeypatch, [(5, 0), (6, 2 * 2**20)])
+    with pytest.raises(LifecycleViolation, match="1 CUDA segments"):
+        with svc._frozen_guard("test"):
+            pass
+    assert svc.state == "POISONED" and svc.counters["cuda_segments_after_freeze"] == 1
+    assert svc.counters["cuda_reserved_bytes_after_freeze"] == 2 * 2**20

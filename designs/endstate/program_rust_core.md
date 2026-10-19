@@ -412,9 +412,15 @@ the bucket set should be COARSE.
   graph per slot × bucket in its lane's pool, and runs the parity gate; then it freezes. After the freeze a flush only copies in, replays and
   copies out. Counters that must stay 0: `compiles_after_freeze` (dynamo graph count),
   `captures_after_freeze`, `cuda_segments_after_freeze` (`torch.cuda.memory_stats`
-  `segment.all.allocated` across the service's own calls — ⚠️ BLIND under `expandable_segments:True`,
-  which the launcher sets for every child: the counter cannot fire there, TECH-DEBT §2(b)); a non-zero one is a typed
-  `LifecycleViolation` at the point it happens. Nothing is lazily compiled: an undeclared bucket
+  `segment.all.allocated` across the service's own calls — BLIND under `expandable_segments:True`,
+  which the launcher sets for every child); a non-zero one is a typed
+  `LifecycleViolation` at the point it happens. Under `expandable_segments` the acquisition that stays
+  visible is RESERVED-byte growth, so the same guard also reads the cumulative
+  `reserved_bytes.all.allocated` from the same `memory_stats` call (`gen3_t2_reserved_after_freeze_v1`):
+  `cuda_reserved_bytes_after_freeze` / `cuda_reserved_growths_after_freeze` count it and a
+  rate-limited `[T2] WARN` names it. It is WARN-FIRST, not a violation, until a leased GPU run of
+  `service_cuda_test`'s expandable test shows that a healthy flush grows the reservation by 0 bytes
+  (`service.RESERVED_GROWTH_POISONS`; TECH-DEBT §2, the T2 row). Nothing is lazily compiled: an undeclared bucket
   cannot be reached (rows are packed into declared buckets), and a new slot cannot be added.
 * **Validation — the same bars as the compile gate.** At startup, for EVERY slot × bucket, the
   committed real-obs fixture (`compile_parity_obs.npz`; full bucket AND a partially-filled one)

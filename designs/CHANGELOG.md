@@ -14810,3 +14810,17 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   prober load), so each process dumps the weights of its own first 3 violations. The code comment is corrected.
 - **Tests.** `src/agents/training/weight_dump_per_process_test.py` (fails on revert). Docs:
   `designs/training/learner_gates.md`, `TASK_BACKLOG.md` OPS-11.
+
+## 2026-10-19 — T2's frozen guard SEES reserved growth under `expandable_segments` (`gen3_t2_reserved_after_freeze_v1`; `agents.inference.service` only; no model / config / obs / signature change)
+
+- **The defect (TECH-DEBT P1).** `InferenceService._frozen_guard` read only `segment.all.allocated`. Under
+  `expandable_segments:True`, which the launcher sets for every child, that counter reads 0 forever (K6), so the guard
+  could not see a device allocation after the freeze.
+- **The change.** `_alloc_marks` reads `segment.all.allocated` and the cumulative `reserved_bytes.all.allocated` from ONE
+  `memory_stats` call. Reserved growth across a frozen call is counted (`cuda_reserved_bytes_after_freeze`,
+  `cuda_reserved_growths_after_freeze`) and warned on stderr at growths 1, 2, 4, 8, and so on. It is WARN-FIRST and never
+  poisons (`RESERVED_GROWTH_POISONS = False`) until a leased GPU run shows that healthy flushes reserve nothing. A new
+  segment still poisons as before.
+- **Tests.** `service_test.py`: four CPU tests with mocked stats, which fail on revert. `service_cuda_test.py`: the arming
+  check (slow, GPU, a subprocess under `expandable_segments:True`), NOT YET RUN because no lease was held. Docs:
+  `endstate/program_rust_core.md` (the T2 lifecycle paragraph) and the `TECH_DEBT_BACKLOG.md` row.
