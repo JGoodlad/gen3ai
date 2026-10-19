@@ -24,7 +24,7 @@ enforced BY CONSTRUCTION — this module calls only pure resolvers (``resolve_la
 restart dry-run and asserts byte-identity, plus an unchanged ``git worktree list``.
 
 WHAT IT CANNOT KNOW. A line the child could only print after importing torch and building a model
-(the architecture-compatibility verdict, the resolved compile flags, the pool seeding, the obs
+(the round-trip smoke, the resolved compile flags, the pool seeding, the obs
 dim) is printed as ``(child-only: …)`` rather than guessed at. A dry run that invented those would
 be worse than one that admits the gap.
 
@@ -82,7 +82,6 @@ REPORTED_DESTS = (
 #: Lines the dry run structurally cannot compute: each needs torch, a built model, or a spawned
 #: child. Printed as gaps rather than guessed at.
 CHILD_ONLY = (
-    "architecture compatibility (check_compatible against the checkpoint's model_config.json)",
     "the ModelVersion round-trip smoke test",
     "the resolved --compile-trainer / --compile-opponents decisions (they read the device)",
     "self-play pool SEEDING from a fork parent (agents.training.pool_seed runs in the child)",
@@ -512,6 +511,14 @@ def dry_run(
         failed = True
     if res.get("env_core_refusal") and not _d4_advisory:
         failed = True
+    # F-BI-2: the --model ARCHITECTURE verdict `checkargs.check` computed (`main.train.fork_arch`: the
+    # trainer's own version build + `check_compatible`). ADVISORY when the child runs another commit.
+    fork_arch = res.get("fork_arch")
+    if fork_arch is not None:
+        for line in fork_arch.lines(advisory=advisory):
+            out(f"  {line}")
+        if fork_arch.refused and not advisory:
+            failed = True
     if torch_res.refusal:                 # printed with the interpreter line above
         failed = True
     if desktop.refused and not _dg_advisory:      # printed at 7d

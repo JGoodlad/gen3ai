@@ -613,7 +613,7 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
            "unsatisfiable": unsatisfiable_pairs(argv),
            "resolution": None, "combinations": [], "ns": None,
            "arch": None, "recipe": None, "recipe_refusal": None, "env_core_refusal": None,
-           "umbrella_refusal": None,
+           "umbrella_refusal": None, "fork_arch": None,
            "shaped_reward": shaped_reward_finding(argv),
            "retired_levers": retired_levers_finding(argv),
            "version_break": version_break_finding(argv)}
@@ -666,6 +666,12 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
     )
     res["recipe_refusal"] = resolution.get("recipe_refusal")
     res["env_core_refusal"] = resolution.get("env_core_refusal")
+    # F-BI-2: a `--model` argv's ARCHITECTURE against the checkpoint's recorded model_config.json — the
+    # trainer's own version build and `check_compatible` (`main.train.fork_arch`), so a fork the child
+    # would kill with `[ModelVersion] FATAL` is refused here, not "still launches".
+    if resolution.get("model") and not resolution.get("read_error"):
+        from main.train.fork_arch import fork_arch_verdict
+        res["fork_arch"] = fork_arch_verdict(effective_argv, resolution["model"])
     res["ns"] = ns
     return res
 
@@ -1066,6 +1072,15 @@ def main(raw: List[str] | None = None) -> int:
         if not (res["unknown"] or res["unsatisfiable"] or res["combinations"]):
             return int(TrainExitCode.FATAL_CONFIG)
 
+    fork_arch = res.get("fork_arch")
+    if fork_arch is not None:
+        print()
+        for line in fork_arch.lines(advisory=advisory):
+            print(f"  {line}")
+        if fork_arch.refused and not advisory:
+            print("\n  ✗ this --model launch would be REFUSED at the child's start (FATAL_CONFIG): the "
+                  "architecture differs from the checkpoint's (above).")
+            return int(TrainExitCode.FATAL_CONFIG)
     if fork_fatal:
         print(f"\n  ✗ this command would be REFUSED at launch (FATAL_CONFIG): {fork_fatal}")
         return int(TrainExitCode.FATAL_CONFIG)

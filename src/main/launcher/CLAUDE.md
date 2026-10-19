@@ -38,6 +38,9 @@ codes in `crashes_and_exit_codes.md`, the child's interpreter in `interpreter.md
   `main.train.recipe_surface.report`), read by the launcher, `--dry-run`, `main.checkargs` and
   `resolve_config`. Never add a second copy of the comparison, or a hand list of keys (they derive from
   the flag registry).
+- **A `--model` argv's architecture is judged before launch by the trainer's own code**
+  (`main.train.fork_arch`: `resume_version_build` + `check_compatible`, via `checkargs.check`). A growth
+  option opens a field only through `fork_arch.DECLARED_GROWTH`, honoured by the trainer too.
 - **The launcher owns no trainer default**: everything not launcher-owned is forwarded verbatim, and
   both parsers are `allow_abbrev=False` (the forwarding tests pin this against the real
   `build_launcher_parser()`).

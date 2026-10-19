@@ -360,7 +360,7 @@ def test_the_child_only_gaps_are_printed(isolated, monkeypatch, capsys):
     _dry_run(["--steps", "1000", *_ARCH_OK], monkeypatch)
     out = capsys.readouterr().out
     assert out.count("(child-only:") == len(dry_run_mod.CHILD_ONLY)
-    assert "check_compatible" in out, "the arch check is the gap a reader most needs named"
+    assert "architecture compatibility" not in out, "F-BI-2: the arch check runs in the dry run now"
 
 
 # ---------------------------------------------------------------------------------------

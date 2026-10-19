@@ -26,7 +26,7 @@ it does) · `--model` · pin sha + subject + source · `--steps` beside the chec
 `num_timesteps` and the `+X steps` delta · interpreter · transport · restart/grace/nice · the
 effective config with each reported flag marked `INHERITED`, `RESTORED at restart from <source>` or `from the argv` (`grad_accum_steps`, `fork_lr`,
 `fork_lr_freeze` — `dry_run.REPORTED_DESTS`; a same-run restart of an `--arch production` run restores its untyped recipe rows from `metadata.json:cli_args`, even when HEAD's `ModelVersion` cannot read a PINNED run's `model_config.json`, in which case a `could NOT be read under THIS tree` line says so — `dry_run_test.py::test_i_*`) · the pool as recorded (`N snapshot(s)` + `win_rate_vs_bots`, so pool
-drift is visible BEFORE launch) · the resolved K9(b) mode (`K9(b) check`: `fatal` unless `--behaviour-check` is typed or inherited — `main.checkargs` prints it too) · then one `(child-only: …)` line per fact it structurally cannot
+drift is visible BEFORE launch) · the resolved K9(b) mode (`K9(b) check`: `fatal` unless `--behaviour-check` is typed or inherited — `main.checkargs` prints it too) · the `--model` architecture verdict (`fork arch`, below) · then one `(child-only: …)` line per fact it structurally cannot
 compute.
 
 **It refuses what the real path refuses**, with the same exit code: an unresolvable `--pin-commit`
@@ -46,10 +46,27 @@ dir before and after a same-run-restart dry run and requires byte-identity, chec
 list` is unchanged, and booby-traps all four effectful entry points so a future edit that reaches
 one FAILS the suite.
 
-**What it cannot know.** The architecture-compatibility verdict, the `ModelVersion` round-trip, the
-resolved compile flags, the pool SEEDING and the obs dim all need torch and a built model in the
-child. Each is printed as `(child-only: …)` rather than guessed at — a dry run that invented them
-would be worse than one that names the gap.
+**The `--model` architecture check (F-BI-2, 2026-10-19).** A `--model` argv (fork or restart) is judged
+against the checkpoint's recorded `model_config.json` BEFORE launch, by `main.train.fork_arch`: the argv is
+resolved the way the child resolves it (the trainer's parser, then `config.resolve_config`), the current
+`ModelVersion` is built by `fork_arch.resume_version_build` — the SAME function the trainer's load path
+(`model_build.build_and_train`) calls — and the trainer's own `ModelVersion.check_compatible` decides. One
+construction, one comparator, so the refusal text IS the child's `[ModelVersion] FATAL` text. `checkargs.check`
+computes it (`res["fork_arch"]`) and both front ends print it: `✓ fork arch : compatible …`, or
+`✗ REFUSED (architecture vs the --model checkpoint, FATAL_CONFIG)` with the mismatch (exit 3 in both). Before
+this, a toy fork typing `--trunk-layers 4` read "✓ this command still launches" and died at the child's start.
+It is ADVISORY when the child runs a PINNED other commit (that commit's `check_compatible` is the authority —
+the arch-surface rule below), and `⚠️ NOT checked here` (never a refusal) when the parent's config is absent,
+unreadable under this tree, or the argv is refused by `resolve_config` first (those have their own findings).
+**Declared changes:** a growth option (B-GROW's `--grow-trunk-layers`, not yet on main) is allowed through
+`fork_arch.DECLARED_GROWTH` (option dest → the `ModelVersion` fields it may change), EMPTY today; the unit that
+adds an option adds its row AND makes the trainer's load honour the same table. Tests:
+`src/main/launcher/fork_arch_dry_run_test.py` (a mismatched toy / production fork refused; the X26- and
+X34-style fork lines pass; the seam; each refusal fails on revert).
+
+**What it cannot know.** The `ModelVersion` round-trip, the resolved compile flags, the pool SEEDING and the
+obs dim need torch and a built model in the child. Each is printed as `(child-only: …)` rather than guessed
+at — a dry run that invented them would be worse than one that names the gap.
 
 **It is the EXECUTING complement to `python -m main.checkargs`** (`designs/ops/training_runbook.md` → *Will this
 command still launch?*): `checkargs` answers "do these flags still parse and cohere?" from an argv

@@ -414,11 +414,14 @@ labels, offline, feeding search's opponent model. Re-open **rung 3**, the BC war
 
 - **F-BI-1 (HAZARD, scheduling).** An arm shares C0 only at its batch's pin. If B-GROW lands after the toy batch's pin,
   X47 needs its own toy C0: +12.6 GPU-h, a 74 % cost increase. Dispatch B-GROW before T\* is called.
-- **F-BI-2 (a tool limit, declared by the tool itself).** Neither `main.checkargs` nor `main.launcher --dry-run` checks
-  a fork's architecture against its parent. A toy fork typing `--trunk-layers 4` reads "✓ this command still
-  launches" (checkargs exit 0). The dry run prints "child-only: architecture compatibility (check_compatible …)", and
-  the child would die at `ModelVersionError: trunk_layers mismatch`. Any growth argv must be proven by the child's
-  start (B-GROW's fork-time gate), not by the dry-run tools.
+- **F-BI-2 (FIXED 2026-10-19).** `main.checkargs` and `main.launcher --dry-run` now judge a `--model` argv's
+  architecture against the checkpoint's `model_config.json` with the trainer's own version build and
+  `check_compatible` (`main.train.fork_arch`), and refuse a mismatch FATAL_CONFIG with the child's own reason (a toy
+  fork typing `--trunk-layers 4` reads `trunk_layers mismatch: saved=2, current=4`). It is ADVISORY when the child is
+  pinned to another commit, so a growth fork should be dry-run at a pin that IS the checked tree. A growth argv
+  passes only through a declared option: `fork_arch.DECLARED_GROWTH` is B-GROW's seam (empty until
+  `--grow-trunk-layers` lands; B-GROW adds its row and makes the trainer honour it). Detail:
+  `designs/launcher/launch_guards.md`.
 - **F-BI-3 (UNVERIFIED).** How a fork carries the optimizer state (Adam moments) was not read. B-GROW must establish
   it before a new parameter gets a moment.
 - **F-BI-4 (a reading hazard for X50).** Kakuna (Metamon) learned from human ladder replays. A BC-initialised model
@@ -444,3 +447,4 @@ labels, offline, feeding search's opponent model. Re-open **rung 3**, the BC war
 | date | decision | chosen | rejected / alternatives | evidence |
 |---|---|---|---|---|
 | 2026-10-19 | **This doc CREATED** (design worker, orchestrator brief after the bot survey) | Five bot ideas costed as X35-frame arms. **Growth forks** at the plateau checkpoints share X35's C0, with equal effective learn time as the primary for capacity levers. Ranked: X47 toy depth growth FIRST after X34 plateaus (≈ 17 GPU-h, B-GROW), then X48 per-kind FFN on production, X47b (conditional), X49 intent shaping, and X50 human data (S0 now, the GPU part on the owner's Q1). C-MUTATE folded into X41. All of them after X45(b), X35 batch 1, X44 and the toy calibration | fresh-from-scratch A/Bs (pre-plateau, own controls); experts on the toy (no move / event tokens); a toy intent head (a different lever); 8 layers before 4; a BC warm start before ai_v11's rung 1 (the owner punted ai_v11 on 2026-08-18, and its census shows 16.7 % tier-A, 3.9 % own items known); a new set-mutation row (X41 exists) | `trunk_depth.py`, `model_version/compat.py`, `flag_registry.py` (`opp_intent_grad_mode`), `team_transformer.py`; `checkargs` exit 0 on a fresh depth-4 toy argv at HEAD; the fork refusal path (F-BI-2); `../ai_v11/design_human_replay_objectives.md` §5; the survey |
+| 2026-10-19 | **F-BI-2 fixed** (build worker) | The dry-run tools check a `--model` argv's architecture with the trainer's own code; growth only through `fork_arch.DECLARED_GROWTH` | a second comparator in the launcher; refusing a pinned-other-commit fork (that commit's check is the authority) | `src/main/launcher/fork_arch_dry_run_test.py` (refusals fail on revert) |

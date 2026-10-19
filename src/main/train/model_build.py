@@ -14,7 +14,7 @@ import traceback
 import torch
 
 from agents.model.extractor_arch import build_extractor_arch_kwargs
-from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
+from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.model.policy import Gen3DualHeadMaskablePolicy, POLICY_ACTIVATION_FN
 from agents.model.resume_reapply import reapply_resume_immutable, resolved_run_level
@@ -29,6 +29,7 @@ from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from main.exit_codes import TrainExitCode, exit_code_for
 from main.launcher.ipc import emit, send_event
 from main.train.checkpoint_state import _validate_or_reset_optimizer_state
+from main.train.fork_arch import resume_version_build
 from main.train.fork_lr import apply_fork_lr_pin, read_recorded_pin, resolve_fork_lr
 from main.train.lifecycle import (
     _apply_grad_checkpointing, _arm_compile_sentinel, _arm_learner_lifecycle, _maybe_compile_trainer,
@@ -227,63 +228,11 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                     model_path = p
                     break
 
-        # Build the current-code version for compatibility check
-        _load_encoder = Gen3ObservationEncoder(mappings)
-        # ONE source of truth for every version-checked arch toggle
-        # (agents.model.extractor_arch.build_extractor_arch_kwargs). The fresh-run path below
-        # builds the SAME dict from the SAME table, so a new v51 toggle cannot land on one
-        # path and not the other — which would make a resume version-check an arch it did not
-        # build.
-        _load_extractor_kwargs = build_extractor_arch_kwargs(
-            args, base=_load_encoder.get_features_extractor_kwargs())
-        _load_policy_kwargs = {
-            "features_extractor_class": Gen3FeaturesExtractor,
-            "features_extractor_kwargs": _load_extractor_kwargs,
-            "net_arch": NET_ARCH,
-            # gen3_policy_activation_pin_v1: carried for PARITY with the fresh-run dict below, so
-            # the two policy_kwargs sites cannot drift. It has no effect on the resume itself —
-            # ModelVersion records no activation field, and SB3 rebuilds the loaded policy from the
-            # ZIP's OWN saved policy_kwargs, not from this dict.
-            "activation_fn": POLICY_ACTIVATION_FN,
-            "critic": args.critic,  # gen3_winprob_critic_mode_v1: WHICH readout is the critic
-        }
-        current_version = ModelVersion.from_layout_and_policy_kwargs(
-            _load_extractor_kwargs["layout"], _load_policy_kwargs, vf_coef=args.vf_coef,
-            reward_config=reward_config,
-            opp_belief_aux_coef=args.opp_belief_aux_coef,
-            move_belief_coef=args.move_belief_coef,
-            move_belief_latent_coef=args.move_belief_latent_coef,
-            spread_belief_coef=args.spread_belief_coef,
-            hp_type_belief_coef=args.hp_type_belief_coef,
-            item_belief_coef=args.item_belief_coef,
-            arch_source=getattr(args, "arch_source", None),
-            policy_grad_coef=args.policy_grad_coef,
-            intent_label_bot_weight=args.intent_label_bot_weight,
-            policy_gae_lambda=args.policy_gae_lambda,
-            diagnostics_every=args.diagnostics_every,
-            opp_intent_coef=float(args.opp_intent_coef or 0.0),
-            fork_fraction=args.fork_fraction,
-            fork_branches=args.fork_branches,
-            fork_contested_gap=args.fork_contested_gap,
-            fork_contested_absv=args.fork_contested_absv,
-            fork_max_per_battle=args.fork_max_per_battle,
-            fork_crn=args.fork_crn,
-            # gen3_eval_sentinel_greedy_default_v1 (v112): the EVAL REGIME + the gate it
-            # derives, so a flagless resume reads its own regime back instead of crossing
-            # an opponent-regime boundary. Both are RESOLVED by `resolve_config`.
-            eval_sentinel_greedy=args.eval_sentinel_greedy,
-            promote_threshold=args.promote_threshold,
-            eval_mirrored_pairs=args.eval_mirrored_pairs,
-            promotion_sprt=args.promotion_sprt,
-            trunk_precision=args.trunk_precision,
-            canary_shift_max=args.canary_shift_max,
-            capacity_telemetry=args.capacity_telemetry,
-            canary_reset_steps=args.canary_reset_steps,
-            capacity_cosine_every=args.capacity_cosine_every,
-            capacity_velocity_every=args.capacity_velocity_every,
-            rank_tripwire=args.rank_tripwire,
-            rank_tripwire_drop=args.rank_tripwire_drop,
-        )
+        # The current-code version for the compatibility check — the ONE construction, shared with
+        # `main.checkargs` / `launcher --dry-run` (`main.train.fork_arch`, F-BI-2), so a fork they pass
+        # is a fork this load accepts.
+        current_version, _load_layout, _load_policy_kwargs = resume_version_build(
+            args, mappings=mappings, reward_config=reward_config)
 
         print(f"Loading existing model from {model_path}")
         try:
@@ -449,7 +398,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         _start_rust_env(env, model)   # M5 Lane G: BEFORE the trainer's compile step
         _ledger.mark("rust env core (T2 slots, staging, arena)")
         _maybe_compile_trainer(model, args)
-        _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
+        _run_roundtrip_test(model, _load_layout, _load_policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)
         _arm_compile_sentinel(model, args)   # gen3_compile_sentinel_v1: reset, prewarm, lock
         _ledger.mark("compiled regions: gate + prewarm + lock")
