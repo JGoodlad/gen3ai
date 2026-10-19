@@ -234,3 +234,46 @@ def test_the_worse_verdict_wins_and_a_recorded_reason_outranks_the_state_of_the_
     # …and two recorded reasons keep the first
     sem = A.verdict_from_record(OBS_SEMANTICS_VERSION - 1, ARCH_SIGNATURE, None)
     assert A.worst(old, sem) is old
+
+
+# -- the CLI (`python -m main.prober.arch_status`): it printed NOTHING (no `__main__`) while root CLAUDE.md named it
+#    as the drift diagnosis (audit, 2026-10-19). Run as a real subprocess so a missing `__main__` fails here.
+
+def _cli(*args: str):
+    import subprocess
+    import sys
+    from utils.paths import src_root
+    env = {**os.environ, "PYTHONPATH": str(src_root()), "CUDA_VISIBLE_DEVICES": ""}
+    return subprocess.run([sys.executable, "-m", "main.prober.arch_status", *args],
+                          capture_output=True, text=True, env=env, timeout=120)
+
+
+def test_the_cli_diagnoses_a_run_dir_and_a_checkpoint(tmp_path):
+    cur, old = tmp_path / "cur", tmp_path / "old"
+    _write(str(cur / "model_config.json"), _cur())
+    os.makedirs(cur / "eval_traces" / "step_5" / "heuristic")
+    _write(str(old / "model_config.json"), {"config_version": 143, "arch_signature": "gen3_event_record_v2"})
+    r = _cli(str(cur))
+    assert r.returncode == 0, r.stderr
+    assert "verdict: CURRENT" in r.stdout and "picker tier: current" in r.stdout
+    r = _cli(str(old), "--json")
+    assert r.returncode == 1, r.stderr
+    d = json.loads(r.stdout)
+    assert d["status"] == A.INCOMPATIBLE and d["kind"] == A.KIND_ARCH_SIGNATURE and d["what"] == "run"
+    assert d["plain"] == A.verdict_for_step(str(old)).plain
+    ckpt = _zip(str(old / "checkpoints" / "checkpoint_1_steps.zip"))
+    r = _cli(ckpt)
+    assert r.returncode == 1 and f"({A.KIND_ARCH_SIGNATURE})" in r.stdout, r.stdout + r.stderr
+
+
+def test_the_cli_refuses_a_missing_path_and_an_unknown_step(tmp_path):
+    r = _cli(str(tmp_path / "nope"))
+    assert r.returncode == 2 and "no such run directory" in r.stdout
+    _write(str(tmp_path / "run" / "model_config.json"), _cur())
+    r = _cli(str(tmp_path / "run"), "--step", "7")
+    assert r.returncode == 2 and "step_7" in r.stdout
+
+
+def test_an_unrecorded_run_exits_3(tmp_path):
+    os.makedirs(tmp_path / "bare")
+    assert A.main([str(tmp_path / "bare")]) == 3

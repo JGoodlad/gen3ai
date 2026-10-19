@@ -39,6 +39,11 @@ per-cycle record of the model that played; an eval `snapshot.zip` sits beside it
 `unrecorded`: the views may be TRIED (and a failure is classified), but it is never counted as current — and a
 signature without a version is `unrecorded` too, because only the version can vouch for the observation's meaning.
 
+**From a shell:** `python -m main.prober.arch_status <run_dir | checkpoint.zip> [--step N] [--json]` prints the
+verdict (status, kind, the plain sentence, recorded vs code identity; for a run, its traces and picker tier).
+Exit 0 current, 1 incompatible, 3 unrecorded, 2 a path or step that does not exist. Records only: a run is judged
+at its newest (or named) step, a checkpoint by its sidecars plus the width its zip declares; no torch import.
+
 **Two sides, and the worse one wins.** The model views re-run a CHECKPOINT on a trace's STORED OBSERVATIONS.
 `model_status(step)` is the worse of the checkpoint's verdict and the trace's own (`arch_status.worst`), and
 `ProbeSession._model_for` refuses on the trace's verdict before loading (an injected test loader skips it): on a

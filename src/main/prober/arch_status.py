@@ -357,3 +357,63 @@ def checkpoint_verdict(ckpt_path: str, *, peek_obs_dim: Optional[int] = None) ->
                            source=os.path.basename(ckpt_path))
     cv, sig, dim, src = checkpoint_record(ckpt_path)
     return verdict_from_record(cv, sig, peek_obs_dim if peek_obs_dim is not None else dim, source=src)
+
+
+# -- the CLI: `python -m main.prober.arch_status <run_dir | checkpoint.zip>` ----------------------------------------
+
+_EXIT = {CURRENT: 0, INCOMPATIBLE: 1, UNRECORDED: 3}     # 2 is argparse's usage error
+
+
+def diagnose(path: str, step: Optional[int] = None) -> dict:
+    """The verdict for a run directory (its newest eval step, or `step`) or a checkpoint FILE, as the dict the CLI
+    prints. A checkpoint's width comes from the zip itself (`peek_checkpoint`, ~5 ms; no torch). Raises
+    `FileNotFoundError` for a path that does not exist (a typo, never a confident verdict)."""
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"no such run directory or checkpoint: {path}")
+    if os.path.isdir(path):
+        if step is not None and step not in {s for s, _ in step_dirs(path)}:
+            raise FileNotFoundError(f"{path} has no eval_traces/step_{step}/")
+        v = verdict_for_step(path, step)
+        traces = run_has_traces(path)
+        return {"path": path, "what": "run", "step": step, "has_traces": traces,
+                "tier": tier_of(traces, v), **v.as_dict()}
+    from main.prober.model import peek_checkpoint          # light: zipfile + json; torch stays unimported
+    v = checkpoint_verdict(path, peek_obs_dim=peek_checkpoint(path).get("obs_dim"))
+    return {"path": path, "what": "checkpoint", **v.as_dict()}
+
+
+def _render(d: dict) -> str:
+    head = d["status"].upper() + (f" ({d['kind']})" if d["kind"] else "")
+    lines = [f"{d['what']}: {d['path']}" + (f"  [step {d['step']}]" if d.get("step") is not None else ""),
+             f"verdict: {head} — model views {'may run' if d['model_views'] else 'CANNOT run'}",
+             d["plain"],
+             f"recorded: config v{d['config_version']}, signature {d['arch_signature']}, obs_dim {d['obs_dim']}"
+             f" (from {d['source'] or 'no record'})",
+             f"code:     config v{d['current_config_version']}, signature {d['current_arch_signature']},"
+             f" obs_dim {current_obs_dim()}"]
+    if d["what"] == "run":
+        lines.append(f"eval traces: {'yes' if d['has_traces'] else 'none'} · picker tier: {d['tier']}")
+    return "\n".join(lines)
+
+
+def main(argv: "Optional[list[str]]" = None) -> int:
+    import argparse
+    ap = argparse.ArgumentParser(
+        prog="python -m main.prober.arch_status",
+        description="Is a run / a checkpoint at the architecture THIS code builds? Read from records, never a "
+                    "load. Exit 0 current, 1 incompatible (the kind says why), 3 unrecorded.")
+    ap.add_argument("path", help="a run directory (judged at its newest eval step) or a checkpoint .zip")
+    ap.add_argument("--step", type=int, default=None, help="a run directory's eval step (default: the newest)")
+    ap.add_argument("--json", action="store_true", help="print the verdict as JSON")
+    args = ap.parse_args(argv)
+    try:
+        d = diagnose(args.path, args.step)
+    except FileNotFoundError as exc:
+        print(json.dumps({"error": str(exc)}) if args.json else f"error: {exc}")
+        return 2
+    print(json.dumps(d, indent=2) if args.json else _render(d))
+    return _EXIT[d["status"]]
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
