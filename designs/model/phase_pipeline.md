@@ -244,7 +244,7 @@ ADDITIVELY into `value_pooled`, and the intent cells widen the pointer stash, no
 
 ## Moved from the leaf (2026-10-10)
 
-The full text of the model leaf's sections on this topic, moved here when `src/agents/model/CLAUDE.md` was cut to rules, commands, map and hazards (the leaf keeps a one-line pointer to each). Always-current like the rest of this doc; where it overlaps an earlier section, the earlier section is the fuller statement.
+The full text of the model leaf's sections on this topic, moved here when `src/agents/model/CLAUDE.md` was cut to rules, commands, map and hazards (the leaf's topic map points here; it keeps only the hazards). Always-current like the rest of this doc; where it overlaps an earlier section, the earlier section is the fuller statement.
 
 ### Phase module structure
 
@@ -306,7 +306,7 @@ Rules to preserve:
 - **Any change to the phase structure or forward math is a structural change → bump `ARCH_SIGNATURE`** in `model_version/constants.py`. **Read the live value there, not from prose.** Three cases people get wrong:
   - A **pure decomposition** still changes state_dict keys, so old checkpoints must fail loudly — bump it.
   - A forward-math change with **unchanged `out_dim` / projection widths** is not shape-caught by anything, so the signature bump is the ONLY thing that rejects a stale checkpoint. This is the case that has bitten most often.
-  - **Re-sourcing or re-meaning an obs block** is retrain-class even when no individual dim moves (a constant fallback becoming a real value; a scalar's definition changing; a block moving from `available_moves` order to request-slot order). The long list of historical examples lives in `designs/CHANGELOG.md`.
+  - **Re-sourcing or re-meaning an obs block with no shape change is NOT this case** (a constant fallback becoming a real value; a scalar's definition changing; a block moving from `available_moves` order to request-slot order): it sets `OBS_SEMANTICS_VERSION`, not `ARCH_SIGNATURE` (`designs/model/versioning.md`, the obs-semantics playbook; v151 shipped that way). The weights still load; the marker lets a reader refuse a checkpoint trained on the old meaning. The historical examples, some of which predate the marker and bumped the signature, live in `designs/CHANGELOG.md`.
 - Per-phase unit tests live in `phase_modules_test.py` — `CLSPool` (incl. the `value_cls` pool) and `ProjectionAssembler` (which returns `(pi_combined, vf_combined)`) are tested on a hand-built `ExtractorContext` (`_dummy_ctx`) without a full forward pass. Prefer adding precise phase-level tests there.
 ### 🚨 X5's hypothesis tokens: every reduction over OPPONENT tokens declares its presence semantics
 

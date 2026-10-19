@@ -11,7 +11,7 @@ training package). Each section below is unchanged, including its dated measurem
 
 ## Hidden-opponent belief supervision (`--opp-belief-aux-coef`) — X5's set BCE, the `hidden_team_set` row
 
-The training half of the opponent-belief family (model side: `src/agents/model/CLAUDE.md` → X5's
+The training half of the opponent-belief family (model side: `designs/model/phase_pipeline.md` → X5's
 hypothesis tokens, the ONLY belief representation since the X5 version break, config v144). Off by
 default. Two pieces live here:
 - **Labels (the Rust env core's label path (formerly `gen3_env.py`, deleted in U3; `designs/rust_sim/env_labels.md`)).** When `emit_belief_labels` (set from `--opp-belief-aux-coef>0`), `step()`
@@ -81,7 +81,7 @@ default. Two pieces live here:
 
 ## Move-belief reinjection loss (`--move-belief-mode` / `--move-belief-coef`)
 
-The training half of the move-belief feature (model side: `src/agents/model/CLAUDE.md` → MoveBelief,
+The training half of the move-belief feature (model side: `designs/model/phase_pipeline.md` → MoveBelief,
 v17). The predicted moveset is REINJECTED into the opp token (it flows to both heads), AND supervised:
 - **Labels (the Rust env core's label path (formerly `gen3_env.py`, deleted in U3; `designs/rust_sim/env_labels.md`)).** When `move_belief_mode != "off"` (or species-belief on), the trainee obs
   carries `belief_moves[6,4]` (hidden slots, shared with the species aux) and — when mode ∈
@@ -112,7 +112,7 @@ v17). The predicted moveset is REINJECTED into the opp token (it flows to both h
 
 ## Spread-belief supervision loss (`--spread-belief-coef`)
 
-The training half of the THIRD belief leg (model side: `src/agents/model/CLAUDE.md` → SpreadBelief, v25).
+The training half of the THIRD belief leg (model side: `designs/model/phase_pipeline.md` → SpreadBelief, v25).
 The `SpreadBelief` head predicts the opponent's hidden SPREAD (the 5 derived stats {atk,def,spa,spd,spe}) and
 the `DamageOperator` consumes it for damage + outspeed. WITHOUT this loss the head is **unsupervised** — it
 gets only the weak/unaligned gradient leaking back through the op, so it sits at the usage-mean prior, which
@@ -176,7 +176,7 @@ against the *modal* opponent, not the real one. Off by default (`--spread-belief
 
 ## Opponent HP-type belief loss (`--hp-type-belief-coef`)
 
-The training half of `gen3_typed_hp_belief_v1` (model side: `src/agents/model/CLAUDE.md` → DISCRETE typed
+The training half of `gen3_typed_hp_belief_v1` (model side: `designs/model/phase_pipeline.md` → DISCRETE typed
 Hidden Power, v51). The opponent's Hidden Power is reasoned about ONLY as the 16 discrete typed moves; the
 `HPTypeBelief` head supplies the type half of `P(HP_t) = presence · P(type=t)`, and this CE is its direct
 supervision.
@@ -306,7 +306,7 @@ because the loss is still computed; only the graph behind it is gone. The access
 `KeyError` on an unknown key so a typo cannot degrade into that, and
 `agents/model/belief_label_only_gate_test.py::test_every_belief_loss_still_trains_its_head` is the
 guard that each key still deposits gradient on its own head. The full four-route table is in
-`src/agents/model/CLAUDE.md` → `--belief-grad-mode`.
+`designs/model/phase_pipeline.md` → `--belief-grad-mode`.
 
 ### The supervised belief losses
 

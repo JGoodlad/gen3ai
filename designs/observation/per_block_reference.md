@@ -68,9 +68,11 @@ SWAPPED — lives in the fold, `designs/ARCHITECTURE.md` §1.1).
 
 > **The per-row COLUMN CONTRACT is `constants.EventCol`** (`gen3_event_col_names_v1`) — an
 > `IntEnum`, ONE declaration the MODEL reads, held equal to the PRODUCER (the Rust encoder's `layout.rs`
-> `EV_*` columns) by `rust_core_obs_layout_test.py`; its Python consumers are
-> `team_transformer.EventSeats.forward` + `_event_reference_cells` and the feature-coverage probe helper
-> (`feature_coverage/_support.py::obs_with_event_row`). It replaced a comment plus ~30 bare integer literals
+> `EV_*` columns) by `rust_core_obs_layout_test.py`. Its Python consumers are
+> `team_transformer.EventSeats.forward` + `_event_reference_cells`, which read the PLAIN-INT mirror
+> `constants.EVENT_COL` (an `IntEnum` member inside the traced forward breaks `torch.fx` code generation;
+> the reason is the comment above `EVENT_COL` in `constants.py`), and the eager feature-coverage probe helper
+> (`feature_coverage/_support.py::obs_with_event`), which reads `EventCol`. It replaced a comment plus ~30 bare integer literals
 > spread across five files — a producer/consumer pair bound by POSITION with nothing relating
 > them, the class the 2026-08-18 positional-binding sweep convicted five times. **Never write a
 > bare column index**; the members ARE ints, so `vec[_o + EventCol.CRIT]` is the same arithmetic
@@ -80,7 +82,7 @@ SWAPPED — lives in the fold, `designs/ARCHITECTURE.md` §1.1).
 > is load-bearing: reordering a member relabels every historical row with no shape change.
 > `event_window_test.py` pins all of it — the members TILE `range(EVENT_TOKEN_DIM)` with no gaps
 > or overlaps, the groups are contiguous and in the TurnDelta effectiveness-code order, the consumer
-> imports the SAME object, and `EventSeats._N_SCALARS` (a weight shape) agrees with the
+> imports the SAME `EVENT_COL` object, the mirror agrees with `EventCol` member for member, and `EventSeats._N_SCALARS` (a weight shape) agrees with the
 > map's id/scalar classification.
 
 Unit gate: `training/event_window_test.py` (the contract); the fold's gates are the Rust core's

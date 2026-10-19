@@ -14,7 +14,7 @@ filename stays so existing links resolve.
 
 ## Win-probability head (`--win-prob-mode`)
 
-The training half of the tri-state win-probability head (model side: `src/agents/model/CLAUDE.md` →
+The training half of the tri-state win-probability head (model side: `designs/model/readouts_and_value_routes.md` →
 win-probability head, v22). A calibrated **P(win|state)** the shaped critic can't give — supervised by the
 Monte-Carlo episode OUTCOME. Off by default (`--win-prob-mode none`); under the win-prob critic (the only critic) it is THE CRITIC.
 Three pieces live here:

@@ -416,7 +416,7 @@ The owner put four of §5's gaps IN SCOPE on 2026-10-06 as ONE observation-enric
 on its own and NOT bundled into the static-token rebuild's arm: rank 4 (B7, backlog E1), rank 5 (B9's
 Choice-lock half), rank 6 (B5) and rank 7 (B8's Encore / Taunt, plus Disable, Uproar and the partial
 trap). Layout and sources: [`../ARCHITECTURE.md`](../ARCHITECTURE.md) §1.7 and
-`src/agents/observation/CLAUDE.md` (the OBS-FACTS block).
+`designs/observation/per_block_reference.md` (the OBS-FACTS block).
 
 **Status: IN THE OBSERVATION since the X5 version break (config v144, part 3, 2026-10-07).** The block is
 the observation's LAST block (`OFFSET_OBS_FACTS` = 2761, obs 2761 → 2845; the 2761-dim prefix byte-identical:

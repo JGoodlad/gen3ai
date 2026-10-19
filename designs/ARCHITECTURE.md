@@ -1,7 +1,7 @@
 # ARCHITECTURE.md — what is true NOW
 
 **Scope: current state only.** History lives in [`CHANGELOG.md`](CHANGELOG.md); versioning
-*mechanics* live in `src/agents/model/CLAUDE.md`. If a claim here disagrees with the code, the code
+*mechanics* live in `designs/model/versioning.md`. If a claim here disagrees with the code, the code
 wins and this file is a bug — fix it in the same change.
 
 **"Current" means the production configuration as HEAD resolves it.** Two objects, deliberately
@@ -1323,7 +1323,7 @@ head AND shapes the shared trunk through the head's read, and the PPO loss reach
 parameters through the reinject write. The opponent-INTENT head is the exception and runs
 **`detached`** (`opp_intent_grad_mode: "detached"`): its trunk read is stop-grad, so the intent
 labels cannot reshape the trunk. `label_only` (publish stop-grad; labels alone train the head) is
-a built, non-default mode — see `src/agents/model/CLAUDE.md` for the four-route table.
+a built, non-default mode — see `designs/model/phase_pipeline.md` for the four-route table.
 
 ---
 
@@ -2029,8 +2029,8 @@ not re-derive them.
 | Question | File |
 |---|---|
 | **This document as a clickable digraph** — the **120 nodes / 1103 edges** above (counted 2026-08-23 from `delivery_graph_snapshot.json`, which the viewer is built from — read it there rather than trusting this cell), hue-coded by what each channel physically carries, with a per-checkpoint measured-dependence overlay and a path filter (pick `value_pooled` to see exactly what the critic reads) | **https://model.g5d.io** (served live from the workstation checkout, so it is never a stale copy), or `designs/architecture_viewer.html` via `file://`. **Generated — never hand-edit it**: rebuild with `python -m agents.model.build_arch_viewer`, and `--check` fails if the committed artifact has drifted from the graph. |
-| Obs-build performance gate (mandatory benchmark) + per-slot detail | `src/agents/observation/CLAUDE.md` (the rule) · `designs/observation/per_block_reference.md` (the detail) |
-| Phase contract, `ExtractorContext`, versioning playbook | `src/agents/model/CLAUDE.md` |
+| Obs-build performance gate (mandatory benchmark) + per-slot detail | root `CLAUDE.md` § Running Tests (the rule) · `designs/rust_sim/encoder.md` §8 (the benchmark) · `designs/observation/per_block_reference.md` (the detail) |
+| Phase contract, `ExtractorContext`, versioning playbook | `designs/model/phase_pipeline.md` · `designs/model/versioning.md` (hazards: `src/agents/model/CLAUDE.md`) |
 | How it got here — every version entry, verbatim | `designs/CHANGELOG.md` |
 | Which `ai_vN` folder is relevant | `designs/CLAUDE.md` |
 | Hypothesis status / what has been killed | `designs/research_state/ledger.md` |

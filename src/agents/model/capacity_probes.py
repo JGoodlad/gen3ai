@@ -280,7 +280,7 @@ def build_fresh_extractor(policy: Any, seed: int = 0) -> Any:
     Linear in the extractor (clobbering all 13 deliberate zero-inits), and
     `Gen3DualHeadMaskablePolicy.__init__` then calls `restore_identity_init()` to put them back.
     A reference arm built without both steps is not the network training starts from — see
-    `src/agents/model/CLAUDE.md` → *Identity-at-init is NOT free*.
+    `designs/model/phase_pipeline.md` → *Identity-at-init is NOT free*.
     """
     import torch
     from stable_baselines3.common.policies import ActorCriticPolicy

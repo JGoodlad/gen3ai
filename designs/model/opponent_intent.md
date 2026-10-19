@@ -200,7 +200,7 @@ defender-conditioned one.
 
 ## Moved from the leaf (2026-10-10)
 
-The full text of the model leaf's sections on this topic, moved here when `src/agents/model/CLAUDE.md` was cut to rules, commands, map and hazards (the leaf keeps a one-line pointer to each). Always-current like the rest of this doc; where it overlaps an earlier section, the earlier section is the fuller statement.
+The full text of the model leaf's sections on this topic, moved here when `src/agents/model/CLAUDE.md` was cut to rules, commands, map and hazards (the leaf's topic map points here; it keeps only the hazards). Always-current like the rest of this doc; where it overlaps an earlier section, the earlier section is the fuller statement.
 
 ### Opponent intent — X5's FLAT POINTER, re-expressed as `α` / `β` (`flat_intent.py`; `opp_intent.py` keeps the shared constants)
 

@@ -60,7 +60,7 @@ if TYPE_CHECKING:
 # version pin on the code, not by this constant.
 #
 # Changing this is an ARCHITECTURE change: bump `ARCH_SIGNATURE` deliberately (see the
-# model-versioning playbook in `src/agents/model/CLAUDE.md`), because nothing else will catch it.
+# model-versioning playbook in `designs/model/versioning.md`), because nothing else will catch it.
 POLICY_ACTIVATION_FN = th.nn.Tanh
 
 

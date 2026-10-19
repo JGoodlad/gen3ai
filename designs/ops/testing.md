@@ -1148,7 +1148,7 @@ against 2.2%. Rank work by a wall measurement; use cProfile to find WHICH functi
 🚨 **Every change under `src/agents/observation/` — and to the Rust encoder — must run
 `python -m agents.observation.rust_encoder_benchmark` before/after and confirm no meaningful regression** (P6 slice
 6b: the row every run reads is the Rust encoder's). The gate and how to read it are in
-`src/agents/observation/CLAUDE.md`. Absolute µs scale with machine load; compare a same-session before/after.
+`designs/rust_sim/encoder.md` §8. Absolute µs scale with machine load; compare a same-session before/after.
 (The Python benchmarks that used to gate this — `obs_build_benchmark` with its canonical baseline and load-stable call
 counts, `trainer_turn_benchmark` with its `--pin-battles` rule, `live_view_build_benchmark` — were deleted in slice 6c; the
 lesson they carried stands: **unpinned, a benchmark that walks a fresh random battle per invocation profiles a different

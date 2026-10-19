@@ -70,8 +70,8 @@ eval / self-play-pool opponents, where the forward is identical regardless of th
 and a false rejection would break league play. Instead they get a dedicated check
 (`ModelVersion.check_vf_coef`) invoked **only on the training-resume path** via
 `load_model_snapshot(..., enforce_vf_coef=…)`; `train_rl_agent.py` FATALs on mismatch exactly like
-an arch error. To add another such hparam, follow the optional-feature playbook in
-`src/agents/model/CLAUDE.md` (field +
+an arch error. To add another such hparam, follow the optional-feature playbook below
+(field +
 `MODEL_CONFIG_VERSION` bump + `_migrate_config` default) **plus** a dedicated `check_*` + an
 `enforce_*` opt-in on `load_model_snapshot`, and leave it out of `_WEIGHT_FIELDS`.
 
@@ -412,7 +412,7 @@ built by their own flags. It rides `snapshot.current_model_version(critic=…)` 
 
 ## Moved from the leaf (2026-10-10)
 
-The full text of the model leaf's sections on this topic, moved here when `src/agents/model/CLAUDE.md` was cut to rules, commands, map and hazards (the leaf keeps a one-line pointer to each). Always-current like the rest of this doc; where it overlaps an earlier section, the earlier section is the fuller statement.
+The full text of the model leaf's sections on this topic, moved here when `src/agents/model/CLAUDE.md` was cut to rules, commands, map and hazards (the leaf's topic map points here; it keeps only the hazards). Always-current like the rest of this doc; where it overlaps an earlier section, the earlier section is the fuller statement.
 
 ### Model versioning (`model_version/`, `snapshot.py`)
 

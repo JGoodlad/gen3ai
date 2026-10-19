@@ -131,8 +131,8 @@ ignores them and they exist for the `src/rust_sim` port. The exceptions that ARE
   re-numbered to distinct **355-370** from the deterministic module-level `_HP_TYPE_NUMS` map (alphabetical
   by type, so the extractor-parity test reproduces the file). This lets OUR known-HP be represented by the
   move embedding itself (the opponent's unrevealed HP stays the typeless 237); it IS an obs-value change
-  (our HP move-id channel) → retrain-class, golden regenerated. See `src/agents/model/CLAUDE.md` →
-  `gen3_typed_hidden_power_ids_v1` and `designs/ai_v6/design_typed_hidden_power_ids.md`.
+  (our HP move-id channel) → retrain-class, golden regenerated. See `designs/CHANGELOG.md`
+  (`gen3_typed_hidden_power_ids_v1`) and `designs/ai_v6/design_typed_hidden_power_ids.md`.
 - **`build_moves`** also carries **`critRatio`** (only when present — the ~dozen gen-3 high-crit moves
   Slash/Crabhammer/Aircutter/Blaze Kick/Leaf Blade/…; absent ⇒ ratio 1). It is **NOT in the obs vector**
   (the facade ignores it, like the secondary fields), so it is obs-neutral; it exists for the `src/rust_sim`
