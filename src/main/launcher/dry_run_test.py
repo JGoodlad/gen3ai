@@ -237,6 +237,21 @@ def test_c_fresh_dry_run_prints_role_fresh_and_a_head_pin(isolated, monkeypatch,
     assert not list((work / "models").iterdir()), "a dry run must not mint the fresh run dir"
 
 
+@pytest.mark.parametrize("extra, mode, fragment", [
+    ([], "fatal", "neither typed nor inherited"),
+    (["--behaviour-check", "warn"], "warn", "NOT fatal"),
+])
+def test_c_the_resolved_k9b_mode_is_printed_and_a_typed_one_differs_from_the_default(
+        isolated, monkeypatch, capsys, extra, mode, fragment):
+    """T60: a staged `warn` dry run was byte-identical to a default one, so nothing showed which mode a launch had."""
+    _root, (_first, second), _work = isolated
+    monkeypatch.setattr(wt, "get_git_hash", lambda *a, **k: second)
+    _dry_run(["--steps", "1000", *_ARCH_OK, *extra], monkeypatch)
+    lines = [ln for ln in capsys.readouterr().out.splitlines() if ln.lstrip().startswith("K9(b) check")]
+    assert len(lines) == 1, lines
+    assert lines[0].split(":", 1)[1].split()[0] == mode and fragment in lines[0], lines[0]
+
+
 def test_c_no_pin_says_so_and_still_resolves_everything_else(isolated, monkeypatch, capsys):
     _root, (_first, _second), _work = isolated
     _dry_run(["--no-pin", "--steps", "1000", *_ARCH_OK], monkeypatch)

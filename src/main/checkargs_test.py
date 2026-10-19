@@ -704,3 +704,18 @@ def test_a_restart_INHERITS_the_desugared_damage_matrices_the_run_recorded(tmp_p
     named = {d.name: d for d in rep.diffs}
     for k in ("damage_matrices_outgoing", "damage_matrices_incoming"):
         assert k not in named or named[k].resolved is True, named.get(k)
+
+
+# ------------------------------------------------------------------ T60: the resolved K9(b) mode is printed
+
+@pytest.mark.parametrize("extra, mode, fragment", [
+    ("", "fatal", "neither typed nor inherited"),
+    (" --behaviour-check warn", "warn", "NOT fatal"),
+    (" --behaviour-check off", "off", "NOT fatal"),
+])
+def test_checkargs_prints_the_resolved_k9b_mode(capsys, extra, mode, fragment):
+    from main.checkargs import main as checkargs_main
+    checkargs_main(["--argv", "--steps 1000 --device cpu" + extra])
+    lines = [ln for ln in capsys.readouterr().out.splitlines() if ln.lstrip().startswith("K9(b) behaviour check")]
+    assert len(lines) == 1, lines
+    assert lines[0].split(":", 1)[1].split()[0] == mode and fragment in lines[0], lines[0]

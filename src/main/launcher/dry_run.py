@@ -379,6 +379,9 @@ def dry_run(
         switch = env_core_switch_line(ns)
         if switch:
             out(f"  {switch}")
+        # T60: an unset --behaviour-check runs FATAL; say so, so a `warn`/`off` argv is not byte-identical to a default one.
+        from main.train.rust_env_setup import behaviour_check_line
+        out(f"  K9(b) check : {behaviour_check_line(ns)}")
 
     # 7. Pool drift, when there is a directory to look in.
     if exists:

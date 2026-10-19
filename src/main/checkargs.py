@@ -989,6 +989,7 @@ def main(raw: List[str] | None = None) -> int:
 
     _print_resolution(res["resolution"])
     _print_oracle_reveal(res.get("ns"))
+    _print_behaviour_check(res.get("ns"))
     fork_fatal = _print_diagnostic_fork(res.get("ns"))
     _print_fork_lr_inheritance(res["resolution"])
     shaped_fatal = _print_shaped_reward(res.get("shaped_reward"), argv, a.pin)
@@ -1268,6 +1269,15 @@ def _print_oracle_reveal(ns) -> None:
           "the trainee's team too; the in-loop eval plays at this mode). RESUME-IMMUTABLE: recorded in "
           "model_config.json, inherited on a flagless resume, a flip is refused.")
     print(f"      canonical {rec['canonical']}   hash {rec['hash']}")
+
+
+def _print_behaviour_check(ns) -> None:
+    """The K9(b) behaviour-policy consistency mode the launch would run at (T60): an unset flag runs FATAL on every
+    core, so a fork or a restart that types nothing would otherwise print nothing about it."""
+    if ns is None:
+        return
+    from main.train.rust_env_setup import behaviour_check_line
+    print(f"  K9(b) behaviour check          : {behaviour_check_line(ns)}")
 
 
 def _print_diagnostic_fork(ns) -> str | None:

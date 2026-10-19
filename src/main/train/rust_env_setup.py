@@ -18,6 +18,25 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 from main.launcher.ipc import emit as _emit
 
 
+#: K9(b)'s mode when ``--behaviour-check`` is neither typed nor inherited.
+DEFAULT_BEHAVIOUR_CHECK = "fatal"
+
+
+def behaviour_check_line(args: Any) -> str:
+    """The resolved K9(b) mode and where it came from (the text after the label), as ``main.checkargs`` and
+    ``main.launcher --dry-run`` print it (T60).
+
+    An unset flag resolves to :data:`DEFAULT_BEHAVIOUR_CHECK` (``resolve_env_core_args``), so a fork or a restart
+    that types nothing runs FATAL without any line saying so; this states the mode and where it came from."""
+    typed = getattr(args, "behaviour_check", None)
+    mode = typed or DEFAULT_BEHAVIOUR_CHECK
+    source = "typed or inherited" if typed else "the default: --behaviour-check is neither typed nor inherited"
+    note = "" if mode == DEFAULT_BEHAVIOUR_CHECK else (
+        f"  ⚠️  NOT {DEFAULT_BEHAVIOUR_CHECK}: a behaviour-policy mismatch " + (
+            "is logged, not fatal" if mode == "warn" else "is not checked at all"))
+    return f"{mode}  ({source}){note}"
+
+
 def resolve_env_core_args(args: Any) -> None:
     """Fill every collector flag left ``None`` (untyped) with the default its help states. Idempotent."""
     defaults = {
@@ -32,7 +51,7 @@ def resolve_env_core_args(args: Any) -> None:
     if getattr(args, "behaviour_check", None) is None:
         # K9(b) is FATAL on both env cores (M5 Lane K): under python it reads the first micro-batch's
         # own forward (`instrumented_ppo/learner_gates.py`) — one host read per update, no forward.
-        args.behaviour_check = "fatal"
+        args.behaviour_check = DEFAULT_BEHAVIOUR_CHECK
 
 
 def recorded_env_core(model_path: Optional[str]) -> Optional[str]:

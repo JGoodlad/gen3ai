@@ -9,7 +9,7 @@ from types import SimpleNamespace
 import pytest
 
 from main.train.parser import build_parser
-from main.train.rust_env_setup import _bot_names, resolve_env_core_args, segment_seed
+from main.train.rust_env_setup import _bot_names, behaviour_check_line, resolve_env_core_args, segment_seed
 
 
 def _args(*argv):
@@ -35,6 +35,23 @@ def test_the_rust_core_resolves_to_the_stated_defaults():
     c = _args("--behaviour-check", "warn", "--trainee-slots", "4")
     resolve_env_core_args(c)
     assert (c.behaviour_check, c.trainee_slots) == ("warn", 4)
+
+
+def test_the_resolved_k9b_mode_is_stated_with_its_source():
+    """T60: an UNSET `--behaviour-check` runs fatal; the line says so, and a typed `warn` / `off` is flagged."""
+    unset = behaviour_check_line(_args())
+    assert unset.startswith("fatal") and "neither typed nor inherited" in unset and "NOT fatal" not in unset
+    typed_fatal = behaviour_check_line(_args("--behaviour-check", "fatal"))
+    assert typed_fatal.startswith("fatal") and "typed or inherited" in typed_fatal
+    for mode in ("warn", "off"):
+        line = behaviour_check_line(_args("--behaviour-check", mode))
+        assert line.startswith(mode) and "NOT fatal" in line, line
+    # the line states what the trainer's own resolution produces
+    for argv in ((), ("--behaviour-check", "warn")):
+        a = _args(*argv)
+        said = behaviour_check_line(a).split()[0]
+        resolve_env_core_args(a)
+        assert said == a.behaviour_check
 
 
 def test_the_training_floor_roster_maps_onto_ported_bots():
