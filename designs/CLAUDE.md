@@ -76,6 +76,9 @@ the kit is `tools/cloud/vast/`). [`ops/TECH_DEBT_BACKLOG.md`](ops/TECH_DEBT_BACK
 tech-debt list (nothing on it is dispatched without the owner's word);
 [`ops/deletion_pass_manifest.md`](ops/deletion_pass_manifest.md) records the post-M5 deletion pass,
 each unit marked SHIPPED as it landed.
+[`ops/instruction_docs_principles.md`](ops/instruction_docs_principles.md) is how every `CLAUDE.md`,
+`MEMORY.md`, slash command and brief is written (always-current); its first audit and sweep plan is
+[`ops/instruction_docs_audit_2026-10-19.md`](ops/instruction_docs_audit_2026-10-19.md).
 
 ---
 
