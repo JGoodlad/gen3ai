@@ -18,6 +18,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
+from main.anchors.config import load_config
 from main.team_strength import fit as F
 from main.team_strength import kakuna_lane as KL
 from main.team_strength import panel as PN
@@ -26,7 +27,9 @@ from main.team_strength import register as RG
 from main.team_strength import report as RP
 from main.team_strength import x26_lane as XL
 
-DEFAULT_METAMON_TEAMS = Path("/home/goodlad/dev/metamon/cache/teams")
+def default_metamon_teams() -> Path:
+    """Metamon's team cache, from the one anchors config (``designs/ops/anchors.json`` / ``GEN3AI_METAMON_CACHE_DIR``)."""
+    return load_config().metamon.cache_dir / "teams"
 
 
 def expected_digest(paths: Sequence[Path]) -> str:
@@ -290,7 +293,7 @@ def parser() -> argparse.ArgumentParser:
     i = sub.add_parser("install-kakuna")
     i.add_argument("--reg", required=True)
     i.add_argument("--state", required=True)
-    i.add_argument("--metamon-teams", default=str(DEFAULT_METAMON_TEAMS))
+    i.add_argument("--metamon-teams", default=str(default_metamon_teams()))
     u = sub.add_parser("run")
     u.add_argument("--reg", required=True)
     u.add_argument("--state", required=True)
@@ -305,7 +308,7 @@ def parser() -> argparse.ArgumentParser:
     u.add_argument("--profile", default="release", choices=("release", "selfcheck"))
     u.add_argument("--tree", default=None, help="kakuna: the pinned checkout ROOT every unit runs from")
     u.add_argument("--python", default=sys.executable)
-    u.add_argument("--metamon-teams", default=str(DEFAULT_METAMON_TEAMS))
+    u.add_argument("--metamon-teams", default=str(default_metamon_teams()))
     s = sub.add_parser("status")
     s.add_argument("--reg", required=True)
     s.add_argument("--state", required=True)
