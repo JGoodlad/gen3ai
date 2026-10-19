@@ -60,8 +60,8 @@ Match the seed file's structure unless the user wants something different.
 3. **Write / update** the markdown to match the seed file's shape (TL;DR → intuitive →
    technical → where-it-lives → synthesis → see-also). Capture what was actually discussed,
    distilled into a durable explainer — not a verbatim chat log.
-4. **Register if new.** The `designs/learning/` folder is noted in `designs/CLAUDE.md`; no
-   per-file index is required, but keep that pointer accurate if the folder's purpose grows.
+4. **Register if new.** Add a row for a new note to the index, `designs/learning/README.md`
+   (and keep an existing row accurate when a note's scope changes).
 5. **Ship only on request.** Do NOT commit unless the user's current message contains
    `/gen3ai-ship` (per the project git rule). Finishing the note is not permission to commit.
 

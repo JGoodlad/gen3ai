@@ -17,7 +17,6 @@
   "grandfathered": {
     ".claude/commands/gen3ai-ship.md": 12881,
     "CLAUDE.md": 38556,
-    "designs/CLAUDE.md": 15591,
     "src/agents/model/CLAUDE.md": 21507,
     "src/agents/training/CLAUDE.md": 35505,
     "~/.claude/agents/opus-high.md": 2797,
