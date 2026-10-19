@@ -775,3 +775,42 @@ Neither event dumped weights (the dump counter is per lineage: the diagnosis's F
   checkpoint, so the cap is per lineage.
 - **`selection_sites.REASONS["BISECT"]`:** its "ulp-scale change" is false on saturated k = 1 rows (the diagnosis's
   F2).
+
+## Amendment 6 (2026-10-18 ≈ 23:00, X26 stopped at 320.14M) — the judged-max ceiling for the DIAGNOSED τ class
+
+Registered BEFORE the resume, after the A3 stop at u32180 (judged max 2.974e-3 @ 316,795,546) was diagnosed NUMERICAL
+(`measurements/x26_a3_stop_316M_2026-10-18/`, `1e3e4b6b4`). The orchestrator registers it under the owner's
+full-discretion grant (2026-10-17).
+
+**The mechanism.** On rows with exactly one unseen opponent species (k = 1) and a near-certain belief, the species-presence
+shift τ (`hypothesis_set.fixed_size_tau`) solves an almost flat equation (slope ≈ 1e-5). fp32 fixes τ only to within
+7e-3–1.5e-2, so T2's compiled program and the learner's eager program land at different points in that band.
+- The violator ranks 1st of 33 on fp32 error in all 6 neighbour weight sets.
+- The shift is whole-row and τ-directed.
+- Integrity is clean: legal set, argmax, version, finiteness.
+- The class reaches ≈ 5e-3, so it WILL cross 1e-3 again.
+
+### A6.1 The ceilings from the resume on (replacing A3's judged-max clause only)
+
+- **STOP** on any update with judged max ≥ **1e-2**, or p99 ≥ 1e-4 (unchanged), or any non-finite value (unchanged).
+- **1e-3 ≤ judged max < 1e-2 ⇒ RE-DIAGNOSIS, not a stop.** Run `locate_tau.py` + `tau_programs.py` from the diagnosis dir on
+  the violation's row dump and the nearest checkpoints, on CPU (≈ 3 CPU-min). X26 keeps training while it runs.
+  - **τ-CLASS** (the violator is k = 1, ranks top-3 on fp32 error, and the shift is whole-row, τ-directed) ⇒ continue.
+  - **NOT τ-class** ⇒ HOLD at the next checkpoint per §A2.7(3).
+- **Amendment 4's W2** judged-max trigger moves from 5e-4 to 1e-3, merged into the clause above. W2's p99 5e-5 and W1 are
+  unchanged.
+- **Rule 8:** a value within 1e-9 (relative) of a bar is recorded and does not fire.
+
+### A6.2 The resume
+
+- Resume from `final_model_interrupted.zip` (320,139,480) at pin `9c033489`, with the run's argv + `--behaviour-check warn`.
+- If the startup gate refuses it, follow readiness §4.2 (fallback `checkpoint_320000071`).
+- Nothing is void.
+- The Amendment-5 stop (the first checkpoint ≥ 380,000,000) is re-armed.
+
+### A6.3 Findings carried
+
+- **A6-F1** (corrects A4-F1): the weight-dump cap is per LINEAGE, not per process. The counter is saved in every checkpoint
+  and restored on resume. A fix for future pins is backlogged; nothing changes at this pin.
+- **A6-F2:** `selection_sites.py` describes the τ bisection as an ulp-scale change; on k = 1 rows it reaches ≈ 1.5e-2. For
+  future pins (X34 / X35), compute τ's constraint in float64 (backlogged; not at this pin).
