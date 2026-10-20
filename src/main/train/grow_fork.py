@@ -122,7 +122,7 @@ def decide(*, grown: Dict[str, Tuple[Any, Any]], model_path: Optional[str], mode
            now: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """The verdict for one launch: the STAMP of a genuine growth, ``None`` (no ``--grow``, or a restart of a grown
     fork), or `GrowForkRefused`. ``grown`` is :func:`apply_to_namespace`'s ``{field: (parent, child)}``."""
-    from agents.model.growth import OPTIMIZER_RULE, SCHEMA
+    from agents.model.growth import SCHEMA, optimizer_rule
     from main.train.fork_lr import is_same_run_checkpoint
 
     if not grown:
@@ -150,7 +150,7 @@ def decide(*, grown: Dict[str, Tuple[Any, Any]], model_path: Optional[str], mode
         "date": now or datetime.now(timezone.utc).isoformat(),
         "parent_model": os.path.abspath(model_path or ""),
         "fields": growth_fields(types.SimpleNamespace(_grow_declared=grown)),
-        "optimizer": OPTIMIZER_RULE,
+        "optimizer": optimizer_rule(changes),
     }
 
 
@@ -208,10 +208,11 @@ def grow_seeded_pool(pool_dir: str, fields: Dict[str, Dict[str, Any]], child_ver
     pool has no arch record or its record already holds every child value (grown before: an idempotent relaunch).
     Each snapshot: a STRICT load at the record's (parent's) architecture on the CPU, `growth.apply_growth` (the same
     rounds, the same optimizer rule, the same bit-identity gate), a save to a temporary file and an atomic replace. A
-    snapshot already at the child depth (a relaunch that died mid-pool) is left alone. The record is rewritten LAST,
+    snapshot whose every declared field is already BUILT at its child value (each row's ``current``; a relaunch that
+    died mid-pool) is left alone. The record is rewritten LAST,
     as the child version's JSON — byte-identical to what the run's `SnapshotPool._record_arch` compares. Returns
     ``{"fields", "snapshots", "skipped"}``, also added to ``pool_seed.json`` as ``grown``."""
-    from agents.model.growth import GrowthError, apply_growth, trunk_layers_of
+    from agents.model.growth import GROWABLE, GrowthError, apply_growth
     from agents.model.model_version import ModelVersion
     from agents.model.snapshot import load_model_snapshot
     from agents.training.pool_seed import read_seed_record, write_seed_record
@@ -230,7 +231,8 @@ def grow_seeded_pool(pool_dir: str, fields: Dict[str, Dict[str, Any]], child_ver
     skipped: List[str] = []
     for z in _snapshot_zips(pool_dir):
         model = load_model_snapshot(z, env=None, current_version=recorded, device="cpu")
-        if trunk_layers_of(model.policy) == fields["trunk_layers"]["child"]:
+        if all(GROWABLE[f].current(model.policy) == step["child"]                   # type: ignore[misc]
+               for f, step in fields.items()):
             skipped.append(os.path.basename(z))
             continue
         apply_growth(model, fields)

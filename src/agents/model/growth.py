@@ -16,6 +16,12 @@ THE GROWABLE FIELDS (one table, `GROWABLE`):
 * ``trunk_ffn_by_kind`` / ``opp_intent_grad_mode`` — DECLARED, NOT BUILT (B-KFFN, B-INT). Naming one is a typed
   refusal that names the build that adds it.
 
+FIELD-GENERIC (`design_growth_builds_kffn_int.md` §3). Each BUILT row carries its own hooks — ``parse``, ``validate``,
+``current`` (the value the loaded network is BUILT at), ``grow`` (in place; returns the new parameters) and an optional
+``gate`` — and nothing outside the row names its field. :func:`apply_growth` loops over the declared fields in
+``GROWABLE``'s declaration ORDER: one probe of the parent, every grower, ONE optimizer rebuild over the union of the new
+parameters, one probe of the child; the forward bit-identity check and every row's extra gate read those probes.
+
 THE OPTIMIZER RULE (F-BI-3, established 2026-10-19). A fork carries the parent's WHOLE optimizer state: SB3 loads the
 zip's ``policy.optimizer.pth`` and `main.train.checkpoint_state._validate_or_reset_optimizer_state` realigns every
 AdamW entry (``exp_avg``, ``exp_avg_sq``, ``step``) to the current parameters BY NAME, with the param group's
@@ -36,7 +42,7 @@ child build's key set and shapes.
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple
 
 import numpy as np
 import torch
@@ -51,27 +57,42 @@ class GrowthError(ModelVersionError):
     """A declared growth the loader must refuse, or a grown network that is not its parent's function."""
 
 
+class Grown(NamedTuple):
+    """What one row's grower appended: the new ``(name, parameter)`` pairs in module order, and ``copies`` —
+    ``{id(new parameter): the existing parameter it is a COPY of}`` for a row whose new parameters copy existing ones
+    (the optimizer then copies that parameter's AdamW state: the row's ``optimizer_rule``); empty when they start
+    fresh."""
+
+    new: List[Tuple[str, torch.nn.Parameter]]
+    copies: Dict[int, torch.nn.Parameter]
+
+
+#: A row's extra gate: ``(parent probe, child probe, (obs, mask)) -> report keys`` merged into the fork-time gate's
+#: report (the forward bit-identity check is every row's, run once on the same probes); raises `GrowthError`.
+GateHook = Callable[[Any, Any, Tuple[np.ndarray, np.ndarray]], Dict[str, Any]]
+
+
 @dataclasses.dataclass(frozen=True)
 class Growable:
-    """One field a fork may grow."""
+    """One field a fork may grow, with its hooks (module docstring, FIELD-GENERIC). A BUILT row carries every hook but
+    the optional ``gate``; an unbuilt row is only its declaration."""
 
     field: str
     built: bool
     build: str          # the build that adds (or added) the growth
     what: str           # one line: what the growth appends
+    #: ``text -> the typed child value`` (`GrowthError` on a bad value)
+    parse: Optional[Callable[[str], Any]] = None
+    #: ``(parent, child) -> None``: refuses a step this row cannot initialise as the identity (equal is not judged)
+    validate: Optional[Callable[[Any, Any], None]] = None
+    #: ``policy -> the field's value as BUILT`` (what the loaded network actually is)
+    current: Optional[Callable[[Any], Any]] = None
+    #: ``(policy, child) -> Grown``: grows the policy IN PLACE (modules, the extractor's attribute and kwargs)
+    grow: Optional[Callable[[Any, Any], Grown]] = None
+    gate: Optional[GateHook] = None
+    #: the row's addendum to `OPTIMIZER_RULE`, recorded in the stamp (empty = the shared rule alone)
+    optimizer_rule: str = ""
 
-
-GROWABLE: Dict[str, Growable] = {
-    "trunk_layers": Growable(
-        "trunk_layers", True, "B-GROW",
-        "appends identity-init pre-LN trunk rounds (trunk_depth.IdentityInitRound: out_proj and linear2 zero)"),
-    "trunk_ffn_by_kind": Growable(
-        "trunk_ffn_by_kind", False, "B-KFFN",
-        "per-token-kind FFN experts upcycled as copies of the shared FFN (design_bot_ideas_screen.md §2.2)"),
-    "opp_intent_grad_mode": Growable(
-        "opp_intent_grad_mode", False, "B-INT",
-        "the opponent-intent objective's trunk gradient switch (design_bot_ideas_screen.md §2.3)"),
-}
 
 #: The optimizer rule, as recorded in the lineage stamp and the `growth` record.
 OPTIMIZER_RULE = ("every parent parameter's AdamW state (exp_avg, exp_avg_sq, step) carried unchanged after the "
@@ -96,30 +117,24 @@ def require_built(field: str) -> Growable:
 
 
 def parse_value(field: str, text: str) -> Any:
-    """The typed child value of ``field`` (``trunk_layers``: an int in `trunk_depth.TRUNK_LAYERS_CHOICES`)."""
-    require_built(field)
-    if field == "trunk_layers":
-        from agents.model.trunk_depth import TRUNK_LAYERS_CHOICES
-        try:
-            v = int(str(text).strip())
-        except ValueError:
-            raise GrowthError(f"--grow trunk_layers={text!r}: not an integer") from None
-        if v not in TRUNK_LAYERS_CHOICES:
-            raise GrowthError(f"--grow trunk_layers={v}: the trunk depth must be one of {TRUNK_LAYERS_CHOICES}")
-        return v
-    raise GrowthError(f"--grow {field}: no value parser")       # pragma: no cover - every built row has one
+    """The typed child value of ``field`` (the row's ``parse``)."""
+    row = require_built(field)
+    assert row.parse is not None, f"built growable row {field} has no parse hook"
+    return row.parse(text)
 
 
 def validate_step(field: str, parent: Any, child: Any) -> None:
     """``parent -> child`` is a growth of ``field`` this code can initialise as the identity (equal is NOT a
     growth: the caller decides whether an unchanged value is a restart or a meaningless flag)."""
-    require_built(field)
-    if field == "trunk_layers":
-        if int(child) < int(parent):
-            raise GrowthError(
-                f"--grow trunk_layers={child}: the parent records {parent} rounds — growth only ADDS rounds (a "
-                "trained round cannot be removed as an identity). Start a fresh run to train a shallower trunk.")
-        return
+    row = require_built(field)
+    assert row.validate is not None, f"built growable row {field} has no validate hook"
+    row.validate(parent, child)
+
+
+def optimizer_rule(fields: Any) -> str:
+    """The optimizer rule a growth of ``fields`` records: `OPTIMIZER_RULE`, plus each declared row's addendum."""
+    extra = [f"{f}: {GROWABLE[f].optimizer_rule}" for f in GROWABLE if f in fields and GROWABLE[f].optimizer_rule]
+    return OPTIMIZER_RULE + ("".join(f"; {e}" for e in extra))
 
 
 def validate_declared(saved: Any, current: Any, growth: Mapping[str, Mapping[str, Any]]) -> None:
@@ -154,6 +169,28 @@ def trunk_layers_of(policy: Any) -> int:
     return int(_transformer(policy).trunk_layers)
 
 
+def _parse_trunk_layers(text: str) -> int:
+    from agents.model.trunk_depth import TRUNK_LAYERS_CHOICES
+    try:
+        v = int(str(text).strip())
+    except ValueError:
+        raise GrowthError(f"--grow trunk_layers={text!r}: not an integer") from None
+    if v not in TRUNK_LAYERS_CHOICES:
+        raise GrowthError(f"--grow trunk_layers={v}: the trunk depth must be one of {TRUNK_LAYERS_CHOICES}")
+    return v
+
+
+def _validate_trunk_layers(parent: Any, child: Any) -> None:
+    if int(child) < int(parent):
+        raise GrowthError(
+            f"--grow trunk_layers={child}: the parent records {parent} rounds — growth only ADDS rounds (a "
+            "trained round cannot be removed as an identity). Start a fresh run to train a shallower trunk.")
+
+
+def _grow_trunk_layers_row(policy: Any, child: Any) -> Grown:
+    return Grown(grow_trunk_layers(policy, int(child)), {})
+
+
 def grow_trunk_layers(policy: Any, trunk_layers: int) -> List[Tuple[str, torch.nn.Parameter]]:
     """Append identity-init rounds IN PLACE so the trunk has ``trunk_layers`` rounds. The existing rounds (and every
     other module) are untouched objects; the new ones are `build_extra_rounds(trunk_layers)`'s modules at the new
@@ -185,10 +222,13 @@ def grow_trunk_layers(policy: Any, trunk_layers: int) -> List[Tuple[str, torch.n
     return [(n, p) for n, p in policy.named_parameters() if id(p) in added_ids]
 
 
-def regrow_optimizer(policy: Any, new_params: Sequence[torch.nn.Parameter]) -> Dict[str, int]:
+def regrow_optimizer(policy: Any, new_params: Sequence[torch.nn.Parameter],
+                     copies: Optional[Mapping[int, torch.nn.Parameter]] = None) -> Dict[str, int]:
     """Rebuild ``policy.optimizer`` over the grown policy (module docstring, THE OPTIMIZER RULE). Returns counts:
     ``carried`` (parent parameters whose state moved over), ``no_state`` (parent parameters that had none),
-    ``fresh`` (new parameters, no state)."""
+    ``fresh`` (new parameters, no state) and — only when a row declares ``copies`` (``{id(new): source}``) —
+    ``copied``: new parameters given an independent CLONE of their source's AdamW state (``exp_avg``,
+    ``exp_avg_sq``, ``step``); a copy whose source has no state is ``fresh``."""
     old = getattr(policy, "optimizer", None)
     if old is None:
         return {"carried": 0, "no_state": 0, "fresh": len(new_params)}
@@ -205,8 +245,16 @@ def regrow_optimizer(policy: Any, new_params: Sequence[torch.nn.Parameter]) -> D
     opt.defaults = dict(old.defaults)
     opt.param_groups[0].update(group)
     counts = {"carried": 0, "no_state": 0, "fresh": len(new_ids)}
+    if copies:
+        counts["copied"] = 0
     for p in params:
         if id(p) not in old_ids:
+            src = (copies or {}).get(id(p))
+            st = old.state.get(src) if src is not None else None
+            if st:
+                opt.state[p] = {k: (v.detach().clone() if torch.is_tensor(v) else v) for k, v in st.items()}
+                counts["copied"] += 1
+                counts["fresh"] -= 1
             continue
         st = old.state.get(p)
         if st:
@@ -267,29 +315,41 @@ def apply_growth(model: Any, growth: Mapping[str, Mapping[str, Any]], *,
                  rows: Optional[Tuple[np.ndarray, np.ndarray]] = None) -> Dict[str, Any]:
     """Grow ``model`` (an SB3 algorithm whose policy was loaded STRICTLY at the parent's architecture) IN PLACE by
     ``growth`` (``{field: {"parent": p, "child": c}}``), rebuild its optimizer by THE OPTIMIZER RULE and run THE
-    FORK-TIME GATE. Returns the report recorded beside the stamp; raises `GrowthError` on any refusal."""
+    FORK-TIME GATE. The declared fields grow in ``GROWABLE``'s declaration order (depth before the FFN experts, so a
+    new round's zero FFN is what gets copied). Returns the report recorded beside the stamp; raises `GrowthError` on any
+    refusal."""
     policy = model.policy
+    rows_of: Dict[str, Growable] = {}
     for field, step in growth.items():
-        require_built(field)
-        have = trunk_layers_of(policy) if field == "trunk_layers" else None
+        row = require_built(field)
+        assert row.current is not None and row.grow is not None, f"built growable row {field} lacks a hook"
+        have = row.current(policy)
         if have != step.get("parent"):
             raise GrowthError(f"declared growth {field} {step.get('parent')!r} -> {step.get('child')!r}, but the "
                               f"loaded network has {field}={have!r}")
+        rows_of[field] = row
+    order = [f for f in GROWABLE if f in rows_of]
     obs, mask = rows if rows is not None else gate_rows(policy)
-    ref = forward_record(cpu_probe(model), obs, mask)
+    parent_probe = cpu_probe(model)
+    ref = forward_record(parent_probe, obs, mask)
     new_named: List[Tuple[str, torch.nn.Parameter]] = []
-    child = int(growth["trunk_layers"]["child"])
-    new_named += grow_trunk_layers(policy, child)
-    counts = regrow_optimizer(policy, [p for _, p in new_named])
+    copies: Dict[int, torch.nn.Parameter] = {}
     pk = getattr(model, "policy_kwargs", None)
-    if isinstance(pk, dict) and isinstance(pk.get("features_extractor_kwargs"), dict):
-        pk["features_extractor_kwargs"]["trunk_layers"] = child
+    for field in order:
+        child = growth[field]["child"]
+        grown = rows_of[field].grow(policy, child)       # type: ignore[misc]
+        new_named += grown.new
+        copies.update(grown.copies)
+        if isinstance(pk, dict) and isinstance(pk.get("features_extractor_kwargs"), dict):
+            pk["features_extractor_kwargs"][field] = child
+    counts = regrow_optimizer(policy, [p for _, p in new_named], copies)
     # The child's ACTUAL weights (new parameters included), loaded STRICTLY into a fresh build at the child's kwargs.
-    got = forward_record(cpu_probe(model), obs, mask)
+    child_probe = cpu_probe(model)
+    got = forward_record(child_probe, obs, mask)
     d_logits = _max_abs_diff(ref["logits"], got["logits"])
     d_values = _max_abs_diff(ref["values"], got["values"])
     identical = bool(np.array_equal(ref["logits"], got["logits"]) and np.array_equal(ref["values"], got["values"]))
-    report = {
+    report: Dict[str, Any] = {
         "function_check": {
             "rows": int(obs.shape[0]), "rows_source": GATE_ROWS_SOURCE, "device": "cpu", "dtype": "float32",
             "mode": "eager", "max_abs_d_logits": d_logits, "max_abs_d_value": d_values, "bit_identical": identical,
@@ -302,4 +362,24 @@ def apply_growth(model: Any, growth: Mapping[str, Mapping[str, Any]], *,
             f"the grown network is NOT its parent's function on {obs.shape[0]} real rows (fp32 eager CPU): max |d "
             f"logits| {d_logits:.3g}, max |d value| {d_values:.3g}. A growth must start as the identity — a new "
             "parameter's init is not function-preserving. Refused.")
+    for field in order:
+        gate = rows_of[field].gate
+        if gate is not None:
+            report.update(gate(parent_probe, child_probe, (obs, mask)))
     return report
+
+
+# ------------------------------------------------------------------------------------------ the table
+GROWABLE: Dict[str, Growable] = {
+    "trunk_layers": Growable(
+        "trunk_layers", True, "B-GROW",
+        "appends identity-init pre-LN trunk rounds (trunk_depth.IdentityInitRound: out_proj and linear2 zero)",
+        parse=_parse_trunk_layers, validate=_validate_trunk_layers, current=trunk_layers_of,
+        grow=_grow_trunk_layers_row),
+    "trunk_ffn_by_kind": Growable(
+        "trunk_ffn_by_kind", False, "B-KFFN",
+        "per-token-kind FFN experts upcycled as copies of the shared FFN (design_bot_ideas_screen.md §2.2)"),
+    "opp_intent_grad_mode": Growable(
+        "opp_intent_grad_mode", False, "B-INT",
+        "the opponent-intent objective's trunk gradient switch (design_bot_ideas_screen.md §2.3)"),
+}
