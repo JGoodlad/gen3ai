@@ -5,15 +5,20 @@ card ([`../gpu_window_battery_2026-10-19/README.md`](../gpu_window_battery_2026-
 FP32_ALT is built in `gen3_tau_fp32_alt_v1` (config v160): a split residual in fp32, no float64 op. Its CPU evidence is
 in [`../tau_fp32_alt_2026-10-20/`](../tau_fp32_alt_2026-10-20/).
 
-This battery has two parts, in this order, in one short GPU window before X35's production arms:
+This battery has three parts, in this order, in one short GPU window before X35's production arms:
 
-1. **FP32_ALT's GPU cost** against the pre-T62 naive fp32 sum (two arms only: fp64 was measured by the 2026-10-19
+1. **FP32_ALT's tau on the card** (`tau_cuda_parity`, ~9 min, FIRST: cheap, and it decides what the cost read MEANS).
+   Every earlier "two programs land on one tau" number compared CPU programs; the production pair is T2's compiled CUDA
+   rollout (Triton) against the CUDA learner. The review's F2
+   ([`../tau_fp32_alt_2026-10-20/REVIEW.md`](../tau_fp32_alt_2026-10-20/REVIEW.md)) found it unmeasured. A miss of the
+   preregistered bar HOLDS the battery before any cost is read. Section "The tau parity cell".
+2. **FP32_ALT's GPU cost** against the pre-T62 naive fp32 sum (two arms only: fp64 was measured by the 2026-10-19
    battery). Production GO waits for this read.
-2. **The X14 overlap A/B** (`x14_off`, `x14_on`): two forks of X26 at 380,000,195, 15 updates each, at the battery's pin.
+3. **The X14 overlap A/B** (`x14_off`, `x14_on`): two forks of X26 at 380,000,195, 15 updates each, at the battery's pin.
    The first attempt (2026-10-20, pin `397cce81`) was deferred because that pin carried T62's fp64 τ solve
    ([`../x14_overlap_2026-10-19/README.md`](../x14_overlap_2026-10-19/README.md) §4 finding 13). This is the re-run.
 
-The training session runs it with the X35 arms paused. **Both parts need ~115 min** (7 cells; section "The cells").
+The training session runs it with the X35 arms paused. **All three parts need ~125 min** (8 cells; section "The cells").
 
 ## Run it (the training session, with the run PAUSED and the GPU clear)
 
@@ -24,7 +29,7 @@ B=designs/research_state/measurements/gpu_window_battery_2026-10-20
 # BEFORE the window, on the CPU (any time; ~7 min at nice 19 beside a live run; the window re-runs only the light checks):
 nice -n 19 taskset -c 5-7,13-15 $B/run_battery.sh --out /tmp/gpu_battery_fp32alt --dry-run
 # the window; re-run the SAME line to resume:
-$B/run_battery.sh --out /tmp/gpu_battery_fp32alt --budget-min 125
+$B/run_battery.sh --out /tmp/gpu_battery_fp32alt --budget-min 135
 /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 $B/read_battery.py /tmp/gpu_battery_fp32alt
 ```
 
@@ -36,7 +41,7 @@ started, recorded in `battery_status.json`; it must contain `d4af9f1e` and `02ca
 next cell did NOT run) · `10` BUDGET_STOP (re-run the same line to resume) · `2` usage error, or a refused `--out`
 (never under `models/` or `data/`).
 
-**A cell's own exit code** (the HOLD line names it): `3` precondition · `4` the τ forcing was violated · `8` **a learner
+**A cell's own exit code** (the HOLD line names it): `3` precondition · `4` the τ forcing was violated · `9` **`tau_cuda_parity` missed a pass bar** (the compiled rollout and the learner do not land on one τ on the card) · `8` **a learner
 arm did not run the production compiled path** (its startup gate was not PASS) · `11` the X14 launcher exited non-zero ·
 `12` the X14 run is not the arm that was specified · `124`/`137` wall cap · `86` OOM at the cell's cap · `5`/`6` `gpu_lock`.
 
@@ -52,13 +57,14 @@ skipped on a re-run once its `cells/<cell>.state.json` reads `ok`.
 
 | # | cell | what it measures | mem cap | wall cap | ETA |
 |---|---|---|---|---|---|
-| 1 | `tau_dec` | **Rollout.** T2's decision forward (`engine.decide`, inductor `dynamic=False`, CUDA graph: the `graph` backend's build) at buckets 64 and 256, `fp32_naive` (old) vs `fp32_alt` (new), in one process on the same seeded fresh build at X26's surface. 8 interleaved blocks of 50 replays per arm (ABAB). Also the agreement of the two arms: max \|d log π\|, max \|d V\|, greedy agreement. The method is `t62_dec`'s | 16 GB | 45 min | 16 min |
-| 2-5 | `tau_u_naive_a`, `tau_u_alt_a`, `tau_u_alt_b`, `tau_u_naive_b` | **Learner.** The frozen suite's `update_bf16` cell (X26's argv, the K9 learner, the compiled bf16 `train()` at 384 × 256 rows, micro-batch 2,048 × accumulation 32, the 10-epoch estimate), the arm forced per process, run **ABBA**. Only the cell's name (and, see below, the path rule) differs from the suite; `reps` is the suite's 2 | 24 GB each | 40 min each | 6 min each |
-| 6 | `x14_off` | **X14, the serial arm.** A fork of X26 `rb_x26_s2601` @ 380,000,195 through the real launcher (`x14_cell.py`), 15 updates, `--behaviour-check warn`, eval and ladder games off, at the battery's pin. It is the cold-compile arm | 40 GB | 75 min | 45 min |
-| 7 | `x14_on` | **X14, the overlap arm.** The same argv plus `--overlap-collect`. Its compile cache is warm from `x14_off` | 40 GB | 55 min | 25 min |
+| 1 | `tau_cuda_parity` | **τ on the card (REVIEW F2).** Read 1: the CUDA case of `tau_solve_test.py`'s compiled-vs-eager test (a pytest subprocess; leads 23 / 40 / 100, k = 1 / 3). Read 2: the compiled CUDA decision forward against the CUDA learner (`evaluate_actions`, train mode, eager), taken-action \|d log π\|, on X26's three τ-class violators (+ the scan's 32 worst, each event at its nearest checkpoint) and the 915 fixture rows. Read 3: τ itself, compiled vs eager, on those same rows' captured inputs. Section "The tau parity cell" | 16 GB | 25 min | 9 min |
+| 2 | `tau_dec` | **Rollout.** T2's decision forward (`engine.decide`, inductor `dynamic=False`, CUDA graph: the `graph` backend's build) at buckets 64 and 256, `fp32_naive` (old) vs `fp32_alt` (new), in one process on the same seeded fresh build at X26's surface. 8 interleaved blocks of 50 replays per arm (ABAB). Also the agreement of the two arms: max \|d log π\|, max \|d V\|, greedy agreement. The method is `t62_dec`'s | 16 GB | 45 min | 16 min |
+| 3-6 | `tau_u_naive_a`, `tau_u_alt_a`, `tau_u_alt_b`, `tau_u_naive_b` | **Learner.** The frozen suite's `update_bf16` cell (X26's argv, the K9 learner, the compiled bf16 `train()` at 384 × 256 rows, micro-batch 2,048 × accumulation 32, the 10-epoch estimate), the arm forced per process, run **ABBA**. Only the cell's name (and, see below, the path rule) differs from the suite; `reps` is the suite's 2 | 24 GB each | 40 min each | 6 min each |
+| 7 | `x14_off` | **X14, the serial arm.** A fork of X26 `rb_x26_s2601` @ 380,000,195 through the real launcher (`x14_cell.py`), 15 updates, `--behaviour-check warn`, eval and ladder games off, at the battery's pin. It is the cold-compile arm | 40 GB | 75 min | 45 min |
+| 8 | `x14_on` | **X14, the overlap arm.** The same argv plus `--overlap-collect`. Its compile cache is warm from `x14_off` | 40 GB | 55 min | 25 min |
 
-**Total ETA: about 115 min** = `tau_dec` 16 + learner 24 + `x14_off` 45 + `x14_on` 25, plus about 5 min of CPU checks
-between cells (the GPU idles for them). **Worst case at every wall cap:** 335 min. With `--budget-min 125` the battery
+**Total ETA: about 125 min** = `tau_cuda_parity` 9 + `tau_dec` 16 + learner 24 + `x14_off` 45 + `x14_on` 25, plus about 5 min
+of CPU checks between cells (the GPU idles for them). **Worst case at every wall cap:** 360 min. With `--budget-min 135` the battery
 stops cleanly before a cell that would overrun.
 
 Why the ETAs are what they are:
@@ -82,6 +88,65 @@ Why the ETAs are what they are:
 - **Rollout.** The 2026-10-19 per-block deltas were tight: B64 3.35-3.78 ms, B256 14.94-15.06 ms. The SERIAL bound is
   the sensitive term. It multiplies the B64 delta by 20 opponent slots and 416.5 host steps, so 0.27 ms of B64 delta
   alone is 3 % of the cycle.
+
+## The tau parity cell (`tau_cuda_parity_cell.py`, `tau_parity_read.py`)
+
+**The question.** FP32_ALT's property is that "two programs land on one τ": T2's compiled rollout and the eager learner
+used to land at different points of the naive sum's ulp(1) / slope ≈ 1e-2 band (the X26 τ class), and K9(b) read the 1e-3
+gap. The proof says any summation order lands within 2c, and a fast `exp` is the same class of perturbation as the rounding
+of x = a + τ. But every measurement was a CPU pair. The review (F2) asks for the CUDA pair; this is that cell.
+
+**The reads** (one process tree, one card, ~9 min with the first Triton compile cold):
+
+1. **Synthetic rows, as a test.** `pytest src/agents/model/tau_solve_test.py -k 'compiled_by_inductor and cuda'` with
+   `GEN3AI_TEST_ALLOW_GPU=1 GEN3AI_SKIP_SLOW_STATUS_RECORD=1`, inside the cell's `gpu_lock.sh` / lease (the test file's
+   CPU case was parametrized over `device`, the CUDA case is `slow`). Rows: 6 saturated rows, leads 23 / 40 / 100 nats,
+   k = 1 / 3. Compiled Triton `fixed_size_tau` against eager, both on the card. The test writes its numbers to
+   `$TAU_CUDA_PARITY_RECORD` before it asserts. The shared helper is `tau_solve_test.compiled_vs_eager_tau`.
+2. **The network.** The compiled decision forward (`engine.decide`, inductor `dynamic=False`, bucket 256, the rollout's
+   build) against the learner forward (`policy.evaluate_actions`, train mode, eager, fp32 `highest`, grad on, as the K9(b)
+   probe runs it; the same 256-row chunks), on the SAME taken action's log π:
+   - the 3 X26 τ-class violators, each dump (the violator + the scan's 32 worst) at its event's NEAREST checkpoint
+     (`taus.EVENTS`: u32180 @ 316000231, u32320 @ 317000041, u35950 @ 353000151), the three **violators** being row 0;
+   - the **915 fixture rows** (`play_rows(24, seed=6201)`, T62's) at P\* (X26 checkpoint_280000170), the taken action being
+     the compiled forward's greedy legal action.
+   The compiled function is built ONCE and the weights are loaded into it in place, so the one Triton build serves all sets.
+3. **τ on the same rows.** Each chunk's species-presence τ inputs are CAPTURED from an eager CUDA decision forward
+   (`taus.Tap`, call 0) and solved in one batch by the SAME helper as read 1.
+
+**The bars (preregistered 2026-10-20 before any CUDA datum; deterministic comparisons of seeded inputs; `tau_parity_read.py`).**
+
+| read | bar | why |
+|---|---|---|
+| 1 | every row ≤ **4 ulp** of τ | the CPU test's bar is 2 (measured 0 on every violator); Triton adds a per-thread serial prefix and a fast `exp` |
+| 3 | every LIVE row (0 < k < n) of every set ≤ **4 ulp**, the ulp taken at the row's scale max(\|τ\|, max over candidates \|score\|) | the rounding of x = a + τ is at the scale of the largest \|x\|, not of τ (a τ near 0 has a tiny ulp) |
+| 2 | the 3 violators' taken-action \|d log π\| ≤ **1e-4** | K9(b)'s fatal bar. The CPU analogue read 2.4e-6 / 6.7e-6 / 1.4e-5 |
+| 2 | the fixture rows' taken-action **p99** ≤ 1e-4 | CPU p99 was 1.0e-5; the fixture MAX is reported, not judged (F4 of the FP32_ALT README: a non-τ fp32 tail at 4e-4 exists at some weights) |
+| all | the forcing record clean (the compiled forward TRACED the wrapper, the learner / capture reached it eagerly); every value finite | a vacuous compiled arm is not a pass |
+
+A miss is **exit 9, a HOLD**: the proof's worst case (F3) is 2c ≈ 4.8e-5 for ANY summation order, so a miss between the bar
+and that is a number for the orchestrator to read, not a refutation of FP32_ALT. `read_battery.py` re-judges the stored
+record (`TAU ON CUDA` section: PASS / FAIL / INCOMPLETE). It is not a cost, so it does not change the cost verdict; with
+a FAIL or INCOMPLETE the cost verdict is a cost only, and "FP32_ALT lands on one τ on the card" stays UNVERIFIED.
+
+**Reported:** τ's max |Δ| (absolute and in ulp), p99, and the share of rows bit-equal; per set the taken-action |Δ log π|
+max / p99 / median and the count over 1e-4; the violators' own values; the fixture row count (the 915 of T62's fixture:
+the record carries `fixture_rows` beside `fixture_rows_expected`, and a different count is a changed fixture, reported not
+failed).
+
+**What the cell cannot see.**
+- The τ INSIDE the compiled decision forward is a graph-internal value. Read 3 solves the same inputs with the same
+  function compiled STANDALONE, which can be fused and tiled differently. Read 2 measures the embedded programs through
+  their log π.
+- The rollout's CUDA graph is not captured: a graph replays the kernels it captured, so it cannot change the numerics. The
+  cell calls the compiled function directly.
+- The learner is the eager fp32 forward, not the compiled bf16-trunk R1 of training. K9(b) probes the same eager forward.
+- **The CUDA path of this cell has not been executed** (the card was busy with X35 when it was staged); the CPU `--prove`
+  ran every line except the Triton compile and the pytest CUDA case. See "Hazards".
+
+**On a CPU the cell SKIPS cleanly:** no visible CUDA device ⇒ result status `skip`, exit 0, and the battery's reader treats
+that as NOT ok (a window with no card never counts as a pass); the pytest CUDA case skips by its own `_cuda_skip_reason`
+(naming why) and the cell reads "no record" as a failure.
 
 ## The τ forcing (`tau_force.py`)
 
@@ -241,6 +306,17 @@ independent of this gate: either can be INCOMPLETE while the other reads.
   guard would book a learner reservation growth inside a worker flush as its own); `rollout/collect_ms` on an ON run is
   the exposed collection; 15 updates give a throughput read, not a learning read.
 
+- **The `tau_cuda_parity` CUDA path is UNEXECUTED when staged.** The CPU `--prove` runs the whole pipeline on the CPU
+  with the compile backend `eager` (the real CPU inductor kernel only for read 3's shared helper), so a bug in anything
+  CUDA-specific (a device mismatch, the Triton compile, the in-place weight load into a compiled function, memory at bucket
+  256 beside a learner forward with grad on) would surface in the window as exit 1 / HOLD. Its mem cap (16 GB) and wall cap
+  (25 min) are guesses from `tau_dec` (16 GB; compile ~3.8 min per build). It is first in the order so that a bug costs 25
+  min at most. Its Triton compile is COLD (nothing warms it earlier), so `tau_dec` after it should compile faster.
+- **`tau_cuda_parity` calls the compiled decision function directly, without a CUDA graph** (numerics identical by
+  construction; **UNVERIFIED** on the card).
+- **The fixture is rebuilt by playing battles** (`play_rows`, Rust env, seeded): the row count is recorded against T62's
+  915 and a different count is reported, not failed.
+
 ## Dry-run record (2026-10-20, CPU, `CUDA_VISIBLE_DEVICES=""`, `nice -n 19 taskset -c 5-7,13-15`, under `mem_cap.sh 24`)
 
 `run_battery.sh --out /tmp/... --dry-run` at `d4af9f1e2` + this change: **all checks ok in 404 s** (peak 1.04 GB), exit 0,
@@ -266,3 +342,28 @@ independent of this gate: either can be INCOMPLETE while the other reads.
 **Not proved, and so UNVERIFIED until the window:** the CUDA verdict of either learner arm's gate; that a real launcher run
 reaches the cell's post-run read (the fake launcher writes the same run-dir shape the first attempt's real one had);
 `mem 40 GB` for a production trainer; `ON` arm behaviour on a card.
+
+### Dry-run record: the `tau_cuda_parity` cell (2026-10-20, CPU, `CUDA_VISIBLE_DEVICES=""`, `nice -n 19 taskset -c 5-7,13-15`)
+
+Three runs; the box was contended (the heavy-slot queue was 13 deep, so the FULL `run_battery.sh --dry-run` could not get a
+slot in an hour and was withdrawn before it started):
+
+- **`tau_cuda_parity_cell.py --check --prove`, under `mem_cap.sh 24` in a heavy slot: exit 0, 1.69 GB peak.** The
+  verdict passes a clean record and refuses 8 planted misses; the pytest CUDA case is collected and **skips cleanly with no
+  card** (`1 skipped, 30 deselected`, exit 0, no record, which the verdict reads as a miss); the cell run with no CUDA
+  writes status `skip` and exits 0; the WHOLE network pipeline ran on the CPU (compile backend `eager`, bucket 32, 62
+  fixture rows from 2 battles, the 3 events at their nearest checkpoints) in 620 s, with the shared τ helper compiling the
+  real CPU inductor kernel on 115 live rows: τ max **0.31 ulp**, violators' |d log π| 9.1e-6 / 2.9e-6 / 2.9e-6, fixture
+  p99 1.2e-5, the forcing record clean, verdict PASS on that record.
+- **The battery dry run with the LIGHT checks** (every cell's `check` in place of its `dry_check`; the learner and X14
+  `--prove` runs are the previous record's and this unit does not touch them): `all checks ok`, **runnable cells: ETA 119
+  min, worst case 360 min** (was 110 / 335), the new cell first, its command
+  `gpu_lock.sh mem_cap.sh --name battery-tau_cuda_parity 16 timeout --kill-after=60 1500 python3 -u tau_cuda_parity_cell.py --out …`.
+- **The reader**: `read_battery.py --selftest` ok (including the parity verdict: PASS / FAIL on a planted violator /
+  INCOMPLETE when absent or skipped), and the table plus the `TAU ON CUDA` section print from a synthetic record.
+- **Static tier** (`utils.static_gates --paths`, 261 tests) green; `tau_solve_test.py`: 30 passed, 1 skipped (the CUDA
+  case, with its reason), the CPU compiled case 2 ulp bar unchanged.
+
+**Not proved, UNVERIFIED until the window:** the Triton compile and the CUDA pytest case; the in-place weight load into a
+compiled function on a card; the cell's mem cap (16 GB) and wall cap (25 min); the 9 min ETA (the cold compile is
+~4 min of it, from `t62_dec`'s 3.8 min per build).

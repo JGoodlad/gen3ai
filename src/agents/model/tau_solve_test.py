@@ -10,6 +10,10 @@ What each test pins, and what reverting it would break:
   sum in fp32) fails it;
 * ONE τ UNDER ANY SUMMATION ORDER (the two-program emulation of the A3 diagnosis): the naive fp32 sum spreads over 32
   candidate orders by > 1e-3 (asserted), ``fp32_alt`` by <= 2 ulp, ``fp64`` by <= 1 ulp;
+* THE REAL SECOND PROGRAM, CPU AND CUDA (`slow`): inductor's compiled fp32_alt τ against eager on the saturated rows —
+  within 2 ulp on the CPU (C++ kernel), within `CUDA_TAU_MAX_ULPS` on CUDA (Triton: the production rollout's kernel; a GPU
+  test, it skips naming why without a free card). The CUDA case is the GPU-window cell `tau_cuda_parity`'s first half
+  (`REVIEW.md` F2); `compiled_vs_eager_tau` is shared with that cell;
 * NO FLOAT64 ON THE fp32 PATH: the traced graph of the ``fp32_alt`` solve on fp32 scores holds no float64 tensor (the
   GPU cost reason), the ``fp64`` one does (the probe has teeth); both trace as ONE graph equal to eager;
 * THE RECORD: one default everywhere (``TAU_SOLVE_DEFAULT``, the ModelVersion field, the extractor kwarg, the registry
@@ -31,6 +35,7 @@ import pytest
 import torch
 
 from agents.model import hypothesis_set as HS
+from agents.model.extractor_compiles_test import _cuda_skip_reason
 from agents.model.hypothesis_set import TAU_SOLVE_DEFAULT, TAU_SOLVE_NAIVE, TAU_SOLVES, fixed_size_tau
 
 N = 400
@@ -166,26 +171,73 @@ def test_each_solve_traces_as_one_graph_equal_to_eager_and_fp32_alt_holds_no_flo
     assert (torch.float64 in dts) == (solve == "fp64"), dts
 
 
-@pytest.mark.slow
-def test_fp32_alt_compiled_by_inductor_matches_eager_on_the_tau_class_row():
-    """A REAL second program (inductor's fused C++ reduction against ATen's), not the permutation emulation: on the
-    saturated rows the compiled fp32_alt τ is within 2 ulp of eager (the naive sum's gap was up to 1.7e-2 on X26's
-    violators, `research_state/measurements/tau_fp32_alt_2026-10-20/`)."""
+def _tau_class_rows() -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """The saturated rows the compiled-vs-eager test judges: leads 23 / 40 / 100 nats, k = 1 and 3 (CPU tensors)."""
+    rows = torch.cat([_saturated(lead, k) for lead in (23.0, 40.0, 100.0) for k in (1, 3)])
+    return rows, torch.ones(rows.shape[0], N, dtype=torch.bool), torch.tensor([1, 3] * 3)
+
+
+def compiled_vs_eager_tau(rows: torch.Tensor, cand: torch.Tensor, k: torch.Tensor, device: str,
+                          solve: str = "fp32_alt") -> tuple[torch.Tensor, torch.Tensor]:
+    """``(compiled, eager)`` fp32 τ of ``fixed_size_tau`` on ``device``, both returned on the CPU: inductor's fused
+    reduction (C++ on the CPU, Triton on CUDA, ``dynamic=False``) against ATen's. SHARED by this file's test and by the
+    GPU-window cell `tau_cuda_parity` (`research_state/measurements/gpu_window_battery_2026-10-20/`), which runs it on
+    X26's captured τ-class rows too."""
     import torch._dynamo as dynamo
 
     from agents.model.inductor_compile import compile_on
-    rows = torch.cat([_saturated(lead, k) for lead in (23.0, 40.0, 100.0) for k in (1, 3)])
-    cand = torch.ones(rows.shape[0], N, dtype=torch.bool)
-    k = torch.tensor([1, 3] * 3)
-    fn = compile_on(lambda a, b, c: fixed_size_tau(a, b, c, solve="fp32_alt"), device="cpu", backend="inductor",
+    rows, cand, k = rows.to(device), cand.to(device), k.to(device)
+    fn = compile_on(lambda a, b, c: fixed_size_tau(a, b, c, solve=solve), device=device, backend="inductor",
                     dynamic=False)
     try:
         comp = fn(rows, cand, k)
     finally:
         dynamo.reset()
-    eager = fixed_size_tau(rows, cand, k, solve="fp32_alt")
-    for i in range(rows.shape[0]):
-        assert abs(float(comp[i]) - float(eager[i])) <= 2 * _ulp32(float(eager[i])), i
+    return comp.cpu(), fixed_size_tau(rows, cand, k, solve=solve).cpu()
+
+
+#: THE CUDA BAR (preregistered before any CUDA datum, `tau_fp32_alt_2026-10-20/REVIEW.md` F2): the compiled Triton τ is
+#: within 4 fp32 ulp of ATen's. The CPU bar is 2 (measured 0 on every violator). The proof's worst case is 2c <= 4.8e-5
+#: (F3) for ANY summation order, so a CUDA miss between 4 ulp (~8e-6) and that is a HOLD to read, not a refutation.
+CUDA_TAU_MAX_ULPS = 4
+_CUDA_SKIP = _cuda_skip_reason()
+_TAU_RECORD_ENV = "TAU_CUDA_PARITY_RECORD"
+
+
+def _record_cuda_tau(comp: torch.Tensor, eager: torch.Tensor, ulps: List[float], max_ulps: int) -> None:
+    """The GPU-window cell reads this: when ``$TAU_CUDA_PARITY_RECORD`` names a file, the CUDA case writes its numbers
+    there BEFORE it asserts (a failing run keeps its record)."""
+    import json
+    import os
+    path = os.environ.get(_TAU_RECORD_ENV)
+    if not path:
+        return
+    d = (comp.double() - eager.double()).abs()
+    with open(path, "w") as fh:
+        json.dump({"test": "fp32_alt_compiled_by_inductor_matches_eager_on_the_tau_class_row", "device": "cuda",
+                   "gpu": torch.cuda.get_device_name(0), "torch": torch.__version__, "rows": int(d.numel()),
+                   "bar_ulps": max_ulps, "max_abs_dtau": float(d.max()), "max_ulps": max(ulps),
+                   "per_row_abs_dtau": [float(x) for x in d], "per_row_ulps": ulps,
+                   "tau_eager": [float(x) for x in eager]}, fh, indent=1)
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("device,max_ulps", (
+    ("cpu", 2),
+    pytest.param("cuda", CUDA_TAU_MAX_ULPS, marks=pytest.mark.skipif(_CUDA_SKIP is not None, reason=_CUDA_SKIP or ""))))
+def test_fp32_alt_compiled_by_inductor_matches_eager_on_the_tau_class_row(device: str, max_ulps: int):
+    """A REAL second program (inductor's fused reduction against ATen's), not the permutation emulation: on the
+    saturated rows the compiled fp32_alt τ is within ``max_ulps`` ulp of eager (the naive sum's gap was up to 1.7e-2 on
+    X26's violators, `research_state/measurements/tau_fp32_alt_2026-10-20/`). The CPU case is the C++ kernel; the CUDA
+    case (GPU tier: `GEN3AI_TEST_ALLOW_GPU=1` under a lease, ~2 min) is the PRODUCTION pair's Triton kernel, which the
+    review (F2) found unmeasured. A skip names why (no card, or someone else on it) and is NOT a pass."""
+    rows, cand, k = _tau_class_rows()
+    comp, eager = compiled_vs_eager_tau(rows, cand, k, device)
+    ulps = [abs(float(comp[i]) - float(eager[i])) / _ulp32(float(eager[i])) for i in range(rows.shape[0])]
+    if device == "cuda":
+        _record_cuda_tau(comp, eager, ulps, max_ulps)
+    for i, u in enumerate(ulps):
+        assert u <= max_ulps, (i, u)
 
 
 # ------------------------------------------------------------- the review's pins (REVIEW.md, 2026-10-20)

@@ -1,5 +1,6 @@
-"""THE FP32_ALT GPU-WINDOW BATTERY (staged 2026-10-20): FP32_ALT's GPU cost against the pre-T62 naive fp32 τ solve,
-then the X14 overlap A/B (two forks of X26 at the FP32_ALT pin), one cell at a time, in a short window before X35's
+"""THE FP32_ALT GPU-WINDOW BATTERY (staged 2026-10-20): FIRST FP32_ALT's tau on the card (``tau_cuda_parity``: do the
+compiled CUDA rollout and the CUDA learner land on one tau, REVIEW.md F2; a miss HOLDS the battery), then FP32_ALT's GPU
+cost against the pre-T62 naive fp32 τ solve, then the X14 overlap A/B (two forks of X26 at the FP32_ALT pin), one cell at a time, in a short window before X35's
 production arms. README.md has the order, the costs and the decision rules. A copy of the 2026-10-19 battery's driver
 (`../gpu_window_battery_2026-10-19/battery.py`) with its cells changed, plus: the learner cells' FAIRNESS rule
 (`learner_path.py`: both τ arms run the identical compiled path or the cell fails; ``--learner-gate off`` makes it
@@ -164,6 +165,16 @@ def battery_pin(out: Path) -> str:
 def cells(learner_gate: str = LP.GATE_ON) -> list[Cell]:
     py = _py()
     cs: list[Cell] = []
+    # 0. FIRST: tau on the CUDA production pair (cheap; it gates what the cost read MEANS). A cell that is not PASS holds.
+    par = str(HERE / "tau_cuda_parity_cell.py")
+    cs.append(Cell(
+        "tau_cuda_parity", "FP32_ALT on CUDA (REVIEW F2): compiled Triton tau vs eager on synthetic + X26 violator + 915 "
+                           "fixture rows, and the compiled rollout vs the CUDA learner's taken-action log pi",
+        mem_gb=16, wall_min=25, eta_min=9,
+        cmd=lambda out: [py, "-u", par, "--out", str(out / "cells" / "tau_cuda_parity.json")],
+        check=lambda out: _run_check([py, par, "--check"]),
+        dry_check=lambda out: _run_check([py, par, "--check", "--prove"], timeout=1800),
+        result=lambda out: _json_status_ok(out / "cells" / "tau_cuda_parity.json")))
     # 1. the rollout decision forward (naive vs alt in one process)
     dec = str(HERE / "tau_decision_cell.py")
     cs.append(Cell(
@@ -378,6 +389,7 @@ def run(out: Path, sel: list[Cell], budget_min: float | None) -> int:
             kind = {124: "WALL TIMEOUT", 137: "KILLED after timeout", 86: "OOM at its mem cap", 85: "mem cap not in force",
                     5: "GPU busy (one-off holder)", 6: "GPU leased to someone else",
                     4: "tau forcing violated (wrapper replaced, or an arm never reached it)",
+                    9: "tau_cuda_parity: a PASS BAR was missed (the compiled rollout and the learner do not land on one tau)",
                     8: "learner path UNFAIR (this arm did not run the production compiled path; see --learner-gate off)",
                     11: "the X14 launcher exited non-zero", 12: "the X14 run is not the specified arm",
                     143: "stopped by SIGTERM (the wall cap)"}.get(rc, f"exit {rc}")

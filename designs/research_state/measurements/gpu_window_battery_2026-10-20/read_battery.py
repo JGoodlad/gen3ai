@@ -1,9 +1,13 @@
 """Read the FP32_ALT GPU-window battery: ONE table (every cell's status, wall, peak memory and headline number), the
-FP32_ALT gate decision and the X14 overlap A/B read, computed deterministically from the cells (README.md "The FP32_ALT
+TAU-ON-CUDA parity verdict (`tau_parity_read.py`), the FP32_ALT gate decision and the X14 overlap A/B read, computed deterministically from the cells (README.md "The FP32_ALT
 gate", "The X14 A/B").
 
     python3 read_battery.py <out-dir> [--json]
     python3 read_battery.py --selftest            # CPU: the fairness rule, the gate and the X14 read on synthetic cells
+
+THE TAU-ON-CUDA PARITY (``tau_cuda_parity``, first in the run order; REVIEW.md F2): PASS / FAIL / INCOMPLETE, re-judged here from
+the stored record against the preregistered bars (`tau_parity_read.judge`). It is not a cost: it says whether the cost
+verdict below is about a solve whose two production programs land on one tau on the card.
 
 THE FP32_ALT GATE: the 2026-10-19 battery's T62 cost computation (`../gpu_window_battery_2026-10-19/read_battery.py`)
 with ``fp32_naive`` as old and ``fp32_alt`` as new.
@@ -38,6 +42,7 @@ HERE = Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 import learner_path as LP  # noqa: E402
+import tau_parity_read as TPR  # noqa: E402
 import x14_read as XR  # noqa: E402
 
 GATE_PCT = 3.0
@@ -50,7 +55,7 @@ UPD_ARM = {"tau_u_naive_a": "fp32_naive", "tau_u_alt_a": "fp32_alt", "tau_u_alt_
            "tau_u_naive_b": "fp32_naive"}
 DEC_ARMS = ("fp32_naive", "fp32_alt")
 X14_CELLS = ("x14_off", "x14_on")
-ORDER = ("tau_dec",) + tuple(UPD_ARM) + X14_CELLS
+ORDER = ("tau_cuda_parity", "tau_dec") + tuple(UPD_ARM) + X14_CELLS
 
 
 def _load(p: Path) -> dict[str, Any] | None:
@@ -123,6 +128,11 @@ def fp32_alt_decision(cells: Path) -> dict[str, Any]:
 def _headline(name: str, d: dict[str, Any] | None) -> str:
     if d is None:
         return ""
+    if name == "tau_cuda_parity":
+        v = TPR.verdict(d)
+        t = d.get("tau_captured") or {}
+        return f"{v['verdict']}; tau max {t.get('max_abs', float('nan')):.2g} ({t.get('max_ulps', float('nan')):.2f} ulp)" \
+            if v["verdict"] != "INCOMPLETE" else f"INCOMPLETE ({d.get('status')})"
     if name == "tau_dec" and "summary" in d:
         return "; ".join(f"B{b}: naive {v['old_ms']:.2f} -> alt {v['new_ms']:.2f} ms (d {v['delta_ms']['median']:+.2f})"
                          for b, v in d["summary"].items())
@@ -243,6 +253,7 @@ def selftest() -> str:
 
     a = LP.selftest()
     b = XR.selftest()
+    c = TPR.selftest()
     lines = ["[CompileRegions] installing ['R1_learner_micro_step'] (fullgraph=True)", "[CompileRegions] parity PASS (x)",
              "[CompileRegions] inventory == declaration: R1 1 graph", "[CompileControl] prewarmed 1 production signature(s)",
              "[CompileCanary] armed: R1"]
@@ -308,7 +319,7 @@ def selftest() -> str:
         d_on.pop("summary")
         (cells / "x14_on.json").write_text(json.dumps(d_on))
         assert x14_decision(cells)["verdict"] == "CLEARS"
-    return (f"{a}; {b}; reader: the gate is {good['verdict']} on a fair set and INCOMPLETE on an unfair or path-less one; "
+    return (f"{a}; {b}; {c}; reader: the gate is {good['verdict']} on a fair set and INCOMPLETE on an unfair or path-less one; "
             "the X14 section reads, decides (CLEARS at x1.176) and prints from synthetic runs, re-reading a run dir when "
             "a cell stored no summary")
 
@@ -326,17 +337,22 @@ def main(argv: list[str] | None = None) -> int:
         ap.error("out is required (or --selftest)")
     out = Path(a.out)
     rows, dec, x14 = table(out), fp32_alt_decision(out / "cells"), x14_decision(out / "cells")
+    par = _load(out / "cells" / "tau_cuda_parity.json")
     if a.json:
-        print(json.dumps({"cells": rows, "fp32_alt": dec, "x14": x14}, indent=1, default=str))
+        print(json.dumps({"cells": rows, "tau_parity": TPR.verdict(par), "fp32_alt": dec, "x14": x14}, indent=1,
+                         default=str))
         return 0
     st = _load(out / "battery_status.json") or {}
     print(f"FP32_ALT GPU-window battery {out}  (battery status: {st.get('status', '?')}; pin {str(st.get('pin'))[:12]}; "
           f"learner gate {st.get('learner_gate')})\n")
-    print(f"{'cell':14s} {'status':8s} {'wall min':>8s} {'GPU MiB':>8s}  headline")
+    print(f"{'cell':15s} {'status':8s} {'wall min':>8s} {'GPU MiB':>8s}  headline")
     for r in rows:
         w = "" if r["wall_min"] is None else f"{r['wall_min']:.1f}"
         g = "" if r["peak_gpu_mib"] is None else str(r["peak_gpu_mib"])
-        print(f"{r['cell']:14s} {r['status']:8s} {w:>8s} {g:>8s}  {r['headline']}")
+        print(f"{r['cell']:15s} {r['status']:8s} {w:>8s} {g:>8s}  {r['headline']}")
+    print()
+    for line in TPR.lines(par):
+        print(line)
     print()
     if dec["verdict"] == "INCOMPLETE":
         print(f"FP32_ALT GATE: INCOMPLETE -- cells not ok: {', '.join(dec['missing'])}")

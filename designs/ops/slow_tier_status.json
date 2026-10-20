@@ -1762,12 +1762,20 @@
    "contention": 1.75,
    "detail": ""
   },
-  "src/agents/model/tau_solve_test.py::test_fp32_alt_compiled_by_inductor_matches_eager_on_the_tau_class_row": {
+  "src/agents/model/tau_solve_test.py::test_fp32_alt_compiled_by_inductor_matches_eager_on_the_tau_class_row[cpu-2]": {
    "status": "pass",
-   "commit": "1a3d242924bae2f18b8b77beb2551078b386e73d",
-   "at": "2026-10-20T12:27:24Z",
-   "duration_s": 27.92,
-   "contention": 2.4,
+   "commit": "5ab1fcdd9ba0cd9854cad68f9186c3daf536019f",
+   "at": "2026-10-20T12:40:25Z",
+   "duration_s": 17.01,
+   "contention": 2.01,
+   "detail": ""
+  },
+  "src/agents/model/tau_solve_test.py::test_fp32_alt_compiled_by_inductor_matches_eager_on_the_tau_class_row[cuda-4]": {
+   "status": "skip",
+   "commit": "5ab1fcdd9ba0cd9854cad68f9186c3daf536019f",
+   "at": "2026-10-20T12:40:25Z",
+   "duration_s": 0.0,
+   "contention": 4.27,
    "detail": ""
   },
   "src/agents/model/update_performance_shape_test.py::test_R1s_attention_profile_on_cpu_is_pinned": {
@@ -5463,5 +5471,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-20T12:27:24Z"
+ "last_written": "2026-10-20T12:40:25Z"
 }
