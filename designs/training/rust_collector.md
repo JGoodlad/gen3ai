@@ -117,7 +117,12 @@ anchor the clip to the stale policy. So every FILL also computes the PROXIMAL lo
 `−min(w·A·r, w·A·clip(r)) = −w·min(A·r, A·clip(r))`. On a fresh row π_prox = μ to fp32 rounding and w = 1, which is
 plain PPO. Tags: `overlap/is_weight_mean`, `is_weight_max_raw`, `is_weight_truncated_frac`, `is_ess` (normalised
 effective sample size), `behaviour_kl` (μ → π_prox), and the fill's `prox_forward_ms`. ⚠️ `normalize_advantage` then normalises
-w·A per micro-batch instead of A: a small rescale and baseline shift at w ≈ 1 ± 0.1 (FINDING).
+w·A per micro-batch instead of A. That is a BIAS, not only a rescale: with an advantage that carries no
+information about the action, the expected gradient is (E[A]/s)·Σₐ(π_prox(a) − μ(a))·∇log π(a) ≠ 0, a push along
+μ → π_prox that normalising first and weighting after does not have (core review 2026-10-20, A2, CPU repro;
+size on real buffers unmeasured; TECH_DEBT_BACKLOG "X14's advantage normalisation runs AFTER the importance weight").
+The startup dry update (`update_fit.dry_update`, which runs with the runner attached) hands `train()` an IDENTITY
+rewrite (`_overlap_prox := log μ`, w = 1): no fill made its buffer.
 
 **K9(b) under overlap judges the stale rows on a BEHAVIOUR SNAPSHOT.** The learner's probe judges the rows at the
 current version, and under overlap there are none. Every `after_update` copies the weights it loads into T2 into one

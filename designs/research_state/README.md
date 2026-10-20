@@ -120,6 +120,10 @@ disagree, **the ledger wins and the view is wrong** — fix the view.
   [`showdown_bots_landscape_2026-10-18.md`](literature/showdown_bots_landscape_2026-10-18.md): the
   autumn-2026 wave of Showdown ladder bots (the Gen 9 Champions VGC Reg M-C #1 bots, Jaxcalibur,
   Metamon, VGC-Bench), the new Smogon bot registry policy, and what transfers to us.
+- **[reviews/](reviews/)** — dated independent CODE reviews (correctness only, each finding CONFIRMED by a
+  repro or marked PLAUSIBLE); a snapshot as of its commit. Confirmed findings become TECH_DEBT_BACKLOG rows.
+  [`core_review_2026-10-20.md`](reviews/core_review_2026-10-20.md): the owned PPO loop, learner lifecycle,
+  compile regions, opponent load, X14 overlap, X45 grouped forward, B-GROW, heavy slots.
 - **[week_plan_2026-09-07.md](week_plan_2026-09-07.md)** — THE WEEK'S REGISTRATION (draft for the owner):
   arms A (SPARSE) and B (self-head bootstrap), decisions D1–D5 with their bars and dates.
 - **[`../ops/TRAINING_RUN_SOP.md`](../ops/TRAINING_RUN_SOP.md)** — the era-independent operating
