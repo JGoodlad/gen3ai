@@ -7,7 +7,7 @@ HEAD `03b983be` (§4.3); nothing launched; every launch NEEDS THE ORCHESTRATOR'S
 `gen3_tau_fp32_alt_v1`; its GPU cost read gates production), so there is ONE PIN PER SIDE, the TOY BLOCK RUNS FIRST (AM-9) and production waits for the FP32_ALT commit (a
 placeholder the kit refuses to launch on).** **AMENDED 2026-10-20 (AM-X47, §0) before any X47 read:** the
 orchestrator accepted X47's readout review (AM-X47-1 to -11) and ruled that X47 arms are not thinned (AM-X47-12). X47's
-READ PLAN is §4.5, and its guards' pre-read (both READ on toys) is §4.5.1. **AMENDED 2026-10-20 (AM-X47b, §0) before any X47 read:** G-C pooled over seeds (a crossed cluster bootstrap), the toy's own B2 truth, a policy-difference descriptor (reported only), and UNDECIDED with Δ̂ ≤ 0 deprioritises X47b. **AMENDED 2026-10-20 (AM-X47c, §0) before any X35 read:** the UNDECIDED line prints the CURRENT look's detectable effect, and production's B2 truth is refreshed under P\* (§5.6.5's own refresh rule). **AMENDED 2026-10-20 (D1-CORPUS, §0) before any D1 launch:** X54's sealed confirmation panel `forum216b` was carved out of D1's corpus, which is now 1,982 teams (tier sha `73a76e808431`); launch pre-check 2d HOLDs a pin without it. X47 is a **kit arm**
+READ PLAN is §4.5, and its guards' pre-read (both READ on toys) is §4.5.1. **AMENDED 2026-10-20 (AM-X47b, §0) before any X47 read:** G-C pooled over seeds (a crossed cluster bootstrap), the toy's own B2 truth, a policy-difference descriptor (reported only), and UNDECIDED with Δ̂ ≤ 0 deprioritises X47b. **AMENDED 2026-10-20 (AM-X47c, §0) before any X35 read:** the UNDECIDED line prints the CURRENT look's detectable effect, and production's B2 truth is refreshed under P\* (§5.6.5's own refresh rule). **AMENDED 2026-10-20 (D1-CORPUS, §0) before any D1 launch:** X54's sealed confirmation panel `forum216b` was carved out of D1's corpus, which is now 1,982 teams (tier sha `73a76e808431`); launch pre-check 2d HOLDs a pin without it. **NOTE 2026-10-20 (TM, §0) before any production X35 read:** the X26 treadmill read's MECHANISM predictions for C0 / A1 / A2 (pool refresh, pool-relative edge, the learning rate in force), reported only, and the LR confound every production fork inherits; no arm, argv, bar or order changed. X47 is a **kit arm**
 (`toy_x47`, F-LS-1 closed). The orchestrator has ruled **C1** (a), **C2** (X47 interleaved with its toy C0), **C3** (the
 toy arms run K9(b) `warn` under X34's ceilings), **C4** (batch 1 launches without R0) and every amendment of the
 [adversarial review](X35_BATCH1_REVIEW.md) (AM-1 to AM-7, the POOL check, the G-E readers); C1's rule (a) is SUPERSEDED by AM-8; C6 is still open; C5 is RULED and DONE (§5). This sheet is
@@ -172,6 +172,89 @@ no lever was chosen on. Done the same day; nothing of D1 had launched or been re
   - The production pin, not yet written, must therefore be a commit at or after the carve.
 - **What it changes for D1's read.** D1's lever widens by 1,982 forum teams, not 2,424. Its H panels (H, F, P72) and
   its rule (`main.x35.d1`) are unchanged. `forum216b` is never one of D1's panels.
+
+### ORCHESTRATOR NOTE 2026-10-20 (TM): the X26 TREADMILL read mapped onto batch 1, REGISTERED BEFORE any production X35 read
+
+**What this is.** A registration of MECHANISM predictions, written before any production arm has launched (production
+waits for FP32_ALT) and before any X35 read. No X35 run's TensorBoard or eval record was opened for it: the toy block
+T1's runs exist, and none of them was read. **It changes no arm, argv, bar, order or rule (batch 1 is closed), and it
+decides nothing.** Every item below is REPORTED beside the arm's registered verdict. X55's S predictions
+([`../x55_league_headroom_2026-10-20/PREDICTIONS.md`](../x55_league_headroom_2026-10-20/PREDICTIONS.md): A1 +0.5 pp,
+A2 0.0 pp) stand unchanged. The TM items add what the treadmill read says about the MECHANISM.
+
+**The read it maps** ([`../x26_collapse_battery_2026-10-20/`](../x26_collapse_battery_2026-10-20/README.md), `3e8a4124`):
+- X26's plateau is a TREADMILL. About 30 % of greedy choices flip per 20M, yet 380M differs from 180M on only 36 %.
+- The self-play pool went stale: promotions per 50M fell 9 → 3, and the pool's median member age rose 63M → 135M.
+- The adaptive-KL controller cut the learning rate 1.74e-4 → 8.4e-5 while the gradient norm rose 70 %.
+- Entropy, coverage, rank, dormancy, α and the critic held.
+
+**TM-1. What A1 and A2 actually change (a correction to "they attack staleness directly").**
+- **Neither arm touches the pool's REFRESH rule.** A snapshot is promoted when the eval cycle's `win_rate_vs_pool` (the
+  mean over the pool sentinels, 100 games each) exceeds 0.55.
+  - **A1** sends half its self-play games to 8 frozen archive nodes. Its snapshot pool and its promotion rule are C0's.
+  - **A2** re-weights sampling inside the SAME pool (PFSP) and doubles the sentinels (`--n-sentinels 10`).
+  - So both change the pool's COMPOSITION or WEIGHTING. Neither changes its FRESHNESS.
+- **Promotion is a noise crossing at this edge.** At a true edge of 0.52–0.53 over ≈ 500 games (SE ≈ 2.2 pp), the 0.55
+  bar is crossed mostly by noise. A2's 10 sentinels (≈ 1,000 games, SE ≈ 1.6 pp) therefore cross it about HALF as
+  often at an EQUAL edge. **A2's promotion count is confounded by its own sentinel count** and is not comparable with
+  C0's.
+- **Interpretation (UNVERIFIED, DESCRIPTIVE).** X26's edge over its pool stayed 0.52–0.54 while that pool aged 63M →
+  135M, i.e. while its target got MORE stationary. A learner that is still improving should beat a frozen target by
+  more and more. This one did not. That favours "progress stopped, so the pool stopped refreshing" over the reverse.
+  Batch 1 cannot settle it: a NULL on A1 and A2 does not refute staleness-as-cause, because neither arm freshens the
+  pool.
+- **A freshness lever** is the promotion rule itself. `--promotion-sprt` (T6) is built. It is NAMED here, not designed
+  (rule 9).
+
+**TM-2. The instruments.** Each is read on the fork's OWN rows (`main.ops.tb_read`, which cuts at the fork step), per
+seed final, s3501–s3503, and REPORTED:
+- **N_prom**: the count of `train/selfplay_promoted_steps` rows after the fork, pooled over the 3 seeds.
+- **E**: the mean of `eval/win_rate_vs_pool` over the arm's eval cycles. Per seed, then the mean over seeds.
+- **Age**: the median member age of the final's `snapshots/` (final step − snapshot step).
+- **LR**: `train/learning_rate` at the final (= `main.dose` `lr_now`).
+- **KL**: the mean `train/approx_kl` over the arm.
+
+**TM-3. The predictions.** Each is falsified deterministically: integer counts, and intervals with rule 8 at 1e-9.
+- **C0.**
+  - **LR.** Every seed's final LR is 1.0047e-4 or 8.3724e-5, and none ends at or above P\*'s 1.2056e-4. X26 itself cut
+    to 1.0047e-4 at 282.0M, 2M after P\*. The controller's rungs are 3e-4 / 1.2^k, so the read is exact.
+  - **N_prom** pooled: 3–8 (X26 made 6 per 50M up to 280M, i.e. ≈ 2.4 per 20M per seed).
+  - **Age.** The final's median age is 55–76M. C0 is seeded with 14 snapshots (164–268M, median age 54M at P\*), and
+    a pool under 20 evicts nothing.
+- **A1** (S: X55 P2, unchanged).
+  - **E** A1 − C0 lies in [−2.0, +0.5] pp, because half its games leave the recent cluster. **Falsified toward "A1
+    lifts the pool-relative edge"** if the Welch 95 % lower bound (3 v 3 seeds) is > 0.
+  - **N_prom**(A1) ≤ N_prom(C0) + 2.
+  - **LR**: each A1 seed's final LR is within one controller rung (×1.2) of the same-seed C0's.
+- **A2** (S: X55 P3, unchanged).
+  - **N_prom**(A2) < N_prom(C0), from the sentinel count alone (TM-1). Falsified if N_prom(A2) ≥ N_prom(C0) + 3.
+  - **E** is reported and NOT compared: an average over 10 sentinels is not an average over 5.
+  - **LR**: as A1's.
+- **The conditional reading.** An R1 GAIN on A1 or A2 whose N_prom and E do not rise above C0's is a
+  diversity / generalisation gain, not a freshness gain. A GAIN with E's interval above C0's supports the pool route.
+
+**TM-4. The LR CONFOUND, which every production fork inherits.**
+- Every production arm, C0 included, starts at P\*'s saved learning rate. That rate is 1.2056e-4, ≈ 0.69× the
+  1.7361e-4 that was in force from 138.9M to 218.3M while X26 climbed.
+- The controller is expected to cut it to 1.0047e-4 within ≈ 2–3M.
+- **The A − C0 comparison stays FAIR:** b-ON and b-OFF share the controller state and its rule. But two caveats apply.
+  1. **The absolute S is read at a depressed weight-space step**, ≈ 0.58× the climbing rate. So a lever whose benefit
+     needs a larger step can read NULL here and GAIN at a restored rate (an interaction batch 1 cannot see). **A
+     batch-1 NULL reads "NULL at the halved rate".**
+  2. **The controller is ENDOGENOUS.** A lever that changes the data changes approx-KL, and so changes its own LR.
+     - One rung is 20 %, so a single extra cut in one arm trips §5.6.1's 10 % dose-gap rule.
+     - Each arm's LR path (`main.dose`, TB) is REPORTED beside its verdict, and a gap is a declared confound.
+- **The toy is milder.** T\*'s 1.4468e-4 had held unchanged on X34 from 211.4M to 292M, so no cut is expected on the
+  toy arms.
+- **Policy space vs weight space.** The approx-KL per update held at 0.018–0.019 throughout X26's halving. The
+  controller kept the per-update POLICY step constant while the KL per unit learning rate roughly doubled (the
+  gradient norm rose 70 %). So "the dose halved" holds in weight space only.
+- The direct test of this confound is a batch-2 candidate: the LR FLOOR (`STAGED_PLAN.md` §4), toy first.
+
+**TM-5. C0 is itself a partial freshness change against X26** (DESCRIPTIVE, not a read). C0's seeded pool is 14
+members with a median age of 54M at P\*. X26's own pool at 280M was 20 members with a median of 83M (battery B-pool),
+because T54 dropped the post-P\* snapshots and the eviction history differs. X26's own 280M → 300M is therefore not a
+substitute for C0.
 
 
 ---
