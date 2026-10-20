@@ -248,10 +248,10 @@ def _nodes(ladder: Dict[str, Any]) -> List[Tuple[int, float, float]]:
 def _refit_first_n(run_dir: str, n: int, *, what: str, rated_steps: Sequence[int],
                    allow_mixed_transport: bool = False
                    ) -> Tuple[Optional[List[Tuple[int, float, float]]], Optional[str]]:
-    """``(nodes, None)`` — a fresh BT fit over the FIRST ``n`` of the committed ladder's rated
-    snapshots — or ``(None, why)`` when that prefix cannot be fit on its own. The prefix comes
-    from the LADDER's own rated steps, not the pool on disk (a closed run's `snapshots/` may have
-    been groomed while its ladder.json stands). It cannot be fit when the raw pair log is absent,
+    """``(nodes, None)`` — a fresh BT fit over the FIRST ``n`` of ``rated_steps`` (the side's OWN steps
+    EVER rated: ``_own_steps``) — or ``(None, why)`` when that prefix cannot be fit on its own. The
+    prefix is never the pool on disk nor the committed ladder's nodes: both are the SURVIVORS of a
+    groomed pool (ledger 6c4ae35d). It cannot be fit when the raw pair log is absent,
     or when the prefix has no measured edge INSIDE itself — a FORK's ladder often rates its early
     parent snapshots only through edges to its own late selves (`ai_v9_59_R2ACTION_0827`: every
     pair touches 26M/28M, eval rows exist only there), and a strict prefix fit of that is empty.
@@ -275,6 +275,62 @@ def _refit_first_n(run_dir: str, n: int, *, what: str, rated_steps: Sequence[int
     if not doc.get("converged"):
         return None, f"the first-{n} BT fit of {what}'s ladder did not converge."
     return nodes, None
+
+
+def _final_delta(final_nodes: Dict[str, Any]) -> Optional[float]:
+    r, p = final_nodes.get("run"), final_nodes.get("parent")
+    return None if r is None or p is None else float(r[1] - p[1])
+
+
+def _sentinel_steps_ever(run_dir: str) -> List[int]:
+    """Every pool snapshot an eval cycle ever drew as a sentinel (``eval_results.jsonl``): the pool's
+    history when ``games.jsonl`` is gone."""
+    path = os.path.join(run_dir, "eval_results.jsonl")
+    out: set = set()
+    if os.path.exists(path):
+        with open(path) as fh:
+            for line in fh:
+                try:
+                    row = json.loads(line)
+                except ValueError:
+                    continue
+                for s in (row.get("sentinels") or []) if isinstance(row, dict) else []:
+                    if isinstance(s, dict) and isinstance(s.get("step"), (int, float)):
+                        out.add(int(s["step"]))
+    return sorted(out)
+
+
+def _own_steps(run_dir: str, committed: List[Tuple[int, float, float]], what: str) -> List[int]:
+    """The side's OWN snapshot steps EVER rated — what a matched COUNT counts over.
+
+    With ``games.jsonl``: its append-only endpoints + the committed nodes, above the lineage
+    ``fork_step`` (``snapshot_ladder.own_rated_steps_ever``). WITHOUT it only the committed nodes remain,
+    and those are the SURVIVORS of a groomed pool: if the eval record shows any own snapshot the
+    committed file no longer rates, the first n cannot be known and the read is REFUSED."""
+    from agents.training import snapshot_ladder as sl
+    from agents.training.lineage import fork_step_of
+    steps = sl.own_rated_steps_ever(run_dir, [s for s, _, _ in committed])
+    if os.path.exists(sl.games_log_path(run_dir)):
+        return steps
+    floor = fork_step_of(run_dir) or -1
+    lost = [s for s in _sentinel_steps_ever(run_dir) if s > floor and s not in set(steps)]
+    if lost:
+        raise GateRefusal(f"{what} ladder", (
+            f"{run_dir!r} has no snapshot_ladder/games.jsonl and its committed ladder.json no longer rates "
+            f"{len(lost)} snapshot(s) its own eval cycles drew from the pool (first: {lost[:3]}) — the pool was "
+            "GROOMED and the committed file rates the SURVIVORS, so its 'first n' are not the run's first n "
+            "(ledger 6c4ae35d). A matched-count read needs the append-only games.jsonl; nothing is concluded."))
+    return steps
+
+
+def _census(run_dir: str, ladder: Dict[str, Any], own_steps: List[int]) -> Dict[str, Any]:
+    """What the count was taken over, printed beside it: every step ever rated vs the committed survivors."""
+    from agents.training.lineage import fork_step_of
+    committed = {int(k) for k in (ladder.get("ratings") or {})}
+    return {"n_own_rated_ever": len(own_steps),
+            "n_groomed_out": sum(1 for s in own_steps if s not in committed),
+            "fork_step": fork_step_of(run_dir),
+            "n_inherited_excluded": sum(1 for s in committed if s not in set(own_steps))}
 
 
 def side_transport(run_dir: str, doc: Dict[str, Any]) -> str:
@@ -306,13 +362,20 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
     run = {**run, "ladder_doc": lr}
     parent = {**parent, "ladder_doc": lp}
     nr, npar = _nodes(lr), _nodes(lp)
-    avail = min(len(nr), len(npar))
+    # 🚨 THE COUNT IS OVER EVERY STEP EVER RATED, the side's OWN (ledger 6c4ae35d, D2 2026-09-08): the
+    # committed ladder rates only the SURVIVING pool (groomed to 20), and a fork's ladder also rates the
+    # parent snapshots its pool was seeded with. `own_rated_steps_ever` counts the append-only games.jsonl
+    # (+ the committed nodes) above the lineage fork_step; a side with no games.jsonl whose eval record
+    # shows a groomed-away snapshot is REFUSED (`_own_steps`).
+    own = {"run": _own_steps(run["run_dir"], nr, "run"), "parent": _own_steps(parent["run_dir"], npar, "parent")}
+    avail = min(len(own["run"]), len(own["parent"]))
     n = at_snapshots or avail
     if n < 1 or n > avail:
         raise GateRefusal("--at-snapshots", (
-            f"asked for {n} snapshot(s); the run rates {len(nr)} and the parent rates "
-            f"{len(npar)}, so the matched count can be at most {avail}. Comparing at MATCHED "
-            "COUNT (never at matched step) is the third ELO reading rule."))
+            f"asked for {n} snapshot(s); the run has rated {len(own['run'])} of its own and the parent "
+            f"{len(own['parent'])} (every step ever rated, above any fork step), so the matched count can "
+            f"be at most {avail}. Comparing at MATCHED COUNT (never at matched step) is the third ELO "
+            "reading rule."))
     # MATCHED COUNT MEANS MATCHED FIT SIZE. The n-th node of a run's FINAL 12-node fit is not the
     # n-th node of a 4-node fit: BT re-solves every node on every add and the newest node is
     # systematically inflated, so a side with MORE than n rated nodes is REFIT on its first n
@@ -332,19 +395,21 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
     # biased one. Refitting here puts BOTH sides through THIS tree's `fit_ladder`.
     # A side with no `games.jsonl` cannot be refit; it falls back to its committed `ladder.json`
     # and is LABELLED as such in `fit_size_note` — never silently trusted.
-    final_nodes = {"run": nr[n - 1], "parent": npar[n - 1]}
+    # the COMMITTED fit's node at the same step (None when the committed file no longer rates it: groomed)
+    final_nodes = {k: next((t for t in nodes if t[0] == own[k][n - 1]), None)
+                   for k, nodes in (("run", nr), ("parent", npar))}
     refit = {"run": False, "parent": False}
     unmatched: List[str] = []
     fallbacks: List[str] = []
 
     def _side(nodes: List[Tuple[int, float, float]], run_dir: str, what: str
               ) -> List[Tuple[int, float, float]]:
-        got, why = _refit_first_n(run_dir, n, what=what,
-                                  rated_steps=[s for s, _, _ in nodes],
+        got, why = _refit_first_n(run_dir, n, what=what, rated_steps=own[what],
                                   allow_mixed_transport=allow_transport_mix)
         if got is not None:
             refit[what] = True
             return got
+        nodes = [t for t in nodes if t[0] in set(own[what])]     # the side's OWN committed nodes
         if len(nodes) > n:
             # the SIZE is genuinely unmatched and cannot be corrected — the pre-existing refusal
             unmatched.append(why or f"{what}: refit unavailable")
@@ -381,7 +446,7 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
     return {
         "at_snapshots": n,
         "available_matched": avail,
-        "run": {"ladder_path": lr["path"], "n_rated": len(nr),
+        "run": {"ladder_path": lr["path"], "n_rated": len(nr), **_census(run["run_dir"], lr, own["run"]),
                 "recipe_status": lr.get("recipe_status"),
                 "recipe": lr.get("recipe_detail"),
                 "anchored_to_bots": bool(lr.get("anchored_to_bots")),
@@ -390,7 +455,7 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
                           for i, (s, e, v) in enumerate(nr[:n])],
                 "node_at_count": {"step": a[0], "elo": a[1], "se": a[2], "ci95": Z95 * a[2]},
                 "finished": finished, "final_model": final_path},
-        "parent": {"ladder_path": lp["path"], "n_rated": len(npar),
+        "parent": {"ladder_path": lp["path"], "n_rated": len(npar), **_census(parent["run_dir"], lp, own["parent"]),
                    "recipe_status": lp.get("recipe_status"),
                    "recipe": lp.get("recipe_detail"),
                    "anchored_to_bots": bool(lp.get("anchored_to_bots")),
@@ -409,9 +474,9 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
         "refit_at_count": refit,
         "refit_fallbacks": fallbacks,
         "matched_fit_size": matched_fit_size,
-        "final_fit_nodes": {k: {"step": v[0], "elo": v[1], "se": v[2]}
+        "final_fit_nodes": {k: ({"step": v[0], "elo": v[1], "se": v[2]} if v else None)
                             for k, v in final_nodes.items()},
-        "delta_elo_final_fits": final_nodes["run"][1] - final_nodes["parent"][1],
+        "delta_elo_final_fits": _final_delta(final_nodes),
         "fit_size_note": (
             "🚨 UNMATCHED FIT SIZE — this delta compares the n-th node of a LONGER final fit "
             "against a short fit's n-th node, which is the newest-node-inflation error (94 Elo on "
@@ -424,7 +489,8 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
             "before 2026-09-07 folded the eval cycles' greedy-vs-stochastic SENTINEL edges into "
             "the fit (+8.9 pp to the newer snapshot; +21..+29 Elo on the newest nodes) — "
             f"refit: run={refit['run']}, parent={refit['parent']}; the committed-ladder delta "
-            f"would have read {final_nodes['run'][1] - final_nodes['parent'][1]:+.0f}."
+            + (f"would have read {_final_delta(final_nodes):+.0f}." if _final_delta(final_nodes) is not None else
+               "is not available (the committed file no longer rates the n-th node: groomed).")
             + ("" if not fallbacks else
                " ⚠️ FELL BACK to the COMMITTED ladder.json for: " + " | ".join(fallbacks)
                + " — that side's numbers are whatever its own pinned code wrote, which before "

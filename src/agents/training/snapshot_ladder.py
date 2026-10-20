@@ -339,6 +339,29 @@ def eval_cycle_only_pairs(run_dir: str, steps: "list[int] | None" = None) -> lis
                   if srcs == {EVAL_CYCLE_SOURCE} and k[0] in keep and k[1] in keep)
 
 
+def rated_steps_ever(run_dir: str, committed: "list[int] | None" = None) -> list[int]:
+    """Every snapshot step EVER rated — the endpoints of ``games.jsonl``'s rating-edge rows, plus the
+    ``committed`` ladder's own nodes — ascending.
+
+    🚨 NOT the pool on disk and NOT the committed ``ladder.json``'s nodes. The pool is GROOMED (to
+    ``--max-snapshots``, 20) and every refit rates only the survivors, so at run end a 36-snapshot run's
+    ``ladder.json`` rates 36M..74M and its "first 12" read 36M -> 58M where the comparator's read
+    2M -> 24M (D2 VERDICT 2026-09-08, ledger ``6c4ae35d``). ``games.jsonl`` is APPEND-ONLY: a groomed
+    snapshot's rows outlive its zip, so this is the history a matched-COUNT read must count over."""
+    steps = {s for pair in load_games(run_dir) for s in pair}
+    steps.update(int(s) for s in (committed or []))
+    return sorted(steps)
+
+
+def own_rated_steps_ever(run_dir: str, committed: "list[int] | None" = None) -> list[int]:
+    """:func:`rated_steps_ever` without the PARENT's snapshots a FORK's pool was seeded with: a fork's
+    ladder rates its parent's pool (steps ``<=`` the lineage record's ``fork_step``,
+    ``agents.training.lineage.fork_step_of``) beside its own — the arm's "first n" are its OWN first n."""
+    from agents.training.lineage import fork_step_of
+    floor = fork_step_of(run_dir)
+    return [s for s in rated_steps_ever(run_dir, committed) if floor is None or s > floor]
+
+
 def _atomic_write_json(path: str, obj: dict) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     tmp = path + ".tmp"

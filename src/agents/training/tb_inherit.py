@@ -486,9 +486,8 @@ def own_step_floor(run_dir: str) -> Optional[int]:
     record names no ``fork_step``, or names a different one: the boundary is then unknown, and a
     reader must refuse rather than slice at a guess.
     """
-    from agents.training.lineage import read_block
-    block = read_block(run_dir) or {}
-    rec = block.get("fork_step") if isinstance(block.get("fork_parent"), dict) else None
+    from agents.training.lineage import fork_step_of
+    rec = fork_step_of(run_dir)
     prov = read_provenance(run_dir)
     if prov is not None:
         inherited = prov.get("fork_step")
@@ -501,7 +500,7 @@ def own_step_floor(run_dir: str) -> Optional[int]:
             raise ArmBoundaryError(
                 f"{run_dir}: the lineage record's fork_step {int(rec):,} disagrees with the inherited "
                 f"TensorBoard prefix's {int(inherited):,} ({PROVENANCE_BASENAME})")
-    return int(rec) if rec else None
+    return rec
 
 
 def own_points(run_dir: str, points: Iterable[Any], *, step: Any = None) -> List[Any]:

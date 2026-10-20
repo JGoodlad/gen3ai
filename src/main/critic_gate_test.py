@@ -1100,3 +1100,64 @@ def test_G7_REFUSES_a_fork_whose_boundary_the_lineage_record_cannot_confirm(tree
                         cg._resolve_ref(tree["parent"], what="parent"),
                         stall_turns=250, max_stall_rate=0.05, max_ep_len_ratio=1.25)
     assert exc.value.code == 2
+
+
+# ------------- matched COUNT is over EVERY step EVER rated, the side's OWN (ledger 6c4ae35d)
+
+def test_matched_count_counts_a_GROOMED_pool_from_the_append_only_games_log(tree):
+    """🚨 D2 2026-09-08: the pool is groomed to 20 and every refit rates only the SURVIVORS, so at run end
+    "the first 12" of one side were 36M->58M while the other's were 2M->24M. Here the comparator's 1M
+    snapshot was groomed away (its zip gone, its committed ladder refit over the survivors) but its rows
+    are still in games.jsonl: the 2nd snapshot it ever rated is 2M, not 3M. Reverting the count to the
+    committed nodes reads 3M."""
+    from agents.training import snapshot_ladder as sl
+    comp = _three_node_comparator(tree["root"])
+    os.remove(os.path.join(comp, "snapshots", f"snapshot_{1_000_000:012d}.zip"))
+    sl.fit_ladder(comp)                                     # the committed file now rates 2M, 3M only
+    assert set(json.load(open(sl.ladder_json_path(comp)))["ratings"]) == {"2000000", "3000000"}
+    arm = build_run(tree["root"], "ARMG", sharpness=0.05, ladder_elo=(1820.0, 1870.0))
+    sec = cg.ladder_section(cg._resolve_ref(arm, what="run"), cg._resolve_ref(comp, what="parent"), None)
+    assert sec["at_snapshots"] == 2
+    assert sec["parent"]["node_at_count"]["step"] == 2_000_000
+    assert [nd["step"] for nd in sec["parent"]["nodes"]] == [1_000_000, 2_000_000]
+    assert sec["parent"]["n_own_rated_ever"] == 3 and sec["parent"]["n_groomed_out"] == 1
+
+
+def test_a_groomed_pool_with_no_games_log_is_REFUSED_at_matched_count(tree):
+    """Without games.jsonl only the committed survivors remain; the eval record proves a snapshot was
+    groomed away, so the side's first n cannot be known — a refusal, never the survivors' first n."""
+    comp = build_run(tree["root"], "GROOMEDNOLOG", sharpness=0.05, steps=(2_000_000, 3_000_000),
+                     ladder_elo=(1850.0, 1900.0))
+    path = os.path.join(comp, "eval_results.jsonl")
+    rows = [json.loads(line) for line in open(path) if line.strip()]
+    rows[-1]["sentinels"] = [{"step": 1_000_000, "win_rate": 0.6}]   # a pool member the ladder no longer rates
+    with open(path, "w") as fh:
+        fh.writelines(json.dumps(r) + "\n" for r in rows)
+    arm = build_run(tree["root"], "ARMGN", sharpness=0.05)
+    with pytest.raises(cg.GateRefusal) as exc:
+        cg.ladder_section(cg._resolve_ref(arm, what="run"), cg._resolve_ref(comp, what="parent"), None)
+    assert "GROOMED" in str(exc.value)
+
+
+def test_a_FORKs_matched_count_never_counts_the_parent_snapshots_its_pool_was_seeded_with(tree):
+    """A fork's pool is seeded with its parent's snapshots, and its ladder rates them (steps <= the
+    lineage fork_step). The arm's "first n" are its OWN: the count excludes them."""
+    steps = (1_000_000, 2_000_000, 3_000_000)
+    arm = build_run(tree["root"], "FORKARM", sharpness=0.05, steps=steps, ladder_elo=(1800.0, 1850.0, 1900.0))
+    _write_pair_log(arm, steps, [(2_000_000, 1_000_000, 60), (3_000_000, 1_000_000, 65),
+                                 (3_000_000, 2_000_000, 55)])
+    meta_path = os.path.join(arm, "metadata.json")
+    meta = json.load(open(meta_path))
+    meta["lineage"] = {"schema": 1, "role": "fork", "fork_step": 1_500_000,
+                       "fork_parent": {"run_dir": tree["parent"]}}
+    json.dump(meta, open(meta_path, "w"))
+    sec = cg.ladder_section(cg._resolve_ref(arm, what="run"), cg._resolve_ref(tree["parent"], what="parent"), None)
+    assert sec["at_snapshots"] == 2
+    assert [nd["step"] for nd in sec["run"]["nodes"]] == [2_000_000, 3_000_000]
+    assert sec["run"]["fork_step"] == 1_500_000 and sec["run"]["n_inherited_excluded"] == 1
+
+
+def test_the_report_states_what_the_matched_count_was_taken_over(tree, tmp_path):
+    out_json, out_md = str(tmp_path / "cb.json"), str(tmp_path / "cb.md")
+    cg.main(_run(tree, "--json", out_json, "--md", out_md))
+    assert "Count basis (games.jsonl, append-only)" in open(out_md).read()

@@ -310,7 +310,7 @@ values of one quantity start disagreeing.
 
 | section | what it does | whose statistics |
 |---|---|---|
-| 1 ladder | reads both `snapshot_ladder/ladder.json` for the node LIST, then **REFITS BOTH SIDES** on their first n from their own `games.jsonl` with this tree's `fit_ladder(first_n=…)` (strict prefix) — *always*, not only when the counts differ, because a committed ladder written before 2026-09-07 carries the eval-**sentinel** bias (+21..+29 Elo on its newest nodes) and a run pinned to an older commit keeps writing it. Compares at **matched SNAPSHOT COUNT**, never matched step. A side that cannot be refit falls back to its committed ladder and is NAMED in `refit_fallbacks` + `fit_size_note`; a side with MORE rated nodes that cannot be refit is still **UNMATCHED FIT SIZE** and the famine pre-test still REFUSES on it. Prints `rating not final` while the run is unfinished | the BT fit's, re-fit on the prefix — both sides |
+| 1 ladder | counts each side's OWN snapshots EVER rated (`games.jsonl` + the committed nodes, above the lineage `fork_step` — never the groomed survivors in `ladder.json`, never a fork's inherited parent nodes; rule 5 of "Reading an ELO"), then **REFITS BOTH SIDES** on their first n from their own `games.jsonl` with this tree's `fit_ladder(first_n=…)` (strict prefix) — *always*, not only when the counts differ, because a committed ladder written before 2026-09-07 carries the eval-**sentinel** bias (+21..+29 Elo on its newest nodes) and a run pinned to an older commit keeps writing it. Compares at **matched SNAPSHOT COUNT**, never matched step. A side that cannot be refit falls back to its committed ladder and is NAMED in `refit_fallbacks` + `fit_size_note`; a side with MORE rated nodes that cannot be refit is still **UNMATCHED FIT SIZE** and the famine pre-test still REFUSES on it. Prints `rating not final` while the run is unfinished | the BT fit's, re-fit on the prefix — both sides |
 | 2 calibration | §4.3 G1–G4 per checkpoint, `bot`/`pool` **separately**, selection-reweighted | `main.scaffolding_gauge`'s `collect_slices` / `build_reliability` / `true_win_rates`, IMPORTED |
 | 3 G7 kill | stall rate + mean episode length vs the era; episode length is read from TensorBoard `eval/mean_ep_len_vs_{bots,pool}` (every cycle) first, the `metadata.json` blocks second — the blocks are keyed by CHECKPOINT and miss any cycle no checkpoint captured (10M and 14M on `ai_v12_02`); a step with no episode length prints **ep_len NOT EVALUABLE**, never OK. 🚨 **The 1.25× threshold is defined on EVAL episode length, never on the train series `rollout/ep_len_mean`** — same name, same units, different population: on `ai_v12_02` at 18M the train series was +25% over its early value (self-play opponents improve WITH the trainee, so near-equal games lengthen) while eval-vs-bots was +3.7% and eval-vs-pool flat, so applying the eval threshold to the train series would have fired a kill on an arm at 0% of the real one | the run's own recorded metrics + its trace summaries |
 | 4 untaught meter | `main.untaught_meter --baseline <parent> --control <cont…>` | the meter's, read back out of its own `--json` |
@@ -1857,3 +1857,18 @@ at 21/21 pairs is internally complete but only 7 nodes deep, and depth is what t
    at n=4 and from **+34.3 (se 14.7) → +20.9 (se 15.8)** at n=12. The verdict does not change —
    both are inside the registry floor of 38 — but the registered −30 / −34 numbers were
    measured through the biased fit.
+
+5. **The COUNT is over every OWN snapshot EVER rated — `games.jsonl`, never the committed file's
+   nodes** (2026-10-19; D2 VERDICT 2026-09-08, ledger `6c4ae35d`). The pool is GROOMED to
+   `--max-snapshots` (20) and every refit rates only the SURVIVORS, so a closed run's `ladder.json`
+   is its last 20: at run end "the arm's first 12" read 36M → 58M against the comparator's 2M → 24M
+   (on the archive, `ai_v12_02_winprob_critic` has rated 36 snapshots and its committed file holds
+   36M → 74M). A FORK's ladder also rates the parent snapshots its pool was seeded with — 19 of the
+   ~23 ever-rated nodes of a typical `ai_v13`/`ai_v14` fork sit at or below its `fork_step`.
+   `snapshot_ladder.own_rated_steps_ever` (the append-only log's endpoints + the committed nodes,
+   above the lineage record's `fork_step`) is what `main.critic_gate` counts and refits the strict
+   prefix over; each side's JSON carries `n_own_rated_ever`, `n_groomed_out`, `fork_step` and
+   `n_inherited_excluded`, and the report prints the count basis. A side with NO `games.jsonl` whose
+   eval record names a pool snapshot its committed file no longer rates is REFUSED (the first n cannot
+   be known). 🚨 A hand read off `ladder.json`'s n-th node is NOT a matched-count read on a groomed or
+   forked run — use `main.critic_gate`.

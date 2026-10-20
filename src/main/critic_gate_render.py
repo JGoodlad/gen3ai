@@ -42,6 +42,20 @@ def _meter_digest(result: Dict[str, Any]) -> str:
         return json.dumps(result.get("result", result), indent=1)[:4000]
 
 
+def count_basis(lad: Dict[str, Any]) -> str:
+    """What the matched COUNT was taken over, per side (ledger 6c4ae35d): every OWN step ever rated."""
+    def one(side: Dict[str, Any], name: str) -> str:
+        bits = [f"{side.get('n_own_rated_ever', '?')} own snapshot(s) ever rated"]
+        if side.get("n_groomed_out"):
+            bits.append(f"{side['n_groomed_out']} groomed out of the committed file")
+        if side.get("fork_step"):
+            bits.append(f"{side.get('n_inherited_excluded', 0)} inherited parent node(s) <= fork step "
+                        f"{side['fork_step']:,} excluded")
+        return f"{name}: " + ", ".join(bits)
+    return ("Count basis (games.jsonl, append-only): " + one(lad["run"], "run") + "; "
+            + one(lad["parent"], "parent"))
+
+
 def render_markdown(doc: Dict[str, Any]) -> str:
     out: List[str] = []
     m = doc["_meta"]
@@ -81,6 +95,8 @@ def render_markdown(doc: Dict[str, Any]) -> str:
                    f"{lad['comparability']}")
         out.append("")
         out.append(f"Fit size: {lad['fit_size_note']}")
+        out.append("")
+        out.append(count_basis(lad))
         if lad.get("era_warning"):
             out.append("")
             out.append(f"**{lad['era_warning']}**")
@@ -255,6 +271,7 @@ def render_text(doc: Dict[str, Any]) -> str:
                    f"[{lad['delta_ci95'][0]:+.0f}, {lad['delta_ci95'][1]:+.0f}]")
         out.append(f"    {lad['comparability']}")
         out.append(f"    fit size: {lad['fit_size_note']}")
+        out.append(f"    {count_basis(lad)}")
         if lad.get("era_warning"):
             out.append(f"    {lad['era_warning']}")
     else:

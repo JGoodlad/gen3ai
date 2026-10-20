@@ -491,6 +491,21 @@ def read_block(run_dir: str) -> Optional[Dict[str, Any]]:
     return block if isinstance(block, dict) else None
 
 
+def fork_step_of(run_dir: str) -> Optional[int]:
+    """THE ARM BOUNDARY: the recorded ``fork_step`` of a FORK (a block naming a ``fork_parent``), else None.
+
+    Everything a fork's run dir holds at steps ``<= fork_step`` — its TensorBoard prefix
+    (``gen3_tb_inherit_v1``), the parent snapshots its self-play pool was seeded with and their ladder
+    nodes — is the PARENT's. A reader that wants the arm's own record cuts there. Read off the
+    immutable recorded block only (never derived from a command or a curve); ``None`` for a fresh
+    run, for ``fork_step`` 0 and for a run with no block."""
+    block = read_block(run_dir) or {}
+    if not isinstance(block.get("fork_parent"), dict):
+        return None
+    step = block.get("fork_step")
+    return int(step) if step else None
+
+
 def fork_parent(run_dir: str, *, warn: bool = True) -> Optional[ForkParent]:
     """THE ACCESSOR. The run's fork parent — recorded if it has one, DERIVED from
     `original_command` otherwise (with a printed warning), None if neither names one.
