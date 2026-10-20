@@ -16,15 +16,15 @@ validated on the REAL P\* at pin `c1b0c1f0`; it NEEDS GO like every arm.
 [`X35_BATCH1_REVIEW.md`](X35_BATCH1_REVIEW.md) (AM-1 one pin, AM-2 the variance gate G1, AM-3 the conditional toy
 calibration, AM-4 X47's look 2 and readout, AM-5 D1's widened H, AM-6 K9(b) at arm end, AM-7 the staged order, the POOL
 record, the G-E readers, C1 (a)); each is built in `src/main/x35/` (`batch.py`, `x47.py`, `d1.py`) and enforced by
-`launch_x35.sh` (pre-checks 2b, 9, 10, 11). The launch sheet's §0 is the table; its §1 the new order. §4 below is
-superseded by it.
+`launch_x35.sh` (pre-checks 2b, 9, 10, 11). The launch sheet's §0 is the table; its §1 the new order (§4 below now points there
+and holds the BATCH-2 CANDIDATES).
 
 **AMENDED AGAIN 2026-10-20 (AM-8 / AM-9), before any launch, after the GPU battery's read** (the T62 gate is DECIDED as
 FP32_ALT, which does not exist yet): the orchestrator ruled ONE PIN PER SIDE (AM-1 amended: `x35_pin_batch1_production.txt`
 and `x35_pin_batch1_toy.txt`), the TOY block FIRST (AM-9: T1, then T1b on X47's look-1 CONTINUE, then production when FP32_ALT
 has landed, the toy calibration T2 last), and the side's own `--t62` token (production `FP32_ALT`, toy `NA_TOY`). Production
 is HELD by a placeholder commit in `x35_required_commits_production.txt` (pre-check 2c). The launch sheet's §0 (AM-8) and §3
-are the record; §4 below, where it says "production first" or "`X35_PIN_1`", is superseded by them.
+are the record. **§4 holds the BATCH-2 CANDIDATES (2026-10-20), first the LR FLOOR (LR-F), from the X26 treadmill read.**
 
 **THE LAUNCH SHEET for batch 1 + X47 (2026-10-19): [`BATCH1_LAUNCH_SHEET.md`](BATCH1_LAUNCH_SHEET.md).** The 32 forks in AM-7's GPU order (14 unconditional, 18 on a stage condition; sheet §1) with GPU-h, stop rule and matched control; every argv `checkargs` exit 0, "would launch" and a PASS verdict at `03b983be` (all 32 forks, the toy on the REAL T\*, [`batch1_validation_03b983be/`](batch1_validation_03b983be/); the older validations, on the 200M stand-in for T\*, are history: `d825c6a1` (32 forks), `9c3bf3c4` (24) and `803a13e3` (24, whose toy lines typed K9(b) `fatal`), kept because `kit_test.py` reads the last one's argv files); the T62 / FP32_ALT pin variants (no FP32_ALT commit exists); the pre-launch checks and the failure handling. **X47 is a kit arm** (`toy_x47`, F-LS-1 closed). **Ruled by the orchestrator (2026-10-19): C2** (X47 interleaved with its toy C0, toy A2 last), **C3** (the toy arms run K9(b) `warn` under X34's ceilings) and **C4** (batch 1 launches without R0); C1 and the AM-1..AM-7 rulings have since been made (sheet §0); C5 is ruled and done (the production R re-frozen with T\* as a second X member); C6 is still open. [`validate_batch1.sh`](validate_batch1.sh) rebuilds and re-validates the lines at any pin, with a deterministic verdict per line.
 
@@ -106,23 +106,166 @@ python -m main.launcher --restart-interval-hours 24 --pin-commit 9ebda1904da7a77
 7. The reference population R is frozen and its file is written before the first arm launches (§5.6.4). **Production: DONE 2026-10-19** (`reference_population_production.json`); **toy: DONE 2026-10-19** (`reference_population_toy.json`, on the real T\*).
 8. The disk has room for the whole batch, or finished arms are being thinned (F22).
 
-## 4. The batch-1 queue (production first, then the toy block with X47 and the calibration pair)
+## 4. Batch 1's queue is the launch sheet's §1; this section holds the BATCH-2 CANDIDATES
 
-**Superseded in detail by [`BATCH1_LAUNCH_SHEET.md`](BATCH1_LAUNCH_SHEET.md) §1**, which carries the order, the GPU-h and
-the stop rule; the kit's `BATCH1` is the order of record. R0 is NOT in it (ruling C4, 2026-10-19: batch 1 launches
-without R0, whose argv is unregistered, F27). The order, 24 forks:
+**Batch 1's order, GPU-h and stop rule are [`BATCH1_LAUNCH_SHEET.md`](BATCH1_LAUNCH_SHEET.md) §1.** The kit's `BATCH1`
+is the order of record. The 24-fork "production first" queue that stood here is superseded and is removed; git history
+keeps it. R0 is not in batch 1 (ruling C4, 2026-10-19: its argv is unregistered, F27).
 
-| # | run | seed | GPU-h (est.) |
-|---|---|---|---|
-| 1–6 | A1 s3501 · C0 s3501 · C0 s3502 · A1 s3502 · A1 s3503 · C0 s3503 | 3501–3503 | 6 × ≈ 4.35 ≈ 26 |
-| 7–9 | D1 s3501–s3503 (X38) | 3501–3503 | ≈ 13 |
-| 10–12 | A2 s3501–s3503 | 3501–3503 | ≈ 13 |
-| 13–21 | toy A1 s3601 · toy C0 s3601 · **X47 s3601 · X47 s3602** · toy C0 s3602 · toy A1 s3602 · toy A1 s3603 · toy C0 s3603 · **X47 s3603** (ruling C2) | 3601–3603 | 6 × 4.35 + 3 × ≈ 5.8 ≈ 43 |
-| 22–24 | toy A2 s3601–s3603 | 3601–3603 | ≈ 13 |
-| — | R2 readers (1 per arm final, seed 1) and the population reads, in the windows between arms | 3532+ | ≈ 1.4 per arm |
+**The batch-2 candidates.** None is registered or built into the kit, and each NEEDS the orchestrator's ruling and GO.
+Each has ONE lever per A/B and is read by R1 against a C0 at its own side's pin.
 
-The first A1-vs-C0 read lands after ≈ 27 GPU-h. A3 (≈ 18 GPU-h) follows in the same batch if the orchestrator wants
-it before the toy calibration. That is a tactical call (`feedback_gpu_scheduling_is_mine`).
+| candidate | in plain words | the lever | GPU-h, look 1 | designed in |
+|---|---|---|---|---|
+| **LR-F, the LR FLOOR** (§4.1) | continue the plateau checkpoint with the learning-rate controller forbidden to go below the rate the run used while it was still climbing | `--min-lr` (two controller rungs above the start's rate) | toy 12.9; production 12.9 | here |
+| LG-1, main exploiters (A3) + R0 | train 3 exploiters to beat P\*, then fold them into P\*'s opponents | the exploiter slice | ≈ 19 | [`design_alphastar_league_path.md`](../../../endstate/design_alphastar_league_path.md) §6 |
+| LG-2, PFSP over the archive | A1 with the archive nodes the trainee loses to drawn more often | `--stable-opponent-pfsp` | ≈ 14.4 | the same |
+| A4, the trailing magnet | a pull toward a recent copy of itself (R-NaD / MMD) | `β · KL(π ‖ π_mag)` (build T56) | ≈ 15 | [`design_compute_efficiency.md`](../../../endstate/design_compute_efficiency.md) §5.6.2 |
+| a FRESHNESS lever | change the promotion rule, so the self-play pool refreshes | `--promotion-sprt` (T6, built) | — | NAMED only (sheet §0 TM-1), not designed |
+
+### 4.1 LR-F, the LR FLOOR (designed 2026-10-20, from the X26 treadmill read; NEEDS a ruling and GO)
+
+**In plain words.** Continue the plateau checkpoint, but forbid the learning-rate controller to go below the rate it
+used while the run was still climbing. Everything else is C0's.
+
+**Why: the evidence** (MEASURED, read-only, [`batch2_lr_floor/lr_pool_series.md`](batch2_lr_floor/lr_pool_series.md)
+by `batch2_lr_floor/lr_pool_series.py`; trailing-10M means).
+
+| | X26 (production) | X34 (the toy) |
+|---|---|---|
+| the controller's rungs (3e-4 / 1.2^k) | 1.7361e-4 from 138.9M to 218.3M (Tier 1 GAIN throughout); 1.4468e-4 to 247.3M; **1.2056e-4 to 282.0M (P\*)**; 1.0047e-4 to 342.7M; 8.3724e-5 after | 3.0e-4 at 75–105M; 2.0833e-4 from 134.7M; 1.7361e-4 from 168.0M; **1.4468e-4 from 211.4M through T\* (290M)** |
+| approx KL per update | 0.017–0.019 throughout | 0.017–0.019 throughout |
+| gradient norm | 0.62 (150M) → 1.04 (280M) → 1.28 (380M) | 0.53 (90M) → 1.01 (290M) |
+| KL per unit LR² | ×2.2 from 180M to 280M | ×1.5 from 190M to 290M (×4.4 from 90M) |
+| promotions per 50M | 18 (90M) → 6 (280M) → 3 (380M) | 20 (90M) → 3 (240M) → 3 (290M) |
+| pool median age; oldest member | 33M → 83M (280M) → 135M (380M); 164M at 380M | 29M → 103M (240M) → 128M (290M); 92M at T\* |
+
+- **The toy shows the same pattern:** the rate halved, the gradient norm doubled at a constant KL, and the pool went
+  stale.
+- **But on the toy the step size did not coincide with the plateau.** The rate held at 1.4468e-4 for 80M, from 211.4M
+  through T\*. Tier 1 read GAIN at 210–270M (UNDECIDED at 250M) and FLAT only at 280M and 290M. The pool was already
+  at 3–6 promotions per 50M from 240M on.
+- On X26 the cuts continued into the plateau (247.3M, 282.0M).
+- So the step size COVARIES with the plateau on both lineages, but it COINCIDES with the plateau only on X26. This arm
+  is the intervention that tells the two apart. **It is also the direct test of the LR confound every X35 production
+  fork inherits** (sheet §0 TM-4).
+
+**The ONE lever: `--min-lr`, two controller rungs (×1.44) above the start's saved rate.**
+- **Production:** `--min-lr 1.7361e-4`. P\*'s rate is 1.2056e-4, and 1.7361e-4 is the rate X26 climbed at from 139M
+  to 218M.
+- **Toy:** `--min-lr 2.0833e-4`. T\*'s rate is 1.4468e-4, and 2.0833e-4 was X34's rate from 134.7M to 168.0M.
+- The SAME ×1.44 on both sides, so the toy read calibrates the production arm.
+- **How it acts, read in the code:**
+  - On a fork, the resume path clamps the saved rate into `[min_lr, max_lr]` (`main/train/model_build.py`: "Clamping
+    resume LR …"), so the arm starts AT the floor.
+  - The controller's down-step is `max(lr / 1.2, min_lr)`, so it never goes below the floor.
+  - Its up-step (KL EMA < 0.005) stays live, but it is not expected to fire.
+  - The floor is in the argv, so every launcher restart re-applies it.
+  - `max_lr` stays 6e-4, and the inherited `--lr` 3e-4 is ≥ the floor, so the `[min_lr, max_lr]` check passes.
+- **Validation:** `main.checkargs` exits 0 on both argvs, with `min_lr … (TYPED)`:
+  [`checkargs_lrfloor_s3501.txt`](batch2_lr_floor/checkargs_lrfloor_s3501.txt) on P\*'s pinned parser @`9c033489`,
+  and [`checkargs_toy_lrfloor_s3601.txt`](batch2_lr_floor/checkargs_toy_lrfloor_s3601.txt) on T\*'s @`ae2d0901`.
+  The launcher dry-run was NOT run (FINDING below).
+
+**Rejected.**
+- **`--fork-lr 1.7361e-4` alone.** It pins the rate once. With the KL then above 0.02, the controller walks it back
+  two rungs within ≈ 2–4M of a 20M arm. That is a pulse, not a lever.
+- **`--fork-lr … --fork-lr-freeze`.** It gives the same level, but it also switches off the controller's raise half: a
+  second difference.
+- **Back to the declared 3e-4.** The rate would rise 2.5× and the KL ≈ 2.5–6×, beyond anything either lineage climbed at.
+- **A warm restart (a cosine re-warm, SGDR).** That is two levers: the level and the shape.
+- **A floor at P\*'s own rate.** It only stops C0's next ≈ 20 % cut, which is too small to read at R1's ±2 pp.
+
+**What it tests: a two-sided prior.** The literature is cited from memory, **UNVERIFIED**.
+- **Toward a GAIN.**
+  1. Self-play's target moves. Tracking a non-stationary target needs a step that does not vanish (Sutton & Barto
+     2018 §2.5).
+  2. Plasticity. Rising curvature goes with plasticity loss (Lyle et al. 2023). The remedies include resets and
+     re-warmed rates:
+     - the primacy bias (Nikishin et al. 2022);
+     - continual learning's loss of plasticity (Dohare et al. 2024);
+     - LR re-warming in continual LLM pre-training (Gupta et al. 2023; Ibrahim et al. 2024);
+     - warm restarts (Loshchilov & Hutter 2017).
+     X26's KL per unit LR² rose ×2.2 (the toy's ×1.5): the curvature-rise signature. That reading is an
+     interpretation.
+- **Toward NULL or LOSS.**
+  1. The controller held the per-update POLICY step constant (KL 0.017–0.019). The floor raises it about 1.5–2×,
+     beyond what either lineage climbed at. PPO's adaptive-KL variant and its LR form exist to hold that step
+     (Schulman et al. 2017 §4; Rudin et al. 2021). The LR is the most sensitive knob (Andrychowicz et al. 2021).
+  2. In stationary supervised learning, cutting the step at a plateau LOWERS the SGD noise floor (step decay), so a
+     higher rate raises it.
+  3. No plasticity loss of the dormant-unit kind shows: battery B10 is flat and rank is rising.
+  4. The toy climbed for 60M at its halved rate.
+  5. Pre-era fold and exploiter evidence: more dose did not buy more (L09015), and at 1.78× it hurt (L21165).
+
+**The predictions, registered with the candidate** (a ruling may revise them before any LR-F launch, never after).
+- **Mechanism.**
+  - The LR sits at the floor on ≥ 95 % of the arm's updates, every seed.
+  - The arm-mean approx KL lies in [0.025, 0.045]: at ×1.44, KL ∝ LR gives 0.026–0.028 and KL ∝ LR² gives
+    0.038–0.040.
+  - The clip fraction is 0.20–0.30 (from 0.17–0.18).
+  - Production only: greedy churn per 20M on `bank_x26` is 0.33–0.42 (from ≈ 0.30).
+  - N_prom (sheet TM-2) is within ±2 of the same side's C0, pooled: the step does not move the pool-relative edge.
+- **R1.** Δ_pop (LR-F − C0) = 0.0 pp, 80 % [−2.0, +1.5], on each side. The modal class is look-1 UNDECIDED.
+- **G-C.**
+  - B1 ON − OFF lies in [−0.05, +0.01] nats: a larger step sharpens a little, so a B1 FAIL is possible but not
+    expected.
+  - B2's point estimate lies in [−0.02, +0.04].
+
+**What each final class licenses** (toy first).
+- **Toy GAIN** (R1 GAIN, guards pass):
+  - production LR-F runs;
+  - every batch-1 production NULL is flagged "NULL at the halved rate";
+  - the controller's floor becomes a recipe question (`design_learner_recipe.md` §3.7).
+- **Toy NULL:**
+  - the step size is not the binding constraint at the toy's plateau;
+  - TM-4's first caveat is downgraded on the toy side;
+  - production LR-F is DEPRIORITISED, not dropped: the toy-to-production transfer is uncalibrated (T2).
+- **Toy LOSS:** the controller's cuts were protective, and production LR-F is not run on this evidence.
+- **UNDECIDED:** the current look's detectable effect is printed (`readout.r1_detectable_effect`, AM-X47c-1).
+- **TRADE** (a guard fails): the orchestrator's ruling.
+
+**The frame.**
+- **Matched control:** the same side's C0, at the same pin and seeds. That is toy C0 s3601–s3603 (T1) and production C0
+  s3501–s3503. Look 2 adds s3604–s3605 / s3504–s3505.
+- **Reads:**
+  - R1 as registered (§5.6.4: S over the side's frozen R, Welch at 97.5 %, ±2 pp, two looks);
+  - G-F, G-C (§5.6.5, pooled by AM-X47b-1) and G-K;
+  - G-E only on a GAIN;
+  - reported: sheet TM-2's instruments, the KL, the clip fraction and the churn.
+- **A VOID guard, new and proposed for the ruling.**
+  - A seed whose trailing-2M mean approx KL exceeds 0.08 (4× the band top, ≈ 2× the predicted top) is stopped and
+    VOID. A broken trust region is not the lever under test.
+  - Rule 8 applies at 1e-9.
+  - It is read by hand with `main.ops.tb_read` at every restart and daily, as K9(b) is. No code enforces it.
+- **Order: TOY FIRST**, for four reasons.
+  1. The toy shows the same pattern.
+  2. The toy needs no FP32_ALT, and its pin is written.
+  3. Toy C0 s3601–s3603 already exist, so look 1 costs only the 3 arm seeds.
+  4. T\*'s rate held for 80M, so toy C0 runs at a constant 1.4468e-4 and the contrast is a clean ×1.44 throughout.
+     Production C0 is expected to cut to 1.0047e-4 within ≈ 2–3M, which makes the production contrast ≈ ×1.73 for
+     most of the arm.
+- **Cost, on the sheet's §1 basis (≈ 4.3 GPU-h per seed on either side):**
+  - toy look 1: 3 × 4.3 = **12.9 GPU-h**;
+  - toy look 2, on CONTINUE: + 2 × 4.3 = 8.6. Toy C0 s3604–s3605 are T1b's and are shared if they ran;
+  - production: the same, **12.9** (+ 8.6);
+  - each R1 read: ≈ 0.3 GPU-h in a window; G-C runs on CPU;
+  - if the kit cannot admit a new arm on a side whose pin file is already written (**UNVERIFIED**, the league doc's
+    F-AS-8), each side adds its own C0: + 12.9;
+  - the build: a kit arm (`lrfloor` / `toy_lrfloor`: the C0 argv + `--min-lr`, with `describe`, a stage condition and
+    a test), ≈ 0.25 agent-day.
+- **The argv (a design block, NOT a launch command; NEEDS GO).**
+  - Toy: toy C0's argv + `--min-lr 2.0833e-4`, run name `rb_x35t_lrfloor_s360x`.
+  - Production: C0's argv + `--min-lr 1.7361e-4`, run name `rb_x35_lrfloor_s350x`.
+
+**FINDINGS (LR-F).**
+- **F-LRF-1.** The launcher dry-run was not run. Its CUDA-visibility preflight refuses a `--device cuda` dry run with no
+  visible GPU, and this unit had no lease. `checkargs` validated the argv against the CHECKPOINTS' pinned parsers, not
+  an X35 pin.
+- **F-LRF-2.** The VOID guard has no code, like K9(b)'s ceilings (F-LS-9).
+- **F-LRF-3.** The toy's prior is weakened by its own record: the toy plateaued 70M after its last cut.
+- **F-LRF-4.** No X35 run's telemetry was read for this design. Toy C0 s3601 has finished, and its LR path is
+  unread.
 
 ## 5. Findings at staging
 

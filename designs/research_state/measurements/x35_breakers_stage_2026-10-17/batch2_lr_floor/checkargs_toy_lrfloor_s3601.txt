@@ -1,0 +1,69 @@
+checked 10 flags from --argv
+  parser                         : the PINNED commit ae2d0901's — the git_hash recorded by checkpoint_290000087_steps.zip
+  ✅ argv validated against PINNED parser @ae2d0901 via the pinned build_parser() [mode=build_parser, 373 options, 3.6s]
+  accepted by the PINNED parser  : 10
+  launcher-owned (not forwarded) : 0
+  unrecognized                   : 0
+  resolved against the FORK PARENT: /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep/model_config.json
+      70 unset flag(s) INHERITED from it — the checks below read the EFFECTIVE config, not the argv
+  oracle reveal                  : off (the production observation)
+  K9(b) behaviour check          : warn  (typed or inherited)  ⚠️  NOT fatal: a behaviour-policy mismatch is logged, not fatal
+  [ForkLR] ✓ the fork parent (rb_toy_ent_s4002_deep) did not run at a frozen LR — the inherited rate is an ordinary annealed one
+  shaped-reward parent             : none (no --model, or its reward was the terminal alone)
+  retired-lever parent             : none (no --model, or no deleted lever was ON)
+  pre-break parent                 : none (no --model, or its config is this generation's)
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@5438df2b171b]
+    27 of 39 ARCH-surface key(s) differ from production (39 of 48 registry toggles are the ARCH surface; 6 critic readouts + 3 non-structural rows are excluded by their own declaration):
+        opp_belief_cls_k             0              (this argv, argv)   production: 6
+        opp_belief_slots             False          (this argv, argv)   production: True
+        move_belief_mode             'off'          (this argv, argv)   production: 'both'
+        damage_op                    False          (this argv, argv)   production: True
+        move_prior_fusion            False          (this argv, argv)   production: True
+        damage_outgoing              False          (this argv, argv)   production: True
+        move_latent                  False          (this argv, argv)   production: True
+        spread_belief                False          (this argv, argv)   production: True
+        damage_topk_k                0              (this argv, argv)   production: 6
+        damage_matrices_outgoing     False          (this argv, argv)   production: True
+        damage_matrices_incoming     False          (this argv, argv)   production: True
+        spread_belief_nature         False          (this argv, argv)   production: True
+        entity_topk_seats            0              (this argv, argv)   production: 6
+        edge_bias_families           'off'          (this argv, argv)   production: 'd1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h,r'
+        entity_tail_seats            False          (this argv, argv)   production: True
+        opp_intent                   False          (this argv, argv)   production: True
+        species_prior_fusion         False          (this argv, argv)   production: True
+        t0_species_prior             False          (this argv, argv)   production: True
+        value_entity_pool_full       False          (this argv, argv)   production: True
+        history_events               False          (this argv, argv)   production: True
+        value_entity_pool            False          (this argv, argv)   production: True
+        item_belief                  False          (this argv, argv)   production: True
+        op_drop_renders              False          (this argv, argv)   production: True
+        op_believed_lean             False          (this argv, argv)   production: True
+        mon_hazard_cost              'off'          (this argv, argv)   production: 'on'
+        trunk_layers                 2              (this argv, argv)   production: 3
+        move_set_closure             'off'          (this argv, argv)   production: 'on'
+    ℹ️  INFO only — this is a FORK/RESTART, which INHERITS its parent's arch surface from the recorded model_config.json. The diff above is against PRODUCTION, not against the parent.
+
+  RECIPE SURFACE vs designs/production_config.json recipe.fork  [production_config@5438df2b171b]
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
+    ♻️  --model launch (fork): every untyped recipe knob restored from the PARENT run's record — n_envs=256 [parent metadata.json:cli_args]  rollout_target_samples=98304 [parent metadata.json:cli_args]  trainee_slots=1 [parent metadata.json:cli_args]  t2_buckets=None [parent metadata.json:cli_args]  t2_lanes=0 [parent metadata.json:cli_args]  grad_accum_steps=32 [parent metadata.json:cli_args]  n_epochs=10 [parent metadata.json:cli_args]  max_lr=None [parent metadata.json:cli_args]  anneal_lr_start_steps=None [parent metadata.json:cli_args]  weight_decay=1e-05 [parent metadata.json:cli_args]  clip_range=0.15 [parent metadata.json:cli_args]  clip_range_vf=None [parent metadata.json:cli_args]  ent_coef=0.05 [parent metadata.json:cli_args]  self_play=True [parent metadata.json:cli_args]  vf_coef=0.5 [model_config.json]
+        (--lr / --batch-size / --n-steps are INERT on a resume — SB3 restores them — and are never re-applied here)
+    13 of 33 RECIPE knob(s) differ from recipe.fork:
+        n_steps                  2048       (INERT on a resume: SB3 restores the checkpoint's own)   production: 384
+        batch_size               4096       (INERT on a resume: SB3 restores the checkpoint's own)   production: 2048
+        n_epochs                 10         (restored from the record)   production: 5
+        min_lr                   0.00020833 (TYPED)   production: 1e-05
+        opp_belief_aux_coef      0.0        (inherited)   production: 0.05
+        opp_intent_coef          0.0        (inherited)   production: 0.05
+        move_belief_coef         0.0        (inherited)   production: 0.05
+        move_belief_latent_coef  0.0        (inherited)   production: 0.05
+        spread_belief_coef       0.0        (inherited)   production: 0.05
+        hp_type_belief_coef      0.0        (inherited)   production: 0.05
+        item_belief_coef         0.0        (inherited)   production: 0.05
+        fork_lr                  None       (untyped default)   production: 5.6e-05
+        fork_lr_freeze           False      (untyped default)   production: True
+    ℹ️  INFO only — a FORK/RESTART. Its recipe is its ARGV plus the record of the run that wrote the checkpoint (a fork: its PARENT's model_config.json + metadata.json:cli_args; a restart: its own) — recipe.fork is never applied.
+
+  ✓ fork arch  : compatible with /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep/model_config.json (check_compatible, the trainer's own check)
+  ✓ this command still launches (its own commit's parser accepts every flag)

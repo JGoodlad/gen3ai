@@ -1528,8 +1528,22 @@ stale (promotions per 50M 9 → 3, median member age 63M → 135M); the adaptive
 8.4e-5). Entropy gave back its post-30M broadening (−0.04 to −0.07 nats from 160M, flat from 280M) and starvation crept
 UP +0.03 to +0.06 on both referees while dominated mass and regret stopped falling (the ai_v14 direction at ~⅓ its
 size; on X26's own truth it waits on a refreshed truth, B4). No coverage, rank, dormant-unit or opponent-model
-collapse. [meas: [`measurements/x26_collapse_battery_2026-10-20/`](measurements/x26_collapse_battery_2026-10-20/README.md);
-ledger 2026-10-20 · *X26 COLLAPSE BATTERY*]
+collapse.
+- **The toy shows the same pattern, but not the same timing.** X34's rate halved too (3.0e-4 → 1.45e-4) and its pool went
+  as stale (promotions per 50M 20 → 3, median age 29M → 128M). But its rate held for 80M before T\*, and Tier 1 kept
+  reading GAIN for 60M of that. So the step size COVARIES with the plateau and does not coincide with it on the toy.
+- **The halving is in weight space only.** The approx KL per update held at 0.017–0.019 on both lineages: the
+  controller kept the per-update POLICY step constant while the KL per unit rate rose.
+- **What it means for X35.** Neither A1 nor A2 changes the pool's REFRESH rule, so neither tests staleness as a cause.
+  Every production fork starts at P\*'s rate, 0.69× the climbing one, so a batch-1 NULL reads "NULL at the halved rate".
+  Both points are registered before any production read (launch sheet §0, note TM).
+- **The intervention is a batch-2 CANDIDATE, toy first:** the LR FLOOR, `--min-lr` two controller rungs above the
+  start's rate. The prior is two-sided.
+
+[meas: [`measurements/x26_collapse_battery_2026-10-20/`](measurements/x26_collapse_battery_2026-10-20/README.md),
+[`measurements/x35_breakers_stage_2026-10-17/batch2_lr_floor/`](measurements/x35_breakers_stage_2026-10-17/batch2_lr_floor/lr_pool_series.md);
+design: `measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md` §4.1; ledger 2026-10-20 · *X26 COLLAPSE BATTERY*,
+*X34 TOY: SAME HALVING AND STALENESS*]
 
 ### 4.5 The X5 belief A/B at look 3 (final), and the value of perfect information (2026-10-07)
 

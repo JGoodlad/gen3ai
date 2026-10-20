@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-27,774-line file. **The ledger itself is append-only and is never edited by this**;
+27,799-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**917 headings · 862 dated · 2026-08-01 → 2026-10-20 · ledger 27,774 lines.**
+**918 headings · 863 dated · 2026-08-01 → 2026-10-20 · ledger 27,799 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -937,3 +937,4 @@ rename.
   - `L27678` · `2026-10-20` · BASELINES · five outside-panel members registered (`outside_es_end2_s2001`, `s2002`, `s2003`, `s2006`, `s2007`; df933ef3) — the ledger lines `main.baselines set` printed and did not append
   - `L27688` · `2026-10-20` · MEASUREMENT · **L3's FAMILIARITY COUNTER-TEST (the L3 review's F2), READ under its pre-registration (`b39c9cdc`): a POOL DECOY (another training-pool team, consistent with every reveal, not a near copy of the truth) put in the truth's place beats today's honest worlds clearly (AUC 0.575 [0.517, 0.631], POOL-LIFT), and the truth beats its decoys only inconclusively (0.578 [0.489, 0.664]); the registered verdict is NOT-DETECTED on the 82 of 283 states that hold a decoy. About half of L3's separation on those states is pool-ness (share 0.52 [0.15, 0.95]). L3 stays PROVISIONAL-POOL; the off-pool bank is required**
   - `L27737` · `2026-10-20` · MEASURED · **X26 COLLAPSE BATTERY on the plateau (180M–380M): a TREADMILL, not a collapse — steady churn, a stale self-play pool, a halved step size, and starvation creeping up while entropy, coverage, rank, dormant units and the opponent model hold**
+  - `L27775` · `2026-10-20` · MEASURED · **X34 TOY: SAME HALVING AND STALENESS as X26's treadmill, but the step size stopped falling 80M before T\* and the toy kept climbing for 60M of that; on both lineages the KL per update held at 0.017–0.019, so the halving is in weight space only**

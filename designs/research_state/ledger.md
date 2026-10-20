@@ -27771,3 +27771,28 @@ cycle monitor), on `rb_x26_s2601` at 180 / 230 / 280 / 330 / 380M.
 
 Evidence: `research_state/measurements/x26_collapse_battery_2026-10-20/` (README, scripts, `results/`); archive
 `~/gen3ai_archive/x26_collapse_battery_2026-10-20/`; design `endstate/design_collapse_and_counterfactuals.md` §4.
+
+### 2026-10-20 · MEASURED · **X34 TOY: SAME HALVING AND STALENESS as X26's treadmill, but the step size stopped falling 80M before T\* and the toy kept climbing for 60M of that; on both lineages the KL per update held at 0.017–0.019, so the halving is in weight space only**
+
+Tag: **MEASURED · DESCRIPTIVE** (record reads only: TensorBoard scalars and Tier-1 status, read-only on `models/`, CPU at
+rule 5b; one run per lineage; no X35 run read).
+- **X34** (`rb_toy_ent_s4002_deep`, TB inheriting `rb_toy_ent_s4002` below 100M), trailing-10M means:
+  - the controller's rungs: 3.0e-4 at 75–105M, 2.0833e-4 from 134.7M, 1.7361e-4 from 168.0M, 1.4468e-4 from 211.4M
+    through T\* (290M), with no change for the last 80M;
+  - approx KL 0.017–0.019 throughout;
+  - the gradient norm 0.53 (90M) → 1.01 (290M);
+  - promotions per 50M 20 (90M) → 3 (240M) → 6 (270M) → 3 (290M);
+  - the pool's median member age 29M → 128M, with its oldest member at T\* from 92M;
+  - the edge over the pool 0.56 → 0.52.
+- **X34's Tier 1** (`main.plateau status`): GAIN at 210–270M (UNDECIDED at 250M), FLAT at 280M and 290M. The toy climbed
+  for 60M at its halved, constant rate, with a pool already at 3–6 promotions per 50M.
+- **X26**, the same series: rungs 1.7361e-4 at 138.9–218.3M, 1.4468e-4 to 247.3M, 1.2056e-4 to 282.0M (P\*), 1.0047e-4
+  to 342.7M, then 8.3724e-5. KL 0.017–0.019. The KL per unit rate² rose ×2.2 from 180M to 280M (the toy's ×1.5 from
+  190M to 290M). Tier 1 GAIN through 260M, FLAT at 270M and 280M.
+- **Reading.** The step size and the pool's staleness COVARY with the plateau on both lineages. On the toy, neither one
+  coincides with its onset. The controller held the per-update POLICY step constant while the policy's sensitivity to
+  its weights rose. No causal claim: the intervention is X35's batch-2 candidate LR-F (a design, not a result).
+
+Evidence: `research_state/measurements/x35_breakers_stage_2026-10-17/batch2_lr_floor/` (`lr_pool_series.py`,
+`lr_pool_series.md`); X26's archive `~/gen3ai_archive/x26_collapse_battery_2026-10-20/tb_scalars.json.gz`; X34's
+extracted with the battery's `tb_extract.py` (not committed); design `STAGED_PLAN.md` §4.1, launch sheet §0 note TM.
