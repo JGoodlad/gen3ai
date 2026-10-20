@@ -1,0 +1,424 @@
+{
+ "am2_gate_pp": 1.2,
+ "assumed_sigma_bracket_pp": [
+  0.8,
+  1.6
+ ],
+ "batch_pairs": 100,
+ "family": "x26_drift_preread_2026-10-19",
+ "pairs_per_cell": 500,
+ "pre_c5": {
+  "content_sha256": "39bae18f9c0473372e0d3061f89201b6da0374c9788c2620b864924aa615bec0",
+  "members": [
+   "production",
+   "x26_080m",
+   "x26_140m",
+   "x26_210m",
+   "x26_270m",
+   "x26_pstar"
+  ],
+  "nodes": [
+   {
+    "ci95_pp": [
+     55.2926343058623,
+     57.60736569413769
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 290,
+    "per_member_pp": {
+     "production": 71.65,
+     "x26_080m": 55.35,
+     "x26_140m": 53.449999999999996,
+     "x26_210m": 51.800000000000004,
+     "x26_270m": 53.55,
+     "x26_pstar": 52.900000000000006
+    },
+    "per_member_se_pp": {
+     "production": 1.3946522864140725,
+     "x26_080m": 1.4663747815616581,
+     "x26_140m": 1.4469606076186041,
+     "x26_210m": 1.443440334755822,
+     "x26_270m": 1.455092780547,
+     "x26_pstar": 1.4707753057486381
+    },
+    "s_pp": 56.449999999999996,
+    "se_pp": 0.5905035515934214,
+    "sha256": "46c7a1c0b1696cb4051ad79b36fa19daff16500c7c53f1294844a52c1f15007b",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_290000216_steps.zip"
+   },
+   {
+    "ci95_pp": [
+     54.426933856008446,
+     56.77306614399156
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 310,
+    "per_member_pp": {
+     "production": 72.85000000000001,
+     "x26_080m": 56.45,
+     "x26_140m": 52.5,
+     "x26_210m": 51.6,
+     "x26_270m": 49.1,
+     "x26_pstar": 51.1
+    },
+    "per_member_se_pp": {
+     "production": 1.3539774739632855,
+     "x26_080m": 1.455779859731546,
+     "x26_140m": 1.4688430821568381,
+     "x26_210m": 1.550767551891643,
+     "x26_270m": 1.457182212353692,
+     "x26_pstar": 1.502524542228845
+    },
+    "s_pp": 55.6,
+    "se_pp": 0.5985141323867521,
+    "sha256": "c9bb509be41145331f25bcad416fd655a52ea9e5a6c9bd9d83e2683a2a219630",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_310000097_steps.zip"
+   },
+   {
+    "ci95_pp": [
+     54.58171970135229,
+     56.91828029864771
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 330,
+    "per_member_pp": {
+     "production": 72.25,
+     "x26_080m": 55.800000000000004,
+     "x26_140m": 52.849999999999994,
+     "x26_210m": 50.55,
+     "x26_270m": 51.9,
+     "x26_pstar": 51.15
+    },
+    "per_member_se_pp": {
+     "production": 1.3180952165909716,
+     "x26_080m": 1.4908789353934813,
+     "x26_140m": 1.5004182750153372,
+     "x26_210m": 1.4788154043016999,
+     "x26_270m": 1.5257063937730615,
+     "x26_pstar": 1.4369603334817562
+    },
+    "s_pp": 55.75,
+    "se_pp": 0.5960723296901327,
+    "sha256": "9fc72221722c06e1f113cca24f574184250b24991fb0ef4004912a182ddee58f",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_330000202_steps.zip"
+   },
+   {
+    "inconclusive": [
+     "missing cell vs member production (4047f4380661)",
+     "missing cell vs member x26_080m (52cebba08e38)",
+     "missing cell vs member x26_140m (70d515b8c65c)",
+     "missing cell vs member x26_210m (b379a47b3d84)",
+     "missing cell vs member x26_270m (091979cd61bb)",
+     "missing cell vs member x26_pstar (814823c514fb)"
+    ],
+    "n_pairs": {},
+    "nominal_m": 350,
+    "per_member_pp": {},
+    "per_member_se_pp": {},
+    "s_pp": null,
+    "sha256": "6d742f27fc3440eed93e6ad8e2ccb3ffedc7eb6b6979fbd6b2f6d4a4974544e7",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_350000020_steps.zip"
+   },
+   {
+    "ci95_pp": [
+     56.68139915254234,
+     59.01860084745766
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 380,
+    "per_member_pp": {
+     "production": 72.55,
+     "x26_080m": 58.5,
+     "x26_140m": 54.25,
+     "x26_210m": 55.55,
+     "x26_270m": 52.15,
+     "x26_pstar": 54.1
+    },
+    "per_member_se_pp": {
+     "production": 1.3380937934240633,
+     "x26_080m": 1.421442928857856,
+     "x26_140m": 1.5037868864968866,
+     "x26_210m": 1.4969619233634501,
+     "x26_270m": 1.4691000646654402,
+     "x26_pstar": 1.5252475208961986
+    },
+    "s_pp": 57.85,
+    "se_pp": 0.5962358780065338,
+    "sha256": "7e0ebe942eaaac69f1a5ef123d236fbb69f1e7a9fe32011f4d7e0e833dfbf6fd",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_380000195_steps.zip"
+   }
+  ],
+  "refpop": "reference_population_production_PRE_C5.json",
+  "summary": {
+   "mean_meas_se_pp": 0.5953387807701501,
+   "mean_s_pp": 56.4125,
+   "meas_only_chi2": 8.89494177335009,
+   "meas_only_df": 3,
+   "meas_only_p": 0.03072080017116087,
+   "n_nodes": 4,
+   "nodes_m": [
+    290,
+    310,
+    330,
+    380
+   ],
+   "residual_sd_pp": 0.8631419156085769,
+   "sd_beyond_meas_pp": 0.8373749077391269,
+   "sd_ratio_to_meas": 1.7258007752705113,
+   "sd_s_pp": 1.027436129401726,
+   "slope_pp_per_100m": 1.9357541899441388,
+   "slope_se_pp_per_100m": 1.2902851155019606
+  }
+ },
+ "regime": "main.h2h play-many, greedy vs greedy, mirrored pairs, eval team builder (no panel), cpu, torch_threads 1",
+ "registered": {
+  "content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519",
+  "members": [
+   "production",
+   "tstar",
+   "x26_080m",
+   "x26_140m",
+   "x26_210m",
+   "x26_270m",
+   "x26_pstar"
+  ],
+  "nodes": [
+   {
+    "ci95_pp": [
+     55.64426880320049,
+     57.81287405394238
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "tstar": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 290,
+    "per_member_pp": {
+     "production": 71.65,
+     "tstar": 58.4,
+     "x26_080m": 55.35,
+     "x26_140m": 53.449999999999996,
+     "x26_210m": 51.800000000000004,
+     "x26_270m": 53.55,
+     "x26_pstar": 52.900000000000006
+    },
+    "per_member_se_pp": {
+     "production": 1.3946522864140725,
+     "tstar": 1.5632913995797457,
+     "x26_080m": 1.4663747815616581,
+     "x26_140m": 1.4469606076186041,
+     "x26_210m": 1.443440334755822,
+     "x26_270m": 1.455092780547,
+     "x26_pstar": 1.4707753057486381
+    },
+    "s_pp": 56.728571428571435,
+    "se_pp": 0.5532257907131627,
+    "sha256": "46c7a1c0b1696cb4051ad79b36fa19daff16500c7c53f1294844a52c1f15007b",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_290000216_steps.zip"
+   },
+   {
+    "ci95_pp": [
+     55.088130935548854,
+     57.26901192159401
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "tstar": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 310,
+    "per_member_pp": {
+     "production": 72.85000000000001,
+     "tstar": 59.650000000000006,
+     "x26_080m": 56.45,
+     "x26_140m": 52.5,
+     "x26_210m": 51.6,
+     "x26_270m": 49.1,
+     "x26_pstar": 51.1
+    },
+    "per_member_se_pp": {
+     "production": 1.3539774739632855,
+     "tstar": 1.50706834616085,
+     "x26_080m": 1.455779859731546,
+     "x26_140m": 1.4688430821568381,
+     "x26_210m": 1.550767551891643,
+     "x26_270m": 1.457182212353692,
+     "x26_pstar": 1.502524542228845
+    },
+    "s_pp": 56.17857142857143,
+    "se_pp": 0.5563574133851111,
+    "sha256": "c9bb509be41145331f25bcad416fd655a52ea9e5a6c9bd9d83e2683a2a219630",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_310000097_steps.zip"
+   },
+   {
+    "ci95_pp": [
+     55.34233644973695,
+     57.51480640740591
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "tstar": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 330,
+    "per_member_pp": {
+     "production": 72.25,
+     "tstar": 60.5,
+     "x26_080m": 55.800000000000004,
+     "x26_140m": 52.849999999999994,
+     "x26_210m": 50.55,
+     "x26_270m": 51.9,
+     "x26_pstar": 51.15
+    },
+    "per_member_se_pp": {
+     "production": 1.3180952165909716,
+     "tstar": 1.5031633311120918,
+     "x26_080m": 1.4908789353934813,
+     "x26_140m": 1.5004182750153372,
+     "x26_210m": 1.4788154043016999,
+     "x26_270m": 1.5257063937730615,
+     "x26_pstar": 1.4369603334817562
+    },
+    "s_pp": 56.42857142857143,
+    "se_pp": 0.5542117034535611,
+    "sha256": "9fc72221722c06e1f113cca24f574184250b24991fb0ef4004912a182ddee58f",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_330000202_steps.zip"
+   },
+   {
+    "inconclusive": [
+     "missing cell vs member production (4047f4380661)",
+     "missing cell vs member tstar (cfa7f7bee7b7)",
+     "missing cell vs member x26_080m (52cebba08e38)",
+     "missing cell vs member x26_140m (70d515b8c65c)",
+     "missing cell vs member x26_210m (b379a47b3d84)",
+     "missing cell vs member x26_270m (091979cd61bb)",
+     "missing cell vs member x26_pstar (814823c514fb)"
+    ],
+    "n_pairs": {},
+    "nominal_m": 350,
+    "per_member_pp": {},
+    "per_member_se_pp": {},
+    "s_pp": null,
+    "sha256": "6d742f27fc3440eed93e6ad8e2ccb3ffedc7eb6b6979fbd6b2f6d4a4974544e7",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_350000020_steps.zip"
+   },
+   {
+    "ci95_pp": [
+     57.148052454924354,
+     59.309090402218516
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "tstar": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 380,
+    "per_member_pp": {
+     "production": 72.55,
+     "tstar": 60.5,
+     "x26_080m": 58.5,
+     "x26_140m": 54.25,
+     "x26_210m": 55.55,
+     "x26_270m": 52.15,
+     "x26_pstar": 54.1
+    },
+    "per_member_se_pp": {
+     "production": 1.3380937934240633,
+     "tstar": 1.4472387501722028,
+     "x26_080m": 1.421442928857856,
+     "x26_140m": 1.5037868864968866,
+     "x26_210m": 1.4969619233634501,
+     "x26_270m": 1.4691000646654402,
+     "x26_pstar": 1.5252475208961986
+    },
+    "s_pp": 58.228571428571435,
+    "se_pp": 0.5512953206877824,
+    "sha256": "7e0ebe942eaaac69f1a5ef123d236fbb69f1e7a9fe32011f4d7e0e833dfbf6fd",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_380000195_steps.zip"
+   }
+  ],
+  "refpop": "reference_population_production.json",
+  "summary": {
+   "mean_meas_se_pp": 0.5537755614407154,
+   "mean_s_pp": 56.891071428571436,
+   "meas_only_chi2": 8.30875073042303,
+   "meas_only_df": 3,
+   "meas_only_p": 0.040043658845690895,
+   "n_nodes": 4,
+   "nodes_m": [
+    290,
+    310,
+    330,
+    380
+   ],
+   "residual_sd_pp": 0.6407376161405207,
+   "sd_beyond_meas_pp": 0.7341373356198578,
+   "sd_ratio_to_meas": 1.6605620975672537,
+   "sd_s_pp": 0.9195787078874779,
+   "slope_pp_per_100m": 1.9581005586592193,
+   "slope_se_pp_per_100m": 0.9578195590992887
+  }
+ },
+ "stop_history": [
+  {
+   "changed_at": "2026-10-20T01:35:26-0700",
+   "new_stop_iso": "2026-10-20T22:00:00-07:00",
+   "old_stop_iso": "2026-10-20T09:50:01-0700",
+   "reason": "orchestrator 2026-10-20: X35 production arms delayed ~1 day (T62 verdict FP32_ALT being built); AM-2 gate >1 day away; more 290-380M nodes wanted"
+  }
+ ],
+ "stop_iso": "2026-10-20T22:00:00-0700"
+}
