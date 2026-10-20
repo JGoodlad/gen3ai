@@ -101,25 +101,41 @@ def test_first_last_and_every_tenth_are_kept():
         names += [f"checkpoint_{(i + 1) * 1000}_steps.zip",
                   f"checkpoint_{(i + 1) * 1000}_steps.json"]
     keep, delete = ag.plan_checkpoints(names)
-    kept_steps = sorted({ag.checkpoint_step(n) for n in keep})
+    kept_steps = sorted({ag.checkpoint_step(n) for n in keep if n.endswith('.zip')})
     # indices 0, 10, 20 of the ascending step list, plus the last (index 24)
     assert kept_steps == [1000, 11000, 21000, 25000]
     assert keep["checkpoint_1000_steps.zip"].startswith("first")
     assert "last" in keep["checkpoint_25000_steps.zip"]
     assert "every-10th" in keep["checkpoint_11000_steps.zip"]
-    assert len(delete) == 2 * (25 - 4)
+    assert len(delete) == 25 - 4                       # zips only: every sidecar stays
+    assert all(n.endswith('.zip') for n in delete)
 
 
-def test_a_zip_and_its_sidecar_are_never_split():
+def test_every_checkpoint_sidecar_is_kept_even_when_its_zip_is_thinned():
+    """Found 2026-10-19: the standing plan dropped `checkpoint_N_steps.json` with its zip. `main.dose` reads
+    the sidecar's LR and tier 4 keeps it on purpose, so a sidecar is NEVER a deletion candidate."""
     names = []
-    for i in range(15):
+    for i in range(25):
         names += [f"checkpoint_{(i + 1) * 100}_steps.zip",
                   f"checkpoint_{(i + 1) * 100}_steps.json"]
     keep, delete = ag.plan_checkpoints(names)
-    for group in (keep, delete):
-        steps = [ag.checkpoint_step(n) for n in group]
-        for s in set(steps):
-            assert steps.count(s) == 2, f"step {s} was split across keep/delete"
+    sidecars = [n for n in names if n.endswith(".json")]
+    assert delete and all(n.endswith(".zip") for n in delete)
+    assert all(n in keep for n in sidecars), "a sidecar was planned for deletion"
+    # a thinned zip's sidecar says why it survives
+    thinned = ag.checkpoint_step(delete[0])
+    assert keep[f"checkpoint_{thinned}_steps.json"] == ag.SIDECAR_KEEP_REASON
+
+
+def test_a_sidecar_left_by_an_earlier_thinning_does_not_move_the_ends_of_a_replan():
+    """After a pass, orphan sidecars remain. Re-planning must still keep the real first and last ZIP:
+    a sidecar-only step 100 must not become "first" and make zip 1000 look deletable."""
+    names = ["checkpoint_100_steps.json", "checkpoint_200_steps.json"]
+    names += [f"checkpoint_{(i + 3) * 100}_steps.zip" for i in range(3)]
+    keep, delete = ag.plan_checkpoints(names)
+    assert "checkpoint_300_steps.zip" in keep and "first" in keep["checkpoint_300_steps.zip"]
+    assert "checkpoint_500_steps.zip" in keep and "last" in keep["checkpoint_500_steps.zip"]
+    assert delete == ["checkpoint_400_steps.zip"]
 
 
 def test_latest_txt_pin_survives_a_plain_every_nth_rule():

@@ -335,7 +335,7 @@ def test_tier3_keeps_the_ends_and_the_pin_but_takes_no_stride(tiered_archive):
     models, repo = tiered_archive
     c = census(models, repo)
     keep = c["runs"]["ai_v8_70_closed_0725"]["plan"]["keep"]
-    steps = sorted({ag.checkpoint_step(n) for n in keep})
+    steps = sorted({ag.checkpoint_step(n) for n in keep if n.endswith('.zip')})   # sidecars always stay
     assert steps == [1000, 25000], "tier 3 is first + last (+ pin) only"
     assert not any("every-" in v for v in keep.values())
     # …and the gentler tier on the SAME tree does take the stride

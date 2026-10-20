@@ -15,7 +15,8 @@ tool is built to REFUSE rather than to reclaim.  It reports, per run:
 
 * ``checkpoints/`` — keep the FIRST, the LAST, every 10th, whatever ``latest.txt``
   pins, and any checkpoint another run's ``lineage`` block resolved to.  Each
-  ``.zip`` travels with its ``.json`` sidecar.
+  ``.zip`` is thinned; its ``.json`` sidecar is NEVER a candidate (see
+  :func:`plan_checkpoints`).
 * ``eval_traces/`` — ``main.prober.groom`` at ``3/1`` (the standing policy), and
   it is the groomer's OWN planner that is called, never a re-implementation.
 
@@ -149,6 +150,14 @@ def read_json(path: str) -> dict:
 # ------------------------------------------------------ checkpoint policy ----
 
 
+SIDECAR_KEEP_REASON = "checkpoint sidecar — the record, not the weights"
+
+
+def _is_checkpoint_sidecar(name: str) -> bool:
+    """``checkpoint_N_steps.json`` — the per-checkpoint record ``main.dose`` reads."""
+    return name.endswith(".json") and _CKPT_RE.match(name) is not None
+
+
 def checkpoint_step(name: str) -> "int | None":
     m = _CKPT_RE.match(name)
     return int(m.group(1)) if m else None
@@ -164,15 +173,26 @@ def plan_checkpoints(
 
     ``names`` are bare filenames.  ``latest_pin`` is ``latest.txt``'s content (a
     run-relative path).  ``pinned_files`` are bare filenames another run's
-    lineage resolved to.  A ``.json`` sidecar always follows its ``.zip``,
-    because they are kept or dropped by STEP, not by filename.
+    lineage resolved to.
+
+    🚨 **EVERY ``checkpoint_N_steps.json`` SIDECAR IS KEPT, whatever happens to its
+    ``.zip``** (found 2026-10-19: this planner used to drop a sidecar with its zip,
+    "by STEP", so the standing policy would have deleted the per-checkpoint record
+    that ``main.dose`` reads a run's LR from and that tier 4 keeps on purpose — see
+    ``archive_grooming_tiers.plan_tier4``).  The sidecar is kilobytes; the weights
+    are the cost.  So the stride, the ends and the pins are all computed over the
+    ZIPS: a sidecar left behind by an earlier thinning must not become the "first"
+    step of a re-plan and make a real first zip look deletable.
     """
     names = list(names)
     pinned = set(pinned_files or ())
-    steps = sorted({s for s in (checkpoint_step(n) for n in names) if s is not None})
+    sidecars = {n for n in names if _is_checkpoint_sidecar(n)}
+    steps = sorted({s for s in (checkpoint_step(n) for n in names if n not in sidecars)
+                    if s is not None})
     if not steps:
         # anything unrecognised in checkpoints/ is kept, never guessed at
-        return ({n: "unrecognised name — kept" for n in sorted(names)}, [])
+        return ({n: (SIDECAR_KEEP_REASON if n in sidecars else "unrecognised name — kept")
+                 for n in sorted(names)}, [])
 
     step_set = set(steps)
     keep_steps: dict[int, str] = {}
@@ -208,7 +228,9 @@ def plan_checkpoints(
     delete: list[str] = []
     for n in sorted(names):
         s = checkpoint_step(n)
-        if s is None:
+        if n in sidecars:
+            keep[n] = SIDECAR_KEEP_REASON
+        elif s is None:
             keep[n] = "unrecognised name — kept"
         elif s in keep_steps:
             keep[n] = keep_steps[s]
@@ -1038,7 +1060,7 @@ def render_markdown(c: dict) -> str:
           f"`{'`, `'.join(p['touchable_subdirs'])}`.\n")
     A(f"- **`checkpoints/`** — keep the FIRST, the LAST, every {p['checkpoint_every']}th, "
       "whatever `latest.txt` pins, and any checkpoint another run's `lineage` block "
-      "resolved to. A `.json` sidecar is kept or dropped with its `.zip`, by STEP.")
+      "resolved to. Every `.json` sidecar is KEPT (`main.dose` reads it); only the `.zip`s thin.")
     A(f"- **`eval_traces/`** — `main.prober.groom` at "
       f"{p['keep_trace_steps']}/{p['keep_snapshots']}. The groomer's own planner is "
       "called, not re-implemented, so the two can never drift.")
