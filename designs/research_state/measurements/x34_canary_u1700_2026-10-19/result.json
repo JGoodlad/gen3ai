@@ -1,0 +1,242 @@
+{
+ "event": {
+  "run": "rb_toy_ent_s4002_deep",
+  "pin": "ae2d0901",
+  "update": 1700,
+  "num_timesteps": 267205580,
+  "refusing_arm": "eager (bf16) \u2014 _clip_margin_rule checks arms in the order compiled, eager, fp32 reference; compiled 0.5209 <= M 0.72 passed, eager 0.8563 > 0.72 raised; 0 clip-branch switches",
+  "margin": 0.72,
+  "shift_max": 0.18
+ },
+ "canary_history_x34": [
+  {
+   "update": 10,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.06377,
+   "eager": 0.05487,
+   "worst_param": "pointer_head.move_proj.bias",
+   "worst_ratio": 1.645
+  },
+  {
+   "update": 100,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.09298,
+   "eager": 0.09425,
+   "worst_param": "features_extractor.pokemon_encoder.move_dyn_proj.weight",
+   "worst_ratio": 1.479
+  },
+  {
+   "update": 200,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.07263,
+   "eager": 0.07275,
+   "worst_param": "features_extractor.pokemon_encoder.move_dyn_proj.bias",
+   "worst_ratio": 1.949
+  },
+  {
+   "update": 300,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.05514,
+   "eager": 0.09618,
+   "worst_param": "features_extractor.cls_pool.norm_pool_our.bias",
+   "worst_ratio": 1.245
+  },
+  {
+   "update": 400,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.1459,
+   "eager": 0.07532,
+   "worst_param": "features_extractor.cls_pool.our_cls",
+   "worst_ratio": 1.882
+  },
+  {
+   "update": 500,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.09454,
+   "eager": 0.09716,
+   "worst_param": "features_extractor.team_transformer.field_proj.bias",
+   "worst_ratio": 2.06
+  },
+  {
+   "update": 600,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.132,
+   "eager": 0.1704,
+   "worst_param": "pointer_head.switch_proj.bias",
+   "worst_ratio": 1.565
+  },
+  {
+   "update": 700,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.3124,
+   "eager": 0.07091,
+   "worst_param": "features_extractor.cls_pool.our_cls",
+   "worst_ratio": 1.493
+  },
+  {
+   "update": 800,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.2609,
+   "eager": 0.2966,
+   "worst_param": "features_extractor.pokemon_encoder.move_self_norm.weight",
+   "worst_ratio": 1.446
+  },
+  {
+   "update": 900,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.1135,
+   "eager": 0.1864,
+   "worst_param": "pointer_head.switch_proj.weight",
+   "worst_ratio": 1.331
+  },
+  {
+   "update": 1000,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.24,
+   "eager": 0.2153,
+   "worst_param": "mlp_extractor.policy_net.0.weight",
+   "worst_ratio": 1.374
+  },
+  {
+   "update": 1100,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.2659,
+   "eager": 0.1147,
+   "worst_param": "features_extractor.cls_pool.value_cls",
+   "worst_ratio": 1.119
+  },
+  {
+   "update": 1200,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.142,
+   "eager": 0.1754,
+   "worst_param": "pointer_head.switch_proj.bias",
+   "worst_ratio": 1.45
+  },
+  {
+   "update": 1300,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.1127,
+   "eager": 0.1495,
+   "worst_param": "features_extractor.cls_pool.value_cls",
+   "worst_ratio": 1.141
+  },
+  {
+   "update": 1400,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.184,
+   "eager": 0.1218,
+   "worst_param": "pointer_head.switch_score.weight",
+   "worst_ratio": 2.279
+  },
+  {
+   "update": 1500,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.224,
+   "eager": 0.3126,
+   "worst_param": "features_extractor.cls_pool.our_cls",
+   "worst_ratio": 1.756
+  },
+  {
+   "update": 1600,
+   "verdict": "pass",
+   "read": "scheduled",
+   "compiled": 0.1703,
+   "eager": 0.1841,
+   "worst_param": "features_extractor.cls_pool.value_cls",
+   "worst_ratio": 5.13
+  },
+  {
+   "update": 1700,
+   "verdict": "unconfirmed",
+   "read": "scheduled",
+   "compiled": 0.5209,
+   "eager": 0.8563,
+   "worst_param": "pointer_head.move_score.bias",
+   "worst_ratio": 3.582
+  },
+  {
+   "update": 1700,
+   "verdict": "unconfirmed",
+   "read": "confirm_slice2",
+   "compiled": 0.5209,
+   "eager": 0.8563,
+   "worst_param": "features_extractor.cls_pool.their_cls",
+   "worst_ratio": 3.112
+  },
+  {
+   "update": 1700,
+   "verdict": "unconfirmed",
+   "read": "confirm_slice1",
+   "compiled": 0.1907,
+   "eager": 0.1514,
+   "worst_param": "features_extractor.cls_pool.our_cls",
+   "worst_ratio": 3.08
+  }
+ ],
+ "cpu_reads": {
+  "267M": {
+   "2": {
+    "Ebf_vs_E32_max": 0.09511327743530273,
+    "Ebf_worst_row": 4,
+    "fp32_dither_null_max": 0.40964841842651367,
+    "fp32_dither_n": 12,
+    "fp32_dither_worst_row": "0",
+    "Cbf_cpu_inductor_vs_E32_max": null,
+    "Cbf_cpu_inductor_vs_Ebf_max": null
+   },
+   "1": {
+    "Ebf_vs_E32_max": 0.11129140853881836,
+    "Ebf_worst_row": 33,
+    "fp32_dither_null_max": 0.5373592376708984,
+    "fp32_dither_n": 12,
+    "fp32_dither_worst_row": "43",
+    "Cbf_cpu_inductor_vs_E32_max": null,
+    "Cbf_cpu_inductor_vs_Ebf_max": null
+   }
+  },
+  "268M": {
+   "2": {
+    "Ebf_vs_E32_max": 0.12592697143554688,
+    "Ebf_worst_row": 22,
+    "fp32_dither_null_max": 0.2995743751525879,
+    "fp32_dither_n": 24,
+    "fp32_dither_worst_row": "19",
+    "Cbf_cpu_inductor_vs_E32_max": 0.1256270408630371,
+    "Cbf_cpu_inductor_vs_Ebf_max": 0.027933120727539062
+   },
+   "1": {
+    "Ebf_vs_E32_max": 0.1027216911315918,
+    "Ebf_worst_row": 40,
+    "fp32_dither_null_max": 0.3383173942565918,
+    "fp32_dither_n": 24,
+    "fp32_dither_worst_row": "63",
+    "Cbf_cpu_inductor_vs_E32_max": 0.1027231216430664,
+    "Cbf_cpu_inductor_vs_Ebf_max": 0.01696491241455078
+   }
+  }
+ },
+ "verdict": "bf16 conditioning tail read by the canary as a compile disagreement; not a compile bug",
+ "under_proposed_fix_at_u1700": {
+  "step1": "the eager arm's 0.8563 > M 0.72 is a YARDSTICK event, recorded, never a disagreement and never counted toward the confirm / FATAL ladder",
+  "step2": "the rung re-relocates once at M' = max(M, 1.25 x the largest YARDSTICK (eager / reference) shift) = 1.07 and re-runs the pair; the forwards do not depend on the old log-probs, so the shifts stay 0.52 / 0.86 <= 1.07: precondition holds",
+  "step3": "the bf16 gradient rule then judges the pair; recorded worst ratio 3.58 < 12 on the original relocation (UNVERIFIED on the re-relocated rows: needs the u1700 weights, not saved)",
+  "outcome": "PASS (expected); no unconfirmed, nothing carried to u1800"
+ }
+}
