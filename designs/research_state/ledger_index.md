@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-27,566-line file. **The ledger itself is append-only and is never edited by this**;
+27,592-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**911 headings · 856 dated · 2026-08-01 → 2026-10-20 · ledger 27,566 lines.**
+**912 headings · 857 dated · 2026-08-01 → 2026-10-20 · ledger 27,592 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -931,3 +931,4 @@ rename.
   - `L27448` · `2026-10-19` · REGISTRATION · **THE WORLD SAMPLER's STAGE 1 registered and launched: five candidate samplers against F at HEAD, with playouts, on the maturity battery's 287 LEAN states at X26 225M. The confounds and factors of the day are SECONDARY: F2's legality rule alone (F_legal − F_off), and F1 tier A uniform and likelihood-weighted. The corpus backoff's α = 89.1 is fitted on the ladder corpus alone. A registered stop at 24 h; no number yet**
   - `L27485` · `2026-10-19` · BUILD · MEASUREMENT · **THE CYCLE MONITOR and the plateau's TIER 2 BUILT OFFLINE (`main.cycle_monitor`, `6730430b`); the first retro reads: X26's in-run ladder is non-transitive at EVERY 10M check (Hodge at the bootstrap floor, excess cyclic RMS ≈ 4 pp; ≈ 3 pp inside the last 80M around P\* = 280M, null calibrated on the same graph), so under the two-tier rule P\* is a TIER-1 plateau with cycling SUSPECTED, not a declared plateau; X34's registered rows (20M–60M only): NONE at 30M / 40M, SUSPECTED at 50M / 60M. DESCRIPTIVE; no decision changes**
   - `L27526` · `2026-10-20` · MEASUREMENT · **L1 + L5 of the hidden-information search review, READ under their pre-registration (`d443c098`): an acting rule ANCHORED to the policy (piKL / Gumbel scale / a deviation threshold, each fitted on Tier 1) lifts honest search on X26 from −0.012 per decision to about the policy but never above it, held out; the registered L1 verdict is PAYS-SCOPED on one cell (piKL, E2, 4-turn leaf +0.012, lower +0.001 at 98.33 %), which is the leaf's own E2 signal (the anchor adds +0.002 [−0.005, +0.008]). The acting rule does not bind; the sampler does. L5 (descriptive): leaf correlation 0.97 near the end, disambiguation 0.41 per own turn (0.70 early), near Skat on Long et al.'s map. PROVISIONAL**
+  - `L27567` · `2026-10-19` · DECISION · MEASUREMENT · **THE SIZE BAR (ORCHESTRATOR ruling on F-ED-27): a cycling flag counts for the plateau only when its non-transitive size on the last 8 checks' nodes is MATERIAL against 1.7 pp; re-read, X26's cycling is MATERIAL (≈ 3–5 pp) or too wide to call at every check, never negligible, so P\* still reads CONTINUE. The first outside panel, `outside_v1` = {the `production` baseline}, is registered. DESCRIPTIVE for X26; no decision row changes**
