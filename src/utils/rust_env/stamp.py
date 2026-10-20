@@ -9,18 +9,25 @@ on a search path is the same class. So every build of the env core carries a sta
 
 ``src`` is the refusal key — FNV-1a-64 over the sorted ``"<tag>/<rel>\\t<git blob id>\\n"`` listing of
 every file that reaches the build (:func:`source_listing`; ``build.rs`` is the Rust twin — keep the two
-identical). ``schema`` must equal this checkout's column table (``columns.schema_id()``); ``data`` must
-be THIS checkout's ``data/pokemon`` — the BUILD's checkout (the cdylib reads its data at run time from the
-repo it sits in, ``pokesim::dex::data_dir``, so with ``src`` this pins "built here, reads here"); ``nan_poison`` can be demanded (a self-check build
-NaN-prefills a row, a release build zero-fills it). ``commit`` is informational.
+identical). ``schema`` must equal this checkout's column table (``columns.schema_id()``); ``nan_poison`` can be
+demanded (a self-check build NaN-prefills a row, a release build zero-fills it). ``commit`` is informational.
+
+``data`` is the COMPILE-TIME default only (the build checkout's ``data/pokemon``). Since ``gen3_dex_runtime_data_dir_v1``
+the Rust side resolves the dir it READS at RUN time (``pokesim::dex::data_dir``: ``$POKESIM_DATA_DIR`` -> the repo holding the
+running module -> that compile-time default), so comparing the BUILD's checkout with this one would refuse a legitimate
+binary (built in a worktree, sitting in main's ``target/``, reading main's data) and say nothing about what it reads.
+:func:`runtime_data_dir` re-implements that rule for the module being loaded, and :func:`check_stamp` demands the
+RESOLVED dir be THIS checkout's ``data/pokemon`` — "reads here", the property that matters; with ``src`` it pins the sources.
+A caller that cannot name the module gets the compile-time dir (the old check).
 
 Dependency-free except ``utils.paths`` and the column table; the recompute is a few ms.
 """
 from __future__ import annotations
 
 import hashlib
+import os
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Mapping, Optional, Tuple
 
 from utils.paths import repo_path, src_path
 from utils.rust_env import columns
@@ -76,11 +83,34 @@ def data_dir() -> str:
     return str(repo_path("data", "pokemon").resolve())
 
 
+#: The run-time override and the marker file — the Rust side's own constants (``dex/data_dir.rs``).
+DATA_DIR_ENV = "POKESIM_DATA_DIR"
+_MARKER = "gen3_species.json"
+
+
+def runtime_data_dir(compile_default: str, module: Optional[Path] = None,
+                     environ: Optional[Mapping[str, str]] = None) -> Tuple[str, str]:
+    """``(dir, source)`` — the data directory the Rust build will READ, by ``dex/data_dir.rs``'s rule: a non-empty
+    ``$POKESIM_DATA_DIR`` (``"env"``), else the first ancestor of the loaded ``module`` holding
+    ``data/pokemon/gen3_species.json`` (``"module"``), else ``compile_default`` (the stamp's ``data``;
+    ``"compile-time"``). ``module`` is resolved through symlinks (the Rust side reads ``/proc/self/maps``)."""
+    env = (os.environ if environ is None else environ).get(DATA_DIR_ENV)
+    if env:
+        return str(Path(env).resolve()), "env"
+    if module is not None:
+        for d in Path(module).resolve().parents:
+            cand = d / "data" / "pokemon"
+            if (cand / _MARKER).is_file():
+                return str(cand.resolve()), "module"
+    return str(Path(compile_default).resolve()), "compile-time"
+
+
 def check_stamp(stamp: str, what: str, *, src: Optional[Path] = None,
-                nan_poison: Optional[bool] = None) -> Dict[str, str]:
+                nan_poison: Optional[bool] = None, module: Optional[Path] = None) -> Dict[str, str]:
     """REFUSE (``StampMismatch``, naming both sides) a build that is not this tree's; return the
     parsed stamp otherwise. ``src`` overrides the tree hashed (tests); ``nan_poison`` demands a
-    self-check (True) or release (False) build."""
+    self-check (True) or release (False) build; ``module`` is the loaded ``.so`` / child binary, whose
+    location (with ``$POKESIM_DATA_DIR``) decides the data dir it reads (:func:`runtime_data_dir`)."""
     st = parse_stamp(stamp)
     want, n = source_hash(src)
     problems = []
@@ -89,8 +119,10 @@ def check_stamp(stamp: str, what: str, *, src: Optional[Path] = None,
                         f"this tree src={want} over {n}")
     if st.get("schema") != columns.schema_id():
         problems.append(f"column schema: the build has {st.get('schema')}, this tree's table {columns.schema_id()}")
-    if src is None and st.get("data") != data_dir():
-        problems.append(f"data: the build reads {st.get('data')}, this checkout is {data_dir()}")
+    if src is None:
+        reads, how = runtime_data_dir(st.get("data", ""), module)
+        if reads != data_dir():
+            problems.append(f"data: the build reads {reads} ({how}), this checkout is {data_dir()}")
     if nan_poison is not None and st.get("nan_poison") != str(int(nan_poison)):
         problems.append(f"build kind: nan_poison={st.get('nan_poison')}, the caller demands {int(nan_poison)}")
     if problems:

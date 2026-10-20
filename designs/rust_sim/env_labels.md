@@ -160,7 +160,7 @@ production label row was ever dropped. Pinned by `src/rust_env/tests/label_looku
    (`src/rust_env/src/labels/belief.rs`, gated by `src/agents/training/rust_env_labels_parity_test.py`:
    400 milestone episodes, 0 divergences). **`hp_type` and `item` BUILT**
    (`src/rust_env/src/labels/per_slot.rs`, the same gate: 0 divergences). **`spread` BUILT**
-   (`src/rust_env/src/labels/spread.rs`, the nature table loaded at startup from the stamp's data
+   (`src/rust_env/src/labels/spread.rs`, the nature table loaded at startup from the run-time data
    dir; the same gate: 0 divergences — first as a port of the IV-31 stat inversion, since
    2026-09-29 as the declared-spread read, `gen3_true_spread_labels_v1`). **`intent` BUILT**
    (`src/rust_env/src/labels/intent.rs`, over `trackers::IntentLabel`; the same gate: 0 divergences).

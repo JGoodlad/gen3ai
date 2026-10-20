@@ -220,14 +220,14 @@ def parse_handshake(line: str) -> Dict[str, str]:
 
 
 def check_handshake(hs: Dict[str, str], what: str, *, nan_poison: Optional[bool] = None,
-                    stamp_src: Optional[Path] = None) -> Dict[str, str]:
+                    stamp_src: Optional[Path] = None, module: Optional[Path] = None) -> Dict[str, str]:
     """REFUSE a child that is not this tree's build — before any op. Returns the parsed stamp."""
     if hs.get("wire") != wire_id():
         raise ProcLoadError(f"{what}: wire {hs.get('wire')}, this tree's {wire_id()} — rebuild it from THIS checkout")
     if hs.get("schema") != C.schema_id() or hs.get("n_columns") != str(len(C.COLUMNS)):
         raise ProcLoadError(f"{what}: column schema {hs.get('schema')} / {hs.get('n_columns')} columns, "
                             f"this tree's {C.schema_id()} / {len(C.COLUMNS)}")
-    return S.check_stamp(hs.get("stamp", ""), what, src=stamp_src, nan_poison=nan_poison)
+    return S.check_stamp(hs.get("stamp", ""), what, src=stamp_src, nan_poison=nan_poison, module=module)
 
 
 # ------------------------------------------------------------------ the pool
@@ -334,7 +334,8 @@ class ProcCore:
                 if len(line) > 1 << 16:
                     raise ProcLoadError(f"{self.binary}: no handshake line in 64 KiB of output")
             hs = parse_handshake(line.decode(errors="replace"))
-            st = check_handshake(hs, str(self.binary), nan_poison=self.nan_poison, stamp_src=self._stamp_src)
+            st = check_handshake(hs, str(self.binary), nan_poison=self.nan_poison, stamp_src=self._stamp_src,
+                                 module=Path(self.binary))
             obs_dim = int(hs["obs_dim"])
             if self._mm is None:
                 self.obs_dim = obs_dim

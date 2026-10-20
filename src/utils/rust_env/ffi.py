@@ -247,7 +247,7 @@ def load(path: Path, *, nan_poison: Optional[bool] = None, check: bool = True) -
         raise FfiLoadError(f"{path}: column schema {lib.rust_env_schema_id().decode()} / "
                            f"{lib.rust_env_n_columns()} columns, this tree's {C.schema_id()} / {len(C.COLUMNS)}")
     if check:
-        S.check_stamp(lib.rust_env_stamp().decode(), str(path), nan_poison=nan_poison)
+        S.check_stamp(lib.rust_env_stamp().decode(), str(path), nan_poison=nan_poison, module=path)
     return lib
 
 
