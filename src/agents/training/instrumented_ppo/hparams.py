@@ -26,9 +26,11 @@ class PpoHyperparameters:
     #   `accum` equal-size micro-batches (verified to ~3e-8 in instrumented_ppo_test). Two bounded,
     #   negligible deviations otherwise: (1) per-MICRO-batch advantage normalization — stock normalizes
     #   per-minibatch too, so the only change is the normalization sample size (batch_size vs batch_size·K),
-    #   immaterial for batches of thousands; (2) a NON-divisible rollout slightly mis-weights the single
-    #   remainder minibatch in the final group of each epoch (no worse than stock's full-weight step on it).
-    #   For a bit-exact effective batch, pick batch_size | rollout and accum | minibatch-count.
+    #   immaterial for batches of thousands; (2) a SUBSET-normalised aux / belief term (a mean over
+    #   the micro's labelled rows) is a mean of per-micro means inside a group (F-LG-12: inventoried, not
+    #   corrected — designs/training/step_size_and_batch.md). A rollout that does not divide by
+    #   batch_size is REFUSED (`learner_gates.check_full_micro_batches`, gen3_learner_full_micro_v1); a
+    #   trailing group of fewer than accum FULL micro-batches is exact.
     grad_accum_steps: int = 1
     # +PER-TERM NOISE SCALE (`noise_scale_terms.py`): also estimate the McCandlish critical batch
     # SEPARATELY per loss group (policy / value / entropy / aux), not just on the total

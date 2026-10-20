@@ -55,6 +55,7 @@ from agents.training.instrumented_ppo.loop import OwnedLoop   # gen3_owned_ppo_l
 from agents.training.instrumented_ppo.learner_gates import (   # K9(b) dispatch + K9(c)
     behaviour_gate_mode,
     check_buffer_finite,
+    check_full_micro_batches,
     check_kl_finite,
     check_loss_finite,
     check_loss_finite_read,
@@ -283,6 +284,9 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # returns, every float label key) are finite, ONCE per update and BEFORE any forward
         # (`learner_gates`).
         check_buffer_finite(self.rollout_buffer)
+        # +FULL MICRO-BATCHES (gen3_learner_full_micro_v1): every micro-batch holds `batch_size` rows — a
+        # short last one would be weighted as if full by the accumulation below (`learner_gates`).
+        check_full_micro_batches(self.rollout_buffer, self.batch_size)
         # +K9(b) / STALENESS (M5 Lane G): before any optimizer step; a no-op unless --behaviour-check.
         # Lane G's pre-loop probe (its own forward, age-bucketed by the rows' policy versions; a buffer
         # with no version record is judged as every row current) — the ONE implementation
@@ -646,16 +650,14 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                                            shared_trunk, clip_range, cap_features)
                 if _ph is not None: _ph("capacity")
 
-            # +GRAD-ACCUM: flush a trailing partial group (#minibatches not divisible by accum).
-            # Rescale its accumulated grad from 1/accum to 1/micro_in_group so the short group's step
-            # has the right magnitude. EXACT when its micro-batches are equal-size (the common case —
-            # only the buffer's final minibatch can be smaller than batch_size); if that smaller
-            # remainder lands in a group with full-size micro-batches it is weighted as if full-size,
-            # a tiny bounded mis-weighting of one remainder per epoch (≈8e-5 on params in a toy probe,
-            # negligible vs a 100k-sample rollout, and no worse than stock SB3's full-weight step on the
-            # same remainder minibatch). ZERO when batch_size divides the rollout AND accum divides the
-            # minibatch count → every group is `accum` equal-size micro-batches and the gradient is
-            # bit-exact (verified: instrumented_ppo_test.test_grad_accum_matches_full_batch).
+            # +GRAD-ACCUM: flush a trailing partial group (#minibatches not divisible by accum — the live
+            # 98,304 / 65,536 shape's half step). Rescale its accumulated grad from 1/accum to
+            # 1/micro_in_group so the short group's step is the mean over ITS rows. EXACT: every
+            # micro-batch is full (`check_full_micro_batches` above, gen3_learner_full_micro_v1), so the
+            # group is micro_in_group equal-size micro-batches (instrumented_ppo_test
+            # .test_grad_accum_matches_full_batch). A SUBSET-normalised aux / belief term is still a mean
+            # of per-micro means inside a group (F-LG-12; designs/training/step_size_and_batch.md
+            # "Subset-normalised terms under accumulation").
             if micro_in_group > 0:
                 if micro_in_group < accum:
                     _rescale = accum / micro_in_group

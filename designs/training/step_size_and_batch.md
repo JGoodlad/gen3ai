@@ -39,11 +39,20 @@ upstream** (one step per minibatch).
   and a trailing group of 16 that is rescaled and stepped at full LR — two optimizer steps per epoch,
   the second on 32,768 rows. `dose.py` counts 1.5 steps per epoch there, so the recorded dose
   undercounts real steps by 4/3 (a common factor for arms at one shape; an error across shapes).
-  See [`../endstate/design_learner_recipe.md`](../endstate/design_learner_recipe.md) §3.3. For a NON-divisible rollout the single
-  smaller remainder minibatch in the **final group of each epoch** is weighted as if full-size — a
-  bounded mis-weighting of one remainder per epoch (≈8e-5 on params in a toy probe; negligible vs a
-  100k-sample rollout, and no worse than stock SB3, which gives that remainder minibatch its own
-  full-weight optimizer step).
+  See [`../endstate/design_learner_recipe.md`](../endstate/design_learner_recipe.md) §3.3.
+- **Every micro-batch is FULL — a short one is REFUSED** (`gen3_learner_full_micro_v1`, 2026-10-19,
+  TECH_DEBT F-LG-12 part 2). An update whose rows do not divide by `--batch-size` raises
+  `learner_gates.RaggedMicroBatchError` (a `FatalConfigError` → `FATAL_CONFIG`) at the top of `train()`,
+  before any forward or optimizer step (`check_full_micro_batches`). Before it, the eager learner trained
+  such a rollout and weighted the short remainder as if it held `batch_size` rows (`loss / accum`) — a
+  per-row over-weighting of that remainder in the last group of each epoch. No live run could reach it: the
+  Rust collector never emits a ragged update (`RustCollector._ensure_buffer`, the trigger's quantum
+  lcm(`batch_size`, `n_envs`)) and the compiled R1 refuses a second row count; the refusal makes the learner
+  hold that contract itself rather than trust its caller. The trailing SHORT GROUP (fewer than K full
+  micro-batches) is unaffected and exact.
+- **A SUBSET-normalised aux / belief term is a mean of per-micro means inside a group**. See
+  "Subset-normalised terms under accumulation" below (F-LG-12 part 1: the inventory is done, the measurement is
+  pending).
 - **KL early-stop** (`target_kl`, `None` by default so this path is dormant) discards the partial
   group (`zero_grad`, no step) on a trip — a true `(batch_size·K)` batch checks KL over the whole
   effective batch and would discard it as one unit.
@@ -65,9 +74,64 @@ upstream** (one step per minibatch).
 
 Tests: `instrumented_ppo_test.py` — `test_grad_accum_matches_full_batch` runs the REAL `train()` on a
 minimal `MaskablePPO` and asserts `K=accum` over `batch/K` micro-batches reproduces the parameter
-update of `K=1` over the full batch to `rtol=1e-4` (parametrized over a divisible 16=4×4 **and** a
-non-divisible 15=5×3 case that exercises the partial-group rescale), plus default-is-1 + source-marker
-guards.
+update of `K=1` over the full batch to `rtol=1e-4` (parametrized over divisible groups **and** trailing
+short groups — (8, 3, 24) and (4, 3, 12) on 32 rows — that exercise the partial-group rescale; the
+unaccumulated reference's own short last minibatch is built with the refusal bypassed on purpose), plus
+`test_a_short_micro_batch_is_refused_before_any_forward` (the refusal: typed, `FATAL_CONFIG`, no
+parameter or optimizer state moved) and default-is-1 + source-marker guards.
+
+### Subset-normalised terms under accumulation (F-LG-12 — inventory done, measurement PENDING)
+
+Every term in region R1 (`instrumented_ppo/micro_step.py`) is a mean over its micro-batch, and the step averages
+the group's micro-batch losses (`loss / accum`, the trailing group rescaled). A term whose mean runs over ALL the
+micro-batch's rows is then the exact group mean, because every micro-batch is full (above). A term normalised by
+a per-micro SUBSET count (the rows or slots carrying a label) is a MEAN OF PER-MICRO MEANS: a labelled element in
+micro-batch m weighs `1 / (k · n_m)` in the step instead of `1 / Σ n`. The effect has two parts: the per-element
+weight spreads by `n̄ / n_m` (the CV of the per-micro count), and the effective coefficient shifts by
+E[mean of means] / [ratio of sums] − 1. An empty micro-batch contributes 0, through R1's `present` gate.
+
+There is ONE learner, `InstrumentedMaskablePPO.train()`. The eager and the compiled R1 are the same function, and
+it is fed only by the Rust collector (the Python collect is deleted). So the inventory below covers both of the
+row's "paths". The production surface, as R1's `MicroStatic` resolves it (`--arch production`):
+
+| term (coef) | normaliser | mean of means? | count depends on |
+|---|---|---|---|
+| clipped surrogate (1.0) · entropy (`ent_coef` 0.05) | all rows of the micro-batch | no: full micro-batches | — |
+| win-prob BCE, THE critic (`vf_coef` 0.5) | rows with `win_mask` | only if `win_mask` < 1 | the obs label. A complete-game buffer labels every row (the 64-row golden buffer: 64 / 64) |
+| `hidden_team_set` (0.05): presence set BCE, BeliefHead set BCE | scored rows (`live & consistent`, the same rows for both) | yes | the obs + the candidate set built in the forward |
+| `hidden_team_set`: hypothesis moves BCE (× `moves_weight`) | supervised hypothesis seats | yes | the MODEL (which species it seats) |
+| `move_belief` (0.05) | revealed slots with a known move + supervised hypothesis seats | yes | obs + the MODEL |
+| `move_latent` (0.05) | slots with a known move (cosine), plus a VICReg floor on the micro-batch's latent std | yes (cosine). The VICReg term is a batch STATISTIC, not a count | the obs |
+| `spread` (0.05) | `belief_spread_mask` slots × 5 | yes | the obs |
+| `nature_ev` (`spread_belief_coef` 0.05) | nature CE: nature-mask slots; EV: ev-mask slots × 5 (gated on nature) | yes, both | the obs |
+| `hp_type` (0.05) · `item` (0.05) | their mask's slots | yes | the obs |
+| `opp_intent` flat CE (0.05) | supervised row COUNT (bot rows weighted 0.25 inside it) | yes | obs + the forward's live candidates |
+
+The rows not on the production path: the scalar value MSE (dropped under the win-prob critic), the fork arm's
+policy mask (a subset normaliser, `--fork-fraction` OFF), and the ride-along heads (0 in production, with their
+own optimizer). **The toy** (`rb_toy_ent_s4002*`, X34 / X35's toy arms) turns every belief and intent coefficient
+off. Its only subset-normalised term is the win-prob critic, whose `win_mask` covers every row of a complete-game
+buffer.
+
+**Measurement: PENDING.** `../research_state/measurements/aux_norm_2026-10-19/measure.py` builds the per-term
+(numerator, count) split from real Rust-collector rows and simulates the live shape (2048 × K 32 over 98,304 rows)
+against the golden's (16 × 3). Its CPU run is queued for a heavy slot (rule 5b). A dry run on the golden's 64 rows,
+at a 256-row micro-batch, showed |bias| ≤ 5e-4 per term. At 2048-row micro-batches the per-micro counts are in
+the thousands, so the bias is expected to be smaller still. **UNVERIFIED** until the run lands. **The exact fix
+is costed and NOT built**:
+
+- (a) For the obs-determined counts (spread, nature / EV, hp-type, item, the move-latent cosine and the critic),
+  compute each accumulation group's count on the host from the buffer's label columns and the permutation. Pass
+  them into R1 as 0-d tensors, and have each term divide its numerator by `N_group / k`. This touches R1's
+  signature and its compile declaration, the static belief bank and its legacy-equivalence tests, both learner
+  golden entries and a recorded recipe field (`ModelVersion`, pre-version → per-micro). About 1.5–2 agent-days
+  at opus-high, plus a GPU compile check.
+- (b) For the model-dependent counts (the hypothesis seats, the intent candidates, the set's candidate rows), an
+  exact group count needs a no-grad forward pre-pass per group, about +25–35 % learner time. A lagged count is
+  approximate.
+
+Neither is worth building unless the measurement finds a term at the live shape whose effective-coefficient
+shift is material.
 
 ### Gradient noise scale (`train/noise_scale`) — "is the batch big enough?"
 

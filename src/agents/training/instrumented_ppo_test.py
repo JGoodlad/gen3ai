@@ -161,13 +161,16 @@ def _train_from_init(model, init_sd, init_opt, *, batch_size, accum, seed=123):
     return {k: v.detach().clone() for k, v in model.policy.state_dict().items()}
 
 
-@pytest.mark.parametrize("micro,accum,full", [(4, 4, 16), (8, 2, 16), (5, 3, 15), (4, 3, 12)])
-def test_grad_accum_matches_full_batch(micro, accum, full):
+@pytest.mark.parametrize("micro,accum,full", [(4, 4, 16), (8, 2, 16), (8, 3, 24), (4, 3, 12)])
+def test_grad_accum_matches_full_batch(micro, accum, full, monkeypatch):
     """accum=K over micro-batches of size B reproduces the parameter update of accum=1 over a single
     (B·K)=`full` batch — the BIT-EXACT-gradient guarantee (with normalize_advantage off so this
     isolates the accumulation math; empirically max|Δ|~3e-8, the float32 noise floor). The 32-sample
-    buffer with micro∈{4,8} divides cleanly (all groups = K equal-size micros); micro=5 (→ a size-2
-    trailing group that is a single micro) exercises the partial-group rescale and is still exact.
+    buffer with micro∈{4,8} divides cleanly; (8, 3, 24) leaves a trailing group of ONE full micro (4 micros
+    over K = 3), which exercises the partial-group rescale and is still exact. (A SHORT micro-batch is
+    refused before any forward — `test_a_short_micro_batch_is_refused_before_any_forward` — so where
+    `full` does not divide the buffer the UNACCUMULATED reference, whose last minibatch is short and alone
+    in its own step, i.e. normalised by its real rows, is built with that refusal bypassed on purpose.)
     (4, 3, 12) is the RUST COLLECTOR's shape (M5 Lane G): every micro-batch FULL (the update target is
     a multiple of lcm(batch_size, n_envs)), the last optimizer step a SHORT group of two full micros —
     the live 98,304 / 65,536 = 1.5 case — and its step equals the unaccumulated step over the same rows,
@@ -178,7 +181,11 @@ def test_grad_accum_matches_full_batch(micro, accum, full):
     # Fill model.rollout_buffer with one real rollout (learn() also runs one discarded train()).
     model.learn(total_timesteps=8 * 4)
 
-    ref = _train_from_init(model, init_sd, init_opt, batch_size=full, accum=1)
+    from agents.training.instrumented_ppo import ppo as _ppo_mod
+    with monkeypatch.context() as m:
+        if 32 % full:
+            m.setattr(_ppo_mod, "check_full_micro_batches", lambda *a, **k: None)
+        ref = _train_from_init(model, init_sd, init_opt, batch_size=full, accum=1)
     acc = _train_from_init(model, init_sd, init_opt, batch_size=micro, accum=accum)
 
     for k in ref:
@@ -187,22 +194,32 @@ def test_grad_accum_matches_full_batch(micro, accum, full):
         )
 
 
-def test_grad_accum_nondivisible_is_bounded():
-    """A NON-divisible rollout whose remainder minibatch lands in a group with full-size micro-batches
-    (32 samples, micro=6, accum=2 → minibatches [6,6,6,6,6,2], final group [6,2]) is NOT bit-exact —
-    the size-2 remainder is weighted as if full-size. The deviation must stay SMALL and BOUNDED (the
-    rescale keeps it tiny; if someone broke the partial-group handling it would balloon). Documents the
-    'use a divisible rollout for bit-exactness' caveat and guards against a gross regression."""
+def test_a_short_micro_batch_is_refused_before_any_forward():
+    """gen3_learner_full_micro_v1 (TECH_DEBT F-LG-12 part 2): a rollout that does not divide by the
+    micro-batch (32 rows, micro 6 → [6,6,6,6,6,2]) used to TRAIN, its size-2 remainder weighted as if it
+    held 6 rows (the eager path's "bounded mis-weighting"). It is now a typed FATAL_CONFIG refusal before
+    any forward or optimizer step: the parameters and Adam's state are untouched. Fails on revert: the
+    old learner stepped (the parameters moved) and raised nothing."""
+    from agents.training.instrumented_ppo.learner_gates import RaggedMicroBatchError
+    from main.exit_codes import FatalConfigError, TrainExitCode, exit_code_for
+
     model, _venv = _build_tiny_ppo(n_steps=8, n_envs=4)
     init_sd = copy.deepcopy(model.policy.state_dict())
     init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
     model.learn(total_timesteps=8 * 4)
-
-    ref = _train_from_init(model, init_sd, init_opt, batch_size=12, accum=1)   # effective 6·2
-    acc = _train_from_init(model, init_sd, init_opt, batch_size=6, accum=2)
-    dev = max(float((ref[k] - acc[k]).abs().max()) for k in ref)
-    assert dev < 5e-3, f"non-divisible mixed-group deviation {dev:.2e} exceeds the bounded tolerance"
-    assert dev > 1e-6, "expected a small (non-bit-exact) deviation here — the mixed-group remainder caveat"
+    model.policy.load_state_dict(init_sd)
+    model.policy.optimizer.load_state_dict(init_opt)
+    model.batch_size, model.grad_accum_steps = 6, 2
+    with pytest.raises(RaggedMicroBatchError, match=r"32 rows does not divide by the micro-batch 6") as ei:
+        model.train()
+    assert isinstance(ei.value, FatalConfigError)
+    assert exit_code_for(ei.value) == int(TrainExitCode.FATAL_CONFIG)
+    after = model.policy.state_dict()
+    assert all(th.equal(init_sd[k], after[k]) for k in init_sd), "a refused update moved a parameter"
+    assert not model.policy.optimizer.state_dict()["state"], "a refused update stepped the optimizer"
+    # the same buffer at a dividing micro-batch trains
+    model.batch_size = 8
+    model.train()
 
 
 # --------------------------------------------------------------------------------------

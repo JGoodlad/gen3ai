@@ -27,7 +27,14 @@ the optimizer can move anything:
   a NaN (and the grad-accumulation flush's rescale).
 
 plus `check_buffer_finite` (once per update, before any forward: rewards, values, log-probs, advantages, returns and
-every float label key) and `check_kl_finite` (the approx-KL can be Inf under a finite loss). The rest of
+every float label key) and `check_kl_finite` (the approx-KL can be Inf under a finite loss).
+
+**THE FULL-MICRO-BATCH RULE** (`gen3_learner_full_micro_v1`, TECH_DEBT F-LG-12 part 2): `check_full_micro_batches`
+refuses, once per update and before any forward, a buffer whose row count does not divide by the micro-batch —
+`RaggedMicroBatchError` (a ``FatalConfigError`` → ``FATAL_CONFIG``; not a K9(c) non-finite fatal). A short last micro-batch was weighted
+as if full-size by the accumulation (the eager path's former "bounded mis-weighting"); the Rust collector never
+emits one (`RustCollector._ensure_buffer`, the trigger's quantum) and compiled R1 refuses one, so the eager
+learner now holds the same contract instead of trusting its caller. The rest of
 the audit — the sites that absorbed a NaN BEFORE the total — is ``designs/training/learner_gates.md``.
 
 All raise `NonFiniteLearnerError` BEFORE the optimizer step, so the weights a crash-save writes are the
@@ -43,14 +50,34 @@ from typing import Any, Dict, List
 import numpy as np
 import torch as th
 
-from main.exit_codes import NonFiniteLearnerError
+from main.exit_codes import FatalConfigError, NonFiniteLearnerError
 
 
 #: The tag every non-finite FATAL's message starts with (`nonfinite`), beside the class itself —
 #: ``main.exit_codes.NonFiniteLearnerError`` (a ``FloatingPointError``), which the trainer's fail-fast
 #: handlers map to ``TrainExitCode.FATAL_NONFINITE`` (4) through ``exit_code_for`` and the launcher does
-#: NOT restart (cutover-prep, ``743008c1``). This module only raises; it defines no class of its own.
+#: NOT restart (cutover-prep, ``743008c1``). This module only raises; its one class is `RaggedMicroBatchError`.
 LEARNER_FATAL_TAG = "[Learner] FATAL"
+
+
+class RaggedMicroBatchError(FatalConfigError):
+    """`check_full_micro_batches`: an update whose rows do not divide by the learner's micro-batch — a
+    deterministic configuration defect, so ``TrainExitCode.FATAL_CONFIG`` (no restart loop)."""
+
+
+def check_full_micro_batches(buf: Any, batch_size: int) -> None:
+    """Every micro-batch of this update is FULL (`gen3_learner_full_micro_v1`): ``buffer_size * n_envs`` is a
+    multiple of ``batch_size``. Once per update, before any forward. A short last micro-batch would join an
+    accumulation group as if it held ``batch_size`` rows (``loss / accum``), over-weighting each of its rows —
+    the same contract the Rust collector (`RustCollector._ensure_buffer`) and compiled R1 already enforce."""
+    rows = int(buf.buffer_size) * int(buf.n_envs)
+    micro = int(batch_size)
+    if micro <= 0 or rows % micro:
+        raise RaggedMicroBatchError(
+            f"{LEARNER_FATAL_TAG} an update of {rows:,} rows does not divide by the micro-batch {micro:,}: "
+            f"the last micro-batch would hold {rows % micro if micro > 0 else rows:,} rows and be weighted as "
+            "if full (gen3_learner_full_micro_v1). Pick a --batch-size that divides the update (the Rust "
+            "collector's trigger quantum guarantees it).")
 
 
 def nonfinite(message: str) -> NonFiniteLearnerError:

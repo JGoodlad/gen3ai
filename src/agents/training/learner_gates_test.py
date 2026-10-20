@@ -137,11 +137,19 @@ def test_a_non_finite_term_is_fatal_before_its_backward_naming_it():
     assert th.allclose(before, _params(model), rtol=0.0, atol=0.0, equal_nan=True)
 
 
-def test_a_one_row_final_micro_batch_trains_finite():
-    """64 rows at micro 21 → 21, 21, 21, 1: the one-row micro-batch's advantage std is NaN, which
-    silently poisoned every weight before K9(c). SB3 PPO's `len > 1` guard skips normalising it."""
+def test_a_one_row_final_micro_batch_is_refused_and_its_guard_still_trains_finite(monkeypatch):
+    """64 rows at micro 21 → 21, 21, 21, 1. Since gen3_learner_full_micro_v1 the short micro-batch is REFUSED
+    before any forward (`check_full_micro_batches`, parameters untouched). The guard beneath it stays pinned:
+    with the refusal bypassed, the one-row micro-batch's advantage std is NaN, which silently poisoned every
+    weight before K9(c), and SB3 PPO's `len > 1` guard skips normalising it."""
     model = _learner("off")
     model.batch_size = 21
+    before = _params(model)
+    with pytest.raises(G.RaggedMicroBatchError, match="64 rows does not divide by the micro-batch 21"):
+        _train(model)
+    assert th.equal(before, _params(model))
+    from agents.training.instrumented_ppo import ppo as _ppo_mod
+    monkeypatch.setattr(_ppo_mod, "check_full_micro_batches", lambda *a, **k: None)
     _train(model)
     assert bool(th.isfinite(_params(model)).all())
 
