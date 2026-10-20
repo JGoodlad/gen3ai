@@ -44,6 +44,10 @@ struct ScenMeta {
 struct RunCase {
     scen: String,
     init_seed: String,
+    /// The sim's `battle.quickClawRoll` at the first request boundary — the OPTIONAL 5th INIT field, written only for
+    /// the Quick Claw LEAD battles (absent = false). `Battle::start_with_switchins` resumes with `quick_claw_roll:
+    /// false`, so a holder the roll favoured is mis-ordered on turn 1 unless this is applied.
+    quick_claw_roll: bool,
     decisions: Vec<DecExpect>,
     ended: bool,
     winner: WinTok,
@@ -170,12 +174,18 @@ fn parse_golden() -> (BTreeMap<String, ScenMeta>, Vec<RunCase>) {
                 meta.entry(f[1].to_string()).or_default().teams[side] = Some(f[3].to_string());
             }
             "INIT" => {
-                // INIT <id> <init_seed> <choose_seed>
-                assert_eq!(f.len(), 4, "INIT needs 4 fields (line {ln})");
+                // INIT <id> <init_seed> <choose_seed> [<quick_claw_roll 0|1>]
+                assert!(f.len() == 4 || f.len() == 5, "INIT needs 4 fields, or 5 with the Quick Claw roll (line {ln})");
+                let quick_claw_roll = match f.get(4).copied() {
+                    None | Some("0") => false,
+                    Some("1") => true,
+                    Some(other) => panic!("bad Quick Claw roll {other:?} (line {ln})"),
+                };
                 flush(&mut cur, &mut cases);
                 cur = Some(RunCase {
                     scen: f[1].to_string(),
                     init_seed: f[2].to_string(),
+                    quick_claw_roll,
                     decisions: Vec::new(),
                     ended: false,
                     winner: WinTok::None,
@@ -271,6 +281,13 @@ fn opts_for(meta: &ScenMeta, init_seed: &str) -> BattleOptions {
     }
 }
 
+/// Restore the half of the post-construction state the seed alone cannot carry: the sim's turn-0 Quick Claw roll
+/// (`gen3_turn0_quick_claw_capture_v1`; `ab_replay` does the same). Applied AFTER the init-seed check, so it can never
+/// mask a seed divergence.
+fn apply_turn0_quick_claw_roll(battle: &mut Battle, case: &RunCase) {
+    battle.state_mut().unwrap().quick_claw_roll = case.quick_claw_roll;
+}
+
 fn script_from_decisions(case: &RunCase) -> Vec<ScriptDecision> {
     case.decisions
         .iter()
@@ -307,6 +324,7 @@ fn e2e_diag() {
             Ok(b) => b,
             Err(e) => { eprintln!("[{}] START-ERR {e}", case.scen); continue; }
         };
+        apply_turn0_quick_claw_roll(&mut battle, case);
         let script = script_from_decisions(case);
         let outcome = battle.state_mut().unwrap().run_full_battle(&script, &d);
         let n = outcome.decisions.len().min(case.decisions.len());
@@ -405,6 +423,7 @@ fn e2e_fuzz_golden_matches_showdown() {
             continue;
         }
 
+        apply_turn0_quick_claw_roll(&mut battle, case);
         let script = script_from_decisions(case);
         let outcome = battle.state_mut().unwrap().run_full_battle(&script, &d);
 
@@ -845,6 +864,7 @@ fn e2e_trace_one() {
         let m = meta.get(&case.scen).unwrap();
         let opts = opts_for(m, &case.init_seed);
         let mut battle = Battle::start_with_switchins(&opts, &d).unwrap();
+        apply_turn0_quick_claw_roll(&mut battle, case);
         let script = script_from_decisions(case);
         let outcome = battle.state_mut().unwrap().run_full_battle(&script, &d);
         for (di, (rec, exp)) in outcome.decisions.iter().zip(case.decisions.iter()).enumerate() {
@@ -873,6 +893,7 @@ fn e2e_trace_log() {
         let m = meta.get(&case.scen).unwrap();
         let opts = opts_for(m, &case.init_seed);
         let mut battle = Battle::start_with_switchins(&opts, &d).unwrap();
+        apply_turn0_quick_claw_roll(&mut battle, case);
         let script = script_from_decisions(case);
         let (_outcome, log) = battle.state_mut().unwrap().run_full_battle_logged(&script, &d);
         for line in &log {
@@ -886,5 +907,38 @@ fn e2e_trace_log() {
             }
         }
         break;
+    }
+}
+
+/// The Quick Claw LEAD battles (the golden's trailing cases with a 5th INIT field) are what make the turn-0
+/// `quickClawRoll` matter to this gate: none of the 722 pinned teams holds a Quick Claw, so the 220 random battles
+/// are blind to it. Each such battle is built so the roll REORDERS turn 1 (a slower Quick Claw lead moves first),
+/// so replaying it WITHOUT the roll must put a different mon first at decision 0 — the field is not redundant.
+#[test]
+fn e2e_quick_claw_lead_battles_need_the_turn0_roll() {
+    let d = dex();
+    let (meta, cases) = parse_golden();
+    let qc: Vec<&RunCase> = cases.iter().filter(|c| c.quick_claw_roll).collect();
+    assert!(!qc.is_empty(), "the golden must carry at least one battle with a Quick Claw lead and roll = 1");
+    for case in qc {
+        let m = meta.get(&case.scen).unwrap();
+        let lead_item = |side: usize| {
+            m.teams[side].as_ref().unwrap().split(']').next().unwrap().split('|').nth(2).unwrap().to_ascii_lowercase()
+        };
+        assert_eq!(lead_item(0), "quickclaw", "[{}] p1's lead must hold the Quick Claw", case.scen);
+        let first_mover_at_decision_0 = |roll: bool| {
+            let mut battle = Battle::start_with_switchins(&opts_for(m, &case.init_seed), &d).unwrap();
+            battle.state_mut().unwrap().quick_claw_roll = roll;
+            let script = script_from_decisions(case);
+            let outcome = battle.state_mut().unwrap().run_full_battle(&script, &d);
+            outcome.decisions[0].first_mover
+        };
+        let want = if case.decisions[0].first_mover == "p1" { Some(0) } else { Some(1) };
+        assert_eq!(first_mover_at_decision_0(true), want, "[{}] with the roll the Rust order is the sim's", case.scen);
+        assert_ne!(
+            first_mover_at_decision_0(false), want,
+            "[{}] without the roll the order must differ — else this battle does not test the field",
+            case.scen
+        );
     }
 }

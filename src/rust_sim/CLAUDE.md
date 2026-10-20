@@ -108,7 +108,8 @@ findings: `ab_fuzzer_findings.md`.
 - 🚨 **The E2E capstone is STRICT: `filtered_diverged == 0`, no escape hatch.** The golden regenerates
   byte for byte from its PINNED team list (`tests/vectors/e2e_fuzz_teams.sha256`; `src/rust_sim/e2e_fuzz_golden_test.py`
   fails on drift). A widened modeled universe or a re-pinned list is a deliberate RE-RECORD: review it against the Rust
-  gate and write the provenance in `e2e_capstone.md`.
+  gate and write the provenance in `e2e_capstone.md`. The golden's last battle has a Quick Claw LEAD (no pinned team holds
+  one) and the only 5th INIT field, the turn-0 `quickClawRoll`; keep it when re-recording.
 - 🚨 **Every edge case or engine bug a fuzz surfaces becomes a NAMED deterministic pin** in
   `tests/regression_test.rs` (or a `# regression:` golden scenario), and the pin is real only once
   you have reverted the fix and watched it fail. Assert the sim's observable (the line, the seed), not

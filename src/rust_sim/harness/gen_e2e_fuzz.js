@@ -90,6 +90,10 @@ const MASTER_SEED = Number(process.env.E2E_MASTER_SEED || 0x1234abcd) >>> 0;
 const FILTERED_TARGET = Number(process.env.E2E_FILTERED_TARGET || 220);
 const UNFILTERED_TARGET = Number(process.env.E2E_UNFILTERED || 300);
 const MAX_TRIES = Number(process.env.E2E_MAX_TRIES || 6000);
+// The Quick Claw LEAD battles appended after the random pairing (`appendQuickClawLeadBattles`): none of the 722 pinned
+// teams carries Quick Claw, so without them the turn-0 `quickClawRoll` (the 5th INIT field) could not matter to this gate.
+// 0 omits them (the byte-prefix test compares a SHORT run to the golden's head, which they would follow).
+const QC_LEAD_BATTLES = Number(process.env.E2E_QC_LEAD_BATTLES ?? 1);
 const SAFETY = 1000; // max decisions per battle (real teams can grind)
 
 function tick() { return new Promise((r) => setTimeout(r, 0)); }
@@ -1860,6 +1864,46 @@ function classifyTeamsGaps(p1Packed, p2Packed) {
   return gaps;
 }
 
+// ── The Quick Claw LEAD battles ───────────────────────────────────────────────
+// `battle.quickClawRoll` (`randomChance(1,5)` at every completed endTurn, READ on the next turn) is decided for turn 1 during
+// the turn-0 construction window the offline replay skips, so it rides in the golden as the 5th INIT field, and it matters
+// ONLY when a Quick Claw holder is active. None of the 722 pinned teams holds a Quick Claw, so the 220 random battles can
+// never exercise it. These battles do: the pinned filter-clean team `teams[ia]` with its LEAD's item set to Quick Claw, versus
+// `teams[ib]`, taken from the first pairing (a dedicated RNG, after the random loop, so every earlier battle is unchanged)
+// where the roll is TRUE and the Quick Claw actually REORDERS turn 1 — the identical battle with the lead's own item has the
+// foe moving first at decision 0. The Rust test must fail on such a battle if it drops the 5th field.
+async function appendQuickClawLeadBattles(goldenLines, teams, cleanIdx, firstId) {
+  const out = { battles: 0, decisions: 0 };
+  if (QC_LEAD_BATTLES <= 0) return out;
+  const qcRng = mulberry32(MASTER_SEED ^ 0x0c1a3c1a);
+  const withLeadItem = (packed, item) => {
+    const team = Teams.unpack(packed);
+    team[0].item = item;
+    return Teams.pack(team);
+  };
+  for (let tries = 0; out.battles < QC_LEAD_BATTLES && tries < 400; tries++) {
+    const ia = cleanIdx[randInt(qcRng, cleanIdx.length)];
+    const ib = cleanIdx[randInt(qcRng, cleanIdx.length)];
+    const seed = seedFrom((Math.imul(qcRng() * 4294967296, 1) ^ (tries * 2654435761)) >>> 0);
+    const chooseSeed = (Math.floor(qcRng() * 4294967296) ^ 0x9e3779b9) >>> 0;
+    if (ia === ib) continue;
+    const qcTeam = withLeadItem(teams[ia].packed, 'Quick Claw');
+    if (!teamFilterClean(qcTeam).ok) continue;
+    let rec; let plain;
+    try {
+      rec = await runBattle(qcTeam, teams[ib].packed, seed, chooseSeed, 'modeled');
+      plain = await runBattle(withLeadItem(teams[ia].packed, ''), teams[ib].packed, seed, chooseSeed, 'modeled');
+    } catch (e) { continue; }
+    if (rec.dropped || !rec.ended || !rec.initSeed || rec.decisions.length === 0) continue;
+    if (!rec.quickClawRoll || plain.dropped || plain.decisions.length === 0) continue;
+    if (rec.decisions[0].firstMover !== 'p1' || plain.decisions[0].firstMover !== 'p2') continue;
+    emitBattle(goldenLines, `e2e_${firstId + out.battles}`, qcTeam, teams[ib].packed, rec, { legacyInit: false });
+    out.battles++; out.decisions += rec.decisions.length;
+  }
+  if (out.battles < QC_LEAD_BATTLES) throw new Error(`found only ${out.battles}/${QC_LEAD_BATTLES} Quick Claw lead battles`);
+  return out;
+}
+
 async function main() {
   const t0 = Date.now();
   if (process.argv.includes('--repin-teams')) { repinTeams(); process.exit(0); }
@@ -1886,7 +1930,7 @@ async function main() {
   goldenLines.push(`# MASTER_SEED ${MASTER_SEED}  filter-clean-teams ${cleanIdx.length}/${teams.length}`);
   goldenLines.push('# SCEN <id>');
   goldenLines.push('# TEAM <id> <p1|p2> <packed>');
-  goldenLines.push('# INIT <id> <initSeed m,n,o,p> <chooseSeed>');
+  goldenLines.push('# INIT <id> <initSeed m,n,o,p> <chooseSeed> [<quickClawRoll 0|1>, ONLY on the Quick Claw lead battles at the end]');
   goldenLines.push('# DEC  <id> <di> <move|switch> <fP1> <fP2> <cP1> <cP2> <seedAfter> \\');
   goldenLines.push('#       p1(species hp max fnt status atk def spa spd spe conf left) p2(...) first_mover \\');
   goldenLines.push('#       p1Spikes p2Spikes fixedMove batch5Move batch6Move');
@@ -1953,6 +1997,8 @@ async function main() {
     }
   }
 
+  const qcKept = await appendQuickClawLeadBattles(goldenLines, teams, cleanIdx, filteredKept);
+  filteredKept += qcKept.battles; decRows += qcKept.decisions;
   fs.writeFileSync(OUT_GOLDEN, goldenLines.join('\n') + '\n');
   console.error(`FILTERED gate: kept ${filteredKept} battles (${decRows} decisions, ${winRows} wins, ${tieRows} ties, ${switchRows} forced-switch, ${doubleRows} double, ${statusMoveDecs} STATUS-MOVE decisions, ${setupMoveDecs} SETUP-MOVE decisions, ${recoveryMoveDecs} RECOVERY-MOVE decisions, ${protectMoveDecs} PROTECT-MOVE decisions, ${phazeMoveDecs} PHAZE-MOVE decisions, ${leechMoveDecs} LEECH-MOVE decisions, ${substituteMoveDecs} SUBSTITUTE-MOVE decisions, ${restrictionMoveDecs} TAUNT/DISABLE-MOVE decisions, ${explosionMoveDecs} EXPLOSION-MOVE decisions, ${fixedMoveDecs} FIXED-DAMAGE-MOVE decisions, ${batch5MoveDecs} BATCH5-MOVE decisions, ${batch6MoveDecs} BATCH6-MOVE decisions), dropped ${filteredDropped} -> ${OUT_GOLDEN}`);
   console.error('  drop reasons: ' + [...dropReasons.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}=${v}`).join(' '));

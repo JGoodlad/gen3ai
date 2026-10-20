@@ -15258,3 +15258,15 @@ same. The corpus is not under `data/` and no pinned run reads it, so a restart d
 `python -m tools.replay_corpus_downloader.freshness` (exit 1 when the newest date folder is older than `--max-age-days`, default 3) with tests. The
 status, evidence and restart plan: `designs/tools/replay_corpus.md`. The downloader README's "never committed" provenance claim is corrected. Nothing
 was downloaded or written under `data/`.
+## 2026-10-20 — the e2e golden gets a Quick Claw LEAD battle: the turn-0 `quickClawRoll` is no longer untested (a Rust-core test fixture; no model / config / obs / training change)
+
+- **The blind spot.** The 2026-10-20 re-record kept the 4-field INIT, dropping the turn-0 `quickClawRoll`. It matters only when a Quick Claw
+  holder is active, and none of the 722 pinned teams (nor the golden's 440 TEAM rows) holds one, so the roll was inert in the 220 random
+  battles and the gate never exercised the Quick Claw `speed = 65535` override.
+- **The fix.** `gen_e2e_fuzz.js` appends ONE battle after the random loop (a dedicated RNG, so e2e_0..e2e_219 are byte-unchanged and the taxonomy
+  is unchanged): a pinned filter-clean team with its lead's item set to Quick Claw, with the roll TRUE and reordering turn 1; it alone carries the
+  5th INIT field. `tests/e2e_fuzz_test.rs` reads the optional field and applies it after the init-seed check (as `ab_replay` does). Golden: 221
+  battles / 12142 decisions, Rust gate 221/221, 0 diverged. `E2E_QC_LEAD_BATTLES=0` omits it.
+- **Tests** (each fails on revert): the gate diverges on e2e_220 without the field (decision count 92 vs 170);
+  `e2e_quick_claw_lead_battles_need_the_turn0_roll` (the order at decision 0 differs without the roll);
+  `e2e_fuzz_golden_test.py::test_the_golden_carries_quick_claw_lead_battles_with_the_turn0_roll`. Docs: `rust_sim/e2e_capstone.md`, `src/rust_sim/CLAUDE.md`.

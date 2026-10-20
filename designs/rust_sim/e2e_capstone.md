@@ -342,7 +342,7 @@ game-end**, asserting per-decision state + status + boosts + confusion + running
 - **The gate** `tests/e2e_fuzz_test.rs::e2e_fuzz_golden_matches_showdown` seeds a `BattleState` ONCE
   at the sim's pre-first-decision PRNG state and replays the recorded choices WITHOUT re-seeding.
   🚨 **The invariant is STRICT `filtered_diverged == 0` over EVERY battle — there is no escape
-  hatch.** The committed golden is **220 battles / 11972 decisions / 0 diverged**, byte-reproducible
+  hatch.** The committed golden is **221 battles (220 random + the Quick Claw lead battle below) / 12142 decisions / 0 diverged**, byte-reproducible
   at the committed knobs (MASTER_SEED 0x1234abcd, FILTERED_TARGET 220) from the pinned team list
   (`src/rust_sim/e2e_fuzz_golden_test.py`: the pin matches the files, a 15-battle prefix is byte-equal in the `sim`
   tier, a full regeneration of the golden AND the taxonomy is byte-equal in the `slow` tier). RE-RECORDED 2026-10-20: the
@@ -351,6 +351,21 @@ game-end**, asserting per-decision state + status + boosts + confusion + running
   positions e2e_16, e2e_51 and e2e_133 — and the last three old battles fall off the end of the 220; the other
   217 are the old battles unchanged (first 15 byte-equal), the 4-field INIT shape is kept (`opts.legacyInit`), and the
   Rust gate replays the re-recorded file 220/220, 0 diverged.
+- 🚨 **The Quick Claw LEAD battle (appended 2026-10-20).** `battle.quickClawRoll` (`randomChance(1,5)` at every completed
+  endTurn, read on the next turn) is decided for turn 1 in the turn-0 construction window the offline replay skips, so a
+  golden battle carries it as an OPTIONAL 5th INIT field (the Rust test applies it after the init-seed check, as `ab_replay`
+  does). It matters ONLY when a Quick Claw holder is active, and **none of the 722 pinned teams holds a Quick Claw** (checked
+  on the `.txt` files and on the golden's 440 TEAM rows), so the 220 random battles are blind to it: their 4-field INIT drops
+  nothing, and the roll=1 battles among them are inert. The golden therefore ends with ONE extra battle, `e2e_220`: a pinned
+  filter-clean team with its LEAD's item set to Quick Claw, against another pinned team, taken from the first pairing of a
+  dedicated RNG (`MASTER_SEED ^ 0x0c1a3c1a`, after the random loop, so e2e_0..e2e_219 are byte-unchanged) where the roll is
+  true AND it reorders turn 1 (the same battle with the lead's own item has the foe first at decision 0). Result: 221 battles /
+  12142 decisions (e2e_220 = 170, Tyranitar vs Salamence), Rust gate 221/221, 0 diverged; the taxonomy is byte-unchanged.
+  Teeth: ignoring the 5th field makes the gate diverge on e2e_220 (decision count 92 vs 170);
+  `e2e_quick_claw_lead_battles_need_the_turn0_roll` (Rust) proves the roll is not redundant (without it the order at
+  decision 0 differs); `e2e_fuzz_golden_test.py::test_the_golden_carries_quick_claw_lead_battles_with_the_turn0_roll` pins
+  the battle's presence, its 5th field, and the no-Quick-Claw-in-the-pool premise. `E2E_QC_LEAD_BATTLES=0` omits it (the
+  prefix test compares a short run to the golden's head).
 - 🚨 **The per-decision assertion tallies are CLEAN-ONLY** — the loop breaks at the first divergence,
   so post-desync rows are never counted. A tally is not a coverage claim.
 - 🚨 **Coverage is GATED, not reported.** The golden carries per-decision feature columns and the test
@@ -363,7 +378,7 @@ game-end**, asserting per-decision state + status + boosts + confusion + running
   divergence cause, and it is **MOVE-LEVEL-BLIND** (it only ever picks damaging-or-switch choices).
   It does NOT gate `cargo test`: it is the measured remaining-work map, nothing more.
 - **Run it:** `node src/rust_sim/harness/gen_e2e_fuzz.js` (env knobs `E2E_FILTERED_TARGET` [default
-  **220**, the committed golden's size], `E2E_UNFILTERED`, `E2E_MAX_TRIES`, `E2E_MASTER_SEED`; `E2E_OUT_DIR` writes
+  **220**, the random battles' count], `E2E_QC_LEAD_BATTLES` [default 1], `E2E_UNFILTERED`, `E2E_MAX_TRIES`, `E2E_MASTER_SEED`; `E2E_OUT_DIR` writes
   elsewhere, `E2E_TEAMS_DIR` re-points the team tree) regenerates both vectors from the pinned team list and
   reproduces the committed ones byte for byte; then `cargo test`
   re-pins the Rust against them. A DELIBERATE re-record (a widened modeled universe, a re-pinned team list:
