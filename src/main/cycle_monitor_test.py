@@ -3,8 +3,9 @@ decides each check ONCE when every row up to it is complete, tops up a SUSPECTED
 without replaying, refuses a changed node file, ``verify`` re-derives each ``cycle_flag`` decision, ``status`` /
 ``main.plateau status`` print the Tier-2 columns and the signature, and the ladder read orients the in-run ladder's
 mirrored edges. The games are synthetic rows written under claims as ``main.h2h`` writes them (an Elo model per
-node). The engine path was run by hand (a real tick on X34: ``research_state/measurements/
-cycle_monitor_retro_2026-10-19/``); an engine integration test is a follow-up."""
+node). The engine path is ``main/h2h/cycle_monitor_integration_test.py`` (slow: a real tick on the h2h engine), and
+was run by hand on X34 (``research_state/measurements/cycle_monitor_retro_2026-10-19/``). Also: the size bar's
+fields on every decided check, the panel's cells through ``tick --panel``, and the registered panel's shape."""
 from __future__ import annotations
 
 import hashlib
@@ -19,6 +20,7 @@ import pytest
 from agents.training import cycle_monitor as CM
 from agents.training import eval_ledger as L
 from agents.training.eval_ledger import audit as A
+from agents.training import plateau_t2 as T2
 from agents.training.eval_ledger import testkit as K
 from main import cycle_monitor as M
 
@@ -184,6 +186,15 @@ def test_status_and_the_plateau_reader_print_tier2(setup, capsys):
     assert rep["signature"]["status"] == "CONTINUE"                     # no Tier-1 verdicts in this ledger
     out = "\n".join(M.format_tier2(rep))
     assert "TWO-TIER STATUS: CONTINUE" in out and "NOT DECLARED" in out
+    # the size bar: every decided check carries its windowed size, its state and the COUNTED verdict
+    for c in rep["checks"][1:]:
+        assert c["size"] in (T2.MATERIAL, T2.NEGLIGIBLE, T2.SIZE_INCONCLUSIVE)
+        assert c["size_detail"]["min_step"] == c["grid"] - 8 * D
+        assert c["counted"] == T2.counted_monitor(c["monitor"], c["size"])
+    assert rep["size_rule"]["bar_pp"] == 1.7 and "size = the recent window" in out
+    # the size is a pure function of the rows: a second read gives the same numbers
+    again = M.tier2_by_check("rb_fake", M.node_series(run_dir), Path(root), {})
+    assert [c["size_detail"] for c in again["checks"]] == [c["size_detail"] for c in rep["checks"]]
 
 
 def test_the_ladder_edges_orient_both_seat_halves(tmp_path):
@@ -219,3 +230,64 @@ def test_the_ladder_read_runs_per_check_and_windows(tmp_path):
     win = M.ladder_read(d.parent, rule=FAST, window_steps=2 * D, emit=lambda _m: None)
     assert win["window_steps"] == 2 * D
     assert win["checks"][-1]["summary"]["nodes"] < rep["checks"][-1]["summary"]["nodes"]
+    # the size reads the last 80M of grid whatever --window-steps says; with Tier 1, a DESCRIPTIVE signature
+    last = rep["checks"][-1]
+    assert last["size_detail"]["min_step"] == last["grid"] - 8 * D and win["checks"][-1]["size_detail"] == \
+        last["size_detail"]
+    t1 = M.ladder_read(d.parent, rule=FAST, t1_states={5 * D: "FLAT", 6 * D: "FLAT"}, emit=lambda _m: None)
+    assert t1["signature"]["status"] in (T2.CONTINUE, T2.PLATEAU_BUT_PANEL) and "DESCRIPTIVE" in t1["signature"]["note"]
+    assert "signature" not in rep
+
+
+def _panel_file(tmp: Path, member: Path, sha: str) -> Path:
+    p = tmp / "plateau_panels.json"
+    p.write_text(json.dumps({"schema": M.PANELS_SCHEMA, "panels": {"p1": {"members": [
+        {"id": "outside", "path": str(member), "sha256": sha}]}}}))
+    return p
+
+
+def test_tick_plays_the_panel_and_status_reads_it(setup, tmp_path):
+    run_dir, root = setup
+    other = make_run(tmp_path, 3, name="rb_outside")                    # another lineage: a frozen outside member
+    member = other / "checkpoints" / f"checkpoint_{3 * D + 11}_steps.zip"
+    sha = hashlib.sha256(member.read_bytes()).hexdigest()
+    reg = _panel_file(tmp_path, member, sha)
+    fake = FakePlay(CLIMB)
+    run_tick(run_dir, root, fake, panel="p1", panel_path=reg, t1_root=Path(root))
+    panel_cells = sorted({(i, j) for k, i, j, _b in fake.played if k == "panel"})
+    assert panel_cells == [(1, 3), (2, 3), (6, 3), (7, 3)]               # 60M / 70M and their W-back 10M / 20M
+    assert all(sum(1 for k, i, j, _b in fake.played if k == "panel" and (i, j) == c) == 500 // 50
+               for c in panel_cells)                                     # 500 pairs: no Tier-1 FLAT, no candidate
+    rep = M.tier2_by_check("rb_fake", M.node_series(run_dir), Path(root), {}, panel="p1", panel_path=reg)
+    by = {c["grid"]: c for c in rep["checks"]}
+    assert by[7 * D]["panel"] in (T2.RISING, T2.FLAT, T2.UNDECIDED) and by[7 * D]["panel_detail"]["pairs"] == 500
+    assert by[4 * D]["panel"] == T2.INCOMPLETE                            # no W-back node 50M before 40M
+    # a member whose file no longer hashes to the registry is refused (a moved panel is a different panel)
+    bad = _panel_file(tmp_path, member, "0" * 64)
+    with pytest.raises(M.MonitorDriverError, match="registered 000000000000"):
+        run_tick(run_dir, root, fake, panel="p1", panel_path=bad, t1_root=Path(root))
+
+
+def test_the_registered_outside_panel_names_frozen_baselines():
+    """``designs/research_state/plateau_panels.json``: every member is a named baseline's EXPLICIT checkpoint, its
+    sha256 is the baselines registry's, and it says what "outside" means for it (no file is read here)."""
+    from agents.training import baselines as B
+
+    panels = M.load_panels()["panels"]
+    assert "outside_v1" in panels
+    for name, p in panels.items():
+        assert p["members"] and p.get("cost_per_check") and p.get("rule"), name
+        for m in p["members"]:
+            assert {"id", "path", "sha256", "outside", "in_band"} <= set(m), m
+            if "baseline" in m:
+                b = B.get(m["baseline"])
+                assert m["sha256"] == b.sha256 and m["path"] == f"{b.run}/{b.checkpoint}", m
+                assert not b.era_checkout_only, m                         # playable at HEAD's architecture
+
+
+def test_a_member_file_resolves_absolute_or_run_relative(tmp_path):
+    f = tmp_path / "x.zip"
+    f.write_bytes(b"x")
+    assert M.member_file({"id": "a", "path": str(f)}) == str(f)
+    with pytest.raises(M.MonitorDriverError, match="does not resolve"):
+        M.member_file({"id": "b", "path": "rb_no_such_run_ever/final_model.zip"})

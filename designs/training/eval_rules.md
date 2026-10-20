@@ -134,8 +134,9 @@ due check (the newest 10M-grid node vs the node 50M back) as the registered GSPR
 `--inflight-batches` (default 4, T38) at a time in one cycle, judged in BATCH ORDER (a batch past the stop is a surplus
 row the rule never reads), and writes ONE `plateau` decision row per check (GAIN / FLAT / UNDECIDED / INCONCLUSIVE; `verify` re-derives it);
 `status <run>` prints the run's Tier-1 status, Tier 2 and the TWO-TIER STATUS. 🚨 **`TIER1_PLATEAU` alone is a
-candidate**: a plateau is `TRUE_PLATEAU` (Tier 1 FLAT + the cycle monitor NONE + the panel FLAT, twice); while no
-panel is registered a FLAT pair reads `PLATEAU_BUT_PANEL`. 🚨 **`python -m main.cycle_monitor` is TIER 2** (eval U5 +
+candidate**: a plateau is `TRUE_PLATEAU` (Tier 1 FLAT + the cycle monitor counted NONE + the panel FLAT, twice); a
+cycling flag counts only when its windowed size is MATERIAL against 1.7 pp (NEGLIGIBLE counts as NONE; the size bar,
+2026-10-19); the registered panel is `outside_v1` (`--panel outside_v1`). 🚨 **`python -m main.cycle_monitor` is TIER 2** (eval U5 +
 U9 offline): `tick <run>` plays each check's monitor row (+ top-up, + panel) and writes one `cycle_flag` decision per
 check; `ladder <run>` is a descriptive read of the in-run snapshot ladder. Offline, never on CPU beside an X5 A/B arm
 (`designs/training/eval_and_rating.md`).

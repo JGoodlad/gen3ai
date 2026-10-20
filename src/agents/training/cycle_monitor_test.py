@@ -146,3 +146,63 @@ def test_the_registered_rule_string_names_every_constant():
     s = CM.REGISTERED.rule_string()
     for frag in ("alpha=0.05", "n_boot=2000", "pairs=500", "topup=500x3", "support_w=0.01", "abort=0.25"):
         assert frag in s
+
+
+# ------------------------------------------------------------------------------------------------ the SIZE (F-ED-27)
+def diffuse(tau_pp: float, among, seed: int = 21) -> dict:
+    """An independent cyclic perturbation of SD ``tau_pp`` (pp of score at ½) on every planned edge whose two nodes
+    are both in ``among``, in Elo (the planted-shift unit of :func:`matrix`)."""
+    rng = np.random.default_rng(seed)
+    steps = [(k + 1) * D for k in range(len(CLIMB))]
+    out = {}
+    for rp in CM.plan_rows(steps):
+        for _lag, s in rp.edges:
+            i, j = steps.index(rp.newest), steps.index(s)
+            if i in among and j in among:
+                out[(i, j)] = float(rng.normal(0.0, tau_pp * 4 / 100)) * 400 / math.log(10)
+    return out
+
+
+WINDOW_MIN = (len(CLIMB) - 8) * D          # the last 8 checks' nodes: n5..n13 (node k sits at (k + 1)·Δ)
+
+
+def test_the_size_reads_the_recent_window_only():
+    """F-ED-27's regression: a strong cycle among OLD nodes makes the accumulated (a) flag, while the recent
+    window's size is small and its interval sits below the 1.7 pp bar."""
+    mx, new = matrix(CLIMB, planted=diffuse(8.0, range(0, 5)))
+    r = CM.signals(mx, new, FAST, seed=11)
+    assert r.signals["hodge"] == CM.FLAG and r.detail["hodge"]["p_boot"] < 0.01
+    s = CM.cyclic_size(mx, WINDOW_MIN, seed=5, n_boot=400)
+    assert s["measured"] and s["nodes"] == 9 and s["edges"] == 36 and s["df"] == 28
+    assert s["upper_pp"] < 1.65, s                          # below the 1.7 pp bar by a margin (rule 8)
+
+
+def test_the_size_is_unbiased_on_the_targets_scale_and_material_when_large():
+    sizes = []
+    for seed in range(3):
+        mx, _new = matrix(CLIMB, planted=diffuse(4.0, range(len(CLIMB)), seed=31 + seed), seed=3 + seed)
+        s = CM.cyclic_size(mx, WINDOW_MIN, seed=7, n_boot=400)
+        assert s["lower_pp"] > 2.5, s                       # MATERIAL with a margin
+        assert s["lower_pp"] <= s["size_pp"] <= s["upper_pp"]
+        sizes.append(s["size_pp"])
+    assert 3.0 < float(np.mean(sizes)) < 5.0, sizes          # τ = 4 pp planted (the window's realised SD varies)
+
+
+def test_the_size_of_a_transitive_climb_is_negligible_and_deterministic():
+    mx, _new = matrix(CLIMB)
+    a = CM.cyclic_size(mx, WINDOW_MIN, seed=9, n_boot=400)
+    assert a == CM.cyclic_size(mx, WINDOW_MIN, seed=9, n_boot=400)
+    assert a["upper_pp"] < 1.65 and 0.9 < a["phi"] < 1.1, a   # below the bar by a margin (rule 8)
+    # a window with no cycle is not measured (never a silent zero)
+    tiny = CM.cyclic_size(mx, (len(CLIMB) - 1) * D, seed=9, n_boot=50)
+    assert tiny["measured"] is False and "no cycle" in tiny["reason"]
+
+
+def test_the_noncentrality_bounds_invert_the_cdf():
+    from scipy.stats import ncx2
+
+    lo = CM._ncp_bound(80.0, 28, 0.95)
+    hi = CM._ncp_bound(80.0, 28, 0.05)
+    assert 0 < lo < 80 - 28 < hi
+    assert abs(float(ncx2.cdf(80.0, 28, lo)) - 0.95) < 1e-8 and abs(float(ncx2.cdf(80.0, 28, hi)) - 0.05) < 1e-8
+    assert CM._ncp_bound(28.0, 28, 0.95) == 0.0 and CM._ncp_bound(10.0, 28, 0.05) == 0.0

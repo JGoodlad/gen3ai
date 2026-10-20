@@ -1,5 +1,24 @@
 {
  "schema": "gen3_plateau_panels_v1",
  "note": "THE PLATEAU'S OUTSIDE PANELS (design_evaluation.md §8.2; read by main.cycle_monitor / main.plateau status --panel <name>). A panel is a FROZEN set of outside opponents (checkpoints of ANOTHER lineage or registry-named anchors, at an architecture main.h2h can pair with the run's), each scoring inside the 15-85 % band against the run's nodes when it was chosen. Every member names its file and sha256; a member whose file no longer hashes to it is REFUSED (a moved panel is a different panel). Add a panel by a declared rule and a ledger entry, never by editing a member in place: the panel's rows are keyed by its NAME.",
- "panels": {}
+ "panels": {
+  "outside_v1": {
+   "registered_on": "2026-10-19",
+   "registered_by": "2026-10-19 meter-build worker, ORCHESTRATOR ruling 2 on F-ED-26 (design_evaluation.md Decision record)",
+   "rule": "every frozen checkpoint that is (1) OUTSIDE every run it is read against (another lineage, never trained again), (2) loadable at HEAD's architecture today, and (3) named in designs/baselines.json. Of the eleven baselines only `production` meets (2): the other ten are era_checkout_only. No Rust roster bot is a member: main.h2h plays checkpoints only (F-ED-26), and every roster bot already scores 0.89-1.0 against X26 and the X34 toy in their plateau regions (eval_results.jsonl), outside the 15-85 % band.",
+   "members": [
+    {
+     "id": "production",
+     "baseline": "production",
+     "path": "rb_es_end2_s2005/final_model.zip",
+     "sha256": "4047f43806619825bb4054590662c7e47b16e67f69e59c3156a5da561c367c0b",
+     "num_timesteps": 15047521,
+     "outside": "another LINEAGE (the closing test's end-state seed s2005, a fresh 15M run; the lower-median seed by a stated rule) at HEAD's architecture (gen3_mon_tied_gain_v1); frozen since 2026-10-12, so it cannot co-move with a run's cycling. It is outside every rb_ run read so far (X26, X34 and its parent, X35's arms), and INSIDE nothing: no run's self-play pool holds it. It is NOT outside the RECIPE: it is the production recipe at 15M, so it measures progress against an early production policy, not against a different style of play.",
+     "in_band": "UNVERIFIED: no row of it against X26's or X34's 200-380M nodes exists. X26 beat its own 2M node 0.93-0.97 by 30M, so against a 15M production policy its 230-280M nodes may score near or above 0.85. The first panel tick measures it; a member outside the band inflates the panel's SE (logit variance grows as 1/(m(1-m))^2) and the panel then reads UNDECIDED, never FLAT."
+    }
+   ],
+   "cost_per_check": "the newest node's cell, 500 mirrored pairs = 1,000 games (1,000 pairs = 2,000 games at a candidate, plus the W-back node's top-up to 1,000 pairs once); the W-back node's cell is reused. Production-net games on rule 5b's CPU (3 cores) run at 1.2-2 games/s (design_x26_readiness.md section 2.6; X26's Tier-1 rows): 8-14 min a check, 25-45 min at a candidate. On the toy (X34) the cross-architecture cell's cost is UNMEASURED (bounded above by the production rate).",
+   "power": "ONE member: at zero true gain and 1,000 pairs per node in band (SE of the Elo delta ~10 Elo), PANEL FLAT (upper one-sided 95 % bound < 14 Elo) has probability ~0.39 per check, ~0.15 at two consecutive checks; the design's ~0.95 assumed six members. So this panel makes TRUE_PLATEAU REACHABLE, not likely: a PLATEAU_BUT_PANEL with the panel UNDECIDED is its common read at a true plateau."
+  }
+ }
 }

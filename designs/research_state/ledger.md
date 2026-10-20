@@ -27563,3 +27563,29 @@ playouts, and a fact count in place of Long's world count (df_event = df only un
 
 Evidence: `research_state/measurements/search_l1_l5_2026-10-20/` (PREREG, README, `result_l1.json`, `fit_l1.json`,
 `result_l5.json`, `scripts/`); `endstate/search_ledger.md` §1, N5, §7 Q13, Decision record; `research_state/UNDERSTANDING.md`.
+
+### 2026-10-19 · DECISION · MEASUREMENT · **THE SIZE BAR (ORCHESTRATOR ruling on F-ED-27): a cycling flag counts for the plateau only when its non-transitive size on the last 8 checks' nodes is MATERIAL against 1.7 pp; re-read, X26's cycling is MATERIAL (≈ 3–5 pp) or too wide to call at every check, never negligible, so P\* still reads CONTINUE. The first outside panel, `outside_v1` = {the `production` baseline}, is registered. DESCRIPTIVE for X26; no decision row changes**
+
+**The rule** (`design_evaluation.md` §8.2 "The size bar"; `plateau_t2` `gen3_plateau_t2_v2`). The monitor's test is
+unchanged. The size is the per-edge cyclic SD (the scale of §2.5's 1.7 pp detection target) on the RECENT WINDOW —
+the last 8 checks' nodes, the complete dense-lag subgraph (80M at Δ = 10M), whose scope never grows with the run —
+estimated from the window's WLS residual χ² above its bootstrap null mean, with one-sided 95 % bounds by inverting
+the noncentral χ² (Steiger & Lind; MacCallum et al.'s test of close fit). MATERIAL (lower bound > 1.7 pp): the flag
+counts. NEGLIGIBLE (upper bound < 1.7 pp): it counts as NONE. Otherwise INCONCLUSIVE, which blocks a plateau (rule 8).
+A treadmill needs CONFIRMED and MATERIAL. Simulated: unbiased; one check resolves sizes below ≈ 1 pp or above
+≈ 2.5 pp (F-ED-28).
+
+**X26 re-read** (its in-run ladder, the windowed size, Tier 1 from the archive ledger): MATERIAL at 28 of 37 checks
+(3.2–6.4 pp through 270M; 270M 3.3 pp [1.9, 4.6]), INCONCLUSIVE at 9 (280M 2.6 [0.5, 4.2]; 320M–370M, where 4–8
+nodes give 0–8 pp intervals). Two-tier status: CONTINUE at every check, as before. X34's registered 50M / 60M: 2.6 /
+2.5 pp, INCONCLUSIVE (still SUSPECTED, top-ups pending).
+
+**The panel `outside_v1`** (`plateau_panels.json`): the named baselines loadable at HEAD's architecture — only
+`production` (the closing test's s2005 end-state seed at 15M; the other ten are era-checkout-only). Outside = another
+lineage, frozen, in no pool; not outside the recipe. ≈ 8–14 min of CPU a check (1,000 games), 25–45 min at a
+candidate. Its band against late X26 / X34 nodes is UNVERIFIED and one member reads FLAT with probability ≈ 0.38 a
+check at zero gain (F-ED-29): TRUE_PLATEAU is reachable, not likely. Bots: a bot cell on `main.h2h` is scoped
+(≈ 1 agent-day) and not built; every roster bot scores 0.89–1.0 on both runs' late nodes, out of band.
+
+Evidence: `research_state/measurements/cycle_monitor_retro_2026-10-19/` (`x26_ladder_sizebar.json`,
+`x34_status_sizebar.txt`, `size_bar_oc.*`); `endstate/design_evaluation.md` §8.2, F-ED-26–F-ED-29, Decision record.

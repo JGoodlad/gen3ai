@@ -366,6 +366,101 @@ def seed_of(ids: Iterable[str]) -> int:
     return int.from_bytes(h[:8], "big")
 
 
+def _null_boot(k: int, mx: Matrix, n: np.ndarray, pred: np.ndarray, rng: np.random.Generator,
+               nb: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """The parametric bootstrap under the TRANSITIVE fit: each edge's shape tilted to the fitted score, ``nb``
+    replicate matrices on the same graph and pair counts. Returns (replicate scores, spines, residual χ²)."""
+    shapes = tilt(mx.counts, 1.0 / (1.0 + np.exp(-pred)))
+    draws = np.stack([rng.multinomial(int(n[e]), shapes[e], size=nb) for e in range(len(n))], axis=1).astype(float)
+    _bn, bm, _bv, by, bw = edge_stats(draws)
+    br = np.concatenate([wls_fit(k, mx.ei, mx.ej, by[c:c + BOOT_CHUNK], bw[c:c + BOOT_CHUNK])
+                         for c in range(0, nb, BOOT_CHUNK)])          # chunked: a large graph's Laplacians
+    return bm, br, chi2_resid(mx.ei, mx.ej, by, bw, br)
+
+
+def window(mx: Matrix, min_step: int) -> Matrix:
+    """The sub-matrix of the nodes at ``step >= min_step`` and the edges among them."""
+    keep = [i for i in range(mx.n) if mx.steps[i] >= min_step]
+    idx = {old: new for new, old in enumerate(keep)}
+    sel = [e for e in range(len(mx.ei)) if int(mx.ei[e]) in idx and int(mx.ej[e]) in idx]
+    return Matrix(keys=[mx.keys[i] for i in keep], steps=[mx.steps[i] for i in keep],
+                  ei=np.asarray([idx[int(mx.ei[e])] for e in sel], dtype=np.int64),
+                  ej=np.asarray([idx[int(mx.ej[e])] for e in sel], dtype=np.int64),
+                  counts=mx.counts[sel].reshape(-1, 5))
+
+
+def _ncp_bound(t: float, df: int, cdf_target: float) -> float:
+    """The noncentrality λ at which ``P(χ²_df(λ) ≤ t) = cdf_target`` (0 when even λ = 0 sits below it): the
+    inversion that bounds a noncentrality from one observed χ² (Steiger & Lind's RMSEA interval)."""
+    from scipy.optimize import brentq
+    from scipy.stats import chi2 as c2
+    from scipy.stats import ncx2
+
+    if float(c2.cdf(t, df)) <= cdf_target:
+        return 0.0
+
+    def f(lam: float) -> float:
+        return float(ncx2.cdf(t, df, lam)) - cdf_target
+
+    hi = max(1.0, t)
+    while f(hi) > 0:
+        hi *= 2.0
+    return float(brentq(f, 1e-12, hi, xtol=1e-10, rtol=1e-12))
+
+
+def cyclic_size(mx: Matrix, min_step: int, seed: int, n_boot: int = 2000, one_sided: float = 0.95
+                ) -> Dict[str, Any]:
+    """THE SIZE of the non-transitive component on the RECENT WINDOW (the nodes at ``step >= min_step``): an
+    ESTIMATE with a confidence interval, never a test (``design_evaluation.md`` §8.2, the 2026-10-19 amendment).
+
+    The scale is the design's detection target's (§2.5, ``revision/monitor_power.py``): ``τ`` = the SD, in pp of
+    score at ½, of an independent cyclic logit perturbation on every edge. Such a perturbation leaves, after the
+    logit-WLS spine, a residual of expected weighted energy ``λ = τ_logit² · D`` with ``D = tr(W) − tr(W H)`` (H the
+    WLS hat matrix: the cycle space's share of the weights); the residual χ² is then ≈ noncentral χ²(df, λ). So:
+
+    * ``φ`` = the null bootstrap's mean χ² / df (the pentanomial, mirrored-pair dispersion; ≈ 1);
+    * ``λ̂ = max(0, χ² − φ·df)``, ``τ̂ = 25 · √(λ̂ / D)`` pp (25 pp per logit at ½);
+    * the one-sided ``one_sided`` bounds invert the noncentral χ² CDF at ``χ²/φ`` (Steiger & Lind 1980; the
+      test of close fit of MacCallum, Browne & Sugawara 1996) and scale back by φ.
+
+    Unlike signal (a)'s p-value, ``τ̂`` does not grow with the matrix: more games narrow its interval around the
+    same size. ``measured`` is False (with the reason) when the window has < 3 nodes, no cycle (df < 1), or is not
+    connected."""
+    w_mx = window(mx, min_step)
+    k, e_n = w_mx.n, int(len(w_mx.ei))
+    base: Dict[str, Any] = {"min_step": int(min_step), "nodes": k, "edges": e_n, "one_sided": one_sided}
+    df = e_n - (k - 1)
+    if k < 3 or df < 1:
+        return {**base, "measured": False, "reason": f"the window holds {k} nodes and {e_n} edges: no cycle"}
+    if not _connected(k, w_mx.ei, w_mx.ej):
+        return {**base, "measured": False, "reason": "the window's graph is not connected"}
+    n, _m, _v, y, w = edge_stats(w_mx.counts)
+    r = wls_fit(k, w_mx.ei, w_mx.ej, y, w)
+    chi2 = float(chi2_resid(w_mx.ei, w_mx.ej, y, w, r))
+    pred = r[w_mx.ei] - r[w_mx.ej]
+    rng = np.random.Generator(np.random.PCG64(seed))
+    _bm, _br, bchi = _null_boot(k, w_mx, n, pred, rng, n_boot)
+    null_mean = float(bchi.mean())
+    phi = null_mean / df
+    b = np.zeros((e_n, k))
+    b[np.arange(e_n), w_mx.ei] = 1.0
+    b[np.arange(e_n), w_mx.ej] = -1.0
+    b = b[:, 1:]
+    btw = b.T * w
+    d_eff = float(w.sum() - np.trace(np.linalg.solve(btw @ b, (btw * w) @ b)))
+    t = chi2 / phi
+    lam_hat = max(0.0, chi2 - null_mean)
+    lam_lo = phi * _ncp_bound(t, df, one_sided)
+    lam_hi = phi * _ncp_bound(t, df, 1.0 - one_sided)
+
+    def pp(lam: float) -> float:
+        return 25.0 * math.sqrt(max(0.0, lam) / d_eff)
+
+    return {**base, "measured": True, "df": df, "chi2": chi2, "null_mean": null_mean, "phi": phi, "d_eff": d_eff,
+            "size_pp": pp(lam_hat), "lower_pp": pp(lam_lo), "upper_pp": pp(lam_hi),
+            "excess_rms_pp": 25.0 * math.sqrt(lam_hat / float(w.sum()))}
+
+
 def signals(mx: Matrix, newest: str, rule: MonitorRule = REGISTERED, seed: int = 0) -> MonitorResult:
     """The four signals on matrix ``mx`` at the check whose newest node is ``newest`` (a key of ``mx``)."""
     if newest not in mx.keys:
@@ -380,13 +475,8 @@ def signals(mx: Matrix, newest: str, rule: MonitorRule = REGISTERED, seed: int =
     pred = r[mx.ei] - r[mx.ej]
     energy = float((w * y ** 2).sum())
     rng = np.random.Generator(np.random.PCG64(seed))
-    shapes = tilt(mx.counts, 1.0 / (1.0 + np.exp(-pred)))
     nb = rule.n_boot
-    draws = np.stack([rng.multinomial(int(n[e]), shapes[e], size=nb) for e in range(len(n))], axis=1).astype(float)
-    _bn, bm, _bv, by, bw = edge_stats(draws)
-    br = np.concatenate([wls_fit(k, mx.ei, mx.ej, by[c:c + BOOT_CHUNK], bw[c:c + BOOT_CHUNK])
-                         for c in range(0, nb, BOOT_CHUNK)])          # chunked: a large graph's Laplacians
-    bchi = chi2_resid(mx.ei, mx.ej, by, bw, br)
+    bm, br, bchi = _null_boot(k, mx, n, pred, rng, nb)
     p_a = float((1 + (bchi >= chi2 - 1e-12).sum()) / (nb + 1))
     sig: Dict[str, str] = {"hodge": _boot_state(p_a, rule)}
     detail: Dict[str, Any] = {"hodge": {"chi2": round(chi2, 4), "df": int(len(n) - (k - 1)), "p_boot": round(p_a, 5),

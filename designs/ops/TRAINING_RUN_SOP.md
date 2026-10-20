@@ -524,8 +524,9 @@ wake. Re-create it on the next GO, written to this contract.
   unaffected.
 - **A plateau STOP reads BOTH tiers** (2026-10-19): `python -m main.plateau status <run>` prints Tier 1, Tier 2 (the
   cycle monitor's `cycle_flag` verdict and the panel's, per check) and the TWO-TIER STATUS. `TIER1_PLATEAU` alone is
-  a CANDIDATE: stop on `TRUE_PLATEAU`; while no outside panel is registered a FLAT pair reads `PLATEAU_BUT_PANEL`, and
-  a stop on it must say "Tier 1 + the cycle monitor; no panel" in its record. Tier 2's rows come from
+  a CANDIDATE: stop on `TRUE_PLATEAU`; the registered panel is `outside_v1` (one member, `--panel outside_v1`), and a
+  stop on `PLATEAU_BUT_PANEL` must say "Tier 1 + the cycle monitor; no FLAT panel" in its record. A cycling flag
+  counts only when its windowed size is MATERIAL (the size bar, 2026-10-19: `status` prints `size` and `counted`). Tier 2's rows come from
   `python -m main.cycle_monitor tick <run>` after each 10M checkpoint (CPU, rule 5b, under `mem_cap.sh`: the toy
   ≈ 10 min a check, production ≈ 1.5–2.5 h — not BLOCKING by default; a check is decided only once every earlier row
   is complete). `TREADMILL` (the monitor CONFIRMED) is never a plateau: population levers, not forks

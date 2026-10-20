@@ -4,12 +4,14 @@ the verdict) and ``agents.training.plateau_t2`` (the panel and the two-tier sign
 
     python -m main.cycle_monitor status <run> [--lineage-run DIR ...] [--panel NAME] [--json]    # reads; plays nothing
     python -m main.cycle_monitor tick   <run> [--lineage-run DIR ...] [--panel NAME] [--max-checks N] [--dry-run] ...
-    python -m main.cycle_monitor ladder <run> [--from-step S] [--to-step S] [--json]    # DESCRIPTIVE retro read
+    python -m main.cycle_monitor ladder <run> [--from-step S] [--to-step S] [--tier1] [--json]   # DESCRIPTIVE retro
 
 **What it answers.** At every Δ = 10M check: is the run CYCLING (NONE / SUSPECTED / CONFIRMED / INCONCLUSIVE), and —
 with the Tier-1 GSPRT (``main.plateau``) and the panel — which §8.3 signature is it (``TRANSITIVE_IMPROVEMENT``,
 ``TRUE_PLATEAU``, ``PLATEAU_BUT_PANEL``, ``TREADMILL``, ``CONTINUE``)? ``main.plateau status`` prints the same Tier-2
-columns and signature beside Tier 1.
+columns and signature beside Tier 1. A flag COUNTS for the signature only when its SIZE on the recent window (the last
+8 checks' nodes) is MATERIAL against the 1.7 pp bar; a NEGLIGIBLE one counts as NONE (``plateau_t2``, the
+2026-10-19 amendment, F-ED-27). The size is computed by the reader from the rows; no decision row changes.
 
 **``tick``** plays, oldest check first: (1) the check's ROW — the newest node against every older node at a lag in
 the hybrid set, 500 mirrored pairs per edge (one ``monitor_row`` request per check, every edge a cell of it, its node
@@ -25,7 +27,8 @@ any batch. CPU by default (``nice`` + ``taskset`` + ``scripts/ops/mem_cap.sh`` b
 **``ladder``** is a DESCRIPTIVE retro read, never a decision: the same four signals on a run's IN-RUN snapshot ladder
 (``snapshot_ladder/games.jsonl``: mirrored, 100 pairs per edge, the pool's sliding window), as of each Δ check. It is
 NOT the registered instrument (a different graph, a fifth of the pairs, the edges the pool chose) — a free first look
-at a pinned run that carries none of this code.
+at a pinned run that carries none of this code. It reports each check's windowed SIZE too, and with ``--tier1`` a
+DESCRIPTIVE two-tier status (Tier 1 from the ledger, the ladder's monitor read, no panel).
 
 **Cost (state it before you tick).** A row is ≤ 11 edges × 1,000 games. On rule 5b's CPU the production net plays
 ≈ 1.2–2 games/s (``design_x26_readiness.md`` §2.6; X26's Tier-1 rows): ≈ 1.5–2.5 h per check. The toy plays
@@ -105,6 +108,21 @@ def panel_members(name: Optional[str], path: Optional[Path] = None) -> List[Dict
     if name not in panels:
         raise MonitorDriverError(f"panel {name!r} is not registered ({sorted(panels)})")
     return [dict(m) for m in panels[name]["members"]]
+
+
+def member_file(m: Mapping[str, Any]) -> str:
+    """A panel member's file: an absolute path as is; a relative one in this checkout, else run-relative under the
+    MAIN checkout's ``models/`` (``baselines.candidate_paths``: a member that is a named baseline's checkpoint is
+    recorded by its run-relative path, so a later re-set of the baseline never moves the frozen panel)."""
+    from agents.training.baselines import candidate_paths
+
+    p = str(m["path"])
+    if Path(p).is_absolute():
+        return p
+    for cand in [str(repo_path(p))] + candidate_paths(p):
+        if Path(cand).exists():
+            return cand
+    raise MonitorDriverError(f"panel member {m.get('id')}: {p} does not resolve on this box")
 
 
 def panel_request_id(node_id: str, panel: str) -> str:
@@ -267,31 +285,58 @@ def panel_cells(root: Path, node_id: str, panel: str) -> Dict[str, Dict[str, Any
 def tier2_by_check(run: str, nodes: Mapping[int, Path], root: Path, t1_states: Mapping[int, str], *,
                    panel: Optional[str] = None, plan: CM.MonitorPlan = CM.DEFAULT_PLAN,
                    t1_plan: T1.CheckPlan = T1.DEFAULT_PLAN, evaluate: bool = True,
-                   panel_path: Optional[Path] = None, shas: Optional[Dict[int, str]] = None) -> Dict[str, Any]:
-    """Per grid step: the monitor's verdict and the panel's; plus the run's §8.3 signature. ``t1_states``: grid →
-    Tier-1 state (``main.plateau``)."""
-    states = check_states(run, nodes, root, plan, evaluate=evaluate, shas=shas)
+                   panel_path: Optional[Path] = None, shas: Optional[Dict[int, str]] = None,
+                   rule: Optional[CM.MonitorRule] = None) -> Dict[str, Any]:
+    """Per grid step: the monitor's verdict, its windowed SIZE and the COUNTED verdict (the size bar), and the
+    panel's; plus the run's §8.3 signature. ``t1_states``: grid → Tier-1 state (``main.plateau``)."""
+    shas = {} if shas is None else shas
+    states = check_states(run, nodes, root, plan, rule, evaluate=evaluate, shas=shas)
     members = panel_members(panel, panel_path)
     msha = [m["sha256"] for m in members]
     per: List[Dict[str, Any]] = []
     for cs in states:
         g = cs.row.grid
         mon = cs.verdict if cs.verdict in CM.VERDICTS and cs.state in CM.VERDICTS else cs.state
+        size: Optional[Dict[str, Any]] = None
+        if evaluate and cs.verdict in CM.VERDICTS and cs.newest_sha is not None:   # its rows are complete
+            size = check_size(run, nodes, root, cs.row, plan, shas)
+        sst = T2.size_state(size) if size is not None else None
+        counted = T2.counted_monitor(mon, sst)
         pv: Dict[str, Any] = {"verdict": T2.NOT_DECLARED}
         if members and cs.newest is not None:
             wb = T1.node_at(g - t1_plan.w_steps, sorted(nodes), t1_plan.slack_steps)
             if wb is None:
                 pv = {"verdict": T2.INCOMPLETE, "short": ["no W-back node"]}
             else:
-                cand = t1_states.get(g) == T1.FLAT and mon == CM.NONE
+                cand = t1_states.get(g) == T1.FLAT and counted == CM.NONE      # the COUNTED monitor (size bar)
                 want = T2.REGISTERED.candidate_pairs if cand else T2.REGISTERED.pairs
                 pv = T2.panel_verdict(panel_cells(root, cs.newest, panel or ""),
                                       panel_cells(root, node_name(nodes, wb) or "", panel or ""), msha, want)
-        per.append({"grid": g, "tier1": t1_states.get(g), "monitor": mon, "panel": pv["verdict"],
-                    "panel_detail": pv, "check": cs.to_json()})
+        per.append({"grid": g, "tier1": t1_states.get(g), "monitor": mon, "size": sst, "size_detail": size,
+                    "counted": counted, "panel": pv["verdict"], "panel_detail": pv, "check": cs.to_json()})
     sig = T2.signature(per, plan.delta_steps)
     return {"checks": per, "signature": sig, "panel": panel, "family": family_id(run, plan),
-            "rule": CM.REGISTERED.to_json(), "plan": plan.to_json(), "panel_rule": T2.REGISTERED.to_json()}
+            "rule": CM.REGISTERED.to_json(), "plan": plan.to_json(), "panel_rule": T2.REGISTERED.to_json(),
+            "size_rule": T2.SIZE_RULE.to_json()}
+
+
+def size_seed(ids: Sequence[str]) -> int:
+    """The size bootstrap's seed: the monitor's seed rule over the consumed ids, salted so it never shares the
+    signals' stream."""
+    return CM.seed_of(["size:" + str(i) for i in ids])
+
+
+def check_size(run: str, nodes: Mapping[int, Path], root: Path, rp: CM.RowPlan, plan: CM.MonitorPlan,
+               shas: Dict[int, str], rule: Optional[T2.SizeRule] = None) -> Dict[str, Any]:
+    """The check's non-transitive SIZE on its recent window (``plateau_t2`` docstring): the matrix of every
+    ``monitor_row`` row among nodes ≤ the newest, cut to the last ``window_checks`` checks' nodes."""
+    rule = rule or T2.SIZE_RULE
+    got = _check_read(run, nodes, root, rp, plan, shas)
+    mat = [r for r in got.rows if (r.get("request") or {}).get("kind") == CM.REQUEST_KIND_ROW]
+    if not mat:
+        return {"measured": False, "reason": "no monitor_row rows"}
+    return CM.cyclic_size(CM.build_matrix(CM.edges_from_rows(mat)), rule.min_step(rp.grid, plan.delta_steps),
+                          size_seed([r["row_id"] for r in mat]), rule.n_boot, rule.one_sided)
 
 
 # ------------------------------------------------------------------------------------------------ playing
@@ -385,7 +430,7 @@ def tick(run_dir: Path, lineage: Sequence[Path], out: Optional[str], compute: An
     members = panel_members(panel, panel_path)
     mrefs = []
     for m in members:
-        r = resolve(str(repo_path(m["path"])) if not Path(m["path"]).is_absolute() else m["path"])
+        r = resolve(member_file(m))
         if r.sha256 != m["sha256"]:
             raise MonitorDriverError(f"panel {panel}: {m['id']} is {r.sha256[:12]}, registered {m['sha256'][:12]}")
         mrefs.append(r)
@@ -421,7 +466,8 @@ def tick(run_dir: Path, lineage: Sequence[Path], out: Optional[str], compute: An
         if mrefs:
             t1 = _t1_states(run, nodes, t1_root or Path(L.archive_ledger_root()))
             after = check_states(run, nodes, root, plan, rule, evaluate=False, shas=shas)
-            mon = {c.row.grid: c.verdict for c in after}
+            mon = {c["grid"]: c["counted"] for c in                  # the COUNTED monitor: the size bar applies
+                   tier2_by_check(run, nodes, root, t1, plan=plan, shas=shas, rule=rule)["checks"]}
             for s in after:                       # every check's panel, not only the checks whose rows were due
                 g = s.row.grid
                 if grids is not None and g not in grids:
@@ -510,10 +556,13 @@ def ladder_edges(run_dir: Path) -> Tuple[List[Tuple[str, int, str, int, List[flo
 
 def ladder_read(run_dir: Path, *, delta_steps: int = 10_000_000, slack: int = 500_000, from_step: int = 0,
                 to_step: Optional[int] = None, window_steps: Optional[int] = None, rule: Optional[CM.MonitorRule] = None,
+                t1_states: Optional[Mapping[int, str]] = None,
                 emit: Callable[[str], None] = lambda m: print(m, file=sys.stderr, flush=True)) -> Dict[str, Any]:
-    """The four signals on the in-run ladder as of each Δ check in [from_step, to_step] (module docstring).
-    ``window_steps``: only nodes within that many steps of the newest (a CURRENT-cycling view; the registered (a)
-    reads the whole accumulated matrix)."""
+    """The four signals on the in-run ladder as of each Δ check in [from_step, to_step] (module docstring), and the
+    SIZE on the recent window (``plateau_t2.SIZE_RULE``: the ladder's nodes in the last 80M of grid, whatever
+    ``window_steps`` says). ``window_steps``: the SIGNALS read only nodes within that many steps of the newest (a
+    CURRENT-cycling view; the registered (a) reads the whole accumulated matrix). ``t1_states`` (grid → Tier-1
+    state): also a DESCRIPTIVE two-tier signature (no panel)."""
     rule = rule or CM.REGISTERED
     edges, meta = ladder_edges(run_dir)
     steps = sorted({e[1] for e in edges} | {e[3] for e in edges})
@@ -543,28 +592,53 @@ def ladder_read(run_dir: Path, *, delta_steps: int = 10_000_000, slack: int = 50
             checks.append({"grid": g, "newest_step": newest, "verdict": "NOT_READ", "reason": str(err)})
             g += delta_steps
             continue
+        size_rule = T2.SIZE_RULE
+        win = [e for e in edges if e[1] <= newest and e[3] <= newest]
+        size = CM.cyclic_size(CM.build_matrix(win), size_rule.min_step(g, delta_steps),
+                              CM.seed_of(f"size:ladder:{e[0]}:{e[2]}:{','.join(str(int(x)) for x in e[4])}"
+                                         for e in win), size_rule.n_boot, size_rule.one_sided)
+        sst = T2.size_state(size, size_rule)
         checks.append({"grid": g, "newest_step": newest, "verdict": res.verdict, "signals": res.signals,
                        "summary": _summary(res), "flagged": res.flagged_items,
                        "lag_curve": (res.detail.get("lag") or {}).get("curve"),
-                       "triangles": res.detail["triangles"]})
-        emit(f"[monitor/ladder] {run_dir.name} {g:,} (newest {newest:,}): {res.verdict} {res.signals}")
+                       "triangles": res.detail["triangles"], "size": sst, "size_detail": size,
+                       "counted": T2.counted_monitor(res.verdict, sst)})
+        emit(f"[monitor/ladder] {run_dir.name} {g:,} (newest {newest:,}): {res.verdict} {res.signals}; size "
+             f"{_fmt_size(size)} {sst}")
         g += delta_steps
-    return {"run": run_dir.name, "source": "snapshot_ladder (DESCRIPTIVE: not the registered instrument)",
-            "window_steps": window_steps, "meta": meta, "rule": rule.to_json(), "checks": checks}
+    out = {"run": run_dir.name, "source": "snapshot_ladder (DESCRIPTIVE: not the registered instrument)",
+           "window_steps": window_steps, "meta": meta, "rule": rule.to_json(),
+           "size_rule": T2.SIZE_RULE.to_json(), "checks": checks}
+    if t1_states is not None:
+        per = [{"grid": c["grid"], "tier1": t1_states.get(c["grid"]), "monitor": c["verdict"],
+                "size": c.get("size"), "panel": T2.NOT_DECLARED} for c in checks]
+        out["tier1"] = {str(k): v for k, v in sorted(t1_states.items())}
+        out["signature"] = {**T2.signature(per, delta_steps), "note": "DESCRIPTIVE: the ladder's monitor read, "
+                            "not the registered rows; no panel"}
+    return out
+
+
+def _fmt_size(size: Optional[Mapping[str, Any]]) -> str:
+    if not size or not size.get("measured"):
+        return "not measured" + (f" ({size.get('reason')})" if size else "")
+    return f"{size['size_pp']:.2f} pp [{size['lower_pp']:.2f}, {size['upper_pp']:.2f}]"
 
 
 # ------------------------------------------------------------------------------------------------ the CLI
 def format_tier2(rep: Mapping[str, Any]) -> List[str]:
     lines = [f"  TIER 2 = the cycle monitor (family {rep['family']}) + the panel ({rep['panel'] or 'NOT DECLARED'})",
+             f"  size = the recent window's per-edge cyclic SD, pp [one-sided 95 % bounds]; bar "
+             f"{T2.SIZE_RULE.bar_pp} pp ({T2.SIZE_RULE.rule_string()})",
              f"  {'check':>13}  {'tier1':<11} {'monitor':<13} {'edges':>6} {'hodge p':>8} {'lag z/crit':>12} "
-             f"{'tri minp':>9} {'nash':>5}  {'panel':<12} note"]
+             f"{'tri minp':>9} {'nash':>5}  {'size':<24} {'counted':<13} {'panel':<12} note"]
     for c in rep["checks"]:
         ch, sm = c["check"], c["check"]["summary"]
         lz = f"{sm['lag_z_max']:.2f}/{sm['lag_z_crit']:.2f}" if sm.get("lag_z_max") is not None else ""
         lines.append(f"  {c['grid']:>13,}  {str(c['tier1'] or '-'):<11} {str(c['monitor']):<13} "
                      f"{ch['edges_done']:>2}/{ch['edges_total']:<3} {sm.get('hodge_p', ''):>8} {lz:>12} "
                      f"{'' if sm.get('tri_min_p') is None else sm['tri_min_p']:>9} {sm.get('nash_support', ''):>5}  "
-                     f"{c['panel']:<12} {ch['note']}")
+                     f"{_fmt_size(c.get('size_detail')) if c.get('size_detail') else '-':<24} "
+                     f"{str(c.get('counted') or '-'):<13} {c['panel']:<12} {ch['note']}")
     s = rep["signature"]
     lines.append(f"TWO-TIER STATUS: {s['status']}" + (f" (as of the {s['as_of_check']:,} check)"
                                                     if s.get("as_of_check") else "") + f" — {s['why']}")
@@ -604,7 +678,11 @@ def cmd_tick(a: argparse.Namespace) -> int:
 
 def cmd_ladder(a: argparse.Namespace) -> int:
     run_dir, _lineage, _root = _run(a)
-    rep = ladder_read(run_dir, from_step=a.from_step, to_step=a.to_step, window_steps=a.window_steps)
+    t1 = None
+    if a.tier1:
+        t1_root = Path(L.check_write_root(a.tier1_out)) if a.tier1_out else Path(L.archive_ledger_root())
+        t1 = _t1_states(run_dir.name, node_series(run_dir, []), t1_root)
+    rep = ladder_read(run_dir, from_step=a.from_step, to_step=a.to_step, window_steps=a.window_steps, t1_states=t1)
     if a.json:
         print(json.dumps(rep, indent=1, sort_keys=True, default=str))
         return 0
@@ -614,7 +692,12 @@ def cmd_ladder(a: argparse.Namespace) -> int:
         print(f"  {c['grid']:>13,}  newest {c['newest_step']:>11,}  {c['verdict']:<13} {c.get('signals', '')}  "
               f"nodes {sm.get('nodes')} edges {sm.get('edges')} hodge p {sm.get('hodge_p')} share "
               f"{sm.get('cyclic_share')} lag z {sm.get('lag_z_max')}/{sm.get('lag_z_crit')} tri {sm.get('tri_n')} "
-              f"minp {sm.get('tri_min_p')} nash {sm.get('nash_support')} (post {sm.get('nash_post_support')})")
+              f"minp {sm.get('tri_min_p')} nash {sm.get('nash_support')} (post {sm.get('nash_post_support')})  "
+              f"size {_fmt_size(c.get('size_detail'))} {c.get('size', '')} -> counted {c.get('counted', '')}")
+    if "signature" in rep:
+        s = rep["signature"]
+        print(f"TWO-TIER STATUS (DESCRIPTIVE, ladder + Tier 1, no panel): {s['status']}"
+              + (f" (as of the {s['as_of_check']:,} check)" if s.get("as_of_check") else "") + f" — {s['why']}")
     return 0
 
 
@@ -632,6 +715,9 @@ def _parser() -> argparse.ArgumentParser:
             p.add_argument("--to-step", type=int, default=None)
             p.add_argument("--window-steps", type=int, default=None,
                            help="only nodes within this many steps of the check's newest (a CURRENT-cycling view)")
+            p.add_argument("--tier1", action="store_true",
+                           help="also read Tier 1 from the ledger and print a DESCRIPTIVE two-tier status")
+            p.add_argument("--tier1-out", default=None, help="the ledger root Tier 1's rows are read from")
             p.add_argument("--json", action="store_true")
             continue
         p.add_argument("--lineage-run", action="append", default=None,

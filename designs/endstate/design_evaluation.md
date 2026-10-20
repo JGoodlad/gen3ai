@@ -23,7 +23,10 @@
   panel rule and the two-tier signature (`agents/training/plateau_t2.py`), the driver and reader
   `python -m main.cycle_monitor` (`tick` / `status` / `ladder`), one `cycle_flag` decision per check, and
   `main.plateau status` printing both tiers (§2.5 and §8.2 "As built"). NOT built: the GPU window and scheduler (U4),
-  bot panel members, a registered panel, the G6 joint OC simulation (F-ED-24–F-ED-26).
+  bot panel members, the G6 joint OC simulation (F-ED-24–F-ED-26).
+- **AMENDED 2026-10-19 (ORCHESTRATOR rulings on F-ED-26 / F-ED-27):** a cycling flag COUNTS for the plateau only
+  when its SIZE on the recent window clears the 1.7 pp bar (§8.2 "The size bar"); the first outside panel,
+  `outside_v1` (the `production` baseline alone), is REGISTERED (§8.2 "As built").
 
 This doc is the SYSTEM: how eval evidence is produced, stored, scheduled and estimated. The population DECISIONS (promotion, eviction, plateau) live in [`design_league_decisions.md`](design_league_decisions.md). A build or decision that differs from this doc updates it and its Decision record in the same commit. Era context: [`era_plan_post_m5.md`](era_plan_post_m5.md). The evidence behind the numbers measured on banked data is in [`measurements/eval_design_2026-10-03/`](../research_state/measurements/eval_design_2026-10-03/README.md); the revision's simulations are in its `revision/` folder.
 
@@ -791,6 +794,10 @@ the check's rows; the driver and reader are `python -m main.cycle_monitor` (`tic
   CONTINUE under the two-tier rule. It exposes F-ED-27: (a) on an accumulating matrix cannot tell material or current
   cycling from a small persistent component. X34's REGISTERED rows were played for 20M–60M only (heavy-slot
   contention stopped the tick): 30M and 40M NONE, 50M and 60M SUSPECTED (Hodge + triangles, ≈ 2 pp; top-ups pending).
+  **Re-read under the size bar (2026-10-19, §8.2):** X26's ladder window size is MATERIAL at 28 of 37 checks
+  (3–6 pp) and INCONCLUSIVE at the other 9 (280M–300M, 320M–370M: wide intervals on 4–11 ladder nodes); never
+  NEGLIGIBLE, so X26 still reads CONTINUE at every check, 270M / 280M included. X34's 50M / 60M sizes are 2.6 pp
+  [1.5, 3.9] and 2.5 pp [1.6, 3.5]: INCONCLUSIVE.
 - **`ladder`: a DESCRIPTIVE retro read**, never a decision: the same signals on the in-run SNAPSHOT LADDER
   (`snapshot_ladder/games.jsonl`, mirrored, 50–100 pairs per line, the pool's sliding window, a_p1 + reversed b_p1),
   as of each Δ check. It is a different graph from the registered row (the edges the pool chose, a fifth to a tenth
@@ -801,7 +808,9 @@ the check's rows; the driver and reader are `python -m main.cycle_monitor` (`tic
 - **Tests:** `agents/training/cycle_monitor_test.py` (the plan, orientation, the LP, NONE on a transitive climb,
   SUSPECTED on a planted hole, confirmation on top-up games only, the band, aborts, determinism);
   `main/cycle_monitor_test.py` (the driver through a real ledger: one family, decided once, a top-up that confirms,
-  resume, the frozen spec, `verify` re-derivation, the ladder's orientation).
+  resume, the frozen spec, `verify` re-derivation, the ladder's orientation; the size bar's fields, the panel's cells
+  through `tick --panel`, the registered panel's shape); `main/h2h/cycle_monitor_integration_test.py` (slow: a real
+  tick on the h2h engine, CPU, decided once, `verify` and `audit` clean).
 
 ### 2.6 Archive scale (later)
 The cross-run archive is where T1 + T0 + matrix completion pay off. **Not built until a question needs it.** The
@@ -1180,11 +1189,66 @@ it is NOT a plateau.
   RISING / FLAT (< 14 Elo) / UNDECIDED at one-sided 95 %, rule 8's 1e-9 band; INCOMPLETE when a cell is short;
   INCONCLUSIVE above 25 % aborted.
 - **NOT built in this slice (FINDINGS F-ED-25, F-ED-26):** BOT opponents (`main.h2h` plays checkpoints only; §8.2's
-  "bots inside the band" need a bot cell on the h2h engine); NO panel is registered yet (choosing members needs
-  in-band games: the X35 X-block rule of `design_compute_efficiency.md` §5.6.4 is the natural one); Metamon SmallRL /
-  Kakuna stay REPORTED on `main.anchors`' milestone cadence (≈ 9 s a game on CPU: a 1,000-pair panel cell is days),
-  never a gating panel member; the betting confidence sequence for repeated panel reads; the G6 joint OC simulation;
-  STAGNATION (`main.policy_drift`) is the operator's follow-up read.
+  "bots inside the band" need a bot cell on the h2h engine); Metamon SmallRL / Kakuna stay REPORTED on
+  `main.anchors`' milestone cadence (≈ 9 s a game on CPU: a 1,000-pair panel cell is days), never a gating panel
+  member; the betting confidence sequence for repeated panel reads; the G6 joint OC simulation; STAGNATION
+  (`main.policy_drift`) is the operator's follow-up read.
+
+**The size bar (AMENDMENT, 2026-10-19, ORCHESTRATOR ruling on F-ED-27; `plateau_t2` `gen3_plateau_t2_v2`).** The
+monitor's statistical test and its `cycle_flag` decisions are UNCHANGED; what changes is which flags COUNT for the
+two-tier signature.
+- **The size.** `cycle_monitor.cyclic_size` on the RECENT WINDOW: the nodes of the last 8 checks (the hybrid plan's
+  dense lags, so every pair among the 9 nodes is played: a complete 36-edge graph whose scope never grows with the
+  run; 80M steps at Δ = 10M). The window is chosen in CHECKS, not steps, because that is the subgraph every check
+  plays in full; geometric-lag edges reach older history and are left out. The scale is §2.5's detection target's:
+  τ, the SD (pp of score at ½) of an independent cyclic logit perturbation per edge. Such a perturbation leaves a
+  WLS residual of expected weighted energy λ = τ²·D, D = tr(W) − tr(WH) (H the WLS hat matrix), and the residual
+  χ² is then ≈ noncentral χ²(df, λ). So τ̂ = 25·√(max(0, χ² − E₀χ²)/D) pp, with E₀ the null bootstrap's mean
+  (2,000 replicates, the signals' tilted-pentanomial null on the window graph), and its one-sided 95 % bounds invert
+  the noncentral χ² CDF at χ²/φ, φ = E₀χ²/df (Steiger & Lind 1980; MacCallum, Browne & Sugawara's 1996 test of
+  close fit). The seed is the monitor's seed rule over the consumed row ids, salted `size:`.
+- **The rule.** **MATERIAL** iff the lower bound > 1.7 pp (Q9's within-check target); **NEGLIGIBLE** iff the
+  upper bound < 1.7 pp; else **INCONCLUSIVE** (the bar inside the interval, or a window with no cycle). A
+  SUSPECTED / CONFIRMED check counts as itself when MATERIAL, as NONE when NEGLIGIBLE, and as INCONCLUSIVE
+  otherwise (rule 8: an estimate within its own interval of the bar is not a crossing; a bound within 1e-9 of the
+  bar neither). NONE / INCONCLUSIVE monitor verdicts pass through. A TREADMILL therefore needs CONFIRMED and
+  MATERIAL; a panel CANDIDATE (1,000 pairs) is Tier 1 FLAT and the COUNTED monitor NONE.
+- **Operating characteristics (SIMULATED, 40 synthetic runs per cell, the registered plan at 500 pairs, the
+  14-node climb; `measurements/cycle_monitor_retro_2026-10-19/size_bar_oc.txt`):** τ̂ is unbiased on τ (mean 0.32 /
+  0.90 / 1.69 / 2.52 / 4.05 pp at τ = 0 / 1 / 1.7 / 2.5 / 4); NEGLIGIBLE / INCONCLUSIVE / MATERIAL = 34/6/0 at τ = 0,
+  17/23/0 at 1, 1/35/4 at 1.7, 0/13/27 at 2.5, 0/0/40 at 4. So one check's window resolves sizes below ≈ 1 pp or
+  above ≈ 2.5 pp; between, a flag reads INCONCLUSIVE and blocks the plateau (FINDING F-ED-28).
+- **Not changed:** `cycle_flag` decision rows, their rule string and `verify`; the ledger; the panel rule. The size
+  is computed by the READER from the rows (`main.cycle_monitor status`, `main.plateau status`, the `ladder` read),
+  so no recorded decision moves.
+
+**The registered panel `outside_v1` (2026-10-19, ORCHESTRATOR ruling on F-ED-26; `plateau_panels.json`).** Rule:
+every frozen checkpoint that is OUTSIDE every run it is read against, LOADABLE at HEAD's architecture today and NAMED
+in `designs/baselines.json`. Of the eleven baselines only `production` (the closing test's lower-median end-state
+seed, `rb_es_end2_s2005/final_model.zip`, 15M steps) qualifies: the other ten are `era_checkout_only`. So
+`outside_v1` = {`production`}, recorded by its run-relative path and sha256 (a later re-set of the baseline never
+moves the frozen panel; a changed file is refused).
+- **What "outside" means for it:** another LINEAGE, frozen since 2026-10-12, in no run's self-play pool, so it
+  cannot co-move with a run's cycling. It is NOT outside the RECIPE: it is the production recipe at 15M, so it
+  measures progress against an early production policy, not against a different style of play.
+- **Cost per check:** the newest node's cell, 1,000 games (500 pairs; 2,000 at a candidate, plus the W-back's top-up
+  once); the W-back's cell is reused. ≈ 8–14 min of rule 5b's CPU at the production net's 1.2–2 games/s, 25–45 min at
+  a candidate. The toy's cross-architecture cell is UNMEASURED (bounded above by the production rate).
+- **Its limits, stated (FINDING F-ED-29):** (1) its in-band status against X26's / X34's 200–380M nodes is
+  UNVERIFIED (no row exists; X26 beat its own 2M node 0.93–0.97 by 30M); an out-of-band member inflates the logit
+  SE and the panel then reads UNDECIDED; (2) with ONE member, P(PANEL FLAT | zero gain) ≈ 0.38 per check at 1,000
+  pairs in band (SE(Δ) ≈ 10 Elo against the 14 Elo bar), ≈ 0.15 at two consecutive checks — the design's ≈ 0.95
+  assumed six members. TRUE_PLATEAU is now REACHABLE, not likely.
+- **Bots (scoped, not built):** a bot member needs a BOT cell on `main.h2h`'s engine — the opponent slot driven by a
+  Rust roster bot (`rust_env/src/bots`, as the in-loop eval's executor already does) under the h2h protocol,
+  mirrored pairs, a `kind: bot` opponent block keyed by the bot's name + source digest (U2's identity rule) — about
+  one agent-day with its integration test. It buys nothing for today's runs: every roster bot scores 0.89–1.0
+  against X26 at 280M and the X34 toy at 280M (`eval_results.jsonl`), outside the 15–85 % band.
+- **The proposals that would make the panel strong (not registered: outside the ruling's list):** the other seven
+  closing-test end-state seeds (`rb_es_end2_s2001`…`s2008` finals: other lineages, HEAD's architecture, frozen) would
+  give the six-member panel the design sized, at 6× the cost; a stronger outside member (a frozen node of ANOTHER
+  long run, e.g. X26's 200M for X34-era runs) would fix the band. Each needs a baselines entry first (`main.baselines
+  set`).
 
 ### 8.3 The signatures: deterministic, pre-registered
 
@@ -1531,7 +1595,8 @@ the public `opponent_builder` (the rows' `team_set`). `rust_eval.launch.run_seed
 - **F-ED-26 (U9, 2026-10-19): no outside panel is registered, and bots cannot be members.** `main.h2h` plays
   checkpoints only, so §8.2's "bots inside the band" are not playable; the panel registry is empty until members are
   chosen by a declared in-band rule (the X35 X-block's). Until then every two-tier read of a FLAT pair is
-  `PLATEAU_BUT_PANEL`, never `TRUE_PLATEAU`.
+  `PLATEAU_BUT_PANEL`, never `TRUE_PLATEAU`. **RESOLVED IN PART 2026-10-19:** `outside_v1` = {`production`} is
+  registered (§8.2 "As built"); bots still cannot be members, and the panel's limits are F-ED-29.
 - **F-ED-27 (U5 retro, 2026-10-19, MEASURED on X26's in-run ladder): signal (a) on the ACCUMULATED matrix has
   ever-growing power against a FIXED small cyclic component, so on a run with any persistent non-transitivity it
   flags at every check, and the registered two-tier rule can then never call a plateau.** On X26's ladder (72
@@ -1543,7 +1608,19 @@ the public `opponent_builder` (the rows' `team_set`). `rust_eval.launch.run_seed
   the owner / orchestrator; the registered rule is unchanged here, standing rule 9):** make (a) a materiality test
   (a one-sided bound on the excess RMS above a declared bar, e.g. the 1.7 pp target), or restrict (a) to the newest
   row's window (the dense lags), keeping the accumulated read REPORTED. Until then, read a SUSPECTED that rests on (a)
-  alone together with its `excess_rms_pp` (now reported beside every check).
+  alone together with its `excess_rms_pp` (now reported beside every check). **RESOLVED 2026-10-19 (ORCHESTRATOR):**
+  both halves — a size estimate on the recent window, against the 1.7 pp bar, with the test unchanged (§8.2 "The size
+  bar"; Decision record).
+- **F-ED-28 (the size bar, 2026-10-19, SIMULATED): one check's window resolves a cyclic size only outside ≈ 1–2.5 pp.**
+  At 500 pairs on the 36-edge window the one-sided 95 % interval is ≈ ±0.8 pp, so a flag whose true size is near
+  the bar reads INCONCLUSIVE and blocks the plateau (the window reads INCONCLUSIVE in 58 % of runs at τ = 1 pp, 88 %
+  at 1.7 pp). A concentrated HOLE is diluted too: one edge 6.5 pp off (§2.5's single-hole target) is ≈ 6.5/√36 ≈
+  1.1 pp of per-edge SD on the window, so a CONFIRMED single hole can read NEGLIGIBLE and not count — the ruling sizes DIFFUSE cycling; a
+  per-item bar for (b) / (c) would be a further amendment. Pooling two checks' windows (Q9's ≈ 1.2 pp) or 1,000
+  pairs per edge would narrow the band.
+- **F-ED-29 (the panel, 2026-10-19): `outside_v1` is one member of unverified band.** P(PANEL FLAT | zero gain) ≈
+  0.38 a check, ≈ 0.15 twice, with one in-band member at 1,000 pairs; its band against X26's / X34's late nodes is
+  unmeasured. The first panel tick measures it; the proposals in §8.2 "As built" would fix both.
 
 ## Decision record
 
@@ -1581,3 +1658,5 @@ the public `opponent_builder` (the rows' `team_set`). `rust_eval.launch.run_seed
 | 2026-10-06 | **U9a build decisions (plateau-meter agent; BUILT as planned)** | (1) the verdict is a pure function of the request's rows under the rule its decision row spells out in full, so `verify` re-derives it with no other input; (2) rows are folded in BATCH order, the first crossing stops, later batches are surplus (never folded), and a gap or a short batch is a refusal, never a verdict; (3) INCONCLUSIVE (aborts > 25 %) is judged at the stop; (4) ONE decision per request by `append_decision(unique=True)` under the ledger lock, plus `read_decisions` (no `ReaderDecl`: decisions are not count rows); (5) `audit.RULES` entries may return `None` for a decision of a rule they do not own (the kind `plateau` will also carry U9's two-tier decision); (6) the request spec FREEZES both nodes' sha256 through a new optional `consumer` block in `main.h2h`'s edge spec (absent = the spec every existing request holds); (7) the plateau's own ordered schedule namespace, so its seed blocks never collide with a monitor row on the same pair; (8) W declared in STEPS (5 × 10M), not converted from GPU-hours per run; (9) nodes are periodic checkpoints only, the first in [g, g + 500k) | a CONTINUE / UNDECIDED decision row per interim look (rows already carry the trail); the Tier-1 request inside a plateau family now (U9's choice); a per-run lock file (the ledger's claim + unique decision already serialize two drivers); nodes from the self-play pool's `snapshots/` (promotion-gated, so a stalled run would have no nodes) | §8.1 "As built"; `plateau_t1_test.py`, `main/plateau_test.py`, `main/h2h/plateau_integration_test.py` |
 | 2026-10-17 | X35's breaker reference (design worker, for the orchestrator) | a uniform frozen set (own archive at lags disjoint from the archive-pool arm's nodes + another lineage, band [0.20, 0.80]), for X35 only | waiting for the §2.3 back-test (blocks X35 indefinitely); the posterior Nash (no solver yet) | `design_compute_efficiency.md` §5.6.4 |
 | 2026-10-19 | **U5 + U9 OFFLINE (meter-build worker, for the orchestrator)** | the cycle monitor and Tier 2 built OFFLINE on `main.h2h`'s engine: one `monitor_row` request per check in ONE family per run (indexed reads; `cycle_flag` joins `GROUP_SEQUENTIAL_KINDS`), decided only when every earlier row is complete, a SUSPECTED check decided after its top-up; signal (d) on the POINT matrix's LP Nash (posterior reported); the panel as a REGISTERED checkpoint set; a `PLATEAU_BUT_PANEL` status; a descriptive `ladder` read on the in-run snapshot ladder | waiting for U4's window (a pinned run cannot carry it; F-ED-19); the posterior support as the flag statistic (2·10⁶ LPs a check); Metamon / Kakuna as gating panel members (days a cell on CPU); one family per check (a check needs the earlier rows) | §2.5 / §8.2 "As built"; F-ED-24–F-ED-26 |
+| 2026-10-19 | **AMENDMENT: the size bar on a counted cycling flag (ORCHESTRATOR ruling on F-ED-27)** | the monitor's test unchanged; a SUSPECTED / CONFIRMED check COUNTS for the plateau only when its non-transitive size on the RECENT WINDOW (the last 8 checks' nodes: the complete dense-lag subgraph, 80M at Δ = 10M) is MATERIAL (one-sided 95 % lower bound > 1.7 pp, Q9's target); NEGLIGIBLE (upper bound < 1.7 pp) counts as NONE; the bar inside the interval is INCONCLUSIVE (rule 8). The size is the per-edge cyclic SD (the target's scale), its interval the noncentral-χ² inversion (Steiger & Lind; MacCallum et al.'s close-fit test). `gen3_plateau_t2_v2`; computed by the reader, no decision row changes | a window of the last 80M of STEPS (the same at Δ = 10M; a check count is what every row plays in full); the accumulated matrix's excess RMS (grows nothing but still mixes old history in); a size test with the bar as H0 alone (no NEGLIGIBLE call: a plateau would wait on power the window does not have); the excess weighted RMS as the scale (it under-reads an iid perturbation by √(df/E) ≈ 0.88 and is not the target's scale) | §8.2 "The size bar"; F-ED-27, F-ED-28; `measurements/cycle_monitor_retro_2026-10-19/` |
+| 2026-10-19 | **The first OUTSIDE PANEL, `outside_v1` (ORCHESTRATOR ruling on F-ED-26)** | the named baselines loadable at HEAD's architecture: `production` alone (the other ten are era-checkout-only), by run-relative path + sha256; ≈ 8–14 min of CPU a check | Kakuna / SmallRL (days a cell on CPU); Rust roster bots (need a bot cell on `main.h2h`, ≈ 1 agent-day, and all score 0.89–1.0: out of band); the seven other closing-test seeds (not named baselines: proposed, not registered) | §8.2 "As built"; F-ED-26, F-ED-29 |

@@ -18,11 +18,21 @@ cell whose aborted games exceed 25 % is INCONCLUSIVE.
 
 | status | rule |
 |---|---|
-| ``TREADMILL`` | the monitor CONFIRMED at the newest decided check, whatever Tier 1 says |
-| ``TRUE_PLATEAU`` | Tier 1 FLAT AND monitor NONE AND panel FLAT, at two consecutive checks (Δ apart) |
-| ``PLATEAU_BUT_PANEL`` | Tier 1 FLAT AND monitor NONE at two consecutive checks, the panel NOT flat or not played (it names why) |
-| ``TRANSITIVE_IMPROVEMENT`` | Tier 1 GAIN AND monitor NONE at the newest check |
-| ``CONTINUE`` | anything else (UNDECIDED, SUSPECTED, INCONCLUSIVE, a check not yet read) |
+| ``TREADMILL`` | the monitor CONFIRMED, its size MATERIAL, at the newest decided check, whatever Tier 1 says |
+| ``TRUE_PLATEAU`` | Tier 1 FLAT AND monitor counted NONE AND panel FLAT, at two consecutive checks (Δ apart) |
+| ``PLATEAU_BUT_PANEL`` | Tier 1 FLAT AND monitor counted NONE at two consecutive checks, the panel NOT flat or not played |
+| ``TRANSITIVE_IMPROVEMENT`` | Tier 1 GAIN AND monitor counted NONE at the newest check |
+| ``CONTINUE`` | anything else (UNDECIDED, a MATERIAL or size-INCONCLUSIVE flag, INCONCLUSIVE, a check not yet read) |
+
+**The SIZE BAR (amendment, 2026-10-19, ORCHESTRATOR ruling on F-ED-27).** The monitor's statistical test is
+unchanged; a SUSPECTED / CONFIRMED check COUNTS only when the non-transitive component it flags is MATERIAL. The size
+is :func:`cycle_monitor.cyclic_size` on the RECENT WINDOW — the nodes of the last :data:`SizeRule.window_checks`
+checks (the hybrid plan's dense lags: every pair among them is played, so the window is a complete graph whose scope
+does not grow with the run; 80M steps at Δ = 10M) — on the scale of §2.5's detection target (the per-edge cyclic SD,
+pp at ½). With its one-sided 95 % bounds: **MATERIAL** iff the lower bound > :data:`SizeRule.bar_pp` (1.7 pp, the
+target); **NEGLIGIBLE** iff the upper bound < the bar, and a NEGLIGIBLE flag COUNTS AS NONE; else (the bar inside the
+interval, or the window not measurable) **INCONCLUSIVE**, which counts as INCONCLUSIVE (rule 8: an estimate within
+its own interval of the bar is not a crossing; a bound within 1e-9 of the bar neither).
 
 STAGNATION (a TRUE_PLATEAU with ``main.policy_drift`` below its floor) is the operator's follow-up read, not computed
 here. The G6 joint operating-characteristics simulation is NOT part of this slice (a FINDING).
@@ -37,7 +47,7 @@ from agents.training import cycle_monitor as CM
 from agents.training import plateau_t1 as T1
 
 RULE_NAME = "plateau_t2_panel"
-RULE_VERSION = "gen3_plateau_t2_v1"
+RULE_VERSION = "gen3_plateau_t2_v2"     # v2: the size bar on a counted flag (2026-10-19)
 REQUEST_KIND = "panel"
 PURPOSE = "plateau"
 
@@ -45,7 +55,56 @@ RISING, FLAT, UNDECIDED, INCOMPLETE, INCONCLUSIVE, NOT_DECLARED = (
     "RISING", "FLAT", "UNDECIDED", "INCOMPLETE", "INCONCLUSIVE", "NOT_DECLARED")
 TREADMILL, TRUE_PLATEAU, PLATEAU_BUT_PANEL, TRANSITIVE_IMPROVEMENT, CONTINUE = (
     "TREADMILL", "TRUE_PLATEAU", "PLATEAU_BUT_PANEL", "TRANSITIVE_IMPROVEMENT", "CONTINUE")
+MATERIAL, NEGLIGIBLE, SIZE_INCONCLUSIVE = "MATERIAL", "NEGLIGIBLE", "INCONCLUSIVE"
 BAND = 1e-9
+
+
+@dataclass(frozen=True)
+class SizeRule:
+    """The size bar a cycling flag must clear to COUNT (module docstring, the 2026-10-19 amendment)."""
+
+    bar_pp: float = 1.7                      # §2.5's within-check detection target (Q9)
+    one_sided: float = 0.95
+    window_checks: int = 8                   # = MonitorPlan.dense_lags: the complete recent subgraph
+    n_boot: int = 2000
+
+    def rule_string(self) -> str:
+        return (f"cycle_size_bar(bar_pp={self.bar_pp},one_sided={self.one_sided},window_checks={self.window_checks},"
+                f"n_boot={self.n_boot},scale=per_edge_cyclic_sd_pp,ci=noncentral_chi2_inversion,band=1e-09)")
+
+    def min_step(self, grid: int, delta_steps: int) -> int:
+        """The window's first node step: the node of the check ``window_checks`` back (its grid step; a node is the
+        first checkpoint at or above its grid, within a slack below Δ)."""
+        return int(grid) - self.window_checks * int(delta_steps)
+
+    def to_json(self) -> Dict[str, Any]:
+        return {**asdict(self), "rule": self.rule_string()}
+
+
+SIZE_RULE = SizeRule()
+
+
+def size_state(size: Optional[Mapping[str, Any]], rule: SizeRule = SIZE_RULE) -> str:
+    """MATERIAL / NEGLIGIBLE / INCONCLUSIVE from :func:`cycle_monitor.cyclic_size`'s interval (module docstring)."""
+    if not size or not size.get("measured"):
+        return SIZE_INCONCLUSIVE
+    lo, hi = float(size["lower_pp"]), float(size["upper_pp"])
+    if lo > rule.bar_pp + BAND:
+        return MATERIAL
+    if hi < rule.bar_pp - BAND:
+        return NEGLIGIBLE
+    return SIZE_INCONCLUSIVE
+
+
+def counted_monitor(monitor: Optional[str], size: Optional[str]) -> Optional[str]:
+    """The monitor verdict as the PLATEAU counts it: a SUSPECTED / CONFIRMED flag counts only when MATERIAL; a
+    NEGLIGIBLE one counts as NONE; a size-INCONCLUSIVE one (or a flag with no size read) as INCONCLUSIVE. Any other
+    verdict (NONE, INCONCLUSIVE, CONTINUE, a state) passes through."""
+    if monitor not in (CM.SUSPECTED, CM.CONFIRMED):
+        return monitor
+    if size == MATERIAL:
+        return monitor
+    return CM.NONE if size == NEGLIGIBLE else CM.INCONCLUSIVE
 
 
 @dataclass(frozen=True)
@@ -119,17 +178,19 @@ def panel_verdict(newest: Mapping[str, Mapping[str, Any]], wback: Mapping[str, M
 
 
 def signature(checks: Sequence[Mapping[str, Any]], delta_steps: int) -> Dict[str, Any]:
-    """The run's two-tier status from per-check ``{"grid", "tier1", "monitor", "panel"}`` (module docstring)."""
-    by = {int(c["grid"]): c for c in checks}
+    """The run's two-tier status from per-check ``{"grid", "tier1", "monitor", "size", "panel"}`` (module
+    docstring): ``monitor`` is the cycle monitor's verdict, ``size`` its :func:`size_state` (absent = not read);
+    the status reads the COUNTED monitor (:func:`counted_monitor`)."""
+    by = {int(c["grid"]): {**c, "monitor": counted_monitor(c["monitor"], c.get("size"))} for c in checks}
     decided = sorted(g for g, c in by.items() if c["tier1"] in T1.VERDICTS and c["monitor"] in CM.VERDICTS)
     if not decided:
         return {"status": CONTINUE, "as_of_check": None, "why": "no check has both a Tier-1 and a monitor verdict"}
     g = decided[-1]
     c = by[g]
     if c["monitor"] == CM.CONFIRMED:
-        return {"status": TREADMILL, "as_of_check": g, "why": "the cycle monitor CONFIRMED cycling"}
+        return {"status": TREADMILL, "as_of_check": g, "why": "the cycle monitor CONFIRMED MATERIAL cycling"}
     if c["tier1"] == T1.GAIN and c["monitor"] == CM.NONE:
-        return {"status": TRANSITIVE_IMPROVEMENT, "as_of_check": g, "why": "Tier 1 GAIN, monitor NONE"}
+        return {"status": TRANSITIVE_IMPROVEMENT, "as_of_check": g, "why": "Tier 1 GAIN, monitor counted NONE"}
     prev = by.get(g - delta_steps)
     pair = [prev, c] if prev is not None else None
     if pair and all(x["tier1"] == T1.FLAT and x["monitor"] == CM.NONE for x in pair):
@@ -137,7 +198,7 @@ def signature(checks: Sequence[Mapping[str, Any]], delta_steps: int) -> Dict[str
             return {"status": TRUE_PLATEAU, "as_of_check": g, "why": "Tier 1 FLAT, monitor NONE, panel FLAT at "
                     f"{g - delta_steps:,} and {g:,}"}
         return {"status": PLATEAU_BUT_PANEL, "as_of_check": g,
-                "why": f"Tier 1 FLAT and monitor NONE at {g - delta_steps:,} and {g:,}; the panel reads "
+                "why": f"Tier 1 FLAT and monitor counted NONE at {g - delta_steps:,} and {g:,}; the panel reads "
                        f"{[x.get('panel') for x in pair]} — a TRUE PLATEAU also needs the panel FLAT at both"}
     return {"status": CONTINUE, "as_of_check": g,
-            "why": f"Tier 1 {c['tier1']}, monitor {c['monitor']}, panel {c.get('panel')}"}
+            "why": f"Tier 1 {c['tier1']}, monitor counted {c['monitor']} (size {c.get('size')}), panel {c.get('panel')}"}

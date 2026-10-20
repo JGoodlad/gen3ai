@@ -805,9 +805,11 @@ non-transitive at every 10M check from 10M to 370M: the Hodge residual is at its
 excess cyclic RMS of about 4 pp of score over the whole archive and about 3 pp inside the last 80M around P\* (280M).
 The null is calibrated on that very graph (1 / 30 false flags). So under the two-tier rule P\* is a TIER-1 plateau with
 cycling SUSPECTED (never confirmed), not a declared one. Hypothesis: the cyclic part is small next to the run's
-progress but comparable to Tier 1's 2 pp bar, so at the plateau it may be what "flat" is made of. The rule's (a) needs
-a materiality bar before it can gate a stop (`design_evaluation.md` F-ED-27). [ledger 2026-10-19 · *THE CYCLE
-MONITOR*]
+progress but comparable to Tier 1's 2 pp bar, so at the plateau it may be what "flat" is made of. **It is MATERIAL,
+not merely persistent:** under the size bar ruled the same day (a flag counts only when the per-edge cyclic SD on
+the last 80M is above 1.7 pp at one-sided 95 %), X26's window reads ≈ 3–5 pp, MATERIAL at 28 of 37 checks
+(270M: 3.3 pp [1.9, 4.6]) and too wide to call at the other 9, NEVER negligible — so P\* still reads CONTINUE
+(`design_evaluation.md` §8.2 "The size bar"). [ledger 2026-10-19 · *THE CYCLE MONITOR* · *THE SIZE BAR*]
 
 **And a second anchor ABOVE us (2026-09-14, `foul_play_derisk_2026-09-14/`):** [MEASURED] Foul Play — MCTS with
 decoupled UCT over a hand-written evaluator on the Rust poke-engine, determinising the opponent's sets from Smogon

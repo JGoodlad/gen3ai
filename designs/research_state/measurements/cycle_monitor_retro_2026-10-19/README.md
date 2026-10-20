@@ -70,17 +70,58 @@ So the toy's early archive (rb_toy_ent_s4002, 10M–60M) already carries a detec
 its Nash frontier stays on the newest node: the same shape as X26's, smaller. Its plateau region (X34 is past 230M,
 Tier 1 FLAT once at 200M) is NOT read.
 
-**To finish it** (resumable at the batch; the rows already banked are never replayed):
+**To finish it** (NOT re-run on 2026-10-19 by the orchestrator's ruling: heavy slots were scarce; resumable at the
+batch, the rows already banked are never replayed, and the status reader applies the size bar below by itself):
 
 ```bash
-# CPU, rule 5b, when a heavy slot is free (≈ 3 h):
+# from a worktree at or after the size-bar commit, CPU, rule 5b, when a heavy slot is free (≈ 3 h):
+export PYTHONPATH=$PWD/src CUDA_VISIBLE_DEVICES=""
 scripts/ops/mem_cap.sh 10 nice -n 19 taskset -c 5-7,13-15 python -m main.cycle_monitor tick rb_toy_ent_s4002_deep \
     --lineage-run rb_toy_ent_s4002 --out ~/gen3ai_archive/cycle_monitor_retro_2026-10-19/smoke_ledger \
-    --threads 3 --torch-threads 3 --grid 20000000 ... --grid 230000000
+    --threads 3 --torch-threads 3 $(for g in $(seq 20 10 230); do printf -- '--grid %d000000 ' "$g"; done)
+# add --panel outside_v1 to play the registered panel's cells too (+ ≈ 1,000 games per check)
+python -m main.cycle_monitor status rb_toy_ent_s4002_deep --lineage-run rb_toy_ent_s4002 \
+    --out ~/gen3ai_archive/cycle_monitor_retro_2026-10-19/smoke_ledger      # reads only; prints sizes + counted
 # or in a GPU lease window (the toy's rows take minutes there): the same with --device cuda under the lease token
 ```
 
+## Re-read under the SIZE BAR (2026-10-19, the ORCHESTRATOR's ruling on F-ED-27; DESCRIPTIVE)
+
+The amended Tier-2 rule (`design_evaluation.md` §8.2 "The size bar"): a SUSPECTED / CONFIRMED check counts for the
+plateau only when its non-transitive SIZE on the recent window (the last 8 checks' nodes; for the ladder, its nodes
+in the last 80M of grid) is MATERIAL — the one-sided 95 % lower bound of the per-edge cyclic SD above 1.7 pp; a
+NEGLIGIBLE one (upper bound below 1.7 pp) counts as NONE; the bar inside the interval is INCONCLUSIVE.
+
+```bash
+python -m main.cycle_monitor ladder rb_x26_s2601 --tier1 --json > x26_ladder_sizebar.json   # ≈ 10 min, 1 core
+python -m main.cycle_monitor status rb_toy_ent_s4002_deep --lineage-run rb_toy_ent_s4002 \
+    --out ~/gen3ai_archive/cycle_monitor_retro_2026-10-19/smoke_ledger > x34_status_sizebar.txt
+python size_bar_oc.py 40 > size_bar_oc.txt                                                   # the OC simulation
+```
+
+- **X26 (`x26_ladder_sizebar.json`): the size is MATERIAL at 28 of 37 checks and INCONCLUSIVE at 9; NEVER
+  NEGLIGIBLE.** 3.2–5.2 pp through 270M (the 270M window: 3.26 pp [1.86, 4.55], MATERIAL); 280M 2.64 [0.50, 4.15],
+  290M 2.21 [0.00, 3.80], 300M 3.00 [1.55, 4.29] INCONCLUSIVE; 310M 3.49 [1.81, 5.06] MATERIAL; 320M–370M
+  INCONCLUSIVE (the ladder thins: 4–8 nodes in the window, intervals 0–8 pp wide).
+- **X26's two-tier status under the new rule: CONTINUE at every check** (as of the newest check with both tiers,
+  320M: Tier 1 GAIN, the counted monitor INCONCLUSIVE). At the Tier-1 plateau pair 270M / 280M it reads CONTINUE
+  (270M MATERIAL, 280M INCONCLUSIVE); at 310M (Tier 1 FLAT) MATERIAL. No check reads TRANSITIVE_IMPROVEMENT either:
+  the cyclic component is ≈ 3–4 pp of per-edge SD, twice the bar, wherever the window can resolve it. So the
+  amendment does not change X26's read: its cycling is MATERIAL, not merely persistent. (Caveat: the ladder is
+  50–100 pairs per line on the pool's edges, not the registered 500-pair rows; and 270M / 280M read the same 268M
+  node, so their windows overlap.)
+- **X34 (`x34_status_sizebar.txt`, the registered rows):** 30M / 40M NONE (size 0.00 pp [0, 3.71] and [0, 2.78]);
+  50M 2.63 pp [1.48, 3.87] and 60M 2.54 pp [1.64, 3.49] — INCONCLUSIVE, and still SUSPECTED pending their top-ups.
+- **The estimator's operating characteristics (`size_bar_oc.txt`, SIMULATED):** unbiased on the target's scale;
+  NEGLIGIBLE / INCONCLUSIVE / MATERIAL = 34/6/0 at τ = 0, 17/23/0 at 1 pp, 1/35/4 at 1.7 pp, 0/13/27 at 2.5 pp,
+  0/0/40 at 4 pp (40 runs a cell). One check resolves sizes below ≈ 1 pp or above ≈ 2.5 pp (F-ED-28).
+
 ## Files
+
+- `x26_ladder_sizebar.json` — the X26 ladder re-read with each check's windowed size, its state, the counted
+  verdict, Tier 1 and the DESCRIPTIVE two-tier signature.
+- `x34_status_sizebar.txt` — X34's status under the size bar.
+- `size_bar_oc.py` / `size_bar_oc.txt` — the size estimate's simulated operating characteristics.
 
 - `x26_ladder_accumulated.json`, `x26_ladder_window80M.json` — every check's verdict, signals, summary, the newest
   node's lag curve and the significant triangles.
