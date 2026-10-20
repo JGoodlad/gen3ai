@@ -20,7 +20,7 @@ executor writes the same CORE traces (``rust_eval.traces``: records + reconstruc
 ``meta``-only ``*_summary.json``, which the prober expands), the same shard results the collect merges,
 and an ``eval_manifest.json`` at ``selection_schema`` 2 with the per-opponent capture rates rule 17 asks
 for. The regime is READ from the run's recorded config (``eval_sentinel_greedy``, the mirrored-pair
-regime, the observation mode, the reward's terminal, the trainee's team pin), never assumed; a run that
+regime, the observation mode, the reward's terminal; the trainee's team pin from ``metadata.json``, fingerprint-verified — ``recover_trainee_pin``), never assumed; a run that
 recorded no sentinel regime is REFUSED rather than measured under a guess. (Until poke-env retirement
 P6 slice 6c it drove ``python -m main.eval_worker`` processes on the poke-env eval path; a cycle
 generated then carries no ``transport`` in its provenance block, and ``spec_of`` keeps the two engines'
@@ -69,6 +69,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from main.ops.run_ref import refuse, resolve_run_dir
+from utils.paths import repo_path
 
 #: `gen3_offline_eval_cycle_v1` — the provenance contract. A cycle carrying this block was
 #: GENERATED; one without it was played by a live training run. Bumped when the block's own
@@ -270,6 +271,93 @@ def recoverable_regime(run_dir: Path) -> Optional[bool]:
     return None if val is None else bool(val)
 
 
+#: The kinds of ``MatchupSpec.eval_trainee_teams`` that PIN the trainee (a specialist / exploiter).
+_PINNED_KINDS = ("pinned", "pin_multi", "pin_biased")
+
+
+def _pin_sha(text: str) -> str:
+    """``MatchupSpec.to_dict``'s fingerprint of a pinned team export (sha1 of the RAW text, 10 hex)."""
+    return hashlib.sha1(text.encode()).hexdigest()[:10]
+
+
+def recover_trainee_pin(run_dir: Path) -> Dict[str, Any]:
+    """The team(s) the run's EVAL cycles piloted the trainee on, recovered from ``metadata.json``.
+
+    A ``--trainee-team`` / ``--trainee-teams`` run records its pin ONLY in ``metadata.json``: the files
+    in ``cli_args.trainee_team(s)`` (paths relative to the repo root, as the trainer resolved them) and
+    their content fingerprints in the declared matchup, ``cli_args._matchup_spec.eval_trainee_teams``
+    (``pin_sha`` / ``pin_shas``). This reads the files and VERIFIES each against its recorded
+    fingerprint, so the cycle pilots exactly the teams the run's own cycles did: one export (a ``str``)
+    for a single pin, the list for a multi-team pin — the shapes the trainer hands its eval callbacks.
+
+    🚨 REFUSES rather than defaulting to the pool when the run's declared matchup says SPECIALIST and
+    the pin cannot be recovered (no file named, a file missing, or a file whose content no longer
+    matches the fingerprint the run recorded): a specialist measured on random pool teams is measured
+    out of its own distribution, and every number would look like a result. A run with NO declared
+    matchup (pre-``MatchupSpec``) and no pin flag reads as the pool; one with a pin flag but no
+    fingerprint uses the file and says ``verified: False``.
+    """
+    meta_path = run_dir / "metadata.json"
+    if not meta_path.exists():
+        refuse(f"REFUSING: {run_dir.name} has no metadata.json — whether the trainee was PINNED to a "
+               "team (a specialist) cannot be read, and it must not be assumed.")
+    try:
+        meta = json.loads(meta_path.read_text())
+    except ValueError as exc:
+        refuse(f"REFUSING: {meta_path} is unreadable: {exc}")
+    cli = meta.get("cli_args") if isinstance(meta.get("cli_args"), dict) else {}
+    spec = cli.get("_matchup_spec")
+    history = [h for h in (meta.get("matchup_history") or []) if isinstance(h, dict)]
+    if not isinstance(spec, dict) and history:
+        spec = history[-1].get("spec")
+    ets = (spec or {}).get("eval_trainee_teams") if isinstance(spec, dict) else None
+    declared_kind = ets.get("kind") if isinstance(ets, dict) else None
+
+    multi = cli.get("trainee_teams")
+    single = cli.get("trainee_team")
+    files = ([f.strip() for f in str(multi).split(",") if f.strip()] if multi
+             else [str(single)] if single else [])
+    eras = {json.dumps((h.get("spec") or {}).get("eval_trainee_teams"), sort_keys=True) for h in history}
+
+    def _refuse(why: str) -> None:
+        refuse(f"REFUSING: {run_dir.name}'s declared matchup PINS the trainee "
+               f"(`eval_trainee_teams.kind` = {declared_kind!r}) but {why}.",
+               "  Its eval cycles piloted that pin; a cycle generated without it would measure the "
+               "specialist on RANDOM POOL TEAMS — out of its own distribution.",
+               "  Nothing is generated.")
+
+    if not files:
+        if declared_kind in _PINNED_KINDS:
+            _refuse("its metadata.json `cli_args` names no `trainee_team(s)` file")
+        return {"trainee_team_str": None,
+                "trainee_pin": {"kind": declared_kind or "pool", "source": "metadata.cli_args",
+                                "files": [], "shas": [], "verified": declared_kind is not None,
+                                "eval_source_eras": len(eras)}}
+    if declared_kind is not None and declared_kind not in _PINNED_KINDS:
+        refuse(f"REFUSING: {run_dir.name}'s metadata.json is INCOHERENT — `cli_args` names the pin "
+               f"{files} but its declared matchup's eval trainee source is {declared_kind!r}. "
+               "Nothing is generated.")
+    recorded = (list(ets.get("pin_shas") or []) if declared_kind == "pin_multi"
+                else [ets.get("pin_sha")] if isinstance(ets, dict) and ets.get("pin_sha") else [])
+    texts: List[str] = []
+    for i, f in enumerate(files):
+        p = Path(f) if os.path.isabs(f) else repo_path(f)
+        if not p.is_file():
+            _refuse(f"its pinned team file {f} does not exist at {p}")
+        text = p.read_text(encoding="utf-8")
+        if recorded:
+            if len(recorded) != len(files):
+                _refuse(f"it records {len(recorded)} pin fingerprint(s) for {len(files)} file(s)")
+            if _pin_sha(text) != recorded[i]:
+                _refuse(f"{f}'s content (sha {_pin_sha(text)}) no longer matches the fingerprint the "
+                        f"run recorded ({recorded[i]}) — the file changed since the run pinned it")
+        texts.append(text)
+    return {"trainee_team_str": texts if multi else texts[0],
+            "trainee_pin": {"kind": "pin_multi" if multi else "pinned", "source": "metadata.cli_args",
+                            "files": files, "shas": [_pin_sha(t) for t in texts],
+                            "verified": bool(recorded), "eval_source_eras": len(eras)}}
+
+
 def read_regime(run_dir: Path, declared: Optional[bool] = None) -> Dict[str, Any]:
     """The run's RECORDED eval regime, or the one the caller DECLARED for a pre-boundary run.
 
@@ -334,7 +422,10 @@ def read_regime(run_dir: Path, declared: Optional[bool] = None) -> Dict[str, Any
         "eval_sentinel_greedy_source": source,
         "self_play_temp": float(cfg.get("self_play_temp", 1.0) or 1.0),
         "gamma": float(cfg.get("gamma") or 0.99),
-        "trainee_team_str": cfg.get("trainee_team_str"),
+        # 🚨 NEVER `cfg.get("trainee_team_str")`: `model_config.json` cannot carry that key (its parser,
+        # `ModelVersion.from_json_file`, has no such field and raises on it), so that read was `None` for
+        # EVERY specialist run and the cycle measured the specialist on random pool teams.
+        **recover_trainee_pin(run_dir),
         # the other two recorded eval-regime fields the in-loop cycle plays at (absent = their defaults: a run
         # that predates the field never ran the other value)
         "eval_mirrored_pairs": bool(cfg.get("eval_mirrored_pairs", False)),
@@ -568,6 +659,10 @@ def generate(args) -> Dict[str, Any]:
         sent_regime += " [regime DECLARED on the command line — the run recorded none]"
     if mirrored:
         sent_regime += "; MIRRORED team pairs"
+    _pin = regime["trainee_pin"]
+    if _pin["files"]:
+        sent_regime += (f"; trainee PINNED to {len(_pin['files'])} team(s) {_pin['shas']}"
+                        + ("" if _pin["verified"] else " [fingerprint NOT recorded by the run — unverified]"))
     population = (
         f"OFFLINE-GENERATED cycle on the Rust eval core: {len(names)} opponents ({len(bots)} scripted bots + "
         f"{len(sentinels)} pool sentinels) x {args.games} games, {traced}; {sent_regime}")
@@ -583,6 +678,11 @@ def generate(args) -> Dict[str, Any]:
             "(DECLARED on the command line — this run's model_config.json records none; the "
             "declaration is written into the manifest and bounds every delta this cycle enters)")
          + f", eval_mirrored_pairs={mirrored}, oracle_reveal={regime['oracle_reveal']}")
+    _log(f"trainee pin: {_pin['kind']} {_pin['files'] or '(the pool)'} "
+         + ("(fingerprints VERIFIED against the run's declared matchup)" if _pin["verified"] and _pin["files"] else ""))
+    if _pin["eval_source_eras"] > 1:
+        _log(f"⚠️  the run declared {_pin['eval_source_eras']} different eval-trainee sources across its matchup eras; "
+             "this cycle pilots the LATEST era's. A checkpoint from an earlier era piloted another.")
     _log(f"seed {seed} ({seed_source}) — every game is a pure function of (seed, opponent, game index): "
          "re-run with this --seed and the same compute flags for the identical cycle")
 
@@ -646,6 +746,8 @@ def generate(args) -> Dict[str, Any]:
         "quota": quota._asdict(),
         "eval_sentinel_greedy": regime["eval_sentinel_greedy"],
         "eval_sentinel_greedy_source": regime["eval_sentinel_greedy_source"],
+        # the team pin the trainee piloted, RECOVERED from metadata.json and fingerprint-verified
+        "trainee_pin": regime["trainee_pin"],
         "eval_mirrored_pairs": mirrored,
         "oracle_reveal": regime["oracle_reveal"],
         "self_play_temp": regime["self_play_temp"],

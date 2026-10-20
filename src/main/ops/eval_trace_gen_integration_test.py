@@ -41,6 +41,8 @@ def _a_run(root: Path) -> Path:
     rec = json.loads(Path(cfg).read_text())
     rec.update(eval_sentinel_greedy=True)
     (run / "model_config.json").write_text(json.dumps(rec))
+    # a POOL run: the team pin is read from metadata.json (`recover_trainee_pin`), which refuses a run without one
+    (run / "metadata.json").write_text(json.dumps({"cli_args": {"eval_sentinel_greedy": True}}))
     shutil.copy2(trainee, run / "eval_traces" / f"step_{STEP}" / "snapshot.zip")
     shutil.copy2(sentinels[0], run / "snapshots" / f"snapshot_{SENTINEL_STEP:012d}.zip")
     return run

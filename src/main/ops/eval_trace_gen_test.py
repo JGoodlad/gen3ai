@@ -450,3 +450,74 @@ def test_the_ledger_quote_marks_an_offline_read():
     assert "OFFLINE-GENERATED" not in ledger_line(doc)
 
 
+
+
+# --------------------------------------------------------------------------- the SPECIALIST's team pin
+
+def _specialist_run(tmp_path: Path, teams, *, multi: bool, record_shas=True, spec_kind=None):
+    """A run that pinned its trainee: the pin lives ONLY in metadata.json (cli_args + the declared matchup)."""
+    run = _fake_run(tmp_path)
+    files = []
+    for i, text in enumerate(teams):
+        f = tmp_path / f"team_{i}.txt"
+        f.write_text(text, encoding="utf-8")
+        files.append(str(f))
+    shas = [ETG._pin_sha(t) for t in teams]
+    ets = {"kind": spec_kind or ("pin_multi" if multi else "pinned"), "pin_file": files[0], "bias_prob": 0.0,
+           "pin_sha": shas[0] if record_shas else None}
+    if multi and record_shas:
+        ets["pin_shas"] = shas
+    cli = {"eval_sentinel_greedy": True, "_matchup_spec": {"eval_trainee_teams": ets},
+           ("trainee_teams" if multi else "trainee_team"): ",".join(files) if multi else files[0]}
+    (run / "metadata.json").write_text(json.dumps({"git_hash": "deadbeef", "cli_args": cli}))
+    return run, files
+
+
+def test_a_specialist_cycle_pilots_the_runs_OWN_pin(tmp_path):
+    """🚨 The pin is in metadata.json, never model_config.json (whose parser has no such field).
+
+    The old read took `trainee_team_str` from model_config.json — a key that cannot legally be there —
+    so EVERY specialist cycle silently piloted random pool teams. Reverting the read makes both reads
+    below None.
+    """
+    run, _ = _specialist_run(tmp_path, ["Starmie @ Leftovers\n"], multi=False)
+    reg = ETG.read_regime(run)
+    assert reg["trainee_team_str"] == "Starmie @ Leftovers\n"
+    assert reg["trainee_pin"]["kind"] == "pinned" and reg["trainee_pin"]["verified"] is True
+
+    run2, files = _specialist_run(tmp_path / "m", ["A @ B\n", "C @ D\n"], multi=True)
+    reg2 = ETG.read_regime(run2)
+    assert reg2["trainee_team_str"] == ["A @ B\n", "C @ D\n"]     # the LIST the trainer hands eval
+    assert reg2["trainee_pin"]["files"] == files
+
+
+def test_a_pool_run_reads_as_the_pool(tmp_path):
+    reg = ETG.read_regime(_fake_run(tmp_path))
+    assert reg["trainee_team_str"] is None and reg["trainee_pin"]["files"] == []
+
+
+@pytest.mark.parametrize("breakage", ["no_file_named", "file_missing", "file_changed"])
+def test_an_unrecoverable_specialist_pin_is_REFUSED_never_defaulted_to_the_pool(tmp_path, capsys, breakage):
+    run, files = _specialist_run(tmp_path, ["Starmie @ Leftovers\n"], multi=False)
+    meta = json.loads((run / "metadata.json").read_text())
+    if breakage == "no_file_named":
+        del meta["cli_args"]["trainee_team"]
+        (run / "metadata.json").write_text(json.dumps(meta))
+    elif breakage == "file_missing":
+        Path(files[0]).unlink()
+    else:
+        Path(files[0]).write_text("Gengar @ Leftovers\n", encoding="utf-8")
+    with pytest.raises(SystemExit) as exc:
+        ETG.read_regime(run)
+    assert exc.value.code == 2
+    assert "RANDOM POOL TEAMS" in capsys.readouterr().out
+
+
+def test_a_pre_matchupspec_pin_is_used_but_marked_unverified(tmp_path):
+    run, _ = _specialist_run(tmp_path, ["Starmie @ Leftovers\n"], multi=False)
+    meta = json.loads((run / "metadata.json").read_text())
+    del meta["cli_args"]["_matchup_spec"]
+    (run / "metadata.json").write_text(json.dumps(meta))
+    reg = ETG.read_regime(run)
+    assert reg["trainee_team_str"] == "Starmie @ Leftovers\n"
+    assert reg["trainee_pin"]["verified"] is False
