@@ -41,6 +41,14 @@
    "contention": 3.4,
    "detail": ""
   },
+  "src/agents/inference/service/grouped_cuda_test.py::test_grouped_graph_backend_parity_weight_swap_and_a_frozen_steady_state": {
+   "status": "skip",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.25,
+   "detail": ""
+  },
   "src/agents/inference/service/grouped_test.py::test_a_load_into_a_grouped_slot_is_served_on_the_next_flush": {
    "status": "pass",
    "commit": "ea9dd01066efd02dff332d0e3a6ecf3e98ea1ebc",
@@ -121,6 +129,30 @@
    "contention": 1.4,
    "detail": ""
   },
+  "src/agents/inference/service/lead_lanes_test.py::test_ON_launches_the_lead_slot_first_and_serves_bit_identical_decisions": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 18.51,
+   "contention": 1.78,
+   "detail": ""
+  },
+  "src/agents/inference/service/lead_lanes_test.py::test_the_engine_reads_the_lane_plan": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 3.95,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/inference/service/precision_band_test.py::test_a_service_started_at_a_non_fp32_precision_is_refused_at_startup": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 3.57,
+   "contention": 1.75,
+   "detail": ""
+  },
   "src/agents/inference/service/service_cuda_test.py::test_aot_backend_one_package_per_bucket_serves_every_slot": {
    "status": "pass",
    "commit": "065d2d7ff2caaa1e5d968577499cabd144d10c8c",
@@ -135,6 +167,22 @@
    "at": "2026-10-06T05:50:22Z",
    "duration_s": 1.1,
    "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/inference/service/service_cuda_test.py::test_expandable_segments_steady_state_reserves_nothing_and_a_new_mapping_is_seen[eager]": {
+   "status": "skip",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.25,
+   "detail": ""
+  },
+  "src/agents/inference/service/service_cuda_test.py::test_expandable_segments_steady_state_reserves_nothing_and_a_new_mapping_is_seen[graph]": {
+   "status": "skip",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.25,
    "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_graph_backend_parity_weight_swap_and_a_frozen_steady_state": {
@@ -521,6 +569,62 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/model/canary_shift_max_gate_test.py::test_a_FATAL_record_carries_it_too": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 33.99,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/canary_shift_max_gate_test.py::test_a_PASS_record_carries_the_shift_its_source_and_the_margin[0.3-0.3---canary-shift-max-1.2]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 30.59,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/canary_shift_max_gate_test.py::test_a_PASS_record_carries_the_shift_its_source_and_the_margin[None-0.18-default-0.72]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 31.24,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/canary_shift_max_gate_test.py::test_every_R1_rule_line_of_the_startup_gate_prints_the_raised_shift_its_source_and_the_margin": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 28.78,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_cache_shared_test.py::test_T2s_startup_parity_gate_runs_every_slot_x_bucket_on_a_hit": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.79,
+   "contention": 1.76,
+   "detail": ""
+  },
+  "src/agents/model/compile_cache_shared_test.py::test_two_real_processes_share_one_compile": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 20.6,
+   "contention": 1.83,
+   "detail": ""
+  },
+  "src/agents/model/compile_cache_test.py::test_a_real_compile_lands_in_the_run_cache": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 12.84,
+   "contention": 1.91,
+   "detail": ""
+  },
   "src/agents/model/compile_canary_test.py::test_TWO_CONSECUTIVE_unconfirmed_disagreements_are_FATAL": {
    "status": "pass",
    "commit": "b0f5dc138732dab650d1006a3eefda9acd1a45f8",
@@ -681,6 +785,30 @@
    "contention": 1.53,
    "detail": ""
   },
+  "src/agents/model/compile_regions_clip_margin_test.py::test_a_planted_10pct_POINTER_HEAD_miscompile_is_still_refused_at_the_fp32_rule": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 34.65,
+   "contention": 2.05,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_clip_margin_test.py::test_the_gate_RELOCATES_on_every_rungs_own_weights_and_says_so[bf16]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 30.86,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_clip_margin_test.py::test_the_gate_RELOCATES_on_every_rungs_own_weights_and_says_so[fp32]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 29.75,
+   "contention": 1.75,
+   "detail": ""
+  },
   "src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda": {
    "status": "pass",
    "commit": "71351ff5a3596a6dea6bda4f6ff57c17872b13b6",
@@ -695,6 +823,158 @@
    "at": "2026-10-16T05:19:03Z",
    "duration_s": 247.48,
    "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_golden_rows_test.py::test_a_fork_shaped_space_judges_the_FULL_golden_parameter_set": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.86,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_golden_rows_test.py::test_the_gate_REFUSES_a_placeholder_that_shrinks_the_judged_set": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 33.95,
+   "contention": 1.73,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_independence_test.py::test_a_NONFINITE_compiled_gradient_is_NAMED_not_read_as_a_cosine": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 1.02,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_independence_test.py::test_a_planted_GRADIENT_miscompile_under_fixed_mass_is_FATAL": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 1.06,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_independence_test.py::test_a_planted_LOSS_miscompile_under_fixed_mass_is_FATAL": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 1.03,
+   "contention": 1.76,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_independence_test.py::test_cos_of_a_nonfinite_gradient_is_NaN_never_zero": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.36,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_independence_test.py::test_the_CANARY_confirms_a_nonfinite_compiled_gradient_and_names_it": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 3.11,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_independence_test.py::test_the_CANARY_names_a_dependent_pair_as_such_never_as_a_CONFIRMED_disagreement": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 1.0,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_independence_test.py::test_the_fixed_mass_gate_PASSES_honest_arms_and_judges_the_encoder": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 30.29,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_independence_test.py::test_the_gate_REFUSES_a_compiled_slot_that_runs_EAGER": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 1.02,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_independence_test.py::test_the_gate_REFUSES_an_eager_arm_that_dispatches_the_compiled_graph": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.99,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_independence_test.py::test_the_gate_REFUSES_the_bare_eager_function_in_the_compiled_slot": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 1.02,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_loss_rows_test.py::test_the_gate_hands_the_bf16_rule_the_GOLDEN_row_losses": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 28.43,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_memory_test.py::test_the_canary_check_leaves_no_graph_and_measure_changes_nothing": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 30.56,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_memory_test.py::test_the_gate_leaves_no_graph_behind_and_says_where_its_memory_went": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 28.87,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_resolution_test.py::test_a_10pc_encoder_miscompile_is_BELOW_the_bf16_gates_resolution_on_fresh_weights": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.07,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_resolution_test.py::test_a_planted_NaN_is_still_NAMED_under_the_bf16_rule": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 1.31,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_resolution_test.py::test_the_bf16_gates_resolution_is_what_its_arithmetic_says_planted_both_sides": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 20.86,
+   "contention": 1.74,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_resolution_test.py::test_the_honest_bf16_gate_PASSES_under_the_bf16_rule": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 32.4,
+   "contention": 1.71,
    "detail": ""
   },
   "src/agents/model/compile_regions_test.py::test_a_COLLAPSED_critic_is_judged_by_R1_like_any_other_weights": {
@@ -809,12 +1089,52 @@
    "contention": 2.55,
    "detail": ""
   },
+  "src/agents/model/compile_regions_unmoved_init_test.py::test_a_RESUME_reads_the_record_from_the_checkpoint_and_without_one_falls_back_to_the_zero_rule": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 32.55,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_unmoved_init_test.py::test_the_CANARY_passes_a_dead_ortho_heads_noise_and_FATALs_its_miscompile": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 39.36,
+   "contention": 1.75,
+   "detail": ""
+  },
   "src/agents/model/compile_regions_unmoved_init_test.py::test_the_GATE_passes_a_dead_ortho_heads_noise_and_FATALs_its_miscompile": {
    "status": "pass",
    "commit": "b0f5dc138732dab650d1006a3eefda9acd1a45f8",
    "at": "2026-10-19T22:53:41Z",
    "duration_s": 49.95,
    "contention": 2.55,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_unmoved_test.py::test_the_CANARY_passes_the_unmoved_heads_noise_and_FATALs_its_miscompile": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 38.16,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_unmoved_test.py::test_the_GATE_judges_an_unmoved_head_at_the_FRESH_bar_and_on_its_own_perturbed_rung": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 30.04,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/compile_regions_unmoved_test.py::test_the_GATE_still_catches_a_REAL_miscompile_on_the_unmoved_head": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 30.88,
+   "contention": 1.75,
    "detail": ""
   },
   "src/agents/model/compiled_first_update_test.py::test_a_first_update_through_the_compiled_regions_survives_the_donating_default_on_cpu": {
@@ -836,6 +1156,14 @@
    "last_skipped_commit": "a8161c137e6d28be86b4f5b98d908852bd5e7a30",
    "last_skip_detail": ""
   },
+  "src/agents/model/cpu_inductor_tile2d_test.py::test_the_smallest_repro_compiles_and_matches_eager_with_the_cpu_option": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 9.68,
+   "contention": 1.78,
+   "detail": ""
+  },
   "src/agents/model/dense_attn_bias_test.py::test_cuda_inductor_n64_bias_reproduction": {
    "status": "skip",
    "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
@@ -852,12 +1180,28 @@
    "contention": 1.65,
    "detail": ""
   },
+  "src/agents/model/edge_bias_test.py::test_biased_layer_compiles_fullgraph": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 10.07,
+   "contention": 1.78,
+   "detail": ""
+  },
   "src/agents/model/extractor_compiles_test.py::test_cpu_backward_still_does_not_compile": {
    "status": "pass",
    "commit": "53059377e50e61412ac28bca02ff74cdc220610d",
    "at": "2026-10-15T22:45:28Z",
    "duration_s": 347.17,
    "contention": 1.56,
+   "detail": ""
+  },
+  "src/agents/model/extractor_compiles_test.py::test_h_tier_arch_compiles_to_one_graph": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 23.85,
+   "contention": 1.75,
    "detail": ""
   },
   "src/agents/model/extractor_compiles_test.py::test_h_tier_arch_compiles_without_suppression": {
@@ -898,12 +1242,28 @@
    "last_skipped_commit": "53059377e50e61412ac28bca02ff74cdc220610d",
    "last_skip_detail": ""
   },
+  "src/agents/model/extractor_compiles_test.py::test_production_arch_compiles_to_one_graph": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 29.5,
+   "contention": 1.88,
+   "detail": ""
+  },
   "src/agents/model/extractor_compiles_test.py::test_production_arch_compiles_without_suppression": {
    "status": "pass",
    "commit": "53059377e50e61412ac28bca02ff74cdc220610d",
    "at": "2026-10-15T22:45:28Z",
    "duration_s": 304.4,
    "contention": 1.54,
+   "detail": ""
+  },
+  "src/agents/model/extractor_compiles_test.py::test_x5_fixed_mass_arch_compiles_to_one_graph": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 24.08,
+   "contention": 1.75,
    "detail": ""
   },
   "src/agents/model/growth_test.py::test_under_compile_the_grown_toy_matches_the_parent_within_compile_noise": {
@@ -914,12 +1274,44 @@
    "contention": 2.87,
    "detail": ""
   },
+  "src/agents/model/ko_exact_test.py::test_both_spellings_meet_the_exact_rational_value": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 7.3,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/move_resolution_bridge_integration_test.py::test_a_stated_zero_is_never_contradicted_on_real_battles": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 11.8,
+   "contention": 1.77,
+   "detail": ""
+  },
   "src/agents/model/move_resolution_x5_test.py::test_debug_smoke_under_fixed_mass_with_the_family_on": {
    "status": "pass",
    "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
    "at": "2026-10-15T19:47:21Z",
    "duration_s": 787.81,
    "contention": 2.63,
+   "detail": ""
+  },
+  "src/agents/model/op_lean_forward_test.py::test_drop_renders_is_bit_identical_at_init": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 2.37,
+   "contention": 1.83,
+   "detail": ""
+  },
+  "src/agents/model/op_status_landing_bridge_integration_test.py::test_a_certain_zero_status_landing_is_never_contradicted_on_real_battles": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 25.94,
+   "contention": 1.76,
    "detail": ""
   },
   "src/agents/model/opponent_parity_test.py::test_a_COLLAPSED_critic_opponent_passes_parity_above_the_first_rung": {
@@ -960,6 +1352,54 @@
    "at": "2026-10-19T22:53:41Z",
    "duration_s": 14.09,
    "contention": 2.55,
+   "detail": ""
+  },
+  "src/agents/model/policy_readout_test.py::test_trunk_fresh_build_one_cpu_update_under_the_K6_freeze": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.68,
+   "contention": 1.74,
+   "detail": ""
+  },
+  "src/agents/model/probe_facts_test.py::test_one_lever_init_and_the_fact_reaches_the_trunk[legacy-move_target_state-move_target_proj]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.39,
+   "contention": 1.71,
+   "detail": ""
+  },
+  "src/agents/model/probe_facts_test.py::test_one_lever_init_and_the_fact_reaches_the_trunk[static-move_target_state-move_target_proj]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.54,
+   "contention": 1.73,
+   "detail": ""
+  },
+  "src/agents/model/r1_declared_levers_test.py::test_an_UNDECLARED_lever_or_key_after_the_lock_is_the_typed_FATAL": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 29.38,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/r1_declared_levers_test.py::test_the_startup_declaration_COVERS_every_update_the_lever_reaches[fork_rust]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 37.94,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/r1_declared_levers_test.py::test_the_startup_declaration_COVERS_every_update_the_lever_reaches[production]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 40.72,
+   "contention": 1.75,
    "detail": ""
   },
   "src/agents/model/r1_graphed_route_test.py::test_a_cudagraph_skip_after_install_is_FATAL_never_a_silent_un_graphed_route": {
@@ -1130,6 +1570,110 @@
    "contention": 2.55,
    "detail": ""
   },
+  "src/agents/model/retired_levers_test.py::test_a_checkpoint_written_before_the_deletion_still_loads_through_the_loaders": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.87,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/retired_levers_test.py::test_a_pre_deletion_checkpoint_loads_as_an_OPPONENT": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.55,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/reveal_provenance_test.py::test_a_fork_of_a_plain_parent_with_a_reveal_records_it_everywhere": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 3.89,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/speed_physics_bridge_integration_test.py::test_the_priority_bracket_is_never_contradicted_and_the_physics_is_calibrated": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 17.47,
+   "contention": 1.72,
+   "detail": ""
+  },
+  "src/agents/model/static_port_test.py::test_permuting_our_team_slots_permutes_the_trunk_input_exactly[actor]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 2.44,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/static_port_test.py::test_permuting_our_team_slots_permutes_the_trunk_input_exactly[both]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 2.4,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/static_port_test.py::test_permuting_our_team_slots_permutes_the_trunk_input_exactly[hazard]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.69,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/static_port_test.py::test_permuting_our_team_slots_permutes_the_trunk_input_exactly[production]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 2.48,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/static_port_test.py::test_permuting_our_team_slots_permutes_the_trunk_input_exactly[static]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.67,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/static_port_test.py::test_the_spikes_entry_cost_on_constructed_boards": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 3.45,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/static_recovery_test.py::test_all_levers_together_start_as_the_static_network": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 2.45,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/static_recovery_test.py::test_trunk_depth_3_at_init_is_the_2_round_network_bit_for_bit[legacy]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.14,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/static_recovery_test.py::test_trunk_depth_3_at_init_is_the_2_round_network_bit_for_bit[static]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.23,
+   "contention": 1.75,
+   "detail": ""
+  },
   "src/agents/model/update_performance_shape_test.py::test_R1s_attention_profile_on_cpu_is_pinned": {
    "status": "pass",
    "commit": "b0f5dc138732dab650d1006a3eefda9acd1a45f8",
@@ -1165,12 +1709,156 @@
    "last_skipped_commit": "53059377e50e61412ac28bca02ff74cdc220610d",
    "last_skip_detail": ""
   },
+  "src/agents/observation/rust_encoder_benchmark_test.py::test_the_encoder_benchmark_runs": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 7.11,
+   "contention": 1.98,
+   "detail": ""
+  },
+  "src/agents/training/cpu_load_no_cuda_test.py::test_a_cpu_load_that_creates_a_cuda_context_is_refused": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 3.93,
+   "contention": 1.76,
+   "detail": ""
+  },
+  "src/agents/training/cpu_load_no_cuda_test.py::test_no_loader_unpickles_an_old_checkpoints_training_state": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 10.56,
+   "contention": 1.73,
+   "detail": ""
+  },
   "src/agents/training/cycle_ledger_integration_test.py::test_the_cycles_ledger_rows_are_its_games_and_the_ledger_changes_no_game": {
    "status": "pass",
    "commit": "50d322654b06329863451ef54cae77e2bb03a5cf",
    "at": "2026-10-08T11:55:47Z",
    "duration_s": 73.56,
    "contention": 1.27,
+   "detail": ""
+  },
+  "src/agents/training/diagnostics_cadence_test.py::test_a_flagless_resume_INHERITS_the_recorded_cadence_and_a_typed_one_overrides_it": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 2.26,
+   "detail": ""
+  },
+  "src/agents/training/diagnostics_cadence_test.py::test_a_skipped_update_runs_no_gated_probe_unless_a_consumer_declared_it_load_bearing": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.24,
+   "detail": ""
+  },
+  "src/agents/training/diagnostics_cadence_test.py::test_a_skipped_update_writes_NONE_of_the_gated_tags_and_every_per_update_one": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.39,
+   "detail": ""
+  },
+  "src/agents/training/diagnostics_cadence_test.py::test_checkargs_reports_the_inherited_cadence": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.02,
+   "contention": 1.87,
+   "detail": ""
+  },
+  "src/agents/training/diagnostics_cadence_test.py::test_learning_is_BIT_IDENTICAL_with_the_diagnostics_on_and_skipped": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.03,
+   "contention": 1.84,
+   "detail": ""
+  },
+  "src/agents/training/diagnostics_cadence_test.py::test_the_K9b_excluded_share_reaches_TENSORBOARD_on_EVERY_update_not_on_the_diagnostics_cadence": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 15.15,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/diagnostics_cadence_test.py::test_the_ON_arm_really_runs_every_gated_probe": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 8.98,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/diagnostics_cadence_test.py::test_the_argparse_default_is_None_and_a_fresh_run_resolves_to_the_production_default": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.03,
+   "contention": 1.91,
+   "detail": ""
+  },
+  "src/agents/training/diagnostics_cadence_test.py::test_the_derived_key_list_covers_every_key_the_liveness_probes_write": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/agents/training/diagnostics_cadence_test.py::test_the_exemptions_are_derived_from_the_predicates_that_register_the_consumers": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 2.17,
+   "detail": ""
+  },
+  "src/agents/training/diagnostics_cadence_test.py::test_the_first_update_of_a_process_is_always_a_diagnostic_update": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.79,
+   "detail": ""
+  },
+  "src/agents/training/diagnostics_cadence_test.py::test_the_phase_is_the_restored_rollout_index": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.24,
+   "detail": ""
+  },
+  "src/agents/training/diagnostics_cadence_test.py::test_the_process_latch_never_rides_a_checkpoint": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.45,
+   "detail": ""
+  },
+  "src/agents/training/diagnostics_cadence_test.py::test_the_production_networks_full_metric_set_dumps_through_stdout_and_tensorboard": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.03,
+   "contention": 2.11,
+   "detail": ""
+  },
+  "src/agents/training/diagnostics_cadence_test.py::test_the_startup_gate_passes_the_production_network_and_refuses_a_planted_collision": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.14,
    "detail": ""
   },
   "src/agents/training/eval_sentinel_greedy_test.py::test_a_greedy_sentinel_draws_the_TRAINEES_teams": {
@@ -1205,12 +1893,76 @@
    "contention": 2.55,
    "detail": ""
   },
+  "src/agents/training/global_rng_guard_test.py::test_an_OPPONENT_load_leaves_every_global_stream_bit_identical[zip_off]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 7.74,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/global_rng_guard_test.py::test_an_OPPONENT_load_leaves_every_global_stream_bit_identical[zip_on]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.56,
+   "contention": 1.75,
+   "detail": ""
+  },
   "src/agents/training/gpu_bench_suite_integration_test.py::test_quick_suite_end_to_end": {
    "status": "pass",
    "commit": "20fe0ae71246d26d995e34f149701de749a85d0f",
    "at": "2026-10-18T16:24:53Z",
    "duration_s": 142.52,
    "contention": 1.97,
+   "detail": ""
+  },
+  "src/agents/training/gpu_bench_suite_integration_test.py::test_update_cell_quick": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 14.11,
+   "contention": 1.82,
+   "detail": ""
+  },
+  "src/agents/training/host_sync_guard_test.py::test_a_diagnostics_update_batches_every_probe_read": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 7.16,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/host_sync_guard_test.py::test_a_plain_update_reads_once_per_optimizer_step[16]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.55,
+   "contention": 1.72,
+   "detail": ""
+  },
+  "src/agents/training/host_sync_guard_test.py::test_a_plain_update_reads_once_per_optimizer_step[8]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 8.1,
+   "contention": 1.74,
+   "detail": ""
+  },
+  "src/agents/training/instrumented_ppo_device_batches_test.py::test_a_whole_update_staged_equals_the_resident_and_host_paths": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 16.45,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/instrumented_ppo_device_batches_test.py::test_a_whole_update_through_device_batches_equals_the_host_path": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 11.07,
+   "contention": 1.74,
    "detail": ""
   },
   "src/agents/training/instrumented_ppo_device_batches_test.py::test_on_cuda_staged_updates_strand_no_cache_on_a_new_stream": {
@@ -1235,12 +1987,316 @@
    "last_skipped_commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
    "last_skip_detail": ""
   },
+  "src/agents/training/learner_gates_test.py::test_a_localized_fault_on_the_real_buffer_is_fatal_on_the_first_update_before_any_step": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 14.46,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/learner_gates_test.py::test_the_normal_path_passes_the_behaviour_probe": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 6.21,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/learner_golden_fixed_mass_test.py::test_K9b_passes_on_the_fixed_mass_entry_with_the_excluded_share_under_its_ceiling": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/learner_golden_fixed_mass_test.py::test_TEETH_each_planted_x5_perturbation_fails_the_golden[flat_mask]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.55,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/learner_golden_fixed_mass_test.py::test_TEETH_each_planted_x5_perturbation_fails_the_golden[logpi_sign]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.35,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/learner_golden_fixed_mass_test.py::test_TEETH_each_planted_x5_perturbation_fails_the_golden[other_column]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.76,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/learner_golden_fixed_mass_test.py::test_TEETH_each_planted_x5_perturbation_fails_the_golden[tau_bias]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.45,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/learner_golden_fixed_mass_test.py::test_delta_theta_learns_from_the_set_BCE_alone_at_golden_level": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.52,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/learner_golden_fixed_mass_test.py::test_independent_fp64_numpy_references_of_the_construction_on_the_golden_rows": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 2.3,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/learner_golden_fixed_mass_test.py::test_the_B_ride_along_on_the_flat_pointer_is_bit_identical_to_learning_at_golden_level": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 6.23,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/learner_golden_fixed_mass_test.py::test_the_buffer_covers_every_x5_case_design_6_4": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 2.28,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/learner_golden_fixed_mass_test.py::test_the_fixed_mass_entry_is_not_vacuous": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.15,
+   "detail": ""
+  },
+  "src/agents/training/learner_golden_fixed_mass_test.py::test_the_fixed_mass_update_reproduces_its_golden_exactly_with_K9b_on": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 6.27,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/learner_golden_fixed_mass_test.py::test_the_fp32_micro_step_agrees_with_fp64_within_the_declared_tolerances_and_reproduces": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.97,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/learner_golden_fixed_mass_test.py::test_the_fp64_reference_has_teeth_an_fp32_only_defect_fails_it": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.54,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/learner_golden_threads_test.py::test_the_golden_is_identical_across_processes_hash_seeds_and_thread_counts": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 26.26,
+   "contention": 2.63,
+   "detail": ""
+  },
+  "src/agents/training/learner_golden_threads_test.py::test_the_init_is_byte_identical_at_1_and_8_threads_and_is_the_recorded_one": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 14.05,
+   "contention": 1.75,
+   "detail": ""
+  },
   "src/agents/training/lever_supply_integration_test.py::test_a_self_play_run_whose_pool_never_seeds_exits_FATAL_SUPPLY": {
    "status": "pass",
    "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
    "at": "2026-10-15T21:32:05Z",
    "duration_s": 211.3,
    "contention": 1.5,
+   "detail": ""
+  },
+  "src/agents/training/loop_hooks_test.py::test_learn_opens_the_declared_points_in_their_nesting": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 12.43,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/loop_hooks_test.py::test_the_per_update_region_call_window_is_reset_by_the_update_hook": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 13.32,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/loop_hooks_test.py::test_the_real_freeze_guard_registers_into_the_table": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 13.17,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/matchup_spec_test.py::test_default_spec_builders_match_legacy": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 11.85,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_SENTINEL_and_FOREIGN_opponent_loads_after_the_freeze_acquire_nothing": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.41,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_a_NON_ride_along_mismatch_is_still_refused_on_the_opponent_path": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.14,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_a_POOL_load_after_the_freeze_builds_no_optimizer_and_trips_nothing": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 11.98,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_a_READER_load_REFUSES_a_checkpoint_missing_an_extractor_submodule": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 3.72,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_a_checkpoint_MISSING_an_extractor_submodule_is_refused_by_every_load[flat_intent_head]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 6.25,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_a_checkpoint_MISSING_an_extractor_submodule_is_refused_by_every_load[win_head]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 6.21,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_a_checkpoint_with_an_UNEXPECTED_key_is_refused": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.08,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_an_inference_load_refuses_to_train_or_save": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.59,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_an_opponent_may_differ_in_ride_along_heads_in_EITHER_direction": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 8.01,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_set_parameters_REFUSES_exact_match_False_on_a_mismatch": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.05,
+   "contention": 1.8,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_the_T2_slot_identity_ignores_the_heads_in_either_direction": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.36,
+   "contention": 1.73,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_the_TRAINEE_acquires_its_ride_along_optimizers_in_setup": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 2.25,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_the_TRAINEE_resume_stays_strict_on_a_head_mismatch": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.31,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_the_inference_load_plays_the_identical_function": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.57,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_the_reader_surfaces_refuse_a_dropped_submodule_and_the_prober_still_DIAGNOSES": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.56,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_the_ride_along_key_set_is_every_ride_along_field": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.46,
+   "detail": ""
+  },
+  "src/agents/training/opponent_inference_load_test.py::test_the_strict_reader_load_is_otherwise_a_plain_MaskablePPO_load": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 3.76,
+   "contention": 1.75,
    "detail": ""
   },
   "src/agents/training/optimizer_state_cuda_test.py::test_the_K6_declaration_is_bit_identical_to_lazy_init_on_cuda[adam_foreach]": {
@@ -1283,6 +2339,206 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/training/rank_metrics_test.py::test_the_learner_reads_the_micro_steps_own_forward_no_second_forward": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 8.06,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/rank_metrics_test.py::test_the_probe_reaches_no_new_compiled_signature_after_the_lock": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 22.96,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_host_sync_test.py::test_a_head_with_NO_label_at_all_takes_no_step_and_logs_no_grad_norm": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.58,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_host_sync_test.py::test_a_real_update_is_BIT_IDENTICAL_to_HEADs_ride_along_and_PPO_side": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 10.93,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_host_sync_test.py::test_a_ride_along_micro_batch_makes_ONE_host_read_and_HEAD_made_over_a_hundred": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.19,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_host_sync_test.py::test_on_a_real_train_every_meter_read_comes_after_the_last_micro_batch_read": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.79,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_host_sync_test.py::test_the_RARE_path_really_skips_the_ensemble_for_that_micro_batch": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.19,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_host_sync_test.py::test_the_new_micro_batch_path_equals_HEADs_bit_for_bit[clean]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 6.18,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_host_sync_test.py::test_the_new_micro_batch_path_equals_HEADs_bit_for_bit[nan_observation]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.77,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_host_sync_test.py::test_the_new_micro_batch_path_equals_HEADs_bit_for_bit[no_win_labels_in_one_micro_batch]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.42,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_update_test.py::test_BF16_one_update_is_BIT_IDENTICAL_with_the_heads_on_and_off": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 10.61,
+   "contention": 1.81,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_update_test.py::test_LIFECYCLE_every_ride_along_optimizer_is_acquired_at_startup_and_nothing_after": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.13,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_update_test.py::test_PREALLOCATED_adam_steps_bit_identically_to_lazy_init[False]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.93,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_update_test.py::test_PREALLOCATED_adam_steps_bit_identically_to_lazy_init[True]": {
+   "status": "skip",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.08,
+   "contention": 2.11,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_update_test.py::test_an_UNACQUIRED_step_RAISES_and_builds_nothing": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.04,
+   "contention": 2.07,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_update_test.py::test_building_the_heads_draws_nothing_from_the_global_rng": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 10.39,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_update_test.py::test_fixed_mass_B_on_the_FLAT_pointer_is_BIT_IDENTICAL_to_learning": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 11.16,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_update_test.py::test_fixed_mass_B_trains_on_OTHER_rows_and_the_flat_loss_ran": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.18,
+   "contention": 1.84,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_update_test.py::test_one_update_is_BIT_IDENTICAL_with_the_heads_on_and_off": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.02,
+   "contention": 2.11,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_update_test.py::test_the_ON_arm_is_not_vacuous": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.01,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_update_test.py::test_the_heads_are_in_no_PPO_param_group_and_not_in_the_forward": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.67,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_update_test.py::test_the_rollouts_are_identical": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.06,
+   "detail": ""
+  },
+  "src/agents/training/ridealong_update_test.py::test_the_variants_leave_the_four_heads_and_BASE_bit_identical": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.13,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/rust_eval/recorded_version_gate_test.py::test_a_pool_eval_loads_the_runs_own_sentinel_under_every_named_arm[endstate]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 3.92,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/rust_eval/recorded_version_gate_test.py::test_a_pool_eval_loads_the_runs_own_sentinel_under_every_named_arm[production]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 3.79,
+   "contention": 1.75,
+   "detail": ""
+  },
   "src/agents/training/rust_eval/safe_point_integration_test.py::test_the_eval_core_calls_the_safe_point_at_every_host_step": {
    "status": "pass",
    "commit": "b0f5dc138732dab650d1006a3eefda9acd1a45f8",
@@ -1291,12 +2547,132 @@
    "contention": 2.55,
    "detail": ""
   },
+  "src/agents/training/rust_rollout/collector_integration_test.py::test_a_core_child_death_is_a_counted_budgeted_respawn": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 15.92,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/collector_integration_test.py::test_the_complete_game_collector_keeps_every_row_and_labels_it[ffi]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 27.28,
+   "contention": 1.77,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/collector_integration_test.py::test_the_complete_game_collector_keeps_every_row_and_labels_it[proc]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 25.09,
+   "contention": 1.61,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/collector_integration_test.py::test_the_trainees_keyed_draw_replays_from_its_key": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 26.89,
+   "contention": 1.7,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/consistency_test.py::test_a_tied_row_whose_behaviour_took_the_OTHER_resolution_is_judged_by_the_flip_and_passes": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.72,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/consistency_test.py::test_current_rows_match_on_cpu_to_float_rounding": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 3.03,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/consistency_test.py::test_one_current_row_off_by_1e_3_fails_fatal_and_warns_under_warn": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.44,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/consistency_test.py::test_the_probe_reads_the_one_fp32_gate_and_refuses_any_other_precision": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 7.72,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/consistency_test.py::test_the_warn_scan_is_a_bounded_sample_and_the_fatal_scan_reads_every_row": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 6.96,
+   "contention": 1.74,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/consistency_test.py::test_under_zero_scorers_every_row_is_judged_and_a_planted_mismatch_on_a_tied_row_is_FATAL": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.14,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/consistency_test.py::test_with_zero_scorers_no_selection_reaches_log_pi_the_certificates_premise": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 6.04,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/fork_crn_integration_test.py::test_a_reseeded_dice_stream_DIVERGES": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 32.55,
+   "contention": 1.93,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/fork_crn_integration_test.py::test_a_sibling_action_shares_the_prefix_and_the_frame_keys": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 8.32,
+   "contention": 1.97,
+   "detail": ""
+  },
   "src/agents/training/rust_rollout/fork_crn_integration_test.py::test_the_fork_phase_runs_inside_collect_and_the_lifecycle_stays_clean": {
    "status": "pass",
    "commit": "b30502e021721a5787308de44aae9799db401e36",
    "at": "2026-10-08T18:20:14Z",
    "duration_s": 39.24,
    "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/fork_crn_integration_test.py::test_the_parent_action_with_the_parents_keys_IS_the_parent": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 72.55,
+   "contention": 2.01,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/fork_crn_integration_test.py::test_the_same_dice_with_other_draw_streams_DIVERGES": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 28.95,
+   "contention": 1.93,
    "detail": ""
   },
   "src/agents/training/rust_rollout/overlap_integration_test.py::test_a_whole_learn_with_overlap_trains_through_overlapped_updates_and_is_deterministic": {
@@ -1435,6 +2811,14 @@
    "contention": 1.4,
    "detail": ""
   },
+  "src/agents/training/trainee_spaces_test.py::test_no_module_imports_the_deleted_python_env_core": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 8.14,
+   "contention": 1.69,
+   "detail": ""
+  },
   "src/agents/training/untaught_rust_integration_test.py::test_CRN_two_refs_see_the_same_opponent_team_and_battle_seed_game_by_game": {
    "status": "pass",
    "commit": "b0f5dc138732dab650d1006a3eefda9acd1a45f8",
@@ -1443,12 +2827,44 @@
    "contention": 3.4,
    "detail": ""
   },
+  "src/agents/training/untaught_rust_integration_test.py::test_a_cell_replays_bit_for_bit_at_one_compute": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.12,
+   "detail": ""
+  },
+  "src/agents/training/untaught_rust_integration_test.py::test_a_fresh_process_plays_a_cell_without_a_poke_env_player_or_the_bridge": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 32.7,
+   "contention": 1.86,
+   "detail": ""
+  },
   "src/agents/training/untaught_rust_integration_test.py::test_every_cell_is_stamped_rust_eval_and_a_turn_limit_game_is_a_draw_not_a_timeout": {
    "status": "pass",
    "commit": "b0f5dc138732dab650d1006a3eefda9acd1a45f8",
    "at": "2026-10-19T23:04:03Z",
    "duration_s": 559.21,
    "contention": 3.4,
+   "detail": ""
+  },
+  "src/agents/training/untaught_rust_integration_test.py::test_the_training_regime_SAMPLES_the_pilot_and_the_eval_regime_plays_its_argmax": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 242.91,
+   "contention": 1.74,
+   "detail": ""
+  },
+  "src/agents/training/update_fit_test.py::test_a_dry_update_leaves_the_learner_bit_identical": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 13.33,
+   "contention": 1.74,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[node-live]": {
@@ -1513,6 +2929,110 @@
    "at": "2026-10-15T20:19:51Z",
    "duration_s": 29.82,
    "contention": 1.38,
+   "detail": ""
+  },
+  "src/main/anchors/live_side_test.py::test_a_rust_bot_plays_our_side_on_its_own_reading_and_its_streams_are_seeded": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 24.62,
+   "contention": 3.28,
+   "detail": ""
+  },
+  "src/main/belief_roles/belief_roles_integration_test.py::test_a_pre_break_run_is_refused_by_the_read_with_the_loaders_reason": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.3,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/main/belief_roles/belief_roles_integration_test.py::test_an_x5_checkpoint_reads_on_the_bank": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 14.48,
+   "contention": 1.76,
+   "detail": ""
+  },
+  "src/main/belief_roles/belief_roles_integration_test.py::test_the_conditional_metric_on_a_banked_blob_set": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 3.98,
+   "contention": 1.77,
+   "detail": ""
+  },
+  "src/main/best_response_gap_integration_test.py::test_cli_refuses_then_prints": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 8.08,
+   "contention": 1.72,
+   "detail": ""
+  },
+  "src/main/best_response_gap_integration_test.py::test_within_an_era_the_exploiters_are_matched": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 3.46,
+   "contention": 1.73,
+   "detail": ""
+  },
+  "src/main/h2h/arch_default_kwargs_test.py::test_declare_engine_puts_the_default_only_pair_in_one_group[new_first]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.06,
+   "contention": 1.72,
+   "detail": ""
+  },
+  "src/main/h2h/arch_default_kwargs_test.py::test_declare_engine_puts_the_default_only_pair_in_one_group[old_first]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.22,
+   "contention": 1.72,
+   "detail": ""
+  },
+  "src/main/h2h/arch_default_kwargs_test.py::test_the_old_zip_really_lacks_the_defaulted_kwargs_and_loads_the_same_extractor": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.85,
+   "contention": 1.71,
+   "detail": ""
+  },
+  "src/main/h2h/plateau_integration_test.py::test_a_second_tick_plays_nothing": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 4.09,
+   "detail": ""
+  },
+  "src/main/h2h/plateau_integration_test.py::test_one_tick_decides_the_due_check": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 338.33,
+   "contention": 1.92,
+   "detail": ""
+  },
+  "src/main/h2h/plateau_integration_test.py::test_parallel_batches_play_the_same_games_and_reach_the_same_decision": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 130.53,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/main/h2h/plateau_integration_test.py::test_the_decision_verifies_and_the_ledger_audits_clean": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.02,
+   "contention": 3.4,
    "detail": ""
   },
   "src/main/h2h/play_cross_integration_test.py::test_a_base_cell_in_the_second_group_plays_game_for_game_what_a_single_group_engine_plays": {
@@ -1627,12 +3147,68 @@
    "contention": 2.55,
    "detail": ""
   },
+  "src/main/h2h/play_edge_integration_test.py::test_a_different_batch_size_over_banked_rows_is_refused": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.06,
+   "contention": 1.96,
+   "detail": ""
+  },
+  "src/main/h2h/play_edge_integration_test.py::test_a_longer_plan_plays_only_the_new_batch_and_never_replays_a_banked_one": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.26,
+   "detail": ""
+  },
+  "src/main/h2h/play_edge_integration_test.py::test_a_rerun_of_the_same_plan_plays_and_writes_nothing": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.24,
+   "detail": ""
+  },
+  "src/main/h2h/play_edge_integration_test.py::test_each_batch_is_one_valid_row_and_the_edge_pools_them": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 291.6,
+   "contention": 1.75,
+   "detail": ""
+  },
   "src/main/h2h/play_edge_integration_test.py::test_each_rows_digest_is_the_digest_of_the_games_it_played": {
    "status": "pass",
    "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
    "at": "2026-10-15T20:27:10Z",
    "duration_s": 85.21,
    "contention": 2.28,
+   "detail": ""
+  },
+  "src/main/h2h/play_edge_integration_test.py::test_play_refuses_to_write_under_models": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 2.16,
+   "detail": ""
+  },
+  "src/main/h2h/play_edge_integration_test.py::test_the_cli_reads_the_rows_and_its_pooled_numbers_are_the_readers": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 2.28,
+   "detail": ""
+  },
+  "src/main/h2h/play_edge_integration_test.py::test_the_ledger_audits_clean_after_resumes": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 2.26,
    "detail": ""
   },
   "src/main/h2h/play_many_integration_test.py::test_a_cell_listed_twice_is_refused": {
@@ -1763,6 +3339,22 @@
    "contention": 2.55,
    "detail": ""
   },
+  "src/main/h2h/play_panel_integration_test.py::test_every_piloted_team_on_both_sides_is_a_panel_team": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.86,
+   "contention": 1.96,
+   "detail": ""
+  },
+  "src/main/h2h/play_panel_integration_test.py::test_the_row_carries_the_registered_panels_regime": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 104.51,
+   "contention": 1.74,
+   "detail": ""
+  },
   "src/main/h2h/play_reveal_integration_test.py::test_both_sided_reaches_both_sides_and_the_oracle_side_reads_what_it_reads_one_sided": {
    "status": "pass",
    "commit": "82ad9f9bffa3d863dd08e51ce3ef4840916b64d9",
@@ -1803,6 +3395,686 @@
    "contention": 1.65,
    "detail": ""
   },
+  "src/main/h2h/recorded_version_cross_test.py::test_an_endstate_checkpoint_is_its_own_groups_architecture": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 10.14,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/main/h2h/recorded_version_cross_test.py::test_the_endstate_x_another_architecture_cross_declares_two_groups[opponent]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.96,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/main/h2h/recorded_version_cross_test.py::test_the_endstate_x_another_architecture_cross_declares_two_groups[player]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 6.24,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_a_fainted_active_takes_no_active_terms": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.15,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_a_fainted_mon_scores_nothing": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.16,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_a_healthy_mon_scores_140_and_balanced_teams_score_zero": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.58,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_a_screen_whose_turns_and_presence_disagree_raises": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.37,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_active_volatiles[confusion--20.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.38,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_active_volatiles[leechseed--30.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.38,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_active_volatiles[substitute-75.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_bare_hidden_power_of_unknown_type_is_not_physical": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.15,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_boost_step_table_on_each_stat[-1]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.05,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_boost_step_table_on_each_stat[-2]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.98,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_boost_step_table_on_each_stat[-3]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.98,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_boost_step_table_on_each_stat[-4]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.32,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_boost_step_table_on_each_stat[-5]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.09,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_boost_step_table_on_each_stat[-6]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.2,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_boost_step_table_on_each_stat[0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.33,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_boost_step_table_on_each_stat[1]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.33,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_boost_step_table_on_each_stat[2]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.26,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_boost_step_table_on_each_stat[3]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.23,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_boost_step_table_on_each_stat[4]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.23,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_boost_step_table_on_each_stat[5]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.95,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_boost_step_table_on_each_stat[6]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.16,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_burn_scales_with_physical_moves_and_halves_for_special_attackers": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.46,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_burn_uses_the_level_100_stats_when_the_spread_is_known": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.5,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_flat_status_terms[frz--40.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.33,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_flat_status_terms[par--25.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.14,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_flat_status_terms[psn--10.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.46,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_flat_status_terms[slp--25.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.33,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_flat_status_terms[tox--30.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.28,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_flying_and_levitate_are_not_grounded": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.95,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_foul_play_leaf_scale": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.32,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_guards_raise_on_a_contradictory_row": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.99,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_guts_and_marvel_scale_turn_burn_and_poison_positive[guts]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.5,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_guts_and_marvel_scale_turn_burn_and_poison_positive[marvelscale]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.18,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_item_states": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.37,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_layout_resolves_inside_the_blocks": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 2.52,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_low_pp_penalty[0--30.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.18,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_low_pp_penalty[1--27.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.14,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_low_pp_penalty[10-0.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.79,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_low_pp_penalty[11-0.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.25,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_low_pp_penalty[5--15.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.85,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_low_pp_penalty[64-0.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.14,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[active_flag]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.56,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[boost_neg]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.13,
+   "contention": 1.93,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[boost_pos]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.13,
+   "contention": 1.91,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[condition]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.11,
+   "contention": 1.64,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[context_start]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.12,
+   "contention": 1.87,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[hp]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.09,
+   "contention": 1.67,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[item_consumed]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.09,
+   "contention": 1.97,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[item_known]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.13,
+   "contention": 1.67,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[moves]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.09,
+   "contention": 1.88,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[mv_current_pp]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.12,
+   "contention": 1.83,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[mv_known]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.1,
+   "contention": 1.86,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[screen_present]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.12,
+   "contention": 2.09,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[screen_turns]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.12,
+   "contention": 1.96,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[species_id]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.12,
+   "contention": 1.65,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[spikes]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.06,
+   "contention": 1.97,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[team_start]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 1.84,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_row_check_has_teeth_one_cell_off[vol_index]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.12,
+   "contention": 1.91,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_real_rows_match_the_protocol_facts": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 9.94,
+   "contention": 1.85,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_screens_score_twenty_per_turn_left[1-light_screen-20.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.25,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_screens_score_twenty_per_turn_left[1-reflect-20.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 2.25,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_screens_score_twenty_per_turn_left[3-light_screen-20.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.8,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_screens_score_twenty_per_turn_left[3-reflect-20.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.46,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_screens_score_twenty_per_turn_left[5-light_screen-20.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.12,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_screens_score_twenty_per_turn_left[5-reflect-20.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.8,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_spikes_hit_every_alive_grounded_mon[0-0.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.15,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_spikes_hit_every_alive_grounded_mon[1--12.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.2,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_spikes_hit_every_alive_grounded_mon[2--16.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.2,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_spikes_hit_every_alive_grounded_mon[3--25.0]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.95,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_swapping_the_sides_negates_the_score": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 2.21,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_the_floor_applies_before_the_alive_bonus": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.64,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_their_boosts_count_against_us": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.16,
+   "detail": ""
+  },
+  "src/main/hidden_info_study/hand_eval_test.py::test_unseen_opponent_slots_score_as_fresh_grounded_mons": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.2,
+   "detail": ""
+  },
+  "src/main/info_audit/info_audit_integration_test.py::test_every_check_passes_on_the_real_builder": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 12.92,
+   "contention": 2.01,
+   "detail": ""
+  },
+  "src/main/info_audit/info_audit_integration_test.py::test_teeth_a_choice_log_core_events_accepts_but_the_playout_tool_refuses_is_rejected": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.15,
+   "contention": 1.93,
+   "detail": ""
+  },
+  "src/main/info_audit/info_audit_integration_test.py::test_teeth_a_world_that_copies_the_true_moves_is_caught": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 9.67,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/info_audit/info_audit_integration_test.py::test_teeth_consistency_catches_a_fact_record_at_another_mons_slot": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 1.75,
+   "contention": 1.86,
+   "detail": ""
+  },
+  "src/main/info_audit/info_audit_integration_test.py::test_teeth_log_consistency_catches_an_over_reveal": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.05,
+   "contention": 2.11,
+   "detail": ""
+  },
+  "src/main/info_audit/info_audit_integration_test.py::test_teeth_regate_legality_and_genders_catch_a_tampered_world": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.93,
+   "contention": 1.85,
+   "detail": ""
+  },
+  "src/main/info_audit/info_audit_integration_test.py::test_teeth_seed_reuse_through_the_gender_dice_is_closed_by_the_pad_and_caught_without_it": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 3.71,
+   "contention": 1.89,
+   "detail": ""
+  },
+  "src/main/info_audit/info_audit_integration_test.py::test_the_pilot_keeps_seen_facts_true_and_the_honest_builder_draws_them": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.45,
+   "detail": ""
+  },
+  "src/main/info_audit/info_audit_integration_test.py::test_the_seed_reuse_residual_is_measured_by_counterfactual_flips_against_a_passing_control": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 1.21,
+   "contention": 1.73,
+   "detail": ""
+  },
   "src/main/info_audit/info_audit_slow_test.py::test_the_suite_passes_on_twelve_decisions_and_every_spec": {
    "status": "pass",
    "commit": "8702a56f416ae8e859dcfbb9fd0e0f86d2a3a5c3",
@@ -1811,12 +4083,284 @@
    "contention": 1.52,
    "detail": ""
   },
+  "src/main/live/live_integration_test.py::test_gate_a_two_roads_one_row_in_miniature": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 8.18,
+   "contention": 4.24,
+   "detail": ""
+  },
   "src/main/ops/diag_bf16_canary_test.py::test_EVERY_route_of_the_GPU_read_RUNS_through_a_smoke_backend_on_cpu": {
    "status": "pass",
    "commit": "a8161c137e6d28be86b4f5b98d908852bd5e7a30",
    "at": "2026-10-17T11:47:26Z",
    "duration_s": 191.71,
    "contention": 1.3,
+   "detail": ""
+  },
+  "src/main/ops/eval_trace_gen_integration_test.py::test_a_rerun_at_the_same_seed_is_identical_file_for_file": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.04,
+   "contention": 1.87,
+   "detail": ""
+  },
+  "src/main/ops/eval_trace_gen_integration_test.py::test_another_seed_is_another_cycle": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.81,
+   "detail": ""
+  },
+  "src/main/ops/eval_trace_gen_integration_test.py::test_critic_read_picks_the_generated_cycle_and_its_gates_read_it": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 1.85,
+   "detail": ""
+  },
+  "src/main/ops/eval_trace_gen_integration_test.py::test_the_manifest_records_the_RUNs_regime_and_the_sentinels_it_played": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 264.62,
+   "contention": 1.61,
+   "detail": ""
+  },
+  "src/main/ops/eval_trace_gen_integration_test.py::test_the_prober_summary_and_scan_read_the_generated_cycle": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.33,
+   "contention": 1.63,
+   "detail": ""
+  },
+  "src/main/ops/eval_trace_gen_integration_test.py::test_the_shadow_run_resolves_the_step_snapshot_and_the_pinned_sentinel": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.85,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_a_floor_is_applied_to_the_MATCHED_delta_not_the_as_traced_one": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 1.88,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_a_manifest_that_claims_a_count_the_tree_does_not_hold_is_reported_and_the_disk_wins": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.03,
+   "contention": 2.16,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_a_pair_level_row_is_declared_and_is_never_quota_matched": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.26,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_a_pair_matched_control_vs_control_is_the_same_operation": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 10.55,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_a_symmetric_pair_produces_rows_identical_to_matching_disabled": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 1.76,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_equal_caps_are_a_symmetric_pair_and_nothing_is_subsampled": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.05,
+   "contention": 2.0,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_every_meter_declares_its_frame_sensitivity_with_a_reason": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.79,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_every_row_that_goes_through_the_out_of_fold_decoder_is_frame_sensitive": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 1.85,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_nothing_is_written_anywhere_by_a_subsample": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.16,
+   "contention": 1.81,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_only_the_frame_sensitive_rows_are_touched": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 2.21,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_the_calibration_slope_is_read_as_traced_and_only_its_stratum_row_is_matched": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.26,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_the_decoder_matched_rung_gives_the_richer_side_the_poorer_sides_decoder_frame": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.2,
+   "contention": 1.76,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_the_default_seed_count_is_odd_and_at_least_twenty": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.21,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_the_ledger_line_says_which_frame_it_quotes": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 2.31,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_the_legacy_three_tuple_view_still_unpacks": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.21,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_the_matched_row_reports_the_across_seed_spread_and_the_median_seeds_own_interval": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 1.93,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_the_opt_out_prints_a_marker_and_never_a_label": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 2.27,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_the_planted_artefact_is_DETECTED_unmatched_and_NOT_DETECTED_matched": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 11.1,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_the_provisional_row_is_declared_and_carries_its_reason": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.83,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_the_realized_profile_is_read_off_the_disk_not_the_nominal_quota": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.03,
+   "contention": 2.09,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_the_report_renders_the_profiles_and_the_matched_detail": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 2.43,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_the_richer_side_is_the_one_cut_whichever_role_it_holds": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.08,
+   "contention": 1.81,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_the_richer_sides_matched_frame_is_the_size_of_the_poorer_sides": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.02,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_the_subsample_is_seeded_reproducible_and_seed_dependent": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.12,
+   "contention": 1.85,
+   "detail": ""
+  },
+  "src/main/ops/quota_match_test.py::test_the_subsample_recomputes_the_capture_rates_for_the_view_it_produces": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.13,
+   "contention": 1.91,
+   "detail": ""
+  },
+  "src/main/ops/v_column_matched_test.py::test_the_matched_rows_CHANGE_when_the_v_column_does": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.9,
+   "contention": 1.72,
+   "detail": ""
+  },
+  "src/main/policy_spectrum/policy_spectrum_integration_test.py::test_gate_one_on_a_slice_of_the_committed_bank": {
+   "status": "skip",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.32,
+   "contention": 1.72,
    "detail": ""
   },
   "src/main/policy_spectrum/policy_spectrum_integration_test.py::test_gate_one_on_the_whole_committed_bank": {
@@ -1829,6 +4373,158 @@
    "last_skipped_at": "2026-10-15T21:10:17Z",
    "last_skipped_commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
    "last_skip_detail": ""
+  },
+  "src/main/policy_spectrum/policy_spectrum_integration_test.py::test_the_reader_is_deterministic_on_an_x5_checkpoint": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 10.04,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/main/policy_spectrum/truth_integration_test.py::test_branch_turns_are_crn_deterministic_and_token_checked": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 6.79,
+   "contention": 1.74,
+   "detail": ""
+  },
+  "src/main/prober/better_line_integration_test.py::test_better_line_depth1_chosen_value_matches_recorded_next_obs": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.99,
+   "contention": 1.83,
+   "detail": ""
+  },
+  "src/main/prober/better_line_integration_test.py::test_better_line_depth2_beam_produces_principal_variation": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.31,
+   "contention": 2.09,
+   "detail": ""
+  },
+  "src/main/prober/better_line_integration_test.py::test_better_line_is_deterministic": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.77,
+   "contention": 2.35,
+   "detail": ""
+  },
+  "src/main/prober/core_trace_integration_test.py::test_a_tampered_record_text_is_refused_naming_the_line": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.2,
+   "contention": 1.84,
+   "detail": ""
+  },
+  "src/main/prober/core_trace_integration_test.py::test_states_rows_that_disagree_with_the_replay_are_refused": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.36,
+   "contention": 1.81,
+   "detail": ""
+  },
+  "src/main/prober/core_trace_integration_test.py::test_the_core_stream_rows_equal_the_stored_rows_and_the_choice_maps_name_the_legal_actions": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 1.62,
+   "contention": 1.8,
+   "detail": ""
+  },
+  "src/main/prober/core_trace_integration_test.py::test_the_expansion_matches_the_states_rows_and_keeps_the_stored_meta": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.78,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/core_trace_integration_test.py::test_the_json_cli_reads_a_core_trace_run": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.31,
+   "contention": 1.78,
+   "detail": ""
+  },
+  "src/main/prober/core_trace_integration_test.py::test_the_protocol_log_stands_in_for_the_missing_replay_html": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.48,
+   "detail": ""
+  },
+  "src/main/prober/core_trace_integration_test.py::test_the_stall_game_ends_on_the_trainees_forfeit_with_no_row_for_it": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 1.91,
+   "detail": ""
+  },
+  "src/main/prober/falsifier_integration_test.py::test_falsify_scan_end_to_end": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.72,
+   "contention": 1.92,
+   "detail": ""
+  },
+  "src/main/prober/game_integration_test.py::test_every_turn_of_a_real_battle_reads_as_ordered_beats": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.47,
+   "contention": 1.83,
+   "detail": ""
+  },
+  "src/main/prober/game_integration_test.py::test_the_attention_map_is_a_distribution_per_live_row": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.03,
+   "contention": 1.98,
+   "detail": ""
+  },
+  "src/main/prober/game_integration_test.py::test_the_readout_carries_the_scouting_notes": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.11,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/main/prober/game_integration_test.py::test_the_readout_re_runs_the_policy_and_reads_every_panel": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 3.26,
+   "contention": 1.75,
+   "detail": ""
+  },
+  "src/main/prober/game_integration_test.py::test_the_story_carries_every_turns_events_and_board": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.09,
+   "contention": 1.76,
+   "detail": ""
+  },
+  "src/main/prober/game_integration_test.py::test_the_web_views_render_the_model_panels": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 4.2,
+   "contention": 1.8,
+   "detail": ""
   },
   "src/main/prober/web/render_integration_test.py::test_a_404_page_still_renders_the_shell": {
    "status": "pass",
@@ -2222,6 +4918,54 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/main/ridealong_read/ridealong_read_integration_test.py::test_reader_smoke_end_to_end": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 17.58,
+   "contention": 1.76,
+   "detail": ""
+  },
+  "src/main/ridealong_read/ridealong_read_integration_test.py::test_v_matches_the_policy_spectrum_critic_read": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 7.32,
+   "contention": 1.77,
+   "detail": ""
+  },
+  "src/main/team_strength/x26_lane_integration_test.py::test_a_unit_from_another_registration_is_refused": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.34,
+   "detail": ""
+  },
+  "src/main/team_strength/x26_lane_integration_test.py::test_every_pair_played_its_planned_teams_and_reads_as_games": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.34,
+   "detail": ""
+  },
+  "src/main/team_strength/x26_lane_integration_test.py::test_the_fit_reads_the_lane_into_per_team_and_per_set_ratings": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.01,
+   "contention": 1.89,
+   "detail": ""
+  },
+  "src/main/team_strength/x26_lane_integration_test.py::test_units_are_durable_and_a_rerun_resumes": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 359.75,
+   "contention": 1.97,
+   "detail": ""
+  },
   "src/main/train/canary_shift_max_test.py::test_one_update_is_BIT_IDENTICAL_with_the_flag_at_two_values": {
    "status": "pass",
    "commit": "77ada5042c4c8c5083db7316793c03ac3fc5be6f",
@@ -2262,6 +5006,30 @@
    "contention": 1.03,
    "detail": ""
   },
+  "src/main/train/fatal_config_exits_integration_test.py::test_a_bot_weights_typo_exits_FATAL_CONFIG_not_CRASH": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 8.94,
+   "contention": 2.07,
+   "detail": ""
+  },
+  "src/main/train/fresh_build_threads_test.py::test_a_fresh_production_build_is_byte_identical_at_1_and_8_threads[fixture]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 15.08,
+   "contention": 1.81,
+   "detail": ""
+  },
+  "src/main/train/fresh_build_threads_test.py::test_a_fresh_production_build_is_byte_identical_at_1_and_8_threads[trainer]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 13.9,
+   "contention": 1.84,
+   "detail": ""
+  },
   "src/main/untaught_meter_reproducibility_integration_test.py::test_the_artifact_carries_the_rust_eval_transport_stamp": {
    "status": "pass",
    "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
@@ -2286,12 +5054,52 @@
    "contention": 1.51,
    "detail": ""
   },
+  "src/main/value_search/name_variant_integration_test.py::test_no_world_of_the_variant_team_holds_a_move_twice_and_the_revealed_one_sits_in_its_true_slot": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 73.23,
+   "contention": 1.91,
+   "detail": ""
+  },
+  "src/main/value_search/search_integration_test.py::test_honest_search_runs_on_sampled_worlds": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 38.38,
+   "contention": 1.99,
+   "detail": ""
+  },
+  "src/node_free_search_integration_test.py::test_search_replay_and_the_prober_run_with_node_impossible": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.89,
+   "contention": 1.76,
+   "detail": ""
+  },
   "src/poke_env_free_entry_points_test.py::test_a_debug_smoke_with_eval_runs_with_poke_env_blocked": {
    "status": "pass",
    "commit": "cb9405dd4838557a38e9f49a0ed3371dff438cc7",
    "at": "2026-10-10T22:28:05Z",
    "duration_s": 442.12,
    "contention": 1.4,
+   "detail": ""
+  },
+  "src/poke_env_free_entry_points_test.py::test_a_head_to_head_edge_plays_with_poke_env_blocked": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 48.29,
+   "contention": 1.76,
+   "detail": ""
+  },
+  "src/poke_env_free_entry_points_test.py::test_a_rust_bot_our_side_plays_a_battle_with_poke_env_blocked": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 8.51,
+   "contention": 1.88,
    "detail": ""
   },
   "src/poke_env_free_entry_points_test.py::test_every_prober_command_and_the_web_app_run_with_poke_env_blocked": {
@@ -2302,6 +5110,70 @@
    "contention": 1.45,
    "detail": ""
   },
+  "src/utils/bridge/node_reject_bound_integration_test.py::test_refusals_reset_across_committed_decisions": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 8.58,
+   "contention": 2.7,
+   "detail": ""
+  },
+  "src/utils/bridge/ws_frontend_byte_identity_integration_test.py::test_the_front_ends_protocol_is_byte_identical_to_the_node_bridges": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 14.95,
+   "contention": 3.68,
+   "detail": ""
+  },
+  "src/utils/bridge/ws_frontend_byte_identity_integration_test.py::test_the_rust_backed_front_end_is_byte_identical_to_the_node_bridge": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 14.41,
+   "contention": 4.03,
+   "detail": ""
+  },
+  "src/utils/bridge/ws_frontend_integration_test.py::test_a_battle_is_backed_by_exactly_one_bridge_child_that_is_reaped": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 20.64,
+   "contention": 4.66,
+   "detail": ""
+  },
+  "src/utils/bridge/ws_frontend_integration_test.py::test_two_clients_complete_a_two_battle_series_over_the_websocket": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 22.94,
+   "contention": 4.34,
+   "detail": ""
+  },
+  "src/utils/compile_pool_teardown_test.py::test_the_compile_pool_is_gone_after_its_module_and_the_check_sees_a_live_one": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 29.26,
+   "contention": 1.8,
+   "detail": ""
+  },
+  "src/utils/rust_env/bots_gate_test.py::test_commit_tier_every_banked_decision_is_equal": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.87,
+   "contention": 2.08,
+   "detail": ""
+  },
+  "src/utils/rust_env/bots_gate_test.py::test_every_setup_bot_sets_up_with_curse": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.61,
+   "detail": ""
+  },
   "src/utils/rust_env/bots_gate_test.py::test_milestone_every_decision_is_equal_at_scale": {
    "status": "pass",
    "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
@@ -2310,12 +5182,60 @@
    "contention": 1.08,
    "detail": ""
   },
+  "src/utils/rust_env/bots_gate_test.py::test_the_bank_holds_exactly_the_commit_tier_plan": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.0,
+   "contention": 2.52,
+   "detail": ""
+  },
+  "src/utils/rust_env/bots_gate_test.py::test_the_gate_has_teeth[action]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.81,
+   "contention": 2.02,
+   "detail": ""
+  },
+  "src/utils/rust_env/bots_gate_test.py::test_the_gate_has_teeth[relabel]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.89,
+   "contention": 1.76,
+   "detail": ""
+  },
+  "src/utils/rust_env/bots_gate_test.py::test_the_gate_has_teeth[rng]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.77,
+   "contention": 1.76,
+   "detail": ""
+  },
+  "src/utils/rust_env/bots_gate_test.py::test_the_gate_has_teeth[view]": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 0.86,
+   "contention": 1.77,
+   "detail": ""
+  },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_procedural_teams": {
    "status": "pass",
    "commit": "3190a05d11be3e2e009c20b14f229879cf2806a1",
    "at": "2026-10-10T09:45:02Z",
    "duration_s": 30.91,
    "contention": 1.01,
+   "detail": ""
+  },
+  "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_the_ladder_commit_tier": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 7.05,
+   "contention": 1.83,
    "detail": ""
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_the_ladder_milestone_tier": {
@@ -2332,6 +5252,46 @@
    "at": "2026-10-10T09:45:02Z",
    "duration_s": 31.31,
    "contention": 1.01,
+   "detail": ""
+  },
+  "src/utils/rust_env/core_cargo_test.py::test_the_rust_env_core_suite_passes": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 74.89,
+   "contention": 2.19,
+   "detail": ""
+  },
+  "src/utils/rust_env/fixture_battles_test.py::test_self_play_answers_both_sides_with_the_policy": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 5.44,
+   "contention": 1.76,
+   "detail": ""
+  },
+  "src/utils/rust_env/fixture_battles_test.py::test_two_calls_play_byte_identical_rows": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 7.78,
+   "contention": 1.76,
+   "detail": ""
+  },
+  "src/utils/rust_env/proc_integration_test.py::test_gate_1_the_ladder_commit_tier_ffi_equals_process": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 6.39,
+   "contention": 4.39,
+   "detail": ""
+  },
+  "src/utils/rust_env/successors_integration_test.py::test_gate_1_the_depth_3_successor_slice_commit": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 18.89,
+   "contention": 1.79,
    "detail": ""
   },
   "src/utils/rust_env/successors_integration_test.py::test_gate_1_the_depth_3_successor_slice_milestone[ladder_milestone-12]": {
@@ -2357,7 +5317,15 @@
    "duration_s": 14.15,
    "contention": 1.0,
    "detail": ""
+  },
+  "src/utils/team_corpora/team_corpora_test.py::test_the_committed_corpus_reproduces_from_its_source": {
+   "status": "pass",
+   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
+   "at": "2026-10-20T02:17:48Z",
+   "duration_s": 28.55,
+   "contention": 1.74,
+   "detail": ""
   }
  },
- "last_written": "2026-10-20T00:54:56Z"
+ "last_written": "2026-10-20T02:18:03Z"
 }
