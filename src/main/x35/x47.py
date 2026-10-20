@@ -55,7 +55,8 @@ C0 finals. In order:
 * primary NULL or UNDECIDED (final): PER-STEP ONLY when the secondary's class is GAIN (reported to the owner as a
   throughput-dependent result; no adoption), INCONCLUSIVE when the secondary is, else the primary's class;
 * primary LOSS: LOSS.
-Nothing is adopted by this rule alone. Every verdict prints what it does to X47b (AM-X47-2, :data:`X47B_ACTION`).
+Nothing is adopted by this rule alone. Every verdict prints what it does to X47b (AM-X47-2, :data:`X47B_ACTION`); an
+UNDECIDED line states its own look's detectable effect (AM-X47c-1, ``readout.r1_detectable_effect``).
 
 REPORTED, NEVER DECIDING (registered 2026-10-20, before any read):
 * AM-X47-5: a PER-STEP ONLY carries D = mean over seeds of (S_final − S_s_eq) with its two-sided 95 % t interval on
@@ -113,15 +114,17 @@ FINAL_FILE = "final_model.zip"
 
 #: AM-X47-2 (ACCEPTED as proposed, 2026-10-20): what each FINAL class does to X47b. UNDECIDED splits on the sign of
 #: the primary's Δ̂ (Δ̂ > 0 by AM-X47-2; Δ̂ <= 0, within 1e-9 of 0 included, by AM-X47b-4); a look-1 CONTINUE is not
-#: final.
+#: final. AM-X47c-1: the UNDECIDED lines are TEMPLATES; ``{mde}`` is the CURRENT look's detectable effect
+#: (``readout.r1_detectable_effect``: 4.6 pp after look 2, ≈ 6.8 at look 1), never a constant.
 X47B_ACTION: Dict[str, str] = {
     ADOPT: "X47b RUNS (licensed by ADOPT-CANDIDATE)",
     TRADE: "X47b only on the orchestrator's ruling (a required guard FAILed)",
     PER_STEP_ONLY: "X47b RUNS (licensed by PER-STEP ONLY)",
-    UNDECIDED + "+": ("X47b keeps its rank-9 conditional slot, unlicensed but not dropped; report: no effect >= 4.6 pp "
-                      "detected (σ 1.07 pp, 80 %) -- never 'depth does not help'"),
+    UNDECIDED + "+": ("X47b keeps its rank-9 conditional slot, unlicensed but not dropped; report: no effect >= {mde:.1f} "
+                      "pp detected (look {look}, σ {sigma} pp, 80 %) -- never 'depth does not help'"),
     UNDECIDED + "-": ("X47b LEAVES its rank-9 conditional slot and is DEPRIORITISED in the backlog (AM-X47b-4); "
-                      "report: no effect >= 4.6 pp detected; point estimate <= 0 -- never 'depth does not help'"),
+                      "report: no effect >= {mde:.1f} pp detected; point estimate <= 0 (look {look}, σ {sigma} pp, "
+                      "80 %) -- never 'depth does not help'"),
     NULL: "X47b drops in rank, not out (the toy only ranks before calibration); a verdict on THIS growth recipe only",
     LOSS: "X47b is not run on this evidence",
     CONTINUE: "not final: look 2 (T1b) first",
@@ -130,10 +133,12 @@ X47B_ACTION: Dict[str, str] = {
 
 
 def x47b_action(verdict: str, primary: "R.R1Decision") -> str:
-    """AM-X47-2's line for a verdict (:data:`X47B_ACTION`)."""
+    """AM-X47-2's line for a verdict (:data:`X47B_ACTION`); an UNDECIDED line states the primary's OWN look's
+    detectable effect (AM-X47c-1)."""
     if verdict == UNDECIDED:
         pos = primary.stat is not None and R._clears(primary.stat.delta, 0.0, above=True)[0]
-        return X47B_ACTION[UNDECIDED + ("+" if pos else "-")]
+        return X47B_ACTION[UNDECIDED + ("+" if pos else "-")].format(
+            mde=R.r1_detectable_effect(primary.look), look=primary.look, sigma=R.POWER_SIGMA_PP)
     return X47B_ACTION.get(verdict, X47B_ACTION[INCONCLUSIVE])
 
 #: one process's rows: ``(collect rows, update rows)``, each ``[(step, seconds)]`` sorted by step.

@@ -53,6 +53,7 @@ DECLARED HERE, BEFORE ANY REAL READ (choices §5.6.4 leaves open; each is a FIND
 """
 from __future__ import annotations
 
+import functools
 import math
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
@@ -274,6 +275,61 @@ def decide_r1(look: int, on: Mapping[str, Optional[float]], off: Mapping[str, Op
             return R1Decision(look, cls, CONTINUE, False, stat, seeds, nn, ())
         return R1Decision(look, cls, cls, True, stat, seeds, nn, ())
     return R1Decision(look, cls, cls, True, stat, seeds, near, ())
+
+
+#: AM-X47c-1: the registered power function's inputs (``review_x47_2026-10-20/power.py``, X47_READOUT_REVIEW §4):
+#: σ = the per-seed SD of S on both sides (X26's node-to-node SD), the power target, the draws and their seed.
+POWER_SIGMA_PP = 1.07
+POWER_TARGET = 0.80
+POWER_DRAWS = 200_000
+POWER_SEED = 20261020
+
+
+@functools.lru_cache(maxsize=None)
+def r1_detectable_effect(look: int, *, sigma: float = POWER_SIGMA_PP, power: float = POWER_TARGET,
+                         draws: int = POWER_DRAWS, seed: int = POWER_SEED) -> float:
+    """AM-X47c-1: the smallest true Δ (pp) that R1 calls GAIN with probability >= ``power`` BY look ``look``, under the
+    registered sequential rule: look 1 = GAIN on the look-1 seeds; look 2 = GAIN at look 1, or CONTINUE (UNDECIDED
+    with Δ̂ > 0) and GAIN on all the look-2 seeds. Welch at :data:`R1_CONFIDENCE`, bar :data:`BAR_PP`, per-seed SD
+    ``sigma`` on both sides, ``draws`` simulated reads (seed ``seed``). The draws are COMMON across Δ (Δ shifts every
+    ON score), so the power is monotone in Δ and a bisection to 0.001 pp finds the boundary; deterministic."""
+    import numpy as np
+    from scipy.stats import t as student_t
+
+    if look not in LOOK_SEEDS:
+        raise ValueError(f"look {look} is not one of the registered looks {sorted(LOOK_SEEDS)}")
+    n_max = max(LOOK_SEEDS.values())
+    rng = np.random.default_rng(seed)
+    on = rng.normal(0.0, sigma, (draws, n_max))
+    off = rng.normal(0.0, sigma, (draws, n_max))
+
+    def welch(n: int) -> Tuple[Any, Any, Any]:
+        a, b = on[:, :n], off[:, :n]
+        va, vb = a.var(axis=1, ddof=1) / n, b.var(axis=1, ddof=1) / n
+        v = va + vb
+        df = v * v / (va * va / (n - 1) + vb * vb / (n - 1))
+        q = student_t.ppf(1.0 - (1.0 - R1_CONFIDENCE) / 2.0, df)
+        d = a.mean(axis=1) - b.mean(axis=1)
+        return d, d - q * np.sqrt(v), d + q * np.sqrt(v)
+
+    d1, lo1, hi1 = welch(LOOK_SEEDS[1])
+    _, lo2, _ = welch(LOOK_SEEDS[2])
+
+    def p_gain(delta: float) -> float:
+        g1 = lo1 + delta > BAR_PP
+        if look == 1:
+            return float(g1.mean())
+        h1, l1 = hi1 + delta, lo1 + delta
+        und = ~g1 & ~(h1 < -BAR_PP) & ~((l1 > -BAR_PP) & (h1 < BAR_PP))
+        return float((g1 | (und & (d1 + delta > 0.0) & (lo2 + delta > BAR_PP))).mean())
+
+    lo, hi = 0.0, 64.0
+    if p_gain(hi) < power:
+        raise ValueError(f"R1 never reaches {power:.0%} power below {hi} pp at σ {sigma}")
+    while hi - lo > 1e-3:
+        mid = (lo + hi) / 2.0
+        lo, hi = (lo, mid) if p_gain(mid) >= power else (mid, hi)
+    return hi
 
 
 # --------------------------------------------------------------------------------------------------------- R2

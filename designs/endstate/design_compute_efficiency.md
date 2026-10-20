@@ -661,6 +661,13 @@ The launch sheet's §0 has the table.**
 - **AM-X47b-4:** a final UNDECIDED with Δ̂ ≤ 0 deprioritises X47b; the report says "no effect ≥ 4.6 pp detected;
   point estimate ≤ 0".
 
+**AMENDMENT 2026-10-20 (AM-X47c: two follow-ups to AM-X47b, ruled BEFORE any production X35 read). The launch sheet's
+§0 has the table.**
+- **AM-X47c-1 (F-1):** the UNDECIDED line prints the CURRENT look's detectable effect, computed from the registered
+  power function (`readout.r1_detectable_effect`): 4.6 pp after look 2, ≈ 6.8 pp at look 1.
+- **AM-X47c-2 (F-5):** §5.6.5's truth-refresh rule fires for production (P\* at 280M ≥ 150M + 50M): production's B2
+  truth is re-branched under P\* (`X26@280M greedy (both sides)`), the toy refresh's procedure.
+
 #### 5.6.1 The shared frame (every arm)
 
 - **The start.** P\* is X26's plateau checkpoint: the newest node of the second FLAT Tier-1 check (§4.3's convention),

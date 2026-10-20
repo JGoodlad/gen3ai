@@ -4,6 +4,7 @@ file); every constructed number sits well clear of its boundary except the delib
 from __future__ import annotations
 
 import json
+import math
 
 import pytest
 
@@ -333,6 +334,23 @@ def test_am_x47_2_every_verdict_says_what_it_does_to_x47b():
     assert "no effect >= 4.6 pp detected; point estimate <= 0" in neg_line
     assert X.read(_doc(s_eq=LOSS_ON, final=GAIN_ON)).as_dict()["x47b"] == X.X47B_ACTION[R.LOSS]
     assert X.read(_doc(s_eq=NULL_ON, final=NULL_ON)).as_dict()["x47b"].startswith("X47b drops in rank, not out")
+
+
+def test_am_x47c_1_the_detectable_effect_is_the_current_looks_own():
+    """F-1: a FINAL UNDECIDED with Δ̂ <= 0 can end at LOOK 1, where R1 detects only ≈ 6.8 pp at 80 %; the line must not
+    print look 2's 4.6 pp there. The figure comes from the registered power function, not a constant."""
+    mde1, mde2 = R.r1_detectable_effect(1), R.r1_detectable_effect(2)
+    for v in (mde1, mde2):                                   # rule 8: clear of the 0.1-pp rounding boundary
+        assert abs(v * 10 - math.floor(v * 10) - 0.5) > 0.05
+    assert f"{mde2:.1f}" == "4.6" and f"{mde1:.1f}" == "6.8"  # look 2 reproduces the registered 4.6 (review §4)
+    assert 4.0 < mde2 < 5.0                                  # the review's table: 57.6 % at Δ 4, 91.1 % at Δ 5
+    assert R.r1_detectable_effect(2, sigma=1.6) > mde2        # it IS a function of σ, not a constant
+    neg = X.read(_doc(look=1, s_eq=[50.0, 44.0, 52.0], final=[50.0, 44.0, 52.0]))
+    assert neg.verdict == R.UNDECIDED and neg.primary.final and neg.primary.stat.delta < 0
+    line = neg.as_dict()["x47b"]
+    assert "no effect >= 6.8 pp detected; point estimate <= 0 (look 1" in line and "4.6" not in line
+    with pytest.raises(ValueError):
+        R.r1_detectable_effect(3)
 
 
 def test_am_x47_10_the_descriptor_reads_the_new_rounds():
