@@ -14980,3 +14980,23 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
 - **Docs.** `designs/model/versioning.md` "Declared growth at a fork"; `ARCHITECTURE.md` §2.1 step 9;
   `design_bot_ideas_screen.md` (status, F-BI-3, decision row); `TASK_BACKLOG.md` B-GROW;
   `designs/ops/flag_census.md`; `designs/ops/training_runbook.md`; the training leaf's table.
+## 2026-10-19 — the compile canary's YARDSTICK is not the compiled arm (`gen3_r1_yardstick_margin_v1`; no model / config / obs / signature change; training math untouched)
+
+- **The defect (TECH-DEBT P1, the X34 u1700 UNCONFIRMED).** `compile_regions._clip_margin_rule` refused ANY arm past the
+  clip margin M (0.72) and the canary logged it as "compiled DISAGREES with eager" on its confirm / FATAL ladder. At u1700
+  the arm past M was EAGER bf16 (0.856), the yardstick; compiled read 0.52 with 0 clip switches — a bf16 conditioning
+  tail (`research_state/measurements/x34_canary_u1700_2026-10-19/`).
+- **The change.** `YARDSTICK_ARMS` (eager, fp32 reference): one past M on a rung's first read is a recorded
+  `yardstick_out_of_margin` event, never counted; the rung (`_r1_judge`, and the graphed accumulation rung) re-runs ONCE
+  at M' = max(M, `YARDSTICK_HEADROOM` 1.25 x the largest YARDSTICK shift) and is judged there. The compiled arm's shift
+  never sets M'; a compiled breach refuses as before. A yardstick still past M' (and the bf16 DRIFT rule) raises
+  `YardstickRefusal`, which still counts but is never worded "compiled DISAGREES with eager". Every record carries each
+  arm's `worst_row` / `worst_fixture_row` (`R1Batch.fixture_rows`) and `same_precision` (max |log pi_compiled - log
+  pi_eager| and its row; no bar until a CUDA census); an unconfirmed / FATAL record carries `policy_pt`, the policy
+  `state_dict` (`compile_canary.DUMP_WEIGHTS_MAX` = 3 per process); new TB scalar `compile/canary_yardstick_events`.
+- **Tests.** `src/agents/model/canary_yardstick_test.py` (planted arms, CPU, fast: the u1700 shape PASSES with an event
+  and one re-run at 1.07; a compiled-only 0.9 refuses; a compiled shift never widens M'; a non-reproducing yardstick is a
+  `YardstickRefusal`; through the canary a compiled breach confirms and is FATAL with rows and weights recorded; the
+  dump cap; the wording); `compile_canary_test::test_a_u1700_shaped_EAGER_tail_on_the_real_learner_*` (slow, the real
+  learner). Docs: `training/compile_flags.md` "The yardstick is not the compiled arm", `training/learner_lifecycle.md`
+  (the canary), `ops/TRAINING_RUN_SOP.md` §3 rule 5, `endstate/design_x26_readiness.md` §4.2, the TECH-DEBT row closed.

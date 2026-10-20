@@ -826,7 +826,9 @@ C32 (compiled fp32) reads ≤ 4e-6 everywhere.
   So the headroom today is **0.110 = 61 % of `R1_LOGPROB_SHIFT_MAX` 0.18**, not 76 %. The 0.136 figure is the
   all-legal-actions maximum, a superset (F24).
 - **0.18 is not the refusal.** The rule refuses an arm only past the MARGIN M = 4 × 0.18 = **0.72**, or on any
-  clip-branch switch. 0.18 is the largest healthy shift measured so far, and the 4× safety factor rests on it. Today's
+  clip-branch switch — and since `gen3_r1_yardstick_margin_v1` (2026-10-19, the X34 u1700 read) only the COMPILED arm:
+  an eager / fp32-reference arm past M is a recorded yardstick event and the rung re-runs at M′
+  (`designs/training/compile_flags.md` "The yardstick is not the compiled arm"); X26's pin predates it. 0.18 is the largest healthy shift measured so far, and the 4× safety factor rests on it. Today's
   read sits 6.5× below the refusal.
 - **The growth follows the WEIGHTS, not the compiler.** Eager bf16 grows with it (0.043 → 0.107 at 66M), and
   Cbf / Ebf stays between 0.5× and 1.4× on the 64 rows. The pre-activation p99 grew from 6.3 to 11 over the same

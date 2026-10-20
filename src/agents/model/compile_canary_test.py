@@ -339,3 +339,40 @@ def test_a_disagreement_carried_by_ONE_row_does_NOT_confirm_itself(full_rows_lea
     assert _verdicts(tmp_path) == ["unconfirmed"]
     with pytest.raises(CompileCanaryError, match="two CONSECUTIVE"):     # a persistent one still ends the run
         can.after_update()
+
+
+@pytest.mark.slow  # the real learner's canary, run twice (the re-run): ~30 s
+def test_a_u1700_shaped_EAGER_tail_on_the_real_learner_reads_PASS_with_a_yardstick_event(regions_learner, tmp_path,
+                                                                                       monkeypatch):
+    """`gen3_r1_yardstick_margin_v1` end to end (the X34 u1700 UNCONFIRMED): the EAGER arm's largest |dlogp| from the
+    fp32 reference reads 0.856 > M 0.72 on every read (planted on the margin rule's read only, so the real verdict
+    judges) while the compiled arm is healthy. The canary PASSES, records the yardstick event, re-relocates ONCE at
+    M' = 1.25 x 0.856 and counts nothing. Fails on revert: the old rule refused the yardstick as "compiled DISAGREES
+    with eager" and counted an UNCONFIRMED."""
+    from agents.model import compile_regions as cr
+    from agents.model.trunk_precision import trunk_precision_of
+    assert trunk_precision_of(regions_learner.policy) == "bf16"          # PRECONDITION: the eager arm is bf16
+    real_reads, real_reloc = cr._margin_reads, cr.relocate_clip_boundary
+    margins = []
+
+    def reads(fix, arms):
+        out = real_reads(fix, arms)
+        sh, row, flips = out["eager"]
+        assert sh < 0.3, out                                             # PRECONDITION: the planted tail dominates
+        out["eager"] = (0.856, 3, flips)
+        return out
+
+    def reloc(model, args, margin=None):
+        margins.append(margin)
+        return real_reloc(model, args, margin)
+    monkeypatch.setattr(cr, "_margin_reads", reads)
+    monkeypatch.setattr(cr, "relocate_clip_boundary", reloc)
+    out = CompileCanary(regions_learner, batch_size=16, every=1).after_update()
+    assert out["compile/canary_ok"] == 1.0 and out["compile/canary_unconfirmed_disagreements"] == 0.0, out
+    assert out["compile/canary_yardstick_events"] == 1.0
+    assert margins[:2] == [None, pytest.approx(1.25 * 0.856)], margins
+    (rec,) = _records(tmp_path)
+    w = rec["watch"]["scheduled"]
+    assert rec["verdict"] == "pass" and w["yardstick_out_of_margin"][0]["out_of_margin"]["eager"]["row"] == 3
+    assert w["clip_margin"]["margin"] == pytest.approx(1.07, rel=1e-3)
+    assert w["clip_margin"]["same_precision"]["max_abs_dlogp"] < 0.05     # compiled == eager (dynamo eager backend)

@@ -168,8 +168,16 @@ graph, so a disagreement is confirmed IN THE SAME UPDATE:
   the 2026-10-12 golden rebuild), so a miscompile only one half judges is FATAL by the consecutive rule below.
 - **Every check runs on the fixture moved off the PPO clip boundary** (`compile_regions.relocate_clip_boundary`,
   the startup gate's rows exactly; standing rule 8): a row within `R1_CLIP_MARGIN` of the clip bound that switches
-  its gradient is moved 2 × the margin inside its active side, and an arm that moves a log-prob past the margin is
-  refused by name (`compile_flags.md` "The bf16 canary FATAL on trained weights"). The bf16 rule's LOSS comparisons (drift and envelope) read each
+  its gradient is moved 2 × the margin inside its active side, and a COMPILED arm that moves a log-prob past the
+  margin is refused by name (`compile_flags.md` "The bf16 canary FATAL on trained weights"). **A YARDSTICK arm past
+  the margin is not a disagreement** (`gen3_r1_yardstick_margin_v1`, 2026-10-19; the X34 u1700 UNCONFIRMED, where
+  EAGER bf16 read 0.856 > 0.72 and compiled 0.52): eager and the fp32 reference are what the compiled arm is measured
+  against, so their tail is a recorded `yardstick_out_of_margin` event, never counted toward confirm / FATAL; the rung
+  re-runs ONCE at M′ = max(M, 1.25 × the largest yardstick shift) and is judged there. The compiled arm's shift never
+  sets M′ (a miscompile cannot widen its own bar); a yardstick still past M′ did not reproduce its own forward and is
+  refused as a `YardstickRefusal`, as is the bf16 DRIFT rule (eager bf16 vs fp32); both still count on the ladder, but
+  the log never words them "compiled DISAGREES with eager" (`compile_flags.md` "The yardstick is not the compiled
+  arm"). The bf16 rule's LOSS comparisons (drift and envelope) read each
   arm's loss on the golden's OWN rows instead (`compile_regions.golden_row_loss`, `gen3_r1_loss_on_golden_rows_v1`): the
   loss is continuous in the ratio, and the relocation multiplied a moved row's weight in it ≈ 4×, which the bars were
   never derived on (`compile_flags.md` "bf16 drift on a sharpening policy").
@@ -188,7 +196,13 @@ distance from the fp32 reference, eager bf16's `eager` yardstick and the `floor`
 and its `global` drift / envelope numbers (the judged loss values on the golden's own rows, with
 `drift_loss_relocated` / `envelope_loss_relocated` reported beside them), plus `clip_margin` (rows relocated, the margin, the nearest unmoved
 row's distance, the `shift_max` / `shift_max_source` the margin was built from and every arm's largest |Δ log π| from
-the fp32 reference — the margin's provisional input, read at every canary) — filled before any check can refuse. Every
+the fp32 reference — the margin's provisional input, read at every canary; `worst_row` per arm, and
+`worst_fixture_row`, the committed fixture row it tiles; `same_precision`, the max |log π_compiled − log π_eager| and
+its row, RECORDED with no bar until a CUDA census) — filled before any check can refuse — and, only when one occurred,
+`yardstick_out_of_margin` (each event: the arms past M with their shift, row and fixture row, M, M′, and the first
+read's shifts per arm, compiled included). An UNCONFIRMED or FATAL record carries `policy_pt`: the policy `state_dict`
+written beside it (`canary_u<update>_<verdict>_policy.pt`, ~40 MB), at most `compile_canary.DUMP_WEIGHTS_MAX` = 3 per
+process (like K9(b)'s cap, T61), `"cap"` after that. Every
 record also carries the top-level `canary_shift_max` {value, source, margin} (`--canary-shift-max`, T37: the code's
 `R1_LOGPROB_SHIFT_MAX` 0.18 with source `default`, or a RAISED value a same-run resume typed), whatever its verdict
 (`designs/training/compile_flags.md` "The check-only margin override"). The `rb_toy_ent_s4001` FATAL
@@ -203,6 +217,7 @@ The canary runs under `fork_rng`, restores the training mode and leaves every `.
 is untouched (pinned). TB scalars, written on canary updates only:
 - `compile/canary_ok` (1 pass, 0 unconfirmed);
 - `compile/canary_unconfirmed_disagreements`;
+- `compile/canary_yardstick_events` (cumulative yardstick-out-of-margin events: recorded, never counted);
 - `compile/canary_seconds`;
 - `compile/canary_grad_cosine`;
 - `compile/canary_unmoved_params` (how many judged parameters are still exactly 0.0, `gen3_r1_unmoved_param_v1`).
@@ -213,6 +228,10 @@ is untouched (pinned). TB scalars, written on canary updates only:
 one-shot blip that FATALs instead of counting; two consecutive unconfirmed disagreements that do not
 FATAL; a wrong rollback-point choice; confirmation halves that overlap; and a disagreement carried by ONE
 second-half row that confirms itself (it must stay unconfirmed, then FATAL at the next canary).
+`canary_yardstick_test` (fast, planted arms) and `compile_canary_test`'s u1700 read (slow, the real learner) fail
+on revert of `gen3_r1_yardstick_margin_v1`: the u1700 shape must PASS with a recorded event; a compiled breach still
+confirms and is FATAL; a compiled shift never widens M′; the rows and the weight dump are recorded; a yardstick
+refusal is never worded as a compiled one.
 ## The memory half — the CUDA memory TREND, wired (`gen3_cuda_memory_trend_v1`)
 
 The detector itself (what it reads, the floor / demand / ceiling, SUSTAINED / STOP / WARN, the

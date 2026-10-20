@@ -395,6 +395,9 @@ class R1Batch(NamedTuple):
     returns: torch.Tensor
     source: str
     filled: Tuple[str, ...] = ()      # space keys the golden lacks, at their DECLARED placeholder
+    #: per batch row, the committed fixture row it tiles (`compile_trainer.fixture_index`): the canary records the
+    #: worst row of every arm as a FIXTURE row (gen3_r1_yardstick_margin_v1), so a tail can be named afterwards
+    fixture_rows: Optional[np.ndarray] = None
 
 
 def fill_value(key: str, space: Any) -> Optional[np.ndarray]:
@@ -490,7 +493,7 @@ def r1_batch(model: Any, batch: int, slice_: int = 0) -> R1Batch:
     return R1Batch(obs, f["actions"].to(adt).reshape(-1, 1), f["action_masks"].float(),
                    f["log_probs"].float().reshape(-1), f["values"].float().reshape(-1),
                    f["advantages"].float().reshape(-1), f["returns"].float().reshape(-1),
-                   src, tuple(g.filled))
+                   src, tuple(g.filled), np.asarray(idx))
 
 
 class R1Declaration(NamedTuple):
@@ -773,6 +776,21 @@ def release_gate_memory(model: Any) -> int:
 
 
 def _r1_accum_rule(model: Any, names: List[str], regime: str, batch_size: int) -> str:
+    """`_r1_accum_once`, re-run ONCE at M' when a YARDSTICK arm broke the margin on the first read (as `_r1_judge`;
+    gen3_r1_yardstick_margin_v1)."""
+    margin: Optional[float] = None
+    events: List[Dict[str, Any]] = []
+    while True:
+        try:
+            return _r1_accum_once(model, names, regime, batch_size, margin, events)
+        except _YardstickOutOfMargin as y:
+            events.append(y.event)
+            margin = float(y.event["rerun_margin"])
+            release_gate_memory(model)
+
+
+def _r1_accum_once(model: Any, names: List[str], regime: str, batch_size: int, margin: Optional[float],
+                   events: List[Dict[str, Any]]) -> str:
     """The GRAPHED route's ACCUMULATION rung (`gen3_r1_graphed_route_v1`): two micro-batches (the golden
     rows' slices 0 and 1 — different rows, so the two gradients differ) through the graphed route with
     ONE `.grad` accumulating across both, against the same through eager, at ``regime``'s bar (the
@@ -785,14 +803,17 @@ def _r1_accum_rule(model: Any, names: List[str], regime: str, batch_size: int) -
         raise ct.GateArmsNotIndependentError(
             "--learner-cudagraphs on but no graphed R1 route is installed — mis-wired "
             "(gen3_r1_graphed_route_v1)")
-    fixes = [relocate_clip_boundary(model, _r1_args(model, r1_batch(model, int(batch_size), s))) for s in (0, 1)]
+    fixes = [relocate_clip_boundary(model, _r1_args(model, r1_batch(model, int(batch_size), s)), margin)
+             for s in (0, 1)]
     args_list = [a for a, _ in fixes]
     # the accumulated arms' log-probs are the two micro-batches' concatenated: so is the fixture's record
     parts = [x for _, x in fixes]
     fix = ClipRelocation(torch.cat([x.old_log_prob for x in parts]), torch.cat([x.moved for x in parts]),
                          torch.cat([x.ref_log_prob for x in parts]), torch.cat([x.advantages for x in parts]),
                          parts[0].clip_range, parts[0].margin, min(x.nearest_unmoved for x in parts),
-                         parts[0].shift_source, torch.cat([_raw_old(x) for x in parts]))
+                         _rerun_source(events[0]) if events else parts[0].shift_source,
+                         torch.cat([_raw_old(x) for x in parts]))
+    tail = "".join("; " + yardstick_line(e) for e in events)
     e0, g0 = int(RC.EAGER_BODY["R1"]), int(RC.peek().get("R1_graphed", 0))
     graphed = _r1_accum_arm(model, g, args_list)
     e1, g1 = int(RC.EAGER_BODY["R1"]), int(RC.peek().get("R1_graphed", 0))
@@ -818,14 +839,15 @@ def _r1_accum_rule(model: Any, names: List[str], regime: str, batch_size: int) -
             raise ct.GateArmsNotIndependentError(
                 f"--compile-trainer region R1[graphed] (bf16 rule): the accumulation rung's fp32 REFERENCE arm ran "
                 f"the eager body {e3 - e2}x / the graphed route {g3 - g2}x (want 2 / 0)")
-        margin = _clip_margin_rule(fix, {"graphed": graphed, "eager": eager, "fp32 reference": ref})
+        m_line = _clip_margin_rule(fix, {"graphed": graphed, "eager": eager, "fp32 reference": ref},
+                                   rerun=not events)
         gl = golden_row_losses({"ref": ref, "eager": eager, "comp": graphed}, fix, args_list)
         return "R1[graphed] " + _r1_verdict_bf16(eager, graphed, ref, names, regime, label=label,
                                                  bar_by_index=excepted,
-                                                 losses=(gl["ref"], gl["eager"], gl["comp"])) + "; " + margin
-    margin = _clip_margin_rule(fix, {"graphed": graphed, "eager": eager})
+                                                 losses=(gl["ref"], gl["eager"], gl["comp"])) + "; " + m_line + tail
+    m_line = _clip_margin_rule(fix, {"graphed": graphed, "eager": eager}, rerun=not events)
     return ("R1[graphed] " + _r1_verdict(eager, graphed, names, regime, bar_by_index=excepted, label=label)
-            + "; " + margin)
+            + "; " + m_line + tail)
 
 
 # ------------------------------------------------------------- R1's judged set vs the golden's own
@@ -1057,36 +1079,55 @@ def _r1_judge(model: Any, args: Tuple[Any, ...], names: List[str], regime: str,
     """ONE rung: the independent compiled / eager pair on the CURRENT weights, judged by the rule of the
     policy's trunk precision — fp32: `_r1_verdict` (compiled vs eager at the fp32 bars); bf16: THE bf16 PARITY
     RULE (`_r1_verdict_bf16`, with the fp32 eager REFERENCE arm `_r1_reference`). Returns (eager, compiled,
-    the rule line). ``fn``: the R1 route under judgement (`r1_routes`; None = the installed compiled route)."""
+    the rule line). ``fn``: the R1 route under judgement (`r1_routes`; None = the installed compiled route).
+
+    A YARDSTICK arm out of margin on the first read (`YARDSTICK_ARMS`, gen3_r1_yardstick_margin_v1) is recorded as an
+    event (``watch``, the rule line) and the WHOLE rung re-runs ONCE at M' (`_clip_margin_rule`), judged there: the
+    first read's verdict is discarded (its gradient may carry the 0/1 clip switch the margin exists to exclude)."""
     from agents.model.trunk_precision import trunk_precision_of
-    args, fix = relocate_clip_boundary(model, args)          # rule 8: the rows off the PPO clip boundary (T36)
-    comp, eager = _r1_pair(model, args, fn)
-    arms: Dict[str, Dict[str, torch.Tensor]] = {"compiled": comp, "eager": eager}
-    line, err = "", None
-    try:
-        if trunk_precision_of(model.policy) == "bf16":
-            ref = _r1_reference(model, args)
-            arms["fp32 reference"] = ref
-            gl = golden_row_losses({"ref": ref, "eager": eager, "comp": comp}, fix, [args])
-            line = _r1_verdict_bf16(eager, comp, ref, names, regime, label=label, bar_by_index=bar_by_index,
-                                    watch=watch, losses=(gl["ref"], gl["eager"], gl["comp"]))
-        else:
-            line = _r1_verdict(eager, comp, names, regime, label=label, bar_by_index=bar_by_index, watch=watch)
-    except (ct.NonFiniteGateArmError, ct.GateArmsNotIndependentError):
-        raise                                                 # named precisely already
-    except ct.CompileTrainerError as exc:
-        err = exc
-    # the margin's precondition is read whatever the verdict (the watch record is complete), and an arm that broke
-    # it is named as ITSELF — its gradient verdict would be the 0/1 switch this fixture exists to exclude
-    try:
-        margin = _clip_margin_rule(fix, arms, watch)
-    except ct.CompileTrainerError as m_err:
+    margin: Optional[float] = None
+    events: List[Dict[str, Any]] = []
+    raw_args = args
+    while True:
+        # rule 8: the rows off the PPO clip boundary (T36), at the model's margin or the yardstick re-run's M'
+        args, fix = relocate_clip_boundary(model, raw_args, margin)
+        if events:
+            fix = fix._replace(shift_source=_rerun_source(events[0]))
+        comp, eager = _r1_pair(model, args, fn)
+        arms: Dict[str, Dict[str, torch.Tensor]] = {"compiled": comp, "eager": eager}
+        line, err = "", None
+        try:
+            if trunk_precision_of(model.policy) == "bf16":
+                ref = _r1_reference(model, args)
+                arms["fp32 reference"] = ref
+                gl = golden_row_losses({"ref": ref, "eager": eager, "comp": comp}, fix, [args])
+                line = _r1_verdict_bf16(eager, comp, ref, names, regime, label=label, bar_by_index=bar_by_index,
+                                        watch=watch, losses=(gl["ref"], gl["eager"], gl["comp"]))
+            else:
+                line = _r1_verdict(eager, comp, names, regime, label=label, bar_by_index=bar_by_index, watch=watch)
+        except (ct.NonFiniteGateArmError, ct.GateArmsNotIndependentError):
+            raise                                             # named precisely already
+        except ct.CompileTrainerError as exc:
+            err = exc
+        # the margin's precondition is read whatever the verdict (the watch record is complete), and an arm that broke
+        # it is named as ITSELF — its gradient verdict would be the 0/1 switch this fixture exists to exclude
+        try:
+            m_line = _clip_margin_rule(fix, arms, watch, rerun=not events)
+        except _YardstickOutOfMargin as y:
+            events.append(y.event)
+            if watch is not None:
+                watch.add_yardstick(y.event)
+            margin = float(y.event["rerun_margin"])
+            del comp, eager, arms
+            release_gate_memory(model)
+            continue
+        except ct.CompileTrainerError as m_err:
+            if err is not None:
+                raise m_err from err                          # the verdict's own refusal rides as the cause
+            raise
         if err is not None:
-            raise m_err from err                              # the verdict's own refusal rides as the cause
-        raise
-    if err is not None:
-        raise err
-    return eager, comp, line + "; " + margin
+            raise err
+        return eager, comp, line + "; " + m_line + "".join("; " + yardstick_line(e) for e in events)
 
 
 def _r1_unmoved_perturbed(model: Any, args: Tuple[Any, ...], names: List[str],
@@ -1190,8 +1231,9 @@ def _r1_verdict(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], n
 #:
 #: THE PRECONDITION, checked on every rung (`_clip_margin_rule`): every judged arm's largest |Δ log π| from the
 #: reference is <= the margin. Then no row can switch (moved rows sit 2 M away, the others > M), and that is a
-#: CATEGORICAL statement; an arm that moves a log-prob farther is refused by name (a forward disagreement of
-#: >= 4x the measured healthy maximum — never a lottery read through a gradient ratio).
+#: CATEGORICAL statement; a COMPILED arm that moves a log-prob farther is refused by name (a forward disagreement of
+#: >= 4x the measured healthy maximum — never a lottery read through a gradient ratio). A YARDSTICK arm that does is
+#: an event and the rung re-runs at M' (`YARDSTICK_ARMS`, gen3_r1_yardstick_margin_v1, below).
 #:
 #: The largest |Δ log π| (the taken action's log-prob) a JUDGED arm has been measured to move a fixture row from the
 #: fp32 eager reference. PROVISIONAL — CPU and EAGER only (2026-10-15): eager bf16 vs eager fp32, max over (a) the
@@ -1422,41 +1464,155 @@ def relocate_clip_boundary(model: Any, args: Tuple[Any, ...], margin: Optional[f
     return args[:4] + (fix.old_log_prob,) + args[5:], fix
 
 
-def _clip_margin_rule(fix: ClipRelocation, arms: Dict[str, Dict[str, torch.Tensor]],
-                      watch: Optional["GradWatch"] = None) -> str:
-    """The precondition (module comment above): every judged arm's largest |Δ log π| from the relocation's
-    reference is <= the margin, and — its consequence, checked rather than assumed — no arm's clip branch differs from
-    the reference's on any row. Raises `CompileTrainerError` naming the arm; returns the rule-line fragment."""
+#: THE YARDSTICK ARMS (`gen3_r1_yardstick_margin_v1`, 2026-10-19; the X34 u1700 UNCONFIRMED,
+#: `designs/research_state/measurements/x34_canary_u1700_2026-10-19/`). The margin rule reads every arm against the fp32
+#: reference, but only the COMPILED arm ("compiled", "graphed": any arm not named here) is under judgement; eager (bf16
+#: or fp32) and the fp32 reference are the YARDSTICK it is measured against. At u1700 EAGER bf16 moved a fixture row by
+#: 0.856 > M 0.72 while compiled read 0.52 with 0 clip switches: a bf16 conditioning tail (the fp32 function alone moves
+#: a row by up to 0.54 under a half-ulp weight dither), which the old rule refused as "compiled DISAGREES with eager"
+#: and counted toward the canary's confirm / FATAL ladder. Now a yardstick out of margin is a recorded EVENT, never a
+#: refusal on its own: the rung re-runs ONCE at M' = max(M, `YARDSTICK_HEADROOM` x the largest YARDSTICK shift) and is
+#: judged there. The compiled arm's shift never sets M', so a miscompile cannot widen its own bar; a compiled arm out
+#: of M (with every yardstick inside) is refused exactly as before. Deterministic (rule 8): the arms' forwards do not
+#: read the old log-probs, so the re-run reads the same shifts (CUDA eager / compiled are run-to-run bit-identical,
+#: window D) and the yardstick sits 1/1.25 inside M'. A yardstick STILL out at M' did not reproduce its own forward:
+#: that is refused (`YardstickRefusal`) and the canary's ladder counts it.
+YARDSTICK_ARMS: Tuple[str, ...] = ("eager", "fp32 reference")
+#: M' headroom over the yardstick's own shift. **UNVERIFIED** — a proposal with no CUDA census behind it (u1700 README).
+YARDSTICK_HEADROOM = 1.25
+
+
+class YardstickRefusal(ct.CompileTrainerError):
+    """A refusal whose failing arm is a YARDSTICK (`YARDSTICK_ARMS`) or the bf16 DRIFT rule (eager bf16 vs the fp32
+    reference) — never the compiled arm. Typed so the canary words it as itself, never "compiled DISAGREES with eager";
+    it still refuses (and the canary's ladder still counts it): a yardstick that does not reproduce its own forward, or
+    a bf16 function that left the fp32 one, leaves nothing to judge the compiled arm by."""
+
+
+class _YardstickOutOfMargin(Exception):
+    """Internal signal: a yardstick arm broke the margin on a rung's FIRST read; the rung re-runs at
+    ``event["rerun_margin"]``. Never escapes `_r1_judge` / `_r1_accum_rule`."""
+
+    def __init__(self, event: Dict[str, Any]) -> None:
+        super().__init__(f"yardstick out of margin: {event}")
+        self.event = event
+
+
+def _nan_inf(d: torch.Tensor) -> torch.Tensor:
+    return torch.nan_to_num(d, nan=float("inf"))
+
+
+def _margin_reads(fix: ClipRelocation, arms: Dict[str, Dict[str, torch.Tensor]]) -> Dict[str, Tuple[float, int, int]]:
+    """Per arm: (its largest |Δ log π| from the relocation's reference, the batch row that carries it (-1 on an empty
+    batch), how many rows' clip branch it switches). A non-finite shift reads +inf."""
     act_ref = clip_active(fix.ref_log_prob, fix.old_log_prob, fix.advantages, fix.clip_range)
-    shifts: Dict[str, float] = {}
+    reads: Dict[str, Tuple[float, int, int]] = {}
     for name, arm in arms.items():
         lp = arm["log_prob"].detach().double().cpu().reshape(-1)
         if lp.shape != fix.ref_log_prob.shape:
             raise ct.CompileTrainerError(f"--compile-trainer region R1: the {name} arm's log-probs "
                                          f"{tuple(lp.shape)} do not match the fixture's {tuple(fix.ref_log_prob.shape)}")
-        d = (lp - fix.ref_log_prob).abs()
-        shift = float(d.max()) if d.numel() else 0.0
+        d = _nan_inf((lp - fix.ref_log_prob).abs())
+        row = int(d.argmax()) if d.numel() else -1
+        shift = float(d[row]) if d.numel() else 0.0
         shift = shift if np.isfinite(shift) else float("inf")
-        shifts[name] = shift
         flips = int((clip_active(lp, fix.old_log_prob, fix.advantages, fix.clip_range) != act_ref).sum())
-        if not shift <= fix.margin or flips:
-            if watch is not None:
-                watch.fill_margin(fix, shifts)
-            raise ct.CompileTrainerError(
-                f"--compile-trainer region R1: the {name} arm moved a fixture row's log-prob by up to {shift:.3g} "
-                f"from the fp32 eager reference and switched {flips} row(s)' PPO clip branch (the clip margin is "
-                f"{fix.margin:.3g} = {R1_BAR_K:g} x the shift {fix.shift_max:.4g} [{fix.shift_source}]; the largest "
-                f"healthy shift measured is R1_LOGPROB_SHIFT_MAX {R1_LOGPROB_SHIFT_MAX:g}). The gate's rows are "
-                f"relocated off the clip boundary by that margin so no verdict depends "
-                f"on a 0/1 switch (standing rule 8, gen3_r1_clip_margin_v1): a forward this far from the reference is "
-                f"refused as itself. If this arm is HEALTHY, the margin is too small — re-measure "
-                f"(main.ops.diag_bf16_canary) and raise the shift: {SHIFT_MAX_FLAG} <v> on a RESUME of this run "
-                f"(check-only, it can only raise; T37), or R1_LOGPROB_SHIFT_MAX in code for the next pin; never "
-                f"judge across a switch.")
+        reads[name] = (shift, row, flips)
+    return reads
+
+
+def _same_precision(arms: Dict[str, Dict[str, torch.Tensor]]) -> Optional[Tuple[str, float, int]]:
+    """THE SAME-PRECISION FORWARD (gen3_r1_yardstick_margin_v1): (the compiled arm, max |log π_compiled − log π_eager|,
+    its batch row) — what the compiler did, without bf16's conditioning (CPU Inductor read 0.017-0.028 at X34 268M where
+    each arm sat 0.10-0.13 from fp32). RECORDED with NO bar until a CUDA census; None without both arms."""
+    judged = [n for n in arms if n not in YARDSTICK_ARMS]
+    if "eager" not in arms or not judged:
+        return None
+    a = arms[judged[0]]["log_prob"].detach().double().cpu().reshape(-1)
+    b = arms["eager"]["log_prob"].detach().double().cpu().reshape(-1)
+    if a.shape != b.shape or not a.numel():
+        return None
+    d = _nan_inf((a - b).abs())
+    row = int(d.argmax())
+    v = float(d[row])
+    return judged[0], (v if np.isfinite(v) else float("inf")), row
+
+
+def _rerun_source(event: Dict[str, Any]) -> str:
+    """The re-run's margin source, for the rule line and the record (`ClipRelocation.shift_source`)."""
+    arm, d = max(event["out_of_margin"].items(), key=lambda kv: kv[1]["shift"])
+    return f"yardstick re-run: {YARDSTICK_HEADROOM:g} x {arm} {d['shift']:.4g}"
+
+
+def _g(v: Any, spec: str = ".3g") -> str:
+    """A number as ``spec``; a recorded non-finite value (`GradWatch.record` writes it as its string) as itself."""
+    return format(v, spec) if isinstance(v, (int, float)) else str(v)
+
+
+def yardstick_line(event: Dict[str, Any]) -> str:
+    """One yardstick event (live, or as `GradWatch.record` wrote it), for a rule line and the canary's log."""
+    arms = ", ".join(f"{n} {_g(d['shift'])} (row {d['row']})" for n, d in event["out_of_margin"].items())
+    return (f"YARDSTICK out of margin, NOT counted (gen3_r1_yardstick_margin_v1): {arms} > M {_g(event['margin'], '.3f')} "
+            f"on the first read (compiled {_g(event['compiled_shift'])}) — re-run once at M' "
+            f"{_g(event['rerun_margin'], '.3f')} = max(M, {YARDSTICK_HEADROOM:g} x the yardstick's shift; the compiled "
+            f"arm's never sets it)")
+
+
+def _clip_margin_rule(fix: ClipRelocation, arms: Dict[str, Dict[str, torch.Tensor]],
+                      watch: Optional["GradWatch"] = None, *, rerun: bool = False) -> str:
+    """The precondition (module comment above): every judged arm's largest |Δ log π| from the relocation's
+    reference is <= the margin, and — its consequence, checked rather than assumed — no arm's clip branch differs from
+    the reference's on any row. Returns the rule-line fragment, else:
+
+      * ``rerun`` and a YARDSTICK arm (`YARDSTICK_ARMS`) out of margin: `_YardstickOutOfMargin`, carrying the event
+        and M' (the caller re-runs the rung there; the compiled arm is judged only at M');
+      * a COMPILED arm out of margin: `CompileTrainerError` naming it (as before gen3_r1_yardstick_margin_v1);
+      * a yardstick out of margin without ``rerun`` (the re-run itself, or a direct caller): `YardstickRefusal`."""
+    reads = _margin_reads(fix, arms)
+    same = _same_precision(arms)
     if watch is not None:
-        watch.fill_margin(fix, shifts)
-    return fix.line() + "; max |dlogp| " + ", ".join(f"{k} {v:.2e}" for k, v in shifts.items()) + \
-        f" <= {fix.margin:.3f}, 0 clip-branch switches"
+        watch.fill_margin(fix, reads, same)
+    out = [n for n, (sh, _, fl) in reads.items() if not sh <= fix.margin or fl]
+    yard = [n for n in out if n in YARDSTICK_ARMS]
+    judged = [n for n in out if n not in YARDSTICK_ARMS]
+    if yard and rerun:
+        widest = max(reads[n][0] for n in yard)
+        m2 = max(fix.margin, YARDSTICK_HEADROOM * widest)
+        if np.isfinite(m2) and m2 > fix.margin:
+            comp = [reads[n][0] for n in reads if n not in YARDSTICK_ARMS]
+            raise _YardstickOutOfMargin({
+                "margin": float(fix.margin), "rerun_margin": float(m2), "headroom": YARDSTICK_HEADROOM,
+                "out_of_margin": {n: {"shift": reads[n][0], "row": reads[n][1], "clip_switches": reads[n][2]}
+                                  for n in yard},
+                "first_read_max_abs_dlogp": {n: r[0] for n, r in reads.items()},
+                "first_read_worst_row": {n: r[1] for n, r in reads.items()},
+                "compiled_shift": max(comp) if comp else float("nan")})
+    for name in judged + yard:
+        shift, row, flips = reads[name]
+        if name in YARDSTICK_ARMS:
+            raise YardstickRefusal(
+                f"--compile-trainer region R1: the YARDSTICK {name} arm — NOT the compiled one — moved a fixture "
+                f"row's log-prob by up to {shift:.3g} (row {row}) from the fp32 eager reference and switched {flips} "
+                f"row(s)' PPO clip branch, past the margin {fix.margin:.3g} [{fix.shift_source}]"
+                + (" — set by its OWN first read: the yardstick did not reproduce its own forward"
+                   if fix.shift_source.startswith("yardstick") else "")
+                + ". The compiled arm cannot be judged against it (gen3_r1_yardstick_margin_v1).")
+        raise ct.CompileTrainerError(
+            f"--compile-trainer region R1: the {name} arm moved a fixture row's log-prob by up to {shift:.3g} "
+            f"(row {row}) from the fp32 eager reference and switched {flips} row(s)' PPO clip branch (the clip margin "
+            f"is {fix.margin:.3g} = {R1_BAR_K:g} x the shift {fix.shift_max:.4g} [{fix.shift_source}]; the largest "
+            f"healthy shift measured is R1_LOGPROB_SHIFT_MAX {R1_LOGPROB_SHIFT_MAX:g}). The gate's rows are "
+            f"relocated off the clip boundary by that margin so no verdict depends "
+            f"on a 0/1 switch (standing rule 8, gen3_r1_clip_margin_v1): a forward this far from the reference is "
+            f"refused as itself. If this arm is HEALTHY, the margin is too small — re-measure "
+            f"(main.ops.diag_bf16_canary) and raise the shift: {SHIFT_MAX_FLAG} <v> on a RESUME of this run "
+            f"(check-only, it can only raise; T37), or R1_LOGPROB_SHIFT_MAX in code for the next pin; never "
+            f"judge across a switch.")
+    line = (fix.line() + "; max |dlogp| " + ", ".join(f"{k} {v[0]:.2e} (row {v[1]})" for k, v in reads.items())
+            + f" <= {fix.margin:.3f}, 0 clip-branch switches")
+    if same is not None:
+        line += f"; same-precision |{same[0]} - eager| {same[1]:.2e} (row {same[2]}; recorded, no bar)"
+    return line
 
 
 # ------------------------------------------------------------------ the canary's WATCH-LIST record
@@ -1475,15 +1631,39 @@ class GradWatch:
         self.worst: Optional[Dict[str, Any]] = None
         self.globals: Dict[str, float] = {}
         self.margin: Optional[Dict[str, Any]] = None
+        #: per batch row, the committed fixture row it tiles (`R1Batch.fixture_rows`; set by the canary), so a worst row is
+        #: recorded as a FIXTURE row too; None = batch rows only
+        self.fixture_rows: Optional[List[int]] = None
+        self.yardstick: List[Dict[str, Any]] = []        # gen3_r1_yardstick_margin_v1: the rung's yardstick events
 
-    def fill_margin(self, fix: "ClipRelocation", shifts: Dict[str, float]) -> None:
+    def _fixture(self, row: int) -> Optional[int]:
+        fr = self.fixture_rows
+        return int(fr[row]) if fr is not None and 0 <= row < len(fr) else None
+
+    def fill_margin(self, fix: "ClipRelocation", reads: Dict[str, Tuple[float, int, int]],
+                    same: Optional[Tuple[str, float, int]] = None) -> None:
         """The rung's clip-boundary fixture (`gen3_r1_clip_margin_v1`): rows relocated, the margin, the nearest unmoved
         row's distance and every arm's largest |Δ log π| from the reference — so a run's records carry the compiled
-        arm's shift (the margin's provisional input) at every canary."""
+        arm's shift (the margin's provisional input) at every canary — plus (gen3_r1_yardstick_margin_v1) the WORST
+        ROW of every arm (batch row, and fixture row when known) and the same-precision compiled-vs-eager gap."""
         self.margin = {"relocated_rows": int(fix.moved.sum()), "rows": int(fix.moved.numel()),
                        "margin": float(fix.margin), "shift_max": float(fix.shift_max),
                        "shift_max_source": str(fix.shift_source), "nearest_unmoved": float(fix.nearest_unmoved),
-                       "max_abs_dlogp": {k: float(v) for k, v in shifts.items()}}
+                       "max_abs_dlogp": {k: float(v[0]) for k, v in reads.items()},
+                       "worst_row": {k: int(v[1]) for k, v in reads.items()}}
+        if self.fixture_rows is not None:
+            self.margin["worst_fixture_row"] = {k: self._fixture(int(v[1])) for k, v in reads.items()}
+        if same is not None:
+            self.margin["same_precision"] = {"arms": f"{same[0]} - eager", "max_abs_dlogp": float(same[1]),
+                                             "row": int(same[2]), "fixture_row": self._fixture(int(same[2])),
+                                             "bar": None}
+
+    def add_yardstick(self, event: Dict[str, Any]) -> None:
+        """A yardstick-out-of-margin event (`_clip_margin_rule`), its rows also as fixture rows when known."""
+        ev = dict(event)
+        ev["out_of_margin"] = {n: dict(d, fixture_row=self._fixture(int(d["row"])))
+                               for n, d in event["out_of_margin"].items()}
+        self.yardstick.append(ev)
 
     def wants(self, name: str) -> bool:
         return bool(self.prefixes) and name.startswith(self.prefixes)
@@ -1529,8 +1709,11 @@ class GradWatch:
             if isinstance(v, dict):
                 return {k: r(x) for k, x in v.items()}
             return v
-        return {"rule": self.rule, "params": r(self.params), "worst": r(self.worst), "global": r(self.globals),
-                "clip_margin": r(self.margin)}
+        out: Dict[str, Any] = {"rule": self.rule, "params": r(self.params), "worst": r(self.worst),
+                               "global": r(self.globals), "clip_margin": r(self.margin)}
+        if self.yardstick:                                  # only when one occurred: other records are unchanged
+            out["yardstick_out_of_margin"] = [r(e) for e in self.yardstick]
+        return out
 
 
 # ------------------------------------------------------------------ THE bf16 PARITY RULE
@@ -1659,7 +1842,7 @@ def _r1_verdict_bf16(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tenso
     # ---- DRIFT: the bf16 function vs the fp32 one
     for what, v in (("loss", d_loss_e), ("grad_rel_l2", d_g_e)):
         if not v <= BF16_DRIFT_BARS[what]:
-            raise ct.CompileTrainerError(
+            raise YardstickRefusal(
                 f"--compile-trainer region R1 (bf16 rule): the bf16 EAGER micro-step has DRIFTED from the fp32 "
                 f"function — {what} {v:.2e} > {BF16_DRIFT_BARS[what]:g} (eager bf16 vs the fp32 eager reference, "
                 f"same weights and rows){rows if what == 'loss' else ''}). bf16 no longer represents this model: run "

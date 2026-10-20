@@ -44,6 +44,14 @@ halves alone would judge less); a miscompile only one half judges is FATAL by th
 also runs on the fixture moved off the PPO clip boundary (`compile_regions.relocate_clip_boundary`, the startup gate's
 rows exactly), so no verdict depends on a row's 0/1 clip switch (standing rule 8).
 
+THE YARDSTICK IS NOT THE COMPILED ARM (`gen3_r1_yardstick_margin_v1`, 2026-10-19; the X34 u1700 UNCONFIRMED). Eager and
+the fp32 reference are what the compiled arm is measured against: one past the clip margin is a recorded
+`yardstick_out_of_margin` event (`compile/canary_yardstick_events`), never counted toward confirm / FATAL — the rung
+re-runs once at M' (`compile_regions.YARDSTICK_ARMS`) and is judged there. The log says "compiled DISAGREES with eager"
+only when the compiled arm failed; a `compile_regions.YardstickRefusal` is worded as the yardstick. Every record names
+each arm's worst row (batch and fixture row) and the same-precision compiled-vs-eager gap; an UNCONFIRMED or FATAL
+record dumps the policy weights (`DUMP_WEIGHTS_MAX` per process).
+
 Every verdict (update, step, pass / unconfirmed / fatal) is appended to
 `<run_dir>/canary_verdicts.jsonl` WITH THE WATCH-LIST RECORD (`WATCH_PREFIXES`, `gen3_canary_watch_v1`): every
 watched parameter's per-check numbers — under the bf16 rule its ratio, the compiled distance and eager bf16's
@@ -96,6 +104,13 @@ WATCH_PREFIXES: Tuple[str, ...] = ("pointer_head.",)
 #: is unchanged; a check never changes training (module docstring), so this moves only WHEN one runs. Unset in every
 #: production launch.
 FIRST_ENV = "GEN3AI_CANARY_FIRST"
+#: THE WEIGHT DUMP (gen3_r1_yardstick_margin_v1, 2026-10-19): an UNCONFIRMED or FATAL verdict writes the policy's
+#: `state_dict` (``canary_u<update>_<verdict>_policy.pt``, ~40 MB) beside its record, so the weights a disagreement was
+#: read on can be re-read offline (the X34 u1700 weights were never saved, and its row is unrecoverable). At most this
+#: many per PROCESS (`_WEIGHT_DUMPS`, a module counter: no checkpoint carries it), like K9(b)'s cap
+#: (`rust_rollout.consistency._DUMP_WEIGHTS_MAX`, T61).
+DUMP_WEIGHTS_MAX = 3
+_WEIGHT_DUMPS = 0
 
 
 def _first_from_env() -> Optional[int]:
@@ -113,6 +128,37 @@ def _first_from_env() -> Optional[int]:
 
 class CompileCanaryError(ct.CompileTrainerError):
     """The compiled learner no longer equals eager on the fixture at the startup gate's bars."""
+
+
+def _yardstick_refused(exc: BaseException) -> bool:
+    """The refusal's failing arm is the canary's YARDSTICK (eager / the fp32 reference) or the bf16 DRIFT rule, not
+    the compiled arm (`compile_regions.YardstickRefusal`)."""
+    from agents.model.compile_regions import YardstickRefusal
+    return isinstance(exc, YardstickRefusal)
+
+
+def _what(exc: BaseException) -> str:
+    """The log's name for a refusal: "compiled DISAGREES with eager" ONLY when the compiled arm failed."""
+    return ("the canary's YARDSTICK refused (eager / the fp32 reference, NOT the compiled arm)"
+            if _yardstick_refused(exc) else "compiled DISAGREES with eager")
+
+
+def _dump_weights(model: Any, run_dir: Optional[str], update: int, verdict: str) -> Optional[str]:
+    """Write the policy's `state_dict` for an unconfirmed / FATAL verdict (`DUMP_WEIGHTS_MAX` per process). Returns
+    the file name written, ``"cap"`` when this process has used its cap, None with no run directory or on an
+    OSError (diagnostics: the verdict stands either way)."""
+    global _WEIGHT_DUMPS
+    if not run_dir:
+        return None
+    if _WEIGHT_DUMPS >= DUMP_WEIGHTS_MAX:
+        return "cap"
+    name = f"canary_u{int(update)}_{verdict}_policy.pt"
+    try:
+        torch.save({k: v.detach().cpu() for k, v in model.policy.state_dict().items()}, os.path.join(run_dir, name))
+    except OSError:
+        return None
+    _WEIGHT_DUMPS += 1
+    return name
 
 
 def _run_dir(model: Any) -> Optional[str]:
@@ -184,6 +230,7 @@ class CompileCanary:
         self.updates = 0
         self.runs = 0
         self.unconfirmed = 0            # cumulative: disagreements that did not reproduce
+        self.yardstick_events = 0       # cumulative: yardstick-out-of-margin events (recorded, never counted)
         self.memory: Dict[str, float] = {}   # the last check's card (gen3_canary_memory_v1; CUDA only)
         self.prev_disagreed = False     # the previous SCHEDULED canary disagreed (unconfirmed)
         self.last: Dict[str, float] = {}
@@ -237,6 +284,8 @@ class CompileCanary:
                                "num_timesteps": int(getattr(self.model, "num_timesteps", 0) or 0),
                                "time": time.time(), "detail": detail[:4000],
                                "canary_shift_max": self._shift_max_record()}
+        if verdict != "pass":                               # gen3_r1_yardstick_margin_v1: the weights it was read on
+            rec["policy_pt"] = _dump_weights(self.model, _run_dir(self.model), self.updates, verdict)
         if self.memory:
             rec["memory"] = dict(self.memory)
         if watch:
@@ -276,10 +325,12 @@ class CompileCanary:
             except Exception as exc:                          # the FATAL stands either way
                 saved = f"FAILED to write ({type(exc).__name__}: {exc})"
         self._record("fatal", f"{why} — {first}", watch)
-        verdict = ("The COMPILED learner no longer equals eager on the committed real-obs fixture at the "
-                   "startup gate's bars" if compared else
-                   "NO comparison was made, so this says nothing about the compiled arithmetic — the "
-                   "learner's compiled route is not the one the gate certified")
+        verdict = ("NO comparison was made, so this says nothing about the compiled arithmetic — the "
+                   "learner's compiled route is not the one the gate certified" if not compared else
+                   "The canary's YARDSTICK (eager / the fp32 reference) refused, NOT the compiled arm: there is "
+                   "nothing left to judge the compiled learner by on these weights" if _yardstick_refused(first) else
+                   "The COMPILED learner no longer equals eager on the committed real-obs fixture at the "
+                   "startup gate's bars")
         raise CompileCanaryError(
             f"{CANARY_TAG} after update {self.updates}: {why}. {verdict} — {first}\n"
             f"Checkpoint: {saved}.\nSAFE ROLLBACK POINT: {rollback_point(run_dir)}.\n"
@@ -305,7 +356,7 @@ class CompileCanary:
             _append(_run_dir(self.model), DISAGREEMENTS_FILE,
                     {"update": self.updates, "num_timesteps": int(getattr(self.model, "num_timesteps", 0) or 0),
                      "verdict": str(first)[:4000]})
-            self._say(f"⚠️  [CompileCanary] update {self.updates}: compiled DISAGREES with eager — "
+            self._say(f"⚠️  [CompileCanary] update {self.updates}: {_what(first)} — "
                       f"confirming now (the two disjoint halves of the rows). {str(first)[:300]}")
             again = []
             watches: Dict[str, Any] = {"scheduled": w0.record()}
@@ -333,16 +384,21 @@ class CompileCanary:
                       f"(reproduced on slice(s) {[sl for sl, _ in again]} of the halves {halves}) — training "
                       f"continues; {self.unconfirmed} unconfirmed so far; a disagreement at the NEXT "
                       f"scheduled canary is FATAL.")
+            self._note_yardstick(watches)
             out = {"compile/canary_ok": 0.0,
                    "compile/canary_unconfirmed_disagreements": float(self.unconfirmed),
+                   "compile/canary_yardstick_events": float(self.yardstick_events),
                    "compile/canary_seconds": time.perf_counter() - t0}
             self.last = out
             return out
         self.prev_disagreed = False
         self.runs += 1
-        self._record("pass", watch={"scheduled": w0.record()})
+        watches = {"scheduled": w0.record()}
+        self._record("pass", watch=watches)
+        self._note_yardstick(watches)
         out["compile/canary_ok"] = 1.0
         out["compile/canary_unconfirmed_disagreements"] = float(self.unconfirmed)
+        out["compile/canary_yardstick_events"] = float(self.yardstick_events)
         out["compile/canary_seconds"] = time.perf_counter() - t0
         if self.memory:
             out["compile/canary_peak_alloc_mib"] = float(self.memory["peak_alloc_mib"])
@@ -357,6 +413,15 @@ class CompileCanary:
                   + " | ".join(rules))
         return out
 
+    def _note_yardstick(self, watches: Dict[str, Any]) -> None:
+        """Count and LOG the yardstick-out-of-margin events of this canary's checks (gen3_r1_yardstick_margin_v1):
+        recorded, never counted toward confirm / FATAL — the rung re-ran at M' and was judged there."""
+        from agents.model.compile_regions import yardstick_line
+        for name, w in watches.items():
+            for ev in (w or {}).get("yardstick_out_of_margin", []):
+                self.yardstick_events += 1
+                self._say(f"📏 [CompileCanary] update {self.updates} ({name}): {yardstick_line(ev)}")
+
     # ------------------------------------------------------------------ the compiled region
     def _regions(self, model: Any, out: Dict[str, float], slice_: int = 0, watch: Optional[Any] = None) -> list:
         """K8's declared region: R1 (compiled micro-step vs eager: loss + every policy gradient) on the
@@ -365,7 +430,10 @@ class CompileCanary:
         from agents.model import compile_regions as cr
         policy = model.policy
         policy.set_training_mode(True)
-        args = cr._r1_args(model, cr.r1_batch(model, self.batch_size, slice_))
+        b = cr.r1_batch(model, self.batch_size, slice_)
+        args = cr._r1_args(model, b)
+        if watch is not None and b.fixture_rows is not None:      # worst rows recorded as FIXTURE rows too
+            watch.fixture_rows = [int(x) for x in b.fixture_rows]
         names = [n for n, _ in ct.grad_parameters(model, policy.features_extractor)]
         # the startup gate's rungs (`compile_regions.r1_rungs`): the live weights at the regime's bar,
         # an unmoved zero-init parameter at the FRESH bar there and on its own perturbed rung at the

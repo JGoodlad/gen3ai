@@ -1987,8 +1987,9 @@ boundary at ~10⁴ smaller odds: its arms differ by ~1e-6 in log-prob):
    judged-set rule's golden-alone reference.
 2. **The margin's precondition, CHECKED** (`_clip_margin_rule`, on every rung): every judged arm's largest |Δ log π|
    from the reference is ≤ the margin, and — its consequence, checked rather than assumed — no arm switches any row's
-   clip branch. An arm that breaks it is refused BY NAME as a forward this far from the reference (≥ 4× the healthy
-   maximum), never read through a gradient ratio. Every R1 rule line prints `clip margin: <n>/<B> boundary rows
+   clip branch. A COMPILED arm that breaks it is refused BY NAME as a forward this far from the reference (≥ 4× the
+   healthy maximum), never read through a gradient ratio; a YARDSTICK arm (eager, the fp32 reference) that breaks it is
+   a recorded event and the rung re-runs at M′ ("The yardstick is not the compiled arm", below). Every R1 rule line prints `clip margin: <n>/<B> boundary rows
    relocated (M …; nearest unmoved …); max |dlogp| compiled …, eager …, fp32 reference … <= M, 0 clip-branch
    switches`, and every canary record carries it (`watch.*.clip_margin`).
    **The margin**: `R1_CLIP_MARGIN = R1_BAR_K × R1_LOGPROB_SHIFT_MAX = 4 × 0.18 = 0.72` (log-prob). 0.18 is the largest
@@ -2096,6 +2097,49 @@ pinned tree: it does for any pin at or after the T37 commit (X26's P_X26 is afte
 refuses the argv (`pinned_argv.pinned_parser_check`: `✗ NOT IN PINNED TREE`). The raise survives the launcher's later 6-hourly
 restarts through the recorded field. It does not replace the diag (`scripts/ops/diag_bf16_canary.sh <run>`), which says
 whether the shift is shared by eager bf16 and C32 is still ≈ 0; it replaces the FORK that a code-only raise would have forced.
+
+### The yardstick is not the compiled arm (`gen3_r1_yardstick_margin_v1`, 2026-10-19)
+
+**The defect** (the X34 u1700 UNCONFIRMED; `../research_state/measurements/x34_canary_u1700_2026-10-19/README.md`).
+`_clip_margin_rule` refused ANY arm past the margin, and the canary logged every refusal as "compiled DISAGREES with
+eager" on its confirm / FATAL ladder. At X34 update 1700 (pin `ae2d0901`, bf16 trunk) the arm that broke M = 0.72 was
+EAGER bf16 at 0.856, the canary's own yardstick; compiled read 0.52 with 0 clip switches, and the gradient rule's worst
+ratio was 3.58 against 12. The read: a bf16 CONDITIONING tail, not a compile bug. The fp32 function alone moves a
+fixture row's log-prob by up to 0.54 under a half-ulp weight dither (CPU, 267M), both bf16 arms move together across
+X34's history, and compiled vs eager at the SAME precision reads 0.017–0.028 on CPU Inductor, 4–6× tighter than either
+arm's distance from fp32. One more tail on a passing compiler would have been a FATAL.
+
+**The rule now** (`compile_regions.YARDSTICK_ARMS` = eager, fp32 reference; every other arm, "compiled" or "graphed", is
+the judged one):
+1. **A yardstick out of margin is an EVENT, not a refusal.** It is recorded (`watch.*.yardstick_out_of_margin`: the arms
+   past M with shift, batch row and fixture row; M; M′; the first read's shift per arm, compiled included; and a
+   `📏 [CompileCanary]` log line) and never counts toward confirm / FATAL (`compile/canary_yardstick_events` counts it).
+2. **The rung re-runs ONCE at M′ = max(M, `YARDSTICK_HEADROOM` 1.25 × the largest YARDSTICK shift)** and is judged
+   there: a new relocation at M′, new arms, the full verdict (the first read's verdict is discarded, since its gradient
+   may carry the 0/1 switch the margin exists to exclude). **The compiled arm's shift never sets M′**, so a miscompile
+   cannot widen its own bar, and a compiled arm past M with every yardstick inside is refused exactly as before. The
+   startup gate's rungs (`r1_rungs`, the graphed route's accumulation rung) take the same path.
+3. **Deterministic** (rule 8). The arms' forwards do not read the old log-probs, so the re-run reads the same shifts
+   (CUDA arms are run-to-run bit-identical, window D), and the yardstick sits at 1/1.25 of M′. A yardstick STILL past M′
+   did not reproduce its own forward: `YardstickRefusal`, which still refuses and still counts on the ladder.
+4. **The log names the failing arm.** "compiled DISAGREES with eager" only when the compiled arm failed; a
+   `YardstickRefusal` (the case above, and the bf16 DRIFT rule, eager bf16 vs fp32, now typed as one) is worded "the
+   canary's YARDSTICK refused (eager / the fp32 reference, NOT the compiled arm)", in the warning and in the FATAL.
+5. **The instrument gap closed.** Every record names each arm's worst row (`clip_margin.worst_row`, and
+   `worst_fixture_row`: the committed fixture row it tiles, via `R1Batch.fixture_rows`) and carries `same_precision`:
+   max |log π_compiled − log π_eager| and its row, **RECORDED with no bar** until a CUDA census reads it. An UNCONFIRMED
+   or FATAL verdict writes the policy `state_dict` beside its record (`policy_pt`, `canary_u<update>_<verdict>_policy.pt`),
+   at most `compile_canary.DUMP_WEIGHTS_MAX` = 3 per process (a module counter no checkpoint carries, like K9(b)'s T61
+   cap). At u1700 neither the row nor the weights could be recovered.
+
+**What it does at u1700.** Eager's 0.856 is an event; the rung re-runs at M′ = 1.07; both arms sit inside (0.52, 0.86)
+and no row switches; the gradient rule judges the re-relocated rows. Expected verdict PASS, and nothing carries to u1800.
+The gradient rule's ratio on the re-relocated rows is **UNVERIFIED** (the u1700 weights are gone); the planted replay
+(`canary_yardstick_test`) and the real learner's (`compile_canary_test`, slow) read PASS with one recorded event.
+
+**What it does not cover.** **UNVERIFIED:** the 1.25 headroom and the same-precision gap's healthy range have no CUDA
+census behind them. A pin before this change (X34 at `ae2d0901`) keeps the old rule; its only remedy for a yardstick tail
+is the `--canary-shift-max` raise on a resume (below, and `TRAINING_RUN_SOP.md` §3 rule 5).
 
 ### bf16 drift on a sharpening policy: the loss is read on the golden's own rows (`gen3_r1_loss_on_golden_rows_v1`, 2026-10-17)
 
