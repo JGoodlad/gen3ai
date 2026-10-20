@@ -158,7 +158,7 @@ wrong weights during the overlap, as the learner's probe does serially. `rust_co
 
 It logs `behaviour/max_abs_dlogp_current`, `behaviour/p99_abs_dlogp_current`, `rows_current`,
 `rows_probed`, one `behaviour/bar_<statistic>` per condition and
-`behaviour/excluded_frac`, `rows_excluded`, `rows_judged`, `max_abs_dlogp_judged`,
+`behaviour/excluded_frac`, `excluded_ceiling_judged`, `rows_excluded`, `rows_judged`, `max_abs_dlogp_judged`,
 `max_abs_dlogp_excluded`, `tie_eps` and `selection_free` (and the Rust probe `probe_forward_ms`; on a
 violation `scan_ms` / `scan_rows`), plus the FLIP-JUDGE's `rows_judged_by_flip`, `rows_flip_forward`,
 `rows_flip_resolved`, `excluded_frac_before_flip` and `flip_forward_ms` (below).
@@ -176,7 +176,7 @@ K2, and a process at any other precision is refused by `consistency.behaviour_ga
 
 | condition | catches | bar | FATAL when |
 |---|---|---|---|
-| max \|Δ\| over the rows NOT at a selection tie, + the excluded share | every fault class | 1e-4; excluded share < 0.15 | the FIRST violation — **DETERMINISTIC** (below): a row within a relative margin `FP32_TIE_EPS` = 2e-4 of a discrete cutoff is excluded, every other row is judged |
+| max \|Δ\| over the rows NOT at a selection tie, + the excluded share | every fault class | 1e-4; excluded share < 0.15 (judged on >= 1,024 current rows only) | the FIRST violation — **DETERMINISTIC** (below): a row within a relative margin `FP32_TIE_EPS` = 2e-4 of a discrete cutoff is excluded, every other row is judged |
 
 **Every violation** prints `🚨` (or `🛑` when fatal) with the condition, its value and its bar, logs the
 offending rows (index, |Δ|, action, mask — the largest 10; the p99 for context), and appends a JSON line
@@ -264,7 +264,16 @@ it; the flipped gaps were 5e-8 to 1.7e-7 in fp64 (`TECH_DEBT_BACKLOG.md` §2(b))
 5. **The excluded share must stay under `FP32_EXCLUDED_CEILING` = 0.15** (FATAL otherwise): a fault that
    pushed many rows onto ties would otherwise hide from the judgement. The share is counted AFTER the
    flip-judge (a flip-judged row is judged, not excluded); `behaviour/excluded_frac_before_flip` is the
-   share before it.
+   share before it. **The ceiling is JUDGED only on `FP32_EXCLUDED_MIN_ROWS` = 1,024 or more current rows**
+   (`gen3_k9_excluded_min_rows_v1`, 2026-10-19): it was derived on 1,024-row blocks, and below that a share is a
+   handful of clustered ties, not a fault (a 57-row `--debug` probe read 0.193, a 108-row one 0.194, a 64-row golden
+   seed 0.375 — all FATAL before). Under it the share is REPORTED (`behaviour/excluded_frac`,
+   `behaviour/excluded_ceiling_judged` = 0, one note per process) and cannot FATAL; the `max` bar judges at every
+   size. **Production is unchanged**: the probe takes `batch_size` = 2,048 rows, at most half of them current when
+   older rows exist (`choose_rows`), so `behaviour/rows_current` is >= 1,024 on every update — measured min 1,024
+   over `rb_x26_s2601` (3,872 updates), `rb_toy_ent_s4002_deep` (2,643), `rb_xs_s2701` (51), `rb_x5ab_fm_s1001`
+   (153), each read from TensorBoard 2026-10-19 — so the ceiling is judged on all of them; `consistency_min_rows_test`
+   pins it from `production_config.json` (a production `batch_size` under 2,048 would otherwise darken the ceiling).
 
 *The measurement* (`k9_behaviour_exclusion/`, `sweep.py` + `derive.py`, criteria declared before the
 numbers were read): the tail sweep's setup re-run with margins — A2's 4.0M checkpoint and its 2
@@ -278,6 +287,7 @@ training, every one of 3,538,944 rows of 36 fills through the probe forward; tor
 | rows over the bar (all rows) | 4, at margins ≤ **4.2e-7** | every real flip sat ~480× under epsilon (and under 1e-6) |
 | JUDGED rows over the bar | **0 of 3,407,893** | judged max \|Δ\| 2.1e-5 — 4.7× under 1e-4; by margin decade the max is 2.1e-5 at [1e-3, 1e-2) and ≤ 1.9e-5 above |
 | excluded share | **3.70 %** (largest 1,024-row block 6.25 %) | 2.0 % dominant-move `argmax` exact ties with the gate open, 0.6 % fixed damage == current HP exactly, the rest near-ties of the candidate `topk` / its cutoff |
+| `FP32_EXCLUDED_MIN_ROWS` | **1,024** | the block size the ceiling was measured on; production's floor of `rows_current` |
 | `FP32_EXCLUDED_CEILING` | **0.15** | the smallest of 0.02 / 0.05 / 0.10 / 0.15 / … at ≥ 3 × the pooled share and ≥ 1.5 × the largest block; fresh, 4.0M and 75M (N0 final) weights read 4.2 / 3.9 / 4.2 % at epsilon (CPU, 4,096 of A2's real rows) |
 | planted faults (the real probe, at epsilon) | **all FATAL on the FIRST update** | one-step-stale weights (an Adam-sized 2.8e-5 step on every weight); ONE wrong-action row at margin 0.128; one env's obs / mask column shifted by one decision. The unmodified buffer passes, before and after |
 | cost | **+27.7 ms** on a 62.6 ms probe forward of 2,048 rows | ~0.07 % of an update (~40 s) |

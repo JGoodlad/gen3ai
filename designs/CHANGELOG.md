@@ -15034,3 +15034,20 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   empty pool still FATALs; failed cycles still count; fails on revert); the slow `lever_supply_integration_test.py` now pins
   that the `--self-play-start-wr 1.01` trainer COMPLETES with a loud line per cycle (it used to exit 5). Docs:
   `designs/training/supply_guards.md`, `self_play_and_pool.md`.
+
+## 2026-10-19 — K9(b)'s excluded-share CEILING is judged only on enough rows (`gen3_k9_excluded_min_rows_v1`; `rust_rollout/consistency.py` only; no model / config / obs / signature change, no training-math change, production's verdicts unchanged)
+
+- **The defect (backlog row).** `FP32_EXCLUDED_CEILING` (0.15) applied at any row count but was derived on 1,024-row blocks
+  (largest block 6.25 %, pooled 3.70 %): a 57-row `--debug` probe read 0.193 and a 108-row one 0.194 (healthy ties,
+  clustered in a few states), a hard FATAL in a harness the check was never sized for.
+- **The fix.** `GateCondition.min_rows`; the ceiling's is `FP32_EXCLUDED_MIN_ROWS` = 1,024 CURRENT rows (a count, so the
+  decision is the same on every run). Under it `judge_behaviour` returns `Judged(…, judged=False)`: the share is reported
+  (`behaviour/excluded_frac`, the new `behaviour/excluded_ceiling_judged` = 0, one note per process) and cannot FATAL. The
+  `max` bar is judged at every size.
+- **Production is unchanged, shown.** The probe takes `batch_size` = 2,048 rows, at most half current when older rows exist
+  (`choose_rows`), so `behaviour/rows_current` >= 1,024: measured min 1,024 over `rb_x26_s2601` (3,872 updates),
+  `rb_toy_ent_s4002_deep` (2,643), `rb_xs_s2701` (51), `rb_x5ab_fm_s1001` (153) (TensorBoard, 2026-10-19), so the ceiling is
+  judged on every one. `consistency_min_rows_test.py` pins it from `production_config.json`.
+- **Tests.** `consistency_min_rows_test.py` (57 rows over the ceiling reported not FATAL; 1,024 / 1,025 / 2,048 rows over it
+  FATAL; 1,023 rows at the same share do not; `max` still judged tiny; the production guarantee; fails on revert);
+  `consistency_test` / `learner_gates_test` table pins updated. Docs: `designs/training/learner_gates.md`.

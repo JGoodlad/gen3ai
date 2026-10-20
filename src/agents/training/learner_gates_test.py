@@ -181,7 +181,7 @@ def test_the_gate_is_ONE_fp32_table_and_a_process_at_any_other_precision_is_refu
 
     C = K.GateCondition
     assert K.behaviour_gate() == (C("max", 1e-4, K.FP32_TIE_EPS),
-                                  C("excluded_frac", K.FP32_EXCLUDED_CEILING, K.FP32_TIE_EPS))
+                                  C("excluded_frac", K.FP32_EXCLUDED_CEILING, K.FP32_TIE_EPS, K.FP32_EXCLUDED_MIN_ROWS))
     assert K.BEHAVIOUR_BAR == 1e-4
     for gone in ("BEHAVIOUR_GATES", "TF32_MAX_PERSISTENCE", "TF32_P99_MULTIPLE", "TF32_MAX_MULTIPLE"):
         assert not hasattr(K, gone), gone

@@ -139,7 +139,8 @@ def test_the_probe_reads_the_one_fp32_gate_and_refuses_any_other_precision():
     above the bar FAILS; a process at any other precision is REFUSED by the probe (`UndeclaredPrecision`),
     never judged at a bar measured elsewhere."""
     assert K.BEHAVIOUR_GATE == (K.GateCondition("max", 1e-4, K.FP32_TIE_EPS),
-                                K.GateCondition("excluded_frac", K.FP32_EXCLUDED_CEILING, K.FP32_TIE_EPS))
+                                K.GateCondition("excluded_frac", K.FP32_EXCLUDED_CEILING, K.FP32_TIE_EPS,
+                                                K.FP32_EXCLUDED_MIN_ROWS))
     assert K.behaviour_gate() is K.BEHAVIOUR_GATE
     m = _model()
     m.behaviour_check = "fatal"

@@ -13,7 +13,8 @@ reuses the training graph rather than declaring a new signature) and compares th
   selection or threshold within ``FP32_TIE_EPS`` of its cutoff (its TIE MARGIN, recorded from this same
   forward by `tie_margins.TieMargins`) is EXCLUDED; every other row must have
   ``|log π − log μ| < 1e-4``, else a typed `BehaviourMismatch` at once (``--behaviour-check fatal``, the
-  default); and the excluded share must stay under ``FP32_EXCLUDED_CEILING``. It catches stale served
+  default); and the excluded share must stay under ``FP32_EXCLUDED_CEILING`` (judged on at least
+  ``FP32_EXCLUDED_MIN_ROWS`` current rows; fewer and it is only reported). It catches stale served
   weights (T2 not reloaded), an
   eval-vs-train-mode difference, and a rollout/learner observation mismatch. It would NOT catch a
   miscompile shared by both sides — K6's eager canary exists for that.
@@ -55,6 +56,10 @@ class GateCondition(NamedTuple):
     # (`tie_margins` — its smallest relative distance from a cutoff over every declared MARGIN site of the
     # forward, `agents/model/selection_sites.py`) is below this is NOT judged; every other row is.
     tie_eps: float = 0.0
+    # The fewest CURRENT rows at which the condition is JUDGED (0 = always). Below it the condition's value is still
+    # computed and REPORTED, but it can neither pass nor fail (`Judged.judged` False): a share measured on a handful
+    # of rows is sampling noise, not evidence — `FP32_EXCLUDED_MIN_ROWS`.
+    min_rows: int = 0
 
 
 #: THE fp32 RULE — DETERMINISTIC (owner, 2026-10-01: "toss out ones where the cutoff would be sensitive
@@ -76,6 +81,18 @@ class GateCondition(NamedTuple):
 #:   weights read 4.2 / 3.9 / 4.2 % at this epsilon (CPU, 4,096 real rows).
 FP32_TIE_EPS = 2e-4
 FP32_EXCLUDED_CEILING = 0.15
+#: The ceiling is JUDGED only on at least this many current rows (`gen3_k9_excluded_min_rows_v1`, 2026-10-19; backlog
+#: row "K9(b)'s excluded-share CEILING FATALs tiny rollouts"). 1,024 is the block size the ceiling was derived on (the
+#: largest 1,024-row block read 6.25 %, `designs/training/learner_gates.md`), and the production probe never sees fewer:
+#: it picks `batch_size` = 2,048 rows, half of them current, so `behaviour/rows_current` read min 1,024 / p50 1,024 /
+#: max 2,048 over all 3,872 updates of `rb_x26_s2601` (TensorBoard, read 2026-10-19), with the excluded share at max 0.092.
+#: Below it a share is a handful of clustered ties (a 57-row probe read 0.193, a 108-row one 0.194, a 64-row golden seed
+#: 0.375 — all healthy), not a fault that moves rows onto ties; the share is REPORTED (``behaviour/excluded_frac``, and a
+#: one-line note) but cannot FATAL. The ``max`` condition judges every row it can, at any size. A COUNT, never a
+#: statistic of the data: the decision is the same on every run.
+FP32_EXCLUDED_MIN_ROWS = 1024
+#: Non-empty once this process has printed the "ceiling not judged" note (`enforce_behaviour`).
+_CEILING_SKIP_NOTED: List[bool] = []
 EXCLUSION_MEASUREMENT = "designs/research_state/measurements/k9_behaviour_exclusion/result.json"
 #: The superseded tie rule's measurement (the tail sweep that root-caused the discontinuity).
 TAIL_MEASUREMENT = "designs/research_state/measurements/k9_behaviour_tail/result.json"
@@ -83,7 +100,7 @@ TAIL_MEASUREMENT = "designs/research_state/measurements/k9_behaviour_tail/result
 
 BEHAVIOUR_GATE: Tuple[GateCondition, ...] = (
     GateCondition("max", 1e-4, FP32_TIE_EPS),
-    GateCondition("excluded_frac", FP32_EXCLUDED_CEILING, FP32_TIE_EPS),
+    GateCondition("excluded_frac", FP32_EXCLUDED_CEILING, FP32_TIE_EPS, FP32_EXCLUDED_MIN_ROWS),
 )
 BEHAVIOUR_BAR = BEHAVIOUR_GATE[0].bar
 BAR_MEASUREMENT = "designs/research_state/measurements/k9_behaviour_bar_2026-09-30/result.json"
@@ -163,6 +180,7 @@ class Judged(NamedTuple):
     condition: GateCondition
     value: float
     ok: bool
+    judged: bool = True       # False: fewer rows than ``condition.min_rows`` — ``value`` is reported, ``ok`` is vacuous
 
 
 def judge_behaviour(abs_d: np.ndarray, margins: Optional[np.ndarray] = None) -> Tuple[Judged, ...]:
@@ -177,13 +195,17 @@ def judge_behaviour(abs_d: np.ndarray, margins: Optional[np.ndarray] = None) -> 
             v = float(ex.mean()) if a.size else 0.0
         else:
             v = behaviour_statistic(a[~ex], c.statistic)
+        if a.size < c.min_rows:            # too few rows to JUDGE this condition: reported, never a verdict
+            out.append(Judged(c, v, True, False))
+            continue
         out.append(Judged(c, v, bool(v < c.bar)))
     return tuple(out)
 
 
 def _describe(judged: Tuple[Judged, ...]) -> str:
     return "fp32: " + ", ".join(
-        f"{j.condition.statistic} {j.value:.3g} {'<' if j.ok else 'NOT <'} {j.condition.bar:g}" for j in judged)
+        f"{j.condition.statistic} {j.value:.3g} {'<' if j.ok else 'NOT <'} {j.condition.bar:g}" if j.judged else
+        f"{j.condition.statistic} {j.value:.3g} (not judged: under {j.condition.min_rows} rows)" for j in judged)
 
 
 def _dump(model: Any, abs_d: np.ndarray, judged: Tuple[Judged, ...], where: str,
@@ -220,7 +242,7 @@ def _dump(model: Any, abs_d: np.ndarray, judged: Tuple[Judged, ...], where: str,
     record = {"where": where, "num_timesteps": int(getattr(model, "num_timesteps", 0) or 0),
               "n_updates": int(getattr(model, "_n_updates", 0) or 0), "precision": "highest",
               "conditions": [{"statistic": j.condition.statistic, "value": j.value, "bar": j.condition.bar,
-                              "ok": j.ok} for j in judged],
+                              "ok": j.ok, "judged": j.judged} for j in judged],
               "p99": behaviour_statistic(a, "p99"), "rows_current": int(a.size),
               "rows_judged": int((~ex).sum()), "rows_excluded": int(ex.sum()), "tie_eps": eps, "rows": rows}
     if details is not None:
@@ -383,6 +405,14 @@ def enforce_behaviour(model: Any, abs_d: np.ndarray, *, where: str, actions: Any
     for j in judged:
         key = j.condition.statistic
         metrics[f"behaviour/bar_{key}"] = j.condition.bar
+        if key == "excluded_frac":
+            metrics["behaviour/excluded_ceiling_judged"] = float(j.judged)
+            if not j.judged and not _CEILING_SKIP_NOTED:
+                _CEILING_SKIP_NOTED.append(True)       # once per PROCESS, not per update (and not a model attribute: no save carries it)
+                print(f"ℹ️  [K9(b)] the excluded-share ceiling ({j.condition.bar:g}) is NOT judged on {a.size} current "
+                      f"rows (it needs {j.condition.min_rows}, the block size it was measured on): excluded share "
+                      f"{j.value:.3f} is reported as behaviour/excluded_frac only. The max |d log pi| bar still judges "
+                      f"every non-tie row.", flush=True)
         if not j.ok:
             totals[key] = totals.get(key, 0) + 1
             failed.append(j)

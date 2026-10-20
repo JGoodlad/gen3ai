@@ -303,7 +303,8 @@ def _run_smoke(tmp_path, name, extra):
             # completed-game rows). The old `--steps 3000 --n-steps 256 --batch-size 128 --n-epochs 2` was
             # an SB3-era shape: `--n-steps` does not size the Rust core's rollout, so the FIRST update ran on
             # 108 rows and tripped K9(b)'s `excluded_frac < 0.15` bar (0.194, bit-reproducible, also on
-            # main at 900de5e2 — P10-F2), a hard FATAL that has nothing to do with tags.
+            # main at 900de5e2 — P10-F2), a hard FATAL that has nothing to do with tags. (Since
+            # `gen3_k9_excluded_min_rows_v1` a probe under 1,024 rows no longer FATALs on the ceiling; the smoke shape stays.)
             "--debug", "--steps", "10000", "--run-name", name, *extra]
     proc = subprocess.run(argv, cwd=str(tmp_path), env=env, capture_output=True, text=True)
     assert proc.returncode == 0, f"smoke failed:\n{proc.stdout[-4000:]}\n{proc.stderr[-4000:]}"
