@@ -114,18 +114,18 @@ keeps it. R0 is not in batch 1 (ruling C4, 2026-10-19: its argv is unregistered,
 
 **The batch-2 candidates.** Each has ONE lever per A/B and is read by R1 against a C0 at its own side's pin. **AM-RP-f
 (the launch sheet's §0, 2026-10-20) REGISTERED two of them, before X47's look 1 and before any production arm: the
-SPRT arm (§4.2, both sides) and toy LR-F (§4.1).** Production LR-F stays a designed candidate. None is a kit arm yet
+SPRT arm (§4.2, both sides) and toy LR-F (§4.1).** Production LR-F was registered after them (§4.1.2, 2026-10-20). None is a kit arm yet
 (§4.3: F-AS-8), and every launch NEEDS the orchestrator's GO. The GPU order is AM-RP-e's.
 
 | candidate | in plain words | the lever | GPU-h, look 1 | designed in |
 |---|---|---|---|---|
-| **LR-F, the LR FLOOR** (§4.1; **toy REGISTERED**, AM-RP-f) | continue the plateau checkpoint with the learning-rate controller forbidden to go below the rate the run used while it was still climbing | `--min-lr` (two controller rungs above the start's rate) | toy 12.9; production 12.9 | here |
+| **LR-F, the LR FLOOR** (§4.1; **toy REGISTERED**, AM-RP-f; **production REGISTERED**, §4.1.2) | continue the plateau checkpoint with the learning-rate controller forbidden to go below the rate the run used while it was still climbing | `--min-lr` (two controller rungs above the start's rate) | toy 12.9; production 12.9 | here |
 | LG-1, main exploiters (A3) + R0 | train 3 exploiters to beat P\*, then fold them into P\*'s opponents | the exploiter slice | ≈ 19 | [`design_alphastar_league_path.md`](../../../endstate/design_alphastar_league_path.md) §6 |
 | LG-2, PFSP over the archive (**only on an A1 GAIN**, AM-RP-b) | A1 with the archive nodes the trainee loses to drawn more often | `--stable-opponent-pfsp` | ≈ 14.4 | the same |
 | A4, the trailing magnet | a pull toward a recent copy of itself (R-NaD / MMD) | `β · KL(π ‖ π_mag)` (build T56) | ≈ 15 | [`design_compute_efficiency.md`](../../../endstate/design_compute_efficiency.md) §5.6.2 |
 | **SPRT, the promotion rule** (§4.2; **REGISTERED**, AM-RP-f) | promote a snapshot by its own sequential test instead of the first noisy crossing of 0.55, so the self-play pool refreshes | `--promotion-sprt` (T6, built) | toy 12.9; production 12.9 | [`REPLAN_2026-10-20.md`](REPLAN_2026-10-20.md) §2 |
 
-### 4.1 LR-F, the LR FLOOR (designed 2026-10-20, from the X26 treadmill read; the TOY arm REGISTERED by AM-RP-f, §4.1.1; production NEEDS a registration and GO)
+### 4.1 LR-F, the LR FLOOR (designed 2026-10-20, from the X26 treadmill read; the TOY arm REGISTERED by AM-RP-f, §4.1.1; production REGISTERED 2026-10-20, §4.1.2; each launch NEEDS GO)
 
 **In plain words.** Continue the plateau checkpoint, but forbid the learning-rate controller to go below the rate it
 used while the run was still climbing. Everything else is C0's.
@@ -305,7 +305,47 @@ predictions are §4.1's as designed in `6befe873`, unchanged and now FROZEN: no 
 - **Order and cost.** AM-RP-e (11): toy LR-F fills a GPU idle gap. Look 1 costs 12.9 GPU-h, and look 2 adds 8.6 on
   CONTINUE.
 - **Production LR-F is NOT registered by AM-RP.** It is AM-RP-e's slot (8). Its predictions are §4.1's, and it needs a
-  registration and a GO before its launch.
+  registration and a GO before its launch. (Registered since: §4.1.2.)
+
+#### 4.1.2 Production LR-F: the REGISTRATION (2026-10-20, the F-AS-8 kit unit's brief, before any slot (8) launch)
+
+**Registered before any production X35 arm has launched** (`models/` holds only the toy's `rb_x35t_*` runs) **and
+before any LR-F read.** The values and predictions are §4.1's production values as designed in `6befe873`, unchanged
+and now FROZEN: no ruling may revise them. The kit arm is built in the commit that follows this one (§4.3).
+
+- **Arm.** `lrfloor`, run `rb_x35_lrfloor_s{seed}`. C0's argv + `--min-lr 1.7361e-4` (one lever): two controller rungs
+  (×1.44) above P\*'s saved rate 1.2056e-4, the rate X26 climbed at from 139M to 218M.
+- **Pin and matched control.** The production side's written pin (`x35_pin_batch1_production.txt`, which must carry
+  FP32_ALT: AM-8). Production C0 at the same pin and seeds: look 1 s3501–s3503, look 2 s3504–s3505 (P2's, shared).
+- **The registered predictions** (§4.1's, production):
+  - **Mechanism:**
+    - the LR sits at the floor on ≥ 95 % of updates, every seed;
+    - the arm-mean approx KL is in [0.025, 0.045];
+    - the clip fraction is 0.20–0.30;
+    - greedy churn per 20M on `bank_x26` is 0.33–0.42;
+    - N_prom is within ±2 of production C0's, pooled.
+  - **R1:** Δ_pop = 0.0 pp, 80 % [−2.0, +1.5]; the modal class is look-1 UNDECIDED.
+  - **G-C:** B1 ON − OFF is in [−0.05, +0.01] nats; B2's point estimate is in [−0.02, +0.04].
+  - The contrast is ≈ ×1.73 for most of the arm, not ×1.44: production C0 is expected to cut to 1.0047e-4 within
+    ≈ 2–3M (§4.1, "Order"). The predictions are the designed ones regardless.
+- **The read.** As §4.1.1's: R1 as registered (S over production's frozen R, Welch at 97.5 %, ±2 pp, two looks), G-F,
+  G-C (pooled) and G-K, G-E only on a GAIN. Reported beside them: TM-2's instruments, the LR path, the KL, the clip
+  fraction, the churn.
+- **The launch conditions** (`kit stage-check`):
+  - AM-8: PENDING until FP32_ALT is recorded, as every production fork;
+  - §4.1's licence table: a toy LR-F FINAL class of **LOSS REFUSES** it ("not run on this evidence"). A toy NULL
+    deprioritises it (order, not a gate), and an unread toy LR-F is no condition: AM-RP-e puts production (8) before
+    the toy (11);
+  - look 2 (s3504–s3505) only on its own look 1 reading CONTINUE.
+- **The stop rule.** It runs to `--steps` 300,000,170 (P\* + 20M) and ends with `Training complete`, or early only on
+  the sheet §1's stops: K9(b) `warn` (AM-6 at arm end), a `FATAL_*`, a 4th crash, or the post-spawn pool-seed check.
+- **The VOID guard** (§4.1.1's, the same 0.08): a seed whose trailing-2M mean approx KL exceeds **0.08** is stopped
+  and VOID, rule 8 at 1e-9. It is read by hand with `main.ops.tb_read` at every restart and daily, and at arm end by the
+  kit (§4.3). AM-6's K9(b) VOID applies. A VOID seed enters no read and is re-run at the same pin and seed.
+- **Order and cost.** AM-RP-e's slot (8): look 1 12.9 GPU-h, look 2 + 8.6 on CONTINUE.
+- **Validated:** `checkargs` exits 0 on P\*'s pinned parser @`9c033489`
+  ([`checkargs_lrfloor_s3501.txt`](batch2_lr_floor/checkargs_lrfloor_s3501.txt), `min_lr 0.00017361 (TYPED)`). Not yet
+  at the production X35 pin, which is not written: `launch_x35.sh`'s pre-checks run it at the GO (F-LRF-1).
 
 ### 4.2 SPRT, the PROMOTION-RULE arm (REGISTERED 2026-10-20 by AM-RP-f, before X47's look 1 and any production arm)
 
