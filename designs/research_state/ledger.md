@@ -27523,3 +27523,43 @@ eleven jobs queued. The plateau region is not read.
 Evidence: `research_state/measurements/cycle_monitor_retro_2026-10-19/` (README, `x26_ladder_accumulated.json`,
 `x26_ladder_window80M.json`, `calibration_x26_graph.*`, `x34_status.txt`); `endstate/design_evaluation.md` §2.5, §8.2,
 F-ED-24–F-ED-27; `endstate/design_league_decisions.md` §C.
+### 2026-10-20 · MEASUREMENT · **L1 + L5 of the hidden-information search review, READ under their pre-registration (`d443c098`): an acting rule ANCHORED to the policy (piKL / Gumbel scale / a deviation threshold, each fitted on Tier 1) lifts honest search on X26 from −0.012 per decision to about the policy but never above it, held out; the registered L1 verdict is PAYS-SCOPED on one cell (piKL, E2, 4-turn leaf +0.012, lower +0.001 at 98.33 %), which is the leaf's own E2 signal (the anchor adds +0.002 [−0.005, +0.008]). The acting rule does not bind; the sampler does. L5 (descriptive): leaf correlation 0.97 near the end, disambiguation 0.41 per own turn (0.70 early), near Skat on Long et al.'s map. PROVISIONAL**
+
+**Question** (`literature/hidden_info_search_review_2026-10-20.md` §10 L1, L5; `endstate/search_ledger.md` §7 Q13).
+Ataraxos's search played 362 Elo below its own policy without a KL anchor and above it with one; our honest argmax over 8
+worlds does not beat the policy. Does an anchored acting rule make honest search pay on data its parameter was not fitted
+on? And where does Gen 3 OU sit on Long, Sturtevant, Buro & Furtak's (AAAI 2010) map of when PIMC works?
+
+**Design** (`measurements/search_l1_l5_2026-10-20/PREREG.md`, committed before any anchored rule was evaluated; scripts
+and cache byte-identical at the read). Zero playouts: banked honest (F) rows re-scored. Each rule's one parameter is
+fitted on Tier 1 (1,477 states, end2 + prod at 15M) per scorer, then read on E2 (1,108 fresh competent-opponent states,
+same policies) and X26's LEAN rows (287 states × 25M / 100M / 175M / 225M, a different run). PAYS iff one rule's
+held-out lower bound (98.33 %, Bonferroni over 3 rules) clears +0.0005 at LEAF-K8 and TRUNC-4-K8 on both banks. GIGO
+G1–G3 PASS (the recomputed argmax IMP equals every registered per-state IMP; E2's means and n reproduced).
+
+**Result.**
+- Fitted (LEAF-K8 / TRUNC-4-K8): piKL λ 0.1 / 0.015, Gumbel c 0.1 / 0.2, threshold δ 5/32 / 0.02.
+- X26: argmax −0.012 [−0.020, −0.004] (LEAF-K8) → anchored −0.003 / −0.004 / −0.007; the anchor's gain over the argmax
+  +0.006 to +0.010 (clear on 4 of 6 cells at 95 %); the best grid value chosen on X26 itself +0.004 [−0.001, +0.009].
+- E2: TRUNC-4-K8 argmax +0.010; anchored +0.011 to +0.012; the anchor's own gain +0.000 to +0.002, not clear.
+- VERDICT PAYS-SCOPED (one cell: piKL|E2|TRUNC-4-K8). Its registered consequence: replicate on the maturity plateau
+  bank after its `QUEUE_DONE`; no new default.
+- Secondaries: the oracle world's fitted anchor is ≈ none (λ 0.02 / 0.001); sampled piKL no better; anchored rollout vs
+  anchored critic search not separable; FN worlds the same pattern. The Tier-1 in-sample gains (+0.005 to +0.013)
+  halve or vanish held out.
+- L5: leaf correlation 0.97 (34 of the 35 bank states whose playouts all end in their own turn), falling to 0.02 at ≥ 8
+  turns from the end; bias proxy 0.06 (mostly forced losses); disambiguation P(a new true opponent species or move per
+  own turn) 0.41 [0.38, 0.43], 0.70 in turns 1–7, 0.19 after turn 22 (Skat / Hearts: correlation 0.8 to ≈ 1.0, df ≈ 0.6).
+
+**Reading.** An anchor is a guard against the argmax's harm, not a source of gain: the honest leaf holds almost no
+decision information the policy lacks. Gen 3 OU sits where PIMC works on Long et al.'s map, so neither the acting rule
+nor the classic PIMC failures explain the honest null; the world sampler does.
+
+**FINDINGS.** (1) The heavy-job slots were held by a 28 h job with 13 queued; the job measured light (1.3 GB, 31 s) and
+ran under `nice -n 19 taskset` and `ulimit -v` instead of `mem_cap` (recorded in PREREG §7 before the read). (2) The one
+clear cell is not evidence for the anchor. (3) The X26 rows came from a running queue's archive (only finished LEAN
+anchors; G1 equality guards it). (4) L5 rests on proxies: 35 pre-terminal states selected by bank quotas, network
+playouts, and a fact count in place of Long's world count (df_event = df only under the paper's generative model).
+
+Evidence: `research_state/measurements/search_l1_l5_2026-10-20/` (PREREG, README, `result_l1.json`, `fit_l1.json`,
+`result_l5.json`, `scripts/`); `endstate/search_ledger.md` §1, N5, §7 Q13, Decision record; `research_state/UNDERSTANDING.md`.

@@ -1,0 +1,436 @@
+{
+ "disambiguation (X26 interim-bank battles)": {
+  "species+moves (primary)": {
+   "battles": 513,
+   "df_event": {
+    "ci95": [
+     0.3798,
+     0.4313
+    ],
+    "mean": 0.4057,
+    "n": 17013
+   },
+   "long_model_halvings_per_move_at_df_event (df / (1 - df); derived, not in the paper)": 0.683,
+   "revealed_fraction": {
+    "ci95": [
+     0.0194,
+     0.0219
+    ],
+    "mean": 0.0207,
+    "n": 17013
+   },
+   "stratum bot": {
+    "df_event": {
+     "ci95": [
+      0.4302,
+      0.5041
+     ],
+     "mean": 0.4691,
+     "n": 6201
+    },
+    "revealed_fraction": {
+     "ci95": [
+      0.0208,
+      0.0244
+     ],
+     "mean": 0.0227,
+     "n": 6201
+    }
+   },
+   "stratum snapshot": {
+    "df_event": {
+     "ci95": [
+      0.3388,
+      0.401
+     ],
+     "mean": 0.3694,
+     "n": 10812
+    },
+    "revealed_fraction": {
+     "ci95": [
+      0.0179,
+      0.0212
+     ],
+     "mean": 0.0195,
+     "n": 10812
+    }
+   },
+   "turn 1-7": {
+    "df_event": {
+     "ci95": [
+      0.6792,
+      0.7173
+     ],
+     "mean": 0.6987,
+     "n": 3591
+    },
+    "revealed_fraction": {
+     "ci95": [
+      0.0273,
+      0.0291
+     ],
+     "mean": 0.0282,
+     "n": 3591
+    }
+   },
+   "turn 15-21": {
+    "df_event": {
+     "ci95": [
+      0.3873,
+      0.4345
+     ],
+     "mean": 0.4112,
+     "n": 2889
+    },
+    "revealed_fraction": {
+     "ci95": [
+      0.022,
+      0.0248
+     ],
+     "mean": 0.0234,
+     "n": 2889
+    }
+   },
+   "turn 22-": {
+    "df_event": {
+     "ci95": [
+      0.168,
+      0.2161
+     ],
+     "mean": 0.1902,
+     "n": 7044
+    },
+    "revealed_fraction": {
+     "ci95": [
+      0.0115,
+      0.0148
+     ],
+     "mean": 0.013,
+     "n": 7044
+    }
+   },
+   "turn 8-14": {
+    "df_event": {
+     "ci95": [
+      0.5138,
+      0.5566
+     ],
+     "mean": 0.5348,
+     "n": 3489
+    },
+    "revealed_fraction": {
+     "ci95": [
+      0.0249,
+      0.0273
+     ],
+     "mean": 0.0261,
+     "n": 3489
+    }
+   },
+   "turns": 17013
+  },
+  "species+moves+items+abilities": {
+   "battles": 513,
+   "df_event": {
+    "ci95": [
+     0.4066,
+     0.4617
+    ],
+    "mean": 0.4345,
+    "n": 17013
+   },
+   "long_model_halvings_per_move_at_df_event (df / (1 - df); derived, not in the paper)": 0.768,
+   "revealed_fraction": {
+    "ci95": [
+     0.0176,
+     0.0199
+    ],
+    "mean": 0.0188,
+    "n": 17013
+   },
+   "stratum bot": {
+    "df_event": {
+     "ci95": [
+      0.4675,
+      0.547
+     ],
+     "mean": 0.5098,
+     "n": 6201
+    },
+    "revealed_fraction": {
+     "ci95": [
+      0.0198,
+      0.0233
+     ],
+     "mean": 0.0216,
+     "n": 6201
+    }
+   },
+   "stratum snapshot": {
+    "df_event": {
+     "ci95": [
+      0.3588,
+      0.4248
+     ],
+     "mean": 0.3913,
+     "n": 10812
+    },
+    "revealed_fraction": {
+     "ci95": [
+      0.0157,
+      0.0186
+     ],
+     "mean": 0.0171,
+     "n": 10812
+    }
+   },
+   "turn 1-7": {
+    "df_event": {
+     "ci95": [
+      0.7232,
+      0.7611
+     ],
+     "mean": 0.7424,
+     "n": 3591
+    },
+    "revealed_fraction": {
+     "ci95": [
+      0.0261,
+      0.0278
+     ],
+     "mean": 0.0269,
+     "n": 3591
+    }
+   },
+   "turn 15-21": {
+    "df_event": {
+     "ci95": [
+      0.418,
+      0.4668
+     ],
+     "mean": 0.4424,
+     "n": 2889
+    },
+    "revealed_fraction": {
+     "ci95": [
+      0.02,
+      0.0226
+     ],
+     "mean": 0.0213,
+     "n": 2889
+    }
+   },
+   "turn 22-": {
+    "df_event": {
+     "ci95": [
+      0.1811,
+      0.2323
+     ],
+     "mean": 0.2049,
+     "n": 7044
+    },
+    "revealed_fraction": {
+     "ci95": [
+      0.0094,
+      0.012
+     ],
+     "mean": 0.0106,
+     "n": 7044
+    }
+   },
+   "turn 8-14": {
+    "df_event": {
+     "ci95": [
+      0.5528,
+      0.5977
+     ],
+     "mean": 0.5747,
+     "n": 3489
+    },
+    "revealed_fraction": {
+     "ci95": [
+      0.0236,
+      0.0258
+     ],
+     "mean": 0.0247,
+     "n": 3489
+    }
+   },
+   "turns": 17013
+  }
+ },
+ "leaf_correlation_and_bias": {
+  "all banks": {
+   "b (Long: share of correlated pre-terminal states won by the searched side)": 0.0588,
+   "by_turns_to_end (median over playouts)": {
+    "0 (ends this turn)": {
+     "all_outcomes_equal": 0.8769,
+     "lc_seed": 0.9719,
+     "n": 65,
+     "win_share_of_equal_seeds": 0.0615
+    },
+    "1": {
+     "all_outcomes_equal": 0.5126,
+     "lc_seed": 0.8628,
+     "n": 119,
+     "win_share_of_equal_seeds": 0.4177
+    },
+    "2-3": {
+     "all_outcomes_equal": 0.4866,
+     "lc_seed": 0.8249,
+     "n": 224,
+     "win_share_of_equal_seeds": 0.5185
+    },
+    "4-7": {
+     "all_outcomes_equal": 0.1921,
+     "lc_seed": 0.5775,
+     "n": 406,
+     "win_share_of_equal_seeds": 0.4871
+    },
+    ">=8": {
+     "all_outcomes_equal": 0.0243,
+     "lc_seed": 0.249,
+     "n": 2919,
+     "win_share_of_equal_seeds": 0.3737
+    }
+   },
+   "draw_share_of_correlated": 0.0294,
+   "lc (Long: share of pre-terminal states whose every action and seed gives one payoff)": 0.9714,
+   "lc_seed (pre-terminal; dice-paired)": 0.9993,
+   "leaf_win_rate (all states)": 0.4857,
+   "pre_terminal": 35,
+   "states": 3733,
+   "with_end_turns": 3733
+  },
+  "e2": {
+   "b (Long: share of correlated pre-terminal states won by the searched side)": 0.0,
+   "by_turns_to_end (median over playouts)": {
+    "0 (ends this turn)": {
+     "all_outcomes_equal": 0.8,
+     "lc_seed": 0.9933,
+     "n": 15,
+     "win_share_of_equal_seeds": 0.0667
+    },
+    "1": {
+     "all_outcomes_equal": 0.6538,
+     "lc_seed": 0.8606,
+     "n": 26,
+     "win_share_of_equal_seeds": 0.2814
+    },
+    "2-3": {
+     "all_outcomes_equal": 0.3404,
+     "lc_seed": 0.7803,
+     "n": 47,
+     "win_share_of_equal_seeds": 0.3294
+    },
+    "4-7": {
+     "all_outcomes_equal": 0.1569,
+     "lc_seed": 0.5853,
+     "n": 102,
+     "win_share_of_equal_seeds": 0.3849
+    },
+    ">=8": {
+     "all_outcomes_equal": 0.0185,
+     "lc_seed": 0.2418,
+     "n": 918,
+     "win_share_of_equal_seeds": 0.3013
+    }
+   },
+   "draw_share_of_correlated": 0.1429,
+   "lc (Long: share of pre-terminal states whose every action and seed gives one payoff)": 1.0,
+   "lc_seed (pre-terminal; dice-paired)": 1.0,
+   "leaf_win_rate (all states)": 0.4226,
+   "pre_terminal": 7,
+   "states": 1108,
+   "with_end_turns": 1108
+  },
+  "tier1": {
+   "b (Long: share of correlated pre-terminal states won by the searched side)": 0.0714,
+   "by_turns_to_end (median over playouts)": {
+    "0 (ends this turn)": {
+     "all_outcomes_equal": 0.8276,
+     "lc_seed": 0.9405,
+     "n": 29,
+     "win_share_of_equal_seeds": 0.069
+    },
+    "1": {
+     "all_outcomes_equal": 0.55,
+     "lc_seed": 0.8979,
+     "n": 60,
+     "win_share_of_equal_seeds": 0.535
+    },
+    "2-3": {
+     "all_outcomes_equal": 0.4688,
+     "lc_seed": 0.8169,
+     "n": 96,
+     "win_share_of_equal_seeds": 0.4964
+    },
+    "4-7": {
+     "all_outcomes_equal": 0.2079,
+     "lc_seed": 0.5847,
+     "n": 178,
+     "win_share_of_equal_seeds": 0.5013
+    },
+    ">=8": {
+     "all_outcomes_equal": 0.0359,
+     "lc_seed": 0.2667,
+     "n": 1114,
+     "win_share_of_equal_seeds": 0.4074
+    }
+   },
+   "draw_share_of_correlated": 0.0,
+   "lc (Long: share of pre-terminal states whose every action and seed gives one payoff)": 0.9333,
+   "lc_seed (pre-terminal; dice-paired)": 0.9983,
+   "leaf_win_rate (all states)": 0.5066,
+   "pre_terminal": 15,
+   "states": 1477,
+   "with_end_turns": 1477
+  },
+  "x26": {
+   "b (Long: share of correlated pre-terminal states won by the searched side)": 0.0769,
+   "by_turns_to_end (median over playouts)": {
+    "0 (ends this turn)": {
+     "all_outcomes_equal": 1.0,
+     "lc_seed": 1.0,
+     "n": 21,
+     "win_share_of_equal_seeds": 0.0476
+    },
+    "1": {
+     "all_outcomes_equal": 0.3333,
+     "lc_seed": 0.8008,
+     "n": 33,
+     "win_share_of_equal_seeds": 0.3117
+    },
+    "2-3": {
+     "all_outcomes_equal": 0.5926,
+     "lc_seed": 0.8602,
+     "n": 81,
+     "win_share_of_equal_seeds": 0.6543
+    },
+    "4-7": {
+     "all_outcomes_equal": 0.1984,
+     "lc_seed": 0.5609,
+     "n": 126,
+     "win_share_of_equal_seeds": 0.5495
+    },
+    ">=8": {
+     "all_outcomes_equal": 0.0158,
+     "lc_seed": 0.2342,
+     "n": 887,
+     "win_share_of_equal_seeds": 0.4063
+    }
+   },
+   "draw_share_of_correlated": 0.0,
+   "lc (Long: share of pre-terminal states whose every action and seed gives one payoff)": 1.0,
+   "lc_seed (pre-terminal; dice-paired)": 1.0,
+   "leaf_win_rate (all states)": 0.5198,
+   "pre_terminal": 13,
+   "states": 1148,
+   "with_end_turns": 1148
+  }
+ },
+ "long_2010_reference": {
+  "skat_and_hearts": "correlation 0.8 to nearly 1.0, bias varying widely, df very close to 0.6 (p. 139, Fig. 6)"
+ },
+ "status": "L5, DESCRIPTIVE (PREREG \u00a76): Long et al. 2010's properties on the banked rows"
+}
