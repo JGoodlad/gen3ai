@@ -15249,3 +15249,12 @@ Pins: `present::live_reader_reading_tests` (six tests over `tests/vectors/live_r
   default stream INSIDE a guard window; NOT YET RUN (no lease) — the 2026-10-20 battery's new last cell `t2_guard`
   runs it beside the 2026-10-19 arming check. Docs: `endstate/program_rust_core.md` (the T2 lifecycle paragraph),
   `training/rust_collector.md`, the battery README, the `TECH_DEBT_BACKLOG.md` row.
+
+## 2026-10-20 — the replay corpus's STALENESS is diagnosed and alarmed (`tools/replay_corpus_downloader/freshness.py`; no model / config / obs / training change; read-only)
+
+The corpus under `<main>/replays/showdown/gen3ou/` stopped at 2026-09-23 12:07 (X50 census F-X50-13). Cause: its collector, `src/main/collect_replays.py` (a
+poke-env live spectator, since deleted), ran in a hand-started tmux window with no supervisor, and the 12:08 reboot killed it; the 2026-08-02 stop was the
+same. The corpus is not under `data/` and no pinned run reads it, so a restart does not touch the data freeze. Added: the read-only
+`python -m tools.replay_corpus_downloader.freshness` (exit 1 when the newest date folder is older than `--max-age-days`, default 3) with tests. The
+status, evidence and restart plan: `designs/tools/replay_corpus.md`. The downloader README's "never committed" provenance claim is corrected. Nothing
+was downloaded or written under `data/`.
