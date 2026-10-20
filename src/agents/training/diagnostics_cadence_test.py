@@ -132,8 +132,10 @@ def test_it_is_a_RECORDED_field_and_a_pre_v124_config_is_refused():
         _migrate_config({"config_version": 123})
     rec = _migrate_config({"config_version": MIGRATION_FLOOR, "diagnostics_every": 10})
     assert rec["diagnostics_every"] == 10 and rec["config_version"] >= MIGRATION_FLOOR
+    import main.train.fork_arch as fa
     import main.train.model_build as mb
-    assert inspect.getsource(mb).count("diagnostics_every=args.diagnostics_every,") == 2
+    # Since F-BI-2 the RESUME block lives in `fork_arch.resume_version_build`; the fresh block stays in `model_build`.
+    assert (inspect.getsource(mb) + inspect.getsource(fa)).count("diagnostics_every=args.diagnostics_every,") == 2
 
 
 def test_checkargs_reports_the_inherited_cadence(tmp_path):
