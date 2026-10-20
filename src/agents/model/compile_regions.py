@@ -1258,17 +1258,25 @@ R1_CLIP_MARGIN = R1_BAR_K * R1_LOGPROB_SHIFT_MAX
 #: holds one update bit-identical at two values). It can only RAISE the shift above `R1_LOGPROB_SHIFT_MAX`: a lower
 #: margin has no measured basis (0.18 is the largest healthy shift measured), and `resolve_shift_max` refuses one.
 SHIFT_MAX_FLAG = "--canary-shift-max"
+#: THE CODE CEILING (T52 / OPS-8): the largest value `--canary-shift-max` may carry. 0.5 is the ceiling the operating rule
+#: already put on an orchestrator-approved raise (`TRAINING_RUN_SOP.md` section 3: "a raise to a value <= 0.5 needs the
+#: ORCHESTRATOR's approval"); past it the gate's margin (4 x it = 2.0 log-prob) no longer separates a healthy arm from a
+#: broken one, so a value above it is a typo (18 for 0.18, 1.8 for 0.18) that would silently disarm every canary refusal.
+#: Raising THIS constant is a code change with a measured basis, not a flag. The values the orchestrator has ruled
+#: (0.3 for the X34 / toy resumes, 2026-10-20) sit below it.
+SHIFT_MAX_CEILING = 0.5
 
 
 class CanaryShiftMaxError(ValueError):
-    """A `--canary-shift-max` value the gate cannot honour: not a finite number, or BELOW `R1_LOGPROB_SHIFT_MAX` (the
-    flag only raises it; a lower bar has no measured basis). Typed so the parser, `resolve_config` and the gate
-    refuse it with one reason."""
+    """A `--canary-shift-max` value the gate cannot honour: not a finite number, BELOW `R1_LOGPROB_SHIFT_MAX` (the
+    flag only raises it; a lower bar has no measured basis) or ABOVE `SHIFT_MAX_CEILING` (the code ceiling: a margin
+    that wide disarms the gate). Typed so the parser, `resolve_config` and the gate refuse it with one reason."""
 
 
 def resolve_shift_max(value: Any) -> float:
     """The shift (log-prob) the margin is built from: ``None`` is the code's `R1_LOGPROB_SHIFT_MAX`; a typed value
-    is returned as a float if it is finite and at least that constant, else `CanaryShiftMaxError` naming why."""
+    is returned as a float if it is finite and within [`R1_LOGPROB_SHIFT_MAX`, `SHIFT_MAX_CEILING`], else
+    `CanaryShiftMaxError` naming why."""
     if value is None:
         return float(R1_LOGPROB_SHIFT_MAX)
     try:
@@ -1282,6 +1290,13 @@ def resolve_shift_max(value: Any) -> float:
             f"{SHIFT_MAX_FLAG} {v:g} is BELOW the code's R1_LOGPROB_SHIFT_MAX {R1_LOGPROB_SHIFT_MAX:g}, the largest "
             f"healthy shift measured: the flag only RAISES the margin (4 x it) — a lower bar has no measured basis, "
             f"and it would make the gate refuse arms the measurements call healthy")
+    if v > SHIFT_MAX_CEILING:
+        raise CanaryShiftMaxError(
+            f"{SHIFT_MAX_FLAG} {v:g} is ABOVE the code ceiling SHIFT_MAX_CEILING {SHIFT_MAX_CEILING:g} (the orchestrator-"
+            f"approval cap of TRAINING_RUN_SOP section 3): a margin of 4 x {v:g} = {R1_BAR_K * v:g} log-prob no longer "
+            f"separates a healthy arm from a broken one and would silently disarm every canary refusal. A typo? (0.18 "
+            f"is the default; 0.3 is the largest value ruled so far.) Raising the ceiling is a code change with a "
+            f"measured basis (compile_regions.SHIFT_MAX_CEILING), not a flag")
     return v
 
 

@@ -706,13 +706,17 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     if args.diagnostics_every < 1:
         parser.error("--diagnostics-every must be >= 1 (1 = the optional telemetry every update)")
     if args.canary_shift_max is not None:
-        # A TYPED value was judged at parse; this judges the INHERITED one too (the code's constant may have risen
-        # since the run recorded it), so the gate never reads a bar below the measured healthy shift.
+        # A TYPED value was judged at parse; this judges the INHERITED one too (the code's constant may have risen, or
+        # its ceiling fallen, since the run recorded it), so the gate never reads a bar outside [the measured healthy
+        # shift, SHIFT_MAX_CEILING]. FATAL_CONFIG (T52): every restart of this run would meet the identical recorded
+        # value, so the launcher must STOP and name the reason instead of crash-looping.
         from agents.model import compile_regions as _cr
         try:
             _cr.resolve_shift_max(args.canary_shift_max)
         except _cr.CanaryShiftMaxError as _e:
-            parser.error(str(_e))
+            from main.exit_codes import TrainExitCode as _Exit
+            print(str(_e), file=sys.stderr, flush=True)
+            sys.exit(int(_Exit.FATAL_CONFIG))
         emit(f"🐤 [CANARY SHIFT MAX] {args.canary_shift_max:g} (the code's R1_LOGPROB_SHIFT_MAX is "
              f"{_cr.R1_LOGPROB_SHIFT_MAX:g}): the compile gate's and the canary's clip margin is {_cr.R1_BAR_K:g} x it = "
              f"{_cr.R1_BAR_K * args.canary_shift_max:g}. CHECK-ONLY: it moves no training quantity.")

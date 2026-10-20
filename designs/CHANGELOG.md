@@ -15198,3 +15198,14 @@ Pins: `present::live_reader_reading_tests` (six tests over `tests/vectors/live_r
   - `design_beat_metamon_path.md`: §0, the dose, §6.6, §6.8, FINDINGS 2 and 7, the Decision record.
   - `design_diversity_teams_opponents.md`: the registry, the D1 lever, the corpus result and soak, the Decision record.
   - `design_compute_efficiency.md` (D1); `EXPERIMENT_BACKLOG.md` BM-4 and DV-5.
+## 2026-10-20 — `--canary-shift-max` gets a CODE CEILING (T52 / OPS-8; no model / config / obs / signature change, no training-math change)
+
+- `compile_regions.SHIFT_MAX_CEILING` = 0.5 (the `TRAINING_RUN_SOP.md` section 3 approval cap): `resolve_shift_max` refuses a
+  value above it with a typed `CanaryShiftMaxError` naming the ceiling, so a typo of 18 for 0.18 (a margin of 72 log-prob) can no
+  longer disarm every canary refusal. A typed value is refused at parse; an INHERITED one exits `FATAL_CONFIG` (3) from
+  `resolve_config` (the former `parser.error`, exit 2, also for the below-constant case), so the launcher stops instead of
+  looping. 0.3 (the X34 / toy resume value ruled 2026-10-20) and 0.5 stay allowed; no acknowledgement flag was added.
+- **Tests** (each fails on revert): `canary_shift_max_test.py` (the parse refusal of 18 / 1.8 / 0.51 / 100, 0.3 and 0.5 pass;
+  an inherited 18.0 is FATAL_CONFIG), `canary_shift_max_gate_test.py` (the resolver, the model helpers, the ceiling's value).
+- **Docs.** `TRAINING_RUN_SOP.md` section 3 rule 5, `designs/training/compile_flags.md`, `ARCHITECTURE.md`, `flag_census.md`,
+  `src/agents/training/CLAUDE.md`, `TASK_BACKLOG.md` (OPS-8 done), `TECH_DEBT_BACKLOG.md` (Next 10 row closed).

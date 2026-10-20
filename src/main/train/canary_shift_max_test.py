@@ -17,6 +17,7 @@ import inspect
 
 import pytest
 
+from main.exit_codes import TrainExitCode
 from main.train.derived_toggle_resume_test import _resolve, _saved_version
 from main.train.parser import build_parser
 
@@ -40,6 +41,19 @@ def test_a_value_below_the_constant_or_not_a_finite_number_is_REFUSED_typed(bad,
     err = capsys.readouterr().err
     assert "--canary-shift-max" in err and ("BELOW the code's R1_LOGPROB_SHIFT_MAX" in err or "not a number" in err
                                             or "not finite" in err), err
+
+
+@pytest.mark.parametrize("typo", ["18", "1.8", "0.51", "100"])
+def test_a_value_ABOVE_the_code_ceiling_is_REFUSED_at_parse_naming_the_reason(typo, capsys):
+    """T52 (OPS-8): `--canary-shift-max 18` (for 0.18) used to parse and disarm every canary refusal. 0.3 (the ruled
+    X34 / toy resume value) and the ceiling 0.5 itself stay allowed. Fails on revert of the ceiling."""
+    with pytest.raises(SystemExit) as e:
+        build_parser().parse_args(["--canary-shift-max", typo])
+    assert e.value.code == 2
+    err = capsys.readouterr().err
+    assert "--canary-shift-max" in err and "ABOVE the code ceiling SHIFT_MAX_CEILING 0.5" in err, err
+    for ok in ("0.3", "0.5"):
+        assert build_parser().parse_args(["--canary-shift-max", ok]).canary_shift_max == float(ok)
 
 
 def test_the_parser_accepts_no_abbreviation_of_it():
@@ -89,8 +103,8 @@ def test_a_same_run_RESUME_may_RAISE_it_and_the_typed_value_WINS_and_is_recorded
     assert _saved_version(resumed).canary_shift_max == 0.4
     # …and a typed value beats a RECORDED one (a second raise at a later restart)
     run2, ckpt2 = _run(tmp_path / "again", dataclasses.replace(_saved_version(resumed)))
-    raised = _resolve(["--model", ckpt2, "--run-dir", run2, "--steps", "2000", "--canary-shift-max", "0.9"])
-    assert raised.canary_shift_max == 0.9
+    raised = _resolve(["--model", ckpt2, "--run-dir", run2, "--steps", "2000", "--canary-shift-max", "0.5"])
+    assert raised.canary_shift_max == 0.5
 
 
 def test_an_UNTYPED_restart_and_a_flagless_resume_INHERIT_the_recorded_value(tmp_path):
@@ -116,7 +130,7 @@ def test_a_FORK_inherits_the_parents_value(tmp_path):
     assert str(parent_run) not in str(getattr(fork, "run_dir", "") or "")            # a different run: the PARENT's record
     # a fork may also RAISE it, and the typed value wins there too
     assert _resolve(["--model", ckpt, "--run-name", "child_fork2", "--steps", "2000",
-                     "--canary-shift-max", "1.5"]).canary_shift_max == 1.5
+                     "--canary-shift-max", "0.5"]).canary_shift_max == 0.5
 
 
 def test_an_INHERITED_value_below_the_constant_is_refused_too(tmp_path, capsys):
@@ -126,8 +140,20 @@ def test_an_INHERITED_value_below_the_constant_is_refused_too(tmp_path, capsys):
     _run_dir, ckpt = _run(tmp_path, dataclasses.replace(_saved_version(fresh), canary_shift_max=0.1))
     with pytest.raises(SystemExit) as e:
         _resolve(["--model", ckpt, "--run-name", "child", "--steps", "2000"])
-    assert e.value.code == 2
+    assert e.value.code == int(TrainExitCode.FATAL_CONFIG)       # a restart would meet the same value: the launcher STOPS
     assert "BELOW the code's R1_LOGPROB_SHIFT_MAX" in capsys.readouterr().err
+
+
+def test_an_INHERITED_value_ABOVE_the_ceiling_is_a_FATAL_CONFIG_too(tmp_path, capsys):
+    """A recorded value past the ceiling (the ceiling fell after the run recorded it, or a hand-edited record) must not
+    become a disarmed gate by inheritance: FATAL_CONFIG (exit 3, so the launcher gives up rather than crash-looping),
+    naming the flag and the ceiling. Fails on revert of the ceiling in `resolve_shift_max`."""
+    fresh = _resolve(list(_FRESH))
+    _run_dir, ckpt = _run(tmp_path, dataclasses.replace(_saved_version(fresh), canary_shift_max=18.0))
+    with pytest.raises(SystemExit) as e:
+        _resolve(["--model", ckpt, "--run-name", "child", "--steps", "2000"])
+    assert e.value.code == int(TrainExitCode.FATAL_CONFIG)
+    assert "ABOVE the code ceiling SHIFT_MAX_CEILING" in capsys.readouterr().err
 
 
 def test_checkargs_reports_the_inherited_value(tmp_path):
@@ -137,7 +163,7 @@ def test_checkargs_reports_the_inherited_value(tmp_path):
     ckpt, _ = _parent_run(tmp_path, canary_shift_max=0.4)
     res = check(["--model", ckpt, "--steps", "1000", "--run-name", "child"])
     assert res["resolution"]["inherited"]["canary_shift_max"] == 0.4
-    typed = check(["--model", ckpt, "--steps", "1000", "--run-name", "child", "--canary-shift-max", "0.9"])
+    typed = check(["--model", ckpt, "--steps", "1000", "--run-name", "child", "--canary-shift-max", "0.5"])
     assert "canary_shift_max" not in typed["resolution"]["inherited"]
 
 

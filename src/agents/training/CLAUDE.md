@@ -105,7 +105,8 @@ reason, and a checkpoint that recorded one is refused by `model_version/retired_
 - R1 alone runs bf16; a new forward of the live learner policy that must agree with the rollout (a behaviour
   log-prob in a test or tool) runs under `trunk_precision.fp32_scope`.
 - Do not launch `--learner-cudagraphs on`: it fails on the GPU (`designs/training/compile_flags.md` "Lever C").
-  Nothing in a loss, an optimizer or a parity bar may read `--canary-shift-max`.
+  Nothing in a loss, an optimizer or a parity bar may read `--canary-shift-max`; its value is bounded to
+  [`R1_LOGPROB_SHIFT_MAX`, `SHIFT_MAX_CEILING` 0.5] in code (T52).
 - **R1's margin rule judges an arm by its NAME**: only `compile_regions.YARDSTICK_ARMS` (`eager`, `fp32 reference`)
   are yardsticks (out of margin = a recorded event and one re-run at M′); any other name is judged as COMPILED. A new
   yardstick arm joins that tuple, never a new spelling (`compile_flags.md` "The yardstick is not the compiled arm").

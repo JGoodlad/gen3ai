@@ -26,7 +26,8 @@ def _rnd_variants_arg(value: str) -> str:
 
 def _canary_shift_max_arg(value: str) -> float:
     """argparse ``type`` for --canary-shift-max: a finite number AT LEAST the code's `R1_LOGPROB_SHIFT_MAX` (the flag only
-    RAISES the margin's input); anything else is an argparse error naming why (`compile_regions.resolve_shift_max`)."""
+    RAISES the margin's input) and AT MOST its `SHIFT_MAX_CEILING` (T52: a typo cannot disarm the gate); anything else
+    is an argparse error naming why (`compile_regions.resolve_shift_max`)."""
     from agents.model import compile_regions as cr
 
     try:
@@ -325,7 +326,8 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "the X26 headroom watch (designs/endstate/design_x26_readiness.md 4.2) reaches the run: "
                              "resume the SAME run with --canary-shift-max V at the next planned restart. It can only "
                              "RAISE the constant (a value below 0.18 is refused, typed: a lower bar has no measured "
-                             "basis). It affects ONLY the gate's judgement, never training (one update is "
+                             "basis; a value above the code ceiling SHIFT_MAX_CEILING 0.5 is refused too: a typo "
+                             "such as 18 for 0.18 would disarm the gate). It affects ONLY the gate's judgement, never training (one update is "
                              "bit-identical at any value, canary_shift_max_test). Default None = the constant. RECORDED "
                              "in model_config.json and inherited by a flagless resume, a launcher restart and a fork "
                              "(typed wins); printed on every R1 rule line and every canary record "

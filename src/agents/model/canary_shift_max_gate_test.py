@@ -35,10 +35,31 @@ def test_the_resolver_is_the_default_for_None_and_only_RAISES_above_it():
     assert cr.resolve_shift_max(None) == cr.R1_LOGPROB_SHIFT_MAX == 0.18
     assert cr.resolve_shift_max(0.18) == 0.18
     assert cr.resolve_shift_max("0.5") == 0.5
-    assert cr.resolve_shift_max(3) == 3.0
+    assert cr.resolve_shift_max(0.3) == 0.3                              # the X34 / toy resume value (ruled 2026-10-20)
+    assert cr.resolve_shift_max(cr.SHIFT_MAX_CEILING) == cr.SHIFT_MAX_CEILING == 0.5   # the ceiling itself is allowed
     for bad in (0.179, 0.0, -1.0, float("nan"), float("inf"), float("-inf"), "x", object()):
         with pytest.raises(cr.CanaryShiftMaxError):
             cr.resolve_shift_max(bad)
+
+
+@pytest.mark.parametrize("typo", [18, 1.8, 0.51, 3, "18", float(cr.SHIFT_MAX_CEILING) * 1.0001])
+def test_a_value_ABOVE_the_code_ceiling_is_refused_typed_with_its_reason(typo):
+    """T52 (OPS-8): a typo of 18 for 0.18 would make the margin 72 log-prob and silently disarm every canary refusal.
+    Fails on revert of the ceiling (the resolver then returns the typo)."""
+    with pytest.raises(cr.CanaryShiftMaxError, match=r"ABOVE the code ceiling SHIFT_MAX_CEILING 0\.5"):
+        cr.resolve_shift_max(typo)
+
+
+def test_the_gate_refuses_a_model_that_carries_a_value_above_the_ceiling():
+    class M:
+        _canary_shift_max = 18.0
+    for read in (cr.shift_max_of, cr.clip_margin_of):
+        with pytest.raises(cr.CanaryShiftMaxError, match="ABOVE"):
+            read(M())
+
+
+def test_the_ceiling_is_the_SOPs_approval_cap_and_sits_above_every_ruled_value():
+    assert cr.R1_LOGPROB_SHIFT_MAX < 0.3 <= cr.SHIFT_MAX_CEILING == 0.5
 
 
 def test_the_model_helpers_read_the_models_attribute_and_name_the_source():

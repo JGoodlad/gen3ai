@@ -1871,7 +1871,8 @@ interval [−1.19, +3.31] (not worse; not shown better), and the TensorBoard `tr
 (median of the eight seeds' medians per arm). **The compile gate's and the canary's clip margin has ONE
 CHECK-ONLY input beside the code's constant: `--canary-shift-max`** (`ModelVersion.canary_shift_max`, config v158;
 default None = `compile_regions.R1_LOGPROB_SHIFT_MAX` 0.18, so the margin is 4 × 0.18 = 0.72 log-prob). A same-run resume
-may RAISE it (a value below the constant is refused, typed) because a live run's code pin cannot move at a restart; it is
+may RAISE it (a value below the constant, or above the code ceiling `compile_regions.SHIFT_MAX_CEILING` 0.5, is refused,
+typed; an inherited out-of-range value exits FATAL_CONFIG) because a live run's code pin cannot move at a restart; it is
 recorded in `model_config.json` and inherited by a launcher restart, a flagless resume and a fork, never compared by
 `check_compatible`, never read by a loss, an optimizer or a bar of the parity rule (one update is bit-identical at any
 value, `canary_shift_max_test`), and printed on every R1 rule line and every canary record

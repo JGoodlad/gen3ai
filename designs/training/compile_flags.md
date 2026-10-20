@@ -2074,6 +2074,13 @@ X26 onto all of HEAD. So the delivery is a flag a same-run RESUME may change.
   (`CanaryShiftMaxError`; an argparse error at parse, a `parser.error` in `resolve_config` for an INHERITED value, and the
   gate itself refuses a model carrying one): 0.18 is the largest healthy shift measured, so a lower margin has no measured
   basis and would make the gate refuse arms the measurements call healthy.
+- **Ceiling-bounded (T52, 2026-10-20).** A value ABOVE `compile_regions.SHIFT_MAX_CEILING` (0.5, the orchestrator-approval cap
+  of `TRAINING_RUN_SOP.md` §3) is refused the same way (`CanaryShiftMaxError`, naming the ceiling): a margin of 4 x 18 = 72
+  log-prob (a typo of 18 for 0.18) disarms every canary refusal silently. 0.3 (the X34 / toy resume value ruled 2026-10-20)
+  and 0.5 itself parse. A typed value is refused at parse (exit 2); an INHERITED one (the ceiling fell after the run
+  recorded it) exits `FATAL_CONFIG` (3) from `resolve_config`, so the launcher stops instead of crash-looping on the
+  identical recorded value. Raising the ceiling is a code change with a measured basis, not a flag. No acknowledgement
+  flag exists: the ceiling alone bounds the typo, and a second flag would break the hand-typed ruled resume.
 - **A typed value needs the gate it moves.** `combination_checks.canary_shift_max_needs_the_compiled_cuda_learner` refuses
   a TYPED value on `--no-compile-trainer` / `--device cpu` / `--debug` (silently inert otherwise, like `--learner-cudagraphs`);
   an INHERITED value is carried, never refused (a CPU smoke of an X26 fork still launches).
