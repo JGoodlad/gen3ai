@@ -27733,3 +27733,41 @@ replication (the review's A4) is required before L3 or stage 1c steers anything.
 Evidence: `research_state/measurements/search_l3_2026-10-20/counter_test/` (PREREGISTRATION, README,
 `result_decoy.json`, `decoy_registration.json`, `decoy_run.py`, `decoy_read.py`, `run.sh`); rows in
 `~/gen3ai_archive/search_l3_decoy/`; `endstate/search_ledger.md` §1, §7 Q15; `endstate/design_world_sampler.md` §4 (f).
+
+### 2026-10-20 · MEASURED · **X26 COLLAPSE BATTERY on the plateau (180M–380M): a TREADMILL, not a collapse — steady churn, a stale self-play pool, a halved step size, and starvation creeping up while entropy, coverage, rank, dormant units and the opponent model hold**
+
+Tag: **MEASURED · DESCRIPTIVE · PROVISIONAL** (one run, one seed, nothing registered; CPU forward passes and record
+reads only, read-only on `models/`). The battery of `endstate/design_collapse_and_counterfactuals.md` §4 minus B6 (the
+cycle monitor), on `rb_x26_s2601` at 180 / 230 / 280 / 330 / 380M.
+
+- **B1 entropy** (fixed banks, battle-clustered 95 %): own bank 160→380M −0.049 [−0.063, −0.035], 180→380M −0.026
+  [−0.045, −0.000], 280→380M +0.017; `bank_v1` 160→380M −0.065 [−0.077, −0.053], flat after 280M. 30→380M +0.013
+  [−0.014, +0.039]: the post-30M broadening given back. Not entropy collapse.
+- **B2 starvation** (X26@150M truth, 179 decisive turns): 0.318 / 0.324 / 0.307 / 0.335 / 0.369; 280→380M +0.061
+  [+0.017, +0.109], 160→380M +0.084 [+0.022, +0.150]. Mostly misrank. Greedy regret and dominated mass flat. The
+  truth is 230M old at 380M: SUGGESTED until B4 re-branches it (≈ 3.7 CPU-h, scoped, not run).
+- **B3 starvation** (`truth_v2`): 180→380M +0.033 [+0.008, +0.057] / +0.048 [+0.020, +0.076] / +0.043 [+0.017, +0.072]
+  (C_fix / K2 / N0, 3/3 detected), the step at 180→230M; dominated mass and regret not falling (they fell 10→160M,
+  3/3). Still −0.09 to −0.13 below K3.
+- **B5** (ride-along A on `truth_v2`, 200 of 580 battles): A's Spearman vs the truth 0.13–0.20, no better than the
+  logits (A − logits −0.012 to +0.001 at 380M); A ranks a starved near-best move in its top 2 on 2–6 % of turns
+  (chance 25 %).
+- **B8** (RND): the variants never read SATURATED step to step, the stream did not homogenise, late-game AUROC stays
+  0.85–0.91 (`decay`, `feat`). Base RND's training error is saturated (2–3e-6 since 90M).
+- **B9** (α): intent log loss 1.824 → 1.772 (unpaired intervals; flat after 280M). R5 has no reader (A2-F2).
+- **B10** (built here, `dormant.py`): τ-dormant share (τ = 0.025) 0.060 → 0.056, flat since 30M; weight norm +2 %.
+- **Added reads.**
+  - Self-play POOL: promotions (≥ 0.55 vs the pool in a cycle) per 50M 18 (90M) → 9 (180M) → 3 (380M); pool median
+    age 63M → 135M; oldest member at 380M is 164M.
+  - Greedy churn ≈ 0.28–0.32 per 20M; 180→380M 0.358.
+  - Learning rate (adaptive KL, target 0.01) 1.74e-4 → 8.37e-5 while the gradient norm rose 0.74 → 1.27.
+  - Feature effective ranks and critic resolution still rise.
+- **Not run (scoped):** B4 (≈ 3.7 CPU-h), B7 (R0, ≈ 1.1 GPU-h), B10's refit probe (unbuilt), R5 and B5-on-X26-truth
+  (reader code).
+- FINDINGS F1–F10 in the README. The main ones:
+  - pool staleness and the halved learning rate are NOT battery items, but they are the plainest changes across the
+    plateau, and the falling dose confounds Tier 1's "flat";
+  - the registered ride-along FINAL read is now due on 380M.
+
+Evidence: `research_state/measurements/x26_collapse_battery_2026-10-20/` (README, scripts, `results/`); archive
+`~/gen3ai_archive/x26_collapse_battery_2026-10-20/`; design `endstate/design_collapse_and_counterfactuals.md` §4.

@@ -1522,6 +1522,15 @@ decisive), and on the pre-era `truth_v2` above:
 meas: [`measurements/collapse_pilot_2026-10-17/`](measurements/collapse_pilot_2026-10-17/README.md); ledger 2026-10-17 ·
 *COLLAPSE PILOT*]
 
+**On the plateau (180M–380M) the battery reads a TREADMILL, not a collapse (2026-10-20; DESCRIPTIVE · PROVISIONAL,
+one seed).** Steady ≈ 30 % greedy churn per 20M whose distance from 380M barely grows with lag; a self-play pool gone
+stale (promotions per 50M 9 → 3, median member age 63M → 135M); the adaptive-KL learning rate halved (1.74e-4 →
+8.4e-5). Entropy gave back its post-30M broadening (−0.04 to −0.07 nats from 160M, flat from 280M) and starvation crept
+UP +0.03 to +0.06 on both referees while dominated mass and regret stopped falling (the ai_v14 direction at ~⅓ its
+size; on X26's own truth it waits on a refreshed truth, B4). No coverage, rank, dormant-unit or opponent-model
+collapse. [meas: [`measurements/x26_collapse_battery_2026-10-20/`](measurements/x26_collapse_battery_2026-10-20/README.md);
+ledger 2026-10-20 · *X26 COLLAPSE BATTERY*]
+
 ### 4.5 The X5 belief A/B at look 3 (final), and the value of perfect information (2026-10-07)
 
 **Hypothesis tokens (concrete guesses of the opponent's hidden Pokémon, "fixed_mass") are NON-INFERIOR to the blob belief at matched steps, INFERIOR per GPU-hour, and BETTER at predicting the opponent's next action.** Eight seeds per arm (look 3, the last registered look), mirrored head-to-head cross, δ = 3.5 pp, played and read at the seeds' training pin `706fa536`:

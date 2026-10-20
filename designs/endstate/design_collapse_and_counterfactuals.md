@@ -36,7 +36,15 @@ Words used throughout:
 ## 0. One screen
 
 **What kind of collapse does X26 show? Not entropy collapse, and not GROWING starvation. A steady misranking whose
-value lives in the hidden information, plus a slowing, mildly cyclic climb.** PROVISIONAL: X26 is still climbing.
+value lives in the hidden information, plus a slowing, mildly cyclic climb.** PROVISIONAL: the bullets after the first
+read 10M–160M, before the plateau.
+- **On the plateau (180M–380M, read 2026-10-20) X26 is a TREADMILL, not a collapse** (DESCRIPTIVE, one seed,
+  [`../research_state/measurements/x26_collapse_battery_2026-10-20/`](../research_state/measurements/x26_collapse_battery_2026-10-20/README.md)):
+  - steady ≈ 30 % greedy churn per 20M, with a stale self-play pool and a halved learning rate;
+  - entropy −0.04 to −0.07 nats from 160M, then flat;
+  - starvation up +0.03 to +0.06 on both referees while dominated mass and regret stop falling (B2 awaits B4's
+    refreshed truth);
+  - no coverage, rank, dormant-unit or opponent-model collapse.
 - **(b) Entropy: none.** X26's entropy on its own states is flat at 1.05–1.16 nats from 10M to 160M (it broadened
   after 30M, +0.062 [+0.037, +0.087]). `ent_coef` 0.05 holds it (§3.2).
 - **(a) Starvation is present and FLAT, not rising.**
@@ -500,3 +508,4 @@ rise (the interval's lower bound > 0). B3 and B6 are reported; B4 refreshes the 
 | 2026-10-17 | ESTABLISHED (owner request: "what type of collapse … we need some way to give counterfactuals") | The taxonomy (a1 tie-collapse / a2 misrank / b–f), each with its instrument; true-world one-ply rollouts as the REFEREE for starvation, honest-world ones as the deployable read; the battery B1–B10 on X26 every 20M and on every X35 arm, starvation as a GUARD on breakers | Treating entropy as the collapse meter (X26's entropy is flat while ~3 in 10 decisive turns starve); one undivided "starvation" number (it hides that 3/4 is misrank); an anti-starvation GPU arm on X26 now (its starvation is flat, and no deployable counterfactual can target the right moves, §3.5) | §3; `../research_state/measurements/collapse_pilot_2026-10-17/` |
 | 2026-10-17 | Counterfactual targets (iii) Q head on rollout labels and (iv) Gumbel completed-Q | Written up as DEFERRED designs, in line with the owner's 2026-09-30 label-scope rule (`design_q_head.md` §5.0); their usefulness is gated on honest-world value quality, i.e. the search programme | Recommending them now: honest one-ply values flag the wrong starved moves (−0.068 vs the top choice) | §2, §3.5 |
 | 2026-10-17 | The battery as X35's guard (design worker, for the orchestrator) | G-C = B1 (FAIL iff the ON − OFF entropy interval is wholly below −0.05 nats) + B2 (FAIL iff a detected rise in the starved share), on every b-ON and b-OFF final; B3 / B6 reported; an anti-starvation arm NOT run, with three named triggers | a guard on B4–B10 (cost; B5 and B10 not built); a fixed starvation bar of +0.05 (read A cannot resolve it, F-CC-3) | `design_compute_efficiency.md` §5.6.5 |
+| 2026-10-20 | The battery READ on X26's plateau (180M–380M), every offline item | B1–B3, B5, B8, B9 (α), B10's dormant share (built as a measurement script) read; B4, B7, B10's refit probe, R5 SCOPED, not run; the pool's composition, churn and the update size added as descriptive reads | — (a read, not a decision; pool staleness as a battery item is PROPOSED, not adopted) | `../research_state/measurements/x26_collapse_battery_2026-10-20/` |

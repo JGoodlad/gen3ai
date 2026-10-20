@@ -1,0 +1,763 @@
+{
+ "schema": "x26_collapse_battery_dormant_v1",
+ "n_rows": 7028,
+ "gate": {
+  "recorded_rows_checked": 7028,
+  "byte_equal": 7028,
+  "obs_as_recorded": true
+ },
+ "taus": [
+  0.0,
+  0.025,
+  0.1
+ ],
+ "reads": {
+  "X26@10M": {
+   "pooled": {
+    "dormant_0.0": 0.01742,
+    "dormant_0.025": 0.12398,
+    "dormant_0.1": 0.18494
+   },
+   "units": 1952,
+   "weight_norm_total_excl_ridealong": 221.6066,
+   "layers": {
+    "features_extractor.pokemon_encoder.move_latent_encoder.mlp.1": {
+     "units": 64,
+     "rows_x_positions": 786688,
+     "layer_mean_abs": 0.5744563341140747,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.0
+    },
+    "features_extractor.pokemon_encoder.move_network.1": {
+     "units": 96,
+     "rows_x_positions": 764288,
+     "layer_mean_abs": 0.7911167740821838,
+     "dormant_0.0": 0.03125,
+     "dormant_0.025": 0.08333,
+     "dormant_0.1": 0.17708
+    },
+    "features_extractor.pokemon_encoder.role_encoder.1": {
+     "units": 256,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.5691695213317871,
+     "dormant_0.0": 0.03516,
+     "dormant_0.025": 0.05078,
+     "dormant_0.1": 0.08984
+    },
+    "features_extractor.pokemon_encoder.dynamic_encoder.1": {
+     "units": 128,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.3812893033027649,
+     "dormant_0.0": 0.00781,
+     "dormant_0.025": 0.14844,
+     "dormant_0.1": 0.21875
+    },
+    "features_extractor.team_transformer.transformer_layers.0.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.3967646360397339,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.00391
+    },
+    "features_extractor.team_transformer.transformer_layers.1.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.3735164403915405,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.01562
+    },
+    "features_extractor.hidden_opp_belief.decoder.ffn": {
+     "units": 256,
+     "rows_x_positions": 84336,
+     "layer_mean_abs": 0.3495371639728546,
+     "dormant_0.0": 0.00781,
+     "dormant_0.025": 0.07031,
+     "dormant_0.1": 0.16016
+    },
+    "features_extractor.win_head.net.2": {
+     "units": 128,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 0.38733363151550293,
+     "dormant_0.0": 0.14844,
+     "dormant_0.025": 0.53125,
+     "dormant_0.1": 0.60938
+    },
+    "features_extractor.activation": {
+     "units": 512,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 0.6267022490501404,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.22656,
+     "dormant_0.1": 0.33008
+    }
+   }
+  },
+  "X26@30M": {
+   "pooled": {
+    "dormant_0.0": 0.01639,
+    "dormant_0.025": 0.0625,
+    "dormant_0.1": 0.10963
+   },
+   "units": 1952,
+   "weight_norm_total_excl_ridealong": 225.6692,
+   "layers": {
+    "features_extractor.pokemon_encoder.move_latent_encoder.mlp.1": {
+     "units": 64,
+     "rows_x_positions": 786688,
+     "layer_mean_abs": 0.57944655418396,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.0
+    },
+    "features_extractor.pokemon_encoder.move_network.1": {
+     "units": 96,
+     "rows_x_positions": 764288,
+     "layer_mean_abs": 0.7809050679206848,
+     "dormant_0.0": 0.05208,
+     "dormant_0.025": 0.09375,
+     "dormant_0.1": 0.20833
+    },
+    "features_extractor.pokemon_encoder.role_encoder.1": {
+     "units": 256,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.49729371070861816,
+     "dormant_0.0": 0.04297,
+     "dormant_0.025": 0.04688,
+     "dormant_0.1": 0.08594
+    },
+    "features_extractor.pokemon_encoder.dynamic_encoder.1": {
+     "units": 128,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.3239707350730896,
+     "dormant_0.0": 0.00781,
+     "dormant_0.025": 0.125,
+     "dormant_0.1": 0.22656
+    },
+    "features_extractor.team_transformer.transformer_layers.0.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.3747280240058899,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.00391
+    },
+    "features_extractor.team_transformer.transformer_layers.1.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.3898126482963562,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.02344
+    },
+    "features_extractor.hidden_opp_belief.decoder.ffn": {
+     "units": 256,
+     "rows_x_positions": 84336,
+     "layer_mean_abs": 0.3011183738708496,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.01562,
+     "dormant_0.1": 0.10156
+    },
+    "features_extractor.win_head.net.2": {
+     "units": 128,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 0.37464016675949097,
+     "dormant_0.0": 0.11719,
+     "dormant_0.025": 0.55469,
+     "dormant_0.1": 0.61719
+    },
+    "features_extractor.activation": {
+     "units": 512,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 1.0297698974609375,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.01953,
+     "dormant_0.1": 0.06055
+    }
+   }
+  },
+  "X26@90M": {
+   "pooled": {
+    "dormant_0.0": 0.02664,
+    "dormant_0.025": 0.06045,
+    "dormant_0.1": 0.09426
+   },
+   "units": 1952,
+   "weight_norm_total_excl_ridealong": 232.2744,
+   "layers": {
+    "features_extractor.pokemon_encoder.move_latent_encoder.mlp.1": {
+     "units": 64,
+     "rows_x_positions": 786688,
+     "layer_mean_abs": 0.573619544506073,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.0
+    },
+    "features_extractor.pokemon_encoder.move_network.1": {
+     "units": 96,
+     "rows_x_positions": 764288,
+     "layer_mean_abs": 0.7502584457397461,
+     "dormant_0.0": 0.07292,
+     "dormant_0.025": 0.09375,
+     "dormant_0.1": 0.22917
+    },
+    "features_extractor.pokemon_encoder.role_encoder.1": {
+     "units": 256,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.4468609094619751,
+     "dormant_0.0": 0.03906,
+     "dormant_0.025": 0.04297,
+     "dormant_0.1": 0.07812
+    },
+    "features_extractor.pokemon_encoder.dynamic_encoder.1": {
+     "units": 128,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.2956680953502655,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.10938,
+     "dormant_0.1": 0.19531
+    },
+    "features_extractor.team_transformer.transformer_layers.0.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.3637830913066864,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.01562
+    },
+    "features_extractor.team_transformer.transformer_layers.1.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.38849639892578125,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.01562
+    },
+    "features_extractor.hidden_opp_belief.decoder.ffn": {
+     "units": 256,
+     "rows_x_positions": 84336,
+     "layer_mean_abs": 0.27884507179260254,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.01562,
+     "dormant_0.1": 0.05859
+    },
+    "features_extractor.win_head.net.2": {
+     "units": 128,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 0.36420971155166626,
+     "dormant_0.0": 0.27344,
+     "dormant_0.025": 0.625,
+     "dormant_0.1": 0.6875
+    },
+    "features_extractor.activation": {
+     "units": 512,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 1.7566595077514648,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.01172
+    }
+   }
+  },
+  "X26@160M": {
+   "pooled": {
+    "dormant_0.0": 0.0333,
+    "dormant_0.025": 0.0584,
+    "dormant_0.1": 0.09631
+   },
+   "units": 1952,
+   "weight_norm_total_excl_ridealong": 236.7469,
+   "layers": {
+    "features_extractor.pokemon_encoder.move_latent_encoder.mlp.1": {
+     "units": 64,
+     "rows_x_positions": 786688,
+     "layer_mean_abs": 0.557903528213501,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.0
+    },
+    "features_extractor.pokemon_encoder.move_network.1": {
+     "units": 96,
+     "rows_x_positions": 764288,
+     "layer_mean_abs": 0.7157189846038818,
+     "dormant_0.0": 0.07292,
+     "dormant_0.025": 0.09375,
+     "dormant_0.1": 0.17708
+    },
+    "features_extractor.pokemon_encoder.role_encoder.1": {
+     "units": 256,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.426715224981308,
+     "dormant_0.0": 0.03906,
+     "dormant_0.025": 0.04688,
+     "dormant_0.1": 0.09375
+    },
+    "features_extractor.pokemon_encoder.dynamic_encoder.1": {
+     "units": 128,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.27225399017333984,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.10938,
+     "dormant_0.1": 0.20312
+    },
+    "features_extractor.team_transformer.transformer_layers.0.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.35706591606140137,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.00781
+    },
+    "features_extractor.team_transformer.transformer_layers.1.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.3896998167037964,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.02344
+    },
+    "features_extractor.hidden_opp_belief.decoder.ffn": {
+     "units": 256,
+     "rows_x_positions": 84336,
+     "layer_mean_abs": 0.3227720260620117,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.02344
+    },
+    "features_extractor.win_head.net.2": {
+     "units": 128,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 0.3321987986564636,
+     "dormant_0.0": 0.375,
+     "dormant_0.025": 0.60938,
+     "dormant_0.1": 0.66406
+    },
+    "features_extractor.activation": {
+     "units": 512,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 2.1329588890075684,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.00195,
+     "dormant_0.1": 0.04297
+    }
+   }
+  },
+  "X26@180M": {
+   "pooled": {
+    "dormant_0.0": 0.0292,
+    "dormant_0.025": 0.06045,
+    "dormant_0.1": 0.09682
+   },
+   "units": 1952,
+   "weight_norm_total_excl_ridealong": 237.6767,
+   "layers": {
+    "features_extractor.pokemon_encoder.move_latent_encoder.mlp.1": {
+     "units": 64,
+     "rows_x_positions": 786688,
+     "layer_mean_abs": 0.5571544170379639,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.0
+    },
+    "features_extractor.pokemon_encoder.move_network.1": {
+     "units": 96,
+     "rows_x_positions": 764288,
+     "layer_mean_abs": 0.7115946412086487,
+     "dormant_0.0": 0.07292,
+     "dormant_0.025": 0.09375,
+     "dormant_0.1": 0.20833
+    },
+    "features_extractor.pokemon_encoder.role_encoder.1": {
+     "units": 256,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.42697030305862427,
+     "dormant_0.0": 0.03906,
+     "dormant_0.025": 0.05078,
+     "dormant_0.1": 0.08984
+    },
+    "features_extractor.pokemon_encoder.dynamic_encoder.1": {
+     "units": 128,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.2753886580467224,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.11719,
+     "dormant_0.1": 0.1875
+    },
+    "features_extractor.team_transformer.transformer_layers.0.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.3629406690597534,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.0
+    },
+    "features_extractor.team_transformer.transformer_layers.1.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.4065004587173462,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.03516
+    },
+    "features_extractor.hidden_opp_belief.decoder.ffn": {
+     "units": 256,
+     "rows_x_positions": 84336,
+     "layer_mean_abs": 0.3426746428012848,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.01953
+    },
+    "features_extractor.win_head.net.2": {
+     "units": 128,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 0.34143561124801636,
+     "dormant_0.0": 0.3125,
+     "dormant_0.025": 0.625,
+     "dormant_0.1": 0.6875
+    },
+    "features_extractor.activation": {
+     "units": 512,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 2.1384799480438232,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.00195,
+     "dormant_0.1": 0.03906
+    }
+   }
+  },
+  "X26@230M": {
+   "pooled": {
+    "dormant_0.0": 0.02869,
+    "dormant_0.025": 0.05891,
+    "dormant_0.1": 0.09324
+   },
+   "units": 1952,
+   "weight_norm_total_excl_ridealong": 239.7429,
+   "layers": {
+    "features_extractor.pokemon_encoder.move_latent_encoder.mlp.1": {
+     "units": 64,
+     "rows_x_positions": 786688,
+     "layer_mean_abs": 0.5504146814346313,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.0
+    },
+    "features_extractor.pokemon_encoder.move_network.1": {
+     "units": 96,
+     "rows_x_positions": 764288,
+     "layer_mean_abs": 0.7037598490715027,
+     "dormant_0.0": 0.07292,
+     "dormant_0.025": 0.09375,
+     "dormant_0.1": 0.1875
+    },
+    "features_extractor.pokemon_encoder.role_encoder.1": {
+     "units": 256,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.4207753837108612,
+     "dormant_0.0": 0.03906,
+     "dormant_0.025": 0.04688,
+     "dormant_0.1": 0.08984
+    },
+    "features_extractor.pokemon_encoder.dynamic_encoder.1": {
+     "units": 128,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.27036407589912415,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.11719,
+     "dormant_0.1": 0.17969
+    },
+    "features_extractor.team_transformer.transformer_layers.0.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.3650232255458832,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.0
+    },
+    "features_extractor.team_transformer.transformer_layers.1.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.4163355827331543,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.03516
+    },
+    "features_extractor.hidden_opp_belief.decoder.ffn": {
+     "units": 256,
+     "rows_x_positions": 84336,
+     "layer_mean_abs": 0.35886791348457336,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.01172
+    },
+    "features_extractor.win_head.net.2": {
+     "units": 128,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 0.31372183561325073,
+     "dormant_0.0": 0.30469,
+     "dormant_0.025": 0.60156,
+     "dormant_0.1": 0.66406
+    },
+    "features_extractor.activation": {
+     "units": 512,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 2.238246440887451,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.00391,
+     "dormant_0.1": 0.04102
+    }
+   }
+  },
+  "X26@280M": {
+   "pooled": {
+    "dormant_0.0": 0.0292,
+    "dormant_0.025": 0.05686,
+    "dormant_0.1": 0.08965
+   },
+   "units": 1952,
+   "weight_norm_total_excl_ridealong": 241.1015,
+   "layers": {
+    "features_extractor.pokemon_encoder.move_latent_encoder.mlp.1": {
+     "units": 64,
+     "rows_x_positions": 786688,
+     "layer_mean_abs": 0.5441575646400452,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.0
+    },
+    "features_extractor.pokemon_encoder.move_network.1": {
+     "units": 96,
+     "rows_x_positions": 764288,
+     "layer_mean_abs": 0.6941204071044922,
+     "dormant_0.0": 0.07292,
+     "dormant_0.025": 0.09375,
+     "dormant_0.1": 0.1875
+    },
+    "features_extractor.pokemon_encoder.role_encoder.1": {
+     "units": 256,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.41383835673332214,
+     "dormant_0.0": 0.03516,
+     "dormant_0.025": 0.04688,
+     "dormant_0.1": 0.08594
+    },
+    "features_extractor.pokemon_encoder.dynamic_encoder.1": {
+     "units": 128,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.26864439249038696,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.10938,
+     "dormant_0.1": 0.19531
+    },
+    "features_extractor.team_transformer.transformer_layers.0.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.36680668592453003,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.0
+    },
+    "features_extractor.team_transformer.transformer_layers.1.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.4407578110694885,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.04297
+    },
+    "features_extractor.hidden_opp_belief.decoder.ffn": {
+     "units": 256,
+     "rows_x_positions": 84336,
+     "layer_mean_abs": 0.33761605620384216,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.00391
+    },
+    "features_extractor.win_head.net.2": {
+     "units": 128,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 0.2971932590007782,
+     "dormant_0.0": 0.32031,
+     "dormant_0.025": 0.59375,
+     "dormant_0.1": 0.65625
+    },
+    "features_extractor.activation": {
+     "units": 512,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 2.317667245864868,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.02734
+    }
+   }
+  },
+  "X26@330M": {
+   "pooled": {
+    "dormant_0.0": 0.03279,
+    "dormant_0.025": 0.05891,
+    "dormant_0.1": 0.09273
+   },
+   "units": 1952,
+   "weight_norm_total_excl_ridealong": 242.0354,
+   "layers": {
+    "features_extractor.pokemon_encoder.move_latent_encoder.mlp.1": {
+     "units": 64,
+     "rows_x_positions": 786688,
+     "layer_mean_abs": 0.5401436686515808,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.0
+    },
+    "features_extractor.pokemon_encoder.move_network.1": {
+     "units": 96,
+     "rows_x_positions": 764288,
+     "layer_mean_abs": 0.6849731802940369,
+     "dormant_0.0": 0.07292,
+     "dormant_0.025": 0.09375,
+     "dormant_0.1": 0.15625
+    },
+    "features_extractor.pokemon_encoder.role_encoder.1": {
+     "units": 256,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.41362518072128296,
+     "dormant_0.0": 0.03516,
+     "dormant_0.025": 0.04688,
+     "dormant_0.1": 0.08594
+    },
+    "features_extractor.pokemon_encoder.dynamic_encoder.1": {
+     "units": 128,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.2703876793384552,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.10156,
+     "dormant_0.1": 0.1875
+    },
+    "features_extractor.team_transformer.transformer_layers.0.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.3683922588825226,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.0
+    },
+    "features_extractor.team_transformer.transformer_layers.1.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.4207373261451721,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.05859
+    },
+    "features_extractor.hidden_opp_belief.decoder.ffn": {
+     "units": 256,
+     "rows_x_positions": 84336,
+     "layer_mean_abs": 0.32855424284935,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.01172
+    },
+    "features_extractor.win_head.net.2": {
+     "units": 128,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 0.30162689089775085,
+     "dormant_0.0": 0.375,
+     "dormant_0.025": 0.625,
+     "dormant_0.1": 0.67969
+    },
+    "features_extractor.activation": {
+     "units": 512,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 2.4364609718322754,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.00195,
+     "dormant_0.1": 0.0293
+    }
+   }
+  },
+  "X26@380M": {
+   "pooled": {
+    "dormant_0.0": 0.02971,
+    "dormant_0.025": 0.05584,
+    "dormant_0.1": 0.08914
+   },
+   "units": 1952,
+   "weight_norm_total_excl_ridealong": 242.7496,
+   "layers": {
+    "features_extractor.pokemon_encoder.move_latent_encoder.mlp.1": {
+     "units": 64,
+     "rows_x_positions": 786688,
+     "layer_mean_abs": 0.5367045402526855,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.0
+    },
+    "features_extractor.pokemon_encoder.move_network.1": {
+     "units": 96,
+     "rows_x_positions": 764288,
+     "layer_mean_abs": 0.6826910972595215,
+     "dormant_0.0": 0.07292,
+     "dormant_0.025": 0.09375,
+     "dormant_0.1": 0.15625
+    },
+    "features_extractor.pokemon_encoder.role_encoder.1": {
+     "units": 256,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.41136378049850464,
+     "dormant_0.0": 0.03516,
+     "dormant_0.025": 0.04297,
+     "dormant_0.1": 0.09375
+    },
+    "features_extractor.pokemon_encoder.dynamic_encoder.1": {
+     "units": 128,
+     "rows_x_positions": 191072,
+     "layer_mean_abs": 0.26868128776550293,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.08594,
+     "dormant_0.1": 0.17969
+    },
+    "features_extractor.team_transformer.transformer_layers.0.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.37687331438064575,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.0
+    },
+    "features_extractor.team_transformer.transformer_layers.1.ffn": {
+     "units": 256,
+     "rows_x_positions": 899584,
+     "layer_mean_abs": 0.42752203345298767,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.04688
+    },
+    "features_extractor.hidden_opp_belief.decoder.ffn": {
+     "units": 256,
+     "rows_x_positions": 84336,
+     "layer_mean_abs": 0.34120458364486694,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.00391,
+     "dormant_0.1": 0.01172
+    },
+    "features_extractor.win_head.net.2": {
+     "units": 128,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 0.27546828985214233,
+     "dormant_0.0": 0.32812,
+     "dormant_0.025": 0.60156,
+     "dormant_0.1": 0.67188
+    },
+    "features_extractor.activation": {
+     "units": 512,
+     "rows_x_positions": 14056,
+     "layer_mean_abs": 2.424400568008423,
+     "dormant_0.0": 0.0,
+     "dormant_0.025": 0.0,
+     "dormant_0.1": 0.02148
+    }
+   }
+  }
+ }
+}

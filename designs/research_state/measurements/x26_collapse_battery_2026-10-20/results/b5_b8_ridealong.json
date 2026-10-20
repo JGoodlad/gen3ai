@@ -1,0 +1,1457 @@
+{
+ "schema": "x26_collapse_battery_b5_b8_v1",
+ "rows": {
+  "X26@10M": {
+   "heads": "trained",
+   "bank": {
+    "battles": 200,
+    "content_sha256": "8ca1bfa544bffcf6750bbfb226d44ef90bfdcf5c0eb70701fde6e492a93c10a4",
+    "decisions": 6256
+   },
+   "b5": {
+    "K2final": {
+     "A_spearman": {
+      "ci": [
+       0.1244,
+       0.206
+      ],
+      "mean": 0.1662,
+      "n": 415
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.0431,
+       0.0003
+      ],
+      "delta": -0.0222,
+      "n": 415
+     },
+     "A_starved_top2": {
+      "chance": 0.2546,
+      "ci": [
+       0.0,
+       0.0408
+      ],
+      "mean": 0.0155,
+      "n": 129
+     },
+     "logits_starved_top2": {
+      "chance": 0.2546,
+      "ci": [
+       0.0067,
+       0.0616
+      ],
+      "mean": 0.031,
+      "n": 129
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.5097,
+      "ci": [
+       0.4537,
+       0.562
+      ],
+      "n_neg": 2023,
+      "n_pos": 129
+     }
+    },
+    "N0final75M": {
+     "A_spearman": {
+      "ci": [
+       0.0393,
+       0.1275
+      ],
+      "mean": 0.0815,
+      "n": 415
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.0593,
+       -0.01
+      ],
+      "delta": -0.0342,
+      "n": 415
+     },
+     "A_starved_top2": {
+      "chance": 0.256,
+      "ci": [
+       0.0065,
+       0.0647
+      ],
+      "mean": 0.0317,
+      "n": 126
+     },
+     "logits_starved_top2": {
+      "chance": 0.256,
+      "ci": [
+       0.0,
+       0.042
+      ],
+      "mean": 0.0159,
+      "n": 126
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.5638,
+      "ci": [
+       0.5069,
+       0.6204
+      ],
+      "n_neg": 1984,
+      "n_pos": 126
+     }
+    },
+    "C_fixfinal": {
+     "A_spearman": {
+      "ci": [
+       0.0801,
+       0.1687
+      ],
+      "mean": 0.1229,
+      "n": 418
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.0493,
+       -0.0044
+      ],
+      "delta": -0.0264,
+      "n": 418
+     },
+     "A_starved_top2": {
+      "chance": 0.261,
+      "ci": [
+       0.0079,
+       0.0686
+      ],
+      "mean": 0.0342,
+      "n": 117
+     },
+     "logits_starved_top2": {
+      "chance": 0.261,
+      "ci": [
+       0.0,
+       0.0559
+      ],
+      "mean": 0.0256,
+      "n": 117
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.5301,
+      "ci": [
+       0.4761,
+       0.5817
+      ],
+      "n_neg": 2005,
+      "n_pos": 117
+     }
+    }
+   },
+   "b8_coverage": {
+    "rnd": {
+     "b1_exploiter": {
+      "ci": [
+       0.5232,
+       0.6646
+      ],
+      "value": 0.59651
+     },
+     "b2_late_game": {
+      "ci": [
+       0.7864,
+       0.9466
+      ],
+      "value": 0.85355
+     }
+    },
+    "rndv_fast": {
+     "b1_exploiter": {
+      "ci": [
+       0.4622,
+       0.6094
+      ],
+      "value": 0.53659
+     },
+     "b2_late_game": {
+      "ci": [
+       0.838,
+       0.8954
+      ],
+      "value": 0.8577
+     }
+    },
+    "rndv_decay": {
+     "b1_exploiter": {
+      "ci": [
+       0.4976,
+       0.6264
+      ],
+      "value": 0.56356
+     },
+     "b2_late_game": {
+      "ci": [
+       0.7357,
+       0.9305
+      ],
+      "value": 0.80785
+     }
+    },
+    "rndv_small": {
+     "b1_exploiter": {
+      "ci": [
+       0.492,
+       0.6236
+      ],
+      "value": 0.55812
+     },
+     "b2_late_game": {
+      "ci": [
+       0.6065,
+       0.9949
+      ],
+      "value": 0.76792
+     }
+    },
+    "rndv_feat": {
+     "b1_exploiter": {
+      "ci": [
+       0.4874,
+       0.6919
+      ],
+      "value": 0.59027
+     },
+     "b2_late_game": {
+      "ci": [
+       0.7899,
+       0.9982
+      ],
+      "value": 0.93291
+     }
+    }
+   },
+   "b8_saturation_rel_spread": {
+    "rnd": 0.508106,
+    "rndv_fast": 0.91983,
+    "rndv_decay": 0.503479,
+    "rndv_small": 0.493272,
+    "rndv_feat": 0.723232
+   },
+   "b8_median_raw_err": {
+    "rnd": 0.00239454,
+    "rndv_fast": 9.27529e-05,
+    "rndv_decay": 0.00563064,
+    "rndv_small": 0.0100703,
+    "rndv_feat": 0.00207933
+   },
+   "ens_std_auroc_v_err": 0.6528
+  },
+  "X26@180M": {
+   "heads": "trained",
+   "bank": {
+    "battles": 200,
+    "content_sha256": "8ca1bfa544bffcf6750bbfb226d44ef90bfdcf5c0eb70701fde6e492a93c10a4",
+    "decisions": 6256
+   },
+   "b5": {
+    "K2final": {
+     "A_spearman": {
+      "ci": [
+       0.1454,
+       0.2279
+      ],
+      "mean": 0.1854,
+      "n": 415
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.0561,
+       0.0029
+      ],
+      "delta": -0.0242,
+      "n": 415
+     },
+     "A_starved_top2": {
+      "chance": 0.2491,
+      "ci": [
+       0.0,
+       0.0428
+      ],
+      "mean": 0.016,
+      "n": 125
+     },
+     "logits_starved_top2": {
+      "chance": 0.2491,
+      "ci": [
+       0.0,
+       0.0428
+      ],
+      "mean": 0.016,
+      "n": 125
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.4943,
+      "ci": [
+       0.4422,
+       0.5485
+      ],
+      "n_neg": 2027,
+      "n_pos": 125
+     }
+    },
+    "N0final75M": {
+     "A_spearman": {
+      "ci": [
+       0.0812,
+       0.1694
+      ],
+      "mean": 0.1258,
+      "n": 415
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.0478,
+       0.0118
+      ],
+      "delta": -0.0171,
+      "n": 415
+     },
+     "A_starved_top2": {
+      "chance": 0.2563,
+      "ci": [
+       0.016,
+       0.0828
+      ],
+      "mean": 0.0483,
+      "n": 145
+     },
+     "logits_starved_top2": {
+      "chance": 0.2563,
+      "ci": [
+       0.016,
+       0.0828
+      ],
+      "mean": 0.0483,
+      "n": 145
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.5545,
+      "ci": [
+       0.5064,
+       0.604
+      ],
+      "n_neg": 1965,
+      "n_pos": 145
+     }
+    },
+    "C_fixfinal": {
+     "A_spearman": {
+      "ci": [
+       0.1477,
+       0.228
+      ],
+      "mean": 0.1869,
+      "n": 418
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.0455,
+       0.0113
+      ],
+      "delta": -0.0173,
+      "n": 418
+     },
+     "A_starved_top2": {
+      "chance": 0.2579,
+      "ci": [
+       0.0163,
+       0.0918
+      ],
+      "mean": 0.0496,
+      "n": 121
+     },
+     "logits_starved_top2": {
+      "chance": 0.2579,
+      "ci": [
+       0.0074,
+       0.0673
+      ],
+      "mean": 0.0331,
+      "n": 121
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.5411,
+      "ci": [
+       0.4873,
+       0.5949
+      ],
+      "n_neg": 2001,
+      "n_pos": 121
+     }
+    }
+   },
+   "b8_coverage": {
+    "rnd": {
+     "b1_exploiter": {
+      "ci": [
+       0.5307,
+       0.691
+      ],
+      "value": 0.61382
+     },
+     "b2_late_game": {
+      "ci": [
+       0.6205,
+       0.7984
+      ],
+      "value": 0.74913
+     }
+    },
+    "rndv_fast": {
+     "b1_exploiter": {
+      "ci": [
+       0.4244,
+       0.5722
+      ],
+      "value": 0.50206
+     },
+     "b2_late_game": {
+      "ci": [
+       0.6704,
+       0.9261
+      ],
+      "value": 0.75126
+     }
+    },
+    "rndv_decay": {
+     "b1_exploiter": {
+      "ci": [
+       0.47,
+       0.5797
+      ],
+      "value": 0.52671
+     },
+     "b2_late_game": {
+      "ci": [
+       0.8274,
+       0.9707
+      ],
+      "value": 0.88868
+     }
+    },
+    "rndv_small": {
+     "b1_exploiter": {
+      "ci": [
+       0.468,
+       0.5806
+      ],
+      "value": 0.52134
+     },
+     "b2_late_game": {
+      "ci": [
+       0.6508,
+       0.9933
+      ],
+      "value": 0.79336
+     }
+    },
+    "rndv_feat": {
+     "b1_exploiter": {
+      "ci": [
+       0.371,
+       0.5385
+      ],
+      "value": 0.45653
+     },
+     "b2_late_game": {
+      "ci": [
+       0.8983,
+       0.9585
+      ],
+      "value": 0.92638
+     }
+    }
+   },
+   "b8_saturation_rel_spread": {
+    "rnd": 0.720485,
+    "rndv_fast": 0.495223,
+    "rndv_decay": 0.479645,
+    "rndv_small": 0.485276,
+    "rndv_feat": 1.04993
+   },
+   "b8_median_raw_err": {
+    "rnd": 1.08108e-06,
+    "rndv_fast": 4.75799e-05,
+    "rndv_decay": 0.00338864,
+    "rndv_small": 0.00944933,
+    "rndv_feat": 1.55012e-05
+   },
+   "ens_std_auroc_v_err": 0.6614
+  },
+  "X26@230M": {
+   "heads": "trained",
+   "bank": {
+    "battles": 200,
+    "content_sha256": "8ca1bfa544bffcf6750bbfb226d44ef90bfdcf5c0eb70701fde6e492a93c10a4",
+    "decisions": 6256
+   },
+   "b5": {
+    "K2final": {
+     "A_spearman": {
+      "ci": [
+       0.1591,
+       0.2497
+      ],
+      "mean": 0.2045,
+      "n": 415
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.0374,
+       0.0086
+      ],
+      "delta": -0.0154,
+      "n": 415
+     },
+     "A_starved_top2": {
+      "chance": 0.257,
+      "ci": [
+       0.0211,
+       0.0929
+      ],
+      "mean": 0.0548,
+      "n": 146
+     },
+     "logits_starved_top2": {
+      "chance": 0.257,
+      "ci": [
+       0.0138,
+       0.0779
+      ],
+      "mean": 0.0411,
+      "n": 146
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.5519,
+      "ci": [
+       0.4998,
+       0.6018
+      ],
+      "n_neg": 2006,
+      "n_pos": 146
+     }
+    },
+    "N0final75M": {
+     "A_spearman": {
+      "ci": [
+       0.0882,
+       0.1752
+      ],
+      "mean": 0.1309,
+      "n": 415
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.0283,
+       0.0181
+      ],
+      "delta": -0.004,
+      "n": 415
+     },
+     "A_starved_top2": {
+      "chance": 0.2671,
+      "ci": [
+       0.0208,
+       0.0898
+      ],
+      "mean": 0.0537,
+      "n": 149
+     },
+     "logits_starved_top2": {
+      "chance": 0.2671,
+      "ci": [
+       0.0208,
+       0.0898
+      ],
+      "mean": 0.0537,
+      "n": 149
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.5573,
+      "ci": [
+       0.5042,
+       0.6109
+      ],
+      "n_neg": 1961,
+      "n_pos": 149
+     }
+    },
+    "C_fixfinal": {
+     "A_spearman": {
+      "ci": [
+       0.1634,
+       0.2391
+      ],
+      "mean": 0.1996,
+      "n": 418
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.0228,
+       0.0157
+      ],
+      "delta": -0.0029,
+      "n": 418
+     },
+     "A_starved_top2": {
+      "chance": 0.2724,
+      "ci": [
+       0.0238,
+       0.0992
+      ],
+      "mean": 0.0584,
+      "n": 137
+     },
+     "logits_starved_top2": {
+      "chance": 0.2724,
+      "ci": [
+       0.0143,
+       0.0821
+      ],
+      "mean": 0.0438,
+      "n": 137
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.5792,
+      "ci": [
+       0.5318,
+       0.6256
+      ],
+      "n_neg": 1985,
+      "n_pos": 137
+     }
+    }
+   },
+   "b8_coverage": {
+    "rnd": {
+     "b1_exploiter": {
+      "ci": [
+       0.5878,
+       0.7038
+      ],
+      "value": 0.65017
+     },
+     "b2_late_game": {
+      "ci": [
+       0.6622,
+       0.8073
+      ],
+      "value": 0.70097
+     }
+    },
+    "rndv_fast": {
+     "b1_exploiter": {
+      "ci": [
+       0.4753,
+       0.6462
+      ],
+      "value": 0.5593
+     },
+     "b2_late_game": {
+      "ci": [
+       0.9019,
+       0.9692
+      ],
+      "value": 0.91705
+     }
+    },
+    "rndv_decay": {
+     "b1_exploiter": {
+      "ci": [
+       0.4798,
+       0.6034
+      ],
+      "value": 0.5411
+     },
+     "b2_late_game": {
+      "ci": [
+       0.73,
+       0.9756
+      ],
+      "value": 0.83399
+     }
+    },
+    "rndv_small": {
+     "b1_exploiter": {
+      "ci": [
+       0.4679,
+       0.5753
+      ],
+      "value": 0.51897
+     },
+     "b2_late_game": {
+      "ci": [
+       0.6243,
+       0.9941
+      ],
+      "value": 0.77893
+     }
+    },
+    "rndv_feat": {
+     "b1_exploiter": {
+      "ci": [
+       0.3583,
+       0.5401
+      ],
+      "value": 0.44875
+     },
+     "b2_late_game": {
+      "ci": [
+       0.8402,
+       0.982
+      ],
+      "value": 0.89909
+     }
+    }
+   },
+   "b8_saturation_rel_spread": {
+    "rnd": 0.786145,
+    "rndv_fast": 0.415521,
+    "rndv_decay": 0.474669,
+    "rndv_small": 0.484401,
+    "rndv_feat": 1.08614
+   },
+   "b8_median_raw_err": {
+    "rnd": 5.324e-07,
+    "rndv_fast": 5.14112e-05,
+    "rndv_decay": 0.00338108,
+    "rndv_small": 0.00946712,
+    "rndv_feat": 1.09693e-05
+   },
+   "ens_std_auroc_v_err": 0.649
+  },
+  "X26@280M": {
+   "heads": "trained",
+   "bank": {
+    "battles": 200,
+    "content_sha256": "8ca1bfa544bffcf6750bbfb226d44ef90bfdcf5c0eb70701fde6e492a93c10a4",
+    "decisions": 6256
+   },
+   "b5": {
+    "K2final": {
+     "A_spearman": {
+      "ci": [
+       0.1348,
+       0.2291
+      ],
+      "mean": 0.1821,
+      "n": 415
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.0439,
+       0.0144
+      ],
+      "delta": -0.0153,
+      "n": 415
+     },
+     "A_starved_top2": {
+      "chance": 0.2564,
+      "ci": [
+       0.006,
+       0.0571
+      ],
+      "mean": 0.0272,
+      "n": 147
+     },
+     "logits_starved_top2": {
+      "chance": 0.2564,
+      "ci": [
+       0.0,
+       0.0461
+      ],
+      "mean": 0.0204,
+      "n": 147
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.5811,
+      "ci": [
+       0.5314,
+       0.6298
+      ],
+      "n_neg": 2005,
+      "n_pos": 147
+     }
+    },
+    "N0final75M": {
+     "A_spearman": {
+      "ci": [
+       0.0887,
+       0.1746
+      ],
+      "mean": 0.1328,
+      "n": 415
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.0414,
+       0.0149
+      ],
+      "delta": -0.0129,
+      "n": 415
+     },
+     "A_starved_top2": {
+      "chance": 0.2658,
+      "ci": [
+       0.0132,
+       0.0755
+      ],
+      "mean": 0.0424,
+      "n": 165
+     },
+     "logits_starved_top2": {
+      "chance": 0.2658,
+      "ci": [
+       0.0049,
+       0.0488
+      ],
+      "mean": 0.0242,
+      "n": 165
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.5746,
+      "ci": [
+       0.5228,
+       0.6264
+      ],
+      "n_neg": 1945,
+      "n_pos": 165
+     }
+    },
+    "C_fixfinal": {
+     "A_spearman": {
+      "ci": [
+       0.1309,
+       0.2177
+      ],
+      "mean": 0.1745,
+      "n": 418
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.05,
+       0.0041
+      ],
+      "delta": -0.0237,
+      "n": 418
+     },
+     "A_starved_top2": {
+      "chance": 0.2696,
+      "ci": [
+       0.0139,
+       0.0791
+      ],
+      "mean": 0.0417,
+      "n": 144
+     },
+     "logits_starved_top2": {
+      "chance": 0.2696,
+      "ci": [
+       0.0,
+       0.0364
+      ],
+      "mean": 0.0139,
+      "n": 144
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.5502,
+      "ci": [
+       0.4982,
+       0.5984
+      ],
+      "n_neg": 1978,
+      "n_pos": 144
+     }
+    }
+   },
+   "b8_coverage": {
+    "rnd": {
+     "b1_exploiter": {
+      "ci": [
+       0.5796,
+       0.6977
+      ],
+      "value": 0.64455
+     },
+     "b2_late_game": {
+      "ci": [
+       0.6152,
+       0.7793
+      ],
+      "value": 0.65432
+     }
+    },
+    "rndv_fast": {
+     "b1_exploiter": {
+      "ci": [
+       0.4115,
+       0.5205
+      ],
+      "value": 0.46704
+     },
+     "b2_late_game": {
+      "ci": [
+       0.6191,
+       0.7216
+      ],
+      "value": 0.68706
+     }
+    },
+    "rndv_decay": {
+     "b1_exploiter": {
+      "ci": [
+       0.4748,
+       0.61
+      ],
+      "value": 0.54234
+     },
+     "b2_late_game": {
+      "ci": [
+       0.7689,
+       0.9838
+      ],
+      "value": 0.85798
+     }
+    },
+    "rndv_small": {
+     "b1_exploiter": {
+      "ci": [
+       0.4639,
+       0.5739
+      ],
+      "value": 0.51666
+     },
+     "b2_late_game": {
+      "ci": [
+       0.6192,
+       0.9934
+      ],
+      "value": 0.77475
+     }
+    },
+    "rndv_feat": {
+     "b1_exploiter": {
+      "ci": [
+       0.3915,
+       0.5643
+      ],
+      "value": 0.47493
+     },
+     "b2_late_game": {
+      "ci": [
+       0.7663,
+       0.9854
+      ],
+      "value": 0.85325
+     }
+    }
+   },
+   "b8_saturation_rel_spread": {
+    "rnd": 0.547529,
+    "rndv_fast": 0.649002,
+    "rndv_decay": 0.479387,
+    "rndv_small": 0.483565,
+    "rndv_feat": 0.976145
+   },
+   "b8_median_raw_err": {
+    "rnd": 7.88571e-07,
+    "rndv_fast": 3.31804e-05,
+    "rndv_decay": 0.00339178,
+    "rndv_small": 0.00947959,
+    "rndv_feat": 8.35865e-06
+   },
+   "ens_std_auroc_v_err": 0.61
+  },
+  "X26@330M": {
+   "heads": "trained",
+   "bank": {
+    "battles": 200,
+    "content_sha256": "8ca1bfa544bffcf6750bbfb226d44ef90bfdcf5c0eb70701fde6e492a93c10a4",
+    "decisions": 6256
+   },
+   "b5": {
+    "K2final": {
+     "A_spearman": {
+      "ci": [
+       0.1497,
+       0.2359
+      ],
+      "mean": 0.1924,
+      "n": 415
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.0343,
+       0.0192
+      ],
+      "delta": -0.0084,
+      "n": 415
+     },
+     "A_starved_top2": {
+      "chance": 0.2558,
+      "ci": [
+       0.0,
+       0.0476
+      ],
+      "mean": 0.0201,
+      "n": 149
+     },
+     "logits_starved_top2": {
+      "chance": 0.2558,
+      "ci": [
+       0.0058,
+       0.0548
+      ],
+      "mean": 0.0268,
+      "n": 149
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.517,
+      "ci": [
+       0.4641,
+       0.5727
+      ],
+      "n_neg": 2003,
+      "n_pos": 149
+     }
+    },
+    "N0final75M": {
+     "A_spearman": {
+      "ci": [
+       0.0933,
+       0.1736
+      ],
+      "mean": 0.1343,
+      "n": 415
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.0366,
+       0.0168
+      ],
+      "delta": -0.0085,
+      "n": 415
+     },
+     "A_starved_top2": {
+      "chance": 0.2635,
+      "ci": [
+       0.0122,
+       0.0658
+      ],
+      "mean": 0.0364,
+      "n": 165
+     },
+     "logits_starved_top2": {
+      "chance": 0.2635,
+      "ci": [
+       0.0117,
+       0.0659
+      ],
+      "mean": 0.0364,
+      "n": 165
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.5794,
+      "ci": [
+       0.5252,
+       0.6383
+      ],
+      "n_neg": 1945,
+      "n_pos": 165
+     }
+    },
+    "C_fixfinal": {
+     "A_spearman": {
+      "ci": [
+       0.1484,
+       0.238
+      ],
+      "mean": 0.1931,
+      "n": 418
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.0268,
+       0.0185
+      ],
+      "delta": -0.0034,
+      "n": 418
+     },
+     "A_starved_top2": {
+      "chance": 0.2635,
+      "ci": [
+       0.0058,
+       0.0568
+      ],
+      "mean": 0.0272,
+      "n": 147
+     },
+     "logits_starved_top2": {
+      "chance": 0.2635,
+      "ci": [
+       0.0,
+       0.046
+      ],
+      "mean": 0.0204,
+      "n": 147
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.5827,
+      "ci": [
+       0.5381,
+       0.6287
+      ],
+      "n_neg": 1975,
+      "n_pos": 147
+     }
+    }
+   },
+   "b8_coverage": {
+    "rnd": {
+     "b1_exploiter": {
+      "ci": [
+       0.482,
+       0.6428
+      ],
+      "value": 0.55849
+     },
+     "b2_late_game": {
+      "ci": [
+       0.7052,
+       0.8862
+      ],
+      "value": 0.78165
+     }
+    },
+    "rndv_fast": {
+     "b1_exploiter": {
+      "ci": [
+       0.4634,
+       0.5954
+      ],
+      "value": 0.53251
+     },
+     "b2_late_game": {
+      "ci": [
+       0.6365,
+       0.8647
+      ],
+      "value": 0.69235
+     }
+    },
+    "rndv_decay": {
+     "b1_exploiter": {
+      "ci": [
+       0.4699,
+       0.5891
+      ],
+      "value": 0.52909
+     },
+     "b2_late_game": {
+      "ci": [
+       0.759,
+       0.9763
+      ],
+      "value": 0.84992
+     }
+    },
+    "rndv_small": {
+     "b1_exploiter": {
+      "ci": [
+       0.463,
+       0.5738
+      ],
+      "value": 0.5156
+     },
+     "b2_late_game": {
+      "ci": [
+       0.6246,
+       0.9935
+      ],
+      "value": 0.77848
+     }
+    },
+    "rndv_feat": {
+     "b1_exploiter": {
+      "ci": [
+       0.3866,
+       0.5666
+      ],
+      "value": 0.472
+     },
+     "b2_late_game": {
+      "ci": [
+       0.7463,
+       0.9731
+      ],
+      "value": 0.83963
+     }
+    }
+   },
+   "b8_saturation_rel_spread": {
+    "rnd": 0.552045,
+    "rndv_fast": 0.438081,
+    "rndv_decay": 0.476404,
+    "rndv_small": 0.479401,
+    "rndv_feat": 1.00971
+   },
+   "b8_median_raw_err": {
+    "rnd": 1.38277e-06,
+    "rndv_fast": 4.12619e-05,
+    "rndv_decay": 0.00337207,
+    "rndv_small": 0.0095008,
+    "rndv_feat": 6.63941e-06
+   },
+   "ens_std_auroc_v_err": 0.6318
+  },
+  "X26@380M": {
+   "heads": "trained",
+   "bank": {
+    "battles": 200,
+    "content_sha256": "8ca1bfa544bffcf6750bbfb226d44ef90bfdcf5c0eb70701fde6e492a93c10a4",
+    "decisions": 6256
+   },
+   "b5": {
+    "K2final": {
+     "A_spearman": {
+      "ci": [
+       0.143,
+       0.2329
+      ],
+      "mean": 0.1876,
+      "n": 415
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.0328,
+       0.0065
+      ],
+      "delta": -0.0121,
+      "n": 415
+     },
+     "A_starved_top2": {
+      "chance": 0.2539,
+      "ci": [
+       0.0179,
+       0.0833
+      ],
+      "mean": 0.047,
+      "n": 149
+     },
+     "logits_starved_top2": {
+      "chance": 0.2539,
+      "ci": [
+       0.0134,
+       0.0752
+      ],
+      "mean": 0.0403,
+      "n": 149
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.5595,
+      "ci": [
+       0.5067,
+       0.6154
+      ],
+      "n_neg": 2003,
+      "n_pos": 149
+     }
+    },
+    "N0final75M": {
+     "A_spearman": {
+      "ci": [
+       0.0853,
+       0.1742
+      ],
+      "mean": 0.1309,
+      "n": 415
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.0296,
+       0.0189
+      ],
+      "delta": -0.0045,
+      "n": 415
+     },
+     "A_starved_top2": {
+      "chance": 0.2655,
+      "ci": [
+       0.0072,
+       0.0604
+      ],
+      "mean": 0.0325,
+      "n": 154
+     },
+     "logits_starved_top2": {
+      "chance": 0.2655,
+      "ci": [
+       0.0074,
+       0.0617
+      ],
+      "mean": 0.0325,
+      "n": 154
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.6063,
+      "ci": [
+       0.5564,
+       0.655
+      ],
+      "n_neg": 1956,
+      "n_pos": 154
+     }
+    },
+    "C_fixfinal": {
+     "A_spearman": {
+      "ci": [
+       0.1596,
+       0.2459
+      ],
+      "mean": 0.2027,
+      "n": 418
+     },
+     "A_minus_logits": {
+      "ci": [
+       -0.019,
+       0.0205
+      ],
+      "delta": 0.0011,
+      "n": 418
+     },
+     "A_starved_top2": {
+      "chance": 0.2606,
+      "ci": [
+       0.0217,
+       0.0959
+      ],
+      "mean": 0.0559,
+      "n": 143
+     },
+     "logits_starved_top2": {
+      "chance": 0.2606,
+      "ci": [
+       0.0132,
+       0.0763
+      ],
+      "mean": 0.042,
+      "n": 143
+     },
+     "A_std_starved_near_auroc": {
+      "auroc": 0.58,
+      "ci": [
+       0.5314,
+       0.633
+      ],
+      "n_neg": 1979,
+      "n_pos": 143
+     }
+    }
+   },
+   "b8_coverage": {
+    "rnd": {
+     "b1_exploiter": {
+      "ci": [
+       0.5096,
+       0.6378
+      ],
+      "value": 0.57778
+     },
+     "b2_late_game": {
+      "ci": [
+       0.6533,
+       0.7812
+      ],
+      "value": 0.68654
+     }
+    },
+    "rndv_fast": {
+     "b1_exploiter": {
+      "ci": [
+       0.4724,
+       0.6055
+      ],
+      "value": 0.54035
+     },
+     "b2_late_game": {
+      "ci": [
+       0.8437,
+       0.9614
+      ],
+      "value": 0.87226
+     }
+    },
+    "rndv_decay": {
+     "b1_exploiter": {
+      "ci": [
+       0.4775,
+       0.5927
+      ],
+      "value": 0.53616
+     },
+     "b2_late_game": {
+      "ci": [
+       0.7898,
+       0.9638
+      ],
+      "value": 0.86116
+     }
+    },
+    "rndv_small": {
+     "b1_exploiter": {
+      "ci": [
+       0.4664,
+       0.573
+      ],
+      "value": 0.51695
+     },
+     "b2_late_game": {
+      "ci": [
+       0.5807,
+       0.9931
+      ],
+      "value": 0.75393
+     }
+    },
+    "rndv_feat": {
+     "b1_exploiter": {
+      "ci": [
+       0.3886,
+       0.589
+      ],
+      "value": 0.48562
+     },
+     "b2_late_game": {
+      "ci": [
+       0.8781,
+       0.9739
+      ],
+      "value": 0.91384
+     }
+    }
+   },
+   "b8_saturation_rel_spread": {
+    "rnd": 0.605422,
+    "rndv_fast": 0.556009,
+    "rndv_decay": 0.480055,
+    "rndv_small": 0.481129,
+    "rndv_feat": 0.94978
+   },
+   "b8_median_raw_err": {
+    "rnd": 1.19251e-06,
+    "rndv_fast": 2.32992e-05,
+    "rndv_decay": 0.00337231,
+    "rndv_small": 0.00946785,
+    "rndv_feat": 5.7401e-06
+   },
+   "ens_std_auroc_v_err": 0.5794
+  }
+ }
+}
