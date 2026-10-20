@@ -1,0 +1,6 @@
+# X35 batch 1's TOY pin (X35_PIN_1_toy), written once by the side's first launch's GO.
+sha: 4609c15548764bdf149d803d2a5cebb7a277fbc6
+side: toy
+written_at: 2026-10-20T09:30:19+00:00
+t62_verdict: NA_TOY
+rule: AM-1 as amended by AM-8 (orchestrator 2026-10-20): every batch-1 toy arm, look 2 included, launches at this pin
