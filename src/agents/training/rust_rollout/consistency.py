@@ -652,6 +652,73 @@ def _never_unpacked(_x: Any) -> Any:
     raise RuntimeError("the behaviour probe's forward is never backpropagated (gen3_probe_releases_graph_v1)")
 
 
+def _detached_tree(v: Any, seen: Dict[int, Tuple[Any, Any]], depth: int) -> Tuple[Any, int]:
+    """``(v with every graph-carrying tensor inside it detached, how many were)`` — the walk
+    `release_autograd_stashes` runs over one module attribute (`gen3_release_walks_stashes_v1`). It reaches
+    the TYPED stash containers a forward leaves (`ExtractorStashes`, `OpStashes` and the dataclasses /
+    NamedTuples / dicts / lists / tuples they hold: `belief_supervision`, `PointerInputs`, `HypothesisSet`,
+    `OpRoster`, …). Dicts, lists and dataclasses (frozen ones too) are updated IN PLACE, so every alias of
+    the container sees the release; a tuple is rebuilt (a NamedTuple as its own type) only when something in
+    it changed. A parameter has no ``grad_fn`` and is never touched; a module is not entered (the caller
+    walks ``policy.modules()``); any other object type is left alone. A container met twice (an alias, a
+    cycle) is walked ONCE: ``seen`` maps its id to ``(itself, its released value)``, so a second alias of a
+    rebuilt tuple gets the same rebuilt tuple (holding the original keeps its id from being reused)."""
+    import dataclasses
+
+    import torch as th
+
+    if isinstance(v, th.Tensor):
+        return (v.detach(), 1) if v.grad_fn is not None else (v, 0)
+    if depth <= 0 or v is None or isinstance(v, (th.nn.Module, str, bytes, int, float, bool)):
+        return v, 0
+    if id(v) in seen:
+        new = seen[id(v)][1]
+        return new, int(new is not v)
+    n = 0
+    if isinstance(v, dict):
+        seen[id(v)] = (v, v)
+        for k, x in list(v.items()):
+            y, c = _detached_tree(x, seen, depth - 1)
+            if c:
+                v[k] = y
+                n += c
+        return v, n
+    if isinstance(v, list):
+        seen[id(v)] = (v, v)
+        for i, x in enumerate(list(v)):
+            y, c = _detached_tree(x, seen, depth - 1)
+            if c:
+                v[i] = y
+                n += c
+        return v, n
+    if isinstance(v, tuple):
+        seen[id(v)] = (v, v)
+        items = []
+        for x in v:
+            y, c = _detached_tree(x, seen, depth - 1)
+            items.append(y)
+            n += c
+        if not n:
+            return v, 0
+        new = type(v)._make(items) if hasattr(type(v), "_make") else type(v)(items)
+        seen[id(v)] = (v, new)
+        return new, n
+    if dataclasses.is_dataclass(v) and not isinstance(v, type):
+        seen[id(v)] = (v, v)
+        for f in dataclasses.fields(v):
+            y, c = _detached_tree(getattr(v, f.name), seen, depth - 1)
+            if c:
+                object.__setattr__(v, f.name, y)   # a frozen stash dataclass too: the value is unchanged
+                n += c
+        return v, n
+    return v, 0
+
+
+#: How deep the walk goes below a module attribute. The deepest stash today is three levels
+#: (`ExtractorStashes.hypothesis` → `HypothesisSet.species` → its tensor); the margin is for growth.
+_STASH_WALK_DEPTH = 8
+
+
 def release_autograd_stashes(policy: Any) -> int:
     """Drop the autograd graph an eager grad-mode forward left behind in the policy's STASHES
     (gen3_probe_releases_graph_v1). `evaluate_actions` stashes its outputs on the policy and its
@@ -660,20 +727,28 @@ def release_autograd_stashes(policy: Any) -> int:
     micro-step, until R1 overwrote them (the saved activations themselves are no longer kept at all —
     `behaviour_probe`'s `saved_tensors_hooks`). Every tensor stash with a ``grad_fn`` is replaced by its
     detached value (the value is unchanged; the next forward overwrites it anyway) and the
-    masked-distribution stash is cleared. Returns how many stashes held a graph."""
-    import torch as th
+    masked-distribution stash is cleared. Returns how many tensors held a graph.
 
+    The walk reaches INSIDE the typed stash containers (`gen3_release_walks_stashes_v1`, `_detached_tree`):
+    before, only a tensor held DIRECTLY on a module was detached, so the extractor's ``stash``
+    (`ExtractorStashes`: ``belief_supervision``'s LIVE logits, ``value_pooled``, ``pointer_inputs`` …) and
+    the op's (`OpStashes`) kept the forward's graph — and with it every activation autograd saved —
+    alive. Call it only after a forward that is NEVER backpropagated: a stash a later backward reads
+    (``belief_supervision``) loses its graph."""
     n = 0
     if getattr(policy, "_last_pi_distribution", None) is not None:
         policy._last_pi_distribution = None
         n += 1
+    seen: Dict[int, Tuple[Any, Any]] = {}
     for m in policy.modules():
         for k, v in list(vars(m).items()):
             if k in ("_parameters", "_buffers", "_modules"):
                 continue
-            if isinstance(v, th.Tensor) and v.grad_fn is not None:
-                setattr(m, k, v.detach())
-                n += 1
+            y, c = _detached_tree(v, seen, _STASH_WALK_DEPTH)
+            if c:
+                if y is not v:
+                    setattr(m, k, y)
+                n += c
     return n
 
 

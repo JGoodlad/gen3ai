@@ -2269,8 +2269,9 @@ training state resident: at update 2 it peaked at **8,223 MiB allocated** (train
   tensor (K9(b)'s probe recipe, `consistency._drop_saved`; hooks change what autograd keeps, never a kernel or a value —
   `compile_regions_memory_test` pins the reference log-probs bit-identical and that the forward saves 0 bytes, where the
   plain forward saves 2,285 tensors on the CPU golden). `release_gate_memory` then detaches the module-level stashes.
-  ⚠️ `release_autograd_stashes` reaches only tensor attributes held DIRECTLY on a module; the extractor's typed `stash`
-  container and the op's are NOT reached (the K9(b) probe relies on its hooks, as the relocation now does) — FINDING.
+  `release_autograd_stashes` walks INTO the typed stash containers (`ExtractorStashes`, `OpStashes` and the dicts /
+  tuples / dataclasses they hold — `gen3_release_walks_stashes_v1`, 2026-10-19); before, it reached only tensors held
+  DIRECTLY on a module, so a forward relying on the release alone kept its graph (`consistency_test` pins the walk).
 - **The gate hands its cache back**: `arm_compile_sentinel` calls `release_gate_memory` + `empty_cache()` after the
   LOCK, so the startup transient is not held where nothing else can use it.
 - **The update-fit check measures what training will need** (`gen3_update_fit_v2`, `designs/training/learner_lifecycle.md`

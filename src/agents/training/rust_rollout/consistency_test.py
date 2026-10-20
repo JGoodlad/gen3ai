@@ -544,3 +544,93 @@ def test_a_row_with_near_ties_at_two_calls_stays_EXCLUDED(monkeypatch):
     out = K.behaviour_probe(m)                                   # excluded: no raise
     assert out["behaviour/max_abs_dlogp_excluded"] == pytest.approx(0.0389, rel=1e-2)
     assert out["behaviour/max_abs_dlogp_judged"] < K.BEHAVIOUR_BAR
+
+
+def _graph_holders(policy) -> list:
+    """Every tensor carrying a ``grad_fn`` reachable from a module attribute of ``policy`` — through dicts,
+    lists, tuples and dataclasses (frozen ones too), the shapes the typed stashes take. Written independently
+    of `K._detached_tree`, so the pin below does not trust the walk it pins."""
+    import dataclasses
+
+    out: list = []
+    seen: set = set()
+
+    def walk(v, path, depth):
+        if th.is_tensor(v):
+            if v.grad_fn is not None:
+                out.append(path)
+            return
+        if depth == 0 or id(v) in seen or isinstance(v, (th.nn.Module, str, bytes)):
+            return
+        seen.add(id(v))
+        if isinstance(v, dict):
+            for k, x in v.items():
+                walk(x, f"{path}[{k!r}]", depth - 1)
+        elif isinstance(v, (list, tuple)):
+            for i, x in enumerate(v):
+                walk(x, f"{path}[{i}]", depth - 1)
+        elif dataclasses.is_dataclass(v) and not isinstance(v, type):
+            for f in dataclasses.fields(v):
+                walk(getattr(v, f.name), f"{path}.{f.name}", depth - 1)
+
+    for name, mod in policy.named_modules():
+        for k, v in vars(mod).items():
+            if k not in ("_parameters", "_buffers", "_modules"):
+                walk(v, f"{name or 'policy'}.{k}", 10)
+    return out
+
+
+def test_the_release_reaches_inside_the_typed_stash_containers():
+    """gen3_release_walks_stashes_v1: after an eager grad-mode forward through the extractor (no saved-tensor
+    hooks — the case that relies on the release ALONE), `release_autograd_stashes` leaves NO tensor with a
+    graph anywhere on the policy's modules — including inside the extractor's `ExtractorStashes` (the LIVE
+    `belief_supervision` logits, `value_pooled`, `pointer_inputs` …) and the op's `OpStashes`, which the
+    module-attribute-only walk missed. Fails on revert: the stash fields still hold their graph."""
+    from stable_baselines3.common.utils import obs_as_tensor
+
+    m = _model(n_steps=4, n_envs=2)
+    b = m.rollout_buffer
+    obs = {k: v.reshape(-1, *v.shape[2:]) for k, v in b.observations.items()}
+    m.policy.set_training_mode(True)
+    with th.enable_grad():
+        _v, logp, _ent = m.policy.evaluate_actions(obs_as_tensor(obs, m.device),
+                                                   th.as_tensor(b.actions.reshape(-1)),
+                                                   action_masks=b.action_masks.reshape(-1, 11))
+    del _v, logp, _ent
+    before = _graph_holders(m.policy)
+    fe = m.policy.features_extractor
+    # the premise: the forward DID leave its graph inside the typed containers, not only on direct attributes
+    assert any(".stash." in p for p in before), before
+    assert fe.stash.value_pooled is not None and fe.stash.value_pooled.grad_fn is not None
+    vp = fe.stash.value_pooled.detach().clone()
+    n = K.release_autograd_stashes(m.policy)
+    assert n >= len(before)
+    assert _graph_holders(m.policy) == []
+    assert th.equal(fe.stash.value_pooled, vp)          # released, not cleared: the value is unchanged
+
+
+def test_the_walk_rebuilds_an_aliased_tuple_once_and_updates_a_frozen_dataclass_in_place():
+    import dataclasses
+    from typing import NamedTuple
+
+    class _NT(NamedTuple):
+        a: th.Tensor
+        b: int
+
+    @dataclasses.dataclass(frozen=True)
+    class _Frozen:
+        t: th.Tensor
+        nt: _NT
+
+    w = th.ones(3, requires_grad=True)
+    g = w * 2
+    nt = _NT(g, 7)
+    fr = _Frozen(g + 1, nt)
+    box = {"x": [nt, fr], "y": nt}
+    seen: dict = {}
+    out, n = K._detached_tree(box, seen, 8)
+    assert out is box and n == 4                       # g, g+1, and the two later aliases of the rebuilt tuple
+    assert isinstance(box["x"][0], _NT) and box["x"][0].b == 7 and box["x"][0].a.grad_fn is None
+    assert box["y"] is box["x"][0]                     # the alias gets the SAME rebuilt tuple
+    assert box["x"][1] is fr and fr.t.grad_fn is None and fr.nt is box["x"][0]
+    assert th.equal(fr.t, th.full((3,), 3.0)) and w.grad_fn is None and w.requires_grad
