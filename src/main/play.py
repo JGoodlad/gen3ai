@@ -58,7 +58,7 @@ OWN_ACCOUNTS_ENV = "PS_OWN_ACCOUNTS"
 # training-tools server. (Training and eval themselves are IN-PROCESS on the Rust core: the trainer
 # connects to no server at all, so nothing here can "drop" a training run.) Nothing of ours starts,
 # stops or dials either port, so a client has no business on them and the refusal is in CODE rather
-# than in a docs warning — see the root CLAUDE.md § Showdown Server. Your own server goes on a 9XXX
+# than in a docs warning — see the root CLAUDE.md standing rule 1. Your own server goes on a 9XXX
 # port.
 RESERVED_PORTS = {8000: "the shared DEV server",
                   8001: "the reserved TRAINING server (the trainer itself is in-process and connects to none)"}

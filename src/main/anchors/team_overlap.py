@@ -24,7 +24,7 @@ Normalisation, each rule a fact rather than a judgement:
 * **formes**: a forme is matched by its OWN id (Deoxys-Speed is not Deoxys), EXCEPT a forme whose
   base stats and types equal its base species' (the Unown letters): it is the base species
   mechanically and matches as it. Formes share their base's national-dex ``num``, so nothing here is
-  keyed by ``num`` (root ``CLAUDE.md`` § Data Dependencies).
+  keyed by ``num`` (``src/agents/gen3_data/CLAUDE.md``).
 
 **What is counted, against each reference set** (:func:`overlap`):
 

@@ -14,14 +14,5 @@
     "memory": 8000,
     "agent": 1500
   },
-  "grandfathered": {
-    "CLAUDE.md": 38556,
-    "~/.claude/agents/opus-high.md": 2797,
-    "~/.claude/agents/opus-medium.md": 2688,
-    "~/.claude/agents/opus-xhigh.md": 2769,
-    "~/.claude/agents/sonnet-high.md": 2866,
-    "~/.claude/agents/sonnet-medium.md": 2884,
-    "~/.claude/agents/sonnet-xhigh.md": 2941,
-    "~/.claude/projects/<main checkout>/memory/MEMORY.md": 12393
-  }
+  "grandfathered": {}
 }

@@ -2,7 +2,7 @@
 //! natures / learnsets), generation-parameterized.
 //!
 //! **Source of truth.** Loads this repo's `data/pokemon/*.json` — the SAME files
-//! `agents.gen3_data` reads (see root CLAUDE.md "Data Dependencies"), not a
+//! `agents.gen3_data` reads (see `src/agents/gen3_data/CLAUDE.md`), not a
 //! re-derivation from poke-env/Showdown. So the Rust dex and the Python facade
 //! agree on every base stat and base power by construction; the one piece of
 //! *logic* (move category derivation) is pinned by a parity test

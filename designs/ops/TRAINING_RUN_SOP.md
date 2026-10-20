@@ -271,7 +271,7 @@ with what it measures.
 🚨 **EVERYTHING IN THAT TABLE IS A *LIVE* INSTRUMENT — the OFFLINE meters are a different tier and
 are NOT run against a live arm for a verdict.** The live ones read TensorBoard events, the launcher
 child log and checkpoint mtimes while all of those are still being appended to; the offline ones
-(the root `CLAUDE.md`'s offline-meters block: `main.elo`, `main.untaught_meter`, `main.critic_gate`,
+(the runbook's offline-meter index: `main.elo`, `main.untaught_meter`, `main.critic_gate`,
 `main.exploitability`, `main.dose`, `main.lineage`, `main.best_response_gap`, …) read a FINISHED
 run's committed artifacts, play no part in the four watch layers, and write nothing under
 `models/`. Two that a population-loop week reaches for, and which tier each belongs to:
@@ -518,6 +518,10 @@ wake. Re-create it on the next GO, written to this contract.
   text, reproduce on a short fork with `TORCH_LOGS=recompiles`, fix the caller (add its signature to the region table and prewarm it — `compile_trainer.eager_extractor`, the old eager-route wrapper, is deleted), relaunch. `⚠️ [COMPILE REGRESSION?]` (train_ms > 1.4x the
   post-lock baseline for 3 updates; `compile/regression_flag`) is a WARN — check contention first.
   Detail: `designs/training/compile_flags.md` "The compile sentinel".
+- **A live run's Tier-1 plateau tick (`python -m main.plateau tick`) is BLOCKING the GPU's next work**: launch it with
+  `GEN3AI_BLOCKING=<why>` set, at nice 0 inside the agent cores (`taskset -c 5-7,13-15`), never at nice 19 — a
+  started job cannot be reniced back down (RLIMIT_NICE 0). Measured 2026-10-19: 18 → 135 pairs/min, X34's fps
+  unaffected.
 - **Composition guard:** `reward/untracked_abs_mean` must read 0; the launch banner must match the
   registered composition (e.g. "1 TERMINAL + 0 PBRS + 0 BIAS").
 

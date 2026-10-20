@@ -1379,7 +1379,7 @@ the public `opponent_builder` (the rows' `team_set`). `rust_eval.launch.run_seed
   the module under the gate.
 - **F-ED-12: no pentanomial data exists in any RUN's eval history.**
 - **F-ED-13 (WITHDRAWN by the review):** the first draft read N0's `ladder.json` "se 16.9" as an SE. It is the 95 %
-  half-width; the se is ≈ 8.7 Elo, consistent with root `CLAUDE.md`'s "±10".
+  half-width; the se is ≈ 8.7 Elo, consistent with the runbook's ELO rule's "±10".
 - **F-ED-14 (MEASURED, the reviewer's rerun + this revision): the block-median throughput rule almost never adopts.**
   - On `sizing_B`, 5-update block medians have a paired log-ratio SD of 0.082 (level shifts), so P(adopt a free lane)
     ≈ 0.09 (`revision/blk.py`).

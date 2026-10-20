@@ -1047,7 +1047,7 @@ additionally self-contained, so they replay even after the generator changes.
 
 The golden vectors are captured from the **real** Showdown `prng.js`. Regenerate
 after any PRNG change (needs the `deps/pokemon-showdown` submodule's `dist/` +
-`node_modules` symlinks — see the root `CLAUDE.md` "Git Worktree Setup"):
+`node_modules` symlinks — `./scripts/bootstrap.sh` makes them; manual steps in `docs/DEVELOPING.md`):
 
 ```bash
 node src/rust_sim/harness/gen_prng_vectors.js

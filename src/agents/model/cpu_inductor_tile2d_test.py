@@ -56,7 +56,7 @@ def _compile(options):
 
 @pytest.fixture
 def one_thread(restore_torch_globals):
-    """A test's CPU compile and run use ONE torch thread (CLAUDE.md "One torch thread for the CPU plays")."""
+    """A test's CPU compile and run use ONE torch thread (designs/ops/testing.md "One torch thread for the CPU plays")."""
     torch.set_num_threads(1)
     try:
         yield

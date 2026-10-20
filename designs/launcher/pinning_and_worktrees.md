@@ -304,4 +304,4 @@ the no-`cwd=` spawn).
 `models/` exists **only in the main checkout** and never in a worktree —
 so anything else that needs the run archive must reach across rather than look beside itself.
 `utils.paths.main_models_dir()` is that reach (via git's shared `--git-common-dir`, the same fact
-`utils.git.get_main_repo_root()` reads); see the root `CLAUDE.md` § *Path discovery*.
+`utils.git.get_main_repo_root()` reads); see `src/utils/paths.py`.

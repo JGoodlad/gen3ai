@@ -798,7 +798,7 @@ FIX (idempotent, run from this checkout):
 
     ./scripts/bootstrap.sh
 
-or the two manual steps from the root CLAUDE.md "Git Worktree Setup":
+or the two manual steps (docs/DEVELOPING.md):
 
     git submodule update --init
     for n in dist node_modules; do \\

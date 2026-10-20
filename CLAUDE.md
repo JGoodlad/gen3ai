@@ -1,10 +1,8 @@
 # CLAUDE.md — Gen3AI Project Guide
 
-> **This file is a CONSTITUTION, a COMMAND CARD and a MAP — nothing else.** It is loaded into every
-> session, including every subagent's, so a line earns its place only if an agent that has NOT read
-> it would do the work **wrong**. Detail lives in the leaf `CLAUDE.md` files and the `designs/` docs
-> named throughout; **follow the pointer when you touch the subject.** (The previous, longer root is
-> frozen at `designs/research_state/claude_md_archive/root_CLAUDE_2026-10-09.md`.)
+Loaded into every session and subagent: the standing rules, the commands, and a map. A line stays only if an agent
+without it would do the work wrong ([`designs/ops/instruction_docs_principles.md`](designs/ops/instruction_docs_principles.md)).
+Follow the pointer when you touch the subject.
 
 ## Where the detail is
 
@@ -15,288 +13,186 @@
 | dispatch, wait on or resume agents | `designs/ops/ORCHESTRATOR_SOP.md` §2, §7 |
 | write or tier a test, run a benchmark, check a static gate | `designs/ops/testing.md`; the gate table is `docs/DEVELOPING.md` |
 | reason about the model | `designs/ARCHITECTURE.md` **first**, then `src/agents/model/CLAUDE.md` → `designs/model/` |
+| touch the observation | `src/agents/observation/CLAUDE.md` |
+| touch `data/` or the data facade | `src/agents/gen3_data/CLAUDE.md`, `tools/CLAUDE.md` |
 | reason about the research | `designs/research_state/UNDERSTANDING.md`; `ledger.md` wins any disagreement |
-| reason about search (where it works, where it does not, how far we are) | `designs/endstate/search_ledger.md` (always-current; update it with any search result), then the designs it points at |
-| give training, search or the model's inputs EXTRA information (oracle reveals, honest worlds, ceilings) | `designs/endstate/design_information_levers.md` (the ONE spec, `agents.info_levers`) |
-| touch a training flag, or quote an offline meter / ELO | `src/agents/training/CLAUDE.md` → `designs/training/<topic>.md`; the meter index + ELO rules: `designs/ops/training_runbook.md` |
-| touch the rust port | `src/rust_sim/CLAUDE.md`, then its `designs/rust_sim/<topic>.md` |
-| probe a run's traces / the prober | `src/main/prober/CLAUDE.md`, then its `designs/prober/<topic>.md` |
+| reason about search | `designs/endstate/search_ledger.md` (always-current; update it with any search result) |
+| give training, search or the model's inputs EXTRA information | `designs/endstate/design_information_levers.md` (`agents.info_levers`) |
+| touch a training flag, or quote an offline meter / ELO | `src/agents/training/CLAUDE.md` → `designs/training/<topic>.md`; meters + ELO rules: the runbook |
+| touch the rust port | `src/rust_sim/CLAUDE.md` → `designs/rust_sim/<topic>.md` |
+| probe a run's traces / the prober | `src/main/prober/CLAUDE.md` → `designs/prober/<topic>.md` |
 | play over a websocket, or read an external anchor | § Playing below, then `designs/ops/EXTERNAL_ANCHORS_SOP.md` |
-| see where the system is heading | `designs/endstate/README.md` (index + reading order) |
+| edit anything under `designs/` | `designs/CLAUDE.md` |
+| see where the system is heading | `designs/endstate/README.md` |
+
+**Rapid iteration:** breaking changes to the observation, network or action space are fine; add no compatibility
+shims. Architecture constants live only in `src/agents/model/arch_constants.py`.
 
 ---
 
-## Development Stage
+## Standing rules for EVERY session and agent — the ONE list
 
-**Rapid iteration — checkpoint compatibility is not a concern.** Breaking changes to the observation space, network architecture or action space are fine; add no backwards-compatibility shims. Architecture constants live in `src/agents/model/arch_constants.py` and **nowhere else** (`features_extractor.py` re-exports them). **Before reasoning about the model, read [`designs/ARCHITECTURE.md`](designs/ARCHITECTURE.md)** — the only document that states it *as it is now*; [`designs/CHANGELOG.md`](designs/CHANGELOG.md) is the past.
+Briefs do not repeat these; an agent that breaks one has broken its brief.
 
----
-
-## 🧱 Standing rules for EVERY session and agent — the ONE list
-
-Briefs do not repeat these; an agent that breaks one has broken its brief. Detail lives where each points.
-
-1. **Never stop, restart or signal a server or process you did not start.** Ports 8000 / 8001 are reserved and REFUSED in code; a server of your own binds a `9XXX` port and is stopped by its PID (§ Showdown Server).
-2. **Kill only by explicit PID or process group** — never `pkill -f` / a blanket kill. **No unbounded foreground wait loop**: wrap it in `timeout N` (N below the tool timeout) or run it in the background. (A hook refuses both.)
-3. **Never put the literal trainer script name in a backgrounded argv** — it trips the live-run watchers.
-4. **Edits and commits only in a worktree; main is never dirty.** Land code only via `/gen3ai-ship` (delegated or typed): routine gate green, `python -m utils.push_guard`, never a soft reset onto a moved ref (§ Git Workflow). In a worktree, `export PYTHONPATH=$PWD/src` (§ Python Environment).
-5. **The GPU is LEASED for an agent's lifetime, and nobody waits** (owner, 2026-10-03). The orchestrator grants ONE lease at a time and names the agent in its brief; that agent runs `scripts/ops/gpu_lease.sh acquire --owner <name>` (immediate typed refusal if held), puts the printed token in front of each GPU call, and `release`s at the end. Every GPU command goes through `scripts/ops/gpu_lock.sh`, which passes the owner's token through and REFUSES everyone else AT ONCE (exit 6 leased, 5 one-off holder) — `--wait` is for the orchestrator or a training launch only. **An agent that is not briefed with a lease never touches the GPU, never sets `GEN3AI_TEST_ALLOW_GPU`, and runs with `CUDA_VISIBLE_DEVICES=""`** (a CPU-only job can still open a CUDA context through an import or a default device; 2026-10-15, during a leased window). A heavy one-off job goes under `scripts/ops/mem_cap.sh` (§ Running Tests).
-5b. **While a training run is LIVE, agent CPU work runs at LOW PRIORITY, not capped** (owner 2026-10-10: "if our GPU is queued all the time we are doing the most possible work"): `nice -n 19` on every heavy job and gate (the gate at its normal `-n 6`), so agents get every spare core and yield only when the trainer / Rust core need one; keep `scripts/ops/mem_cap.sh`, whose 2 heavy SLOTS hold you to ≤ 2 heavy jobs at once (`--status`; memory can't be shared by priority), and confine agent CPU work to ≤ 3 WHOLE physical cores (`taskset -c 5-7,13-15` on this box, where CPU n and n+8 are SMT siblings — `cat /sys/devices/system/cpu/cpu0/topology/thread_siblings_list`): with load above the thread count, nice alone did NOT protect a live seed (−25 %, 2026-10-11), and a pin that left only logical CPUs free still shared physical cores with the trainer (−30 %). A unit the orchestrator marks as BLOCKING the GPU's next work may run at normal priority (`GEN3AI_BLOCKING=<why>` skips the slots).
-6. **`models/` is read-only** except your own new run dirs; **no `data/` change while a pinned run is live** (pins isolate code, not data).
-7. **Report every hazard, skip, or thing you could not verify as an explicit FINDING** — a reported hazard is a finding, not a footnote.
-8. **Checks pass or fail DETERMINISTICALLY**: exclude inputs within a rounding error of a decision boundary rather than tolerating them by chance (owner, 2026-10-01).
+1. **Never stop, restart or signal a server or process you did not start.** Ports 8000 / 8001 are reserved and refused
+   in code. Training and eval need no server; if you need one, bind a `9XXX` port (prefer
+   `python -m utils.bridge.ws_frontend --port 9XXX`; Node only when the test is about Node) and stop it by its PID.
+2. **Kill only by explicit PID or process group**, never `pkill -f` or a blanket kill. **No unbounded foreground wait
+   loop**: wrap it in `timeout N` or run it in the background. (A hook refuses both.)
+3. **Never put the literal trainer script name in a backgrounded argv**: it trips the live-run watchers.
+4. **Edits and commits only in a worktree; main is never dirty. Never `git stash`**: the stash is shared by every
+   worktree. Land code only via `/gen3ai-ship` (§ Git Workflow). In a worktree, `export PYTHONPATH=$PWD/src`.
+5. **The GPU is LEASED for an agent's lifetime, and nobody waits.** The orchestrator grants ONE lease and names the
+   agent in its brief; that agent runs `scripts/ops/gpu_lease.sh acquire --owner <name>`, puts the token in front of
+   each GPU call, and `release`s at the end. Every GPU command goes through `scripts/ops/gpu_lock.sh`, which refuses
+   everyone else at once (`--wait` is for the orchestrator or a training launch). **An agent without a lease never
+   touches the GPU, never sets `GEN3AI_TEST_ALLOW_GPU`, and runs with `CUDA_VISIBLE_DEVICES=""`** (an import can
+   open a CUDA context).
+5b. **While a training run is live, agent CPU work runs at low priority on the agent cores**: `nice -n 19` and
+   `taskset -c 5-7,13-15` (3 whole physical cores; CPU n and n+8 are SMT siblings), because nice alone did not protect
+   a live run. A heavy job goes under `scripts/ops/mem_cap.sh`, whose 2 heavy slots hold the box to ≤ 2 heavy jobs
+   (memory cannot be shared by priority). A unit the orchestrator marks BLOCKING the GPU's next work sets
+   `GEN3AI_BLOCKING=<why>` (it skips the slots) and may run at nice 0 on the agent cores — launched that way, since
+   renicing to a lower nice is refused.
+6. **`models/` is read-only** except your own new run dirs; **no `data/` change while a pinned run is live or
+   queued** (a pin isolates code, not data).
+7. **Report every hazard, skip, or thing you could not verify as an explicit FINDING.**
+8. **Checks pass or fail DETERMINISTICALLY**: exclude inputs within a rounding error of a decision boundary rather
+   than tolerating them by chance.
 9. **Out of scope ⇒ STOP and report**; never widen a unit or a closed list on your own.
 
----
+## Subagents and waiting
 
-## Subagents, Workflows and waiting
+Mechanics: `designs/ops/ORCHESTRATOR_SOP.md` §2 (dispatch), §7 (stalls, waiting).
 
-Mechanics and evidence: [`designs/ops/ORCHESTRATOR_SOP.md`](designs/ops/ORCHESTRATOR_SOP.md) §2 (dispatch) and §7 (stalls, waiting).
-
-- **Dispatch a named agent type** (`~/.claude/agents/`: `opus-*`, `sonnet-*`) — the cheapest tier that fits the risk, never above your own effort; never a fork or a generic type, whose effort you do not control.
-- **Never an unbounded wait on a sub-agent** — its completion notification can fail to arrive. Right after dispatching, arm ONE background `timeout 3300 sleep 3300`; on a timer wake make ONE cheap status read per agent and re-arm silently; let it lapse when the last one reports. No wait of any kind runs past 55 min (the prompt cache lives 1 h).
-- **A stalled `Agent` is RESUMED with `SendMessage` to its agentId, not redone**; after two resumes that change nothing on disk, do the work inline.
-- **In a Workflow script, pass `stallMs: 900_000` on EVERY `agent()` call** — Workflow subagents carry a separate 180 s watchdog hardcoded in the binary (no env var, no settings key; the `Agent` tool rejects `stallMs`). No fixed concurrency cap — size the fan-out by the binding resources (GPU lease, gate lock, rule 5b's cores, disjoint files, quota; `designs/ops/ORCHESTRATOR_SOP.md` §2).
-- **Never report agent ERRORS as "no findings"**: `parallel()` returns `null` for a failed agent — track failures and return a distinct status; diagnose from `journal.jsonl`'s `result` field.
-- The 2026-08…10 stall epidemic was Claude Code's keep-alive latch, patched 2026-10-07 (131 → 0 watchdog aborts in an afternoon): a session runs patched when launched via `cc_keepalive_patch.py claude …`, and `cc_keepalive_patch.py self` checks the running one. Don't re-chase stalls by tuning timeouts.
-
----
+- Dispatch a named type (`opus-*`, `sonnet-*`), the cheapest that fits the risk and never above your own effort;
+  never a fork or a generic type, whose effort you do not control.
+- Never an unbounded wait on a sub-agent (its notification can fail to arrive): arm ONE background
+  `timeout 3300 sleep 3300`; on a wake make one cheap status read per agent and re-arm. No wait runs past 55 min (the
+  prompt cache lives 1 h).
+- Resume a stalled `Agent` with `SendMessage` to its agentId; after two resumes that change nothing on disk, do the
+  work inline.
+- In a Workflow script pass `stallMs: 900_000` on every `agent()` call (a separate 180 s watchdog), and track
+  `parallel()`'s `null`s as failures, never as "no findings".
 
 ## Documentation Maintenance
 
-Keep docs in sync **automatically, as part of the same change** — no need to be asked:
+Keep docs current **in the same change**, unasked. Apply the deletion test and replace, never append
+(`designs/ops/instruction_docs_principles.md`; the freshness gate enforces each file's byte cap).
 
-- **Every `CLAUDE.md`** (root and every leaf) and **every `README.md`**: always current; fix a stale one in the same pass. Exception: `designs/ai_v3/README.md` is a frozen historical digraph.
-- **`designs/ARCHITECTURE.md`**: always current, the **first** thing an architecture change updates. Only what is true now — no version numbers in prose, every measured figure with its provenance, every unverifiable claim marked `**UNVERIFIED:**`; state the new truth and delete the old.
-- **`designs/CHANGELOG.md`**: append-only; add the new version entry in the same pass, never edit an old one.
-- **Eight `designs/` trees OWN detail lifted out of a leaf** and are updated with the code exactly like one: `designs/ops/`, `designs/training/`, `designs/model/`, `designs/rust_sim/`, `designs/prober/`, `designs/launcher/`, `designs/observation/`, `designs/tools/`. **Every doc in `designs/endstate/` is ALWAYS-CURRENT** (owner, 2026-09-27): a decision or build that differs updates it in the same commit, saying what changed and why. `designs/research_state/claude_md_archive/` is HISTORY — add, never update.
-- **Other `designs/` docs** (`impl_step*.md`, `design_*.md`, `todo.md`) are explicit-only (directly, or via `/gen3ai-update-design-docs`); `CLAUDE.md` files inside `designs/` follow the always-current rule.
-- A path or flag a `CLAUDE.md` names deliberately as HISTORY goes in `designs/deleted_flags.md` with its citation (the freshness gate reads it).
-
-**Leaf `CLAUDE.md` map:**
-
-| Directory | Leaf covers |
-|---|---|
-| `src/agents/model/` | Feature-extractor phase contract, dual-head policy, architecture-constant rules, model versioning |
-| `src/agents/gen3_data/` | The data facade over `data/`: its conventions and hazards (schemas: `designs/tools/data_files.md`) |
-| `src/agents/observation/` | The observation LAYOUT (constants, `get_layout()`, vocabularies), the Rust-encoder benchmark mandate, the per-block meaning table |
-| `src/agents/battle/` | The battle read-models (LiveView / LegalActions, built from the Rust core by `core_view`), corpus replay |
-| `src/agents/training/` | The training hub — each topic's summary, its detail in `designs/training/<topic>.md` |
-| `src/rust_sim/` | The Rust Showdown port: module map, conventions, the differential-gate ladder, the A/B fuzzers, the search/replay drivers |
-| `src/main/launcher/` | Launcher internals: restarts, crash reporting, exit codes, flags, which interpreter the child runs |
-| `src/main/prober/` (+ `web/`) | The forensic-replay inspector's engine, `ProbeSession`, the JSON CLI, the browser front end and its hazards |
-| `src/main/tui/` | The thin shared Textual base (the launcher's UI) |
-| `tools/` | The acquisition layer — the only code that knows the three upstreams |
-| `designs/` | The `designs/` folder map and the always-current docs in it |
-
-**Non-`CLAUDE.md` docs under the same always-current obligation:** `designs/ARCHITECTURE.md` (the MODEL now) · `designs/research_state/UNDERSTANDING.md` (what we BELIEVE now; its append-only `ledger.md` wins any disagreement — fix the view, never the ledger) · `designs/ops/TRAINING_RUN_SOP.md` and `designs/ops/ORCHESTRATOR_SOP.md` (how runs and the orchestrator operate).
-
----
+- **Always current:** every `CLAUDE.md` and `README.md` (except the frozen `designs/ai_v3/README.md`);
+  `designs/ARCHITECTURE.md` (the model as it is now, the first thing an architecture change updates; no version
+  numbers in prose, every figure with its provenance, `**UNVERIFIED:**` where it cannot be checked); every doc in
+  `designs/endstate/`; `designs/research_state/UNDERSTANDING.md`; the SOPs; and the eight trees that own a leaf's
+  detail: `designs/ops/`, `designs/training/`, `designs/model/`, `designs/rust_sim/`, `designs/prober/`,
+  `designs/launcher/`, `designs/observation/`, `designs/tools/`.
+- **Append-only:** `designs/CHANGELOG.md` (a new entry per version), the research ledger (never edit it; fix the
+  view), `designs/research_state/claude_md_archive/`.
+- **Explicit-only:** other `designs/` docs (`impl_step*.md`, `design_*.md`, `todo.md`).
+- A flag or path a `CLAUDE.md` names deliberately as history goes in `designs/deleted_flags.md` with its citation.
 
 ## Git Workflow
 
-Personal project — no pull requests. Work lands directly on `main`, but **all edits and commits happen in a worktree or branch, never on the main checkout** (`/home/goodlad/dev/gen3ai`); main is never dirty. `/gen3ai-ship` (`.claude/commands/gen3ai-ship.md`) is the only mechanism that lands code: it rebases onto `origin/main`, regenerates the ledger index, runs `python -m utils.push_guard` (exit 1 = a stale file would revert others' work — do NOT push), then pushes `<branch>:main`.
-
-🚨 **Who may commit and push (owner, 2026-09-29):** the ORCHESTRATOR session (named in `~/.claude/projects/-home-goodlad-dev-gen3ai/ORCHESTRATOR`) holds STANDING `/gen3ai-ship` permission and may DELEGATE it per logical unit in a brief; everyone else commits or pushes only when the user's current message contains `/gen3ai-ship`. Finishing a task is NOT by itself a reason to commit — ship a complete unit with green gates. **No AI attribution lines** (`Co-Authored-By`, `Claude-Session`) in commits; the skill overrides the harness reminder.
-
-**Rebases:** the ledger and `CHANGELOG.md` merge by union and `ledger_index.md` keeps our side (`.gitattributes`) — never hand-merge the index, re-run `python -m main.ledger_index --write` after a rebase, and never edit the ledger. When parallel agents edited the same doc, keep both sides' facts.
-
----
+No pull requests: work lands on `main` only through `/gen3ai-ship` (`.claude/commands/gen3ai-ship.md`: rebase,
+ledger index, `python -m utils.push_guard`, push). **Who may ship:** the orchestrator session (named in
+`~/.claude/projects/-home-goodlad-dev-gen3ai/ORCHESTRATOR`) holds standing permission and may delegate it per unit in
+a brief; anyone else only when the user's current message contains `/gen3ai-ship`. Ship a complete unit with green
+gates. **No AI attribution lines** in commits (the skill overrides the harness reminder). After a rebase, re-run
+`python -m main.ledger_index --write`; never hand-merge the index.
 
 ## Python Environment
 
-The env is **`gen3ai_torch28`** (torch 2.8, `environment_torch28.yml`) for every run, gate and tool; new code targets torch 2.8 only. A bare `python3` outside an activated env is BASE miniconda, and `deps/venv` is stale — ignore both.
+Every run, gate and tool uses **`gen3ai_torch28`** (torch 2.8); a bare `python3` is base miniconda and `deps/venv` is
+stale.
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src
-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 <script>     # elsewhere: conda activate gen3ai_torch28
+/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 <script>
 ```
 
-- **`./scripts/bootstrap.sh`** does all setup idempotently (env, submodule, Showdown build, worktree symlinks, optional cargo build) and verifies with the static gates and a smoke; `--dry-run` prints the plan. 🚨 **The conda env is SHARED:** a WORKTREE bootstrap whose env file differs prints the diff and REFUSES (exit 3) — `--update-shared-env` opts in, `--skip-env` finishes without touching it, and **`--adopt-env` is the SAFE re-stamp** after an env-file edit that only added pins the env already has (it proves, read-only, that every pin is met — `src/utils/env_file.py` — then adds the stamp; nothing is installed). Human version: `docs/DEVELOPING.md`.
-- 🚨 **THE CUDA 12.8 TWIN `gen3ai_torch28_cu128`** (`environment_torch28_cu128.yml`; `./scripts/bootstrap.sh --variant cu128`; owner 2026-10-12): the SAME package versions as `gen3ai_torch28` except torch / torchvision / torchaudio at `+cu128` and the CUDA wheels / headers they pin — the only torch with Blackwell (sm_120: RTX 5090 / 5070 Ti) kernels, and it runs the local sm_86 card too. **Not the default**: use it where a run or measurement must be on cu128 (the cloud benchmark, a Blackwell card, the cu126-vs-cu128 baseline: `scripts/ops/cuda_build_validate.sh`, `designs/ops/cloud_gpu_benchmark.md`); select it with `GEN3AI_PYTHON=<env>/bin/python3`. The default switches only at a clean EXPERIMENT BOUNDARY, never mid-run. Two builds of one torch release are two measurements: **the launcher refuses to resume a `+cu126` run under a `+cu128` interpreter (and the reverse) without `--allow-torch-switch`** (`torch_runtime.carries`), and a fresh run records its build at its first save. Never `conda env update` the shared env to get there.
-- 🚨 **In a worktree, a direct `python <script>` / `python -m …` imports MAIN's code unless you export `PYTHONPATH`** (the editable install names main's `src/`); `pytest` puts this checkout's `src/` first by itself (root `conftest.py`). Detail: `designs/ops/testing.md` "Worktree imports". `PYTHONPATH` outranks the editable install, which is how the launcher pins a resumed run to its commit — so install editable from the **main checkout only**.
-- **`gen3ai_stable` (torch 2.5.1, `environment.yml`) is LEGACY and FROZEN** — never edit `environment.yml` or update that env. The launcher selects it only to resume a pre-era run on the torch it recorded (`--allow-torch-switch` consents to switching); HEAD runs torch ≥ 2.8 only (`src/utils/torch_floor.py`). Detail: `designs/launcher/interpreter.md`.
-- 🚨 **poke-env is RETIRED — one Rust stack** (T27, done 2026-10-08): no file of ours imports it (`src/poke_env_import_gate_test.py`, a shrink-only allowlist, now EMPTY) and no package exists (`src/poke_env_absent_gate_test.py`). Fix an import with `agents.gen3_data` (data tables), `agents.enums` / `utils.showdown_id` / `utils.team_packing` (owned seams) or the Rust path. The one process still on poke-env is the Metamon peer script (`src/main/anchors/peer_scripts/metamon_side.py`), upstream poke-env in Metamon's own interpreter.
-- Every process the project spawns runs under `sys.executable`; the launcher takes **`$GEN3AI_PYTHON`** to pin its child's interpreter.
-
----
-
-## Git Worktree Setup
-
-**`./scripts/bootstrap.sh` does this.** The manual recipe, from a FRESH worktree only:
-
-```bash
-git submodule update --init
-for n in dist node_modules; do
-  [ -e "deps/pokemon-showdown/$n" ] || \
-    ln -s "/home/goodlad/dev/gen3ai/deps/pokemon-showdown/$n" "deps/pokemon-showdown/$n"
-done
-```
-
-> 🚨 **Keep the `[ -e ]` guard, and never run this from the MAIN checkout**: there `dist` is a real directory, `ln -s` puts a `dist/dist` loop inside it, and every Node path then dies with `ELOOP` (2026-07-23, unnoticed for four weeks). Fix: `rm deps/pokemon-showdown/dist/dist`, then `node build`. Never symlink the whole `deps/pokemon-showdown` (git then sees a symlink and `git status` breaks).
-
-Without step 2 the root `conftest.py` REFUSES the test session with one message naming the fix (`GEN3AI_SKIP_DEPS_GUARD=1` opts a pure-unit CI out), and every Node-backed path (the team validator, `--server node`, the Node differential gates) fails with `Cannot find module '…/dist/sim/…'`.
-
-🚨 **Node's ONLY runtime job is TEAM VALIDATION** (owner 2026-10-10: "delete node", scoped the same day): `utils.teambuilder` runs `src/utils/bridge/validate_team.js` as a subprocess at startup, which is why the submodule stays a launch requirement. Everything else Node does is a DEV / TEST ORACLE — the differential gate ladder, the A/B fuzzers, the drift scan, `tools/` acquisition, the anchors' explicit `--server node` opt-out, the websocket front end's byte-identity test. The offline SEARCH / replay driver, `reconstruction`, `better_line` and every prober probe are RUST ONLY: the Node drivers (`search_driver.js` / `replay_driver.js`) are deleted, and a typed `--impl` on `main.prober.query` / `main.prober.web` / `main.harvest` (or `ws_frontend --impl node`) is refused with its reason. `src/node_free_search_integration_test.py` RUNS those paths with Node impossible (`src/utils/node_blocker.py`).
-
----
+- **`./scripts/bootstrap.sh`** sets up a checkout or worktree idempotently (env, submodule, Showdown symlinks, cargo);
+  `--dry-run` prints the plan. The conda env is SHARED: a worktree whose env file differs is refused; never
+  `conda env update` it to get past that (`docs/DEVELOPING.md`). The cu128 twin and the frozen `gen3ai_stable` are
+  `designs/launcher/interpreter.md`'s.
+- **In a worktree, a direct `python` imports MAIN's code unless you export `PYTHONPATH`** (the editable install names
+  main's `src/`; `pytest` fixes this itself). Install editable from the main checkout only.
+- The launcher takes **`$GEN3AI_PYTHON`** to pin its child's interpreter.
+- Node's only runtime job is validating teams with Showdown's own validator, so `deps/pokemon-showdown` stays a launch
+  requirement; everything else Node does is a dev / test oracle, and search, replay and the prober are Rust only.
 
 ## Running Tests
 
-**Full chapter — tiers, markers, contention, fuzz, benchmarks: [`designs/ops/testing.md`](designs/ops/testing.md).** Prefix each command with `export PYTHONPATH=$PYTHONPATH:src PY=${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3} &&`:
+Full chapter: [`designs/ops/testing.md`](designs/ops/testing.md). Prefix each command with
+`export PYTHONPATH=$PYTHONPATH:src PY=${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3} &&`:
 
 | When | Command |
 |---|---|
 | **inner loop** | `"$PY" -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q -n 2` |
-| **THE ROUTINE GATE** | `scripts/ops/gate_lock.sh "$PY" -m pytest src/ -m "not slow and not e2e" -q -n 6` — ONE gate at a time (`utils.gate_lock`); `gate_lock.sh --status` shows holder, ETA, queue |
-| **the static tier** | `"$PY" -m pytest $("$PY" -m utils.static_gates --paths) -q -n 2` — no gate lock; the same 240 tests as `-m static` without collecting the tree (~1 min on the agent cores; a fresh worktree's mypy caches are seeded from a sibling's) |
-| **before `/gen3ai-ship`** | **THE SHIP GATE `scripts/ops/ship_gate.sh run`**: the routine gate in the shape the box affords (rule 5b beside a live run, ~15 min) — plus the `slow` tests of code you touched. A TARGETED set + the static tier only with HIGH confidence, scope and reason in the commit body (owner, 2026-10-05). Never an automated test-selection framework (`designs/ops/testing.md` "The SHIP GATE") |
-| everything / the slow tier | `"$PY" -m pytest src/ -q` (~47 min serial) / `"$PY" -m pytest src/ -m slow -q -n 2` |
-| anything on the GPU | only with a LEASE (standing rule 5): `scripts/ops/gpu_lock.sh <cmd>` with `GEN3AI_GPU_LEASE_TOKEN` set (Python: `utils.gpu_lock.gpu_lock()`) — **never a bare `flock …/gpu.lock`** |
-| a one-off HEAVY job | `scripts/ops/mem_cap.sh <GB> <cmd>` (Python: `utils.mem_cap`) — its own capped scope, so an overrun kills only that job, not the session |
+| **the static tier** | `"$PY" -m pytest $("$PY" -m utils.static_gates --paths) -q -n 2` (no gate lock) |
+| **THE ROUTINE GATE, before every `/gen3ai-ship`** | `scripts/ops/ship_gate.sh run`: `-m "not slow and not e2e"` under `gate_lock.sh` (one gate at a time; `--status`) and `mem_cap.sh`, in the shape rule 5b allows; plus the `slow` tests of code you touched. A targeted set only with high confidence, its scope and reason in the commit body |
+| everything / the slow tier | `"$PY" -m pytest src/ -q` / `"$PY" -m pytest src/ -m slow -q -n 2` |
+| anything on the GPU | only with a lease (rule 5): `scripts/ops/gpu_lock.sh <cmd>` with `GEN3AI_GPU_LEASE_TOKEN` set |
+| a one-off HEAVY job | `scripts/ops/mem_cap.sh <GB> <cmd>`: its own capped scope, so an overrun kills only that job |
 
-The rules an agent would otherwise break (each detailed in `designs/ops/testing.md`):
+- **Cut tiers on `slow`, never `-m "not integration and not e2e"`.** A tier is declared by marker, never inferred
+  from a filename.
+- **Seventeen static gates** run in every tier (`python -m utils.static_gates` lists them; the table with every
+  opt-out is `docs/DEVELOPING.md`); a missing tool FAILS. Their allowlists are empty: fix the code (decompose a file
+  over 2,000 lines, fix a vacuous stub at the source), never add an entry.
+- A deselected `slow` test cannot fail the routine gate, so the slow tier records its verdicts in
+  `designs/ops/slow_tier_status.json` and the routine gate fails on a recorded FAIL.
+- **A timeout is never a semantic outcome**: bounds scale by measured contention; > 25 % timeouts ⇒ INCONCLUSIVE.
+- A collected test plays the SAME battle every run (`utils.rust_env.fixture_battles.play_rows(...)`) and asserts its
+  precondition; a test restores any process-global torch state it changes.
+- **Any obs change:** run `python -m agents.observation.rust_encoder_benchmark` before and after, and
+  `python -m agents.training.golden_obs_core --check`.
 
-- 🚨 **Cut on `slow`, never the old `-m "not integration and not e2e"`** — `integration` spans a ~100x cost range; that cut let the obs golden ride main RED three times. A tier is DECLARED by marker (what a test NEEDS: unmarked · `integration` · `sim` · `browser` · `e2e`; what it COSTS: `slow`), never inferred from a filename.
-- **Seventeen static gates** run in every tier (the `static` marker: mypy, ruff, file size, `CLAUDE.md` freshness, stub vacuity, slow-tier status, the doc gates, the ledger index, the poke-env gates, …); a missing tool FAILS. The table with every opt-out is `docs/DEVELOPING.md`; `python -m utils.static_gates` lists them. **Their allowlists are EMPTY — decompose a file over 2,000 lines, fix a vacuous stub at the source; never add an entry.**
-- 🚨 **A deselected `slow` test cannot fail the routine gate — so the slow tier records its verdicts** in `designs/ops/slow_tier_status.json` (committed) and the routine gate fails on a recorded FAIL. A test that broke since the last slow run still reads green.
-- 🚨 **A decomposition moves symbols out from under the stubs that name them**: a patch on `mod.func` reaches the code only if `mod` still reads `func` at call time. Spell module and attribute out (the stub gate is blind to loop variables).
-- 🚨 **A test that leaks process-global torch state FAILS** (threads, matmul precision, dtype, dynamo/inductor config) — restore with `try/finally`, `torch_globals(...)` or the `restore_torch_globals` fixture.
-- 🚨 **A test's CPU play or eval runs `torch_threads=1`** (the h2h / eval engines call `torch.set_num_threads` themselves, past the conftest's OMP pin): at 2 threads beside other workers ~75 % of the time sat in OpenMP barriers, and the h2h / eval-core files took 3-20x longer (2026-10-12; `designs/ops/testing.md` "One torch thread for the CPU plays").
-- 🚨 **A TIMEOUT IS NEVER A SEMANTIC OUTCOME.** Bounds scale by measured contention (`src/utils/contention.py`); >25 % timeouts ⇒ INCONCLUSIVE. Benchmarks are the opposite: warn, never stretch.
-- 🚨 **A collected test wants the SAME battle every run** (the Rust core, seeded end to end: `utils.rust_env.fixture_battles.play_rows(...)`, fixed teams, `concurrency=1`) and **asserts its precondition** rather than branching on it; a fuzz SCRIPT wants a new battle every run.
-- Rust tests and fuzz scripts run the emission self-check build; a fresh worktree pays one cargo build first. 🚨 **Any obs change: run `python -m agents.observation.rust_encoder_benchmark` before and after, and `python -m agents.training.golden_obs_core --check`.**
+## Training and the Launcher
 
-```bash
-cargo build --profile selfcheck --features emission-selfcheck --bin sim_bridge --bin search_driver --bin core_events --manifest-path src/rust_sim/Cargo.toml
-```
-
----
-
-## Smoke Test
+Full chapter: [`designs/ops/training_runbook.md`](designs/ops/training_runbook.md) (its "Launch hazards in full").
+Run these with the env's interpreter and `PYTHONPATH` (§ Python Environment).
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 src/main/train_rl_agent.py --debug --steps 10000
-```
-
-~2 min on CPU, serverless, on the production critic and the Rust env core; exit 0 with `Training complete. Model saved to …`. Add `--debug-eval --eval-freq 4000` to exercise eval (`--debug-eval` alone fires no cycle); `--arch production --debug` works (it auto-shrinks the update and prints `🧪 [DEBUG SHAPE]`). For a throwaway smoke set `GEN3AI_MODELS_DIR` to a scratch dir — otherwise the run lands in main's `models/`. What to look for, and what each failure means: `designs/ops/training_runbook.md` "The smoke test". 🚨 **`--debug` exercises a STRICTLY SMALLER surface** (one env, CPU, eager inference, no `--compile-trainer`, no warm start): the first two minutes of a real launch are the only test of that layer.
-
----
-
-## Training + the Launcher
-
-**Full chapter: [`designs/ops/training_runbook.md`](designs/ops/training_runbook.md)**; per-flag semantics in `src/agents/training/CLAUDE.md` and `designs/launcher/flags.md`. The launcher (restarts, crash auto-restart, worktree pinning, a TUI; headless when detached) is the way to run anything long.
-
-```bash
-export PYTHONPATH=$PYTHONPATH:src
-python -m main.checkargs models/<run>          # or --argv "…": does it launch, AND is it the architecture you meant?
-python -m main.launcher --dry-run …            # resolve the ACTUAL launch without creating anything (safe on a restart)
-python -m main.launcher --steps 15000000 --device cuda --log-level periodic --arch production   # fresh run
+python3 src/main/train_rl_agent.py --debug --steps 10000   # the SMOKE: ~2 min, CPU; set GEN3AI_MODELS_DIR to a scratch dir
+python -m main.checkargs models/<run>                     # or --argv "…": does it launch, AND is it the architecture you meant?
+python -m main.launcher --dry-run …                       # the ACTUAL launch, creating nothing
+python -m main.launcher --steps 15000000 --device cuda --log-level periodic --arch production        # fresh
 python -m main.launcher --model models/<run>/checkpoints/<ckpt>.zip --steps 15000000 --device cuda   # resume / fork
 ```
 
-The hazards that have actually cost runs (full text: the runbook's "Launch hazards in full"):
+- **"It launches" and "it is the experiment" are independent checks**: `--arch production` supplies the architecture
+  AND the recipe; type a recipe knob only when it is the arm's lever. A design-doc command block is not a launch
+  command.
+- **An argv is not a config:** with `--model`, every flag you do not type is inherited from the run (a fork: its
+  parent's recipe); `--lr` / `--batch-size` / `--n-steps` are inert on a resume. Match forks by DOSE
+  (`python -m main.dose <run>`).
+- Never "launch and kill" to validate; use `--dry-run`. `--debug` tests a strictly smaller surface than a real launch.
+- Runs are named by era (`utils/era.py`); pre-era runs are history, never comparators.
 
-- 🚨 **"It launches" and "it is the experiment" are INDEPENDENT checks.** `--arch production` supplies the architecture AND the training recipe; `checkargs` refuses a fresh argv whose surface differs. Type a recipe knob only when it IS the arm's lever. A design-doc command block is not a launch command (2026-09-06: 24.4M steps on a near-bare network).
-- **Restart interval: 6 h** (owner, 2026-10-04) — the launcher default (`run.DEFAULT_RESTART_INTERVAL_HOURS`); a typed `--restart-interval-hours` wins.
-- 🚨 **AN ARGV IS NOT A CONFIG.** With `--model`, every flag you do not name is INHERITED from `model_config.json` — and every recipe knob (`--n-envs`, `--self-play`, …) from the checkpoint run's `metadata.json` (a fork: the PARENT's; the launcher passes them typed — fixed 2026-10-14, before which a fork trained the parser's recipe); `--lr` / `--batch-size` / `--n-steps` are INERT on a resume — a fork pins its rate with `--fork-lr`, and the quantity to match is the DOSE (`python -m main.dose <run>`).
-- 🚨 **`--arch production` trains a bf16 TRUNK** (`recipe.fresh.trunk_precision`, adopted 2026-10-14: the strength A/B PASSED, −22 % per update; rollout, eval and K9(b) stay fp32). An fp32 comparator TYPES `--trunk-precision fp32`; a FORK keeps its parent's recorded precision (type `bf16` to move an fp32 parent's fork).
-- 🚨 **A BARE RUN DIRECTORY MEANS THE RUN'S LAST SNAPSHOT** (`--stable-opponents`, `--exploiter`, …); name the `.zip` or `@step` to pin a file.
-- 🚨 **A restart RESUMES; a FRESH argv never lands on a run** — a fresh launch into a dir holding a checkpoint is refused; pass `--model` or a new `--run-name`. A PINNED argv is judged by the PINNED commit's parser. Never "launch and kill" to validate — use `--dry-run`.
-- 🚨 **A fork's self-play pool starts EMPTY**, and an empty pool silently falls back to the bot pool; the trainer auto-seeds the parent's pool and refuses (`FATAL_CONFIG` / `FATAL_SUPPLY`) otherwise.
-- **Refusals you will meet:** a CUDA launch while the desktop holds the GPU (stop `gdm.service` first; `--allow-desktop-gpu`), one the disk cannot fit (`--allow-low-disk`; in flight, `FATAL_DISK`), and a launch from a checkout whose `deps/pokemon-showdown` is not initialised / built (`git submodule update --init`, then `./scripts/bootstrap.sh --skip-env`) — `designs/ops/TRAINING_RUN_SOP.md` §1.
-- **ERAS:** runs are named for Hoenn towns; the Rustboro era (`rb_`) is current (`utils/era.py`). Pre-era runs are history, never comparators.
+## Playing
 
-**Constants, not flags:** the Rust env core and the in-process Rust bridge are the only env core and transport (no Showdown server); the win-prob critic, its win-indicator terminal and `gamma` 1.0 are constants — `--critic`, `--env-core`, `--gamma` and friends are DELETED and refused with the reason (`designs/deleted_flags.md`). `--compile-trainer` is on for cuda.
+**No ladder campaign, and an agent never plays, challenges or chats with a human.** We play against ourselves and
+bots. `--mode ladder` refuses in an agent session unless the OWNER wrote the approval file; an agent never creates it
+or asks for it (`src/main/ladder_guard.py`, `designs/endstate/design_ladder_campaign.md`). Any public-server session
+needs the orchestrator's go and a green `src/main/ladder_drift_scan.py` first.
 
-**Meters:** `python -m main.<meter>` — the index (what each reads, which four write under `models/<run>/`) and the rules for quoting an ELO (`ladder.json` not `eval/elo`, final only at run end, matched snapshot COUNT, a `recipe` block that matches the fitter; the transport and eval-regime boundaries) are the runbook's last sections. `main.ops.*` and `scripts/ops/` are the LIVE-run tier (`scripts/ops/README.md`).
+- `src/main/play.py` dials a server YOU started on a 9XXX port; an external-anchor read is `python -m main.anchors`
+  (`designs/ops/EXTERNAL_ANCHORS_SOP.md`; a number never leaves it without its regime).
+- **A live parse panic halts all play** (`FATAL_LIVE_PARSE`, a durable halt marker that `main.play` and
+  `main.anchors` refuse on): root-cause it with a regression test from the captured lines, land it, then
+  `python -m main.live.halt clear --fixed-by <commit>`, and push the owner. Never skip the line.
 
----
+## Paths, the model, data
 
-## Playing / the LADDER
-
-🚨 **NO LADDER CAMPAIGN, and an agent NEVER plays, challenges or chats with a human** (owner, 2026-10-07: "be respectful that they are real people"). We play the agent against itself and against bots. The only public-server use is a low-volume CUSTOM gen3ou series between OUR OWN accounts, through the owner's SOCKS5 proxy, with the orchestrator's explicit go (`play.py --server official --public-acceptance --proxy …`, both accounts in `$PS_OWN_ACCOUNTS`). Decision record: `designs/endstate/design_ladder_campaign.md`.
-
-🚨 **`--mode ladder` (owner, 2026-10-09): allowed for USERS at concurrency 1 (fixed); NEVER by an agent without the owner's explicit approval token.** In an agent session (Claude Code's environment markers, own or any ancestor's) it REFUSES unless the OWNER has written `~/.local/state/gen3ai/ladder_owner_approval.json` (a purpose and an expiry ≤ 24 h) — **an agent never creates, edits or requests it be created for itself.** The other guards (`src/main/ladder_guard.py`): no T28 halt marker, and a green `ladder_drift_scan` from the last 2 days (the scan records it). Never queue a ladder game from an agent on your own initiative.
-
-`src/main/play.py` is a websocket CLIENT on the Rust stack (`main.live`: the live reader reads the server's stream through the same chain training's rows come from — `designs/rust_sim/live_reader.md`). It dials a server YOU started on a 9XXX port:
-
-```bash
-export PYTHONPATH=$PYTHONPATH:src
-python -m utils.bridge.ws_frontend --port 9017 &       # our Rust websocket front end (no Node); stop it by its PID
-python3 src/main/play.py --mode selfplay --port 9017 --model models/<run>/final_model.zip --n-battles 4
-python3 src/main/ladder_drift_scan.py --n 200          # 🚨 the DRIFT GATE — before any public-server session
-python -m main.anchors --model models/<run> --opponent metamon:SmallRL \
-  --regime greedy --teamset away --games 100 --out <dir>   # an EXTERNAL-ANCHOR read
-```
-
-- 🚨 **A LIVE PARSE PANIC HALTS ALL PLAY (T28).** An unparseable / unclassified line, an encoder raise or an unsendable choice exits `FATAL_LIVE_PARSE` (7) and writes a durable HALT marker; `main.play` and `main.anchors` refuse to start while it exists (`python -m main.live.halt status`). Root-cause it with a regression test built from the captured lines that fails on revert, land it, then `python -m main.live.halt clear --fixed-by <commit>`, and PUSH the owner. Never skip the line.
-- 🚨 **Run the drift gate first**: the public server runs Showdown master while `deps/pokemon-showdown` is pinned, and the reader refuses an unknown keyword BY DESIGN — on a live game that is a T28 halt. `--mode ladder` enforces it (a green record ≤ 2 days old, written by a FULL scan). Audit: `designs/research_state/ladder_readiness.md`.
-- 🚨 **An external-anchor read is `python -m main.anchors`, procedure [`designs/ops/EXTERNAL_ANCHORS_SOP.md`](designs/ops/EXTERNAL_ANCHORS_SOP.md)** — greedy-vs-greedy, and a number never leaves it without its regime. It starts and stops its OWN server (the Rust front end by default, 9500–9599).
-- **A websocket game ends where a training episode ends**: `--forfeit-turn-limit` defaults to the trainer's stall threshold (`MAX_TURNS`); lower it if you must, never raise it.
-
----
-
-## Prober (forensic-replay inspector)
-
-Reads a run's `eval_traces` + a checkpoint; no server. Two surfaces over one engine — the browser app and the JSON CLI (`python -m main.prober.query summary|scan|turns|analyze|…`).
-
-```bash
-python3 -m main.prober models/<run>          # browser app
-python3 -m main.prober.web models/           # :6008 run picker (runs without traces fold into a hidden group); public at prober.g5d.io
-```
-
-`/game` is THE battle viewer (`/battle` redirects to it). 🚨 Every route that loads a checkpoint or runs the model is behind the shared password — a new such route must be too (a derived class guard enforces it). ⚠️ Model-loading views work only at the CURRENT architecture (elsewhere a typed `ArchDriftError`, diagnosed by `main.prober.arch_status`); model-free commands work on every run. 🚨 **The trace quota PREFERS LOSSES** — read each cycle's `eval_manifest.json`; none recorded = SELECTION UNKNOWN. Detail: `src/main/prober/CLAUDE.md`.
-
----
-
-## Showdown Server
-
-**No standing Showdown server exists on this box, and none is needed**: training and eval run in-process on the Rust core. Ports **8000 / 8001 are reserved and refused in code** (`play.py`, `main.anchors`, `utils.bridge.ws_frontend`). Need a server? Bind a **9XXX** port, prefer our Rust front end (`python -m utils.bridge.ws_frontend --port 9XXX`), use Node (`npm run showdown -- 9XXX`) only when the test is about Node, and **stop only what you started, by its PID** — never a bare `npm run stop` (it `kill -9`s whatever holds :8000), never a blanket node kill.
-
----
-
-## Repository Structure
-
-```
-src/
-  agents/       model/ (extractor, heads, versioning) · observation/ (the obs layout) · gen3_data/ (the data facade)
-                battle/ (read-models) · action/ (the 11-dim action space) · inference/ (the inference service, belief decode)
-                training/ (callbacks, eval, meters) · enums.py
-  main/         train_rl_agent.py + train/ (its phases) · launcher/ · live/ (websocket play, the T28 halt) · anchors/
-                h2h/ · prober/ (+ web/) · ops/ (live-run instruments) · tui/ · the offline meters (*.py and packages)
-  rust_sim/     the Rust Showdown port          rust_env/   the Rust ENV core (the only env core)
-  utils/        paths.py, git.py, era.py, bridge/ (ws_frontend, the sim bridge), rust_env/ (its Python side), …
-designs/        ARCHITECTURE.md, CHANGELOG.md, production_config.json, baselines.json, endstate/, ops/,
-                training/, model/, rust_sim/, prober/, research_state/, ai_vN/ (history)
-docs/           RUNNING.md, DEVELOPING.md (the human references)
-data/           the source of truth (derived by tools/, read via agents.gen3_data)
-tools/          the acquisition layer          scripts/   bootstrap.sh, land.sh, ops/
-deps/           the pokemon-showdown submodule   models/   saved runs (NOT committed; MAIN checkout only)
-```
-
-### Path discovery — `src/utils/paths.py`
-
-🚨 **Never hand-write `Path(__file__).resolve().parents[N]`.** Use `repo_root()` / `repo_path(...)` (this checkout), `src_root()` / `src_path(...)`, `main_models_dir()` (the run archive to READ — `Path` **or `None`**, which every caller turns into a skip) and `run_archive_dir()` / `checked_run_dir(path)` (where a run is CREATED — a typed `RunArchiveError` when there is none); `utils.git` for git's opinion. 🚨 **`models/` exists only in the MAIN checkout**, and a run ALWAYS lands there, even from a worktree (`$GEN3AI_MODELS_DIR` overrides, authoritatively). A test that creates a run dir takes the `run_archive` fixture. `src/utils/paths_test.py` fails any `/home/…` literal used as a value in `src/agents`, `src/main`, `src/utils`.
-
----
-
-## The Model — obs, extractor, versioning, baselines
-
-- The observation is a flat **2845-dim float32 vector** + an 11-dim `action_mask` (a Dict obs). 🚨 **NEVER hardcode an index** — read `Gen3ObservationEncoder.get_layout()`; offsets live in `agents/observation/constants.py`.
-- `Gen3FeaturesExtractor` returns a **`(pi_features, vf_features)` tuple** and MUST be paired with `Gen3DualHeadMaskablePolicy`; the action head is the **pointer head** (no flat `action_net`).
-- `ARCH_SIGNATURE` / `MODEL_CONFIG_VERSION` live in `src/agents/model/model_version/`. **Read live values from the code — a version quoted in prose is stale the moment the next lands.** X5's hypothesis tokens (the old `fixed_mass`) are the production belief representation. 🚨 **The END STATE is production** (adopted 2026-10-12 on the closing test's PASS, Δ̂ +0.60 pp, 90 % [−0.72, +1.92]: `designs/endstate/design_endstate_closing_test.md` §9): static per-mon tokens, trunk depth 3, the recovery and fact levers, move resolution, no critic threat injection. `--arch endstate` is an alias of `--arch production`; the legacy encoding and the judgment features stay in the code (`--arch static_recovery`, the OFF values) only until the deletion units of `designs/ops/legacy_deletion_manifest_2026-10-12.md`. Code or a test that builds the LEGACY network on purpose reads `main.train.arch_arms.legacy_production_config`, never a hand-typed flag list. Every quantity the model reads that our code derives by hand is ledgered in `designs/endstate/design_hand_computed_features.md`.
-- **Every save writes `model_config.json`** (the arch record; a mismatch is a hard `[ModelVersion] FATAL`) **and `metadata.json`**, whose `original_command`, `lineage` and `pin_history` blocks are IMMUTABLE — read them through `main.lineage` / `main.sidecar_audit`, never by re-deriving.
-- 🚨 **BASELINES are NAMED and read by name** (`designs/baselines.json` + `agents.training.baselines`); never copy a path. `python -m main.baselines set … --reason` is the only way to change one.
-- 🚨 **`models/` retention is policy:** the pre-Rustboro SKELETON was applied 2026-10-09 — every pre-`rb_` run keeps only its records, TensorBoard, jsonl, final model and registry-named files (intermediate checkpoints, eval traces and their sidecar JSONs are GONE). What survives where: `designs/research_state/models_retention_policy.md` §0.
-
----
-
-## Data Dependencies
-
-**`data/` is the single source of truth**: `tools/` (the only layer that knows the three upstreams) derives each file into `data/pokemon/`; the runtime reads it only through the **`agents.gen3_data` facade**.
-
-- 🚨 **ALL priors must be Smogon-derived; only the MODEL gets bias against the pool** (owner, 2026-08-15). Anything the network READS traces to Smogon, ground-truth labels or ladder replays; the team pool may MEASURE structure but **never ships as a prior**.
-- 🚨 **A forme SHARES its base species' `num`**: num-indexed consumers MUST iterate `gen3_data.species.base_form_ids()`.
-
-Per-file schemas: `designs/tools/data_files.md`. Acquisition: `tools/CLAUDE.md`.
+- **Paths:** never hand-write `Path(__file__).parents[N]`; use `src/utils/paths.py` (`repo_path`, `src_path`,
+  `main_models_dir`, `run_archive_dir`). `models/` exists only in the MAIN checkout and a run always lands there
+  (`$GEN3AI_MODELS_DIR` overrides); a test that creates a run dir takes the `run_archive` fixture.
+- **The observation:** never hardcode an index; read `Gen3ObservationEncoder.get_layout()`.
+- **Read versions from the code** (`src/agents/model/model_version/`), never from prose. `model_config.json` and
+  `metadata.json` are written at every save; their `original_command`, `lineage` and `pin_history` blocks are
+  immutable: read them through `main.lineage` / `main.sidecar_audit`.
+- **Baselines are named** (`designs/baselines.json`, `agents.training.baselines`); never copy a path; change one only
+  with `python -m main.baselines set … --reason`.
+- **`data/` is the source of truth**, derived by `tools/` and read only through the `agents.gen3_data` facade.
+  **Everything the network reads traces to Smogon, ground-truth labels or ladder replays**; the team pool may measure
+  structure but never ships as a prior (only the model gets bias against the pool).

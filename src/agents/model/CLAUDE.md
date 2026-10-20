@@ -35,7 +35,8 @@ The live `MODEL_CONFIG_VERSION`, `ARCH_SIGNATURE` and `OBS_SEMANTICS_VERSION` ar
   `_migrate_config` `setdefault` block. Every value `--arch production` writes must be a `ModelVersion` field
   (a restart inherits only what `model_config.json` records).
 - Deleting an extractor kwarg breaks every load of an old zip, and no gate catches it: follow
-  `versioning.md`. A lever the legacy deletion removes is judged by `model_version/adopted_levers.py`.
+  `versioning.md`. A lever the legacy deletion removes is judged by `model_version/adopted_levers.py`; code that
+  builds the LEGACY network on purpose reads `main.train.arch_arms.legacy_production_config`, never typed flags.
 - A `resume_immutable` flag the extractor carries is re-applied after every `--model` load
   (`resume_reapply.SETTERS`).
 - 🚨 **A FORK grows the network only DECLARED** (`--grow trunk_layers=N`, `growth.py`): the parent loads strictly, the

@@ -108,4 +108,4 @@ def test_this_checkout_satisfies_the_guard():
     keeps the fact stated where a reader looks, and it fails honestly under the opt-out."""
     for rel in (_PROBE, _NODE_MODULES):
         assert (repo_root() / rel).exists(), (
-            f"{rel} missing — run ./scripts/bootstrap.sh (see the root CLAUDE.md, Git Worktree Setup)")
+            f"{rel} missing — run ./scripts/bootstrap.sh (manual steps: docs/DEVELOPING.md)")

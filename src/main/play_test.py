@@ -3,7 +3,7 @@
 The ones that matter are SAFETY RAILS, not conveniences:
 
 * the reserved-port refusal — a client that connects to :8001 / :8000 has no business on the reserved training-tools
-  server or the shared dev server (root CLAUDE.md § Showdown Server; training itself is in-process and uses neither),
+  server or the shared dev server (root CLAUDE.md standing rule 1; training itself is in-process and uses neither),
   so the refusal lives in code rather than in a warning, and its remedy names the in-repo Rust front end;
 * `--server official` never reachable through a local port typo;
 * the flags DELETED with the legacy poke-env client (P6) are refused with their reason, never silently ignored.
@@ -43,7 +43,7 @@ def test_the_port_refusal_points_at_the_in_repo_rust_front_end_not_at_node():
 
 
 def test_the_8001_reason_no_longer_claims_the_trainer_connects_to_it():
-    """Training and eval are in-process on the Rust core (root CLAUDE.md § Showdown Server): the reason shown for
+    """Training and eval are in-process on the Rust core (root CLAUDE.md standing rule 1): the reason shown for
     :8001 must not say a training run's websockets hang off it."""
     assert "live" not in RESERVED_PORTS[8001].lower()
     assert "in-process" in RESERVED_PORTS[8001]

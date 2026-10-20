@@ -97,7 +97,7 @@ def test_a_static_gate_is_still_held_to_a_budget_it_is_not_exempt(conf, monkeypa
     assert 1000.0 > conf._tier_budget_seconds(base=conf._STATIC_BUDGET_BASE_S)
 
 
-#: THE DECLARED LIST of static gates (the root CLAUDE.md's table + the RNG-seed gate). A tier is declared,
+#: THE DECLARED LIST of static gates (docs/DEVELOPING.md's table + the RNG-seed gate). A tier is declared,
 #: never inferred, so a gate missing from the tier is a defect this list catches; a new gate is added HERE.
 _STATIC_GATES = (
     "src/agents/model/mypy_gate_test.py", "src/ruff_gate_test.py", "src/file_size_gate_test.py",

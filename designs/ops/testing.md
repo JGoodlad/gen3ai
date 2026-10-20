@@ -96,7 +96,7 @@ Collapsing those into one axis is what the old single `integration` marker did, 
 | `browser` | headless chrome | 57 tests, **~19 s** (re-measured 2026-09-29, quiet box, 5 runs 18.0–20.3 s; was 1426 s) — NOT `slow` since 2026-09-29: it runs in the ROUTINE gate (a busy box skips a timed-out probe as inconclusive) |
 | `e2e` | a live Showdown server | run directly as scripts |
 | `slow` | *(orthogonal)* minutes, not seconds | 75 tests |
-| `static` | *(orthogonal)* a static gate: ~free warm, a bounded COLD-cache cost — its own 180 s budget, still in every tier | every static gate's file (root `CLAUDE.md`'s table; `tier_budget_guard_test._STATIC_GATES` declares them) |
+| `static` | *(orthogonal)* a static gate: ~free warm, a bounded COLD-cache cost — its own 180 s budget, still in every tier | every static gate's file (`docs/DEVELOPING.md`'s table; `tier_budget_guard_test._STATIC_GATES` declares them) |
 
 **Counts are dated on purpose — RECOUNT before quoting one** (`pytest -m <tier> --collect-only -q`);
 this corpus moves faster than the doc describing it. Durations were taken on a quiet box and have

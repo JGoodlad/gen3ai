@@ -88,7 +88,7 @@ s_rust_build() {   # the env core where its loaders look (utils.rust_env.build),
     (cd "$REPO/src/rust_env" && CARGO_TARGET_DIR=$PWD/target cargo build --release --lib --bin rust_env_proc) &&
         cargo build --release --bin sim_bridge --manifest-path "$REPO/src/rust_sim/Cargo.toml"
 }
-s_smoke() {   # the repo's CPU smoke (root CLAUDE.md "Smoke Test"), runs into a scratch archive
+s_smoke() {   # the repo's CPU smoke (root CLAUDE.md "Training and the Launcher"), runs into a scratch archive
     cd "$REPO" && mkdir -p /root/runs &&
         PYTHONPATH="$REPO/src" GEN3AI_MODELS_DIR=/root/runs "$VENV/bin/python" src/main/train_rl_agent.py --debug --steps 10000
 }
