@@ -628,7 +628,7 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
            "unsatisfiable": unsatisfiable_pairs(argv),
            "resolution": None, "combinations": [], "ns": None,
            "arch": None, "recipe": None, "recipe_refusal": None, "env_core_refusal": None,
-           "umbrella_refusal": None, "fork_arch": None,
+           "umbrella_refusal": None, "parse_refusal": None, "fork_arch": None,
            "shaped_reward": shaped_reward_finding(argv),
            "retired_levers": retired_levers_finding(argv),
            "version_break": version_break_finding(argv)}
@@ -649,6 +649,11 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
     resolution = resolve_against_parent(effective_argv)
     res["resolution"] = resolution
     res["umbrella_refusal"] = (resolution or {}).get("umbrella_refusal")
+    # An argv the trainer's parser REJECTS (a bad choice, a missing value, a type error) never resolves, so no
+    # later check sees a namespace. It is a refusal in its own right: the child dies at argparse. Kept at the
+    # TOP of the result (not only inside `resolution`) because `launcher --dry-run` replaces `resolution`.
+    if resolution and resolution.get("parse_error"):
+        res["parse_refusal"] = "; ".join(resolution["parse_error"])
     if not resolution or resolution.get("ns") is None:
         return res
     ns, inherited = resolution["ns"], resolution["inherited"]
@@ -1065,6 +1070,14 @@ def main(raw: List[str] | None = None) -> int:
         # other check — so no ARCH / RECIPE report is printed for a namespace the launch never builds.
         print(f"\n  ✗ this command would be REFUSED at launch (FATAL_CONFIG): {res['umbrella_refusal']}")
         return int(TrainExitCode.FATAL_CONFIG)
+    if res.get("parse_refusal"):
+        # An argv the trainer's own parser rejects: the child exits at argparse. With a PINNED parser that answered
+        # (`advisory`), the pinned commit's parser is the child's and its verdict below is the authority — this
+        # tree's parse failure is then information only (`_print_resolution` printed it).
+        if not advisory:
+            print(f"\n  ✗ this command would be REFUSED at launch (FATAL_CONFIG): the trainer's parser rejects "
+                  f"the argv — {res['parse_refusal']}")
+            return int(TrainExitCode.FATAL_CONFIG)
     derived_refusal = (res.get("resolution") or {}).get("derived_refusal")
     if derived_refusal:
         # Same verdict class as the shaped parent: resolve_config exits FATAL_CONFIG on it.
@@ -1377,8 +1390,8 @@ def _print_resolution(resolution: dict | None) -> None:
     if resolution is None:
         return
     if resolution.get("parse_error"):
-        print("  ⚠️  WARNING: the argv does not parse, so no inherited value could be resolved: "
-              + "; ".join(resolution["parse_error"]))
+        print("  ✗ the argv does not parse (the verdict below is a refusal unless a pinned parser answers "
+              "instead), so no inherited value could be resolved: " + "; ".join(resolution["parse_error"]))
         return
     if resolution.get("umbrella_refusal"):
         return                     # its own ✗ verdict, printed by `main` (gen3_umbrella_no_silent_override_v1)

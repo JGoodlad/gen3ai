@@ -719,3 +719,24 @@ def test_checkargs_prints_the_resolved_k9b_mode(capsys, extra, mode, fragment):
     lines = [ln for ln in capsys.readouterr().out.splitlines() if ln.lstrip().startswith("K9(b) behaviour check")]
     assert len(lines) == 1, lines
     assert lines[0].split(":", 1)[1].split()[0] == mode and fragment in lines[0], lines[0]
+
+
+def test_an_argv_the_trainer_parser_rejects_is_a_FATAL_CONFIG_refusal_not_a_launch(capsys):
+    """TECH_DEBT 97bae4d2: `--trunk-layers 5` (choices 2-4) printed "✓ this command still launches", exit 0.
+
+    The parse error was recorded in `resolution['parse_error']` and only WARNED; the child died at argparse.
+    """
+    from main.checkargs import check, main as checkargs_main
+    from main.exit_codes import TrainExitCode
+
+    rc = checkargs_main(["--argv", "--arch production --trunk-layers 5 --steps 1000"])
+    out = capsys.readouterr().out
+    assert rc == int(TrainExitCode.FATAL_CONFIG)
+    assert "still launches" not in out and "REFUSED at launch (FATAL_CONFIG)" in out and "invalid choice" in out
+
+    res = check(["--arch", "production", "--trunk-layers", "5"])
+    assert res.get("parse_refusal") and "trunk-layers" in res["parse_refusal"]
+    assert "invalid choice" in res["parse_refusal"]
+
+    # The same argv with a legal value does not trip it.
+    assert check(["--arch", "production", "--trunk-layers", "3"]).get("parse_refusal") is None
