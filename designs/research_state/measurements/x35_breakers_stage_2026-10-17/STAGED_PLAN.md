@@ -114,8 +114,8 @@ keeps it. R0 is not in batch 1 (ruling C4, 2026-10-19: its argv is unregistered,
 
 **The batch-2 candidates.** Each has ONE lever per A/B and is read by R1 against a C0 at its own side's pin. **AM-RP-f
 (the launch sheet's §0, 2026-10-20) REGISTERED two of them, before X47's look 1 and before any production arm: the
-SPRT arm (§4.2, both sides) and toy LR-F (§4.1).** Production LR-F was registered after them (§4.1.2, 2026-10-20). None is a kit arm yet
-(§4.3: F-AS-8), and every launch NEEDS the orchestrator's GO. The GPU order is AM-RP-e's.
+SPRT arm (§4.2, both sides) and toy LR-F (§4.1).** Production LR-F was registered after them (§4.1.2, 2026-10-20). All four are kit arms
+since the F-AS-8 build (§4.3), and every launch NEEDS the orchestrator's GO. The GPU order is AM-RP-e's.
 
 | candidate | in plain words | the lever | GPU-h, look 1 | designed in |
 |---|---|---|---|---|
@@ -264,7 +264,8 @@ by `batch2_lr_floor/lr_pool_series.py`; trailing-10M means).
 - **F-LRF-1.** The launcher dry-run was not run. Its CUDA-visibility preflight refuses a `--device cuda` dry run with no
   visible GPU, and this unit had no lease. `checkargs` validated the argv against the CHECKPOINTS' pinned parsers, not
   an X35 pin.
-- **F-LRF-2.** The VOID guard has no code, like K9(b)'s ceilings (F-LS-9).
+- **F-LRF-2.** The VOID guard has no code DURING the run, like K9(b)'s ceilings (F-LS-9): it is read by hand at every
+  restart and daily. At arm end `kit void` reads it (§4.3, built since).
 - **F-LRF-3.** The toy's prior is weakened by its own record: the toy plateaued 70M after its last cut.
 - **F-LRF-4.** No X35 run's telemetry was read for this design. Toy C0 s3601 has finished, and its LR path is
   unread.
@@ -428,42 +429,69 @@ X26 measured ≈ 0.24 promotions per cycle at 280M, so its noise is above binomi
 
 ### 4.3 F-AS-8: can the kit admit a NEW arm at a side whose pin is already written? (verified 2026-10-20, CPU, read-only)
 
-**Verdict: at the PIN level YES, so SPRT and LR-F share their side's C0 and need no +12.9 GPU-h. At the KIT level NO,
-not today: a kit change is needed first.** The transcript is
+**Verdict: at the PIN level YES, so SPRT and LR-F share their side's C0 and need no +12.9 GPU-h. At the KIT level it
+needed a change, now BUILT (2026-10-20).** The pre-build transcript is
 [`batch2_sprt/f_as_8_kit_dryform.txt`](batch2_sprt/f_as_8_kit_dryform.txt).
 
-- **What already works for a new arm** (read in `batch.py` / `kit.py` / `launch_x35.sh`):
-  - The pin file is per SIDE, not per arm. `pin-check` passes any launch whose `--pin` equals the side's written pin
-    (shown: toy `4609c155`, exit 0), and `pin-write` then says "already recorded".
-  - The POOL record is per side, so the new arm seeds C0's exact snapshot set. The post-spawn `pool-seed-check` is
-    arm-generic.
+- **What already worked for a new arm:**
+  - The pin file is per SIDE, not per arm, and `pin-write` says "already recorded" for any arm of a pinned side.
+  - The POOL record is per side, so the new arm seeds C0's exact snapshot set; `pool-seed-check` is arm-generic.
   - `launch_x35.sh` picks the side from the arm's `toy_` prefix.
-  - The trainer flags exist at the toy pin: `checkargs --pin 4609c155` accepts both `--promotion-sprt` and `--min-lr`.
   - R1's input is S per seed for ON and OFF, so C0's finals are re-used as they are.
-- **What refuses or misses it today:**
-  1. `kit describe` / `stage-check` / `pool-check` / `validate-run` refuse the arm: argparse `choices=sorted(ARMS)`
-     (shown, exit 2). Without `describe` there is no argv, so `launch_x35.sh` HOLDs.
-  2. `batch.pin_check` judges only `BATCH1_ARMS` (+ the G-E readers). A new arm's run is listed "not batch 1, not
-     judged". So a later launch does not check that run's recorded pin (shown with a deliberately wrong one): AM-1's
-     per-run check silently skips it.
-  3. `batch.stage_status` returns ALLOWED for any arm outside `BATCH1_ARMS` BEFORE the AM-8 side gate. A production
-     `sprt` reads ALLOWED while `c0` reads PENDING on the FP32_ALT placeholder (shown). Pre-check 2c
-     (`required-check`) would still HOLD the launch, so this is a wrong answer, not a launch hole.
-  4. `k9b-batch` (pre-check 11) and `disk` count only batch-1 runs, so a finished new arm's K9(b) is never pre-checked.
-  5. `readout.decide` refuses an arm label outside {A1…A6}, and `batch.READ_LABEL` has no entry, so no
-     `reads/<arm>_look<k>.json` record can be written.
-- **The code change that admits them (a separate unit, NOT built here):**
-  - `kit.ARMS`: add `sprt` / `toy_sprt` and `lrfloor` / `toy_lrfloor` (phase 0, `warn`, the side's seeds and length).
-  - `build_argv`: the levers `--promotion-sprt` and `--min-lr 1.7361e-4` (production) / `--min-lr 2.0833e-4` (toy).
-  - `batch`: a `SIDE_PINNED_ARMS` set (batch 1 + batch 2) that `pin_check`, `k9b_batch` and `disk_check` read, and that
-    `stage_status` runs through the AM-8 side gate. Add batch 2's own conditions in a `BATCH2_STAGES`, never in the
-    closed `STAGES`.
-  - `readout.ARMS` / `batch.READ_LABEL`: the labels `SPRT` and `LRF`.
-  - The VOID readers: V-S1 / V-S2 from `sprt_promotion.jsonl`, and LR-F's KL guard as a `tb_read` check.
-  - Each with a test that fails on revert. ≈ 0.25–0.5 agent-day for both arms. LR-F's cost line already budgets the
-    kit arm.
-- **Hazard.** The toy pin `4609c155` is fixed, so a toy batch-2 arm trains on that commit's code. Any T6 / `--min-lr` fix
-  that lands after it does not reach the toy arms.
+- **What the build changed** (`src/main/x35/`; each rule has a test in `batch2_test.py` that fails on revert):
+  - **The arms.** `kit.ARMS` holds `sprt` / `toy_sprt` and `lrfloor` / `toy_lrfloor` (phase 0, `warn`, the side's
+    seeds and length). `build_argv` adds the ONE lever: `--promotion-sprt`, or `--min-lr 1.7361e-4` (production) /
+    `--min-lr 2.0833e-4` (toy). A test pins, for every arm and seed, that the argv is the side's C0 argv token for
+    token plus the lever. Another pins that it equals the argv `checkargs` validated (toy SPRT and toy LR-F at the toy
+    pin, production SPRT at P\*'s parser).
+  - **The pin (closes the hole).** `batch.SIDE_PINNED_ARMS` = batch 1 + batch 2. `pin_check` judges every
+    side-pinned run (and the G-E readers) against the side's written pin, so a batch-2 run on a wrong pin now HOLDs.
+    Before, it was listed "not batch 1, not judged" and passed. Only an unregistered `rb_x35*` name (the A3 / A6 kits)
+    is still listed as not judged.
+  - **AM-6 and the disk.** `k9b-batch` pre-checks every finished side-pinned run. `disk` counts batch 1's and batch
+    2's not-yet-created forks: 26 + 20.
+  - **The stage.** `stage_status` sends a batch-2 arm through the AM-8 side gate (production PENDING until FP32_ALT
+    is recorded) and then `batch.BATCH2_STAGES`' registered conditions, never through the closed `STAGES`:
+    - a look-2 seed (s3504–s3505 / s3604–s3605) only on its own look 1 reading CONTINUE;
+    - production LR-F is REFUSED on a toy LR-F FINAL class LOSS (§4.1.2).
+    G1 does not gate batch 2. A toy batch-2 arm's look-1 CONTINUE also licenses toy C0's look-2 seeds s3604–s3605,
+    their shared control.
+  - **The reads.** `readout.ARMS` and `batch.READ_LABEL` carry `SPRT` and `LRF`, so `reads/<arm>_look<k>.json`
+    records exist for them.
+  - **The VOID readers.** `python -m main.x35.kit void --arm <arm> --run-dir <run>` (`main.x35.batch2_void`) reads at
+    arm end: exit 0 PASS, 1 VOID, 3 INCONCLUSIVE.
+    - SPRT: V-S1 and V-S2 from the seed's `sprt_promotion.jsonl`.
+    - LR-F: every trailing-2M window of the fork's own `train/approx_kl` rows against 0.08.
+    The choices the registrations left open are declared in the module's docstring (FINDINGS F-AS-8a–c below).
+- **Hazard: the toy pin's code.** The toy pin `4609c155` is fixed, so a toy batch-2 arm trains on that commit's code;
+  a fix that lands after it does not reach the toy arms. Read at the pin on 2026-10-20:
+  - **`--min-lr`: no difference.** `adaptive_lr_callback.py` (the down-step `max(lr / 1.2, min_lr)`) and
+    `main/train/callbacks.py` are byte-identical at `4609c155` and `main`. `model_build.py`'s resume clamp ("Clamping
+    resume LR …") is unchanged in its LR lines. `checkargs --pin 4609c155` printed `min_lr 0.00020833 (TYPED)`.
+  - **`--promotion-sprt`: one fix is missing, B-F1** (`ebd9198f`, committed before the pin but not its ancestor). A
+    snapshot RE-promoted at a step the pool already holds (a crash replay) kept serving its OLD weights from the
+    model cache and the resident T2 slot. The whole fix is absent at the pin: `snapshot_pool.py`'s file-identity
+    keying, and the `_forget_replaced_step` call in both promotion paths (`sprt_promotion.py` and the threshold path
+    in `selfplay_callback.py`). The bug hits toy C0 and toy SPRT alike. But SPRT is predicted to promote ≈ 2–3× as
+    often (§4.2), so a crash replay is more likely to re-promote a held step. The exposure is unmatched in DEGREE. Any toy-seed restart that replays past a promoted
+    step should be named in the read (its `sprt_promotion.jsonl` and the restart log hold both).
+  - Every other training-code commit after the pin reaches neither toy C0 nor the toy batch-2 arms, so it is
+    matched. Examples: FP32_ALT `d4af9f1e`, the short-micro-batch refusal `fc53d4ad`, the pinned data root
+    `3d6780ee` and the T2 stream attribution `facdb1e0`.
+
+**FINDINGS (F-AS-8 build).**
+- **F-AS-8a.** SPRT abandonment: a candidate counts as ABANDONED on an `abandoned` line, a `verdict` line whose
+  `reason` is `abandoned` (an eval-core failure inside the test), or a `start` with no later line. V-S1 counts only
+  DECIDED verdicts. An unparseable log line is INCONCLUSIVE.
+- **F-AS-8b.** LR-F's KL guard judges EVERY trailing-2M window ending at or past fork + 2M. That is stricter than the
+  by-hand read at restarts and days. A step logged twice keeps the later segment's value. A non-finite KL row is VOID.
+- **F-AS-8c.** Production LR-F's toy-LOSS refusal is §4.1's licence table made a gate (registered in §4.1.2). An
+  unread toy LR-F is no condition, because AM-RP-e runs production (8) before the toy (11).
+- **F-AS-8d.** `stage_status` still returns ALLOWED for the unregistered A3 / A6 kits (`a3_mx`, `a3`, `a6_lx`, `a6`)
+  before the AM-8 side gate. Pre-check 2c still HOLDs a production launch, so this is a wrong answer, not a hole. It
+  is left for the A3 / A6 registration.
+- **F-AS-8e.** The disk pre-check now reserves 46 forks. At the build, `models/` had 436 GiB free. The 23 batch-1
+  forks still to create (× 20.68) already exceeded that, so `--thinning` was needed before batch 2 was added.
 
 ## 5. Findings at staging
 

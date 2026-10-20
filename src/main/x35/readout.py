@@ -72,8 +72,9 @@ LOOK_SEEDS: Dict[int, int] = {1: 3, 2: 5}
 MIN_PAIRS = 500
 #: The arms whose mechanism is exploitability (§5.6.4: R2 is their co-primary).
 R2_ARMS = frozenset({"A3", "A4", "A6"})
-#: Every arm the readout knows (C0 is the control, never read as an arm).
-ARMS = frozenset({"A1", "A2", "A3", "A4", "A5", "A6"})
+#: Every arm the readout knows (C0 is the control, never read as an arm). SPRT (the promotion rule) and LRF (the LR
+#: floor) are batch 2's (STAGED_PLAN §4.1-§4.2): R1 is their primary, read against the same side's C0.
+ARMS = frozenset({"A1", "A2", "A3", "A4", "A5", "A6", "SPRT", "LRF"})
 #: G-C's B1 bar, nats (§5.6.5).
 G_C_B1_BAR_NATS = -0.05
 #: G-K's floor, counted games per team set per side (module docstring).

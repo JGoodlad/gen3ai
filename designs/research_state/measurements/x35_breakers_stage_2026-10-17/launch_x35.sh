@@ -12,7 +12,9 @@
 #          the phase-1 record) · toy_c0 toy_a1 toy_a2 toy_x47 (+70M; toy_x47 = depth growth, X47; the toy arms run K9(b)
 #          `warn`) · ge_a1 ge_a2 ge_d1 ge_c0 (the G-E READERS, main.x35.ge, +5M: <seed> = the TARGET's, 3501; a fresh
 #          best responder of that arm's FINISHED final, launched only when the arm's primary reads GAIN (pre-check 9);
-#          ge_c0 is every arm's shared b-OFF reader)                  (main.x35.kit holds every argv)
+#          ge_c0 is every arm's shared b-OFF reader) · BATCH 2 (STAGED_PLAN §4.1-§4.3, F-AS-8; each = the side's C0
+#          argv + ONE lever, at the side's written pin): sprt lrfloor (+20M) · toy_sprt toy_lrfloor (+70M)
+#                                                                      (main.x35.kit holds every argv)
 #   phase 1 → 2:  after the three exploiters END,
 #          python -m main.x35.kit phase1-record --arm a3 --call <R> --out <stage>/phase1_a3.json   (write-once)
 #
@@ -22,7 +24,8 @@
 #       caller killed toy_x47 3602's first GO at startup, 2026-10-20; the launcher's --dry-run does not catch it)
 #   2. the pin carries every commit in x35_required_commits.txt, which must name T54 (F18)
 #   2b. AM-1 (one pin PER SIDE, AM-8): the pin EQUALS the side's X35_PIN_1 (x35_pin_batch1_<side>.txt, written ONCE by
-#      the side's first GO) and every batch-1 run OF THAT SIDE's RECORDED pin (metadata.json git_hash + pin_history); a
+#      the side's first GO) and every SIDE-PINNED run (batch 1 + 2 + G-E readers) OF THAT SIDE's RECORDED pin
+#      (metadata.json git_hash + pin_history); a
 #      run of that side whose pin cannot be read HOLDs too; a typed --t62 must be the side's token
 #   2c. AM-8: the side's OWN required commits (x35_required_commits_<side>.txt; production's names FP32_ALT) are real
 #      commits and in the pin; a placeholder sha (FP32_ALT has not landed) HOLDs every production launch
@@ -34,14 +37,14 @@
 #   5. checkargs --pin <pin> exits 0
 #   6. launcher --dry-run says "would launch", FORK of the start node's run, and the arm's +steps
 #   7. R was frozen BEFORE every existing rb_x35* run directory was created
-#   8. the disk covers the remaining batch-1 forks at the dry-run's REQUIRED GiB each, or --thinning (F22); a
+#   8. the disk covers the remaining batch-1 AND batch-2 forks at the dry-run's REQUIRED GiB each, or --thinning (F22); a
 #      conditional fork its records REFUSED (AM-9) is not counted
 #   9. AM-9 / AM-3 / AM-4 / AM-8: the fork's stage is ALLOWED by the saved records (kit stage-check: G1, look-1
 #      CONTINUE, production's FINAL class before the toy calibration, the FP32_ALT commit named for production; a G-E
 #      reader: its arm's primary FINAL class GAIN, ge_c0 any arm's); PENDING or REFUSED HOLDs
 #  10. POOL: the parent's seeded snapshot set (T54's filter, names + sha256) equals the side's record
 #      (x35_pool_batch1_<side>.json, written by the side's first GO)
-#  11. AM-6: every FINISHED batch-1 arm has a K9(b) arm-end record (its own rows after the fork step) that PASSes;
+#  11. AM-6: every FINISHED batch-1 / batch-2 arm has a K9(b) arm-end record (its own rows after the fork step) that PASSes;
 #      a missing one is read now; VOID or INCONCLUSIVE HOLDs
 # At GO, after the last pre-check: the side's pin file and pool record are written if absent (once).
 # GO with --at-epoch E: E is checked at arming (now <= E <= now + 24 h, an ABSOLUTE epoch, never a clock string),
@@ -148,7 +151,7 @@ prechecks() {
   # 10. POOL: the seeded set is the side's recorded set
   kit pool-check --arm "$ARM" --call "$R" --stage "$STAGE" > "$out.pool.txt" 2>&1 \
     || hold "pool-check: $(cat "$out.pool.txt")"
-  # 11. AM-6: every finished batch-1 arm PASSed K9(b) at its end
+  # 11. AM-6: every finished batch-1 / batch-2 arm PASSed K9(b) at its end
   kit k9b-batch --stage "$STAGE" --models-dir "$MODELS" > "$out.k9b.txt" 2>&1 \
     || hold "K9(b) arm-end: $(tr '\n' ' ' < "$out.k9b.txt")"
   log "pre-checks PASS ($tag): pin ${PIN:0:8}, $(cat "$out.disk.txt"), lease: ${lease%%,*}"

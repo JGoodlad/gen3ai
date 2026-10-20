@@ -45,14 +45,22 @@ THE READ RECORDS the stage rules read are ``<stage>/reads/<arm>_look<k>.json``: 
 ``python -m main.x35.readout decide`` (A1 / A2 and the toy pair), ``decide-d1`` (D1) or ``python -m main.x35.x47
 decide`` (X47). The record names its arm and look; a record for another arm or look is a refusal.
 
+* **BATCH 2 (F-AS-8, STAGED_PLAN §4.3)**: ``sprt`` / ``toy_sprt`` and ``lrfloor`` / ``toy_lrfloor``
+  (:data:`BATCH2_ARMS`) launch at their SIDE'S written pin and share its C0. They are SIDE-PINNED
+  (:data:`SIDE_PINNED_ARMS` = batch 1 + batch 2): :func:`pin_check` judges their recorded pins, :func:`k9b_batch`
+  pre-checks their K9(b) and ``kit.disk_check`` counts their forks. :func:`stage_status` runs them through the AM-8
+  side gate (production PENDING until FP32_ALT is recorded) and then :data:`BATCH2_STAGES`' registered conditions
+  (:func:`_batch2_status`); the closed :data:`STAGES` does not list them. Their VOID guards are
+  ``main.x35.batch2_void``.
 * **THE G-E READERS** (``main.x35.ge``; launch sheet §0 "G-E readers"): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` / ``ge_c0``
   are not batch-1 ARMS (not in :data:`STAGES`, the disk count or AM-6's K9(b) pre-check) but they run at the SIDE'S
   pin: :func:`pin_check` judges their recorded pins with the side's batch-1 runs, and :func:`stage_status` gives a
   reader the ``ge.trigger`` condition (ALLOWED only when its arm's primary reads GAIN; ``ge_c0`` when any does).
 
 DECLARED HERE (choices the rulings leave open; each a FINDING of this build):
-* AM-1's "every existing ``rb_x35*`` run" is read as every BATCH-1 run OF THE LAUNCH'S SIDE (:func:`batch1_run_names`, a
-  moved-aside ``<run>.<SUFFIX>`` included): a later batch's runs carry their own pin and are listed as not judged here.
+* AM-1's "every existing ``rb_x35*`` run" is read as every SIDE-PINNED run OF THE LAUNCH'S SIDE
+  (:func:`side_pinned_run_names`: batch 1, batch 2 and the G-E readers, a moved-aside ``<run>.<SUFFIX>`` included).
+  Any other ``rb_x35*`` run (the unregistered A3 / A6 kits) is listed as not judged here.
 * The pin file is ``key: value`` text with a ``side:`` line; its T62 token must be one of the side's
   :data:`T62_BY_SIDE` (the battery DECIDED FP32_ALT, 2026-10-20: production no longer launches under ``PENDING`` /
   ``ADOPT``, C1 (a) is superseded; the toy's ``NA_TOY`` says the toy makes no tau-solve call).
@@ -125,8 +133,28 @@ DROPPED = {a: ("AM-RP-c (2026-10-20): A2 (PFSP) is DROPPED from batch 1 -- its l
                "biased (F31)") for a in ("a2", "toy_a2")}
 #: The arms of batch 1 (the AM-1 pin and the POOL record cover their runs).
 BATCH1_ARMS = ("c0", "a1", "a2", "d1", "toy_c0", "toy_a1", "toy_a2", "toy_x47")
-#: The arm label each read record carries (``readout`` A1 / A2, ``d1`` X38, ``x47`` X47).
-READ_LABEL = {"a1": "A1", "a2": "A2", "d1": "X38", "toy_a1": "A1", "toy_a2": "A2", "toy_x47": "X47"}
+#: Batch 2 (STAGED_PLAN §4.1-§4.3, F-AS-8): the SPRT promotion rule and the LR floor, each at its side's pin.
+BATCH2_ARMS = ("sprt", "lrfloor", "toy_sprt", "toy_lrfloor")
+#: Every arm whose runs MUST record their side's written pin (AM-1), whose finished runs AM-6 pre-checks, and whose
+#: forks the disk pre-check counts. The G-E readers share the side's pin too (:func:`side_pinned_run_names`).
+SIDE_PINNED_ARMS = BATCH1_ARMS + BATCH2_ARMS
+#: Batch 2's stages (F-AS-8), in AM-RP-e's slots: (6) production SPRT, (8) production LR-F, (11) the toy pair; each
+#: look 2 (``b``) only on its own look-1 CONTINUE. The ORDER is the Training session's (AM-RP-e), not a gate; the
+#: conditions are :func:`_batch2_status`'s. Never merged into the closed :data:`STAGES`.
+BATCH2_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
+    ("B2-SPRT", (("sprt", 3501), ("sprt", 3502), ("sprt", 3503))),
+    ("B2-LRF", (("lrfloor", 3501), ("lrfloor", 3502), ("lrfloor", 3503))),
+    ("B2-T", (("toy_lrfloor", 3601), ("toy_lrfloor", 3602), ("toy_lrfloor", 3603),
+              ("toy_sprt", 3601), ("toy_sprt", 3602), ("toy_sprt", 3603))),
+    ("B2-SPRTb", (("sprt", 3504), ("sprt", 3505))),
+    ("B2-LRFb", (("lrfloor", 3504), ("lrfloor", 3505))),
+    ("B2-Tb", (("toy_lrfloor", 3604), ("toy_lrfloor", 3605), ("toy_sprt", 3604), ("toy_sprt", 3605))),
+)
+#: The arm label each read record carries (``readout`` A1 / A2 / SPRT / LRF, ``d1`` X38, ``x47`` X47).
+READ_LABEL = {"a1": "A1", "a2": "A2", "d1": "X38", "toy_a1": "A1", "toy_a2": "A2", "toy_x47": "X47",
+              "sprt": "SPRT", "toy_sprt": "SPRT", "lrfloor": "LRF", "toy_lrfloor": "LRF"}
+#: The toy arms whose look-1 CONTINUE licenses toy C0's look-2 seeds s3604-s3605 (their shared control).
+TOY_LOOK2_LICENSORS = ("toy_x47", "toy_a1", "toy_a2", "toy_lrfloor", "toy_sprt")
 #: Where a read record keeps its PRIMARY when it is not R1 (``d1.D1Verdict``: H).
 PRIMARY_KEY = {"d1": "h"}
 CONTROLS = ("c0", "toy_c0")
@@ -145,26 +173,26 @@ def _now() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
 
 
-def batch1_run_names(*, readers: bool = False) -> Dict[str, Tuple[str, int]]:
-    """``{run name: (arm, seed)}`` of every batch-1 arm at every registered seed; with ``readers`` the G-E readers'
-    runs too (they share the side's pin, ``main.x35.ge``)."""
+def side_pinned_run_names(*, readers: bool = False) -> Dict[str, Tuple[str, int]]:
+    """``{run name: (arm, seed)}`` of every side-pinned arm (:data:`SIDE_PINNED_ARMS`: batch 1 + batch 2) at every
+    registered seed; with ``readers`` the G-E readers' runs too (they share the side's pin, ``main.x35.ge``)."""
     from main.x35.ge import READER_ARMS
     from main.x35.kit import ARMS, run_name
 
-    arms = BATCH1_ARMS + (tuple(READER_ARMS) if readers else ())
+    arms = SIDE_PINNED_ARMS + (tuple(READER_ARMS) if readers else ())
     return {run_name(a, s): (a, s) for a in arms for s in ARMS[a].seeds}
 
 
 def side_of_run(base: str) -> str:
-    """The side (``production`` / ``toy``) of a batch-1 (or G-E reader) run name."""
+    """The side (``production`` / ``toy``) of a side-pinned (or G-E reader) run name."""
     from main.x35.kit import ARMS
 
-    return ARMS[batch1_run_names(readers=True)[base][0]].side
+    return ARMS[side_pinned_run_names(readers=True)[base][0]].side
 
 
-def _batch1_dirs(models_dir: str, *, readers: bool = False) -> Tuple[List[Tuple[str, str]], List[str]]:
+def _side_pinned_dirs(models_dir: str, *, readers: bool = False) -> Tuple[List[Tuple[str, str]], List[str]]:
     """``([(dir name, run name)], [other rb_x35* dirs])``; ``<run>.<SUFFIX>`` (moved aside) counts as its run."""
-    names = batch1_run_names(readers=readers)
+    names = side_pinned_run_names(readers=readers)
     ours: List[Tuple[str, str]] = []
     other: List[str] = []
     if not os.path.isdir(models_dir):
@@ -258,8 +286,8 @@ def _same_sha(a: str, b: str) -> bool:
 
 def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[str] = None) -> Tuple[bool, List[str]]:
     """AM-1's pre-check for one SIDE: ``(ok, lines)``. ``pin`` is the full sha the launch would use; ``t62`` (when typed)
-    must be the side's token. Only this side's batch-1 runs are judged against the side's pin; the other side's are
-    listed (their own side's launches judge them)."""
+    must be the side's token. Only this side's side-pinned runs (batch 1, batch 2, the G-E readers) are judged against
+    the side's pin; the other side's are listed (their own side's launches judge them)."""
     lines: List[str] = []
     ok = True
     label, fname = pin_label(side), os.path.basename(pin_path(stage, side))
@@ -275,7 +303,7 @@ def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[st
     else:
         lines.append(f"the pin equals {label} {pin[:12]} ({fname}, T62 {rec.get('t62_verdict')})")
     want = rec["sha"] if rec is not None else pin
-    ours, other = _batch1_dirs(models_dir, readers=True)
+    ours, other = _side_pinned_dirs(models_dir, readers=True)
     mine = [(d, base) for d, base in ours if side_of_run(base) == side]
     for d, _ in mine:
         hs = recorded_pins(os.path.join(models_dir, d))
@@ -288,12 +316,12 @@ def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[st
             ok = False
             lines.append(f"{d}: recorded pin(s) {[h[:12] for h in bad]} != {want[:12]}")
     if mine:
-        lines.append(f"{len(mine)} batch-1 {side} run(s) checked against {want[:12]}")
+        lines.append(f"{len(mine)} side-pinned {side} run(s) checked against {want[:12]}")
     elsewhere = [d for d, base in ours if side_of_run(base) != side]
     if elsewhere:
-        lines.append(f"the other side's batch-1 run(s), judged at its own launches: {elsewhere}")
+        lines.append(f"the other side's run(s), judged at its own launches: {elsewhere}")
     if other:
-        lines.append(f"not batch 1, not judged here: {other}")
+        lines.append(f"not a side-pinned arm (batch 1 / 2 / G-E reader), not judged here: {other}")
     return ok, lines
 
 
@@ -562,7 +590,7 @@ def _look2_licence(stage: str, arm: str) -> Tuple[str, str]:
 
 
 def stage_of(arm: str, seed: int) -> Optional[str]:
-    for name, forks in STAGES:
+    for name, forks in STAGES + BATCH2_STAGES:
         if (arm, seed) in forks:
             return name
     return None
@@ -576,8 +604,10 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
 
     if arm in READER_ARMS:                   # a G-E reader: only on its arm's GAIN (main.x35.ge), after AM-8
         return trigger(stage, arm)
+    if arm in BATCH2_ARMS:                   # F-AS-8: the AM-8 side gate, then batch 2's registered conditions
+        return _batch2_status(stage, arm, seed)
     if arm not in BATCH1_ARMS:
-        return ALLOWED, f"{arm} is not a batch-1 arm (no AM-9 condition)"
+        return ALLOWED, f"{arm} is not a staged arm (no AM-9 or batch-2 condition)"
     if arm in DROPPED:
         return REFUSED, DROPPED[arm]
     side = ARMS[arm].side
@@ -591,7 +621,7 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
         return (ALLOWED, f"G1 is read ({g})") if g else (PENDING, "C0's look-2 seeds run after G1 (AM-2 / AM-9)")
     if arm == "toy_c0" and look2:
         why = []
-        for b in ("toy_x47", "toy_a1", "toy_a2"):
+        for b in TOY_LOOK2_LICENSORS:
             st, w = _look2_licence(stage, b)
             if st == ALLOWED:
                 return ALLOWED, w
@@ -611,6 +641,28 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
         if cls not in FINAL_CLASSES:
             return REFUSED, f"AM-3: production {prod}'s final class is {cls}: the calibration is NOT SHOWN, no toy fork"
     if look2 and arm not in CONTROLS:
+        return _look2_licence(stage, arm)
+    return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)})"
+
+
+def _batch2_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
+    """A batch-2 fork's registered conditions (STAGED_PLAN §4.1.1, §4.1.2, §4.2): production is PENDING until its
+    FP32_ALT commit is named (AM-8); production LR-F is REFUSED once toy LR-F's FINAL class is LOSS (§4.1's licence
+    table, registered in §4.1.2; an unread toy LR-F is no condition, AM-RP-e puts production first); a look-2 seed
+    needs its own look 1 to read CONTINUE."""
+    from main.x35.kit import ARMS
+
+    side = ARMS[arm].side
+    if side == "production":
+        filled, why = side_gate(stage, side)
+        if not filled:
+            return PENDING, why
+    if arm == "lrfloor":
+        cls, why = final_class(stage, "toy_lrfloor")
+        if cls == "LOSS":
+            return REFUSED, (f"STAGED_PLAN §4.1.2: toy LR-F's FINAL class is LOSS ({why}): the controller's cuts were "
+                             "protective, production LR-F is not run on this evidence")
+    if seed in LOOK2_SEEDS[side]:
         return _look2_licence(stage, arm)
     return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)})"
 
@@ -691,11 +743,12 @@ def k9b_record(stage: str, k: K9b) -> str:
 
 
 def k9b_batch(stage: str, models_dir: str, *, reader: Any = None) -> Tuple[bool, List[str]]:
-    """The launch pre-check: every FINISHED batch-1 run (``final_model.zip``) has a K9(b) arm-end record that PASSes;
-    a missing record is read now (``reader``, default :func:`k9b_read`) and written. VOID / INCONCLUSIVE ⇒ HOLD."""
+    """The launch pre-check: every FINISHED side-pinned run (batch 1 + 2, ``final_model.zip``) has a K9(b) arm-end
+    record that PASSes; a missing record is read now (``reader``, default :func:`k9b_read`) and written. VOID /
+    INCONCLUSIVE ⇒ HOLD."""
     read = reader or k9b_read
     ok, lines = True, []
-    ours, _ = _batch1_dirs(models_dir)
+    ours, _ = _side_pinned_dirs(models_dir)
     for d, _base in ours:
         rd = os.path.join(models_dir, d)
         if d != _base or not os.path.isfile(os.path.join(rd, "final_model.zip")):
@@ -710,4 +763,4 @@ def k9b_batch(stage: str, models_dir: str, *, reader: Any = None) -> Tuple[bool,
         if v != PASS:
             ok = False
         lines.append(f"{d}: K9(b) arm end {v}")
-    return ok, lines or ["no finished batch-1 arm yet"]
+    return ok, lines or ["no finished batch-1/2 arm yet"]

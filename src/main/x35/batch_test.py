@@ -131,7 +131,7 @@ def test_the_other_sides_runs_are_listed_but_not_judged_by_this_sides_pin(tmp_pa
     assert not ok and any("rb_x35t_c0_s3601" in x and "aaaaaaaaaaaa" in x for x in lines), lines
     B.pin_write_if_absent(PIN, str(stage), TOY, "NA_TOY")
     ok, lines = B.pin_check(PIN, str(stage), str(models), TOY)
-    assert ok and any("2 batch-1 toy run(s) checked" in x for x in lines), lines
+    assert ok and any("2 side-pinned toy run(s) checked" in x for x in lines), lines
     _run(models, "rb_x35t_c0_s3602", OTHER)                               # a toy run on the wrong pin
     ok, lines = B.pin_check(PIN, str(stage), str(models), TOY)
     assert not ok and any("rb_x35t_c0_s3602" in x for x in lines), lines
@@ -145,7 +145,7 @@ def test_a_batch1_run_without_a_recorded_pin_holds_and_other_batches_are_not_jud
     _run(models, "rb_x35_a3mx_s3501", OTHER)                              # a later batch's run (its own pin)
     ok, lines = B.pin_check(PIN, str(stage), str(models), PROD)
     assert not ok and any("no recorded pin" in x for x in lines)
-    assert any("not batch 1" in x and "rb_x35_a3mx_s3501" in x for x in lines)
+    assert any("not a side-pinned arm" in x and "rb_x35_a3mx_s3501" in x for x in lines)
     (models / "rb_x35_c0_s3502").rename(models / "rb_x35_c0_s3502.POOLSEED_FAIL")   # moved aside: still batch 1
     ok, lines = B.pin_check(PIN, str(stage), str(models), PROD)
     assert not ok and any("POOLSEED_FAIL" in x for x in lines)
@@ -462,10 +462,10 @@ def test_a_read_record_for_another_arm_or_look_is_refused(tmp_path):
 def test_the_disk_check_skips_the_forks_the_records_refused(tmp_path):
     _fill_fp32(tmp_path)
     ok, msg = K.disk_check("/nonexistent", 10.0, thinning=False, existing=[], free_gib=1000.0, stage=str(tmp_path))
-    assert ok and "26 batch-1 fork(s)" in msg                              # PENDING forks are counted (A2s dropped)
+    assert ok and "46 batch-1/2 fork(s)" in msg, msg                       # PENDING forks are counted (A2s dropped; 20 of batch 2)
     _g1_record(tmp_path, B.HOLD)                                          # D1 and toy A1 (3 + 3) refused
     ok, msg = K.disk_check("/nonexistent", 10.0, thinning=False, existing=[], free_gib=1000.0, stage=str(tmp_path))
-    assert ok and "20 batch-1 fork(s)" in msg, msg
+    assert ok and "40 batch-1/2 fork(s)" in msg, msg
 
 
 # ------------------------------------------------------------------------------------------------------ AM-6

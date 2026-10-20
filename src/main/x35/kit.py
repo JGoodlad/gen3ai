@@ -22,7 +22,12 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   GAIN (``stage-check``); the kit seed is the TARGET's, the reader trains at seed 3531;
 * toy (``--behaviour-check warn`` under X34's registered GIGO ceilings, C3, orchestrator 2026-10-19; +70M; the X34
   toy extras): ``toy_c0``, ``toy_a1``, ``toy_a2``, and ``toy_x47`` -- X47 / depth growth (``design_bot_ideas_screen.md``
-  §2.1), the toy C0 argv + the ONE lever ``--grow trunk_layers=4`` (seeds 3601-3603), read against ``toy_c0``.
+  §2.1), the toy C0 argv + the ONE lever ``--grow trunk_layers=4`` (seeds 3601-3603), read against ``toy_c0``;
+* BATCH 2 (STAGED_PLAN §4.1-§4.3, F-AS-8; ``batch.BATCH2_STAGES``), each the side's C0 argv token for token + ONE
+  lever, at the side's written pin: ``sprt`` / ``toy_sprt`` (``--promotion-sprt``, §4.2) and ``lrfloor`` /
+  ``toy_lrfloor`` (``--min-lr`` two controller rungs above the start's rate: 1.7361e-4 / 2.0833e-4, §4.1.1-§4.1.2).
+  Their registered VOID guards are read by ``python -m main.x35.kit void --arm <arm> --run-dir <run>``
+  (``main.x35.batch2_void``).
 
     python -m main.x35.kit describe --arm a1 --seed 3501 --call <R_production.json> [--phase1 <record>]
     python -m main.x35.kit describe --arm ge_a1 --seed 3501 --call <R_production.json> [--models-dir D]   # a G-E reader
@@ -102,6 +107,11 @@ X47_GROWTH = "trunk_layers 2 -> 4"
 #: recorded, no fire (standing rule 8). The toy has no belief tokens, so the production tau class cannot occur and
 #: X26's Amendment 6 does not apply. ``describe`` carries them for the toy arms only (production's are the sheet's).
 K9B_TOY_CEILINGS: Dict[str, Any] = {"judged_max": 1e-3, "p99": 1e-4, "non_finite": "STOP", "rule8_rel": 1e-9}
+#: Batch 2's SPRT arm (STAGED_PLAN §4.2, AM-RP-f): the ONE lever, both sides (T6, ``gen3_sprt_promotion_v1``).
+SPRT_LEVER = ("--promotion-sprt",)
+#: Batch 2's LR-F arm (STAGED_PLAN §4.1.1 toy, §4.1.2 production): the ONE lever, ``--min-lr`` two controller rungs
+#: (x1.44) above the start's saved rate, typed exactly as the validated ``checkargs`` transcripts type it.
+LRF_LEVER = {"production": ("--min-lr", "1.7361e-4"), "toy": ("--min-lr", "2.0833e-4")}
 
 
 @dataclass(frozen=True)
@@ -132,6 +142,11 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("toy_a1", "toy", L_TOY, TOY_SEEDS, "rb_x35t_a1arch_s{seed}", 0, "warn"),
     Arm("toy_a2", "toy", L_TOY, TOY_SEEDS, "rb_x35t_a2pfsp_s{seed}", 0, "warn"),
     Arm("toy_x47", "toy", L_TOY, X47_SEEDS, "rb_x35t_x47d4_s{seed}", 0, "warn"),
+    # batch 2 (F-AS-8): look 1 at s3501-s3503 / s3601-s3603, look 2 at the side's last two seeds, as C0's
+    Arm("sprt", "production", L_PROD, PROD_SEEDS, "rb_x35_sprt_s{seed}", 0, "warn"),
+    Arm("lrfloor", "production", L_PROD, PROD_SEEDS, "rb_x35_lrfloor_s{seed}", 0, "warn"),
+    Arm("toy_sprt", "toy", L_TOY, TOY_SEEDS, "rb_x35t_sprt_s{seed}", 0, "warn"),
+    Arm("toy_lrfloor", "toy", L_TOY, TOY_SEEDS, "rb_x35t_lrfloor_s{seed}", 0, "warn"),
 )}
 #: ARM ALIASES: the ONE table of alternative spellings a launch sheet or an operator may type; every kit subcommand
 #: that takes ``--arm`` resolves it through :func:`canonical_arm` (argparse ``type=``), so ``x47`` == ``toy_x47``
@@ -157,6 +172,8 @@ assert all(v in ARMS for v in ARM_ALIASES.values()) and not set(ARM_ALIASES) & s
 #: production's FINAL class); A2 / toy A2 DROPPED (AM-RP-c, 2026-10-20: ``batch.DROPPED``). The conditional stages launch only when ``batch.stage_status`` says ALLOWED
 #: (``launch_x35.sh`` pre-check 9), and no production fork before its FP32_ALT commit is named (AM-8).
 BATCH1: Tuple[Tuple[str, int], ...] = tuple(f for _, forks in BATCH_STAGES for f in forks)
+#: Batch 2 (F-AS-8), ``batch.BATCH2_STAGES`` flattened: SPRT and LR-F at each side's pin, look 1 then look 2.
+BATCH2: Tuple[Tuple[str, int], ...] = tuple(f for _, forks in _B.BATCH2_STAGES for f in forks)
 
 
 class KitError(ValueError):
@@ -212,6 +229,10 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
         lever = list(D1_LEVER)
     elif arm == "toy_x47":
         lever = list(X47_LEVER)
+    elif arm in ("sprt", "toy_sprt"):
+        lever = list(SPRT_LEVER)
+    elif arm in ("lrfloor", "toy_lrfloor"):
+        lever = list(LRF_LEVER[a.side])
     elif a.phase == 2:
         if phase1 is None:
             raise KitError(f"arm {arm} is phase 2: it needs the {a.phase1_of} phase-1 record")
@@ -446,19 +467,19 @@ def live_runs() -> Dict[str, int]:
 def disk_check(models_dir: str, required_gib: float, *, thinning: bool,
                existing: Optional[Sequence[str]] = None, free_gib: Optional[float] = None,
                stage: Optional[str] = None) -> Tuple[bool, str]:
-    """Pre-check 8 (F22): free disk covers EVERY not-yet-created batch-1 fork at ``required_gib`` each, or the
-    operator declares ``thinning`` (finished arms are being thinned to their 10M nodes + final). With ``stage``, a
-    conditional fork its records have REFUSED (AM-7: ``batch.stage_status``) is not counted; a PENDING one is (the
-    conservative side)."""
+    """Pre-check 8 (F22): free disk covers EVERY not-yet-created batch-1 AND batch-2 fork (:data:`BATCH1` +
+    :data:`BATCH2`, F-AS-8) at ``required_gib`` each, or the operator declares ``thinning`` (finished arms are being
+    thinned to their 10M nodes + final). With ``stage``, a conditional fork its records have REFUSED (AM-7:
+    ``batch.stage_status``) is not counted; a PENDING one is (the conservative side)."""
     from main.x35.batch import REFUSED, stage_status
 
     have = set(existing) if existing is not None else {d for d in os.listdir(models_dir)
                                                         if d.startswith("rb_x35")}
-    remaining = [run_name(a, s) for a, s in BATCH1 if run_name(a, s) not in have
+    remaining = [run_name(a, s) for a, s in BATCH1 + BATCH2 if run_name(a, s) not in have
                  and (stage is None or stage_status(stage, a, s)[0] != REFUSED)]
     free = free_gib if free_gib is not None else shutil.disk_usage(models_dir).free / 2 ** 30
     need = len(remaining) * required_gib
-    msg = f"{free:.1f} GiB free; {len(remaining)} batch-1 fork(s) to create x {required_gib:.2f} = {need:.1f} GiB"
+    msg = f"{free:.1f} GiB free; {len(remaining)} batch-1/2 fork(s) to create x {required_gib:.2f} = {need:.1f} GiB"
     if free >= need:
         return True, msg
     if thinning and free >= required_gib:
@@ -543,8 +564,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     q.add_argument("--call", required=True)
     q.add_argument("--log", action="append", default=[], help="a log holding the startup line (repeatable)")
     q.add_argument("--stage", default=None, help="compare the seeded names with the side's recorded set (POOL)")
-    pc = sub.add_parser("pin-check", help="AM-1 (one pin PER SIDE): the pin == the side's X35_PIN_1 and every batch-1 "
-                                          "run of that side's recorded pin; exit 0 / 1")
+    pc = sub.add_parser("pin-check", help="AM-1 (one pin PER SIDE): the pin == the side's X35_PIN_1 and every side-pinned "
+                                          "run (batch 1 + 2 + the G-E readers) of that side's recorded pin; exit 0 / 1")
     pc.add_argument("--pin", required=True, help="the full sha")
     pc.add_argument("--side", required=True, choices=_B.SIDES)
     pc.add_argument("--stage", required=True)
@@ -580,7 +601,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     kb = sub.add_parser("k9b", help="AM-6: K9(b) over the fork's own rows at arm end: exit 0 PASS, 1 VOID, 3 INCONCLUSIVE")
     kb.add_argument("--run-dir", required=True)
     kb.add_argument("--stage", default=None, help="write the record <stage>/k9b/<run>.json")
-    kq = sub.add_parser("k9b-batch", help="AM-6 pre-check: every finished batch-1 arm's K9(b) record PASSes; exit 0 / 1")
+    kq = sub.add_parser("k9b-batch", help="AM-6 pre-check: every finished batch-1/2 arm's K9(b) record PASSes; exit 0 / 1")
     kq.add_argument("--stage", required=True)
     kq.add_argument("--models-dir", default=None)
     vr = sub.add_parser("validate-run", help="the verdict on one argv's checkargs + dry-run transcripts: exit 0 PASS, 1 FAIL")
@@ -594,6 +615,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     vr.add_argument("--checkargs", required=True, help="the checkargs transcript")
     vr.add_argument("--rc-dryrun", required=True, type=int)
     vr.add_argument("--rc-checkargs", required=True, type=int)
+    vo = sub.add_parser("void", help="batch 2's registered VOID guards at arm end (SPRT V-S1 / V-S2, LR-F's KL): exit 0 "
+                                     "PASS, 1 VOID, 3 INCONCLUSIVE")
+    vo.add_argument("--arm", required=True, type=canonical_arm, choices=sorted(_B.BATCH2_ARMS))
+    vo.add_argument("--run-dir", required=True)
     k = sub.add_parser("disk")
     k.add_argument("--required-gib", type=float, default=FORK_GIB)
     k.add_argument("--models-dir", default=None)
@@ -696,6 +721,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             if a.stage:
                 print(f"[x35 kit] K9(b) record {_B.k9b_record(a.stage, k)}")
             return {"PASS": 0, "VOID": 1}.get(k.verdict, 3)
+        if a.cmd == "void":
+            from main.x35 import batch2_void as _V
+
+            res = _V.read_void(a.arm, a.run_dir)
+            print(json.dumps(res.as_dict(), indent=1))
+            return {"PASS": 0, "VOID": 1}.get(res.verdict, 3)
         if a.cmd == "live":
             live = live_runs()
             for rd, pid in sorted(live.items()):

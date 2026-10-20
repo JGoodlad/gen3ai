@@ -126,12 +126,12 @@ def test_a_missing_exploiter_final_is_refused(tmp_path):
 
 def test_the_disk_check_counts_the_whole_remaining_batch():
     ok, msg = K.disk_check("/nonexistent", 20.68, thinning=False, existing=[], free_gib=318.0)
-    assert not ok and "26 batch-1 fork(s)" in msg    # 26 forks (AM-RP-c dropped A2 / toy A2), the conditional ones counted
+    assert not ok and "46 batch-1/2 fork(s)" in msg    # 26 batch-1 forks (AM-RP-c dropped A2 / toy A2) + 20 batch-2, the conditional ones counted
     ok, _ = K.disk_check("/nonexistent", 20.68, thinning=True, existing=[], free_gib=318.0)
     assert ok
     done = [K.run_name(a, s) for a, s in K.BATCH1[:7]]
-    ok, msg = K.disk_check("/nonexistent", 20.68, thinning=False, existing=done, free_gib=600.0)   # 19 x 20.68 = 392.9
-    assert ok and "19 batch-1" in msg
+    ok, msg = K.disk_check("/nonexistent", 20.68, thinning=False, existing=done, free_gib=900.0)   # 39 x 20.68 = 806.5
+    assert ok and "39 batch-1/2" in msg
     ok, msg = K.disk_check("/nonexistent", 20.68, thinning=True, existing=[], free_gib=10.0)
     assert not ok and "not even this launch" in msg
 
@@ -142,13 +142,13 @@ def test_the_disk_check_counts_x47s_three_forks():
     on both sides (standing rule 8)."""
     x47 = [K.run_name("toy_x47", s) for s in (3601, 3602, 3603, 3604, 3605)]
     assert x47 == [f"rb_x35t_x47d4_s{s}" for s in range(3601, 3606)]
-    others = sorted({K.run_name(a, s) for a, s in K.BATCH1} - set(x47))
+    others = sorted({K.run_name(a, s) for a, s in K.BATCH1 + K.BATCH2} - set(x47))
     ok, msg = K.disk_check("/nonexistent", 13.05, thinning=False, existing=others, free_gib=75.0)
-    assert ok and "5 batch-1 fork(s)" in msg, msg
+    assert ok and "5 batch-1/2 fork(s)" in msg, msg
     ok, msg = K.disk_check("/nonexistent", 13.05, thinning=False, existing=others, free_gib=55.0)
-    assert not ok and "5 batch-1 fork(s)" in msg, msg
+    assert not ok and "5 batch-1/2 fork(s)" in msg, msg
     ok, msg = K.disk_check("/nonexistent", 13.05, thinning=False, existing=others + x47, free_gib=1.0)
-    assert ok and "0 batch-1 fork(s)" in msg, msg
+    assert ok and "0 batch-1/2 fork(s)" in msg, msg
 
 
 def test_describe_names_the_dry_run_expectations():
@@ -337,7 +337,7 @@ def test_x47_is_toy_c0_plus_the_grow_lever_and_nothing_else():
 
 def test_c3_the_toy_arms_run_k9b_warn_under_x34s_ceilings_and_production_is_unchanged():
     toys = [n for n, a in K.ARMS.items() if a.side == "toy"]
-    assert sorted(toys) == ["toy_a1", "toy_a2", "toy_c0", "toy_x47"]
+    assert sorted(toys) == ["toy_a1", "toy_a2", "toy_c0", "toy_lrfloor", "toy_sprt", "toy_x47"]
     for n in toys:
         assert flags(K.build_argv(n, 3601, toy_call()))["--behaviour-check"] == "warn", n
         d = K.describe(n, 3601, toy_call())
