@@ -1,0 +1,44 @@
+{
+ "band": 0.005,
+ "bank": {
+  "ids_sha256": "cf8d8c6fc09c9a85ce976a85a6195eb52977900659ac9be218b47562d9a09dfb",
+  "n": 287
+ },
+ "bootstrap": {
+  "B": 2000,
+  "cluster": "battle",
+  "seed": 20261020
+ },
+ "code_commit": "8fe4fb89927fcb596d187a9fb01feb3a8c2fe491",
+ "decoys": {
+  "D": 4,
+  "batch": 60,
+  "max_gated": 1000,
+  "near_copy_sets": 4,
+  "salt": "search_l3_decoy_v1:"
+ },
+ "min_states": 60,
+ "opponent_model": {
+  "checkpoint": "x26_225M checkpoint_225000152_steps.zip",
+  "sha256": "bc93a321bf1d4c6a83bc80910e8bbc81673a157f71e6cb2cbd7ca7b5427819ce"
+ },
+ "pool": {
+  "file": "~/gen3ai_archive/world_sampler_stage1/pool/pool_pin.json",
+  "sha256": "4083c86bdffa09d58c076f2a0577ed9696161a3b844beeeb50b2749243c107ee"
+ },
+ "recheck": {
+  "n": 10,
+  "salt": "search_l3_decoy_recheck_v1:"
+ },
+ "registered": "2026-10-20",
+ "repro_nats": 0.0001,
+ "sha256": {
+  "../l3_read.py": "036f6260c8cdb39633ccc2a09331ad0519362e2a33b5782a21f46fa9f5489110",
+  "PREREGISTRATION.md": "b0628a5f250b5aaf1e3d881daba96285a734852e64d484641bf4644b25870821",
+  "decoy_read.py": "bd84afe633c506b9f2135f1c3d9e36a35a65385003f690ea2037a47bb1e801b4",
+  "decoy_run.py": "a760a6770d749466372a06f20347b6ab9544ed7cdfa0b59a89b5213750425f9e",
+  "run.sh": "cf1a0988af5287d37f593c23f9158f51289555a7ccb105af750eba6a399dfff6"
+ },
+ "tie_nats": 1e-06,
+ "unit": "L3 familiarity counter-test (REVIEW.md F2): pool decoys scored in the truth's place"
+}
