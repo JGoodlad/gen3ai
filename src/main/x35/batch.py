@@ -29,9 +29,10 @@ exposes each as a subcommand, and ``launch_x35.sh`` calls them as pre-checks (a 
 * **AM-9 (the order, amended 2026-10-20 from AM-7) and the conditional stages** (:data:`STAGES`): the TOY block runs
   FIRST (T1 toy C0 + X47 s3601-s3603 interleaved, then T1b = X47 and toy C0 s3604-s3605 only if X47's look 1 is
   CONTINUE, AM-4), then production once FP32_ALT has landed: P1 the first six forks -> G1 -> P2 C0 s3504-s3505 -> P3
-  A1 s3504-s3505 (only if A1's look 1 is CONTINUE) -> P4 D1, A2 (only if G1 PASSes); the toy calibration T2 stays last
-  and conditional (AM-3: toy A1 / toy A2 only after production A1 / A2 has a FINAL class GAIN, NULL or LOSS, and G1
-  PASSed). :func:`stage_status` says, from the saved read records, whether a fork is ALLOWED, PENDING (its record does
+  A1 s3504-s3505 (only if A1's look 1 is CONTINUE) -> P4 D1 (only if G1 PASSes); the toy calibration T2 stays last
+  and conditional (AM-3: toy A1 only after production A1 has a FINAL class GAIN, NULL or LOSS, and G1 PASSed).
+  **AM-RP-c (orchestrator, 2026-10-20): A2 and toy A2 are DROPPED** (:data:`DROPPED`): they left ``STAGES`` and
+  :func:`stage_status` REFUSES them; they stay in :data:`BATCH1_ARMS` so a run of theirs would still be judged. :func:`stage_status` says, from the saved read records, whether a fork is ALLOWED, PENDING (its record does
   not exist yet) or REFUSED; the ORDER is the Training session's launch sequence (:data:`STAGES`), not a gate.
 * **AM-6, K9(b) AT ARM END.** :func:`k9b_read` reads ``behaviour/max_abs_dlogp_judged`` and
   ``behaviour/p99_abs_dlogp_current`` over the fork's OWN rows (steps > its fork step: the inherited rows are
@@ -114,10 +115,14 @@ STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
     ("P1", (("a1", 3501), ("c0", 3501), ("c0", 3502), ("a1", 3502), ("a1", 3503), ("c0", 3503))),
     ("P2", (("c0", 3504), ("c0", 3505))),
     ("P3", (("a1", 3504), ("a1", 3505))),
-    ("P4", (("d1", 3501), ("d1", 3502), ("d1", 3503), ("a2", 3501), ("a2", 3502), ("a2", 3503))),
-    ("T2", (("toy_a1", 3601), ("toy_a1", 3602), ("toy_a1", 3603), ("toy_a2", 3601), ("toy_a2", 3602),
-            ("toy_a2", 3603))),
+    ("P4", (("d1", 3501), ("d1", 3502), ("d1", 3503))),
+    ("T2", (("toy_a1", 3601), ("toy_a1", 3602), ("toy_a1", 3603))),
 )
+#: AM-RP-c (orchestrator, 2026-10-20, BATCH1_LAUNCH_SHEET.md §0, before any production arm): arms DROPPED from batch 1.
+#: :func:`stage_status` REFUSES every seed of them; their registration text stays in the sheet as history.
+DROPPED = {a: ("AM-RP-c (2026-10-20): A2 (PFSP) is DROPPED from batch 1 -- its lever tilts 1.2 % of games, R1 cannot "
+               "reach NULL, its promotion count is confounded by its sentinel count (TM-1) and its PFSP state is "
+               "biased (F31)") for a in ("a2", "toy_a2")}
 #: The arms of batch 1 (the AM-1 pin and the POOL record cover their runs).
 BATCH1_ARMS = ("c0", "a1", "a2", "d1", "toy_c0", "toy_a1", "toy_a2", "toy_x47")
 #: The arm label each read record carries (``readout`` A1 / A2, ``d1`` X38, ``x47`` X47).
@@ -573,6 +578,8 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
         return trigger(stage, arm)
     if arm not in BATCH1_ARMS:
         return ALLOWED, f"{arm} is not a batch-1 arm (no AM-9 condition)"
+    if arm in DROPPED:
+        return REFUSED, DROPPED[arm]
     side = ARMS[arm].side
     if side == "production":                 # AM-8: no production fork before its FP32_ALT commit is named
         filled, why = side_gate(stage, side)

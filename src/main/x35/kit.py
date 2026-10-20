@@ -153,8 +153,8 @@ assert all(v in ARMS for v in ARM_ALIASES.values()) and not set(ARM_ALIASES) & s
 #: Batch 1 + X47, in GPU order: AM-9 (orchestrator, 2026-10-20; it moved the toy block ahead of production, which waits
 #: for the FP32_ALT build), stage by stage in ``main.x35.batch.STAGES``: T1 toy C0 + X47 (C2's interleave, toy A1 out) ->
 #: T1b X47 look 2 with toy C0 s3604-s3605 (AM-4: X47 look 1 CONTINUE) -> P1 the A1 / C0 ABBA (s3501-s3503) -> [G1,
-#: AM-2] -> P2 C0 s3504-s3505 -> P3 A1 s3504-s3505 (A1 look 1 CONTINUE) -> P4 D1, A2 (G1 PASS) -> T2 toy A1 / toy A2
-#: (AM-3: production's FINAL class). The conditional stages launch only when ``batch.stage_status`` says ALLOWED
+#: AM-2] -> P2 C0 s3504-s3505 -> P3 A1 s3504-s3505 (A1 look 1 CONTINUE) -> P4 D1 (G1 PASS) -> T2 toy A1 (AM-3:
+#: production's FINAL class); A2 / toy A2 DROPPED (AM-RP-c, 2026-10-20: ``batch.DROPPED``). The conditional stages launch only when ``batch.stage_status`` says ALLOWED
 #: (``launch_x35.sh`` pre-check 9), and no production fork before its FP32_ALT commit is named (AM-8).
 BATCH1: Tuple[Tuple[str, int], ...] = tuple(f for _, forks in BATCH_STAGES for f in forks)
 

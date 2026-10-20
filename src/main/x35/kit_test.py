@@ -126,12 +126,12 @@ def test_a_missing_exploiter_final_is_refused(tmp_path):
 
 def test_the_disk_check_counts_the_whole_remaining_batch():
     ok, msg = K.disk_check("/nonexistent", 20.68, thinning=False, existing=[], free_gib=318.0)
-    assert not ok and "32 batch-1 fork(s)" in msg    # AM-7's 32 forks, the conditional stages counted (PENDING)
+    assert not ok and "26 batch-1 fork(s)" in msg    # 26 forks (AM-RP-c dropped A2 / toy A2), the conditional ones counted
     ok, _ = K.disk_check("/nonexistent", 20.68, thinning=True, existing=[], free_gib=318.0)
     assert ok
     done = [K.run_name(a, s) for a, s in K.BATCH1[:7]]
-    ok, msg = K.disk_check("/nonexistent", 20.68, thinning=False, existing=done, free_gib=600.0)   # 25 x 20.68 = 517.0
-    assert ok and "25 batch-1" in msg
+    ok, msg = K.disk_check("/nonexistent", 20.68, thinning=False, existing=done, free_gib=600.0)   # 19 x 20.68 = 392.9
+    assert ok and "19 batch-1" in msg
     ok, msg = K.disk_check("/nonexistent", 20.68, thinning=True, existing=[], free_gib=10.0)
     assert not ok and "not even this launch" in msg
 
@@ -363,14 +363,14 @@ def _p1(arm: str):
 def test_batch1_keeps_c2s_x47_interleave_and_the_toy_calibration_last():
     """C2 (orchestrator, 2026-10-19) inside AM-9's order (the whole list: ``batch_test.test_batch1_is_am9s_order_...``):
     X47 beside its toy C0 in counterbalanced pairs, at look 1 (ABA) and look 2 (BA, AB), the toy block (T1, T1b) FIRST,
-    production after it, and the toy calibration (toy A1 / toy A2, AM-3's conditional stage) last."""
+    production after it, and the toy calibration (toy A1, AM-3's conditional stage; toy A2 DROPPED by AM-RP-c) last."""
     pos = {(a, s): i for i, (a, s) in enumerate(K.BATCH1)}
     first = []
     for s in (3601, 3602, 3603, 3604, 3605):
         assert abs(pos["toy_c0", s] - pos["toy_x47", s]) == 1, s    # X47 runs right beside its own C0
         first.append("toy_c0" if pos["toy_c0", s] < pos["toy_x47", s] else "toy_x47")
     assert first == ["toy_c0", "toy_x47", "toy_c0", "toy_x47", "toy_c0"]   # box drift lands on neither side
-    assert {a for a, _ in K.BATCH1[-6:]} == {"toy_a1", "toy_a2"}
+    assert {a for a, _ in K.BATCH1[-3:]} == {"toy_a1"}                     # AM-RP-c: toy A2 DROPPED
     block = [(a, s) for a, s in K.BATCH1 if a in ("toy_c0", "toy_x47")]
     assert list(K.BATCH1[:len(block)]) == block                                  # AM-9: the toy block opens the batch
     assert max(pos[f] for f in block) < min(pos[a, s] for a, s in K.BATCH1 if not a.startswith("toy_"))   # production after

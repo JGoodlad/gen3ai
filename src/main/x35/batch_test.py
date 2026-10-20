@@ -362,9 +362,9 @@ def test_batch1_is_am9s_order_the_toy_block_first():
         ("toy_x47", 3604), ("toy_c0", 3604), ("toy_c0", 3605), ("toy_x47", 3605),
         ("a1", 3501), ("c0", 3501), ("c0", 3502), ("a1", 3502), ("a1", 3503), ("c0", 3503),
         ("c0", 3504), ("c0", 3505), ("a1", 3504), ("a1", 3505),
-        ("d1", 3501), ("d1", 3502), ("d1", 3503), ("a2", 3501), ("a2", 3502), ("a2", 3503),
-        ("toy_a1", 3601), ("toy_a1", 3602), ("toy_a1", 3603), ("toy_a2", 3601), ("toy_a2", 3602), ("toy_a2", 3603)]
-    assert len({K.run_name(a, s) for a, s in K.BATCH1}) == 32
+        ("d1", 3501), ("d1", 3502), ("d1", 3503),
+        ("toy_a1", 3601), ("toy_a1", 3602), ("toy_a1", 3603)]                 # AM-RP-c: A2 / toy A2 DROPPED
+    assert len({K.run_name(a, s) for a, s in K.BATCH1}) == 26
     first_prod = min(i for i, (a, _) in enumerate(K.BATCH1) if not a.startswith("toy_"))
     assert all(a.startswith("toy_") for a, _ in K.BATCH1[:first_prod]) and first_prod == 10   # T1 + T1b, then production
 
@@ -378,12 +378,12 @@ def _g1_record(stage: Path, verdict: str) -> None:
     (stage / B.G1_FILE).write_text(json.dumps({"schema": B.G1_SCHEMA, "verdict": verdict}))
 
 
-def test_t1_and_p1_are_unconditional_and_g1_gates_d1_a2_and_c0s_look_2(tmp_path):
+def test_t1_and_p1_are_unconditional_and_g1_gates_d1_and_c0s_look_2(tmp_path):
     st = str(tmp_path)
     _fill_fp32(tmp_path)                                                   # FP32_ALT named: production may be asked
     for a, s in [("a1", 3501), ("c0", 3503), ("toy_c0", 3601), ("toy_x47", 3603)]:
         assert B.stage_status(st, a, s)[0] == B.ALLOWED, (a, s)
-    for a, s in [("d1", 3501), ("a2", 3502), ("c0", 3504)]:
+    for a, s in [("d1", 3501), ("c0", 3504)]:
         assert B.stage_status(st, a, s)[0] == B.PENDING, (a, s)
     _g1_record(tmp_path, B.HOLD)
     assert B.stage_status(st, "c0", 3504)[0] == B.ALLOWED          # the HOLD branch runs C0's look-2 seeds next
@@ -392,7 +392,24 @@ def test_t1_and_p1_are_unconditional_and_g1_gates_d1_a2_and_c0s_look_2(tmp_path)
     assert B.stage_status(st, "toy_a1", 3601)[0] == B.REFUSED
     (tmp_path / B.G1_FILE).unlink()
     _g1_record(tmp_path, B.PASS)
-    assert B.stage_status(st, "d1", 3501)[0] == B.ALLOWED and B.stage_status(st, "a2", 3503)[0] == B.ALLOWED
+    assert B.stage_status(st, "d1", 3501)[0] == B.ALLOWED
+
+
+def test_am_rp_c_a2_and_toy_a2_are_dropped_refused_at_every_seed_and_whatever_the_records_say(tmp_path):
+    """AM-RP-c (orchestrator, 2026-10-20): A2 and toy A2 left the queue. ``stage-check`` REFUSES every seed of them
+    with the ruling as its reason, even on the records that once ALLOWED them (G1 PASS, production A2 final); their
+    runs would still be judged by the side's pin (they stay batch-1 arms). Fails on revert of the DROPPED rule."""
+    st = str(tmp_path)
+    _fill_fp32(tmp_path)
+    _g1_record(tmp_path, B.PASS)
+    _save(tmp_path, "a2", 1, verdict="NULL", r1={"final": True, "class": "NULL"})
+    for a in ("a2", "toy_a2"):
+        assert not any(a == arm for _, forks in B.STAGES for arm, _ in forks)
+        assert a in B.BATCH1_ARMS
+        for s in K.ARMS[a].seeds:
+            status, why = B.stage_status(st, a, s)
+            assert status == B.REFUSED and "AM-RP-c" in why, (a, s, why)
+    assert B.stage_status(st, "d1", 3501)[0] == B.ALLOWED and B.stage_status(st, "toy_a1", 3601)[0] == B.PENDING
 
 
 def test_a_look_2_bon_fork_needs_its_look_1_continue(tmp_path):
@@ -431,7 +448,7 @@ def test_am3_the_toy_calibration_needs_productions_final_class(tmp_path):
     (tmp_path / B.READS_DIR / "a1_look2.json").unlink()
     _save(tmp_path, "a1", 2, verdict="ADOPT-CANDIDATE", r1={"final": True, "class": "GAIN"})
     assert B.stage_status(st, "toy_a1", 3603)[0] == B.ALLOWED
-    assert B.stage_status(st, "toy_a2", 3601)[0] == B.PENDING             # A2 has its own condition
+    assert B.stage_status(st, "toy_a2", 3601)[0] == B.REFUSED             # AM-RP-c: toy A2 is DROPPED
 
 
 def test_a_read_record_for_another_arm_or_look_is_refused(tmp_path):
@@ -445,8 +462,8 @@ def test_a_read_record_for_another_arm_or_look_is_refused(tmp_path):
 def test_the_disk_check_skips_the_forks_the_records_refused(tmp_path):
     _fill_fp32(tmp_path)
     ok, msg = K.disk_check("/nonexistent", 10.0, thinning=False, existing=[], free_gib=1000.0, stage=str(tmp_path))
-    assert ok and "32 batch-1 fork(s)" in msg                              # PENDING forks are counted
-    _g1_record(tmp_path, B.HOLD)                                          # D1, A2, toy A1 / A2 (6 + 6) refused
+    assert ok and "26 batch-1 fork(s)" in msg                              # PENDING forks are counted (A2s dropped)
+    _g1_record(tmp_path, B.HOLD)                                          # D1 and toy A1 (3 + 3) refused
     ok, msg = K.disk_check("/nonexistent", 10.0, thinning=False, existing=[], free_gib=1000.0, stage=str(tmp_path))
     assert ok and "20 batch-1 fork(s)" in msg, msg
 
