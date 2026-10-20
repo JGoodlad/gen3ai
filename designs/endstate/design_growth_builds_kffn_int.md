@@ -3,8 +3,11 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A build or decision that differs from this
 doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-19): SPEC; nothing built.** These are the build specs for **B-KFFN** (per-token-kind feed-forward
-experts, the lever of X48) and **B-INT** (the opponent-intent objective shaping the trunk, the lever of X49). The
+**Status (2026-10-20): B-KFFN BUILT (T66: `agents/model/trunk_kffn.py`, config v161) together with the §3 field-generic
+refactor; B-INT is still a SPEC (T67).** These are the build specs for **B-KFFN** (per-token-kind feed-forward
+experts, the lever of X48) and **B-INT** (the opponent-intent objective shaping the trunk, the lever of X49). Where the
+build differs from the text below, the text was updated in place and the Decision record says so (F-GB-3 was wrong;
+Q-K3's ruling is built). The
 parent design, with the hypotheses, A/Bs, costs in GPU-h and ranking, is
 [`design_bot_ideas_screen.md`](design_bot_ideas_screen.md) §2.2, §2.3 and §4. Both builds are filed in
 [`../ops/TASK_BACKLOG.md`](../ops/TASK_BACKLOG.md): **T66 (B-KFFN)** and **T67 (B-INT)**. Each spec is written so that
@@ -98,9 +101,12 @@ Keeping `linear1` / `linear2` as the Pokémon expert means the parent's keys loa
   built (the X5 hypothesis set), and the event seat count. **No literal.**
 - The table is then set on every round, `round.ffn_segments`. The round's forward reads plain ints that were
   precomputed in `__init__` or at build, which is the compile spelling `src/agents/model/CLAUDE.md` requires.
-- **Never route by token-type id.** The E5 tail seats carry `TOKEN_TYPE_HISTORY`, the same id as the event seats
-  (the event seats' block in `extractor_forward.py` cites the E5 tail as the precedent for that id). A type-id router would therefore send
-  the 6 OTHER_move tokens to the EVENT expert (F-GB-3).
+- **Never route by token-type id.** The table is read off the seat MODULES that write each position, so it cannot
+  drift from them. (CORRECTED 2026-10-20, F-GB-3: the E5 tail seats are typed `TOKEN_TYPE_THEIR_THREAT`, like E4 —
+  `EntityMoveSeats.seat_types`; the event seats' "E5 precedent" means only "no token-type table growth" — so on today's
+  layout a type-id router would agree with the seat-role table. The rule stands because a type id is not a role: the
+  OTHER_species seat shares THEIR_TEAM with the opponent's six, and a future seat may reuse an id. K-2 checks the table
+  against the ids the real forward hands the trunk AND against the seat counts.)
 - **The round asserts** that its input's token count equals the table's last `end`. A layout change that forgets the
   table then raises at the first forward instead of mis-routing. This is a Python int compare on a static shape, so it
   is free under compile.
@@ -148,13 +154,12 @@ rows. The row's hooks (§3):
      `policy_kwargs`, as `grow_trunk_layers` does.
 
   It returns the new `(name, parameter)` pairs in module order.
-- **The optimizer** follows B-GROW's rule unchanged: every parent parameter's AdamW state is carried, and the new
-  experts start with NO state. **This is not neutral, and it is a deliberate part of the lever:**
-  - at their first update the four copies of each FFN take a fresh-Adam step (bias-corrected, step 1);
-  - meanwhile the Pokémon expert, which IS the old shared FFN, keeps its moments;
-  - so the copies DIVERGE from the first update even on identical gradients.
-
-  The alternative is to copy the shared FFN's moments into each expert. It is open question Q-K3.
+- **The optimizer (AS BUILT, ruling Q-K3).** Every parent parameter's AdamW state is carried (B-GROW's rule), and each
+  new expert parameter gets an independent CLONE of its shared source's state (`exp_avg`, `exp_avg_sq`, `step`): the
+  grower returns the copy map, `regrow_optimizer` clones, and the report counts them as `copied`. So all five experts
+  start as ONE optimizer trajectory and diverge only through their gradients (no step-1 jolt on 30 % of the
+  parameters). The stamp's `optimizer` string carries the row's addendum. B-GROW's identity rounds copy nothing and still
+  start fresh. (The spec's first text — new experts with NO state — was Q-K3's rejected alternative.)
 - **The fork-time gate.** It is B-GROW's: fresh CPU builds, fp32, eager, the 64 fixture rows, **bit-identical logits
   and values**, otherwise `GrowthError` → `FATAL_CONFIG`.
   - The bar is achievable, as MEASURED: the split FFN equals the shared FFN bit for bit in every round, on the fresh
@@ -172,8 +177,8 @@ rows. The row's hooks (§3):
 
 ### 1.5 Versioning and the strict-loader record
 
-- **`ModelVersion.trunk_ffn_by_kind: str = "off"`** (values `off` / `on`). Bump `MODEL_CONFIG_VERSION` to the next
-  free number (160 if nothing lands first). Add one `_migrate_config` block, `data.setdefault("trunk_ffn_by_kind",
+- **`ModelVersion.trunk_ffn_by_kind: str = "off"`** (values `off` / `on`). `MODEL_CONFIG_VERSION` 161 (as built: v160 was
+  FP32_ALT's `tau_solve`). Add one `_migrate_config` block, `data.setdefault("trunk_ffn_by_kind",
   "off")`. Add a `check_compatible` clause whose mismatch text names `--grow trunk_ffn_by_kind=on`, like the
   `trunk_layers` clause.
 - **No `ARCH_SIGNATURE` bump.** The off path builds nothing, so every existing state dict and forward is unchanged, and
@@ -210,8 +215,10 @@ rows. The row's hooks (§3):
   would run in fp32 outside the region, silently. Test K-9 pins this.
 - **Compile.** The routing is six static slices, six `Linear → relu → Linear` chains and one `cat` per round. Every
   index is a build-time int, there is no data-dependent op, and so `selection_sites` gains only a `PYTHON` entry for
-  the `self.kind_ffn is not None` branch. Expected to compile fullgraph; **UNVERIFIED until the build's slow compile
-  test runs** (K-11).
+  the `self.kind_ffn is not None` branch. MEASURED (K-11, 2026-10-20, CPU Inductor): the kffn
+  production extractor compiles with `fullgraph=True` (no graph break) and matches eager at 1.30e-5 on the 64 rows,
+  against 1.08e-5 for the OFF extractor under the identical procedure (a matched control: the shared FFN's own compile
+  noise, ~1.2x); the test's bar is 1e-4, `cpu_compile_sites_slow_test`'s. The CUDA graph is not measured here.
   - The compile-cache key covers the field automatically: it hashes `extractor_arch.arch_toggles_from_args`, which is
     generated from the registry.
   - `--grad-checkpointing` wraps the whole round and is unaffected.
@@ -240,12 +247,12 @@ It is rejected.
 | id | test | it fails when… |
 |---|---|---|
 | K-1 | off builds nothing: the state-dict keys and every initial byte equal a build without the field | an expert is built, or the RNG stream moves, when off |
-| K-2 | the segment table matches the SEAT ROLES of a real production forward. Each position's kind is checked against the seat that wrote it: the E5 tail is `threat` although it is typed HISTORY, and position 31 is `mon` | routing by token-type id, or a literal layout |
+| K-2 | the segment table matches the SEAT ROLES of a real production forward. Each position's kind is checked against the seat that wrote it (the type ids the forward hands the trunk): the E5 tail is `threat` (typed THEIR_THREAT, like E4; F-GB-3 corrected), position 31 is `mon`; and the same function on other seat counts moves every boundary, a missing kind a typed refusal | a literal layout, a wrong seat count |
 | K-3 | tied experts (each a copy of the shared FFN) give a full policy whose logits and values are BIT-IDENTICAL to the shared FFN's (64 fixture rows, one batch, CPU fp32 eager) | a segment drops, duplicates or reorders tokens |
 | K-4 | perturbing expert k changes, at that round's output, exactly the tokens of kind k (a forward hook) | mis-routing between kinds |
 | K-5 | a fresh `on` build: every non-expert parameter's initial bytes equal the off build's | the experts are not `IsolatedLinear` or are not built in `fork_rng` |
 | K-6 | an `IdentityInitRound` built with experts is the identity (its experts' `linear2` zero); `--grow trunk_layers` on a kffn parent stays bit-identical | the experts' zero init in extra rounds |
-| K-7 | **the grow fork:** a production-shaped parent after one AdamW step (`growth_test`'s pattern); `apply_growth` with `trunk_ffn_by_kind off → on`; the child's logits and values bit-identical; the grown state dict loads strictly into a fresh `on` build; the optimizer carries every parent state and the experts have none | the copy, the key layout or the optimizer rule |
+| K-7 | **the grow fork:** a production-shaped parent after one AdamW step (`growth_test`'s pattern); `apply_growth` with `trunk_ffn_by_kind off → on`; the child's logits and values bit-identical; the grown state dict loads strictly into a fresh `on` build; the optimizer carries every parent state and every expert holds a CLONE of its source's (Q-K3); with depth at the same fork, depth applies first | the copy, the key layout or the optimizer rule |
 | K-8 | a non-copy expert init (monkeypatched) is REFUSED by the fork-time gate | a gate that does not compare |
 | K-9 | under `set_trunk_precision(policy, "bf16")` the expert matmuls run in bf16 (a dtype hook) and the round returns fp32 | experts outside the round class |
 | K-10 | refusals: `on` without one of the five kinds (the toy argv) is typed; `on → off` growth is refused; `--trunk-ffn-by-kind` beside `--grow` is refused; a fork typing it without `--grow` is refused by `checkargs` and the dry run (the F-BI-2 path) | a missing guard |
@@ -445,8 +452,10 @@ and every row's extra gate run on the same probes. `grow_seeded_pool`'s skip tes
   reason.
 - **F-GB-2 (HAZARD, B-GROW as built).** `growth.apply_growth` and `grow_fork.grow_seeded_pool` are hard-coded to
   `trunk_layers` (a `KeyError` for any other field). Today the declared-but-refused rows hide this. §3 is the fix.
-- **F-GB-3 (HAZARD, routing).** The E5 tail seats (OTHER_move tokens) carry `TOKEN_TYPE_HISTORY`, the event seats' id.
-  A token-type router would put move tokens in the event expert. Route by seat role (§1.2, K-2).
+- **F-GB-3 (CORRECTED 2026-10-20 by the build).** The spec said the E5 tail seats carry `TOKEN_TYPE_HISTORY`. They do
+  not: `EntityMoveSeats.seat_types` gives E4 and the E5 tail `TOKEN_TYPE_THEIR_THREAT` (the event seats' "E5 precedent"
+  is only "no token-type table growth"); the real forward confirms it (K-2). So no hazard exists on today's layout, and a
+  type-id router would agree with the table. Seat-role routing stays (§1.2: a type id is not a role).
 - **F-GB-4 (layout).** OTHER_species sits at position 31, after the entity seats and before the event seats, not
   beside the 12 team tokens. The Pokémon kind is two segments, and the routing is six segments, not five.
 - **F-GB-5 (MEASURED, a determinism boundary).** CPU split-versus-shared FFN equality is bit-exact at batch ≥ 8 here,
@@ -463,6 +472,14 @@ and every row's extra gate run on the same probes. `grow_seeded_pool`'s skip tes
 - **F-GB-8 (CONFIRMED figures).** The screen doc's "2.61M → 3.40M" is exact: 2,609,183 → 3,400,223 for the fresh
   production policy. The trained baseline counts 5,624,179 because it carries its ride-along heads (declared
   overrides). FFN parameters are 65,920 per round. The intent head has 24,832 parameters.
+- **F-GB-10 (B-KFFN as built, a capability gap).** `pin_worker depth` REFUSES a kffn checkpoint (`UnsupportedTrunk`,
+  K-14) rather than routing its replica through `round.ffn`: the probe battery's depth / FFN-unit / truncation / spectra
+  diagnostics are unavailable on X48's arms until the replica learns the segment table. Its `capture` command (forward
+  hooks on the real rounds) is unaffected. X48's registered descriptor (the experts' pairwise weight distance) reads
+  weights and needs neither.
+- **F-GB-11 (Q-K2, MEASURED on the build).** The gate's bar held on this box on a TRAINED-shape production parent (one
+  AdamW step): bit-identical at the 64-row batch, every round. Another CPU stays **UNVERIFIED**; a failure there is the
+  typed refusal (ruling Q-K2), never a tolerance.
 - **F-GB-9 (process).** The measurement scripts were throwaway and are not committed. They ran with nice 19 on cores
   5–7 / 13–15 under `ulimit -v` 12 GB instead of `scripts/ops/mem_cap.sh`: the capped scope sat queued behind other
   agents' capped jobs, and the jobs were light (≈ 1 min each). Their wall-clock figures carry the shared box's noise.
@@ -476,3 +493,4 @@ and every row's extra gate run on the same probes. `grow_seeded_pool`'s skip tes
 |---|---|---|---|---|
 | 2026-10-19 | **This doc CREATED** (design worker, orchestrator brief): build specs for B-KFFN and B-INT | **B-KFFN:** five per-kind experts per round, the shared FFN kept as the Pokémon expert (parent keys unchanged), routed by build-time seat-role SEGMENTS, experts inside the round classes (bf16 for free), a private-seed `IsolatedLinear` init when fresh and COPIES at a fork, a CLI-tier `trunk_ffn_by_kind` field with a config bump and no `ARCH_SIGNATURE` bump, the gate bit-identical at one 64-row batch. **B-INT:** `--grow opp_intent_grad_mode=shaping` with the flag RE-PROMOTED to the CLI tier, a forward + GRADIENT gate, `opp_intent_coef` inherited. A field-generic growth refactor first. B-KFFN before B-INT, in series | routing by token-type id (F-GB-3); experts as sibling modules (they would escape the bf16 region); a padded grouped GEMM (≈ 2.5× FFN FLOPs); a tolerance gate for the experts (bit-identity MEASURED achievable at 64 rows); leaving `opp_intent_grad_mode` CONFIG_ONLY (F-GB-1: a silent no-op arm); a two-pass flat head to cut a consumer route (MEASURED unnecessary: F-GB-7); building experts on the toy (no move, threat or event tokens) | the CPU measurements above (fresh production build at `b79b66bb`; trained `rb_es_end2_s2005`); `growth.py`, `grow_fork.py`, `team_transformer.py`, `trunk_depth.py`, `trunk_precision.py`, `extractor_forward.py`, `move_resolution.py`, `extractor_arch.py`, `flag_registry.py`, `pin_worker.py` |
 | 2026-10-19 | **Open questions RULED** (orchestrator, owner's full-discretion grant) | **Q-K1:** five kinds (board has its own expert). **Q-K2:** refuse when bit-identity fails at 64 rows (rule 8, no tolerance). **Q-K3:** a COPIED expert inherits the shared FFN's AdamW moments and step at the fork (a copy is the same function, so it keeps the same optimizer state); identity-init NEW layers (B-GROW depth) still start fresh, so F-BI-3's rule holds for them. **Q-K4:** the equal-parameter attribution arm is built only if X48 reads adopt-candidate. **Q-I1:** X49 runs at the inherited `opp_intent_coef` 0.05. **Q-I2:** re-save each pool snapshot through the uniform growth path | four kinds; a declared tolerance; fresh moments for copies; building the attribution arm now; a dose arm first; declaring the field opponent-irrelevant | the recommendations in "Open questions" above; F-BI-3 (B-GROW's optimizer rule) |
+| 2026-10-20 | **B-KFFN BUILT (T66)** with the §3 refactor (B-KFFN worker, orchestrator brief; config v161) | As specified, with Q-K1…Q-K4 as ruled: five kinds, six seat-role segments, experts inside `TrunkRound`, private-seed fresh init, `--grow trunk_ffn_by_kind=on` copying weights AND AdamW state (`copied`), bit-identity refusal at one 64-row batch, CLI-tier field, no `ARCH_SIGNATURE` bump; `pin_worker depth` REFUSES (F-GB-10). What changed from the text: F-GB-3 CORRECTED (the E5 tail is typed THEIR_THREAT); §1.4's optimizer paragraph rewritten to the ruling; K-2 / K-7 rows updated; config v161 (v160 was FP32_ALT) | routing `pin_worker`'s replica through the experts now (refused instead: F-GB-10) | fresh production 2,609,183 → 3,400,223 params; the grow gate on a one-step production parent max \|Δ\| 0.0, 48 tensors all copied; OFF: learner golden, played-bits sentinel, obs golden unchanged; tests K-1…K-14 (`trunk_kffn_test.py`, `grow_fork_test.py`, `probe_battery_test.py`) |

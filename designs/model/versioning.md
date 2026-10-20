@@ -310,16 +310,23 @@ RECORDED so a run keeps the arithmetic it trained with:
   (`research_state/measurements/tau_fp32_alt_2026-10-20/`).
 * **`OBS_SEMANTICS_VERSION` / `MIGRATION_FLOOR`: unchanged.** No observation cell moved; every v144+ checkpoint loads.
 
-## Declared growth at a fork (`--grow`, B-GROW, `gen3_grow_fork_v1`, config v159)
+## Declared growth at a fork (`--grow`, B-GROW, `gen3_grow_fork_v1`, config v159; B-KFFN v161)
 
 A FORK may declare that named fields of its parent's network GROW — `--grow trunk_layers=4` — and start as the
 parent's FUNCTION, bit for bit. Model side: `agents/model/growth.py`; launch side: `main/train/grow_fork.py`. Design:
 [`../endstate/design_bot_ideas_screen.md`](../endstate/design_bot_ideas_screen.md) §4 (B-GROW), for X47 (toy depth
-2 → 4), X47b (production 3 → 4) and, once B-KFFN / B-INT land, X48 / X49.
+2 → 4), X47b (production 3 → 4), X48 (B-KFFN, `trunk_ffn_by_kind`) and, once B-INT lands, X49. The build specs of the
+two later fields: [`../endstate/design_growth_builds_kffn_int.md`](../endstate/design_growth_builds_kffn_int.md).
 
-* **The growable fields** are ONE table, `growth.GROWABLE`. BUILT: `trunk_layers` (append
-  `trunk_depth.IdentityInitRound`s; `TRUNK_LAYERS_CHOICES` bounds the child, so 2 → 3 / 4 and 3 → 4 today). DECLARED,
-  NOT BUILT: `trunk_ffn_by_kind` (B-KFFN) and `opp_intent_grad_mode` (B-INT) — the parser refuses them naming the build.
+* **The growable fields** are ONE table, `growth.GROWABLE`, and FIELD-GENERIC: each built row carries its own hooks —
+  `parse`, `validate`, `current` (the value the loaded network is BUILT at), `grow` (in place; returns the new
+  parameters and, for copies, the COPY map) and an optional extra `gate` — and nothing outside the row names its field
+  (`apply_growth` and `grow_seeded_pool` loop over the rows). BUILT: `trunk_layers` (append
+  `trunk_depth.IdentityInitRound`s; `TRUNK_LAYERS_CHOICES` bounds the child, so 2 → 3 / 4 and 3 → 4 today) and
+  `trunk_ffn_by_kind` (B-KFFN, `off → on` only: every round gets `trunk_kffn.build_kind_ffn`'s four experts, each a
+  COPY of the round's shared FFN, and the seat-role segment table; a parent without all five token kinds is a typed
+  refusal). DECLARED, NOT BUILT: `opp_intent_grad_mode` (B-INT) — the parser refuses it naming the build. Several
+  fields at one fork apply in the table's ORDER: depth first, so a new round's (zero) FFN is what its experts copy.
 * **The flag** is fork-only: `--grow FIELD=VALUE`, VALUE the CHILD's; the PARENT's is read from the `--model`
   checkpoint's `model_config.json`. `resolve_config` sets the field to the child value AFTER the inheritance sweep (so
   the child builds, checks and records the grown architecture). Refused (exit 2): no `--model`, an unreadable parent
@@ -346,8 +353,12 @@ parent's FUNCTION, bit for bit. Model side: `agents/model/growth.py`; launch sid
   `--fork-lr` pins it). Growth runs after that realignment: `growth.regrow_optimizer` builds a new optimizer of the
   same class over the policy's parameters in module order (a fresh child's order), copies every param-group key, and
   carries each PARENT parameter's state object unchanged; a NEW parameter has NO state, so AdamW zero-initialises its
-  moments at its first step, with its own step count (its own bias correction). The ride-along heads keep their own
-  optimizers (re-acquired on every load, as always).
+  moments at its first step, with its own step count (its own bias correction) — EXCEPT a COPIED parameter (ruling
+  Q-K3, 2026-10-19): a row's grower declares the copy, and the new parameter gets an independent CLONE of its source's
+  `exp_avg`, `exp_avg_sq` and `step` (a copy is the same function, so it keeps the same optimizer state; the copies then
+  diverge only through their gradients). B-KFFN's experts are copies; B-GROW's identity rounds copy nothing. The
+  stamp's `optimizer` string is the shared rule plus each declared row's addendum, and the counts gain `copied` when a
+  row copies. The ride-along heads keep their own optimizers (re-acquired on every load, as always).
 * **THE FORK-TIME GATE.** `apply_growth` evaluates the parent and the grown child on the 64 REAL rows of the
   compile-parity fixture (`compile_parity_obs.npz`, reproducible Rust-core battles; a stale fixture is its typed
   refusal) on FRESH CPU builds — the parent's kwargs, then the child's, each loaded STRICTLY with the live weights —
@@ -355,6 +366,11 @@ parent's FUNCTION, bit for bit. Model side: `agents/model/growth.py`; launch sid
   BIT-IDENTICAL. CPU is what makes bit-identity deterministic on a CUDA learner. Measured on the toy (2 → 4, after one
   AdamW step): max |Δ| 0.0 for logits and values; 24 new tensors, 264,960 parameters; under CPU Inductor the compiled
   child equals the compiled parent (max |Δ| 0.0) and sits 2.4e-7 from the eager parent (`growth_test.py`, slow).
+  B-KFFN on a production parent after one AdamW step: max |Δ| 0.0, 48 new tensors, 791,040 parameters, all 48 copied
+  with their source's AdamW state (`trunk_kffn_test.py` K-7). The split FFN equals the shared one bit for bit only at a
+  batch large enough for the same GEMM kernel (≥ 8 rows here; NOT at batch 1–2, F-GB-5), so the gate always runs the
+  64 rows as ONE batch, and a CPU whose BLAS breaks that refuses (ruling Q-K2: no tolerance). A row's extra `gate`
+  reads the same two probes (B-INT's gradient check will be one).
 * **The seeded pool.** A fork's self-play pool is seeded from its parent's, at the PARENT's architecture, and a pool is
   single-architecture (its write-once arch record; the inference service's slot groups). `grow_fork.grow_seeded_pool`
   (in `train_rl_agent`, after the pool is seeded and before it is constructed) grows each snapshot the same way (a strict

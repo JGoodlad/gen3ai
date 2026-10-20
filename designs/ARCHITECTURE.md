@@ -732,6 +732,15 @@ The concrete steps:
    are BIT-IDENTICAL to the parent's on 64 real rows (fresh CPU builds, fp32 eager; measured on the toy 2 → 4: max
    |Δ| 0.0, +264,960 parameters). The seeded self-play pool is grown the same way. Detail:
    [`model/versioning.md`](model/versioning.md) "Declared growth at a fork".
+   **Per-kind FFN experts** (`--trunk-ffn-by-kind on`, B-KFFN, `trunk_kffn.py`, `gen3_trunk_ffn_by_kind_v1`, config
+   v161; OFF in production, the lever of X48): each round's FFN position applies one FFN per token KIND, routed by a
+   build-time table of six seat-role segments — Pokémon (the round's own `linear1` / `linear2`: positions 0–11 and
+   OTHER_species at 31), board (12–14), our moves (15–18), threats (E4 + the E5 tail, 19–30), events (32–63) —
+   +65,920 parameters per kind per round (fresh production policy 2,609,183 → 3,400,223, counted), no extra FLOPs.
+   The experts live inside the round classes, so the bf16 region covers them. A FORK reaches it only through `--grow
+   trunk_ffn_by_kind=on`, which copies every round's shared FFN, and its AdamW state, into each expert (gate measured
+   max |Δ| 0.0 on a production parent after one AdamW step; the bar holds at the gate's 64-row batch, not at batch
+   1–2). Detail: [`endstate/design_growth_builds_kffn_int.md`](endstate/design_growth_builds_kffn_int.md) §1.
 10. **`CLSPool`** — three learned queries: `our_cls` over our 6 refined tokens, `their_cls` over
     theirs, `value_cls` over **all 12**. Also extracts `our_active_refined`.
 11. **`ProjectionAssembler`** → `pre_proj_norm`/`projection`/ReLU (policy), emitting `PROJECTION_DIM` =
@@ -1787,6 +1796,7 @@ does nothing given another setting.
 | `spread_belief_nature` | `true` | ACTIVE |
 | `t0_species_prior` | `true` | ACTIVE |
 | `token_encoding` | `"static"` | ACTIVE |
+| `trunk_ffn_by_kind` | `"off"` | OFF |
 | `trunk_layers` | `3` | ACTIVE |
 | `value_entity_pool` | `true` | ACTIVE |
 | `value_entity_pool_full` | `true` | ACTIVE |

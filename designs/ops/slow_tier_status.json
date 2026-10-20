@@ -5517,6 +5517,22 @@
    "duration_s": 13.83,
    "contention": 1.76,
    "detail": ""
+  },
+  "src/agents/model/trunk_kffn_test.py::test_k11_the_kffn_extractor_compiles_fullgraph_and_matches_eager": {
+   "status": "pass",
+   "commit": "2e268ed731524590adaeaa0a2b0206875faa7a1f",
+   "at": "2026-10-20T19:24:28Z",
+   "duration_s": 337.53,
+   "contention": 1.76,
+   "detail": ""
+  },
+  "src/main/train/grow_fork_test.py::test_kffn_the_seeded_pool_grows_its_experts_and_a_relaunch_mid_pool_is_idempotent": {
+   "status": "pass",
+   "commit": "db8e0dbac230c65f5f17505737b448c2aa00a31c",
+   "at": "2026-10-20T21:22:30Z",
+   "duration_s": 21.41,
+   "contention": 1.78,
+   "detail": ""
   }
  },
  "last_written": "2026-10-20T19:32:55Z"

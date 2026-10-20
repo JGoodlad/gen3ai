@@ -15270,3 +15270,47 @@ was downloaded or written under `data/`.
 - **Tests** (each fails on revert): the gate diverges on e2e_220 without the field (decision count 92 vs 170);
   `e2e_quick_claw_lead_battles_need_the_turn0_roll` (the order at decision 0 differs without the roll);
   `e2e_fuzz_golden_test.py::test_the_golden_carries_quick_claw_lead_battles_with_the_turn0_roll`. Docs: `rust_sim/e2e_capstone.md`, `src/rust_sim/CLAUDE.md`.
+## 2026-10-20 — B-KFFN: per-token-kind FFN experts, a fork's `--grow trunk_ffn_by_kind=on` (`gen3_trunk_ffn_by_kind_v1`; config v161, one STRUCTURAL field `trunk_ffn_by_kind` / `--trunk-ffn-by-kind {off,on}`, OFF in production; the growth table made field-generic; no `ARCH_SIGNATURE` / obs / floor change; production byte-identical)
+
+- **Why.** X48's lever (`endstate/design_bot_ideas_screen.md` §2.2), built to its spec
+  (`endstate/design_growth_builds_kffn_int.md` §1, §3; TASK_BACKLOG T66) with the orchestrator's rulings Q-K1…Q-K4.
+- **The prerequisite (§3, F-GB-2).** `growth.GROWABLE` rows carry their own `parse` / `validate` / `current` / `grow` /
+  optional `gate` hooks; `apply_growth` grows the declared fields in the table's order (depth first) with ONE parent
+  probe, ONE optimizer rebuild over the union of the new parameters and ONE child probe; `grow_seeded_pool`'s skip test
+  reads every row's `current`. `growth_test.py` / `grow_fork_test.py` passed UNTOUCHED on the refactor alone.
+- **The network.** `agents/model/trunk_kffn.py`: `TrunkRound` is the base of `BiasedEncoderLayer` and
+  `IdentityInitRound`, and both forwards call `ffn(h)` — the literal shared expression when off; when on, each of six
+  build-time SEAT-ROLE segments (`ffn_kind_segments`, read off the built seat modules: mons 0–11, board 12–14, E3 15–18,
+  E4 + E5 tail 19–30, OTHER_species 31, events 32–63) through its kind's FFN (Pokémon = the round's own `linear1` /
+  `linear2`, keys unchanged; `kind_ffn.{board,move,threat,event}`). The experts live INSIDE the round, so the bf16
+  region covers them. A fresh `on` builds them as `IsolatedLinear`s from `KFFN_INIT_SEED + round` (identity rounds:
+  `linear2` zero). `on` needs all five kinds (static tokens, E4 + E5, history events, X5's OTHER_species): the toy is a
+  typed refusal. `selection_sites` declares the module and its one build-time compare.
+- **The growth.** `--grow trunk_ffn_by_kind=on` (`off → on` only) builds the same modules and COPIES each round's shared
+  FFN into every expert; by ruling Q-K3 each expert also gets a CLONE of its source's AdamW state (`regrow_optimizer`'s
+  copy map; counted `copied`; the stamp's `optimizer` string carries the row's addendum). A trunk-depth growth on a kffn
+  parent appends identity rounds whose experts are zero.
+- **Recorded.** Config v161: `trunk_ffn_by_kind` (CLI tier — a config_only field would build its frozen default under
+  `--grow`, F-GB-1), `check_compatible` clause naming `--grow trunk_ffn_by_kind=on`, a pre-v161 config migrates to
+  `off`. No `ARCH_SIGNATURE` bump: off builds nothing and the on path is gated by the field (the `trunk_layers`
+  precedent). `designs/flag_registry.md` regenerated.
+- **Evidence** (CPU, fp32 eager, one thread, the 64 compile-parity rows as ONE batch). Fresh production policy
+  2,609,183 → 3,400,223 parameters (+791,040 = 4 × 65,920 × 3, the spec's count); every non-expert initial byte equal.
+  Tied experts = the shared FFN bit for bit (every round scrambled). The grow fork on a production parent after one
+  AdamW step: max |Δ logits| 0.0, max |Δ value| 0.0, 48 tensors, all 48 copied with state. Forward FLOPs unchanged (the
+  same work per token; the spec's 94.3 MFLOP / row). K-11 (slow, CPU Inductor): the kffn extractor compiles
+  `fullgraph=True` (no graph break), compiled vs eager 1.30e-5 against a matched OFF control's 1.08e-5 under the same
+  procedure (bar 1e-4, `cpu_compile_sites_slow_test`'s; the borrowed toy bar 1e-5 failed production OFF itself).
+- **OFF is byte-identical**: the K9 learner golden (`learner_golden_test`), `played_bits_sentinel_test` and the obs golden
+  (`golden_obs_core --check`, 991 hashes) pass unchanged; K-1 pins that an off build equals a build without the kwarg
+  (keys, bytes, RNG state).
+- **`pin_worker`'s depth replica refuses a kffn trunk, typed** (`UnsupportedTrunk`, F-GB-6 / K-14): its FFN statistics,
+  truncation and spectra read only the shared FFN.
+- **Tests** (each fails on its revert; 13 of 14 revert mutations caught directly, the 14th — the constructor's
+  `history_events` guard — is caught by the segment builder's own typed refusal): `src/agents/model/trunk_kffn_test.py`
+  (K-1…K-9, K-10 / K-12 model side, K-11 slow), `src/main/train/grow_fork_test.py` (K-10 / K-12 launch side, K-13 the
+  pool incl. a relaunch mid-pool), `src/main/probe_battery/probe_battery_test.py` (K-14).
+- **Docs.** `ARCHITECTURE.md` step 9; `design_growth_builds_kffn_int.md` (status, F-GB-3 CORRECTED — the E5 tail is
+  typed THEIR_THREAT, not HISTORY —, Q-K3 as built, Decision record); `designs/model/versioning.md`, `file_layout.md`;
+  the model leaf; `flag_census.md`; `training_runbook.md`; `TASK_BACKLOG.md` T66 DONE; `EXPERIMENT_BACKLOG.md` X48 ready
+  once X47 reads.

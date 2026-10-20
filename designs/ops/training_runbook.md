@@ -240,6 +240,12 @@ python -m main.launcher --dry-run --model models/<toy run>/checkpoints/<T*>.zip 
     --steps <total> --grow trunk_layers=4 --device cuda      # then the same without --dry-run
 ```
 
+The second growable field, **`--grow trunk_ffn_by_kind=on`** (B-KFFN, X48's lever; production only — the toy lacks the
+move, threat and event tokens and is refused), splits every trunk round's FFN into per-token-kind experts, each a COPY
+of the shared FFN carrying its AdamW state; the same gate, the same pool growth, and `🌱 [GrowFork] grown: 48 new
+tensors (791,040 parameters) … COPIED for 48`. Never type `--trunk-ffn-by-kind on` on a fork: it is refused, naming
+`--grow`.
+
 ---
 
 ## Training
