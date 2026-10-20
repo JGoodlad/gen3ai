@@ -311,3 +311,4 @@
 | `--sync-to-main` | False | — | documented: pin a resume to HEAD (`designs/launcher/flags.md`) | **KEEP** |
 | `--pin-commit` | None | — | documented: pin a batch to one commit (`--pin-to-hash` is its legacy spelling) | **KEEP** |
 | `--allow-torch-switch` | False | — | the consent for a resume under another torch (root `CLAUDE.md`) | **KEEP** |
+| `--gpu-window` | False | — | the GPU window between a live run's safe points (T46, `designs/launcher/gpu_window.md`; X35's battery windows) | **KEEP** |

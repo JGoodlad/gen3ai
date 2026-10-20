@@ -25,6 +25,7 @@ class LauncherSnapshot:
     events: list               # launcher event strings (timestamped)
     initial_git_hash: Optional[str]
     run_dir: Optional[str]     # current checkpoint output directory
+    window_status: Optional[str] = None  # the GPU window's status line (T46), None when no window is open
 
 
 class LauncherState:
@@ -61,6 +62,9 @@ class LauncherState:
         self.view_mode: str = "dashboard"
         self.initial_git_hash: Optional[str] = None
         self.run_dir: Optional[str] = None
+        # The GPU window's one-line status (`gpu_window.controller`), shown on the dashboard's badge row
+        # while a window is open; None otherwise.
+        self.window_status: Optional[str] = None
         # Optional plain-text echo for every event, set by run.py in headless mode.
         # Headless has no screen, so without this a detached run reports nothing at all
         # about restarts, checkpoints or crashes. Called outside the lock; see add_event.
@@ -76,6 +80,10 @@ class LauncherState:
     def last_activity_ts(self) -> float:
         with self._lock:
             return self._last_activity_ts
+
+    def set_window_status(self, line: Optional[str]) -> None:
+        with self._lock:
+            self.window_status = line
 
     def add_log(self, line: str) -> None:
         with self._lock:
@@ -139,4 +147,5 @@ class LauncherState:
                 events=list(self._events),
                 initial_git_hash=self.initial_git_hash,
                 run_dir=self.run_dir,
+                window_status=self.window_status,
             )

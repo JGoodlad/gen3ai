@@ -189,6 +189,7 @@ def dry_run(
     nice: int,
     out: Callable[[str], None] = print,
     allow_torch_switch: bool = False,
+    gpu_window: bool = False,
 ) -> int:
     """Resolve this launch, print the block, return the exit code the launch would leave with.
 
@@ -342,6 +343,8 @@ def dry_run(
     sched = (f"every {interval_hours:.1f}h" if interval_hours > 0 else "single run (no restart)")
     out(f"  restarts    : {sched}, grace {grace_minutes:.1f} min, "
         f"max {max_crash_restarts} crash restart(s), nice {nice}")
+    out("  gpu window  : " + (f"ENABLED — requests read from {run_dir}/gpu_window/ (python -m main.launcher.gpu_window)"
+                              if gpu_window else "off (--gpu-window enables; designs/launcher/gpu_window.md)"))
 
     # 6. The effective config — argv OVERLAID on the parent's recorded model_config.json. An argv
     #    is not a config, and the flags below are where that bites.

@@ -552,13 +552,16 @@ def _supervise(
     on_tick=None,
     shutdown: "threading.Event | None" = None,
     proc_box: "list | None" = None,
+    window=None,
 ) -> int:
     """The restart/child-supervision loop — mirror of ``run.py`` lines 244-419.
 
     Returns the process exit code instead of calling ``sys.exit`` (it runs in a worker
     thread). ``on_tick(snapshot)`` marks where Rich would repaint (Textual passes ``None``
     and renders on its own timer). ``shutdown``/``proc_box`` support frontend-driven
-    teardown so an abnormal app exit never orphans the child."""
+    teardown so an abnormal app exit never orphans the child. ``window`` (a
+    ``gpu_window.controller.WindowController``, only with ``--gpu-window``) pauses the run for a
+    GPU window: see ``designs/launcher/gpu_window.md``."""
     child_args = ctx.child_args
     child_env = ctx.child_env
     train_script = ctx.train_script
@@ -602,6 +605,8 @@ def _supervise(
 
         flags = _PollFlags()
         deadline_announced = False
+        window_req = None            # the GPU window this child is being paused for (T46)
+        window_sigterm_epoch = 0.0
 
         while True:
             _tick()
@@ -652,6 +657,19 @@ def _supervise(
                     pass
                 flags.sigkill_sent = True
 
+            # T46: a GPU window whose trigger epoch has come pauses the run exactly as a quit stops it
+            # (SIGTERM → the child saves at its next safe point and exits INTERRUPTED); the launcher stays.
+            if window is not None and window_req is None and not flags.sigterm_sent:
+                window_req = window.due()
+                if window_req is not None:
+                    try:
+                        os.kill(proc.pid, signal.SIGTERM)
+                    except ProcessLookupError:
+                        pass
+                    flags.sigterm_sent = True
+                    flags.sigterm_at = now
+                    window_sigterm_epoch = time.time()
+
             poll_timeout = 0.5
             try:
                 proc.wait(timeout=poll_timeout)
@@ -683,6 +701,11 @@ def _supervise(
 
         rc = proc.returncode
 
+        if window_req is not None and (rc == TrainExitCode.COMPLETE or flags.quit_requested):
+            window.abandon(window_req, "the run completed before the pause" if rc == TrainExitCode.COMPLETE
+                           else "the launcher is quitting")
+            window_req = None
+
         if rc == TrainExitCode.COMPLETE:
             state.add_event("✅ Training complete — all steps done")
             _tick()
@@ -694,6 +717,19 @@ def _supervise(
             _tick()
             time.sleep(1)
             return 0
+
+        # T46: the child stopped for a GPU window — run it (GO, the guest, DONE; or a HOLD) with the
+        # launcher alive, then fall through to the ordinary same-run RESTART below (same pin, same command,
+        # the RESUME role). A child that did not stop cleanly HOLDS inside `run_window`.
+        window_resumed = False
+        if window_req is not None:
+            outcome = window.run_window(window_req, rc, window_sigterm_epoch,
+                                        should_quit=lambda: _window_should_quit(cmd_q, shutdown, state))
+            if outcome == "quit":
+                state.add_event("👋 Quit complete (during a GPU window).")
+                _tick()
+                return 0
+            window_resumed = True
 
         # K6's CUDA memory trend STOPPED the child (`CudaMemoryLeakError`): it checkpointed
         # (`final_model_exception.zip`) before exiting, and a fresh process clears a leak, so RESTART
@@ -753,7 +789,7 @@ def _supervise(
         # An INTENDED restart (user 'r' or launcher force-kill) recovers regardless of the
         # exit code; a self-crash (unintended non-INTERRUPTED exit) auto-restarts from the
         # last checkpoint, guarded by the consecutive-rapid-crash circuit-breaker.
-        intended_restart = flags.forced_restart or flags.restart_requested or leak_restart
+        intended_restart = flags.forced_restart or flags.restart_requested or leak_restart or window_resumed
         crashed = not intended_restart and rc != TrainExitCode.INTERRUPTED
 
         if crashed:
@@ -811,12 +847,29 @@ def _supervise(
         # Built from the RESUME role: every FRESH-only flag the trainer refuses beside --model
         # (`--arch production`) is stripped, or the restart dies on it (2026-09-26).
         child_args, stripped = resume_child_args(child_args, checkpoint, run_dir)
+        if window_resumed:
+            window.mark_resumed(window_req, checkpoint)
         if stripped:
             state.add_event(
                 f"✂️  Resume argv: dropped FRESH-only {', '.join(sorted(set(stripped)))} "
                 f"(inherited from the run's model_config.json)")
         state.restart_count += 1
         state.view_mode = "dashboard"
+
+
+def _window_should_quit(cmd_q: queue.Queue, shutdown: "threading.Event | None",
+                        state: LauncherState) -> bool:
+    """While a GPU window holds the run paused: True once the operator quits (``q``→``y``, ctrl-c, a
+    signal). Other child-control keys have no child to act on and are reported, not queued."""
+    if shutdown is not None and shutdown.is_set():
+        return True
+    while not cmd_q.empty():
+        ch = cmd_q.get_nowait()
+        if ch == "__quit__":
+            return True
+        if ch in ("r", "c", "f"):
+            state.add_event(f"⏸ key {ch!r} ignored: the run is paused for a GPU window (no child)")
+    return False
 
 
 def _reap(proc_box: "list | None", grace: float = KILL_GRACE_SECONDS) -> None:
@@ -948,6 +1001,7 @@ def run(
     grace_minutes: float = 20.0,
     max_crash_restarts: int = 3,
     allow_torch_switch: bool = False,
+    gpu_window: bool = False,
 ) -> None:
     """Set up the session, run the app, reap, exit.
 
@@ -999,6 +1053,14 @@ def run(
     shutdown = threading.Event()
     proc_box: list = []
 
+    # T46 — OFF unless asked for: only a `--gpu-window` launch reads window requests.
+    window = None
+    if gpu_window:
+        from main.launcher.gpu_window.controller import WindowController
+        window = WindowController(lambda: ctx.run_dir_box[0], add_event=state.add_event,
+                                  set_status=state.set_window_status)
+        window.announce()
+
     app = LauncherApp(state, cmd_q)
 
     def _supervisor() -> None:
@@ -1013,6 +1075,7 @@ def run(
                 on_tick=None,
                 shutdown=shutdown,
                 proc_box=proc_box,
+                window=window,
             )
         except Exception as e:  # noqa: BLE001 — never let a supervisor fault hang the app
             state.add_event(f"❌ launcher supervisor error: {e}")
@@ -1145,6 +1208,17 @@ def build_launcher_parser():
             "See main/launcher/torch_runtime.py."
         ),
     )
+    parser.add_argument(
+        "--gpu-window",
+        action="store_true",
+        default=False,
+        help=(
+            "Honour GPU-WINDOW requests for this run (T46): `python -m main.launcher.gpu_window arm <run_dir> "
+            "--precheck …` pauses the run at its next safe point at an absolute epoch, a guest job takes "
+            "the GPU by file handoff, and the run re-launches (same pin, same command) on DONE; any "
+            "mid-window failure HOLDS. Off by default. See designs/launcher/gpu_window.md."
+        ),
+    )
     parser.add_argument("-h", "--help", action="store_true")
     return parser
 
@@ -1183,6 +1257,7 @@ def main() -> None:
             max_crash_restarts=known.max_crash_restarts,
             nice=known.nice,
             allow_torch_switch=known.allow_torch_switch,
+            gpu_window=known.gpu_window,
         ))
 
     # Deprioritise the whole run before anything is spawned, so the training child and
@@ -1199,6 +1274,7 @@ def main() -> None:
             grace_minutes=known.restart_grace_minutes,
             max_crash_restarts=known.max_crash_restarts,
             allow_torch_switch=known.allow_torch_switch,
+            gpu_window=known.gpu_window,
         )
     except KeyboardInterrupt:
         sys.exit(0)

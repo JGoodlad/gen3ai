@@ -538,6 +538,11 @@ wake. Re-create it on the next GO, written to this contract.
 ### Process rules from three misfires and one script gap (X26's first days, orchestrator 2026-10-17)
 
 Each rule is a thing that went wrong once; follow the pointer when you build the matching watcher, window or script.
+**A GPU window INSIDE a live run is the launcher's `--gpu-window`** (`python -m main.launcher.gpu_window arm … --precheck …`,
+then a bounded `guest`; [`../launcher/gpu_window.md`](../launcher/gpu_window.md)): it carries rules 1, 3, 4 and 6 in
+code (an epoch trigger, HOLD on any unclean step, a precheck before arming, a request honoured only by the launcher it
+names), and the lease stays with its holder. A hand-made script is only for what it does not do: ending a run, or
+chaining across runs. A run must be LAUNCHED with `--gpu-window` to take one.
 
 1. **A time trigger uses an ABSOLUTE epoch with a sanity bound, never an `HH:MM` string comparison.** Compare `date +%s` against an epoch computed once at arming, and refuse a trigger whose epoch is in the past or more than the expected horizon ahead (a clock-string compare fires at the wrong day boundary, or never).
 2. **A log watcher matches only lines written AFTER it was armed** (per-file line offsets that persist across re-arms): already in §2 above (`98cd814b`, `alert_watch.sh`; two watchers on 2026-10-15 matched stale lines). VERIFIED present 2026-10-17; build every new watcher on that pattern.

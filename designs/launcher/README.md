@@ -15,6 +15,7 @@ exit-code tables and the module map (below). The operator's chapter (how to laun
 | [`pinning_and_worktrees.md`](pinning_and_worktrees.md) | worktree isolation, the startup prune and its ownership record, the PINNED-parser argv check (`pinned_argv.py`), which commit a checkpoint records, `pin_history`, the pin's four sources, the child's `PYTHONPATH` |
 | [`launch_guards.md`](launch_guards.md) | `--dry-run`, the ARCH-SURFACE and RECIPE-SURFACE guards, the desktop-GPU, disk-space and Showdown-submodule preflights |
 | [`interpreter.md`](interpreter.md) | which interpreter (and torch) the child runs |
+| [`gpu_window.md`](gpu_window.md) | the GPU WINDOW (`--gpu-window`, T46): pause a live run at a safe point for a guest GPU job by file handoff, its files and phases, the HOLD rule, the CLI, the tests |
 | [`tui_and_session.md`](tui_and_session.md) | how the supervisor rides beside Textual's event loop, quit / SIGHUP / SIGTERM teardown, HEADLESS mode, stdout discipline, the dashboard, keys and metrics layout |
 
 ## Module map (`src/main/launcher/`)
@@ -29,6 +30,7 @@ exit-code tables and the module map (below). The operator's chapter (how to laun
 | `torch_runtime.py` | which interpreter / torch a resume or fork runs (`resolve_for_launch`, `KNOWN_ENVS`) |
 | `pinned_argv.py` + `pinned_argv_probe.py` | validate the child argv against the PINNED commit's parser, not this tree's |
 | `dry_run.py` | `--dry-run`: resolve and print the launch, create nothing |
+| `gpu_window/` | the GPU window: `protocol.py` (the files), `controller.py` (the launcher's half, driven by `_supervise`), `cli.py` (`python -m main.launcher.gpu_window arm / guest / status / resume / cancel`) |
 | `disk_gate.py` / `submodule_gate.py` | the launcher halves of the disk-space and Showdown-submodule preflights |
 | `state.py`, `ipc.py`, `input.py`, `format.py` | the lock-protected state snapshot, child IPC, key dispatch, pure formatters |
 | `app.py` + `launcher.tcss` | the Textual UI (a `Gen3App` on the shared `src/main/tui/` base) |

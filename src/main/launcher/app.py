@@ -387,6 +387,10 @@ class LauncherApp(Gen3App):
             out.append("waiting for first rollout…", style="dim")
         # ELO headline — the absolute skill rating (only present once an eval cycle has run).
         out.append_text(self._elo_badge(snap.metrics))
+        if snap.window_status:
+            out.append(sep)
+            out.append(snap.window_status, style="bold red" if "HOLD" in snap.window_status else "bold yellow")
+            return out              # paused: "no child output" is the window, not a stall
         idle = now - snap.last_activity_ts
         if idle > 120:
             out.append(sep)

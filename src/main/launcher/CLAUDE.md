@@ -56,6 +56,10 @@ codes in `crashes_and_exit_codes.md`, the child's interpreter in `interpreter.md
   each verdict. The launcher's ask is the only one a pinned older trainer gets.
 - **A new non-recoverable error class goes through `exit_codes.exit_code_for`**, never a bare
   `sys.exit`.
+- **A GPU window pauses through the SAME stop and restart paths** (`--gpu-window`, `gpu_window/`): SIGTERM to
+  the safe-point save, then the ordinary same-run RESTART (same pin, same command); the launcher stays alive so
+  the lease stays with its holder. Every step that cannot finish cleanly HOLDS (never auto-resumes over it), and
+  a request is honoured only by the launcher it names (`designs/launcher/gpu_window.md`).
 - **The child's interpreter is decided once per launcher session** (`torch_runtime.resolve_for_launch`;
   a resume or fork gets the torch its run recorded) and held in the child's `$GEN3AI_PYTHON`, so every
   restart spawns the same one; never a machine path (`interpreter_test.py`).

@@ -382,7 +382,7 @@ def _strip_launcher_args(argv: list) -> list:
             i += 1
         elif argv[i] == "--dry-run":
             i += 1
-        elif argv[i] in ("--sync-to-main", "--allow-torch-switch"):
+        elif argv[i] in ("--sync-to-main", "--allow-torch-switch", "--gpu-window"):
             i += 1
         elif argv[i] in ("--pin-commit", "--pin-to-hash"):
             i += 2
