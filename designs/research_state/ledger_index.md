@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-27,385-line file. **The ledger itself is append-only and is never edited by this**;
+27,447-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**907 headings · 852 dated · 2026-08-01 → 2026-10-19 · ledger 27,385 lines.**
+**908 headings · 853 dated · 2026-08-01 → 2026-10-19 · ledger 27,447 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -927,3 +927,4 @@ rename.
   - `L27205` · `2026-10-19` · MEASUREMENT · BUILD · **TEAM STRENGTH: a per-team rating with ONE pilot on both sides (`main.team_strength`, TSR) says the held-out replay-reconstructed teams (heldout72_hpfix) are ~70 Elo (≈ 10 pp a game at even) WEAKER than human-built forum teams in BOTH pilots' hands (X26 −71 [−147, −2], Kakuna −69 [−188, +43]; UNDECIDED at the registered 35-Elo bar), procedural P72 is MATERIALLY WEAKER (−146), forum72 ≈ home72; and X37a's piloting gap SURVIVES matching on team strength (+0.28 [+0.12, +0.44] on Kakuna-rated teams, DETECTED; +0.11 set-level). PROVISIONAL**
   - `L27279` · `2026-10-19` · MEASUREMENT · **the MATURITY BATTERY's first LEAN trajectory on X26, READ under its pre-registration (`826bee89`): on 287 frozen states at 25M / 100M / 175M / 225M the oracle − honest gap G_F falls +0.075 → +0.062 → +0.055 → +0.053, but GAP-SHRINKS is NOT DETECTED (−0.022 [−0.049, +0.004]); BELIEF-RISES NOT DETECTED (TODAY ≈ 0.01 at every anchor); NOT CONVERGED; FRONTIER NOT READ (LEAN); every gate CLOSED. Post hoc: the decline is the oracle's edge over the policy falling, not honest search rising. PROVISIONAL (interim bank)**
   - `L27353` · `2026-10-19` · BUILT · **T62: the species-presence τ constraint SOLVED IN FLOAT64 (`gen3_tau_fp64_solve_v1`) — the K9(b) τ class removed for future pins; on the event rows the compiled-vs-eager log π gap falls 1.39e-3 → 1.5e-5; an X26 fork adopting it moves log π by less than the eager-vs-compiled floor except on saturated k = 1 rows (≤ 2.2e-3, toward the exact function); GPU cost UNMEASURED**
+  - `L27386` · `2026-10-19` · MEASUREMENT · **X37b TRANSFER: in-house (X26 vs X26, no external opponent), P\* (X26 @ 280M) beats X26 @ 25M by +18.8 pp on home72 and +14.8 pp [+11.6, +17.9] on unseen teams (heldout72_hpfix + forum72): about four fifths of X26's progress transfers. The transfer shortfall T_tot = +4.0 pp [−0.7, +8.4] and the piloting-specific T_pilot = +0.4 pp [−5.8, +6.5] leave H1 (piloting memorisation) UNDECIDED by its preregistered rule. In-house, P\* shows no piloting deficit beyond team strength, so the 11–28 pp Kakuna-side deficit is either Kakuna-specific or invisible to a same-family opponent (F-DV-19 supported, not settled). PROVISIONAL**

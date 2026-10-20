@@ -783,6 +783,21 @@ X26's own ratings also put off-meta (FAR) held-out teams far lower than Kakuna d
 piloting deficit seen from inside. Self-play may under-measure that deficit (hypothesis). A widening pool should draw
 human-built teams first, screened for strength but not by X26's own rating. [ledger 2026-10-19 · *TEAM STRENGTH*]
 
+**…while IN-HOUSE most of X26's progress transfers to unseen teams (2026-10-19, X37b, `measurements/x37b_transfer_2026-10-19/`):**
+[MEASURED · PROVISIONAL · preregistered, 10,752 games, no external opponent] P\* (X26 @ 280M) against X26 @ 25M:
+P\*'s edge is **+18.8 pp on home72 and +14.8 pp [+11.6, +17.9] on unseen teams** (heldout72_hpfix + forum72), so
+about four fifths of the progress transfers.
+- The shortfall (+4.0 pp [−0.7, +8.4] in total) is NOT DETECTED once teams are resampled.
+- In the piloting-specific shape (the ref pilots the unseen team against P\* on a familiar team) it is +0.4 pp
+  [−5.8, +6.5].
+- H1 (piloting memorisation) is UNDECIDED by its rule: neither killed nor supported.
+- In-house, P\* pilots unseen teams about as well as their strength predicts. So the 11–28 pp piloting deficit seen
+  against Kakuna is either Kakuna-specific or invisible to a same-family opponent (F-DV-19). These reads cannot say
+  which.
+- Nearly all of the in-house gain came before 100M (P\*'s edge over 100M is +3.5 / +3.6 pp, descriptive).
+- The plateau is not a memorisation plateau in-house; whether it is one against outside opponents stays open.
+[ledger 2026-10-19 · *X37b TRANSFER*]
+
 **And a second anchor ABOVE us (2026-09-14, `foul_play_derisk_2026-09-14/`):** [MEASURED] Foul Play — MCTS with
 decoupled UCT over a hand-written evaluator on the Rust poke-engine, determinising the opponent's sets from Smogon
 usage — beats the same 75M policy: our win rate **0.388 [0.288, 0.497]** over 80 games, at ~1.4M visits and 2.1 s

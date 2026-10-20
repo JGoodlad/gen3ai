@@ -27382,3 +27382,65 @@ GIGO audit clean · PROVISIONAL (interim bank; the plateau bank governs)** · ev
   UNMEASURED (no lease):** each row runs ≈ 6,000 candidate elements × 64 fp64 sigmoids per forward (species 400 ×
   3 calls + the per-slot move call [6, 400] TWICE); on the sm_86 card fp64 is 1/64 of fp32, so the ESTIMATE is
   ≈ 7 ms per T2 decision at B 256 and ≈ 55 ms per learner forward at 2,048 — possibly NOTABLE; **UNVERIFIED**.
+
+### 2026-10-19 · MEASUREMENT · **X37b TRANSFER: in-house (X26 vs X26, no external opponent), P\* (X26 @ 280M) beats X26 @ 25M by +18.8 pp on home72 and +14.8 pp [+11.6, +17.9] on unseen teams (heldout72_hpfix + forum72): about four fifths of X26's progress transfers. The transfer shortfall T_tot = +4.0 pp [−0.7, +8.4] and the piloting-specific T_pilot = +0.4 pp [−5.8, +6.5] leave H1 (piloting memorisation) UNDECIDED by its preregistered rule. In-house, P\* shows no piloting deficit beyond team strength, so the 11–28 pp Kakuna-side deficit is either Kakuna-specific or invisible to a same-family opponent (F-DV-19 supported, not settled). PROVISIONAL**
+
+**Question** (`EXPERIMENT_BACKLOG.md` DV-2 / X37b; `endstate/design_diversity_teams_opponents.md` §3 H1, §3.2, §5.4).
+Does X26's improvement since 25M carry over to piloting teams it never trained on, with no opponent's training bias in
+the read? Is the plateau partly a memorisation plateau?
+
+**Design** (PREREG `38c64909`, registration digest `91af4446…`, committed before any game).
+- The opponent is always P\* (`checkpoint_280000170_steps.zip`, sha `814823c5…`), on CRN mirrored pairs.
+- **T_tot (GEN-M):** 25M vs P\*, both sides piloting teams of ONE set (home72; or H–H / F–F), so T_tot = g_home − g_U.
+- **T_pilot / T_face (the D0e shape):** cross pairs (an unseen team, a home72 team); 25M and P\* each pilot the unseen
+  team against P\* on the familiar team (game A), and the reverse (game B). T_pilot = g_home − (A_P − A_R).
+  - This is the reverse-cell shape that revealed the Kakuna piloting deficit, and the registered design-around for
+    F-DV-19.
+- **H1 rule:** KILLED iff T_tot's upper bound < +2.0 pp AND T_pilot's lower bound ≤ 0; SUPPORTED iff either lower
+  bound > 0; two-way team bootstrap.
+- **Played:** 14 rounds (1,344 pairs per primary cell), 10,752 games, plus 2,304 trajectory games (refs 100M and
+  175M), all 68 registered units. `main.h2h`'s engine with the scheduled builder, CPU, one lane on rule 5b's cores.
+
+**Result.**
+
+| | H | F | U (pooled) |
+|---|---|---|---|
+| g_home (P\*'s edge on home72) | | | +0.188 [+0.155, +0.220] |
+| g_S (P\*'s edge on the unseen set) | +0.136 | +0.160 | +0.148 [+0.116, +0.179] |
+| **T_tot** | +0.052 [−0.003, +0.109] | +0.028 [−0.032, +0.085] | **+0.040 [−0.007, +0.084]** |
+| **T_pilot** | +0.025 [−0.053, +0.104] | −0.016 [−0.107, +0.079] | **+0.004 [−0.058, +0.065]** |
+| T_face | +0.015 | +0.057 | +0.036 [−0.031, +0.104] |
+| A_P (P\* pilots unseen vs P\* on home72) | 0.418 | 0.493 | 0.456 |
+
+- **H1: UNDECIDED**; GEN-M and D0e classes UNDECIDED on U, H and F. The near-tie re-read (13 games) agrees.
+- Teams held fixed (the pair-level co-read): T_tot [+1.6, +6.4], T_pilot [−3.3, +4.2].
+- Seat term +0.2 pp [−0.5, +1.0]: no seat advantage visible.
+- **Trajectory (descriptive):** P\*'s edge over 100M is +3.5 pp on home72 and +3.6 pp unseen; over 175M it is +1.8 /
+  −0.5 (±8 pp).
+
+**Reading.**
+- In-house, X26's continued training bought held-out strength: four fifths of the 25M → 280M gain shows on unseen
+  teams. Nearly all of it came before 100M.
+- H1 is not killed: the total shortfall's point is +4 pp, with a team-limited interval (F-DV-24). The piloting-shaped
+  read centres on 0.
+- In-house, P\* pilots H about as far below 0.5 as H's strength gap predicts (0.418 vs Kakuna's K(P, H) = 0.573),
+  and F at 0.493. Against Kakuna, X26 pilots unseen teams 11–28 pp worse at matched strength (X37a, TSR).
+  - Either Kakuna exploits our unfamiliar-team play in a way our own models do not, or a same-family opponent cannot
+    punish it (F-DV-19, F-DV-26).
+  - So a GEN-M "transfers" is never a held-out clean bill.
+- X38 / D1 keeps its X35 rank: its demotion condition needs X37b to read TRANSFERS.
+
+**FINDINGS.**
+1. home72 holds one team twice (F-DV-25). The lane failed at startup on it and was fixed before any game (aliasing;
+   the plan unchanged).
+2. Team heterogeneity dominates: ±4.5 pp on T_tot with the team bootstrap, against ±2.4 pp with teams fixed. A 2 pp
+   bar needs about 4× the teams (F-DV-24).
+3. The first engineering smoke at 3 torch threads crawled beside the other agents' jobs; ONE torch thread was
+   registered.
+4. The trajectory's 2 rounds give ±10 pp; descriptive only.
+5. No GPU, no server, nothing under `models/` or `data/`; T28 clear; every checkpoint re-hashed before every unit.
+
+Tag: **MEASUREMENT · H1 UNDECIDED · TRANSFER LARGE IN-HOUSE (+14.8 of +18.8 pp) · F-DV-19 SUPPORTED (descriptive) ·
+PROVISIONAL** (one lineage, one seed) · evidence: `research_state/measurements/x37b_transfer_2026-10-19/` (README,
+`results.json`, `rows.jsonl`); `endstate/design_diversity_teams_opponents.md` §3, §3.2, §5.4, F-DV-24..26, Decision
+record; `research_state/UNDERSTANDING.md`

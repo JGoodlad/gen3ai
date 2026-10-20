@@ -91,6 +91,16 @@ This doc answers them, after challenging the reading itself (§8).
     P72 is the weakest set (−146 vs forum72, MATERIALLY WEAKER); forum72 ≈ home72.
   - **X37a's piloting gap survives matching on team strength:** +0.28 [+0.12, +0.44] on Kakuna-rated teams (DETECTED);
     +0.11 with the slope-1 set-level correction. Team strength is NOT what makes X26 lose with unfamiliar teams.
+- **X37b, the in-house TRANSFER read (2026-10-19, `measurements/x37b_transfer_2026-10-19/`; PROVISIONAL).** P\* vs
+  25M, no external opponent, 10,752 games on CRN.
+  - **Most of X26's progress TRANSFERS in-house:** P\*'s edge over 25M is +18.8 pp on home72 and +14.8 pp
+    [+11.6, +17.9] on the unseen panels (heldout72_hpfix + forum72).
+  - **H1 is UNDECIDED** by its preregistered rule. The total shortfall is T_tot +4.0 pp [−0.7, +8.4] (team
+    bootstrap; teams fixed, [+1.6, +6.4]). The piloting-specific shortfall (the ref pilots the unseen team against
+    P\* on a familiar team) is +0.4 pp [−5.8, +6.5].
+  - **F-DV-19 gains support:** in-house, P\* pilots H about as far below 0.5 as H's strength gap predicts (0.418),
+    so the 11–28 pp piloting deficit seen against Kakuna does not show here. GEN-M stays beside the Kakuna reverse
+    cell.
 - **The first experiment: X37a, now two CPU stages, 0 GPU.**
   - **Stage 1** reads the matrix's core (≈ 3.5 lane-hours; the calibration cell needs B-D9):
     - the DEPLOYMENT cell by stratum: we pilot home72, Kakuna pilots heldout72_hpfix's CORE / NEAR / FAR teams,
@@ -288,7 +298,7 @@ The drop to explain is X26 heldout72 − home72 = **−0.180 [−0.247, −0.111
 
 | # | hypothesis | mechanism | what it predicts | KILL TEST (cheapest first) | evidence so far |
 |---|---|---|---|---|---|
-| H1 | **POLICY memorisation, piloting** | the trunk and policy learned team-specific plans for the 719 teams; on a new team its plans are generic | X26's TRAINING PROGRESS transfers less to piloting unseen teams than pool teams | **D0e-pilot** (§3.2): X26 @25M → latest piloting heldout72 / P72 / home72 against a fixed reference, paired games. KILLED iff the transfer deficit T's 95 % interval lies wholly below +2.0 pp | descriptive only: the exposure ordering 2.1× > 1.2× > 0 matches 0.575 > 0.497 > 0.395 |
+| H1 | **POLICY memorisation, piloting** | the trunk and policy learned team-specific plans for the 719 teams; on a new team its plans are generic | X26's TRAINING PROGRESS transfers less to piloting unseen teams than pool teams | **D0e-pilot** (§3.2): X26 @25M → latest piloting heldout72 / P72 / home72 against a fixed reference, paired games. KILLED iff the transfer deficit T's 95 % interval lies wholly below +2.0 pp | descriptive: the exposure ordering 2.1× > 1.2× > 0 matches 0.575 > 0.497 > 0.395. **X37b (2026-10-19): UNDECIDED** in-house (P\* vs 25M; the X37b PREREG's rule needs BOTH reads): T_tot +4.0 pp [−0.7, +8.4], T_pilot +0.4 pp [−5.8, +6.5]; the unseen gain +14.8 pp vs +18.8 on home72 (≈ 79 % transfers; the shortfall is at most ≈ 8 pp of ≈ 19). The Kakuna-side deficit is untouched (F-DV-19, F-DV-26) |
 | H2 | **FACING memorisation: implicit TEAM IDENTIFICATION** | from 1–3 reveals the policy infers WHICH pool team it faces and plays to its unseen members (W12: worth 0.80 of the oracle gap in-pool) | X26's progress transfers less to FACING unseen teams; the deficit is largest early in the game (few reveals) | **D0e-face**: the reference pilots the set's teams against X26 @25M → latest. Then the same by reveal count, from the eval traces. KILLED iff the facing deficit's interval lies wholly below +2.0 pp | W12 (in-pool information exists); no off-pool read |
 | H3 | **BELIEF-HEAD memorisation** (learned deltas over the Smogon priors encode the pool) | species, move and item posteriors are miscalibrated off-pool; the policy acts on a wrong world | zeroing the learned deltas (prior-only) costs a lot on the pool and nothing, or HELPS, on held-out teams | **D0f**: the 2026-09-24 prior-only DiD (difference in differences), re-run on X26 (a build). KILLED as a major cause iff the DiD's 95 % upper bound < +3.0 pp AND prior-only − full on heldout72 is not detected above 0 | pre-era: DiD +4.8 pp [+1.9, +7.8]; harmful calibration off-pool. Its size caps H3 at about a quarter of the drop |
 | H4 | **POPULATION shift** (off-meta / out-of-distribution SETS and play styles: replay teams with usage-sampled fills; longer games) | X26 is bad at this KIND of team whether or not it saw the team | the drop is the same on unseen teams of this population (heldout72) and ABSENT on unseen teams of another population | **X37a stage 2** (§3.1): P72 and smogon_forum. KILLED iff X26(P72) − X26(heldout72) is NOT detected AND X26(P72) − X26(home72) is detected below 0 | **X37a stage 2 (2026-10-18): KILLED** by this test (read against heldout72_hpfix): X26(P72) 0.453, d1 +0.005 n.d., d2 −0.123 [−0.190, −0.053]; forum72 the same (0.470, UNSEEN-DRIVEN). D0a: not stall-heavy; games 25 % longer; 21 / 72 teams share all six SPECIES with a pool team but no set |
@@ -406,6 +416,21 @@ deficit is T_S = g_home72 − g_S.
 
 **Why this read matters most.** It is the one read that can say whether X26's continued pool training, the plateau
 the programme is waiting for, is buying held-out strength at all (§8.4).
+
+**READ 2026-10-19 (X37b, `measurements/x37b_transfer_2026-10-19/`, PREREG `38c64909`).**
+- **Design deviation from the text above:**
+  - the fixed reference is **P\*** (not `production`), and it pilots a home72 team;
+  - the refs are 25M (primary) and 100M / 175M (trajectory, descriptive);
+  - panels heldout72_hpfix + forum72 (P72 not read);
+  - `main.h2h`'s engine with the scheduled builder, not `main.untaught_meter`.
+  - Why: a strong FAMILIAR-team opponent is the reverse-cell shape that revealed the Kakuna deficit (F-DV-19), and
+    P\* keeps the scores off the ceiling.
+- **D0e-pilot:** T_pilot_U = +0.4 pp [−5.8, +6.5] ⇒ **UNDECIDED** (H +2.5, F −1.6).
+- **D0e-face:** T_face_U = +3.6 pp [−3.1, +10.4], UNDECIDED.
+- **The plateau is not a memorisation plateau in-house:** the unseen gain is +14.8 pp [+11.6, +17.9].
+- **Trajectory (descriptive, 192 pairs per cell):** P\*'s edge over 100M is +3.5 pp on home72 and +3.6 pp unseen,
+  and over 175M +1.8 / −0.5. Nearly all of the in-house gain came before 100M, and the later segment shows nothing
+  pool-specific at ±10 pp resolution.
 
 ### 3.3 The other cheap reads
 
@@ -984,6 +1009,13 @@ only ~36 Elo (≈ 5 pp) further below home72 than Kakuna does. Yet against Kakun
 held-out teams. A same-family opponent may not punish the unfamiliar-team piloting errors Kakuna punishes, so GEN-M
 could under-measure exactly the deficit X37a found. The same-team comparison is −18 Elo [−104, +72], not resolved.
 Read GEN-M beside the Kakuna reverse cell until this is settled.
+**X37b (2026-10-19) supports the caution, without settling it.** In-house, P\* pilots heldout72_hpfix against P\* on
+home72 at 0.418: about H's strength gap (Kakuna's K(P, H) = 0.573), so no piloting deficit beyond strength shows. P\*
+pilots forum72 at 0.493. GEN-M's first read (P\* vs 25M, 1,344 pairs per side):
+- g_P +18.8 pp, g_U +14.8 pp;
+- g_P − g_U = +4.0 pp [−0.7, +8.4] (team bootstrap; teams fixed [+1.6, +6.4]) ⇒ **UNDECIDED**.
+- The team bootstrap's half-width (±4.5 pp) is twice the planning value: a GEN-M verdict at a 2 pp bar needs more
+  TEAMS per panel, not more games (F-DV-24).
 
 ### 5.5 (v) THE headline, and the numbers that always sit beside it
 
@@ -1364,6 +1396,17 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 - **F-DV-23 (X38 build).** The lenient strength cut removed nothing because no corpus team has a TSR rating (every
   rated forum team is a forum72 panel member). Tier C is 77 % of the corpus and entirely unscreened; forum72's tier-B
   competition entries rated −166. A TSR screen of a corpus sample (~30 lane-minutes per 150 teams) would measure it.
+- **F-DV-24 (X37b).** Team heterogeneity dominates the in-house transfer reads. At 72 + 144 teams the team
+  bootstrap on T_tot is ±4.5 pp with 1,344 pairs per side, against ±2.4 pp with the teams held fixed. A GEN-M or D0e
+  kill at the 2 pp bar needs roughly 4× the teams per panel, or a registered statement that the panel IS the
+  population.
+- **F-DV-25 (X37b).** home72 holds one team twice (`63eda9d8d491d6a4.txt` = `dbbfac7bd5.txt` after packing). Any
+  read that resamples home72's 72 FILES double-weights it, and the scheduled builder refuses it until the ids are
+  aliased (X37b's `canonical()`).
+- **F-DV-26 (X37b).** In-house, the piloting deficit does not show beyond team strength (P\* pilots H vs P\* on
+  home72 at 0.418, about Kakuna's K(P, H) gap). Against Kakuna it is 11–28 pp. The two candidate explanations,
+  "Kakuna-specific exploitation" and "same-family opponents cannot punish it" (F-DV-19), are not separable in-house.
+  It needs a pinned-peer K2 (B-D8) or a second external opponent.
 - **F-DV-20 (TSR).** P72 is MATERIALLY WEAKER than human-built teams (−146 Elo vs forum72), and heldout72_hpfix ~70
   Elo weaker. Symmetric cells cancel this on average; an asymmetric cell with either set must carry its strength term.
 
@@ -1398,3 +1441,4 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 | 2026-10-19 | **B-D1 as `w_forum_v1`: X38's widening corpus BUILT from the forum v2 VERBATIM teams** (X38 launch-ready worker, orchestrator brief) | `src/utils/team_corpora/w_forum_v1/` (pin-safe `src/`, Q2): 2,415 teams, tiers A 332 ⊂ AB 555 ⊂ ABC 2,415; excludes our pool's exact teams, every registered panel and its near neighbours (≥ 4 shared mon sets), Transform / Imprison, engine-unplayable ids; HP repair where untyped (0 needed); the lenient TSR cut (0 rated, a no-op); curator cap c = 241 (≤ 10 %); crash soak 24,150 battles, 0 core errors | W_hl first (the TSR read: replay reconstructions ~70 Elo weaker than forum teams); tier A only (332 teams: under half the pool's size); no curator cap (four curators would hold 3,294 of 5,330); screening by X26's rating (it drops the off-meta teams the widening needs) | `w_forum_v1/manifest.json`, `soak_selfcheck.json`; `utils/team_corpora/team_corpora_test.py` |
 | 2026-10-19 | **`w_forum_v1` crash-class exclusion LIFTED** (corpus-lift worker, orchestrator brief) | `build_w_forum.CRASH_MOVES` is EMPTY (Transform + Hidden Power closed by `0cef9320a`; Imprison verified not a livelock, `752aaf16a`); rebuilt: **2,424 teams**, tiers A 332 ⊂ AB 559 ⊂ ABC 2,424, data sha256 `4af495c4…7469`, ABC tier sha256 `7bcdc835…83d`, curator cap c = 242 (263 curators); soak re-run on the whole ABC tier, 24,240 battles, 0 core errors, 42 stall forfeits; **the C tier was RE-SHUFFLED, not just extended** (the seeded within-tier order and the curator cap move with the exclusion set: 580 teams are new and 571 left vs the 2,415 corpus; tier A unchanged), and a run pinned at `c1b0c1f0` / `fc467f1f` still reads the 2,415 corpus (tier sha `65465d25…7fc5`) | none (a rebuild is the corpus's own recipe) | `w_forum_v1/manifest.json`, `soak_selfcheck.json` |
 | 2026-10-19 | **X38 / D1 LAUNCH-READY on paper** (X38 launch-ready worker; NEEDS the orchestrator's GO) | b-ON = C0 + `--team-mix w_forum_v1@ABC:0.5 --team-mix-sides both` (B-D2 `c1b0c1f0`): BOTH sides, the doc's D1 (own side widened per the owner, opponent side with it; D2 stays the opponent-only follow-up); eval on the pool; `main.x35.kit` arm `d1` in BATCH1 after the A1 / C0 ABBA; `checkargs --pin c1b0c1f0` exit 0 and `launcher --dry-run` "would launch", FORK of `rb_x26_s2601`, +20M from the real P\* (280,000,170); B-D7 `main.h2h --panel` and the D1 decision function `main.x35.d1` (self-check 10 / 10) built | trainee-only widening (the owner's words allow it; it is one token, `--team-mix-sides trainee`, and would be a different arm than the registered D1); `hl_05_26` (superseded by the forum corpus for X38) | x35 STAGED_PLAN §7; `main/x35/kit_test.py`, `main/x35/d1_test.py` |
+| 2026-10-19 | **X37b READ: the in-house TRANSFER split** (transfer worker; PREREG `38c64909`, registration `91af4446`) | **H1 UNDECIDED** (KILLED needed T_tot's upper bound < +2.0 pp AND T_pilot's lower bound ≤ 0): T_tot +4.0 pp [−0.7, +8.4], T_pilot +0.4 [−5.8, +6.5], T_face +3.6 [−3.1, +10.4]; P\*'s edge over 25M +18.8 pp on home72, +14.8 pp on unseen panels (≈ 79 % transfers). D0e's fixed reference changed from `production` to P\* piloting home72 (the F-DV-19 design-around); GEN-M and D0e classes UNDECIDED; X38 / D1's rank unchanged (its demotion needs X37b TRANSFERS) | reading the pair-level (teams-fixed) T_tot [+1.6, +6.4] as the verdict (the registration names the team bootstrap); reading GEN-M's large transfer as "no held-out problem" (the Kakuna-side piloting deficit stands, F-DV-26) | `measurements/x37b_transfer_2026-10-19/`; ledger 2026-10-19 *X37b TRANSFER* |

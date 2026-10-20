@@ -146,6 +146,23 @@ def _atomic(path: Path, obj: Any) -> None:
     os.replace(tmp, path)
 
 
+def canonical(texts: Mapping[str, str]) -> Dict[str, str]:
+    """``{team id: canonical id}``: ids whose texts PACK to the same team map to the sorted-first of them (home72 holds
+    one team twice, ``63eda9d8d491d6a4.txt`` = ``dbbfac7bd5.txt``; the scheduled builder refuses one team under two
+    identities). A pair whose two ids share a canonical team plays that team on both sides (a valid mirror)."""
+    from utils.teambuilder import Gen3Teambuilder
+
+    ids = sorted(texts)
+    tb = Gen3Teambuilder([texts[i] for i in ids])
+    if len(tb.packed_teams) != len(ids):
+        raise SystemExit("a panel team fails the validator")
+    first: Dict[str, str] = {}
+    out = {}
+    for i, packed in zip(ids, tb.packed_teams):
+        out[i] = first.setdefault(packed, i)
+    return out
+
+
 def _texts(reg: Mapping[str, Any]) -> Dict[str, str]:
     from main import heldout_panels as HP
 
@@ -181,7 +198,13 @@ def run(reg: Mapping[str, Any], state: Path, stop_at: Optional[float], max_units
 
     check()
     refs = {lab: resolve_player(c["path"]) for lab, c in ck.items()}
-    builder = ScheduledTeams(_texts(reg), team_source="gen3_x37b: named pairs on registered panels, mirrored")
+    texts = _texts(reg)
+    canon = canonical(texts)
+    dups = sorted(i for i, c in canon.items() if c != i)
+    print(f"[x37b] {len(texts)} team ids, {len(set(canon.values()))} distinct teams; aliased: "
+          f"{[(i, canon[i]) for i in dups]}", flush=True)
+    builder = ScheduledTeams({c: texts[c] for c in set(canon.values())},
+                             team_source="gen3_x37b: named pairs on registered panels, mirrored")
     c = reg["compute"]
     comp = Compute(device=c["device"], backend=c["backend"], n_envs=int(c["n_envs"]), threads=int(c["threads"]),
                    torch_threads=int(c["torch_threads"]), front=c["front"], profile=c["profile"])
@@ -200,11 +223,15 @@ def run(reg: Mapping[str, Any], state: Path, stop_at: Optional[float], max_units
             eng.set_cell(refs[u["player"]], opp)
             pairs = round_pairs(reg, u["block"], u["round"])
             seed = round_seed(reg, u["block"], u["round"])
-            builder.schedule(seed, pairs)
+            cpairs = [(canon[a], canon[b]) for a, b in pairs]
+            builder.schedule(seed, cpairs)
             games, stats = eng.play_batch(len(pairs), seed)
             plan_unit = SimpleNamespace(name=u["name"], pairs=[SimpleNamespace(subject=a, ref=b, index=k)
-                                                               for k, (a, b) in enumerate(pairs)])
+                                                               for k, (a, b) in enumerate(cpairs)])
             rows = unit_rows(games, plan_unit, eng.team_packed, builder.id_by_packed)
+            for row, (a, b) in zip(rows, pairs):        # record the PLAN's ids (the canonical team they played beside)
+                row["subject_played"], row["ref_played"] = row["subject"], row["ref"]
+                row["subject"], row["ref"] = a, b
             rec = {"schema": UNIT_SCHEMA, **u, "seed": seed, "pairs": rows, "n_pairs": len(rows),
                    "player_sha256": ck[u["player"]]["sha256"], "opponent_sha256": ck[reg["opponent"]]["sha256"],
                    "registration_digest": reg["digest"], "regime_id": eng.regime["regime_id"],
@@ -564,6 +591,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     d.add_argument("--reg", required=True)
     d.add_argument("--state", required=True)
     d.add_argument("--out", required=True)
+    w = sub.add_parser("rows")
+    w.add_argument("--reg", required=True)
+    w.add_argument("--state", required=True)
+    w.add_argument("--out", required=True)
     sub.add_parser("selfcheck")
     a = ap.parse_args(argv)
     if a.cmd == "selfcheck":
@@ -583,6 +614,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if a.cmd == "run":
         stop = _dt.datetime.fromisoformat(a.stop_at).timestamp() if a.stop_at else None
         print(json.dumps(run(reg, Path(a.state), stop, a.max_units)))
+        return 0
+    if a.cmd == "rows":       # the committed per-pair rows (added after the lane ran; play code unchanged)
+        with open(a.out, "w") as f:
+            for name, rec in load(reg, Path(a.state)).items():
+                for row in rec["pairs"]:
+                    f.write(json.dumps({"unit": name, "round": rec["round"], "cell": f"{rec['block']}_{rec['player']}",
+                                        "k": row["k"], "subject": row["subject"], "ref": row["ref"],
+                                        "subject_played": row.get("subject_played"),
+                                        "ref_played": row.get("ref_played"),
+                                        "games": [{"result": g["result"], "near_ties": g.get("near_ties"),
+                                                   "end_turn": g.get("end_turn")} for g in row["games"]]},
+                                       sort_keys=True) + "\n")
         return 0
     if a.cmd == "read":
         res = read(reg, Path(a.state))
