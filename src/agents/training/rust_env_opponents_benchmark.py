@@ -98,7 +98,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     load_s: List[float] = []
 
     def load(route: int, mid: str) -> None:
-        step = int(mid.split(":")[1])
+        step = int(mid.split(":")[1].partition("@")[0])
         entry = next(e for e in pool._entries if e.step == step)
         t = time.perf_counter()
         svc.load(int(routes[route].slot), pool.load_model(entry).policy.eval(), mid)

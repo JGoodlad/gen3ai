@@ -314,7 +314,8 @@ class SlotFamily:
 class PoolRoster:
     """The self-play pool as the host sees it: ONE ``SnapshotPool`` (weights = recency x PFSP),
     rescanned at a refresh, sampled per env with that env's own stream (``SnapshotPool.sample(rng)``).
-    A model id is ``f"pool:{step}"``."""
+    A model id is the pool's :meth:`SnapshotPool.model_id`: ``pool:<step>``, with ``@<n>`` once that step's
+    file was replaced (a re-promotion), so the new weights reload into a free slot."""
 
     def __init__(self, pool: Any):
         self.pool = pool
@@ -323,10 +324,10 @@ class PoolRoster:
         return bool(self.pool.is_empty())
 
     def model_ids(self) -> List[str]:
-        return [f"pool:{s}" for s in self.pool.steps()]
+        return [self.pool.model_id(s) for s in self.pool.steps()]
 
     def sample(self, rng: random.Random) -> str:
-        return f"pool:{self.pool.sample(rng=rng).step}"
+        return self.pool.model_id(self.pool.sample(rng=rng).step)
 
 
 class EpisodeOpponentSampler:

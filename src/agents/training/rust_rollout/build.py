@@ -247,7 +247,7 @@ class OpponentSources:
         the only copy that serves, and a source on the card is a second copy of it."""
         kind, _, rest = model_id.partition(":")
         if kind == "pool":
-            step = int(rest)
+            step = int(rest.partition("@")[0])      # "<step>" or "<step>@<revision>" (SnapshotPool.model_id)
             entry = next(e for e in self.pool._entries if e.step == step)
             return self._require_cpu(self.pool.load_model(entry).policy.eval(), model_id)
         if kind == "stable":

@@ -280,6 +280,7 @@ class SprtPromotionMixin:
               f"in {job.batch} batch(es), LLR {st.llr:+.3f}" + (" — PROMOTED" if promoted else ""), flush=True)
         if promoted:
             self._pool.add_from_path(job.snapshot, job.step)
+            self._forget_replaced_step(job.step)
             self._pool_generation += 1
             self.logger.record("train/selfplay_promoted_steps", float(job.step))
             self._spawn_snapshot_ladder_update(job.step)

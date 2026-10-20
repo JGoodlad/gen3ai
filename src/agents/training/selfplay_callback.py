@@ -578,6 +578,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         if sf > 0 and self._pool.is_empty():
             self._pool.add_from_path(pending["snapshot"], step,
                                      twin=checkpoint_at_step(self._model_dir, step))
+            self._forget_replaced_step(step)
             self._pool_generation += 1
             emit(f"🌱 [SELFPLAY] Win rate cleared the threshold — seeded the pool from the "
                  f"step {step:,} snapshot (self_play_fraction={sf:.0%})")
@@ -748,6 +749,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         elif win_rate_vs_pool > self._promote_threshold:
             self._pool.add_from_path(pending["snapshot"], step,
                                      twin=checkpoint_at_step(self._model_dir, step))
+            self._forget_replaced_step(step)
             self._pool_generation += 1
             self.logger.record("train/selfplay_promoted_steps", float(step))
             # Pay the one-time snapshot-ladder tax for the NEW frozen node — a DETACHED subprocess
@@ -871,6 +873,13 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
             self.training_env.env_method("set_self_play_target", float(fraction), self._pool_generation)
         except Exception as e:  # noqa: BLE001 — telemetry/curriculum push must never break eval
             print(f"[SELFPLAY] set_self_play_target push failed (non-fatal): {e}")
+
+    def _forget_replaced_step(self, step: int) -> None:
+        """A snapshot RE-promoted at a step the pool already held (the replay after a crash restart) holds
+        NEW weights under the old step: the PFSP win-rate EMA measured the old ones (B-F1, core review
+        2026-10-20). Called after every ``add_from_path``; a first promotion has no revision and no EMA."""
+        if self._pool.revision(step):
+            self._pfsp_winrate_ema.pop(step, None)
 
     def _update_pfsp_ema(self, kept_sentinels: list, tui: dict) -> None:
         """EMA-blend this cycle's measured sentinel win-rates into the per-snapshot PFSP map (keyed

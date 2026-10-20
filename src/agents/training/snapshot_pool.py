@@ -239,6 +239,10 @@ class SnapshotPool:
         self._cache_size = lru_cache_size
         self._entries: list[SnapshotEntry] = []
         self._model_cache: OrderedDict[str, MaskablePPO] = OrderedDict()
+        # A snapshot file's identity as this pool last saw it, and how many times a step's file has been
+        # REPLACED since (:meth:`_observe`, :meth:`model_id`).
+        self._ident: dict[str, tuple] = {}
+        self._revisions: dict[int, int] = {}
         self.pool_dir.mkdir(parents=True, exist_ok=True)
         self._scan()
 
@@ -298,6 +302,7 @@ class SnapshotPool:
                 emit(f"⚠️ [SELFPLAY] step {step:,}: pool snapshot COPIED although a checkpoint exists at "
                      f"this step: {note}")
         entry = SnapshotEntry(path=dst, step=step, pinned=False)
+        self._observe(entry)
         # Replace any existing entry at this step (idempotent), keep sorted by step.
         self._entries = [e for e in self._entries if e.step != step]
         self._entries.append(entry)
@@ -492,6 +497,8 @@ class SnapshotPool:
         # A glob sorts by NAME; the zero-padded name sorts by step only while every step fits in 12
         # digits. Sort by the parsed step so the eviction order never depends on the filename format.
         self._entries.sort(key=lambda e: e.step)
+        for e in self._entries:
+            self._observe(e)
         found = [e.step for e in self._entries]
         self._enforce_cap(unlink=self._owns_dir)
         if len(found) > len(self._entries):
@@ -548,6 +555,7 @@ class SnapshotPool:
         unshare(str(path))       # an in-place save must not rewrite a checkpoint this entry is linked to
         model.save(str(path))
         entry = SnapshotEntry(path=path, step=step, pinned=pinned)
+        self._observe(entry)
         # Replace any existing entry at this step (idempotent re-seed)
         self._entries = [e for e in self._entries if e.step != step]
         self._entries.append(entry)
@@ -566,6 +574,45 @@ class SnapshotPool:
                 f"max_snapshots={self.max_snapshots} after eviction (pinned: "
                 f"{[e.step for e in self._entries if e.pinned]}) — refusing to train or evaluate against "
                 f"selves outside the declared window")
+
+    @staticmethod
+    def _identity(path: Path) -> "tuple | None":
+        """What makes a snapshot file THIS file: device, inode, mtime and size (not ctime - a later hard
+        link to a checkpoint moves that without touching the weights). An atomic replace is a new inode."""
+        try:
+            st = path.stat()
+        except OSError:
+            return None
+        return (st.st_dev, st.st_ino, st.st_mtime_ns, st.st_size)
+
+    def _observe(self, entry: SnapshotEntry) -> None:
+        """Note ``entry``'s file identity; if the file at this path is a DIFFERENT file than the one this
+        pool saw before (a snapshot re-promoted at a step the pool already holds - the replay after a crash
+        restart), the weights behind the name changed: drop the cached model and the step's win rate (it
+        measured the old weights) and bump the step's revision, so :meth:`model_id` names the new weights
+        and a T2 slot still holding the old ones is not mistaken for them (B-F1, core review 2026-10-20)."""
+        ident = self._identity(entry.path)
+        key = str(entry.path)
+        prev = self._ident.get(key)
+        if ident is not None:
+            self._ident[key] = ident
+        if prev is None or ident is None or prev == ident:
+            return
+        self._revisions[entry.step] = self._revisions.get(entry.step, 0) + 1
+        self._model_cache.pop(key, None)
+        self._win_rates.pop(entry.step, None)
+        emit(f"♻️  [SELFPLAY] pool snapshot at step {entry.step:,} was REPLACED on disk (a re-promotion at a "
+             f"step the pool already held): cached weights dropped, now '{self.model_id(entry.step)}'")
+
+    def revision(self, step: int) -> int:
+        """How many times this pool has seen the file at ``step`` replaced (0 = never)."""
+        return self._revisions.get(int(step), 0)
+
+    def model_id(self, step: int) -> str:
+        """The name of the WEIGHTS at ``step``: ``pool:<step>``, or ``pool:<step>@<n>`` after n replacements
+        - so a consumer that keys residency by name (T2's slots) reloads exactly when the weights changed."""
+        n = self.revision(step)
+        return f"pool:{int(step)}" + (f"@{n}" if n else "")
 
     def _drop(self, entry: SnapshotEntry, *, unlink: bool) -> None:
         if unlink:

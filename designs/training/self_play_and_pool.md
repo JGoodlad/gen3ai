@@ -105,6 +105,17 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   *competent* model — never the random/weak step-0 seed of old. By default nothing is pinned: the
   oldest snapshot (incl. the seed) ages out as the window slides past `max_snapshots`, so the floor
   stays a recent self; anti-forgetting is the heuristic floor, not a pinned seed.
+- 🚨 **A RE-PROMOTION AT A STEP THE POOL HOLDS REPLACES THE WEIGHTS AND EVERY COPY OF THE OLD ONES** (core
+  review 2026-10-20, B-F1). After a crash restart from checkpoint C < S the run replays to S and promotes again;
+  the file `snapshot_<S>.zip` is replaced (atomically) and it must not keep serving the old weights. The policy
+  is REPLACE, not refuse: a refusal would crash-loop an auto-restarting run, and the replayed timeline is the
+  run's real one. `SnapshotPool._observe` keys each snapshot file by (device, inode, mtime, size), at every scan
+  and every write; a changed identity drops the LRU model, the step's win rate and (callback side
+  `_forget_replaced_step`) the PFSP EMA, and bumps the step's revision, so the pool's model id (`model_id`) reads
+  `pool:<S>@<n>` instead of `pool:<S>` and the host's `SlotFamily.admit` LOADS the new weights into a free T2
+  slot (a slot still played by an episode keeps the old model until that episode ends). The trainer's pool and
+  the host's are separate objects over one directory, which is why the identity is read from the file, not a
+  counter. Test: `snapshot_pool_replace_test.py`.
 - 🚨 **THE WINDOW HOLDS ON EVERY PATH THAT POPULATES THE POOL** (`gen3_pool_cap_every_path_v1`,
   2026-09-30). `max_snapshots` used to be applied only when a snapshot was ADDED, so a pool built by a
   directory SCAN — every env worker's, every resume's, the Rust env core's (`rust_env_setup`), any

@@ -172,6 +172,7 @@ def _cb(tmp_path):
     cb.model = SimpleNamespace(seed=3)
     cb.logger = SimpleNamespace(record=lambda k, v: rec.__setitem__(k, v), dump=lambda step: None)
     cb._spawn_snapshot_ladder_update = lambda step: rec.__setitem__("ladder", step)
+    cb._forget_replaced_step = lambda step: rec.__setitem__("forgot", step)      # the host callback's hook (B-F1)
     return cb, rec
 
 
