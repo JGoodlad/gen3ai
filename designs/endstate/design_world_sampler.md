@@ -77,9 +77,11 @@ The zero-playout screen (§6.1) already changes the picture:
   printed damage number with the truth's own damage roll. With `dice="rolls"` any of the 16 rolls that prints the same
   thing will do. Before building, the measurement: 9 % of the candidates today's screen rejected fit on another roll.
   On 60 rebuilt states the exclusions fall from 20 to 6, and the worlds' facts barely move (§3.3.1).
-- **The opponent's own choices recognise the truth (L3, 2026-10-20).** The network, seated as the opponent, ranks the
-  true world above an honest one 69 % of the time (80 % against its own snapshots); among 9 worlds it would give the
-  truth a quarter of the weight. But today's honest worlds hold nothing near the truth for it to pick (§4 (f)).
+- **The opponent's own choices recognise the truth (L3, 2026-10-20; PROVISIONAL-POOL).** The network, seated as the
+  opponent, ranks the true world above an honest one 69 % of the time. That pooled figure is carried by the snapshot
+  opponents (80 %, greedy earlier copies of the same network); against scripted bots it is 59 %, WEAK on its own. It
+  was read on pool opponents only, so pool familiarity is not yet ruled out (§4 (f)). Today's honest worlds hold
+  nothing near the truth for it to pick.
 - **So the first target is the moves of the seen Pokémon, kept consistent with the rest of the team**: real teams and
   sets (team-level and set-level models), the legality of move combinations, and the opponent's own choices as
   evidence. A better species guess alone will not do it. Stage 1 (§6.2) then asks the open question: do worlds that are
@@ -490,8 +492,22 @@ stated.
   - **The truth vs today's honest worlds:** the TRUE world out-ranks an honest world (`dice="rolls"`, legality on) with
     AUC 0.692 [0.655, 0.728]. Against X26's own snapshots 0.796, against scripted bots 0.588.
   - **Not familiarity:** the confidence-only control reads 0.481.
-  - **The truth's weight:** inside the weighted set of 9 it takes 0.249 (snapshots 0.360; uniform 0.111). That is the
-    dose curve's p\* range, against the network belief's ≈ 0.01.
+  - **The truth's weight is COUNTERFACTUAL, not the dose curve's p:** inserted among the 8 honest worlds, the truth
+    would take 0.249 of the likelihood weight (snapshots 0.360; uniform 0.111). This is a different quantity from the
+    dose curve's p (`search_ledger.md` §5.1), which is the true world's weight INSIDE the worlds a search plays. No
+    honest proposal set holds the truth: its exact-world mass is ≤ 0.0025 per draw (§6.1). p_truth also falls as
+    candidates are added: among 64 or 128 proposals it would be far below a quarter unless the truth dominated them
+    all. So 0.249 does not say search would reach the dose curve's 0.2–0.35. The quantity that does is the near- or
+    exact-world mass after the resample (stage 1c's nearness meters, §6.3). (L3 review F3, 2026-10-20.)
+  - **Carried by the snapshot stratum (review F1):** the pooled AUC is the equal-weight average of the snapshot
+    stratum (0.796) and the bot stratum (0.588 [0.536, 0.641], WEAK on its own). The snapshot opponents are greedy
+    earlier X26 snapshots, so there the opponent model nearly IS the opponent. By L3's own WEAK rule the bot stratum
+    alone would not have built 1c (its lift_moves is −0.005 [−0.019, +0.007]). A ladder human is neither, and the bot
+    figure is the more defensible prior (UNVERIFIED: no off-pool or human bank exists).
+  - **PROVISIONAL-POOL (review F2, F5):** one pre-plateau anchor (225M; X26 plateaued near 280M) and one bank whose
+    opponents all play training-pool teams. The confidence control shows the network is not SURER on the truth's rows.
+    It does not show that the network does not PREDICT BETTER on a team it trained against. That familiarity
+    counter-test (a pool DECOY scored in the truth's place) is `measurements/search_l3_2026-10-20/counter_test/`.
   - **No lift on today's proposals:** re-weighting today's 8 honest worlds moves the share of the seen mons' correct
     unrevealed moves only +0.005 [−0.004, +0.013] (+0.014 [+0.005, +0.024] against snapshots); exact move sets and
     never-seen species are not detected.
@@ -1026,3 +1042,4 @@ No number yet (§7 Q15 of `search_ledger.md`).
 | 2026-10-20 | **Candidate (f)'s likelihood BUILT, default OFF** (orchestrator brief, L3 of the literature review; `main.value_search.opp_likelihood`) | A reusable function, not a sampler mode: the opponent's own rows from each world's prefix replay, scored by any forward; unobserved (slot-rewritten) and pending (root-round) choices excluded and counted; throwing guards on the searched side's rows and the tokens; tests that fail on revert of the seat and of the pending rule | scoring the slot-rewritten choices with the world's rendered token (the slot is the truth's: a leak); scoring the searched side's rows (the opponent model must see what the opponent saw); a `SearchConfig` weighting mode now (stage 1c's job, after L3's read) | `measurements/search_l3_2026-10-20/PREREGISTRATION.md` |
 | 2026-10-20 | **L3 READ: WORKS** (`measurements/search_l3_2026-10-20/`, pre-registered `4d149799`) | §0, §3.2 and §3.5 rows, §4 (f) (the result and its consequence), §6.2's stage-1c cost row. The opponent's choices JUDGE worlds well (AUC 0.692; 0.796 snapshots, 0.588 bots; not familiarity, control 0.481; the truth's weight 0.249 of 9), but re-weighting today's 8 honest worlds moves the moves' match only +0.005, so stage 1c needs a bigger or team-level proposal set | (f) ranked first now (its value depends on the proposals: it multiplies (c), it does not replace it); stage 1c as a re-weighting of today's 8 worlds; quoting the snapshot stratum as a ladder number | L3 README §2–§4, `result_l3.json` |
 | 2026-10-20 | **STAGE 1c REGISTERED; the importance resample BUILT, default OFF** (orchestrator brief, L3's registered consequence; `measurements/search_1c_2026-10-20/`; `opp_likelihood.resample`, `Worlds.select`, `SearchConfig.proposals`) | §6.3: 64 F + 64 C_ladder proposals per state under `dice="rolls"`, weighted by dice × the opponent-choice likelihood, systematic resampling to 8 (each kept world with its own rolls; the weights spent, so a search over them is uniform); phase A's zero-playout nearness read (ΔH primary, NEARER / MATERIAL / DOSE) gates phase B's playouts with L1's fitted piKL anchor | re-weighting today's 8 (L3: nothing near the truth); top-8 by weight (a mode, not a posterior sample); multinomial resampling (more variance than systematic); a playout of every arm regardless of phase A (the brief's registered bar); the corpus arm under `seed` dice (the brief: `rolls` everywhere); a properly weighted mixture for M128L (the components' consistent mass is not estimated: declared) | `measurements/search_1c_2026-10-20/PREREGISTRATION.md`; `opp_likelihood_test.py`, `worlds_test.py`, `search_weights_test.py`, `world_rolls_integration_test.py` |
+| 2026-10-20 | **L3 CORRECTED after its adversarial review** (`measurements/search_l3_2026-10-20/REVIEW.md`, F1–F3, F5) | §0 (the L3 bullet) and §4 (f) (the L3 read): p_truth 0.249 is a COUNTERFACTUAL (the truth inserted among 8 honest worlds), not the dose curve's p; the pooled WORKS is carried by the snapshot stratum (bots WEAK alone); the read is PROVISIONAL-POOL, with the familiarity counter-test named | "0.249 is the dose curve's p\* range" (two different quantities; the quantity search needs is the near-world mass after the resample, stage 1c's meters) | REVIEW.md F1–F3, F5 |
