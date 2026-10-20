@@ -153,6 +153,19 @@ adopting.
     counted and warned (`cuda_reserved_growths_after_freeze`, 847efe34); once `reserved_growth.RESERVED_GROWTH_POISONS`
     is armed (battery cell 2 is its arming test), it is a `LifecycleViolation`. Before arming it, attribute the growth
     per stream or per thread, or keep `--overlap-collect` off.
+13. **The first §3.1 GPU attempt (2026-10-20, pin `397cce81`) is DEFERRED, not read.** The pin carried T62's
+    fp64 τ solve, which the GPU-window battery measured at 96–98 s per learner update against 41–42 s at fp32
+    (`gpu_window_battery_2026-10-19`; T62 ruled FP32_ALT). An overlap read where the update is ≈ 2.3× its adopted
+    length is not representative, so the orchestrator stopped the ON arm at startup and deferred §3.1 to the
+    FP32_ALT pin.
+    - **The OFF arm crashed twice on K9(b) under §3.1's `--behaviour-check fatal`.** `BehaviourMismatch` max
+      |d log π| was 1.15e-4 and 1.03e-4 against the 1e-4 bar. These are the same single-row tails X26 ran under
+      `warn` with ceilings (its Amendments 3 / 6), here seen at fp64 τ. Each crash auto-restarted the child, so the
+      OFF arm's 15 updates span three processes.
+    - **The re-run** therefore types `--behaviour-check warn` (X26's mode), with a §7-style ceiling read afterwards
+      (judged max ≥ 1e-3, p99 ≥ 1e-4 or non-finite ⇒ HOLD).
+    - **Both arms' run dirs and crash files** are archived at `~/gen3ai_archive/x14_ab_runs/rb_x14ab_{off,on}_s2601/`
+      (local, not committed).
 
 ## 5. The advantage-normalisation bias, before and after the fix (`adv_norm_bias.py` → `result/adv_norm_bias_{before,after}.json`)
 
