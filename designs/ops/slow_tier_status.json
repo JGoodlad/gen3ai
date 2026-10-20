@@ -571,34 +571,34 @@
   },
   "src/agents/model/canary_shift_max_gate_test.py::test_a_FATAL_record_carries_it_too": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 29.46,
-   "contention": 1.85,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 31.88,
+   "contention": 1.75,
    "detail": ""
   },
   "src/agents/model/canary_shift_max_gate_test.py::test_a_PASS_record_carries_the_shift_its_source_and_the_margin[0.3-0.3---canary-shift-max-1.2]": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 29.98,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 28.84,
    "contention": 1.75,
    "detail": ""
   },
   "src/agents/model/canary_shift_max_gate_test.py::test_a_PASS_record_carries_the_shift_its_source_and_the_margin[None-0.18-default-0.72]": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 28.34,
-   "contention": 1.74,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 31.93,
+   "contention": 1.86,
    "detail": ""
   },
   "src/agents/model/canary_shift_max_gate_test.py::test_every_R1_rule_line_of_the_startup_gate_prints_the_raised_shift_its_source_and_the_margin": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 27.6,
-   "contention": 1.75,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 30.23,
+   "contention": 1.78,
    "detail": ""
   },
   "src/agents/model/compile_cache_shared_test.py::test_T2s_startup_parity_gate_runs_every_slot_x_bucket_on_a_hit": {
@@ -627,89 +627,89 @@
   },
   "src/agents/model/compile_canary_test.py::test_TWO_CONSECUTIVE_unconfirmed_disagreements_are_FATAL": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 37.13,
-   "contention": 1.85,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 35.25,
+   "contention": 2.07,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_FATAL_record_carries_the_watch_of_the_scheduled_check_and_of_BOTH_confirmations": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 31.42,
-   "contention": 1.74,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 28.96,
+   "contention": 1.9,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_PASS_record_carries_the_watch_lists_per_parameter_numbers": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 29.94,
-   "contention": 1.79,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 63.34,
+   "contention": 4.03,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_PERSISTENT_fault_is_CONFIRMED_and_FATAL_in_the_SAME_update_with_a_checkpoint": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 32.75,
-   "contention": 1.81,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 29.07,
+   "contention": 1.74,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_backward_only_drift_is_caught_on_EVERY_canary_including_the_first": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 31.12,
-   "contention": 1.82,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 33.86,
+   "contention": 1.88,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_disagreement_carried_by_ONE_row_does_NOT_confirm_itself": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 46.86,
-   "contention": 1.75,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 41.03,
+   "contention": 1.74,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_healthy_compiled_learner_passes_with_the_gradient_checked": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 29.59,
-   "contention": 1.7,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 34.88,
+   "contention": 1.8,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_one_shot_BLIP_warns_counts_and_training_continues": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 37.05,
-   "contention": 1.94,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 27.94,
+   "contention": 1.66,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_u1700_shaped_EAGER_tail_on_the_real_learner_reads_PASS_with_a_yardstick_event": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 30.29,
-   "contention": 1.76,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 25.6,
+   "contention": 1.6,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_the_cadence_runs_every_N_updates_and_writes_nothing_between": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 28.89,
-   "contention": 1.82,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 29.56,
+   "contention": 1.75,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_the_canary_changes_nothing_about_training": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 28.52,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 27.79,
    "contention": 1.75,
    "detail": ""
   },
@@ -795,26 +795,26 @@
   },
   "src/agents/model/compile_regions_clip_margin_test.py::test_a_planted_10pct_POINTER_HEAD_miscompile_is_still_refused_at_the_fp32_rule": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 27.64,
-   "contention": 1.75,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 28.54,
+   "contention": 1.99,
    "detail": ""
   },
   "src/agents/model/compile_regions_clip_margin_test.py::test_the_gate_RELOCATES_on_every_rungs_own_weights_and_says_so[bf16]": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 26.95,
-   "contention": 1.89,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 27.85,
+   "contention": 1.74,
    "detail": ""
   },
   "src/agents/model/compile_regions_clip_margin_test.py::test_the_gate_RELOCATES_on_every_rungs_own_weights_and_says_so[fp32]": {
    "status": "pass",
-   "commit": "d825c6a1a7e96dda73b559c240d6242d34105446",
-   "at": "2026-10-20T05:13:16Z",
-   "duration_s": 27.92,
-   "contention": 1.75,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 23.66,
+   "contention": 1.63,
    "detail": ""
   },
   "src/agents/model/compile_regions_fixed_mass_cuda_test.py::test_fixed_mass_R1_compiles_to_a_finite_gradient_and_passes_the_real_gate_on_cuda": {
@@ -5294,12 +5294,20 @@
    "contention": 1.76,
    "detail": ""
   },
+  "src/utils/rust_env/proc_integration_test.py::test_gate_1_the_bridge_corpus_ffi_equals_process": {
+   "status": "pass",
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 3.43,
+   "contention": 3.07,
+   "detail": ""
+  },
   "src/utils/rust_env/proc_integration_test.py::test_gate_1_the_ladder_commit_tier_ffi_equals_process": {
    "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 6.39,
-   "contention": 4.39,
+   "commit": "6fcbaa74245e2d1a2143a156f16b024cc5839793",
+   "at": "2026-10-20T06:01:18Z",
+   "duration_s": 6.28,
+   "contention": 4.74,
    "detail": ""
   },
   "src/utils/rust_env/successors_integration_test.py::test_gate_1_the_depth_3_successor_slice_commit": {
@@ -5343,5 +5351,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-20T05:13:47Z"
+ "last_written": "2026-10-20T06:01:18Z"
 }
