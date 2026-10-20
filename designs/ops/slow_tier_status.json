@@ -1764,10 +1764,10 @@
   },
   "src/agents/model/tau_solve_test.py::test_fp32_alt_compiled_by_inductor_matches_eager_on_the_tau_class_row": {
    "status": "pass",
-   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
-   "at": "2026-10-20T10:16:08Z",
-   "duration_s": 18.58,
-   "contention": 1.86,
+   "commit": "1a3d242924bae2f18b8b77beb2551078b386e73d",
+   "at": "2026-10-20T12:27:24Z",
+   "duration_s": 27.92,
+   "contention": 2.4,
    "detail": ""
   },
   "src/agents/model/update_performance_shape_test.py::test_R1s_attention_profile_on_cpu_is_pinned": {
@@ -5463,5 +5463,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-20T11:11:05Z"
+ "last_written": "2026-10-20T12:27:24Z"
 }

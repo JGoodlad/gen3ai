@@ -188,6 +188,62 @@ def test_fp32_alt_compiled_by_inductor_matches_eager_on_the_tau_class_row():
         assert abs(float(comp[i]) - float(eager[i])) <= 2 * _ulp32(float(eager[i])), i
 
 
+# ------------------------------------------------------------- the review's pins (REVIEW.md, 2026-10-20)
+def _sparse_saturated(n: int, k: int, gap: float) -> torch.Tensor:
+    """[1, N] fp32 scores with only ``n`` candidates (the first n columns; the move vocabulary's shape): ``k`` of
+    them at 0, 0.25, … and the other ``n − k`` exactly ``gap`` nats below 0. Columns ≥ n are filler (masked)."""
+    a = torch.zeros(N, dtype=torch.float32)
+    a[:k] = 0.25 * torch.arange(k, dtype=torch.float32)
+    a[k:n] = -gap
+    return a.unsqueeze(0)
+
+
+@pytest.mark.parametrize("n,k,gap", ((2, 1, 30.0), (4, 3, 30.0), (5, 4, 25.0), (8, 4, 40.0), (380, 6, 40.0)))
+def test_fp32_alt_is_accurate_on_small_and_full_candidate_sets_with_k_up_to_six(n: int, k: int, gap: float):
+    """THE CLAIM "WHATEVER THE SLOPE" on the shapes the k = 1 / 3 dense rows above do not reach: the move group's
+    SMALL candidate sets (n = 2 … 8 of 400 columns, k_m = n − 1 or 4: most terms in H, the integer k − |H| near 0)
+    and a species-shaped k = 6 row (380 of 400 candidates). PRECONDITION, asserted: the naive fp32 sum misses each by
+    > 1e-3 (measured 1.2e-2 – 4.9 nats). Reverting the split residual fails it."""
+    s32 = _sparse_saturated(n, k, gap)
+    cand = torch.zeros(1, N, dtype=torch.bool)
+    cand[0, :n] = True
+    kk = torch.tensor([k])
+    ref = _ref_tau(s32[:, :n], k)                     # the reference sees ONLY the candidates
+    assert abs(float(fixed_size_tau(s32, cand, kk, solve=TAU_SOLVE_NAIVE)) - ref) > 1e-3
+    got = fixed_size_tau(s32, cand, kk)
+    assert abs(float(got) - ref) <= 2 * _ulp32(ref), (n, k, float(got), ref)
+
+
+@pytest.mark.parametrize("solve", TAU_SOLVES)
+def test_a_non_candidate_never_reaches_tau_whatever_its_score(solve: str):
+    """A non-candidate's score is never read (module docstring: "a non-candidate is −inf"): NaN, ±inf, ±1e30 or the
+    masked key's −1e9 in the masked columns give the SAME τ, bit for bit, as zeros there. The fp32_alt loop replaces
+    them by −inf BEFORE x = a + τ (so NaN − inf never forms); reverting that mask to the raw scores fails it."""
+    base = torch.cat([_saturated(23.0), _saturated(40.0, 3), _sparse_saturated(8, 4, 40.0)])
+    cand = torch.ones(3, N, dtype=torch.bool)
+    cand[:, 100::7] = False                            # 43 masked columns per row, interleaved with the candidates
+    cand[2, 8:] = False
+    k = torch.tensor([1, 3, 4])
+    clean = torch.where(cand, base, torch.zeros(()))
+    want = fixed_size_tau(clean, cand, k, solve=solve)
+    assert bool(torch.isfinite(want).all())
+    for junk in (math.nan, math.inf, -math.inf, 1e30, -1e30, -1e9):
+        dirty = torch.where(cand, base, torch.full((), junk))
+        assert torch.equal(fixed_size_tau(dirty, cand, k, solve=solve), want), junk
+
+
+@pytest.mark.parametrize("k", (1, 3))
+def test_bf16_scores_are_solved_in_fp32_and_only_tau_is_rounded(k: int):
+    """``solve_dt = promote(scores.dtype, float32)``: a bf16 score row is solved in fp32 and τ rounded to bf16 ONCE,
+    exactly the fp32 solve of the upcast scores, rounded (no production caller passes bf16 today — the trunk's bf16
+    region ends before δ_θ and every belief head — but the docstring promises it). Solving in bf16 fails it."""
+    sb = torch.cat([_saturated(23.0, k), _saturated(40.0, k, seed=7)]).bfloat16()
+    cand, kk = torch.ones(2, N, dtype=torch.bool), torch.tensor([k, k])
+    got = fixed_size_tau(sb, cand, kk)
+    assert got.dtype == torch.bfloat16
+    assert torch.equal(got, fixed_size_tau(sb.float(), cand, kk).bfloat16())
+
+
 # ---------------------------------------------------------------------------------------------------- the record
 def test_one_default_everywhere_and_the_naive_sum_is_refused_by_every_model_surface():
     from agents.model.extractor_build import ExtractorBuild
