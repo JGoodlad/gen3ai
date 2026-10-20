@@ -7,7 +7,8 @@ widening corpus (``main.team_corpora``) and the ``--team-mix`` startup guard rea
 **What a panel is.** A frozen, committed directory of team pastes, identified by CONTENT
 (``main.anchors.session.team_set_digest``, ``gen3_team_set_digest_v1``: names and order never enter it), with the rule
 that drew it, its seed, its manifest's sha256, and ``held_out_from``: the list of things that must never train on it.
-``home72`` and ``away`` are IN-POOL reference panels (``held_out_from == []``: our pool already holds them); the others
+A SEALED panel (:data:`SEALED`) is registered and excluded like any held-out panel but played by no meter until its
+read (``forum216b``: X54). ``home72`` and ``away`` are IN-POOL reference panels (``held_out_from == []``: our pool already holds them); the others
 are held out from every training team source.
 
 **The near-neighbour rule** (``NEAR_NEIGHBOUR_MIN_SHARED = 4``, matcher ``gen3_team_overlap_v1``): a team is a near
@@ -109,6 +110,29 @@ def check_distinct(name: str, items: Sequence[Tuple[str, str]],
     if stale:
         raise PanelDuplicateError(f"panel {name}: KNOWN_DUPLICATES names {stale}, which is no longer a duplicate group "
                                   "of the panel -- delete the entry")
+
+
+class PanelSealedError(PanelRegistryError):
+    """A SEALED panel (:data:`SEALED`) was asked for by a surface that PLAYS or READS it."""
+
+
+#: SEALED panels (2026-10-20, beat-Metamon FINDING 2): REGISTERED, so every widening corpus and the ``--team-mix``
+#: training guard exclude them and their near neighbours, but NEVER READ -- no meter plays them -- until the named read
+#: is registered. Unsealing is a commit that deletes the entry and cites that read's registration. Only the surfaces
+#: that play a panel by name refuse (:func:`check_unsealed`; ``main.h2h.panel``): :func:`panel_team_texts` stays open,
+#: because the exclusion rule needs the content. A read that names the team DIRECTORY instead (``main.anchors``
+#: configs) is outside this guard; the panel is installed nowhere such a config could reach.
+SEALED: Dict[str, str] = {
+    "forum216b": "X54, the Metamon goal's confirmation read (design_beat_metamon_path.md §6.6): carved from w_forum_v1's "
+                 "tier AB and registered BEFORE X35's D1 arm launched, so the goal has a panel no lever was chosen on",
+}
+
+
+def check_unsealed(name: str) -> None:
+    """Raise :class:`PanelSealedError` if ``name`` is SEALED (:data:`SEALED`)."""
+    if name in SEALED:
+        raise PanelSealedError(f"panel {name} is SEALED until {SEALED[name]}; it is registered so that training "
+                               "excludes it, and no meter may play it before that read is registered")
 
 
 @dataclass(frozen=True)

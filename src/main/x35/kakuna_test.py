@@ -121,7 +121,10 @@ def test_pooling_counts_only_counted_units_and_feeds_g_k(tmp_path):
 def test_the_committed_panel_configs_are_the_pinned_ones_and_pilot_their_panel_on_both_sides():
     from main import heldout_panels as HP
 
-    assert set(KA.PANEL_CELLS) == set(KA.UNFAMILIAR) == set(HP.panel_names(held_out_only=True)) - {"heldout72"}
+    # every held-out panel but the retired heldout72 and the SEALED ones (forum216b: X54's, never read before X54)
+    assert set(KA.PANEL_CELLS) == set(KA.UNFAMILIAR) == \
+        set(HP.panel_names(held_out_only=True)) - {"heldout72"} - set(HP.SEALED)
+    assert not set(KA.PANEL_CELLS) & set(HP.SEALED)
     for ts, cell in KA.PANEL_CELLS.items():
         assert KA._sha(cell.path) == cell.sha256, ts
         cfg = json.loads(cell.path.read_text())

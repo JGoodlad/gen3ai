@@ -1,0 +1,60 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 252 HP / 16 Def / 136 SpA / 104 Spe
+Modest Nature
+- Substitute
+- Focus Punch
+- Flamethrower
+- Toxic
+
+Gengar @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 248 HP / 44 Def / 112 SpD / 104 Spe
+Timid Nature
+- Will-O-Wisp
+- Explosion
+- Giga Drain
+- Ice Punch
+
+Blissey @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+- Mimic
+- Seismic Toss
+- Soft-Boiled
+- Ice Beam
+
+Swampert @ Leftovers
+Ability: Torrent
+Shiny: Yes
+EVs: 252 HP / 176 Def / 40 SpA / 40 SpD
+Bold Nature
+IVs: 0 Atk
+- Refresh
+- Surf
+- Toxic
+- Protect
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+Shiny: Yes
+EVs: 252 Atk / 24 SpD / 232 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Screech
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 16 Atk / 224 Def / 16 SpD
+Careful Nature
+- Rapid Spin
+- Explosion
+- Shadow Ball
+- Refresh

@@ -1,0 +1,59 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 32 HP / 76 Def / 176 SpA / 224 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Hydro Pump
+- Ice Beam
+- Baton Pass
+
+Machamp @ Leftovers
+Ability: Guts
+EVs: 80 HP / 216 Atk / 36 SpD / 176 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Bulk Up
+- Cross Chop
+- Rock Slide
+- Hidden Power [Ghost]
+
+Snorlax @ Leftovers
+Ability: Immunity
+Shiny: Yes
+EVs: 16 HP / 252 Atk / 120 Def / 120 SpD
+Adamant Nature
+- Curse
+- Double-Edge
+- Earthquake
+- Shadow Ball
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 16 Def / 220 SpA / 104 Spe
+Rash Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+
+Dragonite @ Leftovers
+Ability: Inner Focus
+EVs: 60 HP / 252 Atk / 196 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Brick Break
+- Hidden Power [Flying]

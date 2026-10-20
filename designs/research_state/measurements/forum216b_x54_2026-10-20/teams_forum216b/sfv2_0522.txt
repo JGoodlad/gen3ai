@@ -1,0 +1,57 @@
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 96 SpA / 160 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Calm Mind
+- Substitute
+- Roar
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Sunny Day
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 192 HP / 16 Def / 100 SpA / 200 Spe
+Modest Nature
+IVs: 0 Atk
+- Leech Seed
+- Calm Mind
+- Giga Drain
+- Psychic
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 172 HP / 204 Atk / 16 Def / 116 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Agility
+- Explosion
+
+Charizard @ Leftovers
+Ability: Blaze
+EVs: 24 Atk / 232 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Dragon Claw
+- Hidden Power [Grass]
+- Focus Punch
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 120 Def / 136 SpD
+Adamant Nature
+- Double-Edge
+- Earthquake
+- Shadow Ball
+- Curse

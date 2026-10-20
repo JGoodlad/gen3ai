@@ -1,0 +1,57 @@
+Heracross @ Choice Band
+Ability: Guts
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Focus Punch
+- Rock Slide
+- Megahorn
+- Sleep Talk
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 SpD
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Hypnosis
+- Recover
+
+Hariyama @ Leftovers
+Ability: Guts
+EVs: 252 Atk / 252 Def / 4 SpD
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Cross Chop
+- Knock Off
+- Hidden Power [Bug]
+- Focus Punch
+
+Porygon2 @ Leftovers
+Ability: Trace
+EVs: 252 HP / 200 Def / 56 SpD
+Bold Nature
+IVs: 0 Atk
+- Thunder
+- Ice Beam
+- Thunder Wave
+- Recover
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 204 Def / 40 SpD / 16 Spe
+Relaxed Nature
+- Explosion
+- Rapid Spin
+- Earthquake
+- Psychic
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 240 HP / 68 Def / 136 SpD / 64 Spe
+Calm Nature
+IVs: 0 Atk
+- Psychic
+- Perish Song
+- Leech Seed
+- Recover

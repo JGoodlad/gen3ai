@@ -15160,3 +15160,41 @@ Pins: `present::live_reader_reading_tests` (six tests over `tests/vectors/live_r
   `designs/flag_registry.md` (generated); the 2026-10-19 battery README (T62 VERDICT: FP32_ALT); the X35 launch sheet's C1
   (amended: production pins FP32_ALT, GO after the GPU read); `design_compute_efficiency.md` C1; `TASK_BACKLOG.md`
   (OPS-12 done).
+
+## 2026-10-20 — forum216b: X54's sealed confirmation panel carved out of D1's corpus BEFORE D1 launched (`w_forum_v1` 2,424 → 1,982; X35 AMENDMENT D1-CORPUS; no model / config / obs / signature change)
+
+- **Why.** The orchestrator's ruling on FINDING 2 of `design_beat_metamon_path.md`. forum72, H and P72 have steered
+  four reads and the D1 ranking. Once D1 trained on `w_forum_v1@ABC`, no clean human-built A / B team would be left
+  to confirm the Metamon goal on.
+- **The panel.** `forum216b` (`research_state/measurements/forum216b_x54_2026-10-20/`; `draw_forum216b.py --check`
+  reproduces it).
+  - 216 teams from `w_forum_v1`'s tier AB at `b3886800c`, seed 5400, stratified like forum72 (×3: CORE 12 / NEAR 162 /
+    FAR 42), curator cap 42.
+  - Rejects validator and Hidden Power failures, and exact or ≥ 4-shared copies of the pool, every registered panel
+    and earlier draws. Content digest `7831e2d2…3d02`.
+  - The size comes from X54's power (`power.py`): τ² from X37a's forum72 cell is 0 (MoM), upper 95 % 0.033. At that
+    upper bound T = 216 reaches 0.82 / 0.88 power for LB > 0.50 at p = 0.55 with G = 1,600 / 2,400.
+- **Registered and SEALED.**
+  - `heldout_panels.json` `forum216b`, `held_out_from: ["training"]`.
+  - `main.heldout_panels.SEALED` with `check_unsealed` (`PanelSealedError`). `main.h2h.panel` refuses a sealed panel.
+  - A sealed panel still excludes its teams and near neighbours from every corpus.
+- **D1's corpus.** `w_forum_v1` was rebuilt by its own builder.
+  - ABC 2,424 → **1,982**; tier sha `7bcdc835…` → **`73a76e808431…`**; data `4af495c4…` → **`7f42d95f…`**.
+  - AB 559 → 305. The curator cap fell 242 → 198 and re-selected the C tier: 498 teams are new to the corpus, 323 of
+    them in no earlier version.
+  - **Not yet soaked**: the committed `soak_selfcheck.json` is still the 2,424-team corpus's.
+- **The guard.** `main.x35.kit` `D1_CORPUS` / `ARM_CORPUS` / `corpus_check` and `kit corpus-check --arm --pin` read the
+  PIN's committed manifest AND require a PASSing soak naming its data sha. `launch_x35.sh` runs it as pre-check 2d,
+  and `validate_batch1.sh` on every line.
+- **Tests** (each fails on revert):
+  - `kit_test.py`: the identity equals the committed corpus and holds no forum216b team; corpus-check refuses a
+    pre-carve pin and an unsoaked corpus.
+  - `batch_test.py`: the launch script calls corpus-check.
+  - `heldout_panels_test.py`: the registry restates the draw manifest; no copy or near copy; sealed.
+  - `h2h/panel_test.py`: every h2h path refuses the sealed panel.
+  - `kakuna_test.py`: D1's panel cells exclude sealed panels.
+- **Docs.** X35 `BATCH1_LAUNCH_SHEET.md` §0 AMENDMENT D1-CORPUS (and P4, the pre-check list) and `STAGED_PLAN.md` (the
+  corpus, the banner).
+  - `design_beat_metamon_path.md`: §0, the dose, §6.6, §6.8, FINDINGS 2 and 7, the Decision record.
+  - `design_diversity_teams_opponents.md`: the registry, the D1 lever, the corpus result and soak, the Decision record.
+  - `design_compute_efficiency.md` (D1); `EXPERIMENT_BACKLOG.md` BM-4 and DV-5.

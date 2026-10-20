@@ -1,0 +1,56 @@
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 160 Atk / 252 SpA / 96 Spe
+Naive Nature
+IVs: 30 Def / 30 SpA
+- Substitute
+- Rock Slide
+- Fire Blast
+- Hidden Power [Grass]
+
+Entei @ Leftovers
+Ability: Pressure
+EVs: 132 HP / 196 SpA / 140 SpD / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Substitute
+- Calm Mind
+- Fire Blast
+- Hidden Power [Grass]
+
+Tyranitar @ Black Belt
+Ability: Sand Stream
+EVs: 184 HP / 136 SpA / 188 Spe
+Mild Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Thunder
+- Hidden Power [Grass]
+- Brick Break
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 144 Atk / 176 SpA / 188 Spe
+Naive Nature
+- Endeavor
+- Hydro Pump
+- Ice Beam
+- Earthquake
+
+Registeel @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 88 Atk / 112 SpD / 60 Spe
+Careful Nature
+- Thunder Wave
+- Explosion
+- Seismic Toss
+- Superpower
+
+Kabutops @ Salac Berry
+Ability: Battle Armor
+EVs: 252 Atk / 4 Def / 252 Spe
+Jolly Nature
+- Swords Dance
+- Endure
+- Flail
+- Rock Slide

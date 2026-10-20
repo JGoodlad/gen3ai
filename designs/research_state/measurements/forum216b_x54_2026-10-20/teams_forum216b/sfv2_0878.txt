@@ -1,0 +1,58 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Drill Peck
+- Protect
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 220 SpD / 36 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Rest
+- Toxic
+- Roar
+
+Articuno @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 104 SpA / 136 SpD / 16 Spe
+Calm Nature
+IVs: 0 Atk
+- Ice Beam
+- Rest
+- Heal Bell
+- Sleep Talk
+
+Gligar
+Ability: Hyper Cutter
+EVs: 248 HP / 24 Def / 236 Spe
+Impish Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Thief
+- Hidden Power [Flying]
+- Earthquake
+- Counter
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 208 HP / 184 Atk / 116 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Taunt
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]

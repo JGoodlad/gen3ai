@@ -3341,26 +3341,26 @@
   },
   "src/main/h2h/play_many_integration_test.py::test_a_cell_listed_twice_is_refused": {
    "status": "pass",
-   "commit": "49e22a9d7de42dda66a3de00a1a79e3b607f9051",
-   "at": "2026-10-20T09:08:14Z",
-   "duration_s": 0.06,
-   "contention": 4.67,
+   "commit": "b3886800c06c2f41237f89e35d7dd63bd0750c96",
+   "at": "2026-10-20T15:34:37Z",
+   "duration_s": 0.03,
+   "contention": 1.98,
    "detail": ""
   },
   "src/main/h2h/play_many_integration_test.py::test_a_load_that_never_reached_the_slots_is_caught_and_writes_no_row": {
    "status": "pass",
-   "commit": "49e22a9d7de42dda66a3de00a1a79e3b607f9051",
-   "at": "2026-10-20T09:08:14Z",
-   "duration_s": 187.6,
-   "contention": 2.33,
+   "commit": "b3886800c06c2f41237f89e35d7dd63bd0750c96",
+   "at": "2026-10-20T15:37:17Z",
+   "duration_s": 159.58,
+   "contention": 1.82,
    "detail": ""
   },
   "src/main/h2h/play_many_integration_test.py::test_a_longer_plan_plays_only_the_new_batch_of_every_cell": {
    "status": "pass",
-   "commit": "49e22a9d7de42dda66a3de00a1a79e3b607f9051",
-   "at": "2026-10-20T09:08:14Z",
+   "commit": "b3886800c06c2f41237f89e35d7dd63bd0750c96",
+   "at": "2026-10-20T15:34:32Z",
    "duration_s": 0.0,
-   "contention": 3.83,
+   "contention": 2.61,
    "detail": ""
   },
   "src/main/h2h/play_many_integration_test.py::test_a_refused_cell_leaves_the_engine_on_its_previous_cell": {
@@ -3373,10 +3373,10 @@
   },
   "src/main/h2h/play_many_integration_test.py::test_a_rerun_skips_every_recorded_batch_and_builds_no_engine": {
    "status": "pass",
-   "commit": "49e22a9d7de42dda66a3de00a1a79e3b607f9051",
-   "at": "2026-10-20T09:08:14Z",
+   "commit": "b3886800c06c2f41237f89e35d7dd63bd0750c96",
+   "at": "2026-10-20T15:34:32Z",
    "duration_s": 0.0,
-   "contention": 4.35,
+   "contention": 2.27,
    "detail": ""
   },
   "src/main/h2h/play_many_integration_test.py::test_a_slot_copy_that_does_nothing_is_caught_and_poisons_the_service": {
@@ -3397,42 +3397,42 @@
   },
   "src/main/h2h/play_many_integration_test.py::test_a_third_architecture_cell_is_refused_before_any_engine_or_game": {
    "status": "pass",
-   "commit": "49e22a9d7de42dda66a3de00a1a79e3b607f9051",
-   "at": "2026-10-20T09:08:14Z",
-   "duration_s": 20.24,
-   "contention": 3.1,
+   "commit": "b3886800c06c2f41237f89e35d7dd63bd0750c96",
+   "at": "2026-10-20T15:34:37Z",
+   "duration_s": 5.01,
+   "contention": 1.75,
    "detail": ""
   },
   "src/main/h2h/play_many_integration_test.py::test_many_cells_on_one_engine_write_the_rows_single_cell_play_writes": {
    "status": "pass",
-   "commit": "49e22a9d7de42dda66a3de00a1a79e3b607f9051",
-   "at": "2026-10-20T09:08:14Z",
-   "duration_s": 1492.9,
-   "contention": 3.05,
+   "commit": "b3886800c06c2f41237f89e35d7dd63bd0750c96",
+   "at": "2026-10-20T15:34:32Z",
+   "duration_s": 831.52,
+   "contention": 1.8,
    "detail": ""
   },
   "src/main/h2h/play_many_integration_test.py::test_one_engine_served_every_cell_and_a_swap_costs_no_engine_start": {
    "status": "pass",
-   "commit": "49e22a9d7de42dda66a3de00a1a79e3b607f9051",
-   "at": "2026-10-20T09:08:14Z",
+   "commit": "b3886800c06c2f41237f89e35d7dd63bd0750c96",
+   "at": "2026-10-20T15:34:32Z",
    "duration_s": 0.0,
-   "contention": 4.35,
+   "contention": 2.27,
    "detail": ""
   },
   "src/main/h2h/play_many_integration_test.py::test_the_family_reads_across_the_cells_of_its_look": {
    "status": "pass",
-   "commit": "49e22a9d7de42dda66a3de00a1a79e3b607f9051",
-   "at": "2026-10-20T09:08:14Z",
-   "duration_s": 0.01,
-   "contention": 3.62,
+   "commit": "b3886800c06c2f41237f89e35d7dd63bd0750c96",
+   "at": "2026-10-20T15:34:32Z",
+   "duration_s": 0.0,
+   "contention": 2.61,
    "detail": ""
   },
   "src/main/h2h/play_many_integration_test.py::test_the_row_comparison_is_not_vacuous": {
    "status": "pass",
-   "commit": "49e22a9d7de42dda66a3de00a1a79e3b607f9051",
-   "at": "2026-10-20T09:08:14Z",
+   "commit": "b3886800c06c2f41237f89e35d7dd63bd0750c96",
+   "at": "2026-10-20T15:34:32Z",
    "duration_s": 0.0,
-   "contention": 4.06,
+   "contention": 1.88,
    "detail": ""
   },
   "src/main/h2h/play_mirror_integration_test.py::test_a_change_of_env_count_changes_no_game_that_is_clear_of_a_near_tie": {
@@ -3469,18 +3469,18 @@
   },
   "src/main/h2h/play_panel_integration_test.py::test_every_piloted_team_on_both_sides_is_a_panel_team": {
    "status": "pass",
-   "commit": "49e22a9d7de42dda66a3de00a1a79e3b607f9051",
-   "at": "2026-10-20T08:01:52Z",
+   "commit": "b3886800c06c2f41237f89e35d7dd63bd0750c96",
+   "at": "2026-10-20T15:50:51Z",
    "duration_s": 0.01,
-   "contention": 4.7,
+   "contention": 1.97,
    "detail": ""
   },
   "src/main/h2h/play_panel_integration_test.py::test_the_row_carries_the_registered_panels_regime": {
    "status": "pass",
-   "commit": "49e22a9d7de42dda66a3de00a1a79e3b607f9051",
-   "at": "2026-10-20T08:01:52Z",
-   "duration_s": 88.83,
-   "contention": 3.08,
+   "commit": "b3886800c06c2f41237f89e35d7dd63bd0750c96",
+   "at": "2026-10-20T15:50:51Z",
+   "duration_s": 57.66,
+   "contention": 1.76,
    "detail": ""
   },
   "src/main/h2h/play_reveal_integration_test.py::test_both_sided_reaches_both_sides_and_the_oracle_side_reads_what_it_reads_one_sided": {
@@ -5464,12 +5464,12 @@
   },
   "src/utils/team_corpora/team_corpora_test.py::test_the_committed_corpus_reproduces_from_its_source": {
    "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 28.55,
-   "contention": 1.74,
+   "commit": "b3886800c06c2f41237f89e35d7dd63bd0750c96",
+   "at": "2026-10-20T15:50:51Z",
+   "duration_s": 13.83,
+   "contention": 1.76,
    "detail": ""
   }
  },
- "last_written": "2026-10-20T12:40:25Z"
+ "last_written": "2026-10-20T15:50:51Z"
 }

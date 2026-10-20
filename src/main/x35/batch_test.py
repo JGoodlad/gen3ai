@@ -546,7 +546,9 @@ def test_launch_x35_runs_every_amendment_pre_check():
             "kit k9b-batch", "--side \"$SIDE\" --stage \"$STAGE\" --models-dir \"$MODELS\" --write ${T62:+--t62",
             "pool-check --arm \"$ARM\" --call \"$R\" --stage \"$STAGE\" --write",
             "pool-seed-check --arm \"$ARM\" --run-dir \"$MODELS/$RUN\" --call \"$R\" --stage \"$STAGE\"",
-            "kit disk --required-gib \"$gib\" --models-dir \"$MODELS\" --stage \"$STAGE\""):
+            "kit disk --required-gib \"$gib\" --models-dir \"$MODELS\" --stage \"$STAGE\"",
+            # AMENDMENT D1-CORPUS (2026-10-20): the arm's team corpus at the pin
+            "kit corpus-check --arm \"$ARM\" --pin \"$PIN\" --repo \"$REPO\" >"):
         assert needle in sh, needle
     assert "x35_pin_batch1.txt" not in sh.replace("x35_pin_batch1_", "")        # the single batch pin file is gone
     # the once-only writes happen AFTER the GO's pre-checks, never in a dry run
@@ -554,3 +556,4 @@ def test_launch_x35_runs_every_amendment_pre_check():
     assert re.search(r"if \[ \"\$GO\" -ne 1 \]; then\n  prechecks dry\n", sh)
     # the required-commit check runs inside prechecks(), before the run-dir and R checks
     assert sh.index("kit required-check") < sh.index("# 3. the run dir") < sh.index("prechecks dry")
+    assert sh.index("kit corpus-check") < sh.index("# 3. the run dir")

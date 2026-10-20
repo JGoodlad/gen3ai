@@ -5,7 +5,7 @@
 # `main.launcher --dry-run` at the pin, CPU only, rule 5b, with GEN3AI_MODELS_DIR pointed at a scratch dir so nothing
 # can land under models/, then asks the kit for the VERDICT (`main.x35.kit validate-run`: both tools exit 0, "would
 # launch", FORK of the start node's run, the arm's +steps and K9(b) mode, the trainer's arch check, and the DECLARED
-# growth line for X47 and for no other arm).
+# growth line for X47 and for no other arm), and `kit corpus-check` (AMENDMENT D1-CORPUS: D1's team corpus AT the pin).
 #
 #   usage: validate_batch1.sh --pin <PIN> --toy-call <reference_population_toy.json> --out <scratch dir>
 #                             [--reader-standin <model zip>] <arm>:<seed> ...
@@ -16,7 +16,7 @@
 #          (--reader-standin, e.g. P*): printed as `target=STANDIN:<file>` on the line, never a launch value
 # One line per argv on stdout, ending `verdict=PASS` or `verdict=FAIL <why>`, then `SUMMARY <n> PASS, <m> FAIL`; the exit
 # status is the number of FAILs (capped at 100). A --toy-call whose name says STANDIN is printed as `call=…STANDIN…` on
-# every toy line: a stand-in for T* is never a launch value. Transcripts: <out>/{argv,checkargs,dryrun}_<arm>_s<seed>.txt.
+# every toy line: a stand-in for T* is never a launch value. Transcripts: <out>/{argv,checkargs,dryrun,corpus}_<arm>_s<seed>.txt.
 set -u
 STAGE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO=$(git -C "$STAGE" rev-parse --show-toplevel)
@@ -63,6 +63,9 @@ print(" ".join(shlex.quote(x) for x in describe(arm, seed, call, target=t)["argv
   local rc2=$? line
   line=$("$PY" -m main.x35.kit validate-run --arm "$arm" --seed "$seed" --call "$call" --dryrun "$OUT/dryrun_$tag.txt" \
     --checkargs "$OUT/checkargs_$tag.txt" --rc-dryrun "$rc2" --rc-checkargs "$rc1" "${tgt[@]}" 2>&1 | tail -1)
+  # AMENDMENT D1-CORPUS (2026-10-20): the arm's team corpus AT the pin is its registered identity (launch pre-check 2d)
+  "$PY" -m main.x35.kit corpus-check --arm "$arm" --pin "$PIN" --repo "$REPO" > "$OUT/corpus_$tag.txt" 2>&1 \
+    || line="${line%%verdict=*}verdict=FAIL corpus-check: $(tail -1 "$OUT/corpus_$tag.txt")"
   case "$line" in *"verdict=PASS"*) NPASS=$((NPASS+1));; *) NFAIL=$((NFAIL+1));; esac
   case "$arm" in toy_*) line="$line call=$(basename "$call")";; ge_*) line="$line target=STANDIN:$(basename "$RSTANDIN")";; esac
   echo "$line"

@@ -1,0 +1,57 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 212 SpD / 140 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Dragon Dance
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 188 SpA / 188 SpD / 132 Spe
+Modest Nature
+- Surf
+- Explosion
+- Spikes
+- Rapid Spin
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Calm Mind
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 80 HP / 252 SpA / 176 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]
+- Calm Mind
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 188 SpA / 68 Spe
+Modest Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Calm Mind
+- Substitute
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Explosion

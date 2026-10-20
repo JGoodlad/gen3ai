@@ -35,7 +35,8 @@ Smogon-usage teams; U = the three UNFAMILIAR panels H, F and P72; "pilot" = play
   4. **X41 / D3: set mutation.** Build it now on CPU; run it only on D1's verdict.
   5. **X53: a fresh wide run** (pool + forum teams from step 0) with a 100M look (≈ 21 GPU-h), if D1 reads NULL from
      plasticity or GAIN but short.
-  6. **X54: the goal's confirmation read** on a FRESH panel (FINDING 2).
+  6. **X54: the goal's confirmation read** on a FRESH panel (FINDING 2): **`forum216b`**, 216 human-built teams,
+     carved out of D1's corpus and REGISTERED and SEALED on 2026-10-20, before D1 launched.
 - **Low rank for this goal:** the X35 plateau breakers, more capacity, X49, search, a Kakuna-trained exploiter, an
   ensemble of our checkpoints and test-time adaptation as a deployed regime. Each lever's reason is in §5.
 
@@ -153,8 +154,8 @@ The reads point at one mechanism: X26 plays a team well in proportion to how muc
 - **The dose.** These figures assume ≈ 42 of our decisions per game (X22 f3: 8,418 decisions in 200 games) and that a
   training step is one of our decisions (**ESTIMATE**).
   - By P\* every pool team was piloted ≈ **9,300 times** (280M / 42 / 719), and a home72 team ≈ 2× that.
-  - D1 at 20M with a 0.5 share on both sides pilots each of its 2,424 forum teams ≈ **100 times**: ≈ 1 % of a pool
-    team's dose.
+  - D1 at 20M with a 0.5 share on both sides pilots each of its 1,982 forum teams (2,424 before the forum216b carve)
+    ≈ **120 times**: ≈ 1.3 % of a pool team's dose.
   - **D1 is therefore a BREADTH lever, not a familiarity lever.** It works only if piloting skill GENERALISES from
     many briefly-seen teams to unseen ones. Nothing has measured whether it does. X52 is built to measure it (§6).
 - **Why the critic matters (UNVERIFIED for X26).** `designs/learning/generalist_specialist_amortization_gap.md`
@@ -299,10 +300,25 @@ only, and can land while the GPU works through X35. Run D3 (≈ 13 GPU-h, one le
 The panels F, H and P72 have now steered four reads and will steer D1. A goal claimed on the panels that chose the
 levers carries the selection (FINDING 2). The claim is made on:
 
-- **a fresh human-built panel** (forum72b), drawn and REGISTERED before the lever that it confirms is read;
+- **a fresh human-built panel: `forum216b`** (REGISTERED and SEALED 2026-10-20, before D1 launched;
+  [`forum216b_x54_2026-10-20/`](../research_state/measurements/forum216b_x54_2026-10-20/README.md)).
+  - 216 teams from `w_forum_v1`'s tier AB, drawn with seed 5400 and stratified like forum72 (CORE 12 / NEAR 162 /
+    FAR 42).
+  - No team copies or near-copies a pool, home72, away, forum72, heldout72(_hpfix) or P72 team.
+  - `w_forum_v1` was rebuilt without the panel and its near neighbours (2,424 → 1,982 teams).
+  - `main.heldout_panels.SEALED` keeps any meter from playing it until X54's registration unseals it.
 - plus home72 at Kakuna's strongest checkpoint;
 
-with the interval named in the registration. Cost ≈ 1,600 games ≈ 4.5 lane-h per model.
+with the interval named in the registration.
+
+- **The size comes from X54's power** (`power.py` there):
+  - Var(mean) = τ² / T + p(1 − p) / G. τ² is the per-team piloting interaction of a symmetric cell, measured on
+    X37a's forum72 cell: 0 (method of moments), with a one-sided 95 % upper bound of 0.033.
+  - Under that upper bound, T = 216 is the smallest size that reaches 80 % power for LB > 0.50 at p = 0.55: 0.82 at
+    G = 1,600 games and 0.88 at G = 2,400. T = 144 reaches 0.79 at 2,400.
+  - At p = 0.53 no size reaches 80 %: X54 is then limited by games and by its interval, not by the panel.
+- **Cost:** 1,600–2,400 games on forum216b plus 400 on home72, ≈ 5.6–7.9 lane-h per model (at the 1,600-games-per-
+  4.5-lane-h rate).
 
 ### 6.7 Beside the plan
 
@@ -320,9 +336,9 @@ with the interval named in the registration. Cost ≈ 1,600 games ≈ 4.5 lane-h
 | X38 / D1 (already in X35) | ≈ 13 (C0 shared) | ≈ 10 | 0 (built) |
 | X41 / D3 build; run if triggered | 0; ≈ 13 | ≈ 10 | 1–2 |
 | X53 (conditional) | ≈ 21 to the look; ≈ 60 in all | ≈ 7 | ≈ 0.3 |
-| X54 | 0 | ≈ 4.5 per model | ≈ 0.5 (carve + prereg) |
-| **sure path (X51, X52, D1, X54)** | **≈ 15.5** | **≈ 28** | **≈ 1.2** |
-| **with D3 and X53 to the plateau** | **≈ 89** | **≈ 45** | **≈ 3** |
+| X54 | 0 | ≈ 5.6–7.9 per model | ≈ 0.3 (prereg; the carve is DONE) |
+| **sure path (X51, X52, D1, X54)** | **≈ 15.5** | **≈ 29–31** | **≈ 1.0** |
+| **with D3 and X53 to the plateau** | **≈ 89** | **≈ 46–48** | **≈ 2.8** |
 
 ---
 
@@ -354,6 +370,9 @@ with the interval named in the registration. Cost ≈ 1,600 games ≈ 4.5 lane-h
      trains on it, no unused human-built A / B team is left.
    - The only leftovers are the 1,828 tier-C teams dropped by the curator cap. They come from four curators, and
      their near-neighbour status against the corpus is unchecked.
+   - **RESOLVED 2026-10-20 (the orchestrator's ruling): carved as `forum216b`** (216 teams; §6.6), REGISTERED
+     and SEALED before D1 launched. D1's corpus was rebuilt to 1,982 teams (AB 559 → 305), and X35's launch sheet
+     records it as AMENDMENT D1-CORPUS. Launch pre-check 2d holds a pin without it. The original wording follows.
    - **To confirm on a clean human-built panel, carve forum72b from the A / B tier and REGISTER it before D1
      launches.** That changes `w_forum_v1`'s content and sha256, so X38's validated corpus is re-validated at the
      production pin. Cost ≈ 0.5 agent-day; the orchestrator's call.
@@ -370,6 +389,13 @@ with the interval named in the registration. Cost ≈ 1,600 games ≈ 4.5 lane-h
 7. **Goal (b)'s interval is unsettled.** A Kish / Wilson interval treats the panel's teams as fixed. A team-clustered
    interval treats them as a sample and is wider by an unmeasured amount on Kakuna cells. X37b's in-house version
    was about 2× the planning width. X54's registration must choose.
+   - **Added 2026-10-20 (the forum216b sizing):** on X37a's forum72 cell, the method-of-moments team component is
+     ≈ 0 (upper 95 % ≈ 0.033).
+   - Yet a bootstrap that resamples the panel once for both sides, weighting a game by c_i · c_j, reads **2.02×** the
+     binomial width there (P72: 1.94×). With Poisson(1) counts, E[(c_i c_j)²] = 4, so that weighting doubles the
+     width even when there is no team variance.
+   - X37b's "about 2×" may be this artifact rather than team variance (**UNVERIFIED**: X37b's exact resampling was not
+     re-read). X54 should register a two-way interval whose noise term is not double-counted.
 8. **X51's toy cells assume `main.anchors` loads T\*** (**UNVERIFIED**, as for X37c). If it does not, drop the cells;
    nothing else depends on them.
 9. **home72 holds one team twice** (X37b FINDING 1). Every home72 Kakuna cell inherits a 1 / 72 double weight; it is
@@ -386,4 +412,5 @@ with the interval named in the registration. Cost ≈ 1,600 games ≈ 4.5 lane-h
 | 2026-10-20 | The goal, stated as two targets (design worker, orchestrator brief) | (a) symmetric home72 at the plateau and at Kakuna's strongest checkpoint and temperature; (b) the equal-weight symmetric unfamiliar panels (H, F, P72), D1's H statistic, LB > 0.50; L and the reverse cell reported beside | (b) on L (already met at 0.630, and it carries the strength gap); (b) on the reverse cell (it carries the opponent's familiarity); one panel alone | §1; X37a; TSR |
 | 2026-10-20 | Kakuna re-checked | still upstream's best single model (GitHub `main`, 2026-10-20); the ckpt 28 vs 34 question and the ensemble raised as FINDING 1 | assuming ckpt 34 is the strongest; switching the goal to the ensemble now (no harness, ≈ 3–6× the cost) | §2 |
 | 2026-10-20 | The ranked path (PROPOSED; the orchestrator's GO per step) | X51 plateau read (CPU) → X52 practice ceiling (≈ 2.5 GPU-h) → X38 / D1 as staged (with a scheduling ask) → X41 / D3 built now, run on D1's verdict → X53 fresh wide run with a 100M look (conditional) → X54 confirmation on a fresh panel | D1 first with no diagnostic (≈ 13–90 GPU-h of the widening family unsized); a fresh wide run first (≈ 60 GPU-h before the cheap reads); X35 breakers as the path (+0–2 pp, GUESS); search (≈ 0, measured); X49 (targets facing, which costs ≈ 0); training against Kakuna (trains on the meter; too slow) | §4, §5 |
+| 2026-10-20 | **FINDING 2 RULED and DONE: X54's confirmation panel carved before D1** (eval-registry worker, orchestrator ruling) | `forum216b`: 216 teams from `w_forum_v1` AB, seed 5400, forum72's strata × 3, curator cap 42; registered `held_out_from: ["training"]` and SEALED until X54 (`main.heldout_panels.SEALED`); no copy or near copy of the pool or any panel. `w_forum_v1` rebuilt: ABC 2,424 → 1,982 (tier sha `7bcdc835…` → `73a76e80…`); X35 AMENDMENT D1-CORPUS, launch pre-check 2d | forum72-sized (72: under the upper τ², 0.56 power at G = 2,400); 144 (0.79, fails the 80 % rule); the 1,828 capped C-tier leftovers (four curators, near-neighbour status unchecked); a successor corpus name (`w_forum_v2`: every registered panel must be excluded from any corpus anyway, and the startup guard would refuse `w_forum_v1` unrebuilt) | §6.6; `forum216b_x54_2026-10-20/` |
 | 2026-10-20 | Expected pp per lever | quoted from measured effects where they exist (X37b's 100M → 280M transfer; L1's search null; FACE_c), GUESS elsewhere, with the arithmetic that (b) needs +6–8 pp | single-number promises | §1, §5 |

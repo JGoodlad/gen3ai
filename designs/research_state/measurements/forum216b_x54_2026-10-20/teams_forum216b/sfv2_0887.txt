@@ -1,0 +1,63 @@
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 32 Atk / 68 Def / 112 SpD / 48 Spe
+Sassy Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Fighting]
+- Fire Punch
+- Wish
+- Toxic
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+Shiny: Yes
+EVs: 8 HP / 140 Atk / 132 SpD / 228 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Aerial Ace
+- Hidden Power [Bug]
+- Beat Up
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+Shiny: Yes
+EVs: 232 HP / 156 Atk / 120 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+
+Machamp @ Leftovers
+Ability: Guts
+Shiny: Yes
+EVs: 192 HP / 180 Atk / 120 SpD / 16 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Focus Punch
+- Cross Chop
+- Rock Slide
+- Hidden Power [Ghost]
+
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 248 HP / 96 Def / 164 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Rest
+- Calm Mind
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 4 Def / 20 SpA / 100 SpD / 136 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Baton Pass

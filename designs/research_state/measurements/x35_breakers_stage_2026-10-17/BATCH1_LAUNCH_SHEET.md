@@ -7,7 +7,7 @@ HEAD `03b983be` (§4.3); nothing launched; every launch NEEDS THE ORCHESTRATOR'S
 `gen3_tau_fp32_alt_v1`; its GPU cost read gates production), so there is ONE PIN PER SIDE, the TOY BLOCK RUNS FIRST (AM-9) and production waits for the FP32_ALT commit (a
 placeholder the kit refuses to launch on).** **AMENDED 2026-10-20 (AM-X47, §0) before any X47 read:** the
 orchestrator accepted X47's readout review (AM-X47-1 to -11) and ruled that X47 arms are not thinned (AM-X47-12). X47's
-READ PLAN is §4.5, and its guards' pre-read (both READ on toys) is §4.5.1. **AMENDED 2026-10-20 (AM-X47b, §0) before any X47 read:** G-C pooled over seeds (a crossed cluster bootstrap), the toy's own B2 truth, a policy-difference descriptor (reported only), and UNDECIDED with Δ̂ ≤ 0 deprioritises X47b. X47 is a **kit arm**
+READ PLAN is §4.5, and its guards' pre-read (both READ on toys) is §4.5.1. **AMENDED 2026-10-20 (AM-X47b, §0) before any X47 read:** G-C pooled over seeds (a crossed cluster bootstrap), the toy's own B2 truth, a policy-difference descriptor (reported only), and UNDECIDED with Δ̂ ≤ 0 deprioritises X47b. **AMENDED 2026-10-20 (D1-CORPUS, §0) before any D1 launch:** X54's sealed confirmation panel `forum216b` was carved out of D1's corpus, which is now 1,982 teams (tier sha `73a76e808431`); launch pre-check 2d HOLDs a pin without it. X47 is a **kit arm**
 (`toy_x47`, F-LS-1 closed). The orchestrator has ruled **C1** (a), **C2** (X47 interleaved with its toy C0), **C3** (the
 toy arms run K9(b) `warn` under X34's ceilings), **C4** (batch 1 launches without R0) and every amendment of the
 [adversarial review](X35_BATCH1_REVIEW.md) (AM-1 to AM-7, the POOL check, the G-E readers); C1's rule (a) is SUPERSEDED by AM-8; C6 is still open; C5 is RULED and DONE (§5). This sheet is
@@ -125,6 +125,44 @@ LIVE X47 s3601 (52 s, 1.95 GB RSS, 2 nodes): mean KL 0.0117 at 291M (argmax move
 | **AM-X47b-3 (F-AMX-4): the descriptors stay REPORTED** | The weight-norm line (AM-X47-10) stays as registered, reported only. **Added, also reported only and never in any decision: the POLICY-DIFFERENCE descriptor.** At each node it measures the policy against the same weights with every new round's residual outputs zeroed (`out_proj` and `linear2`, weight and bias, which makes each extra round exactly the identity, `trunk_depth.IdentityInitRound`). Its statistic is the mean KL(π_node ‖ π_zeroed) over the fixed bank `bank_x26` (all 7,028 decisions, and the free ones alone), with the share of decisions whose argmax moves | `python -m main.x35.x47 policy-diff --run <dir> --bank <bank>`; `x47_report.policy_diff` |
 | **AM-X47b-4: UNDECIDED with Δ̂ ≤ 0** (AM-X47-2 left it NOT RULED) | A FINAL UNDECIDED whose primary Δ̂ ≤ 0 (rule 8: within 1e-9 of 0 is not > 0): **X47b LEAVES its rank-9 conditional slot and is DEPRIORITISED in the backlog.** The report says **"no effect ≥ 4.6 pp detected; point estimate ≤ 0"**, never "depth does not help". The code no longer prints "NOT RULED" | `x47.X47B_ACTION`; `design_bot_ideas_screen.md` §1.4 / §5; `TASK_BACKLOG.md` (X47's row) |
 
+### AMENDMENT 2026-10-20 (D1-CORPUS): D1's corpus changed BEFORE any D1 launch (the forum216b carve)
+
+**The orchestrator's ruling on FINDING 2 of [`design_beat_metamon_path.md`](../../../endstate/design_beat_metamon_path.md)
+(2026-10-20):** carve and REGISTER a clean confirmation panel BEFORE D1 launches, so the Metamon goal has a test that
+no lever was chosen on. Done the same day; nothing of D1 had launched or been read.
+
+- **The panel.** `forum216b`: 216 human-built teams drawn from `w_forum_v1`'s tier AB by a fixed seed (5400),
+  stratified like forum72 (CORE 12 / NEAR 162 / FAR 42). It is registered in `heldout_panels.json` with
+  `held_out_from: ["training"]` and SEALED until X54 (`main.heldout_panels.SEALED`; `main.h2h --panel` refuses it).
+  No team in it copies or near-copies (≥ 4 shared full sets) a pool, home72, away, forum72, heldout72, heldout72_hpfix
+  or P72 team, or another of its own teams. The duplicate guard passes. The draw rule, the overlap check and the size
+  from X54's power are in [`../forum216b_x54_2026-10-20/README.md`](../forum216b_x54_2026-10-20/README.md).
+- **D1's corpus, rebuilt by its own builder** (the panel rule now excludes `forum216b` and its near neighbours). The
+  lever is unchanged: `--team-mix w_forum_v1@ABC:0.5 --team-mix-sides both`, and the argv is byte-identical.
+  - Before: ABC **2,424** teams, tier sha256 `7bcdc835c107…f83d`, data `4af495c4…7469`.
+  - After: **1,982**, tier sha256 **`73a76e808431…0bdc4`**, data **`7f42d95f…1336`**.
+  - A ⊂ AB ⊂ ABC goes from 332 ⊂ 559 ⊂ 2,424 to 169 ⊂ 305 ⊂ 1,982.
+  - The curator cap fell from 242 to 198 and re-selected the C tier: 498 of the 1,982 teams are new to the corpus, and
+    323 were in no earlier version.
+- **Where it is enforced.**
+  - `kit.D1_CORPUS` pins the identity. `kit corpus-check --arm d1 --pin <sha>` reads it from the PIN's committed
+    manifest, AND requires a PASSing crash soak of that corpus at the pin (`soak_selfcheck.json` naming its data
+    sha).
+  - **That soak is NOT done yet.** 323 of the 1,982 teams are in no soaked version, and the record committed beside the
+    corpus is still the 2,424-team one. So corpus-check FAILs for D1, and pre-check 2d HOLDs D1, until the soak is
+    run and committed:
+    `python -m utils.team_corpora.soak w_forum_v1 --tier ABC --rounds 10 --out src/utils/team_corpora/w_forum_v1/soak_selfcheck.json`,
+    under `mem_cap.sh`.
+  - **Launch pre-check 2d** (`launch_x35.sh`) HOLDs any arm whose corpus at the pin is not its registered one (an arm
+    without a corpus passes).
+  - `validate_batch1.sh` runs the same check on every line.
+  - Tests: `kit_test.py` (the identity equals the committed corpus; the check refuses a pre-carve pin) and
+    `batch_test.py` (the launch script calls it).
+  - The production pin, not yet written, must therefore be a commit at or after the carve.
+- **What it changes for D1's read.** D1's lever widens by 1,982 forum teams, not 2,424. Its H panels (H, F, P72) and
+  its rule (`main.x35.d1`) are unchanged. `forum216b` is never one of D1's panels.
+
+
 ---
 
 ## 1. The arms, in GPU order
@@ -166,7 +204,7 @@ information, not balance (review F-RV-16); X47's primary is time-based, which is
 | **G1** | — | the S read of the six finals (a GPU window: 36k games, ≈ 5 min at 118 games/s, **UNVERIFIED** for the end state; or ≈ 9 h of CPU) | AM-2's variance gate: `kit gate` | — | ≈ 0.1 | — |
 | **P2** | 17–18 | C0 s3504, s3505 | the registered look-2 controls, moved forward: every arm's look 2 and the 6-df σ̂ | G1 read (either verdict) | 2 × 4.3 | — |
 | **P3** | 19–20 | A1 s3504, s3505 | A1's look 2: the top-ranked arm decided first | A1 look 1 = CONTINUE | 2 × 4.4 | C0 s3504–s3505 |
-| **P4** | 21–23 | **D1 s3501–s3503** (X38) | WIDEN THE TEAM POOL: half of each side's teams from 2,424 Smogon forum teams; eval stays on the pool | G1 PASS | 3 × 4.3 (**UNVERIFIED**) | C0 s3501–s3503 (`main.x35.d1`) |
+| **P4** | 21–23 | **D1 s3501–s3503** (X38) | WIDEN THE TEAM POOL: half of each side's teams from 1,982 Smogon forum teams (AMENDMENT D1-CORPUS); eval stays on the pool | G1 PASS | 3 × 4.3 (**UNVERIFIED**) | C0 s3501–s3503 (`main.x35.d1`) |
 | | 24–26 | **A2 s3501–s3503** | PFSP: recent selves the trainee loses to are drawn more often (+5 sentinels feed it win rates) | G1 PASS | 3 × 4.4 | C0 s3501–s3503 |
 | **T2** | 27–29 | toy A1 s3601–s3603 | the archive pool on the toy (8 nodes of T\*'s own lineage) | G1 PASS and production A1 FINAL GAIN / NULL / LOSS (AM-3) | 3 × 4.4 | toy C0 s3601–s3603 |
 | | 30–32 | toy A2 s3601–s3603 | PFSP on the toy | G1 PASS and production A2 FINAL GAIN / NULL / LOSS (AM-3) | 3 × 4.4 | toy C0 s3601–s3603 |
@@ -211,8 +249,9 @@ arms, as §5.6.4 plans. Look 2 (seeds 3504–3505 / 3604–3605) is a later batc
 ## 2. The pre-launch checks (in this order; any failure is a HOLD)
 
 `launch_x35.sh` runs checks 4–9 itself for every kit arm (exit 7 = HOLD, reason in `~/.claude/jobs/x35/status.txt`),
-X47 (`toy_x47`) included (F-LS-1 is closed), and since the amendments (§0) five more: **2b** the side's ONE pin (AM-1 as
-amended by AM-8), **2c** the side's own required commits (AM-8: production's FP32_ALT), **9** the stage is ALLOWED (AM-9 /
+X47 (`toy_x47`) included (F-LS-1 is closed), and since the amendments (§0) six more: **2b** the side's ONE pin (AM-1 as
+amended by AM-8), **2c** the side's own required commits (AM-8: production's FP32_ALT), **2d** the arm's team corpus
+AT the pin is its registered one (D1-CORPUS: D1's 1,982-team `w_forum_v1@ABC`), **9** the stage is ALLOWED (AM-9 /
 AM-3 / AM-4, and production's FP32_ALT gate), **10** the seeded pool set equals the side's record (POOL), **11** every
 finished batch-1 arm PASSed K9(b) at its end (AM-6, batch-wide). A side's first GO also needs `--t62 <token>` (production
 `FP32_ALT`, toy `NA_TOY`; it writes `x35_pin_batch1_<side>.txt`).

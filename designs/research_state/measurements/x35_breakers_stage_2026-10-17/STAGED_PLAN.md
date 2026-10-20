@@ -218,7 +218,11 @@ Nothing below has been run on a real P\*: P\* is not called yet.
 **Status: LAUNCH-READY ON PAPER (2026-10-19), nothing launched.** D1 is X35 rank 2 (after A1, before A2;
 `design_diversity_teams_opponents.md` §4.2, §6.1). Its ONE lever, b-ON vs C0: `--team-mix w_forum_v1@ABC:0.5
 --team-mix-sides both`, i.e. half of each side's draws come from the pin-safe forum corpus
-(`src/utils/team_corpora/w_forum_v1/`, 2,424 human-built teams since the 2026-10-19 crash-class lift (2,415 at `fc467f1f` / `c1b0c1f0`), minus every registered panel and its near neighbours);
+(`src/utils/team_corpora/w_forum_v1/`, **1,982 human-built teams since AMENDMENT D1-CORPUS (2026-10-20,
+[`BATCH1_LAUNCH_SHEET.md`](BATCH1_LAUNCH_SHEET.md) §0)**, which carved X54's sealed confirmation panel `forum216b` out of
+its AB tier before D1 launched; 2,424 after the 2026-10-19 crash-class lift, 2,415 at `fc467f1f` / `c1b0c1f0`; always
+minus every registered panel and its near neighbours). The pin must carry the 1,982-team corpus: launch pre-check 2d
+(`kit corpus-check`) HOLDs a pin that does not;
 the in-loop eval stays on the pool. Its verdict is D1's OWN rule (`main.x35.d1`), not R1.
 
 | item | value |
@@ -241,9 +245,9 @@ python -m main.launcher --restart-interval-hours 24 --pin-commit <X35_PIN_k> \
 ```
 
 The control is C0 s3501 (the same line without the two `--team-mix` flags, `--run-name rb_x35_c0_s3501`), at the SAME
-pin. Startup banners to expect beyond §5.6.8's: `🧬 [TEAM-MIX] w_forum_v1@ABC (2424 teams, tier sha 7bcdc835c107)
+pin. Startup banners to expect beyond §5.6.8's: `🧬 [TEAM-MIX] w_forum_v1@ABC (1982 teams, tier sha 73a76e808431)
 share 0.50 on both sides; eval stays on the pool` with **0 panel hits** and 0 pool copies, and a `🧭 [MATCHUP]` hash
-that differs from C0's while the eval line still reads "full pool + 10% sample-team bias". (A pin that predates the lift commit reads the old corpus: `2415 teams, tier sha 65465d25252e`; the banner decides which corpus the run trained on, and the C tier is a DIFFERENT 2,415 vs 2,424 sample, not a superset.) A dry run cannot show either
+that differs from C0's while the eval line still reads "full pool + 10% sample-team bias". (A pin that predates the carve reads `2424 teams, tier sha 7bcdc835c107`, one that predates the lift `2415 teams, tier sha 65465d25252e`; pre-check 2d refuses both. The banner decides which corpus the run trained on, and each rebuild re-selects a DIFFERENT C-tier sample, not a superset.) A dry run cannot show either
 (they are child-side): read them in the first minute. A corpus that fails verification, a held-out panel hit or a
 validator drop is a startup `FATAL_CONFIG`.
 

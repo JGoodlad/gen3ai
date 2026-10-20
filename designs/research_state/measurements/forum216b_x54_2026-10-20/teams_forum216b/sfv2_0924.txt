@@ -1,0 +1,63 @@
+Jynx @ Lum Berry
+Ability: Oblivious
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Ice Beam
+- Mean Look
+- Lovely Kiss
+- Perish Song
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+Shiny: Yes
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Earthquake
+- Substitute
+- Rock Slide
+- Hidden Power [Flying]
+
+Charizard (F) @ Petaya Berry
+Ability: Blaze
+Shiny: Yes
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 HP
+- Fire Blast
+- Focus Punch
+- Sunny Day
+- Substitute
+
+Suicune @ Leftovers
+Ability: Pressure
+Shiny: Yes
+EVs: 252 HP / 240 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Substitute
+- Calm Mind
+- Surf
+
+Regice @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 252 HP / 104 Atk / 152 SpA
+Quiet Nature
+- Explosion
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+
+Metagross @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Agility
+- Earthquake
+- Explosion

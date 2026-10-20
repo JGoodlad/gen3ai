@@ -727,8 +727,9 @@ HP-repaired `hl_05_26` teams, minus every frozen panel. It is read against C0 wi
 UNFAMILIAR cells vs Kakuna (heldout72_hpfix, smogon_forum, P72). Its co-primary is no loss worse than −2.0 pp on
 SAMPLE-TEAM ground, measured in-house. The design is [`design_diversity_teams_opponents.md`](design_diversity_teams_opponents.md)
 §4.2 and §6. Every arm above draws POOL teams, and R1 and G-K read pool teams only (that doc's F-DV-1).
-**D1 is LAUNCH-READY on paper (2026-10-19, NEEDS GO):** its corpus is the Smogon FORUM corpus `w_forum_v1` (2,424
-teams; it replaced `hl_05_26`), its lever `--team-mix w_forum_v1@ABC:0.5 --team-mix-sides both` (`c1b0c1f0`), its
+**D1 is LAUNCH-READY on paper (2026-10-19, NEEDS GO):** its corpus is the Smogon FORUM corpus `w_forum_v1` (1,982
+teams since X54's sealed panel `forum216b` was carved out of it on 2026-10-20, X35 AMENDMENT D1-CORPUS; 2,424 before; it
+replaced `hl_05_26`), its lever `--team-mix w_forum_v1@ABC:0.5 --team-mix-sides both` (`c1b0c1f0`), its
 argv `main.x35.kit` arm `d1` (BATCH1 after the A1 / C0 ABBA), dry-run validated on the real P\* at pin `c1b0c1f0`
 (STAGED_PLAN §7), and its readout `main.x35.d1` (self-check 10 / 10). Every batch pin must now carry `c1b0c1f0`
 (`x35_required_commits.txt`) while D1 is in the batch. G-K is unchanged; the unfamiliar panels run on the same Kakuna

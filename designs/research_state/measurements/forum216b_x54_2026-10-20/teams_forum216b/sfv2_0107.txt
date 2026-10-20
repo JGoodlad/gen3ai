@@ -1,0 +1,55 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 56 Atk / 104 SpD / 100 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 152 Def / 40 SpA / 32 SpD / 32 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 SpA / 4 SpD / 252 Spe
+Hasty Nature
+IVs: 30 Def / 30 SpA
+- Dragon Claw
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+- Thunder Wave
+- Seismic Toss
+- Ice Beam
+- Soft-Boiled
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 52 HP / 176 Atk / 144 Def / 136 SpD
+Adamant Nature
+- Curse
+- Shadow Ball
+- Earthquake
+- Self-Destruct
+
+Medicham @ Leftovers
+Ability: Pure Power
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+- Brick Break
+- Focus Punch
+- Shadow Ball
+- Rock Slide

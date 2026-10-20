@@ -1,0 +1,56 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 240 HP / 244 SpD / 24 Spe
+Careful Nature
+- Protect
+- Toxic
+- Whirlwind
+- Spikes
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 184 HP / 252 Def / 72 Spe
+Impish Nature
+- Seismic Toss
+- Toxic
+- Snatch
+- Soft-Boiled
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 200 HP / 220 SpA / 88 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Crunch
+- Pursuit
+- Fire Blast
+- Hidden Power [Grass]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 240 HP / 152 Def / 40 SpA / 44 SpD / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Protect
+- Roar
+- Refresh
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Def / 30 SpA
+- Dragon Claw
+- Fire Blast
+- Hidden Power [Grass]
+- Brick Break
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Spore
+- Focus Punch
+- Sky Uppercut
+- Mach Punch

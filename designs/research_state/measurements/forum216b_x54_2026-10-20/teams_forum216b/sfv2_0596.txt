@@ -1,0 +1,55 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 252 SpA / 8 Spe
+Quiet Nature
+- Crunch
+- Fire Blast
+- Brick Break
+- Pursuit
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 52 Def / 204 SpD
+Sassy Nature
+- Wish
+- Fire Punch
+- Body Slam
+- Protect
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Toxic
+- Roar
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 44 Def / 216 SpA
+Quiet Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Curse
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Thunder Wave
+- Toxic
+- Soft-Boiled
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Double-Edge
+- Earthquake
+- Hidden Power [Flying]

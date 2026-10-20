@@ -1,0 +1,59 @@
+Exeggutor @ Choice Band
+Ability: Chlorophyll
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Hidden Power [Fighting]
+- Ancient Power
+- Explosion
+- Sleep Powder
+
+Medicham @ Salac Berry
+Ability: Pure Power
+Shiny: Yes
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Substitute
+- Reversal
+- Bulk Up
+- Shadow Ball
+
+Starmie @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 252 HP / 16 Def / 24 SpD / 216 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Rain Dance
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 92 HP / 196 SpA / 220 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Calm Mind
+- Psychic
+- Hidden Power [Fire]
+- Giga Drain
+
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 168 HP / 248 Atk / 92 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Earthquake
+- Rock Slide
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Thunderbolt
+- Ice Punch

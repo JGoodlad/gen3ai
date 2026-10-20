@@ -24,6 +24,8 @@
 #      run of that side whose pin cannot be read HOLDs too; a typed --t62 must be the side's token
 #   2c. AM-8: the side's OWN required commits (x35_required_commits_<side>.txt; production's names FP32_ALT) are real
 #      commits and in the pin; a placeholder sha (FP32_ALT has not landed) HOLDs every production launch
+#   2d. AMENDMENT D1-CORPUS (2026-10-20): the team corpus the arm names is, AT the pin, its registered identity
+#      (kit corpus-check: D1's w_forum_v1@ABC after the forum216b carve; an arm with no corpus passes)
 #   3. models/<run> does not exist (a restart RESUMES through the launcher, never through this script)
 #   4. the frozen R file verifies: its content hash and the sha256 of P*, every archive node and every member
 #      (phase 2: the phase-1 record's exploiter sha256s too)
@@ -104,6 +106,9 @@ prechecks() {
   # 2c. AM-8: the side's own required commits (production: the FP32_ALT build)
   kit required-check --side "$SIDE" --pin "$PIN" --stage "$STAGE" --repo "$REPO" > "$out.sidereq.txt" 2>&1 \
     || hold "AM-8 required-check: $(tr '\n' ' ' < "$out.sidereq.txt")"
+  # 2d. AMENDMENT D1-CORPUS: the arm's team corpus at the pin
+  kit corpus-check --arm "$ARM" --pin "$PIN" --repo "$REPO" > "$out.corpus.txt" 2>&1 \
+    || hold "corpus-check: $(cat "$out.corpus.txt")"
   # 3. the run dir
   [ -e "$MODELS/$RUN" ] && hold "$MODELS/$RUN exists (a restart RESUMES through the launcher, not this script)"
   # 4. R and (phase 2) the phase-1 record

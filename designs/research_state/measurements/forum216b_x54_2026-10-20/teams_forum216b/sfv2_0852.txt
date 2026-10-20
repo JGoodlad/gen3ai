@@ -1,0 +1,56 @@
+Medicham @ Lum Berry
+Ability: Pure Power
+EVs: 252 Atk / 56 Def / 200 Spe
+Adamant Nature
+- Bulk Up
+- Brick Break
+- Rock Slide
+- Shadow Ball
+
+Venusaur @ Leftovers
+Ability: Overgrow
+EVs: 8 HP / 240 SpA / 56 SpD / 204 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Sleep Powder
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 32 Def / 224 SpA
+Sassy Nature
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+- Explosion
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 168 HP / 252 Atk / 88 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Agility
+
+Salamence @ Lum Berry
+Ability: Intimidate
+EVs: 252 Atk / 112 SpD / 144 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Rapid Spin
+- Surf
+- Thunderbolt
+- Ice Beam

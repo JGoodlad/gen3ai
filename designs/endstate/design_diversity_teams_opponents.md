@@ -112,8 +112,9 @@ This doc answers them, after challenging the reading itself (§8).
     smogon_forum symmetric, 400 games each.
   - The parallel `heldout72_hpfix` read supplies S(H, H).
 - **The levers (§4), ranked by expected information per GPU-hour:**
-  - **D1 WIDEN fork at the plateau (X38; LAUNCH-READY 2026-10-19, NEEDS GO).** The pool plus `w_forum_v1`, 2,424
-    human-built Smogon forum teams minus every registered panel and its near neighbours (the forum corpus replaced
+  - **D1 WIDEN fork at the plateau (X38; LAUNCH-READY 2026-10-19, NEEDS GO).** The pool plus `w_forum_v1`, 1,982
+    human-built Smogon forum teams (2,424 until X54's panel `forum216b` was carved out on 2026-10-20) minus every
+    registered panel and its near neighbours (the forum corpus replaced
     the ≈ 22.7k `hl_05_26` design, §4.1), at a 50 % draw share on both sides (`--team-mix w_forum_v1@ABC:0.5`), a fork
     of P\* = X26 @ 280M against X35's shared control C0 (**≈ 13 GPU-h**); dry-run validated at pin `c1b0c1f0`
     (x35 STAGED_PLAN §7).
@@ -511,9 +512,17 @@ Smogon-only; widen OUR side (X37a: the gap is PILOTING unfamiliar teams); no own
   the cap (giraffefromholland, Zpanther, Shitrock enjoyer, SPFunkM; 10 % each). Against our pool: max shared mon sets
   0–3 for 2,300, 4–5 for 115 (pool near neighbours are kept: they are new teams). Ladder strata (descriptive, the
   `ladder_weights_v1` species rule): CORE 123 / NEAR 1,925 / FAR 367, i.e. it carries off-meta FAR cores.
+- **The forum216b carve (2026-10-20):**
+  - The rebuild with `forum216b` registered gives **1,982 teams**: `A` 169 ⊂ `AB` 305 ⊂ `ABC` 1,982, data sha256
+    `7f42d95f…1336`, tier ABC sha256 `73a76e80…bdc4`.
+  - `panel` drops: 556 (216 drawn + 91 of their near neighbours).
+  - The curator cap fell from 242 to 198, because it is 10 % of a smaller capped total. The C tier was re-selected:
+    498 teams are new to the corpus, and 323 were in no earlier version.
 - **Crash soak** (`python -m utils.team_corpora.soak w_forum_v1 --rounds 10`, the emission self-check env core): 24,240
   battles, every team 10× in each seat (p1 uniform over its mask, p2 the heuristic bot), **0 core errors**, 42 stall
-  forfeits (`w_forum_v1/soak_selfcheck.json`). It does NOT check sim-vs-port agreement (the Node differential gates
+  forfeits (`w_forum_v1/soak_selfcheck.json`). That soak is of the 2,424-team corpus. **The 1,982-team corpus is not
+  soaked yet**, and X35's launch pre-check 2d (`kit corpus-check`) holds D1 until a PASSing soak naming its data sha
+  is committed. It does NOT check sim-vs-port agreement (the Node differential gates
   were not run on this corpus: F-DV-21).
 - **Exposure at s = 0.5:** a 20M fork plays ≈ 570k games, so each corpus team is drawn ≈ 118 times per side against
   each pool team's ≈ 400. That is 3.4× the pool's team count at ~30 % of a pool team's exposure, not W_hl's ≈ 13
@@ -1061,9 +1070,15 @@ No number leaves without its row of the matrix (§5.1), its regime (SOP RULE 1) 
     panel, kept so its HP-as-filled mon sets stay excluded), `heldout72_hpfix`, `forum72` and `p72` (held out from
     `training`). The TSR reference 24 and X37a's per-stratum sub-sets are covered by their parents. D5's leave-out 72
     is not carved yet; it must be registered before any later widening corpus is built.
+  - **`forum216b` (registered 2026-10-20, beat-Metamon FINDING 2):** X54's confirmation panel.
+    - 216 teams carved from `w_forum_v1`'s AB tier before D1 launched (seed 5400, forum72's strata × 3).
+    - Held out from `training` AND **SEALED**: `main.heldout_panels.SEALED`, so `main.h2h --panel` refuses it, and no
+      meter may play it until X54's registration unseals it.
+    - A sealed panel still excludes its teams and their near neighbours from every corpus.
+    - Detail: `research_state/measurements/forum216b_x54_2026-10-20/`.
   - Our 719-team pool is clean against every held-out panel (0 hits at radius 4; `main/heldout_panels_test.py`).
 - **Panels:** home72 (in-pool reference), `away` (in-pool, Kakuna's turf), heldout72_hpfix, smogon_forum, P72;
-  D5's leave-out 72 is private to D5.
+  `forum216b` (sealed for X54); D5's leave-out 72 is private to D5.
 - **The guard.** At training startup, every team source is checked by content against every FROZEN panel, exact
   and near neighbour. A hit is a startup FATAL, like `gen3_untaught_teacher_guard_v1`. A typed consent flag exists
   for a declared contamination, which is then stamped on every read.
@@ -1462,4 +1477,5 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 | 2026-10-19 | **`w_forum_v1` crash-class exclusion LIFTED** (corpus-lift worker, orchestrator brief) | `build_w_forum.CRASH_MOVES` is EMPTY (Transform + Hidden Power closed by `0cef9320a`; Imprison verified not a livelock, `752aaf16a`); rebuilt: **2,424 teams**, tiers A 332 ⊂ AB 559 ⊂ ABC 2,424, data sha256 `4af495c4…7469`, ABC tier sha256 `7bcdc835…83d`, curator cap c = 242 (263 curators); soak re-run on the whole ABC tier, 24,240 battles, 0 core errors, 42 stall forfeits; **the C tier was RE-SHUFFLED, not just extended** (the seeded within-tier order and the curator cap move with the exclusion set: 580 teams are new and 571 left vs the 2,415 corpus; tier A unchanged), and a run pinned at `c1b0c1f0` / `fc467f1f` still reads the 2,415 corpus (tier sha `65465d25…7fc5`) | none (a rebuild is the corpus's own recipe) | `w_forum_v1/manifest.json`, `soak_selfcheck.json` |
 | 2026-10-19 | **X38 / D1 LAUNCH-READY on paper** (X38 launch-ready worker; NEEDS the orchestrator's GO) | b-ON = C0 + `--team-mix w_forum_v1@ABC:0.5 --team-mix-sides both` (B-D2 `c1b0c1f0`): BOTH sides, the doc's D1 (own side widened per the owner, opponent side with it; D2 stays the opponent-only follow-up); eval on the pool; `main.x35.kit` arm `d1` in BATCH1 after the A1 / C0 ABBA; `checkargs --pin c1b0c1f0` exit 0 and `launcher --dry-run` "would launch", FORK of `rb_x26_s2601`, +20M from the real P\* (280,000,170); B-D7 `main.h2h --panel` and the D1 decision function `main.x35.d1` (self-check 10 / 10) built | trainee-only widening (the owner's words allow it; it is one token, `--team-mix-sides trainee`, and would be a different arm than the registered D1); `hl_05_26` (superseded by the forum corpus for X38) | x35 STAGED_PLAN §7; `main/x35/kit_test.py`, `main/x35/d1_test.py` |
 | 2026-10-19 | **X37b READ: the in-house TRANSFER split** (transfer worker; PREREG `38c64909`, registration `91af4446`) | **H1 UNDECIDED** (KILLED needed T_tot's upper bound < +2.0 pp AND T_pilot's lower bound ≤ 0): T_tot +4.0 pp [−0.7, +8.4], T_pilot +0.4 [−5.8, +6.5], T_face +3.6 [−3.1, +10.4]; P\*'s edge over 25M +18.8 pp on home72, +14.8 pp on unseen panels (≈ 79 % transfers). D0e's fixed reference changed from `production` to P\* piloting home72 (the F-DV-19 design-around); GEN-M and D0e classes UNDECIDED; X38 / D1's rank unchanged (its demotion needs X37b TRANSFERS) | reading the pair-level (teams-fixed) T_tot [+1.6, +6.4] as the verdict (the registration names the team bootstrap); reading GEN-M's large transfer as "no held-out problem" (the Kakuna-side piloting deficit stands, F-DV-26) | `measurements/x37b_transfer_2026-10-19/`; ledger 2026-10-19 *X37b TRANSFER* |
+| 2026-10-20 | **X54's confirmation panel `forum216b` carved, registered and SEALED before D1** (eval-registry worker; the orchestrator's ruling on beat-Metamon FINDING 2) | 216 teams from `w_forum_v1` AB (seed 5400, forum72's strata × 3, curator cap 42; no copy or near copy of the pool or any panel); `held_out_from: ["training"]`; `main.heldout_panels.SEALED`. `w_forum_v1` rebuilt: 2,424 → 1,982 (AB 559 → 305); X35 AMENDMENT D1-CORPUS + launch pre-check 2d (the corpus AND a PASSing soak of it at the pin). Size from X54's power (`power.py`) | `forum216b_x54_2026-10-20/README.md`; `design_beat_metamon_path.md` §6.6 |
 | 2026-10-19 | **AM-5: D1's H interval WIDENED for seed overdispersion** (X35 amendment worker; the orchestrator's ruling on the batch-1 review F-RV-5, before any D1 data) | each Newcombe half-width × √max(1, φ̂), φ̂ = the mean over arms of the between-seed variance of the per-seed panel means over its binomial expectation (df 2(n−1)); classes on the widened interval; self-check 11 / 11 | the pooled-binomial interval (8–21 % false GAIN at a seed SD of 2–4 pp); a t-quantile on φ̂'s df (the amendment scales the half-widths, as the review simulated) | `main.x35.d1.overdispersion`; `selfcheck.check_d1_overdispersion`; `X35_BATCH1_REVIEW.md` F-RV-5 |

@@ -8,7 +8,8 @@ co-primary P instrument (each seed final against X35's frozen reference populati
 * **Refused unless registered.** An unknown name is an :class:`PanelRefused` naming the registered ones; a panel whose
   files on disk no longer match the registry (count, ``gen3_team_set_digest_v1`` content digest) is refused too
   (:func:`main.heldout_panels.panel_team_texts` checks both), and so is a panel the gen3ou validator does not pack
-  WHOLE (``Gen3Teambuilder`` silently SKIPS an invalid paste, which would make the read a different panel).
+  WHOLE (``Gen3Teambuilder`` silently SKIPS an invalid paste, which would make the read a different panel). A SEALED
+  panel (:data:`main.heldout_panels.SEALED`, e.g. ``forum216b`` until X54) is refused by name.
 * **The draw.** A plain ``Gen3Teambuilder`` over the panel's teams, no bias: each side's team is a uniform draw from
   the panel, re-seeded per (game key, side) by the eval core (``rust_eval.seeds.draw_team``), so a run reproduces
   game for game, exactly as the pool path does; the mirror (game ``2k + 1`` hands the two teams over) is the
@@ -44,8 +45,11 @@ def panel_texts(name: str) -> Tuple[Dict[str, Any], List[Tuple[str, str]]]:
 
     try:
         ent = HP.panel_entry(name)
+        HP.check_unsealed(name)
     except KeyError as exc:
         raise PanelRefused(f"--panel {name!r}: {exc.args[0]}") from None
+    except HP.PanelSealedError as exc:
+        raise PanelRefused(f"--panel {name!r}: {exc}") from None
     try:
         items = list(HP.panel_team_texts(name))
     except HP.PanelRegistryError as exc:

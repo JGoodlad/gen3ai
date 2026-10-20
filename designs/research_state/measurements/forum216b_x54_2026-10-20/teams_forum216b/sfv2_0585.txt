@@ -1,0 +1,57 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 16 Def / 240 SpA
+Modest Nature
+IVs: 0 Atk
+- Crunch
+- Pursuit
+- Fire Blast
+- Counter
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Drill Peck
+- Protect
+- Roar
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 32 Def / 48 SpA / 32 SpD / 144 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Recover
+- Toxic
+- Rapid Spin
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Toxic
+- Explosion
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Seismic Toss
+- Thunder Wave
+- Wish
+
+Armaldo @ Leftovers
+Ability: Battle Armor
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Knock Off
+- Hidden Power [Bug]
+- Rock Blast
+- Rest

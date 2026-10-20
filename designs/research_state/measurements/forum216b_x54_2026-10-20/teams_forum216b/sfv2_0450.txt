@@ -1,0 +1,57 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 HP / 160 Atk / 96 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Brick Break
+- Explosion
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 252 Def / 8 SpD
+Bold Nature
+IVs: 0 Atk
+- Hypnosis
+- Surf
+- Ice Beam
+- Recover
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 60 HP / 248 SpA / 200 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 12 HP / 176 Atk / 176 Def / 144 SpD
+Adamant Nature
+- Curse
+- Body Slam
+- Earthquake
+- Self-Destruct
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 24 HP / 252 Atk / 232 Spe
+Jolly Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Dragon Dance
+- Earthquake
+- Hidden Power [Rock]
+- Double-Edge
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 76 SpD / 180 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide

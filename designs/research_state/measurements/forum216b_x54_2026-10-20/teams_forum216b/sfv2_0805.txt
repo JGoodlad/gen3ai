@@ -1,0 +1,58 @@
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 120 HP / 248 Atk / 24 Def / 116 Spe
+Jolly Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Sunny Day
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 Def / 252 SpA / 4 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Soft-Boiled
+- Ice Beam
+- Thunderbolt
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 124 Atk / 96 Def / 20 SpA / 16 SpD
+Sassy Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 240 Def / 16 Spe
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Miltank (F) @ Leftovers
+Ability: Thick Fat
+EVs: 252 HP / 136 Def / 100 SpD / 20 Spe
+Impish Nature
+IVs: 0 Atk
+- Seismic Toss
+- Thunder Wave
+- Milk Drink
+- Heal Bell
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 216 SpD / 40 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Rest
+- Substitute
+- Baton Pass

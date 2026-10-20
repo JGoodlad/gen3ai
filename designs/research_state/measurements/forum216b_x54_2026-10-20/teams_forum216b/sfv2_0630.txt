@@ -1,0 +1,61 @@
+Starmie @ Mystic Water
+Ability: Natural Cure
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
+Modest Nature
+IVs: 0 Atk
+- Hydro Pump
+- Ice Beam
+- Thunderbolt
+- Recover
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 68 HP / 252 SpA / 188 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+- Thunder Wave
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 92 Def / 128 SpD / 40 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Perish Song
+- Hidden Power [Grass]
+- Leech Seed
+- Recover
+
+Swampert @ Leftovers
+Ability: Torrent
+Shiny: Yes
+EVs: 252 HP / 188 Def / 68 SpD
+Relaxed Nature
+- Curse
+- Ice Beam
+- Earthquake
+- Rest
+
+Flygon @ Choice Band
+Ability: Levitate
+Shiny: Yes
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Rock Slide
+- Hidden Power [Bug]
+- Toxic
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 252 HP / 216 SpA / 40 Spe
+Rash Nature
+- Substitute
+- Crunch
+- Flamethrower
+- Focus Punch

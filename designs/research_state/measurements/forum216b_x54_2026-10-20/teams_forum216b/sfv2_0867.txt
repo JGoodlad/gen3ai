@@ -1,0 +1,57 @@
+Medicham @ Choice Band
+Ability: Pure Power
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+- Brick Break
+- Shadow Ball
+- Rock Slide
+- Fake Out
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 144 HP / 216 Atk / 36 SpD / 112 Spe
+Adamant Nature
+- Agility
+- Meteor Mash
+- Earthquake
+- Rock Slide
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 8 HP / 248 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Psychic
+- Ice Beam
+- Rapid Spin
+
+Solrock @ Choice Band
+Ability: Levitate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Rock Slide
+- Hidden Power [Fighting]
+- Explosion
+- Earthquake
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 76 SpA / 180 Spe
+Timid Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Ice Punch
+- Thunder
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 196 HP / 8 Def / 120 SpA / 184 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Giga Drain
+- Hidden Power [Fire]
+- Psychic

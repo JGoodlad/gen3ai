@@ -1,0 +1,57 @@
+Machamp @ Leftovers
+Ability: Guts
+EVs: 248 HP / 176 Atk / 20 Def / 44 SpD / 20 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Bulk Up
+- Low Kick
+- Hidden Power [Ghost]
+- Rock Slide
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 64 SpA / 192 Spe
+Timid Nature
+- Ice Beam
+- Rapid Spin
+- Spikes
+- Explosion
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 40 Def / 180 SpA / 36 Spe
+Modest Nature
+IVs: 0 Atk
+- Substitute
+- Calm Mind
+- Thunder
+- Ice Punch
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 212 SpD / 140 Spe
+Lonely Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Brick Break
+- Fire Blast
+
+Tyranitar @ Lum Berry
+Ability: Sand Stream
+EVs: 184 HP / 144 Atk / 180 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Thunder Wave
+- Counter
+- Soft-Boiled

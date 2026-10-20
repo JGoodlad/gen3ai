@@ -1,0 +1,2956 @@
+{
+ "content_digest": "7831e2d2f5816bd75e74c359b258cc8a1a4b889a4cce0dff31d4ddf798f63d02",
+ "curator_cap": 42,
+ "draw_log": [
+  {
+   "accepted": 1,
+   "id": "sfv2_0523",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 2,
+   "id": "sfv2_0373",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 3,
+   "id": "sfv2_0504",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 4,
+   "id": "sfv2_0618",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 5,
+   "id": "sfv2_0799",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 6,
+   "id": "sfv2_0095",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 7,
+   "id": "sfv2_0435",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 8,
+   "id": "sfv2_0784",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 9,
+   "id": "sfv2_0548",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 10,
+   "id": "sfv2_0681",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 11,
+   "id": "sfv2_0148",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 12,
+   "id": "sfv2_0661",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 13,
+   "id": "sfv2_0571",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 14,
+   "id": "sfv2_0516",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 15,
+   "id": "sfv2_0448",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 16,
+   "id": "sfv2_0777",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 17,
+   "id": "sfv2_0740",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 18,
+   "id": "sfv2_0403",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 19,
+   "id": "sfv2_0904",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 20,
+   "id": "sfv2_0591",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 21,
+   "id": "sfv2_0794",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 22,
+   "id": "sfv2_0158",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 23,
+   "id": "sfv2_0584",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 24,
+   "id": "sfv2_0818",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 25,
+   "id": "sfv2_0118",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 26,
+   "id": "sfv2_0842",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 27,
+   "id": "sfv2_0110",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 28,
+   "id": "sfv2_0781",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 29,
+   "id": "sfv2_0823",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 30,
+   "id": "sfv2_0633",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0135",
+   "rejected": "shares 4 mon sets with pool:pool112",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 31,
+   "id": "sfv2_0160",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 32,
+   "id": "sfv2_0389",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 33,
+   "id": "sfv2_0868",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 34,
+   "id": "sfv2_0657",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 35,
+   "id": "sfv2_0824",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 36,
+   "id": "sfv2_0877",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 37,
+   "id": "sfv2_0579",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 38,
+   "id": "sfv2_0682",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 39,
+   "id": "sfv2_0922",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 40,
+   "id": "sfv2_0748",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 41,
+   "id": "sfv2_0522",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 42,
+   "id": "sfv2_0348",
+   "stratum": "CORE"
+  },
+  {
+   "accepted": 43,
+   "id": "sfv2_0558",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 44,
+   "id": "sfv2_0449",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 45,
+   "id": "sfv2_0455",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 46,
+   "id": "sfv2_0565",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 47,
+   "id": "sfv2_0875",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 48,
+   "id": "sfv2_0119",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 49,
+   "id": "sfv2_0678",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 50,
+   "id": "sfv2_0107",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 51,
+   "id": "sfv2_0840",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 52,
+   "id": "sfv2_0780",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 53,
+   "id": "sfv2_0878",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 54,
+   "id": "sfv2_0640",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 55,
+   "id": "sfv2_0409",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 56,
+   "id": "sfv2_0602",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 57,
+   "id": "sfv2_0686",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 58,
+   "id": "sfv2_0863",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 59,
+   "id": "sfv2_0725",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 60,
+   "id": "sfv2_0436",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 61,
+   "id": "sfv2_0867",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 62,
+   "id": "sfv2_0887",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 63,
+   "id": "sfv2_0175",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 64,
+   "id": "sfv2_0442",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 65,
+   "id": "sfv2_0738",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 66,
+   "id": "sfv2_0757",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 67,
+   "id": "sfv2_0356",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 68,
+   "id": "sfv2_0706",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 69,
+   "id": "sfv2_0068",
+   "stratum": "CORE"
+  },
+  {
+   "accepted": 70,
+   "id": "sfv2_0387",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 71,
+   "id": "sfv2_0621",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 72,
+   "id": "sfv2_0538",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 73,
+   "id": "sfv2_0710",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 74,
+   "id": "sfv2_0804",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 75,
+   "id": "sfv2_0091",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 76,
+   "id": "sfv2_0124",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 77,
+   "id": "sfv2_0750",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 78,
+   "id": "sfv2_0779",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0908",
+   "rejected": "shares 4 mon sets with pool:pool109",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 79,
+   "id": "sfv2_0653",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 80,
+   "id": "sfv2_0632",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 81,
+   "id": "sfv2_0090",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 82,
+   "id": "sfv2_0344",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 83,
+   "id": "sfv2_0586",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 84,
+   "id": "sfv2_0551",
+   "stratum": "CORE"
+  },
+  {
+   "accepted": 85,
+   "id": "sfv2_0089",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 86,
+   "id": "sfv2_0155",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 87,
+   "id": "sfv2_0913",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 88,
+   "id": "sfv2_0534",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 89,
+   "id": "sfv2_0712",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 90,
+   "id": "sfv2_0180",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 91,
+   "id": "sfv2_0604",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 92,
+   "id": "sfv2_0527",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 93,
+   "id": "sfv2_0585",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 94,
+   "id": "sfv2_0635",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 95,
+   "id": "sfv2_0450",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 96,
+   "id": "sfv2_0841",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0340",
+   "rejected": "shares 4 mon sets with drawn:sfv2_0344",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 97,
+   "id": "sfv2_0547",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 98,
+   "id": "sfv2_0873",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 99,
+   "id": "sfv2_0385",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 100,
+   "id": "sfv2_0153",
+   "stratum": "CORE"
+  },
+  {
+   "accepted": 101,
+   "id": "sfv2_0554",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 102,
+   "id": "sfv2_0929",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0879",
+   "rejected": "shares 4 mon sets with drawn:sfv2_0878",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 103,
+   "id": "sfv2_0630",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 104,
+   "id": "sfv2_0758",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 105,
+   "id": "sfv2_0350",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 106,
+   "id": "sfv2_0803",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 107,
+   "id": "sfv2_0528",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 108,
+   "id": "sfv2_0651",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 109,
+   "id": "sfv2_0751",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 110,
+   "id": "sfv2_0526",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 111,
+   "id": "sfv2_0900",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 112,
+   "id": "sfv2_0905",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 113,
+   "id": "sfv2_0346",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 114,
+   "id": "sfv2_0893",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0383",
+   "rejected": "shares 4 mon sets with pool:pool326",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 115,
+   "id": "sfv2_0364",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 116,
+   "id": "sfv2_0805",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 117,
+   "id": "sfv2_0513",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0644",
+   "rejected": "shares 5 mon sets with drawn:sfv2_0119",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 118,
+   "id": "sfv2_0337",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 119,
+   "id": "sfv2_0587",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 120,
+   "id": "sfv2_0802",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 121,
+   "id": "sfv2_0749",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 122,
+   "id": "sfv2_0727",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 123,
+   "id": "sfv2_0694",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 124,
+   "id": "sfv2_0745",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 125,
+   "id": "sfv2_0699",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0372",
+   "rejected": "shares 4 mon sets with pool:pool106",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 126,
+   "id": "sfv2_0829",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 127,
+   "id": "sfv2_0092",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 128,
+   "id": "sfv2_0719",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 129,
+   "id": "sfv2_0096",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 130,
+   "id": "sfv2_0384",
+   "stratum": "CORE"
+  },
+  {
+   "accepted": 131,
+   "id": "sfv2_0675",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 132,
+   "id": "sfv2_0322",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 133,
+   "id": "sfv2_0439",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 134,
+   "id": "sfv2_0590",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 135,
+   "id": "sfv2_0790",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 136,
+   "id": "sfv2_0667",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 137,
+   "id": "sfv2_0641",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 138,
+   "id": "sfv2_0341",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 139,
+   "id": "sfv2_0051",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 140,
+   "id": "sfv2_0437",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0391",
+   "rejected": "shares 5 mon sets with drawn:sfv2_0409",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 141,
+   "id": "sfv2_0920",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0857",
+   "rejected": "shares 4 mon sets with drawn:sfv2_0920",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0161",
+   "rejected": "shares 4 mon sets with pool:pool175",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 142,
+   "id": "sfv2_0646",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 143,
+   "id": "sfv2_0656",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 144,
+   "id": "sfv2_0552",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 145,
+   "id": "sfv2_0606",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 146,
+   "id": "sfv2_0419",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 147,
+   "id": "sfv2_0713",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 148,
+   "id": "sfv2_0924",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 149,
+   "id": "sfv2_0744",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0371",
+   "rejected": "shares 4 mon sets with drawn:sfv2_0384",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 150,
+   "id": "sfv2_0162",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 151,
+   "id": "sfv2_0827",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 152,
+   "id": "sfv2_0798",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 153,
+   "id": "sfv2_0813",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 154,
+   "id": "sfv2_0636",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 155,
+   "id": "sfv2_0733",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 156,
+   "id": "sfv2_0539",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 157,
+   "id": "sfv2_0430",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 158,
+   "id": "sfv2_0497",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 159,
+   "id": "sfv2_0382",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 160,
+   "id": "sfv2_0810",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 161,
+   "id": "sfv2_0555",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 162,
+   "id": "sfv2_0593",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 163,
+   "id": "sfv2_0638",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 164,
+   "id": "sfv2_0397",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 165,
+   "id": "sfv2_0595",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 166,
+   "id": "sfv2_0459",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 167,
+   "id": "sfv2_0855",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 168,
+   "id": "sfv2_0566",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 169,
+   "id": "sfv2_0597",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 170,
+   "id": "sfv2_0336",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 171,
+   "id": "sfv2_0662",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 172,
+   "id": "sfv2_0700",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 173,
+   "id": "sfv2_0353",
+   "stratum": "CORE"
+  },
+  {
+   "accepted": 174,
+   "id": "sfv2_0332",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 175,
+   "id": "sfv2_0852",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 176,
+   "id": "sfv2_0773",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 177,
+   "id": "sfv2_0546",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 178,
+   "id": "sfv2_0885",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 179,
+   "id": "sfv2_0453",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 180,
+   "id": "sfv2_0684",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 181,
+   "id": "sfv2_0413",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 182,
+   "id": "sfv2_0865",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 183,
+   "id": "sfv2_0774",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 184,
+   "id": "sfv2_0417",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0600",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 185,
+   "id": "sfv2_0447",
+   "stratum": "CORE"
+  },
+  {
+   "accepted": 186,
+   "id": "sfv2_0583",
+   "stratum": "CORE"
+  },
+  {
+   "id": "sfv2_0692",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0834",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 187,
+   "id": "sfv2_0357",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 188,
+   "id": "sfv2_0433",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0864",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0611",
+   "rejected": "shares 4 mon sets with pool:pool657",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 189,
+   "id": "sfv2_0458",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0390",
+   "rejected": "shares 5 mon sets with drawn:sfv2_0389",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 190,
+   "id": "sfv2_0860",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 191,
+   "id": "sfv2_0499",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 192,
+   "id": "sfv2_0689",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 193,
+   "id": "sfv2_0729",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 194,
+   "id": "sfv2_0438",
+   "stratum": "CORE"
+  },
+  {
+   "accepted": 195,
+   "id": "sfv2_0142",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0833",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 196,
+   "id": "sfv2_0511",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 197,
+   "id": "sfv2_0599",
+   "stratum": "CORE"
+  },
+  {
+   "accepted": 198,
+   "id": "sfv2_0846",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 199,
+   "id": "sfv2_0564",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0923",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0847",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0715",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0416",
+   "rejected": "shares 5 mon sets with drawn:sfv2_0417",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 200,
+   "id": "sfv2_0825",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0826",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0157",
+   "rejected": "shares 4 mon sets with pool:pool134",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0822",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 201,
+   "id": "sfv2_0525",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 202,
+   "id": "sfv2_0147",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 203,
+   "id": "sfv2_0432",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 204,
+   "id": "sfv2_0762",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 205,
+   "id": "sfv2_0508",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 206,
+   "id": "sfv2_0381",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0851",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 207,
+   "id": "sfv2_0776",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 208,
+   "id": "sfv2_0536",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 209,
+   "id": "sfv2_0117",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0816",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 210,
+   "id": "sfv2_0645",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0837",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0701",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 211,
+   "id": "sfv2_0596",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0792",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0743",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "accepted": 212,
+   "id": "sfv2_0543",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 213,
+   "id": "sfv2_0111",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 214,
+   "id": "sfv2_0496",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0746",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0639",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0761",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0722",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0831",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0647",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0811",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0786",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0627",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0688",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0869",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0625",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0405",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0557",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0769",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0441",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0683",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0735",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0454",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0728",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0577",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0560",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0624",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0129",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0739",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0858",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0603",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0399",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0724",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0580",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0884",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0921",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0568",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0880",
+   "skipped": "stratum full",
+   "stratum": "FAR"
+  },
+  {
+   "id": "sfv2_0775",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0177",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0610",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 215,
+   "id": "sfv2_0771",
+   "stratum": "CORE"
+  },
+  {
+   "id": "sfv2_0415",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0732",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0156",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0460",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0398",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0521",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0549",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0747",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0502",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "id": "sfv2_0839",
+   "skipped": "stratum full",
+   "stratum": "NEAR"
+  },
+  {
+   "accepted": 216,
+   "id": "sfv2_0401",
+   "stratum": "CORE"
+  }
+ ],
+ "drawn_by": "designs/research_state/measurements/forum216b_x54_2026-10-20/draw_forum216b.py",
+ "n": 216,
+ "name": "forum216b",
+ "overlap": {
+  "intra_panel_max_shared": 3,
+  "max_shared_mon_sets_hist": {
+   "away": {
+    "0": 28,
+    "1": 138,
+    "2": 44,
+    "3": 6,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "forum72": {
+    "0": 11,
+    "1": 111,
+    "2": 79,
+    "3": 15,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "heldout72": {
+    "0": 40,
+    "1": 152,
+    "2": 24,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "heldout72_hpfix": {
+    "0": 15,
+    "1": 165,
+    "2": 32,
+    "3": 4,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "home72": {
+    "0": 5,
+    "1": 104,
+    "2": 88,
+    "3": 19,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "p72": {
+    "0": 27,
+    "1": 171,
+    "2": 18,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   },
+   "pool": {
+    "0": 2,
+    "1": 25,
+    "2": 132,
+    "3": 57,
+    "4": 0,
+    "5": 0,
+    "6": 0
+   }
+  }
+ },
+ "quota": {
+  "CORE": 12,
+  "FAR": 42,
+  "NEAR": 162
+ },
+ "rule": "ids sorted, shuffled once with random.Random(seed), taken in that order; a candidate is skipped if its ladder_weights_v1 stratum is full or its curator has curator_cap teams, and rejected if the pinned validator rejects it, a Hidden Power does not play its named type at 70, or it is an exact team / shares >= 4 mon sets with ONE team of the 719-team pool, home72, away, heldout72, heldout72_hpfix, forum72, p72 or an already-drawn team",
+ "schema": "x54_forum216b_manifest_v1",
+ "seed": 5400,
+ "source": {
+  "commit": "b3886800c",
+  "data": "src/utils/team_corpora/w_forum_v1/teams.jsonl.gz",
+  "data_sha256": "4af495c49a2df0266c8fe10c2691cea274e683da0f58c4e82d2a0124b7a17469",
+  "n": 559,
+  "tier": "AB",
+  "tier_sha256": "fa1219f6799f0d4ab93383b93d2d12b0e5b8c9a054419f629680f0c45b681095"
+ },
+ "stats": {
+  "by_stratum_tier": {
+   "CORE": {
+    "A": 11,
+    "B": 1
+   },
+   "FAR": {
+    "A": 8,
+    "B": 34
+   },
+   "NEAR": {
+    "A": 116,
+    "B": 46
+   }
+  },
+  "by_tier": {
+   "A": 135,
+   "B": 81
+  },
+  "per_curator": {
+   "CALLOUS": 4,
+   "Cdijk16": 1,
+   "Celdanami": 1,
+   "Dastardlydwarf": 1,
+   "Derpy Monkey": 2,
+   "Endill": 22,
+   "FJ2K": 2,
+   "GamblingAddict": 3,
+   "Gamebooadvanced": 1,
+   "Garpachi": 1,
+   "Genexys": 1,
+   "Gengar's Gambit": 1,
+   "Gilbert arenas": 3,
+   "Go make a sandwitch": 2,
+   "Hclat": 2,
+   "I Click Things": 1,
+   "Ibidem": 27,
+   "Jirachee": 4,
+   "JoJ": 1,
+   "Johnald": 18,
+   "Koby23": 1,
+   "L3W": 4,
+   "M Dragon": 4,
+   "MYSWEEPERISSHUCKLE": 1,
+   "Mattakata": 1,
+   "McMeghan": 5,
+   "Nal": 1,
+   "Queen of Bean": 1,
+   "Rainer24": 1,
+   "RavenEyeKSR": 1,
+   "Redless": 1,
+   "Redless (with Fruhdazi)": 1,
+   "SEA": 1,
+   "Sato07": 1,
+   "Sharingan/Carlo": 1,
+   "Shitrock enjoyer": 1,
+   "Siglut": 9,
+   "Skarpherim": 1,
+   "SpamOn": 1,
+   "Spreek": 10,
+   "Teclis": 1,
+   "Ummbr": 1,
+   "WraxiusGaming": 2,
+   "Zerkas": 1,
+   "airports": 2,
+   "cheezusp": 1,
+   "freezingpop87": 1,
+   "gorditoconbigote": 1,
+   "johnnyg2": 2,
+   "lenoxaguirre": 1,
+   "mielke": 7,
+   "mikmer": 8,
+   "mr.pink": 1,
+   "pixie909": 1,
+   "roro": 1,
+   "shinjey": 1,
+   "starro433": 1,
+   "thelinearcurve": 23,
+   "tigersuit": 1,
+   "vapicuno": 2,
+   "violet river": 1,
+   "whyIrunninboiiii": 1,
+   "wxybleh": 1,
+   "xtinaxendrix": 1,
+   "z0mOG": 4,
+   "zf": 1,
+   "zinc": 3
+  },
+  "supply_by_stratum": {
+   "CORE": 18,
+   "FAR": 131,
+   "NEAR": 410
+  }
+ },
+ "teams": {
+  "sfv2_0051": {
+   "curator": "M Dragon",
+   "sha256": "2c67ac330eb93b54a59421e87507abb6536c19a247c189b902ea4b7a5ba32164",
+   "stratum": "FAR",
+   "tier": "A"
+  },
+  "sfv2_0068": {
+   "curator": "M Dragon",
+   "sha256": "b0d3a0c9bd5a119a852eabb68119205b1d642f38784c70b6e08db2d871693535",
+   "stratum": "CORE",
+   "tier": "A"
+  },
+  "sfv2_0089": {
+   "curator": "thelinearcurve",
+   "sha256": "897507490c5675d543fbe5373ee85888c16b55e54bb178f29da277ab61192071",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0090": {
+   "curator": "thelinearcurve",
+   "sha256": "005b54c4b94da4bc3dedf7c950bd6198647c6cfcac5eb50cd2c6e71cb369d25a",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0091": {
+   "curator": "thelinearcurve",
+   "sha256": "be93f6457a094ab969126f129e7e157c3e84a7d4b70282ce770ce336611a8b20",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0092": {
+   "curator": "thelinearcurve",
+   "sha256": "415bb24db3bbefa4fd39ee19f4748524074a020897215d1df88a17e3f7f74734",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0095": {
+   "curator": "thelinearcurve",
+   "sha256": "d6a4ceb1a4363d55de00a6b3d16f9e47f76d6f689068fbaea9d625d64cd44e4f",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0096": {
+   "curator": "thelinearcurve",
+   "sha256": "3e40bb3e9e2c5ce70360f0214602d418a171fbd54449b18c33794d5b4f274c5d",
+   "stratum": "FAR",
+   "tier": "A"
+  },
+  "sfv2_0107": {
+   "curator": "thelinearcurve",
+   "sha256": "d6ff8f5ac1d1001a000926b36454b5d34faf792627e7942166bca6abe0ddc738",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0110": {
+   "curator": "thelinearcurve",
+   "sha256": "54669d20c5af471afdadaea230b170e7927e1b5a23e360d71f3d2d65a5c616c2",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0111": {
+   "curator": "thelinearcurve",
+   "sha256": "df57a5b76d7624d4eeccde42957671608c784975d22cabe38dd4f280d766b138",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0117": {
+   "curator": "thelinearcurve",
+   "sha256": "d110479ba2dd9dccdf308e49550f4f25781e4d99ad6658b9d64383a77621cde2",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0118": {
+   "curator": "thelinearcurve",
+   "sha256": "17ae7c75e26aa47a051742db5bd3b3edaec50fe4d39e18ef0771d70d6ee88bdc",
+   "stratum": "FAR",
+   "tier": "A"
+  },
+  "sfv2_0119": {
+   "curator": "thelinearcurve",
+   "sha256": "6ff5ced056e1b0a4d80fc49f4276e4f3b3d6bf53584487f08c87bfc19495207b",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0124": {
+   "curator": "thelinearcurve",
+   "sha256": "b0e358200efc483a3d992ef1f2584d51b59ecd93ab9739ae7dfaf2a9cd553f89",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0142": {
+   "curator": "thelinearcurve",
+   "sha256": "64c35e5deaf0189a72c55383a5c3726e3a1446b4f2a846801b148f5a9a80a66f",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0147": {
+   "curator": "thelinearcurve",
+   "sha256": "61d5edc9b1a4f0ac0a02c95f0d667746abb2f0b5702bdecf89c33205be08658f",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0148": {
+   "curator": "thelinearcurve",
+   "sha256": "0b021c1f38ed56d7991c1add2d2d1e5bb3578f971af9f08ddff866727081b738",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0153": {
+   "curator": "thelinearcurve",
+   "sha256": "253e4fcba04c4c709981c8a8c9e6cbaba28f2a3df66bb9f8352f7c7db5d23a2f",
+   "stratum": "CORE",
+   "tier": "A"
+  },
+  "sfv2_0155": {
+   "curator": "thelinearcurve",
+   "sha256": "b3efe83ae77f69ff2a4bdfbc827eefd7e4c1fbfe3375546924da6eb6840f905c",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0158": {
+   "curator": "thelinearcurve",
+   "sha256": "18e53240f3098dee48d2e99fc675f2597bee9c8990627ec6ceb40cde1772b190",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0160": {
+   "curator": "thelinearcurve",
+   "sha256": "14c71a376a0505e8210024f4564d91007ed59a53db0161ef1d793703503d37a6",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0162": {
+   "curator": "thelinearcurve",
+   "sha256": "9d313c11701c21ffe70a1426660029423241cfd3214ec5ef9166e3387e4052e3",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0175": {
+   "curator": "thelinearcurve",
+   "sha256": "4dc35881e84ec3f9a9118bc852fb702357ec175f1fe9235f2e2173d6c1af75d3",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0180": {
+   "curator": "thelinearcurve",
+   "sha256": "edf0db707fdac66e7e7a3074b00ecc884d6bd38b189426e5511ac90763f3aa77",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0322": {
+   "curator": "Ibidem",
+   "sha256": "bce0f3d48f3823715e667f653677d4b640bf6034972a2ee7819a36d25827f22a",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0332": {
+   "curator": "Ibidem",
+   "sha256": "d0bdaf71b1cf4568af1f1f0bc2694f425f699404e6f4340d417cee2514ec6eec",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0336": {
+   "curator": "Ibidem",
+   "sha256": "51e6e93dbd73312b5b71519812f1dd03d0195d07adc894bf4243ce1fb2ae69e1",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0337": {
+   "curator": "Ibidem",
+   "sha256": "b1e64d55f862df2fcf278e78eba1140c46cba0e2270b8d9530cd18ffe1adb0ca",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0341": {
+   "curator": "Ibidem",
+   "sha256": "1048741113fb9b339574a075fc9b88ec94ad0690df626ee9cbfe2540ab72e4c6",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0344": {
+   "curator": "Ibidem",
+   "sha256": "d2f6d6ed5fde6f72d275fc4607516966e60dfc594a3346f3f9a32af63701de4f",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0346": {
+   "curator": "Ibidem",
+   "sha256": "8e3fb8f39e96576b47d25b7636c06932aa92b858f3ed22ab20733394fd1c11b8",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0348": {
+   "curator": "Ibidem",
+   "sha256": "31a7b28df5a282d8fa4ab48edf9b83865ea06931ba6f358d54f4d46f51085184",
+   "stratum": "CORE",
+   "tier": "A"
+  },
+  "sfv2_0350": {
+   "curator": "Ibidem",
+   "sha256": "9ee336f816d551c1b3ddb67635ee391ad1fe66eb3b95eec27e254cd36384f421",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0353": {
+   "curator": "Ibidem",
+   "sha256": "ce6af3284dcbc836dc313ec4f40a44af29dd9773228b8c941d959bbfb8590340",
+   "stratum": "CORE",
+   "tier": "A"
+  },
+  "sfv2_0356": {
+   "curator": "Ibidem",
+   "sha256": "24f6c278a97f425e6df00c7332923db1bafe0433cda796dabf99d7645cf7c920",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0357": {
+   "curator": "Ibidem",
+   "sha256": "3fd911994d9b07f4e5db5053257eb8e114fefcd790e14f5e2781ac6ade983ff2",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0364": {
+   "curator": "Ibidem",
+   "sha256": "96023bd21ca25fcd7f444408e95fb13d47ef44fda9170112705656e5b8f301ed",
+   "stratum": "FAR",
+   "tier": "A"
+  },
+  "sfv2_0373": {
+   "curator": "Ibidem",
+   "sha256": "9519cc88bc620acac5a15490ff2d13084e92ded612754e0eda727774858c88ce",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0381": {
+   "curator": "Ibidem",
+   "sha256": "951ba036f479849f9709f390edadaac69fde7b099c9458992a0efdde81ca109a",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0382": {
+   "curator": "Ibidem",
+   "sha256": "b00d533081b794e1c76992bad4ac1b79256919645f6e5233bd90e70fa9655db3",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0384": {
+   "curator": "Ibidem",
+   "sha256": "3be95201a36c1085ee4dacac669341ce982624853aef6982cc048e1f09c78349",
+   "stratum": "CORE",
+   "tier": "A"
+  },
+  "sfv2_0385": {
+   "curator": "Ibidem",
+   "sha256": "9d33abf65121f962cfe3b6d6b4219da0a6fc5399809fd9bda088155eb8ceb386",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0387": {
+   "curator": "Ibidem",
+   "sha256": "0b16edd9d50034e0171f1142d13bc8c54c3dbeaa48b984056e38b9d36f7c1e43",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0389": {
+   "curator": "Ibidem",
+   "sha256": "f18eef426cf7d5da3ec627a4e5a0c8e557397964b098186341df6c388f01538e",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0397": {
+   "curator": "Ibidem",
+   "sha256": "39a081151e54713ec0f23432506611cba3aa6d940ba7a120d7aaed27079d0ad7",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0401": {
+   "curator": "Ibidem",
+   "sha256": "b06f025c495c4a1c190fa1fc0b30d608f1b31f09bdf510b7df652556e8992757",
+   "stratum": "CORE",
+   "tier": "A"
+  },
+  "sfv2_0403": {
+   "curator": "Ibidem",
+   "sha256": "0ad9932c819c6d1e540b2ce63b6a62027996693766a4d6e04428dc47c24852c6",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0409": {
+   "curator": "Ibidem",
+   "sha256": "b03469a1b60d1aeabacc8afd6c3d8dbe8f80d6847a681c972c9c48ac6ec9e096",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0413": {
+   "curator": "Ibidem",
+   "sha256": "98ce96f86c71e536c8d605121fe378b69fbc305bb3e841736b39cc2837f472ea",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0417": {
+   "curator": "Ibidem",
+   "sha256": "df9d6b3b056fe3b58ead95eac4de1549f62e8d2da12981c0b184b3c2372c6a32",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0419": {
+   "curator": "Ibidem",
+   "sha256": "2c795b349131655ec3a58573ba92346730238506fbbc9d65f559128148f3c7d5",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0430": {
+   "curator": "Siglut",
+   "sha256": "17e84b31b1983cf56f85d2154b4ab60d5d73fe568860e0f64df05d171d4f5793",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0432": {
+   "curator": "Siglut",
+   "sha256": "4cb5b93c8aeec224e32cb934c6f044e71a0cf6c88facf9d925f6cad09ebbe582",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0433": {
+   "curator": "Siglut",
+   "sha256": "b18686fd5b10b15b1c1d0b6fe699c4971bc6bb67e3b8bedc5d611892987bd9c5",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0435": {
+   "curator": "Siglut",
+   "sha256": "066126a8308fc2683d87000bebfe074bda36b3d838907b7f961e55dfa437763d",
+   "stratum": "FAR",
+   "tier": "A"
+  },
+  "sfv2_0436": {
+   "curator": "Siglut",
+   "sha256": "d5a6c388346d3c2ed7978a199491138cde890b3755b7c24d0234a28acfdbd9cc",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0437": {
+   "curator": "Siglut",
+   "sha256": "44f613cf3102f7e8c0069e8e392fc668543f4420de0a651fc2efc55aa096b513",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0438": {
+   "curator": "Siglut",
+   "sha256": "931db7ab159b15a3fc45176fc5350b2a5a6d8223f2f86beeed9b5dd2b960b47c",
+   "stratum": "CORE",
+   "tier": "A"
+  },
+  "sfv2_0439": {
+   "curator": "Siglut",
+   "sha256": "43d9684ae8474252635f2fdda53b03ea7fd8745aef53183a8132e1f1d3313742",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0442": {
+   "curator": "Siglut",
+   "sha256": "9648bb0a20584b7121d221fb62eaf41994cb54abde653a71d5a6ab69df874a25",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0447": {
+   "curator": "mikmer",
+   "sha256": "0f99a5b820c4acecb442bd29571bca038ae23e877f3f589cd7c25b82b320e570",
+   "stratum": "CORE",
+   "tier": "A"
+  },
+  "sfv2_0448": {
+   "curator": "mikmer",
+   "sha256": "cb5ead3e19272d0fa45106992c15c1dad7c7ba04c99fa0cead76482b0326b6a7",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0449": {
+   "curator": "mikmer",
+   "sha256": "e8f36be0cb5c194f7ff4182816d97567eaf9470f4df69f195eac5161ac040a16",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0450": {
+   "curator": "mikmer",
+   "sha256": "ec3187ce84ffab335ab2e272bbbb98e8b093bc5b0b2609e4726f0d602aebf7e4",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0453": {
+   "curator": "mikmer",
+   "sha256": "8501a1ca0330ece4db969cca38ef90d991f86f30b4428dde0607ec47ac7bb97d",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0455": {
+   "curator": "mikmer",
+   "sha256": "8efe4534b028f53ca845abaeb67dc65aa45e56be47c2417ea9855eed2642ccce",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0458": {
+   "curator": "mikmer",
+   "sha256": "a8e3345b529b354277176594c43a49f4664155b352f6f5ff077c44253593c7ee",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0459": {
+   "curator": "mikmer",
+   "sha256": "022eca62e910dc12300f7227fb3aafd53c6e6c9544c21f87a5c0e3f6b3aac466",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0496": {
+   "curator": "Jirachee",
+   "sha256": "46a460c7f79818c94c12836cc557ce1aeb22c1e0d095a3ded2a353e6dd6ace98",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0497": {
+   "curator": "Jirachee",
+   "sha256": "c5bd4b7e6e6cf23755b1f98dccc7e5ddd66fa0da9d45e64ca9c385658fec2814",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0499": {
+   "curator": "Jirachee",
+   "sha256": "66933db1803c489c68c8b0d2451144b3bff66f5b96bc4fbc8914c2d448464252",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0504": {
+   "curator": "Jirachee",
+   "sha256": "ec983c35c3b199b6fd2e0a2a23df32b7a0634910961e0cb042f5e799c9d16e3e",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0508": {
+   "curator": "CALLOUS",
+   "sha256": "5455cb45ebf5f59378895b89c45ba092c7e447f9468ceae71409b791e23cbc10",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0511": {
+   "curator": "CALLOUS",
+   "sha256": "5f3229ed630206d51d20cd79a80a539bd5450048f6cb3acb11b114d14625a77a",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0513": {
+   "curator": "CALLOUS",
+   "sha256": "b7f78af596cd14b7c0b8380dd412bc9904e482ca8e071245f202e3e3a430f449",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0516": {
+   "curator": "CALLOUS",
+   "sha256": "b408172000768f5d880db2342665d6d9345dfe8b0b51bca47afa4a82c89d22eb",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0522": {
+   "curator": "mielke",
+   "sha256": "01c5627ba8646dc112df58b591223d5770293c692779775fedf83d0da8c14e8e",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0523": {
+   "curator": "mielke",
+   "sha256": "ce70bd1fc02ef89b2af473d8d93be4926a6e03d04e27a3ebc4a4784554dd7089",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0525": {
+   "curator": "mielke",
+   "sha256": "5b36579a9d2fdf75aab78cbf31422757723492ca0a8520be5f87169f58060ca5",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0526": {
+   "curator": "mielke",
+   "sha256": "db8d3f6fde6edcf92b8cd51c8a9ee876e5382ee6aae6c82971ad45e3a4ac7c55",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0527": {
+   "curator": "mielke",
+   "sha256": "8b7d6ee32ad1a2d413a92181d3d5cdcd1ec11910d3568ba05fc3ecd795cdea43",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0528": {
+   "curator": "mielke",
+   "sha256": "5613d16f98d7230d2e624fbfe0eeaef1f04356656835d97c170e101b06545dea",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0534": {
+   "curator": "Spreek",
+   "sha256": "f84ad96be8d1cab7e0c62ebab43ae47383db20c640a8d9a27878ec38e34733f9",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0536": {
+   "curator": "Spreek",
+   "sha256": "95662499add622d794bae5182cf96f3950d8ff43085b265de1fe81585e9c2b5d",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0538": {
+   "curator": "Spreek",
+   "sha256": "2208ba02af51fb7d7a7dda8a7d466cdac081653bdcbfa218fba9dbbf7d81f8e7",
+   "stratum": "FAR",
+   "tier": "A"
+  },
+  "sfv2_0539": {
+   "curator": "Spreek",
+   "sha256": "d007be3bce73412cb758bddaf6bd98bec16c1d51ed30a8bf1ee9b00945869664",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0543": {
+   "curator": "Spreek",
+   "sha256": "dd8d962f973c1996ba57ce335da7fca728599f658490b45b81ccb362cc4241e3",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0546": {
+   "curator": "Spreek",
+   "sha256": "06406e4c605f37083bf83eed84412ae81c45f4edb2e0aa37c20842648fd6bc22",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0547": {
+   "curator": "Spreek",
+   "sha256": "5d265b056cecb4379a48e8ffb535c07deffbe00349488364119229e20f132faf",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0548": {
+   "curator": "Spreek",
+   "sha256": "f32d1a8abcabebaa67fa616edc0a45816789d20f451b915f4adc62981b0af091",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0551": {
+   "curator": "Spreek",
+   "sha256": "0c52cef99619f8f680f9867d0ef528991d896b2a886f065f4bf5594ed608f58e",
+   "stratum": "CORE",
+   "tier": "A"
+  },
+  "sfv2_0552": {
+   "curator": "Spreek",
+   "sha256": "ecde5fd573cf8e7e8cabc7e627a92da3c0fee4ea87118aecf8bd81226fbfa58e",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0554": {
+   "curator": "violet river",
+   "sha256": "b689fb45cb78ddbbeb31708e9547201ad5f7fbb19a303b6067d73cb77c7e2eb5",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0555": {
+   "curator": "zinc",
+   "sha256": "92ff650c851b374b56805262895bdc40765e0a5c985effdf2370ce333ee9013c",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0558": {
+   "curator": "Sharingan/Carlo",
+   "sha256": "43e92f7f73257bc2223d8a9ab17a21baece928c4a7426cdc07e0baee766a0e8f",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0564": {
+   "curator": "M Dragon",
+   "sha256": "1515d3884b9a17f0b59300b5807ee94af5f334e31f4a176eac35ba906319c82d",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0565": {
+   "curator": "Endill",
+   "sha256": "95bf47a05b899daac72aad526c8bd3e0653ebf134da9ae4608e1f7437c50af16",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0566": {
+   "curator": "Endill",
+   "sha256": "4232accd83858bf2a717751f09c955a3fcd7d95d4f351b1ade172f6ed9038f44",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0571": {
+   "curator": "Endill",
+   "sha256": "bf4d319fa84718c31ed1cf68ee922fdfe496757f09dc8c3aeb657fe18b42964f",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0579": {
+   "curator": "Endill",
+   "sha256": "27323d63975a25f9a46c747eef7b1f7670f0aab8c34ac5e4d167eff5e2574ffc",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0583": {
+   "curator": "Endill",
+   "sha256": "10acba37e2b2036f11fa6195cdca450bcc7f55db625cdb197d0fda45deb17744",
+   "stratum": "CORE",
+   "tier": "A"
+  },
+  "sfv2_0584": {
+   "curator": "Endill",
+   "sha256": "ba1c23a6c7da71ce482fbbd2857ee05324bac1f9ad66317d38389c8611f57ee0",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0585": {
+   "curator": "Endill",
+   "sha256": "7ec0a44f7175c472571a9b8f0574ab2863cf80d3aadaff04ce01f21ec0762b08",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0586": {
+   "curator": "Endill",
+   "sha256": "a6e3a4e7f0e04a6889b635d32a742b588859e4ea15c708520f81058d779fcccb",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0587": {
+   "curator": "Endill",
+   "sha256": "73b24f6ddb14faebb4aca85ef0b65fae57eff174eaac9314afd69d068d5aebfc",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0590": {
+   "curator": "Endill",
+   "sha256": "da22c2393c62aeff151a056304712d5df991dcfd18dea31f89707624ef549a0b",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0591": {
+   "curator": "Endill",
+   "sha256": "f4d1377699cddb55cd1cd13f6d04def798a1f2ea0afcb182c20a49dd71bf18af",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0593": {
+   "curator": "Endill",
+   "sha256": "a727914e9baf194e9988de40423a346e45bcbf92b2992aeec15dc82db4df4899",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0595": {
+   "curator": "Endill",
+   "sha256": "de6b9bd1fa10c7caf4adbe5acab30d0b391211a1cc8de3654f25caf1abcbe32a",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0596": {
+   "curator": "Endill",
+   "sha256": "ef9ed718fc02e4118348926a583a38f7c03a0cf6d5dc228bd42a449d9347fa46",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0597": {
+   "curator": "Endill",
+   "sha256": "e58e5cf69486a73a3ccb61ba019bb77d9a0db3ab28168fb4d4d8d93f85cededc",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0599": {
+   "curator": "Endill",
+   "sha256": "ec2f342f2ac68e5935f0828494271ac6707553af57b1d2a94d044804d6572a9e",
+   "stratum": "CORE",
+   "tier": "A"
+  },
+  "sfv2_0602": {
+   "curator": "Endill",
+   "sha256": "93d77637512ac1d161834541a1188e6700bf15f1d7bdffcc492bcc6cfb0e7139",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0604": {
+   "curator": "Endill",
+   "sha256": "f4378300e25d5cbc95e61e1f7a2f38a0119b2821fe56a88c33f90e62739e4b27",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0606": {
+   "curator": "Endill",
+   "sha256": "d0510f63f076a3035fee212358918897b78f680fd3a95814ac5381968874a6f6",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0618": {
+   "curator": "Endill",
+   "sha256": "f25c1b4f6f21455b4b14f16d01539d354ce36d8f067be5acf903973c4305463f",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0621": {
+   "curator": "Endill",
+   "sha256": "d88e317e5fe7a0b135889e762a29825e99737e9a63fd616292463e7f4c18c3e0",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0630": {
+   "curator": "Endill",
+   "sha256": "861655fdec908cb74dfbdae5baaa95c87c2aee28ca3d280cd87e8f35156f81d1",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0632": {
+   "curator": "McMeghan",
+   "sha256": "24742e6f5e95a635999456bc0951c541e38def812208d245387a980cfda17001",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0633": {
+   "curator": "McMeghan",
+   "sha256": "bbbb754f9290f02e6c2f1c9e8f9d64f05959427c23e223df0b782a01435cad6b",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0635": {
+   "curator": "McMeghan",
+   "sha256": "87585123e14e6f82b895659ddf77219589f71aa508155f8c8e9950759f72787b",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0636": {
+   "curator": "McMeghan",
+   "sha256": "bf1c90458a86f9c27f775a2843fb8050a7ef8b0df624b84825da55f9882f8845",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0638": {
+   "curator": "McMeghan",
+   "sha256": "439d6c8b28cddd9341d3f1d5be950906e0fc394f41895e1571c27caf01e6396a",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0640": {
+   "curator": "Hclat",
+   "sha256": "536d719f1cbf5f96dedcfe07085f75dd846af4017ad8b3d47f75664b6308c0ab",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0641": {
+   "curator": "Hclat",
+   "sha256": "534c45c75db2a3d87480520beba1d081d6674a1530215146d4f2f4954681cd18",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0645": {
+   "curator": "Teclis",
+   "sha256": "bfa4d9f1253c491a498692b24ff5af5f2e86c17e6492af97097d40c8e2fd63eb",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0646": {
+   "curator": "Gilbert arenas",
+   "sha256": "e042e42d7a6f9ad5830c1c90da0a9fc731442bca9001d84e0aab7fe1519122b8",
+   "stratum": "FAR",
+   "tier": "A"
+  },
+  "sfv2_0651": {
+   "curator": "Gilbert arenas",
+   "sha256": "8036bef0f2c36ed1cc7f283830df95cfbd530c17ca5abb7ad3e57cddefe01647",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0653": {
+   "curator": "Gilbert arenas",
+   "sha256": "1c855780681ac2d222c4ed260a984d475c5470ce2624a356500b9fc4ad9b2155",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0656": {
+   "curator": "z0mOG",
+   "sha256": "aa4e73a68f6baca6606ecc110f8066733734c570b3b45e16d7c326d21d639035",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0657": {
+   "curator": "z0mOG",
+   "sha256": "05bdeaf4ceae5d147ea390dcc7b48a26966d17fed8674423e507e3082a97e1b2",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0661": {
+   "curator": "z0mOG",
+   "sha256": "e58c73a7044521fc4c933714c20ff446177aad28a57fcbdc9376cce26efd5981",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0662": {
+   "curator": "z0mOG",
+   "sha256": "4419b2fa6bb8d824206ecfbd83959de2c9d471a7003281187f137ec758649a72",
+   "stratum": "NEAR",
+   "tier": "A"
+  },
+  "sfv2_0667": {
+   "curator": "SEA",
+   "sha256": "87b91d481e66943bc039219a9899197c690a0e8a74abc4bf55f541a45aa63695",
+   "stratum": "FAR",
+   "tier": "A"
+  },
+  "sfv2_0675": {
+   "curator": "mielke",
+   "sha256": "3aa55f74271168fa2c504ca863d27c41625f932a038b6d6ad9dcb7dbbc5b605d",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0678": {
+   "curator": "Go make a sandwitch",
+   "sha256": "5331410fda565c1a0b02bf27d86aa3690829176af908eaf32edcc7045ecb8888",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0681": {
+   "curator": "Zerkas",
+   "sha256": "4b0a58b87434694cd992684a6c27f64ebd1461e15a06899f83760affd34e5d9d",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0682": {
+   "curator": "Sato07",
+   "sha256": "f31fe8d7066b474449e80059cdbfafa7abb6cf62695547039f8ec80f38d53d6e",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0684": {
+   "curator": "Redless",
+   "sha256": "889fd10c94c6919e1ced7f05079c1b7e57978d935749e2e8ddd024d9cf8e5e49",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0686": {
+   "curator": "Go make a sandwitch",
+   "sha256": "5d370f17f3984babcc63fa08a69e7b85f74816dce191664ba8792e377a9294e9",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0689": {
+   "curator": "M Dragon",
+   "sha256": "db75abe7a874f1de1ac603a184c41a4bd663651b771f398345308ab9efca345f",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0694": {
+   "curator": "Celdanami",
+   "sha256": "f8fd12f38f2083bcb35568f8afcd3b198aca47f4d7e133e80b8529f43e6aafae",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0699": {
+   "curator": "xtinaxendrix",
+   "sha256": "8b60b55cf8396e7837835624a8a0f9591bc9b0e29ccf42d7ff931fca694d34f6",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0700": {
+   "curator": "pixie909",
+   "sha256": "4f868ee3fa393ff0d4f421d19f3c41292283824fd1d90d1155da86d9e061f518",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0706": {
+   "curator": "tigersuit",
+   "sha256": "e8e549fd111f935036697f831012d139991f448ff7591ae824ee5bb30d5c68c9",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0710": {
+   "curator": "Garpachi",
+   "sha256": "9d2bef99375f7f1de25c5d670dcc8eab981337dc34eae470656c802834871f77",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0712": {
+   "curator": "SpamOn",
+   "sha256": "be1ed741c582b91526cce558673c6e01228b13700b5bba477986318fa7a2eb4e",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0713": {
+   "curator": "Gamebooadvanced",
+   "sha256": "2efcc7d738999fa574a00b689c981cf9381ca1e657aeb45b5cc34019650d94ca",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0719": {
+   "curator": "WraxiusGaming",
+   "sha256": "aa8a3c67fbc7be7aee2ba4f64c7c8993dacac9821bd0d8b6adcab2490df602ab",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0725": {
+   "curator": "MYSWEEPERISSHUCKLE",
+   "sha256": "8bc045de5172f1b6557ee4e07328a294c8a314882df8beedfe50de506ac31317",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0727": {
+   "curator": "Dastardlydwarf",
+   "sha256": "77f5ae29ffb1e9015ac149c6df400c4c64f1bd8fe66d95bdd498991d3500259e",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0729": {
+   "curator": "L3W",
+   "sha256": "f81f0cb609fab3a980fd5734460c5fdcf3d24bb57a4edfd70abdafee0860a2f9",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0733": {
+   "curator": "L3W",
+   "sha256": "621acc969af0925c33b8b9dfac06cf90e29e93c11a8c91f2e95a6528a41da1a2",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0738": {
+   "curator": "FJ2K",
+   "sha256": "73d99256dca8013d7ae32797168a7fc7fc2e280bf55f176eafb7a8601b875b4d",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0740": {
+   "curator": "airports",
+   "sha256": "0e1af363db6848392125d45cf7d46747e0d3e83c52000725ab270a46f1ada770",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0744": {
+   "curator": "Gengar's Gambit",
+   "sha256": "014fc346a87caab9722662f3128c6cf341a573cf4b5880a4c0901eefd0981126",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0745": {
+   "curator": "whyIrunninboiiii",
+   "sha256": "1aa23e1f90e2b968eb56725702a2ba1f816bac716b042007de973845221f89a5",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0748": {
+   "curator": "L3W",
+   "sha256": "6278118a62141194be4700d685a365b3072d81bbdb3f87b84fd6af3527f0bf67",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0749": {
+   "curator": "GamblingAddict",
+   "sha256": "90364c2d9cff5159a02af25fd3f30b4a07872e1cdab23cfabdd6539ce26d3c87",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0750": {
+   "curator": "freezingpop87",
+   "sha256": "05e5024ed91e248702c86f3472247ddc8555051993c0610319a50fdcf41a3252",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0751": {
+   "curator": "airports",
+   "sha256": "e3d47e04f5fabec9d7f035531e9f08f62e25552fb07c80a6bdf59bd0ac3a6566",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0757": {
+   "curator": "WraxiusGaming",
+   "sha256": "608de80e93ac360bd186f4bc44e422af7b4f6822032e1855a9889e7031b50940",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0758": {
+   "curator": "Shitrock enjoyer",
+   "sha256": "0b2083d3cb119a125296325f66311727d43290b8c5a541796b40c8f4caa448e6",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0762": {
+   "curator": "RavenEyeKSR",
+   "sha256": "6e86fbaea1ff100414a7cbf10d346da4c2675a10bb7ed63b44b01248a9f2068c",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0771": {
+   "curator": "Johnald",
+   "sha256": "25bebc092048af9425edfff1b5e1d99fe87908b28715d1ce1bc3ec3da19229ce",
+   "stratum": "CORE",
+   "tier": "B"
+  },
+  "sfv2_0773": {
+   "curator": "Johnald",
+   "sha256": "46c8522e66767382ddc73d6d2bc42e2b06775b4c3ffeaa120df4c1e3cdd8cc81",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0774": {
+   "curator": "Johnald",
+   "sha256": "a61b294d1b0915956e410186bb1550947bc249f2fde6c56025e760aff987226f",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0776": {
+   "curator": "Johnald",
+   "sha256": "f3eea96a6304c9c6b863df4c7e815655714f0101755f34bdd96083543dedaaaf",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0777": {
+   "curator": "Johnald",
+   "sha256": "f73e211a0ef9351a0f8c61fdbaa14301fdff593171bf82e2535862770ef312a4",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0779": {
+   "curator": "Johnald",
+   "sha256": "bf0993464c5c21c8ecbf12f80d037cc67392211d0ce389cfceae5134c724b538",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0780": {
+   "curator": "Johnald",
+   "sha256": "bb79f62083c1334264b7e165f14b4eb69461737c3b8dcbbbd61d8e352fbe57d8",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0781": {
+   "curator": "Johnald",
+   "sha256": "7ffad80a597fec19c18309319d63fbb293e3455b2d3a3632f8bddbe3ac8354dc",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0784": {
+   "curator": "Johnald",
+   "sha256": "a1c949e0f58245361200dcc1f3f2d649d370df6f0283014c2da600a04a923964",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0790": {
+   "curator": "Johnald",
+   "sha256": "5d283f4115e4feb12d64493f1c767e9079bc798756a8f1bc6cf1f67a8a2d086f",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0794": {
+   "curator": "Johnald",
+   "sha256": "ba224f94c3b095f545ea3469f850b10ffcc76958d924c2266a8c12beeb338285",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0798": {
+   "curator": "Johnald",
+   "sha256": "af943a86c56339142f22aee957a797f0d9668f14ca8f123b2fd9303e5287d6a3",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0799": {
+   "curator": "Johnald",
+   "sha256": "698169d700d807552557de008702d7dab6cfcededb585fad8ccade38384f7459",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0802": {
+   "curator": "Johnald",
+   "sha256": "383885bdc0e11d3c9e7e13337c1d43042fe6fd24f37e4582f0e393215a4dd196",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0803": {
+   "curator": "Johnald",
+   "sha256": "13d8f723ee20323f5a2ace265c469149162a5442e71f0c9205174b66a404ea74",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0804": {
+   "curator": "Johnald",
+   "sha256": "2cfcd68ad936c4008319ef3f5049bd665078cf97a6388a40b78d27db0e6656da",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0805": {
+   "curator": "Johnald",
+   "sha256": "5697775d88bb8cb8b797489c3cfd6af400f2255783f66333a06b9fd6ab8a1eeb",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0810": {
+   "curator": "Johnald",
+   "sha256": "a6c52fe5e51f852055c45fb6e8a5f0a969488dcae9d8ea5aa9be9fdb2eb71450",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0813": {
+   "curator": "vapicuno",
+   "sha256": "c22797290875de102f0384f9c9c488833b668fb7134b75df0ea86c43251605e1",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0818": {
+   "curator": "Mattakata",
+   "sha256": "8b4b8ef5148ec5d86180b6784a7acf31343de251f8c4c7341ba8863904849425",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0823": {
+   "curator": "roro",
+   "sha256": "305cf067ea6041dd2d4fd01aa0b0c84e265d2406a7d2035c1b3ec9dbf56101f1",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0824": {
+   "curator": "L3W",
+   "sha256": "1ba4257ebcff4ec56e9856c106da7098b9f0da9fed6616a726cc2162201f856e",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0825": {
+   "curator": "vapicuno",
+   "sha256": "41686949905f1a8d6d900cca05b0c42605ae2591f963f3a52792348831155fb9",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0827": {
+   "curator": "I Click Things",
+   "sha256": "60228324b8b75d063c6a572ac3b4a547b5726c3a18487b3ca55dcfb0d525d540",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0829": {
+   "curator": "Queen of Bean",
+   "sha256": "d52dc21ecb877a36576ae93fc870c1baca19454cbac16dbf9b20a5572e7b7c69",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0840": {
+   "curator": "starro433",
+   "sha256": "82840f91b7de8688a6504520a1725f6e439f694db2f7f51ac34fc2ed164c397e",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0841": {
+   "curator": "Genexys",
+   "sha256": "513ec2a0ae25adc773c9b026e53d7e27100db8c344c227dd9a965bd6784c2f4b",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0842": {
+   "curator": "Skarpherim",
+   "sha256": "a1a04516453e13bbe1db3cb162d6ac7d355e6312b7dcee99b1217d426c00da12",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0846": {
+   "curator": "Nal",
+   "sha256": "b6dac54f577dea32b5972c3008beae1fc2a1e7e1e57f67e6ef333ebb012338f1",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0852": {
+   "curator": "zinc",
+   "sha256": "13b87abbad40b552a58f885daddeeca16761f189e47e0ffe6eac67e5166f98df",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0855": {
+   "curator": "gorditoconbigote",
+   "sha256": "d94ec71447a49c3bda7a4641e1705402fa25391399f5bb649753ff8236544a89",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0860": {
+   "curator": "FJ2K",
+   "sha256": "edd30d349284f4ab8354cba7e47f188f5dbd6c210f6ceeacecde3b173f4b6186",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0863": {
+   "curator": "GamblingAddict",
+   "sha256": "d27a7046109193d40e8325e386c7bd37928b256319891abf1b724ffba75f2008",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0865": {
+   "curator": "GamblingAddict",
+   "sha256": "7eafdd23df5d653cf0f1745a6140dfd64d0d2372b54e69b1ad8d27cbdaf54847",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0867": {
+   "curator": "zinc",
+   "sha256": "c9e2497be43afcae135fc8b6691a6720523ffc37f18b46820cf7367447fadb83",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0868": {
+   "curator": "wxybleh",
+   "sha256": "8a1b9d6fe70f0adc0f83caaaec9f46938d33e9371cb3127ffa2464bc850eefaf",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0873": {
+   "curator": "Ummbr",
+   "sha256": "0ae6e832aebb97f892d02a32c52673de45278021a77f64c0655b068affd6259d",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0875": {
+   "curator": "mr.pink",
+   "sha256": "45bb62871c9bb3fecc37fb3828a735b51499b7633d1354964a5392801d07cb34",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0877": {
+   "curator": "Derpy Monkey",
+   "sha256": "885ec8b4e638d3545eeebebdd2a222cf0a0f19f5bc08c3e39bfcaadcd483014d",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0878": {
+   "curator": "Derpy Monkey",
+   "sha256": "9442a9bc3987095ae2b82e11ca66b2a31b462007a5aba2d106115f12582575a6",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0885": {
+   "curator": "johnnyg2",
+   "sha256": "a2a266d8cb29372eebf2db3f6658b76902d33ddf9a09318c625603615e170db9",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0887": {
+   "curator": "johnnyg2",
+   "sha256": "0c726e088adef722823b7772855e6ccea9cdca6a7b9d806b143f3023bf97df34",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0893": {
+   "curator": "cheezusp",
+   "sha256": "5545a650bda263e2d0837e973471a21ef700fad52ef7bf4a213c5abc364bdc13",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0900": {
+   "curator": "shinjey",
+   "sha256": "6df8b9415be05fadd3f9d6b485feff8153f2aca86ae8020ba90c28945e8780ff",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0904": {
+   "curator": "Rainer24",
+   "sha256": "2561264f6faac990216f22f31b45de0d1db2b2f598488d36c6999d5b69c0c457",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0905": {
+   "curator": "lenoxaguirre",
+   "sha256": "964167d833bd09f1663fbb06b31f98a2f54ce2e3d77747c909096537f1521933",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0913": {
+   "curator": "Koby23",
+   "sha256": "da2fd3135f40532e074d15831dff1680ee8ad99cc04fa28efafdd952d5797c25",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0920": {
+   "curator": "Cdijk16",
+   "sha256": "6240b55d99755bb534f115a35a55a1ff9b76a45ed8856ec7f088cd023079c567",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0922": {
+   "curator": "JoJ",
+   "sha256": "ddcca60649d754e5267b82c2c38b748889ba80a2810f0af1896b9e0fb9ff178f",
+   "stratum": "NEAR",
+   "tier": "B"
+  },
+  "sfv2_0924": {
+   "curator": "Redless (with Fruhdazi)",
+   "sha256": "eb725b18cec7bba3dded4e9945e4049f81282fb9b0f60ab40eed18a8fd661f48",
+   "stratum": "FAR",
+   "tier": "B"
+  },
+  "sfv2_0929": {
+   "curator": "zf",
+   "sha256": "b45bca7611a9c7dddc33a8ed1e94e12572f66f9c702b193f66bd8348bc5a9930",
+   "stratum": "NEAR",
+   "tier": "B"
+  }
+ },
+ "what": "X54's CONFIRMATION panel (design_beat_metamon_path.md §6.6, FINDING 2): human-built forum teams, held out from every training source and SEALED (never read) until X54"
+}

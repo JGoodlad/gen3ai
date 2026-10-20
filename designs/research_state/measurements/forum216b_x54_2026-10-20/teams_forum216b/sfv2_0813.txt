@@ -1,0 +1,56 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 240 Atk / 16 Def
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Substitute
+- Focus Punch
+- Rock Slide
+- Hidden Power [Bug]
+
+Cloyster @ Leftovers
+Ability: Shell Armor
+EVs: 200 HP / 252 SpD / 56 Spe
+Modest Nature
+- Spikes
+- Surf
+- Rapid Spin
+- Explosion
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 168 HP / 164 SpD / 176 Spe
+Timid Nature
+- Hypnosis
+- Giga Drain
+- Thunderbolt
+- Explosion
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 252 SpD / 40 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Toxic
+- Thunderbolt
+- Hidden Power [Grass]
+- Roar
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 200 Def / 56 Spe
+Relaxed Nature
+- Refresh
+- Surf
+- Earthquake
+- Ice Beam
+
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Rock Slide
+- Hidden Power [Flying]
+- Earthquake
+- Substitute

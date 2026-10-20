@@ -1,0 +1,58 @@
+Snorlax (F) @ Leftovers
+Ability: Immunity
+Happiness: 0
+EVs: 52 HP / 176 Atk / 136 Def / 136 SpD / 8 Spe
+Adamant Nature
+- Frustration
+- Earthquake
+- Self-Destruct
+- Shadow Ball
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 16 HP / 120 Atk / 120 Def / 252 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Dragon Dance
+
+Magneton @ Leftovers
+Ability: Magnet Pull
+EVs: 252 SpA / 4 SpD / 252 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Toxic
+- Thunder Wave
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 80 Atk / 176 SpA / 252 Spe
+Rash Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 52 HP / 252 Atk / 204 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Dragon Dance
+- Taunt
+
+Metagross @ Lum Berry
+Ability: Clear Body
+EVs: 240 HP / 252 Atk / 16 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpA
+- Meteor Mash
+- Earthquake
+- Explosion
+- Hidden Power [Grass]

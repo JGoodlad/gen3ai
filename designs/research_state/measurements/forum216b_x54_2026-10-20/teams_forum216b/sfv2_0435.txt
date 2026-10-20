@@ -1,0 +1,57 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Focus Punch
+- Hidden Power [Bug]
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Earthquake
+- Explosion
+- Rapid Spin
+
+Steelix @ Leftovers
+Ability: Rock Head
+EVs: 252 HP / 96 Atk / 16 Def / 124 SpD / 20 Spe
+Impish Nature
+- Explosion
+- Protect
+- Toxic
+- Earthquake
+
+Mantine @ Leftovers
+Ability: Water Absorb
+EVs: 252 HP / 224 Def / 16 SpA / 16 SpD
+Calm Nature
+IVs: 0 Atk
+- Protect
+- Rest
+- Toxic
+- Surf
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 72 Def / 184 SpD
+Calm Nature
+IVs: 0 Atk
+- Pursuit
+- Rest
+- Toxic
+- Wish
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 252 HP / 224 SpA / 32 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Thunder
+- Ice Punch
+- Wish

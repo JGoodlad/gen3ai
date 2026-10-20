@@ -60,6 +60,16 @@ def test_each_panel_is_its_own_regime():
     assert len(set(sets.values())) == len(sets)
 
 
+def test_a_sealed_panel_is_refused_by_every_play_path():
+    """forum216b (X54's confirmation panel) is registered but SEALED: no h2h read may play it before X54."""
+    with pytest.raises(PN.PanelRefused, match="SEALED until X54"):
+        PN.check_panel("forum216b")
+    with pytest.raises(PN.PanelRefused, match="SEALED"):
+        PL.plan_regime(TURNS, "off", "forum216b")
+    with pytest.raises(PN.PanelRefused, match="SEALED"):
+        PN.PanelTeams("forum216b")
+
+
 def test_an_unregistered_panel_is_refused_naming_the_registered_ones():
     with pytest.raises(PN.PanelRefused, match="not a registered panel.*home72"):
         PL.plan_regime(TURNS, "off", "home73")

@@ -1,0 +1,57 @@
+Regirock @ Lum Berry
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 SpD
+Adamant Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Curse
+- Focus Punch
+- Hidden Power [Rock]
+- Explosion
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Hydro Pump
+- Calm Mind
+- Ice Beam
+- Hidden Power [Grass]
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 252 Atk / 108 Def / 148 SpD
+Adamant Nature
+- Curse
+- Body Slam
+- Earthquake
+- Shadow Ball
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 252 Atk / 4 Spe
+Adamant Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Explosion
+
+Breloom @ Leftovers
+Ability: Effect Spore
+EVs: 64 HP / 252 Atk / 192 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Spore
+- Sky Uppercut
+- Hidden Power [Ghost]
+- Focus Punch

@@ -1,0 +1,58 @@
+Vaporeon @ Leftovers
+Ability: Water Absorb
+EVs: 12 HP / 164 Def / 144 SpA / 32 SpD / 156 Spe
+Bold Nature
+IVs: 0 Atk
+- Hydro Pump
+- Substitute
+- Roar
+- Baton Pass
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 112 Def / 252 SpA / 140 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+- Baton Pass
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 2 Atk / 30 Def
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Ice]
+- Substitute
+
+Dugtrio (M) @ Choice Band
+Ability: Arena Trap
+EVs: 80 HP / 148 Atk / 176 SpD / 104 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Beat Up
+- Hidden Power [Bug]
+- Aerial Ace
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 220 Atk / 36 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Kingdra @ Lum Berry
+Ability: Swift Swim
+EVs: 104 HP / 252 SpA / 152 Spe
+Modest Nature
+IVs: 30 Def / 30 SpA / 3 Spe
+- Rain Dance
+- Hydro Pump
+- Ice Beam
+- Hidden Power [Grass]

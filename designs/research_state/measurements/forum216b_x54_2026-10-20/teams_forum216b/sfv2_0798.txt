@@ -1,0 +1,58 @@
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Roar
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 200 HP / 252 Def / 56 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Toxic
+- Aromatherapy
+- Soft-Boiled
+
+Donphan @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 SpD / 4 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Rest
+- Rapid Spin
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 220 Def / 36 Spe
+Bold Nature
+- Surf
+- Ice Beam
+- Calm Mind
+- Rest
+
+Sableye @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 Def / 4 Spe
+Bold Nature
+IVs: 0 Atk
+- Knock Off
+- Recover
+- Seismic Toss
+- Psych Up
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+IVs: 30 Atk / 30 SpD
+- Spikes
+- Hidden Power [Ghost]
+- Explosion
+- Rapid Spin

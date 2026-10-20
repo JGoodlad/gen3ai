@@ -1,0 +1,59 @@
+Armaldo @ Choice Band
+Ability: Battle Armor
+EVs: 202 HP / 252 Atk / 56 Def
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Hidden Power [Bug]
+- Rock Blast
+- Earthquake
+- Brick Break
+
+Shedinja @ Lum Berry
+Ability: Wonder Guard
+EVs: 252 Atk / 4 SpA / 252 Spe
+Adamant Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Swords Dance
+- Shadow Ball
+- Silver Wind
+- Hidden Power [Fighting]
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 Def / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Swords Dance
+- Megahorn
+- Substitute
+- Rock Slide
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Sunny Day
+- Spikes
+- Zap Cannon
+- Rapid Spin
+
+Pinsir @ Leftovers
+Ability: Hyper Cutter
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
+- Hidden Power [Ghost]
+- Rock Slide
+- Brick Break
+- Rain Dance
+
+Scizor @ Salac Berry
+Ability: Swarm
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 SpD
+- Swords Dance
+- Reversal
+- Endure
+- Hidden Power [Ghost]

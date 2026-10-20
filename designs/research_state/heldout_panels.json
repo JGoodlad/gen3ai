@@ -108,6 +108,23 @@
    "held_out_from": [
     "training"
    ]
+  },
+  "forum216b": {
+   "role": "CONFIRMATION panel for X54 (the Metamon goal's read): human-built forum teams, SEALED -- never read by any meter, never trained on, until X54 (main.heldout_panels.SEALED)",
+   "source": "216 of w_forum_v1's tier AB (Smogon forum v2, VERBATIM pastes) as committed at b3886800c, carved BEFORE X35's D1 arm launched (beat-Metamon FINDING 2); w_forum_v1 was rebuilt without them and their near neighbours",
+   "team_dir": "designs/research_state/measurements/forum216b_x54_2026-10-20/teams_forum216b",
+   "n": 216,
+   "content_digest": "7831e2d2f5816bd75e74c359b258cc8a1a4b889a4cce0dff31d4ddf798f63d02",
+   "draw_rule": "forum216b_x54_2026-10-20/README.md 'The draw rule' (draw_forum216b.py): AB ids sorted, shuffled once with random.Random(5400); ladder_weights_v1 strata filled to forum72's shares x3 (CORE 12 / NEAR 162 / FAR 42), curator cap 42 (forum72's 14 x3); rejecting validator / Hidden Power failures and exact / >= 4 shared with the pool, home72, away, heldout72, heldout72_hpfix, forum72, p72 or an earlier draw",
+   "seed": 5400,
+   "manifest": {
+    "path": "designs/research_state/measurements/forum216b_x54_2026-10-20/forum216b_manifest.json",
+    "sha256": "f34f133fdfe37fc0cee4b19e63bb481d08b9506e4c5f2da81800f6b0fa7ebf81"
+   },
+   "frozen_since": "2026-10-20 (registered before X35's D1 arm launched)",
+   "held_out_from": [
+    "training"
+   ]
   }
  },
  "subsets_covered_by_parents": {

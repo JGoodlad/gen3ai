@@ -1,0 +1,59 @@
+Salamence @ Choice Band
+Ability: Intimidate
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Earthquake
+- Rock Slide
+- Brick Break
+
+Blissey (F) @ Leftovers
+Ability: Natural Cure
+EVs: 212 HP / 252 Def / 44 Spe
+Bold Nature
+IVs: 0 Atk
+- Soft-Boiled
+- Aromatherapy
+- Seismic Toss
+- Thunder Wave
+
+Umbreon @ Leftovers
+Ability: Synchronize
+EVs: 252 HP / 100 Def / 96 SpA / 60 SpD
+Calm Nature
+IVs: 0 Atk
+- Wish
+- Protect
+- Pursuit
+- Toxic
+
+Kingler @ Leftovers
+Ability: Shell Armor
+EVs: 252 HP / 252 Def / 4 Spe
+Impish Nature
+IVs: 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Knock Off
+- Harden
+- Rest
+- Hidden Power [Fighting]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 248 HP / 204 Def / 44 SpD / 12 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Toxic
+- Protect
+- Roar
+
+Forretress @ Leftovers
+Ability: Sturdy
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Spikes
+- Rapid Spin
+- Hidden Power [Bug]
+- Sunny Day

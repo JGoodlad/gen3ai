@@ -1,0 +1,60 @@
+Tyranitar @ Leftovers
+Ability: Sand Stream
+Shiny: Yes
+EVs: 252 HP / 188 Atk / 16 Def / 52 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Focus Punch
+- Earthquake
+- Hidden Power [Bug]
+
+Starmie @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Ice Beam
+- Thunderbolt
+- Rapid Spin
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+Shiny: Yes
+EVs: 240 HP / 240 SpD / 28 Spe
+Calm Nature
+- Taunt
+- Toxic
+- Drill Peck
+- Spikes
+
+Swampert @ Leftovers
+Ability: Torrent
+Shiny: Yes
+EVs: 248 HP / 136 Def / 48 SpA / 44 SpD / 32 Spe
+Bold Nature
+- Surf
+- Ice Beam
+- Focus Punch
+- Protect
+
+Aerodactyl @ Liechi Berry
+Ability: Rock Head
+EVs: 4 HP / 252 Atk / 252 Spe
+Jolly Nature
+- Substitute
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 76 HP / 252 SpA / 180 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Leech Seed
+- Hidden Power [Fire]
+- Psychic
+- Giga Drain

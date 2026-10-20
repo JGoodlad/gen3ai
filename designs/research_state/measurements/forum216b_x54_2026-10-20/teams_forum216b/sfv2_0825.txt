@@ -1,0 +1,56 @@
+Metagross @ Choice Band
+Ability: Clear Body
+EVs: 72 HP / 252 Atk / 184 Spe
+Adamant Nature
+- Meteor Mash
+- Explosion
+- Double-Edge
+- Brick Break
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 88 HP / 180 Atk / 120 Def / 120 SpD
+Adamant Nature
+- Curse
+- Self-Destruct
+- Shadow Ball
+- Earthquake
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 252 HP / 140 Atk / 116 Spe
+Adamant Nature
+- Substitute
+- Dragon Dance
+- Earthquake
+- Rock Slide
+
+Gyarados @ Leftovers
+Ability: Intimidate
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Hidden Power [Flying]
+- Earthquake
+- Thunder Wave
+
+Heracross @ Salac Berry
+Ability: Swarm
+EVs: 252 Atk / 4 SpD / 252 Spe
+Adamant Nature
+IVs: 30 HP
+- Substitute
+- Swords Dance
+- Megahorn
+- Focus Punch
+
+Starmie @ Leftovers
+Ability: Natural Cure
+EVs: 252 HP / 40 Def / 216 Spe
+Timid Nature
+IVs: 0 Atk
+- Surf
+- Thunder Wave
+- Rapid Spin
+- Recover

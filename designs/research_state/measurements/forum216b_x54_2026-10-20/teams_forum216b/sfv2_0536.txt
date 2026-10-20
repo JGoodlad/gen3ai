@@ -1,0 +1,55 @@
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 252 SpD / 4 Spe
+Careful Nature
+- Spikes
+- Roar
+- Protect
+- Drill Peck
+
+Gengar @ Leftovers
+Ability: Levitate
+EVs: 176 Atk / 144 SpA / 188 Spe
+Hasty Nature
+- Thunderbolt
+- Ice Punch
+- Hypnosis
+- Focus Punch
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 240 HP / 252 Def / 16 Spe
+Bold Nature
+- Calm Mind
+- Surf
+- Rest
+- Roar
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 156 Atk / 212 SpD / 140 Spe
+Adamant Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Dragon Dance
+- Earthquake
+- Hidden Power [Flying]
+- Rock Slide
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 16 Atk / 128 Def / 112 Spe
+Impish Nature
+- Meteor Mash
+- Earthquake
+- Psych Up
+- Explosion
+
+Regice @ Leftovers
+Ability: Clear Body
+EVs: 252 HP / 236 SpA / 20 Spe
+Modest Nature
+IVs: 0 Atk
+- Ice Beam
+- Thunderbolt
+- Thunder Wave
+- Psych Up

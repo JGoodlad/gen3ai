@@ -1,0 +1,58 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 216 HP / 140 SpA / 152 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Thunderbolt
+- Hidden Power [Grass]
+- Thunder Wave
+- Baton Pass
+
+Weezing @ Leftovers
+Ability: Levitate
+EVs: 4 Atk / 252 SpA / 252 Spe
+Naive Nature
+IVs: 30 Atk / 30 SpA
+- Fire Blast
+- Hidden Power [Grass]
+- Will-O-Wisp
+- Explosion
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 168 HP / 228 Atk / 112 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Earthquake
+- Beat Up
+- Aerial Ace
+- Hidden Power [Bug]
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 108 Def / 252 SpA / 148 Spe
+Rash Nature
+- Hydro Pump
+- Earthquake
+- Ice Beam
+- Focus Punch
+
+Ludicolo @ Leftovers
+Ability: Swift Swim
+EVs: 160 HP / 244 SpA / 104 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA
+- Rain Dance
+- Surf
+- Ice Beam
+- Hidden Power [Grass]
+
+Kingdra @ Lum Berry
+Ability: Swift Swim
+EVs: 248 HP / 244 SpA / 16 Spe
+Modest Nature
+IVs: 0 Atk
+- Rain Dance
+- Substitute
+- Ice Beam
+- Hydro Pump

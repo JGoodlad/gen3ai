@@ -1,0 +1,58 @@
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 156 HP / 252 SpA / 100 Spe
+Quiet Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Meteor Mash
+- Explosion
+
+Raikou @ Leftovers
+Ability: Pressure
+EVs: 4 HP / 252 SpA / 252 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Calm Mind
+- Thunderbolt
+- Hidden Power [Grass]
+- Substitute
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 184 HP / 156 Atk / 168 Spe
+Adamant Nature
+- Dragon Dance
+- Rock Slide
+- Earthquake
+- Double-Edge
+
+Salamence @ Leftovers
+Ability: Intimidate
+EVs: 116 HP / 252 Atk / 140 Spe
+Adamant Nature
+IVs: 30 SpA / 30 SpD / 30 Spe
+- Dragon Dance
+- Hidden Power [Flying]
+- Rock Slide
+- Earthquake
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 188 SpA / 68 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Rest
+- Surf
+- Ice Beam
+
+Jirachi @ Leftovers
+Ability: Serene Grace
+EVs: 248 HP / 36 Def / 128 SpA / 96 Spe
+Timid Nature
+IVs: 30 Atk / 30 SpA
+- Calm Mind
+- Psychic
+- Fire Punch
+- Hidden Power [Grass]

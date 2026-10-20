@@ -43,6 +43,7 @@ THE 2026-10-19 AMENDMENTS, and AM-8 / AM-9 of 2026-10-20 (``main.x35.batch``; ``
     python -m main.x35.kit stage-check --arm d1 --seed 3501 --stage <stage>               # AM-9 / AM-3 / AM-4 / AM-8
     python -m main.x35.kit k9b --run-dir models/<run> --stage <stage>                     # AM-6, at each arm's end
     python -m main.x35.kit k9b-batch --stage <stage>                                      # AM-6 pre-check
+    python -m main.x35.kit corpus-check --arm d1 --pin <sha>                              # D1-CORPUS: pre-check 2d
 """
 from __future__ import annotations
 
@@ -74,8 +75,20 @@ FORK_GIB = 20.68
 PHASE1_SCHEMA = "x35_phase1_exploiters_v1"
 TOY_EXTRAS = ["--snapshot-ladder-games", "0", "--supply-starve-cycles", "self_play_pool=0"]
 #: D1 / X38's ONE lever (``design_diversity_teams_opponents.md`` §4.2): half of each side's draws from the pin-safe
-#: forum corpus (``utils.team_corpora``, tier ABC = 2,424 teams), both sides; eval stays on the pool.
+#: forum corpus (``utils.team_corpora``, tier ABC = 1,982 teams since AMENDMENT D1-CORPUS), both sides; eval stays on
+#: the pool.
 D1_LEVER = ("--team-mix", "w_forum_v1@ABC:0.5", "--team-mix-sides", "both")
+#: AMENDMENT D1-CORPUS (2026-10-20, BATCH1_LAUNCH_SHEET.md §0, before any D1 launch): the corpus D1_LEVER names IS this
+#: one. It is ``w_forum_v1`` rebuilt after X54's sealed confirmation panel ``forum216b`` was carved out of its AB tier
+#: (``designs/research_state/measurements/forum216b_x54_2026-10-20/``). It was 2,424 teams, tier sha ``7bcdc835c107``.
+#: The PIN must carry it (:func:`corpus_check`, launch pre-check 2d): a pin from before the carve would train D1 on the
+#: panel X54 confirms on. The pin must also carry a PASSing crash soak OF THIS corpus (``soak_selfcheck.json`` naming its
+#: data sha256): the rebuild re-selected the C tier, and 323 of its teams were in no soaked corpus.
+D1_CORPUS = {"corpus": "w_forum_v1", "tier": "ABC", "n": 1982,
+             "tier_sha256": "73a76e808431f5c430edf7effafc121a0b4822c6dbd19d33b82b6bb60570bdc4",
+             "data_sha256": "7f42d95f7f08f667738fe6e8f2af33ede93f5dec78af6fa48ed3f72f3d231336"}
+#: The arms whose argv names a team corpus, and the identity their pin must carry.
+ARM_CORPUS = {"d1": D1_CORPUS}
 #: X47's ONE lever (``design_bot_ideas_screen.md`` §2.1; B-GROW, T64): the toy's 2 attention rounds become 4 at the
 #: fork, the 2 new rounds identity-init, so the grown network starts as T*'s function bit for bit (the child refuses
 #: to start otherwise: ``FATAL_CONFIG``). ``--dry-run`` prints ``grow : DECLARED trunk_layers 2 -> 4``.
@@ -454,6 +467,41 @@ def disk_check(models_dir: str, required_gib: float, *, thinning: bool,
                          " -- thin finished arms (F22) or pass --thinning")
 
 
+def corpus_check(arm: str, pin: str, repo: str) -> Tuple[bool, str]:
+    """``(ok, line)``: the team corpus ``arm`` names (:data:`ARM_CORPUS`) is, AT ``pin``, the registered identity
+    (count, tier sha256 and data sha256, read from the pin's committed manifest). An arm that names no corpus passes."""
+    import subprocess
+
+    want = ARM_CORPUS.get(canonical_arm(arm))
+    if want is None:
+        return True, f"{arm} names no team corpus"
+    rel = f"src/utils/team_corpora/{want['corpus']}/manifest.json"
+    p = subprocess.run(["git", "-C", repo, "show", f"{pin}:{rel}"], capture_output=True, text=True)
+    if p.returncode != 0:
+        return False, f"the pin {pin[:12]} holds no {rel}: {p.stderr.strip()[-200:]}"
+    man = json.loads(p.stdout)
+    tier = man.get("tiers", {}).get(want["tier"], {})
+    got = {"n": tier.get("n"), "tier_sha256": tier.get("sha256"), "data_sha256": man.get("data_sha256")}
+    bad = {k: (got[k], want[k]) for k in got if got[k] != want[k]}
+    if bad:
+        return False, (f"the pin {pin[:12]}'s {want['corpus']}@{want['tier']} is not {arm}'s registered corpus "
+                       f"(AMENDMENT D1-CORPUS): " + "; ".join(f"{k} {g} != {w}" for k, (g, w) in bad.items()))
+    soak_rel = f"src/utils/team_corpora/{want['corpus']}/soak_selfcheck.json"
+    p = subprocess.run(["git", "-C", repo, "show", f"{pin}:{soak_rel}"], capture_output=True, text=True)
+    soak = json.loads(p.stdout) if p.returncode == 0 else {}
+    sc = soak.get("corpus", {})
+    if not (soak.get("verdict") == "PASS" and soak.get("core_errors") == [] and sc.get("tier") == want["tier"]
+            and sc.get("data_sha256") == want["data_sha256"]
+            and soak.get("battles_finished") == soak.get("battles_planned") > 0):
+        return False, (f"the pin {pin[:12]} carries no PASSing crash soak of {arm}'s corpus ({soak_rel} names data "
+                       f"{str(sc.get('data_sha256'))[:12]}, verdict {soak.get('verdict')}; want data "
+                       f"{want['data_sha256'][:12]}): run `python -m utils.team_corpora.soak {want['corpus']} --tier "
+                       f"{want['tier']} --rounds 10 --out {soak_rel}` and commit it (AMENDMENT D1-CORPUS)")
+    return True, (f"{want['corpus']}@{want['tier']} at the pin {pin[:12]}: {want['n']} teams, tier sha "
+                  f"{want['tier_sha256'][:12]} (the registered corpus), soaked: {soak['battles_finished']} battles, "
+                  "0 core errors")
+
+
 def _load(path: str) -> Dict[str, Any]:
     return dict(json.loads(Path(path).read_text()))
 
@@ -511,6 +559,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     rc.add_argument("--pin", required=True, help="the full sha")
     rc.add_argument("--stage", required=True)
     rc.add_argument("--repo", default=None, help="the git checkout the commits are looked up in (default: this one)")
+    cc = sub.add_parser("corpus-check", help="AMENDMENT D1-CORPUS: the arm's team corpus AT the pin is its registered "
+                                             "identity (an arm with no corpus passes); exit 0 / 1")
+    cc.add_argument("--arm", required=True, type=canonical_arm, choices=sorted(ARMS))
+    cc.add_argument("--pin", required=True, help="the full sha")
+    cc.add_argument("--repo", default=None, help="the git checkout the pin is read from (default: this one)")
     po = sub.add_parser("pool-check", help="POOL: the seeded set == the side's record; exit 0 / 1")
     po.add_argument("--arm", required=True, type=canonical_arm, choices=sorted(ARMS))
     po.add_argument("--call", required=True)
@@ -611,6 +664,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             ok, lines = _B.required_check(a.stage, a.side, a.pin, a.repo or str(repo_root()))
             for x in lines:
                 print(f"[x35 kit] required-check {a.side}: {x}")
+            return 0 if ok else 1
+        if a.cmd == "corpus-check":
+            from utils.paths import repo_root
+
+            ok, line = corpus_check(a.arm, a.pin, a.repo or str(repo_root()))
+            print(f"[x35 kit] corpus-check: {'PASS' if ok else 'FAIL'}: {line}")
             return 0 if ok else 1
         if a.cmd == "pool-check":
             call = _load(a.call)
