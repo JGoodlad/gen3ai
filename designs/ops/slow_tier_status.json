@@ -3091,6 +3091,22 @@
    "contention": 1.71,
    "detail": ""
   },
+  "src/main/h2h/cycle_monitor_integration_test.py::test_a_second_tick_plays_nothing_and_the_decision_verifies": {
+   "status": "pass",
+   "commit": "ccd660f6a70551f9058094271216a74d0d44ee33",
+   "at": "2026-10-20T07:32:18Z",
+   "duration_s": 0.41,
+   "contention": 7.65,
+   "detail": ""
+  },
+  "src/main/h2h/cycle_monitor_integration_test.py::test_one_tick_plays_every_row_and_decides_once": {
+   "status": "pass",
+   "commit": "ccd660f6a70551f9058094271216a74d0d44ee33",
+   "at": "2026-10-20T07:32:18Z",
+   "duration_s": 924.83,
+   "contention": 8.08,
+   "detail": ""
+  },
   "src/main/h2h/plateau_integration_test.py::test_a_second_tick_plays_nothing": {
    "status": "pass",
    "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
