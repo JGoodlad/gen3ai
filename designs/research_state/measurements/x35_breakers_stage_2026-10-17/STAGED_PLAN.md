@@ -1,9 +1,12 @@
 # X35, plateau-breakers: STAGED ON PAPER (2026-10-17)
 
-**Status: STAGED, not launched; every launch NEEDS THE ORCHESTRATOR'S GO.** The spec is
+**Status: STAGED, not launched; every launch NEEDS THE ORCHESTRATOR'S GO. BOTH PLATEAUS ARE CALLED (2026-10-19): P\* =
+X26 @ 280,000,170 and T\* = X34 @ 290,000,087 (sha256 `cfa7f7be…a22965e7`); both reference populations are FROZEN and all
+32 batch-1 argvs are validated on the real values at `03b983be` (see the paragraphs below and
+[`BATCH1_LAUNCH_SHEET.md`](BATCH1_LAUNCH_SHEET.md) §4.3).** The spec is
 [`design_compute_efficiency.md`](../../../endstate/design_compute_efficiency.md) §5.6. Its backlog rows are
 `EXPERIMENT_BACKLOG.md` CE-3 to CE-3g, and its builds are `TASK_BACKLOG.md` T54–T59. X35 starts when X26 (`rb_x26_s2601`)
-and X34 (`rb_toy_ent_s4002_deep`) have both reached their Tier-1 plateau and the GPU is free. **The stage kit (T55)
+and X34 (`rb_toy_ent_s4002_deep`) have both reached their Tier-1 plateau (they have) and the GPU is free. **The stage kit (T55)
 is BUILT (2026-10-17, §6):** the launch script, the R freeze, the readout and the Kakuna runner.
 
 **D1 (X38, the pool-widening arm) is staged too (2026-10-19, §7):** its argv is `main.x35.kit` arm `d1`, dry-run
@@ -16,14 +19,20 @@ record, the G-E readers, C1 (a)); each is built in `src/main/x35/` (`batch.py`, 
 `launch_x35.sh` (pre-checks 2b, 9, 10, 11). The launch sheet's §0 is the table; its §1 the new order. §4 below is
 superseded by it.
 
-**THE LAUNCH SHEET for batch 1 + X47 (2026-10-19): [`BATCH1_LAUNCH_SHEET.md`](BATCH1_LAUNCH_SHEET.md).** The 24 forks in GPU order with GPU-h, stop rule and matched control; every argv `checkargs` exit 0, "would launch" and a PASS verdict at `9c3bf3c4` (the toy on the 200M stand-in for T\*, [`batch1_validation_9c3bf3c4/`](batch1_validation_9c3bf3c4/); the first validation, at `803a13e3`, is [`batch1_validation_803a13e3/`](batch1_validation_803a13e3/) and is superseded: its toy lines typed K9(b) `fatal`); the T62 / FP32_ALT pin variants (no FP32_ALT commit exists); the pre-launch checks and the failure handling. **X47 is a kit arm** (`toy_x47`, F-LS-1 closed). **Ruled by the orchestrator (2026-10-19): C2** (X47 interleaved with its toy C0, toy A2 last), **C3** (the toy arms run K9(b) `warn` under X34's ceilings) and **C4** (batch 1 launches without R0); C1, C5 and C6 are still open. [`validate_batch1.sh`](validate_batch1.sh) rebuilds and re-validates the lines at any pin, with a deterministic verdict per line.
+**THE LAUNCH SHEET for batch 1 + X47 (2026-10-19): [`BATCH1_LAUNCH_SHEET.md`](BATCH1_LAUNCH_SHEET.md).** The 32 forks in AM-7's GPU order (14 unconditional, 18 on a stage condition; sheet §1) with GPU-h, stop rule and matched control; every argv `checkargs` exit 0, "would launch" and a PASS verdict at `03b983be` (all 32 forks, the toy on the REAL T\*, [`batch1_validation_03b983be/`](batch1_validation_03b983be/); the older validations, on the 200M stand-in for T\*, are history: `d825c6a1` (32 forks), `9c3bf3c4` (24) and `803a13e3` (24, whose toy lines typed K9(b) `fatal`), kept because `kit_test.py` reads the last one's argv files); the T62 / FP32_ALT pin variants (no FP32_ALT commit exists); the pre-launch checks and the failure handling. **X47 is a kit arm** (`toy_x47`, F-LS-1 closed). **Ruled by the orchestrator (2026-10-19): C2** (X47 interleaved with its toy C0, toy A2 last), **C3** (the toy arms run K9(b) `warn` under X34's ceilings) and **C4** (batch 1 launches without R0); C1 and the AM-1..AM-7 rulings have since been made (sheet §0); C5 and C6 are still open. [`validate_batch1.sh`](validate_batch1.sh) rebuilds and re-validates the lines at any pin, with a deterministic verdict per line.
 
 **R (production) is FROZEN (2026-10-19)** at P\* = X26 @ 280,000,170 (Amendment 5's `TIER1_PLATEAU` call, sha256
 `814823c5…91ed`): [`reference_population_production.json`](reference_population_production.json), content sha256
 `39bae18f…5bec0`, `refpop verify` OK. Six members: A-block 280 / 270 / 80 / 140 / 210M, and X-block `production`
-(band score 0.6935 at 500 pairs, KEPT). **T\* is ABSENT** (X34 not launched): the X-block has one member, the toy
-side's R is not frozen, and adding T\* needs a new freeze (F-R1). Write-up:
-[`../x35_refpop_freeze_2026-10-19/README.md`](../x35_refpop_freeze_2026-10-19/README.md). Nothing was launched.
+(band score 0.6935 at 500 pairs, KEPT). Write-up:
+[`../x35_refpop_freeze_2026-10-19/README.md`](../x35_refpop_freeze_2026-10-19/README.md). **R (toy) is FROZEN
+(2026-10-19, after X34 plateaued)** at T\* = X34 @ 290,000,087 (sha256 `cfa7f7be…a22965e7`):
+[`reference_population_toy.json`](reference_population_toy.json), content sha256 `856c04cb…55a4d`, `refpop verify` OK. Six
+members: A-block 290 / 280 / 80 / 150 / 220M, and X-block `pstar_x26` (T\* vs P\*: **0.4160** [0.3863, 0.4457] at 500
+pairs, KEPT); A1's archive 30 / 70 / 100 / 130 / 170 / 200 / 240 / 270M. Write-up:
+[`../x35_toy_refpop_freeze_2026-10-19/README.md`](../x35_toy_refpop_freeze_2026-10-19/README.md). **The production R still
+has ONE X member** (T\* was absent when it froze): adding T\* is a NEW freeze, the orchestrator's open choice C5 (the toy
+band cell has T\* as the player, so it cannot be read for the production side, sheet §5). Nothing was launched.
 
 **How this was staged.** Everything ran at `9ebda190` with `CUDA_VISIBLE_DEVICES=""`, under `nice -n 19 taskset -c
 5-7,13-15`, with no GPU lease. It used only `main.checkargs`, `main.launcher --dry-run` and one offline call to
@@ -37,7 +46,7 @@ side's R is not frozen, and adding T\* needs a new freeze (F-R1). Write-up:
 | pin `9ebda1904da7a7782f22de2495b6e4c51368510b` | `X35_PIN_1`: a main commit carrying T54 (and T56 / T57 if they landed) |
 | A1's archive = 20, 40, …, 160M (`a1_archive_spec_standin.txt`) | N_k = the 10M-multiple checkpoint nearest k·(P\* − 20M)/8, k = 1..8, ties down |
 | `--steps 200000055` | P\* + 20,000,000 (production), T\* + 70,000,000 (toy) |
-| toy C0 from `rb_toy_ent_s4002/final_model.zip` (100,081,428) | T\* in `rb_toy_ent_s4002_deep` |
+| toy C0 from `rb_toy_ent_s4002/final_model.zip` (100,081,428) | T\* in `rb_toy_ent_s4002_deep` (**resolved 2026-10-19: the 290M node, step 290,000,087**; the 200M node used as a later stand-in is retired) |
 
 ## 2. The validated argvs (launcher flags: `--restart-interval-hours 24 --pin-commit <PIN>`)
 
@@ -81,7 +90,7 @@ python -m main.launcher --restart-interval-hours 24 --pin-commit 9ebda1904da7a77
 4. The sha256 of P\* and of every archive node is unchanged since the call.
 5. `checkargs --pin X35_PIN_1` exits 0.
 6. The dry-run says "would launch", FORK of `rb_x26_s2601`, +20,000,000.
-7. The reference population R is frozen and its file is written before the first arm launches (§5.6.4). **Production: DONE 2026-10-19** (`reference_population_production.json`; toy: pending T\*).
+7. The reference population R is frozen and its file is written before the first arm launches (§5.6.4). **Production: DONE 2026-10-19** (`reference_population_production.json`); **toy: DONE 2026-10-19** (`reference_population_toy.json`, on the real T\*).
 8. The disk has room for the whole batch, or finished arms are being thinned (F22).
 
 ## 4. The batch-1 queue (production first, then the toy block with X47 and the calibration pair)

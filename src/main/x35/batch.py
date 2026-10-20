@@ -12,7 +12,8 @@ exposes each as a subcommand, and ``launch_x35.sh`` calls them as pre-checks (a 
   digest) in :data:`POOL_FILE`; every later launch recomputes it and HOLDs on any difference, and the post-spawn
   check compares the fork's ``pool_seed.json`` names with the record. The pool's METADATA (``summary.json``, pruned
   by T54 but carrying the parent's LATEST scalars, F31) is recorded descriptively, never compared: X26 has ended, so
-  production's cannot move; the toy's parent X34 is live, so the toy record is written at the first TOY launch.
+  production's cannot move, and X34 STOPPED (it plateaued, 2026-10-19), so the toy's cannot move either; each side's record is
+  still written only by that side's first GO (a read-only ``pool-check`` without ``--write`` previews the digest).
 * **AM-2, THE VARIANCE GATE G1** (after row 6: A1 and C0 at s3501-s3503). σ̂ = the POOLED WITHIN-ARM SD of the six
   finals' population scores S (pp; 4 df). **PASS iff σ̂ ≤ 1.2 pp**; σ̂ > 1.2, or within :data:`RULE8_EPS` of 1.2
   (rule 8: counted as above), is **HOLD**: D1, A2 and the toy calibration wait for the orchestrator's re-plan; C0

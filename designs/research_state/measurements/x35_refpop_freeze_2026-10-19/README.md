@@ -3,8 +3,10 @@
 **Status: R (production side) is FROZEN.** The file is
 [`../x35_breakers_stage_2026-10-17/reference_population_production.json`](../x35_breakers_stage_2026-10-17/reference_population_production.json)
 (content sha256 `39bae18f9c0473372e0d3061f89201b6da0374c9788c2620b864924aa615bec0`, frozen 2026-10-19T08:22:55Z), and
-`python -m main.x35.refpop verify` on it prints OK. No X35 arm exists. Nothing was launched. The **toy side's R is
-NOT frozen**, because T\* does not exist yet (F-R1).
+`python -m main.x35.refpop verify` on it prints OK. No X35 arm exists. Nothing was launched. The **toy side's R was NOT
+frozen at this freeze**, because T\* did not exist yet (F-R1); **it has since been frozen on the real T\* (X34 @ 290M,
+2026-10-19, later the same day): [`../x35_toy_refpop_freeze_2026-10-19/README.md`](../x35_toy_refpop_freeze_2026-10-19/README.md)**.
+This production R is unchanged: it still has ONE X member (adding T\* is the open choice C5).
 
 - **The rule:** [`design_compute_efficiency.md`](../../../endstate/design_compute_efficiency.md) §5.6.4.
 - **The tool:** `src/main/x35/refpop.py` (T55, `b18684a3`), run from a worktree at `82858f43` (that is the file's

@@ -1,7 +1,8 @@
 # X35 batch 1 + X47: the LAUNCH SHEET (staged 2026-10-19, nothing launched)
 
-**Status: STAGED and AMENDED (§0, 2026-10-19, before any X35 launch); every argv of the amended order validated at
-main HEAD `d825c6a1` (§4.3); nothing launched; every launch NEEDS THE ORCHESTRATOR'S GO.** X47 is a **kit arm**
+**Status: STAGED and AMENDED (§0, 2026-10-19, before any X35 launch); T\* RESOLVED (X34 plateaued, 2026-10-19: "Words used here"); the
+toy R is FROZEN on the real T\*; every argv of the amended order (32 forks, the toy on the real T\*) validated at main
+HEAD `03b983be` (§4.3); nothing launched; every launch NEEDS THE ORCHESTRATOR'S GO.** X47 is a **kit arm**
 (`toy_x47`, F-LS-1 closed). The orchestrator has ruled **C1** (a), **C2** (X47 interleaved with its toy C0), **C3** (the
 toy arms run K9(b) `warn` under X34's ceilings), **C4** (batch 1 launches without R0) and every amendment of the
 [adversarial review](X35_BATCH1_REVIEW.md) (AM-1 to AM-7, the POOL check, the G-E readers); C5 and C6 are still open
@@ -17,11 +18,17 @@ launches the toy arms under `fatal`: take no earlier pin).
 **Words used here.**
 - **P\*** = X26's plateau checkpoint, `models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip`, sha256
   `814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed` (R's frozen call).
-- **T\*** = X34's plateau checkpoint: the newest node of its second FLAT Tier-1 check. X34 (`rb_toy_ent_s4002_deep`)
-  read FLAT_ONCE at 200M; a FLAT at the 210M check makes T\* the **210M node**. That file does not exist yet, so every
-  toy line here was validated on the **200M node as a STAND-IN** (`checkpoint_200000244_steps.zip`, sha256
-  `bb6271a3…0de057`). The stand-in is never a launch value. (X34 has since written the 210M node; whether it is T\* is the
-plateau call's, not this sheet's.)
+- **T\*** = X34's plateau checkpoint, **RESOLVED 2026-10-19**: X34 (`rb_toy_ent_s4002_deep`) PLATEAUED and is stopped (the
+  orchestrator's news of 2026-10-19; the run dir holds `final_model_interrupted.zip` from 23:00 PDT and a last
+  checkpoint at 292,000,216; no launcher is live, `kit live` exits 0; the Tier-1 record behind the call is the
+  plateau call's, not this sheet's). T\* is the **290M node**,
+  `models/rb_toy_ent_s4002_deep/checkpoints/checkpoint_290000087_steps.zip`, step **290,000,087**, sha256
+  `cfa7f7bee7b7a43959f496ce6d5a34556bae914de9c80f90f9342a05a22965e7` (`cfa7f7be…a22965e7`; re-hashed here on the archive
+  file AND on the verified copy in `~/.cache/gen3ai/x34_plateau/`, whose `SHA256SUMS` lists it). Every toy line below
+  is built from the toy R file frozen on it (`reference_population_toy.json`, §4.2). The earlier 200M and 210M
+  guesses (a stand-in `checkpoint_200000244_steps.zip`, sha256 `bb6271a3…0de057`; the 210M node of a hypothetical
+  second FLAT check) are RETIRED: no sheet line, argv or validation below uses them, and the old stand-in validations
+  are kept as history only (`batch1_validation_803a13e3/`, `batch1_validation_9c3bf3c4/`, `batch1_validation_d825c6a1/`).
 - **C0** = the plain continuation control (the same fork with no lever). An arm is read only against the C0 of its own
   start checkpoint AND its own pin.
 - **b-ON / b-OFF** = the arm with its lever / its C0, at the same seed.
@@ -138,32 +145,35 @@ the stage is ALLOWED (AM-7 / AM-3 / AM-4), **10** the seeded pool set equals the
 finished batch-1 arm PASSed K9(b) at its end (AM-6). The first GO also needs `--t62 <verdict>` (it writes
 `x35_pin_batch1.txt`).
 
-1. **X34 has STOPPED by its registered rule** (two consecutive FLAT Tier-1 checks, 200M and 210M), its launcher PID is
-   gone (`ps -p`), and the stop is recorded. T\* is the 210M node: record its path, step and sha256 in the call
-   (`sha256sum models/rb_toy_ent_s4002_deep/checkpoints/checkpoint_210*_steps.zip`).
+1. **X34 has STOPPED** (it plateaued: "Words used here"), its launcher PID is gone (`ps -p`; `python -m main.x35.kit live`
+   exits 0), and T\* is the 290M node: path, step and sha256 are in the toy R file (`reference_population_toy.json`,
+   `pstar`) and re-hashed by `refpop verify` at every launch. **DONE 2026-10-19** (the checks above).
 2. **The GPU is clear**: the battery and the X14 A/B have finished, `nvidia-smi --query-compute-apps=pid --format=csv`
    lists nothing, and `scripts/ops/gpu_lease.sh status` reads FREE or the Training session's lease.
    `python -m main.x35.kit live` exits 0 (no training run live).
 3. **The battery's T62 verdict is read** (`read_battery.py`): ADOPT, FP32_ALT, INCONCLUSIVE or INCOMPLETE. It picks the
    pin variant (§3).
 4. **The pin** carries every commit in [`x35_required_commits.txt`](x35_required_commits.txt): T54 `cdab9cfe`, B-D2
-   `c1b0c1f0`, the forum-corpus lift `f9360870`, F-BI-2 `4df10e65`, B-GROW `24616919`, B-GROW × F-BI-2 `aa5feaf5`, and
-   T62 `bd3126e0` (all added 2026-10-19 except the first two; `launch_x35.sh` pre-check 2 enforces the file).
+   `c1b0c1f0`, the forum-corpus lift `f9360870`, F-BI-2 `4df10e65`, B-GROW `24616919`, B-GROW × F-BI-2 `aa5feaf5`, T62
+   `bd3126e0`, and the canary YARDSTICK fix `03b983be` (its code is `ee49f1f9`, `gen3_r1_yardstick_margin_v1`; `03b983be`
+   is the ship tip; all added 2026-10-19 except the first two; `launch_x35.sh` pre-check 2 enforces the file).
 5. **P\*'s sha256** is `814823c5…91ed`, and `python -m main.x35.refpop verify reference_population_production.json`
    prints OK (it re-hashes P\*, the 8 archive nodes and R's 6 members, all in X26's run dir: never thin those 14 files,
    F-R3).
-6. **The toy side's R is frozen** before the first toy arm: `refpop freeze --side toy` on T\* (§4.3). Not needed for
-   the production block.
+6. **The toy side's R is frozen** before the first toy arm: **DONE 2026-10-19** on the real T\*
+   (`reference_population_toy.json`, §4.2; `python -m main.x35.refpop verify` it prints OK). Not needed for the
+   production block.
 7. **No `models/rb_x35*` directory exists** for the arm (a restart RESUMES through the launcher, never this sheet).
 8. **`data/` is FROZEN** from the first arm's launch until the last X35 arm ends: every X35 arm is a pinned run, and a
    pin isolates code, not data. The forum corpus D1 reads lives in `src/utils/team_corpora/` (pin-safe), not `data/`.
-9. **The disk.** Today 289 GiB are free (`df`, 2026-10-19 18:10). The dry-run asks 10.97 GiB per production fork and
-   13.05 GiB per toy fork (each with a 25 % margin and a 4 GiB reserve, so the sum over-counts). The kit's pre-check 8
-   counts every `BATCH1` fork not yet created (now 24, X47's 3 included) at the REQUIRED GiB of the launch in hand: at
-   the FIRST production launch 24 × 10.97 = 263 GiB against 289 free, a PASS with ≈ 26 GiB to spare (F-LS-5). The
-   count falls as run directories appear, but the free space falls with it: thin finished arms to their 10M nodes +
-   final as they end (F22), and re-read `df` before each toy launch. `--thinning` is the orchestrator's word, never the
-   script's default.
+9. **The disk.** Today 442.9 GiB are free (`kit disk`, 2026-10-19 23:10; it was 289 GiB at 18:10). The dry-run asks
+   10.97 GiB per production fork and 13.05 GiB per toy fork (each with a 25 % margin and a 4 GiB reserve, so the sum
+   over-counts). The kit's pre-check 8 counts every `BATCH1` fork not yet created (**32** since the amendment, X47's 5
+   included; a conditional fork its records REFUSED is not counted) at the REQUIRED GiB of the launch in hand: at the
+   FIRST production launch 32 × 10.97 = 351.0 GiB against 442.9 free, a PASS with ≈ 92 GiB to spare (F-LS-5); the same
+   count at the toy figure would be 32 × 13.05 = 417.6 GiB, also a PASS today. The count falls as run directories
+   appear, but the free space falls with it: thin finished arms to their 10M nodes + final as they end (F22), and
+   re-read `df` before each toy launch. `--thinning` is the orchestrator's word, never the script's default.
 
 ---
 
@@ -173,8 +183,8 @@ The battery's T62 gate ([`../gpu_window_battery_2026-10-19/README.md`](../gpu_wi
 adopt the float64 τ solve iff it costs ≤ 3 % of a training cycle (`cost_hi ≤ 3 %`); **FP32_ALT** iff `cost_lo > 3 %`;
 INCONCLUSIVE in between (the orchestrator decides).
 
-- **Variant T62 (ADOPT): `<PIN>` = main HEAD at launch**, a descendant of `803a13e3`, which is the commit every line
-  here was validated at. Main HEAD carries T62 by default.
+- **Variant T62 (ADOPT): `<PIN>` = main HEAD at launch**, a descendant of `03b983be` (the commit every line here was
+  last validated at, §4.3; it carries T62 `bd3126e0` and the canary yardstick fix). Main HEAD carries T62 by default.
 - **Variant FP32_ALT: NO SUCH COMMIT EXISTS (F-LS-2).** FP32_ALT is not a flag and not a revert. The battery README
   defines it as "the fp32 complementary-constraint alternative" from the T62 decision row in
   [`design_x5_belief_tokens.md`](../../../endstate/design_x5_belief_tokens.md): solve the COMPLEMENTARY constraint
@@ -204,23 +214,23 @@ run from the main checkout (`/home/goodlad/dev/gen3ai`) with `export PYTHONPATH=
 holds the GPU lease. `launch_x35.sh` without `GO` is a dry run of every pre-check; `GO` launches and needs the
 orchestrator's go.
 
-### 4.1 Production (validated at `9c3bf3c4` on the REAL P\*)
+### 4.1 Production (validated at `03b983be` on the REAL P\*)
 
 For each row of §1 (arms `a1`, `c0`, `d1`, `a2`, seeds 3501–3503), in order:
 
 ```bash
-# NEEDS GO. <PIN> = variant T62: main HEAD (≥ 803a13e3); variant FP32_ALT: the FP32_ALT commit (does not exist yet, §3).
+# NEEDS GO. <PIN> = variant T62: main HEAD (≥ 03b983be); variant FP32_ALT: the FP32_ALT commit (does not exist yet, §3).
 S=designs/research_state/measurements/x35_breakers_stage_2026-10-17
 $S/launch_x35.sh a1 3501 --pin <PIN> --lease-owner <owner>          # dry run: every pre-check, prints the line
 $S/launch_x35.sh a1 3501 --pin <PIN> --lease-owner <owner> GO       # only on the orchestrator's GO
 ```
 
-The argv the kit builds is, flag for flag, the validated file `batch1_validation_9c3bf3c4/argv_<arm>_s<seed>.txt`.
+The argv the kit builds is, flag for flag, the validated file `batch1_validation_03b983be/argv_<arm>_s<seed>.txt`.
 The launcher line it runs is:
 
 ```bash
 python -m main.launcher --restart-interval-hours 24 --pin-commit <PIN> \
-  $(cat $S/batch1_validation_9c3bf3c4/argv_<arm>_s<seed>.txt)
+  $(cat $S/batch1_validation_03b983be/argv_<arm>_s<seed>.txt)
 ```
 
 | arm | the argv after `--model P* --behaviour-check warn --steps 300000170 --checkpoint-every-steps 1000000 --device cuda` | run name |
@@ -232,24 +242,39 @@ python -m main.launcher --restart-interval-hours 24 --pin-commit <PIN> \
 
 Each is followed by `--seed <seed> --run-name <run name>`.
 
-### 4.2 Toy (validated at `9c3bf3c4` on the 200M STAND-IN for T\*)
+### 4.2 Toy (validated at `03b983be` on the REAL T\*, 290,000,087)
 
-**At the call (CPU, rule 5b, after check 1 of §2):**
-1. Plan the toy R on the real T\*:
-   `python -m main.x35.refpop plan --side toy --pstar <T*> --archive-dir models/rb_toy_ent_s4002/checkpoints --archive-dir models/rb_toy_ent_s4002_deep/checkpoints --x pstar_x26=<P*>`.
-   By the rule, T\* = 210M gives the archive N_1…N_8 = 20, 50, 70, 90, 120, 140, 170, 190M (95 and 142.5 resolve by
-   "nearest, ties down") and the A-block 210, 200, 60, 100, 150M. That is hand-computed; the tool's output is the record.
-2. Play the band cell T\* vs P\* (500 mirrored pairs, greedy vs greedy; the `plan` prints the `main.h2h play-many`
-   line; ≈ 15–30 min on one CPU lane at the production band cell's 1.23 games/s), then
-   `refpop freeze --side toy … --out $S/reference_population_toy.json`. P\* stays in the toy's X-block only if T\*'s score
-   against it lies in [0.20, 0.80]: an empty X-block is possible and is a FINDING for the orchestrator, not a stop.
-3. Build and validate every toy argv at the pin, in the kit's order (X47 is the kit arm `toy_x47`; `x47` is accepted as
-   its alias):
-   `$S/validate_batch1.sh --pin <PIN> --toy-call $S/reference_population_toy.json --out /tmp/x35_toy_val toy_a1:3601 toy_c0:3601 toy_x47:3601 toy_x47:3602 toy_c0:3602 toy_a1:3602 toy_a1:3603 toy_c0:3603 toy_x47:3603 toy_a2:3601 toy_a2:3602 toy_a2:3603`.
-   The script gives each line a VERDICT from `main.x35.kit validate-run` (a deterministic check, not a read of a grep):
-   both tools exit 0, "would launch", `role=[FORK of …rb_toy_ent_s4002_deep]`, `delta=[+70,000,000 steps]`, `k9b=[warn]`,
-   and `grow=[DECLARED trunk_layers 2 -> 4]` on the three X47 lines and `grow=[none]` on the rest. Every line must end
-   `verdict=PASS`, and the last line must read `SUMMARY 12 PASS, 0 FAIL` (the exit status is the FAIL count).
+**The toy R is FROZEN (2026-10-19, CPU, rule 5b, no GPU lease):** [`reference_population_toy.json`](reference_population_toy.json),
+content sha256 `856c04cb87e9415eda9289845d66a770582c30e773bb7c23df7fdb6221a55a4d`, `refpop verify` OK. The full write-up
+(nodes, the band cell, cost, findings) is
+[`../x35_toy_refpop_freeze_2026-10-19/README.md`](../x35_toy_refpop_freeze_2026-10-19/README.md). In short:
+1. `refpop plan --side toy` on T\* = `models/rb_toy_ent_s4002_deep/checkpoints/checkpoint_290000087_steps.zip` (sha256
+   `cfa7f7be…a22965e7`) with the archive dirs `models/rb_toy_ent_s4002/checkpoints` and
+   `models/rb_toy_ent_s4002_deep/checkpoints`: the archive N_1…N_8 = **30, 70, 100, 130, 170, 200, 240, 270M** (hand-computed
+   first: 67.5 → 70, 135 a tie → 130, 202.5 → 200) and the A-block **290, 280, 80, 150, 220M** (mid(N_2, N_3) = 85 a tie → 80).
+   `refpop_test.py` pins both lists.
+2. The band cell T\* vs P\* (500 mirrored pairs, greedy vs greedy, reveal off, CPU eager, a cross-architecture cell on
+   one engine, the production band cell's regime id `adfdbee824c9eb0a`): **0.4160, 95 % [0.3863, 0.4457]**, W/L/D
+   413 / 581 / 6, 14.1 min on one lane. P\* is **KEPT** in the toy's X-block (0.216 inside the lower edge, far from rule
+   8's 1e-9). R has **6 members: A-block 290 / 280 / 80 / 150 / 220M + X `pstar_x26`**.
+3. **The toy pool, PRE-READ (read-only, no record written).** `python -m main.x35.kit pool-check --arm toy_c0 --call
+   reference_population_toy.json --stage $S` (no `--write`) reads X34's `snapshots/` at the fork step 290,000,087: **20
+   snapshots (92M … 270M; all at or below the fork step, so T54's filter drops none), digest `2e86c4f9d7a1…`** (full
+   digest `2e86c4f9d7a10da2ef5e0516516fc31c219dc966842ccf74567bafdc0c41bbd5`; every name and sha256 in
+   [`toy_pool_preread.json`](../x35_toy_refpop_freeze_2026-10-19/toy_pool_preread.json)). That file is NOT the batch record:
+   the first toy GO writes `x35_pool_batch1_toy.json` (and `x35_pin_batch1.txt` is written by the FIRST GO of the whole
+   batch, production's, with `--t62`). X34 is stopped, so the first toy GO must recompute this same digest; a different
+   one is a HOLD worth reading (something moved in X34's `snapshots/`). Neither file was written here.
+4. Every toy argv was built from that file and validated at the pin, in the kit's order (§4.3): 16 toy lines (toy C0 ×5,
+   X47 ×5, toy A1 ×3, toy A2 ×3), every one `verdict=PASS`, none printing `STANDIN`.
+
+The command for a re-validation at another pin (X47 is the kit arm `toy_x47`; `x47` is accepted as its alias) is the
+whole of `BATCH1` in one call, production and toy together:
+`$S/validate_batch1.sh --pin <PIN> --toy-call $S/reference_population_toy.json --out /tmp/x35_val_<PIN8> $(python -c 'from main.x35.kit import BATCH1; print(" ".join(f"{a}:{s}" for a, s in BATCH1))')`.
+The script gives each line a VERDICT from `main.x35.kit validate-run` (a deterministic check, not a read of a grep):
+both tools exit 0, "would launch", `role=[FORK of …rb_toy_ent_s4002_deep]`, `delta=[+70,000,000 steps]`, `k9b=[warn]`,
+and `grow=[DECLARED trunk_layers 2 -> 4]` on the X47 lines and `grow=[none]` on the rest. Every line must end
+`verdict=PASS`, and the last line must read `SUMMARY 32 PASS, 0 FAIL`.
 
 **All four toy arms are kit arms** (`toy_a1`, `toy_c0`, `toy_a2`, `toy_x47`) and launch exactly as §4.1:
 `$S/launch_x35.sh toy_x47 3601 --pin <PIN> --lease-owner <owner>` (dry run), then the same with `GO` on the
@@ -258,14 +283,14 @@ and starts the watcher for X47 exactly as for the others; the SOP's remaining la
 are the Training session's, as for every kit arm.
 
 **X47** is the toy C0 argv plus ONE lever, `--grow trunk_layers=4`, and its own run name `rb_x35t_x47d4_s<seed>`
-(seeds 3601–3603 only; no look 2 is registered). The kit builds it from the toy R file, so it cannot drift from the
-call. With the stand-in it reads (`argv_toy_x47_s3601.txt` of the validation dir):
+(seeds 3601–3605 since AM-4: look 2 = 3604–3605). The kit builds it from the toy R file, so it cannot drift from the
+call. On the real T\* it reads (`argv_toy_x47_s3601.txt` of the validation dir):
 
 ```bash
-# NEEDS GO. Stand-in values: T* = 200,000,244. At the call: <T*> and --steps = T*.step + 70,000,000, from the toy R file.
+# NEEDS GO. T* = 290,000,087, --steps = T*.step + 70,000,000 = 360,000,087, both from the toy R file.
 python -m main.launcher --restart-interval-hours 24 --pin-commit <PIN> \
-  --model models/rb_toy_ent_s4002_deep/checkpoints/<T* zip> --behaviour-check warn \
-  --steps <T*.step + 70000000> --checkpoint-every-steps 1000000 --snapshot-ladder-games 0 \
+  --model /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep/checkpoints/checkpoint_290000087_steps.zip \
+  --behaviour-check warn --steps 360000087 --checkpoint-every-steps 1000000 --snapshot-ladder-games 0 \
   --supply-starve-cycles self_play_pool=0 --device cuda --grow trunk_layers=4 --seed 3601 --run-name rb_x35t_x47d4_s3601
 ```
 
@@ -277,21 +302,34 @@ way. T54's pool-seed check runs inside `launch_x35.sh`; by hand it is
 (F-LS-9: the growth adds a `grown` block to `pool_seed.json`; the check reads it as before, which `kit_test.py` pins
 on a constructed record, and has not run on a real grown child).
 
-### 4.3 What the dry-runs showed (32 of 32 PASS at `d825c6a1`, the amended order; 24 of 24 at `9c3bf3c4` before it)
+### 4.3 What the dry-runs showed (32 of 32 PASS at `03b983be`, the toy on the REAL T\*)
 
-**Re-validated 2026-10-19 after the amendment (§0): `SUMMARY 32 PASS, 0 FAIL (pin d825c6a1)`**,
-[`batch1_validation_d825c6a1/`](batch1_validation_d825c6a1/) ([`summary.txt`](batch1_validation_d825c6a1/summary.txt),
-all 32 argvs, the `checkargs` / `--dry-run` transcripts of seed 1 of each arm and of the new look-2 lines C0 / A1 s3504,
-X47 / toy C0 s3604). `d825c6a1` was main HEAD when the run started; the amendment's own commits (`00fe75a7`,
-`0801342e`, `6c9fb8d5`) and the docs / gate commits since touch no trainer, launcher or `checkargs` code, and the kit's
-argv builder is unchanged but for X47's seeds. The 24 argvs of the old order are BYTE-IDENTICAL to `9c3bf3c4`'s; the
-8 new lines (C0 / A1 s3504–s3505, X47 / toy C0 s3604–s3605) read as their arms do (production 10.97 GiB REQUIRED,
-toy 13.05; X47 `grow=[DECLARED trunk_layers 2 -> 4]`). **The toy lines are still on the 200M STAND-IN for T\***
-(`call=reference_population_toy_STANDIN_200m.json` on every toy line): never a launch value (F-LS-4). CPU only, one
-job at a time at `nice -n 19 taskset -c 5-7,13-15` (each step ≈ 0.7 GB peak, ≈ 25 s, measured: not run under a heavy
-slot), `GEN3AI_MODELS_DIR` on a scratch dir that stayed empty.
+**Validated 2026-10-19 23:22–23:27 PDT on the real P\* and the real T\*: `SUMMARY 32 PASS, 0 FAIL (pin 03b983be)`**,
+[`batch1_validation_03b983be/`](batch1_validation_03b983be/) ([`summary.txt`](batch1_validation_03b983be/summary.txt), all 32
+argvs, the `checkargs` / `--dry-run` transcripts of seed 1 of each of the 8 arms and of the look-2 lines C0 / A1 s3504,
+X47 / toy C0 s3604). `03b983be` is main HEAD (`03b983be6`, the canary yardstick fix's ship tip) with this unit's
+docs / frozen-record changes in the working tree; none of them touches a trainer, launcher or `checkargs` code, and the
+kit's argv builder is unchanged. Built from the kit's own `BATCH1` (the launch order) with
+`--toy-call reference_population_toy.json`: no line prints `STANDIN`.
 
-**The first validation, at `9c3bf3c4`:**
+| arms | `checkargs` | `--dry-run` |
+|---|---|---|
+| A1, C0, D1, A2 × s3501–s3503 and C0 / A1 × s3504–s3505 (16) | exit 0 | "would launch", FORK of `rb_x26_s2601`, 280,000,170 → 300,000,170 (+20,000,000); K9(b) `warn`; ✓ fork arch; 10.97 GiB REQUIRED; `grow=[none]`. All 16 argvs are **byte-identical** to the `d825c6a1` validation's (`cmp`) |
+| toy C0 ×5, A1 ×3, A2 ×3 (11), s3601–s3605 | exit 0 | "would launch", FORK of `rb_toy_ent_s4002_deep`, **290,000,087 → 360,000,087 (+70,000,000)**; K9(b) `warn`; 13.05 GiB REQUIRED; `grow=[none]`. Toy A1's archive is the 8 nodes of §4.2 (`toy_270m` … `toy_030m`) |
+| X47 ×5, s3601–s3605 | exit 0, `declared growth (--grow) : trunk_layers 2 -> 4` | as the toy rows, plus **`grow=[DECLARED trunk_layers 2 -> 4]`** (the dry-run's full line: "parent from its model_config.json — the parent loads strictly, identity-init parameters are appended, its AdamW state carries, new parameters start fresh", the seeded pool grown the same way) |
+
+CPU only (`CUDA_VISIBLE_DEVICES=""`, `nice -n 19 taskset -c 5-7,13-15`, one job at a time, no GPU lease), with
+`GEN3AI_MODELS_DIR` on a scratch dir that stayed empty; nothing was written under `models/` (X34's and X26's run dirs
+were only READ). The shared compile cache's line (`cap 20.00 GiB - 18.15 GiB in use` against a 1.85 GiB growth) is the
+same in every validation since `d825c6a1`.
+
+**The earlier validations, on the 200M STAND-IN for T\* (history; the production lines are unchanged).** At
+`d825c6a1`, the amended order: `SUMMARY 32 PASS, 0 FAIL`
+([`batch1_validation_d825c6a1/`](batch1_validation_d825c6a1/)), the toy lines on `reference_population_toy_STANDIN_200m.json`
+(printed as `call=…STANDIN…`: never a launch value). The 24 argvs of the pre-amendment order were byte-identical to
+`9c3bf3c4`'s; the 8 look-2 lines read as their arms do.
+
+**The first validation, at `9c3bf3c4` (24 forks, the toy on the stand-in):**
 
 [`batch1_validation_9c3bf3c4/`](batch1_validation_9c3bf3c4/) holds all 24 argvs, the verdict line of each
 ([`summary.txt`](batch1_validation_9c3bf3c4/summary.txt), ending `SUMMARY 24 PASS, 0 FAIL`) and the full `checkargs` and
@@ -314,7 +352,7 @@ argv files) showed a `grow=[…]` column that for every non-X47 arm printed the 
 "(child-only: a declared growth's …)" note; the verdict now checks the DECLARED line itself, in the dry-run AND in
 `checkargs`, and demands its absence on every other arm.
 
-The toy stand-in R used to build the toy argvs is
+The toy stand-in R the three EARLIER validations built their toy argvs from (history; replaced by `reference_population_toy.json`) is
 [`batch1_validation_803a13e3/reference_population_toy_STANDIN_200m.json`](batch1_validation_803a13e3/reference_population_toy_STANDIN_200m.json),
 made by `refpop.freeze` with no X candidate into a scratch path. Its file name keeps `launch_x35.sh` from ever reading it,
 and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds from it.
@@ -355,13 +393,18 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
 - **C4. R0** (the best responder of P\*, queue #0 of STAGED_PLAN §4) has no argv (F27). **RULED (orchestrator,
   2026-10-19): launch batch 1 without it**: A1 / C0 / D1 / A2 do not read it. It is A6's trigger and the R2 baseline, so
   stage its argv before the A3 / A6 batch.
-- **C5. The production R's X-block** (refpop README F-R1): it has one other-lineage member (`production`), because T\*
-  did not exist. T\* will exist BEFORE the first arm launches. (a) Keep R as frozen. (b) Re-freeze with T\* as a
-  second X member BEFORE the first production arm: the old file moves aside (R is write-once; `launch_x35.sh` reads the
-  canonical name), and one more 500-pair band cell (P\* vs T\*) is played on CPU. Whether `refpop freeze` can read the
-  toy freeze's T\*-vs-P\* cell in the other orientation is **UNVERIFIED**; if not, play it twice. **Recommendation:
-  (b) if the band cell can be done before the launch window (≈ 30 min of CPU after 18:15 fits); otherwise (a)**,
-  because R cannot change once an arm exists (pre-check 7), and F-R2's own-lineage lean is the read's main weakness.
+- **C5. The production R's X-block** (refpop README F-R1) **STILL OPEN, its facts updated 2026-10-19**: it has one
+  other-lineage member (`production`), because T\* did not exist when it was frozen. **T\* exists now** (290M, sha256
+  `cfa7f7be…a22965e7`). (a) Keep R as frozen. (b) Re-freeze with T\* as a second X member BEFORE the first production arm:
+  the old file moves aside (R is write-once; `launch_x35.sh` reads the canonical name) and a P\*-vs-T\* band cell is
+  played on CPU. **The toy freeze's cell cannot be reused as it stands:** it has T\* as the PLAYER, and `refpop freeze
+  --band-ledger` matches `player == the freeze's P*` (checked: `_band_from_ledger` returns no cell for the production
+  orientation), so (b) needs either a second cell with P\* as the player (≈ 14 min of one CPU lane; the toy cell took
+  14.1 min) or a `--band-json` cell that DECLARES score = 1 − 0.4160 = 0.5840 (an assumption of exact symmetry, not a
+  measurement). Either way T\* would be inside the band (the toy cell reads 0.416). **Recommendation: (b) if a P\*-player
+  cell can be played before the launch window; otherwise (a)**, because R cannot change once an arm exists (pre-check 7),
+  and F-R2's own-lineage lean (5 of 6 members are X26's own nodes) is the read's main weakness. The pin / pool / toy
+  record do not depend on this choice.
 - **C6. X44 between the blocks.** The bot screen ranks X44 (≈ 10.4 GPU-h) above the toy calibration and X47. It is its
   own unit. Running it between the production and toy blocks delays the toy block, but changes no batch-1 pin (the toy
   block has its own C0). Not decided here.
@@ -399,12 +442,14 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
   executed as written if the battery does not read ADOPT. Choice C1, RULED (a) on 2026-10-19.
 - **F-LS-3 CLOSED 2026-10-19: the toy K9(b) mode** is `warn` (ruling C3, §5). The kit's old `fatal` for the toy was the
   stricter check and a stop would have left an arm short; X34's own scalars never reached its bar (C3).
-- **F-LS-4: every toy line is a 200M STAND-IN** (the validation prints `call=reference_population_toy_STANDIN_200m.json`). Its `--steps` and A1's archive change at the real T\*: rebuild them
-  from the toy R file with `validate_batch1.sh`, never by editing the stand-in files.
-- **F-LS-5: the disk margin at the FIRST launch is ≈ 26 GiB** (§2 check 9: 24 forks × 10.97 = 263 GiB against 289 free),
-  before X34's own growth past 212M and any read output. A HOLD at pre-check 8 is the F22 check working. Thin finished
-  arms as they end; `--thinning` is the orchestrator's word.
-- **F-LS-6: the dry-runs ran at `803a13e3`, but the launch pin is main HEAD at launch time.** Any commit between them is
+- **F-LS-4 CLOSED 2026-10-19: the toy lines are on the REAL T\*.** X34 plateaued; T\* = the 290M node (sha256
+  `cfa7f7be…a22965e7`), the toy R is frozen on it (§4.2) and all 16 toy lines of `batch1_validation_03b983be/` PASS with
+  no `STANDIN` call. The stand-in R, its argvs and the three older validations are history (`kit_test.py` still reads
+  `batch1_validation_803a13e3/` for the argv shapes it pins; never delete that directory).
+- **F-LS-5: the disk margin at the FIRST launch is ≈ 92 GiB** (re-read 2026-10-19 23:10; was ≈ 26): §2 check 9, 32 forks ×
+  10.97 = 351.0 GiB against 442.9 free. It falls with every run directory and every read output. A HOLD at pre-check 8
+  is the F22 check working. Thin finished arms as they end; `--thinning` is the orchestrator's word.
+- **F-LS-6: the dry-runs ran at `03b983be`, but the launch pin is main HEAD at launch time.** Any commit between them is
   unvalidated: `launch_x35.sh` re-runs `checkargs` and the dry-run at `<PIN>` before every arm, and X47's lines must be
   re-run with `validate_batch1.sh --pin <PIN>`.
 - **F-LS-7: D1's GPU-h on forum teams is not measured**, and neither is X47's ρ (ESTIMATED 1.3–1.4). Both are read on the

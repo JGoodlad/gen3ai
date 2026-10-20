@@ -1,8 +1,9 @@
 """X35's node rules and the reference-population freeze (``main.x35.refpop``) on SYNTHETIC checkpoint directories:
 the registered P* = 180M answer, ties down, the refusals, the band's rule-8 edges, and the write-once freeze with
-its sha256s. No real checkpoint is read."""
+its sha256s. No real checkpoint is read (the two FROZEN call files are read as JSON only)."""
 from __future__ import annotations
 
+import hashlib
 import json
 from fractions import Fraction
 from pathlib import Path
@@ -10,8 +11,10 @@ from pathlib import Path
 import pytest
 
 from main.x35 import refpop as RP
+from utils.paths import repo_path
 
 M = 1_000_000
+STAGE = repo_path("designs/research_state/measurements/x35_breakers_stage_2026-10-17")
 
 
 def make_archive(d: Path, last_nominal_m: int = 180, *, start_m: int = 1, overshoot: int = 55) -> Path:
@@ -134,3 +137,35 @@ def test_the_cli_freezes_from_a_band_json_and_verifies(tmp_path, capsys):
     assert RP.main(["verify", str(out)]) == 0
     assert RP.main(["freeze", *argv, "--band-json", str(bj), "--out", str(out)]) == 2
     assert "REFUSED" in capsys.readouterr().err
+
+
+def test_the_registered_t_star_290m_answer():
+    """The toy side's REAL start node (X34 @ 290,000,087, 2026-10-19), hand-computed from the rule: k · 270M / 8 =
+    33.75, 67.5 (> half: up), 101.25, 135 (a tie: DOWN), 168.75, 202.5, 236.25, 270M, and the three midpoints
+    (70+100)/2 = 85 (a tie: DOWN), (130+170)/2 = 150, (200+240)/2 = 220M."""
+    assert RP.archive_targets(290 * M) == [30 * M, 70 * M, 100 * M, 130 * M, 170 * M, 200 * M, 240 * M, 270 * M]
+    assert RP.a_block_targets(290 * M) == [("pstar", 290 * M), ("pstar-10M", 280 * M), ("mid(N2,N3)", 80 * M),
+                                           ("mid(N4,N5)", 150 * M), ("mid(N6,N7)", 220 * M)]
+
+
+@pytest.mark.parametrize("name,pstar_sha,step", [
+    ("reference_population_production.json", "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed", 280_000_170),
+    ("reference_population_toy.json", "cfa7f7bee7b7a43959f496ce6d5a34556bae914de9c80f90f9342a05a22965e7", 290_000_087),
+])
+def test_a_frozen_r_file_is_unedited_names_its_start_node_and_obeys_the_rule(name, pstar_sha, step):
+    """R is write-once: its content hash holds, it names the registered start node (P* for production, the real T* for
+    the toy: NOT the 200M stand-in), its archive and A-block are the rule's nodes for that start, and every X member's
+    kept / excluded verdict is the band rule's own on its recorded score. (The files' sha256 are `refpop verify`'s,
+    which needs the checkpoints and so runs at every launch.)"""
+    doc = json.loads((STAGE / name).read_text())
+    assert hashlib.sha256(RP._canon(doc)).hexdigest() == doc["content_sha256"]
+    assert doc["schema"] == RP.SCHEMA and doc["side"] == name.split("_")[-1].split(".")[0]
+    assert (doc["pstar"]["sha256"], doc["pstar"]["step"]) == (pstar_sha, step)
+    pn = RP.node_of(step)
+    assert [e["nominal"] for e in doc["archive"]] == RP.archive_targets(pn)
+    assert [e["nominal"] for e in doc["a_block"]] == [t for _, t in RP.a_block_targets(pn)]
+    assert doc["a_block"][0]["sha256"] == pstar_sha
+    for x in doc["x_block"]:
+        kept, _ = RP.band_decision(RP.BandCell(x["band_score"], x["band_n_pairs"], "OK"))
+        assert kept == x["kept"], x["label"]
+    assert [m["label"] for m in doc["members"] if m["block"] == "X"] == [x["label"] for x in doc["x_block"] if x["kept"]]

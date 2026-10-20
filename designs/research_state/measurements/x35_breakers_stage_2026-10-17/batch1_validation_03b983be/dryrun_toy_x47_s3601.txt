@@ -1,0 +1,97 @@
+
+── launcher --dry-run — resolving only, nothing will be created ────────────
+  role        : FORK of /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep
+  recipe      : 12 untyped recipe knob(s) restored from the PARENT's record and passed to the child TYPED:
+                n_envs=256  rollout_target_samples=98304  trainee_slots=1  t2_lanes=0  grad_accum_steps=32  n_epochs=10  min_lr=1e-05  weight_decay=1e-05  clip_range=0.15  clip_range_vf=None  ent_coef=0.05  self_play=True
+  run dir     : /tmp/x35_val_03b983be/out/models/rb_x35t_x47d4_s3601   [would be created]
+  --model     : /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep/checkpoints/checkpoint_290000087_steps.zip
+  on restart  : RESUME role — --model → the run's latest checkpoint
+  pin         : 03b983be61b9cbda0e21dfabfe694160742a7465  (source: pin_commit)
+                ↳ test(rust_env): proc_integration gate 1 (bridge corpus) is slow -- 34 s on the ship gate's 8 s bar beside a live run
+                (a real launch would create an isolated worktree at this commit — the dry run does not)
+  steps       : --steps 360,000,087 vs checkpoint at 290,000,087 (sidecar) → +70,000,000 steps
+  interpreter : /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3  (torch 2.8.0+cu126) — carries the run's recorded torch
+  run torch   : 2.8.0+cu126  (recorded in /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep/metadata.json)
+  transport   : in-process bridge [rust] (no Showdown server)
+  restarts    : every 24.0h, grace 20.0 min, max 3 crash restart(s), nice 10
+  effective   : argv overlaid on /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep/model_config.json (68 unset flag(s) INHERITED)
+      --grad-accum-steps     32           (RESTORED from parent metadata.json:cli_args - passed to the child TYPED by the launcher; the argv leaves it unset)
+      --fork-lr              None         (from the argv)
+      --fork-lr-freeze       False        (from the argv)
+  env core    : rust  [the only core]  (the checkpoint was produced on rust)
+  K9(b) check : warn  (typed or inherited)  ⚠️  NOT fatal: a behaviour-policy mismatch is logged, not fatal
+  grow        : DECLARED trunk_layers 2 -> 4 (parent from its model_config.json) — the parent loads strictly, identity-init parameters are appended, its AdamW state carries, new parameters start fresh
+                the self-play pool seeded from the parent is GROWN the same way at the child's start (each snapshot: strict load, identity rounds, the bit-identity gate), and its arch record becomes the child's
+  (child-only: a declared growth's fork-time gate (--grow: the grown network's logits + values bit-identical to the parent's on real rows) and the seeded pool's growth)
+  (child-only: the ModelVersion round-trip smoke test)
+  (child-only: the resolved --compile-trainer / --compile-opponents decisions (they read the device))
+  (child-only: self-play pool SEEDING from a fork parent (agents.training.pool_seed runs in the child))
+  (child-only: the observation dimension and arch signature)
+  ARCH SURFACE vs designs/production_config.json  [production_config@7edfd2bace08]
+    27 of 39 ARCH-surface key(s) differ from production (39 of 47 registry toggles are the ARCH surface; 6 critic readouts + 2 non-structural rows are excluded by their own declaration):
+        opp_belief_cls_k             0              (this argv, argv)   production: 6
+        opp_belief_slots             False          (this argv, argv)   production: True
+        move_belief_mode             'off'          (this argv, argv)   production: 'both'
+        damage_op                    False          (this argv, argv)   production: True
+        move_prior_fusion            False          (this argv, argv)   production: True
+        damage_outgoing              False          (this argv, argv)   production: True
+        move_latent                  False          (this argv, argv)   production: True
+        spread_belief                False          (this argv, argv)   production: True
+        damage_topk_k                0              (this argv, argv)   production: 6
+        damage_matrices_outgoing     False          (this argv, argv)   production: True
+        damage_matrices_incoming     False          (this argv, argv)   production: True
+        spread_belief_nature         False          (this argv, argv)   production: True
+        entity_topk_seats            0              (this argv, argv)   production: 6
+        edge_bias_families           'off'          (this argv, argv)   production: 'd1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h,r'
+        entity_tail_seats            False          (this argv, argv)   production: True
+        opp_intent                   False          (this argv, argv)   production: True
+        species_prior_fusion         False          (this argv, argv)   production: True
+        t0_species_prior             False          (this argv, argv)   production: True
+        value_entity_pool_full       False          (this argv, argv)   production: True
+        history_events               False          (this argv, argv)   production: True
+        value_entity_pool            False          (this argv, argv)   production: True
+        item_belief                  False          (this argv, argv)   production: True
+        op_drop_renders              False          (this argv, argv)   production: True
+        op_believed_lean             False          (this argv, argv)   production: True
+        mon_hazard_cost              'off'          (this argv, argv)   production: 'on'
+        trunk_layers                 4              (this argv, argv)   production: 3
+        move_set_closure             'off'          (this argv, argv)   production: 'on'
+    ℹ️  INFO only — this is a FORK/RESTART, which INHERITS its parent's arch surface from the recorded model_config.json. The diff above is against PRODUCTION, not against the parent.
+  RECIPE SURFACE vs designs/production_config.json recipe.fork  [production_config@7edfd2bace08]
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
+    ♻️  --model launch (fork): every untyped recipe knob restored from the PARENT run's record — t2_buckets=None [parent metadata.json:cli_args]  max_lr=None [parent metadata.json:cli_args]  anneal_lr_start_steps=None [parent metadata.json:cli_args]  vf_coef=0.5 [model_config.json]
+        (--lr / --batch-size / --n-steps are INERT on a resume — SB3 restores them — and are never re-applied here)
+    12 of 31 RECIPE knob(s) differ from recipe.fork:
+        n_steps                  2048       (INERT on a resume: SB3 restores the checkpoint's own)   production: 384
+        batch_size               4096       (INERT on a resume: SB3 restores the checkpoint's own)   production: 2048
+        n_epochs                 10         (TYPED)   production: 5
+        opp_belief_aux_coef      0.0        (inherited)   production: 0.05
+        opp_intent_coef          0.0        (inherited)   production: 0.05
+        move_belief_coef         0.0        (inherited)   production: 0.05
+        move_belief_latent_coef  0.0        (inherited)   production: 0.05
+        spread_belief_coef       0.0        (inherited)   production: 0.05
+        hp_type_belief_coef      0.0        (inherited)   production: 0.05
+        item_belief_coef         0.0        (inherited)   production: 0.05
+        fork_lr                  None       (untyped default)   production: 5.6e-05
+        fork_lr_freeze           False      (untyped default)   production: True
+    ℹ️  INFO only — a FORK/RESTART. Its recipe is its ARGV plus the record of the run that wrote the checkpoint (a fork: its PARENT's model_config.json + metadata.json:cli_args; a restart: its own) — recipe.fork is never applied.
+  desktop GPU : ✓ no display process (gnome-shell / Xorg / Xwayland / …) holds the GPU
+  disk space  : ✓ 41.98 GiB free on /tmp/x35_val_03b983be/out/models vs 13.05 GiB REQUIRED (checkpoint the fork source checkpoint_290000087_steps.zip)
+                shared compile cache: ✓ 442.91 GiB free on /home/goodlad/.cache/gen3ai/compile_shared (another filesystem) vs its growth 1.85 GiB (cap 20.00 GiB - 18.15 GiB in use) + reserve 4.00 GiB
+                the arithmetic:
+          periodic checkpoints      1.46 GiB   = 70 x 21.3 MiB  (steps 360,000,087 // 1,000,000 - resume 290,000,087 // 1,000,000)
+          final/best/aborted+fork    85.3 MiB   = 4 x 21.3 MiB
+          eval traces               2.46 GiB   = 35 cycles x 72.0 MiB  (ceil(70,000,000 / 2,000,000))
+          pool snapshots           426.7 MiB   = 20 x 21.3 MiB  (cap 20, fork re-seeds the pool)
+          compile cache             2.39 GiB   = 2.39 GiB - 0.0 MiB already on disk
+          shared compile cache       0.0 MiB   = growth 1.85 GiB at /home/goodlad/.cache/gen3ai/compile_shared: ANOTHER filesystem, checked below
+          sidecar + tb + logs      420.0 MiB   = 70.0M steps x 6.0 MiB/M
+          fixed                     16.0 MiB   = metadata, ledgers, sidecar json
+          subtotal                  7.24 GiB
+          + margin 25%              1.81 GiB
+          + reserve left free       4.00 GiB   (the 2026-10-09 near-miss had 2.2 GB free at 100 %)
+          = REQUIRED               13.05 GiB
+  showdown deps : ✓ /home/goodlad/dev/gen3ai/.claude/worktrees/x35-tstar/deps/pokemon-showdown serves team validation (13 required files present, node /usr/bin/node)
+  ✓ fork arch  : compatible with /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep/model_config.json (check_compatible, the trainer's own check)
+  ✓ DRY RUN — this command would launch. Nothing was created or modified.
