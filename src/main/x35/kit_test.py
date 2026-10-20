@@ -234,6 +234,35 @@ def test_x47_is_the_validated_x47_argv_token_for_token_but_for_c3s_warn():
         assert K.build_argv("toy_x47", seed, _validated_x47_call()) == want
 
 
+def test_x47_is_an_alias_of_toy_x47_on_every_arm_taking_subcommand(tmp_path, monkeypatch, capsys):
+    """The launch sheet says `x47` is accepted as `toy_x47`; `describe --arm x47` once died with "invalid choice". ONE
+    alias table (`K.ARM_ALIASES`) must serve every subcommand with `--arm`, and `toy_x47` must keep working."""
+    assert K.ARM_ALIASES == {"x47": "toy_x47"} and K.canonical_arm("x47") == "toy_x47"
+    assert K.canonical_arm("toy_x47") == "toy_x47" and K.canonical_arm("c0") == "c0"
+    call = tmp_path / "R.json"
+    call.write_text(json.dumps(_validated_x47_call()))
+    monkeypatch.setattr(K, "verify_call", lambda path: [])
+    out = {}
+    for arm in ("x47", "toy_x47"):
+        assert K.main(["describe", "--arm", arm, "--seed", "3601", "--call", str(call)]) == 0
+        out[arm] = json.loads(capsys.readouterr().out)
+    assert out["x47"] == out["toy_x47"] and out["x47"]["arm"] == "toy_x47"
+    assert out["x47"]["run_name"] == "rb_x35t_x47d4_s3601"
+    # every other subcommand that takes --arm gets past argparse (a refusal for the missing files is NOT a parse error)
+    for argv in (["stage-check", "--seed", "3601", "--stage", str(tmp_path)],
+                 ["pool-check", "--call", str(call), "--stage", str(tmp_path)],
+                 ["pool-seed-check", "--run-dir", str(tmp_path), "--call", str(call)],
+                 ["validate-run", "--seed", "3601", "--call", str(call), "--dryrun", str(tmp_path / "d"),
+                  "--checkargs", str(tmp_path / "c"), "--rc-dryrun", "0", "--rc-checkargs", "0"]):
+        try:
+            K.main([argv[0], "--arm", "x47", *argv[1:]])
+        except SystemExit as exc:  # argparse: an invalid choice would land here
+            raise AssertionError(f"{argv[0]} --arm x47 died in argparse: {capsys.readouterr().err}") from exc
+        assert "invalid choice" not in capsys.readouterr().err
+    with pytest.raises(SystemExit):   # an unknown arm is still refused
+        K.main(["describe", "--arm", "x48", "--seed", "3601", "--call", str(call)])
+
+
 def test_x47_is_toy_c0_plus_the_grow_lever_and_nothing_else():
     call = toy_call()
     on, off = flags(K.build_argv("toy_x47", 3602, call)), flags(K.build_argv("toy_c0", 3602, call))

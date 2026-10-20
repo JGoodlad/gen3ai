@@ -120,10 +120,23 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("toy_a2", "toy", L_TOY, TOY_SEEDS, "rb_x35t_a2pfsp_s{seed}", 0, "warn"),
     Arm("toy_x47", "toy", L_TOY, X47_SEEDS, "rb_x35t_x47d4_s{seed}", 0, "warn"),
 )}
+#: ARM ALIASES: the ONE table of alternative spellings a launch sheet or an operator may type; every kit subcommand
+#: that takes ``--arm`` resolves it through :func:`canonical_arm` (argparse ``type=``), so ``x47`` == ``toy_x47``
+#: everywhere (``describe``, ``validate-run``, ``stage-check``, ``pool-check``, ``pool-seed-check``).
+ARM_ALIASES: Dict[str, str] = {"x47": "toy_x47"}
+
+
+def canonical_arm(name: str) -> str:
+    """The kit arm a typed name stands for (an alias resolves; every other string passes through for the caller's
+    own refusal)."""
+    return ARM_ALIASES.get(name, name)
+
+
 #: The G-E READERS (``main.x35.ge``): the kit seed is the TARGET's seed; the run is ``rb_x35_ge_<target tag>_s<seed>``.
 ARMS.update({r: Arm(r, ARMS[t].side, _GE.L_READER, _GE.TARGET_SEEDS,
                     "rb_x35_ge_" + ARMS[t].run[len("rb_x35_"):], _GE.READER_PHASE, "warn")
              for r, t in _GE.READER_ARMS.items()})
+assert all(v in ARMS for v in ARM_ALIASES.values()) and not set(ARM_ALIASES) & set(ARMS)
 #: Batch 1 + X47, in GPU order: AM-9 (orchestrator, 2026-10-20; it moved the toy block ahead of production, which waits
 #: for the FP32_ALT build), stage by stage in ``main.x35.batch.STAGES``: T1 toy C0 + X47 (C2's interleave, toy A1 out) ->
 #: T1b X47 look 2 with toy C0 s3604-s3605 (AM-4: X47 look 1 CONTINUE) -> P1 the A1 / C0 ABBA (s3501-s3503) -> [G1,
@@ -138,6 +151,7 @@ class KitError(ValueError):
 
 
 def _arm(name: str, seed: int) -> Arm:
+    name = canonical_arm(name)
     if name not in ARMS:
         raise KitError(f"arm {name!r} is not one of {sorted(ARMS)}")
     a = ARMS[name]
@@ -231,7 +245,7 @@ def describe(arm: str, seed: int, call: Mapping[str, Any],
     a = _arm(arm, seed)
     argv = build_argv(arm, seed, call, phase1, target)
     parent = _run_dir_of(str(target["path"])) if a.phase == _GE.READER_PHASE and target else parent_run_dir(call)
-    return {"arm": arm, "seed": seed, "side": a.side, "phase": a.phase, "run_name": run_name(arm, seed),
+    return {"arm": a.name, "seed": seed, "side": a.side, "phase": a.phase, "run_name": run_name(arm, seed),
             "parent_run_dir": parent, "delta_steps": a.length, "delta_text": f"+{a.length:,} steps",
             "behaviour": a.behaviour, "k9b_ceilings": dict(K9B_TOY_CEILINGS) if a.side == "toy" else None,
             "target": dict(target) if target else None,
@@ -458,7 +472,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m main.x35.kit", description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     d = sub.add_parser("describe")
-    d.add_argument("--arm", required=True, choices=sorted(ARMS))
+    d.add_argument("--arm", required=True, type=canonical_arm, choices=sorted(ARMS))
     d.add_argument("--seed", required=True, type=int)
     d.add_argument("--call", required=True, help="the frozen R file of the arm's side (main.x35.refpop)")
     d.add_argument("--phase1", default=None, help="the phase-1 record (phase-2 arms)")
@@ -476,7 +490,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     v.add_argument("file")
     sub.add_parser("live")
     q = sub.add_parser("pool-seed-check", help="T54's post-spawn check: exit 0 PASS, 1 FAIL, 3 PENDING")
-    q.add_argument("--arm", required=True, choices=sorted(ARMS))
+    q.add_argument("--arm", required=True, type=canonical_arm, choices=sorted(ARMS))
     q.add_argument("--run-dir", required=True)
     q.add_argument("--call", required=True)
     q.add_argument("--log", action="append", default=[], help="a log holding the startup line (repeatable)")
@@ -498,7 +512,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     rc.add_argument("--stage", required=True)
     rc.add_argument("--repo", default=None, help="the git checkout the commits are looked up in (default: this one)")
     po = sub.add_parser("pool-check", help="POOL: the seeded set == the side's record; exit 0 / 1")
-    po.add_argument("--arm", required=True, choices=sorted(ARMS))
+    po.add_argument("--arm", required=True, type=canonical_arm, choices=sorted(ARMS))
     po.add_argument("--call", required=True)
     po.add_argument("--stage", required=True)
     po.add_argument("--write", action="store_true", help="GO only: record the set if the side has no record")
@@ -507,7 +521,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     g.add_argument("--stage", default=None, help="with --write: where x35_gate_g1.json is written (once)")
     g.add_argument("--write", action="store_true")
     sc = sub.add_parser("stage-check", help="AM-7 / AM-3 / AM-4: may this fork launch now? exit 0 ALLOWED, 1 not")
-    sc.add_argument("--arm", required=True, choices=sorted(ARMS))
+    sc.add_argument("--arm", required=True, type=canonical_arm, choices=sorted(ARMS))
     sc.add_argument("--seed", required=True, type=int)
     sc.add_argument("--stage", required=True)
     kb = sub.add_parser("k9b", help="AM-6: K9(b) over the fork's own rows at arm end: exit 0 PASS, 1 VOID, 3 INCONCLUSIVE")
@@ -517,7 +531,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     kq.add_argument("--stage", required=True)
     kq.add_argument("--models-dir", default=None)
     vr = sub.add_parser("validate-run", help="the verdict on one argv's checkargs + dry-run transcripts: exit 0 PASS, 1 FAIL")
-    vr.add_argument("--arm", required=True, choices=sorted(ARMS))
+    vr.add_argument("--arm", required=True, type=canonical_arm, choices=sorted(ARMS))
     vr.add_argument("--seed", required=True, type=int)
     vr.add_argument("--call", required=True)
     vr.add_argument("--phase1", default=None)
