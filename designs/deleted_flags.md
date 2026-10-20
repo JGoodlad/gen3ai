@@ -366,6 +366,7 @@ constructor kwarg. A document that still spells one of these `--like-a-flag` is 
 | `--comparator` | proposed in `designs/endstate/design_model_management.md` §3.1 (2026-09-22; "not started") | a role-printing comparator selector for the model-record diff tool; never built |
 | `--team-exclude` | proposed in `designs/endstate/design_diversity_teams_opponents.md` (2026-10-18; "it needs") | a team-manifest source filter for the pool builder; never built |
 | `--value-threat-route` | proposed and REJECTED in `designs/endstate/design_arch_audit.md` (2026-10-07) | "a second name for one lever": the existing `--value-threat-inject` selects it, so no new flag was added |
+| `--trunk-ffn-by-kind` | proposed in `designs/endstate/design_growth_builds_kffn_int.md` (B-KFFN build spec, 043bc3770, 2026-10-20) | the per-kind trunk-FFN switch of the B-KFFN growth build; named as the planned lever until the build lands, then DELETE this row |
 
 ## 4. RETIRED VALUES — the flag lives, one of its VALUES is gone
 

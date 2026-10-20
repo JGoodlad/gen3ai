@@ -742,7 +742,7 @@ confirmation top-ups (≤ 3,000), a check costs **2.1–3.1 %** of wall before T
 - the exploiter gap (`best_response_gap`) stays the population loop's primary meter.
 
 **For a pinned run that carries none of this code** (X26, F-ED-19), the same rows are played by the monitor's
-OFFLINE driver (U5: the cycle monitor's driver, `main.cycle_monitor`, NOT BUILT: no such module yet). It runs CUDA-free on CPU under `mem_cap.sh`, or on the
+OFFLINE driver (`python -m main.cycle_monitor <run>`, U5). It runs CUDA-free on CPU under `mem_cap.sh`, or on the
 offline engine when no run is live. Snapshots are frozen, so a row played late is the same row.
 
 **As built (U5, the OFFLINE slice, 2026-10-19).** The rule is `agents/training/cycle_monitor.py`, a pure function of
