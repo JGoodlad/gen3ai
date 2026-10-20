@@ -143,7 +143,10 @@ shares its batch's control C0.
   population score at equal effective learn time. A GAIN would also tell R-T2 that the toy's ceiling is
   capacity-bound.
 - **The ONE lever.** `trunk_layers` 2 → 4 at the fork, as identity-init rounds (+264,960 parameters).
-- **The cheapest A/B.** **Toy, fork at T\*, 3 seeds (3601–3603), 70M each, against the toy C0 at the same pin.**
+- **The cheapest A/B.** **Toy, fork at T\*, 3 seeds (3601–3603), 70M each, against the toy C0 at the same pin;
+  look 2 at 3604–3605 (with toy C0 3604–3605) iff look 1 reads CONTINUE (AM-4, orchestrator 2026-10-19).**
+  The read is `main.x35.x47` (B-X47-READ, built 2026-10-19): s_eq by the §1.2 node rule from Σ(`collect_ms` +
+  `update_wall_s`) over each fork's OWN TensorBoard rows, restart-aware; the §1.4 classes; constructed-case tests.
   - ρ ≈ 1.3–1.4, ESTIMATED: +5.2 MFLOP forward per round-row against the toy's 17.4 total (§5.3 there), and the
     update tracks FLOPs.
   - Cost ≈ 3 × 4.2 × 1.35 ≈ **17 GPU-h**, plus the R1 read (≈ 0.3 GPU-h in a lease window, or ≈ 6 h of CPU).
@@ -388,8 +391,8 @@ candidates into it.
 - **Set mutation.** X41 (§2.5).
 
 **The first experiment and its cost.** **X47**: T\* + 2 identity-init rounds, seeds 3601–3603, 70M each, ABBA with the
-toy C0, in the toy batch at one pin.
-- ≈ 17 GPU-h, plus ≈ 0.3 GPU-h for the read.
+toy C0, in the toy batch at one pin; look 2 (3604–3605 with toy C0 3604–3605) only on a look-1 CONTINUE (AM-4).
+- ≈ 17 GPU-h, plus ≈ 0.3 GPU-h for the read; look 2 ≈ 20 GPU-h more (2 × 5.8 + 2 × 4.3).
 - Its prerequisite is B-GROW (✅ BUILT 2026-10-19), landed before the toy batch's pin.
 - The first R1 look lands ≈ 17 GPU-h after its first seed launches.
 
@@ -463,3 +466,4 @@ labels, offline, feeding search's opponent model. Re-open **rung 3**, the BC war
 | 2026-10-19 | **X47 STAGED in X35 batch 1's toy block (launch-staging worker)** | [`BATCH1_LAUNCH_SHEET.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md): X47 = the toy C0 argv + `--grow trunk_layers=4`, run `rb_x35t_x47d4_s<seed>`, seeds 3601–3603, +70M; `checkargs` exit 0 and the dry-run's `grow : DECLARED trunk_layers 2 -> 4` at `803a13e3` on the 200M STAND-IN for T\*; recommended order interleaved with the toy C0 (toy A2 last, choice C2) | appending X47 after toy A2 (not ABBA with its C0); a kit arm now (out of scope: the launch is by hand until `main.x35.kit` gains `toy_x47`, F-LS-1) | `batch1_validation_803a13e3/` |
 | 2026-10-19 | **X47 is a KIT ARM; interleaved with its toy C0 (launch-kit worker; orchestrator rulings C2 / C3)** | `main.x35.kit` has `toy_x47` (the toy C0 argv + `--grow trunk_layers=4`, seeds 3601–3603, `rb_x35t_x47d4_s<seed>`), so `launch_x35.sh` checks and launches it and the disk check counts it (F-LS-1 closed); the batch-1 order puts it beside its toy C0 (s3601: C0 then X47; s3602: X47 then C0; s3603: C0 then X47), toy A2 last; the toy arms, X47 included, run K9(b) `warn` under X34's ceilings | launching X47 by hand; X47 after toy A2 | `src/main/x35/kit_test.py`, `BATCH1_LAUNCH_SHEET.md` §4.2 / §5, `batch1_validation_9c3bf3c4/` |
 | 2026-10-19 | **B-KFFN / B-INT SPECIFIED (design worker)** | Build specs in [`design_growth_builds_kffn_int.md`](design_growth_builds_kffn_int.md): B-KFFN ≈ 1.5 agent-days (five per-kind experts, the shared FFN kept as the Pokémon expert, seat-role segments, bit-identical copy at the fork), B-INT ≈ 0.5 agent-day (the CLI-tier re-promotion is REQUIRED, plus a gradient gate), and a field-generic growth refactor first; filed as `TASK_BACKLOG` T66 / T67. B-INT's estimate rose from 0.25 because the CONFIG_ONLY freeze makes the tier change mandatory, and B-KFFN's from 1 because of the growth row, the pool and `pin_worker` | B-INT as a CLI-only change (it would be a silent no-op at a fork); token-type routing; a tolerance gate for the experts | CPU measurements in that doc (fresh production build at `b79b66bb`, trained `rb_es_end2_s2005`) |
+| 2026-10-19 | **AM-4: X47 look 2 REGISTERED and its readout BUILT** (X35 amendment worker; the orchestrator's ruling on the batch-1 review F-RV-4) | X47 seeds 3601–3605 (look 2 = 3604–3605, against toy C0 3604–3605, launched only on a look-1 CONTINUE; `main.x35.batch` enforces it); `main.x35.x47` (B-X47-READ): Σ(`collect_ms` / 1000 + `update_wall_s`) summed over each tag's own rows (`update_wall_s` is dumped with the NEXT rollout's row), the fork's own events only, restart-aware by `time_to_step.py`'s resume rule; s_eq = the largest node with Σ ≤ the C0 mean final Σ (rule 8: within 1e-9 ⇒ the next lower node); ρ ≤ 1.02 reads the finals; the §1.4 classes with CONTINUE when the primary is look-1 CONTINUE; G-F and G-C required, G-K reported; the update-only s_eq and ρ split REPORTED only (F-RV-9's fix is not ruled) | X47 at 3 seeds as a RANKING read (a +5 pp depth effect reads GAIN ≈ 1 time in 3 at σ 1.2 pp); a row-wise collect / update pairing (mis-attributes the lagged update row) | `src/main/x35/x47_test.py`; `X35_BATCH1_REVIEW.md` F-RV-4 / F-RV-9 |
