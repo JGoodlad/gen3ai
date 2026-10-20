@@ -399,6 +399,12 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
     # 🚨 A DECLARED asymmetric calibration cell (K(P, H)): one agent piloting a DIFFERENT team set
     # on each side. Decided on the RESOLVED directory names, so two keys naming one set stay refused.
     self_pair = our_side == args.opponent
+    if not self_pair and kind == "metamon" and our_side.startswith("metamon:"):
+        # Two NAMES, one policy: an alias with the other name's policy AND checkpoint plays itself.
+        meta = cfg.opponent(kind)
+        ours_agent = our_side.partition(":")[2]
+        self_pair = (ours_agent in meta.agents and agent in meta.agents
+                     and meta.identity(ours_agent) == meta.identity(agent))
     asym_self = False
     if self_pair and our_teamset is not None:
         meta = cfg.opponent(kind)

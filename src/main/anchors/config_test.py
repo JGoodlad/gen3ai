@@ -67,6 +67,9 @@ def test_the_committed_default_parses_and_names_both_anchors() -> None:
     # Kakuna is pinned at upstream's own `default_checkpoint` (metamon/rl/pretrained.py @0a00a759)
     # — the hub carries epochs up to 40, so an unpinned name would be a moving target.
     assert cfg.metamon.agents["Kakuna"]["checkpoint"] == 34
+    # X51: Kakuna's checkpoint 28 (Metamon's ensemble presets rate it above 34) is an ALIAS of the same policy
+    assert cfg.metamon.identity("Kakuna28") == ("Kakuna", 28)
+    assert cfg.metamon.identity("Kakuna") == ("Kakuna", 34)
     assert cfg.metamon.team_sets["away"] == "competitive"
     assert set(cfg.our_team_sources) == {"home", "away"}
     assert cfg.port_range == [9500, 9599], "9XXX only — 8000/8001 must be unreachable by default"
@@ -128,6 +131,15 @@ def test_a_pinned_metamon_agent_is_accepted(tmp_path: Path) -> None:
     (tmp_path / "metamon" / "cache").mkdir(parents=True)
     (tmp_path / "metamon" / "python").write_text("")
     cfg.metamon.require("Kakuna")
+
+
+def test_an_alias_policy_that_is_not_a_name_is_refused(tmp_path: Path) -> None:
+    blob = json.loads(_write(tmp_path).read_text())
+    blob["opponents"]["metamon"]["agents"] = {"Bad": {"policy": "", "checkpoint": 1}}
+    (tmp_path / "anchors.json").write_text(json.dumps(blob))
+    cfg = load_config(tmp_path / "anchors.json")
+    with pytest.raises(AnchorConfigError):
+        cfg.metamon.policy("Bad")
 
 
 def test_an_unknown_team_set_is_refused_rather_than_defaulted(tmp_path: Path) -> None:

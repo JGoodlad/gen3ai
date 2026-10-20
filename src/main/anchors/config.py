@@ -30,7 +30,7 @@ import json
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from utils.paths import repo_path
 
@@ -100,6 +100,22 @@ class MetamonOpponent:
                 f"(known: {sorted(self.agents)}). Add it with its checkpoint number rather than "
                 "passing one on the CLI — a policy is only an anchor once its checkpoint is pinned."
             )
+
+    def policy(self, agent: str) -> str:
+        """The Metamon PRETRAINED POLICY an agent name plays (the peer's ``get_pretrained_model(<policy>)``):
+        the agent's ``policy`` key, else the name itself. An ALIAS pins a second checkpoint of one policy
+        under its own name — ``"Kakuna28": {"policy": "Kakuna", "checkpoint": 28}`` (X51, 2026-10-20: Kakuna
+        ckpt 28 against ckpt 34) — so a pair cell can play two checkpoints of one policy, each pinned here."""
+        policy = self.agents.get(agent, {}).get("policy", agent)
+        if not isinstance(policy, str) or not policy:
+            raise AnchorConfigError(
+                f"metamon agent {agent!r}: its 'policy' must name a Metamon pretrained model, got {policy!r}")
+        return policy
+
+    def identity(self, agent: str) -> Tuple[str, Optional[int]]:
+        """``(policy, checkpoint)``: what a peer under this name actually PLAYS. Two names with one identity
+        are one policy (the self-pair refusal reads this, not the names)."""
+        return self.policy(agent), self.agents.get(agent, {}).get("checkpoint")
 
     def team_set(self, teamset: str) -> str:
         try:

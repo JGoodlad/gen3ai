@@ -20,6 +20,8 @@ diff: both peer commands verbatim, both team sources with their counts, and ever
 """
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from main.anchors import cli as cli_mod
@@ -716,6 +718,25 @@ def test_a_metamon_pair_keeps_the_A_side_as_the_record_side(cfg) -> None:
 def test_a_malformed_pair_is_refused_before_anything_starts(cfg, argv) -> None:
     with pytest.raises(SystemExit):
         build_plan(_pair(*argv, "--dry-run"), cfg)
+
+
+def test_two_checkpoints_of_one_policy_make_a_pair_cell(cfg) -> None:
+    """X51: Kakuna ckpt 28 (the alias ``Kakuna28``) against ckpt 34 is two DIFFERENT policies — the cell runs,
+    reported from side A, and the two logins are distinct Showdown users."""
+    plan = build_plan(_pair("--opponent-a", "metamon:Kakuna28", "--opponent-b", "metamon:Kakuna",
+                            "--dry-run"), cfg)
+    assert plan.our_side == "metamon:Kakuna28" and plan.opponent == "metamon:Kakuna"
+    ids = {re.sub(r"[^a-z0-9]", "", n.lower()) for n in (plan.our_username, plan.peer_username)}
+    assert len(ids) == 2
+
+
+def test_an_alias_with_the_same_policy_AND_checkpoint_is_still_itself(cfg, monkeypatch) -> None:
+    """The self-pair refusal reads what a name PLAYS, not the name: an alias of Kakuna at 34 is Kakuna."""
+    monkeypatch.setitem(cfg.metamon.agents, "KakunaDup", {"policy": "Kakuna", "checkpoint": 34})
+    with pytest.raises(SystemExit) as excinfo:
+        build_plan(_pair("--opponent-a", "metamon:KakunaDup", "--opponent-b", "metamon:Kakuna",
+                         "--dry-run"), cfg)
+    assert "against ITSELF" in str(excinfo.value)
 
 
 def test_a_pair_cell_forfeits_nothing_and_the_plan_says_so(cfg) -> None:

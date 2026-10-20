@@ -90,6 +90,26 @@ def test_the_metamon_command_names_the_regime_the_checkpoint_and_the_team_set(cf
     assert plan.their_regime == "greedy"
 
 
+def test_an_alias_plays_its_POLICY_at_its_own_pinned_checkpoint(cfg, tmp_path) -> None:
+    """X51 (2026-10-20): ``Kakuna28`` = Metamon's ``Kakuna`` policy at checkpoint 28. The peer must load the
+    POLICY (``get_pretrained_model("Kakuna")`` — there is no ``Kakuna28`` model upstream) at the ALIAS's
+    checkpoint, and the version stamp must name what was played, never the alias."""
+    plan = MetamonPeer().plan(
+        cfg=cfg.metamon, agent="Kakuna28", regime="greedy", teamset="away", battle_format="gen3ou",
+        server_uri="ws://localhost:9501/showdown/websocket", username="MetaKakuna28",
+        opponent_username="MetaKakuna", role="acceptor", n_games=4, team_seed=7, out_dir=tmp_path)
+    argv = plan.argv
+    assert argv[argv.index("--agent") + 1] == "Kakuna"
+    assert argv[argv.index("--checkpoint") + 1] == "28"
+    assert plan.version == "Kakuna@ckpt28"
+    # the un-aliased name is unchanged: its policy is its own name
+    base = MetamonPeer().plan(
+        cfg=cfg.metamon, agent="Kakuna", regime="greedy", teamset="away", battle_format="gen3ou",
+        server_uri="ws://localhost:9501/showdown/websocket", username="MetaKakuna",
+        opponent_username="MetaKakuna28", role="challenger", n_games=4, team_seed=7, out_dir=tmp_path)
+    assert base.argv[base.argv.index("--agent") + 1] == "Kakuna" and base.version == "Kakuna@ckpt34"
+
+
 def test_the_metamon_env_carries_every_hazard_workaround(cfg, tmp_path) -> None:
     env = _metamon_plan(cfg, tmp_path).env
     assert env["PYTHONUNBUFFERED"] == "1", "H5: unflushed prints hide the readiness banner"

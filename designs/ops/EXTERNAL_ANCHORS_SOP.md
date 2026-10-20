@@ -194,6 +194,17 @@ named for whichever Metamon process challenged in that half. Three facts a reade
 * A Foul Play pair cell's `team_source_asymmetry` compares the two PEERS' directories — both must
   be the same files (see **H19**).
 
+### A second CHECKPOINT of one Metamon policy — an agent ALIAS (X51, 2026-10-20)
+
+An agent in `designs/ops/anchors.json` may carry `"policy"`: the Metamon pretrained model it plays, when that
+differs from its name. `"Kakuna28": {"policy": "Kakuna", "checkpoint": 28}` is Kakuna at checkpoint 28 (Metamon's
+ensemble presets rate it above the default 34). The peer loads the POLICY (`--agent Kakuna`) at the alias's pinned
+checkpoint, and the rows' `opponent_version` names what was played (`Kakuna@ckpt28`), never the alias. This is what
+lets a pair cell play two checkpoints of one policy: `--opponent-a metamon:Kakuna28 --opponent-b metamon:Kakuna`.
+🚨 The self-pair refusal reads `(policy, checkpoint)`, not the names, so an alias with the other side's policy AND
+checkpoint is still refused as a policy against itself. A new checkpoint's weights download from the Hugging Face
+hub into Metamon's cache on first use; fetch them once by hand and record their sha256 before the first unit.
+
 ### `--our-teamset {home,away}` — an ASYMMETRIC pair cell (B-D9, 2026-10-18)
 
 PAIR CELLS ONLY (a `metamon:` our-side, or `--opponent-a/-b`): our peer draws from the Metamon

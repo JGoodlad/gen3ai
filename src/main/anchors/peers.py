@@ -145,7 +145,9 @@ class MetamonPeer(Peer):
              team_seed: int, out_dir: Path, temperature: Optional[float] = None,
              team_sequence: Optional[Path] = None, **_: Any) -> PeerPlan:
         cfg.require(agent)
-        checkpoint = cfg.agents[agent].get("checkpoint")
+        # An alias (``"Kakuna28": {"policy": "Kakuna", "checkpoint": 28}``) plays its POLICY at its own pinned
+        # checkpoint; the version stamp names the policy and checkpoint actually played, never the alias.
+        policy, checkpoint = cfg.identity(agent)
         team_set = cfg.team_set(teamset)
         driver = src_path("main", "anchors", "peer_scripts", "metamon_side.py")
         log_path = out_dir / f"peer_{role}.log"
@@ -153,7 +155,7 @@ class MetamonPeer(Peer):
         argv = [
             str(cfg.python), str(driver),
             "--server-uri", server_uri,
-            "--agent", agent,
+            "--agent", policy,
             "--username", username,
             "--opponent-username", opponent_username,
             "--role", role,
@@ -205,7 +207,7 @@ class MetamonPeer(Peer):
             report_path=report_path,
             their_regime=(f"sample:T={float(temperature):g}" if temperature is not None
                           else regime),
-            version=f"{agent}@ckpt{checkpoint}",
+            version=f"{policy}@ckpt{checkpoint}",
             commit=git_head(cfg.checkout),
             team_dir=cfg.team_dir(teamset, battle_format),
         )
