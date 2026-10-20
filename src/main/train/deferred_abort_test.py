@@ -33,6 +33,7 @@ import pytest
 
 from main.train import lifecycle
 from main.train.deferred_abort import SAFE_POINT_DEADLINE_SEC, SAVE_BUDGET_SEC, DeferredAbort
+from utils import atomic_io
 from utils.contention import scale_timeout
 
 N_STEPS, N_ENVS = 8, 2
@@ -176,6 +177,8 @@ class _StubModel:
 
     def save(self, path: str) -> None:
         self.saves.append(path)
+        with open(path, "wb") as f:                 # the save is atomic: it hands the writer a temp name to fill
+            f.write(b"PK-stub")
 
 
 def test_a_signal_with_no_safe_point_falls_back_without_a_save(tmp_path, restore_signals, monkeypatch):
@@ -503,6 +506,8 @@ def test_a_signal_during_an_eval_cycle_is_honoured_at_the_cycles_safe_point(tmp_
 
     monkeypatch.setattr(lifecycle, "save_model_snapshot", lambda *a, **k: None)
     monkeypatch.setattr(lifecycle, "record_checkpoint", lambda *a, **k: None)
+    # (`latest.txt` moves only AFTER the sidecars -- `commit_checkpoint` -- so the stub's hparams must not raise)
+    monkeypatch.setattr(lifecycle, "_model_hparams", lambda m: {})
     order: List[str] = []
     model, ex = _EvalModel(_HostStepEvaluator(order), order), _Exit()
     abort = lifecycle._setup_signal_handlers(model, str(tmp_path), threading.Event(), None,
@@ -514,7 +519,8 @@ def test_a_signal_during_an_eval_cycle_is_honoured_at_the_cycles_safe_point(tmp_
                                 forensic=False, record=False)
         assert order == ["host step 0", "host step 1", "signal handled", "save"], order
         assert e.value.code == 15 and ex.calls == [(15, "main")] and abort.claimed_by == "safe point"
-        assert model.saves == [os.path.join(str(tmp_path), "final_model_interrupted")]
+        assert len(model.saves) == 1 and atomic_io.is_temp_name(model.saves[0]), model.saves   # (the writer's temp)
+        assert (tmp_path / "final_model_interrupted.zip").read_bytes() == b"PK-stub"
         assert (tmp_path / "latest.txt").read_text().strip() == "final_model_interrupted.zip"
     finally:
         abort.close()

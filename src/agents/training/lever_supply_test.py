@@ -20,6 +20,7 @@ from agents.training.lever_supply import (LEVERS, DryStreakGuard, LeverConfigErr
                                           LeverStarvedError, parse_starve_overrides,
                                           starve_cycles_for)
 from main.exit_codes import FatalConfigError, TrainExitCode, exit_code_for
+from utils.model_save_testkit import fake_save
 
 
 # -- the guard ---------------------------------------------------------------------------------
@@ -132,7 +133,7 @@ def _selfplay(tmp_path, monkeypatch, *, store, n_sentinels=0, bot_win=0.40, sent
     cb = SelfPlayCallback(pool=pool, model_dir=str(tmp_path), n_sentinels=max(1, n_sentinels),
                           pfsp_scale=pfsp_scale)
     cb.model = MagicMock()
-    cb.model.save = lambda base: open(base + ".zip", "w").close()
+    cb.model.save = fake_save
     cb.model.gamma = 0.99
     cb._logger = MagicMock()
     cb.model.get_env.return_value.env_method.return_value = [(100, 5, 2)]

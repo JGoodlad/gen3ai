@@ -76,6 +76,7 @@ import sys
 from datetime import datetime, timezone
 
 from agents.training import elo as elo_mod
+from utils.atomic_io import atomic_write_json as _write_json_atomically
 
 
 # ── paths / durability ────────────────────────────────────────────────────────────────────
@@ -363,11 +364,7 @@ def own_rated_steps_ever(run_dir: str, committed: "list[int] | None" = None) -> 
 
 
 def _atomic_write_json(path: str, obj: dict) -> None:
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = path + ".tmp"
-    with open(tmp, "w") as f:
-        json.dump(obj, f, indent=2)
-    os.replace(tmp, path)
+    _write_json_atomically(path, obj, indent=2)
 
 
 #: Public alias — `main.elo refit --apply` writes the refitted ladder (and preserves the old one)

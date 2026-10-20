@@ -19,6 +19,7 @@ from agents.training.eval_sharding import PLAN_NAME, ShardedEvalPool
 from agents.training.trace_selection import SELECTION_SCHEMA, build_selection
 from agents.training.weights_link import link_or_copy, sha256_file as _sha256_file  # noqa: F401
 from main.launcher.ipc import send_metrics
+from utils.atomic_io import atomic_write_json
 from utils.contention import describe_contention
 
 
@@ -151,8 +152,7 @@ def record_eval_selection(model_dir: str | None, step: int, merged: dict,
         m["selection_schema"] = SELECTION_SCHEMA
         m["selection_rule"] = _rule_for(q)
         m["selection"] = block
-        with open(mpath, "w") as f:
-            json.dump(m, f, indent=2)
+        atomic_write_json(mpath, m, indent=2)
     except (OSError, ValueError) as e:
         print(f"⚠️ [EVAL] could not record trace selection for step {step:,}: {e}")
         return None
@@ -236,8 +236,7 @@ def persist_eval_snapshot(model_dir: str | None, step: int, snapshot_path: str, 
         m["snapshot_storage"] = {"mode": mode, "note": note, "sha256": digest or None,
                                  "checkpoint": (os.path.join("checkpoints", os.path.basename(ckpt))
                                                 if mode == "hardlink" and ckpt else None)}
-        with open(mpath, "w") as f:
-            json.dump(m, f, indent=2)
+        atomic_write_json(mpath, m, indent=2)
     except (OSError, ValueError):
         pass
     prune_eval_snapshots(model_dir, keep_n)

@@ -9,7 +9,6 @@ The evaluator here is a FAKE with the executor's two outputs (one published ``Sh
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock
@@ -21,6 +20,7 @@ from agents.training import eval_ledger as L
 from agents.training import mirrored_pairs as MP
 from agents.training.eval_ledger import audit as AU
 from agents.training.trace_result import DRAW, LOSS, WIN
+from utils.model_save_testkit import fake_save_bytes
 
 TEAMS = [f"team-{i}" for i in range(6)]
 CYCLE_ROWS = L.ReaderDecl(
@@ -105,7 +105,7 @@ class _Stats:
 
 def _model(ev):
     m = MagicMock()
-    m.save = lambda base: Path(base + ".zip").write_bytes(b"trainee weights")
+    m.save = fake_save_bytes(b"trainee weights")
     m.gamma = 0.99
     m.policy = SimpleNamespace(training=False, eval=lambda: None, train=lambda: None)
     m._rust_collector = SimpleNamespace(evaluator=ev, cfg=SimpleNamespace(run_seed=5))

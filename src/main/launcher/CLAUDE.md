@@ -50,7 +50,9 @@ codes in `crashes_and_exit_codes.md`, the child's interpreter in `interpreter.md
   thread busy-loops a core on a `/dev/null` stdin (`headless_test.py`).
 - **The child's save is deferred to a safe point** (`src/main/train/deferred_abort.py`);
   `KILL_GRACE_SECONDS` must stay above the safe-point deadline plus the save budget
-  (`src/main/train/deferred_abort_test.py`).
+  (`src/main/train/deferred_abort_test.py`). **The save is atomic and `latest.txt` moves last**
+  (`designs/training/checkpoint_writes.md`): a failed or killed save leaves the previous file and its old mtime, so the
+  freshness checks here (the GPU window's, `find_latest_checkpoint`'s) refuse it instead of loading a torn zip.
 - **The preflights refuse `FATAL_CONFIG` before the pin, worktree or run dir exist** (the desktop on
   the GPU, low disk, an unusable `deps/pokemon-showdown`, a `--device cuda` launch under `CUDA_VISIBLE_DEVICES` hiding every GPU; `launch_guards.md`), and `--dry-run` prints
   each verdict. The launcher's ask is the only one a pinned older trainer gets.

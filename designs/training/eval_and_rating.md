@@ -509,10 +509,11 @@ implementation `link_or_copy(src, dst, twin)` behind all three): `best_model/bes
 copy made although a checkpoint exists) and the self-play pool entry (`SnapshotPool.add_from_path(src, step,
 twin=<checkpoint_at_step>)`, called by `SelfPlayCallback` at a seeding and a promotion). A hard link is only ever made
 to a SAME-STEP checkpoint that is byte-identical, so at a non-coincident step both stay copies. 🚨 The mirror hazard
-is an IN-PLACE writer opening a name that shares an inode: `weights_link.unshare(path)` removes that one name first,
-and the periodic checkpointer (`run_io._TrackingCheckpointCallback`) and the pool's live `add` call it before
-`model.save`, so a re-reached step can neither rewrite nor (torn) corrupt the other names. Pinned by
-`agents/training/weights_link_test.py`, each test failing on revert.
+is an IN-PLACE writer opening a name that shares an inode. There is none: the periodic checkpointer
+(`run_io._TrackingCheckpointCallback`), the pool's live `add` and the eval snapshots save through
+`utils.atomic_io.atomic_save_model` (a temp file, then `os.replace`), which gives the name a fresh inode, so a
+re-reached step can neither rewrite nor (torn) corrupt the other names (`designs/training/checkpoint_writes.md`).
+Pinned by `agents/training/weights_link_test.py`, each test failing on revert.
 The prober consumes the manifest to load the exact model, falling back to the nearest
 checkpoint. **The trainer grooms the traces it writes**: after each cycle
 `_prune_eval_traces` keeps only the `--keep-eval-trace-steps` most-recent eval

@@ -27,6 +27,8 @@ import json
 import os
 from dataclasses import asdict, dataclass, field
 
+from utils.atomic_io import atomic_write_json
+
 # CVaR tuning for the per-decision critic-surprise tail (eval/td_resid_tail_*). Lives here — the
 # single source of truth — because aggregation owns the pooled computation; eval_callback re-exports
 # these for the recorder + prober parity. Moved out of eval_callback to keep eval_sharding free of
@@ -116,10 +118,7 @@ def _shard_path(result_dir: str, unit_id: str) -> str:
 def write_shard_result(result_dir: str, res: ShardResult) -> None:
     """Atomically persist one shard result (tmp + rename) so a reader never sees a half file."""
     out = _shard_path(result_dir, res.unit_id)
-    tmp = out + ".tmp"
-    with open(tmp, "w") as f:
-        json.dump(asdict(res), f)
-    os.replace(tmp, out)
+    atomic_write_json(out, asdict(res))
 
 
 def read_shard_result(result_dir: str, unit_id: str) -> ShardResult | None:

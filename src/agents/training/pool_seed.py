@@ -83,6 +83,8 @@ import shutil
 import sys
 from typing import Any, Dict, List, Optional
 
+from utils.atomic_io import atomic_write, atomic_write_json, atomic_write_text
+
 #: The pool's metadata files, in the order they are copied. See the table in the module docstring.
 POOL_METADATA_FILES = ("summary.json", "win_rate_vs_bots.txt", "model_config.json")
 
@@ -287,7 +289,7 @@ def seed_pool(parent_run_dir: str, pool_dir: str, *, fork_step: Optional[int] = 
         if fork_step is not None and step is not None and step > fork_step:
             dropped.append(step)
             continue
-        shutil.copy2(z, os.path.join(pool_dir, os.path.basename(z)))
+        atomic_write(os.path.join(pool_dir, os.path.basename(z)), lambda tmp, z=z: shutil.copy2(z, tmp))
         copied.append(os.path.basename(z))
     metadata: List[str] = []
     pruned_keys: List[str] = []
@@ -298,11 +300,10 @@ def seed_pool(parent_run_dir: str, pool_dir: str, *, fork_step: Optional[int] = 
         pruned = (_prune_summary(p, fork_step)
                   if name == "summary.json" and fork_step is not None else None)
         if pruned is None:
-            shutil.copy2(p, os.path.join(pool_dir, name))
+            atomic_write(os.path.join(pool_dir, name), lambda tmp, p=p: shutil.copy2(p, tmp))
         else:
             # The same serialisation SnapshotPool.persist_summary writes.
-            with open(os.path.join(pool_dir, name), "w", encoding="utf-8") as f:
-                f.write(json.dumps(pruned, indent=2))
+            atomic_write_text(os.path.join(pool_dir, name), json.dumps(pruned, indent=2), encoding="utf-8")
             pruned_keys = [k for k in PER_SNAPSHOT_SUMMARY_KEYS if k in pruned]
         metadata.append(name)
     record: Dict[str, Any] = {
@@ -357,8 +358,7 @@ def _read_win_rate(pool_dir: str) -> Optional[float]:
 
 def write_seed_record(pool_dir: str, record: Dict[str, Any]) -> None:
     try:
-        with open(os.path.join(pool_dir, SEED_RECORD_FILE), "w", encoding="utf-8") as f:
-            json.dump(record, f, indent=2)
+        atomic_write_json(os.path.join(pool_dir, SEED_RECORD_FILE), record, indent=2)
     except OSError:  # noqa: BLE001 — provenance must never break a launch
         pass
 

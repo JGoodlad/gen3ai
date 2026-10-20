@@ -15,6 +15,7 @@ import pytest
 from agents.training.snapshot_pool import SnapshotPool, SnapshotEntry
 from agents.training.selfplay_callback import SelfPlayCallback, _PFSP_WR_EMA_BETA
 from agents.training.rust_env_opponents import RustEnvOpponents
+from utils.model_save_testkit import fake_save
 
 
 # ── helpers (mirrors snapshot_pool_test) ─────────────────────────────────────
@@ -28,14 +29,7 @@ def _make_pool(tmp_path, **kwargs) -> SnapshotPool:
 
 def _fake_model(tmp_path) -> MagicMock:
     m = MagicMock()
-
-    def _save(path):
-        p = Path(path)
-        if not str(p).endswith(".zip"):
-            p = Path(str(p) + ".zip")
-        p.touch()
-
-    m.save.side_effect = _save
+    m.save.side_effect = fake_save
     return m
 
 

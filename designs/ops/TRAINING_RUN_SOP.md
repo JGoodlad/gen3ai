@@ -110,7 +110,7 @@ child, whose trainer predates the guard, is covered); the trainer asks again at 
 same verdict (`disk space :` line with the arithmetic). In flight, at every checkpoint save the trainer reads
 `shutil.disk_usage` once: free < 2 x the next save prints `[DiskGuard] LOW DISK` at every save; free < 1 x stops
 cleanly (the checkpoint just written stands; exit `FATAL_DISK` 8; the launcher does NOT restart); a save that fails
-with ENOSPC removes the torn file and stops the same way. `--allow-low-disk` is the dev / short-run opt-out (recorded
+with ENOSPC leaves no partial file (saves are atomic, `designs/training/checkpoint_writes.md`) and stops the same way. `--allow-low-disk` is the dev / short-run opt-out (recorded
 in `metadata.json` `cli_args._disk_guard`; it also stands the in-run STOP down, the warnings stay); `--debug` is exempt
 from the preflight. Before a launch: `df -h /` and `du -sh models/* | sort -h` (retention:
 `designs/research_state/models_retention_policy.md`) — free the archive; never pass the flag to a registered run.

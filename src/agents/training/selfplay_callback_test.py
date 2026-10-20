@@ -13,6 +13,7 @@ import pytest
 
 from agents.training import eval_callback as ec
 from agents.training.snapshot_pool import SnapshotEntry
+from utils.model_save_testkit import fake_save
 from agents.training.selfplay_callback import (
     _monotonicity_score,
     SelfPlayCallback,
@@ -95,7 +96,7 @@ def _make_callback(tmp_path, *, pool=None, promote_threshold=0.65,
         debug=debug,
     )
     cb.model = MagicMock()
-    cb.model.save = lambda base: open(base + ".zip", "w").close()
+    cb.model.save = fake_save
     cb._logger = MagicMock()
     # `training_env` is a read-only property reading model.get_env(); configure the env
     # there. opponent_default_stats telemetry: (decisions, defaults, redecides) per env.

@@ -14,6 +14,7 @@ from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from agents.training.instrumented_ppo.inference import InferenceMaskablePPO
 from agents.training.instrumented_ppo.strict_load import StrictMaskablePPO
+from utils.atomic_io import atomic_write_json
 from utils.git import get_git_hash
 
 #: The launcher exports its chosen pin here; every git_hash written for a run reads it.
@@ -162,7 +163,8 @@ def save_model_snapshot(
     """Write model_config.json and metadata.json into model_dir.
 
     Does NOT call model.save() — the caller is responsible for the .zip file.
-    Safe to call multiple times; files are overwritten in place.
+    Safe to call multiple times; each file is REPLACED atomically (`utils.atomic_io`: a failed or killed write leaves
+    the previous file whole, never a truncated JSON that the next save would crash reading).
     Preserves any existing snapshot_history and the top-level `latest_eval` block
     (so a checkpoint saved after an eval doesn't erase the eval results).
 
@@ -219,8 +221,7 @@ def save_model_snapshot(
         _cfg["inert_reward_flags"] = inert_reward_flags(version)
     except Exception:  # noqa: BLE001 — an ANNOTATION must never be able to fail a save
         pass
-    with open(os.path.join(model_dir, "model_config.json"), "w") as f:
-        json.dump(_cfg, f, indent=2, sort_keys=True)
+    atomic_write_json(os.path.join(model_dir, "model_config.json"), _cfg, indent=2, sort_keys=True)
 
     # ONE resolver for the run metadata and every checkpoint sidecar (`resolve_git_hash`),
     # so the two can never disagree about which commit ran — and it RAISES when the
@@ -386,8 +387,7 @@ def save_model_snapshot(
         })
     if matchup_history:
         metadata["matchup_history"] = matchup_history
-    with open(meta_path, "w") as f:
-        json.dump(metadata, f, indent=2)
+    atomic_write_json(meta_path, metadata, indent=2)
 
 
 def record_team_win_rates(model_dir: str, table: dict) -> None:
@@ -403,8 +403,7 @@ def record_team_win_rates(model_dir: str, table: dict) -> None:
         with open(meta_path) as f:
             meta = json.load(f)
     meta["team_win_rates"] = table
-    with open(meta_path, "w") as f:
-        json.dump(meta, f, indent=2)
+    atomic_write_json(meta_path, meta, indent=2)
 
 
 def record_eval_results(model_dir: str, step: int, metrics: dict) -> None:
@@ -429,8 +428,7 @@ def record_eval_results(model_dir: str, step: int, metrics: dict) -> None:
         "step": step,
         "evaluated_at": datetime.now(timezone.utc).isoformat(),
     }
-    with open(meta_path, "w") as f:
-        json.dump(meta, f, indent=2)
+    atomic_write_json(meta_path, meta, indent=2)
 
 
 def append_eval_result_row(
@@ -752,8 +750,7 @@ def record_snapshot_in_history(
         num_timesteps,
     )
     meta["snapshot_history"] = history
-    with open(meta_path, "w") as f:
-        json.dump(meta, f, indent=2)
+    atomic_write_json(meta_path, meta, indent=2)
 
 
 def record_checkpoint(
@@ -862,8 +859,7 @@ def write_checkpoint_metadata(
         lr, n_epochs, hparams, git_hash, handoff_lr, eval_block, matchup_hash, pin_history,
         _resolve_checkpoint_steps(checkpoint_path, hparams, num_timesteps),
     )
-    with open(_checkpoint_metadata_path(checkpoint_path), "w") as f:
-        json.dump(entry, f, indent=2)
+    atomic_write_json(_checkpoint_metadata_path(checkpoint_path), entry, indent=2)
 
 
 def _read_latest_eval(model_dir: str) -> Optional[dict]:

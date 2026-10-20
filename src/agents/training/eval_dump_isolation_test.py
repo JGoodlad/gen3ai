@@ -16,6 +16,7 @@ from agents.training import logger_scope as LS
 from agents.training.eval_callback import PerOpponentEvalCallback
 from agents.training.eval_sharding import ShardResult
 from agents.training.train_logger import Logger
+from utils.model_save_testkit import fake_save
 
 KL = 0.0123
 
@@ -69,7 +70,7 @@ def _cb(tmp_path: Any, logger: Logger) -> PerOpponentEvalCallback:
                                  best_model_save_path=str(tmp_path / "best"), eval_games=8)
     cb.model = MagicMock()
     cb.model.logger = logger
-    cb.model.save = lambda base: open(base + ".zip", "w").close()
+    cb.model.save = fake_save
     cb.model.gamma = 0.99
     cb.model._rust_collector = SimpleNamespace(evaluator=_FakeEvaluator(), cfg=SimpleNamespace(run_seed=5))
     cb.num_timesteps = 2_000_000

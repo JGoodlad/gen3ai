@@ -42,7 +42,9 @@ safe point, exits INTERRUPTED ─▶ checkpoint + empty GPU checked ─▶ GO �
   escalates to SIGKILL. The resume is the existing restart path, so nothing about the pin, the recipe or the
   argv is re-derived.
 - **GO only on a clean pause.** All three must hold: the child exited `INTERRUPTED` (15); a checkpoint at least
-  as new as the SIGTERM exists (2 s mtime slack); and `nvidia-smi` lists no compute process within 600 s. The
+  as new as the SIGTERM exists (2 s mtime slack; the trainer's save is atomic and moves `latest.txt` last, so a save that
+  failed leaves the PREVIOUS file with its old mtime and the window HOLDS, never a torn zip with a fresh one —
+  `training/checkpoint_writes.md`); and `nvidia-smi` lists no compute process within 600 s. The
   GPU check covers the whole box, because under the lease only its holder uses the GPU. Only an ABSENT
   `nvidia-smi` (a CPU box) skips it, with a warning; one that fails or hangs is not a free GPU (it HOLDS).
 - **The run comes back only to an empty GPU.** After DONE rc 0 the same check runs again, so a worker the

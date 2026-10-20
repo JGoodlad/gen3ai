@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import os
 
+from utils.atomic_io import atomic_write_json
 from agents.training.eval_sharding.units import (
     EvalItem, ShardUnit, game_range, plan_units, shards_per_item,
 )
@@ -65,10 +66,7 @@ class ShardedEvalPool:
         }
         if self.mirrored:            # absent = unmirrored, so a default plan stays byte-identical
             payload["mirrored"] = True
-        tmp = path + ".tmp"
-        with open(tmp, "w") as f:
-            json.dump(payload, f, indent=2)
-        os.replace(tmp, path)
+        atomic_write_json(path, payload, indent=2)
         return path
 
     @classmethod

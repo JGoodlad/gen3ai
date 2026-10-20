@@ -15,6 +15,7 @@ from agents.training import eval_launch
 from agents.training.eval_callback import PerOpponentEvalCallback, eval_opponent_names
 from agents.training.eval_sharding import ShardResult
 from agents.training.rust_eval.launch import RustEvalUnavailable
+from utils.model_save_testkit import fake_save
 
 
 class _Stats:
@@ -48,7 +49,7 @@ def _cb(tmp_path, evaluator):
     cb = PerOpponentEvalCallback(model_dir=str(tmp_path),
                                  best_model_save_path=str(tmp_path / "best"), eval_games=8)
     cb.model = MagicMock()
-    cb.model.save = lambda base: open(base + ".zip", "w").close()
+    cb.model.save = fake_save
     cb.model.gamma = 0.99
     cb.model._rust_collector = SimpleNamespace(evaluator=evaluator, cfg=SimpleNamespace(run_seed=5))
     cb._logger = MagicMock()

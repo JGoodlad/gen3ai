@@ -16,14 +16,13 @@ when - ``twin`` exists, is on the SAME filesystem as ``dst``'s directory and is 
 the other name (retention frees the blocks only when the LAST name goes) and is an ordinary file path to
 every reader.
 
-🚨 TWO HAZARDS, BOTH CLOSED HERE.
-* ``dst`` is replaced ATOMICALLY (build ``dst.tmp``, then ``os.replace``) and never opened for writing: an
-  existing ``dst`` may already be a link to a checkpoint (a restart re-persisting the same step), and a
-  plain ``shutil.copy2`` onto it would truncate the CHECKPOINT through the shared inode.
-* The mirror image - an IN-PLACE writer (``model.save(path)``: the checkpointer, the pool's live ``add``)
-  opening a name that now shares its inode would rewrite every other name with it, and a torn write would
-  corrupt all of them at once. :func:`unshare` removes THAT name first when it has more than one, so the
-  writer creates a fresh inode and the other names keep their bytes.
+🚨 THE HAZARD, CLOSED HERE AND AT EVERY WRITER. ``dst`` is replaced ATOMICALLY (`utils.atomic_io`: a temp file, then
+``os.replace``) and never opened for writing: an existing ``dst`` may already be a link to a checkpoint (a restart
+re-persisting the same step), and a plain ``shutil.copy2`` onto it would truncate the CHECKPOINT through the shared
+inode. The mirror image - an in-place ``model.save(path)`` opening a name that shares an inode - cannot happen
+either: the checkpointer, the pool's live ``add`` and the eval snapshots all save through
+``utils.atomic_io.atomic_save_model``, which gives the name a fresh inode, so the other names keep their bytes and a
+torn write corrupts none of them.
 """
 from __future__ import annotations
 
@@ -31,6 +30,8 @@ import hashlib
 import os
 import shutil
 from typing import Optional, Tuple
+
+from utils.atomic_io import atomic_write
 
 #: The note a copy carries when there was no twin to link to (eval and checkpoint cadences do not always
 #: coincide, so this is normal and must not warn).
@@ -55,11 +56,6 @@ def link_or_copy(src: str, dst: str, twin: Optional[str], *, no_twin_note: str =
     second name for ``twin``'s inode, not a duplicate of it), else ``"copy"`` and ``note`` says why a link was not
     made. ``sha256`` is the digest of ``src`` when it was computed (a link attempt got that far), else ``""``.
     ``dst`` is replaced atomically and never opened for writing (see the module docstring)."""
-    tmp = dst + ".tmp"
-    try:
-        os.remove(tmp)
-    except FileNotFoundError:
-        pass
     mode, note = "copy", no_twin_note
     digest = ""
     if twin is not None:
@@ -73,34 +69,9 @@ def link_or_copy(src: str, dst: str, twin: Optional[str], *, no_twin_note: str =
                 if sha256_file(twin) != digest:
                     note = "the checkpoint at this step is not byte-identical to the snapshot"
                 else:
-                    os.link(twin, tmp)
-                    os.replace(tmp, dst)
-                    # POSIX rename() of one hard link onto ANOTHER NAME OF THE SAME INODE does nothing and
-                    # leaves the source: a re-persist over an existing link would strand `dst.tmp` (a third name).
-                    if os.path.lexists(tmp):
-                        os.remove(tmp)
+                    atomic_write(dst, lambda tmp: os.link(twin, tmp))
                     return "hardlink", digest, "hard link to " + os.path.join("checkpoints", os.path.basename(twin))
         except OSError as e:
             note = f"linking failed ({e})"
-            try:
-                os.remove(tmp)
-            except OSError:
-                pass
-    shutil.copy2(src, tmp)
-    os.replace(tmp, dst)
+    atomic_write(dst, lambda tmp: shutil.copy2(src, tmp))
     return mode, digest, note
-
-
-def unshare(path: str) -> bool:
-    """Remove ``path`` when it is one of several names for its inode (``st_nlink > 1``); True when it did.
-
-    Call this before an IN-PLACE writer (``model.save(path)``) opens ``path``: the writer then creates a fresh
-    inode and the other names (a checkpoint, a best-model export, a pool entry, an eval snapshot) keep the bytes
-    they were linked for. A single-name file is left alone (the writer overwrites it as it always did)."""
-    try:
-        if os.stat(path).st_nlink > 1:
-            os.remove(path)
-            return True
-    except FileNotFoundError:
-        pass
-    return False

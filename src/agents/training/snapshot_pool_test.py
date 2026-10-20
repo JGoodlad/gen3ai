@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from agents.training.snapshot_pool import SnapshotPool, SnapshotEntry, heuristic_fraction
+from utils.model_save_testkit import fake_save
 
 
 # ── heuristic_fraction ──────────────────────────────────────────────────────
@@ -99,14 +100,7 @@ def _make_pool(tmp_path, **kwargs) -> SnapshotPool:
 def _fake_model(tmp_path, name="model") -> MagicMock:
     """Mock model whose .save() writes a real zip so glob finds it."""
     m = MagicMock()
-
-    def _save(path):
-        p = Path(path) if not str(path).endswith(".zip") else Path(path)
-        if not str(p).endswith(".zip"):
-            p = Path(str(p) + ".zip")
-        p.touch()
-
-    m.save.side_effect = _save
+    m.save.side_effect = fake_save
     return m
 
 

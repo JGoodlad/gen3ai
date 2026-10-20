@@ -3,20 +3,21 @@
 `_resolve_fresh_model_dir` picks the directory; `_write_latest_txt` / `_attach_run_tb_logger` /
 `_model_hparams` / `_TrackingCheckpointCallback` are what keep it current while training runs.
 `_run_arch_toggles` is here because it, too, is provenance — the toggle set a snapshot is gated on.
+`commit_checkpoint` is THE save protocol every checkpoint path goes through (zip, sidecars, then `latest.txt`).
 """
 import os
 import sys
 from datetime import datetime
-from typing import Optional
+from typing import Callable, Optional
 
 from agents.training.loop_callbacks import BaseCallback
 
 from agents.model.snapshot import record_checkpoint
 from agents.training.dose import dose_block
 from agents.training.lineage import build_lineage
-from agents.training.weights_link import unshare
 from main.train.constants import checkpoint_due
 from utils import disk_guard
+from utils.atomic_io import atomic_save_model, atomic_write_text
 from utils.torch_state_guard import INIT_NUM_THREADS_ATTR
 
 
@@ -254,19 +255,39 @@ def require_reveal_provenance(model, version) -> None:
 
 
 def _write_latest_txt(model_dir: str, name: str) -> None:
-    """Atomically record the most-recent checkpoint in <model_dir>/latest.txt.
+    """Atomically record the most-recent checkpoint in <model_dir>/latest.txt (`utils.atomic_io`: temp file,
+    fsync, `os.replace`).
 
     ``name`` is resolved RELATIVE to ``model_dir`` (the run root): periodic + forced
     checkpoints live under ``checkpoints/`` so their name is run-relative
     (``checkpoints/checkpoint_123_steps.zip``); the final-model singletons stay at the
     run root so their name is a bare basename (``final_model.zip``). Every reader joins
     it back with the run dir (``os.path.join(run_dir, name)``), so both forms resolve.
+
+    Call it only through :func:`commit_checkpoint`, i.e. AFTER the zip and its sidecars are in place.
     """
-    latest = os.path.join(model_dir, "latest.txt")
-    tmp = latest + ".tmp"
-    with open(tmp, "w") as f:
-        f.write(name + "\n")
-    os.replace(tmp, latest)
+    atomic_write_text(os.path.join(model_dir, "latest.txt"), name + "\n")
+
+
+def commit_checkpoint(model, model_dir: str, zip_path: str, *,
+                      sidecars: "Optional[Callable[[str], None]]" = None,
+                      pointer: "Optional[Callable[[str, str], None]]" = None) -> str:
+    """THE checkpoint commit protocol (T46 review F8): every path that saves a resumable zip runs these three
+    steps in this order, so `latest.txt` NEVER names a missing, partial or sidecar-less target.
+
+    1. the zip, atomically (`atomic_save_model`): a failed or killed save leaves the previous file at that name;
+    2. ``sidecars(final_zip)``: whatever must sit beside the zip (`record_checkpoint`'s ``.json`` + history,
+       `save_model_snapshot`'s ``model_config.json`` / ``metadata.json``), each itself atomic;
+    3. ``latest.txt`` LAST, run-relative to ``model_dir``.
+
+    An exception anywhere stops the sequence before the pointer moves. ``pointer`` is the test seam (and lets a
+    caller keep its own module-level `_write_latest_txt` patchable). Returns the final zip path.
+    """
+    final = atomic_save_model(model, zip_path)
+    if sidecars is not None:
+        sidecars(final)
+    (pointer or _write_latest_txt)(model_dir, os.path.relpath(final, model_dir))
+    return final
 
 
 def _attach_run_tb_logger(model, model_dir: str) -> str:
@@ -393,44 +414,43 @@ class _TrackingCheckpointCallback(BaseCallback):
             ckpt_path = os.path.join(self.save_path, f"{self.name_prefix}_{now}_steps.zip")
             try:
                 # A re-reached step (a restart that resumed from an earlier checkpoint) finds the old file here,
-                # perhaps linked to a best-model / pool / eval-snapshot name: give the save a fresh inode so it
-                # cannot rewrite (or, torn, corrupt) those names.
-                unshare(ckpt_path)
-                self.model.save(ckpt_path)
+                # perhaps linked to a best-model / pool / eval-snapshot name: the atomic replace gives the name a
+                # fresh inode, so the save can neither rewrite (nor, torn, corrupt) those names, and a failed
+                # save leaves the old file whole.
+                # The .zip is in self.save_path (<run>/checkpoints/). latest.txt (LAST) records the run-RELATIVE
+                # path (checkpoints/checkpoint_<N>_steps.zip) and the per-checkpoint sidecar lands next to the
+                # .zip; metadata.json (snapshot_history) stays at the run root (self._run_dir).
+                commit_checkpoint(self.model, self._run_dir, ckpt_path, sidecars=self._record_sidecars)
             except OSError as e:
-                # A write that dies on a full disk leaves a TORN zip; latest.txt still names the previous
-                # checkpoint, so remove the fragment and stop cleanly instead of crash-looping.
+                # A write that dies on a full disk left no fragment at the final name (the temp is removed by the
+                # save itself) and `latest.txt` still names the previous checkpoint: stop cleanly instead of
+                # crash-looping.
                 if not (disk_guard.is_disk_full(e) and self.disk_stop_fn is not None):
                     raise
-                for frag in (ckpt_path, ckpt_path + ".tmp"):
-                    try:
-                        os.remove(frag)
-                    except OSError:
-                        pass
                 self.disk_stop_fn(f"[DiskGuard] 🛑 the checkpoint write at step {now:,} FAILED with a full "
-                                  f"disk ({e}); the torn file was removed and the previous checkpoint "
+                                  f"disk ({e}); no partial file was left and the previous checkpoint "
                                   "stands — exit FATAL_DISK 8, no restart. Free disk space, then resume with "
                                   "--model.")
                 raise
             if self.verbose >= 2:
                 print(f"Saving model checkpoint to {ckpt_path}")
-            # The .zip is in self.save_path (<run>/checkpoints/). latest.txt
-            # records the run-RELATIVE path (checkpoints/checkpoint_<N>_steps.zip) and the
-            # per-checkpoint sidecar lands next to the .zip; metadata.json (snapshot_history)
-            # stays at the run root (self._run_dir).
-            _write_latest_txt(self._run_dir, os.path.relpath(ckpt_path, self._run_dir))
-            if self._current_lr_fn is not None and self._current_epochs_fn is not None:
-                handoff_lr = self._handoff_lr_fn() if self._handoff_lr_fn is not None else None
-                record_checkpoint(
-                    self._run_dir,
-                    ckpt_path,
-                    self._current_lr_fn(),
-                    self._current_epochs_fn(),
-                    hparams=_model_hparams(self.model),
-                    handoff_lr=handoff_lr,
-                )
             self._disk_check(ckpt_path)
         return True
+
+    def _record_sidecars(self, ckpt_path: str) -> None:
+        """The periodic checkpoint's sidecars (step 2 of `commit_checkpoint`): the ``.json`` beside the zip and
+        the run-level ``snapshot_history`` entry, when the LR / epochs sources are wired."""
+        if self._current_lr_fn is None or self._current_epochs_fn is None:
+            return
+        handoff_lr = self._handoff_lr_fn() if self._handoff_lr_fn is not None else None
+        record_checkpoint(
+            self._run_dir,
+            ckpt_path,
+            self._current_lr_fn(),
+            self._current_epochs_fn(),
+            hparams=_model_hparams(self.model),
+            handoff_lr=handoff_lr,
+        )
 
     def _disk_check(self, ckpt_path: str) -> None:
         """After a save: warn at free < 2 x the next save, stop cleanly at free < 1 x (zero cost between

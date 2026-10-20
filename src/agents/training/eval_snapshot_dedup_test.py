@@ -29,6 +29,7 @@ from agents.training.eval_collect import (
 from agents.training.eval_launch import EVAL_MANIFEST_NAME, EVAL_SNAPSHOT_NAME
 from main.prober.discovery import build_trace_tree, resolve_model_for_step
 from main.prober.groom import groom_run
+from utils.atomic_io import is_temp_name
 
 WEIGHTS = b"PK-weights-" + bytes(range(256)) * 40          # stands for a ~62 MB zip; content is what is compared
 OTHER = b"PK-OTHER---" + bytes(range(256)) * 40            # same length, different bytes
@@ -122,7 +123,7 @@ def test_when_a_link_cannot_be_made_it_copies_and_says_why(tmp_path, monkeypatch
     assert open(snap, "rb").read() == WEIGHTS and not os.path.samefile(snap, ckpt)
     m = _manifest(run, step)["snapshot_storage"]
     assert m["mode"] == "copy" and "linking failed" in m["note"]
-    assert not os.path.exists(snap + ".tmp"), "a failed link must leave no .tmp behind"
+    assert not [n for n in os.listdir(os.path.dirname(snap)) if is_temp_name(n)], "a failed link must leave no temp behind"
 
 
 def test_store_eval_snapshot_reports_mode_digest_and_note(tmp_path):
@@ -158,8 +159,8 @@ def test_persisting_the_same_step_twice_is_idempotent(tmp_path):
     persist_eval_snapshot(run, step, transient, keep_n=10)
     persist_eval_snapshot(run, step, transient, keep_n=10)
     assert os.path.samefile(_snap(run, step), ckpt) and os.stat(ckpt).st_nlink == 2
-    assert not os.path.lexists(_snap(run, step) + ".tmp"), (
-        "rename() of a link onto another name of the same inode is a no-op - the .tmp must not be stranded")
+    assert not [n for n in os.listdir(os.path.dirname(_snap(run, step))) if is_temp_name(n)], (
+        "rename() of a link onto another name of the same inode is a no-op - the temp name must not be stranded")
     assert open(ckpt, "rb").read() == WEIGHTS
 
 

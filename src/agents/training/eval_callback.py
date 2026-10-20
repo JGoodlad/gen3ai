@@ -28,6 +28,7 @@ from agents.training.loop_callbacks import BaseCallback
 
 from agents.model.snapshot import record_eval_results
 from agents.training.logger_scope import isolated_dump
+from utils.atomic_io import atomic_save_model
 from agents.training.fixed_opponent_pool import is_external
 from agents.training.artifact_retention import (
     prune_run_artifacts, KEEP_STALLS_DEFAULT, KEEP_CRASHES_DEFAULT,
@@ -324,7 +325,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         os.makedirs(run_dir, exist_ok=True)
 
         snapshot_base = os.path.join(run_dir, "snapshot")
-        self.model.save(snapshot_base)  # SB3 appends .zip
+        atomic_save_model(self.model, snapshot_base)  # SB3 appends .zip
         snapshot_zip = snapshot_base + ".zip"
 
         # Full work-steal universe = the bot roster + any stable cross-run opponents (ext_<label>),

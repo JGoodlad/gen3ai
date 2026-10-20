@@ -99,13 +99,14 @@ def test_the_opt_out_warns_but_never_stops(tmp_path, capsys):
     assert cb.stops == [] and "LOW DISK" in capsys.readouterr().out
 
 
-def test_a_save_that_dies_on_a_full_disk_removes_the_torn_file_and_stops(tmp_path):
+def test_a_save_that_dies_on_a_full_disk_leaves_no_fragment_and_stops(tmp_path):
     model = _Model(nbytes=SAVE, fail=OSError(errno.ENOSPC, "No space left on device"))
     cb = _cb(tmp_path, model, free=[1000 * GiB])
     with pytest.raises(OSError):                        # (the recorded stop returns; the error is re-raised)
         _step_past_a_boundary(cb, model)
     assert len(cb.stops) == 1 and "FAILED with a full disk" in cb.stops[0]
     assert not (tmp_path / "run" / "checkpoints" / "checkpoint_150_steps.zip").exists()
+    assert os.listdir(tmp_path / "run" / "checkpoints") == [], "no fragment, and no temp file, is left behind"
     assert not (tmp_path / "run" / "latest.txt").exists(), "latest.txt must keep naming the previous checkpoint"
 
 

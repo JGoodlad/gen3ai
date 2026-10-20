@@ -21,7 +21,7 @@ class TestWriteLatestTxt:
 
     def test_cleans_up_tmp_file(self, tmp_path):
         _write_latest_txt(str(tmp_path), "checkpoint_100_steps.zip")
-        assert not (tmp_path / "latest.txt.tmp").exists()
+        assert os.listdir(tmp_path) == ["latest.txt"]      # no temp file left beside it
 
     def test_accepts_run_relative_path(self, tmp_path):
         # Periodic/forced checkpoints record a run-relative path (into checkpoints/);
@@ -34,7 +34,8 @@ class TestWriteLatestTxt:
 
 class TestTrackingCheckpointCallback:
     """The periodic checkpointer saves at TOTAL-ENV-STEP boundaries (`constants.checkpoint_due`),
-    never on a call count. `model.save` is a MagicMock here, so these pin the trigger + bookkeeping."""
+    never on a call count. `model.save` is a MagicMock that only touches the file it is handed (the
+    save is atomic: `utils.atomic_io`), so these pin the trigger + bookkeeping."""
 
     def _make_cb(self, tmp_path, interval=100, save_path=None, start=0):
         cb = _TrackingCheckpointCallback(
@@ -44,6 +45,7 @@ class TestTrackingCheckpointCallback:
         )
         mock_model = MagicMock()
         mock_model.num_timesteps = start
+        mock_model.save.side_effect = lambda path: open(path, "wb").close()
         cb.init_callback(mock_model)
         cb.on_training_start()
         return cb

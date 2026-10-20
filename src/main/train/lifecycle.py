@@ -17,7 +17,7 @@ from agents.training.eval_callback import request_forced_eval
 from main.exit_codes import TrainExitCode
 from main.launcher.ipc import send_event
 from main.train.deferred_abort import DeferredAbort
-from main.train.run_io import _model_hparams, _write_latest_txt
+from main.train.run_io import _model_hparams, _write_latest_txt, commit_checkpoint
 
 
 def _apply_grad_checkpointing(model, enabled: bool) -> None:
@@ -266,13 +266,19 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
             print(f"[ABORT] pending-scalar dump failed: {e}")
         try:
             path = os.path.join(model_dir, "final_model_interrupted")
-            model.save(path)
-            _write_latest_txt(model_dir, "final_model_interrupted.zip")
-            lr = current_lr_fn()
-            epochs = current_epochs_fn()
-            hparams = _model_hparams(model)
-            save_model_snapshot(model_dir, version, current_lr=lr, current_epochs=epochs, hparams=hparams)
-            record_checkpoint(model_dir, path + ".zip", lr, epochs, hparams=hparams, handoff_lr=_handoff())
+
+            def _sidecars(zip_path: str) -> None:
+                lr = current_lr_fn()
+                epochs = current_epochs_fn()
+                hparams = _model_hparams(model)
+                save_model_snapshot(model_dir, version, current_lr=lr, current_epochs=epochs, hparams=hparams)
+                record_checkpoint(model_dir, zip_path, lr, epochs, hparams=hparams, handoff_lr=_handoff())
+
+            # The zip is written to a temp file and replaced onto its fixed name only when complete, its sidecars
+            # follow, and `latest.txt` moves LAST (T46 review F8): a save that fails or is killed mid-write leaves
+            # the previous `final_model_interrupted.zip` (and its old mtime, which the GPU window's freshness
+            # check then refuses) instead of a torn zip that `latest.txt` may still name.
+            commit_checkpoint(model, model_dir, path, sidecars=_sidecars, pointer=_write_latest_txt)
             print(f"[ABORT] Checkpoint saved → {path}.zip")
         except Exception as e:
             print(f"[ABORT] Save failed: {e}")
@@ -302,16 +308,12 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
         ckpt = os.path.join(ckpt_dir, name)
         try:
             os.makedirs(ckpt_dir, exist_ok=True)
-            model.save(ckpt)
-            _write_latest_txt(model_dir, os.path.join("checkpoints", name + ".zip"))
-            record_checkpoint(
-                model_dir,
-                ckpt + ".zip",
-                current_lr_fn(),
-                current_epochs_fn(),
-                hparams=_model_hparams(model),
-                handoff_lr=_handoff(),
-            )
+            commit_checkpoint(
+                model, model_dir, ckpt + ".zip",
+                sidecars=lambda zip_path: record_checkpoint(
+                    model_dir, zip_path, current_lr_fn(), current_epochs_fn(),
+                    hparams=_model_hparams(model), handoff_lr=_handoff()),
+                pointer=_write_latest_txt)
         except Exception as e:
             print(f"\n💾 [CHECKPOINT] Forced save FAILED ({type(e).__name__}: {e}) — training continues",
                   flush=True)

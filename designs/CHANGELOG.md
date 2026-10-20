@@ -15326,3 +15326,25 @@ was downloaded or written under `data/`.
   an expandable segment belongs to one (stream, pool); growth extends a range in place. The per-stream sum is right.
 - **Tests:** `stream_attribution_test.py`'s page-rounded band test (fails when the bar reverts to the request) and a
   `new_mapping_ceiling` unit test. The battery README's `t2_guard` section states the predicted outcome (PASS, 4 of 4).
+## 2026-10-20 — every checkpoint and run-state write is ATOMIC, and `latest.txt` moves LAST (`utils/atomic_io.py`, `run_io.commit_checkpoint`; T46 review F8; no model / config / obs change; a restart of an unpinned run picks it up)
+
+- **The defect.** `lifecycle._commit_abort` wrote `model.save("final_model_interrupted")` straight to its fixed name. A save that failed or was
+  killed mid-write left a TORN zip; `latest.txt` (which names that file after any earlier interrupt) still pointed at it, and its fresh
+  mtime passed the GPU window's freshness check, so a resume or restart loaded a torn file. The same shape sat under the periodic and forced
+  checkpoints (at a re-reached step the old, complete file was the one torn), the final model, the pool snapshots, and every `json.dump`
+  into `metadata.json` / `model_config.json` / the sidecars (a truncated `metadata.json` crashes the NEXT save, which read-modify-writes it).
+  `latest.txt` was also moved BEFORE the sidecars, so it could name a zip whose LR / epochs record did not exist yet.
+- **The fix.** ONE helper, `utils/atomic_io.py`: a hidden temp file in the same directory (`.<name>.<pid>.<token>.tmp`), fsync, `os.replace`,
+  directory fsync; a writer that raises removes its temp and leaves the previous file; a SIGKILL's stray temp is inert (no glob or suffix test
+  matches it) and is swept by the next write into the directory once its pid is dead. `atomic_save_model` hands `model.save` the temp name.
+  `run_io.commit_checkpoint` is the one commit order: zip, then sidecars, then `latest.txt` last; the periodic, forced, interrupted, final and
+  crash saves all use it. The JSON writers in `snapshot.py`, the pool's snapshots and records, the pool seeding / growth copies, the eval
+  scratch snapshots, `eval_manifest.json`, `plan.json`, the shard results, `ladder.json` and `weights_link.link_or_copy` use the same helper.
+  File names and formats are unchanged. `weights_link.unshare` is deleted: an atomic replace gives the name a new inode, so no save writes
+  through a hard link.
+- **Pinned runs are unaffected**: a run pinned before this commit keeps its pin's writers (the X35 toy, pin `4609c155`).
+- **Tests** (each fails on a revert): `utils/atomic_io_test.py` (a raising writer and a real SIGKILL leave the previous file whole and no
+  partial file at the final name; a stray temp is never taken for a file and is swept when its owner is dead, spared when alive),
+  `main/train/checkpoint_commit_test.py` (a failed interrupted save leaves the previous zip, mtime and pointer; `latest.txt` never names a
+  missing or partial target; the order is zip, sidecars, pointer; no training-process module calls `model.save` in place),
+  `agents/training/atomic_writers_test.py`. Doc: `training/checkpoint_writes.md` (the write-by-write audit).

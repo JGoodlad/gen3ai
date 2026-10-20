@@ -10,8 +10,9 @@ callbacks) and the pool entry (`SnapshotPool.add_from_path`, a copy on every pro
   the pool;
 * 🚨 a re-save over an existing link NEVER writes through it (a plain `copy2` onto a linked `best_model.zip`
   would truncate the CHECKPOINT through the shared inode);
-* 🚨 the in-place writers (`model.save`: the periodic checkpointer, the pool's live `add`) are `unshare`d first, so
-  a re-reached step cannot rewrite - or, torn, corrupt - the other names of the inode;
+* 🚨 the writers of a weights name (`model.save`: the periodic checkpointer, the pool's live `add`) save through
+  `utils.atomic_io.atomic_save_model` (a temp file, then a replace), so a re-reached step cannot rewrite - or, torn,
+  corrupt - the other names of the inode;
 * the link survives the checkpoint's deletion (retention) and the pool's eviction leaves the checkpoint alone;
 * every reader keeps working: a hard link is an ordinary file path.
 """
@@ -26,7 +27,7 @@ from agents.training.eval_callback import PerOpponentEvalCallback
 from agents.training.eval_collect import checkpoint_at_step, store_best_model
 from agents.training.selfplay_callback import SelfPlayCallback
 from agents.training.snapshot_pool import SnapshotPool
-from agents.training.weights_link import link_or_copy, sha256_file, unshare
+from agents.training.weights_link import link_or_copy, sha256_file
 
 WEIGHTS = b"PK-weights-" + bytes(range(256)) * 40          # stands for a ~62 MB zip; content is what is compared
 OTHER = b"PK-OTHER---" + bytes(range(256)) * 40            # same length, different bytes
@@ -84,7 +85,7 @@ def test_when_a_link_cannot_be_made_it_copies_and_says_why(tmp_path, monkeypatch
     monkeypatch.setattr(os, "link", _no_link)
     mode, _digest, note = link_or_copy(str(transient), str(dst), str(ckpt))
     assert mode == "copy" and "linking failed" in note and dst.read_bytes() == WEIGHTS
-    assert not os.path.exists(str(dst) + ".tmp"), "a failed link strands no .tmp"
+    assert sorted(os.listdir(dst.parent)) == ["x.zip"], "a failed link strands no temp"
 
 
 def test_a_resave_over_an_existing_link_never_writes_through_it(tmp_path):
@@ -109,19 +110,8 @@ def test_a_relink_over_the_same_inode_strands_no_tmp(tmp_path):
     dst.parent.mkdir()
     link_or_copy(str(transient), str(dst), str(ckpt))
     mode, _digest, _note = link_or_copy(str(transient), str(dst), str(ckpt))
-    assert mode == "hardlink" and not os.path.exists(str(dst) + ".tmp")
+    assert mode == "hardlink" and sorted(os.listdir(dst.parent)) == ["x.zip"], "a temp name was stranded"
     assert os.stat(ckpt).st_nlink == 2, "two names, not three"
-
-
-def test_unshare_removes_only_a_multi_name_file(tmp_path):
-    a = tmp_path / "a.zip"
-    a.write_bytes(WEIGHTS)
-    assert unshare(str(a)) is False and a.exists(), "a single-name file is left for the writer to overwrite"
-    assert unshare(str(tmp_path / "missing.zip")) is False
-    b = tmp_path / "b.zip"
-    os.link(a, b)
-    assert unshare(str(b)) is True and not b.exists() and a.read_bytes() == WEIGHTS
-    assert os.stat(a).st_nlink == 1
 
 
 # ---------------------------------------------------------------------------------------
@@ -257,12 +247,12 @@ def test_eviction_unlinks_the_pool_name_only(tmp_path):
 
 
 def test_a_live_add_over_a_linked_name_does_not_rewrite_the_checkpoint(tmp_path):
-    """`SnapshotPool.add` saves IN PLACE (`model.save(path)`); the entry's name may be a link to a checkpoint."""
+    """`SnapshotPool.add` saves through the atomic writer; the entry's name may be a link to a checkpoint."""
     run, transient, ckpt = _run(tmp_path)
     pool = _pool(run)
     pool.add_from_path(transient, STEP, twin=ckpt)
 
-    def _save(path):                                               # what `MaskablePPO.save` does: open + truncate + write
+    def _save(path):                                               # what `MaskablePPO.save` does: open + write
         with open(path, "wb") as f:
             f.write(OTHER)
 
@@ -275,8 +265,8 @@ def test_a_live_add_over_a_linked_name_does_not_rewrite_the_checkpoint(tmp_path)
 
 def test_the_checkpointer_gives_a_re_reached_step_a_fresh_inode(tmp_path):
     """A restart that resumed from an EARLIER checkpoint re-reaches step N and `model.save`s over the old
-    `checkpoint_N`, which a best-model / pool / eval-snapshot name may share. Without `unshare` the save rewrites
-    all of them (and a torn one corrupts all of them)."""
+    `checkpoint_N`, which a best-model / pool / eval-snapshot name may share. A save that wrote in place would rewrite
+    all of them (and a torn one would corrupt all of them)."""
     from main.train.run_io import _TrackingCheckpointCallback
 
     ckpt_dir = tmp_path / "run" / "checkpoints"

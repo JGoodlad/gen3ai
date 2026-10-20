@@ -17,8 +17,9 @@ from sb3_contrib import MaskablePPO
 
 from agents.model.snapshot import load_opponent_snapshot
 from agents.model.model_version import ModelVersion, ModelVersionError
-from agents.training.weights_link import link_or_copy, unshare
+from agents.training.weights_link import link_or_copy
 from main.launcher.ipc import emit
+from utils.atomic_io import atomic_save_model, atomic_write_text
 
 
 _POOL_SEED_ENV = "GEN3AI_POOL_SEED"
@@ -421,10 +422,10 @@ class SnapshotPool:
         import json
         data = self.load_summary()
         data.update(fields)
-        (self.pool_dir / self._SUMMARY_FILE).write_text(json.dumps(data, indent=2))
+        atomic_write_text(self.pool_dir / self._SUMMARY_FILE, json.dumps(data, indent=2))
         if "win_rate_vs_bots" in fields:
             try:
-                (self.pool_dir / self._WIN_RATE_FILE).write_text(f"{float(fields['win_rate_vs_bots']):.6f}\n")
+                atomic_write_text(self.pool_dir / self._WIN_RATE_FILE, f"{float(fields['win_rate_vs_bots']):.6f}\n")
             except (ValueError, TypeError):
                 pass
 
@@ -536,7 +537,7 @@ class SnapshotPool:
             if self._entries:
                 emit(f"⚠️  [SELFPLAY] Pool {self.pool_dir} holds {len(self._entries)} snapshot(s) but no "
                      f"model_config.json: recording THIS run's architecture for them, UNVERIFIED")
-            cfg.write_text(live)
+            atomic_write_text(cfg, live)
             return
         if cfg.read_text() == live:
             return                                      # byte-identical: compatible by construction
@@ -552,8 +553,9 @@ class SnapshotPool:
     def _write(self, model: MaskablePPO, step: int, pinned: bool) -> SnapshotEntry:
         path = self.pool_dir / f"snapshot_{step:012d}.zip"
         self._record_arch()      # BEFORE the save: a refused add leaves nothing on disk
-        unshare(str(path))       # an in-place save must not rewrite a checkpoint this entry is linked to
-        model.save(str(path))
+        # Atomic (temp file + replace): a worker re-scanning the dir never sees a half-written snapshot, and the
+        # name gets a fresh inode, so the save cannot write through a checkpoint this entry is hard-linked to.
+        atomic_save_model(model, str(path))
         entry = SnapshotEntry(path=path, step=step, pinned=pinned)
         self._observe(entry)
         # Replace any existing entry at this step (idempotent re-seed)

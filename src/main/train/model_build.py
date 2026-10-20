@@ -37,7 +37,7 @@ from main.train.lifecycle import (
     _setup_signal_handlers,
 )
 from main.train.run_io import (
-    _attach_run_tb_logger, _model_hparams, _run_lineage, _write_latest_txt, require_reveal_provenance,
+    _attach_run_tb_logger, _model_hparams, _run_lineage, commit_checkpoint, require_reveal_provenance,
 )
 from utils.logging.levels import LogLevel
 from utils.torch_state_guard import INIT_NUM_THREADS_ATTR, single_thread_build
@@ -500,8 +500,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             print(f"Training interrupted by exception: {e}")
             traceback.print_exc()
             final_path = os.path.join(model_dir, "final_model_exception")
-            model.save(final_path)
-            _write_latest_txt(model_dir, "final_model_exception.zip")
+            commit_checkpoint(model, model_dir, final_path)
             raise
 
         # Training is over: claim the exit (the deferred abort's fallback can no longer fire into the
@@ -510,10 +509,12 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             threading.Event().wait()   # the fallback claimed the exit first and is ending the process
         _shutdown_event.set()
         final_path = os.path.join(model_dir, "final_model")
-        model.save(final_path)
-        _write_latest_txt(model_dir, "final_model.zip")
-        save_model_snapshot(os.path.dirname(final_path), current_version, hparams=_model_hparams(model), cli_args=cli_args,
-                            reward_composition=reward_composition, lineage=_lineage)
+        # zip, then its sidecars, then `latest.txt` LAST (`run_io.commit_checkpoint`)
+        commit_checkpoint(
+            model, model_dir, final_path,
+            sidecars=lambda _zip: save_model_snapshot(
+                os.path.dirname(final_path), current_version, hparams=_model_hparams(model), cli_args=cli_args,
+                reward_composition=reward_composition, lineage=_lineage))
         print(f"Training complete. Model saved to {final_path}")
         best_model_dir = os.path.join(model_dir, "best_model")
         if os.path.isdir(best_model_dir):
@@ -672,12 +673,16 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             threading.Event().wait()
         _shutdown_event.set()
         final_path = os.path.join(model_dir, "final_model")
-        model.save(final_path)
-        _write_latest_txt(model_dir, "final_model.zip")
         _final_handoff = lr_callback.handoff_lr if isinstance(lr_callback, TwoPhaseLRCallback) else None
-        record_checkpoint(model_dir, final_path + ".zip", adaptive_ppo_callback.current_lr, model.n_epochs, hparams=_model_hparams(model), handoff_lr=_final_handoff)
-        save_model_snapshot(os.path.dirname(final_path), version, hparams=_model_hparams(model), cli_args=cli_args,
+
+        def _final_sidecars(zip_path: str) -> None:
+            record_checkpoint(model_dir, zip_path, adaptive_ppo_callback.current_lr, model.n_epochs,
+                              hparams=_model_hparams(model), handoff_lr=_final_handoff)
+            save_model_snapshot(os.path.dirname(final_path), version, hparams=_model_hparams(model), cli_args=cli_args,
                                 reward_composition=reward_composition, lineage=_lineage)
+
+        # zip, then its sidecars, then `latest.txt` LAST (`run_io.commit_checkpoint`)
+        commit_checkpoint(model, model_dir, final_path, sidecars=_final_sidecars)
         print(f"Training complete. Model saved to {final_path}")
         best_model_dir = os.path.join(model_dir, "best_model")
         if os.path.isdir(best_model_dir):

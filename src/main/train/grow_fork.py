@@ -34,6 +34,8 @@ import types
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
+from utils.atomic_io import atomic_save_model, atomic_write_text
+
 #: The flag (its argparse ``dest`` is ``grow``: a list of ``(field, value)``).
 FLAG = "--grow"
 
@@ -237,15 +239,12 @@ def grow_seeded_pool(pool_dir: str, fields: Dict[str, Dict[str, Any]], child_ver
             skipped.append(os.path.basename(z))
             continue
         apply_growth(model, fields)
-        tmp = os.path.join(pool_dir, ".growing_" + os.path.basename(z)[:-4])   # outside the pool's glob
-        model.save(tmp)                                # SB3 appends .zip
-        os.replace(tmp + ".zip", z)
+        atomic_save_model(model, z)                    # temp file + replace: a killed growth leaves the parent's snapshot whole
         grown.append(os.path.basename(z))
         if emit_fn is not None:
             emit_fn(f"🌱 [GrowFork] pool snapshot grown ({describe_declared({f: (s['parent'], s['child']) for f, s in fields.items()})}), "
                     f"function bit-identical: {os.path.basename(z)}")
-    with open(cfg, "w") as fh:
-        fh.write(child_version.to_json())
+    atomic_write_text(cfg, child_version.to_json())
     summary = {"fields": fields, "snapshots": grown, "skipped": skipped}
     rec = read_seed_record(pool_dir)
     if rec is not None:

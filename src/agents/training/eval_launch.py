@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from agents.training.eval_quota import ForensicQuota, _rule_for
 from agents.training.trace_selection import SELECTION_SCHEMA
 from main.launcher.ipc import send_event
+from utils.atomic_io import atomic_write_json
 from utils.git import get_git_hash
 
 EVAL_MANIFEST_NAME = "eval_manifest.json"
@@ -130,8 +131,7 @@ def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
         # (each team pairing from both sides, one battle seed)? Always written — False is a fact too.
         "mirrored_pairs": bool(mirrored_pairs),
     }
-    with open(os.path.join(d, EVAL_MANIFEST_NAME), "w") as f:
-        json.dump(manifest, f, indent=2)
+    atomic_write_json(os.path.join(d, EVAL_MANIFEST_NAME), manifest, indent=2)
     return manifest
 
 

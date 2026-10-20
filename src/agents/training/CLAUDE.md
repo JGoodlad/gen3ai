@@ -34,6 +34,7 @@ commit as the code.
 | `--compile-trainer`, compile regions, the sentinel / canary / cache, `--trunk-precision` | `designs/training/compile_flags.md` |
 | `stats.py`, `main.policy_drift`, other offline meters | `designs/training/offline_meters.md` |
 | the stall-tail harvest | `designs/training/stall_tail_harvest.md` |
+| any write a resume or a reader loads (a checkpoint, `latest.txt`, `metadata.json`, a pool or eval file) | `designs/training/checkpoint_writes.md` |
 
 Deleted subsystems (the Python env core and collectors, the shaped reward, PopArt, distillation,
 search-as-teacher, the counterfactual stack): a typed flag is refused with its `designs/deleted_flags.md`
@@ -84,7 +85,11 @@ reason, and a checkpoint that recorded one is refused by `model_version/retired_
 - **The games that selected a snapshot never rate it**; bump `LADDER_FITTER_VERSION` whenever the fit changes
   what a rating means.
 - Snapshot, `best_model` and pool files may be hard links to one checkpoint: store with
-  `weights_link.link_or_copy` and `unshare` before an in-place save; never write through one.
+  `weights_link.link_or_copy`; never write through one.
+- 🚨 **A file a resume or a reader loads is written through `utils.atomic_io`** (temp file in the same directory,
+  fsync, `os.replace`), never a bare `open(path, "w")` or an in-place `model.save(path)`: a failed or killed write leaves
+  a torn file at a name a reader trusts. A checkpoint commits as zip, then sidecars, then `latest.txt` LAST
+  (`run_io.commit_checkpoint`). `designs/training/checkpoint_writes.md`.
 - A live lever's supply line goes through `lever_supply.loud`. Team corpora live in `src/utils/team_corpora/`,
   never `data/` (a pinned run reads `data/` from main).
 

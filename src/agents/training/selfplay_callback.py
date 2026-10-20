@@ -40,6 +40,7 @@ from agents.training.loop_callbacks import BaseCallback
 
 from agents.model.snapshot import record_eval_results
 from agents.training.logger_scope import isolated_dump
+from utils.atomic_io import atomic_save_model
 from agents.training.eval_callback import (
     record_cycle_wall,
     _ForcedEvalMixin,
@@ -394,7 +395,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         os.makedirs(run_dir, exist_ok=True)
 
         snapshot_base = os.path.join(run_dir, "snapshot")
-        self.model.save(snapshot_base)  # freeze live weights; SB3 appends .zip
+        atomic_save_model(self.model, snapshot_base)  # freeze live weights; SB3 appends .zip
         snapshot_zip = snapshot_base + ".zip"
 
         bot_names = eval_opponent_names()

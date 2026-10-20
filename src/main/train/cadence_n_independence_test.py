@@ -29,6 +29,7 @@ import pytest
 
 from agents.training.loop_callbacks import BaseCallback, CallbackList
 from main.train_rl_agent import build_parser
+from utils.model_save_testkit import fake_save
 
 N_PRODUCTION = 48
 N_SWEEP = 2048
@@ -130,6 +131,7 @@ def test_the_rust_collector_checkpoints_at_total_step_boundaries(tmp_path, n_env
     model = MagicMock()
     model.num_timesteps = 0
     model.env = None
+    model.save.side_effect = fake_save
     ckpt = _TrackingCheckpointCallback(interval_env_steps=interval, save_path=str(tmp_path),
                                        name_prefix="checkpoint")
     cbs = CallbackList([ckpt, _StopAfter(stop_at=10 * interval)])
