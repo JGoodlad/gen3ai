@@ -464,6 +464,15 @@ cadence (it is ~hours beside a live run: the 2026-10-19 banking of the ~525 re-t
 accumulates the same float64 adds in the same order in Python floats and builds the tensor once: bit-identical
 (`belief_tables_test::test_the_speed_mix_is_bit_identical_to_the_per_element_tensor_reference`), 0.2 s warm.
 `damage_op_test` alone went 460 s -> 57 s of test time.
+The second pass (2026-10-20) did the same to the other belief-table builders (`build_species_cooccur_prior`,
+`build_move_prior_logits`, `build_species_ev_prior` / `_nature_prior`, `build_item_prior`, `build_opp_spread_prior`,
+and the speed mix's no-record fallback row, now built once per base Speed): Python floats for the float64 tables,
+numpy float32 scalars for the float32 accumulators, one tensor build each. Warm, one quiet agent core, median of 5:
+cooccur 225 -> 43 ms, move prior 146 -> 25 ms, EV prior 135 -> 12 ms, speed mix 234 -> 115 ms, nature prior 33 -> 9
+ms, item prior 29 -> 9 ms, opp spread 31 -> 12 ms; a whole production `build_fresh_model` 1.52 -> 0.72 s warm and
+3.2 -> 2.4 s cold (data load included), about twice that on a contended core. Every table is compared WHOLE with
+`torch.equal` against the original per-element tensor code, kept verbatim in
+`src/agents/model/belief_tables_identity_test.py`.
 
 ### Routine-gate wall time and the `-n` × gate_lock policy (measured 2026-09-30 / 10-01)
 

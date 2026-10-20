@@ -38,6 +38,7 @@ from __future__ import annotations
 import math
 from typing import cast, Dict, List, Optional, Sequence, Tuple
 
+import numpy
 import torch
 
 from agents import gen3_data
@@ -52,11 +53,21 @@ from agents.training.hidden_power_tracker import HIDDEN_POWER_TYPE_ORDER
 SPREAD_STAT_COLS = ("atk", "def", "spa", "spd", "spe")
 N_SPREAD_STATS = len(SPREAD_STAT_COLS)                       # 5
 _SPREAD_BASE_IDX = {"atk": 1, "def": 2, "spa": 3, "spd": 4, "spe": 5}
+_SPREAD_EV_IDX = tuple(_SPREAD_BASE_IDX[stat] for stat in SPREAD_STAT_COLS)
+_SPE_EV_IDX = _SPREAD_BASE_IDX["spe"]
+_F32 = numpy.float32
 
 
 #: The speed lattice of `build_species_speed_mix`: every gen-3 level-100 Speed STAT is an integer below this
 #: (the fastest, Deoxys-S, Timid 252: (2·180 + 31 + 63 + 5)·1.1 = 504; the builder asserts it).
 SPEED_LATTICE = 512
+
+
+def _nature_mult(nature: object, stat: str) -> float:
+    """The nature's multiplier on ``stat`` exactly as the builders read it per spread row (``1.0`` for an
+    unknown nature). The callers memoise it per call (2026-10-20, perf: ~200k chaos rows per speed-mix build)."""
+    nd = gen3_data.natures.get(str(nature).lower())
+    return nd.multipliers.get(stat, 1.0) if nd is not None else 1.0
 
 
 def build_species_speed_mix(n_species: int) -> torch.Tensor:
@@ -78,6 +89,9 @@ def build_species_speed_mix(n_species: int) -> torch.Tensor:
     acc = [[0.0] * SPEED_LATTICE for _ in range(n_species)]
     filled = [False] * n_species
     nature_spe = [float(m.get("spe", 1.0)) for m in gen3_data.natures.multipliers().values()]
+    spe_of: Dict[object, float] = {}                 # nature (as the chaos row spells it) → its Speed multiplier
+    uniform = [(m, ev, 1.0) for m in nature_spe for ev in range(0, 253, 4)]
+    fallback_by_base: Dict[int, List[float]] = {}
     for sid in gen3_data.species.base_form_ids():
         sd = cast(SpeciesData, gen3_data.species.get(sid))
         snum = sd.num
@@ -86,23 +100,40 @@ def build_species_speed_mix(n_species: int) -> torch.Tensor:
         base = int(sd.base_stats.get("spe", 0))
         rows = []
         for n, evs, w in gen3_data.priors.all_spreads(sid):
-            nd = gen3_data.natures.get(str(n).lower())
-            rows.append((nd.multipliers.get("spe", 1.0) if nd is not None else 1.0,
-                         int(evs[_SPREAD_BASE_IDX["spe"]]), float(w)))
-        if not rows:
-            rows = [(m, ev, 1.0) for m in nature_spe for ev in range(0, 253, 4)]
-        tot = sum(w for _, _, w in rows)
-        for mult, ev, w in rows:
-            v = int(gen3_data.priors.gen3_stat(base, ev, mult))
-            if not (0 <= v < SPEED_LATTICE):
-                raise ValueError(f"build_species_speed_mix: {sid}'s speed {v} is outside the lattice "
-                                 f"[0, {SPEED_LATTICE}) — widen SPEED_LATTICE")
-            acc[snum][v] += w / tot
+            mult = spe_of.get(n)
+            if mult is None:
+                mult = spe_of[n] = _nature_mult(n, "spe")
+            rows.append((mult, int(evs[_SPE_EV_IDX]), float(w)))
+        if rows:
+            _add_speed_rows(acc[snum], rows, base, sid)
+        elif not filled[snum]:
+            # No chaos record: the uniform row is a pure function of the base Speed (~170 species, 1,600 adds
+            # each), so it is accumulated ONCE per base and copied — the same adds onto the same zero row.
+            if base not in fallback_by_base:
+                fallback_by_base[base] = [0.0] * SPEED_LATTICE
+                _add_speed_rows(fallback_by_base[base], uniform, base, sid)
+            acc[snum] = list(fallback_by_base[base])
+        else:                                          # a second base forme on an already-filled num
+            _add_speed_rows(acc[snum], uniform, base, sid)
         filled[snum] = True
     for snum, f in enumerate(filled):
         if not f:
             acc[snum][0] = 1.0
     return torch.tensor(acc, dtype=torch.float64).to(torch.float32)
+
+
+def _add_speed_rows(row_acc: List[float], rows: Sequence[Tuple[float, int, float]], base: int, sid: str) -> None:
+    """``row_acc[speed] += w / Σw`` for every ``(nature mult, Speed EV, w)`` row, in order (float64 adds)."""
+    tot = sum(w for _, _, w in rows)
+    speed_of: Dict[Tuple[float, int], int] = {}        # (mult, ev) → the exact integer `gen3_stat` returns
+    for mult, ev, w in rows:
+        v = speed_of.get((mult, ev))
+        if v is None:
+            v = speed_of[(mult, ev)] = int(gen3_data.priors.gen3_stat(base, ev, mult))
+            if not (0 <= v < SPEED_LATTICE):
+                raise ValueError(f"build_species_speed_mix: {sid}'s speed {v} is outside the lattice "
+                                 f"[0, {SPEED_LATTICE}) — widen SPEED_LATTICE")
+        row_acc[v] += w / tot
 
 
 def build_opp_spread_prior(n_species: int) -> torch.Tensor:
@@ -116,7 +147,10 @@ def build_opp_spread_prior(n_species: int) -> torch.Tensor:
     (the same L100/IV31 formula the op uses for our revealed mons).
 
     Relocated from `damage_tables.py` (`gen3_belief_tables_split_v1`, 2026-09-06)."""
-    prior = torch.zeros(n_species, N_SPREAD_STATS, 2, dtype=torch.float32)
+    # Built in Python floats and turned into a float32 tensor ONCE (2026-10-20, perf): each cell is written once,
+    # and a Python float → float32 store rounds the same way in `torch.tensor` as in a per-element assignment.
+    prior = [[[0.0, 0.0] for _ in range(N_SPREAD_STATS)] for _ in range(n_species)]
+    mult_of: Dict[Tuple[object, str], float] = {}     # (nature, stat) → its multiplier, memoised for this build
     for sid in gen3_data.species.base_form_ids():
         sd = cast(SpeciesData, gen3_data.species.get(sid))
         snum = sd.num
@@ -126,25 +160,31 @@ def build_opp_spread_prior(n_species: int) -> torch.Tensor:
         for j, stat in enumerate(SPREAD_STAT_COLS):
             base = int(sd.base_stats.get(stat, 0))
             evi = _SPREAD_BASE_IDX[stat]                      # index into the 6-EV list [hp,atk,def,spa,spd,spe]
+            val_of: Dict[Tuple[float, int], float] = {}   # (mult, ev) → float(the exact `gen3_stat` integer)
             m1 = m2 = wsum = 0.0
             for nature, evs, w in spr:
-                nd = gen3_data.natures.get(str(nature).lower())
-                mult = nd.multipliers.get(stat, 1.0) if nd is not None else 1.0
-                val = float(gen3_data.priors.gen3_stat(base, int(evs[evi]), mult))
+                mult = mult_of.get((nature, stat))
+                if mult is None:
+                    mult = mult_of[(nature, stat)] = _nature_mult(nature, stat)
+                ev = int(evs[evi])
+                val = val_of.get((mult, ev))
+                if val is None:
+                    val = val_of[(mult, ev)] = float(gen3_data.priors.gen3_stat(base, ev, mult))
                 m1 += w * val
                 m2 += w * val * val
                 wsum += float(w)
+            cell = prior[snum][j]
             if wsum <= 0.0:                                   # no usage data → neutral mean + wide std
                 neutral = float(gen3_data.priors.gen3_stat(base, 0, 1.0))
                 maxed = float(gen3_data.priors.gen3_stat(base, 252, 1.1))
-                prior[snum, j, 0] = neutral
-                prior[snum, j, 1] = max(1.0, (maxed - neutral) / 2.0)
+                cell[0] = neutral
+                cell[1] = max(1.0, (maxed - neutral) / 2.0)
             else:
                 mean = m1 / wsum
                 var = max(0.0, m2 / wsum - mean * mean)
-                prior[snum, j, 0] = mean
-                prior[snum, j, 1] = max(1.0, var ** 0.5)
-    return prior
+                cell[0] = mean
+                cell[1] = max(1.0, var ** 0.5)
+    return torch.tensor(prior, dtype=torch.float32)
 
 
 # ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -227,12 +267,15 @@ def build_species_nature_prior(n_species: int) -> torch.Tensor:
         snum = cast(SpeciesData, gen3_data.species.get(sid)).num
         if not (0 <= snum < n_species):
             continue
-        counts = torch.zeros(N_NATURES, dtype=torch.float32)
+        # float32 accumulation on numpy float32 scalars, as `build_species_ev_prior` (2026-10-20, perf).
+        acc = [_F32(0.0)] * N_NATURES
         for nature, _evs, w in gen3_data.priors.spreads(sid):
             nd = nat_raw.get(str(nature).lower())
             if nd is None:
                 continue
-            counts[int(nd["num"])] += float(w)
+            k = int(nd["num"])
+            acc[k] = acc[k] + _F32(float(w))
+        counts = torch.tensor(acc, dtype=torch.float32)
         tot = float(counts.sum())
         if tot <= 0.0:
             continue
@@ -253,14 +296,17 @@ def build_species_ev_prior(n_species: int) -> torch.Tensor:
         snum = cast(SpeciesData, gen3_data.species.get(sid)).num
         if not (0 <= snum < n_species):
             continue
-        acc = torch.zeros(N_SPREAD_STATS, dtype=torch.float32)
+        # The float32 accumulator runs on numpy float32 SCALARS (2026-10-20, perf: ~0.13 s of tensor-index adds
+        # per build): the same single-precision add the tensor's `acc[j] += x` does (x rounded to float32 first,
+        # then one float32 add), in the same order; the division stays the tensor op it was.
+        acc = [_F32(0.0)] * N_SPREAD_STATS
         wsum = 0.0
         for _nature, evs, w in gen3_data.priors.spreads(sid):
-            for j, stat in enumerate(SPREAD_STAT_COLS):
-                acc[j] += float(w) * float(evs[_SPREAD_BASE_IDX[stat]])
+            for j, evi in enumerate(_SPREAD_EV_IDX):
+                acc[j] = acc[j] + _F32(float(w) * float(evs[evi]))
             wsum += float(w)
         if wsum > 0.0:
-            ev[snum] = acc / wsum
+            ev[snum] = torch.tensor(acc, dtype=torch.float32) / wsum
     return ev
 
 
@@ -378,6 +424,7 @@ def build_item_prior(n_species: int, n_items: int) -> torch.Tensor:
     Relocated from `damage_tables.py` (`gen3_belief_tables_split_v1`, 2026-09-06)."""
     _FLOOR = 1e-5   # floor mass total ≈0.6% of a row: cold-start CB column within ~0.6% of SPECIES_CB_PRIOR
     prior = torch.full((n_species, n_items), 1.0 / n_items, dtype=torch.float32)
+    floor32 = _F32(_FLOOR)                       # the float32 the `torch.full` cells hold
     for sid in gen3_data.species.base_form_ids():
         sd = cast(SpeciesData, gen3_data.species.get(sid))
         if not (0 <= sd.num < n_species):
@@ -385,12 +432,17 @@ def build_item_prior(n_species: int, n_items: int) -> torch.Tensor:
         entry = gen3_data.priors.items(sid)
         if not entry:
             continue
-        vec = torch.full((n_items,), _FLOOR, dtype=torch.float32)
+        # The float32 `vec[num] += p` adds run on numpy float32 scalars and land in ONE index write (2026-10-20,
+        # perf, as `build_species_ev_prior`); the sum and the division stay the tensor ops they were.
+        cells: Dict[int, numpy.float32] = {}
         for item_id, p in entry.items():
             it = gen3_data.items.get(item_id)
             num = int(it.num) if it is not None else (0 if item_id == "nothing" else None)
             if num is not None and 0 <= num < n_items:
-                vec[num] += float(p)
+                cells[num] = cells.get(num, floor32) + _F32(float(p))
+        vec = torch.full((n_items,), _FLOOR, dtype=torch.float32)
+        if cells:
+            vec[list(cells)] = torch.tensor(list(cells.values()), dtype=torch.float32)
         prior[sd.num] = vec / float(vec.sum())
     # gen3_format_spec_priors_v1: an item the FORMAT bans (Quick Claw, Bright Powder, Lax Incense) is 0 in every
     # row — the floor and the no-usage uniform rows included — then each row renormalises (the forward's
@@ -509,7 +561,10 @@ def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_
         )
 
     # Illegal → eps (impossible); legal-observed → TRUE usage; legal-unobserved → floor.
-    prob = torch.full((n_species, n_moves), eps, dtype=torch.float64)   # default = impossible
+    # Built in Python floats (float64, exactly the tensor's dtype) and turned into the tensor ONCE (2026-10-20,
+    # perf: ~60k per-element tensor writes and reads were ~0.1 s of each of the two builds per model); every
+    # write and comparison below is the one the per-element tensor code made, in the same order.
+    rows = [[eps] * n_moves for _ in range(n_species)]                  # default = impossible
     # Rows this build never touches are NOT "a species that can learn nothing" — they are rows about
     # which nothing is known: national-dex num 0 (the UNKNOWN-SPECIES sentinel an unrevealed opponent
     # slot carries, and `MoveBelief.move_logits` indexes `move_prior_logits[opp_species_ids]` directly
@@ -517,23 +572,24 @@ def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_
     # model an unseen opponent has NO moves at all — strictly worse than the flat floor, and a claim
     # the data never made. They are flattened to `floor` below (same rule as a species whose learnset
     # is missing: no movepool known → nothing to prune).
-    covered = torch.zeros(n_species, dtype=torch.bool)
+    covered = [False] * n_species
     for sid in gen3_data.species.base_form_ids():
         sd = cast(SpeciesData, gen3_data.species.get(sid))
         snum = sd.num
         if not (0 <= snum < n_species):
             continue
         covered[snum] = True
+        row = rows[snum]
         legal = gen3_data.learnset.get_legal_moves(sid)
         if legal is None:
-            prob[snum, :] = floor                        # unknown movepool → flat floor (nothing to prune)
+            row[:] = [float(floor)] * n_moves            # unknown movepool → flat floor (nothing to prune)
         else:
             for move_id in legal:                        # every LEGAL move → a small liftable base
                 md = gen3_data.moves.get(move_id)
                 if md is not None:
                     bnum = _belief_num(move_id, md)      # any HP (learnset carries bare 'hiddenpower') → 237
                     if 0 <= bnum < n_moves:
-                        prob[snum, bnum] = floor
+                        row[bnum] = float(floor)
                     # gen3_typed_hp_belief_v1 — TYPED-HP LEGALITY. `gen3_learnset.json` carries only the
                     # bare `hiddenpower` (the type is an IV choice, not a learnset entry), so the 16 typed
                     # nums 355-370 fell through to the `eps` "impossible" default for EVERY species — the
@@ -543,7 +599,7 @@ def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_
                     if move_id == "hiddenpower":
                         for tnum in _hp_typed_nums():
                             if 0 <= tnum < n_moves:
-                                prob[snum, tnum] = floor
+                                row[tnum] = float(floor)
         # TRUE usage overrides the floor (an observed move is necessarily legal). HP usage sums into the
         # 237 PRESENCE channel (see `_belief_num`) AND is written per-type at 355-370, so the typed cells
         # carry their own real rate and are independently meaningful under inspection.
@@ -558,9 +614,11 @@ def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_
             if move_id.startswith("hiddenpower") and 0 <= md.num < n_moves and md.num != bnum:
                 usage[md.num] = usage.get(md.num, 0.0) + float(p)   # the typed cell's own rate
         for num, u in usage.items():
-            if u > float(prob[snum, num]):
-                prob[snum, num] = u                      # rare moves keep their real (small) rate
-    prob[~covered, :] = floor                            # unknown species (num 0) / dex gaps → flat floor
+            if u > row[num]:
+                row[num] = u                      # rare moves keep their real (small) rate
+    prob = torch.tensor(rows, dtype=torch.float64)
+    covered_t = torch.tensor(covered, dtype=torch.bool)
+    prob[~covered_t, :] = floor                            # unknown species (num 0) / dex gaps → flat floor
     # gen3_format_spec_priors_v1: a move the FORMAT bans (`agents.gen3_data.format_spec`: Swagger, Assist, the
     # OHKO / evasion moves) is ILLEGAL for every species — the unknown-species row included — and a move banned
     # for ONE species (Smeargle + Ingrain) is illegal in that row. Before, a TM like Swagger / Double Team sat at
@@ -658,28 +716,42 @@ def build_species_cooccur_prior(n_species: int) -> Tuple[torch.Tensor, torch.Ten
     for snum in format_banned_species_nums(n_species):
         log_marginal[snum] = SPECIES_CLAUSE_LOGIT
 
-    log_lift = torch.zeros((n_species, n_species), dtype=torch.float32)
+    # Built in Python floats and turned into the float32 tensor ONCE (2026-10-20, perf: ~70k per-element tensor
+    # reads and writes were ~0.18 s of each of the two builds per model). `usage_prior.tolist()` gives the exact
+    # float32 values `float(usage_prior[i])` read, and each cell is written once (a Python float → float32 store
+    # rounds the same way in `torch.tensor` as in a per-element assignment).
+    usage = usage_prior.tolist()
+    lift_rows = [[0.0] * n_species for _ in range(n_species)]
+    num_of: Dict[str, Optional[int]] = {}                               # species id → num (None: no species)
+
+    def species_num(sid: str) -> Optional[int]:
+        if sid not in num_of:
+            sd = gen3_data.species.get(sid)
+            num_of[sid] = None if sd is None else sd.num
+        return num_of[sid]
+
     base_ids = set(gen3_data.species.base_form_ids())
     n_cols = 0
     for tid in base_ids:                                                # evidence species t
-        td = gen3_data.species.get(tid)
-        if td is None or not (0 < td.num < n_species):
+        tnum = species_num(tid)
+        if tnum is None or not (0 < tnum < n_species):
             continue
         mates = gen3_data.priors.teammates(tid)
         if not mates:
             continue
-        base_renorm = max(1.0 - float(usage_prior[td.num]), 1e-6)
+        base_renorm = max(1.0 - usage[tnum], 1e-6)
         cond_by_num: dict = {}                                          # formes fold into base num
         for sid, p_cond in mates.items():
-            sd = cast(SpeciesData, gen3_data.species.get(sid))
-            if sd is None or not (0 < sd.num < n_species) or sd.num == td.num:
+            snum_ = species_num(sid)
+            if snum_ is None or not (0 < snum_ < n_species) or snum_ == tnum:
                 continue
-            cond_by_num[sd.num] = cond_by_num.get(sd.num, 0.0) + float(p_cond)
+            cond_by_num[snum_] = cond_by_num.get(snum_, 0.0) + float(p_cond)
         for snum, p_cond in cond_by_num.items():
-            expected = max(float(usage_prior[snum]), _SPECIES_PRIOR_FLOOR) / base_renorm
+            expected = max(usage[snum], _SPECIES_PRIOR_FLOOR) / base_renorm
             lift = math.log(max(p_cond, 1e-9) / expected)
-            log_lift[snum, td.num] = max(-_COOCCUR_LIFT_CLAMP, min(_COOCCUR_LIFT_CLAMP, lift))
+            lift_rows[snum][tnum] = max(-_COOCCUR_LIFT_CLAMP, min(_COOCCUR_LIFT_CLAMP, lift))
         n_cols += 1
+    log_lift = torch.tensor(lift_rows, dtype=torch.float32)
     if n_cols == 0:
         raise ValueError(
             "build_species_cooccur_prior: no species carried a Smogon teammate row — "

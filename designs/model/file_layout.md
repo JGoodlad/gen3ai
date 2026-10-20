@@ -130,7 +130,8 @@ The per-table SEMANTICS stay beside the head each prior feeds (`spread_belief_te
 `hp_type_belief_test.py` / `item_belief_test.py` / `move_prior_fusion_test.py` /
 `species_prior_fusion_test.py` / `damage_tables_test.py` — all of which reach their subject through
 the `damage_tables` hub and so were untouched by either move); `belief_tables_test.py` holds only
-what the SPLIT can break.
+what the SPLIT can break. `belief_tables_identity_test.py` pins each builder's output BIT-identical to its original
+per-element tensor code (the 2026-10-20 perf rewrites; a reference is kept verbatim in the test).
 
 ## The extractor CLASS chain
 
