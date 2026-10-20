@@ -318,3 +318,32 @@ fn a_parse_built_version_has_no_engine_and_refuses_to_step() {
     assert!(p.step(&[cmd(0, "move 1")], &dex).is_err());
     assert!(p.audit(0, &dex).is_err(), "no board, no audit");
 }
+
+/// R4b (`gen3_live_reader_reading_v1`): gen 3 announces a Skill Swap with BOTH ability names empty
+/// (`|-activate|p1a: Jirachi|Skill Swap|||[of] p2a: Starmie`), so against a foe whose ability is
+/// unrevealed (Starmie: Illuminate or Natural Cure) our Jirachi's view keeps its SET ability while
+/// the engine holds the foe's. The audit applies the information limit — counted, not a divergence
+/// — and still checks every other field.
+#[test]
+fn the_audit_applies_the_unstated_skill_swap_limit() {
+    let dex = Dex::for_gen(3);
+    let p1 = "Jirachi|||serenegrace|skillswap,calmmind,psychic,wish|Hardy|85,85,85,85,85,85|N||||";
+    let p2 = "Starmie|||naturalcure|surf,recover,rapidspin,psychic|Hardy|85,85,85,85,85,85|N||||";
+    let opts = bridge_opts("gen3ou", "1,2,3,4".to_string(), p1, p2);
+    let mut sess = BridgeSession::new_construct_turn0_core(&opts, &dex).expect("session");
+    let mut v = BattleVersion::observe_root(&sess, ["P1", "P2"], [Some(p1), Some(p2)], [true, true]).expect("root");
+    sess.feed_cmds(&[cmd(0, "move 1"), cmd(1, "move 2")], &dex);
+    v = v.observe(&sess).unwrap();
+    let text = sess.side_lines(0);
+    assert!(text.iter().any(|l| l == "|-activate|p1a: Jirachi|Skill Swap|||[of] p2a: Starmie"), "precondition: {text:?}");
+    let board = sess.battle_state().unwrap();
+    let engine_ability = pokesim::dex::to_id(&board.sides[0].pokemon[0].ability);
+    assert_eq!(engine_ability, "naturalcure", "precondition: the engine swapped");
+    let view = v.view(0).unwrap();
+    assert_eq!(view.ours.mons[0].ability.as_deref(), Some("serenegrace"), "the view cannot know the swap");
+    let audit = v.audit_on(0, board, &dex).unwrap();
+    assert!(audit.divergences.is_empty(), "{:?}", audit.divergences);
+    assert_eq!(audit.rules_fired.get("R4b"), Some(&1), "the limit was applied, once");
+    let theirs = v.audit_on(1, board, &dex).unwrap();
+    assert!(theirs.divergences.is_empty(), "the foe's reading knows both abilities: {:?}", theirs.divergences);
+}

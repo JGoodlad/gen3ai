@@ -143,8 +143,15 @@ Metronome / Assist / Nature Power reach it — none is on a pool team or engine-
 
 **Not findings — INFORMATION LIMITS**, read as poke-env reads them because no client can know
 better: V15 (an own mon the current request did not re-sync holds the sighting count of its PP,
-which lags an un-announced Pressure deduction — the audit checks it can only lag) and V14 / R4 (a
-Transformed own mon's copied ability; a gen-3 request states neither).
+which lags an un-announced Pressure deduction — the audit checks it can only lag), V14 / R4 (a
+Transformed own mon's copied ability; a gen-3 request states neither) and **R4b**, an UNSTATED
+SKILL SWAP: gen 3 prints `|-activate|<user>|Skill Swap|||[of] <target>` with both names empty
+(`sim/battle.ts` `skillSwap`, `gen <= 4`) and its request carries only `baseAbility`, so the reading
+swaps only when it knows both abilities; against an unrevealed foe ability our own mon keeps reading
+its SET ability while the sim holds the foe's. The audit applies R4b exactly there (the engine's
+ability is not the set's and the view still reads the set's), counts it in `rules_fired`, and
+checks every other field (`tests/version_test.rs::the_audit_applies_the_unstated_skill_swap_limit`;
+found by the trackers fuzz, `procedural_51321` turn 3). Explosion's PP (7 vs 6) is V15.
 
 **A BENCHED badly-poisoned mon's counter — RESOLVED, both sides right** (was UNRESOLVED). The sim
 keeps the stage the mon left with in `effectState.stage`; poke-env and the view read 0. The stored

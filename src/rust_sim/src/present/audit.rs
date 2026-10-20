@@ -13,6 +13,12 @@
 //!   its ability is not checked (R4 — the stream never states the copied ability);
 //! * V15 — an own mon the CURRENT request did not re-sync holds the SIGHTING count of its PP,
 //!   which can only lag the sim's (a foe's Pressure is announced to its owner only).
+//! * R4b — a SKILL-SWAPPED own mon whose new ability the stream never stated: gen 3 announces the
+//!   swap as `|-activate|<user>|Skill Swap|||[of] <target>` with both names EMPTY
+//!   (`sim/battle.ts` `skillSwap`, `gen <= 4`) and a gen-3 request carries only `baseAbility`, so
+//!   when the foe's ability was unknown the view keeps our SET ability while the engine holds the
+//!   foe's. Applied exactly there — the engine's ability is not the set's and the view still reads
+//!   the set's — and counted in `rules_fired`, never silently skipped.
 //!
 //! The view's TRUE readings are plain checks: a fainted mon holds no stages (PE-V10), an ACTIVE
 //! badly-poisoned mon's counter is the engine's stage (PE-R1b), Flash Fire is present exactly when
@@ -284,7 +290,13 @@ fn mon_check(a: &mut Audit, m: &MonView, e: &MonState, own: bool, dex: &Dex, who
     let eng_moves: Vec<String> = e.set.moves.iter().map(|mv| dex::retrieve_id(&crate::state::typed_hp_move_id(e, mv))).collect();
     if own {
         a.check(m.item.as_deref() == Some(eng_item.as_str()), &cls("item"), || format!("{sp}: view {:?} engine {eng_item:?}", m.item));
-        if !transformed {
+        let set_ability = dex::to_id(&e.set.ability);
+        // R4b: an UNSTATED Skill Swap (see the module doc) — the engine moved off the set ability,
+        // the stream never said to what, and the view still reads the set ability.
+        let unstated_swap = !e.fainted && eng_ability != set_ability && m.ability.as_deref() == Some(set_ability.as_str());
+        if unstated_swap && !transformed {
+            *a.rules_fired.entry("R4b").or_default() += 1;
+        } else if !transformed {
             a.check(m.ability.as_deref() == Some(eng_ability.as_str()).filter(|x| !x.is_empty()), &cls("ability"), || {
                 format!("{sp}: view {:?} engine {eng_ability:?}", m.ability)
             });
