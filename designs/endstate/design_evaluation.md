@@ -785,6 +785,12 @@ the check's rows; the driver and reader are `python -m main.cycle_monitor` (`tic
   checks: 10 % SUSPECTED (Hodge 9 %, triangles 4 %), in §2.5's 6–10 % band, (a) slightly above its nominal 5 %; at
   500 pairs the (a) bootstrap p-values looked uniform on 12 replicates. **The G6 / U9 joint OC simulation is NOT
   done** (FINDING F-ED-24).
+- **The first retro reads (2026-10-19, `research_state/measurements/cycle_monitor_retro_2026-10-19/`):** X26's in-run
+  ladder reads SUSPECTED at every check 10M–370M (Hodge at the bootstrap floor, excess cyclic RMS 3.9–4.8 pp;
+  2.7–4.2 pp inside the last 80M), with the null calibrated on that graph — so X26's 280M Tier-1 plateau reads
+  CONTINUE under the two-tier rule. It exposes F-ED-27: (a) on an accumulating matrix cannot tell material or current
+  cycling from a small persistent component. X34's REGISTERED rows were played for 20M–60M only (heavy-slot
+  contention stopped the tick): 30M and 40M NONE, 50M and 60M SUSPECTED (Hodge + triangles, ≈ 2 pp; top-ups pending).
 - **`ladder`: a DESCRIPTIVE retro read**, never a decision: the same signals on the in-run SNAPSHOT LADDER
   (`snapshot_ladder/games.jsonl`, mirrored, 50–100 pairs per line, the pool's sliding window, a_p1 + reversed b_p1),
   as of each Δ check. It is a different graph from the registered row (the edges the pool chose, a fifth to a tenth
@@ -1526,6 +1532,18 @@ the public `opponent_builder` (the rows' `team_set`). `rust_eval.launch.run_seed
   checkpoints only, so §8.2's "bots inside the band" are not playable; the panel registry is empty until members are
   chosen by a declared in-band rule (the X35 X-block's). Until then every two-tier read of a FLAT pair is
   `PLATEAU_BUT_PANEL`, never `TRUE_PLATEAU`.
+- **F-ED-27 (U5 retro, 2026-10-19, MEASURED on X26's in-run ladder): signal (a) on the ACCUMULATED matrix has
+  ever-growing power against a FIXED small cyclic component, so on a run with any persistent non-transitivity it
+  flags at every check, and the registered two-tier rule can then never call a plateau.** On X26's ladder (72
+  snapshots, 1,150 mirrored lines) the Hodge χ² is at the bootstrap floor (p = 0.0005) at all 37 checks 10M–370M,
+  with an excess cyclic RMS of only 3.9–4.8 pp; inside the last 80M it is 2.7–4.2 pp from 170M on. The null is
+  calibrated on that very graph (1 / 30 flags under a transitive truth with team effects). The design's own
+  detection target is ≈ 1.7 pp diffuse within one check (Q9), so this is a cyclic component the design meant to SEE,
+  but a SIGNIFICANCE test on an accumulating matrix cannot say whether it is MATERIAL or CURRENT. **PROPOSED (for
+  the owner / orchestrator; the registered rule is unchanged here, standing rule 9):** make (a) a materiality test
+  (a one-sided bound on the excess RMS above a declared bar, e.g. the 1.7 pp target), or restrict (a) to the newest
+  row's window (the dense lags), keeping the accumulated read REPORTED. Until then, read a SUSPECTED that rests on (a)
+  alone together with its `excess_rms_pp` (now reported beside every check).
 
 ## Decision record
 

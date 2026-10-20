@@ -1,0 +1,32 @@
+# python -m main.cycle_monitor status rb_toy_ent_s4002_deep --lineage-run rb_toy_ent_s4002 --out ~/gen3ai_archive/cycle_monitor_retro_2026-10-19/smoke_ledger
+# 2026-10-19T21:44:14-07:00; Tier 1 read from the archive ledger; rows played 20M-60M complete, 70M partial (the tick was stopped: heavy-slot contention)
+[monitor] rb_toy_ent_s4002_deep: rule cycle_monitor(alpha=0.05,n_boot=2000,pairs=500,batch=50,topup=500x3,support_w=0.01,posterior=500,abort=0.25,null=parametric_bootstrap_tilted_pentanomial,lag=bonferroni_one_sided,tri=holm_two_sided,nash=lp_point_support,band=mc_se|1e-09)
+  TIER 2 = the cycle monitor (family monitor:rb_toy_ent_s4002_deep:d10000000) + the panel (NOT DECLARED)
+          check  tier1       monitor        edges  hodge p   lag z/crit  tri minp  nash  panel        note
+     20,000,000  -           NOT_APPLICABLE  1/1                                          NOT_DECLARED 
+     30,000,000  -           NONE           2/2                                          NOT_DECLARED 
+     40,000,000  -           NONE           3/3    0.42429   -5.97/1.96  0.118157     1  NOT_DECLARED the rows decide; no decision row yet — run tick
+     50,000,000  MISSING_NODE CONTINUE       4/4     0.0015   -3.01/2.13   3.1e-05     1  NOT_DECLARED SUSPECTED: the top-up is not complete — run tick
+     60,000,000  GAIN        CONTINUE       5/5     0.0005   -0.75/2.24   0.00292     1  NOT_DECLARED SUSPECTED: the top-up is not complete — run tick
+     70,000,000  GAIN        PARTIAL        2/6                                          NOT_DECLARED 
+     80,000,000  GAIN        NOT_STARTED    0/7                                          NOT_DECLARED 
+     90,000,000  GAIN        NOT_STARTED    0/8                                          NOT_DECLARED 
+    100,000,000  GAIN        NOT_STARTED    0/8                                          NOT_DECLARED 
+    110,000,000  GAIN        NOT_STARTED    0/8                                          NOT_DECLARED 
+    120,000,000  GAIN        NOT_STARTED    0/8                                          NOT_DECLARED 
+    130,000,000  GAIN        NOT_STARTED    0/8                                          NOT_DECLARED 
+    140,000,000  GAIN        NOT_STARTED    0/8                                          NOT_DECLARED 
+    150,000,000  GAIN        NOT_STARTED    0/8                                          NOT_DECLARED 
+    160,000,000  GAIN        NOT_STARTED    0/8                                          NOT_DECLARED 
+    170,000,000  GAIN        NOT_STARTED    0/9                                          NOT_DECLARED 
+    180,000,000  GAIN        NOT_STARTED    0/9                                          NOT_DECLARED 
+    190,000,000  GAIN        NOT_STARTED    0/9                                          NOT_DECLARED 
+    200,000,000  FLAT        NOT_STARTED    0/9                                          NOT_DECLARED 
+    210,000,000  GAIN        NOT_STARTED    0/9                                          NOT_DECLARED 
+    220,000,000  GAIN        NOT_STARTED    0/9                                          NOT_DECLARED 
+    230,000,000  GAIN        NOT_STARTED    0/9                                          NOT_DECLARED 
+    240,000,000  GAIN        NOT_STARTED    0/9                                          NOT_DECLARED 
+    250,000,000  UNDECIDED   NOT_STARTED    0/9                                          NOT_DECLARED 
+    260,000,000  CONTINUE    NOT_STARTED    0/9                                          NOT_DECLARED 
+    270,000,000  NOT_STARTED NOT_STARTED    0/9                                          NOT_DECLARED 
+TWO-TIER STATUS: CONTINUE — no check has both a Tier-1 and a monitor verdict

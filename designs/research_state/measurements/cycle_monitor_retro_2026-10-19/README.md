@@ -48,17 +48,42 @@ plasticity, exploitability), which stay a separate read.
 
 ## X34 (`rb_toy_ent_s4002_deep`, from `rb_toy_ent_s4002`): the REGISTERED instrument, offline
 
-X34's toy plays ≈ 15–20 games/s on rule 5b's CPU, so its registered monitor rows were played in full: every check
-20M–230M, 500 mirrored pairs per edge at the hybrid lags, `--lineage-run rb_toy_ent_s4002`, into a ledger root
-OUTSIDE `models/` (`~/gen3ai_archive/cycle_monitor_retro_2026-10-19/smoke_ledger`; the unit was barred from writing
-under `models/`), one `cycle_flag` decision per check.
+X34's toy plays ≈ 15–20 games/s on rule 5b's CPU when it has a core to itself (≈ 1.3 min per 1,000-game edge;
+≈ 2.5 min beside the gate), so its registered rows were started in full: 500 mirrored pairs per edge at the hybrid
+lags, `--lineage-run rb_toy_ent_s4002`, into a ledger root OUTSIDE `models/`
+(`~/gen3ai_archive/cycle_monitor_retro_2026-10-19/smoke_ledger`; the unit was barred from writing under `models/`).
 
-**PENDING** at this commit (the tick is resumable; the result lands in `x34_status.txt` with the next commit).
+**PARTIAL: rows 20M–60M complete (14 edges, 14,000 games), 70M partial; the tick was STOPPED** because the box's two
+heavy slots were held (one by a 28-hour job) with eleven jobs queued, and the full retro (≈ 154 edges, ≈ 3 h of a
+slot) would have blocked them. What the rows read (`x34_status.txt`; the 40M–60M verdicts are the rule's on the rows,
+not yet recorded as decisions):
+
+| check | verdict | signals | excess cyclic RMS | Nash support |
+|---|---|---|---|---|
+| 20M | NOT_APPLICABLE (one edge) | — | — | — |
+| 30M | **NONE** (decided, `verify` re-derives it) | — | — | — |
+| 40M | NONE | all clear | 0.0 pp | 1 |
+| 50M | SUSPECTED (top-up pending) | Hodge (p 0.0015) + triangles (min p 3.1e-5) | 2.0 pp | 1 |
+| 60M | SUSPECTED (top-up pending) | Hodge (p 0.0005) + triangles (min p 0.003) | 2.1 pp | 1 |
+
+So the toy's early archive (rb_toy_ent_s4002, 10M–60M) already carries a detectable cyclic residual of ≈ 2 pp while
+its Nash frontier stays on the newest node: the same shape as X26's, smaller. Its plateau region (X34 is past 230M,
+Tier 1 FLAT once at 200M) is NOT read.
+
+**To finish it** (resumable at the batch; the rows already banked are never replayed):
+
+```bash
+# CPU, rule 5b, when a heavy slot is free (≈ 3 h):
+scripts/ops/mem_cap.sh 10 nice -n 19 taskset -c 5-7,13-15 python -m main.cycle_monitor tick rb_toy_ent_s4002_deep \
+    --lineage-run rb_toy_ent_s4002 --out ~/gen3ai_archive/cycle_monitor_retro_2026-10-19/smoke_ledger \
+    --threads 3 --torch-threads 3 --grid 20000000 ... --grid 230000000
+# or in a GPU lease window (the toy's rows take minutes there): the same with --device cuda under the lease token
+```
 
 ## Files
 
 - `x26_ladder_accumulated.json`, `x26_ladder_window80M.json` — every check's verdict, signals, summary, the newest
   node's lag curve and the significant triangles.
 - `calibration_x26_graph.txt` — the null-calibration run on X26's own graph.
-- `x34_status.txt` (PENDING) — `python -m main.cycle_monitor status rb_toy_ent_s4002_deep --lineage-run
-  rb_toy_ent_s4002 --out <the retro root>` after the tick, with Tier 1 read from the archive ledger.
+- `x34_status.txt` — `python -m main.cycle_monitor status rb_toy_ent_s4002_deep --lineage-run rb_toy_ent_s4002
+  --out <the retro root>` after the stopped tick, with Tier 1 read from the archive ledger.

@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-27,484-line file. **The ledger itself is append-only and is never edited by this**;
+27,526-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**909 headings · 854 dated · 2026-08-01 → 2026-10-19 · ledger 27,484 lines.**
+**910 headings · 855 dated · 2026-08-01 → 2026-10-19 · ledger 27,526 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -929,3 +929,4 @@ rename.
   - `L27353` · `2026-10-19` · BUILT · **T62: the species-presence τ constraint SOLVED IN FLOAT64 (`gen3_tau_fp64_solve_v1`) — the K9(b) τ class removed for future pins; on the event rows the compiled-vs-eager log π gap falls 1.39e-3 → 1.5e-5; an X26 fork adopting it moves log π by less than the eager-vs-compiled floor except on saturated k = 1 rows (≤ 2.2e-3, toward the exact function); GPU cost UNMEASURED**
   - `L27386` · `2026-10-19` · MEASUREMENT · **X37b TRANSFER: in-house (X26 vs X26, no external opponent), P\* (X26 @ 280M) beats X26 @ 25M by +18.8 pp on home72 and +14.8 pp [+11.6, +17.9] on unseen teams (heldout72_hpfix + forum72): about four fifths of X26's progress transfers. The transfer shortfall T_tot = +4.0 pp [−0.7, +8.4] and the piloting-specific T_pilot = +0.4 pp [−5.8, +6.5] leave H1 (piloting memorisation) UNDECIDED by its preregistered rule. In-house, P\* shows no piloting deficit beyond team strength, so the 11–28 pp Kakuna-side deficit is either Kakuna-specific or invisible to a same-family opponent (F-DV-19 supported, not settled). PROVISIONAL**
   - `L27448` · `2026-10-19` · REGISTRATION · **THE WORLD SAMPLER's STAGE 1 registered and launched: five candidate samplers against F at HEAD, with playouts, on the maturity battery's 287 LEAN states at X26 225M. The confounds and factors of the day are SECONDARY: F2's legality rule alone (F_legal − F_off), and F1 tier A uniform and likelihood-weighted. The corpus backoff's α = 89.1 is fitted on the ladder corpus alone. A registered stop at 24 h; no number yet**
+  - `L27485` · `2026-10-19` · BUILD · MEASUREMENT · **THE CYCLE MONITOR and the plateau's TIER 2 BUILT OFFLINE (`main.cycle_monitor`, `6730430b`); the first retro reads: X26's in-run ladder is non-transitive at EVERY 10M check (Hodge at the bootstrap floor, excess cyclic RMS ≈ 4 pp; ≈ 3 pp inside the last 80M around P\* = 280M, null calibrated on the same graph), so under the two-tier rule P\* is a TIER-1 plateau with cycling SUSPECTED, not a declared plateau; X34's registered rows (20M–60M only): NONE at 30M / 40M, SUSPECTED at 50M / 60M. DESCRIPTIVE; no decision changes**

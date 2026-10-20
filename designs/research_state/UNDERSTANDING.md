@@ -798,6 +798,17 @@ about four fifths of the progress transfers.
 - The plateau is not a memorisation plateau in-house; whether it is one against outside opponents stays open.
 [ledger 2026-10-19 · *X37b TRANSFER*]
 
+**…and X26's plateau sits beside a small, REAL cyclic component (2026-10-19, the cycle monitor's retro read,
+`measurements/cycle_monitor_retro_2026-10-19/`):** [MEASURED · DESCRIPTIVE · the in-run snapshot ladder, not the
+registered instrument] Read by the cycle monitor's four signals, X26's ladder (72 snapshots, 1,150 mirrored lines) is
+non-transitive at every 10M check from 10M to 370M: the Hodge residual is at its bootstrap floor (p = 0.0005), with an
+excess cyclic RMS of about 4 pp of score over the whole archive and about 3 pp inside the last 80M around P\* (280M).
+The null is calibrated on that very graph (1 / 30 false flags). So under the two-tier rule P\* is a TIER-1 plateau with
+cycling SUSPECTED (never confirmed), not a declared one. Hypothesis: the cyclic part is small next to the run's
+progress but comparable to Tier 1's 2 pp bar, so at the plateau it may be what "flat" is made of. The rule's (a) needs
+a materiality bar before it can gate a stop (`design_evaluation.md` F-ED-27). [ledger 2026-10-19 · *THE CYCLE
+MONITOR*]
+
 **And a second anchor ABOVE us (2026-09-14, `foul_play_derisk_2026-09-14/`):** [MEASURED] Foul Play — MCTS with
 decoupled UCT over a hand-written evaluator on the Rust poke-engine, determinising the opponent's sets from Smogon
 usage — beats the same 75M policy: our win rate **0.388 [0.288, 0.497]** over 80 games, at ~1.4M visits and 2.1 s

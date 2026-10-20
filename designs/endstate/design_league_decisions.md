@@ -75,6 +75,14 @@ build or decision that differs updates this doc and its Decision record in the s
     is registered yet and bots cannot be members** (`design_evaluation.md` F-ED-26), so a FLAT pair reads
     `PLATEAU_BUT_PANEL` — a plateau minus the outside check — never `TRUE_PLATEAU`. Detail: `design_evaluation.md`
     §2.5 and §8.2 "As built".
+  - **X26's retro read (descriptive, 2026-10-19):** on its in-run snapshot ladder the cycle monitor reads SUSPECTED
+    at every check, including 270M / 280M (the Tier-1 FLAT pair): a calibrated, real cyclic residual of ≈ 3 pp of
+    score inside the last 80M sits beside the flat Tier 1. Under the two-tier rule, X26 at 280M is CONTINUE (cycling
+    suspected, never confirmed: a ladder read cannot top up), not a declared plateau; the stop stands, and X26's
+    "plateau" is a Tier-1 plateau. But (a) on the accumulated matrix flags any persistent small cyclic component
+    forever (`design_evaluation.md` F-ED-27): before the two-tier rule gates a stop, (a) needs a materiality bar or
+    a window (PROPOSED, an owner / orchestrator call). X34's registered rows reach only 60M (the tick was stopped by
+    heavy-slot contention): NONE at 30M and 40M, SUSPECTED at 50M and 60M; its plateau region is not read yet.
 
   The definition below is the 2026-10-02 version that this proposal would amend.
 - **Definition (owner):** plateau = plain training gains < 2 Elo per training GPU-hour, measured as the slope of

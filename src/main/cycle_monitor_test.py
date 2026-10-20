@@ -3,7 +3,8 @@ decides each check ONCE when every row up to it is complete, tops up a SUSPECTED
 without replaying, refuses a changed node file, ``verify`` re-derives each ``cycle_flag`` decision, ``status`` /
 ``main.plateau status`` print the Tier-2 columns and the signature, and the ladder read orients the in-run ladder's
 mirrored edges. The games are synthetic rows written under claims as ``main.h2h`` writes them (an Elo model per
-node); the engine path is ``cycle_monitor_integration_test.py``."""
+node). The engine path was run by hand (a real tick on X34: ``research_state/measurements/
+cycle_monitor_retro_2026-10-19/``); an engine integration test is a follow-up."""
 from __future__ import annotations
 
 import hashlib

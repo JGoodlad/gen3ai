@@ -27481,3 +27481,45 @@ Power refactor re-packs 34 of the 719 teams with other IV patterns (pool sha256 
 
 Evidence: `research_state/measurements/world_sampler_stage1_2026-10-19/` (PREREGISTRATION, `alpha_fit.json`);
 `endstate/design_world_sampler.md` §6.2, §7 F9, Decision record; `endstate/search_ledger.md` §7 Q12.
+
+### 2026-10-19 · BUILD · MEASUREMENT · **THE CYCLE MONITOR and the plateau's TIER 2 BUILT OFFLINE (`main.cycle_monitor`, `6730430b`); the first retro reads: X26's in-run ladder is non-transitive at EVERY 10M check (Hodge at the bootstrap floor, excess cyclic RMS ≈ 4 pp; ≈ 3 pp inside the last 80M around P\* = 280M, null calibrated on the same graph), so under the two-tier rule P\* is a TIER-1 plateau with cycling SUSPECTED, not a declared plateau; X34's registered rows (20M–60M only): NONE at 30M / 40M, SUSPECTED at 50M / 60M. DESCRIPTIVE; no decision changes**
+
+**Question** (TASK_BACKLOG T20's U5 + U9; `endstate/design_league_decisions.md` §C). Every Tier-1 status of X26 and X34
+said the full plateau also needs the cycle monitor NONE and the panel FLAT, and neither existed. Build them offline,
+and read X26 and X34 with them.
+
+**Built** (`endstate/design_evaluation.md` §2.5 / §8.2 "As built"). The monitor's rule (four signals at α = 0.05:
+the Hodge χ² against a 2,000-replicate tilted-pentanomial parametric bootstrap, the lag curve with Bonferroni,
+triangles through the newest node with Holm, the point matrix's Nash support against the bootstrap; NONE / SUSPECTED /
+CONFIRMED / INCONCLUSIVE with rule-8 bands; confirmation on fresh top-up games only); one `monitor_row` request per
+10M check at the hybrid lags {1..8, 16, 32, 64}, 500 mirrored pairs per edge, ONE family per run; one `cycle_flag`
+decision per check that `verify` re-derives; the panel rule and the §8.3 signature, printed by `main.plateau status`.
+No outside panel is registered, so a FLAT pair reads `PLATEAU_BUT_PANEL`.
+
+**X26** (pinned; read through its in-run snapshot ladder, not the registered row: 72 snapshots, 1,150 mirrored lines,
+50–100 pairs per line). SUSPECTED at all 37 checks 10M–370M on the accumulated matrix (Hodge p = 0.0005, the floor;
+excess cyclic RMS 3.9–4.8 pp); in the last 80M only, SUSPECTED at 34 of 37 (excess 2.7–4.2 pp from 170M), NONE where
+the window holds 5–10 nodes. Triangles through the newest node significant at 16 checks (last at 290M). At P\*
+(270M / 280M, both reading the 268M ladder node): SUSPECTED, Nash signal in its rounding band. **Calibration:** on the
+same 66-node, 1,036-edge graph under a transitive truth with per-pair team effects, Hodge flagged 1 / 30 and
+triangles 1 / 30, so the flags are real non-transitivity, not the null. Consistent with the collapse pilot's Hodge
+read at 162M (excess 32 Elo, p = 0.005).
+
+**X34** (the registered instrument, CPU, a ledger root outside `models/`): rows 20M–60M complete (14,000 games);
+30M decided NONE (`verify` OK), 40M NONE, 50M and 60M SUSPECTED (Hodge + triangles, excess ≈ 2 pp, Nash support 1)
+with their top-ups NOT played: the tick was stopped because both heavy slots were held (one by a 28-hour job) with
+eleven jobs queued. The plateau region is not read.
+
+**What it means.**
+- X26's 280M plateau is a TIER-1 plateau. Tier 2 suspects a small cyclic component beside it and never confirms
+  one (a ladder read cannot top up). The stop and X35's parents are unchanged; any "plateau" claim keeps the
+  caveat, now with a number on it.
+- **F-ED-27 (a FINDING about the registered rule):** (a) on the ACCUMULATED matrix has ever-growing power against a
+  fixed small component, so it flags forever on a run like X26, and the two-tier rule could never call a plateau.
+  PROPOSED: a materiality bar on (a) (e.g. the design's 1.7 pp target) or a windowed (a); an owner / orchestrator
+  call, the registered rule unchanged here.
+- The monitor is the collapse battery's type-(c) item B6 done properly; it is not the battery's other items.
+
+Evidence: `research_state/measurements/cycle_monitor_retro_2026-10-19/` (README, `x26_ladder_accumulated.json`,
+`x26_ladder_window80M.json`, `calibration_x26_graph.*`, `x34_status.txt`); `endstate/design_evaluation.md` §2.5, §8.2,
+F-ED-24–F-ED-27; `endstate/design_league_decisions.md` §C.
