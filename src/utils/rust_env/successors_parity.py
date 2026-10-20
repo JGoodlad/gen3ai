@@ -243,7 +243,12 @@ def compare_battle(js, ip: S.Successors, record, cen: Census, rng: np.random.Gen
                     cen.stuck += a.stuck
                     _cmp_arm(cen, f"{where0} d{d} arm {a.label}", a, b)
                     leaf = a.core_p1 if side == "p1" else a.core_p2
+                    # With no `side` (both sides' rows) the child node is the arm's END version, so a
+                    # D10 leaf's tokens (`mid`: the turn's replacement round, before it was answered)
+                    # do not describe it: expanding the child with them names a switch to the mon now
+                    # active. Only a leaf that IS the child node seeds the next ply.
                     if (not a.ended and leaf and leaf.get("row") is not None
+                            and (want is not None or not leaf.get("mid"))
                             and legal_choices_from_request((a.requests or {}).get(side))):
                         nxt.append((a.node_id, list(leaf["tokens"].values()), a.requests))
                 if len(nxt) > beam:

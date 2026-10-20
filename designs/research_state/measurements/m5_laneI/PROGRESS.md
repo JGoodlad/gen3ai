@@ -102,7 +102,7 @@ tier, load1 0.9–1.1 on 16 cores (`utils.contention`: "box looks idle"). Warn, 
 
 ## Findings
 
-- **F-LI-1 (search, P1 — a GIGO class, in BOTH roads; not Lane I's file, NOT fixed):**
+- **F-LI-1 (search, P1 — a GIGO class, in BOTH roads) — FIXED 2026-10-19 (`gen3_search_turn_boundary_v1`; the kernel re-checks the boundary before every feed — `designs/rust_sim/search_and_replay_drivers.md`). The finding as recorded:**
   `pokesim::search::resolve_turn_sourced_with` (the port's `search.rs`, a faithful port of Node's
   `resolveTurn`) feeds both sides inside one loop iteration without re-checking the boundary between
   them. When side 1's REPLACEMENT switch (after an end-of-turn faint) completes the turn, the sim opens

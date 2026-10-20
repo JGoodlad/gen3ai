@@ -30,7 +30,8 @@ use pokesim::battle::BattleOptions;
 use pokesim::bridge::{bridge_opts, parse_choice, BridgeSession, Cmd, RequestState};
 use pokesim::dex::Dex;
 use pokesim::search::{
-    aux_rng_from_seed, pick_uniform, random_choice, resolve_turn, side_chunk_strings, ActionSpec,
+    aux_rng_from_seed, pick_uniform, random_choice, resolve_turn, resolve_turn_sourced, side_chunk_strings,
+    ActionSpec, TurnSource,
 };
 
 // ===========================================================================
@@ -307,4 +308,92 @@ fn a_wedged_turn_is_reported_stuck_after_nodes_exact_iteration_count() {
     // flip a `stuck` verdict on a turn that settles on its 41st round.
     assert_eq!(r.used[1].len(), 41, "guard arithmetic must match Node's post-increment compare");
     assert!(r.used[0].is_empty(), "p1 already answered; it must not be asked again");
+}
+
+// ===========================================================================
+// 5. A REPLACEMENT SWITCH THAT ENDS THE TURN STOPS THE ARM (F-LI-1)
+// ===========================================================================
+
+/// A Shedinja lead (1 HP, sand-vulnerable) against a Sand Stream Tyranitar: the sand chip at the
+/// end of turn 1 KOs the Shedinja, so its side owes a REPLACEMENT switch while the other side
+/// WAITS — and that switch is what completes turn 1 and opens turn 2's move requests. Tackle is
+/// Normal, so neither lead can hurt the other (Ghost immunity / Wonder Guard): the only faint is
+/// the sand chip. `shedinja_side` picks which side holds it.
+fn replacement_session(shedinja_side: usize, dex: &Dex) -> BridgeSession {
+    let shed = "Shedinja|||wonderguard|tackle|Serious||||||]Blissey|||naturalcure|tackle,headbutt|Serious||||||";
+    let ttar = "Tyranitar|||sandstream|tackle|Serious||||||]Regice|||clearbody|tackle,headbutt|Serious||||||";
+    let (p1, p2) = if shedinja_side == 0 { (shed, ttar) } else { (ttar, shed) };
+    let sess = BridgeSession::new(&bridge_opts("gen3customgame", SEED.to_string(), p1, p2), dex).expect("session");
+    let st = sess.battle_state().expect("state");
+    assert!(st.sides.iter().all(|s| s.pokemon.len() == 2), "each side must field a lead AND a bench mon");
+    assert_eq!(sess.request_kind(0), Some(RequestState::Move), "p1 must open on a move request");
+    assert_eq!(sess.request_kind(1), Some(RequestState::Move), "p2 must open on a move request");
+    sess
+}
+
+/// `resolve_turn_sourced_with` must STOP at the turn boundary even INSIDE one loop iteration.
+///
+/// The loop feeds p1 then p2. When p1 owes the replacement switch (p2 waits), p1's switch ends
+/// turn 1 and the sim opens turn 2's move request for p2 AT ONCE; before the fix the same
+/// iteration then answered it from the follow-up policy — a turn-2 choice committed inside the
+/// turn-1 arm (M5 Lane I F-LI-1). The child node's engine then had p2's turn-2 choice already
+/// made while its leaf (p2's stream: `|turn|2` + a fresh request) said it was p2's decision, and
+/// expanding it with the leaf's own token failed the whole batch (`unresolvable choice`).
+///
+/// The p2-owes-the-switch arm is the CONTROL: its switch is the iteration's last feed, so it was
+/// right before the fix too — the property is the same for both sides.
+#[test]
+fn a_replacement_switch_that_ends_the_turn_does_not_answer_the_next_turn() {
+    let dex = Dex::for_gen(3);
+    for shed in 0..2 {
+        let other = 1 - shed;
+        let mut sess = replacement_session(shed, &dex);
+        let spec = [ActionSpec::Explicit("move 1".into()), ActionSpec::Explicit("move 1".into())];
+        let mut rng = aux_rng_from_seed("original");
+        let r = resolve_turn(&mut sess, &spec, "random", &mut rng, &dex);
+
+        // Non-vacuity: the turn really did contain the replacement round, on the side we meant.
+        assert!(!r.stuck && !sess.is_ended(), "shed={shed}: the turn must settle and the battle go on");
+        assert_eq!(r.used[shed].len(), 2, "shed={shed}: the Shedinja side must move AND replace: {:?}", r.used);
+        assert!(r.used[shed][1].starts_with("switch "), "shed={shed}: the follow-up must be the replacement: {:?}", r.used);
+        assert_eq!(sess.turn(), 2, "shed={shed}: the replacement must have ended turn 1");
+
+        // THE PROPERTY: the other side answered turn 1 ONCE, and turn 2 is still open for BOTH.
+        assert_eq!(r.used[other], vec!["move 1".to_string()], "shed={shed}: a turn-2 choice leaked into the turn-1 arm");
+        for side in 0..2 {
+            assert_eq!(sess.request_kind(side), Some(RequestState::Move), "shed={shed}: p{} must be at turn 2's move request", side + 1);
+            assert!(!sess.is_choice_done(side), "shed={shed}: p{} committed a turn-2 choice inside the turn-1 arm", side + 1);
+        }
+
+        // And the child serves the next ply with ITS OWN choices: an explicit turn-2 switch for the
+        // non-Shedinja side is the one that runs (before the fix the leaked follow-up ran instead).
+        let mut spec2 = [ActionSpec::Explicit("move 1".into()), ActionSpec::Explicit("move 1".into())];
+        spec2[other] = ActionSpec::Explicit("switch 2".into());
+        let r2 = resolve_turn(&mut sess, &spec2, "random", &mut rng, &dex);
+        assert!(!r2.stuck && sess.fatal().is_none(), "shed={shed}: the next ply must resolve: {:?}", sess.fatal());
+        assert_eq!(r2.used[other], vec!["switch 2".to_string()], "shed={shed}: the next ply ran another choice");
+        assert_eq!(sess.turn(), 3, "shed={shed}: the next ply must be ONE turn");
+    }
+}
+
+/// The replay family's record-aligned `"recorded"` source shares the loop: a queue that holds
+/// the NEXT turn's recorded command must not have it popped into this turn's arm.
+#[test]
+fn a_recorded_queue_is_not_drained_across_a_replacement_boundary() {
+    let dex = Dex::for_gen(3);
+    let mut sess = replacement_session(0, &dex);
+    let mut sources = [
+        TurnSource::Explicit("move 1".into()),
+        TurnSource::Queue(["move 1", "switch 2"].iter().map(|s| s.to_string()).collect()),
+    ];
+    let mut rng = aux_rng_from_seed("original");
+    let r = resolve_turn_sourced(&mut sess, &mut sources, "random", &mut rng, &dex);
+    assert_eq!(sess.turn(), 2, "the replacement must have ended turn 1");
+    assert_eq!(r.used[0].len(), 2, "p1 must move and replace: {:?}", r.used);
+    assert_eq!(r.used[1], vec!["move 1".to_string()], "p2's turn-2 recorded command was consumed in turn 1");
+    assert!(!sess.is_choice_done(1), "p2 committed a turn-2 choice inside the turn-1 arm");
+    match &sources[1] {
+        TurnSource::Queue(q) => assert_eq!(q.iter().collect::<Vec<_>>(), vec!["switch 2"], "the queue lost turn 2's entry"),
+        other => panic!("source changed kind: {other:?}"),
+    }
 }

@@ -68,6 +68,8 @@ def logs(lib):
 def _assert_green(cen: SP.Census) -> None:
     print(cen.render())
     assert not cen.diffs, "\n".join(cen.diffs[:20])
+    # F-LI-1 is fixed (`gen3_search_turn_boundary_v1`): a batch both roads refuse is a defect, not equality.
+    assert not cen.refused, "\n".join(cen.refused[:10])
     # Non-vacuity: every depth ran, rows were compared, and D10 leaves were among them.
     assert all(cen.by_depth[d] > 0 for d in (1, 2, 3)), dict(cen.by_depth)
     assert cen.rows > 200 and cen.mid > 0, cen.render()
@@ -235,6 +237,55 @@ def test_the_counterfactual_keys_through_the_ffi(lib, logs):
     assert [r.outcome for r in out["rollouts"]] == [
         {0: "win", 1: "loss", None: "tie"}[br["end"]["winner"]] for br in want]
     assert out["rollouts"][0].text == a.prefix_text + want[0]["text"]
+
+
+# ------------------------------------------------------------------ F-LI-1: the turn boundary
+
+#: A Shedinja lead (1 HP) against a Sand Stream Tyranitar: the Shedinja faints in turn 1 whatever
+#: either side picks (the sand chip at the end of the turn, if nothing earlier), so p1 owes a
+#: REPLACEMENT switch while p2 waits — and that switch is what ends turn 1.
+_SHED_LOG = {
+    "format_id": "gen3ou", "seed": "1,2,3,4", "names": ["fli1a", "fli1b"],
+    "teams": ["Shedinja||leftovers|wonderguard|shadowball,toxic,protect,swordsdance|Adamant|,252,,,4,252|||||]"
+              "Blissey||leftovers|naturalcure|softboiled,seismictoss,toxic,aromatherapy|Calm|252,,,,252,4|||||",
+              "Tyranitar||leftovers|sandstream|rockslide,earthquake,crunch,dragondance|Adamant|252,252,,,4,|||||]"
+              "Swampert||leftovers|torrent|surf,earthquake,protect,roar|Relaxed|252,,252,,4,|||||]"
+              "Skarmory||leftovers|keeneye|spikes,whirlwind,drillpeck,protect|Impish|252,,252,,4,|||||"],
+    "cmds": [],
+}
+
+
+def test_a_replacement_switch_that_ends_the_turn_leaves_the_next_turn_to_the_child(lib):
+    """``gen3_search_turn_boundary_v1`` (M5 Lane I F-LI-1). p1's replacement switch ends turn 1 and
+    the sim opens p2's turn-2 move request at once; the arm must STOP there, so the child node's
+    engine agrees with p2's leaf and EVERY leaf token expands. Before the fix the arm answered p2's
+    turn-2 request with a follow-up choice: ``choices_used.p2`` grew a second entry, and expanding
+    the child with the leaf's own tokens failed the whole batch (``unresolvable choice``) or ran
+    the arm on a board the row did not describe (another active mon)."""
+    rec = S.log_to_record(_SHED_LOG, battle_tag="fli1")
+    with S.Successors(lib=lib) as ss:
+        root = ss.open_root(1, record=rec, side="p2")
+        ours = [c["token"] for c in SP.legal_choices_from_request(root.requests["p2"])]
+        opp = [c["token"] for c in SP.legal_choices_from_request(root.requests["p1"])]
+        arms = [{"node_id": root.node_id, "p2_action": a, "p1_action": opp[0], "seed": "sodium," + "0" * 30 + "11",
+                 "label": i} for i, a in enumerate(ours)]
+        kids = ss.expand_many(arms, side="p2")
+        exercised = 0
+        for arm, k in zip(arms, kids):
+            assert not k.ended and not k.stuck, (arm, k.outcome)
+            p1 = k.choices_used["p1"]
+            if len(p1) == 2 and p1[1].startswith("switch "):
+                exercised += 1
+            # THE PROPERTY: p2 answered turn 1 once; turn 2 is the child's.
+            assert k.choices_used["p2"] == [arm["p2_action"]], f"a turn-2 choice leaked into the arm: {k.choices_used}"
+            toks = list(k.core_p2["tokens"].values())
+            p1_next = [c["token"] for c in SP.legal_choices_from_request(k.requests["p1"])]
+            deeper = [{"node_id": k.node_id, "p2_action": t, "p1_action": p1_next[0], "seed": "sodium," + "0" * 30 + "12",
+                       "label": j} for j, t in enumerate(toks)]
+            for d, g in zip(deeper, ss.expand_many(deeper, side="p2")):  # raised before the fix
+                assert g.choices_used["p2"][:1] == [d["p2_action"]], (d, g.choices_used)
+        # Non-vacuity: the replacement round really ended the turn on (nearly) every arm.
+        assert exercised >= len(arms) - 1 and exercised > 0, f"the fixture no longer forces p1's replacement ({exercised}/{len(arms)})"
 
 
 # ------------------------------------------------------------------ the handle's contract

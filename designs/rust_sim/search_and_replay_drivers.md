@@ -274,14 +274,24 @@ to depth 3 (`src/utils/rust_env/successors_parity.py`, routine COMMIT + `slow` M
 to the core road here must land in `tree.rs` too, or that gate fails. Contract, gates and numbers:
 `designs/endstate/program_rust_core.md` §2 M5 (Lane I).
 
-🚨 **A known kernel defect both roads share (F-LI-1, not fixed):** `resolve_turn_sourced_with` feeds
-the second side inside the same loop iteration after the first side's feed, without re-checking the
-boundary — when side 1's REPLACEMENT switch ends the turn, side 2's fresh next-turn move request is
-answered by the FOLLOW-UP policy inside this arm. The child node's engine then disagrees with its
-own leaf, and a deeper arm fed the leaf's own token fails the whole `expand_many`
-(`bridge fatal: unresolvable choice`). Node's `resolveTurn` has the same shape (this port is
-faithful), so a fix moves both drivers' bytes. Repro and counts:
-`designs/research_state/measurements/m5_laneI/PROGRESS.md` F-LI-1.
+**An arm stops AT the turn boundary, checked before EVERY feed** (`gen3_search_turn_boundary_v1`, fixing
+M5 Lane I F-LI-1, 2026-10-19). `resolve_turn_sourced_with` feeds p1 then p2 inside one loop iteration;
+when p1's REPLACEMENT switch (p2 waiting) completes the turn, the sim opens p2's NEXT-turn move request
+at once, and the loop used to answer it from the follow-up policy inside this arm. The child node's
+engine then held p2's next choice while p2's leaf said p2 was to move: a deeper arm fed a leaf token
+either failed the whole `expand_many` (`bridge fatal: unresolvable choice`; 25 batches in the
+depth-3 slice's milestone) or was ACCEPTED and ran on a board its row did not describe (the leaked
+switch's mon active, the arm's `choices_used` still naming the requested token). Now the next turn's
+requests stay open for BOTH sides in the child. What moved: such an arm's `choices_used` loses the
+trailing next-turn entry, its child expands, and a replay `reroll` arm with a `"recorded"` queue no
+longer pops the next turn's command. Measured at the fix (pre vs post cdylib, 8 battles, 3,714 depth-1
+arms of both sides × 2 seeds): rows, masks, tokens, chunks, outcomes and requests are byte-identical on
+every arm; 203 arms (5.5 %) differ, only in `choices_used`, each by the leaked trailing entry after p1's
+replacement (a Baton Pass's included). The one-ply value search's oracle and honest playouts never
+run this kernel (9 decisions, bit-identical). The deleted Node `resolveTurn` had the same defect. Pins: `tests/search_driver_test.rs`
+(`a_replacement_switch_that_ends_the_turn_does_not_answer_the_next_turn`,
+`a_recorded_queue_is_not_drained_across_a_replacement_boundary`) and
+`successors_integration_test.py::test_a_replacement_switch_that_ends_the_turn_leaves_the_next_turn_to_the_child`.
 
 ## The REPLAY family: the one-shot `replay` / `reroll` / `reroll_many` verbs (`gen3_rust_replay_driver_v1`)
 

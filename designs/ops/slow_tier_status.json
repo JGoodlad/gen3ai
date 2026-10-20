@@ -5312,42 +5312,42 @@
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_procedural_teams": {
    "status": "pass",
-   "commit": "3190a05d11be3e2e009c20b14f229879cf2806a1",
-   "at": "2026-10-10T09:45:02Z",
-   "duration_s": 30.91,
-   "contention": 1.01,
+   "commit": "40dc61f8f339fe5f0c5526b1285e2a23ca636457",
+   "at": "2026-10-20T07:45:08Z",
+   "duration_s": 97.74,
+   "contention": 2.97,
    "detail": ""
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_the_ladder_commit_tier": {
    "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 7.05,
-   "contention": 1.83,
+   "commit": "40dc61f8f339fe5f0c5526b1285e2a23ca636457",
+   "at": "2026-10-20T07:45:08Z",
+   "duration_s": 12.48,
+   "contention": 4.44,
    "detail": ""
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_the_ladder_milestone_tier": {
    "status": "pass",
-   "commit": "3190a05d11be3e2e009c20b14f229879cf2806a1",
-   "at": "2026-10-10T09:45:02Z",
-   "duration_s": 40.11,
-   "contention": 1.0,
+   "commit": "40dc61f8f339fe5f0c5526b1285e2a23ca636457",
+   "at": "2026-10-20T07:45:08Z",
+   "duration_s": 177.52,
+   "contention": 4.69,
    "detail": ""
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_the_training_pool": {
    "status": "pass",
-   "commit": "3190a05d11be3e2e009c20b14f229879cf2806a1",
-   "at": "2026-10-10T09:45:02Z",
-   "duration_s": 31.31,
-   "contention": 1.01,
+   "commit": "40dc61f8f339fe5f0c5526b1285e2a23ca636457",
+   "at": "2026-10-20T07:45:08Z",
+   "duration_s": 117.52,
+   "contention": 3.65,
    "detail": ""
   },
   "src/utils/rust_env/core_cargo_test.py::test_the_rust_env_core_suite_passes": {
    "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 74.89,
-   "contention": 2.19,
+   "commit": "40dc61f8f339fe5f0c5526b1285e2a23ca636457",
+   "at": "2026-10-20T07:45:08Z",
+   "duration_s": 138.43,
+   "contention": 4.63,
    "detail": ""
   },
   "src/utils/rust_env/fixture_battles_test.py::test_self_play_answers_both_sides_with_the_policy": {
@@ -5384,34 +5384,34 @@
   },
   "src/utils/rust_env/successors_integration_test.py::test_gate_1_the_depth_3_successor_slice_commit": {
    "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 18.89,
-   "contention": 1.79,
+   "commit": "91087fe324fa693eff8c28332e399f73182e1654",
+   "at": "2026-10-20T07:24:07Z",
+   "duration_s": 54.25,
+   "contention": 5.97,
    "detail": ""
   },
   "src/utils/rust_env/successors_integration_test.py::test_gate_1_the_depth_3_successor_slice_milestone[ladder_milestone-12]": {
    "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 19.09,
-   "contention": 1.0,
+   "commit": "91087fe324fa693eff8c28332e399f73182e1654",
+   "at": "2026-10-20T07:24:07Z",
+   "duration_s": 140.71,
+   "contention": 5.22,
    "detail": ""
   },
   "src/utils/rust_env/successors_integration_test.py::test_gate_1_the_depth_3_successor_slice_milestone[pool-6]": {
    "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 12.47,
-   "contention": 1.0,
+   "commit": "91087fe324fa693eff8c28332e399f73182e1654",
+   "at": "2026-10-20T07:24:07Z",
+   "duration_s": 66.77,
+   "contention": 6.44,
    "detail": ""
   },
   "src/utils/rust_env/successors_integration_test.py::test_gate_1_the_depth_3_successor_slice_milestone[procedural-6]": {
    "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 14.15,
-   "contention": 1.0,
+   "commit": "91087fe324fa693eff8c28332e399f73182e1654",
+   "at": "2026-10-20T07:24:07Z",
+   "duration_s": 88.55,
+   "contention": 7.67,
    "detail": ""
   },
   "src/utils/team_corpora/team_corpora_test.py::test_the_committed_corpus_reproduces_from_its_source": {

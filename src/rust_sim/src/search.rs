@@ -684,6 +684,11 @@ const RESOLVE_GUARD: u32 = 40;
 /// re-sending the same rejected choice (callers detect the refusal from the `|error|`
 /// line in that side's suffix chunks). A `"recorded"` source is never aligned off-root,
 /// so it yields nothing and the follow-up policy answers every round.
+///
+/// **The boundary is checked before EVERY feed** (`gen3_search_turn_boundary_v1`): a feed that
+/// completes the turn (p1's replacement switch while p2 waits) ends the arm at once, so the next
+/// turn's requests stay open for the child node. Node's `resolveTurn` (deleted 2026-10-10) checked
+/// only at the top of its loop and so answered p2's next-turn request inside the arm (F-LI-1).
 pub fn resolve_turn(
     sess: &mut BridgeSession,
     spec: &[ActionSpec; 2],
@@ -824,6 +829,16 @@ pub fn resolve_turn_sourced_with(
         }
         let mut wrote = false;
         for i in 0..2 {
+            // `gen3_search_turn_boundary_v1` (M5 Lane I F-LI-1): re-check the boundary BEFORE every
+            // side's feed, not only at the top of the iteration. When p1's REPLACEMENT switch (p2
+            // waiting) completes the turn, the sim opens the NEXT turn's move request for p2 at once;
+            // answering it here committed a next-turn choice inside this arm, so the child's engine
+            // had p2's next decision already made while its leaf said p2 was to move — a deeper arm
+            // then either failed (`unresolvable choice`) or ran on a board its row did not describe.
+            // The next turn's requests belong to the CHILD node, open for both sides.
+            if sess.is_ended() || open_boundary_turn(sess) != start_turn {
+                break;
+            }
             let Some(kind) = sess.request_kind(i) else {
                 continue;
             };
