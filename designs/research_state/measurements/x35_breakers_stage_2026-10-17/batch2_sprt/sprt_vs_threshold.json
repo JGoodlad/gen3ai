@@ -1,0 +1,44 @@
+{
+ "runs": 5000,
+ "seed": 20261020,
+ "tau": 1.0,
+ "heterogeneity": 0.4,
+ "cap_pairs": 1680,
+ "min_pairs": 40,
+ "bounds": "wald",
+ "threshold_rule": "Binomial(500) > 0.55 (the code's strict >; the _ge column is >= 0.55)",
+ "rows": [
+  {
+   "edge": 0.51,
+   "sprt_accept": 0.1016,
+   "sprt_mean_pairs": 395.3,
+   "sprt_by_cap": 0.0026,
+   "threshold_promote_binomial": 0.0332,
+   "threshold_promote_binomial_ge": 0.0404
+  },
+  {
+   "edge": 0.52,
+   "sprt_accept": 0.318,
+   "sprt_mean_pairs": 514.6,
+   "sprt_by_cap": 0.0212,
+   "threshold_promote_binomial": 0.0825,
+   "threshold_promote_binomial_ge": 0.0971
+  },
+  {
+   "edge": 0.53,
+   "sprt_accept": 0.6576,
+   "sprt_mean_pairs": 514.5,
+   "sprt_by_cap": 0.0222,
+   "threshold_promote_binomial": 0.1734,
+   "threshold_promote_binomial_ge": 0.1974
+  },
+  {
+   "edge": 0.54,
+   "sprt_accept": 0.8916,
+   "sprt_mean_pairs": 397.1,
+   "sprt_by_cap": 0.0062,
+   "threshold_promote_binomial": 0.3112,
+   "threshold_promote_binomial_ge": 0.3436
+  }
+ ]
+}

@@ -7,7 +7,7 @@ HEAD `03b983be` (§4.3); nothing launched; every launch NEEDS THE ORCHESTRATOR'S
 `gen3_tau_fp32_alt_v1`; its GPU cost read gates production), so there is ONE PIN PER SIDE, the TOY BLOCK RUNS FIRST (AM-9) and production waits for the FP32_ALT commit (a
 placeholder the kit refuses to launch on).** **AMENDED 2026-10-20 (AM-X47, §0) before any X47 read:** the
 orchestrator accepted X47's readout review (AM-X47-1 to -11) and ruled that X47 arms are not thinned (AM-X47-12). X47's
-READ PLAN is §4.5, and its guards' pre-read (both READ on toys) is §4.5.1. **AMENDED 2026-10-20 (AM-X47b, §0) before any X47 read:** G-C pooled over seeds (a crossed cluster bootstrap), the toy's own B2 truth, a policy-difference descriptor (reported only), and UNDECIDED with Δ̂ ≤ 0 deprioritises X47b. **AMENDED 2026-10-20 (AM-X47c, §0) before any X35 read:** the UNDECIDED line prints the CURRENT look's detectable effect, and production's B2 truth is refreshed under P\* (§5.6.5's own refresh rule). **AMENDED 2026-10-20 (D1-CORPUS, §0) before any D1 launch:** X54's sealed confirmation panel `forum216b` was carved out of D1's corpus, which is now 1,982 teams (tier sha `73a76e808431`); launch pre-check 2d HOLDs a pin without it. **NOTE 2026-10-20 (TM, §0) before any production X35 read:** the X26 treadmill read's MECHANISM predictions for C0 / A1 / A2 (pool refresh, pool-relative edge, the learning rate in force), reported only, and the LR confound every production fork inherits; no arm, argv, bar or order changed. X47 is a **kit arm**
+READ PLAN is §4.5, and its guards' pre-read (both READ on toys) is §4.5.1. **AMENDED 2026-10-20 (AM-X47b, §0) before any X47 read:** G-C pooled over seeds (a crossed cluster bootstrap), the toy's own B2 truth, a policy-difference descriptor (reported only), and UNDECIDED with Δ̂ ≤ 0 deprioritises X47b. **AMENDED 2026-10-20 (AM-X47c, §0) before any X35 read:** the UNDECIDED line prints the CURRENT look's detectable effect, and production's B2 truth is refreshed under P\* (§5.6.5's own refresh rule). **AMENDED 2026-10-20 (D1-CORPUS, §0) before any D1 launch:** X54's sealed confirmation panel `forum216b` was carved out of D1's corpus, which is now 1,982 teams (tier sha `73a76e808431`); launch pre-check 2d HOLDs a pin without it. **NOTE 2026-10-20 (TM, §0) before any production X35 read:** the X26 treadmill read's MECHANISM predictions for C0 / A1 / A2 (pool refresh, pool-relative edge, the learning rate in force), reported only, and the LR confound every production fork inherits; no arm, argv, bar or order changed. **AMENDED 2026-10-20 (AM-RP, §0) before any X47 look-1 read and any production arm:** the REPLAN memo's rulings: A2 and toy A2 DROPPED, P3 DEFERRED, LG-2 only on an A1 GAIN, A3's ROBUSTNESS GAIN rule, the toy calibration accepted NOT SHOWN, the GPU order after T1 (the GPU battery first), and batch 2's SPRT and toy LR-F registered. X47 is a **kit arm**
 (`toy_x47`, F-LS-1 closed). The orchestrator has ruled **C1** (a), **C2** (X47 interleaved with its toy C0), **C3** (the
 toy arms run K9(b) `warn` under X34's ceilings), **C4** (batch 1 launches without R0) and every amendment of the
 [adversarial review](X35_BATCH1_REVIEW.md) (AM-1 to AM-7, the POOL check, the G-E readers); C1's rule (a) is SUPERSEDED by AM-8; C6 is still open; C5 is RULED and DONE (§5). This sheet is
@@ -256,6 +256,35 @@ members with a median age of 54M at P\*. X26's own pool at 280M was 20 members w
 because T54 dropped the post-P\* snapshots and the eviction history differs. X26's own 280M → 300M is therefore not a
 substitute for C0.
 
+### AMENDMENT 2026-10-20 (AM-RP): the orchestrator's rulings on the REPLAN memo, made BEFORE any X47 look-1 read and before any production X35 arm
+
+**Registered 2026-10-20, before X47's look 1 is read and before any production arm has launched.** No X35 or X47 read
+has happened, and no X35 run's telemetry was opened for this. The memo is [`REPLAN_2026-10-20.md`](REPLAN_2026-10-20.md)
+(`01a80901`). The kit change that enforces (c) is the commit that FOLLOWS this registration. The batch-2 arms of (f)
+are registered in [`STAGED_PLAN.md`](STAGED_PLAN.md) §4 after it.
+
+| ruling | what it says | where it is enforced |
+|---|---|---|
+| **AM-RP-a: the memo's ruling (a) ACCEPTED** | **A3's verdict**, when the A3 / A6 batch is registered: **the best-response gap (R2) FALLS AND G-F passes AND R1 is not LOSS**, labelled **ROBUSTNESS GAIN**, never "stronger". **The toy calibration (T2) is accepted as NOT SHOWN** as the expected outcome now. The league doc's §7 NOT SHOWN branch applies in advance: **LG-3 on the toy is descriptive only.** Toy A1 stays conditional (AM-3, unchanged) | the A3 / A6 batch's registration (not registered yet; `readout.decide`'s A3 rule is NOT changed here, F-RP-5); [`design_alphastar_league_path.md`](../../../endstate/design_alphastar_league_path.md) §7 |
+| **AM-RP-b: LG-2's second arm DROPPED** | LG-2 (PFSP over the archive) runs **only on an A1 GAIN**. This replaces §7's "A1 UNDECIDED, Δ̂ > 0 ⇒ LG-2 as ranked" | the league doc §6 / §7 |
+| **AM-RP-c: A2 (PFSP) DROPPED from batch 1** | **P4's A2 rows (s3501–s3503) and T2's toy A2 rows (s3601–s3603) leave the queue.** Why (the memo §1, §4c): its lever tilts 1.2 % of games, R1 cannot reach NULL, its promotion count is confounded by its own sentinel count (TM-1), and its PFSP state is biased (F31). The registration text of A2 stays as history, unedited (§1's rows 24–26 and 30–32, §4.2's toy A2 lines, X55's P3) | `batch.STAGES` no longer lists `a2` / `toy_a2`; `kit stage-check` REFUSES them with this ruling as the reason (`batch_test.py`, the commit after this one) |
+| **AM-RP-d: P3 (A1's look 2) DEFERRED** | P3 keeps its registration and its pin. It is not scheduled in (e); it runs only on the orchestrator's later word | the order below; `stage-check`'s own rule for P3 (A1 look 1 = CONTINUE) is unchanged |
+| **AM-RP-e: the GPU order after T1** | **(1) The 2026-10-20 GPU battery FIRST**, the moment T1 ends and before T1b: ≈ 2 h, and the only thing that can unblock production (FP32_ALT's `tau_cuda_parity` and its cost). The memo's "toy SPRT while waiting for FP32_ALT" applies ONLY if the battery FAILS. **(2)** T1b, if X47's look 1 reads CONTINUE. **(3)** P1 with the **C0 seeds first** (s3501–s3503), then A1 s3501–s3503. **(4)** G1. **(5)** D1, if G1 PASSes and D1's corpus soak passes; X52 first if it is staged. If G1 HOLDs, P2 runs here instead. **(6)** The production SPRT arm. **(7)** X48; it moves to slot (5) if X47 reads GAIN / PER-STEP ONLY. **(8)** Production LR-F. **(9)** P2, when a look 2 is wanted. **(10)** LG-1. **(11)** Toy LR-F and toy SPRT fill any GPU idle gap | the Training session's launch sequence, as AM-9's was. **This order supersedes `batch.STAGES`' sequence where they differ** (P1's ABBA becomes C0 first; D1 before P2 on a G1 PASS); `STAGES` keeps every CONDITION, and the order is not a gate (F-RP-6) |
+| **AM-RP-f: batch 2 REGISTERED** | The **SPRT arm** (C0 + `--promotion-sprt`, one lever) and **toy LR-F** are registered in `STAGED_PLAN.md` §4 with their predictions, matched controls, stop rules and VOID guards, before X47's look 1 (which reads toy C0's finals) | `STAGED_PLAN.md` §4.1 (LR-F) / §4.2 (SPRT); neither is a kit arm yet (F-AS-8, §4.3 there) |
+
+**What drops out of §1's GPU-h.** P4 becomes D1 alone (3 × 4.3, **UNVERIFIED**), −13.2. T2 becomes toy A1 alone
+(0–13.2), −0 to −13.2. P3 (8.8) leaves the expected path.
+
+**FINDINGS (AM-RP).**
+- **F-RP-5.** `readout.decide` still reads an R2 arm's gap only when R1 is NULL. AM-RP-a's rule (R1 not LOSS) has to be
+  built when the A3 / A6 batch is registered. Nothing reads A3 before then.
+- **F-RP-6.** `batch.STAGES` is not re-sequenced to (e): its order is not a gate, and the brief covered only the A2
+  drop. The Training session follows (e).
+- **F-RP-7.** Today's threshold rule promotes **0.03 / 0.08 / 0.17 / 0.31** at an edge of 0.51–0.54 under the code's
+  strict `>` (Binomial(500) > 0.55, exact), and 0.04 / 0.10 / 0.20 / 0.34 under `≥`. The memo's 0.04–0.33 sits between
+  them. The SPRT figures reproduce exactly (0.10 / 0.32 / 0.66 / 0.89;
+  [`batch2_sprt/sprt_vs_threshold.json`](batch2_sprt/sprt_vs_threshold.json)).
+
 
 ---
 
@@ -304,6 +333,9 @@ information, not balance (review F-RV-16); X47's primary is time-based, which is
 | | 24–26 | **A2 s3501–s3503** | PFSP: recent selves the trainee loses to are drawn more often (+5 sentinels feed it win rates) | G1 PASS | 3 × 4.4 | C0 s3501–s3503 |
 | **T2** | 27–29 | toy A1 s3601–s3603 | the archive pool on the toy (8 nodes of T\*'s own lineage) | G1 PASS and production A1 FINAL GAIN / NULL / LOSS (AM-3) | 3 × 4.4 | toy C0 s3601–s3603 |
 | | 30–32 | toy A2 s3601–s3603 | PFSP on the toy | G1 PASS and production A2 FINAL GAIN / NULL / LOSS (AM-3) | 3 × 4.4 | toy C0 s3601–s3603 |
+
+**AM-RP (§0, 2026-10-20): rows 24–26 (A2) and 30–32 (toy A2) are DROPPED, and P3 (rows 19–20) is DEFERRED. The rows stay
+above as history. The order after T1 is AM-RP-e's.**
 
 **The GPU-h, by condition** (the basis above; the review's §3 has the same stages; the totals do not depend on the order):
 
