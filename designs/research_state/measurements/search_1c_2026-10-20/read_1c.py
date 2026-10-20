@@ -145,31 +145,12 @@ def facts_values(f: dict) -> Dict[str, float]:
             "U_moves": f["umh"] / ut if ut else nan}
 
 
-def arm_parts(row: dict, arm: str, temper: float = 1.0) -> Optional[Tuple[np.ndarray, List[dict], List[int]]]:
-    """(the arm's weights over its proposals, their facts, their near-copy flags), or None if the arm is not valid.
-    ``temper`` scales the opponent-choice log-likelihood (1: the registered weight; ``K.TEMPER``: the descriptive)."""
-    from main.value_search.opp_likelihood import normalise, posterior_log_weights
-
-    parts, wt = K.ARMS[arm]
-    sets = [s for s, _ in parts]
-    if not row.get("ok") or row.get("defect") or any(not (row.get(s) or {}).get("ok") for s in sets):
-        return None
-    if any("facts" not in row[s] for s in sets):
-        return None
-    facts = K.arm_slice({s: row[s]["facts"] for s in sets}, arm)
-    near = K.arm_slice({s: row[s]["near4"] for s in sets}, arm)
-    n = len(facts)
-    if wt == "uniform":
-        return np.full(n, 1.0 / n), facts, near
-    dice = K.arm_slice({s: row[s]["log_w"] for s in sets}, arm)
-    ll = [temper * x for x in K.arm_slice({s: row[s]["ll"] for s in sets}, arm)] if wt == "dice*opp" else None
-    return normalise(posterior_log_weights(n, dice, ll)), facts, near
-
-
-def arm_meters(row: dict, arm: str, temper: float = 1.0) -> Optional[Dict[str, float]]:
-    p = arm_parts(row, arm, temper)
-    if p is None:
-        return None
+def arm_meters(row: dict, arm: str, **kw):
+    """The arm's meters on one state under ``c1c_common.arm_weights(row, arm, **kw)`` (strict / temper / placebo /
+    weighting), ``"strict-excluded"`` when A1's filter leaves no proposal, or None when the arm is not valid there."""
+    p = K.arm_weights(row, arm, **kw)
+    if p is None or isinstance(p, str):
+        return p
     w, facts, near = p
     vals = [facts_values(f) for f in facts]
     out = {}
@@ -184,8 +165,11 @@ def arm_meters(row: dict, arm: str, temper: float = 1.0) -> Optional[Dict[str, f
         out["NW_lift"] = float(w[top].sum() - top.mean())
     else:
         out["NW_lift"] = float("nan")
-    out["ESS"] = float(w.sum() ** 2 / np.sum(w ** 2))
+    live = w[w > 0]
+    out["ESS"] = float(live.sum() ** 2 / np.sum(live ** 2))
     out["ESS_share"] = out["ESS"] / len(w)
+    # A1: the weight on near4 proposals (the leak mass, under this weighting)
+    out["near4_mass"] = float(w @ np.array([float(v) for v in near]))
     return out
 
 
@@ -254,6 +238,17 @@ def gates_a(rows: List[dict], recheck: Optional[List[dict]], l3: Optional[Dict[s
     return g
 
 
+def labels_a(pooled_v: str, bot_v: Optional[str], snap_v: Optional[str]) -> List[str]:
+    """AMENDMENT A4 on a phase-A verdict: a NEARER is PROVISIONAL-POOL until an off-pool bank and the plateau checkpoint
+    replicate it; one the bot stratum does not reach while the snapshot stratum does is SELF-PLAY-ONLY."""
+    out = []
+    if pooled_v == "NEARER":
+        out.append("PROVISIONAL-POOL")
+        if bot_v != "NEARER" and snap_v == "NEARER":
+            out.append("SELF-PLAY-ONLY")
+    return out
+
+
 def read_a(rows: List[dict], recheck: Optional[List[dict]] = None, l3: Optional[Dict[str, dict]] = None,
            order: Optional[List[str]] = None, interim: bool = False) -> dict:
     g = gates_a(rows, recheck, l3, order)
@@ -266,66 +261,134 @@ def read_a(rows: List[dict], recheck: Optional[List[dict]] = None, l3: Optional[
         return out
     bt = Boot([r["battle"] for r in ok])
     strata = np.array([str(r.get("stratum")) for r in ok])
-    met = {arm: [arm_meters(r, arm) for r in ok] for arm in K.ARMS}
-    met_t = {arm: [arm_meters(r, arm, K.TEMPER) for r in ok] for arm in K.PRIMARY}
+    corpus = set(K.CORPUS_ARMS)
 
-    def col(arm: str, m: str) -> np.ndarray:
-        return np.array([x[m] if x is not None else np.nan for x in met[arm]], dtype=np.float64)
+    def M(arm: str, **kw) -> list:
+        return [arm_meters(r, arm, **kw) for r in ok]
 
-    def colt(arm: str, m: str) -> np.ndarray:
-        return np.array([x[m] if x is not None else np.nan for x in met_t[arm]], dtype=np.float64)
+    # the sources: "ns" non-strict (the original registration); "reg" = the AMENDED reading (A1: corpus arms STRICT);
+    # "t" tempered (descriptive); "p" the A3 placebo; "d" the dice-only weighting of a primary's own proposals
+    src: Dict[str, Dict[str, list]] = {"ns": {a: M(a) for a in K.ARMS}}
+    src["reg"] = {a: (M(a, strict=True) if a in corpus else src["ns"][a]) for a in K.ARMS}
+    src["t"] = {a: M(a, temper=K.TEMPER, strict=a in corpus) for a in K.PRIMARY}
+    src["p"] = {a: M(a, placebo=True, strict=a in corpus) for a in K.PRIMARY}
+    src["d"] = {"F128L": src["reg"]["F128d"], "C128L": src["reg"]["C128d"],
+                "M256L": M("M256L", weighting="dice", strict=True)}
 
-    def contrast(a: str, b: str, m: str, sel=None) -> dict:
-        return summ(*bt.mean(col(a, m) - col(b, m), sel))
+    def col(arm: str, m: str, s_: str = "reg") -> np.ndarray:
+        return np.array([x[m] if isinstance(x, dict) else np.nan for x in src[s_][arm]], dtype=np.float64)
 
-    def level(a: str, m: str, sel=None) -> dict:
-        return summ(*bt.mean(col(a, m), sel))
+    def contrast(a: str, b: str, m: str, sel=None, sa: str = "reg", sb: str = "reg") -> dict:
+        return summ(*bt.mean(col(a, m, sa) - col(b, m, sb), sel))
+
+    def level(a: str, m: str, sel=None, s_: str = "reg") -> dict:
+        return summ(*bt.mean(col(a, m, s_), sel))
+
+    def nearer(c: dict) -> str:
+        return verdict_a({"dH": c, "qSM": {"ci": [None, None]}})["verdict"]
+
+    wa = ("F128L", "C128L", "M256L", "F64L", "C64L", "M128L", "F128d", "C128d")
 
     def block(sel=None) -> dict:
         res: Dict[str, dict] = {"levels": {a: {m: level(a, m, sel) for m in METERS} for a in K.ARMS}}
         res["vs_F8"] = {a: {m: contrast(a, K.BASELINE, m, sel) for m in METERS} for a in K.ARMS if a != K.BASELINE}
-        # the likelihood's own selection (same proposals: dice*opp vs dice only) and the proposal effects
+        res["vs_F8_non_strict"] = {a: {m: contrast(a, K.BASELINE, m, sel, sa="ns") for m in ("H", "M_hit", "U_hit",
+                                                                                           "qSM")}
+                                   for a in K.CORPUS_ARMS}
+        # A2: the likelihood's own selection on the same proposals (the attribution co-primaries, STRICT for C)
         res["likelihood_selection"] = {"F128L-F128d": {m: contrast("F128L", "F128d", m, sel) for m in METERS},
-                                       "C128L-C128d": {m: contrast("C128L", "C128d", m, sel) for m in METERS}}
+                                       "C128L-C128d": {m: contrast("C128L", "C128d", m, sel) for m in METERS},
+                                       "M256L-M256d": {m: contrast("M256L", "M256L", m, sel, sb="d")
+                                                       for m in ("H", "M_hit", "U_hit", "qSM")}}
+        # A3: the permuted-L placebo against the same proposals' dice weighting
+        res["placebo_minus_dice"] = {a: {m: contrast(a, a, m, sel, sa="p", sb="d") for m in ("H", "M_hit", "U_hit",
+                                                                                            "qSM")}
+                                     for a in K.PRIMARY}
         res["proposals"] = {"F128d-F8": {m: contrast("F128d", "F8", m, sel) for m in METERS},
                             "C8-F8": {m: contrast("C8", "F8", m, sel) for m in METERS},
                             "C128d-C8": {m: contrast("C128d", "C8", m, sel) for m in METERS}}
         res["n_scaling"] = {f"{a}-{b}": {m: contrast(a, b, m, sel) for m in ("H", "M_hit", "U_hit", "qSM")}
                             for a, b in (("F128L", "F64L"), ("C128L", "C64L"), ("M256L", "M128L"))}
-        res["tempered_0.5"] = {a: {m: summ(*bt.mean(colt(a, m) - col(K.BASELINE, m), sel)) for m in ("H", "qSM")}
+        res["tempered_0.5"] = {a: {m: summ(*bt.mean(col(a, m, "t") - col(K.BASELINE, m), sel)) for m in ("H", "qSM")}
                                for a in K.PRIMARY}
-        wa = ("F128L", "C128L", "M256L", "F64L", "C64L", "M128L", "F128d", "C128d")
         res["NW_lift"] = {a: level(a, "NW_lift", sel) for a in wa}
         res["ESS"] = {a: {"ESS": level(a, "ESS", sel), "ESS_share": level(a, "ESS_share", sel),
-                          "share_ESS_below_2": summ(*bt.mean((col(a, "ESS") < 2).astype(float)
-                                                             * np.where(np.isfinite(col(a, "ESS")), 1, np.nan), sel))}
+                          "share_ESS_below_2": summ(*bt.mean(np.where(np.isfinite(col(a, "ESS")),
+                                                                      (col(a, "ESS") < 2).astype(float), np.nan), sel))}
                       for a in wa}
         return res
 
     pooled = block()
     out["pooled"] = pooled
-    out["by_stratum"] = {s: block(strata == s) for s in sorted(set(strata))}
-    def head(a: str) -> dict:
-        x = {"dH": pooled["vs_F8"][a]["H"], "qSM": pooled["levels"][a]["qSM"]}
-        return x if interim else {**x, **verdict_a(x)}     # an INTERIM read carries no verdict (§7)
+    out["by_stratum"] = {st_: block(strata == st_) for st_ in sorted(set(strata))}
+
+    # A1: the leak report (non-strict weights), and the STRICT exclusions
+    any_c = np.array([float(any((r.get("C") or {}).get("near4") or [])) if (r.get("C") or {}).get("ok") else np.nan
+                      for r in ok])
+    any_m = np.array([float(any(((r.get("C") or {}).get("near4") or []) + ((r.get("F") or {}).get("near4") or [])))
+                      if (r.get("C") or {}).get("ok") and (r.get("F") or {}).get("ok") else np.nan for r in ok])
+    out["A1_leak"] = {
+        "share_states_with_near4": {"C128": summ(*bt.mean(any_c)), "M256": summ(*bt.mean(any_m))},
+        "F128_near4_share_honest_baseline": level("F128d", "near4", s_="ns"),
+        "leak_mass_L": {a: level(a, "near4_mass", s_="ns") for a in ("C128L", "M256L", "C64L", "M128L")},
+        "dH_states_without_near4": {"C128L": contrast("C128L", "F8", "H", any_c == 0, sa="ns"),
+                                    "M256L": contrast("M256L", "F8", "H", any_m == 0, sa="ns")},
+        "strict_excluded": {a: int(sum(1 for x in src["reg"][a] if x == "strict-excluded")) for a in K.CORPUS_ARMS},
+    }
+
+    def head(a: str, s_: str = "reg") -> dict:
+        x = {"dH": contrast(a, K.BASELINE, "H", sa=s_), "qSM": level(a, "qSM", s_=s_),
+             "dM_hit": contrast(a, K.BASELINE, "M_hit", sa=s_), "dU_hit": contrast(a, K.BASELINE, "U_hit", sa=s_)}
+        if interim:
+            return x                                      # an INTERIM read carries no verdict (§7)
+        v = verdict_a({"dH": x["dH"], "qSM": x["qSM"]})
+        by = {st_: nearer(contrast(a, K.BASELINE, "H", strata == st_, sa=s_)) for st_ in sorted(set(strata))}
+        return {**x, **v, "by_stratum_verdict": by,
+                "labels": labels_a(v["verdict"], by.get("bot"), by.get("snapshot"))}
 
     prim = {a: head(a) for a in K.PRIMARY}
+    for a in K.PRIMARY:
+        if a in corpus:
+            prim[a]["non_strict"] = head(a, "ns")
     out["primary"] = prim
     out["secondary_64"] = {a: head(a) for a in K.SECONDARY_64}
-    if not interim:
-        nearer = [a for a in K.PRIMARY if prim[a]["verdict"] == "NEARER"]
-        play = []
-        if nearer:
-            play = ["F8"] + nearer + (["C8"] if any(a in nearer for a in ("C128L", "M256L")) else [])
-        out["bar"] = {"met": bool(nearer), "nearer": nearer, "play": play}
+    if interim:
+        return out
+    # A2: the attribution co-primaries (the same NEARER rule)
+    attr = {}
+    for k_ in ("F128L-F128d", "C128L-C128d"):
+        c = pooled["likelihood_selection"][k_]["H"]
+        by = {st_: nearer(out["by_stratum"][st_]["likelihood_selection"][k_]["H"]) for st_ in out["by_stratum"]}
+        attr[k_] = {"dH": c, "verdict": nearer(c), "by_stratum_verdict": by,
+                    "labels": labels_a(nearer(c), by.get("bot"), by.get("snapshot"))}
+    out["attribution"] = attr
+    # A3: the placebo must not read NEARER; if it does, the read STOPS
+    plac = {a: nearer(pooled["placebo_minus_dice"][a]["H"]) for a in K.PRIMARY}
+    out["placebo_verdicts"] = plac
+    if any(v == "NEARER" for v in plac.values()):
+        out["stopped"] = True
+        out["stop_reason"] = "A3: a permuted-L placebo reads NEARER (a meter or a leak)"
+        return out
+    nearer_ = [a for a in K.PRIMARY if prim[a]["verdict"] == "NEARER"]
+    play: List[str] = []
+    if nearer_:
+        play = ["F8"] + nearer_
+        if any(a in nearer_ for a in ("C128L", "M256L")):
+            play.append("C8")
+        if "F128L" in nearer_:
+            play.append("F128d")                          # A2
+        if "C128L" in nearer_:
+            play.append("C128d")                          # A2 (STRICT)
+    out["bar"] = {"met": bool(nearer_), "nearer": nearer_, "play": play}
     out["counts"] = {
-        "ok": len(ok), "by_stratum": {s: int((strata == s).sum()) for s in sorted(set(strata))},
-        "valid": {a: int(sum(1 for x in met[a] if x is not None)) for a in K.ARMS},
+        "ok": len(ok), "by_stratum": {st_: int((strata == st_).sum()) for st_ in sorted(set(strata))},
+        "valid": {a: int(sum(1 for x in src["reg"][a] if isinstance(x, dict))) for a in K.ARMS},
         "steps_scored_mean": round(float(np.mean([r.get("n_scored", 0) for r in ok])), 2),
         "corpus_lambda_mean": round(float(np.mean([((r.get("C") or {}).get("prop") or {}).get("lambda", 0.0)
                                                    for r in ok if (r.get("C") or {}).get("ok")] or [0.0])), 4),
-        "cost_cpu_s_mean": {s: round(float(np.mean([r[s]["cost"]["cpu_s"] for r in ok if (r.get(s) or {}).get("cost")]
-                                                   or [0.0])), 1) for s in ("F", "C")},
+        "cost_cpu_s_mean": {st_: round(float(np.mean([r[st_]["cost"]["cpu_s"] for r in ok
+                                                      if (r.get(st_) or {}).get("cost")] or [0.0])), 1)
+                            for st_ in ("F", "C")},
         "cost_ll_cpu_s_mean": round(float(np.mean([r.get("cost_ll_cpu_s", 0.0) for r in ok])), 1),
     }
     return out
@@ -334,8 +397,10 @@ def read_a(rows: List[dict], recheck: Optional[List[dict]] = None, l3: Optional[
 # -------------------------------------------------------------------------------------------- phase B
 
 def read_b(play: Dict[str, Dict[str, dict]], truth: Dict[str, dict], roots: Dict[str, dict], states: Dict[str, dict],
-           ids: List[str], fit: Optional[dict] = None, identity: Optional[dict] = None) -> dict:
-    """``play``: {arm: {id: the pilot's playout row}}; ``truth`` / ``roots``: the banked 225M O rows and roots."""
+           ids: List[str], fit: Optional[dict] = None, identity: Optional[dict] = None,
+           rows: Optional[Dict[str, dict]] = None) -> dict:
+    """``play``: {arm: {id: the pilot's playout row}}; ``truth`` / ``roots``: the banked 225M O rows and roots;
+    ``rows``: phase A's rows (the played indices are re-derived from them, and each state's ESS, A7)."""
     sys.path.insert(0, str(K.L1DIR / "scripts"))
     import l1_read as L1                                # L1's rules (pick), imported unchanged
     import l1l5_data as LD                              # the per-state arrays in the POLICY's order
@@ -364,6 +429,23 @@ def read_b(play: Dict[str, Dict[str, dict]], truth: Dict[str, dict], roots: Dict
             rec[a] = LD.world_part(rw, tp)
         recs.append(rec)
     stopped = [a for a in arms if refused[a] > MAX_DEFECTS]
+    # the played worlds are the ones the amended registration names (A1: a corpus arm from its STRICT weights)
+    idx_bad = 0
+    ess: Dict[str, Dict[str, float]] = {a: {} for a in arms}
+    if rows is not None:
+        for a in arms:
+            for did, rw in play[a].items():
+                r = rows.get(did)
+                if r is None or not rw.get("ok"):
+                    continue
+                if list(rw.get("src") or []) != K.play_indices(r, a):
+                    idx_bad += 1
+                pw = K.arm_weights(r, a, strict=a in K.CORPUS_ARMS)
+                if isinstance(pw, tuple):
+                    live = pw[0][pw[0] > 0]
+                    ess[a][did] = float(live.sum() ** 2 / np.sum(live ** 2))
+    if idx_bad:
+        return {"stopped": True, "reason": f"{idx_bad} played rows' worlds are not the registered indices"}
     if identity is not None and not (identity.get("identical") == identity.get("states") == K.N_IDENTITY):
         return {"stopped": True, "reason": "the identity tooth did not pass", "identity": identity}
     if "F8" in stopped:
@@ -398,9 +480,16 @@ def read_b(play: Dict[str, Dict[str, dict]], truth: Dict[str, dict], roots: Dict
                 if a in ("C128L", "M256L") and "C8" in arms:
                     tab[rule][a][z]["minus_C8"] = summ(*bt.mean(v - imp("C8", z, rule)))
     res["table"] = tab
-    verd = {}
+    # A7: the anchored rule's IMP split by the played weights' ESS (< 2: search on about one guess)
+    res["by_ess"] = {}
     for a in arms:
-        if a not in K.PRIMARY:
+        e = np.array([ess[a].get(r["id"], np.nan) for r in recs])
+        res["by_ess"][a] = {z: {"ESS<2": summ(*bt.mean(imp(a, z, PRIMARY_RULE), e < 2)),
+                                "ESS>=2": summ(*bt.mean(imp(a, z, PRIMARY_RULE), e >= 2))} for z in PRIMARY_SCORERS}
+    verd = {}
+    claim = [a for a in arms if a in K.PRIMARY or a in ("F128d", "C128d")]
+    for a in arms:
+        if a not in claim:
             continue
         if a in stopped:
             verd[a] = {"verdict": "STOPPED (more than 2 refused worlds)", "beats_F8": False}
@@ -408,8 +497,38 @@ def read_b(play: Dict[str, Dict[str, dict]], truth: Dict[str, dict], roots: Dict
         t = tab[PRIMARY_RULE][a]
         v = verdict_b({z: t[z]["imp"] for z in PRIMARY_SCORERS}, {z: t[z]["minus_F8"] for z in PRIMARY_SCORERS})
         beats = all(clear_above(t[z]["minus_F8"]["ci"][0]) for z in PRIMARY_SCORERS)
-        verd[a] = {"verdict": v, "beats_F8": beats}
+        by = {st_: verdict_b({z: t[z]["by_stratum"][st_] for z in PRIMARY_SCORERS}, {}) for st_ in sorted(set(strata))}
+        lab = []
+        if v == "SEARCH-PAYS":
+            lab.append("PROVISIONAL-POOL")                # A4
+            if by.get("bot") != "SEARCH-PAYS" and by.get("snapshot") == "SEARCH-PAYS":
+                lab.append("SELF-PLAY-ONLY")
+        n_played = int(np.isfinite(imp(a, "LEAF-K8", PRIMARY_RULE)).sum())
+        meaning = ("no gain of about +0.03 or more (search-sized) detected; it neither reopens the route nor licenses "
+                   "a re-run on this bank" if v == "NOT-DETECTED" else None)          # A6
+        verd[a] = {"verdict": v, "beats_F8": beats, "by_stratum_verdict": by, "labels": lab, "n_played": n_played,
+                   **({"meaning": meaning} if meaning else {})}
     res["primary"] = verd
+    # A5: the unit-level "honest search pays" by Holm-Bonferroni over the claim arms (one-sided, alpha 0.025 each
+    # family-wise; p = the bootstrap share of draws at or below the +0.0005 edge, the larger of the two scorers)
+    pv = {}
+    for a in claim:
+        if a in stopped:
+            continue
+        ps = []
+        for z in PRIMARY_SCORERS:
+            _, vec, _ = bt.mean(imp(a, z, PRIMARY_RULE))
+            vv = vec[np.isfinite(vec)]
+            ps.append(float(np.mean(vv <= EDGE)) if len(vv) else 1.0)
+        pv[a] = max(ps)
+    order_ = sorted(pv, key=lambda x: (pv[x], x))
+    rejected = []
+    for i, a in enumerate(order_):
+        if pv[a] <= 0.025 / (len(order_) - i):
+            rejected.append(a)
+        else:
+            break
+    res["holm"] = {"p": pv, "rejected": rejected, "honest_search_pays": bool(rejected), "m": len(order_)}
     return res
 
 
@@ -453,17 +572,22 @@ def bcheck(E, order: List[str]) -> dict:
 
 
 def unit_verdict(a: dict, b: Optional[dict]) -> str:
-    """PREREGISTRATION §5–§6: the unit's one line."""
+    """PREREGISTRATION §5–§6 and §11 (A4–A6): the unit's one line."""
     if a.get("stopped"):
-        return "STOPPED (a GIGO gate)"
+        return "STOPPED: " + str(a.get("stop_reason") or "a GIGO gate")
     if not a["bar"]["met"]:
         return "NOT-NEARER: no proposal set, weighted by the opponent's choices, holds worlds clearly nearer the truth"
+    lab = {x: ",".join(a["primary"][x].get("labels") or []) for x in a["bar"]["nearer"]}
+    near = ", ".join(f"{x} [{lab[x]}]" for x in a["bar"]["nearer"])
     if b is None:
-        return "NEARER: phase B pending"
-    pays = [x for x, v in b["primary"].items() if v["verdict"] == "SEARCH-PAYS"]
-    if pays:
-        return "SEARCH-PAYS: " + ", ".join(pays)
-    return "NEARER-BUT-NOT-PAYING: " + ", ".join(f"{x} {v['verdict']}" for x, v in b["primary"].items())
+        return f"NEARER ({near}): phase B pending"
+    if b.get("stopped"):
+        return f"NEARER ({near}); phase B STOPPED: {b.get('reason')}"
+    if b["holm"]["honest_search_pays"]:
+        return ("SEARCH-PAYS (Holm): " + ", ".join(f"{x} [{','.join(b['primary'][x]['labels'])}]"
+                                                    for x in b["holm"]["rejected"]))
+    return (f"NEARER ({near}) BUT NOT PAYING: " + ", ".join(f"{x} {v['verdict']} (n {v['n_played']})"
+                                                           for x, v in b["primary"].items()))
 
 
 # -------------------------------------------------------------------------------------------- the selfcheck
@@ -507,24 +631,56 @@ def selfcheck() -> None:
                 facts = [_facts(int(h), 4, int(h == 4), 0, 0, 1) for h in hits]
                 r[s] = {"ok": True, "log_w": [0.0] * nn, "ll": [float(strength * h + rng.normal(0, 0.5)) for h in hits],
                         "facts": facts, "near4": [0] * nn, "cost": {"cpu_s": 1.0}, "prop": {"lambda": 0.5}}
-            for arm in K.RESAMPLED:
-                parts, wt = K.ARMS[arm]
-                sets = [s for s, _ in parts]
-                dice = K.arm_slice({s: r[s]["log_w"] for s in sets}, arm)
-                ll = K.arm_slice({s: r[s]["ll"] for s in sets}, arm) if wt == "dice*opp" else None
-                lw = posterior_log_weights(len(dice), dice, ll)
-                r["resample"][arm] = {"idx": systematic(normalise(lw), K.J,
-                                                        resample_uniform(K.RESAMPLE_KEY.format(arm=arm, id=r["id"]))),
-                                      "ess": 0.0}
+            stamp(r)
             rows.append(r)
         return rows
+
+    def stamp(r: dict) -> None:
+        for arm in K.RESAMPLED:
+            parts, wt = K.ARMS[arm]
+            sets = [s for s, _ in parts]
+            dice = K.arm_slice({s: r[s]["log_w"] for s in sets}, arm)
+            ll = K.arm_slice({s: r[s]["ll"] for s in sets}, arm) if wt == "dice*opp" else None
+            lw = posterior_log_weights(len(dice), dice, ll)
+            r["resample"][arm] = {"idx": systematic(normalise(lw), K.J,
+                                                    resample_uniform(K.RESAMPLE_KEY.format(arm=arm, id=r["id"]))),
+                                  "ess": 0.0}
 
     assert "verdict" not in read_a(fake(1.5, 40), interim=True)["primary"]["F128L"]
     strong = read_a(fake(1.5))
     assert not strong["stopped"], strong["gates"]
     assert all(strong["primary"][a]["verdict"] == "NEARER" for a in K.PRIMARY), strong["primary"]
     assert strong["primary"]["F128L"]["material"], strong["primary"]
-    assert strong["bar"]["play"] == ["F8", "F128L", "C128L", "M256L", "C8"]
+    assert strong["bar"]["play"] == ["F8", "F128L", "C128L", "M256L", "C8", "F128d", "C128d"]
+    assert strong["attribution"]["F128L-F128d"]["verdict"] == "NEARER"
+    assert all(v != "NEARER" for v in strong["placebo_verdicts"].values()), strong["placebo_verdicts"]
+    assert "PROVISIONAL-POOL" in strong["primary"]["F128L"]["labels"]
+    assert labels_a("NEARER", "NOT-DETECTED", "NEARER") == ["PROVISIONAL-POOL", "SELF-PLAY-ONLY"]
+    assert labels_a("NEARER", "NEARER", "NEARER") == ["PROVISIONAL-POOL"] and labels_a("NULL", None, None) == []
+    # A1: a planted LEAK (corpus near copies of the truth, all facts right, favoured by L) reads NEARER only non-strict
+    leak = fake(0.0)
+    for r in leak:
+        c = r["C"]
+        for j in range(0, K.N_C, 16):
+            c["near4"][j] = 1
+            c["facts"][j] = _facts(4, 4, 1, 0, 0, 1)
+            c["ll"][j] = 12.0
+        stamp(r)
+    lk = read_a(leak)
+    assert lk["primary"]["C128L"]["non_strict"]["verdict"] == "NEARER", lk["primary"]["C128L"]
+    assert lk["primary"]["C128L"]["verdict"] != "NEARER", lk["primary"]["C128L"]
+    assert lk["A1_leak"]["leak_mass_L"]["C128L"]["mean"] > 0.5
+    allnear = fake(0.0, 30)
+    allnear[0]["C"]["near4"] = [1] * K.N_C
+    assert read_a(allnear)["A1_leak"]["strict_excluded"]["C128L"] == 1
+    # A3: a "placebo" that is NOT permuted carries the likelihood's information and must STOP the read
+    real_perm = K.placebo_perm
+    K.placebo_perm = lambda n, arm, did: list(range(n))
+    try:
+        st3 = read_a(fake(1.5, 120))
+    finally:
+        K.placebo_perm = real_perm
+    assert st3["stopped"] and "A3" in st3["stop_reason"], st3.get("placebo_verdicts")
     assert all(strong["secondary_64"][a]["verdict"] == "NEARER" for a in K.SECONDARY_64)
     null = read_a(fake(0.0))
     assert all(null["primary"][a]["verdict"] in ("NULL", "NOT-DETECTED") for a in K.PRIMARY), null["primary"]
@@ -583,7 +739,7 @@ def main() -> None:
         ids = [r["id"] for r in rows if all(r["id"] in play[x] for x in play)]
         idp = K.ARCH / "play" / "identity" / "identity.json"
         identity = json.loads(idp.read_text()) if idp.exists() else {"states": 0, "identical": 0}
-        res = read_b(play, truth, roots, E.mat_states(), ids, fit, identity)
+        res = read_b(play, truth, roots, E.mat_states(), ids, fit, identity, rows_by)
         if not res.get("stopped"):
             res["unit"] = unit_verdict(ra, res)
     text = json.dumps(res, indent=1, sort_keys=True, default=float)

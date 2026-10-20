@@ -22,7 +22,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -37,13 +37,16 @@ for _p in (E.T1, E.BRC, E.PILOT):
         sys.path.insert(2, str(_p))
 
 
-def arm_world_row(arm: str, wrow: dict, row: dict) -> dict:
-    """The 8 worlds an arm plays, in the det format the pilot's driver reads, each with its own rolls."""
+def arm_world_row(arm: str, wrow: dict, row: dict) -> Optional[dict]:
+    """The 8 worlds an arm plays (``c1c_common.play_indices``: a corpus arm from its STRICT weights, AMENDMENT A1), in
+    the det format the pilot's driver reads, each with its own rolls; None when the arm has no valid worlds here."""
+    idx = K.play_indices(row, arm)
+    if idx is None:
+        return None
     sets = K.arm_sets(arm)
     teams = K.arm_slice({s: wrow[s]["teams"] for s in sets}, arm)
     cmds = K.arm_slice({s: wrow[s]["cmds"] for s in sets}, arm)
     rolls = K.arm_slice({s: wrow[s]["rolls"] for s in sets}, arm)
-    idx = list(range(K.J)) if K.ARMS[arm][1] == "uniform" else list(row["resample"][arm]["idx"])
     return {"id": wrow["id"], "side": wrow["side"], "at": wrow["at"], "teams": [teams[i] for i in idx],
             "cmds": [cmds[i] for i in idx], "rolls": [rolls[i] for i in idx], "src": idx}
 
@@ -106,13 +109,7 @@ def main() -> None:
             for arm in arms:
                 if did in done[arm]:
                     continue
-                r = rows[did]
-                sets = K.arm_sets(arm)
-                if not r.get("ok") or r.get("defect") or any(not (r.get(s) or {}).get("ok") for s in sets) \
-                        or (K.ARMS[arm][1] != "uniform" and arm not in (r.get("resample") or {})):
-                    jobs.append((arm, did, None))
-                else:
-                    jobs.append((arm, did, arm_world_row(arm, worlds[did], r)))
+                jobs.append((arm, did, arm_world_row(arm, worlds[did], rows[did])))
         files = {arm: open(p, "a") for arm, p in paths.items()}
     print(f"[1c play] {len(jobs)} (arm, state) jobs at {head[:8]}", flush=True)
     off = C.clock_offset()

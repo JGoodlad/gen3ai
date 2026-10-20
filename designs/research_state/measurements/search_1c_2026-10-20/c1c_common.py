@@ -190,3 +190,80 @@ def near_copy(true_team: str, world_team: str, near: int = 4) -> bool:
 
 def ids_sha(ids: Sequence[str]) -> str:
     return hashlib.sha256("".join(ids).encode()).hexdigest()
+
+
+# ------------------------------------------------------------------------------------------------
+# AMENDMENT A (2026-10-20; PREREGISTRATION §11): the STRICT corpus read, the permuted-L placebo, the play indices
+# ------------------------------------------------------------------------------------------------
+
+#: A1: the arms holding corpus proposals, read STRICT (every near4 proposal's weight 0, the rest renormalised)
+CORPUS_ARMS = ("C128L", "M256L", "C64L", "M128L", "C128d", "C8")
+#: A3: the permuted-L placebo's key
+PLACEBO_SALT = "search_1c_placebo_v1:"
+#: A1: a corpus arm's phase-B worlds are resampled from its STRICT weights under this key
+STRICT_KEY = "search_1c:{arm}:strict:{id}"
+
+
+def placebo_perm(n: int, arm: str, did: str) -> List[int]:
+    """A3: the fixed permutation of a state's n proposals (sha256 of ``search_1c_placebo_v1:<arm>:<id>``)."""
+    import numpy as np
+
+    seed = int(hashlib.sha256(f"{PLACEBO_SALT}{arm}:{did}".encode()).hexdigest()[:16], 16)
+    return [int(x) for x in np.random.default_rng(seed).permutation(n)]
+
+
+def arm_weights(row: dict, arm: str, strict: bool = False, temper: float = 1.0, placebo: bool = False,
+                weighting: Optional[str] = None):
+    """(the arm's normalised weights over its proposals, their facts, their near4 flags), ``"strict-excluded"`` when the
+    STRICT filter leaves no proposal, or None when the arm is not valid on the state. ``weighting`` overrides the arm's
+    own ("uniform" / "dice" / "dice*opp"); ``temper`` scales log L; ``placebo`` permutes log L across the proposals
+    (A3) before the weighting; ``strict`` zeroes every near4 proposal (A1)."""
+    import numpy as np
+
+    from main.value_search.opp_likelihood import normalise, posterior_log_weights
+
+    parts, wt = ARMS[arm]
+    wt = weighting or wt
+    sets = [s for s, _ in parts]
+    if not row.get("ok") or row.get("defect") or any(not (row.get(s) or {}).get("ok") for s in sets):
+        return None
+    if any("facts" not in row[s] for s in sets):
+        return None
+    facts = arm_slice({s: row[s]["facts"] for s in sets}, arm)
+    near = arm_slice({s: row[s]["near4"] for s in sets}, arm)
+    n = len(facts)
+    if wt == "uniform":
+        lw = np.zeros(n)
+    else:
+        dice = arm_slice({s: row[s]["log_w"] for s in sets}, arm)
+        ll = None
+        if wt == "dice*opp":
+            ll = arm_slice({s: row[s]["ll"] for s in sets}, arm)
+            if placebo:
+                p = placebo_perm(n, arm, row["id"])
+                ll = [ll[i] for i in p]
+            ll = [temper * x for x in ll]
+        lw = posterior_log_weights(n, dice, ll)
+    if strict:
+        keep = np.array([not x for x in near], dtype=bool)
+        if not keep.any():
+            return "strict-excluded"
+        lw = np.where(keep, lw, -np.inf)
+    return normalise(lw), facts, near
+
+
+def play_indices(row: dict, arm: str) -> Optional[List[int]]:
+    """The proposal indices (into the arm's own proposal list) an arm PLAYS in phase B: a corpus arm (A1) resampled
+    from its STRICT weights (systematic, key ``STRICT_KEY``); F8 its first 8; any other weighted arm the driver's own
+    stored resample. None when the arm is not valid (or STRICT-excluded) on the state."""
+    from main.value_search.opp_likelihood import resample_uniform, systematic
+
+    if arm in CORPUS_ARMS:
+        p = arm_weights(row, arm, strict=True)
+        if p is None or isinstance(p, str):
+            return None
+        return systematic(p[0], J, resample_uniform(STRICT_KEY.format(arm=arm, id=row["id"])))
+    if ARMS[arm][1] == "uniform":
+        return list(range(J))
+    rec = (row.get("resample") or {}).get(arm)
+    return None if rec is None else list(rec["idx"])

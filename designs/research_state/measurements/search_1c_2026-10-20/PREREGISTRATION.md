@@ -251,3 +251,66 @@ CPU only (`CUDA_VISIBLE_DEVICES=""`), SCHED_IDLE, `nice -n 19`, `taskset -c 5-7,
 (`mem_cap.sh --slot`; rule 5b). Rows go to `~/gen3ai_archive/search_1c/`; nothing is written under `models/`, `data/`
 or another unit's archive. The runner: [`launch_1c.sh`](launch_1c.sh) → [`loop_1c.sh`](loop_1c.sh) →
 [`run_1c.py`](run_1c.py) (phase A) and [`play_1c.py`](play_1c.py) via [`run_play.sh`](run_play.sh) (phase B).
+
+## 11. AMENDMENT A (2026-10-20, registered before any world of a registered state was built)
+
+**Provenance.** An independent adversarial review of L3 and of this registration
+([`../search_l3_2026-10-20/REVIEW.md`](../search_l3_2026-10-20/REVIEW.md) §3) proposed seven amendments; the orchestrator
+RULED all of them ACCEPTED. They are registered here, dated, with the text above unedited. **State of the run when
+registered:** phase A had been launched at 04:41 PDT from `664385776` and was still waiting for its first heavy slot; its
+owner stopped it at 05:22 (by its process group) before any state was built (no `rows/` existed). It is relaunched from
+the commit that carries this amendment with the SAME `STOP_AT` (2026-10-21 10:41 PDT). `run_1c.py` is unchanged: every
+amendment computes from what it stores per proposal (`near4`, `log_w`, `ll`, `facts`). **Looked at for this amendment:**
+the `near4` shares of the 4 non-registered smoke states' worlds (F worlds 0–0.016, C worlds 0–0.016), to check the
+operationalisation of A1. Nothing of a registered state.
+
+**A1 (CRITICAL, leak): a STRICT read of every corpus arm.** The bank's true teams are training-pool teams and C_ladder is
+built non-strict (`design_world_sampler.md` F3).
+- C128L, M256L, C64L, M128L, C128d and C8 are read with every `near4` proposal's weight set to 0 and the rest
+  renormalised (`c1c_common.arm_weights(strict=True)`). A state with no proposal left is a **STRICT exclusion**,
+  counted per arm.
+- A corpus arm's phase-A VERDICT (§5) is its STRICT read; the non-strict read (the original rule) is reported beside it.
+- Reported: the share of states with ≥ 1 `near4` proposal (C128, and F128 ∪ C128); the weight L puts on them (the
+  LEAK MASS, under the non-strict weights); ΔH on the states with none.
+- Phase B draws a corpus arm's 8 worlds by systematic resampling on its STRICT weights (key
+  `search_1c:<arm>:strict:<id>`; C8: uniform over the non-`near4` of its first 8), `c1c_common.play_indices`.
+- **Declared:** `near4` counts every whole mon set equal to the truth's, the revealed ones included, so an honest F or
+  backoff world can be `near4` (smoke: up to 0.016 of F worlds). As ruled, the STRICT read zeroes those too (in the M
+  arms as well). That is conservative (it removes some honest near-exact worlds); the honest base rate, F128d's `near4`
+  share, is reported beside it.
+
+**A2 (HIGH, attribution).** "The opponent's choices move the worlds nearer" is read ONLY on **F128L − F128d** and
+**C128L − C128d** (both STRICT for C): CO-PRIMARY for attribution, by §5's NEARER rule (M256L − M256d descriptive). In
+phase B, **F128d** is played when F128L is NEARER and **C128d** (STRICT) when C128L is.
+
+**A3 (HIGH, placebo).** Per primary arm, a PERMUTED-L placebo: within each state the arm's log L values are permuted
+across its proposals by a fixed permutation (`numpy.random.default_rng(int(sha256("search_1c_placebo_v1:<arm>:<id>")
+[:16], 16)).permutation(n)`, `c1c_common.placebo_perm`), then weighted by exp(log_w + L_perm) (STRICT for C and M).
+**Placebo − the same proposals' dice weighting** (F128d; C128d STRICT; M256d STRICT) must NOT read NEARER; **if any
+does, the read STOPS** (a meter or a leak), and no bar or verdict is read.
+
+**A4 (HIGH, generalisation).**
+- Any NEARER or SEARCH-PAYS is labelled **PROVISIONAL-POOL** until it replicates on an OFF-POOL opponent bank
+  (held-out or `hl_05_26` teams, design F4) AND at the plateau checkpoint (≥ 280M). Until then it unlocks only cheap,
+  reversible work.
+- Every verdict line states the **BOT** stratum's verdict (same rule) beside the pooled one.
+- A pooled NEARER / SEARCH-PAYS that the bot stratum does not reach while the snapshot stratum does is labelled
+  **SELF-PLAY-ONLY**.
+
+**A5 (MEDIUM, multiplicity).** The unit-level claim "honest search pays" is made over the played claim arms (the
+primaries and A2's F128d / C128d) by **Holm–Bonferroni**: per arm p = the larger, over LEAF-K8 and TRUNC-4-K8, of the
+bootstrap share of draws whose mean IMP (piKL) is ≤ +0.0005; sorted ascending, arm i (of m) is rejected while p ≤
+0.025 / (m − i). It pays iff at least one arm is rejected. The per-arm 95 % intervals of §6 stay descriptive.
+
+**A6 (MEDIUM, power).** A phase-B **NOT-DETECTED means "no gain of about +0.03 or more (search-sized) detected"**: it
+neither reopens the route nor licenses a re-run on this bank. Every verdict states the n actually played.
+
+**A7 (LOW, descriptive).** Phase B's IMP split by the played weights' ESS (< 2 vs ≥ 2: a resample that collapses onto
+one world is search on a single guess); ΔM_hit and ΔU_hit beside ΔH for every arm.
+
+**The amended bar (§5).** Phase B plays F8, every primary arm NEARER by its amended verdict (STRICT for C128L and
+M256L), C8 (STRICT) when C128L or M256L is NEARER, F128d when F128L is NEARER and C128d (STRICT) when C128L is.
+
+**Code.** `read_1c.py` and `c1c_common.py` change with this amendment (their new sha256 in `c1c_registration.json`
+`amendment_A`; the read's selfcheck now plants a corpus leak that must read NEARER only non-strict, a STRICT exclusion,
+and an unpermuted "placebo" that must STOP the read). `play_1c.py` draws through `play_indices`. `run_1c.py`: unchanged.

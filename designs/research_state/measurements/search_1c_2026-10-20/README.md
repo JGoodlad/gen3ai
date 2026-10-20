@@ -4,7 +4,7 @@ Stage 1c of [`design_world_sampler.md`](../../../endstate/design_world_sampler.m
 [`PREREGISTRATION.md`](PREREGISTRATION.md) before any world of a registered state was built. The numbers and their
 reading go to the design doc, `search_ledger.md`, `UNDERSTANDING.md` and the ledger once read.
 
-**Status: REGISTERED; phase A crawls detached (§2).** No number yet.
+**Status: REGISTERED, with AMENDMENT A (PREREGISTRATION §11: the orchestrator's ruling on the independent review; a STRICT corpus read, the L-vs-dice attribution co-primaries, a permuted-L placebo that stops the read, PROVISIONAL-POOL / SELF-PLAY-ONLY labels, Holm, NOT-DETECTED's meaning, an ESS split); phase A crawls detached (§2).** No number yet.
 
 | file | what |
 |---|---|

@@ -1,4 +1,25 @@
 {
+ "amendment_A": {
+  "amendments": [
+   "A1 STRICT corpus read",
+   "A2 attribution co-primaries",
+   "A3 permuted-L placebo (stop)",
+   "A4 PROVISIONAL-POOL / SELF-PLAY-ONLY",
+   "A5 Holm-Bonferroni",
+   "A6 NOT-DETECTED meaning",
+   "A7 ESS split, per-class columns"
+  ],
+  "digest": "e4a312b7a9a40b1f8c5430e076f21e93da18bf4284f931b1ab5aa86a02bc863f",
+  "placebo_salt": "search_1c_placebo_v1:",
+  "registered": "2026-10-20",
+  "ruled_by": "the orchestrator (independent review, ../search_l3_2026-10-20/REVIEW.md section 3)",
+  "sha256": {
+   "PREREGISTRATION.md": "b9b15bc453c71ebbb35a3ee82f8843ba9680222cfad8ac92091ada7ccd0d307e",
+   "c1c_common.py": "dc2d08de1430036ff9d2881166590995ab2f4467813745ed721a6a7daded33ec",
+   "read_1c.py": "3ffc6caa383781192b560b269be12708ab7857dbc8876aa33329b121f040dc95"
+  },
+  "strict_key": "search_1c:<arm>:strict:<id>"
+ },
  "bank": {
   "ids_sha256": "cf8d8c6fc09c9a85ce976a85a6195eb52977900659ac9be218b47562d9a09dfb",
   "n": 287,
