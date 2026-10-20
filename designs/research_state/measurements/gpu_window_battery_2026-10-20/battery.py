@@ -72,7 +72,7 @@ class Cell:
 
 
 #: A pytest cell run from the MAIN checkout must not let the conftest's slow-tier recorder dirty main mid-window.
-#: This battery has no pytest cell; the dry run still asserts it for any that is added.
+#: The dry run asserts it for every pytest cell (``t2_guard``).
 NO_SLOW_RECORD = "GEN3AI_SKIP_SLOW_STATUS_RECORD=1"
 
 
@@ -212,7 +212,52 @@ def cells(learner_gate: str = LP.GATE_ON) -> list[Cell]:
                                                         str(out), "--check", "--prove", "--scratch", str(out / "x14_dry")],
                                                        timeout=1800)),
             result=(lambda out, arm=arm: _json_status_ok(out / "cells" / f"x14_{arm}.json"))))
+    # 4. T2's frozen guard on the card (added 2026-10-20 with gen3_t2_stream_attribution_v1; LAST, so it never delays
+    #    the FP32_ALT read): the 2026-10-19 arming check re-run on its fixed bar (gen3_expandable_floor_v1), and the
+    #    overlap attribution proof -- T2's own growth still seen, a learner growth in a worker flush NOT booked to T2
+    junit = "t2_guard.junit.xml"
+    cs.append(Cell(
+        "t2_guard", "T2 frozen guard: expandable steady state (eager + graph) + overlap stream attribution "
+                    "(expandable + default allocator)",
+        mem_gb=16, wall_min=45, eta_min=12,
+        cmd=lambda out: ["env", "GEN3AI_TEST_ALLOW_GPU=1", NO_SLOW_RECORD, py, "-m", "pytest", *T2_GUARD_NODES, "-q",
+                         "-rs", "-s", "-p", "no:cacheprovider", f"--junitxml={out / 'cells' / junit}"],
+        check=lambda out: _check_t2_guard(py),
+        result=lambda out: _junit_all_passed(out / "cells" / junit, expect=4)))
     return cs
+
+
+#: The t2_guard cell's tests: 2 parametrised arming checks + 2 parametrised attribution proofs.
+_T2_CUDA_TEST = "src/agents/inference/service/service_cuda_test.py"
+T2_GUARD_NODES = (
+    f"{_T2_CUDA_TEST}::test_expandable_segments_steady_state_reserves_nothing_and_a_new_mapping_is_seen",
+    f"{_T2_CUDA_TEST}::test_overlap_attribution_books_only_t2s_own_streams")
+
+
+def _check_t2_guard(py: str) -> tuple[str, str]:
+    """SKIP at a commit without the attribution test; else the 4 tests must collect (they SKIP without
+    ``GEN3AI_TEST_ALLOW_GPU=1``; a SKIP on the GPU is a HOLD: `_junit_all_passed` counts skips as a failure)."""
+    src = ROOT / _T2_CUDA_TEST
+    if not src.is_file() or "test_overlap_attribution_books_only_t2s_own_streams" not in src.read_text():
+        return "skip", "gen3_t2_stream_attribution_v1 not at this commit (its card test is absent)"
+    st, d = _run_check([py, "-m", "pytest", *[str(ROOT / n) for n in T2_GUARD_NODES], "--collect-only", "-q",
+                        "-p", "no:cacheprovider"])
+    if st != "ok":
+        return st, d
+    return "ok", "4 parametrised tests collect (a SKIP on the GPU is a HOLD)"
+
+
+def _junit_all_passed(p: Path, expect: int) -> tuple[bool, str]:
+    if not p.is_file():
+        return False, f"no junit {p}"
+    import xml.etree.ElementTree as ET
+    r = ET.parse(p).getroot()
+    s = r if r.tag == "testsuite" else r.find("testsuite")
+    if s is None:
+        return False, "junit has no testsuite"
+    n, f, e, sk = (int(s.get(k, 0)) for k in ("tests", "failures", "errors", "skipped"))
+    ok = n == expect and f == 0 and e == 0 and sk == 0
+    return ok, f"tests {n} failures {f} errors {e} skipped {sk} (a SKIP is NOT a pass)"
 
 
 # ------------------------------------------------------------------------------------------------- the driver

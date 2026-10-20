@@ -8,7 +8,8 @@ parity-gates EVERY slot x bucket (and, with lanes, every slot at once) on the co
 fixture, and FREEZES. After the freeze a ``flush()`` only packs, copies, replays and copies out —
 it compiles, captures and allocates nothing, and three ``*_after_freeze`` counters prove it on
 every call (plus a counted, warned reserved-byte growth, the one acquisition visible under
-``expandable_segments:True``). This module is the API, the scheduling and the lifecycle; ``engine.py`` executes.
+``expandable_segments:True``) — each charged only for what grew on T2's OWN streams
+(``reserved_growth.StreamAttribution``, gen3_t2_stream_attribution_v1). This module is the API, the scheduling and the lifecycle; ``engine.py`` executes.
 
 Not thread-safe: one caller loop drives it (the M5 env core is in-process). Results are views into
 the arenas, valid until the next ``flush()`` (a later read is a `CallerError`, never stale data).
@@ -19,7 +20,7 @@ import contextlib
 import time
 from dataclasses import dataclass
 import re
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Callable, Dict, FrozenSet, Iterator, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -97,20 +98,40 @@ class Ticket:
         return e.host_out[0][sl].numpy(), e.host_out[1][sl].numpy(), e.host_out[2][sl].numpy()
 
 
-def _alloc_marks(device: torch.device) -> Tuple[int, int]:
-    """``(segments ever allocated, bytes ever reserved)`` on ``device`` — two CUMULATIVE
-    ``torch.cuda.memory_stats`` counters read from ONE call (``(0, 0)`` off CUDA).
+def _alloc_marks(device: torch.device) -> RG.Marks:
+    """`reserved_growth.Marks` on ``device``: three CUMULATIVE ``torch.cuda.memory_stats`` counters read from ONE
+    call (all 0 off CUDA).
 
     ``segment.all.allocated`` counts the default caching allocator's ``cudaMalloc`` segments; under
     ``expandable_segments:True`` (the launcher's setting for every child) it reads 0 forever.
     ``reserved_bytes.all.allocated`` counts every byte the allocator ever added to its reservation,
     an expandable segment's newly MAPPED pages included (K6 measured reserved steps of +36 / +120 MiB
     under ``expandable_segments`` while the segment counters read 0) — cumulative, so a release
-    (``empty_cache``) inside the window can never cancel a growth."""
+    (``empty_cache``) inside the window can never cancel a growth. ``reserved_bytes.all.freed`` tells
+    `RG.StreamAttribution` that a release happened (its per-stream baseline must be re-read)."""
     if device.type != "cuda":
-        return 0, 0
+        return RG.Marks(0, 0, 0)
     st = torch.cuda.memory_stats(device)
-    return int(st.get("segment.all.allocated", 0)), int(st.get("reserved_bytes.all.allocated", 0))
+    return RG.Marks(int(st.get("segment.all.allocated", 0)), int(st.get("reserved_bytes.all.allocated", 0)),
+                    int(st.get("reserved_bytes.all.freed", 0)))
+
+
+def _alloc_segments(device: torch.device) -> List[Dict[str, Any]]:
+    """The caching allocator's segments on ``device`` (``torch.cuda.memory_snapshot()``: each carries its ``stream``,
+    ``total_size``, ``address`` and ``is_expandable``) — read by `RG.StreamAttribution` only when a mark moved."""
+    if device.type != "cuda":
+        return []
+    idx = device.index if device.index is not None else torch.cuda.current_device()
+    return [seg for seg in torch.cuda.memory_snapshot() if int(seg.get("device", idx)) == idx]
+
+
+def _t2_streams(engine: Any, device: torch.device) -> FrozenSet[int]:
+    """The streams T2 allocates on in a window: its lanes' streams and the CALLING thread's current stream (the
+    learner's default stream in a serial run, the overlap worker's own stream under X14)."""
+    if device.type != "cuda":
+        return frozenset()
+    lanes = [int(s.cuda_stream) for s in getattr(engine, "streams", ())]
+    return frozenset(lanes + [int(torch.cuda.current_stream(device).cuda_stream)])
 
 
 def _dynamo_graphs() -> int:
@@ -130,7 +151,7 @@ class InferenceService:
             "compiles_after_freeze": 0, "captures_after_freeze": 0,
             "cuda_segments_after_freeze": 0, "cuda_reserved_bytes_after_freeze": 0,
             "cuda_reserved_growths_after_freeze": 0, "rows_served": 0, "rows_padded": 0, "batches": 0,
-            "loads": 0, "flushes": 0}
+            "loads": 0, "flushes": 0, **{k: 0 for k in RG.ATTRIBUTION_KEYS}}
         self.batches_by_bucket: Dict[int, int] = {b: 0 for b in self.buckets}
         self.startup_reports: List[ParityReport] = []
         #: How many parity verdicts each PATH produced (``ParityReport.path``: the perturbed rung's
@@ -143,6 +164,8 @@ class InferenceService:
         self._seq = 0
         self._epoch = 0
         self._poison: Optional[str] = None
+        #: gen3_t2_stream_attribution_v1: which part of a window's growth is T2's (its counters join ``counters``)
+        self._attr = RG.StreamAttribution(lambda: _alloc_segments(self.device), self.counters)
 
     # ------------------------------------------------------------------ lifecycle
     def _require(self, *states: str) -> None:
@@ -161,12 +184,16 @@ class InferenceService:
     def _frozen_guard(self, where: str) -> Iterator[None]:
         """Count what a steady-state call acquired; a compile, a capture or a new segment poisons the
         service. RESERVED-byte growth (the only acquisition visible under ``expandable_segments``)
-        is counted and warned — ``reserved_growth.RESERVED_GROWTH_POISONS`` says why it does not poison yet."""
+        is counted and warned — ``reserved_growth.RESERVED_GROWTH_POISONS`` says why it does not poison yet.
+        Segments and reserved bytes are T2's OWN: what grew on T2's streams (`RG.StreamAttribution`,
+        gen3_t2_stream_attribution_v1) — a learner allocation on another stream in the same window is FOREIGN."""
         g0, c0 = _dynamo_graphs(), self.engine.captures
-        s0, r0 = _alloc_marks(self.device)
+        m0 = _alloc_marks(self.device)
+        self._attr.enter(m0)
+        streams = _t2_streams(self.engine, self.device)
         yield
-        s1, r1 = _alloc_marks(self.device)
-        dg, ds, dr = _dynamo_graphs() - g0, s1 - s0, r1 - r0
+        own = self._attr.exit(m0, _alloc_marks(self.device), streams)
+        dg, ds, dr = _dynamo_graphs() - g0, own.own_segments, own.own_bytes
         dc = self.engine.captures - c0
         self.counters["compiles_after_freeze"] += max(dg, 0)
         self.counters["cuda_segments_after_freeze"] += max(ds, 0)

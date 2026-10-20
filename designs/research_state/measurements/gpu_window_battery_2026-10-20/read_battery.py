@@ -55,7 +55,9 @@ UPD_ARM = {"tau_u_naive_a": "fp32_naive", "tau_u_alt_a": "fp32_alt", "tau_u_alt_
            "tau_u_naive_b": "fp32_naive"}
 DEC_ARMS = ("fp32_naive", "fp32_alt")
 X14_CELLS = ("x14_off", "x14_on")
-ORDER = ("tau_cuda_parity", "tau_dec") + tuple(UPD_ARM) + X14_CELLS
+#: T2's frozen-guard card cell (pytest; judged by the battery from its junit, no decision here): listed in the table only.
+T2_GUARD_CELL = "t2_guard"
+ORDER = ("tau_cuda_parity", "tau_dec") + tuple(UPD_ARM) + X14_CELLS + (T2_GUARD_CELL,)
 
 
 def _load(p: Path) -> dict[str, Any] | None:

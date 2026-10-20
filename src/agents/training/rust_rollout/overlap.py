@@ -191,8 +191,8 @@ class OverlapRunner:
     Protocol (main thread): ``begin()`` right before ``train()`` → ``join()`` before the next ``after_update`` →
     the collector replays ``Played``. ``abort()`` on any exception out of ``train()``. ``warm`` is False until the
     process's first ``after_update``: the FIRST update of every process runs alone, so the learner's CUDA
-    reservation reaches its peak before any flush runs beside it (T2's frozen guard reads process-wide allocator
-    counters)."""
+    reservation reaches its peak before any flush runs beside it (T2's frozen guard books only T2's own streams,
+    ``gen3_t2_stream_attribution_v1``; this keeps its foreign snapshots and the memory peak as in a serial run)."""
 
     # @startup_builder: built ONCE by `build_collector` at startup (before the freeze); its CUDA stream is part of
     # the declared lifecycle (`src/learner_lifecycle_gate_test.py`)

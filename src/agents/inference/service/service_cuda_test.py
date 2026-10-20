@@ -262,3 +262,129 @@ def test_expandable_segments_steady_state_reserves_nothing_and_a_new_mapping_is_
     assert floor > 0, ("precondition: the request must exceed the reusable slack", r)
     assert r["after"]["cuda_reserved_bytes_after_freeze"] >= floor, (floor, r)
     assert r["state"] == "FROZEN"                                 # warn-first until armed
+
+
+_OVERLAP_ATTRIBUTION_PROBE = r"""
+import json, sys, threading, torch
+from agents.inference.service import InferenceService, LifecycleViolation, ServiceSpec, SlotGroupSpec
+from agents.inference.service import reserved_growth as RG
+from agents.inference.service.parity import fixture_rows
+from agents.inference.service.fixtures import perturbed_fresh_policy
+MiB = 2**20
+svc = InferenceService(ServiceSpec(groups=(SlotGroupSpec("pool", 1, perturbed_fresh_policy(0)),),
+                                   device="cuda", backend="graph", buckets=(8,))).startup()
+obs, mask = fixture_rows(svc.obs_dim, 8)
+worker = torch.cuda.Stream()          # X14: the overlap worker's OWN stream; the learner keeps the default one
+KEYS = ("cuda_segments_after_freeze", RG.BYTES_KEY, RG.FOREIGN_BYTES_KEY, RG.FOREIGN_SEGMENTS_KEY)
+out = {"segments_now": torch.cuda.memory_stats().get("segment.all.current", 0)}
+
+def on_worker(fn):
+    box = {}
+    def run():
+        try:
+            with torch.cuda.stream(worker):
+                box["value"] = fn()
+            worker.synchronize()
+        except BaseException as exc:
+            box["error"] = f"{type(exc).__name__}: {exc}"
+    t = threading.Thread(target=run); t.start(); t.join(); return box
+
+def snap():
+    st = svc.stats(); return {k: int(st[k]) for k in KEYS}
+
+def delta(a, b):
+    return {k: b[k] - a[k] for k in KEYS}
+
+def flushes(n):
+    for _ in range(n):
+        svc.score(0, obs, mask)
+
+s0 = snap(); on_worker(lambda: flushes(3)); s1 = snap()
+out["worker_warmup"] = delta(s0, s1)          # the worker stream's FIRST flushes (recorded, not judged)
+on_worker(lambda: flushes(15)); s2 = snap()
+out["healthy"] = delta(s1, s2)                 # 15 steady-state flushes on the worker stream
+
+def window(learner_bytes, t2_bytes):
+    # one guard window on the worker thread; the "learner" (this main thread, default stream) allocates INSIDE it
+    go, done, kept = threading.Event(), threading.Event(), {}
+    def body():
+        with svc._frozen_guard("probe"):
+            kept["reusable"] = torch.cuda.memory_reserved() - torch.cuda.memory_allocated()
+            go.set(); done.wait()
+            if t2_bytes:
+                kept["t2"] = torch.empty(t2_bytes // 4, dtype=torch.float32, device="cuda")
+    box = {}
+    def run():
+        try:
+            with torch.cuda.stream(worker):
+                body()
+        except BaseException as exc:
+            box["error"] = f"{type(exc).__name__}: {exc}"
+    t = threading.Thread(target=run); t.start()
+    go.wait()
+    hold = torch.empty(learner_bytes // 4, dtype=torch.float32, device="cuda")   # the learner's growth
+    torch.cuda.synchronize(); done.set(); t.join()
+    return hold, kept.get("reusable", 0), box.get("error")
+
+a = snap()
+hold_b, reusable_b, err_b = window(256 * MiB, 0)
+out["foreign_window"] = {"delta": delta(a, snap()), "reusable": reusable_b, "error": err_b, "state": svc.state}
+a = snap()
+hold_a, reusable_a, err_a = window(256 * MiB, 128 * MiB)
+out["both_window"] = {"delta": delta(a, snap()), "reusable": reusable_a, "error": err_a, "state": svc.state}
+print(json.dumps(out))
+"""
+
+
+@pytest.mark.parametrize("alloc", ["expandable", "default"])
+def test_overlap_attribution_books_only_t2s_own_streams(alloc, tmp_path):
+    """gen3_t2_stream_attribution_v1 — THE CARD PROOF that X14's overlap no longer false-FATALs T2, in a fresh
+    process per allocator mode (``expandable_segments`` True = the launcher's; False = C-1's direct launch). T2
+    (graph backend) flushes on a WORKER thread under its own stream, as ``overlap.py`` runs it, while the "learner"
+    (the main thread, default stream) allocates 256 MiB INSIDE a guard window (events order it deterministically):
+
+    - (healthy) 15 worker-stream flushes book 0 B and 0 segments to T2;
+    - (b) a learner-only window books 0 B / 0 segments to T2 (the old process-wide guard: +256 MiB, or a FATAL new
+      segment without expandable segments) and >= the mapping floor as FOREIGN; T2 stays FROZEN;
+    - (a) a window where T2 maps 128 MiB on its own stream beside the learner's 256 MiB: under expandable segments T2
+      is booked at least the floor and at most 128 MiB (not the learner's bytes); under the default allocator T2's
+      new segment poisons with exactly ``1 CUDA segments`` (the learner's is foreign).
+    The worker stream's first 3 flushes are RECORDED, not judged (``worker_warmup``: a lazily acquired working set
+    on a fresh stream is a real T2 growth, a precondition for arming — the unit's FINDING)."""
+    import json
+    import os
+    import subprocess
+    import sys
+
+    from agents.inference.service.reserved_growth import new_mapping_floor
+
+    env = {**os.environ, "PYTORCH_CUDA_ALLOC_CONF": f"expandable_segments:{alloc == 'expandable'}",
+           "TORCHINDUCTOR_CACHE_DIR": str(tmp_path / "inductor"), "TRITON_CACHE_DIR": str(tmp_path / "triton")}
+    out = subprocess.run([sys.executable, "-c", _OVERLAP_ATTRIBUTION_PROBE], env=env,
+                         capture_output=True, text=True, timeout=1800)
+    assert out.returncode == 0, out.stderr[-4000:]
+    r = json.loads(out.stdout.strip().splitlines()[-1])
+    print("overlap attribution probe:", json.dumps(r))           # the battery cell's record (-s / junit)
+    if alloc == "expandable":
+        assert r["segments_now"] == 0, ("precondition: the allocator is NOT in expandable mode", r)
+    else:
+        assert r["segments_now"] > 0, ("precondition: the allocator IS in expandable mode", r)
+    z = {"cuda_segments_after_freeze": 0, "cuda_reserved_bytes_after_freeze": 0}
+    assert {k: r["healthy"][k] for k in z} == z, r
+    fw = r["foreign_window"]
+    floor_b = new_mapping_floor(256 * 2**20, fw["reusable"])
+    assert floor_b > 0, ("precondition: the learner's request must exceed the reusable slack", r)
+    assert fw["error"] is None and fw["state"] == "FROZEN", r
+    assert {k: fw["delta"][k] for k in z} == z, r                          # (b) NOT booked to T2
+    assert fw["delta"]["cuda_reserved_bytes_foreign_in_window"] >= floor_b, r
+    bw = r["both_window"]
+    if alloc == "expandable":
+        floor_a = new_mapping_floor(128 * 2**20, bw["reusable"])
+        assert floor_a > 0, ("precondition: T2's request must exceed the reusable slack", r)
+        assert bw["error"] is None and bw["state"] == "FROZEN", r          # warn-first: not armed
+        assert floor_a <= bw["delta"]["cuda_reserved_bytes_after_freeze"] <= 128 * 2**20, r   # (a) seen, own only
+        assert bw["delta"]["cuda_segments_after_freeze"] == 0, r
+    else:
+        assert bw["state"] == "POISONED", r                                # (a) T2's own new segment is fatal
+        assert "0 dynamo graphs, 1 CUDA segments" in (bw["error"] or ""), r
+        assert bw["delta"]["cuda_segments_foreign_in_window"] == 1, r

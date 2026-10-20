@@ -443,7 +443,16 @@ the bucket set should be COARSE.
   `service_cuda_test`'s expandable test shows that a healthy flush grows the reservation by 0 bytes
   (`reserved_growth.RESERVED_GROWTH_POISONS`; TECH-DEBT §2, the T2 row). The rollout collector's and the eval
   executor's `check_lifecycle` read the same counter through the same helper (`reserved_growth.ReservedGrowthWatch`:
-  the bytes T2 counted since the last check, warned at checks 1, 2, 4, 8, …), and the ONE switch arms all three sites. Nothing is lazily compiled: an undeclared bucket
+  the bytes T2 counted since the last check, warned at checks 1, 2, 4, 8, …), and the ONE switch arms all three sites.
+  The counters are process-wide, so segments and reserved bytes are ATTRIBUTED (`gen3_t2_stream_attribution_v1`,
+  `reserved_growth.StreamAttribution`): T2 is charged only what grew on its OWN streams (its lanes' and the calling
+  thread's current stream, read from `torch.cuda.memory_snapshot()`'s per-segment `stream`; the caching allocator
+  never lends a block across streams), and the rest of the window's growth is counted FOREIGN
+  (`cuda_reserved_bytes_foreign_in_window`, `cuda_segments_foreign_in_window`), never fatal. That is what lets X14's
+  overlap (the learner allocating on the default stream while a worker-stream flush runs) leave T2 alone. A snapshot is
+  read only when a cumulative counter moved (none in a steady state); an unreadable one books the window process-wide
+  (`cuda_attribution_fallbacks`). Card proof: `service_cuda_test.py::test_overlap_attribution_books_only_t2s_own_streams`
+  (the 2026-10-20 battery's `t2_guard` cell; UNVERIFIED on a card until it runs). Nothing is lazily compiled: an undeclared bucket
   cannot be reached (rows are packed into declared buckets), and a new slot cannot be added.
 * **Validation — the same bars as the compile gate.** At startup, for EVERY slot × bucket, the
   committed real-obs fixture (`compile_parity_obs.npz`; full bucket AND a partially-filled one)

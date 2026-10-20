@@ -498,19 +498,38 @@ def test_alloc_marks_reads_the_cumulative_segment_and_reserved_counters(monkeypa
     def fake_stats(device):
         calls.append(device)
         return {"segment.all.allocated": 7, "segment.all.current": 3,
-                "reserved_bytes.all.allocated": 5 * 2**20, "reserved_bytes.all.current": 2**20}
+                "reserved_bytes.all.allocated": 5 * 2**20, "reserved_bytes.all.current": 2**20,
+                "reserved_bytes.all.freed": 4 * 2**20}
 
     monkeypatch.setattr(svc_mod.torch.cuda, "memory_stats", fake_stats)
-    assert svc_mod._alloc_marks(torch.device("cuda")) == (7, 5 * 2**20)
+    assert svc_mod._alloc_marks(torch.device("cuda")) == (7, 5 * 2**20, 4 * 2**20)
     assert len(calls) == 1
-    assert svc_mod._alloc_marks(torch.device("cpu")) == (0, 0) and len(calls) == 1
+    assert svc_mod._alloc_marks(torch.device("cpu")) == (0, 0, 0) and len(calls) == 1
 
 
 def _scripted_marks(monkeypatch, marks):
+    """Script the process-wide ``(segments, reserved)`` marks, with every byte and segment on ONE stream that is T2's
+    (so `StreamAttribution` books it all to T2: these tests are about the growth policy, not the attribution — that
+    is ``stream_attribution_test.py``)."""
+    from agents.inference.service import reserved_growth as RG
     from agents.inference.service import service as svc_mod
 
     it = iter(marks)
-    monkeypatch.setattr(svc_mod, "_alloc_marks", lambda device: next(it))
+    now = [RG.Marks(0, 0, 0)]
+
+    def read(device):
+        s, r = next(it)
+        now[0] = RG.Marks(s, r, 0)
+        return now[0]
+
+    def segments(device):
+        s, r = now[0].segments, now[0].reserved
+        return ([{"stream": 7, "address": 0, "total_size": r, "is_expandable": True}]
+                + [{"stream": 7, "address": a, "total_size": 0, "is_expandable": False} for a in range(1, s + 1)])
+
+    monkeypatch.setattr(svc_mod, "_alloc_marks", read)
+    monkeypatch.setattr(svc_mod, "_alloc_segments", segments)
+    monkeypatch.setattr(svc_mod, "_t2_streams", lambda engine, device: frozenset({7}))
 
 
 def test_reserved_growth_with_zero_segments_is_counted_and_warned_not_poisoned(policies, monkeypatch,

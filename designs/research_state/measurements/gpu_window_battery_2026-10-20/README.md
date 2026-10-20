@@ -18,7 +18,12 @@ This battery has three parts, in this order, in one short GPU window before X35'
    The first attempt (2026-10-20, pin `397cce81`) was deferred because that pin carried T62's fp64 τ solve
    ([`../x14_overlap_2026-10-19/README.md`](../x14_overlap_2026-10-19/README.md) §4 finding 13). This is the re-run.
 
-The training session runs it with the X35 arms paused. **All three parts need ~125 min** (8 cells; section "The cells").
+4. **T2's frozen guard on the card** (`t2_guard`, added 2026-10-20, LAST so it never delays the FP32_ALT read): the
+   2026-10-19 `frozen_guard` arming check re-run on its fixed bar, plus the overlap STREAM ATTRIBUTION proof
+   (`gen3_t2_stream_attribution_v1`). Skip it with `--only` if the window is short; it decides nothing below.
+
+The training session runs it with the X35 arms paused. **The first three parts need ~125 min** (8 cells), the fourth
+~12 min more (9 cells; section "The cells").
 
 ## Run it (the training session, with the run PAUSED and the GPU clear)
 
@@ -62,9 +67,12 @@ skipped on a re-run once its `cells/<cell>.state.json` reads `ok`.
 | 3-6 | `tau_u_naive_a`, `tau_u_alt_a`, `tau_u_alt_b`, `tau_u_naive_b` | **Learner.** The frozen suite's `update_bf16` cell (X26's argv, the K9 learner, the compiled bf16 `train()` at 384 × 256 rows, micro-batch 2,048 × accumulation 32, the 10-epoch estimate), the arm forced per process, run **ABBA**. Only the cell's name (and, see below, the path rule) differs from the suite; `reps` is the suite's 2 | 24 GB each | 40 min each | 6 min each |
 | 7 | `x14_off` | **X14, the serial arm.** A fork of X26 `rb_x26_s2601` @ 380,000,195 through the real launcher (`x14_cell.py`), 15 updates, `--behaviour-check warn`, eval and ladder games off, at the battery's pin. It is the cold-compile arm | 40 GB | 75 min | 45 min |
 | 8 | `x14_on` | **X14, the overlap arm.** The same argv plus `--overlap-collect`. Its compile cache is warm from `x14_off` | 40 GB | 55 min | 25 min |
+| 9 | `t2_guard` | **T2's frozen guard** (pytest, `GEN3AI_TEST_ALLOW_GPU=1`, `-s`): `service_cuda_test.py`'s `test_expandable_segments_steady_state_...` (eager + graph; the 2026-10-19 cell's test on its fixed `new_mapping_floor` bar) and `test_overlap_attribution_books_only_t2s_own_streams` (expandable + default allocator: T2 flushing on a worker thread's own stream, the "learner" allocating 256 MiB on the default stream INSIDE a guard window). It must show **4 passed, 0 skipped: a SKIP is a HOLD**. The probe's JSON (incl. the worker stream's first-flush growth, recorded not judged) is in `logs/t2_guard.log` | 16 GB | 45 min | 12 min |
 
 **Total ETA: about 125 min** = `tau_cuda_parity` 9 + `tau_dec` 16 + learner 24 + `x14_off` 45 + `x14_on` 25, plus about 5 min
-of CPU checks between cells (the GPU idles for them). **Worst case at every wall cap:** 360 min. With `--budget-min 135` the battery
+of CPU checks between cells (the GPU idles for them); `t2_guard` adds about 12 (its ETA is the 2026-10-19 `frozen_guard`
+cell's 10 plus the two attribution probes' one-bucket graph builds; UNVERIFIED until it runs). **Worst case at every wall
+cap:** 360 min, 405 with `t2_guard`. With `--budget-min 135` the battery
 stops cleanly before a cell that would overrun.
 
 Why the ETAs are what they are:
@@ -281,6 +289,16 @@ The reader also prints the agreement of alt vs naive, the compile sentinel's gat
 path markers. fp64 vs fp32_naive is not re-measured: the 2026-10-19 battery's `t62_dec` is that read. The X14 read is
 independent of this gate: either can be INCOMPLETE while the other reads.
 
+## The `t2_guard` cell (added 2026-10-20, `gen3_t2_stream_attribution_v1`)
+
+**PASS iff the junit shows 4 tests, 0 failures, 0 errors, 0 skipped.** It decides no production question; it is the
+card proof two backlog steps wait on (`designs/ops/TECH_DEBT_BACKLOG.md`, the frozen-guard row): (1) the 2026-10-19
+arming check on its fixed bar, and (2) the overlap attribution — (a) T2's own growth is still seen, (b) a learner
+growth on the default stream inside a worker-thread flush window is booked FOREIGN, not to T2 (with
+`expandable_segments` True and False). A PASS does NOT by itself clear `RESERVED_GROWTH_POISONS`: the orchestrator also
+reads the probe's `worker_warmup` line in `logs/t2_guard.log` (the overlap worker stream's FIRST flushes; a non-zero
+own growth there is a real T2 acquisition after the freeze that arming would make fatal).
+
 ## Hazards known when staging
 
 - **The naive arm is forced through the wrapper, not checked out at bd3126e02^.** It runs the same arithmetic as the
@@ -302,8 +320,10 @@ independent of this gate: either can be INCOMPLETE while the other reads.
   prune only removes DEAD launchers' pinned worktrees (`designs/launcher/pinning_and_worktrees.md`), so the paused X35 arm's
   worktree is untouched.
 - **X14's own caveats stand** ([`../x14_overlap_2026-10-19/README.md`](../x14_overlap_2026-10-19/README.md) §4): CUDA
-  concurrency and GIL contention are unverified on a card; `RESERVED_GROWTH_POISONS` stays OFF (T2's reserved-growth
-  guard would book a learner reservation growth inside a worker flush as its own); `rollout/collect_ms` on an ON run is
+  concurrency and GIL contention are unverified on a card; `RESERVED_GROWTH_POISONS` stays OFF (until 2026-10-20 T2's
+  reserved-growth guard booked a learner reservation growth inside a worker flush as its own; at a pin carrying
+  `gen3_t2_stream_attribution_v1` it books only T2's own streams, and the ON arm's T2 reserved-growth warning count is
+  T2's own growth — the `t2_guard` cell proves the mechanism on the card); `rollout/collect_ms` on an ON run is
   the exposed collection; 15 updates give a throughput read, not a learning read.
 
 - **The `tau_cuda_parity` CUDA path is UNEXECUTED when staged.** The CPU `--prove` runs the whole pipeline on the CPU

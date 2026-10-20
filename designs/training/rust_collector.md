@@ -98,8 +98,9 @@ that rollout is played by version k and trained on by the learner at k + 1 — O
 straddles two updates, as in a serial run, is older). The worker plays until the trigger is ready and STOPS: it
 never plays past the target and never reloads T2 mid-rollout, so no wall-clock timing reaches a row and an ON run
 is deterministic (`overlap_integration_test`: two learns, same bytes). The first update of every process runs
-alone, so the learner's CUDA reservation reaches its peak before a flush runs beside it (T2's frozen guard reads
-process-wide allocator counters, `gen3_t2_reserved_after_freeze_v1`).
+alone, so the learner's CUDA reservation reaches its peak before a flush runs beside it (kept although T2's frozen
+guard now books only T2's own streams, `gen3_t2_stream_attribution_v1`: fewer foreign snapshots, and the same
+memory peak as a serial run).
 
 **The worker touches the collector's side only** (the core, T2, the opponent server, the stager, the arena, the
 counters) — never the learner, the logger, a callback or `num_timesteps`. Each host step's decision count and the
@@ -137,10 +138,15 @@ own probe still writes `staleness/*` against μ — the lag read.
 
 **CUDA.** T2's `execute` orders its copies on the CALLING thread's current stream; on the main thread that is the
 default stream the learner fills during `train()`. The worker runs under its OWN stream (acquired at startup) with
-explicit joins at `begin` and `join`. ⚠️ UNVERIFIED on the card (no GPU lease when it was built). 🚨 T2's frozen
-guard reads PROCESS-WIDE allocator counters, so a learner reservation growth inside a worker flush is booked as T2's:
-counted and warned today, a `LifecycleViolation` once `reserved_growth.RESERVED_GROWTH_POISONS` is armed — arming it
-needs per-stream attribution first, or overlap stays off.
+explicit joins at `begin` and `join`. ⚠️ UNVERIFIED on the card (no GPU lease when it was built). T2's frozen guard
+reads process-wide allocator counters and ATTRIBUTES them per stream (`gen3_t2_stream_attribution_v1`,
+`reserved_growth.StreamAttribution`): a learner allocation on the default stream inside a worker-stream flush is
+counted FOREIGN (`cuda_reserved_bytes_foreign_in_window`, `cuda_segments_foreign_in_window`), never T2's — before it, a
+learner segment there was a FATAL `cuda_segments_after_freeze` without `expandable_segments` (core review C-1) and a
+learner reservation was booked as T2's growth. ⚠️ The card proof is the 2026-10-20 battery's `t2_guard` cell.
+`RESERVED_GROWTH_POISONS` stays OFF until it passes AND the worker stream's FIRST flushes are shown to grow nothing on
+T2's streams (a working set acquired lazily on the fresh worker stream is a real T2 growth that arming would make
+fatal; the cell records it).
 
 **Refused:** with the fork arm (its pass runs between the trigger and the fill on the learner's thread), and on CUDA
 with a T2 backend other than `graph` (an eager / AOT forward from a second thread opens a second cuBLAS handle and

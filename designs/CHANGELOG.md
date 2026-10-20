@@ -15219,3 +15219,33 @@ Pins: `present::live_reader_reading_tests` (six tests over `tests/vectors/live_r
 - The golden is RE-RECORDED (3 battles inserted at e2e_16 / e2e_51 / e2e_133, the last three dropped; 11972 decisions; the Rust gate
   220/220, 0 diverged) and the taxonomy's one doc-pointer line repointed. `src/rust_sim/e2e_fuzz_golden_test.py` holds the pin, a
   15-battle prefix (`sim`) and the full byte comparison (`slow`).
+## 2026-10-20 — T2's frozen guard books only T2's OWN streams (`gen3_t2_stream_attribution_v1`; `agents.inference.service` only; no model / config / obs / signature change)
+
+- **The defect (core review 2026-10-20 C-1 and X14 finding 6).** `_frozen_guard` read process-wide allocator counters.
+  With X14's overlap on, T2 flushes on the collector's worker stream while the learner runs `train()` on the default
+  stream, so a learner allocation inside a T2 window was booked to T2: a learner `cudaMalloc` segment (no
+  `expandable_segments`: a direct trainer launch or a user `PYTORCH_CUDA_ALLOC_CONF`) was a FATAL
+  `cuda_segments_after_freeze` on a healthy run, and a learner reservation was a counted T2 growth, fatal once
+  `RESERVED_GROWTH_POISONS` is armed. That is why the switch had to stay off.
+- **The mechanism (cheapest that counts only T2).** torch 2.8 has no per-stream or per-pool counter (`memory_stats` is
+  device-wide; `MemPool` exposes only `snapshot()` / `use_count()`; the allocator trace needs
+  `_record_memory_history` on every allocation, process-wide). `torch.cuda.memory_snapshot()` gives every segment's
+  `stream`, `total_size`, `address` and `is_expandable`, and the caching allocator never lends a block or an
+  expandable segment across streams. `reserved_growth.StreamAttribution` keeps a per-stream ledger (mapped bytes,
+  `cudaMalloc` addresses) and charges T2 only the growth on ITS streams (lanes + the calling thread's current stream);
+  the rest is FOREIGN (`cuda_reserved_bytes_foreign_in_window`, `cuda_segments_foreign_in_window`), never fatal. A
+  snapshot is read only when a cumulative mark moved (`segment.all.allocated`, `reserved_bytes.all.allocated`,
+  `reserved_bytes.all.freed`): at a window's start when anything was mapped or released since the last one (the baseline
+  must be the window's start), at its end when the window grew. A steady state reads none. An unreadable snapshot
+  books the window process-wide (the old rule; `cuda_attribution_fallbacks`). A dedicated `MemPool` for T2 was
+  rejected: no cheaper to read (its only reader is the same snapshot) and it changes allocation (T2's freed blocks
+  unusable by the learner; graph-capture interaction).
+- **Behaviour.** The segment check (FATAL) and the reserved count both use T2's own share. `RESERVED_GROWTH_POISONS`
+  stays OFF.
+- **Tests.** `stream_attribution_test.py` (CPU, the real guard on a fake allocator; 6 fail when the guard is reverted to
+  process-wide reads, 2 more when `enter`'s baseline re-read is removed); `service_test.py`'s growth-policy tests
+  script one T2 stream. `service_cuda_test.py::test_overlap_attribution_books_only_t2s_own_streams` (slow, GPU,
+  expandable + default allocator): T2 on a worker thread's own stream, the "learner" allocating 256 MiB on the
+  default stream INSIDE a guard window; NOT YET RUN (no lease) — the 2026-10-20 battery's new last cell `t2_guard`
+  runs it beside the 2026-10-19 arming check. Docs: `endstate/program_rust_core.md` (the T2 lifecycle paragraph),
+  `training/rust_collector.md`, the battery README, the `TECH_DEBT_BACKLOG.md` row.
