@@ -142,8 +142,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     # (A prior `_reorder_move_labels` step re-sorted these to the per-mon block's MOVESET order via
     # `our_active_move_slots`, which differs from request order after a server reorder — that SCRAMBLED the
     # already-correct labels and produced spurious `disagree` flags + transposed matchup/op labels. Removed.)
-    labels = list(acts.keys())
-    mask = np.array([1 if acts[k]["valid"] else 0 for k in labels], dtype=np.int8)
+    labels, mask = _row_mask(inv)
 
     # Hidden-opp belief: prefer the loaded model's RE-COMPUTED belief (works for ANY belief-on
     # checkpoint, incl. runs whose recorder predates the summary `belief` block) over the summary
@@ -264,3 +263,57 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
         opp_full_team=opp_full_team,
         switch_in_outgoing=switch_in_outgoing, opp_switched_to=opp_voluntary_switch(inv),
     )
+
+
+# ---------------------------------------------------------------------------
+# `find disagree` — the re-run argmax over a whole battle, batched
+# ---------------------------------------------------------------------------
+
+#: Rows per batched forward (the capture's measured size, `model_capture.CAPTURE_BATCH`).
+DISAGREE_BATCH = 64
+#: A batched row whose top two masked probabilities lie within this of each other is re-read on the
+#: SINGLE-ROW path (`model.action_dist`, what `analyze_invocation` reads), so a batch-size-dependent
+#: float difference can never flip its argmax (root rule 8: exclude the boundary, never tolerate it by
+#: chance). Measured batched-vs-single |Δp| on X26 (<= 6.8e-6): `designs/prober/session_reading.md`.
+DISAGREE_TIE_EPS = 1e-3
+
+
+def _row_mask(inv: dict) -> "tuple[list, np.ndarray]":
+    """THE (labels, mask) pair `analyze_invocation` builds for one decision — one definition for both paths."""
+    acts = inv["actions"]
+    labels = list(acts.keys())
+    return labels, np.array([1 if acts[k]["valid"] else 0 for k in labels], dtype=np.int8)
+
+
+def disagreements(model, summary: dict, npz) -> "list[int]":
+    """The decisions (ascending) whose RE-RUN argmax differs from the recorded choice — exactly the
+    indices where ``analyze_invocation(...).has_state and not .agrees``, without running the rest of the
+    analysis (intervention sweep, two saliency gradients, every belief view) once per decision.
+
+    A model with ``action_probs_batch`` is read in ONE batched forward per `DISAGREE_BATCH` rows; any row
+    whose top-two margin is within `DISAGREE_TIE_EPS` is re-read on the single-row ``action_dist`` path, so
+    every per-decision verdict is the single-row path's. A model without it (a fake) is read row by row."""
+    invs = summary["invocations"]
+    rows = [i for i in range(len(invs)) if _has_state(npz, i)]
+    if not rows:
+        return []
+    pairs = [_row_mask(invs[i]) for i in rows]
+    obs_all = npz["obs"]
+
+    def single(k: int) -> np.ndarray:
+        return np.asarray(model.action_dist(obs_all[rows[k]].astype(np.float32), pairs[k][1])[0])
+
+    batch_fn = getattr(model, "action_probs_batch", None)
+    if batch_fn is not None and len({len(m) for _, m in pairs}) == 1:
+        obs = np.stack([obs_all[i].astype(np.float32) for i in rows])
+        masks = np.stack([m for _, m in pairs])
+        probs = np.concatenate([np.asarray(batch_fn(obs[s:s + DISAGREE_BATCH], masks[s:s + DISAGREE_BATCH]))
+                                for s in range(0, len(rows), DISAGREE_BATCH)])
+        per_row = []
+        for k in range(len(rows)):
+            top2 = np.sort(probs[k])[-2:]
+            per_row.append(single(k) if top2.size == 2 and top2[1] - top2[0] <= DISAGREE_TIE_EPS else probs[k])
+    else:
+        per_row = [single(k) for k in range(len(rows))]
+    return [i for k, i in enumerate(rows)
+            if pairs[k][0][int(np.argmax(per_row[k]))] != invs[i]["chosen"]]

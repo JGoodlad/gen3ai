@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
-from main.prober.engine import (analyze_invocation, build_opp_intent, opp_intent_text,
+from main.prober.engine import (analyze_invocation, build_opp_intent, disagreements, opp_intent_text,
     summary_flags, surprise_phrase, timeline_entry_text)
 from main.prober.session.serialize import _choice_dict
 
@@ -81,9 +81,7 @@ class _AnalysisMixin:
 
         if criterion == "disagree":
             model, _ = self._model_for(b)
-            npz = self._npz(b)
-            hits = [i for i in range(n)
-                    if (a := analyze_invocation(model, summary, npz, i)).has_state and not a.agrees]
+            hits = disagreements(model, summary, self._npz(b))     # batched; per-decision = analyze's `agrees`
         elif criterion in ("value_drop", "low_value", "high_value"):
             values = self._values(b)
             scored = []

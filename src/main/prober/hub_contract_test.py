@@ -71,7 +71,7 @@ _PRE_SPLIT_ENGINE = (
     "build_belief_trajectory", "build_belief_truth", "build_board", "build_exclusive_belief",
     "build_meta", "build_opp_full_team", "build_opp_intent", "build_our_hp_types",
     "build_result_timeline", "build_spread_belief", "build_switch_in_outgoing",
-    "cant_phrase", "decode_incoming_belief", "fit_probe",
+    "cant_phrase", "decode_incoming_belief", "disagreements", "fit_probe",
     "has_curable_status", "history_slot_saliency", "is_status_cure", "move_belief_view",
     "move_order_from_protocol", "opp_intent_text", "opp_voluntary_switch", "opponent_rank",
     "parse_pct", "parse_protocol_log", "protocol_action_fate", "protocol_for_turn",

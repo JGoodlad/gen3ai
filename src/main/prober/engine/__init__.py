@@ -29,7 +29,7 @@ THE MODULE MAP — a strict DAG, leaves first:
     spread.py      believed vs TRUE derived spreads (the DamageOperator's stat input)
     switch_in.py   forced-switch OUTGOING damage per bench candidate
     decode.py      the obs/model decoding units (faithfulness, matchups, intervention, saliency)
-    analyze.py     `analyze_invocation` — the top-level entry — plus `build_meta`
+    analyze.py     `analyze_invocation` — the top-level entry — plus `build_meta`, `disagreements`
     taxonomy.py    loss attribution: the turning-point category table
     probes.py      representation probing (`fit_probe`)
     turn_events.py `/game`'s turn story: the protocol folded into typed events + the board per turn
@@ -102,7 +102,7 @@ from main.prober.engine.decode import (   # noqa: F401 — re-export hub
     _value_saliency, decode_incoming_belief, history_slot_saliency,
 )
 from main.prober.engine.analyze import (   # noqa: F401 — re-export hub
-    analyze_invocation, build_meta,
+    analyze_invocation, build_meta, disagreements,
 )
 from main.prober.engine.taxonomy import (   # noqa: F401 — re-export hub
     _Cat, _f, _was_winning, BELIEF_FIRED_PKO, BELIEF_UNDERREAD_PKO, CRITIC_CONFIDENT_V,

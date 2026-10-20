@@ -87,7 +87,13 @@ the tier that works on every run, forever.
 - `find(battle_id, criterion, limit=)` — ranked/listed invocations:
   `switch`/`uncertain`/`faint` (flags, model-free), `value_drop`/`low_value`/
   `high_value` (ranked by recorded V, model-free), or `disagree` (loads the
-  model; chosen ≠ the model's argmax).
+  model; chosen ≠ the model's argmax). `disagree` is `engine.disagreements`: ONE batched forward per
+  64 decisions instead of a full `analyze` per decision (X26 step 380M traces, one CPU thread,
+  2026-10-20: 105 decisions 222.4 s → 0.64 s, ~350x, 39 hits identical; 18 decisions 34.8 s → 0.16 s).
+  Batched probabilities are NOT bit-identical to the single-row read (max |Δp| 4.8e-6 / 6.8e-6
+  measured; 14 / 105 and 1 / 18 rows bit-equal), so a row whose top-two margin is ≤ `DISAGREE_TIE_EPS` (1e-3) is
+  re-read on the single-row `action_dist` path: every verdict is the single-row path's
+  (`main/prober/disagreements_test.py`).
 - `probe_model(battle_id)` — `(ProbeModel, ModelChoice)`, the **public face of the exact→nearest→recent
   resolution ladder** (the same cached `_model_for` every analysis uses). For out-of-package readers
   that need the loaded network rather than one of the analyses over it —
