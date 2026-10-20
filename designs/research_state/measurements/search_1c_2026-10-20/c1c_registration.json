@@ -1,0 +1,66 @@
+{
+ "bank": {
+  "ids_sha256": "cf8d8c6fc09c9a85ce976a85a6195eb52977900659ac9be218b47562d9a09dfb",
+  "n": 287,
+  "name": "world sampler stage 1 (maturity interim LEAN common states, X26 225M)",
+  "order": "sha256('ws_stage1_order_v1:' + id)"
+ },
+ "bootstrap": {
+  "B": 2000,
+  "cluster": "battle",
+  "interval": "percentile 95%",
+  "seed": 20261020
+ },
+ "digest": "367b18a64ced14f54348684c84aa09eee981d37c3fc1e32b432e4a26b578f3d1",
+ "identity": {
+  "n": 12,
+  "salt": "search_1c_identity_v1:"
+ },
+ "max_defects": 2,
+ "opponent_model": {
+  "checkpoint": "x26_225M checkpoint_225000152_steps.zip",
+  "sha256": "bc93a321bf1d4c6a83bc80910e8bbc81673a157f71e6cb2cbd7ca7b5427819ce"
+ },
+ "proposals": {
+  "J": 8,
+  "N_C": 64,
+  "N_F": 64,
+  "builder": "WorldSampler(reveal='off', dice='rolls', max_tries=60), legality ON",
+  "corpus": "stage 1 C_ladder (samplers_s1.CorpusProposal, ladder corpus), alpha 89.125094"
+ },
+ "recheck": {
+  "n": 6,
+  "salt": "search_1c_recheck_v1:"
+ },
+ "registered": "2026-10-20",
+ "resample": {
+  "key": "search_1c:<arm>:<id>",
+  "rule": "systematic",
+  "salt": "opp_likelihood_resample_v1:"
+ },
+ "rules_a": {
+  "dose_qSM": 0.1,
+  "edge": 0.0005,
+  "material_H": 0.05,
+  "null_band": 0.01
+ },
+ "rules_b": {
+  "lambda": {
+   "CRITIC": 0.015,
+   "LEAF-K8": 0.1,
+   "TRUNC-4-K8": 0.015
+  },
+  "rule": "PIKL"
+ },
+ "sha256": {
+  "PREREGISTRATION.md": "c0a02fd7b282bfa94c1e7105b7389b46069812b691f6b90ec55abff613ef1de3",
+  "c1c_common.py": "baf67b0721b49a6213c0cf671bed3480347bf2f34cfc0f70064f065d7ff7ea91",
+  "read_1c.py": "482f1827dd48beb7823eeed46a94f3f8f03a9da1f47120fcb0787fbde58cc8fb"
+ },
+ "stop": {
+  "chunk_max_min": 45,
+  "phase_a_h": 30,
+  "phase_b_h": 24
+ },
+ "unit": "stage 1c: more or team-level proposals, importance-resampled by the opponent-choice likelihood (design_world_sampler.md \u00a76.3; L3's registered consequence)"
+}
