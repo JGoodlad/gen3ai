@@ -102,7 +102,7 @@ Three rules. **(1) Every block is written by the thing that knows it** — the t
 `optimisation` and `ecology` at save, the ladder fitter writes `ratings.ladder`, `main.anchors`
 appends to `ratings.anchors`; nothing is re-derived. **(2) A number never appears without its
 regime and its hazards** — the field shape forbids it. **(3) A diff of two records is a tool**
-(`python -m main.model_diff A B`) that prints every resolved difference, so the "fourth lever" class
+(`main.model_diff A B`, NOT BUILT: proposed) that prints every resolved difference, so the "fourth lever" class
 cannot recur: an arm registration includes the diff against its control, generated. (The `ecology` block once carried a `distill` sub-block; distillation was deleted in L3, 2026-10-02, so it is gone from the design.)
 
 ### 3.2 The registry — names, roles, policies

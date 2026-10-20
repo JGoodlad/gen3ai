@@ -573,7 +573,7 @@ tree), landed BEFORE X34 launches. **Owner / orchestrator choice (Q2, §9).**
 - The teams are TRAINING DATA (experience). Nothing the network reads is fitted on them.
 - The HP repair samples SMOGON usage.
 - 🚨 Forbidden: refitting any `data/` prior (species usage, teammates, moves) on W_hl. The corpus must never
-  feed `tools/compute_priors.py`.
+  feed `tools/smogon_stats_downloader/compute_priors.py`.
 
 **Risks.**
 

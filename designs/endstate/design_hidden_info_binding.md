@@ -356,7 +356,7 @@ penalty, a floor at 0, Spikes layers −12 / −16 / −25 on grounded mons, Lee
   tests: every term, a side-swap symmetry, and 905 real Rust-core decisions checked term by term against an
   independent protocol tracker with 0 mismatches, each layout field's one-cell shift caught); the pinned twin
   `hand_eval_pin.py` loads the same source by path (the layouts at both pins resolve identically); the driver
-  `hand_eval_playouts.py --world O|P|F` re-plays to T + 4 and records the hand eval and V at every searched-side
+  `hand_eval_playouts.py` (its world modes O|P|F) re-plays to T + 4 and records the hand eval and V at every searched-side
   decision (its critic traces reproduce the pilot's archived ones exactly). Named deviations, each forced by
   reading the one-sided row (the module docstring): a never-seen opponent slot scores full HP, held item, grounded;
   an unknown opponent item scores held; only KNOWN move slots get the low-PP term; an unrevealed ability is the

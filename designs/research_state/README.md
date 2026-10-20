@@ -97,7 +97,7 @@ disagree, **the ledger wins and the view is wrong** — fix the view.
   tree that persists across turns, a PUCT policy prior inside selection, and **visit-count argmax
   chosen explicitly over Q-argmax for the variance reason we then walked into**. Carries the diff
   table, the noise/margin ladder, and the one experiment that separates variance from a critic-bias
-  floor. Instrument: `python -m main.search_dividend` (the R-ladder was flags only, zero code; the battery was DELETED in P6 slice 6d-1, 2026-10-08 — its measured verdicts stay in the ledger and `measurements/`).
+  floor. Instrument: `main.search_dividend` (DELETED; the R-ladder was flags only, zero code; the battery was DELETED in P6 slice 6d-1, 2026-10-08 — its measured verdicts stay in the ledger and `measurements/`).
   ⚠️ **Every search-dividend cell measured before 2026-08-29 carries the allocator-noise caveat**
   (`d2a0212`): at the battery's own 1 s budget the grid agrees with its own large-budget argmax on
   only **86.1%** of decisions, so ~1 in 7 "searched" decisions was allocator noise. Re-read any
@@ -360,7 +360,7 @@ against rev-3's 12 via 6 at 2. Rev-4 adjudicates at fixed total compute.
 | **E** (`4867537`) | — | The **scaffolding gauge** (TB `train/scaffolding_gauge` + offline) and **`python -m main.exploitability`** |
 
 Also shipped this week and dormant: **v104 route-1 PBRS**, the **winprob teacher + confirm** modes,
-**defensive search + racing** (`--root-strategy racing`, `--defensive-confirm`), the **`signal/`
+**defensive search + racing** (`--root-strategy racing`, `--defensive-confirm`: the deleted `main.search_dividend` flags, `designs/deleted_flags.md`), the **`signal/`
 TB group** (advantage density × outcome entropy — *the PAIR is the instrument; singly each
 misleads*), and the **exploiter ladder curriculum** (`--exploiter-ladder`).
 

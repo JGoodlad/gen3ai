@@ -11,9 +11,14 @@ recorded argv costs a launch-crash-fix loop, and the root `CLAUDE.md`'s own c-fa
 that an allowlist entry can outlive its own fix and mislead every reader after it. Prose has no
 compiler, so it needs a gate.
 
-**Five checks, all mechanical.** None is a judgement about writing.
+**Five checks, all mechanical.** None is a judgement about writing. Checks 1-3 scan every ALWAYS-CURRENT doc, not
+only the `CLAUDE.md` files: `designs/ARCHITECTURE.md`, `designs/endstate/*.md`, the `designs/ops/` SOPs (+ the
+runbook and `testing.md`), `docs/*.md` and every owned `README.md` (`always_current_docs()`; the history trees —
+`measurements/`, the archives, `ai_v3/` — are out of scope on purpose, and so are the seven `designs/<topic>/`
+trees: their logs name deleted files by design, and that cleanup is its own backlog row).
 
-1. **Every repo-relative path a CLAUDE.md names must EXIST.** Scope is the five owned prefixes
+1. **Every repo-relative path a CLAUDE.md names must EXIST** (a `data/*.ts` citation is a Showdown source and
+   resolves in `deps/pokemon-showdown`; a path gone on purpose is listed in `designs/deleted_flags.md`). Scope is the five owned prefixes
    (`src/`, `designs/`, `data/`, `tools/`, `scripts/`) — `deps/` is a submodule plus untracked
    build output, so its contents are not a promise this tree can keep in a fresh worktree.
 2. **Every `--flag` a CLAUDE.md names must RESOLVE somewhere in the tree's own CLI surface** —
@@ -50,7 +55,7 @@ a design rationale, a "this is 22% of worker CPU" — none of that has a mechani
 gate that pretended otherwise would either pass everything or block on prose review. This gate
 checks the things that have a referent in the filesystem: names of files, flags and modules, and sizes.
 
-**Cost: about a second of work** (a few seconds of pytest start-up) — it reads ~20 markdown files and
+**Cost: about a second of work** (a few seconds of pytest start-up) — it reads ~90 markdown files and
 AST-parses the tree once. No cost marker, runs in the fast inner loop. Opt out explicitly:
 
     GEN3AI_SKIP_CLAUDE_MD_GATE=1 pytest src/ -q     # the whole gate
@@ -63,7 +68,7 @@ import functools
 import os
 import pathlib
 import re
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import pytest
 
@@ -86,6 +91,42 @@ _SKIP = pytest.mark.skipif(
 
 def claude_md_files() -> List[pathlib.Path]:
     return budget.claude_md_files(_REPO_ROOT)
+
+
+# The ALWAYS-CURRENT docs the root `CLAUDE.md` names beside the `CLAUDE.md` files: they are read as fact exactly as
+# a leaf is, so checks 1-3 scan them too (the byte budget, check 4, stays `CLAUDE.md`-only: it is their ratchet).
+# Declared by name or glob, never inferred: a dated audit, a measurement record and a frozen archive are HISTORY
+# and name deleted things on purpose (`designs/CLAUDE.md` lists which trees are which).
+_ALWAYS_CURRENT_GLOBS = (
+    "designs/ARCHITECTURE.md",
+    "designs/endstate/*.md",
+    "designs/ops/*_SOP.md",
+    "designs/ops/training_runbook.md",
+    "designs/ops/testing.md",
+    "designs/learning/*.md",          # always-current concept explainers (`designs/CLAUDE.md`)
+    "designs/ai_v12/launch_runbook.md",
+    "README.md",
+    "docs/*.md",
+)
+# Every `README.md` in the tree EXCEPT these: a vendored/untracked/build tree, and the HISTORY trees (frozen digraph,
+# dated measurement records, archives).
+_README_EXCLUDED_PARTS = ("deps", ".claude", ".pytest_cache", "node_modules", "target", "upstream", "ai_v3",
+                          "measurements", "claude_md_archive", "memory_archive")
+
+
+def _rel(doc: pathlib.Path) -> str:
+    return doc.relative_to(_REPO_ROOT).as_posix() if doc.is_relative_to(_REPO_ROOT) else str(doc)
+
+
+def always_current_docs() -> List[pathlib.Path]:
+    """Every doc checks 1-3 scan: the `CLAUDE.md` files, the globs above, and every owned `README.md`."""
+    docs = set(claude_md_files())
+    for glob in _ALWAYS_CURRENT_GLOBS:
+        docs.update(p for p in _REPO_ROOT.glob(glob) if p.is_file())
+    for p in _REPO_ROOT.rglob("README.md"):
+        if not any(part in _README_EXCLUDED_PARTS for part in p.relative_to(_REPO_ROOT).parts[:-1]):
+            docs.add(p)
+    return sorted(docs)
 
 
 # --------------------------------------------------------------------------------------------
@@ -132,8 +173,22 @@ def _is_placeholder(token: str) -> bool:
             or bool(_PLACEHOLDER_SEGMENTS.search(token)))
 
 
-def _bases_for(rel_doc: str) -> List[pathlib.Path]:
+_UPSTREAM_BASE = "deps/pokemon-showdown"
+
+
+def _is_upstream_source(token: str) -> bool:
+    """`data/moves.ts`, `data/mods/gen4/items.ts`: a Showdown SOURCE file the docs cite as evidence. This repo's own
+    `data/` holds derived JSON and no TypeScript, so a `.ts` token under `data/` is upstream's by construction."""
+    return token.startswith("data/") and token.endswith(".ts")
+
+
+def _bases_for(rel_doc: str, token: str = "") -> List[pathlib.Path]:
     """Where a path named in `rel_doc` is allowed to resolve, in order."""
+    if _is_upstream_source(token):
+        # An uninitialised submodule is not a documentation defect: no base, and `test_every_..._path_exists`
+        # skips the token (a fresh worktree without the submodule must not fail on Showdown citations).
+        base = _REPO_ROOT / _UPSTREAM_BASE
+        return [base] if (base / "data").is_dir() else []
     bases = [_REPO_ROOT, _REPO_ROOT / pathlib.PurePosixPath(rel_doc).parent]
     for extra, _reason in _EXTRA_BASES.get(rel_doc, ()):
         base = _REPO_ROOT / extra
@@ -144,14 +199,14 @@ def _bases_for(rel_doc: str) -> List[pathlib.Path]:
     return bases
 
 
-def collect_path_claims() -> List[Tuple[str, int, str]]:
-    """Every (doc, line, path) a CLAUDE.md asserts exists."""
+def collect_path_claims(docs: Optional[List[pathlib.Path]] = None) -> List[Tuple[str, int, str]]:
+    """Every (doc, line, path) an always-current doc asserts exists."""
     claims = []
-    for doc in claude_md_files():
-        rel = str(doc.relative_to(_REPO_ROOT))
+    for doc in (always_current_docs() if docs is None else docs):
+        rel = _rel(doc)
         for lineno, line in enumerate(doc.read_text().splitlines(), 1):
             for m in _PATH_RE.finditer(line):
-                token = m.group(1).rstrip(".,;:)`'\"")
+                token = m.group(1).rstrip(".,;:)`'\"/")   # a directory named with its slash is the directory
                 if _is_placeholder(token) or token in _PROSE_NOT_A_PATH:
                     continue
                 claims.append((rel, lineno, token))
@@ -300,6 +355,15 @@ _EXTERNAL_TOOL_FLAGS: Dict[str, str] = {
     "--password-store": "chrome",
     "--virtual-time-budget": "chrome",
     "--accent": "chrome",
+    "--ff-only": "git pull / git merge",
+    "--rebase": "git pull",
+    "--prune": "conda env update",
+    "--full": "pgrep (the hook that refuses it)",
+    "--logdir": "tensorboard",
+    "--native": "py-spy",
+    "--query-gpu": "nvidia-smi",
+    "--strict-equality": "mypy",
+    "--weekly-threshold": "~/.claude/skills/usage-limits/check_usage.py (a user skill, not this repo)",
 }
 
 # Metasyntactic flag names: prose ABOUT flags rather than a flag anyone can pass.
@@ -345,10 +409,10 @@ def historical_paths() -> Set[str]:
 _DOC_FLAG_RE = re.compile(r"(?<![\w\-])--[A-Za-z][A-Za-z0-9_-]*")
 
 
-def collect_flag_claims() -> List[Tuple[str, int, str]]:
+def collect_flag_claims(docs: Optional[List[pathlib.Path]] = None) -> List[Tuple[str, int, str]]:
     claims = []
-    for doc in claude_md_files():
-        rel = str(doc.relative_to(_REPO_ROOT))
+    for doc in (always_current_docs() if docs is None else docs):
+        rel = _rel(doc)
         for lineno, line in enumerate(doc.read_text().splitlines(), 1):
             for m in _DOC_FLAG_RE.finditer(line):
                 # `--anneal-lr-*` and `--win-prob-pbrs-…` name a FAMILY; the regex stops at the
@@ -386,7 +450,8 @@ def test_every_claude_md_path_exists():
     for rel, lineno, token in collect_path_claims():
         if token in history:
             continue
-        if any((base / token).exists() for base in _bases_for(rel)):
+        bases = _bases_for(rel, token)
+        if (not bases and _is_upstream_source(token)) or any((base / token).exists() for base in bases):
             continue
         misses.append(f"  {rel}:{lineno}  {token}")
 
@@ -501,7 +566,7 @@ _MODULE_BASES = ("src", "")   # `src/` (the package root) and the repo root (`to
 def collect_module_claims(docs: List[pathlib.Path]) -> List[Tuple[str, int, str]]:
     claims = []
     for doc in docs:
-        rel = doc.relative_to(_REPO_ROOT).as_posix() if doc.is_relative_to(_REPO_ROOT) else str(doc)
+        rel = _rel(doc)
         for lineno, line in enumerate(doc.read_text().splitlines(), 1):
             for m in _MODULE_RE.finditer(line):
                 if m.group(2) or m.group(1).endswith("."):   # a placeholder, not a module claim
@@ -523,7 +588,7 @@ def module_resolves(module: str, root: pathlib.Path = _REPO_ROOT) -> bool:
 
 @_SKIP
 def test_every_claude_md_python_module_resolves():
-    claims = collect_module_claims(claude_md_files())
+    claims = collect_module_claims(always_current_docs())
     assert len(claims) > 20, f"only {len(claims)} `python -m` claims found: the scan is broken"
     misses = [f"  {rel}:{lineno}  python -m {mod}" for rel, lineno, mod in claims if not module_resolves(mod)]
     assert not misses, (
@@ -556,6 +621,45 @@ def test_meta_the_module_check_has_teeth(tmp_path):
                    "`python -m a.{b,c}`, `python3.11 -u -m tools.fetch`, `$GEN3AI_PYTHON -m pkg.tool`.\n")
     assert [c[2] for c in collect_module_claims([doc])] == [
         "pkg.tool", "pkg.gone", "pkg.sub", "tools.fetch", "pkg.tool"]
+
+
+def test_meta_the_scan_scope_reaches_every_always_current_doc():
+    """Revert-proof: the docs the root `CLAUDE.md` calls always-current are SCANNED (it once stopped at `CLAUDE.md`,
+    and `designs/endstate/` named deleted flags and modules unchecked); the HISTORY trees are not."""
+    scanned = {_rel(p) for p in always_current_docs()}
+    must = {"CLAUDE.md", "README.md", "designs/ARCHITECTURE.md", "designs/ops/ORCHESTRATOR_SOP.md",
+            "designs/ops/TRAINING_RUN_SOP.md", "designs/ops/EXTERNAL_ANCHORS_SOP.md", "designs/ops/training_runbook.md",
+            "designs/ops/testing.md", "docs/DEVELOPING.md", "src/rust_sim/README.md",
+            "designs/endstate/README.md", "designs/endstate/program_rust_core.md"}
+    assert must <= scanned, sorted(must - scanned)
+    assert any(r.startswith("designs/endstate/") and r.endswith("search_ledger.md") for r in scanned)
+    history = [r for r in scanned if "/measurements/" in r or "/ai_v3/" in r or "claude_md_archive" in r
+               or r.startswith(("deps/", ".claude/")) or r == "designs/CHANGELOG.md"]
+    assert not history, history
+
+
+def test_meta_a_non_claude_md_doc_is_checked_for_paths_flags_and_modules(tmp_path):
+    """Revert-proof: the three claim collectors read ANY doc handed to them, and the gate's verdict on each claim is
+    the same one it gives a `CLAUDE.md`."""
+    doc = tmp_path / "design_x.md"
+    doc.write_text("see `src/gone/never_was.py`, run `--no-such-flag-xyz`, and `python -m main.gone_module_xyz`.\n"
+                   "upstream `data/moves.ts`, a dir `src/main/rust_core_m5/`.\n")
+    assert [c[2] for c in collect_path_claims([doc])] == ["src/gone/never_was.py", "data/moves.ts", "src/main/rust_core_m5"]
+    assert not any((base / "src/gone/never_was.py").exists() for base in _bases_for(str(doc), "src/gone/never_was.py"))
+    assert [c[2] for c in collect_flag_claims([doc])] == ["--no-such-flag-xyz"]
+    assert not flag_resolves("--no-such-flag-xyz", set(), set())
+    assert [c[2] for c in collect_module_claims([doc])] == ["main.gone_module_xyz"]
+    assert not module_resolves("main.gone_module_xyz")
+
+
+def test_meta_an_upstream_ts_citation_resolves_against_the_submodule_only():
+    assert _is_upstream_source("data/mods/gen4/items.ts")
+    assert not _is_upstream_source("data/pokemon/gen3_pokedex.json")
+    assert not _is_upstream_source("src/foo.ts")
+    submodule = _REPO_ROOT / _UPSTREAM_BASE
+    assert _bases_for("designs/ARCHITECTURE.md", "data/moves.ts") == (
+        [submodule] if (submodule / "data").is_dir() else [])
+    assert _bases_for("designs/ARCHITECTURE.md", "data/moves.json")[0] == _REPO_ROOT
 
 
 # --------------------------------------------------------------------------------------------

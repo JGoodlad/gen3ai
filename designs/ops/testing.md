@@ -603,9 +603,9 @@ paid off: `designs/research_state/claude_md_archive/file_size_paydown.md`.
 **Prose has no compiler, and a `CLAUDE.md` is loaded into every session and read as fact.** A path
 that moved and a flag that was deleted do not merely go stale — they are *actively believed*, and
 the believer then reports a false result or types a command that cannot launch. So the same two
-things a scanner CAN check are checked, over every `CLAUDE.md` in the tree: **every repo-relative
+things a scanner CAN check are checked, over every `CLAUDE.md` AND every other always-current doc (`designs/ARCHITECTURE.md`, `designs/endstate/*.md`, the `designs/ops/` SOPs + runbook + this chapter, `docs/*.md`, every owned `README.md`; the history trees and the seven `designs/<topic>/` build-log trees are NOT scanned yet, and a `data/*.ts` citation resolves in the Showdown submodule): **every repo-relative
 path must exist**, and **every `--flag` must resolve in some parser in this tree**. Unmarked,
-**0.84 s**, opt out with `GEN3AI_SKIP_CLAUDE_MD_GATE=1`.
+~10 s over the ~90 docs, opt out with `GEN3AI_SKIP_CLAUDE_MD_GATE=1`.
 
 **Section pointers (a fifth check, same gate).** Any doc or code comment that writes `<file> § <section>`,
 `<file> → "Title"` or `"Title" in <file>` must land on a section of that file; `utils.section_refs` holds the

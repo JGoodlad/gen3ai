@@ -90,9 +90,9 @@ corpus.
    POKESIM_AB_REPLAY_BIN=/tmp/pokesim_target_bytefuzz/release/ab_replay \
      node src/rust_sim/harness/ab_fuzz.js --mode pool --protocol \
        --format gen3customgame --battles 80 --chunk 80 --keep-chunks \
-       --out src/rust_sim/harness/ab_fuzz_out_cg
+       --out /tmp/ab_fuzz_out_cg
    ```
-   (the `ab_fuzz_out*` dirs are gitignored — never commit run output).
+   (the harness's own `ab_fuzz_out*` dirs are gitignored — never commit run output).
 2. Pick a CLEAN single battle whose `L`-rows contain the target form
    (`grep` the L-rows) and drop its standalone `battle.txt` here with a name that
    says which form it guards. The test auto-discovers it — no code change needed.
