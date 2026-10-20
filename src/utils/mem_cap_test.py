@@ -12,7 +12,12 @@ drop-ins ``set-property --runtime`` wrote). The load-bearing pins, each FAILS on
   its slice holds the kill; a sibling ALLOCATING through the victim's teardown may die too (a kernel
   memcg race, 2026-10-01) — either way its report is truthful;
 * inside the scope ``oom_score_adj`` is +500, the cgroup is the capped scope, the environment passes
-  through, and the GPU lock composes with the wrapper in BOTH orders.
+  through, and the GPU lock composes with the wrapper in BOTH orders;
+* STOPPING (``gen3_mem_cap_stop_v1``): a ``timeout`` OUTSIDE the wrapper stops a job that defers SIGTERM
+  (the trainer's deferred abort) — the whole tree, a ``setsid``-ed worker included — after the grace; a job
+  that exits on SIGTERM gets its detached leftovers swept; the wrapper's own SIGKILL stops the job too;
+  a bad ``--term-grace`` is refused. Each runs a REAL process tree in a REAL scope and fails on revert
+  (the old wrapper never returns).
 
 ``integration``: needs a systemd user manager with the memory controller delegated; SKIPS (with the
 reason) where there is none. ~15 s.
@@ -22,11 +27,13 @@ from __future__ import annotations
 import os
 import selectors
 import shutil
+import signal
 import subprocess
 import sys
 import textwrap
 import time
 from pathlib import Path
+from typing import List, Tuple
 
 import pytest
 
@@ -261,3 +268,162 @@ def test_the_default_unit_name_sees_through_the_usual_wrappers():
     assert M.default_name(["/x/scripts/ops/gpu_lock.sh", "python3", "bench.py"]) == "python3"
     assert M.default_name(["env", "A=1", "nice", "-n", "10", "cargo", "build"]) == "cargo"
     assert M.sanitize("a b/c:d") == "a_b_c_d"
+
+
+# ---------------------------------------------------------------------------- STOPPING A JOB
+#: A "trainer" tree, run as a script: the root, a worker in the root's process group and a worker in its OWN
+#: session (`setsid`, which a `timeout`'s process-group signal never reaches). Every process DEFERS SIGTERM /
+#: SIGINT / SIGHUP (the trainer's deferred abort) and records ``<role> <pid>`` once its handlers are in place.
+#: ``coop`` makes the ROOT exit on SIGTERM (the default disposition) after spawning one deferring `setsid`
+#: grandchild; ``graceful`` makes it exit 3 on SIGTERM after a short delay.
+_TREE = textwrap.dedent("""
+    import os, signal, subprocess, sys, time
+    pidfile, role = sys.argv[1], sys.argv[2]
+    def record(r):
+        with open(pidfile, "a") as f:
+            f.write(f"{r} {os.getpid()}\\n")
+    def defer(*_a):
+        pass
+    def bye(*_a):
+        time.sleep(0.3)
+        os._exit(3)
+    if role != "coop":
+        for s in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
+            signal.signal(s, bye if role == "graceful" else defer)
+    if role in ("root", "coop"):
+        subprocess.Popen([sys.executable, __file__, pidfile, "setsid_worker"], start_new_session=True)
+    if role == "root":
+        subprocess.Popen([sys.executable, __file__, pidfile, "worker"])
+    record(role)
+    while True:
+        time.sleep(0.1)
+""")
+
+
+def _tree_cmd(tmp_path: Path, role: str) -> Tuple[List[str], Path]:
+    script, pidfile = tmp_path / "tree.py", tmp_path / "pids.txt"
+    script.write_text(_TREE)
+    pidfile.write_text("")
+    return [sys.executable, str(script), str(pidfile), role], pidfile
+
+
+def _tree_pids(pidfile: Path, want: int) -> dict:
+    """Wait until ``want`` processes of the tree have recorded themselves (handlers installed)."""
+    t0 = time.monotonic()
+    while True:
+        rows = [ln.split() for ln in pidfile.read_text().splitlines() if ln.strip()]
+        if len(rows) >= want:
+            return {role: int(pid) for role, pid in rows}
+        assert time.monotonic() - t0 < scale_timeout(60), f"the tree never came up: {rows}"
+        time.sleep(0.05)
+
+
+def _all_gone(pids, within: float) -> list:
+    t0 = time.monotonic()
+    while True:
+        alive = [p for p in pids if _alive(p)]
+        if not alive or time.monotonic() - t0 > scale_timeout(within):
+            return alive
+        time.sleep(0.05)
+
+
+def _kill_tree(pidfile: Path) -> None:
+    """Teardown: only the pids THIS test's tree recorded, by explicit pid."""
+    for ln in pidfile.read_text().splitlines():
+        try:
+            os.kill(int(ln.split()[1]), signal.SIGKILL)
+        except (IndexError, ValueError, ProcessLookupError):
+            pass
+
+
+def test_a_timeout_OUTSIDE_the_wrapper_stops_a_job_that_defers_SIGTERM_and_its_whole_tree(env, tmp_path):
+    """The U4 finding (a), 2026-10-02: `timeout 590 mem_cap.sh … <trainer>` ran 12 min past its bound and needed a
+    SIGKILL by PID — the trainer defers SIGTERM to a safe point. Here the REAL `timeout` binary wraps the
+    wrapper around a tree whose three processes all defer it, one of them in its own session. SIGTERM to the
+    `timeout` process is what its expiry does (it forwards the term signal to its child and its group). After the
+    grace every process is gone and the wrapper returns; the OLD wrapper never returned (the bounded
+    `communicate` below fails on revert, and the teardown kills the tree by pid)."""
+    cmd, pidfile = _tree_cmd(tmp_path, "root")
+    p = subprocess.Popen(["timeout", "600", _SH, "--term-grace", "3", "0.5", *cmd], env=env,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    try:
+        pids = _tree_pids(pidfile, 3)
+        assert set(pids) == {"root", "worker", "setsid_worker"}
+        t_stop = time.monotonic()
+        os.kill(p.pid, signal.SIGTERM)                      # what `timeout`'s expiry does
+        _out, err = p.communicate(timeout=scale_timeout(60))
+        took = time.monotonic() - t_stop
+        assert not _all_gone(pids.values(), 10), f"a process of the stopped tree survived: {pids}"
+        assert "SIGKILL to the" in err and "still in the scope" in err, err
+        assert took >= 2.5, f"killed after {took:.1f} s: before the 3 s grace (the job got no time to save)"
+        assert p.returncode in (137, 143, 124), (p.returncode, err)
+    finally:
+        _kill_tree(pidfile)
+        if p.poll() is None:
+            p.kill()
+            p.wait()
+
+
+def test_a_job_that_exits_on_SIGTERM_has_its_DETACHED_leftovers_swept_too(env, tmp_path):
+    """Whole tree, not just the child: the root dies on SIGTERM at once, but its `setsid` grandchild defers it
+    and is no longer anyone's child to wait for. The scope must end up empty (SIGTERM to it, then SIGKILL at the
+    deadline), the wrapper reporting the command's own signal exit (143)."""
+    cmd, pidfile = _tree_cmd(tmp_path, "coop")
+    p = subprocess.Popen([_SH, "--term-grace", "3", "0.5", *cmd], env=env, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, text=True)
+    try:
+        pids = _tree_pids(pidfile, 2)
+        os.kill(p.pid, signal.SIGTERM)                      # the wrapper itself: `kill <pid>` / a bare forward
+        _out, err = p.communicate(timeout=scale_timeout(60))
+        assert p.returncode == 143, (p.returncode, err)
+        assert not _all_gone(pids.values(), 10), f"the detached leftover survived the wrapper: {pids}"
+        assert "left in the scope: SIGTERM to them" in err, err
+    finally:
+        _kill_tree(pidfile)
+        if p.poll() is None:
+            p.kill()
+            p.wait()
+
+
+def test_the_wrappers_own_SIGKILL_stops_the_job_it_must_not_outlive_its_wrapper(env, tmp_path):
+    """`timeout -k` and a `kill -9` of the wrapper's PID cannot be caught: the supervisor asks the kernel
+    (`PR_SET_PDEATHSIG`) to tell it, and the job then stops as for any stop signal. Without it the scope lives
+    on, uncapped by any slot, with nobody to stop it."""
+    cmd, pidfile = _tree_cmd(tmp_path, "root")
+    p = subprocess.Popen([_SH, "--term-grace", "3", "0.5", *cmd], env=env, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, text=True)
+    try:
+        pids = _tree_pids(pidfile, 3)
+        os.kill(p.pid, signal.SIGKILL)
+        p.wait(timeout=scale_timeout(30))
+        assert not _all_gone(pids.values(), 20), f"the job outlived its SIGKILLed wrapper: {pids}"
+    finally:
+        _kill_tree(pidfile)
+        if p.poll() is None:
+            p.kill()
+            p.wait()
+
+
+def test_a_job_that_stops_inside_the_grace_keeps_its_own_exit_status_and_is_not_killed(env, tmp_path):
+    cmd, pidfile = _tree_cmd(tmp_path, "graceful")
+    p = subprocess.Popen([_SH, "--term-grace", "30", "0.5", *cmd], env=env, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, text=True)
+    try:
+        _tree_pids(pidfile, 1)
+        os.kill(p.pid, signal.SIGTERM)
+        _out, err = p.communicate(timeout=scale_timeout(60))
+        assert p.returncode == 3, (p.returncode, err)
+        assert "SIGKILL to the" not in err and "forwarded to the job" in err, err
+    finally:
+        _kill_tree(pidfile)
+        if p.poll() is None:
+            p.kill()
+            p.wait()
+
+
+@pytest.mark.parametrize("grace", ["0", "-1", "abc", "nan", "inf", ""])
+def test_a_bad_term_grace_is_refused_without_running_anything(env, grace):
+    r = _run(["--term-grace", grace, "1", "true"], env)
+    assert r.returncode == 2 and "REFUSING" in r.stderr and "--term-grace" in r.stderr, (r.returncode, r.stderr)
+    r = _run(["1", "true"], {**env, M.TERM_GRACE_ENV: grace or "x"})
+    assert r.returncode == 2 and M.TERM_GRACE_ENV in r.stderr, (r.returncode, r.stderr)

@@ -15000,3 +15000,21 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   dump cap; the wording); `compile_canary_test::test_a_u1700_shaped_EAGER_tail_on_the_real_learner_*` (slow, the real
   learner). Docs: `training/compile_flags.md` "The yardstick is not the compiled arm", `training/learner_lifecycle.md`
   (the canary), `ops/TRAINING_RUN_SOP.md` §3 rule 5, `endstate/design_x26_readiness.md` §4.2, the TECH-DEBT row closed.
+
+## 2026-10-19 — `mem_cap.sh` STOPS the job it caps (`gen3_mem_cap_stop_v1`; ops wrapper only; no model / config / obs / signature change, no training-math change)
+
+- **The defect (U4 finding (a), 2026-10-02).** `timeout 590 mem_cap.sh … <trainer>` ran 12 min past its bound and needed a
+  SIGKILL by PID. The wrapper forwarded SIGINT / SIGTERM / SIGHUP to its supervisor and the supervisor to the command, but
+  nothing escalated: the trainer DEFERS SIGTERM to a safe point (`lifecycle._setup_signal_handlers`), and a worker that
+  `setsid`-ed out of the process group is never reached by a `timeout`'s group signal. Reproduced on a real tree of three
+  processes that defer SIGTERM (not on a trainer: the 2026-10-02 incident itself stays UNVERIFIED).
+- **The fix.** The supervisor SIGKILLs EVERY process left in the scope `--term-grace` seconds (default 60;
+  `$GEN3AI_MEM_CAP_TERM_GRACE_S`) after the FIRST stop signal; a command that exits on the signal has its detached leftovers
+  swept (SIGTERM, then SIGKILL at the deadline); the wrapper's own SIGKILL (`timeout -k`, `kill -9`) stops the job through
+  `PR_SET_PDEATHSIG`; the handlers (wrapper and supervisor) are installed BEFORE the command starts, with a stop signal in
+  that window forwarded afterwards. Exit 143 on SIGTERM, 137 once the grace killed it. A timeout outside the wrapper stays
+  legal (it is what every agent types).
+- **Tests.** `src/utils/mem_cap_test.py`: the real `timeout` binary around a three-process tree that defers SIGTERM (one in
+  its own session), the detached-leftover sweep, the wrapper's SIGKILL, a graceful stop keeping its own exit status, a bad
+  `--term-grace` refused; each fails on revert (the old wrapper never returns). Docs: `scripts/ops/README.md`,
+  `scripts/ops/mem_cap.sh --help`, `designs/ops/testing.md`.

@@ -5,11 +5,15 @@ USAGE
     scripts/ops/mem_cap.sh <GB> <cmd> [args...]                 # the shell form
     scripts/ops/mem_cap.sh --name k8trace 24 timeout 2h python -m main.compile_inventory run ...
     scripts/ops/mem_cap.sh --status                              # the slice and every capped job now
-    python -m utils.mem_cap [--name N] [--slice-gb G] <GB> -- <cmd> [args...]
+    python -m utils.mem_cap [--name N] [--slice-gb G] [--term-grace S] <GB> -- <cmd> [args...]
 
-    # composes with the GPU lock in BOTH orders; a timeout goes INSIDE:
+    # composes with the GPU lock in BOTH orders; a timeout INSIDE bounds the command alone (the
+    # heavy-slot wait is not counted), one OUTSIDE bounds the whole wrapper and ALSO stops the scope
+    # (STOPPING A JOB, below):
     scripts/ops/gpu_lock.sh scripts/ops/mem_cap.sh 24 timeout 1h python ...
     scripts/ops/mem_cap.sh 24 scripts/ops/gpu_lock.sh timeout 1h python ...
+    timeout 3000 scripts/ops/mem_cap.sh 24 python ...             # outside: SIGTERM, then the grace, then SIGKILL
+    scripts/ops/mem_cap.sh --term-grace 300 24 python ...         # a longer grace for a job that saves on SIGTERM
 
 WHY. On 2026-09-30 three global OOM kills (15:33, 16:44, 16:54; ``journalctl -k``) each killed one
 python3 that had grown to 74-82 GB anonymous RSS on this 89 GB box. Every agent process and the Claude
@@ -55,6 +59,21 @@ visible line (``--no-wait`` refuses at once, exit 87). A job the orchestrator ma
 (``$GEN3AI_BLOCKING=<reason>`` or ``--blocking <reason>``) bypasses them; a job inside a holder (the
 routine gate holds one) takes none. ``--status`` lists holders, the queue and the bypassers.
 
+STOPPING A JOB (2026-10-19, ``gen3_mem_cap_stop_v1``; backlog row "a ``timeout`` OUTSIDE mem_cap.sh does not
+stop a trainer", U4 finding (a) 2026-10-02: ``timeout 590 mem_cap.sh … <trainer>`` ran 12 min past its bound
+and needed a SIGKILL by PID). SIGINT / SIGTERM / SIGHUP — from ``timeout``, a terminal, a ``kill`` of the
+wrapper — are forwarded wrapper -> supervisor -> command (the command may save and exit: the trainer's
+deferred abort does). Then ``--term-grace`` seconds (default ``DEFAULT_TERM_GRACE_S``; ``$GEN3AI_MEM_CAP_
+TERM_GRACE_S``) after the FIRST stop signal the supervisor SIGKILLs **every process left in the scope** — a
+worker that ``setsid``-ed out of the process group included, which ``timeout``'s own group kill never
+reaches — and a command that exits on the signal gets its leftover descendants swept the same way (SIGTERM,
+then SIGKILL at the deadline), so a stopped job leaves an EMPTY scope. The wrapper's own death by SIGKILL
+(``timeout -k``, ``kill -9`` of its PID) is a stop signal too: the supervisor asks the kernel for
+``PR_SET_PDEATHSIG`` SIGTERM, so the job never outlives its wrapper (and its heavy slot) uncapped and
+unslotted. The exit status is the command's (143 for SIGTERM, 137 once the grace killed it). What it does
+NOT cover: a command that exits NORMALLY leaving a detached background process behind (nothing was asked to
+stop; that process stays in the scope, listed by ``--status``).
+
 EXIT STATUS: the command's own (128+N if signal N killed it); ``EXIT_OOM`` (86) when the job was
 OOM-killed at its cap or the slice's; ``EXIT_NOCAP`` (85) when the cap could not be put in force (no
 user manager, no memory controller, systemd-run refused); 2 = usage. The ``[mem_cap]`` lines on
@@ -83,18 +102,29 @@ SLICE_GB_ENV = "GEN3AI_HEAVY_SLICE_GB"
 DEFAULT_SLICE = "gen3ai-heavy.slice"
 DEFAULT_SLICE_GB = 64.0
 OOM_SCORE_ADJ = 500
+TERM_GRACE_ENV = "GEN3AI_MEM_CAP_TERM_GRACE_S"
+#: Seconds from the FIRST stop signal to SIGKILL of everything left in the scope. A graceful stop
+#: (the trainer's checkpoint-and-exit, a pytest teardown, a cargo shutdown) takes seconds; a job that has
+#: not ended in a minute is not going to, and "a timeout that does not stop the job" was the hazard.
+DEFAULT_TERM_GRACE_S = 60.0
 UNIT_PREFIX = "gen3ai-capped-"
 EXIT_NOCAP = 85
 EXIT_OOM = 86
 GiB = 1 << 30
 PAGE = 4096
 
-# Runs INSIDE the scope, as ``python -I -S -c SUPERVISOR <report> <job max> <slice max> <adj> -- cmd...``.
+# Runs INSIDE the scope, as ``python -I -S -c SUPERVISOR <report> <job max> <slice max> <adj> <grace> <wrapper pid> -- cmd...``.
 # Stdlib only and import-light: it must not depend on PYTHONPATH (and must not perturb the command's).
+# STOPPING (module docs): the handlers are installed BEFORE the command starts (a stop signal in the window
+# between its start and its handlers used to kill the supervisor and orphan the command); the first stop
+# signal is forwarded to the command and arms SIGALRM for ``grace`` seconds, which SIGKILLs EVERY process in
+# the scope; a command that ends on the signal has its leftover descendants swept; and the supervisor asks the
+# kernel for SIGTERM when its own parent (the wrapper) dies.
 SUPERVISOR = r"""
-import os, signal, subprocess, sys
-report, want, want_slice, adj = sys.argv[1:5]
-cmd = sys.argv[6:]
+import os, signal, subprocess, sys, time
+report, want, want_slice, adj, grace, wrapper = sys.argv[1:7]
+cmd = sys.argv[8:]
+grace = float(grace)
 def rd(p):
     try:
         with open(p) as f:
@@ -104,6 +134,8 @@ def rd(p):
 def out(s):
     with open(report, "a") as f:
         f.write(s + "\n")
+def say(s):
+    os.write(2, ("[mem_cap] " + s + "\n").encode())
 rel = ""
 for line in rd("/proc/self/cgroup").splitlines():
     if line.startswith("0::"):
@@ -116,6 +148,44 @@ if (got, swap, got_slice) != (want, "0", want_slice):
     sys.exit(%(nocap)d)
 with open("/proc/self/oom_score_adj", "w") as f:
     f.write(adj)
+def scope_pids():
+    # every LIVE process of the scope but this one (a zombie is dead; its parent or the subreaper reaps it)
+    me, live = os.getpid(), []
+    for tok in rd(cg + "/cgroup.procs").split():
+        pid = int(tok)
+        st = rd("/proc/%d/stat" % pid)
+        if pid != me and st and st[st.rfind(")") + 2:][:1] != "Z":
+            live.append(pid)
+    return live
+def sweep(sig):
+    n = 0
+    for pid in scope_pids():
+        try:
+            os.kill(pid, sig)
+            n += 1
+        except OSError:
+            pass
+    return n
+child, stop = None, []        # stop = [first stop signal's time, its number]
+def on_stop(n, _f):
+    if not stop:
+        stop.extend([time.monotonic(), n])
+        signal.setitimer(signal.ITIMER_REAL, grace)
+        say("signal %d received: forwarded to the job; every process left in the scope is SIGKILLed in %g s" % (n, grace))
+    if child is not None:
+        child.send_signal(n)
+def on_alarm(_n, _f):
+    say("the %g s grace after the stop signal is over: SIGKILL to the %d process(es) still in the scope" % (grace, sweep(signal.SIGKILL)))
+for s in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+    signal.signal(s, on_stop)
+signal.signal(signal.SIGALRM, on_alarm)
+try:    # the wrapper's death (kill -9, timeout -k) is a stop signal too: the job must not outlive it
+    import ctypes
+    ctypes.CDLL(None).prctl(1, int(signal.SIGTERM), 0, 0, 0)        # PR_SET_PDEATHSIG
+    if os.getppid() != int(wrapper):                                # already orphaned: the kernel will not say so
+        on_stop(signal.SIGTERM, None)
+except Exception:
+    pass
 out("started cgroup=%s" % rel)
 try:
     child = subprocess.Popen(cmd)
@@ -123,9 +193,20 @@ except OSError as e:
     out("done 127 %s 0" % (rd(cg + "/memory.peak") or "0"))
     print("[mem_cap] cannot run %r: %s" % (cmd[0], e), file=sys.stderr)
     sys.exit(127)
-for s in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
-    signal.signal(s, lambda n, _f: child.send_signal(n))
+if stop:
+    child.send_signal(stop[1])
 rc = child.wait()
+if stop:    # asked to stop: the scope must end up EMPTY (the command's descendants, a setsid-ed worker too)
+    left = scope_pids()
+    if left:
+        say("the job ended on the stop signal with %d process(es) left in the scope: SIGTERM to them" % sweep(signal.SIGTERM))
+        while scope_pids() and time.monotonic() < stop[0] + grace:
+            time.sleep(0.05)
+    for _ in range(100):
+        if not sweep(signal.SIGKILL):
+            break
+        time.sleep(0.02)
+    signal.setitimer(signal.ITIMER_REAL, 0)
 kills = 0
 for line in rd(cg + "/memory.events").splitlines():
     k, _, v = line.partition(" ")
@@ -158,6 +239,23 @@ def slice_name() -> str:
 def slice_gb() -> float:
     raw = os.environ.get(SLICE_GB_ENV)
     return float(raw) if raw else DEFAULT_SLICE_GB
+
+
+def term_grace_s() -> float:
+    """The grace between the first stop signal and the SIGKILL of the scope (``$GEN3AI_MEM_CAP_TERM_GRACE_S``
+    or `DEFAULT_TERM_GRACE_S`). A malformed value raises ValueError — never a silently different bound."""
+    raw = os.environ.get(TERM_GRACE_ENV)
+    return parse_grace(raw) if raw else DEFAULT_TERM_GRACE_S
+
+
+def parse_grace(raw: object) -> float:
+    try:
+        g = float(raw)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        raise ValueError(f"a stop grace must be a number of seconds > 0, got {raw!r}") from None
+    if not (0.0 < g < float("inf")):        # NaN fails the comparison too
+        raise ValueError(f"a stop grace must be a number of seconds > 0 and finite, got {raw!r}")
+    return g
 
 
 def default_name(cmd: Sequence[str]) -> str:
@@ -223,20 +321,24 @@ class CapResult:
 
 
 def capped_argv(cmd: Sequence[str], cap_bytes: int, *, unit: str, slice_: str, slice_bytes: int,
-                report: str, adj: int = OOM_SCORE_ADJ) -> List[str]:
+                report: str, adj: int = OOM_SCORE_ADJ, grace: float = DEFAULT_TERM_GRACE_S) -> List[str]:
     """The ``systemd-run`` argv that runs ``cmd`` under the supervisor in a capped scope."""
     return ["systemd-run", "--user", "--scope", "--quiet", f"--slice={slice_}",
             "-p", f"MemoryMax={cap_bytes}", "-p", "MemorySwapMax=0", "-p", "OOMPolicy=stop",
             "--unit", unit, "--",
             sys.executable, "-I", "-S", "-c", SUPERVISOR, report, str(cap_bytes), str(slice_bytes), str(adj),
-            "--", *cmd]
+            repr(grace), str(os.getpid()), "--", *cmd]
 
 
 def run_capped(cmd: Sequence[str], gb: float, *, name: Optional[str] = None,
                slice_: Optional[str] = None, slice_gb_: Optional[float] = None,
+               term_grace: Optional[float] = None,
                log: Callable[[str], None] = _stderr) -> CapResult:
-    """Run ``cmd`` capped at ``gb`` GB in its own scope inside the heavy slice; report and return."""
+    """Run ``cmd`` capped at ``gb`` GB in its own scope inside the heavy slice; report and return.
+    A stop signal (SIGINT / SIGTERM / SIGHUP) reaching this process is forwarded to the supervisor, which
+    SIGKILLs the whole scope ``term_grace`` seconds after the first one (module docs, STOPPING A JOB)."""
     cap = gb_to_bytes(gb)
+    grace = parse_grace(term_grace) if term_grace is not None else term_grace_s()
     sl = slice_ or slice_name()
     sl_bytes = gb_to_bytes(slice_gb() if slice_gb_ is None else slice_gb_)
     unit = f"{UNIT_PREFIX}{sanitize(name) if name else default_name(cmd)}-{os.getpid()}.scope"
@@ -253,18 +355,30 @@ def run_capped(cmd: Sequence[str], gb: float, *, name: Optional[str] = None,
         f"· oom_score_adj +{OOM_SCORE_ADJ}")
     fd, report = tempfile.mkstemp(prefix="gen3ai_mem_cap_", suffix=".txt", dir=_env().get("XDG_RUNTIME_DIR"))
     os.close(fd)
+    holder: List[subprocess.Popen] = []
+    pending: List[int] = []                 # a stop signal that arrives before the supervisor exists
+
+    def _forward(n: int, _frame: object) -> None:
+        if holder:
+            holder[0].send_signal(n)
+        else:
+            pending.append(n)
+
+    # the handlers are in place BEFORE the supervisor starts: a SIGTERM in that window used to kill this
+    # wrapper outright, leaving a scope nobody reports on or stops
+    fwd = {s: signal.signal(s, _forward) for s in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)}
     try:
-        child = subprocess.Popen(capped_argv(cmd, cap, unit=unit, slice_=sl, slice_bytes=sl_bytes, report=report),
-                                 env=_env())
-        fwd = {s: signal.signal(s, lambda n, _f: child.send_signal(n)) for s in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)}
-        try:
-            raw_rc = child.wait()
-        finally:
-            for s, h in fwd.items():
-                signal.signal(s, h)
+        child = subprocess.Popen(capped_argv(cmd, cap, unit=unit, slice_=sl, slice_bytes=sl_bytes, report=report,
+                                             grace=grace), env=_env())
+        holder.append(child)
+        for n in pending:
+            child.send_signal(n)
+        raw_rc = child.wait()
         with open(report) as f:
             lines = f.read().splitlines()
     finally:
+        for s, h in fwd.items():
+            signal.signal(s, h)
         os.unlink(report)
     return _verdict(unit, cap, sl, sl_bytes, raw_rc, lines, log)
 
@@ -328,6 +442,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 0
     name: Optional[str] = None
     sgb: Optional[float] = None
+    grace: Optional[float] = None
     force_slot, wait = False, True
     while args and args[0].startswith("--") and args[0] != "--":
         flag = args.pop(0)
@@ -335,6 +450,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             name = args.pop(0)
         elif flag == "--slice-gb" and args:
             sgb = float(args.pop(0))
+        elif flag == "--term-grace" and args:
+            try:
+                grace = parse_grace(args.pop(0))
+            except ValueError as e:
+                print(f"[mem_cap] REFUSING: --term-grace: {e}", file=sys.stderr)
+                return 2
         elif flag == "--slot":
             force_slot = True
         elif flag == "--no-wait":
@@ -359,8 +480,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print("[mem_cap] REFUSING: no command to run", file=sys.stderr)
         return 2
     try:
+        grace = term_grace_s() if grace is None else grace        # a bad $GEN3AI_MEM_CAP_TERM_GRACE_S is a refusal
+    except ValueError as e:
+        print(f"[mem_cap] REFUSING: ${TERM_GRACE_ENV}: {e}", file=sys.stderr)
+        return 2
+    try:
         with HS.heavy_slot(args, force=force_slot, wait=wait):
-            return run_capped(args, gb, name=name, slice_gb_=sgb).rc
+            return run_capped(args, gb, name=name, slice_gb_=sgb, term_grace=grace).rc
     except (HS.SlotsFull, TimeoutError) as e:
         print(str(e), file=sys.stderr)
         return HS.EXIT_SLOTS_FULL
