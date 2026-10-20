@@ -16,8 +16,14 @@ usage() {
 mem_cap.sh — run a command under a memory cap in its own scope (see src/utils/mem_cap.py)
 
 USAGE
-    scripts/ops/mem_cap.sh [--name N] [--slice-gb G] <GB> <cmd> [args...]
-    scripts/ops/mem_cap.sh --status           # the heavy slice and every capped job now
+    scripts/ops/mem_cap.sh [--name N] [--slice-gb G] [--slot] [--no-wait] [--blocking WHY] <GB> <cmd> [args...]
+    scripts/ops/mem_cap.sh --status           # the heavy slice, every capped job, the HEAVY SLOTS
+
+HEAVY SLOTS (rule 5b, utils/heavy_slots.py): while a training run is live (or with --slot) the job
+first takes one of the box's 2 heavy slots, waiting with a visible line; --no-wait refuses at once
+(exit 87). A job the orchestrator marks BLOCKING ($GEN3AI_BLOCKING=<why> or --blocking <why>) bypasses
+them; a job inside a slot holder (the routine gate holds one) takes none. Lock order: gate_lock.sh
+OUTSIDE mem_cap.sh.
 
 The command runs in gen3ai-capped-<name>-<pid>.scope (MemoryMax=<GB>G, MemorySwapMax=0,
 OOMPolicy=stop) inside gen3ai-heavy.slice ($GEN3AI_HEAVY_SLICE), whose aggregate MemoryMax is
@@ -25,7 +31,8 @@ declared at every launch (default 64 GB; --slice-gb / $GEN3AI_HEAVY_SLICE_GB), w
 +500. Prints the cap and unit at start; peak memory and whether it was OOM-killed at the end.
 A timeout goes INSIDE (mem_cap.sh 24 timeout 2h python ...); composes with gpu_lock.sh either way.
 Exit status: the command's own (128+N if signal N killed it); 86 = OOM-killed at its cap or the
-slice's; 85 = the cap could not be put in force (the command did NOT run); 2 = usage.
+slice's; 85 = the cap could not be put in force (the command did NOT run); 87 = --no-wait and every
+heavy slot is held (the command did NOT run); 2 = usage.
 USAGE_EOF
 }
 

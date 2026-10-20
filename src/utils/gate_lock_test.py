@@ -22,6 +22,7 @@ import time
 import pytest
 
 from utils import gate_lock as GL
+from utils import heavy_slots as HS
 from utils import procfs as P
 from utils.contention import scale_timeout
 from utils.paths import repo_path, src_root
@@ -32,8 +33,9 @@ _SH = str(repo_path("scripts", "ops", "gate_lock.sh"))
 
 
 def _env(d, n=2) -> dict:
-    env = {k: v for k, v in os.environ.items() if k != GL.HELD_ENV}
-    env.update({GL.DIR_ENV: str(d), GL.SLOTS_ENV: str(n),
+    env = {k: v for k, v in os.environ.items() if k not in (GL.HELD_ENV, HS.HELD_ENV)}
+    # never the REAL heavy slots (a gate takes one while a run is live), and never a wait on them here
+    env.update({GL.DIR_ENV: str(d), GL.SLOTS_ENV: str(n), HS.DIR_ENV: str(d / "heavy"), HS.SLOTS_ENV: "16",
                 "PYTHONPATH": os.pathsep.join([str(src_root()), os.environ.get("PYTHONPATH", "")])})
     return env
 

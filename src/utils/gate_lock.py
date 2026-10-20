@@ -37,6 +37,12 @@ Every take LOGS its wait and when it acquired; every release logs how long it he
 the GPU lock: ``--timeout-s`` bounds the WAIT for a slot (exit 4); a WALL timeout on the gate goes
 INSIDE — ``gate_lock.sh timeout 3000 <cmd>`` — never around it (``timeout 3000 gate_lock.sh <cmd>``
 counts queue time and kills a gate that never ran).
+HEAVY SLOTS (2026-10-19, ``utils.heavy_slots``): while a training run is live a gate also holds ONE of
+the box's heavy-job slots for its whole run, taken AFTER its gate slot (so a queued gate holds none);
+its children inherit the holder marker, so the ``mem_cap.sh`` inside it takes no second slot. LOCK
+ORDER is gate before heavy: a take that would have to WAIT for the gate while an ancestor already
+holds a heavy slot (``mem_cap.sh … gate_lock.sh …``) is refused at once, :class:`GateLockOrderError`
+(exit 5) — two of those plus a gate holder waiting for a heavy slot is a deadlock.
 Linux only (``/proc``).
 """
 from __future__ import annotations
@@ -53,6 +59,7 @@ from pathlib import Path
 from typing import Callable, Iterator, List, Optional, Sequence, Tuple
 
 from utils import gate_lock_status as GS
+from utils import heavy_slots as HS
 from utils import procfs
 
 GATE_SLOTS = 1
@@ -84,6 +91,10 @@ def slot_path(i: int, d: Optional[Path] = None) -> Path:
 
 class GateLockSelfDeadlock(RuntimeError):
     """Every slot is held by this process's own ancestors — the wait can never end."""
+
+
+class GateLockOrderError(RuntimeError):
+    """The gate would have to be WAITED for while an ancestor holds a heavy slot (lock order: gate first)."""
 
 
 def _stderr(msg: str) -> None:
@@ -129,13 +140,21 @@ def _try(fd: int) -> bool:
 
 
 def _acquire(fds: List[int], paths: List[Path], *, report_every_s: float, poll_s: float,
-             timeout_s: Optional[float], log: Callable[[str], None]) -> Tuple[int, float]:
-    """Take one slot; returns ``(slot index, seconds waited)``."""
+             timeout_s: Optional[float], log: Callable[[str], None],
+             may_wait: bool = True) -> Tuple[int, float]:
+    """Take one slot; returns ``(slot index, seconds waited)``. ``may_wait=False`` raises
+    :class:`GateLockOrderError` instead of waiting."""
     t0 = time.monotonic()
     for i, fd in enumerate(fds):
         if _try(fd):
             return i, 0.0
     n = len(fds)
+    if not may_wait:
+        raise GateLockOrderError(
+            f"gate lock REFUSED (lock order): every gate slot is held and this process's ancestor holds a "
+            f"HEAVY slot ({HS.HELD_ENV}={os.environ.get(HS.HELD_ENV)}) — waiting here could deadlock. Put "
+            "gate_lock.sh OUTSIDE mem_cap.sh (`gate_lock.sh mem_cap.sh 24 …`, the ship gate's order). "
+            + status(paths[0].parent, compact=True))
     home = os.getpid() % n
     got = threading.Event()
     mu = threading.Lock()
@@ -221,7 +240,7 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
     what = f" ({what})" if what else ""
     try:
         slot, waited = _acquire(fds, paths, report_every_s=report_every_s, poll_s=poll_s,
-                                timeout_s=timeout_s, log=log)
+                                timeout_s=timeout_s, log=log, may_wait=HS.verified_holder() is None)
         t_acq = time.time()
         log(f"[gate_lock] acquired slot {slot} of {n}{what} at "
             f"{time.strftime('%H:%M:%S', time.localtime(t_acq))} after waiting {waited:.1f} s")
@@ -233,7 +252,8 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
         before = os.environ.get(HELD_ENV)
         os.environ[HELD_ENV] = f"{os.getpid()}:{slot}"
         try:
-            yield slot
+            with HS.heavy_slot(cmd, log=log):       # rule 5b: the gate holds one heavy slot itself
+                yield slot
         finally:
             if before is None:
                 os.environ.pop(HELD_ENV, None)
@@ -349,6 +369,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except GateLockSelfDeadlock as e:
         print(str(e), file=sys.stderr)
         return 3
+    except GateLockOrderError as e:
+        print(str(e), file=sys.stderr)
+        return 5
     except TimeoutError as e:
         print(str(e), file=sys.stderr)
         return 4

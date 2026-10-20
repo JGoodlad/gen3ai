@@ -30,6 +30,7 @@ from pathlib import Path
 
 import pytest
 
+from utils import heavy_slots as HS
 from utils import mem_cap as M
 from utils.contention import scale_timeout
 from utils.paths import repo_path, src_root
@@ -67,9 +68,11 @@ if _SKIP:
 
 
 @pytest.fixture
-def env():
+def env(tmp_path):
     sl = f"gen3ai-heavytest{os.getpid()}.slice"
-    e = {**M._env(), M.SLICE_ENV: sl, M.SLICE_GB_ENV: "4",
+    # never the REAL heavy slots (taken while a run is live), and never a wait on them here
+    e = {**{k: v for k, v in M._env().items() if k != HS.HELD_ENV}, M.SLICE_ENV: sl, M.SLICE_GB_ENV: "4",
+         HS.DIR_ENV: str(tmp_path / "heavy_slots"), HS.SLOTS_ENV: "16",
          "PYTHONPATH": os.pathsep.join([str(src_root()), os.environ.get("PYTHONPATH", "")])}
     yield e
     subprocess.run(["systemctl", "--user", "revert", sl], env=e, capture_output=True)   # the runtime drop-ins

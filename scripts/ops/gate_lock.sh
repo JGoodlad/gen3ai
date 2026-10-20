@@ -28,7 +28,9 @@ acquisition time are logged to stderr; while waiting, the holders are printed ev
 --timeout-s bounds the WAIT; a wall timeout goes INSIDE: gate_lock.sh timeout 3000 <cmd> (never
 timeout 3000 gate_lock.sh <cmd>, which counts queue time).
 Exit status: the command's own (128+N if signal N killed it); 2 = usage; 3 = self-deadlock;
-4 = --timeout-s expired.
+4 = --timeout-s expired; 5 = lock order (an ancestor holds a heavy slot and the gate is busy: put
+gate_lock.sh OUTSIDE mem_cap.sh). While a training run is live the gate also holds one HEAVY slot
+(utils/heavy_slots.py; scripts/ops/mem_cap.sh --status).
 USAGE_EOF
 }
 

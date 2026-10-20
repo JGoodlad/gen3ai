@@ -49,6 +49,12 @@ command — a cap that is not in force is a REFUSAL (``EXIT_NOCAP``), never an u
 place the peak of a well-behaved job can be read; an OOM-killed scope stays loaded as ``failed`` with
 ``Result=oom-kill`` and ``MemoryPeak``, which this wrapper reads and then ``reset-failed``s.
 
+HEAVY-JOB SLOTS (2026-10-19, ``utils.heavy_slots``): while a training run is live (or with ``--slot``)
+the job first takes one of the box's 2 heavy slots — rule 5b's "<= 2 heavy jobs" — waiting with a
+visible line (``--no-wait`` refuses at once, exit 87). A job the orchestrator marks BLOCKING
+(``$GEN3AI_BLOCKING=<reason>`` or ``--blocking <reason>``) bypasses them; a job inside a holder (the
+routine gate holds one) takes none. ``--status`` lists holders, the queue and the bypassers.
+
 EXIT STATUS: the command's own (128+N if signal N killed it); ``EXIT_OOM`` (86) when the job was
 OOM-killed at its cap or the slice's; ``EXIT_NOCAP`` (85) when the cap could not be put in force (no
 user manager, no memory controller, systemd-run refused); 2 = usage. The ``[mem_cap]`` lines on
@@ -69,6 +75,8 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from typing import Callable, List, Optional, Sequence
+
+from utils import heavy_slots as HS
 
 SLICE_ENV = "GEN3AI_HEAVY_SLICE"
 SLICE_GB_ENV = "GEN3AI_HEAVY_SLICE_GB"
@@ -315,15 +323,24 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(__doc__)
         return 0 if args else 2
     if args[0] == "--status":
-        return status()
+        status()
+        print(HS.format_human(HS.collect()))
+        return 0
     name: Optional[str] = None
     sgb: Optional[float] = None
+    force_slot, wait = False, True
     while args and args[0].startswith("--") and args[0] != "--":
         flag = args.pop(0)
         if flag == "--name" and args:
             name = args.pop(0)
         elif flag == "--slice-gb" and args:
             sgb = float(args.pop(0))
+        elif flag == "--slot":
+            force_slot = True
+        elif flag == "--no-wait":
+            wait = False
+        elif flag == "--blocking" and args:
+            os.environ[HS.BLOCKING_ENV] = args.pop(0)      # the child inherits the mark
         else:
             print(f"[mem_cap] unknown option {flag!r}", file=sys.stderr)
             return 2
@@ -341,7 +358,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not args:
         print("[mem_cap] REFUSING: no command to run", file=sys.stderr)
         return 2
-    return run_capped(args, gb, name=name, slice_gb_=sgb).rc
+    try:
+        with HS.heavy_slot(args, force=force_slot, wait=wait):
+            return run_capped(args, gb, name=name, slice_gb_=sgb).rc
+    except (HS.SlotsFull, TimeoutError) as e:
+        print(str(e), file=sys.stderr)
+        return HS.EXIT_SLOTS_FULL
 
 
 if __name__ == "__main__":
