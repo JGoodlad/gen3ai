@@ -187,6 +187,10 @@ kit pool-check --arm "$ARM" --call "$R" --stage "$STAGE" --write > "$J/$RUN.pool
 log "batch records: $(tr '\n' ' ' < "$J/$RUN.pin_write.txt") $(cat "$J/$RUN.pool_write.txt")"
 
 # ---- launch -----------------------------------------------------------------------------------------------------
+# a re-launch of the same run name (after a failed GO) must not share the old launcher log: the watcher would read
+# the old attempt's "cannot restart" lines as this run's failure and exit at once (toy_x47 3602, 2026-10-20). Rotate
+# it (renamed, never deleted) so this GO's log, the pool-seed check and the watcher start on a fresh file.
+if [ -e "$J/$RUN.launcher.log" ]; then PREV="$J/$RUN.launcher.log.$(date +%Y%m%dT%H%M%S).prev"; mv "$J/$RUN.launcher.log" "$PREV" && log "rotated the previous launcher log to $(basename "$PREV")" || hold "could not rotate $J/$RUN.launcher.log"; fi
 log "START $RUN: ${A[*]} (pin ${PIN:0:8}, restart 24 h)"
 ( cd "$REPO" && export PYTHONPATH="$REPO/src"; exec taskset -c 0-4,8-12 "$PY" -m main.launcher \
   --restart-interval-hours 24 --pin-commit "$PIN" "${A[@]}" ) >> "$J/$RUN.launcher.log" 2>&1 < /dev/null &

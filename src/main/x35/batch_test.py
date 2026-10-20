@@ -575,3 +575,23 @@ def test_launch_x35_pre_check_1b_refuses_an_empty_cuda_visible_devices():
         r = subprocess.run(["env", *env_args, "bash", "-c", probe], capture_output=True, text=True)
         assert r.stdout.startswith(want), (env_args, r.stdout, r.stderr)
         assert (r.returncode == 7) == (want == "HOLD")
+
+
+def test_launch_x35_rotates_an_existing_launcher_log_at_go(tmp_path):
+    """A re-launch of the same run name (after a failed GO) must not share the old launcher log: the watcher read the
+    old attempt's "cannot restart" lines as the new run's failure and exited at once (toy_x47 3602, 2026-10-20). At
+    GO, before the launcher starts, an existing <run>.launcher.log is RENAMED to <log>.<ts>.prev (never deleted)."""
+    from utils.paths import repo_path
+
+    sh = repo_path("designs/research_state/measurements/x35_breakers_stage_2026-10-17/launch_x35.sh").read_text()
+    line = next(l for l in sh.splitlines() if l.startswith('if [ -e "$J/$RUN.launcher.log" ]; then PREV='))
+    assert sh.index("batch records:") < sh.index(line) < sh.index('log "START $RUN') < sh.index(">> \"$J/$RUN.launcher.log\"")
+    probe = ('J="$1"; RUN=r; log() { echo "LOG: $1"; }; hold() { echo "HOLD: $1"; exit 7; }\n' + line + '\necho DONE\n')
+    log = tmp_path / "r.launcher.log"
+    log.write_text("old attempt: cannot restart\n")
+    r = subprocess.run(["bash", "-c", probe, "probe", str(tmp_path)], capture_output=True, text=True)
+    assert r.returncode == 0 and "rotated the previous launcher log" in r.stdout, (r.stdout, r.stderr)
+    prev = [p for p in tmp_path.iterdir() if p.name.startswith("r.launcher.log.") and p.name.endswith(".prev")]
+    assert not log.exists() and len(prev) == 1 and prev[0].read_text() == "old attempt: cannot restart\n"
+    r = subprocess.run(["bash", "-c", probe, "probe", str(tmp_path)], capture_output=True, text=True)    # no log: no-op
+    assert r.returncode == 0 and "rotated" not in r.stdout and not log.exists()
