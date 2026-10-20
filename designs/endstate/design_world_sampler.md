@@ -3,7 +3,13 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this doc
 updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-19, latest): STAGE 1 REGISTERED and RUNNING (§6.2).** The sampler ablation with playouts is
+**Status (2026-10-20, latest): STAGE 1c REGISTERED (§6.3).** On stage 1's 287 states, 64 honest F worlds and 64
+C_ladder worlds per state are weighted by the damage-roll weight × the opponent-choice likelihood (L3) and resampled to
+8 (`opp_likelihood.resample`, built OFF by default). Phase A asks whether the weighted worlds hold more of the truth's
+binding hidden facts than today's 8 (zero playouts); only if one arm is clearly nearer does phase B play them with L1's
+anchored acting rule. No number yet.
+
+**Status (2026-10-19): STAGE 1 REGISTERED and RUNNING (§6.2).** The sampler ablation with playouts is
 pre-registered (`measurements/world_sampler_stage1_2026-10-19/PREREGISTRATION.md`) on the 287 maturity LEAN states at
 X26 225M: B, C_ladder, C_forum_strict, C_pool and NS against F_legal (F at HEAD, F2's rule on), plus F_off (the legality
 rule alone) and F_rolls (F1 tier A, read uniform and likelihood-weighted) as secondaries. The corpus backoff's α is
@@ -491,7 +497,7 @@ stated.
     never-seen species are not detected.
 
   **Consequence:** stage 1c pairs this likelihood with a proposal set that can hold near-true worlds (64 F proposals
-  resampled to 8, or (c)'s real teams as proposals), never with today's 8 alone.
+  resampled to 8, or (c)'s real teams as proposals), never with today's 8 alone. **REGISTERED 2026-10-20 (§6.3).**
 
 ### (b) Smogon teammates, jointly (naive Bayes over the teammate table): rank 3
 
@@ -872,12 +878,35 @@ teams are public.
 | the α fit on the ladder corpus | — | — | minutes |
 | **stage 1a total** | | | **≈ 12–24 CPU-h**, one slot (rule 5b; the maturity queue holds the other two) |
 | stage 1b (E2, 1,108 states, end2 + prod pins) | | | ≈ 40–75 CPU-h, conditional |
-| stage 1c: (f) re-weighting over 64 proposed worlds | + the opponent-side replay and forwards (BUILT: `opp_likelihood`; L3 measured ≈ 1 s per 9 worlds once built) | resample to 8, ≈ 13 | the likelihood is built; ≈ 0.5 agent-day of driver + ≈ 10 CPU-h; L3 says WORTH BUILDING with a proposal set that can hold near-true worlds |
+| stage 1c: (f) re-weighting over 64 proposed worlds | + the opponent-side replay and forwards (BUILT: `opp_likelihood`; L3 measured ≈ 1 s per 9 worlds once built) | resample to 8, ≈ 13 | REGISTERED 2026-10-20 (§6.3): 64 F + 64 C_ladder proposals per state, the resample BUILT (`opp_likelihood.resample`) |
 
 **Build needed:** one measurement driver beside `pool_worlds.py` (`load_pool` swapped for a corpus, a backoff to B,
 the strict filter), and B's weight function: measurement-folder code. The validator redraw is BUILT into the builder
 itself (F2, 2026-10-19, `world_legality`): every arm through `WorldSampler` gets it, and a corpus arm's worlds pass
 `world_guard.check_legal`.
+
+### 6.3 Stage 1c: more or team-level proposals, resampled by the opponent's own choices (REGISTERED 2026-10-20; RUNNING)
+
+**Registered** in `measurements/search_1c_2026-10-20/PREREGISTRATION.md` (the read script and the facts meter by
+sha256), as L3's registered consequence. On stage 1's 287 states at X26 225M, under `dice="rolls"` with the legality
+rule on, each state gets two PROPOSAL SETS on one screen cache: **64 honest F worlds** and **64 C_ladder worlds**
+(stage 1's corpus sampler, α 89.1, unchanged). Each proposal is weighted by its damage-roll weight × the
+opponent-choice likelihood (L3's, X26 225M as the opponent), and 8 are drawn by systematic resampling
+(`opp_likelihood.resample`, BUILT with this unit, OFF by default; `SearchConfig(proposals=N)` turns it on in a search).
+- **Arms:** F8 (the first 8 F worlds, uniform: the baseline of record); **F64L, C64L, M128L** (the 64 F, the 64 C, and
+  their union, weighted: PRIMARY); F64d, C64d (dice weight only) and C8 (the corpus alone) as controls.
+- **Phase A (zero playouts):** the primary is **ΔH**, the change in the posterior share of the truth's BINDING hidden
+  facts the worlds hold (each never-seen species and each seen mon's unrevealed move), against F8. Beside it: the moves'
+  and species' hits and exactness, the exact-world mass q_SM, items, spreads, the likelihood's own selection
+  (F64L − F64d), the effective sample size and the mass on the nearest proposal.
+  - NEARER iff ΔH's lower bound > +0.0005; MATERIAL iff > 0.0505; DOSE iff q_SM's lower bound > 0.1005.
+- **The bar:** any primary arm NEARER ⇒ phase B plays F8, every NEARER arm (and C8 for a corpus arm), with the pilot's
+  driver at X26's pin + the roll control, and scores them with L1's fitted piKL anchor (λ 0.1 / 0.015) on the true
+  world's referee. SEARCH-PAYS iff IMP's lower bound > +0.0005 at both LEAF-K8 and TRUNC-4-K8.
+- **Stop:** phase A no state after launch + 30 h (an interim descriptive read at ≈ 12 h); phase B no state after its
+  launch + 24 h. One heavy slot per ≤ 45-min chunk.
+
+No number yet (§7 Q15 of `search_ledger.md`).
 
 ---
 
@@ -996,3 +1025,4 @@ itself (F2, 2026-10-19, `world_legality`): every arm through `WorldSampler` gets
 | 2026-10-19 | **STAGE 1 REGISTERED and LAUNCHED** (orchestrator brief; `measurements/world_sampler_stage1_2026-10-19/`) | §6.2's arms on the 287 maturity LEAN states at X26 225M. **F_legal** (F at HEAD) is the baseline of record. The brief's confound and factor arms are SECONDARY: **F_off** (the legality rule off) and **F_rolls** (tier A, uniform and likelihood-weighted through the new `SearchConfig(weights="likelihood")`). α = 89.1 is fitted on the ladder corpus alone. Every arm but C_pool is F's builder with its departures swapped in for one sample, on one shared screen cache: CRN, with a backoff world exactly B's. A seen mon's Hidden Power is the screen's. C_pool uses the pin's pool packing (F9). The playouts run at X26's pin + the cherry-picked roll control, and its identity tooth passed 12 / 12. One heavy job runs at a time; the read is made once, on the done prefix at the stop | stage 0's α = 1 backoff (over-confident, §6.1 point 4); playing at HEAD (the network's obs and τ solve changed since the pin, so arms would not be comparable with the banked F / FN / O); dropping the rolls factor (the default switch is stage 1's call); a mid-run interim verdict (two looks); the forum per-species sets strict-filtered for NS (stage 0's NS configuration kept, flagged optimistic) | `PREREGISTRATION.md`, `alpha_fit.json`; `play_s1.py`'s identity mode (`identity.json` in the archive); `search_weights_test.py` |
 | 2026-10-20 | **Candidate (f)'s likelihood BUILT, default OFF** (orchestrator brief, L3 of the literature review; `main.value_search.opp_likelihood`) | A reusable function, not a sampler mode: the opponent's own rows from each world's prefix replay, scored by any forward; unobserved (slot-rewritten) and pending (root-round) choices excluded and counted; throwing guards on the searched side's rows and the tokens; tests that fail on revert of the seat and of the pending rule | scoring the slot-rewritten choices with the world's rendered token (the slot is the truth's: a leak); scoring the searched side's rows (the opponent model must see what the opponent saw); a `SearchConfig` weighting mode now (stage 1c's job, after L3's read) | `measurements/search_l3_2026-10-20/PREREGISTRATION.md` |
 | 2026-10-20 | **L3 READ: WORKS** (`measurements/search_l3_2026-10-20/`, pre-registered `4d149799`) | §0, §3.2 and §3.5 rows, §4 (f) (the result and its consequence), §6.2's stage-1c cost row. The opponent's choices JUDGE worlds well (AUC 0.692; 0.796 snapshots, 0.588 bots; not familiarity, control 0.481; the truth's weight 0.249 of 9), but re-weighting today's 8 honest worlds moves the moves' match only +0.005, so stage 1c needs a bigger or team-level proposal set | (f) ranked first now (its value depends on the proposals: it multiplies (c), it does not replace it); stage 1c as a re-weighting of today's 8 worlds; quoting the snapshot stratum as a ladder number | L3 README §2–§4, `result_l3.json` |
+| 2026-10-20 | **STAGE 1c REGISTERED; the importance resample BUILT, default OFF** (orchestrator brief, L3's registered consequence; `measurements/search_1c_2026-10-20/`; `opp_likelihood.resample`, `Worlds.select`, `SearchConfig.proposals`) | §6.3: 64 F + 64 C_ladder proposals per state under `dice="rolls"`, weighted by dice × the opponent-choice likelihood, systematic resampling to 8 (each kept world with its own rolls; the weights spent, so a search over them is uniform); phase A's zero-playout nearness read (ΔH primary, NEARER / MATERIAL / DOSE) gates phase B's playouts with L1's fitted piKL anchor | re-weighting today's 8 (L3: nothing near the truth); top-8 by weight (a mode, not a posterior sample); multinomial resampling (more variance than systematic); a playout of every arm regardless of phase A (the brief's registered bar); the corpus arm under `seed` dice (the brief: `rolls` everywhere); a properly weighted mixture for M128L (the components' consistent mass is not estimated: declared) | `measurements/search_1c_2026-10-20/PREREGISTRATION.md`; `opp_likelihood_test.py`, `worlds_test.py`, `search_weights_test.py`, `world_rolls_integration_test.py` |

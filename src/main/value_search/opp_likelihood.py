@@ -30,21 +30,38 @@ THE GUARDS (a defect raises, never an exclusion): every world's replay must repr
 its root decision byte for byte (the gate the world passed; a world replayed without its damage rolls fails it), the
 opponent's tracker choice at every one of its decisions must equal the log's token, and a scored token must be one of
 the decision's legal tokens. Measurement and verdict: ``designs/research_state/measurements/search_l3_2026-10-20/``.
+
+STAGE 1c, THE IMPORTANCE RESAMPLE (``design_world_sampler.md`` §4 (f), §6.3; OFF by default: ``SearchConfig.proposals``
+or a measurement driver asks for it). The sampler's worlds are draws from its prior restricted to the worlds consistent
+with the searched side's log, so the posterior weight of proposal j is
+
+    log W_j = log_w_j (the damage-roll likelihood, ``Worlds.log_w``; 0 under ``dice="seed"``) + log L_j (above)
+
+self-normalised over the proposals (``posterior_log_weights``). ``resample`` keeps ``k`` of them by SYSTEMATIC
+resampling (one uniform per ``key``, deterministic; a heavy proposal is kept more than once, a light one may not be),
+each kept world carrying its own log, rolls and facts (``Worlds.select``). The weights are SPENT by the resample: the
+kept worlds are equally weighted (their ``log_w`` is reset to 0, so a search's ``weights="likelihood"`` over them is
+uniform and never counts the dice twice), and ``Worlds.resample`` records the proposals' count, each kept world's
+proposal index, the posterior log-weights and their effective sample size. Measurement:
+``designs/research_state/measurements/search_1c_2026-10-20/``.
 """
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass, field
 from typing import Callable, List, Optional, Sequence, Tuple
 
 import numpy as np
 
 from main.value_search.playout import ACT, dedup_forward
-from main.value_search.worlds import Root, WorldError, log_commands, render, reveals
+from main.value_search.worlds import Root, WorldError, Worlds, log_commands, render, reveals
 
 #: ``forward(rows [k, OBS] f32, masks [k, 11] u8) -> [k, ≥ 11]``: the 11 policy logits first (``playout.Forward``)
 Forward = Callable[[np.ndarray, np.ndarray], np.ndarray]
 
 STATUSES = ("scored", "unobserved", "pending")
+#: the systematic resample's one uniform per key (module docstring, STAGE 1c)
+RESAMPLE_SALT = "opp_likelihood_resample_v1:"
 
 
 class OppLikelihoodError(RuntimeError):
@@ -209,3 +226,84 @@ def world_logliks(root: Root, logs: Sequence[dict], forward: Forward, steps: Opt
                                   n_informative=sum(1 for n in n_leg if n >= 2), n_unobserved=n_un, n_pending=n_pe))
         o += k
     return res_
+
+
+# ------------------------------------------------------------------------------------------------
+# STAGE 1c: the importance resample (module docstring)
+# ------------------------------------------------------------------------------------------------
+
+def posterior_log_weights(n: int, dice_log_w: Optional[Sequence[float]] = None,
+                          ll: Optional[Sequence[float]] = None) -> np.ndarray:
+    """log W_j = the damage-roll log-weight (when given: ``Worlds.log_w``; an empty list is the ``seed`` dice' 0)
+    + the opponent-choice log-likelihood (when given), for ``n`` proposals. Unnormalised. A non-finite term, or a
+    term of the wrong length, is a defect and raises."""
+    out = np.zeros(n, dtype=np.float64)
+    for name, x in (("dice", dice_log_w), ("opp", ll)):
+        if x is None or (name == "dice" and len(x) == 0):
+            continue
+        v = np.asarray(x, dtype=np.float64)
+        if v.shape != (n,):
+            raise OppLikelihoodError(f"posterior_log_weights: {len(v)} {name} terms for {n} proposals")
+        if not np.all(np.isfinite(v)):
+            raise OppLikelihoodError(f"posterior_log_weights: a non-finite {name} term {v.tolist()}")
+        out = out + v
+    return out
+
+
+def normalise(log_w: Sequence[float]) -> np.ndarray:
+    """The self-normalised weights of unnormalised log-weights."""
+    v = np.asarray(log_w, dtype=np.float64)
+    e = np.exp(v - v.max())
+    return e / e.sum()
+
+
+def ess(w: Sequence[float]) -> float:
+    """The effective sample size (Σ w)² / Σ w² of normalised or unnormalised weights (n for uniform, 1 for a point)."""
+    v = np.asarray(w, dtype=np.float64)
+    return float(v.sum() ** 2 / np.sum(v ** 2))
+
+
+def resample_uniform(key: str) -> float:
+    """The systematic resample's one uniform in [0, 1) for ``key`` (deterministic)."""
+    return int(hashlib.sha256((RESAMPLE_SALT + key).encode()).hexdigest()[:13], 16) / float(16 ** 13)
+
+
+def systematic(w: Sequence[float], k: int, u: float) -> List[int]:
+    """SYSTEMATIC resampling: the ``k`` indices at the positions (u + i) / k, i = 0..k-1, of the weights' cumulative
+    sum (``w`` normalised here). Proposal j is kept floor(k·w_j) or ceil(k·w_j) times; a zero weight never."""
+    if k <= 0:
+        raise ValueError(f"systematic: k = {k}")
+    if not 0.0 <= u < 1.0:
+        raise ValueError(f"systematic: u = {u} outside [0, 1)")
+    v = np.asarray(w, dtype=np.float64)
+    if v.ndim != 1 or len(v) == 0 or not np.all(np.isfinite(v)) or np.any(v < 0) or v.sum() <= 0:
+        raise ValueError(f"systematic: weights {v.tolist()}")
+    c = np.cumsum(v / v.sum())
+    pos = (u + np.arange(k)) / k
+    idx = np.searchsorted(c, pos, side="right")
+    last = int(np.flatnonzero(v > 0)[-1])                  # a rounding shortfall of the cumsum lands on a live proposal
+    return [min(int(i), last) for i in idx]
+
+
+def resample(worlds: Worlds, k: int, key: str, ll: Optional[Sequence[float]] = None, dice: bool = True) -> Worlds:
+    """``k`` of ``worlds``' proposals by systematic resampling on the posterior weights (the damage-roll weight when
+    ``dice``, times the opponent-choice likelihood ``ll`` when given), as an equally weighted :class:`Worlds`
+    (module docstring, STAGE 1c). Pure: the likelihoods are the caller's (``resample_by_opponent`` computes them)."""
+    n = len(worlds.logs)
+    lw = posterior_log_weights(n, list(worlds.log_w) if dice else None, ll)
+    w = normalise(lw)
+    idx = systematic(w, k, resample_uniform(key))
+    out = worlds.select(idx)
+    if out.log_w:
+        out.log_w = [0.0] * k                              # the weights are spent by the resample
+    out.resample = {"n": n, "k": k, "src": idx, "log_post": [float(x) for x in lw], "ess": ess(w),
+                    "dice": bool(dice and len(worlds.log_w) > 0), "opp": ll is not None}
+    return out
+
+
+def resample_by_opponent(root: Root, worlds: Worlds, forward: Forward, k: int, key: str, dice: bool = True,
+                         steps: Optional[Sequence[OppStep]] = None) -> Tuple[Worlds, List[OppLikelihood]]:
+    """:func:`resample` with each proposal's opponent-choice likelihood computed here (:func:`world_logliks`, the
+    proposals' own logs, their rolls included). Returns the kept worlds and every proposal's likelihood."""
+    res = world_logliks(root, worlds.logs, forward, steps, label=f"{key}#resample")
+    return resample(worlds, k, key, [r.ll for r in res], dice=dice), res

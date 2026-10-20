@@ -57,10 +57,12 @@ returned world (``world_guard.check_worlds``). Worlds built before this are not 
 """
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 from dataclasses import dataclass, field
-from typing import Dict, FrozenSet, List, Optional, Set, Tuple
+from dataclasses import replace as dc_replace
+from typing import Dict, FrozenSet, List, Optional, Sequence, Set, Tuple
 
 import numpy as np
 
@@ -352,6 +354,32 @@ class Worlds:
     dice: str = "seed"
     log_w: List[float] = field(default_factory=list)
     rolls: List[List[List[int]]] = field(default_factory=list)
+    #: stage 1c (``opp_likelihood.resample``, ``design_world_sampler.md`` §4 (f)): when these worlds are an importance
+    #: RESAMPLE of a larger proposal set, its record (the proposals' count, each kept world's proposal index, the
+    #: posterior log-weights it was drawn by, their effective sample size); empty for a plain draw
+    resample: dict = field(default_factory=dict)
+
+    def select(self, idx: Sequence[int]) -> "Worlds":
+        """The worlds at ``idx``, in that order (a repeated index is a duplicate world: an importance resample),
+        each carrying ITS OWN log (the log's ``"rolls"`` included), team, tries, stats, facts and, under
+        ``dice="rolls"``, its log-weight and the rolls it took: a world rebuilt from its team alone loses its rolls
+        (``design_world_sampler.md`` §7 F1), so they travel with it. The per-decision records (leak, revealed, fails,
+        spec, screens, samplers, dice) are shared and kept."""
+        ix = [int(i) for i in idx]
+        n = len(self.logs)
+        if any(i < 0 or i >= n for i in ix):
+            raise IndexError(f"Worlds.select: an index outside the {n} worlds: {ix}")
+
+        def pick(xs: list) -> list:
+            if not xs:
+                return []
+            if len(xs) != n:
+                raise ValueError(f"Worlds.select: a per-world record holds {len(xs)} entries for {n} worlds")
+            return [copy.deepcopy(xs[i]) for i in ix]
+
+        return dc_replace(self, logs=pick(self.logs), teams=pick(self.teams), tries=pick(self.tries),
+                          stats=pick(self.stats), facts=pick(self.facts), log_w=pick(self.log_w),
+                          rolls=pick(self.rolls), resample=copy.deepcopy(self.resample))
 
 
 def key_rng(key: str, j: int, attempt: int = 0):

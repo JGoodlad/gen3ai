@@ -4125,82 +4125,82 @@
   },
   "src/main/info_audit/info_audit_integration_test.py::test_every_check_passes_on_the_real_builder": {
    "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 12.92,
-   "contention": 2.01,
+   "commit": "741c3d41b12af39d284f67ba61b0c7c11ca797f6",
+   "at": "2026-10-20T11:11:05Z",
+   "duration_s": 11.78,
+   "contention": 2.18,
    "detail": ""
   },
   "src/main/info_audit/info_audit_integration_test.py::test_teeth_a_choice_log_core_events_accepts_but_the_playout_tool_refuses_is_rejected": {
    "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 0.15,
-   "contention": 1.93,
+   "commit": "741c3d41b12af39d284f67ba61b0c7c11ca797f6",
+   "at": "2026-10-20T11:11:05Z",
+   "duration_s": 0.22,
+   "contention": 2.06,
    "detail": ""
   },
   "src/main/info_audit/info_audit_integration_test.py::test_teeth_a_world_that_copies_the_true_moves_is_caught": {
    "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 9.67,
-   "contention": 1.9,
+   "commit": "741c3d41b12af39d284f67ba61b0c7c11ca797f6",
+   "at": "2026-10-20T11:11:05Z",
+   "duration_s": 9.84,
+   "contention": 2.16,
    "detail": ""
   },
   "src/main/info_audit/info_audit_integration_test.py::test_teeth_consistency_catches_a_fact_record_at_another_mons_slot": {
    "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 1.75,
-   "contention": 1.86,
+   "commit": "741c3d41b12af39d284f67ba61b0c7c11ca797f6",
+   "at": "2026-10-20T11:11:05Z",
+   "duration_s": 2.2,
+   "contention": 2.14,
    "detail": ""
   },
   "src/main/info_audit/info_audit_integration_test.py::test_teeth_log_consistency_catches_an_over_reveal": {
    "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 0.05,
-   "contention": 2.11,
+   "commit": "741c3d41b12af39d284f67ba61b0c7c11ca797f6",
+   "at": "2026-10-20T11:11:05Z",
+   "duration_s": 0.07,
+   "contention": 2.72,
    "detail": ""
   },
   "src/main/info_audit/info_audit_integration_test.py::test_teeth_regate_legality_and_genders_catch_a_tampered_world": {
    "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 0.93,
-   "contention": 1.85,
+   "commit": "741c3d41b12af39d284f67ba61b0c7c11ca797f6",
+   "at": "2026-10-20T11:11:05Z",
+   "duration_s": 1.03,
+   "contention": 2.31,
    "detail": ""
   },
   "src/main/info_audit/info_audit_integration_test.py::test_teeth_seed_reuse_through_the_gender_dice_is_closed_by_the_pad_and_caught_without_it": {
    "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 3.71,
-   "contention": 1.89,
+   "commit": "741c3d41b12af39d284f67ba61b0c7c11ca797f6",
+   "at": "2026-10-20T11:11:05Z",
+   "duration_s": 3.84,
+   "contention": 2.19,
    "detail": ""
   },
   "src/main/info_audit/info_audit_integration_test.py::test_the_pilot_keeps_seen_facts_true_and_the_honest_builder_draws_them": {
    "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
+   "commit": "741c3d41b12af39d284f67ba61b0c7c11ca797f6",
+   "at": "2026-10-20T11:11:05Z",
    "duration_s": 0.0,
-   "contention": 2.45,
+   "contention": 1.92,
    "detail": ""
   },
   "src/main/info_audit/info_audit_integration_test.py::test_the_seed_reuse_residual_is_measured_by_counterfactual_flips_against_a_passing_control": {
    "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 1.21,
-   "contention": 1.73,
+   "commit": "741c3d41b12af39d284f67ba61b0c7c11ca797f6",
+   "at": "2026-10-20T11:11:05Z",
+   "duration_s": 1.26,
+   "contention": 1.89,
    "detail": ""
   },
   "src/main/info_audit/info_audit_slow_test.py::test_the_suite_passes_on_twelve_decisions_and_every_spec": {
    "status": "pass",
-   "commit": "8702a56f416ae8e859dcfbb9fd0e0f86d2a3a5c3",
-   "at": "2026-10-15T09:45:07Z",
-   "duration_s": 246.87,
-   "contention": 1.52,
+   "commit": "741c3d41b12af39d284f67ba61b0c7c11ca797f6",
+   "at": "2026-10-20T11:11:05Z",
+   "duration_s": 437.73,
+   "contention": 2.12,
    "detail": ""
   },
   "src/main/live/live_integration_test.py::test_gate_a_two_roads_one_row_in_miniature": {
@@ -5176,18 +5176,26 @@
   },
   "src/main/value_search/name_variant_integration_test.py::test_no_world_of_the_variant_team_holds_a_move_twice_and_the_revealed_one_sits_in_its_true_slot": {
    "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 73.23,
-   "contention": 1.91,
+   "commit": "741c3d41b12af39d284f67ba61b0c7c11ca797f6",
+   "at": "2026-10-20T11:11:05Z",
+   "duration_s": 67.5,
+   "contention": 2.35,
    "detail": ""
   },
   "src/main/value_search/search_integration_test.py::test_honest_search_runs_on_sampled_worlds": {
    "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 38.38,
-   "contention": 1.99,
+   "commit": "741c3d41b12af39d284f67ba61b0c7c11ca797f6",
+   "at": "2026-10-20T11:11:05Z",
+   "duration_s": 38.5,
+   "contention": 2.36,
+   "detail": ""
+  },
+  "src/main/value_search/world_legality_integration_test.py::test_the_builder_applies_the_rule_to_seen_and_never_seen_draws_and_raises_on_one_rejecting_the_truth": {
+   "status": "pass",
+   "commit": "741c3d41b12af39d284f67ba61b0c7c11ca797f6",
+   "at": "2026-10-20T11:11:05Z",
+   "duration_s": 4.76,
+   "contention": 2.25,
    "detail": ""
   },
   "src/node_free_search_integration_test.py::test_search_replay_and_the_prober_run_with_node_impossible": {
@@ -5455,5 +5463,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-20T10:16:08Z"
+ "last_written": "2026-10-20T11:11:05Z"
 }

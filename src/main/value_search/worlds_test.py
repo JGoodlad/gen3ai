@@ -1,6 +1,7 @@
 """The world sampler's pure parts: Hidden Power IVs, the packed-set fields, the move draw, the gender placement, the
 extra reveal lines and the choice attribution."""
 import numpy as np
+import pytest
 
 from main.value_search import worlds as W
 
@@ -258,3 +259,22 @@ def test_the_true_team_is_read_through_packed_and_an_unresolvable_id_throws_befo
     log = {"teams": ["Skarmory||leftovers|keeneye|spikes|Impish|||||||", bad], "cmds": []}
     with pytest.raises(PackedError, match="item 'cb'"):
         W.prepare_root(log, 0, "p1", "k")
+
+
+def test_select_carries_each_worlds_own_log_rolls_and_records_and_copies_them():
+    n = 5
+    logs = [{"wid": j, "rolls": [[j, 3]]} for j in range(n)]
+    w = W.Worlds(logs=logs, teams=[f"t{j}" for j in range(n)], tries=list(range(n)), leak={"x": 1},
+                 revealed={"a": ["b"]}, stats=[{"j": j} for j in range(n)], facts=[[{"j": j}] for j in range(n)],
+                 dice="rolls", log_w=[-float(j) for j in range(n)], rolls=[[[j, 3]] for j in range(n)])
+    s = w.select([4, 1, 1])
+    assert [lg["wid"] for lg in s.logs] == [4, 1, 1] and s.teams == ["t4", "t1", "t1"] and s.tries == [4, 1, 1]
+    assert [lg["rolls"] for lg in s.logs] == [[[4, 3]], [[1, 3]], [[1, 3]]] and s.rolls == [[[4, 3]], [[1, 3]], [[1, 3]]]
+    assert s.log_w == [-4.0, -1.0, -1.0] and [f[0]["j"] for f in s.facts] == [4, 1, 1]
+    assert s.leak == {"x": 1} and s.dice == "rolls" and s.revealed == {"a": ["b"]}
+    s.logs[1]["rolls"].append([9, 9])                     # a copy: the source is untouched, and so is its twin
+    assert w.logs[1]["rolls"] == [[1, 3]] and s.logs[2]["rolls"] == [[1, 3]]
+    with pytest.raises(IndexError):
+        w.select([5])
+    seed = W.Worlds(logs=logs, teams=[f"t{j}" for j in range(n)], tries=[1] * n, leak={}, revealed={})
+    assert seed.select([0]).log_w == [] and seed.select([0]).rolls == []

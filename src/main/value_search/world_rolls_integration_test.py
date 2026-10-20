@@ -170,3 +170,34 @@ def test_a_control_that_excludes_the_truth_raises(case, monkeypatch):
 def test_dice_is_validated():
     with pytest.raises(ValueError, match="dice"):
         W.WorldSampler(dice="fresh")
+
+
+def test_a_resample_keeps_each_worlds_rolls_and_its_kept_worlds_replay_as_gated(case):
+    """STAGE 1c (``opp_likelihood.resample_by_opponent``): a kept world carries the rolls ITS proposal was gated on,
+    so the likelihood's own guarded replay (the searched side's rows equal the truth's) accepts every kept world.
+    FAILS ON REVERT of ``Worlds.select`` carrying the rolls: the shifted world replayed without its table raises."""
+    import numpy as np
+
+    from main.value_search import opp_likelihood as OL
+
+    root, rr = case["root"], case["res"]["rolls"]
+    force = [list(x) for x in rr["force"]]
+    lw = dict(case["log"], teams=[case["team"] if s == root.oi else t for s, t in enumerate(case["log"]["teams"])],
+              cmds=[f"CHOOSE {c0} {tok}" for c0, tok in case["cmds"]] + list(case["log"]["cmds"][case["at"]:]),
+              rolls=force)
+
+    def flat(rows, masks):                      # every world equally likely: the resample keeps 2 of each
+        return np.zeros((len(rows), 12), dtype=np.float32)
+
+    bare = {k: v for k, v in lw.items() if k != "rolls"}
+    with pytest.raises(OL.OppLikelihoodError):  # the precondition: off its rolls the world is another history
+        OL.world_logliks(root, [bare], flat)
+    props = W.Worlds(logs=[OL.truth_log(root), lw], teams=[root.team, case["team"]], tries=[1, 1], leak={},
+                     revealed={}, dice="rolls", log_w=[0.0, float(rr["log_w"])], rolls=[[], force])
+    kept, lls = OL.resample_by_opponent(root, props, flat, 4, case["key"], dice=False)
+    assert sorted(kept.resample["src"]) == [0, 0, 1, 1] and len(lls) == 2
+    for lg, r, j in zip(kept.logs, kept.rolls, kept.resample["src"]):
+        assert lg.get("rolls", []) == r == props.rolls[j]
+    assert kept.log_w == [0.0] * 4
+    again = OL.world_logliks(root, kept.logs, flat)          # the guarded replay of every kept world
+    assert [x.n_scored for x in again] == [lls[0].n_scored] * 4

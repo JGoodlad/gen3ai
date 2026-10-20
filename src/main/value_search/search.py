@@ -46,6 +46,11 @@ class SearchConfig:
     #: sampler's ``Worlds.log_w``: F1 tier A's ``dice="rolls"`` worlds; seed-dice worlds carry none, so uniform). Uniform
     #: allocation only (sequential halving's means are not world-indexed: refused)
     weights: str = "uniform"
+    #: STAGE 1c (``design_world_sampler.md`` §4 (f), §6.3; OFF = None, today): draw ``proposals`` worlds, then keep
+    #: ``n_worlds`` of them by an importance RESAMPLE on each world's damage-roll weight × the likelihood of the
+    #: opponent's own past choices with this engine's network seated as the opponent
+    #: (``opp_likelihood.resample_by_opponent``). The kept worlds are equally weighted (the resample spends the weights)
+    proposals: Optional[int] = None
 
 
 @dataclass
@@ -86,6 +91,9 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
         raise ValueError(f"unknown world weighting {cfg.weights!r}")
     if cfg.weights == "likelihood" and cfg.allocation != "uniform":
         raise ValueError("likelihood world weights need uniform allocation (halving's means are not world-indexed)")
+    if cfg.proposals is not None and (cfg.oracle or cfg.proposals < cfg.n_worlds):
+        raise ValueError(f"proposals={cfg.proposals}: an honest search resamples n_worlds={cfg.n_worlds} of at least "
+                         "as many proposals (never the oracle)")
     c0, w0 = _cpu(), time.monotonic()
     out = engine.forward(root_row[None].astype(np.float32), root_mask[None].astype(np.uint8))[0]
     logits = np.where(root_mask.astype(bool), out[:ACT].astype(np.float64), -np.inf)
@@ -100,7 +108,15 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
         if sampler is None:
             raise ValueError("an honest search needs a world sampler (or cfg.oracle=True)")
         root = engine.root(log, at, side)
-        w = sampler.sample(log, at, side, cfg.n_worlds, key, root_choice_in_log=not bool(root["other_open"]))
+        in_log = not bool(root["other_open"])
+        w = sampler.sample(log, at, side, cfg.n_worlds if cfg.proposals is None else cfg.proposals, key,
+                           root_choice_in_log=in_log)
+        if cfg.proposals is not None:
+            from main.value_search import opp_likelihood as OL
+            from main.value_search import worlds as W
+
+            w, _ = OL.resample_by_opponent(W.prepare_root(log, at, side, key, in_log), w, engine.forward,
+                                           cfg.n_worlds, key)
         logs, tries, leak = w.logs, w.tries, w.leak
         log_w = list(getattr(w, "log_w", None) or [])
     seeds = seeds_for(key, cfg.n_worlds)

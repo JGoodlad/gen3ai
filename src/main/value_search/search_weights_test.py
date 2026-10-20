@@ -71,3 +71,68 @@ def test_likelihood_refuses_halving_and_unknown_modes():
     with pytest.raises(ValueError):
         _search("posterior", [0.0] * 4)
     assert math.isfinite(_search("uniform", [0.0] * 4).value_target)
+
+
+# ------------------------------------------------------------------------------------------------
+# STAGE 1c: SearchConfig.proposals (draw more worlds, keep n_worlds by the opponent-choice resample)
+# ------------------------------------------------------------------------------------------------
+
+class _WorldEngine(_Engine):
+    """Leaf value of action 0 is 1 only in the world whose log is tagged ``wid`` 5; action 1 is 0.6 everywhere."""
+
+    def leaves(self, logs, at, side, root_turn, reqs, depth=None):
+        return [(1.0 if logs[r.world]["wid"] == 5 else 0.0) if r.action == 0 else 0.6 for r in reqs]
+
+
+class _ProposalSampler:
+    def __init__(self):
+        self.asked = []
+
+    def sample(self, log, at, side, J, key, root_choice_in_log=False):
+        from main.value_search.worlds import Worlds
+
+        self.asked.append(J)
+        return Worlds(logs=[{"wid": j} for j in range(J)], teams=[f"t{j}" for j in range(J)], tries=[1] * J, leak={},
+                      revealed={})
+
+
+def _search_1c(monkeypatch, proposals, n_worlds=4):
+    from main.value_search import opp_likelihood as OL
+    from main.value_search import worlds as W
+
+    seen = {}
+
+    def fake_logliks(root, logs, forward, steps=None, label=""):
+        seen["logs"] = [lg["wid"] for lg in logs]
+        return [OL.OppLikelihood(ll=0.0 if lg["wid"] == 5 else -40.0, conf=0.0) for lg in logs]
+
+    monkeypatch.setattr(OL, "world_logliks", fake_logliks)
+    monkeypatch.setattr(W, "prepare_root", lambda *a, **k: "root")
+    mask = np.zeros(ACT, dtype=np.uint8)
+    mask[[0, 1]] = 1
+    cfg = SearchConfig(per_action=n_worlds, n_worlds=n_worlds, rule="argmax", depth=None, proposals=proposals)
+    smp = _ProposalSampler()
+    res = search_decision(_WorldEngine(), {}, 0, "p1", np.ones(8, dtype=np.float32), mask, cfg, key="t", sampler=smp)
+    return res, smp, seen
+
+
+def test_proposals_off_draws_n_worlds_as_today(monkeypatch):
+    res, smp, seen = _search_1c(monkeypatch, None)
+    assert smp.asked == [4] and "logs" not in seen
+    assert res.q == pytest.approx({0: 0.0, 1: 0.6}) and res.action == 1      # worlds 0..3: world 5 never drawn
+
+
+def test_proposals_resample_the_kept_worlds_by_the_opponent_likelihood(monkeypatch):
+    res, smp, seen = _search_1c(monkeypatch, 8)
+    assert smp.asked == [8] and seen["logs"] == list(range(8))     # every proposal scored
+    assert res.q == pytest.approx({0: 1.0, 1: 0.6}) and res.action == 0      # all 4 kept worlds are world 5
+
+
+def test_proposals_fewer_than_the_worlds_or_on_the_oracle_are_refused(monkeypatch):
+    with pytest.raises(ValueError):
+        _search_1c(monkeypatch, 3)
+    mask = np.zeros(ACT, dtype=np.uint8)
+    mask[[0, 1]] = 1
+    with pytest.raises(ValueError):
+        search_decision(_WorldEngine(), {}, 0, "p1", np.ones(8, dtype=np.float32), mask,
+                        SearchConfig(n_worlds=4, oracle=True, proposals=8), key="t")
