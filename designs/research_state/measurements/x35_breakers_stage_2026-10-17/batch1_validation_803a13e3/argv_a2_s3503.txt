@@ -1,0 +1,1 @@
+--model /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip --behaviour-check warn --steps 300000170 --checkpoint-every-steps 1000000 --device cuda --pfsp-scale 2.5 --n-sentinels 10 --seed 3503 --run-name rb_x35_a2pfsp_s3503

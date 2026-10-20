@@ -3,3 +3,8 @@
 # and its commit is written here, every launch HOLDs. Add T56 / T57 when an arm that needs them joins a batch.
 cdab9cfe1e68312915e4f8f99c6f26c1bb7fa6b4 T54 the fork pool seed's step filter (gen3_pool_seed_step_filter_v1), shipped 2026-10-17
 c1b0c1f0c747e628cc53c72274755990c49af844 B-D2 --team-mix + the w_forum_v1 corpus (fc467f1f is its ancestor): D1 / X38 needs both in the pin; required while D1 is in the batch
+f93608700c57b6215b60a054b0346a8ab8a6253f W-FORUM-LIFT w_forum_v1 lifts the Transform / Imprison exclusion (2,424 teams, tier sha 7bcdc835c107): the corpus D1's banner names; added 2026-10-19 (BATCH1_LAUNCH_SHEET.md)
+4df10e6506606f9f061067683b7722a445dc11b1 F-BI-2 checkargs / --dry-run judge a --model argv's architecture with the trainer's own check; added 2026-10-19 (BATCH1_LAUNCH_SHEET.md)
+2461691948b4024a14c5b0e19b2038a57ad21fe3 B-GROW --grow trunk_layers=N, a fork's declared function-preserving growth (X47, the toy batch); added 2026-10-19 (BATCH1_LAUNCH_SHEET.md)
+aa5feaf501ca3bc753c86fd615ff6e2eb2c766ed B-GROWxF-BI-2 the dry run judges a --grow argv with check_compatible_grown (the trainer load's own gate); added 2026-10-19 (BATCH1_LAUNCH_SHEET.md)
+bd3126e028a83846ecd1f09f522fe26f437bc372 T62 tau solved in float64; an FP32_ALT pin is a LATER commit on top of it, so this line holds in both variants (BATCH1_LAUNCH_SHEET.md §3); added 2026-10-19

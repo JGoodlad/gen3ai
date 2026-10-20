@@ -9,6 +9,8 @@ is BUILT (2026-10-17, §6):** the launch script, the R freeze, the readout and t
 **D1 (X38, the pool-widening arm) is staged too (2026-10-19, §7):** its argv is `main.x35.kit` arm `d1`, dry-run
 validated on the REAL P\* at pin `c1b0c1f0`; it NEEDS GO like every arm.
 
+**THE LAUNCH SHEET for batch 1 + X47 (2026-10-19): [`BATCH1_LAUNCH_SHEET.md`](BATCH1_LAUNCH_SHEET.md).** The 24 forks in GPU order with GPU-h, stop rule and matched control; every argv `checkargs` exit 0 and "would launch" at `803a13e3` (the toy on the 200M stand-in for T\*, [`batch1_validation_803a13e3/`](batch1_validation_803a13e3/)); the T62 / FP32_ALT pin variants (no FP32_ALT commit exists); the pre-launch checks, the failure handling, and six open choices. [`validate_batch1.sh`](validate_batch1.sh) rebuilds and re-validates the lines at any pin.
+
 **R (production) is FROZEN (2026-10-19)** at P\* = X26 @ 280,000,170 (Amendment 5's `TIER1_PLATEAU` call, sha256
 `814823c5…91ed`): [`reference_population_production.json`](reference_population_production.json), content sha256
 `39bae18f…5bec0`, `refpop verify` OK. Six members: A-block 280 / 270 / 80 / 140 / 210M, and X-block `production`
