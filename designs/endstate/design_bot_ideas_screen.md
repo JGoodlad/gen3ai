@@ -5,7 +5,7 @@ this doc updates it in the same commit, and the Decision record at the end says 
 
 **Status (2026-10-19): DESIGN; B-GROW BUILT.** Nothing here is registered or launched. **B-GROW** (§4) is built
 (`--grow trunk_layers=N`, `gen3_grow_fork_v1`, config v159; `TASK_BACKLOG` T64), so X47 / X47b need only their GO and
-a pin at or after it; B-KFFN and B-INT are not built. **X47 is STAGED (2026-10-19) as the X35 kit arm `toy_x47`** in batch 1's toy block (interleaved with its toy C0, the orchestrator's ruling C2; the toy arms run K9(b) `warn`, C3), its argv dry-run validated on a stand-in T\*: [`BATCH1_LAUNCH_SHEET.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md). Each candidate has its cheapest A/B,
+a pin at or after it. B-KFFN and B-INT are not built; their BUILD SPECS (2026-10-19) are [`design_growth_builds_kffn_int.md`](design_growth_builds_kffn_int.md) (`TASK_BACKLOG` T66 / T67). **X47 is STAGED (2026-10-19) as the X35 kit arm `toy_x47`** in batch 1's toy block (interleaved with its toy C0, the orchestrator's ruling C2; the toy arms run K9(b) `warn`, C3), its argv dry-run validated on a stand-in T\*: [`BATCH1_LAUNCH_SHEET.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md). Each candidate has its cheapest A/B,
 its decision rule, its risks and its build, written so the orchestrator can adopt it into an X35 batch. Launches need
 the orchestrator's GO, and a design block is not a launch command.
 
@@ -202,9 +202,11 @@ shares its batch's control C0.
   - an expert that sees only 3 tokens (board) may overfit;
   - upcycled experts that never diverge give a cheap NULL. The descriptor is the experts' pairwise weight distance
     over training.
-- **Code.** **B-KFFN:** per-kind FFNs in `BiasedEncoderLayer` and `IdentityInitRound`. The ranges are read from
-  `_total_tokens` and the seat offsets, never from literals. Plus a flag, a config version and a test that the
-  experts are an exact split when tied. ≈ 1 agent-day, opus-high. It also needs **B-GROW** for the fork.
+- **Code.** **B-KFFN**, SPECIFIED in [`design_growth_builds_kffn_int.md`](design_growth_builds_kffn_int.md) §1 (≈ 1.5 agent-days, opus-high). Five experts per round, with the shared
+  FFN kept as the Pokémon expert, routed by six build-time seat-role segments (OTHER_species is not beside the team
+  tokens, and the E5 tail is typed HISTORY, so never by type id). A CLI-tier field and a config bump. The fork copies
+  the shared FFN into each expert, and the gate is bit-identical at one 64-row batch (MEASURED achievable). It needs
+  **B-GROW**, made field-generic first (that doc's §3).
 
 ### 2.3 C-INTENT: an auxiliary head that predicts the opponent's next action (X49, production)
 
@@ -255,9 +257,12 @@ shares its batch's control C0.
   - the aux gradient competes with the policy (the detector exists);
   - self-play intent labels model OUR population's opponents, which deepens pool-specific memorisation (the H3 channel
     of the diversity doc). The G-K Kakuna guard on the held-out panel covers it.
-- **Code.** **B-INT:** re-promote `--opp-intent-grad-mode` to the CLI and the registry's CLI tier, ≈ 0.25 agent-day,
-  opus-medium. It also needs **B-GROW**'s fork allowance: `opp_intent_grad_mode mismatch` is a hard
-  `ModelVersionError` today.
+- **Code.** **B-INT**, SPECIFIED in [`design_growth_builds_kffn_int.md`](design_growth_builds_kffn_int.md) §2 (≈ 0.5 agent-day, opus-medium). `--grow opp_intent_grad_mode=shaping`,
+  with the flag RE-PROMOTED to the CLI tier. That is required: a CONFIG_ONLY field is frozen at `detached` in the
+  build, so without it the arm would be a silent no-op. The fork-time gate adds a GRADIENT check (the parent's intent
+  CE reaches no trunk parameter, and the child's does). MEASURED: `shaping` adds exactly one trunk route, the intent CE
+  at `opp_intent_coef`, because the policy's trunk gradient is bit-identical under both modes (move resolution reads
+  α / β stop-grad).
 
 ### 2.4 C-HUMAN: an imitation warm start from human replays (X50)
 
@@ -394,9 +399,9 @@ toy C0, in the toy batch at one pin.
 
 | build | what | effort | needed by |
 |---|---|---|---|
-| **B-GROW** ✅ **BUILT 2026-10-19** (T64; as built: `--grow trunk_layers=N` only — the other two fields are declared and refused until B-KFFN / B-INT; the parent loads strictly at its own architecture and the growth is applied in place; the gate runs on fresh CPU builds; the seeded pool grows too; `designs/model/versioning.md` "Declared growth at a fork") | **Declared growth at a fork.** A typed `--grow <field>=<value>` list, limited to `trunk_layers`, `trunk_ffn_by_kind` and `opp_intent_grad_mode`, lets exactly those fields differ from the parent's `model_config.json` in `check_compatible`. Parent parameters load STRICTLY. New parameters are initialised function-preservingly: identity rounds as today; experts as copies of the shared FFN. **At fork time, the child's fp32 forward must match the parent's on real rows** (bit-identical for rounds and the grad switch; ≤ 1e-6 for experts, or a typed refusal). New parameters' Adam moments start at zero, and the existing ones carry over (how a fork carries the optimizer state today is UNVERIFIED, F-BI-3). A `grow` block in `metadata.json`'s lineage. Tests that fail on revert | opus-high, ≈ 1.5–2 agent-days | X47, X47b, X48, X49 |
-| B-KFFN | per-kind FFN experts (§2.2), its flag and config version | opus-high, ≈ 1 agent-day | X48 |
-| B-INT | `--opp-intent-grad-mode` back on the CLI | opus-medium, ≈ 0.25 agent-day | X49 |
+| **B-GROW** ✅ **BUILT 2026-10-19** (T64; as built: `--grow trunk_layers=N` only — the other two fields are declared and refused until B-KFFN / B-INT; the parent loads strictly at its own architecture and the growth is applied in place; the gate runs on fresh CPU builds; the seeded pool grows too; `designs/model/versioning.md` "Declared growth at a fork") | **Declared growth at a fork.** A typed `--grow <field>=<value>` list, limited to `trunk_layers`, `trunk_ffn_by_kind` and `opp_intent_grad_mode`, lets exactly those fields differ from the parent's `model_config.json` in `check_compatible`. Parent parameters load STRICTLY. New parameters are initialised function-preservingly: identity rounds as today; experts as copies of the shared FFN. **At fork time, the child's fp32 forward must match the parent's on real rows** (bit-identical for rounds and the grad switch; ≤ 1e-6 for experts, or a typed refusal; SUPERSEDED for experts by B-KFFN's spec: bit-identical at one 64-row batch, MEASURED achievable). New parameters' Adam moments start at zero, and the existing ones carry over (how a fork carries the optimizer state today is UNVERIFIED, F-BI-3). A `grow` block in `metadata.json`'s lineage. Tests that fail on revert | opus-high, ≈ 1.5–2 agent-days | X47, X47b, X48, X49 |
+| B-KFFN (T66) | per-kind FFN experts (§2.2), its flag and config version; **SPEC: [`design_growth_builds_kffn_int.md`](design_growth_builds_kffn_int.md) §1**, incl. the field-generic growth refactor (§3 there) | opus-high, ≈ 1.5 agent-days (+0.25 for the refactor) | X48 |
+| B-INT (T67) | `--grow opp_intent_grad_mode=shaping`: the flag back on the CLI tier, a growth row and a gradient gate; **SPEC: [`design_growth_builds_kffn_int.md`](design_growth_builds_kffn_int.md) §2** | opus-medium, ≈ 0.5 agent-day (after B-KFFN's refactor) | X49 |
 | B-DEPTH8 | widen `TRUNK_LAYERS_CHOICES` | ≈ 0.25 agent-day | an 8-layer dose arm, only after X47 GAIN |
 | S0 | the replay census on the Rust reader (§2.4) | sonnet-high, ≈ 1 agent-day, CPU | X50 |
 | B-BC | the BC pipeline (§2.4) | opus-high, ≈ 5–8 agent-days | X50 S1, only after the owner's Q1 |
@@ -457,3 +462,4 @@ labels, offline, feeding search's opponent model. Re-open **rung 3**, the BC war
 | 2026-10-19 | **B-GROW BUILT** (build worker; `TASK_BACKLOG` T64) | `--grow trunk_layers=N`, fork-only: strict parent load at its own architecture, then in-place identity-round growth (a fresh depth-N build's modules), the optimizer rule above (F-BI-3 RESOLVED), the fork-time gate on fresh CPU builds (bit-identical logits + values on 64 real rows, else FATAL_CONFIG), the seeded pool grown the same way, the `grow` lineage stamp and `model_config.json` `growth` (config v159); `checkargs` / `--dry-run` resolve and print a `--grow` argv | non-strict loading of the parent into the child architecture (would need an exception to the strict-load mechanism); the gate on the learner's own device (a GPU need not reproduce itself bit for bit); building `trunk_ffn_by_kind` / `opp_intent_grad_mode` growth now (B-KFFN / B-INT, out of scope: declared and refused) | `growth_test.py` (toy 2 → 4 after one AdamW step: max \|Δ\| 0.0, 264,960 new parameters; compiled child = compiled parent 0.0, 2.4e-7 from eager), `grow_fork_test.py`, a CPU `--debug` parent + grow-fork smoke |
 | 2026-10-19 | **X47 STAGED in X35 batch 1's toy block (launch-staging worker)** | [`BATCH1_LAUNCH_SHEET.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md): X47 = the toy C0 argv + `--grow trunk_layers=4`, run `rb_x35t_x47d4_s<seed>`, seeds 3601–3603, +70M; `checkargs` exit 0 and the dry-run's `grow : DECLARED trunk_layers 2 -> 4` at `803a13e3` on the 200M STAND-IN for T\*; recommended order interleaved with the toy C0 (toy A2 last, choice C2) | appending X47 after toy A2 (not ABBA with its C0); a kit arm now (out of scope: the launch is by hand until `main.x35.kit` gains `toy_x47`, F-LS-1) | `batch1_validation_803a13e3/` |
 | 2026-10-19 | **X47 is a KIT ARM; interleaved with its toy C0 (launch-kit worker; orchestrator rulings C2 / C3)** | `main.x35.kit` has `toy_x47` (the toy C0 argv + `--grow trunk_layers=4`, seeds 3601–3603, `rb_x35t_x47d4_s<seed>`), so `launch_x35.sh` checks and launches it and the disk check counts it (F-LS-1 closed); the batch-1 order puts it beside its toy C0 (s3601: C0 then X47; s3602: X47 then C0; s3603: C0 then X47), toy A2 last; the toy arms, X47 included, run K9(b) `warn` under X34's ceilings | launching X47 by hand; X47 after toy A2 | `src/main/x35/kit_test.py`, `BATCH1_LAUNCH_SHEET.md` §4.2 / §5, `batch1_validation_9c3bf3c4/` |
+| 2026-10-19 | **B-KFFN / B-INT SPECIFIED (design worker)** | Build specs in [`design_growth_builds_kffn_int.md`](design_growth_builds_kffn_int.md): B-KFFN ≈ 1.5 agent-days (five per-kind experts, the shared FFN kept as the Pokémon expert, seat-role segments, bit-identical copy at the fork), B-INT ≈ 0.5 agent-day (the CLI-tier re-promotion is REQUIRED, plus a gradient gate), and a field-generic growth refactor first; filed as `TASK_BACKLOG` T66 / T67. B-INT's estimate rose from 0.25 because the CONFIG_ONLY freeze makes the tier change mandatory, and B-KFFN's from 1 because of the growth row, the pool and `pin_worker` | B-INT as a CLI-only change (it would be a silent no-op at a fork); token-type routing; a tolerance gate for the experts | CPU measurements in that doc (fresh production build at `b79b66bb`, trained `rb_es_end2_s2005`) |
