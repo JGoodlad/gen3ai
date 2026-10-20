@@ -1,0 +1,60 @@
+|gametype|singles
+|player|p1|me||
+|player|p2|foe||
+|gen|3
+|tier|[Gen 3] Custom Game
+|rule|HP Percentage Mod: HP is shown in percentages
+|
+|teamsize|p1|2
+|teamsize|p2|1
+|start
+|switch|p1a: Snorlax|Snorlax, M|482/482
+|switch|p2a: Zapdos|Zapdos, M|342/342
+|turn|1
+|request|{"active":[{"moves":[{"move":"Rest","id":"rest","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Sleep Talk","id":"sleeptalk","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Return 102","id":"return","pp":32,"maxpp":32,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Snorlax","details":"Snorlax, M","condition":"482/482","active":true,"stats":{"atk":277,"def":187,"spa":187,"spd":277,"spe":96},"moves":["rest","sleeptalk","bodyslam","return102"],"baseAbility":"immunity","item":"","pokeball":"pokeball"},{"ident":"p1: Skarmory","details":"Skarmory, M","condition":"292/292","active":false,"stats":{"atk":217,"def":337,"spa":137,"spd":197,"spe":197},"moves":["spikes","whirlwind","drillpeck","toxic"],"baseAbility":"keeneye","item":"","pokeball":"pokeball"}]}}
+|
+|move|p2a: Zapdos|Thunderbolt|p1a: Snorlax
+|-damage|p1a: Snorlax|366/482
+|move|p1a: Snorlax|Body Slam|p2a: Zapdos
+|-damage|p2a: Zapdos|212/342
+|-status|p2a: Zapdos|par
+|
+|upkeep
+|turn|2
+|request|{"active":[{"moves":[{"move":"Rest","id":"rest","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Sleep Talk","id":"sleeptalk","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Body Slam","id":"bodyslam","pp":22,"maxpp":24,"target":"normal","disabled":false},{"move":"Return 102","id":"return","pp":32,"maxpp":32,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Snorlax","details":"Snorlax, M","condition":"366/482","active":true,"stats":{"atk":277,"def":187,"spa":187,"spd":277,"spe":96},"moves":["rest","sleeptalk","bodyslam","return102"],"baseAbility":"immunity","item":"","pokeball":"pokeball"},{"ident":"p1: Skarmory","details":"Skarmory, M","condition":"292/292","active":false,"stats":{"atk":217,"def":337,"spa":137,"spd":197,"spe":197},"moves":["spikes","whirlwind","drillpeck","toxic"],"baseAbility":"keeneye","item":"","pokeball":"pokeball"}]}}
+|
+|move|p1a: Snorlax|Rest|p1a: Snorlax
+|-status|p1a: Snorlax|slp|[from] move: Rest
+|-heal|p1a: Snorlax|482/482 slp|[silent]
+|cant|p2a: Zapdos|par
+|
+|upkeep
+|turn|3
+|request|{"active":[{"moves":[{"move":"Rest","id":"rest","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Sleep Talk","id":"sleeptalk","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Body Slam","id":"bodyslam","pp":22,"maxpp":24,"target":"normal","disabled":false},{"move":"Return 102","id":"return","pp":32,"maxpp":32,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Snorlax","details":"Snorlax, M","condition":"482/482 slp","active":true,"stats":{"atk":277,"def":187,"spa":187,"spd":277,"spe":96},"moves":["rest","sleeptalk","bodyslam","return102"],"baseAbility":"immunity","item":"","pokeball":"pokeball"},{"ident":"p1: Skarmory","details":"Skarmory, M","condition":"292/292","active":false,"stats":{"atk":217,"def":337,"spa":137,"spd":197,"spe":197},"moves":["spikes","whirlwind","drillpeck","toxic"],"baseAbility":"keeneye","item":"","pokeball":"pokeball"}]}}
+|
+|cant|p1a: Snorlax|slp
+|move|p1a: Snorlax|Sleep Talk|p1a: Snorlax
+|move|p1a: Snorlax|Body Slam|p2a: Zapdos|[from] Sleep Talk
+|-damage|p2a: Zapdos|87/342 par
+|move|p2a: Zapdos|Agility|p2a: Zapdos
+|-boost|p2a: Zapdos|spe|2
+|
+|upkeep
+|turn|4
+|request|{"active":[{"moves":[{"move":"Rest","id":"rest","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Sleep Talk","id":"sleeptalk","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Body Slam","id":"bodyslam","pp":22,"maxpp":24,"target":"normal","disabled":false},{"move":"Return 102","id":"return","pp":32,"maxpp":32,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Snorlax","details":"Snorlax, M","condition":"482/482 slp","active":true,"stats":{"atk":277,"def":187,"spa":187,"spd":277,"spe":96},"moves":["rest","sleeptalk","bodyslam","return102"],"baseAbility":"immunity","item":"","pokeball":"pokeball"},{"ident":"p1: Skarmory","details":"Skarmory, M","condition":"292/292","active":false,"stats":{"atk":217,"def":337,"spa":137,"spd":197,"spe":197},"moves":["spikes","whirlwind","drillpeck","toxic"],"baseAbility":"keeneye","item":"","pokeball":"pokeball"}]}}
+|
+|switch|p1a: Skarmory|Skarmory, M|292/292
+|cant|p2a: Zapdos|par
+|
+|upkeep
+|turn|5
+|request|{"active":[{"moves":[{"move":"Spikes","id":"spikes","pp":32,"maxpp":32,"target":"foeSide","disabled":false},{"move":"Whirlwind","id":"whirlwind","pp":32,"maxpp":32,"target":"normal","disabled":false},{"move":"Drill Peck","id":"drillpeck","pp":32,"maxpp":32,"target":"any","disabled":false},{"move":"Toxic","id":"toxic","pp":16,"maxpp":16,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Skarmory","details":"Skarmory, M","condition":"292/292","active":true,"stats":{"atk":217,"def":337,"spa":137,"spd":197,"spe":197},"moves":["spikes","whirlwind","drillpeck","toxic"],"baseAbility":"keeneye","item":"","pokeball":"pokeball"},{"ident":"p1: Snorlax","details":"Snorlax, M","condition":"482/482 slp","active":false,"stats":{"atk":277,"def":187,"spa":187,"spd":277,"spe":96},"moves":["rest","sleeptalk","bodyslam","return102"],"baseAbility":"immunity","item":"","pokeball":"pokeball"}]}}
+|
+|move|p1a: Skarmory|Spikes|p2a: Zapdos
+|-sidestart|p2: foe|Spikes
+|move|p2a: Zapdos|Agility|p2a: Zapdos
+|-boost|p2a: Zapdos|spe|2
+|
+|upkeep
+|turn|6
+|request|{"active":[{"moves":[{"move":"Spikes","id":"spikes","pp":30,"maxpp":32,"target":"foeSide","disabled":false},{"move":"Whirlwind","id":"whirlwind","pp":32,"maxpp":32,"target":"normal","disabled":false},{"move":"Drill Peck","id":"drillpeck","pp":32,"maxpp":32,"target":"any","disabled":false},{"move":"Toxic","id":"toxic","pp":16,"maxpp":16,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Skarmory","details":"Skarmory, M","condition":"292/292","active":true,"stats":{"atk":217,"def":337,"spa":137,"spd":197,"spe":197},"moves":["spikes","whirlwind","drillpeck","toxic"],"baseAbility":"keeneye","item":"","pokeball":"pokeball"},{"ident":"p1: Snorlax","details":"Snorlax, M","condition":"482/482 slp","active":false,"stats":{"atk":277,"def":187,"spa":187,"spd":277,"spe":96},"moves":["rest","sleeptalk","bodyslam","return102"],"baseAbility":"immunity","item":"","pokeball":"pokeball"}]}}

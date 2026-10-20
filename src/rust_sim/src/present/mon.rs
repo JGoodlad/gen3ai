@@ -143,7 +143,8 @@ impl MoveSet {
         self.resolved_mut().mimic = m;
     }
     /// `MoveSet.moves`: the resolved base moves with the `mimic` key replaced by the Mimic
-    /// overlay (keyed by its `Move.id`). Returned as `(key, move)` pairs in dict order.
+    /// overlay (keyed by its [`overlay_key`] — the `Move.retrieve_id` of its id, as every base
+    /// move is). Returned as `(key, move)` pairs in dict order.
     pub fn moves(&self) -> Vec<(String, PMove)> {
         let r = self.resolved();
         match &r.mimic {
@@ -151,7 +152,7 @@ impl MoveSet {
             Some(mm) => r
                 .base
                 .iter()
-                .map(|(k, v)| if k == "mimic" { (mm.id.clone(), mm.clone()) } else { (k.clone(), v.clone()) })
+                .map(|(k, v)| if k == "mimic" { (overlay_key(&mm.id).to_string(), mm.clone()) } else { (k.clone(), v.clone()) })
                 .collect(),
         }
     }
@@ -160,7 +161,7 @@ impl MoveSet {
         let r = self.resolved();
         match &r.mimic {
             None => r.base.iter().map(|(k, v)| (k.as_str(), v)).collect(),
-            Some(mm) => r.base.iter().map(|(k, v)| if k == "mimic" { (mm.id.as_str(), mm) } else { (k.as_str(), v) }).collect(),
+            Some(mm) => r.base.iter().map(|(k, v)| if k == "mimic" { (overlay_key(&mm.id), mm) } else { (k.as_str(), v) }).collect(),
         }
     }
     /// `key in self.moves`.
@@ -168,15 +169,15 @@ impl MoveSet {
         let r = self.resolved();
         match &r.mimic {
             None => r.base.iter().any(|(k, _)| k == key),
-            Some(mm) => r.base.iter().any(|(k, _)| (k == "mimic" && mm.id == key) || (k != "mimic" && k == key)),
+            Some(mm) => r.base.iter().any(|(k, _)| (k == "mimic" && overlay_key(&mm.id) == key) || (k != "mimic" && k == key)),
         }
     }
-    /// The move object `self.moves[key]` names: the Mimic overlay when `key` is its id and the
+    /// The move object `self.moves[key]` names: the Mimic overlay when `key` is its key and the
     /// base set still holds the `mimic` slot, else the base move stored under `key`.
     pub fn lookup(&self, key: &str) -> Option<MoveRef> {
         let r = self.resolved();
         if let Some(mm) = &r.mimic {
-            if mm.id == key && r.base.iter().any(|(k, _)| k == "mimic") {
+            if overlay_key(&mm.id) == key && r.base.iter().any(|(k, _)| k == "mimic") {
                 return Some(MoveRef::Mimic);
             }
             if key == "mimic" {
@@ -219,6 +220,19 @@ impl MoveSet {
             MoveRef::Base(k) => r.base.iter().find(|(kk, _)| kk == k).map(|(_, v)| v),
         }
     }
+}
+
+/// The moves-dict KEY of the Mimic overlay: `Move.retrieve_id` of its id, borrowed. A Mimic copy
+/// of a Hidden Power is TYPED from our request (`gen3_live_reader_reading_v1`, [`PMon::learn_move`])
+/// while its key stays `hiddenpower`, exactly as a learned Hidden Power is keyed. Every other
+/// overlay id is already its own key (the copy is built from `retrieve_id`).
+fn overlay_key(id: &str) -> &str {
+    for bare in ["return", "frustration", "hiddenpower"] {
+        if id.starts_with(bare) {
+            return bare;
+        }
+    }
+    id
 }
 
 /// WHICH `Move` object a poke-env lookup returned — the Mimic overlay or a base-set entry.
@@ -614,12 +628,36 @@ impl PMon {
 
     /// [`Self::add_move`] when the caller discards WHICH object it returns (a request's moveset):
     /// the same store, without building the handle of a move already known.
+    ///
+    /// `gen3_live_reader_reading_v1`: a request's TYPED Hidden Power (`hiddenpowerdark`) types an
+    /// own move still held BARE — a Mimic copy (`-start|…|Mimic|Hidden Power` names no type) or a
+    /// Transform copy of a foe's revealed Hidden Power. The sim types Hidden Power by its USER
+    /// (`sim/pokemon.ts` `getSwitchRequestData`: `hiddenpower` + the user's `hpType`; neither Mimic
+    /// nor `transformInto` copies `hpType`), so the request's id is the move this mon will use.
     pub fn learn_move(&mut self, move_id: &str) -> R<()> {
         let id = dex::retrieve_id_of(move_id);
         if self.moves.contains(&id) {
+            if id == "hiddenpower" && move_id.len() > id.len() {
+                self.type_bare_hidden_power(move_id)?;
+            }
             return Ok(());
         }
         self.store_new_move(id.into_owned(), move_id).map(|_| ())
+    }
+
+    /// [`Self::learn_move`]'s Hidden Power typing: the move held under `hiddenpower`, when its id
+    /// is still the bare `hiddenpower`, takes the request id's type (and base power digits, which
+    /// a gen-3 request never carries); its PP and flags are kept.
+    fn type_bare_hidden_power(&mut self, move_id: &str) -> R<()> {
+        let Some(at) = self.moves.lookup("hiddenpower") else { return Ok(()) };
+        let Some(m) = self.moves.get_mut(&at) else { return Ok(()) };
+        if m.id != "hiddenpower" {
+            return Ok(());
+        }
+        let typed = PMove::new("hiddenpower", Some(move_id), m.from_transform)?;
+        m.id = typed.id;
+        m.base_power_override = typed.base_power_override;
+        Ok(())
     }
 
     /// `add_move` past its `if id in self.moves` return.
@@ -638,8 +676,14 @@ impl PMon {
     // ---------------------------------------------------------------- HP / status
 
     /// `Pokemon.set_hp_status(hp_status, store)`: `0 fnt` is a faint; an `hp status` token
-    /// writes `_status` DIRECTLY (not through the setter — no counter reset) and ends a Yawn on
-    /// a new sleep; a bare `hp` CLEARS the status.
+    /// writes `_status` DIRECTLY (not through the setter — no counter reset); a bare `hp` CLEARS
+    /// the status.
+    ///
+    /// A sleep token does NOT end a pending Yawn (`gen3_live_reader_reading_v1`; upstream poke-env
+    /// did): the sim's `yawn` volatile ends only at its own residual, `|-end|<mon>|move:
+    /// Yawn|[silent]` (`data/moves.ts` `yawn.condition`, `duration: 2`), whatever put the mon to
+    /// sleep meanwhile — Rest's `-heal …|slp` included, which matters when a Chesto Berry wakes it
+    /// before the Yawn lands.
     pub fn set_hp_status(&mut self, hp_status: &str, store: bool) -> R<()> {
         if hp_status == "0 fnt" {
             self.faint();
@@ -651,12 +695,6 @@ impl PMon {
                 return Err(refuse(PyExc::ValueError, format!("set_hp_status({hp_status:?}): too many values to unpack (ValueError)")));
             }
             self.status = Some(dex::status_from(status)?);
-            if self.status == Some(Status::Slp) {
-                let yawn = dex::effect_from_message("yawn");
-                if self.has_effect(yawn) {
-                    self.end_effect("yawn");
-                }
-            }
             hp
         } else {
             self.status = None;
@@ -814,6 +852,26 @@ impl PMon {
             }
             if row.ends_on_turn {
                 self.end_effect(row.name);
+            }
+        }
+    }
+
+    /// `|upkeep|` — the end of the residual phase, for the ACTIVE mons
+    /// (`gen3_live_reader_reading_v1`). The sim's `lockon` volatile (`data/moves.ts`
+    /// `lockon.condition`, `duration: 2`, no `onEnd` line) is added by Lock-On AND by Mind Reader
+    /// (`-activate|<user>|move: Lock-On` / `move: Mind Reader`, both `source.addVolatile('lockon')`)
+    /// and ends SILENTLY at the residual of the turn AFTER its start: it holds at the next turn's
+    /// decision (the one move it guarantees) and is gone at the one after. Its count here is the
+    /// upkeeps it has seen; the second ends it. Upstream poke-env ended MIND_READER at the next
+    /// `|turn|` and LOCK_ON only at a switch-out.
+    pub fn upkeep(&mut self) {
+        for name in ["LOCK_ON", "MIND_READER"] {
+            let e = dex::effect_by_name(name).expect("a lockon effect row");
+            if let Some((_, c)) = self.effects.iter_mut().find(|(x, _)| *x == e) {
+                *c += 1;
+                if *c >= 2 {
+                    self.effects.retain(|(x, _)| *x != e);
+                }
             }
         }
     }

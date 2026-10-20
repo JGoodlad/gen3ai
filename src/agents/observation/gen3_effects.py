@@ -147,16 +147,16 @@ NOT_A_VOLATILE: Dict[str, str] = {
     "magnitude": "ONE-SHOT. `-activate|<user>|move: Magnitude|<n>` announces the rolled "
                  "magnitude; its only consequence is the `-damage` that follows",
     "spite": "ONE-SHOT. `-activate|<target>|move: Spite|<move>|<pp cut>`; its consequence is a "
-             "PP cut (own side: the next |request| carries it; opponent side: the reader does not "
-             "apply it — a reading finding, designs/observation/volatile_vocabulary.md)",
+             "PP cut, which the reader applies to the named move's PP (own side: the next |request| "
+             "confirms it; designs/observation/volatile_vocabulary.md)",
     "mist": "ONE-SHOT. `-activate|<target>|move: Mist` when the side's Mist blocks a stat drop; "
             "Mist itself is a SIDE condition (`-sidestart`), and the blocked drop is the absence "
             "of a `-unboost`",
     "safeguard": "ONE-SHOT. `-activate|<target>|move: Safeguard` when the side's Safeguard blocks "
                  "a status; Safeguard itself is a SIDE condition (`-sidestart`)",
     "focusband": "ONE-SHOT. `-activate|<holder>|item: Focus Band` when the band leaves it at 1 HP; "
-                 "the HP arrives as `-damage` (the item disclosure does NOT — a reading finding, "
-                 "designs/observation/volatile_vocabulary.md)",
+                 "the HP arrives as `-damage` and the item disclosure in the item block (the reader "
+                 "sets the holder's item; designs/observation/volatile_vocabulary.md)",
     "typechange": "PERSISTENT, CARRIED ELSEWHERE. `-start|<mon>|typechange|<Type>` (Conversion, "
                   "Conversion 2, Camouflage, Color Change): the Rust reader's `start_effect(TYPECHANGE, "
                   "details)` (`present/mon.rs`) sets the mon's temporary types, which the per-mon "

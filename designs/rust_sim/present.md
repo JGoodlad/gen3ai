@@ -141,6 +141,25 @@ pins: `poke_env/battle/called_move_reading_test.py` (23 fail on upstream), `pres
 Not a training-input change: every line it changes used to raise (or, for the `[still]` shape, only
 Metronome / Assist / Nature Power reach it — none is on a pool team or engine-playable).
 
+**The live-reader reading fixes (`gen3_live_reader_reading_v1`, 2026-10-19, a TRAINING-INPUT
+change).** Five more places where the reading (poke-env's, mirrored) disagreed with a sim fact the
+stream establishes; each is fixed at its source and pinned on a REAL player stream of the pinned
+Showdown (`harness/probe_live_reader_reading.js` →
+`tests/vectors/live_reader_reading/`, read by `present::live_reader_reading_tests`; each pin failed
+before its fix):
+
+| class | the old reading | the truth (source) | the fix |
+|---|---|---|---|
+| a Mimic / Transform copy of HIDDEN POWER | the copy kept the bare `hiddenpower` (the `-activate…\|move: Mimic\|Hidden Power` line names no type), so the move-type cell and `own_hp_typed_id` read it untyped | the sim types Hidden Power by its USER (`sim/pokemon.ts`: the request's `hiddenpower<type>`; neither Mimic nor `transformInto` copies `hpType`) | `PMon::learn_move` types a still-bare own Hidden Power from the request id; the Mimic overlay is KEYED by `retrieve_id` like every base move |
+| a pending YAWN when the target sleeps another way | any `hp slp` token (Rest's `-heal …\|slp`) ended it | the `yawn` volatile ends only at its own residual `-end …\|move: Yawn\|[silent]` (`data/moves.ts`), so a Rest + Chesto Berry mon still falls asleep | `set_hp_status` no longer ends it |
+| a move CALLED by Sleep Talk into Pressure | charged the caller a second, Pressure PP | gen 3 charges no Pressure for a sourced move (`data/mods/gen3/scripts.ts` `useMoveInner`) | the called-move branch of `move_line` charges none |
+| `-activate\|<mon>\|item: Focus Band` | started an effect only; the item stayed unknown | the band is disclosed (not consumed) | `activate` sets the item, public |
+| `-activate\|<target>\|move: Spite\|<move>\|<n>` / Lock-On / Mind Reader | Spite cut nothing; MIND_READER ended at the next `\|turn\|`, LOCK_ON only at a switch-out | Spite cuts `n` PP; both moves add `lockon` (`duration: 2`, silent end at the residual of the turn after) | `activate` cuts the PP; `PMon::upkeep` ends both at the second `\|upkeep\|` |
+
+The first four are reachable in training (the engine plays Mimic, Yawn, Rest, Chesto Berry, Sleep
+Talk, Pressure and Focus Band); Spite, Lock-On and Mind Reader fail loud in the engine, so those
+three reach only live and replay reads.
+
 **Not findings — INFORMATION LIMITS**, read as poke-env reads them because no client can know
 better: V15 (an own mon the current request did not re-sync holds the sighting count of its PP,
 which lags an un-announced Pressure deduction — the audit checks it can only lag), V14 / R4 (a

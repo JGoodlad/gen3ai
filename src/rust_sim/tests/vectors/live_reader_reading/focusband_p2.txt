@@ -1,0 +1,47 @@
+|gametype|singles
+|player|p1|me||
+|player|p2|foe||
+|gen|3
+|tier|[Gen 3] Custom Game
+|rule|HP Percentage Mod: HP is shown in percentages
+|
+|teamsize|p1|1
+|teamsize|p2|2
+|start
+|switch|p1a: Machamp|Machamp, M|342/342
+|switch|p2a: Abra|Abra, L5, M|20/20
+|turn|1
+|request|{"active":[{"moves":[{"move":"Teleport","id":"teleport","pp":32,"maxpp":32,"target":"self","disabled":false},{"move":"Calm Mind","id":"calmmind","pp":32,"maxpp":32,"target":"self","disabled":false},{"move":"Psychic","id":"psychic","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false}]}],"side":{"name":"foe","id":"p2","pokemon":[{"ident":"p2: Abra","details":"Abra, L5, M","condition":"20/20","active":true,"stats":{"atk":9,"def":9,"spa":18,"spd":13,"spe":15},"moves":["teleport","calmmind","psychic","substitute"],"baseAbility":"synchronize","item":"focusband","pokeball":"pokeball"},{"ident":"p2: Blissey","details":"Blissey, M","condition":"672/672","active":false,"stats":{"atk":77,"def":77,"spa":207,"spd":327,"spe":167},"moves":["softboiled","seismictoss","toxic","aromatherapy"],"baseAbility":"naturalcure","item":"","pokeball":"pokeball"}]}}
+|
+|move|p1a: Machamp|Cross Chop|p2a: Abra|[miss]
+|-miss|p1a: Machamp|p2a: Abra
+|move|p2a: Abra|Calm Mind|p2a: Abra
+|-boost|p2a: Abra|spa|1
+|-boost|p2a: Abra|spd|1
+|
+|upkeep
+|turn|2
+|request|{"active":[{"moves":[{"move":"Teleport","id":"teleport","pp":32,"maxpp":32,"target":"self","disabled":false},{"move":"Calm Mind","id":"calmmind","pp":31,"maxpp":32,"target":"self","disabled":false},{"move":"Psychic","id":"psychic","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false}]}],"side":{"name":"foe","id":"p2","pokemon":[{"ident":"p2: Abra","details":"Abra, L5, M","condition":"20/20","active":true,"stats":{"atk":9,"def":9,"spa":18,"spd":13,"spe":15},"moves":["teleport","calmmind","psychic","substitute"],"baseAbility":"synchronize","item":"focusband","pokeball":"pokeball"},{"ident":"p2: Blissey","details":"Blissey, M","condition":"672/672","active":false,"stats":{"atk":77,"def":77,"spa":207,"spd":327,"spe":167},"moves":["softboiled","seismictoss","toxic","aromatherapy"],"baseAbility":"naturalcure","item":"","pokeball":"pokeball"}]}}
+|
+|move|p1a: Machamp|Cross Chop|p2a: Abra
+|-resisted|p2a: Abra
+|-crit|p2a: Abra
+|-activate|p2a: Abra|item: Focus Band
+|-damage|p2a: Abra|1/20
+|move|p2a: Abra|Calm Mind|p2a: Abra
+|-boost|p2a: Abra|spa|1
+|-boost|p2a: Abra|spd|1
+|
+|upkeep
+|turn|3
+|request|{"active":[{"moves":[{"move":"Teleport","id":"teleport","pp":32,"maxpp":32,"target":"self","disabled":false},{"move":"Calm Mind","id":"calmmind","pp":30,"maxpp":32,"target":"self","disabled":false},{"move":"Psychic","id":"psychic","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false}]}],"side":{"name":"foe","id":"p2","pokemon":[{"ident":"p2: Abra","details":"Abra, L5, M","condition":"1/20","active":true,"stats":{"atk":9,"def":9,"spa":18,"spd":13,"spe":15},"moves":["teleport","calmmind","psychic","substitute"],"baseAbility":"synchronize","item":"focusband","pokeball":"pokeball"},{"ident":"p2: Blissey","details":"Blissey, M","condition":"672/672","active":false,"stats":{"atk":77,"def":77,"spa":207,"spd":327,"spe":167},"moves":["softboiled","seismictoss","toxic","aromatherapy"],"baseAbility":"naturalcure","item":"","pokeball":"pokeball"}]}}
+|
+|move|p1a: Machamp|Cross Chop|p2a: Abra|[miss]
+|-miss|p1a: Machamp|p2a: Abra
+|move|p2a: Abra|Calm Mind|p2a: Abra
+|-boost|p2a: Abra|spa|1
+|-boost|p2a: Abra|spd|1
+|
+|upkeep
+|turn|4
+|request|{"active":[{"moves":[{"move":"Teleport","id":"teleport","pp":32,"maxpp":32,"target":"self","disabled":false},{"move":"Calm Mind","id":"calmmind","pp":29,"maxpp":32,"target":"self","disabled":false},{"move":"Psychic","id":"psychic","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false}]}],"side":{"name":"foe","id":"p2","pokemon":[{"ident":"p2: Abra","details":"Abra, L5, M","condition":"1/20","active":true,"stats":{"atk":9,"def":9,"spa":18,"spd":13,"spe":15},"moves":["teleport","calmmind","psychic","substitute"],"baseAbility":"synchronize","item":"focusband","pokeball":"pokeball"},{"ident":"p2: Blissey","details":"Blissey, M","condition":"672/672","active":false,"stats":{"atk":77,"def":77,"spa":207,"spd":327,"spe":167},"moves":["softboiled","seismictoss","toxic","aromatherapy"],"baseAbility":"naturalcure","item":"","pokeball":"pokeball"}]}}

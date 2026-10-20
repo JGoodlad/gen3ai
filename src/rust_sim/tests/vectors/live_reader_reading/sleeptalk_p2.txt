@@ -1,0 +1,61 @@
+|gametype|singles
+|player|p1|me||
+|player|p2|foe||
+|gen|3
+|tier|[Gen 3] Custom Game
+|rule|HP Percentage Mod: HP is shown in percentages
+|
+|teamsize|p1|2
+|teamsize|p2|1
+|start
+|switch|p1a: Snorlax|Snorlax, M|482/482
+|switch|p2a: Zapdos|Zapdos, M|342/342
+|-ability|p2a: Zapdos|Pressure|[silent]
+|turn|1
+|request|{"active":[{"moves":[{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Drill Peck","id":"drillpeck","pp":32,"maxpp":32,"target":"any","disabled":false},{"move":"Agility","id":"agility","pp":48,"maxpp":48,"target":"self","disabled":false},{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false}]}],"side":{"name":"foe","id":"p2","pokemon":[{"ident":"p2: Zapdos","details":"Zapdos, M","condition":"342/342","active":true,"stats":{"atk":237,"def":227,"spa":307,"spd":237,"spe":257},"moves":["thunderbolt","drillpeck","agility","substitute"],"baseAbility":"pressure","item":"","pokeball":"pokeball"}]}}
+|
+|move|p2a: Zapdos|Thunderbolt|p1a: Snorlax
+|-damage|p1a: Snorlax|366/482
+|move|p1a: Snorlax|Body Slam|p2a: Zapdos
+|-damage|p2a: Zapdos|212/342
+|-status|p2a: Zapdos|par
+|
+|upkeep
+|turn|2
+|request|{"active":[{"moves":[{"move":"Thunderbolt","id":"thunderbolt","pp":23,"maxpp":24,"target":"normal","disabled":false},{"move":"Drill Peck","id":"drillpeck","pp":32,"maxpp":32,"target":"any","disabled":false},{"move":"Agility","id":"agility","pp":48,"maxpp":48,"target":"self","disabled":false},{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false}]}],"side":{"name":"foe","id":"p2","pokemon":[{"ident":"p2: Zapdos","details":"Zapdos, M","condition":"212/342 par","active":true,"stats":{"atk":237,"def":227,"spa":307,"spd":237,"spe":257},"moves":["thunderbolt","drillpeck","agility","substitute"],"baseAbility":"pressure","item":"","pokeball":"pokeball"}]}}
+|
+|move|p1a: Snorlax|Rest|p1a: Snorlax
+|-status|p1a: Snorlax|slp|[from] move: Rest
+|-heal|p1a: Snorlax|482/482 slp|[silent]
+|cant|p2a: Zapdos|par
+|
+|upkeep
+|turn|3
+|request|{"active":[{"moves":[{"move":"Thunderbolt","id":"thunderbolt","pp":23,"maxpp":24,"target":"normal","disabled":false},{"move":"Drill Peck","id":"drillpeck","pp":32,"maxpp":32,"target":"any","disabled":false},{"move":"Agility","id":"agility","pp":48,"maxpp":48,"target":"self","disabled":false},{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false}]}],"side":{"name":"foe","id":"p2","pokemon":[{"ident":"p2: Zapdos","details":"Zapdos, M","condition":"212/342 par","active":true,"stats":{"atk":237,"def":227,"spa":307,"spd":237,"spe":257},"moves":["thunderbolt","drillpeck","agility","substitute"],"baseAbility":"pressure","item":"","pokeball":"pokeball"}]}}
+|
+|cant|p1a: Snorlax|slp
+|move|p1a: Snorlax|Sleep Talk|p1a: Snorlax
+|move|p1a: Snorlax|Body Slam|p2a: Zapdos|[from] Sleep Talk
+|-damage|p2a: Zapdos|87/342 par
+|move|p2a: Zapdos|Agility|p2a: Zapdos
+|-boost|p2a: Zapdos|spe|2
+|
+|upkeep
+|turn|4
+|request|{"active":[{"moves":[{"move":"Thunderbolt","id":"thunderbolt","pp":23,"maxpp":24,"target":"normal","disabled":false},{"move":"Drill Peck","id":"drillpeck","pp":32,"maxpp":32,"target":"any","disabled":false},{"move":"Agility","id":"agility","pp":47,"maxpp":48,"target":"self","disabled":false},{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false}]}],"side":{"name":"foe","id":"p2","pokemon":[{"ident":"p2: Zapdos","details":"Zapdos, M","condition":"87/342 par","active":true,"stats":{"atk":237,"def":227,"spa":307,"spd":237,"spe":257},"moves":["thunderbolt","drillpeck","agility","substitute"],"baseAbility":"pressure","item":"","pokeball":"pokeball"}]}}
+|
+|switch|p1a: Skarmory|Skarmory, M|292/292
+|cant|p2a: Zapdos|par
+|
+|upkeep
+|turn|5
+|request|{"active":[{"moves":[{"move":"Thunderbolt","id":"thunderbolt","pp":23,"maxpp":24,"target":"normal","disabled":false},{"move":"Drill Peck","id":"drillpeck","pp":32,"maxpp":32,"target":"any","disabled":false},{"move":"Agility","id":"agility","pp":47,"maxpp":48,"target":"self","disabled":false},{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false}]}],"side":{"name":"foe","id":"p2","pokemon":[{"ident":"p2: Zapdos","details":"Zapdos, M","condition":"87/342 par","active":true,"stats":{"atk":237,"def":227,"spa":307,"spd":237,"spe":257},"moves":["thunderbolt","drillpeck","agility","substitute"],"baseAbility":"pressure","item":"","pokeball":"pokeball"}]}}
+|
+|move|p1a: Skarmory|Spikes|p2a: Zapdos
+|-sidestart|p2: foe|Spikes
+|move|p2a: Zapdos|Agility|p2a: Zapdos
+|-boost|p2a: Zapdos|spe|2
+|
+|upkeep
+|turn|6
+|request|{"active":[{"moves":[{"move":"Thunderbolt","id":"thunderbolt","pp":23,"maxpp":24,"target":"normal","disabled":false},{"move":"Drill Peck","id":"drillpeck","pp":32,"maxpp":32,"target":"any","disabled":false},{"move":"Agility","id":"agility","pp":46,"maxpp":48,"target":"self","disabled":false},{"move":"Substitute","id":"substitute","pp":16,"maxpp":16,"target":"self","disabled":false}]}],"side":{"name":"foe","id":"p2","pokemon":[{"ident":"p2: Zapdos","details":"Zapdos, M","condition":"87/342 par","active":true,"stats":{"atk":237,"def":227,"spa":307,"spd":237,"spe":257},"moves":["thunderbolt","drillpeck","agility","substitute"],"baseAbility":"pressure","item":"","pokeball":"pokeball"}]}}

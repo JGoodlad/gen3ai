@@ -1224,7 +1224,7 @@ pub static EFFECTS: &[EffectRow] = &[
     EffectRow { name: "MAX_GUARD", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "MIMIC", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "MIMICRY", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
-    EffectRow { name: "MIND_READER", ends_on_turn: true, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
+    EffectRow { name: "MIND_READER", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "MINIMIZE", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "MIRACLE_EYE", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },
     EffectRow { name: "MIST", ends_on_turn: false, turn_countable: false, action_countable: false, breaks_protect: false, bp_copied: false },

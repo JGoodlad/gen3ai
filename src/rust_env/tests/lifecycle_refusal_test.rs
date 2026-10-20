@@ -156,9 +156,13 @@ fn replay_repro_with(budget: usize, bank_dir: Option<std::path::PathBuf>, refuse
             if cols.slice::<u8>(col::NEED)[side] == 1 {
                 let c = q.next().expect("the script ran out before the refusal");
                 let tok = c.strip_prefix(&format!("CHOOSE p{} ", side + 1)).unwrap_or_else(|| panic!("expected p{} next, got {c}", side + 1));
-                let idx = env.open_tokens(side).unwrap().iter().find(|(_, t)| t == tok).unwrap_or_else(|| panic!("{tok} is not legal")).0;
+                let open = env.open_tokens(side).unwrap();
+                let idx = pokesim_env::search::game::logged_token_index(open, tok).unwrap_or_else(|| panic!("{tok} is not legal"));
                 acts[side] = idx as i32;
-                fed.push(c);
+                // What the core banks is the OFFERED token (a pre-`gen3_live_reader_reading_v1` script spells a
+                // Transform copy's Hidden Power bare; the offered token is typed).
+                let offered = &open.iter().find(|(i, _)| *i == idx).expect("offered").1;
+                fed.push(format!("CHOOSE p{} {offered}", side + 1));
             }
         }
         cols.slice_mut::<i32>(col::ACTION).copy_from_slice(&acts);

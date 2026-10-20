@@ -1,0 +1,54 @@
+|gametype|singles
+|player|p1|me||
+|player|p2|foe||
+|gen|3
+|tier|[Gen 3] Custom Game
+|rule|HP Percentage Mod: HP is shown in percentages
+|
+|teamsize|p1|1
+|teamsize|p2|1
+|start
+|switch|p1a: Snorlax|Snorlax, M|482/482
+|switch|p2a: Jolteon|Jolteon, M|291/291
+|turn|1
+|request|{"active":[{"moves":[{"move":"Mimic","id":"mimic","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Curse","id":"curse","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Rest","id":"rest","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Snorlax","details":"Snorlax, M","condition":"482/482","active":true,"stats":{"atk":277,"def":187,"spa":187,"spd":277,"spe":96},"moves":["mimic","curse","rest","bodyslam"],"baseAbility":"immunity","item":"","pokeball":"pokeball"}]}}
+|
+|move|p2a: Jolteon|Hidden Power|p1a: Snorlax
+|debug|BP: 70
+|-damage|p1a: Snorlax|424/482
+|move|p1a: Snorlax|Curse|p1a: Snorlax
+|-unboost|p1a: Snorlax|spe|1
+|-boost|p1a: Snorlax|atk|1
+|-boost|p1a: Snorlax|def|1
+|
+|upkeep
+|turn|2
+|request|{"active":[{"moves":[{"move":"Mimic","id":"mimic","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Curse","id":"curse","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Rest","id":"rest","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Snorlax","details":"Snorlax, M","condition":"424/482","active":true,"stats":{"atk":277,"def":187,"spa":187,"spd":277,"spe":96},"moves":["mimic","curse","rest","bodyslam"],"baseAbility":"immunity","item":"","pokeball":"pokeball"}]}}
+|
+|move|p2a: Jolteon|Hidden Power|p1a: Snorlax
+|debug|BP: 70
+|-damage|p1a: Snorlax|372/482
+|move|p1a: Snorlax|Mimic|p2a: Jolteon
+|-activate|p1a: Snorlax|move: Mimic|Hidden Power
+|
+|upkeep
+|turn|3
+|request|{"active":[{"moves":[{"move":"Hidden Power Dark 70","id":"hiddenpower","pp":5,"maxpp":24,"disabled":false},{"move":"Curse","id":"curse","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Rest","id":"rest","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Snorlax","details":"Snorlax, M","condition":"372/482","active":true,"stats":{"atk":277,"def":187,"spa":187,"spd":277,"spe":96},"moves":["hiddenpowerdark","curse","rest","bodyslam"],"baseAbility":"immunity","item":"","pokeball":"pokeball"}]}}
+|
+|move|p2a: Jolteon|Agility|p2a: Jolteon
+|-boost|p2a: Jolteon|spe|2
+|move|p1a: Snorlax|Body Slam|p2a: Jolteon
+|-damage|p2a: Jolteon|41/291
+|
+|upkeep
+|turn|4
+|request|{"active":[{"moves":[{"move":"Hidden Power Dark 70","id":"hiddenpower","pp":5,"maxpp":24,"disabled":false},{"move":"Curse","id":"curse","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Rest","id":"rest","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Body Slam","id":"bodyslam","pp":23,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Snorlax","details":"Snorlax, M","condition":"372/482","active":true,"stats":{"atk":277,"def":187,"spa":187,"spd":277,"spe":96},"moves":["hiddenpowerdark","curse","rest","bodyslam"],"baseAbility":"immunity","item":"","pokeball":"pokeball"}]}}
+|
+|move|p2a: Jolteon|Agility|p2a: Jolteon
+|-boost|p2a: Jolteon|spe|2
+|move|p1a: Snorlax|Body Slam|p2a: Jolteon
+|-damage|p2a: Jolteon|0 fnt
+|debug|move failed because it did nothing
+|faint|p2a: Jolteon
+|
+|win|me

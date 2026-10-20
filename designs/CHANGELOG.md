@@ -15071,3 +15071,52 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   hermetic-cache scan counts `compile_on`; compile stubs in `compile_extractor_test` / `opponent_parity_test` take `**kw`.
 - **Docs.** `designs/training/compile_flags.md` "Every CPU compile site goes through ONE seam" (the inventory and the proof);
   the model leaf; `designs/model/file_layout.md`; `TECH_DEBT_BACKLOG.md` (row closed).
+
+## 2026-10-19 — the live reader's six reading defects, fixed at their source (`gen3_live_reader_reading_v1`, `gen3_faint_clears_types_override_v1`; a TRAINING-INPUT change; no config / `OBS_SEMANTICS_VERSION` / signature bump)
+
+The Next-10 item 3 of `designs/ops/TECH_DEBT_BACKLOG.md`: six places where the Rust core's reading (the chain
+training's rows and the live reader share) or the port disagreed with the sim, each reproduced on a REAL stream of the
+pinned Showdown and fixed where it arises.
+
+- **Mimic / Transform copy of Hidden Power** (`present/mon.rs`): the copy kept the bare `hiddenpower` because
+  `-activate|…|move: Mimic|Hidden Power` names no type; the sim types it by its USER and our request says so
+  (`hiddenpowerdark`). `PMon::learn_move` now types a still-bare own Hidden Power from the request id, and the Mimic
+  overlay is keyed by `retrieve_id` like every base move (so the next request finds it rather than storing a second
+  entry). Reaches the active-request move-type cell and `own_hp_typed_id` (the event window's typed id).
+- **Yawn + Rest** (`present/mon.rs` `set_hp_status`): an `hp slp` token no longer ends a pending Yawn; only its own
+  `-end …|move: Yawn|[silent]` does (a Rest + Chesto Berry mon still falls asleep). Reaches the `yawn` volatile slot,
+  both sides.
+- **Sleep Talk into Pressure** (`present/board_reading.rs` `move_line`): a called move charges the caller no Pressure
+  PP (gen 3 `useMoveInner`). Reaches the opponent's PP estimate (and a benched own mon's sighting count).
+- **Focus Band / Spite / Lock-On + Mind Reader** (`present/board_reading.rs` `activate`, `present/mon.rs`
+  `PMon::upkeep`, `present/tables.rs`): Focus Band's survive discloses the item; Spite cuts the named move's PP; both
+  lock moves add the sim's `lockon` (duration 2, silent end) and now end at the second `|upkeep|` (MIND_READER no longer
+  `ends_on_turn`). Spite / Lock-On / Mind Reader fail loud in the engine, so they reach only live and replay reads.
+- **Skill Swap — an INFORMATION LIMIT, R4b** (`present/audit.rs`): gen 3 names neither ability, so the view of our
+  swapped mon keeps its set ability against an unrevealed foe; the audit applies the limit (counted in `rules_fired`)
+  instead of reporting a divergence. No reading change. `designs/rust_sim/present.md`.
+- **The port's corpse types** (`turn/switch.rs`): the faint block clears `types_override` (the sim's `clearVolatile`
+  → `setSpecies(baseSpecies)` re-types it). Not on the wire; an engine-board fix (`regression_pins.md` FT1).
+
+Pins: `present::live_reader_reading_tests` (six tests over `tests/vectors/live_reader_reading/`, the player streams
+`harness/probe_live_reader_reading.js` captures and re-checks), `tests/version_test.rs::the_audit_applies_the_unstated_skill_swap_limit`,
+`tests/regression_test.rs::a_faint_clears_the_color_change_type`; each failed with its fix reverted.
+- **Obs impact, measured.** The obs golden reproduces all 991 committed hashes after the change (no cell of those
+  battles moves), so `obs_semantics_test.py` keeps its pin. The env core's pinned corpus digests
+  (`src/rust_env/tests/oracle_reveal_test.rs`, the bridge-corpus teams, three seeds, 28,848 side-rows) DID move and
+  are re-recorded with a census: 47 side-rows changed, only the opponent's item cells + the obs-facts item-seen cell
+  + the Choice NOT-locked proof (Focus Band disclosures, seeds 11 and 12) and, on one battle, a Mimic / Transform
+  copy's Hidden Power (the active-request move num / type cells, the own move slot, and that battle's `known_moves` /
+  `hp_type` labels of the opposing view, whose truth is the other side's reading); mask / need / done identical.
+  rust_env: `search::game::feed_logged` matches a pre-change logged `move hiddenpower` to the typed token
+  (`logged_token_index`); the F-M5-1 lifecycle test banks the offered token. **No `OBS_SEMANTICS_VERSION` bump**: no cell changes
+  what it MEANS (the HP move-type cell is still "this move's type", the `yawn` / `lockon` slots still "the volatile
+  is held", the item and PP cells still "what the stream established") — the reading of a rare event now matches
+  that definition, where it used to contradict it (the backlog's repro rates: ~0.001 per 1,000 decisions each). A
+  bump would have marked every live checkpoint "older input semantics" in the prober for a change no golden cell
+  shows. `MODEL_CONFIG_VERSION` and `ARCH_SIGNATURE` unchanged.
+- **Encoder benchmark** (`python -m agents.observation.rust_encoder_benchmark --decisions 40 --reps 300`, release
+  builds, interleaved, nice 19 on the agent cores beside a live run): `encode_us` median before 10.0 / 10.5 µs,
+  after 10.6 / 10.7 µs; `present_encode_us` before 15.7 / 16.6, after 15.4 / 16.2 — no change beyond the run-to-run
+  spread.
+

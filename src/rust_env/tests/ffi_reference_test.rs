@@ -127,7 +127,7 @@ fn record_the_quarantine_run_for_the_ffi_front_end() {
             if cols.slice::<u8>(col::NEED)[side] == 1 {
                 let c = q.next().expect("the script ran out before the refusal");
                 let tok = c.strip_prefix(&format!("CHOOSE p{} ", side + 1)).unwrap_or_else(|| panic!("expected p{} next, got {c}", side + 1));
-                acts[side] = env.open_tokens(side).unwrap().iter().find(|(_, t)| t == tok).unwrap_or_else(|| panic!("{tok} is not legal")).0 as i32;
+                acts[side] = pokesim_env::search::game::logged_token_index(env.open_tokens(side).unwrap(), tok).unwrap_or_else(|| panic!("{tok} is not legal")) as i32;
             }
         }
         cols.slice_mut::<i32>(col::ACTION).copy_from_slice(&acts);

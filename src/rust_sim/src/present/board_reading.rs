@@ -694,6 +694,12 @@ impl BoardReading {
         if kw == "upkeep" {
             // `Gen3Battle.parse_message`'s CONTROL branch (`gen3_obs_facts_v1`); poke-env ignores it.
             self.upkeep_turn = Some(self.turn);
+            // The residual phase's silent volatile ends (`PMon::upkeep`: Lock-On / Mind Reader).
+            for own in [true, false] {
+                if let Some(i) = self.active_index(own) {
+                    self.mon_at((own, i)).upkeep();
+                }
+            }
             return Ok(());
         }
         if BATTLE_IGNORED.contains(&kw) {
@@ -1131,7 +1137,11 @@ impl BoardReading {
             m.moved(&mv, failed, false, reveal, false)?;
             let key = dex::retrieve_id(&o);
             let at = m.moves.lookup(&key).ok_or_else(|| refuse(PyExc::KeyError, format!("moves[{key:?}]: KeyError (overridden move)")))?;
-            m.moves.get_mut(&at).expect("looked up").use_move(pressure, true);
+            // `gen3_live_reader_reading_v1`: a CALLED move (`|move|…|[from] Sleep Talk`) charges
+            // the caller NO Pressure PP — gen3 `useMoveInner` deducts Pressure PP only for an
+            // unsourced move (or Pursuit's), `data/mods/gen3/scripts.ts`. The caller paid its one
+            // PP on its own `|move|` line; upstream poke-env charged it again here under Pressure.
+            m.moves.get_mut(&at).expect("looked up").use_move(false, true);
         } else if !failed && matches!(mv.as_str(), "Sleep Talk" | "Copycat" | "Metronome" | "Nature Power") {
             m.moved(&mv, failed, use_, reveal, false)?;
         } else {
@@ -1273,6 +1283,33 @@ impl BoardReading {
                 let at = m.moves.lookup(&key).ok_or_else(|| refuse(PyExc::KeyError, format!("moves[{key:?}]: KeyError (Leppa Berry)")))?;
                 let mv = m.moves.get_mut(&at).expect("looked up");
                 mv.current_pp = (mv.current_pp + 10).min(mv.max_pp()?);
+            }
+            // `gen3_live_reader_reading_v1`: Focus Band's survive DISCLOSES the holder's item
+            // (`data/items.ts` `focusband.onDamage`; the band is not consumed). Upstream poke-env
+            // only started an effect here, so the item stayed unknown.
+            "item: Focus Band" => {
+                let m = self.mon(&target)?;
+                set_item(m, Some("focusband"));
+                m.start_effect(&effect, None)?;
+            }
+            // `gen3_live_reader_reading_v1`: `|-activate|<target>|move: Spite|<move id>|<cut>` —
+            // gen 3 Spite deducts a `random(2, 6)` cut from the target's LAST move and prints it
+            // (`data/mods/gen3/moves.ts` `spite.onHit`). The cut lands on the reading's estimate
+            // (an own mon's PP is the next request's word anyway). Upstream poke-env cut nothing.
+            // A line without a move and a numeric cut (no sim emits one; the drift scan derives such
+            // shapes from source) cuts nothing, as before the fix.
+            "move: Spite" => {
+                let cut = sm.get(5).filter(|c| !c.is_empty() && c.bytes().all(|b| b.is_ascii_digit())).and_then(|c| c.parse::<u32>().ok());
+                let mv = sm.get(4).filter(|m| !m.is_empty()).cloned();
+                let m = self.mon(&target)?;
+                if let (Some(mv), Some(cut)) = (mv, cut) {
+                    if let Some(at) = m.add_move(&mv)? {
+                        if let Some(x) = m.moves.get_mut(&at) {
+                            x.current_pp = x.current_pp.saturating_sub(cut);
+                        }
+                    }
+                }
+                m.start_effect(&effect, None)?;
             }
             "move: Mimic" => {
                 let mv = PMove::new(&dex::retrieve_id(sm.get(4).ok_or_else(|| refuse(PyExc::IndexError, "Mimic: field 4 (IndexError)"))?), None, false)?;

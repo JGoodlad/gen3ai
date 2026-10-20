@@ -1,0 +1,103 @@
+|gametype|singles
+|player|p1|me||
+|player|p2|foe||
+|gen|3
+|tier|[Gen 3] Custom Game
+|rule|HP Percentage Mod: HP is shown in percentages
+|
+|teamsize|p1|2
+|teamsize|p2|2
+|start
+|switch|p1a: Gengar|Gengar, M|282/282
+|switch|p2a: Snorlax|Snorlax, M|482/482
+|turn|1
+|request|{"active":[{"moves":[{"move":"Spite","id":"spite","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Lock-On","id":"lockon","pp":8,"maxpp":8,"target":"normal","disabled":false},{"move":"Mind Reader","id":"mindreader","pp":8,"maxpp":8,"target":"normal","disabled":false},{"move":"Shadow Ball","id":"shadowball","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Gengar","details":"Gengar, M","condition":"282/282","active":true,"stats":{"atk":187,"def":177,"spa":317,"spd":207,"spe":256},"moves":["spite","lockon","mindreader","shadowball"],"baseAbility":"levitate","item":"","pokeball":"pokeball"},{"ident":"p1: Electrode","details":"Electrode, M","condition":"282/282","active":false,"stats":{"atk":157,"def":197,"spa":217,"spd":217,"spe":337},"moves":["lockon","zapcannon","mindreader","thunderbolt"],"baseAbility":"static","item":"","pokeball":"pokeball"}]}}
+|
+|move|p1a: Gengar|Shadow Ball|p2a: Snorlax
+|-immune|p2a: Snorlax
+|move|p2a: Snorlax|Body Slam|p1a: Gengar
+|-immune|p1a: Gengar
+|
+|upkeep
+|turn|2
+|request|{"active":[{"moves":[{"move":"Spite","id":"spite","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Lock-On","id":"lockon","pp":8,"maxpp":8,"target":"normal","disabled":false},{"move":"Mind Reader","id":"mindreader","pp":8,"maxpp":8,"target":"normal","disabled":false},{"move":"Shadow Ball","id":"shadowball","pp":23,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Gengar","details":"Gengar, M","condition":"282/282","active":true,"stats":{"atk":187,"def":177,"spa":317,"spd":207,"spe":256},"moves":["spite","lockon","mindreader","shadowball"],"baseAbility":"levitate","item":"","pokeball":"pokeball"},{"ident":"p1: Electrode","details":"Electrode, M","condition":"282/282","active":false,"stats":{"atk":157,"def":197,"spa":217,"spd":217,"spe":337},"moves":["lockon","zapcannon","mindreader","thunderbolt"],"baseAbility":"static","item":"","pokeball":"pokeball"}]}}
+|
+|move|p1a: Gengar|Spite|p2a: Snorlax
+|-activate|p2a: Snorlax|move: Spite|bodyslam|4
+|move|p2a: Snorlax|Body Slam|p1a: Gengar
+|-immune|p1a: Gengar
+|
+|upkeep
+|turn|3
+|request|{"active":[{"moves":[{"move":"Spite","id":"spite","pp":15,"maxpp":16,"target":"normal","disabled":false},{"move":"Lock-On","id":"lockon","pp":8,"maxpp":8,"target":"normal","disabled":false},{"move":"Mind Reader","id":"mindreader","pp":8,"maxpp":8,"target":"normal","disabled":false},{"move":"Shadow Ball","id":"shadowball","pp":23,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Gengar","details":"Gengar, M","condition":"282/282","active":true,"stats":{"atk":187,"def":177,"spa":317,"spd":207,"spe":256},"moves":["spite","lockon","mindreader","shadowball"],"baseAbility":"levitate","item":"","pokeball":"pokeball"},{"ident":"p1: Electrode","details":"Electrode, M","condition":"282/282","active":false,"stats":{"atk":157,"def":197,"spa":217,"spd":217,"spe":337},"moves":["lockon","zapcannon","mindreader","thunderbolt"],"baseAbility":"static","item":"","pokeball":"pokeball"}]}}
+|
+|switch|p1a: Electrode|Electrode, M|282/282
+|move|p2a: Snorlax|Curse|p2a: Snorlax
+|-unboost|p2a: Snorlax|spe|1
+|-boost|p2a: Snorlax|atk|1
+|-boost|p2a: Snorlax|def|1
+|
+|upkeep
+|turn|4
+|request|{"active":[{"moves":[{"move":"Lock-On","id":"lockon","pp":8,"maxpp":8,"target":"normal","disabled":false},{"move":"Zap Cannon","id":"zapcannon","pp":8,"maxpp":8,"target":"normal","disabled":false},{"move":"Mind Reader","id":"mindreader","pp":8,"maxpp":8,"target":"normal","disabled":false},{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Electrode","details":"Electrode, M","condition":"282/282","active":true,"stats":{"atk":157,"def":197,"spa":217,"spd":217,"spe":337},"moves":["lockon","zapcannon","mindreader","thunderbolt"],"baseAbility":"static","item":"","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"282/282","active":false,"stats":{"atk":187,"def":177,"spa":317,"spd":207,"spe":256},"moves":["spite","lockon","mindreader","shadowball"],"baseAbility":"levitate","item":"","pokeball":"pokeball"}]}}
+|
+|move|p1a: Electrode|Lock-On|p2a: Snorlax
+|-activate|p1a: Electrode|move: Lock-On|[of] p2a: Snorlax
+|move|p2a: Snorlax|Curse|p2a: Snorlax
+|-unboost|p2a: Snorlax|spe|1
+|-boost|p2a: Snorlax|atk|1
+|-boost|p2a: Snorlax|def|1
+|
+|upkeep
+|turn|5
+|request|{"active":[{"moves":[{"move":"Lock-On","id":"lockon","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Zap Cannon","id":"zapcannon","pp":8,"maxpp":8,"target":"normal","disabled":false},{"move":"Mind Reader","id":"mindreader","pp":8,"maxpp":8,"target":"normal","disabled":false},{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Electrode","details":"Electrode, M","condition":"282/282","active":true,"stats":{"atk":157,"def":197,"spa":217,"spd":217,"spe":337},"moves":["lockon","zapcannon","mindreader","thunderbolt"],"baseAbility":"static","item":"","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"282/282","active":false,"stats":{"atk":187,"def":177,"spa":317,"spd":207,"spe":256},"moves":["spite","lockon","mindreader","shadowball"],"baseAbility":"levitate","item":"","pokeball":"pokeball"}]}}
+|
+|move|p1a: Electrode|Zap Cannon|p2a: Snorlax
+|-damage|p2a: Snorlax|387/482
+|-status|p2a: Snorlax|par
+|cant|p2a: Snorlax|par
+|
+|upkeep
+|turn|6
+|request|{"active":[{"moves":[{"move":"Lock-On","id":"lockon","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Zap Cannon","id":"zapcannon","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Mind Reader","id":"mindreader","pp":8,"maxpp":8,"target":"normal","disabled":false},{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Electrode","details":"Electrode, M","condition":"282/282","active":true,"stats":{"atk":157,"def":197,"spa":217,"spd":217,"spe":337},"moves":["lockon","zapcannon","mindreader","thunderbolt"],"baseAbility":"static","item":"","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"282/282","active":false,"stats":{"atk":187,"def":177,"spa":317,"spd":207,"spe":256},"moves":["spite","lockon","mindreader","shadowball"],"baseAbility":"levitate","item":"","pokeball":"pokeball"}]}}
+|
+|move|p1a: Electrode|Mind Reader|p2a: Snorlax
+|-activate|p1a: Electrode|move: Mind Reader|[of] p2a: Snorlax
+|cant|p2a: Snorlax|par
+|
+|upkeep
+|turn|7
+|request|{"active":[{"moves":[{"move":"Lock-On","id":"lockon","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Zap Cannon","id":"zapcannon","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Mind Reader","id":"mindreader","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Thunderbolt","id":"thunderbolt","pp":24,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Electrode","details":"Electrode, M","condition":"282/282","active":true,"stats":{"atk":157,"def":197,"spa":217,"spd":217,"spe":337},"moves":["lockon","zapcannon","mindreader","thunderbolt"],"baseAbility":"static","item":"","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"282/282","active":false,"stats":{"atk":187,"def":177,"spa":317,"spd":207,"spe":256},"moves":["spite","lockon","mindreader","shadowball"],"baseAbility":"levitate","item":"","pokeball":"pokeball"}]}}
+|
+|move|p1a: Electrode|Thunderbolt|p2a: Snorlax
+|-damage|p2a: Snorlax|303/482 par
+|move|p2a: Snorlax|Curse|p2a: Snorlax
+|-unboost|p2a: Snorlax|spe|1
+|-boost|p2a: Snorlax|atk|1
+|-boost|p2a: Snorlax|def|1
+|
+|upkeep
+|turn|8
+|request|{"active":[{"moves":[{"move":"Lock-On","id":"lockon","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Zap Cannon","id":"zapcannon","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Mind Reader","id":"mindreader","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Thunderbolt","id":"thunderbolt","pp":23,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Electrode","details":"Electrode, M","condition":"282/282","active":true,"stats":{"atk":157,"def":197,"spa":217,"spd":217,"spe":337},"moves":["lockon","zapcannon","mindreader","thunderbolt"],"baseAbility":"static","item":"","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"282/282","active":false,"stats":{"atk":187,"def":177,"spa":317,"spd":207,"spe":256},"moves":["spite","lockon","mindreader","shadowball"],"baseAbility":"levitate","item":"","pokeball":"pokeball"}]}}
+|
+|move|p1a: Electrode|Thunderbolt|p2a: Snorlax
+|-damage|p2a: Snorlax|210/482 par
+|move|p2a: Snorlax|Curse|p2a: Snorlax
+|-unboost|p2a: Snorlax|spe|1
+|-boost|p2a: Snorlax|atk|1
+|-boost|p2a: Snorlax|def|1
+|
+|upkeep
+|turn|9
+|request|{"active":[{"moves":[{"move":"Lock-On","id":"lockon","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Zap Cannon","id":"zapcannon","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Mind Reader","id":"mindreader","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Thunderbolt","id":"thunderbolt","pp":22,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Electrode","details":"Electrode, M","condition":"282/282","active":true,"stats":{"atk":157,"def":197,"spa":217,"spd":217,"spe":337},"moves":["lockon","zapcannon","mindreader","thunderbolt"],"baseAbility":"static","item":"","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"282/282","active":false,"stats":{"atk":187,"def":177,"spa":317,"spd":207,"spe":256},"moves":["spite","lockon","mindreader","shadowball"],"baseAbility":"levitate","item":"","pokeball":"pokeball"}]}}
+|
+|move|p1a: Electrode|Mind Reader|p2a: Snorlax
+|-activate|p1a: Electrode|move: Mind Reader|[of] p2a: Snorlax
+|move|p2a: Snorlax|Curse|p2a: Snorlax
+|-unboost|p2a: Snorlax|spe|1
+|-boost|p2a: Snorlax|atk|1
+|-boost|p2a: Snorlax|def|1
+|
+|upkeep
+|turn|10
+|request|{"active":[{"moves":[{"move":"Lock-On","id":"lockon","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Zap Cannon","id":"zapcannon","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Mind Reader","id":"mindreader","pp":6,"maxpp":8,"target":"normal","disabled":false},{"move":"Thunderbolt","id":"thunderbolt","pp":22,"maxpp":24,"target":"normal","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Electrode","details":"Electrode, M","condition":"282/282","active":true,"stats":{"atk":157,"def":197,"spa":217,"spd":217,"spe":337},"moves":["lockon","zapcannon","mindreader","thunderbolt"],"baseAbility":"static","item":"","pokeball":"pokeball"},{"ident":"p1: Gengar","details":"Gengar, M","condition":"282/282","active":false,"stats":{"atk":187,"def":177,"spa":317,"spd":207,"spe":256},"moves":["spite","lockon","mindreader","shadowball"],"baseAbility":"levitate","item":"","pokeball":"pokeball"}]}}

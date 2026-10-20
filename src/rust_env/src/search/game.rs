@@ -139,7 +139,7 @@ impl Game {
         let side = side_of(tag).ok_or_else(|| format!("replay: command {k} {c:?}"))?;
         let idx = self.open[side]
             .as_ref()
-            .and_then(|o| o.tokens.iter().find(|(_, t)| t == tok).map(|(i, _)| *i))
+            .and_then(|o| logged_token_index(&o.tokens, tok))
             .ok_or_else(|| format!("replay: command {k} {c:?} — p{} has no open decision offering that token", side + 1))?;
         self.feed(side, idx as i32)
     }
@@ -305,6 +305,25 @@ fn side_of(tag: &str) -> Option<usize> {
     match tag {
         "1" => Some(0),
         "2" => Some(1),
+        _ => None,
+    }
+}
+
+/// The open decision's index for a LOGGED token: the token itself, or — for a Hidden Power — the one
+/// offered `move hiddenpower*` token. A log written before `gen3_live_reader_reading_v1` spells a Mimic /
+/// Transform copy's Hidden Power bare (`move hiddenpower`); the reading now types it from the request
+/// (`move hiddenpowerdark`), and the sim reads both choices as the same move (`sim/side.ts` `chooseMove`
+/// collapses `hiddenpower*`).
+pub fn logged_token_index(tokens: &[(usize, String)], tok: &str) -> Option<usize> {
+    if let Some((i, _)) = tokens.iter().find(|(_, t)| t == tok) {
+        return Some(*i);
+    }
+    if !tok.starts_with("move hiddenpower") {
+        return None;
+    }
+    let mut hp = tokens.iter().filter(|(_, t)| t.starts_with("move hiddenpower"));
+    match (hp.next(), hp.next()) {
+        (Some((i, _)), None) => Some(*i),
         _ => None,
     }
 }

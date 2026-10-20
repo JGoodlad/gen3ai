@@ -117,7 +117,15 @@ fn corpus_digest(level: OracleSpec, n: usize, threads: usize, seed: u64, steps: 
 /// column of the three seeds dumped per op before / after: 116 of 28,848 side-rows moved, ONLY in the opponent slots'
 /// Hidden-Power block (116 `hp_revealed` cells, 24 Fire and 24 Ground `hp_probs` cells); mask, need, done and every label
 /// column byte-identical.
-const PRE_REVEAL_DIGEST: [u64; 3] = [0x41d0a43d3a4c0a8a, 0x04cd44475055f915, 0x10706c60a40548c2];
+/// RE-RECORDED 2026-10-20 for `gen3_live_reader_reading_v1` (the reading's Focus Band / Mimic-Transform Hidden Power fixes;
+/// was [0x41d0a43d3a4c0a8a, 0x04cd44475055f915, 0x10706c60a40548c2]). CENSUS, the OBS / MASK / label columns of the three
+/// seeds dumped per op from the base and the fix: 47 of 28,848 side-rows moved (seeds 11 and 12; seed 13 byte-identical),
+/// ONLY in the opponent's ITEM cells (+7 / +8) with the obs-facts item-seen cell (+19) and the Choice NOT-locked proof
+/// (+42) — a Focus Band survive now discloses the band — and, on one battle of seed 11 (5 rows), a Mimic / Transform copy's
+/// Hidden Power typed from its request (the active-request move num / type cells and the own move slot); the mask, need
+/// and done byte-identical; the label columns moved only on that battle (6 ops: `known_moves`, `hp_type_label` /
+/// `hp_type_mask` of the opposing view, whose TRUTH is the other side's reading, now typed as its doc says).
+const PRE_REVEAL_DIGEST: [u64; 3] = [0x5b66a796756e6d27, 0xa5187063ffdd74da, 0x10706c60a40548c2];
 
 #[test]
 fn off_is_inert() {
@@ -133,7 +141,9 @@ fn off_is_inert() {
 /// (the toxic cell's scale and the Wish flag's phase; was [0x891cf763e4a2a136, 0x052ba1c32a90dad9, 0x691a5b236ccac9ff]).
 /// RE-RECORDED 2026-10-19 with `PRE_REVEAL_DIGEST` (`gen3_hp_fire_time_target_v1`; `species_differs_from_off_only_in_the_declared_cells`
 /// still passes, so the move is OFF's Hidden-Power-block move; was [0x71246ab6e7a116b8, 0x696f20607029b1c5, 0x18223e1ed7797e41]).
-const SPECIES_DIGEST: [u64; 3] = [0xb4f2cf73fd76d3b0, 0x525e3ba9366f6948, 0x03e146e2ace1db1c];
+/// RE-RECORDED 2026-10-20 with `PRE_REVEAL_DIGEST` (`gen3_live_reader_reading_v1`; was
+/// [0xb4f2cf73fd76d3b0, 0x525e3ba9366f6948, 0x03e146e2ace1db1c]).
+const SPECIES_DIGEST: [u64; 3] = [0x33641b949289e2dd, 0x304bdeaee5ecbffb, 0x03e146e2ace1db1c];
 
 #[test]
 fn species_bytes_are_pinned() {
@@ -145,7 +155,9 @@ fn species_bytes_are_pinned() {
 /// RE-RECORDED for the OBS-FACTS append (prefix reproduced; was
 /// [0xca6588ea5346cc81, 0xbe296c50b2391687, 0xdd62f412c287f835]). RE-RECORDED 2026-10-09 with `PRE_REVEAL_DIGEST` (was
 /// [0x8b2b6001c764e4da, 0x8496445448a003a3, 0x0c3727e67aa6f4c0]).
-const FULL_DIGEST: [u64; 3] = [0xcdd895a69a8a8c14, 0x363aa2e5c1b79a73, 0x2e08941ae673a4ce];
+/// RE-RECORDED 2026-10-20 with `PRE_REVEAL_DIGEST` (`gen3_live_reader_reading_v1`; was
+/// [0xcdd895a69a8a8c14, 0x363aa2e5c1b79a73, 0x2e08941ae673a4ce]).
+const FULL_DIGEST: [u64; 3] = [0x59dde882478161a9, 0x4f6895816ddd89a6, 0x2e08941ae673a4ce];
 
 #[test]
 fn full_bytes_are_pinned() {

@@ -1,0 +1,60 @@
+|gametype|singles
+|player|p1|me||
+|player|p2|foe||
+|gen|3
+|tier|[Gen 3] Custom Game
+|rule|HP Percentage Mod: HP is shown in percentages
+|
+|teamsize|p1|1
+|teamsize|p2|1
+|start
+|switch|p1a: Snorlax|Snorlax, M|482/482
+|switch|p2a: Slowbro|Slowbro, M|352/352
+|turn|1
+|request|{"active":[{"moves":[{"move":"Rest","id":"rest","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Curse","id":"curse","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Sleep Talk","id":"sleeptalk","pp":16,"maxpp":16,"target":"self","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Snorlax","details":"Snorlax, M","condition":"482/482","active":true,"stats":{"atk":277,"def":187,"spa":187,"spd":277,"spe":96},"moves":["rest","curse","bodyslam","sleeptalk"],"baseAbility":"immunity","item":"chestoberry","pokeball":"pokeball"}]}}
+|
+|move|p2a: Slowbro|Surf|p1a: Snorlax
+|-damage|p1a: Snorlax|371/482
+|move|p1a: Snorlax|Curse|p1a: Snorlax
+|-unboost|p1a: Snorlax|spe|1
+|-boost|p1a: Snorlax|atk|1
+|-boost|p1a: Snorlax|def|1
+|
+|upkeep
+|turn|2
+|request|{"active":[{"moves":[{"move":"Rest","id":"rest","pp":16,"maxpp":16,"target":"self","disabled":false},{"move":"Curse","id":"curse","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Sleep Talk","id":"sleeptalk","pp":16,"maxpp":16,"target":"self","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Snorlax","details":"Snorlax, M","condition":"371/482","active":true,"stats":{"atk":277,"def":187,"spa":187,"spd":277,"spe":96},"moves":["rest","curse","bodyslam","sleeptalk"],"baseAbility":"immunity","item":"chestoberry","pokeball":"pokeball"}]}}
+|
+|move|p2a: Slowbro|Yawn|p1a: Snorlax
+|-start|p1a: Snorlax|move: Yawn|[of] p2a: Slowbro
+|move|p1a: Snorlax|Rest|p1a: Snorlax
+|-status|p1a: Snorlax|slp|[from] move: Rest
+|-heal|p1a: Snorlax|482/482 slp|[silent]
+|-enditem|p1a: Snorlax|Chesto Berry|[eat]
+|-curestatus|p1a: Snorlax|slp|[msg]
+|
+|upkeep
+|turn|3
+|request|{"active":[{"moves":[{"move":"Rest","id":"rest","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Curse","id":"curse","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Sleep Talk","id":"sleeptalk","pp":16,"maxpp":16,"target":"self","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Snorlax","details":"Snorlax, M","condition":"482/482","active":true,"stats":{"atk":277,"def":187,"spa":187,"spd":277,"spe":96},"moves":["rest","curse","bodyslam","sleeptalk"],"baseAbility":"immunity","item":"","pokeball":"pokeball"}]}}
+|
+|move|p2a: Slowbro|Calm Mind|p2a: Slowbro
+|-boost|p2a: Slowbro|spa|1
+|-boost|p2a: Slowbro|spd|1
+|move|p1a: Snorlax|Curse|p1a: Snorlax
+|-unboost|p1a: Snorlax|spe|1
+|-boost|p1a: Snorlax|atk|1
+|-boost|p1a: Snorlax|def|1
+|
+|-end|p1a: Snorlax|move: Yawn|[silent]
+|-status|p1a: Snorlax|slp
+|upkeep
+|turn|4
+|request|{"active":[{"moves":[{"move":"Rest","id":"rest","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Curse","id":"curse","pp":14,"maxpp":16,"target":"self","disabled":false},{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Sleep Talk","id":"sleeptalk","pp":16,"maxpp":16,"target":"self","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Snorlax","details":"Snorlax, M","condition":"482/482 slp","active":true,"stats":{"atk":277,"def":187,"spa":187,"spd":277,"spe":96},"moves":["rest","curse","bodyslam","sleeptalk"],"baseAbility":"immunity","item":"","pokeball":"pokeball"}]}}
+|
+|move|p2a: Slowbro|Calm Mind|p2a: Slowbro
+|-boost|p2a: Slowbro|spa|1
+|-boost|p2a: Slowbro|spd|1
+|cant|p1a: Snorlax|slp
+|
+|upkeep
+|turn|5
+|request|{"active":[{"moves":[{"move":"Rest","id":"rest","pp":15,"maxpp":16,"target":"self","disabled":false},{"move":"Curse","id":"curse","pp":14,"maxpp":16,"target":"self","disabled":false},{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Sleep Talk","id":"sleeptalk","pp":16,"maxpp":16,"target":"self","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Snorlax","details":"Snorlax, M","condition":"482/482 slp","active":true,"stats":{"atk":277,"def":187,"spa":187,"spd":277,"spe":96},"moves":["rest","curse","bodyslam","sleeptalk"],"baseAbility":"immunity","item":"","pokeball":"pokeball"}]}}

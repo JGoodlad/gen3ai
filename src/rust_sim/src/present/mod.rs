@@ -67,3 +67,5 @@ pub use view::{present, OneSidedView};
 mod tests;
 #[cfg(test)]
 mod called_move_tests;
+#[cfg(test)]
+mod live_reader_reading_tests;

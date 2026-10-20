@@ -76,17 +76,21 @@ This change is **value-neutral on every state that encoded before**: a newly cla
 touches encodes that used to RAISE. Proof: 400 pool battles (30,943 decisions) were byte-identical
 before and after, and the obs goldens pass unchanged. There was no `ARCH_SIGNATURE` bump.
 
-**poke-env reading findings this surfaced** (history — the reading is the Rust core's now). These were reported, not fixed. poke-env's reading is
-not the spec.
+**Reading findings this surfaced** (2026-09-24, found in poke-env and shared by the Rust core's
+reading, which mirrored it). All three are FIXED in the Rust reading (`src/rust_sim/src/present/`,
+`gen3_live_reader_reading_v1`, 2026-10-19), each pinned on a real Showdown stream
+(`present::live_reader_reading_tests`):
 
-- `|-activate|<mon>|item: Focus Band` does NOT disclose the item. The generic branch only starts an
-  effect, so the opponent's item slot stays unknown after a public reveal. This reaches the obs
-  item block.
-- `|-activate|<target>|move: Spite|<move>|<n>` does NOT apply the PP cut to the opponent's estimated
-  PP. Our own side is corrected by the next `|request|`.
-- MIND_READER is `ends_on_turn`, so it's dropped at the next `|turn|`. LOCK_ON never ends before
-  switch-out. The sim's `lockon` lasts 2 turns (through the user's next move) for both. So the
-  `lockon` bit is never visible at a turn-start decision after Mind Reader, and stays set after a
-  Lock-On is spent.
+- `|-activate|<mon>|item: Focus Band` now DISCLOSES the band (`BoardReading::activate` sets the item,
+  public; the band is not consumed). It used to only start an effect, so the opponent's item slot
+  stayed unknown after a public reveal.
+- `|-activate|<target>|move: Spite|<move>|<n>` now cuts `n` PP from the named move on the reading
+  (the opponent's estimate; our own is the next `|request|`'s word anyway).
+- Lock-On and Mind Reader both add the sim's `lockon` volatile (`duration: 2`, ended silently at the
+  residual of the turn after). The reading now ends LOCK_ON / MIND_READER at the second `|upkeep|`
+  after the start (`PMon::upkeep`), so the `lockon` slot is set at the next turn's decision and clear
+  at the one after. It used to drop MIND_READER at the next `|turn|` (never visible at a decision)
+  and keep LOCK_ON until switch-out. The engine plays none of Spite / Lock-On / Mind Reader (they
+  fail loud), so no training row could hold them: the fixes reach only live and replay reads.
 - Every one-shot effect stays in `mon.effects` until switch-out, which is why `NOT_A_VOLATILE` has
   to exist at all.

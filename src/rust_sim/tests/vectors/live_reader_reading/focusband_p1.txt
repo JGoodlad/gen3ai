@@ -1,0 +1,47 @@
+|gametype|singles
+|player|p1|me||
+|player|p2|foe||
+|gen|3
+|tier|[Gen 3] Custom Game
+|rule|HP Percentage Mod: HP is shown in percentages
+|
+|teamsize|p1|1
+|teamsize|p2|2
+|start
+|switch|p1a: Machamp|Machamp, M|342/342
+|switch|p2a: Abra|Abra, L5, M|20/20
+|turn|1
+|request|{"active":[{"moves":[{"move":"Cross Chop","id":"crosschop","pp":8,"maxpp":8,"target":"normal","disabled":false},{"move":"Bulk Up","id":"bulkup","pp":32,"maxpp":32,"target":"self","disabled":false},{"move":"Rock Slide","id":"rockslide","pp":16,"maxpp":16,"target":"allAdjacentFoes","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Machamp","details":"Machamp, M","condition":"342/342","active":true,"stats":{"atk":317,"def":217,"spa":187,"spd":227,"spe":167},"moves":["crosschop","bulkup","rockslide","earthquake"],"baseAbility":"guts","item":"choiceband","pokeball":"pokeball"}]}}
+|
+|move|p1a: Machamp|Cross Chop|p2a: Abra|[miss]
+|-miss|p1a: Machamp|p2a: Abra
+|move|p2a: Abra|Calm Mind|p2a: Abra
+|-boost|p2a: Abra|spa|1
+|-boost|p2a: Abra|spd|1
+|
+|upkeep
+|turn|2
+|request|{"active":[{"moves":[{"move":"Cross Chop","id":"crosschop","pp":7,"maxpp":8,"target":"normal","disabled":false},{"move":"Bulk Up","id":"bulkup","pp":32,"maxpp":32,"target":"self","disabled":true},{"move":"Rock Slide","id":"rockslide","pp":16,"maxpp":16,"target":"allAdjacentFoes","disabled":true},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":true}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Machamp","details":"Machamp, M","condition":"342/342","active":true,"stats":{"atk":317,"def":217,"spa":187,"spd":227,"spe":167},"moves":["crosschop","bulkup","rockslide","earthquake"],"baseAbility":"guts","item":"choiceband","pokeball":"pokeball"}]}}
+|
+|move|p1a: Machamp|Cross Chop|p2a: Abra
+|-resisted|p2a: Abra
+|-crit|p2a: Abra
+|-activate|p2a: Abra|item: Focus Band
+|-damage|p2a: Abra|1/20
+|move|p2a: Abra|Calm Mind|p2a: Abra
+|-boost|p2a: Abra|spa|1
+|-boost|p2a: Abra|spd|1
+|
+|upkeep
+|turn|3
+|request|{"active":[{"moves":[{"move":"Cross Chop","id":"crosschop","pp":6,"maxpp":8,"target":"normal","disabled":false},{"move":"Bulk Up","id":"bulkup","pp":32,"maxpp":32,"target":"self","disabled":true},{"move":"Rock Slide","id":"rockslide","pp":16,"maxpp":16,"target":"allAdjacentFoes","disabled":true},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":true}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Machamp","details":"Machamp, M","condition":"342/342","active":true,"stats":{"atk":317,"def":217,"spa":187,"spd":227,"spe":167},"moves":["crosschop","bulkup","rockslide","earthquake"],"baseAbility":"guts","item":"choiceband","pokeball":"pokeball"}]}}
+|
+|move|p1a: Machamp|Cross Chop|p2a: Abra|[miss]
+|-miss|p1a: Machamp|p2a: Abra
+|move|p2a: Abra|Calm Mind|p2a: Abra
+|-boost|p2a: Abra|spa|1
+|-boost|p2a: Abra|spd|1
+|
+|upkeep
+|turn|4
+|request|{"active":[{"moves":[{"move":"Cross Chop","id":"crosschop","pp":5,"maxpp":8,"target":"normal","disabled":false},{"move":"Bulk Up","id":"bulkup","pp":32,"maxpp":32,"target":"self","disabled":true},{"move":"Rock Slide","id":"rockslide","pp":16,"maxpp":16,"target":"allAdjacentFoes","disabled":true},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":true}]}],"side":{"name":"me","id":"p1","pokemon":[{"ident":"p1: Machamp","details":"Machamp, M","condition":"342/342","active":true,"stats":{"atk":317,"def":217,"spa":187,"spd":227,"spe":167},"moves":["crosschop","bulkup","rockslide","earthquake"],"baseAbility":"guts","item":"choiceband","pokeball":"pokeball"}]}}
