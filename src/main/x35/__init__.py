@@ -18,7 +18,10 @@
 * :mod:`main.x35.ge` -- the G-E READERS (F27 closed for the readers): the fresh best responders of an arm's seed-3501
   final and C0's, their trigger (only on the arm's primary GAIN) and the ``r2`` read through ``main.best_response_gap``;
 * :mod:`main.x35.x47` -- X47's readout (AM-4): s_eq at equal effective learn time, the matched-step secondary, the
-  PER-STEP ONLY class; :mod:`main.x35.tbrows` -- a fork's OWN TensorBoard rows (the inherited prefix excluded).
+  PER-STEP ONLY class, and the AM-X47 amendments (2026-10-20: ``seq`` reads only finished, K9(b)-PASS, unthinned runs
+  and names the files; look 2's moved nodes; what each class does to X47b); :mod:`main.x35.x47_report` -- X47's
+  REPORTED quantities (the PER-STEP ONLY gap, the per-member Δ, the new rounds' weight norms);
+  :mod:`main.x35.tbrows` -- a fork's OWN TensorBoard rows (the inherited prefix excluded).
 
 Nothing here launches, trains or plays on import. The staging record is
 ``designs/research_state/measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md``.
