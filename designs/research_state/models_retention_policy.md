@@ -1,11 +1,23 @@
 # `models/` retention policy
 
-*Written 2026-09-06. ⚠️ **SUPERSEDED IN PRACTICE 2026-10-09:** the owner approved, and the orchestrator applied, a coarser PRE-RUSTBORO SKELETON (§0 below states what each pre-`rb_` run keeps — moved here from the root `CLAUDE.md` on 2026-10-09; per-path plan `~/gen3ai_archive/models_cleanup_2026-10-09_plan.tsv`; ~386 GB freed with the finished `rb_` compile caches). The tiers below were NOT applied as written.* *(Original:) **Nothing has been applied.** Both policies below have been run as dry runs
+*Written 2026-09-06. ⚠️ **SUPERSEDED IN PRACTICE 2026-10-09:** the owner approved, and the orchestrator applied, a coarser PRE-RUSTBORO SKELETON (§0 below states what each pre-`rb_` run keeps — moved here from the root `CLAUDE.md` on 2026-10-09; per-path plan `~/gen3ai_archive/models_cleanup_2026-10-09_plan.tsv`; ~386 GB freed with the finished `rb_` compile caches; a second, cache-only pass on 2026-10-19 freed ~177 GiB more, also in §0). The tiers below were NOT applied as written.* *(Original:) **Nothing has been applied.** Both policies below have been run as dry runs
 and their reports are committed beside them; the `--apply` commands are in §7.*
 
 ## 0. What was APPLIED — the pre-Rustboro skeleton (owner, 2026-10-09)
 
 🚨 **The PRE-RUSTBORO SKELETON was APPLIED 2026-10-09 (owner):** every pre-`rb_` run keeps only `metadata.json`, `model_config.json`, TensorBoard, every jsonl (incl. `value_sidecar/`), small json/md/png, its `final_model*.zip` (or its newest checkpoint when it has none) and every file the baseline registry names — intermediate checkpoints, snapshot pools, eval traces, compile caches and `best_model/` are GONE (~322 GB) — ⚠️ WHOLE directories went when no kept file sat inside, so the per-checkpoint sidecar JSONs in `checkpoints/*.json` went too (`main.dose` now reads a skeleton run's LR from its TB curve, `6ed20cdd`); finished `rb_` runs lost only their `compile_cache/` (~64 GB; a resume recompiles). The per-path plan is `~/gen3ai_archive/models_cleanup_2026-10-09_plan.tsv`.
+
+🚨 **The 2026-10-19 DISK RECLAIM was APPLIED (owner ask "reclaim unused disk"; the orchestrator ruled per category), ahead of X35 batch 1 (≈ 263 GiB asked): free space went from 286.8 GiB to 464.0 GiB.** No checkpoint, snapshot, eval trace, `tb/` or sidecar was deleted anywhere. Only regenerable caches and dead scratch went:
+- **`compile_cache/` of the 42 FINISHED `rb_` runs that had one: 117.98 GiB.** A run's own cache is reused only by that run's own restart (`main.train.lifecycle._declare_compile_cache`: a fork starts empty, and readers get a private cache), so a resume recompiles. Live X34 `rb_toy_ent_s4002_deep` and `rb_x26_s2601` were excluded.
+- **The 2026-10-07 static-token SPEED-benchmark scratch `~/.cache/gen3ai/st1/launch/models/*/{compile_cache,snapshots}`: 25.56 GiB**, plus its pin worktree `st1/wt`. Nothing ran from it, and no committed doc names the path except `scripts/ops/README.md`'s note on its crashed `s_read.py` copy. Its model zips, `tb/`, logs and per-cycle jsonl stay, so the speed read can be recomputed.
+- **14 compile-cache dirs inside `~/gen3ai_archive` measurement scratch: 17.55 GiB.** The raw data beside them stays, because committed docs cite it.
+- **`models/gen{8,9}_launcher.log` gzipped** (2.83 GB → 21 MB, lossless).
+- **16 dead agent worktrees, ~9 GiB, every branch KEPT.** The 8 dirty ones (the 2026-10-10 `CLAUDE.md` cuts, whose files are all on main) were salvaged first to `~/gen3ai_archive/worktree_salvage_2026-10-19/` (a diff and an untracked-file tarball each, plus an `INDEX.txt`). 20 more were left alone because they carry a Claude Code lock naming a live session.
+- The pip cache was purged.
+
+NOT applied, by ruling: the STANDING policy's thinning (31.5 GiB in 42 CLOSED `rb_` runs, because weights are irreversible and the caches sufficed), a manual trim of `compile_shared` (its LRU pruner keeps it at its 20 GB cap), and the finished studies' pin worktrees under `~/.cache/gen3ai/`. The per-path allowlists, delete logs and the standing dry run are in `~/gen3ai_archive/disk_reclaim_2026-10-19/`.
+
+**TECH DEBT (found 2026-10-19): the STANDING plan deletes `checkpoints/*.json` SIDECARS together with their zips.** Tier 4 (§4) keeps them deliberately, and `main.dose` reads a run's LR from them. Before the standing policy is ever applied, its plan must keep every `checkpoints/*.json`. The fix goes in `archive_grooming_dryrun.py`, with a test that fails on revert.
 
 The run archive is the one thing in this project that is never reproducible. A checkpoint is a
 weight file that no amount of compute re-derives, because the run that produced it consumed dice,
