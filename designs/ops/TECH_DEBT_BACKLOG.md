@@ -7,22 +7,34 @@ The one list of tech-debt work. Research and measurement work is NOT tracked her
 live in `designs/endstate/obs_enrichment_backlog.md` (observation facts) or `UNDERSTANDING.md` §6
 (everything else).
 
-## Next 10 (ranked 2026-10-19, after grooming)
+## Next 10 (ranked 2026-10-20, after grooming)
 
-Ranked by value to the current goals (X35 plateau-breakers, then search) over effort. Not ranked here,
-because other agents own them on 2026-10-19: the aux / belief loss means, CPU Inductor tile2d, the
-search replacement switch, the rust_sim dex data path, the core-module review, the Teambuilder
-Node validator spawns, fixed SLEEPS and the `best_response_gap` CWD. **Blocks search:** only the search replacement switch (c). This is a
-value ranking for the orchestrator's pick; the burn-down rule below still orders a quota burn (tier,
-then size).
+Ranked by value to the current goals, in this order: **X35 production launch readiness**, then **search** (the stage 1c / L3
+follow-ups), then **measurement correctness**, then hygiene; effort and agent tier are the cheapest that fit the risk.
+**State, 2026-10-20 07:50:** X35's TOY block is running (C0 s3601 finished 360,098,229 steps at 06:46, K9(b) PASS; X47 depth-4
+s3601 is running); production waits for the FP32_ALT GPU read. **The gate is a window, not a row:** `measurements/gpu_window_battery_2026-10-20/`
+(FP32_ALT's cost cells, then the X14 A/B; about 115 min leased, the run paused; staged, NOT RUN). Items 1-3 are what production's
+first launch also waits on. **Blocks search:** nothing open (the replacement-switch row closed 2026-10-19); search's gates are
+readings. Not ranked, because other agents own them tonight: B-KFFN's field-generic growth refactor (`bkffn`, T66), X50's S0
+census (`x50-census`), X47's readout review, the stage 1 and 1c chunk runners, the X26 drift pre-read and the outside-panel band.
+This is a value ranking for the orchestrator's pick; the burn-down rule below still orders a quota burn (tier, then size).
 
-| # | row (bold phrase) | effort | why now / blocks |
+| # | row (bold phrase) | effort / tier | why now / blocks |
 |---|---|---|---|
-| 1 | ~~**A PINNED run reads `data/` from the MAIN checkout** + **`TeamLoader` default `base_dir`**~~ DONE 2026-10-19 (`gen3_pinned_data_root_v1`, §3) | — | the freeze now holds only while a run pinned BEFORE the fix is live or queued (root rule 6) |
-| 2 | **T2's `InferenceService._frozen_guard` … BLIND under `expandable_segments`** (b) | S, ~1 h in a GPU window + the owner's keep-or-drop call | the guard that watches every X35 run's memory cannot fire until its switch is armed |
-| 3 | ~~One reading unit for the live reader~~ — DONE 2026-10-19 (`gen3_live_reader_reading_v1`, `gen3_faint_clears_types_override_v1`; §3) | — | — |
-| 6 | ~~**Port: a Perish Song faint is skipped …** — the allowlist-gate half~~ CLOSED 2026-10-20 (`gen3_perside_window_keys_whole_battle_v1`; see §3) | — | — |
-| 8 | **~22 stale `.claude/worktrees/agent-*` worktrees** (g) | S, ~1 h; the orchestrator approves the list | X26 has ended; run the `models`-symlink check first |
+| 1 | **FP32_ALT's adversarial-review follow-ups** (b; F2 the CUDA (Triton) case of the compiled-vs-eager τ test, F1 the T62-window provenance, F3-F5 wording) | S, ~0.5 agent-day + ~2 min of card inside the battery window; sonnet-high; F2 is IN FLIGHT in worktree `tau_cuda_parity` | **gates production's GO**: the program that reads the τ-class fix on the card must not be the first to run compiled CUDA |
+| 2 | **The aux / belief loss terms' accumulated means are UNAUDITED** (b) | S-M; sonnet-high to read the queued `aux_norm_2026-10-19/measure.py`, opus-high for the fix if a term is mis-weighted (then P0) | a distorted loss weight reaches every production arm and its control alike, and no meter would show it |
+| 3 | **TASK_BACKLOG T52 (OPS-8): `--canary-shift-max` has no code ceiling** | XS-S; sonnet-high | the toy block's canary rule (orchestrator, 2026-10-20 03:16) has the training session resume a FATAL arm with a hand-typed `--canary-shift-max 0.3`; a typo of 18 for 0.18 disarms the gate silently |
+| 4 | **T2's `InferenceService._frozen_guard` ... BLIND under `expandable_segments`** (b) | S for the card cell (rides the next window; not in the 2026-10-20 battery as staged at `e5ab15f4`) + M for the overlap-attribution design (opus-high) | the guard that watches every X35 run's memory stays OFF by ruling until a worker flush's growth is not booked to T2 |
+| 5 | **Search: L3's familiarity counter-test** (`measurements/search_l3_2026-10-20/counter_test/`, preregistered `b39c9cdc5`; `search_ledger.md` §7 Q15) | ~45 min CPU on one heavy slot (queued 2026-10-20 as the `l3-decoy` job) + ~1 h; sonnet-high applies the registered read | decides whether L3's WORKS (AUC 0.692, carried by the snapshot stratum) is pool familiarity, the premise of stage 1c |
+| 6 | **Search: stage 1c's phase A read and Amendment A's reads** (STRICT corpus read, L-vs-dice attribution, permuted-L placebo, off-pool and plateau replication; `measurements/search_1c_2026-10-20/`) | M, reads of chunked runs; opus-high | the first number on whether a larger or team-level proposal set puts the worlds near the truth; the sampler is what binds (L1, L3) |
+| 7 | **Search: L1's registered replication on the maturity plateau bank** (`search_ledger.md` §7 Q13) | XS, ~1 CPU-min once `QUEUE_DONE` lands (ETA 10-23 to 10-24); sonnet-medium | closes Q13: the anchored rule's one PAYS-SCOPED cell either replicates or not |
+| 8 | **TASK_BACKLOG T46 (OPS-2): a launcher pause / GPU-window hook** | M; opus-high (launcher internals) | every X35 window (battery, X14 A/B, K9(b) reads) is a hand-made PAUSE / GO file handoff; production will need several |
+| 9 | **The e2e fuzz golden generator does not reproduce its committed golden** (c) | S; sonnet-high | a golden whose generator drifts with `data/teams/` (813 files now) is a fixture nobody can refresh or trust |
+| 10 | **22 stale `.claude/worktrees/agent-*` worktrees** (g; about 18 GiB) | S, ~1 h; sonnet-medium; the orchestrator approves the list | X35 batch 1's 31 remaining forks need ~468 GiB against ~446 GiB free (thinning declared, F22); named worktrees are live agents' |
+
+Next after these (unranked): the freshness gate's seven `designs/<topic>/` trees (h, S-M), the stale `ai_v14` defaults (d, S), the
+dead launcher panel rows (d, XS), the display nits (g, S). Search builds gated on the 1c read, not in the list: L4's calibrated bank
+(1-2 agent-days), F1 tier B's remaining dice, a behaviour-cloned opponent model for the ladder.
 
 **Two rules (owner, 2026-09-06).** (1) During the week nothing here is dispatched on the
 orchestrator's own initiative: the orchestrator ADDS rows; the owner moves a row to ACCEPTED, and an
