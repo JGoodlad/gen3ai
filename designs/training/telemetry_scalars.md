@@ -223,7 +223,8 @@ alternative actions; `signal/` only reports the critic's own opinion of its roll
 **Advantage density is read ONCE per `train()`, off `self.rollout_buffer.advantages`, BEFORE the
 epoch loop** — because that is the last point at which the raw GAE advantages still exist. The
 minibatch loop applies `normalize_advantage`, which forces std→1 per minibatch and so *destroys the
-quantity being measured*. Composes with `--grad-accum-steps` for free (the read is per-rollout, not
+quantity being measured*. Under X14's `--overlap-collect` the buffer advantage stays RAW too: the decoupled update's
+importance weight is stored beside it and applied per micro-batch (`designs/training/rust_collector.md` "Overlap (X14)"). Composes with `--grad-accum-steps` for free (the read is per-rollout, not
 per-optimizer-step) and is untouched by `--compile-trainer` (it is numpy over the buffer, outside
 any traced graph). Degenerate rollouts are NaN-safe: an empty buffer publishes nothing, a constant
 rollout reports a real std/abs-mean with `adv_kurtosis` **NaN** — TensorBoard drops NaN, so the

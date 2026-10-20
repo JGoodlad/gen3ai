@@ -97,6 +97,7 @@
       "n_epochs": 10,
       "opp_belief_aux_coef": 0.05,
       "opp_intent_coef": 0.05,
+      "overlap_collect": false,
       "policy_gae_lambda": 0.8,
       "self_play": true,
       "spread_belief_coef": 0.05,

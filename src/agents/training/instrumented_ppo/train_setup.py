@@ -24,6 +24,12 @@ from agents.training.instrumented_ppo.noise_scale_terms import (
 from agents.training.instrumented_ppo.signal_metrics import advantage_density_metrics
 
 
+def _overlap_decoupled(model: Any) -> bool:
+    """X14's decoupled-PPO predicate (`rust_rollout.overlap.decoupled`), imported at call time."""
+    from agents.training.rust_rollout.overlap import decoupled
+    return decoupled(model)
+
+
 class FoldFlags(NamedTuple):
     """WHICH terms this `train()` call folds. Every field is read by exactly the guard of the term
     it names; the reasoning for each one is the comment above its computation below."""
@@ -108,7 +114,8 @@ class TrainSetup:
         # +X14 OVERLAP (`--overlap-collect`, gen3_overlap_collect_v1; `rust_rollout/overlap.py`): a no-op when OFF.
         # When ON, every update: K9(b) on the rows played at version current - 1, judged under that version's
         # BEHAVIOUR SNAPSHOT (the weights T2 served them with), then the DECOUPLED-PPO buffer rewrite (the
-        # proximal log-probs become `old_log_prob`, the truncated importance weight scales the advantage) — after
+        # proximal log-probs become `old_log_prob`, the truncated importance weight is stored BESIDE the raw advantage
+        # and applied per micro-batch after normalising, `_micro_advantages`) — after
         # the learner's own probe (both read the stored behaviour log-prob) and before any optimizer step.
         from agents.training.rust_rollout.overlap import judge_snapshot, proximal_transform, runner_of
 
@@ -238,7 +245,9 @@ class TrainSetup:
         value_mode = "plain" if (f.critic_winprob or self.clip_range_vf is None) else "clipped"
         return MicroStatic(
             discrete=isinstance(self.action_space, spaces.Discrete),
-            normalize_advantage=bool(self.normalize_advantage),
+            # X14 (gen3_overlap_norm_then_weight_v1): a DECOUPLED update normalises each micro-batch's RAW
+            # advantage BEFORE weighting it (`_micro_advantages`), so R1's own normalisation is off there.
+            normalize_advantage=bool(self.normalize_advantage) and not _overlap_decoupled(self),
             clip_range=clip_range, clip_range_vf=clip_vf, value_mode=value_mode,
             critic_winprob=bool(f.critic_winprob),
             vf_coef=float(self.vf_coef), ent_coef=float(self.ent_coef),
@@ -256,6 +265,19 @@ class TrainSetup:
             bot_label_weight=float(getattr(self, "intent_label_bot_weight", 1.0)),
             win_prob_on=bool(f.win_prob_on),
         )
+
+    def _micro_advantages(self, rollout_data: Any) -> Any:
+        """The advantage R1 receives for one micro-batch: the buffer's, untouched (a serial update — the SAME
+        tensor), or under X14's decoupled PPO the raw advantage normalised FIRST and weighted by the rows'
+        truncated importance weights AFTER (`overlap.decoupled_advantages`; `gen3_overlap_norm_then_weight_v1`)."""
+        if not _overlap_decoupled(self):
+            return rollout_data.advantages
+        from agents.training.rust_rollout.overlap import OverlapError, decoupled_advantages
+        w = getattr(rollout_data, "is_weights", None)
+        if w is None:
+            raise OverlapError("a decoupled-PPO micro-batch carries no importance weights (`proximal_transform` "
+                               "writes them before the epoch loop)")
+        return decoupled_advantages(rollout_data.advantages, w, bool(self.normalize_advantage))
 
     def _micro_region(self, retained_graph: bool = False) -> Any:
         """R1 as installed: the compiled region under --compile-trainer (K8), else the function. Under

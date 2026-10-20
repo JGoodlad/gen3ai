@@ -404,7 +404,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 _mo = self._micro_region(_retains)(self.policy, rollout_data.observations,
                                          rollout_data.actions, rollout_data.action_masks,
                                          rollout_data.old_log_prob, rollout_data.old_values,
-                                         rollout_data.advantages, rollout_data.returns,
+                                         self._micro_advantages(rollout_data), rollout_data.returns,
                                          _micro_st)
                 actions = (rollout_data.actions.long().flatten() if _micro_st.discrete
                            else rollout_data.actions)

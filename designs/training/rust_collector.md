@@ -113,14 +113,18 @@ a team pull) land one rollout later. 🚨 Anything new in `host_step` must keep 
 `train/approx_kl` on μ. X26's own probe reads one-version-old rows at the START of an update at approx-KL 0.016
 vs μ (target 0.01) and 22.5 % outside the 0.15 clip band (`staleness/probe_age_1_*`, median of the last 30 updates
 at ~380M). With every row stale, plain PPO would make the controller cut the rate for a lag it cannot remove and
-anchor the clip to the stale policy. So every FILL also computes the PROXIMAL log-prob log π_prox(a|s) of every row — the learner's weights at the next update's start — with T2's trainee slot, which holds exactly those weights then (`after_update` loaded them; the worker is idle) and is the very function μ was served by (`OverlapRunner.proximal_logp`; `overlap/prox_forward_ms`). The learner's own eager fp32 forward would cost ≈ 0.34 s per 2,048 rows on X26 (`behaviour/probe_forward_ms`), ≈ 16 s a 98,304-row update. `train()`, after the K9(b) probes and before any optimizer step, rewrites the buffer (`proximal_transform`): `old_log_prob := log π_prox` (the update's starting policy) and `advantage := w · advantage`, `w = min(π_prox / μ, 2.0)` (`IS_WEIGHT_CAP`, a declared constant, unmeasured as a lever). The micro-step is unchanged: since w > 0,
-`−min(w·A·r, w·A·clip(r)) = −w·min(A·r, A·clip(r))`. On a fresh row π_prox = μ to fp32 rounding and w = 1, which is
-plain PPO. Tags: `overlap/is_weight_mean`, `is_weight_max_raw`, `is_weight_truncated_frac`, `is_ess` (normalised
-effective sample size), `behaviour_kl` (μ → π_prox), and the fill's `prox_forward_ms`. ⚠️ `normalize_advantage` then normalises
-w·A per micro-batch instead of A. That is a BIAS, not only a rescale: with an advantage that carries no
-information about the action, the expected gradient is (E[A]/s)·Σₐ(π_prox(a) − μ(a))·∇log π(a) ≠ 0, a push along
-μ → π_prox that normalising first and weighting after does not have (core review 2026-10-20, A2, CPU repro;
-size on real buffers unmeasured; TECH_DEBT_BACKLOG "X14's advantage normalisation runs AFTER the importance weight").
+anchor the clip to the stale policy. So every FILL also computes the PROXIMAL log-prob log π_prox(a|s) of every row — the learner's weights at the next update's start — with T2's trainee slot, which holds exactly those weights then (`after_update` loaded them; the worker is idle) and is the very function μ was served by (`OverlapRunner.proximal_logp`; `overlap/prox_forward_ms`). The learner's own eager fp32 forward would cost ≈ 0.34 s per 2,048 rows on X26 (`behaviour/probe_forward_ms`), ≈ 16 s a 98,304-row update. `train()`, after the K9(b) probes and before any optimizer step, rewrites the buffer (`proximal_transform`): `old_log_prob := log π_prox` (the update's starting policy), and the truncated importance weight `w = min(π_prox / μ, 2.0)` (`IS_WEIGHT_CAP`, a declared constant, unmeasured as a lever) is stored BESIDE the raw advantage as `RolloutBuffer.is_weights`, never folded into it. **Normalise, then weight** (`gen3_overlap_norm_then_weight_v1`, Hilton et al.'s order): every micro-batch carries its rows' weights (`RolloutSamples.is_weights`, served by all three `device_batches` modes), `TrainSetup._micro_advantages` normalises the RAW advantage over the micro-batch with the micro-step's own expression and multiplies by w after (`overlap.decoupled_advantages`), and R1 runs with its own normalisation OFF (`_micro_static`; the R1 compile declares that static at startup, and every gate hands R1 the same pre-normalised advantage, `compile_regions._r1_advantages`). The micro-step's code is unchanged: since w > 0,
+`−min(w·Â·r, w·Â·clip(r)) = −w·min(Â·r, Â·clip(r))`. On a fresh row π_prox = μ to fp32 rounding and w = 1, which is
+plain PPO (w = 1 gives the serial update's normalised advantage bit for bit against the eager micro-step:
+`overlap_test::test_a_unit_weight_is_the_serial_updates_normalised_advantage_bit_for_bit`). The order is not
+cosmetic: normalising w·A instead (the code until 2026-10-20, core review A2) leaves, for an advantage that carries
+no information about the action, an expected gradient (E[A]/S)·Σₐ(π_prox(a) − μ(a))·∇log π(a) ≠ 0, a steady push
+along μ → π_prox. On the CPU repro (two actions, μ (0.6, 0.4) → π_prox (0.5, 0.5), E[A] = std = 1, a real
+`train()`) the logit push was (−0.096, +0.096) before the fix and is 0 to rounding after
+(`x14_overlap_2026-10-19/adv_norm_bias.py`; the measurement folder's README §5). What reads "the advantage" as a
+quantity — the `signal/*` density tags and the ride-along `adv` head's TARGET — reads the RAW buffer advantage
+(C-3). Tags: `overlap/is_weight_mean`, `is_weight_max_raw`, `is_weight_truncated_frac`, `is_ess` (normalised
+effective sample size), `behaviour_kl` (μ → π_prox), and the fill's `prox_forward_ms`.
 The startup dry update (`update_fit.dry_update`, which runs with the runner attached) hands `train()` an IDENTITY
 rewrite (`_overlap_prox := log μ`, w = 1): no fill made its buffer.
 
@@ -145,7 +149,7 @@ workspace after the freeze).
 **Memory.** No second row buffer: the buffer being trained and the arena being filled both exist in a serial run
 (the arena is target + 2 games per env either way). Added: the two snapshot slots + one swap scratch = 3 copies of
 the policy's state dict (`BehaviourSnapshots.nbytes`; the X26 policy with its ride-along heads is 11.67M values =
-44.5 MiB, so 134 MiB; the toy's 11.9 MiB, so 36 MiB) and one float64 per buffer row on the host (π_prox). X26's update peak
+44.5 MiB, so 134 MiB; the toy's 11.9 MiB, so 36 MiB), one float64 per buffer row on the host (π_prox) and one float32 per row for w (`is_weights`, 384 KiB at 98,304 rows, copied to the card with the micro-batches). X26's update peak
 reserves 8,304 MiB of the 12 GB card, the toy's 1,880 MiB (`lifecycle/cuda_update_peak_reserved_mib`).
 
 **Tags that change meaning when ON:** `rollout/collect_ms` is the EXPOSED collection (the join wait, the replay and
@@ -153,8 +157,10 @@ the fill); `overlap/play_ms` is the worker's play wall, `overlap/join_wait_ms` t
 returned, `overlap/host_steps_overlapped` / `host_steps_tail` the host steps played on each side.
 `rust_env/trainee_decisions_per_s` divides by the whole overlapped window.
 
-**Recorded:** `metadata.json`'s `env_core.overlap_collect` (present only when ON). A launcher restart replays the
-typed argv; a FORK does not inherit it — type it on the fork.
+**Recorded:** `metadata.json`'s `env_core.overlap_collect` (present only when ON) and, as a RECIPE ROW
+(`recipe_surface`, `recipe.fresh.overlap_collect` false; core review C-2), `cli_args.overlap_collect`: a resume or a
+FORK of an ON arm inherits it unless `--no-overlap-collect` is typed, the launcher writes it TYPED into the child argv,
+and `checkargs` shows it. A record from before the flag (no key) trained OFF and is left OFF.
 
 ## K9(b) — behaviour-policy consistency
 

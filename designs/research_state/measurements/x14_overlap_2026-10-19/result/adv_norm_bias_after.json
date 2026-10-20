@@ -1,0 +1,59 @@
+{
+ "label": "after",
+ "overlap_module": "/home/goodlad/dev/gen3ai/.claude/worktrees/x14-adv-norm-order/src/agents/training/rust_rollout/overlap.py",
+ "has_decoupled_advantages": true,
+ "cells": {
+  "stratified": {
+   "push": [
+    -1.1548399925231934e-09,
+    1.1548399925231934e-09
+   ],
+   "closed_form_as_coded": [
+    -0.09583639929274992,
+    0.09583639929274992
+   ],
+   "normalize_in_r1": false,
+   "n_micro": 1,
+   "max_abs_push": 1.1548399925231934e-09
+  },
+  "sampled_s1": {
+   "push": [
+    0.0010820309533070914,
+    -0.0010820309533070914
+   ],
+   "closed_form_as_coded": [
+    -0.09664285166682487,
+    0.09664285166682487
+   ],
+   "normalize_in_r1": false,
+   "n_micro": 10,
+   "max_abs_push": 0.0010820309533070914
+  },
+  "sampled_s2": {
+   "push": [
+    0.007599587545811309,
+    -0.007599587545811309
+   ],
+   "closed_form_as_coded": [
+    -0.0960272047321918,
+    0.0960272047321918
+   ],
+   "normalize_in_r1": false,
+   "n_micro": 10,
+   "max_abs_push": 0.007599587545811309
+  },
+  "sampled_s3": {
+   "push": [
+    0.003473624614890737,
+    -0.003473624614890737
+   ],
+   "closed_form_as_coded": [
+    -0.09628004502496681,
+    0.09628004502496681
+   ],
+   "normalize_in_r1": false,
+   "n_micro": 10,
+   "max_abs_push": 0.003473624614890737
+  }
+ }
+}

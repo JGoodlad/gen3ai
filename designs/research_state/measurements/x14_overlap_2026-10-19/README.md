@@ -120,8 +120,10 @@ adopting.
 1. **The brief's premise held only for the GRADIENT.** PPO's ratio π/μ keeps the policy gradient unbiased for any
    behaviour policy, but production's clip AND its KL→LR controller are centred on μ. At X26's measured one-version
    lag, plain overlap would have cut the learning rate. Decoupled PPO was built for that reason.
-2. **`normalize_advantage` normalises w·A per micro-batch, not A** (the rewrite feeds the unchanged micro-step). At
-   w ≈ 1 ± 0.1 that is a small rescale plus a baseline shift. Unmeasured.
+2. **~~`normalize_advantage` normalises w·A per micro-batch, not A~~ — FIXED 2026-10-20 (§5).** This was written
+   as "a small rescale plus a baseline shift". It was a BIAS (core review 2026-10-20 A2): a steady push along
+   μ → π_prox, (∓0.096) a logit on the CPU repro. The decoupled update now normalises the raw advantage first and
+   weights it after.
 3. **No V-trace.** The GAE advantages of an overlapped rollout use μ's trajectories and T2's version-k value. That is
    one version of lag, the same as today's 7.6 % age-1 rows, but now it applies to ~100 % of rows. Unmeasured.
 4. **CUDA concurrency is UNVERIFIED.** The worker runs T2 on its own stream, and T2's frozen guard reads
@@ -134,7 +136,8 @@ adopting.
    The callbacks themselves fire at the same `num_timesteps` with the same learner weights.
 7. **`rollout/collect_ms` means the EXPOSED collection on an ON run.** A tool that reads it as the whole collection
    (the cloud bench's `LIVE_CYCLE` calibration, killbar, the iteration split) misreads an ON run.
-8. **A fork does not inherit the flag.** A launcher restart replays the typed argv; a fork must type it.
+8. **~~A fork does not inherit the flag.~~ — FIXED 2026-10-20:** `--overlap-collect` is a recorded `recipe.fresh` row
+   (false). A resume or fork of an ON arm inherits it from `cli_args`, and `checkargs` shows it (core review C-2).
 9. **Tiny-fixture K9(b) trips.** On 8 envs × 32 rows, one tie-heavy game made 40 % of a probe's rows ties, under the
    snapshot AND under the learner's weights on the same rows (`excluded_frac` 0.402 vs the 0.15 ceiling). This is a
    fixture property, not the overlap's; production's probe samples 2,048 of 98,304 rows.
@@ -150,3 +153,33 @@ adopting.
     counted and warned (`cuda_reserved_growths_after_freeze`, 847efe34); once `reserved_growth.RESERVED_GROWTH_POISONS`
     is armed (battery cell 2 is its arming test), it is a `LifecycleViolation`. Before arming it, attribute the growth
     per stream or per thread, or keep `--overlap-collect` off.
+
+## 5. The advantage-normalisation bias, before and after the fix (`adv_norm_bias.py` → `result/adv_norm_bias_{before,after}.json`)
+
+**What was wrong (core review 2026-10-20 A2 + C-3).** The decoupled rewrite folded the importance weight into the
+buffer (`A := w·A`), and the micro-step then normalised w·A per micro-batch. Take an advantage that carries no
+information about the action. Its expected logit gradient should be 0. The old order gave (E[A]/S)·(π_prox − μ),
+S = std(w·A): a steady push along μ → π_prox. The `signal/*` tags and the ride-along `adv` head's target also read
+w·A. **The fix** (`gen3_overlap_norm_then_weight_v1`; `designs/training/rust_collector.md` "Overlap (X14)"):
+w is stored beside the raw advantage. Each micro-batch's raw advantage is normalised first and multiplied by w
+after, and R1's own normalisation is off under overlap. R1's code is unchanged, and the serial path is
+byte-identical.
+
+**The repro.** The harness is `overlap_test._decoupled_logit_push`: a real toy-learner `train()` under a decoupled
+update, reading what R1 is handed. The same harness ran against the parent commit's tree ("before") and the fix's
+tree ("after"). The fixture: μ = (0.6, 0.4) → π_prox = (0.5, 0.5), so TV = 0.1 and w = (0.833, 1.25), below the cap.
+The advantage is independent of the action, with mean 1 and std 1. CPU only, rule 5b.
+
+| cell | before: push on the logits | closed form of the old order | after: push |
+|---|---|---|---|
+| stratified (exact proportions, 1 micro-batch of 200) | (−0.0958, +0.0958) | (−0.0958, +0.0958) | (−1.2e-9, +1.2e-9) |
+| sampled, seed 1 (20,000 rows, 10 micro-batches of ≤ 2,048) | (−0.0946, +0.0946) | (−0.0966, +0.0966) | (+0.0011, −0.0011) |
+| sampled, seed 2 | (−0.0886, +0.0886) | (−0.0960, +0.0960) | (+0.0076, −0.0076) |
+| sampled, seed 3 | (−0.0933, +0.0933) | (−0.0963, +0.0963) | (+0.0035, −0.0035) |
+
+**Before**, the push matched the closed form, about 0.096 of a logit per unit of E[A]/S, always toward π_prox.
+**After**, the stratified cell is 0 to rounding. The sampled cells sit at sampling noise (|push| ≤ 0.008, against
+≈ 1/√20,000 ≈ 0.007), with no consistent sign. On real buffers the bias would scale with E[A]/S and with
+TV(μ, π_prox): one version of lag on X26 reads KL(μ → π_prox) ≈ 0.011 (§2.1). That size on real buffers is NOT
+measured; it is moot now that the order is fixed.
+

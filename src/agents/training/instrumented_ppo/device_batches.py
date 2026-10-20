@@ -18,6 +18,10 @@ that raised mid-loop cannot leave a stale copy serving the next), so the learner
 K6's memory trend reads) is unchanged; the update's PEAK grows by the copy (~1.1 GB at production
 shape).
 
+X14's importance weights (``RolloutBuffer.is_weights``, `gen3_overlap_norm_then_weight_v1`) are one more flat
+array while a decoupled-PPO update holds them (`RolloutBuffer.flat_fields`): every mode gathers them like the rest
+and serves them as ``RolloutSamples.is_weights``; absent, every mode is exactly as it was.
+
 Only the learner's `RolloutBuffer` on a CUDA device is served (``force`` is the CPU test seam); anything
 else — a CPU buffer — keeps the host path untouched.
 """
@@ -33,6 +37,8 @@ from agents.training.rollout_buffer import RolloutBuffer, RolloutSamples
 
 #: The flat per-row arrays `_get_samples` reads beside the observation dict, and how it shapes each.
 _FLAT = RolloutBuffer.FLAT
+#: X14's optional flat array (`RolloutBuffer.flat_fields`): gathered only while present.
+_W = RolloutBuffer.IS_WEIGHTS
 
 
 def _servable(buffer: Any) -> bool:
@@ -57,7 +63,7 @@ class _DeviceGather:
         self.obs = {k: torch.as_tensor(np.ascontiguousarray(v)).to(self.device)
                     for k, v in b.observations.items()}
         self.flat = {t: torch.as_tensor(np.ascontiguousarray(b.__dict__[t])).to(self.device)
-                     for t in _FLAT}
+                     for t in b.flat_fields()}
         self.copies += 1
         self.nbytes = (sum(int(v.numel()) * v.element_size() for v in self.obs.values())
                        + sum(int(v.numel()) * v.element_size() for v in self.flat.values()))
@@ -76,6 +82,7 @@ class _DeviceGather:
             advantages=f["advantages"].index_select(0, idx).flatten(),
             returns=f["returns"].index_select(0, idx).flatten(),
             action_masks=f["action_masks"].index_select(0, idx).reshape(-1, self.buffer.mask_dims),
+            is_weights=(f[_W].index_select(0, idx).flatten() if _W in f else None),
         )
 
 
@@ -127,7 +134,8 @@ class _StagedGather:
                               pin_memory=self.cuda)
             np.take(a, inds, axis=0, out=out.numpy())
             return out
-        return ({k: take(v) for k, v in b.observations.items()}, {t: take(b.__dict__[t]) for t in _FLAT})
+        return ({k: take(v) for k, v in b.observations.items()},
+                {t: take(b.__dict__[t]) for t in b.flat_fields()})
 
     def _serve(self, fut: Any) -> RolloutSamples:
         obs, f = fut.result()
@@ -144,7 +152,8 @@ class _StagedGather:
             observations=obs, actions=f["actions"], old_values=f["values"].flatten(),
             old_log_prob=f["log_probs"].flatten(), advantages=f["advantages"].flatten(),
             returns=f["returns"].flatten(),
-            action_masks=f["action_masks"].reshape(-1, self.buffer.mask_dims))
+            action_masks=f["action_masks"].reshape(-1, self.buffer.mask_dims),
+            is_weights=(f[_W].flatten() if _W in f else None))
 
     def get(self, batch_size: Optional[int] = None) -> Iterator[Any]:
         """Installed as the buffer's `get`: the class's own generator (the permutation draw, the

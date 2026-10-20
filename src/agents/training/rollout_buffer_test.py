@@ -92,8 +92,10 @@ def test_get_draws_the_same_permutation_and_serves_the_same_micro_batches(batch)
         ref = list(theirs.get(batch))
         assert len(mine) == len(ref)
         for m, r in zip(mine, ref):
-            assert isinstance(m, RolloutSamples) and m._fields == r._fields
-            for f in m._fields:
+            # sb3's fields, in sb3's order, plus X14's optional `is_weights` (absent here: None)
+            assert isinstance(m, RolloutSamples) and m._fields == r._fields + ("is_weights",)
+            assert m.is_weights is None
+            for f in r._fields:
                 if f == "observations":
                     assert m.observations.keys() == r.observations.keys()
                     for k in m.observations:
@@ -102,6 +104,21 @@ def test_get_draws_the_same_permutation_and_serves_the_same_micro_batches(batch)
                 else:
                     assert th.equal(getattr(m, f), getattr(r, f)) and getattr(m, f).dtype == getattr(r, f).dtype, f
     _same(_arrays(ours), _arrays(theirs))                  # both flattened in place, identically
+
+
+def test_x14_importance_weights_ride_get_beside_their_rows_and_reset_drops_them():
+    """gen3_overlap_norm_then_weight_v1: weights written into an unflattened buffer are flattened with the FLAT
+    arrays and served row-aligned with each micro-batch's advantages; `reset()` clears them."""
+    ours, _ = _pair()
+    _fill([ours])
+    assert ours.is_weights is None and ours.flat_fields() == RolloutBuffer.FLAT
+    ours.is_weights = (2.0 + ours.advantages).astype(np.float32)        # w a function of the row: alignment shows
+    assert ours.flat_fields() == RolloutBuffer.FLAT + ("is_weights",)
+    np.random.seed(5)
+    for s in ours.get(4):
+        assert s.is_weights is not None and th.equal(s.is_weights, 2.0 + s.advantages)
+    ours.reset()
+    assert ours.is_weights is None and ours.flat_fields() == RolloutBuffer.FLAT
 
 
 def test_reset_restores_the_unflattened_layout():

@@ -528,9 +528,20 @@ def check_r1_declared(model: Any, st: Any) -> None:
             "`TrainSetup._micro_static`, never relax the lock.")
 
 
+def _r1_advantages(model: Any, b: R1Batch) -> torch.Tensor:
+    """The advantage argument R1 receives in ``train()`` for ``b``'s rows: the batch's own, or — on a DECOUPLED-PPO
+    run (X14 `--overlap-collect`; its static turns R1's normalisation off) — the same rows normalised the way
+    ``train()`` hands them over at w = 1 (`overlap.decoupled_advantages`), so every gate judges R1 on the inputs a
+    production update gives it (`gen3_overlap_norm_then_weight_v1`)."""
+    from agents.training.rust_rollout.overlap import decoupled, decoupled_advantages
+    if not decoupled(model):
+        return b.advantages
+    return decoupled_advantages(b.advantages, torch.ones_like(b.advantages), bool(model.normalize_advantage))
+
+
 def _r1_args(model: Any, b: R1Batch) -> Tuple[Any, ...]:
     return (model.policy, b.obs, b.actions, b.action_masks,
-            b.old_log_prob, b.old_values, b.advantages, b.returns, _r1_static(model))
+            b.old_log_prob, b.old_values, _r1_advantages(model, b), b.returns, _r1_static(model))
 
 
 def _r1_arm(model: Any, fn: Callable[..., Any], args: Tuple[Any, ...]) -> Dict[str, torch.Tensor]:
@@ -893,7 +904,7 @@ def _r1_reference_args(model: Any, b: R1Batch) -> Tuple[Any, ...]:
         buf.observations = saved
     obs = {k: v for k, v in b.obs.items() if k not in keys}
     return (model.policy, obs, b.actions, b.action_masks,
-            b.old_log_prob, b.old_values, b.advantages, b.returns, st)
+            b.old_log_prob, b.old_values, _r1_advantages(model, b), b.returns, st)
 
 
 def _r1_judged_set_rule(model: Any, b: R1Batch, run: Dict[str, torch.Tensor], names: List[str]) -> str:

@@ -285,7 +285,8 @@ def test_a_fork_of_a_checkpoint_with_NO_record_REFUSES_by_name(tmp_path):
     for d in ("n_envs", "grad_accum_steps", "n_epochs", "min_lr", "weight_decay", "clip_range", "ent_coef"):
         typed += [rs._ROW[d].flag, str(_PARENT_CLI[d])]
     typed += ["--clip-range-vf", "none", "--self-play", "true", "--max-lr", "1e-3", "--anneal-lr-start-steps", "0",
-              "--rollout-target-samples", "98304"]           # the update size; T2's serving sizes are derived
+              "--rollout-target-samples", "98304",           # the update size; T2's serving sizes are derived
+              "--overlap-collect", "false"]                  # no record at all: X14's row is named too
     assert [d for d, _v, _s in rs.inherit_recorded_recipe(_fork_ns(lone, *typed), None, _SAVED)] == ["vf_coef"]
 
 
@@ -513,3 +514,50 @@ def test_a_same_run_restart_leaves_the_precision_to_the_resume_s_own_inheritance
     ns = _restart_ns(run)
     got = {d for d, _v, _s in rs.inherit_recorded_recipe(ns, str(run), _SAVED)}
     assert "trunk_precision" not in got and ns.trunk_precision is None
+
+
+# ------------------------------------------------------------- X14 `--overlap-collect` is a recorded row (C-2)
+def test_overlap_collect_is_a_cli_args_row_and_arch_production_writes_it_off():
+    """Core review 2026-10-20 C-2: the flag changes the objective (stale rows, decoupled PPO) but was no row. Fails on
+    revert (no row: `checkargs` never shows it and a resume / fork never inherits it)."""
+    fields = rs._model_version_fields()
+    assert rs.restart_route("overlap_collect", build_parser().get_default("overlap_collect"), fields) == "cli_args"
+    assert rs.production_recipe()["overlap_collect"] is False
+    ns = _desugared(["--arch", "production"])
+    assert ns.overlap_collect is False and "overlap_collect" not in rs.typed_dests(ns)
+    on = _check(["--arch", "production", "--overlap-collect"])["recipe"]          # the X14 arm: its lever, INFO
+    assert [(d.dest, d.source, d.resolved, d.production) for d in on.diffs] \
+        == [("overlap_collect", "argv", True, False)] and not on.refuses
+    assert any("overlap_collect" in line and "TYPED" in line for line in rs.report_lines(on))   # checkargs shows it
+
+
+def test_a_fork_or_resume_of_an_overlap_arm_inherits_it_and_a_pre_flag_parent_trains_off(tmp_path):
+    """C-2: a fork of an ON arm (and a manual resume of one) keeps `--overlap-collect` from the record — restored in
+    the child's own resolution AND written TYPED into the argv by the launcher; a parent from BEFORE the flag (its
+    cli_args lack the key) trained OFF: nothing is refused, nothing is written (a child pinned before X14 would not
+    parse the flag), and the untyped flag resolves OFF. Fails on revert."""
+    on_parent = _run(tmp_path / "on", "launcher --steps 9", {**_PARENT_CLI, "overlap_collect": True})
+    ns = _fork_ns(on_parent)
+    got = {d: (v, s) for d, v, s in rs.inherit_recorded_recipe(ns, str(tmp_path / "the_fork"), _SAVED)}
+    assert ns.overlap_collect is True and got["overlap_collect"] == (True, "parent metadata.json:cli_args")
+    resumed = _restart_ns(on_parent)
+    rs.inherit_recorded_recipe(resumed, str(on_parent), _SAVED)
+    assert resumed.overlap_collect is True
+    argv = ["--steps", "1", "--model", str(on_parent / "checkpoints" / "c.zip"), "--fork-lr", "3.6e-4"]
+    out, added = rs.materialize_recorded_recipe(argv, str(tmp_path / "the_fork"))
+    assert ("overlap_collect", True, "parent metadata.json:cli_args") in added
+    assert build_parser().parse_args(out).overlap_collect is True
+    typed_off = _fork_ns(on_parent, "--no-overlap-collect")                       # a typed choice still wins
+    rs.inherit_recorded_recipe(typed_off, None, _SAVED)
+    assert typed_off.overlap_collect is False
+
+    pre = _run(tmp_path / "pre", "launcher --steps 9", _PARENT_CLI)               # no `overlap_collect` key
+    ns = _fork_ns(pre)
+    got = {d for d, _v, _s in rs.inherit_recorded_recipe(ns, None, _SAVED)}
+    assert "overlap_collect" not in got and ns.overlap_collect is None
+    out, added = rs.materialize_recorded_recipe(
+        ["--steps", "1", "--model", str(pre / "checkpoints" / "c.zip"), "--fork-lr", "3.6e-4"], None)
+    assert "--overlap-collect" not in out and "overlap_collect" not in {d for d, _v, _s in added}
+    from main.train.rust_env_setup import resolve_env_core_args
+    resolve_env_core_args(ns)
+    assert ns.overlap_collect is False

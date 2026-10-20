@@ -34,6 +34,8 @@ def _same(a, b):
                 for k in xa:
                     assert xa[k].dtype == ya[k].dtype and xa[k].shape == ya[k].shape, k
                     assert torch.equal(xa[k].cpu(), ya[k].cpu()), k
+            elif xa is None or ya is None:                    # X14's optional is_weights: absent on both
+                assert xa is None and ya is None
             else:
                 assert xa.dtype == ya.dtype and xa.shape == ya.shape
                 assert torch.equal(xa.cpu(), ya.cpu())
@@ -52,6 +54,27 @@ def test_device_batches_are_bit_identical_to_the_host_path_and_consume_the_same_
         assert len(eh) == len(ed)
         _same(eh, ed)
     assert "_get_samples" not in buf.__dict__                 # uninstalled: the host path again
+
+
+def test_x14_importance_weights_ride_every_mode_bit_identically_beside_their_rows():
+    """gen3_overlap_norm_then_weight_v1: a decoupled-PPO buffer's `is_weights` reach each micro-batch in every
+    mode, from the same permutation, row-aligned (here w is a function of the row's advantage, so a misaligned
+    gather would show); absent, no mode serves any (the bit-identity tests above)."""
+    model = _golden_buffer()
+    buf = model.rollout_buffer
+    buf.is_weights = (1.0 + 0.01 * buf.advantages).astype(np.float32)
+    host, rng_host = _batches(buf, 16, 2, seed=11)
+    assert all(s.is_weights is not None for e in host for s in e)
+    for e in host:
+        for s in e:
+            assert torch.equal(s.is_weights, (1.0 + 0.01 * s.advantages).to(torch.float32))
+    for mode in ("resident", "staged"):
+        with DB.device_samples(buf, force=True, mode=mode):
+            dev, rng_dev = _batches(buf, 16, 2, seed=11)
+        assert rng_dev == rng_host
+        for eh, ed in zip(host, dev):
+            assert len(eh) == len(ed)
+            _same(eh, ed)
 
 
 def test_install_replaces_a_stale_gather_and_a_cpu_buffer_keeps_the_host_path():

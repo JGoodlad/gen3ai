@@ -33,14 +33,19 @@ THE THREE CORRECTNESS PIECES.
    those weights then (``after_update`` loaded them; the worker is idle) and is the very function μ was served by
    (`OverlapRunner.proximal_logp`; the learner's eager fp32 forward costs ≈ 0.34 s per 2,048 rows on X26 —
    ``behaviour/probe_forward_ms`` — i.e. ≈ 16 s a 98,304-row update; T2's captured graphs serve it for a fraction).
-   Before the first optimizer step the buffer is rewritten so the UNCHANGED micro-step computes the decoupled loss:
-   ``old_log_prob := log π_prox`` (the clip and ``train/approx_kl`` are now centred on π_prox, as on a fresh
-   row), and ``advantage := w · advantage`` with ``w = min(π_prox / μ, IS_WEIGHT_CAP)`` (the truncated importance
-   weight). Because w > 0, ``-min(w·A·r, w·A·clip(r)) = -w·min(A·r, A·clip(r))``: the decoupled surrogate, exactly —
-   EXCEPT that ``normalize_advantage`` then normalises w·A per micro-batch rather than A (a per-micro-batch
-   rescale and baseline shift; w ≈ 1 ± 0.1 at one version — FINDING, ``rust_collector.md``). On a fresh row
-   π_prox = μ to fp32 rounding (both are T2's forward of the same weights; only the bucket padding can differ),
-   w = 1, and the loss is plain PPO.
+   Before the first optimizer step the buffer is rewritten: ``old_log_prob := log π_prox`` (the clip and
+   ``train/approx_kl`` are now centred on π_prox, as on a fresh row), and the truncated importance weight
+   ``w = min(π_prox / μ, IS_WEIGHT_CAP)`` is stored BESIDE the raw advantage (``RolloutBuffer.is_weights``), never
+   folded into it. Each micro-batch's advantage is then NORMALISED FIRST AND WEIGHTED AFTER
+   (`decoupled_advantages`: ``Â = norm(A)`` exactly as the micro-step's ``normalize_advantage`` would, then
+   ``w · Â``), and the micro-step runs with its own normalisation off (`TrainSetup._micro_static`); the micro-step's
+   code is unchanged. Because w > 0, ``-min(w·Â·r, w·Â·clip(r)) = -w·min(Â·r, Â·clip(r))``: the decoupled surrogate,
+   exactly (Hilton et al.'s order). The order matters (`gen3_overlap_norm_then_weight_v1`, core review 2026-10-20
+   A2): normalising w·A instead leaves, for an advantage that carries no information about the action, an expected
+   gradient (E[A]/s)·Σₐ(π_prox(a) − μ(a))·∇log π(a) ≠ 0 — a steady push along μ → π_prox. Everything that reads
+   "the advantage" as a quantity — the ``signal/*`` density tags, the ride-along ``adv`` head's target — reads the
+   RAW buffer advantage. On a fresh row π_prox = μ to fp32 rounding (both are T2's forward of the same weights; only
+   the bucket padding can differ), w = 1, and the loss is plain PPO (bit for bit against the eager micro-step).
 3. **CUDA streams.** T2's ``execute`` orders its copies on the CALLING thread's current stream. On the main
    thread that is the legacy default stream, which the learner fills during ``train()``; a worker on it would
    queue every flush behind the update. The worker therefore runs under its OWN stream, acquired at startup, with
@@ -62,11 +67,14 @@ import contextlib
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
 import numpy as np
 
 from agents.training.lifecycle_decl import startup_builder
+
+if TYPE_CHECKING:
+    import torch
 
 #: The decoupled objective's importance-weight TRUNCATION (w = min(π_prox / μ, cap)). At one version of lag X26's
 #: age-1 rows read mean |π/μ − 1| 0.106 at an update's start, so the cap binds on a small tail only; it bounds the
@@ -372,17 +380,39 @@ def judge_snapshot(model: Any, runner: OverlapRunner) -> Optional[Dict[str, floa
                                metrics_attr="_behaviour_snapshot_metrics")
 
 
+def decoupled(model: Any) -> bool:
+    """Is ``model``'s update DECOUPLED PPO (`proximal_transform` runs before it, and the micro-step's own
+    advantage normalisation is OFF in favour of `decoupled_advantages`)? Exactly when an overlap runner is
+    attached — the predicate `TrainSetup._overlap_prepare` reads, so the static the R1 compile declares at startup
+    and the update's own agree."""
+    return runner_of(model) is not None
+
+
+def decoupled_advantages(advantages: "torch.Tensor", is_weights: "torch.Tensor", normalize: bool) -> "torch.Tensor":
+    """One micro-batch's decoupled-PPO advantage (`gen3_overlap_norm_then_weight_v1`): the RAW advantage
+    normalised FIRST — the micro-step's own expression, operation for operation, so ``is_weights`` of ones gives
+    the serial update's normalised advantage bit for bit — and weighted AFTER (``w · Â``)."""
+    adv = advantages
+    if normalize and adv.numel() > 1:
+        adv = (adv - adv.mean()) / (adv.std() + 1e-8)
+    return adv * is_weights.to(adv.dtype)
+
+
 def proximal_transform(model: Any, cap: float = IS_WEIGHT_CAP) -> Dict[str, float]:
     """DECOUPLED PPO as a buffer rewrite (module docs, piece 2), from the fill's proximal log-probs
     (``model._overlap_prox``, `OverlapRunner.proximal_logp`): ``log_probs := log π_prox`` and
-    ``advantages *= min(π_prox / μ, cap)``. Before any optimizer step and AFTER the K9(b) probes (they read μ).
-    Records and returns the ``overlap/*`` weight tags."""
+    ``is_weights := min(π_prox / μ, cap)`` BESIDE the raw advantages, which stay untouched (the micro-batch weights
+    them after normalising, `decoupled_advantages`). Before any optimizer step and AFTER the K9(b) probes (they
+    read μ). Records and returns the ``overlap/*`` weight tags."""
     buf = model.rollout_buffer
     n_steps, n_envs = int(buf.buffer_size), int(buf.n_envs)
     prox = getattr(model, "_overlap_prox", None)
     if prox is None or np.asarray(prox).shape != (n_steps, n_envs):
         raise OverlapError("the decoupled update has no proximal log-probs for this buffer (the fill computes them: "
                            f"got {None if prox is None else np.asarray(prox).shape}, want {(n_steps, n_envs)})")
+    if bool(getattr(buf, "generator_ready", False)):
+        raise OverlapError("the decoupled rewrite needs the buffer in its [n_steps, n_envs] layout, but get() has "
+                           "already flattened it (a second update on one buffer?)")
     prox = np.asarray(prox, dtype=np.float64).reshape(-1)
     n = prox.size
     mu = buf.log_probs.reshape(n).astype(np.float64)
@@ -393,7 +423,7 @@ def proximal_transform(model: Any, cap: float = IS_WEIGHT_CAP) -> Dict[str, floa
         from main.exit_codes import NonFiniteLearnerError
         raise NonFiniteLearnerError("[X14] a NON-FINITE proximal log-prob or importance weight before the update")
     buf.log_probs[...] = prox.reshape(n_steps, n_envs).astype(buf.log_probs.dtype)
-    buf.advantages[...] = (buf.advantages.astype(np.float64) * w.reshape(n_steps, n_envs)).astype(buf.advantages.dtype)
+    buf.is_weights = w.reshape(n_steps, n_envs).astype(buf.advantages.dtype)
     model._overlap_prox = None                  # consumed: a second update on this buffer must not re-weight it
     out = {
         "overlap/is_weight_mean": float(w.mean()),

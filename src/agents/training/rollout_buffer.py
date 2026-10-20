@@ -22,6 +22,11 @@ THE CONTRACT ``train()`` and the K9 golden rest on (each property is load-bearin
 * **``_get_samples``**: a ``th.tensor`` COPY of each field's rows on the buffer's device — values,
   log-probs, advantages and returns flattened to 1-D, the masks reshaped to ``[-1, n_actions]`` — as a
   `RolloutSamples`.
+* **The X14 importance weights** (``is_weights``, `gen3_overlap_norm_then_weight_v1`): ``None`` after every
+  ``reset()``; a decoupled-PPO update under ``--overlap-collect`` writes them (``[buffer_size, n_envs]`` float32,
+  `rust_rollout.overlap.proximal_transform`) BESIDE the raw advantages, never into them. While present they ride
+  ``get()`` like a ``FLAT`` array (`flat_fields`) and each micro-batch carries its rows' weights as
+  ``RolloutSamples.is_weights``; absent (every serial run) the buffer and its micro-batches are exactly as above.
 * **Window GAE** (``compute_returns_and_advantage``, the fixed-window trigger's fill and the toy
   collector): sb3's arithmetic, step for step, with ``returns = advantages + values``. The complete-game
   fill computes its own per game (``store.game_gae``, the same operations) and writes the arrays.
@@ -32,7 +37,7 @@ whole flattened buffer (`gen3_device_batch_mode_v1`).
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, NamedTuple, Optional
+from typing import Any, Dict, Iterator, NamedTuple, Optional, Tuple
 
 import numpy as np
 import torch as th
@@ -49,6 +54,9 @@ class RolloutSamples(NamedTuple):
     advantages: th.Tensor
     returns: th.Tensor
     action_masks: th.Tensor
+    #: X14's per-row truncated importance weight w = min(pi_prox / mu, cap) (`gen3_overlap_norm_then_weight_v1`):
+    #: None unless a decoupled-PPO update wrote ``RolloutBuffer.is_weights``. Not one of sb3's fields.
+    is_weights: Optional[th.Tensor] = None
 
 
 class RolloutBufferLayoutError(TypeError):
@@ -71,8 +79,11 @@ class RolloutBuffer:
 
     #: The flat per-row arrays beside the observation dict, in the order ``get()`` flattens them.
     FLAT = ("actions", "values", "log_probs", "advantages", "returns", "action_masks")
+    #: The flat per-row array a decoupled-PPO update adds (module docstring); flattened only while present.
+    IS_WEIGHTS = "is_weights"
 
     observations: Dict[str, np.ndarray]
+    is_weights: Optional[np.ndarray]
 
     def __init__(self, buffer_size: int, observation_space: Any, action_space: Any, device: Any = "auto",
                  gae_lambda: float = 1, gamma: float = 0.99, n_envs: int = 1):
@@ -114,9 +125,14 @@ class RolloutBuffer:
         self.values = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.log_probs = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.advantages = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
+        self.is_weights = None
         self.generator_ready = False
         self.pos = 0
         self.full = False
+
+    def flat_fields(self) -> Tuple[str, ...]:
+        """``FLAT``, plus ``is_weights`` while a decoupled-PPO update has written them."""
+        return self.FLAT + ((self.IS_WEIGHTS,) if self.is_weights is not None else ())
 
     def size(self) -> int:
         return self.buffer_size if self.full else self.pos
@@ -174,7 +190,7 @@ class RolloutBuffer:
         if not self.generator_ready:
             for key, obs in self.observations.items():
                 self.observations[key] = self.swap_and_flatten(obs)
-            for tensor in self.FLAT:
+            for tensor in self.flat_fields():
                 self.__dict__[tensor] = self.swap_and_flatten(self.__dict__[tensor])
             self.generator_ready = True
         if batch_size is None:
@@ -198,4 +214,6 @@ class RolloutBuffer:
             advantages=self.to_torch(self.advantages[batch_inds].flatten()),
             returns=self.to_torch(self.returns[batch_inds].flatten()),
             action_masks=self.to_torch(self.action_masks[batch_inds].reshape(-1, self.mask_dims)),
+            is_weights=(None if self.is_weights is None
+                        else self.to_torch(self.is_weights[batch_inds].flatten())),
         )

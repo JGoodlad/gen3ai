@@ -17,7 +17,8 @@ report, read by every surface that launches.
   * ``recipe.fresh`` — N0's MEASURED fresh recipe (`models/ai_v14_01_base`, the lineage's fresh
     launch), every knob it launched with, including its reward values, plus the one knob ADOPTED since:
     ``trunk_precision`` ``"bf16"`` (the bf16 strength A/B PASSED, 2026-10-14; ``--trunk-precision fp32``
-    is the explicit opt-out), plus
+    is the explicit opt-out), and one knob RECORDED since: ``overlap_collect`` ``false`` (X14 stays OFF; a row so a
+    resume or fork inherits it, core review 2026-10-20 C-2), plus
     ``kl_controller``: the controller constants it ran with (not flags — pinned against the
     callbacks' own defaults by `recipe_surface_test`). A key that is ALSO a recorded top-level
     mirror field must EQUAL it (`production_recipe` refuses otherwise): one truth, two readers.
@@ -166,6 +167,12 @@ FRESH_ROWS: Tuple[RecipeRow, ...] = (
     # value resolves to "fp32" (`config.resolve_config`) and a flagless FORK / restart inherits its parent's
     # recorded value (`_resolve`) — recipe.fork deliberately carries no row for it (§3.22 "Left out").
     RecipeRow("trunk_precision", "--trunk-precision", "fp32", "§1 row 25 — bf16 trunk rounds (A/B PASS 2026-10-14)"),
+    # X14 (`--overlap-collect`, gen3_overlap_collect_v1): it changes the OBJECTIVE (one-version-stale rows, decoupled
+    # PPO), so a resume or a fork inherits it from the record like any knob, and `checkargs` shows it (core review
+    # 2026-10-20 C-2: it was no row, and a fork of an ON arm silently trained serial PPO). A tri-state flag resolved
+    # by `rust_env_setup.resolve_env_core_args` (False when untyped). Absent from a record, the run PREDATES the flag
+    # (`PRE_FLAG_ROWS`): it trained OFF, which is what the unset flag resolves to.
+    RecipeRow("overlap_collect", "--overlap-collect", False, "X14 — default OFF (stale rows, decoupled PPO)"),
 )
 #: Every row the fresh recipe declares — ``recipe.sizing`` first, then ``recipe.fresh``.
 ROWS: Tuple[RecipeRow, ...] = SIZING_ROWS + FRESH_ROWS
@@ -176,6 +183,11 @@ FORK_ROWS: Tuple[RecipeRow, ...] = (
     RecipeRow("fork_lr", "--fork-lr", None, "§1 row 9 — E5: a frozen 5.6e-5"),
     RecipeRow("fork_lr_freeze", "--fork-lr-freeze", PARSER_DEFAULT, "§1 rows 8-9"),
 )
+#: Rows a record may LACK because the source run predates the flag: a `cli_args` dict without the key means the run
+#: trained with the flag's unset value, so the untyped flag is left to resolve to it — never refused, never
+#: materialized (a child pinned before the flag would not parse it). A run with NO `cli_args` still refuses.
+PRE_FLAG_ROWS = frozenset({"overlap_collect"})
+
 #: ``recipe.fork`` may override these fresh rows (E5's 5 epochs).
 FORK_OVERRIDES = frozenset({"n_epochs"})
 
@@ -414,6 +426,8 @@ def inherit_recorded_recipe(ns: Any, run_dir: Optional[str], saved_ver: Any = No
             value, source = getattr(saved_ver, r.dest), "model_config.json"
         else:
             if not isinstance(cli, dict) or r.dest not in cli:
+                if r.dest in PRE_FLAG_ROWS and isinstance(cli, dict):
+                    continue                       # the run predates the flag: it trained the unset value
                 if r.dest in COLLECTOR_ROWS and (isinstance(cli, dict) or r.dest in SERVING_ROWS):
                     # untyped there too (a run from before the flag): derived. The SERVING sizes are derived at
                     # startup whatever the record says; the update size (`rollout_target_samples`) is not, so
