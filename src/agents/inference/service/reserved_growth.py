@@ -24,6 +24,20 @@ BYTES_KEY = "cuda_reserved_bytes_after_freeze"
 GROWTHS_KEY = "cuda_reserved_growths_after_freeze"
 
 
+def new_mapping_floor(alloc_bytes: int, reusable_bytes: int) -> int:
+    """The least a ``reserved_bytes.all.allocated`` counter MUST grow when ``alloc_bytes`` is requested
+    while ``reusable_bytes`` (``memory_reserved() - memory_allocated()``, read just before the request) is
+    already mapped and free.
+
+    Why not ``alloc_bytes``: under ``expandable_segments`` the allocator first reuses mapped-but-free
+    pages (it extends the segment's free tail, mapping only the shortfall), so a 256 MiB request read a
+    growth of 251,658,240 B = 240 MiB on the 2026-10-19 battery -- the other 16 MiB was already mapped.
+    Everything beyond the reusable bytes MUST be newly mapped, so the floor is ``alloc - reusable``
+    (never below 0): deterministic whatever slack the warm-up left, and still > 0 whenever the request
+    is larger than the slack, i.e. the counter must see a new mapping the segment counter cannot."""
+    return max(0, int(alloc_bytes) - max(0, int(reusable_bytes)))
+
+
 def note_growth(counters: MutableMapping[str, int], where: str, dr: int) -> Optional[str]:
     """Count a reservation growth of ``dr`` bytes into ``counters`` (`BYTES_KEY`, `GROWTHS_KEY`).
 

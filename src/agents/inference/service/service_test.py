@@ -561,3 +561,16 @@ def test_a_new_segment_still_poisons_through_the_marks(policies, monkeypatch):
             pass
     assert svc.state == "POISONED" and svc.counters["cuda_segments_after_freeze"] == 1
     assert svc.counters["cuda_reserved_bytes_after_freeze"] == 2 * 2**20
+
+
+def test_new_mapping_floor_is_the_request_less_the_already_mapped_slack():
+    """The expandable-segments test's bar (service_cuda_test.py): the 2026-10-19 battery measured a
+    growth of 240 MiB for a 256 MiB request, i.e. 16 MiB of reusable mapped slack."""
+    from agents.inference.service.reserved_growth import new_mapping_floor
+
+    mib = 2**20
+    assert new_mapping_floor(256 * mib, 16 * mib) == 240 * mib == 251_658_240   # the measured case
+    assert new_mapping_floor(256 * mib, 0) == 256 * mib
+    assert new_mapping_floor(256 * mib, 256 * mib) == 0           # the slack covers it: no claim
+    assert new_mapping_floor(256 * mib, 300 * mib) == 0           # never negative
+    assert new_mapping_floor(256 * mib, -5) == 256 * mib          # a negative slack reads as none

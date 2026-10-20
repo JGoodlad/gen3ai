@@ -59,6 +59,12 @@ class Cell:
         self.cmd, self.check, self.result, self.prepare = cmd, check, result, prepare
 
 
+#: Every pytest cell runs from the MAIN checkout, where the conftest's slow-tier recorder would rewrite main's
+#: committed `designs/ops/slow_tier_status.json` and leave main dirty mid-window (standing rule 4). This is the
+#: conftest's own escape hatch; the dry run asserts every pytest cell's command carries it.
+NO_SLOW_RECORD = "GEN3AI_SKIP_SLOW_STATUS_RECORD=1"
+
+
 def _py() -> str:
     return os.environ.get("PY") or os.environ.get("GEN3AI_PYTHON") or "/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3"
 
@@ -149,7 +155,7 @@ def cells() -> list[Cell]:
     cs.append(Cell(
         "frozen_guard", "T2 frozen guard under expandable_segments: a healthy flush reserves 0 B (eager + graph)",
         mem_gb=16, wall_min=65, eta_min=10,
-        cmd=lambda out: ["env", "GEN3AI_TEST_ALLOW_GPU=1", py, "-m", "pytest", FROZEN_GUARD_NODE, "-q", "-rs",
+        cmd=lambda out: ["env", "GEN3AI_TEST_ALLOW_GPU=1", NO_SLOW_RECORD, py, "-m", "pytest", FROZEN_GUARD_NODE, "-q", "-rs",
                          "-p", "no:cacheprovider", f"--junitxml={out / 'cells' / junit}"],
         check=lambda out: _check_frozen_guard(py),
         result=lambda out: _junit_all_passed(out / "cells" / junit, expect=2)))
@@ -168,7 +174,7 @@ def cells() -> list[Cell]:
     cs.append(Cell(
         "x45_cuda_test", "X45: grouped_cuda_test.py -- graph-backend parity, weight swap, frozen steady state (GPU)",
         mem_gb=24, wall_min=30, eta_min=5,
-        cmd=lambda out: ["env", "GEN3AI_TEST_ALLOW_GPU=1", py, "-m", "pytest", str(ROOT / X45_CUDA_TEST), "-q", "-rs",
+        cmd=lambda out: ["env", "GEN3AI_TEST_ALLOW_GPU=1", NO_SLOW_RECORD, py, "-m", "pytest", str(ROOT / X45_CUDA_TEST), "-q", "-rs",
                          "-p", "no:cacheprovider", f"--junitxml={out / 'cells' / xjunit}"],
         check=lambda out: _check_x45(py, cuda_test=True),
         result=lambda out: _junit_all_passed(out / "cells" / xjunit, expect=1)))
@@ -323,6 +329,12 @@ def dry_run(out: Path, sel: list[Cell]) -> int:
         print(f"  {'ok  ' if ok else 'FAIL'} {OPS / tool} executable")
     tok = os.environ.get("GEN3AI_GPU_LEASE_TOKEN") or os.environ.get("GEN3AI_GPU_LEASE_TOKEN_FILE")
     print(f"  {'ok  ' if tok else 'WARN'} lease token {'set' if tok else 'NOT set (the real run refuses without it)'}")
+    for c in sel:                                  # every pytest cell must not record into main's status file
+        argv = c.cmd(out)
+        if "pytest" in argv:
+            ok = NO_SLOW_RECORD in argv
+            bad += not ok
+            print(f"  {'ok  ' if ok else 'FAIL'} {c.name}: pytest cell exports {NO_SLOW_RECORD}")
     total_eta = total_cap = 0
     for c in sel:
         st, detail = c.check(out)

@@ -24,6 +24,25 @@ $B/run_battery.sh --out /tmp/gpu_battery_2026-10-20 --budget-min 100   # the win
 The battery never stops, resumes or signals a training run. The caller pauses and resumes the run. On a HOLD, the
 window is the orchestrator's call (`TRAINING_RUN_SOP.md` §3, rule 3).
 
+## Run note: the `frozen_guard` cell (cell 2) failed on its TEST threshold, not on the guard
+
+On the first run (2026-10-19, under the training session's lease) both parametrisations failed on
+`cuda_reserved_bytes_after_freeze >= 256 * 2**20`: the counter read 251,658,240 B = 240 MiB. Every precondition
+passed (`segments_now == 0`, a healthy flush reserved 0 B / 0 growths, the old segment counter read 0), so the
+reserved-bytes counter DID see the new mapping. The bar was wrong: under `expandable_segments` the allocator reuses
+pages that are already mapped and free (it extends the segment's free tail and maps only the shortfall), so 16 MiB of
+the 256 MiB request was not a new mapping. The test now asserts `>= reserved_growth.new_mapping_floor(request,
+reusable)`, where `reusable = memory_reserved() - memory_allocated()` is read inside the guard just before the request
+(`gen3_expandable_floor_v1`; CPU-tested in `service_test.py`). The cell must be re-run on a card to see 2 passed.
+
+**`RESERVED_GROWTH_POISONS` stays OFF** by the orchestrator's ruling, for a separate reason: the overlap false-FATAL
+found in the core review. This cell passing does not arm it.
+
+**Slow-tier recording is off for the pytest cells** (`frozen_guard`, `x45_cuda_test`). They run from the MAIN checkout,
+where the conftest's recorder would rewrite main's committed `designs/ops/slow_tier_status.json` and dirty main
+mid-window. Each cell's command carries `GEN3AI_SKIP_SLOW_STATUS_RECORD=1`, and `--dry-run` FAILs if a pytest cell
+lacks it. The cost: these two cells' verdicts are NOT banked in the status file; read them from the junit XML.
+
 ## The cells, in run order
 
 Each cell runs as `gpu_lock.sh mem_cap.sh --name battery-<cell> <GB> timeout --kill-after=60 <cap> <cmd>`. A cell is

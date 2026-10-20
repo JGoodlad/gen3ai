@@ -216,13 +216,14 @@ for _ in range(3):
         svc.score(0, obs[:n], mask[:n])
 healthy = dict(svc.stats())
 with svc._frozen_guard("probe"):
+    reusable = torch.cuda.memory_reserved() - torch.cuda.memory_allocated()   # mapped and free
     hold = torch.empty(64 * 2**20, dtype=torch.float32, device="cuda")   # 256 MiB, new
     del hold
 st = svc.stats()
 print(json.dumps({"healthy": {k: healthy[k] for k in ("cuda_segments_after_freeze",
     "cuda_reserved_bytes_after_freeze", "cuda_reserved_growths_after_freeze")},
     "after": {k: st[k] for k in ("cuda_segments_after_freeze", "cuda_reserved_bytes_after_freeze")},
-    "state": st["state"], "segments_now": torch.cuda.memory_stats().get("segment.all.current", 0)}))
+    "state": st["state"], "reusable_bytes": reusable, "segments_now": torch.cuda.memory_stats().get("segment.all.current", 0)}))
 """
 
 
@@ -232,7 +233,9 @@ def test_expandable_segments_steady_state_reserves_nothing_and_a_new_mapping_is_
     process under the launcher's ``PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True``: (1) 15 healthy
     flushes grow ``reserved_bytes.all.allocated`` by 0 bytes (else arming would poison a healthy
     run); (2) a 256 MiB allocation inside the guard is SEEN by the reserved counter while the
-    segment counter reads 0 (the blindness this unit fixes). Not yet run on a card (no lease)."""
+    segment counter reads 0 (the blindness this unit fixes), by at least the request minus the
+    slack already mapped (`reserved_growth.new_mapping_floor`). Run on the card 2026-10-19: the
+    old `>= 256 MiB` bar failed at 240 MiB; the guard was right, the bar was not."""
     import json
     import os
     import subprocess
@@ -249,5 +252,13 @@ def test_expandable_segments_steady_state_reserves_nothing_and_a_new_mapping_is_
     assert r["healthy"] == {"cuda_segments_after_freeze": 0, "cuda_reserved_bytes_after_freeze": 0,
                             "cuda_reserved_growths_after_freeze": 0}, r
     assert r["after"]["cuda_segments_after_freeze"] == 0          # the old counter: blind
-    assert r["after"]["cuda_reserved_bytes_after_freeze"] >= 256 * 2**20, r
+    # NOT >= 256 MiB: expandable segments reuse already-mapped free pages, so the first battery
+    # (2026-10-19) read 251,658,240 B = 240 MiB (16 MiB of the request was reusable slack). What is
+    # guaranteed is everything beyond the pre-request slack -- and that floor must be > 0, or the
+    # test would prove nothing (the 256 MiB request must exceed the slack).
+    from agents.inference.service.reserved_growth import new_mapping_floor
+
+    floor = new_mapping_floor(256 * 2**20, r["reusable_bytes"])
+    assert floor > 0, ("precondition: the request must exceed the reusable slack", r)
+    assert r["after"]["cuda_reserved_bytes_after_freeze"] >= floor, (floor, r)
     assert r["state"] == "FROZEN"                                 # warn-first until armed
