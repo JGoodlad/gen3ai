@@ -254,7 +254,9 @@ cost of 82–127 %: FP32_ALT.**
   summation order and inductor-vs-eager ([`../tau_fp32_alt_2026-10-20/`](../tau_fp32_alt_2026-10-20/)); the learner
   golden, the played-bits sentinel and the reveal file's `OFF_BITS` are re-recorded with their cause. **Production GO
   waits for its GPU cost read** ([`../gpu_window_battery_2026-10-20/`](../gpu_window_battery_2026-10-20/): FP32_ALT vs
-  the naive fp32 sum, CONFIRMED iff ≤ 3 % of a cycle); the orchestrator fills the placeholder below after that read.
+  the naive fp32 sum, CONFIRMED iff ≤ 3 % of a cycle) AND for that battery's first cell `tau_cuda_parity` to PASS
+  (orchestrator 2026-10-20: FP32_ALT's compiled-rollout vs learner τ agreement on CUDA, 61a29997); the orchestrator
+  fills the placeholder below only after BOTH.
   - **The gate (AM-8).** [`x35_required_commits_production.txt`](x35_required_commits_production.txt) holds the placeholder
     `FP32_ALT_SHA_PENDING`; until it is replaced by the commit's full sha, `launch_x35.sh` HOLDs every production launch
     (pre-check 2c) and `kit stage-check` reads PENDING for every production fork. **When FP32_ALT lands:** (1) replace the
