@@ -16,6 +16,11 @@ team of the panel. An exact copy shares 6. A widening corpus excludes every regi
 neighbours, the in-pool panels included (so a corpus never re-weights the sample ground); the training guard refuses a
 team source that hits a HELD-OUT panel (:func:`contamination`).
 
+**A panel holds DISTINCT teams** (``gen3_panel_duplicate_guard_v1``): :func:`panel_team_texts` raises
+:class:`PanelDuplicateError` for one team under two labels (byte-identical, or the same once packed) unless
+:data:`KNOWN_DUPLICATES` names that group with a reason. ``home72`` (X37b finding 1) and ``away`` are named: both are
+frozen, so their duplicates are excused, not removed.
+
 Why by content and with a radius: ``away`` was described as "never trained on" for a month while 19 of its 20 teams
 were pool copies (F-DV-5), and ``hl_05_26`` holds repeat teams from the same players, so an exact-only exclusion leaks.
 """
@@ -41,6 +46,69 @@ HELD_OUT_FROM_TRAINING = "training"
 
 class PanelRegistryError(RuntimeError):
     """The registry does not match the committed panels (a digest, a count or a manifest changed)."""
+
+
+class PanelDuplicateError(PanelRegistryError):
+    """A panel holds one team under two labels (byte-identical, or the same team once packed) that no
+    :data:`KNOWN_DUPLICATES` entry names. A read that resamples the panel's FILES double-weights that team, and the
+    scheduled builder refuses one team under two identities (X37b, F-DV-25)."""
+
+
+#: ``gen3_panel_duplicate_guard_v1``. A panel is a set of DISTINCT teams; :func:`panel_team_texts` refuses one that is
+#: not, unless the duplicate is NAMED here with the reason it is tolerated. Teams are the same iff they pack to the same
+#: string (``Teambuilder.join_team`` over the parsed paste -- the criterion X37b's ``canonical()`` used, a byte-identical
+#: paste included). An entry matches a duplicate GROUP exactly (the set of its labels): a third copy, or a different pair,
+#: is a new duplicate and refused. A stale entry (its group no longer duplicates) is refused as well, so the list cannot
+#: outlive the defect it excuses. The panels' files, the manifests and the registered digests are FROZEN (every X35 / X37
+#: readout names them); this list exists so those users keep working, not to bless a duplicate in a NEW panel.
+KNOWN_DUPLICATES: Dict[str, Tuple[Dict[str, Any], ...]] = {
+    "home72": ({
+        "labels": ("63eda9d8d491d6a4.txt", "dbbfac7bd5.txt"),
+        "reason": "X37b finding 1 (F-DV-25): one team twice, 71 distinct teams in 72 files; the panel stays frozen so "
+                  "X35's readouts stay comparable, and X37b plays the duplicate as the sorted-first id "
+                  "(`canonical()` in its scripts/x37b.py)",
+    },),
+    "away": ({
+        "labels": ("team_13.gen3ou_team", "team_9.gen3ou_team"),
+        "reason": "found by this guard 2026-10-19, the same class as X37b finding 1 (F-DV-25): two BYTE-IDENTICAL "
+                  "files, 19 distinct teams in 20 files; the panel is Metamon's `competitive` copy and stays frozen",
+    },),
+}
+
+
+def duplicate_groups(items: Sequence[Tuple[str, str]]) -> List[Tuple[str, ...]]:
+    """The groups of labels in ``items`` (``(label, paste)`` pairs) that are ONE team (same packed string), each group
+    sorted, the groups sorted. Pure: no registry, no Node (the pack is :class:`utils.team_packing.Teambuilder`'s)."""
+    from utils.team_packing import Teambuilder
+
+    by_pack: Dict[str, List[str]] = {}
+    for label, text in items:
+        by_pack.setdefault(Teambuilder.join_team(Teambuilder.parse_showdown_team(text)), []).append(label)
+    return sorted(tuple(sorted(v)) for v in by_pack.values() if len(v) > 1)
+
+
+def check_distinct(name: str, items: Sequence[Tuple[str, str]],
+                   allowed: Optional[Dict[str, Tuple[Dict[str, Any], ...]]] = None) -> None:
+    """Raise :class:`PanelDuplicateError` for a duplicate group of panel ``name`` that ``allowed`` (default
+    :data:`KNOWN_DUPLICATES`) does not name, or for an allow entry that no longer matches a duplicate group."""
+    allowed = KNOWN_DUPLICATES if allowed is None else allowed
+    entries = allowed.get(name, ())
+    for e in entries:
+        if not str(e.get("reason", "")).strip():
+            raise PanelDuplicateError(f"panel {name}: the allow entry for {tuple(e['labels'])} carries no reason")
+    named = {tuple(sorted(e["labels"])) for e in entries}
+    found = set(duplicate_groups(items))
+    new = sorted(found - named)
+    if new:
+        raise PanelDuplicateError(
+            f"panel {name}: {len(new)} team(s) appear under two or more labels (one team once packed): "
+            + "; ".join(" = ".join(g) for g in new)
+            + ". A resample of the panel's files double-weights them (X37b F-DV-25). Fix the panel, or -- only for a "
+              "frozen panel that is already in use -- name the group in KNOWN_DUPLICATES with the reason.")
+    stale = sorted(named - found)
+    if stale:
+        raise PanelDuplicateError(f"panel {name}: KNOWN_DUPLICATES names {stale}, which is no longer a duplicate group "
+                                  "of the panel -- delete the entry")
 
 
 @dataclass(frozen=True)
@@ -96,6 +164,7 @@ def panel_team_texts(name: str) -> Tuple[Tuple[str, str], ...]:
     got = team_set_digest([t for _, t in items])
     if got != ent["content_digest"]:
         raise PanelRegistryError(f"panel {name}: content digest {got} != registered {ent['content_digest']}")
+    check_distinct(name, items)
     return tuple(items)
 
 

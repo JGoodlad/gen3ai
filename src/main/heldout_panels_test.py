@@ -81,3 +81,55 @@ def test_a_changed_panel_is_refused(monkeypatch):
             H.panel_team_texts("p72")
     finally:
         H.panel_team_texts.cache_clear()
+
+
+# ----------------------------------------------- the duplicate-team guard (X37b F-DV-25)
+
+def _team(species: str) -> str:
+    return f"{species} @ Leftovers\nAbility: Pressure\nEVs: 252 HP\n- Tackle\n- Protect"
+
+
+def test_the_frozen_panels_duplicates_are_exactly_the_named_ones():
+    """home72's pair is X37b's F-DV-25; `away`'s byte-identical pair was found by this guard. Both are named, no other panel
+    has any, so `verify()` (above) passing means the allow list is neither missing nor stale."""
+    assert H.duplicate_groups(H.panel_team_texts("home72")) == [("63eda9d8d491d6a4.txt", "dbbfac7bd5.txt")]
+    assert H.duplicate_groups(H.panel_team_texts("away")) == [("team_13.gen3ou_team", "team_9.gen3ou_team")]
+    for name in ("heldout72", "heldout72_hpfix", "forum72", "p72"):
+        assert H.duplicate_groups(H.panel_team_texts(name)) == []
+    assert set(H.KNOWN_DUPLICATES) == {"home72", "away"}
+    assert all("X37b" in e["reason"] or "F-DV-25" in e["reason"] for e in H.KNOWN_DUPLICATES["home72"])
+
+
+def test_a_panel_loader_refuses_an_unnamed_duplicate(monkeypatch):
+    """The wiring: with home72's allow entry removed the REAL loader raises (fails on revert of the check)."""
+    monkeypatch.setattr(H, "KNOWN_DUPLICATES", {})
+    H.panel_team_texts.cache_clear()
+    try:
+        with pytest.raises(H.PanelDuplicateError, match="63eda9d8d491d6a4.txt = dbbfac7bd5.txt"):
+            H.panel_team_texts("home72")
+    finally:
+        H.panel_team_texts.cache_clear()
+    assert isinstance(H.PanelDuplicateError("x"), H.PanelRegistryError)     # h2h.panel turns this into PanelRefused
+
+
+def test_duplicate_groups_see_byte_identical_and_repacked_copies_but_not_distinct_teams():
+    a, b = _team("Snorlax"), _team("Skarmory")
+    padded = "\n" + a + "\n\n\n"                       # the same paste with Metamon-style padding: same packed team
+    items = [("a1", a), ("b", b), ("a2", padded), ("a3", a)]
+    assert H.duplicate_groups(items) == [("a1", "a2", "a3")]
+    assert H.duplicate_groups([("a", a), ("b", b)]) == []
+
+
+def test_check_distinct_allows_only_the_exact_named_group_with_a_reason():
+    a, b = _team("Snorlax"), _team("Skarmory")
+    items = [("a1", a), ("a2", a), ("b", b)]
+    ok = {"p": ({"labels": ("a2", "a1"), "reason": "X37b: frozen"},)}
+    H.check_distinct("p", items, ok)                                              # label order does not matter
+    with pytest.raises(H.PanelDuplicateError, match="a1 = a2"):
+        H.check_distinct("p", items, {})
+    with pytest.raises(H.PanelDuplicateError, match="a1 = a2 = a3"):             # a third copy is a NEW duplicate
+        H.check_distinct("p", items + [("a3", a)], ok)
+    with pytest.raises(H.PanelDuplicateError, match="no reason"):
+        H.check_distinct("p", items, {"p": ({"labels": ("a1", "a2"), "reason": " "},)})
+    with pytest.raises(H.PanelDuplicateError, match="no longer a duplicate"):    # a stale entry cannot outlive its defect
+        H.check_distinct("p", [("a1", a), ("b", b)], ok)

@@ -1403,6 +1403,13 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 - **F-DV-25 (X37b).** home72 holds one team twice (`63eda9d8d491d6a4.txt` = `dbbfac7bd5.txt` after packing). Any
   read that resamples home72's 72 FILES double-weights it, and the scheduled builder refuses it until the ids are
   aliased (X37b's `canonical()`).
+  **GUARDED 2026-10-19 (`gen3_panel_duplicate_guard_v1`):** `main.heldout_panels.panel_team_texts` -- the loader every
+  registered-panel consumer goes through (`--panel`, the Kakuna reads, `verify()`, the corpus builders) -- now raises
+  `PanelDuplicateError` for one team under two labels (byte-identical, or the same once packed), unless
+  `KNOWN_DUPLICATES` names the exact group with a reason. `home72` is named (this finding); the panel, its manifest and
+  its registered digest are UNCHANGED, so X35's readouts stay comparable. The guard also found that **`away` holds
+  `team_9.gen3ou_team` = `team_13.gen3ou_team` byte for byte** (19 distinct teams in 20 files), named the same way;
+  no other registered panel has a duplicate. An allow entry that stops matching is refused too.
 - **F-DV-26 (X37b).** In-house, the piloting deficit does not show beyond team strength (P\* pilots H vs P\* on
   home72 at 0.418, about Kakuna's K(P, H) gap). Against Kakuna it is 11–28 pp. The two candidate explanations,
   "Kakuna-specific exploitation" and "same-family opponents cannot punish it" (F-DV-19), are not separable in-house.
