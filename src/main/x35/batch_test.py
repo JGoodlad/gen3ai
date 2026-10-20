@@ -612,3 +612,16 @@ def test_launch_x35_rotates_an_existing_launcher_log_at_go(tmp_path):
     assert not log.exists() and len(prev) == 1 and prev[0].read_text() == "old attempt: cannot restart\n"
     r = subprocess.run(["bash", "-c", probe, "probe", str(tmp_path)], capture_output=True, text=True)    # no log: no-op
     assert r.returncode == 0 and "rotated" not in r.stdout and not log.exists()
+
+
+def test_launch_x35_runs_the_launcher_dry_run_with_the_card_visible():
+    """The launcher's CUDA-visibility preflight (d812e78c4) refuses a --device cuda launch under an empty
+    CUDA_VISIBLE_DEVICES, dry run included, so pre-check 6 must not export one (it blocked toy_c0 3602's GO,
+    2026-10-20); pre-check 1b, which refuses an inherited empty value, runs first in the same prechecks()."""
+    from utils.paths import repo_path
+
+    sh = repo_path("designs/research_state/measurements/x35_breakers_stage_2026-10-17/launch_x35.sh").read_text()
+    body = sh[sh.index("prechecks() {"):]
+    line = next(l for l in body.splitlines() if "-m main.launcher --dry-run" in l)
+    assert "CUDA_VISIBLE_DEVICES" not in line, line
+    assert body.index("CUDA_VISIBLE_DEVICES+x") < body.index("-m main.launcher --dry-run")

@@ -134,7 +134,9 @@ prechecks() {
   ( cd "$REPO" && PYTHONPATH="$REPO/src" CUDA_VISIBLE_DEVICES="" timeout 600 "$PY" -m main.checkargs --pin "$PIN" \
     --argv "${A[*]}" ) > "$out.checkargs.txt" 2>&1 || hold "checkargs refused (see $out.checkargs.txt)"
   # 6. the dry-run
-  ( cd "$REPO" && PYTHONPATH="$REPO/src" CUDA_VISIBLE_DEVICES="" timeout 900 "$PY" -m main.launcher --dry-run \
+  # the launcher --dry-run must SEE the card: its CUDA-visibility preflight (d812e78c4) refuses a --device cuda launch
+  # under an empty CUDA_VISIBLE_DEVICES, dry run included (it blocked toy_c0 3602's GO, 2026-10-20). It creates nothing.
+  ( cd "$REPO" && PYTHONPATH="$REPO/src" timeout 900 "$PY" -m main.launcher --dry-run \
     --restart-interval-hours 24 --pin-commit "$PIN" "${A[@]}" ) > "$out.dryrun.txt" 2>&1 \
     || hold "launcher --dry-run refused (see $out.dryrun.txt)"
   grep -q "this command would launch" "$out.dryrun.txt" || hold "the dry-run did not say 'would launch'"
