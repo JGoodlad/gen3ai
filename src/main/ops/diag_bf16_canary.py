@@ -718,6 +718,7 @@ class Context:
             ensure_hermetic_cache("diag_bf16_canary")   # K3: never torch's shared default dir
             from agents.model import compile_control as cc
             from agents.model import compile_regions as cr
+            from agents.model.inductor_compile import compile_on   # THE compile seam (gen3_cpu_compile_sites_v1)
             cc.control().install()
             torch._dynamo.config.cache_size_limit = max(int(torch._dynamo.config.cache_size_limit), 64)
             kw: Dict[str, Any] = {"fullgraph": True, "dynamic": False}
@@ -731,17 +732,18 @@ class Context:
                 self.fns["C32"] = (self.model32, self.model32._compiled_micro_step, False)
             if "Cbf_emul" in compiled:
                 emul: Dict[str, Any] = sb or {"options": {"emulate_precision_casts": True}}
-                self.fns["Cbf_emul"] = (self.model, torch.compile(micro_step, **emul, **kw), False)
+                self.fns["Cbf_emul"] = (self.model, compile_on(micro_step, device=device, **emul, **kw), False)
             if "Cbf_aot" in compiled:
-                self.fns["Cbf_aot"] = (self.model, torch.compile(micro_step, backend="aot_eager", **kw), False)
+                self.fns["Cbf_aot"] = (self.model, compile_on(micro_step, device=device, backend="aot_eager", **kw),
+                                       False)
             if "Cbf_pheager" in compiled:
                 # the pointer head EAGER inside an otherwise compiled R1: an instance-level disabled forward is a
                 # graph break (so fullgraph=False), on its OWN learner so no other arm's guards see the patch
                 self.model_ph = build_learner(first_zip, device)
                 ph = self.model_ph.policy.pointer_head
                 ph.forward = torch.compiler.disable(ph.forward)
-                self.fns["Cbf_pheager"] = (self.model_ph, torch.compile(micro_step, fullgraph=False, dynamic=False,
-                                                                        **sb), False)
+                self.fns["Cbf_pheager"] = (self.model_ph, compile_on(micro_step, device=device, fullgraph=False,
+                                                                     dynamic=False, **sb), False)
         self.say(f"[diag] learner(s) built on {device} in {time.perf_counter() - t0:.1f}s; arms {self.arm_names}")
 
     @property

@@ -284,19 +284,23 @@ def _view(model: Any, name: str, orig_train: Callable[[Any], None], pristine: Di
     from agents.model.compile_cache import ensure_hermetic_cache
     ensure_hermetic_cache(f"compile_inventory {name}")   # K3: never torch's shared default dir
     torch._dynamo.reset()
+    # THE compile seam (gen3_cpu_compile_sites_v1). `cap.backend` is a callable, so `compile_on` adds nothing here:
+    # the capture's own `inductor` mode applies the CPU workaround inside (`capture._compile`)
+    from agents.model.inductor_compile import compile_on
+    dev = getattr(model, "device", "cpu")
     with InventoryCapture(backend=cfg.get("backend", "aot_eager")) as cap:
         if name == "today":
-            fe.forward = torch.compile(fe.forward, backend=cap.backend)
+            fe.forward = compile_on(fe.forward, device=dev, backend=cap.backend)
             step: Callable[[Any], None] = orig_train
 
             def rollout(pol: Any, o: Any, m: Any) -> Any:
                 return pol(o, action_masks=m)
         else:
-            step = torch.compile(orig_train, backend=cap.backend)
+            step = compile_on(orig_train, device=dev, backend=cap.backend)
 
             def _rollout(pol: Any, o: Any, m: Any) -> Any:
                 return pol(o, action_masks=m)
-            rollout = torch.compile(_rollout, backend=cap.backend)
+            rollout = compile_on(_rollout, device=dev, backend=cap.backend)
         try:
             with cap.label("update1:first(diagnostics)"):
                 _stage(f"{name}:update1")

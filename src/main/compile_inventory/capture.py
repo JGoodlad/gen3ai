@@ -272,7 +272,11 @@ class InventoryCapture:
             return self._marked(gm.forward, rec, "fw", boxed=False)
         if self.backend_name == "inductor":
             from torch._inductor.compile_fx import compile_fx
-            return self._marked(compile_fx(gm, example_inputs), rec, "fw", boxed=False)
+            from agents.model.inductor_compile import device_of_inputs, inductor_options
+            # the CPU tile2d workaround when the graph is CPU (gen3_cpu_compile_sites_v1; `inductor_compile`)
+            patches = inductor_options(device_of_inputs(example_inputs))
+            return self._marked(compile_fx(gm, example_inputs, config_patches=patches or None), rec, "fw",
+                                boxed=False)
         from torch._dynamo.backends.common import aot_autograd
 
         def _fw(fx_g: torch.fx.GraphModule, _ex: Sequence[Any]) -> Callable[..., Any]:

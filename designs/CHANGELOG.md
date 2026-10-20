@@ -15051,3 +15051,23 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
 - **Tests.** `consistency_min_rows_test.py` (57 rows over the ceiling reported not FATAL; 1,024 / 1,025 / 2,048 rows over it
   FATAL; 1,023 rows at the same share do not; `max` still judged tiny; the production guarantee; fails on revert);
   `consistency_test` / `learner_gates_test` table pins updated. Docs: `designs/training/learner_gates.md`.
+## 2026-10-19 — FIX: every CPU compile site goes through ONE seam that carries the tile2d step-around (`gen3_cpu_compile_sites_v1`; no model / config / obs / signature change, no training-math change, CUDA compile kwargs byte-identical)
+
+- **The gap.** `gen3_cpu_inductor_scalar_v1` (2026-10-15) put `cpp.simdlen = 1` on R1's CPU compile only. Measured now: the
+  production extractor's CPU compile WITHOUT it dies in g++ at B = 16 and 64 (no-grad) and at B = 16 (grad) — so
+  `compile_opponents.maybe_compile_extractor` (the prober's counterfactual view, `snapshot`'s opponent loads), warmed at
+  B = 1, silently FELL BACK to eager on its first B >= 16 call; `compile_inventory`'s fullgraph check (`batch=16`) and capture
+  backend (`inductor` mode) and the bf16 canary's CPU arms were exposed the same way. T2's `decide` (named in the backlog
+  row) is NOT reachable on CPU (`ServiceSpec` refuses `graph` / `aot` off CUDA).
+- **The fix.** `agents.model.inductor_compile`: `compile_on(fn, device=..., **kw)` = `torch.compile` + `CPU_INDUCTOR_OPTIONS`
+  exactly when the compile reaches Inductor's C++ codegen (CPU + Inductor backend), merged last; `inductor_options(device)`
+  for a backend that calls Inductor itself (`capture`'s `compile_fx`, T2's AOT `inductor_config.patch`). Every compile call
+  in `src/` (8 production modules, the CPU / CUDA test sites) routes through it; `compile_regions.CPU_INDUCTOR_OPTIONS` /
+  `cpu_inductor_options` are re-exports.
+- **Tests.** `inductor_compile_test.py` (the decision table; exact kwargs to `torch.compile`; an AST SCAN of `src/` that fails
+  a bypass, sees every production site and catches planted offenders; the repro at B = 16 / 32 / 64 through `compile_on` and
+  through the capture backend, slow). `cpu_compile_sites_slow_test.py` (the production extractor at B = 16 / 32 / 64 on the
+  real parity rows; `maybe_compile_extractor` serving B = 16 / 32 / 64 compiled, failing on the fallback warning). The
+  hermetic-cache scan counts `compile_on`; compile stubs in `compile_extractor_test` / `opponent_parity_test` take `**kw`.
+- **Docs.** `designs/training/compile_flags.md` "Every CPU compile site goes through ONE seam" (the inventory and the proof);
+  the model leaf; `designs/model/file_layout.md`; `TECH_DEBT_BACKLOG.md` (row closed).

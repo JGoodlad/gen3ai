@@ -45,7 +45,7 @@ def _uninstall(fe):
 
 def _pointer_cell_miscompile(fe):
     """Features exact; the per-action move cells only the pointer head reads are wrong."""
-    def factory(fn):
+    def factory(fn, **_kw):
         def fwd(obs):
             out = fn(obs)
             pin = fe.stash.pointer_inputs

@@ -323,7 +323,8 @@ def _module_source(rel: str) -> str:
 
 
 def test_every_production_compile_site_declares_the_hermetic_cache():
-    """A module under src/agents, src/main or src/utils that calls `torch.compile` /
+    """A module under src/agents, src/main or src/utils that calls `torch.compile` / the compile seam's
+    `compile_on` (`agents.model.inductor_compile`, through which every site compiles) /
     `aoti_compile_and_package` must route through the hermetic cache in the same module (directly, or
     via `compile_opponents._inductor_cache_dir` / `compile_cache.t2_aot_dir`). A new compile site that
     forgets would compile into whatever torch defaults to — the shared dir this retired."""
@@ -331,17 +332,18 @@ def test_every_production_compile_site_declares_the_hermetic_cache():
     offenders = []
     for top in ("agents", "main", "utils"):
         for p in Path(src_path(top)).rglob("*.py"):
-            if p.name.endswith("_test.py") or p.name == "compile_cache.py":
+            if p.name.endswith("_test.py") or p.name in ("compile_cache.py", "inductor_compile.py"):
                 continue
             src = p.read_text(errors="replace")
-            if "compile(" not in src:
+            if "compile" not in src:
                 continue
             tree = ast.parse(src)
             calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call)
-                     and isinstance(n.func, ast.Attribute)
-                     and ((n.func.attr == "compile" and isinstance(n.func.value, ast.Name)
-                           and n.func.value.id in ("torch", "th"))
-                          or n.func.attr == "aoti_compile_and_package")]
+                     and ((isinstance(n.func, ast.Attribute)
+                           and ((n.func.attr == "compile" and isinstance(n.func.value, ast.Name)
+                                 and n.func.value.id in ("torch", "th"))
+                                or n.func.attr in ("aoti_compile_and_package", "compile_on")))
+                          or (isinstance(n.func, ast.Name) and n.func.id == "compile_on"))]
             called = {(n.func.id if isinstance(n.func, ast.Name) else getattr(n.func, "attr", None))
                       for n in ast.walk(tree) if isinstance(n, ast.Call)}
             if calls and not (called & set(markers)):     # a CALL, never a bare import

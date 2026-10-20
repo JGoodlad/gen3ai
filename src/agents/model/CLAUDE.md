@@ -73,6 +73,9 @@ The live `MODEL_CONFIG_VERSION`, `ARCH_SIGNATURE` and `OBS_SEMANTICS_VERSION` ar
   `index_max.max_by_index`, never `amax`, on a gradient path; `op_reduction.believed_reduce` verbatim; float
   attention biases through `dense_attn_bias`; a forward reads plain ints precomputed in `__init__`. Bisect a
   compile failure to the op before any global suppression (`designs/model/op_contracts.md`).
+- 🚨 **Every compile goes through `inductor_compile.compile_on`** (never a bare `torch.compile`; a scan fails the
+  bypass): on CPU it adds the torch 2.8 tile2d step-around, without which the extractor dies in g++ at B >= 16
+  (`designs/training/compile_flags.md` "The CPU Inductor tile2d codegen bug").
 
 ## Heads
 

@@ -26,6 +26,7 @@ import pytest
 import torch
 
 from agents.model import compile_regions as cr
+from agents.model.inductor_compile import compile_on
 
 B, K = 16, 18                       # the failing shape: B and K both >= 16 fp32 lanes
 
@@ -47,11 +48,11 @@ def _inputs():
 
 
 def _compile(options):
+    """The repro compiled with EXACTLY ``options`` — the bug's own proof, so the seam's workaround is off
+    (`cpu_workaround=False`, which nothing else in `src/` passes: `inductor_compile_test`)."""
     torch._dynamo.reset()
-    kw = {"backend": "inductor", "fullgraph": True}
-    if options:
-        kw["options"] = dict(options)
-    return torch.compile(_repro, **kw)
+    return compile_on(_repro, device="cpu", backend="inductor", fullgraph=True, options=options,
+                      cpu_workaround=False)
 
 
 @pytest.fixture

@@ -82,6 +82,14 @@ def _inductor_cache_dir() -> str:
     return os.environ[ENV_INDUCTOR]
 
 
+def _extractor_device(fe: Any) -> Any:
+    """The device ``fe``'s parameters live on (CPU when it has none, or is a stand-in without `parameters`)."""
+    import torch
+    params = getattr(fe, "parameters", None)
+    p = next(iter(params()), None) if callable(params) else None
+    return p.device if p is not None else torch.device("cpu")
+
+
 def maybe_compile_extractor(model: Any, enabled: bool, label: str = "opponent",
                             hide_cuda: bool = False) -> bool:
     """`torch.compile` a frozen model's FEATURE EXTRACTOR for CPU inference. Returns True if applied.
@@ -144,7 +152,11 @@ def maybe_compile_extractor(model: Any, enabled: bool, label: str = "opponent",
     eager_series: List[float] = []
     comp_series: List[float] = []
     try:
-        compiled = torch.compile(fe.forward)
+        # THE one compile seam (gen3_cpu_compile_sites_v1): on CPU it adds the tile2d workaround, without which the
+        # end-state extractor dies in g++ at B >= 16 (`inductor_compile`); the warm-up is B = 1, a live reader's
+        # batch is not.
+        from agents.model.inductor_compile import compile_on
+        compiled = compile_on(fe.forward, device=_extractor_device(fe))
         # Force the compile HERE, inside the try — `torch.compile` is lazy, so without this the real
         # compilation happens on the first live decision, far outside this handler.
         with torch.no_grad():

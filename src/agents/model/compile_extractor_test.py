@@ -64,7 +64,7 @@ def _is_eager(fe):
 
 def _fast_compile(fe):
     """A stand-in compile that is genuinely faster than the instrumented eager forward."""
-    return lambda fn: (lambda obs: fe.lin(obs["observation"]))
+    return lambda fn, **_kw: (lambda obs: fe.lin(obs["observation"]))
 
 
 def test_disabled_is_a_no_op():
@@ -84,7 +84,7 @@ def test_reverts_when_compile_is_not_faster(monkeypatch):
     the fusion win on a fragmented graph. Measure, then keep or revert; never assume."""
     fe = _FE()
 
-    def slow_compile(fn):
+    def slow_compile(fn, **_kw):
         def wrapper(obs):
             import time
             t0 = time.perf_counter()
@@ -109,7 +109,7 @@ def test_exception_is_swallowed_and_forward_restored(monkeypatch):
     """A perf knob must never take a run down."""
     fe = _FE()
 
-    def boom(fn):
+    def boom(fn, **_kw):
         raise RuntimeError("inductor exploded")
 
     monkeypatch.setattr(torch, "compile", boom)
@@ -140,7 +140,7 @@ def test_late_failure_falls_back_to_eager_instead_of_raising(monkeypatch):
     # those so this exercises the LATE path rather than the load-time try/except.
     _load_time_calls = 1 + S._TIMING_WARMUP + S._TIMING_SAMPLES * S._TIMING_REPS
 
-    def flaky(_fn):
+    def flaky(_fn, **_kw):
         def wrapper(obs):
             calls["n"] += 1
             if calls["n"] > _load_time_calls:
@@ -164,7 +164,7 @@ def test_validation_is_paid_once_per_process(monkeypatch):
     calls = {"n": 0}
     fe1 = _FE(cost_ms=2.0)
 
-    def counting_compile(_fn):
+    def counting_compile(_fn, **_kw):
         calls["n"] += 1
         return lambda obs: fe1.lin(obs["observation"])
 
@@ -182,7 +182,7 @@ def test_validation_is_paid_once_per_process(monkeypatch):
         return orig_forward(obs)
 
     fe2.forward = counted_forward
-    monkeypatch.setattr(torch, "compile", lambda _fn: (lambda obs: fe1.lin(obs["observation"])))
+    monkeypatch.setattr(torch, "compile", lambda _fn, **_kw: (lambda obs: fe1.lin(obs["observation"])))
     assert S.maybe_compile_extractor(_model(fe2), True, label="second") is True
     assert fe2_forwards["n"] == 0, (
         f"the second compile re-ran {fe2_forwards['n']} eager timing forwards; validation should be "
@@ -210,7 +210,7 @@ def test_grad_enabled_calls_route_to_eager(monkeypatch):
     fe = _FE(cost_ms=2.0)
     used = {"compiled": 0}
 
-    def counting(_fn):
+    def counting(_fn, **_kw):
         def wrapper(obs):
             used["compiled"] += 1
             return fe.lin(obs["observation"])
@@ -480,7 +480,7 @@ def test_the_revert_message_reports_measurements_and_asserts_no_cause(monkeypatc
     investigations after the wrong thing. Report what was measured; the reader diagnoses."""
     fe = _FE()
 
-    def slow(fn):
+    def slow(fn, **_kw):
         def wrapper(obs):
             import time as _t
             t0 = _t.perf_counter()

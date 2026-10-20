@@ -22,6 +22,7 @@ from agents.model import dense_attn_bias as dab
 from agents.model import team_transformer as tt
 from agents.model.arch_constants import D_MODEL, TRANSFORMER_N_HEADS
 from agents.model.extractor_compiles_test import _cuda_skip_reason
+from agents.model.inductor_compile import compile_on
 from agents.model.team_transformer import _KEY_PAD_NEG, BiasedEncoderLayer, EdgeBias
 
 H = TRANSFORMER_N_HEADS
@@ -170,9 +171,9 @@ def test_cuda_inductor_n64_bias_reproduction(monkeypatch: pytest.MonkeyPatch) ->
                 mp.setattr(tt, "dense_attn_bias", lambda b: b)
                 torch._dynamo.reset()
                 with pytest.raises(RuntimeError, match="last dimension must be contiguous"):
-                    torch.compile(mod, fullgraph=True)(*args)
+                    compile_on(mod, device="cuda", fullgraph=True)(*args)
             torch._dynamo.reset()
-            got = torch.compile(mod, fullgraph=True)(*args)
+            got = compile_on(mod, device="cuda", fullgraph=True)(*args)
         torch.testing.assert_close(got, want, rtol=1e-4, atol=1e-4)
     finally:
         torch._dynamo.reset()
@@ -194,7 +195,7 @@ def test_cuda_inductor_n64_bias_training_gradients_match_eager() -> None:
         want = {k: p.grad.clone() for k, p in mod.named_parameters()}
         mod.zero_grad(set_to_none=True)
         torch._dynamo.reset()
-        torch.compile(mod, fullgraph=True)(*args).square().mean().backward()
+        compile_on(mod, device="cuda", fullgraph=True)(*args).square().mean().backward()
         for k, p in mod.named_parameters():
             assert p.grad is not None, k
             torch.testing.assert_close(p.grad, want[k], rtol=1e-3, atol=1e-6, msg=k)

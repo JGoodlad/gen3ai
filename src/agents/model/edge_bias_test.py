@@ -28,6 +28,7 @@ from agents.model.features_extractor import (
     TRANSFORMER_FFN_DIM, TRANSFORMER_N_HEADS, _EDGE_D1_CELL, _EDGE_D2_CELL, _EDGE_D3_CELL,
     _EDGE_S1_CELL, _EDGE_D4_CELL, _EDGE_S3_CELL, _EDGE_V_CELL, _KEY_PAD_NEG,
 )
+from agents.model.inductor_compile import compile_on
 from agents.model.model_version import (
     ARCH_SIGNATURE, MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError, _migrate_config,
 )
@@ -161,7 +162,7 @@ def test_family_requirement_gates():
 @pytest.mark.slow  # ship gate (2026-10-19): 21 s beside a live run
 def test_biased_layer_compiles_fullgraph():
     layer = BiasedEncoderLayer().eval()
-    compiled = torch.compile(layer, fullgraph=True, dynamic=False)
+    compiled = compile_on(layer, device="cpu", fullgraph=True, dynamic=False)
     x = torch.randn(2, 29, D_MODEL)
     bias = torch.randn(2, TRANSFORMER_N_HEADS, 29, 29) * 0.1
     with torch.no_grad():

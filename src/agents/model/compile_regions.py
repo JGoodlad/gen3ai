@@ -74,6 +74,7 @@ from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional, Tu
 import numpy as np
 import torch
 
+from agents.model import inductor_compile as _ic
 from agents.model import compile_trainer as ct
 from agents.model.compile_gate_probe import per_param_grad_errors
 from agents.model import region_calls as RC
@@ -131,22 +132,12 @@ R1_INDUCTOR_PRESETS: Dict[str, Dict[str, Any]] = {
 }
 
 
-#: The CPU-ONLY Inductor options of R1's compile (`cpu_inductor_options`; `gen3_cpu_inductor_scalar_v1`,
-#: 2026-10-15). torch 2.8.0's Inductor CPU backend emits INVALID C++ for a kernel that (a) gathers a row at a
-#: data-dependent index (`x[arange(B), idx]`, which the end-state graph's move-resolution family does at the
-#: active slot) and (b) is chosen as a 2-D TILED vector kernel (a [B] reduction over K of a strided column, with B
-#: and K both >= the 16 fp32 lanes of AVX-512): the transposed tile load of the gathered buffer names the
-#: gather's per-row index `tmp<N>` BEFORE it is declared (`CppTile2DKernel.need_vec_transpose` does not exclude an
-#: indirect index), so g++ stops with `error: 'tmp8' was not declared in this scope`. The smallest repro is
-#: pinned in `cpu_inductor_tile2d_test.py`; the kernel-level account and the upstream issues are in
-#: `designs/training/compile_flags.md` "The CPU Inductor tile2d codegen bug". `cpp.simdlen = 1` turns the CPP
-#: backend's vectorisation (and so the tiling) off: scalar C++ kernels, the same graph, fp32 summation order inside
-#: a kernel is the only thing that may move. It is applied to a CPU learner on the DEFAULT Inductor backend only —
-#: CUDA compiles to Triton and never reaches the CPP codegen, so a CUDA compile's kwargs are unchanged byte for
-#: byte (pinned by `cpu_inductor_tile2d_test`). The trainer's `--compile-trainer` refuses a CPU device (a CPU
-#: compiled learner has never been gated), so this serves the TEST SEAMS that compile R1 on CPU
-#: (`compiled_first_update_test`'s CPU cell).
-CPU_INDUCTOR_OPTIONS: Dict[str, Any] = {"cpp.simdlen": 1}
+#: The CPU-ONLY Inductor options (`gen3_cpu_inductor_scalar_v1`, 2026-10-15) — defined in, and applied by, THE one
+#: compile seam `agents.model.inductor_compile` (`compile_on`), which every compile site in `src/` goes through
+#: (`gen3_cpu_compile_sites_v1`). Re-exported here for R1's readers. A CPU learner's R1 carries it; a CUDA learner's
+#: kwargs are unchanged byte for byte (pinned by `cpu_inductor_tile2d_test`). The trainer's `--compile-trainer`
+#: refuses a CPU device, so on R1 it serves the TEST SEAMS that compile R1 on CPU (`compiled_first_update_test`).
+CPU_INDUCTOR_OPTIONS: Dict[str, Any] = _ic.CPU_INDUCTOR_OPTIONS
 
 
 def learner_device_type(model: Any) -> str:
@@ -162,9 +153,7 @@ def cpu_inductor_options(model: Any, backend: Optional[str] = None) -> Dict[str,
     """`CPU_INDUCTOR_OPTIONS` when R1 compiles on a CPU learner through Inductor (``backend`` None or
     ``"inductor"``); ``{}`` for a CUDA learner and for any other backend (an `eager` / `aot_eager` stand-in takes
     no Inductor options)."""
-    if backend not in (None, "inductor"):
-        return {}
-    return dict(CPU_INDUCTOR_OPTIONS) if learner_device_type(model) == "cpu" else {}
+    return _ic.inductor_options(learner_device_type(model), backend)
 
 
 def r1_inductor_options(preset: str) -> Dict[str, Any]:
@@ -244,7 +233,8 @@ def install(model: Any, *, backend: Optional[str] = None,
     if backend is not None:
         kw["backend"] = backend
     preset = str(getattr(model, "_r1_inductor_preset", "default") or "default")
-    opts = {**cpu_inductor_options(model, backend), **r1_inductor_options(preset)}
+    opts = r1_inductor_options(preset)   # + the CPU workaround, added by `compile_on` on a CPU learner only
+    dev = learner_device_type(model)
     graphed = learner_cudagraphs_on(model)
     if graphed and "cudagraphs" in preset.split("+"):
         raise ct.CompileTrainerError(
@@ -252,9 +242,9 @@ def install(model: Any, *, backend: Optional[str] = None,
             f"compile, so the retain_graph probes would run through cudagraph trees again (F-PB-2). The "
             f"flag declares its own graphed route; drop `cudagraphs` from the preset "
             f"(gen3_r1_graphed_route_v1)")
-    if opts:                              # a non-default preset (T25 levers B / C) or a CPU learner (gen3_cpu_inductor_scalar_v1); never CUDA's default
-        kw["options"] = opts
-    r1c = ctl.wrap_compiled(torch.compile(micro_step, **kw))
+    # a non-default preset (T25 levers B / C) or a CPU learner (gen3_cpu_inductor_scalar_v1) passes `options`;
+    # CUDA's default passes none
+    r1c = ctl.wrap_compiled(_ic.compile_on(micro_step, device=dev, options=opts, **kw))
     rows = int(getattr(model, "batch_size", 0) or 0)
     model._compiled_micro_step = _r1_dispatcher(r1c, rows, "compiled")
     names = ["R1_learner_micro_step"]
@@ -264,11 +254,11 @@ def install(model: Any, *, backend: Optional[str] = None,
         # T25 lever C (`gen3_r1_graphed_route_v1`): R1 compiled a SECOND time, the same function and the
         # same options plus cudagraph trees — a second DECLARED signature on R1's code object (dynamo keys
         # a cache entry by its compile wrapper), gated, prewarmed and locked like the first.
-        gkw = dict(kw, options={**opts, **R1_INDUCTOR_PRESETS["cudagraphs"]})
         if graphed_backend is not None:              # the CPU test seam (no options: a stand-in)
-            gkw = {k: v for k, v in kw.items() if k != "options"}
-            gkw["backend"] = graphed_backend
-        r1g = ctl.wrap_compiled(torch.compile(micro_step, **gkw))
+            r1g = ctl.wrap_compiled(_ic.compile_on(micro_step, device=dev, **dict(kw, backend=graphed_backend)))
+        else:
+            r1g = ctl.wrap_compiled(_ic.compile_on(micro_step, device=dev, options={
+                **opts, **R1_INDUCTOR_PRESETS["cudagraphs"]}, **kw))
         model._compiled_micro_step_graphed = _r1_dispatcher(r1g, rows, "graphed")
         names.append("R1_learner_micro_step[graphed]")
         from agents.model.compile_control import cudagraph_skips

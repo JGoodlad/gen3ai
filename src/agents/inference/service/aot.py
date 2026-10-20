@@ -93,7 +93,10 @@ def build_package(module: torch.nn.Module, static_obs: torch.Tensor, static_mask
     # OWN dict via `config.patch`: the mutation lands on the patched object, and the process's dict
     # is handed back untouched. (Slow-tier row RED since the T2 AOT backend landed; K3, 2026-09-30.)
     import torch._inductor.config as inductor_config
-    with inductor_config.patch({"aot_inductor.metadata": {}}):
+    # + the CPU tile2d workaround on a CPU export (`inductor_compile`, gen3_cpu_compile_sites_v1): nothing on CUDA,
+    # the only device this backend serves (`ServiceSpec` refuses another)
+    from agents.model.inductor_compile import inductor_options
+    with inductor_config.patch({"aot_inductor.metadata": {}, **inductor_options(static_obs.device)}):
         pkg = inductor.aoti_compile_and_package(ep, package_path=str(path))
     runner = inductor.aoti_load_package(pkg)
     return runner, names

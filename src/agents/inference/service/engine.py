@@ -225,7 +225,8 @@ class Engine:
     def _build_graphs(self) -> None:
         from agents.model.compile_cache import ensure_hermetic_cache
         ensure_hermetic_cache("T2 graph")         # K3: the run's cache, or a private one — never shared
-        compiled = torch.compile(decide, dynamic=False)
+        from agents.model.inductor_compile import compile_on    # THE compile seam (gen3_cpu_compile_sites_v1)
+        compiled = compile_on(decide, device=self.device, dynamic=False)
         pools = [torch.cuda.graph_pool_handle() for _ in range(self.n_lanes)]
         limit = max(int(torch._dynamo.config.cache_size_limit),
                     len(self.buckets) * (len(self.groups) + len(self.ranges)) + 4)
@@ -261,7 +262,7 @@ class Engine:
             # X45: one graph per grouped range x bucket — the compiled grouped forward, the weight VIEWS as
             # graph inputs (a load copies into the same storage), captured on the range's lane like the rest
             for r, gf in enumerate(self.gfwd):
-                gcomp = torch.compile(gf.call_with, dynamic=False, fullgraph=True)
+                gcomp = compile_on(gf.call_with, device=self.device, dynamic=False, fullgraph=True)
                 lane = self.range_lane(r)
                 ls = self.streams[lane]
                 for b in self.range_buckets(r):

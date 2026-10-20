@@ -50,6 +50,7 @@ def run(batch: int = 16, backend: str = "eager") -> Dict[str, Any]:
                                          lambda _: 3e-4, **pk)
     from agents.model.compile_cache import ensure_hermetic_cache
     ensure_hermetic_cache("compile_inventory fullgraph")  # K3: never torch's shared default dir
+    from agents.model.inductor_compile import compile_on   # THE compile seam (gen3_cpu_compile_sites_v1)
     fe = pol.features_extractor
     rows, masks = load_parity_rows(dim)
     obs = {"observation": torch.as_tensor(rows[:batch], dtype=torch.float32)}
@@ -70,7 +71,7 @@ def run(batch: int = 16, backend: str = "eager") -> Dict[str, Any]:
             torch._dynamo.reset()
             pol.set_training_mode(mode.startswith("train"))
             try:
-                f = torch.compile(fn, fullgraph=True, backend=backend)
+                f = compile_on(fn, device="cpu", fullgraph=True, backend=backend)   # the rows are CPU
                 if mode.endswith("nograd"):
                     with torch.no_grad():
                         f(obs)

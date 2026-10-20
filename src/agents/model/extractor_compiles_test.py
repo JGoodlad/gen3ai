@@ -63,6 +63,7 @@ import pytest
 import torch
 
 from agents.model.features_extractor import BeliefHead, Gen3FeaturesExtractor
+from agents.model.inductor_compile import compile_on
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from utils.paths import repo_path
 
@@ -248,7 +249,7 @@ def test_production_arch_compiles_without_suppression(restore_torch_globals):
                                      generator=torch.Generator().manual_seed(7))}
     with torch.no_grad():
         ref = fe(obs)
-        got = torch.compile(fe.forward)(obs)
+        got = compile_on(fe.forward, device="cpu")(obs)
     err = max(float((a - b).abs().max()) for a, b in zip(ref, got))
     assert err < 1e-5, f"compiled output diverged from eager: {err:.2e}"
 
@@ -305,7 +306,7 @@ def test_h_tier_arch_compiles_without_suppression(restore_torch_globals):
                                      generator=torch.Generator().manual_seed(7))}
     with torch.no_grad():
         ref = fe(obs)
-        got = torch.compile(fe.forward)(obs)
+        got = compile_on(fe.forward, device="cpu")(obs)
     err = max(float((a - b).abs().max()) for a, b in zip(ref, got))
     assert err < 1e-5, f"compiled H-tier output diverged from eager: {err:.2e}"
 
@@ -418,10 +419,10 @@ def test_cpu_backward_still_does_not_compile(restore_torch_globals):
     assert lowers is not None, (f"no recorded CPU-backward expectation for torch {torch.__version__} — "
                                 f"run this test on it and record the answer in _CPU_BACKWARD_LOWERS")
     if lowers:
-        _backward_through(fe, torch.compile(fe.forward)(_obs(layout, "cpu")))
+        _backward_through(fe, compile_on(fe.forward, device="cpu")(_obs(layout, "cpu")))
         return
     try:
-        _backward_through(fe, torch.compile(fe.forward)(_obs(layout, "cpu")))
+        _backward_through(fe, compile_on(fe.forward, device="cpu")(_obs(layout, "cpu")))
     except Exception as exc:
         # The exception is a BARE `AssertionError` with an EMPTY message (`assert mode is None`,
         # unannotated in torch), so there is nothing to match on in `str(exc)` — the only
@@ -458,7 +459,7 @@ def test_production_arch_compiles_on_cuda():
     obs = _obs(layout, "cuda")
     with torch.no_grad():
         ref = fe(obs)
-        got = torch.compile(fe.forward)(obs)
+        got = compile_on(fe.forward, device="cuda")(obs)
     err = max(float((a - b).abs().max()) for a, b in zip(ref, got))
     # Looser than the CPU cell's 1e-5: cuDNN/cuBLAS may pick TF32 or a different reduction order for
     # the compiled kernels than for eager. 1e-4 still catches a wrong kernel; it tolerates a
@@ -497,5 +498,5 @@ def test_production_arch_compiles_forward_and_backward_on_cuda():
     fe, layout = _build_production_extractor()
     fe = fe.cuda()
     fe.train()
-    grads = _backward_through(fe, torch.compile(fe.forward)(_obs(layout, "cuda")))
+    grads = _backward_through(fe, compile_on(fe.forward, device="cuda")(_obs(layout, "cuda")))
     _assert_real_gradient(fe, grads, "cuda fwd+bwd")

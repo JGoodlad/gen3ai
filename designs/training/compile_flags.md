@@ -2355,7 +2355,7 @@ Refused (`FATAL_CONFIG`) on cpu, under `--debug`, with `--no-compile-trainer` (`
 `--compile-trainer` resolved off (`lifecycle._maybe_compile_trainer`). It stays a MEASUREMENT lever (default off) until
 its paired benchmark (PLAN.md lever C, window E) adopts it.
 
-### 🚨 The CPU Inductor tile2d codegen bug (`gen3_cpu_inductor_scalar_v1`, 2026-10-15) — torch 2.8.0; R1 on CPU carries `cpp.simdlen = 1`
+### 🚨 The CPU Inductor tile2d codegen bug (`gen3_cpu_inductor_scalar_v1`, 2026-10-15) — torch 2.8.0; every CPU compile carries `cpp.simdlen = 1` (`inductor_compile.compile_on`)
 
 **Read this before you compile anything on CPU.** Production compiles on CUDA only (Triton); `--compile-trainer` REFUSES
 a CPU device (`compile_trainer`: "a CPU compiled learner has never been gated"). A CPU compile of R1 exists as a TEST
@@ -2421,17 +2421,65 @@ integration sweep found that seam RED since the end state became production (`ed
   failing it, so the workaround is retired with the bug). Alternatives measured on the repro: `cpp.vec_isa_ok = False`
   and `cpp.simdlen = 1` compile; `cpp.enable_tiling_heuristics = False` does not; `max_fusion_size = 1` compiles (and keeps
   tiling) but unfuses the whole graph.
-- **Other CPU compile sites are exposed in principle and were NOT changed here (out of scope):** the T2 inference
-  service's `torch.compile(decide)` (`inference/service/engine.py`) and `compile_opponents.maybe_compile_extractor` (the
-  offline readers) compile the extractor on CPU; at B < 16 (the offline opponent compile runs B = 1) the tiled kernel is
-  not chosen. A CPU compile of the end-state extractor at B >= 16 outside R1 would hit this bug until it carries the same
-  option.
+- **Every other CPU compile site now carries the same option** (`gen3_cpu_compile_sites_v1`, 2026-10-19): the option
+  moved from R1 alone into ONE seam that every compile in `src/` goes through — the inventory and its proof are the next
+  subsection.
 - **The CUDA twin is UNREAD at the end-state graph.** The production CUDA smoke passed with compile on (2026-10-15) and the
   CUDA row of `compiled_first_update_test` holds a PASS from 2026-10-04 (88 s) — a graph older than the end state, i.e. a
   stale PASS (testing.md "The SLOW-TIER LAST-KNOWN-STATUS gate"). Its read, for the training session's next GPU window:
   `GEN3AI_GPU_LEASE_TOKEN=<token> GEN3AI_TEST_ALLOW_GPU=1 scripts/ops/gpu_lock.sh timeout 1200 "$PY" -m pytest
   src/agents/model/compiled_first_update_test.py -m slow -k on_cuda -q -p no:cacheprovider` (~2-3 min: the 2026-10-04 run
   took 88 s; the end-state R1 compiles larger). It records its row in `slow_tier_status.json`.
+
+#### Every CPU compile site goes through ONE seam (`gen3_cpu_compile_sites_v1`, 2026-10-19)
+
+**The rule.** `agents.model.inductor_compile.compile_on(fn, device=..., **torch_compile_kwargs)` is `torch.compile` plus
+`CPU_INDUCTOR_OPTIONS` when — and only when — the compile reaches Inductor's C++ codegen: the target device is CPU and
+the backend is Inductor (`None` / `"inductor"`). A CUDA compile (Triton) and a stand-in backend (`"eager"`,
+`"aot_eager"`, a callable) get their kwargs back unchanged, byte for byte (no `options` key at all when there is nothing to
+add). The workaround is merged LAST, so a caller's option cannot re-enable the tiled kernel; `cpu_workaround=False` exists
+for the bug's own repro and is refused anywhere else. A backend that calls Inductor itself takes
+`inductor_options(device)` as its `config_patches` / `inductor_configs`. `compile_regions.CPU_INDUCTOR_OPTIONS` /
+`cpu_inductor_options` are re-exports of the seam's.
+
+**The guard** (`inductor_compile_test.py`, routine tier): an AST scan of `src/` FAILS a `torch.compile` call outside the
+seam (a TEST may name a non-Inductor stand-in backend, which never reaches the C++ codegen), a `compile_fx` /
+`aoti_compile_and_package` call in a module that does not read `inductor_options`, and a `cpu_workaround=` outside the
+repro's two files; it also asserts it SEES every production site below (non-vacuous) and catches planted offenders. The
+hermetic-cache scan (`compile_cache_test::test_every_production_compile_site_declares_the_hermetic_cache`) now counts a
+`compile_on` call as a compile site too.
+
+**The inventory (2026-10-19, every compile call in `src/`):**
+
+| site | what it compiles | can it reach CPU C++ at B >= 16? | route now |
+|---|---|---|---|
+| `compile_regions.install` (R1 + its graphed twin) | the learner micro-step, train + backward | YES on the CPU test seams (`compiled_first_update_test`'s CPU cell, the `compile_regions_*` CPU cells, `diag_bf16_canary --device cpu`): `batch_size` rows, 16 in the K9 golden — the original 2026-10-15 find. Production: CUDA only (`--compile-trainer` refuses CPU) | `compile_on(device=<learner device>)` |
+| `compile_opponents.maybe_compile_extractor` | one frozen extractor's forward, no-grad (the prober's counterfactual view, `snapshot`'s opponent loads, `compile_cache_benchmark`) | YES: warmed and parity-checked at B = 1, but `torch.compile` is lazy and dynamic, so a reader's larger batch compiles a NEW graph at call time — and `_eager_fallback_on_error` turns that failure into a silent eager fallback (one `FELL BACK to eager` warning, ~6x slower), not a crash | `compile_on(device=<the extractor's parameters' device>)` |
+| `main/ops/diag_bf16_canary` (`Cbf_emul`, `Cbf_pheager`, `Cbf_aot`; `Cbf` / `C32` via `install`) | R1's micro-step | YES with `--device cpu` | `compile_on(device=device)` |
+| `main/compile_inventory/fullgraph_check.run` | the extractor / policy forward, train and eval, on CPU rows, `batch=16` default | YES with `backend="inductor"` | `compile_on(device="cpu")` |
+| `main/compile_inventory/worker._view` + `capture.InventoryCapture` | the extractor / the update / the rollout through a CAPTURE backend (a callable) | YES in the capture's `inductor` mode, which calls `compile_fx` itself | `compile_on` (adds nothing for a callable) + `compile_fx(config_patches=inductor_options(device_of_inputs(...)))` |
+| `inference/service/engine._build_graphs` (`decide`, the grouped `call_with`) | T2's served forward, captured into CUDA graphs | NO: `ServiceSpec` refuses backend `graph` / `aot` off CUDA (`spec.py`), and the build uses CUDA graph pools. The backlog row named "T2 `decide` on CPU" as exposed; it is not reachable | `compile_on(device=self.device)` (CUDA: kwargs unchanged) |
+| `inference/service/aot.build_package` | T2's AOTInductor package | NO (CUDA only, as above) | `inductor_options(static_obs.device)` merged into its `inductor_config.patch` (CUDA: nothing added) |
+| tests: `extractor_compiles_test`, `growth_test`, `edge_bias_test` (CPU); `dense_attn_bias_test`, the CUDA cells (CUDA) | the extractor / a layer | the CPU ones run at B = 2 / 64 rows (`growth_test`'s gate rows) | `compile_on(device=...)` |
+
+**The proof on the failing shapes** (B = 16 / 32 / 64; all `slow`): `inductor_compile_test` compiles the 4-line repro at each
+B through `compile_on` (no `transpose_mxn` / `Vectorized<float>` left, eager's numbers) and through the capture's own
+`compile_fx`; `cpu_compile_sites_slow_test` compiles the PRODUCTION extractor through `compile_on` at a static B on the
+committed real parity rows, and drives `maybe_compile_extractor` to install at B = 1 and then serve B = 16 / 32 / 64
+COMPILED (it fails on the fallback warning, not only on an exception). R1 at B = 16 is `compiled_first_update_test`'s CPU
+cell. **Measured 2026-10-19** (torch 2.8.0+cu126, AVX-512, one thread, the agent cores beside a live run): WITHOUT the
+option the production extractor's CPU compile on the parity rows FAILS in g++ (`tmp<N>` was not declared) at B = 16
+and B = 64 no-grad (the inference graph, i.e. the opponents' and the fullgraph check's) and at B = 16 with grad (train
+mode, forward + backward) — so `maybe_compile_extractor`'s first B >= 16 call had been FALLING BACK to eager since the
+end state became production. WITH the seam: the static-B cells pass at B = 16 / 32 / 64 (< 1e-5 from eager; 250-280 s
+each cold), the opponents' site serves B = 16 / 32 / 64 compiled with no fallback (its lazy compile past B = 1 is a
+DYNAMIC-batch graph: 1.49e-5 from eager at B = 32, judged at 1e-4), the repro cells pass through both routes, and the
+touched files' slow tier is green (58 passed, 3 CUDA cells skipped; the opponents' cell re-run after its bar moved to
+1e-4).
+
+**Not seen by the scan:** `torch.compile` inside a child-process SCRIPT STRING (`compile_cache_test`,
+`compile_cache_shared_test`, `utils/compile_pool_teardown_test`: one-line elementwise lambdas that cannot form the
+gather-beside-reduction pattern), and a compile entry point reached through an alias (`f = torch.compile; f(...)`).
 
 ## From the training leaf (moved 2026-10-10)
 

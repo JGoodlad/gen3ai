@@ -21,6 +21,7 @@ import torch
 
 from agents.model import growth as G
 from agents.model.model_version import ModelVersionError
+from agents.model.inductor_compile import compile_on
 from utils.torch_state_guard import torch_globals
 
 FIELDS = {"trunk_layers": {"parent": 2, "child": 4}}
@@ -219,11 +220,13 @@ def test_under_compile_the_grown_toy_matches_the_parent_within_compile_noise() -
             model, obs, mask = _parent()
             parent = G.cpu_probe(model)
             eager_parent = G.forward_record(parent, obs, mask)
-            parent.features_extractor.forward = torch.compile(parent.features_extractor.forward, dynamic=False)
+            parent.features_extractor.forward = compile_on(parent.features_extractor.forward, device="cpu",
+                                                               dynamic=False)
             compiled_parent = G.forward_record(parent, obs, mask)
             G.apply_growth(model, FIELDS, rows=(obs, mask))
             child = G.cpu_probe(model)
-            child.features_extractor.forward = torch.compile(child.features_extractor.forward, dynamic=False)
+            child.features_extractor.forward = compile_on(child.features_extractor.forward, device="cpu",
+                                                              dynamic=False)
             compiled_child = G.forward_record(child, obs, mask)
         finally:
             torch._dynamo.reset()
