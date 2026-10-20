@@ -92,7 +92,10 @@ seam (`local_battle_runner.py`, deleted in 6d-2) exec'd:
 `resolve_sim_bridge_bin()` honors `$POKESIM_SIM_BRIDGE_BIN` (absolute-path override) first, else
 runs `cargo build --release --bin sim_bridge` in `src/rust_sim` and caches the resulting
 `target/release/sim_bridge`; it raises a clear, actionable error (never a silent fall-back to
-node) if cargo/crate/binary is unavailable. Under **`POKESIM_EMISSION_SELFCHECK=1`** — set by the
+node) if cargo/crate/binary is unavailable. Either way the binary must pass its BUILD STAMP
+(`<bin> --build-stamp` vs this checkout's Rust sources, `utils.rust_env.stamp`): a binary built
+before the last Rust commit raises `StampMismatch` naming the rebuild command (`POKESIM_ALLOW_STALE_BUILD=1`
+is the loud opt-out). Under **`POKESIM_EMISSION_SELFCHECK=1`** — set by the
 root `conftest.py` for every pytest session and automatically for a `*fuzz_test.py` run as a script,
 never by production — every resolver builds the EMISSION SELF-CHECK build instead (`cargo build
 --profile selfcheck --features emission-selfcheck` → `target/selfcheck/<bin>`, its own directory, so
@@ -214,7 +217,7 @@ Same module owns both: `sim_bridge_bin.py`.
 | offline drivers | `search_driver` binary (**both** verb families) | `resolve_search_driver_bin` / `search_driver_spawn_argv()` (no argument) | `POKESIM_SEARCH_DRIVER_BIN` |
 
 Both resolvers share `_resolve_rust_bin(bin_name, env_var, selector)`: env override first (no
-build), else `cargo build --release --bin <name>` in `src/rust_sim` (the self-check build under
+build, but the binary's build stamp is checked against this checkout's sources), else `cargo build --release --bin <name>` in `src/rust_sim` (the self-check build under
 `POKESIM_EMISSION_SELFCHECK=1`, `build_argv`), cached per bin name AND build across the
 process, and a clear actionable error (`SimBridgeBinaryError`) on any failure — never a fallback.
 

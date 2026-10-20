@@ -125,7 +125,7 @@ What that established:
   now builds its own checkout's core at startup, before the model exists
   (`utils.rust_env.build.ensure_built`, from `rust_env_setup.build_rust_vec_env`). It is an
   incremental `cargo build` into the crate's own `target/`: about 7 s cold in a fresh pin and 0.0 s
-  on a restart, printed as `🦀 [ENV CORE BUILD]`. The stamp check still refuses a foreign build. ⚠️ A
+  on a restart, printed as `🦀 [ENV CORE BUILD]`. The stamp check refuses a build whose Rust sources are not the PIN's own (the pin's `utils.paths` finds the pin's tree, so a pinned run is judged against its own sources, never main's, and a correct pinned run is never refused; the pin's `ensure_built` makes its build current first). ⚠️ A
   checkpoint recorded at a commit BEFORE this fix still cannot be resumed through the launcher on the
   Rust core: its pin has no build step. Use `--sync-to-main`.
 - **A restart keeps the run's env core** (`gen3_env_core_switch_v1`): there is one core and no flag to

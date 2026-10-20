@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from utils.contention import scale_timeout
+from utils.rust_env.stamp_fakes import make_stamp, write_fake_binary
 
 from utils.bridge import sim_bridge_bin
 from utils.bridge.sim_bridge_bin import (
@@ -33,8 +34,7 @@ def test_node_argv_is_node_plus_the_js():
 
 def test_rust_argv_is_the_resolved_binary_via_env_override(tmp_path, monkeypatch):
     # A pre-built binary via POKESIM_SIM_BRIDGE_BIN is honored first — no cargo build.
-    fake = tmp_path / "sim_bridge"
-    fake.write_text("#!/bin/true\n")
+    fake = write_fake_binary(tmp_path / "sim_bridge", make_stamp("port"))   # answers --build-stamp: the check stays ACTIVE
     monkeypatch.setenv("POKESIM_SIM_BRIDGE_BIN", str(fake))
     argv = bridge_spawn_argv("rust")
     assert argv == [str(fake.resolve())]  # NO "node" — just the binary
@@ -63,8 +63,7 @@ def test_search_driver_takes_no_impl_and_never_names_node(tmp_path, monkeypatch)
     """The offline driver has no engine choice: ``search_driver_spawn_argv()`` takes NO argument (a caller
     passing an impl fails loudly) and its argv is the resolved binary — never ``node``, and the deleted
     Node driver scripts are gone from the tree (owner 2026-10-10: "delete node")."""
-    fake = tmp_path / "search_driver"
-    fake.write_text("#!/bin/true\n")
+    fake = write_fake_binary(tmp_path / "search_driver", make_stamp("port"))
     monkeypatch.setenv("POKESIM_SEARCH_DRIVER_BIN", str(fake))
     assert search_driver_spawn_argv() == [str(fake.resolve())]  # NO "node" — just the binary
     with pytest.raises(TypeError):
@@ -97,10 +96,8 @@ def test_search_driver_env_overrides_are_independent(tmp_path, monkeypatch):
     """The two families must not share an override. A single env var (or a single cache slot)
     would silently hand the search driver the sim_bridge binary — a wrong-protocol child that
     fails far from the cause."""
-    bridge = tmp_path / "sim_bridge"
-    bridge.write_text("#!/bin/true\n")
-    driver = tmp_path / "search_driver"
-    driver.write_text("#!/bin/true\n")
+    bridge = write_fake_binary(tmp_path / "sim_bridge", make_stamp("port"))
+    driver = write_fake_binary(tmp_path / "search_driver", make_stamp("port"))
     monkeypatch.setenv("POKESIM_SIM_BRIDGE_BIN", str(bridge))
     monkeypatch.setenv("POKESIM_SEARCH_DRIVER_BIN", str(driver))
     assert bridge_spawn_argv("rust") == [str(bridge.resolve())]

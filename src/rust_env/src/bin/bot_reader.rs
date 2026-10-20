@@ -32,7 +32,7 @@ use pokesim_env::opponents::stream_seed;
 const MAX_SEED: f64 = 9_007_199_254_740_991.0; // 2^53 - 1, the route table's own bound
 
 fn main() {
-    pokesim::dex::data_dir::exit_on_version_flag("bot_reader");
+    pokesim::dex::data_dir::exit_on_flags("bot_reader", pokesim_env::core::STAMP);
     let _ = pokesim::trackers::dex();
     let mut bot: Option<BotSide> = None;
     let stdin = io::stdin();

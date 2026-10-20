@@ -30,6 +30,9 @@ the Rust binary-resolution + build logic (shared by every family via ``_resolve_
   dir lies inside another checkout (:func:`foreign_checkout_of` — the 2026-09-09 incident). A
   build here is otherwise harmless: the binary resolves its data dir at RUN time from where it
   sits (``pokesim::dex::data_dir``; ``<bin> --version`` prints it), never from where it was built.
+- EVERY resolved binary (an override and a fresh build alike) is judged by its BUILD STAMP before it is returned
+  (:func:`_checked`): a binary built from other Rust sources than this checkout's is refused with a ``StampMismatch``
+  (``utils.rust_env.stamp``; ``POKESIM_ALLOW_STALE_BUILD=1`` is the loud opt-out).
 - the resolved path is cached process-wide per binary (the build is idempotent + not free, and
   the spawners hit this on every child spawn), and any failure raises a CLEAR, actionable error
   naming the fix — we NEVER fall back to Node.
@@ -165,7 +168,7 @@ def _resolve_rust_bin(bin_name: str, env_var: str, selector: str) -> str:
                 f"Set it to the absolute path of a built `{bin_name}` binary, or unset it "
                 f"to build from {_RUST_CRATE_DIR}."
             )
-        return str(p.resolve())
+        return _checked(str(p.resolve()), bin_name, env_var)
 
     selfcheck = selfcheck_requested()
     cache_key = f"{bin_name}@{SELFCHECK_PROFILE}" if selfcheck else bin_name
@@ -228,9 +231,25 @@ def _resolve_rust_bin(bin_name: str, env_var: str, selector: str) -> str:
                 f"cargo build succeeded but the {bin_name} binary is missing at {bin_path}. "
                 f"(CARGO_TARGET_DIR={target_dir!r}.)"
             )
-        resolved = str(bin_path.resolve())
+        resolved = _checked(str(bin_path.resolve()), bin_name)
         _rust_bin_cache[cache_key] = resolved
         return resolved
+
+
+def _checked(path: str, bin_name: str, override_var: Optional[str] = None) -> str:
+    """``path`` once the binary has proved it was built from THIS checkout's Rust sources (``<bin> --build-stamp`` vs a
+    recompute: ``utils.rust_env.stamp``), else ``StampMismatch`` (one line: built-at hash, this tree's, the rebuild
+    command). Runs on every resolve — an override is the case that matters: it is taken by path, with no build —
+    and costs a ~5 ms hash plus one exec per binary identity. ``$POKESIM_ALLOW_STALE_BUILD=1`` runs a stale one loudly.
+    ``override_var`` names the env var that pointed here, so the fix can say to repoint or unset it."""
+    from utils.rust_env import stamp
+
+    profile = Path(path).parent.name                      # target/<profile>/<bin>; anywhere else: the session's own build
+    fix = build_command(bin_name, selfcheck=(profile == SELFCHECK_PROFILE) if profile in (SELFCHECK_PROFILE, "release") else None)
+    if override_var:
+        fix += f" (in the checkout whose sources you run), then point ${override_var} at the result or unset it"
+    stamp.check_binary_stamp(Path(path), bin_name, kind="port", fix=fix)
+    return path
 
 
 def foreign_checkout_of(path: Path) -> Optional[Path]:

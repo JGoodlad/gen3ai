@@ -65,12 +65,21 @@ Python resolver refuses a target dir inside another checkout), and give a fuzzer
 its own `CARGO_TARGET_DIR`, never the shared `target/` (it holds the live `ab_replay`). The data
 directory is resolved at RUN time, never baked in: `$POKESIM_DATA_DIR` → the repo holding the running
 binary / cdylib → the compile-time default (`src/dex/data_dir.rs`); every binary prints it on
-`<bin> --version`; the build stamp's `data=` is only that compile-time default, so the Python loader
-(`utils.rust_env.stamp.runtime_data_dir`) re-applies this rule to the module it loads and demands the result be its own
-checkout's data. Read data only through `dex::default_data_dir()`, never
-`env!("CARGO_MANIFEST_DIR")`. The emission self-check build lives in `target/selfcheck/`, never
+`<bin> --version`. Read data only through `dex::default_data_dir()`, never `env!("CARGO_MANIFEST_DIR")`. The
+emission self-check build lives in `target/selfcheck/`, never
 `target/release/`, which a live run execs; Python picks it with `POKESIM_EMISSION_SELFCHECK=1` (the
 root `conftest.py` sets it).
+
+🚨 **A STALE RUST BUILD IS REFUSED, never run.** `build.rs` embeds a hash of the sources a non-test build compiles
+(`build_support.rs` defines it once: `src/**/*.rs` minus test modules, `Cargo.toml`, `build.rs`, the root crate's
+`Cargo.lock`; the env core's covers this crate too) and every binary prints it on `<bin> --build-stamp`. Python
+recomputes it from the checkout it runs in (a pinned run's own pin, never main's) and raises `StampMismatch`, one line
+with the built-at hash, this tree's and the rebuild command: `ffi.load` and the `proc` handshake always; every
+`sim_bridge_bin` / `bot_reader_bin` resolve, a `$POKESIM_*_BIN` path included; the env core's loader also demands the data
+dir its module resolves be this checkout's (`utils.rust_env.stamp.runtime_data_dir`). After a Rust commit, rebuild every
+target you run (`target/` is per checkout). A `#[cfg(test)] mod x;` file must be named `tests.rs` / `*_tests.rs` /
+`*_test.rs` (`stamp_test.py` enforces; an edit to a test file then never stales a build).
+`POKESIM_ALLOW_STALE_BUILD=1` runs a stale one on purpose and logs loudly; never use it to get past a refusal.
 
 ```bash
 cargo test                                                        # self-check ON (debug_assertions)

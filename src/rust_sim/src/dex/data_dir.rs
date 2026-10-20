@@ -13,7 +13,8 @@
 //! 3. the compile-time default (`<crate>/../../data/pokemon`) — only for a module outside any
 //!    checkout.
 //!
-//! Every binary prints the resolution on `--version` ([`exit_on_version_flag`]).
+//! Every binary prints the resolution on `--version` ([`exit_on_version_flag`]), and its build stamp on
+//! `--build-stamp`.
 
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
@@ -125,12 +126,26 @@ pub fn version_line(bin: &str) -> String {
     )
 }
 
-/// `<bin> --version` (as the FIRST argument): print [`version_line`] and exit 0. Call it first in
-/// every binary's `main`.
+/// `<bin> --version` / `<bin> --build-stamp` (as the FIRST argument): print [`version_line`], or this
+/// crate's build stamp ([`crate::stamp::STAMP`]), and exit 0. Call it first in every port binary's `main`.
 pub fn exit_on_version_flag(bin: &str) {
-    if std::env::args().nth(1).as_deref() == Some("--version") {
-        println!("{}", version_line(bin));
-        std::process::exit(0);
+    exit_on_flags(bin, crate::stamp::STAMP);
+}
+
+/// The first-argument flags every binary answers: `--version` ([`version_line`]) and `--build-stamp`
+/// (`build_stamp`, the BINARY'S OWN crate's stamp: a `rust_env` binary passes `pokesim_env::core::STAMP`,
+/// which covers the port too). The Python resolvers run `--build-stamp` before they spawn a binary.
+pub fn exit_on_flags(bin: &str, build_stamp: &str) {
+    match std::env::args().nth(1).as_deref() {
+        Some("--version") => {
+            println!("{}", version_line(bin));
+            std::process::exit(0);
+        }
+        Some("--build-stamp") => {
+            println!("{build_stamp}");
+            std::process::exit(0);
+        }
+        _ => {}
     }
 }
 

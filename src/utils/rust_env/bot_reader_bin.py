@@ -56,7 +56,7 @@ def resolve_bot_reader_bin() -> str:
         if not p.is_file():
             raise BotReaderBinaryError(f"{ENV_OVERRIDE}={override!r} is not a file; point it at a built "
                                        f"`{BIN_NAME}` or unset it to build from src/rust_env")
-        return str(p.resolve())
+        return _checked(str(p.resolve()), profile())
     prof = profile()
     with _lock:
         if prof in _cache:
@@ -76,5 +76,16 @@ def resolve_bot_reader_bin() -> str:
         path = expected_path(prof)
         if not path.is_file():
             raise BotReaderBinaryError(f"cargo succeeded but {path} is missing")
-        _cache[prof] = str(path.resolve())
+        _cache[prof] = _checked(str(path.resolve()), prof)
         return _cache[prof]
+
+
+def _checked(path: str, prof: str) -> str:
+    """``path`` once ``bot_reader --build-stamp`` proves it was built from THIS checkout's port and env sources
+    (``utils.rust_env.stamp``), else ``StampMismatch``; ``$POKESIM_ALLOW_STALE_BUILD=1`` runs a stale one loudly."""
+    from utils.rust_env import stamp
+    from utils.rust_env.build import PROFILE_FLAGS
+
+    fix = f"cargo {' '.join(build_argv(prof if prof in PROFILE_FLAGS else 'release'))}"
+    stamp.check_binary_stamp(Path(path), BIN_NAME, kind="env", fix=fix)
+    return path

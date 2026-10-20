@@ -110,6 +110,14 @@ if not os.environ.get("GEN3AI_TEST_ALLOW_THREADS"):
 # setdefault: an explicit `POKESIM_EMISSION_SELFCHECK=0` (a deliberate production-binary check) wins.
 os.environ.setdefault("POKESIM_EMISSION_SELFCHECK", "1")
 
+# --- A test never runs a STALE Rust build (`utils.rust_env.stamp`) --------------------------------
+#
+# `POKESIM_ALLOW_STALE_BUILD=1` is the loud opt-out that lets a Rust binary / library whose sources are not this
+# checkout's run anyway. An ambient export of it would make every "a stale build is REFUSED" test pass or fail by the
+# shell it was launched from (rule 8: checks pass or fail deterministically), so no pytest session inherits it; a test
+# of the opt-out sets it itself with `monkeypatch.setenv`.
+os.environ.pop("POKESIM_ALLOW_STALE_BUILD", None)
+
 
 # --- The RUN ARCHIVE is SEALED for every test (gen3_run_archive_sealed_v1) -----------------------
 #

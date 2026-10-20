@@ -50,7 +50,7 @@ def test_the_layout_is_the_column_table_aligned_and_disjoint():
 
 def _hs(**over):
     d = {"wire": proc.wire_id(), "obs_dim": "2761", "n_columns": str(len(C.COLUMNS)), "schema": C.schema_id(),
-         "stamp": "stamp=v1;commit=x;src=0;nfiles=0;nan_poison=1;schema=x;data=/nowhere"}
+         "stamp": "stamp=v2;kind=env;commit=x;src=0;nfiles=0;nan_poison=1;schema=x;data=/nowhere"}
     d.update(over)
     return d
 

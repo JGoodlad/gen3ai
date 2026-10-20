@@ -8,6 +8,7 @@ import pytest
 from utils.bridge import search_session as ss_mod
 from utils.bridge.search_session import SearchSession
 from utils.bridge.sim_bridge_bin import SimBridgeBinaryError
+from utils.rust_env.stamp_fakes import make_stamp, write_fake_binary
 
 
 class _FakeProc:
@@ -46,6 +47,19 @@ class _FakeStream:
 
 
 @pytest.fixture
+def stamped_driver(tmp_path, monkeypatch):
+    """A fake `search_driver` that answers `--build-stamp` with THIS tree's stamp, named by the override and already JUDGED
+    by the resolver (the answer is cached per binary identity), so the check is active and `spawned`'s fake `Popen` —
+    installed after this fixture — never sees its exec."""
+    from utils.bridge import sim_bridge_bin
+
+    fake = write_fake_binary(tmp_path / "search_driver", make_stamp("port"))
+    monkeypatch.setenv("POKESIM_SEARCH_DRIVER_BIN", str(fake))
+    assert sim_bridge_bin.resolve_search_driver_bin() == str(fake.resolve())
+    return fake
+
+
+@pytest.fixture
 def spawned(monkeypatch):
     """Capture the argv every ``SearchSession`` would exec, spawning nothing."""
     calls = []
@@ -58,12 +72,10 @@ def spawned(monkeypatch):
     return calls
 
 
-def test_the_session_execs_the_resolved_rust_binary_and_never_node(spawned, tmp_path, monkeypatch):
+def test_the_session_execs_the_resolved_rust_binary_and_never_node(stamped_driver, spawned):
     """The ONLY driver is the Rust ``search_driver`` binary (the Node driver and the ``impl=`` selector were
     deleted 2026-10-10): the session execs the resolved binary, and it no longer accepts an engine choice."""
-    fake = tmp_path / "search_driver"
-    fake.write_text("#!/bin/true\n")
-    monkeypatch.setenv("POKESIM_SEARCH_DRIVER_BIN", str(fake))
+    fake = stamped_driver
     s = SearchSession()
     try:
         assert spawned == [[str(fake.resolve())]]
@@ -87,12 +99,10 @@ def test_unresolvable_rust_binary_raises_before_spawning(spawned, tmp_path, monk
     assert spawned == [], "nothing may be spawned when the binary can't be resolved"
 
 
-def test_child_errors_name_the_binary(spawned, tmp_path, monkeypatch):
+def test_child_errors_name_the_binary(stamped_driver, spawned):
     """A failure must self-diagnose: the stream-closed / timeout / desync messages name the binary that
     ran."""
-    fake = tmp_path / "search_driver"
-    fake.write_text("#!/bin/true\n")
-    monkeypatch.setenv("POKESIM_SEARCH_DRIVER_BIN", str(fake))
+    fake = stamped_driver
     s = SearchSession()
     try:
         assert str(fake.resolve()) in s._who()

@@ -141,6 +141,9 @@ pub mod version;
 /// ONE side's parse-built observation chain advanced write by write — shared by `sim_bridge`'s core
 /// observation mode and the `live_reader` session (poke-env retirement P4).
 pub mod side_reader;
+/// THE BUILD STAMP (`build.rs`): what sources this build compiled, reported by every binary on
+/// `--build-stamp` so the Python resolvers refuse a stale or foreign binary before spawning it.
+pub mod stamp;
 pub mod stats;
 pub mod team;
 pub mod turn;

@@ -390,7 +390,11 @@ server at all.**
 `rust` is a byte-for-byte protocol-compatible drop-in for `node`, so nothing above the transport
 changes. Binaries resolve through `sim_bridge_bin.py::resolve_sim_bridge_bin()` /
 `resolve_search_driver_bin()` — `$POKESIM_SIM_BRIDGE_BIN` / `$POKESIM_SEARCH_DRIVER_BIN` first,
-else a cached `cargo build --release` — with **a clear error and never a silent node fall-back**.
+else a cached `cargo build --release` — with **a clear error and never a silent node fall-back**. Whatever
+resolves (an override included) must also pass its BUILD STAMP (`<bin> --build-stamp` vs the Rust sources of the
+checkout that runs it): a binary built before the last Rust commit is REFUSED with a one-line `StampMismatch` naming
+both hashes and the rebuild command, so rebuild `target/` after a Rust commit; `POKESIM_ALLOW_STALE_BUILD=1` is the
+loud opt-out for a deliberate stale run (`src/rust_sim/CLAUDE.md` § Builds).
 The DEPRECATED `--use-showdown-bridge` alias is **DELETED**.
 
 **Why the default is `rust`, and it is not throughput.** At production `n_envs` the end-to-end FPS
