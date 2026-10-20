@@ -18,6 +18,8 @@
 #
 # PRE-CHECKS (STAGED_PLAN §3; ALL run before anything is created; the FIRST failure HOLDs, exit 7):
 #   1. no training run is LIVE (X26 and X34 stopped); the GPU lease is FREE or held by --lease-owner; load1 <= max
+#   1b. the launch can SEE the GPU: CUDA_VISIBLE_DEVICES is unset or non-empty (an inherited empty value from a CPU-only
+#       caller killed toy_x47 3602's first GO at startup, 2026-10-20; the launcher's --dry-run does not catch it)
 #   2. the pin carries every commit in x35_required_commits.txt, which must name T54 (F18)
 #   2b. AM-1 (one pin PER SIDE, AM-8): the pin EQUALS the side's X35_PIN_1 (x35_pin_batch1_<side>.txt, written ONCE by
 #      the side's first GO) and every batch-1 run OF THAT SIDE's RECORDED pin (metadata.json git_hash + pin_history); a
@@ -81,6 +83,8 @@ prechecks() {
   local tag=$1; local out=$J/${RUN:-pending}.$tag
   # 1. nothing live; the lease; the CPU
   kit live > "$out.live.txt" 2>&1 || hold "a training run is LIVE: $(tr '\n' ' ' < "$out.live.txt")"
+  # 1b. the GO must see the GPU (an empty CUDA_VISIBLE_DEVICES hides every device; 2026-10-20)
+  if [ -n "${CUDA_VISIBLE_DEVICES+x}" ] && [ -z "$CUDA_VISIBLE_DEVICES" ]; then hold "CUDA_VISIBLE_DEVICES is set and EMPTY: the launch would see no GPU (unset it for the GO)"; fi
   local lease; lease=$("$OPS/gpu_lease.sh" status 2>&1 | head -1)
   case "$lease" in
     FREE*) ;;

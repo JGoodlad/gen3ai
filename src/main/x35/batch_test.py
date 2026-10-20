@@ -557,3 +557,21 @@ def test_launch_x35_runs_every_amendment_pre_check():
     # the required-commit check runs inside prechecks(), before the run-dir and R checks
     assert sh.index("kit required-check") < sh.index("# 3. the run dir") < sh.index("prechecks dry")
     assert sh.index("kit corpus-check") < sh.index("# 3. the run dir")
+
+
+def test_launch_x35_pre_check_1b_refuses_an_empty_cuda_visible_devices():
+    """Pre-check 1b (2026-10-20): an inherited CUDA_VISIBLE_DEVICES="" killed toy_x47 3602's first GO at startup
+    ("No CUDA GPUs are available") and the launcher's --dry-run did not catch it. The check sits in prechecks(),
+    right after pre-check 1's `kit live`, and is RUN here: set-and-empty HOLDs; unset or a device list passes."""
+    from utils.paths import repo_path
+
+    sh = repo_path("designs/research_state/measurements/x35_breakers_stage_2026-10-17/launch_x35.sh").read_text()
+    line = next(l for l in sh.splitlines() if 'CUDA_VISIBLE_DEVICES+x' in l)
+    body = sh[sh.index("prechecks() {"):]
+    assert body.index("kit live") < body.index("CUDA_VISIBLE_DEVICES+x") < body.index("local lease")
+    probe = 'hold() { echo "HOLD: $1"; exit 7; }\n' + line.strip() + '\necho PASS\n'
+    for env_args, want in ((["CUDA_VISIBLE_DEVICES="], "HOLD"), (["-u", "CUDA_VISIBLE_DEVICES"], "PASS"),
+                           (["CUDA_VISIBLE_DEVICES=0"], "PASS")):
+        r = subprocess.run(["env", *env_args, "bash", "-c", probe], capture_output=True, text=True)
+        assert r.stdout.startswith(want), (env_args, r.stdout, r.stderr)
+        assert (r.returncode == 7) == (want == "HOLD")
