@@ -1,0 +1,62 @@
+{
+ "acting_model_and_anchor": {
+  "checkpoint": "rb_x26_s2601 checkpoint_280000170_steps.zip",
+  "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed"
+ },
+ "bank": {
+  "cells": "k bin (1-2,3,4,5,6) x stratum (snapshot, bot)",
+  "per_battle": 3,
+  "per_battle_per_bin": 1,
+  "per_cell": 32,
+  "salt": "search_offpool_bank_v1:"
+ },
+ "bootstrap": {
+  "B": 2000,
+  "cluster": "battle",
+  "interval": "percentile 95%",
+  "seed": 20261020
+ },
+ "boundaries": {
+  "band": 0.005,
+  "chance": 0.5,
+  "material": 0.55
+ },
+ "code_commit": "8fe4fb89927fcb596d187a9fb01feb3a8c2fe491",
+ "decoy_corpus": {
+  "file": "~/gen3ai_archive/search_offpool_bank/decoy_corpus.json",
+  "n": 22606,
+  "sha256": "d2d531b5f4fe554aeb9b42e9c0d6f61bed8868d2d19662b492a82a70fb10f707"
+ },
+ "decoys": {
+  "D": 4,
+  "batch": 60,
+  "max_gated": 1000,
+  "near_copy_sets": 4,
+  "salt": "search_offpool_decoy_v1:"
+ },
+ "min_decoy_states": 60,
+ "opponent_teams": "heldout72_hpfix (72 hl_05_26 teams; heldout72_hpfix_manifest.json)",
+ "recheck": {
+  "n": 10,
+  "salt": "search_offpool_recheck_v1:"
+ },
+ "registered": "2026-10-20",
+ "reused_reads": {
+  "counter_test/decoy_read.py": "bd84afe633c506b9f2135f1c3d9e36a35a65385003f690ea2037a47bb1e801b4",
+  "l3_read.py": "036f6260c8cdb39633ccc2a09331ad0519362e2a33b5782a21f46fa9f5489110"
+ },
+ "sha256": {
+  "PREREGISTRATION.md": "8b1fa23e3aaeafe533a513ab78fa3e9e2faea1c45a2be12729cf4d14ce7f49b9",
+  "gen_cycle.py": "ba0de9f406b6ae5e284b7f161dc5171191754307e2f032d242547f574ea6d746",
+  "make_bank.py": "631aa8e58415ed96ce0735ed2bcf8748b7d53aed3dade8a678a95347dcfe9275",
+  "offpool_common.py": "5aed202cd69b06086c159712a432e07bb08d26d7f62b6e68aa9980218fd56705",
+  "offpool_proof.json": "31662293df7819d793c75d810967a08f6868c3b66455b79d9ebd777c6056418b",
+  "offpool_read.py": "aa42cb91c293b10279c2e6354a93b2ea0474650458d77ba6d69cca940cd57210",
+  "offpool_refs.py": "194a442d12808d09087b8c3610be8bca681bf09597d1f7720d67116db0afcf43",
+  "offpool_run.py": "9e90e0edc2c7597e937041758140cee0bc1b29399278b91fe58d6e8b76d45ccc",
+  "run_bank.sh": "6501cbaaa547df46facf27ef5e1f5a9fe25ca5420d58714a2931554fde1d5a2e",
+  "run_score.sh": "c9e9c1a6777dacd09f2e37eb96fbc99002cd399b46401a601ae03538a3ce3100"
+ },
+ "tie_nats": 1e-06,
+ "unit": "the off-pool bank at P*, L3 and its decoy test replicated (search_offpool_bank_2026-10-20)"
+}
