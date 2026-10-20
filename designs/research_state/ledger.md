@@ -27684,3 +27684,52 @@ Registered with the six-member Tier-2 panel `outside_v2` (`endstate/design_evalu
 - **baseline `outside_es_end2_s2003` registered** on 2026-10-20: `rb_es_end2_s2003/final_model.zip` @15047265 steps, commit `62085750`, config v154 `gen3_mon_tied_gain_v1`, sha256 `8c0dd0a599f0…`. Was: *(new baseline)*. Reason: outside panel member (Tier-2, orchestrator 2026-10-20).
 - **baseline `outside_es_end2_s2006` registered** on 2026-10-20: `rb_es_end2_s2006/final_model.zip` @15047567 steps, commit `62085750`, config v154 `gen3_mon_tied_gain_v1`, sha256 `e692ee5ecf9a…`. Was: *(new baseline)*. Reason: outside panel member (Tier-2, orchestrator 2026-10-20).
 - **baseline `outside_es_end2_s2007` registered** on 2026-10-20: `rb_es_end2_s2007/final_model.zip` @15045685 steps, commit `62085750`, config v154 `gen3_mon_tied_gain_v1`, sha256 `b9896df4899b…`. Was: *(new baseline)*. Reason: outside panel member (Tier-2, orchestrator 2026-10-20).
+
+### 2026-10-20 · MEASUREMENT · **L3's FAMILIARITY COUNTER-TEST (the L3 review's F2), READ under its pre-registration (`b39c9cdc`): a POOL DECOY (another training-pool team, consistent with every reveal, not a near copy of the truth) put in the truth's place beats today's honest worlds clearly (AUC 0.575 [0.517, 0.631], POOL-LIFT), and the truth beats its decoys only inconclusively (0.578 [0.489, 0.664]); the registered verdict is NOT-DETECTED on the 82 of 283 states that hold a decoy. About half of L3's separation on those states is pool-ness (share 0.52 [0.15, 0.95]). L3 stays PROVISIONAL-POOL; the off-pool bank is required**
+
+**Question** (`measurements/search_l3_2026-10-20/REVIEW.md` F2). L3's likelihood ranks the true world above honest
+worlds (AUC 0.692). Every opponent in that bank plays a training-pool team X26 trained against. Is the truth picked
+because it is TRUE, or because it is a POOL team?
+
+**Design** (`measurements/search_l3_2026-10-20/counter_test/PREREGISTRATION.md`, committed before any decoy likelihood;
+the read, driver and run script registered by sha256). Forward passes only. The code is L3's own commit `8fe4fb89`.
+- **States:** L3's 287 states, with L3's 8 honest worlds rebuilt by L3's call.
+- **Decoys:** up to 4 per state, drawn from X26's pin pool. Each holds every revealed species and move, is not the
+  truth, and shares fewer than 4 identical mon sets with it. Each is built as Tier 1's POOL builds a world, gated by
+  the same damage-roll match gate as the honest worlds, and taken in a fixed sha256 order.
+- **Scoring:** the truth, the honest worlds and the decoys are scored in one forward.
+- **The read:** PRIMARY is AUC truth vs decoy; CO-PRIMARY is AUC decoy vs honest. Rule-8 bands ±0.005; a verdict
+  needs at least 60 decoy states.
+
+**Gates.** All PASS:
+- 287 ids, 0 defects, 10 / 10 deterministic rechecks;
+- G5: 283 / 283 states reproduce L3's archived truth and honest values within 5.0e-5 nats (bar 1e-4);
+- the same 4 builder exclusions.
+
+**Result.** 82 states hold a decoy (40 bot, 42 snapshot; 244 decoys). On 140 states no other pool team fits once the
+truth and its near copies are dropped; on 61, none passed the gate.
+- **Pooled:** truth vs decoy 0.578 [0.489, 0.664] INCONCLUSIVE. Decoy vs honest 0.575 [0.517, 0.631] POOL-LIFT. Truth
+  vs honest on the subset 0.645 [0.577, 0.711]. **VERDICT NOT-DETECTED.**
+- **Snapshot (descriptive, 42 states):** truth vs decoy 0.639 [0.518, 0.754]; decoy vs honest 0.562.
+- **Bot (descriptive, 40 states):** truth vs decoy 0.515 [0.384, 0.639]; decoy vs honest 0.589, equal to the truth's
+  0.588.
+- **Confidence control:** truth vs decoy 0.379 [0.295, 0.470]. The network is LESS sure on the truth's rows than on a
+  decoy's.
+
+**Reading.** Part of L3 is pool-ness: a pool team that shares only the revealed facts with the truth already
+out-ranks honest worlds. Whether the truth's own hidden facts add to that is not settled pooled. Only the snapshot
+stratum, where the model nearly is the opponent, shows the truth above its decoys. Against bots, L3's signal is matched
+by the decoys. NOT-DETECTED has no registered consequence of its own: L3 stays PROVISIONAL-POOL, and the off-pool
+replication (the review's A4) is required before L3 or stage 1c steers anything.
+
+**FINDINGS.**
+1. **The subset is selected:** 29 % of states, mostly with few reveals (L3's AUC there is 0.645, against 0.692).
+2. **Pool-ness vs real-team coherence is not separated.** An off-pool real-team decoy is the control; it was not run.
+3. **Decoy and honest worlds also differ in non-binding seen-mon facts** (item, ability, spread).
+4. **Both strata are under the 60-state minimum.**
+5. **No validator ran on the decoys.**
+6. **One model, one anchor, one pool bank.**
+
+Evidence: `research_state/measurements/search_l3_2026-10-20/counter_test/` (PREREGISTRATION, README,
+`result_decoy.json`, `decoy_registration.json`, `decoy_run.py`, `decoy_read.py`, `run.sh`); rows in
+`~/gen3ai_archive/search_l3_decoy/`; `endstate/search_ledger.md` §1, §7 Q15; `endstate/design_world_sampler.md` §4 (f).

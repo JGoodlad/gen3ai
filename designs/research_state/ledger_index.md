@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-27,687-line file. **The ledger itself is append-only and is never edited by this**;
+27,736-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**915 headings · 860 dated · 2026-08-01 → 2026-10-20 · ledger 27,687 lines.**
+**916 headings · 861 dated · 2026-08-01 → 2026-10-20 · ledger 27,736 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -935,3 +935,4 @@ rename.
   - `L27593` · `2026-10-20` · MEASUREMENT · **L3 of the hidden-information search review, READ under its pre-registration (`4d149799`): the opponent's own past choices identify the true world. With X26's 225M network seated as the opponent, the TRUE world out-ranks today's honest worlds (`dice="rolls"`, legality on, J = 8) under the likelihood of the opponent's observed choices with AUC 0.692 [0.655, 0.728], WORKS (snapshot opponents 0.796, scripted bots 0.588 WEAK); a confidence-only control reads 0.481, so it is evidence, not familiarity; among 9 worlds the truth would take 0.249 of the weight (uniform 0.111). Re-weighting today's 8 honest worlds moves the share of correct unrevealed moves only +0.005 [−0.004, +0.013]: a good judge with nothing near the truth to pick. PROVISIONAL**
   - `L27649` · `2026-10-20` · BUILT · **FP32_ALT: X5's τ constraint solved by a SPLIT RESIDUAL in fp32, the default (`gen3_tau_fp32_alt_v1`, config v160) — T62's accuracy on the τ-class violators at fp32 cost; the K9(b) violator gap at A3's nearest weights 5.9e-4 → 2.4e-6; GPU cost staged for the next window**
   - `L27678` · `2026-10-20` · BASELINES · five outside-panel members registered (`outside_es_end2_s2001`, `s2002`, `s2003`, `s2006`, `s2007`; df933ef3) — the ledger lines `main.baselines set` printed and did not append
+  - `L27688` · `2026-10-20` · MEASUREMENT · **L3's FAMILIARITY COUNTER-TEST (the L3 review's F2), READ under its pre-registration (`b39c9cdc`): a POOL DECOY (another training-pool team, consistent with every reveal, not a near copy of the truth) put in the truth's place beats today's honest worlds clearly (AUC 0.575 [0.517, 0.631], POOL-LIFT), and the truth beats its decoys only inconclusively (0.578 [0.489, 0.664]); the registered verdict is NOT-DETECTED on the 82 of 283 states that hold a decoy. About half of L3's separation on those states is pool-ness (share 0.52 [0.15, 0.95]). L3 stays PROVISIONAL-POOL; the off-pool bank is required**

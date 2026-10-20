@@ -1,0 +1,256 @@
+{
+ "AUC_truth_vs_honest_all_ok": {
+  "ci": [
+   0.655,
+   0.7282
+  ],
+  "mean": 0.6921,
+  "n": 283
+ },
+ "by_shared_sets": {
+  "mean<2": {
+   "ci": [
+    0.4876,
+    0.6692
+   ],
+   "mean": 0.5797,
+   "n": 68
+  },
+  "mean>=2": {
+   "ci": [
+    0.3269,
+    0.8
+   ],
+   "mean": 0.5714,
+   "n": 14
+  }
+ },
+ "by_stratum": {
+  "bot": {
+   "AUC_conf_decoy_vs_honest": {
+    "ci": [
+     0.4395,
+     0.5987
+    ],
+    "mean": 0.5198,
+    "n": 40
+   },
+   "AUC_conf_truth_vs_decoy": {
+    "ci": [
+     0.282,
+     0.5241
+    ],
+    "mean": 0.4021,
+    "n": 40
+   },
+   "AUC_conf_truth_vs_honest": {
+    "ci": [
+     0.3575,
+     0.5436
+    ],
+    "mean": 0.45,
+    "n": 40
+   },
+   "AUC_decoy_vs_honest": {
+    "ci": [
+     0.5039,
+     0.6706
+    ],
+    "mean": 0.5888,
+    "n": 40
+   },
+   "AUC_truth_vs_decoy": {
+    "ci": [
+     0.384,
+     0.6389
+    ],
+    "mean": 0.5146,
+    "n": 40
+   },
+   "AUC_truth_vs_honest": {
+    "ci": [
+     0.4844,
+     0.6906
+    ],
+    "mean": 0.5875,
+    "n": 40
+   },
+   "VERDICT": "UNDERPOWERED",
+   "pool_share_of_L3": {
+    "ci": [
+     -2.3661,
+     4.7896
+    ],
+    "mean": 1.0149,
+    "n": 40
+   },
+   "verdict_decoy_vs_honest": "INCONCLUSIVE",
+   "verdict_truth_vs_decoy": "INCONCLUSIVE"
+  },
+  "snapshot": {
+   "AUC_conf_decoy_vs_honest": {
+    "ci": [
+     0.4233,
+     0.594
+    ],
+    "mean": 0.5084,
+    "n": 42
+   },
+   "AUC_conf_truth_vs_decoy": {
+    "ci": [
+     0.2428,
+     0.4787
+    ],
+    "mean": 0.3571,
+    "n": 42
+   },
+   "AUC_conf_truth_vs_honest": {
+    "ci": [
+     0.3684,
+     0.5551
+    ],
+    "mean": 0.4613,
+    "n": 42
+   },
+   "AUC_decoy_vs_honest": {
+    "ci": [
+     0.4817,
+     0.6391
+    ],
+    "mean": 0.5618,
+    "n": 42
+   },
+   "AUC_truth_vs_decoy": {
+    "ci": [
+     0.518,
+     0.7544
+    ],
+    "mean": 0.6389,
+    "n": 42
+   },
+   "AUC_truth_vs_honest": {
+    "ci": [
+     0.6165,
+     0.773
+    ],
+    "mean": 0.6994,
+    "n": 42
+   },
+   "VERDICT": "UNDERPOWERED",
+   "pool_share_of_L3": {
+    "ci": [
+     -0.1318,
+     0.702
+    ],
+    "mean": 0.3097,
+    "n": 42
+   },
+   "verdict_decoy_vs_honest": "INCONCLUSIVE",
+   "verdict_truth_vs_decoy": "TRUTH-ABOVE"
+  }
+ },
+ "counts": {
+  "decoys_total": 244,
+  "defects": 0,
+  "excluded": 4,
+  "no_decoy_reasons": {
+   "no_eligible_candidate": 140,
+   "none_passed": 61
+  },
+  "ok": 283,
+  "ok_by_stratum": {
+   "bot": 141,
+   "snapshot": 142
+  },
+  "with_decoy": 82,
+  "with_decoy_by_stratum": {
+   "bot": 40,
+   "snapshot": 42
+  }
+ },
+ "gates": {
+  "G1_ids": true,
+  "G2_defects": true,
+  "G3": true,
+  "G3_determinism": {
+   "identical": 10,
+   "rechecked": 10
+  },
+  "G5": true,
+  "G5_reproduction": {
+   "compared": 283,
+   "failing": [],
+   "l3_ok_not_ok_here": 0,
+   "max_abs_nats": 5.0469583456447253e-05,
+   "n_failing": 0,
+   "not_in_l3_ok": 0
+  },
+  "defects": [],
+  "excluded": 4,
+  "ids_sha256": "cf8d8c6fc09c9a85ce976a85a6195eb52977900659ac9be218b47562d9a09dfb",
+  "n_rows": 287
+ },
+ "pooled": {
+  "AUC_conf_decoy_vs_honest": {
+   "ci": [
+    0.4544,
+    0.5704
+   ],
+   "mean": 0.514,
+   "n": 82
+  },
+  "AUC_conf_truth_vs_decoy": {
+   "ci": [
+    0.2952,
+    0.4695
+   ],
+   "mean": 0.3791,
+   "n": 82
+  },
+  "AUC_conf_truth_vs_honest": {
+   "ci": [
+    0.392,
+    0.5223
+   ],
+   "mean": 0.4558,
+   "n": 82
+  },
+  "AUC_decoy_vs_honest": {
+   "ci": [
+    0.5174,
+    0.6309
+   ],
+   "mean": 0.5749,
+   "n": 82
+  },
+  "AUC_truth_vs_decoy": {
+   "ci": [
+    0.4888,
+    0.6635
+   ],
+   "mean": 0.5783,
+   "n": 82
+  },
+  "AUC_truth_vs_honest": {
+   "ci": [
+    0.5766,
+    0.7108
+   ],
+   "mean": 0.6448,
+   "n": 82
+  },
+  "VERDICT": "NOT-DETECTED",
+  "pool_share_of_L3": {
+   "ci": [
+    0.1502,
+    0.946
+   ],
+   "mean": 0.5175,
+   "n": 82
+  },
+  "verdict_decoy_vs_honest": "POOL-LIFT",
+  "verdict_truth_vs_decoy": "INCONCLUSIVE"
+ },
+ "stopped": false,
+ "verdict": "NOT-DETECTED"
+}
