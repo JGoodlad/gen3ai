@@ -3,10 +3,17 @@ from __future__ import annotations
 
 import pytest
 
+from utils import heavy_slots as HS
 from utils import ship_gate as SG
 
 _ONLINE = list(range(16))
 _TRAINER = [0, 1, 2, 3, 4, 8, 9, 10, 11, 12]
+
+
+@pytest.fixture(autouse=True)
+def _no_lease(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The box's real GPU lease must not decide a unit test's shape."""
+    monkeypatch.setattr(HS, "lease_reason", lambda: None)
 
 
 def test_quiet_box_runs_the_quiet_policy_unpinned_at_normal_priority() -> None:
@@ -93,3 +100,19 @@ def test_the_warm_up_names_a_failed_build_and_counts_it() -> None:
     out = []
     assert W.warm([("ok", lambda: None), ("bad", boom)], emit=out.append) == 1
     assert "ok: ready" in out[0] and "bad: NOT BUILT" in out[1] and "no cargo" in out[1]
+def test_a_held_gpu_lease_with_no_run_live_takes_the_rule_5b_shape(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tonight an unpinned -n 6 gate nearly ran across a GPU battery's learner-timing cells (no run live, lease
+    held). The shape follows `heavy_slots.wanted` - one predicate. Fails on a revert of the shared predicate."""
+    monkeypatch.setattr(HS, "lease_reason", lambda: "the GPU is LEASED (lease owner 'battery')")
+    shape = SG.resolve_shape({}, online=_ONLINE)
+    assert shape.nice == 19 and shape.cpus == [5, 6, 7, 13, 14, 15]
+    assert shape.workers == int(6 * SG.LIVE_WORKERS_PER_CPU)
+    argv = SG.build_argv(shape, "py")
+    assert argv[:5] == ["nice", "-n", "19", "taskset", "-c"] and argv[5] == "5-7,13-15"
+    assert "LEASED" in shape.describe() and "battery" in shape.describe()
+    # a live run still wins and keeps the complement-of-the-trainer rule
+    live = SG.resolve_shape({"/m/rb_x": 42}, online=_ONLINE, trainer_cpus=_TRAINER)
+    assert live.leased == "" and live.cpus == [5, 6, 7, 13, 14, 15]
+    # the shape and the slots read ONE predicate: no lease and no run is quiet on both
+    monkeypatch.setattr(HS, "lease_reason", lambda: None)
+    assert HS.wanted(runs={}) is None and SG.resolve_shape({}, online=_ONLINE).cpus is None

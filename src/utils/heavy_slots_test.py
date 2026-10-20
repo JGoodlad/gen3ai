@@ -49,6 +49,7 @@ def slots(tmp_path, monkeypatch):
     monkeypatch.setenv(HS.SLOTS_ENV, "2")
     monkeypatch.delenv(HS.HELD_ENV, raising=False)
     monkeypatch.delenv(HS.BLOCKING_ENV, raising=False)
+    monkeypatch.setenv("GEN3AI_GPU_LOCK", str(tmp_path / "gpu.lock"))     # never the box's real lease
     monkeypatch.setenv("PYTHONPATH", os.pathsep.join([str(src_root()), os.environ.get("PYTHONPATH", "")]))
     return d
 
@@ -234,3 +235,167 @@ def test_a_gate_waiting_for_a_heavy_slot_does_not_hold_the_gate_lock(slots, tmp_
         assert gate.returncode == 0
     finally:
         _kill(*(p for p in (h1, h2, gate) if p is not None))
+# ── D-3: a job that already holds the GPU takes no CPU slot (core review 2026-10-20) ──────────────────────────
+#
+# `gpu_lock.sh mem_cap.sh …` (the documented order, the GPU-window battery's, cuda_build_validate's, …) held the GPU
+# idle while the job queued for a CPU heavy slot. The job now takes none under `gpu_lock`, in either wrapper order.
+
+def _full_house(tmp_path, monkeypatch):
+    monkeypatch.setenv(HS.SLOTS_ENV, "1")
+    pa = _taker(tmp_path / "a", hold=60.0)
+    _wait_for((tmp_path / "a").exists, "the only slot's holder")
+    return pa
+
+
+def _try_take() -> "int | None | str":
+    try:
+        with HS.heavy_slot(["job"], force=True, wait=False, log=lambda _m: None) as s:
+            return s
+    except HS.SlotsFull:
+        return "FULL"
+
+
+def test_a_job_under_the_gpu_flock_bypasses_a_full_house_but_the_control_is_refused(slots, tmp_path, monkeypatch):
+    from utils import gpu_lock as GPUL
+
+    monkeypatch.setenv(GPUL.GPU_LOCK_ENV, str(tmp_path / "gpu.lock"))
+    for k in (GPUL.HELD_ENV, GPUL.GPU_JOB_ENV):
+        monkeypatch.delenv(k, raising=False)
+    pa = _full_house(tmp_path, monkeypatch)
+    try:
+        assert _try_take() == "FULL", "control: with no GPU held, a full house refuses (--no-wait)"
+        with GPUL.gpu_lock():
+            assert GPUL.gpu_job() == os.getpid()
+            assert _try_take() is None, "a job holding the GPU queued for / was refused a CPU slot (D-3)"
+        assert GPUL.GPU_JOB_ENV not in os.environ and _try_take() == "FULL"
+    finally:
+        _kill(pa)
+
+
+def test_a_job_under_the_lease_pass_through_bypasses_too(slots, tmp_path, monkeypatch):
+    """The lease owner's `gpu_lock` takes no flock and exports no HELD_ENV: it still marks the GPU job."""
+    from types import SimpleNamespace
+
+    from utils import gpu_lock as GPUL
+
+    monkeypatch.setenv(GPUL.GPU_LOCK_ENV, str(tmp_path / "gpu.lock"))
+    for k in (GPUL.HELD_ENV, GPUL.GPU_JOB_ENV):
+        monkeypatch.delenv(k, raising=False)
+    monkeypatch.setattr(GPUL.L, "read_lease", lambda _p: SimpleNamespace(pid=os.getpid()))
+    monkeypatch.setattr(GPUL.L, "token_matches", lambda _l: True)
+    pa = _full_house(tmp_path, monkeypatch)
+    try:
+        with GPUL.gpu_lock():
+            assert GPUL.HELD_ENV not in os.environ and GPUL.gpu_job() == os.getpid()
+            assert _try_take() is None
+        assert _try_take() == "FULL"
+    finally:
+        _kill(pa)
+
+
+def test_a_stale_gpu_job_marker_is_ignored(slots, tmp_path, monkeypatch):
+    from utils import gpu_lock as GPUL
+
+    pa = _full_house(tmp_path, monkeypatch)
+    try:
+        monkeypatch.setenv(GPUL.GPU_JOB_ENV, str(pa.pid))   # alive, but a CHILD of this process, not an ancestor
+        assert GPUL.gpu_job() is None
+        assert _try_take() == "FULL"
+    finally:
+        _kill(pa)
+
+
+# ── rule 5b is keyed to the GPU LEASE too (orchestrator 2026-10-20) ───────────────────────────────────────────
+
+def test_a_held_gpu_lease_wants_the_slots_with_no_run_live_and_a_read_error_never_fails_a_job(slots, monkeypatch):
+    """While the GPU is leased (a measurement battery under mem_cap in the same memory slice) the slots are ON
+    even though no training run is live - else the jobs queued behind a run flood the window the moment it ends.
+    Fails on a revert of `lease_reason`."""
+    from types import SimpleNamespace
+
+    from utils import gpu_lock as GPUL
+
+    assert HS.wanted(runs={}) is None, "precondition: no run, no lease, not forced"
+    lease = SimpleNamespace(describe=lambda: "lease owner 'battery'")
+    monkeypatch.setattr(GPUL.L, "read_lease", lambda _p: lease)
+    why = HS.wanted(runs={})
+    assert why is not None and "LEASED" in why and "battery" in why, why
+    assert HS.wanted(runs={}, lease=False) is None                   # the run-only policy is still expressible
+    assert "training run is live" in HS.wanted(runs={"/m/rb_x": 1})   # a live run keeps its own reason
+
+    def boom(_p):
+        raise OSError("lease file unreadable")
+
+    monkeypatch.setattr(GPUL.L, "read_lease", boom)
+    assert HS.wanted(runs={}) is None, "a lease read error must not fail (or slot) a job"
+
+
+def test_a_job_behind_a_held_lease_queues_for_a_slot_but_the_lease_owners_gpu_job_does_not(slots, tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    from utils import gpu_lock as GPUL
+
+    monkeypatch.setattr(GPUL.L, "read_lease", lambda _p: SimpleNamespace(pid=os.getpid(), describe=lambda: "x"))
+    monkeypatch.setattr(GPUL.L, "token_matches", lambda _l: False)    # an ordinary agent job, not the owner
+    monkeypatch.setattr(procfs, "live_training_runs", lambda *a, **k: {})
+    monkeypatch.setenv(HS.SLOTS_ENV, "1")
+    pa = _taker(tmp_path / "a", hold=60.0)
+    try:
+        _wait_for((tmp_path / "a").exists, "the only slot's holder")
+
+        def try_take():
+            try:
+                with HS.heavy_slot(["job"], wait=False, log=lambda _m: None) as s:
+                    return s
+            except HS.SlotsFull:
+                return "FULL"
+
+        assert try_take() == "FULL", "an agent job beside a held lease took no slot"
+        monkeypatch.setattr(GPUL.L, "token_matches", lambda _l: True)
+        monkeypatch.delenv(GPUL.GPU_JOB_ENV, raising=False)
+        with GPUL.gpu_lock():                                         # the lease owner's battery cell
+            assert try_take() is None, "the lease owner's GPU cell must not queue behind the slots"
+    finally:
+        _kill(pa)
+
+
+# ── the chunk policy (orchestrator 2026-10-20): a slot per bounded chunk, never per run ───────────────────────
+
+def test_a_holder_past_the_long_hold_bar_is_flagged_in_status_and_warned_once(slots, monkeypatch):
+    """Two research jobs each held a slot for a multi-hour run and froze every other agent. Nothing is killed;
+    `--status` flags the holder and the holder gets ONE stderr line. Fails on a revert of the flag / timer."""
+    monkeypatch.setattr(HS, "LONG_HOLD_S", 0.3)
+    lines: list[str] = []
+    with HS.heavy_slot(["a", "long", "job"], force=True, log=lines.append):
+        st = HS.collect(now=time.time() + 0.1)
+        assert st["slots"][0].get("long_hold") is False and HS.LONG_HOLD_TAG not in HS.format_human(st)
+        time.sleep(0.9)
+        warns = [ln for ln in lines if HS.LONG_HOLD_TAG in ln]
+        assert len(warns) == 1, lines                                  # ONE warning, to the holder
+        st = HS.collect(now=time.time() + 1.0)
+        row = st["slots"][0]
+        assert row["long_hold"] is True
+        assert HS.LONG_HOLD_TAG in HS.format_human(st) and "LONG HOLD (policy: <= 45 min per chunk)" in HS.format_human(st)
+    assert not any(HS.LONG_HOLD_TAG in ln for ln in lines[len(warns) + 1:])      # released: the timer is gone
+
+
+def test_a_waiter_proceeds_when_the_run_it_waited_behind_ends(slots, tmp_path, monkeypatch):
+    """`await_free_slot` re-checks the policy while it waits: a gate queued behind a run that then ended must not
+    sit out the other holders (tonight a gate waited ~90 min after the run it queued for was gone)."""
+    monkeypatch.setenv(HS.SLOTS_ENV, "1")
+    pa = _taker(tmp_path / "a", hold=60.0)
+    try:
+        _wait_for((tmp_path / "a").exists, "the only slot's holder")
+        runs = {"/m/rb_x": 1}
+        calls = {"n": 0}
+
+        def wanted_then_over(**_kw):
+            calls["n"] += 1
+            return "a run is live" if calls["n"] < 3 else None
+
+        monkeypatch.setattr(HS, "wanted", wanted_then_over)
+        t0 = time.monotonic()
+        HS.await_free_slot(["gate"], poll_s=0.02, log=lambda _m: None, runs=runs)
+        assert calls["n"] >= 3 and time.monotonic() - t0 < scale_timeout(20)
+    finally:
+        _kill(pa)

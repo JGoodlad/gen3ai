@@ -34,7 +34,9 @@ deleted in deletion pass U3) in ``flock ~/.claude/jobs/gpu.lock``. The harness t
 ``flock`` on a NEW open of the file is a different lock owner, so the inner flock waited 15 min at 0%
 CPU on a lock its own ancestor held. Nothing could ever release it. The class fix:
 
-* **Holding the lock exports** ``GEN3AI_GPU_LOCK_HELD=<holder pid>`` to every child.
+* **Holding the lock exports** ``GEN3AI_GPU_LOCK_HELD=<holder pid>`` to every child, and a command RUNNING under it
+  (the flock holder AND the lease owner's pass-through) sees ``GEN3AI_GPU_JOB=<pid>`` (:func:`gpu_job`): the
+  CPU heavy slots read it and never make a job that holds the GPU queue for a slot (D-3).
 * **A taker that sees the marker does NOT re-acquire — after VERIFYING it**: the marker's pid must be
   this process or one of its ANCESTORS, and ``/proc/locks`` must list that pid HOLDING this lock file.
   A stale marker (inherited into a process that outlived its holder, or copied into an unrelated
@@ -69,6 +71,10 @@ from utils.gpu_lease import GpuBusy, GpuLeased, GpuUnavailable  # noqa: F401  (r
 
 GPU_LOCK_ENV = "GEN3AI_GPU_LOCK"
 HELD_ENV = "GEN3AI_GPU_LOCK_HELD"
+#: Exported to every child of a process that is RUNNING A GPU JOB under :func:`gpu_lock` - the flock holder AND
+#: the lease owner's pass-through (which exports no ``HELD_ENV``). ``utils.heavy_slots`` reads it (:func:`gpu_job`):
+#: a job that already holds the GPU must not queue for a CPU heavy slot, the GPU would idle behind it (D-3).
+GPU_JOB_ENV = "GEN3AI_GPU_JOB"
 REPORT_EVERY_S = 60.0
 POLL_S = 0.5
 
@@ -115,6 +121,31 @@ def verified_holder(path: Optional[PathLike] = None, env: Optional[Mapping[str, 
     if key is None or pid not in _self_and_ancestors():
         return None
     return pid if pid in procfs.holders(key) else None
+
+
+def gpu_job(env: Optional[Mapping[str, str]] = None) -> Optional[int]:
+    """The pid in ``$GEN3AI_GPU_JOB`` iff it is this process or an ANCESTOR (the process that took, or passed
+    through, the GPU for the command now running); else ``None``. Does not re-read the lock file: the marker
+    is only exported while :func:`gpu_lock` is inside its body."""
+    raw = (os.environ if env is None else env).get(GPU_JOB_ENV, "")
+    try:
+        pid = int(raw)
+    except ValueError:
+        return None
+    return pid if pid in _self_and_ancestors() else None
+
+
+@contextlib.contextmanager
+def _marked_gpu_job() -> Iterator[None]:
+    before = os.environ.get(GPU_JOB_ENV)
+    os.environ[GPU_JOB_ENV] = str(os.getpid())
+    try:
+        yield
+    finally:
+        if before is None:
+            os.environ.pop(GPU_JOB_ENV, None)
+        else:
+            os.environ[GPU_JOB_ENV] = before
 
 
 def holder_report(path: Optional[PathLike] = None) -> str:
@@ -238,7 +269,8 @@ def gpu_lock(path: Optional[PathLike] = None, *, wait: bool = False, report_ever
     lease = L.read_lease(p)
     if lease is not None:
         if L.token_matches(lease):
-            yield lease.pid    # the lease OWNER (or its child holding the token): the flock is the lease's
+            with _marked_gpu_job():
+                yield lease.pid    # the lease OWNER (or its child holding the token): the flock is the lease's
             return
         raise GpuLeased(lease, p, what)
     if os.environ.get(HELD_ENV):
@@ -251,7 +283,8 @@ def gpu_lock(path: Optional[PathLike] = None, *, wait: bool = False, report_ever
         before = os.environ.get(HELD_ENV)
         os.environ[HELD_ENV] = str(os.getpid())
         try:
-            yield os.getpid()
+            with _marked_gpu_job():
+                yield os.getpid()
         finally:
             if before is None:
                 os.environ.pop(HELD_ENV, None)

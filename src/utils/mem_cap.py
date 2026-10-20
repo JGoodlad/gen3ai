@@ -59,6 +59,11 @@ visible line (``--no-wait`` refuses at once, exit 87). A job the orchestrator ma
 (``$GEN3AI_BLOCKING=<reason>`` or ``--blocking <reason>``) bypasses them; a job inside a holder (the
 routine gate holds one) takes none. ``--status`` lists holders, the queue and the bypassers.
 
+The slot is tied to the JOB, not the wrapper (D-2, 2026-10-20): the locked fd is handed to the supervisor and the
+job (``pass_fds``), so the slot stays held while any process of the job's tree lives - including the grace a
+SIGKILLed wrapper leaves a job that defers SIGTERM (``--status`` marks a slot whose locker is gone "owner gone");
+a normal end still releases it at once.
+
 STOPPING A JOB (2026-10-19, ``gen3_mem_cap_stop_v1``; backlog row "a ``timeout`` OUTSIDE mem_cap.sh does not
 stop a trainer", U4 finding (a) 2026-10-02: ``timeout 590 mem_cap.sh … <trainer>`` ran 12 min past its bound
 and needed a SIGKILL by PID). SIGINT / SIGTERM / SIGHUP — from ``timeout``, a terminal, a ``kill`` of the
@@ -122,8 +127,8 @@ PAGE = 4096
 # kernel for SIGTERM when its own parent (the wrapper) dies.
 SUPERVISOR = r"""
 import os, signal, subprocess, sys, time
-report, want, want_slice, adj, grace, wrapper = sys.argv[1:7]
-cmd = sys.argv[8:]
+report, want, want_slice, adj, grace, wrapper, slot_fd = sys.argv[1:8]
+cmd = sys.argv[9:]
 grace = float(grace)
 def rd(p):
     try:
@@ -188,7 +193,9 @@ except Exception:
     pass
 out("started cgroup=%s" % rel)
 try:
-    child = subprocess.Popen(cmd)
+    # the heavy slot's locked fd rides into the job (D-2): the slot lives as long as the job's process tree does,
+    # so the grace a SIGKILLed wrapper leaves a SIGTERM-deferring job is not a window with a free slot
+    child = subprocess.Popen(cmd, pass_fds=(int(slot_fd),) if int(slot_fd) >= 0 else ())
 except OSError as e:
     out("done 127 %s 0" % (rd(cg + "/memory.peak") or "0"))
     print("[mem_cap] cannot run %r: %s" % (cmd[0], e), file=sys.stderr)
@@ -321,20 +328,23 @@ class CapResult:
 
 
 def capped_argv(cmd: Sequence[str], cap_bytes: int, *, unit: str, slice_: str, slice_bytes: int,
-                report: str, adj: int = OOM_SCORE_ADJ, grace: float = DEFAULT_TERM_GRACE_S) -> List[str]:
+                report: str, adj: int = OOM_SCORE_ADJ, grace: float = DEFAULT_TERM_GRACE_S,
+                slot_fd: Optional[int] = None) -> List[str]:
     """The ``systemd-run`` argv that runs ``cmd`` under the supervisor in a capped scope."""
     return ["systemd-run", "--user", "--scope", "--quiet", f"--slice={slice_}",
             "-p", f"MemoryMax={cap_bytes}", "-p", "MemorySwapMax=0", "-p", "OOMPolicy=stop",
             "--unit", unit, "--",
             sys.executable, "-I", "-S", "-c", SUPERVISOR, report, str(cap_bytes), str(slice_bytes), str(adj),
-            repr(grace), str(os.getpid()), "--", *cmd]
+            repr(grace), str(os.getpid()), str(-1 if slot_fd is None else slot_fd), "--", *cmd]
 
 
 def run_capped(cmd: Sequence[str], gb: float, *, name: Optional[str] = None,
                slice_: Optional[str] = None, slice_gb_: Optional[float] = None,
-               term_grace: Optional[float] = None,
+               term_grace: Optional[float] = None, slot_fd: Optional[int] = None,
                log: Callable[[str], None] = _stderr) -> CapResult:
     """Run ``cmd`` capped at ``gb`` GB in its own scope inside the heavy slice; report and return.
+    ``slot_fd``: the heavy slot's locked fd (``heavy_slots.slot_fd``), handed to the supervisor and the job so
+    the slot lives as long as any process of the job's tree (a SIGKILLed wrapper stops the job after the grace).
     A stop signal (SIGINT / SIGTERM / SIGHUP) reaching this process is forwarded to the supervisor, which
     SIGKILLs the whole scope ``term_grace`` seconds after the first one (module docs, STOPPING A JOB)."""
     cap = gb_to_bytes(gb)
@@ -369,7 +379,8 @@ def run_capped(cmd: Sequence[str], gb: float, *, name: Optional[str] = None,
     fwd = {s: signal.signal(s, _forward) for s in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)}
     try:
         child = subprocess.Popen(capped_argv(cmd, cap, unit=unit, slice_=sl, slice_bytes=sl_bytes, report=report,
-                                             grace=grace), env=_env())
+                                             grace=grace, slot_fd=slot_fd), env=_env(),
+                                 pass_fds=() if slot_fd is None else (slot_fd,))
         holder.append(child)
         for n in pending:
             child.send_signal(n)
@@ -485,8 +496,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(f"[mem_cap] REFUSING: ${TERM_GRACE_ENV}: {e}", file=sys.stderr)
         return 2
     try:
-        with HS.heavy_slot(args, force=force_slot, wait=wait):
-            return run_capped(args, gb, name=name, slice_gb_=sgb, term_grace=grace).rc
+        with HS.heavy_slot(args, force=force_slot, wait=wait) as slot:
+            return run_capped(args, gb, name=name, slice_gb_=sgb, term_grace=grace, slot_fd=HS.slot_fd(slot)).rc
     except (HS.SlotsFull, TimeoutError) as e:
         print(str(e), file=sys.stderr)
         return HS.EXIT_SLOTS_FULL

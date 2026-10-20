@@ -8,7 +8,10 @@ What it decides is only the SHAPE, from the box:
 * a training run is LIVE (``utils.procfs.live_training_runs``) ⇒ rule 5b: ``nice -n 19``, pinned to
   the agent cores (every online cpu the trainer is NOT pinned to), ``-n`` = ``LIVE_WORKERS_PER_CPU`` x
   those cpus;
-* no run is live ⇒ the quiet policy: ``-n`` = :data:`QUIET_WORKERS`, normal priority, no pin.
+* a GPU LEASE is held (no run live: a measurement battery owns the card and its CPU timing) ⇒ the SAME rule-5b shape
+  on :data:`AGENT_CPUS`. The predicate is ``utils.heavy_slots.wanted`` - the ONE definition of "rule 5b applies"
+  the heavy slots use too, so the two cannot drift;
+* no run is live and no lease is held ⇒ the quiet policy: ``-n`` = :data:`QUIET_WORKERS`, normal priority, no pin.
 
 The session WARMS the Rust binaries the tests resolve lazily before its first test (``$GEN3AI_SHIP_WARM=1``,
 the root conftest's ``pytest_sessionstart`` -> ``utils.ship_gate_warm``: a cargo build paid inside a test body
@@ -42,6 +45,7 @@ import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence
 
+from utils import heavy_slots as HS
 from utils import procfs
 from utils.gate_lock_status import affinity_of, cpu_list
 from utils.paths import repo_path
@@ -52,6 +56,9 @@ MARKERS = "not slow and not e2e"
 QUIET_WORKERS = 6
 #: xdist workers per LOGICAL agent cpu beside a live run — MEASURED, designs/ops/testing.md "The SHIP GATE".
 LIVE_WORKERS_PER_CPU = 0.5
+#: The agent cores when rule 5b applies with NO trainer to read the complement from (a held GPU lease, no live run):
+#: this box's, CPU n and n+8 being SMT siblings (CLAUDE.md rule 5b). Filtered to the online cpus.
+AGENT_CPUS = (5, 6, 7, 13, 14, 15)
 #: The memory cap (GB) the gate runs under (scripts/ops/mem_cap.sh).
 MEM_CAP_GB = 24
 #: Where the last ship gate's 8 s-bar rows land (``utils.ship_bar``; per user, like the test-cost table).
@@ -64,10 +71,14 @@ class Shape:
     cpus: Optional[List[int]]   # None = no pin
     nice: int
     workers: int
+    leased: str = ""            # why rule 5b applies with no run live (a held GPU lease), else ""
 
     def describe(self) -> str:
+        if not self.live_runs and self.leased:
+            return (f"{self.leased}: rule 5b — nice {self.nice}, cpus {cpu_list(self.cpus or [])}, "
+                    f"-n {self.workers}")
         if not self.live_runs:
-            return f"no training run is live: -n {self.workers}, normal priority, no cpu pin"
+            return f"no training run is live and no GPU lease is held: -n {self.workers}, normal priority, no cpu pin"
         names = ", ".join(os.path.basename(rd.rstrip("/")) for rd in sorted(self.live_runs))
         return (f"a training run is LIVE ({names}): rule 5b — nice {self.nice}, cpus "
                 f"{cpu_list(self.cpus or [])}, -n {self.workers}")
@@ -77,9 +88,13 @@ def resolve_shape(runs: Optional[Dict[str, int]] = None, *, online: Optional[Seq
                   trainer_cpus: Optional[Sequence[int]] = None) -> Shape:
     """The gate's shape for the box as it is now. The keyword arguments are for tests."""
     runs = procfs.live_training_runs() if runs is None else runs
-    if not runs:
+    why = HS.wanted(runs=runs)               # THE predicate of rule 5b (a live run OR a held GPU lease)
+    if why is None:
         return Shape({}, None, 0, QUIET_WORKERS)
     online = list(range(os.cpu_count() or 1)) if online is None else list(online)
+    if not runs:                              # a lease and no run: no trainer pin to take the complement of
+        agent = [c for c in AGENT_CPUS if c in online] or online
+        return Shape({}, agent, 19, max(1, int(len(agent) * LIVE_WORKERS_PER_CPU)), leased=why)
     if trainer_cpus is None:
         trainer_cpus = [c for pid in runs.values() for c in (affinity_of(pid) or [])]
     agent = [c for c in online if c not in set(trainer_cpus)]

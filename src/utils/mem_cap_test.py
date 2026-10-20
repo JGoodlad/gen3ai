@@ -78,7 +78,8 @@ if _SKIP:
 def env(tmp_path):
     sl = f"gen3ai-heavytest{os.getpid()}.slice"
     # never the REAL heavy slots (taken while a run is live), and never a wait on them here
-    e = {**{k: v for k, v in M._env().items() if k != HS.HELD_ENV}, M.SLICE_ENV: sl, M.SLICE_GB_ENV: "4",
+    # (an inherited BLOCKING mark - the gate running THIS file may carry one - would bypass the slots under test)
+    e = {**{k: v for k, v in M._env().items() if k not in (HS.HELD_ENV, HS.BLOCKING_ENV)}, M.SLICE_ENV: sl, M.SLICE_GB_ENV: "4",
          HS.DIR_ENV: str(tmp_path / "heavy_slots"), HS.SLOTS_ENV: "16",
          "PYTHONPATH": os.pathsep.join([str(src_root()), os.environ.get("PYTHONPATH", "")])}
     yield e
@@ -427,3 +428,69 @@ def test_a_bad_term_grace_is_refused_without_running_anything(env, grace):
     assert r.returncode == 2 and "REFUSING" in r.stderr and "--term-grace" in r.stderr, (r.returncode, r.stderr)
     r = _run(["1", "true"], {**env, M.TERM_GRACE_ENV: grace or "x"})
     assert r.returncode == 2 and M.TERM_GRACE_ENV in r.stderr, (r.returncode, r.stderr)
+
+
+def _slot_taker_result(e) -> str:
+    r = subprocess.run([sys.executable, "-c",
+                        "from utils import heavy_slots as H\n"
+                        "with H.heavy_slot(['second'], force=True, wait=False): print('TOOK')"],
+                       env=e, capture_output=True, text=True, timeout=scale_timeout(30))
+    return "TOOK" if "TOOK" in r.stdout else ("FULL" if "heavy slots are held" in r.stderr else r.stderr)
+
+
+def test_a_SIGKILLed_wrappers_heavy_slot_lives_as_long_as_its_job_tree(env, tmp_path):
+    """D-2 (core review 2026-10-20): the slot's flock was held by the wrapper alone, so a SIGKILL / OOM kill of
+    the wrapper freed it while the capped job (its own systemd scope) still ran. The supervisor now stops the job
+    when its wrapper dies (gen3_mem_cap_stop_v1) - but a job that DEFERS SIGTERM runs on for the grace, and the
+    slot must stay held through it. A REAL wrapper, a REAL tree, a REAL SIGKILL of the wrapper; only processes
+    this test started. Fails on a revert of the fd hand-down (`slot_fd` / the supervisor's pass_fds)."""
+    e = {**env, HS.SLOTS_ENV: "1"}
+    cmd, pidfile = _tree_cmd(tmp_path, "root")
+    p = subprocess.Popen([sys.executable, "-m", "utils.mem_cap", "--slot", "--term-grace", "8", "0.5", *cmd],
+                         env=e, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    try:
+        pids = _tree_pids(pidfile, 3)
+        assert _slot_taker_result(e) == "FULL", "precondition: the wrapper holds the only slot"
+        os.kill(p.pid, signal.SIGKILL)                          # the wrapper, by the pid this test started
+        p.wait(timeout=scale_timeout(30))
+        assert all(_alive(q) for q in pids.values()), "precondition: the SIGTERM-deferring tree is in its grace"
+        row = HS.collect(Path(e[HS.DIR_ENV]), 1)["slots"][0]
+        assert row["pids"] and "owner gone" in row["why"], row                 # --status says so, not "free"
+        assert _slot_taker_result(e) == "FULL", "the wrapper's death freed the slot while its job still runs (D-2)"
+        assert not _all_gone(pids.values(), 40), "the grace never ended the tree"
+        deadline = time.monotonic() + scale_timeout(30)
+        got = _slot_taker_result(e)
+        while got != "TOOK" and time.monotonic() < deadline:
+            time.sleep(0.2)
+            got = _slot_taker_result(e)
+        assert got == "TOOK", f"the slot never freed once the tree was gone: {got}"
+    finally:
+        _kill_tree(pidfile)
+        if p.poll() is None:
+            p.kill()
+            p.wait()
+
+
+def test_gpu_lock_outside_mem_cap_takes_no_cpu_slot_beside_a_full_house(env, tmp_path):
+    """D-3: `gpu_lock.sh mem_cap.sh …` used to hold the GPU while the job queued for a CPU slot. With the only
+    slot held by someone else and `--slot --no-wait` (exit 87 when it must queue), the GPU job still RUNS."""
+    e = {**env, HS.SLOTS_ENV: "1", "GEN3AI_GPU_LOCK": str(tmp_path / "gpu.lock")}
+    holder = subprocess.Popen([sys.executable, "-c",
+                               "import time\nfrom utils.heavy_slots import heavy_slot\n"
+                               f"with heavy_slot(['holder'], force=True):\n    open({str(tmp_path / 'h')!r}, 'w').write('1')\n"
+                               "    time.sleep(120)"], env=e)
+    try:
+        deadline = time.monotonic() + scale_timeout(20)
+        while not (tmp_path / "h").exists() and time.monotonic() < deadline:
+            time.sleep(0.1)
+        assert (tmp_path / "h").exists()
+        ctl = subprocess.run([_SH, "--slot", "--no-wait", "0.5", "true"], env=e, capture_output=True, text=True,
+                             timeout=scale_timeout(60))
+        assert ctl.returncode == HS.EXIT_SLOTS_FULL, ("control: mem_cap alone must refuse", ctl.stderr)
+        r = subprocess.run([_GPU_SH, _SH, "--slot", "--no-wait", "0.5", "true"], env=e, capture_output=True,
+                           text=True, timeout=scale_timeout(60))
+        assert r.returncode == 0, (r.returncode, r.stderr)
+        assert "takes no CPU heavy slot" in r.stderr
+    finally:
+        holder.kill()
+        holder.wait()

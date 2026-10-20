@@ -14,9 +14,14 @@ BLOCKS the GPU's next work) was starved, and a 14-min ship gate took over an hou
 already goes through ``scripts/ops/mem_cap.sh``, so that is where the slot is taken.
 
 POLICY (:func:`wanted`). A job takes a slot when a training run is live
-(``utils.procfs.live_training_runs``) or when it asks (``--slot``). A job the orchestrator marks
+(``utils.procfs.live_training_runs``), while the GPU is LEASED (:func:`lease_reason`: rule 5b is keyed to the lease
+state too, so a leased window - a measurement battery under ``mem_cap`` in the same 64 GiB slice - is not flooded
+by the jobs that queued behind a run the moment it ends), or when it asks (``--slot``). A job the orchestrator marks
 BLOCKING (``$GEN3AI_BLOCKING=<reason>``, or ``mem_cap.sh --blocking <reason>``) BYPASSES the slots: it
-runs at once, says so on stderr and in ``--status``. The routine gate (``utils.gate_lock``) holds ONE
+runs at once, says so on stderr and in ``--status``. A job that already holds the GPU
+(it runs under ``gpu_lock`` - ``utils.gpu_lock.gpu_job``: the flock holder or the lease owner's pass-through)
+bypasses them too, whatever the wrapper order: ``gpu_lock.sh mem_cap.sh …`` would otherwise hold the GPU idle
+while it queued for a CPU slot (D-3). The routine gate (``utils.gate_lock``) holds ONE
 slot itself for its whole run, taken AFTER its gate slot.
 
 HOW. ``N`` (:data:`HEAVY_SLOTS` = 2; ``$GEN3AI_HEAVY_SLOTS``) ``flock`` slot files
@@ -24,6 +29,17 @@ HOW. ``N`` (:data:`HEAVY_SLOTS` = 2; ``$GEN3AI_HEAVY_SLOTS``) ``flock`` slot fil
 temp dir). A taker tries every slot non-blocking every :data:`POLL_S`; a crashed holder's slot frees
 the instant it dies (the kernel drops its flock). The wait is visible: one line at once, one every
 :data:`REPORT_EVERY_S` naming the holders; ``--no-wait`` refuses instead (:class:`SlotsFull`, exit 87).
+
+THE SLOT LIVES AS LONG AS THE JOB (D-2, core review 2026-10-20). The flock is on an open file description, and
+``mem_cap`` hands the locked fd down to its supervisor and the job (:func:`slot_fd`, ``pass_fds``), so a SIGKILL /
+OOM kill of the ``mem_cap`` wrapper does NOT free the slot while the capped job's process tree still runs (the
+supervisor stops the job when its wrapper dies, but a job that defers SIGTERM runs on for the grace): the slot
+frees when the last process of that tree exits. A NORMAL end still unlocks at once (``LOCK_UN``): a daemon the
+finished job leaked does not hold it.
+
+HOLD A SLOT PER BOUNDED CHUNK (<= 45 min), NEVER PER RUN: a multi-hour job holding a slot froze every other agent for hours
+(2026-10-19); split it into resumable chunks, one slot each. `--status` flags a holder past 60 min as
+`LONG HOLD (policy: <= 45 min per chunk)` and the holder gets one stderr warning; nothing is killed.
 
 NEVER TWO SLOTS FOR ONE JOB. Holding a slot exports ``GEN3AI_HEAVY_SLOT_HELD=<pid>:<slot>``; a taker
 that sees it takes NO slot after VERIFYING that the pid is itself or an ancestor and that
@@ -47,11 +63,13 @@ import os
 import random
 import shlex
 import sys
+import threading
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable, Iterator, List, Optional, Sequence, Tuple
 
+from utils import gpu_lock as GL
 from utils import procfs
 
 HEAVY_SLOTS = 2
@@ -60,9 +78,18 @@ DIR_ENV = "GEN3AI_HEAVY_SLOT_DIR"
 HELD_ENV = "GEN3AI_HEAVY_SLOT_HELD"
 BLOCKING_ENV = "GEN3AI_BLOCKING"
 POLL_S = 0.5
+#: POLICY (orchestrator 2026-10-20): hold a slot per BOUNDED CHUNK (<= CHUNK_MIN), never per run. --status flags a
+#: holder past LONG_HOLD_S and the holder is warned once; nothing is killed.
+CHUNK_MIN = 45
+LONG_HOLD_S = 3600.0
+LONG_HOLD_TAG = f"LONG HOLD (policy: <= {CHUNK_MIN} min per chunk)"
 REPORT_EVERY_S = 60.0
 EXIT_SLOTS_FULL = 87
 RECORD_SCHEMA = "gen3_heavy_slot_record_v1"
+
+
+#: slot index -> the locked fd THIS process holds for it (set only while this process is the holder).
+_HELD_FDS: dict = {}
 
 
 class SlotsFull(RuntimeError):
@@ -115,24 +142,43 @@ def verified_holder(d: Optional[Path] = None) -> Optional[Tuple[int, int]]:
     return (pid, slot) if pid in _holders(slot_path(slot, d)) else None
 
 
+def slot_fd(slot: Optional[int]) -> Optional[int]:
+    """The locked fd this process holds for ``slot``, for a caller that hands it to the job's process tree
+    (:mod:`utils.mem_cap` does: D-2). ``None`` for a re-entrant / bypassed / unwanted slot (nothing to hand on)."""
+    return None if slot is None else _HELD_FDS.get(slot)
+
+
 def blocking_reason() -> Optional[str]:
     """The orchestrator's BLOCKING mark (``$GEN3AI_BLOCKING``, any non-empty text = the reason)."""
     raw = (os.environ.get(BLOCKING_ENV) or "").strip()
     return raw or None
 
 
-def wanted(*, force: bool = False, runs: Optional[dict] = None) -> Optional[str]:
-    """Why this job must take a slot, or ``None`` when it need not (no run live and not forced)."""
+def lease_reason() -> Optional[str]:
+    """Why a GPU LEASE being held wants the slots (``None``: no valid lease, or any read error - a job is never
+    failed over this). Rule 5b is keyed to the LEASE state as well as to a live run: while the GPU is leased its
+    window (a measurement battery under ``mem_cap`` in the SAME memory slice) must not be flooded by the agent
+    jobs that queued behind a live run (they all start the moment the run ends and a cell can be OOM-killed)."""
+    try:
+        lease = GL.L.read_lease(GL.lock_path())
+        return None if lease is None else f"the GPU is LEASED ({lease.describe()}): rule 5b"
+    except Exception:            # noqa: BLE001 — a /proc or file read must never stop a job
+        return None
+
+
+def wanted(*, force: bool = False, runs: Optional[dict] = None, lease: bool = True) -> Optional[str]:
+    """Why this job must take a slot, or ``None`` when it need not (no run live, no GPU lease, not forced).
+    ``lease=False`` ignores the lease (tests that pin the run-only policy)."""
     if force:
         return "asked for (--slot)"
     try:
         runs = procfs.live_training_runs() if runs is None else runs
     except Exception:            # noqa: BLE001 — a /proc read must never stop a job; it then takes no slot
-        return None
+        runs = {}
     if runs:
         names = ", ".join(os.path.basename(rd.rstrip("/")) for rd in sorted(runs))
         return f"a training run is live ({names}): rule 5b"
-    return None
+    return lease_reason() if lease else None
 
 
 @dataclass
@@ -212,10 +258,16 @@ def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = Tru
         yield None
         return
     reason = blocking_reason()
-    if reason is not None:
+    gpu = GL.gpu_job() if reason is None else None
+    if reason is not None or gpu is not None:
         d.mkdir(parents=True, exist_ok=True)
-        p = _write(d, Record.mine("bypass", cmd, note=reason))
-        log(f"[heavy_slots] BLOCKING ({BLOCKING_ENV}={reason!r}): bypassing the {slot_count()} heavy slots")
+        note = reason if reason is not None else f"GPU job (gpu_lock pid {gpu}): the GPU would idle behind a slot wait"
+        p = _write(d, Record.mine("bypass", cmd, note=note))
+        if reason is not None:
+            log(f"[heavy_slots] BLOCKING ({BLOCKING_ENV}={reason!r}): bypassing the {slot_count()} heavy slots")
+        else:
+            log(f"[heavy_slots] a GPU job (under gpu_lock, pid {gpu}) takes no CPU heavy slot: waiting for one "
+                f"would hold the GPU idle (D-3, core review 2026-10-20)")
         try:
             yield None
         finally:
@@ -255,10 +307,18 @@ def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = Tru
         log(f"[heavy_slots] took heavy slot {slot} of {n} after waiting {waited:.1f} s ({why})")
         before = os.environ.get(HELD_ENV)
         os.environ[HELD_ENV] = f"{os.getpid()}:{slot}"
+        _HELD_FDS[slot] = fds[slot]
         t_acq = time.monotonic()
+        warn = threading.Timer(LONG_HOLD_S, lambda: log(
+            f"[heavy_slots] {LONG_HOLD_TAG}: slot {slot} held for {LONG_HOLD_S / 60:.0f} min by pid {os.getpid()} "
+            f"({shlex.join(list(cmd)[:6])}) - release it and re-take one per bounded chunk"))
+        warn.daemon = True
+        warn.start()
         try:
             yield slot
         finally:
+            warn.cancel()
+            _HELD_FDS.pop(slot, None)
             if before is None:
                 os.environ.pop(HELD_ENV, None)
             else:
@@ -277,7 +337,7 @@ def await_free_slot(cmd: Sequence[str] = (), *, force: bool = False, timeout_s: 
                     log: Callable[[str], None] = _stderr, runs: Optional[dict] = None) -> None:
     """Return once a heavy slot LOOKS free, holding NOTHING while it waits (a visible ``wait`` record, polled with
     jitter). The caller then tries ``heavy_slot(wait=False)`` and, if a sibling got there first, waits again.
-    Returns at once when this job needs no slot (re-entrant, not wanted, BLOCKING bypass).
+    Returns at once when this job needs no slot (re-entrant, not wanted, BLOCKING / GPU-job bypass).
 
     WHY (the gate convoy, 2026-10-19/20). ``utils.gate_lock`` took its heavy slot AFTER the gate lock and waited
     for it while holding the gate lock: one gate idle on a 28 h research job's slot blocked every other gate for
@@ -286,7 +346,7 @@ def await_free_slot(cmd: Sequence[str] = (), *, force: bool = False, timeout_s: 
     d = lock_dir()
     if verified_holder(d) is not None or wanted(force=force, runs=runs) is None:
         return
-    if blocking_reason() is not None:
+    if blocking_reason() is not None or GL.gpu_job() is not None:
         return
     n = slot_count()
 
@@ -299,9 +359,13 @@ def await_free_slot(cmd: Sequence[str] = (), *, force: bool = False, timeout_s: 
     wait_rec = _write(d, Record.mine("wait", cmd, note="queued for a heavy slot holding NO lock"))
     try:
         t0 = time.monotonic()
-        next_report = t0
+        next_report = next_check = t0
         while not free():
             now = time.monotonic()
+            if now >= next_check:                          # the run ended / the lease was released while it waited
+                if wanted(force=force, runs=runs) is None:
+                    return
+                next_check = now + 5.0
             if now >= next_report:
                 log(f"[heavy_slots] waiting {now - t0:.0f} s for one of {n} heavy slots (holding no other lock): "
                     + compact_status(d, n))
@@ -333,8 +397,12 @@ def collect(d: Optional[Path] = None, n: Optional[int] = None, *, now: Optional[
         if pids:
             if rec is not None and rec.pid in pids:
                 row.update(held_s=now - rec.since, cmd=shlex.join(rec.cmd), cwd=rec.cwd, why=rec.note)
+                row["long_hold"] = (now - rec.since) > LONG_HOLD_S
             else:
                 row.update(cmd=procfs.cmdline(pids[0]), why="(no record)")
+            if not _alive(pids[0]):
+                # D-2: the locking process (a mem_cap wrapper) was killed; its job tree still holds the fd
+                row["why"] += " [owner gone: held by the job's surviving process tree]"
         slots.append(row)
     side: dict = {"wait": [], "bypass": []}
     if d.is_dir():
@@ -366,8 +434,9 @@ def format_human(state: dict) -> str:
         if not r["pids"]:
             out.append(f"  slot {r['slot']}: free")
         else:
+            flag = f"  <-- {LONG_HOLD_TAG}" if r.get("long_hold") else ""
             out.append(f"  slot {r['slot']}: pid {','.join(map(str, r['pids']))} held {_dur(r['held_s'])} "
-                       f"[{r['why']}] {r['cmd'][:140]}  (cwd {r['cwd'] or '?'})")
+                       f"[{r['why']}] {r['cmd'][:140]}  (cwd {r['cwd'] or '?'}){flag}")
     out.append(f"  queue ({len(state['waiting'])}, oldest first; polled, so not a promise of order):")
     out += [f"    pid {w['pid']} waiting {_dur(w['for_s'])}: {w['cmd'][:140]}" for w in state["waiting"]]
     out.append(f"  BLOCKING bypassers ({len(state['bypassing'])}):")

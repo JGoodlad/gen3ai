@@ -64,6 +64,13 @@ value per GPU-minute: first the T62 gate input that is cheap and least noisy, th
 check, then the learner pairs, then the in-build units. With a short window, `--budget-min` stops cleanly between
 cells.
 
+**CPU heavy slots (verified 2026-10-20, core review D-3).** Rule 5b's slots apply only while a `train_rl_agent.py
+--run-dir` process is live (`utils.heavy_slots.wanted`). A cell runs as `gpu_lock.sh mem_cap.sh …`, and a job
+that already runs under `gpu_lock` (flock holder or lease owner) takes **no** CPU slot (`GEN3AI_GPU_JOB`,
+`utils.gpu_lock.gpu_job`; pinned by `heavy_slots_test.py` and
+`mem_cap_test.py::test_gpu_lock_outside_mem_cap_takes_no_cpu_slot_beside_a_full_house`). So the battery cannot
+stall on a slot whether or not a run is live, and never holds the GPU idle behind a queue (exit 87 cannot occur).
+
 **HOLD conditions:**
 - a cell exits non-zero;
 - a wall timeout (124 / 137);
