@@ -51,9 +51,11 @@ found nothing):
   `for name in (...): monkeypatch.setattr(mod, name, ...)` is invisible to it. Prefer the spelled-out
   form in a new test so the gate can keep auditing it.
 
-**Cost (measured 2026-09-07): 3.6 s** for 407 sites across 70 test files — one AST parse per test
-file plus one per non-test module for the consumer index. No cost marker; runs in the routine gate.
-Opt out explicitly:
+**Cost (re-profiled 2026-10-19): 12.5 s cold at 705 sites over 728 test files and 732 modules, 6 s after the
+single-walk index (`_Nodes`: one walk per tree where the helpers had made five to eight), 0.2 s warm** — every per-file
+result is memoised by the hash of the file's text in `~/.cache/gen3ai/stub_vacuity/` (`GEN3AI_STUB_CACHE_DIR` moves it,
+`GEN3AI_STUB_NO_CACHE=1` turns it off; verdicts are always recomputed from the memoised facts). No cost marker;
+runs in the routine gate. Opt out explicitly:
 
     GEN3AI_SKIP_STUB_GATE=1 pytest src/ -q
 """
@@ -65,7 +67,7 @@ from typing import Dict
 
 import pytest
 
-from stub_vacuity_scan import Site, consumer_index, scan_tree
+from stub_vacuity_scan import Site, consumer_index, default_cache_dir, scan_tree
 from utils.paths import src_root
 
 pytestmark = pytest.mark.static   # the `static` budget tier (conftest._STATIC_BUDGET_BASE_S)
@@ -136,12 +138,12 @@ _SKIP = pytest.mark.skipif(os.environ.get("GEN3AI_SKIP_STUB_GATE") == "1",
 def index():
     """ONE consumer index per module run, shared by the scan and the meta test that proves it is not empty
     (built twice before 2026-10-12: ~27 s of the static tier's longest file on the agent cores)."""
-    return consumer_index(_SRC_ROOT)
+    return consumer_index(_SRC_ROOT, default_cache_dir())
 
 
 @pytest.fixture(scope="module")
 def sites(index):
-    return scan_tree(_SRC_ROOT, index)
+    return scan_tree(_SRC_ROOT, index, default_cache_dir())
 
 
 @_SKIP
@@ -433,8 +435,109 @@ def test_meta_the_scan_engine_has_no_import_of_the_code_under_test():
                 for a in n.names}
     imported |= {n.module.split(".")[0] for n in ast.walk(tree)
                  if isinstance(n, ast.ImportFrom) and n.module}
-    assert imported <= {"__future__", "ast", "dataclasses", "pathlib", "collections", "sys",
-                        "utils"}, f"the scan engine grew a runtime dependency: {sorted(imported)}"
+    assert imported <= {"__future__", "ast", "dataclasses", "pathlib", "collections", "sys", "utils",
+                        "hashlib", "json", "os"}, f"the scan engine grew a runtime dependency: {sorted(imported)}"
+
+
+# ---------------------------------------------------------------------------------------------
+# THE SCAN'S COST (2026-10-19): one walk per tree, and a content-addressed cache. A verdict must be the same with
+# or without either.
+# ---------------------------------------------------------------------------------------------
+
+def test_selfcheck_the_single_walk_index_matches_ast_walk_and_the_old_import_search():
+    """`_bfs` is `ast.walk` and `_function_local_import_froms` is the old per-function walk, on source that has
+    imports at every nesting a statement can have (class in function, try/except, match, with, loops)."""
+    import stub_vacuity_scan as scan
+
+    src = textwrap.dedent('''
+        from top import a
+        def f():
+            from m1 import b
+            class C:
+                def g(self):
+                    from m2 import c
+            try:
+                from m3 import d
+            except ImportError:
+                from m4 import e
+            else:
+                from m5 import f_
+            finally:
+                from m6 import g_
+            for i in x:
+                while y:
+                    with z:
+                        match q:
+                            case 1:
+                                from m7 import h
+        class K:
+            from notfn import n
+            def h(self):
+                if t:
+                    from m8 import i_
+        async def af():
+            from m9 import j
+        if cond:
+            from alsotop import k
+    ''')
+    tree = ast.parse(src)
+    assert all(a is b for a, b in zip(scan._bfs(tree), ast.walk(tree)))
+    assert len(scan._bfs(tree)) == len(list(ast.walk(tree)))
+    old = []
+    for fn in [n for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]:
+        old.extend(n for n in ast.walk(fn) if isinstance(n, ast.ImportFrom))
+    assert {n.module for n in scan._function_local_import_froms(tree)} == {n.module for n in old}
+    assert {n.module for n in old} == {"m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9"}
+    own = ast.parse(Path(scan.__file__).read_text())
+    assert [id(n) for n in scan._bfs(own)] == [id(n) for n in ast.walk(own)]
+
+
+_CACHE_TREE = {
+    "pkg/__init__.py": "",
+    "pkg/helpers.py": "def helper():\n    return 'real'\n",
+    "pkg/consumer.py": "from pkg.helpers import helper\n\ndef run():\n    return helper()\n",
+    "pkg/consumer_test.py": (
+        "import pkg.helpers as helpers\n\n"
+        "def test_it(monkeypatch):\n    monkeypatch.setattr(helpers, \"helper\", lambda: \"stub\")\n"
+        "    monkeypatch.setattr(helpers, \"gone\", lambda: 1)\n"),
+}
+
+
+def _cached_verdicts(root: Path, cache: Path):
+    return {(s.module, s.attr): s.verdict for s in scan_tree(root, consumer_index(root, cache), cache) if s.module}
+
+
+def test_selfcheck_a_cached_scan_gives_the_verdicts_of_an_uncached_one_and_never_a_stale_one(tmp_path):
+    """Revert-proof for the cache: cold == warm == uncached; and an EDIT to a module or a test is seen on the very
+    next run (a cache keyed by path or mtime would answer from the old text)."""
+    root = _tree(tmp_path, _CACHE_TREE)
+    cache = tmp_path / "cache"
+    want = {("pkg.helpers", "helper"): "unread", ("pkg.helpers", "gone"): "missing"}
+    assert _verdicts(root) == want
+    assert _cached_verdicts(root, cache) == want            # cold: computes and writes
+    assert len(list(cache.iterdir())) >= 3                 # reads, test sites, module facts (+ bindings when followed)
+    assert _cached_verdicts(root, cache) == want            # warm: answers from the files
+    (root / "pkg" / "consumer.py").write_text("import pkg.helpers as h\n\ndef run():\n    return h.helper()\n")
+    assert _cached_verdicts(root, cache)[("pkg.helpers", "helper")] == "ok"      # the CONSUMER changed
+    (root / "pkg" / "helpers.py").write_text("def other():\n    return 1\n")
+    assert _cached_verdicts(root, cache)[("pkg.helpers", "helper")] == "missing"   # the patched MODULE changed
+    (root / "pkg" / "consumer_test.py").write_text(
+        "import pkg.helpers as helpers\n\ndef test_it(monkeypatch):\n    monkeypatch.setattr(helpers, 'other', 0)\n")
+    assert _cached_verdicts(root, cache) == {("pkg.helpers", "other"): "unread"}   # the TEST changed
+
+
+def test_selfcheck_a_broken_cache_costs_time_never_a_verdict(tmp_path):
+    root = _tree(tmp_path, _CACHE_TREE)
+    want = {("pkg.helpers", "helper"): "unread", ("pkg.helpers", "gone"): "missing"}
+    cache = tmp_path / "cache"
+    assert _cached_verdicts(root, cache) == want
+    for f in cache.iterdir():
+        f.write_text("{ not json")                           # corrupt every file
+    assert _cached_verdicts(root, cache) == want
+    blocker = tmp_path / "a_file"
+    blocker.write_text("")
+    assert _cached_verdicts(root, blocker / "sub") == want    # a cache dir that cannot be created
+
 
 
 @_SKIP

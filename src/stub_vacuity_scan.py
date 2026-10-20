@@ -45,6 +45,10 @@ did not find. Measured 2026-09-07: the search cleared 39 of 43 candidates.
 from __future__ import annotations
 
 import ast
+import hashlib
+import json
+import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -67,6 +71,92 @@ class Site:
     verdict: str       # "ok" | "missing" | "unread" | "skipped"
     reason: str = ""
     consumers: tuple[str, ...] = ()   # non-test modules that reach it as `<module>.<attr>`
+
+
+def _bfs(root: ast.AST) -> list[ast.AST]:
+    """`list(ast.walk(root))`, same breadth-first order, with `iter_child_nodes` / `iter_fields` inlined (their two
+    generator layers were most of the walk's cost: 1.4 M nodes per session)."""
+    out = [root]
+    i = 0
+    ast_node = ast.AST
+    while i < len(out):
+        node = out[i]
+        i += 1
+        for name in node._fields:
+            try:
+                value = getattr(node, name)
+            except AttributeError:
+                continue
+            if isinstance(value, ast_node):
+                out.append(value)
+            elif isinstance(value, list):
+                out.extend(v for v in value if isinstance(v, ast_node))
+    return out
+
+
+class _Nodes:
+    """ONE `ast.walk` per tree, indexed by node class.
+
+    Profiled 2026-10-19: the scan was 12.5 s per session and ~90 % of it was `ast.walk` — the same tree walked
+    five to eight times by `_import_bindings`, `_local_module_aliases` (a walk per fixed-point round),
+    `_qualified_reads` (a walk per function), `_patch_calls` and `_patch_assignments`, each only to pick a few node
+    classes out. Every one of them now asks this index. The lists keep `ast.walk`'s BREADTH-FIRST order (a rebinding
+    later in the file still wins, exactly as before); `imports` is `Import` and `ImportFrom` interleaved in it.
+    """
+
+    __slots__ = ("by_type", "imports", "order")
+
+    def __init__(self, tree: ast.AST):
+        self.by_type: dict[type, list[ast.AST]] = {}
+        self.order: list[ast.AST] = _bfs(tree)
+        self.imports: list[ast.Import | ast.ImportFrom] = []     # Import and ImportFrom, interleaved in walk order
+        for n in self.order:
+            t = type(n)
+            self.by_type.setdefault(t, []).append(n)
+            if t is ast.Import or t is ast.ImportFrom:
+                self.imports.append(n)   # type: ignore[arg-type]
+
+    def of(self, type_: type) -> list:
+        return self.by_type.get(type_, [])
+
+
+_NODE_CACHE: dict[int, tuple[ast.AST, _Nodes]] = {}
+_NODE_CACHE_SIZE = 8      # files are scanned one after another; a few entries cover the interleaved helper parses
+
+
+def _nodes(tree: ast.AST) -> _Nodes:
+    """The tree's `_Nodes` index, built on first use. A small FIFO cache keyed by the tree's id (the entry holds the
+    tree, so the id cannot be reused while it is cached) — NOT an attribute on the tree: `_Nodes` lists the root, and
+    that cycle would leave every tree to the cycle collector."""
+    hit = _NODE_CACHE.get(id(tree))
+    if hit is not None and hit[0] is tree:
+        return hit[1]
+    idx = _Nodes(tree)
+    _NODE_CACHE[id(tree)] = (tree, idx)
+    while len(_NODE_CACHE) > _NODE_CACHE_SIZE:
+        del _NODE_CACHE[next(iter(_NODE_CACHE))]
+    return idx
+
+
+_STMT_LISTS = ("body", "orelse", "finalbody", "handlers", "cases")
+
+
+def _function_local_import_froms(tree: ast.AST) -> list[ast.ImportFrom]:
+    """Every `from M import A` that sits inside a function body (any depth). A STATEMENT-only walk: an import is a
+    statement and statements nest only through these list fields, so the expression subtrees (most of a file) are
+    never visited."""
+    out: list[ast.ImportFrom] = []
+    stack: list[tuple[ast.AST, bool]] = [(tree, False)]
+    while stack:
+        node, in_fn = stack.pop()
+        for field in _STMT_LISTS:
+            for child in getattr(node, field, ()):
+                if isinstance(child, ast.ImportFrom):
+                    if in_fn:
+                        out.append(child)
+                else:
+                    stack.append((child, in_fn or isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))))
+    return out
 
 
 def _dotted(node: ast.AST) -> str | None:
@@ -108,11 +198,11 @@ def _import_bindings(tree: ast.AST, package: str | None = None) -> dict[str, str
     different local aliases for the same name in one file would have to disagree for it to matter.
     """
     out: dict[str, str] = {}
-    for n in ast.walk(tree):
+    for n in _nodes(tree).imports:
         if isinstance(n, ast.Import):
             for a in n.names:
                 out[a.asname or a.name.split(".")[0]] = a.name if a.asname else a.name.split(".")[0]
-        elif isinstance(n, ast.ImportFrom):
+        else:
             mod = _absolute(package, n)
             if mod:
                 for a in n.names:
@@ -132,8 +222,9 @@ def _local_module_aliases(tree: ast.AST, imports: dict[str, str]) -> dict[str, s
     scan goes blind.
     """
     out = dict(imports)
-    for n in ast.walk(tree):
-        if (isinstance(n, ast.Assign) and len(n.targets) == 1
+    assigns = _nodes(tree).of(ast.Assign)
+    for n in assigns:
+        if (len(n.targets) == 1
                 and isinstance(n.targets[0], ast.Name) and isinstance(n.value, ast.Call)
                 and _dotted(n.value.func) in ("importlib.import_module", "import_module")
                 and n.value.args and isinstance(n.value.args[0], ast.Constant)
@@ -141,9 +232,8 @@ def _local_module_aliases(tree: ast.AST, imports: dict[str, str]) -> dict[str, s
             out[n.targets[0].id] = n.value.args[0].value
     for _ in range(3):          # a fixed point in practice; bounded so a cycle cannot hang the gate
         grew = False
-        for n in ast.walk(tree):
-            if not (isinstance(n, ast.Assign) and len(n.targets) == 1
-                    and isinstance(n.targets[0], ast.Name)):
+        for n in assigns:
+            if not (len(n.targets) == 1 and isinstance(n.targets[0], ast.Name)):
                 continue
             src = _dotted(n.value)
             if src is None:
@@ -193,7 +283,7 @@ class _ModuleFacts:
         self.bound: set[str] = set()
         self.read: set[str] = set()
         self.dynamic = False
-        for n in ast.walk(tree):
+        for n in _bfs(tree):
             if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 self.bound.add(n.name)
             elif isinstance(n, ast.Import):
@@ -229,6 +319,41 @@ class _ModuleFacts:
     def reads(self, attr: str) -> bool:
         return self.dynamic or attr in self.read
 
+    def to_data(self) -> dict:
+        return {"bound": sorted(self.bound), "read": sorted(self.read), "dynamic": self.dynamic}
+
+    @classmethod
+    def from_data(cls, data: dict) -> "_ModuleFacts":
+        facts = cls.__new__(cls)
+        facts.bound, facts.read, facts.dynamic = set(data["bound"]), set(data["read"]), bool(data["dynamic"])
+        return facts
+
+
+def _module_facts_data(text: str, pkg: str) -> dict:
+    return _ModuleFacts(ast.parse(text)).to_data()
+
+
+def _import_bindings_data(text: str, pkg: str) -> dict | None:
+    try:
+        return _import_bindings(ast.parse(text), pkg)
+    except SyntaxError:                                         # pragma: no cover - not in tree
+        return None
+
+
+class _Memos(dict):
+    """The per-scan `module_cache`: a dict of ``dotted -> _ModuleFacts`` that also carries the two content-addressed
+    memos for the facts of the modules a patch NAMES (``facts``) and the import bindings `_follow_module_alias`
+    reads (``bindings``). Both are no-ops without a ``cache_dir``."""
+
+    def __init__(self, cache_dir: "Path | None" = None):
+        super().__init__()
+        self.facts = _ContentCache(cache_dir, "module_facts")
+        self.bindings = _ContentCache(cache_dir, "import_bindings")
+
+    def save(self) -> None:
+        self.facts.save()
+        self.bindings.save()
+
 
 def _qualified_reads(tree: ast.AST, package: str | None = None) -> set[str]:
     """Every `<module alias>.<attr>` in a file, expanded to its full dotted path.
@@ -243,16 +368,11 @@ def _qualified_reads(tree: ast.AST, package: str | None = None) -> set[str]:
     """
     aliases = _local_module_aliases(tree, _import_bindings(tree, package))
     out: set[str] = set()
-    for fn in [n for n in ast.walk(tree)
-               if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]:
-        for n in ast.walk(fn):
-            if isinstance(n, ast.ImportFrom):
-                mod = _absolute(package, n)
-                if mod:
-                    out.update(f"{mod}.{a.name}" for a in n.names)
-    for n in ast.walk(tree):
-        if not isinstance(n, ast.Attribute):
-            continue
+    for n in _function_local_import_froms(tree):
+        mod = _absolute(package, n)
+        if mod:
+            out.update(f"{mod}.{a.name}" for a in n.names)
+    for n in _nodes(tree).of(ast.Attribute):
         dotted = _dotted(n)
         if dotted is None:
             continue
@@ -263,24 +383,102 @@ def _qualified_reads(tree: ast.AST, package: str | None = None) -> set[str]:
     return out
 
 
-def consumer_index(src_root: Path) -> dict[str, set[str]]:
+_CACHE_ENV = "GEN3AI_STUB_CACHE_DIR"
+_NO_CACHE_ENV = "GEN3AI_STUB_NO_CACHE"
+_CACHE_MAX_ENTRIES = 6000     # ~4x one tree (732 modules): beyond it the file is rebuilt from the current tree only
+
+
+def default_cache_dir() -> Path | None:
+    """Where the consumer-read cache lives: per USER (``~/.cache/gen3ai/stub_vacuity``, beside the xdist cost table),
+    so every worktree shares it. ``GEN3AI_STUB_CACHE_DIR`` moves it; ``GEN3AI_STUB_NO_CACHE=1`` turns it off."""
+    if os.environ.get(_NO_CACHE_ENV) == "1":
+        return None
+    return Path(os.environ.get(_CACHE_ENV) or Path.home() / ".cache" / "gen3ai" / "stub_vacuity")
+
+
+def _reads_of(text: str, pkg: str) -> list[str] | None:
+    """The qualified reads of one module's source (sorted), or None when it does not parse."""
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return None
+    return sorted(_qualified_reads(tree, pkg))
+
+
+class _ContentCache:
+    """A CONTENT-ADDRESSED memo of a pure function of one file's text: key = sha1(package, text), file = one JSON per
+    (memo name, ENGINE hash).
+
+    A pure function of its key, so a hit is exactly what a miss would compute and nothing can go stale: an edited
+    file hashes to a new key, an edited ENGINE (this file) to a new cache file. Any I/O trouble (no home, a
+    read-only disk, a corrupt file, a concurrent writer) degrades to computing — a cache failure may cost time,
+    never a verdict. Writes are atomic (temp file + rename); two writers racing lose at most each other's new
+    entries."""
+
+    def __init__(self, directory: Path | None, name: str):
+        self.entries: dict = {}
+        self.fresh = False
+        self.used: set[str] = set()
+        self.path: Path | None = None
+        if directory is None:
+            return
+        # the ENGINE is this file's source and the interpreter's `ast` (a parse tree's shape is a Python-version fact)
+        engine = hashlib.sha1(Path(__file__).read_bytes() + sys.version.encode()).hexdigest()[:16]
+        self.path = directory / f"{name}_{engine}.json"
+        try:
+            loaded = json.loads(self.path.read_text())
+            if isinstance(loaded, dict):
+                self.entries = loaded
+        except (OSError, ValueError):
+            self.entries = {}
+
+    def get(self, text: str, pkg: str, compute):
+        if self.path is None:
+            return compute(text, pkg)
+        key = hashlib.sha1(f"{pkg}\0{text}".encode()).hexdigest()
+        self.used.add(key)
+        if key not in self.entries:
+            self.entries[key] = compute(text, pkg)
+            self.fresh = True
+        return self.entries[key]
+
+    def save(self) -> None:
+        if self.path is None or not self.fresh:
+            return
+        keep = self.entries
+        if len(keep) > _CACHE_MAX_ENTRIES:
+            keep = {k: v for k, v in keep.items() if k in self.used}
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.path.with_name(f"{self.path.name}.{os.getpid()}.tmp")
+            tmp.write_text(json.dumps(keep))
+            os.replace(tmp, self.path)
+        except OSError:
+            pass
+
+
+def consumer_index(src_root: Path, cache_dir: Path | None = None) -> dict[str, set[str]]:
     """`"pkg.mod.name"` -> the non-test modules that read it as a qualified attribute.
 
     Non-test on purpose: a patch exists to steer the CODE UNDER TEST, and a fixture reaching the
     same name proves nothing about whether the production path can see the stub.
+
+    ``cache_dir`` (default: none) memoises each module's reads by the hash of its text (:class:`_ReadsCache`); the
+    gate passes :func:`default_cache_dir`, a synthetic tree in a self-check passes nothing.
     """
     out: dict[str, set[str]] = {}
+    cache = _ContentCache(cache_dir, "consumer_reads")
     for p in sorted(src_root.rglob("*.py")):
         if "rust_sim" in p.parts or p.name.endswith("_test.py"):
             continue
-        try:
-            tree = ast.parse(p.read_text())
-        except SyntaxError:
-            continue
         name = str(p.relative_to(src_root)).removesuffix(".py").replace("/", ".")
         pkg = name.rsplit(".", 1)[0] if "." in name else ""
-        for q in _qualified_reads(tree, pkg):
+        reads = cache.get(p.read_text(), pkg, _reads_of)
+        if reads is None:
+            continue
+        for q in reads:
             out.setdefault(q, set()).add(name)
+    cache.save()
     return out
 
 
@@ -292,7 +490,7 @@ def _module_path(src_root: Path, dotted: str) -> Path | None:
     return None
 
 
-def _follow_module_alias(src_root: Path, dotted: str) -> str:
+def _follow_module_alias(src_root: Path, dotted: str, memos: "_ContentCache | None" = None) -> str:
     """`agents.training.snapshot_ladder.elo_mod` -> `agents.training.elo`.
 
     A test may reach a module through ANOTHER module's alias for it
@@ -309,10 +507,9 @@ def _follow_module_alias(src_root: Path, dotted: str) -> str:
             mpath = _module_path(src_root, head)
             if mpath is None:
                 continue
-            try:
-                binds = _import_bindings(ast.parse(mpath.read_text()),
-                                        head.rsplit(".", 1)[0] if "." in head else "")
-            except SyntaxError:                                 # pragma: no cover - not in tree
+            binds = (memos or _ContentCache(None, "")).get(
+                mpath.read_text(), head.rsplit(".", 1)[0] if "." in head else "", _import_bindings_data)
+            if binds is None:                                   # pragma: no cover - not in tree
                 return dotted
             if rest[0] in binds:
                 dotted = ".".join([binds[rest[0]]] + rest[1:])
@@ -335,9 +532,7 @@ def _split_target(src_root: Path, dotted: str) -> tuple[str, str] | None:
 
 def _patch_calls(tree: ast.AST):
     """Every call that installs a stub, with the spelling it used."""
-    for n in ast.walk(tree):
-        if not isinstance(n, ast.Call):
-            continue
+    for n in _nodes(tree).of(ast.Call):
         f = n.func
         if isinstance(f, ast.Attribute) and f.attr in _SETATTR_ATTRS:
             base = _dotted(f.value)
@@ -366,81 +561,100 @@ def _patch_assignments(tree: ast.AST):
     Only an assignment whose TARGET HEAD resolves to a module of ours is yielded; `self.x = 1` and
     every ordinary local attribute assignment resolve to nothing and never reach the scan.
     """
-    for n in ast.walk(tree):
-        if not isinstance(n, ast.Assign):
-            continue
+    for n in _nodes(tree).of(ast.Assign):
         for t in n.targets:
             if isinstance(t, ast.Attribute):
                 yield n, t
 
 
-def scan_file(path: Path, src_root: Path, module_cache: dict,
-              consumers: dict[str, set[str]] | None = None) -> list[Site]:
-    rel = str(path.relative_to(src_root.parent))
+def _extract_file(text: str, pkg: str) -> dict:
+    """Everything the verdicts need from ONE test file's source, as plain JSON data: a pure function of
+    ``(text, pkg)``, hence the memo's value (:class:`_ContentCache`). No filesystem question is asked here — whether
+    a target is a module of ours, and what it reads, is :func:`scan_file`'s job and is never cached."""
     try:
-        tree = ast.parse(path.read_text())
+        tree = ast.parse(text)
     except SyntaxError as e:                                    # pragma: no cover - not in tree
-        return [Site(rel, getattr(e, "lineno", 0) or 0, "-", "-", None, None, "skipped",
-                     f"unparseable: {e}")]
-    pkg = str(path.relative_to(src_root)).removesuffix(".py").replace("/", ".")
-    pkg = pkg.rsplit(".", 1)[0] if "." in pkg else ""
+        return {"syntax_error": [getattr(e, "lineno", 0) or 0, str(e)]}
     aliases = _local_module_aliases(tree, _import_bindings(tree, pkg))
-    sites: list[Site] = []
-
-    for call, spelling, form in _patch_calls(tree):
-        kwargs = {k.arg for k in call.keywords if k.arg}
-        soft = bool(kwargs & {"raising", "create", "new_callable", "autospec"})
-        dotted = attr = None
+    calls: list[list] = []
+    for call, spelling, _form in _patch_calls(tree):
+        soft = bool({k.arg for k in call.keywords if k.arg} & {"raising", "create", "new_callable", "autospec"})
         shown = ", ".join(ast.unparse(a) for a in call.args[:2])
-
-        if call.args and isinstance(call.args[0], ast.Constant) and isinstance(
-                call.args[0].value, str):
-            full = call.args[0].value
-            split = _split_target(src_root, full)
-            if split is None:
-                sites.append(Site(rel, call.lineno, spelling, shown, None, None, "skipped",
-                                  f"not a module of ours: {full!r}"))
-                continue
-            dotted, attr = split
+        head = [call.lineno, spelling, shown, soft]
+        if call.args and isinstance(call.args[0], ast.Constant) and isinstance(call.args[0].value, str):
+            calls.append(head + ["full", call.args[0].value, ""])
         elif len(call.args) >= 2 and isinstance(call.args[1], ast.Constant) and isinstance(
                 call.args[1].value, str):
             base = _dotted(call.args[0])
             if base is None:
-                sites.append(Site(rel, call.lineno, spelling, shown, None, None, "skipped",
-                                  "target object is an expression, not a name"))
+                calls.append(head + ["skip", "target object is an expression, not a name", ""])
+            else:
+                calls.append(head + ["obj", base, call.args[1].value])
+        else:
+            calls.append(head + ["skip", "no literal target", ""])
+    assigns: list[list] = []
+    for assign, target in _patch_assignments(tree):
+        base = _dotted(target.value)
+        if base is not None:
+            assigns.append([assign.lineno, base, target.attr])
+    return {"aliases": aliases, "calls": calls, "assigns": assigns}
+
+
+def _bindings_memo(module_cache: dict) -> "_ContentCache | None":
+    return getattr(module_cache, "bindings", None)
+
+
+def scan_file(path: Path, src_root: Path, module_cache: dict,
+              consumers: dict[str, set[str]] | None = None,
+              extract_cache: "_ContentCache | None" = None) -> list[Site]:
+    rel = str(path.relative_to(src_root.parent))
+    pkg = str(path.relative_to(src_root)).removesuffix(".py").replace("/", ".")
+    pkg = pkg.rsplit(".", 1)[0] if "." in pkg else ""
+    text = path.read_text()
+    facts = (extract_cache or _ContentCache(None, "")).get(text, pkg, _extract_file)
+    if "syntax_error" in facts:                                 # pragma: no cover - not in tree
+        lineno, msg = facts["syntax_error"]
+        return [Site(rel, lineno, "-", "-", None, None, "skipped", f"unparseable: {msg}")]
+    aliases = facts["aliases"]
+    sites: list[Site] = []
+
+    for lineno, spelling, shown, soft, kind, first, second in facts["calls"]:
+        if kind == "skip":
+            sites.append(Site(rel, lineno, spelling, shown, None, None, "skipped", first))
+            continue
+        if kind == "full":
+            split = _split_target(src_root, first)
+            if split is None:
+                sites.append(Site(rel, lineno, spelling, shown, None, None, "skipped",
+                                  f"not a module of ours: {first!r}"))
                 continue
-            head, _, rest = base.partition(".")
+            dotted, attr = split
+        else:
+            head, _, rest = first.partition(".")
             resolved = _follow_module_alias(
-                src_root, aliases.get(head, head) + (f".{rest}" if rest else ""))
+                src_root, aliases.get(head, head) + (f".{rest}" if rest else ""), _bindings_memo(module_cache))
             if _module_path(src_root, resolved) is None:
-                sites.append(Site(rel, call.lineno, spelling, shown, None, None, "skipped",
+                sites.append(Site(rel, lineno, spelling, shown, None, None, "skipped",
                                   f"target {resolved!r} is not a module of ours"))
                 continue
-            dotted, attr = resolved, call.args[1].value
-        else:
-            sites.append(Site(rel, call.lineno, spelling, shown, None, None, "skipped",
-                              "no literal target"))
-            continue
-
-        sites.append(_judge(rel, call.lineno, spelling, shown, src_root, dotted, attr,
+            dotted, attr = resolved, second
+        sites.append(_judge(rel, lineno, spelling, shown, src_root, dotted, attr,
                             module_cache, consumers, soft))
 
     seen: set[tuple[str, str]] = set()
-    for assign, target in _patch_assignments(tree):
-        base = _dotted(target.value)
-        if base is None:
-            continue
+    for lineno, base, target_attr in facts["assigns"]:
         head, _, rest = base.partition(".")
         if head not in aliases:
             continue                      # a local object, not a module of ours — not our subject
-        resolved = _follow_module_alias(src_root, aliases[head] + (f".{rest}" if rest else ""))
+        resolved = _follow_module_alias(src_root, aliases[head] + (f".{rest}" if rest else ""),
+                                        _bindings_memo(module_cache))
         if _module_path(src_root, resolved) is None:
             continue
-        if (resolved, target.attr) in seen:
+        if (resolved, target_attr) in seen:
             continue                      # the save/restore pair names one target, not two
-        seen.add((resolved, target.attr))
-        sites.append(_judge(rel, assign.lineno, "<assignment>",
-                            f"{base}.{target.attr} = …", src_root, resolved, target.attr,
+        seen.add((resolved, target_attr))
+        sites.append(_judge(rel, lineno, "<assignment>",
+                            f"{base}.{target_attr} = …", src_root, resolved, target_attr,
                             module_cache, consumers, soft=False))
     return sites
 
@@ -456,7 +670,9 @@ def _judge(rel: str, lineno: int, spelling: str, shown: str, src_root: Path,
     mpath = _module_path(src_root, dotted)
     assert mpath is not None
     if dotted not in module_cache:
-        module_cache[dotted] = _ModuleFacts(ast.parse(mpath.read_text()))
+        memo = getattr(module_cache, "facts", None) or _ContentCache(None, "")
+        pkg = dotted.rsplit(".", 1)[0] if "." in dotted else ""
+        module_cache[dotted] = _ModuleFacts.from_data(memo.get(mpath.read_text(), pkg, _module_facts_data))
     facts = module_cache[dotted]
 
     if not facts.reads(attr) and attr not in facts.bound:
@@ -469,18 +685,22 @@ def _judge(rel: str, lineno: int, spelling: str, shown: str, src_root: Path,
     return Site(rel, lineno, spelling, shown, dotted, attr, "ok")
 
 
-def scan_tree(src_root: Path, consumers: dict[str, set[str]] | None = None) -> list[Site]:
+def scan_tree(src_root: Path, consumers: dict[str, set[str]] | None = None,
+              cache_dir: Path | None = None) -> list[Site]:
     """Every patch site under ``src_root``. ``consumers`` is ``consumer_index(src_root)`` when the caller
-    already built it (the gate's module fixture shares ONE index with its meta test: the index parses every
-    non-test module, ~half the gate's cost)."""
-    cache: dict = {}
+    already built it (the gate's module fixture shares ONE index with its meta test). ``cache_dir`` memoises each
+    test file's extraction by the hash of its text (:class:`_ContentCache`; verdicts are always recomputed)."""
+    cache = _Memos(cache_dir)
     if consumers is None:
-        consumers = consumer_index(src_root)
+        consumers = consumer_index(src_root, cache_dir)
+    extract_cache = _ContentCache(cache_dir, "test_sites")
     out: list[Site] = []
     for p in sorted(src_root.rglob("*_test.py")):
         if "rust_sim" in p.parts:
             continue
-        out.extend(scan_file(p, src_root, cache, consumers))
+        out.extend(scan_file(p, src_root, cache, consumers, extract_cache))
+    extract_cache.save()
+    cache.save()
     return out
 
 
