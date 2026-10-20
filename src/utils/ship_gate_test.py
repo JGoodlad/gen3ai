@@ -71,3 +71,25 @@ def test_the_gate_runs_with_the_8s_bar_on(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.delenv("GEN3AI_SHIP_BAR", raising=False)
     assert SG.main(["run"]) == 0
     assert seen["env"]["GEN3AI_SHIP_BAR"] == "1" and seen["env"]["GEN3AI_SHIP_BAR_REPORT"] == SG.BAR_REPORT
+
+
+def test_the_session_warms_the_rust_binaries_before_its_first_test(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A cargo build paid inside a test body is that test's cost to the 8 s bar (2026-10-19: a 2 s test read
+    22 s). The gate switches the root conftest's warm-up on (`$GEN3AI_SHIP_WARM`); it runs inside the gate's
+    own lock / slot / niceness, so the gate argv is unchanged."""
+    seen = {}
+    monkeypatch.setattr(SG, "resolve_shape", lambda: SG.Shape({}, None, 0, 6))
+    monkeypatch.setattr(SG.subprocess, "call", lambda cmd, cwd, env: seen.update(env=env) or 0)
+    monkeypatch.delenv("GEN3AI_SHIP_WARM", raising=False)
+    assert SG.main(["run"]) == 0
+    assert seen["env"]["GEN3AI_SHIP_WARM"] == "1"
+
+
+def test_the_warm_up_names_a_failed_build_and_counts_it() -> None:
+    from utils import ship_gate_warm as W
+
+    def boom():
+        raise RuntimeError("no cargo")
+    out = []
+    assert W.warm([("ok", lambda: None), ("bad", boom)], emit=out.append) == 1
+    assert "ok: ready" in out[0] and "bad: NOT BUILT" in out[1] and "no cargo" in out[1]

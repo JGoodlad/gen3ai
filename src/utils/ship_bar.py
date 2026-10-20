@@ -8,12 +8,33 @@ Nothing held the line afterwards: new tests drifted over (``world_legality_integ
 and each one is minutes of every ship gate, forever. The 30 s quiet-box tier-budget guard in the root
 conftest is a backstop for MINUTES-long tests; this is the ship gate's own, tighter line.
 
-WHAT IS MEASURED. Per test, the SUM of its setup + call + teardown durations (a module fixture's cost
-lands on the test that pays it, as the tiering rule counts it), on the xdist CONTROLLER (or a serial
-session), and — only for a test at or over the bar — the contention over that test's own window
+WHAT IS MEASURED. Per test, the SUM of its setup + call + teardown durations MINUS the setup and teardown
+of every fixture wider than a function (see SCOPE below), on the xdist CONTROLLER (or a serial session), and
+— only for a test at or over the bar — the contention over that test's own window
 (``utils.cpu_meter``, the root conftest's meter: external load only, the session's own tree
 subtracted). Exempt: the COST markers (``slow``, ``e2e``, ``benchmark``), ``static`` (the static
 gates run in every tier by definition) and ``linchpin`` (kept routine at any cost, each with a reason).
+
+SCOPE (2026-10-19, after a ship gate failed ``live_side_test`` on a cost that was not the test's). pytest
+charges a module- / class- / package- / session-scoped fixture's setup to whichever test happens to request it
+FIRST, and its teardown to the LAST test of the scope, so a verdict that sums per test depends on which tests
+a module holds, their order and — under xdist — which worker got them (rule 8). So the cost is attributed by
+SCOPE, timed where pytest runs it (the root conftest's ``pytest_fixture_setup`` wrapper, plus a pair of
+finalizer markers around the fixture's own teardown):
+
+* a FUNCTION-scoped fixture is part of the test that asks for it (it counts toward that test, as before);
+* a fixture of any wider scope is taken OFF the test and charged to its SCOPE OWNER — the module (a class- or
+  package-scoped one: its class / package; the session: ``(session)``) — as one ROW per owner: the sum of its
+  fixtures' setup and teardown seconds, each fixture's cost being its MAX over xdist workers (``--dist load``
+  can split a module over workers, each paying the fixture; a max does not depend on the split);
+* an owner row is judged ONCE, by :func:`judge`, with the SAME bar and margins as a test (a module's shared
+  setup is as much of the ship gate's wall as a test of that cost: the tiering rule marks the WHOLE file
+  ``slow`` when a module fixture is what costs), over the seconds-weighted contention of its fixtures' own
+  windows. An owner is exempt when the test that carried the cost was (``slow`` / ``e2e`` / ...).
+
+The same tree, the same verdicts, whatever the order or the worker split: ``ship_bar_test.py`` proves it in
+child sessions. NOT covered: a one-off cost paid INSIDE a test body (a lazy import, a lazy ``cargo build``)
+is the test's by construction; ``ship_gate.py`` warms the Rust binaries before the session for that reason.
 
 THE DECISION (:func:`judge`), deterministic by construction (standing rule 8):
 
@@ -43,8 +64,9 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 ENABLE_ENV = "GEN3AI_SHIP_BAR"
 BAR_ENV = "GEN3AI_SHIP_BAR_S"
@@ -81,6 +103,53 @@ def judge(total_s: float, factor: Optional[float], bar: Optional[float] = None) 
     return "fail" if total_s >= FAIL_MARGIN * t else "warn"
 
 
+#: Fixture scopes wider than a function: their setup / teardown is the SCOPE OWNER's, never one test's.
+SESSION_OWNER = "(session)"
+
+
+class ScopedTimer:
+    """Worker-side half: times the setup and the teardown of every WIDE-scoped fixture and parks the events
+    until the next report is built, which carries them to the controller (``report.gen3ai_scoped``, a list of
+    JSON-safe dicts: ``scope``, ``owner``, ``fixture``, ``phase``, ``s``, ``start``, ``stop``, ``pid``).
+
+    The root conftest drives it: its ``pytest_fixture_setup`` wrapper calls :meth:`begin` / :meth:`end`, and
+    ``pytest_runtest_makereport`` calls :meth:`drain`. Teardown is timed by two finalizer markers: one added
+    BEFORE the fixture function runs (so it runs LAST in pytest's LIFO ``FixtureDef.finish``, after the
+    generator's own teardown) and one added AFTER (so it runs FIRST, right after the dependents' ``finish``,
+    which registered later still): the span between them is that fixture's OWN teardown.
+    """
+
+    def __init__(self) -> None:
+        self.pending: List[dict] = []
+
+    def _event(self, scope: str, owner: str, fixture: str, phase: str, t0: float, t1: float) -> None:
+        self.pending.append({"scope": scope, "owner": owner, "fixture": fixture, "phase": phase,
+                             "s": max(0.0, t1 - t0), "start": t0, "stop": t1, "pid": os.getpid()})
+
+    def begin(self, fixturedef: Any, request: Any) -> tuple:
+        scope = str(fixturedef.scope)
+        owner = SESSION_OWNER if scope == "session" else (getattr(request.node, "nodeid", "") or SESSION_OWNER)
+        name = str(fixturedef.argname)
+        span: Dict[str, float] = {}
+
+        def end_marker() -> None:           # runs LAST: after the fixture's own teardown
+            if "t0" in span:
+                self._event(scope, owner, name, "teardown", span["t0"], time.time())
+
+        fixturedef.addfinalizer(end_marker)
+        return (scope, owner, name, span, fixturedef, time.time())
+
+    def end(self, token: tuple, ok: bool) -> None:
+        scope, owner, name, span, fixturedef, t0 = token
+        self._event(scope, owner, name, "setup", t0, time.time())
+        if ok:
+            fixturedef.addfinalizer(lambda: span.__setitem__("t0", time.time()))   # runs FIRST
+
+    def drain(self) -> List[dict]:
+        out, self.pending = self.pending, []
+        return out
+
+
 @dataclass
 class _Acc:
     total: float = 0.0
@@ -99,17 +168,29 @@ class ShipBar:
     acc: Dict[str, _Acc] = field(default_factory=dict)
     judged: List[Tuple[str, str, float, Optional[float], str]] = field(default_factory=list)
     report_rows: List[dict] = field(default_factory=list)
+    #: (scope, owner, fixture, phase) -> [(seconds, start, stop, pid)] over every worker's copy, non-exempt only
+    scoped: Dict[Tuple[str, str, str, str], List[Tuple[float, float, float, Optional[int]]]] = field(
+        default_factory=dict)
+    _finalized: bool = False
 
-    def add(self, report) -> None:
+    def add(self, report: Any) -> None:
         a = self.acc.setdefault(report.nodeid, _Acc())
-        a.total += float(getattr(report, "duration", 0.0) or 0.0)
+        exempt = any(m in report.keywords for m in EXEMPT_MARKERS)
+        wide = 0.0
+        for e in getattr(report, "gen3ai_scoped", None) or ():
+            wide += float(e["s"])
+            if not exempt:
+                key = (e["scope"], e["owner"], e["fixture"], e["phase"])
+                self.scoped.setdefault(key, []).append((float(e["s"]), float(e["start"]), float(e["stop"]),
+                                                        e.get("pid")))
+        a.total += max(0.0, float(getattr(report, "duration", 0.0) or 0.0) - wide)
         st, sp = getattr(report, "start", None), getattr(report, "stop", None)
         if st is not None:
             a.start = st if a.start is None else min(a.start, st)
         if sp is not None:
             a.stop = sp if a.stop is None else max(a.stop, sp)
         a.pid = getattr(report, "gen3ai_pid", a.pid)
-        if any(m in report.keywords for m in EXEMPT_MARKERS):
+        if exempt:
             a.exempt = True
         if report.when == "teardown":
             self._finish(report.nodeid, self.acc.pop(report.nodeid))
@@ -133,15 +214,63 @@ class ShipBar:
         if verdict != "ok":
             self.judged.append((nodeid, verdict, a.total, factor, desc))
 
+    def finalize(self) -> None:
+        """Judge every scope owner's row ONCE (idempotent; call after the last report). See SCOPE above."""
+        if self._finalized:
+            return
+        self._finalized = True
+        b = bar_s()
+        owners: Dict[Tuple[str, str], Dict[Tuple[str, str], Tuple[float, float, float, Optional[int]]]] = {}
+        for (scope, owner, fixture, phase), evs in self.scoped.items():
+            worst = max(evs, key=lambda e: e[0])       # a max over workers: independent of the split
+            owners.setdefault((scope, owner), {})[(fixture, phase)] = worst
+        for (scope, owner), fx in sorted(owners.items()):
+            total = sum(w[0] for w in fx.values())
+            if total < b / 2:
+                continue
+            factor: Optional[float] = None
+            desc = ""
+            if total >= b:
+                readings = []
+                for (_f, _p), (s_, st, sp, pid) in fx.items():
+                    if s_ < b / 8:
+                        continue
+                    try:
+                        readings.append((s_, self.window(st, sp, pid)))
+                    except Exception:            # noqa: BLE001 — an unreadable window is a WARN, never a crash
+                        readings.append((s_, None))
+                factors: List[Tuple[float, Optional[float]]] = [(s_, getattr(r, "factor", None))
+                                                                for s_, r in readings]
+                known = [(s_, f) for s_, f in factors if f is not None]
+                if factors and len(known) == len(factors):
+                    wsum = sum(s_ for s_, _ in known)
+                    factor = sum(s_ * f for s_, f in known) / wsum if wsum else None
+                big = max(readings, key=lambda x: x[0], default=None)
+                if big is not None and big[1] is not None and hasattr(big[1], "describe"):
+                    desc = big[1].describe()
+                else:
+                    desc = "contention UNREADABLE for this window"
+            verdict = judge(total, factor, b)
+            parts = ", ".join(f"{f}/{p} {w[0]:.1f}s"
+                              for (f, p), w in sorted(fx.items(), key=lambda kv: -kv[1][0]))
+            label = f"{owner} [{scope}-scoped fixtures: {parts}]"
+            self.report_rows.append({"nodeid": label, "scope": scope, "owner": owner, "total_s": round(total, 3),
+                                     "factor": factor, "verdict": verdict})
+            if verdict != "ok":
+                self.judged.append((label, verdict, total, factor, desc))
+
     @property
     def failed(self) -> List[tuple]:
+        self.finalize()
         return [j for j in self.judged if j[1] == "fail"]
 
     def lines(self) -> List[str]:
+        self.finalize()
         if not self.judged:
             return []
         b = bar_s()
-        out = [f"{len(self.failed)} routine test(s) FAIL and {len(self.judged) - len(self.failed)} WARN the "
+        out = [f"{len(self.failed)} routine test(s) / scope owner(s) FAIL and "
+               f"{len(self.judged) - len(self.failed)} WARN the "
                f"ship gate's {b:.0f} s bar (setup + call + teardown; bar x max(1, factor / {REF_FACTOR}); FAIL at "
                f">= {FAIL_MARGIN:.0f}x, the band between is rule 8's margin — named, never a verdict):"]
         for nodeid, verdict, total, factor, desc in sorted(self.judged, key=lambda j: -j[2]):
@@ -149,8 +278,10 @@ class ShipBar:
             out.append(f"  {total:7.1f}s  {verdict.upper():4}  {f}  {nodeid}")
             if desc:
                 out.append(f"           window: {desc}")
-        out.append("Mark each FAIL `slow` with a `# ship gate (<date>): N s beside a live run` comment (the "
-                   "WHOLE file when a module fixture's cost would move onto the next test), or make it faster "
+        out.append("A row naming `[<scope>-scoped fixtures: ...]` is a SCOPE OWNER's shared fixture cost (charged to "
+                   "its module / class / session, never to one test): mark the WHOLE file `slow`, or make the "
+                   "fixture cheaper. Mark each other FAIL `slow` with a `# ship gate (<date>): N s beside a live "
+                   "run` comment, or make it faster "
                    "(designs/ops/testing.md \"The SHIP GATE\" — the 8 s bar). A WARN that repeats is the same "
                    "test, earlier.")
         return out
@@ -159,6 +290,7 @@ class ShipBar:
         path = os.environ.get(REPORT_ENV)
         if not path:
             return None
+        self.finalize()
         rows = sorted(self.report_rows, key=lambda r: -r["total_s"])
         with open(path, "w") as f:
             json.dump({"schema": "gen3_ship_bar_report_v1", "bar_s": bar_s(), "ref_factor": REF_FACTOR,

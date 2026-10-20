@@ -10,8 +10,11 @@ What it decides is only the SHAPE, from the box:
   those cpus;
 * no run is live ⇒ the quiet policy: ``-n`` = :data:`QUIET_WORKERS`, normal priority, no pin.
 
-Always through ``scripts/ops/gate_lock.sh`` (one gate at a time) and ``scripts/ops/mem_cap.sh``, and
-always with ``CUDA_VISIBLE_DEVICES=""`` (standing rule 5: a gate is never a GPU lease). Always with THE
+The session WARMS the Rust binaries the tests resolve lazily before its first test (``$GEN3AI_SHIP_WARM=1``,
+the root conftest's ``pytest_sessionstart`` -> ``utils.ship_gate_warm``: a cargo build paid inside a test body
+is that test's cost to the bar; one gate-lock slot covers both).
+
+Always through ``scripts/ops/gate_lock.sh`` (one gate at a time) and ``scripts/ops/mem_cap.sh``, and always with ``CUDA_VISIBLE_DEVICES=""`` (standing rule 5: a gate is never a GPU lease). Always with THE
 8 s BAR on (``$GEN3AI_SHIP_BAR=1``, ``utils.ship_bar``): a routine test over the bar the re-tier set is
 named, and one far over it (>= 2x the contention-stretched bar) FAILS the gate; every test at or over
 half the bar is written to :data:`BAR_REPORT` for calibration.
@@ -116,7 +119,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if dry:
         return 0
     os.makedirs(os.path.dirname(BAR_REPORT), exist_ok=True)
-    env = dict(os.environ, CUDA_VISIBLE_DEVICES="", GEN3AI_SHIP_BAR="1", GEN3AI_SHIP_BAR_REPORT=BAR_REPORT)
+    env = dict(os.environ, CUDA_VISIBLE_DEVICES="", GEN3AI_SHIP_BAR="1", GEN3AI_SHIP_BAR_REPORT=BAR_REPORT,
+               GEN3AI_SHIP_WARM="1")
     t0 = time.time()
     rc = subprocess.call(cmd, cwd=str(repo_path()), env=env)
     print(f"[ship_gate] exit {rc} after {(time.time() - t0) / 60:.1f} min wall (queue wait included; "

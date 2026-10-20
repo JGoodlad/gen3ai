@@ -406,6 +406,28 @@ is rule 8's exclusion margin, not a coin flip. A warn-only list is how the tree 
 test at or over half the bar is written to `~/.cache/gen3ai/ship_bar_last.json` (factor and verdict) for the
 next calibration. Tests: `src/utils/ship_bar_test.py` (a child session over the real conftest).
 
+**The bar attributes a fixture's cost by SCOPE** (2026-10-19, rule 8). pytest charges a module- / class- /
+package- / session-scoped fixture's setup to the first test that asks for it and its teardown to the last, so a
+per-test sum gave a verdict that depended on test order and the xdist split. The root conftest's
+`pytest_fixture_setup` wrapper (`utils.ship_bar.ScopedTimer`) times every fixture wider than a function (setup,
+and teardown via a pair of finalizer markers) and takes it OFF the test: a **function-scoped** fixture still
+counts toward its test; a **wider** one is charged to its SCOPE OWNER (module; class / package for those scopes;
+`(session)`) as ONE row per owner, the sum of its fixtures' setup + teardown (each fixture's MAX over xdist
+workers, so a `--dist load` split of the module cannot change it), judged ONCE by the same bar and margins as a
+test, over the seconds-weighted contention of the fixtures' own windows; an owner is exempt when the test that
+carried the cost was (`slow` / `e2e` / ...). The section then names `<module> [module-scoped fixtures:
+<name>/setup 21.9s, ...]`: the fix is the tiering rule's — mark the WHOLE file `slow`, or make the fixture
+cheaper. Proof the verdict does not depend on distribution:
+`ship_bar_test::test_a_module_fixtures_cost_is_the_modules_in_every_order_and_split` (child sessions in
+definition order, reversed order and `-n 2 --dist load` name the same two rows; it fails on revert).
+**What scope cannot fix: a cost paid INSIDE a test body** (a lazy import, a lazy `cargo build`) is the test's by
+construction. The ship gate therefore WARMS the Rust binaries before the first test
+(`utils.ship_gate_warm`, called by the root conftest's `pytest_sessionstart` when `$GEN3AI_SHIP_WARM=1`, which
+`ship_gate.sh` sets: inside the gate's own lock, heavy-job slot and niceness): on 2026-10-19
+`live_side_test::test_a_bot_client_never_forfeits_and_reports_no_argmax` read 22.1 s at x2.42 although the file
+has NO fixture and the test costs 2.2 s warm — `BotReader` resolves `bot_reader` with an incremental
+`cargo build` in the test's own body, the first time on a moved tree.
+
 **LINCHPINS — kept routine at any cost** (each carries a `# LINCHPIN` comment; add one only with a reason a
 whole-repo red must block every ship): `learner_golden_test::test_the_production_golden_is_the_bf16_update_…`
 (the production update, bit for bit), `paths_test::test_no_module_hardcodes_an_absolute_home_path` (a

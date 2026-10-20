@@ -488,7 +488,37 @@ def pytest_runtest_makereport(item, call):
     (the attribute rides xdist's report serialization untouched)."""
     rep = yield
     rep.gen3ai_pid = os.getpid()
+    if _scoped_timer["t"] is not None:       # the 8 s bar's wide-scoped fixture events ride this report
+        rep.gen3ai_scoped = _scoped_timer["t"].drain()
     return rep
+
+
+# --- THE 8 s BAR's fixture-SCOPE attribution (`utils.ship_bar`, SCOPE): time every wider-than-function fixture
+# where pytest runs it, so its cost is charged to the module / class / session, never to whichever test
+# happened to ask first (or last) on whichever xdist worker. On only when the bar is.
+_scoped_timer = {"t": None}
+
+
+def _scoped_timer_obj():
+    if _scoped_timer["t"] is None and os.environ.get("GEN3AI_SHIP_BAR", "") not in ("", "0"):
+        from utils.ship_bar import ScopedTimer
+        _scoped_timer["t"] = ScopedTimer()
+    return _scoped_timer["t"]
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_fixture_setup(fixturedef, request):
+    timer = _scoped_timer_obj()
+    if timer is None or fixturedef.scope == "function":
+        return (yield)
+    token = timer.begin(fixturedef, request)
+    ok = False
+    try:
+        result = yield
+        ok = True
+        return result
+    finally:
+        timer.end(token, ok)
 
 
 def _window_reading(report):
@@ -625,6 +655,8 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
                 f"{e[0].split('::')[-1]} {e[1]:.1f}s @x{e[2].factor:.2f}" if e[2] is not None
                 else f"{e[0].split('::')[-1]} {e[1]:.1f}s" for e in top))
     bar = _ship_bar["bar"]
+    if bar is not None:
+        bar.finalize()                    # the scope owners' rows (utils.ship_bar, SCOPE)
     if bar is not None and bar.judged:
         terminalreporter.section("SHIP GATE 8 s BAR", red=bool(bar.failed))
         for line in bar.lines():
@@ -819,6 +851,12 @@ def pytest_sessionstart(session):
         _refuse_unfinished_checkout()
     _refuse_an_unimportable_torch_state_guard()
     _meter["worker"] = _is_xdist_worker(session.config)
+    if not _meter["worker"] and os.environ.get("GEN3AI_SHIP_WARM", "") not in ("", "0"):
+        # THE SHIP GATE (scripts/ops/ship_gate.sh) builds the Rust binaries the tests resolve lazily BEFORE
+        # the first test, once, under its own gate-lock slot: a `cargo build` paid inside a test body is that
+        # test's cost to the 8 s bar (utils.ship_gate_warm). Controller / sole process only.
+        from utils.ship_gate_warm import warm
+        warm(emit=lambda m: sys.stderr.write(m + "\n"))
     if not _meter["worker"]:
         _start_meter()
 
