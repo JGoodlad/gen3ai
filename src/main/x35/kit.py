@@ -16,13 +16,17 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   exploiter finals (path, step, sha256), refusing a missing or short final. Phase 2 (+20M): ``a3`` / ``a6`` carry
   those finals as ``--stable-opponents`` at share 0.4 with ``--stable-opponent-pfsp`` (the registered round-1 B
   recipe), seeds 3501-3505, b-OFF = C0;
-* toy (``--behaviour-check fatal``, as X34; +70M; the X34 toy extras): ``toy_c0``, ``toy_a1``, ``toy_a2``.
+* toy (``--behaviour-check warn`` under X34's registered GIGO ceilings, C3, orchestrator 2026-10-19; +70M; the X34
+  toy extras): ``toy_c0``, ``toy_a1``, ``toy_a2``, and ``toy_x47`` -- X47 / depth growth (``design_bot_ideas_screen.md``
+  §2.1), the toy C0 argv + the ONE lever ``--grow trunk_layers=4`` (seeds 3601-3603), read against ``toy_c0``.
 
     python -m main.x35.kit describe --arm a1 --seed 3501 --call <R_production.json> [--phase1 <record>]
     python -m main.x35.kit phase1-record --arm a3 --call <R_production.json> --out <stage>/phase1_a3.json
     python -m main.x35.kit verify-phase1 <stage>/phase1_a3.json
     python -m main.x35.kit live                    # exit 1 while any training run is live (pre-check 1)
     python -m main.x35.kit disk --required-gib 20.68 [--thinning]   # pre-check 8 (F22)
+    python -m main.x35.kit validate-run --arm toy_x47 --seed 3601 --call <R_toy.json> --dryrun F --checkargs F \\
+        --rc-dryrun 0 --rc-checkargs 0     # ``validate_batch1.sh``'s verdict on one argv's transcripts (exit 1 = FAIL)
 """
 from __future__ import annotations
 
@@ -52,6 +56,19 @@ TOY_EXTRAS = ["--snapshot-ladder-games", "0", "--supply-starve-cycles", "self_pl
 #: D1 / X38's ONE lever (``design_diversity_teams_opponents.md`` §4.2): half of each side's draws from the pin-safe
 #: forum corpus (``utils.team_corpora``, tier ABC = 2,424 teams), both sides; eval stays on the pool.
 D1_LEVER = ("--team-mix", "w_forum_v1@ABC:0.5", "--team-mix-sides", "both")
+#: X47's ONE lever (``design_bot_ideas_screen.md`` §2.1; B-GROW, T64): the toy's 2 attention rounds become 4 at the
+#: fork, the 2 new rounds identity-init, so the grown network starts as T*'s function bit for bit (the child refuses
+#: to start otherwise: ``FATAL_CONFIG``). ``--dry-run`` prints ``grow : DECLARED trunk_layers 2 -> 4``.
+X47_LEVER = ("--grow", "trunk_layers=4")
+#: What ``checkargs`` / ``--dry-run`` print for it ("DECLARED <this> (parent from its model_config.json)").
+X47_GROWTH = "trunk_layers 2 -> 4"
+#: C3 (orchestrator, 2026-10-19): the toy arms run ``--behaviour-check warn`` (K9(b)), as T*'s own run X34 does
+#: (``x34_toy_deep_stage_2026-10-17/STAGED_LAUNCH.md`` §7, c9516bac / 96c663d4). The mechanism is the flag plus
+#: ceilings READ BY HAND (``main.ops.tb_read``, at every restart and daily); the trainer enforces none: STOP the arm on
+#: any update with judged max >= 1e-3, p99 >= 1e-4 or a non-finite value; within ``rule8_rel`` of a ceiling is
+#: recorded, no fire (standing rule 8). The toy has no belief tokens, so the production tau class cannot occur and
+#: X26's Amendment 6 does not apply. ``describe`` carries them for the toy arms only (production's are the sheet's).
+K9B_TOY_CEILINGS: Dict[str, Any] = {"judged_max": 1e-3, "p99": 1e-4, "non_finite": "STOP", "rule8_rel": 1e-9}
 
 
 @dataclass(frozen=True)
@@ -68,6 +85,7 @@ class Arm:
 
 PROD_SEEDS = tuple(range(3501, 3506))
 TOY_SEEDS = tuple(range(3601, 3606))
+X47_SEEDS = TOY_SEEDS[:3]   # X47 / the bot screen's first experiment: 3 seeds (3601-3603), no look 2 registered
 ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("c0", "production", L_PROD, PROD_SEEDS, "rb_x35_c0_s{seed}", 0, "warn"),
     Arm("a1", "production", L_PROD, PROD_SEEDS, "rb_x35_a1arch_s{seed}", 0, "warn"),
@@ -77,16 +95,20 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("a3", "production", L_PROD, PROD_SEEDS, "rb_x35_a3mx_s{seed}", 2, "warn", phase1_of="a3_mx"),
     Arm("a6_lx", "production", L_EXPLOITER, (3521, 3522, 3523), "rb_x35_lx_s{seed}", 1, "warn"),
     Arm("a6", "production", L_PROD, PROD_SEEDS, "rb_x35_a6lx_s{seed}", 2, "warn", phase1_of="a6_lx"),
-    Arm("toy_c0", "toy", L_TOY, TOY_SEEDS, "rb_x35t_c0_s{seed}", 0, "fatal"),
-    Arm("toy_a1", "toy", L_TOY, TOY_SEEDS, "rb_x35t_a1arch_s{seed}", 0, "fatal"),
-    Arm("toy_a2", "toy", L_TOY, TOY_SEEDS, "rb_x35t_a2pfsp_s{seed}", 0, "fatal"),
+    Arm("toy_c0", "toy", L_TOY, TOY_SEEDS, "rb_x35t_c0_s{seed}", 0, "warn"),
+    Arm("toy_a1", "toy", L_TOY, TOY_SEEDS, "rb_x35t_a1arch_s{seed}", 0, "warn"),
+    Arm("toy_a2", "toy", L_TOY, TOY_SEEDS, "rb_x35t_a2pfsp_s{seed}", 0, "warn"),
+    Arm("toy_x47", "toy", L_TOY, X47_SEEDS, "rb_x35t_x47d4_s{seed}", 0, "warn"),
 )}
-#: STAGED_PLAN §4's batch-1 forks (R0 and the readers have no registered argv yet: a T55 FINDING).
+#: Batch 1 + X47, in GPU order (``BATCH1_LAUNCH_SHEET.md`` §1; R0 and the readers have no registered argv: C4, launched
+#: without R0). The toy block is ruled C2 (orchestrator, 2026-10-19): X47 INTERLEAVED with its toy C0 and toy A1 in
+#: counterbalanced pairs (s3601: C0 then X47; s3602: X47 then C0; s3603: C0 then X47), toy A2 last.
 BATCH1: Tuple[Tuple[str, int], ...] = (
     ("a1", 3501), ("c0", 3501), ("c0", 3502), ("a1", 3502), ("a1", 3503), ("c0", 3503),
     ("d1", 3501), ("d1", 3502), ("d1", 3503),
     ("a2", 3501), ("a2", 3502), ("a2", 3503),
-    ("toy_a1", 3601), ("toy_c0", 3601), ("toy_c0", 3602), ("toy_a1", 3602), ("toy_a1", 3603), ("toy_c0", 3603),
+    ("toy_a1", 3601), ("toy_c0", 3601), ("toy_x47", 3601), ("toy_x47", 3602), ("toy_c0", 3602), ("toy_a1", 3602),
+    ("toy_a1", 3603), ("toy_c0", 3603), ("toy_x47", 3603),
     ("toy_a2", 3601), ("toy_a2", 3602), ("toy_a2", 3603),
 )
 
@@ -135,6 +157,8 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
         lever = ["--pfsp-scale", "2.5", "--n-sentinels", "10"]
     elif arm == "d1":
         lever = list(D1_LEVER)
+    elif arm == "toy_x47":
+        lever = list(X47_LEVER)
     elif a.phase == 2:
         if phase1 is None:
             raise KitError(f"arm {arm} is phase 2: it needs the {a.phase1_of} phase-1 record")
@@ -162,6 +186,7 @@ def describe(arm: str, seed: int, call: Mapping[str, Any],
     argv = build_argv(arm, seed, call, phase1)
     return {"arm": arm, "seed": seed, "side": a.side, "phase": a.phase, "run_name": run_name(arm, seed),
             "parent_run_dir": parent_run_dir(call), "delta_steps": a.length, "delta_text": f"+{a.length:,} steps",
+            "behaviour": a.behaviour, "k9b_ceilings": dict(K9B_TOY_CEILINGS) if a.side == "toy" else None,
             "argv": argv, "argv_shell": " ".join(shlex.quote(x) for x in argv)}
 
 
@@ -221,6 +246,55 @@ def verify_phase1(path: str) -> List[str]:
         elif sha256_file(e["path"]) != e["sha256"]:
             probs.append(f"{e['path']}: sha256 changed since the record")
     return probs
+
+
+# ------------------------------------------------------------------------------ validating one argv's transcripts
+_DRY_K9B = re.compile(r"^\s+K9\(b\) check\s*: (\w+)", re.M)
+_CHK_K9B = re.compile(r"^\s+K9\(b\) behaviour check\s*: (\w+)", re.M)
+_DRY_GROW = re.compile(r"^\s+grow\s+: DECLARED (.+?) \(parent", re.M)
+_CHK_GROW = re.compile(r"^\s+declared growth \(--grow\)\s*: (.+?)\s+\(parent", re.M)
+_DRY_GIB = re.compile(r"([0-9.]+) GiB REQUIRED")
+
+
+def check_validation(d: Mapping[str, Any], dryrun: str, checkargs: str, rc_checkargs: int,
+                     rc_dryrun: int) -> Tuple[bool, str]:
+    """``validate_batch1.sh``'s verdict on ONE argv: ``(ok, one line)``. ``d`` is :func:`describe`'s record. PASS iff
+    both tools exited 0, the dry run says "would launch" as a FORK of the start node's run with the arm's +steps and
+    the arm's K9(b) mode, ``checkargs`` prints the same mode, the trainer's own arch check passed, and the DECLARED
+    growth line is there for X47 (``X47_GROWTH``, in BOTH tools) and for no other arm (the always-printed
+    "(child-only: a declared growth's …)" note is not a growth line)."""
+    probs: List[str] = []
+    if rc_checkargs != 0:
+        probs.append(f"checkargs exit {rc_checkargs}")
+    if rc_dryrun != 0:
+        probs.append(f"dry-run exit {rc_dryrun}")
+    if dryrun.count("this command would launch") != 1:
+        probs.append("the dry-run does not say 'would launch' exactly once")
+    if f"role        : FORK of {d['parent_run_dir']}" not in dryrun:
+        probs.append(f"the dry-run role is not FORK of {d['parent_run_dir']}")
+    if d["delta_text"] not in dryrun:
+        probs.append(f"the dry-run step arithmetic is not {d['delta_text']}")
+    if "✓ fork arch" not in dryrun:
+        probs.append("no '✓ fork arch' line (the trainer's own architecture check)")
+    for tool, rx, text in (("dry-run", _DRY_K9B, dryrun), ("checkargs", _CHK_K9B, checkargs)):
+        m = rx.search(text)
+        if m is None or m.group(1) != d["behaviour"]:
+            probs.append(f"{tool} K9(b) mode {m.group(1) if m else None!r} != the arm's {d['behaviour']!r}")
+    gd, gc = _DRY_GROW.search(dryrun), _CHK_GROW.search(checkargs)
+    want = X47_GROWTH if "--grow" in d["argv"] else None
+    for tool, g in (("dry-run", gd), ("checkargs", gc)):
+        got = g.group(1) if g else None
+        if got != want:
+            probs.append(f"{tool} declared growth {got!r} != {want!r}")
+    gib = _DRY_GIB.search(dryrun)
+    if gib is None:
+        probs.append("the dry-run printed no REQUIRED GiB")
+    line = (f"{d['arm']}_s{d['seed']} checkargs={rc_checkargs} dryrun={rc_dryrun} "
+            f"would_launch={dryrun.count('this command would launch')} delta=[{d['delta_text']}] "
+            f"gib=[{gib.group(1) if gib else None}] role=[FORK of {d['parent_run_dir']}] k9b=[{d['behaviour']}] "
+            f"grow=[{('DECLARED ' + gd.group(1)) if gd else 'none'}] verdict=" + ("PASS" if not probs else
+                                                                                  "FAIL " + "; ".join(probs)))
+    return not probs, line
 
 
 # ---------------------------------------------------------------------------------- the post-spawn pool check
@@ -333,6 +407,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     q.add_argument("--run-dir", required=True)
     q.add_argument("--call", required=True)
     q.add_argument("--log", action="append", default=[], help="a log holding the startup line (repeatable)")
+    vr = sub.add_parser("validate-run", help="the verdict on one argv's checkargs + dry-run transcripts: exit 0 PASS, 1 FAIL")
+    vr.add_argument("--arm", required=True, choices=sorted(ARMS))
+    vr.add_argument("--seed", required=True, type=int)
+    vr.add_argument("--call", required=True)
+    vr.add_argument("--phase1", default=None)
+    vr.add_argument("--dryrun", required=True, help="the --dry-run transcript")
+    vr.add_argument("--checkargs", required=True, help="the checkargs transcript")
+    vr.add_argument("--rc-dryrun", required=True, type=int)
+    vr.add_argument("--rc-checkargs", required=True, type=int)
     k = sub.add_parser("disk")
     k.add_argument("--required-gib", type=float, default=FORK_GIB)
     k.add_argument("--models-dir", default=None)
@@ -371,6 +454,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                                             checkpoint_num_timesteps(str(call["pstar"]["path"])))
             print(f"[x35 kit] pool seed: {status}" + (f": {probs}" if probs else ""))
             return {"PASS": 0, "FAIL": 1}.get(status, 3)
+        if a.cmd == "validate-run":
+            ok, line = check_validation(describe(a.arm, a.seed, _load(a.call), _load(a.phase1) if a.phase1 else None),
+                                        Path(a.dryrun).read_text(errors="replace"),
+                                        Path(a.checkargs).read_text(errors="replace"), a.rc_checkargs, a.rc_dryrun)
+            print(line)
+            return 0 if ok else 1
         if a.cmd == "live":
             live = live_runs()
             for rd, pid in sorted(live.items()):

@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
 # X35 BATCH 1 + X47 — build and VALIDATE every launch argv (BATCH1_LAUNCH_SHEET.md §4). It NEVER launches: for each
-# <arm>:<seed> it builds the argv with main.x35.kit (X47 = toy_c0's argv + `--grow trunk_layers=4`, run name
-# rb_x35t_x47d4_s<seed>), then runs `main.checkargs --pin` and `main.launcher --dry-run` at the pin, CPU only, rule 5b,
-# with GEN3AI_MODELS_DIR pointed at a scratch dir so nothing can land under models/.
+# <arm>:<seed> it builds the argv with main.x35.kit (X47 is the kit arm `toy_x47` since F-LS-1: the toy C0 argv + the ONE
+# lever `--grow trunk_layers=4`, run name rb_x35t_x47d4_s<seed>), runs `main.checkargs --pin` and
+# `main.launcher --dry-run` at the pin, CPU only, rule 5b, with GEN3AI_MODELS_DIR pointed at a scratch dir so nothing
+# can land under models/, then asks the kit for the VERDICT (`main.x35.kit validate-run`: both tools exit 0, "would
+# launch", FORK of the start node's run, the arm's +steps and K9(b) mode, the trainer's arch check, and the DECLARED
+# growth line for X47 and for no other arm).
 #
 #   usage: validate_batch1.sh --pin <PIN> --toy-call <reference_population_toy.json> --out <scratch dir> <arm>:<seed> ...
 #   arms:  a1 c0 d1 a2 (production; read reference_population_production.json beside this script)
-#          toy_a1 toy_c0 toy_a2 x47 (toy; read --toy-call)
-# One line per argv on stdout: checkargs / dry-run exit codes, "would launch", the +steps, the REQUIRED GiB, the role
-# and (X47) the DECLARED growth line. Transcripts: <out>/{argv,checkargs,dryrun}_<arm>_s<seed>.txt.
+#          toy_a1 toy_c0 toy_a2 toy_x47 (toy; read --toy-call; `x47` is accepted for `toy_x47`)
+# One line per argv on stdout, ending `verdict=PASS` or `verdict=FAIL <why>`, then `SUMMARY <n> PASS, <m> FAIL`; the exit
+# status is the number of FAILs (capped at 100). A --toy-call whose name says STANDIN is printed as `call=…STANDIN…` on
+# every toy line: a stand-in for T* is never a launch value. Transcripts: <out>/{argv,checkargs,dryrun}_<arm>_s<seed>.txt.
 set -u
 STAGE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO=$(git -C "$STAGE" rev-parse --show-toplevel)
@@ -21,7 +25,7 @@ while [ $# -gt 0 ]; do
     *) SPECS+=("$1"); shift;;
   esac
 done
-[ -n "$PIN" ] && [ -n "$OUT" ] && [ "${#SPECS[@]}" -gt 0 ] || { sed -n 2,12p "$0" >&2; exit 2; }
+[ -n "$PIN" ] && [ -n "$OUT" ] && [ "${#SPECS[@]}" -gt 0 ] || { sed -n 2,16p "$0" >&2; exit 2; }
 case "$(realpath -m "$OUT")" in */models|*/models/*|*/data|*/data/*) echo "--out must not be under models/ or data/" >&2; exit 2;; esac
 PIN=$(git -C "$REPO" rev-parse --verify "$PIN^{commit}") || exit 2
 RPROD=$STAGE/reference_population_production.json
@@ -29,30 +33,32 @@ mkdir -p "$OUT/models"
 export PYTHONPATH=$REPO/src CUDA_VISIBLE_DEVICES="" GEN3AI_MODELS_DIR=$OUT/models
 cd "$REPO" || exit 2
 CPU=(nice -n 19 taskset -c 5-7,13-15)
+NFAIL=0; NPASS=0
 run() {  # arm seed
-  local arm=$1 seed=$2 karm=$1 call=$RPROD tag=$1_s$2 argv
-  case "$arm" in toy_*|x47) call=$RTOY; [ -n "$RTOY" ] || { echo "$tag: --toy-call is required"; return; };; esac
-  [ "$arm" = x47 ] && karm=toy_c0
+  local arm=$1 seed=$2 call=$RPROD tag argv
+  [ "$arm" = x47 ] && arm=toy_x47
+  tag=${arm}_s$seed
+  case "$arm" in toy_*) call=$RTOY; [ -n "$RTOY" ] || { echo "$tag: --toy-call is required verdict=FAIL"; NFAIL=$((NFAIL+1)); return; };; esac
   argv=$("$PY" -c '
 import json, shlex, sys
 from main.x35.kit import build_argv
-arm, karm, seed, call = sys.argv[1], sys.argv[2], int(sys.argv[3]), json.load(open(sys.argv[4]))
-a = build_argv(karm, seed, call)
-if arm == "x47":  # X47 = the toy C0 argv + the ONE lever (design_bot_ideas_screen.md 2.1)
-    i = a.index("--seed"); a = a[:i] + ["--grow", "trunk_layers=4"] + a[i:]
-    a[a.index("--run-name") + 1] = f"rb_x35t_x47d4_s{seed}"
-print(" ".join(shlex.quote(x) for x in a))' "$arm" "$karm" "$seed" "$call") || { echo "$tag BUILD FAIL"; return; }
+arm, seed, call = sys.argv[1], int(sys.argv[2]), json.load(open(sys.argv[3]))
+print(" ".join(shlex.quote(x) for x in build_argv(arm, seed, call)))' "$arm" "$seed" "$call") \
+    || { echo "$tag BUILD FAIL verdict=FAIL"; NFAIL=$((NFAIL+1)); return; }
   echo "$argv" > "$OUT/argv_$tag.txt"
   timeout 900 "${CPU[@]}" "$PY" -m main.checkargs --pin "$PIN" --argv "$argv" > "$OUT/checkargs_$tag.txt" 2>&1
   local rc1=$?
   # shellcheck disable=SC2086
   timeout 900 "${CPU[@]}" "$PY" -m main.launcher --dry-run --restart-interval-hours 24 --pin-commit "$PIN" $argv \
     > "$OUT/dryrun_$tag.txt" 2>&1
-  local rc2=$? f=$OUT/dryrun_$tag.txt
-  echo "$tag checkargs=$rc1 dryrun=$rc2 would_launch=$(grep -c 'this command would launch' "$f")" \
-       "delta=[$(grep -m1 -oE '\+[0-9,]+ steps' "$f")] gib=[$(grep -m1 -oE '[0-9.]+ GiB REQUIRED' "$f")]" \
-       "role=[$(grep -m1 'role        :' "$f" | sed 's/^ *role *: *//')]" \
-       "k9b=[$(grep -m1 'K9(b) check' "$f" | sed 's/^ *K9(b) check *: *//' | cut -c1-20)]" \
-       "grow=[$(grep -m1 '^  grow        :' "$f" | sed 's/^ *grow *: *//' | cut -c1-60)]"
+  local rc2=$? line
+  line=$("$PY" -m main.x35.kit validate-run --arm "$arm" --seed "$seed" --call "$call" --dryrun "$OUT/dryrun_$tag.txt" \
+    --checkargs "$OUT/checkargs_$tag.txt" --rc-dryrun "$rc2" --rc-checkargs "$rc1" 2>&1 | tail -1)
+  case "$line" in *"verdict=PASS"*) NPASS=$((NPASS+1));; *) NFAIL=$((NFAIL+1));; esac
+  case "$arm" in toy_*) line="$line call=$(basename "$call")";; esac
+  echo "$line"
 }
 for spec in "${SPECS[@]}"; do run "${spec%:*}" "${spec#*:}"; done
+echo "SUMMARY $NPASS PASS, $NFAIL FAIL (pin ${PIN:0:8})"
+[ "$NFAIL" -gt 100 ] && NFAIL=100
+exit "$NFAIL"

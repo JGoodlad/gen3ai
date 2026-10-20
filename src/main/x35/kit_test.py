@@ -13,6 +13,7 @@ from main.x35 import kit as K
 from utils.paths import repo_path
 
 STAGE = repo_path("designs/research_state/measurements/x35_breakers_stage_2026-10-17")
+VALIDATED = STAGE / "batch1_validation_803a13e3"   # the 24 argvs validated at 803a13e3 (the toy on the 200M stand-in)
 C = "models/rb_x26_s2601/checkpoints"
 ARCHIVE_STEPS = {20: 20000043, 40: 40000045, 60: 60000135, 80: 80000111, 100: 100000037, 120: 120000055,
                  140: 140000062, 160: 160000085}
@@ -53,11 +54,17 @@ def test_every_production_argv_equals_its_validated_stand_in(arm, seed, name):
     assert flags(K.build_argv(arm, seed, standin_call())) == flags(standin(name))
 
 
-def test_the_toy_argv_equals_its_validated_stand_in():
-    call = {"side": "toy", "archive": [],
-            "pstar": {"label": "toy_pstar", "path": "models/rb_toy_ent_s4002/final_model.zip", "step": 100081428,
-                      "sha256": "shaT"}}
-    assert flags(K.build_argv("toy_c0", 3601, call)) == flags(standin("toy_c0"))
+def toy_call(path: str = "models/rb_toy_ent_s4002/final_model.zip", step: int = 100081428) -> Dict:
+    return {"side": "toy", "archive": [],
+            "pstar": {"label": "toy_pstar", "path": path, "step": step, "sha256": "shaT"}}
+
+
+def test_the_toy_argv_equals_its_validated_stand_in_but_for_c3s_warn():
+    """The staged stand-in (9ebda190) typed K9(b) `fatal`; C3 (2026-10-19) moved the toy arms to `warn`. Nothing else moved."""
+    want = flags(standin("toy_c0"))
+    assert want["--behaviour-check"] == "fatal"
+    want["--behaviour-check"] = "warn"
+    assert flags(K.build_argv("toy_c0", 3601, toy_call())) == want
 
 
 def test_a_and_c_share_everything_but_the_lever():
@@ -119,14 +126,28 @@ def test_a_missing_exploiter_final_is_refused(tmp_path):
 
 def test_the_disk_check_counts_the_whole_remaining_batch():
     ok, msg = K.disk_check("/nonexistent", 20.68, thinning=False, existing=[], free_gib=318.0)
-    assert not ok and "21 batch-1 fork(s)" in msg
+    assert not ok and "24 batch-1 fork(s)" in msg    # 21 forks + X47's 3 (F-LS-1)
     ok, _ = K.disk_check("/nonexistent", 20.68, thinning=True, existing=[], free_gib=318.0)
     assert ok
     done = [K.run_name(a, s) for a, s in K.BATCH1[:7]]
-    ok, msg = K.disk_check("/nonexistent", 20.68, thinning=False, existing=done, free_gib=318.0)
-    assert ok and "14 batch-1" in msg
+    ok, msg = K.disk_check("/nonexistent", 20.68, thinning=False, existing=done, free_gib=400.0)   # 17 x 20.68 = 351.6
+    assert ok and "17 batch-1" in msg
     ok, msg = K.disk_check("/nonexistent", 20.68, thinning=True, existing=[], free_gib=10.0)
     assert not ok and "not even this launch" in msg
+
+
+def test_the_disk_check_counts_x47s_three_forks():
+    """F-LS-1: X47's runs are batch-1 forks the disk check reserves room for (3 x 13.05 GiB = 39.15 GiB), and stops
+    counting once they exist. Free space is well clear of the 39.15 boundary on both sides (standing rule 8)."""
+    x47 = [K.run_name("toy_x47", s) for s in (3601, 3602, 3603)]
+    assert x47 == ["rb_x35t_x47d4_s3601", "rb_x35t_x47d4_s3602", "rb_x35t_x47d4_s3603"]
+    others = sorted({K.run_name(a, s) for a, s in K.BATCH1} - set(x47))
+    ok, msg = K.disk_check("/nonexistent", 13.05, thinning=False, existing=others, free_gib=45.0)
+    assert ok and "3 batch-1 fork(s)" in msg, msg
+    ok, msg = K.disk_check("/nonexistent", 13.05, thinning=False, existing=others, free_gib=30.0)
+    assert not ok and "3 batch-1 fork(s)" in msg, msg
+    ok, msg = K.disk_check("/nonexistent", 13.05, thinning=False, existing=others + x47, free_gib=1.0)
+    assert ok and "0 batch-1 fork(s)" in msg, msg
 
 
 def test_describe_names_the_dry_run_expectations():
@@ -192,3 +213,145 @@ def test_d1_is_c0_plus_the_team_mix_and_nothing_else():
         {k: v for k, v in off.items() if k != "--run-name"}
     assert on["--run-name"] == "rb_x35_d1wide_s3502"
     assert [s for a, s in K.BATCH1 if a == "d1"] == [3501, 3502, 3503]
+
+
+# ------------------------------------------------------------------------------ X47 (F-LS-1) and C3 (toy K9(b) warn)
+def _validated_x47_call() -> Dict:
+    """The toy call the 803a13e3 validation built X47 from, recovered from its argv file (the 200M STAND-IN for T*)."""
+    t = (VALIDATED / "argv_x47_s3601.txt").read_text().split()
+    return toy_call(t[t.index("--model") + 1], int(t[t.index("--steps") + 1]) - K.L_TOY)
+
+
+def test_x47_is_the_validated_x47_argv_token_for_token_but_for_c3s_warn():
+    """The kit builds the line `validate_batch1.sh` validated (checkargs 0, dry-run `grow : DECLARED trunk_layers 2 -> 4`
+    at 803a13e3), in the same token ORDER (`--grow` between `--device cuda` and `--seed`); only K9(b) moved (C3)."""
+    for seed in (3601, 3602, 3603):
+        want = (VALIDATED / f"argv_x47_s{seed}.txt").read_text().split()
+        i = want.index("--behaviour-check")
+        assert want[i + 1] == "fatal"
+        want[i + 1] = "warn"
+        assert K.build_argv("toy_x47", seed, _validated_x47_call()) == want
+
+
+def test_x47_is_toy_c0_plus_the_grow_lever_and_nothing_else():
+    call = toy_call()
+    on, off = flags(K.build_argv("toy_x47", 3602, call)), flags(K.build_argv("toy_c0", 3602, call))
+    assert set(on) - set(off) == {"--grow"} and set(off) <= set(on)
+    assert on["--grow"] == "trunk_layers=4"
+    assert {k: v for k, v in on.items() if k not in {"--grow", "--run-name"}} == \
+        {k: v for k, v in off.items() if k != "--run-name"}
+    assert on["--run-name"] == "rb_x35t_x47d4_s3602" and on["--steps"] == str(100081428 + 70_000_000)
+    d = K.describe("toy_x47", 3602, call)
+    assert d["side"] == "toy" and d["delta_text"] == "+70,000,000 steps" and d["parent_run_dir"] == "models/rb_toy_ent_s4002"
+    with pytest.raises(K.KitError, match="not registered"):
+        K.build_argv("toy_x47", 3604, call)               # X47 is registered at seeds 3601-3603 only
+    with pytest.raises(K.KitError, match="reads the toy call record"):
+        K.build_argv("toy_x47", 3601, standin_call())
+
+
+def test_c3_the_toy_arms_run_k9b_warn_under_x34s_ceilings_and_production_is_unchanged():
+    toys = [n for n, a in K.ARMS.items() if a.side == "toy"]
+    assert sorted(toys) == ["toy_a1", "toy_a2", "toy_c0", "toy_x47"]
+    for n in toys:
+        assert flags(K.build_argv(n, 3601, toy_call()))["--behaviour-check"] == "warn", n
+        d = K.describe(n, 3601, toy_call())
+        assert d["behaviour"] == "warn"
+        assert d["k9b_ceilings"] == {"judged_max": 1e-3, "p99": 1e-4, "non_finite": "STOP", "rule8_rel": 1e-9}
+    for n, a in K.ARMS.items():   # production keeps what the kit said before C3: `warn` (X26's regime), no toy ceilings
+        if a.side == "production":
+            assert a.behaviour == "warn" and K.describe(n, a.seeds[0], standin_call(), _p1(n))["k9b_ceilings"] is None, n
+
+
+def _p1(arm: str):
+    """A phase-1 record for a phase-2 arm (the standin_call's P*), else None."""
+    a = K.ARMS[arm]
+    if a.phase != 2:
+        return None
+    return {"arm": a.phase1_of, "pstar_sha256": "shaP",
+            "exploiters": [{"path": f"/x/{i}.zip", "label": f"e{i}"} for i in range(3)]}
+
+
+def test_batch1_is_the_launch_sheets_gpu_order_with_x47_interleaved_and_a2_last():
+    """C2 (orchestrator, 2026-10-19): X47 beside its toy C0 in counterbalanced pairs, toy A2 last (sheet §1)."""
+    assert list(K.BATCH1) == [
+        ("a1", 3501), ("c0", 3501), ("c0", 3502), ("a1", 3502), ("a1", 3503), ("c0", 3503),
+        ("d1", 3501), ("d1", 3502), ("d1", 3503), ("a2", 3501), ("a2", 3502), ("a2", 3503),
+        ("toy_a1", 3601), ("toy_c0", 3601), ("toy_x47", 3601), ("toy_x47", 3602), ("toy_c0", 3602),
+        ("toy_a1", 3602), ("toy_a1", 3603), ("toy_c0", 3603), ("toy_x47", 3603),
+        ("toy_a2", 3601), ("toy_a2", 3602), ("toy_a2", 3603)]
+    assert len({K.run_name(a, s) for a, s in K.BATCH1}) == len(K.BATCH1) == 24
+    pos = {(a, s): i for i, (a, s) in enumerate(K.BATCH1)}
+    first = []
+    for s in (3601, 3602, 3603):
+        assert abs(pos["toy_c0", s] - pos["toy_x47", s]) == 1, s    # X47 runs right beside its own C0
+        first.append("toy_c0" if pos["toy_c0", s] < pos["toy_x47", s] else "toy_x47")
+    assert first == ["toy_c0", "toy_x47", "toy_c0"]                # ABA across the seeds: box drift lands on neither side
+    assert [a for a, _ in K.BATCH1[-3:]] == ["toy_a2"] * 3
+
+
+def test_a_grown_pool_seed_record_passes_the_check(tmp_path):
+    """X47's seeded pool is GROWN at the child's start, which adds a `grown` block to pool_seed.json; T54's check
+    (run on the toy_x47 arm after the spawn) must read that record as it reads any other."""
+    run = _seeded(tmp_path, grown={"fields": {"trunk_layers": {"parent": 2, "child": 4}}, "snapshots": ["a.zip"],
+                                   "skipped": []})
+    assert K.check_pool_seed("toy_x47", str(run), standin_call(), LINE, 180000055) == ("PASS", [])
+
+
+# ----------------------------------------------------- validate_batch1.sh's verdict on one argv's transcripts
+def _transcripts(arm_file: str):
+    return ((VALIDATED / f"dryrun_{arm_file}.txt").read_text(), (VALIDATED / f"checkargs_{arm_file}.txt").read_text())
+
+
+def _fatal_era(d: Dict) -> Dict:
+    """The 803a13e3 transcripts were taken BEFORE C3, so they read `K9(b) check : fatal`; the verdict compares the arm's
+    mode with what the transcript printed, so these cases hand it the mode those transcripts were made under."""
+    return dict(d, behaviour="fatal")
+
+
+def test_the_verdict_passes_a_real_x47_transcript_and_shows_its_declared_growth():
+    dry, chk = _transcripts("x47_s3601")
+    ok, line = K.check_validation(_fatal_era(K.describe("toy_x47", 3601, _validated_x47_call())), dry, chk, 0, 0)
+    assert ok, line
+    assert "verdict=PASS" in line and "grow=[DECLARED trunk_layers 2 -> 4]" in line and "delta=[+70,000,000 steps]" in line
+    assert "gib=[13.05]" in line and "would_launch=1" in line
+
+
+def test_the_verdict_passes_a_real_toy_c0_transcript_with_no_growth_line():
+    dry, chk = _transcripts("toy_c0_s3601")
+    ok, line = K.check_validation(_fatal_era(K.describe("toy_c0", 3601, _validated_x47_call())), dry, chk, 0, 0)
+    assert ok and "grow=[none]" in line, line      # the always-printed "(child-only: a declared growth's ...)" is no growth line
+
+
+@pytest.mark.parametrize("what,arm,dry_edit,chk_edit,rcs,why", [
+    ("x47 lost its growth line in the dry-run", "toy_x47", ("grow        : DECLARED", "grow        : (no)"), None, (0, 0),
+     "dry-run declared growth None"),
+    ("x47 lost its growth line in checkargs", "toy_x47", None, ("declared growth (--grow)", "declared growth (--no)"),
+     (0, 0), "checkargs declared growth None"),
+    ("a checkargs refusal", "toy_x47", None, None, (2, 0), "checkargs exit 2"),
+    ("a dry-run refusal", "toy_x47", None, None, (0, 2), "dry-run exit 2"),
+    ("no 'would launch'", "toy_x47", ("this command would launch", "this command would NOT launch"), None, (0, 0),
+     "would launch"),
+    ("the wrong step arithmetic", "toy_x47", ("+70,000,000 steps", "+20,000,000 steps"), None, (0, 0), "step arithmetic"),
+    ("the wrong parent", "toy_x47", ("FORK of /", "FORK of /nowhere/"), None, (0, 0), "role is not FORK of"),
+    ("a K9(b) mode that is not the arm's", "toy_x47", ("K9(b) check : fatal", "K9(b) check : off"), None, (0, 0),
+     "dry-run K9(b) mode 'off'"),
+    ("the trainer's arch check missing", "toy_x47", ("✓ fork arch", "? fork arch"), None, (0, 0), "fork arch"),
+])
+def test_the_verdict_fails_each_hazard(what, arm, dry_edit, chk_edit, rcs, why):
+    dry, chk = _transcripts("x47_s3601")
+    if dry_edit:
+        assert dry_edit[0] in dry, what
+        dry = dry.replace(*dry_edit)
+    if chk_edit:
+        assert chk_edit[0] in chk, what
+        chk = chk.replace(*chk_edit)
+    ok, line = K.check_validation(_fatal_era(K.describe(arm, 3601, _validated_x47_call())), dry, chk, *rcs)
+    assert not ok and "verdict=FAIL" in line and why in line, (what, line)
+
+
+def test_the_verdict_fails_a_growth_line_on_an_arm_that_declared_none_and_a_c3_mode_mismatch():
+    dry, chk = _transcripts("x47_s3601")           # X47's transcripts read against the toy C0 arm: an unexpected growth
+    ok, line = K.check_validation(_fatal_era(K.describe("toy_c0", 3601, _validated_x47_call())), dry, chk, 0, 0)
+    assert not ok and "declared growth 'trunk_layers 2 -> 4' != None" in line
+    ok, line = K.check_validation(K.describe("toy_x47", 3601, _validated_x47_call()), dry, chk, 0, 0)   # C3: warn
+    assert not ok and "K9(b) mode 'fatal' != the arm's 'warn'" in line      # a pre-C3 (fatal) transcript no longer passes

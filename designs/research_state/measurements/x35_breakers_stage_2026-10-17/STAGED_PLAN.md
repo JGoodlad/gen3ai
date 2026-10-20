@@ -9,7 +9,7 @@ is BUILT (2026-10-17, §6):** the launch script, the R freeze, the readout and t
 **D1 (X38, the pool-widening arm) is staged too (2026-10-19, §7):** its argv is `main.x35.kit` arm `d1`, dry-run
 validated on the REAL P\* at pin `c1b0c1f0`; it NEEDS GO like every arm.
 
-**THE LAUNCH SHEET for batch 1 + X47 (2026-10-19): [`BATCH1_LAUNCH_SHEET.md`](BATCH1_LAUNCH_SHEET.md).** The 24 forks in GPU order with GPU-h, stop rule and matched control; every argv `checkargs` exit 0 and "would launch" at `803a13e3` (the toy on the 200M stand-in for T\*, [`batch1_validation_803a13e3/`](batch1_validation_803a13e3/)); the T62 / FP32_ALT pin variants (no FP32_ALT commit exists); the pre-launch checks, the failure handling, and six open choices. [`validate_batch1.sh`](validate_batch1.sh) rebuilds and re-validates the lines at any pin.
+**THE LAUNCH SHEET for batch 1 + X47 (2026-10-19): [`BATCH1_LAUNCH_SHEET.md`](BATCH1_LAUNCH_SHEET.md).** The 24 forks in GPU order with GPU-h, stop rule and matched control; every argv `checkargs` exit 0, "would launch" and a PASS verdict at `9c3bf3c4` (the toy on the 200M stand-in for T\*, [`batch1_validation_9c3bf3c4/`](batch1_validation_9c3bf3c4/); the first validation, at `803a13e3`, is [`batch1_validation_803a13e3/`](batch1_validation_803a13e3/) and is superseded: its toy lines typed K9(b) `fatal`); the T62 / FP32_ALT pin variants (no FP32_ALT commit exists); the pre-launch checks and the failure handling. **X47 is a kit arm** (`toy_x47`, F-LS-1 closed). **Ruled by the orchestrator (2026-10-19): C2** (X47 interleaved with its toy C0, toy A2 last), **C3** (the toy arms run K9(b) `warn` under X34's ceilings) and **C4** (batch 1 launches without R0); C1, C5 and C6 are still open. [`validate_batch1.sh`](validate_batch1.sh) rebuilds and re-validates the lines at any pin, with a deterministic verdict per line.
 
 **R (production) is FROZEN (2026-10-19)** at P\* = X26 @ 280,000,170 (Amendment 5's `TIER1_PLATEAU` call, sha256
 `814823c5…91ed`): [`reference_population_production.json`](reference_population_production.json), content sha256
@@ -77,15 +77,19 @@ python -m main.launcher --restart-interval-hours 24 --pin-commit 9ebda1904da7a77
 7. The reference population R is frozen and its file is written before the first arm launches (§5.6.4). **Production: DONE 2026-10-19** (`reference_population_production.json`; toy: pending T\*).
 8. The disk has room for the whole batch, or finished arms are being thinned (F22).
 
-## 4. The batch-1 queue (production first, then the toy calibration)
+## 4. The batch-1 queue (production first, then the toy block with X47 and the calibration pair)
+
+**Superseded in detail by [`BATCH1_LAUNCH_SHEET.md`](BATCH1_LAUNCH_SHEET.md) §1**, which carries the order, the GPU-h and
+the stop rule; the kit's `BATCH1` is the order of record. R0 is NOT in it (ruling C4, 2026-10-19: batch 1 launches
+without R0, whose argv is unregistered, F27). The order, 24 forks:
 
 | # | run | seed | GPU-h (est.) |
 |---|---|---|---|
-| 0 | R0: offense-archetype best responder of P\* | 3531 | ≈ 1.1 |
-| 1–6 | A1 s3501 · C0 s3501 · C0 s3502 · A1 s3502 · A1 s3503 · C0 s3503 | 3501–3503 | 6 × 4.4 ≈ 26 |
-| 7–9 | A2 s3501–s3503 | 3501–3503 | ≈ 13 |
-| 10–15 | toy A1 / C0 in the same ABBA order | 3601–3603 | ≈ 26 |
-| 16–18 | toy A2 | 3601–3603 | ≈ 13 |
+| 1–6 | A1 s3501 · C0 s3501 · C0 s3502 · A1 s3502 · A1 s3503 · C0 s3503 | 3501–3503 | 6 × ≈ 4.35 ≈ 26 |
+| 7–9 | D1 s3501–s3503 (X38) | 3501–3503 | ≈ 13 |
+| 10–12 | A2 s3501–s3503 | 3501–3503 | ≈ 13 |
+| 13–21 | toy A1 s3601 · toy C0 s3601 · **X47 s3601 · X47 s3602** · toy C0 s3602 · toy A1 s3602 · toy A1 s3603 · toy C0 s3603 · **X47 s3603** (ruling C2) | 3601–3603 | 6 × 4.35 + 3 × ≈ 5.8 ≈ 43 |
+| 22–24 | toy A2 s3601–s3603 | 3601–3603 | ≈ 13 |
 | — | R2 readers (1 per arm final, seed 1) and the population reads, in the windows between arms | 3532+ | ≈ 1.4 per arm |
 
 The first A1-vs-C0 read lands after ≈ 27 GPU-h. A3 (≈ 18 GPU-h) follows in the same batch if the orchestrator wants
@@ -116,7 +120,9 @@ Nothing below has been run on a real P\*: P\* is not called yet.
 - ONE arm × seed per call. The default is a DRY RUN: every pre-check of §3, then the launch line printed. Only the
   literal `GO` launches, and a GO needs the orchestrator's go.
 - The argv is BUILT by `python -m main.x35.kit describe` from the frozen R file of the arm's side, never typed by
-  hand. Every production argv equals its stand-in in §2 flag for flag (`src/main/x35/kit_test.py`).
+  hand. Every production argv equals its stand-in in §2 flag for flag (`src/main/x35/kit_test.py`). The toy arms
+  (`toy_c0`, `toy_a1`, `toy_a2`, `toy_x47`) type K9(b) `warn` (ruling C3, 2026-10-19: X34's regime and ceilings, read by
+  hand); `toy_x47` is the toy C0 argv + `--grow trunk_layers=4` (F-LS-1). `describe` carries the toy ceilings.
 - The first failed pre-check is a HOLD (exit 7, written to `~/.claude/jobs/x35/status.txt`). Pre-check 2 reads
   [`x35_required_commits.txt`](x35_required_commits.txt): it must name T54's commit, so **until T54 lands and its
   commit is written there, every launch HOLDs.**

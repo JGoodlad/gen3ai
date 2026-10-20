@@ -1,0 +1,25 @@
+a1_s3501 checkargs=0 dryrun=0 would_launch=1 delta=[+20,000,000 steps] gib=[10.97] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601] k9b=[warn] grow=[none] verdict=PASS
+c0_s3501 checkargs=0 dryrun=0 would_launch=1 delta=[+20,000,000 steps] gib=[10.97] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601] k9b=[warn] grow=[none] verdict=PASS
+c0_s3502 checkargs=0 dryrun=0 would_launch=1 delta=[+20,000,000 steps] gib=[10.97] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601] k9b=[warn] grow=[none] verdict=PASS
+a1_s3502 checkargs=0 dryrun=0 would_launch=1 delta=[+20,000,000 steps] gib=[10.97] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601] k9b=[warn] grow=[none] verdict=PASS
+a1_s3503 checkargs=0 dryrun=0 would_launch=1 delta=[+20,000,000 steps] gib=[10.97] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601] k9b=[warn] grow=[none] verdict=PASS
+c0_s3503 checkargs=0 dryrun=0 would_launch=1 delta=[+20,000,000 steps] gib=[10.97] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601] k9b=[warn] grow=[none] verdict=PASS
+d1_s3501 checkargs=0 dryrun=0 would_launch=1 delta=[+20,000,000 steps] gib=[10.97] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601] k9b=[warn] grow=[none] verdict=PASS
+d1_s3502 checkargs=0 dryrun=0 would_launch=1 delta=[+20,000,000 steps] gib=[10.97] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601] k9b=[warn] grow=[none] verdict=PASS
+d1_s3503 checkargs=0 dryrun=0 would_launch=1 delta=[+20,000,000 steps] gib=[10.97] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601] k9b=[warn] grow=[none] verdict=PASS
+a2_s3501 checkargs=0 dryrun=0 would_launch=1 delta=[+20,000,000 steps] gib=[10.97] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601] k9b=[warn] grow=[none] verdict=PASS
+a2_s3502 checkargs=0 dryrun=0 would_launch=1 delta=[+20,000,000 steps] gib=[10.97] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601] k9b=[warn] grow=[none] verdict=PASS
+a2_s3503 checkargs=0 dryrun=0 would_launch=1 delta=[+20,000,000 steps] gib=[10.97] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601] k9b=[warn] grow=[none] verdict=PASS
+toy_a1_s3601 checkargs=0 dryrun=0 would_launch=1 delta=[+70,000,000 steps] gib=[13.05] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep] k9b=[warn] grow=[none] verdict=PASS call=reference_population_toy_STANDIN_200m.json
+toy_c0_s3601 checkargs=0 dryrun=0 would_launch=1 delta=[+70,000,000 steps] gib=[13.05] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep] k9b=[warn] grow=[none] verdict=PASS call=reference_population_toy_STANDIN_200m.json
+toy_x47_s3601 checkargs=0 dryrun=0 would_launch=1 delta=[+70,000,000 steps] gib=[13.05] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep] k9b=[warn] grow=[DECLARED trunk_layers 2 -> 4] verdict=PASS call=reference_population_toy_STANDIN_200m.json
+toy_x47_s3602 checkargs=0 dryrun=0 would_launch=1 delta=[+70,000,000 steps] gib=[13.05] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep] k9b=[warn] grow=[DECLARED trunk_layers 2 -> 4] verdict=PASS call=reference_population_toy_STANDIN_200m.json
+toy_c0_s3602 checkargs=0 dryrun=0 would_launch=1 delta=[+70,000,000 steps] gib=[13.05] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep] k9b=[warn] grow=[none] verdict=PASS call=reference_population_toy_STANDIN_200m.json
+toy_a1_s3602 checkargs=0 dryrun=0 would_launch=1 delta=[+70,000,000 steps] gib=[13.05] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep] k9b=[warn] grow=[none] verdict=PASS call=reference_population_toy_STANDIN_200m.json
+toy_a1_s3603 checkargs=0 dryrun=0 would_launch=1 delta=[+70,000,000 steps] gib=[13.05] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep] k9b=[warn] grow=[none] verdict=PASS call=reference_population_toy_STANDIN_200m.json
+toy_c0_s3603 checkargs=0 dryrun=0 would_launch=1 delta=[+70,000,000 steps] gib=[13.05] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep] k9b=[warn] grow=[none] verdict=PASS call=reference_population_toy_STANDIN_200m.json
+toy_x47_s3603 checkargs=0 dryrun=0 would_launch=1 delta=[+70,000,000 steps] gib=[13.05] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep] k9b=[warn] grow=[DECLARED trunk_layers 2 -> 4] verdict=PASS call=reference_population_toy_STANDIN_200m.json
+toy_a2_s3601 checkargs=0 dryrun=0 would_launch=1 delta=[+70,000,000 steps] gib=[13.05] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep] k9b=[warn] grow=[none] verdict=PASS call=reference_population_toy_STANDIN_200m.json
+toy_a2_s3602 checkargs=0 dryrun=0 would_launch=1 delta=[+70,000,000 steps] gib=[13.05] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep] k9b=[warn] grow=[none] verdict=PASS call=reference_population_toy_STANDIN_200m.json
+toy_a2_s3603 checkargs=0 dryrun=0 would_launch=1 delta=[+70,000,000 steps] gib=[13.05] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep] k9b=[warn] grow=[none] verdict=PASS call=reference_population_toy_STANDIN_200m.json
+SUMMARY 24 PASS, 0 FAIL (pin 9c3bf3c4)

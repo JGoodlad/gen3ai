@@ -7,7 +7,8 @@
 #   usage: launch_x35.sh <arm> <seed> --pin <X35_PIN_k> [--lease-owner NAME] [--phase1 FILE] [--thinning]
 #                        [--at-epoch EPOCH] [--max-load L] [GO]
 #   arms:  c0 a1 a2 d1 (production, +20M) · a3_mx a6_lx (phase 1: exploiters, +5M) · a3 a6 (phase 2, +20M, read
-#          the phase-1 record) · toy_c0 toy_a1 toy_a2 (+70M)          (main.x35.kit holds every argv)
+#          the phase-1 record) · toy_c0 toy_a1 toy_a2 toy_x47 (+70M; toy_x47 = depth growth, X47; the toy arms run K9(b)
+#          `warn`)                                                    (main.x35.kit holds every argv)
 #   phase 1 → 2:  after the three exploiters END,
 #          python -m main.x35.kit phase1-record --arm a3 --call <R> --out <stage>/phase1_a3.json   (write-once)
 #
