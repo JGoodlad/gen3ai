@@ -3,7 +3,9 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from
 this doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-19, latest): the WORLD SAMPLER has its own design, and its zero-playout screen has been READ** (`design_world_sampler.md`; stage 0, post hoc, descriptive; it reads only the banks' inputs, never a playout outcome). On 1,395 states of the maturity interim LEAN and E2 banks (training-pool opponents):
+**Status (2026-10-19, latest): F1 TIER A BUILT, default OFF** (`design_world_sampler.md` §3.3.1, §7 F1; builds only, descriptive). The honest builder's true-dice replay made a world reproduce every printed damage number with the truth's own roll. With `WorldSampler(dice="rolls")` any roll that prints what the searched side saw will do, the dice stream kept aligned, and each world carries a likelihood weight. Measured first: today's screen rejects 9.0 % of its candidates that fit on another roll (2.7× the acceptances, 37 of 40 random states). On 60 rebuilt states the exclusions fall 20 → 6 (random 3 / 40 → 0 / 40), the build's cost halves, and the seen mons' facts barely move. Search does not read the weights yet, the default stays `seed`, and the crit roll and the other dice are still the truth's (tier B, not built).
+
+**Status (2026-10-19): the WORLD SAMPLER has its own design, and its zero-playout screen has been READ** (`design_world_sampler.md`; stage 0, post hoc, descriptive; it reads only the banks' inputs, never a playout outcome). On 1,395 states of the maturity interim LEAN and E2 banks (training-pool opponents):
 - The network's belief already puts **0.31** of its mass on the exact set of never-seen species at X26 225M (0.21 at 25M), against 0.020 for today's Smogon draws (F). Its value stayed at 0.01 over the same anchors.
 - No candidate gets EVERY seen mon's hidden moves right more than 3.5 % of the time (F 1.1 %, the network 2.4 %). So the mass on a world exact on both is ≤ 0.0025 for every candidate, against the ≈ 0.2 search needs. **The sets, not the species, are what the sampler lacks.**
 - **5.2 % of the stored honest worlds are ILLEGAL** by Showdown's validator (32 % of states hold one): independent per-slot move draws made impossible egg / event combinations. **FIXED 2026-10-19 (F2):** the builder now redraws every set until the validator accepts it (0 illegal worlds on 316 rebuilt states, no new exclusion); every earlier honest read used the old builder, and worlds before / after are not comparable (§6.1).
@@ -418,11 +420,14 @@ no in-Rust builder exists. The pilot's builder cost ≈ 0.08 CPU-s per world (ca
   unmoved. **Every honest read so far (Tier 1, E2, the maturity battery at its pins) used the illegal-capable builder;
   its effect on IMP is UNMEASURED** (stage 1's F_legal − F). Worlds built before 2026-10-19 are not comparable with
   worlds built after (the rule and the same day's Hidden Power fill).
-- **The true-dice replay over-sharpens spreads (UNMEASURED, `design_world_sampler.md` F1).** A world must reproduce
-  each observed damage number with the truth's own damage ROLL, where an honest player knows only the 16-roll range.
-  The cure is the constrained-dice replay already named for the speed ties. Its two tiers (A: the damage roll's value
-  overridden within the aligned stream, weight k / 16; B: every draw site typed, printed outcomes forced, silent ones
-  sampled) are written down in `design_world_sampler.md` §3.3.1; neither is built.
+- **The true-dice replay over-sharpens spreads (MEASURED and PARTLY RESOLVED 2026-10-19, `design_world_sampler.md`
+  §3.3.1, F1).** A world had to reproduce each observed damage number with the truth's own damage ROLL, where an honest
+  player knows only the 16-roll range. MEASURED: 9.0 % of the candidates today's screen rejects fit on another roll.
+  **Tier A is BUILT behind `WorldSampler(dice="rolls")`, default OFF**: the damage roll's VALUE replaced within the
+  aligned stream, weight Π k / 16, the truth-passes guard raising. On 60 rebuilt states: exclusions 20 → 6, cost
+  96 → 42 s per state, item / ability / spread matches with the truth 0.953 / 0.989 / 0.056 → 0.951 / 0.980 / 0.047,
+  weight ESS 7.3 of 8. **Every honest read so far used `seed`;** worlds of the two modes are not comparable. Tier B
+  (every draw site typed: the crit roll, speed ties, silent dice, the counters) is not built.
 - **What the exclusions are (2026-10-19).** On the maturity LEAN and E2 banks, 125 of 1,520 states are excluded. 121 of
   them are a seen mon whose item / ability / spread screen found no fit in 200 chain steps (Tyranitar 23, Zapdos 17,
   Swampert 14, Jirachi 13, Metagross 12), and 4 had too few worlds. A live search cannot exclude a decision
@@ -522,3 +527,4 @@ feeds one shared trunk to both heads).
 | 2026-10-19 | **The WORLD SAMPLER design and its stage-0 screen** (`design_world_sampler.md`, orchestrator brief; DETERMINIZATION added by the owner the same day) | Status line; §1 (a new bullet: the sampler binds, and within it the sets); N15 (the network's species mass at X26 against its moves); §6.1 (illegal worlds MEASURED 5.2 %; the true-dice replay's damage-roll sharpening named; what the exclusions are); Q11 (the opponent-type-per-world matrix and its harness changes); Q12 (the sampler ablation) | quoting stage 0 as a verdict (post hoc, zero playouts, pool opponents); calling the network's species belief "useless" (it is sharp and maturing; the SETS are missing); folding the matrix into the open list ahead of the sampler | `design_world_sampler.md` §5, §6.1, §6.2; `measurements/world_sampler_screen_2026-10-19/` (`result_screen.json`, `result_validate.json`) |
 | 2026-10-19 | **The maturity battery's PLATEAU STEP REGISTERED (amendment A1) and LAUNCHED on X26** | Status line; §7 Q4 (the plateau step: P\* declared, the plateau bank, the arms, the CONVERGED amendment, the ETA) | quoting any plateau-step number before `QUEUE_DONE` and the registered read; reading the interim bank's FULL pair as the record (it is the replication) | `measurements/hidden_info_maturity_x26_2026-10-18/PREREGISTRATION.md` §9, README §6 |
 | 2026-10-19 | **F2 FIXED: the honest world builder's worlds are legal** (`design_world_sampler.md` §7 F2) | §6.1 (the illegal-worlds bullet: fixed, the after-read, the not-comparable warning; the F1 bullet: the verify step's two tiers) | — | `design_world_sampler.md` §6.1 / §7; `measurements/world_legality_f2_2026-10-19/` |
+| 2026-10-19 | **F1 TIER A BUILT, default OFF: dice-marginalised damage rolls in the honest world builder** (`design_world_sampler.md` §3.3.1, §7 F1) | Status line; §6.1 (the true-dice bullet: measured, built, the re-measure) | flipping the default (stage 1's call); tier B now | `design_world_sampler.md` §3.3.1; `measurements/world_rolls_f1a_2026-10-19/` (`result_f1a.json`) |

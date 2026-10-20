@@ -1,0 +1,147 @@
+{
+  "step1": {
+    "all": {
+      "acceptance_ratio_tier_a_over_today": 2.782,
+      "defects": 0,
+      "excluded_today_with_a_rescued_proposal": 5,
+      "pinned_sites_share": 0.0,
+      "rescued_widened_sites_mean": 1.71,
+      "screen_accept_tier_a": 3224,
+      "screen_accept_today": 1159,
+      "screen_rejected_today_accepted_tier_a": 2065,
+      "screen_replays": 27236,
+      "share_of_today_rejections_tier_a_accepts": 0.0792,
+      "sites_mean": 15.1,
+      "states": 43,
+      "states_with_a_rescue": 39,
+      "today_accepts_tier_a_rejects (must be 0)": 0,
+      "today_ok": 37
+    },
+    "excluded": {
+      "acceptance_ratio_tier_a_over_today": 3.28,
+      "defects": 0,
+      "excluded_today_with_a_rescued_proposal": 2,
+      "pinned_sites_share": 0.0,
+      "rescued_widened_sites_mean": 2.4,
+      "screen_accept_tier_a": 246,
+      "screen_accept_today": 75,
+      "screen_rejected_today_accepted_tier_a": 171,
+      "screen_replays": 5104,
+      "share_of_today_rejections_tier_a_accepts": 0.034,
+      "sites_mean": 14.7,
+      "states": 3,
+      "states_with_a_rescue": 2,
+      "today_accepts_tier_a_rejects (must be 0)": 0,
+      "today_ok": 0
+    },
+    "random": {
+      "acceptance_ratio_tier_a_over_today": 2.747,
+      "defects": 0,
+      "excluded_today_with_a_rescued_proposal": 3,
+      "pinned_sites_share": 0.0,
+      "rescued_widened_sites_mean": 1.65,
+      "screen_accept_tier_a": 2978,
+      "screen_accept_today": 1084,
+      "screen_rejected_today_accepted_tier_a": 1894,
+      "screen_replays": 22132,
+      "share_of_today_rejections_tier_a_accepts": 0.09,
+      "sites_mean": 15.2,
+      "states": 40,
+      "states_with_a_rescue": 37,
+      "today_accepts_tier_a_rejects (must be 0)": 0,
+      "today_ok": 37
+    }
+  },
+  "step1_vs_step5_seed_ok_disagree": 0,
+  "step5": {
+    "cost_wall_s_mean": {
+      "rolls": 42.3,
+      "seed": 96.3
+    },
+    "exclusions_all": {
+      "defects": {
+        "rolls": 0,
+        "seed": 0
+      },
+      "lost (seed ok, rolls excluded)": 1,
+      "recovered (seed excluded, rolls ok)": 15,
+      "rolls": 6,
+      "rolls_rate": 0.1,
+      "seed": 20,
+      "seed_rate": 0.3333,
+      "states": 60
+    },
+    "exclusions_excluded": {
+      "defects": {
+        "rolls": 0,
+        "seed": 0
+      },
+      "lost (seed ok, rolls excluded)": 1,
+      "recovered (seed excluded, rolls ok)": 12,
+      "rolls": 6,
+      "rolls_rate": 0.3,
+      "seed": 17,
+      "seed_rate": 0.85,
+      "states": 20
+    },
+    "exclusions_random": {
+      "defects": {
+        "rolls": 0,
+        "seed": 0
+      },
+      "lost (seed ok, rolls excluded)": 0,
+      "recovered (seed excluded, rolls ok)": 3,
+      "rolls": 0,
+      "rolls_rate": 0.0,
+      "seed": 3,
+      "seed_rate": 0.075,
+      "states": 40
+    },
+    "ok_in_both": 39,
+    "regate_pass": {
+      "of": 39,
+      "rolls": 39,
+      "seed": 39
+    },
+    "rolls_worlds": {
+      "off_stream_rolls_mean": 4.787,
+      "share_off_stream": 0.9074,
+      "states_ess_below_4": 2,
+      "weight_ess_of_8_mean": 7.275,
+      "weight_ess_of_8_min": 2.123,
+      "worlds": 432
+    },
+    "screens_mean_ok_both": {
+      "rolls": 261.7,
+      "seed": 456.7
+    },
+    "seen_exact_hp_equal_truth": {
+      "rolls": 0.5881,
+      "seed": 0.6007
+    },
+    "seen_fact_match_with_truth": {
+      "ability": {
+        "rolls": 0.9799,
+        "seed": 0.9891
+      },
+      "item": {
+        "rolls": 0.9513,
+        "seed": 0.953
+      },
+      "spread": {
+        "rolls": 0.047,
+        "seed": 0.0562
+      }
+    },
+    "seen_slot_distinct_spreads_of_8_mean": {
+      "rolls": 2.653,
+      "seed": 2.211
+    },
+    "seen_slot_tv_seed_vs_rolls_mean": {
+      "item": 0.0066,
+      "spread": 0.4638
+    },
+    "states_both": 60,
+    "team_species_tv_seed_vs_rolls_mean": 0.0005
+  }
+}

@@ -3,6 +3,13 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this doc
 updates it in the same commit, and the Decision record at the end says what changed and why.
 
+**Status (2026-10-19, latest): F1 TIER A BUILT, behind `WorldSampler(dice="rolls")`, default OFF (§3.3.1, §7 F1).**
+Each damage roll of a world's prefix replay may take any roll that prints what the searched side saw, the dice stream
+kept aligned, and each world carries a likelihood weight. Measured before building: today's screen rejects 9.0 % of
+its candidates that tier A accepts (2.7× the acceptances, 37 of 40 random states). On 60 rebuilt states it cuts the
+exclusions from 20 to 6 (3 / 40 → 0 / 40 random; 17 / 20 → 6 / 20 on states the stored builds excluded) and halves the
+build's cost; the seen mons' fact marginals barely move. Descriptive builds only; no arm re-run.
+
 **Status (2026-10-19): DESIGN, plus stage 0 of the first experiment READ.** Stage 0 is a zero-playout screen of every
 candidate sampler on the existing banks. It is post hoc and descriptive, and its numbers are in §6.1. Nothing is built,
 and stage 1 (with playouts) is written so it can be registered (§6.2). Two owner questions are open (§8): may a sampler
@@ -52,6 +59,10 @@ The zero-playout screen (§6.1) already changes the picture:
 - **One honest world in twenty WAS an impossible team (F2, FIXED 2026-10-19).** Drawing each move slot independently
   gave sets Showdown's own validator rejects (egg-move and event combinations), in a third of the states. The builder
   now redraws every set until the validator accepts it (0 illegal worlds in a 316-state rebuild, no new exclusion).
+- **The true-dice replay was over-sharp (F1, tier A BUILT 2026-10-19, default OFF).** A world had to reproduce every
+  printed damage number with the truth's own damage roll. With `dice="rolls"` any of the 16 rolls that prints the same
+  thing will do. Before building, the measurement: 9 % of the candidates today's screen rejected fit on another roll.
+  On 60 rebuilt states the exclusions fall from 20 to 6, and the worlds' facts barely move (§3.3.1).
 - **So the first target is the moves of the seen Pokémon, kept consistent with the rest of the team**: real teams and
   sets (team-level and set-level models), the legality of move combinations, and the opponent's own choices as
   evidence. A better species guess alone will not do it. Stage 1 (§6.2) then asks the open question: do worlds that are
@@ -129,7 +140,7 @@ three steps:
 | fact (owner's list, 2026-10-19) | what it constrains | how it is enforced today | honest? | the gap |
 |---|---|---|---|---|
 | **revealed species, moves, items** | identity; a set's known slots; a held item | kept TRUE from the log source: own `|move|` lines (not called moves, not Transform / Mimic copies, never Struggle), `-item`, `-enditem`, `[from] item:`, Trick / Thief transfers. Conservative: an ambiguous owner reveals nothing, so the fact is drawn and the gate forces it back | yes | none known |
-| **damage ranges** → EVs, nature, Hidden Power type | the attacker's Atk / SpA and the defender's HP / Def / SpD, given the board (boosts, items, weather, screens, crit) | the replay gate: our mon's exact HP after their hit; their HP percentage after ours; the screen draws the seen mon's spread and keeps it only if the replay matches | **NO: too sharp.** The prefix replays on the TRUE dice seed, so a world must reproduce the observed damage with the truth's own damage ROLL. An honest player knows only that the damage fell inside the 16-roll range (× the printed crit flag). The posterior on spreads is therefore narrower than honest | **F1** (§7): unmeasured. Cure: dice-marginalised consistency (§3.3) |
+| **damage ranges** → EVs, nature, Hidden Power type | the attacker's Atk / SpA and the defender's HP / Def / SpD, given the board (boosts, items, weather, screens, crit) | the replay gate: our mon's exact HP after their hit; their HP percentage after ours; the screen draws the seen mon's spread and keeps it only if the replay matches | **Default (`dice="seed"`): NO, too sharp.** The prefix replays on the TRUE dice seed, so a world must reproduce the observed damage with the truth's own damage ROLL. An honest player knows only that the damage fell inside the 16-roll range (× the printed crit flag). **`dice="rolls"` (F1 tier A, BUILT 2026-10-19, default OFF): YES for the roll's value**: any roll that prints what the searched side saw, the world weighted by Π k / 16 | **F1** (§7): MEASURED and PARTLY RESOLVED (§3.3.1): today's screen rejects 9 % of its candidates that fit on another roll; tier A cuts the exclusions 20 → 6 of 60. The crit roll and the other dice remain the truth's (tier B) |
 | **speed order** | Speed inequalities (priority bracket, paralysis, Quick Claw, which rolls battle-wide each turn in gen 3) | the replay gate (who moved first is printed) | partly: a speed TIE spends a die without printing a line, so under the true seed the gate pins the tie | MEASURED: a seen mon's Speed ±1 is rejected for 5.0 % of seen mons, in 20.1 % of decisions (`design_information_levers.md` §7.5) |
 | **abilities** | the ability of a two-ability species | announced → kept; otherwise drawn ∝ Smogon, and the gate rejects one whose effect would have printed (Intimidate on entry, an immunity line) | partly: a dice-rolling ability that did NOT trigger (Static, Flame Body, Effect Spore, Cute Charm, Shed Skin) is visible to the gate through the dice | MEASURED: negligible on this pool |
 | **PP use** | the number of uses of each revealed move; Struggle implies no usable move | the replay consumes PP exactly as the truth did; a never-used move has full PP; `playout_open` refuses a Struggle the world does not force | yes (the opponent's PP is never shown to us in gen 3; only our count of uses) | a Struggle / Taunt / Disable / Choice-lock history is a strong constraint on the UNREVEALED moves, honoured by rejection only (rare, unmeasured) |
@@ -150,7 +161,8 @@ three steps:
      the three banks of §6.1). A per-mon chain (a directed search, then Metropolis-Hastings) handles the hard cases.
      When the chain fails in 200 steps, the decision is EXCLUDED (§3.5).
   2. **It needs the true dice to make the replay deterministic.** That makes the posterior too sharp (damage rolls,
-     speed ties, non-triggering dice abilities: §3.2).
+     speed ties, non-triggering dice abilities: §3.2). The damage-roll leg is cured behind `dice="rolls"` (tier A,
+     §3.3.1); the others need tier B.
   3. **Cost.** About 28 s per decision at 4 worlds on a contended box; the hardest decisions take minutes.
 
 **Constraint propagation** derives the feasible set of each hidden fact from the log analytically: an interval on the
@@ -177,7 +189,7 @@ TRUTH from the feasible set.
    catches a mis-ported mechanic such as §3.4's. The legality rule (F2, BUILT 2026-10-19) is the first rule that
    carries it: `world_legality.Legality.require_true_team` raises before any world is drawn.
 
-#### 3.3.1 What the VERIFY step needs to accept any dice outcome consistent with the log (F1; design note, NOT built)
+#### 3.3.1 What the VERIFY step needs to accept any dice outcome consistent with the log (F1; tier A BUILT 2026-10-19 behind `dice="rolls"`, default OFF; tier B not built)
 
 **Why today's replay is too sharp.** The world replays the prefix on the TRUTH's seed. The Rust core's dice are one
 `Prng` stream (`src/rust_sim/src/prng/mod.rs`), consumed in a fixed order, so the world's k-th draw IS the truth's k-th
@@ -203,9 +215,76 @@ the full 16-roll table (`damage.rs`, `rolls[r]`); every draw is counted (`POKESI
 - A Counter / Mirror Coat / Hidden Power regression (§3.4) for any rule that reads a move's category.
 - The weight is a likelihood, not a probability of the world: a search that uses it must normalise over the J worlds.
 
-**Measure before building.** Without any engine change: for each screened seen mon on the banks, count the spreads the
-screen REJECTED whose only failing line is a damage line an analytic 16-roll check would accept (the replay's 16-roll
-table makes this exact). That bounds tier A's widening and the share of §3.5's exclusions it would recover.
+**Measured before the builder was wired** (`research_state/measurements/world_rolls_f1a_2026-10-19/`, step 1). The
+measurement used the engine itself rather than an analytic 16-roll check: every gate replay today's builder made
+(`dice="seed"`, the studies' call: J 8, 60 tries) was SHADOWED by the same replay with tier A's match control, both
+judged by the builder's byte gate. On 40 random stage-0 states:
+- today's screen ran 22,132 candidate replays and accepted 1,084; **tier A accepts 2,978 of the same candidates
+  (2.7×)**: 1,894 of today's 21,048 rejections (9.0 %), in 37 of the 40 states;
+- a rescued candidate took 1.65 rolls off the stream on average; there are 15 damage-roll sites per prefix on average;
+- **nothing today accepts is rejected by tier A** (0 of 27,236 screen and joint replays, 3 excluded states included):
+  the control reproduces today's trajectory whenever the stream's roll is consistent.
+
+Not negligible, so tier A was built.
+
+**Tier A AS BUILT (2026-10-19).**
+- **The Rust core** (`src/rust_sim/src/rolls.rs`, `gen3_roll_control_v1`; contract and gates:
+  `designs/rust_sim/search_and_replay_drivers.md` "The damage-roll control"). Every damage roll (the single hit, a
+  multi-hit strike, a confusion self-hit, Beat Up, a Future Sight cast, a Jump Kick crash) goes through ONE site that
+  draws the `random(16)` exactly as before and returns the roll used. Unarmed (every training, eval, live and gate
+  path) nothing changes. Three modes:
+  - RECORD (the truth's pass) records, per site, its key (kind, sides, move; Hidden Power's type folded) and what the
+    searched side SAW: our mon's exact HP, the opponent's percent, a Substitute held / broke;
+  - MATCH (a world's pass) takes the stream's roll when it prints the target's sight, else the consistent roll nearest
+    it, and adds log(k / 16) to the world's weight; an empty set makes the world infeasible (the gate rejects it);
+  - FORCE replays a table `[[site, roll], …]`, the trajectory a match took.
+  A site whose sight a post-roll modifier can change is PINNED (the stream's roll, factor 1 / 16): Beat Up, a Future
+  Sight cast and a Jump Kick crash always; a Focus Band holder, Endure or False Swipe when some roll is lethal. On the
+  60 states no site was pinned.
+- **The builder** (`main.value_search.worlds`, `WorldSampler(dice="rolls")`; `dice="seed"` is today and the
+  default). The truth's replay records the targets once per decision; every screen and joint gate replay matches
+  against them; each returned world carries `Worlds.log_w` (Σ log k / 16) and `Worlds.rolls` (its force table, also
+  its log's `"rolls"`). The playout tool (`rust_env_playout_open`'s `log.rolls`) and the info audit's regate replay
+  that table, so search plays the world the gate accepted. The shared screen caches are keyed by the dice mode.
+- **The guards, as built.** THE TRUTH-PASSES GUARD: per decision, the true team's own match replay must pass the
+  gate on exactly its own rolls (no forced site) with a finite weight, else `RollMatchError` raises (a defect, never
+  an exclusion; planted in `world_rolls_integration_test.py`). THE IDENTITY: record, a force of every site's own
+  roll and a self-match are byte-identical to the unarmed replay (`tests/rolls_test.rs` and the Python test). THE
+  ENGINE IS THE ORACLE for the consistent set: each of the 16 rolls forced and read off the viewer's stream gives the
+  same set and the same k the match computes. The F2 legality rule is untouched (every set and world still passes
+  the validator; the truth-team legality guard runs first).
+
+**The re-measure (step 5): the builder rebuilt with `dice="seed"` and `dice="rolls"` on the same 60 states** (the 40
+random ones and 20 the STORED builds excluded; descriptive, builds only; `result_f1a.json`):
+
+| | `seed` (today) | `rolls` (tier A) |
+|---|---|---|
+| excluded, 40 random states | 3 (7.5 %) | **0** |
+| excluded, 20 stored-excluded states | 17 | **6** (12 recovered, 1 newly lost) |
+| excluded, all 60 | 20 | **6** (15 recovered, 1 lost) |
+| exclusion causes | 19 screen chains, 1 tries | 5 screen chains, 1 tries |
+| defects (a guard raised) | 0 | 0 |
+| wall time per state (mean, contended cores) | 96 s | **42 s** |
+| screening replays per state (39 states ok in both) | 457 | 262 |
+
+On the 39 states both modes built (312 worlds each):
+
+| | `seed` | `rolls` |
+|---|---|---|
+| a seen mon's item / ability / spread equal to the truth's | 0.953 / 0.989 / 0.056 | 0.951 / 0.980 / 0.047 |
+| a seen mon's EXACT HP at the root equal to the truth's | 0.601 | 0.588 |
+| distinct spreads per seen mon across the 8 worlds | 2.21 | 2.65 |
+| never-seen species marginal, TV seed vs rolls | — | 0.0005 |
+| the info audit's regate passes | 39 / 39 | 39 / 39 |
+
+Under `rolls`, 91 % of worlds took at least one roll off the stream (4.8 sites on average). The weights are mild: the
+effective sample size of the normalised weights is 7.3 of 8 on average (minimum 2.1; 2 of 54 states below 4).
+
+**Reading.** Tier A widens the honest posterior on spreads (more distinct spreads, slightly fewer exact matches with
+the truth: the true-dice replay was optimistic) and removes most of the exclusions, at less than half the cost, while
+the fact marginals barely move. It is a correctness and robustness change, not a lift lever: the sets (§0) are still
+what the sampler lacks. Worlds built with `dice="rolls"` are not comparable with `dice="seed"` worlds; no study arm
+was re-run, and every study in flight keeps its own pin.
 
 ### 3.4 A checked edge case every propagation rule must honour: Counter, Mirror Coat and Hidden Power (gen 3)
 
@@ -246,7 +325,8 @@ with custom spreads: Tyranitar 23, Zapdos 17, Swampert 14, Jirachi 13, Metagross
 2. IVs below 30 that the log pins (a minimised Attack seen through a confusion hit; the owner's 2026-10-12 ruling keeps
    such decisions excluded);
 3. **the true-dice replay**, which demands the observed damage from the truth's own roll. That is the narrowest
-   possible window, and an honest dice-marginalised check would widen it.
+   possible window. **Tier A (`dice="rolls"`, §3.3.1) widens it: on 60 rebuilt states the exclusions fall 20 → 6,
+   and on 20 states the stored builds excluded, 17 → 6.** The rest are causes 1 and 2 and chain-path failures.
 
 Why this matters beyond the 10 %:
 - **The exclusions are not missing at random** (on the states only the blind replica could fit, n_M is 1.17,
@@ -262,7 +342,7 @@ Why this matters beyond the 10 %:
 | 1 | the seen mons' unrevealed moves are drawn from Smogon's per-species MARGINALS, independently of each other, the teammates, the item and the spread | **M** (necessary, n_M 0.58) | §6.1: one seen mon's hidden moves all right 0.12; every seen mon's 0.011 |
 | 2 | the never-seen species are drawn ∝ the MEAN teammate share of the seen species, not jointly; the drawn mates do not condition the next draw | U | §6.1: p_exact(U\*) 0.020 (the joint (b) 0.045) |
 | 3 | the opponent's own choices are not used as evidence | M, U | unmeasured; candidate (f) |
-| 4 | the true-dice replay over-sharpens spreads and causes exclusions | I / S (+0.019 once U is known) | F1; §3.5 |
+| 4 | the true-dice replay over-sharpens spreads and causes exclusions | I / S (+0.019 once U is known) | F1, PARTLY RESOLVED: tier A (`dice="rolls"`, default OFF) cuts exclusions 20 → 6 of 60 (§3.3.1); the crit and other dice remain the truth's |
 | 5 | the hidden counters are the truth's | a leak (optimistic) | the builder's residual |
 | 6 | ~~no full-validator legality check~~ RESOLVED 2026-10-19 | M (impossible sets) | F2: 5.2 % of worlds, 32 % of states before; 0 after (§7) |
 
@@ -752,14 +832,27 @@ itself (F2, 2026-10-19, `world_legality`): every arm through `WorldSampler` gets
 
 ## 7. HAZARDS AND FINDINGS
 
-- **F1, the true-dice replay over-sharpens the honest posterior.** The prefix replays on the TRUE seed, so a world must
-  reproduce the observed damage with the truth's own roll. That pins spreads tighter than an honest player could (16
-  rolls), beyond the measured speed-tie and dice-ability legs. Its size is UNMEASURED. It makes F optimistic on items,
-  abilities and spreads, and it is a likely cause of the exclusions (§3.5). Cure: the constrained-dice replay (§3.3).
-  It can be measured without that cure: count the seen-mon spreads the screen REJECTS that an analytic 16-roll check
-  would accept. **What the verify step needs (design note, 2026-10-19, §3.3.1):** tier A replaces only the damage
-  roll's VALUE with one of the consistent rolls, keeping the dice stream aligned (weight k / 16); tier B types every
-  draw site and forces printed outcomes / samples silent ones (weight = the likelihood). Neither is built.
+- **F1, the true-dice replay over-sharpens the honest posterior: PARTLY RESOLVED 2026-10-19 (tier A BUILT, default
+  OFF; §3.3.1).** The prefix replays on the TRUE seed, so a world had to reproduce the observed damage with the truth's
+  own roll. MEASURED: today's screen rejects 9.0 % of its candidates that fit on another roll (2.7× the acceptances, 37
+  of 40 random states). Tier A (`WorldSampler(dice="rolls")`, the Rust core's damage-roll control) replaces only the
+  roll's VALUE, the stream aligned, weight Π k / 16: exclusions 20 → 6 of 60 rebuilt states, cost halved, fact
+  marginals barely moved. **What remains:**
+  - **Tier B is not built:** the crit roll, speed ties, a dice item / ability that did not trigger and the pre-root
+    counters are still the truth's dice.
+  - **The default is still `seed`.** Switching it changes every honest read and is the next study's call (stage 1).
+  - **Search does not read the weights yet.** It averages its worlds uniformly; the worlds are draws from the prior
+    restricted to the consistent set, so the posterior needs the weights (mild here: ESS 7.3 of 8).
+  - **The choice inside the consistent set prefers the stream's roll**, so a matched world carries the truth's hidden
+    exact HP after a site whenever the truth's roll fits it (the same class as today's true-dice leak). The weight is
+    the likelihood along the path taken, not marginalised over the set's other rolls.
+  - **A pinned site's factor (1 / 16) is a lower bound**, and pinning on a world's hidden Focus Band is world-dependent
+    (no site was pinned on the 60 states).
+  - **One state built under `seed` failed under `rolls`** (a Salamence screen chain, 200 steps). Its every
+    seed-accepted candidate is also accepted under `rolls` (checked by shadow): the chain's path differs, a
+    robustness gap of the chain, not of the control.
+  - **A world rebuilt from its TEAM alone loses its rolls.** Every consumer must carry `Worlds.rolls` / the log's
+    `"rolls"` (the playout tool and the info audit do).
 - **F2, the honest builder made ILLEGAL worlds: RESOLVED 2026-10-19** (`main.value_search.world_legality`; the read in
   §6.1, after the fix).
   - **Before:** worlds passed the format clauses and the engine-runnable checks, never Showdown's
@@ -839,3 +932,4 @@ itself (F2, 2026-10-19, `world_legality`): every arm through `WorldSampler` gets
 |---|---|---|---|---|
 | 2026-10-19 | **This doc CREATED** (orchestrator brief after the maturity battery's first LEAN read; the owner added DETERMINIZATION the same day) | One always-current doc for the world sampler and determinization. The TARGET in four levels (the truth's likelihood, recall, the exact-world mass q_SM, and the existing value meters TODAY / G / r); the facts a world must honour and how each is enforced today (rejection on a true-dice replay); PROPOSE → PROPAGATE → VERIFY with dice marginalised and a truth-passes guard; the Counter / Mirror Coat / Hidden Power rule as a named test; six candidates ranked (c) team-level corpus model > (f) opponent-choice likelihood > (b) joint Smogon teammates > (e) fact-based inference (correctness) > (d) the network's belief, against the baseline (a); the one-turn matrix in its Bayesian (opponent-type-per-world) form; stage 0 (zero playouts) READ and stage 1 designed | a species-first programme (stage 0: the network already holds the species; the sets are missing); the doubles bots' shared-column matrix (invalid when the opponent's moves differ by world); Foul Play's per-world Nash average (strategy fusion); pure constraint propagation (re-implementing mechanics is a GIGO class, §3.4); fitting any sampler on the evaluated population | §1's pointers; `measurements/world_sampler_screen_2026-10-19/`; `deps/pokemon-showdown/data/mods/gen3/moves.ts` Counter / Mirror Coat; `design_value_discrimination.md` §14.4; `showdown_bots_landscape_2026-10-18.md` |
 | 2026-10-19 | **F2 RESOLVED: the honest builder's worlds are LEGAL** (orchestrator brief; `main.value_search.world_legality`) | Rejection through Showdown's pinned `TeamValidator('gen3ou')` (one persistent Node child, `utils/bridge/validate_stream.js`, memoised): each never-seen set and each seen mon's unrevealed moves are redrawn until accepted, so the draw is the prior conditioned on legality; gender-made and team-level failures are redrawn; the TRUE team must pass the same rule or `LegalityRuleError` raises; `world_guard.check_legal` re-validates every returned world; the audit's `legality` reads `showdown_invalid`; the stale Hidden Power type field of three pool sets is dropped from a seen mon's world. Read on 316 random stage-0 states: 0 / 2,272 illegal worlds (stored 130 / 2,288), 0 new exclusions caused by the rule (5 vs 6 on the 113 touched states), species marginal unmoved (TV 0.0028); the F1 verify step's two tiers written down (§3.3.1), not built | a per-species incompatible-combination table derived from the validator (the doc's first proposal: a second copy of the breeding / event rules that can drift, and only a pairwise approximation of a triple or event rule); re-weighting the species or the screened spread by their sets' legality rate (an artefact of the independent draw); whole-world rejection (the same artefact on the species) | §6.1 (after the fix), §7 F2, §3.3.1; `measurements/world_legality_f2_2026-10-19/` (`result_f2.json`); `world_legality_test.py`, `world_legality_integration_test.py`, `info_audit_integration_test.py` |
+| 2026-10-19 | **F1 TIER A BUILT, default OFF** (orchestrator brief; `pokesim::rolls`, `WorldSampler(dice="rolls")`) | MEASURED FIRST by shadowing every gate replay of today's builder with the engine's match control (not an analytic 16-roll check: the engine is the oracle): 9.0 % of the rejected candidates fit on another roll, 2.7× the acceptances. Built: one damage-roll site in the Rust core (draw unchanged; record / match / force; pins where a post-roll modifier could change the sight); the builder's option with the truth-passes guard (`RollMatchError`), per-world `log_w` and `rolls`, the playout tool and the regate replaying the table. Re-measured on 60 states: exclusions 20 → 6, cost 96 → 42 s, marginals barely moved, regate 39 / 39 (§3.3.1) | building tier B now (typed draw sites everywhere; several agent-days); a uniform pick inside the consistent set (would break the truth-passes identity: the truth's own trajectory would not be reproduced); flipping the default (changes every honest read; stage 1's call); feeding the weights into the MH chain (the prior × indicator chain plus world weights is already the correct importance form) | §3.3.1, §3.5, §7 F1; `measurements/world_rolls_f1a_2026-10-19/` (`result_f1a.json`); `src/rust_sim/tests/rolls_test.rs`, `src/rust_env/tests/search_rolls_test.rs`, `world_rolls_integration_test.py` |
