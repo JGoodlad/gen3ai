@@ -18,6 +18,8 @@ damage roll be any roll that prints what the searched side saw and weights the w
 fact's draw under the spec), ``world_screen`` (the seen mons' item / ability / spread posterior draws: prior
 rejection, then an observation-guided Metropolis-Hastings chain), ``playout`` (the lockstep leaf engine: greedy
 playouts, optionally truncated and scored by the critic), ``search`` (``search_decision``; ``SearchConfig(weights=
-"likelihood")`` averages a ``dice="rolls"`` sampler's worlds by their likelihood weights). Design, measurements and
+"likelihood")`` averages a ``dice="rolls"`` sampler's worlds by their likelihood weights), ``opp_likelihood`` (OFF by
+default: each world's likelihood of the opponent's OBSERVED past choices, the network seated as the opponent; candidate
+(f) of `designs/endstate/design_world_sampler.md` §4). Design, measurements and
 the bootstrap plan: `designs/endstate/design_value_discrimination.md`.
 """
