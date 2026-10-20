@@ -27589,3 +27589,60 @@ check at zero gain (F-ED-29): TRUE_PLATEAU is reachable, not likely. Bots: a bot
 
 Evidence: `research_state/measurements/cycle_monitor_retro_2026-10-19/` (`x26_ladder_sizebar.json`,
 `x34_status_sizebar.txt`, `size_bar_oc.*`); `endstate/design_evaluation.md` §8.2, F-ED-26–F-ED-29, Decision record.
+
+### 2026-10-20 · MEASUREMENT · **L3 of the hidden-information search review, READ under its pre-registration (`4d149799`): the opponent's own past choices identify the true world. With X26's 225M network seated as the opponent, the TRUE world out-ranks today's honest worlds (`dice="rolls"`, legality on, J = 8) under the likelihood of the opponent's observed choices with AUC 0.692 [0.655, 0.728], WORKS (snapshot opponents 0.796, scripted bots 0.588 WEAK); a confidence-only control reads 0.481, so it is evidence, not familiarity; among 9 worlds the truth would take 0.249 of the weight (uniform 0.111). Re-weighting today's 8 honest worlds moves the share of correct unrevealed moves only +0.005 [−0.004, +0.013]: a good judge with nothing near the truth to pick. PROVISIONAL**
+
+**Question** (`literature/hidden_info_search_review_2026-10-20.md` §3, §10 L3; `endstate/design_world_sampler.md` §4 (f);
+`endstate/search_ledger.md` §7 Q15). Honest worlds are almost never right about the opponent's unrevealed moves. An
+unused move leaves no protocol line, but the choices made instead of it do. Does the truth out-rank honest worlds under
+the likelihood of the opponent's observed choices, with our network as the opponent model?
+
+**Design** (`measurements/search_l3_2026-10-20/PREREGISTRATION.md`, committed before any likelihood of a registered state;
+the read script registered by sha256). Forward passes only, no playout.
+- **States:** stage 1's 287 states (X26 225M; bot / snapshot strata).
+- **Worlds:** the truth plus 8 worlds from today's builder.
+- **The likelihood:** log L(w) = Σ_t log π(a_t | the OPPONENT's own row at its decision t in world w), the masked
+  softmax of X26 225M's policy logits in float64. Choices the template rewrote to a slot (unobserved) and the
+  opponent's root-round choice (pending) are excluded.
+- **The read:** the primary is the pooled AUC of the truth vs an honest world (ties within 1e-6 nats count ½), with
+  WORKS at lower bound > 0.555. The secondaries are the truth's weight, a familiarity control and the re-weighting
+  lift on the honest worlds' facts.
+- **Built:** the reusable function `main.value_search.opp_likelihood` (`8fe4fb89`, OFF by default; tests fail on
+  revert of the seat and of the exclusion rules).
+
+**Gates.** All PASS:
+- 287 registered ids; 0 defects (no guard raised on any world); 10 / 10 deterministic rechecks;
+- 283 / 283 truth opponent rows byte-identical at X26's pin;
+- 4 builder exclusions; 283 read.
+
+**Result.**
+- AUC 0.692 [0.655, 0.728] pooled, WORKS. Snapshot 0.796 [0.751, 0.839] (WORKS), bot 0.588 [0.536, 0.641] (WEAK).
+- Truth above all 8 worlds: 0.304 (snapshot 0.465, bot 0.142; chance ≤ 0.111).
+- The truth's weight among 9: 0.249 [0.212, 0.286] (snapshot 0.360, bot 0.137; uniform 0.111).
+- Familiarity control AUC 0.481 [0.443, 0.520]; the regret statistic (log L − conf) 0.676.
+- Re-weighting the honest worlds:
+  - correct unrevealed moves +0.005 [−0.004, +0.013] (snapshot +0.014 [+0.005, +0.024], bot −0.005);
+  - exact move sets −0.000;
+  - never-seen species +0.008 [−0.008, +0.025].
+- By informative choices: 1–4: 0.675, 5–9: 0.609, ≥ 10: 0.729 (Spearman +0.13; a few choices carry most of it).
+
+**Reading.** Inference from the opponent's play works here as in Skat and bridge: the network recognises the world
+the opponent was actually playing, most where the opponent plays like it. It does not need the truth to be familiar
+(the control is at chance). But the honest worlds hold nothing near the truth, so weighting them gains almost nothing.
+The lever multiplies a proposal set that can hold near-true worlds; it does not replace one. The registered
+consequence of WORKS is to build stage 1c: a larger F proposal set or the team-level corpus (c), weighted by this
+likelihood, with playouts.
+
+**FINDINGS.**
+1. The snapshot stratum is optimistic: there the opponent model nearly is the opponent. A ladder human needs a
+   behaviour-cloned model (UNVERIFIED how ours fares).
+2. The AUC and the truth's weight put the truth inside the candidate set, which no honest search has. The honest
+   re-weighting lift (≈ 0) is the decision-relevant number for today's proposals, and no playout was run.
+3. One model, one bank, one anchor.
+4. Against bots, the exact-move lift is slightly negative (−0.003 [−0.006, −0.001]).
+5. Process: the run waited ~2 h for a heavy slot. After it, a `pgrep -f` kill of my own wait timer also signalled
+   other sessions' identical `timeout 3300 sleep 3300` timers (14 processes, only sleeps), breaking standing rule 2.
+
+Evidence: `research_state/measurements/search_l3_2026-10-20/` (PREREGISTRATION, README, `result_l3.json`,
+`l3_registration.json`, `l3_run.py`, `l3_read.py`); `src/main/value_search/opp_likelihood.py`;
+`endstate/search_ledger.md` status, §1, §7 Q15; `endstate/design_world_sampler.md` §4 (f).

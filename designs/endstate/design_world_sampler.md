@@ -71,6 +71,9 @@ The zero-playout screen (§6.1) already changes the picture:
   printed damage number with the truth's own damage roll. With `dice="rolls"` any of the 16 rolls that prints the same
   thing will do. Before building, the measurement: 9 % of the candidates today's screen rejected fit on another roll.
   On 60 rebuilt states the exclusions fall from 20 to 6, and the worlds' facts barely move (§3.3.1).
+- **The opponent's own choices recognise the truth (L3, 2026-10-20).** The network, seated as the opponent, ranks the
+  true world above an honest one 69 % of the time (80 % against its own snapshots); among 9 worlds it would give the
+  truth a quarter of the weight. But today's honest worlds hold nothing near the truth for it to pick (§4 (f)).
 - **So the first target is the moves of the seen Pokémon, kept consistent with the rest of the team**: real teams and
   sets (team-level and set-level models), the legality of move combinations, and the opponent's own choices as
   evidence. A better species guess alone will not do it. Stage 1 (§6.2) then asks the open question: do worlds that are
@@ -156,7 +159,7 @@ three steps:
 | exact HP of a seen mon | from its spread and the replayed history | follows from the screened spread | as honest as the spread (see damage) | 70 / 124 seen mons' exact HP equal the truth's (`design_information_levers.md` §7.1) |
 | **hidden counters** | sleep / confusion / Encore / Disable / lock turns left | NOT drawn: rolled before the root on the true seed, so every world holds the truth's | **no** (the builder's declared residual) | cure: a root-state resample (not built) |
 | gender | the turn-0 gender draws | the engine's gender pad places the drawn never-seen mons on the true draw slots | yes (one residual coin, unobservable) | — |
-| **opponent's choices** | what a player who held world w would have done | **not used** | — | candidate (f), §4 |
+| **opponent's choices** | what a player who held world w would have done | **not used by the builder**; scored on request by `main.value_search.opp_likelihood` (OFF by default) | yes (the opponent's own seat; unobserved and root-round choices excluded) | candidate (f), §4. MEASURED by L3 (2026-10-20): the truth out-ranks honest worlds, AUC 0.692 |
 
 ### 3.3 How consistency is checked: rejection, constraint propagation, and the hybrid we should build
 
@@ -349,7 +352,7 @@ Why this matters beyond the 10 %:
 |---|---|---|---|
 | 1 | the seen mons' unrevealed moves are drawn from Smogon's per-species MARGINALS, independently of each other, the teammates, the item and the spread | **M** (necessary, n_M 0.58) | §6.1: one seen mon's hidden moves all right 0.12; every seen mon's 0.011 |
 | 2 | the never-seen species are drawn ∝ the MEAN teammate share of the seen species, not jointly; the drawn mates do not condition the next draw | U | §6.1: p_exact(U\*) 0.020 (the joint (b) 0.045) |
-| 3 | the opponent's own choices are not used as evidence | M, U | unmeasured; candidate (f) |
+| 3 | the opponent's own choices are not used as evidence | M, U | L3 (2026-10-20): they identify the truth (AUC 0.692, WORKS), but re-weighting today's 8 worlds moves the moves' match only +0.005; candidate (f) |
 | 4 | the true-dice replay over-sharpens spreads and causes exclusions | I / S (+0.019 once U is known) | F1, PARTLY RESOLVED: tier A (`dice="rolls"`, default OFF) cuts exclusions 20 → 6 of 60 (§3.3.1); the crit and other dice remain the truth's |
 | 5 | the hidden counters are the truth's | a leak (optimistic) | the builder's residual |
 | 6 | ~~no full-validator legality check~~ RESOLVED 2026-10-19 | M (impossible sets) | F2: 5.2 % of worlds, 32 % of states before; 0 after (§7) |
@@ -457,7 +460,8 @@ stated.
     choices made instead of it do.
 - **Data.** None new. Computing the weights needs one forward per past opponent decision per world: the gate's replay
   must also emit the opponent side's rows.
-- **Expected lift.** It targets M, the class §6.1 shows is missing. UNVERIFIED; no analogue has been measured.
+- **Expected lift.** It targets M, the class §6.1 shows is missing. **MEASURED by L3 (2026-10-20, zero playouts; see
+  the BUILT bullet below):** a strong JUDGE, but no lift on today's proposals.
   Re-weighting only 8 F worlds cannot put weight on a truth none of them holds, so it needs a larger proposal set
   (e.g. build 64 and resample 8 by weight), or it is paired with (c).
 - **Hazards.**
@@ -476,6 +480,18 @@ stated.
   world's searched-side rows differ from the truth's (e.g. replayed without its rolls) or a token is not one legal
   choice. A familiarity control (`conf`, the network's confidence in its own top choice) rides along. Measured by L3
   (`measurements/search_l3_2026-10-20/`, pre-registered `4d149799`).
+- **L3 READ 2026-10-20 (WORKS; X26 225M as the opponent model; 283 stage-1 states; MEASURED, PROVISIONAL).**
+  - **The truth vs today's honest worlds:** the TRUE world out-ranks an honest world (`dice="rolls"`, legality on) with
+    AUC 0.692 [0.655, 0.728]. Against X26's own snapshots 0.796, against scripted bots 0.588.
+  - **Not familiarity:** the confidence-only control reads 0.481.
+  - **The truth's weight:** inside the weighted set of 9 it takes 0.249 (snapshots 0.360; uniform 0.111). That is the
+    dose curve's p\* range, against the network belief's ≈ 0.01.
+  - **No lift on today's proposals:** re-weighting today's 8 honest worlds moves the share of the seen mons' correct
+    unrevealed moves only +0.005 [−0.004, +0.013] (+0.014 [+0.005, +0.024] against snapshots); exact move sets and
+    never-seen species are not detected.
+
+  **Consequence:** stage 1c pairs this likelihood with a proposal set that can hold near-true worlds (64 F proposals
+  resampled to 8, or (c)'s real teams as proposals), never with today's 8 alone.
 
 ### (b) Smogon teammates, jointly (naive Bayes over the teammate table): rank 3
 
@@ -856,7 +872,7 @@ teams are public.
 | the α fit on the ladder corpus | — | — | minutes |
 | **stage 1a total** | | | **≈ 12–24 CPU-h**, one slot (rule 5b; the maturity queue holds the other two) |
 | stage 1b (E2, 1,108 states, end2 + prod pins) | | | ≈ 40–75 CPU-h, conditional |
-| stage 1c: (f) re-weighting over 64 proposed worlds | + the opponent-side replay and forwards | resample to 8, ≈ 13 | ≈ 1 agent-day of driver + ≈ 10 CPU-h, after 1a |
+| stage 1c: (f) re-weighting over 64 proposed worlds | + the opponent-side replay and forwards (BUILT: `opp_likelihood`; L3 measured ≈ 1 s per 9 worlds once built) | resample to 8, ≈ 13 | the likelihood is built; ≈ 0.5 agent-day of driver + ≈ 10 CPU-h; L3 says WORTH BUILDING with a proposal set that can hold near-true worlds |
 
 **Build needed:** one measurement driver beside `pool_worlds.py` (`load_pool` swapped for a corpus, a backoff to B,
 the strict filter), and B's weight function: measurement-folder code. The validator redraw is BUILT into the builder
@@ -979,3 +995,4 @@ itself (F2, 2026-10-19, `world_legality`): every arm through `WorldSampler` gets
 | 2026-10-19 | **F1 TIER A BUILT, default OFF** (orchestrator brief; `pokesim::rolls`, `WorldSampler(dice="rolls")`) | MEASURED FIRST by shadowing every gate replay of today's builder with the engine's match control (not an analytic 16-roll check: the engine is the oracle): 9.0 % of the rejected candidates fit on another roll, 2.7× the acceptances. Built: one damage-roll site in the Rust core (draw unchanged; record / match / force; pins where a post-roll modifier could change the sight); the builder's option with the truth-passes guard (`RollMatchError`), per-world `log_w` and `rolls`, the playout tool and the regate replaying the table. Re-measured on 60 states: exclusions 20 → 6, cost 96 → 42 s, marginals barely moved, regate 39 / 39 (§3.3.1) | building tier B now (typed draw sites everywhere; several agent-days); a uniform pick inside the consistent set (would break the truth-passes identity: the truth's own trajectory would not be reproduced); flipping the default (changes every honest read; stage 1's call); feeding the weights into the MH chain (the prior × indicator chain plus world weights is already the correct importance form) | §3.3.1, §3.5, §7 F1; `measurements/world_rolls_f1a_2026-10-19/` (`result_f1a.json`); `src/rust_sim/tests/rolls_test.rs`, `src/rust_env/tests/search_rolls_test.rs`, `world_rolls_integration_test.py` |
 | 2026-10-19 | **STAGE 1 REGISTERED and LAUNCHED** (orchestrator brief; `measurements/world_sampler_stage1_2026-10-19/`) | §6.2's arms on the 287 maturity LEAN states at X26 225M. **F_legal** (F at HEAD) is the baseline of record. The brief's confound and factor arms are SECONDARY: **F_off** (the legality rule off) and **F_rolls** (tier A, uniform and likelihood-weighted through the new `SearchConfig(weights="likelihood")`). α = 89.1 is fitted on the ladder corpus alone. Every arm but C_pool is F's builder with its departures swapped in for one sample, on one shared screen cache: CRN, with a backoff world exactly B's. A seen mon's Hidden Power is the screen's. C_pool uses the pin's pool packing (F9). The playouts run at X26's pin + the cherry-picked roll control, and its identity tooth passed 12 / 12. One heavy job runs at a time; the read is made once, on the done prefix at the stop | stage 0's α = 1 backoff (over-confident, §6.1 point 4); playing at HEAD (the network's obs and τ solve changed since the pin, so arms would not be comparable with the banked F / FN / O); dropping the rolls factor (the default switch is stage 1's call); a mid-run interim verdict (two looks); the forum per-species sets strict-filtered for NS (stage 0's NS configuration kept, flagged optimistic) | `PREREGISTRATION.md`, `alpha_fit.json`; `play_s1.py`'s identity mode (`identity.json` in the archive); `search_weights_test.py` |
 | 2026-10-20 | **Candidate (f)'s likelihood BUILT, default OFF** (orchestrator brief, L3 of the literature review; `main.value_search.opp_likelihood`) | A reusable function, not a sampler mode: the opponent's own rows from each world's prefix replay, scored by any forward; unobserved (slot-rewritten) and pending (root-round) choices excluded and counted; throwing guards on the searched side's rows and the tokens; tests that fail on revert of the seat and of the pending rule | scoring the slot-rewritten choices with the world's rendered token (the slot is the truth's: a leak); scoring the searched side's rows (the opponent model must see what the opponent saw); a `SearchConfig` weighting mode now (stage 1c's job, after L3's read) | `measurements/search_l3_2026-10-20/PREREGISTRATION.md` |
+| 2026-10-20 | **L3 READ: WORKS** (`measurements/search_l3_2026-10-20/`, pre-registered `4d149799`) | §0, §3.2 and §3.5 rows, §4 (f) (the result and its consequence), §6.2's stage-1c cost row. The opponent's choices JUDGE worlds well (AUC 0.692; 0.796 snapshots, 0.588 bots; not familiarity, control 0.481; the truth's weight 0.249 of 9), but re-weighting today's 8 honest worlds moves the moves' match only +0.005, so stage 1c needs a bigger or team-level proposal set | (f) ranked first now (its value depends on the proposals: it multiplies (c), it does not replace it); stage 1c as a re-weighting of today's 8 worlds; quoting the snapshot stratum as a ladder number | L3 README §2–§4, `result_l3.json` |

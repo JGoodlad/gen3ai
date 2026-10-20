@@ -3,7 +3,22 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from
 this doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-20, latest): L1 and L5 of the review are READ** (`../research_state/measurements/search_l1_l5_2026-10-20/`;
+**Status (2026-10-20, latest): L3 of the review is READ: the opponent's own choices DO point at the true world**
+(`../research_state/measurements/search_l3_2026-10-20/`; pre-registered `4d149799`; forward passes only, no playout).
+X26's 225M network, seated as the opponent, scores how likely the opponent's actual past choices were in each world.
+On the 283 stage-1 states the TRUE world beats a random honest world with AUC **0.692** [0.655, 0.728]: **WORKS** by the
+registered rule.
+- **By opponent:** 0.796 against X26's own snapshots, 0.588 against scripted bots (WEAK).
+- **It is evidence, not familiarity:** a control that ignores the chosen action reads 0.481, at chance.
+- **The truth's weight:** placed among the 8 honest worlds it would take 0.249 of the weight (0.360 against
+  snapshots; uniform 0.111). That is the range the dose curve asks for.
+- **The limit:** re-weighting today's honest worlds moves almost nothing toward the truth's hidden moves (+0.005
+  [−0.004, +0.013] pooled; +0.014 against snapshots), because they hold no near-true world to find.
+
+**The likelihood is a good JUDGE; the proposals are the binding piece.** Stage 1c (a larger or team-level proposal
+set, weighted by it) is now worth building. §1, §7 Q15 carry it.
+
+**Status (2026-10-20): L1 and L5 of the review are READ** (`../research_state/measurements/search_l1_l5_2026-10-20/`;
 pre-registered `d443c098`; zero playouts, banked rows). **L1: an acting rule ANCHORED to the policy stops honest search
 from hurting but does not make it pay.** Three anchors (piKL, Gumbel's scale, a deviation threshold), each fitted on
 Tier 1 and read held out: on X26 they lift the argmax's −0.012 to about the policy (−0.007 to +0.000), never above it
@@ -182,6 +197,23 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
   turns 1–7, 0.19 after turn 22 (Skat ≈ 0.6). The bias proxy (0.06) is "the searched side is about to lose". In Long et
   al.'s synthetic map this region is where PIMC loses least, so strategy fusion and non-locality do not explain the
   honest null.
+- **The opponent's own past choices identify the true world** (L3, `../research_state/measurements/search_l3_2026-10-20/`;
+  pre-registered; 283 stage-1 states at X26 225M; forward passes only; MEASURED, PROVISIONAL, one model and bank).
+  - **The likelihood:** Π over the opponent's observed past choices of π_X26(choice | the opponent's own row in world
+    w). The OPPONENT's seat: its world team, our team as it saw it. Unobserved (slot-rewritten) and root-round
+    choices are excluded.
+  - **The truth vs today's honest worlds (`dice="rolls"`, legality on, J = 8):** AUC 0.692 [0.655, 0.728], WORKS.
+    Snapshot opponents 0.796, bots 0.588.
+  - **Not familiarity:** a confidence-only control reads 0.481.
+  - **The truth's weight:** inside a likelihood-weighted set of 9 it is 0.249 (0.360 against snapshots), against the
+    network belief's ≈ 0.01 (§5.1).
+  - **The limit:** re-weighting the 8 honest worlds moves the share of correct unrevealed moves by only +0.005
+    [−0.004, +0.013] (+0.014 [+0.005, +0.024] against snapshots); exact move sets and never-seen species are not
+    detected.
+  - **Reading:** inference from the opponent's play works as the literature says. What binds is that no honest
+    proposal is near the truth: stage 1c must propose more or better worlds (64 F proposals, or the team-level corpus
+    (c)) and let this likelihood choose. Against a ladder human the right opponent model is a behaviour clone
+    (UNVERIFIED how our network fares there).
 - **What does not help:** more rollouts as critic-training labels, a per-action head on noisy oracle labels (−0.004), the
   proof-first 2·SE acting rule, trusting the policy prior at Gumbel's default scale, shared-seed dice pairing beyond one
   turn, a privileged critic, telling the frozen network the true moves (+0.001), training it 3M steps with them (−0.38 pp), the network's belief as a world sampler,
@@ -211,8 +243,9 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
      log-likelihood its worlds give the truth, rather than its exact-world mass? Zero cost; time-critical. (C_pool is
      both the only exact and the only calibrated arm for a pool-opponent bank, so "only C_pool pays" cannot separate
      the two readings.)
-  3. **L3, the opponent-action likelihood screen:** does the true world out-rank the honest worlds under the
-     opponent's own policy? ≈ 1 agent-day, forward passes only; it gates stage 1c (`design_world_sampler.md` §4 (f)).
+  3. **L3 READ 2026-10-20: WORKS** (AUC 0.692; snapshots 0.796, bots 0.588; the bullet above). Its registered
+     consequence: build stage 1c (`design_world_sampler.md` §4 (f), §6.2), with a proposal set large or good enough
+     to hold near-true worlds, since re-weighting today's 8 moves almost nothing.
   4. **L4, a calibrated-by-construction bank:** opponents whose teams are drawn by F's own sampler, then O and F. Does a
      right but diffuse prior suffice? ≈ 1–2 agent-days + 10–20 CPU-h.
   5. **L5 READ 2026-10-20 (descriptive):** leaf correlation 0.97 near the end, disambiguation 0.41 (0.70 early): near
@@ -560,7 +593,7 @@ feeds one shared trunk to both heads).
 | Q12 | Which world sampler puts search-sized weight on the truth, and do partly right worlds carry value? | **Stage 0** (zero playouts, READ 2026-10-19): the network holds the species, nothing holds the sets (§1). **Stage 1**: the sampler ablation on the maturity LEAN 287 states at X26 225M (arms: joint Smogon teammates, a team-level corpus model on the forum corpus minus near copies of the truth and on the ladder corpus, the pool ceiling, the network's species × the forum's sets), with PAYS / HURTS / NULL / MATERIAL / SEARCH-ENABLED rules (`design_world_sampler.md` §6.2) | **REGISTERED and RUNNING 2026-10-19** (`measurements/world_sampler_stage1_2026-10-19/`): ≈ 10–16 CPU-h on one slot, stop 24 h after launch; stage 1b on E2 only if 1a meets its trigger |
 | Q13 | Does honest search pay once its acting rule is ANCHORED to the policy (the optimizer's curse; Ataraxos's anchor)? | **L1** of the literature review: piKL / Gumbel scale / a deviation threshold, re-scored on the banked honest rows; λ fitted on Tier 1, read held out | **ANSWERED 2026-10-20** (pre-registered `d443c098`): PAYS-SCOPED on one cell (piKL, E2, TRUNC-4-K8 +0.012, lower +0.001 at 98.33 %), which is the leaf's own E2 signal (the anchor adds +0.002 [−0.005, +0.008]). The anchor removes the argmax's harm on X26 (−0.012 → ≈ 0) and beats the policy nowhere; the sampler binds, not the acting rule. Open: the registered replication on the plateau bank (≈ 1 CPU-min, after its `QUEUE_DONE`) |
 | Q14 | Does search need weight on the exact truth, or a CALIBRATED belief? | **L2** (a descriptive amendment to stage 1 before its read: IMP against the truth's log-likelihood, not q_SM) and **L4** (a bank whose opponents' teams are drawn by F's own sampler) | L2 zero; L4 ≈ 1–2 agent-days + 10–20 CPU-h; neither registered |
-| Q15 | Are the opponent's own past choices usable evidence about its hidden MOVES? | **L3**: the truth's rank among honest worlds by the likelihood of the opponent's observed choices under its policy, per opponent stratum | ≈ 1 agent-day; gates stage 1c |
+| Q15 | Are the opponent's own past choices usable evidence about its hidden MOVES? | **L3**: the truth's rank among honest worlds by the likelihood of the opponent's observed choices under its policy, per opponent stratum | **ANSWERED 2026-10-20** (pre-registered `4d149799`): YES as a judge. The truth out-ranks honest worlds, AUC 0.692 [0.655, 0.728] (WORKS); snapshots 0.796, bots 0.588; not familiarity (control 0.481). Re-weighting today's 8 honest worlds barely moves the moves (+0.005 pooled), so the next step is stage 1c with a bigger or team-level proposal set. Open: the same screen on E2 / the plateau bank, and a behaviour-cloned opponent model for the ladder |
 
 ---
 
@@ -607,3 +640,4 @@ feeds one shared trunk to both heads).
 | 2026-10-19 | **The world sampler's STAGE 1 REGISTERED and LAUNCHED** (`design_world_sampler.md` §6.2) | Status line; §6.1 (the search consumer reads the weights on request; Tier 1's POOL at HEAD is not the pinned pool, F9); §7 Q12 (registered, running) | quoting any stage-1 number before the registered read | `measurements/world_sampler_stage1_2026-10-19/PREREGISTRATION.md` |
 | 2026-10-20 | **A LITERATURE REVIEW of search under hidden information** (`../research_state/literature/hidden_info_search_review_2026-10-20.md`; owner P0.1, "what search needs") | Status line; §1 (a literature bullet; the open list REPLACED by the review's ranked L1–L6, with the study's remaining settling items kept); N5 (oracle world only); §5.1 (the calibration qualifier on p\*); §7 Q13–Q15 | appending the review as a second open list beside the red team's (most of that list is done or running); calling p\* "refuted" (the review's reading is judgement, untested until L2 / L4); ranking the Bayesian matrix or any multi-ply information-set method ahead of the anchor and the sampler (the literature puts both after a sampler that is right in distribution) | the review §0, §6, §10, §11 |
 | 2026-10-20 | **L1 and L5 READ** (`../research_state/measurements/search_l1_l5_2026-10-20/`; pre-registered `d443c098`) | Status line; §1 (two bullets: the anchored acting rule removes harm but buys no gain; Gen 3 OU near Skat on Long et al.'s map; the "what does not help" list; the open list's L1 / L5 entries replaced by their results); N5 (the honest-world read); §7 Q13 (answered) | adopting an anchored rule as the honest default on the PAYS-SCOPED cell (that cell is the leaf's own E2 signal, not the anchor's); quoting the Tier-1 in-sample fits (+0.005 to +0.013) as gains (they halve or vanish held out); reading L5's placement as a number (proxies on a synthetic-tree map) | `search_l1_l5_2026-10-20/` README §2–§4, `result_l1.json`, `result_l5.json` |
+| 2026-10-20 | **L3 READ** (`../research_state/measurements/search_l3_2026-10-20/`; pre-registered `4d149799`; module `main.value_search.opp_likelihood`, `8fe4fb89`) | Status line; §1 (a bullet: the opponent's choices identify the truth; the open list's L3 entry replaced by its result); §7 Q15 (answered) | quoting p_truth 0.249 as what search would get (the truth is never in an honest proposal set: it is the weight the likelihood WOULD give it); reading the snapshot stratum's 0.80 as a ladder number (there the model nearly is the opponent); re-weighting today's 8 honest worlds as stage 1c (S4: it moves ≈ nothing) | `search_l3_2026-10-20/` README §2–§4, `result_l3.json` |
