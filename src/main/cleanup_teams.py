@@ -1,11 +1,21 @@
-import os
+"""One-off tool: drop illegal or missing teams from every ``data/teams/**/teams.json`` (REWRITES those files in
+place -- run it only when ``data/`` may change, i.e. no pinned run is live). Validation is the local Showdown
+validator (``utils.bridge.team_validator``); the data root comes from ``utils.paths``, never the cwd."""
 import json
-from src.utils.bridge.team_validator import validate_team_locally
+import os
+from pathlib import Path
+from typing import Any, Callable, Dict, Optional
 
-def cleanup_teams():
-    base_dir = "data/teams"
+from utils.bridge.team_validator import validate_team_locally
+from utils.paths import repo_path
+
+
+def cleanup_teams(data_root: Optional[Path] = None,
+                  validate: Callable[[str, str], Dict[str, Any]] = validate_team_locally) -> None:
+    data_root = Path(data_root) if data_root is not None else repo_path("data")
+    base_dir = str(data_root / "teams")
     format_id = "gen3ou"
-    
+
     total_found = 0
     total_removed = 0
 
@@ -24,7 +34,7 @@ def cleanup_teams():
                 if not rel_file_path:
                     continue
                 
-                full_path = os.path.join("data", rel_file_path)
+                full_path = os.path.join(str(data_root), rel_file_path)
                 if not os.path.exists(full_path):
                     print(f"  [MISSING] {rel_file_path}")
                     total_removed += 1
@@ -33,7 +43,7 @@ def cleanup_teams():
                 with open(full_path, "r") as f:
                     team_text = f.read()
                 
-                result = validate_team_locally(format_id, team_text)
+                result = validate(format_id, team_text)
                 if result.get("valid"):
                     valid_meta.append(entry)
                 else:
