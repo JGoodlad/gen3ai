@@ -20,7 +20,7 @@ import statistics as st
 import sys
 from typing import Sequence
 
-from main.ops.run_ref import event_dirs, resolve_run_dir
+from main.ops.run_ref import floor_line, resolve_run_dir, scalar_events
 
 DEFAULT_DRAW_BAR = 0.01
 
@@ -35,8 +35,6 @@ def direction(a: float, b: float, eps: float = 0.0) -> str:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
-
     args = list(sys.argv[1:] if argv is None else argv)
     if not args or args[0] in ("-h", "--help"):
         print(__doc__)
@@ -45,17 +43,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     draw_bar = float(args[args.index("--draw-bar") + 1]) if "--draw-bar" in args \
         else DEFAULT_DRAW_BAR
 
-    ep, dr, sp = [], [], []
-    for d in event_dirs(run):
-        ea = EventAccumulator(d, size_guidance={"scalars": 0})
-        ea.Reload()
-        t = ea.Tags()["scalars"]
-        if "rollout/ep_len_mean" in t:
-            ep += [(e.step, e.value) for e in ea.Scalars("rollout/ep_len_mean")]
-        if "signal/draw_rate" in t:
-            dr += [(e.step, e.value) for e in ea.Scalars("signal/draw_rate")]
-        if "train/selfplay_fraction" in t:
-            sp += [(e.step, e.value) for e in ea.Scalars("train/selfplay_fraction")]
+    print(floor_line(run))
+    got = scalar_events(run, ["rollout/ep_len_mean", "signal/draw_rate", "train/selfplay_fraction"])
+    ep, dr, sp = ([(e.step, e.value) for e in got.get(t, [])]
+                  for t in ("rollout/ep_len_mean", "signal/draw_rate", "train/selfplay_fraction"))
     ep, dr, sp = sorted(set(ep)), sorted(set(dr)), sorted(set(sp))
     if not ep:
         print("NO SCALAR rollout/ep_len_mean  <- absence is not a zero")

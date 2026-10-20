@@ -805,13 +805,37 @@ def _recorded_ep_len(run_dir: str) -> Dict[int, Dict[str, Any]]:
     The FULL-cycle number, not a quota statistic. **TensorBoard is the primary source**
     (`_tb_ep_len`: ``eval/mean_ep_len_vs_bots`` / ``_vs_pool`` are logged EVERY cycle); the
     ``metadata.json`` blocks (top-level ``latest_eval``, plus every
-    ``snapshot_history[*].latest_eval``) fill only the steps TensorBoard lacks. Measured
+    ``snapshot_history[*].latest_eval``) fill only the steps TensorBoard lacks. 🚨 A FORK's
+    inherited cycles (steps <= its lineage ``fork_step``) are CUT (``_own_cycles``). Measured
     2026-09-07 on `ai_v12_02_winprob_critic`: the metadata blocks are keyed by CHECKPOINT and a
     checkpoint captures whichever eval was latest when it was saved, so at a 2.4M checkpoint
     cadence against a 2M eval cadence the 10M and 14M cycles landed in NO block and G7 printed
     them blank — while every one of them was on TensorBoard. ``eval_results.jsonl`` does **not**
     carry episode length; it is read for the cycle inventory only.
     """
+    return _own_cycles(run_dir, _recorded_ep_len_all(run_dir))
+
+
+def _own_cycles(run_dir: str, rows: Dict[int, Dict[str, Any]]) -> Dict[int, Dict[str, Any]]:
+    """``rows`` without the cycles a FORK inherited: steps <= the lineage record's ``fork_step`` are the
+    PARENT's (``gen3_tb_inherit_v1``) — a reference, a worst cycle or a verdict row taken there measures
+    the parent under this run's name (ledger ``36f8f7eb``). An unconfirmable boundary refuses (exit 2)."""
+    from agents.training.tb_inherit import ArmBoundaryError, own_step_floor
+    try:
+        floor = own_step_floor(run_dir)
+    except ArmBoundaryError as exc:
+        print(f"REFUSING: {exc}. G7 cannot tell the arm's cycles from its parent's.", file=sys.stderr)
+        raise SystemExit(2) from exc
+    return rows if floor is None else {s: r for s, r in rows.items() if s > floor}
+
+
+def _floor_of(run_dir: str) -> Optional[int]:
+    from agents.training.tb_inherit import own_step_floor
+    return own_step_floor(run_dir)
+
+
+def _recorded_ep_len_all(run_dir: str) -> Dict[int, Dict[str, Any]]:
+    """`_recorded_ep_len` BEFORE the fork cut — every recorded cycle, inherited ones included."""
     out: Dict[int, Dict[str, Any]] = dict(_tb_ep_len(run_dir))
     meta_path = os.path.join(run_dir, "metadata.json")
     if not os.path.exists(meta_path):
@@ -951,7 +975,12 @@ def kill_section(run: Dict[str, Any], parent: Dict[str, Any], *, stall_turns: in
                        "max_ep_len_ratio": max_ep_len_ratio,
                        "threshold_provenance": STALL_RATE_SOURCE_NOTE},
         "era": {"run": parent["run_base"], "ep_len_bots": era_bots, "ep_len_pool": era_pool,
-                "note": "the ERA is the parent's own recorded eval metrics, worst (max) cycle"},
+                "note": "the ERA is the parent's own recorded eval metrics, worst (max) cycle — "
+                        "its OWN cycles only: a forked parent's inherited prefix is cut at its lineage fork_step",
+                "own_steps_above": _floor_of(parent["run_dir"])},
+        # 🚨 THE ARM's cycles are its OWN: a fork's inherited parent cycles (steps <= the lineage
+        # record's fork_step, gen3_tb_inherit_v1) are never a G7 row (ledger 36f8f7eb).
+        "arm_own_steps_above": _floor_of(run["run_dir"]),
         "cycles": cycles,
         "kill": any(c["kill"] for c in cycles),
         "measured": any(c["stall_rate_captured"] is not None or c["ep_len_bots"] is not None

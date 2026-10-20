@@ -1052,3 +1052,51 @@ def test_two_ladders_played_on_different_TRANSPORTS_are_refused_unless_allowed(t
     same = cg.ladder_section(cg._resolve_ref(both_py, what="run"), parent, None)
     assert same["transport"] == {"run": "python_bridge", "parent": "python_bridge"}
     assert same["transport_warning"] == []
+
+
+# ------------------------------------- G7 on a FORK reads the ARM's cycles only (ledger 36f8f7eb)
+
+def _make_fork(run_dir: str, fork_step: int, inherited_rows) -> None:
+    """Turn a built run into a fork as the trainer leaves one: the lineage block names the boundary and
+    `tb/` carries the parent's cycles at steps <= it (gen3_tb_inherit_v1) beside `INHERITED_FROM.json`."""
+    meta_path = os.path.join(run_dir, "metadata.json")
+    with open(meta_path) as fh:
+        meta = json.load(fh)
+    meta["lineage"] = {"schema": 1, "role": "fork", "fork_step": fork_step,
+                       "fork_parent": {"run_dir": run_dir + "_PARENT_OF"}}
+    with open(meta_path, "w") as fh:
+        json.dump(meta, fh)
+    _write_tb_ep_len(run_dir, inherited_rows)
+    with open(os.path.join(run_dir, "tb", "INHERITED_FROM.json"), "w") as fh:
+        json.dump({"marker": "gen3_tb_inherit_v1", "fork_step": fork_step}, fh)
+
+
+def test_G7_on_a_FORK_never_reads_the_parents_cycles_as_the_arms(tree, tmp_path):
+    """🚨 The 2026-09-18 defect: a fork inherits its parent's TensorBoard, so the parent's cycles sat in
+    the arm's series and were read as the arm's. Here the inherited cycles would KILL (40 turns vs an era
+    of 18) and a grandparent's 100-turn cycle in the PARENT's TB would hide any real breach behind a
+    5.5x-inflated era. Reverting the cut makes this arm read KILL on its parent's numbers."""
+    _make_fork(tree["arm"], 500_000, [(250_000, 40.0, None), (500_000, 40.0, None)])
+    _make_fork(tree["parent"], 100_000, [(50_000, 100.0, None)])
+    sec = cg.kill_section(cg._resolve_ref(tree["arm"], what="run"),
+                          cg._resolve_ref(tree["parent"], what="parent"),
+                          stall_turns=250, max_stall_rate=0.05, max_ep_len_ratio=1.25)
+    steps = [c["step"] for c in sec["cycles"]]
+    assert all(s > 500_000 for s in steps) and steps, steps
+    assert sec["kill"] is False
+    assert sec["arm_own_steps_above"] == 500_000
+    assert sec["era"]["ep_len_bots"] == pytest.approx(18.0), "the era is the parent's OWN worst cycle"
+    out_json, out_md = str(tmp_path / "g7f.json"), str(tmp_path / "g7f.md")
+    cg.main(_run(tree, "--json", out_json, "--md", out_md))
+    assert "FORK at step 500,000" in open(out_md).read()
+
+
+def test_G7_REFUSES_a_fork_whose_boundary_the_lineage_record_cannot_confirm(tree):
+    _make_fork(tree["arm"], 500_000, [(250_000, 40.0, None)])
+    with open(os.path.join(tree["arm"], "tb", "INHERITED_FROM.json"), "w") as fh:
+        json.dump({"marker": "gen3_tb_inherit_v1", "fork_step": 400_000}, fh)
+    with pytest.raises(SystemExit) as exc:
+        cg.kill_section(cg._resolve_ref(tree["arm"], what="run"),
+                        cg._resolve_ref(tree["parent"], what="parent"),
+                        stall_turns=250, max_stall_rate=0.05, max_ep_len_ratio=1.25)
+    assert exc.value.code == 2

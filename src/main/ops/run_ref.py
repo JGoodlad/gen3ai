@@ -81,3 +81,48 @@ def event_dirs(run_dir: Path) -> list:
         return []
     subs = sorted(d for d in tb.iterdir() if d.is_dir())
     return [str(d) for d in subs] or [str(tb)]
+
+
+def scalar_events(run_dir: Path, tags, *, include_inherited: bool = False) -> dict:
+    """``{tag: [ScalarEvent, …]}`` (step-sorted) for each tag present — the ARM's OWN points only.
+
+    🚨 A FORK's ``tb/`` holds its parent's curve at steps ``<= fork_step`` (``gen3_tb_inherit_v1``); a
+    window, a ``--last N`` or a whole-series max read across it measures the PARENT under this arm's
+    name (ledger ``36f8f7eb``). The boundary is the lineage record's ``fork_step``
+    (``agents.training.tb_inherit.own_step_floor``); an unconfirmable boundary is a REFUSAL.
+    ``include_inherited=True`` keeps the prefix — for a reader whose question IS the whole history.
+    Every live-tier TensorBoard reader goes through here; a tag with no point is absent from the dict.
+    """
+    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+
+    from agents.training.tb_inherit import ArmBoundaryError, own_step_floor
+
+    floor = None
+    if not include_inherited:
+        try:
+            floor = own_step_floor(str(run_dir))
+        except ArmBoundaryError as exc:
+            refuse(f"REFUSING: {exc}.", "  Nothing is read: a slice at a guessed boundary would mix the "
+                   "parent's points into this arm's.")
+    out: dict = {}
+    want = list(tags)
+    for d in event_dirs(Path(run_dir)):
+        ea = EventAccumulator(d, size_guidance={"scalars": 0})
+        ea.Reload()
+        avail = set(ea.Tags().get("scalars", []))
+        for t in want:
+            if t in avail:
+                out.setdefault(t, []).extend(e for e in ea.Scalars(t) if floor is None or e.step > floor)
+    return {t: sorted(v, key=lambda e: (e.step, e.wall_time)) for t, v in out.items() if v}
+
+
+def floor_line(run_dir: Path) -> str:
+    """The line a live-tier TB reader prints first: whether, and where, an inherited prefix was cut."""
+    from agents.training.tb_inherit import ArmBoundaryError, floor_note
+
+    try:
+        note = floor_note(str(run_dir))
+    except ArmBoundaryError as exc:
+        refuse(f"REFUSING: {exc}.")
+        raise AssertionError("unreachable")  # pragma: no cover
+    return note or "not a fork (no lineage fork_step): every TensorBoard point is this run's own"

@@ -55,7 +55,7 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
-from main.ops.run_ref import event_dirs, resolve_run_dir
+from main.ops.run_ref import floor_line, resolve_run_dir, scalar_events
 
 RISING_BAR_TURNS = 3.0
 WINDOW = 2_000_000
@@ -126,16 +126,10 @@ def self_check() -> None:
 
 
 def series(run_dir: Path, tags: Sequence[str]) -> dict:
-    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
-
-    out: dict = {}
-    for d in event_dirs(run_dir):
-        ea = EventAccumulator(d, size_guidance={"scalars": 0})
-        ea.Reload()
-        for t in tags:
-            if t in ea.Tags()["scalars"]:
-                out.setdefault(t, []).extend((e.step, e.value) for e in ea.Scalars(t))
-    return {t: sorted(set(v)) for t, v in out.items()}
+    """The ARM's OWN points: a fork's inherited parent prefix is cut at its lineage ``fork_step``, so a
+    regime start and a frozen reference can never land in the parent (``run_ref.scalar_events``)."""
+    got = scalar_events(run_dir, tags)
+    return {t: sorted({(e.step, e.value) for e in v}) for t, v in got.items()}
 
 
 def regimes(sp):
@@ -165,6 +159,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         else run / FROZEN_BASENAME
     thresh = 0.03 if bar == "5M" else 0.01
 
+    print(floor_line(run))
     s = series(run, ["rollout/ep_len_mean", "signal/draw_rate",
                      "reward/untracked_abs_mean", "train/selfplay_fraction"])
     ep, dr, sp = (s.get("rollout/ep_len_mean", []), s.get("signal/draw_rate", []),

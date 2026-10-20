@@ -22,7 +22,7 @@ import statistics as st
 import sys
 from typing import Sequence
 
-from main.ops.run_ref import event_dirs, resolve_run_dir
+from main.ops.run_ref import floor_line, resolve_run_dir, scalar_events
 
 COMPONENT_TAGS = ["grad/value_norm_shared", "grad/policy_norm_shared", "grad/value_share",
                   "train/value_loss", "win_prob/critic_brier"]
@@ -38,24 +38,15 @@ def verdict(m: float) -> str:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
-
     args = list(sys.argv[1:] if argv is None else argv)
     if not args or args[0] in ("-h", "--help"):
         print(__doc__)
         return 0 if args else 2
     run = resolve_run_dir(args[0])
-    subs = event_dirs(run)
-    lr, sp = [], []
-    for d in subs:
-        ea = EventAccumulator(d, size_guidance={"scalars": 0})
-        ea.Reload()
-        t = ea.Tags()["scalars"]
-        if "grad/value_policy_logratio" in t:
-            lr += [(e.step, e.value) for e in ea.Scalars("grad/value_policy_logratio")]
-        if "train/selfplay_fraction" in t:
-            sp += [(e.step, e.value) for e in ea.Scalars("train/selfplay_fraction")]
-    lr, sp = sorted(set(lr)), sorted(set(sp))
+    print(floor_line(run))     # a fork's inherited parent prefix is cut at its lineage fork_step
+    got = scalar_events(run, ["grad/value_policy_logratio", "train/selfplay_fraction", *COMPONENT_TAGS])
+    lr = sorted({(e.step, e.value) for e in got.get("grad/value_policy_logratio", [])})
+    sp = sorted({(e.step, e.value) for e in got.get("train/selfplay_fraction", [])})
     if not lr:
         print("NO SCALAR grad/value_policy_logratio  <- absence is not a zero")
         return 2
@@ -133,14 +124,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     # ── COMPONENTS (registered at restart 2): a RATIO WITHOUT ITS COMPONENTS is what let a
     # walk in the DENOMINATOR look like the critic's doing. Print them at every read, per regime.
-    C: dict = {}
-    for d in subs:
-        ea = EventAccumulator(d, size_guidance={"scalars": 0})
-        ea.Reload()
-        tg = ea.Tags()["scalars"]
-        for t in COMPONENT_TAGS:
-            if t in tg:
-                C.setdefault(t, []).extend((e.step, e.value) for e in ea.Scalars(t))
+    C: dict = {t: [(e.step, e.value) for e in got[t]] for t in COMPONENT_TAGS if t in got}
     miss = [t for t in COMPONENT_TAGS if t not in C]
     print("\n  COMPONENTS — the ratio is value_norm / policy_norm; watch the DENOMINATOR")
     if miss:

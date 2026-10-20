@@ -197,3 +197,50 @@ def test_a_run_that_never_crossed_reports_None_never_zero(tmp_path):
                                "grad/value_policy_logratio": [(1, 0.5)]})
     got = tb_read.selfplay_crossing_step(run)
     assert got["step"] is None and got["promotion_step"] is None
+
+
+# ------------------------------------------------- a FORK reads its OWN steps (ledger 36f8f7eb)
+
+def _fork_run(tmp_path, *, fork_step=2_000_000, prov_step=None, record_step=True):
+    """A fork as the trainer leaves it: the parent's prefix (steps <= fork_step) and the fork's own
+    points in ONE `tb/`, `INHERITED_FROM.json` beside them, the boundary in the lineage record."""
+    import json
+
+    run = tmp_path / "fork"
+    tb = run / "tb"
+    _write_events(run, {"rollout/ep_len_mean": [(1_000_000, 10.0), (2_000_000, 11.0)],
+                        "train/selfplay_fraction": [(1_000_000, 0.9), (2_000_000, 0.9)]}, subdir="tb")
+    _write_events(run, {"rollout/ep_len_mean": [(2_100_000, 30.0), (3_000_000, 31.0)],
+                        "train/selfplay_fraction": [(2_100_000, 0.9), (3_000_000, 0.9)]}, subdir="tb")
+    (tb / "INHERITED_FROM.json").write_text(json.dumps(
+        {"marker": "gen3_tb_inherit_v1", "fork_step": prov_step if prov_step is not None else fork_step}))
+    lineage = {"schema": 1, "role": "fork", "fork_parent": {"run_dir": str(tmp_path / "parent")}}
+    if record_step:
+        lineage["fork_step"] = fork_step
+    (run / "metadata.json").write_text(json.dumps({"lineage": lineage}))
+    return run
+
+
+def test_a_fork_reads_ONLY_its_own_steps_and_says_where_it_cut(tmp_path, capsys):
+    """🚨 The parent's prefix is the PARENT's: a `--last N`, a min/max or a window across it labels the
+    parent's numbers as the arm's. Reverting the cut puts the 10.0 / 11.0 back in the series."""
+    run = _fork_run(tmp_path)
+    got = tb_read.load(run, ["rollout/ep_len_mean"])["rollout/ep_len_mean"]
+    assert got == [(2_100_000, 30.0), (3_000_000, 31.0)]
+    # the whole history is still available on request, and only then
+    full = tb_read.load(run, ["rollout/ep_len_mean"], include_inherited=True)["rollout/ep_len_mean"]
+    assert [s for s, _ in full] == [1_000_000, 2_000_000, 2_100_000, 3_000_000]
+    assert tb_read.main([str(run), "--tag", "rollout/ep_len_mean"]) == 0
+    out = capsys.readouterr().out
+    assert "FORK at step 2,000,000" in out and "steps 2,100,000 .. 3,000,000" in out
+    # the crossing is the ARM's, never the parent's
+    assert tb_read.selfplay_crossing_step(run)["promotion_step"] == 2_100_000
+
+
+@pytest.mark.parametrize("breakage", ["no_fork_step_recorded", "boundaries_disagree"])
+def test_an_unconfirmable_fork_boundary_is_REFUSED(tmp_path, breakage):
+    run = (_fork_run(tmp_path, record_step=False) if breakage == "no_fork_step_recorded"
+           else _fork_run(tmp_path, prov_step=1_000_000))
+    with pytest.raises(SystemExit) as exc:
+        tb_read.load(run, ["rollout/ep_len_mean"])
+    assert exc.value.code == 2

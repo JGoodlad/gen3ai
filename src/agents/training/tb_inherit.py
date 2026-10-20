@@ -461,3 +461,70 @@ def _read_lineage_block(run_dir: str) -> Optional[Dict[str, Any]]:
         return None
     block = meta.get("lineage") if isinstance(meta, dict) else None
     return block if isinstance(block, dict) else None
+
+
+# --------------------------------------------------------------------------------------------
+# the READ side — what a fork's TensorBoard holds that the fork did not train
+# --------------------------------------------------------------------------------------------
+class ArmBoundaryError(RuntimeError):
+    """A run's TensorBoard carries an inherited prefix whose boundary its lineage record cannot confirm."""
+
+
+def own_step_floor(run_dir: str) -> Optional[int]:
+    """The step AT AND BELOW which ``run_dir``'s TensorBoard points belong to an ANCESTOR, or None.
+
+    🚨 A FORK'S TENSORBOARD IS NOT ITS OWN (``gen3_tb_inherit_v1``): ``[0, fork_step]`` was logged by
+    the parent (and its ancestors), and only steps ``> fork_step`` are the arm's. A reader that takes a
+    reference window, a "first N cycles", a ``--last N`` or a max over the whole series without this
+    floor measures the PARENT and labels it the arm (2026-09-18, ledger ``36f8f7eb``: a G7 reference
+    frozen on the parent's 2M/4M cycles, then read against the fork's 8M as "95.0 % of bar").
+
+    THE BOUNDARY IS THE LINEAGE RECORD's ``fork_step`` (``agents.training.lineage.read_block``, the
+    block ``main.lineage`` reads), never re-derived from the curves. ``None`` for a fresh run, a
+    same-run restart's record and a pre-lineage run with no inherited prefix. Raises
+    :class:`ArmBoundaryError` when the TB holds an inherited prefix (``INHERITED_FROM.json``) but the
+    record names no ``fork_step``, or names a different one: the boundary is then unknown, and a
+    reader must refuse rather than slice at a guess.
+    """
+    from agents.training.lineage import read_block
+    block = read_block(run_dir) or {}
+    rec = block.get("fork_step") if isinstance(block.get("fork_parent"), dict) else None
+    prov = read_provenance(run_dir)
+    if prov is not None:
+        inherited = prov.get("fork_step")
+        if rec is None:
+            raise ArmBoundaryError(
+                f"{run_dir}: tb/ carries an INHERITED prefix (fork_step {inherited}, {PROVENANCE_BASENAME}) "
+                "but metadata.json's lineage block records no fork parent / fork_step — the arm's first own "
+                "step is unknown")
+        if inherited is not None and int(inherited) != int(rec):
+            raise ArmBoundaryError(
+                f"{run_dir}: the lineage record's fork_step {int(rec):,} disagrees with the inherited "
+                f"TensorBoard prefix's {int(inherited):,} ({PROVENANCE_BASENAME})")
+    return int(rec) if rec else None
+
+
+def own_points(run_dir: str, points: Iterable[Any], *, step: Any = None) -> List[Any]:
+    """``points`` with every one at or below :func:`own_step_floor` removed (the arm's own points only).
+
+    ``step`` extracts a point's step (default: ``p.step`` for a TensorBoard ``ScalarEvent``, else
+    ``p[0]`` for a ``(step, value…)`` tuple)."""
+    floor = own_step_floor(run_dir)
+    pts = list(points)
+    if floor is None:
+        return pts
+
+    def _s(p: Any) -> int:
+        if step is not None:
+            return int(step(p))
+        return int(p.step) if hasattr(p, "step") else int(p[0])
+    return [p for p in pts if _s(p) > floor]
+
+
+def floor_note(run_dir: str) -> Optional[str]:
+    """One line a reader prints when it sliced off an inherited prefix (None when there is none)."""
+    floor = own_step_floor(run_dir)
+    if floor is None:
+        return None
+    return (f"FORK at step {floor:,} (lineage record): TensorBoard points at steps <= {floor:,} are the PARENT's "
+            "(gen3_tb_inherit_v1) and are EXCLUDED — every number below is this arm's own")

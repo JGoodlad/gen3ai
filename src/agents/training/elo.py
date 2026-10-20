@@ -342,7 +342,11 @@ def _rows_from_tensorboard(run_dir: str, n_games: int = 100) -> list[EvalRow]:
                     for e in events:
                         bot_wr.setdefault(int(e.step), {})[name] = float(e.value)
 
-    steps = sorted(set(bot_wr) | set(sent_wr))
+    # A FORK's tb/ carries its parent's curve at steps <= its lineage fork_step (gen3_tb_inherit_v1):
+    # those cycles rated the PARENT, so they are never this run's rows.
+    from agents.training.tb_inherit import own_step_floor
+    floor = own_step_floor(run_dir)
+    steps = sorted(s for s in set(bot_wr) | set(sent_wr) if floor is None or s > floor)
     rows = []
     for step in steps:
         sentinels = []

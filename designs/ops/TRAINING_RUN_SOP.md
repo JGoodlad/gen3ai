@@ -260,7 +260,7 @@ with what it measures.
 | MARGINAL fps, from checkpoint mtimes | `scripts/ops/marginal_fps.sh <run> [--target N:label]` |
 | the deciding famine read | `scripts/ops/famine_read.sh <run> --parent … --famine-comparator … --control "…"` |
 | the registered first-restart read | `scripts/ops/restart_read.sh <run> [--baseline …]` |
-| the registered scalars, at the SOURCE | `python -m main.ops.tb_read <run> --last 20` |
+| the registered scalars, at the SOURCE | `python -m main.ops.tb_read <run> --last 20` — 🚨 on a FORK every live-tier TB reader reads the ARM's steps only (> the lineage `fork_step`; the parent's inherited prefix is cut and the first line says where; `--include-inherited` shows it) |
 | the kill bars · the vf_coef framings | `python -m main.ops.killbar` · `python -m main.ops.vf_framings` |
 | G7, QUOTED never inferred · the plateau signal | `python -m main.ops.g7_report` · `python -m main.ops.plateau_signal` |
 | stall vs sawtooth · per-bot calibration | `python -m main.ops.stall_exhibit` · `main.ops.perbot_r` / `perbot_rank` / `negskill_null` |

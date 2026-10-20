@@ -43,7 +43,7 @@ import statistics as st
 import sys
 from typing import Sequence
 
-from main.ops.run_ref import event_dirs, refuse, resolve_run_dir
+from main.ops.run_ref import refuse, resolve_run_dir, scalar_events
 
 REQUIRED_BASELINE_KEYS = ("last_rollout_step", "last_rollout_wall", "captured_at",
                           "compile_fresh_total", "compile_reused_total")
@@ -53,8 +53,6 @@ MIN_PLAUSIBLE_RESTART_S = 100.0
 
 
 def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901 - one linear read, kept whole
-    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
-
     args = list(sys.argv[1:] if argv is None else argv)
     if not args or args[0] in ("-h", "--help"):
         print(__doc__)
@@ -82,17 +80,10 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901 - one linear r
         refuse(f"REFUSING: baseline {base_path} is missing {missing_keys}.",
                "  A partial baseline yields a partial difference that still prints a number.")
 
-    ev = []
-    sp = []
-    for d in event_dirs(run):
-        ea = EventAccumulator(d, size_guidance={"scalars": 0})
-        ea.Reload()
-        tags = ea.Tags()["scalars"]
-        if "rollout/ep_len_mean" in tags:
-            ev += [(e.step, e.wall_time) for e in ea.Scalars("rollout/ep_len_mean")]
-        if "train/selfplay_fraction" in tags:
-            sp += [(e.step, e.value) for e in ea.Scalars("train/selfplay_fraction")]
-    ev = sorted(set(ev))
+    # the ARM's own points (a fork's inherited parent prefix is cut at its lineage fork_step)
+    got = scalar_events(run, ["rollout/ep_len_mean", "train/selfplay_fraction"])
+    ev = sorted({(e.step, e.wall_time) for e in got.get("rollout/ep_len_mean", [])})
+    sp = [(e.step, e.value) for e in got.get("train/selfplay_fraction", [])]
     if not ev:
         print("NO SCALAR rollout/ep_len_mean  <- absence is not a zero")
         return 2

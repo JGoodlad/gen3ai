@@ -182,6 +182,10 @@ def render_markdown(doc: Dict[str, Any]) -> str:
                    f"(a battle at ≥ {k['thresholds']['stall_turns']} turns is a stall), episode "
                    f"length ≤ {k['thresholds']['max_ep_len_ratio']}× the era's. "
                    f"({k['thresholds']['threshold_provenance']}.)")
+        if k.get("arm_own_steps_above") is not None:
+            out.append("")
+            out.append(f"**FORK at step {k['arm_own_steps_above']:,}** (lineage record): the inherited "
+                       "parent cycles at or below it are EXCLUDED — every row is this arm's own.")
         out.append("")
         out.append("| step | stall rate (captured) | mean turns | ep_len bots | ep_len pool | "
                    "verdict |")
@@ -331,6 +335,9 @@ def render_text(doc: Dict[str, Any]) -> str:
                    f"turns>={k['thresholds']['stall_turns']} "
                    f"ep_len<={k['thresholds']['max_ep_len_ratio']}x era "
                    f"({k['thresholds']['threshold_provenance']})")
+        if k.get("arm_own_steps_above") is not None:
+            out.append(f"    FORK at step {k['arm_own_steps_above']:,} (lineage record): inherited parent "
+                       "cycles at or below it EXCLUDED")
         out.append(f"    {'step':>12}{'stall_rate':>12}{'mean_turns':>12}{'ep_bots':>9}"
                    f"{'ep_pool':>9}  verdict")
         for c in k["cycles"]:

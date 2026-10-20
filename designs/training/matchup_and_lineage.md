@@ -302,6 +302,21 @@ cannot disagree, and nothing here owns a second answer to "is this a fork?" (pin
 It **never raises**: a cosmetic convenience must not be able to kill a launch, so a failure returns a
 reason and the run simply starts its chart at `fork_step`.
 
+🚨 **THE READ SIDE: a fork's `tb/` is NOT its own, and every reader cuts it** (2026-10-19, ledger
+`36f8f7eb`; the 2026-09-18 G7 read froze its reference on the PARENT's 2M/4M cycles and reported the
+fork's 8M against it as "95.0 % of bar"). The arm's points are the steps **> `fork_step`**, and the
+boundary is the LINEAGE RECORD's `fork_step` — `tb_inherit.own_step_floor(run_dir)`, read off the
+block `main.lineage` reads, never re-derived from the curves. It REFUSES (`ArmBoundaryError`) when the
+`tb/` carries an inherited prefix (`INHERITED_FROM.json`) that the record cannot confirm (no
+`fork_step`, or a different one). Every live-tier TensorBoard reader goes through
+`main.ops.run_ref.scalar_events` (`tb_read`, `killbar`, `stall_exhibit`, `vf_framings`,
+`restart_startup`) and prints where it cut (`floor_line`); `main.critic_gate`'s G7 cuts both the arm's
+rows and the parent's ERA (a forked parent's own cycles only), and `agents.training.elo`'s TB
+backfill drops the inherited cycles. `main.dose` excludes the inherited FILE. Display tools that WANT
+the whole history (`main.tb_curate`, `utils.plot_tb`, the TensorBoard UI) keep it; `tb_read
+--include-inherited` shows it on request. Census 2026-10-19: 194 forks in `models/`, 193 with a
+prefix, 0 refusals.
+
 **SCALARS ONLY** — histograms/images/audio and every non-`scalars` plugin are skipped. Measured
 2026-09-06: every value in `models/*/tb/` is a scalar, so the filter drops nothing today; it exists
 so adding a histogram later cannot silently multiply the copy cost. `tb/` is 262 MB across 217 runs;

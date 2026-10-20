@@ -1,6 +1,10 @@
 """Read a live run's instruments from the TENSORBOARD EVENTS, not the child log's table.
 
-    python -m main.ops.tb_read <run-name|run-dir> [--last N] [--tag TAG]...
+    python -m main.ops.tb_read <run-name|run-dir> [--last N] [--tag TAG]... [--include-inherited]
+
+**A FORK READS ITS OWN STEPS ONLY.** A fork's ``tb/`` carries its parent's curve below the fork
+(``gen3_tb_inherit_v1``); every series here is cut at the lineage record's ``fork_step`` and the first
+line printed says where (``run_ref.scalar_events``). ``--include-inherited`` keeps the prefix.
 
 **Why this exists, and what it already caught.** The child log's table is a RENDERING. It drops
 the scalar's group prefix — ``grad/value_policy_logratio`` prints as a bare
@@ -31,7 +35,7 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Sequence, Tuple
 
-from main.ops.run_ref import event_dirs, resolve_run_dir
+from main.ops.run_ref import event_dirs, floor_line, resolve_run_dir, scalar_events
 
 #: The default read. `train/selfplay_fraction` leads because every throughput figure below is a
 #: function of it; the rest are the live win-prob arm's registered instruments.
@@ -57,21 +61,12 @@ CALIBRATION_COST_BAR = 0.10
 Series = Dict[str, List[Tuple[int, float]]]
 
 
-def load(run_dir: Path, tags: Sequence[str] = tuple(TAGS)) -> Series:
-    """Every ``(step, value)`` for each tag, across all of the run's event directories."""
-    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
-
-    series: Series = {t: [] for t in tags}
-    for d in event_dirs(run_dir):
-        ea = EventAccumulator(d, size_guidance={"scalars": 0})
-        ea.Reload()
-        avail = set(ea.Tags().get("scalars", []))
-        for t in tags:
-            if t in avail:
-                series[t] += [(s.step, s.value) for s in ea.Scalars(t)]
-    for t in series:
-        series[t].sort(key=lambda x: x[0])
-    return series
+def load(run_dir: Path, tags: Sequence[str] = tuple(TAGS), *, include_inherited: bool = False) -> Series:
+    """Every ``(step, value)`` for each tag, across all of the run's event directories — the ARM's OWN
+    points: a fork's inherited parent prefix (steps <= its lineage ``fork_step``) is excluded unless
+    ``include_inherited`` (``run_ref.scalar_events``)."""
+    got = scalar_events(run_dir, tags, include_inherited=include_inherited)
+    return {t: [(e.step, e.value) for e in got.get(t, [])] for t in tags}
 
 
 #: the two scalars that DEFINE the self-play crossing. `eval/pool_snapshot_count` is the count of
@@ -114,6 +109,10 @@ def selfplay_crossing_step(run_dir: Path) -> Dict[str, object]:
     """
     from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
+    from agents.training.tb_inherit import own_step_floor
+
+    # a FORK's inherited parent prefix is not this run's crossing (gen3_tb_inherit_v1; the lineage fork_step)
+    floor = own_step_floor(str(run_dir)) or -1
     by_tag: Dict[str, object] = {t: None for t in CROSSING_TAGS}
     first_pool = None
     for d in event_dirs(run_dir):
@@ -123,7 +122,7 @@ def selfplay_crossing_step(run_dir: Path) -> Dict[str, object]:
         for t in CROSSING_TAGS:
             if t not in avail:
                 continue
-            hits = [int(sc.step) for sc in ea.Scalars(t) if sc.value > 0]
+            hits = [int(sc.step) for sc in ea.Scalars(t) if sc.value > 0 and sc.step > floor]
             if hits:
                 cur = by_tag[t]
                 by_tag[t] = min(hits) if cur is None else min(int(cur), min(hits))
@@ -133,7 +132,7 @@ def selfplay_crossing_step(run_dir: Path) -> Dict[str, object]:
         for t in avail:
             if not (t.endswith("_pool") or t.endswith("_vs_pool")):
                 continue
-            steps = [int(sc.step) for sc in ea.Scalars(t)]
+            steps = [int(sc.step) for sc in ea.Scalars(t) if sc.step > floor]
             if steps:
                 m = min(steps)
                 first_pool = m if first_pool is None else min(first_pool, m)
@@ -224,7 +223,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     if "--last" in args:
         n = int(args[args.index("--last") + 1])
     tags = [args[i + 1] for i, a in enumerate(args) if a == "--tag"] or list(TAGS)
-    missing = report(run_dir, load(run_dir, tags), tags, n)
+    inherited = "--include-inherited" in args
+    print("INCLUDING the inherited parent prefix (--include-inherited): steps below the fork are the PARENT's"
+          if inherited else floor_line(run_dir))
+    missing = report(run_dir, load(run_dir, tags, include_inherited=inherited), tags, n)
     if missing:
         # A tag that is not there is a FAILED read, not a clean one. Say so in the exit status
         # so a caller in a chain cannot mistake "nothing found" for "nothing wrong".
