@@ -94,7 +94,9 @@ def build_parser() -> argparse.ArgumentParser:
                         "swaps the pinned team — one game would measure piloting it, the other the "
                         "response to it. See designs/training/eval_and_rating.md 'Mirrored team pairs'.")
     p.add_argument("--play-seed", type=int, default=0)
-    p.add_argument("--impl", choices=("rust", "node"), default="rust")
+    p.add_argument("--impl", choices=("rust", "node"), default="rust",
+                   help="`rust` is the only engine (the Rust eval core); `node` is REFUSED with its reason: the "
+                        "Node bridge was deleted (owner 2026-10-10).")
     p.add_argument("--concurrency", type=int, default=1,
                    help="battles in flight. Above 1 is REFUSED (unreproducible).")
     p.add_argument("--draws", type=int, default=engine.DEFAULT_DRAWS)
@@ -325,6 +327,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     log = (lambda *a: None) if args.quiet else (lambda *a: print(*a, file=sys.stderr))
 
     try:
+        engine.refuse_node_impl(args.impl)       # the Node bridge is deleted: refused BEFORE any run is read
         if args.mirrored_pairs:                  # P13: refused BEFORE any run is read
             from agents.training.mirrored_pairs import pinned_team_refusal
             raise engine.MirroredPinnedTeamError(pinned_team_refusal("main.best_response_gap --play"))

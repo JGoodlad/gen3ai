@@ -465,6 +465,22 @@ def test_cli_end_to_end_on_the_fixture(tmp_path, capsys):
     assert doc["_meta"]["tool"] == "main.best_response_gap"
 
 
+def test_a_node_impl_is_refused_with_its_reason_on_the_cli_and_the_library(tmp_path, capsys):
+    """Revert-proof: `--impl node` (the Node bridge is deleted) exits 2 naming the reason BEFORE any run is read,
+    with or without `--play`; `rust` passes the check; the library entry refuses the same way."""
+    from agents.training import best_response_gap as engine_mod
+    from main import best_response_gap as cli
+    for extra in ([], ["--play", "4"], ["--check"]):
+        assert cli.main(["no_such_run", "--impl", "node", *extra]) == 2
+        err = capsys.readouterr().err
+        assert "node_impl_deleted" in err and "DELETED" in err and "unmatched" not in err
+    engine_mod.refuse_node_impl("rust")
+    with pytest.raises(engine_mod.NodeImplDeletedError, match="DELETED"):
+        engine_mod.refuse_node_impl("node")
+    with pytest.raises(engine_mod.NodeImplDeletedError):
+        engine_mod.play_head_to_head(None, games=1, impl="node")        # refused before the run is touched
+
+
 def test_cli_exits_2_on_a_refusal(tmp_path, capsys):
     from main import best_response_gap as cli
     a = make_run(tmp_path, "a", target_run="g1", target_step=10, fork_step=10, num_timesteps=20,

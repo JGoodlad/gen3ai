@@ -50,9 +50,10 @@ pytestmark = pytest.mark.static   # the `static` budget tier (conftest._STATIC_B
 
 _REPO_ROOT = str(repo_root())
 
-# Kept as one list so the docstring, `ruff.toml`'s header and the /gen3ai-ship step can all
-# quote the SAME command. If you change it, change it in those places too — a gate whose
-# documented command differs from the one it runs is worse than no documented command.
+# Kept as one list so the docstring and `ruff.toml`'s header quote the SAME command (the ship step runs the static
+# tier, `pytest $(python -m utils.static_gates --paths)`, which includes this file, instead of quoting ruff). If you
+# change it, change it in those places too — a gate whose documented command differs from the one it runs is worse
+# than no documented command.
 _RUFF_ARGV = [
     "-m", "ruff", "check",
     "src/agents", "src/main", "src/utils",

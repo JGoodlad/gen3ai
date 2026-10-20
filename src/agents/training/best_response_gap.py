@@ -151,6 +151,24 @@ class MirroredPinnedTeamError(BestResponseGapError):
     cause = "mirrored_pinned_team"
 
 
+class NodeImplDeletedError(BestResponseGapError):
+    """``--impl node`` / ``impl="node"``: the Node bridge is deleted (owner 2026-10-10: "delete node")."""
+
+    cause = "node_impl_deleted"
+
+
+def refuse_node_impl(impl: str) -> None:
+    """``impl`` once chose the poke-env bridge's sim (``rust`` / ``node``). The head-to-head plays on the Rust EVAL
+    CORE and the Node bridge is deleted, so ``node`` is REFUSED WITH its reason, wherever it enters (the CLI before it
+    reads a run, and the library entry ``play_head_to_head``) — the way ``main.prober.query`` refuses its ``--impl``."""
+    if impl == "rust":
+        return
+    raise NodeImplDeletedError(
+        f"--impl {impl}: the Node bridge was DELETED (owner 2026-10-10: \"delete node\") and --play's games run on "
+        "the Rust EVAL CORE (poke-env retirement P2), so there is no implementation to choose; `rust` is the only "
+        "value. Drop the flag (designs/deleted_flags.md).")
+
+
 class RunReadError(BestResponseGapError):
     """The run is not an exploiter run, or states nothing this meter can read."""
 
@@ -978,6 +996,7 @@ def play_head_to_head(run: ExploiterRun, *, games: int, seed: int = 0, impl: str
     """
     from agents.training import untaught_meter as um
 
+    refuse_node_impl(impl)
     if mirrored:
         from agents.training.mirrored_pairs import pinned_team_refusal
         raise MirroredPinnedTeamError(pinned_team_refusal("main.best_response_gap --play"))
