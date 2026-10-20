@@ -299,6 +299,20 @@ growth on the default stream inside a worker-thread flush window is booked FOREI
 reads the probe's `worker_warmup` line in `logs/t2_guard.log` (the overlap worker stream's FIRST flushes; a non-zero
 own growth there is a real T2 acquisition after the freeze that arming would make fatal).
 
+**Predicted: PASS, 4 of 4** (CPU review 2026-10-20, read against torch 2.8's source at the installed build's commit
+a1cb3cc0, `c10/cuda/CUDACachingAllocator.cpp`; UNVERIFIED until the card runs it). The attribution's assumption holds:
+`snapshot()` emits one segment per contiguous MAPPED range, with the head block's `stream`; `find_expandable_block`
+keys an expandable segment by (stream, small/large pool), so a stream owns one or more and never shares one; growth
+maps whole pages and merges them into the range in place (same address, larger `total_size`), which the per-stream
+sum reads correctly. One false FAIL was fixed before the window: (a)'s bar `T2 bytes <= 128 MiB` under
+`expandable_segments`. The large pool maps 20 MiB pages (`kLargeBuffer`), and the worker stream has no segment of its
+own (a graph flush allocates nothing on the caller's stream), so T2's 128 MiB maps 7 pages = 140 MiB. The bar is now
+`t2_own_growth_band` (at most `new_mapping_ceiling` = 140 MiB, still far below the learner's ~260 MiB). Expected
+readings: `worker_warmup` and `healthy` 0 B / 0 segments in both modes. Under expandable: (b) 0 own and >= floor
+foreign; (a) 140 MiB own (less only if the worker stream had free mapped slack). Under the default allocator: (b) one
+foreign segment of 256 MiB; (a) POISONED with `1 CUDA segments` and 1 foreign. A FAIL now points at a real defect or a
+broken precondition, not at the bar.
+
 ## Hazards known when staging
 
 - **The naive arm is forced through the wrapper, not checked out at bd3126e02^.** It runs the same arithmetic as the

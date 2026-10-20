@@ -49,6 +49,18 @@ def new_mapping_floor(alloc_bytes: int, reusable_bytes: int) -> int:
     return max(0, int(alloc_bytes) - max(0, int(reusable_bytes)))
 
 
+#: The page an ``expandable_segments`` LARGE-pool segment maps in: torch 2.8's ``kLargeBuffer`` (20 MiB;
+#: ``c10/cuda/CUDACachingAllocator.cpp``, ``ExpandableSegment::map`` maps whole ``segment_size_`` pages).
+EXPANDABLE_LARGE_PAGE = 20 * 2**20
+
+
+def new_mapping_ceiling(alloc_bytes: int, page: int = EXPANDABLE_LARGE_PAGE) -> int:
+    """The MOST one large request of ``alloc_bytes`` (> 1 MiB) can newly map under ``expandable_segments``: the
+    request rounded up to whole pages. Why not ``alloc_bytes``: a fresh stream's first 128 MiB maps 7 pages =
+    140 MiB (the rest stays mapped and free in the segment); slack already mapped only lowers it."""
+    return -(-int(alloc_bytes) // int(page)) * int(page)
+
+
 def note_growth(counters: MutableMapping[str, int], where: str, dr: int) -> Optional[str]:
     """Count a reservation growth of ``dr`` bytes into ``counters`` (`BYTES_KEY`, `GROWTHS_KEY`).
 
@@ -120,7 +132,11 @@ _EMPTY: Tuple[int, FrozenSet[int]] = (0, frozenset())
 def stream_ledger(segments: Iterable[Mapping[str, Any]]) -> Ledger:
     """Fold ``torch.cuda.memory_snapshot()``'s segments (already filtered to one device) into a `Ledger`. An expandable
     segment is reported once per contiguous MAPPED range, so summing ``total_size`` per stream is that stream's
-    reservation under either allocator mode; only a non-expandable segment's address names a ``cudaMalloc``."""
+    reservation under either allocator mode; only a non-expandable segment's address names a ``cudaMalloc``.
+    Verified against torch 2.8's source (a1cb3cc0, ``CUDACachingAllocator.cpp``): ``snapshot()`` emits one entry per
+    mapped range with the head block's ``stream``; ``find_expandable_block`` keys a segment by (stream, small/large
+    pool), so a stream owns one or more; growth maps pages and merges them into the range IN PLACE (same address,
+    larger ``total_size``) — hence the per-STREAM sum, never a per-address diff, for expandable bytes."""
     acc: Dict[int, Tuple[int, set]] = {}
     for seg in segments:
         s = int(seg["stream"])

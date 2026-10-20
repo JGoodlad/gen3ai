@@ -336,6 +336,17 @@ print(json.dumps(out))
 """
 
 
+def t2_own_growth_band(request: int, reusable: int) -> tuple:
+    """(a)'s band for T2's own booked bytes under ``expandable_segments``: at least the request minus the slack
+    already mapped, at most the request rounded up to whole 20 MiB pages. NOT ``<= request``: T2's 128 MiB on the
+    worker stream (no segment of its own yet: a graph flush allocates nothing) maps 7 pages = 140 MiB, so that bar
+    would fail a correct guard. Still far below the learner's >= ~240 MiB beside it. Pinned on CPU by
+    ``stream_attribution_test.py``."""
+    from agents.inference.service.reserved_growth import new_mapping_ceiling, new_mapping_floor
+
+    return new_mapping_floor(request, reusable), new_mapping_ceiling(request)
+
+
 @pytest.mark.parametrize("alloc", ["expandable", "default"])
 def test_overlap_attribution_books_only_t2s_own_streams(alloc, tmp_path):
     """gen3_t2_stream_attribution_v1 — THE CARD PROOF that X14's overlap no longer false-FATALs T2, in a fresh
@@ -347,7 +358,7 @@ def test_overlap_attribution_books_only_t2s_own_streams(alloc, tmp_path):
     - (b) a learner-only window books 0 B / 0 segments to T2 (the old process-wide guard: +256 MiB, or a FATAL new
       segment without expandable segments) and >= the mapping floor as FOREIGN; T2 stays FROZEN;
     - (a) a window where T2 maps 128 MiB on its own stream beside the learner's 256 MiB: under expandable segments T2
-      is booked at least the floor and at most 128 MiB (not the learner's bytes); under the default allocator T2's
+      is booked within `t2_own_growth_band` (not the learner's bytes); under the default allocator T2's
       new segment poisons with exactly ``1 CUDA segments`` (the learner's is foreign).
     The worker stream's first 3 flushes are RECORDED, not judged (``worker_warmup``: a lazily acquired working set
     on a fresh stream is a real T2 growth, a precondition for arming — the unit's FINDING)."""
@@ -379,10 +390,10 @@ def test_overlap_attribution_books_only_t2s_own_streams(alloc, tmp_path):
     assert fw["delta"]["cuda_reserved_bytes_foreign_in_window"] >= floor_b, r
     bw = r["both_window"]
     if alloc == "expandable":
-        floor_a = new_mapping_floor(128 * 2**20, bw["reusable"])
+        floor_a, ceil_a = t2_own_growth_band(128 * 2**20, bw["reusable"])
         assert floor_a > 0, ("precondition: T2's request must exceed the reusable slack", r)
         assert bw["error"] is None and bw["state"] == "FROZEN", r          # warn-first: not armed
-        assert floor_a <= bw["delta"]["cuda_reserved_bytes_after_freeze"] <= 128 * 2**20, r   # (a) seen, own only
+        assert floor_a <= bw["delta"]["cuda_reserved_bytes_after_freeze"] <= ceil_a, r   # (a) seen, own only
         assert bw["delta"]["cuda_segments_after_freeze"] == 0, r
     else:
         assert bw["state"] == "POISONED", r                                # (a) T2's own new segment is fatal

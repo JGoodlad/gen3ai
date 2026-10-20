@@ -15314,3 +15314,15 @@ was downloaded or written under `data/`.
   typed THEIR_THREAT, not HISTORY —, Q-K3 as built, Decision record); `designs/model/versioning.md`, `file_layout.md`;
   the model leaf; `flag_census.md`; `training_runbook.md`; `TASK_BACKLOG.md` T66 DONE; `EXPERIMENT_BACKLOG.md` X48 ready
   once X47 reads.
+
+## 2026-10-20 — the `t2_guard` card test's (a) bar admits torch's 20 MiB page rounding (a GPU-test bar; no model / config / obs / guard-behaviour change)
+
+- **The false FAIL.** `service_cuda_test.py::test_overlap_attribution_books_only_t2s_own_streams` (expandable) bounded
+  T2's own booked bytes by `<= 128 MiB` for a 128 MiB request. torch 2.8 maps an expandable large-pool segment in whole
+  20 MiB pages (`kLargeBuffer`; `ExpandableSegment::map`, `CUDACachingAllocator.cpp` at a1cb3cc0), and the worker
+  stream has no segment of its own (a graph flush allocates nothing there), so a correct guard books 140 MiB: the
+  `t2_guard` cell would have failed falsely. The bar is now `t2_own_growth_band` (floor .. `new_mapping_ceiling`).
+- **The assumption, verified by source read:** a snapshot segment is one contiguous mapped range carrying its stream;
+  an expandable segment belongs to one (stream, pool); growth extends a range in place. The per-stream sum is right.
+- **Tests:** `stream_attribution_test.py`'s page-rounded band test (fails when the bar reverts to the request) and a
+  `new_mapping_ceiling` unit test. The battery README's `t2_guard` section states the predicted outcome (PASS, 4 of 4).

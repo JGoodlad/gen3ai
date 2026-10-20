@@ -212,6 +212,24 @@ def test_a_window_that_grew_and_released_is_flagged(policy, fake):
     assert svc.counters[RG.RELEASED_KEY] == 1 and svc.counters[RG.BYTES_KEY] == 0
 
 
+def test_t2s_page_rounded_growth_lies_in_the_card_tests_band(policy, fake):
+    """The card test's (a) band (``service_cuda_test.t2_own_growth_band``) must admit a CORRECT guard's reading. torch
+    2.8 maps an ``expandable_segments`` large-pool segment in whole 20 MiB pages (``ExpandableSegment::map``), so T2's
+    128 MiB on its worker stream (no free mapped slack: a graph flush allocates nothing there) maps 7 pages = 140 MiB,
+    and the learner's 256 MiB maps 13 = 260 MiB. The old bar (``<= 128 MiB``) failed this healthy window on the card."""
+    from agents.inference.service.service_cuda_test import t2_own_growth_band
+
+    svc = _svc(policy)
+    with svc._frozen_guard("probe"):
+        fake.expandable(LEARNER, 13 * 20 * MiB)      # the learner's 256 MiB request
+        fake.expandable(T2, 7 * 20 * MiB)            # T2's 128 MiB request
+    own = svc.counters[RG.BYTES_KEY]
+    assert own == 140 * MiB and svc.counters[RG.FOREIGN_BYTES_KEY] == 260 * MiB
+    lo, hi = t2_own_growth_band(128 * MiB, 16 * MiB)
+    assert lo <= own <= hi
+    assert hi < 13 * 20 * MiB                        # still excludes the learner's bytes: the band discriminates
+
+
 # ---------------------------------------------------------------- the pure pieces
 def test_stream_ledger_sums_mapped_ranges_and_names_only_malloc_segments():
     led = RG.stream_ledger([
@@ -252,3 +270,9 @@ def test_alloc_segments_keeps_only_the_services_device(monkeypatch):
     monkeypatch.setattr(svc_mod.torch.cuda, "memory_snapshot", lambda *a, **k: segs)
     assert svc_mod._alloc_segments(torch.device("cuda", 1)) == [segs[1]]
     assert svc_mod._alloc_segments(torch.device("cpu")) == []
+
+
+def test_new_mapping_ceiling_rounds_a_request_up_to_whole_large_pages():
+    assert RG.EXPANDABLE_LARGE_PAGE == 20 * MiB                                  # torch 2.8's kLargeBuffer
+    assert [RG.new_mapping_ceiling(n * MiB) for n in (128, 120, 256, 21)] == [140 * MiB, 120 * MiB, 260 * MiB, 40 * MiB]
+    assert RG.new_mapping_ceiling(1) == 20 * MiB
