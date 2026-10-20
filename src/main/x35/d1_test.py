@@ -143,3 +143,22 @@ def test_p_input_is_inconclusive_when_the_look_was_not_played_on_the_panel(tmp_p
     assert D1.p_input(led.root, "x38_p", "look1", finals, "X38", "C0", {"m1": m1}, panel="away")["inconclusive"]
     p = D1.d1_coprimary(1, out["on"], out["off"], inconclusive=out["inconclusive"])
     assert p.cls is None
+
+
+def test_am5_widening_turns_a_seed_disagreement_gain_into_continue():
+    """AM-5 (2026-10-19): the pooled-binomial interval reads GAIN on seeds at +10 / 0 / +20 pp; the overdispersion
+    (φ̂ = 6.3 / .73 ≈ 8.63) widens it past 0. Fails on revert of the widening."""
+    h = D1.d1_primary(1, SC._hc([(70, 70, 70), (56, 56, 56), (84, 84, 84)]), SC._flat(56))
+    assert h.ci_unwidened_pp is not None and h.ci_unwidened_pp[0] > 2.0          # unwidened: lower clearly > 0
+    assert h.ci_pp is not None and h.ci_pp[0] < -1.0                             # widened: clearly below 0
+    assert (h.cls, h.outcome) == (D1.UNDECIDED, D1.CONTINUE)
+    w = h.as_dict()
+    assert w["overdispersion"]["df"] == 4 and w["overdispersion"]["half_width_factor"] == pytest.approx(
+        (6.3 / 0.73) ** 0.5, rel=1e-12)
+
+
+def test_am5_never_narrows_and_an_undefined_phi_is_inconclusive():
+    h = D1.d1_primary(1, SC._flat(70), SC._flat(56))
+    assert h.od is not None and h.od.factor == 1.0 and h.ci_pp == h.ci_unwidened_pp and h.cls == D1.GAIN
+    with pytest.raises(R.ReadoutInputError, match="binomial expectation is 0"):
+        D1.overdispersion(SC._hc([(0, 140, 0)] * 3), SC._flat(56))

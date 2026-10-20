@@ -430,10 +430,33 @@ def check_d1_h_classes() -> Check:
     ]
     bad = [f"{n}: got {(d.cls, d.outcome, d.final)} {d.ci_pp} +{d.positive_seeds}" for n, d, want in rows
            if (d.cls, d.outcome, d.final) != want]
-    lo_pos = rows[1][1].ci_pp is not None and rows[1][1].ci_pp[0] > 0 and rows[8][1].ci_pp is not None \
-        and rows[8][1].ci_pp[0] > 0
-    return f"D1 H class table ({len(rows)} constructed rows)", not bad and lo_pos, \
-        "; ".join(bad) or "all rows as registered (the sign-rule rows have lower > 0)"
+    # The sign-rule rows were built with lower > 0. Under AM-5 (2026-10-19) their seeds disagree, so the WIDENED
+    # lower bound falls below 0 too: the case the sign rule was registered for is checked on the UNWIDENED interval
+    # (recorded beside the widened one), and the sign rule itself directly on an interval with lower > 0.
+    lo_pos = all(d.ci_unwidened_pp is not None and d.ci_unwidened_pp[0] > 0 for d in (rows[1][1], rows[8][1]))
+    sign = D1.classify_h((1.0, 9.0), False)[0] == D1.UNDECIDED and D1.classify_h((1.0, 9.0), True)[0] == D1.GAIN
+    return f"D1 H class table ({len(rows)} constructed rows)", not bad and lo_pos and sign, \
+        "; ".join(bad) or "all rows as registered (the sign-rule rows have unwidened lower > 0; the rule blocks)"
+
+
+def check_d1_overdispersion() -> Check:
+    """AM-5 (2026-10-19): (i) seeds that agree (identical per-seed cells) give φ̂ = 0 <= 1, and the interval is the
+    unwidened one EXACTLY (φ̂ never narrows it); (ii) φ̂ by hand: ON seeds at p = .5 / .4 / .6 (140 games per panel),
+    OFF flat at .4: between-seed variance .01, binomial expectation .73 / (3 · 420), so ratio_ON = 12.6 / .73,
+    ratio_OFF = 0 and φ̂ = 6.3 / .73 (to 1e-12 relative), df 4; (iii) that case is GAIN on the unwidened interval
+    (Δ̂ = +10 pp, 2 of 3 seeds up) and UNDECIDED -> CONTINUE on the widened one."""
+    agree = D1.d1_primary(1, _flat(70), _flat(56))
+    i_ok = agree.od is not None and agree.od.phi <= 1.0 and agree.od.factor == 1.0 and agree.ci_pp == agree.ci_unwidened_pp
+    spread = D1.d1_primary(1, _hc([(70, 70, 70), (56, 56, 56), (84, 84, 84)]), _flat(56))
+    od = spread.od
+    ii_ok = (od is not None and abs(od.phi - 6.3 / 0.73) <= 1e-12 * (6.3 / 0.73)
+             and abs(od.ratios[0] - 12.6 / 0.73) <= 1e-12 * (12.6 / 0.73) and od.ratios[1] == 0.0 and od.df == 4)
+    unw = spread.ci_unwidened_pp
+    iii_ok = (unw is not None and D1.classify_h(unw, spread.sign_ok)[0] == D1.GAIN
+              and (spread.cls, spread.outcome) == (D1.UNDECIDED, D1.CONTINUE) and spread.positive_seeds == 2)
+    return "D1 AM-5 overdispersion widening (agree / by hand / GAIN -> CONTINUE)", i_ok and ii_ok and iii_ok, \
+        f"agree φ̂ {agree.od.phi if agree.od else None}; spread φ̂ {od.phi if od else None} (want {6.3 / 0.73}); " \
+        f"unwidened {unw} widened {spread.ci_pp} {spread.outcome}"
 
 
 def check_d1_rule8() -> Check:
@@ -560,7 +583,7 @@ def check_d1_read_roundtrip() -> Check:
 D1_CHECKS: Tuple[Callable[[], Check], ...] = (
     check_d1_k1_is_newcombe_published, check_d1_equal_strata_is_pooled, check_d1_variance_by_hand,
     check_d1_coverage, check_d1_h_classes, check_d1_rule8, check_d1_h_inconclusive, check_d1_p,
-    check_d1_verdict_table, check_d1_read_roundtrip,
+    check_d1_verdict_table, check_d1_read_roundtrip, check_d1_overdispersion,
 )
 SUITES: Dict[str, Tuple[Callable[[], Check], ...]] = {"x35": CHECKS, "d1": D1_CHECKS}
 

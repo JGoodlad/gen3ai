@@ -608,7 +608,7 @@ generalisation lever a small LOSS.
 
 | role | statistic | rule |
 |---|---|---|
-| **PRIMARY H** (gain on the UNFAMILIAR cells, §5.6) | Δ_H = ON − OFF score vs Kakuna greedy, pooled over the symmetric UNFAMILIAR cells: `heldout72_hpfix` (W_hl's population, unseen teams), smogon_forum and P72 (populations no arm trains on), equal weights per panel. Each seed final plays 7 role-balanced 20-game units per panel (140 games), so 3 seeds give 420 per panel and 1,260 per arm; unit seeds 0–6 are shared across arms. Newcombe 95 % on the pooled score | **GAIN** iff the lower bound > 0 AND ≥ 2 of 3 seeds have Δ > 0; **LOSS** iff the upper bound < 0; **NULL** iff the interval lies inside [−3.0, +3.0]; else **UNDECIDED** → X35's look 2 at 5 seeds iff Δ̂ > 0. A bound within 1e-9 of a boundary is UNDECIDED |
+| **PRIMARY H** (gain on the UNFAMILIAR cells, §5.6) | Δ_H = ON − OFF score vs Kakuna greedy, pooled over the symmetric UNFAMILIAR cells: `heldout72_hpfix` (W_hl's population, unseen teams), smogon_forum and P72 (populations no arm trains on), equal weights per panel. Each seed final plays 7 role-balanced 20-game units per panel (140 games), so 3 seeds give 420 per panel and 1,260 per arm; unit seeds 0–6 are shared across arms. Newcombe 95 % on the pooled score, each half-width WIDENED by √max(1, φ̂), the seed overdispersion (AM-5, 2026-10-19) | **GAIN** iff the lower bound > 0 AND ≥ 2 of 3 seeds have Δ > 0; **LOSS** iff the upper bound < 0; **NULL** iff the interval lies inside [−3.0, +3.0]; else **UNDECIDED** → X35's look 2 at 5 seeds iff Δ̂ > 0. A bound within 1e-9 of a boundary is UNDECIDED |
 | **CO-PRIMARY P** (the owner's "what it does to the teams we are currently training on": no loss worse than −2.0 pp on SAMPLE-TEAM ground) | Δ_P = ON − OFF of the population score on the home72 panel IN-HOUSE (each final against X35's frozen reference population, mirrored pairs on home72 via B-D7; Welch over seed finals at 97.5 %). X35's R1 on the full pool is reported beside it | **NON-INFERIOR** iff the lower bound > −2.0 pp. A Kakuna read cannot resolve this bar at an affordable n (F-DV-12) |
 | reported | Δ on each unfamiliar panel separately; **L** and **L_c1** ON − OFF (§5.3); GEN-M's class on each final (§5.4) | gain on `heldout72_hpfix` alone = "learned the population"; gain on smogon_forum / P72 too = "generalises beyond its population" |
 | reported | Kakuna on home72 and away, ON − OFF | in-pool external read; no rule |
@@ -623,8 +623,19 @@ generalisation lever a small LOSS.
 - **NULL / LOSS / UNDECIDED** after look 2.
 - Nothing is adopted by this rule alone.
 
-**Implemented as `main.x35.d1`** (`python -m main.x35.readout decide-d1`), self-checked 10 / 10 before any read
-(`x35_breakers_stage_2026-10-17/readout_selfcheck_d1.txt`). Declared choices:
+**Implemented as `main.x35.d1`** (`python -m main.x35.readout decide-d1`), self-checked 11 / 11 before any read
+(`x35_breakers_stage_2026-10-17/readout_selfcheck_d1.txt` holds the 10 / 10 of the first build; the eleventh check is
+AM-5's). Declared choices:
+- **AM-5 (orchestrator, 2026-10-19, ACCEPTED from the batch-1 review F-RV-5, before any D1 data):** pooling the
+  counts over seed finals treats seed-to-seed spread as binomial noise, so the interval was anticonservative
+  (8.5 / 20.4 % false GAIN at a seed SD of 2 / 4 pp, simulated through `main.x35.d1`'s own functions). Each Newcombe
+  half-width is now multiplied by √max(1, φ̂): φ̂ is the mean over the two arms of (the between-seed variance of the
+  per-seed equal-weight panel means) / (its binomial expectation, the mean over seeds of (1/9)·Σ p(1−p)/n with each
+  seed's own cells), df 2(n − 1) recorded; it never narrows; a zero expectation is INCONCLUSIVE. Simulated effect:
+  false GAIN 3.0 / 5.8 / 5.8 % at seed SD 0 / 2 / 4 pp, power at +5 pp 0.90 / 0.75 / 0.50 (the honest cost of the
+  seed variance the old interval hid). Every class reads the widened interval; the unwidened one is recorded. With
+  it, the sign rule rarely binds at look 1, and D1's ADOPT-CANDIDATE realistically needs look 2 (P passes at 3 v 3
+  only 15 % of the time at σ 1.2 and a true Δ_P of 0, review F-RV-5).
 - H pools each arm's wins / n per panel over its seed finals, then takes the EQUAL-WEIGHT mean of the three panel
   scores, with stratified variance V = (1/9)·Σ p(1−p)/n and Kish effective size n_eff = m(1−m)/V. Wilson at n_eff,
   combined by Newcombe's method 10. Ties count as non-wins. With equal n and p per panel it equals pooled Newcombe.
@@ -639,8 +650,9 @@ generalisation lever a small LOSS.
 - Inputs: H from `kakuna plan --teamsets unfamiliar` + `kakuna d1h`; P from `main.h2h play-many --panel home72` (B-D7)
   + `main.x35.d1 p-input`.
 
-**Power.** At p ≈ 0.40 and 1,260 games per arm (three panels), the Newcombe half-width is ≈ 3.9 pp. That is enough
-for a recovery of a quarter of the 18-pp drop. More games cost CPU only.
+**Power.** At p ≈ 0.40 and 1,260 games per arm (three panels), the unwidened Newcombe half-width is ≈ 3.9 pp. That
+is enough for a recovery of a quarter of the 18-pp drop when the seeds agree; AM-5 widens it by √φ̂ when they do not,
+and more games do not shrink that part (the seed count does).
 
 **Cost.**
 
@@ -1449,3 +1461,4 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 | 2026-10-19 | **`w_forum_v1` crash-class exclusion LIFTED** (corpus-lift worker, orchestrator brief) | `build_w_forum.CRASH_MOVES` is EMPTY (Transform + Hidden Power closed by `0cef9320a`; Imprison verified not a livelock, `752aaf16a`); rebuilt: **2,424 teams**, tiers A 332 ⊂ AB 559 ⊂ ABC 2,424, data sha256 `4af495c4…7469`, ABC tier sha256 `7bcdc835…83d`, curator cap c = 242 (263 curators); soak re-run on the whole ABC tier, 24,240 battles, 0 core errors, 42 stall forfeits; **the C tier was RE-SHUFFLED, not just extended** (the seeded within-tier order and the curator cap move with the exclusion set: 580 teams are new and 571 left vs the 2,415 corpus; tier A unchanged), and a run pinned at `c1b0c1f0` / `fc467f1f` still reads the 2,415 corpus (tier sha `65465d25…7fc5`) | none (a rebuild is the corpus's own recipe) | `w_forum_v1/manifest.json`, `soak_selfcheck.json` |
 | 2026-10-19 | **X38 / D1 LAUNCH-READY on paper** (X38 launch-ready worker; NEEDS the orchestrator's GO) | b-ON = C0 + `--team-mix w_forum_v1@ABC:0.5 --team-mix-sides both` (B-D2 `c1b0c1f0`): BOTH sides, the doc's D1 (own side widened per the owner, opponent side with it; D2 stays the opponent-only follow-up); eval on the pool; `main.x35.kit` arm `d1` in BATCH1 after the A1 / C0 ABBA; `checkargs --pin c1b0c1f0` exit 0 and `launcher --dry-run` "would launch", FORK of `rb_x26_s2601`, +20M from the real P\* (280,000,170); B-D7 `main.h2h --panel` and the D1 decision function `main.x35.d1` (self-check 10 / 10) built | trainee-only widening (the owner's words allow it; it is one token, `--team-mix-sides trainee`, and would be a different arm than the registered D1); `hl_05_26` (superseded by the forum corpus for X38) | x35 STAGED_PLAN §7; `main/x35/kit_test.py`, `main/x35/d1_test.py` |
 | 2026-10-19 | **X37b READ: the in-house TRANSFER split** (transfer worker; PREREG `38c64909`, registration `91af4446`) | **H1 UNDECIDED** (KILLED needed T_tot's upper bound < +2.0 pp AND T_pilot's lower bound ≤ 0): T_tot +4.0 pp [−0.7, +8.4], T_pilot +0.4 [−5.8, +6.5], T_face +3.6 [−3.1, +10.4]; P\*'s edge over 25M +18.8 pp on home72, +14.8 pp on unseen panels (≈ 79 % transfers). D0e's fixed reference changed from `production` to P\* piloting home72 (the F-DV-19 design-around); GEN-M and D0e classes UNDECIDED; X38 / D1's rank unchanged (its demotion needs X37b TRANSFERS) | reading the pair-level (teams-fixed) T_tot [+1.6, +6.4] as the verdict (the registration names the team bootstrap); reading GEN-M's large transfer as "no held-out problem" (the Kakuna-side piloting deficit stands, F-DV-26) | `measurements/x37b_transfer_2026-10-19/`; ledger 2026-10-19 *X37b TRANSFER* |
+| 2026-10-19 | **AM-5: D1's H interval WIDENED for seed overdispersion** (X35 amendment worker; the orchestrator's ruling on the batch-1 review F-RV-5, before any D1 data) | each Newcombe half-width × √max(1, φ̂), φ̂ = the mean over arms of the between-seed variance of the per-seed panel means over its binomial expectation (df 2(n−1)); classes on the widened interval; self-check 11 / 11 | the pooled-binomial interval (8–21 % false GAIN at a seed SD of 2–4 pp); a t-quantile on φ̂'s df (the amendment scales the half-widths, as the review simulated) | `main.x35.d1.overdispersion`; `selfcheck.check_d1_overdispersion`; `X35_BATCH1_REVIEW.md` F-RV-5 |

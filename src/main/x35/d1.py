@@ -19,7 +19,14 @@ non-wins, the anchor read's ``win_rate`` and G-K's convention). EXACTLY HOW IT I
 * each arm's interval is Wilson's at (p̄_a, n_eff,a), z = :data:`Z` (``main.anchors.results.Z95``), and Δ_H's 95 %
   interval is Newcombe's method-10 hybrid of the two (``main.anchors.results.newcombe``'s formula, which this IS
   exactly when the panels' n and p are equal: then n_eff = Σn and p̄ = Σx / Σn -- checked by the self-check, as is
-  the K = 1 case against Newcombe's published 1998 table, and the coverage by simulation).
+  the K = 1 case against Newcombe's published 1998 table, and the coverage by simulation);
+* **WIDENED FOR SEED-TO-SEED SPREAD (AM-5, orchestrator 2026-10-19, before any D1 data):** the pooled counts treat
+  the seeds as one binomial sample, so the interval hides the between-seed variance (review F-RV-5: 8-21 % false
+  GAIN at a seed SD of 2-4 pp). Each Newcombe half-width is multiplied by √max(1, φ̂), where φ̂ is the
+  OVERDISPERSION (:func:`overdispersion`): per arm, the between-seed variance of the per-seed equal-weight panel
+  means (ddof 1) over its binomial expectation, the mean over the arm's seeds of (1/K²) Σ_k p_ik (1 − p_ik) / n_ik
+  with each seed's own cell; φ̂ is the mean of the two arms' ratios (df 2(n − 1), recorded). Every class below
+  reads the WIDENED interval; the unwidened one is recorded beside it.
 
 Classes, in this order, on Δ_H in pp (the per-seed sign rule needs ≥ :data:`SIGN_MIN` [look] of the look's seeds
 with Δ_i > 0, where Δ_i = ON seed i's equal-weight panel mean − OFF seed i's, seeds paired by number):
@@ -57,7 +64,13 @@ DECLARED HERE, BEFORE ANY REAL READ (choices §4.2 leaves open; each a FINDING o
 * zero variance on an arm (every p_ak 0 or 1) leaves the effective size undefined: INCONCLUSIVE;
 * P's seed sets must equal H's, and both sides' must be equal and of the look's size (as R1's);
 * each panel's ON − OFF row is REPORTED with its role for this arm (:data:`PANEL_ROLE`: the forum v2 corpus makes
-  ``forum72`` the arm's own population on unseen teams); no rule reads the per-panel rows.
+  ``forum72`` the arm's own population on unseen teams); no rule reads the per-panel rows;
+* AM-5's φ̂ never NARROWS the interval (φ̂ < 1 reads as 1); an arm whose binomial expectation is 0 (every per-seed
+  cell at 0 or 1) leaves φ̂ undefined: INCONCLUSIVE; φ̂'s df is reported, no t / F quantile is applied (the
+  amendment scales the half-widths, as the review's simulation ``review_2026-10-19/sim_d1_od.py`` does);
+* with the widening, a look-1 GAIN at 3 seeds realistically needs the seeds to AGREE: the sign rule rarely binds
+  any more (a lower bound > 0 with 1 of 3 seeds up is all but unreachable once the spread widens the interval), and
+  D1's ADOPT-CANDIDATE realistically needs look 2 because of P (review F-RV-5).
 """
 from __future__ import annotations
 
@@ -162,6 +175,51 @@ def newcombe_strat(on: StratScore, off: StratScore) -> Tuple[float, float, float
     return d, max(-1.0, lo), min(1.0, hi)
 
 
+@dataclass(frozen=True)
+class Overdispersion:
+    """AM-5's φ̂ and its parts (module docs)."""
+
+    phi: float
+    ratios: Tuple[float, float]          # (ON, OFF): between-seed variance / binomial expectation
+    df: int
+    factor: float                        # √max(1, φ̂), the half-width multiplier
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {"phi_hat": self.phi, "ratio_on": self.ratios[0], "ratio_off": self.ratios[1], "df": self.df,
+                "half_width_factor": self.factor}
+
+
+def _arm_ratio(cells: Mapping[str, Mapping[str, Sequence[int]]], panels: Sequence[str]) -> float:
+    K = len(panels)
+    means: List[float] = []
+    exps: List[float] = []
+    for seed in sorted(cells):
+        ps = [(int(cells[seed][k][0]) / int(cells[seed][k][1]), int(cells[seed][k][1])) for k in panels]
+        means.append(math.fsum(p for p, _ in ps) / K)
+        exps.append(math.fsum(p * (1.0 - p) / n for p, n in ps) / (K * K))
+    e = math.fsum(exps) / len(exps)
+    if not e > 0.0:
+        raise R.ReadoutInputError("AM-5: an arm's binomial expectation is 0 (every per-seed cell at 0 or 1): "
+                                  "the overdispersion is undefined")
+    m = math.fsum(means) / len(means)
+    return math.fsum((x - m) ** 2 for x in means) / (len(means) - 1) / e
+
+
+def overdispersion(on: Mapping[str, Mapping[str, Sequence[int]]], off: Mapping[str, Mapping[str, Sequence[int]]],
+                   panels: Sequence[str] = PANELS) -> Overdispersion:
+    """AM-5's φ̂ from each side's ``{seed: {panel: (wins, n)}}`` (module docs; >= 2 seeds per side)."""
+    if len(on) < 2 or len(off) < 2:
+        raise R.ReadoutInputError("AM-5: the overdispersion needs >= 2 seeds per side")
+    r_on, r_off = _arm_ratio(on, panels), _arm_ratio(off, panels)
+    phi = (r_on + r_off) / 2.0
+    return Overdispersion(phi, (r_on, r_off), (len(on) - 1) + (len(off) - 1), math.sqrt(max(1.0, phi)))
+
+
+def widen(d: float, lo: float, hi: float, factor: float) -> Tuple[float, float]:
+    """Each half-width of ``(lo, d, hi)`` times ``factor``, clipped to [−1, 1] as :func:`newcombe_strat` clips."""
+    return max(-1.0, d - (d - lo) * factor), min(1.0, d + (hi - d) * factor)
+
+
 def classify_h(ci_pp: Tuple[float, float], sign_ok: bool) -> Tuple[str, Tuple[str, ...]]:
     """H's class of an interval (pp) and the sign rule's outcome; every boundary a bound touched (rule 8 ⇒
     UNDECIDED)."""
@@ -200,10 +258,14 @@ class HDecision:
     per_panel: Dict[str, Any]
     near: Tuple[str, ...]
     reasons: Tuple[str, ...]
+    od: Optional[Overdispersion] = None
+    ci_unwidened_pp: Optional[Tuple[float, float]] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return {"look": self.look, "class": self.cls, "outcome": self.outcome, "final": self.final,
                 "delta_pp": self.delta_pp, "ci95_pp": list(self.ci_pp) if self.ci_pp else None,
+                "ci95_unwidened_pp": list(self.ci_unwidened_pp) if self.ci_unwidened_pp else None,
+                "overdispersion": self.od.as_dict() if self.od else None,
                 "on": self.on.as_dict() if self.on else None, "off": self.off.as_dict() if self.off else None,
                 "seed_deltas_pp": dict(self.seed_deltas_pp), "positive_seeds": self.positive_seeds,
                 "sign_rule": f">= {SIGN_MIN.get(self.look)} of {LOOK_SEEDS.get(self.look)}", "sign_ok": self.sign_ok,
@@ -257,9 +319,11 @@ def d1_primary(look: int, on: Counts, off: Counts, *, panels: Sequence[str] = PA
         s_on, s_off = strat_score(pooled["on"], panels), strat_score(pooled["off"], panels)
         seed_d = [(seed, 100.0 * (panel_mean(on[seed], panels) - panel_mean(off[seed], panels)))
                   for seed in sorted(on)]
+        od = overdispersion(on, off, panels)
     except R.ReadoutInputError as exc:
         return HDecision(look, None, INCONCLUSIVE, True, None, None, None, None, (), 0, False, {}, (), (str(exc),))
-    d, lo, hi = newcombe_strat(s_on, s_off)
+    d, lo0, hi0 = newcombe_strat(s_on, s_off)
+    lo, hi = widen(d, lo0, hi0, od.factor)                      # AM-5
     ci = (100.0 * lo, 100.0 * hi)
     n_pos = sum(positive(x) for _, x in seed_d)
     sign_ok = n_pos >= SIGN_MIN[look]
@@ -271,7 +335,8 @@ def d1_primary(look: int, on: Counts, off: Counts, *, panels: Sequence[str] = PA
                         "role": PANEL_ROLE.get(k, "")}
     cls, near = classify_h(ci, sign_ok)
     common = dict(delta_pp=100.0 * d, ci_pp=ci, on=s_on, off=s_off, seed_deltas_pp=tuple(seed_d),
-                  positive_seeds=n_pos, sign_ok=sign_ok, per_panel=per_panel, reasons=())
+                  positive_seeds=n_pos, sign_ok=sign_ok, per_panel=per_panel, reasons=(), od=od,
+                  ci_unwidened_pp=(100.0 * lo0, 100.0 * hi0))
     if cls == UNDECIDED and look == 1:
         pos = positive(100.0 * d)
         nn = near + (() if pos or abs(100.0 * d) > RULE8_EPS else
