@@ -71,8 +71,20 @@ def lock(tmp_path, monkeypatch) -> Iterator[Path]:
     p = tmp_path / "gpu.lock"
     monkeypatch.setenv(G.GPU_LOCK_ENV, str(p))
     yield p
+    _kill_leftover_holders(p)
+
+
+def _kill_leftover_holders(p: Path) -> None:
+    """SIGKILL, by pid, every leftover holder of ``p`` and the lease record's pid -- NEVER this process.
+
+    2026-10-19/20: a ship gate lost an xdist worker ("worker gw0 crashed") to this very teardown. An
+    ABANDONED wait (``gpu_lock``'s helper thread blocked in ``flock`` on a dup of the open file; the
+    mid-wait test abandons one) takes the lock the instant the test reaps the real holder, and releases it
+    only once the thread is next scheduled -- so ``/proc/locks`` can list the WORKER ITSELF as a holder when
+    the teardown reads it (1 in ~60 teardowns under load), and the kill below then killed the pytest worker.
+    The thread releases it on its own; our own pid is never a target."""
     rec = L._read_record(p)
-    for pid in _holders(p) + ([rec.pid] if rec else []):
+    for pid in set(_holders(p) + ([rec.pid] if rec else [])) - {os.getpid()}:
         try:
             os.kill(pid, signal.SIGKILL)
         except ProcessLookupError:
@@ -373,6 +385,26 @@ def test_a_lease_appearing_mid_wait_ends_the_wait_with_gpu_leased(lock):
         assert P.holders(key) == [h.pid], "the abandoned wait must not have taken the lock"
     finally:
         _reap(h)
+
+
+def test_the_teardown_never_kills_its_own_process_even_when_it_holds_the_lock(lock):
+    """Regression (2026-10-19/20 worker crash): a process that itself HOLDS the lock when the fixture teardown
+    runs (an abandoned wait's helper thread, mid-hand-off) must survive it. Run in a child, since the reverted
+    teardown would SIGKILL whoever runs it."""
+    code = (
+        "import fcntl, os, sys\n"
+        "from pathlib import Path\n"
+        "from utils import gpu_lease_test as T\n"
+        "p = Path(sys.argv[1])\n"
+        "fd = os.open(str(p), os.O_RDWR | os.O_CREAT)\n"
+        "fcntl.flock(fd, fcntl.LOCK_EX)\n"
+        "assert os.getpid() in T._holders(p), 'precondition: this process holds the lock'\n"
+        "T._kill_leftover_holders(p)\n"
+        "print('SURVIVED')\n"
+    )
+    r = subprocess.run([sys.executable, "-c", code, str(lock)], env=_env(lock), capture_output=True, text=True,
+                       timeout=120)
+    assert r.returncode == 0 and "SURVIVED" in r.stdout, (r.returncode, r.stdout, r.stderr)
 
 
 def test_the_lease_holder_survives_its_acquirer(lock):
