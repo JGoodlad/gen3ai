@@ -113,6 +113,18 @@ shares its batch's control C0.
    - **NULL / LOSS / UNDECIDED** after look 2.
 
    Nothing is adopted by the rule alone: an ADOPT-CANDIDATE goes to the owner.
+
+   **For X47 (AM-X47-2, ACCEPTED by the orchestrator 2026-10-20, before any read; launch sheet §0):**
+   - **X47b RUNS** on GAIN / ADOPT-CANDIDATE, and on PER-STEP ONLY. A PER-STEP ONLY is called "throughput-dependent"
+     only when the per-seed gap between the final and s_eq has a 95 % interval wholly above 0. Otherwise it is
+     "BOUNDARY" (AM-X47-5).
+   - **UNDECIDED with Δ̂ > 0:** X47b keeps its rank-9 conditional slot, unlicensed but not dropped. The report says "no
+     effect ≥ 4.6 pp detected" (σ 1.07 pp, 80 %), never "depth does not help". **UNDECIDED with Δ̂ ≤ 0 is not ruled.**
+   - **NULL:** X47b drops in rank, not out.
+   - **LOSS:** X47b is not run on this evidence.
+   - **TRADE:** X47b runs only on the orchestrator's ruling.
+   - A NULL or LOSS is a verdict on THIS growth recipe, not on depth (review F-XR-11).
+   - A GAIN whose out-of-lineage member (`pstar_x26`) has Δ̂ ≤ 0 goes to the owner labelled "in-lineage" (AM-X47-7).
 5. **The toy only RANKS until X35's transfer calibration passes (§5.2 there).** A toy NULL never drops the
    production arm before then. A candidate that READS machinery the toy lacks skips the toy (§5.2 item 4 there).
 6. **Throughput basis** (MEASURED, [`design_compute_efficiency.md`](design_compute_efficiency.md) §4.4 and §5.6.1):
@@ -155,8 +167,12 @@ shares its batch's control C0.
   - The primary read lands at s_eq ≈ 62M (node ≈ 352M), so it nearly coincides with the matched-step secondary.
   - **Production (X47b)** is P\* + 1 round (3 → 4), 3 × 4.4 × ≈ 1.09 + 1.4 ≈ **16 GPU-h**. It is CONDITIONAL on X47
     reading GAIN or PER-STEP ONLY. Before calibration a toy NULL only lowers its rank.
-- **The decision rule.** §1.4, primary at equal time. The registered DESCRIPTOR is the extra rounds' weight norms over
-  training (do they grow away from zero, or stay near identity?).
+- **The decision rule.** §1.4, primary at equal time, with X47's own lines (AM-X47-2) and its amendments AM-X47-1 to
+  -12 (launch sheet §0; the read plan is its §4.5). The registered DESCRIPTOR is the extra rounds' weight norms over
+  training: `python -m main.x35.x47 norms`, reported as a ratio to the base rounds, "engaged" at ≥ 0.01.
+  - **As registered, the descriptor is weak** (F-AMX-4). On the live s3601 the ratio is already 0.012 at the first 1M
+    node, so under AdamW the line reads "engaged" almost at once.
+  - A functional descriptor (the policy KL with the extra rounds zeroed) is not built.
 - **Risks:**
   - more compute per step, which is why the primary is at equal time;
   - pre-LN extra rounds on top of post-LN base rounds is the mixed stack production already runs, so there is no new
@@ -471,3 +487,4 @@ labels, offline, feeding search's opponent model. Re-open **rung 3**, the BC war
 | 2026-10-19 | **AM-4: X47 look 2 REGISTERED and its readout BUILT** (X35 amendment worker; the orchestrator's ruling on the batch-1 review F-RV-4) | X47 seeds 3601–3605 (look 2 = 3604–3605, against toy C0 3604–3605, launched only on a look-1 CONTINUE; `main.x35.batch` enforces it); `main.x35.x47` (B-X47-READ): Σ(`collect_ms` / 1000 + `update_wall_s`) summed over each tag's own rows (`update_wall_s` is dumped with the NEXT rollout's row), the fork's own events only, restart-aware by `time_to_step.py`'s resume rule; s_eq = the largest node with Σ ≤ the C0 mean final Σ (rule 8: within 1e-9 ⇒ the next lower node); ρ ≤ 1.02 reads the finals; the §1.4 classes with CONTINUE when the primary is look-1 CONTINUE; G-F and G-C required, G-K reported; the update-only s_eq and ρ split REPORTED only (F-RV-9's fix is not ruled) | X47 at 3 seeds as a RANKING read (a +5 pp depth effect reads GAIN ≈ 1 time in 3 at σ 1.2 pp); a row-wise collect / update pairing (mis-attributes the lagged update row) | `src/main/x35/x47_test.py`; `X35_BATCH1_REVIEW.md` F-RV-4 / F-RV-9 |
 | 2026-10-19 | **X47's argv is now on the REAL T\* (launch-staging worker)** | X34 plateaued; T\* = the 290M node (sha256 `cfa7f7be…a22965e7`), so X47's five lines (seeds 3601–3605) read `--model …/checkpoint_290000087_steps.zip --steps 360000087 --grow trunk_layers=4` and all five PASS `checkargs` and the dry-run's `grow : DECLARED trunk_layers 2 -> 4` at `03b983be`; the toy C0 they share a control with froze its R on the same T\* | X47 on the 200M stand-in (retired) | `../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md` §4.2–§4.3, `batch1_validation_03b983be/` |
 | 2026-10-20 | **X47's ρ MEASURED; its readout REVIEWED before the first read (adversarial review worker)** | ρ ≈ 1.13 (collect 1.065, update 1.202) on X47 s3601's first 6.1M steps, so s_eq ≈ 352M and the cost ≈ 4.9 GPU-h per seed; the review's verdict is SOUND-WITH-AMENDMENTS (AM-X47-1 to AM-X47-11, for the orchestrator to rule): the equal-time point's measured biases total ≈ 3M steps or less; in-learn eval IS inside `collect_ms` (≈ 3.8 % of Σ, the docstring's claim is false, ≈ 0.25M steps of bias); the guards G-C and G-F have never run on a toy; the likely final class (UNDECIDED) licenses nothing until it is ruled | the FLOP estimate ρ 1.3–1.4; s_eq ≈ 50–55M | [`X47_READOUT_REVIEW.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/X47_READOUT_REVIEW.md) §1–§3 |
+| 2026-10-20 | **AM-X47 RULED and registered before any X47 read (orchestrator; X47 amendment worker)** | All eleven of the review's amendments were ACCEPTED, AM-X47-2 as proposed (UNDECIDED with Δ̂ > 0 keeps X47b's slot; the report says "no effect ≥ 4.6 pp detected"). One was ADDED: X47 arms are not thinned until the read (AM-X47-12). Built: `seq` reads only finished, K9(b)-PASS, unthinned runs and names the files; the eval share; the PER-STEP ONLY gap; the per-member Δ and the "in-lineage" label; look 2's moved nodes; the norm reader. The pre-read found that h2h plays a grown toy, that G-F and G-C read on toys, and that G-C's seed-pooled interval has no code (F-AMX-1) | UNDECIDED read as "depth does not help"; subtracting eval from Σ; a flip rule (F-RV-9) | `../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md` §0, §4.5; `src/main/x35/x47_test.py` |

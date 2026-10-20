@@ -259,6 +259,10 @@ identical across arms.**
     between the two is UNDECIDED (§5.4.3's flip rule);
   - split ρ (X47's wall time per step over C0's) on the first 1M into collect and update, so the opponent-growth
     share is quantified.
+- **CLOSED 2026-10-20 by the orchestrator (AM-X47-9; [`X47_READOUT_REVIEW.md`](X47_READOUT_REVIEW.md) §1.2,
+  [launch sheet](BATCH1_LAUNCH_SHEET.md) §0).** Both biases are measured and small: (a) the grown pool costs ≤ ≈ 2.3M
+  steps of s_eq, and (b) load costs ≤ ≈ 1.2M steps per seed. The update-only s_eq stays a REPORTED node, never read for
+  S. **No flip rule.**
 
 **F-RV-10. P\* is a Tier-1 plateau CANDIDATE.**
 - **The problem.** The owner's two-tier rule (`design_league_decisions.md`, 2026-10-03) declares a plateau only when

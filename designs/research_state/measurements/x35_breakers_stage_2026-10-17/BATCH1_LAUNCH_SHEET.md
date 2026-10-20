@@ -5,7 +5,9 @@ toy R is FROZEN on the real T\*; every argv of the amended order (32 forks, the 
 HEAD `03b983be` (§4.3); nothing launched; every launch NEEDS THE ORCHESTRATOR'S GO.** **AMENDED AGAIN 2026-10-20
 (AM-8, §0), before any launch, after the GPU battery's read: the T62 gate is DECIDED as FP32_ALT (BUILT later that day,
 `gen3_tau_fp32_alt_v1`; its GPU cost read gates production), so there is ONE PIN PER SIDE, the TOY BLOCK RUNS FIRST (AM-9) and production waits for the FP32_ALT commit (a
-placeholder the kit refuses to launch on).** X47 is a **kit arm**
+placeholder the kit refuses to launch on).** **AMENDED 2026-10-20 (AM-X47, §0) before any X47 read:** the
+orchestrator accepted X47's readout review (AM-X47-1 to -11) and ruled that X47 arms are not thinned (AM-X47-12). X47's
+READ PLAN is §4.5, and its guards' pre-read (both READ on toys) is §4.5.1. X47 is a **kit arm**
 (`toy_x47`, F-LS-1 closed). The orchestrator has ruled **C1** (a), **C2** (X47 interleaved with its toy C0), **C3** (the
 toy arms run K9(b) `warn` under X34's ceilings), **C4** (batch 1 launches without R0) and every amendment of the
 [adversarial review](X35_BATCH1_REVIEW.md) (AM-1 to AM-7, the POOL check, the G-E readers); C1's rule (a) is SUPERSEDED by AM-8; C6 is still open; C5 is RULED and DONE (§5). This sheet is
@@ -76,6 +78,30 @@ that fail on revert) and supersede C1 (a) and AM-7's order.
 | **AM-9: the ORDER** | The TOY block runs FIRST: **T1** = toy C0 + X47 s3601–s3603, interleaved as in AM-7 (toy C0 s3601 → X47 s3601 → X47 s3602 → toy C0 s3602 → toy C0 s3603 → X47 s3603), then **T1b** (X47 and toy C0 s3604–s3605) if X47's look 1 reads CONTINUE. **Production P1 follows when FP32_ALT has landed** (P2–P4 as before). **T2** (toy A1 / A2, the calibration) stays LAST and conditional on the production verdicts (AM-3), unchanged | `batch.STAGES` = `kit.BATCH1` (`batch_test.py` pins the whole list); `stage-check` (pre-check 9) keeps every condition of AM-7 / AM-3 / AM-4 and adds production's FP32_ALT gate. The order itself is the Training session's launch sequence, not a gate: nothing refuses P1 while T1 is unfinished |
 | **The `--t62` token is the SIDE'S** | Production's first GO takes `--t62 FP32_ALT`, the toy's `--t62 NA_TOY` (the toy is τ-free; `NA_TOY` says so in its pin file). The old tokens (`ADOPT`, `PENDING`, `INCONCLUSIVE`, `INCOMPLETE`) are retired: the battery has read. A typed token of the wrong side is refused, in the dry run too | `batch.T62_BY_SIDE`; `kit pin-check --t62` |
 | **Production's FP32_ALT commit (a placeholder until it exists)** | `x35_required_commits_production.txt` (production ONLY) names the FP32_ALT commit. It holds the placeholder `FP32_ALT_SHA_PENDING` until the build lands; **while it does, EVERY production launch HOLDs and `stage-check` reads PENDING for every production fork.** When FP32_ALT is on main its full sha replaces the placeholder (committed BEFORE the production pin is chosen); the check then also requires it to be a real commit and an ANCESTOR of the production pin. A missing file, or one without the `FP32_ALT` line, is a refusal (deleting it is no way past). The toy has no such file | `kit required-check` (pre-check 2c); `batch.side_gate` in `stage_status` |
+
+### AMENDMENT 2026-10-20 (AM-X47): the orchestrator's rulings on X47's readout review, made BEFORE any X47 read
+
+The [readout review](X47_READOUT_REVIEW.md) (`575c4909`) read SOUND-WITH-AMENDMENTS. **The orchestrator ACCEPTED every
+amendment, AM-X47-1 to AM-X47-11 (2026-10-20), with AM-X47-2 exactly as the reviewer proposed it, and RULED one more item
+that came up while the amendments were being built (AM-X47-12, no thinning).** This is registered before any X47 read:
+none has happened yet. The first X47 arm, s3601, ends around 11:00 PDT on 2026-10-20, and look 1 needs all six T1 arms.
+The code parts are built in the commit that FOLLOWS this registration (`src/main/x35/x47.py` and `x47_report.py`), each
+with a test in `x47_test.py` that fails on revert.
+
+| ruling | what it says | where it is enforced |
+|---|---|---|
+| **AM-X47-1 ACCEPTED: pre-read the guards** | Before the first read, on CPU at rule 5b: G-C's readers (B1, B2) on T\* and on X47 s3601's newest checkpoint, and one `cross_stat` matrix between grown and plain toys. If G-C cannot be read on a toy, the orchestrator rules BEFORE the read whether G-C is REQUIRED on the toy or REPORTED only, as G-K is. Without that ruling, `x47.REQUIRED_GUARDS` stays (G-F, G-C), and a GAIN with G-C unread ends INCONCLUSIVE **DONE 2026-10-20 (§4.5.1): both guards READ on toys, so no ruling is needed and G-C stays REQUIRED.** One gap is open: G-C's ON − OFF interval POOLED over seeds has no code (FINDING F-AMX-1, §4.5.1) | §4.5.1; `x47.REQUIRED_GUARDS` unchanged (G-F, G-C) |
+| **AM-X47-2 ACCEPTED as proposed: what each FINAL class does to X47b** | GAIN / ADOPT-CANDIDATE ⇒ X47b runs. PER-STEP ONLY ⇒ X47b runs (as written). **UNDECIDED with Δ̂ > 0 ⇒ X47b keeps its rank-9 conditional slot, unlicensed but not dropped, and the report says "no effect ≥ 4.6 pp detected" (σ 1.07 pp, 80 %), never "depth does not help".** **UNDECIDED with Δ̂ ≤ 0 is NOT RULED** (the proposal covered Δ̂ > 0 only; a FINDING for the orchestrator, printed as such). NULL ⇒ X47b moves down in rank but is not dropped (the toy only ranks before calibration). LOSS ⇒ X47b is not run on this evidence. TRADE ⇒ X47b only on the orchestrator's ruling. INCONCLUSIVE ⇒ nothing; fix the named input and re-read. No report says "depth does not help" on anything but a NULL, and even a NULL is a verdict on THIS growth recipe (review F-XR-11) | [`design_bot_ideas_screen.md`](../../../endstate/design_bot_ideas_screen.md) §1.4 / §2.1; `x47.X47B_ACTION` (the class → X47b line printed with every verdict) |
+| **AM-X47-3 ACCEPTED: `seq` reads only FINISHED, K9(b)-PASS runs** | `python -m main.x35.x47 seq` REFUSES (INCONCLUSIVE, exit 2) any run, C0 or X47, that fails one of these: it has `final_model.zip`; `metadata.json` `num_timesteps` = the step of the run's last TensorBoard row; that step ≥ the run's own `--steps` (`metadata.json` `cli_args.steps`); and its AM-6 record `<stage>/k9b/<run>.json` (schema `x35_k9b_arm_end_v1`, the same run) reads **PASS**. So a VOID or unread arm cannot enter a read | `x47.check_finished` (called by `seq`; `--stage` defaults to this directory) |
+| **AM-X47-4 ACCEPTED: Σ includes in-learn eval** | Σ is registered as what the code measures: the training loop's wall time, **INCLUDING** in-learn eval, checkpoint writes and snapshot saves, which all run inside `rollout/collect_ms`'s timer (`instrumented_ppo/rollout_probes.py`). It is NOT corrected: the measured bias is about 0.25M steps, and subtracting eval would tie Σ to a third tag's row alignment. The docstring's old claim ("excluded by construction") is withdrawn. Each arm's eval share (Σ `eval/wall_sec` ÷ Σ, on the same surviving path) is REPORTED beside ρ | `x47.py` docstring; `seq`'s `reported_only.eval_share` |
+| **AM-X47-5 ACCEPTED: PER-STEP ONLY carries its gap** | A PER-STEP ONLY report carries D = the mean over seeds of (S_final − S_s_eq), with its two-sided 95 % t interval on n − 1 df. It is labelled "throughput-dependent" only when the interval's lower bound is > 0. A bound within 1e-9 of 0 is not above it (rule 8), and a zero-variance D has no interval. Otherwise the label is **"BOUNDARY: the secondary crossed the bar within measurement noise"**. The class, and what it licenses (AM-X47-2), do not change | `x47.per_step_gap` (reported; `read` puts it in `reported.per_step_gap` and in the PER-STEP ONLY reason) |
+| **AM-X47-6 ACCEPTED: the READ PLAN** | Written in §4.5 BEFORE the read. Cells are split across `main.h2h` engines, one engine serving at most two architectures. Its first item, a 2-pair SMOKE of a grown depth-4 toy against T\* and against P\*, **PASSED** on 2026-10-20 | §4.5 |
+| **AM-X47-7 ACCEPTED: per-member Δ, REPORTED, never deciding** | Each member of R gets Δ (X47 at s_eq − C0 finals), with the Welch interval at the look's 97.5 %. The out-of-lineage member `pstar_x26` is also reported on its own. A GAIN (ADOPT-CANDIDATE or TRADE) whose `pstar_x26` Δ̂ ≤ 0 goes to the owner labelled **"in-lineage"** | `x47.per_member`; `read`'s `per_member` input block; `reported.per_member` / `reported.lineage_label` |
+| **AM-X47-8 ACCEPTED: look 2 recomputes s_eq** | At look 2, B and every X47 seed's s_eq are recomputed over ALL FIVE C0 seeds: `seq --look 2` refuses anything but 5 C0 + 5 X47 runs, and `--look 1` anything but 3 + 3. S is read at each new node. A look-1 S is reused only when that seed's node did not move (the same step), and is re-read otherwise. Both looks' nodes are recorded (`seq --look 2 --prior <look-1 seq JSON>` writes `nodes_by_look`, with `reread` per seed) | `x47.moved_nodes`; `seq --look / --prior` |
+| **AM-X47-9: F-RV-9 CLOSED (the orchestrator)** | Its two biases are measured and small (review §1.2: the grown pool ≤ ≈ 2.3M steps, load ≤ ≈ 1.2M per seed). The update-only s_eq stays a REPORTED node, never read for S. **No flip rule** | [`X35_BATCH1_REVIEW.md`](X35_BATCH1_REVIEW.md) F-RV-9 |
+| **AM-X47-10 ACCEPTED: the DESCRIPTOR reader** | The Frobenius norm of each NEW round's `out_proj` and `linear2` (`team_transformer.extra_rounds.<i>`) on every checkpoint of each X47 seed, read on CPU and reported beside the verdict. Each norm is also given as a ratio to the mean norm of the same matrix in the base rounds at that checkpoint. One line of reading, DESCRIPTIVE, decides nothing: a round with both ratios ≥ 0.01 at the last node is "engaged", any other "stayed near identity" | `python -m main.x35.x47 norms --run <dir>`; `x47.round_norms` |
+| **AM-X47-11 ACCEPTED: which files are read** | **"Final"** = `final_model.zip`, whose `metadata.json` `num_timesteps` is the last row's step (AM-X47-3 checks it). It is NOT the last `checkpoint_<N>_steps.zip`: C0 s3601's final is 360,098,229, and its last checkpoint is 360,000,067. **An s_eq node** = `checkpoints/checkpoint_<N>_steps.zip`, or `final_model.zip` when `is_final` | `x47.py` docstring; `seq` prints each s_eq node's `file` and each C0 run's final `file` |
+| **AM-X47-12 RULED (orchestrator, 2026-10-20): X47 arms are NOT THINNED** | Finished toy arms are thinned to their 10M nodes plus final (F22), and C0 s3601 already has been. That would delete the 1M nodes that s_eq (≈ 352M) and the descriptor read. So **X47 arms keep every 1M checkpoint until the X47 read is complete, look 2 included** (≈ 1.8 GB per arm). Toy C0 arms keep the F22 thinning, because they are read only at their finals. `seq` refuses an X47 run whose nodes after the fork have a gap > 1.5 × its `checkpoint_every_steps` (a thinned run) | `x47.check_nodes_dense` (called by `seq` on X47 runs) |
 
 ---
 
@@ -492,6 +518,130 @@ unrecognized, `[ForkLR] ✓ this fork names its own dose`), "would launch", FORK
 `warn`, `✓ fork arch`, `self_play False (TYPED)`, no growth line, **7.91 GiB REQUIRED**. One process at a time, 61 s for
 all four, 718 MB peak RSS, WITHOUT a heavy slot (F-LS-23). `ge_test.py` pins the argvs to these files and passes the
 kit's verdict over the real transcripts.
+
+### 4.5 X47's READ PLAN (AM-X47-6, registered 2026-10-20, BEFORE any X47 read)
+
+**What is read.** Look 1 reads X47 s3601–s3603 and toy C0 s3601–s3603. Look 2 reads s3601–s3605 on both sides, and
+only on a look-1 CONTINUE. Every run must first pass `python -m main.x35.x47 seq --look <k>` (AM-X47-3 / -8 / -12): the
+run is finished, its K9(b) record reads PASS and X47's nodes are not thinned. `seq` names the files: each X47 seed's
+s_eq node, its final and each C0 final (AM-X47-11).
+
+**Three architectures, so three kinds of engine.** One `main.h2h` engine serves at most two architectures
+(`main.h2h.arch.MAX_GROUPS`; a third is a typed `CellArchMismatch`). The three are:
+- **D4**, the grown depth-4 toy: X47's nodes;
+- **D2**, the plain toy: R's five lineage members `toy_pstar` (T\*), `toy_280m`, `toy_220m`, `toy_150m` and `toy_080m`,
+  plus the C0 finals;
+- **P**, production: R's member `pstar_x26` (P\*).
+
+R and its sha256s are [`reference_population_toy.json`](reference_population_toy.json). The player is always the node
+or final being scored, and the opponent is the member (`readout.population_score` reads that orientation only).
+
+| request (`--request`) | engine | cells (look 1) | what it feeds |
+|---|---|---|---|
+| `x35_x47_look<k>_a` | D4 + D2 | X47 nodes (3 s_eq + 3 finals; a node that IS its final is played once) × the 5 lineage members = 30 | S of every X47 node (5 of 6 cells) |
+| `x35_x47_look<k>_gf` | D4 + D2 | X47 s_eq nodes (rows) × C0 finals (columns) = 9 | G-F: `cross.matrix_from_cells(cells, rows, cols, min_pairs=readout.MIN_PAIRS)`. **Pass 500 explicitly: the cross module's default floor is 1,000** (F-AMX-2). Then `h_pp` is `read`'s `g_f` block |
+| `x35_x47_look<k>_b` | D4 + P | X47 nodes × `pstar_x26` = 6 | S of every X47 node (the 6th cell); AM-X47-7's out-of-lineage member |
+| `x35_x47_look<k>_c` | D2 + P | C0 finals × all 6 members = 18 | S of every C0 final |
+
+- **Settings for every cell:**
+  - `python -m main.h2h play-many --cells <file> --pairs 500 --purpose ab --family x35_x47 --request <above>
+    --label x35_x47_look<k>`, greedy against greedy (the default), schedule seed 0;
+  - the family is registered ONCE, before the first cell: `python -m main.eval_ledger family-register --id x35_x47
+    --decision-kind ab_verdict --rule "BATCH1_LAUNCH_SHEET §4.5 AM-X47 v1" --protocol gen3_eval_protocol_v1_h2h
+    --commit <toy pin>`;
+  - each engine's cells are ONE `play-many` call, so the four requests are four calls.
+- **Size of look 1:** 63 cells, 31,500 pairs, 63,000 games.
+- **Where it runs:**
+  - **a GPU window** (≈ 0.3 GPU-h, under the window holder's lease), or
+  - **CPU at rule 5b**: ≈ 15 lane-hours at the review's 1.18 games/s per lane, in ≤ 45-min heavy-slot chunks. A
+    re-run resumes, because rows already recorded are skipped.
+- **Look 2 (AM-X47-8):**
+  - `seq --look 2 --prior <look-1 seq JSON>` lists the nodes that moved;
+  - only those, plus seeds 3604–3605, plus both new C0 finals, are played;
+  - G-F at look 2 is the 5 × 5 matrix, and the cells whose row node did not move are reused.
+- **The read JSON:**
+  - the S blocks are `readout.population_score` over the union of the look's `_a` / `_b` (X47) or `_c` (C0) cells;
+  - `per_member` carries the same cells per member (AM-X47-7);
+  - `g_c` is G-C (§4.5.1);
+  - `comparison` is `seq`'s output.
+  - Then `python -m main.x35.x47 decide <read.json>` writes `reads/x47_look<k>.json`.
+
+**Item 1, the SMOKE: PASSED, 2026-10-20 at 07:24 PDT** (CPU, `CUDA_VISIBLE_DEVICES=""`, `nice -n 19 taskset -c 5-7,13-15`,
+ledger in `/tmp`, nothing written under `models/`).
+- **What it played:** `main.h2h play`, 2 pairs, with a read-only COPY of X47 s3601's newest checkpoint
+  (`checkpoint_298000111_steps.zip`, sha256 `05d8f4d7…`) as the player:
+  - **against T\***: the engine came up in 9.9 s with 2 slot groups (two architectures); the 4 games took 4.7 s, and the
+    whole call 60 s wall at 830 MB RSS, including a 40 s cold cargo build of the env core in a fresh worktree;
+  - **against P\***: the engine came up in 15.1 s with 2 slot groups; the 4 games took 22 s.
+- **The checkpoint really is depth 4:** the strict loader returns `team_transformer.extra_rounds.0/1` beside
+  `transformer_layers.0/1`.
+- **The reviewer's 600 s timeout did not reproduce.** The same plan finished in about a minute per cell. Its likeliest
+  cause is the heavy-slot queue (`mem_cap.sh` was 9 deep on 2026-10-20, with waits over 1 h). **UNVERIFIED**, because
+  the reviewer's exact command is not recorded.
+
+#### 4.5.1 The guards' pre-read (AM-X47-1), 2026-10-20, CPU, read-only
+
+**G-F READS on a grown/plain pair.** One `play-many` engine (D4 + D2) played a 3 × 3 cross, 10 pairs per cell:
+- **rows (grown):** X47 s3601 at 296M, 297M and 298M;
+- **columns (plain):** toy C0 s3601 `final_model.zip`, its 350M checkpoint, and T\*.
+
+The 9 cells took 2 min 28 s at 0.99 GB RSS. `cross.matrix_from_cells` (with `min_pairs` 10) then built the matrix with no
+inconclusive reason, and `readout.guard_f` returned **PASS** (Δ̂ −0.28 pp, 95 % [−16.3, +15.8], df 4). This is plumbing
+only, not a verdict: 10-pair cells are far below the 500 floor, which the same call correctly refuses.
+
+**G-C READS on both toys** (`main.policy_spectrum`; the banks §5.6.5 names, in
+`../collapse_pilot_2026-10-17/`):
+- **B1:** `bank_x26`, 7,028 decisions in 210 battles;
+- **B2:** `subset_x26.json`, 306 turns, against the truth `rows_X26at150M_S32`.
+
+Both T\* (1,423,748 parameters) and the grown toy (1,688,708) loaded every tensor. The bank's arch-signature check
+accepted both (`gen3_mon_tied_gain_v1`, obs 2845), and the re-encode reproduced all 7,028 rows byte-equal.
+
+| | T\* (depth 2, 290M) | grown toy (depth 4, 298M) |
+|---|---|---|
+| B1: mean entropy (nats) | 1.058 | 1.052 |
+| B2: starved share of decisive turns (n = 179) | 0.330 [0.263, 0.391] | 0.324 [0.254, 0.390] |
+
+- **The whole read:** 1 min 28 s at 1.86 GB RSS.
+- **`readout.guard_c` demo** (ON = the grown toy, OFF = T\*): B1 [−0.0055, −0.0156, +0.0068], B2 [−0.0056, −0.0461,
+  +0.0328], so **PASS**. This too is plumbing only.
+- **So no ruling is needed: G-C stays REQUIRED on the toy.**
+- **The commands, for the real read:**
+  ```bash
+  python -m main.policy_spectrum read --bank <pilot>/bank_x26 --out <dir> --ckpt <zip>=<label> ...
+  python -m main.policy_spectrum report ... --pair <OFF>:<ON>     # B1 = paired[0].all.entropy
+  <pilot>/starvation_readout.py --bank <pilot>/bank_x26 --rows X26@150M=<pilot>/rows_X26at150M_S32.compact.jsonl.gz ...
+                                                                  # B2 = paired["OFF->ON"].decisive.starved
+  ```
+  A worktree without `target/` needs `core_events` built first (`POKESIM_CORE_EVENTS_BIN`).
+
+**FINDINGS of the pre-read (standing rule 7):**
+- **F-AMX-1 (OPEN, blocks a G-C read, hence an ADOPT-CANDIDATE):** §5.6.5 registers G-C's interval as "battle-clustered
+  95 %, ON against OFF, POOLED over seeds", but no code pools it.
+  - `starvation_readout.py` and `policy_spectrum.report` each pair exactly TWO labels, and `guard_c` takes only the
+    finished interval.
+  - Until a helper concatenates per-turn deltas across the seed pairs, clustered by (seed, battle), G-C can be read
+    only one pair per seed, so a GAIN ends INCONCLUSIVE.
+  - Building it is a small unit, and it also needs a ruling on how ON and OFF finals pair across seeds. This applies
+    to every X35 arm, not only X47.
+- **F-AMX-2:** the G-F matrix of 500-pair cells must be built with `min_pairs=readout.MIN_PAIRS`; the cross module's
+  default of 1,000 would make every X35 G-F INCONCLUSIVE. No X35 code builds `h_pp` from ledger cells yet; the reader
+  does it by hand, as written above.
+- **F-AMX-3 (an interpretation, not plumbing):**
+  - B2's truth is production's: X26 at 150M, played out greedy on both sides. On a toy, B2 means "starved against what
+    a production continuation calls near-best".
+  - Both banks are production states. The toy's ON − OFF delta is paired, so the comparison is fair, but it is read
+    off the toy's own distribution.
+  - §5.6.5's truth refresh would mean re-branching under a toy continuation, about 3.7 CPU-h, and needs its own
+    ruling.
+- **F-AMX-4 (the descriptor is weak as registered, AM-X47-10):** read on the LIVE X47 s3601 (11 checkpoints, 291–301M,
+  7 s), the new rounds' norm ratio to the base rounds is already 0.012 at the first 1M node and rises steadily to 0.044 at
+  11M, the same for both rounds and both matrices.
+  - So the registered line (≥ 0.01 = "engaged") reads "engaged" from the first node.
+  - Under AdamW, a zero-initialised matrix grows at the learning-rate scale whether or not its gradient is useful, so a
+    norm cannot separate "learned and did not help" from "drifted".
+  - A functional descriptor would separate them, at about the same CPU cost: on `bank_x26`, the policy KL between the
+    node and the node with its extra rounds zeroed. It is not built; the line stays as registered (descriptive).
 
 ## 5. The choices (the orchestrator's): C1, C2, C3, C4 and C5 RULED; C6 and C7 still open
 

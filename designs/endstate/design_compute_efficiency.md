@@ -621,6 +621,34 @@ The TOY makes zero τ-solve calls, so T62 is irrelevant to it.
   calibration) stays conditional on the production verdicts (AM-3) and last.
 - **The `--t62` token is the side's:** production `FP32_ALT`, the toy `NA_TOY` (τ-free).
 
+**AMENDMENT 2026-10-20 (AM-X47: the orchestrator's rulings on X47's readout review
+[`X47_READOUT_REVIEW.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/X47_READOUT_REVIEW.md), made BEFORE any
+X47 read). The launch sheet's §0 has the table and §4.5 the read plan. The code parts are in `main.x35.x47` /
+`x47_report`, each with a test that fails on revert.** All eleven amendments were ACCEPTED, AM-X47-2 as proposed, and
+one item was added:
+- **AM-X47-1:** the guards are pre-read on toys. Both READ, so G-C stays REQUIRED. But G-C's interval POOLED over seeds
+  has no code (F-AMX-1, open), and until it does, a GAIN ends INCONCLUSIVE.
+- **AM-X47-2:** what each final class does to X47b.
+  - GAIN or PER-STEP ONLY: X47b runs.
+  - UNDECIDED with Δ̂ > 0: X47b keeps its conditional slot, and the report says "no effect ≥ 4.6 pp detected", never
+    "depth does not help". UNDECIDED with Δ̂ ≤ 0 is not ruled.
+  - NULL: X47b drops in rank, not out.
+  - LOSS: X47b is not run on this evidence.
+- **AM-X47-3:** `seq` reads only FINISHED runs whose K9(b) reads PASS.
+- **AM-X47-4:** Σ INCLUDES in-learn eval, checkpoint writes and snapshot saves: they run inside `collect_ms`, so §5.4's
+  "excluded" does not hold for X47's Σ. The eval share is reported, not subtracted.
+- **AM-X47-5:** PER-STEP ONLY carries the per-seed gap between the final and s_eq, with its 95 % interval. It is labelled
+  "BOUNDARY" unless that interval excludes 0.
+- **AM-X47-6:** the read plan has three engine kinds, because one engine serves at most two architectures. The smoke
+  of a grown depth-4 toy PASSED.
+- **AM-X47-7:** each member's Δ is reported, and so is the out-of-lineage P\* member alone. A GAIN whose P\* Δ̂ ≤ 0 is
+  labelled "in-lineage".
+- **AM-X47-8:** look 2 recomputes B and every s_eq over five C0 seeds, and re-reads only the nodes that moved.
+- **AM-X47-9:** F-RV-9 is closed, with no flip rule.
+- **AM-X47-10:** a reader for the new rounds' weight norms, descriptive. As registered it is weak under AdamW (F-AMX-4).
+- **AM-X47-11:** the files a read uses: the final is `final_model.zip`, and a node is `checkpoint_<N>_steps.zip`.
+- **AM-X47-12 (ruled):** X47 arms keep every 1M checkpoint until the X47 read is done. Toy C0 arms keep F22's thinning.
+
 #### 5.6.1 The shared frame (every arm)
 
 - **The start.** P\* is X26's plateau checkpoint: the newest node of the second FLAT Tier-1 check (§4.3's convention),
