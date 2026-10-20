@@ -1,0 +1,38 @@
+{
+ "compact_sha256": "02cf24152736846f384591ceaa0ccb6c5e199450d13060bf7005b71644ea705e",
+ "continuations": [
+  "toyTstar@290M greedy (both sides)"
+ ],
+ "decisive_both": 150,
+ "decisive_production": 179,
+ "decisive_toy": 178,
+ "missing": [],
+ "ok": 306,
+ "refused": 0,
+ "rows": 306,
+ "same_near_best_set": 77,
+ "seeds": [
+  32
+ ],
+ "stamp_is_registered": true,
+ "subset": 306,
+ "turns_both_ok": 306,
+ "value_summary_production": {
+  "all_actions_near_best": 64,
+  "mean_legal": 6.902,
+  "mean_near_best": 2.859,
+  "mean_vstar": 0.2949,
+  "turns": 306,
+  "vstar_eq_+1": 71,
+  "vstar_eq_-1": 22
+ },
+ "value_summary_toy": {
+  "all_actions_near_best": 63,
+  "mean_legal": 6.902,
+  "mean_near_best": 2.775,
+  "mean_vstar": 0.2703,
+  "turns": 306,
+  "vstar_eq_+1": 64,
+  "vstar_eq_-1": 21
+ }
+}
