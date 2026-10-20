@@ -15,6 +15,7 @@
 
 pub mod abilities;
 pub mod accmod;
+pub mod data_dir;
 pub mod items;
 pub mod moves;
 pub mod species;
@@ -54,9 +55,10 @@ pub fn to_id(s: &str) -> String {
         .collect()
 }
 
-/// Default data dir: `<repo>/data/pokemon`, relative to this crate.
-pub(crate) fn default_data_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/pokemon")
+/// The data dir: `<repo>/data/pokemon`, resolved at RUN time ([`data_dir::data_dir`]:
+/// `$POKESIM_DATA_DIR` → the repo holding the running module → the compile-time default).
+pub fn default_data_dir() -> PathBuf {
+    data_dir::data_dir()
 }
 
 /// Read-only handle over the static data for one generation.
@@ -79,7 +81,7 @@ pub struct Dex {
 }
 
 impl Dex {
-    /// Open the dex for a generation from the default in-repo data dir.
+    /// Open the dex for a generation from the run-time data dir ([`default_data_dir`]).
     /// Crash-don't-drop: panics with a clear message on any load/parse failure
     /// (a silent data gap would corrupt everything downstream).
     pub fn for_gen(gen: u8) -> Self {

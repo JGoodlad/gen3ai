@@ -152,6 +152,7 @@ impl Server {
 }
 
 fn main() {
+    pokesim::dex::data_dir::exit_on_version_flag("search_driver");
     let dex = Dex::for_gen(3);
     let mut srv = Server::new();
     let stdin = io::stdin();

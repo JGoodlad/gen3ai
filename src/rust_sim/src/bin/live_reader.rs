@@ -30,6 +30,7 @@ use pokesim::side_reader::SideReader;
 use pokesim::trackers::clock::ClockConfig;
 
 fn main() {
+    pokesim::dex::data_dir::exit_on_version_flag("live_reader");
     // Warm the process-wide dex the trackers read, so the first decision pays no load mid-battle.
     let _ = pokesim::trackers::dex();
     let mut reader: Option<SideReader> = None;

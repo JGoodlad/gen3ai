@@ -146,6 +146,7 @@ fn panic_msg(p: Box<dyn std::any::Any + Send>) -> String {
 }
 
 fn main() {
+    pokesim::dex::data_dir::exit_on_version_flag("scan_move_probe");
     // Silence panic's default stderr backtrace spam (we catch + report ourselves).
     panic::set_hook(Box::new(|_| {}));
     let dex = Dex::for_gen(3);

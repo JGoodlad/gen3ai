@@ -122,6 +122,7 @@ use pokesim::trackers::clock::ClockConfig;
 use pokesim::side_reader::SideReader;
 
 fn main() {
+    pokesim::dex::data_dir::exit_on_version_flag("sim_bridge");
     // The process-wide gen-3 dex the core's trackers consult too (`trackers::dex`): the core
     // observation mode would otherwise load a SECOND copy at its first decision.
     let dex: &Dex = pokesim::trackers::dex();

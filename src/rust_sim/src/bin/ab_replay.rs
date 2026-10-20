@@ -1096,6 +1096,7 @@ fn take_panic_msg() -> String {
 // ── main ─────────────────────────────────────────────────────────────────────
 
 fn main() {
+    pokesim::dex::data_dir::exit_on_version_flag("ab_replay");
     let raw_args: Vec<String> = std::env::args().skip(1).collect();
     // `--protocol` turns on the omniscient BYTE differential (gen3_omniscient_byte_fuzz_v1):
     // replay through `run_full_battle_logged` + diff the captured `|...|` lines. It also

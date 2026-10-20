@@ -60,9 +60,13 @@ Contracts: `core_events.md`, `present.md`, `trackers.md`, `encoder.md`, `emissio
 
 ## Builds
 
-🚨 **Never build into main's `target/` from a worktree** (a compile-time dex path leaks into the
-binary), and give a fuzzer or an investigation its own `CARGO_TARGET_DIR`, never the shared `target/`
-(it holds the live `ab_replay`). The emission self-check build lives in `target/selfcheck/`, never
+🚨 **Never build into main's `target/` from a worktree** (main would exec the worktree's code; the
+Python resolver refuses a target dir inside another checkout), and give a fuzzer or an investigation
+its own `CARGO_TARGET_DIR`, never the shared `target/` (it holds the live `ab_replay`). The data
+directory is resolved at RUN time, never baked in: `$POKESIM_DATA_DIR` → the repo holding the running
+binary / cdylib → the compile-time default (`src/dex/data_dir.rs`); every binary prints it on
+`<bin> --version`. Read data only through `dex::default_data_dir()`, never
+`env!("CARGO_MANIFEST_DIR")`. The emission self-check build lives in `target/selfcheck/`, never
 `target/release/`, which a live run execs; Python picks it with `POKESIM_EMISSION_SELFCHECK=1` (the
 root `conftest.py` sets it).
 

@@ -66,6 +66,7 @@ fn init(fd: i32, text: &str) -> Result<(Core, Mapping), DispatchError> {
 }
 
 fn main() {
+    pokesim::dex::data_dir::exit_on_version_flag("rust_env_proc");
     let args: Vec<String> = std::env::args().collect();
     let fd = match args.as_slice() {
         [_, flag, fd] if flag == "--fd" => fd.parse::<i32>().ok(),

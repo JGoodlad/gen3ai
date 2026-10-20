@@ -124,6 +124,25 @@ def test_missing_rust_search_driver_raises_a_clear_error(tmp_path, monkeypatch):
     assert "search_driver" not in sim_bridge_bin._rust_bin_cache
 
 
+def test_a_target_dir_inside_another_checkout_is_refused_before_cargo_runs(tmp_path, monkeypatch):
+    """THE 2026-09-09 INCIDENT, the build half: a worktree build whose target dir is ANOTHER
+    checkout's (an exported ``CARGO_TARGET_DIR``, or a ``target`` symlinked into main) would replace
+    that checkout's binary. The resolver refuses before cargo runs, naming the checkout."""
+    other = tmp_path / "other_checkout"
+    (other / ".git").mkdir(parents=True)
+    monkeypatch.delenv("POKESIM_SIM_BRIDGE_BIN", raising=False)
+    monkeypatch.setenv("CARGO_TARGET_DIR", str(other / "src" / "rust_sim" / "target"))
+    ran = []
+    monkeypatch.setattr(sim_bridge_bin.subprocess, "run", lambda *a, **k: ran.append(a))
+    with pytest.raises(SimBridgeBinaryError, match="ANOTHER checkout"):
+        sim_bridge_bin.resolve_sim_bridge_bin()
+    assert ran == [], "cargo must not run"
+    # A target dir outside every checkout (a fuzzer's own scratch dir) and this checkout's own are fine.
+    assert sim_bridge_bin.foreign_checkout_of(tmp_path / "scratch" / "target") is None
+    assert sim_bridge_bin.foreign_checkout_of(sim_bridge_bin._RUST_CRATE_DIR / "target" / "release") is None
+    assert sim_bridge_bin.foreign_checkout_of(other / "x" / "target").resolve() == other.resolve()
+
+
 def test_deferral_warning_states_the_current_rust_scope():
     """The startup warning must describe the scope that is TRUE NOW, and no wider.
 

@@ -10,8 +10,8 @@ on a search path is the same class. So every build of the env core carries a sta
 ``src`` is the refusal key — FNV-1a-64 over the sorted ``"<tag>/<rel>\\t<git blob id>\\n"`` listing of
 every file that reaches the build (:func:`source_listing`; ``build.rs`` is the Rust twin — keep the two
 identical). ``schema`` must equal this checkout's column table (``columns.schema_id()``); ``data`` must
-be THIS checkout's ``data/pokemon`` (the port reads data from its compile-time path, so a build from
-another checkout reads another checkout's data); ``nan_poison`` can be demanded (a self-check build
+be THIS checkout's ``data/pokemon`` — the BUILD's checkout (the cdylib reads its data at run time from the
+repo it sits in, ``pokesim::dex::data_dir``, so with ``src`` this pins "built here, reads here"); ``nan_poison`` can be demanded (a self-check build
 NaN-prefills a row, a release build zero-fills it). ``commit`` is informational.
 
 Dependency-free except ``utils.paths`` and the column table; the recompute is a few ms.

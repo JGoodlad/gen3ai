@@ -44,12 +44,8 @@ struct Tables {
 
 static TABLES: OnceLock<Result<Tables, String>> = OnceLock::new();
 
-fn data_dir() -> String {
-    crate::core::STAMP.split(';').find_map(|kv| kv.strip_prefix("data=")).expect("the stamp names the data dir").to_string()
-}
-
 fn load_json(name: &str) -> Result<Json, String> {
-    let path = std::path::Path::new(&data_dir()).join(name);
+    let path = pokesim::dex::default_data_dir().join(name);
     let text = std::fs::read_to_string(&path).map_err(|e| format!("read {}: {e}", path.display()))?;
     Json::parse(&text).map_err(|e| format!("parse {}: {e}", path.display()))
 }

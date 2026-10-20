@@ -33,6 +33,7 @@ use pokesim::dex::Dex;
 mod switchin_block_swap;
 
 fn main() -> ExitCode {
+    pokesim::dex::data_dir::exit_on_version_flag("bridge_replay");
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
         eprintln!("usage: bridge_replay <golden.txt> [battle_id] [--print]");

@@ -24,7 +24,7 @@ type Priors = HashMap<String, Vec<(String, f64)>>;
 fn priors() -> &'static Priors {
     static P: OnceLock<Priors> = OnceLock::new();
     P.get_or_init(|| {
-        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/pokemon/gen3_hidden_power_priors.json");
+        let path = crate::dex::default_data_dir().join("gen3_hidden_power_priors.json");
         let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
         let root = Json::parse(&text).unwrap_or_else(|e| panic!("parse {}: {e}", path.display()));
         let mut out = HashMap::new();

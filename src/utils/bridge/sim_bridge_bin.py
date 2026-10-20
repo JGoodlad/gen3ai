@@ -26,7 +26,10 @@ the Rust binary-resolution + build logic (shared by every family via ``_resolve_
 - else ``cargo build --release --bin <name>`` is run in ``src/rust_sim`` and the resulting
   ``target/release/<name>`` is returned — or, under ``POKESIM_EMISSION_SELFCHECK=1`` (every pytest
   session and every fuzz script; never production), the EMISSION SELF-CHECK build in
-  ``target/selfcheck/<name>`` (``SELFCHECK_ENV`` below).
+  ``target/selfcheck/<name>`` (``SELFCHECK_ENV`` below). The build is REFUSED when its target
+  dir lies inside another checkout (:func:`foreign_checkout_of` — the 2026-09-09 incident). A
+  build here is otherwise harmless: the binary resolves its data dir at RUN time from where it
+  sits (``pokesim::dex::data_dir``; ``<bin> --version`` prints it), never from where it was built.
 - the resolved path is cached process-wide per binary (the build is idempotent + not free, and
   the spawners hit this on every child spawn), and any failure raises a CLEAR, actionable error
   naming the fix — we NEVER fall back to Node.
@@ -55,7 +58,7 @@ import threading
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from utils.paths import src_path
+from utils.paths import repo_root, src_path
 
 # This one ships BESIDE this file, so they stay `__file__`-relative: that is a local fact, and
 # routing it through the repo root would make it depend on a global one (`utils.paths`' own
@@ -187,6 +190,16 @@ def _resolve_rust_bin(bin_name: str, env_var: str, selector: str) -> str:
                 f"set {env_var} to a pre-built {bin_name} binary."
             )
 
+        foreign = foreign_checkout_of(expected_bin_path(bin_name, selfcheck))
+        if foreign is not None:
+            raise SimBridgeBinaryError(
+                f"refusing to build {bin_name}: the cargo target dir lies inside ANOTHER checkout "
+                f"({foreign}), so this checkout's build would overwrite that checkout's binary (the "
+                f"2026-09-09 rust-target incident). Unset CARGO_TARGET_DIR (or point it at a dir of "
+                f"your own), make sure {_RUST_CRATE_DIR / 'target'} is not a symlink into another "
+                f"checkout, or set {env_var} to a pre-built binary."
+            )
+
         build_args, _ = build_argv(bin_name, selfcheck)
         shown = " ".join(build_args)
         try:
@@ -218,6 +231,21 @@ def _resolve_rust_bin(bin_name: str, env_var: str, selector: str) -> str:
         resolved = str(bin_path.resolve())
         _rust_bin_cache[cache_key] = resolved
         return resolved
+
+
+def foreign_checkout_of(path: Path) -> Optional[Path]:
+    """The git checkout OTHER than this one that ``path`` (followed through symlinks) lies in, or
+    ``None`` — a build whose target dir is inside another checkout would replace that checkout's
+    binary. A path that does not exist yet is judged by its nearest existing ancestor."""
+    p = Path(path)
+    while not p.exists() and p != p.parent:
+        p = p.parent
+    p = p.resolve()
+    here = repo_root().resolve()
+    for d in (p, *p.parents):
+        if (d / ".git").exists():
+            return None if d == here else d
+    return None
 
 
 def expected_bin_path(bin_name: str, selfcheck: Optional[bool] = None) -> Path:

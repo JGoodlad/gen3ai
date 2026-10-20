@@ -989,6 +989,7 @@ fn bench_parse(rounds: usize, battles: &[Battle], dex: &Dex) -> String {
 }
 
 fn main() {
+    pokesim::dex::data_dir::exit_on_version_flag("core_events");
     let args: Vec<String> = std::env::args().collect();
     if args.get(1).map(String::as_str) == Some("--check-records") {
         std::process::exit(check_records(&args[2..]));
