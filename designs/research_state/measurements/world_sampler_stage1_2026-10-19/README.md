@@ -16,7 +16,7 @@ read's outputs.
 | `samplers_s1.py` | the arms as samplers: F's builder with the arm's departures swapped in for one `sample` call (`hooks`) |
 | `build_s1.py` | BUILDER side: every arm's worlds per state on one shared screen cache |
 | `play_s1.py` | PLAY side (X26's pin + the roll control): every arm played by the pilot's own driver, a rolls world with its force table; `--identity` = the identity tooth |
-| `run_s1.sh`, `queue_s1.py`, `launch_s1.sh` | the checkout selector (CPU rules), the sequential runner (chunks in the registered order; the stop), the detached launcher |
+| `run_s1.sh`, `queue_s1.py`, `launch_s1.sh`, `loop_s1.sh` | the checkout selector (CPU rules), the sequential runner (chunks in the registered order; the stop; `--one-chunk`), the detached launcher, the slot-per-chunk loop |
 | `score_s1.py` | the table: per state every source's IMP at every scorer, F_rolls weighted, F_legal's dose curves, the world meters |
 | `gigo_s1.py` | the GIGO audit before the read: coverage, provenance, defects, the rolls, two CRN teeth, the leak tooth |
 | `rules_s1.py`, `read_s1.py` | the registered rules as code, and the read (`result_s1.json`) |
@@ -58,5 +58,12 @@ own `mem_cap` scope; `CUDA_VISIBLE_DEVICES=""`. No GPU.
   around `queue_s1.py`), so its children take none. It is one heavy job, as rule 5b and the brief allow. Relaunch
   the same way: the env of `launch_s1.sh`, then
   `nohup setsid nice -n 19 <builder>/scripts/ops/mem_cap.sh --name ws1_runner --slot 2 timeout 28h python -I queue_s1.py`.
+- **Switched 2026-10-20 at a chunk boundary to ONE heavy slot per BOUNDED chunk** (the orchestrator's policy: a slot is
+  held per chunk of ≤ ~45 min, never for a multi-hour run). `loop_s1.sh 4` runs `queue_s1.py --one-chunk --chunk 4`
+  in a loop, each call inside its own `mem_cap.sh --slot`, released between chunks. It runs from the RUNNER checkout
+  `~/.cache/gen3ai/ws_stage1/runner` (the commit carrying `--one-chunk`), with `WS1_RUN_S1` = the BUILDER checkout's
+  `run_s1.sh`, so every row's builder and drivers stay the launch commit `8d304953`. The chunk size (6 → 4) is
+  operational: any chunk size keeps the complete states a prefix of the registered order. The order and the stop are
+  unchanged.
 - **Amendment A1 (L2)** registered before any outcome was read (PREREGISTRATION §9). The read must run from a
   checkout that holds it (`l2_s1.py`).
