@@ -65,5 +65,14 @@ own `mem_cap` scope; `CUDA_VISIBLE_DEVICES=""`. No GPU.
   `run_s1.sh`, so every row's builder and drivers stay the launch commit `8d304953`. The chunk size (6 → 4) is
   operational: any chunk size keeps the complete states a prefix of the registered order. The order and the stop are
   unchanged.
+- **2026-10-20 08:28**: the RUNNER checkout moved to current main (`855bbc8b`; the measurement folder unchanged), so the
+  loop's own `mem_cap.sh` / `heavy_slots` take FIFO tickets (`96f011dc`; the old copy polled at random). Every
+  per-chunk slot hold so far was 8–20 min (≤ 45 min).
+- **RULING (orchestrator, 2026-10-20 ~08:50): stage 1's chunk jobs run BLOCKING**, `GEN3AI_BLOCKING="WS stage 1
+  (P0.1)"`: the P0.1 family, as stage 1c. They bypass the heavy slots, still at `nice -n 19` + `taskset -c
+  5-7,13-15` under `mem_cap`, one chunk at a time, chunks ≤ 45 min, with the same registered stop and design. A
+  chunk whose peak memory passes ~10 GB is reported to the orchestrator. The loop was relaunched with the mark: its
+  waiting slot request had started no work and was stopped by pid. Relaunch the same way: `loop_s1.sh 4` with the
+  env of §3's switch, plus `GEN3AI_BLOCKING`.
 - **Amendment A1 (L2)** registered before any outcome was read (PREREGISTRATION §9). The read must run from a
   checkout that holds it (`l2_s1.py`).
