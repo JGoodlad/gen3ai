@@ -397,12 +397,20 @@ test, the SUM of setup + call + teardown on the xdist controller; exempt: `slow`
 and `@pytest.mark.linchpin` (the three LINCHPINS below carry it). The bar is stretched by the test's OWN window's
 contention (the root conftest's meter): `8 s x max(1, factor / 2.7)` — 2.7 is the low end of the factor this
 rule was measured at, so a busier box stretches the bar and a quiet box never shrinks it. **FAIL** (the session
-exits 1, a `SHIP GATE 8 s BAR` section names it) at **>= 2x** the stretched bar; **WARN** (named, never a
-verdict) between 1x and 2x; an unreadable window never fails. WHY FAIL AT 2x (rule 8): a test that honours the
-rule cannot read twice its stretched bar — the meter under-reads by <= ~25 % and the shape's own factor spread
-(x2.7-x4.9, 1.8x) is inside 2x even if the stretch explained none of it — so the verdict is deterministic for
-every compliant test, and a test past it is mis-tiered whichever side of the line it lands; the band below it
-is rule 8's exclusion margin, not a coin flip. A warn-only list is how the tree drifted (nobody reads it). Every
+exits 1, a `SHIP GATE 8 s BAR` section names it) at **>= 2.5x** the stretched bar (20 s at the reference
+contention); **WARN** (named, never a verdict) between 1x and 2.5x; an unreadable window never fails. WHY 2.5x
+(rule 8, 2026-10-19): the nominal line is 2x, with an **exclusion band of 25 %** (`FAIL_BAND`, so `FAIL_LINE` =
+2 x 1.25) because a read within the noise of the line is a coin flip — `compile_cache_test::…[passing]` read
+16.7 s against a 16.0 s line under heavy contention and failed a ship gate while its sibling case read 8.4 s
+stretch-normalised. The 25 % is the contention meter's documented worst under-read (above) — it can make the
+stretch 1.25x too small — checked against the day's logged ship-gate rows (18 WARN / FAIL reads, stretch-
+normalised `total / max(1, factor / 2.7)`): the near-compliant tests read 8.0-11.3 s, a repeated test's own
+spread 1.28x (`cpu_inductor_tile2d`) and 1.43x (`learner_gates` rollout-weights, 10.0 -> 14.3 s), the worst
+compliant read 14.3 s = 1.8x the bar (x1.25 = 2.2x, under the 2.5x line) and the incident 16.7 s = 2.1x; the
+genuinely mis-tiered tests read 22.1-56.5 s (2.8x-7x) and still FAIL. So a test that honours the rule cannot reach
+the line through noise, and a test past it is mis-tiered whichever side of 20 s it lands. Pinned by
+`ship_bar_test.py::test_a_read_just_over_the_nominal_fail_line_is_warn_and_a_clear_one_is_fail` (1.04x the
+nominal line is WARN, clearly above is FAIL; fails on revert of the band). A warn-only list is how the tree drifted (nobody reads it). Every
 test at or over half the bar is written to `~/.cache/gen3ai/ship_bar_last.json` (factor and verdict) for the
 next calibration. Tests: `src/utils/ship_bar_test.py` (a child session over the real conftest).
 
