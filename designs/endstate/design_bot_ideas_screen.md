@@ -119,7 +119,9 @@ shares its batch's control C0.
      only when the per-seed gap between the final and s_eq has a 95 % interval wholly above 0. Otherwise it is
      "BOUNDARY" (AM-X47-5).
    - **UNDECIDED with Δ̂ > 0:** X47b keeps its rank-9 conditional slot, unlicensed but not dropped. The report says "no
-     effect ≥ 4.6 pp detected" (σ 1.07 pp, 80 %), never "depth does not help". **UNDECIDED with Δ̂ ≤ 0 is not ruled.**
+     effect ≥ 4.6 pp detected" (σ 1.07 pp, 80 %), never "depth does not help".
+   - **UNDECIDED with Δ̂ ≤ 0 (AM-X47b-4, ruled 2026-10-20 before any read):** X47b LEAVES its conditional slot and is
+     deprioritised in the backlog. The report says "no effect ≥ 4.6 pp detected; point estimate ≤ 0".
    - **NULL:** X47b drops in rank, not out.
    - **LOSS:** X47b is not run on this evidence.
    - **TRADE:** X47b runs only on the orchestrator's ruling.
@@ -172,7 +174,9 @@ shares its batch's control C0.
   training: `python -m main.x35.x47 norms`, reported as a ratio to the base rounds, "engaged" at ≥ 0.01.
   - **As registered, the descriptor is weak** (F-AMX-4). On the live s3601 the ratio is already 0.012 at the first 1M
     node, so under AdamW the line reads "engaged" almost at once.
-  - A functional descriptor (the policy KL with the extra rounds zeroed) is not built.
+  - A functional descriptor is ADDED (AM-X47b-3), reported only: `python -m main.x35.x47 policy-diff`, the mean KL on
+    `bank_x26` between the node and the same weights with the extra rounds' `out_proj` / `linear2` zeroed.
+  - G-C pools the seed pairs of finals by a crossed cluster bootstrap and reads the toy's own truth (AM-X47b-1 / -2).
 - **Risks:**
   - more compute per step, which is why the primary is at equal time;
   - pre-LN extra rounds on top of post-LN base rounds is the mixed stack production already runs, so there is no new
@@ -391,7 +395,7 @@ candidates into it.
 | 6 | X35-A3 | main exploiters | ≈ 18 | **BUILT** | as staged |
 | 7 | X35-A4 | trailing-magnet KL | ≈ 14.8 | T56 | as staged; targets the measured treadmill |
 | 8 | **X48** | **per-kind FFN, production, upcycled at P\*** | **≈ 15** | **B-KFFN + B-GROW** | zero extra FLOPs; production-only |
-| 9 | **X47b** | **production depth 3 → 4** | **≈ 16** | **B-GROW** | CONDITIONAL on X47 GAIN or PER-STEP ONLY |
+| 9 | **X47b** | **production depth 3 → 4** | **≈ 16** | **B-GROW** | CONDITIONAL on X47 GAIN or PER-STEP ONLY; an UNDECIDED with Δ̂ ≤ 0 takes it out of this slot (AM-X47b-4) |
 | 10 | **X49** | **intent SHAPING, production** | **≈ 15** | **B-INT + B-GROW** | weak prior (§2.3) |
 | 11 | X35-A5 / A6 | Nash archive / league exploiters | ≈ 14.4 / 18 | T57 / flags | conditional, as staged |
 | 12 | X14 | overlap collection with the update | build-heavy | NO | deferred until X44 reads (its gain is larger after X44) |
@@ -488,3 +492,4 @@ labels, offline, feeding search's opponent model. Re-open **rung 3**, the BC war
 | 2026-10-19 | **X47's argv is now on the REAL T\* (launch-staging worker)** | X34 plateaued; T\* = the 290M node (sha256 `cfa7f7be…a22965e7`), so X47's five lines (seeds 3601–3605) read `--model …/checkpoint_290000087_steps.zip --steps 360000087 --grow trunk_layers=4` and all five PASS `checkargs` and the dry-run's `grow : DECLARED trunk_layers 2 -> 4` at `03b983be`; the toy C0 they share a control with froze its R on the same T\* | X47 on the 200M stand-in (retired) | `../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md` §4.2–§4.3, `batch1_validation_03b983be/` |
 | 2026-10-20 | **X47's ρ MEASURED; its readout REVIEWED before the first read (adversarial review worker)** | ρ ≈ 1.13 (collect 1.065, update 1.202) on X47 s3601's first 6.1M steps, so s_eq ≈ 352M and the cost ≈ 4.9 GPU-h per seed; the review's verdict is SOUND-WITH-AMENDMENTS (AM-X47-1 to AM-X47-11, for the orchestrator to rule): the equal-time point's measured biases total ≈ 3M steps or less; in-learn eval IS inside `collect_ms` (≈ 3.8 % of Σ, the docstring's claim is false, ≈ 0.25M steps of bias); the guards G-C and G-F have never run on a toy; the likely final class (UNDECIDED) licenses nothing until it is ruled | the FLOP estimate ρ 1.3–1.4; s_eq ≈ 50–55M | [`X47_READOUT_REVIEW.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/X47_READOUT_REVIEW.md) §1–§3 |
 | 2026-10-20 | **AM-X47 RULED and registered before any X47 read (orchestrator; X47 amendment worker)** | All eleven of the review's amendments were ACCEPTED, AM-X47-2 as proposed (UNDECIDED with Δ̂ > 0 keeps X47b's slot; the report says "no effect ≥ 4.6 pp detected"). One was ADDED: X47 arms are not thinned until the read (AM-X47-12). Built: `seq` reads only finished, K9(b)-PASS, unthinned runs and names the files; the eval share; the PER-STEP ONLY gap; the per-member Δ and the "in-lineage" label; look 2's moved nodes; the norm reader. The pre-read found that h2h plays a grown toy, that G-F and G-C read on toys, and that G-C's seed-pooled interval has no code (F-AMX-1) | UNDECIDED read as "depth does not help"; subtracting eval from Σ; a flip rule (F-RV-9) | `../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md` §0, §4.5; `src/main/x35/x47_test.py` |
+| 2026-10-20 | **AM-X47b RULED and registered before any X47 read (orchestrator; G-C pooling worker)** | G-C pools the seed pairs of finals (each arm final with its same-seed control final) by a crossed cluster bootstrap over seed pairs and bank battles; the readers refuse a bare interval. The toy's B2 reads a truth re-branched under T\*, production keeps X26@150M's. The norm descriptor stays reported, and a policy-difference descriptor is added, reported only. A final UNDECIDED with Δ̂ ≤ 0 deprioritises X47b | a single-pair G-C; production's truth on the toy; an argmax or weight-norm descriptor deciding anything | `../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md` §0 AM-X47b |
