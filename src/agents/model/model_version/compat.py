@@ -477,6 +477,16 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "Resume with the matching --trunk-layers setting (a flagless resume inherits it), or start a fresh "
                 "training run. A FORK that means to GROW the trunk declares it: --grow trunk_layers=N (B-GROW, "
                 "`agents.model.growth`: identity-init rounds, the parent's function bit for bit).")
+        # gen3_trunk_ffn_by_kind_v1 (v161, B-KFFN): the per-kind FFN experts are parameters and, once trained, a
+        # different forward; a frozen opponent's gate must name the cause rather than fail a strict load on key names.
+        if self.trunk_ffn_by_kind != saved.trunk_ffn_by_kind:
+            raise ModelVersionError(
+                f"trunk_ffn_by_kind mismatch: saved={saved.trunk_ffn_by_kind!r}, current={self.trunk_ffn_by_kind!r}.\n"
+                "The per-kind FFN experts are fixed for a run's lifetime (each is its own parameters).\n"
+                "Resume with the matching --trunk-ffn-by-kind setting (a flagless resume inherits it), or start a fresh "
+                "training run. A FORK that means to SPLIT the trunk's FFN declares it: --grow trunk_ffn_by_kind=on "
+                "(B-KFFN, `agents.model.growth`: every expert a copy of the shared FFN, the parent's function bit for "
+                "bit). Removing trained experts (on -> off) is not offered.")
         # gen3_probe_facts_v1 (v153): it builds a projection and adds a fact to every forward.
         if self.move_target_state != saved.move_target_state:
             raise ModelVersionError(

@@ -289,3 +289,21 @@ def test_the_depth_replica_is_the_round_and_its_variants_mean_what_they_say(kind
             assert torch.allclose(zu, L.norm2(L.norm1(x)), atol=1e-6)
         off = W._layer_forward(L, x, bias, mode="full", head_mask=torch.tensor([1.0, 0.0, 1.0, 1.0]))
         assert not torch.allclose(off, ref, atol=1e-4)            # a head ablation moves the output
+
+
+def test_the_depth_worker_refuses_a_trunk_with_per_kind_ffn_experts():
+    """K-14 (B-KFFN, F-GB-6): on a `--trunk-ffn-by-kind on` network the depth replica (and its FFN statistics,
+    truncation and spectra) would read only the shared FFN — `trunk_rounds` refuses it, typed; an off trunk passes."""
+    import torch
+
+    from agents.model.team_transformer import BiasedEncoderLayer
+    from agents.model.trunk_depth import IdentityInitRound
+    from agents.model.trunk_kffn import build_kind_ffn
+    from main.probe_battery import pin_worker as W
+
+    fe = torch.nn.Module()
+    fe.rounds = torch.nn.ModuleList([BiasedEncoderLayer(), IdentityInitRound()])
+    assert len(W.trunk_rounds(fe)) == 2
+    fe.rounds[1].kind_ffn = build_kind_ffn(1, identity=True)
+    with pytest.raises(W.UnsupportedTrunk, match="per-kind FFN experts"):
+        W.trunk_rounds(fe)

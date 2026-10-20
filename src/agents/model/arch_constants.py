@@ -164,3 +164,9 @@ STATIC_OPC_OUT_HIDDEN = 32
 # are built inside `torch.random.fork_rng` from it, out of `IsolatedLinear`s SB3's orthogonal re-init skips, so a deeper
 # trunk draws nothing from the global stream (every other parameter's initial bytes equal the 2-round build's).
 TRUNK_EXTRA_INIT_SEED = 20261009
+
+# gen3_trunk_ffn_by_kind_v1 (B-KFFN, `--trunk-ffn-by-kind on`, `trunk_kffn.py`): the PRIVATE init seed of the per-kind FFN
+# experts. Round i's experts are built inside `torch.random.fork_rng` from KFFN_INIT_SEED + i, out of `IsolatedLinear`s
+# SB3's orthogonal re-init skips, so the experts draw nothing from the global stream (every other parameter's initial bytes
+# equal the off build's) and a round's experts are the same bytes whether it was built fresh or appended by a growth.
+KFFN_INIT_SEED = 20261020

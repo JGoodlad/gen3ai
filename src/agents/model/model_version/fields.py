@@ -387,6 +387,10 @@ class ModelVersionFields:
     # gen3_static_recovery_v1 (config v150): `--trunk-layers N` (2 = the bare network; N > 2 appends identity-init
     # rounds). STRUCTURAL: it builds parameters (a state_dict delta) and changes the trained forward.
     trunk_layers: int = 2
+    # gen3_trunk_ffn_by_kind_v1 (config v161, B-KFFN): `--trunk-ffn-by-kind {off,on}` (or a fork's `--grow
+    # trunk_ffn_by_kind=on`): per-token-kind FFN experts in every trunk round (`trunk_kffn.py`). STRUCTURAL: `on` builds
+    # parameters (a state_dict delta) and changes the trained forward once the experts diverge.
+    trunk_ffn_by_kind: str = "off"
     # gen3_endstate_facts_v1 (config v152): the FACT-COMPLETION levers (`design_hand_computed_features.md` §4 ranks
     # 3-5, §5 rank 1, finding 7). `--drop-progress-clock {off,on}` (the model reads turns_since_progress as 0).
     # STRUCTURAL. (Its sibling `move_resolution_facts` left the config at v157, legacy deletion U3.)

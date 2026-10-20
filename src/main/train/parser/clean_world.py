@@ -227,6 +227,16 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
     # gen3_static_recovery_v1 (v150; designs/endstate/design_static_tokens.md §13): the trunk depth (the static-recovery
     # levers `--switch-hazard-cost` / `--eot-residual` were DELETED by the legacy deletion's U1: built with the op).
     from agents.model.trunk_depth import TRUNK_LAYERS_CHOICES
+    # gen3_trunk_ffn_by_kind_v1 (v161, B-KFFN; design_growth_builds_kffn_int.md §1, the lever of X48).
+    from agents.model.trunk_kffn import KFFN_MODES
+    parser.add_argument("--trunk-ffn-by-kind", "--trunk_ffn_by_kind", dest="trunk_ffn_by_kind",
+                        choices=KFFN_MODES, default=None,
+                        help="Per-token-kind FFN EXPERTS in every trunk round (gen3_trunk_ffn_by_kind_v1, v161, B-KFFN). "
+                             "'off' (default; production): one shared FFN. 'on': five kinds (Pokemon = the shared FFN, "
+                             "board, our moves, threats, events), routed by seat role; +65,920 parameters per kind per "
+                             "round, no extra FLOPs. STRUCTURAL, version-checked. Needs --token-encoding static, E4 + E5 "
+                             "seats, --history-events and X5's hypothesis set. A FORK splits a parent's FFN with "
+                             "--grow trunk_ffn_by_kind=on (copies: the parent's function bit for bit), never this flag.")
     parser.add_argument("--trunk-layers", "--trunk_layers", dest="trunk_layers", type=int,
                         choices=TRUNK_LAYERS_CHOICES, default=None,
                         help="The number of trunk self-attention rounds (gen3_static_recovery_v1, v150). 2 (default; "

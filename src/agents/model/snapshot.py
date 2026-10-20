@@ -1522,6 +1522,7 @@ def current_model_version(
     move_target_state: str = "off",
     move_set_closure: str = "off",
     tau_solve: str = "fp32_alt",
+    trunk_ffn_by_kind: str = "off",
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
 ) -> ModelVersion:
@@ -1598,6 +1599,8 @@ def current_model_version(
     ext_kwargs["move_set_closure"] = str(move_set_closure)
     # gen3_tau_fp32_alt_v1 (v160): the τ solve — numerics, recorded, never compared.
     ext_kwargs["tau_solve"] = str(tau_solve)
+    # gen3_trunk_ffn_by_kind_v1 (v161, B-KFFN): the per-kind FFN experts — structural.
+    ext_kwargs["trunk_ffn_by_kind"] = str(trunk_ffn_by_kind)
     ext_kwargs["opp_intent"] = opp_intent
     ext_kwargs["species_prior_fusion"] = species_prior_fusion
     ext_kwargs["t0_species_prior"] = t0_species_prior

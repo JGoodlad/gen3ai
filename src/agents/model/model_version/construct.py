@@ -210,6 +210,9 @@ class ModelVersionConstruction(ModelVersionFields):
             # gen3_static_recovery_v1 (v150): the trunk depth.
             trunk_layers=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("trunk_layers", 2)),
+            # gen3_trunk_ffn_by_kind_v1 (v161, B-KFFN): the per-kind FFN experts.
+            trunk_ffn_by_kind=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("trunk_ffn_by_kind", "off")),
             # gen3_probe_facts_v1 (v153): their active's state on our move seats.
             move_target_state=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_target_state", "off")),

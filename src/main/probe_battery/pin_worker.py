@@ -447,11 +447,23 @@ ROUND_TYPES = ("BiasedEncoderLayer", "IdentityInitRound")
 PRE_LN_ROUNDS = ("IdentityInitRound",)
 
 
+class UnsupportedTrunk(RuntimeError):
+    """A trunk this worker's REPLICA cannot reproduce: refused, typed, rather than probed silently wrong."""
+
+
 def trunk_rounds(fe) -> List[Any]:
     rounds = [m for m in fe.modules() if type(m).__name__ in ROUND_TYPES]
     if not rounds:
         raise RuntimeError("the extractor builds no trunk round this worker knows "
                            f"({', '.join(ROUND_TYPES)}) — read its commit's trunk before probing it")
+    # B-KFFN (`--trunk-ffn-by-kind on`, F-GB-6 / K-14): the round's FFN position is per-kind experts routed by a segment
+    # table; the replica below, its FFN-unit statistics, the low-rank truncation and the spectra read only the shared
+    # `linear1` / `linear2`, so they would be silently wrong on it. Refused until the replica routes through `round.ffn`.
+    if any(getattr(r, "kind_ffn", None) is not None for r in rounds):
+        raise UnsupportedTrunk(
+            "this checkpoint's trunk carries per-kind FFN experts (trunk_ffn_by_kind='on', B-KFFN): the depth "
+            "diagnostics' layer replica, FFN statistics, truncation and spectra read only the shared FFN and would be "
+            "silently wrong — refused (design_growth_builds_kffn_int.md F-GB-6)")
     return rounds
 
 

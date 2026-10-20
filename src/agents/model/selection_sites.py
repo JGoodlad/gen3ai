@@ -49,7 +49,7 @@ FORWARD_MODULES: Tuple[str, ...] = (
     "masked_categorical", "obs_facts_inject", "opp_intent",
     "move_order", "move_resolution", "move_resolution_rules", "op_reduction", "pair_outcome", "pointer_head", "policy", "pools", "projection", "static_facts", "static_tokens",
     "status_rules", "t0_species", "team_transformer", "value_readouts",
-    "eot_residual", "trunk_depth", "ko_exact", "status_facts",
+    "eot_residual", "trunk_depth", "ko_exact", "status_facts", "trunk_kffn",
 )
 
 #: Top-level functions of a forward module that are NOT the forward (loss, label and metric helpers):
@@ -460,6 +460,11 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     },
     "value_readouts": {
         "OBS": ("op_alive.clamp(max=1.0) < 0.5",),
+    },
+    # gen3_trunk_ffn_by_kind_v1 (B-KFFN): the segment table is computed at BUILD time from the seat modules' counts
+    # (`ffn_kind_segments`); the forward routes by its plain ints (no tensor comparison).
+    "trunk_kffn": {
+        "PYTHON": ("int(es.topk_seats) > 0",),
     },
 }
 

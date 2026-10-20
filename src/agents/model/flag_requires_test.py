@@ -63,6 +63,8 @@ _ON_OVERRIDE: Dict[str, object] = {
     "move_target_state": "on",
     # gen3_move_set_closure_v1 (v154)
     "move_set_closure": "on",
+    # gen3_trunk_ffn_by_kind_v1 (v161, B-KFFN)
+    "trunk_ffn_by_kind": "on",
 }
 
 

@@ -616,7 +616,13 @@ from typing import Any, Dict
 #   same real function: never compared by check_compatible; RECORDED and `_resolve`-inherited. A pre-v160 config
 #   migrates to fp32_alt (no earlier run chose one). No ARCH_SIGNATURE bump (no module, weight or obs change), no
 #   MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 160
+# v161 (gen3_trunk_ffn_by_kind_v1, B-KFFN): one STRUCTURAL field, `trunk_ffn_by_kind` {off,on} (`--trunk-ffn-by-kind`,
+#   or a fork's `--grow trunk_ffn_by_kind=on`): `on` gives every trunk round per-token-kind FFN experts (`trunk_kffn.py`,
+#   4 kinds x 65,920 parameters per round), routed by build-time seat-role segments; the shared FFN stays as the Pokemon
+#   expert. Gated in check_compatible (its text names --grow). A pre-v161 config migrates to off (the only possible
+#   past). No ARCH_SIGNATURE bump (off builds nothing: every existing state dict and forward is unchanged; the on path is
+#   gated by the field — the trunk_layers precedent), no OBS_SEMANTICS or MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 161
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every

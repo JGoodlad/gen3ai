@@ -6,7 +6,7 @@ The model side (what grows, how it starts as the identity, the optimizer rule, t
 
 * **The flag.** ``--grow FIELD=VALUE``, repeatable, one per field. ``VALUE`` is the CHILD's value; the PARENT's is read
   from the ``--model`` checkpoint's ``model_config.json``. Only `growth.GROWABLE` fields parse, and only BUILT ones
-  (``trunk_layers`` today; ``trunk_ffn_by_kind`` / ``opp_intent_grad_mode`` are refused naming B-KFFN / B-INT).
+  (``trunk_layers`` and ``trunk_ffn_by_kind`` today; ``opp_intent_grad_mode`` is refused naming B-INT).
 * **The namespace** (:func:`apply_to_namespace`, after the inheritance sweep). Each declared field is SET to its child
   value — so the child builds, version-checks and records the grown architecture. Refused: ``--grow`` without
   ``--model``, a parent config that cannot be read, a field also TYPED by its own flag (``--trunk-layers``: name the
@@ -22,7 +22,8 @@ The model side (what grows, how it starts as the identity, the optimizer rule, t
 * **The pool** (:func:`grow_seeded_pool`). A fork's self-play pool is seeded from its parent's (`pool_seed`), whose
   snapshots are at the PARENT's architecture, and the pool is single-architecture by construction (its arch record,
   the inference service's slot groups). So each seeded snapshot is grown the same way (strict load at the parent's
-  architecture, the same identity rounds, the same fork-time gate) and the pool's arch record becomes the child's:
+  architecture, the same growth through `growth.apply_growth`, the same fork-time gate) and the pool's arch record
+  becomes the child's:
   every opponent plays exactly the function its parent snapshot played.
 """
 from __future__ import annotations
@@ -257,4 +258,4 @@ def pool_lines(stamp: Optional[Dict[str, Any]], *, self_play: bool) -> Iterable[
     """The dry run's pool line for a grow-fork (only with --self-play: no pool is seeded otherwise)."""
     if stamp and self_play:
         yield ("the self-play pool seeded from the parent is GROWN the same way at the child's start (each snapshot: "
-               "strict load, identity rounds, the bit-identity gate), and its arch record becomes the child's")
+               "strict load, the same growth, the bit-identity gate), and its arch record becomes the child's")

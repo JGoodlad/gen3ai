@@ -54,8 +54,9 @@ def test_the_parser_takes_only_built_growable_fields(capsys):
     assert p.parse_args([]).grow is None
     assert p.parse_args(["--grow", "trunk_layers=4"]).grow == [("trunk_layers", 4)]
     assert p.parse_args(["--grow", "trunk-layers=3"]).grow == [("trunk_layers", 3)]
+    assert p.parse_args(["--grow", "trunk_ffn_by_kind=on"]).grow == [("trunk_ffn_by_kind", "on")]
     for bad, why in (("trunk_layers", "FIELD=VALUE"), ("trunk_layers=9", "must be one of"),
-                     ("trunk_ffn_by_kind=on", "B-KFFN"), ("opp_intent_grad_mode=shaping", "B-INT"),
+                     ("trunk_ffn_by_kind=sideways", "must be one of"), ("opp_intent_grad_mode=shaping", "B-INT"),
                      ("damage_op=on", "not a growable field")):
         with pytest.raises(SystemExit):
             p.parse_args(["--grow", bad])
@@ -301,10 +302,139 @@ def test_the_fork_arch_verdict_passes_a_declared_growth_and_judges_it_with_the_t
     from main.train import fork_arch
 
     parent = request.getfixturevalue("toy_parent")
-    assert fork_arch.DECLARED_GROWTH == {"grow": ("trunk_layers",)}
+    assert fork_arch.DECLARED_GROWTH == {"grow": ("trunk_ffn_by_kind", "trunk_layers")}
     ok = check(["--model", parent, "--grow", "trunk_layers=4", *X34_FORK])["fork_arch"]
     assert ok.checked and not ok.refused, ok
     typed = check(["--model", parent, "--trunk-layers", "4", *X34_FORK])["fork_arch"]
     assert typed.refused and "trunk_layers mismatch" in typed.reason
     other = check(["--model", parent, "--grow", "trunk_layers=4", "--mon-hazard-cost", "on", *X34_FORK])["fork_arch"]
     assert other.refused and "mon_hazard_cost mismatch" in other.reason, other
+
+
+# ── B-KFFN: `--grow trunk_ffn_by_kind=on` (design_growth_builds_kffn_int.md §1.8: K-10, K-12, K-13) ──────────────
+def _kversion(kffn: str) -> ModelVersion:
+    return dataclasses.replace(_saved_version(_resolve(list(_FRESH))), trunk_ffn_by_kind=kffn)
+
+
+def test_kffn_a_grow_fork_resolves_on_and_a_restart_keeps_it(tmp_path, capsys):
+    """K-12 (the launch side). The fork resolves, builds and records ``on`` (the CLI tier: a config_only field would
+    BUILD its frozen default, F-GB-1); its stamp records Q-K3's copy rule; a flagless restart of the grown run
+    inherits ``on`` from its own model_config.json (the derived_toggle_resume round trip)."""
+    _d, ckpt = _run(tmp_path, _kversion("off"), name="parent")
+    plain = _resolve(["--model", ckpt, "--run-name", "child_plain", "--steps", "2000"])
+    assert plain.trunk_ffn_by_kind == "off"
+    grown = _resolve(["--model", ckpt, "--run-name", "child", "--steps", "2000", "--grow", "trunk_ffn_by_kind=on"])
+    assert grown.trunk_ffn_by_kind == "on" and grown._grow_declared == {"trunk_ffn_by_kind": ("off", "on")}
+    assert _saved_version(grown).trunk_ffn_by_kind == "on"
+    assert "[GrowFork] declared growth: trunk_ffn_by_kind 'off' -> 'on'" in capsys.readouterr().out
+    stamp = GF.decide(grown={"trunk_ffn_by_kind": ("off", "on")}, model_path=ckpt, model_dir=str(tmp_path / "child"))
+    assert stamp["fields"] == {"trunk_ffn_by_kind": {"parent": "off", "child": "on"}}
+    assert "trunk_ffn_by_kind: each new expert parameter is a COPY" in stamp["optimizer"]
+    run_d, own = _run(tmp_path, _kversion("on"), name="grown")
+    again = _resolve(["--model", own, "--steps", "3000"])
+    assert again.trunk_ffn_by_kind == "on" and _saved_version(again).trunk_ffn_by_kind == "on"
+
+
+def test_kffn_refusals_on_the_launch_side(tmp_path, capsys):
+    """K-10 (the launch side). The typed flag beside ``--grow``; ``on -> off``; a fork that TYPES ``--trunk-ffn-by-kind
+    on`` without ``--grow``: `checkargs` refuses it (the F-BI-2 fork-arch verdict) and the text names the --grow."""
+    from main.checkargs import check, main as checkargs_main
+
+    _d, ckpt = _run(tmp_path, _kversion("off"), name="parent")
+    base = ["--model", ckpt, "--run-name", "child", "--steps", "2000"]
+    with pytest.raises(SystemExit) as e:
+        _resolve(base + ["--grow", "trunk_ffn_by_kind=on", "--trunk-ffn-by-kind", "on"])
+    assert e.value.code == 2 and "both typed" in capsys.readouterr().err
+    _d2, ckpt_on = _run(tmp_path, _kversion("on"), name="parent_on")
+    with pytest.raises(SystemExit):
+        _resolve(["--model", ckpt_on, "--run-name", "c2", "--steps", "2000", "--grow", "trunk_ffn_by_kind=off"])
+    assert "not function-preserving" in capsys.readouterr().err
+    typed = check(base + ["--trunk-ffn-by-kind", "on"])["fork_arch"]
+    assert typed.refused and "trunk_ffn_by_kind mismatch" in typed.reason
+    assert "--grow trunk_ffn_by_kind=on" in typed.reason
+    assert checkargs_main(["--argv", " ".join(base + ["--trunk-ffn-by-kind", "on"])]) != 0
+    ok = check(base + ["--grow", "trunk_ffn_by_kind=on"])["fork_arch"]
+    assert ok.checked and not ok.refused, ok
+
+
+def test_kffn_the_launcher_dry_run_refuses_a_typed_kffn_fork(request, monkeypatch, capsys):
+    """K-10: the dry run judges the same verdict (F-BI-2's path): the typed flag on a fork is REFUSED, the declared
+    growth would launch."""
+    from main.launcher.dry_run_test import _dry_run, _make_run
+
+    _root, (first, _second), work = request.getfixturevalue("isolated")
+    _parent_dir, ckpt = _make_run(work, first, name="parent")
+    (work / "models" / "parent" / "model_config.json").write_text(json.dumps(dataclasses.asdict(_kversion("off"))))
+    _dry_run(["--model", ckpt, "--run-name", "k_typed", "--steps", "1000", "--trunk-ffn-by-kind", "on"], monkeypatch,
+             expect=int(TrainExitCode.FATAL_CONFIG))
+    out = capsys.readouterr().out
+    assert "trunk_ffn_by_kind mismatch" in out and "--grow trunk_ffn_by_kind=on" in out
+    _dry_run(["--model", ckpt, "--run-name", "k_grow", "--steps", "1000", "--grow", "trunk_ffn_by_kind=on"],
+             monkeypatch)
+    assert "grow        : DECLARED trunk_ffn_by_kind 'off' -> 'on'" in capsys.readouterr().out
+
+
+def _prod_checkpoint(run_dir):
+    """A PRODUCTION parent (kffn off) after one AdamW step, saved as a real run (`final_model.zip` + config)."""
+    from agents.model.growth_test import _step
+    from agents.model.growth_test import _rows as rows
+    from agents.model.snapshot import recorded_model_version, save_model_snapshot
+    from main.fresh_checkpoint import build_fresh_model
+
+    model, _a, _pk = build_fresh_model(0)
+    obs, mask = rows()
+    _step(model, obs, mask)
+    run_dir.mkdir(parents=True, exist_ok=True)
+    model.save(str(run_dir / "final_model"))
+    version = recorded_model_version(model)
+    save_model_snapshot(str(run_dir), version, git_hash="test")
+    return model, version, run_dir / "final_model.zip"
+
+
+@pytest.mark.slow  # ship gate (2026-10-20): 29 s beside a live run (saves + reloads three production policies)
+def test_kffn_the_seeded_pool_grows_its_experts_and_a_relaunch_mid_pool_is_idempotent(tmp_path, _rows):
+    """K-13. `grow_seeded_pool` on a PRODUCTION pool, ``trunk_ffn_by_kind off -> on``: every snapshot loads at the
+    child's version as its parent snapshot's function, the record is the child's; a relaunch that died MID-POOL (one
+    snapshot grown, the record not yet rewritten) grows only the other and skips the grown one. Without the field-generic
+    pool path (§3) the skip test read ``trunk_layers`` and raised KeyError."""
+    import shutil
+
+    from agents.model import growth as G
+    from agents.model.snapshot import load_opponent_snapshot
+    from agents.training.pool_seed import write_seed_record
+    from utils.torch_state_guard import torch_globals
+
+    obs, mask = _rows
+    fields = {"trunk_ffn_by_kind": {"parent": "off", "child": "on"}}
+    with torch_globals(num_threads=1):
+        parent, version, zp = _prod_checkpoint(tmp_path / "parent")
+        parent.policy.set_training_mode(False)
+        ref = G.forward_record(parent.policy, obs, mask)
+        pool = tmp_path / "child" / "snapshots"
+        pool.mkdir(parents=True)
+        names = [f"snapshot_{s:012d}.zip" for s in (1000, 2000)]
+        for n in names:
+            shutil.copy2(zp, pool / n)
+        (pool / "model_config.json").write_text(version.to_json())
+        write_seed_record(str(pool), {"schema": 2, "n_snapshots": 2})
+        child_version = dataclasses.replace(version, trunk_ffn_by_kind="on")
+        with pytest.raises(ModelVersionError, match="trunk_ffn_by_kind mismatch"):
+            load_opponent_snapshot(str(pool / names[0]), child_version)
+        out = GF.grow_seeded_pool(str(pool), fields, child_version)
+        assert out["snapshots"] == names and not out["skipped"]
+        assert (pool / "model_config.json").read_text() == child_version.to_json()
+        for z in names:
+            opp = load_opponent_snapshot(str(pool / z), child_version)
+            assert opp.policy.features_extractor.trunk_ffn_by_kind == "on"
+            opp.policy.set_training_mode(False)
+            got = G.forward_record(opp.policy, obs, mask)
+            assert np.array_equal(got["logits"], ref["logits"]) and np.array_equal(got["values"], ref["values"])
+        assert GF.grow_seeded_pool(str(pool), fields, child_version) is None              # idempotent
+        # a relaunch that died mid-pool: snapshot 2 back at the parent, the record still the parent's
+        shutil.copy2(zp, pool / names[1])
+        (pool / "model_config.json").write_text(version.to_json())
+        out2 = GF.grow_seeded_pool(str(pool), fields, child_version)
+        assert out2["snapshots"] == [names[1]] and out2["skipped"] == [names[0]]
+        opp = load_opponent_snapshot(str(pool / names[1]), child_version)
+        opp.policy.set_training_mode(False)
+        assert np.array_equal(G.forward_record(opp.policy, obs, mask)["logits"], ref["logits"])

@@ -135,6 +135,7 @@
   "terminal_indicator": true,
   "token_encoding": "static",
   "total_dim": 2845,
+  "trunk_ffn_by_kind": "off",
   "trunk_layers": 3,
   "type_embedding_dim": 16,
   "value_entity_pool": true,

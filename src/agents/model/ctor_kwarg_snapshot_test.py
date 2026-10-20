@@ -74,6 +74,7 @@ CTOR_KWARGS_V96 = frozenset({
     "move_set_closure",
     "obs_facts",
     "tau_solve",
+    "trunk_ffn_by_kind",
 })
 
 # The five names MEASURED as uncovered on 2026-08-17, with the run counts that made the case. Pinned

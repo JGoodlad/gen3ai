@@ -34,15 +34,18 @@ import torch
 from agents.model.arch_constants import (D_MODEL, TRANSFORMER_FFN_DIM, TRANSFORMER_N_HEADS, TRANSFORMER_N_LAYERS,
                                          TRUNK_EXTRA_INIT_SEED)
 from agents.model.dense_attn_bias import dense_attn_bias
+from agents.model.trunk_kffn import TrunkRound, build_kind_ffn
+from agents.model.trunk_kffn import check_mode as check_kffn_mode
 
 #: The legal values of `--trunk-layers`: the production 2 (= `TRANSFORMER_N_LAYERS`, nothing extra built) and up to
 #: two identity-init extra rounds. Fewer than 2 is not offered: removing a trained round cannot start as an identity.
 TRUNK_LAYERS_CHOICES: Tuple[int, ...] = (TRANSFORMER_N_LAYERS, TRANSFORMER_N_LAYERS + 1, TRANSFORMER_N_LAYERS + 2)
 
 
-class IdentityInitRound(torch.nn.Module):
+class IdentityInitRound(TrunkRound):
     """One EXTRA trunk round (module docstring): a pre-LN residual self-attention + FFN block whose two output
-    projections start at exactly zero, so it is the identity at init."""
+    projections start at exactly zero, so it is the identity at init. Its FFN position is `TrunkRound.ffn`
+    (`trunk_kffn`: the shared FFN, or `--trunk-ffn-by-kind on`'s experts, whose ``linear2`` start at zero here too)."""
 
     def __init__(self, d_model: int = D_MODEL, n_heads: int = TRANSFORMER_N_HEADS,
                  ffn_dim: int = TRANSFORMER_FFN_DIM) -> None:
@@ -70,18 +73,25 @@ class IdentityInitRound(torch.nn.Module):
         attn = torch.nn.functional.scaled_dot_product_attention(
             q, k, v, attn_mask=None if bias is None else dense_attn_bias(bias))
         x = x + self.out_proj(attn.transpose(1, 2).reshape(B, n, d))
-        out: torch.Tensor = x + self.linear2(torch.nn.functional.relu(self.linear1(self.norm2(x))))
+        out: torch.Tensor = x + self.ffn(self.norm2(x))
         return out
 
 
-def build_extra_rounds(trunk_layers: int) -> Optional[torch.nn.ModuleList]:
+def build_extra_rounds(trunk_layers: int, ffn_by_kind: str = "off") -> Optional[torch.nn.ModuleList]:
     """The `trunk_layers − TRANSFORMER_N_LAYERS` extra rounds, built from the PRIVATE seed (no global RNG draw), or
-    None at the production depth (nothing built: byte-identical)."""
+    None at the production depth (nothing built: byte-identical). ``ffn_by_kind`` ``"on"`` (B-KFFN, `trunk_kffn`)
+    also gives each round its per-kind experts, from round ``TRANSFORMER_N_LAYERS + j``'s own private seed and with
+    ``linear2`` zero (the round stays the identity); their segment table is set by the caller."""
     if trunk_layers not in TRUNK_LAYERS_CHOICES:
         raise ValueError(f"trunk_layers must be one of {TRUNK_LAYERS_CHOICES}, got {trunk_layers!r}")
+    check_kffn_mode(ffn_by_kind)
     n_extra = trunk_layers - TRANSFORMER_N_LAYERS
     if n_extra == 0:
         return None
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(TRUNK_EXTRA_INIT_SEED)
-        return torch.nn.ModuleList(IdentityInitRound() for _ in range(n_extra))
+        rounds = torch.nn.ModuleList(IdentityInitRound() for _ in range(n_extra))
+    if ffn_by_kind == "on":
+        for j, r in enumerate(rounds):
+            r.kind_ffn = build_kind_ffn(TRANSFORMER_N_LAYERS + j, identity=True)
+    return rounds

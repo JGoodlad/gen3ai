@@ -568,6 +568,10 @@ def _migrate_config(data: dict) -> dict:
     if version < 160:
         data.setdefault("tau_solve", "fp32_alt")
         data["config_version"] = 160
+    # v161 (gen3_trunk_ffn_by_kind_v1, B-KFFN) — the per-kind FFN experts: absent before (the only possible past).
+    if version < 161:
+        data.setdefault("trunk_ffn_by_kind", "off")
+        data["config_version"] = 161
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

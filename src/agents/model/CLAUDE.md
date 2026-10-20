@@ -39,12 +39,15 @@ The live `MODEL_CONFIG_VERSION`, `ARCH_SIGNATURE` and `OBS_SEMANTICS_VERSION` ar
   builds the LEGACY network on purpose reads `main.train.arch_arms.legacy_production_config`, never typed flags.
 - A `resume_immutable` flag the extractor carries is re-applied after every `--model` load
   (`resume_reapply.SETTERS`).
-- 🚨 **A FORK grows the network only DECLARED** (`--grow trunk_layers=N`, `growth.py`): the parent loads strictly, the
-  new parameters must start as the identity (the fork-time gate refuses anything not bit-identical), and a new growable
-  field joins `growth.GROWABLE` with its own init and gate (`designs/model/versioning.md` "Declared growth at a fork").
+- 🚨 **A FORK grows the network only DECLARED** (`--grow FIELD=VALUE`, `growth.py`): the parent loads strictly, the
+  grown network must be the parent's function (the gate refuses anything not bit-identical on 64 rows as ONE batch),
+  and a growable field is one `growth.GROWABLE` row with its own hooks
+  (`designs/model/versioning.md` "Declared growth at a fork").
 
 ## Hazards in the forward
 
+- 🚨 **Whatever a trunk round computes lives INSIDE its class** (`trunk_kffn.TrunkRound`): the bf16 region is a
+  class swap of the rounds, so a sibling module beside them silently runs fp32.
 - **Architecture constants live only in `arch_constants.py`**; a new width-contributing part extends
   `compute_projection_widths` and its sweep (`projection_width_test.py`).
 - **The tier order is asserted** (`tier_contract.py`); `Embeddings` alone owns the embedding tables;

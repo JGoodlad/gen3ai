@@ -105,6 +105,7 @@ class ExtractorBuild(torch.nn.Module):
                  move_target_state: str = "off",
                  move_set_closure: str = "off",
                  tau_solve: str = TAU_SOLVE_DEFAULT,
+                 trunk_ffn_by_kind: str = "off",
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -222,8 +223,27 @@ class ExtractorBuild(torch.nn.Module):
         # gen3_static_recovery_v1 (`--trunk-layers`): the extra rounds are built inside the transformer from a PRIVATE
         # seed (`trunk_depth.build_extra_rounds`), so passing a depth > 2 here draws nothing from the global stream.
         self.trunk_layers = int(trunk_layers)
+        # gen3_trunk_ffn_by_kind_v1 (B-KFFN, `trunk_kffn.py`, config v161): `on` = per-token-kind FFN experts in every
+        # round, routed by seat-role segments; it needs all five kinds built (a typed refusal naming the missing one).
+        # The experts are built inside the rounds from a PRIVATE seed (no global RNG draw); `off` builds nothing.
+        from agents.model.trunk_kffn import check_mode as _check_kffn
+        self.trunk_ffn_by_kind = _check_kffn(trunk_ffn_by_kind)
+        if trunk_ffn_by_kind == "on" and token_encoding != "static":
+            raise ValueError("trunk_ffn_by_kind='on' requires token_encoding='static': the BOARD kind is the static "
+                             "encoding's three board tokens (legacy has one global token)")
+        if trunk_ffn_by_kind == "on" and int(entity_topk_seats) <= 0:
+            raise ValueError("trunk_ffn_by_kind='on' requires entity_topk_seats > 0: the THREAT kind is the E4 seats")
+        if trunk_ffn_by_kind == "on" and not entity_tail_seats:
+            raise ValueError("trunk_ffn_by_kind='on' requires entity_tail_seats: the THREAT kind includes the E5 tail "
+                             "(OTHER_move) seats")
+        if trunk_ffn_by_kind == "on" and not history_events:
+            raise ValueError("trunk_ffn_by_kind='on' requires history_events: the EVENT kind is the event seats")
+        if trunk_ffn_by_kind == "on" and not opp_intent:
+            raise ValueError("trunk_ffn_by_kind='on' requires opp_intent: the MON kind's second segment is X5's "
+                             "OTHER_species seat (the hypothesis set)")
         self.team_transformer = TeamTransformer(layout, token_encoding=token_encoding,
-                                                trunk_layers=self.trunk_layers)
+                                                trunk_layers=self.trunk_layers,
+                                                trunk_ffn_by_kind=self.trunk_ffn_by_kind)
         # (The critic's token-content threat projection `CLSPool.value_threat_proj` is DELETED, legacy deletion U3,
         # lane VTI: it was constructed and retired under the adopted surface, so it no longer draws from the stream.)
         self.cls_pool = CLSPool(layout)
@@ -929,6 +949,12 @@ class ExtractorBuild(torch.nn.Module):
         # (`hypothesis_set.fixed_size_tau`; ONE holder, `hypothesis_builder.tau_solve`). Checked even without a builder,
         # so a typo'd value never builds; it builds NOTHING and moves no parameter (the same state_dict under every solve).
         check_tau_solve(tau_solve)
+
+        # gen3_trunk_ffn_by_kind_v1 (B-KFFN): the SEAT-ROLE segment table, computed ONCE from the built seat modules
+        # (`trunk_kffn.ffn_kind_segments`) and set on every round; the rounds' experts already exist (no RNG draw here).
+        if self.trunk_ffn_by_kind == "on":
+            from agents.model.trunk_kffn import ffn_kind_segments, install_segments
+            install_segments(self, ffn_kind_segments(self))
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

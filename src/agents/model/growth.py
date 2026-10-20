@@ -13,8 +13,12 @@ THE GROWABLE FIELDS (one table, `GROWABLE`):
   and bias), so each new round adds 0 to the residual stream. The new rounds are the SAME modules a fresh build at
   ``N_child`` would construct at those positions (`trunk_depth.build_extra_rounds`, the private seed), so a grown
   child and a fresh child differ only in the weights the parent trained.
-* ``trunk_ffn_by_kind`` / ``opp_intent_grad_mode`` — DECLARED, NOT BUILT (B-KFFN, B-INT). Naming one is a typed
-  refusal that names the build that adds it.
+* ``trunk_ffn_by_kind`` — BUILT (B-KFFN, `agents.model.trunk_kffn`). ``off -> on`` gives every trunk round its four new
+  per-kind FFN experts (board, move, threat, event; the round's own ``linear1`` / ``linear2`` stay the Pokémon expert, so
+  the parent's keys load unchanged), each a COPY of the round's shared FFN, and sets the seat-role segment table. The
+  split equals the shared FFN bit for bit at the gate's 64-row batch (NOT at batch 1-2: F-GB-5). ``on -> off`` is
+  refused (trained experts cannot be removed as an identity).
+* ``opp_intent_grad_mode`` — DECLARED, NOT BUILT (B-INT). Naming it is a typed refusal that names the build that adds it.
 
 FIELD-GENERIC (`design_growth_builds_kffn_int.md` §3). Each BUILT row carries its own hooks — ``parse``, ``validate``,
 ``current`` (the value the loaded network is BUILT at), ``grow`` (in place; returns the new parameters) and an optional
@@ -29,7 +33,10 @@ hyperparameters (the LR the parent's controller had reached included). Growth ru
 it: :func:`regrow_optimizer` builds a new optimizer of the same class over the policy's parameters in module order
 (the order a fresh child's `Gen3DualHeadMaskablePolicy._build` uses), copies every param group key, and carries each
 PARENT parameter's state object unchanged (by identity: the parent's parameters are the child's). A NEW parameter
-gets NO state, so AdamW initialises it at its first step: zero moments and step 0, i.e. its own bias correction.
+gets NO state, so AdamW initialises it at its first step: zero moments and step 0, i.e. its own bias correction —
+EXCEPT a COPIED parameter (a row's grower declares the copy; ruling Q-K3, 2026-10-19): it gets an independent clone of its
+source's state (``exp_avg``, ``exp_avg_sq``, ``step``), since a copy is the same function and so keeps the same optimizer
+state. B-KFFN's experts are copies; B-GROW's identity rounds copy nothing and start fresh.
 
 THE FORK-TIME GATE. :func:`apply_growth` evaluates the parent and the grown child on REAL observation rows (the
 committed compile-parity fixture, 64 rows of reproducible Rust-core battles) on FRESH CPU builds (the parent's
@@ -204,7 +211,8 @@ def grow_trunk_layers(policy: Any, trunk_layers: int) -> List[Tuple[str, torch.n
     validate_step("trunk_layers", old, trunk_layers)
     if int(trunk_layers) == old:
         raise GrowthError(f"grow_trunk_layers: the trunk already has {old} rounds")
-    fresh = build_extra_rounds(int(trunk_layers))
+    kffn = _kffn_of(policy)
+    fresh = build_extra_rounds(int(trunk_layers), ffn_by_kind=kffn)
     assert fresh is not None
     existing = list(tt.extra_rounds) if tt.extra_rounds is not None else []
     if len(existing) != old - TRANSFORMER_N_LAYERS:
@@ -212,6 +220,10 @@ def grow_trunk_layers(policy: Any, trunk_layers: int) -> List[Tuple[str, torch.n
                           f"not {old - TRANSFORMER_N_LAYERS}")
     ref = next(tt.parameters())
     added = [fresh[i].to(device=ref.device) for i in range(len(existing), len(fresh))]
+    if kffn == "on":
+        # B-KFFN: the new rounds carry identity experts (``linear2`` zero) and route by the network's ONE table.
+        for m in added:
+            m.ffn_segments = tt.transformer_layers[0].ffn_segments
     tt.extra_rounds = torch.nn.ModuleList(existing + added)
     tt.trunk_layers = int(trunk_layers)
     fe.trunk_layers = int(trunk_layers)
@@ -220,6 +232,61 @@ def grow_trunk_layers(policy: Any, trunk_layers: int) -> List[Tuple[str, torch.n
             kw["trunk_layers"] = int(trunk_layers)
     added_ids = {id(p) for m in added for p in m.parameters()}
     return [(n, p) for n, p in policy.named_parameters() if id(p) in added_ids]
+
+
+def _kffn_of(policy: Any) -> str:
+    return str(getattr(getattr(policy, "features_extractor", None), "trunk_ffn_by_kind", "off") or "off")
+
+
+def _parse_kffn(text: str) -> str:
+    from agents.model.trunk_kffn import KFFN_MODES
+    v = str(text).strip()
+    if v not in KFFN_MODES:
+        raise GrowthError(f"--grow trunk_ffn_by_kind={text!r}: must be one of {KFFN_MODES}")
+    return v
+
+
+def _validate_kffn(parent: Any, child: Any) -> None:
+    if parent == "on" and child == "off":
+        raise GrowthError(
+            "--grow trunk_ffn_by_kind=off: the parent's per-kind FFN experts are TRAINED, and removing them is not "
+            "function-preserving (growth only adds). Start a fresh run to train one shared FFN.")
+
+
+def grow_trunk_ffn_by_kind(policy: Any, child: Any) -> Grown:
+    """``off -> on`` IN PLACE (module docstring): every round gets `trunk_kffn.build_kind_ffn`'s modules (the SAME
+    constructor a fresh child uses, so keys and order match a fresh build), each expert a copy of the round's
+    ``linear1`` / ``linear2``, and the seat-role segment table. Returns the experts' parameters in module order and the
+    copy map (each expert parameter -> the shared parameter it copies: Q-K3's optimizer rule)."""
+    from agents.model.trunk_depth import IdentityInitRound
+    from agents.model.trunk_kffn import (build_kind_ffn, copy_shared_into_experts, ffn_kind_segments,
+                                         trunk_rounds)
+
+    fe = policy.features_extractor
+    tt = _transformer(policy)
+    if _kffn_of(policy) != "off" or str(child) != "on":
+        raise GrowthError(f"grow_trunk_ffn_by_kind: {_kffn_of(policy)!r} -> {child!r} is not the off -> on growth")
+    try:
+        segments = ffn_kind_segments(fe)
+    except ValueError as e:
+        raise GrowthError(f"--grow trunk_ffn_by_kind=on: {e}") from None
+    copies: Dict[int, torch.nn.Parameter] = {}
+    added: List[torch.nn.Module] = []
+    for i, r in enumerate(trunk_rounds(tt)):
+        ref: torch.Tensor = r.linear1.weight                                           # type: ignore[assignment]
+        r.kind_ffn = build_kind_ffn(i, identity=isinstance(r, IdentityInitRound)).to(device=ref.device,
+                                                                                       dtype=ref.dtype)
+        for dst, src in copy_shared_into_experts(r):
+            copies[id(dst)] = src
+        r.ffn_segments = segments
+        added.append(r.kind_ffn)
+    tt.trunk_ffn_by_kind = "on"
+    fe.trunk_ffn_by_kind = "on"
+    kw = getattr(policy, "features_extractor_kwargs", None)
+    if isinstance(kw, dict):
+        kw["trunk_ffn_by_kind"] = "on"
+    added_ids = {id(p) for m in added for p in m.parameters()}
+    return Grown([(n, p) for n, p in policy.named_parameters() if id(p) in added_ids], copies)
 
 
 def regrow_optimizer(policy: Any, new_params: Sequence[torch.nn.Parameter],
@@ -377,8 +444,11 @@ GROWABLE: Dict[str, Growable] = {
         parse=_parse_trunk_layers, validate=_validate_trunk_layers, current=trunk_layers_of,
         grow=_grow_trunk_layers_row),
     "trunk_ffn_by_kind": Growable(
-        "trunk_ffn_by_kind", False, "B-KFFN",
-        "per-token-kind FFN experts upcycled as copies of the shared FFN (design_bot_ideas_screen.md §2.2)"),
+        "trunk_ffn_by_kind", True, "B-KFFN",
+        "per-token-kind FFN experts upcycled as copies of the shared FFN (design_growth_builds_kffn_int.md §1)",
+        parse=_parse_kffn, validate=_validate_kffn, current=_kffn_of, grow=grow_trunk_ffn_by_kind,
+        optimizer_rule="each new expert parameter is a COPY of its round's shared FFN parameter and gets an "
+                       "independent clone of that parameter's AdamW state (exp_avg, exp_avg_sq, step; Q-K3)"),
     "opp_intent_grad_mode": Growable(
         "opp_intent_grad_mode", False, "B-INT",
         "the opponent-intent objective's trunk gradient switch (design_bot_ideas_screen.md §2.3)"),

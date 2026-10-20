@@ -289,7 +289,9 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             _fc, _os_ = _grow_stamp["function_check"], _grow_stamp["optimizer_state"]
             print(f"🌱 [GrowFork] grown: {_grow_stamp['new_parameters']['tensors']} new tensors "
                   f"({_grow_stamp['new_parameters']['elements']:,} parameters); optimizer state carried for "
-                  f"{_os_['carried']}, fresh for {_os_['fresh']}; the parent's function BIT FOR BIT on "
+                  f"{_os_['carried']}, fresh for {_os_['fresh']}"
+                  + (f", COPIED for {_os_['copied']}" if "copied" in _os_ else "")
+                  + f"; the parent's function BIT FOR BIT on "
                   f"{_fc['rows']} real rows (fp32 eager CPU, max |d logits| {_fc['max_abs_d_logits']:g}, "
                   f"max |d value| {_fc['max_abs_d_value']:g})", flush=True)
         model.ent_coef = args.ent_coef          # resume-only: the fresh path passes it to the ctor

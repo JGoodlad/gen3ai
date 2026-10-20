@@ -170,8 +170,7 @@ def test_the_fork_time_gate_refuses_a_non_identity_init(monkeypatch: pytest.Monk
 
 
 def test_declared_growth_refusals() -> None:
-    with pytest.raises(G.GrowthError, match="B-KFFN"):
-        G.require_built("trunk_ffn_by_kind")
+    assert G.require_built("trunk_ffn_by_kind").built           # B-KFFN landed (trunk_kffn_test.py)
     with pytest.raises(G.GrowthError, match="B-INT"):
         G.require_built("opp_intent_grad_mode")
     with pytest.raises(G.GrowthError, match="not a growable field"):

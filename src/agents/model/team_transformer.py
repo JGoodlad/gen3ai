@@ -7,6 +7,8 @@ from agents.model.extractor_ctx import (Embeddings, ExtractorContext, NUM_TOKEN_
                                         TOKEN_TYPE_FIELD, TOKEN_TYPE_GLOBAL, TOKEN_TYPE_OUR_SIDE,
                                         TOKEN_TYPE_OUR_TEAM, TOKEN_TYPE_THEIR_SIDE, TOKEN_TYPE_THEIR_TEAM)
 from agents.model.dense_attn_bias import dense_attn_bias
+from agents.model.trunk_kffn import TrunkRound, build_kind_ffn
+from agents.model.trunk_kffn import check_mode as check_kffn_mode
 from agents.model.board_tokens import (BOARD_SEATS_LEGACY, BOARD_SEATS_STATIC, FIELD_DIM, N_BOARD_TOKENS_STATIC,
                                        SIDE_DIM, board_offsets, field_features, side_features)
 assert (TOKEN_TYPE_THEIR_SIDE, TOKEN_TYPE_FIELD) == (TOKEN_TYPE_OUR_SIDE + 1, TOKEN_TYPE_OUR_SIDE + 2), \
@@ -28,7 +30,7 @@ from agents.model.arch_constants import (
 )
 
 
-class BiasedEncoderLayer(torch.nn.Module):
+class BiasedEncoderLayer(TrunkRound):
     """gen3_edge_bias_trunk_v1 (v56, Stage 2 of the entity generation): a TransformerEncoderLayer
     clone (post-LN, ReLU, dropout 0 — the literal production kwargs) whose self-attention takes an
     ADDITIVE per-pair per-head float bias `[B, H, n, n]` via `F.scaled_dot_product_attention`'s
@@ -40,7 +42,8 @@ class BiasedEncoderLayer(torch.nn.Module):
     bias=mask-only reproduces the stock masked layer's math (pinned by
     `edge_bias_test.py::test_layer_matches_stock_transformer_layer`). State_dict keys differ from
     `nn.TransformerEncoderLayer` (`in_proj.*` vs `self_attn.in_proj_*`) — part of the v55
-    unconditional break."""
+    unconditional break. Its FFN position is `TrunkRound.ffn` (`trunk_kffn`: the shared FFN, or
+    `--trunk-ffn-by-kind on`'s per-kind experts)."""
 
     def __init__(self, d_model: int = D_MODEL, n_heads: int = TRANSFORMER_N_HEADS,
                  ffn_dim: int = TRANSFORMER_FFN_DIM):
@@ -65,7 +68,7 @@ class BiasedEncoderLayer(torch.nn.Module):
         attn = torch.nn.functional.scaled_dot_product_attention(
             q, k, v, attn_mask=None if bias is None else dense_attn_bias(bias))
         x = self.norm1(x + self.out_proj(attn.transpose(1, 2).reshape(B, n, d)))
-        return self.norm2(x + self.linear2(torch.nn.functional.relu(self.linear1(x))))  # type: ignore[no-any-return]
+        return self.norm2(x + self.ffn(x))  # type: ignore[no-any-return]
 
 
 # The key-padding addend on the attention logits. Large-negative-finite rather than -inf: a -inf
@@ -320,7 +323,7 @@ class TeamTransformer(torch.nn.Module):
     refined extra seats."""
 
     def __init__(self, layout: Dict[str, Any], token_encoding: str = "legacy",
-                 trunk_layers: int = TRANSFORMER_N_LAYERS):
+                 trunk_layers: int = TRANSFORMER_N_LAYERS, trunk_ffn_by_kind: str = "off"):
         super().__init__()
         # Runtime-only memory/compute knob (NOT a weight or arch param — never enters
         # model_config.json / the version check). When True, the encoder layers are run
@@ -374,7 +377,15 @@ class TeamTransformer(torch.nn.Module):
         # LAST from a private seed (no global RNG draw). None at the production depth 2: nothing built, byte-identical.
         from agents.model.trunk_depth import build_extra_rounds
         self.trunk_layers = int(trunk_layers)
-        self.extra_rounds: Optional[torch.nn.ModuleList] = build_extra_rounds(self.trunk_layers)
+        self.extra_rounds: Optional[torch.nn.ModuleList] = build_extra_rounds(self.trunk_layers,
+                                                                               ffn_by_kind=trunk_ffn_by_kind)
+        # gen3_trunk_ffn_by_kind_v1 (B-KFFN, `trunk_kffn.py`): `on` gives every round its per-kind FFN experts, each
+        # round's from its own PRIVATE seed (no global RNG draw; the extra rounds' were built by `build_extra_rounds`);
+        # the segment table is set once the extractor's seats exist (`extractor_build`). `off` builds nothing.
+        self.trunk_ffn_by_kind = check_kffn_mode(trunk_ffn_by_kind)
+        if self.trunk_ffn_by_kind == "on":
+            for i, layer in enumerate(self.transformer_layers):
+                layer.kind_ffn = build_kind_ffn(i, identity=False)
 
     def board_tokens(self, ctx: ExtractorContext, side_extra: Optional[torch.Tensor] = None) -> torch.Tensor:
         """[B, 3, D_MODEL] the static board tokens BEFORE the trunk (OUR SIDE, THEIR SIDE, FIELD), type

@@ -116,7 +116,7 @@
 | `--n-epochs` | 5 | 265 / 35 | `--arch production`: `recipe.fresh,recipe.fork.n_epochs` = `10` | **KEEP** |
 | `--lr` | 0.0003 | 264 / 34 | `--arch production`: `recipe.fresh.lr` = `0.0003` | **KEEP** |
 | `--fork-lr` | — | 46 / 30 | `--arch production`: `recipe.fork.fork_lr` = `5.6e-05` | **KEEP** |
-| `--grow` | — | 0 / 0 | B-GROW (`main.train.grow_fork`, `agents.model.growth`; `designs/model/versioning.md` "Declared growth at a fork"): a FORK's declared, function-preserving growth (`--grow trunk_layers=4`) — X47 / X47b in `design_bot_ideas_screen.md` | **KEEP** |
+| `--grow` | — | 0 / 0 | B-GROW (`main.train.grow_fork`, `agents.model.growth`; `designs/model/versioning.md` "Declared growth at a fork"): a FORK's declared, function-preserving growth (`--grow trunk_layers=4`, `--grow trunk_ffn_by_kind=on`) — X47 / X47b / X48 in `design_bot_ideas_screen.md` | **KEEP** |
 | `--fork-lr-freeze` | false | 46 / 30 | `--arch production`: `recipe.fork.fork_lr_freeze` = `true` | **KEEP** |
 | `--allow-inherited-fork-lr` | false | 0 / 0 | the documented escape of the fork-LR guard (`training_runbook.md`, root `CLAUDE.md` `--fork-lr` hazard) | **KEEP** |
 | `--min-lr` | 1e-05 | 260 / 34 | `--arch production`: `recipe.fresh.min_lr` = `1e-05` | **KEEP** |
@@ -178,6 +178,7 @@
 | `--mon-hazard-cost` | — | 0 / 0 | `--arch production`: `production_config.json` `mon_hazard_cost` = `"off"`; a narrow fact for `--token-encoding static` (every mon's own side's Spikes layers + its switch-in HP cost, the op's one entry rule; the static diagnostic's H2 / H3, `designs/endstate/design_static_tokens.md` §12, config v147) | **KEEP** |
 | `--move-actor-state` | — | 0 / 0 | `--arch production`: `production_config.json` `move_actor_state` = `"off"`; a narrow fact for `--token-encoding static` (our active's HP + status onto its E3 move seats; `designs/endstate/design_static_tokens.md` §12, config v147) | **KEEP** |
 | `--trunk-layers` | — | 0 / 0 | `--arch production`: `production_config.json` `trunk_layers` = `2`; the static-recovery arm's `3` (identity-init pre-LN extra trunk rounds; `designs/endstate/design_static_tokens.md` §13, config v150) | **KEEP** |
+| `--trunk-ffn-by-kind` | — | 0 / 0 | B-KFFN (`agents.model.trunk_kffn`, config v161; `designs/endstate/design_growth_builds_kffn_int.md` §1): per-token-kind FFN experts in every trunk round; `off` in production (registry default, not in `production_config.json`); X48 reaches `on` only through `--grow trunk_ffn_by_kind=on` (a typed flag on a fork is refused) | **KEEP** |
 | `--drop-progress-clock` | — | 0 / 0 | `--arch production`: `production_config.json` `drop_progress_clock` = `"off"`; the end-state arm's `on` (the model reads `turns_since_progress` as 0; §5 rank 1, config v152) | **KEEP** |
 | `--move-target-state` | — | 0 / 0 | `--arch production`: `production_config.json` `move_target_state` = `"off"`; the end-state arm's `on` (their active's HP + status on our E3 seats; §4 row 13, config v153) | **KEEP** |
 | `--move-set-closure` | — | 0 / 0 | `--arch production`: `production_config.json` `move_set_closure` = `"off"`; the end-state arm's `on` (owner 2026-10-10, a pre-data amendment of the closing test; the four-move fact in the bench / hidden reinjection; `design_hand_computed_features.md` §4 rank 15, config v154) | **KEEP** |

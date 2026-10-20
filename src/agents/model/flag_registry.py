@@ -473,6 +473,20 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "are IsolatedLinears built from a PRIVATE seed (TRUNK_EXTRA_INIT_SEED), so no other initial byte "
                    "moves. A post-LN round with zero outputs would NOT be the identity (LN of an LN output moves values "
                    "by ~eps), hence the pre-LN form. 2 builds nothing (byte-identical)."),
+    # gen3_trunk_ffn_by_kind_v1 (config v161, B-KFFN; design_growth_builds_kffn_int.md §1): CLI, not config_only — a
+    # config_only field is FROZEN at its default through FROZEN_ARCH_KWARGS, so a `--grow` child would BUILD 'off'
+    # (F-GB-1).
+    ModelFlag("trunk_ffn_by_kind", "off", Tier.CLI, Klass.STRUCTURAL, 161,
+              "per-token-kind FFN experts in every trunk round ('off' = one shared FFN, production; 'on' = five kinds: "
+              "Pokemon (the shared FFN, keys unchanged), board, our moves, threats, events, each its own FFN, routed by "
+              "seat role)",
+              note="`trunk_kffn.py`, the lever of X48. Routing is a build-time table of six contiguous seat-role "
+                   "segments (`ffn_kind_segments`), never token-type ids; the experts live inside the round classes "
+                   "(so the bf16 trunk region covers them). A fresh 'on' builds the four new experts per round as "
+                   "IsolatedLinears from a PRIVATE seed (KFFN_INIT_SEED + round), so no other initial byte moves; a "
+                   "fork reaches 'on' only through `--grow trunk_ffn_by_kind=on`, which COPIES the shared FFN (and its "
+                   "AdamW state) into each expert. +65,920 parameters per kind per round, no extra FLOPs.",
+              requires=("token_encoding", "entity_topk_seats", "entity_tail_seats", "history_events", "opp_intent")),
     # gen3_endstate_facts_v1 (config v152; design_hand_computed_features.md §1's FACT / JUDGMENT test, §4 ranks 3-5,
     # §5 rank 1, finding 7): the FACT-COMPLETION levers. (`status_facts`, `ko_ramp` and `g_ledger` were DELETED by the
     # legacy deletion's U1 with `speed_physics`, `op_reduction`, `switch_hazard_cost`, `eot_residual` and
