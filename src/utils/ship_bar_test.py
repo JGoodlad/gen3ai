@@ -144,25 +144,24 @@ _ORDERINGS = {
 }
 
 
+#: The ONE verdict every arm must give (so all arms agree): the module row, and the test whose own
+#: function-scoped fixture cost 0.6 s — never a test that merely asked for the module fixture first / last.
+_EXPECTED_ROWS = [("FAIL", "planted_test.py"), ("FAIL", "planted_test.py::test_fn_fixture_counts_toward_the_test")]
+
+
 @pytest.mark.integration
-def test_a_module_fixtures_cost_is_the_modules_in_every_order_and_split(tmp_path):
+@pytest.mark.parametrize("label", sorted(_ORDERINGS))
+def test_a_module_fixtures_cost_is_the_modules_in_every_order_and_split(tmp_path, label):
     """THE DETERMINISM PROOF (rule 8). Before the scope attribution the 0.3 s setup landed on whichever test
     ran first and the 0.3 s teardown on whichever ran last, so the NAMED test changed with the order and the
-    split. Now every arm names the SAME two rows: the module (0.6 s of shared fixture >= 2x the bar) and
-    the test whose own function-scoped fixture cost 0.6 s — and never a test that merely asked first / last."""
-    seen = {}
-    for label, (args, targets) in _ORDERINGS.items():
-        d = tmp_path / label.replace(" ", "_")
-        d.mkdir()
-        r = _session(d, bar_on=True, source=_SCOPED, args=args, targets=targets)
-        out = r.stdout + r.stderr
-        assert r.returncode == 1, f"[{label}] the over-bar module must FAIL the session:\n{out}"
-        assert "5 passed" in out, f"[{label}]\n{out}"
-        seen[label] = _judged_rows(out)
-    base = seen["definition order"]
-    assert base == [("FAIL", "planted_test.py"), ("FAIL", "planted_test.py::test_fn_fixture_counts_toward_the_test")], \
-        f"the module row and the function-fixture test, never a test that merely asked first / last: {base}"
-    assert seen == {k: base for k in seen}, f"the verdict depends on the order / the split: {seen}"
+    split (the revert names ``test_a`` / ``test_d`` here). Every arm — definition order, reversed order, and
+    ``-n 2 --dist load`` — must name exactly :data:`_EXPECTED_ROWS`, a constant, so the arms agree."""
+    args, targets = _ORDERINGS[label]
+    r = _session(tmp_path, bar_on=True, source=_SCOPED, args=args, targets=targets)
+    out = r.stdout + r.stderr
+    assert r.returncode == 1, f"[{label}] the over-bar module must FAIL the session:\n{out}"
+    assert "5 passed" in out, f"[{label}]\n{out}"
+    assert _judged_rows(out) == _EXPECTED_ROWS, f"[{label}] the verdict depends on the order / the split:\n{out}"
 
 
 @pytest.mark.integration

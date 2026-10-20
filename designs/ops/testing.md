@@ -426,7 +426,7 @@ construction. The ship gate therefore WARMS the Rust binaries before the first t
 `ship_gate.sh` sets: inside the gate's own lock, heavy-job slot and niceness): on 2026-10-19
 `live_side_test::test_a_bot_client_never_forfeits_and_reports_no_argmax` read 22.1 s at x2.42 although the file
 has NO fixture and the test costs 2.2 s warm — `BotReader` resolves `bot_reader` with an incremental
-`cargo build` in the test's own body, the first time on a moved tree.
+`cargo build` in the test's own body, the first time on a moved tree. The same night's `proc_integration_test::test_gate_1_the_bridge_corpus_ffi_equals_process` (34 s) and `world_legality_integration_test::test_the_builder_applies_…` (33 s) read 4.7 s and under 4 s on the first scope-aware gate, whose warm-up spent 20.9 s building `sim_bridge` (the same cost, paid outside any test); both stay routine. The warm-up covers the `lib` / `bin` / driver binaries, NOT the `cargo test --test ffi_reference_test` binary the proc file's `_record` compiles in a test body.
 
 **LINCHPINS — kept routine at any cost** (each carries a `# LINCHPIN` comment; add one only with a reason a
 whole-repo red must block every ship): `learner_golden_test::test_the_production_golden_is_the_bf16_update_…`
