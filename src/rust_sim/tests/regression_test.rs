@@ -16939,3 +16939,39 @@ fn furycutter_nonend_tick_drains_deferred_perish_faint_before_upkeep() {
 fn lockedmove_nonend_tick_drains_deferred_perish_faint_before_upkeep() {
     nonend_duration_tick_drains_perish_faint("outrage", "44317,42357,9927,48760");
 }
+
+// ============================================================================
+// `gen3_faint_clears_types_override_v1` — a FAINT re-types the corpse from its species. The faint's
+// `clearVolatile` ends with `setSpecies(this.baseSpecies)` → `setType(species.types, true)`
+// (`sim/pokemon.ts`), so a Color Change / Conversion type dies with the mon. The port cleared
+// `types_override` only on an ALIVE switch-out. Not in the protocol (a corpse is never re-typed on
+// the wire); ground truth: the pinned sim on this board and seed reads Kecleon `['Fire']` after
+// turn 1 and `['Normal']` after its turn-2 Explosion (`Battle.sides[0].pokemon[0].getTypes()`,
+// 2026-10-19, the probe in the backlog row's unit commit).
+// ============================================================================
+
+#[test]
+fn a_faint_clears_the_color_change_type() {
+    let d = dex();
+    let p1 = "Kecleon|||colorchange|explosion,bodyslam|Adamant|252,252,,,,|N||||";
+    let p2 = "Charizard|||blaze|ember,ember|Modest|252,,,252,,|N||||";
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, p2, "1,2,3,4"), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (_, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Ember → Color Change to Fire
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Kecleon explodes
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    assert!(
+        raw.iter().any(|l| l == "|-start|p1a: Kecleon|typechange|Fire|[from] ability: Color Change"),
+        "precondition: Color Change fired:\n{}",
+        raw.join("\n")
+    );
+    assert!(raw.iter().any(|l| l == "|faint|p1a: Kecleon"), "precondition: Kecleon fainted");
+    let k = &st.sides[0].pokemon[0];
+    assert!(k.fainted);
+    assert_eq!(k.types_override, None, "the corpse is a Normal type again (the sim's getTypes())");
+}

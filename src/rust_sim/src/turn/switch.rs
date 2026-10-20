@@ -366,6 +366,13 @@ impl crate::state::BattleState {
                 // forme). Unconditional: every non-Castform already has species_id ==
                 // base_species_id. SILENT (no line).
                 mon.species_id = mon.base_species_id.clone();
+                // TYPES (`gen3_faint_clears_types_override_v1`): the same `setSpecies(baseSpecies)`
+                // re-types the corpse from its species (`sim/pokemon.ts` `setSpecies` →
+                // `setType(species.types, true)`), so a Color Change / Conversion / Conversion 2
+                // override dies with it. AFTER the Transform restore, which puts back the
+                // pre-transform override (`base_types_override`) that this then clears. The
+                // alive-outgoing mirror is `execute_switch`'s Color Change clear. SILENT.
+                mon.types_override = None;
                 // DESTINY BOND (`gen3_move_coverage_batch6_v1`, `destinybond.onFaint`):
                 // consume the pending-KO record (set at the qualifying FOE-Move damage
                 // sites — never by a residual / sub-absorbed hit / futuremove) + drop
