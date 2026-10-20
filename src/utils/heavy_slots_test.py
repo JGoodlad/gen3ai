@@ -443,7 +443,9 @@ def test_the_queue_head_skips_dead_and_silent_tickets_and_a_free_slot_per_place(
     STALE one (owner not polling) is skipped but keeps its place, and N free slots entitle the N oldest."""
     monkeypatch.setenv(HS.SLOTS_ENV, "2")
     a, b, c = _sleeper(), _sleeper(), _sleeper()
+    h = _taker(tmp_path / "h")       # the holder starts BEFORE any ticket exists, else it queues behind b and c and never runs
     try:
+        _wait_for((tmp_path / "h").exists, "a holder")
         for p in (a, b, c):
             HS.take_ticket(slots, p.pid)
         t = {pid: path for _, pid, path in HS._tickets(slots)}
@@ -459,18 +461,14 @@ def test_the_queue_head_skips_dead_and_silent_tickets_and_a_free_slot_per_place(
         assert HS.queue_ahead(slots, c.pid, now=later) == 0, "a silent head must not block the queue"
         assert HS.queue_ahead(slots, b.pid, now=later) == 0, "...and it keeps its own place when it returns"
         assert HS.queue_ahead(slots, b.pid, now=now) == 0 and HS.queue_ahead(slots, c.pid, now=now) == 1
-        # two free slots entitle the two oldest, one free slot only the head (entitled() reads the real locks)
-        assert HS.free_count(slots, 2) == 2
+        # one free slot entitles only the head, two free slots the two oldest (entitled() reads the real locks)
+        assert HS.free_count(slots, 2) == 1
+        assert HS.entitled(slots, 2, b.pid, now=now) and not HS.entitled(slots, 2, c.pid, now=now)
+        _kill(h)
+        _wait_for(lambda: HS.free_count(slots, 2) == 2, "the holder's slot to free")
         assert HS.entitled(slots, 2, b.pid, now=now) and HS.entitled(slots, 2, c.pid, now=now)
-        h = _taker(tmp_path / "h")
-        try:
-            _wait_for((tmp_path / "h").exists, "a holder")
-            assert HS.free_count(slots, 2) == 1
-            assert HS.entitled(slots, 2, b.pid, now=now) and not HS.entitled(slots, 2, c.pid, now=now)
-        finally:
-            _kill(h)
     finally:
-        _kill(b, c)
+        _kill(h, b, c)
 
 
 def test_a_gate_keeps_its_place_between_its_wait_and_its_take(slots, tmp_path, monkeypatch):
