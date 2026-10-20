@@ -148,27 +148,69 @@ def _cycle(cb, k):
     cb._on_step()
 
 
-def test_an_EMPTY_pool_for_its_floor_of_eval_cycles_is_FATAL_SUPPLY(tmp_path, monkeypatch):
-    """ai_v12_27_ladder_ctrl10M_shaped_dense: win_rate_vs_bots ended at 0.53 < the 0.55 seeding
-    gate, so `--self-play` trained against the BOT fallback for all 10M steps."""
+def test_a_pool_that_STAYS_empty_after_the_gate_opened_for_its_floor_of_cycles_is_FATAL_SUPPLY(tmp_path, monkeypatch):
+    """The supply the guard exists for: the curriculum asked for a seed (win rate 0.9 over the 0.55 gate) and the
+    pool is STILL empty after the cycle — here the mock pool swallows `add_from_path` — three cycles running.
+    (A fresh run still BELOW the gate is not this: next test, `gen3_supply_guard_v3`.)"""
     store = {}
-    cb, pool = _selfplay(tmp_path, monkeypatch, store=store, bot_win=0.40)
+    cb, pool = _selfplay(tmp_path, monkeypatch, store=store, bot_win=0.9)
     _cycle(cb, 1)
     _cycle(cb, 2)
     with pytest.raises(LeverStarvedError) as ei:
         _cycle(cb, 3)
     assert exit_code_for(ei.value) == 5
     assert "--self-play" in str(ei.value) and "--self-play-start-wr" in str(ei.value)
+    assert "cleared the seeding gate" in str(ei.value)
     assert store["supply_guard"]["self_play_pool"]["streak"] == 3, "persisted BEFORE the raise"
-    pool.add_from_path.assert_not_called()
+    assert pool.add_from_path.call_count == 3, "each cycle DID try to seed it"
+
+
+def test_a_fresh_run_still_BELOW_the_seeding_gate_is_never_FATAL_but_says_so_every_cycle(tmp_path, monkeypatch, capsys):
+    """backlog row "the supply guard counts a NEVER-SEEDED pool as starving": a from-scratch run whose win rate
+    vs bots (0.40) has not reached `--self-play-start-wr` (0.55) legitimately trains on bots with an empty pool —
+    `lever_supply`'s own contract (live=False). SIX cycles (twice the floor of 3) must not raise; the cycles are
+    counted and reported, and nothing is silent: a loud line per cycle, the gated-cycle scalar, the ZERO summary."""
+    store = {}
+    cb, pool = _selfplay(tmp_path, monkeypatch, store=store, bot_win=0.40)
+    for k in range(1, 7):
+        _cycle(cb, k)                                    # would be FATAL at cycle 3 if the cycles counted
+    g = cb._pool_guard
+    assert (g.streak, g.cycles, g.live_cycles, g.dry_cycles) == (0, 6, 0, 0)
+    assert store["supply_guard"]["self_play_pool"]["cycles"] == 6, "the gated cycles are persisted, run-level"
+    pool.add_from_path.assert_not_called()               # the curriculum asked for no seed
+    out = capsys.readouterr().out
+    assert out.count("below the seeding gate --self-play-start-wr 0.55") == 6, out
+    assert "6 gated cycle(s) so far" in out
+    cb.model.logger.record.assert_any_call("supply/selfplay_pool_gated_cycles", 6.0)
+    cb._on_training_end()
+    assert "🚨🚨 [SUPPLY] ZERO" in capsys.readouterr().out, "a bots-only segment is still said to be no evidence about self-play"
+
+
+def test_the_gated_cycles_before_the_gate_opened_do_not_pre_arm_the_floor(tmp_path, monkeypatch):
+    """Two cycles below the gate, then the gate opens (0.9) and the seed fails to land: the floor of 3 counts from
+    the FIRST gate-open cycle — FATAL at cycle 5, not at cycle 3."""
+    from agents.training.selfplay_callback_test import attach_fake_evaluator
+
+    store = {}
+    cb, _ = _selfplay(tmp_path, monkeypatch, store=store, bot_win=0.40)
+    _cycle(cb, 1)
+    _cycle(cb, 2)
+    assert cb._pool_guard.streak == 0
+    attach_fake_evaluator(cb, monkeypatch, bot_win=0.9, sentinel_win=0.0)
+    _cycle(cb, 3)
+    _cycle(cb, 4)
+    assert cb._pool_guard.streak == 2
+    with pytest.raises(LeverStarvedError):
+        _cycle(cb, 5)
+    assert (cb._pool_guard.cycles, cb._pool_guard.live_cycles) == (5, 3)
 
 
 def test_the_pool_streak_is_RUN_level_it_survives_a_launcher_restart(tmp_path, monkeypatch):
     store = {}
-    cb, _ = _selfplay(tmp_path, monkeypatch, store=store)
+    cb, _ = _selfplay(tmp_path, monkeypatch, store=store, bot_win=0.9)
     _cycle(cb, 1)
     _cycle(cb, 2)
-    cb2, _ = _selfplay(tmp_path, monkeypatch, store=store)     # a new segment, same run dir
+    cb2, _ = _selfplay(tmp_path, monkeypatch, store=store, bot_win=0.9)     # a new segment, same run dir
     with pytest.raises(LeverStarvedError):
         _cycle(cb2, 3)
 
@@ -176,7 +218,7 @@ def test_the_pool_streak_is_RUN_level_it_survives_a_launcher_restart(tmp_path, m
 def test_a_FORKS_inherited_parent_counters_are_not_its_own(tmp_path, monkeypatch):
     store = {"supply_guard": {"run": "/some/parent/run",
                               "self_play_pool": {"streak": 2, "cycles": 2}}}
-    cb, _ = _selfplay(tmp_path, monkeypatch, store=store)
+    cb, _ = _selfplay(tmp_path, monkeypatch, store=store, bot_win=0.9)
     _cycle(cb, 1)
     assert cb._pool_guard.streak == 1
 
@@ -207,9 +249,9 @@ def test_the_end_of_segment_summary_is_loud_at_zero_and_raises_nothing(tmp_path,
     in-flight cycle to collect — the cycle is blocking), so a finished run is never turned into a FATAL
     from inside its own shutdown path."""
     store = {}
-    cb, _ = _selfplay(tmp_path, monkeypatch, store=store)
+    cb, _ = _selfplay(tmp_path, monkeypatch, store=store, bot_win=0.9)
     _cycle(cb, 1)
-    _cycle(cb, 2)                 # the pool is still empty after two cycles (floor 3): no FATAL yet
+    _cycle(cb, 2)                 # the gate is open and the pool still empty after two cycles (floor 3): no FATAL yet
     cb._on_training_end()
     assert cb._pool_guard.streak == 2
     assert "🚨🚨 [SUPPLY] ZERO" in capsys.readouterr().out

@@ -17,7 +17,7 @@ coefficient of 0.5, zero labels; the guard went with the cf training half, delet
 
 | lever (`--supply-starve-cycles` key) | what used to happen silently | declared floor |
 |---|---|---|
-| `self_play_pool` — `--self-play` | a pool that never seeds → every episode falls back to the BOT pool | 3 eval cycles |
+| `self_play_pool` — `--self-play` | a pool that stays EMPTY once the seeding gate is open, or whose eval cycles fail → every episode falls back to the BOT pool | 3 live eval cycles |
 | `pfsp` — `--pfsp-scale` | no measured sentinel win-rate → the pool sample stays uniform (or stale) | 3 eval cycles |
 | `fork` — `--fork-fraction` | the arm DISABLED itself with a print (no fork buffer / missing obs key / no handle / no ring; the Python arm is unreachable and goes in L5, so the live arm is the Rust fork port), or every pass failed | 5 rollouts |
 
@@ -62,18 +62,26 @@ about that lever.` when a live lever delivered nothing, else its total.
 
 | lever | one cycle | delivered | live when |
 |---|---|---|---|
-| `self_play_pool` | one COLLECTED eval cycle (`SelfPlayCallback._collect_pending`), **failed cycles included** | 1 if the pool is non-empty after the cycle | always (`--self-play` is the declaration) |
+| `self_play_pool` | one COLLECTED eval cycle (`SelfPlayCallback._collect_pending`), **failed cycles included** | 1 if the pool is non-empty after the cycle | the cycle FAILED, or the pool is non-empty, or the curriculum asked for a seed (`_self_play_target() > 0`: `win_rate_vs_bots` over `--self-play-start-wr`); a gated cycle (empty pool, below the gate) is counted but NOT live |
 | `pfsp` | the same cycle | sentinel win-rates measured | the cycle launched ≥ 1 sentinel (an empty pool is the pool guard's job) |
 | `fork` | one rollout | fork rows injected (a failed pass = 0) | `--fork-fraction` > 0 |
 
-**Why the self-play floor counts a gate that never opens.** The pool seeds only when
-`win_rate_vs_bots` ≥ `--self-play-start-wr` (0.55). A run that never clears it is not starved by a
-broken supplier — the bots-only regime is ENDOGENOUS (audit 2026-09-30: `ai_v12_27`'s bots win rate
-read 0.148 → 0.531 over its five cycles). It is still a run whose argv says self-play and whose every
-game was against bots, which is exactly what a reader of its result will not assume. The FATAL's
-message names the gate and both remedies: lower `--self-play-start-wr`, or drop `--self-play` when a
-bots-only run IS the experiment (or `--supply-starve-cycles self_play_pool=0`, announced). Every v9+
-fresh run in the archive seeded at its FIRST eval cycle (2M), which is what sizes the floor at 3.
+**Why the self-play floor does NOT count a gate that has not opened** (`gen3_supply_guard_v3`, 2026-10-19; v2
+counted it). The pool seeds only when `win_rate_vs_bots` is over `--self-play-start-wr` (0.55). A fresh run below
+it is not starved by a broken supplier — the bots-only regime is ENDOGENOUS and `lever_supply`'s own contract says
+such a cycle is `live=False` (audit 2026-09-30: `ai_v12_27`'s bots win rate read 0.148 → 0.531 over its five
+cycles). v2 counted those cycles anyway ("it is still a run whose argv says self-play and whose every game was
+against bots") and so killed a healthy slow starter after 3 cycles (6M steps) — and could not be told from a real
+supply failure. v3 keeps what v2 wanted without the false FATAL: every gated cycle prints a loud
+`⚠️ [SUPPLY] --self-play: … below the seeding gate … no self-play opponent exists until the gate is cleared (by design: not
+counted toward FATAL_SUPPLY; N gated cycle(s) so far)` line, `supply/selfplay_pool_gated_cycles` (= cycles − live cycles, run-level)
+climbs, and the end-of-segment summary stays `🚨🚨 ZERO … NOT evidence about that lever`. What still FATALs: a pool
+that is EMPTY although the gate was open (the seed did not land — `add_from_path` raises today, so this class is
+a backstop), and EVERY failed eval cycle (a run whose evals never return can never leave the bot fallback). A fork's
+pool is seeded from its parent, so it is non-empty from cycle 1. Floor 3 stays sized by "every v9+ fresh run in the
+archive seeded at its FIRST eval cycle (2M)". **Trade-off, stated:** a fresh run that NEVER reaches the gate now
+runs to its end on bots under a `--self-play` argv with only the loud lines to say so — read the lines (or the
+scalar), and drop `--self-play` when a bots-only run is the experiment.
 
 **Run-level, not segment-level, for the long cycles.** An eval cycle is ~2M
 steps; a launcher segment is ~3 h. A per-process streak would reset at every restart before a floor
@@ -88,7 +96,7 @@ completed run is not turned into exit 5 from inside its own shutdown path.
 
 ## TensorBoard
 
-`supply/selfplay_pool_dry_streak`, `supply/pfsp_dry_streak`, `eval/failed_cycles_total`,
+`supply/selfplay_pool_dry_streak`, `supply/selfplay_pool_gated_cycles`, `supply/pfsp_dry_streak`, `eval/failed_cycles_total`,
 `supply/fork_dry_streak`.
 
 ## Honest limits
@@ -107,7 +115,7 @@ and PFSP guards through a real `_collect_pending`, run-level persistence across 
 a fork's inherited counters ignored, failed cycles, the drain, `--bot-weights`, the warm-start wrap); the fork guard in
 `rust_rollout/fork_test.py` (a pass that injects nothing for its floor is FATAL_SUPPLY; one that injects resets the streak); `agents/training/lever_supply_integration_test.py`
 with REAL processes — the trainer exits 3 on a `--bot-weights` typo (rc 1 on the parent commit), and (slow, sim) the
-`--debug` trainer exits 5 on a self-play run that can never seed.
+`--debug` trainer COMPLETES (exit 0, a loud line per cycle, the ZERO summary) on a self-play run whose seeding gate it cannot reach.
 
 ## From the training leaf (moved 2026-10-10)
 
@@ -123,8 +131,8 @@ read as a result about the lever. Now each such lever is judged once per cycle b
 → `LeverStarvedError` → exit **`FATAL_SUPPLY` (5)**; a mis-wiring a restart would repeat →
 `LeverConfigError` → **`FATAL_CONFIG` (3)**. Neither is restarted. Floors (`lever_supply.LEVERS`,
 override `--supply-starve-cycles key=N`, `key=0` = off and ANNOUNCED): `self_play_pool` 3 eval
-cycles (`--self-play` with the pool still EMPTY — failed cycles count; `ai_v12_27` trained 10M
-against bots), `pfsp` 3, `fork` 5 rollouts
+cycles (`--self-play` with the pool still EMPTY once the seeding gate is open, or failed cycles; a fresh run
+BELOW the gate is loud, not FATAL — v3; `ai_v12_27` trained 10M against bots), `pfsp` 3, `fork` 5 rollouts
 (its four DISABLE-with-a-print paths are now FATAL_CONFIG). The eval-cycle streak persists per RUN
 (`snapshots/summary.json` `supply_guard`), not per launcher segment. Every supply line goes
 through `lever_supply.loud` (the run's own log AND the launcher event stream — `emit` alone never

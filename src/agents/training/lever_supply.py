@@ -10,8 +10,9 @@ and a run that then reads as a result about the lever (the ones still live):
 lever (``key``)        what silently happened instead               measured victim
 =====================  ===========================================  ==================================
 ``self_play_pool``     `--self-play` with a pool that never seeds:   `ai_v12_27_ladder_ctrl10M_shaped_
-                       every episode falls back to the BOT pool      dense` (10M, 0 snapshots),
-                                                                     `ai_v6_10_unified_obs_0618`
+                       every episode falls back to the BOT pool      dense` (10M, 0 snapshots; now
+                       (once the gate is open or the evals fail;     loud, since it never reached
+                       below the gate it is loud, not FATAL)         the gate), `ai_v6_10_unified_obs_0618`
 ``pfsp``               `--pfsp-scale` with no sentinel win-rate:     (inventory)
                        the pool sample stays uniform / stale
 ``fork``               `--fork-fraction` whose arm disables itself   (inventory)

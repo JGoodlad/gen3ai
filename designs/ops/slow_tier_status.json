@@ -2139,14 +2139,6 @@
    "contention": 1.75,
    "detail": ""
   },
-  "src/agents/training/lever_supply_integration_test.py::test_a_self_play_run_whose_pool_never_seeds_exits_FATAL_SUPPLY": {
-   "status": "pass",
-   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
-   "at": "2026-10-15T21:32:05Z",
-   "duration_s": 211.3,
-   "contention": 1.5,
-   "detail": ""
-  },
   "src/agents/training/loop_hooks_test.py::test_learn_opens_the_declared_points_in_their_nesting": {
    "status": "pass",
    "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",

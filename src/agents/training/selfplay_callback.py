@@ -78,7 +78,7 @@ from agents.training.artifact_retention import (
 )
 from agents.training.eval_sharding import EvalItem, ShardedEvalPool, BOT, SENTINEL
 from agents.training.snapshot_pool import (
-    SnapshotPool, heuristic_fraction, HEURISTIC_FLOOR, SELF_PLAY_START, SELF_PLAY_FULL,
+    SnapshotPool, HEURISTIC_FLOOR, SELF_PLAY_START, SELF_PLAY_FULL,
 )
 from agents.training.opponent_classes import STABLE_CHALLENGE_SHARE  # default for the reporting-only share
 from agents.training.lever_supply import LEVERS, loud
@@ -574,9 +574,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         # NOW from the frozen (competent) eval snapshot — so the first self-play opponent is a
         # competent model, never random. Then push the live fraction + pool generation to every
         # training env so the heuristic-vs-pool ratio tracks performance mid-run (no restart).
-        sf = 1.0 - heuristic_fraction(
-            self.win_rate_vs_bots, floor=self._heuristic_floor,
-            start=self._self_play_start_wr, full=self._self_play_full_wr)
+        sf = self._self_play_target()
         if sf > 0 and self._pool.is_empty():
             self._pool.add_from_path(pending["snapshot"], step,
                                      twin=checkpoint_at_step(self._model_dir, step))

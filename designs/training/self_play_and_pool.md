@@ -204,13 +204,17 @@ step — the parent has no pool, or `--no-fork-pool-seed` was passed — the lau
 rather than quietly training against bots. `FATAL_CONFIG` and not `parser.error` because a restart
 would hit the identical config, so the launcher must give up instead of looping.
 
-**THE IN-FLIGHT FLOOR (`gen3_supply_guard_v2`).** The refusal above covers a FORK at startup. ANY
-`--self-play` run — fresh ones included — whose pool is still EMPTY after **3 consecutive eval
-cycles** (failed cycles count: a cycle with no results cannot seed) exits **`FATAL_SUPPLY` (5)**,
-naming the seeding gate (`win_rate_vs_bots` vs `--self-play-start-wr`) and the remedies;
-`--pfsp-scale` with sentinels launched but no win-rate measured for 3 cycles is the same FATAL.
-`ai_v12_27_ladder_ctrl10M_shaped_dense` is the case: bots win rate 0.148 → 0.531 over five cycles,
-never the 0.55 gate, so its whole 10M was bot games under a `--self-play` argv. The streak is
+**THE IN-FLIGHT FLOOR (`gen3_supply_guard_v2`, narrowed by `gen3_supply_guard_v3` 2026-10-19).** The refusal
+above covers a FORK at startup. ANY `--self-play` run — fresh ones included — whose pool is still EMPTY after
+**3 consecutive LIVE eval cycles** exits **`FATAL_SUPPLY` (5)**, naming the seeding gate (`win_rate_vs_bots` vs
+`--self-play-start-wr`) and the remedies. A cycle is LIVE when it FAILED (no results: it cannot seed) or the
+curriculum asked for a seed — `1 - heuristic_fraction(win_rate_vs_bots) > 0`, the very predicate `_collect_pending`
+seeds by (`SelfPlaySupplyMixin._self_play_target`). A fresh run still BELOW the gate is NOT live: it trains on bots
+by design, so it is counted and said LOUDLY every cycle (and `supply/selfplay_pool_gated_cycles`, the end-of-segment
+ZERO summary) but never FATAL — the earlier rule killed a healthy slow starter after 3 gated cycles (6M steps).
+`ai_v12_27_ladder_ctrl10M_shaped_dense` (bots win rate 0.148 → 0.531 over five cycles, never the 0.55 gate, so its
+whole 10M was bot games under a `--self-play` argv) is therefore now loud, no longer FATAL. `--pfsp-scale` with
+sentinels launched but no win-rate measured for 3 cycles is a FATAL as before. The streak is
 persisted in this pool's `summary.json` (`supply_guard`, keyed to the run dir) so it survives a
 launcher restart; `--supply-starve-cycles self_play_pool=0` turns it off (announced). Detail:
 [`supply_guards.md`](supply_guards.md).

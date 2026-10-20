@@ -15018,3 +15018,19 @@ provenance (0 false positives on 120 archived POOL states = 960 worlds; 7 / 7 de
   its own session), the detached-leftover sweep, the wrapper's SIGKILL, a graceful stop keeping its own exit status, a bad
   `--term-grace` refused; each fails on revert (the old wrapper never returns). Docs: `scripts/ops/README.md`,
   `scripts/ops/mem_cap.sh --help`, `designs/ops/testing.md`.
+
+## 2026-10-19 — the self-play pool guard no longer counts a fresh run BELOW its seeding gate (`gen3_supply_guard_v3`; `agents.training.selfplay_supply` only; no model / config / obs / signature change, no training-math change)
+
+- **The defect (backlog row, `lever_supply.py`'s own contract).** `_observe_supply` called `_pool_guard.observe(0 if empty else 1, …)`
+  with no `live=`, although `lever_supply`'s docstring says a below-gate fresh run passes `live=False`: a from-scratch
+  `--self-play` run whose win rate vs bots had not reached `--self-play-start-wr` (0.55) for 3 eval cycles (6M steps) hit a
+  false `FATAL_SUPPLY` on a healthy slow starter. (`supply_guards.md` had documented counting the closed gate as a choice.)
+- **The fix.** The pool is LIVE when the cycle failed, or the pool is non-empty, or the curriculum asked for a seed
+  (`SelfPlaySupplyMixin._self_play_target() > 0`, the one predicate `_collect_pending` seeds by). A gated cycle is
+  counted, printed LOUDLY every cycle, and exported as `supply/selfplay_pool_gated_cycles`; the end-of-segment ZERO summary
+  stays. Still FATAL: a pool that is empty after the gate opened, and every failed eval cycle. `ai_v12_27`'s shape (never
+  reached the gate) is now loud, no longer FATAL.
+- **Tests.** `lever_supply_test.py` (six gated cycles do not raise; two gated cycles do not pre-arm the floor; the gate-open
+  empty pool still FATALs; failed cycles still count; fails on revert); the slow `lever_supply_integration_test.py` now pins
+  that the `--self-play-start-wr 1.01` trainer COMPLETES with a loud line per cycle (it used to exit 5). Docs:
+  `designs/training/supply_guards.md`, `self_play_and_pool.md`.
