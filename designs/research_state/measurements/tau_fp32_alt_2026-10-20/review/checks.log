@@ -1,0 +1,31 @@
+== 1. random rows, many shapes: |tau - ref| in ulp(tau)
+   fp32_alt worst 28.74 ulp; naive worst 6.05e+06 ulp
+== 2. worst-case SEQUENTIAL fp32 accumulation (depth n): the proof's bound with depth = n-1
+   lead 23.0: tau 10.7299 ulp 9.54e-07; seq-sum |err| asc|t|=1.25e-07, desc|t|=1.25e-07, index=1.25e-07, rand=1.25e-07; proven worst 2(n+1)u = 4.78e-05
+   lead 60.0: tau 29.2299 ulp 1.91e-06; seq-sum |err| asc|t|=1.28e-06, desc|t|=1.28e-06, index=1.28e-06, rand=1.28e-06; proven worst 2(n+1)u = 4.78e-05
+== 3. edge cases (finite, structural)
+   k=0                                tau alt -1.80293 fp64 -1.80293  pi [[0.0, 0.0, 0.0]]  sum 0
+   k=n                                tau alt -0.197066 fp64 -0.197066  pi [[1.0, 1.0, 1.0]]  sum 3
+   n=0                                tau alt +0 fp64 +0  pi [[0.0, 0.0, 0.0]]  sum 0
+   n=1,k=1                            tau alt +0 fp64 +0  pi [[1.0, 0.0, 0.0]]  sum 1
+   n=2,k=1 tie                        tau alt -3 fp64 -3  pi [[0.5, 0.5, 0.0]]  sum 1
+   all equal k=2 n=4 (x=0 at root)    tau alt -1.5 fp64 -1.5  pi [[0.5, 0.5, 0.5, 0.5]]  sum 2
+   NaN in non-cand                    tau alt -1 fp64 -1  pi [[0.2689414322376251, 0.0, 0.7310585975646973]]  sum 1
+   +inf in non-cand                   tau alt -1 fp64 -1  pi [[0.2689414322376251, 0.0, 0.7310585975646973]]  sum 1
+   -inf in non-cand                   tau alt -1 fp64 -1  pi [[0.2689414322376251, 0.0, 0.7310585975646973]]  sum 1
+   -inf CANDIDATE                     tau alt +inf fp64 +inf  pi [[1.0, nan, 1.0]]  sum nan
+   +inf CANDIDATE                     tau alt -inf fp64 -inf  pi [[0.0, nan, 0.0]]  sum nan
+   NaN CANDIDATE                      tau alt +nan fp64 +nan  pi [[nan, nan, nan]]  sum nan
+   -1e30 CANDIDATE                    tau alt +2.71051e+10 fp64 +2.71051e+10  pi [[1.0, 0.0, 1.0]]  sum 2
+== 4. bf16 scores: computed in fp32, returned in bf16
+   dtype torch.bfloat16 equal to fp32-solve rounded to bf16: True | max |tau_bf16 - tau_fp32| 0.024669647216796875
+== 5. underflow: k=1 lead L (one top candidate at 0, the next L below; rest 2 nats further)
+   L 100: |alt-ref| 2.53e-06  |fp64-ref| 12.6  ref 47.9976
+   L 140: |alt-ref| 2.53e-06  |fp64-ref| 32.6  ref 67.9976
+   L 150: |alt-ref| 2.53e-06  |fp64-ref| 37.6  ref 72.9976
+   L 160: |alt-ref| 2.53e-06  |fp64-ref| 42.6  ref 77.9976
+   L 165: |alt-ref| 2.53e-06  |fp64-ref| 45.1  ref 80.4976
+   L 170: |alt-ref| 0.28  |fp64-ref| 47.6  ref 82.9976
+   L 175: |alt-ref| 2  |fp64-ref| 50.1  ref 85.4976
+   L 180: |alt-ref| 3.28  |fp64-ref| 52.6  ref 87.9976
+   L 200: |alt-ref| 13.3  |fp64-ref| 62.6  ref 97.9976

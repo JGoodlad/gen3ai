@@ -1,0 +1,7 @@
+/home/goodlad/dev/gen3ai/.claude/worktrees/tau_review/designs/research_state/measurements/tau_fp32_alt_2026-10-20/review/check_small.py:7: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor. (Triggered internally at /pytorch/torch/csrc/utils/tensor_new.cpp:253.)
+  s = torch.tensor([s], dtype=dt); return float(fixed_size_tau(s, torch.ones_like(s, dtype=torch.bool), torch.tensor([k]), solve=solve))
+2 1 30.0 alt err 0.0 naive err 0.026094436645507812 ulp 9.5367431640625e-07 tau 15.0
+4 3 30.0 alt err 2.981726510142835e-07 naive err 0.23238402619999476 ulp 9.5367431640625e-07 tau 15.434669196456255
+5 4 25.0 alt err 5.583100062267476e-07 naive err 0.012291512899849977 ulp 9.5367431640625e-07 tau 13.025010504312064
+8 4 40.0 alt err 1.4327799533475627e-06 naive err 4.918901918050125 ulp 1.9073486328125e-06 tau 19.831861021403
+bf16 return equals fp32 solve rounded: True 10.9375 10.9375

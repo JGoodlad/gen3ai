@@ -1,0 +1,14 @@
+/tmp/tau_review/check_compile.py:44: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:835.)
+  print(f"   {solve}: loss {float(loss):.9g}, |sum(pi)-k| max {float((p.pi.sum(-1)-k).abs().max()):.3g}")
+compiled vs eager: rows differing 48/256; max |d| 1.91e-06; max |d|/ulp 48.00
+   signed mean d/ulp +0.031 (n_pos 29, n_neg 19)
+   lead>=20: mean +0.028 ulp, pos 4 neg 2 of 145
+   lead<20: mean +0.036 ulp, pos 25 neg 17 of 111
+eager vs fp64-split ref: max |err| 4.2e-06; compiled 4.2e-06
+   fp32_alt: loss 33.2961502, |sum(pi)-k| max 2.38e-06
+   fp64: loss 33.2961502, |sum(pi)-k| max 9.54e-07
+   fp32_naive: loss 33.2961502, |sum(pi)-k| max 2.38e-06
+   grad fp32_alt vs fp64: max abs diff 1.86e-09 (rel to max grad 4.77e-07)
+   grad fp32_naive vs fp64: max abs diff 1.86e-09 (rel to max grad 4.77e-07)
+exit 0
