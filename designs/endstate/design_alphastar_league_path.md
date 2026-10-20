@@ -455,9 +455,12 @@ UNDECIDED, the branch uses the sign of Δ̂ only to ORDER work, never to adopt (
   not the registered cycle-monitor instrument. They are descriptive.
 - **F-AS-7. The population-loop evidence (§2.2) is from the PRE-`b0a28b5b` lineage**, so it gives a direction, not a
   level. LG-1 is its replication on the current lineage.
-- **F-AS-8. Sharing batch 1's C0 assumes LG-1 and LG-2 launch at batch 1's production pin.** Whether the X35 kit can
-  admit a new arm on a side whose pin file is already written is UNVERIFIED. If it cannot, each forms a later batch
-  with its own control (≈ +13 GPU-h each), or the orchestrator rules an extension.
+- **F-AS-8. Sharing batch 1's C0 assumes LG-1 and LG-2 launch at batch 1's production pin. VERIFIED 2026-10-20**
+  ([`STAGED_PLAN.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md) §4.3). The pin and
+  the pool record are per SIDE, so a new arm at the written pin shares its side's C0 and needs no +13 GPU-h. But the kit
+  must first register the arm: `kit.ARMS` / `build_argv`, a side-pinned arm set that `pin_check`, `stage_status`'s AM-8
+  gate, `k9b_batch` and `disk_check` read, and `readout`'s arm labels. That is a separate unit of ≈ 0.25–0.5
+  agent-day.
 - **F-AS-9. Literature items that are UNVERIFIED** (§1): AlphaStar's PFSP exponent p, its payoff estimator, and its
   exploiter / snapshot step counts (the exponents are garbled in the manuscript PDF; the values come from TStarBot-X
   and DI-engine); ROA-Star's arXiv / OpenReview id; the compute of AlphaStar Unplugged, DeepNash and Pipeline PSRO's
@@ -485,3 +488,4 @@ UNDECIDED, the branch uses the sign of Δ̂ only to ORDER work, never to adopt (
 | 2026-10-20 | **Decision branches registered BEFORE any X35 production read** (same worker) | §7's table: what each class of G1, A1, A2, D1, X47, the transfer calibration, R0 and LG-1's R2 does to the order; an UNDECIDED orders work by the sign of Δ̂ but adopts nothing | branching on head-to-head results (one opponent, ruled out in a cyclic regime, `design_league_decisions.md` §0) | §2.3's arithmetic; X35 §5.6.4 |
 | 2026-10-20 | **LG-0 (X55) READ** (X55 worker; predictions FIRST, `798c4f2a`, then the read) | §2.4 added: the archive's Nash is in C0's recent pool (0.90), A1's nodes' neighbourhoods hold 0.19, P\*'s measured row is flat (0.45–0.61 over 18 cells, none below 0.5 at 95 %; 0.514 ± 0.014 against the Nash mixture), S(P\*) = 0.569, PFSP near-uniform over A1's archive (max / min 1.3). §0, §2.1, §4.1, §4.3, the LG-0 / LG-2 rows of §6, F-AS-2 (A1's real nodes 30–260M), F-AS-3 (estimated cost) and F-AS-10 updated. LG-2's "second arm" is MOOT (the support is C0's pool). **No rank is changed here**: whether LG-2 drops below LG-4 on this read is the orchestrator's call | leaving LG-2's premise ("PFSP selects the cluster automatically") standing after the read showed no node beats P\* | [`x55_league_headroom_2026-10-20/`](../research_state/measurements/x55_league_headroom_2026-10-20/README.md) |
 | 2026-10-20 | **AM-RP: the orchestrator's rulings on the X35 REPLAN memo** (registration worker; `BATCH1_LAUNCH_SHEET.md` §0 AM-RP) | LG-2 runs only on an A1 GAIN and its second arm is dropped; A2 is dropped from batch 1; the transfer calibration is accepted as NOT SHOWN now, so LG-3 on the toy is descriptive; A3's verdict is "R2 falls AND G-F passes AND R1 not LOSS", labelled ROBUSTNESS GAIN. §6's LG-2 row and §7's A1 / A2 / calibration / LG-1 rows changed | LG-2 on an A1 UNDECIDED with Δ̂ > 0 (f_hard over A1's archive is near-uniform, max / min 1.3, so LG-2 ≈ A1); A2 deferred rather than dropped | [`REPLAN_2026-10-20.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/REPLAN_2026-10-20.md) §1, §4; §2.4 |
+| 2026-10-20 | **F-AS-8 VERIFIED** (the AM-RP registration worker, CPU, read-only) | a new arm CAN share its side's C0 at a written pin (the pin and the pool record are per side); the kit needs the arm registered first (≈ 0.25–0.5 agent-day) | each batch-2 arm with its own C0 (+ ≈ 13 GPU-h per side) | `STAGED_PLAN.md` §4.3; `batch2_sprt/f_as_8_kit_dryform.txt` |

@@ -1,0 +1,56 @@
+# F-AS-8 in dry form (2026-10-20, CPU, read-only on models/; no --write anywhere). Worktree at 01a80901a.
+$ /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.x35.kit describe --arm toy_sprt --seed 3601 --call designs/research_state/measurements/x35_breakers_stage_2026-10-17/reference_population_toy.json --field argv_shell
+usage: python -m main.x35.kit describe [-h] --arm
+                                       {a1,a2,a3,a3_mx,a6,a6_lx,c0,d1,ge_a1,ge_a2,ge_c0,ge_d1,toy_a1,toy_a2,toy_c0,toy_x47}
+                                       --seed SEED --call CALL
+                                       [--phase1 PHASE1]
+                                       [--models-dir MODELS_DIR]
+                                       [--target-standin TARGET_STANDIN]
+                                       [--field FIELD]
+python -m main.x35.kit describe: error: argument --arm: invalid choice: 'toy_sprt' (choose from 'a1', 'a2', 'a3', 'a3_mx', 'a6', 'a6_lx', 'c0', 'd1', 'ge_a1', 'ge_a2', 'ge_c0', 'ge_d1', 'toy_a1', 'toy_a2', 'toy_c0', 'toy_x47')
+[exit 2]
+
+$ /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.x35.kit describe --arm sprt --seed 3501 --call designs/research_state/measurements/x35_breakers_stage_2026-10-17/reference_population_production.json --field argv_shell
+usage: python -m main.x35.kit describe [-h] --arm
+                                       {a1,a2,a3,a3_mx,a6,a6_lx,c0,d1,ge_a1,ge_a2,ge_c0,ge_d1,toy_a1,toy_a2,toy_c0,toy_x47}
+                                       --seed SEED --call CALL
+                                       [--phase1 PHASE1]
+                                       [--models-dir MODELS_DIR]
+                                       [--target-standin TARGET_STANDIN]
+                                       [--field FIELD]
+python -m main.x35.kit describe: error: argument --arm: invalid choice: 'sprt' (choose from 'a1', 'a2', 'a3', 'a3_mx', 'a6', 'a6_lx', 'c0', 'd1', 'ge_a1', 'ge_a2', 'ge_c0', 'ge_d1', 'toy_a1', 'toy_a2', 'toy_c0', 'toy_x47')
+[exit 2]
+
+$ /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.x35.kit stage-check --arm toy_sprt --seed 3601 --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17
+usage: python -m main.x35.kit stage-check [-h] --arm
+                                          {a1,a2,a3,a3_mx,a6,a6_lx,c0,d1,ge_a1,ge_a2,ge_c0,ge_d1,toy_a1,toy_a2,toy_c0,toy_x47}
+                                          --seed SEED --stage STAGE
+python -m main.x35.kit stage-check: error: argument --arm: invalid choice: 'toy_sprt' (choose from 'a1', 'a2', 'a3', 'a3_mx', 'a6', 'a6_lx', 'c0', 'd1', 'ge_a1', 'ge_a2', 'ge_c0', 'ge_d1', 'toy_a1', 'toy_a2', 'toy_c0', 'toy_x47')
+[exit 2]
+
+$ /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.x35.kit describe --arm toy_c0 --seed 3601 --call designs/research_state/measurements/x35_breakers_stage_2026-10-17/reference_population_toy.json --field argv_shell
+--model /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep/checkpoints/checkpoint_290000087_steps.zip --behaviour-check warn --steps 360000087 --checkpoint-every-steps 1000000 --snapshot-ladder-games 0 --supply-starve-cycles self_play_pool=0 --device cuda --seed 3601 --run-name rb_x35t_c0_s3601
+[exit 0]
+
+$ /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.x35.kit stage-check --arm toy_c0 --seed 3601 --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17
+[x35 kit] stage-check toy_c0 s3601: ALLOWED: toy_c0 s3601: no unmet condition (stage T1)
+[exit 0]
+
+$ /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.x35.kit stage-check --arm c0 --seed 3501 --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17
+[x35 kit] stage-check c0 s3501: PENDING: AM-8: the production side's ['FP32_ALT'] commit is not recorded yet (x35_required_commits_production.txt holds a placeholder)
+[exit 1]
+
+$ /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.x35.kit pin-check --side toy --pin 4609c15548764bdf149d803d2a5cebb7a277fbc6 --stage designs/research_state/measurements/x35_breakers_stage_2026-10-17 --models-dir /home/goodlad/dev/gen3ai/models
+[x35 kit] pin-check: the pin equals X35_PIN_1_toy 4609c1554876 (x35_pin_batch1_toy.txt, T62 NA_TOY)
+[x35 kit] pin-check: 3 batch-1 toy run(s) checked against 4609c1554876
+[exit 0]
+
+## The gates' behaviour for an arm OUTSIDE batch.BATCH1_ARMS (a fake run dir in a temp models dir; the stage files copied):
+$ /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -
+pin_check(toy) with two NEW-arm runs recording a WRONG pin: (True, ['the pin equals X35_PIN_1_toy 4609c1554876 (x35_pin_batch1_toy.txt, T62 NA_TOY)', "not batch 1, not judged here: ['rb_x35t_lrfloor_s3601', 'rb_x35t_sprt_s3601']"])
+stage_status(toy_sprt, 3601): ('ALLOWED', 'toy_sprt is not a batch-1 arm (no AM-9 condition)')
+stage_status(sprt, 3501) [production; FP32_ALT still a placeholder]: ('ALLOWED', 'sprt is not a batch-1 arm (no AM-9 condition)')
+stage_status(c0, 3501) [the same side gate, for comparison]: ('PENDING', "AM-8: the production side's ['FP32_ALT'] commit is not recorded yet (x35_required_commits_production.txt holds a placeholder)")
+k9b_batch sees batch-1 runs only: ([], ['rb_x35t_lrfloor_s3601', 'rb_x35t_sprt_s3601'])
+[exit 0]
+

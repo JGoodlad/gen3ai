@@ -112,18 +112,20 @@ python -m main.launcher --restart-interval-hours 24 --pin-commit 9ebda1904da7a77
 is the order of record. The 24-fork "production first" queue that stood here is superseded and is removed; git history
 keeps it. R0 is not in batch 1 (ruling C4, 2026-10-19: its argv is unregistered, F27).
 
-**The batch-2 candidates.** None is registered or built into the kit, and each NEEDS the orchestrator's ruling and GO.
-Each has ONE lever per A/B and is read by R1 against a C0 at its own side's pin.
+**The batch-2 candidates.** Each has ONE lever per A/B and is read by R1 against a C0 at its own side's pin. **AM-RP-f
+(the launch sheet's §0, 2026-10-20) REGISTERED two of them, before X47's look 1 and before any production arm: the
+SPRT arm (§4.2, both sides) and toy LR-F (§4.1).** Production LR-F stays a designed candidate. None is a kit arm yet
+(§4.3: F-AS-8), and every launch NEEDS the orchestrator's GO. The GPU order is AM-RP-e's.
 
 | candidate | in plain words | the lever | GPU-h, look 1 | designed in |
 |---|---|---|---|---|
-| **LR-F, the LR FLOOR** (§4.1) | continue the plateau checkpoint with the learning-rate controller forbidden to go below the rate the run used while it was still climbing | `--min-lr` (two controller rungs above the start's rate) | toy 12.9; production 12.9 | here |
+| **LR-F, the LR FLOOR** (§4.1; **toy REGISTERED**, AM-RP-f) | continue the plateau checkpoint with the learning-rate controller forbidden to go below the rate the run used while it was still climbing | `--min-lr` (two controller rungs above the start's rate) | toy 12.9; production 12.9 | here |
 | LG-1, main exploiters (A3) + R0 | train 3 exploiters to beat P\*, then fold them into P\*'s opponents | the exploiter slice | ≈ 19 | [`design_alphastar_league_path.md`](../../../endstate/design_alphastar_league_path.md) §6 |
-| LG-2, PFSP over the archive | A1 with the archive nodes the trainee loses to drawn more often | `--stable-opponent-pfsp` | ≈ 14.4 | the same |
+| LG-2, PFSP over the archive (**only on an A1 GAIN**, AM-RP-b) | A1 with the archive nodes the trainee loses to drawn more often | `--stable-opponent-pfsp` | ≈ 14.4 | the same |
 | A4, the trailing magnet | a pull toward a recent copy of itself (R-NaD / MMD) | `β · KL(π ‖ π_mag)` (build T56) | ≈ 15 | [`design_compute_efficiency.md`](../../../endstate/design_compute_efficiency.md) §5.6.2 |
-| a FRESHNESS lever | change the promotion rule, so the self-play pool refreshes | `--promotion-sprt` (T6, built) | — | NAMED only (sheet §0 TM-1), not designed |
+| **SPRT, the promotion rule** (§4.2; **REGISTERED**, AM-RP-f) | promote a snapshot by its own sequential test instead of the first noisy crossing of 0.55, so the self-play pool refreshes | `--promotion-sprt` (T6, built) | toy 12.9; production 12.9 | [`REPLAN_2026-10-20.md`](REPLAN_2026-10-20.md) §2 |
 
-### 4.1 LR-F, the LR FLOOR (designed 2026-10-20, from the X26 treadmill read; NEEDS a ruling and GO)
+### 4.1 LR-F, the LR FLOOR (designed 2026-10-20, from the X26 treadmill read; the TOY arm REGISTERED by AM-RP-f, §4.1.1; production NEEDS a registration and GO)
 
 **In plain words.** Continue the plateau checkpoint, but forbid the learning-rate controller to go below the rate it
 used while the run was still climbing. Everything else is C0's.
@@ -198,7 +200,7 @@ by `batch2_lr_floor/lr_pool_series.py`; trailing-10M means).
   4. The toy climbed for 60M at its halved rate.
   5. Pre-era fold and exploiter evidence: more dose did not buy more (L09015), and at 1.78× it hurt (L21165).
 
-**The predictions, registered with the candidate** (a ruling may revise them before any LR-F launch, never after).
+**The predictions, registered with the candidate** (a ruling may revise them before any LR-F launch, never after; FROZEN for the toy by AM-RP-f, §4.1.1).
 - **Mechanism.**
   - The LR sits at the floor on ≥ 95 % of the arm's updates, every seed.
   - The arm-mean approx KL lies in [0.025, 0.045]: at ×1.44, KL ∝ LR gives 0.026–0.028 and KL ∝ LR² gives
@@ -266,6 +268,162 @@ by `batch2_lr_floor/lr_pool_series.py`; trailing-10M means).
 - **F-LRF-3.** The toy's prior is weakened by its own record: the toy plateaued 70M after its last cut.
 - **F-LRF-4.** No X35 run's telemetry was read for this design. Toy C0 s3601 has finished, and its LR path is
   unread.
+- **F-LRF-5 (AM-RP-f).** The toy argv also passes `checkargs` against the toy side's WRITTEN pin `4609c155`
+  ([`checkargs_toy_lrfloor_s3601_at_toy_pin.txt`](batch2_lr_floor/checkargs_toy_lrfloor_s3601_at_toy_pin.txt), exit 0,
+  `min_lr 0.00020833 (TYPED)`). The dry run is still not run (F-LRF-1).
+
+#### 4.1.1 Toy LR-F: the REGISTRATION (AM-RP-f, 2026-10-20, before X47's look 1)
+
+**Registered before X47's look-1 read** (which reads toy C0's finals, F-LRF-4) **and before any LR-F launch.** The
+predictions are §4.1's as designed in `6befe873`, unchanged and now FROZEN: no ruling may revise them.
+
+- **Arm.** `toy_lrfloor`, run `rb_x35t_lrfloor_s{seed}`. Toy C0's argv + `--min-lr 2.0833e-4` (one lever).
+- **Pin and matched control.** The toy side's written pin `4609c155` (`x35_pin_batch1_toy.txt`). Toy C0 at the same pin
+  and seeds: look 1 s3601–s3603 (T1's), look 2 s3604–s3605 (T1b's, shared if they ran).
+- **The registered predictions:**
+  - **Mechanism:**
+    - the LR sits at the floor on ≥ 95 % of updates, every seed;
+    - the arm-mean approx KL is in [0.025, 0.045];
+    - the clip fraction is 0.20–0.30;
+    - N_prom is within ±2 of toy C0's, pooled.
+  - **R1:** Δ_pop = 0.0 pp, 80 % [−2.0, +1.5]; the modal class is look-1 UNDECIDED.
+  - **G-C:** B1 ON − OFF is in [−0.05, +0.01] nats; B2's point estimate is in [−0.02, +0.04].
+- **The read.**
+  - R1 as registered: S over the toy's frozen R, Welch at 97.5 %, ±2 pp, two looks.
+  - G-F, G-C (pooled, AM-X47b-1) and G-K. G-E only on a GAIN.
+  - Reported beside them: TM-2's instruments, the LR path, the KL, the clip fraction.
+  - What each class licenses is §4.1's table.
+- **The stop rule.**
+  - The arm runs to its fixed `--steps` 360,000,087 (T\* + 70M) and ends with `Training complete`.
+  - It ends early only on the sheet §1's stops: K9(b) `warn` with X34's ceilings read by hand (AM-6 at arm end), a
+    `FATAL_*`, a 4th crash, or the post-spawn pool-seed check.
+- **The VOID guard (registered).**
+  - A seed whose trailing-2M mean approx KL exceeds **0.08** is stopped and is VOID. Rule 8 applies at 1e-9.
+  - It is read by hand with `main.ops.tb_read` at every restart and daily. No code enforces it (F-LRF-2).
+  - AM-6's K9(b) VOID applies as for every arm.
+  - A VOID seed enters no read, and it is re-run at the same pin and seed after its cause is fixed.
+- **Order and cost.** AM-RP-e (11): toy LR-F fills a GPU idle gap. Look 1 costs 12.9 GPU-h, and look 2 adds 8.6 on
+  CONTINUE.
+- **Production LR-F is NOT registered by AM-RP.** It is AM-RP-e's slot (8). Its predictions are §4.1's, and it needs a
+  registration and a GO before its launch.
+
+### 4.2 SPRT, the PROMOTION-RULE arm (REGISTERED 2026-10-20 by AM-RP-f, before X47's look 1 and any production arm)
+
+**In plain words.** Today a snapshot joins the self-play pool the first eval cycle its win rate against the pool crosses
+0.55: one noisy crossing. Under SPRT every eval-cycle snapshot is a candidate, and it is admitted only by its own
+sequential test on fresh games. At the small edge a plateaued trainee has over its own pool, that admits more snapshots,
+so the pool stays fresher (the memo's §2).
+
+**The ONE lever: `--promotion-sprt`** (T6, built, `gen3_sprt_promotion_v1`, config v129). The argv is the side's C0 argv
+plus that one flag. Everything else is C0's.
+- **How it acts, read in the code** (`agents/training/sprt_promotion.py`):
+  - every eval-cycle snapshot (each 2M) is a CANDIDATE once the pool holds a snapshot;
+  - each is decided by a pentanomial GSPRT over fresh MIRRORED pairs: H0 0.50 against H1 0.55, α = β = 0.05, checks
+    every 40 pairs, no decision before 40, and a cap of 1,680 pairs that counts as a REJECT;
+  - the test plays the candidate's own cycle's sentinels on a seed namespace disjoint from every cycle's, and it
+    BLOCKS that cycle's collect;
+  - `--promote-threshold` is not read;
+  - every test writes `start` / `verdict` lines to the run's append-only `sprt_promotion.jsonl`, and a test cut by a
+    restart is `abandoned` (not promoted, never re-run).
+- **Runs.** Production `sprt`, run `rb_x35_sprt_s{seed}`. Toy `toy_sprt`, run `rb_x35t_sprt_s{seed}`.
+- **Validated** (CPU, [`batch2_sprt/`](batch2_sprt/)): `main.checkargs` exits 0 in three places:
+  - production C0 + `--promotion-sprt` against P\*'s pinned parser @`9c033489`
+    ([`checkargs_sprt_s3501.txt`](batch2_sprt/checkargs_sprt_s3501.txt));
+  - toy C0 + `--promotion-sprt` against T\*'s @`ae2d0901` ([`checkargs_toy_sprt_s3601.txt`](batch2_sprt/checkargs_toy_sprt_s3601.txt));
+  - the same toy argv against the toy side's written pin @`4609c155`
+    ([`checkargs_toy_sprt_s3601_at_toy_pin.txt`](batch2_sprt/checkargs_toy_sprt_s3601_at_toy_pin.txt)).
+  These transcripts are REGENERATED here: the memo's own runs were not committed (F-RP-1) and were not found on disk.
+  The launcher dry-run was NOT run (no lease, as F-LRF-1).
+
+**The mechanism, simulated** ([`batch2_sprt/sprt_vs_threshold.py`](batch2_sprt/sprt_vs_threshold.py) →
+[`.json`](batch2_sprt/sprt_vs_threshold.json); `sprt_promotion/simulate.py`'s `simulate()` with the shipped rule, τ 1,
+5,000 runs, seed 20261020, CPU, 8 s). This is the probability that ONE candidate is promoted, at a true edge over the pool:
+
+| true edge | 0.51 | 0.52 | 0.53 | 0.54 |
+|---|---|---|---|---|
+| SPRT accept | 0.10 | 0.32 | 0.66 | 0.89 |
+| today's rule, Binomial(500) > 0.55 (the code's strict `>`) | 0.03 | 0.08 | 0.17 | 0.31 |
+| the same with ≥ 0.55 | 0.04 | 0.10 | 0.20 | 0.34 |
+
+X26 measured ≈ 0.24 promotions per cycle at 280M, so its noise is above binomial (F-RP-4). The ratio is therefore
+≈ 2–3×, not the binomial 2.7–3.5×.
+
+**The registered predictions** (GUESS, the memo's, frozen now):
+- **Mechanism.**
+  - The ACCEPT FRACTION over the arm's candidates (≈ 30 over 3 production seeds × 10) lies in **[0.10, 0.90]**.
+    Today's rule promotes 0.04–0.33 per candidate (the memo's figures; F-RP-7 has the exact binomial).
+  - N_prom ≥ 2 × the same side's C0's, pooled, **iff** the accept fraction is ≥ 0.10.
+  - The final median pool age is below C0's (production: TM-3's 55–76M).
+  - Reading it: a fraction near 0.03 means an edge ≈ 0.50 over its own pool, which confirms TM-1 ("progress stopped,
+    so the pool stopped refreshing"). A high fraction with no S gain says freshness is not the binding constraint.
+- **R1.** Δ_pop (SPRT − C0) = **0.0 pp, 80 % [−1.0, +1.5]**. There is a LOSS tail, because near-copies narrow the pool.
+- **The same predictions are registered for the toy side.** The memo derived them for production. On the toy they are
+  a second lineage's read of the pool edge (the memo §3, step 1), not a calibration.
+
+**The frame (as LR-F's).**
+- **Matched control:** the same side's C0 at the same pin and seeds: production C0 s3501–s3503 (look 2 s3504–s3505),
+  toy C0 s3601–s3603 (look 2 s3604–s3605).
+- **Reads:**
+  - R1 as registered;
+  - the guards G-F / G-C (pooled) / G-K, and G-E only on a GAIN;
+  - reported: TM-2's instruments, N_prom, the accept fraction, pairs per candidate, the pool's median age and each
+    seed's LR path (TM-4: the controller is endogenous).
+- **The stop rule.**
+  - Production runs to `--steps` 300,000,170 (P\* + 20M), the toy to 360,000,087 (T\* + 70M), each ending with
+    `Training complete`.
+  - They end early only on the sheet §1's stops: K9(b) `warn` (AM-6 at arm end), a `FATAL_*`, a 4th crash, or the
+    post-spawn pool-seed check.
+- **The VOID guards (registered; read at arm end from the seed's own `sprt_promotion.jsonl`, deterministic integer counts).**
+  - **V-S1, the lever did not act.** A seed with no `verdict` line by its final is VOID.
+  - **V-S2, restarts ate the test.** A seed whose `abandoned` tests exceed 25 % of its candidates (strictly) is VOID.
+  - **AM-6's K9(b) VOID** applies as for every arm.
+  - A VOID seed enters no read, and it is re-run at the same pin and seed after its cause is fixed.
+  - **Reported, not a guard:** the arm's wall time per step against its C0's. The test blocks a collect (≈ 11 s per 2M
+    cycle in the memo's estimate), and the arms stop at equal steps.
+- **Order and cost.**
+  - Production is AM-RP-e's slot (6): 12.9 GPU-h, + 8.6 for look 2.
+  - The toy is slot (11), filling a GPU idle gap: 12.9, + 8.6.
+  - The toy goes earlier only if the 2026-10-20 GPU battery FAILS (AM-RP-e (1)).
+- **The build.** It is a kit arm on each side, ≈ 0.25 agent-day (§4.3). This is the FIRST GPU use of T6.
+
+### 4.3 F-AS-8: can the kit admit a NEW arm at a side whose pin is already written? (verified 2026-10-20, CPU, read-only)
+
+**Verdict: at the PIN level YES, so SPRT and LR-F share their side's C0 and need no +12.9 GPU-h. At the KIT level NO,
+not today: a kit change is needed first.** The transcript is
+[`batch2_sprt/f_as_8_kit_dryform.txt`](batch2_sprt/f_as_8_kit_dryform.txt).
+
+- **What already works for a new arm** (read in `batch.py` / `kit.py` / `launch_x35.sh`):
+  - The pin file is per SIDE, not per arm. `pin-check` passes any launch whose `--pin` equals the side's written pin
+    (shown: toy `4609c155`, exit 0), and `pin-write` then says "already recorded".
+  - The POOL record is per side, so the new arm seeds C0's exact snapshot set. The post-spawn `pool-seed-check` is
+    arm-generic.
+  - `launch_x35.sh` picks the side from the arm's `toy_` prefix.
+  - The trainer flags exist at the toy pin: `checkargs --pin 4609c155` accepts both `--promotion-sprt` and `--min-lr`.
+  - R1's input is S per seed for ON and OFF, so C0's finals are re-used as they are.
+- **What refuses or misses it today:**
+  1. `kit describe` / `stage-check` / `pool-check` / `validate-run` refuse the arm: argparse `choices=sorted(ARMS)`
+     (shown, exit 2). Without `describe` there is no argv, so `launch_x35.sh` HOLDs.
+  2. `batch.pin_check` judges only `BATCH1_ARMS` (+ the G-E readers). A new arm's run is listed "not batch 1, not
+     judged". So a later launch does not check that run's recorded pin (shown with a deliberately wrong one): AM-1's
+     per-run check silently skips it.
+  3. `batch.stage_status` returns ALLOWED for any arm outside `BATCH1_ARMS` BEFORE the AM-8 side gate. A production
+     `sprt` reads ALLOWED while `c0` reads PENDING on the FP32_ALT placeholder (shown). Pre-check 2c
+     (`required-check`) would still HOLD the launch, so this is a wrong answer, not a launch hole.
+  4. `k9b-batch` (pre-check 11) and `disk` count only batch-1 runs, so a finished new arm's K9(b) is never pre-checked.
+  5. `readout.decide` refuses an arm label outside {A1…A6}, and `batch.READ_LABEL` has no entry, so no
+     `reads/<arm>_look<k>.json` record can be written.
+- **The code change that admits them (a separate unit, NOT built here):**
+  - `kit.ARMS`: add `sprt` / `toy_sprt` and `lrfloor` / `toy_lrfloor` (phase 0, `warn`, the side's seeds and length).
+  - `build_argv`: the levers `--promotion-sprt` and `--min-lr 1.7361e-4` (production) / `--min-lr 2.0833e-4` (toy).
+  - `batch`: a `SIDE_PINNED_ARMS` set (batch 1 + batch 2) that `pin_check`, `k9b_batch` and `disk_check` read, and that
+    `stage_status` runs through the AM-8 side gate. Add batch 2's own conditions in a `BATCH2_STAGES`, never in the
+    closed `STAGES`.
+  - `readout.ARMS` / `batch.READ_LABEL`: the labels `SPRT` and `LRF`.
+  - The VOID readers: V-S1 / V-S2 from `sprt_promotion.jsonl`, and LR-F's KL guard as a `tb_read` check.
+  - Each with a test that fails on revert. ≈ 0.25–0.5 agent-day for both arms. LR-F's cost line already budgets the
+    kit arm.
+- **Hazard.** The toy pin `4609c155` is fixed, so a toy batch-2 arm trains on that commit's code. Any T6 / `--min-lr` fix
+  that lands after it does not reach the toy arms.
 
 ## 5. Findings at staging
 
