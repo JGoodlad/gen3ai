@@ -68,7 +68,13 @@ PAIRS, N_ENVS = 12, 8
 #: are a different network, so both digests moved (was 0c534e2a… / 71402a06…); the engine, the observation and the
 #: reveal path did not change. Read off the post-U3 sweep's failure line on this file (the same digests at the one torch
 #: thread this file now runs at); the learner golden was re-recorded for the same cause (`33a1c3b9`).
-OFF_BITS = "94eaba7cc5e6deaf838d3c8bb6334c6e3faab32b56a0fc63d2ab09516fd6dc29"
+#: RE-RECORDED 2026-10-19 for T62 gen3_tau_fp64_solve_v1 (`bd3126e0`: X5's species-presence tau solved in float64):
+#: the BITS only (was 94eaba7c…); `OFF_OUTCOME_ALL` did not move — every result, end turn, team and action is the same,
+#: and the margins / log-probs moved by <= 1.2e-6 (fp32 ulps; 1503 of 2344 p1 log-probs). Bisected over
+#: `c6a14d16..b0f5dc13`: at HEAD with ONLY `hypothesis_set.TAU_SOLVE_DTYPE` set back to float32 the old 94eaba7c…
+#: reproduces exactly, and with only the GEN3_HP_IVS Ghost row reverted (`f2052657`) the digest does not move (none of
+#: these 24 games draws a changed team); the one Hidden Power impl (`c9493053`) packs all 791 pool teams identically.
+OFF_BITS = "a5cd83ef6e7260f8af62fd02736b37e312e82ebf7e21a70a8af4a1544ba07e12"
 OFF_OUTCOME_ALL = "268772129d021a41524eebeca76ec6ead7191a847a3c9cfba396de26dc7aae6f"
 
 

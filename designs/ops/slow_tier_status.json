@@ -1645,26 +1645,42 @@
   },
   "src/main/h2h/play_reveal_integration_test.py::test_both_sided_reaches_both_sides_and_the_oracle_side_reads_what_it_reads_one_sided": {
    "status": "pass",
-   "commit": "b0f5dc138732dab650d1006a3eefda9acd1a45f8",
-   "at": "2026-10-19T22:53:41Z",
-   "duration_s": 0.01,
-   "contention": 2.55,
+   "commit": "82ad9f9bffa3d863dd08e51ce3ef4840916b64d9",
+   "at": "2026-10-20T00:20:32Z",
+   "duration_s": 0.0,
+   "contention": 1.57,
    "detail": ""
   },
   "src/main/h2h/play_reveal_integration_test.py::test_every_row_is_stamped_with_its_protocol_and_per_side_levels": {
    "status": "pass",
-   "commit": "b0f5dc138732dab650d1006a3eefda9acd1a45f8",
-   "at": "2026-10-19T22:53:41Z",
-   "duration_s": 0.07,
-   "contention": 2.55,
+   "commit": "82ad9f9bffa3d863dd08e51ce3ef4840916b64d9",
+   "at": "2026-10-20T00:20:32Z",
+   "duration_s": 0.04,
+   "contention": 1.64,
+   "detail": ""
+  },
+  "src/main/h2h/play_reveal_integration_test.py::test_off_off_plays_the_engine_of_before_bit_for_bit": {
+   "status": "pass",
+   "commit": "82ad9f9bffa3d863dd08e51ce3ef4840916b64d9",
+   "at": "2026-10-20T00:20:32Z",
+   "duration_s": 2675.33,
+   "contention": 2.56,
    "detail": ""
   },
   "src/main/h2h/play_reveal_integration_test.py::test_one_sided_reaches_only_the_oracle_side_in_either_seat": {
    "status": "pass",
-   "commit": "b0f5dc138732dab650d1006a3eefda9acd1a45f8",
-   "at": "2026-10-19T22:53:41Z",
-   "duration_s": 0.01,
-   "contention": 2.55,
+   "commit": "82ad9f9bffa3d863dd08e51ce3ef4840916b64d9",
+   "at": "2026-10-20T00:20:32Z",
+   "duration_s": 0.0,
+   "contention": 1.68,
+   "detail": ""
+  },
+  "src/main/h2h/play_reveal_integration_test.py::test_withheld_plays_the_oracle_checkpoint_exactly_as_off_does_in_either_seat": {
+   "status": "pass",
+   "commit": "82ad9f9bffa3d863dd08e51ce3ef4840916b64d9",
+   "at": "2026-10-20T00:20:32Z",
+   "duration_s": 0.03,
+   "contention": 1.65,
    "detail": ""
   },
   "src/main/info_audit/info_audit_slow_test.py::test_the_suite_passes_on_twelve_decisions_and_every_spec": {
@@ -2223,5 +2239,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-19T23:56:11Z"
+ "last_written": "2026-10-20T00:20:32Z"
 }

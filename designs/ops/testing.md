@@ -406,7 +406,8 @@ Metamon's own interpreter): no routine-gate test starts a Metamon peer. Their ve
 tier in `slow_tier_status.json`, and a recorded red fails the ship gate (§ "The SLOW-TIER LAST-KNOWN-STATUS
 gate" below; on 2026-10-19 373 of the re-tiered ids were still UNBANKED — the slow-tier gate lists them as
 "unrecorded" — and two `play_reveal_integration_test` FAIL rows measured at `b0f5dc13` were HELD pending a
-bisect, orchestrator ruling). ⚠️ **The cost of the speed: a slow test that broke since its last banked run reads green here.**
+bisect, orchestrator ruling; the bisect named T62 `bd3126e0` (X5's tau solved in float64: fp32-ulp margin / log-prob
+bits, no action moved), an intended consequence, and `OFF_BITS` was re-recorded with that provenance). ⚠️ **The cost of the speed: a slow test that broke since its last banked run reads green here.**
 So (a) a change to code a `slow` test covers runs THOSE tests too, chosen by judgment and named in the commit
 body (e.g. a compile change ⇒ `pytest src/agents/model/compile_*_test.py -m slow`); (b) the slow tier needs a
 cadence (it is ~hours beside a live run: the 2026-10-19 banking of the ~525 re-tiered ids banked 152 PASS in ~2 h at `-n 3` before it was stopped for the GPU-blocking work on the agent cores, and its long poles (the play files) run first beside a live run at `-n 3`) — the orchestrator's call, not a cron (owner, 2026-10-05).
@@ -1033,6 +1034,7 @@ are `slow` since 2026-10-19** (the owner's direction for a practical ship gate; 
 
 ### Targeted sets before a ship (owner, 2026-10-05)
 The full serial suite is NOT required before every `/gen3ai-ship` — **"I prefer more targeted test suites."** Since 2026-10-19 the default is **the SHIP GATE** (`scripts/ops/ship_gate.sh run`, above: the whole routine set, ~15 min beside a live run). A TARGETED set the agent chooses by judgment (the tests that cover what it changed, plus the static gates) remains allowed when the agent has HIGH confidence the change is contained, **naming the scope and the reason in the commit body**; shared infrastructure (conftest, the model, the training loop, compile, `data/`, the Rust core, the launcher) or any doubt means the ship gate — plus the `slow` tests of the code it touched. The owner's 2026-09-30 rule still holds: the choice is the agent's, never an AUTOMATED test-selection framework.
+🚨 **A change to ENGINE-FACING DATA (the team pool's packing, the teambuilder's fill, a `data/` table the core or the model reads) or to MODEL NUMERICS (a dtype, a solve, a reduction order in the forward) also runs the PLAYED-BITS goldens — `src/main/h2h/play_reveal_integration_test.py` (`OFF_BITS` / `OFF_OUTCOME_ALL`), ~30 min at one thread** — and re-records them with a cited cause when the move is intended: they are `slow`, so the ship gate does NOT run them (2026-10-19: T62 `bd3126e0` shipped on a targeted set and left the reveal file red on main until a bisect).
 
 ### Everything, including the slow tiers (requires symlinked deps/pokemon-showdown + chrome)
 **Run this in CI, or when a unit's blast radius warrants it** (not required before every `/gen3ai-ship`; see above). ~47 minutes serial (2026-09-29); the browser suite is ~19 s of it.
