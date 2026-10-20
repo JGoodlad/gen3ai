@@ -315,6 +315,16 @@ def _prepare_session(
         sys.exit(int(TrainExitCode.FATAL_CONFIG))
     child_env[PYTHON_ENV_VAR] = _torch.python
 
+    # THE CUDA-VISIBILITY PREFLIGHT (`cuda_visibility_gate`): a `--device cuda` launch whose child env hides every GPU
+    # (`CUDA_VISIBLE_DEVICES=""`, inherited from a CPU-only chain) dies at the child's start. Read from the env the child
+    # will get (`child_env`, final here), no CUDA touched; FATAL_CONFIG before the pin, worktree and run dir exist.
+    from main.launcher.checkpoint import _peek_arg as _peek
+    from main.launcher.cuda_visibility_gate import verdict_for_launch as _cuda_verdict_for_launch
+    _cuda = _cuda_verdict_for_launch(_peek(child_args, "--device"), child_env)
+    if _cuda.refused:
+        print(f"[launcher] ERROR: {_cuda.reason}", file=sys.stderr)
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
+
     # THE DISK-SPACE PREFLIGHT (`utils.disk_guard`): the same verdict the trainer reaches at its own
     # startup and `--dry-run` prints, asked HERE — before the pin, the worktree, the run dir — so it also
     # guards a PINNED child whose trainer predates the guard. FATAL_CONFIG, nothing left behind.

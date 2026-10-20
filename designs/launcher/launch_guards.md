@@ -165,7 +165,7 @@ The gate runs inside `_arch_surface_gate` (first, same last stop), and in `--dry
 `python -m main.checkargs`, all from `main.checkargs.check`'s one `recipe_surface.report`. The doc
 and the block are held together by `src/recipe_doc_gate_test.py`.
 
-## The startup preflights — desktop GPU, disk space, the Showdown submodule
+## The startup preflights — desktop GPU, disk space, the Showdown submodule, CUDA visibility
 
 🚨 **THE DESKTOP-GPU REFUSAL (T23, 2026-10-05).** A CUDA run does not start while a display process (gnome-shell,
 Xorg, Xwayland, a display manager, … — the declared `utils.desktop_gpu.DISPLAY_PROCESS_NAMES`) holds the GPU: the
@@ -211,3 +211,16 @@ checkout; the healthy path; `--no-pin` asks about its own tree; `--dry-run` fail
 one a real pinned worktree is linked to) and `utils/showdown_deps_test.py` (the verdict, the fix text, and a REAL node
 trace of one validation proving every listed file is read). A test that fakes the launcher's repo root with a throwaway
 repository writes a stub checkout (`showdown_deps.write_stub_checkout`) after its commits.
+
+🚨 **THE CUDA-VISIBILITY PREFLIGHT (2026-10-20).** An X35 launch passed `--dry-run ... --device cuda`, then its child died
+at startup with "No CUDA GPUs are available": the launch env carried `CUDA_VISIBLE_DEVICES=""`, inherited from a CPU-only
+end-of-run chain. `main/launcher/cuda_visibility_gate.py` reads the env the CHILD will get (`child._build_child_env()`: the
+launcher's own env) and refuses `FATAL_CONFIG` (3) with a one-line reason naming the variable when the resolved device is
+an EXPLICIT `cuda` / `cuda:N` and the variable hides every device (`""`, `-1`, `NoDevFiles`, any list whose first token is
+not an index or `GPU-` / `MIG-` UUID: the runtime reads left to right and stops at the first invalid token). `_prepare_session`
+asks right after the torch-interpreter decision, before the disk question, the pin, the worktree and the run dir; `--dry-run`
+prints the same verdict (`cuda devices :` line, 7g) and fails. Never advisory (the launcher is the only party that sees the
+inherited env) and no opt-out. `--device auto` / `cpu` are never refused (auto falls to CPU in the trainer; the line says so
+with a warning). The launcher stays CUDA-free: env only, no torch, no `nvidia-smi`. NOT checked: an index past the machine's
+device count, and `cuda:N` past the visible list. The check lives in the LAUNCHER, so it covers a pinned child (whose trainer
+has no check) only when the launcher process itself runs this code. Gate: `cuda_visibility_gate_test.py`.

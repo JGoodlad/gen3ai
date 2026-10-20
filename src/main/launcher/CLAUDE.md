@@ -52,7 +52,7 @@ codes in `crashes_and_exit_codes.md`, the child's interpreter in `interpreter.md
   `KILL_GRACE_SECONDS` must stay above the safe-point deadline plus the save budget
   (`src/main/train/deferred_abort_test.py`).
 - **The preflights refuse `FATAL_CONFIG` before the pin, worktree or run dir exist** (the desktop on
-  the GPU, low disk, an unusable `deps/pokemon-showdown`; `launch_guards.md`), and `--dry-run` prints
+  the GPU, low disk, an unusable `deps/pokemon-showdown`, a `--device cuda` launch under `CUDA_VISIBLE_DEVICES` hiding every GPU; `launch_guards.md`), and `--dry-run` prints
   each verdict. The launcher's ask is the only one a pinned older trainer gets.
 - **A new non-recoverable error class goes through `exit_codes.exit_code_for`**, never a bare
   `sys.exit`.

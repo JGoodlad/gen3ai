@@ -503,6 +503,15 @@ def dry_run(
     for line in deps.lines():
         out(f"  {line}")
 
+    # 7g. THE CUDA-VISIBILITY PREFLIGHT - `cuda_visibility_gate`, the verdict `_prepare_session` enforces: a cuda launch
+    #     whose child env (`_build_child_env`, the launcher's own env) hides every GPU dies at the child's start.
+    #     Never advisory: the launcher is the only party that can see the env the child inherits.
+    from main.launcher.child import _build_child_env
+    from main.launcher.cuda_visibility_gate import verdict_for_launch as _cuda_for_launch
+    cuda_vis = _cuda_for_launch(_dev, _build_child_env())
+    for line in cuda_vis.lines():
+        out(f"  {line}")
+
     # 8. The refusals. Same three families `main.checkargs` reports, on the same resolved namespace
     #    — but read against the CURRENT tree. When the pin names another commit AND we managed to
     #    ask that commit's parser (3b), these are ADVISORY: they describe rules the child will not
@@ -557,6 +566,8 @@ def dry_run(
     if grow_refusal is not None and not (pinned is not None and pinned.available):   # printed at 6c
         failed = True
     if deps.refused:                              # printed at 7f
+        failed = True
+    if cuda_vis.refused:                          # printed at 7g
         failed = True
 
     if failed:
