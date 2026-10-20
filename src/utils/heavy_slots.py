@@ -44,6 +44,7 @@ import contextlib
 import fcntl
 import json
 import os
+import random
 import shlex
 import sys
 import time
@@ -269,6 +270,47 @@ def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = Tru
         _drop(wait_rec, os.getpid())
         for fd in fds:
             os.close(fd)
+
+
+def await_free_slot(cmd: Sequence[str] = (), *, force: bool = False, timeout_s: Optional[float] = None,
+                    poll_s: float = POLL_S, report_every_s: float = REPORT_EVERY_S,
+                    log: Callable[[str], None] = _stderr, runs: Optional[dict] = None) -> None:
+    """Return once a heavy slot LOOKS free, holding NOTHING while it waits (a visible ``wait`` record, polled with
+    jitter). The caller then tries ``heavy_slot(wait=False)`` and, if a sibling got there first, waits again.
+    Returns at once when this job needs no slot (re-entrant, not wanted, BLOCKING bypass).
+
+    WHY (the gate convoy, 2026-10-19/20). ``utils.gate_lock`` took its heavy slot AFTER the gate lock and waited
+    for it while holding the gate lock: one gate idle on a 28 h research job's slot blocked every other gate for
+    over an hour. No process may hold the gate lock while waiting for a heavy slot - it waits HERE, holding none.
+    Raises ``TimeoutError`` (``timeout_s``)."""
+    d = lock_dir()
+    if verified_holder(d) is not None or wanted(force=force, runs=runs) is None:
+        return
+    if blocking_reason() is not None:
+        return
+    n = slot_count()
+
+    def free() -> bool:
+        return any(not r["pids"] for r in collect(d, n)["slots"])
+
+    if free():
+        return
+    d.mkdir(parents=True, exist_ok=True)
+    wait_rec = _write(d, Record.mine("wait", cmd, note="queued for a heavy slot holding NO lock"))
+    try:
+        t0 = time.monotonic()
+        next_report = t0
+        while not free():
+            now = time.monotonic()
+            if now >= next_report:
+                log(f"[heavy_slots] waiting {now - t0:.0f} s for one of {n} heavy slots (holding no other lock): "
+                    + compact_status(d, n))
+                next_report = now + report_every_s
+            if timeout_s is not None and now - t0 >= timeout_s:
+                raise TimeoutError(f"[heavy_slots] gave up after {now - t0:.0f} s: " + compact_status(d, n))
+            time.sleep(poll_s * (0.5 + random.random()))
+    finally:
+        _drop(wait_rec, os.getpid())
 
 
 def _alive(pid: int) -> bool:

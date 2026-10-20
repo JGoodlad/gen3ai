@@ -100,7 +100,7 @@ def test_a_third_taker_waits_and_a_crashed_holders_slot_frees(tmp_path):
         _wait_for(c.exists, "the third taker to get the crashed holder's slot")
         err = (tmp_path / "c.err").read_text()
         assert "acquired slot" in err and "after waiting" in err, err
-        waited = float(err.split("after waiting ")[1].split(" s")[0])
+        waited = float(err.split("acquired slot")[1].split("after waiting ")[1].split(" s")[0])   # the GATE line, not the heavy slot's
         assert waited >= 1.0, err
     finally:
         for p in (ha, hb, third):

@@ -38,7 +38,11 @@ the GPU lock: ``--timeout-s`` bounds the WAIT for a slot (exit 4); a WALL timeou
 INSIDE — ``gate_lock.sh timeout 3000 <cmd>`` — never around it (``timeout 3000 gate_lock.sh <cmd>``
 counts queue time and kills a gate that never ran).
 HEAVY SLOTS (2026-10-19, ``utils.heavy_slots``): while a training run is live a gate also holds ONE of
-the box's heavy-job slots for its whole run, taken AFTER its gate slot (so a queued gate holds none);
+the box's heavy-job slots for its whole run, taken AFTER its gate slot (so a queued gate holds none) and
+NON-BLOCKING: no process waits for a heavy slot while holding the gate lock (the convoy of 2026-10-19/20: one
+gate idle on a 28 h research job's slot blocked every gate for over an hour). A gate that finds no free heavy
+slot RELEASES the gate slot, waits for a heavy slot holding no lock (``heavy_slots.await_free_slot``), and queues
+for the gate again;
 its children inherit the holder marker, so the ``mem_cap.sh`` inside it takes no second slot. LOCK
 ORDER is gate before heavy: a take that would have to WAIT for the gate while an ancestor already
 holds a heavy slot (``mem_cap.sh … gate_lock.sh …``) is refused at once, :class:`GateLockOrderError`
@@ -239,36 +243,51 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
     fds = [os.open(str(p), os.O_RDWR | os.O_CREAT | os.O_CLOEXEC, 0o666) for p in paths]
     what = f" ({what})" if what else ""
     try:
-        slot, waited = _acquire(fds, paths, report_every_s=report_every_s, poll_s=poll_s,
-                                timeout_s=timeout_s, log=log, may_wait=HS.verified_holder() is None)
-        t_acq = time.time()
-        log(f"[gate_lock] acquired slot {slot} of {n}{what} at "
-            f"{time.strftime('%H:%M:%S', time.localtime(t_acq))} after waiting {waited:.1f} s")
-        rec = GS.SlotRecord.mine(slot, cmd)
-        try:
-            GS.write_record(d, rec)
-        except OSError as exc:            # a record only reports; never stop a gate over it
-            log(f"[gate_lock] slot record NOT written ({exc!r}); --status falls back to /proc")
-        before = os.environ.get(HELD_ENV)
-        os.environ[HELD_ENV] = f"{os.getpid()}:{slot}"
-        try:
-            # rule 5b: the gate holds one heavy slot itself, inside what remains of ``timeout_s``
-            with HS.heavy_slot(cmd, log=log, timeout_s=None if timeout_s is None else max(0.0, timeout_s - waited)):
-                yield slot
-        finally:
-            if before is None:
-                os.environ.pop(HELD_ENV, None)
-            else:
-                os.environ[HELD_ENV] = before
-            held = time.time() - t_acq
-            if cmd:
+        t_start = time.monotonic()
+        while True:
+            left = None if timeout_s is None else max(0.0, timeout_s - (time.monotonic() - t_start))
+            slot, waited = _acquire(fds, paths, report_every_s=report_every_s, poll_s=poll_s,
+                                    timeout_s=left, log=log, may_wait=HS.verified_holder() is None)
+            with contextlib.ExitStack() as heavy:
                 try:
-                    GS.append_history(d, rec, held, (outcome or {}).get("rc"))
-                except OSError as exc:
-                    log(f"[gate_lock] history NOT appended ({exc!r})")
-            GS.clear_record(d, slot, rec.pid)
-            fcntl.flock(fds[slot], fcntl.LOCK_UN)
-            log(f"[gate_lock] released slot {slot} of {n}{what} after holding {held:.0f} s")
+                    # rule 5b: the gate holds one heavy slot itself - taken NON-BLOCKING: a gate must never wait
+                    # for a heavy slot while holding the gate lock (the CONVOY of 2026-10-19/20)
+                    heavy.enter_context(HS.heavy_slot(cmd, log=log, wait=False))
+                except HS.SlotsFull:
+                    fcntl.flock(fds[slot], fcntl.LOCK_UN)
+                    log(f"[gate_lock] no heavy slot is free: released gate slot {slot} of {n}{what}, waiting for a "
+                        f"heavy slot holding NO lock (the queue behind this gate keeps moving)")
+                    left = None if timeout_s is None else max(0.0, timeout_s - (time.monotonic() - t_start))
+                    HS.await_free_slot(cmd, log=log, timeout_s=left, poll_s=poll_s, report_every_s=report_every_s)
+                    continue
+                t_acq = time.time()
+                log(f"[gate_lock] acquired slot {slot} of {n}{what} at "
+                    f"{time.strftime('%H:%M:%S', time.localtime(t_acq))} after waiting "
+                    f"{time.monotonic() - t_start:.1f} s")
+                rec = GS.SlotRecord.mine(slot, cmd)
+                try:
+                    GS.write_record(d, rec)
+                except OSError as exc:            # a record only reports; never stop a gate over it
+                    log(f"[gate_lock] slot record NOT written ({exc!r}); --status falls back to /proc")
+                before = os.environ.get(HELD_ENV)
+                os.environ[HELD_ENV] = f"{os.getpid()}:{slot}"
+                try:
+                    yield slot
+                finally:
+                    if before is None:
+                        os.environ.pop(HELD_ENV, None)
+                    else:
+                        os.environ[HELD_ENV] = before
+                    held = time.time() - t_acq
+                    if cmd:
+                        try:
+                            GS.append_history(d, rec, held, (outcome or {}).get("rc"))
+                        except OSError as exc:
+                            log(f"[gate_lock] history NOT appended ({exc!r})")
+                    GS.clear_record(d, slot, rec.pid)
+                    fcntl.flock(fds[slot], fcntl.LOCK_UN)
+                    log(f"[gate_lock] released slot {slot} of {n}{what} after holding {held:.0f} s")
+            return
     finally:
         for fd in fds:
             os.close(fd)

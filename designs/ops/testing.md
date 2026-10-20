@@ -341,7 +341,7 @@ plus a compile inventory and a GPU benchmark put load ~36 on 8 cores / 16 thread
 `flock` slot files under `~/.claude/jobs/gate_slots/`: try each non-blocking, else block on one in the
 kernel while re-trying the rest; a crashed holder's slot frees when it dies. Re-entrant like the GPU
 lock (`GEN3AI_GATE_LOCK_HELD=<pid>:<slot>`, verified against `/proc/locks`); all slots held by
-ancestors is `GateLockSelfDeadlock` (exit 3); the timeout is inside (`--timeout-s`, exit 4) and bounds the gate's own heavy-slot wait too. Wait and
+ancestors is `GateLockSelfDeadlock` (exit 3); the timeout is inside (`--timeout-s`, exit 4) and bounds the gate's own heavy-slot wait too. **No gate waits for a heavy slot while holding the gate lock** (the convoy, 2026-10-19/20: one gate idle on a 28 h job's slot blocked every gate for over an hour): the heavy slot is taken non-blocking after the gate slot, and a gate that finds none releases the gate slot, waits for a slot holding no lock (`heavy_slots.await_free_slot`) and queues for the gate again. Wait and
 acquisition time go to stderr. When a `train_rl_agent.py --run-dir` process is live, every take prints
 ONE line naming the run and the rule-5b shape — nice 19, `taskset -c` the agent cores (every cpu the
 trainer is NOT pinned to), `-n` = 0.5 x those cpus (`LEASED_WORKERS_PER_CPU`) — and what is wrong with

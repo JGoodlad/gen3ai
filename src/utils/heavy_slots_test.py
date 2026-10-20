@@ -168,3 +168,69 @@ def test_lock_order_a_gate_wait_under_a_heavy_holder_is_refused(slots, tmp_path,
     finally:
         gate_holder.terminate()                        # gate_lock forwards SIGTERM to its child
         gate_holder.wait(timeout=scale_timeout(15))
+
+
+# ── the CONVOY (2026-10-19/20): a gate waiting for a heavy slot must not hold the gate lock ───────────────────
+#
+# gate_lock took its heavy slot AFTER the gate lock and WAITED for it, holding the gate lock: pid 971798 held it
+# for 1 h 10 min with no children while a 28 h research job held a heavy slot, and 8 gates queued behind it.
+
+_GATE_DRIVER = (
+    "import pathlib, sys, time\n"
+    "from utils import procfs, gate_lock as GL\n"
+    "procfs.live_training_runs = lambda *a, **k: {'/m/rb_convoy_test': 1}      # rule 5b: a run is 'live'\n"
+    "marker = sys.argv[1]\n"
+    "with GL.gate_slot(poll_s=0.05, report_every_s=0.5, cmd=['convoy-gate']) as s:\n"
+    "    pathlib.Path(marker).write_text('ran'); time.sleep(float(sys.argv[2]))\n"
+)
+
+
+def _gate_proc(marker, hold=0.0, env=None) -> subprocess.Popen:
+    return subprocess.Popen([sys.executable, "-c", _GATE_DRIVER, str(marker), str(hold)], env=env,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+
+def _gate_lock_is_free(gate_dir) -> bool:
+    import fcntl
+
+    fd = os.open(str(gate_dir / "slot0.lock"), os.O_RDWR | os.O_CREAT, 0o666)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return True
+    except BlockingIOError:
+        return False
+    finally:
+        os.close(fd)
+
+
+def test_a_gate_waiting_for_a_heavy_slot_does_not_hold_the_gate_lock(slots, tmp_path, monkeypatch):
+    """Both heavy slots held by long jobs (fake slots, real holders); a gate arrives and cannot get one. It
+    must hold NOTHING while it waits (the gate lock is free for the next gate), and it runs once a slot frees.
+    Fails on a revert of gate_lock's non-blocking heavy take: the waiting gate then sits on the gate lock."""
+    gate_dir = tmp_path / "gate"
+    env = {**os.environ, GL.DIR_ENV: str(gate_dir), GL.SLOTS_ENV: "1", HS.SLOTS_ENV: "2", HS.DIR_ENV: str(slots)}
+    env.pop(GL.HELD_ENV, None)
+    env.pop(HS.HELD_ENV, None)
+    monkeypatch.setenv(GL.DIR_ENV, str(gate_dir))
+    h1 = _taker(tmp_path / "h1", hold=120.0, env=env)
+    h2 = _taker(tmp_path / "h2", hold=120.0, env=env)
+    gate = None
+    try:
+        _wait_for((tmp_path / "h1").exists, "the first long heavy job")
+        _wait_for((tmp_path / "h2").exists, "the second long heavy job")
+        gate = _gate_proc(tmp_path / "ran", env=env)
+        _wait_for(lambda: any(w["pid"] == gate.pid for w in HS.collect()["waiting"]), "the gate to queue for a slot")
+        time.sleep(1.0)                                       # past the gate's first (failed) slot attempt
+        assert gate.poll() is None and not (tmp_path / "ran").exists(), "the gate ran with both slots held"
+        assert _gate_lock_is_free(gate_dir), "a gate WAITING for a heavy slot is holding the gate lock (the convoy)"
+        # a second gate, with the heavy slots bypassed (the orchestrator's BLOCKING mark), gets through at once
+        g2 = _gate_proc(tmp_path / "ran2", env={**env, HS.BLOCKING_ENV: "convoy test"})
+        _wait_for((tmp_path / "ran2").exists, "a gate behind the waiting one to run", timeout=30.0)
+        g2.wait(timeout=scale_timeout(30))
+        assert g2.returncode == 0
+        _kill(h1)                                             # a slot frees: the waiting gate runs
+        _wait_for((tmp_path / "ran").exists, "the waiting gate to run once a slot frees", timeout=30.0)
+        gate.wait(timeout=scale_timeout(30))
+        assert gate.returncode == 0
+    finally:
+        _kill(*(p for p in (h1, h2, gate) if p is not None))
