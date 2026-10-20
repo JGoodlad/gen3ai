@@ -2,11 +2,18 @@
 made BEFORE any X35 launch. Pure functions over files; nothing here launches, trains or plays. ``main.x35.kit``
 exposes each as a subcommand, and ``launch_x35.sh`` calls them as pre-checks (a refusal is a HOLD, exit 7).
 
-* **AM-1, ONE PIN.** :data:`PIN_FILE` (``x35_pin_batch1.txt`` in the stage directory) is written ONCE, by the first
-  launch's GO: the pin's full sha, the date and the T62 verdict that chose it. Every later launch's ``--pin`` must
-  EQUAL it, and every existing batch-1 run's RECORDED pin (``metadata.json``'s ``git_hash`` and every
-  ``pin_history`` span, the record ``main.sidecar_audit`` reads) must equal it. A batch-1 run whose pin cannot be
-  read is a HOLD too (it is not evidence of agreement).
+* **AM-1, ONE PIN PER SIDE (amended by AM-8, orchestrator 2026-10-20).** :data:`PIN_FILE` (``x35_pin_batch1_<side>.txt``
+  in the stage directory, one per side: ``production`` and ``toy``) is written ONCE, by the side's first GO: the pin's
+  full sha, the date and the side's T62 token (:data:`T62_BY_SIDE`: production ``FP32_ALT``, the toy ``NA_TOY``, it has no
+  tau solve). Every later launch OF THAT SIDE must name the same ``--pin``, and every existing batch-1 run OF THAT SIDE
+  must have RECORDED that pin (``metadata.json``'s ``git_hash`` and every ``pin_history`` span, the record
+  ``main.sidecar_audit`` reads); a run of that side whose pin cannot be read is a HOLD too (it is not evidence of
+  agreement). The other side's runs are listed and judged at THEIR side's launches. The reason for two pins: each side's
+  control (C0 / toy C0) shares its own arms' pin, which is all AM-1 protects, and the production pin must carry the
+  FP32_ALT build (:func:`required_check`) that the toy never needs.
+* **AM-8, THE SIDE'S OWN REQUIRED COMMITS** (:func:`required_check`). ``x35_required_commits_<side>.txt`` lists commits
+  only that side's pin must carry. Production's MUST exist and name ``FP32_ALT``; while its sha is a placeholder (not
+  hex) every production fork is PENDING (:func:`stage_status`) and the launch HOLDs (``kit required-check``).
 * **POOL, ONE SEEDED SET.** Every fork of a side seeds its pool from the start node's run (T54: the parent's
   ``snapshot_*.zip`` at or below the fork step). The first launch of a side records that SET (names + sha256 and its
   digest) in :data:`POOL_FILE`; every later launch recomputes it and HOLDs on any difference, and the post-spawn
@@ -19,11 +26,13 @@ exposes each as a subcommand, and ``launch_x35.sh`` calls them as pre-checks (a 
   (rule 8: counted as above), is **HOLD**: D1, A2 and the toy calibration wait for the orchestrator's re-plan; C0
   s3504-s3505 run next and σ̂ is re-estimated on 5 C0 + 3 A1 (6 df, reported). It reads VARIANCE only, never an
   arm's Δ̂. Written once to :data:`G1_FILE`.
-* **AM-7, THE ORDER, and the conditional stages** (:data:`STAGES`): the first six forks → G1 → C0 s3504-s3505 →
-  A1 s3504-s3505 (only if A1's look 1 is CONTINUE) → D1, A2 (only if G1 PASSes) → toy C0 + X47 → X47 look 2
-  (AM-4: X47 and toy C0 s3604-s3605, only if X47's look 1 is CONTINUE) → toy A1 / toy A2 (AM-3: only after
-  production A1 / A2 has a FINAL class GAIN, NULL or LOSS, and G1 PASSed). :func:`stage_status` says, from the
-  saved read records, whether a fork is ALLOWED, PENDING (its record does not exist yet) or REFUSED.
+* **AM-9 (the order, amended 2026-10-20 from AM-7) and the conditional stages** (:data:`STAGES`): the TOY block runs
+  FIRST (T1 toy C0 + X47 s3601-s3603 interleaved, then T1b = X47 and toy C0 s3604-s3605 only if X47's look 1 is
+  CONTINUE, AM-4), then production once FP32_ALT has landed: P1 the first six forks -> G1 -> P2 C0 s3504-s3505 -> P3
+  A1 s3504-s3505 (only if A1's look 1 is CONTINUE) -> P4 D1, A2 (only if G1 PASSes); the toy calibration T2 stays last
+  and conditional (AM-3: toy A1 / toy A2 only after production A1 / A2 has a FINAL class GAIN, NULL or LOSS, and G1
+  PASSed). :func:`stage_status` says, from the saved read records, whether a fork is ALLOWED, PENDING (its record does
+  not exist yet) or REFUSED; the ORDER is the Training session's launch sequence (:data:`STAGES`), not a gate.
 * **AM-6, K9(b) AT ARM END.** :func:`k9b_read` reads ``behaviour/max_abs_dlogp_judged`` and
   ``behaviour/p99_abs_dlogp_current`` over the fork's OWN rows (steps > its fork step: the inherited rows are
   X26's, ``gen3_tb_inherit_v1``). VOID iff any judged max ≥ 1e-3, any p99 ≥ 1e-4, any non-finite value, or the child
@@ -36,12 +45,13 @@ THE READ RECORDS the stage rules read are ``<stage>/reads/<arm>_look<k>.json``: 
 decide`` (X47). The record names its arm and look; a record for another arm or look is a refusal.
 
 DECLARED HERE (choices the rulings leave open; each a FINDING of this build):
-* AM-1's "every existing ``rb_x35*`` run" is read as every BATCH-1 run (:func:`batch1_run_names`, a moved-aside
-  ``<run>.<SUFFIX>`` included): a later batch's runs carry their own pin and are listed as not judged here.
-* The pin file is ``key: value`` text; the T62 verdict is one of :data:`T62_VERDICTS` (``PENDING`` = C1 (a):
-  production launches at main HEAD with T62 before the battery read lands).
+* AM-1's "every existing ``rb_x35*`` run" is read as every BATCH-1 run OF THE LAUNCH'S SIDE (:func:`batch1_run_names`, a
+  moved-aside ``<run>.<SUFFIX>`` included): a later batch's runs carry their own pin and are listed as not judged here.
+* The pin file is ``key: value`` text with a ``side:`` line; its T62 token must be one of the side's
+  :data:`T62_BY_SIDE` (the battery DECIDED FP32_ALT, 2026-10-20: production no longer launches under ``PENDING`` /
+  ``ADOPT``, C1 (a) is superseded; the toy's ``NA_TOY`` says the toy makes no tau-solve call).
 * G1's input is the six finals' S; a missing, duplicated or non-finite S is a refusal, never a verdict.
-* D1 / A2 look 2 (3504-3505) and the toy pair's look 2 are not in AM-7's order; the kit allows them only on their own
+* D1 / A2 look 2 (3504-3505) and the toy pair's look 2 are not in the staged order; the kit allows them only on their own
   look-1 record reading CONTINUE (and AM-3 / G1 for the toy pair), and :data:`BATCH1` does not schedule them.
 """
 from __future__ import annotations
@@ -52,12 +62,19 @@ import json
 import math
 import os
 import re
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 RULE8_EPS = 1e-9
-PIN_FILE = "x35_pin_batch1.txt"
+#: AM-1 amended by AM-8 (orchestrator 2026-10-20): ONE pin file PER SIDE, written once by the side's first GO.
+PIN_FILE = "x35_pin_batch1_{side}.txt"
+SIDES = ("production", "toy")
+#: AM-8: commits only ONE side's pin must carry (the common list is ``x35_required_commits.txt``, read by the launch
+#: script). Production's file MUST exist and name every entry of :data:`SIDE_REQUIRED_NAMES`.
+SIDE_REQUIRED_FILE = "x35_required_commits_{side}.txt"
+SIDE_REQUIRED_NAMES = {"production": ("FP32_ALT",), "toy": ()}
 POOL_FILE = "x35_pool_batch1_{side}.json"
 POOL_SCHEMA = "x35_pool_batch1_v1"
 G1_FILE = "x35_gate_g1.json"
@@ -65,8 +82,12 @@ G1_SCHEMA = "x35_gate_g1_v1"
 READS_DIR = "reads"
 K9B_DIR = "k9b"
 K9B_SCHEMA = "x35_k9b_arm_end_v1"
-#: The battery's T62 verdicts (``gpu_window_battery_2026-10-19/README.md``) and PENDING (C1 (a), 2026-10-19).
-T62_VERDICTS = ("ADOPT", "FP32_ALT", "INCONCLUSIVE", "INCOMPLETE", "PENDING")
+#: The T62 token each side's pin file may carry (orchestrator, 2026-10-20: the GPU battery DECIDED FP32_ALT, because the
+#: float64 tau solve doubles the production learner update; the toy makes ZERO tau-solve calls, so its token is NA_TOY).
+#: A production pin therefore carries the FP32_ALT build (``required_check``); C1 (a) (launch under T62 pending) is
+#: superseded.
+T62_BY_SIDE = {"production": ("FP32_ALT",), "toy": ("NA_TOY",)}
+T62_VERDICTS = tuple(sorted({v for vs in T62_BY_SIDE.values() for v in vs}))   # the CLI's choices
 #: AM-2's bar on σ̂, pp.
 G1_SIGMA_BAR_PP = 1.2
 G1_SEEDS = ("3501", "3502", "3503")
@@ -78,15 +99,17 @@ ALLOWED, PENDING, REFUSED = "ALLOWED", "PENDING", "REFUSED"
 PASS, HOLD, VOID, INCONCLUSIVE = "PASS", "HOLD", "VOID", "INCONCLUSIVE"
 FINAL_CLASSES = ("GAIN", "NULL", "LOSS")
 
-#: AM-7's order (orchestrator, 2026-10-19), stage by stage. ``BATCH1`` (kit) is this list flattened.
+#: AM-9's order (orchestrator, 2026-10-20; it replaces AM-7's production-first order), stage by stage: the TOY block
+#: first (T1, then T1b on X47's look-1 CONTINUE), production P1-P4 once FP32_ALT has landed, the toy calibration T2
+#: last. ``BATCH1`` (kit) is this list flattened.
 STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
+    ("T1", (("toy_c0", 3601), ("toy_x47", 3601), ("toy_x47", 3602), ("toy_c0", 3602), ("toy_c0", 3603),
+            ("toy_x47", 3603))),
+    ("T1b", (("toy_x47", 3604), ("toy_c0", 3604), ("toy_c0", 3605), ("toy_x47", 3605))),
     ("P1", (("a1", 3501), ("c0", 3501), ("c0", 3502), ("a1", 3502), ("a1", 3503), ("c0", 3503))),
     ("P2", (("c0", 3504), ("c0", 3505))),
     ("P3", (("a1", 3504), ("a1", 3505))),
     ("P4", (("d1", 3501), ("d1", 3502), ("d1", 3503), ("a2", 3501), ("a2", 3502), ("a2", 3503))),
-    ("T1", (("toy_c0", 3601), ("toy_x47", 3601), ("toy_x47", 3602), ("toy_c0", 3602), ("toy_c0", 3603),
-            ("toy_x47", 3603))),
-    ("T1b", (("toy_x47", 3604), ("toy_c0", 3604), ("toy_c0", 3605), ("toy_x47", 3605))),
     ("T2", (("toy_a1", 3601), ("toy_a1", 3602), ("toy_a1", 3603), ("toy_a2", 3601), ("toy_a2", 3602),
             ("toy_a2", 3603))),
 )
@@ -117,6 +140,13 @@ def batch1_run_names() -> Dict[str, Tuple[str, int]]:
     return {run_name(a, s): (a, s) for a in BATCH1_ARMS for s in ARMS[a].seeds}
 
 
+def side_of_run(base: str) -> str:
+    """The side (``production`` / ``toy``) of a batch-1 run name."""
+    from main.x35.kit import ARMS
+
+    return ARMS[batch1_run_names()[base][0]].side
+
+
 def _batch1_dirs(models_dir: str) -> Tuple[List[Tuple[str, str]], List[str]]:
     """``([(dir name, run name)], [other rb_x35* dirs])``; ``<run>.<SUFFIX>`` (moved aside) counts as its run."""
     names = batch1_run_names()
@@ -135,10 +165,28 @@ def _batch1_dirs(models_dir: str) -> Tuple[List[Tuple[str, str]], List[str]]:
     return ours, other
 
 
-# ------------------------------------------------------------------------------------------------- AM-1: the pin
-def read_pin_file(path: str) -> Optional[Dict[str, str]]:
-    """The pin file's ``key: value`` lines, or None when it does not exist. A file without a 40-hex ``sha`` is a
-    refusal (a corrupt record never reads as "no pin yet")."""
+# ----------------------------------------------------------------------------- AM-1 (amended): one pin PER SIDE
+def _side(side: str) -> str:
+    if side not in SIDES:
+        raise BatchError(f"side {side!r} is not one of {SIDES}")
+    return side
+
+
+def pin_path(stage: str, side: str) -> str:
+    """The side's pin file (``x35_pin_batch1_<side>.txt`` in the stage directory)."""
+    return os.path.join(stage, PIN_FILE.format(side=_side(side)))
+
+
+def pin_label(side: str) -> str:
+    """How messages name a side's pin."""
+    return f"X35_PIN_1_{_side(side)}"
+
+
+def read_pin_file(path: str, side: str) -> Optional[Dict[str, str]]:
+    """The side's pin file's ``key: value`` lines, or None when it does not exist. A file without a 40-hex ``sha``, one
+    that names another side, or one whose T62 token is not the side's (:data:`T62_BY_SIDE`) is a refusal (a corrupt
+    record never reads as "no pin yet")."""
+    _side(side)
     if not os.path.exists(path):
         return None
     out: Dict[str, str] = {}
@@ -149,21 +197,27 @@ def read_pin_file(path: str) -> Optional[Dict[str, str]]:
         out[k.strip()] = v.strip()
     if not re.fullmatch(r"[0-9a-f]{40}", out.get("sha", "")):
         raise BatchError(f"{path}: no 40-hex 'sha:' line ({out.get('sha')!r})")
+    if out.get("side") != side:
+        raise BatchError(f"{path}: the record says side {out.get('side')!r}, it is the {side} side's file")
+    if out.get("t62_verdict") not in T62_BY_SIDE[side]:
+        raise BatchError(f"{path}: T62 token {out.get('t62_verdict')!r} is not a {side} token {T62_BY_SIDE[side]}")
     return out
 
 
-def write_pin_file(path: str, sha: str, t62: str, now: Optional[str] = None) -> Dict[str, str]:
-    """Write the batch pin ONCE (refuses an existing file and a verdict outside :data:`T62_VERDICTS`)."""
+def write_pin_file(path: str, sha: str, t62: str, side: str, now: Optional[str] = None) -> Dict[str, str]:
+    """Write the side's pin ONCE (refuses an existing file and a T62 token that is not the side's)."""
+    _side(side)
     if os.path.exists(path):
-        raise BatchError(f"{path} exists: the batch pin is written ONCE")
+        raise BatchError(f"{path} exists: the {side} pin is written ONCE")
     if not re.fullmatch(r"[0-9a-f]{40}", sha):
         raise BatchError(f"the pin {sha!r} is not a full 40-hex sha")
-    if t62 not in T62_VERDICTS:
-        raise BatchError(f"T62 verdict {t62!r} is not one of {T62_VERDICTS}")
-    doc = {"sha": sha, "written_at": now or _now(), "t62_verdict": t62,
-           "rule": "AM-1 (orchestrator 2026-10-19): every batch-1 arm, look 2 included, launches at this pin"}
-    Path(path).write_text("# X35 batch 1's ONE pin (X35_PIN_1), written once by the first launch's GO.\n"
-                          + "".join(f"{k}: {v}\n" for k, v in doc.items()))
+    if t62 not in T62_BY_SIDE[side]:
+        raise BatchError(f"T62 token {t62!r} is not a {side} token {T62_BY_SIDE[side]}")
+    doc = {"sha": sha, "side": side, "written_at": now or _now(), "t62_verdict": t62,
+           "rule": f"AM-1 as amended by AM-8 (orchestrator 2026-10-20): every batch-1 {side} arm, look 2 included, "
+                   f"launches at this pin"}
+    Path(path).write_text(f"# X35 batch 1's {side.upper()} pin ({pin_label(side)}), written once by the side's first "
+                          "launch's GO.\n" + "".join(f"{k}: {v}\n" for k, v in doc.items()))
     return doc
 
 
@@ -187,49 +241,129 @@ def _same_sha(a: str, b: str) -> bool:
     return n >= 7 and a[:n] == b[:n]
 
 
-def pin_check(pin: str, stage: str, models_dir: str) -> Tuple[bool, List[str]]:
-    """AM-1's pre-check: ``(ok, lines)``. ``pin`` is the full sha the launch would use."""
+def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[str] = None) -> Tuple[bool, List[str]]:
+    """AM-1's pre-check for one SIDE: ``(ok, lines)``. ``pin`` is the full sha the launch would use; ``t62`` (when typed)
+    must be the side's token. Only this side's batch-1 runs are judged against the side's pin; the other side's are
+    listed (their own side's launches judge them)."""
     lines: List[str] = []
     ok = True
-    rec = read_pin_file(os.path.join(stage, PIN_FILE))
+    label, fname = pin_label(side), os.path.basename(pin_path(stage, side))
+    if t62 is not None and t62 not in T62_BY_SIDE[side]:
+        ok = False
+        lines.append(f"--t62 {t62!r} is not a {side} token {T62_BY_SIDE[side]}")
+    rec = read_pin_file(pin_path(stage, side), side)
     if rec is None:
-        lines.append(f"no {PIN_FILE} yet: the first GO writes {pin[:12]} as X35_PIN_1")
+        lines.append(f"no {fname} yet: the first {side} GO writes {pin[:12]} as {label}")
     elif rec["sha"] != pin:
         ok = False
-        lines.append(f"the pin {pin[:12]} != X35_PIN_1 {rec['sha'][:12]} ({PIN_FILE}, written {rec.get('written_at')})")
+        lines.append(f"the pin {pin[:12]} != {label} {rec['sha'][:12]} ({fname}, written {rec.get('written_at')})")
     else:
-        lines.append(f"the pin equals X35_PIN_1 {pin[:12]} ({PIN_FILE}, T62 {rec.get('t62_verdict')})")
+        lines.append(f"the pin equals {label} {pin[:12]} ({fname}, T62 {rec.get('t62_verdict')})")
     want = rec["sha"] if rec is not None else pin
     ours, other = _batch1_dirs(models_dir)
-    for d, _ in ours:
+    mine = [(d, base) for d, base in ours if side_of_run(base) == side]
+    for d, _ in mine:
         hs = recorded_pins(os.path.join(models_dir, d))
         if not hs:
             ok = False
-            lines.append(f"{d}: no recorded pin (metadata.json absent or without git_hash): cannot show it is X35_PIN_1")
+            lines.append(f"{d}: no recorded pin (metadata.json absent or without git_hash): cannot show it is {label}")
             continue
         bad = sorted({h for h in hs if not _same_sha(h, want)})
         if bad:
             ok = False
             lines.append(f"{d}: recorded pin(s) {[h[:12] for h in bad]} != {want[:12]}")
-    if ours:
-        lines.append(f"{len(ours)} batch-1 run(s) checked against {want[:12]}")
+    if mine:
+        lines.append(f"{len(mine)} batch-1 {side} run(s) checked against {want[:12]}")
+    elsewhere = [d for d, base in ours if side_of_run(base) != side]
+    if elsewhere:
+        lines.append(f"the other side's batch-1 run(s), judged at its own launches: {elsewhere}")
     if other:
         lines.append(f"not batch 1, not judged here: {other}")
     return ok, lines
 
 
-def pin_write_if_absent(pin: str, stage: str, t62: Optional[str]) -> str:
-    """At GO, after every pre-check: write the pin file if it does not exist (needs ``t62``), else confirm it."""
-    path = os.path.join(stage, PIN_FILE)
-    rec = read_pin_file(path)
+def pin_write_if_absent(pin: str, stage: str, side: str, t62: Optional[str]) -> str:
+    """At GO, after every pre-check: write the side's pin file if it does not exist (needs ``t62``), else confirm it."""
+    path = pin_path(stage, side)
+    label, fname = pin_label(side), os.path.basename(path)
+    rec = read_pin_file(path, side)
     if rec is not None:
         if rec["sha"] != pin:
-            raise BatchError(f"the pin {pin[:12]} != X35_PIN_1 {rec['sha'][:12]}")
-        return f"X35_PIN_1 {pin[:12]} already recorded"
+            raise BatchError(f"the pin {pin[:12]} != {label} {rec['sha'][:12]}")
+        return f"{label} {pin[:12]} already recorded"
     if t62 is None:
-        raise BatchError(f"the first GO writes {PIN_FILE} and needs --t62 <{'|'.join(T62_VERDICTS)}>")
-    write_pin_file(path, pin, t62)
-    return f"X35_PIN_1 {pin[:12]} WRITTEN to {PIN_FILE} (T62 {t62})"
+        raise BatchError(f"the first {side} GO writes {fname} and needs --t62 <{'|'.join(T62_BY_SIDE[side])}>")
+    write_pin_file(path, pin, t62, side)
+    return f"{label} {pin[:12]} WRITTEN to {fname} (T62 {t62})"
+
+
+# ------------------------------------------------------------- AM-8: the side's own required commits (FP32_ALT)
+def read_side_required(stage: str, side: str) -> List[Tuple[str, str]]:
+    """``[(sha-or-placeholder, name)]`` of ``x35_required_commits_<side>.txt`` (``<sha> <name> [note]`` lines, ``#``
+    comments). A side that must name commits (:data:`SIDE_REQUIRED_NAMES`) and has no file, or whose file lacks one of
+    the names, is a refusal: deleting the file is never a way past the check."""
+    path = os.path.join(stage, SIDE_REQUIRED_FILE.format(side=_side(side)))
+    need = SIDE_REQUIRED_NAMES[side]
+    if not os.path.exists(path):
+        if need:
+            raise BatchError(f"{path} is missing: the {side} side must name its {list(need)} commit (AM-8)")
+        return []
+    rows: List[Tuple[str, str]] = []
+    for line in Path(path).read_text().splitlines():
+        t = line.strip()
+        if not t or t.startswith("#"):
+            continue
+        parts = t.split(None, 2)
+        rows.append((parts[0], parts[1] if len(parts) > 1 else ""))
+    lacking = [n for n in need if n not in {name for _, name in rows}]
+    if lacking:
+        raise BatchError(f"{path} names no {lacking} line (AM-8: the {side} side's required commit)")
+    return rows
+
+
+def _is_commit_sha(sha: str) -> bool:
+    return re.fullmatch(r"[0-9a-f]{7,40}", sha) is not None
+
+
+def side_gate(stage: str, side: str) -> Tuple[bool, str]:
+    """``(filled, why)``: every commit the side must carry has a real sha written (no placeholder). Reads the file only."""
+    try:
+        rows = read_side_required(stage, side)
+    except BatchError as exc:
+        return False, str(exc)
+    unfilled = [name for sha, name in rows if not _is_commit_sha(sha)]
+    if unfilled:
+        return False, (f"AM-8: the {side} side's {unfilled} commit is not recorded yet (x35_required_commits_{side}.txt "
+                       "holds a placeholder)")
+    return True, f"the {side} side's required commit(s) are recorded ({[name for _, name in rows] or 'none'})"
+
+
+def _git(repo: str, *args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(["git", "-C", repo, *args], capture_output=True, text=True)
+
+
+def required_check(stage: str, side: str, pin: str, repo: str) -> Tuple[bool, List[str]]:
+    """AM-8's pre-check: every commit of the side's own list is a real commit of ``repo`` AND an ancestor of ``pin``
+    (the common list ``x35_required_commits.txt`` stays the launch script's own loop). A placeholder sha, a missing
+    side file for production, or a pin lacking the commit is a HOLD."""
+    rows = read_side_required(stage, side)
+    ok, lines = True, []
+    for sha, name in rows:
+        if not _is_commit_sha(sha):
+            ok = False
+            lines.append(f"{name}: no commit recorded yet ({sha!r}): the {side} GO is refused until "
+                         f"x35_required_commits_{side}.txt names it")
+            continue
+        full = _git(repo, "rev-parse", "--verify", "--quiet", f"{sha}^{{commit}}")
+        if full.returncode != 0:
+            ok = False
+            lines.append(f"{name} {sha}: does not name a commit of {repo}")
+        elif _git(repo, "merge-base", "--is-ancestor", full.stdout.strip(), pin).returncode != 0:
+            ok = False
+            lines.append(f"{name} {sha[:12]}: the pin {pin[:12]} lacks it (not an ancestor)")
+        else:
+            lines.append(f"{name} {sha[:12]} is in the pin {pin[:12]}")
+    return ok, lines or [f"no {side}-only required commits"]
 
 
 # --------------------------------------------------------------------------------------- POOL: one seeded set
@@ -376,7 +510,7 @@ def read_g1(stage: str) -> Optional[str]:
     return str(doc["verdict"])
 
 
-# ---------------------------------------------------------------- AM-7 / AM-3 / AM-4: which fork may launch now
+# ---------------------------------------------------------- AM-9 / AM-3 / AM-4 / AM-8: which fork may launch now
 def read_record(stage: str, arm: str, look: int) -> Optional[Dict[str, Any]]:
     """The saved look-``look`` read of ``arm`` (``reads/<arm>_look<k>.json``), checked to be that arm's and look's."""
     path = os.path.join(stage, READS_DIR, f"{arm}_look{look}.json")
@@ -420,16 +554,21 @@ def stage_of(arm: str, seed: int) -> Optional[str]:
 
 
 def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
-    """ALLOWED / PENDING / REFUSED for ``arm`` × ``seed`` now (module docs), with the reason."""
+    """ALLOWED / PENDING / REFUSED for ``arm`` × ``seed`` now (module docs), with the reason. Production forks are
+    PENDING until the side's FP32_ALT commit is named (AM-8); the toy side has no such condition."""
     from main.x35.kit import ARMS
 
     if arm not in BATCH1_ARMS:
-        return ALLOWED, f"{arm} is not a batch-1 arm (no AM-7 condition)"
+        return ALLOWED, f"{arm} is not a batch-1 arm (no AM-9 condition)"
     side = ARMS[arm].side
+    if side == "production":                 # AM-8: no production fork before its FP32_ALT commit is named
+        filled, why = side_gate(stage, side)
+        if not filled:
+            return PENDING, why
     look2 = seed in LOOK2_SEEDS[side]
     if arm == "c0" and look2:
         g = read_g1(stage)
-        return (ALLOWED, f"G1 is read ({g})") if g else (PENDING, "C0's look-2 seeds run after G1 (AM-7)")
+        return (ALLOWED, f"G1 is read ({g})") if g else (PENDING, "C0's look-2 seeds run after G1 (AM-2 / AM-9)")
     if arm == "toy_c0" and look2:
         why = []
         for b in ("toy_x47", "toy_a1", "toy_a2"):

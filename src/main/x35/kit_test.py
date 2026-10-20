@@ -276,9 +276,9 @@ def _p1(arm: str):
 
 
 def test_batch1_keeps_c2s_x47_interleave_and_the_toy_calibration_last():
-    """C2 (orchestrator, 2026-10-19) inside AM-7's order (the whole list: ``batch_test.test_batch1_is_am7s_order``):
-    X47 beside its toy C0 in counterbalanced pairs, at look 1 (ABA) and look 2 (BA, AB), and the toy calibration
-    (toy A1 / toy A2, AM-3's conditional stage) last."""
+    """C2 (orchestrator, 2026-10-19) inside AM-9's order (the whole list: ``batch_test.test_batch1_is_am9s_order_...``):
+    X47 beside its toy C0 in counterbalanced pairs, at look 1 (ABA) and look 2 (BA, AB), the toy block (T1, T1b) FIRST,
+    production after it, and the toy calibration (toy A1 / toy A2, AM-3's conditional stage) last."""
     pos = {(a, s): i for i, (a, s) in enumerate(K.BATCH1)}
     first = []
     for s in (3601, 3602, 3603, 3604, 3605):
@@ -286,8 +286,9 @@ def test_batch1_keeps_c2s_x47_interleave_and_the_toy_calibration_last():
         first.append("toy_c0" if pos["toy_c0", s] < pos["toy_x47", s] else "toy_x47")
     assert first == ["toy_c0", "toy_x47", "toy_c0", "toy_x47", "toy_c0"]   # box drift lands on neither side
     assert {a for a, _ in K.BATCH1[-6:]} == {"toy_a1", "toy_a2"}
-    assert max(pos[a, s] for a, s in K.BATCH1 if not a.startswith("toy_")) < min(
-        pos[a, s] for a, s in K.BATCH1 if a.startswith("toy_"))           # production first
+    block = [(a, s) for a, s in K.BATCH1 if a in ("toy_c0", "toy_x47")]
+    assert list(K.BATCH1[:len(block)]) == block                                  # AM-9: the toy block opens the batch
+    assert max(pos[f] for f in block) < min(pos[a, s] for a, s in K.BATCH1 if not a.startswith("toy_"))   # production after
 
 
 def test_a_grown_pool_seed_record_passes_the_check(tmp_path):

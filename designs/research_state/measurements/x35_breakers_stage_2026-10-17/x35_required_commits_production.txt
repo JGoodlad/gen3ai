@@ -1,0 +1,10 @@
+# X35's PRODUCTION-ONLY required commits (AM-8, orchestrator 2026-10-20): every production pin must carry each commit
+# listed here, in addition to x35_required_commits.txt (launch_x35.sh pre-check 2c; `kit required-check --side production`).
+# Format: <sha> <name> [note]. The toy side has no such file: it makes no tau-solve call.
+#
+# The FP32_ALT line is REQUIRED (the kit refuses a production GO if the file or the line is missing). Until the build
+# lands the first token is a PLACEHOLDER (not hex) and EVERY production launch HOLDs, as does `kit stage-check` for every
+# production fork. When FP32_ALT is on main, REPLACE the first token with its full 40-hex sha (a descendant of T62
+# `bd3126e0`; the learner golden and the h2h reveal file's OFF_BITS re-recorded in the same commit, BATCH1_LAUNCH_SHEET.md
+# section 3) and commit this file BEFORE the production pin is chosen.
+FP32_ALT_SHA_PENDING FP32_ALT the fp32 complementary-constraint tau build (design_x5_belief_tokens.md, T62 decision row) that replaces the float64 solve; the GPU battery DECIDED it 2026-10-20 (the fp64 solve doubles the production learner update, 41 -> 97 s, a 82-127 % per-cycle cost against the 3 % bar); NOT BUILT yet

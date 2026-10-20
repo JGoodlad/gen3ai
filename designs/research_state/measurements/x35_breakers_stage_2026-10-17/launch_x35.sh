@@ -6,8 +6,8 @@
 #
 #   usage: launch_x35.sh <arm> <seed> --pin <X35_PIN_k> [--lease-owner NAME] [--phase1 FILE] [--thinning]
 #                        [--at-epoch EPOCH] [--max-load L] [--t62 VERDICT] [GO]
-#          --t62: the T62 verdict the FIRST GO records in x35_pin_batch1.txt (ADOPT|FP32_ALT|INCONCLUSIVE|INCOMPLETE|
-#          PENDING; C1 (a), 2026-10-19: production launches at main HEAD with T62 whatever it reads)
+#          --t62: the T62 token the SIDE'S FIRST GO records in x35_pin_batch1_<side>.txt (AM-8, 2026-10-20: production
+#          FP32_ALT, because the battery DECIDED it; the toy NA_TOY, it makes no tau-solve call). One pin file PER SIDE.
 #   arms:  c0 a1 a2 d1 (production, +20M) · a3_mx a6_lx (phase 1: exploiters, +5M) · a3 a6 (phase 2, +20M, read
 #          the phase-1 record) · toy_c0 toy_a1 toy_a2 toy_x47 (+70M; toy_x47 = depth growth, X47; the toy arms run K9(b)
 #          `warn`)                                                    (main.x35.kit holds every argv)
@@ -17,8 +17,11 @@
 # PRE-CHECKS (STAGED_PLAN §3; ALL run before anything is created; the FIRST failure HOLDs, exit 7):
 #   1. no training run is LIVE (X26 and X34 stopped); the GPU lease is FREE or held by --lease-owner; load1 <= max
 #   2. the pin carries every commit in x35_required_commits.txt, which must name T54 (F18)
-#   2b. AM-1: the pin EQUALS X35_PIN_1 (x35_pin_batch1.txt, written ONCE by the first GO) and every batch-1 run's
-#      RECORDED pin (metadata.json git_hash + pin_history); a batch-1 run whose pin cannot be read HOLDs too
+#   2b. AM-1 (one pin PER SIDE, AM-8): the pin EQUALS the side's X35_PIN_1 (x35_pin_batch1_<side>.txt, written ONCE by
+#      the side's first GO) and every batch-1 run OF THAT SIDE's RECORDED pin (metadata.json git_hash + pin_history); a
+#      run of that side whose pin cannot be read HOLDs too; a typed --t62 must be the side's token
+#   2c. AM-8: the side's OWN required commits (x35_required_commits_<side>.txt; production's names FP32_ALT) are real
+#      commits and in the pin; a placeholder sha (FP32_ALT has not landed) HOLDs every production launch
 #   3. models/<run> does not exist (a restart RESUMES through the launcher, never through this script)
 #   4. the frozen R file verifies: its content hash and the sha256 of P*, every archive node and every member
 #      (phase 2: the phase-1 record's exploiter sha256s too)
@@ -26,14 +29,15 @@
 #   6. launcher --dry-run says "would launch", FORK of the start node's run, and the arm's +steps
 #   7. R was frozen BEFORE every existing rb_x35* run directory was created
 #   8. the disk covers the remaining batch-1 forks at the dry-run's REQUIRED GiB each, or --thinning (F22); a
-#      conditional fork its records REFUSED (AM-7) is not counted
-#   9. AM-7 / AM-3 / AM-4: the fork's stage is ALLOWED by the saved records (kit stage-check: G1, look-1 CONTINUE,
-#      production's FINAL class before the toy calibration); PENDING or REFUSED HOLDs
+#      conditional fork its records REFUSED (AM-9) is not counted
+#   9. AM-9 / AM-3 / AM-4 / AM-8: the fork's stage is ALLOWED by the saved records (kit stage-check: G1, look-1
+#      CONTINUE, production's FINAL class before the toy calibration, the FP32_ALT commit named for production);
+#      PENDING or REFUSED HOLDs
 #  10. POOL: the parent's seeded snapshot set (T54's filter, names + sha256) equals the side's record
 #      (x35_pool_batch1_<side>.json, written by the side's first GO)
 #  11. AM-6: every FINISHED batch-1 arm has a K9(b) arm-end record (its own rows after the fork step) that PASSes;
 #      a missing one is read now; VOID or INCONCLUSIVE HOLDs
-# At GO, after the last pre-check: x35_pin_batch1.txt and the side's pool record are written if absent (once).
+# At GO, after the last pre-check: the side's pin file and pool record are written if absent (once).
 # GO with --at-epoch E: E is checked at arming (now <= E <= now + 24 h, an ABSOLUTE epoch, never a clock string),
 # the script sleeps to E, then RE-RUNS every pre-check; a failure then is a HOLD. A launcher that dies within 180 s
 # is a HOLD (a mid-window failure is the orchestrator's decision, never this script's). After the spawn, T54's
@@ -63,6 +67,7 @@ kit() { ( cd "$REPO" && PYTHONPATH="$REPO/src" CUDA_VISIBLE_DEVICES="" "$PY" -m 
 PIN=$(git -C "$REPO" rev-parse --verify "$PIN^{commit}" 2>/dev/null) || hold "the pin does not name a commit"
 case "$ARM" in toy_*) SIDE=toy;; *) SIDE=production;; esac
 R=$STAGE/reference_population_$SIDE.json
+PINF=$STAGE/x35_pin_batch1_$SIDE.txt
 case "$ARM" in a3|a6) PHASE1=${PHASE1:-$STAGE/phase1_$ARM.json};; esac
 P1ARG=(); [ -n "$PHASE1" ] && P1ARG=(--phase1 "$PHASE1")
 MODELS=$(cd "$REPO" && PYTHONPATH="$REPO/src" "$PY" -c 'from utils.paths import main_models_dir as m; print(m() or "")')
@@ -89,11 +94,14 @@ prechecks() {
     case "$sha" in ''|'#'*) continue;; esac
     git -C "$REPO" merge-base --is-ancestor "$sha" "$PIN" 2>/dev/null || hold "pin ${PIN:0:8} lacks $name ($sha)"
   done < "$req"
-  # 2b. AM-1: ONE pin for the batch
-  kit pin-check --pin "$PIN" --stage "$STAGE" --models-dir "$MODELS" > "$out.pin.txt" 2>&1 \
+  # 2b. AM-1 as amended by AM-8: ONE pin PER SIDE
+  kit pin-check --pin "$PIN" --side "$SIDE" --stage "$STAGE" --models-dir "$MODELS" ${T62:+--t62 "$T62"} > "$out.pin.txt" 2>&1 \
     || hold "AM-1 pin-check: $(tr '\n' ' ' < "$out.pin.txt")"
-  [ -e "$STAGE/x35_pin_batch1.txt" ] || [ -n "$T62" ] \
-    || hold "no x35_pin_batch1.txt yet: the first launch names the T62 verdict that chose the pin (--t62 VERDICT)"
+  [ -e "$PINF" ] || [ -n "$T62" ] \
+    || hold "no $(basename "$PINF") yet: the first $SIDE launch names its T62 token (--t62 FP32_ALT for production, --t62 NA_TOY for the toy)"
+  # 2c. AM-8: the side's own required commits (production: the FP32_ALT build)
+  kit required-check --side "$SIDE" --pin "$PIN" --stage "$STAGE" --repo "$REPO" > "$out.sidereq.txt" 2>&1 \
+    || hold "AM-8 required-check: $(tr '\n' ' ' < "$out.sidereq.txt")"
   # 3. the run dir
   [ -e "$MODELS/$RUN" ] && hold "$MODELS/$RUN exists (a restart RESUMES through the launcher, not this script)"
   # 4. R and (phase 2) the phase-1 record
@@ -123,7 +131,7 @@ prechecks() {
   [ -n "$gib" ] || hold "the dry-run printed no REQUIRED GiB"
   kit disk --required-gib "$gib" --models-dir "$MODELS" --stage "$STAGE" $THIN > "$out.disk.txt" 2>&1 \
     || hold "disk: $(cat "$out.disk.txt")"
-  # 9. AM-7 / AM-3 / AM-4: the fork's stage is open
+  # 9. AM-9 / AM-3 / AM-4 / AM-8: the fork's stage is open
   kit stage-check --arm "$ARM" --seed "$SEED" --stage "$STAGE" > "$out.stage.txt" 2>&1 \
     || hold "stage-check: $(cat "$out.stage.txt")"
   # 10. POOL: the seeded set is the side's recorded set
@@ -160,8 +168,8 @@ if [ -n "$AT" ]; then
   while [ "$(date +%s)" -lt "$AT" ]; do sleep $(( AT - $(date +%s) > 300 ? 300 : AT - $(date +%s) )); done
 fi
 prechecks go
-# the once-only batch records (AM-1, POOL), written only now: every pre-check of this GO has passed
-kit pin-check --pin "$PIN" --stage "$STAGE" --models-dir "$MODELS" --write ${T62:+--t62 "$T62"} \
+# the once-only batch records (AM-1 per side, POOL), written only now: every pre-check of this GO has passed
+kit pin-check --pin "$PIN" --side "$SIDE" --stage "$STAGE" --models-dir "$MODELS" --write ${T62:+--t62 "$T62"} \
   > "$J/$RUN.pin_write.txt" 2>&1 || hold "AM-1 pin write: $(tr '\n' ' ' < "$J/$RUN.pin_write.txt")"
 kit pool-check --arm "$ARM" --call "$R" --stage "$STAGE" --write > "$J/$RUN.pool_write.txt" 2>&1 \
   || hold "POOL record: $(cat "$J/$RUN.pool_write.txt")"

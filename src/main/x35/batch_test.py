@@ -1,5 +1,6 @@
-"""X35 batch 1's gates (``main.x35.batch``, the orchestrator's rulings of 2026-10-19 on the adversarial review): AM-1's
-one pin, the POOL record, AM-2's variance gate G1, AM-7 / AM-3 / AM-4's conditional stages and AM-6's K9(b) arm-end
+"""X35 batch 1's gates (``main.x35.batch``, the orchestrator's rulings of 2026-10-19 on the adversarial review and of
+2026-10-20 after the GPU battery): AM-1's one pin PER SIDE (AM-8), the side's own required commit (production's
+FP32_ALT), the POOL record, AM-2's variance gate G1, AM-9 / AM-3 / AM-4's conditional stages and AM-6's K9(b) arm-end
 read. Synthetic files only; every case fails on revert of the rule it names, and every constructed number sits well
 clear of its boundary except the deliberate rule-8 cases (standing rule 8)."""
 from __future__ import annotations
@@ -7,12 +8,14 @@ from __future__ import annotations
 import json
 import math
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
 
 from main.x35 import batch as B
 from main.x35 import kit as K
+from utils.paths import repo_path
 
 PIN = "a" * 40
 OTHER = "b" * 40
@@ -29,35 +32,110 @@ def _run(models: Path, name: str, *hashes: str, final: bool = False) -> Path:
     return d
 
 
-# ------------------------------------------------------------------------------------------------------ AM-1
-def test_the_first_go_writes_the_pin_once_and_every_later_launch_must_equal_it(tmp_path):
+# ------------------------------------------------------------------------------------------------------ AM-1 / AM-8
+PROD, TOY = "production", "toy"
+FP32 = "FP32_ALT"
+
+
+def _pin_file(stage: Path, side: str) -> str:
+    return B.pin_path(str(stage), side)
+
+
+def test_the_first_go_of_a_side_writes_its_pin_once_and_every_later_launch_of_it_must_equal_it(tmp_path):
     stage, models = tmp_path / "stage", tmp_path / "models"
     stage.mkdir()
     models.mkdir()
-    ok, lines = B.pin_check(PIN, str(stage), str(models))
-    assert ok and "the first GO writes" in lines[0]
-    with pytest.raises(B.BatchError, match="needs --t62"):
-        B.pin_write_if_absent(PIN, str(stage), None)
-    assert "WRITTEN" in B.pin_write_if_absent(PIN, str(stage), "PENDING")
-    rec = B.read_pin_file(str(stage / B.PIN_FILE))
-    assert rec is not None and rec["sha"] == PIN and rec["t62_verdict"] == "PENDING"
-    assert B.pin_check(PIN, str(stage), str(models))[0]
-    ok, lines = B.pin_check(OTHER, str(stage), str(models))          # a launch at a LATER pin
-    assert not ok and "!= X35_PIN_1" in lines[0]
+    ok, lines = B.pin_check(PIN, str(stage), str(models), TOY)
+    assert ok and "the first toy GO writes" in lines[0]
+    with pytest.raises(B.BatchError, match="needs --t62 <NA_TOY>"):
+        B.pin_write_if_absent(PIN, str(stage), TOY, None)
+    assert "WRITTEN" in B.pin_write_if_absent(PIN, str(stage), TOY, "NA_TOY")
+    rec = B.read_pin_file(_pin_file(stage, TOY), TOY)
+    assert rec is not None and rec["sha"] == PIN and rec["t62_verdict"] == "NA_TOY" and rec["side"] == TOY
+    assert Path(_pin_file(stage, TOY)).name == "x35_pin_batch1_toy.txt"
+    assert B.pin_check(PIN, str(stage), str(models), TOY)[0]
+    ok, lines = B.pin_check(OTHER, str(stage), str(models), TOY)          # a launch at a LATER pin
+    assert not ok and "!= X35_PIN_1_toy" in lines[0]
     with pytest.raises(B.BatchError, match="written ONCE"):
-        B.write_pin_file(str(stage / B.PIN_FILE), PIN, "ADOPT")
-    with pytest.raises(B.BatchError, match="!= X35_PIN_1"):
-        B.pin_write_if_absent(OTHER, str(stage), "ADOPT")
+        B.write_pin_file(_pin_file(stage, TOY), PIN, "NA_TOY", TOY)
+    with pytest.raises(B.BatchError, match="!= X35_PIN_1_toy"):
+        B.pin_write_if_absent(OTHER, str(stage), TOY, "NA_TOY")
 
 
-def test_every_batch1_runs_recorded_pin_must_equal_the_batch_pin(tmp_path):
+def test_am8_each_side_has_its_own_pin_and_the_production_pin_may_differ_from_the_toys(tmp_path):
+    """The orchestrator's ruling (2026-10-20): ONE PIN PER SIDE. The toy pin being written must not bind production (it
+    would, under the old single x35_pin_batch1.txt), and the production pin being a different sha is the point."""
+    stage, models = tmp_path / "stage", tmp_path / "models"
+    stage.mkdir()
+    models.mkdir()
+    B.pin_write_if_absent(PIN, str(stage), TOY, "NA_TOY")
+    ok, lines = B.pin_check(OTHER, str(stage), str(models), PROD)         # production: no record of its own yet
+    assert ok and "the first production GO writes" in lines[0], lines
+    assert "WRITTEN" in B.pin_write_if_absent(OTHER, str(stage), PROD, FP32)
+    assert Path(_pin_file(stage, PROD)).name == "x35_pin_batch1_production.txt"
+    assert B.pin_check(OTHER, str(stage), str(models), PROD)[0] and B.pin_check(PIN, str(stage), str(models), TOY)[0]
+    ok, lines = B.pin_check(PIN, str(stage), str(models), PROD)           # the toy's pin is not production's
+    assert not ok and "!= X35_PIN_1_production" in lines[0]
+    ok, lines = B.pin_check(OTHER, str(stage), str(models), TOY)
+    assert not ok and "!= X35_PIN_1_toy" in lines[0]
+
+
+def test_am8_the_t62_token_is_the_sides_own(tmp_path):
+    """Production: FP32_ALT (the battery DECIDED it; ADOPT / PENDING / INCONCLUSIVE no longer open a production GO).
+    The toy: NA_TOY (no tau solve). A token of the other side, or an old one, is a refusal at write AND at the check."""
+    stage = tmp_path / "stage"
+    stage.mkdir()
+    for side, bad in ((PROD, "NA_TOY"), (PROD, "ADOPT"), (PROD, "PENDING"), (TOY, FP32), (TOY, "ADOPT")):
+        with pytest.raises(B.BatchError, match="is not a"):
+            B.pin_write_if_absent(PIN, str(stage), side, bad)
+        ok, lines = B.pin_check(PIN, str(stage), str(tmp_path / "m"), side, t62=bad)
+        assert not ok and "is not a" in lines[0], (side, bad, lines)
+    assert B.pin_check(PIN, str(stage), str(tmp_path / "m"), PROD, t62=FP32)[0]
+    assert B.pin_check(PIN, str(stage), str(tmp_path / "m"), TOY, t62="NA_TOY")[0]
+    assert not list(stage.iterdir())                                      # nothing was written by a refusal
+    assert set(B.T62_VERDICTS) == {FP32, "NA_TOY"}
+
+
+def test_a_pin_file_that_names_the_other_side_or_a_wrong_token_is_a_refusal(tmp_path):
+    f = tmp_path / "x35_pin_batch1_production.txt"
+    f.write_text(f"sha: {PIN}\nside: toy\nt62_verdict: NA_TOY\n")
+    with pytest.raises(B.BatchError, match="says side 'toy'"):
+        B.read_pin_file(str(f), PROD)
+    f.write_text(f"sha: {PIN}\nside: production\nt62_verdict: ADOPT\n")
+    with pytest.raises(B.BatchError, match="not a production token"):
+        B.read_pin_file(str(f), PROD)
+    with pytest.raises(B.BatchError, match="not one of"):
+        B.pin_path(str(tmp_path), "both")
+
+
+def test_every_batch1_runs_recorded_pin_must_equal_its_sides_pin(tmp_path):
     stage, models = tmp_path / "stage", tmp_path / "models"
     stage.mkdir()
     _run(models, "rb_x35_a1arch_s3501", PIN)
-    assert B.pin_check(PIN, str(stage), str(models))[0]
+    assert B.pin_check(PIN, str(stage), str(models), PROD)[0]
     _run(models, "rb_x35_c0_s3501", PIN, OTHER)                          # a restart that moved its pin
-    ok, lines = B.pin_check(PIN, str(stage), str(models))
+    ok, lines = B.pin_check(PIN, str(stage), str(models), PROD)
     assert not ok and any("rb_x35_c0_s3501" in x and "bbbbbbbbbbbb" in x for x in lines), lines
+
+
+def test_the_other_sides_runs_are_listed_but_not_judged_by_this_sides_pin(tmp_path):
+    """Toy runs at the toy pin, production launching at another pin: production's check must pass (under the single
+    batch pin it would HOLD on every toy run), and each side still HOLDs on its OWN run recorded at the wrong pin."""
+    stage, models = tmp_path / "stage", tmp_path / "models"
+    stage.mkdir()
+    _run(models, "rb_x35t_c0_s3601", PIN)                                 # a toy run, at the toy pin
+    _run(models, "rb_x35t_x47d4_s3601", PIN)
+    ok, lines = B.pin_check(OTHER, str(stage), str(models), PROD)
+    assert ok and any("judged at its own launches" in x and "rb_x35t_c0_s3601" in x for x in lines), lines
+    ok, lines = B.pin_check(OTHER, str(stage), str(models), TOY)          # before any toy record: runs vs this launch's pin
+    assert not ok and any("rb_x35t_c0_s3601" in x and "aaaaaaaaaaaa" in x for x in lines), lines
+    B.pin_write_if_absent(PIN, str(stage), TOY, "NA_TOY")
+    ok, lines = B.pin_check(PIN, str(stage), str(models), TOY)
+    assert ok and any("2 batch-1 toy run(s) checked" in x for x in lines), lines
+    _run(models, "rb_x35t_c0_s3602", OTHER)                               # a toy run on the wrong pin
+    ok, lines = B.pin_check(PIN, str(stage), str(models), TOY)
+    assert not ok and any("rb_x35t_c0_s3602" in x for x in lines), lines
+    assert B.pin_check(OTHER, str(stage), str(models), PROD)[0]           # production does not care
 
 
 def test_a_batch1_run_without_a_recorded_pin_holds_and_other_batches_are_not_judged(tmp_path):
@@ -65,18 +143,112 @@ def test_a_batch1_run_without_a_recorded_pin_holds_and_other_batches_are_not_jud
     stage.mkdir()
     _run(models, "rb_x35_c0_s3502")                                       # no metadata.json
     _run(models, "rb_x35_a3mx_s3501", OTHER)                              # a later batch's run (its own pin)
-    ok, lines = B.pin_check(PIN, str(stage), str(models))
+    ok, lines = B.pin_check(PIN, str(stage), str(models), PROD)
     assert not ok and any("no recorded pin" in x for x in lines)
     assert any("not batch 1" in x and "rb_x35_a3mx_s3501" in x for x in lines)
     (models / "rb_x35_c0_s3502").rename(models / "rb_x35_c0_s3502.POOLSEED_FAIL")   # moved aside: still batch 1
-    ok, lines = B.pin_check(PIN, str(stage), str(models))
+    ok, lines = B.pin_check(PIN, str(stage), str(models), PROD)
     assert not ok and any("POOLSEED_FAIL" in x for x in lines)
 
 
 def test_a_corrupt_pin_file_is_a_refusal_not_no_pin(tmp_path):
-    (tmp_path / B.PIN_FILE).write_text("sha: abc\n")
+    (tmp_path / "x35_pin_batch1_toy.txt").write_text("sha: abc\n")
     with pytest.raises(B.BatchError, match="40-hex"):
-        B.pin_check(PIN, str(tmp_path), str(tmp_path / "models"))
+        B.pin_check(PIN, str(tmp_path), str(tmp_path / "models"), TOY)
+
+
+# ------------------------------------------------------------------ AM-8: production's FP32_ALT commit, a placeholder
+def _side_file(stage: Path, line: str) -> Path:
+    f = stage / B.SIDE_REQUIRED_FILE.format(side=PROD)
+    f.write_text("# header\n\n" + line + "\n")
+    return f
+
+
+def _fill_fp32(stage: Path, sha: str = "c" * 40) -> None:
+    """The production side file with FP32_ALT NAMED (hex), as the follow-up commit will write it."""
+    _side_file(stage, f"{sha} {FP32} the fp32 build")
+
+
+def _git_repo(tmp_path: Path):
+    """A throwaway repo: base <- fp32 <- head, and ``side`` branching off base (no fp32). ``(repo, {name: sha})``."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    def git(*a: str) -> str:
+        r = subprocess.run(["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t", *a],
+                           capture_output=True, text=True, check=True)
+        return r.stdout.strip()
+
+    git("init", "-q", "-b", "main")
+    shas = {}
+    for name in ("base", "fp32", "head"):
+        (repo / name).write_text(name)
+        git("add", name)
+        git("commit", "-q", "-m", name)
+        shas[name] = git("rev-parse", "HEAD")
+    git("checkout", "-q", "-b", "side", shas["base"])
+    (repo / "side").write_text("side")
+    git("add", "side")
+    git("commit", "-q", "-m", "side")
+    shas["side"] = git("rev-parse", "HEAD")
+    return repo, shas
+
+
+def test_am8_production_is_refused_while_the_fp32_alt_sha_is_a_placeholder(tmp_path):
+    repo, shas = _git_repo(tmp_path)
+    stage = tmp_path / "stage"
+    stage.mkdir()
+    shipped = repo_path("designs/research_state/measurements/x35_breakers_stage_2026-10-17/"
+                        + B.SIDE_REQUIRED_FILE.format(side=PROD))
+    assert shipped.is_file()                                             # the staged file ships with a placeholder
+    (stage / shipped.name).write_text(shipped.read_text())
+    rows = B.read_side_required(str(stage), PROD)
+    assert [n for _, n in rows] == [FP32] and not B._is_commit_sha(rows[0][0])
+    ok, lines = B.required_check(str(stage), PROD, shas["head"], str(repo))
+    assert not ok and "no commit recorded yet" in lines[0], lines
+    filled, why = B.side_gate(str(stage), PROD)
+    assert not filled and "not recorded yet" in why
+    assert B.stage_status(str(stage), "a1", 3501)[0] == B.PENDING        # every production fork waits
+    assert B.stage_status(str(stage), "d1", 3501)[0] == B.PENDING
+    assert B.stage_status(str(stage), "toy_c0", 3601)[0] == B.ALLOWED    # the toy side has no such condition
+    assert K.main(["required-check", "--side", PROD, "--pin", shas["head"], "--stage", str(stage),
+                   "--repo", str(repo)]) == 1
+
+
+def test_am8_production_needs_the_fp32_alt_commit_in_its_pin(tmp_path):
+    repo, shas = _git_repo(tmp_path)
+    stage = tmp_path / "stage"
+    stage.mkdir()
+    _fill_fp32(stage, shas["fp32"])
+    ok, lines = B.required_check(str(stage), PROD, shas["head"], str(repo))
+    assert ok and "is in the pin" in lines[0], lines
+    assert B.required_check(str(stage), PROD, shas["fp32"], str(repo))[0]  # a pin AT the commit carries it
+    ok, lines = B.required_check(str(stage), PROD, shas["side"], str(repo))  # a pin that branched before the build
+    assert not ok and "lacks it" in lines[0], lines
+    _fill_fp32(stage, "d" * 40)                                           # a sha that is no commit of the repo
+    ok, lines = B.required_check(str(stage), PROD, shas["head"], str(repo))
+    assert not ok and "does not name a commit" in lines[0], lines
+    _fill_fp32(stage, shas["fp32"][:12])                                  # a short sha resolves too
+    assert B.required_check(str(stage), PROD, shas["head"], str(repo))[0]
+    assert B.side_gate(str(stage), PROD)[0] and B.stage_status(str(stage), "a1", 3501)[0] == B.ALLOWED
+    _fill_fp32(stage, shas["fp32"])
+    assert K.main(["required-check", "--side", PROD, "--pin", shas["head"], "--stage", str(stage),
+                   "--repo", str(repo)]) == 0
+
+
+def test_am8_deleting_the_production_file_or_its_line_is_never_a_way_past_the_check(tmp_path):
+    repo, shas = _git_repo(tmp_path)
+    stage = tmp_path / "stage"
+    stage.mkdir()
+    with pytest.raises(B.BatchError, match="is missing"):
+        B.required_check(str(stage), PROD, shas["head"], str(repo))
+    assert not B.side_gate(str(stage), PROD)[0] and B.stage_status(str(stage), "c0", 3501)[0] == B.PENDING
+    _side_file(stage, f"{shas['fp32']} OTHER_COMMIT some other commit")
+    with pytest.raises(B.BatchError, match="names no"):
+        B.required_check(str(stage), PROD, shas["head"], str(repo))
+    assert K.main(["required-check", "--side", PROD, "--pin", shas["head"], "--stage", str(stage),
+                   "--repo", str(repo)]) == 2                              # a typed refusal, not a pass
+    assert B.required_check(str(stage), TOY, shas["head"], str(repo)) == (True, ["no toy-only required commits"])
 
 
 # ------------------------------------------------------------------------------------------------------ POOL
@@ -180,17 +352,21 @@ def test_the_kit_gate_subcommand_exits_on_the_verdict(tmp_path):
     assert B.read_g1(str(tmp_path)) == B.HOLD
 
 
-# --------------------------------------------------------------------------------------- AM-7 / AM-3 / AM-4
-def test_batch1_is_am7s_order():
-    assert [n for n, _ in B.STAGES] == ["P1", "P2", "P3", "P4", "T1", "T1b", "T2"]
+# -------------------------------------------------------------------------- AM-9 / AM-3 / AM-4 (the order and its conditions)
+def test_batch1_is_am9s_order_the_toy_block_first():
+    """AM-9 (orchestrator, 2026-10-20): T1 (toy C0 + X47 s3601-s3603, AM-7's interleave), T1b on X47's look-1 CONTINUE,
+    then production P1-P4 once FP32_ALT has landed, and the toy calibration T2 last (conditional on production)."""
+    assert [n for n, _ in B.STAGES] == ["T1", "T1b", "P1", "P2", "P3", "P4", "T2"]
     assert list(K.BATCH1) == [
+        ("toy_c0", 3601), ("toy_x47", 3601), ("toy_x47", 3602), ("toy_c0", 3602), ("toy_c0", 3603), ("toy_x47", 3603),
+        ("toy_x47", 3604), ("toy_c0", 3604), ("toy_c0", 3605), ("toy_x47", 3605),
         ("a1", 3501), ("c0", 3501), ("c0", 3502), ("a1", 3502), ("a1", 3503), ("c0", 3503),
         ("c0", 3504), ("c0", 3505), ("a1", 3504), ("a1", 3505),
         ("d1", 3501), ("d1", 3502), ("d1", 3503), ("a2", 3501), ("a2", 3502), ("a2", 3503),
-        ("toy_c0", 3601), ("toy_x47", 3601), ("toy_x47", 3602), ("toy_c0", 3602), ("toy_c0", 3603), ("toy_x47", 3603),
-        ("toy_x47", 3604), ("toy_c0", 3604), ("toy_c0", 3605), ("toy_x47", 3605),
         ("toy_a1", 3601), ("toy_a1", 3602), ("toy_a1", 3603), ("toy_a2", 3601), ("toy_a2", 3602), ("toy_a2", 3603)]
     assert len({K.run_name(a, s) for a, s in K.BATCH1}) == 32
+    first_prod = min(i for i, (a, _) in enumerate(K.BATCH1) if not a.startswith("toy_"))
+    assert all(a.startswith("toy_") for a, _ in K.BATCH1[:first_prod]) and first_prod == 10   # T1 + T1b, then production
 
 
 def _save(stage: Path, arm: str, look: int, **doc) -> None:
@@ -202,8 +378,9 @@ def _g1_record(stage: Path, verdict: str) -> None:
     (stage / B.G1_FILE).write_text(json.dumps({"schema": B.G1_SCHEMA, "verdict": verdict}))
 
 
-def test_p1_and_t1_are_unconditional_and_g1_gates_d1_a2_and_c0s_look_2(tmp_path):
+def test_t1_and_p1_are_unconditional_and_g1_gates_d1_a2_and_c0s_look_2(tmp_path):
     st = str(tmp_path)
+    _fill_fp32(tmp_path)                                                   # FP32_ALT named: production may be asked
     for a, s in [("a1", 3501), ("c0", 3503), ("toy_c0", 3601), ("toy_x47", 3603)]:
         assert B.stage_status(st, a, s)[0] == B.ALLOWED, (a, s)
     for a, s in [("d1", 3501), ("a2", 3502), ("c0", 3504)]:
@@ -220,6 +397,7 @@ def test_p1_and_t1_are_unconditional_and_g1_gates_d1_a2_and_c0s_look_2(tmp_path)
 
 def test_a_look_2_bon_fork_needs_its_look_1_continue(tmp_path):
     st = str(tmp_path)
+    _fill_fp32(tmp_path)
     assert B.stage_status(st, "a1", 3504)[0] == B.PENDING
     _save(tmp_path, "a1", 1, verdict="NULL", r1={"final": True, "class": "NULL"})
     assert B.stage_status(st, "a1", 3504)[0] == B.REFUSED
@@ -242,6 +420,7 @@ def test_am4_x47_look_2_and_its_toy_c0_seeds_need_x47_look_1_continue(tmp_path):
 
 def test_am3_the_toy_calibration_needs_productions_final_class(tmp_path):
     st = str(tmp_path)
+    _fill_fp32(tmp_path)
     _g1_record(tmp_path, B.PASS)
     assert B.stage_status(st, "toy_a1", 3601)[0] == B.PENDING             # production A1 not read yet
     _save(tmp_path, "a1", 1, verdict="CONTINUE", r1={"final": False, "class": "UNDECIDED"})
@@ -256,6 +435,7 @@ def test_am3_the_toy_calibration_needs_productions_final_class(tmp_path):
 
 
 def test_a_read_record_for_another_arm_or_look_is_refused(tmp_path):
+    _fill_fp32(tmp_path)
     (tmp_path / B.READS_DIR).mkdir()
     (tmp_path / B.READS_DIR / "a1_look1.json").write_text(json.dumps({"arm": "A2", "look": 1, "verdict": "CONTINUE"}))
     with pytest.raises(B.BatchError, match="not A1 look 1"):
@@ -263,6 +443,7 @@ def test_a_read_record_for_another_arm_or_look_is_refused(tmp_path):
 
 
 def test_the_disk_check_skips_the_forks_the_records_refused(tmp_path):
+    _fill_fp32(tmp_path)
     ok, msg = K.disk_check("/nonexistent", 10.0, thinning=False, existing=[], free_gib=1000.0, stage=str(tmp_path))
     assert ok and "32 batch-1 fork(s)" in msg                              # PENDING forks are counted
     _g1_record(tmp_path, B.HOLD)                                          # D1, A2, toy A1 / A2 (6 + 6) refused
@@ -354,12 +535,22 @@ def test_launch_x35_runs_every_amendment_pre_check():
     from utils.paths import repo_path
 
     sh = repo_path("designs/research_state/measurements/x35_breakers_stage_2026-10-17/launch_x35.sh").read_text()
-    for needle in ("kit pin-check --pin \"$PIN\" --stage \"$STAGE\" --models-dir \"$MODELS\" >",
-                   "kit stage-check --arm", "kit pool-check --arm \"$ARM\" --call \"$R\" --stage \"$STAGE\" >",
-                   "kit k9b-batch", "--write ${T62:+--t62", "pool-check --arm \"$ARM\" --call \"$R\" --stage "
-                   "\"$STAGE\" --write", "pool-seed-check --arm \"$ARM\" --run-dir \"$MODELS/$RUN\" --call \"$R\" "
-                   "--stage \"$STAGE\"", "kit disk --required-gib \"$gib\" --models-dir \"$MODELS\" --stage \"$STAGE\""):
+    for needle in (
+            # AM-1 as amended by AM-8: the pin is judged and written PER SIDE, and a typed --t62 is checked in the dry run
+            "kit pin-check --pin \"$PIN\" --side \"$SIDE\" --stage \"$STAGE\" --models-dir \"$MODELS\" "
+            "${T62:+--t62 \"$T62\"} >",
+            "PINF=$STAGE/x35_pin_batch1_$SIDE.txt", "[ -e \"$PINF\" ] || [ -n \"$T62\" ]",
+            # AM-8: the side's own required commits (production: FP32_ALT)
+            "kit required-check --side \"$SIDE\" --pin \"$PIN\" --stage \"$STAGE\" --repo \"$REPO\" >",
+            "kit stage-check --arm", "kit pool-check --arm \"$ARM\" --call \"$R\" --stage \"$STAGE\" >",
+            "kit k9b-batch", "--side \"$SIDE\" --stage \"$STAGE\" --models-dir \"$MODELS\" --write ${T62:+--t62",
+            "pool-check --arm \"$ARM\" --call \"$R\" --stage \"$STAGE\" --write",
+            "pool-seed-check --arm \"$ARM\" --run-dir \"$MODELS/$RUN\" --call \"$R\" --stage \"$STAGE\"",
+            "kit disk --required-gib \"$gib\" --models-dir \"$MODELS\" --stage \"$STAGE\""):
         assert needle in sh, needle
+    assert "x35_pin_batch1.txt" not in sh.replace("x35_pin_batch1_", "")        # the single batch pin file is gone
     # the once-only writes happen AFTER the GO's pre-checks, never in a dry run
     assert sh.index("prechecks go\n") < sh.index("--write ${T62:+--t62")
     assert re.search(r"if \[ \"\$GO\" -ne 1 \]; then\n  prechecks dry\n", sh)
+    # the required-commit check runs inside prechecks(), before the run-dir and R checks
+    assert sh.index("kit required-check") < sh.index("# 3. the run dir") < sh.index("prechecks dry")

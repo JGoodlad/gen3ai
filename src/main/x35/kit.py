@@ -28,12 +28,14 @@ canonical flag order (the order carries no meaning to the trainer's parser):
     python -m main.x35.kit validate-run --arm toy_x47 --seed 3601 --call <R_toy.json> --dryrun F --checkargs F \\
         --rc-dryrun 0 --rc-checkargs 0     # ``validate_batch1.sh``'s verdict on one argv's transcripts (exit 1 = FAIL)
 
-THE 2026-10-19 AMENDMENTS (``main.x35.batch``; ``launch_x35.sh`` pre-checks 2b / 9 / 10 / 11):
+THE 2026-10-19 AMENDMENTS, and AM-8 / AM-9 of 2026-10-20 (``main.x35.batch``; ``launch_x35.sh`` pre-checks 2b / 2c / 9 /
+10 / 11):
 
-    python -m main.x35.kit pin-check --pin <sha> --stage <stage> [--write --t62 PENDING]   # AM-1: ONE pin
+    python -m main.x35.kit pin-check --side toy --pin <sha> --stage <stage> [--write --t62 NA_TOY]   # AM-1: ONE pin PER SIDE
+    python -m main.x35.kit required-check --side production --pin <sha> --stage <stage>   # AM-8: the side's FP32_ALT commit
     python -m main.x35.kit pool-check --arm c0 --call <R> --stage <stage> [--write]       # POOL: one seeded set
     python -m main.x35.kit gate <six_finals_S.json> --stage <stage> --write              # AM-2: G1, exit 1 = HOLD
-    python -m main.x35.kit stage-check --arm d1 --seed 3501 --stage <stage>               # AM-7 / AM-3 / AM-4
+    python -m main.x35.kit stage-check --arm d1 --seed 3501 --stage <stage>               # AM-9 / AM-3 / AM-4 / AM-8
     python -m main.x35.kit k9b --run-dir models/<run> --stage <stage>                     # AM-6, at each arm's end
     python -m main.x35.kit k9b-batch --stage <stage>                                      # AM-6 pre-check
 """
@@ -112,11 +114,12 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("toy_a2", "toy", L_TOY, TOY_SEEDS, "rb_x35t_a2pfsp_s{seed}", 0, "warn"),
     Arm("toy_x47", "toy", L_TOY, X47_SEEDS, "rb_x35t_x47d4_s{seed}", 0, "warn"),
 )}
-#: Batch 1 + X47, in GPU order: AM-7 (orchestrator, 2026-10-19, on the review's §3), stage by stage in
-#: ``main.x35.batch.STAGES``: P1 the A1 / C0 ABBA (s3501-s3503) -> [G1, AM-2] -> P2 C0 s3504-s3505 -> P3 A1
-#: s3504-s3505 (A1 look 1 CONTINUE) -> P4 D1, A2 (G1 PASS) -> T1 toy C0 + X47 (C2's interleave, toy A1 out) -> T1b X47
-#: look 2 with toy C0 s3604-s3605 (AM-4: X47 look 1 CONTINUE) -> T2 toy A1 / toy A2 (AM-3: production's FINAL class).
-#: The conditional stages launch only when ``batch.stage_status`` says ALLOWED (``launch_x35.sh`` pre-check 9).
+#: Batch 1 + X47, in GPU order: AM-9 (orchestrator, 2026-10-20; it moved the toy block ahead of production, which waits
+#: for the FP32_ALT build), stage by stage in ``main.x35.batch.STAGES``: T1 toy C0 + X47 (C2's interleave, toy A1 out) ->
+#: T1b X47 look 2 with toy C0 s3604-s3605 (AM-4: X47 look 1 CONTINUE) -> P1 the A1 / C0 ABBA (s3501-s3503) -> [G1,
+#: AM-2] -> P2 C0 s3504-s3505 -> P3 A1 s3504-s3505 (A1 look 1 CONTINUE) -> P4 D1, A2 (G1 PASS) -> T2 toy A1 / toy A2
+#: (AM-3: production's FINAL class). The conditional stages launch only when ``batch.stage_status`` says ALLOWED
+#: (``launch_x35.sh`` pre-check 9), and no production fork before its FP32_ALT commit is named (AM-8).
 BATCH1: Tuple[Tuple[str, int], ...] = tuple(f for _, forks in BATCH_STAGES for f in forks)
 
 
@@ -427,12 +430,22 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     q.add_argument("--call", required=True)
     q.add_argument("--log", action="append", default=[], help="a log holding the startup line (repeatable)")
     q.add_argument("--stage", default=None, help="compare the seeded names with the side's recorded set (POOL)")
-    pc = sub.add_parser("pin-check", help="AM-1: the pin == X35_PIN_1 and every batch-1 run's recorded pin; exit 0 / 1")
+    pc = sub.add_parser("pin-check", help="AM-1 (one pin PER SIDE): the pin == the side's X35_PIN_1 and every batch-1 "
+                                          "run of that side's recorded pin; exit 0 / 1")
     pc.add_argument("--pin", required=True, help="the full sha")
+    pc.add_argument("--side", required=True, choices=_B.SIDES)
     pc.add_argument("--stage", required=True)
     pc.add_argument("--models-dir", default=None)
-    pc.add_argument("--write", action="store_true", help="GO only: write x35_pin_batch1.txt if it does not exist")
-    pc.add_argument("--t62", default=None, choices=_B.T62_VERDICTS, help="the T62 verdict the first GO records")
+    pc.add_argument("--write", action="store_true",
+                    help="GO only: write x35_pin_batch1_<side>.txt if it does not exist")
+    pc.add_argument("--t62", default=None, choices=_B.T62_VERDICTS,
+                    help="the side's T62 token (production FP32_ALT, toy NA_TOY): the first GO of a side records it")
+    rc = sub.add_parser("required-check", help="AM-8: the side's own required commits (production: FP32_ALT) are real "
+                                               "and in the pin; a placeholder refuses; exit 0 / 1")
+    rc.add_argument("--side", required=True, choices=_B.SIDES)
+    rc.add_argument("--pin", required=True, help="the full sha")
+    rc.add_argument("--stage", required=True)
+    rc.add_argument("--repo", default=None, help="the git checkout the commits are looked up in (default: this one)")
     po = sub.add_parser("pool-check", help="POOL: the seeded set == the side's record; exit 0 / 1")
     po.add_argument("--arm", required=True, choices=sorted(ARMS))
     po.add_argument("--call", required=True)
@@ -517,11 +530,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             if a.cmd == "k9b-batch":
                 ok, lines = _B.k9b_batch(a.stage, md)
             else:
-                ok, lines = _B.pin_check(a.pin, a.stage, md)
+                ok, lines = _B.pin_check(a.pin, a.stage, md, a.side, a.t62)
                 if ok and a.write:
-                    lines.append(_B.pin_write_if_absent(a.pin, a.stage, a.t62))
+                    lines.append(_B.pin_write_if_absent(a.pin, a.stage, a.side, a.t62))
             for x in lines:
                 print(f"[x35 kit] {a.cmd}: {x}")
+            return 0 if ok else 1
+        if a.cmd == "required-check":
+            from utils.paths import repo_root
+
+            ok, lines = _B.required_check(a.stage, a.side, a.pin, a.repo or str(repo_root()))
+            for x in lines:
+                print(f"[x35 kit] required-check {a.side}: {x}")
             return 0 if ok else 1
         if a.cmd == "pool-check":
             call = _load(a.call)
