@@ -1,0 +1,36 @@
+{
+ "bootstrap": {
+  "B": 2000,
+  "seed": 20261011
+ },
+ "cache_sha256_at_registration": "9f63442d084c46a77552ad040e1cb781533b8f25b9b59590ba4d5fd5196e80c4",
+ "digest": "a6386e0161cdd9c79c8a032f2b01e46199693018ba39df495efe2077f42fdeb6",
+ "edge": 0.0005,
+ "expected_n": {
+  "e2": 1108,
+  "tier1": 1477,
+  "x26": 1148
+ },
+ "fit_bank": "tier1",
+ "heldout_banks": [
+  "e2",
+  "x26"
+ ],
+ "inputs": {
+  "e2_result_sha256": "2fa50f4689c0e96b71a30942786cabf2e9d3d656e4337c04b0ce2ac47ab5f1d6",
+  "tier1_blinded_table_sha256": "fc3aced3d1e02093ab9d210d73f03f03ffa93e29cfb3256fc227691ad42bd3d6",
+  "x26_common_ids_sha256": "cf8d8c6fc09c9a85ce976a85a6195eb52977900659ac9be218b47562d9a09dfb",
+  "x26_lean_table_sha256": "43db5719bb5b66f309d8b22dbb75d7ee2e5a38ef928ed65f7a3171dedc46ddee"
+ },
+ "material": 0.005,
+ "registered": "2026-10-20",
+ "sha256": {
+  "PREREG.md": "de67a11ce5a7ad29cba5b665ccd33cdecde0b55b0e434d66da656c1b9ba10f0b",
+  "scripts/l1_read.py": "238e62ebba62fd0fb5b3009d9421cc9362cadc425646ca4080266052b851d5f0",
+  "scripts/l1l5_data.py": "f8a0f465d57fa4bd095503714274b21180c59cb3eb681b8bf2226095d36daf2e",
+  "scripts/l5_props.py": "e2eb760a7b4452db9e82ad990c119353ab4809baefd1aa8e287adb221f6a4f6f",
+  "scripts/run_all.sh": "64dd2353a7943341df1cd1586ec0b557afd9294bb6cb8c2d6d85fafecc713a55"
+ },
+ "unit": "L1 + L5 (search_ledger \u00a71 open list; the 2026-10-20 review \u00a710)",
+ "verdict_level": 98.33333333333333
+}
