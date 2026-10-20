@@ -5,7 +5,9 @@
 # Run it from the Training session that holds the GPU lease (its token in the environment), after the plateau call.
 #
 #   usage: launch_x35.sh <arm> <seed> --pin <X35_PIN_k> [--lease-owner NAME] [--phase1 FILE] [--thinning]
-#                        [--at-epoch EPOCH] [--max-load L] [GO]
+#                        [--at-epoch EPOCH] [--max-load L] [--t62 VERDICT] [GO]
+#          --t62: the T62 verdict the FIRST GO records in x35_pin_batch1.txt (ADOPT|FP32_ALT|INCONCLUSIVE|INCOMPLETE|
+#          PENDING; C1 (a), 2026-10-19: production launches at main HEAD with T62 whatever it reads)
 #   arms:  c0 a1 a2 d1 (production, +20M) · a3_mx a6_lx (phase 1: exploiters, +5M) · a3 a6 (phase 2, +20M, read
 #          the phase-1 record) · toy_c0 toy_a1 toy_a2 toy_x47 (+70M; toy_x47 = depth growth, X47; the toy arms run K9(b)
 #          `warn`)                                                    (main.x35.kit holds every argv)
@@ -15,34 +17,46 @@
 # PRE-CHECKS (STAGED_PLAN §3; ALL run before anything is created; the FIRST failure HOLDs, exit 7):
 #   1. no training run is LIVE (X26 and X34 stopped); the GPU lease is FREE or held by --lease-owner; load1 <= max
 #   2. the pin carries every commit in x35_required_commits.txt, which must name T54 (F18)
+#   2b. AM-1: the pin EQUALS X35_PIN_1 (x35_pin_batch1.txt, written ONCE by the first GO) and every batch-1 run's
+#      RECORDED pin (metadata.json git_hash + pin_history); a batch-1 run whose pin cannot be read HOLDs too
 #   3. models/<run> does not exist (a restart RESUMES through the launcher, never through this script)
 #   4. the frozen R file verifies: its content hash and the sha256 of P*, every archive node and every member
 #      (phase 2: the phase-1 record's exploiter sha256s too)
 #   5. checkargs --pin <pin> exits 0
 #   6. launcher --dry-run says "would launch", FORK of the start node's run, and the arm's +steps
 #   7. R was frozen BEFORE every existing rb_x35* run directory was created
-#   8. the disk covers the remaining batch-1 forks at the dry-run's REQUIRED GiB each, or --thinning (F22)
+#   8. the disk covers the remaining batch-1 forks at the dry-run's REQUIRED GiB each, or --thinning (F22); a
+#      conditional fork its records REFUSED (AM-7) is not counted
+#   9. AM-7 / AM-3 / AM-4: the fork's stage is ALLOWED by the saved records (kit stage-check: G1, look-1 CONTINUE,
+#      production's FINAL class before the toy calibration); PENDING or REFUSED HOLDs
+#  10. POOL: the parent's seeded snapshot set (T54's filter, names + sha256) equals the side's record
+#      (x35_pool_batch1_<side>.json, written by the side's first GO)
+#  11. AM-6: every FINISHED batch-1 arm has a K9(b) arm-end record (its own rows after the fork step) that PASSes;
+#      a missing one is read now; VOID or INCONCLUSIVE HOLDs
+# At GO, after the last pre-check: x35_pin_batch1.txt and the side's pool record are written if absent (once).
 # GO with --at-epoch E: E is checked at arming (now <= E <= now + 24 h, an ABSOLUTE epoch, never a clock string),
 # the script sleeps to E, then RE-RUNS every pre-check; a failure then is a HOLD. A launcher that dies within 180 s
 # is a HOLD (a mid-window failure is the orchestrator's decision, never this script's). After the spawn, T54's
-# pool-seed record is checked (main.x35.kit pool-seed-check); a failure SIGTERMs the launcher by its PID and HOLDs.
+# pool-seed record is checked (main.x35.kit pool-seed-check, against the side's recorded set too); a failure
+# SIGTERMs the launcher by its PID and HOLDs.
 set -u
 STAGE=${X35_STAGE:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}   # X35_STAGE: tests only
 REPO=${X35_REPO:-/home/goodlad/dev/gen3ai}
 J=${X35_JOB_DIR:-/home/goodlad/.claude/jobs/x35}; ST=$J/status.txt
 PY=${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3}; OPS=$REPO/scripts/ops
-ARM=""; SEED=""; PIN=""; OWNER=""; PHASE1=""; THIN=""; AT=""; MAXLOAD=12; GO=0
+ARM=""; SEED=""; PIN=""; OWNER=""; PHASE1=""; THIN=""; AT=""; MAXLOAD=12; GO=0; T62=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --pin) PIN=$2; shift 2;; --lease-owner) OWNER=$2; shift 2;; --phase1) PHASE1=$2; shift 2;;
     --thinning) THIN=--thinning; shift;; --at-epoch) AT=$2; shift 2;; --max-load) MAXLOAD=$2; shift 2;;
+    --t62) T62=$2; shift 2;;
     GO) GO=1; shift;;
     -*) echo "unknown flag $1" >&2; exit 2;;
     *) if [ -z "$ARM" ]; then ARM=$1; elif [ -z "$SEED" ]; then SEED=$1; else echo "extra argument $1" >&2; exit 2; fi
        shift;;
   esac
 done
-[ -n "$ARM" ] && [ -n "$SEED" ] && [ -n "$PIN" ] || { sed -n 2,12p "$0" >&2; exit 2; }
+[ -n "$ARM" ] && [ -n "$SEED" ] && [ -n "$PIN" ] || { sed -n 2,14p "$0" >&2; exit 2; }
 mkdir -p "$J"; log() { echo "[$(date -Is)] $ARM s$SEED: $1" >> "$ST"; }
 hold() { log "HOLD: $1"; echo "HOLD: $1" >&2; exit 7; }
 kit() { ( cd "$REPO" && PYTHONPATH="$REPO/src" CUDA_VISIBLE_DEVICES="" "$PY" -m main.x35.kit "$@" ); }
@@ -75,6 +89,11 @@ prechecks() {
     case "$sha" in ''|'#'*) continue;; esac
     git -C "$REPO" merge-base --is-ancestor "$sha" "$PIN" 2>/dev/null || hold "pin ${PIN:0:8} lacks $name ($sha)"
   done < "$req"
+  # 2b. AM-1: ONE pin for the batch
+  kit pin-check --pin "$PIN" --stage "$STAGE" --models-dir "$MODELS" > "$out.pin.txt" 2>&1 \
+    || hold "AM-1 pin-check: $(tr '\n' ' ' < "$out.pin.txt")"
+  [ -e "$STAGE/x35_pin_batch1.txt" ] || [ -n "$T62" ] \
+    || hold "no x35_pin_batch1.txt yet: the first launch names the T62 verdict that chose the pin (--t62 VERDICT)"
   # 3. the run dir
   [ -e "$MODELS/$RUN" ] && hold "$MODELS/$RUN exists (a restart RESUMES through the launcher, not this script)"
   # 4. R and (phase 2) the phase-1 record
@@ -102,8 +121,17 @@ prechecks() {
   # 8. the disk
   local gib; gib=$(grep -oE '[0-9.]+ GiB REQUIRED' "$out.dryrun.txt" | head -1 | cut -d' ' -f1)
   [ -n "$gib" ] || hold "the dry-run printed no REQUIRED GiB"
-  kit disk --required-gib "$gib" --models-dir "$MODELS" $THIN > "$out.disk.txt" 2>&1 \
+  kit disk --required-gib "$gib" --models-dir "$MODELS" --stage "$STAGE" $THIN > "$out.disk.txt" 2>&1 \
     || hold "disk: $(cat "$out.disk.txt")"
+  # 9. AM-7 / AM-3 / AM-4: the fork's stage is open
+  kit stage-check --arm "$ARM" --seed "$SEED" --stage "$STAGE" > "$out.stage.txt" 2>&1 \
+    || hold "stage-check: $(cat "$out.stage.txt")"
+  # 10. POOL: the seeded set is the side's recorded set
+  kit pool-check --arm "$ARM" --call "$R" --stage "$STAGE" > "$out.pool.txt" 2>&1 \
+    || hold "pool-check: $(cat "$out.pool.txt")"
+  # 11. AM-6: every finished batch-1 arm PASSed K9(b) at its end
+  kit k9b-batch --stage "$STAGE" --models-dir "$MODELS" > "$out.k9b.txt" 2>&1 \
+    || hold "K9(b) arm-end: $(tr '\n' ' ' < "$out.k9b.txt")"
   log "pre-checks PASS ($tag): pin ${PIN:0:8}, $(cat "$out.disk.txt"), lease: ${lease%%,*}"
 }
 
@@ -118,7 +146,7 @@ mapfile -t A < <(field argv)
 if [ "$GO" -ne 1 ]; then
   prechecks dry
   echo "DRY RUN PASS — every pre-check passed; nothing was created. To launch (NEEDS the orchestrator's GO):"
-  echo "  $0 $ARM $SEED --pin $PIN ${OWNER:+--lease-owner '$OWNER'} ${PHASE1:+--phase1 $PHASE1} $THIN GO"
+  echo "  $0 $ARM $SEED --pin $PIN ${OWNER:+--lease-owner '$OWNER'} ${PHASE1:+--phase1 $PHASE1} ${T62:+--t62 $T62} $THIN GO"
   echo "  (runs: python -m main.launcher --restart-interval-hours 24 --pin-commit $PIN ${A[*]})"
   exit 0
 fi
@@ -132,6 +160,12 @@ if [ -n "$AT" ]; then
   while [ "$(date +%s)" -lt "$AT" ]; do sleep $(( AT - $(date +%s) > 300 ? 300 : AT - $(date +%s) )); done
 fi
 prechecks go
+# the once-only batch records (AM-1, POOL), written only now: every pre-check of this GO has passed
+kit pin-check --pin "$PIN" --stage "$STAGE" --models-dir "$MODELS" --write ${T62:+--t62 "$T62"} \
+  > "$J/$RUN.pin_write.txt" 2>&1 || hold "AM-1 pin write: $(tr '\n' ' ' < "$J/$RUN.pin_write.txt")"
+kit pool-check --arm "$ARM" --call "$R" --stage "$STAGE" --write > "$J/$RUN.pool_write.txt" 2>&1 \
+  || hold "POOL record: $(cat "$J/$RUN.pool_write.txt")"
+log "batch records: $(tr '\n' ' ' < "$J/$RUN.pin_write.txt") $(cat "$J/$RUN.pool_write.txt")"
 
 # ---- launch -----------------------------------------------------------------------------------------------------
 log "START $RUN: ${A[*]} (pin ${PIN:0:8}, restart 24 h)"
@@ -147,7 +181,7 @@ if ! kill -0 "$LP" 2>/dev/null; then wait "$LP"; hold "the launcher exited (rc $
 PS_T0=$(date +%s); PS=3
 while [ $(( $(date +%s) - PS_T0 )) -lt 1800 ]; do
   kill -0 "$LP" 2>/dev/null || { wait "$LP"; hold "the launcher exited (rc $?) before the pool-seed check passed"; }
-  kit pool-seed-check --arm "$ARM" --run-dir "$MODELS/$RUN" --call "$R" --log "$J/$RUN.launcher.log" \
+  kit pool-seed-check --arm "$ARM" --run-dir "$MODELS/$RUN" --call "$R" --stage "$STAGE" --log "$J/$RUN.launcher.log" \
     --log "$MODELS/$RUN/launcher_child.full.log" > "$J/$RUN.pool_seed_check.txt" 2>&1; PS=$?
   [ "$PS" -eq 3 ] || break
   sleep 15

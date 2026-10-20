@@ -569,11 +569,35 @@ same wall clock.
 
 ### 5.6 X35 LAUNCH-READY ON PAPER: the arm list, the readout, the builds (2026-10-17)
 
-**Status: STAGED ON PAPER, nothing launched; batch 1 + X47 has a LAUNCH SHEET (2026-10-19, [`BATCH1_LAUNCH_SHEET.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md): the arms in GPU order, every argv dry-run validated at `803a13e3`, the T62 / FP32_ALT pin variants, and six open choices for the orchestrator).** The day the plateau is called, the first arm can launch once the
+**Status: STAGED ON PAPER, nothing launched; batch 1 + X47 has a LAUNCH SHEET (2026-10-19, [`BATCH1_LAUNCH_SHEET.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md): the arms in GPU order, every argv dry-run validated, the T62 / FP32_ALT pin variants, C1–C4 ruled, and the review's amendments AM-1 to AM-7 ruled and built, 2026-10-19: the AMENDMENT below).** The day the plateau is called, the first arm can launch once the
 orchestrator gives its GO; a design block is not a launch command. The staging record, with every dry-run transcript,
 is [`../research_state/measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md).
 **Why now:** X26 is still CLIMBING at 180M (Tier 1 GAIN at every 10M check). The owner's order (2026-10-16) is X26 to
 its plateau, then the toy (X34) to its plateau, then breakers on both. No PFSP or league lever goes inside X26 itself.
+
+**AMENDMENT 2026-10-19 (the orchestrator's rulings on the adversarial review [`X35_BATCH1_REVIEW.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/X35_BATCH1_REVIEW.md), made BEFORE any X35 launch; the full table is the launch sheet's §0, each item BUILT in `src/main/x35/` and enforced by `launch_x35.sh`):**
+- **AM-1 (blocking): ONE pin.** X35_PIN_1 is written ONCE (`x35_pin_batch1.txt`, by the first GO: sha, date, T62
+  verdict); every launch's pin and every batch-1 run's recorded pin must equal it (pre-check 2b).
+- **AM-2: the variance gate G1** after the first six forks: the pooled within-arm SD of S over A1 / C0 × s3501–s3503
+  (4 df); PASS iff ≤ 1.2 pp (within 1e-9 counts above); a HOLD holds D1, A2 and the toy calibration for a re-plan
+  and runs C0 s3504–s3505 next (`kit gate`). It reads variance only.
+- **AM-3:** toy A1 / A2 launch only after production A1 / A2 has a FINAL class GAIN, NULL or LOSS; an UNDECIDED
+  production read ends that calibration as NOT SHOWN (§5.2's rule cannot record agreement otherwise).
+- **AM-4:** X47 registers look 2 (seeds 3604–3605 against toy C0 3604–3605, on a look-1 CONTINUE); its readout
+  `main.x35.x47` (s_eq, the matched-step secondary, PER-STEP ONLY) is built.
+- **AM-5:** D1's H interval is widened by √max(1, φ̂), the seed overdispersion (`design_diversity_teams_opponents.md`).
+- **AM-6:** K9(b) is read at EACH arm's end over its own post-fork rows, deterministically (`kit k9b`); a crossing makes
+  the arm VOID for every read.
+- **AM-7: the order** is the first six forks → G1 → C0's look-2 seeds and A1's look 2 → D1, A2 → toy C0 + X47 → X47's
+  look 2 → the conditional toy calibration (≈ 91 GPU-h on the expected path, ≈ 146–148 with every conditional stage).
+  It REPLACES the batch-1 GPU order below.
+- **POOL:** every arm of a side seeds the SAME snapshot set, recorded at the side's first launch and checked at every
+  launch and after every spawn. **C0 is "P\* continued with X26's pool as of today: 14 snapshots, 164–268M", not
+  "X26 unchanged"**: the pool is older and sparser than X26's at P\* (review F-RV-8), matched across arms.
+- **G-E readers:** not launched in batch 1. An arm whose primary reads GAIN stays INCONCLUSIVE (never
+  ADOPT-CANDIDATE) until its G-E readers (≈ 2.2 GPU-h per arm, argv still unregistered: F27) are registered and run
+  at X35_PIN_1.
+- **C1: (a).** Production launches at main HEAD with T62, pending the GPU battery's read.
 
 #### 5.6.1 The shared frame (every arm)
 
@@ -596,12 +620,13 @@ its plateau, then the toy (X34) to its plateau, then breakers on both. No PFSP o
 - **Lengths.** Production L_P = 20M steps. The toy L_T = 70M, at equal effective learn time (§5.4): 4.2 GPU-h at
   ≈ 5.8 GPU-h per 100M is ≈ 72M. The realised Σ (`collect_ms` + `update_wall_s`) is recorded. A mismatch beyond ±15 %
   is reported, with the toy's +20M node read as the matched-step secondary.
-- **Seeds.** Production 3501–3503 (look 1) and 3504–3505 (look 2); toy 3601–3605. b-ON and b-OFF share seed i.
+- **Seeds.** Production 3501–3503 (look 1) and 3504–3505 (look 2); toy 3601–3603 (look 1) and 3604–3605 (look 2;
+  X47's registered by AM-4). b-ON and b-OFF share seed i.
   Exploiters use 3511–3513, league exploiters 3521–3523 and best-response readers 3531+.
 - **ONE shared control set, C0, per (start checkpoint, pin).** Every breaker in the batch is read against it.
-- **The GPU order (batch 1, production):** A1 s3501, C0 s3501, C0 s3502, A1 s3502, A1 s3503, C0 s3503. This is an ABBA
-  order, so drift in box load does not land on one side. Then A2 × 3, then the toy calibration in the same order. The
-  first A1-vs-C0 read lands after ≈ 26 GPU-h.
+- **The GPU order (batch 1): AM-7's (the amendment above; `kit.BATCH1`).** It opens with A1 s3501, C0 s3501, C0
+  s3502, A1 s3502, A1 s3503, C0 s3503, an ABBA order, so drift in box load does not land on one side. The first
+  A1-vs-C0 read lands after ≈ 26 GPU-h.
 - **Throughput (MEASURED, X26's checkpoint mtimes):** 150,000,100 → 180,000,055 took 22,483 s, i.e. 7,494 s per 10M
   ≈ 1,334 steps/s of wall time, eval cycles included. So a 20M fork is ≈ 4.2 GPU-h, plus ≈ 0.2 h for start and compile:
   ≈ 4.4 GPU-h per seed and ≈ 13 GPU-h per arm of 3 seeds. The first draft's 3.4 GPU-h per seed is superseded (F13).
@@ -1024,3 +1049,4 @@ The T55 build (2026-10-17) adds:
 | 2026-10-19 | **X14 overlap BUILT behind `--overlap-collect` (default OFF)** (build worker) | the worker plays the NEXT rollout during each update (from a process's 2nd update; stops at the trigger, so ON runs are deterministic); DECOUPLED PPO as a buffer rewrite (old_log_prob := log π_prox, advantage × min(π_prox/μ, 2)); K9(b) on a 2-slot behaviour snapshot; the worker on its own CUDA stream | plain PPO on stale rows (X26's age-1 rows start at KL 0.016 vs the controller's 0.01 target and 22.5 % clipped: the controller would cut the rate for the lag); reloading T2 when the update ends mid-rollout (fresher rows, but timing-dependent, i.e. non-deterministic); V-trace (one version of lag) | `designs/training/rust_collector.md` "Overlap (X14)"; `research_state/measurements/x14_overlap_2026-10-19/` |
 | 2026-10-19 | **X35 batch 1 + X47 LAUNCH SHEET (launch-staging worker)** | [`x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md): the 24 forks in GPU order (production A1 / C0 ABBA, D1, A2 on P\*; then the toy block with X47 interleaved with the toy C0), ≈ 108 GPU-h at the MEASURED throughput (X26 1,333–1,358 steps/s, X34 4,719 steps/s); every argv `checkargs` exit 0 and "would launch" at `803a13e3` (toy on the 200M STAND-IN for T\*); `x35_required_commits.txt` now also requires `f9360870`, `4df10e65`, `24616919`, `aa5feaf5`, `bd3126e0`; nothing launched | deciding the open choices C1–C6 (the orchestrator's); adding X47 to the kit (out of scope, F-LS-1) | the sheet §4.3, `batch1_validation_803a13e3/`; the toy forward calls `fixed_size_tau` 0 times (counting patch, 20 in the positive control) |
 | 2026-10-19 | **The orchestrator's rulings C2 / C3 / C4 on the batch-1 launch sheet, BUILT into the kit (launch-kit worker)** | **C2:** X47 interleaved with its toy C0 and toy A1, toy A2 last (the kit's `BATCH1` is the 24-fork order of the sheet). **C3:** the toy arms type `--behaviour-check warn` under X34's ceilings (judged max ≥ 1e-3, p99 ≥ 1e-4, any non-finite value ⇒ STOP, read by hand) instead of `fatal`; production unchanged. **C4:** batch 1 launches without R0. X47 is the kit arm `toy_x47` (F-LS-1 closed), `kit disk` counts 24 forks, and `validate_batch1.sh` gives every line a deterministic verdict (`main.x35.kit validate-run`) | X47 after toy A2 (C2a, un-interleaved with its C0); the toy on `fatal` (C3a: stricter, but a stop leaves an arm short, and X34's scalars never reached the bar: judged max 7.7e-5 over 2,160 updates to 212.4M, 0 at 1e-4); waiting for R0 (C4) | the sheet §5 and §7, `src/main/x35/kit_test.py`, `batch1_validation_9c3bf3c4/` |
+| 2026-10-19 | **The orchestrator's rulings on the batch-1 review, BUILT before any X35 launch (X35 amendment worker)** | AM-1 ONE pin written once and enforced against every batch-1 run's recorded pin; AM-2 the variance gate G1 (σ̂ ≤ 1.2 pp, 4 df) after row 6; AM-3 the toy calibration only after production's FINAL class; AM-4 X47 look 2 + `main.x35.x47`; AM-5 D1's widened H; AM-6 K9(b) at each arm's end over its own rows (VOID on a crossing); AM-7 the staged order (`batch.STAGES`); POOL one recorded seeded set per side (C0 = X26's pool as of today, 14 snapshots 164–268M); G-E readers only for a GAIN arm; C1 (a) | per-arm pins ("HEAD at its launch"); 3-seed reads before σ is known; a toy calibration that cannot record agreement; X47 without look 2; hand reads of K9(b) between restarts; the G-E readers for every arm (≈ 4.4 GPU-h that decide nothing unless an arm reads GAIN) | `X35_BATCH1_REVIEW.md`; `BATCH1_LAUNCH_SHEET.md` §0; `src/main/x35/batch.py`, `batch_test.py` |

@@ -27,6 +27,15 @@ canonical flag order (the order carries no meaning to the trainer's parser):
     python -m main.x35.kit disk --required-gib 20.68 [--thinning]   # pre-check 8 (F22)
     python -m main.x35.kit validate-run --arm toy_x47 --seed 3601 --call <R_toy.json> --dryrun F --checkargs F \\
         --rc-dryrun 0 --rc-checkargs 0     # ``validate_batch1.sh``'s verdict on one argv's transcripts (exit 1 = FAIL)
+
+THE 2026-10-19 AMENDMENTS (``main.x35.batch``; ``launch_x35.sh`` pre-checks 2b / 9 / 10 / 11):
+
+    python -m main.x35.kit pin-check --pin <sha> --stage <stage> [--write --t62 PENDING]   # AM-1: ONE pin
+    python -m main.x35.kit pool-check --arm c0 --call <R> --stage <stage> [--write]       # POOL: one seeded set
+    python -m main.x35.kit gate <six_finals_S.json> --stage <stage> --write              # AM-2: G1, exit 1 = HOLD
+    python -m main.x35.kit stage-check --arm d1 --seed 3501 --stage <stage>               # AM-7 / AM-3 / AM-4
+    python -m main.x35.kit k9b --run-dir models/<run> --stage <stage>                     # AM-6, at each arm's end
+    python -m main.x35.kit k9b-batch --stage <stage>                                      # AM-6 pre-check
 """
 from __future__ import annotations
 
@@ -42,6 +51,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
+from main.x35 import batch as _B
+from main.x35.batch import STAGES as BATCH_STAGES
+from main.x35.batch import BatchError
 from main.x35.refpop import RefPopError, sha256_file
 from main.x35.refpop import verify as verify_call
 
@@ -85,7 +97,7 @@ class Arm:
 
 PROD_SEEDS = tuple(range(3501, 3506))
 TOY_SEEDS = tuple(range(3601, 3606))
-X47_SEEDS = TOY_SEEDS[:3]   # X47 / the bot screen's first experiment: 3 seeds (3601-3603), no look 2 registered
+X47_SEEDS = TOY_SEEDS   # X47: look 1 at 3601-3603, look 2 at 3604-3605 (AM-4, orchestrator 2026-10-19), against toy C0 at the same seeds
 ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("c0", "production", L_PROD, PROD_SEEDS, "rb_x35_c0_s{seed}", 0, "warn"),
     Arm("a1", "production", L_PROD, PROD_SEEDS, "rb_x35_a1arch_s{seed}", 0, "warn"),
@@ -100,17 +112,12 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("toy_a2", "toy", L_TOY, TOY_SEEDS, "rb_x35t_a2pfsp_s{seed}", 0, "warn"),
     Arm("toy_x47", "toy", L_TOY, X47_SEEDS, "rb_x35t_x47d4_s{seed}", 0, "warn"),
 )}
-#: Batch 1 + X47, in GPU order (``BATCH1_LAUNCH_SHEET.md`` §1; R0 and the readers have no registered argv: C4, launched
-#: without R0). The toy block is ruled C2 (orchestrator, 2026-10-19): X47 INTERLEAVED with its toy C0 and toy A1 in
-#: counterbalanced pairs (s3601: C0 then X47; s3602: X47 then C0; s3603: C0 then X47), toy A2 last.
-BATCH1: Tuple[Tuple[str, int], ...] = (
-    ("a1", 3501), ("c0", 3501), ("c0", 3502), ("a1", 3502), ("a1", 3503), ("c0", 3503),
-    ("d1", 3501), ("d1", 3502), ("d1", 3503),
-    ("a2", 3501), ("a2", 3502), ("a2", 3503),
-    ("toy_a1", 3601), ("toy_c0", 3601), ("toy_x47", 3601), ("toy_x47", 3602), ("toy_c0", 3602), ("toy_a1", 3602),
-    ("toy_a1", 3603), ("toy_c0", 3603), ("toy_x47", 3603),
-    ("toy_a2", 3601), ("toy_a2", 3602), ("toy_a2", 3603),
-)
+#: Batch 1 + X47, in GPU order: AM-7 (orchestrator, 2026-10-19, on the review's §3), stage by stage in
+#: ``main.x35.batch.STAGES``: P1 the A1 / C0 ABBA (s3501-s3503) -> [G1, AM-2] -> P2 C0 s3504-s3505 -> P3 A1
+#: s3504-s3505 (A1 look 1 CONTINUE) -> P4 D1, A2 (G1 PASS) -> T1 toy C0 + X47 (C2's interleave, toy A1 out) -> T1b X47
+#: look 2 with toy C0 s3604-s3605 (AM-4: X47 look 1 CONTINUE) -> T2 toy A1 / toy A2 (AM-3: production's FINAL class).
+#: The conditional stages launch only when ``batch.stage_status`` says ALLOWED (``launch_x35.sh`` pre-check 9).
+BATCH1: Tuple[Tuple[str, int], ...] = tuple(f for _, forks in BATCH_STAGES for f in forks)
 
 
 class KitError(ValueError):
@@ -307,12 +314,14 @@ PENDING = "PENDING"
 
 
 def check_pool_seed(arm: str, run_dir: str, call: Mapping[str, Any], log_text: str,
-                    fork_num_timesteps: Optional[int]) -> Tuple[str, List[str]]:
+                    fork_num_timesteps: Optional[int],
+                    expected_names: Optional[Sequence[str]] = None) -> Tuple[str, List[str]]:
     """T54's post-spawn check (``--dry-run`` cannot preview it: the seed runs in the child). ``(status, problems)``,
     status PASS / FAIL / PENDING (the record is not written yet). FAIL iff ``pool_seed.json`` is not schema 2, its
     ``fork_step`` is NULL (T54 only WARNS and seeds unfiltered when it cannot read the step: a HOLD here) or differs
     from P*'s ``num_timesteps`` (and the call record's step), a seeded snapshot is later than it, or the startup
-    line "[step filter <= N: …]" disagrees with the record (or says the filter is OFF)."""
+    line "[step filter <= N: …]" disagrees with the record (or says the filter is OFF), or -- POOL, 2026-10-19 --
+    the seeded names differ from ``expected_names`` (the side's recorded set, ``batch.POOL_FILE``)."""
     from agents.training.pool_seed import SEED_RECORD_FILE, pool_dir_for, snapshot_step
 
     if arm in NO_POOL_ARMS:
@@ -339,6 +348,10 @@ def check_pool_seed(arm: str, run_dir: str, call: Mapping[str, Any], log_text: s
         late = [n for n in rec.get("snapshots") or [] if (st := snapshot_step(n)) is None or st > int(fs)]
         if late:
             probs.append(f"seeded snapshot(s) later than fork_step {fs} (or unnamed): {late}")
+    if expected_names is not None and sorted(rec.get("snapshots") or []) != sorted(expected_names):
+        got = set(rec.get("snapshots") or [])
+        probs.append(f"the seeded set is not the batch's recorded set: missing {sorted(set(expected_names) - got)}, "
+                     f"extra {sorted(got - set(expected_names))}")
     if "step filter OFF" in log_text:
         probs.append("the startup line says the step filter is OFF")
     m = _FILTER_RE.findall(log_text)
@@ -363,12 +376,18 @@ def live_runs() -> Dict[str, int]:
 
 
 def disk_check(models_dir: str, required_gib: float, *, thinning: bool,
-               existing: Optional[Sequence[str]] = None, free_gib: Optional[float] = None) -> Tuple[bool, str]:
+               existing: Optional[Sequence[str]] = None, free_gib: Optional[float] = None,
+               stage: Optional[str] = None) -> Tuple[bool, str]:
     """Pre-check 8 (F22): free disk covers EVERY not-yet-created batch-1 fork at ``required_gib`` each, or the
-    operator declares ``thinning`` (finished arms are being thinned to their 10M nodes + final)."""
+    operator declares ``thinning`` (finished arms are being thinned to their 10M nodes + final). With ``stage``, a
+    conditional fork its records have REFUSED (AM-7: ``batch.stage_status``) is not counted; a PENDING one is (the
+    conservative side)."""
+    from main.x35.batch import REFUSED, stage_status
+
     have = set(existing) if existing is not None else {d for d in os.listdir(models_dir)
                                                         if d.startswith("rb_x35")}
-    remaining = [run_name(a, s) for a, s in BATCH1 if run_name(a, s) not in have]
+    remaining = [run_name(a, s) for a, s in BATCH1 if run_name(a, s) not in have
+                 and (stage is None or stage_status(stage, a, s)[0] != REFUSED)]
     free = free_gib if free_gib is not None else shutil.disk_usage(models_dir).free / 2 ** 30
     need = len(remaining) * required_gib
     msg = f"{free:.1f} GiB free; {len(remaining)} batch-1 fork(s) to create x {required_gib:.2f} = {need:.1f} GiB"
@@ -407,6 +426,32 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     q.add_argument("--run-dir", required=True)
     q.add_argument("--call", required=True)
     q.add_argument("--log", action="append", default=[], help="a log holding the startup line (repeatable)")
+    q.add_argument("--stage", default=None, help="compare the seeded names with the side's recorded set (POOL)")
+    pc = sub.add_parser("pin-check", help="AM-1: the pin == X35_PIN_1 and every batch-1 run's recorded pin; exit 0 / 1")
+    pc.add_argument("--pin", required=True, help="the full sha")
+    pc.add_argument("--stage", required=True)
+    pc.add_argument("--models-dir", default=None)
+    pc.add_argument("--write", action="store_true", help="GO only: write x35_pin_batch1.txt if it does not exist")
+    pc.add_argument("--t62", default=None, choices=_B.T62_VERDICTS, help="the T62 verdict the first GO records")
+    po = sub.add_parser("pool-check", help="POOL: the seeded set == the side's record; exit 0 / 1")
+    po.add_argument("--arm", required=True, choices=sorted(ARMS))
+    po.add_argument("--call", required=True)
+    po.add_argument("--stage", required=True)
+    po.add_argument("--write", action="store_true", help="GO only: record the set if the side has no record")
+    g = sub.add_parser("gate", help="AM-2's G1 from {a1: {seed: S}, c0: {seed: S}}: exit 0 PASS, 1 HOLD")
+    g.add_argument("input")
+    g.add_argument("--stage", default=None, help="with --write: where x35_gate_g1.json is written (once)")
+    g.add_argument("--write", action="store_true")
+    sc = sub.add_parser("stage-check", help="AM-7 / AM-3 / AM-4: may this fork launch now? exit 0 ALLOWED, 1 not")
+    sc.add_argument("--arm", required=True, choices=sorted(ARMS))
+    sc.add_argument("--seed", required=True, type=int)
+    sc.add_argument("--stage", required=True)
+    kb = sub.add_parser("k9b", help="AM-6: K9(b) over the fork's own rows at arm end: exit 0 PASS, 1 VOID, 3 INCONCLUSIVE")
+    kb.add_argument("--run-dir", required=True)
+    kb.add_argument("--stage", default=None, help="write the record <stage>/k9b/<run>.json")
+    kq = sub.add_parser("k9b-batch", help="AM-6 pre-check: every finished batch-1 arm's K9(b) record PASSes; exit 0 / 1")
+    kq.add_argument("--stage", required=True)
+    kq.add_argument("--models-dir", default=None)
     vr = sub.add_parser("validate-run", help="the verdict on one argv's checkargs + dry-run transcripts: exit 0 PASS, 1 FAIL")
     vr.add_argument("--arm", required=True, choices=sorted(ARMS))
     vr.add_argument("--seed", required=True, type=int)
@@ -420,6 +465,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     k.add_argument("--required-gib", type=float, default=FORK_GIB)
     k.add_argument("--models-dir", default=None)
     k.add_argument("--thinning", action="store_true")
+    k.add_argument("--stage", default=None, help="skip the conditional forks the stage's records REFUSED (AM-7)")
     a = ap.parse_args(argv)
     try:
         if a.cmd == "describe":
@@ -450,8 +496,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
             call = _load(a.call)
             text = "".join(Path(x).read_text(errors="replace") for x in a.log if os.path.isfile(x))
+            names = _B.recorded_pool_names(a.stage, ARMS[a.arm].side) if a.stage else None
+            if a.stage and names is None:
+                print(f"[x35 kit] pool seed: FAIL: no recorded {ARMS[a.arm].side} set in {a.stage} (POOL)")
+                return 1
             status, probs = check_pool_seed(a.arm, a.run_dir, call, text,
-                                            checkpoint_num_timesteps(str(call["pstar"]["path"])))
+                                            checkpoint_num_timesteps(str(call["pstar"]["path"])), names)
             print(f"[x35 kit] pool seed: {status}" + (f": {probs}" if probs else ""))
             return {"PASS": 0, "FAIL": 1}.get(status, 3)
         if a.cmd == "validate-run":
@@ -460,6 +510,44 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                                         Path(a.checkargs).read_text(errors="replace"), a.rc_checkargs, a.rc_dryrun)
             print(line)
             return 0 if ok else 1
+        if a.cmd in ("pin-check", "k9b-batch"):
+            from utils.paths import main_models_dir
+
+            md = a.models_dir or str(main_models_dir() or "")
+            if a.cmd == "k9b-batch":
+                ok, lines = _B.k9b_batch(a.stage, md)
+            else:
+                ok, lines = _B.pin_check(a.pin, a.stage, md)
+                if ok and a.write:
+                    lines.append(_B.pin_write_if_absent(a.pin, a.stage, a.t62))
+            for x in lines:
+                print(f"[x35 kit] {a.cmd}: {x}")
+            return 0 if ok else 1
+        if a.cmd == "pool-check":
+            call = _load(a.call)
+            ok, line = _B.pool_check(a.stage, ARMS[a.arm].side, call, parent_run_dir(call), write=a.write)
+            print(f"[x35 kit] pool-check: {'PASS' if ok else 'FAIL'}: {line}")
+            return 0 if ok else 1
+        if a.cmd == "gate":
+            doc = _load(a.input)
+            g1 = _B.gate_g1(doc)
+            print(json.dumps(g1.as_dict(), indent=1))
+            if a.write:
+                if not a.stage:
+                    raise KitError("gate --write needs --stage")
+                print(f"[x35 kit] G1 written to {_B.write_g1(a.stage, g1, doc)}")
+            return 0 if g1.verdict == _B.PASS else 1
+        if a.cmd == "stage-check":
+            _arm(a.arm, a.seed)
+            st, why = _B.stage_status(a.stage, a.arm, a.seed)
+            print(f"[x35 kit] stage-check {a.arm} s{a.seed}: {st}: {why}")
+            return 0 if st == _B.ALLOWED else 1
+        if a.cmd == "k9b":
+            k = _B.k9b_read(a.run_dir)
+            print(json.dumps(k.as_dict(), indent=1))
+            if a.stage:
+                print(f"[x35 kit] K9(b) record {_B.k9b_record(a.stage, k)}")
+            return {"PASS": 0, "VOID": 1}.get(k.verdict, 3)
         if a.cmd == "live":
             live = live_runs()
             for rd, pid in sorted(live.items()):
@@ -467,10 +555,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return 1 if live else 0
         from utils.paths import main_models_dir
 
-        ok, msg = disk_check(a.models_dir or str(main_models_dir() or "."), a.required_gib, thinning=a.thinning)
+        ok, msg = disk_check(a.models_dir or str(main_models_dir() or "."), a.required_gib, thinning=a.thinning,
+                             stage=a.stage)
         print(f"[x35 kit] disk: {msg}")
         return 0 if ok else 1
-    except (KitError, RefPopError, FileNotFoundError, ValueError) as exc:
+    except (KitError, BatchError, RefPopError, FileNotFoundError, ValueError) as exc:
         print(f"[x35 kit] REFUSED: {exc}", file=sys.stderr)
         return 2
 

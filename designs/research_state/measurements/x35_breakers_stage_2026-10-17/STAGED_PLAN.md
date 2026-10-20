@@ -9,6 +9,13 @@ is BUILT (2026-10-17, §6):** the launch script, the R freeze, the readout and t
 **D1 (X38, the pool-widening arm) is staged too (2026-10-19, §7):** its argv is `main.x35.kit` arm `d1`, dry-run
 validated on the REAL P\* at pin `c1b0c1f0`; it NEEDS GO like every arm.
 
+**AMENDED 2026-10-19, before any launch:** the orchestrator ruled every amendment of the adversarial review
+[`X35_BATCH1_REVIEW.md`](X35_BATCH1_REVIEW.md) (AM-1 one pin, AM-2 the variance gate G1, AM-3 the conditional toy
+calibration, AM-4 X47's look 2 and readout, AM-5 D1's widened H, AM-6 K9(b) at arm end, AM-7 the staged order, the POOL
+record, the G-E readers, C1 (a)); each is built in `src/main/x35/` (`batch.py`, `x47.py`, `d1.py`) and enforced by
+`launch_x35.sh` (pre-checks 2b, 9, 10, 11). The launch sheet's §0 is the table; its §1 the new order. §4 below is
+superseded by it.
+
 **THE LAUNCH SHEET for batch 1 + X47 (2026-10-19): [`BATCH1_LAUNCH_SHEET.md`](BATCH1_LAUNCH_SHEET.md).** The 24 forks in GPU order with GPU-h, stop rule and matched control; every argv `checkargs` exit 0, "would launch" and a PASS verdict at `9c3bf3c4` (the toy on the 200M stand-in for T\*, [`batch1_validation_9c3bf3c4/`](batch1_validation_9c3bf3c4/); the first validation, at `803a13e3`, is [`batch1_validation_803a13e3/`](batch1_validation_803a13e3/) and is superseded: its toy lines typed K9(b) `fatal`); the T62 / FP32_ALT pin variants (no FP32_ALT commit exists); the pre-launch checks and the failure handling. **X47 is a kit arm** (`toy_x47`, F-LS-1 closed). **Ruled by the orchestrator (2026-10-19): C2** (X47 interleaved with its toy C0, toy A2 last), **C3** (the toy arms run K9(b) `warn` under X34's ceilings) and **C4** (batch 1 launches without R0); C1, C5 and C6 are still open. [`validate_batch1.sh`](validate_batch1.sh) rebuilds and re-validates the lines at any pin, with a deterministic verdict per line.
 
 **R (production) is FROZEN (2026-10-19)** at P\* = X26 @ 280,000,170 (Amendment 5's `TIER1_PLATEAU` call, sha256

@@ -126,26 +126,27 @@ def test_a_missing_exploiter_final_is_refused(tmp_path):
 
 def test_the_disk_check_counts_the_whole_remaining_batch():
     ok, msg = K.disk_check("/nonexistent", 20.68, thinning=False, existing=[], free_gib=318.0)
-    assert not ok and "24 batch-1 fork(s)" in msg    # 21 forks + X47's 3 (F-LS-1)
+    assert not ok and "32 batch-1 fork(s)" in msg    # AM-7's 32 forks, the conditional stages counted (PENDING)
     ok, _ = K.disk_check("/nonexistent", 20.68, thinning=True, existing=[], free_gib=318.0)
     assert ok
     done = [K.run_name(a, s) for a, s in K.BATCH1[:7]]
-    ok, msg = K.disk_check("/nonexistent", 20.68, thinning=False, existing=done, free_gib=400.0)   # 17 x 20.68 = 351.6
-    assert ok and "17 batch-1" in msg
+    ok, msg = K.disk_check("/nonexistent", 20.68, thinning=False, existing=done, free_gib=600.0)   # 25 x 20.68 = 517.0
+    assert ok and "25 batch-1" in msg
     ok, msg = K.disk_check("/nonexistent", 20.68, thinning=True, existing=[], free_gib=10.0)
     assert not ok and "not even this launch" in msg
 
 
 def test_the_disk_check_counts_x47s_three_forks():
-    """F-LS-1: X47's runs are batch-1 forks the disk check reserves room for (3 x 13.05 GiB = 39.15 GiB), and stops
-    counting once they exist. Free space is well clear of the 39.15 boundary on both sides (standing rule 8)."""
-    x47 = [K.run_name("toy_x47", s) for s in (3601, 3602, 3603)]
-    assert x47 == ["rb_x35t_x47d4_s3601", "rb_x35t_x47d4_s3602", "rb_x35t_x47d4_s3603"]
+    """F-LS-1 / AM-4: X47's runs (look 1 and look 2) are batch-1 forks the disk check reserves room for
+    (5 x 13.05 GiB = 65.25 GiB), and stops counting once they exist. Free space is well clear of the 65.25 boundary
+    on both sides (standing rule 8)."""
+    x47 = [K.run_name("toy_x47", s) for s in (3601, 3602, 3603, 3604, 3605)]
+    assert x47 == [f"rb_x35t_x47d4_s{s}" for s in range(3601, 3606)]
     others = sorted({K.run_name(a, s) for a, s in K.BATCH1} - set(x47))
-    ok, msg = K.disk_check("/nonexistent", 13.05, thinning=False, existing=others, free_gib=45.0)
-    assert ok and "3 batch-1 fork(s)" in msg, msg
-    ok, msg = K.disk_check("/nonexistent", 13.05, thinning=False, existing=others, free_gib=30.0)
-    assert not ok and "3 batch-1 fork(s)" in msg, msg
+    ok, msg = K.disk_check("/nonexistent", 13.05, thinning=False, existing=others, free_gib=75.0)
+    assert ok and "5 batch-1 fork(s)" in msg, msg
+    ok, msg = K.disk_check("/nonexistent", 13.05, thinning=False, existing=others, free_gib=55.0)
+    assert not ok and "5 batch-1 fork(s)" in msg, msg
     ok, msg = K.disk_check("/nonexistent", 13.05, thinning=False, existing=others + x47, free_gib=1.0)
     assert ok and "0 batch-1 fork(s)" in msg, msg
 
@@ -244,7 +245,10 @@ def test_x47_is_toy_c0_plus_the_grow_lever_and_nothing_else():
     d = K.describe("toy_x47", 3602, call)
     assert d["side"] == "toy" and d["delta_text"] == "+70,000,000 steps" and d["parent_run_dir"] == "models/rb_toy_ent_s4002"
     with pytest.raises(K.KitError, match="not registered"):
-        K.build_argv("toy_x47", 3604, call)               # X47 is registered at seeds 3601-3603 only
+        K.build_argv("toy_x47", 3606, call)               # X47 is registered at seeds 3601-3605 (AM-4) only
+    for s in (3604, 3605):                                # AM-4: X47's look 2, paired with toy C0 at the same seed
+        on, off = flags(K.build_argv("toy_x47", s, call)), flags(K.build_argv("toy_c0", s, call))
+        assert set(on) - set(off) == {"--grow"} and on["--seed"] == off["--seed"] == str(s)
     with pytest.raises(K.KitError, match="reads the toy call record"):
         K.build_argv("toy_x47", 3601, standin_call())
 
@@ -271,22 +275,19 @@ def _p1(arm: str):
             "exploiters": [{"path": f"/x/{i}.zip", "label": f"e{i}"} for i in range(3)]}
 
 
-def test_batch1_is_the_launch_sheets_gpu_order_with_x47_interleaved_and_a2_last():
-    """C2 (orchestrator, 2026-10-19): X47 beside its toy C0 in counterbalanced pairs, toy A2 last (sheet §1)."""
-    assert list(K.BATCH1) == [
-        ("a1", 3501), ("c0", 3501), ("c0", 3502), ("a1", 3502), ("a1", 3503), ("c0", 3503),
-        ("d1", 3501), ("d1", 3502), ("d1", 3503), ("a2", 3501), ("a2", 3502), ("a2", 3503),
-        ("toy_a1", 3601), ("toy_c0", 3601), ("toy_x47", 3601), ("toy_x47", 3602), ("toy_c0", 3602),
-        ("toy_a1", 3602), ("toy_a1", 3603), ("toy_c0", 3603), ("toy_x47", 3603),
-        ("toy_a2", 3601), ("toy_a2", 3602), ("toy_a2", 3603)]
-    assert len({K.run_name(a, s) for a, s in K.BATCH1}) == len(K.BATCH1) == 24
+def test_batch1_keeps_c2s_x47_interleave_and_the_toy_calibration_last():
+    """C2 (orchestrator, 2026-10-19) inside AM-7's order (the whole list: ``batch_test.test_batch1_is_am7s_order``):
+    X47 beside its toy C0 in counterbalanced pairs, at look 1 (ABA) and look 2 (BA, AB), and the toy calibration
+    (toy A1 / toy A2, AM-3's conditional stage) last."""
     pos = {(a, s): i for i, (a, s) in enumerate(K.BATCH1)}
     first = []
-    for s in (3601, 3602, 3603):
+    for s in (3601, 3602, 3603, 3604, 3605):
         assert abs(pos["toy_c0", s] - pos["toy_x47", s]) == 1, s    # X47 runs right beside its own C0
         first.append("toy_c0" if pos["toy_c0", s] < pos["toy_x47", s] else "toy_x47")
-    assert first == ["toy_c0", "toy_x47", "toy_c0"]                # ABA across the seeds: box drift lands on neither side
-    assert [a for a, _ in K.BATCH1[-3:]] == ["toy_a2"] * 3
+    assert first == ["toy_c0", "toy_x47", "toy_c0", "toy_x47", "toy_c0"]   # box drift lands on neither side
+    assert {a for a, _ in K.BATCH1[-6:]} == {"toy_a1", "toy_a2"}
+    assert max(pos[a, s] for a, s in K.BATCH1 if not a.startswith("toy_")) < min(
+        pos[a, s] for a, s in K.BATCH1 if a.startswith("toy_"))           # production first
 
 
 def test_a_grown_pool_seed_record_passes_the_check(tmp_path):

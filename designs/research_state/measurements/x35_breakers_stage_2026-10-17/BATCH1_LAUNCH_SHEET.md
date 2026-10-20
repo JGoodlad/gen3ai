@@ -1,9 +1,11 @@
 # X35 batch 1 + X47: the LAUNCH SHEET (staged 2026-10-19, nothing launched)
 
-**Status: STAGED, every argv validated at the candidate pin `9c3bf3c4` (24 of 24 PASS, §4.3); nothing launched; every
-launch NEEDS THE ORCHESTRATOR'S GO.** X47 is a **kit arm** (`toy_x47`, F-LS-1 closed), and the orchestrator has ruled
-three open choices (2026-10-19): **C2** (X47 interleaved with its toy C0, toy A2 last), **C3** (the toy arms run K9(b)
-`warn` under X34's ceilings) and **C4** (batch 1 launches without R0); C1, C5 and C6 are still open (§5). This sheet is
+**Status: STAGED and AMENDED (§0, 2026-10-19, before any X35 launch); every argv of the amended order validated at
+main HEAD `d825c6a1` (§4.3); nothing launched; every launch NEEDS THE ORCHESTRATOR'S GO.** X47 is a **kit arm**
+(`toy_x47`, F-LS-1 closed). The orchestrator has ruled **C1** (a), **C2** (X47 interleaved with its toy C0), **C3** (the
+toy arms run K9(b) `warn` under X34's ceilings), **C4** (batch 1 launches without R0) and every amendment of the
+[adversarial review](X35_BATCH1_REVIEW.md) (AM-1 to AM-7, the POOL check, the G-E readers); C5 and C6 are still open
+(§5). This sheet is
 what the Training session runs, in order, once X34 has stopped and the GPU window (the battery, then the X14 A/B) is
 over. The design is [`design_compute_efficiency.md`](../../../endstate/design_compute_efficiency.md)
 §5.6 (X35) and [`design_bot_ideas_screen.md`](../../../endstate/design_bot_ideas_screen.md) §2.1 (X47); the kit is
@@ -26,13 +28,39 @@ plateau call's, not this sheet's.)
 
 ---
 
+## 0. AMENDMENT 2026-10-19: the orchestrator's rulings on the review, made BEFORE any X35 launch
+
+The [adversarial review](X35_BATCH1_REVIEW.md) (`6a6e6db4`) read GO-WITH-AMENDMENTS. The orchestrator ruled every
+amendment the same day; each is BUILT into the kit (`src/main/x35/batch.py`, `kit.py`, `x47.py`, `d1.py`) and
+enforced by `launch_x35.sh` where it gates a launch. A HOLD is exit 7, as before.
+
+| ruling | what it says | where it is enforced |
+|---|---|---|
+| **AM-1 ACCEPTED (blocking): ONE pin** | X35_PIN_1 is ONE commit, written ONCE to `x35_pin_batch1.txt` (this directory) (sha, date, the T62 verdict) by the FIRST launch's GO, after its pre-checks. Every later launch's `--pin` must EQUAL it, and every existing batch-1 run's RECORDED pin (`metadata.json` `git_hash` + every `pin_history` span) must equal it; a batch-1 run whose pin cannot be read HOLDs too | pre-check 2b (`kit pin-check`); the GO writes the file (`--t62 <verdict>` is required on the first launch). A later batch's `rb_x35*` runs carry their own pin and are listed, not judged |
+| **AM-2 ACCEPTED: the variance gate G1** after row 6 | σ̂ = the pooled within-arm SD of S over the six finals A1 / C0 × s3501–s3503 (4 df). **PASS iff σ̂ ≤ 1.2 pp**; above, or within 1e-9 of 1.2 (rule 8), is **HOLD**: D1, A2 and the toy calibration wait for the orchestrator's re-plan, C0 s3504–s3505 run next and σ̂ is re-estimated on 5 C0 + 3 A1 (6 df, reported). It reads variance only, never an arm's Δ̂. A1's own look-1 R1 is read as registered either way | `python -m main.x35.kit gate <s.json> --stage <stage> --write` (exit 0 PASS / 1 HOLD; written once to `x35_gate_g1.json`); pre-check 9 reads it. The zero-training pre-read on X26 290–380M is a separate agent's (review F-RV-2) |
+| **AM-3 ACCEPTED** | toy A1 (resp. toy A2) launches only after production A1 (resp. A2) has a FINAL class GAIN, NULL or LOSS; an UNDECIDED production read ends that arm's calibration as NOT SHOWN, with no toy fork. The toy C0 still runs (X47 needs it) | pre-check 9 (`kit stage-check`), from the saved read `reads/<arm>_look<k>.json` |
+| **AM-4 ACCEPTED** | X47 seeds 3601–3605: look 2 = X47 s3604–s3605 against toy C0 s3604–s3605 (the toy C0 seeds were already registered; the pairing is seed for seed), launched only on X47's look-1 CONTINUE. **B-X47-READ BUILT:** `main.x35.x47` (s_eq at equal effective learn time, the matched-step secondary, the PER-STEP ONLY class) | `kit.X47_SEEDS`; pre-check 9; `python -m main.x35.x47 seq / decide` |
+| **AM-5 ACCEPTED** | D1's H interval widened by √max(1, φ̂), the seed overdispersion | `main.x35.d1` (self-check 11 / 11) |
+| **AM-6 ACCEPTED** | K9(b) is read at EACH arm's end over the fork's OWN rows (steps > its fork step; the inherited rows are X26's), deterministically: judged max ≥ 1e-3, p99 ≥ 1e-4, any non-finite value or the child log's NON-FINITE K9(b) line ⇒ the arm is **VOID** for every read and is re-run at the same pin and seed after the cause is fixed; within 1e-9 relative of a ceiling is recorded, no fire; no post-fork row is INCONCLUSIVE, never a pass | `python -m main.x35.kit k9b --run-dir models/<run> --stage <stage>` (exit 0 PASS / 1 VOID / 3 INCONCLUSIVE), run by the Training session at arm end; pre-check 11 (`kit k9b-batch`) reads (or records) it for every FINISHED batch-1 arm before the next GO |
+| **AM-7 ACCEPTED: the order** | the first 6 arms → G1 → C0's look-2 seeds and A1's look 2 → D1, A2 → toy C0 + X47 → X47's look 2 → the conditional toy calibration (§1) | `kit.BATCH1` (= `batch.STAGES`, pinned by `batch_test.py`); pre-check 9 for every conditional stage |
+| **POOL** | every arm of a side seeds the SAME snapshot set: the first launch of the side records it (`x35_pool_batch1_production.json` (this directory; the toy side's `x35_pool_batch1_toy.json`): names, sha256, digest), every later launch recomputes it and HOLDs on any difference, and the post-spawn check compares the fork's `pool_seed.json` with it. **C0 = P\* continued with X26's pool as of today: 14 snapshots, 164–268M** (T54 drops the 6 post-P\* ones; the newest pre-P\* selves, 270–280M, were evicted before the call), under T62. Not "X26 unchanged" (review F-RV-8) | pre-check 10 (`kit pool-check`); the post-spawn `kit pool-seed-check --stage` |
+| **G-E readers** | the CHEAPER honest option: **not launched in batch 1.** An arm's R1 (D1: H) GAIN reads **INCONCLUSIVE, never ADOPT-CANDIDATE,** until G-E is read (`readout.decide`, as registered). The readers (one fresh best responder per (arm, seed-3501 final), C0 included: ≈ 1.1 GPU-h each, ≈ 2.2 per arm) are registered, dry-run validated and launched ONLY when an arm's primary reads GAIN, at X35_PIN_1. G-E decides only between ADOPT-CANDIDATE and TRADE, so a reader for a non-GAIN arm buys nothing. Their argv is still unregistered (F27) | `readout.decide` (a GAIN with G-E absent is INCONCLUSIVE) |
+| **C1 RULED: (a)** | production launches at main HEAD with T62, pending the GPU battery's read; its measured cost is recorded beside the batch. b-ON and C0 pay it alike, so it biases no A/B; T62 changes the τ inputs relative to the code that trained P\* (`9c033489`), a small input shift every fork shares (review F-RV-12). The pin file records the T62 verdict known at the first GO (`PENDING` until the battery reads) | `--t62` on the first launch |
+
+The read records the stage rules read are the saved JSON of each read: `reads/<arm>_look<k>.json` =
+`python -m main.x35.readout decide` (A1, A2, toy A1 / A2), `decide-d1` (D1) or `python -m main.x35.x47 decide`
+(X47), naming its arm and look (a record for another arm or look is a refusal).
+
+---
+
 ## 1. The arms, in GPU order
 
-One arm × seed holds the GPU at a time. Both blocks are the kit's `BATCH1` order (`main.x35.kit`, pinned by
-`kit_test.py`); the toy block is the orchestrator's ruling **C2** (§5): X47 beside its own toy C0 in counterbalanced
-pairs (s3601: C0 then X47; s3602: X47 then C0; s3603: C0 then X47), toy A1 on the other side of each, toy A2 last. D1 keeps rank 2 (before A2): its demotion
-needed X37a to read POPULATION / KAKUNA-DRIVEN **and** X37b to read TRANSFERS (`design_diversity_teams_opponents.md`
-§6.1), and X37a's stage 2 read UNSEEN-DRIVEN.
+One arm × seed holds the GPU at a time. The order is AM-7's (§0), the kit's `BATCH1` = `batch.STAGES`, pinned by
+`batch_test.py`. Stages P1, P2 and T1 are unconditional; P3, P4, T1b and T2 launch only when pre-check 9 says ALLOWED.
+Inside T1 and T1b, X47 sits beside its own toy C0 in counterbalanced pairs (ruling C2: s3601 C0 then X47, s3602 X47
+then C0, s3603 C0 then X47; s3604 X47 then C0, s3605 C0 then X47). Toy A1 left the interleave: it is now
+conditional (AM-3). Every production arm and toy A1 / A2 stops at a FIXED step, so their order buys information, not
+balance (review F-RV-16); X47's primary is time-based, which is why its pairs stay interleaved.
 
 **GPU-h basis (MEASURED from checkpoint mtimes, the SOP's meter):**
 - **Production:** X26 250M → 280M took 22,501 s (1,333 steps/s); 270M → 280M took 7,365 s (1,358 steps/s). A 20M fork
@@ -43,36 +71,52 @@ needed X37a to read POPULATION / KAKUNA-DRIVEN **and** X37b to read TRANSFERS (`
   wall time per step over C0's) is ESTIMATED at 1.3–1.4 from FLOPs (`design_bot_ideas_screen.md` F-BI-7): ≈ 5.6–6.0
   GPU-h per seed, measured on its first 1M.
 
-| # | arm × seed | in plain words | parent | GPU-h | stop | matched control |
+| stage | # | arm × seed | in plain words | condition | GPU-h | matched control |
 |---|---|---|---|---|---|---|
-| 1 | **A1 s3501** | the ARCHIVE POOL: half the self-play games go against 8 frozen X26 nodes spread over 30–260M | P\* | 4.4 | fixed length: P\* + 20M = 300,000,170 | C0 s3501 |
-| 2 | C0 s3501 | production control: P\* trained on, unchanged | P\* | 4.3 | 300,000,170 | — |
-| 3 | C0 s3502 | control | P\* | 4.3 | 300,000,170 | — |
-| 4 | A1 s3502 | archive pool | P\* | 4.4 | 300,000,170 | C0 s3502 |
-| 5 | A1 s3503 | archive pool | P\* | 4.4 | 300,000,170 | C0 s3503 |
-| 6 | C0 s3503 | control | P\* | 4.3 | 300,000,170 | — |
-| 7–9 | **D1 s3501–s3503** (X38) | WIDEN THE TEAM POOL: half of each side's teams come from 2,424 human-built Smogon forum teams; eval stays on the pool | P\* | 3 × 4.3 | 300,000,170 | C0 s3501–s3503 (D1's own rule, `main.x35.d1`) |
-| 10–12 | **A2 s3501–s3503** | PFSP: recent selves the trainee loses to are drawn more often (+5 sentinels feed it win rates) | P\* | 3 × 4.4 | 300,000,170 | C0 s3501–s3503 |
-| | **production subtotal** | | | **≈ 52** | | |
-| 13 | toy A1 s3601 | the archive pool on the toy (8 nodes of T\*'s own lineage, `rb_toy_ent_s4002` + `_deep`) | T\* | 4.4 | T\* + 70M | toy C0 s3601 |
-| 14 | toy C0 s3601 | toy control | T\* | 4.3 | T\* + 70M | — |
-| 15 | **X47 s3601** | DEPTH GROWTH: the toy's 2 attention rounds become 4; the 2 new rounds start as exact identities, so the network starts as T\*'s function bit for bit | T\* | 5.6–6.0 | T\* + 70M | toy C0 s3601 (PRIMARY at equal effective learn time, node s_eq) |
-| 16 | X47 s3602 | depth growth | T\* | 5.6–6.0 | T\* + 70M | toy C0 s3602 |
-| 17 | toy C0 s3602 | toy control | T\* | 4.3 | T\* + 70M | — |
-| 18 | toy A1 s3602 | archive pool | T\* | 4.4 | T\* + 70M | toy C0 s3602 |
-| 19 | toy A1 s3603 | archive pool | T\* | 4.4 | T\* + 70M | toy C0 s3603 |
-| 20 | toy C0 s3603 | toy control | T\* | 4.3 | T\* + 70M | — |
-| 21 | X47 s3603 | depth growth | T\* | 5.6–6.0 | T\* + 70M | toy C0 s3603 |
-| 22–24 | toy A2 s3601–s3603 | PFSP on the toy (the calibration pair's plausible null) | T\* | 3 × 4.4 | T\* + 70M | toy C0 s3601–s3603 |
-| | **toy subtotal** | | | **≈ 56** | | |
-| | **batch 1 + X47** | | | **≈ 108 GPU-h ≈ 4.5 days of exclusive GPU** | | |
+| **P1** | 1 | **A1 s3501** | the ARCHIVE POOL: half the self-play games go against 8 frozen X26 nodes spread over 30–260M | none | 4.4 | C0 s3501 |
+| | 2 | C0 s3501 | production control: P\* continued with X26's pool as of today (14 snapshots, 164–268M), under T62 | none | 4.3 | — |
+| | 3 | C0 s3502 | control | none | 4.3 | — |
+| | 4 | A1 s3502 | archive pool | none | 4.4 | C0 s3502 |
+| | 5 | A1 s3503 | archive pool | none | 4.4 | C0 s3503 |
+| | 6 | C0 s3503 | control | none | 4.3 | — |
+| **G1** | — | the S read of the six finals (a GPU window: 36k games, ≈ 5 min at 118 games/s, **UNVERIFIED** for the end state; or ≈ 9 h of CPU) | AM-2's variance gate: `kit gate` | — | ≈ 0.1 | — |
+| **P2** | 7–8 | C0 s3504, s3505 | the registered look-2 controls, moved forward: every arm's look 2 and the 6-df σ̂ | G1 read (either verdict) | 2 × 4.3 | — |
+| **P3** | 9–10 | A1 s3504, s3505 | A1's look 2: the top-ranked arm decided first | A1 look 1 = CONTINUE | 2 × 4.4 | C0 s3504–s3505 |
+| **P4** | 11–13 | **D1 s3501–s3503** (X38) | WIDEN THE TEAM POOL: half of each side's teams from 2,424 Smogon forum teams; eval stays on the pool | G1 PASS | 3 × 4.3 (**UNVERIFIED**) | C0 s3501–s3503 (`main.x35.d1`) |
+| | 14–16 | **A2 s3501–s3503** | PFSP: recent selves the trainee loses to are drawn more often (+5 sentinels feed it win rates) | G1 PASS | 3 × 4.4 | C0 s3501–s3503 |
+| **T1** | 17 | toy C0 s3601 | toy control | none | 4.3 | — |
+| | 18 | **X47 s3601** | DEPTH GROWTH: the toy's 2 attention rounds become 4, the 2 new rounds exact identities, so the network starts as T\*'s function bit for bit | none | 5.6–6.0 | toy C0 s3601 (PRIMARY at equal effective learn time, node s_eq, `main.x35.x47`) |
+| | 19 | X47 s3602 | depth growth | none | 5.6–6.0 | toy C0 s3602 |
+| | 20 | toy C0 s3602 | toy control | none | 4.3 | — |
+| | 21 | toy C0 s3603 | toy control | none | 4.3 | — |
+| | 22 | X47 s3603 | depth growth | none | 5.6–6.0 | toy C0 s3603 |
+| **T1b** | 23–26 | X47 s3604, toy C0 s3604, toy C0 s3605, X47 s3605 | X47's look 2 (AM-4) | X47 look 1 = CONTINUE | 2 × 5.6–6.0 + 2 × 4.3 | toy C0 s3604–s3605 |
+| **T2** | 27–29 | toy A1 s3601–s3603 | the archive pool on the toy (8 nodes of T\*'s own lineage) | G1 PASS and production A1 FINAL GAIN / NULL / LOSS (AM-3) | 3 × 4.4 | toy C0 s3601–s3603 |
+| | 30–32 | toy A2 s3601–s3603 | PFSP on the toy | G1 PASS and production A2 FINAL GAIN / NULL / LOSS (AM-3) | 3 × 4.4 | toy C0 s3601–s3603 |
+
+**The GPU-h, by condition** (the basis below; the review's §3 has the same stages):
+
+| what runs | GPU-h |
+|---|---|
+| unconditional: P1 + G1 + P2 + T1 | 26.1 + 0.1 + 8.6 + 29.7–30.9 ≈ **65** |
+| + P4 (G1 PASSes; the expected path) | + 26.1 ≈ **91** |
+| + P3 (A1 look 1 CONTINUE) | + 8.8 |
+| + T1b (X47 look 1 CONTINUE) | + 19.8–20.6 |
+| + T2 (AM-3: production A1 and A2 both FINAL) | + 0–26.4 |
+| every conditional stage | ≈ **146–148** |
+| not in BATCH1, at X35_PIN_1 when they happen | D1 / A2 look 2 (2 × 4.3 / 2 × 4.4, on their own look-1 CONTINUE; the kit allows them, AM-7 does not schedule them), toy A1 / A2 look 2, the G-E readers (≈ 2.2 per GAIN arm, §0), R1 reads (≈ 0.3 GPU-h each in a window) |
+
+The old queue's "≈ 108 GPU-h ≈ 4.5 days" was look 1 only (review F-RV-13); a fully decided batch was ≈ 190.
 
 **The stop rule, every arm.** Each arm runs to its fixed `--steps` (P\* + 20M, T\* + 70M) and ends with the launcher's
 `Training complete`. No arm stops on a score: the length is what makes it comparable with C0 (§5.6.1; X47's PRIMARY
 reads the node s_eq inside its run, its SECONDARY the final, so X47 also runs to +70M). An arm ends early only on:
 - **K9(b)** (the behaviour-policy check): EVERY arm, production and toy, runs `warn` with the ceilings read by hand via
   `main.ops.tb_read` at every restart and daily: STOP on any update with judged max ≥ 1e-3, p99 ≥ 1e-4, or a non-finite
-  |Δ| (rule 8 at 1e-9 relative). Production's are X26's Amendment 3. The toy's are X34's (ruling **C3**; its
+  |Δ| (rule 8 at 1e-9 relative). **AM-6:** at EACH arm's end the Training session runs
+  `python -m main.x35.kit k9b --run-dir models/<run> --stage $S` (the fork's own rows only); a VOID arm enters no
+  read and is re-run at the same pin and seed after the cause is fixed, and pre-check 11 refuses the next GO until
+  every finished arm reads PASS. Production's are X26's Amendment 3. The toy's are X34's (ruling **C3**; its
   `STAGED_LAUNCH.md` §7, `c9516bac` / `96c663d4`), and `main.x35.kit describe` carries them for the toy arms. **The
   mechanism is the flag plus a human read: no code enforces a ceiling** (F-LS-9).
 - a `FATAL_*` exit (not restarted), or a 4th crash (the launcher restarts 3).
@@ -89,7 +133,10 @@ arms, as §5.6.4 plans. Look 2 (seeds 3504–3505 / 3604–3605) is a later batc
 ## 2. The pre-launch checks (in this order; any failure is a HOLD)
 
 `launch_x35.sh` runs checks 4–9 itself for every kit arm (exit 7 = HOLD, reason in `~/.claude/jobs/x35/status.txt`),
-X47 (`toy_x47`) included (F-LS-1 is closed).
+X47 (`toy_x47`) included (F-LS-1 is closed), and since the amendment (§0) four more: **2b** the ONE pin (AM-1), **9**
+the stage is ALLOWED (AM-7 / AM-3 / AM-4), **10** the seeded pool set equals the side's record (POOL), **11** every
+finished batch-1 arm PASSed K9(b) at its end (AM-6). The first GO also needs `--t62 <verdict>` (it writes
+`x35_pin_batch1.txt`).
 
 1. **X34 has STOPPED by its registered rule** (two consecutive FLAT Tier-1 checks, 200M and 210M), its launcher PID is
    gone (`ps -p`), and the stop is recorded. T\* is the 210M node: record its path, step and sha256 in the call
@@ -144,7 +191,9 @@ INCONCLUSIVE in between (the orchestrator decides).
     `hypothesis_set_test` presence cases), with a counting patch. Only the CPU forward was checked; the learner path
     has no belief loss on the toy (its belief coefficients are 0), which was not executed here.
 
-What to do when the verdict is not ADOPT is open choice C1 (§5).
+**C1 RULED (orchestrator, 2026-10-19): (a).** Production launches at main HEAD with T62 whatever the battery reads
+(FP32_ALT does not exist, and T62's cost is paid by b-ON and C0 alike); the measured cost is recorded beside the
+batch, and `x35_pin_batch1.txt` records the T62 verdict known at the first GO (`PENDING` until the battery reads).
 
 ---
 
@@ -258,10 +307,10 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
 
 ---
 
-## 5. The choices (the orchestrator's): C2, C3 and C4 RULED; C1, C5 and C6 still open
+## 5. The choices (the orchestrator's): C1, C2, C3 and C4 RULED; C5 and C6 still open
 
-- **C1. The battery does not read ADOPT.** The registered rule says production then uses FP32_ALT, which does not exist
-  (§3).
+- **C1. The battery does not read ADOPT. RULED (orchestrator, 2026-10-19): (a)**, launch production at main HEAD with
+  T62 pending the battery read (§0, §3). The registered rule had said FP32_ALT, which does not exist (§3).
   - (a) Launch production at main HEAD anyway (T62), recording the measured cost. T62 is a correctness fix (one τ for the
     compiled rollout and the eager learner), and its cost is paid by b-ON and C0 alike, so it biases no A/B; it only
     raises the GPU-h.
@@ -276,7 +325,8 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
   un-interleaved with its C0. The reason: X47's read is against C0, so box drift should not land on one side, and A2
   (the calibration pair's plausible null, the cheapest to defer) still finishes at the same pin. BUILT: the kit's
   `BATCH1` is this order and `kit_test.py` pins it (the whole list, each X47 adjacent to its C0 with C0 first on s3601
-  and s3603, A2 last).
+  and s3603, A2 last). **Superseded in part by AM-7 (§0):** the X47 / toy C0 pairs keep C2's interleave (look 2 too),
+  toy A1 moved to the conditional toy calibration, last.
 - **C3. The toy arms' K9(b) mode. RULED (orchestrator, 2026-10-19): (b), `warn` with X34's ceilings.** The kit had typed
   `fatal` "as X34 does" (§5.6.1, written 2026-10-17), but X34 itself has run `warn` since its §7 amendment (2026-10-19;
   `STAGED_LAUNCH.md` §7, `c9516bac` / `96c663d4`). X34's mechanism is `--behaviour-check warn` on the argv plus ceilings
@@ -332,7 +382,7 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
   `BATCH1`, and `kit_test.py` cases that fail on revert: so `launch_x35.sh` dry-runs and launches it, `kit disk` counts
   its 3 forks, and `validate_batch1.sh` gives it a verdict.
 - **F-LS-2 (blocker for the FP32_ALT variant): no FP32_ALT commit exists** (§3). The registered T62 rule cannot be
-  executed as written if the battery does not read ADOPT. Choice C1.
+  executed as written if the battery does not read ADOPT. Choice C1, RULED (a) on 2026-10-19.
 - **F-LS-3 CLOSED 2026-10-19: the toy K9(b) mode** is `warn` (ruling C3, §5). The kit's old `fatal` for the toy was the
   stricter check and a stop would have left an arm short; X34's own scalars never reached its bar (C3).
 - **F-LS-4: every toy line is a 200M STAND-IN** (the validation prints `call=reference_population_toy_STANDIN_200m.json`). Its `--steps` and A1's archive change at the real T\*: rebuild them

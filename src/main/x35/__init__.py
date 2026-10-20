@@ -1,5 +1,5 @@
 """X35, the plateau-breakers: the STAGE KIT (``TASK_BACKLOG.md`` T55; ``designs/endstate/design_compute_efficiency.md``
-§5.6). Four parts, one module each:
+§5.6). One module per part:
 
 * :mod:`main.x35.readout` -- the population-score ESTIMATOR and the deterministic decision function of §5.6.4
   (R1, R2, the guards G-F / G-E / G-C / G-K, the verdict), self-checked by :mod:`main.x35.selfcheck` on
@@ -8,7 +8,14 @@
   (the X-block's [0.20, 0.80] band, every sha256 written before the first arm);
 * :mod:`main.x35.kit` -- each arm's launch argv from the frozen call record, the two-phase A3 / A6 records, and the
   pre-check helpers ``launch_x35.sh`` calls (the script lives in the staging directory);
-* :mod:`main.x35.kakuna` -- the external-anchor (G-K) unit runner on the COMMITTED home72 config.
+* :mod:`main.x35.kakuna` -- the external-anchor (G-K) unit runner on the COMMITTED home72 config;
+* :mod:`main.x35.d1` -- D1's (X38's) own readout (H on the unfamiliar panels, widened by the seed overdispersion
+  (AM-5), and P);
+* :mod:`main.x35.batch` -- batch 1's gates, the orchestrator's 2026-10-19 rulings on the review: ONE pin (AM-1), one
+  seeded pool set per side, the variance gate G1 (AM-2), the staged order and its conditions (AM-7 / AM-3 / AM-4),
+  K9(b) at each arm's end (AM-6);
+* :mod:`main.x35.x47` -- X47's readout (AM-4): s_eq at equal effective learn time, the matched-step secondary, the
+  PER-STEP ONLY class; :mod:`main.x35.tbrows` -- a fork's OWN TensorBoard rows (the inherited prefix excluded).
 
 Nothing here launches, trains or plays on import. The staging record is
 ``designs/research_state/measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md``.
