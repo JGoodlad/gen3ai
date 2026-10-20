@@ -610,7 +610,13 @@ from typing import Any, Dict
 #   rule and the fork-time function check; a same-run restart keeps it; None otherwise. Never compared by
 #   check_compatible (the grown fields are; a declared growth passes `check_compatible_grown`). A pre-v159 config
 #   migrates to None. No ARCH_SIGNATURE bump (the forward and every module are unchanged), no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 159
+# v160 (gen3_tau_fp32_alt_v1, FP32_ALT): one NUMERICS field, `tau_solve` {fp32_alt,fp64} (`--tau-solve`, default
+#   fp32_alt): the arithmetic of X5's fixed-size shift τ in every forward the run builds — fp32_alt the split residual in
+#   fp32 (exact to ~2 ulp whatever the slope), fp64 T62's float64 naive sum (~1/64 rate on consumer GPUs). Both are the
+#   same real function: never compared by check_compatible; RECORDED and `_resolve`-inherited. A pre-v160 config
+#   migrates to fp32_alt (no earlier run chose one). No ARCH_SIGNATURE bump (no module, weight or obs change), no
+#   MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 160
 
 # THE OBS-SEMANTICS MARKER (declared 2026-10-09, with v151): the FIRST config version whose OBSERVATION VALUES
 # (the vector the encoder writes, and the model-input cells derived from it) MEAN something different from every

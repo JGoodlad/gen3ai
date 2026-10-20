@@ -149,6 +149,28 @@ class ExtractorApi(ExtractorBuild):
             print(f"[Gen3FeaturesExtractor] oracle_reveal APPLIED at runtime -> {new!r} "
                   "(the loaded extractor carried the zip's mode; the observation itself is the env core's)")
 
+    def set_tau_solve(self, solve: str) -> None:
+        """Apply the RUN's resolved τ solve (`--tau-solve`, gen3_tau_fp32_alt_v1) to the live extractor after a load.
+
+        SB3's load rebuilds the extractor from the ZIP's saved ``policy_kwargs`` -- the PARENT's on a fork, and none at
+        all before config v160 -- so a fork that types (or inherits from ``model_config.json``) a solve its parent's zip
+        does not carry would otherwise run the zip's. The ONE holder is ``hypothesis_builder.tau_solve`` (every
+        fixed-size construction reads it); a network without a builder runs no τ and only checks the value. Like
+        ``set_oracle_reveal`` it never touches ``features_extractor_kwargs``: the two solves are the same real function
+        (<= 2 fp32 ulp of τ apart), so a fork that switched solve is not a different forward for slot grouping. The
+        consequence, harmless for the same reason: a model the run REBUILDS from that zip's kwargs (not a deep copy of
+        the learner) runs the zip's solve until the run's own fresh-built kwargs carry it."""
+        from agents.model.hypothesis_set import check_tau_solve
+
+        solve = check_tau_solve(solve)
+        hb = getattr(self, "hypothesis_builder", None)
+        if hb is None:
+            return
+        changed = solve != hb.tau_solve
+        hb.tau_solve = solve
+        if changed:
+            print(f"[Gen3FeaturesExtractor] tau_solve APPLIED at runtime -> {solve!r} (the loaded zip carried another)")
+
     def _stamp_belief_grad_flags(self) -> None:
         """Push `belief_grad_mode` down onto the heads — the ONE place either per-head flag is set.
 

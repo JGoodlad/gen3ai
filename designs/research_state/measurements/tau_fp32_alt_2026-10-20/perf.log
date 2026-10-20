@@ -1,0 +1,10 @@
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-perf-2488808.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[micro species] eager {'fp32_naive': 30.72746400721371, 'fp32_alt': 45.30172003433108, 'fp64': 109.08258496783674} {'fp32_alt/fp32_naive': 1.474, 'fp64/fp32_naive': 3.55} | compiled {'fp32_naive': 67.42158904671669, 'fp32_alt': 72.71047518588603, 'fp64': 156.39542997814715} {'fp32_alt/fp32_naive': 1.078, 'fp64/fp32_naive': 2.32}
+[micro moves] eager {'fp32_naive': 249.0877399686724, 'fp32_alt': 375.59180497191846, 'fp64': 1052.656346000731} {'fp32_alt/fp32_naive': 1.508, 'fp64/fp32_naive': 4.226} | compiled {'fp32_naive': 319.5685010869056, 'fp32_alt': 491.7133131530136, 'fp64': 573.8021498546004} {'fp32_alt/fp32_naive': 1.539, 'fp64/fp32_naive': 1.796}
+[forward eager B=1] {'fp32_naive': 101.78704210557044, 'fp32_alt': 105.6730451527983, 'fp64': 100.686987163499} {'fp32_alt/fp32_naive': 1.038, 'fp64/fp32_naive': 0.989}
+[forward eager B=16] {'fp32_naive': 164.32649618946016, 'fp32_alt': 175.35845306701958, 'fp64': 174.12770190276206} {'fp32_alt/fp32_naive': 1.067, 'fp64/fp32_naive': 1.06}
+[forward eager B=64] {'fp32_naive': 369.5474599953741, 'fp32_alt': 389.1157389152795, 'fp64': 378.24679794721305} {'fp32_alt/fp32_naive': 1.053, 'fp64/fp32_naive': 1.024}
+[forward eager B=256] {'fp32_naive': 1617.345181060955, 'fp32_alt': 1781.0030030086637, 'fp64': 2280.4500511847436} {'fp32_alt/fp32_naive': 1.101, 'fp64/fp32_naive': 1.41}
+[forward compiled B=64] {'batch': 64, 'compile_s': {'fp32_naive': 44.3, 'fp32_alt': 377.6, 'fp64': 31.8}, 'ms': {'fp32_naive': 6732.066318858415, 'fp32_alt': 384.6155400387943, 'fp64': 983.6625580210239}, 'ratio': {'fp32_alt/fp32_naive': 0.057, 'fp64/fp32_naive': 0.146}}
+[mem_cap] done: gen3ai-capped-perf-2488808.scope exit 0 · peak 3.14 GB of cap 12.00 GB (26%) · not OOM-killed
+exitP 0

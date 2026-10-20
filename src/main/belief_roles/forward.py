@@ -260,7 +260,7 @@ def read_columns(model: Any, br: BankRows, roles: RoleSet, threads: int = 4,
             # ---- the prior column (Smogon T0 → the fixed-size construction, fp64)
             t0lp = species_team_prior_logits(t0.species_prior_log_marginal, t0.species_prior_log_lift,
                                              opp_ids, believed).double()
-            pi_prior = fixed_mass_presence(t0lp, cand, k).pi
+            pi_prior = fixed_mass_presence(t0lp, cand, k, solve=fe.hypothesis_builder.tau_solve).pi
             # ---- the arm's own presence
             hs = st.hypothesis
             assert hs is not None, "an X5 forward stashed no hypothesis set"

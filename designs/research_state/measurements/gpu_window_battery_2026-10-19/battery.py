@@ -73,13 +73,21 @@ def _cpu_env() -> dict[str, str]:
     return {**os.environ, "PYTHONPATH": str(SRC), "CUDA_VISIBLE_DEVICES": "", "PYTHONDONTWRITEBYTECODE": "1"}
 
 
-def _run_check(argv: list[str], timeout: int = 900) -> tuple[str, str]:
-    """``("ok" | "fail", detail)`` of a CPU check subprocess (no GPU: ``CUDA_VISIBLE_DEVICES=""``)."""
+#: A T62 cell's check exits this at a commit carrying FP32_ALT (no ``TAU_SOLVE_DTYPE``): SKIP, never a HOLD.
+#: The FP32_ALT cells are the 2026-10-20 battery (../gpu_window_battery_2026-10-20/).
+T62_SUPERSEDED_RC = 9
+
+
+def _run_check(argv: list[str], timeout: int = 900, skip_rc: int | None = None) -> tuple[str, str]:
+    """``("ok" | "fail" | "skip", detail)`` of a CPU check subprocess (no GPU: ``CUDA_VISIBLE_DEVICES=""``); exit
+    ``skip_rc`` (when given) is a SKIP."""
     try:
         q = subprocess.run(argv, env=_cpu_env(), cwd=str(ROOT), capture_output=True, text=True, timeout=timeout,
                            check=False)
     except subprocess.TimeoutExpired:
         return "fail", f"check timed out after {timeout} s"
+    if skip_rc is not None and q.returncode == skip_rc:
+        return "skip", (q.stdout or q.stderr).strip()[-400:]
     tail = (q.stdout.strip().splitlines() or [""])[-1] if q.returncode == 0 else (q.stderr or q.stdout).strip()[-800:]
     return ("ok" if q.returncode == 0 else "fail"), tail
 
@@ -148,7 +156,7 @@ def cells() -> list[Cell]:
         "t62_dec", "T62: T2 decision forward, compiled + CUDA graph, buckets 64 / 256, fp32 vs fp64 tau (ABAB)",
         mem_gb=16, wall_min=45, eta_min=20,
         cmd=lambda out: [py, "-u", dec, "--out", str(out / "cells" / "t62_dec.json")],
-        check=lambda out: _run_check([py, dec, "--check"]),
+        check=lambda out: _run_check([py, dec, "--check"], skip_rc=T62_SUPERSEDED_RC),
         result=lambda out: _json_status_ok(out / "cells" / "t62_dec.json")))
     # 2. the frozen_guard arming check (bf4eb59d)
     junit = "frozen_guard.junit.xml"
@@ -166,7 +174,7 @@ def cells() -> list[Cell]:
             name, f"T62: learner compiled bf16 train() at production shape, tau solve {tau}",
             mem_gb=24, wall_min=40, eta_min=12,
             cmd=_upd_cmd(py, upd, name, tau),
-            check=lambda out: _run_check([py, upd, "--check"]),
+            check=lambda out: _run_check([py, upd, "--check"], skip_rc=T62_SUPERSEDED_RC),
             result=_json_result(name),
             prepare=_t62_update_prepare(name)))
     # 4. X45 (landed ad821b615): the CUDA test first (it must PASS, not skip), then the sweep

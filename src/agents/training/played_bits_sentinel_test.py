@@ -37,7 +37,10 @@ RECORDED 2026-10-19 on ``803a13e3`` (+ this file): the production surface of tha
 f1deb42d…); the Hidden Power Ghost IV row back to 30 Atk / 30 SpD (``f2052657`` reverted) moves BOTH (79a2ae96… /
 09582cc2…). The Node team validation is NOT in the pack here (it judges legality, never a byte: same digest with it).
 RE-RECORDED log (newest last):
-  (none yet)
+  2026-10-20 — FP32_ALT (``gen3_tau_fp32_alt_v1``, config v160): the default tau solve moved from T62's float64 naive
+  sum to the fp32 split residual (tau moves by <= 2 fp32 ulp). PLAYED_DIGEST only (was 6b2517a4…), PACKED_DIGEST
+  unchanged. Verified: with every hypothesis builder forced to ``fp64`` the old 6b2517a4… reproduces exactly (and the
+  K9 learner golden's T62 record with it), so the solve switch is the sole cause.
 """
 from __future__ import annotations
 
@@ -50,7 +53,7 @@ import pytest
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
 PACKED_DIGEST = "94d96d5746b1a8e5402d940ba649787dbb5097e57f750ccc9abd2e970b6cf5f4"
-PLAYED_DIGEST = "6b2517a448bb89fc68c9d274a972c93450bcb438e61196ab7d9a42ac223d5fc6"
+PLAYED_DIGEST = "41a3593909a5325610edb6d068013e0be014ada5edd69a2233e113c6e5b0b8f7"
 
 N_GAMES = 2
 TURN_LIMIT = 4

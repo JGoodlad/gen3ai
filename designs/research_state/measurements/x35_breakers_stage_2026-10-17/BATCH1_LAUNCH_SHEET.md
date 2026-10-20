@@ -3,8 +3,8 @@
 **Status: STAGED and AMENDED (§0, 2026-10-19, before any X35 launch); T\* RESOLVED (X34 plateaued, 2026-10-19: "Words used here"); the
 toy R is FROZEN on the real T\*; every argv of the amended order (32 forks, the toy on the real T\*) validated at main
 HEAD `03b983be` (§4.3); nothing launched; every launch NEEDS THE ORCHESTRATOR'S GO.** **AMENDED AGAIN 2026-10-20
-(AM-8, §0), before any launch, after the GPU battery's read: the T62 gate is DECIDED as FP32_ALT (which does not exist
-yet), so there is ONE PIN PER SIDE, the TOY BLOCK RUNS FIRST (AM-9) and production waits for the FP32_ALT commit (a
+(AM-8, §0), before any launch, after the GPU battery's read: the T62 gate is DECIDED as FP32_ALT (BUILT later that day,
+`gen3_tau_fp32_alt_v1`; its GPU cost read gates production), so there is ONE PIN PER SIDE, the TOY BLOCK RUNS FIRST (AM-9) and production waits for the FP32_ALT commit (a
 placeholder the kit refuses to launch on).** X47 is a **kit arm**
 (`toy_x47`, F-LS-1 closed). The orchestrator has ruled **C1** (a), **C2** (X47 interleaved with its toy C0), **C3** (the
 toy arms run K9(b) `warn` under X34's ceilings), **C4** (batch 1 launches without R0) and every amendment of the
@@ -175,7 +175,8 @@ finished batch-1 arm PASSed K9(b) at its end (AM-6, batch-wide). A side's first 
    lists nothing, and `scripts/ops/gpu_lease.sh status` reads FREE or the Training session's lease.
    `python -m main.x35.kit live` exits 0 (no training run live).
 3. **The battery's T62 verdict is read: FP32_ALT (2026-10-20, AM-8).** The toy side does not depend on it (§3); production
-   waits for the FP32_ALT commit (check 4).
+   waits for the FP32_ALT commit (check 4) AND for its GPU cost read (`../gpu_window_battery_2026-10-20/read_battery.py`:
+   the FP32_ALT gate CONFIRMED).
 4. **The pin** carries every commit in [`x35_required_commits.txt`](x35_required_commits.txt): T54 `cdab9cfe`, B-D2
    `c1b0c1f0`, the forum-corpus lift `f9360870`, F-BI-2 `4df10e65`, B-GROW `24616919`, B-GROW × F-BI-2 `aa5feaf5`, T62
    `bd3126e0`, and the canary YARDSTICK fix `03b983be` (its code is `ee49f1f9`, `gen3_r1_yardstick_margin_v1`; `03b983be`
@@ -218,14 +219,15 @@ cost of 82–127 %: FP32_ALT.**
   against 20 calls in the positive control (the `hypothesis_set_test` presence cases), with a counting patch. Only the CPU
   forward was checked; the learner path has no belief loss on the toy (its belief coefficients are 0), which was not
   executed here (F-LS-8).
-- **PRODUCTION pin: the FP32_ALT variant, and NO SUCH COMMIT EXISTS YET (F-LS-2).** FP32_ALT is not a flag and not a
-  revert. The battery README defines it as "the fp32 complementary-constraint alternative" from the T62 decision row in
-  [`design_x5_belief_tokens.md`](../../../endstate/design_x5_belief_tokens.md): solve the COMPLEMENTARY constraint when the
-  mass saturates, "a second code path and a second case split". That is a build (another agent's, about a day from
-  2026-10-20): the code, tests that fail on revert, and re-recording the learner golden (`learner_golden.json`) and the h2h
-  reveal file's `OFF_BITS` that `bd3126e0` / `803a13e3` re-recorded under fp64. A plain revert of `bd3126e0` is NOT
-  FP32_ALT: it brings back the K9(b) τ-class divergence (X26's A3 / A6 stops) that T62 fixed, and it would also need
-  `803a13e3` undone.
+- **PRODUCTION pin: the FP32_ALT variant — BUILT 2026-10-20 (`gen3_tau_fp32_alt_v1`, config v160; F-LS-2).** Not a
+  revert of `bd3126e0`: τ's bisection tests the SPLIT residual Σ ±σ(−|x|) > k − |{x > 0}| in fp32 (the "complementary
+  constraint" of the T62 decision row, as one case-free form; [`design_x5_belief_tokens.md`](../../../endstate/design_x5_belief_tokens.md)
+  §3.2), recorded as `--tau-solve fp32_alt`, the default, which every fork of P\* inherits (its pre-v160 config migrates
+  to it): the argvs are unchanged. On X26's τ-class violators τ lands within 1.5e-6 of the exact root under every
+  summation order and inductor-vs-eager ([`../tau_fp32_alt_2026-10-20/`](../tau_fp32_alt_2026-10-20/)); the learner
+  golden, the played-bits sentinel and the reveal file's `OFF_BITS` are re-recorded with their cause. **Production GO
+  waits for its GPU cost read** ([`../gpu_window_battery_2026-10-20/`](../gpu_window_battery_2026-10-20/): FP32_ALT vs
+  the naive fp32 sum, CONFIRMED iff ≤ 3 % of a cycle); the orchestrator fills the placeholder below after that read.
   - **The gate (AM-8).** [`x35_required_commits_production.txt`](x35_required_commits_production.txt) holds the placeholder
     `FP32_ALT_SHA_PENDING`; until it is replaced by the commit's full sha, `launch_x35.sh` HOLDs every production launch
     (pre-check 2c) and `kit stage-check` reads PENDING for every production fork. **When FP32_ALT lands:** (1) replace the
@@ -425,7 +427,7 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
 ## 5. The choices (the orchestrator's): C1, C2, C3, C4 and C5 RULED; C6 still open
 
 - **C1. The battery does not read ADOPT. RULED (orchestrator, 2026-10-19): (a)**, launch production at main HEAD with
-  T62 pending the battery read (§0, §3). The registered rule had said FP32_ALT, which does not exist (§3).
+  T62 pending the battery read (§0, §3). The registered rule had said FP32_ALT, which did not exist then (§3).
   **SUPERSEDED 2026-10-20 (AM-8):** the battery then read FP32_ALT (the fp64 solve doubles the learner update) and the
   orchestrator ruled that production WAITS for it, the toy block going first (AM-9): option (b) below, in effect. Kept as
   the record of the 2026-10-19 choice.
@@ -493,7 +495,7 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
   `FATAL_*`, ends the arm: report to the orchestrator before anything else runs. A relaunch under the same name and pin
   is allowed for an operational fix; a scientific change is a new arm with a new registration (SOP §4.4).
 - **A K9(b) ceiling crossed (production, warn):** stop the arm at its next safe point (SIGTERM by PID through the
-  identity gate `kill_if.sh`), keep the GPU idle, and page the orchestrator. Under T62 the τ class should not recur;
+  identity gate `kill_if.sh`), keep the GPU idle, and page the orchestrator. Under FP32_ALT the τ class should not recur;
   X26's Amendment 6 (the τ class STOP at 1e-2) is NOT carried into X35.
 - **A `--sync-to-main` line, or a `Pinned to` sha that is not `<PIN>`:** the arm is VOID; stop it.
 - **A HOLD between arms:** the GPU stays idle until the orchestrator decides (TRAINING_RUN_SOP §3, rule 3); the next arm
@@ -507,11 +509,11 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
   "rb_x35t_x47d4_s{seed}", 0, "warn")` (seeds 3601–3603) whose lever is `--grow trunk_layers=4`, three places in
   `BATCH1`, and `kit_test.py` cases that fail on revert: so `launch_x35.sh` dry-runs and launches it, `kit disk` counts
   its 3 forks, and `validate_batch1.sh` gives it a verdict.
-- **F-LS-2 (BLOCKS EVERY PRODUCTION FORK until it lands): no FP32_ALT commit exists** (§3). The battery read FP32_ALT on
-  2026-10-20, so the registered T62 rule now points at a build that is not there; C1 (a) is superseded (AM-8) and
-  `x35_required_commits_production.txt` holds the placeholder `FP32_ALT_SHA_PENDING`, which HOLDs every production launch
-  (pre-check 2c) and reads PENDING in `stage-check`. The build (~1 day, another agent's) must also re-record
-  `learner_golden.json` and the h2h `OFF_BITS`.
+- **F-LS-2 (BLOCKS EVERY PRODUCTION FORK until its sha is filled): FP32_ALT is BUILT 2026-10-20** (`gen3_tau_fp32_alt_v1`,
+  §3; `learner_golden.json` and the h2h `OFF_BITS` re-recorded with it). `x35_required_commits_production.txt` still
+  holds the placeholder `FP32_ALT_SHA_PENDING`, which HOLDs every production launch (pre-check 2c) and reads PENDING in
+  `stage-check`, until the orchestrator fills it with the build's sha AFTER its GPU cost read PASSes
+  (`../gpu_window_battery_2026-10-20/`).
 - **F-LS-3 CLOSED 2026-10-19: the toy K9(b) mode** is `warn` (ruling C3, §5). The kit's old `fatal` for the toy was the
   stricter check and a stop would have left an arm short; X34's own scalars never reached its bar (C3).
 - **F-LS-4 CLOSED 2026-10-19: the toy lines are on the REAL T\*.** X34 plateaued; T\* = the 290M node (sha256
@@ -541,8 +543,9 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
   DECLARED); the growth's bit-identity gate, the grown pool and the pool-seed record are child-side and are first seen
   at the real launch (read the first minutes of the log, §4.2).
 - **F-LS-11 (UNVERIFIED): the production GPU-h assume FP32_ALT costs what X26's fp32 τ path did.** X26's 1,333–1,358
-  steps/s predate T62; the fp64 solve measured +82–127 % per cycle, and FP32_ALT "a second code path and a second case
-  split" is expected to cost about what the old fp32 solve did, but nothing has run it. Read the first 1M of the first
+  steps/s predate T62; the fp64 solve measured +82–127 % per cycle, and FP32_ALT is expected to cost about what the old
+  fp32 solve did (CPU: +4 to +10 % of the eager decision forward, `../tau_fp32_alt_2026-10-20/`), but its GPU cost is read
+  only by `../gpu_window_battery_2026-10-20/`. Read the first 1M of the first
   production arm (as F-LS-7 does for D1 and X47) and restate the 65 / 91 / 146–148 GPU-h.
 - **F-LS-12: `required-check` proves ancestry, not identity** (§3): the sha in `x35_required_commits_production.txt` must be
   a real commit and an ancestor of the production pin, but the check cannot know it is THE FP32_ALT build; a wrong sha that

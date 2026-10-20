@@ -210,8 +210,11 @@ def test_every_resume_immutable_flag_has_a_post_load_setter():
     from agents.model.features_extractor import Gen3FeaturesExtractor
     from agents.model.flag_registry import REGISTRY, Klass
 
+    from agents.model.resume_reapply import REAPPLIED_NUMERICS
+
     immutable = {f.name for f in REGISTRY if f.klass is Klass.RESUME_IMMUTABLE}
-    assert set(SETTERS) == immutable, (
+    assert not (REAPPLIED_NUMERICS & immutable) and REAPPLIED_NUMERICS <= {f.name for f in REGISTRY}
+    assert set(SETTERS) == immutable | REAPPLIED_NUMERICS, (
         "a resume_immutable flag the loaded extractor carries as an attribute is rebuilt from the PARENT's zip on a "
         "fork: add its setter to agents.model.resume_reapply.SETTERS (and extractor_api) in the same pass")
     for name, setter in SETTERS.items():

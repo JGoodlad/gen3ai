@@ -604,8 +604,10 @@ its plateau, then the toy (X34) to its plateau, then breakers on both. No PFSP o
 **AMENDMENT 2026-10-20 (AM-8: the orchestrator's rulings after the GPU battery's read, made BEFORE any X35 launch; the
 launch sheet's §0 has the table, each item BUILT in `src/main/x35/` and enforced by `launch_x35.sh`):** the T62 gate is
 DECIDED as **FP32_ALT**: the float64 τ solve doubles the production learner update (41 s → 97 s), 82–127 % per cycle
-against the 3 % bar. FP32_ALT does not exist yet (being built, about a day). The TOY makes zero τ-solve calls, so T62 is
-irrelevant to it.
+against the 3 % bar. FP32_ALT is BUILT (2026-10-20, `gen3_tau_fp32_alt_v1`, config v160: the split residual in fp32, the
+default `--tau-solve`; `research_state/measurements/tau_fp32_alt_2026-10-20/`), and production GO waits for its GPU cost
+read (`research_state/measurements/gpu_window_battery_2026-10-20/`: FP32_ALT vs the naive fp32 sum, ≤ 3 % of a cycle).
+The TOY makes zero τ-solve calls, so T62 is irrelevant to it.
 - **AM-1 amended: ONE PIN PER SIDE.** The production arms (A1 / C0 / D1 / A2) share one pin, the toy arms (toy C0 / X47 /
   toy A1 / toy A2) another. Each side's control shares its own arms' pin, which is all AM-1 protects. The production pin
   must carry the FP32_ALT commit: `x35_required_commits_production.txt` holds a placeholder until its sha is known, and

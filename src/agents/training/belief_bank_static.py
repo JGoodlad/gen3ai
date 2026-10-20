@@ -334,7 +334,7 @@ def hypothesis_set_terms(hs: Any, bl: Optional[Dict[str, th.Tensor]], sp_labels:
     p_loss, p_n, p_bad = set_bce(logits, pres, y)
     believed = hs.slot_is_hypothesis
     team = belief_head_team_scores(bl["species"], believed)                       # [B,S] graph → BeliefHead
-    bh = fixed_mass_presence(team, pres.cand, pres.k)
+    bh = fixed_mass_presence(team, pres.cand, pres.k, solve=pres.solve)          # the model's τ solve
     b_loss, b_n, _ = set_bce(bh.logits, bh, y)
     m_loss, m_n = hypothesis_moves_bce(bl["moves"], hs.slot_species, believed, sp_labels, mv_labels)
     aux = p_loss + b_loss + moves_weight * m_loss

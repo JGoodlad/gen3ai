@@ -345,16 +345,42 @@ uses it knowing that. No reference for dependent-indicator count calibration was
      MEASURED ≤ 45.2 nats on the pool.
    - **Bisection: 64 fixed iterations**, under `no_grad`, no data-dependent exit, so the graph is static and the result
      deterministic. 64 halvings of ≤ 46 nats reach below the fp64 resolution of τ.
-   - **The constraint is solved in FLOAT64 whatever the scores' dtype; only τ is cast back** (T62,
-     `gen3_tau_fp64_solve_v1`, 2026-10-19; `hypothesis_set.TAU_SOLVE_DTYPE`). τ's accuracy is the sum's resolution over
-     its slope, ulp(k) / S'(τ) with S'(τ) = Σπ(1 − π). On a SATURATED k = 1 row (one candidate at π ≈ 1 − 1e-5) the
-     slope is ~1e-5, so an fp32 sum fixed τ only to 7e-3 – 2.8e-2, and the compiled rollout and the eager learner,
-     summing in different orders, landed at different points of that band: the K9(b) τ-class tail (X26's A3 / A6
-     events, `research_state/measurements/x26_a3_stop_316M_2026-10-18/`). In float64 every program lands on the same τ
-     (MEASURED on the three events' violators: the fp32 solve's spread over 64 summation orders 1.4e-3 – 2.7e-2 and
-     its compiled-vs-eager gap up to 1.7e-2, both exactly 0 after; `research_state/measurements/t62_tau_fp64_2026-10-19/`).
-     τ itself is well-conditioned in the scores (∂τ/∂a is a π(1 − π)-weighted average); only the fp32 EVALUATION of
-     the sum was not, so the real function is unchanged.
+   - **The τ SOLVE — FP32_ALT, the split residual in fp32 (the DEFAULT since 2026-10-20, `gen3_tau_fp32_alt_v1`,
+     config v160; the run's recorded `--tau-solve`, `hypothesis_set.fixed_size_tau`'s `solve`).** τ's accuracy is
+     the constraint's evaluation error over its slope S'(τ) = Σπ(1 − π). The NAIVE sum Σσ(a + τ) near k is known
+     in fp32 only to ulp(k), so on a SATURATED k = 1 row (one candidate at π ≈ 1 − 1e-5, slope ~1e-5) it fixed τ
+     only to 7e-3 – 2.8e-2, and the compiled rollout and the eager learner, summing in different orders, landed at
+     different points of that band: the K9(b) τ-class tail (X26's A3 / A6 events,
+     `research_state/measurements/x26_a3_stop_316M_2026-10-18/`). FP32_ALT keeps the bracket and the 64 steps and
+     changes only the direction test: with x = a + τ and H = {x > 0},
+     **Σσ(x) > k ⟺ Σ_s h(x_s) > k − |H|, h(x) = σ(x) for x ≤ 0 and −σ(−x) for x > 0**, so every term is
+     ±σ(−|x|) ∈ [−½, ½], relative-accurate, and k − |H| is an EXACT integer — the near-1 term σ(x) ≈ 1, whose
+     1 − π the naive sum loses below ulp(1), is never formed. **The conditioning, proved:** with R + D = Σσ(−|x_s|)
+     the terms' absolute sum, any summation order errs by at most c·(R + D), c ≈ (depth + 2)·u (u = 2^-24; the
+     rounding of x itself moves τ as a one-ulp change of the scores would); S' = Σπ(1 − π) ≥ ½Σmin(π, 1 − π) =
+     ½(R + D), and log(R + D) is Lipschitz-1 in τ, so S(τ) − k exceeds the error whenever |τ − τ*| > −ln(1 − 2c) ≈
+     2c: τ is fixed to ~2c ≈ 1e-6 absolute WHATEVER the slope (then rounded to fp32 once). It costs ~2× the naive
+     test's elementwise work per element (abs, a sigmoid, a select, one fused integer count) and NO float64 op (the
+     traced graph holds none, `tau_solve_test`). MEASURED (`research_state/measurements/tau_fp32_alt_2026-10-20/`):
+     on X26's three violators at their two neighbour checkpoints each, τ within 1.9e-7 – 1.5e-6 of the exact root
+     of the fp32 scores (≤ 1 fp32 ulp; the naive sum 3.0e-3 – 2.5e-2), the SAME τ under 64 summation orders and
+     inductor-CPU vs eager on every violator (≤ 1.9e-6 on the other 32 rows of each dump), the predicted K9(b) gap
+     (spread × ∂log π/∂τ) 0 on every violator (naive: 3.3e-5 – 4.3e-3, rank 1 of 33); on synthetic saturated rows
+     (k = 1 and 3, the top candidates 12–150 nats clear) within 0.73 ulp of a 60-digit root. It degrades only where
+     EVERY σ(−|x|) underflows (the top candidate ≳ 165 nats clear of the next): τ then lands where the runner-up's
+     log π floors at ≈ −88.7 instead of its true −100 or below — weights < e^−88 either way. The cross-program
+     residue: FP32_ALT's τ sits within ~1 ulp of the float64 root, so two programs can land on ADJACENT floats where
+     fp64's land on the same one — ulp-scale wobbles in the program floor, the class the pre-T62 naive sum had on
+     every well-conditioned row (§3.2 Tolerance below); measured on the network in that directory's README.
+   - **`fp64` — T62's float64 naive sum (`gen3_tau_fp64_solve_v1`, 2026-10-19; `--tau-solve fp64`).** The bracket, the
+     sums and the bisection on a float64 copy of the scores, only τ cast back: ~1e-11 on the τ-class rows (every
+     program lands on the same fp32 τ; `research_state/measurements/t62_tau_fp64_2026-10-19/`). REJECTED as the default
+     for its COST: float64 runs at ~1/64 rate on consumer GPUs, and the 2026-10-19/20 GPU battery read +82–127 % of
+     a training cycle (decision forward B256 8.31 → 23.31 ms, learner update 41.4–42.0 s → 96.1–97.8 s; bar 3 %).
+     Its own naive float64 sum fails past a ~60-nat lead (τ off by 5e-4 at 60, 13 nats at 100). Kept selectable for a
+     run that records it. `fp32_naive` (the pre-T62 sum) is a MEASUREMENT baseline only; every model surface refuses it.
+     τ itself is well-conditioned in the scores (∂τ/∂a is a π(1 − π)-weighted average), so both solves compute the
+     SAME real function: never compared at load, a fork may switch.
    - **Tolerance reached** (MEASURED, 11,504 pool decisions × three beliefs, `x5_revision_2026-10-03/out/m1m3.log`):
      max |Σπ − k| = **2.7e-15 in fp64** and **1.5e-6 in fp32**; max |π_fp32 − π_fp64| = 1.5e-7. A Newton step after
      the bisection only lowers the fp32 residual to 1.0e-6 and is not used.
@@ -2088,3 +2114,4 @@ the safe default, but would leave X5 unadopted for reasons of noise.
 | 2026-10-10 | **F-X5-33's bench reinjection: the four-move closure BUILT, OFF** (`gen3_move_set_closure_v1`, config v154; from the prober's four-revealed Skarmory "Roar 92 %") | `--move-set-closure on`: every non-active opponent slot's MoveBelief reinjection reads `slot_move_presence(..., graph=True)` (the op roster's construction, k = 4 − r, carrying the move head's graph so the PPO route those rows had is kept); production stays `off` (sigmoid). Every other fixed-mass reader was verified closed (a bump on a four-revealed ACTIVE's unrevealed moves moves nothing) | the detached π on those rows (M10's choice at the active: a second lever, it cuts the PPO → move-head route); closing the published posterior (r = 4 only, no 4 − r renormalisation) | `measurements/belief_closure_2026-10-10/`; `move_set_closure_test.py`; `design_hand_computed_features.md` §4 rank 15 |
 | 2026-10-15 | **The seven α / β consumer blocks DELETED; move resolution the ONE consumer of the flat pointer's re-expression** (legacy deletion U3, config v157; `designs/ops/legacy_deletion_manifest_2026-10-12.md` B1 / C1) | `intent_move_cell`, `intent_threshold`, `intent_conditional`, `pair_outcome_*`, `switch_branch`, `conditional_threat` and the critic's threat projection (F-X5-11's R1 route) are gone with their flags; move resolution is DERIVED from its prerequisites; F-X5-15's `seat_live` inconsistency is moot (the inconsistent consumers are deleted). 🚨 The fresh-init stream changed (D-LD7) | keeping them inert (they cost nothing trained, but constructing them moved the init stream and their code duplicated move resolution's facts) | the ledger's U3 entry |
 | 2026-10-19 | **τ's constraint SOLVED IN FLOAT64 (T62, `gen3_tau_fp64_solve_v1`; no config / signature / floor / obs change)** | `fixed_size_tau` upcasts the scores to float64 (exact), runs the bracket, the sums and the 64-step bisection there, and casts only τ back to the scores' dtype. Every caller (the species call, the move group, the per-slot move presence, the belief bank, the belief-roles meter) gets it. The fp32 band ulp(k) / S'(τ) on a saturated k = 1 row is 7e-3 – 2.8e-2; float64's is ~1e-11, so the compiled rollout and the eager learner land on the same τ | solving the COMPLEMENTARY constraint when the mass saturates (correct but a second code path and a second case split); fp64 accumulation of fp32 terms only (the near-certain term σ ≈ 1 − 1e-5 is itself rounded to ~6e-8 in fp32, so the band stays of order 1e-2; reasoning, not measured); leaving it and living with the K9(b) τ class (it WILL cross 1e-3 again, A6) | `research_state/measurements/t62_tau_fp64_2026-10-19/` (repro, network equivalence, perf); `hypothesis_set_test` (fails on revert); `designs/model/versioning.md` "τ in float64" |
+| 2026-10-20 | **FP32_ALT: τ's constraint solved by the SPLIT RESIDUAL in fp32 — the DEFAULT (`gen3_tau_fp32_alt_v1`, config v160, `--tau-solve {fp32_alt,fp64}`, recorded + `_resolve`-inherited, re-applied after every load; no signature / obs / floor change)** | T62's float64 cost +82–127 % of a GPU training cycle (the 2026-10-19/20 battery; bar 3 %), so its registered fallback was built: the bisection's direction test Σσ(x) > k becomes Σ ±σ(−\|x\|) > k − \|{x > 0}\| — relative-accurate terms against an exact integer, τ fixed to ~2(depth + 2)u ≈ 1e-6 whatever the slope (proof §3.2); no float64 op, ~2× the naive test's elementwise work. Every caller passes the model's solve (the builder's `tau_solve`; the BeliefHead set BCE via `Presence.solve`). A pre-v160 config migrates to `fp32_alt`, so X35's forks of P\* run it with unchanged argvs; T62's `fp64` stays selectable | a case split (solve the complement only when the mass saturates — the split form needs no switch: it is exact in both regimes); a compensated (Kahan) fp32 NAIVE sum (still forms σ ≈ 1 − 1e-5, whose 1 − π fp32 rounds to ~6e-8 — the band stays ~1e-2); a closed form for k = 1 (none for n > 2 candidates); a Newton polish (the bisection on the split residual already lands within 1 ulp); a log-space residual (underflow-free past a ~165-nat lead, but a logsumexp per step — two passes — for a regime where float64's naive sum fails first); keeping fp64 (rejected on cost) | `research_state/measurements/tau_fp32_alt_2026-10-20/` (τ on the violators, the network, CPU cost); `tau_solve_test` + `hypothesis_set_test` (fail on revert); the GPU cost: `research_state/measurements/gpu_window_battery_2026-10-20/`; `designs/model/versioning.md` "The τ SOLVE recorded" |

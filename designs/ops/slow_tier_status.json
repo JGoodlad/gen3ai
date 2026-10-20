@@ -1316,50 +1316,50 @@
   },
   "src/agents/model/inductor_compile_test.py::test_compile_on_compiles_the_repro_at_the_failing_batch[16]": {
    "status": "pass",
-   "commit": "ba366dc4bd544a71f2d4a8d4cbffac11a20f7c43",
-   "at": "2026-10-20T06:45:47Z",
-   "duration_s": 9.47,
-   "contention": 2.11,
+   "commit": "397cce813b1e5f7774787b6b7fcffab468e270ac",
+   "at": "2026-10-20T08:52:27Z",
+   "duration_s": 8.3,
+   "contention": 1.9,
    "detail": ""
   },
   "src/agents/model/inductor_compile_test.py::test_compile_on_compiles_the_repro_at_the_failing_batch[32]": {
    "status": "pass",
-   "commit": "ba366dc4bd544a71f2d4a8d4cbffac11a20f7c43",
-   "at": "2026-10-20T06:45:47Z",
-   "duration_s": 0.76,
-   "contention": 2.1,
+   "commit": "397cce813b1e5f7774787b6b7fcffab468e270ac",
+   "at": "2026-10-20T08:52:27Z",
+   "duration_s": 0.57,
+   "contention": 2.75,
    "detail": ""
   },
   "src/agents/model/inductor_compile_test.py::test_compile_on_compiles_the_repro_at_the_failing_batch[64]": {
    "status": "pass",
-   "commit": "ba366dc4bd544a71f2d4a8d4cbffac11a20f7c43",
-   "at": "2026-10-20T06:45:47Z",
-   "duration_s": 0.74,
-   "contention": 2.01,
+   "commit": "397cce813b1e5f7774787b6b7fcffab468e270ac",
+   "at": "2026-10-20T08:52:27Z",
+   "duration_s": 0.59,
+   "contention": 2.79,
    "detail": ""
   },
   "src/agents/model/inductor_compile_test.py::test_the_inventory_capture_inductor_backend_compiles_the_repro[16]": {
    "status": "pass",
-   "commit": "ba366dc4bd544a71f2d4a8d4cbffac11a20f7c43",
-   "at": "2026-10-20T06:45:47Z",
-   "duration_s": 0.12,
-   "contention": 2.24,
+   "commit": "397cce813b1e5f7774787b6b7fcffab468e270ac",
+   "at": "2026-10-20T08:52:27Z",
+   "duration_s": 0.11,
+   "contention": 2.74,
    "detail": ""
   },
   "src/agents/model/inductor_compile_test.py::test_the_inventory_capture_inductor_backend_compiles_the_repro[32]": {
    "status": "pass",
-   "commit": "ba366dc4bd544a71f2d4a8d4cbffac11a20f7c43",
-   "at": "2026-10-20T06:45:47Z",
-   "duration_s": 0.12,
-   "contention": 2.35,
+   "commit": "397cce813b1e5f7774787b6b7fcffab468e270ac",
+   "at": "2026-10-20T08:52:27Z",
+   "duration_s": 0.1,
+   "contention": 3.02,
    "detail": ""
   },
   "src/agents/model/inductor_compile_test.py::test_the_inventory_capture_inductor_backend_compiles_the_repro[64]": {
    "status": "pass",
-   "commit": "ba366dc4bd544a71f2d4a8d4cbffac11a20f7c43",
-   "at": "2026-10-20T06:45:47Z",
-   "duration_s": 0.89,
-   "contention": 2.03,
+   "commit": "397cce813b1e5f7774787b6b7fcffab468e270ac",
+   "at": "2026-10-20T08:52:27Z",
+   "duration_s": 0.58,
+   "contention": 2.75,
    "detail": ""
   },
   "src/agents/model/ko_exact_test.py::test_both_spellings_meet_the_exact_rational_value": {
@@ -1676,10 +1676,10 @@
   },
   "src/agents/model/reveal_provenance_test.py::test_a_fork_of_a_plain_parent_with_a_reveal_records_it_everywhere": {
    "status": "pass",
-   "commit": "53c8ad243ec24281fd1f51078f211bdb04b2c9f5",
-   "at": "2026-10-20T02:21:16Z",
-   "duration_s": 19.05,
-   "contention": 1.75,
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:16:08Z",
+   "duration_s": 7.44,
+   "contention": 1.89,
    "detail": ""
   },
   "src/agents/model/speed_physics_bridge_integration_test.py::test_the_priority_bracket_is_never_contradicted_and_the_physics_is_calibrated": {
@@ -1760,6 +1760,14 @@
    "at": "2026-10-20T02:17:48Z",
    "duration_s": 4.23,
    "contention": 1.75,
+   "detail": ""
+  },
+  "src/agents/model/tau_solve_test.py::test_fp32_alt_compiled_by_inductor_matches_eager_on_the_tau_class_row": {
+   "status": "pass",
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:16:08Z",
+   "duration_s": 18.58,
+   "contention": 1.86,
    "detail": ""
   },
   "src/agents/model/update_performance_shape_test.py::test_R1s_attention_profile_on_cpu_is_pinned": {
@@ -2101,106 +2109,106 @@
   },
   "src/agents/training/learner_golden_fixed_mass_test.py::test_K9b_passes_on_the_fixed_mass_entry_with_the_excluded_share_under_its_ceiling": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:16:08Z",
    "duration_s": 0.0,
-   "contention": 2.62,
+   "contention": 2.36,
    "detail": ""
   },
   "src/agents/training/learner_golden_fixed_mass_test.py::test_TEETH_each_planted_x5_perturbation_fails_the_golden[flat_mask]": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
-   "duration_s": 7.86,
-   "contention": 2.9,
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:16:08Z",
+   "duration_s": 5.3,
+   "contention": 1.75,
    "detail": ""
   },
   "src/agents/training/learner_golden_fixed_mass_test.py::test_TEETH_each_planted_x5_perturbation_fails_the_golden[logpi_sign]": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
-   "duration_s": 8.35,
-   "contention": 3.27,
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:16:08Z",
+   "duration_s": 5.47,
+   "contention": 1.75,
    "detail": ""
   },
   "src/agents/training/learner_golden_fixed_mass_test.py::test_TEETH_each_planted_x5_perturbation_fails_the_golden[other_column]": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
-   "duration_s": 9.1,
-   "contention": 3.36,
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:16:08Z",
+   "duration_s": 5.36,
+   "contention": 1.75,
    "detail": ""
   },
   "src/agents/training/learner_golden_fixed_mass_test.py::test_TEETH_each_planted_x5_perturbation_fails_the_golden[tau_bias]": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
-   "duration_s": 9.1,
-   "contention": 3.17,
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:16:08Z",
+   "duration_s": 5.34,
+   "contention": 1.74,
    "detail": ""
   },
   "src/agents/training/learner_golden_fixed_mass_test.py::test_delta_theta_learns_from_the_set_BCE_alone_at_golden_level": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
-   "duration_s": 10.01,
-   "contention": 3.42,
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:16:08Z",
+   "duration_s": 5.44,
+   "contention": 1.76,
    "detail": ""
   },
   "src/agents/training/learner_golden_fixed_mass_test.py::test_independent_fp64_numpy_references_of_the_construction_on_the_golden_rows": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
-   "duration_s": 3.72,
-   "contention": 3.15,
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:16:08Z",
+   "duration_s": 2.16,
+   "contention": 1.75,
    "detail": ""
   },
   "src/agents/training/learner_golden_fixed_mass_test.py::test_the_B_ride_along_on_the_flat_pointer_is_bit_identical_to_learning_at_golden_level": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
-   "duration_s": 12.77,
-   "contention": 2.96,
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:16:08Z",
+   "duration_s": 5.43,
+   "contention": 1.76,
    "detail": ""
   },
   "src/agents/training/learner_golden_fixed_mass_test.py::test_the_buffer_covers_every_x5_case_design_6_4": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
-   "duration_s": 2.76,
-   "contention": 2.61,
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:16:08Z",
+   "duration_s": 2.09,
+   "contention": 1.76,
    "detail": ""
   },
   "src/agents/training/learner_golden_fixed_mass_test.py::test_the_fixed_mass_entry_is_not_vacuous": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:16:08Z",
    "duration_s": 0.0,
-   "contention": 3.43,
+   "contention": 2.63,
    "detail": ""
   },
   "src/agents/training/learner_golden_fixed_mass_test.py::test_the_fixed_mass_update_reproduces_its_golden_exactly_with_K9b_on": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
-   "duration_s": 7.84,
-   "contention": 2.62,
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:16:08Z",
+   "duration_s": 10.11,
+   "contention": 1.81,
    "detail": ""
   },
   "src/agents/training/learner_golden_fixed_mass_test.py::test_the_fp32_micro_step_agrees_with_fp64_within_the_declared_tolerances_and_reproduces": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
-   "duration_s": 4.82,
-   "contention": 2.26,
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:16:08Z",
+   "duration_s": 4.02,
+   "contention": 1.76,
    "detail": ""
   },
   "src/agents/training/learner_golden_fixed_mass_test.py::test_the_fp64_reference_has_teeth_an_fp32_only_defect_fails_it": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
-   "duration_s": 5.35,
-   "contention": 2.46,
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:16:08Z",
+   "duration_s": 4.14,
+   "contention": 1.76,
    "detail": ""
   },
   "src/agents/training/learner_golden_threads_test.py::test_the_golden_is_identical_across_processes_hash_seeds_and_thread_counts": {
@@ -3469,42 +3477,42 @@
   },
   "src/main/h2h/play_reveal_integration_test.py::test_both_sided_reaches_both_sides_and_the_oracle_side_reads_what_it_reads_one_sided": {
    "status": "pass",
-   "commit": "49e22a9d7de42dda66a3de00a1a79e3b607f9051",
-   "at": "2026-10-20T09:41:10Z",
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:14:56Z",
    "duration_s": 0.0,
-   "contention": 2.23,
+   "contention": 1.96,
    "detail": ""
   },
   "src/main/h2h/play_reveal_integration_test.py::test_every_row_is_stamped_with_its_protocol_and_per_side_levels": {
    "status": "pass",
-   "commit": "49e22a9d7de42dda66a3de00a1a79e3b607f9051",
-   "at": "2026-10-20T09:41:10Z",
-   "duration_s": 0.05,
-   "contention": 2.76,
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:14:56Z",
+   "duration_s": 0.04,
+   "contention": 1.85,
    "detail": ""
   },
   "src/main/h2h/play_reveal_integration_test.py::test_off_off_plays_the_engine_of_before_bit_for_bit": {
    "status": "pass",
-   "commit": "49e22a9d7de42dda66a3de00a1a79e3b607f9051",
-   "at": "2026-10-20T09:41:10Z",
-   "duration_s": 1963.59,
-   "contention": 2.26,
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:14:56Z",
+   "duration_s": 1799.3,
+   "contention": 1.78,
    "detail": ""
   },
   "src/main/h2h/play_reveal_integration_test.py::test_one_sided_reaches_only_the_oracle_side_in_either_seat": {
    "status": "pass",
-   "commit": "49e22a9d7de42dda66a3de00a1a79e3b607f9051",
-   "at": "2026-10-20T09:41:10Z",
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:14:56Z",
    "duration_s": 0.0,
-   "contention": 2.26,
+   "contention": 1.84,
    "detail": ""
   },
   "src/main/h2h/play_reveal_integration_test.py::test_withheld_plays_the_oracle_checkpoint_exactly_as_off_does_in_either_seat": {
    "status": "pass",
-   "commit": "49e22a9d7de42dda66a3de00a1a79e3b607f9051",
-   "at": "2026-10-20T09:41:10Z",
-   "duration_s": 0.04,
-   "contention": 2.52,
+   "commit": "00c1c576ce86d551f65097e477c5cd39dc010076",
+   "at": "2026-10-20T10:14:56Z",
+   "duration_s": 0.03,
+   "contention": 2.02,
    "detail": ""
   },
   "src/main/h2h/recorded_version_cross_test.py::test_an_endstate_checkpoint_is_its_own_groups_architecture": {
@@ -5447,5 +5455,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-20T09:41:10Z"
+ "last_written": "2026-10-20T10:16:08Z"
 }

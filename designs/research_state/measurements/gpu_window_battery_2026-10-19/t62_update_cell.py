@@ -16,6 +16,9 @@ from __future__ import annotations
 import argparse
 import sys
 
+#: Exit code of a T62 cell at a commit carrying FP32_ALT (no TAU_SOLVE_DTYPE): battery.py records a SKIP.
+SUPERSEDED = 9
+
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -26,6 +29,10 @@ def main(argv: list[str] | None = None) -> int:
     import torch
 
     from agents.model import hypothesis_set as HS
+    if not hasattr(HS, "TAU_SOLVE_DTYPE") and "fp32_alt" in getattr(HS, "TAU_SOLVES", ()):
+        print("SUPERSEDED by FP32_ALT (gen3_tau_fp32_alt_v1): hypothesis_set.TAU_SOLVE_DTYPE is gone; the FP32_ALT "
+              "cells are ../gpu_window_battery_2026-10-20/")
+        return SUPERSEDED
     if not hasattr(HS, "TAU_SOLVE_DTYPE"):
         print("PRECONDITION FAILED: hypothesis_set.TAU_SOLVE_DTYPE missing (a pre-T62 checkout)", file=sys.stderr)
         return 3

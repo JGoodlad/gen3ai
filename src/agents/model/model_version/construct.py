@@ -216,6 +216,9 @@ class ModelVersionConstruction(ModelVersionFields):
             # gen3_move_set_closure_v1 (v154): the four-move fact in the bench / hidden reinjection.
             move_set_closure=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("move_set_closure", "off")),
+            # gen3_tau_fp32_alt_v1 (v160): the τ solve (an absent key = the extractor's default, which is this one).
+            tau_solve=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("tau_solve", "fp32_alt")),
             # gen3_endstate_facts_v1 (v152): the surviving fact-completion lever.
             drop_progress_clock=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("drop_progress_clock", "off")),

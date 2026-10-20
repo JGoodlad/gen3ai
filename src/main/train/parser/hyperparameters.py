@@ -187,6 +187,18 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                              "recipe surface REFUSES unless typed (--trunk-precision fp32 is the explicit "
                              "opt-out). Recorded in model_config.json and INHERITED on a flagless fork or "
                              "resume (a fork of an fp32 parent stays fp32 unless it types bf16).")
+    # gen3_tau_fp32_alt_v1 (config v160): the τ solve (FP32_ALT). The choices are the MODEL solves only.
+    from agents.model.hypothesis_set import TAU_SOLVES
+    parser.add_argument("--tau-solve", "--tau_solve", dest="tau_solve", choices=TAU_SOLVES, default=None,
+                        help="The arithmetic of X5's fixed-size presence shift tau in EVERY forward the run builds "
+                             "(the learner, T2, eval, snapshots; gen3_tau_fp32_alt_v1, config v160; "
+                             "designs/endstate/design_x5_belief_tokens.md 3.2). 'fp32_alt' (DEFAULT): the split "
+                             "residual in fp32 -- exact to ~2 fp32 ulp of tau whatever the constraint's slope, no "
+                             "float64 op. 'fp64': T62's float64 naive sum (gen3_tau_fp64_solve_v1; the same function, "
+                             "but float64 runs at ~1/64 rate on consumer GPUs: +82-127%% of a training cycle on the "
+                             "2026-10-19/20 GPU battery). NUMERICS, not architecture: never compared at load. Recorded "
+                             "in model_config.json and INHERITED on a flagless fork or resume (a pre-v160 parent "
+                             "inherits fp32_alt).")
     parser.add_argument("--device-batch", "--device_batch", dest="device_batch",
                         choices=("resident", "staged", "host"), default=None,
                         help="How the update's micro-batches reach the learner's CUDA device "

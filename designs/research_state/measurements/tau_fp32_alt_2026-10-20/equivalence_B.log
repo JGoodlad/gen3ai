@@ -1,0 +1,16 @@
+[mem_cap] cap 16.00 GB (swap 0) · unit gen3ai-capped-eqB-2355276.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[B event rows@280M] rows 99 saturated 9 (k=1 23) band max 1.97e-02
+   alt_vs_fp64: all max 2.289e-05 p99 2.289e-05 greedy 99/99 | sat max 1.764e-05
+   naive_vs_fp64: all max 2.208e-03 p99 3.386e-04 greedy 99/99 | sat max 2.208e-03
+   fp32_naive_vs_ref: all max 2.216e-03 p99 3.508e-04 greedy 99/99 | sat max 2.216e-03
+   fp32_alt_vs_ref: all max 7.337e-05 p99 6.412e-05 greedy 99/99 | sat max 1.894e-05
+   fp64_vs_ref: all max 7.910e-05 p99 7.218e-05 greedy 99/99 | sat max 1.534e-05
+   fp32_naive_compiled_vs_eager (the program floor): all max 1.390e-03 p99 1.439e-04 greedy 99/99 | sat max 1.390e-03
+   fp32_alt_compiled_vs_eager (the program floor): all max 8.380e-05 p99 5.308e-05 greedy 99/99 | sat max 2.289e-05
+   fp64_compiled_vs_eager (the program floor): all max 7.153e-05 p99 5.353e-05 greedy 99/99 | sat max 1.502e-05
+   alt_compiled_vs_fp64_compiled: all max 7.296e-05 p99 4.305e-05 greedy 99/99 | sat max 1.907e-05
+   learner[fp32_naive]: {'vs_ref_taken_max': 0.00041464381118938576, 'vs_eager_decision_taken_max': 2.8133392333984375e-05, 'learner_vs_compiled_taken_max': 0.0002598762512207031, 'learner_vs_compiled_taken_violators': [2.4318695068359375e-05, 0.0002598762512207031, 1.1444091796875e-05], 'learner_vs_compiled_taken_saturated_max': 0.0002598762512207031, 'learner_vs_compiled_taken_p99': 4.6319961547850695e-05}
+   learner[fp32_alt]: {'vs_ref_taken_max': 7.254030334635786e-05, 'vs_eager_decision_taken_max': 1.8835067749023438e-05, 'learner_vs_compiled_taken_max': 8.296966552734375e-05, 'learner_vs_compiled_taken_violators': [2.384185791015625e-07, 8.58306884765625e-06, 4.0531158447265625e-06], 'learner_vs_compiled_taken_saturated_max': 8.58306884765625e-06, 'learner_vs_compiled_taken_p99': 3.0164718627929473e-05}
+   learner[fp64]: {'vs_ref_taken_max': 6.300356018229536e-05, 'vs_eager_decision_taken_max': 1.609325408935547e-05, 'learner_vs_compiled_taken_max': 4.00543212890625e-05, 'learner_vs_compiled_taken_violators': [7.152557373046875e-07, 0.0, 6.198883056640625e-06], 'learner_vs_compiled_taken_saturated_max': 6.198883056640625e-06, 'learner_vs_compiled_taken_p99': 2.8488636016845658e-05}
+[mem_cap] done: gen3ai-capped-eqB-2355276.scope exit 0 · peak 3.22 GB of cap 16.00 GB (20%) · not OOM-killed
+exitB 0

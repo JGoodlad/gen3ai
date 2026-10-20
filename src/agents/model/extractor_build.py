@@ -40,7 +40,7 @@ from agents.model.pools import (CLSPool, HiddenOppBeliefPool, POLICY_READOUT_MOD
 from agents.model.projection import ProjectionAssembler, compute_projection_widths
 from agents.model.move_resolution import MoveResolutionCell
 from agents.model.t0_species import T0SpeciesPrior
-from agents.model.hypothesis_set import HypothesisBuilder
+from agents.model.hypothesis_set import TAU_SOLVE_DEFAULT, HypothesisBuilder, check_tau_solve
 from agents.model.static_tokens import TOKEN_ENCODING_MODES, StaticTokenEncoder
 from agents.model.board_tokens import OpContent
 from agents.model.team_transformer import EdgeBias, EventSeats, TeamTransformer
@@ -104,6 +104,7 @@ class ExtractorBuild(torch.nn.Module):
                  drop_progress_clock: str = "off",
                  move_target_state: str = "off",
                  move_set_closure: str = "off",
+                 tau_solve: str = TAU_SOLVE_DEFAULT,
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -779,7 +780,7 @@ class ExtractorBuild(torch.nn.Module):
                 f"candidate) re-uses the opponent active's E5 tail seat as its token; {_x5_fix}.")
         if opp_belief_slots and self.opp_intent:
             self.hypothesis_builder = HypothesisBuilder(
-                layout, self.team_transformer._global_token_input_dim, self.entity_topk_seats)
+                layout, self.team_transformer._global_token_input_dim, self.entity_topk_seats, tau_solve=tau_solve)
             # The FLAT opponent pointer: built from its OWN private seed out of `IsolatedLinear`s, appended
             # after the hypothesis builder (no position moves).
             self.flat_intent_head = FlatIntentHead(D_MODEL, _intent_ctx)
@@ -924,6 +925,10 @@ class ExtractorBuild(torch.nn.Module):
             raise ValueError("move_set_closure='on' requires the opponent-belief family (opp_belief_slots + opp_intent): "
                              "the per-slot fixed-mass move presence is X5's construction, read through its builder.")
         self.move_set_closure = move_set_closure
+        # gen3_tau_fp32_alt_v1 (config v160, `--tau-solve`): the τ SOLVE every fixed-size construction runs
+        # (`hypothesis_set.fixed_size_tau`; ONE holder, `hypothesis_builder.tau_solve`). Checked even without a builder,
+        # so a typo'd value never builds; it builds NOTHING and moves no parameter (the same state_dict under every solve).
+        check_tau_solve(tau_solve)
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

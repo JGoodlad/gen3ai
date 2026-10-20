@@ -1,0 +1,8 @@
+[mem_cap] cap 16.00 GB (swap 0) · unit gen3ai-capped-offdig_fp32_alt-2518906.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+solve fp32_alt: OFF_BITS 7e97c03ffcf63f93dd8c4d012141ee5dc1e35d41d974dab1edb1ad2251010301 (recorded a5cd83ef…: MOVED); OFF_OUTCOME_ALL 268772129d021a41524eebeca76ec6ead7191a847a3c9cfba396de26dc7aae6f (SAME); fixed_size_tau calls 13065
+[mem_cap] done: gen3ai-capped-offdig_fp32_alt-2518906.scope exit 0 · peak 0.80 GB of cap 16.00 GB (5%) · not OOM-killed
+exitO 0
+[mem_cap] cap 16.00 GB (swap 0) · unit gen3ai-capped-offdig_fp64-2561194.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+solve fp64: OFF_BITS a5cd83ef6e7260f8af62fd02736b37e312e82ebf7e21a70a8af4a1544ba07e12 (recorded 7e97c03f…: MOVED); OFF_OUTCOME_ALL 268772129d021a41524eebeca76ec6ead7191a847a3c9cfba396de26dc7aae6f (SAME); fixed_size_tau calls 13065
+[mem_cap] done: gen3ai-capped-offdig_fp64-2561194.scope exit 0 · peak 0.94 GB of cap 16.00 GB (6%) · not OOM-killed
+exitO 0

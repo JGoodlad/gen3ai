@@ -531,6 +531,12 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     if args.trunk_precision != "fp32":
         emit(f"🧮 [TRUNK PRECISION] {args.trunk_precision}: the learner's trunk rounds run under bf16 autocast in "
              f"R1 (T2 / eval / the K9(b) probe stay fp32; the compile gate applies the bf16 parity rule)")
+    # gen3_tau_fp32_alt_v1 (config v160): the τ SOLVE — numerics every forward runs, so a flagless fork or resume keeps
+    # the parent's recorded value (a pre-v160 parent migrates to fp32_alt, the default).
+    _resolve("tau_solve", "fp32_alt")
+    if args.tau_solve != "fp32_alt":
+        emit(f"🧮 [TAU SOLVE] {args.tau_solve}: X5's fixed-size shift tau is solved by T62's float64 naive sum in every "
+             f"forward (float64 runs at ~1/64 rate on consumer GPUs; the default fp32_alt is the same function)")
     # gen3_canary_shift_max_v1 (T37): the compile gate's / canary's CHECK-ONLY margin input. Typed wins (a same-run RESUME
     # may raise it: the launcher cannot move a live run's pin, so a code change cannot reach it); an untyped launch
     # inherits the recorded value (a launcher restart, a flagless resume, a FORK); a fresh run is None = the code's

@@ -23,7 +23,13 @@ from typing import Any, Dict, Mapping, Tuple
 SETTERS: Dict[str, str] = {
     "belief_grad_mode": "set_belief_grad_mode",
     "oracle_reveal": "set_oracle_reveal",
+    # gen3_tau_fp32_alt_v1 (config v160): NOT resume-immutable (a fork may switch it, nothing is gated) but carried on the
+    # extractor (its hypothesis builder) the same way, so a fork that inherits or types a solve its parent's zip does
+    # not carry needs the same post-load application (`REAPPLIED_NUMERICS`).
+    "tau_solve": "set_tau_solve",
 }
+#: Re-applied rows that are NOT `resume_immutable` (`reveal_provenance_test` pins SETTERS = those + this).
+REAPPLIED_NUMERICS = frozenset({"tau_solve"})
 
 
 def resolved_run_level(args: Any) -> Dict[str, Any]:
@@ -32,6 +38,7 @@ def resolved_run_level(args: Any) -> Dict[str, Any]:
     declared (``rust_env_setup``: ``getattr(args, "oracle_reveal", None) or "off"``)."""
     out = {name: getattr(args, name) for name in SETTERS}
     out["oracle_reveal"] = out["oracle_reveal"] or "off"
+    out["tau_solve"] = out["tau_solve"] or "fp32_alt"          # unset = the default solve (`_resolve` fills it)
     return out
 
 

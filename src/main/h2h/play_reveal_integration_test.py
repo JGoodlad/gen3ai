@@ -74,7 +74,11 @@ PAIRS, N_ENVS = 12, 8
 #: `c6a14d16..b0f5dc13`: at HEAD with ONLY `hypothesis_set.TAU_SOLVE_DTYPE` set back to float32 the old 94eaba7c…
 #: reproduces exactly, and with only the GEN3_HP_IVS Ghost row reverted (`f2052657`) the digest does not move (none of
 #: these 24 games draws a changed team); the one Hidden Power impl (`c9493053`) packs all 791 pool teams identically.
-OFF_BITS = "a5cd83ef6e7260f8af62fd02736b37e312e82ebf7e21a70a8af4a1544ba07e12"
+#: RE-RECORDED 2026-10-20 for FP32_ALT (gen3_tau_fp32_alt_v1, config v160: the default tau solve moved from T62's float64
+#: naive sum to the fp32 split residual, tau within <= 2 fp32 ulp): the BITS only (was a5cd83ef…); `OFF_OUTCOME_ALL` did not
+#: move. Read with `research_state/measurements/tau_fp32_alt_2026-10-20/reveal_off_digest.py` (this file's own OFF/OFF play
+#: alone, the solve forced): `fp32_alt` gives 7e97c03f…, and `fp64` reproduces a5cd83ef… exactly (the bisect).
+OFF_BITS = "7e97c03ffcf63f93dd8c4d012141ee5dc1e35d41d974dab1edb1ad2251010301"
 OFF_OUTCOME_ALL = "268772129d021a41524eebeca76ec6ead7191a847a3c9cfba396de26dc7aae6f"
 
 

@@ -1,0 +1,62 @@
+[mem_cap] cap 12.00 GB (swap 0) · unit gen3ai-capped-taus-2319839.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+/home/goodlad/dev/gen3ai-wt/fp32-alt-tau/designs/research_state/measurements/tau_fp32_alt_2026-10-20/taus.py:185: RuntimeWarning: invalid value encountered in subtract
+  dlp = (up - dn) / (2 * a.delta)
+u32180@316000231 call0: k=1 slope 8.09e-06 band 1.47e-02 tau -19.2103 dlogpi/dtau 0.064
+   fp32_naive |tau-ref| v 4.17e-03 (all 5.09e-03, 5341.5 ulp; over orders 44142.5 ulp) | order spread v 1.20e-02 (all 4.72e-02 = 49484.0 ulp) | compiled-eager v 9.09e-03 (all 9.09e-03) | predicted gap v 7.62e-04 rank [1, 33] (others max 1.38e-04)
+   fp32_alt   |tau-ref| v 1.44e-06 (all 1.54e-06, 1.0 ulp; over orders 1.4 ulp) | order spread v 0.00e+00 (all 9.54e-07 = 2.0 ulp) | compiled-eager v 0.00e+00 (all 0.00e+00) | predicted gap v 0.00e+00 rank [3, 33] (others max 9.72e-07)
+   fp64       |tau-ref| v 4.66e-07 (all 4.66e-07, 0.5 ulp; over orders 0.5 ulp) | order spread v 0.00e+00 (all 0.00e+00 = 0.0 ulp) | compiled-eager v 0.00e+00 (all 0.00e+00) | predicted gap v 0.00e+00 rank [1, 33] (others max 0.00e+00)
+u32180@316000231 call1: rows 27 band max 2.43e-06 | fp32_naive err 1.70e-06 (39.2 ulp) spread 2.86e-06 | fp32_alt err 3.13e-07 (13.4 ulp) spread 4.77e-07 | fp64 err 1.63e-07 (0.5 ulp) spread 0.00e+00
+u32180@316000231 call2: rows 182 band max 3.93e-04 | fp32_naive err 2.47e-04 (333.8 ulp) spread 5.15e-04 | fp32_alt err 5.27e-07 (77.8 ulp) spread 4.77e-07 | fp64 err 4.27e-07 (0.5 ulp) spread 0.00e+00
+u32180@316000231 call3: rows 182 band max 3.93e-04 | fp32_naive err 2.47e-04 (333.8 ulp) spread 5.02e-04 | fp32_alt err 5.27e-07 (77.8 ulp) spread 4.77e-07 | fp64 err 4.27e-07 (0.5 ulp) spread 0.00e+00
+u32180@316000231 call4: rows 18 band max 2.36e-07 | fp32_naive err 1.91e-07 (7.2 ulp) spread 2.98e-07 | fp32_alt err 1.09e-07 (7.2 ulp) spread 2.38e-07 | fp64 err 1.19e-08 (0.5 ulp) spread 0.00e+00
+/home/goodlad/dev/gen3ai-wt/fp32-alt-tau/designs/research_state/measurements/tau_fp32_alt_2026-10-20/taus.py:185: RuntimeWarning: invalid value encountered in subtract
+  dlp = (up - dn) / (2 * a.delta)
+u32180@317000041 call0: k=1 slope 1.04e-05 band 1.14e-02 tau -19.9735 dlogpi/dtau 0.235
+   fp32_naive |tau-ref| v 5.14e-03 (all 5.14e-03, 4771.4 ulp; over orders 53009.4 ulp) | order spread v 4.63e-03 (all 4.60e-02 = 48238.0 ulp) | compiled-eager v 0.00e+00 (all 6.48e-04) | predicted gap v 1.09e-03 rank [1, 33] (others max 1.27e-04)
+   fp32_alt   |tau-ref| v 2.53e-07 (all 8.12e-07, 0.9 ulp; over orders 1.1 ulp) | order spread v 0.00e+00 (all 9.54e-07 = 2.0 ulp) | compiled-eager v 0.00e+00 (all 0.00e+00) | predicted gap v 0.00e+00 rank [2, 33] (others max 1.32e-06)
+   fp64       |tau-ref| v 2.53e-07 (all 4.79e-07, 0.5 ulp; over orders 0.5 ulp) | order spread v 0.00e+00 (all 0.00e+00 = 0.0 ulp) | compiled-eager v 0.00e+00 (all 0.00e+00) | predicted gap v 0.00e+00 rank [1, 33] (others max 0.00e+00)
+u32180@317000041 call1: rows 27 band max 2.51e-06 | fp32_naive err 1.16e-06 (38.4 ulp) spread 3.34e-06 | fp32_alt err 2.07e-07 (18.4 ulp) spread 4.77e-07 | fp64 err 2.07e-07 (0.5 ulp) spread 0.00e+00
+u32180@317000041 call2: rows 182 band max 3.85e-04 | fp32_naive err 2.46e-04 (428.8 ulp) spread 4.27e-04 | fp32_alt err 5.67e-07 (979.2 ulp) spread 9.54e-07 | fp64 err 5.62e-07 (0.5 ulp) spread 0.00e+00
+u32180@317000041 call3: rows 182 band max 3.85e-04 | fp32_naive err 2.46e-04 (428.8 ulp) spread 5.82e-04 | fp32_alt err 5.67e-07 (979.2 ulp) spread 9.54e-07 | fp64 err 5.62e-07 (0.5 ulp) spread 0.00e+00
+u32180@317000041 call4: rows 18 band max 2.12e-07 | fp32_naive err 2.28e-07 (7.7 ulp) spread 2.98e-07 | fp32_alt err 1.88e-07 (6.3 ulp) spread 2.38e-07 | fp64 err 1.37e-08 (0.5 ulp) spread 0.00e+00
+/home/goodlad/dev/gen3ai-wt/fp32-alt-tau/designs/research_state/measurements/tau_fp32_alt_2026-10-20/taus.py:185: RuntimeWarning: invalid value encountered in subtract
+  dlp = (up - dn) / (2 * a.delta)
+u32320@317000041 call0: k=1 slope 1.69e-05 band 7.07e-03 tau -19.2227 dlogpi/dtau 0.041
+   fp32_naive |tau-ref| v 3.02e-03 (all 3.02e-03, 1585.5 ulp; over orders 3205.5 ulp) | order spread v 5.18e-03 (all 5.18e-03 = 2714.0 ulp) | compiled-eager v 2.75e-04 (all 2.75e-04) | predicted gap v 2.12e-04 rank [1, 33] (others max 4.07e-06)
+   fp32_alt   |tau-ref| v 8.62e-07 (all 1.61e-06, 2.8 ulp; over orders 4.8 ulp) | order spread v 0.00e+00 (all 9.54e-07 = 6.0 ulp) | compiled-eager v 0.00e+00 (all 9.54e-07) | predicted gap v 0.00e+00 rank [4, 33] (others max 4.07e-06)
+   fp64       |tau-ref| v 8.62e-07 (all 8.62e-07, 0.5 ulp; over orders 0.5 ulp) | order spread v 0.00e+00 (all 0.00e+00 = 0.0 ulp) | compiled-eager v 0.00e+00 (all 0.00e+00) | predicted gap v 0.00e+00 rank [1, 33] (others max 0.00e+00)
+u32320@317000041 call1: rows 30 band max 6.45e-07 | fp32_naive err 4.71e-07 (268.8 ulp) spread 1.19e-06 | fp32_alt err 1.56e-07 (110.5 ulp) spread 2.38e-07 | fp64 err 5.55e-08 (0.5 ulp) spread 0.00e+00
+u32320@317000041 call2: rows 187 band max 1.68e-06 | fp32_naive err 8.82e-07 (275.3 ulp) spread 1.91e-06 | fp32_alt err 2.18e-07 (275.3 ulp) spread 4.77e-07 | fp64 err 1.19e-07 (0.5 ulp) spread 0.00e+00
+u32320@317000041 call3: rows 187 band max 1.68e-06 | fp32_naive err 8.82e-07 (275.3 ulp) spread 2.86e-06 | fp32_alt err 2.18e-07 (275.3 ulp) spread 4.77e-07 | fp64 err 1.19e-07 (0.5 ulp) spread 0.00e+00
+u32320@317000041 call4: rows 21 band max 2.28e-07 | fp32_naive err 2.72e-07 (13.4 ulp) spread 3.58e-07 | fp32_alt err 2.00e-07 (13.4 ulp) spread 2.38e-07 | fp64 err 1.33e-08 (0.5 ulp) spread 0.00e+00
+/home/goodlad/dev/gen3ai-wt/fp32-alt-tau/designs/research_state/measurements/tau_fp32_alt_2026-10-20/taus.py:185: RuntimeWarning: invalid value encountered in subtract
+  dlp = (up - dn) / (2 * a.delta)
+u32320@320000071 call0: k=1 slope 1.60e-05 band 7.45e-03 tau -19.4279 dlogpi/dtau 0.023
+   fp32_naive |tau-ref| v 4.16e-03 (all 4.16e-03, 2181.2 ulp; over orders 5083.2 ulp) | order spread v 9.51e-03 (all 9.51e-03 = 4986.0 ulp) | compiled-eager v 5.54e-03 (all 5.54e-03) | predicted gap v 2.23e-04 rank [1, 33] (others max 8.84e-06)
+   fp32_alt   |tau-ref| v 1.50e-06 (all 1.50e-06, 1.0 ulp; over orders 1.4 ulp) | order spread v 0.00e+00 (all 1.91e-06 = 2.0 ulp) | compiled-eager v 0.00e+00 (all 1.91e-06) | predicted gap v 0.00e+00 rank [8, 33] (others max 6.80e-06)
+   fp64       |tau-ref| v 4.11e-07 (all 4.20e-07, 0.5 ulp; over orders 0.5 ulp) | order spread v 0.00e+00 (all 0.00e+00 = 0.0 ulp) | compiled-eager v 0.00e+00 (all 0.00e+00) | predicted gap v 0.00e+00 rank [1, 33] (others max 0.00e+00)
+u32320@320000071 call1: rows 30 band max 6.40e-07 | fp32_naive err 4.17e-07 (38.1 ulp) spread 7.15e-07 | fp32_alt err 1.73e-07 (19.8 ulp) spread 2.98e-07 | fp64 err 5.93e-08 (0.5 ulp) spread 0.00e+00
+u32320@320000071 call2: rows 187 band max 1.75e-06 | fp32_naive err 9.57e-07 (69.6 ulp) spread 9.54e-07 | fp32_alt err 3.88e-07 (19.8 ulp) spread 4.77e-07 | fp64 err 1.14e-07 (0.5 ulp) spread 0.00e+00
+u32320@320000071 call3: rows 187 band max 1.75e-06 | fp32_naive err 9.57e-07 (69.6 ulp) spread 1.91e-06 | fp32_alt err 3.88e-07 (19.8 ulp) spread 4.77e-07 | fp64 err 1.14e-07 (0.5 ulp) spread 0.00e+00
+u32320@320000071 call4: rows 21 band max 2.59e-07 | fp32_naive err 2.87e-07 (15.5 ulp) spread 3.58e-07 | fp32_alt err 2.31e-07 (15.5 ulp) spread 2.98e-07 | fp64 err 1.32e-08 (0.5 ulp) spread 0.00e+00
+/home/goodlad/dev/gen3ai-wt/fp32-alt-tau/designs/research_state/measurements/tau_fp32_alt_2026-10-20/taus.py:185: RuntimeWarning: invalid value encountered in subtract
+  dlp = (up - dn) / (2 * a.delta)
+u35950@353000151 call0: k=1 slope 4.24e-06 band 2.81e-02 tau -21.2274 dlogpi/dtau 0.006
+   fp32_naive |tau-ref| v 1.67e-02 (all 1.67e-02, 8754.1 ulp; over orders 11486.1 ulp) | order spread v 5.21e-03 (all 6.80e-03 = 3564.0 ulp) | compiled-eager v 0.00e+00 (all 2.51e-03) | predicted gap v 3.30e-05 rank [1, 33] (others max 8.70e-06)
+   fp32_alt   |tau-ref| v 1.89e-07 (all 1.83e-06, 1.5 ulp; over orders 5.5 ulp) | order spread v 0.00e+00 (all 2.38e-07 = 6.0 ulp) | compiled-eager v 0.00e+00 (all 0.00e+00) | predicted gap v 0.00e+00 rank [3, 33] (others max 2.67e-07)
+   fp64       |tau-ref| v 1.89e-07 (all 7.76e-07, 0.5 ulp; over orders 0.5 ulp) | order spread v 0.00e+00 (all 0.00e+00 = 0.0 ulp) | compiled-eager v 0.00e+00 (all 0.00e+00) | predicted gap v 0.00e+00 rank [1, 33] (others max 0.00e+00)
+u35950@353000151 call1: rows 22 band max 3.21e-06 | fp32_naive err 2.06e-06 (308.9 ulp) spread 7.15e-06 | fp32_alt err 3.43e-07 (47.5 ulp) spread 4.77e-07 | fp64 err 1.05e-07 (0.5 ulp) spread 0.00e+00
+u35950@353000151 call2: rows 169 band max 4.08e-03 | fp32_naive err 2.01e-03 (2109.4 ulp) spread 5.77e-03 | fp32_alt err 5.78e-07 (130.3 ulp) spread 9.54e-07 | fp64 err 3.75e-07 (0.5 ulp) spread 0.00e+00
+u35950@353000151 call3: rows 169 band max 4.08e-03 | fp32_naive err 2.01e-03 (2109.4 ulp) spread 5.77e-03 | fp32_alt err 5.78e-07 (130.3 ulp) spread 9.54e-07 | fp64 err 3.75e-07 (0.5 ulp) spread 0.00e+00
+u35950@353000151 call4: rows 14 band max 2.28e-07 | fp32_naive err 1.56e-07 (10.4 ulp) spread 2.98e-07 | fp32_alt err 1.56e-07 (10.4 ulp) spread 2.38e-07 | fp64 err 1.21e-08 (0.4 ulp) spread 0.00e+00
+/home/goodlad/dev/gen3ai-wt/fp32-alt-tau/designs/research_state/measurements/tau_fp32_alt_2026-10-20/taus.py:185: RuntimeWarning: invalid value encountered in subtract
+  dlp = (up - dn) / (2 * a.delta)
+u35950@354000424 call0: k=1 slope 6.48e-06 band 1.84e-02 tau -21.5699 dlogpi/dtau 0.163
+   fp32_naive |tau-ref| v 2.49e-02 (all 2.49e-02, 13057.3 ulp; over orders 13057.3 ulp) | order spread v 2.65e-02 (all 2.65e-02 = 13896.0 ulp) | compiled-eager v 1.70e-02 (all 1.70e-02) | predicted gap v 4.32e-03 rank [1, 33] (others max 6.86e-05)
+   fp32_alt   |tau-ref| v 1.28e-06 (all 1.35e-06, 0.9 ulp; over orders 4.3 ulp) | order spread v 0.00e+00 (all 1.91e-06 = 6.0 ulp) | compiled-eager v 0.00e+00 (all 0.00e+00) | predicted gap v 0.00e+00 rank [4, 33] (others max 2.14e-07)
+   fp64       |tau-ref| v 6.25e-07 (all 7.40e-07, 0.5 ulp; over orders 0.5 ulp) | order spread v 0.00e+00 (all 0.00e+00 = 0.0 ulp) | compiled-eager v 0.00e+00 (all 0.00e+00) | predicted gap v 0.00e+00 rank [1, 33] (others max 0.00e+00)
+u35950@354000424 call1: rows 22 band max 3.14e-06 | fp32_naive err 3.43e-06 (114.5 ulp) spread 2.38e-06 | fp32_alt err 2.01e-07 (37.5 ulp) spread 4.77e-07 | fp64 err 9.39e-08 (0.5 ulp) spread 0.00e+00
+u35950@354000424 call2: rows 169 band max 3.91e-03 | fp32_naive err 2.51e-04 (262.9 ulp) spread 5.48e-03 | fp32_alt err 8.76e-07 (37.5 ulp) spread 9.54e-07 | fp64 err 1.58e-07 (0.5 ulp) spread 0.00e+00
+u35950@354000424 call3: rows 169 band max 3.91e-03 | fp32_naive err 2.51e-04 (262.9 ulp) spread 3.52e-03 | fp32_alt err 8.76e-07 (37.5 ulp) spread 9.54e-07 | fp64 err 1.58e-07 (0.5 ulp) spread 0.00e+00
+u35950@354000424 call4: rows 14 band max 2.30e-07 | fp32_naive err 1.77e-07 (9.1 ulp) spread 3.58e-07 | fp32_alt err 1.77e-07 (9.1 ulp) spread 2.38e-07 | fp64 err 1.39e-08 (0.5 ulp) spread 0.00e+00
+[mem_cap] done: gen3ai-capped-taus-2319839.scope exit 0 · peak 1.51 GB of cap 12.00 GB (13%) · not OOM-killed

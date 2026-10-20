@@ -27646,3 +27646,31 @@ likelihood, with playouts.
 Evidence: `research_state/measurements/search_l3_2026-10-20/` (PREREGISTRATION, README, `result_l3.json`,
 `l3_registration.json`, `l3_run.py`, `l3_read.py`); `src/main/value_search/opp_likelihood.py`;
 `endstate/search_ledger.md` status, §1, §7 Q15; `endstate/design_world_sampler.md` §4 (f).
+### 2026-10-20 · BUILT · **FP32_ALT: X5's τ constraint solved by a SPLIT RESIDUAL in fp32, the default (`gen3_tau_fp32_alt_v1`, config v160) — T62's accuracy on the τ-class violators at fp32 cost; the K9(b) violator gap at A3's nearest weights 5.9e-4 → 2.4e-6; GPU cost staged for the next window**
+
+- **Why.** The GPU battery (2026-10-19/20) read T62's float64 τ solve at +82–127 % of a training cycle (bar 3 %):
+  REJECTED for X35, and its registered fallback FP32_ALT built.
+- **Built.** `fixed_size_tau(..., solve="fp32_alt")`: the bisection tests Σ ±σ(−|x|) > k − |{x > 0}| — relative-accurate
+  terms against an exact integer, so τ is fixed to ~2(depth + 2)u ≈ 1e-6 whatever the slope (proof:
+  `endstate/design_x5_belief_tokens.md` §3.2). Recorded as `--tau-solve` (config v160, `_resolve`-inherited, never
+  gated; a pre-v160 config migrates to `fp32_alt`); T62's `fp64` stays selectable.
+- **τ on the violators** (`measurements/tau_fp32_alt_2026-10-20/taus.py`; u32180 / u32320 / u35950 × two neighbour
+  checkpoints): |τ − exact| 1.9e-7 – 1.5e-6 (naive fp32 3.0e-3 – 2.5e-2; fp64 1.9e-7 – 8.6e-7); order spread over 64
+  summation orders and inductor-vs-eager on the violator 0 in all six (naive up to 2.7e-2 / 1.7e-2); predicted K9(b)
+  gap 0 (naive 3.3e-5 – 4.3e-3, rank 1 of 33). Synthetic rows 12–150 nats saturated: within 0.73 ulp of a 60-digit root
+  (fp64's own naive sum is off 5e-4 at a 60-nat lead).
+- **Network** (`equivalence.py`, CPU; learner `evaluate_actions` vs the inductor-compiled decision forward, taken
+  action — the K9(b) analogue): at the A3 stop's nearest weights (u32180 @ 316000231) the violator 5.9e-4 naive →
+  **2.4e-6** FP32_ALT (fp64 2.1e-5); every violator ≤ 1.4e-5 under FP32_ALT; 915 fixture rows @ P\* max 1.5e-5, p99
+  1.0e-5, none > 5e-5 (fp64 3.7e-5 / 1.2e-5). Greedy agrees on every row. The all-actions program floor max 8.4e-5 vs
+  fp64's 6.4e-5 / 7.2e-5 (ulp-scale adjacent-float wobbles, the naive sum's class on well-conditioned rows — F1 there).
+  A non-τ tail of ~4e-4 on u32320's neighbour scan rows in ALL arms (F4 there).
+- **Cost.** CPU eager decision forward at one thread +4 to +10 % vs naive; no float64 op. GPU UNMEASURED: staged as
+  `measurements/gpu_window_battery_2026-10-20/` (FP32_ALT vs the naive sum, the T62 gate's formula, ~40 min);
+  production GO waits for it (X35 sheet C1, amended).
+- **Goldens re-recorded, bisected** (every builder forced to `fp64` reproduces the T62 records): K9 learner golden
+  `bd79d729…` → `584de31c…`; `PLAYED_DIGEST` `6b2517a4…` → `41a35939…`; the reveal file's `OFF_BITS` `a5cd83ef…` →
+  `7e97c03f…` (`OFF_OUTCOME_ALL` unchanged).
+
+Evidence: `research_state/measurements/tau_fp32_alt_2026-10-20/` (README, `taus.*`, `equivalence_{A,B,C}.*`, `perf.*`,
+`reveal_off_digest.*`); `endstate/design_x5_belief_tokens.md` §3.2 + Decision record; `designs/model/versioning.md`.

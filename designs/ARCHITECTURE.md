@@ -468,10 +468,14 @@ the X5 version break, config v144 / `gen3_x5_version_break_v1`, deleted `--belie
 `blob` path: [`endstate/design_x5_belief_tokens.md`](endstate/design_x5_belief_tokens.md)). The
 opponent-belief family (`opp_belief_slots` + `opp_intent`, both on in production) builds
 `HypothesisBuilder` (`agents/model/hypothesis_set.py`, T0) — concrete species hypotheses with
-logistic fixed-size presence (Σπ = 6 − revealed; the shift τ solved by a 64-step bisection IN FLOAT64 whatever the
-forward's dtype, only τ cast back — T62, `gen3_tau_fp64_solve_v1`: an fp32 sum fixes τ only to ulp(k) / Σπ(1 − π),
-7e-3 – 2.8e-2 on a saturated k = 1 row, where the compiled rollout and the eager learner then disagreed — the K9(b) τ
-class; MEASURED identical τ across programs after, `research_state/measurements/t62_tau_fp64_2026-10-19/`), a learned
+logistic fixed-size presence (Σπ = 6 − revealed; the shift τ solved by a 64-step bisection on the SPLIT residual
+Σ ±σ(−|a + τ|) > k − |{a + τ > 0}| in fp32 — FP32_ALT, `gen3_tau_fp32_alt_v1`, the default, the run's recorded
+`--tau-solve` (config v160): the naive fp32 sum Σσ(a + τ) fixes τ only to ulp(k) / Σπ(1 − π), 7e-3 – 2.8e-2 on a
+saturated k = 1 row, where the compiled rollout and the eager learner then disagreed — the K9(b) τ class; the split form
+fixes it to ~1e-6 whatever the slope, MEASURED ≤ 1.5e-6 from the exact root and the same τ under 64 summation orders and
+inductor-vs-eager on X26's violators, no float64 op, `research_state/measurements/tau_fp32_alt_2026-10-20/`; T62's
+float64 naive sum, `gen3_tau_fp64_solve_v1`, stays selectable as `--tau-solve fp64` but costs +82–127 % of a GPU
+training cycle), a learned
 delta on the T0 prior, OTHER and the opponent active's move group — and READS it (`gen3_x5_belief_tokens_v1`,
 `agents/model/hypothesis_tokens.py`): each hidden opponent slot holds its hypothesis's dex row encoded
 by THE mon encoder + a learned `hypothesis_marker` (the deleted blob path's constant per-position

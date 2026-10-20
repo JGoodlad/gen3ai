@@ -570,3 +570,13 @@ class ModelVersionFields:
     # recorded block; a plain fork of a grown run records None (its lineage names the grown ancestor). A pre-v159
     # config migrates to None — no run grew before v159.
     growth: Optional[Dict[str, Any]] = None
+    # ---- gen3_tau_fp32_alt_v1 (config v160) — THE τ SOLVE (FP32_ALT; `designs/endstate/design_x5_belief_tokens.md` §3.2) --
+    # `--tau-solve {fp32_alt,fp64}`: the arithmetic of X5's fixed-size shift τ (`hypothesis_set.fixed_size_tau`) in EVERY
+    # forward the run builds (the learner, T2, eval, its snapshots: a deep copy or a rebuild from the saved kwargs both
+    # carry it). Both solves compute the SAME real function — they agree on τ to <= 2 fp32 ulp on X26's τ-class rows,
+    # where the pre-T62 naive fp32 sum missed by up to 2.5e-2 — so it is NUMERICS, not architecture: no weight shape
+    # depends on it and it is never compared by check_compatible (a frozen opponent under the other solve is the same
+    # network). RECORDED (which arithmetic a run's forwards used) and `_resolve`-inherited, so a flagless fork or restart
+    # keeps it. A pre-v160 config migrates to "fp32_alt": no earlier run chose a solve (pre-T62 runs trained on the naive
+    # fp32 sum, T62's fp64 had no field), and fp32_alt evaluates them as T62 did to within fp32's own rounding.
+    tau_solve: str = "fp32_alt"

@@ -562,6 +562,12 @@ def _migrate_config(data: dict) -> dict:
     if version < 159:
         data.setdefault("growth", None)
         data["config_version"] = 159
+    # v160 (gen3_tau_fp32_alt_v1, FP32_ALT) — the τ SOLVE: no run before v160 CHOSE one (pre-T62 runs trained on the
+    # naive fp32 sum, T62's float64 had no field), and the default split-residual solve evaluates them as T62 did to
+    # within fp32's own rounding (<= 2 ulp of τ) — so the default, which is also what an absent extractor kwarg means.
+    if version < 160:
+        data.setdefault("tau_solve", "fp32_alt")
+        data["config_version"] = 160
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

@@ -1,0 +1,42 @@
+[mem_cap] cap 16.00 GB (swap 0) · unit gen3ai-capped-eqC-2389216.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[C u32180@316000231] rows 33 saturated 3 (k=1 6) band max 2.72e-02
+   alt_vs_fp64: all max 2.337e-05 p99 2.337e-05 greedy 33/33 | sat max 6.676e-06
+   naive_vs_fp64: all max 2.712e-04 p99 2.100e-04 greedy 33/33 | sat max 2.712e-04
+   fp32_naive_vs_ref: all max 2.665e-04 p99 2.075e-04 greedy 33/33 | sat max 2.665e-04
+   fp32_alt_vs_ref: all max 7.787e-05 p99 6.892e-05 greedy 33/33 | sat max 1.069e-05
+   fp64_vs_ref: all max 8.168e-05 p99 6.904e-05 greedy 33/33 | sat max 1.259e-05
+   fp32_naive_compiled_vs_eager (the program floor): all max 5.786e-04 p99 4.685e-04 greedy 33/33 | sat max 5.786e-04
+   fp32_alt_compiled_vs_eager (the program floor): all max 5.341e-05 p99 4.730e-05 greedy 33/33 | sat max 1.144e-05
+   fp64_compiled_vs_eager (the program floor): all max 7.343e-05 p99 6.458e-05 greedy 33/33 | sat max 1.311e-05
+   alt_compiled_vs_fp64_compiled: all max 5.245e-05 p99 4.360e-05 greedy 33/33 | sat max 1.097e-05
+   learner[fp32_naive]: {'vs_ref_taken_max': 0.0002585317047212321, 'vs_eager_decision_taken_max': 1.811981201171875e-05, 'learner_vs_compiled_taken_max': 0.0005866289138793945, 'learner_vs_compiled_taken_violators': [0.0005866289138793945], 'learner_vs_compiled_taken_saturated_max': 0.0005866289138793945, 'learner_vs_compiled_taken_p99': 0.0004133749008178709}
+   learner[fp32_alt]: {'vs_ref_taken_max': 2.8393599760256905e-05, 'vs_eager_decision_taken_max': 1.3589859008789062e-05, 'learner_vs_compiled_taken_max': 2.574920654296875e-05, 'learner_vs_compiled_taken_violators': [2.384185791015625e-06], 'learner_vs_compiled_taken_saturated_max': 2.384185791015625e-06, 'learner_vs_compiled_taken_p99': 2.3002624511718748e-05}
+   learner[fp64]: {'vs_ref_taken_max': 3.393959710118466e-05, 'vs_eager_decision_taken_max': 1.5735626220703125e-05, 'learner_vs_compiled_taken_max': 3.7550926208496094e-05, 'learner_vs_compiled_taken_violators': [2.086162567138672e-05], 'learner_vs_compiled_taken_saturated_max': 2.086162567138672e-05, 'learner_vs_compiled_taken_p99': 3.430843353271484e-05}
+[C u32320@317000041] rows 33 saturated 2 (k=1 8) band max 7.07e-03
+   alt_vs_fp64: all max 5.102e-05 p99 4.522e-05 greedy 33/33 | sat max 8.106e-06
+   naive_vs_fp64: all max 1.216e-04 p99 1.052e-04 greedy 33/33 | sat max 1.216e-04
+   fp32_naive_vs_ref: all max 1.152e-04 p99 9.662e-05 greedy 33/33 | sat max 1.152e-04
+   fp32_alt_vs_ref: all max 6.063e-05 p99 5.913e-05 greedy 33/33 | sat max 1.449e-05
+   fp64_vs_ref: all max 5.234e-05 p99 5.233e-05 greedy 33/33 | sat max 7.302e-06
+   fp32_naive_compiled_vs_eager (the program floor): all max 5.250e-04 p99 4.080e-04 greedy 33/33 | sat max 9.537e-06
+   fp32_alt_compiled_vs_eager (the program floor): all max 5.350e-04 p99 3.897e-04 greedy 33/33 | sat max 9.537e-06
+   fp64_compiled_vs_eager (the program floor): all max 5.794e-04 p99 4.165e-04 greedy 33/33 | sat max 7.153e-06
+   alt_compiled_vs_fp64_compiled: all max 3.672e-05 p99 3.603e-05 greedy 33/33 | sat max 1.001e-05
+   learner[fp32_naive]: {'vs_ref_taken_max': 0.00010757679779338503, 'vs_eager_decision_taken_max': 1.430511474609375e-05, 'learner_vs_compiled_taken_max': 0.0004067420959472656, 'learner_vs_compiled_taken_violators': [1.9073486328125e-06], 'learner_vs_compiled_taken_saturated_max': 1.5020370483398438e-05, 'learner_vs_compiled_taken_p99': 0.00032754898071289055}
+   learner[fp32_alt]: {'vs_ref_taken_max': 5.800466036998131e-05, 'vs_eager_decision_taken_max': 3.159046173095703e-05, 'learner_vs_compiled_taken_max': 0.0004138946533203125, 'learner_vs_compiled_taken_violators': [6.67572021484375e-06], 'learner_vs_compiled_taken_saturated_max': 7.152557373046875e-06, 'learner_vs_compiled_taken_p99': 0.00029762268066406243}
+   learner[fp64]: {'vs_ref_taken_max': 7.595186308595459e-05, 'vs_eager_decision_taken_max': 3.8623809814453125e-05, 'learner_vs_compiled_taken_max': 0.0004744529724121094, 'learner_vs_compiled_taken_violators': [1.1920928955078125e-05], 'learner_vs_compiled_taken_saturated_max': 1.1920928955078125e-05, 'learner_vs_compiled_taken_p99': 0.0003435325622558593}
+[C u35950@353000151] rows 33 saturated 5 (k=1 9) band max 2.81e-02
+   alt_vs_fp64: all max 4.387e-05 p99 4.280e-05 greedy 33/33 | sat max 2.062e-05
+   naive_vs_fp64: all max 1.150e-03 p99 8.013e-04 greedy 33/33 | sat max 1.150e-03
+   fp32_naive_vs_ref: all max 1.157e-03 p99 8.310e-04 greedy 33/33 | sat max 1.157e-03
+   fp32_alt_vs_ref: all max 1.627e-04 p99 1.312e-04 greedy 33/33 | sat max 2.507e-05
+   fp64_vs_ref: all max 1.486e-04 p99 1.218e-04 greedy 33/33 | sat max 2.793e-05
+   fp32_naive_compiled_vs_eager (the program floor): all max 1.760e-04 p99 1.615e-04 greedy 33/33 | sat max 1.307e-04
+   fp32_alt_compiled_vs_eager (the program floor): all max 2.029e-04 p99 1.665e-04 greedy 33/33 | sat max 4.435e-05
+   fp64_compiled_vs_eager (the program floor): all max 1.855e-04 p99 1.589e-04 greedy 33/33 | sat max 3.242e-05
+   alt_compiled_vs_fp64_compiled: all max 6.962e-05 p99 6.519e-05 greedy 33/33 | sat max 5.579e-05
+   learner[fp32_naive]: {'vs_ref_taken_max': 0.00010497985538737709, 'vs_eager_decision_taken_max': 3.039836883544922e-05, 'learner_vs_compiled_taken_max': 6.711483001708984e-05, 'learner_vs_compiled_taken_violators': [1.1444091796875e-05], 'learner_vs_compiled_taken_saturated_max': 2.7179718017578125e-05, 'learner_vs_compiled_taken_p99': 6.211757659912109e-05}
+   learner[fp32_alt]: {'vs_ref_taken_max': 5.159362046502913e-05, 'vs_eager_decision_taken_max': 3.3855438232421875e-05, 'learner_vs_compiled_taken_max': 6.008148193359375e-05, 'learner_vs_compiled_taken_violators': [1.4066696166992188e-05], 'learner_vs_compiled_taken_saturated_max': 2.6941299438476562e-05, 'learner_vs_compiled_taken_p99': 5.7392120361328125e-05}
+   learner[fp64]: {'vs_ref_taken_max': 5.838040340866435e-05, 'vs_eager_decision_taken_max': 2.3305416107177734e-05, 'learner_vs_compiled_taken_max': 0.00010776519775390625, 'learner_vs_compiled_taken_violators': [3.5762786865234375e-06], 'learner_vs_compiled_taken_saturated_max': 1.0728836059570312e-05, 'learner_vs_compiled_taken_p99': 9.464263916015623e-05}
+[mem_cap] done: gen3ai-capped-eqC-2389216.scope exit 0 · peak 3.36 GB of cap 16.00 GB (21%) · not OOM-killed
+exitC 0

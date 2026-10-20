@@ -313,9 +313,9 @@ def slot_move_presence(hb: Any, move_logits: torch.Tensor, species: torch.Tensor
     k_m = (MOVE_GROUP_MASS - r).clamp(min=0)
     # The default (detached) path keeps its expressions VERBATIM (dynamo names graph nodes after locals).
     if graph:
-        pres = fixed_mass_presence(move_logits, cand, k_m)                           # [B,6,M], a + τ carries the graph
+        pres = fixed_mass_presence(move_logits, cand, k_m, solve=hb.tau_solve)      # [B,6,M], a + τ carries the graph
     else:
-        pres = fixed_mass_presence(move_logits.detach(), cand, k_m)                  # [B,6,M]
+        pres = fixed_mass_presence(move_logits.detach(), cand, k_m, solve=hb.tau_solve)  # [B,6,M]
     pi = pres.pi
     if graph:   # the same values on a live candidate, through the graph (`Presence.logits` = a + τ)
         pi = torch.where(cand & pres.live.unsqueeze(-1), torch.sigmoid(pres.logits), pi)
@@ -444,7 +444,7 @@ def other_roster(ro: OpRoster, hs: HypothesisSet, hb: Any, move_belief: Any, bas
     # (X5 U6: 29 of the K9 golden buffer's 64 rows — a 47 % K9(b) excluded share vs its 0.15 ceiling).
     cand = cand & hs.other_live.unsqueeze(-1)
     k4 = torch.full((B,), 4, dtype=torch.long, device=pt.device)
-    pres = fixed_mass_presence(mix_logits.detach(), cand, k4)
+    pres = fixed_mass_presence(mix_logits.detach(), cand, k4, solve=hb.tau_solve)
     w_o = pres.pi.to(dt)                                                                # [B,M]
     # OTHER's order replaces each hypothesis slot's in the roster, so the op reads it exactly as
     # `build_op_roster`'s: a SET at each cut (``cuts``; None = every pair of the head, conservative)

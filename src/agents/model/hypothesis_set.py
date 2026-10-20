@@ -45,17 +45,35 @@ THE FIXED-SIZE CONSTRUCTION (`fixed_size_tau`).
   exit: a static graph and a deterministic result. 64 halvings of a bracket of width ``a_max − a_min``
   reach ``width · 2^-64`` — below fp64's resolution of ``τ`` for any realistic width (the prior's is
   ≤ 45.2 nats, MEASURED).
-* **The constraint is SOLVED IN FLOAT64 whatever the scores' dtype** (``TAU_SOLVE_DTYPE``; T62,
-  ``gen3_tau_fp64_solve_v1``): the bracket, the sums and the bisection run on a float64 copy of the
-  scores, and only ``τ`` is cast back to the scores' dtype. WHY: ``τ``'s accuracy is the constraint
-  sum's resolution divided by its slope, ``ulp(k) / S'(τ)`` with ``S'(τ) = Σ π(1 − π)``. On a row with
-  ``k = 1`` and one near-certain candidate (π ≈ 1 − 1e-5) the slope is ~1e-5, so an fp32 sum fixes
-  ``τ`` only to 7e-3 – 1.5e-2, and two valid fp32 programs (the compiled rollout, the eager learner)
-  summing in different orders land at different points of that band — the K9(b) τ-class tail (X26
-  A3 / A6 diagnosis, `designs/research_state/measurements/x26_a3_stop_316M_2026-10-18/`). In float64
-  the band is ~1e-11, so every program lands on the same fp32 ``τ`` (to its own final rounding).
-  ``τ`` itself is WELL-conditioned in the scores (``∂τ/∂a`` is a π(1 − π)-weighted average, magnitude
-  ≤ 1): only the fp32 EVALUATION of the sum was ill-conditioned, so the fix changes no real function.
+* **The τ SOLVE (``solve``, one of ``TAU_SOLVES``; the run's ``--tau-solve``, config v160).** WHY it
+  matters: ``τ``'s accuracy is the constraint's evaluation error over its slope ``S'(τ) = Σ π(1 − π)``.
+  The NAIVE fp32 sum ``Σσ(a + τ)`` near ``k`` is known only to ``ulp(k)``, so on a ``k = 1`` row with
+  one near-certain candidate (π ≈ 1 − 1e-5, slope ~1e-5) it fixes ``τ`` only to 7e-3 – 2.8e-2, and two
+  valid fp32 programs (the compiled rollout, the eager learner) summing in different orders land at
+  different points of that band — the K9(b) τ-class tail (X26 A3 / A6,
+  `designs/research_state/measurements/x26_a3_stop_316M_2026-10-18/`). ``τ`` itself is WELL-conditioned
+  in the scores (``∂τ/∂a`` is a π(1 − π)-weighted average, magnitude ≤ 1): only that EVALUATION was
+  ill-conditioned, so both solves below compute the same real function.
+
+  - ``"fp32_alt"`` (THE DEFAULT, ``gen3_tau_fp32_alt_v1``): the SPLIT residual, in the scores' dtype
+    (at least fp32; no float64 op on an fp32 forward). With ``x = a + τ`` and ``H = {x > 0}``,
+    ``Σσ(x) − k = Σ_s h(x_s) − (k − |H|)``, ``h(x) = σ(x)`` for ``x ≤ 0`` and ``−σ(−x)`` for ``x > 0``:
+    every term is ``±σ(−|x|) ∈ [−½, ½]``, computed to a few ulp RELATIVE, and ``k − |H|`` is an exact
+    integer — the near-1 term ``σ(x) ≈ 1`` is never formed, so nothing cancels. CONDITIONING (the
+    proof): with ``R + D = Σ σ(−|x_s|)`` the terms' absolute sum, any summation order errs by at most
+    ``c·(R + D)``, ``c ≈ (depth + 2)·u`` (u = 2^-24; depth = the reduction's, ≤ 9 for a 400-wide tree;
+    the rounding of ``x = a + τ`` itself moves ``τ`` only as a one-ulp change of the scores would);
+    and ``S' = Σ π(1 − π) ≥ ½ Σ min(π, 1 − π) = ½(R + D)``, with ``R + D`` Lipschitz-1 in log over τ.
+    So the direction test is right whenever ``|τ − τ*| > −ln(1 − 2c) ≈ 2c``: the root is fixed to
+    ~2c ≈ 1e-6 absolute (plus ``τ``'s own fp32 rounding, ~1 ulp) WHATEVER the slope — on the τ-class
+    rows the naive band was 1e-2. The bound fails only where every ``σ(−|x_s|)`` underflows (all
+    ``|x_s|`` > ~87 at the root: the top candidate ~175 nats clear of the next), where float64's own
+    naive sum failed long before (its band reaches 1e-2 at a ~64-nat lead).
+  - ``"fp64"`` (T62, ``gen3_tau_fp64_solve_v1``): the naive sum on a float64 copy of the scores, ``τ``
+    cast back once. Exact to ~1e-11 on the τ-class rows, but float64 runs at ~1/64 rate on consumer GPUs
+    (the 2026-10-19/20 GPU battery: +82–127 % of a training cycle) — kept for a run that recorded it.
+  - ``"fp32_naive"`` (``TAU_SOLVE_NAIVE``, MEASUREMENT ONLY — the config refuses it): the pre-T62 naive
+    sum in the scores' dtype, the cost baseline and the τ-class reproduction.
 * **Structural cases.** ``k = 0``: ``π ≡ 0``, nothing is read from the bisection, every seat and
   OTHER are masked. ``k = n``: ``π ≡ 1`` on ``V`` and the row is EXCLUDED from the BCE (it carries no
   information). The bisection runs on a SAFE stand-in (``k`` clamped into ``[1, n−1]``) for those
@@ -102,9 +120,14 @@ from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 
 #: The bisection's FIXED iteration count (§3.2): no data-dependent exit.
 BISECTION_ITERS = 64
-#: The dtype `fixed_size_tau` SOLVES its constraint in, whatever the scores' dtype (T62; module docstring):
-#: an fp32 sum fixes τ only to ulp(k) / S'(τ), up to 1.5e-2 on a saturated k = 1 row.
-TAU_SOLVE_DTYPE = torch.float64
+#: The τ solves a model may RUN (`fixed_size_tau`'s ``solve``; the run's ``--tau-solve``, model_config ``tau_solve``,
+#: config v160; module docstring): ``fp32_alt`` = the split residual in fp32 (gen3_tau_fp32_alt_v1, the default),
+#: ``fp64`` = T62's float64 naive sum (gen3_tau_fp64_solve_v1).
+TAU_SOLVES: Tuple[str, ...] = ("fp32_alt", "fp64")
+TAU_SOLVE_DEFAULT = "fp32_alt"
+#: MEASUREMENT ONLY (never a model's): the pre-T62 naive sum in the scores' dtype — the cost baseline and the τ-class
+#: reproduction. `fixed_size_tau` accepts it; the config, the flag and `HypothesisBuilder` refuse it.
+TAU_SOLVE_NAIVE = "fp32_naive"
 #: §3.1's rule-8 exclusion: a row whose π at a selection boundary differs by less than this
 #: (ABSOLUTE, π ∈ (0, 1)) across the boundary is excluded from every two-computation comparison.
 SELECTION_TIE_EPS = 1e-6
@@ -124,17 +147,33 @@ MOVE_SET_CLOSURE_MODES = ("off", "on")
 
 # ============================================================================ the pure construction
 
+def check_tau_solve(solve: str) -> str:
+    """``solve`` if a MODEL may run it (`TAU_SOLVES`), else a ValueError naming the choices (the measurement-only
+    ``TAU_SOLVE_NAIVE`` is refused here: no model, config or flag runs the pre-T62 sum)."""
+    if solve not in TAU_SOLVES:
+        raise ValueError(f"tau_solve must be one of {TAU_SOLVES}, got {solve!r} (gen3_tau_fp32_alt_v1; "
+                         f"{TAU_SOLVE_NAIVE!r} is a measurement baseline only)")
+    return solve
+
+
 def fixed_size_tau(scores: torch.Tensor, cand: torch.Tensor, k: torch.Tensor,
-                   n_iter: int = BISECTION_ITERS) -> torch.Tensor:
+                   n_iter: int = BISECTION_ITERS, solve: str = TAU_SOLVE_DEFAULT) -> torch.Tensor:
     """``τ`` [B] with ``Σ_{cand} σ(scores + τ) = k`` (LML Eq. 4), by a fixed-step bisection on the
     provable bracket in the module docstring. ``scores`` [B, N] float; ``cand`` [B, N] bool; ``k`` [B]
     integer. NO gradient (the exact implicit gradient is zero, module docstring). Rows with
     ``k == 0`` or ``k >= n`` (the structural cases) get a finite, MEANINGLESS ``τ`` — callers mask
-    them; nothing here forms a NaN or an inf for them. The solve runs in ``TAU_SOLVE_DTYPE``
-    (float64); ``τ`` is returned in ``scores.dtype``."""
+    them; nothing here forms a NaN or an inf for them. ``solve`` picks the arithmetic (module docstring:
+    ``fp32_alt`` the split residual in the scores' dtype, at least fp32; ``fp64`` the naive sum in float64;
+    ``fp32_naive`` the pre-T62 naive sum, measurement only); ``τ`` is returned in ``scores.dtype``."""
+    if solve == "fp64":
+        solve_dt = torch.float64
+    elif solve == "fp32_alt" or solve == TAU_SOLVE_NAIVE:
+        solve_dt = torch.promote_types(scores.dtype, torch.float32)
+    else:
+        raise ValueError(f"fixed_size_tau: unknown solve {solve!r} (one of {TAU_SOLVES + (TAU_SOLVE_NAIVE,)})")
     with torch.no_grad():
         out_dt = scores.dtype
-        s = scores.detach().to(TAU_SOLVE_DTYPE)
+        s = scores.detach().to(solve_dt)
         dt = s.dtype
         n = cand.sum(-1)                                                        # [B]
         # The SAFE stand-in for the structural rows: k into [1, n-1] (n >= 2), else a dummy row.
@@ -148,6 +187,20 @@ def fixed_size_tau(scores: torch.Tensor, cand: torch.Tensor, k: torch.Tensor,
         base = torch.log(k_safe.to(dt)) - torch.log((n_safe - k_safe).to(dt))  # log(k/(n-k))
         lo = base - a_max
         hi = base - a_min
+        if solve == "fp32_alt":
+            # The SPLIT residual (module docstring): Σσ(x) > k  ⟺  Σ h(x) > k − |{x > 0}|, h = ±σ(−|x|).
+            # A non-candidate is −inf: x = −inf, so it is never in H and its term is σ(−inf) = 0 exactly.
+            s_c = torch.where(cand, s, torch.full_like(s, -math.inf))
+            for _ in range(n_iter):
+                mid = 0.5 * (lo + hi)
+                x = s_c + mid.unsqueeze(-1)
+                in_h = x > 0
+                tail = torch.sigmoid(-x.abs())                                  # min(π, 1 − π), RELATIVE-accurate
+                resid = torch.where(in_h, -tail, tail).sum(-1)                  # Σ (π − 1[x > 0])
+                above = resid > (k_safe - in_h.sum(-1)).to(dt)                  # k − |H|: an EXACT integer
+                hi = torch.where(above, mid, hi)
+                lo = torch.where(above, lo, mid)
+            return (0.5 * (lo + hi)).to(out_dt)
         k_t = k_safe.to(dt)
         zero = torch.zeros((), dtype=dt, device=s.device)
         for _ in range(n_iter):
@@ -175,15 +228,17 @@ class Presence:
     n: torch.Tensor           # [B] long — |V|
     live: torch.Tensor        # [B] bool — 0 < k < n: the construction ran and the BCE may read the row
     full: torch.Tensor        # [B] bool — k >= n > 0: π ≡ 1 on V (structural; excluded from the BCE)
+    solve: str = TAU_SOLVE_DEFAULT   # the τ solve that made it (a construction re-run over it reuses it)
 
 
 def fixed_mass_presence(scores: torch.Tensor, cand: torch.Tensor, k: torch.Tensor,
-                        n_iter: int = BISECTION_ITERS) -> Presence:
+                        n_iter: int = BISECTION_ITERS, solve: str = TAU_SOLVE_DEFAULT) -> Presence:
     """The logistic fixed-size marginals ``π = σ(scores + τ)``, Σ = k over ``cand``, with the
-    structural k = 0 / k = n branches. ``scores`` may carry a graph (δ_θ); ``τ`` never does."""
+    structural k = 0 / k = n branches. ``scores`` may carry a graph (δ_θ); ``τ`` never does. ``solve`` is the
+    model's τ solve (`fixed_size_tau`; a model passes its builder's ``tau_solve``)."""
     k = k.long()
     n = cand.sum(-1)
-    tau = fixed_size_tau(scores, cand, k, n_iter)
+    tau = fixed_size_tau(scores, cand, k, n_iter, solve=solve)
     logits = scores + tau.unsqueeze(-1)                                         # graph → scores only
     live = (k > 0) & (k < n)
     full = (k >= n) & (n > 0)
@@ -195,7 +250,7 @@ def fixed_mass_presence(scores: torch.Tensor, cand: torch.Tensor, k: torch.Tenso
     pi = torch.where(live_c, torch.sigmoid(lg), torch.where(full_c, one, zero))
     masked = torch.full((), MASKED_LOG_PRESENCE, dtype=lg.dtype, device=lg.device)
     log_pi = torch.where(live_c, F.logsigmoid(lg), torch.where(full_c, zero, masked))
-    return Presence(logits=logits, pi=pi, log_pi=log_pi, cand=cand, k=k, n=n, live=live, full=full)
+    return Presence(logits=logits, pi=pi, log_pi=log_pi, cand=cand, k=k, n=n, live=live, full=full, solve=solve)
 
 
 class SetCuts(Tuple[int, ...]):
@@ -441,9 +496,16 @@ class HypothesisBuilder(torch.nn.Module):
         move_legal: torch.Tensor
         move_valid: torch.Tensor
 
-    def __init__(self, layout: dict, global_input_dim: int, n_move_seats: int) -> None:
+    def __init__(self, layout: dict, global_input_dim: int, n_move_seats: int,
+                 tau_solve: str = TAU_SOLVE_DEFAULT) -> None:
         super().__init__()
         from agents.model.hypothesis_dex_rows import load_hypothesis_dex_rows
+
+        # The model's τ solve (`fixed_size_tau`; config ``tau_solve``, gen3_tau_fp32_alt_v1): EVERY fixed-size
+        # construction this model runs reads it — the species set, the move group, the per-slot move presence and
+        # OTHER's mixture (`hypothesis_tokens`), the BeliefHead set BCE (via `Presence.solve`). A plain attribute:
+        # no parameter or buffer, so the state_dict is the same under every solve.
+        self.tau_solve = check_tau_solve(tau_solve)
 
         S = int(layout["max_species"])
         M = int(layout["max_moves"])
@@ -526,7 +588,7 @@ class HypothesisBuilder(torch.nn.Module):
         cand, k = species_candidates(self.species_valid, opp_species_ids, believed)
         revealed_slots = (opp_species_ids > 0) & ~believed
         scores = t0_log_prior + self.delta(opp_role_tokens, revealed_slots, global_input)
-        pres = fixed_mass_presence(scores, cand, k)
+        pres = fixed_mass_presence(scores, cand, k, solve=self.tau_solve)
         pi = pres.pi                                                                 # detached
         # ranks >= k are OTHER's tail, read only as a set (`in_tail`, index-order sums): k positions are
         # consumed in order (gen3_behaviour_tie_consumed_v1)
@@ -586,7 +648,7 @@ class HypothesisBuilder(torch.nn.Module):
         sp = species.clamp(0, self.n_species - 1).long()
         cand, revealed, r = move_candidates(self.move_legal[sp], self.move_valid, revealed_ids)
         k_m = (MOVE_GROUP_MASS - r).clamp(min=0)
-        pres = fixed_mass_presence(move_logits.detach(), cand, k_m)
+        pres = fixed_mass_presence(move_logits.detach(), cand, k_m, solve=self.tau_solve)
         pi = pres.pi
         # One order: revealed (key 2, structural — never a float compare with π) → unrevealed by π →
         # the rest last; ties to the lower num.

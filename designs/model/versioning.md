@@ -276,10 +276,11 @@ deletion). No run recorded it.
   `b132b099`) loads here and evaluates its KO cells to that rounding bound.
 
 **τ in float64 (T62, `gen3_tau_fp64_solve_v1`, 2026-10-19): NO config, obs-semantics, signature or floor bump —
-the same judgment as the closed-form P(KO) above.** `hypothesis_set.fixed_size_tau` solves its constraint in float64
-and casts only τ back (`TAU_SOLVE_DTYPE`; `designs/endstate/design_x5_belief_tokens.md` §3.2):
+the same judgment as the closed-form P(KO) above.** `hypothesis_set.fixed_size_tau` solved its constraint in float64
+and cast only τ back (then a module constant; since config v160 the ``fp64`` value of the recorded `tau_solve` field,
+no longer the default — FP32_ALT below; `designs/endstate/design_x5_belief_tokens.md` §3.2):
 
-* **`MODEL_CONFIG_VERSION`: no bump.** No field, no flag, no parameter; nothing to record or migrate.
+* **`MODEL_CONFIG_VERSION`: no bump** at T62 (no field then). FP32_ALT (below) added the field and bumped it to v160.
 * **`OBS_SEMANTICS_VERSION`: no bump.** No observation cell moved.
 * **`ARCH_SIGNATURE`: no bump, against the letter of "any forward-math change bumps it".** The real function is
   unchanged (τ is the same root of the same equation); only its floating-point evaluation is, and it moves TOWARD the
@@ -289,6 +290,25 @@ and casts only τ back (`TAU_SOLVE_DTYPE`; `designs/endstate/design_x5_belief_to
   weights fit and whose forward is the same real function. A checkpoint trained before T62 loads here and evaluates
   its saturated k = 1 rows a few 1e-3 nats differently at most. Whether an X35 FORK of X26 adopting T62 is the
   "same network" is an experiment-design question (the identity read in that directory), not a version question.
+
+**The τ SOLVE recorded — FP32_ALT (`gen3_tau_fp32_alt_v1`, config v160, 2026-10-20): ONE numerics field, no
+signature, obs-semantics or floor bump.** T62's float64 solve cost +82–127 % of a training cycle on the GPU (the
+2026-10-19/20 battery; bar 3 %), so the default became the fp32 SPLIT residual (`hypothesis_set.fixed_size_tau`'s
+``solve="fp32_alt"``; the method and its proof: `designs/endstate/design_x5_belief_tokens.md` §3.2), and the choice is
+RECORDED so a run keeps the arithmetic it trained with:
+
+* **`MODEL_CONFIG_VERSION` 159 → 160.** One field, `tau_solve` {`fp32_alt`, `fp64`} (`--tau-solve`, default `fp32_alt`;
+  `flag_registry` row, class `training_coef` for its gate semantics). NEVER compared by `check_compatible`: both
+  solves are the same real function (≤ 2 fp32 ulp of τ apart; a frozen opponent under the other solve is the same
+  network). `_resolve`-inherited, so a flagless fork or restart keeps its parent's record; re-applied to the loaded
+  extractor after every `--model` load (`resume_reapply.SETTERS`, the builder's `tau_solve` attribute), because SB3
+  rebuilds the extractor from the zip's kwargs. A pre-v160 config MIGRATES to `fp32_alt`: no earlier run chose a solve
+  (pre-T62 runs trained on the naive fp32 sum, T62's float64 had no field), and `fp32_alt` evaluates them as T62 did
+  to within fp32's own rounding. The measurement-only `fp32_naive` (the pre-T62 sum) is refused by the flag, the
+  config check and the builder.
+* **`ARCH_SIGNATURE`: no bump** — T62's judgment: the same real function, its evaluation moved by ≤ 2 fp32 ulp of τ
+  (`research_state/measurements/tau_fp32_alt_2026-10-20/`).
+* **`OBS_SEMANTICS_VERSION` / `MIGRATION_FLOOR`: unchanged.** No observation cell moved; every v144+ checkpoint loads.
 
 ## Declared growth at a fork (`--grow`, B-GROW, `gen3_grow_fork_v1`, config v159)
 

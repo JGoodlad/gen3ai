@@ -503,6 +503,15 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "2.9 pp under a +-6 logit bump on a four-revealed bench mon's unrevealed moves. Builds nothing; the "
                    "weights carry the move head's graph (sigma(a + tau), tau no-grad).",
               requires=("opp_belief_slots", "opp_intent")),
+    # gen3_tau_fp32_alt_v1 (config v160; design_x5_belief_tokens.md §3.2, FP32_ALT): the τ SOLVE. NUMERICS, so the
+    # TRAINING_COEF class for its gate semantics (recorded + `_resolve`-inherited, never gated), not a coefficient.
+    ModelFlag("tau_solve", "fp32_alt", Tier.CLI, Klass.TRAINING_COEF, 160,
+              "the arithmetic of X5's fixed-size presence shift tau in every forward ('fp32_alt' = the split residual "
+              "in fp32, default; 'fp64' = T62's float64 naive sum)",
+              note="Both are the same real function (<= 2 fp32 ulp of tau apart on X26's tau-class rows, where the "
+                   "pre-T62 naive fp32 sum missed by up to 2.5e-2), so it is never compared at load and a fork may "
+                   "switch it; fp64 costs +82-127% of a training cycle on consumer GPUs (the 2026-10-19/20 battery). "
+                   "Re-applied after every --model load (`resume_reapply.SETTERS`); builds nothing."),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

@@ -1,5 +1,21 @@
 # GPU-window battery (staged 2026-10-19, NOT RUN)
 
+## T62 VERDICT (read 2026-10-20): FP32_ALT
+
+T62's float64 τ solve costs far too much on this card (`/home/goodlad/gen3ai_archive/gpu_battery_2026-10-19/`):
+
+- decision forward: B64 4.11 → 7.86 ms, B256 8.31 → 23.31 ms;
+- learner `update_s_est`: 41.4-42.0 s → 96.1-97.8 s, both ABBA pairs agreeing;
+- per-cycle cost 82-127 %, against the 3 % bar.
+
+FP32_ALT is built in `gen3_tau_fp32_alt_v1` (config v160). Its CPU evidence is in
+`designs/research_state/measurements/tau_fp32_alt_2026-10-20/`. Its GPU cost cells are a separate battery:
+[`../gpu_window_battery_2026-10-20/`](../gpu_window_battery_2026-10-20/README.md).
+
+At a commit that carries FP32_ALT (no `hypothesis_set.TAU_SOLVE_DTYPE`), the five T62 cells (`t62_dec`, `t62_u_*`)
+**SKIP** ("superseded by FP32_ALT"): their `--check` exits 9 and `battery.py` records a SKIP, not a HOLD. At a T62
+commit they run as before; at a pre-T62 commit their precondition still FAILs.
+
 One script collects every pending GPU-only measurement in the next GPU window. That window is X34's planned 24 h
 restart (about 2026-10-20 11:35) or the gap between X34 and X35. The training session holds the GPU lease and runs
 it. Nothing here has touched a GPU yet: it was staged on the CPU, with a `--dry-run` that came back green.

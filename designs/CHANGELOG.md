@@ -15120,3 +15120,43 @@ Pins: `present::live_reader_reading_tests` (six tests over `tests/vectors/live_r
   after 10.6 / 10.7 µs; `present_encode_us` before 15.7 / 16.6, after 15.4 / 16.2 — no change beyond the run-to-run
   spread.
 
+## 2026-10-20 — FP32_ALT: X5's τ constraint solved by a SPLIT RESIDUAL in fp32, the DEFAULT (`gen3_tau_fp32_alt_v1`; config v160, one numerics field `tau_solve` / `--tau-solve {fp32_alt,fp64}`; no signature / obs / floor change; the K9 learner golden, the played-bits sentinel and the reveal file's `OFF_BITS` re-recorded)
+
+- **Why.** The 2026-10-19/20 GPU battery read T62's float64 τ solve (`gen3_tau_fp64_solve_v1`) at +82–127 % of a
+  training cycle (bar 3 %: decision forward B256 8.31 → 23.31 ms, learner 41.4 → 96.1–97.8 s), so its registered
+  fallback "FP32_ALT" was built.
+- **The change.** `hypothesis_set.fixed_size_tau(..., solve=...)`: under `fp32_alt` (the default) the bisection's
+  direction test Σσ(x) > k becomes Σ ±σ(−|x|) > k − |{x > 0}| in the scores' dtype (≥ fp32): every term is
+  relative-accurate and k − |H| is an exact integer, so τ is fixed to ~2(depth + 2)u ≈ 1e-6 WHATEVER the slope (the
+  proof: `designs/endstate/design_x5_belief_tokens.md` §3.2). `fp64` is T62's float64 naive sum, kept selectable;
+  `fp32_naive` (the pre-T62 sum) is measurement-only and refused by every model surface. The model's solve is ONE
+  attribute, `HypothesisBuilder.tau_solve` (extractor kwarg `tau_solve`); every construction reads it — the species
+  set, the move group, the per-slot move presence and OTHER's mixture (`hypothesis_tokens`), the BeliefHead set BCE
+  (`Presence.solve`), `main.belief_roles`. `selection_sites` declares the two new direction tests (BISECT; the reason
+  rewritten).
+- **Recorded.** Config v160: `tau_solve` (`--tau-solve`, `flag_registry` row, class `training_coef` = recorded,
+  `_resolve`-inherited, never gated); re-applied to the loaded extractor after every `--model` load
+  (`resume_reapply.SETTERS["tau_solve"]` → `set_tau_solve`); a pre-v160 config migrates to `fp32_alt`, so X35's forks of
+  P\* run it with unchanged argvs. `designs/model/versioning.md` "The τ SOLVE recorded".
+- **Evidence** (`research_state/measurements/tau_fp32_alt_2026-10-20/`, CPU). On X26's violators (u32180 / u32320 /
+  u35950 × two neighbour checkpoints) τ within 1.9e-7 – 1.5e-6 of the exact root (naive 3.0e-3 – 2.5e-2), the SAME τ
+  under 64 summation orders and inductor-vs-eager (naive spread up to 2.7e-2), predicted K9(b) gap 0 (naive up to
+  4.3e-3, rank 1 of 33). Network, learner (eager `evaluate_actions`) vs compiled decision forward on the taken action:
+  at the A3 stop's nearest weights the violator's gap 5.9e-4 naive → 2.4e-6 FP32_ALT (fp64 2.1e-5); on 915 fixture rows
+  max 1.5e-5, p99 1.0e-5 (fp64 3.7e-5 / 1.2e-5). Greedy agrees everywhere. CPU cost: the eager decision forward +4 to
+  +10 % at one thread (fp64 −1 to +41 % in the same contended run); no float64 op (`tau_solve_test`). The GPU cost is
+  read by `research_state/measurements/gpu_window_battery_2026-10-20/` (staged here: FP32_ALT vs the naive sum, the
+  T62 gate's formula) before X35's production GO; the 2026-10-19 battery's T62 cells now SKIP at such commits.
+- **Tests** (each fails on revert): `src/agents/model/tau_solve_test.py` (within 2 ulp of the exact root at 12–150-nat
+  leads, k = 1 and 3, the naive sum's miss asserted as the precondition; one τ under 32 orders; one traced graph per
+  solve and no float64 tensor in fp32_alt's; the record — one default everywhere, the v160 migration, inheritance;
+  every construction of the production forward and the set BCE receives the model's solve, and the setter switches
+  them; an inductor read, slow); `hypothesis_set_test.py` (`fp64` is still the float64 solve rounded once; FP32_ALT
+  within 2 ulp of the row's largest logit on 700 prior rows).
+- **Goldens, bisected** (every builder forced to `fp64` reproduces the T62 records bit for bit): the K9 learner golden
+  post `bd79d729…` → `584de31c…`, fp32 opt-out `d614ec22…` → `318c114b…` (+cu126 = +cu128); `PLAYED_DIGEST`
+  `6b2517a4…` → `41a35939…`; the reveal file's `OFF_BITS` re-recorded (its RE-RECORDED note).
+- **Docs.** `ARCHITECTURE.md`; `design_x5_belief_tokens.md` §3.2 + Decision record; `designs/model/versioning.md`;
+  `designs/flag_registry.md` (generated); the 2026-10-19 battery README (T62 VERDICT: FP32_ALT); the X35 launch sheet's C1
+  (amended: production pins FP32_ALT, GO after the GPU read); `design_compute_efficiency.md` C1; `TASK_BACKLOG.md`
+  (OPS-12 done).

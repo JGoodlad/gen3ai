@@ -174,11 +174,16 @@ REASONS: Dict[str, str] = {
     "BISECT": "a fixed-step bisection's direction test under no_grad (X5's fixed-size construction, "
               "`hypothesis_set.fixed_size_tau`): either branch keeps the root inside the bracket, so a flip "
               "at a rounding error moves the converged root by at most the final bracket width — continuous, "
-              "never a log pi jump. HOW FAR the root can sit from the true one is the constraint sum's "
-              "resolution over its slope, ulp(k) / S'(tau) with S' = sum pi (1 - pi): the sum is evaluated in "
-              "FLOAT64 (T62, `TAU_SOLVE_DTYPE`), so that is <= ~1e-10 even on a saturated k = 1 row "
-              "(S' ~ 1e-5), and tau is then rounded once to the scores' dtype — every program lands on the same "
-              "tau. (Before T62 the sum was fp32: 7e-3 - 1.5e-2 on such rows, continuous but NOT ulp-scale — "
+              "never a log pi jump. HOW FAR the root can sit from the true one is the constraint's evaluation error "
+              "over its slope S'(tau) = sum pi (1 - pi). Under the default `fp32_alt` solve (gen3_tau_fp32_alt_v1) "
+              "the constraint is the SPLIT residual sum(+-sigma(-|x|)) > k - |{x > 0}|: every term is relative-"
+              "accurate and k - |H| is an exact integer, so the root is fixed to ~2 (depth + 2) u ~ 1e-6 WHATEVER "
+              "the slope (S' >= (R + D) / 2 bounds the error over the slope) — <= 2 fp32 ulp of tau across programs "
+              "on X26's k = 1 tau-class rows (S' ~ 1e-5). Its membership test `x > 0` is the same class: a flip at "
+              "x within a rounding of 0 swaps +sigma(x) for -sigma(-x) (both ~1/2) and moves |H| by one in the "
+              "same step, so the residual moves by its own rounding only. Under `fp64` (T62) the naive sum is "
+              "float64: <= ~1e-10 on such rows. (The pre-T62 naive fp32 sum — `fp32_naive`, measurement only — "
+              "resolved tau only to ulp(k) / S'(tau): 7e-3 - 2.8e-2 on those rows, continuous but NOT ulp-scale — "
               "the X26 A3 / A6 K9(b) tau class, `designs/research_state/measurements/"
               "x26_a3_stop_316M_2026-10-18/`)",
     "COUNT_CONTINUOUS": "a floor / ceil that COUNTS the terms of an arithmetic sequence on one side of a clamp "
@@ -359,11 +364,12 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     # the trunk / the op — log π then reads them, and these three MUST be re-declared: the selection
     # argsort as a MARGIN rule on the k-th / (k+1)-th π gap (§3.1's rule-8 exclusion,
     # `hypothesis_set.near_tie_rows`, including OTHER's tail-mean cutoff and the move seats); the
-    # bisection's `total > k_t` is NOT a discontinuity (τ converges to the same root either way, to the
-    # resolution of the float64 sum since T62 — fp32's was up to 1.5e-2 on a saturated k = 1 row) and needs a
-    # reason of its own; `denom > 0` is a structural-count gate.
+    # bisection's direction tests (`total > k_t`; the split residual's `resid > …` and its `x > 0` membership,
+    # gen3_tau_fp32_alt_v1) are NOT discontinuities (τ converges to the same root either way, to the resolution of the
+    # solve: ~1e-6 for fp32_alt, ~1e-10 for fp64 — the naive fp32 sum's was up to 2.8e-2 on a saturated k = 1 row) and
+    # need a reason of their own; `denom > 0` is a structural-count gate.
     "hypothesis_set": {
-        "BISECT": ("total > k_t",),
+        "BISECT": ("total > k_t", "x > 0", "resid > (k_safe - in_h.sum(-1)).to(dt)"),
         "TABLE": ("logits > cut",),
         "INT": ("k.long()", "opp_species_ids.clamp(0, S - 1).long()", "opp_believed_mask.bool().sum(-1).long()",
                 "revealed_ids.clamp(0, M - 1).long()", "revealed_ids > 0", "revealed.sum(-1).long()",

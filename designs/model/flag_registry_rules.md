@@ -179,4 +179,7 @@ SB3 rebuilds the extractor from the ZIP's `policy_kwargs`, which on a FORK are t
 re-applied (the 2026-07-21 incident) and `oracle_reveal` was not, so every knock-in fork's `metadata.json` recorded the
 parent's `off` (GIGO FIX `gen3_reveal_provenance_v1`, 2026-10-15; the contract: `designs/endstate/design_information_levers.md`
 §6 "THE PROVENANCE CONTRACT"). Only the attribute is re-applied, never the policy's pickled constructor kwargs (those are
-the forward identity `forward_fingerprint` / `main.h2h`'s `EngineArch` read).
+the forward identity `forward_fingerprint` / `main.h2h`'s `EngineArch` read). The table also re-applies `tau_solve` (`REAPPLIED_NUMERICS`; config v160, FP32_ALT): a
+`training_coef`-class NUMERICS row, never gated (both τ solves are the same real function), but carried on the
+extractor's hypothesis builder, so a fork that inherits or types a solve its parent's zip lacks needs the same
+post-load application.
