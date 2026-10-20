@@ -1,0 +1,1 @@
+--model /home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep/checkpoints/checkpoint_200000244_steps.zip --behaviour-check warn --steps 270000244 --checkpoint-every-steps 1000000 --snapshot-ladder-games 0 --supply-starve-cycles self_play_pool=0 --device cuda --grow trunk_layers=4 --seed 3603 --run-name rb_x35t_x47d4_s3603

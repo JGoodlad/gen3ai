@@ -277,7 +277,21 @@ way. T54's pool-seed check runs inside `launch_x35.sh`; by hand it is
 (F-LS-9: the growth adds a `grown` block to `pool_seed.json`; the check reads it as before, which `kit_test.py` pins
 on a constructed record, and has not run on a real grown child).
 
-### 4.3 What the dry-runs showed (24 of 24 PASS at `9c3bf3c4`)
+### 4.3 What the dry-runs showed (32 of 32 PASS at `d825c6a1`, the amended order; 24 of 24 at `9c3bf3c4` before it)
+
+**Re-validated 2026-10-19 after the amendment (§0): `SUMMARY 32 PASS, 0 FAIL (pin d825c6a1)`**,
+[`batch1_validation_d825c6a1/`](batch1_validation_d825c6a1/) ([`summary.txt`](batch1_validation_d825c6a1/summary.txt),
+all 32 argvs, the `checkargs` / `--dry-run` transcripts of seed 1 of each arm and of the new look-2 lines C0 / A1 s3504,
+X47 / toy C0 s3604). `d825c6a1` was main HEAD when the run started; the amendment's own commits (`00fe75a7`,
+`0801342e`, `6c9fb8d5`) and the docs / gate commits since touch no trainer, launcher or `checkargs` code, and the kit's
+argv builder is unchanged but for X47's seeds. The 24 argvs of the old order are BYTE-IDENTICAL to `9c3bf3c4`'s; the
+8 new lines (C0 / A1 s3504–s3505, X47 / toy C0 s3604–s3605) read as their arms do (production 10.97 GiB REQUIRED,
+toy 13.05; X47 `grow=[DECLARED trunk_layers 2 -> 4]`). **The toy lines are still on the 200M STAND-IN for T\***
+(`call=reference_population_toy_STANDIN_200m.json` on every toy line): never a launch value (F-LS-4). CPU only, one
+job at a time at `nice -n 19 taskset -c 5-7,13-15` (each step ≈ 0.7 GB peak, ≈ 25 s, measured: not run under a heavy
+slot), `GEN3AI_MODELS_DIR` on a scratch dir that stayed empty.
+
+**The first validation, at `9c3bf3c4`:**
 
 [`batch1_validation_9c3bf3c4/`](batch1_validation_9c3bf3c4/) holds all 24 argvs, the verdict line of each
 ([`summary.txt`](batch1_validation_9c3bf3c4/summary.txt), ending `SUMMARY 24 PASS, 0 FAIL`) and the full `checkargs` and
