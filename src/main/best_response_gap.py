@@ -38,13 +38,23 @@ import argparse
 import json
 import os
 import sys
+import tempfile
 import time
 from typing import Any, Dict, List, Optional, Sequence
 
 from agents.training import best_response_gap as engine
 from agents.training.best_response_gap import BestResponseGapError
 
-DEFAULT_JSON = "best_response_gap.json"
+
+
+def default_json_path(now: Optional[float] = None) -> str:
+    """Where the report JSON goes when ``--json`` is not given: the TEMP dir, never the cwd.
+
+    The old default was ``./best_response_gap.json``, so a run from the main checkout DIRTIED main
+    (round-2 registration K-1, 2026-09-24: moved within a minute). The name carries the time and pid
+    so two reads never overwrite one another; the path is printed on the way out."""
+    stamp = time.strftime("%Y%m%dT%H%M%S", time.localtime(now))
+    return os.path.join(tempfile.gettempdir(), f"best_response_gap_{stamp}_{os.getpid()}.json")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -89,8 +99,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="battles in flight. Above 1 is REFUSED (unreproducible).")
     p.add_argument("--draws", type=int, default=engine.DEFAULT_DRAWS)
     p.add_argument("--bootstrap-seed", type=int, default=engine.DEFAULT_BOOTSTRAP_SEED)
-    p.add_argument("--json", dest="json_out", default=DEFAULT_JSON, metavar="PATH",
-                   help=f"write the report JSON here (default: ./{DEFAULT_JSON}).")
+    p.add_argument("--json", dest="json_out", default=None, metavar="PATH",
+                   help="write the report JSON here (default: best_response_gap_<time>_<pid>.json in the "
+                        "TEMP dir - never the current directory, which may be a git checkout).")
     p.add_argument("--no-json", action="store_true", help="do not write the JSON.")
     p.add_argument("--md", dest="md_out", default=None, metavar="PATH")
     p.add_argument("--check", action="store_true",
@@ -371,10 +382,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                  "mirrored_pairs": args.mirrored_pairs} if args.play else None,
     }
 
-    if not args.no_json and args.json_out:
-        with open(args.json_out, "w") as fh:
+    if not args.no_json:
+        json_out = args.json_out or default_json_path()
+        with open(json_out, "w") as fh:
             json.dump(doc, fh, indent=1)
-        log(f"  wrote {args.json_out}")
+        log(f"  wrote {json_out}")
     if args.md_out:
         with open(args.md_out, "w") as fh:
             fh.write(render_markdown(doc))
