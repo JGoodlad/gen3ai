@@ -119,6 +119,10 @@ def score(partial: bool = False) -> dict:
 
     bank = load_bank(E.MAT_ARCH / "bank")
     dec = {d["id"]: d for d in bank.decisions}
+    import l2_s1 as L2
+
+    fit = json.loads((E.HERE / "alpha_fit.json").read_text())
+    llu = L2.LLU(fit["ALPHA"], {r["id"]: r for r in E.read_rows(E.MAT_ARCH / "fn_belief" / f"{E.ANCHOR}.jsonl")})
     recs = []
     for did in ids:
         m, rt, r1 = meta[did], roots[did], truth[did]
@@ -161,6 +165,9 @@ def score(partial: bool = False) -> dict:
             wr = wrows[a].get(did)
             if wr is not None and wr.get("ok"):
                 rec["worlds"][a] = world_meters(wr, true_team)
+                # AMENDMENT A1 (L2): the arm's calibration proxies on its own worlds / its species proposal
+                rec["worlds"][a]["ll8"] = L2.ll8(wr["teams"], true_team, wr.get("revealed") or {})
+                rec["worlds"][a]["llu"] = llu(a, did, true_team, wr.get("revealed") or {})
                 rec["worlds"][a]["prop"] = wr.get("prop")
                 rec["worlds"][a]["cost_build_cpu_s"] = wr["cost"]["cpu_s"]
             rec["worlds"].setdefault(a, {})["cost_play_cpu_s"] = (rw["cost"]["play"]["cpu_s"]

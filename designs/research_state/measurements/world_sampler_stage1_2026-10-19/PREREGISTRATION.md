@@ -198,3 +198,57 @@ A failed tooth stops the read (a FINDING, reported).
 CPU only (`CUDA_VISIBLE_DEVICES=""`), one single-thread worker at a time under `chrt --idle`, `nice -n 19`,
 `taskset -c 5-7,13-15` and its own `mem_cap` scope (root rule 5b; a live run). Nothing is written under `models/` or
 `data/`; the maturity battery's archive is read only. Bulk rows: `~/gen3ai_archive/world_sampler_stage1/`.
+
+## 9. AMENDMENT A1 — L2: does the gain track EXACTNESS or CALIBRATION? (registered 2026-10-19 22:02 PDT)
+
+**No outcome has been read.** At this amendment the runner had completed 30 of the 287 states; only build and play
+row shapes, counts, costs, exclusion messages and the identity tooth's equality count had been looked at. No IMP, Δ,
+scorer value or table had been computed (`score_s1.py` had never run on a registered state).
+
+**Why** (the orchestrator, from the literature review `research_state/literature/hidden_info_search_review_2026-10-20.md`
+experiment L2): "only C_pool pays" cannot separate (a) gain tracks the arm's EXACT-WORLD MASS from (b) gain tracks how
+CALIBRATED the arm's worlds are, because C_pool is both the only exact and the only calibrated sampler on a
+pool-opponent bank.
+
+**What it adds: a SECONDARY analysis. It changes no primary rule, verdict, arm, state or seed.** Code: `l2_s1.py`
+(the rules; planted tests in `read_s1_test.py`), wired into `score_s1.py` (the per-state proxies) and `read_s1.py`
+(`SECONDARY_L2`).
+
+- **The predictors**, per arm X and state s, both on the arm's own 8 worlds:
+  - **q_SM,X(s)**, the exact-world mass (§4);
+  - **LL8,X(s)**, the truth's log-likelihood under the arm's world distribution, factorised over the hidden facts and
+    smoothed. This is the closest computable proxy: the 8-world empirical distribution gives the whole truth
+    probability 0 unless a world is exact. The hidden facts are each TRUE never-seen species and, for each seen mon
+    with unrevealed slots, each TRUE unrevealed move (canonical; a Hidden Power is one move). c(f) = the number of the
+    8 worlds holding fact f. p̂(f) = (c(f) + 0.5) / 9 (the Krichevsky–Trofimov estimator). LL8 = the MEAN over the
+    state's hidden facts of log p̂(f); a state with no hidden fact is undefined.
+  - Both are taken relative to the baseline on the same state: Δq_X(s) = q_SM,X(s) − q_SM,F_legal(s) and
+    ΔLL_X(s) = LL8_X(s) − LL8_F_legal(s).
+- **The gain**: Δ_X(s) = IMP_X(s) − IMP_F_legal(s) at LEAF-K8 (TRUNC-4-K8 descriptive).
+- **A descriptive companion, LLU**: stage 0's level-1 analytic log p(U*) of the arm's never-seen SPECIES proposal (the
+  review's proper score), at stage 1's own parameters (α 89.1, the strict filter, the pin's pool; floored at 1e-12).
+  It is read between arms only.
+
+**The registered rules** (rule 8; the read's own bootstrap draws, seed 20261019).
+
+*Within arms (the registered decision):*
+- Per primary arm, compute Spearman ρ_q = ρ(Δ_X, Δq_X) and ρ_LL = ρ(Δ_X, ΔLL_X) over its states valid with F_legal.
+  Each bootstrap draw is the drawn battles' states with their multiplicity.
+- POOLED = the state-count-weighted mean over the five primary arms. An arm whose predictor or gain is constant in a
+  draw drops out of that draw.
+- **TRACKS-EXACT** iff lower95[ρ̄_q] > +0.0005; **TRACKS-LL** iff lower95[ρ̄_LL] > +0.0005. The verdict is **BOTH /
+  EXACT-ONLY / LL-ONLY / NEITHER**.
+- **SEPARATION**: **LL-AHEAD** iff lower95[ρ̄_LL − ρ̄_q] > +0.0005; **EXACT-AHEAD** iff upper95 < −0.0005; else NOT
+  SEPARATED.
+
+*Between arms:*
+- The seven non-baseline arms are B, C_ladder, C_forum_strict, C_pool, NS, F_off and F_rolls. Take each arm's mean
+  Δ_X, Δq_X and ΔLL_X on its own states valid with F_legal, and the Spearman ρ over the arms of (mean gain, mean
+  predictor) on the same draws.
+- The same flags and labels apply: tracks iff lower95[ρ] > +0.0005.
+- It is read for all seven arms AND **without C_pool** (six arms): where exactness is ≈ 0, that is the discriminating
+  comparison. LLU's between-arm ρ is descriptive.
+
+**Expected power (disclosed).** Per-state IMP differences are noisy (24 referee seeds), and q_SM is ≈ 0 on most states
+of every arm but C_pool. The within-arm ρ_q of the non-pool arms will mostly be undefined or ≈ 0, and the between-arm
+ρ over six or seven points has wide intervals. NEITHER / NOT SEPARATED is the likely outcome unless the effect is large.

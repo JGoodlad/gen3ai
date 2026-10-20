@@ -757,6 +757,11 @@ leaves open and adds the day's builds. In short:
 - A fifth verdict, **HURTS**, is added.
 - Each arm's TODAY is checked against the exact-world mass of **its own** worlds.
 - The read is made once: at `QUEUE_DONE`, or at the stop 24 h after launch, on the done prefix of a seeded order.
+- **Amendment A1 (L2, registered before any outcome was read; SECONDARY).** It asks whether the per-state gain tracks
+  each arm's exact-world mass or its CALIBRATION: LL8, the KT-smoothed factorised log-likelihood of the true hidden
+  facts under the arm's 8 worlds. It is read within arms (Spearman, pooled) and between arms (with and without
+  C_pool), with BOTH / EXACT-ONLY / LL-ONLY / NEITHER. The literature review's point: "only C_pool pays" cannot tell
+  the two apart.
 
 The design as written before the registration:
 

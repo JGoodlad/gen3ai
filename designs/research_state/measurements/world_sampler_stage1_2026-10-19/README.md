@@ -50,4 +50,13 @@ own `mem_cap` scope; `CUDA_VISIBLE_DEVICES=""`. No GPU.
 
 ## 3. The run
 
-Filled in at launch: the launch commit, the runner's pid, `STOP_AT`, the identity tooth's result and the smoke's cost.
+- **Launched** 2026-10-19 18:27 PDT from the builder checkout at `8d304953`. `STOP_AT` = 2026-10-20 18:27 PDT.
+  Identity tooth 12 / 12; the smoke's cost is in PREREGISTRATION §5.
+- **Relaunched** 2026-10-19 21:13 PDT (30 states complete, the registered order and stop unchanged). The heavy-job
+  slots (`24099876a`) had landed beside the run, and its every build and play waited for a slot among 12 random
+  pollers (chunk 6 waited 47 min). The runner itself now holds ONE heavy slot for its life (`mem_cap.sh --slot`
+  around `queue_s1.py`), so its children take none. It is one heavy job, as rule 5b and the brief allow. Relaunch
+  the same way: the env of `launch_s1.sh`, then
+  `nohup setsid nice -n 19 <builder>/scripts/ops/mem_cap.sh --name ws1_runner --slot 2 timeout 28h python -I queue_s1.py`.
+- **Amendment A1 (L2)** registered before any outcome was read (PREREGISTRATION §9). The read must run from a
+  checkout that holds it (`l2_s1.py`).

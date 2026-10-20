@@ -167,3 +167,68 @@ def test_normalize_entry_fills_the_hidden_power_ivs():
     e2 = "Raikou||Leftovers|Pressure|HiddenPower,Thunderbolt|Modest||N|30,30,30,30,30,||,Grass,,,,"
     f2 = parse_set(CS.normalize_entry(e2, lambda s: "Raikou"))
     assert set_ivs(f2) == [30, 30, 30, 30, 30, 31] and typed_moves(f2)[0] == "hiddenpower" + hp_type_of(set_ivs(f2))
+
+
+# ---- AMENDMENT A1 (L2): exactness vs calibration --------------------------------------------------------------------
+
+def test_ll8_scores_the_true_hidden_facts_on_the_worlds():
+    import l2_s1 as L2
+
+    true = ("Zapdos||Leftovers|Pressure|thunderbolt,substitute,toxic,protect|Timid|4,,,252,,252|||||]"
+            "Skarmory||Leftovers|KeenEye|spikes,roar,toxic,protect|Impish|252,,252,,4,|||||")
+    rev = {"zapdos": ["thunderbolt", "substitute"]}
+    # unseen: skarmory (1 fact); zapdos's hidden moves: protect, toxic (2 facts)
+    exact = [true] * 8
+    miss = [true.replace("Skarmory", "Forretress").replace("toxic,protect|Timid", "hiddenpowerice,rest|Timid")] * 8
+    hi, lo = L2.ll8(exact, true, rev), L2.ll8(miss, true, rev)
+    assert hi == pytest.approx(np.log(8.5 / 9))
+    assert lo == pytest.approx(np.log(0.5 / 9))
+    half = exact[:4] + miss[:4]
+    assert lo < L2.ll8(half, true, rev) < hi
+    assert np.isnan(L2.ll8(exact, true, {"zapdos": ["thunderbolt", "substitute", "toxic", "protect"],
+                                         "skarmory": ["spikes", "roar", "toxic", "protect"]}))
+
+
+def _per_arm(rng, n, driver):
+    battles = [f"b{i // 2}" for i in range(n)]
+    dq = np.where(rng.random(n) < 0.1, rng.random(n), 0.0)       # exactness: mostly 0, as in honest arms
+    dl = rng.normal(0, 1, n)
+    g = (dl if driver == "LL" else dq * 5) * 0.05 + rng.normal(0, 0.02, n)
+    return g, dq, dl, battles
+
+
+def test_within_arm_reads_the_planted_driver():
+    import l2_s1 as L2
+
+    rng = np.random.default_rng(1)
+    for driver, want, sep in (("LL", "LL-ONLY", "LL-AHEAD"), ("EXACT", "EXACT-ONLY", "EXACT-AHEAD")):
+        per = {x: _per_arm(rng, 240, driver) for x in ("B", "NS")}
+        bt = R.Boot(per["B"][3], n=400)
+        res = L2.within(per, bt, R.ci)
+        assert res["pooled"]["verdict"] == want, (driver, res["pooled"])
+        assert res["pooled"]["separation"] == sep
+
+
+def test_within_arm_a_constant_predictor_reads_neither_and_never_raises():
+    import l2_s1 as L2
+
+    rng = np.random.default_rng(2)
+    g, _, dl, b = _per_arm(rng, 200, "LL")
+    per = {"B": (g, np.zeros(200), rng.normal(0, 1, 200), b)}
+    res = L2.within(per, R.Boot(b, n=200), R.ci)
+    assert res["pooled"]["TRACKS-EXACT"] is False and res["pooled"]["TRACKS-LL"] is False
+
+
+def test_read_carries_the_l2_block_and_changes_no_primary_verdict():
+    t = _table(lift={"C_ladder": 0.04})
+    base = RD.read(_table(lift={"C_ladder": 0.04}))
+    rng = np.random.default_rng(3)
+    for r in t["recs"]:
+        for a in E.ARMS:
+            r["worlds"][a]["ll8"] = float(rng.normal(-2, 0.3))
+    res = RD.read(t)
+    assert {x: res["PRIMARY"][x]["verdict"] for x in E.PRIMARY} == {x: base["PRIMARY"][x]["verdict"] for x in E.PRIMARY}
+    blk = res["SECONDARY_L2"]
+    assert set(blk["within"]["per_arm"]) == {"B", "C_ladder", "C_forum_strict", "C_pool", "NS"}
+    assert blk["within"]["pooled"]["verdict"] in ("BOTH", "EXACT-ONLY", "LL-ONLY", "NEITHER")
+    assert blk["between|LEAF-K8"]["without_C_pool"]["verdict"] in ("BOTH", "EXACT-ONLY", "LL-ONLY", "NEITHER")

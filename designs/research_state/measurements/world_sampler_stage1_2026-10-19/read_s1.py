@@ -119,6 +119,8 @@ def read(tab: dict) -> dict:
                                      {x: prim[x]["SEARCH-ENABLED"] for x in prim})
     out["MEANING"] = R.meaning({x: prim[x]["verdict"] for x in prim}, {x: prim[x]["MATERIAL"] for x in prim},
                                {x: prim[x]["qSM"]["mean"] if prim[x]["qSM"]["mean"] is not None else 1.0 for x in prim})
+    # ---- AMENDMENT A1 (L2, SECONDARY; PREREGISTRATION §9): does the gain track exactness or calibration?
+    out["SECONDARY_L2"] = l2_read(bt, recs)
     # ---- DESCRIPTIVE world meters, the backoff, the weights, the cost
     wm: Dict[str, dict] = {}
     for a in E.ARMS:
@@ -135,6 +137,45 @@ def read(tab: dict) -> dict:
                 blk["share_states_n_gt_0"] = round(float(np.mean([p.get("n", 0) > 0 for p in props])), 4)
         wm[a] = blk
     out["worlds"] = wm
+    return out
+
+
+def _w(recs: List[dict], arm: str, key: str) -> np.ndarray:
+    return np.array([r["worlds"].get(arm, {}).get(key, np.nan) if _ok(r, arm) else np.nan for r in recs], dtype=float)
+
+
+def l2_read(bt: "R.Boot", recs: List[dict]) -> dict:
+    """Amendment A1 (``l2_s1``): within-arm and between-arm rank correlations of the gain with Δq and ΔLL8."""
+    import l2_s1 as L2
+
+    out: dict = {}
+    per_arm = {}
+    for x in L2.L2_ARMS_WITHIN:
+        g = vec(recs, x, LEAF) - vec(recs, "F_legal", LEAF)
+        dq = _w(recs, x, "qSM") - _w(recs, "F_legal", "qSM")
+        dl = _w(recs, x, "ll8") - _w(recs, "F_legal", "ll8")
+        m = np.isfinite(g) & np.isfinite(dq) & np.isfinite(dl)
+        per_arm[x] = (g[m], dq[m], dl[m], [r["battle"] for r, k in zip(recs, m) if k])
+    out["within"] = L2.within(per_arm, bt, R.ci)
+    for z in (LEAF, T4):
+        gains, mq, ml, mu = {}, {}, {}, {}
+        for x in L2.L2_ARMS_BETWEEN:
+            sel = okv(recs, x, "F_legal")
+            gains[x] = bt.mean(vec(recs, x, z) - vec(recs, "F_legal", z), sel)
+            mq[x] = bt.mean(_w(recs, x, "qSM") - _w(recs, "F_legal", "qSM"), sel)
+            ml[x] = bt.mean(_w(recs, x, "ll8") - _w(recs, "F_legal", "ll8"), sel)
+            mu[x] = bt.mean(_w(recs, x, "llu") - _w(recs, "F_legal", "llu"), sel)
+        blk = {}
+        for tag, arms in (("all7", L2.L2_ARMS_BETWEEN), ("without_C_pool", tuple(a for a in L2.L2_ARMS_BETWEEN
+                                                                                 if a != "C_pool"))):
+            bq = L2.between({a: mq[a] for a in arms}, {a: gains[a] for a in arms}, R.ci)
+            bl = L2.between({a: ml[a] for a in arms}, {a: gains[a] for a in arms}, R.ci)
+            bu = L2.between({a: mu[a] for a in arms}, {a: gains[a] for a in arms}, R.ci)
+            blk[tag] = {"exact": bq, "LL8": bl, "LLU (descriptive)": bu,
+                        "verdict": L2.label(bool(bq.get("tracks")), bool(bl.get("tracks")))}
+        blk["arm_means"] = {x: {"gain": R.summary(*gains[x]), "dq": R.summary(*mq[x]), "dLL8": R.summary(*ml[x]),
+                                "dLLU": R.summary(*mu[x])} for x in L2.L2_ARMS_BETWEEN}
+        out[f"between|{z}" + ("" if z == LEAF else " (descriptive)")] = blk
     return out
 
 
