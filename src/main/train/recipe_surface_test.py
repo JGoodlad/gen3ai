@@ -561,3 +561,39 @@ def test_a_fork_or_resume_of_an_overlap_arm_inherits_it_and_a_pre_flag_parent_tr
     from main.train.rust_env_setup import resolve_env_core_args
     resolve_env_core_args(ns)
     assert ns.overlap_collect is False
+
+
+# ------------------------------------------------- the fork arm's `--fork-fraction` is a recorded row (C-2 residual)
+def test_fork_fraction_is_a_resume_route_row_and_a_fork_arm_run_s_fork_inherits_it(tmp_path):
+    """The residual of core review 2026-10-20 C-2. `--fork-fraction` changes the OBJECTIVE (branch rows in the PPO
+    buffer) and was no row, so `checkargs` never showed it. It is ALSO a recorded v120 `ModelVersion` field, so its route
+    is `resume` (`_resolve` restores it on a restart, a fork, a fork's resume): no `cli_args` restore, no materialized
+    token. Fails on revert (no row: nothing below holds)."""
+    from main.train.config import inherit_saved_flag
+    p = build_parser()
+    assert rs.production_recipe()["fork_fraction"] == 0.0 and "fork_fraction" in {r.dest for r in rs.FRESH_ROWS}
+    assert rs.restart_route("fork_fraction", p.get_default("fork_fraction"), rs._model_version_fields()) == "resume"
+    ns = _desugared(["--arch", "production"])
+    assert ns.fork_fraction == 0.0 and "fork_fraction" not in rs.typed_dests(ns)
+    arm = _check(["--arch", "production", "--fork-fraction", "0.02"])["recipe"]              # the arm's lever: INFO
+    assert [(d.dest, d.source, d.resolved, d.production) for d in arm.diffs] \
+        == [("fork_fraction", "argv", 0.02, 0.0)] and not arm.refuses
+    assert any("fork_fraction" in line and "TYPED" in line for line in rs.report_lines(arm))      # checkargs shows it
+
+    # a fork (or a resume) of a fork-arm run keeps the fraction from the parent's model_config.json - and the recipe
+    # record path neither re-applies the row nor writes a token for it
+    parent = _run(tmp_path, "launcher --steps 9 --run-name parent", _PARENT_CLI)
+    fork = _fork_ns(parent)
+    got = {d for d, _v, _s in rs.inherit_recorded_recipe(fork, None, _SAVED)}
+    assert "fork_fraction" not in got and fork.fork_fraction is None
+    assert inherit_saved_flag(fork, types.SimpleNamespace(fork_fraction=0.02), "fork_fraction", 0.0) is True
+    assert fork.fork_fraction == 0.02
+    out, added = rs.materialize_recorded_recipe(
+        ["--steps", "1", "--model", str(parent / "checkpoints" / "c.zip"), "--fork-lr", "3.6e-4"], None)
+    assert "--fork-fraction" not in out and "fork_fraction" not in {d for d, _v, _s in added}
+    diffs = {d.dest: d for d in rs.diff_against_production(fork, kind="fork", inherited=frozenset({"fork_fraction"}))}
+    assert diffs["fork_fraction"].source == "inherited" and diffs["fork_fraction"].production == 0.0
+    # a parent from before the flag has no such field: the registry default, neither refused nor injected
+    old = _fork_ns(parent)
+    assert inherit_saved_flag(old, types.SimpleNamespace(), "fork_fraction", 0.0) is False and old.fork_fraction == 0.0
+    assert "fork_fraction" not in {d.dest for d in rs.diff_against_production(old, kind="fork")}

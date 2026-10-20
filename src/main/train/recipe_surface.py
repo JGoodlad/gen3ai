@@ -17,8 +17,9 @@ report, read by every surface that launches.
   * ``recipe.fresh`` — N0's MEASURED fresh recipe (`models/ai_v14_01_base`, the lineage's fresh
     launch), every knob it launched with, including its reward values, plus the one knob ADOPTED since:
     ``trunk_precision`` ``"bf16"`` (the bf16 strength A/B PASSED, 2026-10-14; ``--trunk-precision fp32``
-    is the explicit opt-out), and one knob RECORDED since: ``overlap_collect`` ``false`` (X14 stays OFF; a row so a
-    resume or fork inherits it, core review 2026-10-20 C-2), plus
+    is the explicit opt-out), and two knobs RECORDED since: ``overlap_collect`` ``false`` (X14 stays OFF; a row so a
+    resume or fork inherits it, core review 2026-10-20 C-2) and ``fork_fraction`` ``0.0`` (the fork arm stays OFF; a
+    row so `checkargs` shows it — the field route already inherited it), plus
     ``kl_controller``: the controller constants it ran with (not flags — pinned against the
     callbacks' own defaults by `recipe_surface_test`). A key that is ALSO a recorded top-level
     mirror field must EQUAL it (`production_recipe` refuses otherwise): one truth, two readers.
@@ -173,6 +174,13 @@ FRESH_ROWS: Tuple[RecipeRow, ...] = (
     # by `rust_env_setup.resolve_env_core_args` (False when untyped). Absent from a record, the run PREDATES the flag
     # (`PRE_FLAG_ROWS`): it trained OFF, which is what the unset flag resolves to.
     RecipeRow("overlap_collect", "--overlap-collect", False, "X14 — default OFF (stale rows, decoupled PPO)"),
+    # The FORK ARM (`--fork-fraction`, gen3_fork_v1): it changes the OBJECTIVE (branch rows enter the PPO buffer) and what
+    # the run COSTS. Unlike `overlap_collect` it is ALSO a recorded `ModelVersion` field (v120, tri-state on the parser),
+    # so its route is `resume`: `_resolve` already restores it on every `--model` launch (a restart, a fork, a fork's
+    # resume) and a pre-v120 config migrates to 0.0. The row adds what the field route lacked: `checkargs` / `--dry-run`
+    # show the RESOLVED fraction, a fork-arm fork reads INFO against production's 0, and a fresh `--arch production` argv
+    # writes the OFF value like any other row. A typed `--fork-fraction` is the arm's lever (INFO).
+    RecipeRow("fork_fraction", "--fork-fraction", 0.0, "gen3_fork_v1 — default OFF (branch rows in the PPO buffer)"),
 )
 #: Every row the fresh recipe declares — ``recipe.sizing`` first, then ``recipe.fresh``.
 ROWS: Tuple[RecipeRow, ...] = SIZING_ROWS + FRESH_ROWS
