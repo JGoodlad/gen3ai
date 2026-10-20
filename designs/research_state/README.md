@@ -120,6 +120,10 @@ disagree, **the ledger wins and the view is wrong** — fix the view.
   [`showdown_bots_landscape_2026-10-18.md`](literature/showdown_bots_landscape_2026-10-18.md): the
   autumn-2026 wave of Showdown ladder bots (the Gen 9 Champions VGC Reg M-C #1 bots, Jaxcalibur,
   Metamon, VGC-Bench), the new Smogon bot registry policy, and what transfers to us.
+  [`hidden_info_search_review_2026-10-20.md`](literature/hidden_info_search_review_2026-10-20.md): what the
+  literature says search under hidden information needs (PIMC and its failures, opponent-choice inference, IS-MCTS,
+  public-belief-state methods, Obscuro, Ataraxos, DeepNash, the Pokémon bots), placed against our numbers, with the
+  ranked experiments L1–L6 that `endstate/search_ledger.md` carries.
 - **[reviews/](reviews/)** — dated independent CODE reviews (correctness only, each finding CONFIRMED by a
   repro or marked PLAUSIBLE); a snapshot as of its commit. Confirmed findings become TECH_DEBT_BACKLOG rows.
   [`core_review_2026-10-20.md`](reviews/core_review_2026-10-20.md): the owned PPO loop, learner lifecycle,

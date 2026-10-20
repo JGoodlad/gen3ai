@@ -3,7 +3,13 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from
 this doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-19, latest): the world sampler's STAGE 1 is REGISTERED and RUNNING** (`design_world_sampler.md` §6.2; `measurements/world_sampler_stage1_2026-10-19/PREREGISTRATION.md`). On the maturity battery's 287 LEAN states at X26 225M, five candidate samplers (joint Smogon teammates, a team-level ladder-corpus model, the forum corpus minus near copies of the truth, the training-pool ceiling, the network's species × the forum's sets) are played against F at HEAD, with PAYS / HURTS / NULL / MATERIAL / SEARCH-ENABLED rules and a registered stop 24 h after launch. F2's legality rule alone (F_legal − F_off) and tier A's rolls (uniform and likelihood-weighted) are read as secondaries. No number yet (§7 Q12). Search can now average its worlds by their likelihood weights (`SearchConfig(weights="likelihood")`, default uniform).
+**Status (2026-10-20, latest): a LITERATURE REVIEW of search under hidden information has been written**
+(`../research_state/literature/hidden_info_search_review_2026-10-20.md`; no measurement). Its summary and its ranked
+experiments (L1–L6) replace §1's open list. Two of its findings qualify this ledger: the "p ≈ 0.2–0.3" of §5.1 is read
+as the cost of a miscalibrated prior, not a requirement (untested), and N5's "the prior hurts" holds in the ORACLE world
+only.
+
+**Status (2026-10-19): the world sampler's STAGE 1 is REGISTERED and RUNNING** (`design_world_sampler.md` §6.2; `measurements/world_sampler_stage1_2026-10-19/PREREGISTRATION.md`). On the maturity battery's 287 LEAN states at X26 225M, five candidate samplers (joint Smogon teammates, a team-level ladder-corpus model, the forum corpus minus near copies of the truth, the training-pool ceiling, the network's species × the forum's sets) are played against F at HEAD, with PAYS / HURTS / NULL / MATERIAL / SEARCH-ENABLED rules and a registered stop 24 h after launch. F2's legality rule alone (F_legal − F_off) and tier A's rolls (uniform and likelihood-weighted) are read as secondaries. No number yet (§7 Q12). Search can now average its worlds by their likelihood weights (`SearchConfig(weights="likelihood")`, default uniform).
 
 **Status (2026-10-19): F1 TIER A BUILT, default OFF** (`design_world_sampler.md` §3.3.1, §7 F1; builds only, descriptive). The honest builder's true-dice replay made a world reproduce every printed damage number with the truth's own roll. With `WorldSampler(dice="rolls")` any roll that prints what the searched side saw will do, the dice stream kept aligned, and each world carries a likelihood weight. Measured first: today's screen rejects 9.0 % of its candidates that fit on another roll (2.7× the acceptances, 37 of 40 random states). On 60 rebuilt states the exclusions fall 20 → 6 (random 3 / 40 → 0 / 40), the build's cost halves, and the seen mons' facts barely move. Search does not read the weights yet, the default stays `seed`, and the crit roll and the other dice are still the truth's (tier B, not built).
 
@@ -151,15 +157,39 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
   turn, a privileged critic, telling the frozen network the true moves (+0.001), training it 3M steps with them (−0.38 pp), the network's belief as a world sampler,
   the honest sharpening (prior-mode moves), the pool's per-species sets, and Foul Play's hand evaluator as the leaf in
   honest worlds (no better than the critic).
-- **Open, in order of cost.** The red team (§16.10) has run, and so has its E1 (the blind U-arm build, compared in §16.11:
-  AGREE, scoped). Its settling list, in order:
-  - the second referee (≈ 3–5 CPU-h);
-  - ~~a competent-opponent state bank with R3 pre-registered on it (E2)~~ **READ 2026-10-18 (§16.12): U-FIRST, scorer-dependent,
-    PROVISIONAL** (above). The reader recommends no more CPU on U vs M at 15M, and carrying R3 into the plateau battery with
-    competent-opponent states in its frozen bank (§7 Q4);
-  - species-only never-seen worlds (F+Usp, ≈ 15 CPU-h);
-  - Tier 2 (items / abilities / spreads arms);
-  - the maturity battery at plateau (§7).
+- **What the literature says search needs** (`../research_state/literature/hidden_info_search_review_2026-10-20.md`;
+  a dated review, every claim VERIFIED in its primary source or marked; the inferences are the reviewer's judgement,
+  not measurements). One-ply determinized search is the regime where the classic failures of perfect-information Monte
+  Carlo are smallest: there is no strategy fusion when one action is shared by every world. The sound methods
+  (DeepStack, ReBeL, Student of Games, Obscuro) need a belief over, or an enumeration of, every private state, and are
+  outside our regime by many orders of magnitude. The closest in-regime precedent is Ataraxos (Stratego, 2025): sampled
+  worlds × every legal move, value-net leaves, a belief network trained on the self-play truth, and a KL ANCHOR to the
+  policy. Without that anchor its search played 362 Elo BELOW its own policy, our symptom. Card-game programs gain
+  most by weighting worlds by the opponent's own past choices (Skat, bridge), the one honest source of evidence about
+  unrevealed MOVES. Every published method and every winning Pokémon search bot samples from a belief that is right IN
+  DISTRIBUTION (the format's generator, a set list, team sheets, a network trained on the truth). None tests a belief
+  worth ~1 % of the truth. In Skat, all weight on the truth was not the best play. So the review reads the "p ≈ 0.2–0.3"
+  of §5.1 as what a MISCALIBRATED prior costs, not as a requirement on a calibrated one (its FINDING F1; untested).
+  Our "the prior hurts" (N5) was measured in the ORACLE world only (F2).
+- **Open, ranked by decision value per cost** (the review's §10; none registered):
+  1. **L1, a policy anchor in the acting rule on the BANKED honest rows** (piKL / Gumbel scale / a deviation threshold;
+     λ fitted on Tier 1, read held out on X26's LEAN rows and E2). Zero playouts. PAYS ⇒ an anchored rule becomes the
+     honest default; NULL ⇒ the sampler binds, not the acting rule.
+  2. **L2, a descriptive amendment to the RUNNING stage 1, before its read:** does an arm's IMP follow the
+     log-likelihood its worlds give the truth, rather than its exact-world mass? Zero cost; time-critical. (C_pool is
+     both the only exact and the only calibrated arm for a pool-opponent bank, so "only C_pool pays" cannot separate
+     the two readings.)
+  3. **L3, the opponent-action likelihood screen:** does the true world out-rank the honest worlds under the
+     opponent's own policy? ≈ 1 agent-day, forward passes only; it gates stage 1c (`design_world_sampler.md` §4 (f)).
+  4. **L4, a calibrated-by-construction bank:** opponents whose teams are drawn by F's own sampler, then O and F. Does a
+     right but diffuse prior suffice? ≈ 1–2 agent-days + 10–20 CPU-h.
+  5. **L5, Long et al.'s three PIMC properties** (leaf correlation, bias, disambiguation) on banked rows: descriptive,
+     zero playouts.
+  6. **L6, the Bayesian one-turn matrix** (Q11), after L1 or a sampler pays.
+
+  Still open from the study's red-team list: the second referee (≈ 3–5 CPU-h), species-only never-seen worlds (F+Usp,
+  ≈ 15 CPU-h), Tier 2, and the maturity battery at plateau (RUNNING, §7 Q4). E2 is READ (§16.12: U-FIRST,
+  scorer-dependent, PROVISIONAL; no more CPU on U vs M at 15M).
 
 ---
 
@@ -190,7 +220,7 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
 | N2 | **More rollouts as critic-training labels** (a frozen readout refit; richer-label arms; λ-returns; contested-state forks into the buffer) | MEASURED (CRN refit on rb-blob; the rest PRE-ERA) | REFIT-K8 − BASE **−0.014** [−0.032, +0.002]; K8 vs K1 label no difference; arm 10 R-rollout targets NULL at 10M; λ-return 0.9 not confirmed; fork arm Δ −0.0003 [−0.0148, +0.0136]; twelve heads on 0.567–0.578 | the readout is not label-limited (a head fitted in 1.1 s matches one trained 75M steps); the label buys calibration (ECE 0.065 → 0.032), not resolution. Whether a TRAINED trunk on sibling-level targets differs is UNVERIFIED (ledger 2026-10-06 L22512, 2026-09-19 L19663) |
 | N3 | **A per-action head on noisy oracle labels** (frozen end-state body, 2 oracle playouts per action, 9,629 states) | PROVISIONAL, end-state only | R-QHEAD **−0.004** [−0.016, +0.009] NOT DETECTED; R-QHEAD-CRITIC **−0.018** [−0.032, −0.004] BEHIND (v2 builder, confirmed); validation R² +0.002 | **83 %** of the labels' sibling spread is dice noise (R² ceiling 0.17) and most of the rest is hidden information; a head that sees only our observations can learn ~0.5 % of the variance. How many labels would suffice is UNVERIFIED; a trained body is untested (ledger 2026-10-11 L24485) |
 | N4 | **Shared-seed (CRN) pairing across a full playout** | MEASURED | VRF **1.057** [1.045, 1.072] at the terminal (move-move pairs 1.28, move-switch 1.04); ρ after one turn 0.44–0.53, at the terminal 0.06; the derangement VRF 1.000 [0.996, 1.005] so the unpaired variance is estimable from shared-seed data | ONE PRNG per battle: shared seeds share the STREAM, not the roll-to-event MAPPING, and the first differing draw misaligns every later one. R-PAIR reads ALIGNMENT-LOSS ⇒ the registered rule says build S1 (per-turn reseed); NOT built. The AIVAT-style branch-turn control variate buys nothing (CV-K8 − LEAF-K8 ≈ 0) (`design_value_discrimination.md` §5) |
-| N5 | **Gumbel's prior-aware selection at the `mctx` defaults (c_visit 50, c_scale 0.1), and top-k restrictions / sequential halving** | PROVISIONAL | R-PRIOR **−0.013** [−0.021, −0.005] / **−0.022** [−0.031, −0.013] (K4); at K8 −0.022 / −0.031; SH-4 is NOT DETECTED at a small budget and WORSE (−0.011…−0.027) at larger ones. A post-hoc read (`target_scale_read.json`): at c_scale ≥ 1 sampling π′ recovers the full ARGMAX gain | where the leaf disagrees with the policy, the leaf is right; at 0.1 our win-scale Q (a spread of ~0.1–0.2) is too small against the policy's logits, so the rule under-trusts it. The module now defaults to c_scale 1.0 (the calibration reading is POST HOC) |
+| N5 | **Gumbel's prior-aware selection at the `mctx` defaults (c_visit 50, c_scale 0.1), and top-k restrictions / sequential halving** | PROVISIONAL | R-PRIOR **−0.013** [−0.021, −0.005] / **−0.022** [−0.031, −0.013] (K4); at K8 −0.022 / −0.031; SH-4 is NOT DETECTED at a small budget and WORSE (−0.011…−0.027) at larger ones. A post-hoc read (`target_scale_read.json`): at c_scale ≥ 1 sampling π′ recovers the full ARGMAX gain | where the leaf disagrees with the policy, the leaf is right; at 0.1 our win-scale Q (a spread of ~0.1–0.2) is too small against the policy's logits, so the rule under-trusts it. The module now defaults to c_scale 1.0 (the calibration reading is POST HOC). **ORACLE world only:** on the fully honest base the prior's effect is unmeasured, and anchored search is the literature's norm (the 2026-10-20 review, F2; its L1) |
 | N6 | **Depth-1 search over the critic of the time, in fair worlds (PRE-ERA)** | MEASURED, PRE-ERA | depth-1 search COST 17–22 points of mirror win rate (honest@1 s 0.294 [0.24, 0.35]); flat across a 32× dice sweep (0.125 … 0.205): BIAS, not variance; 13× more certified overrules moved the win rate onto the null (0.5003 [0.4803, 0.5203]); no win-prob head paid as a leaf at 3 s (0.506 / 0.503 / 0.495) | search AMPLIFIES the critic's systematic error; the leaf, not the allocator, was the limit. The current-era re-measure is §2 W5–W6 (ledger 2026-08-24 L04104, L04318, 2026-08-29 L05912, 2026-09-11) |
 | N7 | **The asymmetric (privileged) critic** | MEASURED, PRE-ERA, one run, no replicate | `truevalue` (V given the opponent's TRUE team) at 10M: NOT DETECTED on discrimination (turn-1–3 spread ratio 0.00 vs 0.09–0.12); +0.040 (all) / +0.088 (late) more OPTIMISTIC than its own continuation; ECE +0.04 | hypothesis only: a critic conditioned on information the policy never has is confidently wrong about what the policy will do. The information family is CLOSED for the era; the omniscient twin (X11) stays offline, never a training target (`UNDERSTANDING.md` §4.x; `design_q_head.md` §7) |
 | N8 | **Telling the NETWORK the true moves** (frozen; and trained) | PROVISIONAL (frozen; the knock-in forks); MEASURED (X5 oracle arms, below the floor) | injected at 95 %: it flips 13 % of picks and gains **+0.001** [−0.003, +0.005] (R-NET, CRITIC-USES NOT DETECTED, 3 networks); a wrong-moves placebo costs the critic search ≈ 0.8 points. X5 oracle arms: told species +2.44 pp [+0.31, +4.57], full set +2.18 pp [+0.53, +3.84], the set over species −0.26 [−1.92, +1.40], all below the 4.57 pp replicate floor; an untrained network handed a revealed team FELL −8.1 pp. **Knock-in forks** (3M more steps of the end state with the truth at 95 % in its observation, 3 seeds per arm vs a no-change control, `design_hidden_info_binding.md` §8.7): moves **−0.38 pp** [−1.86, +1.10], items +0.13 [−1.61, +1.86], never-seen species −0.59 [−1.77, +0.58] (NULL), spreads +0.34 [−2.51, +3.18] (NOT DETECTED); MOVES-FIRST false; no placebo. Withheld at play: moves −2.35, species −2.58 pp vs the control (told − withheld ≈ +1.9, descriptive) | a USABILITY limit, not an information one. The frozen network does not convert the move content. A trained one learns to READ it (removing it costs ≈ 1.9 pp) but not to GAIN from it: it substitutes the told facts for its own inference (mechanism UNVERIFIED: distribution shift, learned reliance or capacity; §8.7 lists the separating experiments) |
@@ -286,6 +316,10 @@ holds**; "today's p" is the p-EQUIVALENT in value units. Registered read on the 
     | IMP | +0.002 | +0.003 | +0.004 | **+0.009** [+0.000, +0.018] | +0.014 | +0.023 | +0.029 | +0.034 | +0.038 |
 
   - It covers half its rise by p ≈ 0.15. How much belief search needs depends on the leaf's resolution.
+  - **The literature review (2026-10-20, F1; judgement, untested):** the curve mixes the truth into F, a prior that is
+    MISCALIBRATED for these states' opponents. It prices a wrong prior; it does not say what a calibrated but diffuse
+    belief would need. Every published sampled-world search uses a belief that is right in distribution. L2 and L4 test
+    this.
 - **Along X26's maturity (the battery's first LEAN trajectory, 2026-10-19; PROVISIONAL, interim bank; §1).** The same curve on X26's 25M / 100M / 175M / 225M checkpoints, 286 frozen states:
   - TODAY (registered, LEAF-K8) is 0.00 / 0.01 / 0.00 / 0.01: below the tie-break step at every anchor (BELIEF-RISES NOT DETECTED, +0.011 [−0.034, +0.178]).
   - P-STAR against the policy (post hoc, R-DOSE's definition) is 0.25 / 0.30 / 0.20 / 0.30.
@@ -492,6 +526,9 @@ feeds one shared trunk to both heads).
 | Q10 | Does the full-length leaf need the per-turn reseed (S1)? | R-PAIR said ALIGNMENT-LOSS; S1 (~0.5–1 agent-day) matters only if a full leaf is still wanted after the 4-turn leaf | not built; conditional |
 | Q11 | What does one-ply best-response give up against an equilibrium method? | the cheapest equilibrium-flavoured step: an MMD-style magnet term (`design_value_discrimination.md` §14.3), or the per-turn matrix-game solve (§14.4). Its gen-3 form: each sampled world is an opponent TYPE, one mixed strategy for us and a best reply per world, a small linear program. That form, its harness changes (a FORCED opponent root action; a depth-1 version on `Successors.expand_many` with no Rust change) and a best-response referee are in `design_world_sampler.md` §5 | not built, not registered; ranked AFTER the sampler (a matrix over worlds worth 1 % of the truth solves the wrong game) |
 | Q12 | Which world sampler puts search-sized weight on the truth, and do partly right worlds carry value? | **Stage 0** (zero playouts, READ 2026-10-19): the network holds the species, nothing holds the sets (§1). **Stage 1**: the sampler ablation on the maturity LEAN 287 states at X26 225M (arms: joint Smogon teammates, a team-level corpus model on the forum corpus minus near copies of the truth and on the ladder corpus, the pool ceiling, the network's species × the forum's sets), with PAYS / HURTS / NULL / MATERIAL / SEARCH-ENABLED rules (`design_world_sampler.md` §6.2) | **REGISTERED and RUNNING 2026-10-19** (`measurements/world_sampler_stage1_2026-10-19/`): ≈ 10–16 CPU-h on one slot, stop 24 h after launch; stage 1b on E2 only if 1a meets its trigger |
+| Q13 | Does honest search pay once its acting rule is ANCHORED to the policy (the optimizer's curse; Ataraxos's anchor)? | **L1** of the literature review: piKL / Gumbel scale / a deviation threshold, re-scored on the banked honest rows; λ fitted on Tier 1, read held out | zero playouts; not registered |
+| Q14 | Does search need weight on the exact truth, or a CALIBRATED belief? | **L2** (a descriptive amendment to stage 1 before its read: IMP against the truth's log-likelihood, not q_SM) and **L4** (a bank whose opponents' teams are drawn by F's own sampler) | L2 zero; L4 ≈ 1–2 agent-days + 10–20 CPU-h; neither registered |
+| Q15 | Are the opponent's own past choices usable evidence about its hidden MOVES? | **L3**: the truth's rank among honest worlds by the likelihood of the opponent's observed choices under its policy, per opponent stratum | ≈ 1 agent-day; gates stage 1c |
 
 ---
 
@@ -536,3 +573,4 @@ feeds one shared trunk to both heads).
 | 2026-10-19 | **F2 FIXED: the honest world builder's worlds are legal** (`design_world_sampler.md` §7 F2) | §6.1 (the illegal-worlds bullet: fixed, the after-read, the not-comparable warning; the F1 bullet: the verify step's two tiers) | — | `design_world_sampler.md` §6.1 / §7; `measurements/world_legality_f2_2026-10-19/` |
 | 2026-10-19 | **F1 TIER A BUILT, default OFF: dice-marginalised damage rolls in the honest world builder** (`design_world_sampler.md` §3.3.1, §7 F1) | Status line; §6.1 (the true-dice bullet: measured, built, the re-measure) | flipping the default (stage 1's call); tier B now | `design_world_sampler.md` §3.3.1; `measurements/world_rolls_f1a_2026-10-19/` (`result_f1a.json`) |
 | 2026-10-19 | **The world sampler's STAGE 1 REGISTERED and LAUNCHED** (`design_world_sampler.md` §6.2) | Status line; §6.1 (the search consumer reads the weights on request; Tier 1's POOL at HEAD is not the pinned pool, F9); §7 Q12 (registered, running) | quoting any stage-1 number before the registered read | `measurements/world_sampler_stage1_2026-10-19/PREREGISTRATION.md` |
+| 2026-10-20 | **A LITERATURE REVIEW of search under hidden information** (`../research_state/literature/hidden_info_search_review_2026-10-20.md`; owner P0.1, "what search needs") | Status line; §1 (a literature bullet; the open list REPLACED by the review's ranked L1–L6, with the study's remaining settling items kept); N5 (oracle world only); §5.1 (the calibration qualifier on p\*); §7 Q13–Q15 | appending the review as a second open list beside the red team's (most of that list is done or running); calling p\* "refuted" (the review's reading is judgement, untested until L2 / L4); ranking the Bayesian matrix or any multi-ply information-set method ahead of the anchor and the sampler (the literature puts both after a sampler that is right in distribution) | the review §0, §6, §10, §11 |
