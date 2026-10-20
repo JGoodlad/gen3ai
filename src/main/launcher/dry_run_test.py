@@ -81,6 +81,9 @@ def isolated(repo, tmp_path, monkeypatch):
     # and the root conftest SEALS the real one — so the scratch dir's own models/ IS the archive.
     (work / "models").mkdir()
     monkeypatch.setenv("GEN3AI_MODELS_DIR", str(work / "models"))
+    # The gate runs with CUDA_VISIBLE_DEVICES="" (rule 5); the cuda-visibility preflight would refuse every cuda case
+    # below for the host's env. Its own verdicts are `cuda_visibility_gate_test.py`'s, which sets the env per case.
+    monkeypatch.delenv("CUDA_VISIBLE_DEVICES", raising=False)
     monkeypatch.setattr(dry_run_mod, "get_repo_root", lambda *a, **k: root)
     monkeypatch.setattr(wt, "get_repo_root", lambda *a, **k: root)
     for name in ("_create_run_worktree", "_prune_stale_launcher_worktrees"):

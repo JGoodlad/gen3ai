@@ -518,6 +518,8 @@ def test_dry_run_and_checkargs_reach_the_same_verdict(monkeypatch, tmp_path, run
 def test_dry_run_accepts_the_umbrella(monkeypatch, tmp_path, run_archive):
     import main.launcher.dry_run as dry_run_mod
     monkeypatch.chdir(tmp_path)
+    # the incident argv is `--device cuda`; the gate's CUDA_VISIBLE_DEVICES="" would trip the cuda-visibility preflight
+    monkeypatch.delenv("CUDA_VISIBLE_DEVICES", raising=False)
     child_args = [t for t in _incident_argv_at_head()
                   if t not in ("--restart-interval-hours", "3", "--pin-commit", "e798c13a")]
     rc = dry_run_mod.dry_run(
