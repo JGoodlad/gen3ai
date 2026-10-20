@@ -1,7 +1,9 @@
 """THE FP32_ALT GPU-WINDOW BATTERY (staged 2026-10-20): FP32_ALT's GPU cost against the pre-T62 naive fp32 τ solve,
-one cell at a time, in a short window before X35's production arms. README.md has the order, the costs and the
-decision rule. A copy of the 2026-10-19 battery's driver (`../gpu_window_battery_2026-10-19/battery.py`) with only
-its cells changed.
+then the X14 overlap A/B (two forks of X26 at the FP32_ALT pin), one cell at a time, in a short window before X35's
+production arms. README.md has the order, the costs and the decision rules. A copy of the 2026-10-19 battery's driver
+(`../gpu_window_battery_2026-10-19/battery.py`) with its cells changed, plus: the learner cells' FAIRNESS rule
+(`learner_path.py`: both τ arms run the identical compiled path or the cell fails; ``--learner-gate off`` makes it
+identical by construction) and the battery PIN (main HEAD when the window opened; ``--pin`` overrides) the X14 arms run at.
 
     # the training session (it holds the GPU lease), from the MAIN checkout, the run PAUSED and the GPU clear:
     export GEN3AI_GPU_LEASE_TOKEN_FILE=<the lease token file>     # or GEN3AI_GPU_LEASE_TOKEN=<token>
@@ -35,6 +37,9 @@ from pathlib import Path
 from typing import Any
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import learner_path as LP  # noqa: E402
+
 ROOT = HERE.parents[3]          # designs/research_state/measurements/<this> -> the checkout
 OPS = ROOT / "scripts" / "ops"
 SRC = ROOT / "src"
@@ -50,9 +55,19 @@ class Cell:
 
     def __init__(self, name: str, what: str, mem_gb: int, wall_min: int, eta_min: int,
                  cmd: Callable[[Path], list[str]], check: Callable[[Path], tuple[str, str]],
-                 result: Callable[[Path], tuple[bool, str]], prepare: Callable[[Path], None] | None = None):
+                 result: Callable[[Path], tuple[bool, str]], prepare: Callable[[Path], None] | None = None,
+                 dry_check: Callable[[Path], tuple[str, str]] | None = None, gate_mode: str | None = None,
+                 kill_after_s: int = 60):
         self.name, self.what, self.mem_gb, self.wall_min, self.eta_min = name, what, mem_gb, wall_min, eta_min
         self.cmd, self.check, self.result, self.prepare = cmd, check, result, prepare
+        #: the heavier check ONLY the dry run makes (the learner cells' CPU compiled-path proof, ~5 min): the window's
+        #: own check is the light one, so the GPU is not idle for it. None = the same check.
+        self.dry_check = dry_check or check
+        #: a learner cell's ``--learner-gate`` mode; a recorded ``ok`` of another mode is NOT reusable
+        self.gate_mode = gate_mode
+        #: `timeout --kill-after`: the grace between the wall cap's SIGTERM and SIGKILL. The X14 cells get 240 s: the
+        #: cell forwards the TERM to the launcher, which saves and tears its child down (its own escalation is 150 s)
+        self.kill_after_s = kill_after_s
 
 
 #: A pytest cell run from the MAIN checkout must not let the conftest's slow-tier recorder dirty main mid-window.
@@ -104,7 +119,7 @@ def _update_cfg(out: Path, name: str) -> Path:
     return out / "cells" / f"{name}.cfg.json"
 
 
-def _update_prepare(name: str) -> Callable[[Path], None]:
+def _update_prepare(name: str, gate: str) -> Callable[[Path], None]:
     def prep(out: Path) -> None:
         sys.path.insert(0, str(SRC))
         from agents.training.gpu_bench_suite import phase_config
@@ -112,7 +127,9 @@ def _update_prepare(name: str) -> Callable[[Path], None]:
         # the suite's update_bf16 cell with ONE field changed: its name / output. Everything else (X26's argv, the K9
         # learner, the fixture rows, micro-batch 2,048 x accumulation 32, epochs (1, 3) -> the 10-epoch estimate, the
         # suite's reps 2) is the frozen suite's. (The 2026-10-19 t62_u_* cells ran reps 4: README "Noise".)
-        c.update(name=name, out=str(out / "cells" / f"{name}.json"))
+        # ``gate``: "on" = the launch's own sentinel (a non-PASS verdict FAILS the cell: learner_path.py); "off" = skipped by
+        # config in all four cells (identical by construction). The suite's own cell default is "on" as well.
+        c.update(name=name, out=str(out / "cells" / f"{name}.json"), gate=gate)
         _update_cfg(out, name).write_text(json.dumps(c, indent=1))
     return prep
 
@@ -125,7 +142,26 @@ def _json_result(name: str) -> Callable[[Path], tuple[bool, str]]:
     return lambda out: _json_status_ok(out / "cells" / f"{name}.json")
 
 
-def cells() -> list[Cell]:
+_PIN_OVERRIDE: str | None = None
+
+
+def battery_pin(out: Path) -> str:
+    """The battery's PIN (full sha): ``--pin`` if typed, else the one recorded when the window opened
+    (``battery_status.json``), else this checkout's HEAD. The X14 arms run AT it (``--pin-commit``)."""
+    st = out / "battery_status.json"
+    stored = None
+    if st.is_file():
+        try:
+            stored = json.loads(st.read_text()).get("pin")
+        except (OSError, ValueError):
+            stored = None
+    spec = _PIN_OVERRIDE or stored or "HEAD"
+    q = subprocess.run(["git", "rev-parse", "--verify", f"{spec}^{{commit}}"], cwd=str(ROOT), capture_output=True,
+                       text=True, check=False)
+    return q.stdout.strip() or spec
+
+
+def cells(learner_gate: str = LP.GATE_ON) -> list[Cell]:
     py = _py()
     cs: list[Cell] = []
     # 1. the rollout decision forward (naive vs alt in one process)
@@ -141,12 +177,30 @@ def cells() -> list[Cell]:
     upd = str(HERE / "tau_update_cell.py")
     for name, arm in TAU_UPDATE_CELLS:
         cs.append(Cell(
-            name, f"FP32_ALT: learner compiled bf16 train() at production shape, tau solve {arm}",
+            name, f"FP32_ALT: learner compiled bf16 train() at production shape, tau solve {arm} "
+                  f"(startup gate {learner_gate}: both arms the identical compiled path)",
             mem_gb=24, wall_min=40, eta_min=6,
             cmd=_upd_cmd(py, upd, name, arm),
             check=lambda out: _run_check([py, upd, "--check"]),
+            dry_check=lambda out: _run_check([py, upd, "--check", "--prove"], timeout=1800),
             result=_json_result(name),
-            prepare=_update_prepare(name)))
+            prepare=_update_prepare(name, learner_gate), gate_mode=learner_gate))
+    # 3. the X14 overlap A/B: two forks of X26 @ 380,000,195, 15 updates each, at the battery's pin
+    x14 = str(HERE / "x14_cell.py")
+    for arm, eta, wall in (("off", 45, 75), ("on", 25, 55)):
+        cs.append(Cell(
+            f"x14_{arm}", f"X14 A/B, the {'--overlap-collect ON' if arm == 'on' else 'serial OFF'} arm: a fork of X26 @ "
+                          "380,000,195, 15 updates, --behaviour-check warn, eval + ladder off, at the battery's pin",
+            mem_gb=40, wall_min=wall, eta_min=eta, kill_after_s=240,
+            cmd=(lambda out, arm=arm: [py, "-u", x14, "--arm", arm, "--pin", battery_pin(out), "--battery-out", str(out),
+                                       "--out", str(out / "cells" / f"x14_{arm}.json")]),
+            check=(lambda out, arm=arm: _run_check([py, x14, "--arm", arm, "--pin", battery_pin(out), "--battery-out",
+                                                    str(out), "--check", "--scratch", str(out / "x14_dry")],
+                                                   timeout=1800)),
+            dry_check=(lambda out, arm=arm: _run_check([py, x14, "--arm", arm, "--pin", battery_pin(out), "--battery-out",
+                                                        str(out), "--check", "--prove", "--scratch", str(out / "x14_dry")],
+                                                       timeout=1800)),
+            result=(lambda out, arm=arm: _json_status_ok(out / "cells" / f"x14_{arm}.json"))))
     return cs
 
 
@@ -154,7 +208,7 @@ def cells() -> list[Cell]:
 
 def gpu_cmd(c: Cell, out: Path) -> list[str]:
     return [str(OPS / "gpu_lock.sh"), str(OPS / "mem_cap.sh"), "--name", f"battery-{c.name}", str(c.mem_gb),
-            "timeout", "--kill-after=60", f"{c.wall_min * 60}"] + c.cmd(out)
+            "timeout", f"--kill-after={c.kill_after_s}", f"{c.wall_min * 60}"] + c.cmd(out)
 
 
 def _gpu_others() -> list[str] | None:
@@ -191,14 +245,18 @@ def _state_path(out: Path, c: Cell) -> Path:
 
 
 def _write_state(out: Path, c: Cell, **kw: Any) -> None:
-    _state_path(out, c).write_text(json.dumps({"cell": c.name, **kw}, indent=1))
+    extra = {"gate_mode": c.gate_mode} if c.gate_mode else {}
+    _state_path(out, c).write_text(json.dumps({"cell": c.name, **extra, **kw}, indent=1))
 
 
 def _done(out: Path, c: Cell) -> str | None:
     p = _state_path(out, c)
     if not p.is_file():
         return None
-    st = json.loads(p.read_text()).get("status")
+    d = json.loads(p.read_text())
+    st = d.get("status")
+    if st == "ok" and c.gate_mode and d.get("gate_mode") != c.gate_mode:
+        return None            # a learner cell recorded under another --learner-gate is not part of THIS pair set
     return st if st in ("ok", "skip") else None
 
 
@@ -233,15 +291,19 @@ def dry_run(out: Path, sel: list[Cell]) -> int:
             ok = NO_SLOW_RECORD in argv
             bad += not ok
             print(f"  {'ok  ' if ok else 'FAIL'} {c.name}: pytest cell exports {NO_SLOW_RECORD}")
+    st_r, d_r = _run_check([_py(), str(HERE / "read_battery.py"), "--selftest"], timeout=600)
+    bad += st_r == "fail"
+    print(f"  {'ok  ' if st_r == 'ok' else 'FAIL'} reader self-test: {d_r}")
+    print(f"  battery pin (the X14 arms run AT it): {battery_pin(out)}")
     total_eta = total_cap = 0
     for c in sel:
-        st, detail = c.check(out)
+        st, detail = c.dry_check(out)
         if st == "ok" and c.prepare:                  # the cell's config is written (pure, CPU) and read back
             try:
                 c.prepare(out)
                 cfg = json.loads(_update_cfg(out, c.name).read_text())
                 detail += (f"; config written ({_update_cfg(out, c.name).name}: reps {cfg.get('reps')}, "
-                           f"epochs {cfg.get('epochs')}, trunk {cfg.get('trunk_precision')})")
+                           f"epochs {cfg.get('epochs')}, trunk {cfg.get('trunk_precision')}, gate {cfg.get('gate')})")
             except Exception as e:  # noqa: BLE001 -- a dry-run FAIL, reported
                 st, detail = "fail", f"prepare raised {e!r}"
         bad += st == "fail"
@@ -267,7 +329,11 @@ def run(out: Path, sel: list[Cell], budget_min: float | None) -> int:
         S.line("HOLD: no GPU lease token in the environment (GEN3AI_GPU_LEASE_TOKEN[_FILE]) -- no lease, no GPU")
         S.save(status="HOLD", reason="no lease token")
         return 1
-    S.save(status="RUNNING", commit=_git_head(), started=S.d.get("started") or time.strftime("%Y-%m-%d %H:%M:%S"))
+    pin = battery_pin(out)                # --pin if typed, else the one recorded at the window's opening, else HEAD
+    gates = sorted({c.gate_mode for c in sel if c.gate_mode})
+    S.save(status="RUNNING", commit=_git_head(), pin=pin, learner_gate=gates[0] if len(gates) == 1 else None,
+           started=S.d.get("started") or time.strftime("%Y-%m-%d %H:%M:%S"))
+    S.line(f"battery pin {pin[:12]} (the X14 arms run AT it); checkout HEAD {_git_head()}; learner gate {gates}")
     t_start = time.time()
     for c in sel:
         prev = _done(out, c)
@@ -311,7 +377,10 @@ def run(out: Path, sel: list[Cell], budget_min: float | None) -> int:
         if rc != 0 or not ok:
             kind = {124: "WALL TIMEOUT", 137: "KILLED after timeout", 86: "OOM at its mem cap", 85: "mem cap not in force",
                     5: "GPU busy (one-off holder)", 6: "GPU leased to someone else",
-                    4: "tau forcing violated (wrapper replaced, or an arm never reached it)"}.get(rc, f"exit {rc}")
+                    4: "tau forcing violated (wrapper replaced, or an arm never reached it)",
+                    8: "learner path UNFAIR (this arm did not run the production compiled path; see --learner-gate off)",
+                    11: "the X14 launcher exited non-zero", 12: "the X14 run is not the specified arm",
+                    143: "stopped by SIGTERM (the wall cap)"}.get(rc, f"exit {rc}")
             _write_state(out, c, status="fail", rc=rc, wall_min=round(wall, 1), reason=f"{kind}; {why}")
             S.d["cells"][c.name] = "fail"
             S.line(f"HOLD: {c.name} FAILED ({kind}; {why}) after {wall:.1f} min -- see {logf}")
@@ -333,13 +402,21 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--only", default="", help="comma-separated cell names (default: all, in order)")
     ap.add_argument("--budget-min", type=float, default=None, help="stop cleanly before a cell that would overrun")
     ap.add_argument("--list", action="store_true")
+    ap.add_argument("--learner-gate", choices=LP.GATE_MODES, default=LP.GATE_ON,
+                    help="the four learner cells' startup parity gate: `on` (default, the launch's own path; a non-PASS "
+                         "verdict FAILS the cell) or `off` (skipped by config in ALL FOUR cells: identical by "
+                         "construction). A recorded ok of the other mode is re-run")
+    ap.add_argument("--pin", default=None, help="the commit the X14 arms run AT (default: the pin recorded when the "
+                                               "window opened, else this checkout's HEAD)")
     a = ap.parse_args(argv)
+    global _PIN_OVERRIDE
+    _PIN_OVERRIDE = a.pin
     out = Path(a.out).resolve()
     why = _refuse_out(out)
     if why:
         print(f"REFUSED: {why}", file=sys.stderr)
         return 2
-    allc = cells()
+    allc = cells(a.learner_gate)
     if a.list:
         for c in allc:
             print(f"{c.name:14s} mem {c.mem_gb:3d} GB  cap {c.wall_min:3d} min  ETA {c.eta_min:3d} min  {c.what}")

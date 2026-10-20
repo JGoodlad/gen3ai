@@ -1,13 +1,19 @@
-# FP32_ALT GPU-window battery (staged 2026-10-20, NOT RUN)
+# FP32_ALT + X14 GPU-window battery (staged 2026-10-20, NOT RUN)
 
 The 2026-10-19 battery's T62 gate read **FP32_ALT**: T62's float64 τ solve cost 82-127 % of a training cycle on this
 card ([`../gpu_window_battery_2026-10-19/README.md`](../gpu_window_battery_2026-10-19/README.md), "T62 VERDICT").
 FP32_ALT is built in `gen3_tau_fp32_alt_v1` (config v160): a split residual in fp32, no float64 op. Its CPU evidence is
 in [`../tau_fp32_alt_2026-10-20/`](../tau_fp32_alt_2026-10-20/).
 
-This battery measures FP32_ALT's GPU cost against the pre-T62 naive fp32 sum. It has two arms only: fp64 was measured
-by the 2026-10-19 battery. The training session runs it in a short window before X35's production arms. Production GO
-waits for its read.
+This battery has two parts, in this order, in one short GPU window before X35's production arms:
+
+1. **FP32_ALT's GPU cost** against the pre-T62 naive fp32 sum (two arms only: fp64 was measured by the 2026-10-19
+   battery). Production GO waits for this read.
+2. **The X14 overlap A/B** (`x14_off`, `x14_on`): two forks of X26 at 380,000,195, 15 updates each, at the battery's pin.
+   The first attempt (2026-10-20, pin `397cce81`) was deferred because that pin carried T62's fp64 τ solve
+   ([`../x14_overlap_2026-10-19/README.md`](../x14_overlap_2026-10-19/README.md) §4 finding 13). This is the re-run.
+
+The training session runs it with the X35 arms paused. **Both parts need ~115 min** (7 cells; section "The cells").
 
 ## Run it (the training session, with the run PAUSED and the GPU clear)
 
@@ -15,19 +21,29 @@ waits for its read.
 cd /home/goodlad/dev/gen3ai                                  # main, at a commit that carries FP32_ALT and this directory
 export GEN3AI_GPU_LEASE_TOKEN_FILE=<the lease token file>     # or GEN3AI_GPU_LEASE_TOKEN=<token>
 B=designs/research_state/measurements/gpu_window_battery_2026-10-20
-$B/run_battery.sh --out /tmp/gpu_battery_fp32alt --dry-run          # CPU only: every check + every command
-$B/run_battery.sh --out /tmp/gpu_battery_fp32alt --budget-min 45    # the window; re-run the same line to resume
+# BEFORE the window, on the CPU (any time; ~7 min at nice 19 beside a live run; the window re-runs only the light checks):
+nice -n 19 taskset -c 5-7,13-15 $B/run_battery.sh --out /tmp/gpu_battery_fp32alt --dry-run
+# the window; re-run the SAME line to resume:
+$B/run_battery.sh --out /tmp/gpu_battery_fp32alt --budget-min 125
 /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 $B/read_battery.py /tmp/gpu_battery_fp32alt
 ```
+
+**Options.** `--only a,b` runs named cells. `--learner-gate on|off` (default `on`): the learner cells' startup gate, see
+"The learner fairness rule". `--pin <commit-ish>`: the commit the X14 arms run at (default: main HEAD when the first cell
+started, recorded in `battery_status.json`; it must contain `d4af9f1e` and `02cac1a9`).
 
 **Exit codes:** `0` DONE · `1` HOLD (`battery_status.json` and the `HOLD:` line in `battery.log` give the reason; the
 next cell did NOT run) · `10` BUDGET_STOP (re-run the same line to resume) · `2` usage error, or a refused `--out`
 (never under `models/` or `data/`).
 
+**A cell's own exit code** (the HOLD line names it): `3` precondition · `4` the τ forcing was violated · `8` **a learner
+arm did not run the production compiled path** (its startup gate was not PASS) · `11` the X14 launcher exited non-zero ·
+`12` the X14 run is not the arm that was specified · `124`/`137` wall cap · `86` OOM at the cell's cap · `5`/`6` `gpu_lock`.
+
 The battery never stops, resumes or signals a training run. The caller pauses and resumes the run. On a HOLD, the
-window is the orchestrator's call (`TRAINING_RUN_SOP.md` §3, rule 3). The driver is the 2026-10-19 battery's, with
-only the cells changed: the same `gpu_lock` + `mem_cap` + wall cap per cell, HOLD semantics, `--dry-run`,
-`--budget-min`, `--only` and resumability.
+window is the orchestrator's call (`TRAINING_RUN_SOP.md` §3, rule 3). Useful moves after one: re-run the same line
+(a failed cell re-runs, an `ok` one is skipped); `--learner-gate off` after exit 8 (re-runs the four learner cells,
++24 min); `--only x14_off,x14_on` to go on to the A/B without the learner pairs.
 
 ## The cells, in run order
 
@@ -37,25 +53,26 @@ skipped on a re-run once its `cells/<cell>.state.json` reads `ok`.
 | # | cell | what it measures | mem cap | wall cap | ETA |
 |---|---|---|---|---|---|
 | 1 | `tau_dec` | **Rollout.** T2's decision forward (`engine.decide`, inductor `dynamic=False`, CUDA graph: the `graph` backend's build) at buckets 64 and 256, `fp32_naive` (old) vs `fp32_alt` (new), in one process on the same seeded fresh build at X26's surface. 8 interleaved blocks of 50 replays per arm (ABAB). Also the agreement of the two arms: max \|d log π\|, max \|d V\|, greedy agreement. The method is `t62_dec`'s | 16 GB | 45 min | 16 min |
-| 2-5 | `tau_u_naive_a`, `tau_u_alt_a`, `tau_u_alt_b`, `tau_u_naive_b` | **Learner.** The frozen suite's `update_bf16` cell (X26's argv, the K9 learner, the compiled bf16 `train()` at 384 × 256 rows, micro-batch 2,048 × accumulation 32, the 10-epoch estimate), the arm forced per process, run **ABBA**. Only the cell's name differs from the suite; `reps` is the suite's 2 | 24 GB each | 40 min each | 6 min each |
+| 2-5 | `tau_u_naive_a`, `tau_u_alt_a`, `tau_u_alt_b`, `tau_u_naive_b` | **Learner.** The frozen suite's `update_bf16` cell (X26's argv, the K9 learner, the compiled bf16 `train()` at 384 × 256 rows, micro-batch 2,048 × accumulation 32, the 10-epoch estimate), the arm forced per process, run **ABBA**. Only the cell's name (and, see below, the path rule) differs from the suite; `reps` is the suite's 2 | 24 GB each | 40 min each | 6 min each |
+| 6 | `x14_off` | **X14, the serial arm.** A fork of X26 `rb_x26_s2601` @ 380,000,195 through the real launcher (`x14_cell.py`), 15 updates, `--behaviour-check warn`, eval and ladder games off, at the battery's pin. It is the cold-compile arm | 40 GB | 75 min | 45 min |
+| 7 | `x14_on` | **X14, the overlap arm.** The same argv plus `--overlap-collect`. Its compile cache is warm from `x14_off` | 40 GB | 55 min | 25 min |
 
-**Total ETA: about 40 min** (`tau_dec` 16, the learner 24), plus about 1.5 min of CPU checks. **Worst case at every
-wall cap:** 205 min.
+**Total ETA: about 115 min** = `tau_dec` 16 + learner 24 + `x14_off` 45 + `x14_on` 25, plus about 5 min of CPU checks
+between cells (the GPU idles for them). **Worst case at every wall cap:** 335 min. With `--budget-min 125` the battery
+stops cleanly before a cell that would overrun.
 
-### Why 40 min and not 30: compile time is fixed
+Why the ETAs are what they are:
 
-The 2026-10-19 walls (`/home/goodlad/gen3ai_archive/gpu_battery_2026-10-19/`) show where the time goes:
-
-- `t62_dec` took 15.8 min. 15.1 min of it was compiling (447 s + 460 s for the two arms, both buckets). The 8 timed
-  blocks took seconds. Fewer blocks saves almost nothing, so `tau_dec` keeps 8 blocks and its noise.
-- The `t62_u_*` cells took 6.1-9.4 min. 4.2-5.8 min of each was compile + gate + prewarm. Timing at `reps` 4 was
-  about 75 s (fp32) and 165 s (fp64). At the suite's `reps` 2, a naive or alt cell should take 5-7 min.
-
-Getting to 30 min would need a change of method. Two options, for the orchestrator to choose:
-
-- run one learner pair (`--only tau_dec,tau_u_naive_a,tau_u_alt_a`), about 28 min. This loses the second pair, and with
-  it the drift term in the band;
-- drop bucket 64 from `tau_dec`, saving about 7 min. This loses the SERIAL opponent bound.
+- **Compile time is fixed.** On 2026-10-19 `t62_dec` took 15.8 min, 15.1 of it compiling; the `t62_u_*` cells took
+  6.1-9.4 min, 4.2-5.8 of it compile + gate + prewarm. Fewer timed blocks saves almost nothing.
+- **The X14 OFF arm's startup is long.** The first attempt's first process took **23 min** from launch to its first
+  rollout (`~/gen3ai_archive/x14_ab_runs/rb_x14ab_off_s2601/launcher_child.log`: learner compile 281 s, the rest the
+  inference service's buckets and pool seeding on a cold shared compile cache); a restart with a warm cache took 5.8 min.
+  FP32_ALT changes the compiled τ graphs, so the OFF arm should be treated as cold again: 23 min + 15 cycles of about
+  70-100 s (update ≈ 42 s + collect ≈ 27-55 s) = 41-48 min. The ON arm shares the cache.
+- **The README's old estimate for the A/B** (≈ 10 min startup + 18 / 14 min of updates) assumed a warm cache.
+- To save time at the cost of method, drop bucket 64 from `tau_dec` (about 7 min; it loses the SERIAL opponent bound) or
+  run one learner pair with `--only tau_dec,tau_u_naive_a,tau_u_alt_a` (about 12 min; it loses the drift term in the band).
 
 ### Noise at these settings
 
@@ -80,15 +97,99 @@ mutation inside a traced function recompiles on every call. This was probed on 2
 Each cell writes a `tau_force` block into its result. The cell FAILS, with exit 4 and status `fail`, if the wrapper was
 replaced mid-cell or an arm called it 0 times. The reader also re-checks this block.
 
-**`--check`** (CPU, about 45 s per script; the four learner cells share one run):
+## The learner fairness rule (`learner_path.py`)
 
-1. The FP32_ALT API is present: `TAU_SOLVES`, `TAU_SOLVE_NAIVE`, `fixed_size_tau(…, n_iter, solve)`, and no
-   `TAU_SOLVE_DTYPE`.
-2. The seeded fresh model is built at X26's surface. For each arm, the cell's own path must reach the wrapper:
-   - the decision cell: T2's eager decision forward, B8;
-   - the learner cells: `evaluate_actions_functional` forward + backward, B8.
-3. A dynamo trace of `fixed_mass_presence` (`fullgraph=True`) per arm must count one trace and must not re-trace on a
-   second call.
+**The builder's finding (`d4af9f1e`).** The compile sentinel's startup parity gate might REFUSE the naive arm, because
+the K9 learner golden is now recorded under fp32_alt. The suite's rule for a refusal is that the cell "continues with
+install + prewarm only". Then the two arms would run different code paths (a gated, locked, canary-armed R1 against a
+bare one) and the cost comparison would be invalid.
+
+**What the code does (checked 2026-10-20).**
+
+- The gate (`compile_regions.gate_regions` → `r1_rungs`) compares **no recorded output** of the golden. It reads the
+  golden's real labelled **rows as inputs**. It then computes the compiled R1, the eager R1 and the fp32 reference
+  **live, in the cell's own process, under the cell's own forced solve, on the arm's own weights**. The clip relocation
+  also reads the arm's own forward. Re-recording the golden under fp32_alt changed no input to it.
+- The symmetric case already ran on 2026-10-19: the fp32 "old" arm against a golden recorded under fp64. **Both `old`
+  cells' gates PASSED**, with the same lines as the fp64 arms
+  (`/home/goodlad/gen3ai_archive/gpu_battery_2026-10-19/cells/t62_u_old_{a,b}.json`).
+- So there is no golden-equality check to bypass and no per-arm golden to supply. A refusal is still *possible*: the gate
+  fails an arm whose compiled and eager programs disagree on a golden row. **UNVERIFIED on the card** until the window.
+
+**What the cells do now.** The guarantee no longer rests on the gate passing.
+
+- Every learner cell records its compiled-path **markers** (`path` in its result): the gate verdict, and five lines the
+  production `arm_compile_sentinel` prints (R1 installed, `parity PASS`, `inventory == declaration: R1 1 graph`,
+  `prewarmed 1 production signature`, `CompileCanary armed`), plus whether the compile trace reached the τ wrapper.
+- **A cell whose gate is not PASS FAILS** (exit 8, status `fail`): the battery HOLDs, naming the verdict and the marker,
+  and no number is produced from a different path. The reader independently refuses a verdict (INCOMPLETE) unless all four
+  cells ran the same mode with violation-free, **identical** markers.
+- **The fallback, `--learner-gate off`.** It skips the gate by config in **all four** cells (`gate: "off"`, the suite's
+  own switch). R1 is still compiled, installed and prewarmed in each, the timed `train()` is the same compiled graph;
+  the lock and the canary are not armed. Identical by construction, and it keeps compile on. Its cost: the cells no
+  longer test the fp32_alt gate on the card, and the numbers differ from the 2026-10-19 gated ones by the lock/canary
+  bookkeeping (none of it inside a timed `train()`). A recorded `ok` of one mode is not reused under the other.
+
+**The CPU proof (`--dry-run`).** `tau_update_cell.py --check --prove` runs the **real** `arm_compile_sentinel` per arm on
+the CPU. R1's backend is `eager` (dynamo still traces `fullgraph=True` through the τ wrapper; no inductor build), on the
+cell's own learner (seeded production-surface K9 build, bf16 trunk, the cell's argv). For each arm it asserts: gate
+`PASS`, all five line markers true, the compile trace reached the wrapper, and the markers **equal the other arm's**.
+The dry-run record is in "Dry-run record" below. It is a CPU stand-in: the CUDA gate's verdict is not proved by it.
+
+## The X14 cells (`x14_cell.py`, `x14_read.py`)
+
+**The recipe** (the first attempt's recorded command with the FP32_ALT pin and `--behaviour-check warn`):
+
+```
+--pin-commit <pin> --model <main>/models/rb_x26_s2601/checkpoints/checkpoint_380000195_steps.zip \
+--steps 381474755 --device cuda --run-name rb_x14ab2_{off,on}_s2601 --restart-interval-hours 24 \
+--eval-freq 1000000000 --snapshot-ladder-games 0 --behaviour-check warn [--overlap-collect]
+```
+
+`--steps` is absolute: 380,000,195 + 15 × 98,304. `GEN3AI_MODELS_DIR=~/gen3ai_archive/x14_ab_runs_2026-10-21`
+(created by the cell; refused if under `models/` or `data/`). A run dir of the arm's name already there is **moved aside**
+to `<name>.prev-<time>`, never deleted. The parent checkpoint is only read.
+
+**Each arm is its own cell and its own process tree**, under its own `mem_cap` scope and wall cap. The cell starts the
+launcher headless (stdin off a TTY), forwards a SIGTERM to it by PID, and reads the run after it exits.
+
+**The pin.** The battery records main HEAD when its first cell starts. Both arms run at it; `cells/x14_pin.json` makes
+the second arm refuse another commit. The cell refuses a pin that does not contain `d4af9f1e` (FP32_ALT: an update of
+~42 s, not T62's ~97 s) and `02cac1a9` (the decoupled update normalises the raw advantage; `--overlap-collect` is a
+recorded recipe row). The other cells run the checkout's working tree, not the pin; the reader warns if the cells ran at
+different checkout commits.
+
+**The read** (`x14_read.py`, printed by `read_battery.py`):
+
+- **The unit is one dump** (one rollout end). A restart writes a new TensorBoard event file, so there is **one segment
+  per process**. In each process the first 3 dumps are dropped ("the updates after the 3rd per process") and the rest are
+  kept: 12 of 15 in an uninterrupted arm.
+- **fps = the cycle's wall fps**: `(step_k − step_{k−1}) / (wall_k − wall_{k−1})` from the event wall times.
+  **`time/fps` is not used to decide**: SB3 logs it as `(num_timesteps − at_start) / elapsed` since the process's
+  `learn()` began (the archived OFF arm reads 1820, 923, 803 … 675 over 11 dumps), so over 15 dumps it is dominated by
+  the first rollouts. Its ratio is printed beside the wall one (the old README's number).
+- **The decision:** ratio = median wall fps(ON) / median wall fps(OFF); **≥ ×1.10 CLEARS** the bar for a learning A/B,
+  below it is BELOW, within 1e-9 relative of it is AT_BAR (standing rule 8: the orchestrator decides). Fewer than 6 kept
+  dumps in an arm is INCOMPLETE. The 25-75 % band is printed, and a band straddling the bar is said so.
+- **Also printed:** OFF update, collect and the max hideable share of the cycle; ON update, the EXPOSED collect (the
+  `rollout/collect_ms` of an ON run), `overlap/join_wait_ms`, `overlap/play_ms`, `overlap/prox_forward_ms`, IS ESS and
+  truncated share, the T2 reserved-growth warning count, the update-peak reserved MiB.
+- **The K9(b) section-7 ceiling read of each arm** (`main.x35.batch.judge_k9b`: the same function and ceilings as X35's
+  AM-6) over the fork's **own** rows, all of them: a judged max ≥ 1e-3, a p99 ≥ 1e-4, any non-finite value or the child
+  log's non-finite line **FLAGS** the arm. `warn` means report: **a flag does not fail the cell or HOLD the battery**.
+  The OFF arm reads `behaviour/*`; the ON arm reads `behaviour_snapshot/*` (and `behaviour/*` where present). The
+  count of judged rows at or over the fatal 1e-4 bar is printed. A read error is `UNREAD`, also a flag.
+- **The cell FAILS (HOLD)** when the launcher exits non-zero (11), or the run is not the arm that was specified (12): it
+  stopped short of 381,474,755, the ON arm logged no `overlap/join_wait_ms` (a vacuous arm), the OFF arm did, the fork
+  step is not 380,000,195, or the run's recorded `pin_history` is not the battery's pin.
+
+**What the dry run proves on the CPU** (`x14_cell.py --check --prove`): the pin carries both commits; the checkpoint and
+the archive are valid; `main.checkargs` and `main.launcher --dry-run` accept each arm's exact argv (the launcher's dry
+run against an empty scratch dir; nothing is launched); the reader on synthetic runs (burn-in per process, ratio, ceilings,
+vacuity); and the cell's run machinery against a **fake launcher** (a script that writes a synthetic run dir): exit 0 for a
+complete OFF and ON arm, 11 for a launcher failure, 12 for a short run, a never-overlapping ON arm, an overlapping OFF arm
+and a wrong recorded pin, 0 for a K9(b) flag (reported, not failed), 143 with the SIGTERM forwarded, 3 for a second arm at
+another pin, and the prior run dir moved aside.
 
 ## The FP32_ALT gate (`read_battery.py`, deterministic)
 
@@ -108,24 +209,60 @@ The 2026-10-19 T62 cost computation, with `fp32_naive` as old and `fp32_alt` as 
    - **OVER** iff `cost_lo > 3 %`;
    - **INCONCLUSIVE** otherwise. The band straddles the bar, so the orchestrator decides (standing rule 8: never
      decided by chance);
-   - **INCOMPLETE** if any of the five cells is not `ok`, or lacks a clean `tau_force` record for its arm.
+   - **INCOMPLETE** if any of the five cells is not `ok`, lacks a clean `tau_force` record for its arm, or the four
+     learner cells did not run the identical compiled path.
 
-The reader also prints the agreement of alt vs naive and the compile sentinel's gate verdict per learner cell.
-fp64 vs fp32_naive is not re-measured. The 2026-10-19 battery's `t62_dec` is that read.
+The reader also prints the agreement of alt vs naive, the compile sentinel's gate verdict per learner cell and the shared
+path markers. fp64 vs fp32_naive is not re-measured: the 2026-10-19 battery's `t62_dec` is that read. The X14 read is
+independent of this gate: either can be INCOMPLETE while the other reads.
 
 ## Hazards known when staging
 
 - **The naive arm is forced through the wrapper, not checked out at bd3126e02^.** It runs the same arithmetic as the
   pre-T62 sum (`fixed_size_tau`'s `fp32_naive` branch). The traced graph may still differ from bd3126e02^'s by
   dtype-promotion no-ops. Its timing was not compared with the 2026-10-19 `old` arm.
-- **The compile sentinel's startup parity gate** reads the committed K9 golden. An arm whose solve differs from the
-  golden's may be REFUSED there. It then continues with install + prewarm only, and the timing is still the compiled
-  update's. A REFUSED gate is not a HOLD. The reader prints `gate` per cell.
-- **The network is a seeded FRESH build at X26's surface**, not X26's weights. τ's cost is a fixed 64-step bisection
-  on static shapes, so the weights do not move it. X35's architecture may differ from X26's.
+- **The CUDA gate verdict for either arm is UNVERIFIED** (the CPU proof is a stand-in). The fairness rule turns a refusal
+  into a HOLD, never a number.
+- **The network is a seeded FRESH build at X26's surface**, not X26's weights. τ's cost is a fixed 64-step bisection on
+  static shapes, so the weights do not move it. X35's architecture may differ from X26's.
 - **The rollout bounds leave out the eval cycle and T2's host-side work.** The cycle denominator is X26's live cycle at
   258.6M (2026-10-18), not X35's.
 - **The learner cells run without a CPU pin.** Any other CPU job on the box adds noise. The ABBA disagreement carries
   that noise into the band.
 - **`tau_dec`'s ETA is the 2026-10-19 compile time.** `fp32_alt` has more ops per bisection step than the naive sum,
   so its compile may take longer. The 45 min wall cap leaves room.
+- **The X14 cap `mem 40 GB` is a guess.** A production trainer's resident set is unmeasured here (the live toy arm reads
+  5.6 GB). An OOM at the cap is exit 86, a HOLD; raise the cap in `battery.py` if it recurs.
+- **The X14 arms are real training runs.** Any watcher that keys on trainer processes sees them. The launcher's startup
+  prune only removes DEAD launchers' pinned worktrees (`designs/launcher/pinning_and_worktrees.md`), so the paused X35 arm's
+  worktree is untouched.
+- **X14's own caveats stand** ([`../x14_overlap_2026-10-19/README.md`](../x14_overlap_2026-10-19/README.md) §4): CUDA
+  concurrency and GIL contention are unverified on a card; `RESERVED_GROWTH_POISONS` stays OFF (T2's reserved-growth
+  guard would book a learner reservation growth inside a worker flush as its own); `rollout/collect_ms` on an ON run is
+  the exposed collection; 15 updates give a throughput read, not a learning read.
+
+## Dry-run record (2026-10-20, CPU, `CUDA_VISIBLE_DEVICES=""`, `nice -n 19 taskset -c 5-7,13-15`, under `mem_cap.sh 24`)
+
+`run_battery.sh --out /tmp/... --dry-run` at `d4af9f1e2` + this change: **all checks ok in 404 s** (peak 1.04 GB), exit 0,
+"runnable cells: ETA 110 min, worst case 335 min". What it showed:
+
+- **The same compiled-path markers in both τ arms** (the real `arm_compile_sentinel`, CPU eager-backend stand-in, B16,
+  bf16 trunk, the cell's learner): `fp32_naive` and `fp32_alt` each had `region_installed`, `parity_pass`,
+  `inventory_one_graph`, `prewarmed`, `canary_armed` all True, gate PASS (116 s / 134 s), and the compile trace reached
+  the τ wrapper in each. The `learner_path` rules refuse a REFUSED gate, a missing marker, an untraced τ, a gate-mode
+  mismatch and gate-off-with-a-PASS verdict.
+- **Both X14 arms' argv launch**: `main.checkargs` accepts them and `main.launcher --dry-run` says "would launch" for
+  `rb_x14ab2_off_s2601` and `rb_x14ab2_on_s2601` (pin `d4af9f1e2` carries `d4af9f1e` and `02cac1a9`; checkpoint present;
+  `--steps 381,474,755`; K9(b) `warn`; eval and ladder off). The archive dir is created at run time.
+- **The cell's run machinery on a FAKE launcher**: exit 0 for a complete OFF and ON arm, 11 launcher failure, 12 for a
+  short run / a never-overlapping ON arm / an overlapping OFF arm / a wrong recorded pin, 0 with a flag for a K9(b)
+  ceiling (reported, not failed), 143 for a forwarded SIGTERM and for a launcher that ignores it (the cell kills its
+  process group after the escalation), 3 for a second arm at another pin, and the prior run dir moved aside.
+- **The reader** on synthetic runs: burn-in per process (9 + 12 kept dumps from 15 + 15), the wall-fps ratio (not the
+  cumulative `time/fps`), the ceilings, the vacuity checks, AT_BAR; and on the archived 2026-10-20 OFF arm
+  (`rb_x14ab_off_s2601`: 2 processes, 15 dumps, 9 kept, wall fps median 640 from a 153 s cycle = 98 s update + 55 s
+  collect; K9(b) PASS).
+
+**Not proved, and so UNVERIFIED until the window:** the CUDA verdict of either learner arm's gate; that a real launcher run
+reaches the cell's post-run read (the fake launcher writes the same run-dir shape the first attempt's real one had);
+`mem 40 GB` for a production trainer; `ON` arm behaviour on a card.

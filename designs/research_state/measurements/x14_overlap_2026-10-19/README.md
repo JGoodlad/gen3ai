@@ -144,10 +144,11 @@ adopting.
 10. **The X14 row's precondition was not met by a measurement.** The row asks for the idle-phase budget to be weighed
     against filler eval before either is built. The build went ahead on the orchestrator's brief. §3.1 measures that
     budget.
-11. **The GPU-window battery's X14 slot stays EMPTY.** `gpu_window_battery_2026-10-19/` cell 12 expects an
-    `x14_cell.sh` hook (30 min ETA, 60 min cap). The two-fork read above needs ≈ 1 h with two cold startups, so it does
-    not fit. A battery-shaped cell would be one in-process run with the overlap toggled per iteration (ABBA). It needs
-    a small driver seam (an `enabled` switch on the runner) and was NOT built: out of this unit's scope.
+11. **~~The GPU-window battery's X14 slot stays EMPTY.~~ — FILLED 2026-10-20.** `gpu_window_battery_2026-10-19/`
+    cell 12 expects an `x14_cell.sh` hook (30 min ETA, 60 min cap), which the two-fork read does not fit (≈ 1 h with
+    two cold startups). The re-run is instead the two last cells of
+    [`../gpu_window_battery_2026-10-20/`](../gpu_window_battery_2026-10-20/README.md), `x14_off` and `x14_on`: one
+    launcher run per cell (its own process tree, `mem_cap` scope and wall cap), ETA 45 + 25 min.
 12. **Arming T2's reserved-growth poison would make overlap FATAL.** T2's frozen guard reads process-wide allocator
     counters. A learner reservation growth that lands inside a worker flush is booked as T2's own: today it is
     counted and warned (`cuda_reserved_growths_after_freeze`, 847efe34); once `reserved_growth.RESERVED_GROWTH_POISONS`
@@ -166,6 +167,15 @@ adopting.
       (judged max ≥ 1e-3, p99 ≥ 1e-4 or non-finite ⇒ HOLD).
     - **Both arms' run dirs and crash files** are archived at `~/gen3ai_archive/x14_ab_runs/rb_x14ab_{off,on}_s2601/`
       (local, not committed).
+    - **The re-run is staged (2026-10-20)** as the battery's `x14_off` / `x14_on` cells
+      ([`../gpu_window_battery_2026-10-20/`](../gpu_window_battery_2026-10-20/README.md) "The X14 cells"): the §3.1
+      recipe at the battery's pin (main HEAD when the window opens; it must contain `d4af9f1e` and `02cac1a9`) with
+      `--behaviour-check warn` and the §7-style ceiling read built in, scratch archive
+      `~/gen3ai_archive/x14_ab_runs_2026-10-21`. It reads the wall fps of each cycle after the 3rd dump of each
+      process, not `time/fps`: SB3 logs that as a cumulative average since the process's `learn()` began (this
+      attempt's OFF arm: 1820, 923, 803 … 675 over 11 dumps).
+    - **Startup is the long part.** This attempt's first process took 23 min from launch to its first rollout on a cold
+      compile cache (a restart with a warm cache: 5.8 min), so §3.1's "≈ 10 min startup" holds only for a warm one.
 
 ## 5. The advantage-normalisation bias, before and after the fix (`adv_norm_bias.py` → `result/adv_norm_bias_{before,after}.json`)
 
