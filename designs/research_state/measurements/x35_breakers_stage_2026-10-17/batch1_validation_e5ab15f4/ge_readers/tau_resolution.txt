@@ -1,0 +1,4 @@
+ge_a1_s3501: tau_solve=fp32_alt trunk_precision=bf16 behaviour_check=warn fork_arch=OK(checked)
+ge_a2_s3501: tau_solve=fp32_alt trunk_precision=bf16 behaviour_check=warn fork_arch=OK(checked)
+ge_c0_s3501: tau_solve=fp32_alt trunk_precision=bf16 behaviour_check=warn fork_arch=OK(checked)
+ge_d1_s3501: tau_solve=fp32_alt trunk_precision=bf16 behaviour_check=warn fork_arch=OK(checked)

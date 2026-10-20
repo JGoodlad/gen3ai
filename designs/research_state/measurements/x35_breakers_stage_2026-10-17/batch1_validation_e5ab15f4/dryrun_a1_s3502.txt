@@ -1,0 +1,60 @@
+
+── launcher --dry-run — resolving only, nothing will be created ────────────
+  role        : FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601
+  recipe      : 12 untyped recipe knob(s) restored from the PARENT's record and passed to the child TYPED:
+                n_envs=256  rollout_target_samples=98304  trainee_slots=1  t2_lanes=0  grad_accum_steps=32  n_epochs=10  min_lr=1e-05  weight_decay=1e-05  clip_range=0.15  clip_range_vf=None  ent_coef=0.05  self_play=True
+  run dir     : /tmp/x35_prodval_e5ab15f4/prod/models/rb_x35_a1arch_s3502   [would be created]
+  --model     : /home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip
+  on restart  : RESUME role — --model → the run's latest checkpoint
+  pin         : e5ab15f4925ac7c5848274934e0707dff6077bb4  (source: pin_commit)
+                ↳ perf(model): the belief-table builders accumulate in Python floats -- ~0.8 s off every production model build warm, bit-identical
+                (a real launch would create an isolated worktree at this commit — the dry run does not)
+  steps       : --steps 300,000,170 vs checkpoint at 280,000,170 (sidecar) → +20,000,000 steps
+  interpreter : /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3  (torch 2.8.0+cu126) — carries the run's recorded torch
+  run torch   : 2.8.0+cu126  (recorded in /home/goodlad/dev/gen3ai/models/rb_x26_s2601/metadata.json)
+  transport   : in-process bridge [rust] (no Showdown server)
+  restarts    : every 24.0h, grace 20.0 min, max 3 crash restart(s), nice 10
+  effective   : argv overlaid on /home/goodlad/dev/gen3ai/models/rb_x26_s2601/model_config.json (70 unset flag(s) INHERITED)
+      --grad-accum-steps     32           (RESTORED from parent metadata.json:cli_args - passed to the child TYPED by the launcher; the argv leaves it unset)
+      --fork-lr              None         (from the argv)
+      --fork-lr-freeze       False        (from the argv)
+  env core    : rust  [the only core]  (the checkpoint was produced on rust)
+  K9(b) check : warn  (typed or inherited)  ⚠️  NOT fatal: a behaviour-policy mismatch is logged, not fatal
+  (child-only: a declared growth's fork-time gate (--grow: the grown network's logits + values bit-identical to the parent's on real rows) and the seeded pool's growth)
+  (child-only: the ModelVersion round-trip smoke test)
+  (child-only: the resolved --compile-trainer / --compile-opponents decisions (they read the device))
+  (child-only: self-play pool SEEDING from a fork parent (agents.training.pool_seed runs in the child))
+  (child-only: the observation dimension and arch signature)
+  ARCH SURFACE vs designs/production_config.json  [production_config@5438df2b171b]
+    ✓ every ARCH-surface key matches the production mirror (39 of 48 registry toggles are the ARCH surface; 6 critic readouts + 3 non-structural rows are excluded by their own declaration)
+  RECIPE SURFACE vs designs/production_config.json recipe.fork  [production_config@5438df2b171b]
+    sizing      : N 256, n_steps max 384 — verdict SIZING 2026-10-02 (program_rust_core.md Decision record): N* = 256, Part L guard NO LOSS DETECTED (n = 1 flagged), fits at steady state on 07eebe13; recipe.fresh n_epochs stays 10
+    trunk       : bf16 — the learner's trunk rounds run under bf16 autocast in R1 (T2 / eval / the K9(b) probe stay fp32); `--trunk-precision fp32` is the explicit opt-out
+    ♻️  --model launch (fork): every untyped recipe knob restored from the PARENT run's record — t2_buckets=None [parent metadata.json:cli_args]  max_lr=None [parent metadata.json:cli_args]  anneal_lr_start_steps=None [parent metadata.json:cli_args]  vf_coef=0.5 [model_config.json]
+        (--lr / --batch-size / --n-steps are INERT on a resume — SB3 restores them — and are never re-applied here)
+    5 of 33 RECIPE knob(s) differ from recipe.fork:
+        n_steps                  2048       (INERT on a resume: SB3 restores the checkpoint's own)   production: 384
+        batch_size               4096       (INERT on a resume: SB3 restores the checkpoint's own)   production: 2048
+        n_epochs                 10         (TYPED)   production: 5
+        fork_lr                  None       (untyped default)   production: 5.6e-05
+        fork_lr_freeze           False      (untyped default)   production: True
+    ℹ️  INFO only — a FORK/RESTART. Its recipe is its ARGV plus the record of the run that wrote the checkpoint (a fork: its PARENT's model_config.json + metadata.json:cli_args; a restart: its own) — recipe.fork is never applied.
+  desktop GPU : ✓ no display process (gnome-shell / Xorg / Xwayland / …) holds the GPU
+  disk space  : ✓ 42.85 GiB free on /tmp/x35_prodval_e5ab15f4/prod/models vs 10.97 GiB REQUIRED (checkpoint the fork source checkpoint_280000170_steps.zip)
+                shared compile cache: ✓ 441.37 GiB free on /home/goodlad/.cache/gen3ai/compile_shared (another filesystem) vs its growth 1.26 GiB (cap 20.00 GiB - 18.74 GiB in use) + reserve 4.00 GiB
+                the arithmetic:
+          periodic checkpoints      1.07 GiB   = 20 x 54.7 MiB  (steps 300,000,170 // 1,000,000 - resume 280,000,170 // 1,000,000)
+          final/best/aborted+fork   218.9 MiB   = 4 x 54.7 MiB
+          eval traces              720.0 MiB   = 10 cycles x 72.0 MiB  (ceil(20,000,000 / 2,000,000))
+          pool snapshots            1.07 GiB   = 20 x 54.7 MiB  (cap 20, fork re-seeds the pool)
+          compile cache             2.39 GiB   = 2.39 GiB - 0.0 MiB already on disk
+          shared compile cache       0.0 MiB   = growth 1.26 GiB at /home/goodlad/.cache/gen3ai/compile_shared: ANOTHER filesystem, checked below
+          sidecar + tb + logs      120.0 MiB   = 20.0M steps x 6.0 MiB/M
+          fixed                     16.0 MiB   = metadata, ledgers, sidecar json
+          subtotal                  5.58 GiB
+          + margin 25%              1.39 GiB
+          + reserve left free       4.00 GiB   (the 2026-10-09 near-miss had 2.2 GB free at 100 %)
+          = REQUIRED               10.97 GiB
+  showdown deps : ✓ /home/goodlad/dev/gen3ai/.claude/worktrees/x35_prod_validate/deps/pokemon-showdown serves team validation (13 required files present, node /usr/bin/node)
+  ✓ fork arch  : compatible with /home/goodlad/dev/gen3ai/models/rb_x26_s2601/model_config.json (check_compatible, the trainer's own check)
+  ✓ DRY RUN — this command would launch. Nothing was created or modified.

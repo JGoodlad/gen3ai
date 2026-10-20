@@ -1,0 +1,6 @@
+# G-E readers at e5ab15f49 (target = STAND-IN checkpoint_280000170_steps.zip of rb_x26_s2601, never a launch value)
+ge_a1_s3501 checkargs=0 dryrun=0 would_launch=1 delta=[+5,000,000 steps] gib=[7.91] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601] k9b=[warn] grow=[none] verdict=PASS target=STANDIN:checkpoint_280000170_steps.zip
+ge_a2_s3501 checkargs=0 dryrun=0 would_launch=1 delta=[+5,000,000 steps] gib=[7.91] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601] k9b=[warn] grow=[none] verdict=PASS target=STANDIN:checkpoint_280000170_steps.zip
+ge_d1_s3501 checkargs=0 dryrun=0 would_launch=1 delta=[+5,000,000 steps] gib=[7.91] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601] k9b=[warn] grow=[none] verdict=PASS target=STANDIN:checkpoint_280000170_steps.zip
+ge_c0_s3501 checkargs=0 dryrun=0 would_launch=1 delta=[+5,000,000 steps] gib=[7.91] role=[FORK of /home/goodlad/dev/gen3ai/models/rb_x26_s2601] k9b=[warn] grow=[none] verdict=PASS target=STANDIN:checkpoint_280000170_steps.zip
+SUMMARY 4 PASS, 0 FAIL (pin e5ab15f4)

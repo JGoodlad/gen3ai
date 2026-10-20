@@ -1,0 +1,10 @@
+# AM-8 refusals at e5ab15f4925ac7c5848274934e0707dff6077bb4 (2026-10-20), run from the worktree; read-only (no --write, no pin file)
+$ kit required-check --side production --pin e5ab15f4925ac7c5848274934e0707dff6077bb4
+[x35 kit] required-check production: FP32_ALT: no commit recorded yet ('FP32_ALT_SHA_PENDING'): the production GO is refused until x35_required_commits_production.txt names it
+rc=1
+$ kit required-check --side toy --pin e5ab15f4925ac7c5848274934e0707dff6077bb4
+[x35 kit] required-check toy: no toy-only required commits
+rc=0
+$ kit pin-check --pin e5ab15f4925ac7c5848274934e0707dff6077bb4 --side production --t62 FP32_ALT   (no --write)
+[x35 kit] pin-check: no x35_pin_batch1_production.txt yet: the first production GO writes e5ab15f4925a as X35_PIN_1_production
+rc=0

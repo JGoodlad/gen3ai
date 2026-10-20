@@ -1,0 +1,18 @@
+== stage-check a1 3501
+[x35 kit] stage-check a1 s3501: PENDING: AM-8: the production side's ['FP32_ALT'] commit is not recorded yet (x35_required_commits_production.txt holds a placeholder)
+rc=1
+== stage-check c0 3501
+[x35 kit] stage-check c0 s3501: PENDING: AM-8: the production side's ['FP32_ALT'] commit is not recorded yet (x35_required_commits_production.txt holds a placeholder)
+rc=1
+== stage-check d1 3501
+[x35 kit] stage-check d1 s3501: PENDING: AM-8: the production side's ['FP32_ALT'] commit is not recorded yet (x35_required_commits_production.txt holds a placeholder)
+rc=1
+== stage-check a2 3501
+[x35 kit] stage-check a2 s3501: PENDING: AM-8: the production side's ['FP32_ALT'] commit is not recorded yet (x35_required_commits_production.txt holds a placeholder)
+rc=1
+== stage-check ge_a1 3501
+[x35 kit] stage-check ge_a1 s3501: PENDING: AM-8: the production side's ['FP32_ALT'] commit is not recorded yet (x35_required_commits_production.txt holds a placeholder)
+rc=1
+== stage-check toy_c0 3601
+[x35 kit] stage-check toy_c0 s3601: ALLOWED: toy_c0 s3601: no unmet condition (stage T1)
+rc=0
