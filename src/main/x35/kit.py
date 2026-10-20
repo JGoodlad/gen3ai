@@ -16,11 +16,16 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   exploiter finals (path, step, sha256), refusing a missing or short final. Phase 2 (+20M): ``a3`` / ``a6`` carry
   those finals as ``--stable-opponents`` at share 0.4 with ``--stable-opponent-pfsp`` (the registered round-1 B
   recipe), seeds 3501-3505, b-OFF = C0;
+* the G-E READERS (``main.x35.ge``, F27 closed for the readers, 2026-10-20; +5M): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` /
+  ``ge_c0`` -- one fresh best responder of the arm's seed-3501 FINAL (``--model F --exploiter F --no-self-play``, the
+  pinned offense 5-team archetype, ``--fork-lr 5.6e-05 --fork-lr-freeze``), launched only when the arm's primary reads
+  GAIN (``stage-check``); the kit seed is the TARGET's, the reader trains at seed 3531;
 * toy (``--behaviour-check warn`` under X34's registered GIGO ceilings, C3, orchestrator 2026-10-19; +70M; the X34
   toy extras): ``toy_c0``, ``toy_a1``, ``toy_a2``, and ``toy_x47`` -- X47 / depth growth (``design_bot_ideas_screen.md``
   §2.1), the toy C0 argv + the ONE lever ``--grow trunk_layers=4`` (seeds 3601-3603), read against ``toy_c0``.
 
     python -m main.x35.kit describe --arm a1 --seed 3501 --call <R_production.json> [--phase1 <record>]
+    python -m main.x35.kit describe --arm ge_a1 --seed 3501 --call <R_production.json> [--models-dir D]   # a G-E reader
     python -m main.x35.kit phase1-record --arm a3 --call <R_production.json> --out <stage>/phase1_a3.json
     python -m main.x35.kit verify-phase1 <stage>/phase1_a3.json
     python -m main.x35.kit live                    # exit 1 while any training run is live (pre-check 1)
@@ -54,6 +59,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from main.x35 import batch as _B
+from main.x35 import ge as _GE
 from main.x35.batch import STAGES as BATCH_STAGES
 from main.x35.batch import BatchError
 from main.x35.refpop import RefPopError, sha256_file
@@ -92,7 +98,7 @@ class Arm:
     length: int
     seeds: Tuple[int, ...]
     run: str             # run-name format
-    phase: int           # 0 = single phase, 1 = exploiters, 2 = folded in
+    phase: int           # 0 = single phase, 1 = exploiters, 2 = folded in, 3 = a G-E reader (main.x35.ge)
     behaviour: str
     phase1_of: Optional[str] = None  # phase 2: the phase-1 arm whose record it reads
 
@@ -114,6 +120,10 @@ ARMS: Dict[str, Arm] = {a.name: a for a in (
     Arm("toy_a2", "toy", L_TOY, TOY_SEEDS, "rb_x35t_a2pfsp_s{seed}", 0, "warn"),
     Arm("toy_x47", "toy", L_TOY, X47_SEEDS, "rb_x35t_x47d4_s{seed}", 0, "warn"),
 )}
+#: The G-E READERS (``main.x35.ge``): the kit seed is the TARGET's seed; the run is ``rb_x35_ge_<target tag>_s<seed>``.
+ARMS.update({r: Arm(r, ARMS[t].side, _GE.L_READER, _GE.TARGET_SEEDS,
+                    "rb_x35_ge_" + ARMS[t].run[len("rb_x35_"):], _GE.READER_PHASE, "warn")
+             for r, t in _GE.READER_ARMS.items()})
 #: Batch 1 + X47, in GPU order: AM-9 (orchestrator, 2026-10-20; it moved the toy block ahead of production, which waits
 #: for the FP32_ALT build), stage by stage in ``main.x35.batch.STAGES``: T1 toy C0 + X47 (C2's interleave, toy A1 out) ->
 #: T1b X47 look 2 with toy C0 s3604-s3605 (AM-4: X47 look 1 CONTINUE) -> P1 the A1 / C0 ABBA (s3501-s3503) -> [G1,
@@ -146,11 +156,17 @@ def run_name(arm: str, seed: int) -> str:
     return _arm(arm, seed).run.format(seed=seed)
 
 
-def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Mapping[str, Any]] = None) -> List[str]:
-    """The trainer argv (the launcher's own flags excluded) of one arm × seed."""
+def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Mapping[str, Any]] = None,
+               target: Optional[Mapping[str, Any]] = None) -> List[str]:
+    """The trainer argv (the launcher's own flags excluded) of one arm × seed. A G-E reader needs its ``target``
+    (:func:`reader_target`)."""
     a = _arm(arm, seed)
     if call.get("side") != a.side:
         raise KitError(f"arm {arm} reads the {a.side} call record, got side {call.get('side')!r}")
+    if a.phase == _GE.READER_PHASE:
+        if target is None:
+            raise KitError(f"arm {arm} is a G-E reader: it needs its target final (reader_target)")
+        return _GE.build_reader_argv(arm, seed, target, behaviour=a.behaviour, ckpt_every=CKPT_EVERY)
     p = call["pstar"]
     start, step = str(p["path"]), int(p["step"])
     head = ["--model", start]
@@ -184,19 +200,41 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
     return out + ["--device", "cuda"] + lever + ["--seed", str(seed), "--run-name", run_name(arm, seed)]
 
 
-def parent_run_dir(call: Mapping[str, Any]) -> str:
-    """The run the fork's dry-run must name: the start node's run directory."""
-    p = Path(str(call["pstar"]["path"]))
+def _run_dir_of(path: str) -> str:
+    p = Path(path)
     return str(p.parent.parent if p.parent.name == "checkpoints" else p.parent)
 
 
-def describe(arm: str, seed: int, call: Mapping[str, Any],
-             phase1: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
+def parent_run_dir(call: Mapping[str, Any]) -> str:
+    """The run the fork's dry-run must name: the start node's run directory."""
+    return _run_dir_of(str(call["pstar"]["path"]))
+
+
+def reader_target(arm: str, seed: int, call: Mapping[str, Any], *, models_dir: Optional[str] = None,
+                  standin: Optional[str] = None) -> Dict[str, Any]:
+    """A G-E reader's target: the target arm's FINISHED ``final_model.zip`` under ``models_dir`` (at least P*'s step
+    + the arm's length, from the call record), or -- VALIDATION ONLY -- a ``standin`` model file (its own step)."""
     a = _arm(arm, seed)
-    argv = build_argv(arm, seed, call, phase1)
+    if a.phase != _GE.READER_PHASE:
+        raise KitError(f"arm {arm} is not a G-E reader")
+    if standin:
+        return _GE.standin_target(standin, _final_step(standin))
+    t = ARMS[_GE.READER_ARMS[arm]]
+    try:
+        return _GE.target_final(arm, seed, models_dir or "", min_step=int(call["pstar"]["step"]) + t.length)
+    except _GE.ReaderError as exc:
+        raise KitError(str(exc)) from exc
+
+
+def describe(arm: str, seed: int, call: Mapping[str, Any],
+             phase1: Optional[Mapping[str, Any]] = None, target: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
+    a = _arm(arm, seed)
+    argv = build_argv(arm, seed, call, phase1, target)
+    parent = _run_dir_of(str(target["path"])) if a.phase == _GE.READER_PHASE and target else parent_run_dir(call)
     return {"arm": arm, "seed": seed, "side": a.side, "phase": a.phase, "run_name": run_name(arm, seed),
-            "parent_run_dir": parent_run_dir(call), "delta_steps": a.length, "delta_text": f"+{a.length:,} steps",
+            "parent_run_dir": parent, "delta_steps": a.length, "delta_text": f"+{a.length:,} steps",
             "behaviour": a.behaviour, "k9b_ceilings": dict(K9B_TOY_CEILINGS) if a.side == "toy" else None,
+            "target": dict(target) if target else None,
             "argv": argv, "argv_shell": " ".join(shlex.quote(x) for x in argv)}
 
 
@@ -309,7 +347,7 @@ def check_validation(d: Mapping[str, Any], dryrun: str, checkargs: str, rc_check
 
 # ---------------------------------------------------------------------------------- the post-spawn pool check
 #: Arms whose fork does NOT self-play, so nothing is seeded (F16: the main exploiter types --no-self-play).
-NO_POOL_ARMS = frozenset({"a3_mx"})
+NO_POOL_ARMS = frozenset({"a3_mx", *_GE.READER_ARMS})
 POOL_SEED_SCHEMA = 2
 _FILTER_RE = re.compile(r"\[step filter <= (\d+): (?:DROPPED (\d+) later snapshot\(s\) at steps \[([0-9, ]*)\]"
                         r"|none later)")
@@ -406,6 +444,16 @@ def _load(path: str) -> Dict[str, Any]:
     return dict(json.loads(Path(path).read_text()))
 
 
+def _cli_target(a: argparse.Namespace, call: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
+    """The target of a G-E reader arm on the CLI (None for every other arm)."""
+    if ARMS[a.arm].phase != _GE.READER_PHASE:
+        return None
+    from utils.paths import main_models_dir
+
+    md = a.models_dir or str(main_models_dir() or "")
+    return reader_target(a.arm, a.seed, call, models_dir=md, standin=a.target_standin)
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m main.x35.kit", description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -414,6 +462,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     d.add_argument("--seed", required=True, type=int)
     d.add_argument("--call", required=True, help="the frozen R file of the arm's side (main.x35.refpop)")
     d.add_argument("--phase1", default=None, help="the phase-1 record (phase-2 arms)")
+    d.add_argument("--models-dir", default=None, help="G-E readers: where the target's final is (default: main's)")
+    d.add_argument("--target-standin", default=None,
+                   help="G-E readers, VALIDATION ONLY: a stand-in target model file (never a launch value)")
     d.add_argument("--field", default=None, help="print one field (argv = one token per line, argv_shell, "
                                                  "run_name, parent_run_dir, delta_text, side, phase)")
     r = sub.add_parser("phase1-record")
@@ -470,6 +521,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     vr.add_argument("--seed", required=True, type=int)
     vr.add_argument("--call", required=True)
     vr.add_argument("--phase1", default=None)
+    vr.add_argument("--models-dir", default=None)
+    vr.add_argument("--target-standin", default=None, help="G-E readers: the stand-in the transcripts were built on")
     vr.add_argument("--dryrun", required=True, help="the --dry-run transcript")
     vr.add_argument("--checkargs", required=True, help="the checkargs transcript")
     vr.add_argument("--rc-dryrun", required=True, type=int)
@@ -486,7 +539,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             probs = verify_call(a.call)
             if probs:
                 raise KitError(f"the call record {a.call} does not verify: {probs}")
-            doc = describe(a.arm, a.seed, call, _load(a.phase1) if a.phase1 else None)
+            doc = describe(a.arm, a.seed, call, _load(a.phase1) if a.phase1 else None, _cli_target(a, call))
             if a.field == "argv":
                 print("\n".join(doc["argv"]))  # one token per line: the launch script's mapfile
             else:
@@ -518,7 +571,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(f"[x35 kit] pool seed: {status}" + (f": {probs}" if probs else ""))
             return {"PASS": 0, "FAIL": 1}.get(status, 3)
         if a.cmd == "validate-run":
-            ok, line = check_validation(describe(a.arm, a.seed, _load(a.call), _load(a.phase1) if a.phase1 else None),
+            vcall = _load(a.call)
+            ok, line = check_validation(describe(a.arm, a.seed, vcall, _load(a.phase1) if a.phase1 else None,
+                                                 _cli_target(a, vcall)),
                                         Path(a.dryrun).read_text(errors="replace"),
                                         Path(a.checkargs).read_text(errors="replace"), a.rc_checkargs, a.rc_dryrun)
             print(line)

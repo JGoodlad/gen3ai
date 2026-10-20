@@ -47,6 +47,10 @@ sheet §5, production README §6). Nothing was launched.
 5-7,13-15`, with no GPU lease. It used only `main.checkargs`, `main.launcher --dry-run` and one offline call to
 `resolve_stable_opponents`. Nothing was created under `models/`, and nothing was written into X26's directory.
 
+**THE G-E READERS are kit arms (2026-10-20, F27 closed for the readers):** `ge_a1` / `ge_a2` / `ge_d1` / `ge_c0`
+(`src/main/x35/ge.py`), launched by `launch_x35.sh` only when the arm's primary reads GAIN; the launch sheet's §4.4 is the
+record (argv, trigger, read, validation) and its §5 C7 the open choices.
+
 ## 1. The stand-ins, and what replaces them at the plateau call
 
 | stand-in here | at the call |

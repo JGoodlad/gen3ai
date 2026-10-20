@@ -55,7 +55,7 @@ enforced by `launch_x35.sh` where it gates a launch. A HOLD is exit 7, as before
 | **AM-6 ACCEPTED** | K9(b) is read at EACH arm's end over the fork's OWN rows (steps > its fork step; the inherited rows are X26's), deterministically: judged max ≥ 1e-3, p99 ≥ 1e-4, any non-finite value or the child log's NON-FINITE K9(b) line ⇒ the arm is **VOID** for every read and is re-run at the same pin and seed after the cause is fixed; within 1e-9 relative of a ceiling is recorded, no fire; no post-fork row is INCONCLUSIVE, never a pass | `python -m main.x35.kit k9b --run-dir models/<run> --stage <stage>` (exit 0 PASS / 1 VOID / 3 INCONCLUSIVE), run by the Training session at arm end; pre-check 11 (`kit k9b-batch`) reads (or records) it for every FINISHED batch-1 arm before the next GO |
 | **AM-7 ACCEPTED: the order; the ORDER is SUPERSEDED by AM-9 (2026-10-20), its CONDITIONS stand** | was: the first 6 arms → G1 → C0's look-2 seeds and A1's look 2 → D1, A2 → toy C0 + X47 → X47's look 2 → the conditional toy calibration. Now (AM-9): toy C0 + X47 → X47's look 2 → the first 6 production arms → G1 → C0's look-2 seeds and A1's look 2 → D1, A2 → the conditional toy calibration (§1). G1, the look-1 CONTINUE rules and AM-3 / AM-4 are unchanged | `kit.BATCH1` (= `batch.STAGES`, pinned by `batch_test.py`); pre-check 9 for every conditional stage |
 | **POOL** | every arm of a side seeds the SAME snapshot set: the first launch of the side records it (`x35_pool_batch1_production.json` (this directory; the toy side's `x35_pool_batch1_toy.json`): names, sha256, digest), every later launch recomputes it and HOLDs on any difference, and the post-spawn check compares the fork's `pool_seed.json` with it. **C0 = P\* continued with X26's pool as of today: 14 snapshots, 164–268M** (T54 drops the 6 post-P\* ones; the newest pre-P\* selves, 270–280M, were evicted before the call), under FP32_ALT (AM-8; it was T62 before the battery read). Not "X26 unchanged" (review F-RV-8) | pre-check 10 (`kit pool-check`); the post-spawn `kit pool-seed-check --stage` |
-| **G-E readers** | the CHEAPER honest option: **not launched in batch 1.** An arm's R1 (D1: H) GAIN reads **INCONCLUSIVE, never ADOPT-CANDIDATE,** until G-E is read (`readout.decide`, as registered). The readers (one fresh best responder per (arm, seed-3501 final), C0 included: ≈ 1.1 GPU-h each, ≈ 2.2 per arm) are registered, dry-run validated and launched ONLY when an arm's primary reads GAIN, at X35_PIN_1. G-E decides only between ADOPT-CANDIDATE and TRADE, so a reader for a non-GAIN arm buys nothing. Their argv is still unregistered (F27) | `readout.decide` (a GAIN with G-E absent is INCONCLUSIVE) |
+| **G-E readers** | the CHEAPER honest option: **not launched in batch 1.** An arm's R1 (D1: H) GAIN reads **INCONCLUSIVE, never ADOPT-CANDIDATE,** until G-E is read (`readout.decide`, as registered). The readers (one fresh best responder per (arm, seed-3501 final), C0 included: ≈ 1.1 GPU-h each, ≈ 2.2 per arm) are registered, dry-run validated and launched ONLY when an arm's primary reads GAIN, at the side's pin. G-E decides only between ADOPT-CANDIDATE and TRADE, so a reader for a non-GAIN arm buys nothing. **REGISTERED 2026-10-20 (F27 closed for the readers, §4.4):** the kit arms `ge_a1` / `ge_a2` / `ge_d1` / `ge_c0` (`main.x35.ge`), validated on a stand-in target; their design choices are C7 (§5) | `readout.decide` (a GAIN with G-E absent is INCONCLUSIVE); `kit stage-check` (pre-check 9: a reader only on its arm's FINAL GAIN, `ge_c0` on any); `kit pin-check` judges reader runs with the side's; `python -m main.x35.ge r2-input` builds the read's `r2` block |
 | **C1 RULED: (a); SUPERSEDED 2026-10-20 by AM-8** | was: production launches at main HEAD with T62, pending the GPU battery's read. The battery has read **FP32_ALT** (the fp64 τ solve doubles the production learner update), so production no longer launches under T62: it waits for the FP32_ALT commit (AM-8). The cost is still paid by b-ON and C0 alike, so it biases no A/B; FP32_ALT, like T62, changes the τ code relative to what trained P\* (`9c033489`), a small input shift every production fork shares (review F-RV-12) | `--t62 FP32_ALT` on production's first launch; pre-check 2c |
 
 The read records the stage rules read are the saved JSON of each read: `reads/<arm>_look<k>.json` =
@@ -132,8 +132,9 @@ information, not balance (review F-RV-16); X47's primary is time-based, which is
 | + P3 (A1 look 1 CONTINUE) | + 8.8 |
 | + T1b (X47 look 1 CONTINUE) | + 19.8–20.6 |
 | + T2 (AM-3: production A1 and A2 both FINAL) | + 0–26.4 |
-| every conditional stage | ≈ **146–148** |
-| not in BATCH1, at the side's pin when they happen | D1 / A2 look 2 (2 × 4.3 / 2 × 4.4, on their own look-1 CONTINUE; the kit allows them, AM-9 does not schedule them), toy A1 / A2 look 2, the G-E readers (≈ 2.2 per GAIN arm, §0), R1 reads (≈ 0.3 GPU-h each in a window) |
+| every conditional stage | ≈ **146–148** (≈ 151–153 with every G-E reader) |
+| + the G-E readers (§4.4; only when an arm's primary reads GAIN) | the FIRST GAIN arm + 2 readers (its own + C0's) ≈ **2.2–2.6**; each later GAIN arm + 1 (C0's is shared) ≈ **1.1–1.3**; all three of A1 / A2 / D1 GAIN ≈ **4.4–5.2** (production 5M at X26's 1,333 steps/s ≈ 1.0 h + ≈ 0.2 h start and compile; no Rustboro-era exploiter has run, so **UNVERIFIED**: read the first reader's first 1M) |
+| not in BATCH1, at the side's pin when they happen | D1 / A2 look 2 (2 × 4.3 / 2 × 4.4, on their own look-1 CONTINUE; the kit allows them, AM-9 does not schedule them), toy A1 / A2 look 2, R1 reads (≈ 0.3 GPU-h each in a window) |
 
 The old queue's "≈ 108 GPU-h ≈ 4.5 days" was look 1 only (review F-RV-13); a fully decided batch was ≈ 190.
 
@@ -424,7 +425,73 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
 
 ---
 
-## 5. The choices (the orchestrator's): C1, C2, C3, C4 and C5 RULED; C6 still open
+### 4.4 The G-E READERS (registered 2026-10-20; F27 closed for the readers; launched only on an arm's GAIN)
+
+**What a reader is** (design §5.6.4 "R2" / "G-E", review F-RV-7). For an arm's seed-3501 FINAL (b-ON) and C0's seed-3501
+final (b-OFF), one fresh best responder each: a fork of that final trained against that final ALONE for 5M steps,
+piloting the pinned OFFENSE 5-team archetype (`designs/research_state/exploiter_teamsets_2026-09-22.json`). Its gap =
+P(it beats its target) − 0.5, the POOLED post-fork greedy-vs-greedy vs-target rate of its own eval cycles
+(`main.best_response_gap`'s default statistic, as population-loop round 1 read it). **G-E FAILs iff the Newcombe 95 %
+lower bound of gap(ON) − gap(OFF) > 0** (the arm is detected MORE exploitable than C0, `readout.guard_e`): a GAIN arm
+then reads TRADE, not ADOPT-CANDIDATE.
+
+| kit arm | reads (its target) | run | when (`stage-check`, pre-check 9) |
+|---|---|---|---|
+| `ge_a1` | `rb_x35_a1arch_s3501/final_model.zip` | `rb_x35_ge_a1arch_s3501` | A1's R1 has a saved FINAL class GAIN (`reads/a1_look<k>.json`, the latest look) |
+| `ge_a2` | `rb_x35_a2pfsp_s3501/final_model.zip` | `rb_x35_ge_a2pfsp_s3501` | A2's R1 FINAL GAIN |
+| `ge_d1` | `rb_x35_d1wide_s3501/final_model.zip` | `rb_x35_ge_d1wide_s3501` | D1's H FINAL GAIN (the record's `h`, not `r1`) |
+| `ge_c0` | `rb_x35_c0_s3501/final_model.zip` | `rb_x35_ge_c0_s3501` | ANY of A1 / A2 / D1 reads GAIN: the ONE b-OFF reader every arm's G-E shares |
+
+Not read yet, a look-1 CONTINUE or a classless INCONCLUSIVE primary is PENDING; a final NULL / LOSS / UNDECIDED is
+REFUSED; production readers also wait for the FP32_ALT commit (AM-8). The kit seed is the TARGET's (3501, the only one
+registered); every reader trains at seed **3531** (§5.6.1: "readers 3531+"), so the two readers of a G-E share the dice.
+They run at the **production side's pin** (`kit pin-check` judges `rb_x35_ge_*` runs with the side's batch-1 runs), are
+not in `BATCH1` (not in the order, `kit disk`'s count or AM-6's pre-check 11), and seed no pool (the post-spawn pool-seed
+check passes them, as `a3_mx`).
+
+**The launch** (after the arm's read is SAVED with its GAIN class; NEEDS GO like every arm):
+
+```bash
+# NEEDS GO. <PIN> = the PRODUCTION pin (x35_pin_batch1_production.txt). Dry run first; GO only on the orchestrator's go.
+$S/launch_x35.sh ge_a1 3501 --pin <PIN> --lease-owner <owner>          # then ge_c0 3501 (once, for every GAIN arm)
+```
+
+The argv the kit builds (`F` = the target's `final_model.zip`, its step read from the file; `--steps` = F's step + 5M):
+
+```bash
+--model F --exploiter F --no-self-play \
+  --trainee-teams data/teams/sample/9eb3abdc52876a63.txt,data/teams/sample/ac17a9dde5.txt,data/teams/sample/a185b2d193.txt,data/teams/sample/9ba039ba8a.txt,data/teams/sample/b904dbe059.txt \
+  --fork-lr 5.6e-05 --fork-lr-freeze --behaviour-check warn --steps <F step + 5000000> --checkpoint-every-steps 1000000 \
+  --device cuda --seed 3531 --run-name rb_x35_ge_<tag>_s3501
+```
+
+`--no-self-play` is F16 (the parent's `self_play=True` is restored typed, and `--exploiter` excludes it); `warn` is F14.
+**No arm lever reaches a reader:** `--stable-opponents`, `--pfsp-scale`, `--n-sentinels` and `--team-mix` are in neither
+`model_config.json` nor the recipe surface (checked on X26's records), so the A1, A2, D1 and C0 readers best-respond in
+ONE regime and differ only in the target (`ge_test.py` pins both). The stop rule: the fixed `--steps`; no early stop on a
+score.
+
+**The read.** When both readers have FINISHED: `python -m main.x35.ge r2-input --arm a1` (or `a2`, `d1`) prints the read
+JSON's `r2` block, `{"on": [wins, games], "off": [wins, games]}`, through `main.best_response_gap`'s own reader and its
+matched gate (budget within 2 %, dose within 10 % from one full-resolution LR record, the same regime). It REFUSES (exit 2)
+a reader that has not finished, recorded another target FILE or step, piloted another archetype, trained < 5M post-fork
+steps, or is unmatched with its partner; put the block in the read JSON and `readout decide` / `decide-d1` reads G-E
+(`ge_test.py` shows an A1 GAIN reaching ADOPT-CANDIDATE with a level G-E and TRADE with a detected one, INCONCLUSIVE
+without it).
+
+**Validated** (CPU, `CUDA_VISIBLE_DEVICES=""`, `nice -n 19 taskset -c 5-7,13-15`, scratch `GEN3AI_MODELS_DIR`, nothing
+written under `models/`): **`SUMMARY 4 PASS, 0 FAIL (pin dfeb3d92)`**, main HEAD `dfeb3d92` with this unit's kit change in the
+working tree (it touches no trainer, launcher or `checkargs` code), `validate_batch1.sh --reader-standin
+models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip ge_a1:3501 ge_a2:3501 ge_d1:3501 ge_c0:3501`
+([`ge_readers_validation_dfeb3d92/`](ge_readers_validation_dfeb3d92/): the 4 argvs and every `checkargs` / `--dry-run`
+transcript). The targets do not exist before the arms end, so **P\* stands in for F** (printed `target=STANDIN:` on each
+line; never a launch value; this is also R0's argv, F-LS-19). Every line: `checkargs` exit 0 (12 flags accepted, 0
+unrecognized, `[ForkLR] ✓ this fork names its own dose`), "would launch", FORK of `rb_x26_s2601`, **+5,000,000**, K9(b)
+`warn`, `✓ fork arch`, `self_play False (TYPED)`, no growth line, **7.91 GiB REQUIRED**. One process at a time, 61 s for
+all four, 718 MB peak RSS, WITHOUT a heavy slot (F-LS-23). `ge_test.py` pins the argvs to these files and passes the
+kit's verdict over the real transcripts.
+
+## 5. The choices (the orchestrator's): C1, C2, C3, C4 and C5 RULED; C6 and C7 still open
 
 - **C1. The battery does not read ADOPT. RULED (orchestrator, 2026-10-19): (a)**, launch production at main HEAD with
   T62 pending the battery read (§0, §3). The registered rule had said FP32_ALT, which did not exist then (§3).
@@ -479,6 +546,31 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
 - **C6. X44 between the blocks.** The bot screen ranks X44 (≈ 10.4 GPU-h) above the toy calibration and X47. It is its
   own unit. Running it between the production and toy blocks delays the toy block, but changes no batch-1 pin (the toy
   block has its own C0). Not decided here.
+- **C7. The G-E readers' open choices (§4.4; registered 2026-10-20, BUILT as the recommendation, NOT ruled).** §5.6.4
+  fixes the target, the archetype, 5M, "matched budget, dose and regime" and the read; it leaves these open. Each is one
+  constant in `main.x35.ge`; a different ruling changes it there before the first reader launches.
+  - **(a) The fork parent.** BUILT: the reader forks FROM its target (`--model F --exploiter F`), as population-loop round
+    1's RB / RC did and as `a3_mx` does with P\*. Alternative: every reader forks from P\* (one shared start). Recommend
+    the built form: it is the registered round-1 recipe, and a P\* start would measure "how far P\* moves to beat F",
+    which mixes the arm's distance from P\* into the gap.
+  - **(b) Bots in the reader's mix.** BUILT: none; the target is the sole opponent (`a3_mx`'s form). Round 1's readers
+    typed `--exploiter-keep-bots` at 0.5. Recommend none: every one of the 5M steps goes to the best response, and the
+    meter's regime gate matches ON and OFF either way.
+  - **(c) The dose.** BUILT: `--fork-lr 5.6e-05 --fork-lr-freeze` (production's `recipe.fork`, E5). Each target's KL
+    controller ends at its own rate (X26's last: 8.4e-5), and an inherited rate could fail `best_response_gap`'s 10 % dose
+    gate between ON and OFF; a frozen pin matches them by construction. Alternatives: round 1's 2.5e-4 (pre-era scale, a
+    faster-converging reader), or each target's own inherited rate. Recommend the built one; the risk is a reader that is
+    not converged at 5M (a smaller gap on both sides, a less sensitive guard, never a false FAIL).
+  - **(d) The budget and n.** BUILT: 5M steps, the inherited eval cadence (every 2M) and games per cycle. That gives
+    about 2–3 vs-target cycles, i.e. ~200–300 games per reader (UNVERIFIED until one runs), not §5.6.4's "n ≈ 400"
+    (round 1 had 4 cycles over 8M). At ~250 a side the Newcombe half-width is ≈ 8.5 pp, so G-E detects only a large
+    exploitability rise. Alternatives: 8M steps (≈ 1.7 GPU-h a reader) or a denser eval. Recommend 5M as registered and
+    report the n with the read.
+  - **(e) The toy side.** BUILT: production only. X47 registers no G-E (`main.x35.x47`), and the toy calibration (AM-3,
+    T2) reads R1's CLASS, which a missing G-E does not change. A toy reader would cost ≈ 0.5 GPU-h at 5M (4,719 steps/s)
+    or ≈ 1.2 at equal learn time (17.5M). Recommend none.
+  - **(f) A reader's own K9(b).** BUILT: not judged (AM-6 covers the batch-1 arms). Recommend: the Training session reads
+    `kit k9b --run-dir models/rb_x35_ge_<tag>_s3501` at the reader's end and reports a VOID beside the r2 block.
 
 ---
 
@@ -566,6 +658,22 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
   (`kit live` exits 1), so the script HOLDs there; the later pre-checks (2b, 2c, 9, 10, 11) are exercised by the kit's own
   subcommands and `batch_test.py`, and the script's wiring by needle tests plus a dry run in a scratch job dir that reached
   pre-check 1 (`bash -n` clean). The first real dry run is the Training session's.
+- **F-LS-19 (2026-10-20): F27 is CLOSED for the G-E readers, OPEN for R0.** The readers are kit arms (§4.4); R0 (the best
+  responder of P\* itself, ruling C4) is the SAME argv with P\* as the target, which is exactly what the readers'
+  stand-in validation ran, but it is not a kit arm (out of this unit's scope): `ge.READER_ARMS` gains one row when the A3
+  / A6 batch is staged.
+- **F-LS-20: the readers were validated on a STAND-IN target** (P\*, `checkpoint_280000170_steps.zip`), because their real
+  targets, the arms' finals, do not exist before the arms end. The real launch's `launch_x35.sh` re-runs `checkargs` and
+  the dry-run on the real final; the child-side facts (the exploiter's arch gate against F, the `ext_<target>` eval
+  registration, the offense pin under `--exploiter`, the pool not seeded) are first seen in the reader's first minutes.
+- **F-LS-21: the GPU-h of a reader is UNVERIFIED.** No Rustboro-era exploiter has run; ≈ 1.1–1.3 GPU-h is X26's
+  self-play step rate applied to 5M.
+- **F-LS-22: `kit disk` at a reader's launch counts every not-yet-created batch-1 fork at the READER's REQUIRED GiB**
+  (the F22 rule, unchanged): 7.91 GiB, below an arm's 10.97 / 13.05, so at a reader's launch the check UNDER-counts the
+  arms still to come. The reader itself always fits if the check passes; the arms' own launches re-check at their figure.
+- **F-LS-23: the readers' validation ran WITHOUT a heavy slot**, as F-LS-18's did: a `mem_cap.sh` request sat about 16
+  minutes FIFO-queued (both slots held, 8 waiting), was cancelled by its PID, and the four lines ran as a light job (one
+  process at a time, nice 19, the 3 agent cores, 61 s, 718 MB peak).
 - **F-LS-18: the 16-line re-validation ran WITHOUT a heavy slot.** The X14 A/B is live, both heavy slots were held (a 4 h
   job and a 30 min job) with 8 waiting (the oldest 2 h 40 min); a `mem_cap.sh` request for the validation sat 17 minutes
   without a slot, was cancelled by its PID, and the lines ran as a light job instead: one process at a time at nice 19 on the

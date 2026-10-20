@@ -10,7 +10,9 @@
 #          FP32_ALT, because the battery DECIDED it; the toy NA_TOY, it makes no tau-solve call). One pin file PER SIDE.
 #   arms:  c0 a1 a2 d1 (production, +20M) · a3_mx a6_lx (phase 1: exploiters, +5M) · a3 a6 (phase 2, +20M, read
 #          the phase-1 record) · toy_c0 toy_a1 toy_a2 toy_x47 (+70M; toy_x47 = depth growth, X47; the toy arms run K9(b)
-#          `warn`)                                                    (main.x35.kit holds every argv)
+#          `warn`) · ge_a1 ge_a2 ge_d1 ge_c0 (the G-E READERS, main.x35.ge, +5M: <seed> = the TARGET's, 3501; a fresh
+#          best responder of that arm's FINISHED final, launched only when the arm's primary reads GAIN (pre-check 9);
+#          ge_c0 is every arm's shared b-OFF reader)                  (main.x35.kit holds every argv)
 #   phase 1 → 2:  after the three exploiters END,
 #          python -m main.x35.kit phase1-record --arm a3 --call <R> --out <stage>/phase1_a3.json   (write-once)
 #
@@ -31,8 +33,8 @@
 #   8. the disk covers the remaining batch-1 forks at the dry-run's REQUIRED GiB each, or --thinning (F22); a
 #      conditional fork its records REFUSED (AM-9) is not counted
 #   9. AM-9 / AM-3 / AM-4 / AM-8: the fork's stage is ALLOWED by the saved records (kit stage-check: G1, look-1
-#      CONTINUE, production's FINAL class before the toy calibration, the FP32_ALT commit named for production);
-#      PENDING or REFUSED HOLDs
+#      CONTINUE, production's FINAL class before the toy calibration, the FP32_ALT commit named for production; a G-E
+#      reader: its arm's primary FINAL class GAIN, ge_c0 any arm's); PENDING or REFUSED HOLDs
 #  10. POOL: the parent's seeded snapshot set (T54's filter, names + sha256) equals the side's record
 #      (x35_pool_batch1_<side>.json, written by the side's first GO)
 #  11. AM-6: every FINISHED batch-1 arm has a K9(b) arm-end record (its own rows after the fork step) that PASSes;
@@ -60,7 +62,7 @@ while [ $# -gt 0 ]; do
        shift;;
   esac
 done
-[ -n "$ARM" ] && [ -n "$SEED" ] && [ -n "$PIN" ] || { sed -n 2,14p "$0" >&2; exit 2; }
+[ -n "$ARM" ] && [ -n "$SEED" ] && [ -n "$PIN" ] || { sed -n 2,16p "$0" >&2; exit 2; }
 mkdir -p "$J"; log() { echo "[$(date -Is)] $ARM s$SEED: $1" >> "$ST"; }
 hold() { log "HOLD: $1"; echo "HOLD: $1" >&2; exit 7; }
 kit() { ( cd "$REPO" && PYTHONPATH="$REPO/src" CUDA_VISIBLE_DEVICES="" "$PY" -m main.x35.kit "$@" ); }

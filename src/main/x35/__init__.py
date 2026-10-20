@@ -15,6 +15,8 @@
   after the GPU battery's read: ONE pin PER SIDE (AM-1 as amended by AM-8), the production side's FP32_ALT commit (AM-8),
   one seeded pool set per side, the variance gate G1 (AM-2), the staged order (the toy block FIRST, AM-9) and its
   conditions (AM-3 / AM-4), K9(b) at each arm's end (AM-6);
+* :mod:`main.x35.ge` -- the G-E READERS (F27 closed for the readers): the fresh best responders of an arm's seed-3501
+  final and C0's, their trigger (only on the arm's primary GAIN) and the ``r2`` read through ``main.best_response_gap``;
 * :mod:`main.x35.x47` -- X47's readout (AM-4): s_eq at equal effective learn time, the matched-step secondary, the
   PER-STEP ONLY class; :mod:`main.x35.tbrows` -- a fork's OWN TensorBoard rows (the inherited prefix excluded).
 

@@ -263,7 +263,10 @@ def test_c3_the_toy_arms_run_k9b_warn_under_x34s_ceilings_and_production_is_unch
         assert d["k9b_ceilings"] == {"judged_max": 1e-3, "p99": 1e-4, "non_finite": "STOP", "rule8_rel": 1e-9}
     for n, a in K.ARMS.items():   # production keeps what the kit said before C3: `warn` (X26's regime), no toy ceilings
         if a.side == "production":
-            assert a.behaviour == "warn" and K.describe(n, a.seeds[0], standin_call(), _p1(n))["k9b_ceilings"] is None, n
+            tgt = ({"path": f"models/{K.run_name(n, a.seeds[0])}/final_model.zip", "step": 300000170}
+                   if a.phase == 3 else None)   # a G-E reader (main.x35.ge) reads its target's final
+            d = K.describe(n, a.seeds[0], standin_call(), _p1(n), tgt)
+            assert a.behaviour == "warn" and d["k9b_ceilings"] is None, n
 
 
 def _p1(arm: str):

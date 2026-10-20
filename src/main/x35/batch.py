@@ -44,6 +44,11 @@ THE READ RECORDS the stage rules read are ``<stage>/reads/<arm>_look<k>.json``: 
 ``python -m main.x35.readout decide`` (A1 / A2 and the toy pair), ``decide-d1`` (D1) or ``python -m main.x35.x47
 decide`` (X47). The record names its arm and look; a record for another arm or look is a refusal.
 
+* **THE G-E READERS** (``main.x35.ge``; launch sheet §0 "G-E readers"): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` / ``ge_c0``
+  are not batch-1 ARMS (not in :data:`STAGES`, the disk count or AM-6's K9(b) pre-check) but they run at the SIDE'S
+  pin: :func:`pin_check` judges their recorded pins with the side's batch-1 runs, and :func:`stage_status` gives a
+  reader the ``ge.trigger`` condition (ALLOWED only when its arm's primary reads GAIN; ``ge_c0`` when any does).
+
 DECLARED HERE (choices the rulings leave open; each a FINDING of this build):
 * AM-1's "every existing ``rb_x35*`` run" is read as every BATCH-1 run OF THE LAUNCH'S SIDE (:func:`batch1_run_names`, a
   moved-aside ``<run>.<SUFFIX>`` included): a later batch's runs carry their own pin and are listed as not judged here.
@@ -117,6 +122,8 @@ STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
 BATCH1_ARMS = ("c0", "a1", "a2", "d1", "toy_c0", "toy_a1", "toy_a2", "toy_x47")
 #: The arm label each read record carries (``readout`` A1 / A2, ``d1`` X38, ``x47`` X47).
 READ_LABEL = {"a1": "A1", "a2": "A2", "d1": "X38", "toy_a1": "A1", "toy_a2": "A2", "toy_x47": "X47"}
+#: Where a read record keeps its PRIMARY when it is not R1 (``d1.D1Verdict``: H).
+PRIMARY_KEY = {"d1": "h"}
 CONTROLS = ("c0", "toy_c0")
 LOOK2_SEEDS = {"production": (3504, 3505), "toy": (3604, 3605)}
 
@@ -133,23 +140,26 @@ def _now() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
 
 
-def batch1_run_names() -> Dict[str, Tuple[str, int]]:
-    """``{run name: (arm, seed)}`` of every batch-1 arm at every registered seed."""
+def batch1_run_names(*, readers: bool = False) -> Dict[str, Tuple[str, int]]:
+    """``{run name: (arm, seed)}`` of every batch-1 arm at every registered seed; with ``readers`` the G-E readers'
+    runs too (they share the side's pin, ``main.x35.ge``)."""
+    from main.x35.ge import READER_ARMS
     from main.x35.kit import ARMS, run_name
 
-    return {run_name(a, s): (a, s) for a in BATCH1_ARMS for s in ARMS[a].seeds}
+    arms = BATCH1_ARMS + (tuple(READER_ARMS) if readers else ())
+    return {run_name(a, s): (a, s) for a in arms for s in ARMS[a].seeds}
 
 
 def side_of_run(base: str) -> str:
-    """The side (``production`` / ``toy``) of a batch-1 run name."""
+    """The side (``production`` / ``toy``) of a batch-1 (or G-E reader) run name."""
     from main.x35.kit import ARMS
 
-    return ARMS[batch1_run_names()[base][0]].side
+    return ARMS[batch1_run_names(readers=True)[base][0]].side
 
 
-def _batch1_dirs(models_dir: str) -> Tuple[List[Tuple[str, str]], List[str]]:
+def _batch1_dirs(models_dir: str, *, readers: bool = False) -> Tuple[List[Tuple[str, str]], List[str]]:
     """``([(dir name, run name)], [other rb_x35* dirs])``; ``<run>.<SUFFIX>`` (moved aside) counts as its run."""
-    names = batch1_run_names()
+    names = batch1_run_names(readers=readers)
     ours: List[Tuple[str, str]] = []
     other: List[str] = []
     if not os.path.isdir(models_dir):
@@ -260,7 +270,7 @@ def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[st
     else:
         lines.append(f"the pin equals {label} {pin[:12]} ({fname}, T62 {rec.get('t62_verdict')})")
     want = rec["sha"] if rec is not None else pin
-    ours, other = _batch1_dirs(models_dir)
+    ours, other = _batch1_dirs(models_dir, readers=True)
     mine = [(d, base) for d, base in ours if side_of_run(base) == side]
     for d, _ in mine:
         hs = recorded_pins(os.path.join(models_dir, d))
@@ -530,7 +540,7 @@ def final_class(stage: str, arm: str) -> Tuple[Optional[str], str]:
         rec = read_record(stage, arm, look)
         if rec is None:
             continue
-        r1 = rec.get("r1") or {}
+        r1 = rec.get(PRIMARY_KEY.get(arm, "r1")) or {}
         if not r1.get("final"):
             return None, f"{arm} look {look}: R1 is not final (outcome {rec.get('verdict')})"
         return str(r1.get("class")), f"{arm} look {look}: R1 FINAL class {r1.get('class')}"
@@ -556,8 +566,11 @@ def stage_of(arm: str, seed: int) -> Optional[str]:
 def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
     """ALLOWED / PENDING / REFUSED for ``arm`` × ``seed`` now (module docs), with the reason. Production forks are
     PENDING until the side's FP32_ALT commit is named (AM-8); the toy side has no such condition."""
+    from main.x35.ge import READER_ARMS, trigger
     from main.x35.kit import ARMS
 
+    if arm in READER_ARMS:                   # a G-E reader: only on its arm's GAIN (main.x35.ge), after AM-8
+        return trigger(stage, arm)
     if arm not in BATCH1_ARMS:
         return ALLOWED, f"{arm} is not a batch-1 arm (no AM-9 condition)"
     side = ARMS[arm].side

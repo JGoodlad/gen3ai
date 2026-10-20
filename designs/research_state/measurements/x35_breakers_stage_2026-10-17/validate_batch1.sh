@@ -7,9 +7,13 @@
 # launch", FORK of the start node's run, the arm's +steps and K9(b) mode, the trainer's arch check, and the DECLARED
 # growth line for X47 and for no other arm).
 #
-#   usage: validate_batch1.sh --pin <PIN> --toy-call <reference_population_toy.json> --out <scratch dir> <arm>:<seed> ...
+#   usage: validate_batch1.sh --pin <PIN> --toy-call <reference_population_toy.json> --out <scratch dir>
+#                             [--reader-standin <model zip>] <arm>:<seed> ...
 #   arms:  a1 c0 d1 a2 (production; read reference_population_production.json beside this script)
 #          toy_a1 toy_c0 toy_a2 toy_x47 (toy; read --toy-call; `x47` is accepted for `toy_x47`)
+#          ge_a1 ge_a2 ge_d1 ge_c0 (the G-E READERS, main.x35.ge; seed = the TARGET's, 3501). Their target is an arm's
+#          FINISHED final, which does not exist before the arm ends, so a validation names a STAND-IN target model
+#          (--reader-standin, e.g. P*): printed as `target=STANDIN:<file>` on the line, never a launch value
 # One line per argv on stdout, ending `verdict=PASS` or `verdict=FAIL <why>`, then `SUMMARY <n> PASS, <m> FAIL`; the exit
 # status is the number of FAILs (capped at 100). A --toy-call whose name says STANDIN is printed as `call=…STANDIN…` on
 # every toy line: a stand-in for T* is never a launch value. Transcripts: <out>/{argv,checkargs,dryrun}_<arm>_s<seed>.txt.
@@ -17,10 +21,11 @@ set -u
 STAGE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO=$(git -C "$STAGE" rev-parse --show-toplevel)
 PY=${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3}
-PIN=""; RTOY=""; OUT=""; SPECS=()
+PIN=""; RTOY=""; OUT=""; SPECS=(); RSTANDIN=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --pin) PIN=$2; shift 2;; --toy-call) RTOY=$2; shift 2;; --out) OUT=$2; shift 2;;
+    --reader-standin) RSTANDIN=$2; shift 2;;
     -*) echo "unknown flag $1" >&2; exit 2;;
     *) SPECS+=("$1"); shift;;
   esac
@@ -35,15 +40,19 @@ cd "$REPO" || exit 2
 CPU=(nice -n 19 taskset -c 5-7,13-15)
 NFAIL=0; NPASS=0
 run() {  # arm seed
-  local arm=$1 seed=$2 call=$RPROD tag argv
+  local arm=$1 seed=$2 call=$RPROD tag argv tgt=()
   [ "$arm" = x47 ] && arm=toy_x47
   tag=${arm}_s$seed
   case "$arm" in toy_*) call=$RTOY; [ -n "$RTOY" ] || { echo "$tag: --toy-call is required verdict=FAIL"; NFAIL=$((NFAIL+1)); return; };; esac
+  case "$arm" in ge_*) [ -n "$RSTANDIN" ] || { echo "$tag: --reader-standin is required verdict=FAIL"; NFAIL=$((NFAIL+1)); return; }
+                       tgt=(--target-standin "$RSTANDIN");; esac
   argv=$("$PY" -c '
 import json, shlex, sys
-from main.x35.kit import build_argv
+from main.x35.kit import describe, reader_target, ARMS
 arm, seed, call = sys.argv[1], int(sys.argv[2]), json.load(open(sys.argv[3]))
-print(" ".join(shlex.quote(x) for x in build_argv(arm, seed, call)))' "$arm" "$seed" "$call") \
+t = reader_target(arm, seed, call, standin=sys.argv[4]) if len(sys.argv) > 4 else None
+print(" ".join(shlex.quote(x) for x in describe(arm, seed, call, target=t)["argv"]))' "$arm" "$seed" "$call" \
+    ${tgt[1]:+"${tgt[1]}"}) \
     || { echo "$tag BUILD FAIL verdict=FAIL"; NFAIL=$((NFAIL+1)); return; }
   echo "$argv" > "$OUT/argv_$tag.txt"
   timeout 900 "${CPU[@]}" "$PY" -m main.checkargs --pin "$PIN" --argv "$argv" > "$OUT/checkargs_$tag.txt" 2>&1
@@ -53,9 +62,9 @@ print(" ".join(shlex.quote(x) for x in build_argv(arm, seed, call)))' "$arm" "$s
     > "$OUT/dryrun_$tag.txt" 2>&1
   local rc2=$? line
   line=$("$PY" -m main.x35.kit validate-run --arm "$arm" --seed "$seed" --call "$call" --dryrun "$OUT/dryrun_$tag.txt" \
-    --checkargs "$OUT/checkargs_$tag.txt" --rc-dryrun "$rc2" --rc-checkargs "$rc1" 2>&1 | tail -1)
+    --checkargs "$OUT/checkargs_$tag.txt" --rc-dryrun "$rc2" --rc-checkargs "$rc1" "${tgt[@]}" 2>&1 | tail -1)
   case "$line" in *"verdict=PASS"*) NPASS=$((NPASS+1));; *) NFAIL=$((NFAIL+1));; esac
-  case "$arm" in toy_*) line="$line call=$(basename "$call")";; esac
+  case "$arm" in toy_*) line="$line call=$(basename "$call")";; ge_*) line="$line target=STANDIN:$(basename "$RSTANDIN")";; esac
   echo "$line"
 }
 for spec in "${SPECS[@]}"; do run "${spec%:*}" "${spec#*:}"; done
