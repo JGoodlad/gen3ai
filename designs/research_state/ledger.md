@@ -27674,3 +27674,13 @@ Evidence: `research_state/measurements/search_l3_2026-10-20/` (PREREGISTRATION, 
 
 Evidence: `research_state/measurements/tau_fp32_alt_2026-10-20/` (README, `taus.*`, `equivalence_{A,B,C}.*`, `perf.*`,
 `reveal_off_digest.*`); `endstate/design_x5_belief_tokens.md` §3.2 + Decision record; `designs/model/versioning.md`.
+
+### 2026-10-20 · BASELINES · five outside-panel members registered (`outside_es_end2_s2001`, `s2002`, `s2003`, `s2006`, `s2007`; df933ef3) — the ledger lines `main.baselines set` printed and did not append
+
+Registered with the six-member Tier-2 panel `outside_v2` (`endstate/design_evaluation.md` §8.2); each is the 15M final of a closing-test end-state seed, a frozen other-lineage checkpoint that loads at HEAD. A panel member, not a reference to quote a strength against. One line per baseline, as the tool printed it (`Was: *(new baseline)*`):
+
+- **baseline `outside_es_end2_s2001` registered** on 2026-10-20: `rb_es_end2_s2001/final_model.zip` @15047835 steps, commit `62085750`, config v154 `gen3_mon_tied_gain_v1`, sha256 `3ddcfcf7e495…`. Was: *(new baseline)*. Reason: outside panel member (Tier-2, orchestrator 2026-10-20).
+- **baseline `outside_es_end2_s2002` registered** on 2026-10-20: `rb_es_end2_s2002/final_model.zip` @15047312 steps, commit `62085750`, config v154 `gen3_mon_tied_gain_v1`, sha256 `01a6dd8deac5…`. Was: *(new baseline)*. Reason: outside panel member (Tier-2, orchestrator 2026-10-20).
+- **baseline `outside_es_end2_s2003` registered** on 2026-10-20: `rb_es_end2_s2003/final_model.zip` @15047265 steps, commit `62085750`, config v154 `gen3_mon_tied_gain_v1`, sha256 `8c0dd0a599f0…`. Was: *(new baseline)*. Reason: outside panel member (Tier-2, orchestrator 2026-10-20).
+- **baseline `outside_es_end2_s2006` registered** on 2026-10-20: `rb_es_end2_s2006/final_model.zip` @15047567 steps, commit `62085750`, config v154 `gen3_mon_tied_gain_v1`, sha256 `e692ee5ecf9a…`. Was: *(new baseline)*. Reason: outside panel member (Tier-2, orchestrator 2026-10-20).
+- **baseline `outside_es_end2_s2007` registered** on 2026-10-20: `rb_es_end2_s2007/final_model.zip` @15045685 steps, commit `62085750`, config v154 `gen3_mon_tied_gain_v1`, sha256 `b9896df4899b…`. Was: *(new baseline)*. Reason: outside panel member (Tier-2, orchestrator 2026-10-20).
