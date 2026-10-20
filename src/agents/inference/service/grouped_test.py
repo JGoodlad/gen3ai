@@ -81,6 +81,7 @@ def _serve(svc, rows=ROWS):
 
 
 # ---------------------------------------------------------------- parity
+@pytest.mark.slow  # ship gate (2026-10-19, the 8 s bar): the `pair` / `policies` module fixtures, 31.6 s + 9.8 s beside a live run
 def test_grouped_decisions_equal_the_per_slot_service_within_the_declared_tolerance(pair):
     off, on = pair
     r0 = on.engine.grouped_rounds
@@ -108,6 +109,7 @@ def test_grouped_decisions_equal_the_per_slot_service_within_the_declared_tolera
     assert float((other - d_off[1][0])[m].abs().max()) > 1e-3
 
 
+@pytest.mark.slow  # ship gate (2026-10-19, the 8 s bar): the `pair` / `policies` module fixtures, 31.6 s + 9.8 s beside a live run
 def test_the_grouped_path_serves_the_grouped_slots_and_only_them(pair):
     _off, on = pair
     seen = []
@@ -130,6 +132,7 @@ def test_the_grouped_path_serves_the_grouped_slots_and_only_them(pair):
     assert "grouped_slots" not in pair[0].stats()                # OFF: the stats are unchanged
 
 
+@pytest.mark.slow  # ship gate (2026-10-19, the 8 s bar): the `pair` / `policies` module fixtures, 31.6 s + 9.8 s beside a live run
 def test_a_load_into_a_grouped_slot_is_served_on_the_next_flush(pair, policies):
     off, on = pair
     rows = (0, 0, 6, 0)
@@ -146,6 +149,7 @@ def test_a_load_into_a_grouped_slot_is_served_on_the_next_flush(pair, policies):
             s.load(2, policies[2], "p2 back")
 
 
+@pytest.mark.slow  # ship gate (2026-10-19, the 8 s bar): the `pair` / `policies` module fixtures, 31.6 s + 9.8 s beside a live run
 def test_the_gate_refuses_a_grouped_forward_that_serves_the_wrong_weights(policies, monkeypatch):
     """The service's own parity gate judges each grouped slot against ITS eager reference: a grouped forward that
     reads slot 0's weights for every slot must be refused (a load gates every bucket of the slot)."""
@@ -164,6 +168,7 @@ def test_the_gate_refuses_a_grouped_forward_that_serves_the_wrong_weights(polici
         svc.load(1, policies[1], "p1")
 
 
+@pytest.mark.slow  # ship gate (2026-10-19, the 8 s bar): the `pair` / `policies` module fixtures, 31.6 s + 9.8 s beside a live run
 def test_no_forward_state_escapes_the_grouped_body(pair):
     _off, on = pair
     _serve(on)
@@ -187,6 +192,7 @@ def test_grouped_ranges_split_per_group_and_refuse_a_gap():
         grouped_ranges(slots, (7,))
 
 
+@pytest.mark.slow  # ship gate (2026-10-19, the 8 s bar): the `pair` / `policies` module fixtures, 31.6 s + 9.8 s beside a live run
 @pytest.mark.parametrize("kw, match", [
     (dict(grouped_slots=(0, 0)), "grouped_slots"),
     (dict(grouped_slots=(5,)), "grouped_slots"),

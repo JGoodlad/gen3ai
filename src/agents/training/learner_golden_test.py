@@ -34,6 +34,7 @@ def test_one_update_reproduces_the_recorded_golden_exactly():
 
 
 # LINCHPIN (ship gate, 2026-10-19): kept in the routine gate at any cost — designs/ops/testing.md "The SHIP GATE"
+@pytest.mark.linchpin
 def test_the_production_golden_is_the_bf16_update_and_the_fp32_opt_out_is_pinned_beside_it():
     """The bf16 ADOPTION (2026-10-14): `production_args()` carries `recipe.fresh.trunk_precision` bf16, so the
     golden's learner has bf16 trunk rounds (not vacuously fp32), and the `--trunk-precision fp32` update is a

@@ -391,10 +391,26 @@ measured cost in a `# ship gate (2026-10-19): N s beside a live run` comment. Th
 guard (above) stays as the backstop; this rule is tighter because the budget is the ship gate's WALL.
 Static gates (`static`) are never `slow` — they run in every tier by definition.
 
+**THE 8 s BAR is ENFORCED by the ship gate** (`src/utils/ship_bar.py`, wired in the root `conftest.py`; on when
+`$GEN3AI_SHIP_BAR=1`, which `ship_gate.sh` sets; 2026-10-19, after new tests drifted over the line). Per routine
+test, the SUM of setup + call + teardown on the xdist controller; exempt: `slow` / `e2e` / `benchmark`, `static`
+and `@pytest.mark.linchpin` (the three LINCHPINS below carry it). The bar is stretched by the test's OWN window's
+contention (the root conftest's meter): `8 s x max(1, factor / 2.7)` — 2.7 is the low end of the factor this
+rule was measured at, so a busier box stretches the bar and a quiet box never shrinks it. **FAIL** (the session
+exits 1, a `SHIP GATE 8 s BAR` section names it) at **>= 2x** the stretched bar; **WARN** (named, never a
+verdict) between 1x and 2x; an unreadable window never fails. WHY FAIL AT 2x (rule 8): a test that honours the
+rule cannot read twice its stretched bar — the meter under-reads by <= ~25 % and the shape's own factor spread
+(x2.7-x4.9, 1.8x) is inside 2x even if the stretch explained none of it — so the verdict is deterministic for
+every compliant test, and a test past it is mis-tiered whichever side of the line it lands; the band below it
+is rule 8's exclusion margin, not a coin flip. A warn-only list is how the tree drifted (nobody reads it). Every
+test at or over half the bar is written to `~/.cache/gen3ai/ship_bar_last.json` (factor and verdict) for the
+next calibration. Tests: `src/utils/ship_bar_test.py` (a child session over the real conftest).
+
 **LINCHPINS — kept routine at any cost** (each carries a `# LINCHPIN` comment; add one only with a reason a
 whole-repo red must block every ship): `learner_golden_test::test_the_production_golden_is_the_bf16_update_…`
 (the production update, bit for bit), `paths_test::test_no_module_hardcodes_an_absolute_home_path` (a
 `/home/…` literal makes a test skip forever everywhere else) and `env_files_test::test_every_third_party_import_is_declared_by_the_env_file`.
+Each also carries `@pytest.mark.linchpin`, the 8 s bar's exemption.
 
 **What moved, and why it is safe.** The re-tier moved ~500 test ids (~80 % of the routine gate's test time) to
 `slow`: the h2h / eval / ladder PLAY files (module-fixture plays of 24-160 games each, the 2026-10-12

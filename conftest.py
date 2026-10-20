@@ -493,18 +493,34 @@ def pytest_runtest_makereport(item, call):
 
 def _window_reading(report):
     """Contention over one test's call, or None when it cannot be measured."""
+    return _span_reading(getattr(report, "start", None), getattr(report, "stop", None),
+                         getattr(report, "gen3ai_pid", None))
+
+
+def _span_reading(start, stop, pid):
+    """Contention over ``[start, stop]`` with ``pid``'s subtree subtracted, or None."""
     from utils.cpu_meter import override_reading
     over = override_reading()
     if over is not None:
         return over
     m = _meter["m"]
-    start, stop = getattr(report, "start", None), getattr(report, "stop", None)
     if m is None or start is None or stop is None:
         return None
     try:
-        return m.window(start, stop, getattr(report, "gen3ai_pid", None))
+        return m.window(start, stop, pid)
     except Exception:
         return None
+
+
+# --- THE 8 s BAR (the ship gate's, `utils.ship_bar`): on when $GEN3AI_SHIP_BAR is set ------------
+_ship_bar = {"bar": None}
+
+
+def _ship_bar_obj():
+    if _ship_bar["bar"] is None:
+        from utils.ship_bar import ShipBar
+        _ship_bar["bar"] = ShipBar(window=_span_reading)
+    return _ship_bar["bar"]
 
 
 def _session_reading():
@@ -528,6 +544,8 @@ def pytest_runtest_logreport(report):
     _record_slow_result(report)         # every phase, so a setup/teardown error is not lost
     if not _meter["worker"]:
         _costs_measured[report.nodeid] = _costs_measured.get(report.nodeid, 0.0) + float(report.duration)
+        if os.environ.get("GEN3AI_SHIP_BAR", "") not in ("", "0"):
+            _ship_bar_obj().add(report)       # the ship gate's 8 s bar (utils.ship_bar)
     if (os.environ.get("GEN3AI_SKIP_TIER_BUDGET") or report.when != "call" or report.skipped
             or _meter["worker"]):
         return                          # an xdist worker's copy: the CONTROLLER judges budgets
@@ -606,6 +624,11 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
             "their contention-scaled budget (a quiet-box run decides): " + ", ".join(
                 f"{e[0].split('::')[-1]} {e[1]:.1f}s @x{e[2].factor:.2f}" if e[2] is not None
                 else f"{e[0].split('::')[-1]} {e[1]:.1f}s" for e in top))
+    bar = _ship_bar["bar"]
+    if bar is not None and bar.judged:
+        terminalreporter.section("SHIP GATE 8 s BAR", red=bool(bar.failed))
+        for line in bar.lines():
+            terminalreporter.write_line(line)
     if not _over_budget:
         return
     try:
@@ -666,6 +689,14 @@ def pytest_sessionfinish(session, exitstatus):
     if (_over_budget and exitstatus == 0 and _box_is_idle()
             and any(_enforceable(e) for e in _over_budget)):
         session.exitstatus = 1
+    bar = _ship_bar["bar"]
+    if bar is not None:
+        try:
+            bar.write_report()
+        except Exception as exc:          # a calibration dump never fails a run
+            _slow_write_note.append(f"ship-bar report NOT written: {exc!r}")
+        if bar.failed and exitstatus == 0:
+            session.exitstatus = 1        # utils.ship_bar: a FAIL is >= 2x the stretched bar
 
 
 # --- The xdist SCHEDULE: whole files, most expensive first (gen3_cost_ordered_loadfile_v1) ---------

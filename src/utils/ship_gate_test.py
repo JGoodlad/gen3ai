@@ -62,3 +62,12 @@ def test_the_gate_runs_with_no_gpu(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0")
     assert SG.main(["run"]) == 0
     assert seen["env"]["CUDA_VISIBLE_DEVICES"] == ""
+
+
+def test_the_gate_runs_with_the_8s_bar_on(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen = {}
+    monkeypatch.setattr(SG, "resolve_shape", lambda: SG.Shape({}, None, 0, 6))
+    monkeypatch.setattr(SG.subprocess, "call", lambda cmd, cwd, env: seen.update(env=env) or 0)
+    monkeypatch.delenv("GEN3AI_SHIP_BAR", raising=False)
+    assert SG.main(["run"]) == 0
+    assert seen["env"]["GEN3AI_SHIP_BAR"] == "1" and seen["env"]["GEN3AI_SHIP_BAR_REPORT"] == SG.BAR_REPORT

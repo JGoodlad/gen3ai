@@ -25,7 +25,7 @@ from agents.training.rust_rollout import testkit as TK
 from agents.training.rust_rollout.build import RustEnvDecl
 from agents.training.rust_vec_env import RustVecEnv
 
-pytestmark = [pytest.mark.sim, pytest.mark.integration]
+pytestmark = [pytest.mark.sim, pytest.mark.integration, pytest.mark.slow]  # ship gate (2026-10-19, the 8 s bar): 56.5 s + 23.4 s beside a live run; module fixtures, so the whole file
 
 N, N_STEPS = 3, 32
 
@@ -202,7 +202,6 @@ def test_flag_off_trains_the_same_bytes_as_before_the_overlap_existed(spaces):
     assert got["hash"] == OFF_GOLDEN, f"the flag-OFF learn() moved: {got['hash']} (golden {OFF_GOLDEN})"
 
 
-@pytest.mark.slow
 def test_a_whole_learn_with_overlap_trains_through_overlapped_updates_and_is_deterministic(spaces):
     a = _learn(spaces, overlap=True)
     b = _learn(spaces, overlap=True)

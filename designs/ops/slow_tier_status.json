@@ -41,6 +41,86 @@
    "contention": 3.4,
    "detail": ""
   },
+  "src/agents/inference/service/grouped_test.py::test_a_load_into_a_grouped_slot_is_served_on_the_next_flush": {
+   "status": "pass",
+   "commit": "ea9dd01066efd02dff332d0e3a6ecf3e98ea1ebc",
+   "at": "2026-10-20T00:54:56Z",
+   "duration_s": 4.75,
+   "contention": 1.4,
+   "detail": ""
+  },
+  "src/agents/inference/service/grouped_test.py::test_grouped_decisions_equal_the_per_slot_service_within_the_declared_tolerance": {
+   "status": "pass",
+   "commit": "ea9dd01066efd02dff332d0e3a6ecf3e98ea1ebc",
+   "at": "2026-10-20T00:54:56Z",
+   "duration_s": 24.33,
+   "contention": 1.39,
+   "detail": ""
+  },
+  "src/agents/inference/service/grouped_test.py::test_no_forward_state_escapes_the_grouped_body": {
+   "status": "pass",
+   "commit": "ea9dd01066efd02dff332d0e3a6ecf3e98ea1ebc",
+   "at": "2026-10-20T00:54:56Z",
+   "duration_s": 0.68,
+   "contention": 1.39,
+   "detail": ""
+  },
+  "src/agents/inference/service/grouped_test.py::test_the_gate_refuses_a_grouped_forward_that_serves_the_wrong_weights": {
+   "status": "pass",
+   "commit": "ea9dd01066efd02dff332d0e3a6ecf3e98ea1ebc",
+   "at": "2026-10-20T00:54:56Z",
+   "duration_s": 6.25,
+   "contention": 1.4,
+   "detail": ""
+  },
+  "src/agents/inference/service/grouped_test.py::test_the_grouped_declaration_is_validated[kw0-grouped_slots]": {
+   "status": "pass",
+   "commit": "ea9dd01066efd02dff332d0e3a6ecf3e98ea1ebc",
+   "at": "2026-10-20T00:54:56Z",
+   "duration_s": 0.0,
+   "contention": 1.58,
+   "detail": ""
+  },
+  "src/agents/inference/service/grouped_test.py::test_the_grouped_declaration_is_validated[kw1-grouped_slots]": {
+   "status": "pass",
+   "commit": "ea9dd01066efd02dff332d0e3a6ecf3e98ea1ebc",
+   "at": "2026-10-20T00:54:56Z",
+   "duration_s": 0.0,
+   "contention": 1.71,
+   "detail": ""
+  },
+  "src/agents/inference/service/grouped_test.py::test_the_grouped_declaration_is_validated[kw2-lead slot]": {
+   "status": "pass",
+   "commit": "ea9dd01066efd02dff332d0e3a6ecf3e98ea1ebc",
+   "at": "2026-10-20T00:54:56Z",
+   "duration_s": 0.0,
+   "contention": 1.71,
+   "detail": ""
+  },
+  "src/agents/inference/service/grouped_test.py::test_the_grouped_declaration_is_validated[kw3-one bucket cap]": {
+   "status": "pass",
+   "commit": "ea9dd01066efd02dff332d0e3a6ecf3e98ea1ebc",
+   "at": "2026-10-20T00:54:56Z",
+   "duration_s": 0.0,
+   "contention": 1.74,
+   "detail": ""
+  },
+  "src/agents/inference/service/grouped_test.py::test_the_grouped_declaration_is_validated[kw4-eager' or 'graph]": {
+   "status": "pass",
+   "commit": "ea9dd01066efd02dff332d0e3a6ecf3e98ea1ebc",
+   "at": "2026-10-20T00:54:56Z",
+   "duration_s": 0.0,
+   "contention": 1.61,
+   "detail": ""
+  },
+  "src/agents/inference/service/grouped_test.py::test_the_grouped_path_serves_the_grouped_slots_and_only_them": {
+   "status": "pass",
+   "commit": "ea9dd01066efd02dff332d0e3a6ecf3e98ea1ebc",
+   "at": "2026-10-20T00:54:56Z",
+   "duration_s": 0.54,
+   "contention": 1.4,
+   "detail": ""
+  },
   "src/agents/inference/service/service_cuda_test.py::test_aot_backend_one_package_per_bucket_serves_every_slot": {
    "status": "pass",
    "commit": "065d2d7ff2caaa1e5d968577499cabd144d10c8c",
@@ -1219,6 +1299,46 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/training/rust_rollout/overlap_integration_test.py::test_a_whole_learn_with_overlap_trains_through_overlapped_updates_and_is_deterministic": {
+   "status": "pass",
+   "commit": "ea9dd01066efd02dff332d0e3a6ecf3e98ea1ebc",
+   "at": "2026-10-20T00:54:56Z",
+   "duration_s": 94.81,
+   "contention": 1.1,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/overlap_integration_test.py::test_flag_off_trains_the_same_bytes_as_before_the_overlap_existed": {
+   "status": "pass",
+   "commit": "ea9dd01066efd02dff332d0e3a6ecf3e98ea1ebc",
+   "at": "2026-10-20T00:54:56Z",
+   "duration_s": 18.61,
+   "contention": 1.31,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/overlap_integration_test.py::test_k9b_judges_the_overlapped_rows_under_their_behaviour_snapshot": {
+   "status": "pass",
+   "commit": "ea9dd01066efd02dff332d0e3a6ecf3e98ea1ebc",
+   "at": "2026-10-20T00:54:56Z",
+   "duration_s": 1.71,
+   "contention": 1.04,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/overlap_integration_test.py::test_overlapped_rows_are_one_version_stale_and_the_serial_control_is_not": {
+   "status": "pass",
+   "commit": "ea9dd01066efd02dff332d0e3a6ecf3e98ea1ebc",
+   "at": "2026-10-20T00:54:56Z",
+   "duration_s": 44.31,
+   "contention": 1.09,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/overlap_integration_test.py::test_the_fill_serves_the_proximal_log_probs_from_t2_at_the_learners_weights": {
+   "status": "pass",
+   "commit": "ea9dd01066efd02dff332d0e3a6ecf3e98ea1ebc",
+   "at": "2026-10-20T00:54:56Z",
+   "duration_s": 0.0,
+   "contention": 1.72,
+   "detail": ""
+  },
   "src/agents/training/rust_rollout/tie_identity_integration_test.py::test_a_planted_behaviour_mismatch_on_a_judged_row_is_FATAL_at_every_arm[perturbed-fixed_mass]": {
    "status": "pass",
    "commit": "b0f5dc138732dab650d1006a3eefda9acd1a45f8",
@@ -2239,5 +2359,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-20T00:20:32Z"
+ "last_written": "2026-10-20T00:54:56Z"
 }

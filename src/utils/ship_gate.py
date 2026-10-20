@@ -11,7 +11,10 @@ What it decides is only the SHAPE, from the box:
 * no run is live ⇒ the quiet policy: ``-n`` = :data:`QUIET_WORKERS`, normal priority, no pin.
 
 Always through ``scripts/ops/gate_lock.sh`` (one gate at a time) and ``scripts/ops/mem_cap.sh``, and
-always with ``CUDA_VISIBLE_DEVICES=""`` (standing rule 5: a gate is never a GPU lease).
+always with ``CUDA_VISIBLE_DEVICES=""`` (standing rule 5: a gate is never a GPU lease). Always with THE
+8 s BAR on (``$GEN3AI_SHIP_BAR=1``, ``utils.ship_bar``): a routine test over the bar the re-tier set is
+named, and one far over it (>= 2x the contention-stretched bar) FAILS the gate; every test at or over
+half the bar is written to :data:`BAR_REPORT` for calibration.
 
 Why it can be ~15 min beside a live run: the expensive tests are tiered ``slow`` by their MEASURED
 cost (designs/ops/testing.md "The SHIP GATE"), and the slow tier banks its verdicts in
@@ -48,6 +51,8 @@ QUIET_WORKERS = 6
 LIVE_WORKERS_PER_CPU = 0.5
 #: The memory cap (GB) the gate runs under (scripts/ops/mem_cap.sh).
 MEM_CAP_GB = 24
+#: Where the last ship gate's 8 s-bar rows land (``utils.ship_bar``; per user, like the test-cost table).
+BAR_REPORT = os.path.join(os.path.expanduser("~"), ".cache", "gen3ai", "ship_bar_last.json")
 
 
 @dataclass(frozen=True)
@@ -110,7 +115,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     print(f"[ship_gate] CUDA_VISIBLE_DEVICES='' {shlex.join(cmd)}", file=sys.stderr)
     if dry:
         return 0
-    env = dict(os.environ, CUDA_VISIBLE_DEVICES="")
+    os.makedirs(os.path.dirname(BAR_REPORT), exist_ok=True)
+    env = dict(os.environ, CUDA_VISIBLE_DEVICES="", GEN3AI_SHIP_BAR="1", GEN3AI_SHIP_BAR_REPORT=BAR_REPORT)
     t0 = time.time()
     rc = subprocess.call(cmd, cwd=str(repo_path()), env=env)
     print(f"[ship_gate] exit {rc} after {(time.time() - t0) / 60:.1f} min wall (queue wait included; "
