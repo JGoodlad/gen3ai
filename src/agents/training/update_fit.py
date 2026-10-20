@@ -391,6 +391,9 @@ def dry_update(model: Any, *, epochs: int = 1, canary: Any = None) -> FitReading
             model._logger = configure(None, [])
         model.rollout_buffer = buf
         model.n_epochs = int(epochs)
+        # X14 (--overlap-collect): an IDENTITY decoupled rewrite (w = 1) for a buffer no fill made; only the
+        # overlap path reads it, and `preserved_learner` removes it
+        model._overlap_prox = np.asarray(buf.log_probs, dtype=np.float64).copy()
         _behaviour_probe_setup(model, buf, dump_dir)
         if snap_path:
             torch.cuda.memory._record_memory_history(max_entries=400_000)

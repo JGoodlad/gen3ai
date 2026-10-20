@@ -252,7 +252,8 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
         before = os.environ.get(HELD_ENV)
         os.environ[HELD_ENV] = f"{os.getpid()}:{slot}"
         try:
-            with HS.heavy_slot(cmd, log=log):       # rule 5b: the gate holds one heavy slot itself
+            # rule 5b: the gate holds one heavy slot itself, inside what remains of ``timeout_s``
+            with HS.heavy_slot(cmd, log=log, timeout_s=None if timeout_s is None else max(0.0, timeout_s - waited)):
                 yield slot
         finally:
             if before is None:

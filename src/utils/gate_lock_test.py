@@ -150,6 +150,48 @@ def test_the_timeout_is_inside(tmp_path):
         _kill_tree(h)
 
 
+def test_the_timeout_bounds_the_heavy_slot_wait_too_and_frees_the_gate(tmp_path, monkeypatch):
+    """``--timeout-s`` bounds the WHOLE wait: with every heavy slot held (a live run wants one) the gate gives
+    up with ``TimeoutError`` (exit 4) and releases its own slot, instead of waiting unbounded while holding
+    the gate. Found by the 2026-10-20 core review (D-1): the heavy-slot wait ignored the timeout."""
+    import fcntl
+    import threading
+
+    d = tmp_path / "slots"
+    for k, v in _env(d, 1).items():
+        monkeypatch.setenv(k, v)
+    monkeypatch.setenv(HS.SLOTS_ENV, "1")
+    for k in (GL.HELD_ENV, HS.HELD_ENV, HS.BLOCKING_ENV):
+        monkeypatch.delenv(k, raising=False)
+    monkeypatch.setattr(HS, "wanted", lambda **_: "a training run is live (test)")
+    heavy = d / "heavy"
+    heavy.mkdir(parents=True)
+    fd = os.open(str(HS.slot_path(0, heavy)), os.O_RDWR | os.O_CREAT, 0o666)
+    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)        # the one heavy slot: held by "another job"
+    out: dict = {}
+
+    def take() -> None:
+        try:
+            with GL.gate_slot(timeout_s=0.3, poll_s=0.02, log=lambda _m: None):
+                out["ran"] = True
+        except TimeoutError as exc:
+            out["timeout"] = exc
+
+    try:
+        t = threading.Thread(target=take, daemon=True)
+        t.start()
+        t.join(scale_timeout(30))
+        assert not t.is_alive(), "the gate waited past --timeout-s for a heavy slot"
+        assert "timeout" in out and "ran" not in out, out
+        g = os.open(str(GL.slot_path(0, d)), os.O_RDWR)
+        try:
+            fcntl.flock(g, fcntl.LOCK_EX | fcntl.LOCK_NB)  # the gate slot is free again
+        finally:
+            os.close(g)
+    finally:
+        os.close(fd)
+
+
 def test_slot_count_is_declared_and_refuses_nonsense(monkeypatch):
     monkeypatch.delenv(GL.SLOTS_ENV, raising=False)
     assert GL.slot_count() == GL.GATE_SLOTS == 1

@@ -113,6 +113,22 @@ def test_a_learner_with_no_logger_yet_runs_the_dry_update_and_still_has_none():
     assert r.oom is None and "_logger" not in vars(m) and LG.params_sha256(m) == h0
 
 
+def test_a_dry_update_runs_with_the_overlap_runner_attached():
+    """X14 (`--overlap-collect`): the collector's overlap runner is attached BEFORE the startup check, so the dry
+    update's `train()` reaches the decoupled-PPO rewrite, which needs the proximal log-probs only a real FILL
+    computes. Found by the 2026-10-20 core review (A1): it raised `OverlapError` at every CUDA launch with the
+    flag on. The dry update hands it an identity rewrite (w = 1) and leaves nothing behind."""
+    from types import SimpleNamespace
+
+    from agents.training import learner_golden as LG
+    m = _learner()
+    m._rust_collector = SimpleNamespace(overlap=SimpleNamespace(
+        warm=False, active=False, snapshots=SimpleNamespace(has=lambda v: False)))
+    h0 = LG.params_sha256(m)
+    r = UF.dry_update(m)
+    assert r.oom is None and "_overlap_prox" not in vars(m) and LG.params_sha256(m) == h0
+
+
 def test_the_check_is_inert_off_cuda():
     assert UF.check_update_fits(_learner()) is None
 
