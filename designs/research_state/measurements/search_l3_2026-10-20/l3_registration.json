@@ -1,0 +1,39 @@
+{
+ "bank": {
+  "ids_sha256": "cf8d8c6fc09c9a85ce976a85a6195eb52977900659ac9be218b47562d9a09dfb",
+  "n": 287,
+  "name": "world sampler stage 1 (maturity interim LEAN common states, X26 225M)"
+ },
+ "bootstrap": {
+  "B": 2000,
+  "cluster": "battle",
+  "interval": "percentile 95%",
+  "seed": 20261020
+ },
+ "boundaries": {
+  "band": 0.005,
+  "chance": 0.5,
+  "material": 0.55
+ },
+ "digest": "5c6703c09b0932ee497d3052ec9d1533201bcafba8579e2f7735d03203d2d9a5",
+ "max_defects": 2,
+ "opponent_model": {
+  "checkpoint": "x26_225M checkpoint_225000152_steps.zip",
+  "sha256": "bc93a321bf1d4c6a83bc80910e8bbc81673a157f71e6cb2cbd7ca7b5427819ce"
+ },
+ "recheck": {
+  "n": 10,
+  "salt": "search_l3_recheck_v1:"
+ },
+ "registered": "2026-10-20",
+ "sha256": {
+  "PREREGISTRATION.md": "9766fcd6cffe2f1684585d0168c0dd34e90dd295c99bc943a8f552c6dfebfe46",
+  "l3_read.py": "036f6260c8cdb39633ccc2a09331ad0519362e2a33b5782a21f46fa9f5489110"
+ },
+ "tie_nats": 1e-06,
+ "unit": "L3, the opponent-choice likelihood screen (hidden_info_search_review_2026-10-20.md \u00a710)",
+ "worlds": {
+  "J": 8,
+  "builder": "WorldSampler(reveal='off', dice='rolls', max_tries=60), legality ON"
+ }
+}
