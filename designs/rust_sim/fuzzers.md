@@ -207,18 +207,21 @@ port's `event::run_start_switchins` is deterministic at a tie). All three are se
   `-weather|…|[from] ability: …|[of] pNa`, a lone non-Intimidate `-ability`, or the pair
   `-ability|…|Intimidate|boost` then `-unboost|<foe>|atk|<n>`. A blocked Intimidate (`-fail`/`-immune`
   tail), Forecast, a three-block rotation, or a co-occurring request residual is NOT admitted.
-- 🚨 **B1 and the mirror key do NOT check the rest of the battle.** The verdict is first-divergence,
-  so an allowlisted B1/mirror battle cannot report a LATER real divergence. The block-swap key's
-  clause (3) closes that for itself only. On 2026-09-25 all 10 B1/mirror-allowlisted cutover-stress
-  repros were byte-identical after the window, so nothing was hidden in that run. Retrofitting (3)
-  onto B1 and the mirror key is still OPEN.
-- **Gate integrity:** `node harness/bridge_ab_fuzz.js --selftest` runs 25 cases through the real
-  replayer. It replays every tagged fixture to its reason, then applies 14 mangled-golden injections
+- **All three keys check the WHOLE battle.** The verdict is first-divergence, so a key that judged
+  only the window would hide a LATER real divergence. B1 and the mirror key are tried through
+  `src/bin/bridge_replay/window_keys_whole_battle.rs` (`gen3_perside_window_keys_whole_battle_v1`,
+  2026-10-19): on BOTH sides the first `|turn|` is `|turn|1` at the same index, everything from it to
+  the end is BYTE-IDENTICAL, each side's window is identical or admitted by B1 / the mirror key, and
+  every differing side is admitted under the SAME reason. The block-swap key has its own clause (3).
+  Pinned on the real repros by `tests/bridge_window_keys_whole_battle_test.rs` (fixtures 16 / 17 / 18,
+  a later `-damage` on either side; each case is `allowlisted` with the clause reverted).
+- **Gate integrity:** `node harness/bridge_ab_fuzz.js --selftest` runs 31 cases through the real
+  replayer. It replays every tagged fixture to its reason, then applies 20 mangled-golden injections
   that must each still FAIL (the NEGATIVES are the load-bearing half): `atk|1`→`atk|2`, a changed
   ability, a mis-targeted `-unboost`, a dropped line, an extra line, the Intimidate pair internally
   reordered (the multiset is preserved), the lead `|switch|` lines swapped, the other side's window,
-  a non-tie lead, a later `-damage` or `|request|` on either side, a truncated golden, and the
-  fixture-22 orientation. The classifier's own 26 `#[cfg(test)]` cases are also mutation-checked:
+  a non-tie lead, a later `-damage` or `|request|` on either side, a truncated golden, the
+  fixture-22 orientation, and a later `-damage` on either side of fixtures 16 / 17 / 18. The classifier's own 26 `#[cfg(test)]` cases are also mutation-checked:
   every clause's revert fails a test, except (4) and the equal-length check, which (5) implies. Tagged
   corpus fixtures: `tests/vectors/bridge_corpus/21_*` and `22_*`. **Run `--selftest` after ANY change
   to a per-side allowlist clause.**

@@ -71,6 +71,9 @@ Two fixture classes — **17 clean + 5 allowlisted** today:
     same-species leads. `node harness/bridge_ab_fuzz.js --selftest` mangles these two fixtures to prove
     a content change, a dropped or extra line, an internal reorder, a non-tie lead, or a LATER divergence
     still fails the gate.
+  - All five are judged over the WHOLE battle: `tests/bridge_window_keys_whole_battle_test.rs`
+    changes one `-damage` HP after `|turn|1` on each side of fixtures 16 / 17 / 18 and requires the
+    gate to FAIL (`gen3_perside_window_keys_whole_battle_v1`).
 
   (The `gender-level-details-construction-draw` deferral is inactive on the pinned-gender
   L100 pool, so it has no fixture yet; the classifier still carries it for randbats/random.)

@@ -31,6 +31,9 @@ use pokesim::dex::Dex;
 // would ALSO auto-discover as a separate binary.
 #[path = "bridge_replay/switchin_block_swap.rs"]
 mod switchin_block_swap;
+// The whole-battle guard for the B1 and mirror window keys (same `#[path]` reason).
+#[path = "bridge_replay/window_keys_whole_battle.rs"]
+mod window_keys_whole_battle;
 
 fn main() -> ExitCode {
     pokesim::dex::data_dir::exit_on_version_flag("bridge_replay");
@@ -373,23 +376,20 @@ fn ab_verdict(b: &GoldenBattle, dex: &Dex) -> String {
                 (Some(a), Some(c)) => a == c,
                 _ => false,
             };
-        let (gw, ew) = if first.side == "p1" {
-            (framing_window(&b.p1_expected), framing_window(&streams.p1))
-        } else {
-            (framing_window(&b.p2_expected), framing_window(&streams.p2))
-        };
         // B1 (pure framing PERMUTATION) first, then the A1-analog MIRROR IDENT FLIP (the
         // single-line `[of]` content flip AND the Intimidate `-ability`+`-unboost` permutation —
-        // both the same harmless turn-0 construction speed-tie same-species mirror reorder),
-        // then the SWITCH-IN BLOCK SWAP (a NON-mirror tie whose moved lines include Intimidate's
-        // `-unboost`, which B1's clause 3 rejects; it also requires the REST of BOTH per-side
-        // streams to be byte-identical — see `switchin_block_swap.rs`).
-        classify_perside_construction_order_flip(&gw, &ew, leads_speed_tie)
-            .or_else(|| classify_perside_construction_mirror_flip(&gw, &ew, leads_speed_tie))
+        // both the same harmless turn-0 construction speed-tie same-species mirror reorder), both
+        // judged over the WHOLE battle (`window_keys_whole_battle.rs`: the rest of BOTH per-side
+        // streams byte-identical, the other side's window identical or the same key), then the
+        // SWITCH-IN BLOCK SWAP (a NON-mirror tie whose moved lines include Intimidate's
+        // `-unboost`, which B1 rejects; same whole-battle clause — see `switchin_block_swap.rs`).
+        let golden = [b.p1_expected.as_slice(), b.p2_expected.as_slice()];
+        let engine = [streams.p1.as_slice(), streams.p2.as_slice()];
+        window_keys_whole_battle::classify_window_keys_whole_battle(golden, engine, leads_speed_tie)
             .or_else(|| {
                 switchin_block_swap::classify_perside_construction_block_swap(
-                    [&b.p1_expected, &b.p2_expected],
-                    [&streams.p1, &streams.p2],
+                    golden,
+                    engine,
                     leads_speed_tie,
                 )
             })
@@ -544,17 +544,6 @@ fn lead_speed(team: &str, dex: &Dex) -> Option<u16> {
     let sets = pokesim::team::unpack(team, dex).ok()?;
     let lead = sets.first()?;
     pokesim::stats::compute_stats(lead, dex).ok().map(|s| s[5])
-}
-
-/// The FULL framing WINDOW of a per-side stream: every line BEFORE the first `|turn|`
-/// (the construction / lead-switch-in / first-request framing block). B1's order flip
-/// lives ENTIRELY in this window.
-fn framing_window(side: &[String]) -> Vec<String> {
-    let end = side
-        .iter()
-        .position(|l| l.starts_with("|turn|"))
-        .unwrap_or(side.len());
-    side[..end].to_vec()
 }
 
 /// B1 — the `turn0-construction-speed-tie-order-flip` per-side allowlist key. The
@@ -1301,16 +1290,6 @@ mod perside_construction_order_flip_tests {
             classify_perside_construction_order_flip(&golden(), &golden(), true),
             None
         );
-    }
-
-    #[test]
-    fn the_framing_window_stops_at_turn_one() {
-        let stream = v(&[
-            "|-ability|p2a: Suicune|Pressure|[silent]",
-            "|turn|1",
-            "|-ability|p2a: Suicune|Pressure|[silent]",
-        ]);
-        assert_eq!(framing_window(&stream).len(), 1);
     }
 }
 

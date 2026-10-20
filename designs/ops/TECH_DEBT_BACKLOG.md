@@ -21,7 +21,7 @@ then size).
 | 1 | ~~**A PINNED run reads `data/` from the MAIN checkout** + **`TeamLoader` default `base_dir`**~~ DONE 2026-10-19 (`gen3_pinned_data_root_v1`, §3) | — | the freeze now holds only while a run pinned BEFORE the fix is live or queued (root rule 6) |
 | 2 | **T2's `InferenceService._frozen_guard` … BLIND under `expandable_segments`** (b) | S, ~1 h in a GPU window + the owner's keep-or-drop call | the guard that watches every X35 run's memory cannot fire until its switch is armed |
 | 3 | ~~One reading unit for the live reader~~ — DONE 2026-10-19 (`gen3_live_reader_reading_v1`, `gen3_faint_clears_types_override_v1`; §3) | — | — |
-| 6 | **Port: a Perish Song faint is skipped …** — the allowlist-gate half (a) | S, ~2 h | a fuzz allowlist that can hide a later divergence |
+| 6 | ~~**Port: a Perish Song faint is skipped …** — the allowlist-gate half~~ CLOSED 2026-10-20 (`gen3_perside_window_keys_whole_battle_v1`; see §3) | — | — |
 | 8 | **~22 stale `.claude/worktrees/agent-*` worktrees** (g) | S, ~1 h; the orchestrator approves the list | X26 has ended; run the `models`-symlink check first |
 
 **Two rules (owner, 2026-09-06).** (1) During the week nothing here is dispatched on the
@@ -83,7 +83,6 @@ gate — they matter only if search reopens — and reading them as one block sa
 
 | tier | item | why | size |
 |---|---|---|---|
-| P2 | **Port: a Perish Song faint is skipped on a turn a ROLLOUT lock counts 2 -> 1** — the ENGINE arm is FIXED (`8bc01de8c`; pins `tests/regression_test.rs:16867+`). REMAINING: the per-side allowlist keys B1 (`bin/bridge_replay.rs:582`) and mirror-flip (`:670`) judge only the framing window and lack the rest-of-battle byte-identity check that the block-swap key has (`bin/bridge_replay/switchin_block_swap.rs`, clause 3), so a later real divergence in an allowlisted battle can hide. Fix: add clause 3 to both. | a gate that could hide a later divergence | S |
 | P3 | **Adversarial NICKNAMES in the fuzzers' teams**: no fuzzer or reader test uses a hostile nickname. Showdown's `Dex.getName` (`sim/dex.ts:217`) strips `| [ ] ,` and whitespace and caps names at 18 characters, so `[from]` and `, M` cannot arrive; `: `, `%`, `.` and unicode can. Add them to the byte-fuzz and bridge teams plus a `SideReader` pin (ident split `trackers/mod.rs:407`; `rsplit(": ")` at `board_reading.rs:1047,1064`). Owner 2026-09-23: tier-2, deferred behind the emission self-check. | a ladder opponent's nickname is the one adversarial string the reader sees | S |
 
 ### (b) Correctness and gates — red, flaky or vacuous tests; gate scope
@@ -169,6 +168,7 @@ compacted 2026-10-19 (58 KB of narrative to one line each). A new closure adds O
 
 | closed | row | evidence |
 |---|---|---|
+| 2026-10-20 | **Port: a Perish Song faint is skipped on a turn a ROLLOUT lock counts 2 -> 1** — FIXED, both halves: the engine arm in `8bc01de8c` (re-verified against `sim/battle.ts:515-521`); the gate half now judges B1 and the mirror key over the WHOLE battle (rest of both per-side streams byte-identical, the other side's window identical or the same key), pinned on real fixtures 16 / 17 / 18, each case allowlisted on revert | `gen3_perside_window_keys_whole_battle_v1`; `src/bin/bridge_replay/window_keys_whole_battle.rs`; `tests/bridge_window_keys_whole_battle_test.rs` |
 | 2026-10-19 | **A PINNED run reads `data/` from the MAIN checkout** + **`TeamLoader` default `base_dir` is cwd-relative** — FIXED: every runtime `data/` reader resolves through `utils.paths.repo_path` (the imported checkout = a pinned child's own worktree, which carries the tracked `data/`); `TeamLoader` raises `EmptyTeamPoolError` on an empty pool; `main.h2h`'s `cwd` pool rule is deleted. Runs pinned before it keep the freeze (root rule 6) | `gen3_pinned_data_root_v1`; `src/main/launcher/pinned_data_test.py`; `designs/launcher/pinning_and_worktrees.md` |
 | 2026-10-19 | **A Mimic'd HIDDEN POWER keeps the bare id `hiddenpower`** — FIXED in the reading (Mimic and Transform copies alike): `PMon::learn_move` types a bare own Hidden Power from the request id, the Mimic overlay is keyed by `retrieve_id` | `present::live_reader_reading_tests::a_mimicked_hidden_power_takes_our_request_type`; `gen3_live_reader_reading_v1` |
 | 2026-10-19 | **poke-env drops a pending YAWN when its target falls asleep another way** — FIXED: `set_hp_status` no longer ends Yawn; only its `-end` line does | `present::live_reader_reading_tests::a_rest_does_not_end_a_pending_yawn` |

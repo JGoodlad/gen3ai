@@ -967,8 +967,8 @@ streams, and it allowlists only if all of the following hold:
 7. At least one side's windows differ.
 
 Clause (3) is new to this key. The verdict is first-divergence, so without (3) the construction
-reorder would HIDE any later real divergence in the same battle. B1 and the mirror key have no such
-clause (see the OPEN item below).
+reorder would HIDE any later real divergence in the same battle. B1 and the mirror key gained the
+same clause on 2026-10-19 (see the CLOSED item below).
 
 **Gate integrity.**
 - **The unit tests.** The module has 26 `#[cfg(test)]` cases: 3 positives, both orientations plus a
@@ -1012,19 +1012,22 @@ Clear Body / Hyper Cutter / White Smoke or a Substitute (a `-fail`/`-immune` tai
   construction key applies. The pre-change replayer at `318bdcb8` returns the same verdict; the
   divergence was not caused by this change, and the change correctly refuses to swallow it.
 
-**OPEN — the Rollout perish faint order (`bab_0_8`).** Reproduce it with the seed-925001 run above.
-The likely root was read from the source but NOT probe-verified and NOT fixed. The sim's
-`fieldEvent('Residual')` skips `faintMessages()` only for a duration handler that ENDS this turn. A
-tick that does not end, such as Rollout's 2 → 1 after a hit, falls through and drains the enqueued
-Perish faint BEFORE `|upkeep`. The port's `turn/residuals.rs` `RolloutDuration` arm `continue`s on its
-non-ending branch too, which is the `MustRechargeDuration` shape of the round-5 D4b fix.
-`FuryCutterDuration`'s `d - 1` branch has the same shape and is UNVERIFIED.
+**CLOSED — the Rollout perish faint order (`bab_0_8`).** Fixed in `8bc01de8c`
+(`gen3_duration_nonend_faint_drain_v1`, the second M6 triage pass above): the non-ending 2 → 1 arms
+of `RolloutDuration`, `FuryCutterDuration` and `LockedMoveDuration` now fall through to the
+per-handler `faintMessages()` (`sim/battle.ts:515-521` skips it only when the duration reaches 0).
 
-**OPEN — B1 and the mirror key mask later divergences.** Both return on the first divergence without
-checking the rest of the battle. As a data point, all 10 B1/mirror-allowlisted repros in the cutover
-stress were re-read with a full-stream check, and every one is byte-identical after the window on
-both sides. Nothing was hidden in that run. Retrofitting clause (3) onto both keys needs its own
-injection proof.
+**CLOSED — B1 and the mirror key masked later divergences** (`gen3_perside_window_keys_whole_battle_v1`,
+2026-10-19). Both keys are now tried through `src/bin/bridge_replay/window_keys_whole_battle.rs`,
+which requires on BOTH sides: the first `|turn|` is `|turn|1` at the same index (W1); everything from
+it to the end byte-identical (W2, the block-swap key's clause 3); each window identical or admitted
+by B1 / the mirror key (W3); one reason across the differing sides (W4); at least one side differing
+(W5). The window classifiers are unchanged. Injection proof: 12 `#[cfg(test)]` cases in the module,
+`tests/bridge_window_keys_whole_battle_test.rs` (fixtures 16 / 17 / 18 with one later `-damage` HP
+changed on each side: 6 negatives, each `allowlisted` under the pre-change window-only dispatch), and
+6 matching `--selftest` negatives. Fuzz (`bridge_ab_fuzz.js --mode ladder --ladder-tier full --format
+gen3ou --battles 300`): seed 925001, 295 ok + 5 allowlisted (4 mirror, 1 block swap), 0 diverged
+(`bab_0_8` replays ok); fresh seed 1019401, 297 ok + 3 allowlisted (mirror), 0 diverged.
 
 
 ---

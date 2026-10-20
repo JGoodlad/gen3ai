@@ -842,6 +842,17 @@ function selftest() {
     const i = findRow(rows, window, (r) => r === '|-unboost|p2a: Zapdos|atk|1', 'the p2 -unboost');
     rows[i] = withRaw(rows[i], '|-unboost|p2a: Zapdos|atk|2');
   }));
+  // The B1 and mirror keys' WHOLE-BATTLE clause (`window_keys_whole_battle.rs`): a later real
+  // divergence on either side of fixtures 16 / 17 / 18 must not hide behind their window reorder.
+  for (const name of ['16_construction_order_flip_cg.txt', '17_perside_construction_mirror_flip.txt', '18_perside_construction_mirror_permutation.txt']) {
+    for (const side of ['p1', 'p2']) {
+      neg(`fixture ${name.slice(0, 2)}: a LATER divergence on ${side} (a -damage HP after |turn|1)`, mangle(read(name), (rows) => {
+        const { rest } = sideRows(rows, side);
+        const i = findRow(rows, rest, (r) => r.startsWith('|-damage|'), `a ${side} -damage after turn 1`);
+        rows[i] = withRaw(rows[i], rawOf(rows[i]).replace(/\|(\d+)([\/ ])/, (m, hp, sep) => `|${Number(hp) === 0 ? 1 : Number(hp) - 1}${sep}`));
+      }));
+    }
+  }
 
   try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) {}
   console.error(fail ? `\n[selftest] ${fail} of ${n} FAILURE(S)` : `\n[selftest] all ${n} allowlist gate-integrity cases pass`);
