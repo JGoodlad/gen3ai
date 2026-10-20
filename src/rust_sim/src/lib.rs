@@ -130,6 +130,9 @@ pub mod json;
 pub mod present;
 pub mod prng;
 pub mod protocol;
+/// DAMAGE-ROLL CONTROL (`gen3_roll_control_v1`, F1 tier A): an offline replay mode that replaces a
+/// damage roll's VALUE with one consistent with what a viewer saw, the PRNG stream kept aligned.
+pub mod rolls;
 pub mod search;
 pub mod state;
 /// The Rust core's persistent battle state (`gen3_core_version_v1`, Rust Core Program M2): one

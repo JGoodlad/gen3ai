@@ -37,6 +37,7 @@ fn battle(dex: &Dex, teams: [&str; 2], seed: &str, sides: &mut [BotSide; 2], ora
         names: [NAMES[0].into(), NAMES[1].into()],
         teams: [teams[0].into(), teams[1].into()],
         cmds: Vec::new(),
+        rolls: Vec::new(),
     };
     let opts = BattleOptions {
         format_id: log.format_id.clone(),

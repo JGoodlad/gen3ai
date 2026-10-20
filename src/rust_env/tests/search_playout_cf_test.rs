@@ -50,7 +50,7 @@ fn logs(n: usize, steps: usize, seed: u64) -> Vec<Log> {
         for i in 0..n {
             if cols.slice::<u8>(col::DONE)[i] == 1 {
                 let l = &core.inline_env(i).unwrap().prev_log;
-                out.push(Log { format_id: l.format_id.clone(), seed: l.seed.clone(), names: l.names.clone(), teams: l.teams.clone(), cmds: l.cmds.clone() });
+                out.push(Log { format_id: l.format_id.clone(), seed: l.seed.clone(), names: l.names.clone(), teams: l.teams.clone(), cmds: l.cmds.clone(), rolls: Vec::new() });
             }
         }
     }

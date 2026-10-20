@@ -69,7 +69,7 @@ fn record(n: usize, steps: usize, seed: u64) -> Vec<(Log, Vec<Dec>)> {
             if cols.slice::<u8>(col::DONE)[i] == 1 {
                 assert_eq!(cols.slice::<u8>(col::REFUSED)[i], 0, "no quarantine expected on the bridge corpus");
                 let l = &core.inline_env(i).unwrap().prev_log;
-                let log = Log { format_id: l.format_id.clone(), seed: l.seed.clone(), names: l.names.clone(), teams: l.teams.clone(), cmds: l.cmds.clone() };
+                let log = Log { format_id: l.format_id.clone(), seed: l.seed.clone(), names: l.names.clone(), teams: l.teams.clone(), cmds: l.cmds.clone(), rolls: Vec::new() };
                 done_eps.push((log, std::mem::take(&mut cur[i])));
             }
             collect(&cols, i, &mut cur[i]);

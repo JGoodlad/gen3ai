@@ -86,6 +86,10 @@ replay family, else the persistent `{id, cmd}` search loop). `BridgeSession::sna
 - Replay a gen3ou repro with `{format:'gen3ou', allowHiddenPower:true}`; the probe default is
   customgame.
 - Never feed `search::volatile_names` to the obs layer: it includes conditions the sim never announces.
+- Every gen-3 damage roll (`random(16)`) goes through `BattleState::damage_roll`: the DAMAGE-ROLL
+  CONTROL (`src/rolls.rs`) changes a roll's VALUE only when armed (offline world replays: `core_events`'
+  START `"rolls"`, the env playout's `Log.rolls`). A new damage site that draws directly breaks a matched
+  world's replay. Contract: `search_and_replay_drivers.md` "The damage-roll control".
 - The gender DRAW PAD (`M*` / `F*` / `N*` in the packed gender field) is ours and offline only.
   Showdown reads `M*` as unnamed, so a padded team never goes to Node or a live server.
 

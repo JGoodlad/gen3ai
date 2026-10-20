@@ -1916,6 +1916,9 @@ pub struct BattleState {
     /// (`gen3_quick_claw_speed_v1` — the P1 state-HP off-by-one + wrongful-faint AND the P2
     /// wrong-first-mover class, one fix). Init false; a fresh construct has no prior endTurn.
     pub quick_claw_roll: bool,
+    /// The DAMAGE-ROLL CONTROL (`crate::rolls`, F1 tier A of the world sampler): `None` (always,
+    /// outside an offline world replay) runs every damage roll exactly as drawn.
+    pub rolls: Option<Box<crate::rolls::RollCtl>>,
 }
 
 impl BattleState {
@@ -1969,6 +1972,7 @@ impl BattleState {
             sleep_talk_call: false,
             pursuit_first_mover: None,
             quick_claw_roll: false,
+            rolls: None,
         })
     }
 

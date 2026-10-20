@@ -43,6 +43,10 @@ pub struct Log {
     pub names: [String; 2],
     pub teams: [String; 2],
     pub cmds: Vec<String>,
+    /// The DAMAGE-ROLL table of a world the honest builder matched (`pokesim::rolls`, F1 tier A of the
+    /// world sampler): `(site, roll)` — the n-th damage roll of the battle uses `roll` instead of the
+    /// stream's (the draw itself is unchanged). Empty (every log but such a world's): the battle as drawn.
+    pub rolls: Vec<(u32, u8)>,
 }
 
 /// An open decision: `(action index, choice token)` per legal action, and its per-side ordinal.
@@ -80,7 +84,11 @@ impl Game {
             p1: PlayerOptions { name: log.names[0].clone(), team: PackedTeam(log.teams[0].clone()) },
             p2: PlayerOptions { name: log.names[1].clone(), team: PackedTeam(log.teams[1].clone()) },
         };
-        let sess = BridgeSession::new_construct_turn0(&opts, dex())?;
+        let mut sess = BridgeSession::new_construct_turn0(&opts, dex())?;
+        if !log.rolls.is_empty() {
+            let table: std::collections::BTreeMap<u32, u8> = log.rolls.iter().copied().collect();
+            sess.set_roll_ctl(Some(pokesim::rolls::RollCtl::new(0, pokesim::rolls::Mode::Force(table))))?;
+        }
         let streams = [stream(0, &log.names[0], &log.teams[0], clock)?, stream(1, &log.names[1], &log.teams[1], clock)?];
         let mut g = Game { sess, streams, decided: [0, 0], emitted: 0, open: [None, None], cmds: Vec::new() };
         g.advance()?;

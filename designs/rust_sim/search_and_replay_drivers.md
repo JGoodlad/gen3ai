@@ -392,6 +392,66 @@ the lesson, and verify against the code + the cargo tests rather than this prose
 
 ---
 
+## The damage-roll control: `src/rolls.rs` (`gen3_roll_control_v1`, F1 tier A)
+
+**What it is for.** The honest world builder (`main.value_search.worlds`) replays each candidate world's prefix on
+the TRUTH's battle seed, so a hit reproduces the printed HP only with the truth's own damage roll; an honest player
+knows only that the roll was one of 16. The control lets a world's replay take another roll VALUE while the PRNG
+stream stays aligned with the truth's (F1 tier A of `designs/endstate/design_world_sampler.md` §3.3.1, where the
+measured effect is).
+
+**The site.** Every gen-3 damage roll goes through `BattleState::damage_roll(Site, dex)`: it draws the one
+`random_below(16)` exactly as before and returns the roll the site uses. Unarmed (`BattleState.rolls == None`, every
+training, eval, live and gate path) it returns the drawn roll and nothing else changes. The six sites
+(`turn/moves.rs`): the single hit, a multi-hit strike, a confusion self-hit, a Beat Up strike, a Future Sight / Doom
+Desire cast and a Jump Kick crash. The n-th site of a battle is site `n` (the ordinal every mode keys on).
+
+**The three modes** (`RollCtl { viewer, mode }`):
+
+| mode | what a site does | report |
+|---|---|---|
+| `record` | uses the drawn roll; records the TARGET: the site's key (kind, attacking side, hit side, the move id with every typed Hidden Power folded to `hiddenpower`) and what `viewer` SAW of the hit at that roll | `targets` |
+| `match` (targets) | the consistent set C = the rolls whose predicted sight equals target n's. Uses the drawn roll if it is in C (today's trajectory), else the member of C nearest it (ties: the lower); the world's log-weight gains log(|C| / 16); an empty C marks the world INFEASIBLE (the drawn roll is used, and the byte gate rejects the world) | `log_w`, `feasible`, `force` |
+| `force` (table) | uses the table's roll at a named site, the drawn one elsewhere | — |
+
+`force` in every report lists the sites whose roll differs from the drawn one: `force` mode with it replays that
+trajectory exactly (both sides, every byte). That is how a matched world is replayed later (the playout tool's
+`Log.rolls`, the info audit's regate).
+
+**The sight** (`roll_outcomes`, state reads only) mirrors the apply path after the roll: into a Substitute
+(`absorb_into_sub`) the sight is `sub:broke` iff the roll reaches the sub's HP, else `sub:held`; otherwise the HP
+after `apply_damage` (which saturates at 0): `0` for a faint, the exact `hp/max` for the viewer's own mon (and for
+both sides in a `customgame` debug format), the non-owner's percent (`core_events::side::hp_percent`) for the other
+side's. **A site is PINNED** (the drawn roll, factor 1/16 — the known lower bound — never widened) when a post-roll
+modifier could change the sight: Beat Up, a Future Sight cast, a Jump Kick crash always; a Focus Band holder, an
+Endure volatile (the move paths) or False Swipe whenever some roll is lethal. A target the truth's pass marked pinned
+pins the world's site too. A world site whose key differs from the target's is `x` (misaligned) and one past the
+targets `u`; both take the drawn roll and change no weight (such a world has already diverged; the gate decides).
+
+**Draw-free, emission-free.** The site consumes exactly the draw it always consumed; the prediction reads state;
+nothing is emitted. So the stream stays aligned, and the emission self-check is unaffected.
+
+**Where it is armed.** `core_events`' START `"rolls"` (`{"viewer","mode",…}`; the output line then carries
+`"rolls":{…}`; `agents.battle.core_replay.RecordedBattle.rolls`); `BridgeSession::set_roll_ctl`; the env crate's
+playout `Log.rolls` (`[[site, roll], …]`, force mode; `rust_env_playout_open`'s `log.rolls`, refused when a roll is
+outside 0..16 or a site is named twice). Nothing in training arms it.
+
+**Gates.** `tests/rolls_test.rs` (pokesim): record / force-the-truth / self-match are byte-identical to the unarmed
+battle; THE ENGINE IS THE ORACLE for C — each of the 16 rolls is forced and what the viewer saw read off its stream,
+and a match against any of those sights picks a roll printing the same line with k = the rolls printing it (the
+opponent's percent, the viewer's exact HP, a Substitute held / broke); a world with other Attack EVs that the drawn
+rolls reject is reproduced byte for byte by match (the PRNG state at the end equal to the truth's) and replayed by
+force with its table; a lethal hit into a Focus Band holder is pinned; a misaligned key takes the drawn roll; bad
+control JSON is refused. `src/rust_env/tests/search_rolls_test.rs`: the playout `Game` replays a table exactly as an
+armed `pokesim` session does, and `log_from_json` reads and checks `rolls`. The Python side:
+`src/main/value_search/world_rolls_integration_test.py`.
+
+**Honest limits** (the design doc's F1 tier A row): the speed-tie dice, a dice ability or item that did not trigger,
+the crit roll and the pre-root counters are still the truth's dice (tier B); the choice inside C prefers the drawn
+roll, so the hidden exact HP a matched world carries after a site is the truth's whenever the truth's roll is
+consistent; the weight is the likelihood ALONG the trajectory the choice took, not marginalised over the other
+members of C.
+
 ## Why the clone-branch snapshot needs no byte format
 
 stream, boundary progress) is **plain owned data** — no `Rc`/`RefCell`/`Box<dyn>`/closures/raw

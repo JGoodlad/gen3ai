@@ -15,6 +15,10 @@
 //! END
 //! ```
 //!
+//! START's optional `"rolls"` arms the DAMAGE-ROLL CONTROL (`pokesim::rolls`, F1 tier A of the
+//! world sampler: `{"viewer","mode":"record"|"match"|"force",…}`) and adds its report `"rolls":{…}`
+//! to the battle's output line; without it not one byte changes.
+//!
 //! `seed` is the RAW `>start` seed (the live `sim_bridge` path, which runs the turn-0
 //! construction window) unless `init_seed` is true, in which case it is the POST-construction
 //! seed a capture golden records (`quick_claw` then carries turn 1's roll).
@@ -88,6 +92,7 @@ use pokesim::core_events::{CoreEvent, Line};
 use pokesim::dex::Dex;
 use pokesim::json::Json;
 use pokesim::prng::normalize_seed;
+use pokesim::rolls::RollCtl;
 use pokesim::side_reader::SideReader;
 use pokesim::trackers::clock::ClockConfig;
 use pokesim::version::{self, BattleVersion};
@@ -98,6 +103,9 @@ struct Battle {
     init_seed: bool,
     quick_claw: bool,
     cmds: Vec<Script>,
+    /// START's opt-in `"rolls"` (the damage-roll control, `pokesim::rolls`): absent, not one byte
+    /// changes.
+    rolls: Option<RollCtl>,
 }
 
 enum Script {
@@ -414,6 +422,9 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
     } else {
         BridgeSession::new_construct_turn0_core(&b.opts, dex)?
     };
+    if let Some(ctl) = &b.rolls {
+        sess.set_roll_ctl(Some(ctl.clone()))?;
+    }
     // The battle is replayed as a CHAIN OF VERSIONS (`gen3_core_version_v1`) OBSERVING the one
     // session this replay drives: each command advances the session and the chain folds each
     // side's new lines, typed at the source, into its stream; a one-side, engine-less parse chain
@@ -558,6 +569,10 @@ fn render(b: &Battle, res: Result<Run, String>) -> String {
                 Some(0) => o.push_str("\"p1\""),
                 Some(_) => o.push_str("\"p2\""),
                 None => o.push_str("null"),
+            }
+            if let Some(ctl) = sess.roll_ctl() {
+                o.push_str(",\"rolls\":");
+                o.push_str(&ctl.json());
             }
             o.push_str(",\"chunks\":[");
             for (i, c) in sess.chunks().chunks.iter().enumerate() {
@@ -1068,6 +1083,10 @@ fn main() {
                         init_seed: v.bool_or("init_seed", false),
                         quick_claw: v.bool_or("quick_claw", false),
                         cmds: Vec::new(),
+                        rolls: match v.get("rolls") {
+                            None | Some(Json::Null) => None,
+                            Some(r) => Some(RollCtl::from_json(r)?),
+                        },
                     });
                 }
                 "CHOOSE" | "CHOOSEIF" => {

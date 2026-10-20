@@ -1669,6 +1669,18 @@ impl BridgeSession {
         &self.engine
     }
 
+    /// Arm (or disarm) the DAMAGE-ROLL CONTROL (`crate::rolls`, `gen3_roll_control_v1`): offline
+    /// world replays only. Arm it before the first command; an unarmed session is unchanged.
+    pub fn set_roll_ctl(&mut self, ctl: Option<crate::rolls::RollCtl>) -> Result<(), String> {
+        self.engine.battle_state_mut().ok_or("set_roll_ctl: no battle state")?.set_roll_ctl(ctl);
+        Ok(())
+    }
+
+    /// The armed damage-roll control and its report so far.
+    pub fn roll_ctl(&self) -> Option<&crate::rolls::RollCtl> {
+        self.engine.battle_state()?.rolls.as_deref()
+    }
+
     /// Consume the transport, keeping only its engine (what a version owns).
     pub fn into_engine(self) -> Engine {
         self.engine

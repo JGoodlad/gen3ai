@@ -1462,8 +1462,12 @@ impl crate::state::BattleState {
         //     regardless of crit), so the shuffle draws even under a crit. ---
         self.modify_damage_phase1_shuffle();
 
-        // --- 3. DAMAGE: random(16) selects rolls[r] (gen-3 randomizer). ---
-        let r = self.prng.random_below(16) as usize;
+        // --- 3. DAMAGE: random(16) selects rolls[r] (gen-3 randomizer). The draw goes through
+        //     `damage_roll` (`crate::rolls`): unarmed, it is exactly `random_below(16)`. ---
+        let r = self.damage_roll(
+            crate::rolls::Site { kind: crate::rolls::SiteKind::Hit, att_side: side, tgt_side: foe, tgt_slot: foe_slot, move_id: &move_id, rolls: &dmg.rolls, via_sub: true, false_swipe: move_id == "falseswipe", endure_applies: true },
+            dex,
+        );
         let realized = dmg.rolls[r];
 
         // --- SUBSTITUTE ABSORB (the gen-3 sub-intercept, `substitute.onTryPrimaryHit`):
@@ -2142,7 +2146,10 @@ impl crate::state::BattleState {
             };
             let dmg = calc_damage(&ctx, dex);
             // [damage] `random(16)` selects the roll — every other damaging move's order.
-            let r = self.prng.random_below(16) as usize;
+            let r = self.damage_roll(
+            crate::rolls::Site { kind: crate::rolls::SiteKind::BeatUp, att_side: side, tgt_side: foe, tgt_slot: foe_slot, move_id: "beatup", rolls: &dmg.rolls, via_sub: true, false_swipe: false, endure_applies: false },
+            dex,
+        );
             let realized = dmg.rolls[r];
 
             // [EMIT] the per-strike `|-activate|<user>|move: Beat Up|[of] <ally>` (the gen3
@@ -2422,7 +2429,10 @@ impl crate::state::BattleState {
             self.modify_damage_phase1_shuffle();
 
             // [damage] `random(16)` per strike.
-            let r = self.prng.random_below(16) as usize;
+            let r = self.damage_roll(
+            crate::rolls::Site { kind: crate::rolls::SiteKind::Multi, att_side: side, tgt_side: foe, tgt_slot: foe_slot, move_id: move_id, rolls: &dmg.rolls, via_sub: true, false_swipe: false, endure_applies: true },
+            dex,
+        );
             let realized = dmg.rolls[r];
 
             // SUBSTITUTE absorb (a break lets later strikes hit the mon) — the same sub-intercept
@@ -2897,7 +2907,10 @@ impl crate::state::BattleState {
         self.modify_damage_phase1_shuffle();
         let dmg = crate::damage::calc_damage(&ctx, dex);
         // ONE random(16) — the getDamage randomizer (the cast's only draw).
-        let r = self.prng.random_below(16) as usize;
+        let r = self.damage_roll(
+            crate::rolls::Site { kind: crate::rolls::SiteKind::FutureCast, att_side: side, tgt_side: foe, tgt_slot: foe_slot, move_id: move_id, rolls: &dmg.rolls, via_sub: false, false_swipe: false, endure_applies: false },
+            dex,
+        );
         let stored = dmg.rolls[r];
         self.sides[foe].future_move = Some(FutureMove {
             duration: FUTURE_MOVE_DURATION,
@@ -3353,7 +3366,10 @@ impl crate::state::BattleState {
         //     same count the sim's gather produces — and draws nothing for 0/1. ---
         self.modify_damage_phase1_shuffle();
         // ONE random(16) randomizer roll for the self-hit damage.
-        let r = self.prng.random_below(16) as usize;
+        let r = self.damage_roll(
+            crate::rolls::Site { kind: crate::rolls::SiteKind::Confusion, att_side: side, tgt_side: side, tgt_slot: slot, move_id: "confusion", rolls: &dmg.rolls, via_sub: false, false_swipe: false, endure_applies: false },
+            dex,
+        );
         let realized = dmg.rolls[r];
         // FOCUS BAND: the confusion self-hit is dealt with `effectType: 'Move'` (the
         // gen4-inherited condition) — the roll draws AFTER the randomizer (probe
@@ -3664,7 +3680,10 @@ impl crate::state::BattleState {
         }
         ctx.crit = crit;
         let dmg = crate::damage::calc_damage(&ctx, dex);
-        let r = self.prng.random_below(16) as usize;
+        let r = self.damage_roll(
+            crate::rolls::Site { kind: crate::rolls::SiteKind::Crash, att_side: side, tgt_side: side, tgt_slot: slot, move_id: "crash", rolls: &dmg.rolls, via_sub: false, false_swipe: false, endure_applies: false },
+            dex,
+        );
         let rolled = dmg.rolls[r];
         // clampIntRange(damage / 2, 1, floor(target.maxhp / 2)) — integer floor, min 1,
         // ceiling = the TARGET's maxhp/2.
