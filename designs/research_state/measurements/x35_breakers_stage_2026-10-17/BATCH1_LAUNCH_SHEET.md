@@ -273,7 +273,9 @@ information, not balance (review F-RV-16); X47's primary is time-based, which is
 **GPU-h basis (MEASURED from checkpoint mtimes, the SOP's meter):**
 - **Production:** X26 250M → 280M took 22,501 s (1,333 steps/s); 270M → 280M took 7,365 s (1,358 steps/s). A 20M fork
   is therefore ≈ 4.1 h, plus ≈ 0.2 h for start and compile, ≈ **4.3 GPU-h**. A1 (+8 evaluated archive opponents) and
-  A2 (+5 sentinels) pay ≈ 2 % more at equal steps, declared and not corrected (§5.6.1): ≈ 4.4. D1's per-step cost on
+  A2 (+5 sentinels) pay ≈ 2 % more at equal steps, declared and not corrected (§5.6.1): ≈ 4.4. **That 2 % is the
+  extra EVAL games only: A1's 8 archive nodes are also 8 more LIVE training opponents, ESTIMATED at a further
+  +7.6 to +9.8 % of wall time at equal steps (≈ 4.7–4.8 GPU-h per A1 seed), UNMEASURED (F-LS-25).** D1's per-step cost on
   forum teams is not measured: ≈ 4.3, **UNVERIFIED**. **UNVERIFIED under FP32_ALT (F-LS-11):** X26's rate was measured on
   the pre-T62 fp32 τ solve; FP32_ALT is an fp32 path, so it is expected to cost the same, but nothing measured it.
 - **Toy:** X34 150M → 200M took 10,595 s (4,719 steps/s). A 70M fork is ≈ 4.1 h + 0.2 ≈ **4.3 GPU-h**. X47's ρ (its
@@ -317,6 +319,14 @@ information, not balance (review F-RV-16); X47's primary is time-based, which is
 | not in BATCH1, at the side's pin when they happen | D1 / A2 look 2 (2 × 4.3 / 2 × 4.4, on their own look-1 CONTINUE; the kit allows them, AM-9 does not schedule them), toy A1 / A2 look 2, R1 reads (≈ 0.3 GPU-h each in a window) |
 
 The old queue's "≈ 108 GPU-h ≈ 4.5 days" was look 1 only (review F-RV-13); a fully decided batch was ≈ 190.
+
+**What R1 can detect (X55, F-AS-1; the arithmetic of the registered rule, F-LS-24).** At a per-final SD of S of σ,
+R1's 97.5 % Welch interval has a half-width of 2.854 σ at look 1 (3 v 3, df 4) and 1.740 σ at look 2 (5 v 5, df 8),
+so: **R1 cannot call GAIN below Δ̂ ≈ 3.4–5.4 pp** (look 1: > 4.3 / 4.9 / 5.4 pp at σ = 0.8 / 1.0 / 1.2; look 2:
+> 3.4 / 3.7 / 4.1 pp), **and cannot call NULL at σ ≥ 1.0 pp** in practice (look 1 needs σ < 0.70 for any NULL; look 2
+needs |Δ̂| < 0.26 pp at σ = 1.0 and none at σ ≥ 1.15). An archive or PFSP effect of the measured cyclic size (≈ 3 pp)
+therefore reads UNDECIDED, never GAIN; X55's registered predictions for A1 / A2 / A3 / A6 under this power are
+[`../x55_league_headroom_2026-10-20/PREDICTIONS.md`](../x55_league_headroom_2026-10-20/PREDICTIONS.md).
 
 **The stop rule, every arm.** Each arm runs to its fixed `--steps` (P\* + 20M, T\* + 70M) and ends with the launcher's
 `Training complete`. No arm stops on a score: the length is what makes it comparable with C0 (§5.6.1; X47's PRIMARY
@@ -983,6 +993,33 @@ accepted both (`gen3_mon_tied_gain_v1`, obs 2845), and the re-encode reproduced 
 - **F-LS-23: the readers' validation ran WITHOUT a heavy slot**, as F-LS-18's did: a `mem_cap.sh` request sat about 16
   minutes FIFO-queued (both slots held, 8 waiting), was cancelled by its PID, and the four lines ran as a light job (one
   process at a time, nice 19, the 3 agent cores, 61 s, 718 MB peak).
+- **F-LS-24 (X55, 2026-10-20; F-AS-1 of `design_alphastar_league_path.md`): R1 cannot call GAIN below ≈ 3.4–5.4 pp,
+  and cannot call NULL at a seed SD σ ≥ 1.0 pp** (§1 "What R1 can detect": the half-width is 2.854 σ at look 1 and
+  1.740 σ at look 2, so NULL needs σ < 0.70 at look 1 and σ < 1.15 at look 2, where at σ = 1.0 it needs |Δ̂| < 0.26 pp).
+  X35's docs stated such a bound for X47 ("4.6 pp") but not for R1. A population lever the size of X26's measured
+  cycling (≈ 3 pp) reads UNDECIDED; an A1 / A2 report says "no effect ≥ the R1 bar detected", never "no effect".
+  Under X55's predictions an inert arm still reads NULL ≈ 26 % of the time after look 2 (σ̂ varies), so NULL is not
+  impossible, only not to be expected.
+- **F-LS-25 (X55, 2026-10-20; F-AS-3): A1's 8 extra LIVE opponents cost collection throughput; the cost is UNMEASURED
+  and was undeclared.** Every live opponent snapshot is one more per-slot forward per host step (the grouped forward,
+  X45(b), is OFF on every X35 arm: `t2_grouped_opponents` defaults off and X26 recorded it off). Two MEASURED slopes
+  bracket it: +1.20 ms of GPU wait per host step per snapshot in X26 itself (T24: 20.4 → 39.0 ms from 1 to 16–17
+  snapshots, ledger 2026-10-16) and +1.55 ms on the bench (§1.6 of `design_compute_efficiency.md`: 18.1 → 41.4 ms
+  from 5 to 20). At ≈ 516 host steps per collect and X26's 65.6 s iteration, +8 live opponents is +5.0 to +6.4 s,
+  i.e. **+7.6 to +9.8 % of wall time at equal steps** on top of the declared ≈ 2 % for the eval games (ESTIMATED:
+  linear in live slots, every archive node live at every host step, which holds while none is mastered; X55's row
+  predicts none is). R1 compares at matched STEPS, so the strength read is clean; the GPU-h of every A1 seed is
+  ≈ 4.7–4.8, not 4.4 (≈ +0.9–1.2 GPU-h over A1's 3 seeds, +1.6–2.0 over 5), and any per-GPU-hour claim for A1 (and
+  LG-2 / LG-3's cost) must read `gpu_wait_ms_per_host_step` from A1's own log against C0's. **Not measured on CPU:** a
+  CPU forward costs per ROW while the GPU path costs per CALL, so a CPU wall would not transfer. Read it on A1 s3501's
+  first 1M (as F-LS-7 does for D1 and X47). The 8 extra slots' GPU memory is also unread on the 12 GB card (the dry
+  run is CPU).
+- **F-LS-26 (X55, 2026-10-20): the toy calibration (T2) is predicted NOT to launch, and A3's ADOPT path is gated by a
+  class R1 rarely reaches.** Under X55's predictions production A1 reaches a FINAL class with P ≈ 0.16 and A2 (one
+  scheduled look) with P ≈ 0.08, so AM-3 most likely ends both calibrations NOT SHOWN. A3 / A6 reach ADOPT-CANDIDATE by
+  "R1 NULL and R2 FALLS", and R1 NULL has P ≈ 0.06 at look 1 (≈ 0.15 with look 2) at σ ≈ 1 pp: P(ADOPT) ≈ 0.07 even if
+  the exploiters work. The orchestrator may want R2 alone (with G-F as the guard) to carry A3's verdict when the A3 /
+  A6 batch is registered; this sheet changes no rule.
 - **F-LS-18: the 16-line re-validation ran WITHOUT a heavy slot.** The X14 A/B is live, both heavy slots were held (a 4 h
   job and a 30 min job) with 8 waiting (the oldest 2 h 40 min); a `mem_cap.sh` request for the validation sat 17 minutes
   without a slot, was cancelled by its PID, and the lines ran as a light job instead: one process at a time at nice 19 on the

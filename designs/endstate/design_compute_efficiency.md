@@ -764,8 +764,8 @@ lever.
   - Phase 1: three exploiters `--model P* --exploiter P* --no-self-play`, 5M steps each, the full trainee pool
     (unpinned: a main exploiter plays the whole game). `--no-self-play` is required (F16).
   - Phase 2: the 3 seed continuations carry the exploiters' finals as stable opponents.
-  - Our exploiters target a FROZEN P\*. AlphaStar's main exploiters track the moving main agent (UNVERIFIED, from
-    memory). A co-trained exploiter would need two learners on one GPU, which is not designed (F24).
+  - Our exploiters target a FROZEN P\*. AlphaStar's main exploiters track the moving main agent (VERIFIED at source,
+    F24). A co-trained exploiter would need two learners on one GPU, which is not designed (F24).
 - **A4.** The magnet starts at P\* and is refreshed to the trainee's own frozen eval weights each cycle (2M).
   - A STATIC anchor (the magnet held at P\*) is the degenerate variant. It runs only if A4 reads ADOPT-CANDIDATE, as
     the attribution follow-up.
@@ -1071,11 +1071,19 @@ Everything else here is the orchestrator's tactical call (GPU order, seeds, the 
   Batch 1 is 9 production forks + 9 toy forks + ≈ 7 exploiter and reader runs, against 318 GiB free today (X34 needs 48
   GiB). Finished arms must be thinned to their 10M nodes + final under the retention policy as they finish, or a later
   launch is refused.
-- **F23. Literature is from memory or second-hand, UNVERIFIED here:** AlphaStar's league roles (main agents, main
-  exploiters, league exploiters, PFSP; Vinyals et al. 2019), PSRO (Lanctot et al. 2017), and R-NaD / MMD (as cited in
-  `design_learner_recipe.md` §3.9).
-- **F24. Our "main exploiter" targets a FROZEN P\*.** AlphaStar's track the moving main agent (UNVERIFIED). A
-  co-trained exploiter would need two learners sharing one GPU, which is neither designed nor costed.
+- **F23. Literature was from memory or second-hand here; CHECKED AT SOURCE 2026-10-20** in
+  [`design_alphastar_league_path.md`](design_alphastar_league_path.md) §1 (two literature workers, primary sources):
+  AlphaStar's league roles, PFSP and the main agent's mix (Vinyals et al. 2019, the accepted manuscript's Methods,
+  §1.1 there), PSRO (Lanctot et al. 2017, §1.3) and R-NaD / MMD (§1.4) are VERIFIED. What stays UNVERIFIED (PFSP's
+  exponent p, the payoff estimator, the step counts garbled in the PDF) is listed in that doc's F-AS-9.
+- **F24. Our "main exploiter" targets a FROZEN P\*.** AlphaStar's track the moving main agent: **VERIFIED
+  2026-10-20** (F-AS-10 of [`design_alphastar_league_path.md`](design_alphastar_league_path.md); its §1.1 read in the
+  accepted-manuscript PDF of Vinyals et al., *Nature* 575, 2019, Methods "Populating the League": a main exploiter
+  plays the CURRENT main agents, is snapshotted at > 70 % against all three or at a timeout, and is then always RESET
+  to the supervised parameters; the timeout's exponent is garbled in the PDF, 4·10⁹ steps is secondary, from
+  TStarBot-X §4.5 and DI-engine). A co-trained exploiter would need two learners sharing one GPU, which is neither
+  designed nor costed; the time-sliced alternative (pause the main run, train reset exploiters of its newest
+  snapshot, resume) is that doc's B-ROUND (§4.4, LG-3).
 
 The T55 build (2026-10-17) adds:
 - **F25 (HAZARD, the toy side). The A-block rule is undefined for a start node at or below 150M.** There, two archive
@@ -1139,3 +1147,4 @@ The T55 build (2026-10-17) adds:
 | 2026-10-20 | **AM-8 / AM-9: the orchestrator's rulings after the GPU battery's read, BUILT before any X35 launch (launch-kit worker)** | The T62 gate is DECIDED as FP32_ALT (the fp64 τ solve doubles the production learner update, 41 → 97 s; 82–127 % per cycle vs the 3 % bar), and FP32_ALT does not exist yet. **ONE PIN PER SIDE** (`x35_pin_batch1_toy.txt`, `x35_pin_batch1_production.txt`; `pin-check` judges by side); the **TOY block runs FIRST** (T1 = toy C0 + X47 s3601–s3603, T1b on X47 look-1 CONTINUE), production P1–P4 when FP32_ALT has landed, the toy calibration T2 last and conditional (AM-3); the `--t62` token is the side's (production `FP32_ALT`, toy `NA_TOY`); `x35_required_commits_production.txt` holds a placeholder for the FP32_ALT commit and the kit refuses every production launch (`required-check`, `stage-check` PENDING) until it is filled and in the pin | one pin for all 32 forks (the toy would wait for a build it never uses); launching production under T62 (C1 (a)) at more than twice the learner-update cost; ordering by stage-check (the order is the Training session's sequence, not a gate) | `BATCH1_LAUNCH_SHEET.md` §0 AM-8, §3; `src/main/x35/batch.py`, `batch_test.py` |
 | 2026-10-20 | **X35's G-E READERS registered as kit arms (launch-staging worker)** | `ge_a1` / `ge_a2` / `ge_d1` / `ge_c0` (`src/main/x35/ge.py`): for an arm's seed-3501 final and C0's, a fork of that final trained against it ALONE (`--exploiter`, `--no-self-play`), the pinned offense 5-team archetype, +5M, the dose PINNED (`--fork-lr 5.6e-05 --fork-lr-freeze`, production's `recipe.fork`), seed 3531, at the production side's pin; `kit stage-check` allows a reader only on its arm's FINAL primary GAIN (D1: H), the shared C0 reader on any arm's; `ge r2-input` reads both through `main.best_response_gap`'s matched gate into the read's `r2` block, so a GAIN reaches ADOPT-CANDIDATE or TRADE instead of INCONCLUSIVE. Open choices C7 (a)–(f) in the sheet | readers forked from P\* (mixes the arm's distance from P\* into the gap); round 1's `--exploiter-keep-bots` 0.5; an inherited LR (the 10 % dose gate can fail between two targets' controllers); toy readers (X47 registers no G-E; AM-3 reads R1's class) | launch sheet §4.4, §5 C7, F-LS-19..22; `src/main/x35/ge_test.py` |
 | 2026-10-20 | **AM-X47b: G-C pooled over seeds, a toy truth for the toy's B2 (orchestrator; G-C pooling worker)** | Each arm final pairs with its same-seed control final; the pooled interval is a CROSSED cluster bootstrap (seed pairs × bank battles, one battle draw shared by every pair, 2,000 replicates, fixed seed), because §5.6.5 named the battle clustering but no seed pooling; `readout decide`, `decide-d1` and `x47 decide` take the `main.x35.gc` record and refuse a bare interval; the toy's B2 truth is re-branched under T\*, production's stays X26@150M | concatenating per-turn deltas clustered by (seed, battle) (F-AMX-1's sketch: it treats the same bank battle in two pairs as independent); a t interval over 3 seed means (ignores the bank's sampling, which every pair shares) | launch sheet §0 AM-X47b; `src/main/x35/gc.py`, `gc_test.py` |
+| 2026-10-20 | **F23 / F24 VERIFIED at source (X55 / LG-0 worker, F-AS-10)** | F24's AlphaStar fact (main exploiters track the moving main agent, and are reset) and F23's literature are now VERIFIED, citing `design_alphastar_league_path.md` §1; §5.6.3's A3 bullet says so. Our A3 still targets a FROZEN P\* (unchanged) | leaving them "UNVERIFIED, from memory" after the league doc read them at source | `design_alphastar_league_path.md` §1.1, §1.3, §1.4, F-AS-9 / F-AS-10 |

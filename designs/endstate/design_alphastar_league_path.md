@@ -3,7 +3,8 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** When a decision, build or read differs from
 this doc, update the doc in the same commit and say in the Decision record (§8) what changed and why.
 
-**Status (2026-10-20): DESIGN.** Nothing here is built, registered or launched. The roadmap in §6 is sequenced AFTER
+**Status (2026-10-20): DESIGN; LG-0 READ (X55, [`x55_league_headroom_2026-10-20/`](../research_state/measurements/x55_league_headroom_2026-10-20/README.md), the
+same day: §2.4).** Nothing else here is built, registered or launched. The roadmap in §6 is sequenced AFTER
 X35 batch 1 ([`design_compute_efficiency.md`](design_compute_efficiency.md) §5.6, launch sheet
 [`BATCH1_LAUNCH_SHEET.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md)), whose
 toy block is on the GPU now. Every launch needs the orchestrator's GO, and a design block is not a launch command.
@@ -43,6 +44,11 @@ three to four orders of magnitude more compute than one X26-length run here (EST
   - X35's R1 reads GAIN only above **≈ 3.4–5.4 pp** (§2.3, FINDING F-AS-1).
   - **The modal outcome of A1 and A2 is therefore UNDECIDED, not GAIN.** The roadmap is built so that an UNDECIDED
     still moves it.
+  - **LG-0 MEASURED it (§2.4):** the archive's Nash sits in C0's own recent pool (0.90 of its posterior mass), A1's
+    nodes' neighbourhoods hold 0.19, P\* scores 0.45–0.61 against every archive node it was measured on (18 cells,
+    none below 0.5 at 95 %) and 0.514 ± 0.014 against the Nash mixture, and PFSP over A1's archive is near-uniform
+    (max / min weight 1.3). The archive holds no hole for a league to repair; registered predictions:
+    [`PREDICTIONS.md`](../research_state/measurements/x55_league_headroom_2026-10-20/PREDICTIONS.md).
   - Exploitability (the best-response gap) is the meter on which population methods have MOVED in this project. The
     old lineage's exploiter loop cut the gap by −10.0 and −8.25 pp in two rounds (§2.2).
 - **The literature at small compute (§1).** Most published leagues are the price of AlphaStar's scale, and the
@@ -195,7 +201,9 @@ and the edges are the ones the pool chose.
 **Reading.** This is the spinning-top picture (Czarnecki et al. 2020, §1.3): transitive progress on the long axis,
 and at the top a cluster of about 8 strategies of nearly equal strength that beat each other by a few pp. X26's
 recent pool (14–20 snapshots covering the last ≈ 80–100M) already spans most of that cluster's STEP range. Whether it
-spans the cluster's STRATEGIES is the open question that LG-0 answers.
+spans the cluster's STRATEGIES was the open question for LG-0: §2.4 says it holds 0.90 of the archive's Nash mass, and
+that "the cluster" is wider than the support: P\* is within noise of 0.5 against 11 of the 14 nodes it was measured on
+from 130M to 270M.
 
 ### 2.2 What population levers have done here before (MEASURED, old lineage)
 
@@ -234,6 +242,28 @@ Two consequences:
 R2 (the best-response gap) is the sensitive meter for exploiter arms. Its Newcombe interval detects a fall of
 ≈ 7 pp at n ≈ 400 per cell, and round 1 read −10.0.
 
+### 2.4 The league's HEADROOM (LG-0 / X55, MEASURED 2026-10-20)
+
+The read is [`x55_league_headroom_2026-10-20/`](../research_state/measurements/x55_league_headroom_2026-10-20/README.md): part 1 on existing games (the
+ladder above and X26's in-run sentinel rows), part 2 P\*'s own row, 18 cells, 5,000 games on `main.h2h` (CPU, rule 5b;
+7 cells at 200 pairs, 11 at 100, F-X55-1 there). Its predictions for X35 were registered and pushed BEFORE any game
+(`798c4f2a`).
+- **The Nash is in C0's pool.** Posterior Nash over the archive to 268M: 0.90 of the mass on C0's 14 seeded
+  snapshots (164–268M), 0.98 at ≥ 130M; support 6 (194, 224, 244, 246, 254, 268M), posterior 7.5 [5, 10].
+- **A1's archive barely touches it:** ±5M neighbourhoods of A1's nodes (30, 60, 100, 130, 160, 190, 230, 260M) hold
+  0.19 (the early four 0.014); R's A-block's 0.21.
+- **P\*'s row is flat:** 0.61 / 0.57 / 0.56 against 30 / 60 / 100M; 0.45–0.59 against every node from 130M to 270M,
+  no cell below 0.5 at 95 % (worst 244M, 0.450 [0.384, 0.516]); against the Nash mixture (six measured support
+  snapshots, 0.74 of the mass) **0.514 ± 0.014**. **S(P\*) = 0.569 ± 0.009**, the score every X35 production arm
+  starts from. The ladder's chained spine overstates long-range gaps (0.733 predicted against 30M, 0.61 measured).
+- **PFSP has nothing to tilt:** stable PFSP over A1's nodes at the measured rates gives 0.85–1.10× uniform (max / min
+  1.3, 3.7 % of the slice moves); A2's factor over C0's pool 0.97–1.05× (1.2 %). No A1 node is near the 0.80 mastery
+  floor, so all eight stay live (and cost collection, F-AS-3).
+- **Reading.** The archive is a wide flat top that P\* already sits in; an archive or PFSP lever has no measured
+  weakness to repair, so its value, if any, is generalisation from more diverse opponents, which nothing here
+  measures. The place a population lever can still move is EXPLOITABILITY against a fresh best responder (§2.2,
+  LG-1), which this read does not bound.
+
 ---
 
 ## 3. AlphaStar's components, mapped onto what we have
@@ -260,9 +290,10 @@ R2 (the best-response gap) is the sensitive meter for exploiter arms. Its Newcom
 - **What it requires:** frozen nodes as opponents (BUILT), a choice of WHICH nodes, and for a growing archive, a way
   to add nodes during a run under a cap on live opponents.
 - **Expected value given our cycling.** It is bounded by the cyclic component the recent pool does NOT already cover.
-  A1 picks 8 nodes evenly over [0, P\* − 20M] (20, 50, …, 230M for P\* = 280M). The Nash cluster (§2.1) sits in the
-  late nodes, so most of A1's early nodes are opponents P\* already beats. That is coverage against FORGETTING (still
-  useful: the 194M-vs-200M lag flag says old holes reopen), not coverage of the CLUSTER. JUDGMENT: Δ_pop ≈ 0–2 pp.
+  A1 picks 8 nodes evenly over [0, P\* − 20M]: 30, 60, 100, 130, 160, 190, 230, 260M for P\* = 280M (the frozen R
+  file). The Nash cluster (§2.1) sits in C0's own pool, and LG-0 (§2.4) measured P\* at only 0.56–0.61 against A1's
+  early nodes and ≈ 0.49–0.53 against its late ones: coverage against FORGETTING of a flat archive, not coverage of
+  the CLUSTER. JUDGMENT: Δ_pop ≈ 0–2 pp; registered: +0.5 pp, 80 % [−1.0, +2.0] (X55 `PREDICTIONS.md` P2).
 - **Built:** A1 (flags), the pool seed's step filter (T54), the X35 kit. The cycle monitor reads the archive's matrix
   offline.
 - **Cheapest experiment:** A1 itself (batch 1, queued). Before it reads, LG-0 on CPU: which nodes carry the Nash
@@ -286,8 +317,9 @@ R2 (the best-response gap) is the sensitive meter for exploiter arms. Its Newcom
 - **What it requires:** a win rate for every candidate opponent, and a weighting. AlphaStar's f_hard concentrates
   games on the opponents the agent loses to. Its premise is a DIVERSE league.
 - **Expected value.** Over a recent, homogeneous pool it is ≈ 0 or negative (our history, F15). Over an archive it
-  concentrates the archive slice on the nodes that still beat P\*, i.e. it SELECTS the cluster automatically. That
-  answers §4.1's worry at no build. JUDGMENT: over the archive, larger than A1 alone, still ≤ the cyclic size.
+  would concentrate the archive slice on the nodes that still beat P\*, i.e. SELECT the cluster automatically, IF any
+  node beat P\*. **LG-0 (§2.4) found none:** over A1's archive f_hard's weights span only 0.85–1.10× uniform (max / min
+  1.3), so LG-2 ≈ A1 plus noise unless the archive or P\* changes. JUDGMENT: over today's archive, ≈ A1.
 - **Built:** `--stable-opponent-pfsp` (weight `1 − p`, floored at 0.05) with `win_rate_vs_ext_<label>` measured
   every cycle for every stable opponent. A1's 8 nodes are each evaluated every 2M (100 games), so the payoff row PFSP
   needs EXISTS for the archive.
@@ -352,9 +384,9 @@ backlog ids are in `../research_state/EXPERIMENT_BACKLOG.md` (new rows AS-1 to A
 
 | rank | id | step | when | GPU-h | agent-days | decision it feeds |
 |---|---|---|---|---|---|---|
-| 1 | **LG-0** (X55) | **The league HEADROOM read, on CPU.** (a) The max-entropy Nash posterior over X26's nodes from the banked ladder and the monitor rows: which nodes carry weight. (b) How much of that weight A1's 8 archive nodes and R's A-block hold. (c) P\*'s score row against the Nash-support nodes and A1's nodes, topped up to 200 pairs per node on `main.h2h` (≈ 6,400 games, ≈ 1–1.5 h of rule 5b's CPU). (d) **Registered predictions** for A1, A2 and A3 (Δ_pop and R2) written BEFORE A1's look 1 reads | NOW (no GPU; must land before A1 reads) | **0** | ≈ 0.5 | whether LG-2 should re-pick its archive from the Nash support; a prior against which batch 1 is read |
+| 1 | **LG-0** (X55) | **The league HEADROOM read, on CPU.** (a) The max-entropy Nash posterior over X26's nodes from the banked ladder and the monitor rows: which nodes carry weight. (b) How much of that weight A1's 8 archive nodes and R's A-block hold. (c) P\*'s score row against the Nash-support nodes and A1's nodes, topped up to 200 pairs per node on `main.h2h` (≈ 6,400 games, ≈ 1–1.5 h of rule 5b's CPU). (d) **Registered predictions** for A1, A2 and A3 (Δ_pop and R2) written BEFORE A1's look 1 reads | **DONE 2026-10-20** (§2.4; predictions pushed `798c4f2a` before any X35 production arm existed) | **0** | ≈ 0.5 | whether LG-2 should re-pick its archive from the Nash support; a prior against which batch 1 is read |
 | 2 | **LG-1** (X35-A3 + R0, row CE-3c) | **MAIN EXPLOITERS, folded in, with R0.** R0 = a fresh best responder of P\* (exploitability baseline, A6's trigger). A3 as registered: 3 exploiters of P\* (5M each), then 3 seed continuations with them at share 0.4 and stable PFSP. R2 is the co-primary. **Run at batch 1's production pin, so it shares C0 (saving ≈ 13 GPU-h)** | the first production arm after batch 1's P1–P4 | ≈ 3.3 + 13 + 1.4 + R0 1.1 ≈ **19** | ≈ 0.25 (R0's argv, the kit stage) | is the gap-fall of the old lineage real on X26's lineage? It gates LG-3's exploiter rounds and A6 |
-| 3 | **LG-2** (X56) | **PFSP OVER THE ARCHIVE**, AlphaStar's main-agent PFSP slice: A1's argv + `--stable-opponent-pfsp` (f_hard with p = 1 over the un-mastered archive). One lever over A1. R1 against C0, and Δ against A1 reported. If LG-0 shows A1's nodes miss the Nash support, a SECOND arm picks the archive from the support instead (the archive choice as its own lever) | after A1's final class, iff A1 ≠ LOSS | ≈ **14.4** | ≈ 0.25 (a kit arm) | does hardness-weighting over a diverse archive move what uniform sampling did not? It supersedes X35-A5 in rank (A5 needs T57 and its static Nash on a near-transitive archive degenerates, F-ED-3) |
+| 3 | **LG-2** (X56) | **PFSP OVER THE ARCHIVE**, AlphaStar's main-agent PFSP slice: A1's argv + `--stable-opponent-pfsp` (f_hard with p = 1 over the un-mastered archive). One lever over A1. R1 against C0, and Δ against A1 reported. If LG-0 shows A1's nodes miss the Nash support, a SECOND arm picks the archive from the support instead (the archive choice as its own lever). **LG-0 (§2.4): A1's nodes DO miss it (0.19 of the mass), but the support is C0's own recent pool (0.90), so a re-picked arm is C0 with a reweighted pool: the second arm is MOOT; and f_hard over A1's archive is near-uniform (max / min 1.3), so LG-2 ≈ A1 on today's archive. Its rank is the orchestrator's call (§8)** | after A1's final class, iff A1 ≠ LOSS | ≈ **14.4** | ≈ 0.25 (a kit arm) | does hardness-weighting over a diverse archive move what uniform sampling did not? It supersedes X35-A5 in rank (A5 needs T57 and its static Nash on a near-transitive archive degenerates, F-ED-3) |
 | 4 | **LG-3** (X57) | **THE LEAGUE-LITE CONTINUATION, toy first.** From T\*: a growing archive (a node every 10M, live cap K = 8 of N, PFSP-weighted, rotated per rollout; B-ARCH), PFSP over it, and every 50M a time-sliced round of 3 reset exploiters of the newest node (5M each; B-ROUND), their finals joining the archive. Run +200M against a matched plain continuation of +200M. Read: Tier 1 and the cycle monitor on both, the population score against the frozen toy R at every 50M, R2 per round. **Production repeats it only if the toy reads ADOPT-CANDIDATE, or UNDECIDED with Δ̂ > 0 and the gap falling, AND X35's transfer calibration did not read a disagreement for population levers** | gated: (LG-1 R2 falls) OR (A1 or LG-2 reads GAIN, or UNDECIDED with Δ̂ > 0) | toy ≈ 12 ON + 12 control + ≈ 3.5 exploiters + readers ≈ **30–35 (toy)**; production at +200M ≈ **105** | B-ARCH ≈ 1, B-ROUND ≈ 1.5–2, read plan ≈ 0.5: **≈ 3–4** | THE AlphaStar-style deliverable: does the composed league keep climbing where the plain continuation is flat? |
 | 5 | **LG-4** (X35-A4, row CE-3d) | **The TRAILING MAGNET** (R-NaD / MMD): β · KL(π ‖ π_mag), β 0.05, magnet refreshed every 2M. The league-free alternative: equilibrium-seeking with no extra opponents and no fan-out | in the first batch whose pin carries T56 | ≈ **15** | T56 ≈ **2** | **Moves to rank 3** if A1 reads NULL / LOSS and LG-1's gap does not fall (no population headroom, so a league has nothing to cover) |
 | 6 | **LG-5** (X58) | **THE MULTI-LINEAGE league**, CONDITIONAL. P\* trains with T\*'s archive and the closing-test seeds' finals (`rb_es_end2_s2001`…`s2008`, other lineages at HEAD's architecture) as stable opponents. Production and the toy are AlphaStar's "several main agents". R must then be re-frozen with an X-block NOT trained against. X29's basin probe (a fresh generalist against the incumbent pool) is the deeper form | after LG-3 on the toy, iff the toy league reads ADOPT-CANDIDATE or the cross-lineage cells of R stay in band while the in-lineage ones saturate | ≈ **15** (3-seed fork); X29 ≈ 30–60 | ≈ **1** (a dry-run of cross-architecture stable opponents in the TRAINER, F-AS-5; the R re-freeze) | is the plateau a property of one lineage's basin? |
@@ -400,12 +432,18 @@ UNDECIDED, the branch uses the sign of Δ̂ only to ORDER work, never to adopt (
   UNDECIDED. X35's docs state such a bound for X47 ("4.6 pp") but not for R1. Every branch in §7 treats an UNDECIDED
   as an outcome with its own action.
 - **F-AS-2. A1's evenly spaced archive tests coverage against FORGETTING, not coverage of the plateau's Nash cluster.**
-  The cluster sits in the late nodes (§2.1); A1's nodes run from 20M to 230M. The X35 doc already notes that R's
-  A-block sits next to A1's nodes (F20). LG-0 measures the overlap before A1 reads.
+  A1's nodes are 30, 60, 100, 130, 160, 190, 230, 260M (the frozen R file; "20–230M" here was the stand-in P\* = 180M
+  spacing, corrected 2026-10-20). The X35 doc already notes that R's A-block sits next to A1's nodes (F20). **LG-0
+  MEASURED the overlap (§2.4):** the Nash mass within ±5M of A1's nodes is 0.19 (early four 0.014), against 0.90 in
+  C0's own pool; and P\* measures 0.56–0.61 against A1's early nodes, so they are not "opponents P\* already beats"
+  by much either.
 - **F-AS-3. A1's extra live opponents cost collection throughput, and the cost is UNMEASURED and undeclared.**
   Collection fell from 5,453 to 3,507 env steps/s going from 5 to 20 pool snapshots. A1 adds 8 live slots, and the
   sheet declares only ≈ 2 % for the extra eval games. R1 compares at matched STEPS, so the strength read is clean.
-  Any per-GPU-hour claim, and LG-3's cost, must record `gpu_wait_ms_per_host_step`.
+  Any per-GPU-hour claim, and LG-3's cost, must record `gpu_wait_ms_per_host_step`. **ESTIMATED by LG-0 and recorded
+  in the X35 sheet as F-LS-25:** +7.6 to +9.8 % of wall time at equal steps (X26's own +1.20 ms per snapshot per host
+  step, or the bench's +1.55, × 8 live slots × ≈ 516 host steps per 65.6 s iteration), ≈ 4.7–4.8 GPU-h per A1 seed;
+  not measured on CPU (a CPU forward costs per row, the GPU per-slot path per call). A1 s3501's first 1M measures it.
 - **F-AS-4. X35 has no arm for PFSP over the ARCHIVE**, which is AlphaStar's form. A2 tests PFSP over the recent
   homogeneous pool, the form our history convicts (F15). LG-2 is that missing arm, and it needs no build.
 - **F-AS-5. Cross-architecture stable opponents in the TRAINER are UNVERIFIED.** X26 and the toy have the same
@@ -429,7 +467,8 @@ UNDECIDED, the branch uses the sign of Δ̂ only to ORDER work, never to adopt (
   pages. Nature's page and DOI were not checked against Nature itself, only through the manuscript.
 - **F-AS-10. The brief's NeuPL author list was wrong** (Piliouras and Gemp are not authors). It is corrected in §1.3.
   The AlphaStar main-exploiter fact that `design_compute_efficiency.md` F24 marks "UNVERIFIED, from memory" (they
-  track the moving main agent) is now VERIFIED (§1.1). That doc is not edited here, and its F23 / F24 can cite §1.1.
+  track the moving main agent) is now VERIFIED (§1.1). **That doc's F23 / F24 now cite §1.1 (edited by LG-0,
+  2026-10-20).**
 - **F-AS-11. X35-A3's exploiters use the f_var-free form.** AlphaStar's main exploiter switches to f_var over
   main-agent-derived players when its win rate is below 20 %. Ours trains only against the frozen P\*. At 5M steps
   from a P\* fork the exploiter starts at about 50 %, so the switch would not fire. The difference matters only for
@@ -445,3 +484,4 @@ UNDECIDED, the branch uses the sign of Δ̂ only to ORDER work, never to adopt (
 | 2026-10-20 | **This doc CREATED** (research + design worker, orchestrator brief for goal 4) | "AlphaStar-style" defined for our compute as FOUR mechanisms (archive, PFSP over it, reset exploiters folded in, the main agent's mix), each mapped onto built flags and X35's arms; the expected value bounded by the MEASURED cycling (≈ 3 pp in the last 80M, ≈ 4 pp over the archive, Nash support ≈ 8); exploitability named as the meter where population levers move | a faithful AlphaStar league (no concurrent learners; TStarBot-X's scale-down collapse); PSRO / P2SRO / XDO as the deliverable; NeuPL now | §1 (two literature workers, primary sources, 2026-10-20); §2 (`cycle_monitor_retro_2026-10-19/`, ledger L21329 / L21387 / L21391) |
 | 2026-10-20 | **The ranked roadmap after X35 batch 1** (same worker; PROPOSED, needs the orchestrator's GO per step) | LG-0 headroom read (CPU, now) → LG-1 main exploiters + R0 (X35-A3, at batch 1's pin, sharing C0) → LG-2 PFSP over the archive (A1 + `--stable-opponent-pfsp`, no build) → LG-3 the league-lite continuation on the toy first (B-ARCH + B-ROUND, ≈ 3–4 agent-days) → LG-4 the trailing magnet (A4) → LG-5 multi-lineage, conditional | A1 / A2 variants first (the cyclic size ≈ 0–3 pp sits below R1's GAIN bar, F-AS-1); A5 before LG-2 (a build, and a near-pure Nash); exploiters as teachers (the old lineage's robbery) | §6, §7; AlphaStar Fig. 3 (exploiters the largest component); population loop rounds 1–2 (gap −10.0 / −8.25 pp) |
 | 2026-10-20 | **Decision branches registered BEFORE any X35 production read** (same worker) | §7's table: what each class of G1, A1, A2, D1, X47, the transfer calibration, R0 and LG-1's R2 does to the order; an UNDECIDED orders work by the sign of Δ̂ but adopts nothing | branching on head-to-head results (one opponent, ruled out in a cyclic regime, `design_league_decisions.md` §0) | §2.3's arithmetic; X35 §5.6.4 |
+| 2026-10-20 | **LG-0 (X55) READ** (X55 worker; predictions FIRST, `798c4f2a`, then the read) | §2.4 added: the archive's Nash is in C0's recent pool (0.90), A1's nodes' neighbourhoods hold 0.19, P\*'s measured row is flat (0.45–0.61 over 18 cells, none below 0.5 at 95 %; 0.514 ± 0.014 against the Nash mixture), S(P\*) = 0.569, PFSP near-uniform over A1's archive (max / min 1.3). §0, §2.1, §4.1, §4.3, the LG-0 / LG-2 rows of §6, F-AS-2 (A1's real nodes 30–260M), F-AS-3 (estimated cost) and F-AS-10 updated. LG-2's "second arm" is MOOT (the support is C0's pool). **No rank is changed here**: whether LG-2 drops below LG-4 on this read is the orchestrator's call | leaving LG-2's premise ("PFSP selects the cluster automatically") standing after the read showed no node beats P\* | [`x55_league_headroom_2026-10-20/`](../research_state/measurements/x55_league_headroom_2026-10-20/README.md) |

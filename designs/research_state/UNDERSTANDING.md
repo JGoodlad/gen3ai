@@ -811,6 +811,17 @@ the last 80M is above 1.7 pp at one-sided 95 %), X26's window reads ≈ 3–5 pp
 (270M: 3.3 pp [1.9, 4.6]) and too wide to call at the other 9, NEVER negligible — so P\* still reads CONTINUE
 (`design_evaluation.md` §8.2 "The size bar"). [ledger 2026-10-19 · *THE CYCLE MONITOR* · *THE SIZE BAR*]
 
+**…but the ARCHIVE gives a league almost nothing to work with (2026-10-20, X55 / LG-0,
+`measurements/x55_league_headroom_2026-10-20/`):** [MEASURED · P\*'s row 18 cells / 5,000 games on `main.h2h`; the
+Nash from the in-run ladder · DESCRIPTIVE] The archive's posterior Nash sits in C0's own recent pool (0.90 of the mass
+on the 14 snapshots 164–268M); P\* scores 0.56–0.61 against X26's 30–100M nodes and 0.45–0.59 against every node from
+130M to 270M (none below 0.5 at 95 %), 0.514 ± 0.014 against the Nash mixture; PFSP's hardness weights over A1's
+archive span only 1.3× (max / min). So the flat top is WIDE (≈ 130M–270M, and the whole archive is within ≈ 11 pp), P\*
+sits inside it, and no archive node is a hole to repair. Hypothesis: archive / PFSP levers (X35 A1 / A2, LG-2) can move
+the population score only through generalisation, ≈ 0–2 pp, below R1's GAIN bar; the population lever still open is
+exploitability against a fresh best responder (LG-1). Predictions registered before any X35 read (`798c4f2a`).
+[ledger 2026-10-20 · *X55 LG-0*]
+
 **And a second anchor ABOVE us (2026-09-14, `foul_play_derisk_2026-09-14/`):** [MEASURED] Foul Play — MCTS with
 decoupled UCT over a hand-written evaluator on the Rust poke-engine, determinising the opponent's sets from Smogon
 usage — beats the same 75M policy: our win rate **0.388 [0.288, 0.497]** over 80 games, at ~1.4M visits and 2.1 s

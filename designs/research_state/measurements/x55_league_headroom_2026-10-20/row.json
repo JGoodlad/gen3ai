@@ -1,0 +1,686 @@
+[
+ {
+  "batches": 4,
+  "d": 3,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 400,
+  "games_per_s": 0.6511900498160388,
+  "l": 173,
+  "near_tie_decisions": 0,
+  "near_tie_games": 0,
+  "opponent": "rb_x26_s2601@100000037",
+  "opponent_sha256": "e1858ffe8a7d95fe053395721c8422dd56b194b1a8f9092aea17ad1961efccb2",
+  "pair_counts": [
+   28,
+   0,
+   117,
+   3,
+   52
+  ],
+  "pair_sd": 0.3120260224620173,
+  "pairs": 200,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.56375,
+  "score_ci95": [
+   0.5206136465669616,
+   0.6068863534330383
+  ],
+  "se_pp": 2.2063571638955843,
+  "w": 224,
+  "wall_s": 614.26,
+  "win_rate": 0.56
+ },
+ {
+  "batches": 2,
+  "d": 1,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 200,
+  "games_per_s": 0.6634753502320505,
+  "l": 94,
+  "near_tie_decisions": 0,
+  "near_tie_games": 0,
+  "opponent": "rb_x26_s2601@130000065",
+  "opponent_sha256": "93180dd781122f1a67f6a5c178a852ccddc0c80fc65f4f40de9a0e1412b71dec",
+  "pair_counts": [
+   17,
+   0,
+   60,
+   1,
+   22
+  ],
+  "pair_sd": 0.31361165910608735,
+  "pairs": 100,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.5275,
+  "score_ci95": [
+   0.4663402264556187,
+   0.5886597735443813
+  ],
+  "se_pp": 3.136116591060874,
+  "w": 105,
+  "wall_s": 301.443,
+  "win_rate": 0.525
+ },
+ {
+  "batches": 2,
+  "d": 0,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 200,
+  "games_per_s": 0.8707312400954321,
+  "l": 86,
+  "near_tie_decisions": 0,
+  "near_tie_games": 0,
+  "opponent": "rb_x26_s2601@140000062",
+  "opponent_sha256": "70d515b8c65c68f59d003a6c99b934d92c228bce446a7822abcde04a7bfb7709",
+  "pair_counts": [
+   15,
+   0,
+   56,
+   0,
+   29
+  ],
+  "pair_sd": 0.3258245174347937,
+  "pairs": 100,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.57,
+  "score_ci95": [
+   0.5064585048964064,
+   0.6335414951035935
+  ],
+  "se_pp": 3.2582451743479375,
+  "w": 114,
+  "wall_s": 229.692,
+  "win_rate": 0.57
+ },
+ {
+  "batches": 2,
+  "d": 0,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 200,
+  "games_per_s": 0.7758734395245448,
+  "l": 102,
+  "near_tie_decisions": 0,
+  "near_tie_games": 0,
+  "opponent": "rb_x26_s2601@160000085",
+  "opponent_sha256": "fde1749ebdaa354b96ae3d9492daef77c843855382b24c1f079650dbe145bd7d",
+  "pair_counts": [
+   22,
+   0,
+   58,
+   0,
+   20
+  ],
+  "pair_sd": 0.3255143559961618,
+  "pairs": 100,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.49,
+  "score_ci95": [
+   0.42651899181644953,
+   0.5534810081835504
+  ],
+  "se_pp": 3.255143559961618,
+  "w": 98,
+  "wall_s": 257.774,
+  "win_rate": 0.49
+ },
+ {
+  "batches": 4,
+  "d": 1,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 400,
+  "games_per_s": 0.6794528366306612,
+  "l": 196,
+  "near_tie_decisions": 0,
+  "near_tie_games": 0,
+  "opponent": "rb_x26_s2601@190000228",
+  "opponent_sha256": "03e43c7e63afd61d9df57cfa5490e36ab6c96b42081e1e98e7fad28a40c215db",
+  "pair_counts": [
+   44,
+   0,
+   108,
+   1,
+   47
+  ],
+  "pair_sd": 0.33846525841772723,
+  "pairs": 200,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.50875,
+  "score_ci95": [
+   0.46195852761987505,
+   0.5555414723801251
+  ],
+  "se_pp": 2.3933107942323213,
+  "w": 203,
+  "wall_s": 588.7090000000001,
+  "win_rate": 0.5075
+ },
+ {
+  "batches": 2,
+  "d": 1,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 200,
+  "games_per_s": 0.5934348304705048,
+  "l": 81,
+  "near_tie_decisions": 0,
+  "near_tie_games": 0,
+  "opponent": "rb_x26_s2601@194000195",
+  "opponent_sha256": "587e07fdc830cd2567e215b8560c4591189d351ac8ecc46a83459c09002d30ec",
+  "pair_counts": [
+   12,
+   0,
+   57,
+   1,
+   30
+  ],
+  "pair_sd": 0.3131281565497463,
+  "pairs": 100,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.5925,
+  "score_ci95": [
+   0.531434517933615,
+   0.6535654820663851
+  ],
+  "se_pp": 3.131281565497463,
+  "w": 118,
+  "wall_s": 337.02099999999996,
+  "win_rate": 0.59
+ },
+ {
+  "batches": 2,
+  "d": 2,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 200,
+  "games_per_s": 0.8911027842506494,
+  "l": 100,
+  "near_tie_decisions": 1,
+  "near_tie_games": 1,
+  "opponent": "rb_x26_s2601@210000149",
+  "opponent_sha256": "b379a47b3d840224c9513aa21b54ea08b409b7236eda502e68899cbe40552f07",
+  "pair_counts": [
+   24,
+   2,
+   50,
+   0,
+   24
+  ],
+  "pair_sd": 0.34992784248969805,
+  "pairs": 100,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.495,
+  "score_ci95": [
+   0.4267579337944696,
+   0.5632420662055304
+  ],
+  "se_pp": 3.49927842489698,
+  "w": 98,
+  "wall_s": 224.441,
+  "win_rate": 0.49
+ },
+ {
+  "batches": 2,
+  "d": 3,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 200,
+  "games_per_s": 0.3437654694461251,
+  "l": 98,
+  "near_tie_decisions": 0,
+  "near_tie_games": 0,
+  "opponent": "rb_x26_s2601@224000053",
+  "opponent_sha256": "e88df5dedf964cb3353463b2cba12443d65efda2738ecddf36c796318205bd1e",
+  "pair_counts": [
+   20,
+   2,
+   56,
+   1,
+   21
+  ],
+  "pair_sd": 0.3246890509363995,
+  "pairs": 100,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.5025,
+  "score_ci95": [
+   0.4391799407770333,
+   0.5658200592229665
+  ],
+  "se_pp": 3.246890509363994,
+  "w": 99,
+  "wall_s": 581.7919999999999,
+  "win_rate": 0.495
+ },
+ {
+  "batches": 4,
+  "d": 0,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 400,
+  "games_per_s": 0.5000356275384621,
+  "l": 197,
+  "near_tie_decisions": 1,
+  "near_tie_games": 1,
+  "opponent": "rb_x26_s2601@230000074",
+  "opponent_sha256": "d84714fca1d0f088c8b65ffc650ffdea1fcfcee0ade5bd99f31411221d48a40c",
+  "pair_counts": [
+   50,
+   0,
+   97,
+   0,
+   53
+  ],
+  "pair_sd": 0.35963933636534606,
+  "pairs": 200,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.5075,
+  "score_ci95": [
+   0.4577812957731197,
+   0.5572187042268802
+  ],
+  "se_pp": 2.5430341352536594,
+  "w": 203,
+  "wall_s": 799.943,
+  "win_rate": 0.5075
+ },
+ {
+  "batches": 2,
+  "d": 0,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 200,
+  "games_per_s": 0.9817589192797816,
+  "l": 110,
+  "near_tie_decisions": 1,
+  "near_tie_games": 1,
+  "opponent": "rb_x26_s2601@244000047",
+  "opponent_sha256": "5e20b0601b571f88ce236006253f3d923119b574f740f330887f753cd982ace7",
+  "pair_counts": [
+   28,
+   0,
+   54,
+   0,
+   18
+  ],
+  "pair_sd": 0.337099931231621,
+  "pairs": 100,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.45,
+  "score_ci95": [
+   0.3842596014615062,
+   0.5157403985384938
+  ],
+  "se_pp": 3.3709993123162105,
+  "w": 90,
+  "wall_s": 203.716,
+  "win_rate": 0.45
+ },
+ {
+  "batches": 2,
+  "d": 0,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 200,
+  "games_per_s": 0.45440603451213835,
+  "l": 85,
+  "near_tie_decisions": 0,
+  "near_tie_games": 0,
+  "opponent": "rb_x26_s2601@246000132",
+  "opponent_sha256": "c3d6a5a76633f9c0708e1b1cfbbb9d56b0137f903319ac141e001ffea0764c80",
+  "pair_counts": [
+   17,
+   0,
+   51,
+   0,
+   32
+  ],
+  "pair_sd": 0.3435921354681384,
+  "pairs": 100,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.575,
+  "score_ci95": [
+   0.507993507777231,
+   0.642006492222769
+  ],
+  "se_pp": 3.435921354681384,
+  "w": 115,
+  "wall_s": 440.135,
+  "win_rate": 0.575
+ },
+ {
+  "batches": 2,
+  "d": 1,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 200,
+  "games_per_s": 0.7533212048619351,
+  "l": 102,
+  "near_tie_decisions": 0,
+  "near_tie_games": 0,
+  "opponent": "rb_x26_s2601@254000018",
+  "opponent_sha256": "e3ce112d57eae2fa1c23f8e4ad33bf05962c8221d546bc7b604365241061e110",
+  "pair_counts": [
+   23,
+   1,
+   55,
+   0,
+   21
+  ],
+  "pair_sd": 0.3340428055797579,
+  "pairs": 100,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.4875,
+  "score_ci95": [
+   0.42235579457848915,
+   0.5526442054215108
+  ],
+  "se_pp": 3.340428055797579,
+  "w": 97,
+  "wall_s": 265.491,
+  "win_rate": 0.485
+ },
+ {
+  "batches": 4,
+  "d": 0,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 400,
+  "games_per_s": 0.3209703575850511,
+  "l": 196,
+  "near_tie_decisions": 2,
+  "near_tie_games": 2,
+  "opponent": "rb_x26_s2601@260000235",
+  "opponent_sha256": "c539bcefce496b8450bc6e2cfb8232c2a365c7f0aa582c3dad9d53d5a99d7687",
+  "pair_counts": [
+   37,
+   0,
+   122,
+   0,
+   41
+  ],
+  "pair_sd": 0.3128728930990681,
+  "pairs": 200,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.51,
+  "score_ci95": [
+   0.46674657007820075,
+   0.5532534299217993
+  ],
+  "se_pp": 2.212345443598048,
+  "w": 204,
+  "wall_s": 1246.221,
+  "win_rate": 0.51
+ },
+ {
+  "batches": 2,
+  "d": 1,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 200,
+  "games_per_s": 0.7830179076195471,
+  "l": 99,
+  "near_tie_decisions": 0,
+  "near_tie_games": 0,
+  "opponent": "rb_x26_s2601@268000171",
+  "opponent_sha256": "558edce3644a8a6cc5aa2f45b07df88eef8780631e0bf623c4b6e6e00c662400",
+  "pair_counts": [
+   18,
+   1,
+   62,
+   0,
+   19
+  ],
+  "pair_sd": 0.3066909575359916,
+  "pairs": 100,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.5025,
+  "score_ci95": [
+   0.4426898846347877,
+   0.5623101153652122
+  ],
+  "se_pp": 3.066909575359916,
+  "w": 100,
+  "wall_s": 255.42200000000003,
+  "win_rate": 0.5
+ },
+ {
+  "batches": 4,
+  "d": 1,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 400,
+  "games_per_s": 0.9082404657457107,
+  "l": 197,
+  "near_tie_decisions": 0,
+  "near_tie_games": 0,
+  "opponent": "rb_x26_s2601@270000128",
+  "opponent_sha256": "091979cd61bb9f26d58431d6db8a0ecc26c1c305249db8b0e95f61ebe607cb17",
+  "pair_counts": [
+   40,
+   0,
+   117,
+   1,
+   42
+  ],
+  "pair_sd": 0.3213874405366105,
+  "pairs": 200,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.50625,
+  "score_ci95": [
+   0.46181946784586075,
+   0.5506805321541393
+  ],
+  "se_pp": 2.272552385916256,
+  "w": 202,
+  "wall_s": 440.41200000000003,
+  "win_rate": 0.505
+ },
+ {
+  "batches": 4,
+  "d": 4,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 400,
+  "games_per_s": 0.7379011876519616,
+  "l": 155,
+  "near_tie_decisions": 0,
+  "near_tie_games": 0,
+  "opponent": "rb_x26_s2601@30000045",
+  "opponent_sha256": "3bd8b64bc90f39e7d164797f4ea935f7ec433df1ac4ec6aaf6468f260535bd46",
+  "pair_counts": [
+   28,
+   2,
+   97,
+   2,
+   71
+  ],
+  "pair_sd": 0.33765932401679266,
+  "pairs": 200,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.6075,
+  "score_ci95": [
+   0.560819944837222,
+   0.6541800551627781
+  ],
+  "se_pp": 2.3876119774313977,
+  "w": 241,
+  "wall_s": 542.078,
+  "win_rate": 0.6025
+ },
+ {
+  "batches": 4,
+  "d": 2,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 400,
+  "games_per_s": 0.31802569647627527,
+  "l": 170,
+  "near_tie_decisions": 0,
+  "near_tie_games": 0,
+  "opponent": "rb_x26_s2601@60000135",
+  "opponent_sha256": "413dd63fae5761125f3457e6c229a94af029f43575d0bfd4328fd9306e6f5159",
+  "pair_counts": [
+   35,
+   1,
+   99,
+   1,
+   64
+  ],
+  "pair_sd": 0.3460019316180432,
+  "pairs": 200,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.5725,
+  "score_ci95": [
+   0.5246666126016566,
+   0.6203333873983434
+  ],
+  "se_pp": 2.446603121507625,
+  "w": 228,
+  "wall_s": 1257.76,
+  "win_rate": 0.57
+ },
+ {
+  "batches": 2,
+  "d": 0,
+  "devices": [
+   "cpu/eager"
+  ],
+  "games": 200,
+  "games_per_s": 0.677433340559289,
+  "l": 75,
+  "near_tie_decisions": 0,
+  "near_tie_games": 0,
+  "opponent": "rb_x26_s2601@80000111",
+  "opponent_sha256": "52cebba08e3884fe94aa06d9b670e6ea151ab2fd1888f4b893c04668e58a96e9",
+  "pair_counts": [
+   11,
+   0,
+   53,
+   0,
+   36
+  ],
+  "pair_sd": 0.3207865963596989,
+  "pairs": 100,
+  "player": "rb_x26_s2601@280000170",
+  "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "purpose": [
+   "audit"
+  ],
+  "regime_id": "adfdbee824c9eb0a",
+  "score": 0.625,
+  "score_ci95": [
+   0.5624409878594618,
+   0.6875590121405382
+  ],
+  "se_pp": 3.207865963596989,
+  "w": 125,
+  "wall_s": 295.23199999999997,
+  "win_rate": 0.625
+ }
+]

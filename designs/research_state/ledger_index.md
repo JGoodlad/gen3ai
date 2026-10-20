@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-27,799-line file. **The ledger itself is append-only and is never edited by this**;
+27,832-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**918 headings · 863 dated · 2026-08-01 → 2026-10-20 · ledger 27,799 lines.**
+**919 headings · 864 dated · 2026-08-01 → 2026-10-20 · ledger 27,832 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -938,3 +938,4 @@ rename.
   - `L27688` · `2026-10-20` · MEASUREMENT · **L3's FAMILIARITY COUNTER-TEST (the L3 review's F2), READ under its pre-registration (`b39c9cdc`): a POOL DECOY (another training-pool team, consistent with every reveal, not a near copy of the truth) put in the truth's place beats today's honest worlds clearly (AUC 0.575 [0.517, 0.631], POOL-LIFT), and the truth beats its decoys only inconclusively (0.578 [0.489, 0.664]); the registered verdict is NOT-DETECTED on the 82 of 283 states that hold a decoy. About half of L3's separation on those states is pool-ness (share 0.52 [0.15, 0.95]). L3 stays PROVISIONAL-POOL; the off-pool bank is required**
   - `L27737` · `2026-10-20` · MEASURED · **X26 COLLAPSE BATTERY on the plateau (180M–380M): a TREADMILL, not a collapse — steady churn, a stale self-play pool, a halved step size, and starvation creeping up while entropy, coverage, rank, dormant units and the opponent model hold**
   - `L27775` · `2026-10-20` · MEASURED · **X34 TOY: SAME HALVING AND STALENESS as X26's treadmill, but the step size stopped falling 80M before T\* and the toy kept climbing for 60M of that; on both lineages the KL per update held at 0.017–0.019, so the halving is in weight space only**
+  - `L27799` · `2026-10-20` · MEASUREMENT · REGISTRATION · **X55 LG-0 — THE LEAGUE HEADROOM: the archive gives a league almost nothing to work with. X26's archive Nash sits in C0's OWN recent pool (0.90 of the posterior mass; A1's nodes' neighbourhoods 0.19); P\*'s measured row is FLAT (0.61 / 0.57 / 0.56 against 30 / 60 / 100M, 0.45–0.59 against every node 130–270M, none below 0.5 at 95 %; 0.514 ± 0.014 against the Nash mixture); S(P\*) = 0.569 ± 0.009; PFSP over A1's archive is near-uniform (max / min weight 1.3). Predictions for X35's A1 / A2 / A3 / A6 registered and pushed FIRST (`798c4f2a`): A1 +0.5 pp, modal FINAL UNDECIDED; A2 0.0; the toy calibration NOT SHOWN**

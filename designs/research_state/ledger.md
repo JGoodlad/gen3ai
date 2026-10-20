@@ -27796,3 +27796,36 @@ rule 5b; one run per lineage; no X35 run read).
 Evidence: `research_state/measurements/x35_breakers_stage_2026-10-17/batch2_lr_floor/` (`lr_pool_series.py`,
 `lr_pool_series.md`); X26's archive `~/gen3ai_archive/x26_collapse_battery_2026-10-20/tb_scalars.json.gz`; X34's
 extracted with the battery's `tb_extract.py` (not committed); design `STAGED_PLAN.md` §4.1, launch sheet §0 note TM.
+### 2026-10-20 · MEASUREMENT · REGISTRATION · **X55 LG-0 — THE LEAGUE HEADROOM: the archive gives a league almost nothing to work with. X26's archive Nash sits in C0's OWN recent pool (0.90 of the posterior mass; A1's nodes' neighbourhoods 0.19); P\*'s measured row is FLAT (0.61 / 0.57 / 0.56 against 30 / 60 / 100M, 0.45–0.59 against every node 130–270M, none below 0.5 at 95 %; 0.514 ± 0.014 against the Nash mixture); S(P\*) = 0.569 ± 0.009; PFSP over A1's archive is near-uniform (max / min weight 1.3). Predictions for X35's A1 / A2 / A3 / A6 registered and pushed FIRST (`798c4f2a`): A1 +0.5 pp, modal FINAL UNDECIDED; A2 0.0; the toy calibration NOT SHOWN**
+
+- **Why.** `endstate/design_alphastar_league_path.md` §6 LG-0: before X35's A1 reads, measure how much an
+  AlphaStar-style league (archive, PFSP) has to work with at X26's plateau, and register predictions under R1's real
+  power (F-AS-1).
+- **Order.** `PREDICTIONS.md` committed and pushed alone at 08:20 PDT (`798c4f2a`), before any X35 production arm
+  existed and before any game of the row (first game 10:21).
+- **Part 1, existing games** (in-run ladder, 66 nodes ≤ 268M, 65,250 pairs; in-run sentinel rows): posterior Nash
+  support 7.5 [5, 10], point 6 (194, 224, 244, 246, 254, 268M); mass 0.90 on C0's 14 seeded snapshots, 0.98 at
+  ≥ 130M; within ±5M of A1's nodes (30, 60, 100, 130, 160, 190, 230, 260M) 0.19 (early four 0.014). A2's tilt at the
+  sentinel rates: 0.97–1.05× (1.2 % of the pool's games).
+- **Part 2, P\*'s row** (`main.h2h`, greedy, mirrored, regime `adfdbee824c9eb0a`, CPU rule 5b, five heavy-slot
+  chunks): 18 cells, 5,000 games (7 at 200 pairs, 11 at 100 — fewer than the 7,200 registered, F-X55-1). S(P\*)
+  0.569 (predicted 0.567). No A1 node near the 0.80 mastery floor. P1 (the row's own prediction) FAILED its pass mark,
+  14 / 18 inside ± 2 SE (bar 15): the old nodes are closer than the ladder's chained spine says (30M: 0.733 vs 0.608
+  measured) and single snapshot edges deviate ± 10 pp from their neighbours (the per-edge cyclic component).
+- **Registered predictions** (`predictions_sim.py`, cross-checked against `decide_r1`): G1 P(PASS) ≈ 0.74; A1 Δ_pop
+  +0.5 pp [80 %: −1.0, +2.0], look 1 CONTINUE 0.60, final UNDECIDED 0.84 (Δ̂ > 0 0.48); A2 0.0 [−0.8, +0.8]; A3 R0
+  gap(P\*) +14 pp, R2 −6 pp, P(ADOPT) ≈ 0.07; A6 conditional; T2 NOT SHOWN (≈ 0.85 / 0.92).
+- **Docs.** X35 sheet: §1 "What R1 can detect" (GAIN needs ≈ 3.4–5.4 pp; NULL needs σ < 0.70 at look 1, < 1.15 at
+  look 2), F-LS-24 (that bound), F-LS-25 (A1's 8 live opponents: ESTIMATED +7.6–9.8 % wall, ≈ 4.7–4.8 GPU-h per seed,
+  from X26's +1.20 and the bench's +1.55 ms per snapshot per host step; not measured on CPU), F-LS-26 (T2 and A3's
+  ADOPT path). `design_compute_efficiency.md` F23 / F24 VERIFIED at source (F-AS-10). The league doc's §2.4 (new),
+  §0, §4.1, §4.3, §6, F-AS-2 / 3 / 10; LG-2's "second arm" is MOOT (the support is C0's pool); no rank changed.
+- **Findings.** F-X55-1 (smaller row), F-X55-2 (P1 failed; single-edge points over-confident), F-X55-3 (the spine is
+  steep at long range, so spine-filled Nash under-weights old nodes), F-X55-4 (A3's ADOPT path, T2), F-X55-5 (max-ent
+  Nash not solved on 66 nodes), F-X55-6 (a 100-game PFSP rate is mostly noise here), F-X55-7 (process: a ≈ 2 h slot
+  queue; the driver was edited while running and reverted at once), F-X55-8 (not done: registered monitor rows,
+  the 290–380M S pre-read, any GPU read of F-AS-3).
+
+Evidence: `research_state/measurements/x55_league_headroom_2026-10-20/` (PREDICTIONS, README, `headroom_existing.*`,
+`play_pstar_row.sh`, `row.json`, `read_row.py`, `row_read.json`, `predictions_sim.*`, `chunks.log`);
+`endstate/design_alphastar_league_path.md` §2.4; X35 `BATCH1_LAUNCH_SHEET.md` §1, F-LS-24–26.
