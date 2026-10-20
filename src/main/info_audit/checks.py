@@ -70,7 +70,11 @@ def oracle_identity(root: "W.Root", worlds: "W.Worlds") -> dict:
 def regate(root: "W.Root", worlds: "W.Worlds", label: str = "regate") -> dict:
     from agents.battle.core_replay import run_core
 
-    out = run_core([root.rec(t, f"{label}#{j}", W.render(root.tmpl, t)) for j, t in enumerate(worlds.teams)],
+    # a world built with ``dice="rolls"`` (F1 tier A) is replayed on the damage rolls it took (``Worlds.rolls``)
+    def rolls_of(j: int) -> Optional[dict]:
+        return {"viewer": root.viewer, "mode": "force", "force": worlds.rolls[j]} if worlds.rolls else None
+
+    out = run_core([root.rec(t, f"{label}#{j}", W.render(root.tmpl, t), rolls_of(j)) for j, t in enumerate(worlds.teams)],
                    trackers=True, obs=True)
     bad = []
     hp = [0, 0]                      # (seen mons whose EXACT HP at the root equals the truth's, seen mons) — descriptive

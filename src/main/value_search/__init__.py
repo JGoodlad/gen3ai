@@ -12,7 +12,9 @@
 Modules: ``rules`` (Gumbel's prior-aware selection, sequential halving, the completed-Q policy target;
 pure numpy), ``worlds`` (the world sampler: HONEST by default — every hidden fact drawn from the Smogon prior and
 gated on the searched side's byte-equal protocol and rows — with the extra information an INFORMATION-LEVER spec
-grants, ``WorldSampler(reveal=...)``; `designs/endstate/design_information_levers.md` §7), ``world_draws`` (each
+grants, ``WorldSampler(reveal=...)``; `designs/endstate/design_information_levers.md` §7; ``dice="rolls"`` lets each
+damage roll be any roll that prints what the searched side saw and weights the worlds, F1 tier A of
+`designs/endstate/design_world_sampler.md` §3.3.1), ``world_draws`` (each
 fact's draw under the spec), ``world_screen`` (the seen mons' item / ability / spread posterior draws: prior
 rejection, then an observation-guided Metropolis-Hastings chain), ``playout`` (the lockstep leaf engine: greedy
 playouts, optionally truncated and scored by the critic), ``search`` (``search_decision``). Design, measurements and

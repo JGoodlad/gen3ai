@@ -18,6 +18,16 @@ facts; an event coupling two is caught by the joint gate). A seen mon's unreveal
 drawn directly (they never acted). The value-discrimination pilot's builder (v1 / v2: a seen mon's item, ability and
 spread kept TRUE) is the ``pilot`` preset.
 
+THE DICE (F1 of ``design_world_sampler.md``, tier A BUILT 2026-10-19, default OFF): with ``dice="seed"`` (the default) a
+world must reproduce every printed damage number with the TRUTH's own damage roll. ``dice="rolls"`` arms the Rust core's
+damage-roll control (``pokesim::rolls``): the truth's replay records what the searched side saw at every damage roll,
+and a world's replay may take, at each roll, ANY of the 16 rolls that prints the same thing (our mon's exact HP, the
+opponent's percent, a Substitute held / broke), the dice stream kept aligned. Each returned world carries its
+likelihood weight ``Worlds.log_w`` (Σ log k / 16 over the rolls, k the consistent rolls; a search normalises over its J
+worlds) and the rolls it took (``Worlds.rolls``, also its log's ``"rolls"``, which the playout tool replays). THE
+TRUTH-PASSES GUARD: the true team's own match replay must pass the gate on the truth's own rolls, or the build RAISES
+(``RollMatchError``: a defect, never an exclusion).
+
 THE RESIDUAL (named, reported in ``Worlds.leak["residual"]``): the world replays the prefix on the TRUE battle seed, so
 a hidden duration rolled before the root (sleep, confusion, Encore, a lock) is the truth's in every world (``counters``).
 The PARTIAL leaks (``Worlds.leak["partial"]``, design §7.5, measured): for the same reason a hidden fact that spends a
@@ -66,6 +76,14 @@ from main.value_search import world_legality as WL
 from main.value_search import world_screen as WS
 
 MAX_TRIES = 30
+#: how a world's prefix replay spends the dice (module docstring, THE DICE): the truth's seed and rolls, or the truth's
+#: seed with each damage roll's VALUE any roll consistent with what the searched side saw (F1 tier A)
+DICE = ("seed", "rolls")
+
+
+class RollMatchError(RuntimeError):
+    """The TRUE team fails its own damage-roll match (``dice="rolls"``): the control would remove the truth from the
+    support, a DEFECT that raises, never an exclusion."""
 #: move draws per seen mon before a world's try fails on a set the format bans or the validator rejects
 MOVE_REDRAWS = 25
 
@@ -328,6 +346,12 @@ class Worlds:
     screens: int = 0                                       # screening replays run
     #: per seen-mon sampler: its slot, species, draws needed / made, chain steps, failure, proposal honesty
     samplers: List[dict] = field(default_factory=list)
+    #: ``dice="rolls"`` (F1 tier A): per world, its damage-roll LIKELIHOOD log Σ log(k / 16) (a search normalises the
+    #: weights over its worlds) and the rolls it took where they differ from the stream's (``[[site, roll], …]``, also
+    #: its log's ``"rolls"``); empty under ``dice="seed"``
+    dice: str = "seed"
+    log_w: List[float] = field(default_factory=list)
+    rolls: List[List[List[int]]] = field(default_factory=list)
 
 
 def key_rng(key: str, j: int, attempt: int = 0):
@@ -360,7 +384,9 @@ class Root:
     tmpl: List[list]
     leak: dict
 
-    def rec(self, team_opp: Optional[str], label: str, commands):
+    def rec(self, team_opp: Optional[str], label: str, commands, rolls: Optional[dict] = None):
+        """The battle with the opponent's team ``team_opp`` (None: the truth's); ``rolls``: the damage-roll control
+        (``RecordedBattle.rolls``)."""
         from agents.battle.core_replay import RecordedBattle
 
         teams = list(self.log["teams"])
@@ -368,7 +394,7 @@ class Root:
             teams[self.oi] = team_opp
         return RecordedBattle(label=label, format_id=self.log["format_id"], seed=self.log["seed"],
                               p1={"name": self.log["names"][0], "team": teams[0]},
-                              p2={"name": self.log["names"][1], "team": teams[1]}, commands=commands)
+                              p2={"name": self.log["names"][1], "team": teams[1]}, commands=commands, rolls=rolls)
 
 
 def render(tmpl: List[list], team_w: str) -> List[list]:
@@ -465,7 +491,12 @@ class WorldSampler:
     validated against the SEARCH consumer); ``off`` is honest. ``key`` seeds every draw (deterministic)."""
 
     def __init__(self, prior: Optional[Prior] = None, max_tries: int = MAX_TRIES, reveal="off",
-                 playout_check: bool = True, playout_lib=None, legality: Optional[WL.Legality] = None):
+                 playout_check: bool = True, playout_lib=None, legality: Optional[WL.Legality] = None,
+                 dice: str = "seed"):
+        if dice not in DICE:
+            raise ValueError(f"dice={dice!r}: one of {DICE}")
+        #: F1 tier A (module docstring, THE DICE): ``seed`` (today, the default) or ``rolls``
+        self.dice = dice
         self.P = prior or Prior()
         self.max_tries = max_tries
         self.spec: InfoReveal = SEARCH.validate(reveal)
@@ -512,6 +543,27 @@ class WorldSampler:
             self._spreads[sid] = WS.SpreadPrior(self.P.spreads(sid))
         return self._spreads[sid]
 
+    def _roll_match(self, root: Root, key: str, world_cmds, gate) -> dict:
+        """F1 tier A: the damage-roll MATCH control of this decision — the truth's replay RECORDS what the searched side
+        saw at every damage roll (``pokesim::rolls``) — after THE TRUTH-PASSES GUARD: the true team, matched against
+        those targets through the world gate's own replay, passes the gate on exactly its own rolls with a finite
+        weight, else :class:`RollMatchError`."""
+        from agents.battle.core_replay import run_core
+
+        rec_ = run_core([root.rec(None, f"{key}#rolls_truth", root.cmds, {"viewer": root.viewer, "mode": "record"})],
+                        trackers=True, obs=True)[0]
+        if not rec_["ok"]:
+            raise RollMatchError(f"{key}: the truth's roll record does not replay: {rec_.get('error')}")
+        match = {"viewer": root.viewer, "mode": "match", "targets": rec_["rolls"]["targets"]}
+        chk = run_core([root.rec(root.team, f"{key}#rolls_guard", world_cmds(root.team), match)],
+                       trackers=True, obs=True)[0]
+        rr = chk.get("rolls") or {}
+        if not (chk["ok"] and gate(chk, set())[0] and rr.get("feasible") and rr.get("force") == []):
+            raise RollMatchError(f"{key}: THE TRUTH-PASSES GUARD failed: the true team's match replay "
+                                 f"(ok {chk['ok']}, feasible {rr.get('feasible')}, force {rr.get('force')}, "
+                                 f"counts {rr.get('counts')}) {chk.get('error') or ''}")
+        return match
+
     def sample(self, log: dict, at: int, side: str, J: int, key: str,
                root_choice_in_log: bool = False, screen_cache: Optional[dict] = None) -> Worlds:
         """J worlds of the decision ``side`` takes at command ``at`` of ``log``. ``screen_cache``: a dict the caller
@@ -539,8 +591,11 @@ class WorldSampler:
         draw_slots = gender_draw_slots(team) & set(never)
         true_problems = team_problems(team)
         fails: Dict[str, int] = {}
+        dk = () if self.dice == "seed" else (self.dice,)   # the dice mode keys every shared cache: verdicts differ
         verdict: Dict[str, tuple] = (screen_cache if screen_cache is not None else {}).setdefault(
-            ("verdict", key), {})                     # screening-team text → (passed, score), cached
+            ("verdict", key) + dk, {})                # screening-team text → (passed, score), cached
+        roll_rep: Dict[str, dict] = (screen_cache if screen_cache is not None else {}).setdefault(
+            ("rolls", key) + dk, {})                  # ``dice="rolls"``: a gate replay's damage-roll report, by job
         screens = [0]
 
         opp_tag = f"p{oi + 1}"
@@ -567,6 +622,12 @@ class WorldSampler:
                     return False, ln, None
             return True, ln, None
 
+        # F1 tier A: the TRUTH's replay records what the searched side saw at every damage roll; every gate replay
+        # then MATCHES against it (module docstring, THE DICE)
+        roll_match: Optional[dict] = None
+        if self.dice == "rolls":
+            roll_match = self._roll_match(root, key, world_cmds, gate)
+
         def run_gate(jobs: List[Tuple[str, FrozenSet[str]]], lenient: bool = False
                      ) -> List[Tuple[bool, float, Optional[Tuple[str, int]]]]:
             """Gate verdicts for (opponent team text, species whose exact HP must equal the truth's), cached.
@@ -583,11 +644,13 @@ class WorldSampler:
                 def cmds_of(t: str) -> List[list]:
                     cs = world_cmds(t)
                     return [c + ["if_open"] if lenient and c[0] != "forcelose" else c for c in cs]
-                out = run_core([rec(t, f"{key}#s{screens[0] + i}", cmds_of(t)) for i, (t, _) in enumerate(todo.values())],
-                               trackers=True, obs=True)
+                out = run_core([rec(t, f"{key}#s{screens[0] + i}", cmds_of(t), roll_match)
+                                for i, (t, _) in enumerate(todo.values())], trackers=True, obs=True)
                 screens[0] += len(todo)
                 for (kk, (_, c)), r in zip(todo.items(), out):
                     verdict[kk] = gate(r, set(c))
+                    if roll_match is not None and r.get("ok"):
+                        roll_rep[kk] = r["rolls"]
             return [verdict[t + "#" + ",".join(sorted(c)) + tag] for t, c in jobs]
 
         def screen_gate(jobs: List[Tuple[str, int, bool]]) -> List[Tuple[bool, float, Optional[Tuple[str, int]]]]:
@@ -597,7 +660,7 @@ class WorldSampler:
         # ``screen_cache``, by every other spec built at it: arms that differ only in other levers take the same
         # seen-mon draws (common random numbers for their paired contrasts) and pay the screen once
         cache = screen_cache if screen_cache is not None else {}
-        samplers: Dict[WS.ScreenKey, WS.MonSampler] = cache.setdefault(("samplers", key), {})
+        samplers: Dict[WS.ScreenKey, WS.MonSampler] = cache.setdefault(("samplers", key) + dk, {})
 
         def sampler_for(k: WS.ScreenKey, i: int, rng) -> WS.MonSampler:
             if k not in samplers:
@@ -725,6 +788,7 @@ class WorldSampler:
             return (rng, placed, facts, keys, need_hp, pinned), None
 
         rev_hp: Dict[int, Optional[int]] = {}
+        w_rolls: List[Optional[dict]] = [None] * J        # ``dice="rolls"``: each returned world's roll report
         refusals: List[str] = []
         used: Dict[WS.ScreenKey, int] = {}
         teams: List[Optional[str]] = [None] * J
@@ -805,11 +869,17 @@ class WorldSampler:
                     continue
                 final[j] = (tw, [facts[i] for i in range(len(entries))], need_hp)
             oks = run_gate([(t, frozenset(c)) for t, _, c in final.values()])
-            for (j, (tw, fl, _)), (ok, _ln, _h) in zip(final.items(), oks):
+            for (j, (tw, fl, c_need)), (ok, _ln, _h) in zip(final.items(), oks):
                 if ok:
                     lw = dict(log, teams=[tw if s_ == oi else t_ for s_, t_ in enumerate(log["teams"])],
                               cmds=[f"FORCELOSE {tok}" if c0 == "forcelose" else f"CHOOSE {c0} {tok}"
                                     for c0, tok in world_cmds(tw)] + list(log["cmds"][at:]))
+                    rr = roll_rep.get(tw + "#" + ",".join(sorted(c_need)) + "#strict") if roll_match else None
+                    if roll_match is not None:
+                        if rr is None or not rr["feasible"]:
+                            raise RollMatchError(f"{key}: world {j} passed the gate without a feasible roll report")
+                        if rr["force"]:
+                            lw["rolls"] = rr["force"]
                     why = self.playout_refusal(lw, at, side)
                     if why is not None:
                         fails["playout_refused"] = fails.get("playout_refused", 0) + 1
@@ -818,6 +888,9 @@ class WorldSampler:
                     teams[j] = tw
                     wfacts[j] = fl
                     stats[j] = {"attempt": attempt}
+                    if rr is not None:
+                        w_rolls[j] = rr
+                        stats[j]["rolls_widened"] = len(rr["force"])
                 else:
                     fails["joint"] = fails.get("joint", 0) + 1
                     if self.debug is not None and len(self.debug) < 20:
@@ -839,12 +912,22 @@ class WorldSampler:
         # THE THROWING GUARD: slot <-> species <-> facts <-> the engine's view of every returned world
         WG.check_worlds(root, [str(t) for t in teams], wfacts, key, legality=legal)
         logs = []
-        for t in teams:
+        for j, t in enumerate(teams):
             tw = list(log["teams"])
             tw[oi] = t
             pre = [f"FORCELOSE {tok}" if s_ == "forcelose" else f"CHOOSE {s_} {tok}" for s_, tok in world_cmds(t)]
-            logs.append(dict(log, teams=tw, cmds=pre + list(log["cmds"][at:])))
-        return Worlds(logs=logs, teams=[str(t) for t in teams], tries=tries, leak=leak,
+            lg = dict(log, teams=tw, cmds=pre + list(log["cmds"][at:]))
+            rr = w_rolls[j]
+            if rr is not None and rr["force"]:
+                lg["rolls"] = [list(x) for x in rr["force"]]      # the playout tool replays the rolls this world took
+            logs.append(lg)
+        rolls_kw: dict = {}
+        if roll_match is not None:
+            rolls_kw = {"dice": self.dice, "log_w": [float(r["log_w"]) for r in w_rolls if r is not None],
+                        "rolls": [[list(x) for x in r["force"]] for r in w_rolls if r is not None]}
+            if len(rolls_kw["log_w"]) != J:
+                raise RollMatchError(f"{key}: {len(rolls_kw['log_w'])} roll reports for {J} worlds")
+        return Worlds(**rolls_kw, logs=logs, teams=[str(t) for t in teams], tries=tries, leak=leak,
                       revealed={k: sorted(v) for k, v in kept.items()}, stats=stats, fails=fails, facts=wfacts,
                       spec=spec.record(), screens=screens[0],
                       samplers=[{"slot": k.slot, "species": m.sid, "needed": m.needed, "samples": len(m.samples),

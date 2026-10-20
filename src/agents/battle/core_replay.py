@@ -31,11 +31,17 @@ class RecordedBattle:
     quick_claw: bool = False
     #: sha256 of the per-side chunks as RECORDED (``None`` for a corpus with no live capture).
     chunks_sha: Optional[str] = None
+    #: START's opt-in DAMAGE-ROLL CONTROL (``pokesim::rolls``, F1 tier A of the world sampler):
+    #: ``{"viewer": 0|1, "mode": "record"|"match"|"force", ...}``; the result then carries ``"rolls"``.
+    #: ``None`` (the default) sends no key, and not one byte of the replay changes.
+    rolls: Optional[dict] = None
 
     def script(self) -> List[str]:
         start = {"label": self.label, "formatid": self.format_id, "seed": self.seed,
                  "p1": self.p1, "p2": self.p2, "init_seed": self.init_seed,
                  "quick_claw": self.quick_claw}
+        if self.rolls is not None:
+            start["rolls"] = self.rolls
         out = ["START " + json.dumps(start)]
         for cmd in self.commands:
             side, choice = cmd[0], cmd[1]
