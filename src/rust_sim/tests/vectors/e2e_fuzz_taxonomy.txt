@@ -7,4 +7,4 @@
 # ── ranked ABILITY gaps (battles blocked) ──
 # ── ranked ITEM gaps (battles blocked) ──
 # ── ENGINE divergence cause among MODELED-mechanics battles (the gate) ──
-ENGINE_GAP	none	(bit-for-bit; the prior weather residual-vs-faint gap is FIXED — see CLAUDE.md "## E2E capstone")
+ENGINE_GAP	none	(bit-for-bit; the prior weather residual-vs-faint gap is FIXED — see designs/rust_sim/e2e_capstone.md)

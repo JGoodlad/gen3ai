@@ -5246,6 +5246,14 @@
    "contention": 1.45,
    "detail": ""
   },
+  "src/rust_sim/e2e_fuzz_golden_test.py::test_a_full_regeneration_equals_the_golden_and_the_taxonomy_byte_for_byte": {
+   "status": "pass",
+   "commit": "cf7781f11ad7dae5f745b2e9a16018aab638ca18",
+   "at": "2026-10-20T14:58:54Z",
+   "duration_s": 500.88,
+   "contention": 1.73,
+   "detail": ""
+  },
   "src/utils/bridge/node_reject_bound_integration_test.py::test_refusals_reset_across_committed_decisions": {
    "status": "pass",
    "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",

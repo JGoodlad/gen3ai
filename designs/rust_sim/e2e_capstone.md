@@ -11,10 +11,11 @@ invariant, the coverage floors and the run command.
 
 ---
 
-- **The generator** `harness/gen_e2e_fuzz.js` GLOBS `data/teams/*.txt` (the sample/ + others/
-  pools) — 813 files as of 2026-09-07, 770 when the committed golden was generated — imports each
-  with the real `Teams.import`, **validates it under gen3ou** (skips rejects/import-fails: 762
-  valid today, 719 then), and packs it (the EXACT bytes `team::unpack` ingests). From a
+- **The generator** `harness/gen_e2e_fuzz.js` reads the PINNED team list `tests/vectors/e2e_fuzz_teams.sha256`
+  (722 valid teams of `data/teams/`, sample/ + others/, one `<sha256>  <path>` per file; a missing, changed or
+  no-longer-valid team THROWS) — the glob (`loadTeams()`, 813 files today, 762 valid) is the A/B fuzzers' pool and
+  grows with the data, so the golden does not use it — imports each
+  with the real `Teams.import`, **validates it under gen3ou**, and packs it (the EXACT bytes `team::unpack` ingests). From a
   fixed **`MASTER_SEED`** it pairs distinct teams + a battle seed, and at EACH decision reads the sim
   request and picks a RANDOM legal choice from a SEPARATE seeded **choice-RNG** (mulberry32, recorded
   via `MASTER_SEED` so a failing battle re-runs deterministically) — RESTRICTED to mechanics the port
@@ -332,7 +333,8 @@ capstone drives BOTH engines over **REAL Showdown-export teams** for **complete 
 game-end**, asserting per-decision state + status + boosts + confusion + running PRNG seed + winner
 **bit-for-bit**. It is the union of every prior rung exercised on production data.
 
-- **The generator** `harness/gen_e2e_fuzz.js` globs `data/teams/*.txt`, validates each under gen3ou,
+- **The generator** `harness/gen_e2e_fuzz.js` loads the pinned team list (`tests/vectors/e2e_fuzz_teams.sha256`),
+  validates each under gen3ou,
   and from a fixed `MASTER_SEED` pairs distinct teams + a battle seed, picking a random legal choice
   per decision from a SEPARATE seeded choice-RNG — **restricted to the modeled allow/blocklist**
   (`isModeledMove` + `MODELED_ABILITIES` + `MODELED_ITEMS`). The battle FORMAT is `gen3customgame`
@@ -340,8 +342,15 @@ game-end**, asserting per-decision state + status + boosts + confusion + running
 - **The gate** `tests/e2e_fuzz_test.rs::e2e_fuzz_golden_matches_showdown` seeds a `BattleState` ONCE
   at the sim's pre-first-decision PRNG state and replays the recorded choices WITHOUT re-seeding.
   🚨 **The invariant is STRICT `filtered_diverged == 0` over EVERY battle — there is no escape
-  hatch.** The committed golden is **220 battles / 11825 decisions / 0 diverged**, byte-reproducible
-  at the committed knobs (MASTER_SEED 0x1234abcd, FILTERED_TARGET 220).
+  hatch.** The committed golden is **220 battles / 11972 decisions / 0 diverged**, byte-reproducible
+  at the committed knobs (MASTER_SEED 0x1234abcd, FILTERED_TARGET 220) from the pinned team list
+  (`src/rust_sim/e2e_fuzz_golden_test.py`: the pin matches the files, a 15-battle prefix is byte-equal in the `sim`
+  tier, a full regeneration of the golden AND the taxonomy is byte-equal in the `slow` tier). RE-RECORDED 2026-10-20: the
+  generator's modeled-move universe had grown since the 2026-07-16 recording (Trick, partial trap, Torment, Eruption, the
+  confusion family, ...), so three pairings the old predicate dropped (inferred: the regeneration drops 3 `forced-unmodeled-move` battles, the 2026-07 recording dropped more) are now accepted — at
+  positions e2e_16, e2e_51 and e2e_133 — and the last three old battles fall off the end of the 220; the other
+  217 are the old battles unchanged (first 15 byte-equal), the 4-field INIT shape is kept (`opts.legacyInit`), and the
+  Rust gate replays the re-recorded file 220/220, 0 diverged.
 - 🚨 **The per-decision assertion tallies are CLEAN-ONLY** — the loop breaks at the first divergence,
   so post-desync rows are never counted. A tally is not a coverage claim.
 - 🚨 **Coverage is GATED, not reported.** The golden carries per-decision feature columns and the test
@@ -354,11 +363,11 @@ game-end**, asserting per-decision state + status + boosts + confusion + running
   divergence cause, and it is **MOVE-LEVEL-BLIND** (it only ever picks damaging-or-switch choices).
   It does NOT gate `cargo test`: it is the measured remaining-work map, nothing more.
 - **Run it:** `node src/rust_sim/harness/gen_e2e_fuzz.js` (env knobs `E2E_FILTERED_TARGET` [default
-  **220**, the committed golden's size — 🚨 but a plain regen does NOT reproduce it today: the
-  golden predates the pool's growth (722 → 762 teams), so its team draw no longer matches; a regen
-  is a NEW golden to be reviewed, not a check (found 2026-09-25)],
-  `E2E_UNFILTERED`, `E2E_MAX_TRIES`, `E2E_MASTER_SEED`) regenerates both vectors; then `cargo test`
-  re-pins the Rust against them. The ignored helpers `e2e_diag` (categorize divergences
+  **220**, the committed golden's size], `E2E_UNFILTERED`, `E2E_MAX_TRIES`, `E2E_MASTER_SEED`; `E2E_OUT_DIR` writes
+  elsewhere, `E2E_TEAMS_DIR` re-points the team tree) regenerates both vectors from the pinned team list and
+  reproduces the committed ones byte for byte; then `cargo test`
+  re-pins the Rust against them. A DELIBERATE re-record (a widened modeled universe, a re-pinned team list:
+  `gen_e2e_fuzz.js --repin-teams`) is a NEW golden to review against the Rust gate, with its provenance written here. The ignored helpers `e2e_diag` (categorize divergences
   SEED/STATE/FIRSTMOVER) + `e2e_trace_one` (per-decision HP/seed trace, `E2E_TRACE`/`E2E_LO`/
   `E2E_HI`) are the triage tools used to build the allow/blocklist and localize an engine bug.
 

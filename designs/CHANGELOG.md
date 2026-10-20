@@ -15209,3 +15209,13 @@ Pins: `present::live_reader_reading_tests` (six tests over `tests/vectors/live_r
   an inherited 18.0 is FATAL_CONFIG), `canary_shift_max_gate_test.py` (the resolver, the model helpers, the ceiling's value).
 - **Docs.** `TRAINING_RUN_SOP.md` section 3 rule 5, `designs/training/compile_flags.md`, `ARCHITECTURE.md`, `flag_census.md`,
   `src/agents/training/CLAUDE.md`, `TASK_BACKLOG.md` (OPS-8 done), `TECH_DEBT_BACKLOG.md` (Next 10 row closed).
+
+## 2026-10-20 — the e2e fuzz golden is REPRODUCIBLE: a pinned team list, RE-RECORDED once (no model / config / obs / training change; a Rust-core test fixture)
+
+- `harness/gen_e2e_fuzz.js` drew its pairs from a glob of `data/teams/` (770 -> 813 files, 722 -> 762 valid teams) and its modeled-move
+  universe had grown, so a regeneration no longer reproduced `tests/vectors/e2e_fuzz_golden.txt` (and wrote a 5th INIT field the
+  Rust test refuses). Now: the pinned list `tests/vectors/e2e_fuzz_teams.sha256` (722 teams, sha256 each, THROWS on drift;
+  `--repin-teams` re-derives it), the golden's 4-field INIT kept (`opts.legacyInit`), `E2E_OUT_DIR` / `E2E_TEAMS_DIR` knobs.
+- The golden is RE-RECORDED (3 battles inserted at e2e_16 / e2e_51 / e2e_133, the last three dropped; 11972 decisions; the Rust gate
+  220/220, 0 diverged) and the taxonomy's one doc-pointer line repointed. `src/rust_sim/e2e_fuzz_golden_test.py` holds the pin, a
+  15-battle prefix (`sim`) and the full byte comparison (`slow`).

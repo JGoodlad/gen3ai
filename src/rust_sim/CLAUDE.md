@@ -105,8 +105,10 @@ The gate ladder (PRNG → dex → team → stats → state → turn → E2E caps
 `e2e_capstone.md`. The four A/B fuzzers, their team modes and blind spots: `fuzzers.md`; closed
 findings: `ab_fuzzer_findings.md`.
 
-- 🚨 **The E2E capstone is STRICT: `filtered_diverged == 0`, no escape hatch.** A regen of
-  `gen_e2e_fuzz.js` is a NEW golden to review, not a check.
+- 🚨 **The E2E capstone is STRICT: `filtered_diverged == 0`, no escape hatch.** The golden regenerates
+  byte for byte from its PINNED team list (`tests/vectors/e2e_fuzz_teams.sha256`; `src/rust_sim/e2e_fuzz_golden_test.py`
+  fails on drift). A widened modeled universe or a re-pinned list is a deliberate RE-RECORD: review it against the Rust
+  gate and write the provenance in `e2e_capstone.md`.
 - 🚨 **Every edge case or engine bug a fuzz surfaces becomes a NAMED deterministic pin** in
   `tests/regression_test.rs` (or a `# regression:` golden scenario), and the pin is real only once
   you have reverted the fix and watched it fail. Assert the sim's observable (the line, the seed), not

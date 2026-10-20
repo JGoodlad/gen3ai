@@ -905,7 +905,7 @@ src/rust_sim/
                           #   disable at priority 7 BEFORE it: identical draws) + Seismic Toss executes under taunt +
                           #   the taunt residual -end precedes a slower foe's brn -damage (order 10/subOrder 15 proof)
     probe_taunt_disable_regression_rng.js # captures the GROUND-TRUTH seeds/state for the TD1-TD4 taunt/disable pins
-    gen_e2e_fuzz.js       # THE CAPSTONE — loads the REAL teams (data/teams/*.txt), pairs + seeds them
+    gen_e2e_fuzz.js       # THE CAPSTONE — loads the PINNED real teams (tests/vectors/e2e_fuzz_teams.sha256), pairs + seeds them
                           #   from a fixed MASTER_SEED, drives the sim full battles with RANDOM legal
                           #   modeled choices -> e2e_fuzz_golden.txt (the bit-for-bit gate) +
                           #   e2e_fuzz_taxonomy.txt (the ranked ability/item coverage-gap list)

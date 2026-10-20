@@ -5,7 +5,7 @@
 // the constructed-scenario goldens (gen_fullbattle_golden.js / gen_secondary_
 // golden.js — hand-picked mons + scripted choices), THIS harness:
 //
-//   * loads the 770 REAL Showdown-export teams under data/teams/ (sample/ + others/),
+//   * loads the 722 pinned REAL Showdown-export teams of data/teams/ (sample/ + others/; TEAMS_MANIFEST),
 //     imports each with the real `Teams.import`, validates it under gen3ou, and packs
 //     it (the EXACT bytes the Rust `team::unpack` ingests);
 //   * pairs distinct teams + a battle seed from a MASTER-seeded RNG;
@@ -62,10 +62,19 @@ const { BattleStream, getPlayerStreams } = require(path.join(PS, 'dist/sim/battl
 const { Teams, Dex, TeamValidator } = require(path.join(PS, 'dist/sim'));
 
 const ROOT = path.resolve(__dirname, '../../..');
-const TEAMS_DIR = path.join(ROOT, 'data/teams');
+// E2E_TEAMS_DIR / E2E_OUT_DIR re-point the team tree / the output dir (the reproduction test writes to a scratch dir
+// and compares to the committed files; `--repin-teams` against an old tree re-derives the manifest).
+const TEAMS_DIR = process.env.E2E_TEAMS_DIR || path.join(ROOT, 'data/teams');
 const RUST_MOVES = path.join(ROOT, 'data/pokemon/gen3_moves.json');
-const OUT_GOLDEN = path.resolve(__dirname, '../tests/vectors/e2e_fuzz_golden.txt');
-const OUT_TAXONOMY = path.resolve(__dirname, '../tests/vectors/e2e_fuzz_taxonomy.txt');
+const VECTORS_DIR = path.resolve(__dirname, '../tests/vectors');
+const OUT_DIR = process.env.E2E_OUT_DIR || VECTORS_DIR;
+const OUT_GOLDEN = path.join(OUT_DIR, 'e2e_fuzz_golden.txt');
+const OUT_TAXONOMY = path.join(OUT_DIR, 'e2e_fuzz_taxonomy.txt');
+// THE PINNED TEAM LIST of the committed golden: `<sha256>  <path relative to data/teams>` per VALID team, sorted. The
+// golden's pairing indexes into the sorted valid-team list, so a team added to (or removed from) data/teams/ shifts
+// every pair after it: the glob in `loadTeams()` is what the A/B fuzzers want (a new battle every run), the golden
+// generator wants THIS list. A listed file that is missing, changed, or no longer valid THROWS (never a silent skip).
+const TEAMS_MANIFEST = path.join(VECTORS_DIR, 'e2e_fuzz_teams.sha256');
 
 const FORMAT = 'gen3customgame'; // run format: arbitrary real teams, gen-3 mechanics
 const VALIDATE_FORMAT = 'gen3ou'; // validate real teams as gen3ou (skip rejects)
@@ -75,7 +84,8 @@ const dex3 = Dex.forFormat(FORMAT);
 // Tunables (env-overridable; defaults sized for a green gate + a real taxonomy).
 // FILTERED_TARGET defaults to 220 — the size of the COMMITTED golden — so a plain
 // `node gen_e2e_fuzz.js` regeneration reproduces `e2e_fuzz_golden.txt` byte-for-byte
-// (the deterministic MASTER_SEED pairing makes battle e2e_N the N-th accepted battle).
+// (the deterministic MASTER_SEED pairing makes battle e2e_N the N-th accepted battle) FROM THE PINNED TEAM LIST
+// (TEAMS_MANIFEST; `src/rust_sim/e2e_fuzz_golden_test.py` holds the byte comparison).
 const MASTER_SEED = Number(process.env.E2E_MASTER_SEED || 0x1234abcd) >>> 0;
 const FILTERED_TARGET = Number(process.env.E2E_FILTERED_TARGET || 220);
 const UNFILTERED_TARGET = Number(process.env.E2E_UNFILTERED || 300);
@@ -1286,7 +1296,7 @@ function teamFilterClean(packed) {
 
 // ── Team loading ─────────────────────────────────────────────────────────────
 // Load every .txt, import → validate (gen3ou) → pack. Skip rejects / import fails.
-function loadTeams() {
+function walkTeamFiles() {
   const files = [];
   const walk = (dir) => {
     for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -1297,26 +1307,72 @@ function loadTeams() {
   };
   walk(TEAMS_DIR);
   files.sort(); // deterministic order
+  return files;
+}
 
+// import → validate (gen3ou) → pack one team file; null for a reject / an import fail.
+function packTeamFile(f, validator) {
+  try {
+    const text = fs.readFileSync(f, 'utf8');
+    const team = Teams.import(text);
+    if (!team || team.length === 0) return null;
+    const errs = validator.validateTeam(team);
+    if (errs && errs.length) return null;
+    const packed = Teams.pack(team);
+    // Round-trip sanity: the packed string must re-unpack to the same species set.
+    const re = Teams.unpack(packed);
+    if (!re || re.length !== team.length) return null;
+    return packed;
+  } catch (e) { return null; }
+}
+
+// EVERY valid team under data/teams/ (the A/B fuzzers' pool: it grows with the data, by design).
+function loadTeams() {
+  const files = walkTeamFiles();
   const validator = new TeamValidator(VALIDATE_FORMAT);
   const teams = [];
   let skipped = 0;
   for (const f of files) {
-    let packed;
-    try {
-      const text = fs.readFileSync(f, 'utf8');
-      const team = Teams.import(text);
-      if (!team || team.length === 0) { skipped++; continue; }
-      const errs = validator.validateTeam(team);
-      if (errs && errs.length) { skipped++; continue; }
-      packed = Teams.pack(team);
-      // Round-trip sanity: the packed string must re-unpack to the same species set.
-      const re = Teams.unpack(packed);
-      if (!re || re.length !== team.length) { skipped++; continue; }
-    } catch (e) { skipped++; continue; }
+    const packed = packTeamFile(f, validator);
+    if (packed === null) { skipped++; continue; }
     teams.push({ file: path.relative(ROOT, f), packed });
   }
   return { teams, skipped, total: files.length };
+}
+
+const sha256File = (f) => require('crypto').createHash('sha256').update(fs.readFileSync(f)).digest('hex');
+
+// The golden generator's pool: exactly the teams TEAMS_MANIFEST names, in its order, each verified by sha256.
+function loadPinnedTeams() {
+  const lines = fs.readFileSync(TEAMS_MANIFEST, 'utf8').split('\n').filter((l) => l && !l.startsWith('#'));
+  const validator = new TeamValidator(VALIDATE_FORMAT);
+  const teams = [];
+  for (const l of lines) {
+    const [sha, rel] = l.split(/\s+/);
+    const f = path.join(TEAMS_DIR, rel);
+    if (!fs.existsSync(f)) throw new Error(`pinned team ${rel} is missing from ${TEAMS_DIR} (manifest ${TEAMS_MANIFEST})`);
+    const got = sha256File(f);
+    if (got !== sha) throw new Error(`pinned team ${rel} changed: sha256 ${got} != manifest ${sha}`);
+    const packed = packTeamFile(f, validator);
+    if (packed === null) throw new Error(`pinned team ${rel} no longer imports / validates under ${VALIDATE_FORMAT}`);
+    teams.push({ file: path.relative(ROOT, f), packed });
+  }
+  return { teams, skipped: 0, total: lines.length };
+}
+
+// `--repin-teams`: rewrite TEAMS_MANIFEST from the teams that are valid NOW. This CHANGES the golden's pairing: only
+// run it to re-record the golden on purpose (and say why in the commit / the CHANGELOG).
+function repinTeams() {
+  const validator = new TeamValidator(VALIDATE_FORMAT);
+  const out = ['# e2e_fuzz_teams.sha256 — the pinned team list of e2e_fuzz_golden.txt (see gen_e2e_fuzz.js TEAMS_MANIFEST).',
+    '# <sha256 of the .txt>  <path relative to data/teams/>, one per VALID team, sorted.'];
+  let n = 0;
+  for (const f of walkTeamFiles()) {
+    if (packTeamFile(f, validator) === null) continue;
+    out.push(`${sha256File(f)}  ${path.relative(TEAMS_DIR, f)}`); n++;
+  }
+  fs.writeFileSync(TEAMS_MANIFEST, out.join('\n') + '\n');
+  console.error(`pinned ${n} teams -> ${TEAMS_MANIFEST}`);
 }
 
 // ── The battle driver ─────────────────────────────────────────────────────────
@@ -1754,7 +1810,9 @@ function emitBattle(lines, id, p1Packed, p2Packed, rec, opts = {}) {
   // The 5th field is the turn-0 `quickClawRoll` (`gen3_turn0_quick_claw_capture_v1`). It is
   // APPENDED, and `ab_replay` treats it as OPTIONAL (absent → false), so every previously
   // saved repro dir and every committed golden stays replayable byte-for-byte.
-  lines.push(['INIT', id, rec.initSeed, rec.chooseSeed, rec.quickClawRoll ? 1 : 0].join('\t'));
+  // `opts.legacyInit` (the committed e2e golden, recorded before the field existed, and `tests/e2e_fuzz_test.rs`, which
+  // asserts 4 INIT fields) omits it.
+  lines.push(['INIT', id, rec.initSeed, rec.chooseSeed, ...(opts.legacyInit ? [] : [rec.quickClawRoll ? 1 : 0])].join('\t'));
   rec.decisions.forEach((d, di) => {
     const sp = (s) => [s.species, s.hp, s.maxhp, s.fainted ? 1 : 0, s.status,
       s.boosts[0], s.boosts[1], s.boosts[2], s.boosts[3], s.boosts[4], s.confusion, s.left].join('\t');
@@ -1804,7 +1862,8 @@ function classifyTeamsGaps(p1Packed, p2Packed) {
 
 async function main() {
   const t0 = Date.now();
-  const { teams, skipped, total } = loadTeams();
+  if (process.argv.includes('--repin-teams')) { repinTeams(); process.exit(0); }
+  const { teams, skipped, total } = loadPinnedTeams();
   console.error(`teams: loaded ${teams.length} / ${total} (.txt), skipped ${skipped} (import/validate)`);
   if (teams.length < 8) { console.error('too few valid teams loaded'); process.exit(1); }
 
@@ -1827,7 +1886,7 @@ async function main() {
   goldenLines.push(`# MASTER_SEED ${MASTER_SEED}  filter-clean-teams ${cleanIdx.length}/${teams.length}`);
   goldenLines.push('# SCEN <id>');
   goldenLines.push('# TEAM <id> <p1|p2> <packed>');
-  goldenLines.push('# INIT <id> <initSeed m,n,o,p> <chooseSeed> <turn0QuickClawRoll:0|1>');
+  goldenLines.push('# INIT <id> <initSeed m,n,o,p> <chooseSeed>');
   goldenLines.push('# DEC  <id> <di> <move|switch> <fP1> <fP2> <cP1> <cP2> <seedAfter> \\');
   goldenLines.push('#       p1(species hp max fnt status atk def spa spd spe conf left) p2(...) first_mover \\');
   goldenLines.push('#       p1Spikes p2Spikes fixedMove batch5Move batch6Move');
@@ -1871,7 +1930,7 @@ async function main() {
       continue;
     }
     const id = `e2e_${filteredKept}`;
-    emitBattle(goldenLines, id, teams[ia].packed, teams[ib].packed, rec);
+    emitBattle(goldenLines, id, teams[ia].packed, teams[ib].packed, rec, { legacyInit: true });
     filteredKept++;
     decRows += rec.decisions.length;
     const wt = winTok(rec);
@@ -1898,7 +1957,7 @@ async function main() {
   console.error(`FILTERED gate: kept ${filteredKept} battles (${decRows} decisions, ${winRows} wins, ${tieRows} ties, ${switchRows} forced-switch, ${doubleRows} double, ${statusMoveDecs} STATUS-MOVE decisions, ${setupMoveDecs} SETUP-MOVE decisions, ${recoveryMoveDecs} RECOVERY-MOVE decisions, ${protectMoveDecs} PROTECT-MOVE decisions, ${phazeMoveDecs} PHAZE-MOVE decisions, ${leechMoveDecs} LEECH-MOVE decisions, ${substituteMoveDecs} SUBSTITUTE-MOVE decisions, ${restrictionMoveDecs} TAUNT/DISABLE-MOVE decisions, ${explosionMoveDecs} EXPLOSION-MOVE decisions, ${fixedMoveDecs} FIXED-DAMAGE-MOVE decisions, ${batch5MoveDecs} BATCH5-MOVE decisions, ${batch6MoveDecs} BATCH6-MOVE decisions), dropped ${filteredDropped} -> ${OUT_GOLDEN}`);
   console.error('  drop reasons: ' + [...dropReasons.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}=${v}`).join(' '));
 
-  if (filteredKept < 50) { console.error('FILTERED GATE: too few kept battles; loosen target or check the filter.'); process.exit(1); }
+  if (filteredKept < Math.min(50, FILTERED_TARGET)) { console.error('FILTERED GATE: too few kept battles; loosen target or check the filter.'); process.exit(1); }
 
   // ===========================================================================
   // (2) THE HONEST TAXONOMY — unfiltered sweep: pair ANY teams, run damaging-or-
@@ -1983,7 +2042,7 @@ async function main() {
 module.exports = {
   runBattle, emitBattle, winTok, encodeChoice,
   isModeledMove, isHiddenPower,
-  abilityAllowed, itemAllowed, teamFilterClean, loadTeams, classifyTeamsGaps,
+  abilityAllowed, itemAllowed, teamFilterClean, loadTeams, loadPinnedTeams, classifyTeamsGaps,
   MODELED_ABILITIES, NOOP_ABILITIES, REJECT_ABILITIES, REJECT_SPECIES, REJECT_MOVES, MODELED_ITEMS,
   MODELED_STATUS_MOVES, MODELED_SETUP_MOVES, MODELED_RECOVERY_MOVES,
   MODELED_PROTECT_MOVES, MODELED_HAZARD_MOVES, MODELED_PHAZE_MOVES,
