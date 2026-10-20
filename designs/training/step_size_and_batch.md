@@ -51,8 +51,8 @@ upstream** (one step per minibatch).
   hold that contract itself rather than trust its caller. The trailing SHORT GROUP (fewer than K full
   micro-batches) is unaffected and exact.
 - **A SUBSET-normalised aux / belief term is a mean of per-micro means inside a group**. See
-  "Subset-normalised terms under accumulation" below (F-LG-12 part 1: the inventory is done, the measurement is
-  pending).
+  "Subset-normalised terms under accumulation" below (F-LG-12 part 1: measured, immaterial at the live
+  shape).
 - **KL early-stop** (`target_kl`, `None` by default so this path is dormant) discards the partial
   group (`zero_grad`, no step) on a trip — a true `(batch_size·K)` batch checks KL over the whole
   effective batch and would discard it as one unit.
@@ -80,7 +80,7 @@ unaccumulated reference's own short last minibatch is built with the refusal byp
 `test_a_short_micro_batch_is_refused_before_any_forward` (the refusal: typed, `FATAL_CONFIG`, no
 parameter or optimizer state moved) and default-is-1 + source-marker guards.
 
-### Subset-normalised terms under accumulation (F-LG-12 — inventory done, measurement PENDING)
+### Subset-normalised terms under accumulation (F-LG-12 part 1 — measured 2026-10-20: IMMATERIAL at the live shape, closed)
 
 Every term in region R1 (`instrumented_ppo/micro_step.py`) is a mean over its micro-batch, and the step averages
 the group's micro-batch losses (`loss / accum`, the trailing group rescaled). A term whose mean runs over ALL the
@@ -113,12 +113,35 @@ own optimizer). **The toy** (`rb_toy_ent_s4002*`, X34 / X35's toy arms) turns ev
 off. Its only subset-normalised term is the win-prob critic, whose `win_mask` covers every row of a complete-game
 buffer.
 
-**Measurement: PENDING.** `../research_state/measurements/aux_norm_2026-10-19/measure.py` builds the per-term
-(numerator, count) split from real Rust-collector rows and simulates the live shape (2048 × K 32 over 98,304 rows)
-against the golden's (16 × 3). Its CPU run is queued for a heavy slot (rule 5b). A dry run on the golden's 64 rows,
-at a 256-row micro-batch, showed |bias| ≤ 5e-4 per term. At 2048-row micro-batches the per-micro counts are in
-the thousands, so the bias is expected to be smaller still. **UNVERIFIED** until the run lands. **The exact fix
-is costed and NOT built**:
+**Measurement (2026-10-20, `../research_state/measurements/aux_norm_2026-10-19/`: `measure.py`, `run.log`,
+`simulate.json`, README).** One real Rust-collector rollout at the production surface (8,192 rows, a FRESH seeded
+network against a random opponent), cut into 512 atoms of 16 rows; the REAL R1 split every term into its numerator
+and count (the split reproduces R1's loss on every atom, max relative error 0); 4,000 accumulation groups per
+shape compared the per-micro mean of means (today) with the whole-update mean. At the live shape (micro 2048,
+K 32, 98,304 rows):
+
+| term | labelled / row | CV of the per-micro count | measured bias (mean of means vs whole-update mean) |
+|---|---|---|---|
+| critic win-prob BCE | 1.000 | 0 | 0 |
+| hypothesis set BCE (presence · BeliefHead) | 0.284 | 0.034 | -4.7e-06 · -3.5e-07 |
+| hypothesis moves BCE | 0.294 | 0.051 | -1.8e-06 |
+| move_belief | 5.648 | 0.003 | +4.7e-06 |
+| move_latent (cosine) | 5.354 | 0.005 | +7.2e-06 |
+| spread | 5.354 | 0.005 | +2.1e-06 |
+| nature CE · EV | 5.354 | 0.005 | +2.1e-06 · +3.4e-06 |
+| hp_type | 2.019 | 0.011 | -5.8e-06 |
+| item | 5.354 | 0.005 | +2.5e-06 |
+| opp_intent | 0.718 | 0.014 | +3.7e-06 |
+
+Largest |bias| 7.2e-06, largest group-to-group sd 1.2e-04 (the set terms), no empty micro-batch. The shift of a
+term's effective coefficient is about 1e-5, two orders under the 1e-3 materiality bar; the per-row weight
+dispersion is at most 5 %. At the K9(a) golden's 16-row micro-batches the same method reads |bias| up to 2.3e-02
+and 2 % empty micros (the mean of means matters only at that scale), and the `--debug` smoke (micro 256, K 9)
+reads |bias| <= 5.3e-05. **Decision: F-LG-12 part 1 is closed; the exact fix is NOT built.** Caveats: a fresh
+network against a random opponent, not a trained self-play agent (a trained agent's longer games label more rows,
+which only lowers the dispersion); the move-latent VICReg floor is a batch statistic and is not measured; the
+atoms are resampled with replacement from one seeded rollout. Re-open if the micro-batch falls toward the golden's
+scale or a new subset-normalised term lands. The costed fix, were it ever needed:
 
 - (a) For the obs-determined counts (spread, nature / EV, hp-type, item, the move-latent cosine and the critic),
   compute each accumulation group's count on the host from the buffer's label columns and the permutation. Pass
@@ -129,9 +152,6 @@ is costed and NOT built**:
 - (b) For the model-dependent counts (the hypothesis seats, the intent candidates, the set's candidate rows), an
   exact group count needs a no-grad forward pre-pass per group, about +25–35 % learner time. A lagged count is
   approximate.
-
-Neither is worth building unless the measurement finds a term at the live shape whose effective-coefficient
-shift is material.
 
 ### Gradient noise scale (`train/noise_scale`) — "is the batch big enough?"
 

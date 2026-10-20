@@ -656,8 +656,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             # micro-batch is full (`check_full_micro_batches` above, gen3_learner_full_micro_v1), so the
             # group is micro_in_group equal-size micro-batches (instrumented_ppo_test
             # .test_grad_accum_matches_full_batch). A SUBSET-normalised aux / belief term is still a mean
-            # of per-micro means inside a group (F-LG-12; designs/training/step_size_and_batch.md
-            # "Subset-normalised terms under accumulation").
+            # of per-micro means inside a group (F-LG-12; measured immaterial at the live shape, |bias| <= 1e-5:
+            # designs/training/step_size_and_batch.md "Subset-normalised terms under accumulation").
             if micro_in_group > 0:
                 if micro_in_group < accum:
                     _rescale = accum / micro_in_group

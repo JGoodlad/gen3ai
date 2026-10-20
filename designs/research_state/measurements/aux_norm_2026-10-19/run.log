@@ -1,0 +1,70 @@
+[mem_cap] cap 16.00 GB (swap 0) · unit gen3ai-capped-python3-2120195.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+wrote /tmp/aux_norm_2026-10-19/pool.npz: 256 x 32 rows
+[mem_cap] done: gen3ai-capped-python3-2120195.scope exit 0 · peak 0.89 GB of cap 16.00 GB (6%) · not OOM-killed
+[heavy_slots] took heavy slot 1 of 2 after waiting 2691.6 s (a training run is live (rb_x35t_c0_s3601): rule 5b)
+[mem_cap] cap 16.00 GB (swap 0) · unit gen3ai-capped-python3-2833858.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+R1 metric keys: ['approx_kl/', 'aux/opp_intent/label_bot_frac', 'aux/opp_intent/other_label_rate', 'aux/opp_intent/other_label_rate_bot', 'aux/opp_intent/other_label_rate_exploiter', 'aux/opp_intent/other_label_rate_pool', 'aux/opp_intent/other_label_rate_stable', 'aux/opp_intent/other_move_label_rate', 'aux/opp_intent/other_move_label_rate_bot', 'aux/opp_intent/other_move_label_rate_exploiter', 'aux/opp_intent/other_move_label_rate_pool', 'aux/opp_intent/other_move_label_rate_stable', 'aux/opp_intent/other_species_label_rate', 'aux/opp_intent/other_species_label_rate_bot', 'aux/opp_intent/other_species_label_rate_exploiter', 'aux/opp_intent/other_species_label_rate_pool', 'aux/opp_intent/other_species_label_rate_stable', 'belief/hptype_acc', 'belief/hptype_loss', 'belief/hptype_mask_rate', 'belief/hptype_n_slots', 'belief/item_acc', 'belief/item_loss', 'belief/item_mask_rate', 'belief/item_n_slots', 'belief/move_bce', 'belief/move_loss', 'belief/move_precision', 'belief/move_recall', 'belief/move_revealed_slots', 'belief/move_unrevealed_slots', 'belief/movelatent_cosine', 'belief/movelatent_loss', 'belief/movelatent_slots', 'belief/movelatent_std', 'belief/natureev_ev_mae', 'belief/natureev_loss', 'belief/natureev_mask_rate', 'belief/natureev_n_slots', 'belief/natureev_nature_acc', 'belief/natureev_nature_ce', 'belief/set_aux_loss', 'belief/set_beliefhead_set_bce', 'belief/set_hyp_moves_bce', 'belief/set_hyp_moves_supervised', 'belief/set_hyp_recall', 'belief/set_other_share', 'belief/set_presence_bce', 'belief/set_presence_label_mismatch', 'belief/spread_largest_bias', 'belief/spread_loss', 'belief/spread_mae', 'belief/spread_mask_rate', 'belief/spread_n_slots', 'clip_fractions/', 'entropy_losses/', 'pg_losses/', 'value_losses/', 'win_prob/acc', 'win_prob/acc_contested', 'win_prob/brier', 'win_prob/brier_contested', 'win_prob/brier_material', 'win_prob/contested_frac', 'win_prob/contested_label_mean', 'win_prob/coverage', 'win_prob/label_mean', 'win_prob/loss', 'win_prob/pred_mean', 'win_prob/skill_vs_material']
+R1 terms: ['entropy', 'hp_type', 'item_belief', 'move_belief', 'move_latent', 'nature_ev', 'opp_intent', 'policy', 'species_belief', 'spread_belief', 'win_prob']
+atom 0
+atom 64
+atom 128
+atom 192
+atom 256
+atom 320
+atom 384
+atom 448
+wrote /tmp/aux_norm_2026-10-19/atoms.npz: 512 atoms x 12 terms; split self-check max rel err 0.00e+00
+[mem_cap] done: gen3ai-capped-python3-2833858.scope exit 0 · peak 1.00 GB of cap 16.00 GB (6%) · not OOM-killed
+[heavy_slots] released heavy slot 1 after 168 s
+atoms rc=0
+
+[heavy_slots] took heavy slot 1 of 2 after waiting 8254.0 s (a training run is live (rb_x35t_c0_s3601): rule 5b)
+[mem_cap] cap 8.00 GB (swap 0) · unit gen3ai-capped-python3-3058134.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+
+== production / X26 / X35 / toy (2048 x 32, 98,304 rows)  groups/epoch [32, 16]
+term                  lab/row   CV n_m   empty       bias        sd
+ev                      5.354   0.0048   0.000  +3.39e-06  6.64e-06
+hp_type                 2.019   0.0105   0.000  -5.80e-06  2.68e-05
+item                    5.354   0.0048   0.000  +2.52e-06  2.59e-05
+move_belief             5.648   0.0029   0.000  +4.72e-06  3.11e-06
+move_latent_cos         5.354   0.0048   0.000  +7.22e-06  9.28e-06
+nature_ce               5.354   0.0048   0.000  +2.13e-06  1.14e-05
+opp_intent              0.718   0.0142   0.000  +3.69e-06  2.02e-05
+set_beliefhead_bce      0.284   0.0342   0.000  -3.53e-07  1.09e-04
+set_hyp_moves_bce       0.294   0.0507   0.000  -1.82e-06  7.20e-06
+set_presence_bce        0.284   0.0343   0.000  -4.71e-06  1.20e-04
+spread                  5.354   0.0048   0.000  +2.12e-06  7.45e-06
+win_prob                1.000   0.0000   0.000  +0.00e+00  0.00e+00
+
+== K9(a) learner golden (16 x 3, 64 rows)  groups/epoch [3, 1]
+term                  lab/row   CV n_m   empty       bias        sd
+ev                      5.354   0.0417   0.000  +1.71e-04  1.52e-03
+hp_type                 2.019   0.0883   0.000  -2.62e-04  5.42e-03
+item                    5.354   0.0413   0.000  +1.90e-04  5.25e-03
+move_belief             5.648   0.0243   0.000  +2.01e-04  6.43e-04
+move_latent_cos         5.354   0.0410   0.000  +3.28e-04  2.00e-03
+nature_ce               5.354   0.0413   0.000  +7.56e-05  2.50e-03
+opp_intent              0.718   0.1242   0.000  +3.54e-04  3.96e-03
+set_beliefhead_bce      0.284   0.3005   0.005  -5.79e-03  4.68e-02
+set_hyp_moves_bce       0.294   0.4570   0.023  -2.28e-02  8.76e-02
+set_presence_bce        0.284   0.3069   0.003  -4.66e-03  4.38e-02
+spread                  5.354   0.0409   0.000  +1.39e-04  1.64e-03
+win_prob                1.000   0.0000   0.000  +0.00e+00  0.00e+00
+
+== --debug smoke (2304-row update, 1 group of micro 256 x K 9)  groups/epoch [9]
+term                  lab/row   CV n_m   empty       bias        sd
+ev                      5.354   0.0129   0.000  +2.44e-05  8.15e-05
+hp_type                 2.019   0.0281   0.000  -4.21e-05  3.15e-04
+item                    5.354   0.0129   0.000  +1.93e-05  3.02e-04
+move_belief             5.648   0.0077   0.000  +3.59e-05  3.69e-05
+move_latent_cos         5.354   0.0129   0.000  +5.34e-05  1.12e-04
+nature_ce               5.354   0.0129   0.000  +1.56e-05  1.35e-04
+opp_intent              0.718   0.0382   0.000  +3.47e-05  2.40e-04
+set_beliefhead_bce      0.284   0.0924   0.000  -2.42e-05  1.35e-03
+set_hyp_moves_bce       0.294   0.1366   0.000  -1.54e-05  8.85e-05
+set_presence_bce        0.284   0.0918   0.000  -1.05e-05  1.48e-03
+spread                  5.354   0.0131   0.000  +1.33e-05  9.12e-05
+win_prob                1.000   0.0000   0.000  +0.00e+00  0.00e+00
+[mem_cap] done: gen3ai-capped-python3-3058134.scope exit 0 · peak 0.03 GB of cap 8.00 GB (0%) · not OOM-killed
+[heavy_slots] released heavy slot 1 after 7 s
+simulate rc=0
