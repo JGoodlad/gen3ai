@@ -55,7 +55,7 @@ place the peak of a well-behaved job can be read; an OOM-killed scope stays load
 
 HEAVY-JOB SLOTS (2026-10-19, ``utils.heavy_slots``): while a training run is live (or with ``--slot``)
 the job first takes one of the box's 2 heavy slots — rule 5b's "<= 2 heavy jobs" — waiting with a
-visible line (``--no-wait`` refuses at once, exit 87). A job the orchestrator marks BLOCKING
+visible line, FIFO (the oldest waiter gets the next free slot; ``--no-wait`` refuses at once, exit 87). A job the orchestrator marks BLOCKING
 (``$GEN3AI_BLOCKING=<reason>`` or ``--blocking <reason>``) bypasses them; a job inside a holder (the
 routine gate holds one) takes none. ``--status`` lists holders, the queue and the bypassers.
 

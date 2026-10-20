@@ -514,7 +514,7 @@ hourly LLM check caught them. Three layers now stand, cheapest first:
 1. **Prevention — the self-match hook** (`~/.claude/hooks/self_match_guard.py`, user-level
    PreToolUse on Bash): refuses `pgrep -f` / `pgrep --full` with an unbracketed pattern, any
    `pkill -f`, and an unbracketed `ps … | grep` inside a `while`/`until`. Allowed: `while kill -0
-   <pid>`, `[x]`-bracketed patterns. Escape hatch: a `# self-match-ok` comment saying why. The GPU
+   <pid>`, `[x]`-bracketed patterns. Escape hatch: a `# self-match-ok` comment saying why. Since 2026-10-20 it also refuses any SIGNAL SENT TO PIDs FOUND BY A NAME MATCH (`pkill`, `killall`, `kill $(pgrep …)`, `pgrep … | xargs kill`, a captured PID list killed later; `pgrep -P <pid>`, explicit PIDs and `kill -- -<pgid>` stay allowed; tests: `~/.claude/hooks/self_match_guard_test.py`). The GPU
    half of the class is fixed in code: every lock taker goes through `utils.gpu_lock` /
    `scripts/ops/gpu_lock.sh`, which is re-entrant for children and raises `GpuLockSelfDeadlock`
    on an ancestor holder. The MEMORY half (2026-09-30: three global OOM kills of a 74-82 GB python3,

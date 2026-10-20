@@ -42,7 +42,7 @@ the box's heavy-job slots for its whole run, taken AFTER its gate slot (so a que
 NON-BLOCKING: no process waits for a heavy slot while holding the gate lock (the convoy of 2026-10-19/20: one
 gate idle on a 28 h research job's slot blocked every gate for over an hour). A gate that finds no free heavy
 slot RELEASES the gate slot, waits for a heavy slot holding no lock (``heavy_slots.await_free_slot``), and queues
-for the gate again;
+for the gate again, keeping its place in the heavy-slot FIFO queue (its ticket);
 its children inherit the holder marker, so the ``mem_cap.sh`` inside it takes no second slot. LOCK
 ORDER is gate before heavy: a take that would have to WAIT for the gate while an ancestor already
 holds a heavy slot (``mem_cap.sh … gate_lock.sh …``) is refused at once, :class:`GateLockOrderError`
@@ -252,7 +252,7 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
                 try:
                     # rule 5b: the gate holds one heavy slot itself - taken NON-BLOCKING: a gate must never wait
                     # for a heavy slot while holding the gate lock (the CONVOY of 2026-10-19/20)
-                    heavy.enter_context(HS.heavy_slot(cmd, log=log, wait=False))
+                    heavy.enter_context(HS.heavy_slot(cmd, log=log, wait=False, keep_ticket=True))
                 except HS.SlotsFull:
                     fcntl.flock(fds[slot], fcntl.LOCK_UN)
                     log(f"[gate_lock] no heavy slot is free: released gate slot {slot} of {n}{what}, waiting for a "
@@ -289,6 +289,7 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
                     log(f"[gate_lock] released slot {slot} of {n}{what} after holding {held:.0f} s")
             return
     finally:
+        HS.drop_ticket()                          # a gate that leaves without a heavy slot leaves the FIFO queue
         for fd in fds:
             os.close(fd)
 

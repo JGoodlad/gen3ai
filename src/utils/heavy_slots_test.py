@@ -4,6 +4,7 @@ the gate running THIS file may itself hold a real heavy slot).
 
 Load-bearing pins, each FAILS on revert of what it guards:
 * a THIRD taker waits while two hold (N = 2), says so, and gets in when a holder is SIGKILLed;
+* the queue is FIFO: waiters get the slot in arrival order, a dead / stale head is skipped, a gate keeps its place;
 * ``--no-wait`` refuses at once (exit 87) and ``mem_cap.sh`` takes the slot (its wiring);
 * a BLOCKING job bypasses a full house and is listed as a bypasser;
 * a child of a holder takes no second slot, and a routine gate holds ONE heavy slot that a
@@ -18,6 +19,7 @@ import os
 import signal
 import subprocess
 import sys
+import threading
 import time
 
 import pytest
@@ -399,3 +401,109 @@ def test_a_waiter_proceeds_when_the_run_it_waited_behind_ends(slots, tmp_path, m
         assert calls["n"] >= 3 and time.monotonic() - t0 < scale_timeout(20)
     finally:
         _kill(pa)
+
+
+# ── the queue is FIFO (2026-10-20: a gate starved 3.4 h behind later arrivals; waiters used to poll at random) ──
+
+# a waiter that records WHEN it got the slot (ns), holds briefly, then leaves
+_FIFO_TAKER = ("import pathlib, sys, time\n"
+               "from utils.heavy_slots import heavy_slot\n"
+               "with heavy_slot(['w', sys.argv[1]], force=True, poll_s=0.02, log=lambda m: None):\n"
+               "    pathlib.Path(sys.argv[1]).write_text(str(time.time_ns())); time.sleep(0.15)\n")
+
+
+def _sleeper() -> subprocess.Popen:
+    return subprocess.Popen([sys.executable, "-c", "import time; time.sleep(120)"])
+
+
+def test_waiters_get_the_slot_in_arrival_order_not_poll_luck(slots, tmp_path, monkeypatch):
+    """ONE slot, a holder, then SIX waiters that arrive one after another; when the holder dies they must run in
+    arrival order. Fails on a revert to polling the slots at random (1/720 to pass by luck)."""
+    monkeypatch.setenv(HS.SLOTS_ENV, "1")
+    holder = _taker(tmp_path / "h")
+    waiters: list = []
+    try:
+        _wait_for((tmp_path / "h").exists, "the holder")
+        for k in range(6):
+            marker = tmp_path / f"w{k}"
+            waiters.append((marker, subprocess.Popen([sys.executable, "-c", _FIFO_TAKER, str(marker)])))
+            _wait_for(lambda: len(HS._tickets(slots)) == k + 1, f"waiter {k}'s ticket")   # arrival order is fixed
+        _kill(holder)
+        for _marker, p in waiters:
+            assert p.wait(timeout=scale_timeout(60)) == 0
+        stamps = [int(m.read_text()) for m, _ in waiters]
+        assert stamps == sorted(stamps), f"waiters ran out of arrival order: {stamps}"
+        assert not HS._tickets(slots), "a finished waiter's ticket outlived it"
+    finally:
+        _kill(holder, *(p for _, p in waiters))
+
+
+def test_the_queue_head_skips_dead_and_silent_tickets_and_a_free_slot_per_place(slots, tmp_path, monkeypatch):
+    """The rank rule, with no timing: tickets of real (sleeping) pids; a DEAD pid's ticket is skipped and removed, a
+    STALE one (owner not polling) is skipped but keeps its place, and N free slots entitle the N oldest."""
+    monkeypatch.setenv(HS.SLOTS_ENV, "2")
+    a, b, c = _sleeper(), _sleeper(), _sleeper()
+    try:
+        for p in (a, b, c):
+            HS.take_ticket(slots, p.pid)
+        t = {pid: path for _, pid, path in HS._tickets(slots)}
+        assert [pid for _, pid, _p in HS._tickets(slots)] == [a.pid, b.pid, c.pid]
+        assert HS.take_ticket(slots, b.pid) == t[b.pid], "a second take must keep the ticket's age"
+        now = time.time()
+        assert [HS.queue_ahead(slots, p.pid, now=now) for p in (a, b, c)] == [0, 1, 2]
+        _kill(a)                                           # a dead head: skipped, and its ticket is removed
+        assert HS.queue_ahead(slots, b.pid, now=now) == 0 and HS.queue_ahead(slots, c.pid, now=now) == 1
+        assert not t[a.pid].exists()
+        later = now + HS.TICKET_STALE_S + 5                # b stops polling (a gate blocked on the gate lock)
+        os.utime(t[c.pid], (later, later))
+        assert HS.queue_ahead(slots, c.pid, now=later) == 0, "a silent head must not block the queue"
+        assert HS.queue_ahead(slots, b.pid, now=later) == 0, "...and it keeps its own place when it returns"
+        assert HS.queue_ahead(slots, b.pid, now=now) == 0 and HS.queue_ahead(slots, c.pid, now=now) == 1
+        # two free slots entitle the two oldest, one free slot only the head (entitled() reads the real locks)
+        assert HS.free_count(slots, 2) == 2
+        assert HS.entitled(slots, 2, b.pid, now=now) and HS.entitled(slots, 2, c.pid, now=now)
+        h = _taker(tmp_path / "h")
+        try:
+            _wait_for((tmp_path / "h").exists, "a holder")
+            assert HS.free_count(slots, 2) == 1
+            assert HS.entitled(slots, 2, b.pid, now=now) and not HS.entitled(slots, 2, c.pid, now=now)
+        finally:
+            _kill(h)
+    finally:
+        _kill(b, c)
+
+
+def test_a_gate_keeps_its_place_between_its_wait_and_its_take(slots, tmp_path, monkeypatch):
+    """`await_free_slot` returns with the ticket still held, so a newcomer that arrives between the wait and the
+    gate's `heavy_slot(wait=False, keep_ticket=True)` queues BEHIND the gate. Fails if the ticket is dropped on the
+    return, or the take ignores the queue (the newcomer then takes the freed slot and the gate is refused)."""
+    monkeypatch.setenv(HS.SLOTS_ENV, "1")
+    holder = _taker(tmp_path / "h")
+    newcomer = None
+    try:
+        _wait_for((tmp_path / "h").exists, "the holder")
+        done = threading.Event()
+        err: list = []
+
+        def gate_wait():
+            try:
+                HS.await_free_slot(["gate"], force=True, poll_s=0.02, log=lambda _m: None)
+            except BaseException as e:          # noqa: BLE001
+                err.append(e)
+            done.set()
+
+        th = threading.Thread(target=gate_wait, daemon=True)
+        th.start()
+        _wait_for(lambda: HS.has_ticket(slots), "the gate to queue")
+        newcomer = _taker(tmp_path / "n", hold=60.0)
+        _wait_for(lambda: len(HS._tickets(slots)) == 2, "the newcomer to queue behind the gate")
+        _kill(holder)                                            # the slot frees: the gate is the head
+        assert done.wait(scale_timeout(15)) and not err, err
+        time.sleep(0.5)                                          # the newcomer polls at 0.05 s: it must NOT jump the gate
+        assert not (tmp_path / "n").exists(), "a newcomer took the slot the gate was next in line for"
+        with HS.heavy_slot(["gate"], force=True, wait=False, keep_ticket=True, log=lambda _m: None) as s:
+            assert s == 0
+        assert not HS.has_ticket(slots), "the gate's ticket outlived its slot"
+        _wait_for((tmp_path / "n").exists, "the newcomer to run after the gate")
+    finally:
+        _kill(*(p for p in (holder, newcomer) if p is not None))

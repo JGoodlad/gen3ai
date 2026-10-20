@@ -26,9 +26,16 @@ slot itself for its whole run, taken AFTER its gate slot.
 
 HOW. ``N`` (:data:`HEAVY_SLOTS` = 2; ``$GEN3AI_HEAVY_SLOTS``) ``flock`` slot files
 ``slot<i>.lock`` under ``~/.claude/jobs/heavy_slots/`` (``$GEN3AI_HEAVY_SLOT_DIR``; tests point it at a
-temp dir). A taker tries every slot non-blocking every :data:`POLL_S`; a crashed holder's slot frees
-the instant it dies (the kernel drops its flock). The wait is visible: one line at once, one every
-:data:`REPORT_EVERY_S` naming the holders; ``--no-wait`` refuses instead (:class:`SlotsFull`, exit 87).
+temp dir). A crashed holder's slot frees the instant it dies (the kernel drops its flock). The wait is visible:
+one line at once, one every :data:`REPORT_EVERY_S` naming the holders; ``--no-wait`` refuses instead
+(:class:`SlotsFull`, exit 87).
+
+THE QUEUE IS FIFO (2026-10-20: waiters polled the slots at random and a gate starved 3.4 h behind later arrivals).
+Every waiter takes a TICKET (``ticket-<seq>-<pid>.tk``, ``seq`` = the highest live one + 1, allocated under a lock held
+for that instant only) and may take a free slot only when fewer live tickets than there are free slots are older than
+its own: the oldest gets the next free slot. A ticket of a dead pid is skipped and removed; one whose owner has not
+polled for :data:`TICKET_STALE_S` (a gate blocked on the gate lock between two slot attempts) is skipped without
+losing its place. The ticket is dropped when the slot is taken or the wait ends; the flock alone is still the lock.
 
 THE SLOT LIVES AS LONG AS THE JOB (D-2, core review 2026-10-20). The flock is on an open file description, and
 ``mem_cap`` hands the locked fd down to its supervisor and the job (:func:`slot_fd`, ``pass_fds``), so a SIGKILL /
@@ -78,6 +85,10 @@ DIR_ENV = "GEN3AI_HEAVY_SLOT_DIR"
 HELD_ENV = "GEN3AI_HEAVY_SLOT_HELD"
 BLOCKING_ENV = "GEN3AI_BLOCKING"
 POLL_S = 0.5
+#: a ticket whose owner has not touched it for this long is not waiting right now (e.g. a gate blocked on the gate
+#: lock): the queue skips it, and it keeps its place.
+TICKET_STALE_S = 20.0
+TICKET_LOCK = "ticket.seq.lock"
 #: POLICY (orchestrator 2026-10-20): hold a slot per BOUNDED CHUNK (<= CHUNK_MIN), never per run. --status flags a
 #: holder past LONG_HOLD_S and the holder is warned once; nothing is killed.
 CHUNK_MIN = 45
@@ -238,14 +249,96 @@ def _try(fd: int) -> bool:
         return False
 
 
+def _tickets(d: Path) -> List[Tuple[int, int, Path]]:
+    """``(seq, pid, path)`` of every ticket, oldest first (dead owners' tickets removed on the way)."""
+    out: List[Tuple[int, int, Path]] = []
+    for p in d.glob("ticket-*.tk") if d.is_dir() else ():
+        try:
+            _, seq_s, pid_s = p.stem.split("-")
+            seq, pid = int(seq_s), int(pid_s)
+        except ValueError:
+            continue
+        if not _alive(pid):
+            with contextlib.suppress(OSError):
+                p.unlink()
+            continue
+        out.append((seq, pid, p))
+    return sorted(out)
+
+
+def take_ticket(d: Path, pid: Optional[int] = None) -> Path:
+    """This pid's place in the queue (idempotent: a second take returns the SAME ticket, keeping its age)."""
+    pid = os.getpid() if pid is None else pid
+    d.mkdir(parents=True, exist_ok=True)
+    with open(d / TICKET_LOCK, "a") as lk:
+        fcntl.flock(lk, fcntl.LOCK_EX)          # held for the instant of the allocation, never while waiting
+        live = _tickets(d)
+        for _, tpid, p in live:
+            if tpid == pid:
+                return p
+        mine = d / f"ticket-{(live[-1][0] + 1) if live else 0:012d}-{pid}.tk"
+        mine.touch()
+        return mine
+
+
+def drop_ticket(d: Optional[Path] = None, pid: Optional[int] = None) -> None:
+    """Leave the queue (a no-op without a ticket)."""
+    d = d or lock_dir()
+    pid = os.getpid() if pid is None else pid
+    for _, tpid, p in _tickets(d):
+        if tpid == pid:
+            with contextlib.suppress(OSError):
+                p.unlink()
+
+
+def has_ticket(d: Path, pid: Optional[int] = None) -> bool:
+    pid = os.getpid() if pid is None else pid
+    return any(tpid == pid for _, tpid, _p in _tickets(d))
+
+
+def _beat(ticket: Path) -> None:
+    with contextlib.suppress(OSError):
+        os.utime(ticket)
+
+
+def queue_ahead(d: Path, pid: Optional[int] = None, *, now: Optional[float] = None) -> int:
+    """How many LIVE, polling tickets are older than ``pid``'s (a stale ticket does not count; ``pid``'s own always does)."""
+    pid = os.getpid() if pid is None else pid
+    now = time.time() if now is None else now
+    ahead = 0
+    for _, tpid, p in _tickets(d):
+        if tpid == pid:
+            return ahead
+        try:
+            if now - p.stat().st_mtime <= TICKET_STALE_S:
+                ahead += 1
+        except OSError:
+            continue
+    return ahead
+
+
+def free_count(d: Path, n: int) -> int:
+    locks = procfs.read_locks()
+    keys = [procfs.file_key(str(slot_path(i, d))) for i in range(n)]
+    return sum(1 for k in keys if not (procfs.holders(k, locks) if k else []))
+
+
+def entitled(d: Path, n: int, pid: Optional[int] = None, *, now: Optional[float] = None) -> bool:
+    """FIFO: this pid may take a free slot iff fewer polling tickets than there are free slots are older than its own."""
+    ahead = queue_ahead(d, pid, now=now)
+    return ahead == 0 or ahead < free_count(d, n)
+
+
 @contextlib.contextmanager
 def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = True,
                timeout_s: Optional[float] = None, poll_s: float = POLL_S,
                report_every_s: float = REPORT_EVERY_S, log: Callable[[str], None] = _stderr,
-               runs: Optional[dict] = None) -> Iterator[Optional[int]]:
+               runs: Optional[dict] = None, keep_ticket: bool = False) -> Iterator[Optional[int]]:
     """Hold one heavy slot for the ``with`` body when the policy wants one; yields the slot index, or
     ``None`` when no slot was taken (bypass / not wanted). Raises :class:`SlotsFull` (``wait=False``)
-    or ``TimeoutError`` (``timeout_s``) without running the body."""
+    or ``TimeoutError`` (``timeout_s``) without running the body. FIFO: a slot is taken only when this job is
+    entitled to it (:func:`entitled`); ``keep_ticket`` leaves the ticket in the queue when ``wait=False`` refuses
+    (the caller will wait with :func:`await_free_slot` and keep its place)."""
     d = lock_dir()
     held = verified_holder(d)
     if held is not None:
@@ -278,28 +371,35 @@ def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = Tru
     paths = [slot_path(i, d) for i in range(n)]
     fds = [os.open(str(p), os.O_RDWR | os.O_CREAT | os.O_CLOEXEC, 0o666) for p in paths]
     wait_rec: Optional[Path] = None
+    ticket = take_ticket(d)
+    kept = False
     try:
         t0 = time.monotonic()
         slot: Optional[int] = None
         next_report = t0
         while slot is None:
-            slot = next((i for i, fd in enumerate(fds) if _try(fd)), None)
+            _beat(ticket)
+            if entitled(d, n):
+                slot = next((i for i, fd in enumerate(fds) if _try(fd)), None)
             if slot is not None:
                 break
             now = time.monotonic()
             if not wait:
-                raise SlotsFull(f"[heavy_slots] REFUSING (--no-wait): all {n} heavy slots are held — "
-                                + compact_status(d, n))
+                kept = keep_ticket
+                raise SlotsFull(f"[heavy_slots] REFUSING (--no-wait): all {n} heavy slots are held or spoken for "
+                                f"({queue_ahead(d)} queued ahead, FIFO) — " + compact_status(d, n))
             if wait_rec is None:
                 wait_rec = _write(d, Record.mine("wait", cmd, note=why))
             if now >= next_report:
-                log(f"[heavy_slots] waiting {now - t0:.0f} s for one of {n} heavy slots ({why}): "
+                log(f"[heavy_slots] waiting {now - t0:.0f} s for one of {n} heavy slots ({why}; "
+                    f"{queue_ahead(d)} queued ahead, FIFO): "
                     + compact_status(d, n) + f" — `scripts/ops/mem_cap.sh --status`; the orchestrator "
                     f"marks a GPU-blocking job with {BLOCKING_ENV}=<reason>")
                 next_report = now + report_every_s
             if timeout_s is not None and now - t0 >= timeout_s:
                 raise TimeoutError(f"[heavy_slots] gave up after {now - t0:.0f} s: " + compact_status(d, n))
             time.sleep(poll_s)
+        drop_ticket(d)
         waited = time.monotonic() - t0
         _drop(wait_rec, os.getpid())
         wait_rec = None
@@ -328,6 +428,8 @@ def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = Tru
             log(f"[heavy_slots] released heavy slot {slot} after {time.monotonic() - t_acq:.0f} s")
     finally:
         _drop(wait_rec, os.getpid())
+        if not kept:
+            drop_ticket(d)
         for fd in fds:
             os.close(fd)
 
@@ -335,8 +437,10 @@ def heavy_slot(cmd: Sequence[str] = (), *, force: bool = False, wait: bool = Tru
 def await_free_slot(cmd: Sequence[str] = (), *, force: bool = False, timeout_s: Optional[float] = None,
                     poll_s: float = POLL_S, report_every_s: float = REPORT_EVERY_S,
                     log: Callable[[str], None] = _stderr, runs: Optional[dict] = None) -> None:
-    """Return once a heavy slot LOOKS free, holding NOTHING while it waits (a visible ``wait`` record, polled with
-    jitter). The caller then tries ``heavy_slot(wait=False)`` and, if a sibling got there first, waits again.
+    """Return once a heavy slot is free AND this job is next in the FIFO queue, holding NO lock while it waits (a
+    visible ``wait`` record and a queue ticket, polled with jitter). The ticket STAYS on a normal return, so the
+    caller's ``heavy_slot(wait=False, keep_ticket=True)`` keeps the place and, if a sibling got there first, waits
+    again without losing its age; it is dropped on a timeout or when the slot is no longer wanted.
     Returns at once when this job needs no slot (re-entrant, not wanted, BLOCKING / GPU-job bypass).
 
     WHY (the gate convoy, 2026-10-19/20). ``utils.gate_lock`` took its heavy slot AFTER the gate lock and waited
@@ -349,32 +453,39 @@ def await_free_slot(cmd: Sequence[str] = (), *, force: bool = False, timeout_s: 
     if blocking_reason() is not None or GL.gpu_job() is not None:
         return
     n = slot_count()
+    ticket = take_ticket(d)
+    wait_rec: Optional[Path] = None
+    done = False
 
-    def free() -> bool:
-        return any(not r["pids"] for r in collect(d, n)["slots"])
+    def ready() -> bool:
+        _beat(ticket)
+        return free_count(d, n) > 0 and entitled(d, n)
 
-    if free():
-        return
-    d.mkdir(parents=True, exist_ok=True)
-    wait_rec = _write(d, Record.mine("wait", cmd, note="queued for a heavy slot holding NO lock"))
     try:
+        if ready():
+            done = True
+            return
+        wait_rec = _write(d, Record.mine("wait", cmd, note="queued for a heavy slot holding NO lock"))
         t0 = time.monotonic()
         next_report = next_check = t0
-        while not free():
+        while not ready():
             now = time.monotonic()
             if now >= next_check:                          # the run ended / the lease was released while it waited
                 if wanted(force=force, runs=runs) is None:
                     return
                 next_check = now + 5.0
             if now >= next_report:
-                log(f"[heavy_slots] waiting {now - t0:.0f} s for one of {n} heavy slots (holding no other lock): "
-                    + compact_status(d, n))
+                log(f"[heavy_slots] waiting {now - t0:.0f} s for one of {n} heavy slots (holding no other lock; "
+                    f"{queue_ahead(d)} queued ahead, FIFO): " + compact_status(d, n))
                 next_report = now + report_every_s
             if timeout_s is not None and now - t0 >= timeout_s:
                 raise TimeoutError(f"[heavy_slots] gave up after {now - t0:.0f} s: " + compact_status(d, n))
             time.sleep(poll_s * (0.5 + random.random()))
+        done = True
     finally:
         _drop(wait_rec, os.getpid())
+        if not done:
+            drop_ticket(d)
 
 
 def _alive(pid: int) -> bool:
@@ -416,8 +527,9 @@ def collect(d: Optional[Path] = None, n: Optional[int] = None, *, now: Optional[
                 continue
             side[rec.kind].append({"pid": rec.pid, "for_s": now - rec.since, "cmd": shlex.join(rec.cmd),
                                    "cwd": rec.cwd, "why": rec.note})
+    order = {pid: seq for seq, pid, _p in _tickets(d)}          # the FIFO queue order (oldest ticket first)
     for k in side:
-        side[k].sort(key=lambda r: -r["for_s"])
+        side[k].sort(key=lambda r: (order.get(r["pid"], 1 << 60), -r["for_s"]))
     return {"dir": str(d), "n_slots": n, "slots": slots, "waiting": side["wait"], "bypassing": side["bypass"]}
 
 
@@ -437,7 +549,7 @@ def format_human(state: dict) -> str:
             flag = f"  <-- {LONG_HOLD_TAG}" if r.get("long_hold") else ""
             out.append(f"  slot {r['slot']}: pid {','.join(map(str, r['pids']))} held {_dur(r['held_s'])} "
                        f"[{r['why']}] {r['cmd'][:140]}  (cwd {r['cwd'] or '?'}){flag}")
-    out.append(f"  queue ({len(state['waiting'])}, oldest first; polled, so not a promise of order):")
+    out.append(f"  queue ({len(state['waiting'])}, FIFO: the head gets the next free slot):")
     out += [f"    pid {w['pid']} waiting {_dur(w['for_s'])}: {w['cmd'][:140]}" for w in state["waiting"]]
     out.append(f"  BLOCKING bypassers ({len(state['bypassing'])}):")
     out += [f"    pid {b['pid']} for {_dur(b['for_s'])} [{b['why']}]: {b['cmd'][:140]}" for b in state["bypassing"]]
