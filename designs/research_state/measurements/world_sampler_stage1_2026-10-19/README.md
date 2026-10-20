@@ -5,7 +5,7 @@ Stage 1 of [`design_world_sampler.md`](../../../endstate/design_world_sampler.md
 design doc (§6.2's read, §7, the Decision record) once read; this folder holds the harness, the registration and the
 read's outputs.
 
-**Status: REGISTERED; the runner crawls detached (§3).** No number yet.
+**Status: REGISTERED; the runner crawls detached to all 287 states (§3; the stop lifted, A2).** No number yet.
 
 | file | what |
 |---|---|
@@ -74,5 +74,9 @@ own `mem_cap` scope; `CUDA_VISIBLE_DEVICES=""`. No GPU.
   chunk whose peak memory passes ~10 GB is reported to the orchestrator. The loop was relaunched with the mark: its
   waiting slot request had started no work and was stopped by pid. Relaunch the same way: `loop_s1.sh 4` with the
   env of §3's switch, plus `GEN3AI_BLOCKING`.
-- **Amendment A1 (L2)** registered before any outcome was read (PREREGISTRATION §9). The read must run from a
+- **Amendment A1 (L2)** registered before any outcome was read (PREREGISTRATION §9).
+- **Amendment A2 (2026-10-20, the orchestrator): the 24 h stop is LIFTED**, so the run goes to all 287 states and the
+  read is made once at `QUEUE_DONE` (PREREGISTRATION §10). `STOP_AT` holds a safety bound; the original is in
+  `STOP_AT.registered`. **BLOCKING ends 2026-10-20 18:27**: after it the loop is relaunched at a chunk boundary
+  WITHOUT `GEN3AI_BLOCKING` (FIFO heavy slots, nice 19, the agent cores, 3-state chunks). The read must run from a
   checkout that holds it (`l2_s1.py`).

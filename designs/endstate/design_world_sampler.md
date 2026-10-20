@@ -14,8 +14,8 @@ pre-registered (`measurements/world_sampler_stage1_2026-10-19/PREREGISTRATION.md
 X26 225M: B, C_ladder, C_forum_strict, C_pool and NS against F_legal (F at HEAD, F2's rule on), plus F_off (the legality
 rule alone) and F_rolls (F1 tier A, read uniform and likelihood-weighted) as secondaries. The corpus backoff's α is
 fitted on the ladder corpus (89.1); the playouts run at X26's pin + the damage-roll control, so a rolls world plays as
-its gate accepted it; a detached runner crawls one heavy job at a time to a registered stop 24 h after launch. No
-number yet. Search can now read the worlds' weights (`SearchConfig(weights="likelihood")`, default uniform).
+its gate accepted it. A detached runner crawls one bounded chunk at a time to all 287 states (the 24 h stop was lifted
+before any read, A2). No number yet. Search can now read the worlds' weights (`SearchConfig(weights="likelihood")`, default uniform).
 
 **Status (2026-10-19): F1 TIER A BUILT, behind `WorldSampler(dice="rolls")`, default OFF (§3.3.1, §7 F1).**
 Each damage roll of a world's prefix replay may take any roll that prints what the searched side saw, the dice stream
@@ -808,7 +808,8 @@ leaves open and adds the day's builds. In short:
 - C_pool uses the pool **as X26's pin packed it**: the Hidden Power refactor re-packs 34 of the 719 teams (§7 F9).
 - A fifth verdict, **HURTS**, is added.
 - Each arm's TODAY is checked against the exact-world mass of **its own** worlds.
-- The read is made once: at `QUEUE_DONE`, or at the stop 24 h after launch, on the done prefix of a seeded order.
+- The read is made once, at `QUEUE_DONE`, on all 287 states. The registered 24 h stop was lifted by amendment A2
+  before any outcome was read.
 - **Amendment A1 (L2, registered before any outcome was read; SECONDARY).** It asks whether the per-state gain tracks
   each arm's exact-world mass or its CALIBRATION: LL8, the KT-smoothed factorised log-likelihood of the true hidden
   facts under the arm's 8 worlds. It is read within arms (Spearman, pooled) and between arms (with and without

@@ -131,7 +131,7 @@ sha256 `8863414f…` (recorded in `alpha_fit.json`).
   in CHUNKS of 6: every arm BUILT (the builder checkout), then every arm PLAYED (the play checkout), then the next chunk;
   ONE heavy job at a time. So the states complete in every arm are always a PREFIX of the order: a uniform random
   sample of the 287.
-- **THE STOP**: no chunk starts after **STOP_AT = the first launch + 24 h** (written once by `launch_s1.sh`; a relaunch
+- **THE STOP** (LIFTED by amendment A2, §10): no chunk starts after **STOP_AT = the first launch + 24 h** (written once by `launch_s1.sh`; a relaunch
   keeps it); a chunk in flight finishes. **The read is made once**, on the states complete in every arm at QUEUE_DONE or
   at the stop, whichever comes first. A state the runner PARKS (no progress twice) is excluded and is a FINDING.
 - **n and power**: n ≤ 287. Between-arm IMP differences on the same states carry about ±0.021 at 287 (design §6.2), so
@@ -252,3 +252,15 @@ pool-opponent bank.
 **Expected power (disclosed).** Per-state IMP differences are noisy (24 referee seeds), and q_SM is ≈ 0 on most states
 of every arm but C_pool. The within-arm ρ_q of the non-pool arms will mostly be undefined or ≈ 0, and the between-arm
 ρ over six or seven points has wide intervals. NEITHER / NOT SEPARATED is the likely outcome unless the effect is large.
+
+## 10. AMENDMENT A2 — the stop is lifted; the read waits for all 287 states (registered 2026-10-20 13:22 PDT)
+
+**No outcome has been read.** 137 of the 287 states were complete; no IMP, Δ, scorer value or table had been computed.
+
+**What changes** (the orchestrator, 2026-10-20: "don't read a partial bank to fit a clock"): §5's registered stop
+(the first launch + 24 h, 2026-10-20 18:27 PDT) is LIFTED. The runner continues in the registered order until every
+state is complete in every arm (`QUEUE_DONE`), and **the read is made once, then, on all 287 states** (a PARKED state
+excluded and reported). `<archive>/STOP_AT` now holds a safety bound, 2026-11-03; the original is kept in
+`STOP_AT.registered`. This registration named no minimum n and no interim look, so none is made: an interim report
+is sent only if something breaks. Everything else stands: the arms, the metrics, every rule, the bootstrap seed, A1.
+From 2026-10-20 18:27 the chunk jobs lose the BLOCKING mark and go through the FIFO heavy slots (the README).
