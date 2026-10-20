@@ -2,17 +2,22 @@
 
 **Status: STAGED and AMENDED (§0, 2026-10-19, before any X35 launch); T\* RESOLVED (X34 plateaued, 2026-10-19: "Words used here"); the
 toy R is FROZEN on the real T\*; every argv of the amended order (32 forks, the toy on the real T\*) validated at main
-HEAD `03b983be` (§4.3); nothing launched; every launch NEEDS THE ORCHESTRATOR'S GO.** X47 is a **kit arm**
+HEAD `03b983be` (§4.3); nothing launched; every launch NEEDS THE ORCHESTRATOR'S GO.** **AMENDED AGAIN 2026-10-20
+(AM-8, §0), before any launch, after the GPU battery's read: the T62 gate is DECIDED as FP32_ALT (which does not exist
+yet), so there is ONE PIN PER SIDE, the TOY BLOCK RUNS FIRST (AM-9) and production waits for the FP32_ALT commit (a
+placeholder the kit refuses to launch on).** X47 is a **kit arm**
 (`toy_x47`, F-LS-1 closed). The orchestrator has ruled **C1** (a), **C2** (X47 interleaved with its toy C0), **C3** (the
 toy arms run K9(b) `warn` under X34's ceilings), **C4** (batch 1 launches without R0) and every amendment of the
-[adversarial review](X35_BATCH1_REVIEW.md) (AM-1 to AM-7, the POOL check, the G-E readers); C6 is still open; C5 is RULED and DONE (§5). This sheet is
+[adversarial review](X35_BATCH1_REVIEW.md) (AM-1 to AM-7, the POOL check, the G-E readers); C1's rule (a) is SUPERSEDED by AM-8; C6 is still open; C5 is RULED and DONE (§5). This sheet is
 what the Training session runs, in order, once X34 has stopped and the GPU window (the battery, then the X14 A/B) is
 over. The design is [`design_compute_efficiency.md`](../../../endstate/design_compute_efficiency.md)
 §5.6 (X35) and [`design_bot_ideas_screen.md`](../../../endstate/design_bot_ideas_screen.md) §2.1 (X47); the kit is
 [`STAGED_PLAN.md`](STAGED_PLAN.md) §6. A design block is not a launch command: the lines below are the launch commands
-only after GO, with `<PIN>` and (toy side) the T\* values filled in. `<PIN>` = main HEAD at launch, a descendant of the
-kit commit that carries `toy_x47` and the toy `warn` (a pin without it HOLDs `launch_x35.sh` at `describe` for X47 and
-launches the toy arms under `fatal`: take no earlier pin).
+only after GO, with `<PIN>` and (toy side) the T\* values filled in. **`<PIN>` is the SIDE'S pin (AM-8):** the toy's =
+main HEAD at the first toy launch, a descendant of the kit commit that carries `toy_x47` and the toy `warn` (a pin
+without it HOLDs `launch_x35.sh` at `describe` for X47 and launches the toy arms under `fatal`: take no earlier pin);
+production's = main HEAD at the first production launch, AFTER the FP32_ALT commit is named in
+`x35_required_commits_production.txt` (§3).
 
 **Words used here.**
 - **P\*** = X26's plateau checkpoint, `models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip`, sha256
@@ -42,75 +47,93 @@ enforced by `launch_x35.sh` where it gates a launch. A HOLD is exit 7, as before
 
 | ruling | what it says | where it is enforced |
 |---|---|---|
-| **AM-1 ACCEPTED (blocking): ONE pin** | X35_PIN_1 is ONE commit, written ONCE to `x35_pin_batch1.txt` (this directory) (sha, date, the T62 verdict) by the FIRST launch's GO, after its pre-checks. Every later launch's `--pin` must EQUAL it, and every existing batch-1 run's RECORDED pin (`metadata.json` `git_hash` + every `pin_history` span) must equal it; a batch-1 run whose pin cannot be read HOLDs too | pre-check 2b (`kit pin-check`); the GO writes the file (`--t62 <verdict>` is required on the first launch). A later batch's `rb_x35*` runs carry their own pin and are listed, not judged |
+| **AM-1 ACCEPTED (blocking); AMENDED 2026-10-20 by AM-8 (below): ONE pin PER SIDE** | Each SIDE has ONE pin, written ONCE to `x35_pin_batch1_toy.txt` / `x35_pin_batch1_production.txt` (this directory; sha, side, date, the side's T62 token) by that side's FIRST launch's GO, after its pre-checks. Every later launch of the side must `--pin` the same commit, and every existing batch-1 run OF THAT SIDE has RECORDED it (`metadata.json` `git_hash` + every `pin_history` span); a run of the side whose pin cannot be read HOLDs too. The other side's runs are listed and judged at THEIR side's launches. (It was ONE pin for all 32 forks in `x35_pin_batch1.txt`, which was never written.) | pre-check 2b (`kit pin-check --side`), 2c (`kit required-check`); the GO writes the side's file (`--t62` is required on a side's first launch: production `FP32_ALT`, toy `NA_TOY`). A later batch's `rb_x35*` runs carry their own pin and are listed, not judged |
 | **AM-2 ACCEPTED: the variance gate G1** after row 6 | σ̂ = the pooled within-arm SD of S over the six finals A1 / C0 × s3501–s3503 (4 df). **PASS iff σ̂ ≤ 1.2 pp**; above, or within 1e-9 of 1.2 (rule 8), is **HOLD**: D1, A2 and the toy calibration wait for the orchestrator's re-plan, C0 s3504–s3505 run next and σ̂ is re-estimated on 5 C0 + 3 A1 (6 df, reported). It reads variance only, never an arm's Δ̂. A1's own look-1 R1 is read as registered either way | `python -m main.x35.kit gate <s.json> --stage <stage> --write` (exit 0 PASS / 1 HOLD; written once to `x35_gate_g1.json`); pre-check 9 reads it. The zero-training pre-read on X26 290–380M is a separate agent's (review F-RV-2) |
 | **AM-3 ACCEPTED** | toy A1 (resp. toy A2) launches only after production A1 (resp. A2) has a FINAL class GAIN, NULL or LOSS; an UNDECIDED production read ends that arm's calibration as NOT SHOWN, with no toy fork. The toy C0 still runs (X47 needs it) | pre-check 9 (`kit stage-check`), from the saved read `reads/<arm>_look<k>.json` |
 | **AM-4 ACCEPTED** | X47 seeds 3601–3605: look 2 = X47 s3604–s3605 against toy C0 s3604–s3605 (the toy C0 seeds were already registered; the pairing is seed for seed), launched only on X47's look-1 CONTINUE. **B-X47-READ BUILT:** `main.x35.x47` (s_eq at equal effective learn time, the matched-step secondary, the PER-STEP ONLY class) | `kit.X47_SEEDS`; pre-check 9; `python -m main.x35.x47 seq / decide` |
 | **AM-5 ACCEPTED** | D1's H interval widened by √max(1, φ̂), the seed overdispersion | `main.x35.d1` (self-check 11 / 11) |
 | **AM-6 ACCEPTED** | K9(b) is read at EACH arm's end over the fork's OWN rows (steps > its fork step; the inherited rows are X26's), deterministically: judged max ≥ 1e-3, p99 ≥ 1e-4, any non-finite value or the child log's NON-FINITE K9(b) line ⇒ the arm is **VOID** for every read and is re-run at the same pin and seed after the cause is fixed; within 1e-9 relative of a ceiling is recorded, no fire; no post-fork row is INCONCLUSIVE, never a pass | `python -m main.x35.kit k9b --run-dir models/<run> --stage <stage>` (exit 0 PASS / 1 VOID / 3 INCONCLUSIVE), run by the Training session at arm end; pre-check 11 (`kit k9b-batch`) reads (or records) it for every FINISHED batch-1 arm before the next GO |
-| **AM-7 ACCEPTED: the order** | the first 6 arms → G1 → C0's look-2 seeds and A1's look 2 → D1, A2 → toy C0 + X47 → X47's look 2 → the conditional toy calibration (§1) | `kit.BATCH1` (= `batch.STAGES`, pinned by `batch_test.py`); pre-check 9 for every conditional stage |
-| **POOL** | every arm of a side seeds the SAME snapshot set: the first launch of the side records it (`x35_pool_batch1_production.json` (this directory; the toy side's `x35_pool_batch1_toy.json`): names, sha256, digest), every later launch recomputes it and HOLDs on any difference, and the post-spawn check compares the fork's `pool_seed.json` with it. **C0 = P\* continued with X26's pool as of today: 14 snapshots, 164–268M** (T54 drops the 6 post-P\* ones; the newest pre-P\* selves, 270–280M, were evicted before the call), under T62. Not "X26 unchanged" (review F-RV-8) | pre-check 10 (`kit pool-check`); the post-spawn `kit pool-seed-check --stage` |
+| **AM-7 ACCEPTED: the order; the ORDER is SUPERSEDED by AM-9 (2026-10-20), its CONDITIONS stand** | was: the first 6 arms → G1 → C0's look-2 seeds and A1's look 2 → D1, A2 → toy C0 + X47 → X47's look 2 → the conditional toy calibration. Now (AM-9): toy C0 + X47 → X47's look 2 → the first 6 production arms → G1 → C0's look-2 seeds and A1's look 2 → D1, A2 → the conditional toy calibration (§1). G1, the look-1 CONTINUE rules and AM-3 / AM-4 are unchanged | `kit.BATCH1` (= `batch.STAGES`, pinned by `batch_test.py`); pre-check 9 for every conditional stage |
+| **POOL** | every arm of a side seeds the SAME snapshot set: the first launch of the side records it (`x35_pool_batch1_production.json` (this directory; the toy side's `x35_pool_batch1_toy.json`): names, sha256, digest), every later launch recomputes it and HOLDs on any difference, and the post-spawn check compares the fork's `pool_seed.json` with it. **C0 = P\* continued with X26's pool as of today: 14 snapshots, 164–268M** (T54 drops the 6 post-P\* ones; the newest pre-P\* selves, 270–280M, were evicted before the call), under FP32_ALT (AM-8; it was T62 before the battery read). Not "X26 unchanged" (review F-RV-8) | pre-check 10 (`kit pool-check`); the post-spawn `kit pool-seed-check --stage` |
 | **G-E readers** | the CHEAPER honest option: **not launched in batch 1.** An arm's R1 (D1: H) GAIN reads **INCONCLUSIVE, never ADOPT-CANDIDATE,** until G-E is read (`readout.decide`, as registered). The readers (one fresh best responder per (arm, seed-3501 final), C0 included: ≈ 1.1 GPU-h each, ≈ 2.2 per arm) are registered, dry-run validated and launched ONLY when an arm's primary reads GAIN, at X35_PIN_1. G-E decides only between ADOPT-CANDIDATE and TRADE, so a reader for a non-GAIN arm buys nothing. Their argv is still unregistered (F27) | `readout.decide` (a GAIN with G-E absent is INCONCLUSIVE) |
-| **C1 RULED: (a)** | production launches at main HEAD with T62, pending the GPU battery's read; its measured cost is recorded beside the batch. b-ON and C0 pay it alike, so it biases no A/B; T62 changes the τ inputs relative to the code that trained P\* (`9c033489`), a small input shift every fork shares (review F-RV-12). The pin file records the T62 verdict known at the first GO (`PENDING` until the battery reads) | `--t62` on the first launch |
+| **C1 RULED: (a); SUPERSEDED 2026-10-20 by AM-8** | was: production launches at main HEAD with T62, pending the GPU battery's read. The battery has read **FP32_ALT** (the fp64 τ solve doubles the production learner update), so production no longer launches under T62: it waits for the FP32_ALT commit (AM-8). The cost is still paid by b-ON and C0 alike, so it biases no A/B; FP32_ALT, like T62, changes the τ code relative to what trained P\* (`9c033489`), a small input shift every production fork shares (review F-RV-12) | `--t62 FP32_ALT` on production's first launch; pre-check 2c |
 
 The read records the stage rules read are the saved JSON of each read: `reads/<arm>_look<k>.json` =
 `python -m main.x35.readout decide` (A1, A2, toy A1 / A2), `decide-d1` (D1) or `python -m main.x35.x47 decide`
 (X47), naming its arm and look (a record for another arm or look is a refusal).
 
+### AMENDMENT 2026-10-20 (AM-8): the orchestrator's rulings after the GPU battery's read, made BEFORE any X35 launch
+
+**The news (the GPU battery's read, 2026-10-20 about 01:00).** The T62 gate is DECIDED as **FP32_ALT**: the float64 τ solve
+doubles the production learner update (41 s → 97 s), a per-cycle cost of 82–127 % against the registered 3 % bar. FP32_ALT
+**does not exist yet** (another agent is building it, about a day). The TOY makes zero τ-solve calls (§3), so T62 is
+irrelevant to it. The rulings below are BUILT into the kit (`src/main/x35/batch.py`, `kit.py`, `launch_x35.sh`, with tests
+that fail on revert) and supersede C1 (a) and AM-7's order.
+
+| ruling | what it says | where it is enforced |
+|---|---|---|
+| **AM-1 amended: ONE PIN PER SIDE** | The production arms (A1 / C0 / D1 / A2) share ONE pin; the toy arms (toy C0 / X47 / toy A1 / toy A2) share ANOTHER. Why: each side's control (C0 / toy C0) shares its own arms' pin, and that is all AM-1 protects; one pin for both would force the toy to wait for a build it never uses. The files are `x35_pin_batch1_toy.txt` and `x35_pin_batch1_production.txt`, each written once by its side's first GO | `kit pin-check --side` (pre-check 2b judges the launch's own side only; a run of the OTHER side is listed, not judged) |
+| **AM-9: the ORDER** | The TOY block runs FIRST: **T1** = toy C0 + X47 s3601–s3603, interleaved as in AM-7 (toy C0 s3601 → X47 s3601 → X47 s3602 → toy C0 s3602 → toy C0 s3603 → X47 s3603), then **T1b** (X47 and toy C0 s3604–s3605) if X47's look 1 reads CONTINUE. **Production P1 follows when FP32_ALT has landed** (P2–P4 as before). **T2** (toy A1 / A2, the calibration) stays LAST and conditional on the production verdicts (AM-3), unchanged | `batch.STAGES` = `kit.BATCH1` (`batch_test.py` pins the whole list); `stage-check` (pre-check 9) keeps every condition of AM-7 / AM-3 / AM-4 and adds production's FP32_ALT gate. The order itself is the Training session's launch sequence, not a gate: nothing refuses P1 while T1 is unfinished |
+| **The `--t62` token is the SIDE'S** | Production's first GO takes `--t62 FP32_ALT`, the toy's `--t62 NA_TOY` (the toy is τ-free; `NA_TOY` says so in its pin file). The old tokens (`ADOPT`, `PENDING`, `INCONCLUSIVE`, `INCOMPLETE`) are retired: the battery has read. A typed token of the wrong side is refused, in the dry run too | `batch.T62_BY_SIDE`; `kit pin-check --t62` |
+| **Production's FP32_ALT commit (a placeholder until it exists)** | `x35_required_commits_production.txt` (production ONLY) names the FP32_ALT commit. It holds the placeholder `FP32_ALT_SHA_PENDING` until the build lands; **while it does, EVERY production launch HOLDs and `stage-check` reads PENDING for every production fork.** When FP32_ALT is on main its full sha replaces the placeholder (committed BEFORE the production pin is chosen); the check then also requires it to be a real commit and an ANCESTOR of the production pin. A missing file, or one without the `FP32_ALT` line, is a refusal (deleting it is no way past). The toy has no such file | `kit required-check` (pre-check 2c); `batch.side_gate` in `stage_status` |
+
 ---
 
 ## 1. The arms, in GPU order
 
-One arm × seed holds the GPU at a time. The order is AM-7's (§0), the kit's `BATCH1` = `batch.STAGES`, pinned by
-`batch_test.py`. Stages P1, P2 and T1 are unconditional; P3, P4, T1b and T2 launch only when pre-check 9 says ALLOWED.
-Inside T1 and T1b, X47 sits beside its own toy C0 in counterbalanced pairs (ruling C2: s3601 C0 then X47, s3602 X47
-then C0, s3603 C0 then X47; s3604 X47 then C0, s3605 C0 then X47). Toy A1 left the interleave: it is now
-conditional (AM-3). Every production arm and toy A1 / A2 stops at a FIXED step, so their order buys information, not
-balance (review F-RV-16); X47's primary is time-based, which is why its pairs stay interleaved.
+One arm × seed holds the GPU at a time. The order is AM-9's (§0, 2026-10-20: the toy block first), the kit's `BATCH1` =
+`batch.STAGES`, pinned by `batch_test.py`. **Stage T1 is unconditional and needs only the toy pin.** The production stages
+P1–P4 need the FP32_ALT commit named in `x35_required_commits_production.txt` (AM-8: until it is, `stage-check` reads
+PENDING for every production fork and the launch HOLDs at pre-check 2c); P2 also needs G1 read, and T1b, P3, P4 and T2
+launch only when pre-check 9 says ALLOWED. Inside T1 and T1b, X47 sits beside its own toy C0 in counterbalanced pairs
+(ruling C2: s3601 C0 then X47, s3602 X47 then C0, s3603 C0 then X47; s3604 X47 then C0, s3605 C0 then X47). Toy A1 left the
+interleave: it is conditional (AM-3), last. Every production arm and toy A1 / A2 stops at a FIXED step, so their order buys
+information, not balance (review F-RV-16); X47's primary is time-based, which is why its pairs stay interleaved.
 
 **GPU-h basis (MEASURED from checkpoint mtimes, the SOP's meter):**
 - **Production:** X26 250M → 280M took 22,501 s (1,333 steps/s); 270M → 280M took 7,365 s (1,358 steps/s). A 20M fork
   is therefore ≈ 4.1 h, plus ≈ 0.2 h for start and compile, ≈ **4.3 GPU-h**. A1 (+8 evaluated archive opponents) and
   A2 (+5 sentinels) pay ≈ 2 % more at equal steps, declared and not corrected (§5.6.1): ≈ 4.4. D1's per-step cost on
-  forum teams is not measured: ≈ 4.3, **UNVERIFIED**.
+  forum teams is not measured: ≈ 4.3, **UNVERIFIED**. **UNVERIFIED under FP32_ALT (F-LS-11):** X26's rate was measured on
+  the pre-T62 fp32 τ solve; FP32_ALT is an fp32 path, so it is expected to cost the same, but nothing measured it.
 - **Toy:** X34 150M → 200M took 10,595 s (4,719 steps/s). A 70M fork is ≈ 4.1 h + 0.2 ≈ **4.3 GPU-h**. X47's ρ (its
   wall time per step over C0's) is ESTIMATED at 1.3–1.4 from FLOPs (`design_bot_ideas_screen.md` F-BI-7): ≈ 5.6–6.0
   GPU-h per seed, measured on its first 1M.
 
 | stage | # | arm × seed | in plain words | condition | GPU-h | matched control |
 |---|---|---|---|---|---|---|
-| **P1** | 1 | **A1 s3501** | the ARCHIVE POOL: half the self-play games go against 8 frozen X26 nodes spread over 30–260M | none | 4.4 | C0 s3501 |
-| | 2 | C0 s3501 | production control: P\* continued with X26's pool as of today (14 snapshots, 164–268M), under T62 | none | 4.3 | — |
-| | 3 | C0 s3502 | control | none | 4.3 | — |
-| | 4 | A1 s3502 | archive pool | none | 4.4 | C0 s3502 |
-| | 5 | A1 s3503 | archive pool | none | 4.4 | C0 s3503 |
-| | 6 | C0 s3503 | control | none | 4.3 | — |
+| **T1** | 1 | toy C0 s3601 | toy control | none | 4.3 | — |
+| | 2 | **X47 s3601** | DEPTH GROWTH: the toy's 2 attention rounds become 4, the 2 new rounds exact identities, so the network starts as T\*'s function bit for bit | none | 5.6–6.0 | toy C0 s3601 (PRIMARY at equal effective learn time, node s_eq, `main.x35.x47`) |
+| | 3 | X47 s3602 | depth growth | none | 5.6–6.0 | toy C0 s3602 |
+| | 4 | toy C0 s3602 | toy control | none | 4.3 | — |
+| | 5 | toy C0 s3603 | toy control | none | 4.3 | — |
+| | 6 | X47 s3603 | depth growth | none | 5.6–6.0 | toy C0 s3603 |
+| **T1b** | 7–10 | X47 s3604, toy C0 s3604, toy C0 s3605, X47 s3605 | X47's look 2 (AM-4) | X47 look 1 = CONTINUE | 2 × 5.6–6.0 + 2 × 4.3 | toy C0 s3604–s3605 |
+| **P1** | 11 | **A1 s3501** | the ARCHIVE POOL: half the self-play games go against 8 frozen X26 nodes spread over 30–260M | FP32_ALT named + in the pin (AM-8) | 4.4 | C0 s3501 |
+| | 12 | C0 s3501 | production control: P\* continued with X26's pool as of today (14 snapshots, 164–268M), under FP32_ALT | FP32_ALT (AM-8) | 4.3 | — |
+| | 13 | C0 s3502 | control | FP32_ALT (AM-8) | 4.3 | — |
+| | 14 | A1 s3502 | archive pool | FP32_ALT (AM-8) | 4.4 | C0 s3502 |
+| | 15 | A1 s3503 | archive pool | FP32_ALT (AM-8) | 4.4 | C0 s3503 |
+| | 16 | C0 s3503 | control | FP32_ALT (AM-8) | 4.3 | — |
 | **G1** | — | the S read of the six finals (a GPU window: 36k games, ≈ 5 min at 118 games/s, **UNVERIFIED** for the end state; or ≈ 9 h of CPU) | AM-2's variance gate: `kit gate` | — | ≈ 0.1 | — |
-| **P2** | 7–8 | C0 s3504, s3505 | the registered look-2 controls, moved forward: every arm's look 2 and the 6-df σ̂ | G1 read (either verdict) | 2 × 4.3 | — |
-| **P3** | 9–10 | A1 s3504, s3505 | A1's look 2: the top-ranked arm decided first | A1 look 1 = CONTINUE | 2 × 4.4 | C0 s3504–s3505 |
-| **P4** | 11–13 | **D1 s3501–s3503** (X38) | WIDEN THE TEAM POOL: half of each side's teams from 2,424 Smogon forum teams; eval stays on the pool | G1 PASS | 3 × 4.3 (**UNVERIFIED**) | C0 s3501–s3503 (`main.x35.d1`) |
-| | 14–16 | **A2 s3501–s3503** | PFSP: recent selves the trainee loses to are drawn more often (+5 sentinels feed it win rates) | G1 PASS | 3 × 4.4 | C0 s3501–s3503 |
-| **T1** | 17 | toy C0 s3601 | toy control | none | 4.3 | — |
-| | 18 | **X47 s3601** | DEPTH GROWTH: the toy's 2 attention rounds become 4, the 2 new rounds exact identities, so the network starts as T\*'s function bit for bit | none | 5.6–6.0 | toy C0 s3601 (PRIMARY at equal effective learn time, node s_eq, `main.x35.x47`) |
-| | 19 | X47 s3602 | depth growth | none | 5.6–6.0 | toy C0 s3602 |
-| | 20 | toy C0 s3602 | toy control | none | 4.3 | — |
-| | 21 | toy C0 s3603 | toy control | none | 4.3 | — |
-| | 22 | X47 s3603 | depth growth | none | 5.6–6.0 | toy C0 s3603 |
-| **T1b** | 23–26 | X47 s3604, toy C0 s3604, toy C0 s3605, X47 s3605 | X47's look 2 (AM-4) | X47 look 1 = CONTINUE | 2 × 5.6–6.0 + 2 × 4.3 | toy C0 s3604–s3605 |
+| **P2** | 17–18 | C0 s3504, s3505 | the registered look-2 controls, moved forward: every arm's look 2 and the 6-df σ̂ | G1 read (either verdict) | 2 × 4.3 | — |
+| **P3** | 19–20 | A1 s3504, s3505 | A1's look 2: the top-ranked arm decided first | A1 look 1 = CONTINUE | 2 × 4.4 | C0 s3504–s3505 |
+| **P4** | 21–23 | **D1 s3501–s3503** (X38) | WIDEN THE TEAM POOL: half of each side's teams from 2,424 Smogon forum teams; eval stays on the pool | G1 PASS | 3 × 4.3 (**UNVERIFIED**) | C0 s3501–s3503 (`main.x35.d1`) |
+| | 24–26 | **A2 s3501–s3503** | PFSP: recent selves the trainee loses to are drawn more often (+5 sentinels feed it win rates) | G1 PASS | 3 × 4.4 | C0 s3501–s3503 |
 | **T2** | 27–29 | toy A1 s3601–s3603 | the archive pool on the toy (8 nodes of T\*'s own lineage) | G1 PASS and production A1 FINAL GAIN / NULL / LOSS (AM-3) | 3 × 4.4 | toy C0 s3601–s3603 |
 | | 30–32 | toy A2 s3601–s3603 | PFSP on the toy | G1 PASS and production A2 FINAL GAIN / NULL / LOSS (AM-3) | 3 × 4.4 | toy C0 s3601–s3603 |
 
-**The GPU-h, by condition** (the basis below; the review's §3 has the same stages):
+**The GPU-h, by condition** (the basis above; the review's §3 has the same stages; the totals do not depend on the order):
 
 | what runs | GPU-h |
 |---|---|
-| unconditional: P1 + G1 + P2 + T1 | 26.1 + 0.1 + 8.6 + 29.7–30.9 ≈ **65** |
+| unconditional on a read: T1 + P1 + G1 + P2 | 29.7–30.9 + 26.1 + 0.1 + 8.6 ≈ **65** (T1 alone ≈ 30, the toy block that opens the batch; P1 and P2 also wait for FP32_ALT) |
 | + P4 (G1 PASSes; the expected path) | + 26.1 ≈ **91** |
 | + P3 (A1 look 1 CONTINUE) | + 8.8 |
 | + T1b (X47 look 1 CONTINUE) | + 19.8–20.6 |
 | + T2 (AM-3: production A1 and A2 both FINAL) | + 0–26.4 |
 | every conditional stage | ≈ **146–148** |
-| not in BATCH1, at X35_PIN_1 when they happen | D1 / A2 look 2 (2 × 4.3 / 2 × 4.4, on their own look-1 CONTINUE; the kit allows them, AM-7 does not schedule them), toy A1 / A2 look 2, the G-E readers (≈ 2.2 per GAIN arm, §0), R1 reads (≈ 0.3 GPU-h each in a window) |
+| not in BATCH1, at the side's pin when they happen | D1 / A2 look 2 (2 × 4.3 / 2 × 4.4, on their own look-1 CONTINUE; the kit allows them, AM-9 does not schedule them), toy A1 / A2 look 2, the G-E readers (≈ 2.2 per GAIN arm, §0), R1 reads (≈ 0.3 GPU-h each in a window) |
 
 The old queue's "≈ 108 GPU-h ≈ 4.5 days" was look 1 only (review F-RV-13); a fully decided batch was ≈ 190.
 
@@ -139,10 +162,11 @@ arms, as §5.6.4 plans. Look 2 (seeds 3504–3505 / 3604–3605) is a later batc
 ## 2. The pre-launch checks (in this order; any failure is a HOLD)
 
 `launch_x35.sh` runs checks 4–9 itself for every kit arm (exit 7 = HOLD, reason in `~/.claude/jobs/x35/status.txt`),
-X47 (`toy_x47`) included (F-LS-1 is closed), and since the amendment (§0) four more: **2b** the ONE pin (AM-1), **9**
-the stage is ALLOWED (AM-7 / AM-3 / AM-4), **10** the seeded pool set equals the side's record (POOL), **11** every
-finished batch-1 arm PASSed K9(b) at its end (AM-6). The first GO also needs `--t62 <verdict>` (it writes
-`x35_pin_batch1.txt`).
+X47 (`toy_x47`) included (F-LS-1 is closed), and since the amendments (§0) five more: **2b** the side's ONE pin (AM-1 as
+amended by AM-8), **2c** the side's own required commits (AM-8: production's FP32_ALT), **9** the stage is ALLOWED (AM-9 /
+AM-3 / AM-4, and production's FP32_ALT gate), **10** the seeded pool set equals the side's record (POOL), **11** every
+finished batch-1 arm PASSed K9(b) at its end (AM-6, batch-wide). A side's first GO also needs `--t62 <token>` (production
+`FP32_ALT`, toy `NA_TOY`; it writes `x35_pin_batch1_<side>.txt`).
 
 1. **X34 has STOPPED** (it plateaued: "Words used here"), its launcher PID is gone (`ps -p`; `python -m main.x35.kit live`
    exits 0), and T\* is the 290M node: path, step and sha256 are in the toy R file (`reference_population_toy.json`,
@@ -150,12 +174,14 @@ finished batch-1 arm PASSed K9(b) at its end (AM-6). The first GO also needs `--
 2. **The GPU is clear**: the battery and the X14 A/B have finished, `nvidia-smi --query-compute-apps=pid --format=csv`
    lists nothing, and `scripts/ops/gpu_lease.sh status` reads FREE or the Training session's lease.
    `python -m main.x35.kit live` exits 0 (no training run live).
-3. **The battery's T62 verdict is read** (`read_battery.py`): ADOPT, FP32_ALT, INCONCLUSIVE or INCOMPLETE. It picks the
-   pin variant (§3).
+3. **The battery's T62 verdict is read: FP32_ALT (2026-10-20, AM-8).** The toy side does not depend on it (§3); production
+   waits for the FP32_ALT commit (check 4).
 4. **The pin** carries every commit in [`x35_required_commits.txt`](x35_required_commits.txt): T54 `cdab9cfe`, B-D2
    `c1b0c1f0`, the forum-corpus lift `f9360870`, F-BI-2 `4df10e65`, B-GROW `24616919`, B-GROW × F-BI-2 `aa5feaf5`, T62
    `bd3126e0`, and the canary YARDSTICK fix `03b983be` (its code is `ee49f1f9`, `gen3_r1_yardstick_margin_v1`; `03b983be`
-   is the ship tip; all added 2026-10-19 except the first two; also `2be4595f` (K9(b)'s excluded-share ceiling judged only on >= 1,024 rows) and `52ac4829` (the supply guard no longer counts a fresh, never-seeded pool as starving; relevant to every X35 fork), added 2026-10-19 on the orchestrator's ruling; `launch_x35.sh` pre-check 2 enforces the file).
+   is the ship tip; all added 2026-10-19 except the first two; also `2be4595f` (K9(b)'s excluded-share ceiling judged only on >= 1,024 rows) and `52ac4829` (the supply guard no longer counts a fresh, never-seeded pool as starving; relevant to every X35 fork), added 2026-10-19 on the orchestrator's ruling; `launch_x35.sh` pre-check 2 enforces the file). **Production's pin ALSO carries the FP32_ALT commit** named in
+   [`x35_required_commits_production.txt`](x35_required_commits_production.txt) (placeholder `FP32_ALT_SHA_PENDING` until the
+   build lands: every production launch HOLDs at pre-check 2c until then; the toy side has no such file).
 5. **P\*'s sha256** is `814823c5…91ed`, and `python -m main.x35.refpop verify reference_population_production.json`
    prints OK (it re-hashes P\*, the 8 archive nodes, R's 7 members (the A-block, `production`, and T\*'s file in X34's run dir) and X26's run-dir files: never thin X26's 14 files or X34's T\* file,
    F-R3).
@@ -165,44 +191,54 @@ finished batch-1 arm PASSed K9(b) at its end (AM-6). The first GO also needs `--
 7. **No `models/rb_x35*` directory exists** for the arm (a restart RESUMES through the launcher, never this sheet).
 8. **`data/` is FROZEN** from the first arm's launch until the last X35 arm ends: every X35 arm is a pinned run, and a
    pin isolates code, not data. The forum corpus D1 reads lives in `src/utils/team_corpora/` (pin-safe), not `data/`.
-9. **The disk.** Today 442.9 GiB are free (`kit disk`, 2026-10-19 23:10; it was 289 GiB at 18:10). The dry-run asks
-   10.97 GiB per production fork and 13.05 GiB per toy fork (each with a 25 % margin and a 4 GiB reserve, so the sum
-   over-counts). The kit's pre-check 8 counts every `BATCH1` fork not yet created (**32** since the amendment, X47's 5
-   included; a conditional fork its records REFUSED is not counted) at the REQUIRED GiB of the launch in hand: at the
-   FIRST production launch 32 × 10.97 = 351.0 GiB against 442.9 free, a PASS with ≈ 92 GiB to spare (F-LS-5); the same
-   count at the toy figure would be 32 × 13.05 = 417.6 GiB, also a PASS today. The count falls as run directories
-   appear, but the free space falls with it: thin finished arms to their 10M nodes + final as they end (F22), and
-   re-read `df` before each toy launch. `--thinning` is the orchestrator's word, never the script's default.
+9. **The disk.** Today 441.4 GiB are free (`kit disk`, 2026-10-20 01:22; 442.9 at 2026-10-19 23:10; 289 at 18:10). The
+   dry-run asks 10.97 GiB per production fork and 13.05 GiB per toy fork (each with a 25 % margin and a 4 GiB reserve, so
+   the sum over-counts). The kit's pre-check 8 counts every `BATCH1` fork not yet created (**32** since the amendment,
+   X47's 5 included; a conditional fork its records REFUSED is not counted) at the REQUIRED GiB of the launch in hand.
+   **Since AM-9 the FIRST launch is a TOY launch, so all 32 forks count at the toy figure: 32 × 13.05 = 417.6 GiB against
+   441.4 free, a PASS with only ≈ 24 GiB to spare (F-LS-5)** (the same count at the production figure, 351.0 GiB, left
+   ≈ 90). The count falls as run directories appear, but the free space falls with it: thin finished arms to their 10M
+   nodes + final as they end (F22), and re-read `kit disk --required-gib 13.05` before the first toy launch.
+   `--thinning` is the orchestrator's word, never the script's default.
 
 ---
 
-## 3. The pin: two variants
+## 3. The pins: one per side (AM-8)
 
-The battery's T62 gate ([`../gpu_window_battery_2026-10-19/README.md`](../gpu_window_battery_2026-10-19/README.md)):
-adopt the float64 τ solve iff it costs ≤ 3 % of a training cycle (`cost_hi ≤ 3 %`); **FP32_ALT** iff `cost_lo > 3 %`;
-INCONCLUSIVE in between (the orchestrator decides).
+The battery's T62 gate ([`../gpu_window_battery_2026-10-19/README.md`](../gpu_window_battery_2026-10-19/README.md)): adopt
+the float64 τ solve iff it costs ≤ 3 % of a training cycle (`cost_hi ≤ 3 %`); **FP32_ALT** iff `cost_lo > 3 %`;
+INCONCLUSIVE in between. **READ 2026-10-20: the fp64 solve doubles the production learner update (41 s → 97 s), a per-cycle
+cost of 82–127 %: FP32_ALT.**
 
-- **Variant T62 (ADOPT): `<PIN>` = main HEAD at launch**, a descendant of `03b983be` (the commit every line here was
-  last validated at, §4.3; it carries T62 `bd3126e0` and the canary yardstick fix). Main HEAD carries T62 by default.
-- **Variant FP32_ALT: NO SUCH COMMIT EXISTS (F-LS-2).** FP32_ALT is not a flag and not a revert. The battery README
-  defines it as "the fp32 complementary-constraint alternative" from the T62 decision row in
-  [`design_x5_belief_tokens.md`](../../../endstate/design_x5_belief_tokens.md): solve the COMPLEMENTARY constraint
-  when the mass saturates, "a second code path and a second case split". That is a build: the code, tests that fail
-  on revert, and re-recording the learner golden (`learner_golden.json`) and the h2h reveal file's `OFF_BITS` that
-  `bd3126e0` / `803a13e3` re-recorded under fp64. A plain revert of `bd3126e0` is NOT FP32_ALT: it brings back the
-  K9(b) τ-class divergence (X26's A3 / A6 stops) that T62 fixed, and it would also need `803a13e3` undone.
-  - When such a commit lands on main, it is a descendant of `bd3126e0`, so `x35_required_commits.txt` holds in both
-    variants. The argvs are unchanged: only `--pin-commit <FP32_ALT_PIN>` differs, and each line must be dry-run again
-    at that pin (`validate_batch1.sh --pin <FP32_ALT_PIN>`).
-  - **The toy is NOT affected by T62.** The toy has no belief tokens (`move_belief_mode off`, `opp_belief_cls_k 0`,
-    no species prior). MEASURED here: the toy network's forward on its 64 recorded rows (`toy_network_identity_test`)
-    calls `hypothesis_set.fixed_size_tau` **0 times**, against 20 calls in the positive control (the
-    `hypothesis_set_test` presence cases), with a counting patch. Only the CPU forward was checked; the learner path
-    has no belief loss on the toy (its belief coefficients are 0), which was not executed here.
+- **TOY pin: `<PIN>` = main HEAD at the first toy launch**, a descendant of `03b983be` (the commit every line here was
+  last validated at, §4.3; it carries T62 `bd3126e0` and the canary yardstick fix) and of the kit commit with AM-8 / AM-9.
+  Its pin file is `x35_pin_batch1_toy.txt`, written by the first toy GO with **`--t62 NA_TOY`**. **The toy is NOT affected by
+  T62.** The toy has no belief tokens (`move_belief_mode off`, `opp_belief_cls_k 0`, no species prior). MEASURED: the toy
+  network's forward on its 64 recorded rows (`toy_network_identity_test`) calls `hypothesis_set.fixed_size_tau` **0 times**,
+  against 20 calls in the positive control (the `hypothesis_set_test` presence cases), with a counting patch. Only the CPU
+  forward was checked; the learner path has no belief loss on the toy (its belief coefficients are 0), which was not
+  executed here (F-LS-8).
+- **PRODUCTION pin: the FP32_ALT variant, and NO SUCH COMMIT EXISTS YET (F-LS-2).** FP32_ALT is not a flag and not a
+  revert. The battery README defines it as "the fp32 complementary-constraint alternative" from the T62 decision row in
+  [`design_x5_belief_tokens.md`](../../../endstate/design_x5_belief_tokens.md): solve the COMPLEMENTARY constraint when the
+  mass saturates, "a second code path and a second case split". That is a build (another agent's, about a day from
+  2026-10-20): the code, tests that fail on revert, and re-recording the learner golden (`learner_golden.json`) and the h2h
+  reveal file's `OFF_BITS` that `bd3126e0` / `803a13e3` re-recorded under fp64. A plain revert of `bd3126e0` is NOT
+  FP32_ALT: it brings back the K9(b) τ-class divergence (X26's A3 / A6 stops) that T62 fixed, and it would also need
+  `803a13e3` undone.
+  - **The gate (AM-8).** [`x35_required_commits_production.txt`](x35_required_commits_production.txt) holds the placeholder
+    `FP32_ALT_SHA_PENDING`; until it is replaced by the commit's full sha, `launch_x35.sh` HOLDs every production launch
+    (pre-check 2c) and `kit stage-check` reads PENDING for every production fork. **When FP32_ALT lands:** (1) replace the
+    placeholder with its sha and commit that, BEFORE the production pin is chosen; (2) the production pin = main HEAD then
+    (a descendant of `bd3126e0`, so `x35_required_commits.txt` holds unchanged); (3) every production line is dry-run
+    AGAIN at that pin (`validate_batch1.sh --pin <PIN> --toy-call … a1:3501 …`: the production validation of §4.3 predates
+    FP32_ALT and its learner changes); (4) the first production GO takes `--t62 FP32_ALT`.
+  - **What the check does NOT prove:** it shows that the named sha is a real commit and an ancestor of the pin, not that it
+    IS the FP32_ALT build; whoever fills the file is trusted with the right sha (F-LS-12).
 
-**C1 RULED (orchestrator, 2026-10-19): (a).** Production launches at main HEAD with T62 whatever the battery reads
-(FP32_ALT does not exist, and T62's cost is paid by b-ON and C0 alike); the measured cost is recorded beside the
-batch, and `x35_pin_batch1.txt` records the T62 verdict known at the first GO (`PENDING` until the battery reads).
+**C1 RULED (orchestrator, 2026-10-19): (a), SUPERSEDED 2026-10-20 by AM-8.** C1 (a) launched production at main HEAD under
+T62 whatever the battery read, because FP32_ALT did not exist and T62's cost is paid by b-ON and C0 alike. The battery has
+now read FP32_ALT, and the orchestrator ruled that production waits for it; the toy block opens the batch instead (AM-9).
 
 ---
 
@@ -213,18 +249,21 @@ run from the main checkout (`/home/goodlad/dev/gen3ai`) with `export PYTHONPATH=
 holds the GPU lease. `launch_x35.sh` without `GO` is a dry run of every pre-check; `GO` launches and needs the
 orchestrator's go.
 
-### 4.1 Production (validated at `03b983be` on the REAL P\*)
+### 4.1 Production (validated at `03b983be` on the REAL P\*; NOT launchable until FP32_ALT lands, AM-8)
 
-For each row of §1 (arms `a1`, `c0`, `d1`, `a2`, seeds 3501–3503), in order:
+For each row of §1 (arms `a1`, `c0`, `d1`, `a2`, seeds 3501–3503), in order, AFTER the toy block T1 (AM-9) and once §3's
+steps (1)–(3) are done:
 
 ```bash
-# NEEDS GO. <PIN> = variant T62: main HEAD (≥ 03b983be); variant FP32_ALT: the FP32_ALT commit (does not exist yet, §3).
+# NEEDS GO. <PIN> = the PRODUCTION pin: main HEAD once x35_required_commits_production.txt names the FP32_ALT commit (§3).
+# The FIRST production launch adds --t62 FP32_ALT (it writes x35_pin_batch1_production.txt); later ones do not need it.
 S=designs/research_state/measurements/x35_breakers_stage_2026-10-17
-$S/launch_x35.sh a1 3501 --pin <PIN> --lease-owner <owner>          # dry run: every pre-check, prints the line
-$S/launch_x35.sh a1 3501 --pin <PIN> --lease-owner <owner> GO       # only on the orchestrator's GO
+$S/launch_x35.sh a1 3501 --pin <PIN> --lease-owner <owner> --t62 FP32_ALT        # dry run: every pre-check, prints the line
+$S/launch_x35.sh a1 3501 --pin <PIN> --lease-owner <owner> --t62 FP32_ALT GO     # only on the orchestrator's GO
 ```
 
-The argv the kit builds is, flag for flag, the validated file `batch1_validation_03b983be/argv_<arm>_s<seed>.txt`.
+The argv the kit builds is, flag for flag, the validated file `batch1_validation_03b983be/argv_<arm>_s<seed>.txt` (at
+`03b983be`; re-validate at the FP32_ALT pin, §3).
 The launcher line it runs is:
 
 ```bash
@@ -241,7 +280,17 @@ python -m main.launcher --restart-interval-hours 24 --pin-commit <PIN> \
 
 Each is followed by `--seed <seed> --run-name <run name>`.
 
-### 4.2 Toy (validated at `03b983be` on the REAL T\*, 290,000,087)
+### 4.2 Toy (validated at `03b983be` on the REAL T\*, 290,000,087; RE-validated at main HEAD 2026-10-20, §4.3). THE TOY BLOCK OPENS THE BATCH (AM-9)
+
+The FIRST launch of the batch is `toy_c0 3601` (stage T1):
+
+```bash
+# NEEDS GO. <PIN> = the TOY pin: main HEAD at this launch. The FIRST toy launch adds --t62 NA_TOY (it writes
+# x35_pin_batch1_toy.txt AND x35_pool_batch1_toy.json); later toy launches pass the SAME --pin and need no --t62.
+S=designs/research_state/measurements/x35_breakers_stage_2026-10-17
+$S/launch_x35.sh toy_c0 3601 --pin <PIN> --lease-owner <owner> --t62 NA_TOY        # dry run
+$S/launch_x35.sh toy_c0 3601 --pin <PIN> --lease-owner <owner> --t62 NA_TOY GO     # only on the orchestrator's GO
+```
 
 **The toy R is FROZEN (2026-10-19, CPU, rule 5b, no GPU lease):** [`reference_population_toy.json`](reference_population_toy.json),
 content sha256 `856c04cb87e9415eda9289845d66a770582c30e773bb7c23df7fdb6221a55a4d`, `refpop verify` OK. The full write-up
@@ -261,8 +310,8 @@ content sha256 `856c04cb87e9415eda9289845d66a770582c30e773bb7c23df7fdb6221a55a4d
    snapshots (92M … 270M; all at or below the fork step, so T54's filter drops none), digest `2e86c4f9d7a1…`** (full
    digest `2e86c4f9d7a10da2ef5e0516516fc31c219dc966842ccf74567bafdc0c41bbd5`; every name and sha256 in
    [`toy_pool_preread.json`](../x35_toy_refpop_freeze_2026-10-19/toy_pool_preread.json)). That file is NOT the batch record:
-   the first toy GO writes `x35_pool_batch1_toy.json` (and `x35_pin_batch1.txt` is written by the FIRST GO of the whole
-   batch, production's, with `--t62`). X34 is stopped, so the first toy GO must recompute this same digest; a different
+   the first toy GO writes `x35_pool_batch1_toy.json` and `x35_pin_batch1_toy.txt` (`--t62 NA_TOY`; production's own
+   pin file and pool record are written by ITS first GO). X34 is stopped, so the first toy GO must recompute this same digest; a different
    one is a HOLD worth reading (something moved in X34's `snapshots/`). Neither file was written here.
 4. Every toy argv was built from that file and validated at the pin, in the kit's order (§4.3): 16 toy lines (toy C0 ×5,
    X47 ×5, toy A1 ×3, toy A2 ×3), every one `verdict=PASS`, none printing `STANDIN`.
@@ -300,6 +349,21 @@ way. T54's pool-seed check runs inside `launch_x35.sh`; by hand it is
 `python -m main.x35.kit pool-seed-check --arm toy_x47 --run-dir models/rb_x35t_x47d4_s<seed> --call $S/reference_population_toy.json --log models/rb_x35t_x47d4_s<seed>/launcher_child.full.log`
 (F-LS-9: the growth adds a `grown` block to `pool_seed.json`; the check reads it as before, which `kit_test.py` pins
 on a constructed record, and has not run on a real grown child).
+
+### 4.2a The toy lines RE-VALIDATED at main HEAD, 2026-10-20 (16 of 16 PASS at `5a598a94`)
+
+**`validate_batch1.sh` at `5a598a94`** (the AM-8 / AM-9 kit commit, a child of main HEAD `805c63fc6`; twenty-one commits and one day
+after `03b983be`, among them the X14 recipe row and the CPU compile seam), the 16 toy forks of T1, T1b and T2 in the kit's new
+order, on the REAL T\* and `reference_population_toy.json`: **`SUMMARY 16 PASS, 0 FAIL (pin 5a598a94)`**
+([`batch1_validation_5a598a94/`](batch1_validation_5a598a94/): `summary.txt`, all 16 argvs, and the `checkargs` / `--dry-run`
+transcripts of toy C0 / X47 / toy A1 / toy A2 s3601 and toy C0 / X47 s3604). Every line: `checkargs=0 dryrun=0 would_launch=1`,
+`delta=[+70,000,000 steps]`, `gib=[13.05]`, FORK of `rb_toy_ent_s4002_deep`, `k9b=[warn]`, `grow=[DECLARED trunk_layers 2 -> 4]` on
+the 5 X47 lines and `grow=[none]` on the other 11; no line prints `STANDIN`; **all 16 argvs are byte-identical (`cmp`) to
+`batch1_validation_03b983be/`'s.** CPU only (`nice -n 19 taskset -c 5-7,13-15`, one process at a time, 44 s and 717 MB peak
+RSS per line, `CUDA_VISIBLE_DEVICES=""`), `GEN3AI_MODELS_DIR` on an empty scratch dir (nothing under `models/` or `data/`
+written; no pin or pool file written). The production lines were NOT re-run (F-LS-15). Read-only beside it, the toy side's
+first-GO previews: `refpop verify reference_population_toy.json` OK, and `pool-check --arm toy_c0` (no `--write`) reads 20
+snapshots at the fork step, digest `2e86c4f9d7a1`, the same as §4.2 item 3.
 
 ### 4.3 What the dry-runs showed (32 of 32 PASS at `03b983be`, the toy on the REAL T\*)
 
@@ -362,6 +426,9 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
 
 - **C1. The battery does not read ADOPT. RULED (orchestrator, 2026-10-19): (a)**, launch production at main HEAD with
   T62 pending the battery read (§0, §3). The registered rule had said FP32_ALT, which does not exist (§3).
+  **SUPERSEDED 2026-10-20 (AM-8):** the battery then read FP32_ALT (the fp64 solve doubles the learner update) and the
+  orchestrator ruled that production WAITS for it, the toy block going first (AM-9): option (b) below, in effect. Kept as
+  the record of the 2026-10-19 choice.
   - (a) Launch production at main HEAD anyway (T62), recording the measured cost. T62 is a correctness fix (one τ for the
     compiled rollout and the eager learner), and its cost is paid by b-ON and C0 alike, so it biases no A/B; it only
     raises the GPU-h.
@@ -440,17 +507,24 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
   "rb_x35t_x47d4_s{seed}", 0, "warn")` (seeds 3601–3603) whose lever is `--grow trunk_layers=4`, three places in
   `BATCH1`, and `kit_test.py` cases that fail on revert: so `launch_x35.sh` dry-runs and launches it, `kit disk` counts
   its 3 forks, and `validate_batch1.sh` gives it a verdict.
-- **F-LS-2 (blocker for the FP32_ALT variant): no FP32_ALT commit exists** (§3). The registered T62 rule cannot be
-  executed as written if the battery does not read ADOPT. Choice C1, RULED (a) on 2026-10-19.
+- **F-LS-2 (BLOCKS EVERY PRODUCTION FORK until it lands): no FP32_ALT commit exists** (§3). The battery read FP32_ALT on
+  2026-10-20, so the registered T62 rule now points at a build that is not there; C1 (a) is superseded (AM-8) and
+  `x35_required_commits_production.txt` holds the placeholder `FP32_ALT_SHA_PENDING`, which HOLDs every production launch
+  (pre-check 2c) and reads PENDING in `stage-check`. The build (~1 day, another agent's) must also re-record
+  `learner_golden.json` and the h2h `OFF_BITS`.
 - **F-LS-3 CLOSED 2026-10-19: the toy K9(b) mode** is `warn` (ruling C3, §5). The kit's old `fatal` for the toy was the
   stricter check and a stop would have left an arm short; X34's own scalars never reached its bar (C3).
 - **F-LS-4 CLOSED 2026-10-19: the toy lines are on the REAL T\*.** X34 plateaued; T\* = the 290M node (sha256
   `cfa7f7be…a22965e7`), the toy R is frozen on it (§4.2) and all 16 toy lines of `batch1_validation_03b983be/` PASS with
   no `STANDIN` call. The stand-in R, its argvs and the three older validations are history (`kit_test.py` still reads
   `batch1_validation_803a13e3/` for the argv shapes it pins; never delete that directory).
-- **F-LS-5: the disk margin at the FIRST launch is ≈ 92 GiB** (re-read 2026-10-19 23:10; was ≈ 26): §2 check 9, 32 forks ×
-  10.97 = 351.0 GiB against 442.9 free. It falls with every run directory and every read output. A HOLD at pre-check 8
-  is the F22 check working. Thin finished arms as they end; `--thinning` is the orchestrator's word.
+- **F-LS-5: the disk margin at the FIRST launch is now ≈ 24 GiB** (re-read 2026-10-20 01:22; it was ≈ 92 when production
+  went first): AM-9 makes the first launch a TOY launch, so §2 check 9 counts all 32 forks at the toy figure, 32 × 13.05 =
+  417.6 GiB against 441.4 GiB free. It falls with every run directory and every read output. A HOLD at pre-check 8
+  is the F22 check working. The count over-counts the 20 production forks by 2.08 GiB each (13.05 vs 10.97: ≈ 42 GiB, the
+  per-fork figure is the launch in hand's, not per side); a per-side figure would read ≈ 65 GiB of margin, and is NOT built
+  (changing the F22 rule is out of this unit's scope). Thin finished arms as they end; `--thinning` is the orchestrator's
+  word.
 - **F-LS-6: the dry-runs ran at `03b983be`, but the launch pin is main HEAD at launch time.** Any commit between them is
   unvalidated: `launch_x35.sh` re-runs `checkargs` and the dry-run at `<PIN>` before every arm, and X47's lines must be
   re-run with `validate_batch1.sh --pin <PIN>`.
@@ -466,3 +540,32 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
 - **F-LS-10: the validation is CPU and at ONE pin.** It proves each argv parses and "would launch" (and X47's growth is
   DECLARED); the growth's bit-identity gate, the grown pool and the pool-seed record are child-side and are first seen
   at the real launch (read the first minutes of the log, §4.2).
+- **F-LS-11 (UNVERIFIED): the production GPU-h assume FP32_ALT costs what X26's fp32 τ path did.** X26's 1,333–1,358
+  steps/s predate T62; the fp64 solve measured +82–127 % per cycle, and FP32_ALT "a second code path and a second case
+  split" is expected to cost about what the old fp32 solve did, but nothing has run it. Read the first 1M of the first
+  production arm (as F-LS-7 does for D1 and X47) and restate the 65 / 91 / 146–148 GPU-h.
+- **F-LS-12: `required-check` proves ancestry, not identity** (§3): the sha in `x35_required_commits_production.txt` must be
+  a real commit and an ancestor of the production pin, but the check cannot know it is THE FP32_ALT build; a wrong sha that
+  is in the pin passes. The orchestrator (or the FP32_ALT builder's ship report) names the sha; read the commit's subject
+  before committing the file.
+- **F-LS-13: the `data/` freeze (§2 check 8) now opens with the first TOY launch and spans the production gap.** Every X35
+  arm is a pinned run and a pin isolates code, not data; with the toy block first and production waiting for FP32_ALT, the
+  freeze starts earlier and runs through T1 (about 30 GPU-h), any T1b, the gap, and all of production.
+- **F-LS-14: the two sides run at TWO pins**, as ruled: a cross-side statement (the toy calibration's agreement with
+  production, AM-3 / T2; the shared G-K reads) compares a toy arm at the toy pin with a production arm at the production
+  pin. Each arm is still read against the C0 of its own side and pin, which is all AM-1 protects.
+- **F-LS-15: only the TOY lines were re-validated** at main HEAD on 2026-10-20 (§4.2a); the 16 production lines are as
+  validated at `03b983be` and MUST be re-validated at the FP32_ALT pin before the first production launch (§3).
+- **F-LS-16: pre-check 11 (K9(b) at arm end) stays batch-wide**: a finished toy arm whose K9(b) reads VOID or INCONCLUSIVE
+  HOLDs the first PRODUCTION GO too (and the reverse). That is AM-6's "before the next GO" read as written; it is not a
+  per-side check like the pin.
+- **F-LS-17 (could not verify): no end-to-end dry run of `launch_x35.sh` past pre-check 1.** The X14 A/B is live
+  (`kit live` exits 1), so the script HOLDs there; the later pre-checks (2b, 2c, 9, 10, 11) are exercised by the kit's own
+  subcommands and `batch_test.py`, and the script's wiring by needle tests plus a dry run in a scratch job dir that reached
+  pre-check 1 (`bash -n` clean). The first real dry run is the Training session's.
+- **F-LS-18: the 16-line re-validation ran WITHOUT a heavy slot.** The X14 A/B is live, both heavy slots were held (a 4 h
+  job and a 30 min job) with 8 waiting (the oldest 2 h 40 min); a `mem_cap.sh` request for the validation sat 17 minutes
+  without a slot, was cancelled by its PID, and the lines ran as a light job instead: one process at a time at nice 19 on the
+  3 agent cores, 44 s and 717 MB peak RSS per line (measured on line 1 with `/usr/bin/time -v`), 4 minutes in all, which is
+  the shape the earlier validations ran in. Rule 5b reads "heavy" as traces / benchmarks / many checkpoints; this was judged
+  not to be one. The Training session's own dry runs before each GO are the same size.

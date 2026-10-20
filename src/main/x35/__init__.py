@@ -11,9 +11,10 @@
 * :mod:`main.x35.kakuna` -- the external-anchor (G-K) unit runner on the COMMITTED home72 config;
 * :mod:`main.x35.d1` -- D1's (X38's) own readout (H on the unfamiliar panels, widened by the seed overdispersion
   (AM-5), and P);
-* :mod:`main.x35.batch` -- batch 1's gates, the orchestrator's 2026-10-19 rulings on the review: ONE pin (AM-1), one
-  seeded pool set per side, the variance gate G1 (AM-2), the staged order and its conditions (AM-7 / AM-3 / AM-4),
-  K9(b) at each arm's end (AM-6);
+* :mod:`main.x35.batch` -- batch 1's gates, the orchestrator's 2026-10-19 rulings on the review and 2026-10-20 rulings
+  after the GPU battery's read: ONE pin PER SIDE (AM-1 as amended by AM-8), the production side's FP32_ALT commit (AM-8),
+  one seeded pool set per side, the variance gate G1 (AM-2), the staged order (the toy block FIRST, AM-9) and its
+  conditions (AM-3 / AM-4), K9(b) at each arm's end (AM-6);
 * :mod:`main.x35.x47` -- X47's readout (AM-4): s_eq at equal effective learn time, the matched-step secondary, the
   PER-STEP ONLY class; :mod:`main.x35.tbrows` -- a fork's OWN TensorBoard rows (the inherited prefix excluded).
 

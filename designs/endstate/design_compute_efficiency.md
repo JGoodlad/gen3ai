@@ -569,15 +569,16 @@ same wall clock.
 
 ### 5.6 X35 LAUNCH-READY ON PAPER: the arm list, the readout, the builds (2026-10-17)
 
-**Status: STAGED ON PAPER, nothing launched; batch 1 + X47 has a LAUNCH SHEET (2026-10-19, [`BATCH1_LAUNCH_SHEET.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md): the arms in GPU order, every argv dry-run validated, the T62 / FP32_ALT pin variants, C1–C4 ruled, and the review's amendments AM-1 to AM-7 ruled and built, 2026-10-19: the AMENDMENT below).** The day the plateau is called, the first arm can launch once the
+**Status: STAGED ON PAPER, nothing launched; batch 1 + X47 has a LAUNCH SHEET (2026-10-19, [`BATCH1_LAUNCH_SHEET.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md): the arms in GPU order, every argv dry-run validated, the T62 / FP32_ALT pin variants, C1–C4 ruled, and the review's amendments AM-1 to AM-7 ruled and built, 2026-10-19; then AM-8 / AM-9 after the GPU battery's read, 2026-10-20: both AMENDMENTS below).** The day the plateau is called, the first arm can launch once the
 orchestrator gives its GO; a design block is not a launch command. The staging record, with every dry-run transcript,
 is [`../research_state/measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md).
 **Why now:** X26 is still CLIMBING at 180M (Tier 1 GAIN at every 10M check). The owner's order (2026-10-16) is X26 to
 its plateau, then the toy (X34) to its plateau, then breakers on both. No PFSP or league lever goes inside X26 itself.
 
 **AMENDMENT 2026-10-19 (the orchestrator's rulings on the adversarial review [`X35_BATCH1_REVIEW.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/X35_BATCH1_REVIEW.md), made BEFORE any X35 launch; the full table is the launch sheet's §0, each item BUILT in `src/main/x35/` and enforced by `launch_x35.sh`):**
-- **AM-1 (blocking): ONE pin.** X35_PIN_1 is written ONCE (`x35_pin_batch1.txt`, by the first GO: sha, date, T62
-  verdict); every launch's pin and every batch-1 run's recorded pin must equal it (pre-check 2b).
+- **AM-1 (blocking): ONE pin PER SIDE (amended by AM-8, 2026-10-20).** Each side's pin is written ONCE
+  (`x35_pin_batch1_production.txt` / `x35_pin_batch1_toy.txt`, by the side's first GO: sha, side, date, the side's T62
+  token); every launch's pin and every recorded pin of that side's batch-1 runs must equal it (pre-check 2b).
 - **AM-2: the variance gate G1** after the first six forks: the pooled within-arm SD of S over A1 / C0 × s3501–s3503
   (4 df); PASS iff ≤ 1.2 pp (within 1e-9 counts above); a HOLD holds D1, A2 and the toy calibration for a re-plan
   and runs C0 s3504–s3505 next (`kit gate`). It reads variance only.
@@ -588,22 +589,38 @@ its plateau, then the toy (X34) to its plateau, then breakers on both. No PFSP o
 - **AM-5:** D1's H interval is widened by √max(1, φ̂), the seed overdispersion (`design_diversity_teams_opponents.md`).
 - **AM-6:** K9(b) is read at EACH arm's end over its own post-fork rows, deterministically (`kit k9b`); a crossing makes
   the arm VOID for every read.
-- **AM-7: the order** is the first six forks → G1 → C0's look-2 seeds and A1's look 2 → D1, A2 → toy C0 + X47 → X47's
+- **AM-7: the order** was the first six forks → G1 → C0's look-2 seeds and A1's look 2 → D1, A2 → toy C0 + X47 → X47's
   look 2 → the conditional toy calibration (≈ 91 GPU-h on the expected path, ≈ 146–148 with every conditional stage).
-  It REPLACES the batch-1 GPU order below.
+  **Its ORDER is superseded by AM-9 (below); its conditions (G1, look-1 CONTINUE, AM-3, AM-4) stand.**
 - **POOL:** every arm of a side seeds the SAME snapshot set, recorded at the side's first launch and checked at every
   launch and after every spawn. **C0 is "P\* continued with X26's pool as of today: 14 snapshots, 164–268M", not
   "X26 unchanged"**: the pool is older and sparser than X26's at P\* (review F-RV-8), matched across arms.
 - **G-E readers:** not launched in batch 1. An arm whose primary reads GAIN stays INCONCLUSIVE (never
   ADOPT-CANDIDATE) until its G-E readers (≈ 2.2 GPU-h per arm, argv still unregistered: F27) are registered and run
   at X35_PIN_1.
-- **C1: (a).** Production launches at main HEAD with T62, pending the GPU battery's read.
+- **C1: (a), SUPERSEDED by AM-8.** Production was to launch at main HEAD with T62, pending the GPU battery's read; the
+  battery read FP32_ALT, so production now waits for it.
+
+**AMENDMENT 2026-10-20 (AM-8: the orchestrator's rulings after the GPU battery's read, made BEFORE any X35 launch; the
+launch sheet's §0 has the table, each item BUILT in `src/main/x35/` and enforced by `launch_x35.sh`):** the T62 gate is
+DECIDED as **FP32_ALT**: the float64 τ solve doubles the production learner update (41 s → 97 s), 82–127 % per cycle
+against the 3 % bar. FP32_ALT does not exist yet (being built, about a day). The TOY makes zero τ-solve calls, so T62 is
+irrelevant to it.
+- **AM-1 amended: ONE PIN PER SIDE.** The production arms (A1 / C0 / D1 / A2) share one pin, the toy arms (toy C0 / X47 /
+  toy A1 / toy A2) another. Each side's control shares its own arms' pin, which is all AM-1 protects. The production pin
+  must carry the FP32_ALT commit: `x35_required_commits_production.txt` holds a placeholder until its sha is known, and
+  the kit refuses every production launch until it is filled (`kit required-check`; `stage-check` reads PENDING).
+- **AM-9: the ORDER.** The TOY block runs FIRST: T1 = toy C0 + X47 s3601–s3603 (interleaved as in AM-7), then T1b (X47 and
+  toy C0 s3604–s3605) if X47's look 1 reads CONTINUE. Production P1–P4 follows when FP32_ALT has landed. T2 (the toy
+  calibration) stays conditional on the production verdicts (AM-3) and last.
+- **The `--t62` token is the side's:** production `FP32_ALT`, the toy `NA_TOY` (τ-free).
 
 #### 5.6.1 The shared frame (every arm)
 
 - **The start.** P\* is X26's plateau checkpoint: the newest node of the second FLAT Tier-1 check (§4.3's convention),
   a 10M-multiple `checkpoints/checkpoint_<N>_steps.zip`, sha256 frozen at the call. T\* is the same for X34.
-- **One pin per BATCH.** `X35_PIN_k` is one main commit that carries every build its arms need, T54 at least (§5.6.7).
+- **One pin per BATCH and SIDE.** `X35_PIN_k` is one main commit per side (production, toy; AM-8) that carries every build
+  that side's arms need, T54 at least (§5.6.7), and production's also the FP32_ALT commit.
   A control is valid only at its own pin (`feedback_replicate_means_pin_and_seed`). So an arm whose build lands after a
   batch's pin forms a later batch with its OWN control. Dispatching the builds now is what keeps batch 1 large.
 - **The recipe is X26's own record, not `recipe.fork`.** The launcher restores X26's 12 recipe knobs typed (10 epochs,
@@ -624,9 +641,10 @@ its plateau, then the toy (X34) to its plateau, then breakers on both. No PFSP o
   X47's registered by AM-4). b-ON and b-OFF share seed i.
   Exploiters use 3511–3513, league exploiters 3521–3523 and best-response readers 3531+.
 - **ONE shared control set, C0, per (start checkpoint, pin).** Every breaker in the batch is read against it.
-- **The GPU order (batch 1): AM-7's (the amendment above; `kit.BATCH1`).** It opens with A1 s3501, C0 s3501, C0
-  s3502, A1 s3502, A1 s3503, C0 s3503, an ABBA order, so drift in box load does not land on one side. The first
-  A1-vs-C0 read lands after ≈ 26 GPU-h.
+- **The GPU order (batch 1): AM-9's (the amendment above; `kit.BATCH1`).** It opens with the toy block (toy C0 s3601,
+  X47 s3601, X47 s3602, toy C0 s3602, toy C0 s3603, X47 s3603; ≈ 30 GPU-h), then production once FP32_ALT has landed:
+  A1 s3501, C0 s3501, C0 s3502, A1 s3502, A1 s3503, C0 s3503, an ABBA order, so drift in box load does not land on one
+  side. The first A1-vs-C0 read lands after ≈ 26 GPU-h of production.
 - **Throughput (MEASURED, X26's checkpoint mtimes):** 150,000,100 → 180,000,055 took 22,483 s, i.e. 7,494 s per 10M
   ≈ 1,334 steps/s of wall time, eval cycles included. So a 20M fork is ≈ 4.2 GPU-h, plus ≈ 0.2 h for start and compile:
   ≈ 4.4 GPU-h per seed and ≈ 13 GPU-h per arm of 3 seeds. The first draft's 3.4 GPU-h per seed is superseded (F13).
@@ -1053,3 +1071,4 @@ The T55 build (2026-10-17) adds:
 | 2026-10-19 | **The orchestrator's rulings on the batch-1 review, BUILT before any X35 launch (X35 amendment worker)** | AM-1 ONE pin written once and enforced against every batch-1 run's recorded pin; AM-2 the variance gate G1 (σ̂ ≤ 1.2 pp, 4 df) after row 6; AM-3 the toy calibration only after production's FINAL class; AM-4 X47 look 2 + `main.x35.x47`; AM-5 D1's widened H; AM-6 K9(b) at each arm's end over its own rows (VOID on a crossing); AM-7 the staged order (`batch.STAGES`); POOL one recorded seeded set per side (C0 = X26's pool as of today, 14 snapshots 164–268M); G-E readers only for a GAIN arm; C1 (a) | per-arm pins ("HEAD at its launch"); 3-seed reads before σ is known; a toy calibration that cannot record agreement; X47 without look 2; hand reads of K9(b) between restarts; the G-E readers for every arm (≈ 4.4 GPU-h that decide nothing unless an arm reads GAIN) | `X35_BATCH1_REVIEW.md`; `BATCH1_LAUNCH_SHEET.md` §0; `src/main/x35/batch.py`, `batch_test.py` |
 | 2026-10-19 | **X35's toy side STAGED ON THE REAL T\* (launch-staging worker)** | X34 PLATEAUED: T\* = the 290M node (`checkpoint_290000087_steps.zip`, sha256 `cfa7f7be…a22965e7`). The toy R is FROZEN on it: archive N_1…N_8 = 30 / 70 / 100 / 130 / 170 / 200 / 240 / 270M, A-block 290 / 280 / 80 / 150 / 220M (85 a tie → 80), X-block P\* KEPT at **0.4160** [0.3863, 0.4457] (T\* vs P\*, 500 mirrored pairs, a cross-architecture cell on one engine, 14.1 min of one CPU lane); `refpop verify` OK. All **32** batch-1 argvs re-validated at `03b983be` with the toy on the real T\* (`--steps 360000087`; X47 `grow=[DECLARED trunk_layers 2 -> 4]`); `x35_required_commits.txt` now also requires `03b983be` (the canary YARDSTICK fix, code in `ee49f1f9`); the toy pool digest recorded read-only (pool-check, no pin file written). The 200M / 210M stand-ins are retired | a 210M T\* (the pre-plateau guess); freezing without the P\* cell (an empty X-block); reading the toy cell for the production R (it has T\* as the PLAYER: C5 needs its own cell) | `../research_state/measurements/x35_toy_refpop_freeze_2026-10-19/README.md`; `reference_population_toy.json`; `BATCH1_LAUNCH_SHEET.md` §4.2–§4.3; `batch1_validation_03b983be/`; `src/main/x35/refpop_test.py` |
 | 2026-10-19 | **X35's production R RE-FROZEN with T\* as a second X member (ruling C5; launch-staging worker)** | The P\*-player band cell was MEASURED, not assumed symmetric: P\* (X26 @ 280M) vs T\* (X34 @ 290M), 500 mirrored pairs, CPU, **0.5905 [0.5605, 0.6205]** (W/L/D 588 / 407 / 5), against the toy cell's 0.4160 (complement 0.5840; the difference is 0.3 SE). T\* KEPT. The old file moved aside as `reference_population_production_PRE_C5.json`; the new production R has **7 members** (A-block 280 / 270 / 80 / 140 / 210M, X `production` 0.6935, X `tstar` 0.5905), content sha256 `cef0960e…e4519`, `refpop verify` OK. `x35_required_commits.txt` also requires `2be4595f1` (K9(b) judged only on >= 1,024 rows) and `52ac48296` (the supply guard no longer counts a fresh, never-seeded pool as starving) | assuming exact symmetry and freezing from a declared `--band-json` score | `../research_state/measurements/x35_refpop_freeze_2026-10-19/README.md` §6; `reference_population_production.json`; `BATCH1_LAUNCH_SHEET.md` §5 C5 |
+| 2026-10-20 | **AM-8 / AM-9: the orchestrator's rulings after the GPU battery's read, BUILT before any X35 launch (launch-kit worker)** | The T62 gate is DECIDED as FP32_ALT (the fp64 τ solve doubles the production learner update, 41 → 97 s; 82–127 % per cycle vs the 3 % bar), and FP32_ALT does not exist yet. **ONE PIN PER SIDE** (`x35_pin_batch1_toy.txt`, `x35_pin_batch1_production.txt`; `pin-check` judges by side); the **TOY block runs FIRST** (T1 = toy C0 + X47 s3601–s3603, T1b on X47 look-1 CONTINUE), production P1–P4 when FP32_ALT has landed, the toy calibration T2 last and conditional (AM-3); the `--t62` token is the side's (production `FP32_ALT`, toy `NA_TOY`); `x35_required_commits_production.txt` holds a placeholder for the FP32_ALT commit and the kit refuses every production launch (`required-check`, `stage-check` PENDING) until it is filled and in the pin | one pin for all 32 forks (the toy would wait for a build it never uses); launching production under T62 (C1 (a)) at more than twice the learner-update cost; ordering by stage-check (the order is the Training session's sequence, not a gate) | `BATCH1_LAUNCH_SHEET.md` §0 AM-8, §3; `src/main/x35/batch.py`, `batch_test.py` |

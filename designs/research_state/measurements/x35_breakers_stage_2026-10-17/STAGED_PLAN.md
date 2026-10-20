@@ -19,6 +19,13 @@ record, the G-E readers, C1 (a)); each is built in `src/main/x35/` (`batch.py`, 
 `launch_x35.sh` (pre-checks 2b, 9, 10, 11). The launch sheet's §0 is the table; its §1 the new order. §4 below is
 superseded by it.
 
+**AMENDED AGAIN 2026-10-20 (AM-8 / AM-9), before any launch, after the GPU battery's read** (the T62 gate is DECIDED as
+FP32_ALT, which does not exist yet): the orchestrator ruled ONE PIN PER SIDE (AM-1 amended: `x35_pin_batch1_production.txt`
+and `x35_pin_batch1_toy.txt`), the TOY block FIRST (AM-9: T1, then T1b on X47's look-1 CONTINUE, then production when FP32_ALT
+has landed, the toy calibration T2 last), and the side's own `--t62` token (production `FP32_ALT`, toy `NA_TOY`). Production
+is HELD by a placeholder commit in `x35_required_commits_production.txt` (pre-check 2c). The launch sheet's §0 (AM-8) and §3
+are the record; §4 below, where it says "production first" or "`X35_PIN_1`", is superseded by them.
+
 **THE LAUNCH SHEET for batch 1 + X47 (2026-10-19): [`BATCH1_LAUNCH_SHEET.md`](BATCH1_LAUNCH_SHEET.md).** The 32 forks in AM-7's GPU order (14 unconditional, 18 on a stage condition; sheet §1) with GPU-h, stop rule and matched control; every argv `checkargs` exit 0, "would launch" and a PASS verdict at `03b983be` (all 32 forks, the toy on the REAL T\*, [`batch1_validation_03b983be/`](batch1_validation_03b983be/); the older validations, on the 200M stand-in for T\*, are history: `d825c6a1` (32 forks), `9c3bf3c4` (24) and `803a13e3` (24, whose toy lines typed K9(b) `fatal`), kept because `kit_test.py` reads the last one's argv files); the T62 / FP32_ALT pin variants (no FP32_ALT commit exists); the pre-launch checks and the failure handling. **X47 is a kit arm** (`toy_x47`, F-LS-1 closed). **Ruled by the orchestrator (2026-10-19): C2** (X47 interleaved with its toy C0, toy A2 last), **C3** (the toy arms run K9(b) `warn` under X34's ceilings) and **C4** (batch 1 launches without R0); C1 and the AM-1..AM-7 rulings have since been made (sheet §0); C5 is ruled and done (the production R re-frozen with T\* as a second X member); C6 is still open. [`validate_batch1.sh`](validate_batch1.sh) rebuilds and re-validates the lines at any pin, with a deterministic verdict per line.
 
 **R (production) is FROZEN (2026-10-19)** at P\* = X26 @ 280,000,170 (Amendment 5's `TIER1_PLATEAU` call, sha256
