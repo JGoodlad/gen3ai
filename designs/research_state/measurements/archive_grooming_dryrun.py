@@ -53,12 +53,17 @@ Run:
     python designs/research_state/measurements/archive_grooming_dryrun.py \
         --policy tiered --apply
 
+    # ONE finished run, the X35 F22 rule (10M nodes + final); see models_retention_policy.md §0
+    python designs/research_state/measurements/archive_grooming_dryrun.py --thin-run <run> [--apply]
+
 (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
 
 from __future__ import annotations
 
 import argparse
+import glob
+import hashlib
 import json
 import os
 import re
@@ -1270,6 +1275,351 @@ def apply_plan(census: dict) -> dict:
     return census
 
 
+# ------------------------------------------------- per-run F22 thinning ----
+#
+# ``--thin-run <run>``: ONE finished run, the X35 batch-1 rule (F22): "finished arms are
+# thinned to their 10M nodes + final".  It is NOT a census policy: it never looks at the
+# archive, only at the run it is handed, and it deletes checkpoint ZIPS only.
+
+#: the node spacing F22 names ("10M nodes").
+THIN_NODE_STEP = 10_000_000
+#: a node is the first checkpoint at or past the multiple, but only if it sits within this
+#: fraction of a median checkpoint spacing of it (a save fires on the first rollout boundary
+#: past its mark, so a real node is a few hundred steps past; a gap is reported, never guessed at).
+THIN_NODE_WINDOW = 0.5
+#: runs that are never thinned by name (X26's plateau run, X34's toy runs).
+THIN_REFUSED_PREFIXES = ("rb_x26_", "rb_x34", "rb_toy_ent_")
+THIN_X35_DIR = os.path.join("designs", "research_state", "measurements",
+                            "x35_breakers_stage_2026-10-17")
+THIN_KEEP_SIDECAR = SIDECAR_KEEP_REASON
+_FINAL_RE = re.compile(r"^final_model.*\.zip$")
+
+
+class ThinRefused(RuntimeError):
+    """The run must not be thinned; the message names the reason."""
+
+
+def _sha256(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _path_key(path: str) -> str:
+    """``<run>/<subdir>/<file>`` — a reference survives a moved ``models/`` root."""
+    parts = os.path.normpath(path).split(os.sep)
+    return "/".join(parts[-3:])
+
+
+def _json_paths(node: Any, out: "set[str]") -> None:
+    """Every absolute path string anywhere in a JSON document."""
+    if isinstance(node, dict):
+        for v in node.values():
+            _json_paths(v, out)
+    elif isinstance(node, list):
+        for v in node:
+            _json_paths(v, out)
+    elif isinstance(node, str) and node.startswith("/"):
+        out.add(node)
+
+
+def protected_reference_paths(x35_dir: str,
+                              extra: "Iterable[str]" = ()) -> "tuple[set[str], list[str]]":
+    """``(path keys, source files)`` named by the X35 reference populations and pool records.
+
+    Every absolute path in ``reference_population_*.json`` and, from ``x35_pool_*.json``, the
+    snapshots under its ``parent_run_dir``.  FAIL CLOSED: a directory with no reference file
+    raises, because "nothing is protected" must never be what a missing path means.
+    """
+    refs = sorted(glob.glob(os.path.join(x35_dir, "reference_population_*.json")))
+    pools = sorted(glob.glob(os.path.join(x35_dir, "x35_pool_*.json")))
+    if not refs:
+        raise ThinRefused(f"no reference_population_*.json under {x35_dir} — the protected "
+                          "references cannot be read, so nothing may be thinned")
+    paths: set[str] = set()
+    for f in refs:
+        doc = read_json(f)
+        if not doc:
+            raise ThinRefused(f"{f} is unreadable — the protected references cannot be read")
+        _json_paths(doc, paths)
+    for f in pools:
+        doc = read_json(f)
+        if not doc:
+            raise ThinRefused(f"{f} is unreadable — the protected references cannot be read")
+        parent = doc.get("parent_run_dir")
+        if isinstance(parent, str):
+            for snap in doc.get("snapshots") or []:
+                if isinstance(snap, dict) and snap.get("name"):
+                    paths.add(os.path.join(parent, "snapshots", snap["name"]))
+    for e in extra:
+        paths.add(e)
+    return {_path_key(p) for p in paths}, refs + pools
+
+
+def baseline_runs(registry: "str | None" = None) -> "set[str]":
+    """Every run name the baseline registry mentions anywhere (fail closed on a broken one)."""
+    from agents.training import baselines
+    doc = baselines.load_registry(registry)
+    names: set[str] = set(baselines.protected_files(registry))
+    strings: list[str] = []
+
+    def walk(n: Any) -> None:
+        if isinstance(n, dict):
+            for v in n.values():
+                walk(v)
+        elif isinstance(n, list):
+            for v in n:
+                walk(v)
+        elif isinstance(n, str):
+            strings.append(n)
+    walk(doc)
+    for s in strings:
+        if "/models/" in s:
+            parts = s.split("/models/", 1)[1].split("/")
+            if parts and parts[0]:
+                names.add(parts[0])
+        elif "/" not in s and " " not in s and s.startswith(("rb_", "ai_v")):
+            names.add(s)
+    return names
+
+
+def _open_by_other_process(run_dir: str) -> "list[str]":
+    """``/proc`` scan: processes (not this one) whose cwd or an open fd is inside ``run_dir``."""
+    root = os.path.realpath(run_dir) + os.sep
+    me = os.getpid()
+    hits: list[str] = []
+    for pid in os.listdir("/proc"):
+        if not pid.isdigit() or int(pid) == me:
+            continue
+        base = f"/proc/{pid}"
+        try:
+            targets = [os.readlink(f"{base}/cwd")]
+            for fd in os.listdir(f"{base}/fd"):
+                try:
+                    targets.append(os.readlink(f"{base}/fd/{fd}"))
+                except OSError:
+                    continue
+        except OSError:
+            continue                       # gone, or not ours to read: no evidence either way
+        if any((t + os.sep).startswith(root) for t in targets):
+            hits.append(pid)
+    return hits
+
+
+def _pid_files(run_name: str, extra: "Iterable[str]") -> "list[str]":
+    home = os.path.expanduser("~")
+    found = glob.glob(os.path.join(home, ".claude", "jobs", "*", f"{run_name}.pid"))
+    return sorted(set(found) | set(extra))
+
+
+def check_thinnable(run_dir: str, models_dir: str, *, baseline_set: "set[str]",
+                    pid_files: "Iterable[str]" = (), allow_no_final: bool = False,
+                    live: "dict[str, str] | None" = None,
+                    open_pids: "list[str] | None" = None) -> None:
+    """Raise :class:`ThinRefused` unless this run may be thinned.  Every check fails closed."""
+    if not os.path.isdir(os.path.join(run_dir, "checkpoints")):
+        raise ThinRefused(f"{run_dir} has no checkpoints/ — not a run dir")
+    names = {os.path.basename(os.path.normpath(run_dir)),
+             os.path.basename(os.path.realpath(run_dir))}
+    for n in sorted(names):
+        if n.startswith(THIN_REFUSED_PREFIXES):
+            raise ThinRefused(f"{n}: X26 / X34 runs are never thinned (their checkpoints are the "
+                              "reference populations' sources)")
+        if n in baseline_set:
+            raise ThinRefused(f"{n}: named in designs/baselines.json — a baseline must stay "
+                              "resolvable")
+    name = os.path.basename(os.path.normpath(run_dir))
+    live = live_run_dirs(models_dir) if live is None else live
+    if name in live:
+        raise ThinRefused(f"{name}: a launcher / trainer process names it: {live[name][:160]}")
+    for pf in pid_files:
+        try:
+            with open(pf) as fh:
+                pid = int(fh.read().split()[0])
+        except (OSError, ValueError, IndexError):
+            continue
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            continue
+        except PermissionError:
+            pass                           # exists, owned by someone else: ALIVE
+        raise ThinRefused(f"{name}: launcher pid {pid} from {pf} is alive")
+    open_pids = _open_by_other_process(run_dir) if open_pids is None else open_pids
+    if open_pids:
+        raise ThinRefused(f"{name}: pid(s) {', '.join(open_pids[:5])} have the run dir open")
+    if not allow_no_final and not any(_FINAL_RE.match(f) for f in os.listdir(run_dir)):
+        raise ThinRefused(f"{name}: no final_model*.zip — not a FINISHED run "
+                          "(--allow-no-final to thin a stopped one)")
+
+
+def thin_nodes(steps: "list[int]", fork_step: int, *, step: int = THIN_NODE_STEP,
+               basis: str = "absolute") -> "tuple[dict[int, int], list[int]]":
+    """``({multiple: checkpoint step}, [multiples with no node])``.
+
+    A node is the first checkpoint at or past the multiple (a save fires on the first rollout
+    boundary past its cadence mark, so ``checkpoint_300000135`` is the 300M node), if it lies
+    within :data:`THIN_NODE_WINDOW` of a median spacing of it.  The multiples are absolute
+    (``k * step``) or ``fork``-relative (the fork step's 1M bucket + ``k * step``); the fork
+    start itself is the PARENT's node, never this run's.
+    """
+    steps = sorted(steps)
+    if not steps:
+        return {}, []
+    gaps = sorted(b - a for a, b in zip(steps, steps[1:]))
+    spacing = gaps[len(gaps) // 2] if gaps else 1_000_000
+    window = min(THIN_NODE_WINDOW * spacing, step // 2)
+    base = 0 if basis == "absolute" else (fork_step // 1_000_000) * 1_000_000
+    nodes: dict[int, int] = {}
+    missing: list[int] = []
+    m = base + step
+    while m <= steps[-1]:
+        if m > fork_step and m >= steps[0] - window:
+            later = [s for s in steps if s >= m]
+            if later and later[0] - m <= window:
+                nodes[m] = later[0]
+            else:
+                missing.append(m)
+        m += step
+    return nodes, missing
+
+
+def plan_thin_run(run_dir: str, protected: "set[str]", *, step: int = THIN_NODE_STEP,
+                  basis: str = "absolute") -> dict:
+    """The F22 plan for ONE run: ``keep`` (name → reason) and ``delete`` (names), checkpoints/ only."""
+    ck_dir = os.path.join(run_dir, "checkpoints")
+    names = sorted(os.listdir(ck_dir))
+    zips = {n: checkpoint_step(n) for n in names
+            if n.endswith(".zip") and checkpoint_step(n) is not None}
+    steps = sorted(s for s in zips.values() if s is not None)
+    fork_step = int((read_json(os.path.join(run_dir, "metadata.json")).get("lineage") or {})
+                    .get("fork_step") or 0)
+    nodes, missing = thin_nodes(steps, fork_step, step=step, basis=basis)
+    node_of = {s: m for m, s in nodes.items()}
+    pin = None
+    try:
+        with open(os.path.join(run_dir, "latest.txt")) as fh:
+            pin = checkpoint_step(os.path.basename(fh.read().strip()))
+    except OSError:
+        pass
+    keep: dict[str, str] = {}
+    delete: list[str] = []
+    for n in names:
+        s = checkpoint_step(n)
+        if n not in zips:                       # sidecars, unrecognised names: never candidates
+            keep[n] = THIN_KEEP_SIDECAR if _is_checkpoint_sidecar(n) else "unrecognised name — kept"
+            continue
+        why = []
+        if s in node_of:
+            why.append(f"{node_of[s] // 1_000_000}M node")
+        if s == steps[-1]:
+            why.append("final checkpoint")
+        if s == pin:
+            why.append("latest.txt pin")
+        if f"{os.path.basename(run_dir.rstrip(os.sep))}/checkpoints/{n}" in protected:
+            why.append("protected X35 reference")
+        if why:
+            keep[n] = ", ".join(why)
+        else:
+            delete.append(n)
+    return {"run": os.path.basename(run_dir.rstrip(os.sep)), "run_dir": run_dir,
+            "fork_step": fork_step, "basis": basis, "node_step": step,
+            "keep": keep, "delete": delete, "missing_nodes": missing,
+            "bytes_delete": sum(os.path.getsize(os.path.join(ck_dir, n)) for n in delete)}
+
+
+def _kept_hashes(run_dir: str, plan: dict) -> "dict[str, str]":
+    """sha256 of every kept checkpoint-dir file and every run-root ``final_model*.zip``."""
+    out: dict[str, str] = {}
+    for n in plan["keep"]:
+        out[os.path.join("checkpoints", n)] = _sha256(os.path.join(run_dir, "checkpoints", n))
+    for f in sorted(os.listdir(run_dir)):
+        if _FINAL_RE.match(f):
+            out[f] = _sha256(os.path.join(run_dir, f))
+    return out
+
+
+def apply_thin_run(plan: dict, log_dir: str) -> dict:
+    """Delete the plan's zips, sha-checking every kept file before and after; log to ``log_dir``."""
+    run_dir = plan["run_dir"]
+    ck_dir = os.path.join(run_dir, "checkpoints")
+    paths = [os.path.join(ck_dir, n) for n in plan["delete"]]
+    for p in paths:
+        if os.path.islink(p):
+            raise UnsafeDeletion(f"{p} is a symlink — refused")
+        if not p.endswith(".zip"):
+            raise UnsafeDeletion(f"{p} is not a checkpoint zip")
+    _assert_safe(run_dir, paths)
+    before = _kept_hashes(run_dir, plan)
+    removed, freed = [], 0
+    for p in paths:
+        freed += os.path.getsize(p)
+        os.remove(p)
+        removed.append(os.path.basename(p))
+    after = _kept_hashes(run_dir, plan)
+    bad = sorted(k for k in before if after.get(k) != before[k])
+    leftovers = [n for n in plan["delete"] if os.path.exists(os.path.join(ck_dir, n))]
+    result = {"run": plan["run"], "removed": removed, "bytes_freed": freed,
+              "n_kept_hashed": len(before), "sha_mismatch": bad, "leftovers": leftovers,
+              "at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "sha256_kept": before,
+              "plan": {k: plan[k] for k in ("fork_step", "basis", "node_step", "keep",
+                                            "missing_nodes")}}
+    os.makedirs(log_dir, exist_ok=True)
+    log = os.path.join(log_dir, f"thin_{plan['run']}_{time.strftime('%Y%m%dT%H%M%S')}.json")
+    with open(log, "w") as fh:
+        json.dump(result, fh, indent=1)
+    result["log"] = log
+    return result
+
+
+def thin_main(args: "argparse.Namespace", models_dir: str) -> int:
+    run = args.thin_run
+    run_dir = run if os.path.isdir(run) else os.path.join(models_dir, run)
+    if not os.path.isdir(run_dir):
+        print(f"THIN REFUSED: no run dir {run_dir}", file=sys.stderr)
+        return 2
+    run_dir = os.path.normpath(run_dir)
+    x35 = args.x35_dir or os.path.join(args.repo_root, THIN_X35_DIR)
+    try:
+        protected, ref_files = protected_reference_paths(x35, args.protect)
+        check_thinnable(run_dir, models_dir, baseline_set=baseline_runs(),
+                        pid_files=_pid_files(os.path.basename(run_dir), args.pid_file),
+                        allow_no_final=args.allow_no_final)
+    except ThinRefused as exc:
+        print(f"THIN REFUSED: {exc}", file=sys.stderr)
+        return 3
+    except Exception as exc:                                    # baseline registry unreadable etc.
+        print(f"THIN REFUSED (cannot verify, failing closed): {type(exc).__name__}: {exc}",
+              file=sys.stderr)
+        return 3
+    plan = plan_thin_run(run_dir, protected, step=args.node_step, basis=args.nodes_from)
+    print(f"run                     {plan['run']}   (fork step {plan['fork_step']}, "
+          f"nodes every {plan['node_step'] // 1_000_000}M, {plan['basis']})")
+    print(f"protected refs read     {len(protected)} paths from {len(ref_files)} files")
+    nz = [n for n in plan["keep"] if n.endswith(".zip")]
+    print(f"checkpoint zips kept    {len(nz)}")
+    for n in nz:
+        print(f"    {n}   {plan['keep'][n]}")
+    print(f"sidecars/other kept     {len(plan['keep']) - len(nz)}")
+    if plan["missing_nodes"]:
+        print("FINDING: node(s) with no checkpoint within the window: "
+              + ", ".join(f"{m // 1_000_000}M" for m in plan["missing_nodes"]))
+    print(f"zips to DELETE          {len(plan['delete'])}   ({plan['bytes_delete'] / 2**30:.2f} GiB)")
+    if not args.apply:
+        print("NOTHING WAS DELETED — dry run. Add --apply to delete.")
+        return 0
+    res = apply_thin_run(plan, args.log_dir)
+    print(f"APPLIED: {len(res['removed'])} zips removed, {res['bytes_freed'] / 2**30:.2f} GiB freed; "
+          f"{res['n_kept_hashed']} kept files sha-checked before and after; log {res['log']}")
+    if res["sha_mismatch"] or res["leftovers"]:
+        print(f"FAILED: sha mismatch {res['sha_mismatch']} · leftovers {res['leftovers']}",
+              file=sys.stderr)
+        return 4
+    return 0
+
+
 # ------------------------------------------------------------------- main ----
 
 
@@ -1300,6 +1650,28 @@ def main(argv: "list[str] | None" = None) -> int:
     p.add_argument("--no-write", action="store_true", help="print the summary only")
     p.add_argument("--apply", action="store_true",
                    help="ACTUALLY DELETE the planned entries (default: dry run)")
+    t = p.add_argument_group(
+        "--thin-run: ONE finished run, the X35 F22 rule (10M nodes + final); dry run unless --apply")
+    t.add_argument("--thin-run", metavar="RUN", default=None,
+                   help="a run dir (or a name under --models-dir): keep its 10M-multiple "
+                        "checkpoint nodes + the final checkpoint + every sidecar and every "
+                        "protected X35 reference, delete the other checkpoint zips")
+    t.add_argument("--node-step", type=int, default=THIN_NODE_STEP, help="node spacing")
+    t.add_argument("--nodes-from", choices=("absolute", "fork"), default="absolute",
+                   help="multiples of --node-step counted from step 0 (default) or from the "
+                        "run's fork step")
+    t.add_argument("--x35-dir", default=None,
+                   help="dir holding reference_population_*.json / x35_pool_*.json "
+                        "(default: the committed X35 stage dir of --repo-root)")
+    t.add_argument("--protect", action="append", default=[], metavar="PATH",
+                   help="an extra absolute checkpoint path to keep (repeatable)")
+    t.add_argument("--pid-file", action="append", default=[], metavar="FILE",
+                   help="a launcher pid file; a live pid refuses (also read: "
+                        "~/.claude/jobs/*/<run>.pid)")
+    t.add_argument("--allow-no-final", action="store_true",
+                   help="thin a run that has no final_model*.zip (a stopped one)")
+    t.add_argument("--log-dir", default=os.path.expanduser("~/gen3ai_archive/retention_thin"),
+                   help="where --apply writes its sha log")
     args = p.parse_args(argv)
 
     models_dir = (args.models_dir or os.environ.get("GEN3AI_MODELS_DIR")
@@ -1307,6 +1679,9 @@ def main(argv: "list[str] | None" = None) -> int:
     if not os.path.isdir(models_dir):
         print(f"no run archive at {models_dir} — nothing to census", file=sys.stderr)
         return 2
+
+    if args.thin_run:
+        return thin_main(args, models_dir)
 
     out_prefix = args.out_prefix
     if out_prefix is None:

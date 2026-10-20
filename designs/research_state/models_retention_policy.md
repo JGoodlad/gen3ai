@@ -19,6 +19,20 @@ NOT applied, by ruling: the STANDING policy's thinning (31.5 GiB in 42 CLOSED `r
 
 **FIXED 2026-10-19 (was TECH DEBT): the STANDING plan used to delete `checkpoints/*.json` SIDECARS together with their zips.** `archive_grooming_dryrun.plan_checkpoints` (shared by the standing policy and tiers 1-3) now keeps EVERY `checkpoint_N_steps.json` (reason "checkpoint sidecar — the record, not the weights") and computes the ends, stride and pins over the ZIPS only, so a re-plan after a thinning is not thrown by orphan sidecars. Tier 4 keeps them by its own rule (§4). `main.dose` reads a run's LR from them. Tests that fail on revert: `archive_grooming_dryrun_test.py::test_every_checkpoint_sidecar_is_kept_even_when_its_zip_is_thinned` and `::test_a_sidecar_left_by_an_earlier_thinning_does_not_move_the_ends_of_a_replan`. Checked read-only against `models/` (`--policy standing`, output to /tmp): 240 zips planned for deletion, 0 sidecars. The standing policy is still NOT applied (see above).
 
+### Per-run F22 thinning (`--thin-run`, added 2026-10-20)
+
+X35 batch 1 thins each FINISHED arm to its 10M nodes + final as it ends (the launch sheet's F22; `--thinning` on a launch declares it). That is a per-run act, not a census, so it is a mode of the same script:
+
+```bash
+cd /home/goodlad/dev/gen3ai && export PYTHONPATH=$PWD/src && CUDA_VISIBLE_DEVICES="" \
+  python designs/research_state/measurements/archive_grooming_dryrun.py --thin-run <run> [--apply]
+```
+
+- **Kept:** every `checkpoint_N_steps.zip` that is the first checkpoint at or past a multiple of 10M (`--node-step`; `--nodes-from absolute` is the default, `fork` counts from the fork step's 1M bucket; the fork start is the parent's node, never the run's), the newest checkpoint zip (the final), the `latest.txt` pin, and every file a `reference_population_*.json` or `x35_pool_*.json` names; EVERY `checkpoint_*.json` sidecar, `final_model*.zip`, TensorBoard, jsonl, eval traces, snapshots and readout artifacts (only `checkpoints/*.zip` is ever a candidate). A node with no checkpoint within half a median spacing of it is printed as a FINDING, never guessed.
+- **Refused (exit 3, nothing read further):** a run a launcher / trainer process names, a live pid in `~/.claude/jobs/*/<run>.pid` (or `--pid-file`), a process whose cwd or open fd is inside the run dir, `rb_x26_*` / `rb_x34*` / `rb_toy_ent_*`, any run `designs/baselines.json` mentions, a run with no `final_model*.zip` (`--allow-no-final`), and an unreadable registry or reference file (fail closed).
+- **Dry run by default.** `--apply` re-checks each path with `_assert_safe` (no symlinks, zips only), sha256-hashes every kept file and `final_model*.zip` before and after, exits 4 on any mismatch, and writes the log to `--log-dir` (default `~/gen3ai_archive/retention_thin/`).
+- Tests (they fail on revert): `archive_grooming_thin_run_test.py` (each refusal, the sidecars, the node selection, the protected references, the apply).
+
 The run archive is the one thing in this project that is never reproducible. A checkpoint is a
 weight file that no amount of compute re-derives, because the run that produced it consumed dice,
 a pool, an opponent distribution and a commit that no longer all coexist. So the whole tool is
@@ -306,12 +320,13 @@ targets are still the ones you mean.
 - **Symlinked run dirs are held out by default** in both policies; a deletion "in `models/`" would
   otherwise land physically under `.claude/worktrees/`.
 - **Tests**: `archive_grooming_dryrun_test.py` (34, the standing policy) and
-  `archive_grooming_tiered_test.py` (47) — synthetic trees under `tmp_path`, which is also the only
+  `archive_grooming_tiered_test.py` (47), plus `archive_grooming_thin_run_test.py` for `--thin-run` (§0) — synthetic trees under `tmp_path`, which is also the only
   place `--apply` is ever exercised. Run them with:
 
 ```bash
 python -m pytest designs/research_state/measurements/archive_grooming_dryrun_test.py \
-                 designs/research_state/measurements/archive_grooming_tiered_test.py -q
+                 designs/research_state/measurements/archive_grooming_tiered_test.py \
+                 designs/research_state/measurements/archive_grooming_thin_run_test.py -q
 ```
 
 (`pytest.ini` sets `testpaths = src tools`, so a test under `designs/` is not collected by the
