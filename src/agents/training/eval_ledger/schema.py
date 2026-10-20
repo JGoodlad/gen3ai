@@ -94,8 +94,9 @@ PROTOCOLS = ("gen3_eval_protocol_v1_h2h", "gen3_eval_protocol_v1_bot_rr", "gen3_
 V1_WRITER_PROTOCOL = {"h2h": "gen3_eval_protocol_v1_h2h", "bot_rr": "gen3_eval_protocol_v1_bot_rr"}
 
 DECISION_KINDS = ("promotion", "eviction", "plateau", "ab_verdict", "cycle_flag")
-#: Decision kinds registered as GROUP-SEQUENTIAL: only these may read a request FAMILY (§0b.7).
-GROUP_SEQUENTIAL_KINDS = ("ab_verdict", "plateau")
+#: Decision kinds that may read a request FAMILY (§0b.7): the GROUP-SEQUENTIAL ones, and the cycle monitor's
+#: ``cycle_flag`` (a check reads its run's accumulated rows, one family per run; U5, 2026-10-19).
+GROUP_SEQUENTIAL_KINDS = ("ab_verdict", "plateau", "cycle_flag")
 #: Decision kinds that SELECT a node; ``selection="exclude"`` drops the rows they consumed (§0c rule 3).
 SELECTING_DECISION_KINDS = ("promotion",)
 

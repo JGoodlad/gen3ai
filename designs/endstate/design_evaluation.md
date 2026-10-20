@@ -16,8 +16,14 @@
   owner's review on 10-04.
 - **U9a, the plateau's TIER 1 run OFFLINE, is BUILT (2026-10-06):** §8.1's GSPRT as a pure rule over one request's
   rows (`agents/training/plateau_t1.py`), the check planner, the offline driver and reader `python -m main.plateau`
-  (`tick` / `status`), one decision row per check (§8.1 "As built"). Tier 2, the panel, the GPU window and the
-  scheduler are NOT built.
+  (`tick` / `status`), one decision row per check (§8.1 "As built"). The GPU window and the scheduler are NOT
+  built (Tier 2: the next item).
+- **U5 + U9, the CYCLE MONITOR and the plateau's TIER 2, are BUILT OFFLINE (2026-10-19):** the monitor's rule
+  (`agents/training/cycle_monitor.py`: the four signals, the bootstrap nulls, the verdict, the confirmation), the
+  panel rule and the two-tier signature (`agents/training/plateau_t2.py`), the driver and reader
+  `python -m main.cycle_monitor` (`tick` / `status` / `ladder`), one `cycle_flag` decision per check, and
+  `main.plateau status` printing both tiers (§2.5 and §8.2 "As built"). NOT built: the GPU window and scheduler (U4),
+  bot panel members, a registered panel, the G6 joint OC simulation (F-ED-24–F-ED-26).
 
 This doc is the SYSTEM: how eval evidence is produced, stored, scheduled and estimated. The population DECISIONS (promotion, eviction, plateau) live in [`design_league_decisions.md`](design_league_decisions.md). A build or decision that differs from this doc updates it and its Decision record in the same commit. Era context: [`era_plan_post_m5.md`](era_plan_post_m5.md). The evidence behind the numbers measured on banked data is in [`measurements/eval_design_2026-10-03/`](../research_state/measurements/eval_design_2026-10-03/README.md); the revision's simulations are in its `revision/` folder.
 
@@ -245,7 +251,7 @@ the owner's or the orchestrator's to add, in both places in one commit.
 | `FLAGS` | `draws_folded`, `teams_unrecorded`, `seed_unrecorded`, `sha_unrecorded`, `eval_core_unrecorded`, `digest_unrecorded` |
 | `PROTOCOLS` | `gen3_eval_protocol_v1_h2h`, `gen3_eval_protocol_v1_bot_rr`, `gen3_eval_protocol_v1_inloop`, `gen3_eval_protocol_v1_h2h_oracle_one_sided`, `gen3_eval_protocol_v1_h2h_oracle_both_sided`, `gen3_eval_protocol_v1_h2h_oracle_withheld` |
 | `DECISION_KINDS` | `promotion`, `eviction`, `plateau`, `ab_verdict`, `cycle_flag` |
-| `GROUP_SEQUENTIAL_KINDS` | `ab_verdict`, `plateau` |
+| `GROUP_SEQUENTIAL_KINDS` | `ab_verdict`, `plateau`, `cycle_flag` |
 | `EVENT_KINDS` | `open`, `family`, `claim`, `void`, `row`, `done`, `cancel` |
 
 - **`PROTOCOLS` holds only what exists.** `gen3_eval_protocol_v1_<writer>` names the protocol a v1 writer played,
@@ -434,8 +440,9 @@ rows = eval_ledger.read(DECL, request_id=..., players=..., as_of=...)
 
 - **One regime per call** (`MixedRegimeError` otherwise).
 - **No duplicates:** the read refuses a duplicate batch key (§0b.4).
-- **`requests="family"`** is legal only for a decision kind registered as group-sequential (today `ab_verdict` and
-  `plateau`), and the family must name its rule.
+- **`requests="family"`** is legal only for a decision kind registered in `GROUP_SEQUENTIAL_KINDS` (today `ab_verdict`,
+  `plateau`, and the cycle monitor's `cycle_flag`: one family per run, a check reading the run's accumulated rows),
+  and the family must name its rule.
 - **`as_of`** (a timestamp or a run step) restricts rows AND decisions to those that existed then: the time-travel a
   BACK-TEST or an eviction needs.
 - **`selection="exclude"`** implements "the games that selected a node do not rate it" through the decision stream.
@@ -738,6 +745,58 @@ confirmation top-ups (≤ 3,000), a check costs **2.1–3.1 %** of wall before T
 OFFLINE driver (`python -m main.cycle_monitor <run>`, U5). It runs CUDA-free on CPU under `mem_cap.sh`, or on the
 offline engine when no run is live. Snapshots are frozen, so a row played late is the same row.
 
+**As built (U5, the OFFLINE slice, 2026-10-19).** The rule is `agents/training/cycle_monitor.py`, a pure function of
+the check's rows; the driver and reader are `python -m main.cycle_monitor` (`tick` / `status` / `ladder`).
+- **The plan.** Nodes are the plateau's (the run's periodic checkpoints, the first at or above each multiple of Δ =
+  10M within 500k steps; `--lineage-run` adds an ancestor's). A check at grid g (from 2Δ) has ONE `monitor_row`
+  request holding every edge of the hybrid lag set L = {1..8} ∪ {16, 32, 64} that reaches a node ≥ Δ, 500 mirrored
+  pairs per edge in 50-pair batches, on `main.h2h`'s engine and row builder, purpose `monitor`, the h2h protocol,
+  its own schedule namespace (`monitor_row:<digest(run, newest, older)>`), the row's node set FROZEN in the request
+  spec. A lag whose node is missing is never substituted. The first check (one edge) is played — its edge is matrix
+  data — but never decided (`NOT_APPLICABLE`).
+- **One request FAMILY per run** (`monitor:<run>:d<Δ>`, decision kind `cycle_flag`, protocol pinned): every row and
+  top-up joins it, so a check's read is the indexed family read restricted to nodes ≤ the newest
+  (`requests="family"`; `cycle_flag` was added to `GROUP_SEQUENTIAL_KINDS` for it). A fork RE-PLAYS its parent's
+  rows under its own family (fresh seeds: the run is in the schedule key), so a family never reads another's rows.
+- **The decision.** A check is decided only once EVERY row up to it is complete (else `WAITING`); one `cycle_flag`
+  decision row per check (unique under the ledger lock), verdict NONE / SUSPECTED / CONFIRMED / INCONCLUSIVE, its
+  `rule` string spelling every constant; `python -m main.eval_ledger verify` RE-DERIVES it (`audit.RULES`). A
+  SUSPECTED check first plays its `monitor_topup` (500 pairs on each flagged item's edges, ≤ 3 per item; the
+  schedule key salted by the check, so two checks topping up one edge play fresh games) and is decided after it.
+- **The signals, as built:** (a) the logit-WLS BT residual χ² against a 2,000-replicate parametric bootstrap (each
+  edge's Dirichlet(c + ½) shape tilted to the fitted score by `sprt.mle_lambda`); (b) the newest row's adjacent-lag
+  z, one-sided Bonferroni; (c) every closed triangle through the newest node, Holm two-sided; (d) the Nash support
+  size (weights > 0.01) of the POINT matrix against the same bootstrap. Missing pairs of the meta-game are filled
+  from the BT spine. **Deviation (d), stated:** the flag statistic is the point matrix's support, not the posterior
+  mean support (a posterior per bootstrap replicate is 2·10⁶ LPs a check); the Nash is HiGHS's LP vertex, which on a
+  generic noisy matrix IS the unique, hence maximum-entropy, Nash; on a degenerate matrix its support can be smaller,
+  which errs toward not flagging. The posterior mean support (500 Dirichlet draws) and P(w_newest > 0.01) are
+  REPORTED. **Confirmation, as built:** the lag pair's z and the triangle's curl z on the top-up games only,
+  one-sided in the flagged direction at α; for (a) / (d), the signed z-sum of the ≤ 3 largest-residual edges'
+  top-up logits against the ORIGINAL spine. A SUSPECTED check whose top-up does not confirm stays SUSPECTED (final);
+  it blocks a plateau call either way.
+- **Rounding bands (rule 8):** a bootstrap p within one Monte Carlo SE (√(α(1−α)/2000) ≈ 0.0049) of α, a z within
+  1e-9 of its critical value, or a Holm p within 1e-9 of its threshold is not a crossing; a check with no flag but a
+  signal in its band is INCONCLUSIVE, never NONE. More than 25 % aborted games in a cell of the newest row (or a
+  top-up) is INCONCLUSIVE.
+- **Determinism:** the bootstrap / posterior seed is the sha256 of the rule version and the sorted consumed row ids
+  (§9.1); the same rows give the same JSON (tested).
+- **Calibration seen in the build (synthetic, SIMULATED):** on transitive Elo curves at 100 pairs per edge, 120
+  checks: 10 % SUSPECTED (Hodge 9 %, triangles 4 %), in §2.5's 6–10 % band, (a) slightly above its nominal 5 %; at
+  500 pairs the (a) bootstrap p-values looked uniform on 12 replicates. **The G6 / U9 joint OC simulation is NOT
+  done** (FINDING F-ED-24).
+- **`ladder`: a DESCRIPTIVE retro read**, never a decision: the same signals on the in-run SNAPSHOT LADDER
+  (`snapshot_ladder/games.jsonl`, mirrored, 50–100 pairs per line, the pool's sliding window, a_p1 + reversed b_p1),
+  as of each Δ check. It is a different graph from the registered row (the edges the pool chose, a fifth to a tenth
+  of the pairs), so it is a first look at a pinned run, not the instrument.
+- **Cost on CPU (rule 5b, 3 cores):** the toy ≈ 15–20 games/s (a full row of 9 edges ≈ 8–10 min); the production
+  net ≈ 1.2–2 games/s (≈ 1.5–2.5 h per row). The GPU window (U4) is NOT built, so a production run's monitor rows are
+  CPU-bound today (FINDING F-ED-25).
+- **Tests:** `agents/training/cycle_monitor_test.py` (the plan, orientation, the LP, NONE on a transitive climb,
+  SUSPECTED on a planted hole, confirmation on top-up games only, the band, aborts, determinism);
+  `main/cycle_monitor_test.py` (the driver through a real ledger: one family, decided once, a top-up that confirms,
+  resume, the frozen spec, `verify` re-derivation, the ladder's orientation).
+
 ### 2.6 Archive scale (later)
 The cross-run archive is where T1 + T0 + matrix completion pay off. **Not built until a question needs it.** The
 ledger already makes it possible without a new training run.
@@ -785,9 +844,9 @@ passes checks 1–3 against the same derived thresholds. Otherwise a₀ = 0 perm
 | Betting confidence sequences | every REPEATED interval check: T2 eligibility, the panel's running score | Waudby-Smith & Ramdas 2024; Howard et al. 2021 | DESIGNED (U5, U7) |
 | CUSUM | plateau onset (refinement) | Page 1954 | optional |
 | Bradley–Terry | the rating spine | Bradley & Terry 1952; Elo 1978 | BUILT (`main.elo`, ladder) |
-| HodgeRank + χ² vs a parametric-bootstrap null | the cycle monitor (a); the pool's cycling read | Jiang et al. 2011 | BUILT for trainee × bots; monitor U5 |
-| Max-entropy Nash with its Dirichlet posterior | monitor signal (d); eviction's necessary condition; one candidate reference | Balduzzi et al. 2018 | DESIGNED (U5, U7) |
-| Holm step-down | monitor signal (c) | Holm 1979 | DESIGNED (U5) |
+| HodgeRank + χ² vs a parametric-bootstrap null | the cycle monitor (a); the pool's cycling read | Jiang et al. 2011 | BUILT for trainee × bots; the monitor's (a) BUILT (U5 offline, pair-level, tilted-pentanomial bootstrap) |
+| Max-entropy Nash with its Dirichlet posterior | monitor signal (d); eviction's necessary condition; one candidate reference | Balduzzi et al. 2018 | monitor (d) BUILT as the POINT matrix's LP Nash support + a reported posterior (U5; the deviation is in §2.5 "As built"); U7 DESIGNED |
+| Holm step-down | monitor signal (c) | Holm 1979 | BUILT (U5 offline) |
 | ResponseGraphUCB-style targeted sampling | T2 top-ups | Rowland et al. 2019 | DESIGNED (U7) |
 | Power prior, a₀ by the commensurate model | T0 reuse | Chen & Ibrahim 2000; Duan et al. 2006; Hobbs et al. 2011 | DESIGNED, OFF until §2.7 B |
 | Random-effects across runs | run-level claims | (meta-analysis; P0 `main.h2h.runfloor`) | BUILT |
@@ -1100,6 +1159,27 @@ plateau is declared only when BOTH say so.
     opponent (SE(Δ) ≈ 0.61 pp). That makes P(PANEL FLAT | zero true gain) ≈ 0.95, at 12,000 games once.
   - Repeated checks of a running score use a betting confidence sequence.
 
+**As built (U9's offline slice, 2026-10-19).** The rule is `agents/training/plateau_t2.py`; `python -m main.plateau
+status <run> [--panel NAME]` prints Tier 1, then TIER 2 per check (the monitor's verdict, its signals' summary, the
+panel's verdict) and the run's **TWO-TIER STATUS** (§8.3: `TRANSITIVE_IMPROVEMENT` / `TRUE_PLATEAU` /
+`PLATEAU_BUT_PANEL` / `TREADMILL` / `CONTINUE`). `PLATEAU_BUT_PANEL` is a status the design did not name: Tier 1 FLAT
+and the monitor NONE at two consecutive checks with the panel not FLAT or not played — it says what is missing, and
+it is NOT a plateau.
+- **The panel, as built:** a REGISTERED frozen set (`designs/research_state/plateau_panels.json`, schema
+  `gen3_plateau_panels_v1`: each member's file and sha256; a moved file is refused) of CHECKPOINT opponents, played
+  by `main.cycle_monitor tick --panel NAME` on `main.h2h`'s engine (a cross-architecture member is the engine's
+  second slot group): one `panel` request per (node, panel), purpose `plateau`, 500 pairs per member, 1,000 at a
+  candidate (Tier 1 FLAT and monitor NONE at that check); reused when the node is later the W-back. Δ_panel is the
+  equal-weight mean of the per-member logit-Elo deltas, its SE by the delta method from the pair-level variances;
+  RISING / FLAT (< 14 Elo) / UNDECIDED at one-sided 95 %, rule 8's 1e-9 band; INCOMPLETE when a cell is short;
+  INCONCLUSIVE above 25 % aborted.
+- **NOT built in this slice (FINDINGS F-ED-25, F-ED-26):** BOT opponents (`main.h2h` plays checkpoints only; §8.2's
+  "bots inside the band" need a bot cell on the h2h engine); NO panel is registered yet (choosing members needs
+  in-band games: the X35 X-block rule of `design_compute_efficiency.md` §5.6.4 is the natural one); Metamon SmallRL /
+  Kakuna stay REPORTED on `main.anchors`' milestone cadence (≈ 9 s a game on CPU: a 1,000-pair panel cell is days),
+  never a gating panel member; the betting confidence sequence for repeated panel reads; the G6 joint OC simulation;
+  STAGNATION (`main.policy_drift`) is the operator's follow-up read.
+
 ### 8.3 The signatures: deterministic, pre-registered
 
 | kind | rule | lever family (league §C) |
@@ -1201,9 +1281,9 @@ adds the monitor and the plateau unit).
 | 6 | **U4** | the scheduler + window: request store, claims, allocation and yields (§0d), budgets and c_gpu, the window spread over ≤ 5 windows, **the frozen-vs-frozen executor change** (a frozen player in the trainee eval slot, ≤ 5 opponents per pass), the replay audit. **First deliverable: the in-window measurement** (SPRT batch wall incl. `load_sentinels`, games/s, per-window overhead) that fixes c_gpu | 3.0 | opus-high | U2 | no |
 | 7 | **U4a** | slot-direct snapshot loads (F-ED-11): state dicts go straight into the declared slots via `slots.copy_in`, with no per-cycle `nn.Module` build in `load_sentinels`; `rust_eval/launch.py` added to the learner-lifecycle gate's scope if it is not already | 0.5 | opus-high | U4 | no |
 | 8 | **U4b** | SPRT resume across restarts (Q7) + snapshot files pinned while a request is open | 0.5 | opus-high | U4 | no |
-| 9 | **U5** | the CYCLE MONITOR: thinned-node requests, rows + panel, the four signals with parametric-bootstrap nulls, confirmation top-ups, `cycle_flag` decisions, the dashboard (support size, entropy, lag curve), `hodge.py` pool × pool, and the offline driver `main.cycle_monitor` (CPU or offline engine, for pinned runs and N0) | 2.0 | opus-high | U4 (driver: U1 + U6) | no |
+| 9 | **U5 — OFFLINE SLICE DONE 2026-10-19** (§2.5 "As built"; the in-window rows wait for U4) | the CYCLE MONITOR: thinned-node requests, rows + panel, the four signals with parametric-bootstrap nulls, confirmation top-ups, `cycle_flag` decisions, the dashboard (support size, entropy, lag curve), `hodge.py` pool × pool, and the offline driver `main.cycle_monitor` (CPU or offline engine, for pinned runs and N0) | 2.0 | opus-high | U4 (driver: U1 + U6) | no |
 | 9a | **U9a — DONE 2026-10-06** | the plateau's TIER 1, offline (§8.1 "As built"): the rule as a pure function of a request's rows, the check planner, `python -m main.plateau tick / status`, one decision row per check, `verify` re-derivation, `read_decisions` + unique decisions in the ledger | 0.5 | opus-high | U1, U6 | no |
-| 10 | **U9** | the two-tier PLATEAU check: Tier 1 GSPRT requests (offline: U9a), the panel rule, the signature table, the 2-check rule, the G6 joint OC simulation, the decision rows | 1.0 | opus-high | U5 | no (a pre-registration) |
+| 10 | **U9 — OFFLINE SLICE DONE 2026-10-19** (§8.2 "As built"; LEFT: bot members, a registered panel, the G6 simulation) | the two-tier PLATEAU check: Tier 1 GSPRT requests (offline: U9a), the panel rule, the signature table, the 2-check rule, the G6 joint OC simulation, the decision rows | 1.0 | opus-high | U5 | no (a pre-registration) |
 | 11 | **U3b** | `main.anchors`, `main.untaught_meter`, `best_response_gap` onto the ledger | 1.0 | sonnet-high | U1, U2 | **yes** |
 | 12 | **U3c** | migrate the `eval_results.jsonl` readers (TensorBoard / TUI, `main.elo`, `best_response_gap`, the supply guards) to the ledger; retire the file's write | 1.0 | sonnet-xhigh | U2, U3 | **yes**, with the reader list |
 | 13 | **U7** | T20 estimators: BT / Hodge pool × pool, the reference candidates (§2.3), T3 rows in the window, T2 on betting CSs, the eviction ledger read (§2.4), the ladder fit reading the ledger | 2.5 | opus-high | U4, U0 | no |
@@ -1434,6 +1514,18 @@ the public `opponent_builder` (the rows' `team_set`). `rust_eval.launch.run_seed
   `outcome_digest` hashed an EMPTY vector; on the digest proof's perturbed fresh policies 40 of 48 games were excluded.
   The in-loop rows therefore also carry `compute.outcome_digest_all` (every game), which a SAME-device replay checks.
   The coverage on trained checkpoints is UNMEASURED; a cross-device replay audit (U4) should report its coverage.
+- **F-ED-24 (U5, 2026-10-19): the two-tier rule's joint operating characteristics (G6) are NOT simulated.** The
+  monitor's per-check false-alarm rate was read on synthetic transitive curves at 100 pairs per edge (10 % SUSPECTED
+  over 120 checks; Hodge 9 %, above its nominal 5 %), not at the registered 500 pairs nor jointly with Tier 1 and the
+  panel. A TRUE_PLATEAU's error rate is therefore UNVERIFIED; SUSPECTED errs toward CONTINUE.
+- **F-ED-25 (U5, 2026-10-19): a production run's monitor rows are CPU-bound.** ≤ 11 edges × 1,000 games a check at
+  ≈ 1.2–2 games/s on rule 5b's cores is ≈ 1.5–2.5 h per check (the toy: ≈ 10 min). Without U4's window, a production
+  run's full retro monitor (≈ 350 edges to 380M) is ≈ 2 CPU-days; the in-run snapshot ladder (`main.cycle_monitor
+  ladder`) is the free descriptive substitute.
+- **F-ED-26 (U9, 2026-10-19): no outside panel is registered, and bots cannot be members.** `main.h2h` plays
+  checkpoints only, so §8.2's "bots inside the band" are not playable; the panel registry is empty until members are
+  chosen by a declared in-band rule (the X35 X-block's). Until then every two-tier read of a FLAT pair is
+  `PLATEAU_BUT_PANEL`, never `TRUE_PLATEAU`.
 
 ## Decision record
 
@@ -1470,3 +1562,4 @@ the public `opponent_builder` (the rows' `team_set`). `rust_eval.launch.run_seed
 | 2026-10-06 | **Poke-env retirement P2: the ladder's (and the untaught meter's) GAMES move to the Rust eval engine (P2 agent)** | (1) every new snapshot-ladder edge is played on `main.h2h`'s engine (`snapshot_ladder_play.py`), CPU: MIRRORED pairs (§6's planned U7 change, landed early because the engine plays only mirrored pairs) and SEAT-BALANCED (half the pairs each way on one schedule, because the engine keeps its player on p1 and the old ladder credited p1 to the NEWEST node); draws recorded and excluded from the BT edge; (2) THE TRANSPORT IS A REGIME BOUNDARY: every row stamps `transport` (absent = `python_bridge`), a fit over both is refused, `ladder.json`'s recipe block names it (provenance, not a fitter bump), `main.critic_gate` refuses two ladders of different transports; (3) the ladder still writes `games.jsonl` only, NOT the ledger: the dual write and the fit on the ledger stay U7 / U7a | the ledger write now (U7's scope); unmirrored Rust play (the engine plays only mirrored pairs); a fitter-version bump (the fit did not change: every committed file would read `differs` and a refit would reproduce it) | `designs/training/eval_and_rating.md` "The TRANSPORT boundary"; `measurements/pokeenv_p2_ladder_2026-10-06/` |
 | 2026-10-06 | **U9a build decisions (plateau-meter agent; BUILT as planned)** | (1) the verdict is a pure function of the request's rows under the rule its decision row spells out in full, so `verify` re-derives it with no other input; (2) rows are folded in BATCH order, the first crossing stops, later batches are surplus (never folded), and a gap or a short batch is a refusal, never a verdict; (3) INCONCLUSIVE (aborts > 25 %) is judged at the stop; (4) ONE decision per request by `append_decision(unique=True)` under the ledger lock, plus `read_decisions` (no `ReaderDecl`: decisions are not count rows); (5) `audit.RULES` entries may return `None` for a decision of a rule they do not own (the kind `plateau` will also carry U9's two-tier decision); (6) the request spec FREEZES both nodes' sha256 through a new optional `consumer` block in `main.h2h`'s edge spec (absent = the spec every existing request holds); (7) the plateau's own ordered schedule namespace, so its seed blocks never collide with a monitor row on the same pair; (8) W declared in STEPS (5 × 10M), not converted from GPU-hours per run; (9) nodes are periodic checkpoints only, the first in [g, g + 500k) | a CONTINUE / UNDECIDED decision row per interim look (rows already carry the trail); the Tier-1 request inside a plateau family now (U9's choice); a per-run lock file (the ledger's claim + unique decision already serialize two drivers); nodes from the self-play pool's `snapshots/` (promotion-gated, so a stalled run would have no nodes) | §8.1 "As built"; `plateau_t1_test.py`, `main/plateau_test.py`, `main/h2h/plateau_integration_test.py` |
 | 2026-10-17 | X35's breaker reference (design worker, for the orchestrator) | a uniform frozen set (own archive at lags disjoint from the archive-pool arm's nodes + another lineage, band [0.20, 0.80]), for X35 only | waiting for the §2.3 back-test (blocks X35 indefinitely); the posterior Nash (no solver yet) | `design_compute_efficiency.md` §5.6.4 |
+| 2026-10-19 | **U5 + U9 OFFLINE (meter-build worker, for the orchestrator)** | the cycle monitor and Tier 2 built OFFLINE on `main.h2h`'s engine: one `monitor_row` request per check in ONE family per run (indexed reads; `cycle_flag` joins `GROUP_SEQUENTIAL_KINDS`), decided only when every earlier row is complete, a SUSPECTED check decided after its top-up; signal (d) on the POINT matrix's LP Nash (posterior reported); the panel as a REGISTERED checkpoint set; a `PLATEAU_BUT_PANEL` status; a descriptive `ladder` read on the in-run snapshot ladder | waiting for U4's window (a pinned run cannot carry it; F-ED-19); the posterior support as the flag statistic (2·10⁶ LPs a check); Metamon / Kakuna as gating panel members (days a cell on CPU); one family per check (a check needs the earlier rows) | §2.5 / §8.2 "As built"; F-ED-24–F-ED-26 |

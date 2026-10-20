@@ -15,7 +15,7 @@ commit as the code.
 | the K9 gates (learner golden, behaviour check, non-finite), the CUDA memory trend | `designs/training/learner_gates.md` |
 | the declared lifecycle (K6): the freeze, `@startup_builder`, the update-fit check, reseeding | `designs/training/learner_lifecycle.md` |
 | the reward (the terminal alone), the no-progress clock | `designs/training/reward.md` |
-| the in-loop eval, the eval count ledger, `main.h2h`, `main.plateau`, baselines, ELO, traces | `designs/training/eval_rules.md`, then `designs/training/eval_and_rating.md` |
+| the in-loop eval, the eval count ledger, `main.h2h`, `main.plateau`, `main.cycle_monitor` (the plateau's Tier 2), baselines, ELO, traces | `designs/training/eval_rules.md`, then `designs/training/eval_and_rating.md` |
 | self-play, the snapshot pool, stable opponents | `designs/training/self_play_and_pool.md` |
 | exploiters, the best-response gap, the rank tripwire | `designs/training/exploiter_and_distillation.md` |
 | `--team-mix`, per-team win rates, team blocking | `designs/training/team_curriculum.md` |

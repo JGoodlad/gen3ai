@@ -522,6 +522,14 @@ wake. Re-create it on the next GO, written to this contract.
   `GEN3AI_BLOCKING=<why>` set, at nice 0 inside the agent cores (`taskset -c 5-7,13-15`), never at nice 19 — a
   started job cannot be reniced back down (RLIMIT_NICE 0). Measured 2026-10-19: 18 → 135 pairs/min, X34's fps
   unaffected.
+- **A plateau STOP reads BOTH tiers** (2026-10-19): `python -m main.plateau status <run>` prints Tier 1, Tier 2 (the
+  cycle monitor's `cycle_flag` verdict and the panel's, per check) and the TWO-TIER STATUS. `TIER1_PLATEAU` alone is
+  a CANDIDATE: stop on `TRUE_PLATEAU`; while no outside panel is registered a FLAT pair reads `PLATEAU_BUT_PANEL`, and
+  a stop on it must say "Tier 1 + the cycle monitor; no panel" in its record. Tier 2's rows come from
+  `python -m main.cycle_monitor tick <run>` after each 10M checkpoint (CPU, rule 5b, under `mem_cap.sh`: the toy
+  ≈ 10 min a check, production ≈ 1.5–2.5 h — not BLOCKING by default; a check is decided only once every earlier row
+  is complete). `TREADMILL` (the monitor CONFIRMED) is never a plateau: population levers, not forks
+  (`designs/endstate/design_league_decisions.md` §C).
 - **Composition guard:** `reward/untracked_abs_mean` must read 0; the launch banner must match the
   registered composition (e.g. "1 TERMINAL + 0 PBRS + 0 BIAS").
 

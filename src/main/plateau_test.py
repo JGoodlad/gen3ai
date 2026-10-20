@@ -182,7 +182,9 @@ def test_status_reads_every_check(tmp_path, capsys):
     assert rep["tier1"]["pending_after"] == [8 * D] and rep["conflicts"] == []
     assert P.main(["status", str(run), "--out", str(root)]) == 0
     out = capsys.readouterr().out
-    assert "TIER 1 STATUS: TIER1_PLATEAU" in out and "NOT BUILT" in out and "rb_fake@60000100" in out
+    assert "TIER 1 STATUS: TIER1_PLATEAU" in out and "candidate" in out and "rb_fake@60000100" in out
+    # Tier 2 is read beside it: no monitor rows in this ledger, so the two-tier status cannot call a plateau
+    assert "TWO-TIER STATUS: CONTINUE" in out
 
 
 def test_status_flags_two_decisions_as_a_conflict(tmp_path):

@@ -1158,8 +1158,9 @@ python -m main.plateau tick <fork> --lineage-run <parent>   # the parent's check
 python -m main.eval_ledger verify <decision_id>       # re-derives a check's verdict from its rows
 ```
 
-- 🚨 **TIER 1 ONLY.** `TIER1_PLATEAU` (FLAT at two consecutive checks) is a CANDIDATE plateau: §8.3's plateau also
-  needs the cycle monitor NONE and the panel FLAT (U5 / U9, NOT BUILT). Every output says so.
+- 🚨 **Tier 1 alone is a CANDIDATE.** `TIER1_PLATEAU` (FLAT at two consecutive checks) is not a plateau: §8.3's
+  plateau also needs the cycle monitor NONE and the panel FLAT at the same two checks. `status` prints TIER 2 below
+  Tier 1 and the run's **TWO-TIER STATUS** (next section); `--tier1-only` skips it.
 - **Statuses:** `NOT_YET` (no decided check) · `CLIMBING` (newest decided check GAIN) · `FLAT_ONCE` · `TIER1_PLATEAU`
   · `CONTINUE` (newest decided check UNDECIDED / INCONCLUSIVE: re-check at the next interval). A later check still
   running does not erase a called status; it is listed as pending.
@@ -1180,6 +1181,43 @@ python -m main.eval_ledger verify <decision_id>       # re-derives a check's ver
   cron can call `tick`). CPU by default, under `scripts/ops/mem_cap.sh` and `nice`. **Never on CPU beside an X5 A/B
   arm** (the registered speed rule, `design_evaluation.md` §4.2). `--device cuda` takes the GPU lease through the
   engine: only the lease holder, never while a run owns the GPU. The in-trainer window is not built (U4).
+
+### The cycle monitor = the plateau's TIER 2 (`python -m main.cycle_monitor`, eval U5 + U9 offline — `gen3_cycle_monitor_v1`, `gen3_plateau_t2_v1`)
+
+**What it answers:** "is the run CYCLING — beating its recent past while holes open against older selves?" at every
+Δ = 10M check, and, with Tier 1 and the panel, which §8.3 signature the run is in
+(`designs/endstate/design_evaluation.md` §2.5 / §8.2 "As built"). Each check's ROW plays the newest node against
+every older node at the hybrid lags {1..8, 16, 32, 64} × Δ, 500 mirrored pairs per edge; the accumulated matrix is
+read by four signals (Hodge χ², the lag curve, triangles through the newest node, the Nash support), each at
+α = 0.05 against a parametric bootstrap or its Bonferroni / Holm bound. Verdicts: NONE · SUSPECTED (a signal flags) ·
+CONFIRMED (it flags again on 500 fresh top-up pairs) · INCONCLUSIVE (a signal in its rounding band, or > 25 %
+aborts).
+
+```bash
+python -m main.cycle_monitor status <run> [--panel NAME]       # per check: monitor + panel + the TWO-TIER STATUS
+python -m main.cycle_monitor tick <run> [--panel NAME] [--grid G ...] [--max-checks N] [--dry-run]
+python -m main.cycle_monitor tick <fork> --lineage-run <parent>  # a fork re-plays the parent's rows in its own family
+python -m main.cycle_monitor ladder <run> [--from-step S] [--json]  # DESCRIPTIVE: the in-run snapshot ladder, no games
+python -m main.plateau status <run> [--panel NAME]             # Tier 1 + Tier 2 + the two-tier status
+```
+
+- **The TWO-TIER STATUS** (`agents/training/plateau_t2.py`): `TRANSITIVE_IMPROVEMENT` (Tier 1 GAIN, monitor NONE) ·
+  `TRUE_PLATEAU` (Tier 1 FLAT, monitor NONE, panel FLAT at two consecutive checks) · `PLATEAU_BUT_PANEL` (the same
+  without a FLAT panel — 🚨 every FLAT pair reads this until a panel is registered; it is NOT a plateau) ·
+  `TREADMILL` (the monitor CONFIRMED) · `CONTINUE`.
+- **Ledger:** one `monitor_row` request per check in ONE family per run (`monitor:<run>:d<Δ>`, decision kind
+  `cycle_flag`), purpose `monitor`, the h2h protocol, the row's node set frozen in its spec; a check is decided only
+  when every row up to it is complete (`WAITING` otherwise); one `cycle_flag` decision per check, which
+  `python -m main.eval_ledger verify` re-derives. A SUSPECTED check plays a `monitor_topup` first.
+- **The panel:** a REGISTERED frozen checkpoint set (`designs/research_state/plateau_panels.json`; none registered
+  yet), one `panel` request per (node, panel), purpose `plateau`, 500 pairs per member (1,000 at a candidate);
+  Δ_panel in Elo, FLAT iff its upper one-sided 95 % bound < 14 Elo. Bots cannot be members (`main.h2h` plays
+  checkpoints only); Metamon / Kakuna stay REPORTED milestones on `main.anchors`.
+- 🚨 **Cost.** The toy ≈ 15–20 games/s on rule 5b's cores (≈ 10 min a row); the production net ≈ 1.2–2 games/s
+  (≈ 1.5–2.5 h a row). Run it like Tier 1: offline, `nice` + `taskset -c 5-7,13-15` + `scripts/ops/mem_cap.sh`
+  beside a live run, never on CPU beside an X5 A/B arm. The in-trainer window is not built (U4).
+- **`ladder`** applies the same signals to `snapshot_ladder/games.jsonl` (mirrored, 50–100 pairs per line, the pool's
+  sliding window) as of each check: a free FIRST LOOK at a pinned run, never a decision, never the registered row.
 
 ### Eval on the Rust env core (the only trainer core, M5 Lane H — `agents/training/rust_eval/`)
 

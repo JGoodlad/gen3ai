@@ -1,0 +1,5 @@
+{
+ "schema": "gen3_plateau_panels_v1",
+ "note": "THE PLATEAU'S OUTSIDE PANELS (design_evaluation.md §8.2; read by main.cycle_monitor / main.plateau status --panel <name>). A panel is a FROZEN set of outside opponents (checkpoints of ANOTHER lineage or registry-named anchors, at an architecture main.h2h can pair with the run's), each scoring inside the 15-85 % band against the run's nodes when it was chosen. Every member names its file and sha256; a member whose file no longer hashes to it is REFUSED (a moved panel is a different panel). Add a panel by a declared rule and a ledger entry, never by editing a member in place: the panel's rows are keyed by its NAME.",
+ "panels": {}
+}

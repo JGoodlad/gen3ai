@@ -6,8 +6,11 @@
 **What it answers.** "Does Tier 1 say PLATEAU, or not yet?" for a live or finished run. Every Δ = 10M steps the
 newest node plays the node W = 50M steps back on mirrored pairs, and the registered GSPRT (``agents.training.
 plateau_t1``: H0 0.50 / H1 0.52, α = β = 0.05, 40-pair batches, cap 6,000 pairs) decides GAIN / FLAT / UNDECIDED.
-The run's TIER-1 status is ``TIER1_PLATEAU`` once two consecutive checks are FLAT. 🚨 **It is Tier 1 ONLY**: §8.3's
-plateau also needs the cycle monitor NONE and the panel FLAT (U5 / U9, NOT BUILT) — every output says so.
+The run's TIER-1 status is ``TIER1_PLATEAU`` once two consecutive checks are FLAT. 🚨 **Tier 1 alone is a
+candidate**: §8.3's plateau also needs the cycle monitor NONE and the panel FLAT. ``status`` prints TIER 2 beside it
+(the monitor's verdict and the panel's per check, read from the ledger by ``main.cycle_monitor``, BUILT offline
+2026-10-19) and the run's TWO-TIER STATUS (``agents.training.plateau_t2``: TRANSITIVE_IMPROVEMENT / TRUE_PLATEAU /
+PLATEAU_BUT_PANEL / TREADMILL / CONTINUE). Tier 2's rows are played by ``python -m main.cycle_monitor tick``.
 
 **``tick``** plays every DUE check (both nodes on disk, no decision yet), oldest first: ONE ``plateau_t1`` request per
 (run, check step, W), opened with its two nodes' sha256 FROZEN in the spec (a node file that changed is a refusal,
@@ -275,9 +278,21 @@ def _run(a: argparse.Namespace) -> tuple:
 def cmd_status(a: argparse.Namespace) -> int:
     run_dir, lineage, plan, root = _run(a)
     nodes = node_series(run_dir, lineage)
-    rep = status_report(run_dir.name, check_states(run_dir.name, nodes, root, plan, T1.REGISTERED), plan,
-                        T1.REGISTERED, root)
-    print(json.dumps(rep, indent=1, sort_keys=True) if a.json else format_report(rep))
+    states = check_states(run_dir.name, nodes, root, plan, T1.REGISTERED)
+    rep = status_report(run_dir.name, states, plan, T1.REGISTERED, root)
+    if not a.tier1_only:
+        from main import cycle_monitor as CMD
+
+        rep["tier2"] = CMD.tier2_by_check(run_dir.name, nodes, root, {s.check.grid: s.state for s in states},
+                                          panel=a.panel, t1_plan=plan)
+    if a.json:
+        print(json.dumps(rep, indent=1, sort_keys=True, default=str))
+    else:
+        print(format_report(rep))
+        if "tier2" in rep:
+            from main import cycle_monitor as CMD
+
+            print("\n".join(CMD.format_tier2(rep["tier2"])))
     return 2 if rep["conflicts"] else 0
 
 
@@ -382,6 +397,9 @@ def _parser() -> argparse.ArgumentParser:
                             "REFUSED)")
         if name == "status":
             p.add_argument("--json", action="store_true")
+            p.add_argument("--panel", default=None,
+                           help="the REGISTERED outside panel of Tier 2 (designs/research_state/plateau_panels.json)")
+            p.add_argument("--tier1-only", action="store_true", help="skip the Tier-2 read (the cycle monitor + panel)")
         else:
             p.add_argument("--max-checks", type=int, default=None, help="play at most N due checks (oldest first)")
             p.add_argument("--dry-run", action="store_true", help="list the due checks; play nothing")

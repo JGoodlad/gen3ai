@@ -1,0 +1,6434 @@
+{
+ "checks": [
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:10000089",
+       "snap:6000061"
+      ],
+      [
+       "snap:6000061",
+       "snap:2000128"
+      ],
+      [
+       "snap:10000089",
+       "snap:2000128"
+      ]
+     ],
+     "nodes": [
+      "snap:10000089",
+      "snap:6000061",
+      "snap:2000128"
+     ],
+     "signal": "triangles",
+     "z": 3.8807
+    },
+    {
+     "edges": [
+      [
+       "snap:6000061",
+       "snap:2000128"
+      ],
+      [
+       "snap:10000089",
+       "snap:2000128"
+      ],
+      [
+       "snap:10000089",
+       "snap:6000061"
+      ]
+     ],
+     "sign": [
+      1,
+      -1,
+      1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 10000000,
+   "lag_curve": [
+    {
+     "lag_steps": 1999938,
+     "opponent": "snap:8000151",
+     "opponent_step": 8000151,
+     "pairs": 100,
+     "score": 0.52927,
+     "se": 0.03158
+    },
+    {
+     "lag_steps": 4000028,
+     "opponent": "snap:6000061",
+     "opponent_step": 6000061,
+     "pairs": 100,
+     "score": 0.76341,
+     "se": 0.03116
+    },
+    {
+     "lag_steps": 5999955,
+     "opponent": "snap:4000134",
+     "opponent_step": 4000134,
+     "pairs": 100,
+     "score": 0.79268,
+     "se": 0.02524
+    },
+    {
+     "lag_steps": 7999961,
+     "opponent": "snap:2000128",
+     "opponent_step": 2000128,
+     "pairs": 100,
+     "score": 0.83659,
+     "se": 0.0258
+    }
+   ],
+   "newest_step": 10000089,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "FLAG"
+   },
+   "summary": {
+    "cyclic_share": 0.0439,
+    "edges": 10,
+    "excess_rms_pp": 4.848,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.128,
+    "lag_z_max": -0.7299,
+    "nash_post_support": 1.0,
+    "nash_support": 1,
+    "nodes": 5,
+    "p_newest_in_support": 0.828,
+    "tri_min_p": 0.000104,
+    "tri_n": 6
+   },
+   "triangles": {
+    "min_p": 0.000104,
+    "n": 6,
+    "rejected": [
+     {
+      "curl": 1.2076,
+      "nodes": [
+       "snap:10000089",
+       "snap:6000061",
+       "snap:2000128"
+      ],
+      "p": 0.000104,
+      "z": 3.881
+     }
+    ]
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:16000010",
+       "snap:2000128"
+      ],
+      [
+       "snap:6000061",
+       "snap:2000128"
+      ],
+      [
+       "snap:10000089",
+       "snap:6000061"
+      ]
+     ],
+     "sign": [
+      -1,
+      1,
+      1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 20000000,
+   "lag_curve": [
+    {
+     "lag_steps": 1999882,
+     "opponent": "snap:18000161",
+     "opponent_step": 18000161,
+     "pairs": 100,
+     "score": 0.56585,
+     "se": 0.02993
+    },
+    {
+     "lag_steps": 4000033,
+     "opponent": "snap:16000010",
+     "opponent_step": 16000010,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.04572
+    },
+    {
+     "lag_steps": 5999831,
+     "opponent": "snap:14000212",
+     "opponent_step": 14000212,
+     "pairs": 100,
+     "score": 0.61707,
+     "se": 0.03148
+    },
+    {
+     "lag_steps": 7999831,
+     "opponent": "snap:12000212",
+     "opponent_step": 12000212,
+     "pairs": 50,
+     "score": 0.59524,
+     "se": 0.05241
+    },
+    {
+     "lag_steps": 9999954,
+     "opponent": "snap:10000089",
+     "opponent_step": 10000089,
+     "pairs": 100,
+     "score": 0.68293,
+     "se": 0.03154
+    },
+    {
+     "lag_steps": 11999892,
+     "opponent": "snap:8000151",
+     "opponent_step": 8000151,
+     "pairs": 50,
+     "score": 0.64286,
+     "se": 0.04925
+    },
+    {
+     "lag_steps": 13999982,
+     "opponent": "snap:6000061",
+     "opponent_step": 6000061,
+     "pairs": 100,
+     "score": 0.76341,
+     "se": 0.02807
+    },
+    {
+     "lag_steps": 15999909,
+     "opponent": "snap:4000134",
+     "opponent_step": 4000134,
+     "pairs": 50,
+     "score": 0.9381,
+     "se": 0.02572
+    },
+    {
+     "lag_steps": 17999915,
+     "opponent": "snap:2000128",
+     "opponent_step": 2000128,
+     "pairs": 100,
+     "score": 0.90976,
+     "se": 0.02001
+    }
+   ],
+   "newest_step": 20000043,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.05327,
+    "edges": 45,
+    "excess_rms_pp": 4.508,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.4977,
+    "lag_z_max": 0.8697,
+    "nash_post_support": 1.092,
+    "nash_support": 1,
+    "nodes": 10,
+    "p_newest_in_support": 0.992,
+    "tri_min_p": 0.004242,
+    "tri_n": 36
+   },
+   "triangles": {
+    "min_p": 0.004242,
+    "n": 36,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:30000045",
+       "snap:12000212"
+      ],
+      [
+       "snap:30000045",
+       "snap:10000089"
+      ]
+     ],
+     "long": "snap:10000089",
+     "short": "snap:12000212",
+     "signal": "lag",
+     "z": 2.8005
+    },
+    {
+     "edges": [
+      [
+       "snap:30000045",
+       "snap:12000212"
+      ],
+      [
+       "snap:12000212",
+       "snap:10000089"
+      ],
+      [
+       "snap:30000045",
+       "snap:10000089"
+      ]
+     ],
+     "nodes": [
+      "snap:30000045",
+      "snap:12000212",
+      "snap:10000089"
+     ],
+     "signal": "triangles",
+     "z": 3.9634
+    },
+    {
+     "edges": [
+      [
+       "snap:28000133",
+       "snap:4000134"
+      ],
+      [
+       "snap:6000061",
+       "snap:2000128"
+      ],
+      [
+       "snap:16000010",
+       "snap:2000128"
+      ]
+     ],
+     "sign": [
+      -1,
+      1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 30000000,
+   "lag_curve": [
+    {
+     "lag_steps": 1999912,
+     "opponent": "snap:28000133",
+     "opponent_step": 28000133,
+     "pairs": 100,
+     "score": 0.49512,
+     "se": 0.03637
+    },
+    {
+     "lag_steps": 3999823,
+     "opponent": "snap:26000222",
+     "opponent_step": 26000222,
+     "pairs": 50,
+     "score": 0.4619,
+     "se": 0.04413
+    },
+    {
+     "lag_steps": 5999823,
+     "opponent": "snap:24000222",
+     "opponent_step": 24000222,
+     "pairs": 50,
+     "score": 0.61429,
+     "se": 0.04419
+    },
+    {
+     "lag_steps": 7999946,
+     "opponent": "snap:22000099",
+     "opponent_step": 22000099,
+     "pairs": 100,
+     "score": 0.53171,
+     "se": 0.03185
+    },
+    {
+     "lag_steps": 10000002,
+     "opponent": "snap:20000043",
+     "opponent_step": 20000043,
+     "pairs": 50,
+     "score": 0.61429,
+     "se": 0.04198
+    },
+    {
+     "lag_steps": 11999884,
+     "opponent": "snap:18000161",
+     "opponent_step": 18000161,
+     "pairs": 50,
+     "score": 0.55238,
+     "se": 0.04773
+    },
+    {
+     "lag_steps": 14000035,
+     "opponent": "snap:16000010",
+     "opponent_step": 16000010,
+     "pairs": 100,
+     "score": 0.65122,
+     "se": 0.02979
+    },
+    {
+     "lag_steps": 15999833,
+     "opponent": "snap:14000212",
+     "opponent_step": 14000212,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.05113
+    },
+    {
+     "lag_steps": 17999833,
+     "opponent": "snap:12000212",
+     "opponent_step": 12000212,
+     "pairs": 50,
+     "score": 0.72857,
+     "se": 0.04172
+    },
+    {
+     "lag_steps": 19999956,
+     "opponent": "snap:10000089",
+     "opponent_step": 10000089,
+     "pairs": 50,
+     "score": 0.56667,
+     "se": 0.04002
+    },
+    {
+     "lag_steps": 21999894,
+     "opponent": "snap:8000151",
+     "opponent_step": 8000151,
+     "pairs": 100,
+     "score": 0.77805,
+     "se": 0.02903
+    },
+    {
+     "lag_steps": 23999984,
+     "opponent": "snap:6000061",
+     "opponent_step": 6000061,
+     "pairs": 50,
+     "score": 0.79524,
+     "se": 0.03897
+    },
+    {
+     "lag_steps": 25999911,
+     "opponent": "snap:4000134",
+     "opponent_step": 4000134,
+     "pairs": 50,
+     "score": 0.85238,
+     "se": 0.03405
+    },
+    {
+     "lag_steps": 27999917,
+     "opponent": "snap:2000128",
+     "opponent_step": 2000128,
+     "pairs": 100,
+     "score": 0.89512,
+     "se": 0.02109
+    }
+   ],
+   "newest_step": 30000045,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "FLAG",
+    "nash": "CLEAR",
+    "triangles": "FLAG"
+   },
+   "summary": {
+    "cyclic_share": 0.06761,
+    "edges": 105,
+    "excess_rms_pp": 4.595,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.6653,
+    "lag_z_max": 2.8005,
+    "nash_post_support": 2.242,
+    "nash_support": 1,
+    "nodes": 15,
+    "p_newest_in_support": 0.564,
+    "tri_min_p": 7.4e-05,
+    "tri_n": 91
+   },
+   "triangles": {
+    "min_p": 7.4e-05,
+    "n": 91,
+    "rejected": [
+     {
+      "curl": 1.1757,
+      "nodes": [
+       "snap:30000045",
+       "snap:12000212",
+       "snap:10000089"
+      ],
+      "p": 7.4e-05,
+      "z": 3.963
+     }
+    ]
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:40000045",
+       "snap:26000222"
+      ],
+      [
+       "snap:26000222",
+       "snap:8000151"
+      ],
+      [
+       "snap:40000045",
+       "snap:8000151"
+      ]
+     ],
+     "nodes": [
+      "snap:40000045",
+      "snap:26000222",
+      "snap:8000151"
+     ],
+     "signal": "triangles",
+     "z": 3.8357
+    },
+    {
+     "edges": [
+      [
+       "snap:6000061",
+       "snap:2000128"
+      ],
+      [
+       "snap:38000095",
+       "snap:2000128"
+      ],
+      [
+       "snap:28000133",
+       "snap:4000134"
+      ]
+     ],
+     "sign": [
+      1,
+      -1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 40000000,
+   "lag_curve": [
+    {
+     "lag_steps": 1999950,
+     "opponent": "snap:38000095",
+     "opponent_step": 38000095,
+     "pairs": 100,
+     "score": 0.55366,
+     "se": 0.02987
+    },
+    {
+     "lag_steps": 3999928,
+     "opponent": "snap:36000117",
+     "opponent_step": 36000117,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.03932
+    },
+    {
+     "lag_steps": 5999863,
+     "opponent": "snap:34000182",
+     "opponent_step": 34000182,
+     "pairs": 50,
+     "score": 0.57619,
+     "se": 0.04368
+    },
+    {
+     "lag_steps": 7999947,
+     "opponent": "snap:32000098",
+     "opponent_step": 32000098,
+     "pairs": 50,
+     "score": 0.55714,
+     "se": 0.05216
+    },
+    {
+     "lag_steps": 10000000,
+     "opponent": "snap:30000045",
+     "opponent_step": 30000045,
+     "pairs": 100,
+     "score": 0.59268,
+     "se": 0.03132
+    },
+    {
+     "lag_steps": 11999912,
+     "opponent": "snap:28000133",
+     "opponent_step": 28000133,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04413
+    },
+    {
+     "lag_steps": 13999823,
+     "opponent": "snap:26000222",
+     "opponent_step": 26000222,
+     "pairs": 50,
+     "score": 0.61429,
+     "se": 0.04198
+    },
+    {
+     "lag_steps": 15999823,
+     "opponent": "snap:24000222",
+     "opponent_step": 24000222,
+     "pairs": 50,
+     "score": 0.63333,
+     "se": 0.04527
+    },
+    {
+     "lag_steps": 17999946,
+     "opponent": "snap:22000099",
+     "opponent_step": 22000099,
+     "pairs": 50,
+     "score": 0.65238,
+     "se": 0.03635
+    },
+    {
+     "lag_steps": 20000002,
+     "opponent": "snap:20000043",
+     "opponent_step": 20000043,
+     "pairs": 100,
+     "score": 0.5878,
+     "se": 0.03353
+    },
+    {
+     "lag_steps": 21999884,
+     "opponent": "snap:18000161",
+     "opponent_step": 18000161,
+     "pairs": 50,
+     "score": 0.63333,
+     "se": 0.05119
+    },
+    {
+     "lag_steps": 24000035,
+     "opponent": "snap:16000010",
+     "opponent_step": 16000010,
+     "pairs": 50,
+     "score": 0.61429,
+     "se": 0.04419
+    },
+    {
+     "lag_steps": 25999833,
+     "opponent": "snap:14000212",
+     "opponent_step": 14000212,
+     "pairs": 50,
+     "score": 0.64286,
+     "se": 0.04306
+    },
+    {
+     "lag_steps": 27999833,
+     "opponent": "snap:12000212",
+     "opponent_step": 12000212,
+     "pairs": 50,
+     "score": 0.7,
+     "se": 0.04716
+    },
+    {
+     "lag_steps": 29999956,
+     "opponent": "snap:10000089",
+     "opponent_step": 10000089,
+     "pairs": 100,
+     "score": 0.71463,
+     "se": 0.02809
+    },
+    {
+     "lag_steps": 31999894,
+     "opponent": "snap:8000151",
+     "opponent_step": 8000151,
+     "pairs": 50,
+     "score": 0.68571,
+     "se": 0.04499
+    },
+    {
+     "lag_steps": 33999984,
+     "opponent": "snap:6000061",
+     "opponent_step": 6000061,
+     "pairs": 50,
+     "score": 0.85238,
+     "se": 0.03405
+    },
+    {
+     "lag_steps": 35999911,
+     "opponent": "snap:4000134",
+     "opponent_step": 4000134,
+     "pairs": 50,
+     "score": 0.84286,
+     "se": 0.03972
+    },
+    {
+     "lag_steps": 37999917,
+     "opponent": "snap:2000128",
+     "opponent_step": 2000128,
+     "pairs": 100,
+     "score": 0.89512,
+     "se": 0.02329
+    }
+   ],
+   "newest_step": 40000045,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "FLAG"
+   },
+   "summary": {
+    "cyclic_share": 0.07445,
+    "edges": 190,
+    "excess_rms_pp": 4.312,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.7729,
+    "lag_z_max": 1.3059,
+    "nash_post_support": 2.544,
+    "nash_support": 3,
+    "nodes": 20,
+    "p_newest_in_support": 0.838,
+    "tri_min_p": 0.000125,
+    "tri_n": 171
+   },
+   "triangles": {
+    "min_p": 0.000125,
+    "n": 171,
+    "rejected": [
+     {
+      "curl": 1.283,
+      "nodes": [
+       "snap:40000045",
+       "snap:26000222",
+       "snap:8000151"
+      ],
+      "p": 0.000125,
+      "z": 3.836
+     }
+    ]
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:50000106",
+       "snap:28000133"
+      ],
+      [
+       "snap:28000133",
+       "snap:18000161"
+      ],
+      [
+       "snap:50000106",
+       "snap:18000161"
+      ]
+     ],
+     "nodes": [
+      "snap:50000106",
+      "snap:28000133",
+      "snap:18000161"
+     ],
+     "signal": "triangles",
+     "z": 3.6326
+    },
+    {
+     "edges": [
+      [
+       "snap:6000061",
+       "snap:2000128"
+      ],
+      [
+       "snap:44000166",
+       "snap:24000222"
+      ],
+      [
+       "snap:38000095",
+       "snap:2000128"
+      ]
+     ],
+     "sign": [
+      1,
+      -1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 50000000,
+   "lag_curve": [
+    {
+     "lag_steps": 2000009,
+     "opponent": "snap:48000097",
+     "opponent_step": 48000097,
+     "pairs": 100,
+     "score": 0.4561,
+     "se": 0.03161
+    },
+    {
+     "lag_steps": 4000013,
+     "opponent": "snap:46000093",
+     "opponent_step": 46000093,
+     "pairs": 50,
+     "score": 0.50952,
+     "se": 0.04601
+    },
+    {
+     "lag_steps": 5999940,
+     "opponent": "snap:44000166",
+     "opponent_step": 44000166,
+     "pairs": 50,
+     "score": 0.45238,
+     "se": 0.04284
+    },
+    {
+     "lag_steps": 7999881,
+     "opponent": "snap:42000225",
+     "opponent_step": 42000225,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.04851
+    },
+    {
+     "lag_steps": 10000061,
+     "opponent": "snap:40000045",
+     "opponent_step": 40000045,
+     "pairs": 50,
+     "score": 0.6,
+     "se": 0.04186
+    },
+    {
+     "lag_steps": 12000011,
+     "opponent": "snap:38000095",
+     "opponent_step": 38000095,
+     "pairs": 100,
+     "score": 0.51463,
+     "se": 0.03169
+    },
+    {
+     "lag_steps": 13999989,
+     "opponent": "snap:36000117",
+     "opponent_step": 36000117,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.04318
+    },
+    {
+     "lag_steps": 15999924,
+     "opponent": "snap:34000182",
+     "opponent_step": 34000182,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.05043
+    },
+    {
+     "lag_steps": 18000008,
+     "opponent": "snap:32000098",
+     "opponent_step": 32000098,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04874
+    },
+    {
+     "lag_steps": 20000061,
+     "opponent": "snap:30000045",
+     "opponent_step": 30000045,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.0534
+    },
+    {
+     "lag_steps": 21999973,
+     "opponent": "snap:28000133",
+     "opponent_step": 28000133,
+     "pairs": 100,
+     "score": 0.63171,
+     "se": 0.03667
+    },
+    {
+     "lag_steps": 23999884,
+     "opponent": "snap:26000222",
+     "opponent_step": 26000222,
+     "pairs": 50,
+     "score": 0.55714,
+     "se": 0.04205
+    },
+    {
+     "lag_steps": 25999884,
+     "opponent": "snap:24000222",
+     "opponent_step": 24000222,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04017
+    },
+    {
+     "lag_steps": 28000007,
+     "opponent": "snap:22000099",
+     "opponent_step": 22000099,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.05217
+    },
+    {
+     "lag_steps": 30000063,
+     "opponent": "snap:20000043",
+     "opponent_step": 20000043,
+     "pairs": 100,
+     "score": 0.60488,
+     "se": 0.03143
+    },
+    {
+     "lag_steps": 31999945,
+     "opponent": "snap:18000161",
+     "opponent_step": 18000161,
+     "pairs": 50,
+     "score": 0.55714,
+     "se": 0.05395
+    },
+    {
+     "lag_steps": 34000096,
+     "opponent": "snap:16000010",
+     "opponent_step": 16000010,
+     "pairs": 50,
+     "score": 0.62381,
+     "se": 0.05609
+    },
+    {
+     "lag_steps": 35999894,
+     "opponent": "snap:14000212",
+     "opponent_step": 14000212,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.04134
+    },
+    {
+     "lag_steps": 37999894,
+     "opponent": "snap:12000212",
+     "opponent_step": 12000212,
+     "pairs": 50,
+     "score": 0.7,
+     "se": 0.04123
+    }
+   ],
+   "newest_step": 50000106,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "FLAG"
+   },
+   "summary": {
+    "cyclic_share": 0.09731,
+    "edges": 270,
+    "excess_rms_pp": 4.494,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.7729,
+    "lag_z_max": 1.626,
+    "nash_post_support": 4.57,
+    "nash_support": 5,
+    "nodes": 25,
+    "p_newest_in_support": 0.878,
+    "tri_min_p": 0.000281,
+    "tri_n": 160
+   },
+   "triangles": {
+    "min_p": 0.000281,
+    "n": 160,
+    "rejected": [
+     {
+      "curl": 1.1573,
+      "nodes": [
+       "snap:50000106",
+       "snap:28000133",
+       "snap:18000161"
+      ],
+      "p": 0.000281,
+      "z": 3.633
+     }
+    ]
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:6000061",
+       "snap:2000128"
+      ],
+      [
+       "snap:44000166",
+       "snap:24000222"
+      ],
+      [
+       "snap:38000095",
+       "snap:2000128"
+      ]
+     ],
+     "sign": [
+      1,
+      -1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 60000000,
+   "lag_curve": [
+    {
+     "lag_steps": 2000028,
+     "opponent": "snap:56000179",
+     "opponent_step": 56000179,
+     "pairs": 100,
+     "score": 0.47073,
+     "se": 0.03382
+    },
+    {
+     "lag_steps": 4000080,
+     "opponent": "snap:54000127",
+     "opponent_step": 54000127,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.03751
+    },
+    {
+     "lag_steps": 5999989,
+     "opponent": "snap:52000218",
+     "opponent_step": 52000218,
+     "pairs": 50,
+     "score": 0.50952,
+     "se": 0.03871
+    },
+    {
+     "lag_steps": 8000101,
+     "opponent": "snap:50000106",
+     "opponent_step": 50000106,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.04758
+    },
+    {
+     "lag_steps": 10000110,
+     "opponent": "snap:48000097",
+     "opponent_step": 48000097,
+     "pairs": 50,
+     "score": 0.59048,
+     "se": 0.04285
+    },
+    {
+     "lag_steps": 12000114,
+     "opponent": "snap:46000093",
+     "opponent_step": 46000093,
+     "pairs": 100,
+     "score": 0.50244,
+     "se": 0.0288
+    },
+    {
+     "lag_steps": 14000041,
+     "opponent": "snap:44000166",
+     "opponent_step": 44000166,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.05429
+    },
+    {
+     "lag_steps": 15999982,
+     "opponent": "snap:42000225",
+     "opponent_step": 42000225,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04874
+    },
+    {
+     "lag_steps": 18000162,
+     "opponent": "snap:40000045",
+     "opponent_step": 40000045,
+     "pairs": 50,
+     "score": 0.63333,
+     "se": 0.04084
+    },
+    {
+     "lag_steps": 20000112,
+     "opponent": "snap:38000095",
+     "opponent_step": 38000095,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.04389
+    },
+    {
+     "lag_steps": 22000090,
+     "opponent": "snap:36000117",
+     "opponent_step": 36000117,
+     "pairs": 100,
+     "score": 0.50976,
+     "se": 0.03447
+    },
+    {
+     "lag_steps": 24000025,
+     "opponent": "snap:34000182",
+     "opponent_step": 34000182,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.03876
+    },
+    {
+     "lag_steps": 26000109,
+     "opponent": "snap:32000098",
+     "opponent_step": 32000098,
+     "pairs": 50,
+     "score": 0.56667,
+     "se": 0.05054
+    },
+    {
+     "lag_steps": 28000162,
+     "opponent": "snap:30000045",
+     "opponent_step": 30000045,
+     "pairs": 50,
+     "score": 0.64286,
+     "se": 0.04574
+    },
+    {
+     "lag_steps": 30000074,
+     "opponent": "snap:28000133",
+     "opponent_step": 28000133,
+     "pairs": 100,
+     "score": 0.57317,
+     "se": 0.03424
+    },
+    {
+     "lag_steps": 31999985,
+     "opponent": "snap:26000222",
+     "opponent_step": 26000222,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.03622
+    },
+    {
+     "lag_steps": 33999985,
+     "opponent": "snap:24000222",
+     "opponent_step": 24000222,
+     "pairs": 50,
+     "score": 0.59524,
+     "se": 0.04664
+    },
+    {
+     "lag_steps": 36000108,
+     "opponent": "snap:22000099",
+     "opponent_step": 22000099,
+     "pairs": 50,
+     "score": 0.71905,
+     "se": 0.04595
+    },
+    {
+     "lag_steps": 38000164,
+     "opponent": "snap:20000043",
+     "opponent_step": 20000043,
+     "pairs": 50,
+     "score": 0.67143,
+     "se": 0.04033
+    }
+   ],
+   "newest_step": 58000207,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.11068,
+    "edges": 346,
+    "excess_rms_pp": 4.322,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.7729,
+    "lag_z_max": 2.3826,
+    "nash_post_support": 3.448,
+    "nash_support": 3,
+    "nodes": 29,
+    "p_newest_in_support": 0.692,
+    "tri_min_p": 0.003793,
+    "tri_n": 163
+   },
+   "triangles": {
+    "min_p": 0.003793,
+    "n": 163,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:68000214",
+       "snap:44000166"
+      ],
+      [
+       "snap:44000166",
+       "snap:26000222"
+      ],
+      [
+       "snap:68000214",
+       "snap:26000222"
+      ]
+     ],
+     "nodes": [
+      "snap:68000214",
+      "snap:44000166",
+      "snap:26000222"
+     ],
+     "signal": "triangles",
+     "z": 4.0976
+    },
+    {
+     "edges": [
+      [
+       "snap:6000061",
+       "snap:2000128"
+      ],
+      [
+       "snap:44000166",
+       "snap:24000222"
+      ],
+      [
+       "snap:38000095",
+       "snap:2000128"
+      ]
+     ],
+     "sign": [
+      1,
+      -1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 70000000,
+   "lag_curve": [
+    {
+     "lag_steps": 2000021,
+     "opponent": "snap:66000193",
+     "opponent_step": 66000193,
+     "pairs": 100,
+     "score": 0.54878,
+     "se": 0.03414
+    },
+    {
+     "lag_steps": 4000115,
+     "opponent": "snap:64000099",
+     "opponent_step": 64000099,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.03932
+    },
+    {
+     "lag_steps": 10000007,
+     "opponent": "snap:58000207",
+     "opponent_step": 58000207,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04466
+    },
+    {
+     "lag_steps": 12000035,
+     "opponent": "snap:56000179",
+     "opponent_step": 56000179,
+     "pairs": 50,
+     "score": 0.55714,
+     "se": 0.04636
+    },
+    {
+     "lag_steps": 14000087,
+     "opponent": "snap:54000127",
+     "opponent_step": 54000127,
+     "pairs": 50,
+     "score": 0.48095,
+     "se": 0.04491
+    },
+    {
+     "lag_steps": 15999996,
+     "opponent": "snap:52000218",
+     "opponent_step": 52000218,
+     "pairs": 100,
+     "score": 0.62195,
+     "se": 0.03355
+    },
+    {
+     "lag_steps": 18000108,
+     "opponent": "snap:50000106",
+     "opponent_step": 50000106,
+     "pairs": 50,
+     "score": 0.56667,
+     "se": 0.04506
+    },
+    {
+     "lag_steps": 20000117,
+     "opponent": "snap:48000097",
+     "opponent_step": 48000097,
+     "pairs": 50,
+     "score": 0.48095,
+     "se": 0.05087
+    },
+    {
+     "lag_steps": 22000121,
+     "opponent": "snap:46000093",
+     "opponent_step": 46000093,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.04551
+    },
+    {
+     "lag_steps": 24000048,
+     "opponent": "snap:44000166",
+     "opponent_step": 44000166,
+     "pairs": 50,
+     "score": 0.68095,
+     "se": 0.04295
+    },
+    {
+     "lag_steps": 25999989,
+     "opponent": "snap:42000225",
+     "opponent_step": 42000225,
+     "pairs": 100,
+     "score": 0.62683,
+     "se": 0.0297
+    },
+    {
+     "lag_steps": 28000169,
+     "opponent": "snap:40000045",
+     "opponent_step": 40000045,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.04303
+    },
+    {
+     "lag_steps": 30000119,
+     "opponent": "snap:38000095",
+     "opponent_step": 38000095,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04413
+    },
+    {
+     "lag_steps": 32000097,
+     "opponent": "snap:36000117",
+     "opponent_step": 36000117,
+     "pairs": 50,
+     "score": 0.57619,
+     "se": 0.03907
+    },
+    {
+     "lag_steps": 34000032,
+     "opponent": "snap:34000182",
+     "opponent_step": 34000182,
+     "pairs": 100,
+     "score": 0.58293,
+     "se": 0.03524
+    },
+    {
+     "lag_steps": 36000116,
+     "opponent": "snap:32000098",
+     "opponent_step": 32000098,
+     "pairs": 50,
+     "score": 0.65238,
+     "se": 0.04768
+    },
+    {
+     "lag_steps": 38000169,
+     "opponent": "snap:30000045",
+     "opponent_step": 30000045,
+     "pairs": 50,
+     "score": 0.64286,
+     "se": 0.04777
+    },
+    {
+     "lag_steps": 40000081,
+     "opponent": "snap:28000133",
+     "opponent_step": 28000133,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.04971
+    },
+    {
+     "lag_steps": 41999992,
+     "opponent": "snap:26000222",
+     "opponent_step": 26000222,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.04373
+    }
+   ],
+   "newest_step": 68000214,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "FLAG"
+   },
+   "summary": {
+    "cyclic_share": 0.1199,
+    "edges": 403,
+    "excess_rms_pp": 4.198,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.7729,
+    "lag_z_max": 1.2613,
+    "nash_post_support": 4.714,
+    "nash_support": 4,
+    "nodes": 32,
+    "p_newest_in_support": 0.922,
+    "tri_min_p": 4.2e-05,
+    "tri_n": 165
+   },
+   "triangles": {
+    "min_p": 4.2e-05,
+    "n": 165,
+    "rejected": [
+     {
+      "curl": 1.4019,
+      "nodes": [
+       "snap:68000214",
+       "snap:44000166",
+       "snap:26000222"
+      ],
+      "p": 4.2e-05,
+      "z": 4.098
+     }
+    ]
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:6000061",
+       "snap:2000128"
+      ],
+      [
+       "snap:44000166",
+       "snap:24000222"
+      ],
+      [
+       "snap:38000095",
+       "snap:2000128"
+      ]
+     ],
+     "sign": [
+      1,
+      -1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 80000000,
+   "lag_curve": [
+    {
+     "lag_steps": 2000108,
+     "opponent": "snap:78000003",
+     "opponent_step": 78000003,
+     "pairs": 100,
+     "score": 0.47561,
+     "se": 0.03276
+    },
+    {
+     "lag_steps": 4000055,
+     "opponent": "snap:76000056",
+     "opponent_step": 76000056,
+     "pairs": 50,
+     "score": 0.50952,
+     "se": 0.04998
+    },
+    {
+     "lag_steps": 8000103,
+     "opponent": "snap:72000008",
+     "opponent_step": 72000008,
+     "pairs": 50,
+     "score": 0.63333,
+     "se": 0.04527
+    },
+    {
+     "lag_steps": 11999897,
+     "opponent": "snap:68000214",
+     "opponent_step": 68000214,
+     "pairs": 50,
+     "score": 0.56667,
+     "se": 0.04712
+    },
+    {
+     "lag_steps": 13999918,
+     "opponent": "snap:66000193",
+     "opponent_step": 66000193,
+     "pairs": 50,
+     "score": 0.50952,
+     "se": 0.05185
+    },
+    {
+     "lag_steps": 16000012,
+     "opponent": "snap:64000099",
+     "opponent_step": 64000099,
+     "pairs": 100,
+     "score": 0.56585,
+     "se": 0.0319
+    },
+    {
+     "lag_steps": 21999904,
+     "opponent": "snap:58000207",
+     "opponent_step": 58000207,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.04217
+    },
+    {
+     "lag_steps": 23999932,
+     "opponent": "snap:56000179",
+     "opponent_step": 56000179,
+     "pairs": 50,
+     "score": 0.67143,
+     "se": 0.0448
+    },
+    {
+     "lag_steps": 25999984,
+     "opponent": "snap:54000127",
+     "opponent_step": 54000127,
+     "pairs": 50,
+     "score": 0.55238,
+     "se": 0.04245
+    },
+    {
+     "lag_steps": 27999893,
+     "opponent": "snap:52000218",
+     "opponent_step": 52000218,
+     "pairs": 50,
+     "score": 0.67143,
+     "se": 0.04887
+    },
+    {
+     "lag_steps": 30000005,
+     "opponent": "snap:50000106",
+     "opponent_step": 50000106,
+     "pairs": 100,
+     "score": 0.57317,
+     "se": 0.03203
+    },
+    {
+     "lag_steps": 32000014,
+     "opponent": "snap:48000097",
+     "opponent_step": 48000097,
+     "pairs": 50,
+     "score": 0.55714,
+     "se": 0.03724
+    },
+    {
+     "lag_steps": 34000018,
+     "opponent": "snap:46000093",
+     "opponent_step": 46000093,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.03989
+    },
+    {
+     "lag_steps": 35999945,
+     "opponent": "snap:44000166",
+     "opponent_step": 44000166,
+     "pairs": 50,
+     "score": 0.55714,
+     "se": 0.05901
+    },
+    {
+     "lag_steps": 37999886,
+     "opponent": "snap:42000225",
+     "opponent_step": 42000225,
+     "pairs": 100,
+     "score": 0.63171,
+     "se": 0.02989
+    },
+    {
+     "lag_steps": 40000066,
+     "opponent": "snap:40000045",
+     "opponent_step": 40000045,
+     "pairs": 50,
+     "score": 0.67619,
+     "se": 0.04779
+    },
+    {
+     "lag_steps": 42000016,
+     "opponent": "snap:38000095",
+     "opponent_step": 38000095,
+     "pairs": 50,
+     "score": 0.55714,
+     "se": 0.05395
+    },
+    {
+     "lag_steps": 43999994,
+     "opponent": "snap:36000117",
+     "opponent_step": 36000117,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.04519
+    },
+    {
+     "lag_steps": 45999929,
+     "opponent": "snap:34000182",
+     "opponent_step": 34000182,
+     "pairs": 50,
+     "score": 0.64286,
+     "se": 0.04574
+    }
+   ],
+   "newest_step": 80000111,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.13035,
+    "edges": 479,
+    "excess_rms_pp": 4.023,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.7729,
+    "lag_z_max": 1.9287,
+    "nash_post_support": 3.812,
+    "nash_support": 3,
+    "nodes": 36,
+    "p_newest_in_support": 0.892,
+    "tri_min_p": 0.002133,
+    "tri_n": 168
+   },
+   "triangles": {
+    "min_p": 0.002133,
+    "n": 168,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:44000166",
+       "snap:24000222"
+      ],
+      [
+       "snap:48000097",
+       "snap:10000089"
+      ],
+      [
+       "snap:52000218",
+       "snap:30000045"
+      ]
+     ],
+     "sign": [
+      -1,
+      -1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 90000000,
+   "lag_curve": [
+    {
+     "lag_steps": 5999804,
+     "opponent": "snap:84000263",
+     "opponent_step": 84000263,
+     "pairs": 100,
+     "score": 0.57805,
+     "se": 0.03304
+    },
+    {
+     "lag_steps": 9999956,
+     "opponent": "snap:80000111",
+     "opponent_step": 80000111,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.04337
+    },
+    {
+     "lag_steps": 12000064,
+     "opponent": "snap:78000003",
+     "opponent_step": 78000003,
+     "pairs": 50,
+     "score": 0.50952,
+     "se": 0.05185
+    },
+    {
+     "lag_steps": 14000011,
+     "opponent": "snap:76000056",
+     "opponent_step": 76000056,
+     "pairs": 50,
+     "score": 0.62381,
+     "se": 0.05213
+    },
+    {
+     "lag_steps": 18000059,
+     "opponent": "snap:72000008",
+     "opponent_step": 72000008,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.04056
+    },
+    {
+     "lag_steps": 21999853,
+     "opponent": "snap:68000214",
+     "opponent_step": 68000214,
+     "pairs": 100,
+     "score": 0.44634,
+     "se": 0.02883
+    },
+    {
+     "lag_steps": 23999874,
+     "opponent": "snap:66000193",
+     "opponent_step": 66000193,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.05226
+    },
+    {
+     "lag_steps": 25999968,
+     "opponent": "snap:64000099",
+     "opponent_step": 64000099,
+     "pairs": 50,
+     "score": 0.59524,
+     "se": 0.04509
+    },
+    {
+     "lag_steps": 31999860,
+     "opponent": "snap:58000207",
+     "opponent_step": 58000207,
+     "pairs": 50,
+     "score": 0.48095,
+     "se": 0.04896
+    },
+    {
+     "lag_steps": 33999888,
+     "opponent": "snap:56000179",
+     "opponent_step": 56000179,
+     "pairs": 50,
+     "score": 0.42381,
+     "se": 0.04368
+    },
+    {
+     "lag_steps": 35999940,
+     "opponent": "snap:54000127",
+     "opponent_step": 54000127,
+     "pairs": 100,
+     "score": 0.57805,
+     "se": 0.03074
+    },
+    {
+     "lag_steps": 37999849,
+     "opponent": "snap:52000218",
+     "opponent_step": 52000218,
+     "pairs": 50,
+     "score": 0.48095,
+     "se": 0.04491
+    },
+    {
+     "lag_steps": 39999961,
+     "opponent": "snap:50000106",
+     "opponent_step": 50000106,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.03989
+    },
+    {
+     "lag_steps": 41999970,
+     "opponent": "snap:48000097",
+     "opponent_step": 48000097,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04413
+    },
+    {
+     "lag_steps": 43999974,
+     "opponent": "snap:46000093",
+     "opponent_step": 46000093,
+     "pairs": 100,
+     "score": 0.55854,
+     "se": 0.03326
+    },
+    {
+     "lag_steps": 45999901,
+     "opponent": "snap:44000166",
+     "opponent_step": 44000166,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.04134
+    },
+    {
+     "lag_steps": 47999842,
+     "opponent": "snap:42000225",
+     "opponent_step": 42000225,
+     "pairs": 50,
+     "score": 0.57619,
+     "se": 0.03907
+    },
+    {
+     "lag_steps": 50000022,
+     "opponent": "snap:40000045",
+     "opponent_step": 40000045,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.04519
+    },
+    {
+     "lag_steps": 51999972,
+     "opponent": "snap:38000095",
+     "opponent_step": 38000095,
+     "pairs": 50,
+     "score": 0.67143,
+     "se": 0.04637
+    }
+   ],
+   "newest_step": 90000067,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.23505,
+    "edges": 444,
+    "excess_rms_pp": 3.493,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.7729,
+    "lag_z_max": 2.0353,
+    "nash_post_support": 5.282,
+    "nash_support": 5,
+    "nodes": 34,
+    "p_newest_in_support": 0.94,
+    "tri_min_p": 0.00078,
+    "tri_n": 170
+   },
+   "triangles": {
+    "min_p": 0.00078,
+    "n": 170,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:100000037",
+       "snap:48000097"
+      ],
+      [
+       "snap:100000037",
+       "snap:46000093"
+      ]
+     ],
+     "long": "snap:46000093",
+     "short": "snap:48000097",
+     "signal": "lag",
+     "z": 3.1945
+    },
+    {
+     "edges": [
+      [
+       "snap:44000166",
+       "snap:24000222"
+      ],
+      [
+       "snap:52000218",
+       "snap:30000045"
+      ],
+      [
+       "snap:92000275",
+       "snap:56000179"
+      ]
+     ],
+     "sign": [
+      -1,
+      -1,
+      1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 100000000,
+   "lag_curve": [
+    {
+     "lag_steps": 1999867,
+     "opponent": "snap:98000170",
+     "opponent_step": 98000170,
+     "pairs": 100,
+     "score": 0.4439,
+     "se": 0.03832
+    },
+    {
+     "lag_steps": 5999825,
+     "opponent": "snap:94000212",
+     "opponent_step": 94000212,
+     "pairs": 50,
+     "score": 0.62381,
+     "se": 0.04201
+    },
+    {
+     "lag_steps": 7999762,
+     "opponent": "snap:92000275",
+     "opponent_step": 92000275,
+     "pairs": 50,
+     "score": 0.56667,
+     "se": 0.04289
+    },
+    {
+     "lag_steps": 9999970,
+     "opponent": "snap:90000067",
+     "opponent_step": 90000067,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04248
+    },
+    {
+     "lag_steps": 15999774,
+     "opponent": "snap:84000263",
+     "opponent_step": 84000263,
+     "pairs": 50,
+     "score": 0.50476,
+     "se": 0.04577
+    },
+    {
+     "lag_steps": 19999926,
+     "opponent": "snap:80000111",
+     "opponent_step": 80000111,
+     "pairs": 100,
+     "score": 0.47561,
+     "se": 0.03163
+    },
+    {
+     "lag_steps": 22000034,
+     "opponent": "snap:78000003",
+     "opponent_step": 78000003,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.05449
+    },
+    {
+     "lag_steps": 23999981,
+     "opponent": "snap:76000056",
+     "opponent_step": 76000056,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.04273
+    },
+    {
+     "lag_steps": 28000029,
+     "opponent": "snap:72000008",
+     "opponent_step": 72000008,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.05094
+    },
+    {
+     "lag_steps": 31999823,
+     "opponent": "snap:68000214",
+     "opponent_step": 68000214,
+     "pairs": 50,
+     "score": 0.50952,
+     "se": 0.04335
+    },
+    {
+     "lag_steps": 33999844,
+     "opponent": "snap:66000193",
+     "opponent_step": 66000193,
+     "pairs": 100,
+     "score": 0.5439,
+     "se": 0.03473
+    },
+    {
+     "lag_steps": 35999938,
+     "opponent": "snap:64000099",
+     "opponent_step": 64000099,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.0495
+    },
+    {
+     "lag_steps": 41999830,
+     "opponent": "snap:58000207",
+     "opponent_step": 58000207,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.04804
+    },
+    {
+     "lag_steps": 43999858,
+     "opponent": "snap:56000179",
+     "opponent_step": 56000179,
+     "pairs": 50,
+     "score": 0.59524,
+     "se": 0.04715
+    },
+    {
+     "lag_steps": 45999910,
+     "opponent": "snap:54000127",
+     "opponent_step": 54000127,
+     "pairs": 100,
+     "score": 0.5439,
+     "se": 0.03256
+    },
+    {
+     "lag_steps": 47999819,
+     "opponent": "snap:52000218",
+     "opponent_step": 52000218,
+     "pairs": 50,
+     "score": 0.6619,
+     "se": 0.03993
+    },
+    {
+     "lag_steps": 49999931,
+     "opponent": "snap:50000106",
+     "opponent_step": 50000106,
+     "pairs": 50,
+     "score": 0.62381,
+     "se": 0.04201
+    },
+    {
+     "lag_steps": 51999940,
+     "opponent": "snap:48000097",
+     "opponent_step": 48000097,
+     "pairs": 50,
+     "score": 0.74762,
+     "se": 0.037
+    },
+    {
+     "lag_steps": 53999944,
+     "opponent": "snap:46000093",
+     "opponent_step": 46000093,
+     "pairs": 50,
+     "score": 0.56667,
+     "se": 0.04289
+    }
+   ],
+   "newest_step": 100000037,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "FLAG",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.36193,
+    "edges": 429,
+    "excess_rms_pp": 3.588,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.7729,
+    "lag_z_max": 3.1945,
+    "nash_post_support": 5.158,
+    "nash_support": 5,
+    "nodes": 33,
+    "p_newest_in_support": 0.692,
+    "tri_min_p": 0.000352,
+    "tri_n": 171
+   },
+   "triangles": {
+    "min_p": 0.000352,
+    "n": 171,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:110000269",
+       "snap:108000219"
+      ],
+      [
+       "snap:108000219",
+       "snap:56000179"
+      ],
+      [
+       "snap:110000269",
+       "snap:56000179"
+      ]
+     ],
+     "nodes": [
+      "snap:110000269",
+      "snap:108000219",
+      "snap:56000179"
+     ],
+     "signal": "triangles",
+     "z": 4.0279
+    },
+    {
+     "edges": [
+      [
+       "snap:100000037",
+       "snap:48000097"
+      ],
+      [
+       "snap:92000275",
+       "snap:56000179"
+      ],
+      [
+       "snap:52000218",
+       "snap:42000225"
+      ]
+     ],
+     "sign": [
+      1,
+      1,
+      1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 110000000,
+   "lag_curve": [
+    {
+     "lag_steps": 2000050,
+     "opponent": "snap:108000219",
+     "opponent_step": 108000219,
+     "pairs": 100,
+     "score": 0.57805,
+     "se": 0.03229
+    },
+    {
+     "lag_steps": 10000232,
+     "opponent": "snap:100000037",
+     "opponent_step": 100000037,
+     "pairs": 50,
+     "score": 0.63333,
+     "se": 0.04527
+    },
+    {
+     "lag_steps": 12000099,
+     "opponent": "snap:98000170",
+     "opponent_step": 98000170,
+     "pairs": 50,
+     "score": 0.48095,
+     "se": 0.04491
+    },
+    {
+     "lag_steps": 16000057,
+     "opponent": "snap:94000212",
+     "opponent_step": 94000212,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.04554
+    },
+    {
+     "lag_steps": 17999994,
+     "opponent": "snap:92000275",
+     "opponent_step": 92000275,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.04167
+    },
+    {
+     "lag_steps": 20000202,
+     "opponent": "snap:90000067",
+     "opponent_step": 90000067,
+     "pairs": 100,
+     "score": 0.53415,
+     "se": 0.03449
+    },
+    {
+     "lag_steps": 26000006,
+     "opponent": "snap:84000263",
+     "opponent_step": 84000263,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.04282
+    },
+    {
+     "lag_steps": 30000158,
+     "opponent": "snap:80000111",
+     "opponent_step": 80000111,
+     "pairs": 50,
+     "score": 0.61429,
+     "se": 0.04419
+    },
+    {
+     "lag_steps": 32000266,
+     "opponent": "snap:78000003",
+     "opponent_step": 78000003,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.04572
+    },
+    {
+     "lag_steps": 34000213,
+     "opponent": "snap:76000056",
+     "opponent_step": 76000056,
+     "pairs": 50,
+     "score": 0.63333,
+     "se": 0.03844
+    },
+    {
+     "lag_steps": 38000261,
+     "opponent": "snap:72000008",
+     "opponent_step": 72000008,
+     "pairs": 100,
+     "score": 0.56098,
+     "se": 0.03526
+    },
+    {
+     "lag_steps": 42000055,
+     "opponent": "snap:68000214",
+     "opponent_step": 68000214,
+     "pairs": 50,
+     "score": 0.4619,
+     "se": 0.04017
+    },
+    {
+     "lag_steps": 44000076,
+     "opponent": "snap:66000193",
+     "opponent_step": 66000193,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04248
+    },
+    {
+     "lag_steps": 46000170,
+     "opponent": "snap:64000099",
+     "opponent_step": 64000099,
+     "pairs": 50,
+     "score": 0.55714,
+     "se": 0.04837
+    },
+    {
+     "lag_steps": 52000062,
+     "opponent": "snap:58000207",
+     "opponent_step": 58000207,
+     "pairs": 100,
+     "score": 0.56098,
+     "se": 0.03275
+    },
+    {
+     "lag_steps": 54000090,
+     "opponent": "snap:56000179",
+     "opponent_step": 56000179,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.03811
+    },
+    {
+     "lag_steps": 56000142,
+     "opponent": "snap:54000127",
+     "opponent_step": 54000127,
+     "pairs": 50,
+     "score": 0.60952,
+     "se": 0.04779
+    },
+    {
+     "lag_steps": 58000051,
+     "opponent": "snap:52000218",
+     "opponent_step": 52000218,
+     "pairs": 50,
+     "score": 0.55714,
+     "se": 0.04205
+    },
+    {
+     "lag_steps": 60000163,
+     "opponent": "snap:50000106",
+     "opponent_step": 50000106,
+     "pairs": 50,
+     "score": 0.62381,
+     "se": 0.04475
+    }
+   ],
+   "newest_step": 110000269,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "FLAG"
+   },
+   "summary": {
+    "cyclic_share": 0.42885,
+    "edges": 357,
+    "excess_rms_pp": 3.515,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.7729,
+    "lag_z_max": 2.3898,
+    "nash_post_support": 5.504,
+    "nash_support": 5,
+    "nodes": 29,
+    "p_newest_in_support": 0.94,
+    "tri_min_p": 5.6e-05,
+    "tri_n": 171
+   },
+   "triangles": {
+    "min_p": 5.6e-05,
+    "n": 171,
+    "rejected": [
+     {
+      "curl": 1.0263,
+      "nodes": [
+       "snap:110000269",
+       "snap:108000219",
+       "snap:56000179"
+      ],
+      "p": 5.6e-05,
+      "z": 4.028
+     },
+     {
+      "curl": 1.18,
+      "nodes": [
+       "snap:110000269",
+       "snap:80000111",
+       "snap:56000179"
+      ],
+      "p": 0.00018,
+      "z": 3.745
+     }
+    ]
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:100000037",
+       "snap:48000097"
+      ],
+      [
+       "snap:92000275",
+       "snap:56000179"
+      ],
+      [
+       "snap:52000218",
+       "snap:42000225"
+      ]
+     ],
+     "sign": [
+      1,
+      1,
+      1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 120000000,
+   "lag_curve": [
+    {
+     "lag_steps": 2000018,
+     "opponent": "snap:116000110",
+     "opponent_step": 116000110,
+     "pairs": 100,
+     "score": 0.55854,
+     "se": 0.03078
+    },
+    {
+     "lag_steps": 7999859,
+     "opponent": "snap:110000269",
+     "opponent_step": 110000269,
+     "pairs": 50,
+     "score": 0.47143,
+     "se": 0.05352
+    },
+    {
+     "lag_steps": 9999909,
+     "opponent": "snap:108000219",
+     "opponent_step": 108000219,
+     "pairs": 50,
+     "score": 0.37619,
+     "se": 0.04883
+    },
+    {
+     "lag_steps": 18000091,
+     "opponent": "snap:100000037",
+     "opponent_step": 100000037,
+     "pairs": 50,
+     "score": 0.55714,
+     "se": 0.04371
+    },
+    {
+     "lag_steps": 19999958,
+     "opponent": "snap:98000170",
+     "opponent_step": 98000170,
+     "pairs": 50,
+     "score": 0.45238,
+     "se": 0.04056
+    },
+    {
+     "lag_steps": 23999916,
+     "opponent": "snap:94000212",
+     "opponent_step": 94000212,
+     "pairs": 100,
+     "score": 0.58293,
+     "se": 0.03347
+    },
+    {
+     "lag_steps": 25999853,
+     "opponent": "snap:92000275",
+     "opponent_step": 92000275,
+     "pairs": 50,
+     "score": 0.47143,
+     "se": 0.04373
+    },
+    {
+     "lag_steps": 28000061,
+     "opponent": "snap:90000067",
+     "opponent_step": 90000067,
+     "pairs": 50,
+     "score": 0.54286,
+     "se": 0.04692
+    },
+    {
+     "lag_steps": 33999865,
+     "opponent": "snap:84000263",
+     "opponent_step": 84000263,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.04698
+    },
+    {
+     "lag_steps": 38000017,
+     "opponent": "snap:80000111",
+     "opponent_step": 80000111,
+     "pairs": 50,
+     "score": 0.48095,
+     "se": 0.05087
+    },
+    {
+     "lag_steps": 40000125,
+     "opponent": "snap:78000003",
+     "opponent_step": 78000003,
+     "pairs": 100,
+     "score": 0.51951,
+     "se": 0.03088
+    },
+    {
+     "lag_steps": 42000072,
+     "opponent": "snap:76000056",
+     "opponent_step": 76000056,
+     "pairs": 50,
+     "score": 0.44762,
+     "se": 0.04773
+    },
+    {
+     "lag_steps": 46000120,
+     "opponent": "snap:72000008",
+     "opponent_step": 72000008,
+     "pairs": 50,
+     "score": 0.40476,
+     "se": 0.04509
+    },
+    {
+     "lag_steps": 49999914,
+     "opponent": "snap:68000214",
+     "opponent_step": 68000214,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04675
+    },
+    {
+     "lag_steps": 51999935,
+     "opponent": "snap:66000193",
+     "opponent_step": 66000193,
+     "pairs": 100,
+     "score": 0.50488,
+     "se": 0.03637
+    },
+    {
+     "lag_steps": 54000029,
+     "opponent": "snap:64000099",
+     "opponent_step": 64000099,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.04936
+    },
+    {
+     "lag_steps": 59999921,
+     "opponent": "snap:58000207",
+     "opponent_step": 58000207,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.04739
+    },
+    {
+     "lag_steps": 61999949,
+     "opponent": "snap:56000179",
+     "opponent_step": 56000179,
+     "pairs": 50,
+     "score": 0.40476,
+     "se": 0.04913
+    },
+    {
+     "lag_steps": 64000001,
+     "opponent": "snap:54000127",
+     "opponent_step": 54000127,
+     "pairs": 50,
+     "score": 0.47143,
+     "se": 0.04373
+    }
+   ],
+   "newest_step": 118000128,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.50677,
+    "edges": 323,
+    "excess_rms_pp": 3.649,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.7729,
+    "lag_z_max": 2.0247,
+    "nash_post_support": 6.052,
+    "nash_support": 5,
+    "nodes": 27,
+    "p_newest_in_support": 0.25,
+    "tri_min_p": 0.000952,
+    "tri_n": 171
+   },
+   "triangles": {
+    "min_p": 0.000952,
+    "n": 171,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:100000037",
+       "snap:48000097"
+      ],
+      [
+       "snap:92000275",
+       "snap:56000179"
+      ],
+      [
+       "snap:52000218",
+       "snap:42000225"
+      ]
+     ],
+     "sign": [
+      1,
+      1,
+      1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 130000000,
+   "lag_curve": [
+    {
+     "lag_steps": 2000018,
+     "opponent": "snap:116000110",
+     "opponent_step": 116000110,
+     "pairs": 100,
+     "score": 0.55854,
+     "se": 0.03078
+    },
+    {
+     "lag_steps": 7999859,
+     "opponent": "snap:110000269",
+     "opponent_step": 110000269,
+     "pairs": 50,
+     "score": 0.47143,
+     "se": 0.05352
+    },
+    {
+     "lag_steps": 9999909,
+     "opponent": "snap:108000219",
+     "opponent_step": 108000219,
+     "pairs": 50,
+     "score": 0.37619,
+     "se": 0.04883
+    },
+    {
+     "lag_steps": 18000091,
+     "opponent": "snap:100000037",
+     "opponent_step": 100000037,
+     "pairs": 50,
+     "score": 0.55714,
+     "se": 0.04371
+    },
+    {
+     "lag_steps": 19999958,
+     "opponent": "snap:98000170",
+     "opponent_step": 98000170,
+     "pairs": 50,
+     "score": 0.45238,
+     "se": 0.04056
+    },
+    {
+     "lag_steps": 23999916,
+     "opponent": "snap:94000212",
+     "opponent_step": 94000212,
+     "pairs": 100,
+     "score": 0.58293,
+     "se": 0.03347
+    },
+    {
+     "lag_steps": 25999853,
+     "opponent": "snap:92000275",
+     "opponent_step": 92000275,
+     "pairs": 50,
+     "score": 0.47143,
+     "se": 0.04373
+    },
+    {
+     "lag_steps": 28000061,
+     "opponent": "snap:90000067",
+     "opponent_step": 90000067,
+     "pairs": 50,
+     "score": 0.54286,
+     "se": 0.04692
+    },
+    {
+     "lag_steps": 33999865,
+     "opponent": "snap:84000263",
+     "opponent_step": 84000263,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.04698
+    },
+    {
+     "lag_steps": 38000017,
+     "opponent": "snap:80000111",
+     "opponent_step": 80000111,
+     "pairs": 50,
+     "score": 0.48095,
+     "se": 0.05087
+    },
+    {
+     "lag_steps": 40000125,
+     "opponent": "snap:78000003",
+     "opponent_step": 78000003,
+     "pairs": 100,
+     "score": 0.51951,
+     "se": 0.03088
+    },
+    {
+     "lag_steps": 42000072,
+     "opponent": "snap:76000056",
+     "opponent_step": 76000056,
+     "pairs": 50,
+     "score": 0.44762,
+     "se": 0.04773
+    },
+    {
+     "lag_steps": 46000120,
+     "opponent": "snap:72000008",
+     "opponent_step": 72000008,
+     "pairs": 50,
+     "score": 0.40476,
+     "se": 0.04509
+    },
+    {
+     "lag_steps": 49999914,
+     "opponent": "snap:68000214",
+     "opponent_step": 68000214,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04675
+    },
+    {
+     "lag_steps": 51999935,
+     "opponent": "snap:66000193",
+     "opponent_step": 66000193,
+     "pairs": 100,
+     "score": 0.50488,
+     "se": 0.03637
+    },
+    {
+     "lag_steps": 54000029,
+     "opponent": "snap:64000099",
+     "opponent_step": 64000099,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.04936
+    },
+    {
+     "lag_steps": 59999921,
+     "opponent": "snap:58000207",
+     "opponent_step": 58000207,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.04739
+    },
+    {
+     "lag_steps": 61999949,
+     "opponent": "snap:56000179",
+     "opponent_step": 56000179,
+     "pairs": 50,
+     "score": 0.40476,
+     "se": 0.04913
+    },
+    {
+     "lag_steps": 64000001,
+     "opponent": "snap:54000127",
+     "opponent_step": 54000127,
+     "pairs": 50,
+     "score": 0.47143,
+     "se": 0.04373
+    }
+   ],
+   "newest_step": 118000128,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.50677,
+    "edges": 323,
+    "excess_rms_pp": 3.649,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.7729,
+    "lag_z_max": 2.0247,
+    "nash_post_support": 6.052,
+    "nash_support": 5,
+    "nodes": 27,
+    "p_newest_in_support": 0.25,
+    "tri_min_p": 0.000952,
+    "tri_n": 171
+   },
+   "triangles": {
+    "min_p": 0.000952,
+    "n": 171,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:138000134",
+       "snap:72000008"
+      ],
+      [
+       "snap:138000134",
+       "snap:68000214"
+      ]
+     ],
+     "long": "snap:68000214",
+     "short": "snap:72000008",
+     "signal": "lag",
+     "z": 3.4504
+    },
+    {
+     "edges": [
+      [
+       "snap:138000134",
+       "snap:116000110"
+      ],
+      [
+       "snap:116000110",
+       "snap:66000193"
+      ],
+      [
+       "snap:138000134",
+       "snap:66000193"
+      ]
+     ],
+     "nodes": [
+      "snap:138000134",
+      "snap:116000110",
+      "snap:66000193"
+     ],
+     "signal": "triangles",
+     "z": 5.0252
+    },
+    {
+     "edges": [
+      [
+       "snap:138000134",
+       "snap:66000193"
+      ],
+      [
+       "snap:100000037",
+       "snap:94000212"
+      ],
+      [
+       "snap:134000128",
+       "snap:94000212"
+      ]
+     ],
+     "sign": [
+      -1,
+      1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 140000000,
+   "lag_curve": [
+    {
+     "lag_steps": 1999981,
+     "opponent": "snap:136000153",
+     "opponent_step": 136000153,
+     "pairs": 100,
+     "score": 0.5878,
+     "se": 0.03335
+    },
+    {
+     "lag_steps": 4000006,
+     "opponent": "snap:134000128",
+     "opponent_step": 134000128,
+     "pairs": 50,
+     "score": 0.43333,
+     "se": 0.04289
+    },
+    {
+     "lag_steps": 20000006,
+     "opponent": "snap:118000128",
+     "opponent_step": 118000128,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.04056
+    },
+    {
+     "lag_steps": 22000024,
+     "opponent": "snap:116000110",
+     "opponent_step": 116000110,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.03644
+    },
+    {
+     "lag_steps": 27999865,
+     "opponent": "snap:110000269",
+     "opponent_step": 110000269,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.04586
+    },
+    {
+     "lag_steps": 29999915,
+     "opponent": "snap:108000219",
+     "opponent_step": 108000219,
+     "pairs": 100,
+     "score": 0.47561,
+     "se": 0.0335
+    },
+    {
+     "lag_steps": 38000097,
+     "opponent": "snap:100000037",
+     "opponent_step": 100000037,
+     "pairs": 50,
+     "score": 0.50952,
+     "se": 0.04804
+    },
+    {
+     "lag_steps": 39999964,
+     "opponent": "snap:98000170",
+     "opponent_step": 98000170,
+     "pairs": 50,
+     "score": 0.48095,
+     "se": 0.04896
+    },
+    {
+     "lag_steps": 43999922,
+     "opponent": "snap:94000212",
+     "opponent_step": 94000212,
+     "pairs": 50,
+     "score": 0.51429,
+     "se": 0.04727
+    },
+    {
+     "lag_steps": 45999859,
+     "opponent": "snap:92000275",
+     "opponent_step": 92000275,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.04698
+    },
+    {
+     "lag_steps": 48000067,
+     "opponent": "snap:90000067",
+     "opponent_step": 90000067,
+     "pairs": 100,
+     "score": 0.56829,
+     "se": 0.03325
+    },
+    {
+     "lag_steps": 53999871,
+     "opponent": "snap:84000263",
+     "opponent_step": 84000263,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.04998
+    },
+    {
+     "lag_steps": 58000023,
+     "opponent": "snap:80000111",
+     "opponent_step": 80000111,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.04134
+    },
+    {
+     "lag_steps": 60000131,
+     "opponent": "snap:78000003",
+     "opponent_step": 78000003,
+     "pairs": 50,
+     "score": 0.59524,
+     "se": 0.04509
+    },
+    {
+     "lag_steps": 62000078,
+     "opponent": "snap:76000056",
+     "opponent_step": 76000056,
+     "pairs": 100,
+     "score": 0.54878,
+     "se": 0.03431
+    },
+    {
+     "lag_steps": 66000126,
+     "opponent": "snap:72000008",
+     "opponent_step": 72000008,
+     "pairs": 50,
+     "score": 0.68095,
+     "se": 0.04068
+    },
+    {
+     "lag_steps": 69999920,
+     "opponent": "snap:68000214",
+     "opponent_step": 68000214,
+     "pairs": 50,
+     "score": 0.4619,
+     "se": 0.04874
+    },
+    {
+     "lag_steps": 71999941,
+     "opponent": "snap:66000193",
+     "opponent_step": 66000193,
+     "pairs": 50,
+     "score": 0.35714,
+     "se": 0.04078
+    },
+    {
+     "lag_steps": 74000035,
+     "opponent": "snap:64000099",
+     "opponent_step": 64000099,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04466
+    }
+   ],
+   "newest_step": 138000134,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "FLAG",
+    "nash": "CLEAR",
+    "triangles": "FLAG"
+   },
+   "summary": {
+    "cyclic_share": 0.73079,
+    "edges": 196,
+    "excess_rms_pp": 3.796,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.7729,
+    "lag_z_max": 3.4504,
+    "nash_post_support": 6.44,
+    "nash_support": 5,
+    "nodes": 21,
+    "p_newest_in_support": 0.728,
+    "tri_min_p": 1e-06,
+    "tri_n": 158
+   },
+   "triangles": {
+    "min_p": 1e-06,
+    "n": 158,
+    "rejected": [
+     {
+      "curl": 1.5597,
+      "nodes": [
+       "snap:138000134",
+       "snap:116000110",
+       "snap:66000193"
+      ],
+      "p": 1e-06,
+      "z": 5.025
+     },
+     {
+      "curl": 1.6142,
+      "nodes": [
+       "snap:138000134",
+       "snap:72000008",
+       "snap:66000193"
+      ],
+      "p": 5e-06,
+      "z": 4.556
+     },
+     {
+      "curl": 1.2056,
+      "nodes": [
+       "snap:138000134",
+       "snap:72000008",
+       "snap:68000214"
+      ],
+      "p": 6.7e-05,
+      "z": 3.986
+     },
+     {
+      "curl": 1.2806,
+      "nodes": [
+       "snap:138000134",
+       "snap:78000003",
+       "snap:66000193"
+      ],
+      "p": 9.9e-05,
+      "z": 3.894
+     },
+     {
+      "curl": 1.2327,
+      "nodes": [
+       "snap:138000134",
+       "snap:94000212",
+       "snap:66000193"
+      ],
+      "p": 0.000154,
+      "z": 3.784
+     }
+    ]
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:100000037",
+       "snap:94000212"
+      ],
+      [
+       "snap:134000128",
+       "snap:94000212"
+      ],
+      [
+       "snap:134000128",
+       "snap:108000219"
+      ]
+     ],
+     "sign": [
+      1,
+      -1,
+      1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 150000000,
+   "lag_curve": [
+    {
+     "lag_steps": 10000076,
+     "opponent": "snap:138000134",
+     "opponent_step": 138000134,
+     "pairs": 100,
+     "score": 0.50488,
+     "se": 0.03412
+    },
+    {
+     "lag_steps": 12000057,
+     "opponent": "snap:136000153",
+     "opponent_step": 136000153,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.04586
+    },
+    {
+     "lag_steps": 14000082,
+     "opponent": "snap:134000128",
+     "opponent_step": 134000128,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.04896
+    },
+    {
+     "lag_steps": 30000082,
+     "opponent": "snap:118000128",
+     "opponent_step": 118000128,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04248
+    },
+    {
+     "lag_steps": 32000100,
+     "opponent": "snap:116000110",
+     "opponent_step": 116000110,
+     "pairs": 50,
+     "score": 0.43333,
+     "se": 0.05417
+    },
+    {
+     "lag_steps": 37999941,
+     "opponent": "snap:110000269",
+     "opponent_step": 110000269,
+     "pairs": 100,
+     "score": 0.49512,
+     "se": 0.0357
+    },
+    {
+     "lag_steps": 39999991,
+     "opponent": "snap:108000219",
+     "opponent_step": 108000219,
+     "pairs": 50,
+     "score": 0.50952,
+     "se": 0.03681
+    },
+    {
+     "lag_steps": 48000173,
+     "opponent": "snap:100000037",
+     "opponent_step": 100000037,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.05125
+    },
+    {
+     "lag_steps": 50000040,
+     "opponent": "snap:98000170",
+     "opponent_step": 98000170,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.04373
+    },
+    {
+     "lag_steps": 53999998,
+     "opponent": "snap:94000212",
+     "opponent_step": 94000212,
+     "pairs": 50,
+     "score": 0.45238,
+     "se": 0.03876
+    },
+    {
+     "lag_steps": 55999935,
+     "opponent": "snap:92000275",
+     "opponent_step": 92000275,
+     "pairs": 100,
+     "score": 0.50976,
+     "se": 0.03534
+    },
+    {
+     "lag_steps": 58000143,
+     "opponent": "snap:90000067",
+     "opponent_step": 90000067,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.03985
+    },
+    {
+     "lag_steps": 63999947,
+     "opponent": "snap:84000263",
+     "opponent_step": 84000263,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.03876
+    },
+    {
+     "lag_steps": 68000099,
+     "opponent": "snap:80000111",
+     "opponent_step": 80000111,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.03913
+    },
+    {
+     "lag_steps": 70000207,
+     "opponent": "snap:78000003",
+     "opponent_step": 78000003,
+     "pairs": 100,
+     "score": 0.5878,
+     "se": 0.03425
+    },
+    {
+     "lag_steps": 72000154,
+     "opponent": "snap:76000056",
+     "opponent_step": 76000056,
+     "pairs": 50,
+     "score": 0.59524,
+     "se": 0.05287
+    },
+    {
+     "lag_steps": 76000202,
+     "opponent": "snap:72000008",
+     "opponent_step": 72000008,
+     "pairs": 50,
+     "score": 0.59524,
+     "se": 0.04292
+    },
+    {
+     "lag_steps": 79999996,
+     "opponent": "snap:68000214",
+     "opponent_step": 68000214,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.04586
+    }
+   ],
+   "newest_step": 148000210,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.72935,
+    "edges": 159,
+    "excess_rms_pp": 3.514,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.7543,
+    "lag_z_max": 1.5218,
+    "nash_post_support": 6.758,
+    "nash_support": 7,
+    "nodes": 19,
+    "p_newest_in_support": 0.704,
+    "tri_min_p": 0.009866,
+    "tri_n": 141
+   },
+   "triangles": {
+    "min_p": 0.009866,
+    "n": 141,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:160000085",
+       "snap:108000219"
+      ],
+      [
+       "snap:108000219",
+       "snap:90000067"
+      ],
+      [
+       "snap:160000085",
+       "snap:90000067"
+      ]
+     ],
+     "nodes": [
+      "snap:160000085",
+      "snap:108000219",
+      "snap:90000067"
+     ],
+     "signal": "triangles",
+     "z": -3.6849
+    },
+    {
+     "edges": [
+      [
+       "snap:134000128",
+       "snap:108000219"
+      ],
+      [
+       "snap:100000037",
+       "snap:94000212"
+      ],
+      [
+       "snap:134000128",
+       "snap:94000212"
+      ]
+     ],
+     "sign": [
+      1,
+      1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 160000000,
+   "lag_curve": [
+    {
+     "lag_steps": 8000019,
+     "opponent": "snap:152000066",
+     "opponent_step": 152000066,
+     "pairs": 100,
+     "score": 0.52927,
+     "se": 0.03523
+    },
+    {
+     "lag_steps": 11999875,
+     "opponent": "snap:148000210",
+     "opponent_step": 148000210,
+     "pairs": 50,
+     "score": 0.44286,
+     "se": 0.04584
+    },
+    {
+     "lag_steps": 21999951,
+     "opponent": "snap:138000134",
+     "opponent_step": 138000134,
+     "pairs": 50,
+     "score": 0.45238,
+     "se": 0.04758
+    },
+    {
+     "lag_steps": 23999932,
+     "opponent": "snap:136000153",
+     "opponent_step": 136000153,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04466
+    },
+    {
+     "lag_steps": 25999957,
+     "opponent": "snap:134000128",
+     "opponent_step": 134000128,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.03801
+    },
+    {
+     "lag_steps": 41999957,
+     "opponent": "snap:118000128",
+     "opponent_step": 118000128,
+     "pairs": 100,
+     "score": 0.47561,
+     "se": 0.03257
+    },
+    {
+     "lag_steps": 43999975,
+     "opponent": "snap:116000110",
+     "opponent_step": 116000110,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.04499
+    },
+    {
+     "lag_steps": 49999816,
+     "opponent": "snap:110000269",
+     "opponent_step": 110000269,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.04554
+    },
+    {
+     "lag_steps": 51999866,
+     "opponent": "snap:108000219",
+     "opponent_step": 108000219,
+     "pairs": 50,
+     "score": 0.44286,
+     "se": 0.04205
+    },
+    {
+     "lag_steps": 60000048,
+     "opponent": "snap:100000037",
+     "opponent_step": 100000037,
+     "pairs": 50,
+     "score": 0.47143,
+     "se": 0.04373
+    },
+    {
+     "lag_steps": 61999915,
+     "opponent": "snap:98000170",
+     "opponent_step": 98000170,
+     "pairs": 100,
+     "score": 0.47073,
+     "se": 0.03506
+    },
+    {
+     "lag_steps": 65999873,
+     "opponent": "snap:94000212",
+     "opponent_step": 94000212,
+     "pairs": 50,
+     "score": 0.56667,
+     "se": 0.05101
+    },
+    {
+     "lag_steps": 67999810,
+     "opponent": "snap:92000275",
+     "opponent_step": 92000275,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04248
+    },
+    {
+     "lag_steps": 70000018,
+     "opponent": "snap:90000067",
+     "opponent_step": 90000067,
+     "pairs": 50,
+     "score": 0.65238,
+     "se": 0.05198
+    },
+    {
+     "lag_steps": 75999822,
+     "opponent": "snap:84000263",
+     "opponent_step": 84000263,
+     "pairs": 100,
+     "score": 0.58293,
+     "se": 0.02769
+    },
+    {
+     "lag_steps": 79999974,
+     "opponent": "snap:80000111",
+     "opponent_step": 80000111,
+     "pairs": 50,
+     "score": 0.65238,
+     "se": 0.04818
+    }
+   ],
+   "newest_step": 160000085,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "FLAG"
+   },
+   "summary": {
+    "cyclic_share": 0.76175,
+    "edges": 127,
+    "excess_rms_pp": 2.989,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.7131,
+    "lag_z_max": 1.6902,
+    "nash_post_support": 6.46,
+    "nash_support": 4,
+    "nodes": 17,
+    "p_newest_in_support": 0.548,
+    "tri_min_p": 0.000229,
+    "tri_n": 111
+   },
+   "triangles": {
+    "min_p": 0.000229,
+    "n": 111,
+    "rejected": [
+     {
+      "curl": -1.2844,
+      "nodes": [
+       "snap:160000085",
+       "snap:108000219",
+       "snap:90000067"
+      ],
+      "p": 0.000229,
+      "z": -3.685
+     }
+    ]
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:134000128",
+       "snap:94000212"
+      ],
+      [
+       "snap:134000128",
+       "snap:108000219"
+      ],
+      [
+       "snap:100000037",
+       "snap:94000212"
+      ]
+     ],
+     "sign": [
+      -1,
+      1,
+      1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 170000000,
+   "lag_curve": [
+    {
+     "lag_steps": 2000068,
+     "opponent": "snap:164000130",
+     "opponent_step": 164000130,
+     "pairs": 100,
+     "score": 0.47073,
+     "se": 0.03592
+    },
+    {
+     "lag_steps": 6000113,
+     "opponent": "snap:160000085",
+     "opponent_step": 160000085,
+     "pairs": 50,
+     "score": 0.47143,
+     "se": 0.04789
+    },
+    {
+     "lag_steps": 14000132,
+     "opponent": "snap:152000066",
+     "opponent_step": 152000066,
+     "pairs": 50,
+     "score": 0.61429,
+     "se": 0.03717
+    },
+    {
+     "lag_steps": 17999988,
+     "opponent": "snap:148000210",
+     "opponent_step": 148000210,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.04554
+    },
+    {
+     "lag_steps": 28000064,
+     "opponent": "snap:138000134",
+     "opponent_step": 138000134,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.03479
+    },
+    {
+     "lag_steps": 30000045,
+     "opponent": "snap:136000153",
+     "opponent_step": 136000153,
+     "pairs": 100,
+     "score": 0.49512,
+     "se": 0.03637
+    },
+    {
+     "lag_steps": 32000070,
+     "opponent": "snap:134000128",
+     "opponent_step": 134000128,
+     "pairs": 50,
+     "score": 0.4619,
+     "se": 0.04825
+    },
+    {
+     "lag_steps": 48000070,
+     "opponent": "snap:118000128",
+     "opponent_step": 118000128,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.04789
+    },
+    {
+     "lag_steps": 50000088,
+     "opponent": "snap:116000110",
+     "opponent_step": 116000110,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.04802
+    },
+    {
+     "lag_steps": 55999929,
+     "opponent": "snap:110000269",
+     "opponent_step": 110000269,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.05278
+    },
+    {
+     "lag_steps": 57999979,
+     "opponent": "snap:108000219",
+     "opponent_step": 108000219,
+     "pairs": 100,
+     "score": 0.55854,
+     "se": 0.03556
+    },
+    {
+     "lag_steps": 66000161,
+     "opponent": "snap:100000037",
+     "opponent_step": 100000037,
+     "pairs": 50,
+     "score": 0.47143,
+     "se": 0.04789
+    },
+    {
+     "lag_steps": 68000028,
+     "opponent": "snap:98000170",
+     "opponent_step": 98000170,
+     "pairs": 50,
+     "score": 0.64286,
+     "se": 0.04925
+    },
+    {
+     "lag_steps": 71999986,
+     "opponent": "snap:94000212",
+     "opponent_step": 94000212,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.04491
+    },
+    {
+     "lag_steps": 73999923,
+     "opponent": "snap:92000275",
+     "opponent_step": 92000275,
+     "pairs": 100,
+     "score": 0.54878,
+     "se": 0.0336
+    },
+    {
+     "lag_steps": 76000131,
+     "opponent": "snap:90000067",
+     "opponent_step": 90000067,
+     "pairs": 50,
+     "score": 0.56667,
+     "se": 0.04812
+    }
+   ],
+   "newest_step": 166000198,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.78173,
+    "edges": 128,
+    "excess_rms_pp": 3.149,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.7131,
+    "lag_z_max": 1.8577,
+    "nash_post_support": 6.954,
+    "nash_support": 7,
+    "nodes": 17,
+    "p_newest_in_support": 0.872,
+    "tri_min_p": 0.001293,
+    "tri_n": 112
+   },
+   "triangles": {
+    "min_p": 0.001293,
+    "n": 112,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:176000224",
+       "snap:152000066"
+      ],
+      [
+       "snap:152000066",
+       "snap:134000128"
+      ],
+      [
+       "snap:176000224",
+       "snap:134000128"
+      ]
+     ],
+     "nodes": [
+      "snap:176000224",
+      "snap:152000066",
+      "snap:134000128"
+     ],
+     "signal": "triangles",
+     "z": 3.6299
+    },
+    {
+     "edges": [
+      [
+       "snap:164000130",
+       "snap:138000134"
+      ],
+      [
+       "snap:134000128",
+       "snap:108000219"
+      ],
+      [
+       "snap:164000130",
+       "snap:160000085"
+      ]
+     ],
+     "sign": [
+      1,
+      1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 180000000,
+   "lag_curve": [
+    {
+     "lag_steps": 10000026,
+     "opponent": "snap:166000198",
+     "opponent_step": 166000198,
+     "pairs": 100,
+     "score": 0.53902,
+     "se": 0.03069
+    },
+    {
+     "lag_steps": 12000094,
+     "opponent": "snap:164000130",
+     "opponent_step": 164000130,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.04092
+    },
+    {
+     "lag_steps": 16000139,
+     "opponent": "snap:160000085",
+     "opponent_step": 160000085,
+     "pairs": 50,
+     "score": 0.57619,
+     "se": 0.04581
+    },
+    {
+     "lag_steps": 24000158,
+     "opponent": "snap:152000066",
+     "opponent_step": 152000066,
+     "pairs": 50,
+     "score": 0.61429,
+     "se": 0.04419
+    },
+    {
+     "lag_steps": 28000014,
+     "opponent": "snap:148000210",
+     "opponent_step": 148000210,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.05094
+    },
+    {
+     "lag_steps": 38000090,
+     "opponent": "snap:138000134",
+     "opponent_step": 138000134,
+     "pairs": 100,
+     "score": 0.52683,
+     "se": 0.03208
+    },
+    {
+     "lag_steps": 40000071,
+     "opponent": "snap:136000153",
+     "opponent_step": 136000153,
+     "pairs": 50,
+     "score": 0.55714,
+     "se": 0.04371
+    },
+    {
+     "lag_steps": 42000096,
+     "opponent": "snap:134000128",
+     "opponent_step": 134000128,
+     "pairs": 50,
+     "score": 0.42381,
+     "se": 0.04368
+    },
+    {
+     "lag_steps": 58000096,
+     "opponent": "snap:118000128",
+     "opponent_step": 118000128,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.04825
+    },
+    {
+     "lag_steps": 60000114,
+     "opponent": "snap:116000110",
+     "opponent_step": 116000110,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.05159
+    },
+    {
+     "lag_steps": 65999955,
+     "opponent": "snap:110000269",
+     "opponent_step": 110000269,
+     "pairs": 100,
+     "score": 0.52927,
+     "se": 0.02513
+    },
+    {
+     "lag_steps": 68000005,
+     "opponent": "snap:108000219",
+     "opponent_step": 108000219,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04466
+    },
+    {
+     "lag_steps": 76000187,
+     "opponent": "snap:100000037",
+     "opponent_step": 100000037,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.04698
+    },
+    {
+     "lag_steps": 78000054,
+     "opponent": "snap:98000170",
+     "opponent_step": 98000170,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.04441
+    }
+   ],
+   "newest_step": 176000224,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "FLAG"
+   },
+   "summary": {
+    "cyclic_share": 0.75911,
+    "edges": 100,
+    "excess_rms_pp": 3.037,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.6653,
+    "lag_z_max": 2.1577,
+    "nash_post_support": 5.896,
+    "nash_support": 5,
+    "nodes": 15,
+    "p_newest_in_support": 0.9,
+    "tri_min_p": 0.000284,
+    "tri_n": 86
+   },
+   "triangles": {
+    "min_p": 0.000284,
+    "n": 86,
+    "rejected": [
+     {
+      "curl": 1.1582,
+      "nodes": [
+       "snap:176000224",
+       "snap:152000066",
+       "snap:134000128"
+      ],
+      "p": 0.000284,
+      "z": 3.63
+     }
+    ]
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:176000224",
+       "snap:152000066"
+      ],
+      [
+       "snap:152000066",
+       "snap:134000128"
+      ],
+      [
+       "snap:176000224",
+       "snap:134000128"
+      ]
+     ],
+     "nodes": [
+      "snap:176000224",
+      "snap:152000066",
+      "snap:134000128"
+     ],
+     "signal": "triangles",
+     "z": 3.6299
+    },
+    {
+     "edges": [
+      [
+       "snap:164000130",
+       "snap:138000134"
+      ],
+      [
+       "snap:134000128",
+       "snap:108000219"
+      ],
+      [
+       "snap:164000130",
+       "snap:160000085"
+      ]
+     ],
+     "sign": [
+      1,
+      1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 190000000,
+   "lag_curve": [
+    {
+     "lag_steps": 10000026,
+     "opponent": "snap:166000198",
+     "opponent_step": 166000198,
+     "pairs": 100,
+     "score": 0.53902,
+     "se": 0.03069
+    },
+    {
+     "lag_steps": 12000094,
+     "opponent": "snap:164000130",
+     "opponent_step": 164000130,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.04092
+    },
+    {
+     "lag_steps": 16000139,
+     "opponent": "snap:160000085",
+     "opponent_step": 160000085,
+     "pairs": 50,
+     "score": 0.57619,
+     "se": 0.04581
+    },
+    {
+     "lag_steps": 24000158,
+     "opponent": "snap:152000066",
+     "opponent_step": 152000066,
+     "pairs": 50,
+     "score": 0.61429,
+     "se": 0.04419
+    },
+    {
+     "lag_steps": 28000014,
+     "opponent": "snap:148000210",
+     "opponent_step": 148000210,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.05094
+    },
+    {
+     "lag_steps": 38000090,
+     "opponent": "snap:138000134",
+     "opponent_step": 138000134,
+     "pairs": 100,
+     "score": 0.52683,
+     "se": 0.03208
+    },
+    {
+     "lag_steps": 40000071,
+     "opponent": "snap:136000153",
+     "opponent_step": 136000153,
+     "pairs": 50,
+     "score": 0.55714,
+     "se": 0.04371
+    },
+    {
+     "lag_steps": 42000096,
+     "opponent": "snap:134000128",
+     "opponent_step": 134000128,
+     "pairs": 50,
+     "score": 0.42381,
+     "se": 0.04368
+    },
+    {
+     "lag_steps": 58000096,
+     "opponent": "snap:118000128",
+     "opponent_step": 118000128,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.04825
+    },
+    {
+     "lag_steps": 60000114,
+     "opponent": "snap:116000110",
+     "opponent_step": 116000110,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.05159
+    },
+    {
+     "lag_steps": 65999955,
+     "opponent": "snap:110000269",
+     "opponent_step": 110000269,
+     "pairs": 100,
+     "score": 0.52927,
+     "se": 0.02513
+    },
+    {
+     "lag_steps": 68000005,
+     "opponent": "snap:108000219",
+     "opponent_step": 108000219,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04466
+    },
+    {
+     "lag_steps": 76000187,
+     "opponent": "snap:100000037",
+     "opponent_step": 100000037,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.04698
+    },
+    {
+     "lag_steps": 78000054,
+     "opponent": "snap:98000170",
+     "opponent_step": 98000170,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.04441
+    }
+   ],
+   "newest_step": 176000224,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "FLAG"
+   },
+   "summary": {
+    "cyclic_share": 0.75911,
+    "edges": 100,
+    "excess_rms_pp": 3.037,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.6653,
+    "lag_z_max": 2.1577,
+    "nash_post_support": 5.896,
+    "nash_support": 5,
+    "nodes": 15,
+    "p_newest_in_support": 0.9,
+    "tri_min_p": 0.000284,
+    "tri_n": 86
+   },
+   "triangles": {
+    "min_p": 0.000284,
+    "n": 86,
+    "rejected": [
+     {
+      "curl": 1.1582,
+      "nodes": [
+       "snap:176000224",
+       "snap:152000066",
+       "snap:134000128"
+      ],
+      "p": 0.000284,
+      "z": 3.63
+     }
+    ]
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:200000120",
+       "snap:194000195"
+      ],
+      [
+       "snap:194000195",
+       "snap:164000130"
+      ],
+      [
+       "snap:200000120",
+       "snap:164000130"
+      ]
+     ],
+     "nodes": [
+      "snap:200000120",
+      "snap:194000195",
+      "snap:164000130"
+     ],
+     "signal": "triangles",
+     "z": 3.9523
+    },
+    {
+     "edges": [
+      [
+       "snap:194000195",
+       "snap:136000153"
+      ],
+      [
+       "snap:194000195",
+       "snap:164000130"
+      ],
+      [
+       "snap:152000066",
+       "snap:134000128"
+      ]
+     ],
+     "sign": [
+      -1,
+      1,
+      1
+     ],
+     "signal": "hodge"
+    },
+    {
+     "edges": [
+      [
+       "snap:194000195",
+       "snap:164000130"
+      ],
+      [
+       "snap:200000120",
+       "snap:164000130"
+      ],
+      [
+       "snap:200000120",
+       "snap:160000085"
+      ]
+     ],
+     "sign": [
+      1,
+      -1,
+      -1
+     ],
+     "signal": "nash"
+    }
+   ],
+   "grid": 200000000,
+   "lag_curve": [
+    {
+     "lag_steps": 5999925,
+     "opponent": "snap:194000195",
+     "opponent_step": 194000195,
+     "pairs": 100,
+     "score": 0.5439,
+     "se": 0.03456
+    },
+    {
+     "lag_steps": 23999896,
+     "opponent": "snap:176000224",
+     "opponent_step": 176000224,
+     "pairs": 50,
+     "score": 0.57619,
+     "se": 0.04368
+    },
+    {
+     "lag_steps": 33999922,
+     "opponent": "snap:166000198",
+     "opponent_step": 166000198,
+     "pairs": 50,
+     "score": 0.45714,
+     "se": 0.04267
+    },
+    {
+     "lag_steps": 35999990,
+     "opponent": "snap:164000130",
+     "opponent_step": 164000130,
+     "pairs": 50,
+     "score": 0.42381,
+     "se": 0.04144
+    },
+    {
+     "lag_steps": 40000035,
+     "opponent": "snap:160000085",
+     "opponent_step": 160000085,
+     "pairs": 50,
+     "score": 0.41905,
+     "se": 0.04538
+    },
+    {
+     "lag_steps": 48000054,
+     "opponent": "snap:152000066",
+     "opponent_step": 152000066,
+     "pairs": 100,
+     "score": 0.5878,
+     "se": 0.03632
+    },
+    {
+     "lag_steps": 51999910,
+     "opponent": "snap:148000210",
+     "opponent_step": 148000210,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04825
+    },
+    {
+     "lag_steps": 61999986,
+     "opponent": "snap:138000134",
+     "opponent_step": 138000134,
+     "pairs": 50,
+     "score": 0.57619,
+     "se": 0.03907
+    },
+    {
+     "lag_steps": 63999967,
+     "opponent": "snap:136000153",
+     "opponent_step": 136000153,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.03989
+    },
+    {
+     "lag_steps": 65999992,
+     "opponent": "snap:134000128",
+     "opponent_step": 134000128,
+     "pairs": 50,
+     "score": 0.65238,
+     "se": 0.05012
+    }
+   ],
+   "newest_step": 200000120,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "FLAG",
+    "triangles": "FLAG"
+   },
+   "summary": {
+    "cyclic_share": 0.71872,
+    "edges": 55,
+    "excess_rms_pp": 4.221,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.5392,
+    "lag_z_max": 1.9497,
+    "nash_post_support": 5.44,
+    "nash_support": 7,
+    "nodes": 11,
+    "p_newest_in_support": 0.91,
+    "tri_min_p": 7.7e-05,
+    "tri_n": 45
+   },
+   "triangles": {
+    "min_p": 7.7e-05,
+    "n": 45,
+    "rejected": [
+     {
+      "curl": 1.071,
+      "nodes": [
+       "snap:200000120",
+       "snap:194000195",
+       "snap:164000130"
+      ],
+      "p": 7.7e-05,
+      "z": 3.952
+     }
+    ]
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:200000120",
+       "snap:194000195"
+      ],
+      [
+       "snap:194000195",
+       "snap:164000130"
+      ],
+      [
+       "snap:200000120",
+       "snap:164000130"
+      ]
+     ],
+     "nodes": [
+      "snap:200000120",
+      "snap:194000195",
+      "snap:164000130"
+     ],
+     "signal": "triangles",
+     "z": 3.9523
+    },
+    {
+     "edges": [
+      [
+       "snap:194000195",
+       "snap:136000153"
+      ],
+      [
+       "snap:194000195",
+       "snap:164000130"
+      ],
+      [
+       "snap:152000066",
+       "snap:134000128"
+      ]
+     ],
+     "sign": [
+      -1,
+      1,
+      1
+     ],
+     "signal": "hodge"
+    },
+    {
+     "edges": [
+      [
+       "snap:194000195",
+       "snap:164000130"
+      ],
+      [
+       "snap:200000120",
+       "snap:164000130"
+      ],
+      [
+       "snap:200000120",
+       "snap:160000085"
+      ]
+     ],
+     "sign": [
+      1,
+      -1,
+      -1
+     ],
+     "signal": "nash"
+    }
+   ],
+   "grid": 210000000,
+   "lag_curve": [
+    {
+     "lag_steps": 5999925,
+     "opponent": "snap:194000195",
+     "opponent_step": 194000195,
+     "pairs": 100,
+     "score": 0.5439,
+     "se": 0.03456
+    },
+    {
+     "lag_steps": 23999896,
+     "opponent": "snap:176000224",
+     "opponent_step": 176000224,
+     "pairs": 50,
+     "score": 0.57619,
+     "se": 0.04368
+    },
+    {
+     "lag_steps": 33999922,
+     "opponent": "snap:166000198",
+     "opponent_step": 166000198,
+     "pairs": 50,
+     "score": 0.45714,
+     "se": 0.04267
+    },
+    {
+     "lag_steps": 35999990,
+     "opponent": "snap:164000130",
+     "opponent_step": 164000130,
+     "pairs": 50,
+     "score": 0.42381,
+     "se": 0.04144
+    },
+    {
+     "lag_steps": 40000035,
+     "opponent": "snap:160000085",
+     "opponent_step": 160000085,
+     "pairs": 50,
+     "score": 0.41905,
+     "se": 0.04538
+    },
+    {
+     "lag_steps": 48000054,
+     "opponent": "snap:152000066",
+     "opponent_step": 152000066,
+     "pairs": 100,
+     "score": 0.5878,
+     "se": 0.03632
+    },
+    {
+     "lag_steps": 51999910,
+     "opponent": "snap:148000210",
+     "opponent_step": 148000210,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04825
+    },
+    {
+     "lag_steps": 61999986,
+     "opponent": "snap:138000134",
+     "opponent_step": 138000134,
+     "pairs": 50,
+     "score": 0.57619,
+     "se": 0.03907
+    },
+    {
+     "lag_steps": 63999967,
+     "opponent": "snap:136000153",
+     "opponent_step": 136000153,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.03989
+    },
+    {
+     "lag_steps": 65999992,
+     "opponent": "snap:134000128",
+     "opponent_step": 134000128,
+     "pairs": 50,
+     "score": 0.65238,
+     "se": 0.05012
+    }
+   ],
+   "newest_step": 200000120,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "FLAG",
+    "triangles": "FLAG"
+   },
+   "summary": {
+    "cyclic_share": 0.71872,
+    "edges": 55,
+    "excess_rms_pp": 4.221,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.5392,
+    "lag_z_max": 1.9497,
+    "nash_post_support": 5.44,
+    "nash_support": 7,
+    "nodes": 11,
+    "p_newest_in_support": 0.91,
+    "tri_min_p": 7.7e-05,
+    "tri_n": 45
+   },
+   "triangles": {
+    "min_p": 7.7e-05,
+    "n": 45,
+    "rejected": [
+     {
+      "curl": 1.071,
+      "nodes": [
+       "snap:200000120",
+       "snap:194000195",
+       "snap:164000130"
+      ],
+      "p": 7.7e-05,
+      "z": 3.952
+     }
+    ]
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:194000195",
+       "snap:164000130"
+      ],
+      [
+       "snap:200000120",
+       "snap:164000130"
+      ],
+      [
+       "snap:200000120",
+       "snap:176000224"
+      ]
+     ],
+     "sign": [
+      1,
+      -1,
+      1
+     ],
+     "signal": "hodge"
+    },
+    {
+     "edges": [
+      [
+       "snap:194000195",
+       "snap:164000130"
+      ],
+      [
+       "snap:200000120",
+       "snap:164000130"
+      ],
+      [
+       "snap:200000120",
+       "snap:176000224"
+      ]
+     ],
+     "sign": [
+      1,
+      -1,
+      1
+     ],
+     "signal": "nash"
+    }
+   ],
+   "grid": 220000000,
+   "lag_curve": [
+    {
+     "lag_steps": 19999907,
+     "opponent": "snap:200000120",
+     "opponent_step": 200000120,
+     "pairs": 100,
+     "score": 0.51951,
+     "se": 0.03147
+    },
+    {
+     "lag_steps": 25999832,
+     "opponent": "snap:194000195",
+     "opponent_step": 194000195,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.04706
+    },
+    {
+     "lag_steps": 43999803,
+     "opponent": "snap:176000224",
+     "opponent_step": 176000224,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.04389
+    },
+    {
+     "lag_steps": 53999829,
+     "opponent": "snap:166000198",
+     "opponent_step": 166000198,
+     "pairs": 50,
+     "score": 0.55714,
+     "se": 0.04425
+    },
+    {
+     "lag_steps": 55999897,
+     "opponent": "snap:164000130",
+     "opponent_step": 164000130,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.04586
+    },
+    {
+     "lag_steps": 59999942,
+     "opponent": "snap:160000085",
+     "opponent_step": 160000085,
+     "pairs": 100,
+     "score": 0.44878,
+     "se": 0.02898
+    },
+    {
+     "lag_steps": 67999961,
+     "opponent": "snap:152000066",
+     "opponent_step": 152000066,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.05087
+    },
+    {
+     "lag_steps": 71999817,
+     "opponent": "snap:148000210",
+     "opponent_step": 148000210,
+     "pairs": 50,
+     "score": 0.47143,
+     "se": 0.04984
+    }
+   ],
+   "newest_step": 220000027,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "FLAG",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.64783,
+    "edges": 36,
+    "excess_rms_pp": 3.245,
+    "hodge_p": 0.0035,
+    "lag_z_crit": 2.45,
+    "lag_z_max": 1.471,
+    "nash_post_support": 4.562,
+    "nash_support": 7,
+    "nodes": 9,
+    "p_newest_in_support": 0.458,
+    "tri_min_p": 0.048463,
+    "tri_n": 28
+   },
+   "triangles": {
+    "min_p": 0.048463,
+    "n": 28,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:228000030",
+       "snap:160000085"
+      ],
+      [
+       "snap:228000030",
+       "snap:152000066"
+      ]
+     ],
+     "long": "snap:152000066",
+     "short": "snap:160000085",
+     "signal": "lag",
+     "z": 2.7346
+    },
+    {
+     "edges": [
+      [
+       "snap:228000030",
+       "snap:164000130"
+      ],
+      [
+       "snap:164000130",
+       "snap:152000066"
+      ],
+      [
+       "snap:228000030",
+       "snap:152000066"
+      ]
+     ],
+     "nodes": [
+      "snap:228000030",
+      "snap:164000130",
+      "snap:152000066"
+     ],
+     "signal": "triangles",
+     "z": 4.1352
+    },
+    {
+     "edges": [
+      [
+       "snap:224000053",
+       "snap:194000195"
+      ],
+      [
+       "snap:228000030",
+       "snap:152000066"
+      ],
+      [
+       "snap:228000030",
+       "snap:164000130"
+      ]
+     ],
+     "sign": [
+      -1,
+      -1,
+      1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 230000000,
+   "lag_curve": [
+    {
+     "lag_steps": 3999977,
+     "opponent": "snap:224000053",
+     "opponent_step": 224000053,
+     "pairs": 100,
+     "score": 0.40244,
+     "se": 0.02936
+    },
+    {
+     "lag_steps": 8000003,
+     "opponent": "snap:220000027",
+     "opponent_step": 220000027,
+     "pairs": 50,
+     "score": 0.57619,
+     "se": 0.04784
+    },
+    {
+     "lag_steps": 27999910,
+     "opponent": "snap:200000120",
+     "opponent_step": 200000120,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.04445
+    },
+    {
+     "lag_steps": 33999835,
+     "opponent": "snap:194000195",
+     "opponent_step": 194000195,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.04554
+    },
+    {
+     "lag_steps": 51999806,
+     "opponent": "snap:176000224",
+     "opponent_step": 176000224,
+     "pairs": 50,
+     "score": 0.55714,
+     "se": 0.04425
+    },
+    {
+     "lag_steps": 61999832,
+     "opponent": "snap:166000198",
+     "opponent_step": 166000198,
+     "pairs": 100,
+     "score": 0.54878,
+     "se": 0.03484
+    },
+    {
+     "lag_steps": 63999900,
+     "opponent": "snap:164000130",
+     "opponent_step": 164000130,
+     "pairs": 50,
+     "score": 0.67143,
+     "se": 0.04033
+    },
+    {
+     "lag_steps": 67999945,
+     "opponent": "snap:160000085",
+     "opponent_step": 160000085,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.04572
+    },
+    {
+     "lag_steps": 75999964,
+     "opponent": "snap:152000066",
+     "opponent_step": 152000066,
+     "pairs": 50,
+     "score": 0.42381,
+     "se": 0.04784
+    },
+    {
+     "lag_steps": 79999820,
+     "opponent": "snap:148000210",
+     "opponent_step": 148000210,
+     "pairs": 50,
+     "score": 0.59524,
+     "se": 0.04292
+    }
+   ],
+   "newest_step": 228000030,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "FLAG",
+    "nash": "CLEAR",
+    "triangles": "FLAG"
+   },
+   "summary": {
+    "cyclic_share": 0.638,
+    "edges": 55,
+    "excess_rms_pp": 4.158,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.5392,
+    "lag_z_max": 2.7346,
+    "nash_post_support": 4.43,
+    "nash_support": 4,
+    "nodes": 11,
+    "p_newest_in_support": 0.896,
+    "tri_min_p": 3.5e-05,
+    "tri_n": 45
+   },
+   "triangles": {
+    "min_p": 3.5e-05,
+    "n": 45,
+    "rejected": [
+     {
+      "curl": 1.4075,
+      "nodes": [
+       "snap:228000030",
+       "snap:164000130",
+       "snap:152000066"
+      ],
+      "p": 3.5e-05,
+      "z": 4.135
+     },
+     {
+      "curl": -1.1329,
+      "nodes": [
+       "snap:228000030",
+       "snap:224000053",
+       "snap:194000195"
+      ],
+      "p": 0.000162,
+      "z": -3.772
+     },
+     {
+      "curl": -0.9536,
+      "nodes": [
+       "snap:228000030",
+       "snap:224000053",
+       "snap:164000130"
+      ],
+      "p": 0.000171,
+      "z": -3.758
+     },
+     {
+      "curl": 0.9683,
+      "nodes": [
+       "snap:228000030",
+       "snap:166000198",
+       "snap:152000066"
+      ],
+      "p": 0.000765,
+      "z": 3.365
+     },
+     {
+      "curl": -1.0218,
+      "nodes": [
+       "snap:228000030",
+       "snap:200000120",
+       "snap:164000130"
+      ],
+      "p": 0.000851,
+      "z": -3.336
+     }
+    ]
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:224000053",
+       "snap:194000195"
+      ],
+      [
+       "snap:228000030",
+       "snap:164000130"
+      ],
+      [
+       "snap:228000030",
+       "snap:224000053"
+      ]
+     ],
+     "sign": [
+      -1,
+      1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 240000000,
+   "lag_curve": [
+    {
+     "lag_steps": 8000125,
+     "opponent": "snap:228000030",
+     "opponent_step": 228000030,
+     "pairs": 100,
+     "score": 0.50976,
+     "se": 0.03246
+    },
+    {
+     "lag_steps": 12000102,
+     "opponent": "snap:224000053",
+     "opponent_step": 224000053,
+     "pairs": 50,
+     "score": 0.4619,
+     "se": 0.04017
+    },
+    {
+     "lag_steps": 16000128,
+     "opponent": "snap:220000027",
+     "opponent_step": 220000027,
+     "pairs": 50,
+     "score": 0.52857,
+     "se": 0.05352
+    },
+    {
+     "lag_steps": 36000035,
+     "opponent": "snap:200000120",
+     "opponent_step": 200000120,
+     "pairs": 50,
+     "score": 0.40476,
+     "se": 0.05287
+    },
+    {
+     "lag_steps": 41999960,
+     "opponent": "snap:194000195",
+     "opponent_step": 194000195,
+     "pairs": 50,
+     "score": 0.45238,
+     "se": 0.04554
+    },
+    {
+     "lag_steps": 59999931,
+     "opponent": "snap:176000224",
+     "opponent_step": 176000224,
+     "pairs": 100,
+     "score": 0.50488,
+     "se": 0.03552
+    },
+    {
+     "lag_steps": 69999957,
+     "opponent": "snap:166000198",
+     "opponent_step": 166000198,
+     "pairs": 50,
+     "score": 0.56667,
+     "se": 0.04061
+    },
+    {
+     "lag_steps": 72000025,
+     "opponent": "snap:164000130",
+     "opponent_step": 164000130,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.04904
+    },
+    {
+     "lag_steps": 76000070,
+     "opponent": "snap:160000085",
+     "opponent_step": 160000085,
+     "pairs": 50,
+     "score": 0.48095,
+     "se": 0.03985
+    }
+   ],
+   "newest_step": 236000155,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.64051,
+    "edges": 45,
+    "excess_rms_pp": 3.89,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.4977,
+    "lag_z_max": 1.6458,
+    "nash_post_support": 4.102,
+    "nash_support": 3,
+    "nodes": 10,
+    "p_newest_in_support": 0.166,
+    "tri_min_p": 0.010843,
+    "tri_n": 36
+   },
+   "triangles": {
+    "min_p": 0.010843,
+    "n": 36,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:224000053",
+       "snap:194000195"
+      ],
+      [
+       "snap:246000132",
+       "snap:244000047"
+      ],
+      [
+       "snap:224000053",
+       "snap:200000120"
+      ]
+     ],
+     "sign": [
+      -1,
+      1,
+      1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 250000000,
+   "lag_curve": [
+    {
+     "lag_steps": 2000085,
+     "opponent": "snap:244000047",
+     "opponent_step": 244000047,
+     "pairs": 100,
+     "score": 0.53902,
+     "se": 0.03069
+    },
+    {
+     "lag_steps": 9999977,
+     "opponent": "snap:236000155",
+     "opponent_step": 236000155,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.04904
+    },
+    {
+     "lag_steps": 18000102,
+     "opponent": "snap:228000030",
+     "opponent_step": 228000030,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.04499
+    },
+    {
+     "lag_steps": 22000079,
+     "opponent": "snap:224000053",
+     "opponent_step": 224000053,
+     "pairs": 50,
+     "score": 0.50952,
+     "se": 0.04998
+    },
+    {
+     "lag_steps": 26000105,
+     "opponent": "snap:220000027",
+     "opponent_step": 220000027,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.03932
+    },
+    {
+     "lag_steps": 46000012,
+     "opponent": "snap:200000120",
+     "opponent_step": 200000120,
+     "pairs": 100,
+     "score": 0.4561,
+     "se": 0.02941
+    },
+    {
+     "lag_steps": 51999937,
+     "opponent": "snap:194000195",
+     "opponent_step": 194000195,
+     "pairs": 50,
+     "score": 0.43333,
+     "se": 0.05101
+    },
+    {
+     "lag_steps": 69999908,
+     "opponent": "snap:176000224",
+     "opponent_step": 176000224,
+     "pairs": 50,
+     "score": 0.48095,
+     "se": 0.03542
+    },
+    {
+     "lag_steps": 79999934,
+     "opponent": "snap:166000198",
+     "opponent_step": 166000198,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.04445
+    }
+   ],
+   "newest_step": 246000132,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.67984,
+    "edges": 45,
+    "excess_rms_pp": 2.924,
+    "hodge_p": 0.0035,
+    "lag_z_crit": 2.4977,
+    "lag_z_max": 0.7002,
+    "nash_post_support": 4.39,
+    "nash_support": 3,
+    "nodes": 10,
+    "p_newest_in_support": 0.574,
+    "tri_min_p": 0.010565,
+    "tri_n": 36
+   },
+   "triangles": {
+    "min_p": 0.010565,
+    "n": 36,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:224000053",
+       "snap:194000195"
+      ],
+      [
+       "snap:224000053",
+       "snap:200000120"
+      ],
+      [
+       "snap:252000090",
+       "snap:176000224"
+      ]
+     ],
+     "sign": [
+      -1,
+      1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 260000000,
+   "lag_curve": [
+    {
+     "lag_steps": 1999928,
+     "opponent": "snap:252000090",
+     "opponent_step": 252000090,
+     "pairs": 100,
+     "score": 0.49512,
+     "se": 0.03358
+    },
+    {
+     "lag_steps": 7999886,
+     "opponent": "snap:246000132",
+     "opponent_step": 246000132,
+     "pairs": 50,
+     "score": 0.45238,
+     "se": 0.04114
+    },
+    {
+     "lag_steps": 9999971,
+     "opponent": "snap:244000047",
+     "opponent_step": 244000047,
+     "pairs": 50,
+     "score": 0.50952,
+     "se": 0.04754
+    },
+    {
+     "lag_steps": 17999863,
+     "opponent": "snap:236000155",
+     "opponent_step": 236000155,
+     "pairs": 50,
+     "score": 0.56667,
+     "se": 0.05461
+    },
+    {
+     "lag_steps": 25999988,
+     "opponent": "snap:228000030",
+     "opponent_step": 228000030,
+     "pairs": 50,
+     "score": 0.47143,
+     "se": 0.04533
+    },
+    {
+     "lag_steps": 29999965,
+     "opponent": "snap:224000053",
+     "opponent_step": 224000053,
+     "pairs": 100,
+     "score": 0.47073,
+     "se": 0.03197
+    },
+    {
+     "lag_steps": 33999991,
+     "opponent": "snap:220000027",
+     "opponent_step": 220000027,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.0434
+    },
+    {
+     "lag_steps": 53999898,
+     "opponent": "snap:200000120",
+     "opponent_step": 200000120,
+     "pairs": 50,
+     "score": 0.41429,
+     "se": 0.04441
+    },
+    {
+     "lag_steps": 59999823,
+     "opponent": "snap:194000195",
+     "opponent_step": 194000195,
+     "pairs": 50,
+     "score": 0.54286,
+     "se": 0.04987
+    },
+    {
+     "lag_steps": 77999794,
+     "opponent": "snap:176000224",
+     "opponent_step": 176000224,
+     "pairs": 50,
+     "score": 0.62381,
+     "se": 0.04201
+    }
+   ],
+   "newest_step": 254000018,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.78197,
+    "edges": 55,
+    "excess_rms_pp": 3.191,
+    "hodge_p": 0.0005,
+    "lag_z_crit": 2.5392,
+    "lag_z_max": 2.1474,
+    "nash_post_support": 5.244,
+    "nash_support": 5,
+    "nodes": 11,
+    "p_newest_in_support": 0.538,
+    "tri_min_p": 0.005173,
+    "tri_n": 45
+   },
+   "triangles": {
+    "min_p": 0.005173,
+    "n": 45,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:224000053",
+       "snap:194000195"
+      ],
+      [
+       "snap:224000053",
+       "snap:200000120"
+      ],
+      [
+       "snap:254000018",
+       "snap:200000120"
+      ]
+     ],
+     "sign": [
+      -1,
+      1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 270000000,
+   "lag_curve": [
+    {
+     "lag_steps": 14000153,
+     "opponent": "snap:254000018",
+     "opponent_step": 254000018,
+     "pairs": 100,
+     "score": 0.46098,
+     "se": 0.03514
+    },
+    {
+     "lag_steps": 16000081,
+     "opponent": "snap:252000090",
+     "opponent_step": 252000090,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04248
+    },
+    {
+     "lag_steps": 22000039,
+     "opponent": "snap:246000132",
+     "opponent_step": 246000132,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04874
+    },
+    {
+     "lag_steps": 24000124,
+     "opponent": "snap:244000047",
+     "opponent_step": 244000047,
+     "pairs": 50,
+     "score": 0.46667,
+     "se": 0.04807
+    },
+    {
+     "lag_steps": 32000016,
+     "opponent": "snap:236000155",
+     "opponent_step": 236000155,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.05408
+    },
+    {
+     "lag_steps": 40000141,
+     "opponent": "snap:228000030",
+     "opponent_step": 228000030,
+     "pairs": 100,
+     "score": 0.52683,
+     "se": 0.03534
+    },
+    {
+     "lag_steps": 44000118,
+     "opponent": "snap:224000053",
+     "opponent_step": 224000053,
+     "pairs": 50,
+     "score": 0.4619,
+     "se": 0.05601
+    },
+    {
+     "lag_steps": 48000144,
+     "opponent": "snap:220000027",
+     "opponent_step": 220000027,
+     "pairs": 50,
+     "score": 0.59524,
+     "se": 0.05103
+    },
+    {
+     "lag_steps": 68000051,
+     "opponent": "snap:200000120",
+     "opponent_step": 200000120,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.04134
+    },
+    {
+     "lag_steps": 73999976,
+     "opponent": "snap:194000195",
+     "opponent_step": 194000195,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.04954
+    }
+   ],
+   "newest_step": 268000171,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "BAND",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.74036,
+    "edges": 55,
+    "excess_rms_pp": 2.914,
+    "hodge_p": 0.0055,
+    "lag_z_crit": 2.5392,
+    "lag_z_max": 1.0434,
+    "nash_post_support": 5.264,
+    "nash_support": 6,
+    "nodes": 11,
+    "p_newest_in_support": 0.752,
+    "tri_min_p": 0.001312,
+    "tri_n": 45
+   },
+   "triangles": {
+    "min_p": 0.001312,
+    "n": 45,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:224000053",
+       "snap:194000195"
+      ],
+      [
+       "snap:224000053",
+       "snap:200000120"
+      ],
+      [
+       "snap:254000018",
+       "snap:200000120"
+      ]
+     ],
+     "sign": [
+      -1,
+      1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 280000000,
+   "lag_curve": [
+    {
+     "lag_steps": 14000153,
+     "opponent": "snap:254000018",
+     "opponent_step": 254000018,
+     "pairs": 100,
+     "score": 0.46098,
+     "se": 0.03514
+    },
+    {
+     "lag_steps": 16000081,
+     "opponent": "snap:252000090",
+     "opponent_step": 252000090,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04248
+    },
+    {
+     "lag_steps": 22000039,
+     "opponent": "snap:246000132",
+     "opponent_step": 246000132,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04874
+    },
+    {
+     "lag_steps": 24000124,
+     "opponent": "snap:244000047",
+     "opponent_step": 244000047,
+     "pairs": 50,
+     "score": 0.46667,
+     "se": 0.04807
+    },
+    {
+     "lag_steps": 32000016,
+     "opponent": "snap:236000155",
+     "opponent_step": 236000155,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.05408
+    },
+    {
+     "lag_steps": 40000141,
+     "opponent": "snap:228000030",
+     "opponent_step": 228000030,
+     "pairs": 100,
+     "score": 0.52683,
+     "se": 0.03534
+    },
+    {
+     "lag_steps": 44000118,
+     "opponent": "snap:224000053",
+     "opponent_step": 224000053,
+     "pairs": 50,
+     "score": 0.4619,
+     "se": 0.05601
+    },
+    {
+     "lag_steps": 48000144,
+     "opponent": "snap:220000027",
+     "opponent_step": 220000027,
+     "pairs": 50,
+     "score": 0.59524,
+     "se": 0.05103
+    },
+    {
+     "lag_steps": 68000051,
+     "opponent": "snap:200000120",
+     "opponent_step": 200000120,
+     "pairs": 50,
+     "score": 0.60476,
+     "se": 0.04134
+    },
+    {
+     "lag_steps": 73999976,
+     "opponent": "snap:194000195",
+     "opponent_step": 194000195,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.04954
+    }
+   ],
+   "newest_step": 268000171,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "BAND",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.74036,
+    "edges": 55,
+    "excess_rms_pp": 2.914,
+    "hodge_p": 0.0055,
+    "lag_z_crit": 2.5392,
+    "lag_z_max": 1.0434,
+    "nash_post_support": 5.264,
+    "nash_support": 6,
+    "nodes": 11,
+    "p_newest_in_support": 0.752,
+    "tri_min_p": 0.001312,
+    "tri_n": 45
+   },
+   "triangles": {
+    "min_p": 0.001312,
+    "n": 45,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [],
+   "grid": 290000000,
+   "lag_curve": [
+    {
+     "lag_steps": 17999953,
+     "opponent": "snap:268000171",
+     "opponent_step": 268000171,
+     "pairs": 100,
+     "score": 0.5878,
+     "se": 0.03127
+    },
+    {
+     "lag_steps": 32000106,
+     "opponent": "snap:254000018",
+     "opponent_step": 254000018,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.04802
+    },
+    {
+     "lag_steps": 34000034,
+     "opponent": "snap:252000090",
+     "opponent_step": 252000090,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.04804
+    },
+    {
+     "lag_steps": 39999992,
+     "opponent": "snap:246000132",
+     "opponent_step": 246000132,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.04499
+    },
+    {
+     "lag_steps": 42000077,
+     "opponent": "snap:244000047",
+     "opponent_step": 244000047,
+     "pairs": 50,
+     "score": 0.44286,
+     "se": 0.03724
+    },
+    {
+     "lag_steps": 49999969,
+     "opponent": "snap:236000155",
+     "opponent_step": 236000155,
+     "pairs": 100,
+     "score": 0.55366,
+     "se": 0.03165
+    },
+    {
+     "lag_steps": 58000094,
+     "opponent": "snap:228000030",
+     "opponent_step": 228000030,
+     "pairs": 50,
+     "score": 0.57619,
+     "se": 0.04368
+    },
+    {
+     "lag_steps": 62000071,
+     "opponent": "snap:224000053",
+     "opponent_step": 224000053,
+     "pairs": 50,
+     "score": 0.55714,
+     "se": 0.04837
+    },
+    {
+     "lag_steps": 66000097,
+     "opponent": "snap:220000027",
+     "opponent_step": 220000027,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.03122
+    }
+   ],
+   "newest_step": 286000124,
+   "signals": {
+    "hodge": "CLEAR",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.61898,
+    "edges": 45,
+    "excess_rms_pp": 1.963,
+    "hodge_p": 0.09745,
+    "lag_z_crit": 2.4977,
+    "lag_z_max": 1.4022,
+    "nash_post_support": 4.484,
+    "nash_support": 5,
+    "nodes": 10,
+    "p_newest_in_support": 0.748,
+    "tri_min_p": 0.005049,
+    "tri_n": 36
+   },
+   "triangles": {
+    "min_p": 0.005049,
+    "n": 36,
+    "rejected": []
+   },
+   "verdict": "NONE"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:292000193",
+       "snap:254000018"
+      ],
+      [
+       "snap:292000193",
+       "snap:220000027"
+      ],
+      [
+       "snap:286000124",
+       "snap:220000027"
+      ]
+     ],
+     "sign": [
+      1,
+      -1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 300000000,
+   "lag_curve": [
+    {
+     "lag_steps": 6000069,
+     "opponent": "snap:286000124",
+     "opponent_step": 286000124,
+     "pairs": 100,
+     "score": 0.47073,
+     "se": 0.03235
+    },
+    {
+     "lag_steps": 24000022,
+     "opponent": "snap:268000171",
+     "opponent_step": 268000171,
+     "pairs": 50,
+     "score": 0.48095,
+     "se": 0.04044
+    },
+    {
+     "lag_steps": 38000175,
+     "opponent": "snap:254000018",
+     "opponent_step": 254000018,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.03743
+    },
+    {
+     "lag_steps": 40000103,
+     "opponent": "snap:252000090",
+     "opponent_step": 252000090,
+     "pairs": 50,
+     "score": 0.52381,
+     "se": 0.05107
+    },
+    {
+     "lag_steps": 46000061,
+     "opponent": "snap:246000132",
+     "opponent_step": 246000132,
+     "pairs": 50,
+     "score": 0.40476,
+     "se": 0.04064
+    },
+    {
+     "lag_steps": 48000146,
+     "opponent": "snap:244000047",
+     "opponent_step": 244000047,
+     "pairs": 100,
+     "score": 0.5,
+     "se": 0.03604
+    },
+    {
+     "lag_steps": 56000038,
+     "opponent": "snap:236000155",
+     "opponent_step": 236000155,
+     "pairs": 50,
+     "score": 0.41429,
+     "se": 0.04221
+    },
+    {
+     "lag_steps": 64000163,
+     "opponent": "snap:228000030",
+     "opponent_step": 228000030,
+     "pairs": 50,
+     "score": 0.61429,
+     "se": 0.05211
+    },
+    {
+     "lag_steps": 68000140,
+     "opponent": "snap:224000053",
+     "opponent_step": 224000053,
+     "pairs": 50,
+     "score": 0.47143,
+     "se": 0.04149
+    },
+    {
+     "lag_steps": 72000166,
+     "opponent": "snap:220000027",
+     "opponent_step": 220000027,
+     "pairs": 50,
+     "score": 0.41429,
+     "se": 0.04802
+    }
+   ],
+   "newest_step": 292000193,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.69505,
+    "edges": 55,
+    "excess_rms_pp": 2.674,
+    "hodge_p": 0.006,
+    "lag_z_crit": 2.5392,
+    "lag_z_max": 2.1447,
+    "nash_post_support": 4.716,
+    "nash_support": 5,
+    "nodes": 11,
+    "p_newest_in_support": 0.2,
+    "tri_min_p": 0.001615,
+    "tri_n": 45
+   },
+   "triangles": {
+    "min_p": 0.001615,
+    "n": 45,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:302000101",
+       "snap:228000030"
+      ],
+      [
+       "snap:292000193",
+       "snap:236000155"
+      ],
+      [
+       "snap:292000193",
+       "snap:246000132"
+      ]
+     ],
+     "sign": [
+      -1,
+      -1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 310000000,
+   "lag_curve": [
+    {
+     "lag_steps": 9999908,
+     "opponent": "snap:292000193",
+     "opponent_step": 292000193,
+     "pairs": 100,
+     "score": 0.48049,
+     "se": 0.03316
+    },
+    {
+     "lag_steps": 15999977,
+     "opponent": "snap:286000124",
+     "opponent_step": 286000124,
+     "pairs": 50,
+     "score": 0.59524,
+     "se": 0.05287
+    },
+    {
+     "lag_steps": 33999930,
+     "opponent": "snap:268000171",
+     "opponent_step": 268000171,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.04389
+    },
+    {
+     "lag_steps": 48000083,
+     "opponent": "snap:254000018",
+     "opponent_step": 254000018,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.04554
+    },
+    {
+     "lag_steps": 50000011,
+     "opponent": "snap:252000090",
+     "opponent_step": 252000090,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.04698
+    },
+    {
+     "lag_steps": 55999969,
+     "opponent": "snap:246000132",
+     "opponent_step": 246000132,
+     "pairs": 100,
+     "score": 0.56829,
+     "se": 0.02915
+    },
+    {
+     "lag_steps": 58000054,
+     "opponent": "snap:244000047",
+     "opponent_step": 244000047,
+     "pairs": 50,
+     "score": 0.45238,
+     "se": 0.04758
+    },
+    {
+     "lag_steps": 65999946,
+     "opponent": "snap:236000155",
+     "opponent_step": 236000155,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.04441
+    },
+    {
+     "lag_steps": 74000071,
+     "opponent": "snap:228000030",
+     "opponent_step": 228000030,
+     "pairs": 50,
+     "score": 0.43333,
+     "se": 0.04862
+    },
+    {
+     "lag_steps": 78000048,
+     "opponent": "snap:224000053",
+     "opponent_step": 224000053,
+     "pairs": 50,
+     "score": 0.44286,
+     "se": 0.04425
+    }
+   ],
+   "newest_step": 302000101,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.74582,
+    "edges": 55,
+    "excess_rms_pp": 2.681,
+    "hodge_p": 0.01,
+    "lag_z_crit": 2.5392,
+    "lag_z_max": 2.3142,
+    "nash_post_support": 5.37,
+    "nash_support": 3,
+    "nodes": 11,
+    "p_newest_in_support": 0.762,
+    "tri_min_p": 0.002614,
+    "tri_n": 45
+   },
+   "triangles": {
+    "min_p": 0.002614,
+    "n": 45,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:302000101",
+       "snap:228000030"
+      ],
+      [
+       "snap:292000193",
+       "snap:236000155"
+      ],
+      [
+       "snap:292000193",
+       "snap:246000132"
+      ]
+     ],
+     "sign": [
+      -1,
+      -1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 320000000,
+   "lag_curve": [
+    {
+     "lag_steps": 9999908,
+     "opponent": "snap:292000193",
+     "opponent_step": 292000193,
+     "pairs": 100,
+     "score": 0.48049,
+     "se": 0.03316
+    },
+    {
+     "lag_steps": 15999977,
+     "opponent": "snap:286000124",
+     "opponent_step": 286000124,
+     "pairs": 50,
+     "score": 0.59524,
+     "se": 0.05287
+    },
+    {
+     "lag_steps": 33999930,
+     "opponent": "snap:268000171",
+     "opponent_step": 268000171,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.04389
+    },
+    {
+     "lag_steps": 48000083,
+     "opponent": "snap:254000018",
+     "opponent_step": 254000018,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.04554
+    },
+    {
+     "lag_steps": 50000011,
+     "opponent": "snap:252000090",
+     "opponent_step": 252000090,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.04698
+    },
+    {
+     "lag_steps": 55999969,
+     "opponent": "snap:246000132",
+     "opponent_step": 246000132,
+     "pairs": 100,
+     "score": 0.56829,
+     "se": 0.02915
+    },
+    {
+     "lag_steps": 58000054,
+     "opponent": "snap:244000047",
+     "opponent_step": 244000047,
+     "pairs": 50,
+     "score": 0.45238,
+     "se": 0.04758
+    },
+    {
+     "lag_steps": 65999946,
+     "opponent": "snap:236000155",
+     "opponent_step": 236000155,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.04441
+    },
+    {
+     "lag_steps": 74000071,
+     "opponent": "snap:228000030",
+     "opponent_step": 228000030,
+     "pairs": 50,
+     "score": 0.43333,
+     "se": 0.04862
+    },
+    {
+     "lag_steps": 78000048,
+     "opponent": "snap:224000053",
+     "opponent_step": 224000053,
+     "pairs": 50,
+     "score": 0.44286,
+     "se": 0.04425
+    }
+   ],
+   "newest_step": 302000101,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.74582,
+    "edges": 55,
+    "excess_rms_pp": 2.681,
+    "hodge_p": 0.01,
+    "lag_z_crit": 2.5392,
+    "lag_z_max": 2.3142,
+    "nash_post_support": 5.37,
+    "nash_support": 3,
+    "nodes": 11,
+    "p_newest_in_support": 0.762,
+    "tri_min_p": 0.002614,
+    "tri_n": 45
+   },
+   "triangles": {
+    "min_p": 0.002614,
+    "n": 45,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:302000101",
+       "snap:228000030"
+      ],
+      [
+       "snap:292000193",
+       "snap:236000155"
+      ],
+      [
+       "snap:292000193",
+       "snap:246000132"
+      ]
+     ],
+     "sign": [
+      -1,
+      -1,
+      -1
+     ],
+     "signal": "hodge"
+    }
+   ],
+   "grid": 330000000,
+   "lag_curve": [
+    {
+     "lag_steps": 9999908,
+     "opponent": "snap:292000193",
+     "opponent_step": 292000193,
+     "pairs": 100,
+     "score": 0.48049,
+     "se": 0.03316
+    },
+    {
+     "lag_steps": 15999977,
+     "opponent": "snap:286000124",
+     "opponent_step": 286000124,
+     "pairs": 50,
+     "score": 0.59524,
+     "se": 0.05287
+    },
+    {
+     "lag_steps": 33999930,
+     "opponent": "snap:268000171",
+     "opponent_step": 268000171,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.04389
+    },
+    {
+     "lag_steps": 48000083,
+     "opponent": "snap:254000018",
+     "opponent_step": 254000018,
+     "pairs": 50,
+     "score": 0.54762,
+     "se": 0.04554
+    },
+    {
+     "lag_steps": 50000011,
+     "opponent": "snap:252000090",
+     "opponent_step": 252000090,
+     "pairs": 50,
+     "score": 0.51905,
+     "se": 0.04698
+    },
+    {
+     "lag_steps": 55999969,
+     "opponent": "snap:246000132",
+     "opponent_step": 246000132,
+     "pairs": 100,
+     "score": 0.56829,
+     "se": 0.02915
+    },
+    {
+     "lag_steps": 58000054,
+     "opponent": "snap:244000047",
+     "opponent_step": 244000047,
+     "pairs": 50,
+     "score": 0.45238,
+     "se": 0.04758
+    },
+    {
+     "lag_steps": 65999946,
+     "opponent": "snap:236000155",
+     "opponent_step": 236000155,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.04441
+    },
+    {
+     "lag_steps": 74000071,
+     "opponent": "snap:228000030",
+     "opponent_step": 228000030,
+     "pairs": 50,
+     "score": 0.43333,
+     "se": 0.04862
+    },
+    {
+     "lag_steps": 78000048,
+     "opponent": "snap:224000053",
+     "opponent_step": 224000053,
+     "pairs": 50,
+     "score": 0.44286,
+     "se": 0.04425
+    }
+   ],
+   "newest_step": 302000101,
+   "signals": {
+    "hodge": "FLAG",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.74582,
+    "edges": 55,
+    "excess_rms_pp": 2.681,
+    "hodge_p": 0.01,
+    "lag_z_crit": 2.5392,
+    "lag_z_max": 2.3142,
+    "nash_post_support": 5.37,
+    "nash_support": 3,
+    "nodes": 11,
+    "p_newest_in_support": 0.762,
+    "tri_min_p": 0.002614,
+    "tri_n": 45
+   },
+   "triangles": {
+    "min_p": 0.002614,
+    "n": 45,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:302000101",
+       "snap:286000124"
+      ],
+      [
+       "snap:292000193",
+       "snap:268000171"
+      ],
+      [
+       "snap:302000101",
+       "snap:268000171"
+      ]
+     ],
+     "sign": [
+      1,
+      -1,
+      -1
+     ],
+     "signal": "nash"
+    }
+   ],
+   "grid": 340000000,
+   "lag_curve": [
+    {
+     "lag_steps": 30000036,
+     "opponent": "snap:302000101",
+     "opponent_step": 302000101,
+     "pairs": 100,
+     "score": 0.49024,
+     "se": 0.03321
+    },
+    {
+     "lag_steps": 39999944,
+     "opponent": "snap:292000193",
+     "opponent_step": 292000193,
+     "pairs": 50,
+     "score": 0.43333,
+     "se": 0.05284
+    },
+    {
+     "lag_steps": 46000013,
+     "opponent": "snap:286000124",
+     "opponent_step": 286000124,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.04053
+    },
+    {
+     "lag_steps": 63999966,
+     "opponent": "snap:268000171",
+     "opponent_step": 268000171,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04017
+    },
+    {
+     "lag_steps": 78000119,
+     "opponent": "snap:254000018",
+     "opponent_step": 254000018,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.04167
+    }
+   ],
+   "newest_step": 332000137,
+   "signals": {
+    "hodge": "CLEAR",
+    "lag": "CLEAR",
+    "nash": "FLAG",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.5759,
+    "edges": 15,
+    "excess_rms_pp": 2.315,
+    "hodge_p": 0.11944,
+    "lag_z_crit": 2.2414,
+    "lag_z_max": 0.9119,
+    "nash_post_support": 3.216,
+    "nash_support": 5,
+    "nodes": 6,
+    "p_newest_in_support": 0.338,
+    "tri_min_p": 0.113488,
+    "tri_n": 10
+   },
+   "triangles": {
+    "min_p": 0.113488,
+    "n": 10,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [
+    {
+     "edges": [
+      [
+       "snap:302000101",
+       "snap:286000124"
+      ],
+      [
+       "snap:292000193",
+       "snap:268000171"
+      ],
+      [
+       "snap:302000101",
+       "snap:268000171"
+      ]
+     ],
+     "sign": [
+      1,
+      -1,
+      -1
+     ],
+     "signal": "nash"
+    }
+   ],
+   "grid": 350000000,
+   "lag_curve": [
+    {
+     "lag_steps": 30000036,
+     "opponent": "snap:302000101",
+     "opponent_step": 302000101,
+     "pairs": 100,
+     "score": 0.49024,
+     "se": 0.03321
+    },
+    {
+     "lag_steps": 39999944,
+     "opponent": "snap:292000193",
+     "opponent_step": 292000193,
+     "pairs": 50,
+     "score": 0.43333,
+     "se": 0.05284
+    },
+    {
+     "lag_steps": 46000013,
+     "opponent": "snap:286000124",
+     "opponent_step": 286000124,
+     "pairs": 50,
+     "score": 0.5,
+     "se": 0.04053
+    },
+    {
+     "lag_steps": 63999966,
+     "opponent": "snap:268000171",
+     "opponent_step": 268000171,
+     "pairs": 50,
+     "score": 0.5381,
+     "se": 0.04017
+    },
+    {
+     "lag_steps": 78000119,
+     "opponent": "snap:254000018",
+     "opponent_step": 254000018,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.04167
+    }
+   ],
+   "newest_step": 332000137,
+   "signals": {
+    "hodge": "CLEAR",
+    "lag": "CLEAR",
+    "nash": "FLAG",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.5759,
+    "edges": 15,
+    "excess_rms_pp": 2.315,
+    "hodge_p": 0.11944,
+    "lag_z_crit": 2.2414,
+    "lag_z_max": 0.9119,
+    "nash_post_support": 3.216,
+    "nash_support": 5,
+    "nodes": 6,
+    "p_newest_in_support": 0.338,
+    "tri_min_p": 0.113488,
+    "tri_n": 10
+   },
+   "triangles": {
+    "min_p": 0.113488,
+    "n": 10,
+    "rejected": []
+   },
+   "verdict": "SUSPECTED"
+  },
+  {
+   "flagged": [],
+   "grid": 360000000,
+   "lag_curve": [
+    {
+     "lag_steps": 19999934,
+     "opponent": "snap:332000137",
+     "opponent_step": 332000137,
+     "pairs": 100,
+     "score": 0.53902,
+     "se": 0.03444
+    },
+    {
+     "lag_steps": 49999970,
+     "opponent": "snap:302000101",
+     "opponent_step": 302000101,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.04167
+    },
+    {
+     "lag_steps": 59999878,
+     "opponent": "snap:292000193",
+     "opponent_step": 292000193,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.04851
+    },
+    {
+     "lag_steps": 65999947,
+     "opponent": "snap:286000124",
+     "opponent_step": 286000124,
+     "pairs": 50,
+     "score": 0.56667,
+     "se": 0.04506
+    }
+   ],
+   "newest_step": 352000071,
+   "signals": {
+    "hodge": "CLEAR",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.59467,
+    "edges": 10,
+    "excess_rms_pp": 1.64,
+    "hodge_p": 0.24638,
+    "lag_z_crit": 2.128,
+    "lag_z_max": 0.8981,
+    "nash_post_support": 2.142,
+    "nash_support": 3,
+    "nodes": 5,
+    "p_newest_in_support": 0.84,
+    "tri_min_p": 0.113563,
+    "tri_n": 6
+   },
+   "triangles": {
+    "min_p": 0.113563,
+    "n": 6,
+    "rejected": []
+   },
+   "verdict": "NONE"
+  },
+  {
+   "flagged": [],
+   "grid": 370000000,
+   "lag_curve": [
+    {
+     "lag_steps": 19999934,
+     "opponent": "snap:332000137",
+     "opponent_step": 332000137,
+     "pairs": 100,
+     "score": 0.53902,
+     "se": 0.03444
+    },
+    {
+     "lag_steps": 49999970,
+     "opponent": "snap:302000101",
+     "opponent_step": 302000101,
+     "pairs": 50,
+     "score": 0.49048,
+     "se": 0.04167
+    },
+    {
+     "lag_steps": 59999878,
+     "opponent": "snap:292000193",
+     "opponent_step": 292000193,
+     "pairs": 50,
+     "score": 0.58571,
+     "se": 0.04851
+    },
+    {
+     "lag_steps": 65999947,
+     "opponent": "snap:286000124",
+     "opponent_step": 286000124,
+     "pairs": 50,
+     "score": 0.56667,
+     "se": 0.04506
+    }
+   ],
+   "newest_step": 352000071,
+   "signals": {
+    "hodge": "CLEAR",
+    "lag": "CLEAR",
+    "nash": "CLEAR",
+    "triangles": "CLEAR"
+   },
+   "summary": {
+    "cyclic_share": 0.59467,
+    "edges": 10,
+    "excess_rms_pp": 1.64,
+    "hodge_p": 0.24638,
+    "lag_z_crit": 2.128,
+    "lag_z_max": 0.8981,
+    "nash_post_support": 2.142,
+    "nash_support": 3,
+    "nodes": 5,
+    "p_newest_in_support": 0.84,
+    "tri_min_p": 0.113563,
+    "tri_n": 6
+   },
+   "triangles": {
+    "min_p": 0.113563,
+    "n": 6,
+    "rejected": []
+   },
+   "verdict": "NONE"
+  }
+ ],
+ "meta": {
+  "dropped": {
+   "no_pair_counts": 0,
+   "other_regime": 0
+  },
+  "lines": 1150,
+  "regime_id": "adfdbee824c9eb0a",
+  "regimes": {
+   "adfdbee824c9eb0a": 1150
+  },
+  "used": 1150
+ },
+ "rule": {
+  "abort_frac": 0.25,
+  "alpha": 0.05,
+  "batch_pairs": 50,
+  "n_boot": 2000,
+  "pairs_per_edge": 500,
+  "posterior_draws": 500,
+  "registered": true,
+  "rule": "cycle_monitor(alpha=0.05,n_boot=2000,pairs=500,batch=50,topup=500x3,support_w=0.01,posterior=500,abort=0.25,null=parametric_bootstrap_tilted_pentanomial,lag=bonferroni_one_sided,tri=holm_two_sided,nash=lp_point_support,band=mc_se|1e-09)",
+  "rule_version": "gen3_cycle_monitor_v1",
+  "support_w": 0.01,
+  "topup_max_edges": 3,
+  "topup_pairs": 500
+ },
+ "run": "rb_x26_s2601",
+ "source": "snapshot_ladder (DESCRIPTIVE: not the registered instrument)",
+ "window_steps": 80000000
+}

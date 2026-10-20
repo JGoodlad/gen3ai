@@ -18,8 +18,8 @@ The invariants (each a line in :attr:`AuditReport.problems` when broken):
   cursor and compared). ``rebuild_index=True`` (``audit --rebuild-index``) drops and rebuilds them first.
 
 ``verify`` re-checks one decision: its rows and digest. Re-deriving its VERDICT needs the decision's rule
-registered in :data:`RULES`: the plateau's TIER-1 GSPRT is (``agents.training.plateau_t1``, U9a, 2026-10-06); the
-SPRT and A/B rules land with U4 / X5. A registered function returns ``None`` for a decision whose ``rule`` it does not
+registered in :data:`RULES`: the plateau's TIER-1 GSPRT is (``agents.training.plateau_t1``, U9a, 2026-10-06), and so
+is the cycle monitor's ``cycle_flag`` (``agents.training.cycle_monitor``, U5, 2026-10-19); the SPRT and A/B rules land with U4 / X5. A registered function returns ``None`` for a decision whose ``rule`` it does not
 own (a future two-tier plateau decision shares the kind)."""
 from __future__ import annotations
 
@@ -42,7 +42,14 @@ def _plateau_rule(d: Mapping[str, Any], rows: List[Dict[str, Any]]) -> Optional[
 
 #: decision kind -> a function re-deriving its verdict from (decision, rows), or ``None`` when the decision's
 #: ``rule`` is not one it owns.
-RULES: Dict[str, Callable[[Mapping[str, Any], List[Dict[str, Any]]], Optional[str]]] = {"plateau": _plateau_rule}
+def _cycle_flag_rule(d: Mapping[str, Any], rows: List[Dict[str, Any]]) -> Optional[str]:
+    from agents.training import cycle_monitor as CM   # lazy: the rule imports numpy / scipy
+
+    return CM.rederive(d, rows)
+
+
+RULES: Dict[str, Callable[[Mapping[str, Any], List[Dict[str, Any]]], Optional[str]]] = {
+    "plateau": _plateau_rule, "cycle_flag": _cycle_flag_rule}
 
 
 @dataclass

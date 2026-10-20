@@ -133,8 +133,12 @@ pool is read cwd-relative; any other cwd is refused).
 due check (the newest 10M-grid node vs the node 50M back) as the registered GSPRT on `main.h2h`'s engine, 40-pair batches
 `--inflight-batches` (default 4, T38) at a time in one cycle, judged in BATCH ORDER (a batch past the stop is a surplus
 row the rule never reads), and writes ONE `plateau` decision row per check (GAIN / FLAT / UNDECIDED / INCONCLUSIVE; `verify` re-derives it);
-`status <run>` prints the run's Tier-1 status. 🚨 **Tier 1 only**: `TIER1_PLATEAU` is a candidate until Tier 2 (the cycle
-monitor) and the panel exist. Offline, never on CPU beside an X5 A/B arm (`designs/training/eval_and_rating.md`).
+`status <run>` prints the run's Tier-1 status, Tier 2 and the TWO-TIER STATUS. 🚨 **`TIER1_PLATEAU` alone is a
+candidate**: a plateau is `TRUE_PLATEAU` (Tier 1 FLAT + the cycle monitor NONE + the panel FLAT, twice); while no
+panel is registered a FLAT pair reads `PLATEAU_BUT_PANEL`. 🚨 **`python -m main.cycle_monitor` is TIER 2** (eval U5 +
+U9 offline): `tick <run>` plays each check's monitor row (+ top-up, + panel) and writes one `cycle_flag` decision per
+check; `ladder <run>` is a descriptive read of the in-run snapshot ladder. Offline, never on CPU beside an X5 A/B arm
+(`designs/training/eval_and_rating.md`).
 🚨 **`python -m main.belief_roles` is the X5 PURPOSE-METRIC reader** (U7; `designs/endstate/design_x5_belief_tokens.md` §4 / §7.4) — it plays
 NOTHING: any checkpoint `.zip` at HEAD's architecture (X5) on the Lane S bank, CPU forwards only, output refused under
 `models/`; a blob or other pre-break checkpoint is REFUSED with the pinned commit (`[belief_roles] REFUSED`; the A/B's blob

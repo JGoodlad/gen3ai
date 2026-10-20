@@ -29,7 +29,8 @@ ignored, never folded. The rule's every constant is spelled out in the decision 
 
 **The run-level read** (:func:`tier1_status`): ``TIER1_PLATEAU`` iff the newest finally-decided check and the check
 one Δ before it are both FLAT (§8.3's two consecutive checks). This is TIER 1 ONLY: a PLATEAU in §8.3's sense also
-needs the cycle monitor NONE and the panel FLAT (Tier 2, U5 / U9), which are not built — every reader prints that.
+needs the cycle monitor NONE and the panel FLAT (Tier 2: ``agents.training.cycle_monitor`` + ``plateau_t2``, BUILT
+offline 2026-10-19); ``main.plateau status`` prints both tiers and the two-tier signature.
 
 **The check plan** (:func:`plan_checks`): a NODE is the run's periodic checkpoint at a multiple of Δ — the first one
 at or above it, within :attr:`CheckPlan.slack_steps` (checkpoints land a few rollouts past the boundary). A check at
@@ -71,9 +72,9 @@ CONTINUE_STATUS = "CONTINUE"        # the newest final verdict is UNDECIDED or I
 STATUSES = (NOT_YET, CLIMBING, FLAT_ONCE, TIER1_PLATEAU, CONTINUE_STATUS)
 
 #: Printed beside every status: what Tier 1 alone does not say.
-TIER2_CAVEAT = ("Tier 1 ONLY: a PLATEAU (design_evaluation.md §8.3) also needs the cycle monitor NONE and the panel "
-                "FLAT at the same two checks — Tier 2 (U5) and the panel are NOT BUILT, so this is not a plateau "
-                "declaration")
+TIER2_CAVEAT = ("Tier 1 ALONE is a candidate: a PLATEAU (design_evaluation.md §8.3) also needs the cycle monitor NONE "
+                "and the panel FLAT at the same two checks — read the TWO-TIER STATUS line (Tier 2: "
+                "python -m main.cycle_monitor)")
 
 
 class Tier1RowsError(ValueError):
