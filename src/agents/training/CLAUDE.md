@@ -64,6 +64,9 @@ reason, and a checkpoint that recorded one is refused by `model_version/retired_
 - **Build everything at startup** (K6, `learner_lifecycle.py`): an optimizer, parameter, module, buffer or CUDA
   stream acquired after the first rollout is a typed fatal. No global RNG is seeded after the freeze; a stream
   that must repeat owns its generator.
+- **Played bits:** `played_bits_sentinel_test.py` (routine) pins 17 seeded self-play decisions' actions + fp32
+  log-probs and the played teams' pack; a change to model numerics or engine-facing data moves it — re-record
+  by its docstring's procedure (cause + log line) and run the slow reveal file too (`designs/ops/testing.md`).
 - **K9:** `learner_golden_test.py` pins one update's bytes; re-record it (`python -m
   agents.training.learner_golden record --reason "..."`) only for a deliberate change. A non-finite loss,
   gradient or KL is `NonFiniteLearnerError`: never `nan_to_num` it or skip the step.

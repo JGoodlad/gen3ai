@@ -38,22 +38,26 @@ Policy = Callable[[np.ndarray, np.ndarray], Sequence[int]]
 
 def play_rows(n_battles: int, *, seed: int, n_teams: Optional[int] = 12, turn_limit: int = 250, n_envs: int = 2,
               policy: Optional[Policy] = None, self_play: bool = False, profile: str = "release",
-              lib=None) -> List[Tuple[np.ndarray, np.ndarray]]:
+              lib=None, teams: Optional[Sequence[str]] = None) -> List[Tuple[np.ndarray, np.ndarray]]:
     """Play ``n_battles`` seeded games; per finished game (in finish order) p1's ``(obs (k, OBS_DIM) f32, mask (k,
     11) bool)``. A p1 decision at ``turn >= turn_limit`` is the stall forfeit (no row), as in training.
 
     p1 plays ``policy`` (default: a seeded uniform draw over the mask). ``self_play``: p2 is an EXTERNAL route
     answered by the same ``policy`` (a checkpoint against itself) instead of the episode-seeded Rust bot.
-    ``n_teams``: the pool's first ``n_teams`` packed teams (``None`` = the whole pool)."""
+    ``n_teams``: the pool's first ``n_teams`` packed teams (``None`` = the whole pool); ``teams`` (packed strings)
+    replaces that draw source outright (``n_teams`` is then ignored)."""
     from utils.rust_env import ffi
     from utils.rust_env import protocol as P
     from utils.team_sources import packed_teams
 
     if self_play and policy is None:
         raise ValueError("self_play needs a policy for p2")
-    teams = list(packed_teams("pool"))
-    if n_teams is not None:
-        teams = teams[:n_teams]
+    if teams is not None:
+        teams = list(teams)
+    else:
+        teams = list(packed_teams("pool"))
+        if n_teams is not None:
+            teams = teams[:n_teams]
     opp = {"kind": "external"} if self_play else dict(FIXTURE_BOT)
     spec = P.spec_json(n=n_envs, threads=1, teams=teams, names=NAMES, turn_limit=turn_limit, refusal_budget=4,
                        bank_dir=None, opponents=[opp])
