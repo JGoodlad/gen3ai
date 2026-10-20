@@ -54,8 +54,9 @@ Briefs do not repeat these; an agent that breaks one has broken its brief.
    (memory cannot be shared by priority). A unit the orchestrator marks BLOCKING the GPU's next work sets
    `GEN3AI_BLOCKING=<why>` (it skips the slots) and may run at nice 0 on the agent cores — launched that way, since
    renicing to a lower nice is refused.
-6. **`models/` is read-only** except your own new run dirs; **no `data/` change while a pinned run is live or
-   queued** (a pin isolates code, not data).
+6. **`models/` is read-only** except your own new run dirs; **no `data/` change while a run pinned BEFORE
+   `gen3_pinned_data_root_v1` is live or queued** (it reads main's `data/teams` CWD-relative; a pin carrying
+   `src/main/launcher/pinned_data_test.py` reads its own `data/` — `designs/launcher/pinning_and_worktrees.md`).
 7. **Report every hazard, skip, or thing you could not verify as an explicit FINDING.**
 8. **Checks pass or fail DETERMINISTICALLY**: exclude inputs within a rounding error of a decision boundary rather
    than tolerating them by chance.

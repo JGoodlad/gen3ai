@@ -41,6 +41,7 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 import numpy as np
 
 from agents.gen3_data import species as g3species
+from utils.paths import repo_path
 
 # NOTE: poke-env is imported LAZILY inside `team_species` (the only consumer). Importing it at
 # module scope starts poke-env's global asyncio loop THREAD — the same import-side effect that
@@ -50,7 +51,8 @@ from agents.gen3_data import species as g3species
 # tool only, e.g. the belief-coupling measurement. Its numpy estimator remains the pool's
 # naive-Bayes reference.)
 
-ARTIFACT_PATH = os.path.join("data", "teams", "gen3_species_priors.json")
+#: THIS checkout's file (``repo_path``), never the CWD: a launcher-pinned child runs with cwd = main.
+ARTIFACT_PATH = str(repo_path("data", "teams", "gen3_species_priors.json"))
 
 # Shrinkage strength for the CONDITIONAL estimate: P(s|t) = (n_st + m·P(s)) / (n_t + m).
 # A teammate seen on few teams shrinks its conditional back toward the marginal (log-lift → 0),

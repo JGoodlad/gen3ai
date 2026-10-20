@@ -127,8 +127,8 @@ with only the slots its cells need and one eval core per (player group, opponent
 X5 A/B's was `fixed_mass` × `blob`, played at its own pin) plays on one engine — a THIRD architecture is refused before
 anything plays; an extractor kwarg RECORDED AT ITS DEFAULT (the extractor constructor's signature default — what an
 absent key builds) does not split an architecture, any non-default value does (`slots.canonical_extractor_kwargs`, X5
-look 3 FINDING 1). Run it from the repo root (the team
-pool is read cwd-relative; any other cwd is refused).
+look 3 FINDING 1). Its team pool is the imported
+checkout's `data/teams` from any cwd (`check_team_pool`; an empty pool is refused).
 🚨 **`python -m main.plateau` is the PLATEAU meter's TIER 1** (eval U9a; the rule is `plateau_t1.py`): `tick <run>` plays each
 due check (the newest 10M-grid node vs the node 50M back) as the registered GSPRT on `main.h2h`'s engine, 40-pair batches
 `--inflight-batches` (default 4, T38) at a time in one cycle, judged in BATCH ORDER (a batch past the stop is a surplus

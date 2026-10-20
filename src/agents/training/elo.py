@@ -56,6 +56,8 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from utils.paths import repo_path
+
 # Elo convention: 400 rating points per factor-of-10 odds. ``_S`` is the logistic slope
 # that turns an Elo difference into a win probability: P = sigmoid(_S * (R_i - R_j)).
 ELO_PER_DECADE = 400.0
@@ -81,7 +83,9 @@ def win_prob(r_a: float, r_b: float) -> float:
     """Bradley-Terry win probability of player a over b on the Elo scale."""
     return _sigmoid(_S * (r_a - r_b))
 
-BOT_ANCHORS_PATH = os.path.join("data", "gen3_bot_elo_anchors.json")
+#: THIS checkout's file (``repo_path``), never the CWD: a launcher-pinned child runs with cwd = main, and a
+#: missing file is the SILENT ``random``-pinned fallback below.
+BOT_ANCHORS_PATH = str(repo_path("data", "gen3_bot_elo_anchors.json"))
 
 BOT = "bot:"
 SNAP = "snap:"

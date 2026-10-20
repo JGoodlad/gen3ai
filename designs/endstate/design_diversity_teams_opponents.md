@@ -36,7 +36,8 @@ This doc answers them, after challenging the reading itself (§8).
 - **A research-PATH claim needs adversarial treatment, counter-tests and replication on a PLATEAUED model**
   (owner, 2026-10-11). Every read at 161M is PROVISIONAL here.
 - **One lever per A/B, the cheapest option that is not a regression** (owner, 2026-10-03).
-- **`data/` is FROZEN while X26 is live** (and no `data/` change while any pinned run is live, root rule 6).
+- **No `data/` change while a run pinned before `gen3_pinned_data_root_v1` is live** (root rule 6; a later pin
+  reads its own `data/`, `designs/launcher/pinning_and_worktrees.md`). X26 has ended.
 
 ---
 

@@ -1,3 +1,3 @@
-from .loader import TeamLoader
+from .loader import EmptyTeamPoolError, TeamLoader, default_base_dir
 
-__all__ = ["TeamLoader"]
+__all__ = ["EmptyTeamPoolError", "TeamLoader", "default_base_dir"]

@@ -136,8 +136,7 @@ def load_pool(root: str) -> Dict[str, PoolTeam]:
 def _cross_check_pool(root: str, pool: Dict[str, PoolTeam]) -> None:
     """The universe this tool draws from must be exactly the one the samplers draw from."""
     from utils.team_loader import TeamLoader
-    with _chdir(root):
-        loader_shas = {team_sha(t) for t in TeamLoader().get_all_teams()}
+    loader_shas = {team_sha(t) for t in TeamLoader(os.path.join(root, "data", "teams")).get_all_teams()}
     if loader_shas != set(pool):
         only_loader = sorted(loader_shas - set(pool))[:5]
         only_here = sorted(set(pool) - loader_shas)[:5]
@@ -495,8 +494,7 @@ def check_invariants(root: str, expect_sample: int, expect_total: int) -> Dict[s
     draws twice as often as its neighbours — on exactly the teams the fleet measures.
     """
     from utils.team_loader import TeamLoader
-    with _chdir(root):
-        loader = TeamLoader()
+    loader = TeamLoader(os.path.join(root, "data", "teams"))
     allt, samp = loader.get_all_teams(), loader.get_sample_teams()
     shas = [team_sha(t) for t in allt]
     dupes = [s for s, c in Counter(shas).items() if c > 1]

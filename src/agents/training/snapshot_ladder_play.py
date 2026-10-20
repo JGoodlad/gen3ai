@@ -104,7 +104,7 @@ class LadderEngine:
         self.compute = PL.Compute(device="cpu", backend="eager", n_envs=int(n_envs), threads=int(threads),
                                   torch_threads=int(torch_threads), **extra)
         a, b = (self.ref(s) for s in first)
-        self.eng = PL.H2HEngine(a, b, self.compute, emit, team_source_check=False, team_pool="cwd")
+        self.eng = PL.H2HEngine(a, b, self.compute, emit, team_source_check=False)
 
     def ref(self, step: int) -> Any:
         from agents.training import snapshot_ladder as sl

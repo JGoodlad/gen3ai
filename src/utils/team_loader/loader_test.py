@@ -55,10 +55,45 @@ def test_loader_finds_all_teams(mock_teams_structure):
     assert "Sample Team 1 Content" in loader.get_sample_teams()
     assert "Other Team 1 Content" in loader.get_other_teams()
 
-def test_loader_handles_missing_base_dir():
-    # Should not crash if directory doesn't exist
-    loader = TeamLoader(base_dir="/non/existent/path")
-    assert len(loader.get_all_teams()) == 0
+def test_a_missing_or_empty_pool_is_REFUSED_never_an_empty_list(tmp_path):
+    """An empty pool is a wrong input (GIGO), not a result: every caller drew from it (2026-10-17 anchors read)."""
+    from src.utils.team_loader.loader import EmptyTeamPoolError
+    with pytest.raises(EmptyTeamPoolError, match="does not exist"):
+        TeamLoader(base_dir=str(tmp_path / "no" / "such" / "teams"))
+    teams = tmp_path / "data" / "teams" / "sample"
+    teams.mkdir(parents=True)
+    (teams / "teams.json").write_text(json.dumps([{"file": "teams/sample/ghost.txt"}]))
+    with pytest.raises(EmptyTeamPoolError, match="holds no loadable team"):
+        TeamLoader(base_dir=str(tmp_path / "data" / "teams"))
+
+
+def test_the_default_pool_is_the_IMPORTED_checkouts_from_any_cwd(tmp_path, monkeypatch):
+    """The default base is ``repo_path("data", "teams")``, never the CWD: a launcher-pinned child stands in MAIN's
+    checkout and must read its pin's pool (e74c0610). From a directory holding ANOTHER ``data/teams`` the default
+    still loads this checkout's pool, byte for byte."""
+    from src.utils.team_loader.loader import default_base_dir
+    from utils.paths import repo_path
+    want = TeamLoader(base_dir=str(repo_path("data", "teams"))).get_all_teams()
+    decoy = tmp_path / "data" / "teams" / "sample"
+    decoy.mkdir(parents=True)
+    (decoy / "d.txt").write_text("DECOY TEAM")
+    (decoy / "teams.json").write_text(json.dumps([{"file": "teams/sample/d.txt"}]))
+    monkeypatch.chdir(tmp_path)
+    assert default_base_dir() == str(repo_path("data", "teams"))
+    got = TeamLoader().get_all_teams()
+    assert got == want and "DECOY TEAM" not in got
+
+
+def test_sample_is_decided_UNDER_the_base_not_by_its_absolute_path(tmp_path):
+    """An absolute base whose own path says "sample" (a worktree named ``resample-x``) must not class every team as a
+    sample team; only a ``sample`` directory under the base does."""
+    base = tmp_path / "resample-x" / "data" / "teams"
+    other = base / "others" / "a"
+    other.mkdir(parents=True)
+    (other / "o.txt").write_text("OTHER TEAM")
+    (other / "teams.json").write_text(json.dumps([{"file": "teams/others/a/o.txt"}]))
+    loader = TeamLoader(base_dir=str(base))
+    assert loader.get_other_teams() == ["OTHER TEAM"] and loader.get_sample_teams() == []
 
 def test_loader_handles_invalid_json(mock_teams_structure):
     # Add an invalid JSON file

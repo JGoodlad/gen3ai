@@ -160,7 +160,8 @@ mon's candidate moves from the move prior's own legality (`hypothesis_set.build_
 never a candidate — `format_spec_priors_test.test_fixed_mass_hypothesis_moves_exclude_banned_moves`), its species
 score from the same co-occurrence prior, and its dex rows from the same observation encoder.
 
-**Why it waited:** a `data/` change reaches pinned runs (a pin isolates code, not data), and the orchestrator gated
+**Why it waited:** a `data/` change reached pinned runs then (a pin isolated code, not data, until
+`gen3_pinned_data_root_v1`), and the orchestrator gated
 every model-input change on the X5 look-3 cross finishing. It finished at 10:02 (`c344ccd1`) with nothing pinned live.
 
 ### 5.2 BOARD STATE (Sleep Clause Mod, Freeze Clause Mod)

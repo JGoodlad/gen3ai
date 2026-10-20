@@ -30,7 +30,9 @@ codes in `crashes_and_exit_codes.md`, the child's interpreter in `interpreter.md
 - **A pinned argv is judged by the PINNED commit's parser** (`pinned_argv.pinned_parser_check`). Only
   `build_parser` / `parse_args_hook` verdicts may refuse; `ast_scan` and `unavailable` warn.
 - 🚨 **Never "clean up" the child's `PYTHONPATH=<worktree>/src`, and pass no `cwd=` to the spawn**:
-  that line is the only thing that makes a pinned child import its pin.
+  that line is the only thing that makes a pinned child import its pin. The child stands in the launching checkout,
+  so it reads its pin's `data/` only because every runtime reader resolves `data/` through `utils.paths.repo_path`,
+  never the CWD (`pinned_data_test.py`).
 - **The recorded `git_hash` has one resolver**, `agents.model.snapshot.resolve_git_hash`; never derive
   it elsewhere. **A restart never moves the pin**: `--pin-commit` differing from the resumed
   checkpoint's hash is `FATAL_CONFIG`.

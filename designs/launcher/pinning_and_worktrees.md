@@ -301,6 +301,38 @@ hands it (in the archive — main's `models/`), so a pinned child running an OLD
 child pinned to HEAD, wrote only into the archive; `run_archive_test.py` pins the absolute `--run-dir` and
 the no-`cwd=` spawn).
 
+### A pinned run reads `data/` AS OF ITS PIN (`gen3_pinned_data_root_v1`, 2026-10-19)
+
+🚨 **Until this fix a pin isolated CODE, not DATA.** The same no-`cwd=` split means the child STANDS IN the launching
+(main) checkout, and four runtime readers resolved `data/` against the CWD: `TeamLoader`'s default `"data/teams"` (the
+training pool, eval's team builders, the snapshot ladder — which even had a `team_pool="cwd"` rule to follow it), the
+ELO anchors `data/gen3_bot_elo_anchors.json`, and the archetype / species-prior artifacts under `data/teams/`. A
+`data/` change on main therefore reached every live and queued pinned run: the 2026-09-23 curated/promoted team split
+moved files under a live run and was reverted (`e74c0610`), and root rule 6 froze `data/` for whole campaigns.
+`data/pokemon/` was already pin-safe — `gen3_data._base` reads it through `repo_path`, and the Rust env core is built
+in the pinned tree and resolves `data/pokemon` from the repo holding its own module (`gen3_dex_runtime_data_dir_v1`;
+`$POKESIM_DATA_DIR` overrides), so it reads the pin's.
+
+**The mechanism is the one `gen3_data` already used: every runtime `data/` reader resolves through
+`utils.paths.repo_path` — the checkout the code was IMPORTED from**, which for a pinned child is its own worktree. No
+copy and no new launcher step: `data/` is entirely tracked (~22 MB; only the ignored
+`data/pokemon/smogon_stats_monthly/` is not, and the runtime never reads it), so `git worktree add` at the pin already
+checks out the pin's `data/`. `TeamLoader()` defaults to `utils.team_loader.default_base_dir()` and raises
+`EmptyTeamPoolError` on a missing or empty pool (the old silent empty list was a wrong input); `main.h2h`'s two pool
+rules collapsed to one (`check_team_pool`: the imported checkout's pool, from any CWD). Gate:
+`src/main/launcher/pinned_data_test.py` pins a commit in a throwaway repo, moves main's `data/` on (a commit AND an
+uncommitted edit), spawns a probe through the real `_create_run_worktree` + `_launch_child` with cwd = main, and
+asserts it reads the PIN's teams and anchors; `src/utils/team_loader/loader_test.py` covers the default and the refusal.
+
+**Which runs it covers.** A run reads its pin's `data/` exactly when its pin carries the fix — test with
+`git cat-file -e <pin>:src/main/launcher/pinned_data_test.py`. A run pinned BEFORE it (X34 at `ae2d0901`, and any
+fork or restart that keeps an older pin — a restart never moves the pin) still reads main's `data/teams/**` and
+`data/gen3_bot_elo_anchors.json` CWD-relative, so root rule 6's freeze holds while any such run is live or queued.
+
+⚠️ **A TYPED relative path is still the launcher's CWD's**: `--trainee-team data/teams/specialist/x.txt` (and
+`--trainee-teams`) is opened by the child relative to the launcher's directory — main's file, not the pin's (**UNVERIFIED:** whether a
+restart re-reads it). Name a pin-stable file (an absolute path to a file that will not change) for a specialist run.
+
 `models/` exists **only in the main checkout** and never in a worktree —
 so anything else that needs the run archive must reach across rather than look beside itself.
 `utils.paths.main_models_dir()` is that reach (via git's shared `--git-common-dir`, the same fact

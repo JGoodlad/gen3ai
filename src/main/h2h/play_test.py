@@ -249,18 +249,20 @@ def test_the_row_carries_the_all_games_digest_over_every_game(tmp_path):
     assert row["compute"]["outcome_digest_all"] == L.outcome_digest(PL.outcome_vector(toy_games(10)))
 
 
-def test_the_team_pool_is_refused_outside_the_repo_root_instead_of_loading_an_empty_pool(tmp_path, monkeypatch):
-    """``TeamLoader`` reads ``./data/teams``: from another directory it loads NO team (the team-set id silently became
-    the empty pool's, then the eval core died on an IndexError). The tool now refuses, naming the repo root."""
-    from utils.paths import repo_path, repo_root
+def test_the_team_pool_is_the_imported_checkouts_from_any_cwd_and_an_empty_one_is_refused(tmp_path, monkeypatch):
+    """The pool is THIS checkout's ``data/teams`` (``repo_path``), whatever the working directory: a pinned run's child
+    stands in main's checkout and must still read its pin's pool. An EMPTY pool (the team-set id silently became the
+    empty pool's, then the eval core died on an IndexError) is a named refusal."""
+    from utils.paths import repo_path
+    from utils.team_loader import loader as LD
 
+    want = PL.eval_team_set()
     assert PL.check_team_pool() == repo_path("data", "teams")
+    (tmp_path / "data" / "teams").mkdir(parents=True)          # another tree's (empty) pool under the CWD
     monkeypatch.chdir(tmp_path)
-    with pytest.raises(PL.H2HError, match="run `python -m main.h2h` from the repo root") as ei:
-        PL.eval_team_set()
-    assert str(repo_root()) in str(ei.value) and "missing" in str(ei.value)
-    (tmp_path / "data" / "teams").mkdir(parents=True)
-    with pytest.raises(PL.H2HError, match="another checkout's"):
+    assert PL.check_team_pool() == repo_path("data", "teams") and PL.eval_team_set() == want
+    monkeypatch.setattr(LD, "default_base_dir", lambda: str(tmp_path / "data" / "teams"))
+    with pytest.raises(PL.H2HError, match="holds no loadable team"):
         PL.check_team_pool()
 
 

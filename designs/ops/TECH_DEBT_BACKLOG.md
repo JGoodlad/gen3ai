@@ -18,7 +18,7 @@ then size).
 
 | # | row (bold phrase) | effort | why now / blocks |
 |---|---|---|---|
-| 1 | **A PINNED run reads `data/` from the MAIN checkout** + **`TeamLoader` default `base_dir`** (f; one fix) | S–M, ~half a day | **BLOCKS X35 (soft):** lifts the `data/` freeze that holds across X34 and every X35 fork, and ends a silent empty-pool GIGO |
+| 1 | ~~**A PINNED run reads `data/` from the MAIN checkout** + **`TeamLoader` default `base_dir`**~~ DONE 2026-10-19 (`gen3_pinned_data_root_v1`, §3) | — | the freeze now holds only while a run pinned BEFORE the fix is live or queued (root rule 6) |
 | 2 | **T2's `InferenceService._frozen_guard` … BLIND under `expandable_segments`** (b) | S, ~1 h in a GPU window + the owner's keep-or-drop call | the guard that watches every X35 run's memory cannot fire until its switch is armed |
 | 3 | ~~One reading unit for the live reader~~ — DONE 2026-10-19 (`gen3_live_reader_reading_v1`, `gen3_faint_clears_types_override_v1`; §3) | — | — |
 | 6 | **Port: a Perish Song faint is skipped …** — the allowlist-gate half (a) | S, ~2 h | a fuzz allowlist that can hide a later divergence |
@@ -132,8 +132,6 @@ No open rows (2026-10-19): the `playoff` / `search_dividend` battery, the Node d
 | tier | item | why | size |
 |---|---|---|---|
 | P3 | **PARTLY DONE 2026-10-18 — the REPAIR is built and applied to `heldout72`; the CORPUS is not repaired yet.** **The Metamon ladder-usage corpus's HIDDEN fields are artifacts**: ~92 % of its Hidden Powers are HP Dark (blank IVs read as all-31), and EVs / natures are defaulted where unrevealed. `gen3_hp_repair_v1` (`agents.gen3_data.hp_repair`) also runs in `utils/team_corpora/build_w_forum.py`. Remains: a seeded repair step in `utils/ladder_corpus/build.py` (`--check` byte-identical) BEFORE any ladder-corpus team enters a TRAINING mix. Today only measurement and the fuzz / parity gates read that corpus (`utils/team_sources.py`); the training widening uses `w_forum_v1`. Spec: `designs/endstate/design_diversity_teams_opponents.md` §4.1. | the belief heads would memorise the corpus's fake HP type exactly as they memorised the pool | S |
-| P1 | **A PINNED run reads `data/` from the MAIN checkout (cwd-relative), so any change to `data/` on main reaches live and queued pinned runs.** `TeamLoader` defaults to `data/teams` (`utils/team_loader/loader.py:9`) and the launcher spawns the child with no `cwd=`. Fix: resolve `data/` through the pinned tree's `repo_path()`, or snapshot `data/` at launch, and test that a pinned child ignores main's `data/`. Until then root rule 6 holds: NO `data/` change while any pinned run (X34, then every X35 fork) is live. Incident: `e74c0610`. | the pin promise is silently false for data; the freeze costs every data change across the whole X35 campaign | S-M |
-| P2 | **`TeamLoader` default `base_dir` is cwd-relative; make it `repo_path()` (fold into the pinned-`data/` row's fix).** `utils/team_loader/loader.py:9` defaults to `"data/teams"`, so a caller run from another CWD silently loads ZERO teams (a printed warning only). Bare callers: `rust_eval/build.py:80`, `rust_eval/offline.py:115`, `team_archetypes.py:269`, `species_priors.py:385`, `team_sources.py:59`, `h2h/play.py:159,471`, `promote_teams.py:140,499`, `probe_battery/pin_worker.py:742`, `train/matchup_setup.py:235`. `main.anchors` already passes an absolute base. | an empty team pool is a silent wrong input (GIGO), not a refusal | S |
 
 ### (g) Ops and infrastructure
 
@@ -171,6 +169,7 @@ compacted 2026-10-19 (58 KB of narrative to one line each). A new closure adds O
 
 | closed | row | evidence |
 |---|---|---|
+| 2026-10-19 | **A PINNED run reads `data/` from the MAIN checkout** + **`TeamLoader` default `base_dir` is cwd-relative** — FIXED: every runtime `data/` reader resolves through `utils.paths.repo_path` (the imported checkout = a pinned child's own worktree, which carries the tracked `data/`); `TeamLoader` raises `EmptyTeamPoolError` on an empty pool; `main.h2h`'s `cwd` pool rule is deleted. Runs pinned before it keep the freeze (root rule 6) | `gen3_pinned_data_root_v1`; `src/main/launcher/pinned_data_test.py`; `designs/launcher/pinning_and_worktrees.md` |
 | 2026-10-19 | **A Mimic'd HIDDEN POWER keeps the bare id `hiddenpower`** — FIXED in the reading (Mimic and Transform copies alike): `PMon::learn_move` types a bare own Hidden Power from the request id, the Mimic overlay is keyed by `retrieve_id` | `present::live_reader_reading_tests::a_mimicked_hidden_power_takes_our_request_type`; `gen3_live_reader_reading_v1` |
 | 2026-10-19 | **poke-env drops a pending YAWN when its target falls asleep another way** — FIXED: `set_hp_status` no longer ends Yawn; only its `-end` line does | `present::live_reader_reading_tests::a_rest_does_not_end_a_pending_yawn` |
 | 2026-10-19 | **Sleep Talk into Pressure** — FIXED: a called move charges the caller no Pressure PP | `present::live_reader_reading_tests::a_move_called_by_sleep_talk_charges_no_pressure` |

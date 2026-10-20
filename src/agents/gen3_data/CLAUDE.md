@@ -5,6 +5,14 @@
 `hp_repair`). It knows no upstream; `tools/` derives `data/` (`tools/CLAUDE.md`). What each file holds,
 field by field, is `designs/tools/data_files.md`.
 
+## Where `data/` is
+
+Every runtime reader of `data/` resolves it through `utils.paths.repo_path` — the checkout the code was IMPORTED
+from — never the CWD (`_base` here; `utils.team_loader.default_base_dir()`, the ELO anchors and the `data/teams/`
+artifacts outside). A launcher-pinned child imports its pin while standing in main's checkout, so this is what makes it
+read the pin's `data/` (`designs/launcher/pinning_and_worktrees.md`; gate `src/main/launcher/pinned_data_test.py`). A
+new `data/` reader that opens a CWD-relative path reopens root rule 6's freeze.
+
 ## Module conventions
 
 Each concept module follows `moves.py`: a frozen dataclass keyed by id, parsed once through a `_base`

@@ -21,7 +21,7 @@ POOL_TS = "ts:0123456789abcdef"
 @pytest.fixture
 def no_pool_read(monkeypatch):
     """The pool's team-set id without reading the pool (the pool path's regime is otherwise unchanged)."""
-    monkeypatch.setattr(PL, "eval_team_set", lambda team_pool="repo": POOL_TS)
+    monkeypatch.setattr(PL, "eval_team_set", lambda: POOL_TS)
 
 
 @pytest.fixture

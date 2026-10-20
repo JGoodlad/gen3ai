@@ -148,14 +148,13 @@ def read_own(protocol: str, **kw: Any) -> Any:
     raise H2HError(f"protocol {protocol!r} is not one main.h2h plays ({sorted(RV.PROTOCOL_OF_MODE.values())})")
 
 
-def eval_team_set(team_pool: str = "repo") -> str:
+def eval_team_set() -> str:
     """The TEAM SET identity of the player's eval team builder (``eval_builders(None, [])``'s trainee builder: the
-    default pool with its 10 % sample-team bias): the digest of the ordered team lists and the builder parameters.
-    ``team_pool`` names the pool rule checked first (``repo``: :func:`check_team_pool`; ``cwd``:
-    :func:`check_team_pool_cwd`)."""
+    default pool with its 10 % sample-team bias): the digest of the ordered team lists and the builder parameters,
+    over the pool :func:`check_team_pool` checks first."""
     from utils.team_loader import TeamLoader
 
-    team_pool_check(team_pool)
+    check_team_pool()
     loader = TeamLoader()
     return L.team_set_id({"builder": "Gen3Teambuilder", "kind": "default_biased", "bias_prob": 0.1,
                           "teams": list(loader.get_all_teams()), "bias_teams": list(loader.get_sample_teams())})
@@ -443,46 +442,19 @@ def panel_builder(panel: Optional[str]) -> Optional[Any]:
 
 
 def check_team_pool() -> Path:
-    """REFUSE unless the WORKING DIRECTORY's ``data/teams`` is this checkout's (``utils.paths.repo_path``). The team
-    pool loader (``utils.team_loader.TeamLoader``, shared with training) reads ``./data/teams`` and resolves every
-    manifest entry under ``./data``: from any other directory it loads NO team, the team-set id silently becomes the
-    empty pool's and the eval core dies on an ``IndexError`` at its first draw."""
-    from utils.paths import repo_path, repo_root
+    """REFUSE unless THIS checkout's team pool (``utils.team_loader.default_base_dir``, the checkout the code was
+    IMPORTED from — a pinned run's own tree, never the working directory) loads at least one team. An empty pool used
+    to hash into a silent team-set id and die on an ``IndexError`` at the eval core's first draw; the loader now
+    raises :class:`~utils.team_loader.EmptyTeamPoolError`, named here as an :class:`H2HError`. One rule for the
+    head-to-head and the trainer's snapshot ladder alike, since both read the imported checkout's ``data/``."""
+    from utils.team_loader import EmptyTeamPoolError, TeamLoader, default_base_dir
 
-    want, here = repo_path("data", "teams"), Path.cwd() / "data" / "teams"
-    if not here.is_dir() or here.resolve() != want.resolve():
-        state = "missing" if not here.is_dir() else f"another checkout's (it resolves to {here.resolve()})"
-        raise H2HError(f"the team pool is read relative to the working directory ({Path.cwd()}): {here} is {state}, "
-                       f"not this checkout's {want} — run `python -m main.h2h` from the repo root {repo_root()}")
+    want = Path(default_base_dir())
+    try:
+        TeamLoader()
+    except EmptyTeamPoolError as e:
+        raise H2HError(f"{e}: the eval core would die at its first draw") from e
     return want
-
-
-def check_team_pool_cwd() -> Path:
-    """The TRAINER's rule (``team_pool="cwd"``): the pool is the WORKING DIRECTORY's ``data/teams``, whatever checkout
-    the code came from. A PINNED run's child imports its pin's ``src/`` but runs with cwd = the main checkout and reads
-    main's ``data/`` (root CLAUDE.md: a pin isolates CODE, not DATA), so a process it spawns (the snapshot ladder's
-    detached updater) must draw from the pool the run trained on, where :func:`check_team_pool` would refuse. It still
-    REFUSES the failure that check exists for: no ``./data/teams``, or a pool that loads no team."""
-    from utils.team_loader import TeamLoader
-
-    here = Path.cwd() / "data" / "teams"
-    if not here.is_dir():
-        raise H2HError(f"the team pool is read relative to the working directory ({Path.cwd()}): {here} is missing")
-    if not TeamLoader().get_all_teams():
-        raise H2HError(f"the team pool under {here} loads NO team: the eval core would die at its first draw")
-    return here
-
-
-#: The team-pool rules an engine can check (``H2HEngine(team_pool=...)``): ``repo`` = this checkout's pool, the
-#: head-to-head's own rule; ``cwd`` = the working directory's, the trainer's rule.
-TEAM_POOL_RULES: Dict[str, Callable[[], Path]] = {"repo": check_team_pool, "cwd": check_team_pool_cwd}
-
-
-def team_pool_check(rule: str) -> Path:
-    """Run the named team-pool rule (:data:`TEAM_POOL_RULES`); an unknown name is refused."""
-    if rule not in TEAM_POOL_RULES:
-        raise H2HError(f"team pool rule {rule!r} not in {sorted(TEAM_POOL_RULES)}")
-    return TEAM_POOL_RULES[rule]()
 
 
 class H2HEngine:
@@ -503,7 +475,7 @@ class H2HEngine:
     def __init__(self, player: PlayerRef, opponent: PlayerRef, compute: Compute,
                  emit: Callable[[str], None] = lambda m: print(m, file=sys.stderr, flush=True),
                  decl: Optional[EngineDecl] = None, reveal_mode: str = "off", *,
-                 team_source_check: bool = True, team_pool: str = "repo", team_builder: Optional[Any] = None):
+                 team_source_check: bool = True, team_builder: Optional[Any] = None):
         import torch
 
         from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec
@@ -511,11 +483,11 @@ class H2HEngine:
         from agents.training.rust_rollout.build import RustEnvDecl
 
         self.compute, self.emit = compute, emit
-        # `team_source_check=False` + `team_pool="cwd"` is the SNAPSHOT LADDER's engine (`agents.training.
-        # snapshot_ladder_play`): its yardstick draws both sides from the default pool for EVERY run (as it always
-        # did), and it runs inside a pinned run's tree, whose data/ is the working directory's
-        self.team_source_check, self.team_pool = bool(team_source_check), team_pool
-        team_pool_check(team_pool)
+        # `team_source_check=False` is the SNAPSHOT LADDER's engine (`agents.training.snapshot_ladder_play`): its
+        # yardstick draws both sides from the default pool for EVERY run (as it always did); inside a pinned run that
+        # pool is the pin's own `data/teams` (`check_team_pool`, the imported checkout's)
+        self.team_source_check = bool(team_source_check)
+        check_team_pool()
         # `team_builder` (opt-in; None = the player's eval team builder, today's engine byte for byte) is the builder
         # BOTH sides draw from: the trainee's, which a greedy sentinel draws from too (`RustEvalCore.opponent_builder`).
         # Its teams are declared into the team table at startup; its `team_set_id` / `team_source` replace the regime's.
@@ -536,7 +508,7 @@ class H2HEngine:
         if decl is not None and reveal_mode not in ("off", decl.mode):
             raise H2HError(f"reveal mode {reveal_mode!r} differs from the declaration's {decl.mode!r}")
         if team_builder is None:
-            self.regime = regime_for(self.turn_limit, team_set=eval_team_set(team_pool), mode=self.mode)
+            self.regime = regime_for(self.turn_limit, team_set=eval_team_set(), mode=self.mode)
         else:
             self.regime = builder_regime(self.turn_limit, team_builder, self.mode)
         self._threads0 = torch.get_num_threads()

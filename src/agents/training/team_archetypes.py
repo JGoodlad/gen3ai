@@ -31,13 +31,15 @@ import json
 import os
 from dataclasses import dataclass, field
 
+from utils.paths import repo_path
 from utils.showdown_id import to_id_str
 from utils.team_packing import Teambuilder
 
 from agents.gen3_data import moves as g3moves
 from agents.gen3_data import species as g3species
 
-ARTIFACT_PATH = os.path.join("data", "teams", "gen3_team_archetypes.json")
+#: THIS checkout's file (``repo_path``), never the CWD: a launcher-pinned child runs with cwd = main.
+ARTIFACT_PATH = str(repo_path("data", "teams", "gen3_team_archetypes.json"))
 ARCHETYPE_CLASSES = ("hyper_offense", "offense", "balance", "semi_stall", "stall")
 
 # ── move/ability vocabularies (gen3-legal; ids via to_id_str) ────────────────────

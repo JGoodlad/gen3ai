@@ -34,6 +34,8 @@ import os
 import statistics
 from typing import Dict, List, Optional
 
+from utils.paths import repo_path
+
 # ------------------------------------------------------------------ pre-registered constants
 TAIL_K = 4                    # the tail-K ladder convention (the gen-8 resolution lesson)
 NONINF_MARGIN = -15.0         # §5 convention: within −15 …
@@ -375,7 +377,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("run_dir")
     ap.add_argument("--ref", default=None, help="the previous generation's run dir (ladder Δ)")
-    ap.add_argument("--anchors", default="data/gen3_bot_elo_anchors.json")
+    ap.add_argument("--anchors", default=str(repo_path("data", "gen3_bot_elo_anchors.json")))
     ap.add_argument("--max-states", type=int, default=6000)
     ap.add_argument("--batch", type=int, default=512)
     ap.add_argument("--skip", default="",

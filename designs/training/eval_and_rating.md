@@ -1527,7 +1527,7 @@ on. What an edge measures (protocol `gen3_ladder_rust_v1`):
 | seats | `a` (the NEW node, on a promotion) on p1 in every game | SEAT-BALANCED: `ceil(P/2)` pairs with `a` as the player, `floor(P/2)` with `b`, on the same schedule (the key is order-independent) |
 | a draw | folded into `b`'s column (`wins_a` / finished) | recorded (`draws`) and EXCLUDED from the edge (`games` = decisive games) |
 | seeds | the unseeded global `random` stream | a pure function of the two content hashes and the edge's batch index (a deliberate re-measurement takes a NEW batch) |
-| pinned-team run | played on the default pool | the same (the yardstick is the default pool for every run); the pool is the WORKING DIRECTORY's, the trainer's rule (`H2HEngine(team_pool="cwd")`), because a pinned run's child reads main's `data/` |
+| pinned-team run | played on the default pool | the same (the yardstick is the default pool for every run); the pool is the imported checkout's (`check_team_pool`), which inside a pinned run is the pin's own `data/teams` (`gen3_pinned_data_root_v1`) |
 
 **THE DECISION: a REGIME BOUNDARY, like 2026-09-07's.** Even a zero transport shift would leave the protocol
 changed (the seat effect no longer credited to the newest node; draws no longer `b`'s), so the two are different

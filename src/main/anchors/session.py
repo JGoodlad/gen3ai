@@ -86,20 +86,21 @@ def load_team_texts(directory: Path) -> "list[tuple[str, str]]":
 def pool_team_texts() -> List[str]:
     """Every team of OUR pool (``{"kind": "pool"}``), stripped — resolved against THIS checkout.
 
-    🚨 ``TeamLoader()``'s default base dir is the CWD-relative ``"data/teams"``: from any other
-    working directory it PRINTS a warning and returns ZERO teams, and ``Gen3Teambuilder([])``
-    then died with an ``IndexError`` out of its own error message — every ``--teamset home``
-    unit of the 2026-10-17 X26 read run from ``src/`` failed at once as ``our_side_error``. The
-    path is now absolute (``utils.paths.repo_path``) and an empty pool is a NAMED refusal, the
-    same as the ``dir`` source's ``no_teams``.
+    🚨 ``TeamLoader()``'s default base dir USED TO BE the CWD-relative ``"data/teams"``: from any
+    other working directory it returned ZERO teams, and ``Gen3Teambuilder([])`` then died with an
+    ``IndexError`` — every ``--teamset home`` unit of the 2026-10-17 X26 read run from ``src/``
+    failed at once as ``our_side_error``. The path is absolute (``utils.paths.repo_path``; the
+    loader's default is too since ``gen3_pinned_data_root_v1``) and an empty pool is a NAMED
+    refusal, the same as the ``dir`` source's ``no_teams``.
     """
     from utils.paths import repo_path
-    from utils.team_loader import TeamLoader
+    from utils.team_loader import EmptyTeamPoolError, TeamLoader
 
     base = repo_path("data", "teams")
-    teams = [t.strip() for t in TeamLoader(str(base)).get_all_teams()]
-    if not teams:
-        raise SeriesFailure("no_teams", f"our pool at {base} holds no teams")
+    try:
+        teams = [t.strip() for t in TeamLoader(str(base)).get_all_teams()]
+    except EmptyTeamPoolError as e:
+        raise SeriesFailure("no_teams", f"our pool at {base} holds no teams ({e})") from e
     return teams
 
 
