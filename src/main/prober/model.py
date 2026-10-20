@@ -484,8 +484,8 @@ class ProbeModel:
     def _pin(self, ot, mt):
         """THE policy-input dict for every offline forward on this class — one seam, so a future
         privileged input (a Dict key the recorded observation vector cannot reconstruct) is refused
-        in ONE place rather than fifteen. None exists today: the privileged true-team value route
-        that this seam once guarded was deleted (deletion pass L2), and such a checkpoint no longer
+        in ONE place rather than fifteen (`model_capture.capture` takes it as ``policy_input``). None
+        exists today: the privileged true-team value route that this seam once guarded was deleted (deletion pass L2), and such a checkpoint no longer
         loads at all."""
         return {"observation": ot, "action_mask": mt}
 
@@ -1105,7 +1105,7 @@ class ProbeModel:
         eager = getattr(fe, "_orig_mod", None) if fe is not None else None
         if eager is not None:                      # a compiled extractor skips module hooks
             raise RuntimeError("capture_battle needs the EAGER extractor (the prober was started with --compile)")
-        res = capture(self._policy, obs, np.asarray(masks))
+        res = capture(self._policy, obs, np.asarray(masks), policy_input=self._pin)
         res["teams"] = [self.team_species(row) for row in obs]
         facts = [self.opp_slot_facts(row) for row in obs]
         res["opp_active"] = np.asarray([f["active"] for f in facts], dtype=np.int8)

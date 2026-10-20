@@ -31,7 +31,7 @@ grad-free call to the compiled path, which is why `capture_battle` runs the EAGE
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List
 
 import numpy as np
 
@@ -115,9 +115,14 @@ def token_layout(extractor, n_tokens: int) -> Dict[str, Any]:
             "ok": rest >= 0}
 
 
-def capture(policy, obs: np.ndarray, masks: np.ndarray, *, batch: int = CAPTURE_BATCH) -> Dict[str, Any]:
+def capture(policy, obs: np.ndarray, masks: np.ndarray, *, policy_input: Callable[[Any, Any], Dict[str, Any]],
+            batch: int = CAPTURE_BATCH) -> Dict[str, Any]:
     """The raw readout of every row of ``obs`` [N,D] / ``masks`` [N,11] — numpy arrays, keyed by name.
-    A head the model does not build is ABSENT from the result (never zeros)."""
+    A head the model does not build is ABSENT from the result (never zeros).
+
+    ``policy_input(obs_t, mask_t)`` builds the policy's input dict and has NO default:
+    `ProbeModel.capture_battle` passes its ``_pin`` seam, so this forward is refused or extended in the SAME
+    place as every other prober forward (`model_capture_test.test_every_prober_forward_builds_its_input_at_the_pin`)."""
     import torch
 
     from agents.model.damage_op_layout import decode_damage_block
@@ -176,7 +181,7 @@ def capture(policy, obs: np.ndarray, masks: np.ndarray, *, batch: int = CAPTURE_
             ot = torch.as_tensor(np.asarray(obs[s:s + batch], dtype=np.float32))
             mt = torch.as_tensor(np.asarray(masks[s:s + batch]))
             with torch.no_grad():
-                d = policy.get_distribution({"observation": ot, "action_mask": mt})
+                d = policy.get_distribution(policy_input(ot, mt))
                 lg = d.distribution.logits
                 masked = torch.where(mt.bool(), lg, torch.full_like(lg, -1e8))
                 put("probs", _np(torch.softmax(masked, 1)))

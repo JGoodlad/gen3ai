@@ -18,6 +18,12 @@ from agents.model.trunk_depth import IdentityInitRound
 from main.prober import model_capture
 
 
+def _pin(ot, mt):
+    """What `ProbeModel._pin` returns today — the capture tests drive `capture` without a ProbeModel."""
+    from main.prober.model import ProbeModel
+    return ProbeModel._pin(None, ot, mt)
+
+
 def _rederive(layer, x, w):
     B, n, d = x.shape
     v = layer.in_proj(x).reshape(B, n, 3, layer.n_heads, layer.head_dim)[:, :, 2].transpose(1, 2)
@@ -136,7 +142,7 @@ def test_capture_stacks_every_trunk_round_of_a_deeper_trunk():
     _make_live(rnd, seed=2, scale=0.05)
     h = rnd.register_forward_hook(spy, with_kwargs=True)
     try:
-        cap = model_capture.capture(pol, obs, mask, batch=6)
+        cap = model_capture.capture(pol, obs, mask, batch=6, policy_input=_pin)
         A = cap["attention"].astype(np.float32)
         assert cap["n_layers"] == 3 and A.shape[1] == 3, (cap["n_layers"], A.shape)
         assert np.allclose(A.sum(-1), 1.0, atol=2e-3)
@@ -171,7 +177,7 @@ def test_capture_summarises_every_belief_head_bounded_per_opponent_slot():
     pol.observation_space = gym.spaces.Dict({**space.spaces, "action_mask": gym.spaces.MultiBinary(mask.shape[1])})
     pol.eval()
     try:
-        cap = model_capture.capture(pol, obs, mask, batch=6)     # ONE batch: the stashes below are this forward's
+        cap = model_capture.capture(pol, obs, mask, batch=6, policy_input=_pin)     # ONE batch: the stashes below are this forward's
         fe = pol.features_extractor
         full = torch.sigmoid(fe.last_move_belief_logits.float()).numpy()
         item = torch.softmax(fe.last_item_logits.float(), -1).numpy()
@@ -206,3 +212,46 @@ def test_capture_summarises_every_belief_head_bounded_per_opponent_slot():
     assert np.allclose(cap["belief_spread"], spread)
     assert np.all((cap["belief_nature_p"] >= 0) & (cap["belief_nature_p"] <= 1))
     assert np.all(np.diff(cap["belief_hp_type_p"], axis=-1) <= 0)
+
+
+# ======================================================================================= the ONE input seam
+# `ProbeModel._pin` is THE policy-input dict for every offline forward, so a future privileged input is refused in one
+# place. `capture` once built its own dict, bypassing it (2026-10-19 prober audit).
+
+def test_every_prober_forward_builds_its_input_at_the_pin():
+    import ast
+    import inspect
+
+    from utils.paths import src_path
+    hits = []
+    for path in sorted(src_path("main", "prober").rglob("*.py")):
+        if path.name.endswith("_test.py"):
+            continue
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Dict) and any(isinstance(k, ast.Constant) and k.value == "action_mask"
+                                                  for k in node.keys):
+                hits.append((path.name, node.lineno))
+    from main.prober.model import ProbeModel
+    lines, start = inspect.getsourcelines(ProbeModel._pin)
+    assert hits == [("model.py", h) for _, h in hits if start <= h < start + len(lines)] and len(hits) == 1, (
+        f"a policy-input dict built outside ProbeModel._pin: {hits}")
+    assert "policy_input" in inspect.signature(model_capture.capture).parameters
+    assert inspect.signature(model_capture.capture).parameters["policy_input"].default is inspect.Parameter.empty
+
+
+def test_capture_battle_hands_capture_the_pin(monkeypatch):
+    from main.prober.model import ObsOffsets, ProbeModel
+    seen = {}
+
+    def fake_capture(policy, obs, masks, *, policy_input, batch=model_capture.CAPTURE_BATCH):
+        seen["fn"] = policy_input
+        return {}
+
+    monkeypatch.setattr(model_capture, "capture", fake_capture)
+    pm = ProbeModel(object(), ObsOffsets.resolve())
+    monkeypatch.setattr(pm, "_check_obs_dim", lambda obs: None)
+    monkeypatch.setattr(pm, "team_species", lambda row: {})
+    monkeypatch.setattr(pm, "opp_slot_facts", lambda row: {"active": 0, "revealed_moves": []})
+    pm.capture_battle(np.zeros((1, 4), dtype=np.float32), np.ones((1, 11), dtype=np.int8))
+    assert seen["fn"] == pm._pin

@@ -194,7 +194,9 @@ Moved verbatim-ish out of `src/main/prober/CLAUDE.md` when that leaf was cut to 
   `norm1(x)`; stacked in execution order; pinned against each round's output by `model_capture_test.py`), the pointer head's raw
   scores, the flat opponent pointer + hypothesis set, the op stash, bounded top-k summaries of the belief stashes
   (moves / item / spread / nature / HP type, per opponent slot — the scouting notes'); every hook removed in a
-  `finally`, so the cost when off is zero. The three non-torch decode helpers (`describe_global`,
+  `finally`, so the cost when off is zero. Every forward's input dict is built by ONE seam, `ProbeModel._pin`
+  (the capture takes it as its required `policy_input`; an AST test fails a policy-input dict built anywhere else
+  under `main/prober/`). The three non-torch decode helpers (`describe_global`,
   `describe_team`, `describe_turn_outcome`) live here because they need the encoder. 🚨 **A turn's
   events land in the NEXT decision's obs**, so `describe_turn_outcome` is read from decision *T+1*.
   Detail: `designs/prober/engine_and_model.md`.
