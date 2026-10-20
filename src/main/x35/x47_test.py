@@ -7,6 +7,7 @@ import json
 
 import pytest
 
+from main.x35 import gc as GC
 from main.x35 import readout as R
 from main.x35 import x47 as X
 
@@ -131,19 +132,24 @@ WIDE_POS = [53.0, 58.0, 49.0]                      # Δ̂ > 0, wide: UNDECIDED -
 LOSS_ON = [40.0, 40.4, 39.6]
 
 
+def _gc(n: int, b1: float = 0.0, b2: float = 0.0):
+    """A seed-pooled G-C record (AM-X47b-1) over the toy seeds 3601.. of constructed per-turn deltas."""
+    return GC.constructed_record("toy", [3601 + i for i in range(n)], [b1] * n, [b2] * n)
+
+
 def _doc(look=1, s_eq=GAIN_ON, final=GAIN_ON, off=OFF, **extra):
     n = len(off)
     d = {"look": look, "c0_final": _s(off), "x47_s_eq": _s(s_eq), "x47_final": _s(final) if final is not None else None,
          "g_f": {"h_pp": [[50.0 + ai - bj for bj in (0.5, -0.5, 0.0, 0.3, -0.3)[:n]]
                           for ai in (1.0, -1.0, 0.0, 0.6, -0.6)[:n]]},     # additive, level: G-F PASSes
-         "g_c": {"b1": [0.0, -0.02, 0.02], "b2": [0.0, -0.01, 0.01]}}
+         "g_c": _gc(n)}
     d.update(extra)
     return d
 
 
 def test_each_verdict_class():
     assert X.read(_doc()).verdict == R.ADOPT
-    assert X.read(_doc(g_c={"b1": [-0.2, -0.25, -0.15], "b2": [0.0, -0.01, 0.01]})).verdict == R.TRADE
+    assert X.read(_doc(g_c=_gc(3, b1=-0.2))).verdict == R.TRADE
     assert X.read(_doc(g_c=None)).verdict == R.INCONCLUSIVE                   # a required guard not read
     assert X.read(_doc(s_eq=NULL_ON, final=GAIN_ON)).verdict == X.PER_STEP_ONLY
     assert X.read(_doc(s_eq=NULL_ON, final=NULL_ON)).verdict == R.NULL
@@ -321,7 +327,10 @@ def test_am_x47_2_every_verdict_says_what_it_does_to_x47b():
     line = und.as_dict()["x47b"]
     assert "keeps its rank-9 conditional slot" in line and "no effect >= 4.6 pp detected" in line
     neg = X.read(_doc(look=2, s_eq=[50.0, 44.0, 52.0, 47.0, 48.0], final=[50.0, 44.0, 52.0, 47.0, 48.0], off=off5))
-    assert neg.verdict == R.UNDECIDED and neg.as_dict()["x47b"].startswith("NOT RULED")
+    assert neg.verdict == R.UNDECIDED
+    neg_line = neg.as_dict()["x47b"]                          # AM-X47b-4: ruled, no longer "NOT RULED"
+    assert "NOT RULED" not in neg_line and "DEPRIORITISED" in neg_line
+    assert "no effect >= 4.6 pp detected; point estimate <= 0" in neg_line
     assert X.read(_doc(s_eq=LOSS_ON, final=GAIN_ON)).as_dict()["x47b"] == X.X47B_ACTION[R.LOSS]
     assert X.read(_doc(s_eq=NULL_ON, final=NULL_ON)).as_dict()["x47b"].startswith("X47b drops in rank, not out")
 
@@ -363,3 +372,40 @@ def test_am_x47_10_run_norms_reads_every_checkpoint_and_the_final(tmp_path):
     out = XR.run_norms(str(run), loader=lambda f: sd)
     assert [s["step"] for s in out["series"]] == [FORK + IT, FORK + 2 * IT, "final"]
     assert out["last_node"] == "final" and out["reading"] == {"0": XR.NEAR_IDENTITY}
+
+
+# ------------------------------------------------------------------ AM-X47b-3: the policy-difference descriptor
+def test_am_x47b_3_zeroing_the_new_rounds_makes_them_the_identity():
+    import torch
+
+    from agents.model.trunk_depth import build_extra_rounds
+
+    class Trunk(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.extra_rounds = build_extra_rounds(4)
+
+    t = Trunk()
+    with torch.no_grad():                                     # a "trained" round: its outputs are no longer zero
+        for p in t.parameters():
+            p.add_(0.05 * torch.randn_like(p))
+    x = torch.randn(2, 5, t.extra_rounds[0].norm1.normalized_shape[0])
+    assert not torch.equal(t.extra_rounds[1](t.extra_rounds[0](x)), x)
+    assert XR.zero_extra_rounds(t) == 2
+    assert torch.equal(t.extra_rounds[1](t.extra_rounds[0](x)), x)
+    assert XR.zero_extra_rounds(torch.nn.Linear(2, 2)) == 0
+
+
+def test_am_x47b_3_policy_diff_is_the_mean_kl_by_hand():
+    import math
+
+    p = [[0.5, 0.5, 0.0], [1.0, 0.0, 0.0]]
+    q = [[0.25, 0.75, 0.0], [1.0, 0.0, 0.0]]
+    kl0 = 0.5 * math.log(0.5 / 0.25) + 0.5 * math.log(0.5 / 0.75)
+    out = XR.policy_diff(p, q, free=[True, False])
+    assert out["kl_mean"] == pytest.approx(kl0 / 2, abs=1e-15) and out["kl_max"] == pytest.approx(kl0, abs=1e-15)
+    assert out["kl_mean_free"] == pytest.approx(kl0, abs=1e-15)
+    assert out["argmax_moved_share"] == 0.5                   # row 0: argmax 0 -> 1
+    assert XR.policy_diff(p, p)["kl_mean"] == 0.0
+    with pytest.raises(ValueError, match="infinite"):
+        XR.policy_diff([[0.5, 0.5]], [[1.0, 0.0]])

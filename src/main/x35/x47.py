@@ -8,6 +8,7 @@ Pure functions plus a read-only loader; no game is played here (S comes from ``m
     python -m main.x35.x47 seq --look 2 ... --prior <look-1 seq.json>          # + which nodes moved (AM-X47-8)
     python -m main.x35.x47 decide <read.json>                                 # the verdict (JSON; ``read``)
     python -m main.x35.x47 norms --run <dir>                                  # the descriptor (AM-X47-10)
+    python -m main.x35.x47 policy-diff --run <dir> --bank <bank_x26>          # the policy descriptor (AM-X47b-3)
 
 EFFECTIVE LEARN TIME (``design_compute_efficiency.md`` §5.4). Σ = Σ ``rollout/collect_ms`` / 1000 + Σ
 ``lifecycle/update_wall_s`` over the fork's OWN TensorBoard rows (``main.x35.tbrows``: the inherited file and every
@@ -64,6 +65,9 @@ REPORTED, NEVER DECIDING (registered 2026-10-20, before any read):
   (:func:`per_member`), the out-of-lineage member :data:`OUT_OF_LINEAGE` on its own; a primary GAIN whose
   ``pstar_x26`` Δ̂ <= 0 is labelled "in-lineage".
 * AM-X47-10: the new rounds' weight norms (``python -m main.x35.x47 norms``, :func:`round_norms`).
+* AM-X47b-3: the POLICY-DIFFERENCE descriptor (``python -m main.x35.x47 policy-diff``, ``x47_report.policy_diff``):
+  per node, the mean KL(π_node ‖ π_zeroed) on a fixed bank, π_zeroed = the same weights with every new round's
+  ``out_proj`` / ``linear2`` (weight and bias) zeroed, which makes each extra round exactly the identity.
 
 DECLARED HERE, BEFORE ANY REAL READ (choices the design leaves open; each a FINDING of B-X47-READ):
 * The two tags are summed over their OWN rows: ``update_wall_s`` is recorded after an update and dumped with the NEXT
@@ -108,14 +112,16 @@ _CKPT = re.compile(r"checkpoint_(\d+)_steps\.zip$")
 FINAL_FILE = "final_model.zip"
 
 #: AM-X47-2 (ACCEPTED as proposed, 2026-10-20): what each FINAL class does to X47b. UNDECIDED splits on the sign of
-#: the primary's Δ̂ (only Δ̂ > 0 was ruled); a look-1 CONTINUE is not final.
+#: the primary's Δ̂ (Δ̂ > 0 by AM-X47-2; Δ̂ <= 0, within 1e-9 of 0 included, by AM-X47b-4); a look-1 CONTINUE is not
+#: final.
 X47B_ACTION: Dict[str, str] = {
     ADOPT: "X47b RUNS (licensed by ADOPT-CANDIDATE)",
     TRADE: "X47b only on the orchestrator's ruling (a required guard FAILed)",
     PER_STEP_ONLY: "X47b RUNS (licensed by PER-STEP ONLY)",
     UNDECIDED + "+": ("X47b keeps its rank-9 conditional slot, unlicensed but not dropped; report: no effect >= 4.6 pp "
                       "detected (σ 1.07 pp, 80 %) -- never 'depth does not help'"),
-    UNDECIDED + "-": "NOT RULED (UNDECIDED with Δ̂ <= 0): ask the orchestrator; never 'depth does not help'",
+    UNDECIDED + "-": ("X47b LEAVES its rank-9 conditional slot and is DEPRIORITISED in the backlog (AM-X47b-4); "
+                      "report: no effect >= 4.6 pp detected; point estimate <= 0 -- never 'depth does not help'"),
     NULL: "X47b drops in rank, not out (the toy only ranks before calibration); a verdict on THIS growth recipe only",
     LOSS: "X47b is not run on this evidence",
     CONTINUE: "not final: look 2 (T1b) first",
@@ -457,7 +463,10 @@ def read(doc: Mapping[str, Any]) -> X47Verdict:
     """The whole decision from one JSON-shaped read (``decide``'s input):
 
     ``{"look": 1, "c0_final": {seed: S_pp}, "x47_s_eq": {seed: S_pp}, "x47_final": {seed: S_pp},
-    "g_f": {"h_pp": [[...]]}, "g_c": {"b1": [e, lo, hi], "b2": [e, lo, hi]}, "g_k": {...}, "comparison": {...}}``
+    "g_f": {"h_pp": [[...]]}, "g_c": <the main.x35.gc record>, "g_k": {...}, "comparison": {...}}``
+
+    ``g_c`` is the toy side's seed-pooled G-C record (AM-X47b-1: X47 FINAL s360x against toy C0 final s360x, the T*
+    truth of AM-X47b-2); a bare triple, or a record over other seeds, is INCONCLUSIVE.
 
     ``x47_s_eq`` holds each X47 seed's S at its s_eq node (``compare``'s output, carried in ``comparison``); when ρ
     coincides they are the finals' S. G-F's matrix is the primary's (s_eq nodes × C0 finals).
@@ -470,8 +479,8 @@ def read(doc: Mapping[str, Any]) -> X47Verdict:
     primary = R.decide_r1(look, dict(doc.get("x47_s_eq") or {}), off)
     fin = doc.get("x47_final")
     secondary = R.decide_r1(look, dict(fin), off) if fin else None
-    gc = doc.get("g_c") or {}
-    guards = [R.guard_f((doc.get("g_f") or {}).get("h_pp"), look), R.guard_c(gc.get("b1"), gc.get("b2"))]
+    guards = [R.guard_f((doc.get("g_f") or {}).get("h_pp"), look),
+              R.guard_c_record(doc.get("g_c"), list(doc.get("x47_s_eq") or {}), list(off))]
     if doc.get("g_k") is not None:
         g = R.guard_k(doc["g_k"])
         guards.append(R.GuardResult("G-K (reported)", g.status, g.detail, g.near, g.reasons))
@@ -536,12 +545,22 @@ def _main(argv: Optional[Sequence[str]] = None) -> int:
     d.add_argument("input")
     n = sub.add_parser("norms", help="AM-X47-10: the new rounds' weight norms on every checkpoint of a run (read-only)")
     n.add_argument("--run", required=True)
+    pd = sub.add_parser("policy-diff", help="AM-X47b-3: mean KL on a bank to the same weights with the new rounds "
+                                            "zeroed (read-only; REPORTED only)")
+    pd.add_argument("--run", required=True)
+    pd.add_argument("--bank", required=True, help="a main.policy_spectrum bank (the registered one: bank_x26)")
+    pd.add_argument("--stride", type=int, default=10, help="every k-th checkpoint (the final is always read)")
+    pd.add_argument("--node", type=int, action="append", default=[], help="read only these checkpoint steps")
+    pd.add_argument("--threads", type=int, default=1)
     a = ap.parse_args(argv)
     try:
         if a.cmd == "seq":
             json.dump(_seq(a), sys.stdout, indent=1)
         elif a.cmd == "norms":
             json.dump(XR.run_norms(a.run), sys.stdout, indent=1)
+        elif a.cmd == "policy-diff":
+            json.dump(XR.run_policy_diff(a.run, a.bank, stride=a.stride, nodes=a.node, threads=a.threads),
+                      sys.stdout, indent=1)
         else:
             with open(a.input) as f:
                 json.dump(read(json.load(f)).as_dict(), sys.stdout, indent=1, default=str)
@@ -549,6 +568,11 @@ def _main(argv: Optional[Sequence[str]] = None) -> int:
         return 0
     except (X47InputError, R.ReadoutInputError) as exc:
         print(f"[x35 x47] INCONCLUSIVE: {exc}", file=sys.stderr)
+        return 2
+    except ValueError as exc:                   # policy-diff's refusals (a missing node, not a grown network)
+        if a.cmd != "policy-diff":
+            raise
+        print(f"[x35 x47] policy-diff REFUSED: {exc}", file=sys.stderr)
         return 2
 
 

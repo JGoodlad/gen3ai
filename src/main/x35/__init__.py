@@ -20,7 +20,9 @@
 * :mod:`main.x35.x47` -- X47's readout (AM-4): s_eq at equal effective learn time, the matched-step secondary, the
   PER-STEP ONLY class, and the AM-X47 amendments (2026-10-20: ``seq`` reads only finished, K9(b)-PASS, unthinned runs
   and names the files; look 2's moved nodes; what each class does to X47b); :mod:`main.x35.x47_report` -- X47's
-  REPORTED quantities (the PER-STEP ONLY gap, the per-member Δ, the new rounds' weight norms);
+  REPORTED quantities (the PER-STEP ONLY gap, the per-member Δ, the new rounds' weight norms, the policy-difference
+  descriptor of AM-X47b-3); :mod:`main.x35.gc` -- G-C POOLED over seed pairs of finals (AM-X47b-1, a crossed cluster
+  bootstrap; each side's B2 truth, AM-X47b-2), the record every reader's ``g_c`` must be;
   :mod:`main.x35.tbrows` -- a fork's OWN TensorBoard rows (the inherited prefix excluded).
 
 Nothing here launches, trains or plays on import. The staging record is

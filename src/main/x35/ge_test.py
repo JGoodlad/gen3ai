@@ -11,6 +11,7 @@ import pytest
 
 from agents.training import best_response_gap as E
 from main.x35 import batch as B
+from main.x35 import gc as GC
 from main.x35 import ge as GE
 from main.x35 import kit as K
 from main.x35 import readout as R
@@ -251,7 +252,7 @@ def _read_doc(r2: Any) -> Dict[str, Any]:
                            "r1": {"on": {"3501": 60.0, "3502": 60.5, "3503": 61.0},
                                   "off": {"3501": 50.0, "3502": 50.5, "3503": 51.0}},
                            "g_f": {"h_pp": [[51.0, 50.5, 51.5], [50.8, 51.2, 50.9], [51.1, 50.7, 51.3]]},
-                           "g_c": {"b1": [0.0, -0.01, 0.01], "b2": [0.0, -0.01, 0.01]},
+                           "g_c": GC.constructed_record("production", [3501, 3502, 3503], [0.0] * 3, [0.0] * 3),
                            "g_k": {ts: {"on": [250, 500], "off": [250, 500]} for ts in R.G_K_TEAMSETS}}
     if r2 is not None:
         doc["r2"] = r2

@@ -21,7 +21,10 @@ THE GUARDS (each PASS / FAIL / INCONCLUSIVE, deterministically):
   columns OFF seeds; the look's seed count); FAIL iff its two-sided 95 % upper bound < −2.0.
 * G-E, exploitability: the R2 read; FAIL iff the Newcombe 95 % LOWER bound of gap(ON) − gap(OFF) > 0.
 * G-C, the collapse battery (§5.6.5): B1 entropy, FAIL iff the battle-clustered 95 % interval of ON − OFF lies
-  wholly below −0.05 nats (upper < −0.05); B2 the starved share, FAIL iff its lower bound > 0.
+  wholly below −0.05 nats (upper < −0.05); B2 the starved share, FAIL iff its lower bound > 0. The read's ``g_c`` is
+  the SEED-POOLED record of ``main.x35.gc`` (AM-X47b-1: each final paired with its same-seed control final, a crossed
+  cluster bootstrap); :func:`guard_c_record` refuses a bare triple, a record over other seeds than R1's, or one whose
+  B2 truth is not the seeds' side's.
 * G-K, the external anchor (§5.6.6): FAIL iff ON − OFF is detected below 0 (Newcombe 95 % upper < 0) on EITHER team
   set (home72, away), each pooled over the seed finals and each side >= :data:`G_K_MIN_GAMES` counted games.
 
@@ -388,6 +391,23 @@ def guard_c(b1: Any, b2: Any) -> GuardResult:
                        detail={"B1": [e1, l1, u1], "B1_fail": f1, "B2": [e2, l2, u2], "B2_fail": f2}, near=near)
 
 
+def guard_c_record(rec: Any, on_seeds: Sequence[Any], off_seeds: Sequence[Any]) -> GuardResult:
+    """G-C from the seed-pooled record (``main.x35.gc``, AM-X47b-1) of a read whose R1 seeds are ``on_seeds`` /
+    ``off_seeds``: INCONCLUSIVE when absent, a bare triple, or not fit for this read (``gc.check_record``)."""
+    from main.x35 import gc as GC
+
+    if rec is None or rec == {}:
+        return GuardResult("G-C", INCONCLUSIVE, reasons=("no G-C read",))
+    try:
+        b1, b2 = GC.check_record(rec, on_seeds, off_seeds)
+    except ReadoutInputError as exc:
+        return GuardResult("G-C", INCONCLUSIVE, reasons=(str(exc),))
+    g = guard_c(b1, b2)
+    detail = dict(g.detail, side=rec.get("side"), seeds=list(rec.get("seeds") or ()), method=rec.get("method"),
+                  truth=rec.get("truth"), per_pair=rec.get("per_pair"))
+    return GuardResult("G-C", g.status, detail, g.near, g.reasons)
+
+
 def guard_k(cells: Optional[Mapping[str, Mapping[str, Sequence[int]]]]) -> GuardResult:
     """G-K: ``{teamset: {"on": (wins, n), "off": (wins, n)}}`` for home72 and away; FAIL iff ON − OFF's Newcombe
     95 % upper bound < 0 on EITHER set (``main.anchors.results.newcombe``, the SOP's interval)."""
@@ -488,7 +508,7 @@ def read(doc: Mapping[str, Any]) -> Verdict:
     """The whole decision from one JSON-shaped read (the CLI's input; ``selfcheck`` shows every field):
 
     ``{"arm": "A1", "look": 1, "r1": {"on": {seed: S_pp}, "off": {...}}, "r2": {"on": [w, n], "off": [w, n]},
-    "g_f": {"h_pp": [[...]]}, "g_c": {"b1": [e, lo, hi], "b2": [e, lo, hi]},
+    "g_f": {"h_pp": [[...]]}, "g_c": <the main.x35.gc record>,
     "g_k": {"home72": {"on": [w, n], "off": [w, n]}, "away": {...}}, "dose": {"on": [...], "off": [...]}}``"""
     arm, look = str(doc["arm"]), int(doc["look"])
     r1d = doc.get("r1") or {}
@@ -504,8 +524,8 @@ def read(doc: Mapping[str, Any]) -> Verdict:
             r2why.append(f"R2 input: {exc}")
     r2 = decide_r2(gap, inconclusive=r2why)
     gf = (doc.get("g_f") or {}).get("h_pp")
-    gc = doc.get("g_c") or {}
-    guards = [guard_f(gf, look), guard_e(gap if not r2why else None), guard_c(gc.get("b1"), gc.get("b2")),
+    guards = [guard_f(gf, look), guard_e(gap if not r2why else None),
+              guard_c_record(doc.get("g_c"), list(r1d.get("on") or {}), list(r1d.get("off") or {})),
               guard_k(doc.get("g_k"))]
     dose = doc.get("dose") or {}
     return decide(arm, r1, r2, guards, reported={"dose": dose_confound(dose.get("on"), dose.get("off"))})

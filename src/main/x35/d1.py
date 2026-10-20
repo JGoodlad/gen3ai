@@ -449,7 +449,7 @@ def read_d1(doc: Mapping[str, Any]) -> D1Verdict:
 
     ``{"arm": "X38", "look": 1, "h": {"on": {seed: {panel: [wins, n]}}, "off": {...}},
     "p": {"on": {seed: S_pp}, "off": {...}, "inconclusive": [...]}, "r2": {"on": [w, n], "off": [w, n]},
-    "g_f": {"h_pp": [[...]]}, "g_c": {"b1": [e, lo, hi], "b2": [e, lo, hi]},
+    "g_f": {"h_pp": [[...]]}, "g_c": <the main.x35.gc record over H's seeds>,
     "kakuna_in_pool": {"home72": {"on": [w, n], "off": [w, n]}, "away": {...}}, "dose": {"on": [...], "off": [...]}}``
 
     ``h`` is ``python -m main.x35.kakuna d1h``'s output (its ``on`` / ``off``); P's seed sets must equal H's."""
@@ -471,8 +471,8 @@ def read_d1(doc: Mapping[str, Any]) -> D1Verdict:
         except (R.ReadoutInputError, KeyError, TypeError, IndexError) as exc:
             gap_why = f"G-E input: {exc}"
     g_e = R.guard_e(gap) if gap_why is None else R.GuardResult("G-E", INCONCLUSIVE, reasons=(gap_why,))
-    gc = doc.get("g_c") or {}
-    guards = [R.guard_f((doc.get("g_f") or {}).get("h_pp"), look), g_e, R.guard_c(gc.get("b1"), gc.get("b2"))]
+    guards = [R.guard_f((doc.get("g_f") or {}).get("h_pp"), look), g_e,
+              R.guard_c_record(doc.get("g_c"), list(hd.get("on") or {}), list(hd.get("off") or {}))]
     dose = doc.get("dose") or {}
     rep: Dict[str, Any] = {"dose": R.dose_confound(dose.get("on"), dose.get("off"))}
     if doc.get("kakuna_in_pool") is not None:

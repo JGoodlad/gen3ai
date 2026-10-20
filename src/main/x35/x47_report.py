@@ -11,6 +11,12 @@ decides a verdict; ``main.x35.x47.read`` carries each beside the verdict.
   round's ``out_proj`` and ``linear2`` (``team_transformer.extra_rounds.<i>``), and its ratio to the mean norm of the
   same matrix over the base rounds (``team_transformer.transformer_layers.<j>``) at the same checkpoint. The reading line
   at the last node: a round whose two ratios are both >= :data:`ENGAGED_RATIO` "engaged", else "stayed near identity".
+* :func:`policy_diff` / :func:`run_policy_diff` (AM-X47b-3, registered 2026-10-20 before any read; REPORTED ONLY, in no
+  decision): per node, KL(π_node ‖ π_zeroed) on a fixed bank (the registered one is the collapse pilot's ``bank_x26``),
+  π_zeroed = the same weights with every new round's ``out_proj`` and ``linear2`` (weight AND bias) set to zero, which
+  makes each ``trunk_depth.IdentityInitRound`` exactly the identity (the network is then the base rounds' function).
+  The mean over every decision and over the free ones, the max, and the share of decisions whose argmax moves. Unlike
+  the norm, it separates "the rounds changed the policy" from "the rounds' weights drifted".
 """
 from __future__ import annotations
 
@@ -171,3 +177,95 @@ def run_norms(run_dir: str, *, loader: Any = None) -> Dict[str, Any]:
             "skipped": skipped, "last_node": last["step"] if last else None,
             "reading": reading(last["norms"]) if last else None}
 
+
+
+# ------------------------------------------------------------------------------------------ AM-X47b-3
+def zero_extra_rounds(module: Any) -> int:
+    """Zero ``out_proj`` and ``linear2`` (weight and bias) of every round inside a module named ``extra_rounds``, IN
+    PLACE; returns the number of rounds zeroed (0 = no new round: the descriptor is undefined)."""
+    import torch
+
+    n = 0
+    with torch.no_grad():
+        for name, mod in module.named_modules():
+            if name.rsplit(".", 1)[-1] != "extra_rounds":
+                continue
+            for rnd in mod:
+                for lin in (rnd.out_proj, rnd.linear2):
+                    lin.weight.zero_()
+                    if lin.bias is not None:
+                        lin.bias.zero_()
+                n += 1
+    return n
+
+
+def policy_diff(p_node: Any, p_zeroed: Any, free: Optional[Any] = None) -> Dict[str, Any]:
+    """KL(p_node ‖ p_zeroed) per row of masked probabilities (illegal = 0), summarised (module docs)."""
+    import numpy as np
+
+    p = np.asarray(p_node, dtype=np.float64)
+    q = np.asarray(p_zeroed, dtype=np.float64)
+    if p.shape != q.shape or p.ndim != 2 or len(p) == 0:
+        raise ValueError(f"policy_diff: shapes {p.shape} / {q.shape}")
+    with np.errstate(divide="ignore", invalid="ignore"):
+        terms = np.where(p > 0, p * (np.log(np.where(p > 0, p, 1.0)) - np.log(np.where(q > 0, q, 1.0))), 0.0)
+    if np.any((p > 0) & (q <= 0)):
+        raise ValueError("policy_diff: the zeroed policy puts no mass where the node does (KL infinite)")
+    kl = np.maximum(terms.sum(axis=1), 0.0)
+    moved = np.argmax(p, axis=1) != np.argmax(q, axis=1)
+    out: Dict[str, Any] = {"n": int(len(kl)), "kl_mean": float(kl.mean()), "kl_max": float(kl.max()),
+                           "argmax_moved_share": float(moved.mean())}
+    if free is not None:
+        f = np.asarray(free, dtype=bool)
+        out.update({"n_free": int(f.sum()), "kl_mean_free": float(kl[f].mean()) if f.any() else None})
+    return out
+
+
+def run_policy_diff(run_dir: str, bank_dir: str, *, stride: int = 10, nodes: Optional[List[int]] = None,
+                    threads: int = 1) -> Dict[str, Any]:
+    """The descriptor on a run's checkpoints (every ``stride``-th after sorting, or exactly ``nodes``) and its final,
+    read-only, on CPU. Each node is loaded twice (as saved, then with the new rounds zeroed)."""
+    from pathlib import Path
+
+    from main.policy_spectrum.bank import load_bank
+    from main.policy_spectrum.reader import inference_globals, load_checkpoint, policy_logits, reencode
+    from main.policy_spectrum.spectrum import masked_probs
+
+    if stride < 1:
+        raise ValueError("--stride must be >= 1")
+    files: List[Tuple[int, str]] = []
+    for f in glob.glob(os.path.join(run_dir, "checkpoints", "checkpoint_*_steps.zip")):
+        m = _CKPT.search(f)
+        if m:
+            files.append((int(m.group(1)), f))
+    files.sort()
+    if nodes:
+        want = set(int(n) for n in nodes)
+        files = [x for x in files if x[0] in want]
+        missing = sorted(want - {x[0] for x in files})
+        if missing:
+            raise ValueError(f"no checkpoint at {missing}")
+    else:
+        files = files[stride - 1::stride]
+        final = os.path.join(run_dir, "final_model.zip")
+        if os.path.isfile(final):
+            files.append((-1, final))
+    if not files:
+        raise ValueError(f"{run_dir}: no checkpoint to read")
+    bank = load_bank(Path(bank_dir))
+    rows, masks, gate = reencode(bank)
+    free = [d.get("kind") == "free" for d in bank.decisions]
+    series: List[Dict[str, Any]] = []
+    with inference_globals(threads):
+        for step, f in files:
+            model = load_checkpoint(Path(f))
+            p_node = masked_probs(policy_logits(model, rows, masks), masks)
+            n = zero_extra_rounds(model.policy)
+            if n == 0:
+                raise ValueError(f"{f}: no extra_rounds (not a grown network)")
+            p_zero = masked_probs(policy_logits(model, rows, masks), masks)
+            series.append({"step": step if step >= 0 else "final", "file": os.path.relpath(f, run_dir),
+                           "rounds_zeroed": n, **policy_diff(p_node, p_zero, free)})
+            del model
+    return {"run": os.path.basename(os.path.normpath(run_dir)), "bank": bank.manifest.get("content_sha256"),
+            "obs_as_recorded": gate.get("obs_as_recorded"), "reported_only": True, "series": series}

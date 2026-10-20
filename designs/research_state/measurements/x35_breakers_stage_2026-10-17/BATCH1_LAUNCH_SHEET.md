@@ -111,6 +111,12 @@ GAIN would end INCONCLUSIVE), F-AMX-3 (B2's truth is production's, read on a toy
 (2026-10-20). This is registered before any X47 read and before any X35 read: none has happened.** The code is built
 in the commit that FOLLOWS this registration (`src/main/x35/gc.py`, `readout.py`, `d1.py`, `x47.py`,
 `x47_report.py`), each part with a test that fails on revert; the toy truth is the record committed after it.
+**BUILT 2026-10-20** (`gc_test.py`, `x47_test.py`; the self-check still 25 / 25). Validated read-only on real files, as
+plumbing, not as a read: `gc pool --side production` on the collapse pilot's X26 reads reproduces the pilot's paired
+deltas exactly where they overlap (B2 X26@150M → 160M −0.0391 on 179 decisive turns; B1 X26@10M → 160M +0.02381
+nats), and three identical pairs give the single pair's interval (one shared battle draw). `x47 policy-diff` on the
+LIVE X47 s3601 (52 s, 1.95 GB RSS, 2 nodes): mean KL 0.0117 at 291M (argmax moved on 7.6 % of the 7,028 decisions),
+0.0755 at 305M (19.6 %). Reported only.
 
 | ruling | what it says | where it is enforced |
 |---|---|---|

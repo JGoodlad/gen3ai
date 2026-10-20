@@ -17,6 +17,7 @@ from typing import Any, Callable, Dict, List, Sequence, Tuple
 
 from agents.training.eval_ledger.cells import Cell
 from main.x35 import d1 as D1
+from main.x35 import gc as GC
 from main.x35 import readout as R
 
 #: The Monte-Carlo coverage floor of the 97.5 % Welch interval (declared before the draws were run).
@@ -304,7 +305,7 @@ def check_read_roundtrip() -> Check:
         "r1": {"on": _seeds([50.1, 50.2, 50.0]), "off": _seeds([50.0, 50.1, 49.9])},
         "r2": {"on": [200, 400], "off": [264, 400]},
         "g_f": {"h_pp": _additive(0.0, [1.0, -1.0, 0.0], [0.5, -0.5, 0.0])},
-        "g_c": {"b1": [0.01, -0.03, 0.05], "b2": [0.0, -0.05, 0.05]},
+        "g_c": GC.constructed_record("production", [3501, 3502, 3503], [0.01] * 3, [0.0] * 3),
         "g_k": {"home72": {"on": [252, 420], "off": [250, 420]}, "away": {"on": [228, 400], "off": [226, 400]}},
         "dose": {"on": [1.0e-8, 1.02e-8, 0.99e-8], "off": [1.0e-8, 1.0e-8, 1.01e-8]},
     }
@@ -569,7 +570,7 @@ def check_d1_read_roundtrip() -> Check:
         "p": {"on": _seeds([50.1, 50.2, 50.0]), "off": _seeds([50.0, 50.1, 49.9])},
         "r2": {"on": [250, 400], "off": [264, 400]},
         "g_f": {"h_pp": _additive(0.0, [1.0, -1.0, 0.0], [0.5, -0.5, 0.0])},
-        "g_c": {"b1": [0.01, -0.03, 0.05], "b2": [0.0, -0.05, 0.05]},
+        "g_c": GC.constructed_record("production", [3501, 3502, 3503], [0.01] * 3, [0.0] * 3),
         "kakuna_in_pool": {"home72": {"on": [252, 420], "off": [250, 420]},
                            "away": {"on": [228, 400], "off": [226, 400]}},
     }
