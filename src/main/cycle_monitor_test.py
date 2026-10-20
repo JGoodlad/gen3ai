@@ -285,6 +285,20 @@ def test_the_registered_outside_panel_names_frozen_baselines():
                 assert not b.era_checkout_only, m                         # playable at HEAD's architecture
 
 
+def test_outside_v2_is_six_distinct_in_band_end_state_lineages_and_v1_is_untouched():
+    """``outside_v2`` (2026-10-20, F-ED-29) is the design's SIX members: distinct runs, each a named baseline
+    and a MEASURED in-band score vs X26's P* and X34's T*; ``outside_v1`` keeps its one member (its rows are
+    keyed by the name, so it is never edited in place)."""
+    panels = M.load_panels()["panels"]
+    assert [m["id"] for m in panels["outside_v1"]["members"]] == ["production"]
+    mem = panels["outside_v2"]["members"]
+    assert len(mem) == 6
+    assert len({m["path"].split("/")[0] for m in mem}) == 6 and len({m["sha256"] for m in mem}) == 6
+    assert all(m["baseline"] == m["id"] and m["path"].startswith("rb_es_end2_s") for m in mem)
+    assert "production" in {m["id"] for m in mem}
+    assert all(m["in_band"].startswith("MEASURED") and "INSIDE" in m["in_band"] for m in mem)
+
+
 def test_a_member_file_resolves_absolute_or_run_relative(tmp_path):
     f = tmp_path / "x.zip"
     f.write_bytes(b"x")

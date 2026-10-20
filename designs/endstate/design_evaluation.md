@@ -27,6 +27,9 @@
 - **AMENDED 2026-10-19 (ORCHESTRATOR rulings on F-ED-26 / F-ED-27):** a cycling flag COUNTS for the plateau only
   when its SIZE on the recent window clears the 1.7 pp bar (§8.2 "The size bar"); the first outside panel,
   `outside_v1` (the `production` baseline alone), is REGISTERED (§8.2 "As built").
+- **AMENDED 2026-10-20 (ORCHESTRATOR ruling, F-ED-29):** the panel grows to the design's SIX members, `outside_v2` =
+  `production` + five more closing-test end-state seeds, every one measured IN the 15–85 % band (§8.2 "The registered
+  panel `outside_v2`"). `outside_v1` stays registered as it was.
 
 This doc is the SYSTEM: how eval evidence is produced, stored, scheduled and estimated. The population DECISIONS (promotion, eviction, plateau) live in [`design_league_decisions.md`](design_league_decisions.md). A build or decision that differs from this doc updates it and its Decision record in the same commit. Era context: [`era_plan_post_m5.md`](era_plan_post_m5.md). The evidence behind the numbers measured on banked data is in [`measurements/eval_design_2026-10-03/`](../research_state/measurements/eval_design_2026-10-03/README.md); the revision's simulations are in its `revision/` folder.
 
@@ -1244,11 +1247,50 @@ moves the frozen panel; a changed file is refused).
   mirrored pairs, a `kind: bot` opponent block keyed by the bot's name + source digest (U2's identity rule) — about
   one agent-day with its integration test. It buys nothing for today's runs: every roster bot scores 0.89–1.0
   against X26 at 280M and the X34 toy at 280M (`eval_results.jsonl`), outside the 15–85 % band.
-- **The proposals that would make the panel strong (not registered: outside the ruling's list):** the other seven
+- **The proposals that would make the panel strong (the first DONE 2026-10-20 as `outside_v2`, below):** the other
   closing-test end-state seeds (`rb_es_end2_s2001`…`s2008` finals: other lineages, HEAD's architecture, frozen) would
   give the six-member panel the design sized, at 6× the cost; a stronger outside member (a frozen node of ANOTHER
   long run, e.g. X26's 200M for X34-era runs) would fix the band. Each needs a baselines entry first (`main.baselines
   set`).
+
+**The registered panel `outside_v2` (2026-10-20, ORCHESTRATOR ruling on F-ED-29; `plateau_panels.json`).** The
+design sized the panel at SIX members; `outside_v1` had one. The same rule as `outside_v1`, applied to the closing
+test's other end-state seeds: `production` (`rb_es_end2_s2005`) + `outside_es_end2_s2001`, `s2002`, `s2003`, `s2006`,
+`s2007` (new named baselines, `main.baselines set … --reason "outside panel member (Tier-2, orchestrator
+2026-10-20)"`, each `main.baselines check --load`-verified to LOAD at HEAD). Seeds s2004 and s2008 are left out to hold
+six; the five were spread across the arm, never picked by score; every seed id is distinct. A NEW name, because a
+panel's rows are keyed by it; `outside_v1` is left as registered.
+- **The closing test's PRODUCTION-arm seeds cannot be members (FINDING).** `rb_es_prod_s2001`–`s2008` (config v153)
+  are REFUSED by the strict loader at HEAD (they record the legacy levers that legacy-deletion U1 / U3 deleted: "this
+  code cannot rebuild the forward that checkpoint trained"), although `main.prober.arch_status` reads them `current`
+  (it is record-only and never loads). So the panel is ONE arm: six lineages of the same recipe, not two recipes.
+- **BAND CHECK (F-ED-29), MEASURED 2026-10-20** with `main.h2h play-many`: each member as the PLAYER against X26's P*
+  (`rb_x26_s2601` @ 280M) and X34's T* (`rb_toy_ent_s4002_deep` @ 290M, a cross-architecture cell), 200 mirrored pairs
+  (400 games) per cell, greedy, CPU, `torch_threads 1`, none aborted. The member's score:
+
+  | member | vs P* (X26 280M) | vs T* (X34 290M) |
+  |---|---|---|
+  | `production` (s2005) | 28.8 % | 36.1 % |
+  | `outside_es_end2_s2001` | 26.1 % | 30.6 % |
+  | `outside_es_end2_s2002` | 28.0 % | 39.8 % |
+  | `outside_es_end2_s2003` | 25.9 % | 33.9 % |
+  | `outside_es_end2_s2006` | 28.9 % | 38.9 % |
+  | `outside_es_end2_s2007` | 31.9 % | 32.8 % |
+
+  **All twelve cells sit inside the band** (each cell's 95 % interval is ±4.2–4.9 pp, so the nearest to the 15 % edge,
+  25.9 %, is far from it). Read it as the PLATEAU REGION's band only: a run's EARLY nodes can beat a 15M policy
+  above 85 %, which is why the panel is read at a candidate plateau. Cells are in the member-as-player direction; the
+  run's node is the other side, at P* 68–74 % and T* 60–69 % against the members.
+- **Power (computed from the cells' own pair SDs).** Per member, SE(Δ_Elo) at 1,000 pairs per node =
+  √2 · (400/ln 10) · pair_sd / (√1000 · m(1−m)) = 10.5–12.3 Elo (the cells are at m = 0.26–0.40, off the centre where
+  the design's ≈ 10.2 holds). The equal-weight panel SE = √(Σ SE_i²) / 6 = 4.85 Elo (P* scale) / 4.57 Elo (T* scale), so
+  **P(PANEL FLAT | zero gain) = Φ(14/SE − 1.645) = 0.89 / 0.92 per check at 1,000 pairs**, ≈ 0.80 / 0.85 at two
+  consecutive checks (treated as independent), and 0.65 / 0.70 at the 500-pair non-candidate check; `outside_v1`
+  on the same arithmetic: 0.34. The design's ≈ 0.95 is reached only with six members exactly at m = 0.5.
+- **Cost (FINDING).** Six cells a check: 6 × 500 pairs = 6,000 games (12,000 at a candidate). This box measured
+  0.3–0.4 games/s for the production net on rule 5b's 3 shared cores under load (0.7 against the toy), so a check is
+  ~4–5 h here, not the 8–14 min × 6 the quoted 1.2–2 games/s would give. The band check itself took five
+  ≤ 45-min heavy-slot chunks (~3.5 h of play) and several hours of slot queueing. Budget it as an overnight CPU job, or give the panel a GPU window.
 
 ### 8.3 The signatures: deterministic, pre-registered
 
@@ -1618,7 +1660,10 @@ the public `opponent_builder` (the rows' `team_set`). `rust_eval.launch.run_seed
   1.1 pp of per-edge SD on the window, so a CONFIRMED single hole can read NEGLIGIBLE and not count — the ruling sizes DIFFUSE cycling; a
   per-item bar for (b) / (c) would be a further amendment. Pooling two checks' windows (Q9's ≈ 1.2 pp) or 1,000
   pairs per edge would narrow the band.
-- **F-ED-29 (the panel, 2026-10-19): `outside_v1` is one member of unverified band.** P(PANEL FLAT | zero gain) ≈
+- **F-ED-29 (the panel, 2026-10-19; RESOLVED IN PART 2026-10-20): `outside_v1` is one member of unverified band.** *Update
+  2026-10-20: `outside_v2` (six members) is registered and every member MEASURED in band (§8.2); P(FLAT | zero gain)
+  ≈ 0.89–0.92 per check. Left open: all six are ONE recipe at 15M (no different style of play), a check costs hours of
+  CPU, and the closing test's production-arm seeds do not load.* Original text: P(PANEL FLAT | zero gain) ≈
   0.38 a check, ≈ 0.15 twice, with one in-band member at 1,000 pairs; its band against X26's / X34's late nodes is
   unmeasured. The first panel tick measures it; the proposals in §8.2 "As built" would fix both.
 
@@ -1660,3 +1705,4 @@ the public `opponent_builder` (the rows' `team_set`). `rust_eval.launch.run_seed
 | 2026-10-19 | **U5 + U9 OFFLINE (meter-build worker, for the orchestrator)** | the cycle monitor and Tier 2 built OFFLINE on `main.h2h`'s engine: one `monitor_row` request per check in ONE family per run (indexed reads; `cycle_flag` joins `GROUP_SEQUENTIAL_KINDS`), decided only when every earlier row is complete, a SUSPECTED check decided after its top-up; signal (d) on the POINT matrix's LP Nash (posterior reported); the panel as a REGISTERED checkpoint set; a `PLATEAU_BUT_PANEL` status; a descriptive `ladder` read on the in-run snapshot ladder | waiting for U4's window (a pinned run cannot carry it; F-ED-19); the posterior support as the flag statistic (2·10⁶ LPs a check); Metamon / Kakuna as gating panel members (days a cell on CPU); one family per check (a check needs the earlier rows) | §2.5 / §8.2 "As built"; F-ED-24–F-ED-26 |
 | 2026-10-19 | **AMENDMENT: the size bar on a counted cycling flag (ORCHESTRATOR ruling on F-ED-27)** | the monitor's test unchanged; a SUSPECTED / CONFIRMED check COUNTS for the plateau only when its non-transitive size on the RECENT WINDOW (the last 8 checks' nodes: the complete dense-lag subgraph, 80M at Δ = 10M) is MATERIAL (one-sided 95 % lower bound > 1.7 pp, Q9's target); NEGLIGIBLE (upper bound < 1.7 pp) counts as NONE; the bar inside the interval is INCONCLUSIVE (rule 8). The size is the per-edge cyclic SD (the target's scale), its interval the noncentral-χ² inversion (Steiger & Lind; MacCallum et al.'s close-fit test). `gen3_plateau_t2_v2`; computed by the reader, no decision row changes | a window of the last 80M of STEPS (the same at Δ = 10M; a check count is what every row plays in full); the accumulated matrix's excess RMS (grows nothing but still mixes old history in); a size test with the bar as H0 alone (no NEGLIGIBLE call: a plateau would wait on power the window does not have); the excess weighted RMS as the scale (it under-reads an iid perturbation by √(df/E) ≈ 0.88 and is not the target's scale) | §8.2 "The size bar"; F-ED-27, F-ED-28; `measurements/cycle_monitor_retro_2026-10-19/` |
 | 2026-10-19 | **The first OUTSIDE PANEL, `outside_v1` (ORCHESTRATOR ruling on F-ED-26)** | the named baselines loadable at HEAD's architecture: `production` alone (the other ten are era-checkout-only), by run-relative path + sha256; ≈ 8–14 min of CPU a check | Kakuna / SmallRL (days a cell on CPU); Rust roster bots (need a bot cell on `main.h2h`, ≈ 1 agent-day, and all score 0.89–1.0: out of band); the seven other closing-test seeds (not named baselines: proposed, not registered) | §8.2 "As built"; F-ED-26, F-ED-29 |
+| 2026-10-20 | **The SIX-member OUTSIDE PANEL, `outside_v2` (ORCHESTRATOR ruling on F-ED-29)** | `production` + five more closing-test end-state seeds (`outside_es_end2_s2001`, `s2002`, `s2003`, `s2006`, `s2007`, each a new named baseline that strict-LOADS at HEAD), a NEW name so `outside_v1` and its rows stay as registered; every member MEASURED in band, 25.9–39.8 % as the player against X26 P* (280M) and X34 T* (290M), 200 mirrored pairs each; P(PANEL FLAT given zero gain) 0.89 / 0.92 per check at 1,000 pairs (from the cells' pair SDs), up from 0.34 | editing `outside_v1` in place (rows are keyed by the name); the closing test's production-arm seeds (refused by the strict loader at HEAD: legacy levers deleted; `arch_status` reads them current, record-only); the two remaining end-state seeds (the design sizes six); picking seeds by score | §8.2 "The registered panel `outside_v2`"; F-ED-29; `plateau_panels.json`; `baselines.json`; `cycle_monitor_test.py` |

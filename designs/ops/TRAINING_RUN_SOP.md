@@ -524,7 +524,7 @@ wake. Re-create it on the next GO, written to this contract.
   unaffected.
 - **A plateau STOP reads BOTH tiers** (2026-10-19): `python -m main.plateau status <run>` prints Tier 1, Tier 2 (the
   cycle monitor's `cycle_flag` verdict and the panel's, per check) and the TWO-TIER STATUS. `TIER1_PLATEAU` alone is
-  a CANDIDATE: stop on `TRUE_PLATEAU`; the registered panel is `outside_v1` (one member, `--panel outside_v1`), and a
+  a CANDIDATE: stop on `TRUE_PLATEAU`; the registered panel is `outside_v2` (six members, `--panel outside_v2`; `outside_v1`, its one-member predecessor, stays registered), and a
   stop on `PLATEAU_BUT_PANEL` must say "Tier 1 + the cycle monitor; no FLAT panel" in its record. A cycling flag
   counts only when its windowed size is MATERIAL (the size bar, 2026-10-19: `status` prints `size` and `counted`). Tier 2's rows come from
   `python -m main.cycle_monitor tick <run>` after each 10M checkpoint (CPU, rule 5b, under `mem_cap.sh`: the toy

@@ -1214,9 +1214,10 @@ python -m main.plateau status <run> [--panel NAME]             # Tier 1 + Tier 2
   `cycle_flag`), purpose `monitor`, the h2h protocol, the row's node set frozen in its spec; a check is decided only
   when every row up to it is complete (`WAITING` otherwise); one `cycle_flag` decision per check, which
   `python -m main.eval_ledger verify` re-derives. A SUSPECTED check plays a `monitor_topup` first.
-- **The panel:** a REGISTERED frozen checkpoint set (`designs/research_state/plateau_panels.json`: `outside_v1` =
-  {the `production` baseline}, ≈ 8–14 min of CPU a check; its band is unverified and one member reads FLAT rarely,
-  F-ED-29), one `panel` request per (node, panel), purpose `plateau`, 500 pairs per member (1,000 at a candidate:
+- **The panel:** a REGISTERED frozen checkpoint set (`designs/research_state/plateau_panels.json`: `outside_v2` =
+  six closing-test end-state seeds (`production` + five `outside_es_end2_s*` baselines), all measured IN the 15–85 %
+  band against X26's P* and X34's T*; ≈ 6 × the one-member cost a check (hours on the loaded box); P(FLAT | zero gain)
+  ≈ 0.89–0.92 per check; its one-member predecessor `outside_v1` stays registered, F-ED-29), one `panel` request per (node, panel), purpose `plateau`, 500 pairs per member (1,000 at a candidate:
   Tier 1 FLAT and the counted monitor NONE); Δ_panel in Elo, FLAT iff its upper one-sided 95 % bound < 14 Elo. Bots
   cannot be members (`main.h2h` plays checkpoints only); Metamon / Kakuna stay REPORTED milestones on `main.anchors`.
 - 🚨 **Cost.** The toy ≈ 15–20 games/s on rule 5b's cores (≈ 10 min a row); the production net ≈ 1.2–2 games/s

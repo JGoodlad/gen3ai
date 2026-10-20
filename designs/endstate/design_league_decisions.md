@@ -72,9 +72,10 @@ build or decision that differs updates this doc and its Decision record in the s
     top-ups, and the panel's cells) and writes one `cycle_flag` decision per check (NONE / SUSPECTED / CONFIRMED /
     INCONCLUSIVE); `python -m main.plateau status <run> [--panel NAME]` prints both tiers and the run's TWO-TIER
     STATUS (`TRANSITIVE_IMPROVEMENT` / `TRUE_PLATEAU` / `PLATEAU_BUT_PANEL` / `TREADMILL` / `CONTINUE`). **The
-    first outside panel, `outside_v1` = {the `production` baseline}, is registered (2026-10-19); bots cannot be
-    members** (`design_evaluation.md` F-ED-26, F-ED-29: one member of unverified band, so `TRUE_PLATEAU` is reachable
-    but unlikely; a stop on `PLATEAU_BUT_PANEL` must say "no FLAT panel"). **Amended 2026-10-19 (F-ED-27):** a
+    outside panel is `outside_v2` = six frozen end-state seeds, all measured IN the 15–85 % band, registered
+    2026-10-20 (its one-member predecessor `outside_v1` = {the `production` baseline} stays registered); bots cannot be
+    members** (`design_evaluation.md` F-ED-26, F-ED-29: at six members P(PANEL FLAT | zero gain) ≈ 0.89–0.92 per
+    check, so `TRUE_PLATEAU` is reachable; a stop on `PLATEAU_BUT_PANEL` must say "no FLAT panel"). **Amended 2026-10-19 (F-ED-27):** a
     cycling flag COUNTS only when its size on the recent window (the last 8 checks' nodes) is MATERIAL against the
     1.7 pp bar; a NEGLIGIBLE one counts as NONE, the bar inside the interval as INCONCLUSIVE. Detail:
     `design_evaluation.md` §2.5 and §8.2 "As built" / "The size bar".

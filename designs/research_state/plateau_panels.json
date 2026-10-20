@@ -1,6 +1,6 @@
 {
  "schema": "gen3_plateau_panels_v1",
- "note": "THE PLATEAU'S OUTSIDE PANELS (design_evaluation.md §8.2; read by main.cycle_monitor / main.plateau status --panel <name>). A panel is a FROZEN set of outside opponents (checkpoints of ANOTHER lineage or registry-named anchors, at an architecture main.h2h can pair with the run's), each scoring inside the 15-85 % band against the run's nodes when it was chosen. Every member names its file and sha256; a member whose file no longer hashes to it is REFUSED (a moved panel is a different panel). Add a panel by a declared rule and a ledger entry, never by editing a member in place: the panel's rows are keyed by its NAME.",
+ "note": "THE PLATEAU'S OUTSIDE PANELS (design_evaluation.md \u00a78.2; read by main.cycle_monitor / main.plateau status --panel <name>). A panel is a FROZEN set of outside opponents (checkpoints of ANOTHER lineage or registry-named anchors, at an architecture main.h2h can pair with the run's), each scoring inside the 15-85 % band against the run's nodes when it was chosen. Every member names its file and sha256; a member whose file no longer hashes to it is REFUSED (a moved panel is a different panel). Add a panel by a declared rule and a ledger entry, never by editing a member in place: the panel's rows are keyed by its NAME.",
  "panels": {
   "outside_v1": {
    "registered_on": "2026-10-19",
@@ -19,6 +19,69 @@
    ],
    "cost_per_check": "the newest node's cell, 500 mirrored pairs = 1,000 games (1,000 pairs = 2,000 games at a candidate, plus the W-back node's top-up to 1,000 pairs once); the W-back node's cell is reused. Production-net games on rule 5b's CPU (3 cores) run at 1.2-2 games/s (design_x26_readiness.md section 2.6; X26's Tier-1 rows): 8-14 min a check, 25-45 min at a candidate. On the toy (X34) the cross-architecture cell's cost is UNMEASURED (bounded above by the production rate).",
    "power": "ONE member: at zero true gain and 1,000 pairs per node in band (SE of the Elo delta ~10 Elo), PANEL FLAT (upper one-sided 95 % bound < 14 Elo) has probability ~0.39 per check, ~0.15 at two consecutive checks; the design's ~0.95 assumed six members. So this panel makes TRUE_PLATEAU REACHABLE, not likely: a PLATEAU_BUT_PANEL with the panel UNDECIDED is its common read at a true plateau."
+  },
+  "outside_v2": {
+   "registered_on": "2026-10-20",
+   "registered_by": "2026-10-20 eval-registry worker, ORCHESTRATOR ruling (Tier-2 panel to six members; F-ED-29)",
+   "rule": "outside_v1's rule (every frozen checkpoint that is (1) OUTSIDE every run it is read against, (2) loadable at HEAD's architecture today and strict-loaded by `main.baselines check --load`, (3) named in designs/baselines.json), applied to the closing test's other seeds, chosen by a stated rule and never by score: five end-state seeds spread across the arm (rb_es_end2_s2001, s2002, s2003, s2006, s2007) beside `production` (s2005); every seed id distinct; s2004 and s2008 left out to hold the design's six. The closing test's PRODUCTION-arm seeds (rb_es_prod_s2001-s2008, config v153) are REFUSED by the strict loader at HEAD (the legacy levers were deleted in legacy-deletion U1/U3; the record-only `main.prober.arch_status` still reads them 'current') and so cannot be members. A superset of outside_v1 under a NEW name (the panel's rows are keyed by its name; outside_v1 is left as registered).",
+   "members": [
+    {
+     "id": "production",
+     "baseline": "production",
+     "path": "rb_es_end2_s2005/final_model.zip",
+     "sha256": "4047f43806619825bb4054590662c7e47b16e67f69e59c3156a5da561c367c0b",
+     "num_timesteps": 15047521,
+     "outside": "another LINEAGE (the closing test's end-state seed s2005, a fresh 15M run at P_end2 62085750) at HEAD's architecture (gen3_mon_tied_gain_v1; strict-loaded by `main.baselines check --load`); frozen since 2026-10-12, in no run's self-play pool. NOT outside the RECIPE: the production recipe at 15M.",
+     "in_band": "MEASURED 2026-10-20 (member as player, 200 mirrored pairs, CPU, torch_threads 1, greedy; main.h2h play-many): 28.7 % vs X26 P* (280M) and 36.1 % vs X34 T* (290M): INSIDE the 15-85 % band against both. Band at the plateau nodes only: an early node of a run may score above 85 % against a 15M policy."
+    },
+    {
+     "id": "outside_es_end2_s2001",
+     "baseline": "outside_es_end2_s2001",
+     "path": "rb_es_end2_s2001/final_model.zip",
+     "sha256": "3ddcfcf7e495bfed11eae55f0c315d35a20cfa591610a2550b7910a27f897849",
+     "num_timesteps": 15047835,
+     "outside": "another LINEAGE (the closing test's end-state seed s2001, a fresh 15M run at P_end2 62085750) at HEAD's architecture (gen3_mon_tied_gain_v1; strict-loaded by `main.baselines check --load`); frozen since 2026-10-12, in no run's self-play pool. NOT outside the RECIPE: the production recipe at 15M.",
+     "in_band": "MEASURED 2026-10-20 (member as player, 200 mirrored pairs, CPU, torch_threads 1, greedy; main.h2h play-many): 26.1 % vs X26 P* (280M) and 30.6 % vs X34 T* (290M): INSIDE the 15-85 % band against both. Band at the plateau nodes only: an early node of a run may score above 85 % against a 15M policy."
+    },
+    {
+     "id": "outside_es_end2_s2002",
+     "baseline": "outside_es_end2_s2002",
+     "path": "rb_es_end2_s2002/final_model.zip",
+     "sha256": "01a6dd8deac5936d44b7d1f03a342f4f5bcf3b1c1a25106f61f40779e3779d1d",
+     "num_timesteps": 15047312,
+     "outside": "another LINEAGE (the closing test's end-state seed s2002, a fresh 15M run at P_end2 62085750) at HEAD's architecture (gen3_mon_tied_gain_v1; strict-loaded by `main.baselines check --load`); frozen since 2026-10-12, in no run's self-play pool. NOT outside the RECIPE: the production recipe at 15M.",
+     "in_band": "MEASURED 2026-10-20 (member as player, 200 mirrored pairs, CPU, torch_threads 1, greedy; main.h2h play-many): 28.0 % vs X26 P* (280M) and 39.8 % vs X34 T* (290M): INSIDE the 15-85 % band against both. Band at the plateau nodes only: an early node of a run may score above 85 % against a 15M policy."
+    },
+    {
+     "id": "outside_es_end2_s2003",
+     "baseline": "outside_es_end2_s2003",
+     "path": "rb_es_end2_s2003/final_model.zip",
+     "sha256": "8c0dd0a599f0c7a170a54dda076b77a3f191945aeac0917e965ffb63c45c4f09",
+     "num_timesteps": 15047265,
+     "outside": "another LINEAGE (the closing test's end-state seed s2003, a fresh 15M run at P_end2 62085750) at HEAD's architecture (gen3_mon_tied_gain_v1; strict-loaded by `main.baselines check --load`); frozen since 2026-10-12, in no run's self-play pool. NOT outside the RECIPE: the production recipe at 15M.",
+     "in_band": "MEASURED 2026-10-20 (member as player, 200 mirrored pairs, CPU, torch_threads 1, greedy; main.h2h play-many): 25.9 % vs X26 P* (280M) and 33.9 % vs X34 T* (290M): INSIDE the 15-85 % band against both. Band at the plateau nodes only: an early node of a run may score above 85 % against a 15M policy."
+    },
+    {
+     "id": "outside_es_end2_s2006",
+     "baseline": "outside_es_end2_s2006",
+     "path": "rb_es_end2_s2006/final_model.zip",
+     "sha256": "e692ee5ecf9a039d12344d5564b0b87b18df622476f1aaf0d3090b998d6f222b",
+     "num_timesteps": 15047567,
+     "outside": "another LINEAGE (the closing test's end-state seed s2006, a fresh 15M run at P_end2 62085750) at HEAD's architecture (gen3_mon_tied_gain_v1; strict-loaded by `main.baselines check --load`); frozen since 2026-10-12, in no run's self-play pool. NOT outside the RECIPE: the production recipe at 15M.",
+     "in_band": "MEASURED 2026-10-20 (member as player, 200 mirrored pairs, CPU, torch_threads 1, greedy; main.h2h play-many): 28.9 % vs X26 P* (280M) and 38.9 % vs X34 T* (290M): INSIDE the 15-85 % band against both. Band at the plateau nodes only: an early node of a run may score above 85 % against a 15M policy."
+    },
+    {
+     "id": "outside_es_end2_s2007",
+     "baseline": "outside_es_end2_s2007",
+     "path": "rb_es_end2_s2007/final_model.zip",
+     "sha256": "b9896df4899b4889444aba7cbfa306733f4534d244d6b324b36cf5f62ad1061f",
+     "num_timesteps": 15045685,
+     "outside": "another LINEAGE (the closing test's end-state seed s2007, a fresh 15M run at P_end2 62085750) at HEAD's architecture (gen3_mon_tied_gain_v1; strict-loaded by `main.baselines check --load`); frozen since 2026-10-12, in no run's self-play pool. NOT outside the RECIPE: the production recipe at 15M.",
+     "in_band": "MEASURED 2026-10-20 (member as player, 200 mirrored pairs, CPU, torch_threads 1, greedy; main.h2h play-many): 31.9 % vs X26 P* (280M) and 32.8 % vs X34 T* (290M): INSIDE the 15-85 % band against both. Band at the plateau nodes only: an early node of a run may score above 85 % against a 15M policy."
+    }
+   ],
+   "cost_per_check": "SIX cells instead of one: the newest node's cell is 6 x 500 mirrored pairs = 6,000 games a check (12,000 at a candidate, plus the W-back node's top-up once); the W-back node's cells are reused. At the production net's measured 0.3-0.4 games/s on rule 5b's 3 shared cores (2026-10-20, a loaded box; design_x26_readiness.md section 2.6 quotes 1.2-2) that is ~4-5 h a check on this box, 8-14 min x 6 at the quoted rate. A toy (X34-architecture) player's cells are cross-architecture (the engine's second slot group): UNMEASURED as a player; as an opponent T* ran 0.7 games/s.",
+   "power": "SIX members, in band (measured 2026-10-20): at zero true gain and 1,000 pairs per node, the per-member Elo-delta SE from the cells' own pair SDs is 10.5-12.3 Elo, so the equal-weight panel SE is 4.6-4.9 Elo and P(PANEL FLAT | zero gain) = Phi(14/SE - 1.645) = 0.89 against X26's P* scale (0.92 on X34's T* scale) per check; ~0.80-0.85 at two consecutive checks (checks treated as independent). The design's ~0.95 assumed SE(Delta) 10.2 per member exactly at m = 0.5; these members score 0.26-0.40, where the logit SE is larger. At 500 pairs (a non-candidate check) 0.65-0.70. ONE member (outside_v1): 0.34 at the same SEs."
   }
  }
 }
