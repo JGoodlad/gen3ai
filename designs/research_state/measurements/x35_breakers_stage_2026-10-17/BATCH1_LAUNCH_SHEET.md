@@ -5,8 +5,7 @@ toy R is FROZEN on the real T\*; every argv of the amended order (32 forks, the 
 HEAD `03b983be` (§4.3); nothing launched; every launch NEEDS THE ORCHESTRATOR'S GO.** X47 is a **kit arm**
 (`toy_x47`, F-LS-1 closed). The orchestrator has ruled **C1** (a), **C2** (X47 interleaved with its toy C0), **C3** (the
 toy arms run K9(b) `warn` under X34's ceilings), **C4** (batch 1 launches without R0) and every amendment of the
-[adversarial review](X35_BATCH1_REVIEW.md) (AM-1 to AM-7, the POOL check, the G-E readers); C5 and C6 are still open
-(§5). This sheet is
+[adversarial review](X35_BATCH1_REVIEW.md) (AM-1 to AM-7, the POOL check, the G-E readers); C6 is still open; C5 is RULED and DONE (§5). This sheet is
 what the Training session runs, in order, once X34 has stopped and the GPU window (the battery, then the X14 A/B) is
 over. The design is [`design_compute_efficiency.md`](../../../endstate/design_compute_efficiency.md)
 §5.6 (X35) and [`design_bot_ideas_screen.md`](../../../endstate/design_bot_ideas_screen.md) §2.1 (X47); the kit is
@@ -156,9 +155,9 @@ finished batch-1 arm PASSed K9(b) at its end (AM-6). The first GO also needs `--
 4. **The pin** carries every commit in [`x35_required_commits.txt`](x35_required_commits.txt): T54 `cdab9cfe`, B-D2
    `c1b0c1f0`, the forum-corpus lift `f9360870`, F-BI-2 `4df10e65`, B-GROW `24616919`, B-GROW × F-BI-2 `aa5feaf5`, T62
    `bd3126e0`, and the canary YARDSTICK fix `03b983be` (its code is `ee49f1f9`, `gen3_r1_yardstick_margin_v1`; `03b983be`
-   is the ship tip; all added 2026-10-19 except the first two; `launch_x35.sh` pre-check 2 enforces the file).
+   is the ship tip; all added 2026-10-19 except the first two; also `2be4595f` (K9(b)'s excluded-share ceiling judged only on >= 1,024 rows) and `52ac4829` (the supply guard no longer counts a fresh, never-seeded pool as starving; relevant to every X35 fork), added 2026-10-19 on the orchestrator's ruling; `launch_x35.sh` pre-check 2 enforces the file).
 5. **P\*'s sha256** is `814823c5…91ed`, and `python -m main.x35.refpop verify reference_population_production.json`
-   prints OK (it re-hashes P\*, the 8 archive nodes and R's 6 members, all in X26's run dir: never thin those 14 files,
+   prints OK (it re-hashes P\*, the 8 archive nodes, R's 7 members (the A-block, `production`, and T\*'s file in X34's run dir) and X26's run-dir files: never thin X26's 14 files or X34's T\* file,
    F-R3).
 6. **The toy side's R is frozen** before the first toy arm: **DONE 2026-10-19** on the real T\*
    (`reference_population_toy.json`, §4.2; `python -m main.x35.refpop verify` it prints OK). Not needed for the
@@ -359,7 +358,7 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
 
 ---
 
-## 5. The choices (the orchestrator's): C1, C2, C3 and C4 RULED; C5 and C6 still open
+## 5. The choices (the orchestrator's): C1, C2, C3, C4 and C5 RULED; C6 still open
 
 - **C1. The battery does not read ADOPT. RULED (orchestrator, 2026-10-19): (a)**, launch production at main HEAD with
   T62 pending the battery read (§0, §3). The registered rule had said FP32_ALT, which does not exist (§3).
@@ -393,18 +392,21 @@ and `validate_batch1.sh` prints `call=…STANDIN…` on every toy line it builds
 - **C4. R0** (the best responder of P\*, queue #0 of STAGED_PLAN §4) has no argv (F27). **RULED (orchestrator,
   2026-10-19): launch batch 1 without it**: A1 / C0 / D1 / A2 do not read it. It is A6's trigger and the R2 baseline, so
   stage its argv before the A3 / A6 batch.
-- **C5. The production R's X-block** (refpop README F-R1) **STILL OPEN, its facts updated 2026-10-19**: it has one
-  other-lineage member (`production`), because T\* did not exist when it was frozen. **T\* exists now** (290M, sha256
-  `cfa7f7be…a22965e7`). (a) Keep R as frozen. (b) Re-freeze with T\* as a second X member BEFORE the first production arm:
-  the old file moves aside (R is write-once; `launch_x35.sh` reads the canonical name) and a P\*-vs-T\* band cell is
-  played on CPU. **The toy freeze's cell cannot be reused as it stands:** it has T\* as the PLAYER, and `refpop freeze
-  --band-ledger` matches `player == the freeze's P*` (checked: `_band_from_ledger` returns no cell for the production
-  orientation), so (b) needs either a second cell with P\* as the player (≈ 14 min of one CPU lane; the toy cell took
-  14.1 min) or a `--band-json` cell that DECLARES score = 1 − 0.4160 = 0.5840 (an assumption of exact symmetry, not a
-  measurement). Either way T\* would be inside the band (the toy cell reads 0.416). **Recommendation: (b) if a P\*-player
-  cell can be played before the launch window; otherwise (a)**, because R cannot change once an arm exists (pre-check 7),
-  and F-R2's own-lineage lean (5 of 6 members are X26's own nodes) is the read's main weakness. The pin / pool / toy
-  record do not depend on this choice.
+- **C5. The production R's X-block. RULED and DONE (orchestrator, 2026-10-19): (b), MEASURED rather than assumed.** A
+  P\*-player band cell was played, P\* vs T\* (X34 @ 290,000,087), 500 mirrored pairs / 1,000 games, greedy vs greedy,
+  reveal off, CPU eager, a cross-architecture cell on one engine (regime `adfdbee824c9eb0a`, the same as the other two
+  band cells): **0.5905, 95 % [0.5605, 0.6205]**, W/L/D 588 / 407 / 5, pentanomial [80, 1, 247, 2, 170]. The toy
+  freeze's T\*-player cell read 0.4160, so the exact complement would be 0.5840: the measured score is 0.0065 above it,
+  0.3 of a standard error of the difference (each cell's SE is about 1.5 pp, so the difference's is about 2.2 pp), so the two orientations agree within noise; the
+  freeze used the measured cell. `tstar` is KEPT (0.2095 below the band's upper edge 0.80, 0.3905 above its lower edge; nowhere near
+  rule 8's 1e-9). The old file moved aside (`git mv`) to
+  [`reference_population_production_PRE_C5.json`](reference_population_production_PRE_C5.json) (it still verifies OK,
+  history, not read by `launch_x35.sh`), and `refpop freeze --band-ledger` wrote the canonical
+  `reference_population_production.json`: **7 members (A-block 280 / 270 / 80 / 140 / 210M, X `production`, X `tstar`),
+  content sha256 `cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519`**, frozen 2026-10-20T06:51:59Z
+  (2026-10-19 23:51 PDT), `tool_commit` `0fee8fd15`; `verify` OK on it, on the PRE_C5 file and on the toy file. Own-lineage
+  share of the equal-weight S is now 5 of 7 (F-R2's lean is lighter). Write-up: production README §6. R still
+  predates every `rb_x35*` directory (pre-check 7). The pin / pool / toy record do not depend on this choice.
 - **C6. X44 between the blocks.** The bot screen ranks X44 (≈ 10.4 GPU-h) above the toy calibration and X47. It is its
   own unit. Running it between the production and toy blocks delays the toy block, but changes no batch-1 pin (the toy
   block has its own C0). Not decided here.

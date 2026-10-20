@@ -96,7 +96,7 @@ Full hashes are in the frozen file.
   as a second X member) it finds NO cell (checked: `_band_from_ledger` returns `{'tstar': None}`). C5 needs a second
   cell with P\* as the player (≈ 14 min of one CPU lane), or a `--band-json` cell that declares score = 1 − 0.4160 =
   0.5840 (`main.h2h` draws the same team pairs in either orientation by its default schedule key; whether the battle
-  draws coincide, so that the two scores are exact complements, was not checked: the symmetry is an assumption). Not done here: C5 is the orchestrator's open choice.
+  draws coincide, so that the two scores are exact complements, was not checked: the symmetry is an assumption). **Since done (ruling C5, 2026-10-19):** the P\*-player cell was played and measured (0.5905 [0.5605, 0.6205]) and the production R re-frozen with T\* as a second X member: [`../x35_refpop_freeze_2026-10-19/README.md`](../x35_refpop_freeze_2026-10-19/README.md) §6.
 - **F-TR4, the toy side's R is now frozen, so pre-check 7 binds the toy side too.** R must predate every `rb_x35*` run
   directory; this file's `frozen_at_epoch` is 1792477310. A toy arm launched later is fine; nothing in this unit
   creates an `rb_x35*` directory.

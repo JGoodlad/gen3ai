@@ -1,0 +1,21 @@
+[mem_cap] cap 16.00 GB (swap 0) · unit gen3ai-capped-bash-1505743.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+=== 2026-10-19T23:35:54-07:00 band cells; code /home/goodlad/dev/gen3ai-wt/x35-c5 at 0fee8fd15f19a2b80633ca112781e0f001c1a503
+[h2h] play-many: 1 cell(s) x 500 pairs in batches of 50; 1 with batches to play (10 batch(es)), 0 already recorded; purpose ab, family x35_band, request x35_band_production under /home/goodlad/.cache/gen3ai/x35_refpop/ledger
+[h2h] pre-flight: 1 cell(s), 2 checkpoint(s) — 2 architecture(s): eval declared from rb_x26_s2601@280000170 (slots ['player']); eval_b declared from rb_toy_ent_s4002_deep@290000087 (slots ['opponent']); eval core(s) for (player group, opponent group) [(0, 1)] in 11.3s
+🦀 [ENV CORE BUILD] release — this checkout's src/rust_env built in 0.0 s (/home/goodlad/dev/gen3ai-wt/x35-c5/src/rust_env/target/release)
+[h2h] engine up in 12.4s: rb_x26_s2601@280000170 vs rb_toy_ent_s4002_deep@290000087; 64 envs, T2 eager on cpu; 2 slot group(s) [('eval', 1), ('eval_b', 1)], 1 eval core(s); regime adfdbee824c9eb0a
+[h2h] cell 1/1: rb_x26_s2601@280000170 vs rb_toy_ent_s4002_deep@290000087 — 10 batch(es) to play, 0 recorded; request x35_band_production; swap 0.00s
+[h2h] batch 1/10: 50 pairs / 100 games in 150.1s (0.67 games/s); W/L/D 58/40/2; pair counts [7, 0, 27, 0, 16]; near-tie games 0; digest 1370c2791139
+[h2h] batch 2/10: 50 pairs / 100 games in 49.4s (2.02 games/s); W/L/D 54/46/0; pair counts [11, 0, 24, 0, 15]; near-tie games 0; digest 2e3788f7aad3
+[h2h] batch 3/10: 50 pairs / 100 games in 61.9s (1.62 games/s); W/L/D 56/44/0; pair counts [10, 0, 24, 0, 16]; near-tie games 0; digest 4df6f9633a55
+[h2h] batch 4/10: 50 pairs / 100 games in 68.3s (1.46 games/s); W/L/D 61/39/0; pair counts [4, 0, 31, 0, 15]; near-tie games 0; digest 892ef6b5c602
+[h2h] batch 5/10: 50 pairs / 100 games in 90.0s (1.11 games/s); W/L/D 67/32/1; pair counts [5, 0, 22, 1, 22]; near-tie games 0; digest ffd4537926f4
+[h2h] batch 6/10: 50 pairs / 100 games in 94.9s (1.05 games/s); W/L/D 65/33/2; pair counts [4, 1, 24, 1, 20]; near-tie games 0; digest 16ead217de83
+[h2h] batch 7/10: 50 pairs / 100 games in 71.4s (1.40 games/s); W/L/D 56/44/0; pair counts [10, 0, 24, 0, 16]; near-tie games 0; digest bae19aa1ff6c
+[h2h] batch 8/10: 50 pairs / 100 games in 100.7s (0.99 games/s); W/L/D 63/37/0; pair counts [6, 0, 25, 0, 19]; near-tie games 0; digest e846a1e2c901
+[h2h] batch 9/10: 50 pairs / 100 games in 129.6s (0.77 games/s); W/L/D 57/43/0; pair counts [9, 0, 25, 0, 16]; near-tie games 0; digest 3861353b0776
+[h2h] batch 10/10: 50 pairs / 100 games in 98.5s (1.01 games/s); W/L/D 51/49/0; pair counts [14, 0, 21, 0, 15]; near-tie games 0; digest aca5d1a34e11
+rb_x26_s2601@280000170 vs rb_toy_ent_s4002_deep@290000087: score 59.05% [56.05, 62.05] (pair-clustered 95%), SE 1.532 pp over 500 pairs / 1000 games; W/L/D 588/407/5; pentanomial [80, 1, 247, 2, 170]; 1.09 games/s
+{"cells": [{"batches": 10, "d": 5, "devices": ["cpu/eager"], "games": 1000, "games_per_s": 1.0932307154101804, "l": 407, "near_tie_decisions": 0, "near_tie_games": 0, "opponent": "rb_toy_ent_s4002_deep@290000087", "opponent_sha256": "cfa7f7bee7b7a43959f496ce6d5a34556bae914de9c80f90f9342a05a22965e7", "pair_counts": [80, 1, 247, 2, 170], "pair_sd": 0.3426654187080405, "pairs": 500, "player": "rb_x26_s2601@280000170", "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed", "purpose": ["ab"], "regime_id": "adfdbee824c9eb0a", "score": 0.5905, "score_ci95": [0.5604941027262973, 0.6205058972737028], "se_pp": 1.5324463395392136, "w": 588, "wall_s": 914.7199999999999, "win_rate": 0.588}], "engine": {"cells": [{"cell": "rb_x26_s2601@280000170 vs rb_toy_ent_s4002_deep@290000087", "load_s": 22.867, "play_s": 915.002, "rows": 10, "set_cell_s": 0.0}], "decl": {"combos": [[0, 1]], "groups": [{"fingerprint": "18ba1ba0b8e5", "name": "eval", "roles": ["player"], "source": "rb_x26_s2601@280000170"}, {"fingerprint": "fa633628241e", "name": "eval_b", "roles": ["opponent"], "source": "rb_toy_ent_s4002_deep@290000087"}]}, "preflight_s": 11.348, "startup_s": 12.405}}
+=== 2026-10-19T23:51:38-07:00 DONE
+[mem_cap] done: gen3ai-capped-bash-1505743.scope exit 0 · peak 0.82 GB of cap 16.00 GB (5%) · not OOM-killed

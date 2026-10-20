@@ -6,7 +6,10 @@
 `python -m main.x35.refpop verify` on it prints OK. No X35 arm exists. Nothing was launched. The **toy side's R was NOT
 frozen at this freeze**, because T\* did not exist yet (F-R1); **it has since been frozen on the real T\* (X34 @ 290M,
 2026-10-19, later the same day): [`../x35_toy_refpop_freeze_2026-10-19/README.md`](../x35_toy_refpop_freeze_2026-10-19/README.md)**.
-This production R is unchanged: it still has ONE X member (adding T\* is the open choice C5).
+**UPDATE, ruling C5 (same night, §6): this production R was RE-FROZEN with T\* as a second X member** (7 members, content
+sha256 `cef0960e…e4519`); the file described in §1-§5 is kept as `reference_population_production_PRE_C5.json` (history,
+content `39bae18f…5bec0`). §1-§5 below describe that first freeze and stay true of its A-block, archive and `production`
+member.
 
 - **The rule:** [`design_compute_efficiency.md`](../../../endstate/design_compute_efficiency.md) §5.6.4.
 - **The tool:** `src/main/x35/refpop.py` (T55, `b18684a3`), run from a worktree at `82858f43` (that is the file's
@@ -107,3 +110,35 @@ The run went beside the live X26 and the hidden-info maturity battery's 2 slots,
 - **F-R6, the archive's tie rule moved two nodes down.** N_2 at 65M goes to 60M and N_6 at 195M goes to 190M, under
   the tool's exact-rational "ties down". So does mid(N_4, N_5) at 145M, which goes to 140M. All three are as F25
   declared. They are reported because they differ from naive rounding.
+
+## 6. C5: the re-freeze with T\* as a second X member (2026-10-19, orchestrator ruling)
+
+- **The cell (measured, not assumed symmetric):** P\* (X26 @ 280,000,170, the PLAYER) vs T\* (X34 @ 290,000,087, sha256
+  `cfa7f7be…a22965e7`), 500 mirrored pairs / 1,000 games, greedy vs greedy, reveal off, CPU eager, one engine serving the
+  two architectures (fingerprints for production and toy; regime `adfdbee824c9eb0a`, the same as the other two band
+  cells): **0.5905, 95 % [0.5605, 0.6205]** (pair-clustered), SE 1.532 pp, W/L/D 588 / 407 / 5, pentanomial
+  [80, 1, 247, 2, 170]. The toy freeze's T\*-player cell read 0.4160 (so the exact complement is 0.5840): the two
+  orientations differ by 0.0065 = 0.3 SE of the difference. **KEPT** (0.2095 below the upper edge, nowhere near rule 8).
+  Evidence: [`band_cell_tstar_c5.json`](band_cell_tstar_c5.json), [`play_band_c5.log`](play_band_c5.log) (all 10 batches
+  with digests), [`play_band_c5.sh`](play_band_c5.sh) (`play_band.sh` without its `family-register`).
+- **The ledger:** the cell is in the SCRATCH ledger `~/.cache/gen3ai/x35_refpop/ledger`, family `x35_band`, request
+  `x35_band_production`: the SAME request as the `production` cell, so one `--band-ledger` read decides both X members.
+  Nothing was written under `models/`.
+- **The freeze:** the old file moved aside (`git mv`) to `reference_population_production_PRE_C5.json`, then
+  `refpop freeze --side production --pstar <P*> --archive-dir models/rb_x26_s2601/checkpoints --x production=baseline:production
+  --x tstar=<T* zip in rb_toy_ent_s4002_deep/checkpoints> --band-ledger … --band-family x35_band --band-request
+  x35_band_production`, run at `tool_commit` `0fee8fd15`. **7 members: A-block `x26_pstar` / `x26_270m` / `x26_080m` /
+  `x26_140m` / `x26_210m`, X `production` (0.6935) and X `tstar` (0.5905); content sha256
+  `cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519`**, frozen 2026-10-20T06:51:59Z. `refpop verify` is OK
+  on it, on the PRE_C5 file and on the toy file. The archive, A-block and P\* are byte-identical to the first freeze.
+- **Cost:** 1,000 games, 17.2 min wall (23:34 -> 23:51 PDT, 1.09 games/s on one lane, `--threads 1 --torch-threads 1`),
+  `nice -n 19 taskset -c 5-7,13-15 scripts/ops/mem_cap.sh 16`, `CUDA_VISIBLE_DEVICES=""`, peak 0.82 GB; about 0.29 CPU
+  lane-hours.
+- **F-C5-1, F-R2 is lighter:** 5 of the 7 members are X26's own nodes (was 5 of 6).
+- **F-C5-2, the production R now depends on one X34 file:** T\*'s `checkpoint_290000087_steps.zip` in
+  `models/rb_toy_ent_s4002_deep/checkpoints/` (it is already the toy R's `pstar`, F-TR1); `verify` re-hashes it at every
+  launch.
+- **F-C5-3, the family-register step was dropped:** family `x35_band` was registered at the first freeze's commit
+  (`82858f43`), and `family-register` refuses a re-register at another commit ("other terms"). The second cell is the same
+  family and request, so it only plays.
+- **F-C5-4, the cell's T\* arch record is the toy cell's copy** (`~/.cache/gen3ai/x35_refpop/tstar/…`, F-TR2).

@@ -1,0 +1,81 @@
+{
+    "cells": [
+        {
+            "batches": 10,
+            "d": 5,
+            "devices": [
+                "cpu/eager"
+            ],
+            "games": 1000,
+            "games_per_s": 1.0932307154101804,
+            "l": 407,
+            "near_tie_decisions": 0,
+            "near_tie_games": 0,
+            "opponent": "rb_toy_ent_s4002_deep@290000087",
+            "opponent_sha256": "cfa7f7bee7b7a43959f496ce6d5a34556bae914de9c80f90f9342a05a22965e7",
+            "pair_counts": [
+                80,
+                1,
+                247,
+                2,
+                170
+            ],
+            "pair_sd": 0.3426654187080405,
+            "pairs": 500,
+            "player": "rb_x26_s2601@280000170",
+            "player_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+            "purpose": [
+                "ab"
+            ],
+            "regime_id": "adfdbee824c9eb0a",
+            "score": 0.5905,
+            "score_ci95": [
+                0.5604941027262973,
+                0.6205058972737028
+            ],
+            "se_pp": 1.5324463395392136,
+            "w": 588,
+            "wall_s": 914.7199999999999,
+            "win_rate": 0.588
+        }
+    ],
+    "engine": {
+        "cells": [
+            {
+                "cell": "rb_x26_s2601@280000170 vs rb_toy_ent_s4002_deep@290000087",
+                "load_s": 22.867,
+                "play_s": 915.002,
+                "rows": 10,
+                "set_cell_s": 0.0
+            }
+        ],
+        "decl": {
+            "combos": [
+                [
+                    0,
+                    1
+                ]
+            ],
+            "groups": [
+                {
+                    "fingerprint": "18ba1ba0b8e5",
+                    "name": "eval",
+                    "roles": [
+                        "player"
+                    ],
+                    "source": "rb_x26_s2601@280000170"
+                },
+                {
+                    "fingerprint": "fa633628241e",
+                    "name": "eval_b",
+                    "roles": [
+                        "opponent"
+                    ],
+                    "source": "rb_toy_ent_s4002_deep@290000087"
+                }
+            ]
+        },
+        "preflight_s": 11.348,
+        "startup_s": 12.405
+    }
+}

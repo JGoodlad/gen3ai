@@ -115,9 +115,9 @@
    "step": 260000235
   }
  ],
- "content_sha256": "39bae18f9c0473372e0d3061f89201b6da0374c9788c2620b864924aa615bec0",
- "frozen_at": "2026-10-19T08:22:55.571317+00:00",
- "frozen_at_epoch": 1792398175,
+ "content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519",
+ "frozen_at": "2026-10-20T06:51:59.243399+00:00",
+ "frozen_at_epoch": 1792479119,
  "members": [
   {
    "block": "A",
@@ -154,6 +154,12 @@
    "label": "production",
    "path": "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2005/final_model.zip",
    "sha256": "4047f43806619825bb4054590662c7e47b16e67f69e59c3156a5da561c367c0b"
+  },
+  {
+   "block": "X",
+   "label": "tstar",
+   "path": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep/checkpoints/checkpoint_290000087_steps.zip",
+   "sha256": "cfa7f7bee7b7a43959f496ce6d5a34556bae914de9c80f90f9342a05a22965e7"
   }
  ],
  "pstar": {
@@ -177,7 +183,7 @@
  },
  "schema": "x35_reference_population_v1",
  "side": "production",
- "tool_commit": "82858f43393695c97412480c7e0aad57be502b9a",
+ "tool_commit": "0fee8fd15f19a2b80633ca112781e0f001c1a503",
  "x_block": [
   {
    "band_n_pairs": 500,
@@ -187,6 +193,15 @@
    "label": "production",
    "path": "/home/goodlad/dev/gen3ai/models/rb_es_end2_s2005/final_model.zip",
    "sha256": "4047f43806619825bb4054590662c7e47b16e67f69e59c3156a5da561c367c0b"
+  },
+  {
+   "band_n_pairs": 500,
+   "band_score": 0.5905,
+   "excluded_because": null,
+   "kept": true,
+   "label": "tstar",
+   "path": "/home/goodlad/dev/gen3ai/models/rb_toy_ent_s4002_deep/checkpoints/checkpoint_290000087_steps.zip",
+   "sha256": "cfa7f7bee7b7a43959f496ce6d5a34556bae914de9c80f90f9342a05a22965e7"
   }
  ]
 }
