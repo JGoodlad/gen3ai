@@ -166,7 +166,8 @@ def _free_gib(path: Path) -> float:
 
 def check(arm: str, pin_spec: str, models_dir: Path, scratch: Path, battery_cells: Path | None,
           prove: bool = False) -> str:
-    """CPU only (the caller exports CUDA_VISIBLE_DEVICES=""). Nothing is launched and nothing is created under the
+    """CPU only (the caller exports CUDA_VISIBLE_DEVICES="", lifted only for the launcher's --dry-run, which must see the
+    card to pass its CUDA-visibility preflight). Nothing is launched and nothing is created under the
     archive: the launcher's own --dry-run runs against an EMPTY SCRATCH dir (it refuses a $GEN3AI_MODELS_DIR that does
     not exist, and the real one is created by the run)."""
     pin, ckpt = preconditions(arm, pin_spec, models_dir, battery_cells)
@@ -179,8 +180,12 @@ def check(arm: str, pin_spec: str, models_dir: Path, scratch: Path, battery_cell
     if ca.returncode != 0 or "this command still launches" not in ca.stdout:
         raise ValueError(f"checkargs refused the {arm} argv (rc {ca.returncode}): {(ca.stdout + ca.stderr)[-900:]}")
     scratch.mkdir(parents=True, exist_ok=True)
+    # the launcher's --dry-run must SEE the card: its CUDA-visibility preflight (d812e78c4) refuses a --device cuda launch
+    # under an empty CUDA_VISIBLE_DEVICES, dry run included, so the export above failed both X14 cells by construction
+    # (2026-10-20). The dry run creates nothing and opens no CUDA context; checkargs and the rest stay CPU-only.
+    dr_env = {k: v for k, v in env.items() if k != "CUDA_VISIBLE_DEVICES"}
     dr = subprocess.run([_py(), "-m", "main.launcher", "--dry-run", *argv], cwd=str(ROOT), capture_output=True,
-                        text=True, check=False, timeout=600, env={**env, "GEN3AI_MODELS_DIR": str(scratch)})
+                        text=True, check=False, timeout=600, env={**dr_env, "GEN3AI_MODELS_DIR": str(scratch)})
     if dr.returncode != 0 or "this command would launch" not in dr.stdout:
         raise ValueError(f"launcher --dry-run: the {arm} command would NOT launch (rc {dr.returncode}): "
                          f"{(dr.stdout + dr.stderr)[-1200:]}")
