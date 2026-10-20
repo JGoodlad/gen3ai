@@ -1,0 +1,73 @@
+{
+ "ALPHA": 89.125094,
+ "forum": {
+  "alpha_star": 316.227766,
+  "corpus_teams": 2424,
+  "curve": {
+   "0.001": -10.08587,
+   "0.003162": -9.61776,
+   "0.01": -9.15024,
+   "0.031623": -8.68488,
+   "0.1": -8.22591,
+   "0.316228": -7.7847,
+   "1": -7.38422,
+   "10": -6.8027,
+   "100": -6.54734,
+   "1000": -6.53781,
+   "10000": -6.60547,
+   "3.16228": -7.05189,
+   "31.6228": -6.63699,
+   "316.228": -6.52107,
+   "3162.28": -6.5723
+  },
+  "mean_logp_at_alpha_1": -7.38422,
+  "mean_logp_at_star": -6.52107,
+  "mean_logp_b_only": -6.6722,
+  "median_n": 1.0,
+  "samples_used": 3996,
+  "share_covers_U": 0.1499,
+  "share_n_zero": 0.4432,
+  "skip_out_of_pool": 4
+ },
+ "grid": [
+  0.001,
+  10000.0,
+  141
+ ],
+ "ladder": {
+  "alpha_star": 89.125094,
+  "corpus_teams": 22813,
+  "curve": {
+   "0.001": -7.69475,
+   "0.003162": -7.38185,
+   "0.01": -7.0694,
+   "0.031623": -6.75849,
+   "0.1": -6.45223,
+   "0.316228": -6.15891,
+   "1": -5.89556,
+   "10": -5.5355,
+   "100": -5.4317,
+   "1000": -5.53451,
+   "10000": -5.73686,
+   "3.16228": -5.68344,
+   "31.6228": -5.45325,
+   "316.228": -5.46264,
+   "3162.28": -5.63206
+  },
+  "mean_logp_at_alpha_1": -5.89556,
+  "mean_logp_at_star": -5.43134,
+  "mean_logp_b_only": -6.02221,
+  "median_n": 4.0,
+  "samples_used": 4000,
+  "share_covers_U": 0.36,
+  "share_n_zero": 0.368,
+  "skip_out_of_pool": 0
+ },
+ "n_fit": 4000,
+ "registered_rule": "\u03bb = n / (n + ALPHA), ALPHA = the LADDER fit's argmax; used by C_ladder AND C_forum_strict. The forum fit is descriptive.",
+ "salt": "ws_stage1_alpha_v1:",
+ "schema": "ws_stage1_alpha_fit_v1",
+ "sha256_of_this_script": "8863414f49d2588dcce7a1d4b261eeec49027c497d3da1fcf110c8cf44cf9f18",
+ "smogon_alpha_b": 0.05,
+ "wall_s": 17.0
+}

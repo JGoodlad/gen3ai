@@ -106,3 +106,19 @@ def test_sequential_halving_minimum_one_sample_per_survivor():
     req = sh.next_round()
     assert req == {a: 1 for a in range(8)}       # ⌊8 / (3·8)⌋ = 0 → 1 each
     assert sh.rounds == math.ceil(math.log2(8))
+
+
+def test_world_weights_normalise_the_likelihoods():
+    w = rules.world_weights([math.log(1 / 16), math.log(4 / 16), 0.0], 3)
+    assert w.sum() == pytest.approx(1.0)
+    assert w.tolist() == pytest.approx([1 / 21, 4 / 21, 16 / 21])
+    # only the first k worlds are searched, and the weights renormalise over them
+    assert rules.world_weights([0.0, math.log(0.5), -5.0], 2).tolist() == pytest.approx([2 / 3, 1 / 3])
+
+
+def test_world_weights_seed_dice_are_uniform_and_defects_raise():
+    assert rules.world_weights([], 4).tolist() == [0.25] * 4
+    with pytest.raises(ValueError):
+        rules.world_weights([0.0], 2)                     # fewer weights than worlds
+    with pytest.raises(ValueError):
+        rules.world_weights([0.0, -math.inf], 2)          # an infeasible world is never returned

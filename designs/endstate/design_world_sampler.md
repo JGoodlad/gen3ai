@@ -3,7 +3,15 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this doc
 updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-19, latest): F1 TIER A BUILT, behind `WorldSampler(dice="rolls")`, default OFF (§3.3.1, §7 F1).**
+**Status (2026-10-19, latest): STAGE 1 REGISTERED and RUNNING (§6.2).** The sampler ablation with playouts is
+pre-registered (`measurements/world_sampler_stage1_2026-10-19/PREREGISTRATION.md`) on the 287 maturity LEAN states at
+X26 225M: B, C_ladder, C_forum_strict, C_pool and NS against F_legal (F at HEAD, F2's rule on), plus F_off (the legality
+rule alone) and F_rolls (F1 tier A, read uniform and likelihood-weighted) as secondaries. The corpus backoff's α is
+fitted on the ladder corpus (89.1); the playouts run at X26's pin + the damage-roll control, so a rolls world plays as
+its gate accepted it; a detached runner crawls one heavy job at a time to a registered stop 24 h after launch. No
+number yet. Search can now read the worlds' weights (`SearchConfig(weights="likelihood")`, default uniform).
+
+**Status (2026-10-19): F1 TIER A BUILT, behind `WorldSampler(dice="rolls")`, default OFF (§3.3.1, §7 F1).**
 Each damage roll of a world's prefix replay may take any roll that prints what the searched side saw, the dice stream
 kept aligned, and each world carries a likelihood weight. Measured before building: today's screen rejects 9.0 % of
 its candidates that tier A accepts (2.7× the acceptances, 37 of 40 random states). On 60 rebuilt states it cuts the
@@ -736,7 +744,21 @@ where the rule rejected any draw, plus controls.
 **Not read here, and why.** The PLATEAU bank's states are not read: they belong to the plateau step's pending
 registered read (`design_hidden_info_binding.md` §12.13.7), so reading even their inputs before it would muddy it.
 
-### 6.2 Stage 1: the sampler ablation with playouts (DESIGNED, ready to register; not run)
+### 6.2 Stage 1: the sampler ablation with playouts (REGISTERED 2026-10-19; RUNNING)
+
+**Registered** in `measurements/world_sampler_stage1_2026-10-19/PREREGISTRATION.md`, which fixes what this section
+leaves open and adds the day's builds. In short:
+- **F_legal** (F at HEAD) is the baseline of record. **F_off** (HEAD with the legality rule off) separates the rule
+  from the Hidden Power fill, so F_legal − F_off is the legality rule's own effect. **F_rolls** reads tier A,
+  uniform and likelihood-weighted. All three are SECONDARY.
+- **α = 89.1**, fitted leave-one-team-out on the ladder corpus. NS keeps stage 0's λ_s = n_s / (n_s + 1).
+- A seen mon's Hidden Power inclusion and type follow F_legal's screen.
+- C_pool uses the pool **as X26's pin packed it**: the Hidden Power refactor re-packs 34 of the 719 teams (§7 F9).
+- A fifth verdict, **HURTS**, is added.
+- Each arm's TODAY is checked against the exact-world mass of **its own** worlds.
+- The read is made once: at `QUEUE_DONE`, or at the stop 24 h after launch, on the done prefix of a seeded order.
+
+The design as written before the registration:
 
 **Question.** Does any candidate sampler put enough weight on the truth to make honest search pay, and does stage 0's
 exact-world mass predict it?
@@ -841,8 +863,10 @@ itself (F2, 2026-10-19, `world_legality`): every arm through `WorldSampler` gets
   - **Tier B is not built:** the crit roll, speed ties, a dice item / ability that did not trigger and the pre-root
     counters are still the truth's dice.
   - **The default is still `seed`.** Switching it changes every honest read and is the next study's call (stage 1).
-  - **Search does not read the weights yet.** It averages its worlds uniformly; the worlds are draws from the prior
-    restricted to the consistent set, so the posterior needs the weights (mild here: ESS 7.3 of 8).
+  - **Search reads the weights only on request** (BUILT 2026-10-19 for stage 1): `SearchConfig(weights="likelihood")`
+    averages each action's leaves by the self-normalised `rules.world_weights(Worlds.log_w)`; the default stays
+    uniform, and halving refuses it. The worlds are draws from the prior restricted to the consistent set, so the
+    posterior needs the weights (mild here: ESS 7.3 of 8). Stage 1 reads F_rolls both ways.
   - **The choice inside the consistent set prefers the stream's roll**, so a matched world carries the truth's hidden
     exact HP after a site whenever the truth's roll fits it (the same class as today's true-dice leak). The weight is
     the likelihood along the path taken, not marginalised over the set's other rolls.
@@ -903,6 +927,13 @@ itself (F2, 2026-10-19, `world_legality`): every arm through `WorldSampler` gets
 - **F8, read-only use of running artifacts.** Stage 0 read the maturity bank's F world file while the plateau step was
   appending to it. It read the LEAN ids only (all built before the read of 2026-10-19), skipped torn lines, and wrote
   nothing there.
+- **F9, Tier 1's POOL at HEAD is not the pool the banks' opponents came from** (found 2026-10-19, building stage 1).
+  The Hidden Power refactor (`c9493053b`) and the Ghost fill fix (`f20526571`) changed the IVs the trainer's packing
+  path fills for a typed Hidden Power. So HEAD packs 34 of the 719 pool teams with other 30 / 31 patterns than X26's
+  pin did (pool sha256 `d8f708e5…` at HEAD against `4083c86b…` at the pins; Ghost 30 Def / 30 SpD against 30 Atk /
+  30 SpD). POOL gates a candidate WHOLE, so at HEAD a true team can fail the gate by a stat point and the ceiling
+  loses the truth. Stage 1 loads the pin's packing (`pool_pin.py`) and checks every true team is in it. Any later POOL
+  read on a pinned bank must do the same.
 - **The Counter / Mirror Coat / Hidden Power rule (§3.4)** is a named test for any propagation layer.
 
 ---
@@ -933,3 +964,4 @@ itself (F2, 2026-10-19, `world_legality`): every arm through `WorldSampler` gets
 | 2026-10-19 | **This doc CREATED** (orchestrator brief after the maturity battery's first LEAN read; the owner added DETERMINIZATION the same day) | One always-current doc for the world sampler and determinization. The TARGET in four levels (the truth's likelihood, recall, the exact-world mass q_SM, and the existing value meters TODAY / G / r); the facts a world must honour and how each is enforced today (rejection on a true-dice replay); PROPOSE → PROPAGATE → VERIFY with dice marginalised and a truth-passes guard; the Counter / Mirror Coat / Hidden Power rule as a named test; six candidates ranked (c) team-level corpus model > (f) opponent-choice likelihood > (b) joint Smogon teammates > (e) fact-based inference (correctness) > (d) the network's belief, against the baseline (a); the one-turn matrix in its Bayesian (opponent-type-per-world) form; stage 0 (zero playouts) READ and stage 1 designed | a species-first programme (stage 0: the network already holds the species; the sets are missing); the doubles bots' shared-column matrix (invalid when the opponent's moves differ by world); Foul Play's per-world Nash average (strategy fusion); pure constraint propagation (re-implementing mechanics is a GIGO class, §3.4); fitting any sampler on the evaluated population | §1's pointers; `measurements/world_sampler_screen_2026-10-19/`; `deps/pokemon-showdown/data/mods/gen3/moves.ts` Counter / Mirror Coat; `design_value_discrimination.md` §14.4; `showdown_bots_landscape_2026-10-18.md` |
 | 2026-10-19 | **F2 RESOLVED: the honest builder's worlds are LEGAL** (orchestrator brief; `main.value_search.world_legality`) | Rejection through Showdown's pinned `TeamValidator('gen3ou')` (one persistent Node child, `utils/bridge/validate_stream.js`, memoised): each never-seen set and each seen mon's unrevealed moves are redrawn until accepted, so the draw is the prior conditioned on legality; gender-made and team-level failures are redrawn; the TRUE team must pass the same rule or `LegalityRuleError` raises; `world_guard.check_legal` re-validates every returned world; the audit's `legality` reads `showdown_invalid`; the stale Hidden Power type field of three pool sets is dropped from a seen mon's world. Read on 316 random stage-0 states: 0 / 2,272 illegal worlds (stored 130 / 2,288), 0 new exclusions caused by the rule (5 vs 6 on the 113 touched states), species marginal unmoved (TV 0.0028); the F1 verify step's two tiers written down (§3.3.1), not built | a per-species incompatible-combination table derived from the validator (the doc's first proposal: a second copy of the breeding / event rules that can drift, and only a pairwise approximation of a triple or event rule); re-weighting the species or the screened spread by their sets' legality rate (an artefact of the independent draw); whole-world rejection (the same artefact on the species) | §6.1 (after the fix), §7 F2, §3.3.1; `measurements/world_legality_f2_2026-10-19/` (`result_f2.json`); `world_legality_test.py`, `world_legality_integration_test.py`, `info_audit_integration_test.py` |
 | 2026-10-19 | **F1 TIER A BUILT, default OFF** (orchestrator brief; `pokesim::rolls`, `WorldSampler(dice="rolls")`) | MEASURED FIRST by shadowing every gate replay of today's builder with the engine's match control (not an analytic 16-roll check: the engine is the oracle): 9.0 % of the rejected candidates fit on another roll, 2.7× the acceptances. Built: one damage-roll site in the Rust core (draw unchanged; record / match / force; pins where a post-roll modifier could change the sight); the builder's option with the truth-passes guard (`RollMatchError`), per-world `log_w` and `rolls`, the playout tool and the regate replaying the table. Re-measured on 60 states: exclusions 20 → 6, cost 96 → 42 s, marginals barely moved, regate 39 / 39 (§3.3.1) | building tier B now (typed draw sites everywhere; several agent-days); a uniform pick inside the consistent set (would break the truth-passes identity: the truth's own trajectory would not be reproduced); flipping the default (changes every honest read; stage 1's call); feeding the weights into the MH chain (the prior × indicator chain plus world weights is already the correct importance form) | §3.3.1, §3.5, §7 F1; `measurements/world_rolls_f1a_2026-10-19/` (`result_f1a.json`); `src/rust_sim/tests/rolls_test.rs`, `src/rust_env/tests/search_rolls_test.rs`, `world_rolls_integration_test.py` |
+| 2026-10-19 | **STAGE 1 REGISTERED and LAUNCHED** (orchestrator brief; `measurements/world_sampler_stage1_2026-10-19/`) | §6.2's arms on the 287 maturity LEAN states at X26 225M. **F_legal** (F at HEAD) is the baseline of record. The brief's confound and factor arms are SECONDARY: **F_off** (the legality rule off) and **F_rolls** (tier A, uniform and likelihood-weighted through the new `SearchConfig(weights="likelihood")`). α = 89.1 is fitted on the ladder corpus alone. Every arm but C_pool is F's builder with its departures swapped in for one sample, on one shared screen cache: CRN, with a backoff world exactly B's. A seen mon's Hidden Power is the screen's. C_pool uses the pin's pool packing (F9). The playouts run at X26's pin + the cherry-picked roll control, and its identity tooth passed 12 / 12. One heavy job runs at a time; the read is made once, on the done prefix at the stop | stage 0's α = 1 backoff (over-confident, §6.1 point 4); playing at HEAD (the network's obs and τ solve changed since the pin, so arms would not be comparable with the banked F / FN / O); dropping the rolls factor (the default switch is stage 1's call); a mid-run interim verdict (two looks); the forum per-species sets strict-filtered for NS (stage 0's NS configuration kept, flagged optimistic) | `PREREGISTRATION.md`, `alpha_fit.json`; `play_s1.py --identity` (`identity.json` in the archive); `search_weights_test.py` |

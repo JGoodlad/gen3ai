@@ -27444,3 +27444,40 @@ Tag: **MEASUREMENT · H1 UNDECIDED · TRANSFER LARGE IN-HOUSE (+14.8 of +18.8 pp
 PROVISIONAL** (one lineage, one seed) · evidence: `research_state/measurements/x37b_transfer_2026-10-19/` (README,
 `results.json`, `rows.jsonl`); `endstate/design_diversity_teams_opponents.md` §3, §3.2, §5.4, F-DV-24..26, Decision
 record; `research_state/UNDERSTANDING.md`
+
+### 2026-10-19 · REGISTRATION · **THE WORLD SAMPLER's STAGE 1 registered and launched: five candidate samplers against F at HEAD, with playouts, on the maturity battery's 287 LEAN states at X26 225M. The confounds and factors of the day are SECONDARY: F2's legality rule alone (F_legal − F_off), and F1 tier A uniform and likelihood-weighted. The corpus backoff's α = 89.1 is fitted on the ladder corpus alone. A registered stop at 24 h; no number yet**
+
+**Question** (`endstate/design_world_sampler.md` §6.2). Does any candidate sampler put enough weight on the truth to make
+honest search pay, and do PARTLY right worlds carry value? Stage 0 says no source makes a world exact on the never-seen
+species AND the seen mons' hidden moves more than ≈ 0.25 % of the time, against the ≈ 0.2 the dose curve asks.
+
+**Design** (`measurements/world_sampler_stage1_2026-10-19/PREREGISTRATION.md`, committed with its harness before any
+arm's output).
+- **Arms** (8 worlds, every legal action, LEAF-K8 / TRUNC-4-K8 / CRITIC):
+  - the baseline **F_legal** (F at HEAD, the validator rule on);
+  - PRIMARY: **B** (joint Smogon teammates), **C_ladder** and **C_forum_strict** (a consistent corpus team with
+    λ = n / (n + 89.1), else B), **C_pool** (Tier 1's POOL on the pin's packing), **NS** (the network's species × the
+    forum's per-species sets);
+  - SECONDARY: **F_off** (the rule off) and **F_rolls** (tier A, uniform and weighted).
+  - Every arm but C_pool takes F_legal's seen-mon screen (common random numbers).
+- **Rules:** Δ_X = IMP_X − IMP_F_legal. PAYS iff the lower bound > +0.0005 at both scorers; HURTS mirrored; NULL inside
+  ±0.01; MATERIAL (r ≥ 0.25); SEARCH-ENABLED; TODAY_X against each arm's own exact-world mass (CALIBRATED); the 1b
+  trigger. Bootstrap seed 20261019.
+- **Instruments:** the playouts run at X26's pin + the cherry-picked damage-roll control (`13ffd55c`; identity tooth
+  12 / 12 identical to the banked F rows). One heavy job at a time; the read is made once, on the done prefix of a
+  seeded order, at `QUEUE_DONE` or the stop.
+
+**Predictions (the author's, before any data).**
+- C_pool PAYS (Tier 1's POOL recovered r 0.80 at 15M).
+- B, C_ladder and C_forum_strict read NULL or NOT DETECTED: their exact-world mass is ≤ 0.002, and α = 89 makes most
+  corpus-arm worlds B worlds.
+- NS reads NOT DETECTED (the network's species bought ≤ +0.008 at 15M).
+- F_legal − F_off reads NULL (≈ 5 % of worlds were illegal).
+- F_rolls_w − F_legal reads NULL (weight ESS 7.3 of 8).
+
+**Found while building (a FINDING):** Tier 1's POOL at HEAD is not the pool the banks' opponents came from. The Hidden
+Power refactor re-packs 34 of the 719 teams with other IV patterns (pool sha256 `d8f708e5…` against the pins'
+`4083c86b…`). Stage 1 loads the pin's packing.
+
+Evidence: `research_state/measurements/world_sampler_stage1_2026-10-19/` (PREREGISTRATION, `alpha_fit.json`);
+`endstate/design_world_sampler.md` §6.2, §7 F9, Decision record; `endstate/search_ledger.md` §7 Q12.

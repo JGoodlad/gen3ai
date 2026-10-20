@@ -41,6 +41,11 @@ class SearchConfig:
     depth: Optional[int] = 4
     n_worlds: int = 16
     oracle: bool = False
+    #: how an action's leaf values average over its worlds: ``"uniform"`` (every world the same weight: today) or
+    #: ``"likelihood"`` (each world by its self-normalised likelihood weight, ``rules.world_weights`` over the
+    #: sampler's ``Worlds.log_w``: F1 tier A's ``dice="rolls"`` worlds; seed-dice worlds carry none, so uniform). Uniform
+    #: allocation only (sequential halving's means are not world-indexed: refused)
+    weights: str = "uniform"
 
 
 @dataclass
@@ -77,6 +82,10 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
     """Search the decision ``side`` takes at command index ``at`` of ``log`` (``root_row`` /
     ``root_mask``: that decision's obs row and mask). ``key`` seeds the worlds and the dice
     (deterministic). ``sampler``: a ``worlds.WorldSampler`` (required unless ``cfg.oracle``)."""
+    if cfg.weights not in ("uniform", "likelihood"):
+        raise ValueError(f"unknown world weighting {cfg.weights!r}")
+    if cfg.weights == "likelihood" and cfg.allocation != "uniform":
+        raise ValueError("likelihood world weights need uniform allocation (halving's means are not world-indexed)")
     c0, w0 = _cpu(), time.monotonic()
     out = engine.forward(root_row[None].astype(np.float32), root_mask[None].astype(np.uint8))[0]
     logits = np.where(root_mask.astype(bool), out[:ACT].astype(np.float64), -np.inf)
@@ -84,6 +93,7 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
     legal = [int(a) for a in np.flatnonzero(root_mask)]
     root_turn = int(decode_turn(root_row[None], engine.off)[0])
     tries, leak = [], {}
+    log_w: List[float] = []
     if cfg.oracle:
         logs = [log] * cfg.n_worlds
     else:
@@ -92,6 +102,7 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
         root = engine.root(log, at, side)
         w = sampler.sample(log, at, side, cfg.n_worlds, key, root_choice_in_log=not bool(root["other_open"]))
         logs, tries, leak = w.logs, w.tries, w.leak
+        log_w = list(getattr(w, "log_w", None) or [])
     seeds = seeds_for(key, cfg.n_worlds)
     budget = cfg.budget if cfg.budget is not None else cfg.per_action * len(legal)
 
@@ -120,7 +131,11 @@ def search_decision(engine: LeafEngine, log: dict, at: int, side: str, root_row:
     elif cfg.allocation == "uniform":
         k = min(cfg.n_worlds, max(1, budget // len(legal)))
         got = play({a: k for a in legal}, {})
-        q = {a: float(np.mean(v)) for a, v in got.items()}
+        if cfg.weights == "likelihood":
+            wk = rules.world_weights(log_w, k)        # sample i of every action is world i (play's request order)
+            q = {a: float(np.dot(wk, np.asarray(v, dtype=np.float64))) for a, v in got.items()}
+        else:
+            q = {a: float(np.mean(v)) for a, v in got.items()}
         visits = {a: k for a in legal}
         order = rules.policy_order(logits, legal)
         score = rules.gumbel_scores(logits, q, k) if cfg.rule == "gumbel" else q

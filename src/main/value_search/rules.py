@@ -61,6 +61,25 @@ def pick(score: Dict[int, float], order: Sequence[int]) -> int:
     return next(a for a in cand if score[a] >= m - TIE)
 
 
+def world_weights(log_w: Sequence[float], k: int) -> np.ndarray:
+    """The SELF-NORMALISED likelihood weights of a search's first ``k`` worlds (``design_world_sampler.md`` §3.3.1, F1
+    tier A): ``log_w`` is ``worlds.Worlds.log_w``, each world's damage-roll log-likelihood Σ log(k_site / 16). The
+    worlds are draws from the prior restricted to the consistent set, so a posterior mean weights world j by its
+    likelihood, normalised over the worlds searched. Empty ``log_w`` (``dice="seed"``: a 0 / 1 screen) = uniform. A
+    non-finite weight is a defect (an infeasible world is never returned) and raises."""
+    if k <= 0:
+        raise ValueError(f"world_weights: k = {k}")
+    if len(log_w) == 0:
+        return np.full(k, 1.0 / k)
+    if len(log_w) < k:
+        raise ValueError(f"world_weights: {len(log_w)} log-weights for {k} worlds")
+    lw = np.asarray(log_w[:k], dtype=np.float64)
+    if not np.all(np.isfinite(lw)):
+        raise ValueError(f"world_weights: a non-finite log-weight {lw.tolist()}")
+    w = np.exp(lw - lw.max())
+    return w / w.sum()
+
+
 def softmax_masked(logits: np.ndarray, legal: Sequence[int]) -> np.ndarray:
     out = np.zeros(len(logits), dtype=np.float64)
     lg = np.array([float(logits[a]) for a in legal])
