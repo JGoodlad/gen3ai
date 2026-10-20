@@ -6,7 +6,7 @@ twice, a few seconds apart, with the age / interval bars lowered and the idle ba
 fork-per-second loop cannot read as busy on a loaded box. The scans are SCOPED to this test process's
 subtree, so the live box's own waiters never enter an assertion.
 
-``integration``: the tests spawn and kill their own processes (by explicit PID). ~10 s in all.
+``integration``: the tests spawn and kill their own processes (by explicit PID). ~5 s in all, no fixed sleep.
 """
 from __future__ import annotations
 
@@ -85,20 +85,30 @@ def session(tmp_path):
         _reap(p)
 
 
-def _pid_of(root: int, needle: str, comm: str = "", exact: bool = False) -> int:
-    """The descendant of ``root`` whose command line contains ``needle`` — waited for, since the
-    fake session forks its children asynchronously."""
+def _pid_of(root_pid: int, needle: str, comm: str = "", exact: bool = False) -> int:
+    """The descendant of ``root_pid`` whose command line contains ``needle`` - waited for, since the
+    fake session forks its children asynchronously.
+
+    A ``cmd &`` line forks a CLONE of the session shell first, and until that clone ``exec``s it carries the
+    session's own command line (the WHOLE script, so it contains every line's needle) and the comm ``claude``.
+    Matching it handed back a pid that then became a DIFFERENT process (the flake behind a 'healthy' pid flagged
+    as the file-waiter, 2026-10-19, under load). So: skip comm ``claude``, and read the stat BEFORE the command
+    line - a comm that has changed means the exec is done, so the command line read after it is the new one."""
     found: List[int] = []
 
     def look() -> bool:
-        for q, c in _tree(root).items():
+        procs = P.snapshot()
+        for q in P.descendants(root_pid, P.children_map(procs)):
             st = P.read_stat(q)
-            if q != root and (c == needle if exact else needle in c) and st is not None and (not comm or st.comm == comm):
+            if st is None or st.comm == "claude" or (comm and st.comm != comm):
+                continue
+            c = P.cmdline(q)
+            if (c == needle) if exact else (needle in c):
                 found.append(q)
                 return True
         return False
 
-    _wait_for(look, f"a process under {root} matching {needle!r}")
+    _wait_for(look, f"a process under {root_pid} matching {needle!r}")
     return found[0]
 
 
@@ -107,11 +117,40 @@ def _has_sleep_child(pid: int) -> bool:
     return any(procs[c].comm == "sleep" for c in P.children_map(procs).get(pid, ()) if c in procs)
 
 
-def _two_scans(**kw):
-    first = W.Scan(None, scope_pid=os.getpid(), **{**KW, **kw})
+def _subtree_cpu_s(pid: int) -> float:
+    procs = P.snapshot()
+    return P.subtree_cpu(procs, P.children_map(procs)).get(pid, 0) / P.HZ
+
+
+def _live_sleep_key(pid: int) -> str:
+    """The identity of ``pid``'s current ``sleep`` child, or '' when it has none right now."""
+    procs = P.snapshot()
+    for c in P.children_map(procs).get(pid, ()):
+        if c in procs and procs[c].comm == "sleep":
+            return procs[c].key
+    return ""
+
+
+def _two_scans(*, busy=(), cycled=(), **kw):
+    """Two scans ``GAP_S`` apart ON THE SCAN'S OWN CLOCK (``Scan(now=...)`` is injectable), so no test sleeps for it.
+
+    What the 3 s of wall clock used to buy, each now waited for as an EVENT:
+      * ``busy``: pids that must read as PROGRESSING get real CPU, so each is waited on until its subtree has
+        burned 1.5x the idle bar's worth (``idle_frac * GAP_S``) since the first scan - a fixed sleep flaked when
+        the box starved the spinner (2026-10-19);
+      * ``cycled``: ``sleep 1`` loops must be on a NEW sleep child, or the scan reads them as "the SAME sleep as
+        last run: one deliberate delay" and (rightly) never flags them.
+    An idle process burns ~nothing in the few real ms/s between the scans, far under the virtual bar."""
+    args = {**KW, **kw}
+    first = W.Scan(None, scope_pid=os.getpid(), **args)
     f1 = first.run()
-    time.sleep(GAP_S)
-    second = W.Scan(first.next_state(), scope_pid=os.getpid(), **{**KW, **kw})
+    need = 1.5 * args["idle_frac"] * GAP_S
+    base = {p: first.cpu[p] / P.HZ for p in busy}
+    seen = {p: first.sleep_child.get(first.procs[p].key, "") for p in cycled}
+    _wait_for(lambda: all(_subtree_cpu_s(p) - base[p] >= need for p in busy)
+              and all(_live_sleep_key(p) not in ("", seen[p]) for p in cycled),
+              "the busy pids to burn CPU and the sleep loops to start a new sleep", timeout=scale_timeout(60))
+    second = W.Scan(first.next_state(), now=first.now + GAP_S, scope_pid=os.getpid(), **args)
     return f1, second.run()
 
 
@@ -137,7 +176,7 @@ def test_idle_loops_are_flagged_and_healthy_ones_are_not(session, tmp_path):
     for w in (busy_waiter, selfmatch, filewait, long_sleep):
         _wait_for(lambda w=w: _has_sleep_child(w), f"pid {w}'s sleep child")
 
-    first, second = _two_scans()
+    first, second = _two_scans(busy=(spinner,), cycled=(busy_waiter, selfmatch, filewait))
     assert first == [], "a first run has no baseline and must judge nothing"
     assert len(_flagged(second, selfmatch)) == 1, second
     assert "self-match" in _flagged(second, selfmatch)[0].reason
@@ -218,8 +257,7 @@ def test_self_deadlock_is_reported_on_the_first_run(session, tmp_path):
     # a second run: the holder's idle subtree is the SAME stall, reported once (as the deadlock)
     s1 = W.Scan(None, scope_pid=os.getpid(), **KW)
     s1.run()
-    time.sleep(1.5)
-    again = W.Scan(s1.next_state(), scope_pid=os.getpid(), **KW).run()
+    again = W.Scan(s1.next_state(), now=s1.now + GAP_S, scope_pid=os.getpid(), **KW).run()
     assert [(f.kind, f.pid) for f in again] == [("SELF-DEADLOCK", inner)], again
 
     # the CLI: one line, exit 1 — and nothing about itself
@@ -251,7 +289,7 @@ def test_a_lock_waiter_is_judged_by_its_non_ancestor_holder(session, tmp_path, b
         key = P.file_key(str(lock))
         assert key is not None
         _wait_for(lambda: waiter in P.waiters(key), "the flock to block")
-        first, second = _two_scans()
+        first, second = _two_scans(busy=(holder.pid,) if busy else ())
         assert not [f for f in first + second if f.kind == "SELF-DEADLOCK"], "a sibling holder is not a deadlock"
         if busy:
             assert not _flagged(second, waiter), second
@@ -420,22 +458,21 @@ def test_big_rss_growth_alone_is_INFO_unless_uncapped_and_above_half_the_box(ses
     assert not _rss_of(first.run(), pid)
     go.write_text("1")
     _wait_for(_rss_at_least(pid, 300), "the hog to grow by 300 MB", timeout=scale_timeout(30))
-    time.sleep(GAP_S)       # past --min-interval-s, so each scan becomes the next one's baseline
     base = first.next_state()
+    later = first.now + GAP_S       # past --min-interval-s ON THE SCAN'S CLOCK, so each scan becomes the next one's baseline
     # growth on a box where the process is far below half the RAM: INFORMATIONAL only
-    small_share = W.Scan(base, limit_of=_UNCAPPED, box_bytes=_BOX, **kw)
+    small_share = W.Scan(base, now=later, limit_of=_UNCAPPED, box_bytes=_BOX, **kw)
     assert not _rss_of(small_share.run(), pid), "growth alone paged"
     info = _rss_of(small_share.rss_info, pid, kind="BIG-RSS-INFO")
     assert len(info) == 1 and "grew +0.3 GB since the last run" in info[0].reason, small_share.rss_info
     # uncapped AND above half of a (declared) 0.4 GB box: FLAGGED
-    big_share = W.Scan(base, limit_of=_UNCAPPED, box_bytes=400 << 20, **kw)
+    big_share = W.Scan(base, now=later, limit_of=_UNCAPPED, box_bytes=400 << 20, **kw)
     grown = _rss_of(big_share.run(), pid)
     assert [f.pid for f in grown] == [pid] and "grew +0.3 GB" in grown[0].reason, grown
     # the same growth while CAPPED: never flagged
-    assert not _rss_of(W.Scan(base, limit_of=_CAPPED_1G, box_bytes=400 << 20, **kw).run(), pid)
+    assert not _rss_of(W.Scan(base, now=later, limit_of=_CAPPED_1G, box_bytes=400 << 20, **kw).run(), pid)
     # and with no growth since THAT run, nothing
-    time.sleep(GAP_S)
-    third = W.Scan(big_share.next_state(), limit_of=_UNCAPPED, box_bytes=400 << 20, **kw)
+    third = W.Scan(big_share.next_state(), now=later + GAP_S, limit_of=_UNCAPPED, box_bytes=400 << 20, **kw)
     assert not _rss_of(third.run(), pid) and not _rss_of(third.rss_info, pid, kind="BIG-RSS-INFO")
 
 
