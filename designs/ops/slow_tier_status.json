@@ -353,6 +353,14 @@
    "contention": 3.4,
    "detail": ""
   },
+  "src/agents/inference/service/service_test.py::test_new_mapping_floor_is_the_request_less_the_already_mapped_slack": {
+   "status": "pass",
+   "commit": "3d14e51d7ff8a132201c127e3cc56b7600de3d9c",
+   "at": "2026-10-20T19:32:55Z",
+   "duration_s": 0.01,
+   "contention": 1.71,
+   "detail": ""
+  },
   "src/agents/inference/service/service_test.py::test_nothing_is_served_before_the_freeze_and_startup_runs_once": {
    "status": "pass",
    "commit": "b0f5dc138732dab650d1006a3eefda9acd1a45f8",
@@ -5511,5 +5519,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-20T17:42:21Z"
+ "last_written": "2026-10-20T19:32:55Z"
 }
