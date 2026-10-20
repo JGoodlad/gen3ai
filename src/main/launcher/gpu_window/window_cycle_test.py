@@ -51,7 +51,12 @@ stop = []
 signal.signal(signal.SIGTERM, lambda *a: stop.append(1))
 open(os.path.join(run_dir, "ready"), "w").write(str(os.getpid()))
 t0 = time.time()
+reported = False
 while not stop and time.time() - t0 < 45:
+    # the first rollout report (the launcher's metrics pipe), held back while `defer_report` exists
+    if not reported and not os.path.exists(os.path.join(run_dir, "defer_report")):
+        os.write(int(os.environ["LAUNCHER_METRICS_FD"]), b'{"_step": 1, "time/fps": 1.0}\n')
+        reported = True
     time.sleep(0.05)
 if not stop:
     note(event="complete_unpaused")
@@ -89,11 +94,14 @@ def _guest(run_dir: Path, *cmd: str) -> subprocess.Popen:
 class _Harness:
     """`_supervise` over the fake trainer, with a real `WindowController` (GPU probe: always free)."""
 
-    def __init__(self, tmp_path: Path, monkeypatch):
+    def __init__(self, tmp_path: Path, monkeypatch, defer_report: bool = False):
+        monkeypatch.setenv("GEN3AI_GPU_LOCK", str(tmp_path / "gpu.lock"))   # never the box's real lease
         # `main.launcher.run` the ATTRIBUTE is the `run()` function (the package re-exports it): patch the module.
         monkeypatch.setattr(sys.modules["main.launcher.run"], "_git_hash", lambda: "abc1234")
         self.run_dir = tmp_path / "models" / "rb_window_toy"
         self.run_dir.mkdir(parents=True)
+        if defer_report:
+            (self.run_dir / "defer_report").write_text("")
         script = tmp_path / "fake_trainer.py"
         script.write_text(_FAKE_TRAINER)
         self.state = LauncherState(interval_hours=0)
@@ -247,3 +255,28 @@ def test_a_guest_that_never_starts_is_missed_and_the_run_resumes(tmp_path, monke
     assert late.returncode == cli.EXIT_REFUSED, out
     assert P.read_json(wdir / P.DONE_FILE) is None
 
+
+
+def test_no_pause_before_the_childs_first_report(tmp_path, monkeypatch):
+    """A trigger that comes while the child is still STARTING waits for its first rollout report: before
+    it, the trainer's stop handlers may not be installed and a SIGTERM kills it unsaved (rc -15 → HOLD)."""
+    h = _Harness(tmp_path, monkeypatch, defer_report=True)
+
+    def operator():
+        assert h.arm("--guest-start-timeout-s", "1") == 0           # due NOW; no guest: MISSED → resume
+        time.sleep(2.0)                                              # 20 request polls
+        held_back = (P.window_root(h.run_dir) / P.REQUEST_FILE).exists() and not any(
+            k["event"] == "exit_interrupted" for k in _children(h.run_dir))
+        (h.run_dir / "defer_report").unlink()
+        return held_back
+
+    t, res = _in_thread(operator)
+    try:
+        code = h.supervise()
+    finally:
+        h.shutdown.set()
+    t.join(60)
+    assert "e" not in res, res.get("e")
+    assert res["v"] is True, "the window paused a child that had not reported yet"
+    assert code == 0
+    assert P.read_current(h.run_dir)["outcome"] == P.MISSED, "the window never ran once the child reported"

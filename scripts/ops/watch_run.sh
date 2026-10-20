@@ -241,6 +241,22 @@ while true; do
     s=$(grep -oE 'total_timesteps *\| *[0-9]+' "$CLOG" 2>/dev/null | tail -1 | grep -oE '[0-9]+$')
     now=$(date +%s)
     if [ -n "$s" ] && [ "$s" != "$last_step" ]; then last_step=$s; last_move=$now; fi
+    # A GPU WINDOW (T46, designs/launcher/gpu_window.md) pauses the run ON PURPOSE: while one is open
+    # no step progress is not a wedge (a window runs up to its --max-window-min, often > the wedge
+    # limit), and its HOLD is the alarm, said once per window. Pinned by watch_run_gpu_window_test.py.
+    win=""; wfile="$D/gpu_window/current.json"
+    if [ -f "$wfile" ]; then
+        wphase=$(grep -oE '"phase": *"[a-z]+"' "$wfile" | head -1 | sed -E 's/.*"([a-z]+)"$/\1/')
+        case "$wphase" in
+            pausing|go|claimed|hold)
+                last_move=$now; win=" window=${wphase}"
+                wid=$(grep -oE '"window_id": *"[^"]*"' "$wfile" | head -1 | sed -E 's/.*"([^"]*)"$/\1/')
+                if [ "$wphase" = hold ] && [ "$wid" != "${held_wid:-}" ]; then
+                    held_wid=$wid
+                    say "ALERT: GPU WINDOW HOLD ${wid} — $(grep -oE '"reason": *"([^"\\]|\\.)*"' "$wfile" | head -1 | cut -c1-240); the run stays PAUSED until \`python -m main.launcher.gpu_window resume\`; still watching"
+                fi ;;
+        esac
+    fi
     if [ $((now-last_move)) -gt "$WEDGE" ]; then
         say "FAILURE: WEDGED — no step progress for $(( (now-last_move)/60 )) min at step ${last_step}"
         break
@@ -265,7 +281,7 @@ PY
     el=$(grep -oE 'ep_len_mean *\| *[0-9.]+' "$CLOG" 2>/dev/null | tail -1 | grep -oE '[0-9.]+$')
     ck=$(ls "$D"/checkpoints/*.zip 2>/dev/null | wc -l)
     cr=""; have_launcher && cr=" crashes=${n_crash}"
-    say "ok step=${s:-?} ckpt=${ck} marginal_fps=${marg} ep_len=${el:-?}${cr}"
+    say "ok step=${s:-?} ckpt=${ck} marginal_fps=${marg} ep_len=${el:-?}${cr}${win}"
     sleep "$INTERVAL"
 done
 say "WATCHER EXIT"

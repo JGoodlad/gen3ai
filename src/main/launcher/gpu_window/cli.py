@@ -74,10 +74,16 @@ def _open_window(run_dir: Path) -> Optional[str]:
 def _lease_line(no_lease_check: Optional[str]) -> str:
     """The lease the guest will run on. The caller must HOLD it (its token is in this environment):
     the guest's GPU commands run on the holder's token, so the lease never moves during a window."""
-    if no_lease_check is not None:
-        return f"lease NOT checked: {no_lease_check}"
     from utils.gpu_lease import holds_lease, read_lease
     from utils.gpu_lock import lock_path
+    if no_lease_check is not None:
+        # The opt-out is for a box with NO lease (a CPU-only run, a test). While anyone holds the lease,
+        # it would let a non-holder pause the holder's run (review 2026-10-20): refuse it.
+        held = read_lease(lock_path())
+        if held is not None:
+            raise Refused(f"--no-lease-check is refused while a GPU lease is held ({held.describe()}): "
+                          "put the holder's GEN3AI_GPU_LEASE_TOKEN(_FILE) in front of the call instead")
+        return f"lease NOT checked: {no_lease_check}"
     mine = holds_lease(lock_path())
     if mine is None:
         other = read_lease(lock_path())

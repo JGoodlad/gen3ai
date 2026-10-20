@@ -669,7 +669,10 @@ def _supervise(
 
             # T46: a GPU window whose trigger epoch has come pauses the run exactly as a quit stops it
             # (SIGTERM → the child saves at its next safe point and exits INTERRUPTED); the launcher stays.
-            if window is not None and window_req is None and not flags.sigterm_sent:
+            # Not before the child's first rollout report: until then its stop handlers may not be
+            # installed, and a SIGTERM kills it unsaved (rc -15 → a needless HOLD).
+            if (window is not None and window_req is None and not flags.sigterm_sent
+                    and state.child_has_reported()):
                 window_req = window.due()
                 if window_req is not None:
                     try:

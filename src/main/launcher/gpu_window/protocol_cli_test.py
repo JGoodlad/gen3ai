@@ -17,8 +17,15 @@ from main.exit_codes import TrainExitCode
 from main.launcher.checkpoint import _strip_launcher_args
 from main.launcher.gpu_window import cli
 from main.launcher.gpu_window import protocol as P
+from main.launcher.gpu_window import controller as C
 from main.launcher.gpu_window.controller import WindowController
 from main.launcher.run import build_launcher_parser
+
+
+@pytest.fixture(autouse=True)
+def _private_gpu_lock(tmp_path, monkeypatch):
+    """A lock of the test's own: the box's real lease (a live run's) must never decide a test's verdict."""
+    monkeypatch.setenv("GEN3AI_GPU_LOCK", str(tmp_path / "gpu.lock"))
 
 
 @pytest.fixture
@@ -235,3 +242,81 @@ def test_gpu_window_is_off_by_default_and_never_reaches_the_child():
     assert p.parse_known_args(["--gpu-window"])[0].gpu_window is True
     assert _strip_launcher_args(["--steps", "5", "--gpu-window", "--device", "cuda"]) == \
         ["--steps", "5", "--device", "cuda"]
+
+
+# ── review 2026-10-20: the GPU check never fails open, a dead launcher's window never blocks ─────
+
+def test_a_failing_nvidia_smi_is_not_a_free_gpu(run_dir, tmp_path, monkeypatch):
+    """A present nvidia-smi that fails (rc != 0, a hang) used to read as "absent" and GO unchecked."""
+    fake = tmp_path / "nvidia-smi"
+    fake.write_text("#!/bin/sh\necho 'Unable to determine the device handle' >&2\nexit 15\n")
+    fake.chmod(0o755)
+    monkeypatch.setattr(C.shutil, "which", lambda name: str(fake))
+    with pytest.raises(C.GpuQueryFailed, match="rc 15"):
+        C.gpu_compute_pids()
+    monkeypatch.setattr(C.shutil, "which", lambda name: None)
+    assert C.gpu_compute_pids() is None, "ABSENT (a CPU box) is the only unchecked case"
+
+
+def test_a_window_holds_without_go_while_nvidia_smi_fails(run_dir, tmp_path):
+    ck = tmp_path / "c.zip"
+    ck.write_text("x")
+
+    def failing():
+        raise C.GpuQueryFailed("nvidia-smi exited rc 15")
+    ctl = _controller(run_dir, [], ckpt=str(ck), gpu_pids=failing, gpu_release_timeout_s=0.05)
+    req = _request(run_dir, ctl)
+    assert "nvidia-smi still fails" in _hold_reason(run_dir, ctl, req, int(TrainExitCode.INTERRUPTED))
+    assert not (P.window_dir(run_dir, req.window_id) / P.GO_FILE).exists()
+
+
+def test_the_run_does_not_resume_while_the_guests_processes_hold_the_gpu(run_dir, tmp_path):
+    """DONE rc 0 is not "the GPU is free": a worker the guest spawned can outlive it."""
+    ck = tmp_path / "c.zip"
+    ck.write_text("x")
+    calls: list = []
+
+    def pids():
+        calls.append(1)
+        return [] if len(calls) == 1 else [777]          # free at GO, busy after the guest
+    ctl = _controller(run_dir, [], ckpt=str(ck), gpu_pids=pids, gpu_release_timeout_s=0.05)
+    req = _request(run_dir, ctl)
+    wdir = P.window_dir(run_dir, req.window_id)
+    assert P.create_json_exclusive(wdir / P.CLAIM_FILE, {"by": "guest", "window_id": req.window_id,
+                                                         "guest": P.process_identity(os.getpid())})
+    P.write_json_atomic(wdir / P.DONE_FILE, {"window_id": req.window_id, "rc": 0})
+    reason = _hold_reason(run_dir, ctl, req, int(TrainExitCode.INTERRUPTED))
+    assert "777" in reason and "the guest exited 0" in reason
+
+
+def test_a_dead_launchers_open_window_is_closed_by_the_next_launcher(run_dir, capsys):
+    """A launcher that died mid-window left current.json OPEN: every later `arm` refused forever."""
+    stale = {"window_id": "w_old", "phase": P.HOLD, "reason": "the guest exited rc 3",
+             "launcher": {"pid": os.getpid(), "start_ticks": -5}}
+    P.write_json_atomic(P.window_root(run_dir) / P.CURRENT_FILE, stale)
+    events: list = []
+    _controller(run_dir, events).announce()
+    cur = P.read_current(run_dir)
+    assert cur["phase"] == P.ABANDONED and cur["stale_launcher"] == stale["launcher"], cur
+    assert any("its launcher is gone" in e for e in events)
+    assert _arm(run_dir) == 0, capsys.readouterr().err
+    # a window whose launcher is ALIVE is never touched
+    ctl = _controller(run_dir, [])
+    live = {**stale, "launcher": P.process_identity(os.getpid())}
+    P.write_json_atomic(P.window_root(run_dir) / P.CURRENT_FILE, live)
+    ctl.announce()
+    assert P.read_current(run_dir)["phase"] == P.HOLD
+
+
+def test_no_lease_check_is_refused_while_a_lease_is_held(run_dir, capsys, monkeypatch):
+    """The opt-out is for a box with no lease; with one held it let any caller pause the holder's run."""
+    import utils.gpu_lease as L
+
+    class _Held:
+        def describe(self):
+            return "owner 'training' pid 1"
+    monkeypatch.setattr(L, "read_lease", lambda lock: _Held())
+    _controller(run_dir, []).announce()
+    assert _arm(run_dir) == cli.EXIT_REFUSED
+    assert "refused while a GPU lease is held" in capsys.readouterr().err
+    assert not (P.window_root(run_dir) / P.REQUEST_FILE).exists()

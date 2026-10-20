@@ -33,8 +33,15 @@ GPU_RELEASE_TIMEOUT_S = 600.0
 CHECKPOINT_SLACK_S = 2.0
 
 
+class GpuQueryFailed(RuntimeError):
+    """``nvidia-smi`` is installed but could not answer (non-zero exit, timeout, OSError). NOT "free": a
+    hung or failing ``nvidia-smi`` is exactly when the card's state is least known (review 2026-10-20)."""
+
+
 def gpu_compute_pids() -> "Optional[List[int]]":
-    """PIDs of every process holding a CUDA context (``nvidia-smi``), or None when it cannot be asked.
+    """PIDs of every process holding a CUDA context (``nvidia-smi``); None only when ``nvidia-smi`` is
+    ABSENT (a CPU box). Raises :class:`GpuQueryFailed` when it is present but fails: the window then
+    keeps waiting and HOLDS at its bound, never GOes on an unanswered query.
 
     The whole box, not the child's tree: under the lease only its holder uses the GPU, so "no compute
     process" is what "the GPU is free for the guest" means (the hand-made windows' check, 2026-10-19)."""
@@ -44,10 +51,10 @@ def gpu_compute_pids() -> "Optional[List[int]]":
     try:
         out = subprocess.run([exe, "--query-compute-apps=pid", "--format=csv,noheader"],
                              capture_output=True, text=True, timeout=30)
-    except (OSError, subprocess.TimeoutExpired):
-        return None
+    except (OSError, subprocess.TimeoutExpired) as e:
+        raise GpuQueryFailed(f"nvidia-smi did not answer: {type(e).__name__}") from e
     if out.returncode != 0:
-        return None
+        raise GpuQueryFailed(f"nvidia-smi exited rc {out.returncode}: {out.stderr.strip()[:200]}")
     return [int(t) for t in out.stdout.split() if t.strip().isdigit()]
 
 
@@ -87,7 +94,21 @@ class WindowController:
         return P.window_root(self._run_dir_fn())
 
     def announce(self) -> None:
-        """Record that THIS launcher honours windows for the run (``arm`` refuses without it)."""
+        """Record that THIS launcher honours windows for the run (``arm`` refuses without it).
+
+        A window left OPEN by a launcher that is GONE (it died or was killed mid-window) is closed
+        here as ABANDONED: otherwise every later ``arm`` refuses on it forever, and its ``resume``
+        writes a file no launcher reads. Nothing is resumed over it — this launcher was started by
+        hand, from whatever checkpoint its operator chose."""
+        cur = P.read_current(self._run_dir_fn())
+        if (cur is not None and cur.get("phase") in P.OPEN_PHASES
+                and not P.identity_alive(cur.get("launcher"))):
+            P.write_json_atomic(self.root / P.CURRENT_FILE, {
+                **cur, "phase": P.ABANDONED, "since_epoch": self._clock(), "launcher": self._identity,
+                "reason": f"its launcher {cur.get('launcher')} is gone (left it {str(cur.get('phase')).upper()}: "
+                          f"{cur.get('reason', '')})", "stale_launcher": cur.get("launcher")})
+            self._event(f"⚠️  GPU window {cur.get('window_id')}: its launcher is gone and it was left "
+                        f"{str(cur.get('phase')).upper()} — closed as ABANDONED (check the run's checkpoint)")
         P.write_json_atomic(self.root / P.LAUNCHER_FILE, {
             "launcher": self._identity, "started_epoch": self._clock(), "run_dir": self._run_dir_fn()})
         self._event(f"🪟 GPU window: ENABLED — arm one with `python -m main.launcher.gpu_window arm "
@@ -173,20 +194,9 @@ class WindowController:
             return self._hold(req, wdir, f"no checkpoint saved by the pause (latest: {ckpt})", should_quit)
 
         # The GPU must be EMPTY before GO: the child's tree can outlive it for a moment.
-        t0 = self._clock()
-        while True:
-            pids = self._gpu_pids()
-            if pids is None:
-                self._event("⚠️  GPU window: nvidia-smi unavailable — the GPU's release is NOT checked")
-                break
-            if not pids:
-                break
-            if should_quit():
-                return self._quit(req)
-            if self._clock() - t0 > self._gpu_release_timeout_s:
-                return self._hold(req, wdir, f"the GPU still lists compute pid(s) {pids} "
-                                             f"{self._gpu_release_timeout_s:.0f} s after the run stopped", should_quit)
-            self._sleep(self._wait_poll_s)
+        out = self._await_empty_gpu(req, wdir, "the run stopped", should_quit)
+        if out is not None:
+            return out
 
         go_epoch = self._clock()
         P.write_json_atomic(wdir / P.GO_FILE, {"window_id": req.window_id, "go_epoch": go_epoch,
@@ -224,6 +234,12 @@ class WindowController:
             if done is not None and done.get("window_id") == req.window_id:
                 rc_guest = done.get("rc")
                 if rc_guest == 0:
+                    # The guest's own processes must have LEFT the GPU before the run comes back (a
+                    # guest command that returns while a worker it spawned still holds a context
+                    # would put two jobs on the card: the trainer's first update then OOMs).
+                    out = self._await_empty_gpu(req, wdir, "the guest exited 0", should_quit)
+                    if out is not None:
+                        return out
                     self._set_phase(req, P.DONE, "guest exited 0 — resuming the run", guest_rc=0)
                     self._event(f"✅ GPU window {req.window_id}: guest DONE (rc 0) after "
                                 f"{(self._clock() - go_epoch) / 60:.1f} min — resuming the run")
@@ -239,6 +255,33 @@ class WindowController:
             if self._clock() - go_epoch > req.max_window_s:
                 return self._hold(req, wdir, f"the guest overran the window ({req.max_window_s / 60:.0f} min "
                                              "after GO) and may still hold the GPU", should_quit)
+            self._sleep(self._wait_poll_s)
+
+    def _await_empty_gpu(self, req: P.Request, wdir, after: str,
+                         should_quit: Callable[[], bool]) -> Optional[str]:
+        """None once ``nvidia-smi`` lists no compute process (or is ABSENT: warned, not checked); else the
+        window's outcome — ``"quit"``, or the operator's ``"resume"`` that ends the HOLD this enters when
+        the GPU is still busy, or ``nvidia-smi`` still fails, ``gpu_release_timeout_s`` after ``after``."""
+        t0 = self._clock()
+        while True:
+            failed = None
+            try:
+                pids = self._gpu_pids()
+            except GpuQueryFailed as e:
+                pids, failed = None, str(e)
+            if failed is None:
+                if pids is None:
+                    self._event("⚠️  GPU window: nvidia-smi absent — the GPU's release is NOT checked")
+                    return None
+                if not pids:
+                    return None
+            if should_quit():
+                return self._quit(req)
+            if self._clock() - t0 > self._gpu_release_timeout_s:
+                what = (f"nvidia-smi still fails ({failed})" if failed is not None
+                        else f"the GPU still lists compute pid(s) {pids}")
+                return self._hold(req, wdir, f"{what} {self._gpu_release_timeout_s:.0f} s after {after}",
+                                  should_quit)
             self._sleep(self._wait_poll_s)
 
     def _quit(self, req: P.Request) -> str:

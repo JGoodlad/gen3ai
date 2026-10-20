@@ -81,6 +81,14 @@ class LauncherState:
         with self._lock:
             return self._last_activity_ts
 
+    def child_has_reported(self) -> bool:
+        """True once THIS child (launched at ``run_start``) has pushed rollout metrics. Its stop handlers
+        are installed before ``learn()`` (``main.train.model_build``), so from then on a SIGTERM reaches
+        the deferred-abort save; during startup (load, compile, the dry update: minutes) it kills the child
+        with no save. The GPU window (T46) triggers only after this."""
+        with self._lock:
+            return self._metrics_ts is not None and self._metrics_ts >= self.run_start
+
     def set_window_status(self, line: Optional[str]) -> None:
         with self._lock:
             self.window_status = line

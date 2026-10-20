@@ -29,6 +29,10 @@ safe point, exits INTERRUPTED ─▶ checkpoint + empty GPU checked ─▶ GO �
 - **Trigger = an absolute epoch, never a message.** `arm --at-epoch E` (or `--in-minutes M`, made absolute at
   arming) is refused if it is more than 60 s in the past or more than `--horizon-hours` ahead (default 48).
   The launcher re-checks the bounds against the request's own arming time and horizon (at most 168 h).
+- **Never during the child's startup.** A due request waits until the CURRENT child has pushed its first
+  rollout metrics (`LauncherState.child_has_reported`). The trainer installs its stop handlers only after
+  load, compile and the dry update (`main.train.model_build`, minutes); a SIGTERM before them kills it unsaved
+  (rc -15 → HOLD; on a fresh run, nothing to resume). So a window due just after a restart starts late.
 - **A request is honoured only by the launcher it names.** A request whose launcher identity is not this
   launcher's is moved to `refused_<id>.json` with an event and never acted on. Typical sources: a leftover
   from a dead session, or a hand-written file. The launcher CONSUMES a due request by an atomic rename into
@@ -39,14 +43,17 @@ safe point, exits INTERRUPTED ─▶ checkpoint + empty GPU checked ─▶ GO �
   argv is re-derived.
 - **GO only on a clean pause.** All three must hold: the child exited `INTERRUPTED` (15); a checkpoint at least
   as new as the SIGTERM exists (2 s mtime slack); and `nvidia-smi` lists no compute process within 600 s. The
-  GPU check covers the whole box, because under the lease only its holder uses the GPU. If `nvidia-smi` is
-  absent, the launcher prints a warning and skips the check.
+  GPU check covers the whole box, because under the lease only its holder uses the GPU. Only an ABSENT
+  `nvidia-smi` (a CPU box) skips it, with a warning; one that fails or hangs is not a free GPU (it HOLDS).
+- **The run comes back only to an empty GPU.** After DONE rc 0 the same check runs again, so a worker the
+  guest spawned and left behind holds the window instead of OOMing the trainer's first update.
 - **One claimant.** `w_<id>/claim.json` is created `O_EXCL`, by the guest (which then runs) or by the launcher
   when no guest claimed within `--guest-start-timeout-s` (default 180). A launcher claim makes the window
   MISSED, and the run resumes, because nothing ran on the GPU. A late guest then finds the claim taken and
   never runs its command.
 - **The lease never moves.** `arm` and `guest` require the caller to HOLD the GPU lease: its token must be in
-  the environment, or the caller passes `--no-lease-check REASON`. The guest's GPU commands go through
+  the environment. `--no-lease-check REASON` is for a box with NO lease (a CPU run, a test) and is refused
+  while anyone holds one. The guest's GPU commands go through
   `scripts/ops/gpu_lock.sh` on the holder's token. The launcher stays alive throughout, so a lease that
   watches it is kept.
 
@@ -55,14 +62,17 @@ safe point, exits INTERRUPTED ─▶ checkpoint + empty GPU checked ─▶ GO �
 The run stays PAUSED (no child, launcher alive, lease kept) whenever one of these happens:
 - the child exits other than `INTERRUPTED`;
 - the pause saves no checkpoint;
-- the GPU is not released within 600 s;
+- the GPU is not released within 600 s, or `nvidia-smi` keeps failing (before GO, and again after DONE rc 0);
 - the guest exits non-zero;
 - the guest dies without writing DONE (its pid and start ticks are in its claim);
 - the guest is still running `--max-window-min` after GO (default 60). It may still hold the GPU.
 
 The reason goes to `current.json`, to the events (`🛑 GPU WINDOW HOLD …`) and to the red status badge.
 Only an operator ends a HOLD: `python -m main.launcher.gpu_window resume <run_dir> --reason "…"`, or a quit.
-The launcher never auto-resumes over a failure (`TRAINING_RUN_SOP.md` §3 rule 3).
+The launcher never auto-resumes over a failure (`TRAINING_RUN_SOP.md` §3 rule 3). An operator's `resume` does
+NOT re-check the GPU: after an overrun or a dead guest, check `nvidia-smi` first (the guest's identity is its
+wrapper pid, so a command it started can outlive it). A window left OPEN by a launcher that died is closed as
+`abandoned` by the next `--gpu-window` launcher of the run, so it cannot block `arm` forever.
 
 ## Files (`<run_dir>/gpu_window/`) and phases
 
@@ -109,11 +119,34 @@ for GO.
 
 ## Hazards
 
-- **An unfixed T45 overrun turns a pause into a HOLD.** If the child does not reach a safe point within 150 s
-  (TASK_BACKLOG T45: a stop deferred across an eval cycle), the existing SIGKILL escalation kills it. The child
-  exits `-9` with no fresh save, so the window HOLDS rather than resuming. Until T45 lands, trigger a window
-  away from an eval cycle.
+- **A stop with no safe point turns a pause into a HOLD.** If the child reaches no safe point within 120 s
+  (TASK_BACKLOG T45: a stop deferred across an eval cycle), the trainer's own watchdog exits 15 WITHOUT a save
+  (`deferred_abort.SAFE_POINT_DEADLINE_SEC`; `latest.txt` stays on the last periodic checkpoint). The window
+  HOLDS on "no checkpoint saved by the pause"; at 150 s the launcher's SIGKILL (rc -9) also HOLDS. Until T45
+  lands, trigger a window away from an eval cycle.
 - **A HOLD waits indefinitely.** It is a decision for the orchestrator, not a timeout. Watch for the HOLD line
   with the run's alert watcher.
+- **The layer-1 watcher knows windows.** `scripts/ops/watch_run.sh` does not call an open window a wedge, and
+  it writes one `ALERT: GPU WINDOW HOLD` line per held window (`watch_run_gpu_window_test.py`).
 - **Quitting the launcher during a window ends its lease watch.** A lease whose `--watch-pid` is the launcher
   ends when the launcher exits, even if a guest is still running.
+
+## The first real trial (not yet run; every test so far is a fake CPU child)
+
+The cheapest real-trainer check, for the training session in a GPU gap, ~25 min of GPU:
+1. **Preconditions:** no live run on the GPU; `scripts/ops/gpu_lease.sh status` FREE; the box quiet enough
+   for a `--arch production` startup. Acquire: `scripts/ops/gpu_lease.sh acquire --owner t46-trial
+   --token-file /tmp/t46.tok --max-hours 2`; every command below carries `GEN3AI_GPU_LEASE_TOKEN_FILE=/tmp/t46.tok`.
+2. **Launch** a throwaway run with the window on, the real path (not `--debug`), into a scratch archive:
+   `GEN3AI_MODELS_DIR=<scratch> scripts/ops/gpu_lock.sh "$PY" -m main.launcher --steps 2000000 --device cuda
+   --arch production --restart-interval-hours 0 --gpu-window --run-name t46_trial` (detached: headless). Check
+   it with `--dry-run` first.
+3. **Arm before the first rollout** (it must WAIT for the first report, not kill the startup):
+   `"$PY" -m main.launcher.gpu_window arm <run> --no-precheck "trial" --in-minutes 0 --guest-start-timeout-s 600`,
+   then `"$PY" -m main.launcher.gpu_window guest <run> --wait-max-min 30 -- scripts/ops/gpu_lock.sh nvidia-smi`.
+4. **PASS** = the child log's `[ABORT] … Checkpoint saved → …final_model_interrupted.zip`, the launcher's
+   `GO`, the guest's DONE rc 0 with the trainer absent from its `nvidia-smi` listing, the re-launch with
+   `--model …/final_model_interrupted.zip` and the SAME `--run-dir`, and that child's first rollout at a step
+   ≥ the pause's. Then a second window whose guest is `false`: it must HOLD (no re-launch) until `resume`.
+5. **Teardown:** quit the launcher by its PID (SIGTERM; it saves), `gpu_lease.sh release`, delete the scratch
+   archive. Any other outcome is a FINDING against this doc before the first use on a live run.
