@@ -1,0 +1,131 @@
+[x50] 2026-10-20T04:11:54-07:00 109 date folders; stop at 2026-10-20T12:11:54-07:00; shards /home/goodlad/dev/gen3ai/.claude/worktrees/x50-census/designs/research_state/measurements/x50_replay_census_2026-10-20/shards
+[x50] 2026-10-20T04:11:54-07:00 chunk: 2026-05-18 .. (20 dates max), bound 2700s
+[heavy_slots] waiting 0 s for one of 2 heavy slots (asked for (--slot); 3 queued ahead, FIFO): held: slot 0 pid 2700512 13m55s 'nice -n 19 taskset -c 5-7,13-15 /home/goodlad/miniconda3/env'; slot 1 pid 2579574 9m23s 'timeout 2700 /home/goodlad/miniconda3/envs/gen3ai_torch28/bi'; 8 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[x50-log-trim] 79 intermediate heavy-slot wait lines dropped
+[heavy_slots] waiting 4814 s for one of 2 heavy slots (asked for (--slot); 0 queued ahead, FIFO): held: slot 0 pid 2767583 32m57s 'nice -n 19 taskset -c 5-7,13-15 /home/goodlad/miniconda3/env'; slot 1 pid 2816446 44m38s 'timeout 2700 /home/goodlad/miniconda3/envs/gen3ai_torch28/bi'; 6 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] took heavy slot 1 of 2 after waiting 4836.4 s (asked for (--slot))
+[mem_cap] cap 8.00 GB (swap 0) · unit gen3ai-capped-x50census-2758174.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[x50] 2026-05-18: 754 replays in 4.5s refusals=0 present_fail=0
+[x50] 2026-05-19: 3914 replays in 22.6s refusals=0 present_fail=0
+[x50] 2026-05-20: 4117 replays in 24.3s refusals=0 present_fail=0
+[x50] 2026-05-21: 3808 replays in 22.4s refusals=0 present_fail=0
+[x50] 2026-05-22: 3955 replays in 24.7s refusals=0 present_fail=0
+[x50] 2026-05-23: 3447 replays in 24.8s refusals=0 present_fail=0
+[x50] 2026-05-24: 4313 replays in 28.8s refusals=0 present_fail=0
+[x50] 2026-05-25: 4027 replays in 25.0s refusals=0 present_fail=0
+[x50] 2026-05-26: 3883 replays in 23.2s refusals=0 present_fail=0
+[x50] 2026-05-27: 4240 replays in 25.0s refusals=0 present_fail=0
+[x50] 2026-05-28: 3713 replays in 22.4s refusals=0 present_fail=0
+[x50] 2026-05-29: 3874 replays in 23.7s refusals=0 present_fail=0
+[x50] 2026-05-30: 3831 replays in 20.4s refusals=0 present_fail=0
+[x50] 2026-05-31: 3695 replays in 22.5s refusals=0 present_fail=0
+[x50] 2026-06-01: 3837 replays in 24.5s refusals=0 present_fail=0
+[x50] 2026-06-02: 4508 replays in 27.5s refusals=0 present_fail=0
+[x50] 2026-06-03: 4143 replays in 25.3s refusals=0 present_fail=0
+[x50] 2026-06-04: 4420 replays in 26.2s refusals=0 present_fail=0
+[x50] 2026-06-05: 4291 replays in 25.7s refusals=0 present_fail=0
+[x50] 2026-06-06: 4333 replays in 36.4s refusals=0 present_fail=0
+[mem_cap] done: gen3ai-capped-x50census-2758174.scope exit 0 · peak 1.00 GB of cap 8.00 GB (13%) · not OOM-killed
+[heavy_slots] released heavy slot 1 after 480 s
+[x50] 2026-10-20T05:40:31-07:00 chunk: 2026-06-07 .. (20 dates max), bound 2700s
+[heavy_slots] waiting 0 s for one of 2 heavy slots (asked for (--slot); 4 queued ahead, FIFO): held: slot 0 pid 2809968 1m19s '/home/goodlad/dev/gen3ai/.claude/worktrees/perf-belief-table'; 8 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[x50] 2026-10-20T05:40:46-07:00 driver restarted with X50_CHUNK_DATES=109 (same registered stop 1792523514): the first chunk released its slot and re-queued at the back
+[x50] 2026-10-20T05:40:47-07:00 109 date folders; stop at 2026-10-20T12:11:54-07:00; shards /home/goodlad/dev/gen3ai/.claude/worktrees/x50-census/designs/research_state/measurements/x50_replay_census_2026-10-20/shards
+[x50] 2026-10-20T05:40:47-07:00 chunk: 2026-06-07 .. (109 dates max), bound 2700s
+[heavy_slots] waiting 0 s for one of 2 heavy slots (asked for (--slot); 3 queued ahead, FIFO): held: slot 0 pid 2809968 1m34s '/home/goodlad/dev/gen3ai/.claude/worktrees/perf-belief-table'; slot 1 pid 2833858 0m15s 'timeout 45m /home/goodlad/miniconda3/envs/gen3ai_torch28/bin'; 7 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[x50-log-trim] 133 intermediate heavy-slot wait lines dropped
+[heavy_slots] waiting 8073 s for one of 2 heavy slots (asked for (--slot); 0 queued ahead, FIFO): held: slot 0 pid 3238904 15m01s 'timeout 3h /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/'; slot 1 pid 3182882 6m06s 'nice -n 19 taskset -c 5-7,13-15 /home/goodlad/miniconda3/env'; 13 waiting — `scripts/ops/mem_cap.sh --status`; the orchestrator marks a GPU-blocking job with GEN3AI_BLOCKING=<reason>
+[heavy_slots] took heavy slot 0 of 2 after waiting 8089.7 s (asked for (--slot))
+[mem_cap] cap 8.00 GB (swap 0) · unit gen3ai-capped-x50census-3051076.scope · slice gen3ai-heavy.slice (aggregate cap 64.00 GB) · oom_score_adj +500
+[x50] 2026-06-07: 4141 replays in 26.1s refusals=0 present_fail=0
+[x50] 2026-06-08: 4596 replays in 28.1s refusals=0 present_fail=0
+[x50] 2026-06-09: 4181 replays in 26.2s refusals=0 present_fail=0
+[x50] 2026-06-10: 4137 replays in 24.7s refusals=0 present_fail=0
+[x50] 2026-06-11: 4544 replays in 27.7s refusals=0 present_fail=0
+[x50] 2026-06-12: 4986 replays in 29.7s refusals=0 present_fail=0
+[x50] 2026-06-13: 5022 replays in 30.0s refusals=0 present_fail=0
+[x50] 2026-06-14: 4275 replays in 25.6s refusals=0 present_fail=0
+[x50] 2026-06-15: 1198 replays in 6.0s refusals=0 present_fail=0
+[x50] 2026-06-21: 1193 replays in 6.5s refusals=0 present_fail=0
+[x50] 2026-06-22: 3819 replays in 21.3s refusals=0 present_fail=0
+[x50] 2026-06-23: 3987 replays in 20.3s refusals=0 present_fail=0
+[x50] 2026-06-24: 3784 replays in 19.0s refusals=0 present_fail=0
+[x50] 2026-06-25: 3886 replays in 19.6s refusals=0 present_fail=0
+[x50] 2026-06-26: 4470 replays in 23.2s refusals=0 present_fail=0
+[x50] 2026-06-27: 3470 replays in 22.9s refusals=0 present_fail=0
+[x50] 2026-06-28: 3928 replays in 22.0s refusals=0 present_fail=0
+[x50] 2026-06-29: 3395 replays in 15.4s refusals=0 present_fail=0
+[x50] 2026-06-30: 3274 replays in 13.9s refusals=0 present_fail=0
+[x50] 2026-07-01: 3301 replays in 16.9s refusals=0 present_fail=0
+[x50] 2026-07-02: 3318 replays in 19.0s refusals=0 present_fail=0
+[x50] 2026-07-03: 3279 replays in 18.2s refusals=0 present_fail=0
+[x50] 2026-07-04: 2957 replays in 15.1s refusals=0 present_fail=0
+[x50] 2026-07-05: 3147 replays in 15.8s refusals=0 present_fail=0
+[x50] 2026-07-06: 3251 replays in 19.5s refusals=0 present_fail=0
+[x50] 2026-07-07: 3408 replays in 17.3s refusals=0 present_fail=0
+[x50] 2026-07-08: 3745 replays in 20.0s refusals=0 present_fail=0
+[x50] 2026-07-09: 3717 replays in 21.6s refusals=0 present_fail=0
+[x50] 2026-07-10: 3290 replays in 17.4s refusals=0 present_fail=0
+[x50] 2026-07-11: 3155 replays in 15.5s refusals=0 present_fail=0
+[x50] 2026-07-12: 3522 replays in 18.0s refusals=0 present_fail=0
+[x50] 2026-07-13: 3641 replays in 20.8s refusals=0 present_fail=0
+[x50] 2026-07-14: 3789 replays in 19.0s refusals=0 present_fail=0
+[x50] 2026-07-15: 3746 replays in 18.5s refusals=0 present_fail=0
+[x50] 2026-07-16: 3771 replays in 18.8s refusals=0 present_fail=0
+[x50] 2026-07-17: 3717 replays in 18.7s refusals=0 present_fail=0
+[x50] 2026-07-18: 3491 replays in 16.9s refusals=0 present_fail=0
+[x50] 2026-07-19: 3064 replays in 15.5s refusals=0 present_fail=0
+[x50] 2026-07-20: 4179 replays in 22.8s refusals=0 present_fail=0
+[x50] 2026-07-21: 3777 replays in 20.9s refusals=0 present_fail=0
+[x50] 2026-07-22: 3554 replays in 18.2s refusals=0 present_fail=0
+[x50] 2026-07-23: 3392 replays in 16.9s refusals=0 present_fail=0
+[x50] 2026-07-24: 3648 replays in 20.1s refusals=0 present_fail=0
+[x50] 2026-07-25: 2926 replays in 14.9s refusals=0 present_fail=0
+[x50] 2026-07-26: 3363 replays in 17.7s refusals=0 present_fail=0
+[x50] 2026-07-27: 3818 replays in 20.3s refusals=0 present_fail=0
+[x50] 2026-07-28: 3190 replays in 15.8s refusals=0 present_fail=0
+[x50] 2026-07-29: 3329 replays in 15.9s refusals=0 present_fail=0
+[x50] 2026-07-30: 3059 replays in 14.9s refusals=0 present_fail=0
+[x50] 2026-07-31: 3604 replays in 19.1s refusals=0 present_fail=0
+[x50] 2026-08-01: 3484 replays in 18.5s refusals=0 present_fail=0
+[x50] 2026-08-02: 3138 replays in 19.0s refusals=0 present_fail=0
+[x50] 2026-08-18: 280 replays in 2.1s refusals=0 present_fail=0
+[x50] 2026-08-19: 3566 replays in 20.0s refusals=0 present_fail=0
+[x50] 2026-08-20: 3799 replays in 20.6s refusals=0 present_fail=0
+[x50] 2026-08-21: 3813 replays in 21.1s refusals=0 present_fail=0
+[x50] 2026-08-22: 3857 replays in 19.7s refusals=0 present_fail=0
+[x50] 2026-08-23: 3421 replays in 18.1s refusals=0 present_fail=0
+[x50] 2026-08-24: 3546 replays in 17.7s refusals=0 present_fail=0
+[x50] 2026-08-25: 3227 replays in 15.8s refusals=0 present_fail=0
+[x50] 2026-08-26: 3521 replays in 20.2s refusals=0 present_fail=0
+[x50] 2026-08-27: 3286 replays in 17.6s refusals=0 present_fail=0
+[x50] 2026-08-28: 3567 replays in 18.7s refusals=0 present_fail=0
+[x50] 2026-08-29: 3399 replays in 18.4s refusals=0 present_fail=0
+[x50] 2026-08-30: 3415 replays in 17.2s refusals=0 present_fail=0
+[x50] 2026-08-31: 3524 replays in 17.5s refusals=0 present_fail=0
+[x50] 2026-09-01: 3446 replays in 17.2s refusals=0 present_fail=0
+[x50] 2026-09-02: 3446 replays in 17.4s refusals=0 present_fail=0
+[x50] 2026-09-03: 3187 replays in 16.2s refusals=0 present_fail=0
+[x50] 2026-09-04: 3405 replays in 18.3s refusals=0 present_fail=0
+[x50] 2026-09-05: 3161 replays in 16.4s refusals=0 present_fail=0
+[x50] 2026-09-06: 2997 replays in 15.7s refusals=0 present_fail=0
+[x50] 2026-09-07: 3028 replays in 15.2s refusals=0 present_fail=0
+[x50] 2026-09-08: 3117 replays in 16.5s refusals=0 present_fail=0
+[x50] 2026-09-09: 3170 replays in 16.5s refusals=0 present_fail=0
+[x50] 2026-09-10: 3001 replays in 15.1s refusals=0 present_fail=1
+[x50] 2026-09-11: 2813 replays in 13.4s refusals=0 present_fail=0
+[x50] 2026-09-12: 2896 replays in 16.0s refusals=0 present_fail=0
+[x50] 2026-09-13: 2891 replays in 15.5s refusals=0 present_fail=0
+[x50] 2026-09-14: 2715 replays in 14.5s refusals=0 present_fail=0
+[x50] 2026-09-15: 2341 replays in 11.5s refusals=0 present_fail=0
+[x50] 2026-09-16: 2561 replays in 13.6s refusals=0 present_fail=0
+[x50] 2026-09-17: 2914 replays in 16.1s refusals=0 present_fail=0
+[x50] 2026-09-18: 3007 replays in 17.8s refusals=0 present_fail=0
+[x50] 2026-09-19: 2565 replays in 14.2s refusals=0 present_fail=0
+[x50] 2026-09-20: 2956 replays in 17.1s refusals=0 present_fail=0
+[x50] 2026-09-21: 3020 replays in 18.4s refusals=0 present_fail=0
+[x50] 2026-09-22: 2964 replays in 18.7s refusals=0 present_fail=0
+[x50] 2026-09-23: 1429 replays in 9.3s refusals=0 present_fail=0
+[mem_cap] done: gen3ai-capped-x50census-3051076.scope exit 0 · peak 3.25 GB of cap 8.00 GB (41%) · not OOM-killed
+[heavy_slots] released heavy slot 0 after 1612 s
+[x50] 2026-10-20T08:22:29-07:00 all 109 dates done

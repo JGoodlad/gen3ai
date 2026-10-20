@@ -7,6 +7,20 @@
 > owner decision only; the Phase-0 numbers and kill conditions remain valid inputs when that
 > happens.
 
+> **[STATUS 2026-10-20] §5's census was RE-MEASURED by X50 S0** on the Rust reader, the whole
+> 376,410-log corpus: [`../research_state/measurements/x50_replay_census_2026-10-20/README.md`](../research_state/measurements/x50_replay_census_2026-10-20/README.md).
+> Where it differs from §5:
+> - 0 % of sides fail to parse (§5.2's 3.15 % is gone);
+> - the own item is known on 69.7 % of own mons at ≥ 1500, so §5.3's 3.93 % was the deleted reader's;
+> - tier A at ≥ 1500 is 489,973 decisions, counted (§5.7 estimated ≈ 259k);
+> - the loss enrichment is 1.04 (§2.4 said 1.29);
+> - the per-decision mask-hazard proxy (P0.4) is 2.5 %;
+> - rung 1's usable-label yield is 86.0 % of opponent turn actions (69.4 % under the production label rules), not
+>   §5.5's 92 % paired turns.
+>
+> This document is otherwise unchanged history; the owner's Q1 recommendation is in
+> `../endstate/design_bot_ideas_screen.md` §5.
+
 > **[STATE 2026-08-18]** Opened as the first ai_v11 document. **Nothing here is built.** The §5
 > census numbers are NEW and were measured this session against the live corpus and the live
 > `agents.bc.log_reader`; every one carries its n and its seed. §3's ladder is **pre-registered and

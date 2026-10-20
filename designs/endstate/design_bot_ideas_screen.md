@@ -64,7 +64,8 @@ shares its batch's control C0.
      toy, which has none of the token kinds the idea separates.
   3. **X47b: production depth 3 → 4**, only if X47 reads GAIN. ≈ 16 GPU-h.
   4. **X49: intent SHAPING on production**, ≈ 15 GPU-h. The prior is weak.
-  5. **X50, human data:** a zero-GPU scoping read now (S0). The GPU A/B waits for the owner's Q1.
+  5. **X50, human data:** the zero-GPU scoping read (S0) is DONE (2026-10-20). It is FEASIBLE on volume, but no
+     decision has a complete own side. The GPU A/B waits for the owner's Q1.
   - **Redundant or dominated:**
     - set mutation (X41 already covers it);
     - fresh-from-scratch depth and expert A/Bs (the growth forks dominate them);
@@ -306,9 +307,14 @@ shares its batch's control C0.
     why this needs more refinement". It is re-opened only by owner decision.
   - **No reader of ours turns a replay into training rows today.** The Python BC log reader was deleted with poke-env
     (`designs/deleted_flags.md`: "to be rebuilt on the Rust reader when ai_v11 opens").
-- **What blocks a warm start (MEASURED by the census, rating ≥ 1500, ≈ 30k decisions):**
-  - all six own Pokémon AND all four of the acting Pokémon's moves are known on only **16.7 %** of decisions;
-  - the own item is known on **3.9 %** of own Pokémon, and the EV spread on **0 %**;
+- **What blocks a warm start (MEASURED by S0, 2026-10-20, the Rust reader, the whole corpus; at rating ≥ 1500 there
+  are 2.73M decisions; [`x50_replay_census_2026-10-20`](../research_state/measurements/x50_replay_census_2026-10-20/README.md)):**
+  - all six own Pokémon AND all four of the acting Pokémon's moves (tier A) are known on **18.0 %** of decisions,
+    which is **489,973**;
+  - **every** own Pokémon at 4 moves: **0.03 %** of decisions. A two-ability species' ability is known on 0.29 % of
+    own Pokémon, and the EV spread on **0 %**;
+  - the own item is known on **69.7 %** of own Pokémon. ai_v11's 3.9 % was the deleted Python reader's number,
+    overturned (F-X50-2);
   - our observation always contains our full sets (the static tokens read species, set and actual stats).
 
   So every BC input on our own side must be COMPLETED. Under the owner's rule the completion must be Smogon-derived
@@ -335,6 +341,14 @@ shares its batch's control C0.
       the player knew their own set.
 
     S0 decides feasibility: ai_v11's floor is ≥ 50k admitted tier-A decisions at ≥ 1500.
+
+    **S0 DONE 2026-10-20 ([`x50_replay_census_2026-10-20`](../research_state/measurements/x50_replay_census_2026-10-20/README.md)): FEASIBLE by the floor.**
+    - Reader: 0 refusals and 0 encoder failures over 752,820 seat reads (one classified spectator case).
+    - Volume: tier A at ≥ 1500 is 489,973, about 10x the floor; 458,354 of them are also hazard-clean.
+    - Mask hazard per turn decision: 2.5 % (a proxy that undercounts).
+    - Loss enrichment of tier A: only 1.04.
+    - The catch is not volume: no decision has a COMPLETE own side (above). The intent-label yield is in the
+      "Dominated" bullet below.
   - **S1 (only on S0 FEASIBLE and the owner's Q1 = re-open), toy, fresh, 3 + 3 seeds to 50M:** BC-init against
     random-init, at one pin.
     - Cost: ≈ 6 × 2.9 + the BC phase (≈ 1 GPU-h ESTIMATED: ≈ 0.26–1.5M rows × a few epochs at the toy learner's
@@ -355,15 +369,24 @@ shares its batch's control C0.
     **UNVERIFIED**);
   - **the Kakuna anchor loses independence**: Kakuna learned from the same human population (F-BI-4);
   - `data/` is frozen while X26 is live, so any derived dataset lives in the archive, not `data/`.
-- **Code.** S0: a census script on `main.live.replay_scan`. S1: B-BC, the large build, opus-high ≈ 5–8 agent-days:
-  - POV rows with Smogon-completed own sets;
+- **Code.** S0: BUILT (`census.py` beside its README: `main.live.replay_scan` + `core_events --present-stream` + a
+  text timeline). S1: B-BC, the large build, opus-high ≈ 5–8 agent-days:
+  - a per-side REQUEST SYNTHESISER: the reader decides only at a `|request|`, and a spectator replay has none
+    (S0 F-X50-5). Rung 1 needs it too;
+  - POV rows with Smogon-completed own sets. The Rust reader asserts a fabricated own spread as known on a
+    spectator read (S0 F-X50-4: IVs 31, EVs 0, serious), and the rows must override it;
   - action labels mapped to the 11-dim space, with ai_v11's mask-hazard filter;
   - a BC trainer on the pointer head that writes a standard checkpoint with its lineage;
   - a declared "initialise a FRESH run from this checkpoint" path. Today `--model` means resume or fork, with the
     recipe restored.
 - **Dominated for the search half** by ai_v11's rung 1: the human OPPONENT's actions as intent labels, offline. It
-  needs no policy change, its label coverage is 92 % (MEASURED), and it is cheaper than BC. It is the better first
-  re-opened rung if the owner re-opens ai_v11.
+  needs no policy change and it is cheaper than BC. It is the better first re-opened rung if the owner re-opens
+  ai_v11. **S0's label yield at ≥ 1500 (2.44M viewer turn decisions):**
+  - **86.0 %** carry the opponent's observable choice (2.10M labels), and 44.8 % (1.10M) carry an
+    already-revealed target that alpha / beta address deterministically;
+  - **69.4 %** survive the production label rules (approximated on the text, UNVERIFIED against the labeller);
+  - Hidden Power (4.3 %) is unlabelable: the replay never states its type;
+  - ai_v11's "92 %" counted paired turns, not usable labels.
 
 ### 2.5 C-MUTATE: set-level moveset mutation in self-play (no new row; X41)
 
@@ -399,7 +422,7 @@ candidates into it.
 | 10 | **X49** | **intent SHAPING, production** | **≈ 15** | **B-INT + B-GROW** | weak prior (§2.3) |
 | 11 | X35-A5 / A6 | Nash archive / league exploiters | ≈ 14.4 / 18 | T57 / flags | conditional, as staged |
 | 12 | X14 | overlap collection with the update | build-heavy | NO | deferred until X44 reads (its gain is larger after X44) |
-| **13** | **X50** | **human data: S0 now (0 GPU); S1 BC toy A/B** | **0 / ≈ 18.5** | **S0 script / B-BC** | GPU part gated on S0 FEASIBLE and owner Q1 |
+| **13** | **X50** | **human data: S0 DONE 2026-10-20 (FEASIBLE on volume: 489,973 tier A at ≥ 1500; no complete own side; 2.10M intent labels); S1 BC toy A/B** | **0 / ≈ 18.5** | **S0 BUILT / B-BC** | GPU part gated on owner Q1 (S0 FEASIBLE). Recommended: rung 1 first (§5) |
 | — | X41 (C-MUTATE) | set mutation | ≈ 13 | build | REDUNDANT here; its own conditional row |
 
 **Dominated or redundant:**
@@ -428,7 +451,7 @@ toy C0, in the toy batch at one pin; look 2 (3604–3605 with toy C0 3604–3605
 | B-KFFN (T66) | per-kind FFN experts (§2.2), its flag and config version; **SPEC: [`design_growth_builds_kffn_int.md`](design_growth_builds_kffn_int.md) §1**, incl. the field-generic growth refactor (§3 there) | opus-high, ≈ 1.5 agent-days (+0.25 for the refactor) | X48 |
 | B-INT (T67) | `--grow opp_intent_grad_mode=shaping`: the flag back on the CLI tier, a growth row and a gradient gate; **SPEC: [`design_growth_builds_kffn_int.md`](design_growth_builds_kffn_int.md) §2** | opus-medium, ≈ 0.5 agent-day (after B-KFFN's refactor) | X49 |
 | B-DEPTH8 | widen `TRUNK_LAYERS_CHOICES` | ≈ 0.25 agent-day | an 8-layer dose arm, only after X47 GAIN |
-| S0 | the replay census on the Rust reader (§2.4) | sonnet-high, ≈ 1 agent-day, CPU | X50 |
+| S0 ✅ **BUILT + RUN 2026-10-20** ([`x50_replay_census_2026-10-20`](../research_state/measurements/x50_replay_census_2026-10-20/README.md)) | the replay census on the Rust reader (§2.4) | sonnet-high, ≈ 1 agent-day, CPU | X50 |
 | B-BC | the BC pipeline (§2.4) | opus-high, ≈ 5–8 agent-days | X50 S1, only after the owner's Q1 |
 
 ---
@@ -440,6 +463,18 @@ evidence, but they come from doubles with team preview, where the acting side's 
 recommendation: run **S0** (zero GPU) now either way. Then re-open **rung 1 first**: human opponent actions as intent
 labels, offline, feeding search's opponent model. Re-open **rung 3**, the BC warm start, only if S0 clears ai_v11's
 50k floor and rung 1 reads something. Until you answer, X50 stops at S0.
+
+**S0's answer (2026-10-20): re-open narrowly, rung 1 only; keep the BC warm start closed for now.**
+- The label side is clean and dense. At ≥ 1500, 86 % of the opponent's turn actions are observable choices: 2.1M
+  labels, half of them on targets the head addresses deterministically. The opponent half of the input is in its
+  native distribution, and a turn-by-turn read leaks nothing as long as the opponent's set is never completed from
+  the future.
+- Behaviour cloning fails on a different axis than volume. Tier A clears the 50k floor about 10x, but a decision with
+  the WHOLE own side known does not exist (every mon at 4 moves: 0.03 %; EVs never). So every BC row is a
+  completion, and S1 would measure the completion as much as the human play.
+- The next rung-1 step is still zero GPU: ai_v11's P0.2 / P0.3 offline probe. Score the current intent head on
+  held-out human decisions against the Smogon prior. It needs the request synthesiser and an own-spread override
+  first (S0 F-X50-5 / F-X50-4), the same core B-BC needs. Train on human labels only if the probe reads something.
 
 ---
 
@@ -463,7 +498,8 @@ labels, offline, feeding search's opponent model. Re-open **rung 3**, the BC war
 - **F-BI-4 (a reading hazard for X50).** Kakuna (Metamon) learned from human ladder replays. A BC-initialised model
   shares its training population, so the Kakuna anchor stops being an independent opponent for that arm. The
   in-house cross is the primary for that reason.
-- **F-BI-5 (scope).** The census numbers in §2.4 are ai_v11's (2026-08-18, the Python reader, 263k logs, ≈ 30k
+- **F-BI-5 (RESOLVED 2026-10-20 by S0: §2.4 now quotes S0's numbers; ai_v11's own-item figure was overturned).**
+  The census numbers in §2.4 were ai_v11's (2026-08-18, the Python reader, 263k logs, ≈ 30k
   decisions at ≥ 1500). The corpus has since grown to 376k, and the reader is now Rust. S0 re-measures them; they
   are not re-verified here.
 - **F-BI-6 (UNVERIFIED literature, from memory):** VLMo / BEiT-3 modality experts; sparse upcycling (Komatsuzaki et al.
@@ -493,3 +529,4 @@ labels, offline, feeding search's opponent model. Re-open **rung 3**, the BC war
 | 2026-10-20 | **X47's ρ MEASURED; its readout REVIEWED before the first read (adversarial review worker)** | ρ ≈ 1.13 (collect 1.065, update 1.202) on X47 s3601's first 6.1M steps, so s_eq ≈ 352M and the cost ≈ 4.9 GPU-h per seed; the review's verdict is SOUND-WITH-AMENDMENTS (AM-X47-1 to AM-X47-11, for the orchestrator to rule): the equal-time point's measured biases total ≈ 3M steps or less; in-learn eval IS inside `collect_ms` (≈ 3.8 % of Σ, the docstring's claim is false, ≈ 0.25M steps of bias); the guards G-C and G-F have never run on a toy; the likely final class (UNDECIDED) licenses nothing until it is ruled | the FLOP estimate ρ 1.3–1.4; s_eq ≈ 50–55M | [`X47_READOUT_REVIEW.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/X47_READOUT_REVIEW.md) §1–§3 |
 | 2026-10-20 | **AM-X47 RULED and registered before any X47 read (orchestrator; X47 amendment worker)** | All eleven of the review's amendments were ACCEPTED, AM-X47-2 as proposed (UNDECIDED with Δ̂ > 0 keeps X47b's slot; the report says "no effect ≥ 4.6 pp detected"). One was ADDED: X47 arms are not thinned until the read (AM-X47-12). Built: `seq` reads only finished, K9(b)-PASS, unthinned runs and names the files; the eval share; the PER-STEP ONLY gap; the per-member Δ and the "in-lineage" label; look 2's moved nodes; the norm reader. The pre-read found that h2h plays a grown toy, that G-F and G-C read on toys, and that G-C's seed-pooled interval has no code (F-AMX-1) | UNDECIDED read as "depth does not help"; subtracting eval from Σ; a flip rule (F-RV-9) | `../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md` §0, §4.5; `src/main/x35/x47_test.py` |
 | 2026-10-20 | **AM-X47b RULED and registered before any X47 read (orchestrator; G-C pooling worker)** | G-C pools the seed pairs of finals (each arm final with its same-seed control final) by a crossed cluster bootstrap over seed pairs and bank battles; the readers refuse a bare interval. The toy's B2 reads a truth re-branched under T\*, production keeps X26@150M's. The norm descriptor stays reported, and a policy-difference descriptor is added, reported only. A final UNDECIDED with Δ̂ ≤ 0 deprioritises X47b | a single-pair G-C; production's truth on the toy; an argmax or weight-norm descriptor deciding anything | `../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md` §0 AM-X47b |
+| 2026-10-20 | **X50 S0 RUN (census worker)** | The census on the Rust reader over all 376,410 logs ([`x50_replay_census_2026-10-20`](../research_state/measurements/x50_replay_census_2026-10-20/README.md)): FEASIBLE by ai_v11's floor (489,973 tier A at ≥ 1500), but no decision has a complete own side; intent-label yield 86.0 % (choice) / 69.4 % (production rules) of opponent turn actions at ≥ 1500; §2.4, §3, §4 and §5 now carry it. Recommendation on Q1: re-open rung 1 only | treating "FEASIBLE on volume" as a GO for S1 (the completion problem is not a volume problem); quoting ai_v11's 3.9 % own items (a deleted-reader artifact); the production intent labeller on replays (it folds at decisions, and a replay has none: F-X50-5) | `census.py` / `census_report.py` / `shards/` / `results/census.md` there; HEAD `dfeb3d92d` |

@@ -563,7 +563,8 @@ same wall clock.
   plateaus.
 - **X48** (per-kind feed-forward experts), **X47b** (production depth 3 → 4, conditional) and **X49** (intent
   shaping) are production arms ranked after A3 / A4.
-- **X50** (human data) is a zero-GPU scoping read first.
+- **X50** (human data) is a zero-GPU scoping read first. It is DONE (S0, 2026-10-20): FEASIBLE on volume, no complete own
+  side, 2.1M intent labels at ≥ 1500. The GPU part waits for the owner's Q1 (`design_bot_ideas_screen.md` §5).
 - **Set mutation is X41.**
 - X47 supersedes X36's rung 1 for the PLATEAU question. X36 keeps CEILING attribution.
 
