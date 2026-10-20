@@ -99,6 +99,7 @@ def decision():
 
 
 @pytest.mark.sim
+@pytest.mark.slow  # ship gate (2026-10-20): 130 s beside a live run (x9.35); its module fixture `decision` serves only it
 def test_the_builder_applies_the_rule_to_seen_and_never_seen_draws_and_raises_on_one_rejecting_the_truth(decision):
     """World 0 built with no rule, then with ONE (species, move) of it banned — a seen mon's unrevealed move, then a
     never-seen mon's move. Until the banned draw, the ruled build draws exactly what the free one did (the rule spends
