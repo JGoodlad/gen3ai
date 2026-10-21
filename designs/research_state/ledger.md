@@ -28102,3 +28102,51 @@ recipe, on the toy, before X35's transfer calibration. It does not show that dep
 Evidence: `research_state/measurements/x35_breakers_stage_2026-10-17/reads/toy_x47_look1.json`, `x47_look1/`
 (README, `read_look1.json`, `seq_look1.json`, `gc_pooled_look1.json`, the norms, the ledger tarball);
 `research_state/UNDERSTANDING.md` §4.9.
+
+### 2026-10-21 · MEASUREMENT · **Stage 1c's PHASE B, READ under its pre-registration (`c9bdc928`) and AMENDMENT A (`a144482b`): honest one-ply search over the likelihood-resampled worlds, with L1's fitted piKL anchor, is NOT-DETECTED against the policy on every played arm (F128L −0.001, C128L +0.007 [−0.003, +0.017], M256L −0.002 at LEAF-K8; n 285), Holm rejects none, and none beats today's 8 F worlds. THE UNIT: NEARER BUT NOT PAYING. PROVISIONAL-POOL**
+
+**Question** (`endstate/design_world_sampler.md` §6.3). Phase A found the likelihood-weighted proposals slightly
+NEARER the truth (all three primaries, SELF-PLAY-ONLY). Does honest search over the resampled 8 then beat the policy?
+
+**Design** (PREREGISTRATION §6, AMENDMENT A).
+- **Arms played:** F8, F128L, C128L, M256L, C8, F128d, C128d. Corpus arms resampled from their STRICT weights; the play
+  indices are computed at the DRIVER checkout (`play_idx_1c.py`) and re-checked by the read.
+- **Where:** X26's pin + the damage-roll control (stage 1's play recipe, this unit's own checkout); the pilot's driver;
+  every legal action × 8 worlds to the end, the critic one-ply on seeds 40 + j.
+- **Scoring:** the true world's referee seeds 16..39.
+- **The rules:** piKL at L1's fitted λ (0.1 / 0.015); SEARCH-PAYS iff lower95 > +0.0005 at both LEAF-K8 and TRUNC-4-K8;
+  Holm over the claim arms (A5); PROVISIONAL-POOL / SELF-PLAY-ONLY (A4); NOT-DETECTED = no search-sized gain (A6).
+
+**Gates.** All PASS: the identity tooth 12 / 12; 287 × 7 rows, 0 refused worlds, the 2 phase-A exclusions excluded in
+every arm; every played index equal to the registered one (0 mismatches); 285 states read.
+
+**Result.**
+
+| arm | IMP over the policy, LEAF-K8 / TRUNC-4-K8 | verdict |
+|---|---|---|
+| F8 | +0.001 / −0.002 | (baseline) |
+| F128L | −0.001 [−0.011, +0.008] / −0.001 | NOT-DETECTED |
+| C128L | +0.007 [−0.003, +0.017] / +0.002 | NOT-DETECTED |
+| M256L | −0.002 / −0.005 | NOT-DETECTED |
+| F128d | −0.002 / −0.002 | NOT-DETECTED |
+| C128d | +0.001 / −0.004 | NOT-DETECTED |
+| C8 | −0.001 / +0.007 | (control) |
+
+- Holm p: C128L 0.37, F128L 0.63, F128d 0.68, C128d 0.74, M256L 0.80. None rejected.
+- **Against F8:** C128L +0.006 [−0.006, +0.018]; the others ≤ 0.
+- **Every stratum** is NOT-DETECTED.
+- **The other rules:** GUMBEL / THRESH within ±0.012. The plain argmax again plays below the policy (F8 −0.020
+  [−0.035, −0.006]), and the anchor removes that harm.
+- **A7:** no ESS subset pays.
+
+**Reading.** The slightly nearer worlds of phase A buy no decision value: honest search plays like the policy, as the
+dose curve predicts for worlds that stay ≈ 0 % exact. Read with stage 1 (only exact team identification pays; partly
+right worlds do not) and L3's off-pool replication (the likelihood carries evidence only against our own network), the
+opponent-choice likelihood with our network as the opponent model is not a search lever here. NOT-DETECTED excludes
+only a search-sized (≈ +0.03) gain at n 285 and licenses no re-run on this bank (A6). Findings (`README` §7): two
+phase-B script defects caught before any play and fixed (`46ce84db9`, `a2a3624b3`); G4's ≤ 6e-5-nat differences from
+L3 (an inherited τ-solve change); A1's conservative near-copy flag; the run's operational relaunches under the
+orchestrator's slot rulings.
+
+**Evidence:** `research_state/measurements/search_1c_2026-10-20/` (README §6, §7; `result_1c_b.json`);
+`endstate/design_world_sampler.md` §6.3; `endstate/search_ledger.md` §1, §7 Q15.

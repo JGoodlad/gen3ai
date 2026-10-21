@@ -4,7 +4,7 @@ Stage 1c of [`design_world_sampler.md`](../../../endstate/design_world_sampler.m
 [`PREREGISTRATION.md`](PREREGISTRATION.md) before any world of a registered state was built. The numbers and their
 reading go to the design doc, `search_ledger.md`, `UNDERSTANDING.md` and the ledger once read.
 
-**Status: REGISTERED, with AMENDMENT A (PREREGISTRATION §11: the orchestrator's ruling on the independent review; a STRICT corpus read, the L-vs-dice attribution co-primaries, a permuted-L placebo that stops the read, PROVISIONAL-POOL / SELF-PLAY-ONLY labels, Holm, NOT-DETECTED's meaning, an ESS split); PHASE A READ (§5): all three primaries NEARER, none MATERIAL, PROVISIONAL-POOL and SELF-PLAY-ONLY; the bar is met, so phase B (the playouts) runs.**
+**Status: READ (§5 phase A, §6 phase B). THE UNIT: NEARER BUT NOT PAYING.** The opponent's choices pick slightly nearer worlds (snapshot opponents only), and honest search over them still does not beat the policy.
 
 | file | what |
 |---|---|
@@ -179,3 +179,73 @@ SELF-PLAY-ONLY** (bot NOT-DETECTED, snapshot NEARER). Pooled, against F8 (the co
   it. Doubling the proposals to 128 adds nothing. There is still nothing near the truth for the likelihood to pick.
 - Phase B tests whether these slightly nearer worlds pay in playouts. The dose curve and the power (±0.02) predict NOT
   DETECTED.
+
+## 6. PHASE B: THE REGISTERED READ (2026-10-21 10:01 PDT; `read_1c.py b`, once, after `B_DONE`)
+
+[`result_1c_b.json`](result_1c_b.json).
+
+**Gates: all pass.**
+- The identity tooth: 12 / 12.
+- 287 states × 7 arms played. 0 refused worlds; the 2 phase-A exclusions are excluded in every arm.
+- Every played world is the registered one: `read_b` recomputes each played index with `play_indices` (0
+  mismatches).
+- **285 states read** in every arm.
+
+**THE VERDICT (§6 and AMENDMENT A): every played arm is NOT-DETECTED, and Holm rejects none.** "Honest search pays" is
+NOT met. The anchored rule is piKL at L1's fitted λ (0.1 / 0.015). IMP is the gain over the policy's own top choice on
+the true world's referee:
+
+| arm | LEAF-K8 | TRUNC-4-K8 | − F8 at LEAF-K8 | Holm p |
+|---|---|---|---|---|
+| F8 (baseline) | +0.001 [−0.009, +0.012] | −0.002 [−0.015, +0.010] | — | — |
+| **F128L** | −0.001 [−0.011, +0.008] | −0.001 [−0.013, +0.010] | −0.003 [−0.014, +0.010] | 0.63 |
+| **C128L** (STRICT) | +0.007 [−0.003, +0.017] | +0.002 [−0.010, +0.015] | +0.006 [−0.006, +0.018] | 0.37 |
+| **M256L** | −0.002 [−0.015, +0.010] | −0.005 [−0.016, +0.008] | −0.004 [−0.019, +0.011] | 0.80 |
+| F128d | −0.002 [−0.014, +0.009] | −0.002 [−0.015, +0.011] | −0.004 | 0.68 |
+| C128d (STRICT) | +0.001 [−0.011, +0.013] | −0.004 [−0.015, +0.008] | −0.000 | 0.74 |
+| C8 (STRICT) | −0.001 [−0.014, +0.013] | +0.007 [−0.005, +0.019] | −0.002 | — |
+
+- **What NOT-DETECTED means (A6):** no gain of about +0.03 or more (search-sized) was detected (n = 285). It neither
+  reopens the route nor licenses a re-run on this bank.
+- **Each stratum:** NOT-DETECTED on every arm.
+- **No other acting rule pays:**
+  - GUMBEL and THRESH stay within ±0.012 on every arm;
+  - the plain ARGMAX sits clearly below the policy on F8 (−0.020 [−0.035, −0.006] at LEAF-K8), as L1 found, and the
+    anchor removes that harm.
+- **A7, the ESS split:** no subset pays. F128L's states with ESS < 2 read +0.011 [−0.001, +0.025] at LEAF-K8.
+
+**THE UNIT (§5–§6): NEARER BUT NOT PAYING.** The likelihood-weighted proposals hold slightly more of the truth's hidden
+facts (phase A, snapshot opponents only). Honest one-ply search over the resampled worlds, with the anchor, plays like
+the policy: within about ±0.01 of it, and no better than today's 8 F worlds. That is what the dose curve predicts for
+worlds that stay ≈ 0 % exact.
+
+## 7. FINDINGS (hazards, deviations, and what could not be verified)
+
+1. **Two DEFECTS of this unit's phase-B scripts, both caught before any play.**
+   - `play_1c.py` runs at the pin, whose `main` predates `opp_likelihood`, so it could not compute the play indices
+     (crash at the first chunk).
+   - `play_indices` named a uniform arm's first 8 on the 2 states whose sets were never built.
+   - Both fixed (`46ce84db9`, `a2a3624b3`): the indices are computed at the DRIVER by `play_idx_1c.py`, and `read_b`
+     re-checks every one.
+2. **G4:** the truth's likelihood differs from L3's by ≤ 6e-5 nats on all 282 compared states (1 exactly equal). The driver commit inherited the
+   fp32_alt τ solve (`d4af9f1e2`, rebased in at the code ship) that X26's pre-v160 checkpoint migrates to. It is
+   negligible against the ≈ 1-nat spread between worlds, and declared rather than re-run.
+3. **A1's flag is conservative.** `near4` counts revealed sets too, so the STRICT read also zeroes rare honest
+   near-exact worlds (the honest base rate is 0.001). It moved nothing: STRICT and non-strict verdicts agree.
+4. **The familiarity confound (L3's review and decoy test):** the likelihood partly rewards pool-like teams. Here it
+   cannot explain a gain, because the corpus-side selection is NOT-DETECTED and the F-side selection is among honest
+   draws, which are not pool teams. It is also why everything is PROVISIONAL-POOL.
+5. **M256L has no proper mixture weight** (hazard 2): it is read descriptively in spirit; it changed no conclusion.
+6. **The run's operations** (§3) changed throughput, never the design.
+   - Phase A was stopped twice between states (to register Amendment A, and for the BLOCKING rulings), relaunched with
+     the registered stop each time; no state was lost or rerun.
+   - Chunks moved from SCHED_IDLE to nice 19 through operational wrappers outside the repo
+     (`~/gen3ai_archive/search_1c/ops/`).
+   - Every phase-A row's head is `a144482b0`; phase B's scripts are at `a2a3624b3`, and only the play-index code
+     changed.
+7. **Light jobs outside a heavy slot:** two functional checks of the driver (N = 4 / 12, ≤ 1.2 GB, ≤ 35 s) and the
+   reads (≤ 0.5 GB, seconds) ran under `nice -n 19`, SCHED_IDLE and an address-space cap.
+8. **One model, one bank, one pre-plateau anchor, pool opponents.** Nothing here is read off-pool or at the plateau
+   (A4). The NOT-DETECTED also holds only at this power (≈ ±0.02 between arms).
+9. **The design doc's §6.3 named the draft's 64 + 64 proposals** in the code ship (`664385776`) until the phase-A read
+   corrected it (`d4d9c6149`); the registration itself always said 128 + 128.

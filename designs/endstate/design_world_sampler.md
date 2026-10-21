@@ -3,7 +3,18 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this doc
 updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-21, latest): STAGE 1 READ (§6.2): ONLY TEAM IDENTIFICATION PAYS.** On the 287 maturity LEAN states
+**Status (2026-10-21, latest): STAGE 1c READ (§6.3): NEARER BUT NOT PAYING.** The weighted proposals hold slightly more
+of the truth's binding hidden facts:
+- 128 honest and 128 real-team corpus worlds per state, weighted by the damage-roll weight × the opponent-choice
+  likelihood;
+- ΔH +0.007 / +0.019 / +0.013;
+- SELF-PLAY-ONLY; the exact-world mass ≈ 0.
+
+Honest one-ply search over the resampled 8, with L1's piKL anchor, is NOT-DETECTED against the policy on every arm
+(Holm: none pays). With stage 1 (exactness carries the value; only POOL's team identification pays) and L3's off-pool
+read (no likelihood evidence against non-self opponents), the opponent-choice route buys no search gain here.
+
+**Status (2026-10-21): STAGE 1 READ (§6.2): ONLY TEAM IDENTIFICATION PAYS.** On the 287 maturity LEAN states
 at X26 225M, POOL (the training pool's consistent teams) beats today's honest worlds by +0.038 [+0.022, +0.055] per
 decision at the 8-rollout leaf and recovers 0.72 [0.53, 0.92] of the oracle gap (PAYS, MATERIAL). Every
 open-population sampler is NOT DETECTED against F, with points from −0.008 to +0.002 and intervals near ±0.015. That
@@ -1008,7 +1019,7 @@ the strict filter), and B's weight function: measurement-folder code. The valida
 itself (F2, 2026-10-19, `world_legality`): every arm through `WorldSampler` gets it, and a corpus arm's worlds pass
 `world_guard.check_legal`.
 
-### 6.3 Stage 1c: more or team-level proposals, resampled by the opponent's own choices (PHASE A READ 2026-10-20; phase B RUNNING)
+### 6.3 Stage 1c: more or team-level proposals, resampled by the opponent's own choices (READ 2026-10-21: NEARER BUT NOT PAYING)
 
 **Registered** in `measurements/search_1c_2026-10-20/PREREGISTRATION.md` (`c9bdc928`; the read script and the facts meter
 by sha256), as L3's registered consequence, with **AMENDMENT A** (`a144482b`, §11 there: the orchestrator's ruling on an
@@ -1062,7 +1073,32 @@ All three are labelled **PROVISIONAL-POOL, SELF-PLAY-ONLY**.
   - The bar (any primary NEARER) is met. **Phase B** plays F8, the three primaries, C8, F128d and C128d with L1's
     fitted piKL anchor (RUNNING; stop 2026-10-21 21:00 PDT).
 
-Detail: `measurements/search_1c_2026-10-20/README.md` §5, `result_1c_a.json`.
+**PHASE B READ (2026-10-21; 285 states × 7 arms; MEASURED, PROVISIONAL-POOL).** The identity tooth passed 12 / 12, and
+there were 0 refused worlds; every played world is the registered one. With L1's fitted piKL anchor, IMP over the
+policy at LEAF-K8 / TRUNC-4-K8:
+
+| arm | LEAF-K8 | TRUNC-4-K8 |
+|---|---|---|
+| F8 | +0.001 | −0.002 |
+| F128L | −0.001 | −0.001 |
+| **C128L** | **+0.007** [−0.003, +0.017] | +0.002 |
+| M256L | −0.002 | −0.005 |
+| F128d | −0.002 | −0.002 |
+| C128d | +0.001 | −0.004 |
+| C8 | −0.001 | +0.007 |
+
+- Every played arm is NOT-DETECTED, in each stratum. Holm rejects none, and none beats F8.
+- NOT-DETECTED means no search-sized (≈ +0.03) gain; it licenses no re-run on this bank.
+- **The unit: NEARER BUT NOT PAYING.**
+- **Read with stage 1 (§6.2):**
+  - Partly nearer worlds carry no value at this leaf; only exact team identification does.
+  - The likelihood's selection exists only against our own network (L3 off-pool: bots NO-EVIDENCE).
+  - So (f) with our network as the opponent model is not a search lever here. Its only remaining use is as the weight
+    on a proposal set that ALREADY holds the truth's team, for example a behaviour-cloned opponent model with a
+    covering corpus. Neither exists for the ladder.
+
+Detail: `measurements/search_1c_2026-10-20/README.md` §5 (phase A), §6 (phase B), §7 (findings);
+`result_1c_a.json`, `result_1c_b.json`.
 
 ---
 
@@ -1210,3 +1246,4 @@ Detail: `measurements/search_1c_2026-10-20/README.md` §5, `result_1c_a.json`.
 | 2026-10-20 | **STAGE 1c PHASE A READ** (`measurements/search_1c_2026-10-20/` README §5, `result_1c_a.json`) | Status; §6.3 rewritten (it still named the pre-registration draft's 64 + 64 proposals and its arm names; the registered N is 128 + 128) with the read: all primaries NEARER, none MATERIAL, PROVISIONAL-POOL and SELF-PLAY-ONLY; the corpus carries the species, the likelihood +0.008 among F worlds only; the exact-world mass ≈ 0; phase B running | ranking (f) above (c) on this read (the likelihood adds little to the corpus); calling the route closed before phase B's playouts and the off-pool replication | README §5 |
 | 2026-10-20 | **THE OFF-POOL BANK EXISTS; L3 off-pool SELF-PLAY-ONLY, the pool decoy lift was MEMORY** (`measurements/search_offpool_bank_2026-10-20/`, pre-registered `7642df0f6`) | F4 (the bank now exists; what it showed for §4 (f)) | quoting a pool-bank likelihood or corpus-arm number as a ladder number; reading the pool decoys' lift as coherence | that folder's README, `result_offpool.json` |
 | 2026-10-21 | **STAGE 1 READ: only team identification pays** (`measurements/world_sampler_stage1_2026-10-19/result_s1.json`; registered, amendments A1–A3 before any outcome was read) | §6.2's read on all 287 states. C_pool (POOL) PAYS and is MATERIAL: Δ +0.038 [+0.022, +0.055], r 0.72. B, C_ladder, C_forum_strict and NS are NOT DETECTED, and none is SEARCH-ENABLED. NOT CALIBRATED (F10). L2 reads EXACT-ONLY between arms with POOL and NEITHER without. The secondaries (F2's rule, tier A uniform and weighted) are NOT DETECTED. The 1b trigger fires on POOL alone. Status, §0, §6.2, §7 F1 / F2 / F10–F12 updated | reading partial worlds as the path (NS's far better calibration bought nothing); calling the open arms NULL (their intervals reach ±0.015); flipping the dice default to `rolls` on value (no effect read; it stays a correctness option); quoting q_SM as a value proxy (POOL 0.82 vs TODAY 0.40) | `PREREGISTRATION.md` §9–§11; `gigo_s1.json` (PASS with A3); `read_s1_test.py` (14 planted) |
+| 2026-10-21 | **STAGE 1c READ: NEARER BUT NOT PAYING** (`measurements/search_1c_2026-10-20/` README §6) | Status; §6.3 (phase B's table and the unit; read with stage 1 and L3 off-pool) | ranking (f) as a sampler for the ladder (its evidence is self-play-only, and nearer-not-exact worlds do not pay at this leaf); a re-run on this bank (A6); quoting phase A's nearness as value | README §6 |
