@@ -5335,10 +5335,18 @@
   },
   "src/rust_sim/e2e_fuzz_golden_test.py::test_a_full_regeneration_equals_the_golden_and_the_taxonomy_byte_for_byte": {
    "status": "pass",
-   "commit": "cf7781f11ad7dae5f745b2e9a16018aab638ca18",
-   "at": "2026-10-20T14:58:54Z",
-   "duration_s": 500.88,
-   "contention": 1.73,
+   "commit": "2308f76d7830ef4e6a37eda39133febc75b5f471",
+   "at": "2026-10-21T00:44:03Z",
+   "duration_s": 542.99,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/rust_sim/e2e_fuzz_golden_test.py::test_the_generators_first_battles_are_the_goldens_prefix": {
+   "status": "pass",
+   "commit": "2308f76d7830ef4e6a37eda39133febc75b5f471",
+   "at": "2026-10-21T00:44:03Z",
+   "duration_s": 19.32,
+   "contention": 1.81,
    "detail": ""
   },
   "src/utils/bridge/node_reject_bound_integration_test.py::test_refusals_reset_across_committed_decisions": {
@@ -5566,5 +5574,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-20T23:11:24Z"
+ "last_written": "2026-10-21T00:44:03Z"
 }

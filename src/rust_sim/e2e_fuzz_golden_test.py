@@ -85,6 +85,7 @@ def test_the_golden_carries_quick_claw_lead_battles_with_the_turn0_roll():
 
 
 @pytest.mark.sim
+@pytest.mark.slow  # ~20 s of Node generation, over the routine tier's 8 s bar
 def test_the_generators_first_battles_are_the_goldens_prefix(tmp_path):
     """The deterministic MASTER_SEED pairing makes battle e2e_N the N-th accepted battle: a short run is a byte prefix of
     the golden, header and INIT field count included (`tests/e2e_fuzz_test.rs` asserts 4 INIT fields)."""
