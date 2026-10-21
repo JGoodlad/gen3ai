@@ -1,0 +1,73 @@
+{
+ "digest": "8a68b851fede65699925c8579b820cbdcc1edb80a3572bd842dc5c777e884fbe",
+ "fork_step": 280000170,
+ "metadata_sha256_descriptive": {
+  "model_config.json": "7c480fe7fe8d9f6e963b63541a65465f88e321ef7bf02840e99d09a8f6ba8032",
+  "summary.json": "f045a5bdeac1025a0a9e3d6a9565c35e1b4388acdca763fda87f6881fd14d98f",
+  "win_rate_vs_bots.txt": "78ac8f6e311126ecaa054b26b7f8015c50cfd71e0cffa46ede3b8b0cd9844e83"
+ },
+ "n_snapshots": 14,
+ "parent_run_dir": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601",
+ "pstar_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+ "schema": "x35_pool_batch1_v1",
+ "side": "production",
+ "snapshots": [
+  {
+   "name": "snapshot_000164000130.zip",
+   "sha256": "2bde01f344959157816e16e5cc34357ad55273a639e54cc82405811039c3367d"
+  },
+  {
+   "name": "snapshot_000166000198.zip",
+   "sha256": "8a07fae5e8ed81c2abd21bac8a56ee9a56b8f37c952c31e15fb95f453077b715"
+  },
+  {
+   "name": "snapshot_000176000224.zip",
+   "sha256": "e6ddc040f5ff7db190c4ff6f8ccc598ee40b954728c1373b52c847d422e7dace"
+  },
+  {
+   "name": "snapshot_000194000195.zip",
+   "sha256": "587e07fdc830cd2567e215b8560c4591189d351ac8ecc46a83459c09002d30ec"
+  },
+  {
+   "name": "snapshot_000200000120.zip",
+   "sha256": "6fc7a43270f58e76fdc3eddba06136e42d23c3837fb11ca416e58bb1e01de28e"
+  },
+  {
+   "name": "snapshot_000220000027.zip",
+   "sha256": "17c1618bf55edd82716fc8b9ec59814f3d500778c2d5703b9ba4e1da0f1deb82"
+  },
+  {
+   "name": "snapshot_000224000053.zip",
+   "sha256": "e88df5dedf964cb3353463b2cba12443d65efda2738ecddf36c796318205bd1e"
+  },
+  {
+   "name": "snapshot_000228000030.zip",
+   "sha256": "a7ed4e0f5f32ca16c89b945fd7e5ea24547d6da5b21e756f9940639d2e269f6f"
+  },
+  {
+   "name": "snapshot_000236000155.zip",
+   "sha256": "34f5f483c084d0558915837b71a7b6b10d6728b4dafca3889468113093fe763f"
+  },
+  {
+   "name": "snapshot_000244000047.zip",
+   "sha256": "5e20b0601b571f88ce236006253f3d923119b574f740f330887f753cd982ace7"
+  },
+  {
+   "name": "snapshot_000246000132.zip",
+   "sha256": "c3d6a5a76633f9c0708e1b1cfbbb9d56b0137f903319ac141e001ffea0764c80"
+  },
+  {
+   "name": "snapshot_000252000090.zip",
+   "sha256": "87f22e4eec36bc10e7e6810c0557b1391a76b2ed2e20123d5ed399299213e601"
+  },
+  {
+   "name": "snapshot_000254000018.zip",
+   "sha256": "e3ce112d57eae2fa1c23f8e4ad33bf05962c8221d546bc7b604365241061e110"
+  },
+  {
+   "name": "snapshot_000268000171.zip",
+   "sha256": "558edce3644a8a6cc5aa2f45b07df88eef8780631e0bf623c4b6e6e00c662400"
+  }
+ ],
+ "written_at": "2026-10-21T16:50:58+00:00"
+}

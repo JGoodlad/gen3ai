@@ -1,0 +1,6 @@
+# X35 batch 1's PRODUCTION pin (X35_PIN_1_production), written once by the side's first launch's GO.
+sha: f4b25238def57900c0305bb2a3a5a8f9edaef285
+side: production
+written_at: 2026-10-21T16:50:58+00:00
+t62_verdict: FP32_ALT
+rule: AM-1 as amended by AM-8 (orchestrator 2026-10-20): every batch-1 production arm, look 2 included, launches at this pin
