@@ -857,6 +857,9 @@ on the states both built. Battle-clustered 95 %, seed 20261019.
   [+0.025, +0.076] on own snapshots. C_ladder: +0.014 [−0.010, +0.040] on snapshots, −0.009 on bots.
 - **The 1b trigger fires**, on C_pool alone (Δ ≥ +0.010 at both scorers). No C or NS arm is SEARCH-ENABLED. Stage 1b
   (E2's 1,108 states) is not run by this unit.
+- **2026-10-21, orchestrator ruling: stage 1b is NOT run.** C_pool is the closed-population ceiling, and knowing the
+  training pool is not available against real opponents; the off-pool L3 read (`82f90eb3`) shows the opponent-choice
+  likelihood works only when our network IS the opponent. 1b would sharpen a number no real opponent lets us use.
 
 *Secondary contrasts, the same rule* (none clear):
 

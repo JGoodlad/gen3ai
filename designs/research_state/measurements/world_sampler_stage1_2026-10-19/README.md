@@ -91,5 +91,8 @@ own `mem_cap` scope; `CUDA_VISIBLE_DEVICES=""`. No GPU.
 - The verdicts, the tables and the reading are `design_world_sampler.md` §6.2. In one line: C_pool PAYS and is
   MATERIAL (Δ +0.038, r 0.72); B, C_ladder, C_forum_strict and NS are NOT DETECTED; NOT CALIBRATED; L2 EXACT-ONLY
   between arms; every secondary NOT DETECTED; the 1b trigger fires on C_pool.
-- The checkouts `~/.cache/gen3ai/ws_stage1/{builder,pin_rolls,runner}` and the archive stay until the orchestrator
-  closes the unit (the 1b decision). §1 says how to recreate the play checkout.
+- **Closed 2026-10-21.** The orchestrator ruled that stage 1b is not run (`design_world_sampler.md` §6.2). The checkouts
+  `~/.cache/gen3ai/ws_stage1/{builder,pin_rolls,runner}` were removed. The archive
+  (`~/gen3ai_archive/world_sampler_stage1/`) is kept. To re-run or re-read, recreate them:
+  - the BUILDER and RUNNER: detached at `8d304953` and `855bbc8b`;
+  - the PLAY checkout: §1's recipe (`9c033489` + the cherry-pick of `fc010d7d3`).
