@@ -1,0 +1,64 @@
+{
+ "_README": [
+  "X51 pair cell: Kakuna ckpt 28 (side A, reported) vs Kakuna ckpt 34, both piloting home72 (gen3ai_home72). Needs the agent `policy` key (main.anchors)."
+ ],
+ "showdown": {
+  "node": "node",
+  "port_range": [
+   9500,
+   9599
+  ]
+ },
+ "opponents": {
+  "metamon": {
+   "checkout": "/home/goodlad/dev/metamon",
+   "python": "/home/goodlad/miniconda3/envs/metamon/bin/python",
+   "cache_dir": "/home/goodlad/dev/metamon/cache",
+   "agents": {
+    "SmallRL": {
+     "checkpoint": 40,
+     "params": 13938567
+    },
+    "SyntheticRLV2": {
+     "checkpoint": 48,
+     "params": 200894911
+    },
+    "Kakuna": {
+     "checkpoint": 34,
+     "params": 142832563
+    },
+    "Kakuna28": {
+     "policy": "Kakuna",
+     "checkpoint": 28,
+     "params": 142832563
+    }
+   },
+   "reference_team_dirs": {
+    "competitive": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou",
+    "hl_05_26": "/home/goodlad/gen3ai_archive/metamon_cache_2026-09-24/teams/hl_05_26/gen3ou"
+   },
+   "team_sets": {
+    "home": "gen3ai_home72",
+    "away": "competitive"
+   }
+  },
+  "foulplay": {
+   "checkout": "/home/goodlad/dev/foul-play",
+   "python": "/home/goodlad/dev/foul-play/.conda/bin/python",
+   "team_dirs": {
+    "home": "/home/goodlad/dev/gen3ai-reads/x51_2026-10-20/teams_home72",
+    "away": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou"
+   }
+  }
+ },
+ "our_team_sources": {
+  "home": {
+   "kind": "dir",
+   "path": "/home/goodlad/dev/gen3ai-reads/x51_2026-10-20/teams_home72"
+  },
+  "away": {
+   "kind": "dir",
+   "path": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou"
+  }
+ }
+}

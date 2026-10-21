@@ -798,6 +798,20 @@ about four fifths of the progress transfers.
 - The plateau is not a memorisation plateau in-house; whether it is one against outside opponents stays open.
 [ledger 2026-10-19 · *X37b TRANSFER*]
 
+**At the plateau, goal (a) holds and goal (b) is ≈ 4 pp away (2026-10-21, X51, `measurements/x51_plateau_vs_kakuna_2026-10-20/`):**
+[MEASURED · PROVISIONAL · n = 400 per cell, the X26 reads' own harness `63f97a57`, paired seeds] P\* (X26 @ 280M) vs
+Kakuna ckpt 34, greedy:
+- **home72 0.598 [0.549, 0.644]**: goal (a) MET at the plateau. Kakuna's ckpt 28 is not detectably stronger than ckpt
+  34 (0.515 [0.466, 0.564] against it), so 34 stays the opponent.
+- **Unfamiliar teams: H 0.497, F 0.530, P72 0.433; pooled 0.487 [0.459, 0.515]**: goal (b) NOT met, ≈ 4.3 pp short of
+  ≈ 0.53.
+- P\* − X26 @161M: pooled unfamiliar +3.0 pp [−1.0, +7.0], home72 +2.3 pp; each panel not detected (P72 −2.0).
+  The familiarity premium (home72 − unfamiliar) stays ≈ 11 pp from 161M to the plateau.
+- The toy T\* (no belief stack) is weaker than P\* on home72 (−10.5 pp) and forum72 (−7.3 pp), both detected; its
+  drop between them is about half P\*'s on the logit scale, not detected. Whether the belief stack is the
+  memorisation channel stays open.
+[ledger 2026-10-21 · *X51 PLATEAU vs KAKUNA*]
+
 **…and X26's plateau sits beside a small, REAL cyclic component (2026-10-19, the cycle monitor's retro read,
 `measurements/cycle_monitor_retro_2026-10-19/`):** [MEASURED · DESCRIPTIVE · the in-run snapshot ladder, not the
 registered instrument] Read by the cycle monitor's four signals, X26's ladder (72 snapshots, 1,150 mirrored lines) is

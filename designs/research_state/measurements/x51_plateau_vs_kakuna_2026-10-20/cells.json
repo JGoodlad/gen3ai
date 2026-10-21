@@ -1,0 +1,2367 @@
+{
+ "cells": {
+  "pstar_home72": {
+   "n": 400,
+   "wins": 239,
+   "losses": 160,
+   "ties": 1,
+   "win_rate": 0.5975,
+   "wilson95": [
+    0.5487342037373939,
+    0.644410898866556
+   ],
+   "by_half": {
+    "ours_challenge": 0.605,
+    "peer_challenge": 0.59
+   },
+   "hit_forfeit_limit": 1,
+   "median_turns": 32,
+   "distinct_our_teams": 68,
+   "distinct_their_teams": 67,
+   "regime_stamps": {
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 280000170, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x51_2026-10-20/model/checkpoint_280000170_steps.zip\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@63f97a575+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 72}": 400
+   },
+   "units": [
+    "pstar_home72_00",
+    "pstar_home72_01",
+    "pstar_home72_02",
+    "pstar_home72_03",
+    "pstar_home72_04",
+    "pstar_home72_05",
+    "pstar_home72_06",
+    "pstar_home72_07",
+    "pstar_home72_08",
+    "pstar_home72_09",
+    "pstar_home72_10",
+    "pstar_home72_11",
+    "pstar_home72_12",
+    "pstar_home72_13",
+    "pstar_home72_14",
+    "pstar_home72_15",
+    "pstar_home72_16",
+    "pstar_home72_17",
+    "pstar_home72_18",
+    "pstar_home72_19"
+   ],
+   "team_overlap": {
+    "version": "gen3_team_overlap_v1",
+    "dir": "/home/goodlad/dev/gen3ai-reads/x51_2026-10-20/teams_home72",
+    "training_pool": {
+     "n_read_teams": 72,
+     "n_reference_teams": 719,
+     "exact_team": 72,
+     "exact_team_strict": 72,
+     "same_species6": 72,
+     "n_read_mons": 432,
+     "mons_seen": 432,
+     "mons_seen_strict": 432,
+     "max_shared_mons_hist": {
+      "0": 0,
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0,
+      "6": 72
+     },
+     "teams_sharing_ge4": 72,
+     "exact_examples": [
+      [
+       "009e3d0244.txt",
+       ""
+      ],
+      [
+       "023a2d47648b85e6.txt",
+       ""
+      ],
+      [
+       "0972146213a667c9.txt",
+       ""
+      ],
+      [
+       "0fa105ae42dc85ec.txt",
+       ""
+      ],
+      [
+       "11fb5d2fc2.txt",
+       ""
+      ]
+     ]
+    },
+    "competitive": {
+     "n_read_teams": 72,
+     "n_reference_teams": 20,
+     "exact_team": 8,
+     "exact_team_strict": 7,
+     "same_species6": 12,
+     "n_read_mons": 432,
+     "mons_seen": 173,
+     "mons_seen_strict": 61,
+     "max_shared_mons_hist": {
+      "0": 9,
+      "1": 42,
+      "2": 10,
+      "3": 3,
+      "4": 0,
+      "5": 0,
+      "6": 8
+     },
+     "teams_sharing_ge4": 8,
+     "exact_examples": [
+      [
+       "3650f09b2f.txt",
+       "team_0.gen3ou_team"
+      ],
+      [
+       "53f215cb45b7d729.txt",
+       "team_21.gen3ou_team"
+      ],
+      [
+       "63eda9d8d491d6a4.txt",
+       "team_12.gen3ou_team"
+      ],
+      [
+       "6d56d06b9fca508e.txt",
+       "team_8.gen3ou_team"
+      ],
+      [
+       "a04c29cf769e9a11.txt",
+       "team_7.gen3ou_team"
+      ]
+     ]
+    }
+   }
+  },
+  "pstar_hpfix": {
+   "n": 400,
+   "wins": 199,
+   "losses": 201,
+   "ties": 0,
+   "win_rate": 0.4975,
+   "wilson95": [
+    0.44875888866825975,
+    0.546288672803434
+   ],
+   "by_half": {
+    "ours_challenge": 0.495,
+    "peer_challenge": 0.5
+   },
+   "hit_forfeit_limit": 1,
+   "median_turns": 38,
+   "distinct_our_teams": 69,
+   "distinct_their_teams": 68,
+   "regime_stamps": {
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 280000170, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x51_2026-10-20/model/checkpoint_280000170_steps.zip\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@63f97a575+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 72}": 400
+   },
+   "units": [
+    "pstar_hpfix_00",
+    "pstar_hpfix_01",
+    "pstar_hpfix_02",
+    "pstar_hpfix_03",
+    "pstar_hpfix_04",
+    "pstar_hpfix_05",
+    "pstar_hpfix_06",
+    "pstar_hpfix_07",
+    "pstar_hpfix_08",
+    "pstar_hpfix_09",
+    "pstar_hpfix_10",
+    "pstar_hpfix_11",
+    "pstar_hpfix_12",
+    "pstar_hpfix_13",
+    "pstar_hpfix_14",
+    "pstar_hpfix_15",
+    "pstar_hpfix_16",
+    "pstar_hpfix_17",
+    "pstar_hpfix_18",
+    "pstar_hpfix_19"
+   ],
+   "team_overlap": {
+    "version": "gen3_team_overlap_v1",
+    "dir": "/home/goodlad/dev/gen3ai-reads/x51_2026-10-20/teams_heldout72_hpfix",
+    "training_pool": {
+     "n_read_teams": 72,
+     "n_reference_teams": 719,
+     "exact_team": 0,
+     "exact_team_strict": 0,
+     "same_species6": 21,
+     "n_read_mons": 432,
+     "mons_seen": 164,
+     "mons_seen_strict": 45,
+     "max_shared_mons_hist": {
+      "0": 3,
+      "1": 40,
+      "2": 28,
+      "3": 1,
+      "4": 0,
+      "5": 0,
+      "6": 0
+     },
+     "teams_sharing_ge4": 0,
+     "exact_examples": []
+    },
+    "competitive": {
+     "n_read_teams": 72,
+     "n_reference_teams": 20,
+     "exact_team": 0,
+     "exact_team_strict": 0,
+     "same_species6": 9,
+     "n_read_mons": 432,
+     "mons_seen": 61,
+     "mons_seen_strict": 4,
+     "max_shared_mons_hist": {
+      "0": 30,
+      "1": 38,
+      "2": 4,
+      "3": 0,
+      "4": 0,
+      "5": 0,
+      "6": 0
+     },
+     "teams_sharing_ge4": 0,
+     "exact_examples": []
+    }
+   }
+  },
+  "pstar_forum72": {
+   "n": 400,
+   "wins": 212,
+   "losses": 188,
+   "ties": 0,
+   "win_rate": 0.53,
+   "wilson95": [
+    0.48103615589437393,
+    0.5783931064453032
+   ],
+   "by_half": {
+    "ours_challenge": 0.535,
+    "peer_challenge": 0.525
+   },
+   "hit_forfeit_limit": 3,
+   "median_turns": 37,
+   "distinct_our_teams": 69,
+   "distinct_their_teams": 68,
+   "regime_stamps": {
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 280000170, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x51_2026-10-20/model/checkpoint_280000170_steps.zip\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@63f97a575+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 72}": 400
+   },
+   "units": [
+    "pstar_forum72_00",
+    "pstar_forum72_01",
+    "pstar_forum72_02",
+    "pstar_forum72_03",
+    "pstar_forum72_04",
+    "pstar_forum72_05",
+    "pstar_forum72_06",
+    "pstar_forum72_07",
+    "pstar_forum72_08",
+    "pstar_forum72_09",
+    "pstar_forum72_10",
+    "pstar_forum72_11",
+    "pstar_forum72_12",
+    "pstar_forum72_13",
+    "pstar_forum72_14",
+    "pstar_forum72_15",
+    "pstar_forum72_16",
+    "pstar_forum72_17",
+    "pstar_forum72_18",
+    "pstar_forum72_19"
+   ],
+   "team_overlap": {
+    "version": "gen3_team_overlap_v1",
+    "dir": "/home/goodlad/dev/gen3ai-reads/x51_2026-10-20/teams_forum72",
+    "training_pool": {
+     "n_read_teams": 72,
+     "n_reference_teams": 719,
+     "exact_team": 0,
+     "exact_team_strict": 0,
+     "same_species6": 6,
+     "n_read_mons": 432,
+     "mons_seen": 303,
+     "mons_seen_strict": 100,
+     "max_shared_mons_hist": {
+      "0": 0,
+      "1": 14,
+      "2": 42,
+      "3": 16,
+      "4": 0,
+      "5": 0,
+      "6": 0
+     },
+     "teams_sharing_ge4": 0,
+     "exact_examples": []
+    },
+    "competitive": {
+     "n_read_teams": 72,
+     "n_reference_teams": 20,
+     "exact_team": 0,
+     "exact_team_strict": 0,
+     "same_species6": 2,
+     "n_read_mons": 432,
+     "mons_seen": 131,
+     "mons_seen_strict": 8,
+     "max_shared_mons_hist": {
+      "0": 10,
+      "1": 45,
+      "2": 14,
+      "3": 3,
+      "4": 0,
+      "5": 0,
+      "6": 0
+     },
+     "teams_sharing_ge4": 0,
+     "exact_examples": []
+    }
+   }
+  },
+  "pstar_p72": {
+   "n": 400,
+   "wins": 173,
+   "losses": 227,
+   "ties": 0,
+   "win_rate": 0.4325,
+   "wilson95": [
+    0.38481873705969716,
+    0.48146542267603
+   ],
+   "by_half": {
+    "ours_challenge": 0.4,
+    "peer_challenge": 0.465
+   },
+   "hit_forfeit_limit": 2,
+   "median_turns": 38,
+   "distinct_our_teams": 69,
+   "distinct_their_teams": 68,
+   "regime_stamps": {
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 280000170, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x51_2026-10-20/model/checkpoint_280000170_steps.zip\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@63f97a575+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 72}": 400
+   },
+   "units": [
+    "pstar_p72_00",
+    "pstar_p72_01",
+    "pstar_p72_02",
+    "pstar_p72_03",
+    "pstar_p72_04",
+    "pstar_p72_05",
+    "pstar_p72_06",
+    "pstar_p72_07",
+    "pstar_p72_08",
+    "pstar_p72_09",
+    "pstar_p72_10",
+    "pstar_p72_11",
+    "pstar_p72_12",
+    "pstar_p72_13",
+    "pstar_p72_14",
+    "pstar_p72_15",
+    "pstar_p72_16",
+    "pstar_p72_17",
+    "pstar_p72_18",
+    "pstar_p72_19"
+   ],
+   "team_overlap": {
+    "version": "gen3_team_overlap_v1",
+    "dir": "/home/goodlad/dev/gen3ai-reads/x51_2026-10-20/teams_p72",
+    "training_pool": {
+     "n_read_teams": 72,
+     "n_reference_teams": 719,
+     "exact_team": 0,
+     "exact_team_strict": 0,
+     "same_species6": 0,
+     "n_read_mons": 432,
+     "mons_seen": 133,
+     "mons_seen_strict": 35,
+     "max_shared_mons_hist": {
+      "0": 7,
+      "1": 42,
+      "2": 23,
+      "3": 0,
+      "4": 0,
+      "5": 0,
+      "6": 0
+     },
+     "teams_sharing_ge4": 0,
+     "exact_examples": []
+    },
+    "competitive": {
+     "n_read_teams": 72,
+     "n_reference_teams": 20,
+     "exact_team": 0,
+     "exact_team_strict": 0,
+     "same_species6": 0,
+     "n_read_mons": 432,
+     "mons_seen": 53,
+     "mons_seen_strict": 7,
+     "max_shared_mons_hist": {
+      "0": 29,
+      "1": 40,
+      "2": 3,
+      "3": 0,
+      "4": 0,
+      "5": 0,
+      "6": 0
+     },
+     "teams_sharing_ge4": 0,
+     "exact_examples": []
+    }
+   }
+  },
+  "k28v34_home72": {
+   "n": 400,
+   "wins": 206,
+   "losses": 194,
+   "ties": 0,
+   "win_rate": 0.515,
+   "wilson95": [
+    0.4661135603203139,
+    0.5636010708495245
+   ],
+   "by_half": {
+    "ours_challenge": 0.52,
+    "peer_challenge": 0.51
+   },
+   "hit_forfeit_limit": 0,
+   "median_turns": 40,
+   "distinct_our_teams": 67,
+   "distinct_their_teams": 0,
+   "regime_stamps": {
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 0, \"mirrored_pairs\": false, \"model_loader\": \"\", \"model_step\": null, \"model_zip\": \"\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy (metamon:Kakuna28)\", \"our_side\": \"metamon:Kakuna28\", \"our_team_count\": 72, \"our_transport\": \"peer\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend@b9c758841+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 72}": 400
+   },
+   "units": [
+    "k28v34_home72_00",
+    "k28v34_home72_01",
+    "k28v34_home72_02",
+    "k28v34_home72_03",
+    "k28v34_home72_04",
+    "k28v34_home72_05",
+    "k28v34_home72_06",
+    "k28v34_home72_07",
+    "k28v34_home72_08",
+    "k28v34_home72_09",
+    "k28v34_home72_10",
+    "k28v34_home72_11",
+    "k28v34_home72_12",
+    "k28v34_home72_13",
+    "k28v34_home72_14",
+    "k28v34_home72_15",
+    "k28v34_home72_16",
+    "k28v34_home72_17",
+    "k28v34_home72_18",
+    "k28v34_home72_19"
+   ]
+  },
+  "toy_home72": {
+   "n": 400,
+   "wins": 197,
+   "losses": 203,
+   "ties": 0,
+   "win_rate": 0.4925,
+   "wilson95": [
+    0.44381128060140973,
+    0.5413314038136712
+   ],
+   "by_half": {
+    "ours_challenge": 0.49,
+    "peer_challenge": 0.495
+   },
+   "hit_forfeit_limit": 2,
+   "median_turns": 31,
+   "distinct_our_teams": 68,
+   "distinct_their_teams": 67,
+   "regime_stamps": {
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 290000087, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x51_2026-10-20/model_toy/checkpoint_290000087_steps.zip\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@63f97a575+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 72}": 400
+   },
+   "units": [
+    "toy_home72_00",
+    "toy_home72_01",
+    "toy_home72_02",
+    "toy_home72_03",
+    "toy_home72_04",
+    "toy_home72_05",
+    "toy_home72_06",
+    "toy_home72_07",
+    "toy_home72_08",
+    "toy_home72_09",
+    "toy_home72_10",
+    "toy_home72_11",
+    "toy_home72_12",
+    "toy_home72_13",
+    "toy_home72_14",
+    "toy_home72_15",
+    "toy_home72_16",
+    "toy_home72_17",
+    "toy_home72_18",
+    "toy_home72_19"
+   ]
+  },
+  "toy_forum72": {
+   "n": 400,
+   "wins": 183,
+   "losses": 216,
+   "ties": 1,
+   "win_rate": 0.4575,
+   "wilson95": [
+    0.40931357958068565,
+    0.5064949654381055
+   ],
+   "by_half": {
+    "ours_challenge": 0.45,
+    "peer_challenge": 0.465
+   },
+   "hit_forfeit_limit": 1,
+   "median_turns": 37,
+   "distinct_our_teams": 69,
+   "distinct_their_teams": 68,
+   "regime_stamps": {
+    "{\"battle_format\": \"gen3ou\", \"forfeit_turn_limit\": 250, \"mirrored_pairs\": false, \"model_loader\": \"bare\", \"model_step\": 290000087, \"model_zip\": \"/home/goodlad/dev/gen3ai-reads/x51_2026-10-20/model_toy/checkpoint_290000087_steps.zip\", \"opponent\": \"metamon:Kakuna\", \"opponent_commit\": \"0a00a759\", \"opponent_version\": \"Kakuna@ckpt34\", \"our_regime\": \"greedy\", \"our_side\": \"model\", \"our_team_count\": 72, \"our_transport\": \"rust_core_slot\", \"regime_matched\": true, \"server_impl\": \"rust\", \"server_version\": \"ws_frontend[in-process]@63f97a575+rust:cargo:src/rust_sim\", \"showdown_pin\": \"e0551883f\", \"teamset\": \"home\", \"their_regime\": \"greedy\", \"their_team_count\": 72}": 400
+   },
+   "units": [
+    "toy_forum72_00",
+    "toy_forum72_01",
+    "toy_forum72_02",
+    "toy_forum72_03",
+    "toy_forum72_04",
+    "toy_forum72_05",
+    "toy_forum72_06",
+    "toy_forum72_07",
+    "toy_forum72_08",
+    "toy_forum72_09",
+    "toy_forum72_10",
+    "toy_forum72_11",
+    "toy_forum72_12",
+    "toy_forum72_13",
+    "toy_forum72_14",
+    "toy_forum72_15",
+    "toy_forum72_16",
+    "toy_forum72_17",
+    "toy_forum72_18",
+    "toy_forum72_19"
+   ]
+  }
+ },
+ "analysis": {
+  "x26_161M": {
+   "home72": {
+    "n": 400,
+    "wins": 230,
+    "losses": 168,
+    "ties": 2,
+    "win_rate": 0.575,
+    "wilson95": [
+     0.5260675370788677,
+     0.6225056187703244
+    ],
+    "by_half": {
+     "ours_challenge": 0.535,
+     "peer_challenge": 0.615
+    },
+    "hit_forfeit_limit": 1,
+    "median_turns": 30,
+    "distinct_our_teams": 68,
+    "distinct_their_teams": 0
+   },
+   "hpfix": {
+    "n": 400,
+    "wins": 179,
+    "losses": 220,
+    "ties": 1,
+    "win_rate": 0.4475,
+    "wilson95": [
+     0.39950089321583937,
+     0.4964978976897262
+    ],
+    "by_half": {
+     "ours_challenge": 0.445,
+     "peer_challenge": 0.45
+    },
+    "hit_forfeit_limit": 0,
+    "median_turns": 38,
+    "distinct_our_teams": 69,
+    "distinct_their_teams": 0
+   },
+   "forum72": {
+    "n": 400,
+    "wins": 188,
+    "losses": 212,
+    "ties": 0,
+    "win_rate": 0.47,
+    "wilson95": [
+     0.421606893554697,
+     0.5189638441056262
+    ],
+    "by_half": {
+     "ours_challenge": 0.47,
+     "peer_challenge": 0.47
+    },
+    "hit_forfeit_limit": 2,
+    "median_turns": 37,
+    "distinct_our_teams": 69,
+    "distinct_their_teams": 68
+   },
+   "p72": {
+    "n": 400,
+    "wins": 181,
+    "losses": 218,
+    "ties": 1,
+    "win_rate": 0.4525,
+    "wilson95": [
+     0.404404788504311,
+     0.5014988794578674
+    ],
+    "by_half": {
+     "ours_challenge": 0.47,
+     "peer_challenge": 0.435
+    },
+    "hit_forfeit_limit": 3,
+    "median_turns": 38,
+    "distinct_our_teams": 69,
+    "distinct_their_teams": 68
+   }
+  },
+  "pstar_minus_x26": {
+   "home72": {
+    "newcombe95": [
+     0.022500000000000075,
+     -0.04558000220238982,
+     0.09028656474550277
+    ],
+    "verdict": "NOT DETECTED",
+    "paired": {
+     "pairs": 400,
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+     ],
+     "diff": 0.0225,
+     "normal95": [
+      -0.039712732097921276,
+      0.08471273209792127
+     ],
+     "seed_bootstrap95": [
+      -0.035,
+      0.08
+     ],
+     "a_only_wins": 85,
+     "b_only_wins": 76
+    }
+   },
+   "hpfix": {
+    "newcombe95": [
+     0.04999999999999999,
+     -0.019112154588509053,
+     0.11844157249799124
+    ],
+    "verdict": "NOT DETECTED",
+    "paired": {
+     "pairs": 400,
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+     ],
+     "diff": 0.05,
+     "normal95": [
+      -0.010685557112918215,
+      0.11068555711291822
+     ],
+     "seed_bootstrap95": [
+      -0.0125,
+      0.1125
+     ],
+     "a_only_wins": 87,
+     "b_only_wins": 67
+    }
+   },
+   "forum72": {
+    "newcombe95": [
+     0.06000000000000005,
+     -0.009245332400098422,
+     0.1284381874603125
+    ],
+    "verdict": "NOT DETECTED",
+    "paired": {
+     "pairs": 400,
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+     ],
+     "diff": 0.06,
+     "normal95": [
+      -0.0021667706127725186,
+      0.12216677061277251
+     ],
+     "seed_bootstrap95": [
+      -0.025,
+      0.1475
+     ],
+     "a_only_wins": 93,
+     "b_only_wins": 69
+    }
+   },
+   "p72": {
+    "newcombe95": [
+     -0.020000000000000018,
+     -0.08836953286156722,
+     0.04863499097878084
+    ],
+    "verdict": "NOT DETECTED",
+    "paired": {
+     "pairs": 400,
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+     ],
+     "diff": -0.02,
+     "normal95": [
+      -0.07843041745709622,
+      0.038430417457096216
+     ],
+     "seed_bootstrap95": [
+      -0.0775,
+      0.04
+     ],
+     "a_only_wins": 67,
+     "b_only_wins": 75
+    }
+   }
+  },
+  "goal_a": {
+   "cell": "pstar_home72",
+   "win_rate": 0.5975,
+   "wilson95": [
+    0.5487342037373939,
+    0.644410898866556
+   ],
+   "verdict_vs_0.50": "BETTER",
+   "met": true
+  },
+  "goal_b": {
+   "pstar": {
+    "per_panel": {
+     "hpfix": [
+      199,
+      400
+     ],
+     "forum72": [
+      212,
+      400
+     ],
+     "p72": [
+      173,
+      400
+     ]
+    },
+    "mean": 0.48666666666666664,
+    "var": 0.0002068159722222222,
+    "n_eff": 1207.9445293218948,
+    "wilson95": [
+     0.4585671811164776,
+     0.5148506876900627
+    ]
+   },
+   "x26_161M": {
+    "per_panel": {
+     "hpfix": [
+      179,
+      400
+     ],
+     "forum72": [
+      188,
+      400
+     ],
+     "p72": [
+      181,
+      400
+     ]
+    },
+    "mean": 0.4566666666666667,
+    "var": 0.0002066909722222222,
+    "n_eff": 1200.4502158684295,
+    "wilson95": [
+     0.42867161467866843,
+     0.48493816865285044
+    ]
+   },
+   "verdict_vs_0.50": "NOT DETECTED",
+   "met": false,
+   "gap_to_0.53_pp": 4.333333333333339,
+   "pstar_minus_x26": {
+    "newcombe_strat95": [
+     0.029999999999999916,
+     -0.00986049313217386,
+     0.06972482821684635
+    ],
+    "verdict": "NOT DETECTED"
+   },
+   "premium_home72_minus_U_pp": 11.08333333333334
+  },
+  "kakuna28_vs_34": {
+   "ckpt28_win_rate": 0.515,
+   "wilson95": [
+    0.4661135603203139,
+    0.5636010708495245
+   ],
+   "rule": "NOT DETECTED"
+  },
+  "toy_minus_pstar": {
+   "home72": {
+    "newcombe95": [
+     -0.10500000000000004,
+     -0.1726108262717067,
+     -0.03598834240840301
+    ],
+    "verdict": "WORSE",
+    "paired": {
+     "pairs": 400,
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+     ],
+     "diff": -0.105,
+     "normal95": [
+      -0.16851315376954903,
+      -0.04148684623045096
+     ],
+     "seed_bootstrap95": [
+      -0.1675,
+      -0.04
+     ],
+     "a_only_wins": 65,
+     "b_only_wins": 107
+    }
+   },
+   "forum72": {
+    "newcombe95": [
+     -0.07250000000000001,
+     -0.14079219475352478,
+     -0.0032326579990165916
+    ],
+    "verdict": "WORSE",
+    "paired": {
+     "pairs": 400,
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+     ],
+     "diff": -0.0725,
+     "normal95": [
+      -0.13992993374542417,
+      -0.005070066254575817
+     ],
+     "seed_bootstrap95": [
+      -0.13,
+      -0.0125
+     ],
+     "a_only_wins": 81,
+     "b_only_wins": 110
+    }
+   }
+  }
+ },
+ "units": [
+  {
+   "unit": "pstar_forum72_00",
+   "cell": "pstar_forum72",
+   "seed": 0,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_00",
+   "cell": "pstar_home72",
+   "seed": 0,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_00",
+   "cell": "pstar_hpfix",
+   "seed": 0,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_00",
+   "cell": "pstar_p72",
+   "seed": 0,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_01",
+   "cell": "pstar_forum72",
+   "seed": 1,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_01",
+   "cell": "pstar_home72",
+   "seed": 1,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_01",
+   "cell": "pstar_hpfix",
+   "seed": 1,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_01",
+   "cell": "pstar_p72",
+   "seed": 1,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_02",
+   "cell": "pstar_forum72",
+   "seed": 2,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_02",
+   "cell": "pstar_home72",
+   "seed": 2,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_02",
+   "cell": "pstar_hpfix",
+   "seed": 2,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_02",
+   "cell": "pstar_p72",
+   "seed": 2,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_03",
+   "cell": "pstar_forum72",
+   "seed": 3,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_03",
+   "cell": "pstar_home72",
+   "seed": 3,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_03",
+   "cell": "pstar_hpfix",
+   "seed": 3,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_03",
+   "cell": "pstar_p72",
+   "seed": 3,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_04",
+   "cell": "pstar_forum72",
+   "seed": 4,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_04",
+   "cell": "pstar_home72",
+   "seed": 4,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_04",
+   "cell": "pstar_hpfix",
+   "seed": 4,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_04",
+   "cell": "pstar_p72",
+   "seed": 4,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_05",
+   "cell": "pstar_forum72",
+   "seed": 5,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_05",
+   "cell": "pstar_home72",
+   "seed": 5,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_05",
+   "cell": "pstar_hpfix",
+   "seed": 5,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_05",
+   "cell": "pstar_p72",
+   "seed": 5,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_06",
+   "cell": "pstar_forum72",
+   "seed": 6,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_06",
+   "cell": "pstar_home72",
+   "seed": 6,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_06",
+   "cell": "pstar_hpfix",
+   "seed": 6,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_06",
+   "cell": "pstar_p72",
+   "seed": 6,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_07",
+   "cell": "pstar_forum72",
+   "seed": 7,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_07",
+   "cell": "pstar_home72",
+   "seed": 7,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_07",
+   "cell": "pstar_hpfix",
+   "seed": 7,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_07",
+   "cell": "pstar_p72",
+   "seed": 7,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_08",
+   "cell": "pstar_forum72",
+   "seed": 8,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_08",
+   "cell": "pstar_home72",
+   "seed": 8,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_08",
+   "cell": "pstar_hpfix",
+   "seed": 8,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_08",
+   "cell": "pstar_p72",
+   "seed": 8,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_09",
+   "cell": "pstar_forum72",
+   "seed": 9,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_09",
+   "cell": "pstar_home72",
+   "seed": 9,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_09",
+   "cell": "pstar_hpfix",
+   "seed": 9,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_09",
+   "cell": "pstar_p72",
+   "seed": 9,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_10",
+   "cell": "pstar_forum72",
+   "seed": 10,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_10",
+   "cell": "pstar_home72",
+   "seed": 10,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_10",
+   "cell": "pstar_hpfix",
+   "seed": 10,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_10",
+   "cell": "pstar_p72",
+   "seed": 10,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_11",
+   "cell": "pstar_forum72",
+   "seed": 11,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_11",
+   "cell": "pstar_home72",
+   "seed": 11,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_11",
+   "cell": "pstar_hpfix",
+   "seed": 11,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_11",
+   "cell": "pstar_p72",
+   "seed": 11,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_12",
+   "cell": "pstar_forum72",
+   "seed": 12,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_12",
+   "cell": "pstar_home72",
+   "seed": 12,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_12",
+   "cell": "pstar_hpfix",
+   "seed": 12,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_12",
+   "cell": "pstar_p72",
+   "seed": 12,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_13",
+   "cell": "pstar_forum72",
+   "seed": 13,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_13",
+   "cell": "pstar_home72",
+   "seed": 13,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_13",
+   "cell": "pstar_hpfix",
+   "seed": 13,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_13",
+   "cell": "pstar_p72",
+   "seed": 13,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_14",
+   "cell": "pstar_forum72",
+   "seed": 14,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_14",
+   "cell": "pstar_home72",
+   "seed": 14,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_14",
+   "cell": "pstar_hpfix",
+   "seed": 14,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_14",
+   "cell": "pstar_p72",
+   "seed": 14,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_15",
+   "cell": "pstar_forum72",
+   "seed": 15,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_15",
+   "cell": "pstar_home72",
+   "seed": 15,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_15",
+   "cell": "pstar_hpfix",
+   "seed": 15,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_15",
+   "cell": "pstar_p72",
+   "seed": 15,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_16",
+   "cell": "pstar_forum72",
+   "seed": 16,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_16",
+   "cell": "pstar_home72",
+   "seed": 16,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_16",
+   "cell": "pstar_hpfix",
+   "seed": 16,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_16",
+   "cell": "pstar_p72",
+   "seed": 16,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_17",
+   "cell": "pstar_forum72",
+   "seed": 17,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_17",
+   "cell": "pstar_home72",
+   "seed": 17,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_17",
+   "cell": "pstar_hpfix",
+   "seed": 17,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_17",
+   "cell": "pstar_p72",
+   "seed": 17,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_18",
+   "cell": "pstar_forum72",
+   "seed": 18,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_18",
+   "cell": "pstar_home72",
+   "seed": 18,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_18",
+   "cell": "pstar_hpfix",
+   "seed": 18,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_18",
+   "cell": "pstar_p72",
+   "seed": 18,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_forum72_19",
+   "cell": "pstar_forum72",
+   "seed": 19,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_home72_19",
+   "cell": "pstar_home72",
+   "seed": 19,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_hpfix_19",
+   "cell": "pstar_hpfix",
+   "seed": 19,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "pstar_p72_19",
+   "cell": "pstar_p72",
+   "seed": 19,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_00",
+   "cell": "k28v34_home72",
+   "seed": 0,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_01",
+   "cell": "k28v34_home72",
+   "seed": 1,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_02",
+   "cell": "k28v34_home72",
+   "seed": 2,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_03",
+   "cell": "k28v34_home72",
+   "seed": 3,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_04",
+   "cell": "k28v34_home72",
+   "seed": 4,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_05",
+   "cell": "k28v34_home72",
+   "seed": 5,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_06",
+   "cell": "k28v34_home72",
+   "seed": 6,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_07",
+   "cell": "k28v34_home72",
+   "seed": 7,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_08",
+   "cell": "k28v34_home72",
+   "seed": 8,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_09",
+   "cell": "k28v34_home72",
+   "seed": 9,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_10",
+   "cell": "k28v34_home72",
+   "seed": 10,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_11",
+   "cell": "k28v34_home72",
+   "seed": 11,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_12",
+   "cell": "k28v34_home72",
+   "seed": 12,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_13",
+   "cell": "k28v34_home72",
+   "seed": 13,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_14",
+   "cell": "k28v34_home72",
+   "seed": 14,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_15",
+   "cell": "k28v34_home72",
+   "seed": 15,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_16",
+   "cell": "k28v34_home72",
+   "seed": 16,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_17",
+   "cell": "k28v34_home72",
+   "seed": 17,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_18",
+   "cell": "k28v34_home72",
+   "seed": 18,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "k28v34_home72_19",
+   "cell": "k28v34_home72",
+   "seed": 19,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_00",
+   "cell": "toy_forum72",
+   "seed": 0,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_00",
+   "cell": "toy_home72",
+   "seed": 0,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_01",
+   "cell": "toy_forum72",
+   "seed": 1,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_01",
+   "cell": "toy_home72",
+   "seed": 1,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_02",
+   "cell": "toy_forum72",
+   "seed": 2,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_02",
+   "cell": "toy_home72",
+   "seed": 2,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_03",
+   "cell": "toy_forum72",
+   "seed": 3,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_03",
+   "cell": "toy_home72",
+   "seed": 3,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_04",
+   "cell": "toy_forum72",
+   "seed": 4,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_04",
+   "cell": "toy_home72",
+   "seed": 4,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_05",
+   "cell": "toy_forum72",
+   "seed": 5,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_05",
+   "cell": "toy_home72",
+   "seed": 5,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_06",
+   "cell": "toy_forum72",
+   "seed": 6,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_06",
+   "cell": "toy_home72",
+   "seed": 6,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_07",
+   "cell": "toy_forum72",
+   "seed": 7,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_07",
+   "cell": "toy_home72",
+   "seed": 7,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_08",
+   "cell": "toy_forum72",
+   "seed": 8,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_08",
+   "cell": "toy_home72",
+   "seed": 8,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_09",
+   "cell": "toy_forum72",
+   "seed": 9,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_09",
+   "cell": "toy_home72",
+   "seed": 9,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_10",
+   "cell": "toy_forum72",
+   "seed": 10,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_10",
+   "cell": "toy_home72",
+   "seed": 10,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_11",
+   "cell": "toy_forum72",
+   "seed": 11,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_11",
+   "cell": "toy_home72",
+   "seed": 11,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_12",
+   "cell": "toy_forum72",
+   "seed": 12,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_12",
+   "cell": "toy_home72",
+   "seed": 12,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_13",
+   "cell": "toy_forum72",
+   "seed": 13,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_13",
+   "cell": "toy_home72",
+   "seed": 13,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_14",
+   "cell": "toy_forum72",
+   "seed": 14,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_14",
+   "cell": "toy_home72",
+   "seed": 14,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_15",
+   "cell": "toy_forum72",
+   "seed": 15,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_15",
+   "cell": "toy_home72",
+   "seed": 15,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_16",
+   "cell": "toy_forum72",
+   "seed": 16,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_16",
+   "cell": "toy_home72",
+   "seed": 16,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_17",
+   "cell": "toy_forum72",
+   "seed": 17,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_17",
+   "cell": "toy_home72",
+   "seed": 17,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_18",
+   "cell": "toy_forum72",
+   "seed": 18,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_18",
+   "cell": "toy_home72",
+   "seed": 18,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_forum72_19",
+   "cell": "toy_forum72",
+   "seed": 19,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  },
+  {
+   "unit": "toy_home72_19",
+   "cell": "toy_home72",
+   "seed": 19,
+   "counts": true,
+   "reasons": [],
+   "status": "OK",
+   "n": 20,
+   "peer_exit_notes": []
+  }
+ ],
+ "skipped_units": []
+}

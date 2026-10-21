@@ -1,6 +1,8 @@
 # The most direct path to a reliable win over Metamon's Kakuna
 
-**Status: DESIGN 2026-10-20 (orchestrator brief; planning input; no game played, nothing built).** ALWAYS-CURRENT
+**Status: X51 READ 2026-10-21 (`measurements/x51_plateau_vs_kakuna_2026-10-20/`): goal (a) MET at the plateau P\*
+(home72 0.598 [0.549, 0.644]); goal (b) NOT met, 0.487 [0.459, 0.515], ≈ 4.3 pp short; Kakuna ckpt 28 not
+detectably stronger than 34. X52 is next.** ALWAYS-CURRENT
 (owner, 2026-09-27): a later read, decision or build that differs updates this doc in the same commit, and the
 Decision record (§9) says what changed and why. Every number below is quoted from a banked read with its directory;
 every effect size that is not measured is marked **GUESS** or **ESTIMATE**.
@@ -14,11 +16,12 @@ Smogon-usage teams; U = the three UNFAMILIAR panels H, F and P72; "pilot" = play
 
 ## 0. One screen
 
-- **Goal (a), our teams: met, once, before the plateau.** X26 @161M beats Kakuna on home72, **0.575 [0.526, 0.623]**
-  (n = 400, greedy against greedy). P\* has never been read against Kakuna. Two loose ends: P\* is unread, and Kakuna's
-  strongest CHECKPOINT is unread (§2, FINDING 1). Closing both costs **≈ 2 lane-hours of CPU and 0 GPU**.
-- **Goal (b), unfamiliar teams: not met, and it is about 6–8 pp away.** X26 @161M scores 0.470 on F, 0.448 on H and
-  0.453 on P72, a pooled **≈ 0.457**. A pooled LB > 0.50 needs about **0.53** at 1,200 games (§1).
+- **Goal (a), our teams: MET at the plateau** (X51). P\* beats Kakuna on home72, **0.598 [0.549, 0.644]** (n = 400,
+  greedy against greedy; X26 @161M read 0.575). Kakuna's checkpoint 28 is not detectably stronger than the 34 we
+  read (0.515 [0.466, 0.564] against it, n = 400), so ckpt 34 stays the opponent (§2, FINDING 1).
+- **Goal (b), unfamiliar teams: not met, about 4 pp away.** P\* scores 0.497 on H, 0.530 on F and 0.433 on P72, a
+  pooled **0.487 [0.459, 0.515]** (161M: 0.457; +3.0 pp, n.d.). A pooled LB > 0.50 needs about **0.53** at 1,200
+  games (§1).
 - **The deficit is PILOTING an unfamiliar team, and only Kakuna sees it.**
   - Against Kakuna, X26 pilots unfamiliar teams 12 pp worse after correcting for team strength (X37a PILOT_c +0.123),
     and 11–28 pp worse at matched strength (TSR).
@@ -26,8 +29,9 @@ Smogon-usage teams; U = the three UNFAMILIAR panels H, F and P72; "pilot" = play
   - Off-meta teams cost most: X26 pilots held-out FAR teams at 0.263.
   - In-house, P\* shows no piloting deficit beyond team strength (X37b), so **self-play meters cannot steer this
     goal**. Only Kakuna reads can, and they run on CPU at ≈ 10 s per game on one lane.
-- **No lever we have measured is expected to close 6–8 pp alone.** Ranked by expected pp per unit of cost:
-  1. **X51: read where P\* stands** (CPU only).
+- **No lever we have measured is expected to close the remaining ≈ 4 pp alone.** Ranked by expected pp per unit of
+  cost:
+  1. **X51: read where P\* stands** (CPU only). DONE 2026-10-21 (above; §6.1).
   2. **X52: a PRACTICE-CEILING fork** (≈ 2.5 GPU-h). It tests whether exposure to a team fixes piloting it, and
      whether that transfers to the same population's other teams. It sizes or kills the D1 family before ≈ 13–60
      GPU-h are spent on it.
@@ -49,11 +53,11 @@ Wilson LB > 0.50 "on our teams, at Metamon's strongest temperature". The orchest
 (2026-10-18, `design_diversity_teams_opponents.md` §9 Q3): the same bar on the held-out panel, at the plateau. This
 doc reads the brief's two targets as:
 
-| target | cell | statistic | bar | status (X26 @161M) |
+| target | cell | statistic | bar | status (P\*, X51) |
 |---|---|---|---|---|
-| **(a) our teams** | symmetric home72: both sides draw from home72 | Wilson on n games | LB > 0.50 at Kakuna's strongest checkpoint and temperature, at the PLATEAU | **met at 161M**: 0.575 [0.526, 0.623]; P\* unread; checkpoint unread |
-| **(b) unfamiliar teams** | symmetric cells on H, F and P72: both sides draw from one unseen panel | the equal-weight mean of the three panel scores, Kish effective n (D1's H statistic, `main.x35.d1`) | LB > 0.50 | **not met**: 0.457 pooled; F 0.470 [0.422, 0.519], H 0.448 [0.400, 0.496], P72 0.453 [0.404, 0.501] |
-| L, the external headline (reported) | we pilot home72, Kakuna pilots H by `ladder_weights_v1` stratum | stratified, team-clustered bootstrap | — | 0.630 [0.573, 0.686] |
+| **(a) our teams** | symmetric home72: both sides draw from home72 | Wilson on n games | LB > 0.50 at Kakuna's strongest checkpoint and temperature, at the PLATEAU | **met at the plateau**: P\* 0.598 [0.549, 0.644] vs ckpt 34; ckpt 28 not stronger (0.515 [0.466, 0.564] vs 34) |
+| **(b) unfamiliar teams** | symmetric cells on H, F and P72: both sides draw from one unseen panel | the equal-weight mean of the three panel scores, Kish effective n (D1's H statistic, `main.x35.d1`) | LB > 0.50 | **not met**: 0.487 [0.459, 0.515] pooled (161M 0.457); F 0.530 [0.481, 0.578], H 0.497 [0.449, 0.546], P72 0.433 [0.385, 0.481] |
+| L, the external headline (reported) | we pilot home72, Kakuna pilots H by `ladder_weights_v1` stratum | stratified, team-clustered bootstrap | — | 0.630 [0.573, 0.686] (X26 @161M; P\* unread) |
 
 **Why (b) is the symmetric cell, and not L or the reverse cell:**
 
@@ -65,7 +69,7 @@ doc reads the brief's two targets as:
   beside (b), never as the goal: it carries the opponent's familiarity.
 
 **How far (b) is.** Wins needed for a Wilson LB > 0.50: 220 / 400 (0.550), 428 / 800 (0.535), 634 / 1,200 (0.528),
-1,249 / 2,400 (0.520). From the pooled 0.457 that is **+7 pp at 1,200 games, +6 pp at 2,400**. If the TEAMS are
+1,249 / 2,400 (0.520). From P\*'s pooled 0.487 that is **+4.1 pp at 1,200 games, +3.3 pp at 2,400**. If the TEAMS are
 treated as a sample (a team-clustered interval, X37b FINDING 3), the bar rises further, by an amount nobody has
 measured on a Kakuna cell (**UNVERIFIED**). The registration of the goal read (X54) must say which interval it uses.
 
@@ -112,14 +116,22 @@ All cells are greedy against greedy, Kakuna ckpt 34, on CPU, 20-game role-balanc
 
 | cell | model | n | win rate [Wilson 95 %] | read |
 |---|---|---:|---|---|
-| home72, symmetric | X26 @161M | 400 | **0.575 [0.526, 0.623]** BETTER | `k2_x26_kakuna_both_teamsets_2026-10-17` |
+| **home72, symmetric** | **P\* (X26 @280M)** | 400 | **0.598 [0.549, 0.644]** BETTER | `x51_plateau_vs_kakuna_2026-10-20` |
+| | T\* (toy) | 400 | 0.493 [0.444, 0.541] | the same |
+| | X26 @161M | 400 | **0.575 [0.526, 0.623]** BETTER | `k2_x26_kakuna_both_teamsets_2026-10-17` |
 | | K2 (previous lineage, plateau) | 400 | 0.487 [0.439, 0.536] | the same |
 | | N0 | 200 | 0.460 [0.392, 0.529] | `kakuna_goal_read_2026-09-28` |
 | home72, Kakuna at T = 1.0 | X26 @161M | 240 | 0.600 [0.537, 0.660] | `x26_metamon_anchor_2026-10-17` |
 | away (`competitive`; 19 / 20 in our pool) | X26 @161M | 400 | 0.497 [0.449, 0.546] | `k2_x26_kakuna_both_teamsets_2026-10-17` |
-| **H, symmetric** | X26 @161M | 400 | **0.448 [0.400, 0.496]** WORSE | `heldout72_hpfix_kakuna_2026-10-18` |
-| **F, symmetric** | X26 @161M | 400 | **0.470 [0.422, 0.519]** | `x37a_eval_matrix_2026-10-18` stage 2 |
-| **P72, symmetric** | X26 @161M | 400 | **0.453 [0.404, 0.501]** | the same |
+| **H, symmetric** | **P\*** | 400 | **0.497 [0.449, 0.546]** | `x51_plateau_vs_kakuna_2026-10-20` |
+| | X26 @161M | 400 | 0.448 [0.400, 0.496] WORSE | `heldout72_hpfix_kakuna_2026-10-18` |
+| **F, symmetric** | **P\*** | 400 | **0.530 [0.481, 0.578]** | `x51_plateau_vs_kakuna_2026-10-20` |
+| | T\* (toy) | 400 | 0.458 [0.409, 0.506] | the same |
+| | X26 @161M | 400 | 0.470 [0.422, 0.519] | `x37a_eval_matrix_2026-10-18` stage 2 |
+| **P72, symmetric** | **P\*** | 400 | **0.433 [0.385, 0.481]** WORSE | `x51_plateau_vs_kakuna_2026-10-20` |
+| | X26 @161M | 400 | 0.453 [0.404, 0.501] | `x37a_eval_matrix_2026-10-18` stage 2 |
+| **U** (H, F, P72 equal weight; Kish n_eff ≈ 1,200) | **P\*** / X26 @161M | — | **0.487 [0.459, 0.515]** / 0.457 [0.429, 0.485] | X51 |
+| Kakuna ckpt 28 vs Kakuna ckpt 34, home72 (from ckpt 28's side) | Kakuna vs Kakuna | 400 | 0.515 [0.466, 0.564] | X51 |
 | DEPLOYMENT: we pilot home72, Kakuna pilots H by stratum | X26 @161M | 600 | **L = 0.630 [0.573, 0.686]** | X37a stage 1 |
 | REVERSE: we pilot H, Kakuna pilots home72 | X26 @161M | 400 | **0.380 [0.334, 0.428]** | the same |
 | Kakuna pilots home72 vs Kakuna pilots H | Kakuna vs Kakuna | 400 | 0.573 [0.524, 0.620] (strength term) | the same |
@@ -141,7 +153,14 @@ All cells are greedy against greedy, Kakuna ckpt 34, on CPU, 20-game role-balanc
   - P\* pilots H against itself at 0.418, about what H's weakness predicts.
   - Almost all of that gain came by 100M. From 100M to 280M: +3.5 pp on home72 and +3.6 pp on unseen panels, neither
     detected.
-- **PROVISIONAL throughout:** one checkpoint (161M) of one seed against Kakuna; P\* never.
+- **The plateau gained on unfamiliar teams, not detectably** (X51; paired twins, the same harness `63f97a57`).
+  - P\* − X26 @161M: home72 +0.023 [−0.046, +0.090], H +0.050 [−0.019, +0.118], F +0.060 [−0.009, +0.128], P72
+    −0.020 [−0.088, +0.049]; pooled U **+0.030 [−0.010, +0.070]**. All not detected.
+  - The familiarity premium (home72 − U, raw) is unchanged: +11.1 pp at P\*, +11.8 pp at 161M.
+  - The toy T\* is weaker than P\* on home72 (−0.105, detected) and F (−0.073, detected); its home72 → F drop is half
+    P\*'s on the logit scale (0.14 vs 0.28), a difference not detected. It neither supports nor kills "the belief
+    stack is the memorisation channel" (X37c's question).
+- **PROVISIONAL throughout:** one seed of one run against Kakuna.
 
 ---
 
@@ -172,7 +191,7 @@ behind it is a GUESS.
 
 | lever | id | mechanism vs the measured deficit | expected pp (b) | evidence | cost | rank |
 |---|---|---|---|---|---|---|
-| **Read P\*** | X51 | none: it measures where the plateau stands | **+0 to +3** (ESTIMATE) | X37b in-house 100M → 280M: +3.6 pp on unseen panels, n.d.; 161M is between | 0 GPU; ≈ 9 lane-h | **1** |
+| **Read P\*** | X51 | none: it measures where the plateau stands | **MEASURED: +3.0 [−1.0, +7.0]** (n.d.) | X51: P\* 0.487 vs 161M 0.457 pooled | 0 GPU; 8 lane-h of play (18.5 h wall behind the slot queue) | **DONE** |
 | **Practice ceiling** | X52 | sizes the familiarity premium and its within-population transfer | diagnostic; **practised half up to +10** (GUESS: home72's premium) | §4 | ≈ 2.5 GPU-h; ≈ 4.5 lane-h; corpus ≈ 0.25 agent-day | **2** |
 | **Widen the pool (D1)** | X38 | breadth on BOTH sides: forum teams at a 0.5 share | **+2 to +6** (GUESS) | targets the 10–13 pp premium; dose ≈ 1 % per team (§4); plasticity at a plateau is a named risk (diversity doc §4.2) | ≈ 13 GPU-h (C0 shared); ≈ 10 lane-h for the readout | **3** |
 | **Set mutation (D3)** | X41 | defeats exact-set identification on familiar cores, the CORE-stratum ≈ 11 pp | **+1 to +4** (GUESS) | X37a reverse CORE 0.463 vs home72 0.575 | build 1–2 agent-days (CPU, now) + ≈ 13 GPU-h | **4** (build now, run on D1's verdict) |
@@ -187,13 +206,13 @@ behind it is a GUESS.
 | Train against Kakuna | — | fit the meter | — | — | Kakuna is ≈ 75 ms per decision on CPU | **REJECTED**: it trains on the meter, and RL against it is ≈ 2 orders of magnitude too slow |
 | Sample our side at T > 0 | — | — | negative | T = 1 cost N0 23 pp; 0 < T < 1 unmeasured | — | no |
 
-**The arithmetic.** Goal (b) needs +6–8 pp. The plausible stack is P\* (+0–3), then D1 (+2–6), then D3 or a fresh
-wide run. **No single row reaches the bar on its own expected value.** X52 decides whether this family is the right
+**The arithmetic.** At P\* goal (b) needs ≈ +4 pp (0.487 → ≈ 0.53; X51). The plausible stack is D1 (+2–6), then
+D3 or a fresh wide run. **No single row reaches the bar on its own expected value.** X52 decides whether this family is the right
 one before the GPU is spent.
 
-**Goal (a) needs no lever.** It needs X51's reads: P\* on home72, and Kakuna's strongest checkpoint. If P\* falls
-below the bar at the strongest checkpoint, specialisation (more exposure to the teams we bring: the X52 mechanism
-pointed at our own deployment set) is the direct lever.
+**Goal (a) needs no lever.** X51 read it MET at P\* against ckpt 34, and ckpt 28 is not detectably stronger. Had it
+failed, specialisation (more exposure to the teams we bring: the X52 mechanism pointed at our own deployment set)
+would have been the direct lever.
 
 ---
 
@@ -232,6 +251,9 @@ toy is **UNVERIFIED**.
   - If Kakuna-28 beats Kakuna-34 (pair cell LB > 0.50), every later goal cell uses ckpt 28, and P\*'s home72 cell is
     re-read against it (+400 games).
   - If P\* reads (b)'s LB > 0.50, goal (b) moves straight to X54's confirmation.
+- **READ 2026-10-21** (`measurements/x51_plateau_vs_kakuna_2026-10-20/`): every cell above at 400 games EXCEPT the
+  REVERSE cell, which the unit's brief did not include (it stays open). Neither rule fired: the pair cell's LB is
+  0.466, and (b)'s LB is 0.459. The numbers are in §0, §1 and §3.
 
 ### 6.2 X52 — the practice ceiling (≈ 2.5 GPU-h; CPU ≈ 4.5 lane-h). SECOND.
 
@@ -362,8 +384,9 @@ with the interval named in the registration.
    - Every read used Kakuna ckpt 34 (the default).
    - Metamon's ensemble presets rate ckpt 28 higher (GXE 0.78 vs 0.75, numbers the code itself calls incorrect).
    - Metamon's strongest DEPLOYED agent is an ensemble that `main.anchors` cannot play.
-   - "Met" is therefore not shown against Metamon's strongest checkpoint. X51's pair cell settles the checkpoint; the
-     ensemble is a later bar (§6.7).
+   - **X51's pair cell (2026-10-21): ckpt 28 vs ckpt 34 reads 0.515 [0.466, 0.564] from ckpt 28's side, NOT
+     DETECTED.** §6.1's switch rule does not fire and ckpt 34 stays the opponent; the cell does not exclude a ±6 pp
+     difference. The ensemble is a later bar (§6.7).
 2. **Panel reuse: there will be no fresh human-built panel after D1.**
    - F, H and P72 have steered X37a, TSR, X37b and the D1 ranking, so a goal claim on them carries the selection.
    - `w_forum_v1@ABC` takes EVERY tier-A / B forum team outside the registered panels (A 332, AB 559). Once D1
@@ -396,8 +419,8 @@ with the interval named in the registration.
      width even when there is no team variance.
    - X37b's "about 2×" may be this artifact rather than team variance (**UNVERIFIED**: X37b's exact resampling was not
      re-read). X54 should register a two-way interval whose noise term is not double-counted.
-8. **X51's toy cells assume `main.anchors` loads T\*** (**UNVERIFIED**, as for X37c). If it does not, drop the cells;
-   nothing else depends on them.
+8. **RESOLVED (X51): `main.anchors` loads T\*** at `63f97a57` (`bare`, config v158). T\* trained at pin `ae2d0901`,
+   so its numbers carry that harness difference (UNVERIFIED identity); P\*'s do not.
 9. **home72 holds one team twice** (X37b FINDING 1). Every home72 Kakuna cell inherits a 1 / 72 double weight; it is
    immaterial at this resolution.
 10. This unit played no game, used no GPU, and wrote nothing under `models/` or `data/`. It read Metamon's checkout
@@ -413,4 +436,5 @@ with the interval named in the registration.
 | 2026-10-20 | Kakuna re-checked | still upstream's best single model (GitHub `main`, 2026-10-20); the ckpt 28 vs 34 question and the ensemble raised as FINDING 1 | assuming ckpt 34 is the strongest; switching the goal to the ensemble now (no harness, ≈ 3–6× the cost) | §2 |
 | 2026-10-20 | The ranked path (PROPOSED; the orchestrator's GO per step) | X51 plateau read (CPU) → X52 practice ceiling (≈ 2.5 GPU-h) → X38 / D1 as staged (with a scheduling ask) → X41 / D3 built now, run on D1's verdict → X53 fresh wide run with a 100M look (conditional) → X54 confirmation on a fresh panel | D1 first with no diagnostic (≈ 13–90 GPU-h of the widening family unsized); a fresh wide run first (≈ 60 GPU-h before the cheap reads); X35 breakers as the path (+0–2 pp, GUESS); search (≈ 0, measured); X49 (targets facing, which costs ≈ 0); training against Kakuna (trains on the meter; too slow) | §4, §5 |
 | 2026-10-20 | **FINDING 2 RULED and DONE: X54's confirmation panel carved before D1** (eval-registry worker, orchestrator ruling) | `forum216b`: 216 teams from `w_forum_v1` AB, seed 5400, forum72's strata × 3, curator cap 42; registered `held_out_from: ["training"]` and SEALED until X54 (`main.heldout_panels.SEALED`); no copy or near copy of the pool or any panel. `w_forum_v1` rebuilt: ABC 2,424 → 1,982 (tier sha `7bcdc835…` → `73a76e80…`); X35 AMENDMENT D1-CORPUS, launch pre-check 2d | forum72-sized (72: under the upper τ², 0.56 power at G = 2,400); 144 (0.79, fails the 80 % rule); the 1,828 capped C-tier leftovers (four curators, near-neighbour status unchecked); a successor corpus name (`w_forum_v2`: every registered panel must be excluded from any corpus anyway, and the startup guard would refuse `w_forum_v1` unrebuilt) | §6.6; `forum216b_x54_2026-10-20/` |
+| 2026-10-21 | **X51 READ** (anchor worker; CPU, 2,800 games at the `63f97a57` harness; the stop lifted by the orchestrator so every cell reached 400) | goal (a) MET at P\* (0.598 [0.549, 0.644]); goal (b) NOT met (0.487 [0.459, 0.515], ≈ 4.3 pp short; P\* − 161M +3.0 pp n.d.); ckpt 34 stays the opponent (ckpt 28 0.515 [0.466, 0.564] vs it, n.d.); T\* weaker than P\*. §0, §1, §3, §5 and FINDINGS 1 and 8 now quote it; the path's order is unchanged (X52 next) | switching the goal to ckpt 28 (its rule did not fire); reading (b) as within reach of the plateau alone (+3 pp, n.d.) | `x51_plateau_vs_kakuna_2026-10-20/` |
 | 2026-10-20 | Expected pp per lever | quoted from measured effects where they exist (X37b's 100M → 280M transfer; L1's search null; FACE_c), GUESS elsewhere, with the arithmetic that (b) needs +6–8 pp | single-number promises | §1, §5 |

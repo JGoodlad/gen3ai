@@ -27977,3 +27977,25 @@ one CPU forward of `rb_x26_s2601/checkpoint_380000195_steps.zip` per supervised 
 Evidence: `research_state/measurements/x50_r1_intent_read_2026-10-20/` (README, `r1_read.json`, `run_r1.sh`);
 `src/main/x50_r1/`; the extracted parts in `/home/goodlad/gen3ai_archive/x50_r1_intent/`.
 
+### 2026-10-21 · MEASURED · **X51 PLATEAU vs KAKUNA — goal (a) MET at P\* (home72 0.598 [0.549, 0.644]); goal (b) NOT met (unfamiliar 0.487 [0.459, 0.515], ≈ 4.3 pp short; P\* − 161M +3.0 pp n.d.); Kakuna ckpt 28 not stronger than 34 (0.515 [0.466, 0.564]); the toy T\* weaker than P\***
+
+- **Why.** `endstate/design_beat_metamon_path.md` §6.1 (BM-1): the plateau checkpoint P\* (`rb_x26_s2601`
+  @280,000,170) had never played Kakuna; Metamon's presets rate Kakuna ckpt 28 above the ckpt 34 every read used.
+- **How.** `python -m main.anchors`, Kakuna ckpt 34 greedy vs our greedy, CPU, 20-game role-balanced units, paired seeds
+  0–19 (twins of the X26 @161M cells), at the X26 reads' own harness `63f97a57`; symmetric cells, n = 400 each. The pair
+  cell (ckpt 28 vs 34) ran at `b9c75884`, which adds the agent `policy` alias (`Kakuna28`). 140 units, all counted on
+  their first try; one heavy slot per ≤ 45-min chunk; the 12-h stop lifted by the orchestrator so every cell reached 400.
+- **P\*:** home72 **0.598 [0.549, 0.644]** BETTER; heldout72_hpfix 0.497 [0.449, 0.546]; forum72 0.530 [0.481, 0.578];
+  P72 0.433 [0.385, 0.481] WORSE. Unfamiliar, equal weight (`main.x35.d1.strat_score`): **0.487 [0.459, 0.515]**.
+- **P\* − X26 @161M** (Newcombe; the paired descriptor agrees): home72 +0.023, H +0.050, F +0.060, P72 −0.020, pooled
+  **+0.030 [−0.010, +0.070]**; none detected. The familiarity premium (home72 − unfamiliar) 11.1 pp vs 11.8 pp.
+- **Kakuna ckpt 28 vs 34** (home72, from ckpt 28's side): 0.515 [0.466, 0.564], NOT DETECTED; §6.1's switch rule does
+  not fire; ckpt 34 stays the goal's opponent.
+- **T\*** (`rb_toy_ent_s4002_deep` @290,000,087; loads at `63f97a57`): home72 0.493 [0.444, 0.541], forum72 0.458
+  [0.409, 0.506]; T\* − P\* −0.105 / −0.073, both WORSE. Its home72 → forum72 drop is half P\*'s in logits (0.14 vs
+  0.28), not detected; X37c's question stays open.
+- **Not read:** the REVERSE cell at P\* (outside the unit's brief).
+
+Evidence: `research_state/measurements/x51_plateau_vs_kakuna_2026-10-20/` (README, `cells.json`, `rows.jsonl`,
+`scripts/`); `endstate/design_beat_metamon_path.md` status, §0, §1, §3, §5, §6.1, FINDINGS 1 and 8, Decision record;
+`ops/EXTERNAL_ANCHORS_SOP.md` §4.
