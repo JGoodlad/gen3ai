@@ -435,15 +435,13 @@ token injection), through `value_entity_pool`'s op-row source, and through `valu
   op's rows through the trunk (`prefuse_proj`) AND `value_entity_pool`'s op-row source: F10 deletes one of three
   routes, not two. `--arch production --value-threat-inject off --allow-nonproduction-arch` is the screen arm;
   composes with `--token-encoding static`, `--policy-readout trunk`, `--move-resolution on` and X5's fixed-mass
-  surface (tested; production since the X5 version break, v144). **The screen's meter** (not registered, not run): `python -m main.ops.critic_read <off arm>
-  --control <production arm> --out <dir>`, read on its delta rows — PRIMARY `gate.resolution.bot` and
-  `gate.resolution.pool` (G1: Murphy resolution of V against the outcome, the discrimination term, per stratum,
-  from `main.critic_gate`); SECONDARY `identity.resolution` (Murphy resolution, IPW, all strata),
-  `gate.skill.bot` / `gate.skill.pool` (G4) and `identity.turn_contrast` (corr(turn, V) − corr(turn, MC): does V
-  track the game as it unfolds); `gate.reliability.*` / `gate.ece.*` as the calibration guard. Caveats: Murphy
-  resolution pools states ACROSS battles, so it is not strictly WITHIN-game; the within-game sibling pairwise
-  accuracy (the 0.517 meter, `paired_refit_discrimination_2026-09-14/`) is not a `critic_read` row; and with no
-  `--floor-json` every label reads *vs ZERO — NO FLOOR*. Built, not trained; GPU checks DEFERRED (no lease).
+  surface (tested; production since the X5 version break, v144). **The screen's meter** (not registered, not run): `python -m main.critic_gate <off arm> --parent <ref> --control <production arm>`, read on its G rows — PRIMARY
+  `gate.resolution.bot` and `gate.resolution.pool` (G1: Murphy resolution of V against the outcome, the
+  discrimination term, per stratum); SECONDARY `gate.skill.bot` / `gate.skill.pool` (G4), with
+  `gate.reliability.*` / `gate.ece.*` as the calibration guard. Caveats: Murphy resolution pools states ACROSS
+  battles, so it is not strictly WITHIN-game; the within-game sibling pairwise accuracy (the 0.517 meter,
+  `paired_refit_discrimination_2026-09-14/`) is not a gate row; and with no floor every label reads *vs ZERO — NO
+  FLOOR*. Built, not trained; GPU checks DEFERRED (no lease).
 - *Now (2026-10-15):* OFF was adopted with the end state (2026-10-12; constructed, then retired) and legacy deletion U3
   (config v157; `designs/ops/legacy_deletion_manifest_2026-10-12.md` row C1) DELETED `--value-threat-inject`, the
   projection (`CLSPool.value_threat_proj`, `value_threat_inject.py`), `retire_value_threat_inject`, the op's

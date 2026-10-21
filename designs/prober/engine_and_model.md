@@ -94,7 +94,7 @@ under an unrelated name is its blind spot. Opt out with `GEN3AI_SKIP_SUMMARY_REA
 | `ops.conditioning_meters.extract_cycle` | `load_summary` | expanded under `--v-column values`; REFUSED under the `win_probs` column (NaN head) |
 | `critic_gate._trace_turns` (G7), `ops.quota_match.classify_on_disk`, `harvest_meter._load_tail` / `control_battles` | `load_summary_meta` | stored meta; `harvest_meter`'s `recorded_phi_T` is `None` (not NaN) on a NaN head |
 | `harvest.build_candidates` (and the deleted `cf_audit.build_frame`) | `refuse_core_trace` | REFUSED — both sampled by the recorded win-prob head; the refusal escapes their counted-skip `except` |
-| `scaffolding_gauge.collect_slices` (and every meter over it: `critic_gate`, `ops.critic_readouts`, `ops.perbot_*`, `ops.negskill_null`) | `is_core_trace` on the NaN head | REFUSED — contestedness / the V-vs-P(win) gauge have no P(win); the gauge's old refusal blamed `--win-prob-mode none` |
+| `scaffolding_gauge.collect_slices` (and every meter over it: `critic_gate`, `ops.perbot_*`, `ops.negskill_null`) | `is_core_trace` on the NaN head | REFUSED — contestedness / the V-vs-P(win) gauge have no P(win); the gauge's old refusal blamed `--win-prob-mode none` |
 
 **The expansion** (`core_trace.expand` / `load_summary`; `ProbeSession._summary` calls it, as does
 `forensics.build_decision_table`) reads the battle from the **RUST CORE** — `gen3_core_walk_v1`,

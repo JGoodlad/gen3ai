@@ -154,7 +154,7 @@ def test_a_run_with_no_tb_directory_is_a_refusal_not_an_empty_read(tmp_path, cap
 # (`--self-play-start-wr`) against `win_rate_vs_bots`, inside the 2M-bots replicate floor, NOT
 # `--promote-threshold` (ledger 2026-09-11 CORRECTION) — so six of the eight 10M ladder arms
 # crossed at 4,128,768 and two at 2,162,688, and the λ-0.9 replicate pair straddles its own
-# boundary. `critic_read` prints the field so a pair read across it is not silently compared; it
+# boundary. the field exists so a pair read across it is not silently compared; it
 # is DESCRIPTIVE and selects nothing, the crossing being post-treatment.
 
 

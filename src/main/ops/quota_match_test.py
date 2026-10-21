@@ -2,23 +2,16 @@
 
 The module exists because of one measured failure: a conditioning row whose estimator is a FIT on
 the frame read **DETECTED** between an arm traced at 40/40/10 and a control at 5/10/5, and **NOT
-DETECTED** once the two frames were the same size (ledger 2026-09-09 · RETRACTION). So the tests
-plant exactly that shape and assert the tool's whole job:
+DETECTED** once the two frames were the same size (ledger 2026-09-09 · RETRACTION). The tests plant
+that shape and assert what the module owns (the delta-row end-to-end tests went with the deleted
+``critic_read`` reader):
 
-1. **The planted artefact is caught.** Two trees whose critics are the SAME function are traced at
-   different quotas, and the extra frame alone buys the richer side a higher own-team R². Unmatched
-   the delta is DETECTED; matched it is not. This is the test that would have failed before the
-   fix, and it fails again on a revert.
-2. **A symmetric pair is untouched, bit for bit.** Equal realized caps ⇒ no subsample, and
-   ``compute_deltas`` returns rows byte-identical to the ones it returns with matching disabled.
-   The fix must not move a number it was not meant to move.
-3. **The opt-out prints a MARKER, never a label.** ``--no-quota-match`` on an unequal pair leaves
-   every frame-sensitive row carrying ``UNMATCHED — not a reading`` and neither DETECTED nor NOT
-   DETECTED — on an unequal frame both are claims the report may not make.
-4. **The realized profile is read off the DISK, including the shard rounding.** A nominal 5/10/5
+1. **The realized profile is read off the DISK, including the shard rounding.** A nominal 5/10/5
    lands as 8/12 per opponent; matching the NOMINAL numbers over-shrinks the richer side by ~35%.
    A manifest that CLAIMS a different count than the tree holds is reported and the disk wins.
-5. **Symmetry.** A richer CONTROL is subsampled, not the arm — the rule is about frames, not roles.
+2. **Symmetry.** A richer CONTROL is subsampled, not the arm — the rule is about frames, not roles.
+3. **The matched frame is the poorer side's size**, the subsample is seeded and writes nothing.
+4. **Every conditioning meter DECLARES its frame sensitivity with a reason.**
 
 Pure unit, unmarked (runs in every tier): no ``models/``, no subprocess, no model forward.
 """
@@ -32,7 +25,6 @@ import numpy as np
 import pytest
 
 from main.ops import conditioning_meters as CM
-from main.ops import critic_read as CR
 from main.ops import quota_match as QM
 pytestmark = pytest.mark.slow  # ship gate (2026-10-19), WHOLE FILE: its module `artefact` moves onto whichever test runs first (2026-10-19: 17-29 s each)
 
@@ -199,16 +191,6 @@ def test_the_decoder_matched_rung_gives_the_richer_side_the_poorer_sides_decoder
 
 # --------------------------------------------------------------------------- the artefact
 
-def _delta_rows(arm_block, ctl_block, qm) -> Dict[str, dict]:
-    """``compute_deltas``' conditioning rows, from two conditioning blocks."""
-    def side(blk):
-        return {"conditioning": {"points": blk["points"]}, "_cond_draws": blk["_draws"],
-                "_gate_draws": {},
-                "_gate_points": {"strata": {}}}
-    rows = CR.compute_deltas(side(arm_block), side(ctl_block), None, seed=0, qm=qm)
-    return {r["key"]: r for r in rows}
-
-
 @pytest.fixture(scope="module")
 def artefact(tmp_path_factory):
     """The planted artefact: ONE critic, TWO quotas.
@@ -258,37 +240,6 @@ def _qm_uncached(artefact, *, enabled=True, seeds=9, boot=400):
                     seeds=seeds, boot=boot, block_seed=0)
 
 
-def test_the_planted_artefact_is_DETECTED_unmatched_and_NOT_DETECTED_matched(artefact) -> None:
-    """🚨 THE REGRESSION. One critic, two quotas: unmatched, the extra frame alone buys the richer
-    side a DETECTED own-team R²; matched, it does not. A revert of the fix fails HERE."""
-    key = "cond.own_team_r2.t1"
-    plain = _delta_rows(artefact["rich"], artefact["poor"], None)[key]
-    assert plain["label"] == "DETECTED", plain
-    assert plain["delta"] > 0
-
-    matched = _delta_rows(artefact["rich"], artefact["poor"], _qm(artefact))[key]
-    assert matched["quota_match"]["status"] == "MATCHED"
-    assert matched["label"] == "NOT DETECTED", matched
-    assert abs(matched["delta"]) < abs(plain["delta"])
-    # the as-traced number rides along, and is never labelled
-    assert matched["quota_match"]["unmatched"]["delta"] == pytest.approx(plain["delta"])
-    assert "label" not in matched["quota_match"]["unmatched"]
-
-
-def test_the_matched_row_reports_the_across_seed_spread_and_the_median_seeds_own_interval(
-        artefact) -> None:
-    qm = _qm(artefact)
-    row = _delta_rows(artefact["rich"], artefact["poor"], qm)["cond.own_team_r2.t1"]
-    v = row["quota_match"]["variants"]["battle"]
-    side = v["sides"]["arm"]
-    lo, hi = side["spread"]
-    assert lo <= v["arm"] <= hi                       # the point is inside its own spread
-    assert side["n_seeds"] == 9
-    assert 0 <= side["median_seed"] < 9
-    assert row["ci"][0] < row["delta"] < row["ci"][1]
-    assert "decoder" in row["quota_match"]["variants"]
-
-
 def test_the_richer_sides_matched_frame_is_the_size_of_the_poorer_sides(artefact) -> None:
     qm = _qm(artefact)
     battle = qm["rungs"]["arm"]["battle"]
@@ -297,62 +248,7 @@ def test_the_richer_sides_matched_frame_is_the_size_of_the_poorer_sides(artefact
     assert abs(battle["median_battles"] - poor_battles) <= 0.15 * poor_battles
 
 
-def test_the_opt_out_prints_a_marker_and_never_a_label(artefact) -> None:
-    """🚨 On an unequal frame neither DETECTED nor NOT DETECTED is a claim this report may make."""
-    rows = _delta_rows(artefact["rich"], artefact["poor"], _qm(artefact, enabled=False))
-    # a meter this small synthetic frame cannot support is OMITTED upstream and never reaches the
-    # delta engine; the ones that do reach it must all carry the marker.
-    present = [k for k in CM.FRAME_SENSITIVE_KEYS if k in rows]
-    assert {"cond.own_team_r2.t1", "cond.opp_class_auc.t1"} <= set(present)
-    for key in present:
-        r = rows[key]
-        assert r["label"] == QM.UNMATCHED_LABEL, key
-        assert r["clears_zero"] is False
-        assert r["quota_match"]["status"] == "UNMATCHED"
-        assert "--no-quota-match" in r["qualifier"]
-    for key in (k for k in CM.METER_KEYS if k not in CM.FRAME_SENSITIVE_KEYS):
-        if key in rows:
-            assert rows[key]["label"] in ("DETECTED", "NOT DETECTED", "WITHIN FLOOR")
-
-
-def test_only_the_frame_sensitive_rows_are_touched(artefact) -> None:
-    """The noise-corrected spreads, the spread delta and the Elo slope are weighted statistics
-    whose expectation does not move with frame size — matching them would cost power and remove no
-    bias, so they must come out of a matched read bit-identical to an unmatched one."""
-    plain = _delta_rows(artefact["rich"], artefact["poor"], None)
-    matched = _delta_rows(artefact["rich"], artefact["poor"], _qm(artefact))
-    for key in CM.METER_KEYS:
-        if key in CM.FRAME_SENSITIVE_KEYS or key not in plain:
-            continue
-        assert {k: v for k, v in plain[key].items() if k != "quota_match"} == \
-               {k: v for k, v in matched[key].items() if k != "quota_match"}, key
-
-
 # --------------------------------------------------------------------------- the symmetric pair
-
-def test_a_symmetric_pair_produces_rows_identical_to_matching_disabled(tmp_path) -> None:
-    """🚨 BIT-FOR-BIT. Equal realized caps ⇒ nothing is subsampled, and every delta row is exactly
-    what the tool produced before quota matching existed. A fix that moves a number it was not
-    meant to move is not a fix."""
-    a_root, c_root = tmp_path / "a", tmp_path / "c"
-    a_td = _plant(a_root, quota_w=8, quota_l=12, seed=21, team_signal=1.0)
-    c_td = _plant(c_root, quota_w=8, quota_l=12, seed=22, team_signal=1.0)
-    a_blk, c_blk = _block(a_root, a_td), _block(c_root, c_td)
-    pa, pc = QM.realized_profile("a", STEP, a_td), QM.realized_profile("c", STEP, c_td)
-    qm = QM.match(arm_profile=pa, control_profile=pc,
-                  load_frame=lambda s: (_ for _ in ()).throw(
-                      AssertionError("a symmetric pair must not extract a frame")),
-                  run_dirs={"arm": str(a_root), "control": str(c_root)},
-                  steps={"arm": STEP, "control": STEP}, seeds=9, boot=200, block_seed=0)
-    assert qm["plan"]["needed"] is False and qm["rungs"] == {}
-    off = _delta_rows(a_blk, c_blk, None)
-    on = _delta_rows(a_blk, c_blk, qm)
-    assert set(off) == set(on)
-    for key in off:
-        assert off[key] == {k: v for k, v in on[key].items() if k != "quota_match"}, key
-        if key in CM.FRAME_SENSITIVE_KEYS:
-            assert on[key]["quota_match"]["status"] == "SYMMETRIC"
-
 
 # --------------------------------------------------------------------------- the declaration
 
@@ -456,88 +352,3 @@ def test_the_default_seed_count_is_odd_and_at_least_twenty() -> None:
     assert QM.DEFAULT_SEEDS >= 20 and QM.DEFAULT_SEEDS % 2 == 1
 
 
-def test_the_report_renders_the_profiles_and_the_matched_detail(artefact) -> None:
-    from main.ops import critic_read_render as RENDER
-
-    qm = _qm(artefact)
-    rows = CR.compute_deltas(
-        {"conditioning": {"points": artefact["rich"]["points"]},
-         "_cond_draws": artefact["rich"]["_draws"], "_gate_draws": {},
-         "_gate_points": {"strata": {}}},
-        {"conditioning": {"points": artefact["poor"]["points"]},
-         "_cond_draws": artefact["poor"]["_draws"], "_gate_draws": {},
-         "_gate_points": {"strata": {}}},
-        None, seed=0, qm=qm)
-    doc = {"deltas": rows, "quota_match": QM.serialisable(qm)}
-    head = RENDER._profiles_block(doc)
-    assert "REALIZED capture profile" in head and "UNEQUAL FRAMES — MATCHED" in head
-    detail = RENDER._matched_detail(doc)
-    assert "MATCHED · battle" in detail and "MATCHED · decoder" in detail
-    assert "UNMATCHED (as traced)" in detail and "no label — not a reading" in detail
-    assert QM.UNMATCHED_LABEL not in detail          # a MATCHED read never prints the marker
-
-
-def test_the_ledger_line_says_which_frame_it_quotes(artefact) -> None:
-    """🚨 A matched number and an as-traced one are different measurements. The 2026-09-09
-    retraction is what happens when a quoted line does not say which one it is."""
-    from main.ops import critic_read_render as RENDER
-
-    rows = _delta_rows(artefact["rich"], artefact["poor"], _qm(artefact))
-    doc = {"deltas": list(rows.values()),
-           "arm": {"run": "rich", "step": STEP}, "control": {"run": "poor", "step": STEP}}
-    assert "[QUOTA-MATCHED]" in RENDER.ledger_line(doc)
-    rows_off = _delta_rows(artefact["rich"], artefact["poor"], _qm(artefact, enabled=False))
-    doc["deltas"] = list(rows_off.values())
-    assert "[FRAMES UNMATCHED]" in RENDER.ledger_line(doc)
-
-
-def test_a_pair_matched_control_vs_control_is_the_same_operation(tmp_path) -> None:
-    """The replicate FLOOR is a control-vs-control read, and it carries the same asymmetry with
-    the same sign. Nothing in the matching depends on a side being called the arm."""
-    rich_root, poor_root = tmp_path / "b", tmp_path / "a"
-    rich_td = _plant(rich_root, quota_w=40, quota_l=40, n_battles=120, seed=31, team_signal=1.0)
-    poor_td = _plant(poor_root, quota_w=5, quota_l=8, n_battles=120, seed=32, team_signal=1.0)
-    frames = {"arm": CM.extract_cycle(poor_td), "control": CM.extract_cycle(rich_td)}
-    qm = QM.match(arm_profile=QM.realized_profile("a", STEP, poor_td),
-                  control_profile=QM.realized_profile("b", STEP, rich_td),
-                  load_frame=lambda s: frames[s],
-                  run_dirs={"arm": str(poor_root), "control": str(rich_root)},
-                  steps={"arm": STEP, "control": STEP}, seeds=9, boot=300, block_seed=0)
-    assert qm["plan"]["sides"] == ["control"]
-    rows = _delta_rows(_block(poor_root, poor_td), _block(rich_root, rich_td), qm)
-    row = rows["cond.own_team_r2.t1"]
-    assert row["quota_match"]["status"] == "MATCHED"
-    assert "control" in row["quota_match"]["variants"]["battle"]["sides"]
-    assert row["label"] in ("DETECTED", "NOT DETECTED")
-
-
-def test_a_floor_is_applied_to_the_MATCHED_delta_not_the_as_traced_one(artefact, tmp_path) -> None:
-    """A replicate floor is a control-vs-control magnitude, and it must bite the number the row
-    actually reports. A floor applied to an as-traced delta while the label was decided on a
-    matched one would be two different measurements wearing one bar."""
-    key = "cond.own_team_r2.t1"
-    qm = _qm(artefact)
-    rows = _delta_rows(artefact["rich"], artefact["poor"], qm)
-    matched_delta = rows[key]["delta"]
-    unmatched_delta = rows[key]["quota_match"]["unmatched"]["delta"]
-    assert abs(unmatched_delta) > abs(matched_delta)
-
-    # a floor that swallows the MATCHED delta but not the as-traced one
-    floor = (abs(matched_delta) + abs(unmatched_delta)) / 2
-    fp = tmp_path / "floor.json"
-    fp.write_text(json.dumps({"floors": {key: floor}, "provenance": "planted"}))
-    floors = CR.load_floors(str(fp))["floors"]
-    assert floors[key] == pytest.approx(floor)
-
-    with_floor = CR.compute_deltas(
-        {"conditioning": {"points": artefact["rich"]["points"]},
-         "_cond_draws": artefact["rich"]["_draws"], "_gate_draws": {},
-         "_gate_points": {"strata": {}}},
-        {"conditioning": {"points": artefact["poor"]["points"]},
-         "_cond_draws": artefact["poor"]["_draws"], "_gate_draws": {},
-         "_gate_points": {"strata": {}}},
-        floors, seed=0, qm=qm)
-    row = {r["key"]: r for r in with_floor}[key]
-    assert row["floor"] == pytest.approx(floor)
-    assert row["label"] == "WITHIN FLOOR"          # decided on the MATCHED delta
-    assert row["delta"] == pytest.approx(matched_delta)

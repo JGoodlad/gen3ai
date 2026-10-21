@@ -334,6 +334,7 @@ def cli_flag_surface() -> frozenset:
 # cannot quietly become a dumping ground for our own dead flags.
 _EXTERNAL_TOOL_FLAGS: Dict[str, str] = {
     "--collect-only": "pytest",
+    "--gate": "the usage-limits skill's check_usage.py",
     "--durations": "pytest",
     "--dist": "pytest-xdist",
     "--select": "ruff",

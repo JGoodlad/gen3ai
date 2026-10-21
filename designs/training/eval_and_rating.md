@@ -1341,13 +1341,13 @@ output goes. Until P6 slice 6c it spawned `python -m main.eval_worker` processes
    the tool, schema, source run, checkpoint sha, games, the bot list, `sentinels_requested` beside
    `sentinels_used`, the capture rule, the regime fields, the `transport` (`rust_eval`) and the eval core's compute
    flags, the seed and whether it was given or drawn, the cycle's near-tie count, whether the cycle is
-   REPRODUCIBLE, and the POPULATION in words. `main.ops.critic_read` **REFUSES** to form a
-   delta between a generated frame and a live one — they are different populations, and the v3
+   REPRODUCIBLE, and the POPULATION in words. A reader must REFUSE to form a
+   delta between a generated frame and a live one — they are different populations, and a
    quota match corrects a difference in capture RATE between two frames of the same shape, not a
    difference in the shape itself. Two generated frames must further agree on games / opponent set
    / capture rule / sentinel regime; a differing SEED is deliberately NOT checked, being two draws
    from one population. It also records `battles_expected` beside `battles_played` and a
-   `complete` flag, and `critic_read` REFUSES a side that is incomplete **or** whose completeness
+   `complete` flag; a reader must REFUSE a side that is incomplete **or** whose completeness
    is UNRECORDED. A truncated cycle is otherwise indistinguishable from a finished one — same
    nominal games, same opponents, same `selection`, same capture rates — while being a smaller
    frame. (2026-09-09: `scripts/land.sh` removed the worktree a generation was running out of;
@@ -1356,9 +1356,7 @@ output goes. Until P6 slice 6c it spawned `python -m main.eval_worker` processes
    units that finished and is recorded INCOMPLETE the same way.)
 5. 🚨 **A generated cycle is CORE traces, so every reader that samples or scores by the RECORDED win-prob head
    REFUSES it** — a core trace records none (`win_probs` NaN, F-LH-4), exactly as on every live Rust-core cycle.
-   That was `cf_audit`'s sampling frame (and with it `critic_read`'s identity read; both deleted, P6 slice 6d-1) and
-   is still `critic_read`'s gate and conditioning blocks (`scaffolding_gauge`, `conditioning_meters`). The cycle pick,
-   the refusal gates, the prober's views and the shadow run's layout (the step dir's `snapshot.zip`, the sentinel
+   The gate and conditioning meters (`scaffolding_gauge`, `conditioning_meters`) are such readers. The prober's views and the shadow run's layout (the step dir's `snapshot.zip`, the sentinel
    pins) read it (`main/ops/eval_trace_gen_integration_test.py`); a critic read on a Rust-core cycle waits on the
    win-prob head being recorded at eval.
 

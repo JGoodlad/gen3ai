@@ -1,6 +1,6 @@
 """`--v-column` REACHES THE QUOTA-MATCHED ROWS — it used to be silently ignored on every one.
 
-The defect this file pins (tech-debt P1, 2026-09-16). `critic_read --v-column values` read the
+The defect this file pins (tech-debt P1, 2026-09-16). the ladder reader's `--v-column values` read the
 flag at the AS-TRACED call site and `main.ops.quota_match` did not read it at all: the matched
 path extracts its OWN frame (`CM.extract_cycle(d["trace_dir"])`, no kwarg), so a
 `--v-column values` report's matched rows came out byte-identical to the `win_probs` run while
@@ -148,24 +148,6 @@ def test_the_matched_frame_is_extracted_with_the_requested_column(pair, monkeypa
     monkeypatch.setattr(CM, "extract_cycle", _spy)
     _matched_points(pair, "values")
     assert seen and set(seen) == {"values"}, seen
-
-
-def test_the_two_paths_read_the_flag_through_ONE_accessor():
-    """`critic_read` and `quota_match` both call `v_column_of`, so they cannot disagree."""
-    import inspect
-
-    from main.ops import critic_read as CR
-
-    for mod in (CR, QM):
-        src = inspect.getsource(mod)
-        assert 'getattr(args, "v_column"' not in src, (
-            f"{mod.__name__} reads --v-column with its own getattr instead of "
-            "conditioning_meters.v_column_of — that is the second opinion this closed.")
-    assert CM.v_column_of(_args("values")) == "values"
-    assert CM.v_column_of(_args(None)) == CM.DEFAULT_V_COLUMN
-    assert CM.v_column_of(argparse.Namespace()) == CM.DEFAULT_V_COLUMN
-    with pytest.raises(CM.ConditioningRefusal):
-        CM.v_column_of(_args("advantages"))
 
 
 def test_a_frame_whose_column_DISAGREES_with_the_request_is_REFUSED(pair):

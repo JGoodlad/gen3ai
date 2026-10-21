@@ -145,7 +145,7 @@ responder (`main.best_response_gap`). **What we know:** §3.4.
 
 **What.** Self-play visits a narrowing set of states (same leads, same lines), so the value and policy are untrained off
 it. **Measurement.** RND novelty on the observation (the X26 ride-along RND variants), visitation counts of a decoded
-state key, off-distribution AUROC on held-out teams / exploiter games (`main.ridealong_read`, `rnd_states`).
+state key, off-distribution AUROC on held-out teams / exploiter games (read from the checkpoint's RND heads; no reader is in the tree).
 **What we know:** RND tracks visitation (Spearman −0.34 against a coarse state key's count) and flags off-distribution
 classes (AUROC ~0.75), but it does NOT separate the successors of starved near-best moves from other unplayed moves
 (+0.001 [−0.037, +0.040]): novelty steers effort across STATES, not toward the right unplayed ACTION
@@ -438,11 +438,11 @@ exists. "New" marks the only pieces that do not exist today.
 | B2 | (a) starvation, on-distribution | starved / tie-collapse / misrank shares, dominated mass, held-out gain, IMP, greedy regret on the 306-turn X26 truth | `starvation_readout.py` on read A's rows | forward pass only | exists (this pilot) |
 | B3 | (a) starvation, cross-era referee | the same on `truth_v2` | `readout_oldtruth.sh` | ~75 s | exists (this pilot) |
 | B4 | (a) truth refresh | re-branch read A's turns under the NEWEST checkpoint's greedy continuation once per ~50M, so "near-best" tracks the policy's own continuation (the 150M truth ages as X26 moves) | `main.policy_spectrum.truth run` | ≈ 3.7 CPU-h (306 turns, S = 32, CPU); minutes on the GPU | exists |
-| B5 | (a) + (ii) | R3 (A vs ground truth) and R4 (A's spread on starved near-best moves) on read A's truth as well as `truth_v2` | `main.ridealong_read` | minutes | **new: `--truth-dir` reads only `truth_v2`'s three file names (`TRUTH_CONTINUATIONS`); it needs a generic rows argument** (F-CC-4) |
+| B5 | (a) + (ii) | R3 (A vs ground truth) and R4 (A's spread on starved near-best moves) on read A's truth as well as `truth_v2` | **new** (the heads' reader is not in the tree; F-CC-4) | minutes | not built |
 | B6 | (c) strategic | Hodge width vs its null; plateau Tier 1; sentinel win rates by age | `main.elo --out <dir outside models/>`, `main.plateau status`, `strategic_series.py` | seconds | exists |
 | B7 | (c) exploitability | a fresh best responder's gap at P\* (and at one earlier node) | `main.best_response_gap` | GPU, per X35 | exists |
-| B8 | (d) coverage | RND variants' coverage / saturation series | `main.ridealong_read` variants | minutes | exists |
-| B9 | (e) opponent model | α's intent NLL / OTHER rate by class; R5 (B's outcome information) | `main.belief_roles`, `main.ridealong_read` | minutes | exists |
+| B8 | (d) coverage | RND variants' coverage / saturation series | **new** (the heads' reader is not in the tree) | minutes | not built |
+| B9 | (e) opponent model | α's intent NLL / OTHER rate by class; R5 (B's outcome information) | `main.belief_roles`; R5 **new** (the ride-along heads' reader is not in the tree) | minutes | belief_roles part exists |
 | B10 | (f) plasticity | dormant-unit share and a fixed-target refit probe on frozen checkpoints | **new** (F-CC-6) | minutes | not built |
 | B11 | (c) pool STALENESS | promotions per 50M; the self-play pool's median member age and oldest member (the pool at t = the 20 latest promotions ≤ t, FIFO, checked against `snapshots/`); the pool-relative edge `eval/win_rate_vs_pool`. Promotion is a noise crossing when the edge sits near the 0.55 bar, and its rate depends on `--n-sentinels`, so compare runs only at equal sentinel counts | `main.ops.tb_read <run> --tag train/selfplay_promoted_steps --tag eval/win_rate_vs_pool` (a fork's own rows); the series: `../research_state/measurements/x35_breakers_stage_2026-10-17/batch2_lr_floor/lr_pool_series.py` | seconds (record reads) | exists |
 | B12 | (f) the LEARNING RATE in force | the adaptive-KL controller's rate (`train/learning_rate`, rungs 3e-4 / 1.2^k), with approx KL, gradient norm and clip fraction beside it. Reported next to EVERY plateau or Tier-1 claim and every fork comparison: a plateau read at a falling rate is read at a falling weight-space dose, and one rung (20 %) trips the 10 % dose-gap rule | `python -m main.dose <run>` (`lr_now`, the controller block); `main.ops.tb_read <run> --tag train/learning_rate --tag train/approx_kl` | seconds | exists |
@@ -486,8 +486,8 @@ rise (the interval's lower bound > 0). B3 and B6 are reported; B4 refreshes the 
 - **F-CC-3.** Read A's power is limited: 179 decisive turns, intervals ±0.07–0.08. It excludes an ai_v14-sized rise
   (+0.14), not a small one. The nested 16-seed read detects the 10M → 150M step (+0.081 [+0.006, +0.169]) where the
   32-seed read does not (+0.028 [−0.040, +0.098]); the 32-seed read is primary.
-- **F-CC-4.** `main.ridealong_read --truth-dir` reads only `truth_v2`'s three file names (`TRUTH_CONTINUATIONS`), so R3 /
-  R4 cannot be read against an on-distribution X26 truth without a small reader change (battery B5).
+- **F-CC-4.** No reader of the ride-along heads is in the tree, so R3 / R4 cannot be read against an on-distribution
+  X26 truth until one is built (battery B5, B8, B9's R5).
 - **F-CC-5 (scope).** The brief's counterfactual options (iii) and (iv) conflict with the owner's 2026-09-30 label-scope
   rule (`design_q_head.md` §5.0: playout labels DEFERRED; V-bootstrapped one-ply Q̂ never a target). They are written up
   as DEFERRED designs here; lifting the deferral is the owner's call.

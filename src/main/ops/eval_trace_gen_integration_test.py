@@ -6,7 +6,7 @@ fresh current-architecture policies (``rust_eval.offline.build_models``: a greed
 pointer head's uniform tie). The cycle is generated TWICE at one seed and once at another (2 games x 3 opponents
 each; a MODULE fixture: the tier budget is per test call), and the tests read the result:
 
-(a) the READERS accept it — ``main.ops.critic_read``'s cycle pick and refusal gates, the prober's ``summary`` /
+(a) the READERS accept it — the prober's ``summary`` /
     ``scan``, and the shadow run's layout (the step's ``snapshot.zip`` and the pinned sentinel's snapshot resolve
     against it; the offline ``cf_audit`` identity half that read it was deleted, P6 slice 6d-1);
 (b) a rerun at the same ``--seed`` is IDENTICAL, file for file and byte for byte; another seed is another cycle;
@@ -144,21 +144,6 @@ def test_another_seed_is_another_cycle(cycles):
 
 
 # ------------------------------------------------------------------------------------------------- (a) the readers
-
-def test_critic_read_picks_the_generated_cycle_and_its_gates_read_it(cycles):
-    from main.ops import critic_read as CR
-
-    out = cycles["a"]
-    assert CR.resolve_read_root(cycles["run"], str(out), role="arm") == out.resolve()
-    cyc = CR.pick_cycle(out, on_live="use", step=None)
-    assert cyc["step"] == STEP and cyc["manifest"]["selection"]
-    cov = CR.winprob_coverage(cyc["trace_dir"])
-    assert cov["n_npz"] == 6 and cov["n_missing"] == 0
-    assert CR.draw_share(cyc["manifest"]) is not None
-    # two generated frames at one spec (different seeds) are comparable; the population says what it is
-    CR.check_comparable({"manifest": cycles["man_a"]}, {"manifest": cycles["man_c"]})
-    assert ETG.population_of(cycles["man_a"]).startswith("OFFLINE-GENERATED cycle on the Rust eval core")
-
 
 def test_the_prober_summary_and_scan_read_the_generated_cycle(cycles):
     from main.prober import query

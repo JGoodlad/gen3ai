@@ -233,7 +233,7 @@ def payload(*, n_battles: int, opp_of_battle: np.ndarray,
             buckets: Dict[str, Dict[str, np.ndarray]]) -> Dict[str, Any]:
     """The per-state columns the slope rows are computed from, in the shape :func:`block` wants.
 
-    Kept as a standalone document so :mod:`main.ops.critic_read` can CACHE it and re-fit the
+    Kept as a standalone document so the deleted `critic_read` ladder reader can CACHE it and re-fit the
     common-support companion for a PAIR without re-reading either trace tree — the window is a
     function of both sides, so it cannot be computed inside a single run's block.
     """

@@ -2,7 +2,7 @@
 
 > **P6 slice 6d-1 (2026-10-08): the OFFLINE stack below is DELETED too.** Owner decision 2026-10-08 ("LGTM for deleting both
 > cf label and search, they need poke-env"): `cf_producer*` (with `cf_producer_snapshot`), `cf_audit*`, `cf_q_labels.py`, `cf_mc_return.py`,
-> `utils/bridge/counterfactual.py` and `main/ops/critic_read`'s identity half are gone (`designs/ops/deletion_pass_manifest.md` §8.4); this supersedes decision D6, which had kept them.
+> `utils/bridge/counterfactual.py` and the identity half of the old `critic_read` ladder reader are gone (`designs/ops/deletion_pass_manifest.md` §8.4); this supersedes decision D6, which had kept them.
 > They ran on the poke-env road (`RLPlayer`, `run_local_battles`, the Python encoder) and `cf_audit.build_frame` already REFUSED every
 > Rust-core trace (F-LH-4). **Everything from the "What stays" table down is now the RECORD of what the stack was and measured — no
 > module, command or test named there exists any more** (the prober's counterfactual views are the one live descendant: they play
@@ -66,7 +66,7 @@ decision-time handle capture; the python-core refusal row went with the Python c
 | the per-action label arithmetic, the MC-return label | `agents/training/cf_q_labels.py`, `agents/training/cf_mc_return.py` | § PER-ACTION stream |
 | prefix-sharing materialization | `agents/training/obs_materializer.py` | § Prefix-sharing |
 | the win-prob fine-tune, the harvest schema | `agents/training/winprob_finetune.py`, `agents/training/harvest_schema.py` | their own module docstrings |
-| the live critic read | `main/ops/critic_read.py` | its docstring |
+| the live critic read | `main/critic_gate.py` | its docstring |
 | the counterfactual rollout driver | DELETED (T27 P6 slice 6d-1; the prober's replay-counterfactual runs on the Rust play-out) | [`../prober/counterfactual_probes.md`](../prober/counterfactual_probes.md) |
 | the prober's counterfactual views | `main/prober/` | [`../prober/counterfactual_probes.md`](../prober/counterfactual_probes.md) |
 
@@ -763,8 +763,7 @@ and one that recorded a live cf coefficient refuses resume / fork
 KEPT it): `cf_producer*` (the label producer and its single-instance lock), `cf_audit*`, `cf_q_labels.py`,
 `cf_mc_return.py` and `utils/bridge/counterfactual.py`. What stays: `harvest*` and `winprob_finetune` (the
 stall-tail pipeline below — they only cite `cf_audit` as the source of the schema they were modelled on),
-`main/ops/critic_read.py` WITHOUT its identity half (it ran `cf_audit`; the gate, conditioning and quota-matched
-halves read recorded `V` and stay), the shared `stats.py`, and the prober's counterfactual views (which play on the
+the shared `stats.py`, and the prober's counterfactual views (which play on the
 Rust core, `utils/rust_env/counterfactual.py`). The prober's twin / evidential readers degrade to "no head" on any
 checkpoint at HEAD (those heads cannot be built). `cf_records.py` (the `record_key` / `index_records` join of the
 Python fork arm) is DELETED with that arm (L5). History: [`designs/training/cf_grounding.md`](cf_grounding.md).

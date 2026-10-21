@@ -1103,7 +1103,7 @@ once. They are deduped against `../ops/TASK_BACKLOG.md`, where they are added as
 - **F19 (T32, A2-F1). F5's premise was wrong**, see F5. The real downsampling is the TensorBoard WEB UI's 1,000
   points per tag, which bites at X26's ≈ 5,100 updates; Amendment 2 §A2.7 names `main.ops.tb_read` as the reader.
 - **F20 (T32, A2-F2). Two registered ride-along reads have NO reader code:** R1×R2's paired AUROC difference and
-  R5's Brier(V) − Brier(Q_played) on the flat pointer (`main.ridealong_read` emits only B's plumbing count). R5 also
+  R5's Brier(V) − Brier(Q_played) on the flat pointer (no ride-along reader is in the tree). R5 also
   needs `bank_v1` to carry the one-ahead opponent label in flat-pointer terms (UNVERIFIED). Offline, ~0.5 agent-day
   (est.), must land before X26's FINAL read; not a launch blocker. A plumbing smoke at HEAD on `rb_bf_eb_s2001`'s 9M
   checkpoint shows the rest of the reader runs on the end state

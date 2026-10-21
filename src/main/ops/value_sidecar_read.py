@@ -1,8 +1,9 @@
 """THE TRAINING-SIDE CALIBRATION READ — `python -m main.ops.value_sidecar_read <run>`.
 
-The counterpart to `main.ops.critic_read`, and the distinction between them is the whole point:
+The counterpart to the EVAL-battle readers (the prober's `calibration`, `main.critic_gate`), and the
+distinction between them is the whole point:
 
-* **`critic_read` reads EVAL battles** — a greedy trainee against a fixed roster, sampled under a
+* **an eval read uses EVAL battles** — a greedy trainee against a fixed roster, sampled under a
   quota that prefers losses. It answers *"is this critic calibrated on the eval distribution?"*
 * **this reads the TRAINING buffer** — the stochastic policy against the live self-play curriculum,
   scored against `win_target`, the label the BCE actually minimises. It answers *"is this critic
@@ -311,7 +312,7 @@ def render_md(doc) -> str:
          "## What this is", "",
          "The critic scored against **its own training target** — the `win_target` label the BCE "
          "minimises, on the states the rollout buffer actually held. This is NOT "
-         "`main.ops.critic_read`, which reads EVAL battles (a greedy trainee, a fixed roster, a "
+         "an eval-battle read (a greedy trainee, a fixed roster, a "
          "loss-preferring quota). A critic can pass one and fail the other; a disagreement is a "
          "finding about generalisation, not a defect in either.", "",
          "## The sample", "",
@@ -346,7 +347,7 @@ def build_parser() -> argparse.ArgumentParser:
             "mode — and so whether V is a probability at all — would be unknown), a sidecar in "
             "which nothing is labelled, and a slice under the cell floor are each refused or "
             "marked, never averaged into a confident number.\n\n"
-            "This is NOT main.ops.critic_read. That one reads EVAL battles; this reads the "
+            "This is NOT an eval-battle read: those use EVAL battles; this reads the "
             "TRAINING buffer. Neither supersedes the other."))
     p.add_argument("run", help="a run NAME under models/ or a run DIRECTORY")
     p.add_argument("--out", default=None,

@@ -350,7 +350,7 @@ def _assert_rnd_equal(a, b, what):
 def test_RND_mirrors_equal_the_device_branches_bit_for_bit_across_outside_writes():
     """The mirrors answer ``count == 0`` and ``err_seen`` from the host; HEAD answered with a device read.
     Same buffers, same normalised rows, after every kind of write the mirror must notice: the module's
-    own update, an outside ``zero_`` (`main.ridealong_read.rnd_choice` does it), a state-dict load, a
+    own update, an outside ``zero_``, a state-dict load, a
     deepcopy, and an empty batch."""
     a, b = _twin_rnd()
     g = th.Generator().manual_seed(7)

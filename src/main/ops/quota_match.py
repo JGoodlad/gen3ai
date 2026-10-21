@@ -1,7 +1,7 @@
 """``main.ops.quota_match`` — equalise two ladder arms' TRACE FRAMES before a fitted conditioning
 row is compared between them.
 
-**The defect this exists for.** The critic ladder's read (:mod:`main.ops.critic_read`) compares an
+**The defect this exists for.** The critic ladder's read (the deleted `critic_read` ladder reader) compared an
 arm against a control on the conditioning meters. Every gauge row is Horvitz-Thompson reweighted by
 the cycle's own capture rates, so the loss-ENRICHMENT of the eval quota is handled (rule of
 evidence 17). What reweighting does not touch is **frame SIZE**: an out-of-fold score of a decoder
@@ -467,7 +467,7 @@ def _profile_doc(p: Profile) -> Dict[str, Any]:
             "opponents": p.opponents, "disk_mismatches": p.disk_mismatches}
 
 
-# --------------------------------------------------------------- the critic_read entry point
+# --------------------------------------------------------------- the ladder reader's entry point (reader deleted)
 
 def serialisable(qm: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """The quota-match document minus every raw bootstrap draw array."""

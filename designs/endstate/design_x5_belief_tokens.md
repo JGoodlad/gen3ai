@@ -1897,7 +1897,7 @@ backward's gradients — equal `889add9d`'s). No config bump, no `ARCH_SIGNATURE
   cold start (aligned labels, one `train()`) `other_label_rate` 0.19, `flat_unmodeled_rate` 0.
 - **For U7 (readers).** `other_label_rate` is the belief-miss share of CHOICES; the OTHER labels make the pointer's
   calibration on OTHER readable (P(OTHER_species) vs its label rate). `render_flat` names the options for a trace.
-  `main.ridealong_read` passes the flat fields to B (`RideAlongSpec.opp_flat_k`).
+  `RideAlongSpec.opp_flat_k` carries the flat fields to B.
 - **For U8 (cost).** §3.6 "What U4 ADDS" (F-X5-37). The OTHER_move column is the one full-move-axis computation U4 adds;
   the flat head replaces α + β (24,833 vs 65,923 parameters).
 - **Decisions in force.** π detached into the pointer (M10; the flat loss reaches the head, never δ_θ —

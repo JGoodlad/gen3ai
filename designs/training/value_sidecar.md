@@ -14,7 +14,7 @@ Code: `src/agents/training/value_sidecar.py` (writer) · `src/main/ops/value_sid
 ## 1. The hole it closes
 
 **Every instrument this project owns that reads the critic reads EVAL battles** — `main.critic_gate`,
-`main.ops.critic_read`, the prober's `calibration`, the scaffolding gauge, the whole win-prob
+the prober's `calibration`, the scaffolding gauge, the whole win-prob
 ladder. Nothing had ever logged the value estimate against **its own training target**. Three
 reasons that is a real hole rather than a cosmetic one:
 
@@ -28,7 +28,7 @@ reasons that is a real hole rather than a cosmetic one:
    `V = sigmoid(win logit)` by BCE against `win_target`. Calibration against THAT is the
    objective's own residual; calibration against an eval battle is a *generalisation* question.
 
-🚨 **`critic_read` and `value_sidecar_read` answer different questions and neither supersedes the
+🚨 **`value_sidecar_read` and the eval-battle reads answer different questions and neither supersedes the
 other.** A disagreement between them is a finding about generalisation, not a defect in either
 instrument — report it as one.
 
@@ -325,7 +325,7 @@ Once per rollout at `_on_rollout_end`, a seeded 1/64 of buffer states is appende
   header FIRST, labels every table with the quantity it scored, and REFUSES a mid-file change by
   ROW INDEX and a `--compare` across a quantity boundary. A schema-1 file and a schema-2 file at
   λ = 1.0 compare EQUAL on purpose.
-- 🚨 **`critic_read` (eval) and `value_sidecar_read` (training) answer DIFFERENT questions.**
+- 🚨 **The eval-battle reads and `value_sidecar_read` (training) answer DIFFERENT questions.**
   Neither supersedes the other; a disagreement is a finding about GENERALISATION.
 - ⚠️ **`opp_class` now rides the win-prob gate too**, not just the intent labels — a win-prob arm
   normally has no intent loss, so the by-opponent-class slice was otherwise empty on exactly the

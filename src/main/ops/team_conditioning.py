@@ -1,7 +1,7 @@
 """``main.ops.team_conditioning`` — the OWN-TEAM cell arithmetic behind the (A)/(B) separation.
 
 Split out of :mod:`main.ops.conditioning_meters` for the same reason
-:mod:`main.ops.critic_read_render` is split out of the read: the meters module already owns the
+the deleted `critic_read` report renderer was split out of the read: the meters module already owns the
 extraction, the reweighting, the spread identity and the decodes, and one more block of
 second-moment arithmetic would push it past the file-size gate's reporting band. The METERS are
 still DECLARED in ``conditioning_meters`` — this module holds only the arithmetic they call.

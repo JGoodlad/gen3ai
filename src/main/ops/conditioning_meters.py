@@ -12,7 +12,7 @@ as session scripts:
   (``decode.py``).
 
 Those copies STAY where they are — a committed measurement must remain reproducible from the
-artifacts beside it — and this module is the version :mod:`main.ops.critic_read` imports, so every
+artifacts beside it — and this module is the version the deleted `critic_read` ladder reader imported, so every
 ladder arm is read by identical code.
 
 **THE IDENTITY THIS MEASURES.** For ANY calibrated critic ``E[V | opponent] == E[y | opponent]``
@@ -795,7 +795,7 @@ class Meter(NamedTuple):
 
     ``pair_level`` marks a row that a SINGLE run's block cannot compute at all, because its
     definition names both sides — the COMMON-SUPPORT calibration slope, whose window is the
-    intersection of the two sides' central 95% of ``V``. :mod:`main.ops.critic_read` fits it from
+    intersection of the two sides' central 95% of ``V``. The deleted `critic_read` ladder reader fits it from
     each side's cached per-state columns once both readouts exist. It is DECLARED rather than
     matched on a name for the same reason the other two flags are, and it is why the block's
     "every meter is reported or omitted with a reason" invariant excludes it: a single-run block
@@ -965,7 +965,7 @@ METER_SPECS: Tuple[Meter, ...] = (
           "of their central 95% of V, so the lever arm sd(logit V) cannot differ between them",
           f"all states, <={STATES_PER_BATTLE_CAP} per battle, common V window", False,
           f"as `{CALIB_SLOPE_ALL}`. It is additionally a PAIR-level row: the window is a function "
-          "of BOTH sides, so it is fitted by `main.ops.critic_read` from the cached per-state "
+          "of BOTH sides, so it is fitted by the deleted `critic_read` ladder reader from the cached per-state "
           "columns after both readouts exist, and there is no single-run frame for a quota match "
           "to subsample", pair_level=True),
     Meter(CALIB_INTERCEPT_COMMON,
@@ -1172,7 +1172,7 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
     # battle exactly as the within-cell rows are, plus each state's own-team STRENGTH STRATUM (for
     # the within-stratum companion) and each battle's OPPONENT cell (the bootstrap resamples
     # battles WITHIN the pinned roster, as every other interval here does). The payload is
-    # returned on the block so `main.ops.critic_read` can re-fit the COMMON-SUPPORT companion for
+    # returned on the block so the deleted `critic_read` ladder reader can re-fit the COMMON-SUPPORT companion for
     # a PAIR without re-reading either trace tree — that window is a function of both sides.
     calib_buckets: Dict[str, Dict[str, np.ndarray]] = {}
     for bucket, bmask in (("all", np.ones(arr.size, bool)), ("t1_3", arr["turn"] <= 3)):
@@ -1337,7 +1337,7 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
                  for k, v in draws.items() if k in points and np.isfinite(points.get(k, np.nan))}
     out_draws.update(calib["draws"])
     for k in METER_KEYS:
-        # 🚨 the COMMON-SUPPORT rows are PAIR-level and are fitted by `main.ops.critic_read` after
+        # 🚨 the COMMON-SUPPORT rows are PAIR-level and are fitted by the deleted `critic_read` ladder reader after
         # both sides exist. Listing them as omitted here would put a false reason in every
         # single-run block, and the reason would still be there after the pair filled them in.
         if k in PAIR_LEVEL_KEYS:

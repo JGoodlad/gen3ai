@@ -55,12 +55,9 @@ chimera ÷ real-row error, the identification monitor). Base logs the same `rnd_
 only where `--opp-intent-coef > 0`, because that is what aligns the one-ahead opponent labels. The
 meters are disagreement / novelty vs |V − z| (`*_auroc_err`, `*_spearman_err`, top vs bottom decile),
 `rnd_z_<class>`, `adv_corr_logit`, `adv_std_starved` vs `adv_std_fed`, `q_out_of_range`. These are
-MONITORING (rows the heads just trained on). The verdicts are the offline reader's,
-`python -m main.ridealong_read` (`src/main/ridealong_read/`: CPU forwards on the Lane S bank and the
-X4 pre-read truth turns; `--fresh-heads` reads the same checkpoint's untrained floor; every RND variant
-and the amended comparisons (a)–(e); `--run-checkpoints <run>` reads a run's retained checkpoints as a
-series), plus
-`python -m main.ridealong_read.rnd_states` for the state-level RND reads. The pre-registered run is
+MONITORING (rows the heads just trained on). No offline reader of a checkpoint's heads exists in the tree: a
+verdict read (the heads on the Lane S bank and the X4 pre-read truth turns, the untrained-head floor, the RND
+variants' coverage) is built on demand from this module's heads and `main.policy_spectrum`'s reader. The pre-registered run is
 EXPERIMENT_BACKLOG X26.
 
 ### The micro-batch path makes ONE host read (T25 next lever 1, 2026-10-10)

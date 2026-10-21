@@ -4322,14 +4322,6 @@
    "contention": 1.81,
    "detail": ""
   },
-  "src/main/ops/eval_trace_gen_integration_test.py::test_critic_read_picks_the_generated_cycle_and_its_gates_read_it": {
-   "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 0.01,
-   "contention": 1.85,
-   "detail": ""
-  },
   "src/main/ops/eval_trace_gen_integration_test.py::test_the_manifest_records_the_RUNs_regime_and_the_sentinels_it_played": {
    "status": "pass",
    "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
@@ -4354,14 +4346,6 @@
    "contention": 1.85,
    "detail": ""
   },
-  "src/main/ops/quota_match_test.py::test_a_floor_is_applied_to_the_MATCHED_delta_not_the_as_traced_one": {
-   "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 0.01,
-   "contention": 1.88,
-   "detail": ""
-  },
   "src/main/ops/quota_match_test.py::test_a_manifest_that_claims_a_count_the_tree_does_not_hold_is_reported_and_the_disk_wins": {
    "status": "pass",
    "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
@@ -4376,22 +4360,6 @@
    "at": "2026-10-20T02:17:48Z",
    "duration_s": 0.0,
    "contention": 2.26,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_a_pair_matched_control_vs_control_is_the_same_operation": {
-   "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 10.55,
-   "contention": 1.75,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_a_symmetric_pair_produces_rows_identical_to_matching_disabled": {
-   "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 1.76,
-   "contention": 1.75,
    "detail": ""
   },
   "src/main/ops/quota_match_test.py::test_equal_caps_are_a_symmetric_pair_and_nothing_is_subsampled": {
@@ -4426,14 +4394,6 @@
    "contention": 1.81,
    "detail": ""
   },
-  "src/main/ops/quota_match_test.py::test_only_the_frame_sensitive_rows_are_touched": {
-   "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 0.01,
-   "contention": 2.21,
-   "detail": ""
-  },
   "src/main/ops/quota_match_test.py::test_the_calibration_slope_is_read_as_traced_and_only_its_stratum_row_is_matched": {
    "status": "pass",
    "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
@@ -4458,44 +4418,12 @@
    "contention": 2.21,
    "detail": ""
   },
-  "src/main/ops/quota_match_test.py::test_the_ledger_line_says_which_frame_it_quotes": {
-   "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 0.01,
-   "contention": 2.31,
-   "detail": ""
-  },
   "src/main/ops/quota_match_test.py::test_the_legacy_three_tuple_view_still_unpacks": {
    "status": "pass",
    "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
    "at": "2026-10-20T02:17:48Z",
    "duration_s": 0.0,
    "contention": 2.21,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_the_matched_row_reports_the_across_seed_spread_and_the_median_seeds_own_interval": {
-   "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 0.01,
-   "contention": 1.93,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_the_opt_out_prints_a_marker_and_never_a_label": {
-   "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 0.01,
-   "contention": 2.27,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_the_planted_artefact_is_DETECTED_unmatched_and_NOT_DETECTED_matched": {
-   "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 11.1,
-   "contention": 1.75,
    "detail": ""
   },
   "src/main/ops/quota_match_test.py::test_the_provisional_row_is_declared_and_carries_its_reason": {
@@ -4512,14 +4440,6 @@
    "at": "2026-10-20T02:17:48Z",
    "duration_s": 0.03,
    "contention": 2.09,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_the_report_renders_the_profiles_and_the_matched_detail": {
-   "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 0.01,
-   "contention": 2.43,
    "detail": ""
   },
   "src/main/ops/quota_match_test.py::test_the_richer_side_is_the_one_cut_whichever_role_it_holds": {
@@ -5123,22 +5043,6 @@
    "at": "2026-09-29T22:44:41Z",
    "duration_s": 0.17,
    "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/ridealong_read/ridealong_read_integration_test.py::test_reader_smoke_end_to_end": {
-   "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 17.58,
-   "contention": 1.76,
-   "detail": ""
-  },
-  "src/main/ridealong_read/ridealong_read_integration_test.py::test_v_matches_the_policy_spectrum_critic_read": {
-   "status": "pass",
-   "commit": "339cf18dca3638c135a2ca8c74691268ce2359b1",
-   "at": "2026-10-20T02:17:48Z",
-   "duration_s": 7.32,
-   "contention": 1.77,
    "detail": ""
   },
   "src/main/team_strength/x26_lane_integration_test.py::test_a_unit_from_another_registration_is_refused": {

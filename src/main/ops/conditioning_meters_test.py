@@ -327,7 +327,7 @@ def test_every_declared_meter_is_either_reported_or_omitted_with_a_reason(tmp_pa
     blk = CM.conditioning_block(str(tmp_path), 100, boot=100, ladder="off", seed=15)
     for key in CM.METER_KEYS:
         if key in CM.PAIR_LEVEL_KEYS:
-            # a PAIR-level row (the common-support slope) is fitted by `main.ops.critic_read` once
+            # a PAIR-level row (the common-support slope) is fitted by the deleted `critic_read` ladder reader once
             # both sides exist; a single-run block neither reports nor omits it, because an
             # omission reason here would still be sitting there after the pair filled it in.
             assert key not in blk["points"] and key not in blk["omitted"], key
@@ -523,20 +523,6 @@ def test_a_team_under_the_minimum_is_never_a_cell(tmp_path) -> None:
                 "cond.team_spread_ratio.t1_3"):
         assert key in blk["omitted"], key
         assert key not in blk["points"], key
-
-
-def test_the_within_cell_resolution_reduces_to_the_ordinary_murphy_resolution(tmp_path) -> None:
-    """ONE cell means the within-cell construction IS Murphy's resolution — checked against the
-    ladder's own implementation in `critic_readouts`, so the two cannot drift apart."""
-    from main.ops import critic_readouts as CRO
-
-    rng = np.random.default_rng(3)
-    v = rng.random(400)
-    y = (rng.random(400) < v).astype(float)
-    w = rng.random(400) + 0.5
-    got = TC.cellwise_resolution(v, y, w, np.zeros(400, dtype=int), np.array([1.0]), 1)
-    want = CRO.murphy_arrays(v, y, np.ones(400), w, TC.RESOLUTION_BINS)["resolution"]
-    assert got == pytest.approx(want, abs=1e-12)
 
 
 def test_the_strata_are_cut_at_equal_battle_mass_not_equal_team_count() -> None:
@@ -899,7 +885,7 @@ def test_the_common_support_fit_equalises_the_lever_arm(tmp_path) -> None:
 
 
 def test_the_calibration_payload_round_trips_through_json(tmp_path) -> None:
-    """`main.ops.critic_read` CACHES these columns so the common-support companion costs no second
+    """The deleted `critic_read` ladder reader CACHES these columns so the common-support companion costs no second
     extraction. A round trip that lost a column would silently disable the row on every reuse."""
     blk = _cal(tmp_path, _true, boot=20)
     back = CS.from_json(json.loads(json.dumps(CS.to_json(blk["_calib"]))))

@@ -166,7 +166,7 @@
 | `--edge-bias-families` | — | 186 / 34 | `--arch production`: `production_config.json` `edge_bias_families` = `"d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h,r"` | **KEEP** |
 | `--damage-candidate-k` | — | 184 / 34 | `--arch production`: `production_config.json` `damage_candidate_k` = `0` (the production value is OFF / zero: an arch toggle held for ablations, see FINDINGS) | **KEEP** |
 | `--win-prob-mode` | — | 252 / 34 | NOT one-valued: winprob refuses only `none`, so `read_only` (the win-prob head on a stop-grad value pool) is a legal arm — `design_winprob_only_critic.md` §3 + open question 5 ("whether `--win-prob-mode read_only` is the interesting arm"), a `Family.CRITIC` registry row, a recorded `ModelVersion` field. **Owner delegation 2026-10-03: KEEP** — open question 5 is the live name | **KEEP** |
-| `--ridealong-ensemble` | — | 0 / 0 | `--arch production`: `production_config.json` `ridealong_ensemble` = `0`; X26's ride-along baseline heads (`EXPERIMENT_BACKLOG.md`, `main.ridealong_read`) | **KEEP** |
+| `--ridealong-ensemble` | — | 0 / 0 | `--arch production`: `production_config.json` `ridealong_ensemble` = `0`; X26's ride-along baseline heads (`EXPERIMENT_BACKLOG.md`) | **KEEP** |
 | `--ridealong-rnd` | — | 0 / 0 | `--arch production`: `production_config.json` `ridealong_rnd` = `false`; X26's RND novelty head | **KEEP** |
 | `--ridealong-adv` | — | 0 / 0 | `--arch production`: `production_config.json` `ridealong_adv` = `0`; X26's per-action A heads | **KEEP** |
 | `--ridealong-opp` | — | 0 / 0 | `--arch production`: `production_config.json` `ridealong_opp` = `0`; X26's opponent-effect B heads | **KEEP** |

@@ -409,8 +409,8 @@ class _HostMirror:
     The copy can never go stale silently: it is valid only while the buffer is the SAME tensor object,
     at the SAME storage address, at the SAME in-place-write count (``Tensor._version``, which every
     ``fill_`` / ``copy_`` / ``zero_`` / ``load_state_dict`` copy bumps). Anything else — the buffer
-    moved to another device or dtype (a new tensor), reloaded, zeroed from outside
-    (`main.ridealong_read.rnd_choice` does), or a tensor made under ``inference_mode`` (no version
+    moved to another device or dtype (a new tensor), reloaded, zeroed from outside,
+    or a tensor made under ``inference_mode`` (no version
     counter) — falls back to the one device read and re-records. A copy of the module (``deepcopy``,
     pickle) starts with an EMPTY mirror (`__reduce__`), so it re-reads its own buffer."""
 

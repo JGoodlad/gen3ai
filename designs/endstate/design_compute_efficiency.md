@@ -934,8 +934,8 @@ rule 5b. Nothing was created. The transcripts are in the staging directory.
 5. **T58 — `best_response_gap` reads arm against arm** (opus-high, ≈ 0.5–1 agent-day, OPTIONAL). It adds a full-pool
    pseudo-archetype, so unpinned readers stop being UNASSIGNED (F17). The interim is pinned offense readers with
    `--rounds`.
-6. **T59 — `ridealong_read --truth-dir` takes generic rows** (F-CC-4; opus-medium, ≈ 0.25 agent-day, OPTIONAL). B5 is
-   not in the guard.
+6. **T59 — a ride-along heads reader that takes generic truth rows** (F-CC-4; opus-medium, OPTIONAL; the old reader is
+   not in the tree). B5 is not in the guard.
 
 #### 5.6.8 The first arm's launch block (A1, seed 3501), dry-run validated, NEEDS THE ORCHESTRATOR'S GO
 

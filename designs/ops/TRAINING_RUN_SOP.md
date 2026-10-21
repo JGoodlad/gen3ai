@@ -264,8 +264,7 @@ with what it measures.
 | the kill bars · the vf_coef framings | `python -m main.ops.killbar` · `python -m main.ops.vf_framings` |
 | G7, QUOTED never inferred · the plateau signal | `python -m main.ops.g7_report` · `python -m main.ops.plateau_signal` |
 | stall vs sawtooth · per-bot calibration | `python -m main.ops.stall_exhibit` · `main.ops.perbot_r` / `perbot_rank` / `negskill_null` |
-| **a CRITIC LADDER arm's whole read** | `python -m main.ops.critic_read <arm> --control <control-arm> --step <N> --out <dir>` — G1 + the gate's calibration metrics + **CONDITIONING** as ARM − CONTROL with the delta's CI and its label, one invocation, one report; **QUOTA-MATCHED by default**. (Its IDENTITY half — `cf_audit`, the `V − p̂` bias, Murphy and the turn-contrast — was DELETED in P6 slice 6d-1, owner decision 2026-10-08.) Its CONDITIONING section carries the **(A)/(B)** block (v4, 2026-09-10): a critic whose `V` decodes its OWN TEAM is either CONDITIONING on it (within-team resolution not lower, between-team spread up) or SUBSTITUTING it for the board (within-team resolution DOWN), and the two within-cell rows are read WITH their cell census — ~7 episodes per team cell is mostly the binning's own noise, so the coarse 5-stratum row wins where the two disagree. Since **v5** (2026-09-10) it also carries the **CALIBRATION SLOPE** — the outcome regressed on `logit(V)`; `b > 1` means `V` is UNDER-dispersed (SHRUNK toward the base rate), which is what a BOOTSTRAPPED target produces and what an out-of-fold decode, being scale-invariant, cannot see. 🚨 Read it with the LEVER ARM printed beside it (`sd(logit V)`) and with the COMMON-SUPPORT row: the slope's SE scales as `1/sd(logit V)`, so the shrunk side is handed the wider interval by the very effect under test. Since **v6** (2026-09-10) it also carries the **LATE WINDOWS** and the **OPPONENT-IDENTITY SPLIT** of the spread. 🚨 The N-curve (`measurements/winprob_refit_ncurve_2026-09-10/` §3) measured that on a matched-team frame the opponent is **UNOBSERVABLE at turn 1** — Gen 3 has no team preview — so **a turn-1 spread ratio of 0 is BAYES-OPTIMAL, not a defect**, and the window where the question has an answer is **turns 4-10**. Read `cond.spread_ratio.t4_10` / `.t11_24` and `cond.opp_class_auc.t4_10` there; the registered `t1_3` rows stay, bit-identical, because three landed reads were written from them. And read every spread ratio beside its `cond.spread_ratio_optimal.<window>` companion — the part of that spread attributable to the head's own `V` revealing WHICH opponent it faces — because 1.0 is the WRONG reference at early turns. 🚨 It is a DECOMPOSITION TERM, **not a ceiling**: the first read had `V` ABOVE it at every window (hp800 turns 11-24: 0.647 / 0.704 against 0.214 / 0.187), because a per-state conditional mean ATTENUATES, and the excess is spread riding on BOARD state that differs by opponent rather than on opponent IDENTITY. Read the two together; never quote it as "the maximum". 🚨 **The late-window SPREAD rows carry a LARGE run-level floor** — the two hp800 control-vs-control pairs give 0.2179 at `t4_10` and 0.1920 at `t11_24`, bigger than any arm delta measured so far, so a `DETECTED (vs ZERO — NO FLOOR)` on them is NOT a detection once a floor json carries them. `cond.opp_class_auc.t4_10` is the LOW-noise row of the family (floor 0.0219, four runs spanning 0.688-0.709). v6 also prints the **SELF-PLAY CROSSING** of both sides and a `CROSSING MISMATCH` line when they differ: the first crossing is a coin flip on the SEED path (`SELF_PLAY_START = 0.55` / `--self-play-start-wr` against `win_rate_vs_bots`, NOT `--promote-threshold`), six of eight 10M arms crossed at 4,128,768 and two at 2,162,688, and the mismatch is a RAMP from ~3%. ⚠️ DESCRIPTIVE — the crossing is POST-TREATMENT and may be a mediator, so it SELECTS NOTHING |
-| **a HIGH-POWER offline re-read** | `python -m main.ops.eval_trace_gen <run>@<step> --games N --sentinels K --out DIR` on EACH side, then `main.ops.critic_read … --arm-traces DIR --control-traces DIR` — for when the ladder read's binding constraint is POWER, not effect size |
+| **a HIGH-POWER offline re-read** | `python -m main.ops.eval_trace_gen <run>@<step> --games N --sentinels K --out DIR` — a saved checkpoint's eval cycle regenerated OFFLINE on CPU at any size, for a read whose binding constraint is POWER, not effect size (the paragraphs below) |
 | **the TRAINING-SIDE calibration** | `python -m main.ops.value_sidecar_read <run> --out <dir>` — mean V vs mean target, the Murphy decomposition and skill, sliced by turn bucket / opponent class / outcome / 1M step bucket, each with an EPISODE-clustered CI |
 
 🚨 **EVERYTHING IN THAT TABLE IS A *LIVE* INSTRUMENT — the OFFLINE meters are a different tier and
@@ -285,146 +284,38 @@ run's committed artifacts, play no part in the four watch layers, and write noth
 plays a fixed THIRD PARTY. On 2026-09-21 the head-to-head winner was the most NEGATIVE arm on the
 third-party gate. Quote them side by side, never one as evidence for the other.
 
-🚨 **PIN `critic_read`'s CYCLE WITH `--step` WHENEVER THE ARM'S LAUNCHER MAY STILL BE ALIVE.**
-`--on-live skip-newest` is the default and it DROPS the newest cycle when any process still names
-the run — so a finished 10M arm whose launcher had not yet exited is read at **8M**, and the
-2026-09-09 tdaux read did exactly that. The report now prints WHICH cycle was chosen and WHY, for
-both runs, in its header and on stdout before anything expensive runs; `--step N` pins both runs
-and `--control-step N` pins the control alone. A run with no `step_N` REFUSES, naming the steps it
-has.
+🚨 **A CYCLE FROM `main.ops.eval_trace_gen` IS A DIFFERENT POPULATION FROM A LIVE EVAL CYCLE.** A live cycle
+is sized for a training run (100 games against 12 opponents, an outcome quota that persists ~200 traced
+battles a side); the generator re-plays a SAVED checkpoint offline on the Rust eval core at any size, with full
+capture by default and the regime READ from the run's `eval_sentinel_greedy` (a run that recorded none is
+REFUSED). Two frames differ in games, in opponent cells and in whether the traced battles are a random sample or
+a loss-enriched slice, so never difference a generated frame against a live one, and difference two generated
+frames only at the identical spec (a differing seed is fine). Core traces record NO win-prob head (F-LH-4), so
+the win-prob readers refuse a core cycle until that head is recorded at eval. Calibration on EVAL battles comes
+from `main.critic_gate` and the prober's `calibration`.
 
-🚨 **THE CONDITIONING ROWS ARE THE ONES THE CURRENT LADDER IS READ ON** (2026-09-09). Three offline
-reads established that the critic's defect is a CONDITIONING failure in the win head — it emits one
-near-marginal win probability regardless of opponent AND of its own team — so the arms built
-against it are read on the meters that measure that, not on strength and not only on G1. The two
-primaries are the **turn-1-3 between-opponent SPREAD RATIO** of `V` against the outcome (a
-calibrated critic's is **1.0**) and the **turn-1 own-team leave-one-battle-out win-rate R²** of
-`V`. Both are HEADLINE rows and both appear in the ledger quote. ⚠️ The noise-corrected ratio is
-CLAMPED and can sit at or below its own interval's lower bound — **the interval is the read**, and
-the unclamped companion is printed beside it. ⚠️ The Elo-slope row is OMITTED WITH A REASON when
-the run's snapshot-ladder refit is not bot-anchored; it is never reported on two scales.
+🚨 **A GENERATED CYCLE MUST SAY IT FINISHED.** A cycle whose workers die part-way still writes a well-formed
+manifest (nominal `--games`, a recorded `selection`, capture rates of 1.0), so nothing else on disk separates it
+from a finished one. The generator records `battles_expected` beside `battles_played` and a `complete` flag and
+prints a loud INCOMPLETE line; read a side only when it says `complete`. ⚠️ This happened on 2026-09-09: a
+generation ran out of a git worktree, the landing removed that worktree, and all four workers died at once
+(`OSError: failed to make path absolute`); the cycle landed at 71% of its plan. **Run a long generation from the
+MAIN checkout, never from a worktree you intend to land and remove.**
 
-🚨 **THE READ IS QUOTA-MATCHED BY DEFAULT, AND `UNMATCHED` IS A REFUSAL TO LABEL** (2026-09-09).
-The ladder's arms are traced at different outcome quotas — 40/40/10 against the control's 5/10/5 —
-so their read frames differ by 2-4x, and a conditioning row whose estimator is a **FIT on the
-frame** (`cond.own_team_r2.*`, `cond.opp_class_auc.t1`) or an **UNCORRECTED second moment**
-(`cond.spread_ratio_raw.*`) has an expectation that moves with frame SIZE. Rule 17's
-capture-rate reweighting corrects the loss-ENRICHMENT and does **not** correct that. So
-`main.ops.critic_read` prints both cycles' **REALIZED per-opponent capture profiles** in its
-header — always, matched or not — and where the caps differ it subsamples the RICHER side to the
-poorer side's cap (`main.ops.quota_match`, ~8 s), over 21 seeded IN-MEMORY draws with the capture
-rates recomputed per draw, and decides that row's label on the **MATCHED** delta. The as-traced
-value is printed beside it marked **UNMATCHED** and is never labelled, and a second
-**decoder-matched** rung is printed because equal battle counts do not give equal DECODER frames.
-Every other row — the noise-corrected spread ratio, the spread delta, the Elo slope, every gate row
-and every identity row — is a weighted mean or a regression on cell means, is unaffected by frame
-size given correct weights, and is read AS TRACED.
+⚠️ **The sentinel count is clamped by what the run saved, and is never padded**: `--sentinels 6` on a run that
+kept four snapshots (one excluded as a 50%-by-construction self-mirror) yields three. The manifest records
+`sentinels_requested` beside `sentinels_used`; report the gap rather than the request.
 
-**What to do with each marker.** *Header says SYMMETRIC* — both sides carry the same realized cap;
-the report is what the tool printed before matching existed, and nothing needs saying. *A row says
-MATCHED* — quote the matched Δ, and never quote the UNMATCHED number beside it as a result.
-*A row says `UNMATCHED — not a reading`* — `--no-quota-match` was passed on an unequal pair; on an
-unequal frame neither DETECTED nor NOT DETECTED is a claim the report may make, so **re-run without
-the flag** rather than reading the row. 🚨 **Match a CONTROL-vs-CONTROL read too**: the replicate
-floor carries the same asymmetry with the same sign, and a floor magnitude read off an unmatched
-decoder row bakes the artefact into every later arm's bar. The cost of getting this wrong is
-measured: `cond.own_team_r2.t1` read **+0.084 [+0.032, +0.183] DETECTED** as traced and **+0.008
-[−0.135, +0.082] NOT DETECTED** matched, and the first was WITHDRAWN (ledger 2026-09-09 ·
-RETRACTION).
+⚠️ **Reproducibility is `--concurrency 1`, not `--workers 1`.** A shard's streams are keyed on
+`(seed, opponent, shard index)`, so the worker count does not enter the result; above concurrency 1 several
+battles of one shard share the process-global `random` stream the scripted bots draw from, a timing race, and
+the manifest marks the cycle NOT reproducible.
 
-🚨 **WHEN THE BINDING CONSTRAINT IS POWER, RE-READ THE CHECKPOINT — DO NOT RETRAIN** (2026-09-09).
-A live eval cycle is sized for a training run, not for a measurement: 100 games against 12
-opponents, of which the outcome quota persists ~200 traced battles a side. Five 10M arms were read
-that way and registered **zero** detected rows, and the floor read showed why — the turn-1-3
-spread ratio's battle-clustered CI is ~±0.4 around a control value of ~0.12 (only 12 opponent
-cells), resolution rows resolve only deltas above ~0.03, and the run-to-run floor on the
-low-variance rows (bot resolution 0.010, own-team R² 0.012, spread ratio t1-3 0.028) sits **below**
-the battle-level CI width. That last fact is the diagnosis: the read was limited by how many
-battles it saw, not by how similar the arms are.
-
-Every finished arm still has its 10M checkpoint, so the fix costs CPU and no GPU:
-
-```bash
-export PYTHONPATH=$PYTHONPATH:src && export CUDA_VISIBLE_DEVICES=""
-# per side — OFFLINE, CPU, niced; a training arm normally shares the box, so cap the eval core
-nice -n 15 python -m main.ops.eval_trace_gen <run>@10000032 --games 400 --sentinels 6 \
-    --out <tmp>/hp_eval/<run> --n-envs 32 --threads 4 --torch-threads 4 --seed 20260909
-# then the read, with BOTH sides pointed at generated cycles
-python -m main.ops.critic_read <arm> --control <control> --step 10000032 \
-    --arm-traces <tmp>/hp_eval/<arm> --control-traces <tmp>/hp_eval/<control> --out <dir>
-```
-
-**The four things that make this a measurement and not just a bigger number.**
-
-1. **It is not a re-implementation of eval.** It plays a `ShardedEvalPool` plan on the Rust eval
-   core — the executor a live cycle plays on — so it writes the same CORE traces and the same
-   `selection_schema` 2 manifest. The eval REGIME is READ from the run's `eval_sentinel_greedy`,
-   never assumed — that key names an opponent-regime boundary worth ~8.9 pp to the trainee, and a
-   run that recorded none is REFUSED. 🚨 **Since poke-env retirement P6 slice 6c (the Python eval
-   worker is deleted) the cycle is CORE traces, which record NO win-prob head (F-LH-4).** `cf_audit`
-   (the identity half of `critic_read`) is deleted (P6 slice 6d-1), but the read below STILL refuses
-   a core cycle — now at the gate block (`scaffolding_gauge`) and the conditioning block, which need
-   that head too — until it is recorded at eval; a cycle generated before the port (Python traces)
-   still reads.
-2. **Capture is ALL by default.** The live quota exists to bound a training run's disk; here the
-   traces ARE the measurement, and a loss-enriched subsample is exactly what costs the
-   low-variance rows their power. 400 games × 12 opponents fully captured is ~4,800 traced
-   battles against a live cycle's ~200.
-3. 🚨 **AN OFFLINE FRAME AND A LIVE FRAME ARE DIFFERENT POPULATIONS, and `critic_read` REFUSES to
-   difference them.** They differ in games, possibly in opponent count, and decisively in whether
-   the traced battles are a random sample or the outcome quota's loss-enriched slice — and every
-   conditioning row is a statistic OF its frame. The v3 quota match corrects a difference in
-   capture RATE between two frames of the same shape; it cannot turn a 400-game full-capture frame
-   into a 100-game quota one. Both sides offline, or both live. Two offline frames must further
-   agree on games / opponent set / capture rule / sentinel regime; a differing **seed** is fine and
-   is deliberately unchecked, being two draws from one population.
-4. **The report says which population it read, and so does the ledger quote.** The header states
-   both sides' populations in words — the live one too, because a header that describes only the
-   unusual side invites the reader to treat the other as the neutral default — and the one-line
-   quote carries an `OFFLINE-GENERATED` marker beside its games/opponent spec, for the same reason
-   `CROSS-STEP` exists.
-
-🚨 **NEVER PUT THE HIGH-POWER ROWS IN A TABLE BESIDE THE 100-GAME DELTAS.** They are a different
-number of games, possibly a different number of opponent cells, and a different capture rule. Write
-them as their own table, against **their own floor pair** — a control-vs-control read generated at
-the identical spec. Without that floor a high-power DETECTED is a detection against zero, and the
-lesson of the 2026-09-09 RETRACTION is precisely that a bigger frame moves fitted rows on its own.
-
-⚠️ **THE SENTINEL COUNT IS CLAMPED BY WHAT THE RUN SAVED, and is never padded.** `--sentinels 6`
-on a 10M arm that kept four snapshots (one of them at the read step, excluded as a
-50%-by-construction self-mirror) yields **three** — the same opponent-cell count as the live cycle,
-so on these runs the power comes from games and full capture, not from more cells. The manifest
-records `sentinels_requested` beside `sentinels_used`; report the gap rather than the request.
-
-🚨 **A GENERATED CYCLE MUST SAY IT FINISHED, AND `critic_read` REFUSES ONE THAT DOES NOT.** A
-cycle whose workers die part-way still writes a perfectly well-formed manifest — nominal
-`--games`, the full opponent set, a recorded `selection`, capture rates of 1.0 — so nothing else
-on disk separates a finished cycle from a truncated one, while the truncated one is a SMALLER
-FRAME and frame size moves every fitted conditioning row on its own. The generator therefore
-records `battles_expected` beside `battles_played` and a `complete` flag, prints a loud INCOMPLETE
-line, and `critic_read` refuses both an incomplete side and one whose completeness is UNRECORDED
-(an older producer — unknown is never read as yes). ⚠️ **This is not hypothetical: it happened on
-2026-09-09.** A generation was running out of a git worktree, `scripts/land.sh` removed that
-worktree on landing, and all four workers died at once with `OSError: failed to make path
-absolute`; the cycle landed at 71% of its plan and read as nominal. **Run a long generation from
-the MAIN checkout, never from a worktree you intend to land and remove.**
-
-⚠️ **REPRODUCIBILITY IS `--concurrency 1`, NOT `--workers 1`.** A shard's streams are keyed on
-`(seed, opponent, shard index)` — deliberately not on the worker id, which work-stealing decides in
-a race — so the worker count does not enter the result. Above concurrency 1 several battles of one
-shard share the process-global `random` stream the scripted bots draw from, and the order they draw
-in is a timing race; the manifest records both numbers and marks the cycle NOT reproducible rather
-than letting a number wander without saying so.
-
-
-🚨 **`critic_read` AND `value_sidecar_read` ANSWER DIFFERENT QUESTIONS AND NEITHER SUPERSEDES THE
-OTHER** (`gen3_value_sidecar_v1`, 2026-09-08). `critic_read` reads EVAL battles — a greedy trainee,
-a fixed roster, a quota that prefers losses — and asks whether the critic is calibrated on the
-**eval** distribution. `value_sidecar_read` reads the run's own **training buffer**, scored against
-`win_target`, the label the BCE actually minimises, and asks whether it is calibrated on the
-distribution it is being **fit to**. Every probe this project owned before the sidecar read eval
-battles, so the second question was simply unmeasurable. A disagreement between the two is a
-finding about GENERALISATION, not a defect in either instrument — report it as one.
+🚨 **`value_sidecar_read` and the eval-battle reads ANSWER DIFFERENT QUESTIONS AND NEITHER SUPERSEDES THE OTHER**
+(`gen3_value_sidecar_v1`, 2026-09-08). An eval read (a greedy trainee, a fixed roster, a quota that prefers
+losses) asks whether the critic is calibrated on the **eval** distribution; `value_sidecar_read` reads the run's
+own **training buffer**, scored against `win_target`, the label the BCE actually minimises. A disagreement is a
+finding about GENERALISATION, not a defect in either instrument.
 
 ⚠️ **The sidecar cannot be reconstructed after the fact.** It reads the rollout buffer, which is
 gone the moment `train()` returns; a run launched without `--value-sidecar` has no training-side
