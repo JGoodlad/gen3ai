@@ -1,0 +1,34 @@
+# Reference copy of ~/.config/systemd/user/gen3ai-replay-backfill.service (designs/tools/replay_corpus.md § Supervision)
+#
+# The one-off backfill of the gen3ou replay corpus from Showdown's public replay ARCHIVE, through the owner's SOCKS5
+# proxy (owner approval 2026-10-20: download only; no play, login or chat). Phases and chunks: service.py.
+# It resumes from disk, so systemd restarts it after any failure (the proxy down, a persistent 429/5xx); once it
+# finishes it writes BACKFILL_DONE.json and never runs again (ConditionPathExists=!).
+#
+# Install:  cp tools/replay_corpus_downloader/systemd/gen3ai-replay-* ~/.config/systemd/user/
+#           systemctl --user daemon-reload && systemctl --user enable --now gen3ai-replay-backfill.service
+# Stop:     systemctl --user disable --now gen3ai-replay-backfill.service
+# Logs:     journalctl --user -u gen3ai-replay-backfill.service
+
+[Unit]
+Description=Gen3AI replay corpus backfill (public replay archive, via the SOCKS5 proxy)
+# Ordered after the tunnel but NOT Requires=: a missing proxy fails the run CLOSED (exit 3) and systemd retries.
+After=network-online.target proxy-tunnel.service
+ConditionPathExists=!/home/goodlad/dev/gen3ai/replays/showdown/gen3ou/BACKFILL_DONE.json
+StartLimitIntervalSec=0
+
+[Service]
+Type=exec
+WorkingDirectory=/home/goodlad/dev/gen3ai
+Environment=PYTHONPATH=/home/goodlad/dev/gen3ai/src CUDA_VISIBLE_DEVICES=
+ExecStart=/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m tools.replay_corpus_downloader.service backfill --out /home/goodlad/dev/gen3ai/replays/showdown/gen3ou --proxy socks5h://127.0.0.1:1080 --chunk 4000 --sleep 1.0
+Restart=on-failure
+RestartSec=15min
+# Root rule 5b: never what slows a trainer.
+Nice=19
+CPUAffinity=5-7 13-15
+IOSchedulingClass=idle
+MemoryMax=2G
+
+[Install]
+WantedBy=default.target

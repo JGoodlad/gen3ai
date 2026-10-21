@@ -14,7 +14,7 @@ upstream into committed files under `data/`; the runtime never imports `tools/` 
 | `smogon_stats_downloader/compute_priors.py` | the aggregated stats + pokedex | `data/pokemon/gen3_{ability,hidden_power,move,item,spread,teammate}_priors.json` |
 | `sample_team_downloader/sync.py` | Smogon forum sample-team thread | `data/teams/sample/` |
 | `others_team_downloader/sync.py` | PokePaste dumps | `data/teams/others/` |
-| `replay_corpus_downloader/sync.py` | the public replay archive | `<main>/replays/showdown/…`, not `data/`; never run against the live server (`replay_corpus_downloader/README.md`); STOPPED since 2026-09-23, status and plan in `designs/tools/replay_corpus.md`; `replay_corpus_downloader.freshness` is the read-only staleness alarm |
+| `replay_corpus_downloader/sync.py` | the public replay archive | `<main>/replays/showdown/…`, not `data/`; every request through the owner's SOCKS5 proxy (`--proxy`, fail closed); run only by the `gen3ai-replay-*` systemd user units (`service.py`), status and how to stop them in `designs/tools/replay_corpus.md`; `replay_corpus_downloader.freshness` is the read-only staleness alarm |
 
 `cloud/vast/` is not acquisition: it rents a vast.ai box for the cloud-GPU benchmark
 (`designs/ops/cloud_gpu_benchmark.md`, `cloud/vast/README.md`). Its API key and ssh key never leave this

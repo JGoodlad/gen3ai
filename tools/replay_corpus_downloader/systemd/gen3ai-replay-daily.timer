@@ -1,0 +1,15 @@
+# Reference copy of ~/.config/systemd/user/gen3ai-replay-daily.timer (designs/tools/replay_corpus.md § Supervision)
+#
+# Once a day; Persistent=true runs a tick missed while the box was down at the next start, so a reboot never loses a day.
+# Install: systemctl --user enable --now gen3ai-replay-daily.timer   Stop: systemctl --user disable --now gen3ai-replay-daily.timer
+
+[Unit]
+Description=Daily gen3ou replay corpus pull + freshness alarm
+
+[Timer]
+OnCalendar=*-*-* 05:30:00 America/Los_Angeles
+RandomizedDelaySec=20min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -54,15 +54,15 @@ def test_sync_writes_the_corpus_layout_skips_private_and_present(tmp_path):
     present = tmp_path / "2026-05-18"
     present.mkdir()
     (present / "battle-gen3ou-1.log").write_text("already here")
-    written, skipped = S.sync(tmp_path, "gen3ou", srv, log=lambda m: None)
-    assert (written, skipped) == (1, 2)
+    written, skipped, folders = S.sync(tmp_path, "gen3ou", srv, log=lambda m: None)
+    assert (written, skipped, folders) == (1, 2, ("2026-05-18",))
     assert (tmp_path / "2026-05-18" / "battle-gen3ou-3.log").read_text(encoding="utf-8") == LOG
     assert (present / "battle-gen3ou-1.log").read_text() == "already here"      # never overwritten
     assert not list(tmp_path.rglob("*.part"))
     assert not any("gen3ou-2.log" in u for u in srv.asked), "a private replay is not fetched"
     # a re-run fetches nothing: resumable
     srv.asked.clear()
-    assert S.sync(tmp_path, "gen3ou", srv, log=lambda m: None) == (0, 3)
+    assert S.sync(tmp_path, "gen3ou", srv, log=lambda m: None)[:2] == (0, 3)
     assert all("/search.json" in u for u in srv.asked)
 
 
@@ -107,11 +107,38 @@ def test_a_persistent_failure_stops_the_run_instead_of_skipping(tmp_path):
         S.sync(tmp_path, "gen3ou", srv, log=lambda m: None)
 
 
-def test_main_refuses_an_impolite_sleep(capsys):
+@pytest.mark.parametrize("sleep", ["0.1", "0.99"])
+def test_main_refuses_an_impolite_sleep(capsys, sleep):
     with pytest.raises(SystemExit):
-        S.main(["--out", "x", "--sleep", "0.1"])
+        S.main(["--out", "x", "--proxy", "socks5h://127.0.0.1:1080", "--sleep", sleep])
     assert "refused" in capsys.readouterr().err
 
 
+def test_main_refuses_to_run_without_a_proxy(capsys):
+    with pytest.raises(SystemExit):
+        S.main(["--out", "x"])
+    assert "--proxy" in capsys.readouterr().err
+
+
 def test_the_real_fetcher_makes_no_request_until_called():
-    S.make_http_fetch(sleep_s=1.0)     # construction touches no network
+    S.make_http_fetch(sleep_s=1.0, proxy="socks5h://127.0.0.1:1080")     # construction touches no network
+
+
+def test_until_starts_the_walk_at_the_cut_and_drops_rows_at_or_after_it(tmp_path):
+    rows = [_row(i, 2_000_000_000 - i) for i in range(S.PAGE_SIZE + 10)]
+    cut = rows[20]["uploadtime"]
+    for inclusive in (True, False):
+        srv = FakeServer(rows, {})
+        got = [r["id"] for r in S.search_pages("gen3ou", srv, until_ts=cut)]
+        assert got == [r["id"] for r in rows[21:]]
+        assert f"before={cut}" in srv.asked[0], "the walk starts at the cut, not at the newest page"
+
+
+def test_until_date_bounds_the_written_window(tmp_path):
+    t0 = S.la_midnight_ts("2026-05-18")
+    rows = [_row(3, t0 + 86400 + 60), _row(2, t0 + 600), _row(1, t0 - 600)]        # 05-19, 05-18, 05-17
+    logs = {r["id"]: f"|t:|{r['uploadtime']}\n" for r in rows}
+    res = S.sync(tmp_path, "gen3ou", FakeServer(rows, logs), since="2026-05-18", until="2026-05-19", log=lambda m: None)
+    assert (res.written, res.folders) == (1, ("2026-05-18",))
+    assert [p.name for p in tmp_path.rglob("*.log")] == ["battle-gen3ou-2.log"]
+

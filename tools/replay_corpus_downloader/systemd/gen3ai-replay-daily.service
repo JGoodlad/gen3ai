@@ -1,0 +1,21 @@
+# Reference copy of ~/.config/systemd/user/gen3ai-replay-daily.service (designs/tools/replay_corpus.md § Supervision)
+#
+# The daily top-up of the gen3ou replay corpus (since the newest date folder minus one day, at most 6000), then the
+# freshness alarm. A STALE corpus exits 1 (the unit shows FAILED in `systemctl --user --failed`) and logs the alarm at
+# priority err (`journalctl --user -u gen3ai-replay-daily.service -p err`). While the backfill holds the downloader
+# lock it skips the pull and still checks freshness. Started only by gen3ai-replay-daily.timer.
+
+[Unit]
+Description=Gen3AI replay corpus daily pull + freshness alarm (via the SOCKS5 proxy)
+After=network-online.target proxy-tunnel.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/goodlad/dev/gen3ai
+Environment=PYTHONPATH=/home/goodlad/dev/gen3ai/src CUDA_VISIBLE_DEVICES=
+ExecStart=/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m tools.replay_corpus_downloader.service daily --out /home/goodlad/dev/gen3ai/replays/showdown/gen3ou --proxy socks5h://127.0.0.1:1080 --max-replays 6000 --sleep 1.0
+Nice=19
+CPUAffinity=5-7 13-15
+IOSchedulingClass=idle
+MemoryMax=2G
+TimeoutStartSec=6h

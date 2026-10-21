@@ -1,16 +1,55 @@
 # The replay corpus: how it grows, why it stops, and the guard
 
 **What it is.** The project's own copy of the PUBLIC gen3ou replay logs, `<main checkout>/replays/showdown/gen3ou/<YYYY-MM-DD>/battle-gen3ou-<id>.log`
-(gitignored; 376,410 logs in 109 date folders, 2026-05-18 to 2026-09-23; ~4 GB; the date folder is the America/Los_Angeles date of the battle
-start). Readers: `python -m main.live.replay_scan` (the Rust reader's bulk drift scan), `main.ladder_drift_scan`, the X50 census
+(gitignored; the date folder is the America/Los_Angeles date of the battle start). It has TWO populations: 376,410 spectator logs, 2026-05-18
+to 2026-09-23 12:07 PDT (listed in `SPECTATOR_MANIFEST_2026-09-23.txt` in the corpus root), and the archive pull since 2026-10-20 (below). Readers: `python -m main.live.replay_scan` (the Rust reader's bulk drift scan), `main.ladder_drift_scan`, the X50 census
 (`research_state/measurements/x50_replay_census_2026-10-20/`) and ai_v11's human-replay design.
 
 🚨 **It is NOT under `data/`.** `data/replays/` is an EMPTY directory (nothing tracked, nothing written since 2026-05-12); the corpus lives under the
 main checkout's top-level `replays/`. Root rule 6 (no `data/` change while a pinned run is live) is therefore not touched by any replay write.
 
-## Status (diagnosed 2026-10-20, read-only; replace this section when the state changes)
+## Status (2026-10-20; replace this section when the state changes)
 
-**STOPPED since 2026-09-23 12:07 PDT (27 days at the diagnosis). Nothing is scheduled; nothing is running.**
+**RESTARTED 2026-10-20 from the public replay ARCHIVE, through the owner's SOCKS5 proxy (owner: "Sure use the proxy for replay download",
+2026-10-20; download only, no play, login or chat), supervised by systemd user units (§ Supervision).** The backfill runs the weeks since the
+spectator stopped, then the 08-03..08-17 hole, then the 06-16..06-20 hole; the daily timer keeps it growing.
+
+### The archive is not the spectator (measured 2026-10-20, through the proxy, 50 replays of 2026-09-22 into a scratch dir)
+
+| check | result |
+|---|---|
+| log content vs the spectator's file of the same id | 50 / 50 identical from the first `\|j\|` line to `\|win\|`. The spectator file starts with `\|init\|battle` + `\|title\|`, which the archive lacks; the archive adds lines AFTER `\|win\|`: the two `\|raw\|` rating changes (50 / 50) and sometimes `\|l\|`, an empty `\|player\|pN\|` and post-game `\|c\|` chat (13 / 50). |
+| the Rust reader on the archive logs | `main.live.replay_scan --corpus <scratch>`: 50 / 50 clean, 22,028 protocol lines, no refusal, PASS |
+| date folder (`\|t:\|`, Los Angeles) | 50 / 50 in the same folder as the spectator's file |
+| `search.json` depth | `before=` reaches 2020-09 (full pages at 2025-06 and 2020-09): no depth limit in our window |
+| volume | **about 250-450 uploaded replays a day** (51-row pages span 2.7 h on 09-23, 4.8 h on 10-20), against ~3,450 a day the spectator saw: the archive holds UPLOADED replays only, roughly a tenth. 45 of 51 archive ids of 2026-05-22 are in the spectator set. **UNVERIFIED:** which battles get uploaded (a selection bias, not a random tenth). |
+
+So the corpus after 2026-09-23 is a thinner, differently selected sample: a per-day rate or a census across the seam compares two mechanisms.
+The backfill is ~10k replays (27 days) plus ~6k in the holes, ~2 requests each at the 1 s floor: hours, not the 46 h the spectator rate implied.
+
+## Supervision (installed 2026-10-20)
+
+Unit files live in `tools/replay_corpus_downloader/systemd/` (reference copies; installed in `~/.config/systemd/user/`); the driver is
+`python -m tools.replay_corpus_downloader.service {backfill,daily}`, over `sync.py`. Both run the MAIN checkout's code (`WorkingDirectory`, `PYTHONPATH`),
+write only under `<main>/replays/showdown/gen3ou/`, at `Nice=19`, `CPUAffinity=5-7 13-15`, idle I/O, `MemoryMax=2G`, one request a second.
+
+| unit | what | stop it |
+|---|---|---|
+| `gen3ai-replay-backfill.service` | the phases in 4,000-replay chunks; `Restart=on-failure` every 15 min (a dead proxy, a persistent 429 / 5xx); writes `BACKFILL_DONE.json` in the corpus root when done, and `ConditionPathExists=!` keeps it from running again | `systemctl --user disable --now gen3ai-replay-backfill.service` |
+| `gen3ai-replay-daily.timer` → `.service` | 05:30 Los Angeles daily, `Persistent=true`: pulls since the newest folder minus a day (≤ 6,000), then the freshness alarm | `systemctl --user disable --now gen3ai-replay-daily.timer` |
+
+- **Every request goes through the proxy** (`--proxy socks5h://127.0.0.1:1080`, the `proxy-tunnel.service` SSH tunnel `main.play --proxy` uses; no
+  credential in it). It fails CLOSED: an unreachable proxy exits 3 before any request, a proxy lost mid-run is a persistent failure (exit 1), and the
+  session ignores `*_PROXY` / `NO_PROXY`, so nothing reroutes it direct (`proxy_test.py` runs it against a fake SOCKS5 server).
+- **One downloader at a time:** an `flock` on `$XDG_RUNTIME_DIR/gen3ai_replay_corpus_downloader.lock`; a second one exits 75. The daily run defers to
+  a running backfill (skips the pull, still checks freshness).
+- **The alarm is logged** in the daily unit's journal: a STALE corpus (newest folder > 3 days old) exits 1, so the unit shows in
+  `systemctl --user --failed`, and the line `[freshness] REPLAY CORPUS STALE: …` is at priority err:
+  `journalctl --user -u gen3ai-replay-daily.service -p err`. Progress: `journalctl --user -u gen3ai-replay-backfill.service` (one line a chunk).
+- **The units start with the user manager.** `Linger=no` for `goodlad`: after a reboot they run once the owner logs in (as every other user unit
+  here); enabling linger is the owner's call.
+
+## Why it stopped three times (the spectator, diagnosed 2026-10-20)
 
 | fact | evidence |
 |---|---|
@@ -22,11 +61,6 @@ main checkout's top-level `replays/`. Root rule 6 (no `data/` change while a pin
 | A THIRD hole, 2026-06-16..06-20: last file 06-15 08:07, restarted 06-21 16:30. No reboot, no OOM near 06-15 08:07 (an OOM kill hit the user slice 06-16 20:04, a day after the last file). **UNVERIFIED:** a wedge (rooms that never finish held every spectator slot); the reaper that fixes that class landed 2026-07-05. | `journalctl -b -4` around 06-15 |
 | The documented "last run 2026-08-02" (GCP_INFRASTRUCTURE, the deletion commit) was only the first stop; the collector was restarted 2026-08-18 and ran to 2026-09-23. | file mtimes |
 
-**The replacement tool is a different mechanism.** `tools/replay_corpus_downloader/sync.py` pulls the public replay ARCHIVE (`search.json` and
-`<id>.log`), one request at a time. It has never been run against the public server. It is a manual command, not a service. Differences from
-the collector that matter: the archive holds UPLOADED replays, the collector saw every public battle finish. **UNVERIFIED:** how deep `search.json`
-paginates, that rated ladder battles are all uploaded, and that an archive log equals a spectator log byte for byte (the Rust reader's gate (b) ran
-on spectator logs).
 
 ### Does a restart touch the toy runs? No, and here is the evidence
 
@@ -37,22 +71,6 @@ on spectator logs).
   search or launcher code (grep for the module names and for `replays` over the pin's non-test `src/`), and the pin's own `data/` tree has no `replays/`.
   (The code references are an offline scan and a CLI default.)
 - Conclusion: the pinned runs never read the replay corpus, by path or by import. A replay write is safe under the data freeze **now**.
-- The only readers a growing corpus changes are the OFFLINE ones. A census run while a download is in flight reads a moving set: **name the date
-  range** (the X50 census is pinned to the 376,410 logs of 2026-05-18..2026-09-23).
-
-### Restart plan (needs the owner's go: it is network load on a public server; `tools/replay_corpus_downloader/README.md`)
-
-1. **Validate the tool on a SCRATCH dir first** (it has never met the real server): `--out <scratch> --list-only --max-replays 20`, then
-   `--since 2026-09-22 --max-replays 60` into the scratch dir. Check, against the corpus' files of the same ids (the 09-22/09-23 overlap), that the
-   archive log equals the spectator log (or says how it differs); that the date folder agrees; the pagination depth (does the walk reach 2026-09-23?).
-   Run it from the MAIN checkout or pass an ABSOLUTE `--out`: a relative `--out` resolves against the cwd and a worktree run writes a stray `replays/`
-   inside the worktree.
-2. **Backfill in resumable chunks, detached, `nice -n 19`, owner-approved volume:** `--since 2026-09-23 --max-replays 4000` repeated (about 2.2 h a chunk;
-   every id already on disk is skipped). Size: ~83k replays after 09-23 plus ~60k in the 06-16..06-20 and 08-03..08-17 holes (`--since 2026-06-16`)
-   at ~3,000 a day, 2 requests a replay at the 1 s floor: ~80 h of wall, ~1.5 GB (437 GB free). Do the recent weeks first; the holes are optional.
-3. **Keep it growing, supervised:** a systemd USER timer (the pattern of `gen3ai-prober-web-watchdog.timer`) running the pull once a day, `--since`
-   the newest folder minus one day, `--max-replays 6000`, `Nice=19`, with `Persistence=true` so a reboot never loses a day. The timer is a proposal, not
-   installed; installing it is the owner's / orchestrator's call.
-4. **The alarm (BUILT):** `python -m tools.replay_corpus_downloader.freshness` is read-only and exits 0 fresh / 1 STALE (newest folder older than
-   `--max-age-days`, default 3) / 2 no corpus. Wire it into the orchestrator's :07/:37 health check (one line when healthy) or as the timer's
-   `ExecStartPost`. It would have fired on 2026-09-27; the gap went unnoticed for 27 days. `main.ops` has no corpus check today.
+- The only readers a growing corpus changes are the OFFLINE ones, and the pull writes into old date folders too (the 09-23 folder, the two holes):
+  a date range no longer names a set. **Name the population:** the spectator set is the manifest's 376,410 paths (the X50 census's set); the rest
+  is the archive pull.
