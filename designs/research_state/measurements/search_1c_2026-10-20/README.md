@@ -11,7 +11,7 @@ reading go to the design doc, `search_ledger.md`, `UNDERSTANDING.md` and the led
 | `PREREGISTRATION.md`, `c1c_registration.json` | the arms, the meters, the rules, the bar, the stops; the registered files' sha256 |
 | `c1c_common.py` | the constants, the arms as (set, first n) slices, the per-world facts meter (registered) |
 | `run_1c.py` | PHASE A's driver: per state 128 F + 128 C_ladder worlds (`dice="rolls"`), the opponent-choice likelihood, the facts, each weighted arm's resample (`opp_likelihood.resample`); `--one-chunk`, `--recheck` (G3), `--smoke`, `--status` |
-| `play_1c.py`, `run_play.sh` | PHASE B (only when the bar is met): the identity tooth, then every played arm's 8 worlds through the pilot's driver at the pin checkout |
+| `play_idx_1c.py`, `play_1c.py`, `run_play.sh` | PHASE B (only when the bar is met): the play indices computed at the DRIVER (`play_idx_1c.py`: the pin's `main` predates `opp_likelihood`), the identity tooth, then every played arm's 8 worlds through the pilot's driver at the pin checkout |
 | `loop_1c.sh`, `launch_1c.sh` | the detached runner: one heavy slot per bounded chunk; the registered stops |
 | `read_1c.py` | the registered read: `a` (phase A, `--interim`), `b` (phase B), `bcheck` (phase B's plumbing), `selfcheck` |
 
@@ -65,6 +65,13 @@ chunk (root rule 5b).
   remaining chunks run in the normal FIFO heavy slots (nice 19, cores 5-7,13-15, ≤ 45-min chunks); a later end is
   accepted. The wrapper's bash was stopped between chunks' starts (the chunk in flight left to finish), and
   `ops/loop_a_fifo.sh` (the same loop, without the mark) continues after it. The read is unchanged.
+- **Phase B, 21:00:** launched through `ops/loop_b_fifo.sh` (loop_1c.sh's play branch at nice 19, normal FIFO slots;
+  `STOP_B` = 2026-10-21 21:00 PDT). The identity tooth passed 12 / 12 (21:45). **The first play chunk crashed before
+  any play (a DEFECT of this unit's script, a FINDING):** `play_1c.py` runs at the pin checkout, whose `main` predates
+  `main.value_search.opp_likelihood`, so `c1c_common.play_indices` could not import. The wrapper was stopped while it
+  waited for a slot (no play row existed). FIX: `play_idx_1c.py` computes the same registered indices at the DRIVER
+  checkout into `play/play_idx.json`, and `play_1c.py` reads them. `read_1c.py b` recomputes every played index with
+  `play_indices` and stops on a mismatch, so the check is end to end. The registered stop is unchanged.
 
 ## 4. THE INTERIM READ (registered §7: about 12 h after launch, descriptive; NO verdict, NO bar; it changes no rule, n or stop)
 

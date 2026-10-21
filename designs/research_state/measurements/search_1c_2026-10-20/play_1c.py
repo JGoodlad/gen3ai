@@ -37,10 +37,10 @@ for _p in (E.T1, E.BRC, E.PILOT):
         sys.path.insert(2, str(_p))
 
 
-def arm_world_row(arm: str, wrow: dict, row: dict) -> Optional[dict]:
-    """The 8 worlds an arm plays (``c1c_common.play_indices``: a corpus arm from its STRICT weights, AMENDMENT A1), in
-    the det format the pilot's driver reads, each with its own rolls; None when the arm has no valid worlds here."""
-    idx = K.play_indices(row, arm)
+def arm_world_row(arm: str, wrow: dict, idx: Optional[List[int]]) -> Optional[dict]:
+    """The 8 worlds an arm plays (``idx``: its play indices, ``c1c_common.play_indices`` computed at the DRIVER
+    checkout by ``play_idx_1c.py``: a corpus arm from its STRICT weights, AMENDMENT A1), in the det format the pilot's
+    driver reads, each with its own rolls; None when the arm has no valid worlds here."""
     if idx is None:
         return None
     sets = K.arm_sets(arm)
@@ -48,7 +48,7 @@ def arm_world_row(arm: str, wrow: dict, row: dict) -> Optional[dict]:
     cmds = K.arm_slice({s: wrow[s]["cmds"] for s in sets}, arm)
     rolls = K.arm_slice({s: wrow[s]["rolls"] for s in sets}, arm)
     return {"id": wrow["id"], "side": wrow["side"], "at": wrow["at"], "teams": [teams[i] for i in idx],
-            "cmds": [cmds[i] for i in idx], "rolls": [rolls[i] for i in idx], "src": idx}
+            "cmds": [cmds[i] for i in idx], "rolls": [rolls[i] for i in idx], "src": list(idx)}
 
 
 def identity_ids() -> List[str]:
@@ -92,6 +92,9 @@ def main() -> None:
             raise SystemExit("phase A's bar was not met: no playout is registered")
         arms = list(ra["bar"]["play"])
         rows = K.read_by_id(K.ARCH / "rows" / "rows.jsonl")
+        pidx = json.loads((K.ARCH / "play" / "play_idx.json").read_text())     # play_idx_1c.py, at the DRIVER
+        if pidx["arms"] != arms:
+            raise SystemExit(f"play_idx.json names arms {pidx['arms']}, the bar {arms}")
         worlds = K.read_by_id(K.ARCH / "worlds" / "worlds.jsonl")
         order = [i for i in E.ordered_ids() if i in rows]
         paths = {arm: K.d("play", arm) / "rows.jsonl" for arm in arms}
@@ -109,7 +112,7 @@ def main() -> None:
             for arm in arms:
                 if did in done[arm]:
                     continue
-                jobs.append((arm, did, arm_world_row(arm, worlds[did], rows[did])))
+                jobs.append((arm, did, arm_world_row(arm, worlds[did], pidx["idx"][arm].get(did))))
         files = {arm: open(p, "a") for arm, p in paths.items()}
     print(f"[1c play] {len(jobs)} (arm, state) jobs at {head[:8]}", flush=True)
     off = C.clock_offset()

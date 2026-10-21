@@ -35,6 +35,7 @@ if [ "$PHASE" = a ]; then
   slot s1c_recheck "$TO" "$PY" -I "$HERE/run_1c.py" --recheck; log "recheck rc $?"
   log "PHASE_A_LOOP_DONE"
 else
+  "$PY" -I "$HERE/play_idx_1c.py" || { log "play_idx_1c.py failed: phase B stops"; exit 1; }   # the indices, at the DRIVER
   slot s1c_identity "$TO" "$HERE/run_play.sh" play_1c.py --identity; rc=$?
   log "identity rc $rc"
   [ "$rc" -eq 0 ] || { log "THE IDENTITY TOOTH did not pass: phase B stops"; exit 1; }
