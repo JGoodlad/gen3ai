@@ -195,6 +195,39 @@ class LiveReader:
         self._send("CHOOSE " + token)
         self._expect("__OK__")
 
+    def spectator_decide(self, force: bool) -> Tuple[Optional[Frame], bool]:
+        """X50 rung 1 (OFFLINE, a reading opened with no team): fold ONE synthesised spectator request built
+        from the reading itself (legality only). → (the decision's frame or None, whether only the Struggle
+        placeholder was legal). Never on the live path."""
+        self._alive()
+        self._send("SPECDECIDE " + json.dumps({"force": bool(force)}))
+        frame: Optional[Frame] = None
+        placeholder = False
+        for ln in self._expect("__FED__ "):
+            if ln.startswith("__OBS__ "):
+                _, side, payload = ln.split(" ", 2)
+                frame = Frame.parse(side, payload)
+            else:
+                st = json.loads(ln[len("__FED__ "):])
+                self.folded, self.decided, self.turn = int(st["folded"]), int(st["decided"]), int(st["turn"])
+                placeholder = bool(st["placeholder"])
+        return frame, placeholder
+
+    def intent_label(self) -> Tuple[int, Optional[dict]]:
+        """(decisions so far, the trackers' intent label at the LATEST decision — the window the previous
+        decision opened — as the Rust `IntentLabel` JSON, or None before any)."""
+        self._alive()
+        self._send("LABEL")
+        ln = self._read()
+        if ln.startswith("__ERR__ "):
+            obj = json.loads(ln[len("__ERR__ "):])
+            self._dead = obj.get("message", ln)
+            raise ReaderRefusal(obj.get("message", ln), obj.get("kind", "reader"))
+        if not ln.startswith("__LABEL__ "):
+            raise ReaderRefusal(f"unexpected LABEL reply {ln[:200]!r}", "protocol")
+        obj = json.loads(ln[len("__LABEL__ "):])
+        return int(obj["decisions"]), obj["label"]
+
     def probe(self) -> Optional[str]:
         """The DRIFT SCAN's encoder check (never the live path): encode the current reading with or without an
         open decision. ``None`` = it encoded (finite); else the encoder's message. A probe failure does not fail

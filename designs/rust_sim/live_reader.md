@@ -51,6 +51,8 @@ its rows to the bridge's (`designs/research_state/measurements/pokeenv_p6_reader
 | `FEED [<line>, …]` — one WRITE: the lines one server message carried, battle protocol only | `__OBS__ pN {…}` when the write ended at a decision, then `__FED__ {"folded","decided","turn"}` |
 | `CHOOSE <token>` — the choice sent for the open decision | `__OK__` |
 | `PROBE` — the drift scan's encoder check (never the live path) | `__OK__`, or `__ERR__ {"kind":"probe",…}` (the reader stays alive) |
+| `SPECDECIDE {"force":<bool>}` — X50 rung 1, OFFLINE, a reading OPENED WITHOUT a team: fold one synthesised `\|request\|` built from the reading (`side_reader::spectator_request`), marked `"spectator":true` so the board takes its LEGALITY only (no roster, HP, item, ability or PP write; `BoardReading::parse_spectator_request`); Struggle is the declared placeholder when nothing else is legal | `__OBS__ pN {…}` when it opened a decision, then `__FED__ {…,"placeholder"}`; refused on a reading with a team |
+| `LABEL` — the trackers' intent label at the latest decision (the window the previous one opened) | `__LABEL__ {"decisions","label":<IntentLabel>\|null}` |
 | `CLOSE` / `END` | `__OK__` / exit |
 
 Any other failure is ONE `__ERR__ {"kind","message"}` in place of the reply, and the reader is FAILED for the rest of

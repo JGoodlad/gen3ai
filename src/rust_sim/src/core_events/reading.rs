@@ -398,6 +398,11 @@ impl Reader {
     /// `Battle.parse_request` -> `_update_team_from_request`: our side's roster, HP/status (the
     /// `condition`), the active flag and the details-species, for every mon in the request.
     fn request(&mut self, v: &Val) -> CoreResult<()> {
+        // X50 rung 1: a synthesised spectator request carries legality only, never the roster
+        // (`BoardReading::parse_spectator_request`), so the reading folds nothing from it.
+        if matches!(v.get(crate::present::board_reading::SPECTATOR_REQUEST_KEY), Some(Val::Bool(true))) {
+            return Ok(());
+        }
         let Some(Val::Arr(mons)) = v.get("side").and_then(|s| s.get("pokemon")) else {
             return Err(refuse(PyExc::KeyError, "request without side.pokemon"));
         };

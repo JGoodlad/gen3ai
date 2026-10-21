@@ -1,0 +1,111 @@
+|init|battle
+|title|playerA vs. playerB
+|t:|1782896064
+|gametype|singles
+|player|p1|playerA|silver|1137
+|player|p2|playerB|101|1079
+|gen|3
+|tier|[Gen 3] OU
+|rated|
+|rule|HP Percentage Mod: HP is shown in percentages
+|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+|rule|Endless Battle Clause: Forcing endless battles is banned
+|rule|Sleep Clause Mod: Limit one foe put to sleep
+|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+|rule|Species Clause: Limit one of each Pokémon
+|rule|OHKO Clause: OHKO moves are banned
+|rule|Evasion Items Clause: Evasion items are banned
+|rule|Evasion Moves Clause: Evasion moves are banned
+|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+|rule|Freeze Clause Mod: Limit one foe frozen
+|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+|
+|t:|1782896064
+|teamsize|p1|6
+|teamsize|p2|6
+|start
+|switch|p1a: Suicune|Suicune, shiny|100/100
+|switch|p2a: Jynx|Jynx, F|100/100
+|turn|1
+|inactive|Battle timer is ON: inactive players will automatically lose when time's up. (requested by playerA)
+|
+|t:|1782896072
+|move|p2a: Jynx|Lovely Kiss|p1a: Suicune
+|-status|p1a: Suicune|slp|[from] move: Lovely Kiss
+|cant|p1a: Suicune|slp
+|
+|upkeep
+|turn|2
+|
+|t:|1782896084
+|switch|p2a: Exeggutor|Exeggutor, M|100/100
+|switch|p1a: Dugtrio|Dugtrio, F|100/100
+|
+|upkeep
+|turn|3
+|
+|t:|1782896094
+|move|p1a: Dugtrio|Hidden Power|p2a: Exeggutor
+|-supereffective|p2a: Exeggutor
+|-damage|p2a: Exeggutor|0 fnt
+|faint|p2a: Exeggutor
+|
+|t:|1782896102
+|switch|p2a: Snorlax|Snorlax, M|100/100
+|
+|upkeep
+|turn|4
+|
+|t:|1782896109
+|switch|p1a: Suicune|Suicune, shiny|100/100 slp
+|move|p2a: Snorlax|Body Slam|p1a: Suicune
+|-damage|p1a: Suicune|69/100 slp
+|
+|-heal|p1a: Suicune|75/100 slp|[from] item: Leftovers
+|upkeep
+|turn|5
+|
+|t:|1782896115
+|move|p2a: Snorlax|Body Slam|p1a: Suicune
+|-damage|p1a: Suicune|45/100 slp
+|-curestatus|p1a: Suicune|slp|[msg]
+|move|p1a: Suicune|Roar|p2a: Snorlax
+|drag|p2a: Starmie|Starmie|100/100
+|
+|-heal|p1a: Suicune|51/100|[from] item: Leftovers
+|upkeep
+|turn|6
+|
+|t:|1782896122
+|switch|p1a: Raikou|Raikou|100/100
+|move|p2a: Starmie|Thunderbolt|p1a: Raikou
+|-resisted|p1a: Raikou
+|-damage|p1a: Raikou|83/100
+|
+|-heal|p1a: Raikou|89/100|[from] item: Leftovers
+|upkeep
+|turn|7
+|
+|t:|1782896127
+|switch|p2a: Snorlax|Snorlax, M|100/100
+|move|p1a: Raikou|Substitute|p1a: Raikou
+|-start|p1a: Raikou|Substitute
+|-damage|p1a: Raikou|64/100
+|
+|-heal|p1a: Raikou|71/100|[from] item: Leftovers
+|upkeep
+|turn|8
+|
+|t:|1782896136
+|move|p1a: Raikou|Thunderbolt|p2a: Snorlax
+|-damage|p2a: Snorlax|71/100
+|-status|p2a: Snorlax|par
+|cant|p2a: Snorlax|par
+|
+|-heal|p1a: Raikou|77/100|[from] item: Leftovers
+|-heal|p2a: Snorlax|78/100 par|[from] item: Leftovers
+|upkeep
+|turn|9
+|-message|playerB forfeited.
+|
+|win|playerA

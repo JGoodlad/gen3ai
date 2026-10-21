@@ -16,6 +16,12 @@
 //!   `{"folded":<int>,"decided":<int>,"turn":<int>}`
 //! - `CHOOSE <token>` — the choice this side sends for its open decision, noted BEFORE the next FEED
 //!   (`note_choice`) → `__OK__`
+//! - `SPECDECIDE <json>` `{"force":<bool>}` — X50 rung 1, a SPECTATOR reading only (opened with no
+//!   team): fold ONE synthesised `|request|` built from the reading itself
+//!   (`side_reader::spectator_request`, legality only) → `__OBS__ …` when it opened a decision, then
+//!   `__FED__ <json>` with `"placeholder":<bool>` added
+//! - `LABEL` → `__LABEL__ <json>` `{"decisions":<int>,"label":<IntentLabel json>|null}`: the trackers'
+//!   intent label at the LATEST decision (the window its previous decision opened; training's shift by one)
 //! - `CLOSE` → `__OK__` (drops the reader)
 //! - `END` → exit
 //!
@@ -117,6 +123,48 @@ fn handle(reader: &mut Option<SideReader>, line: &str, out: &mut impl Write) -> 
             }
             r.note_choice(rest);
             reply(out, b"__OK__\n");
+            Ok(())
+        }
+        "SPECDECIDE" => {
+            let r = reader.as_mut().ok_or(("command", "SPECDECIDE before OPEN".to_string()))?;
+            let v = Json::parse(rest).map_err(|e| ("command", format!("SPECDECIDE: bad json: {e}")))?;
+            let force = match v.get("force") {
+                Some(Json::Bool(b)) => *b,
+                other => return Err(("command", format!("SPECDECIDE: `force` must be a bool, got {other:?}"))),
+            };
+            let mut frame = Vec::new();
+            let d = r.spectator_decide(force, &mut frame).map_err(|e| ("reader", e))?;
+            let mut buf = Vec::with_capacity(frame.len() + 128);
+            if d.decided {
+                buf.extend_from_slice(if r.side() == 0 { b"__OBS__ p1 " } else { b"__OBS__ p2 " });
+                buf.extend_from_slice(&frame);
+                buf.push(b'\n');
+            }
+            let turn = r.version().and_then(|v| v.stream(r.side())).map_or(0, |s| s.board_reading.turn);
+            buf.extend_from_slice(
+                format!(
+                    "__FED__ {{\"folded\":{},\"decided\":{},\"turn\":{},\"placeholder\":{}}}\n",
+                    r.folded(),
+                    r.decided(),
+                    turn,
+                    d.placeholder
+                )
+                .as_bytes(),
+            );
+            reply(out, &buf);
+            Ok(())
+        }
+        "LABEL" => {
+            let r = reader.as_ref().ok_or(("command", "LABEL before OPEN".to_string()))?;
+            let v = r.version().ok_or(("command", "LABEL on a failed reader".to_string()))?;
+            let trk = v.trackers(r.side());
+            let mut o = format!("__LABEL__ {{\"decisions\":{},\"label\":", trk.map_or(0, |t| t.decisions));
+            match trk.and_then(|t| t.label.as_ref()) {
+                Some(l) => l.json_into(&mut o),
+                None => o.push_str("null"),
+            }
+            o.push_str("}\n");
+            reply(out, o.as_bytes());
             Ok(())
         }
         "PROBE" => {

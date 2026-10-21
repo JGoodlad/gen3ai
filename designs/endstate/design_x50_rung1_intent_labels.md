@@ -55,8 +55,9 @@ lines, and nothing later.
   information the public lines did not). Where nothing would be legal (the lead before it moved, alone), Struggle is
   the declared placeholder so the decision still opens and the trackers fold every turn; such rows are flagged.
 - **The guard (the extractor's prefix guard).** For a row to be valid, a FRESH reader fed only the lines before the
-  decision point plus that synthesised request must produce a byte-identical row. The extractor runs it on every
-  decision of every battle whose id hashes into the guard sample (1 in 16), and on every decision in the tests. A
+  decision point plus that synthesised request must produce a byte-identical row. The extractor runs it on ONE
+  decision of every seat of every battle (chosen by a hash of the battle and seat), and on every decision in the
+  tests (`src/main/x50_r1/extract_test.py`, which also holds a leaky row it must refuse). A
   mismatch is a refusal, never a skip; it is what fails if the extractor ever folds a line past the decision.
 
 ## 3. Decision points on a spectator log
@@ -66,13 +67,17 @@ The viewer gets a decision exactly where Showdown sends it a non-`wait` request:
 1. **turn**: right after each `|turn|N` line;
 2. **forced**: the viewer's replacement after its active fainted, or its Baton Pass resolved. The decision sits at the
    START of the chunk that carries the replacement `|switch|`: back from that switch line to the chunk's `|t:|` line,
-   and before the bare `|` that opens it (a double KO's two switches share one chunk).
+   and before the bare `|` that opens it (a double KO's two switches share one chunk). A replacement with no new
+   chunk since its trigger was chosen BEFORE (gen 2-4: a switch continues after a Pursuit KO): no decision.
 
 No decision at the opponent's forced switch (the viewer's request is `wait`), and none after `|win|` / `|tie|`.
 **Validated on our own battles:** on X26's eval traces, which carry both seats' real streams, the rule must
-reproduce the trainee's real non-`wait` request positions exactly (a test, and a check the extractor runs on every trace),
-and a spectator view of a trace is the two seat streams merged line by line (a differing line is taken from the
-stream of the side it does NOT name: the public version).
+reproduce the trainee's real non-`wait` request positions exactly (`points_test.py`, and a refusal the extractor
+raises on every trace it reads). A spectator view of a trace is the two seat streams ALIGNED (HP figures folded): a
+paired line is taken from the stream of the side it does NOT name (the public version), and a line one seat holds
+alone (its `[silent]` ability, its `|error|`, a `|-hint|`) is dropped. Checked on 405 traces before the build landed:
+405 / 405 point sequences equal, 405 / 405 label sequences equal between the spectator and full reads, and 404 / 405
+full reads byte-equal to the rows the trainee played on (the one: a 250-turn draw whose last row the trace omits).
 
 ## 4. Population, rating filter, held-out dates
 
@@ -127,7 +132,7 @@ labels" means here. S's and B's boards come from X26's own play; H's from two hu
 
 ## 6. The extractor (build)
 
-The package main.x50_r1 (built in the commit after this design; CPU, the Rust live reader only, no Node, no poke-env):
+`src/main/x50_r1/` (CPU, the Rust live reader only, no Node, no poke-env):
 - `points.py` (decision points), `spectate.py` (a spectator view of a trace), `extract.py` (logs → rows: the reader
   session, the synthesised decisions, the production label from `LABEL`, the prefix guard);
 - the Rust side: `live_reader`'s `SPECDECIDE` and `LABEL` commands, `SideReader::spectator_request`, and the
@@ -153,3 +158,4 @@ The package main.x50_r1 (built in the commit after this design; CPU, the Rust li
 | date | what | rejected | evidence |
 |---|---|---|---|
 | 2026-10-20 | **CREATED + R1 REGISTERED** (X50 rung-1 worker, the owner's rung-1 approval). Label = the production label by the production labeller on synthesised spectator decisions, resolved by `flat_intent_targets`; own side public-only; spectator manifest only; held-out 09-21..09-23; primary ≥ 1500; R1's rule on Δ NLL(H − S) at ±0.05 nats | completing the own side from the game's end (a selection leak); the census's text labeller (an approximation of the production rules); the archive pulls (upload selection unverified); a typed guess for Hidden Power; a training run in this unit | the census README; `opp_intent_labels.py`; `trackers/mod.rs`; `flat_intent.py`; X26's eval-trace manifests |
+| 2026-10-20 | **EXTRACTOR BUILT** | One decision guarded per seat (not a 1-in-16 battle sample: broader, cheaper). Two point-rule refinements found on traces before landing: the Pursuit-continuation switch is no decision; a log with no `\|t:\|` mark is refused. The trace merge aligns rather than zips (private `[silent]` / `\|error\|` / `\|-hint\|` lines). A battle whose trainee stream holds a refused choice (`\|error\|`, 7 % of traces) keeps its spectator read and skips only the full control (its retry request has no public twin) | zipping the two seat streams (fails on private lines); placing a forced point on every post-faint switch | `extract_test.py` (hand-read golden labels, the guard and its leak, spectator = full labels, full = the trainee's rows); `points_test.py` |

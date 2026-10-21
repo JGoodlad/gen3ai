@@ -1,0 +1,439 @@
+{
+ "v": 1,
+ "format_id": "gen3ou",
+ "prng_seed": "54121,34426,50441,2222",
+ "input_log": [
+  ">start {\"formatid\":\"gen3ou\",\"seed\":\"54121,34426,50441,2222\"}",
+  ">player p1 {\"name\":\"rhone\",\"team\":\"Swampert||leftovers|torrent|curse,earthquake,hydropump,icebeam|Quiet|240,,,252,,16|||||]Metagross||leftovers|clearbody|earthquake,thunderpunch,hiddenpowergrass,explosion|Rash|168,,16,252,,72||,30,,30,,|||]Gengar||leftovers|levitate|icepunch,thunderbolt,hiddenpowergrass,explosion|Timid|4,,,252,,252||,30,,30,,|||]Tyranitar||leftovers|sandstream|dragondance,earthquake,rockslide,doubleedge|Adamant|184,104,,,,220|||||]Jolteon||leftovers|voltabsorb|substitute,thunderbolt,hiddenpowergrass,batonpass|Timid|8,,,248,,252||,2,,30,,|||]Charizard||leftovers|blaze|dragonclaw,flamethrower,hiddenpowergrass,beatup|Modest|4,,,252,,252||,2,,30,,|||\"}",
+  ">player p2 {\"name\":\"rhtwo\",\"team\":\"Heracross||leftovers|guts|megahorn,rockslide,focuspunch,toxic|Adamant|248,124,,,116,20|||||]Magneton||magnet|magnetpull|thunderbolt,hiddenpowerfire,thunderwave,toxic|Modest|240,,,248,,20||,2,,30,,30|||]Tyranitar||leftovers|sandstream|rockslide,crunch,pursuit,focuspunch|Quiet|248,12,,160,52,36|||||]Swampert||leftovers|torrent|hydropump,earthquake,icebeam,focuspunch|Brave|176,136,,156,4,36|||||]Flygon||leftovers|levitate|earthquake,rockslide,hiddenpowerbug,substitute|Jolly|16,240,,,,252||,30,30,,30,|||]Gyarados||leftovers|intimidate|hiddenpowerflying,earthquake,dragondance,substitute|Jolly|4,252,,,,252||30,30,30,30,30,|||\"}",
+  ">p1 switch 6",
+  ">p2 move 1",
+  ">p1 move 2",
+  ">p2 move 2",
+  ">p1 move 2",
+  ">p2 switch 3",
+  ">p1 move 3",
+  ">p2 move 1",
+  ">p1 switch 5",
+  ">p1 move 3",
+  ">p2 switch 5",
+  ">p1 switch 3",
+  ">p2 move 4",
+  ">p1 move 1",
+  ">p2 move 2",
+  ">p1 move 1",
+  ">p2 switch 2",
+  ">p1 switch 4",
+  ">p2 move 1",
+  ">p1 move 1",
+  ">p2 switch 4",
+  ">p1 move 2",
+  ">p2 move 2",
+  ">p1 switch 4",
+  ">p1 move 3",
+  ">p2 move 1",
+  ">p2 switch 4",
+  ">p1 switch 3",
+  ">p2 move 3",
+  ">p1 move 1",
+  ">p2 switch 2",
+  ">p1 move 4",
+  ">p2 move 2",
+  ">p1 switch 3",
+  ">p1 move 1",
+  ">p2 switch 2",
+  ">p1 move 2",
+  ">p2 move 3",
+  ">p1 switch 6",
+  ">p2 move 2",
+  ">p1 move 2",
+  ">p2 move 4",
+  ">p2 switch 3",
+  ">p1 move 4",
+  ">p2 move 1",
+  ">p2 switch 6",
+  ">p1 switch 2",
+  ">p2 move 4",
+  ">p1 move 2",
+  ">p2 move 2",
+  ">p1 move 4",
+  ">p2 move 4",
+  ">p1 switch 3",
+  ">p1 move 1",
+  ">p2 switch 2",
+  ">p1 move 4",
+  ">p2 move 4",
+  ">p1 switch 6",
+  ">p1 move 1",
+  ">p2 move 2",
+  ">p1 move 1",
+  ">p2 move 4",
+  ">p1 move 1",
+  ">p2 move 2",
+  ">p1 move 1",
+  ">p2 move 4",
+  ">p1 move 1",
+  ">p2 move 2",
+  ">p1 move 4",
+  ">p2 move 4",
+  ">p1 move 3",
+  ">p2 move 2",
+  ">p1 switch 2",
+  ">p1 move 4",
+  ">p2 move 1",
+  ">p1 move 3",
+  ">p2 switch 5",
+  ">p2 switch 2",
+  ">p1 move 4",
+  ">p2 move 3",
+  ">p1 move 4",
+  ">p2 move 2",
+  ">p1 switch 6",
+  ">p1 move 2",
+  ">p2 move 2"
+ ],
+ "commands": [
+  [
+   "p1",
+   "switch Charizard"
+  ],
+  [
+   "p2",
+   "move megahorn"
+  ],
+  [
+   "p1",
+   "move flamethrower"
+  ],
+  [
+   "p2",
+   "move rockslide"
+  ],
+  [
+   "p1",
+   "move flamethrower"
+  ],
+  [
+   "p2",
+   "switch Tyranitar"
+  ],
+  [
+   "p1",
+   "move hiddenpowergrass"
+  ],
+  [
+   "p2",
+   "move rockslide"
+  ],
+  [
+   "p1",
+   "switch Jolteon"
+  ],
+  [
+   "p1",
+   "move hiddenpowergrass"
+  ],
+  [
+   "p2",
+   "switch Flygon"
+  ],
+  [
+   "p1",
+   "switch Gengar"
+  ],
+  [
+   "p2",
+   "move substitute"
+  ],
+  [
+   "p1",
+   "move icepunch"
+  ],
+  [
+   "p2",
+   "move rockslide"
+  ],
+  [
+   "p1",
+   "move icepunch"
+  ],
+  [
+   "p2",
+   "switch Magneton"
+  ],
+  [
+   "p1",
+   "switch Tyranitar"
+  ],
+  [
+   "p2",
+   "move thunderbolt"
+  ],
+  [
+   "p1",
+   "move dragondance"
+  ],
+  [
+   "p2",
+   "switch Swampert"
+  ],
+  [
+   "p1",
+   "move earthquake"
+  ],
+  [
+   "p2",
+   "move earthquake"
+  ],
+  [
+   "p1",
+   "switch Gengar"
+  ],
+  [
+   "p1",
+   "move hiddenpowergrass"
+  ],
+  [
+   "p2",
+   "move hydropump"
+  ],
+  [
+   "p2",
+   "switch Magneton"
+  ],
+  [
+   "p1",
+   "switch Jolteon"
+  ],
+  [
+   "p2",
+   "move thunderwave"
+  ],
+  [
+   "p1",
+   "move substitute"
+  ],
+  [
+   "p2",
+   "switch Flygon"
+  ],
+  [
+   "p1",
+   "move batonpass"
+  ],
+  [
+   "p2",
+   "move rockslide"
+  ],
+  [
+   "p1",
+   "switch Gengar"
+  ],
+  [
+   "p1",
+   "move icepunch"
+  ],
+  [
+   "p2",
+   "switch Magneton"
+  ],
+  [
+   "p1",
+   "move thunderbolt"
+  ],
+  [
+   "p2",
+   "move thunderwave"
+  ],
+  [
+   "p1",
+   "switch Swampert"
+  ],
+  [
+   "p2",
+   "move hiddenpowerfire"
+  ],
+  [
+   "p1",
+   "move earthquake"
+  ],
+  [
+   "p2",
+   "move toxic"
+  ],
+  [
+   "p2",
+   "switch Heracross"
+  ],
+  [
+   "p1",
+   "move icebeam"
+  ],
+  [
+   "p2",
+   "move megahorn"
+  ],
+  [
+   "p2",
+   "switch Gyarados"
+  ],
+  [
+   "p1",
+   "switch Metagross"
+  ],
+  [
+   "p2",
+   "move substitute"
+  ],
+  [
+   "p1",
+   "move thunderpunch"
+  ],
+  [
+   "p2",
+   "move earthquake"
+  ],
+  [
+   "p1",
+   "move explosion"
+  ],
+  [
+   "p2",
+   "move substitute"
+  ],
+  [
+   "p1",
+   "switch Jolteon"
+  ],
+  [
+   "p1",
+   "move substitute"
+  ],
+  [
+   "p2",
+   "switch Flygon"
+  ],
+  [
+   "p1",
+   "move batonpass"
+  ],
+  [
+   "p2",
+   "move substitute"
+  ],
+  [
+   "p1",
+   "switch Gengar"
+  ],
+  [
+   "p1",
+   "move icepunch"
+  ],
+  [
+   "p2",
+   "move rockslide"
+  ],
+  [
+   "p1",
+   "move icepunch"
+  ],
+  [
+   "p2",
+   "move substitute"
+  ],
+  [
+   "p1",
+   "move icepunch"
+  ],
+  [
+   "p2",
+   "move rockslide"
+  ],
+  [
+   "p1",
+   "move icepunch"
+  ],
+  [
+   "p2",
+   "move substitute"
+  ],
+  [
+   "p1",
+   "move icepunch"
+  ],
+  [
+   "p2",
+   "move rockslide"
+  ],
+  [
+   "p1",
+   "move explosion"
+  ],
+  [
+   "p2",
+   "move substitute"
+  ],
+  [
+   "p1",
+   "move hiddenpowergrass"
+  ],
+  [
+   "p2",
+   "move rockslide"
+  ],
+  [
+   "p1",
+   "switch Swampert"
+  ],
+  [
+   "p1",
+   "move icebeam"
+  ],
+  [
+   "p2",
+   "move earthquake"
+  ],
+  [
+   "p1",
+   "move hydropump"
+  ],
+  [
+   "p2",
+   "switch Tyranitar"
+  ],
+  [
+   "p2",
+   "switch Gyarados"
+  ],
+  [
+   "p1",
+   "move icebeam"
+  ],
+  [
+   "p2",
+   "move dragondance"
+  ],
+  [
+   "p1",
+   "move icebeam"
+  ],
+  [
+   "p2",
+   "move earthquake"
+  ],
+  [
+   "p1",
+   "switch Jolteon"
+  ],
+  [
+   "p1",
+   "move thunderbolt"
+  ],
+  [
+   "p2",
+   "move earthquake"
+  ]
+ ],
+ "battle_tag": "core-380000195-sentinel_0-g1",
+ "trainee_username": "rhone"
+}

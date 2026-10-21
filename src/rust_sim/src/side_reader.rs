@@ -102,6 +102,21 @@ impl SideReader {
         self.advance_with(lines, None)
     }
 
+    /// X50 rung 1 (`designs/endstate/design_x50_rung1_intent_labels.md` §2): open a SPECTATOR decision —
+    /// build the synthesised `|request|` line from this side's current reading ([`spectator_request`])
+    /// and fold it as ONE write through [`SideReader::advance`], so the board, the trackers, the label
+    /// and the frame are the production chain's. Only a reading OPENED WITHOUT a team takes one (the
+    /// board refuses it otherwise). `decided: false` = no decision opened (a finished battle).
+    pub fn spectator_decide(&mut self, force: bool, out: &mut Vec<u8>) -> Result<SpectatorDecision, String> {
+        let line = {
+            let v = self.chain.as_ref().ok_or_else(|| "core_obs: spectator decide on a failed reader".to_string())?;
+            let s = v.stream(self.side).ok_or_else(|| "core_obs: spectator decide: no stream".to_string())?;
+            spectator_request(&s.board_reading, force)?
+        };
+        let adv = self.advance(&[line.text.as_str()], out)?;
+        Ok(SpectatorDecision { decided: adv.decided, placeholder: line.placeholder })
+    }
+
     fn advance_with(&mut self, lines: &[&str], out: Option<&mut Vec<u8>>) -> Result<Advanced, String> {
         if let Some(m) = &self.failed {
             return Err(format!("core_obs: refused after an earlier failure in this battle: {m}"));
@@ -165,4 +180,75 @@ impl SideReader {
         self.chain = Some(next);
         Ok(adv)
     }
+}
+
+/// What [`SideReader::spectator_decide`] did.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SpectatorDecision {
+    pub decided: bool,
+    /// Nothing but the declared Struggle placeholder was legal.
+    pub placeholder: bool,
+}
+
+/// A synthesised spectator request line and whether it holds only the Struggle placeholder.
+pub struct SpectatorRequest {
+    pub text: String,
+    pub placeholder: bool,
+}
+
+/// X50 rung 1: the `|request|` a spectator reading would have been sent, built from what the reading
+/// HOLDS — the own active's moves as read (the reading's PP; Struggle / Recharge never listed), the
+/// roster idents, `forceSwitch` on a forced decision — and marked `"spectator":true` so the board takes
+/// its legality only (`BoardReading::parse_spectator_request`). When no move and no benched alive mon is
+/// legal, the moves are the declared Struggle placeholder, so the decision opens and the trackers fold.
+pub fn spectator_request(br: &crate::present::BoardReading, force: bool) -> Result<SpectatorRequest, String> {
+    use crate::core_events::json_out::str_into;
+    let mut o = String::from("|request|{\"spectator\":true");
+    if force {
+        o.push_str(",\"forceSwitch\":[true]");
+    }
+    let mut moves: Vec<(String, u32, u32)> = Vec::new();
+    if !force {
+        if let Some(ai) = br.active_index(true) {
+            for (_, m) in br.team[ai].1.moves.moves_ref() {
+                if m.id == "struggle" || m.id == "recharge" {
+                    continue;
+                }
+                let max = m.max_pp().map_err(|e| format!("spectator request: {}", e.message()))?;
+                moves.push((m.id.clone(), m.current_pp, max));
+                if moves.len() == 4 {
+                    break;
+                }
+            }
+        }
+    }
+    let bench = br.team.iter().any(|(_, m)| !m.active && !m.fainted());
+    let placeholder = moves.is_empty() && !bench;
+    if placeholder {
+        moves.push(("struggle".to_string(), 1, 1));
+    }
+    o.push_str(",\"active\":[{\"moves\":[");
+    for (i, (id, pp, max)) in moves.iter().enumerate() {
+        if i > 0 {
+            o.push(',');
+        }
+        o.push_str("{\"move\":");
+        str_into(&mut o, id);
+        o.push_str(",\"id\":");
+        str_into(&mut o, id);
+        o.push_str(&format!(",\"pp\":{pp},\"maxpp\":{max},\"target\":\"normal\",\"disabled\":false}}"));
+    }
+    o.push_str("]}],\"side\":{\"id\":");
+    str_into(&mut o, if br.role == 0 { "p1" } else { "p2" });
+    o.push_str(",\"pokemon\":[");
+    for (i, (k, m)) in br.team.iter().enumerate() {
+        if i > 0 {
+            o.push(',');
+        }
+        o.push_str("{\"ident\":");
+        str_into(&mut o, k);
+        o.push_str(&format!(",\"active\":{}}}", m.active));
+    }
+    o.push_str("]},\"rqid\":null}");
+    Ok(SpectatorRequest { text: o, placeholder })
 }

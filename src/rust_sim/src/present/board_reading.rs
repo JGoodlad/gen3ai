@@ -63,6 +63,10 @@ impl ReqMon {
     }
 }
 
+/// The key that marks a SYNTHESISED spectator request (X50 rung 1; [`BoardReading::parse_request_val`]). A real
+/// server's request never carries it.
+pub const SPECTATOR_REQUEST_KEY: &str = "spectator";
+
 /// Python truthiness of a JSON value.
 pub fn truthy(v: Option<&Val>) -> bool {
     match v {
@@ -362,6 +366,9 @@ impl BoardReading {
     /// [`Self::parse_request`] of an already-parsed payload: `json` is its text (kept as
     /// `last_request_text`), `v` its value (kept as `last_request`).
     pub fn parse_request_val(&mut self, json: String, v: Val) -> R<()> {
+        if truthy(v.get(SPECTATOR_REQUEST_KEY)) {
+            return self.parse_spectator_request(json, v);
+        }
         self.wait = truthy(v.get("wait"));
         let side = v.get("side").ok_or_else(|| refuse(PyExc::KeyError, "request without side (KeyError)"))?;
         let recs = match side.get("pokemon") {
@@ -420,6 +427,52 @@ impl BoardReading {
                 }
             }
         }
+        self.last_request = Some(v);
+        Ok(())
+    }
+
+    /// X50 rung 1 (`designs/endstate/design_x50_rung1_intent_labels.md` §2): a SYNTHESISED request on a
+    /// SPECTATOR reading (no packed team) — `side_reader::spectator_request` builds it from this reading.
+    /// It carries LEGALITY only: no team update, no HP / status / item / ability, no PP sync, so the
+    /// reading after it is the public lines' reading. The legal set: the active's request moves (none on a
+    /// forced decision), a switch to each alive benched mon the reading holds, and Struggle as the
+    /// declared placeholder when nothing else is legal (the decision must open so the trackers fold every
+    /// window). Refused on a reading with a team: a real player's reading never takes one.
+    fn parse_spectator_request(&mut self, json: String, v: Val) -> R<()> {
+        if self.teambuilder.is_some() {
+            return Err(malformed("a spectator request on a reading that holds a packed team"));
+        }
+        self.wait = false;
+        self.reviving = false;
+        self.trapped = false;
+        self.maybe_trapped = false;
+        self.force_switch = match v.get("forceSwitch") {
+            Some(Val::Arr(a)) => truthy(a.first()),
+            None => false,
+            Some(other) => return Err(malformed(format!("forceSwitch {other:?} is not a list"))),
+        };
+        self.available_moves.clear();
+        self.available_switches.clear();
+        // (the builder lists no move on a forced decision except the placeholder)
+        if let Some(Val::Arr(active)) = v.get("active") {
+            let ar = active.first().ok_or_else(|| malformed("spectator request: active []"))?;
+            if let Some(Val::Arr(moves)) = ar.get("moves") {
+                for m in moves {
+                    let id = m.str_at("id").ok_or_else(|| malformed("spectator request: a move without id"))?;
+                    self.available_moves.push(id.to_string());
+                }
+            }
+        }
+        for (i, (_, m)) in self.team.iter().enumerate() {
+            if !m.active && !m.fainted() {
+                self.available_switches.push(i);
+            }
+        }
+        let moves_legal = self.available_moves.iter().any(|m| m != "struggle");
+        if !moves_legal && self.available_switches.is_empty() && !self.available_moves.iter().any(|m| m == "struggle") {
+            return Err(malformed("spectator request: nothing legal and no Struggle placeholder (the builder owes one)"));
+        }
+        self.last_request_text = Some(json);
         self.last_request = Some(v);
         Ok(())
     }

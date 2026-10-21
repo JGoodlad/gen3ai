@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "step": 380000195,
+    "battle_id": "core-380000195-sentinel_0-g1",
+    "result": "LOSS",
+    "turns": 37,
+    "invocations": 44,
+    "result_vocabulary": "gen3_trace_result_v2",
+    "trace_source": {
+      "schema": "gen3_core_trace_v1",
+      "kind": "gen3_core_event_v1",
+      "env_core": "rust",
+      "trainee_side": "p1",
+      "records": {
+        "p1": "loss_s0_002.p1.jsonl.gz",
+        "p2": "loss_s0_002.p2.jsonl.gz"
+      },
+      "reconstruction": "loss_s0_002_reconstruction.json",
+      "states": "loss_s0_002_states.npz",
+      "turn_limit": 250,
+      "cycle": {
+        "key": [
+          1361758359023253741,
+          "sentinel_0",
+          1
+        ],
+        "game": 1,
+        "seed_rule": "gen3_eval_game_seed_v1"
+      }
+    }
+  }
+}
