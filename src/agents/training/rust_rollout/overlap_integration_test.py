@@ -188,18 +188,55 @@ def _learn(spaces, *, overlap: bool, rollouts: int = 5, n_epochs: int = 2):
         env.close()
 
 
-#: THE OFF GOLDEN: `_learn(overlap=False, rollouts=3, n_epochs=1)`'s final-weights hash, RECORDED AT THE COMMIT BEFORE
-#: X14 (origin/main 2939cc96, with this file's helpers; the decl is built without the `overlap` field when OFF so the
-#: same helper runs there). Equal at HEAD = the flag-OFF loop (collect, update, the K9(b) probe, the fill) trains the
-#: same bytes as before the overlap existed. A DELIBERATE change to what a serial update trains moves it: re-record
-#: by printing `_learn(...)["hash"]` at the new commit, and say why in the commit.
-OFF_GOLDEN = "541381a30acdb2862c079a93600e3e16a16087b405710177f217f8de499beea9"
+#: THE OFF GOLDEN: `_learn(overlap=False, rollouts=3, n_epochs=1)`'s final-weights hash at the DEFAULT tau solve. Equal at
+#: HEAD = the flag-OFF loop (collect, update, the K9(b) probe, the fill) trains the same bytes as before the overlap
+#: existed. A DELIBERATE change to what a serial update trains moves it: re-record by printing `_learn(...)["hash"]` at
+#: the new commit, and say why here and in the commit.
+#:
+#: RE-RECORDED 2026-10-21, `541381a3...` -> `0f8c5209...`, because of `d4af9f1e2` (FP32_ALT, `gen3_tau_fp32_alt_v1`, config
+#: v160): it moved the DEFAULT tau solve from T62's float64 naive sum to the fp32 split residual, which changes every
+#: fixed-size tau in the policy's forward (T2's rollout and the learner's update alike), so the trained bytes moved. That
+#: commit re-recorded the learner golden, PLAYED_DIGEST and the reveal OFF_BITS and MISSED this one (a `slow` test: the
+#: routine gate never ran it; the slow-tier record's PASS at `731da3cc` went stale). Bisected on the CPU, one run per
+#: commit: `c9bdc9285` (d4af9f1e2's parent) reproduced `541381a3...`; `d4af9f1e2` and `f6c8c3096` gave `0f8c5209...`; and at
+#: `f6c8c3096` with EVERY tau solve forced to fp64 (the module-global seam below) the same learn gave `541381a3...` bit for
+#: bit. So the whole difference is the default solve and nothing else; the flag-OFF loop's equality with the pre-X14
+#: commit is pinned by PRE_X14_GOLDEN_FP64 (the next test), not lost with this re-record.
+OFF_GOLDEN = "0f8c52092c7f38bc0619552736ade8fb0e7904e77a499a1d1d6c260c2e7f9792"
+
+#: The golden RECORDED AT THE COMMIT BEFORE X14 (origin/main 2939cc96, with this file's helpers; the decl is built without
+#: the `overlap` field when OFF so the same helper runs there), when T62's float64 tau solve was the only solve. It is
+#: reproduced at HEAD by forcing that solve: the witness that overlap's flag-OFF path still trains the pre-X14 bytes.
+PRE_X14_GOLDEN_FP64 = "541381a30acdb2862c079a93600e3e16a16087b405710177f217f8de499beea9"
 
 
 def test_flag_off_trains_the_same_bytes_as_before_the_overlap_existed(spaces):
     got = _learn(spaces, overlap=False, rollouts=3, n_epochs=1)
     assert getattr(got["col"], "overlap", None) is None
     assert got["hash"] == OFF_GOLDEN, f"the flag-OFF learn() moved: {got['hash']} (golden {OFF_GOLDEN})"
+
+
+def test_flag_off_under_the_T62_float64_tau_solve_trains_the_pre_X14_bytes(spaces, monkeypatch):
+    """The pre-X14 witness: with every tau solve forced to T62's float64 naive sum (the arithmetic the golden was recorded
+    under) the flag-OFF learn() gives the golden recorded at 2939cc96, byte for byte. The seam is the ONE call site every
+    model path shares: `hypothesis_set.fixed_mass_presence` calls `fixed_size_tau` through the module global, so the
+    replacement drops the caller's ``solve`` and passes fp64 (counted: a vacuous force FAILS)."""
+    import inspect
+
+    from agents.model import hypothesis_set as HS
+
+    assert "fixed_size_tau(" in inspect.getsource(HS.fixed_mass_presence)      # the seam's precondition
+    orig, calls = HS.fixed_size_tau, []
+
+    def forced(scores, cand, k, n_iter=HS.BISECTION_ITERS, solve=None):
+        calls.append(1)
+        return orig(scores, cand, k, n_iter, solve="fp64")
+
+    monkeypatch.setattr(HS, "fixed_size_tau", forced)
+    got = _learn(spaces, overlap=False, rollouts=3, n_epochs=1)
+    assert len(calls) > 0, "the forcing was never reached: a vacuous witness"
+    assert got["hash"] == PRE_X14_GOLDEN_FP64, f"the flag-OFF learn() under fp64 moved: {got['hash']}"
+    assert got["hash"] != OFF_GOLDEN                                             # and the two solves are two different learners
 
 
 def test_a_whole_learn_with_overlap_trains_through_overlapped_updates_and_is_deterministic(spaces):

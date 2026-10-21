@@ -2836,42 +2836,50 @@
   },
   "src/agents/training/rust_rollout/overlap_integration_test.py::test_a_whole_learn_with_overlap_trains_through_overlapped_updates_and_is_deterministic": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
-   "duration_s": 177.6,
-   "contention": 2.19,
+   "commit": "f6c8c3096f7bc16c4011158dd9a8d4b8cbc0ef31",
+   "at": "2026-10-21T16:37:03Z",
+   "duration_s": 124.29,
+   "contention": 1.45,
    "detail": ""
   },
   "src/agents/training/rust_rollout/overlap_integration_test.py::test_flag_off_trains_the_same_bytes_as_before_the_overlap_existed": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
-   "duration_s": 31.06,
-   "contention": 2.28,
+   "commit": "f6c8c3096f7bc16c4011158dd9a8d4b8cbc0ef31",
+   "at": "2026-10-21T16:37:03Z",
+   "duration_s": 17.91,
+   "contention": 1.39,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/overlap_integration_test.py::test_flag_off_under_the_T62_float64_tau_solve_trains_the_pre_X14_bytes": {
+   "status": "pass",
+   "commit": "f6c8c3096f7bc16c4011158dd9a8d4b8cbc0ef31",
+   "at": "2026-10-21T16:37:03Z",
+   "duration_s": 20.51,
+   "contention": 1.39,
    "detail": ""
   },
   "src/agents/training/rust_rollout/overlap_integration_test.py::test_k9b_judges_the_overlapped_rows_under_their_behaviour_snapshot": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
-   "duration_s": 3.93,
-   "contention": 2.84,
+   "commit": "f6c8c3096f7bc16c4011158dd9a8d4b8cbc0ef31",
+   "at": "2026-10-21T16:37:03Z",
+   "duration_s": 1.54,
+   "contention": 1.38,
    "detail": ""
   },
   "src/agents/training/rust_rollout/overlap_integration_test.py::test_overlapped_rows_are_one_version_stale_and_the_serial_control_is_not": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
-   "duration_s": 83.0,
-   "contention": 2.69,
+   "commit": "f6c8c3096f7bc16c4011158dd9a8d4b8cbc0ef31",
+   "at": "2026-10-21T16:37:03Z",
+   "duration_s": 44.84,
+   "contention": 1.39,
    "detail": ""
   },
   "src/agents/training/rust_rollout/overlap_integration_test.py::test_the_fill_serves_the_proximal_log_probs_from_t2_at_the_learners_weights": {
    "status": "pass",
-   "commit": "731da3cc248f74261b52d92364257268b42ac1c7",
-   "at": "2026-10-20T07:55:29Z",
-   "duration_s": 0.01,
-   "contention": 2.69,
+   "commit": "f6c8c3096f7bc16c4011158dd9a8d4b8cbc0ef31",
+   "at": "2026-10-21T16:37:03Z",
+   "duration_s": 0.0,
+   "contention": 1.42,
    "detail": ""
   },
   "src/agents/training/rust_rollout/tie_identity_integration_test.py::test_a_planted_behaviour_mismatch_on_a_judged_row_is_FATAL_at_every_arm[perturbed-fixed_mass]": {
@@ -5478,5 +5486,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-21T00:44:03Z"
+ "last_written": "2026-10-21T16:37:03Z"
 }
