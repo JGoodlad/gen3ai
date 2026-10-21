@@ -64,8 +64,10 @@ def test_the_kit_argv_equals_the_registered_checkargs_transcripts_argv(arm, seed
     """The argv `checkargs` validated (AM-RP-f, at the toy pin 4609c155 for the toy) IS what `describe` builds."""
     want = _transcript_argv(STAGE / transcript)
     side = K.ARMS[arm].side
-    call = {"side": side, "archive": [], "pstar": {"path": f"/home/goodlad/dev/gen3ai/models/{pstar[0]}",
-                                                   "step": pstar[1], "sha256": "s"}}
+    # the transcript recorded the run archive's absolute path; read it back rather than typing a home path
+    model = want[want.index("--model") + 1]
+    assert model.endswith(f"/models/{pstar[0]}"), model
+    call = {"side": side, "archive": [], "pstar": {"path": model, "step": pstar[1], "sha256": "s"}}
     assert K.build_argv(arm, seed, call) == want
 
 
