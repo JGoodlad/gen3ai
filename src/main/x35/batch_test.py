@@ -200,8 +200,11 @@ def test_am8_production_is_refused_while_the_fp32_alt_sha_is_a_placeholder(tmp_p
     stage.mkdir()
     shipped = repo_path("designs/research_state/measurements/x35_breakers_stage_2026-10-17/"
                         + B.SIDE_REQUIRED_FILE.format(side=PROD))
-    assert shipped.is_file()                                             # the staged file ships with a placeholder
-    (stage / shipped.name).write_text(shipped.read_text())
+    assert shipped.is_file()
+    # the file as staged before 2026-10-21: the shipped one with its FP32_ALT sha put back to the placeholder
+    text = "\n".join(("FP32_ALT_SHA_PENDING" + ln[40:]) if ln.split(" ", 2)[1:2] == [FP32] else ln
+                     for ln in shipped.read_text().splitlines())
+    (stage / shipped.name).write_text(text + "\n")
     rows = B.read_side_required(str(stage), PROD)
     assert [n for _, n in rows] == [FP32] and not B._is_commit_sha(rows[0][0])
     ok, lines = B.required_check(str(stage), PROD, shas["head"], str(repo))
@@ -625,3 +628,12 @@ def test_launch_x35_runs_the_launcher_dry_run_with_the_card_visible():
     line = next(l for l in body.splitlines() if "-m main.launcher --dry-run" in l)
     assert "CUDA_VISIBLE_DEVICES" not in line, line
     assert body.index("CUDA_VISIBLE_DEVICES+x") < body.index("-m main.launcher --dry-run")
+
+
+def test_am8_the_shipped_production_file_names_fp32_alt_d4af9f1e():
+    """Filled 2026-10-21 after the GPU battery (tau_cuda_parity PASS, FP32_ALT cost 1.37-2.55 % <= 3 %)."""
+    shipped = repo_path("designs/research_state/measurements/x35_breakers_stage_2026-10-17/"
+                        + B.SIDE_REQUIRED_FILE.format(side=PROD))
+    tmp_rows = [ln.split(" ", 2)[:2] for ln in shipped.read_text().splitlines() if ln and not ln.startswith("#")]
+    assert tmp_rows == [["d4af9f1e26061681644473d22e2022dda2b43655", FP32]]
+    assert B._is_commit_sha(tmp_rows[0][0])

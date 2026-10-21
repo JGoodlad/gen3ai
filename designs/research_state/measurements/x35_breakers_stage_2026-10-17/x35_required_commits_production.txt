@@ -7,4 +7,4 @@
 # production fork. When FP32_ALT is on main, REPLACE the first token with its full 40-hex sha (a descendant of T62
 # `bd3126e0`; the learner golden and the h2h reveal file's OFF_BITS re-recorded in the same commit, BATCH1_LAUNCH_SHEET.md
 # section 3) and commit this file BEFORE the production pin is chosen.
-FP32_ALT_SHA_PENDING FP32_ALT the fp32 complementary-constraint tau build (design_x5_belief_tokens.md, T62 decision row) that replaces the float64 solve; the GPU battery DECIDED it 2026-10-20 (the fp64 solve doubles the production learner update, 41 -> 97 s, a 82-127 % per-cycle cost against the 3 % bar); NOT BUILT yet
+d4af9f1e26061681644473d22e2022dda2b43655 FP32_ALT the fp32 complementary-constraint tau build (split residual; design_x5_belief_tokens.md, T62 decision row) replacing the float64 solve; FILLED 2026-10-21 by the orchestrator after the 2026-10-20 GPU battery: tau_cuda_parity PASS (captured rows 1.91e-06, 0.5 ulp; bar 4 ulp) AND FP32_ALT cost CONFIRMED 1.37-2.55 % per cycle (bar 3.0 %)
