@@ -1,0 +1,22 @@
+{
+ "ceilings": {
+  "judged_max": 0.001,
+  "p99": 0.0001
+ },
+ "fires": [],
+ "fork_step": 290000087,
+ "max_after_fork": {
+  "judged_max": 9.870529174804688e-05,
+  "p99": 1.929521567944903e-05
+ },
+ "near_ceiling": [],
+ "read_at": "2026-10-21T08:43:45+00:00",
+ "reasons": [],
+ "rows_after_fork": {
+  "judged_max": 713,
+  "p99": 713
+ },
+ "run": "rb_x35t_c0_s3603",
+ "schema": "x35_k9b_arm_end_v1",
+ "verdict": "PASS"
+}
