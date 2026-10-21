@@ -1784,6 +1784,28 @@ much as the gap. The contrast holds the pipeline fixed, but the absolute numbers
 training use is a separate registration. [SIGNIFICANT on the registered contrast · one checkpoint · ledger 2026-10-20
 *X50 R1* · `measurements/x50_r1_intent_read_2026-10-20/`]
 
+### 4.9 Toy depth 2 → 4 at the plateau: UNDECIDED, Δ̂ ≤ 0, ended at look 1 (X47, 2026-10-21)
+
+The test: T\* (the X34 toy at 290M) was grown from 2 to 4 identity-init attention rounds, then trained 70M steps on
+seeds 3601–3603. It was read against toy C0 (the same fork without the growth) at equal effective learn time
+(ρ 1.136, so s_eq ≈ 351–352M).
+- **Primary R1: Δ −0.88 pp [−3.20, +1.44]**, so UNDECIDED. With Δ̂ ≤ 0 the read is FINAL at look 1, and the look-2
+  seeds (T1b) do not run.
+- **Secondary (matched steps):** −0.41 [−2.34, +1.51].
+- **Guards:** G-F PASS, G-C PASS.
+- **Out-of-lineage member P\*:** −1.13 [−4.76, +2.49].
+- **What it licenses:**
+  - no effect ≥ 6.8 pp is detected at look 1, and the point estimate is ≤ 0;
+  - X47b (production 3 → 4) leaves its conditional slot (AM-X47b-4);
+  - it is never "depth does not help": the read is on THIS growth recipe, on the toy, before transfer calibration.
+- **Both new rounds did move off the identity**, both in their weights and in the policy (reported only):
+  - their weight norms are ≈ 0.1 of the base rounds';
+  - zeroing them moves the argmax on 25–29 % of the bank's decisions (mean KL 0.16–0.19 nats).
+
+  So depth changed what the policy does without raising S.
+
+[UNDECIDED · 3 + 3 seeds · ledger 2026-10-21 *X47 LOOK 1* · `measurements/x35_breakers_stage_2026-10-17/x47_look1/`]
+
 ## 5. Retired hypotheses
 
 Each is retired for the flywheel's gift question. None is retired as a general claim about RL.

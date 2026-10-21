@@ -170,6 +170,10 @@ shares its batch's control C0.
   - Cost ≈ 3 × 4.3 × 1.13 ≈ **14.7 GPU-h**, plus the R1 read (≈ 0.3 GPU-h in a lease window, or ≈ 15 CPU
     lane-hours for its ≈ 63k games, [`X47_READOUT_REVIEW.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/X47_READOUT_REVIEW.md) F-XR-6).
   - The primary read lands at s_eq ≈ 62M (node ≈ 352M), so it nearly coincides with the matched-step secondary.
+  - **READ 2026-10-21 (look 1, final): UNDECIDED with Δ̂ ≤ 0.** ρ 1.136, s_eq ≈ 351–352M; primary −0.88 pp
+    [−3.20, +1.44], secondary −0.41 [−2.34, +1.51], G-F and G-C PASS, P\* member −1.13 [−4.76, +2.49]. No effect
+    ≥ 6.8 pp detected; X47b leaves its slot (AM-X47b-4); T1b does not run
+    ([`x47_look1/`](../research_state/measurements/x35_breakers_stage_2026-10-17/x47_look1/README.md)).
   - **Production (X47b)** is P\* + 1 round (3 → 4), 3 × 4.4 × ≈ 1.09 + 1.4 ≈ **16 GPU-h**. It is CONDITIONAL on X47
     reading GAIN or PER-STEP ONLY. Before calibration a toy NULL only lowers its rank.
 - **The decision rule.** §1.4, primary at equal time, with X47's own lines (AM-X47-2) and its amendments AM-X47-1 to
@@ -416,11 +420,11 @@ candidates into it.
 | 2 | X35 batch 1 (production) | A1, C0, D1, A2 | ≈ 13–14.6 each | **BUILT / staged** | targets the MEASURED plateau mechanism (a slow climb with a small real cycle) |
 | 3 | X44 | fewer PPO passes, matched wall (pilot) | ≈ 10.4 | flags | ×1.4–1.8 on every future fresh run. A fresh-run recipe question, so independent of the plateau forks |
 | 4 | X35 toy calibration | A1 + A2 + the toy C0 at T\* | ≈ 3 × 12.6 | **BUILT** | without it the toy may only rank |
-| **5** | **X47** | **toy depth 2 → 4, growth at T\*** | **≈ 17** | **B-GROW** | **FIRST new candidate after X34 plateaus.** It joins the toy batch and shares its C0. It is the biggest structural gap to the bots, and production's own depth is an unscreened high cost |
+| **5** | **X47** | **toy depth 2 → 4, growth at T\*** | **≈ 17** | **B-GROW** | **READ 2026-10-21: UNDECIDED, Δ̂ ≤ 0, final at look 1** (primary −0.88 pp [−3.20, +1.44]; secondary −0.41; G-F / G-C PASS; [`x47_look1/`](../research_state/measurements/x35_breakers_stage_2026-10-17/x47_look1/README.md)). No look 2 |
 | 6 | X35-A3 | main exploiters | ≈ 18 | **BUILT** | as staged |
 | 7 | X35-A4 | trailing-magnet KL | ≈ 14.8 | T56 | as staged; targets the measured treadmill |
 | 8 | **X48** | **per-kind FFN, production, upcycled at P\*** | **≈ 15** | **B-KFFN + B-GROW** | zero extra FLOPs; production-only |
-| 9 | **X47b** | **production depth 3 → 4** | **≈ 16** | **B-GROW** | CONDITIONAL on X47 GAIN or PER-STEP ONLY; an UNDECIDED with Δ̂ ≤ 0 takes it out of this slot (AM-X47b-4) |
+| 9 | **X47b** | **production depth 3 → 4** | **≈ 16** | **B-GROW** | **OUT of this slot, DEPRIORITISED (2026-10-21): X47 read UNDECIDED with Δ̂ ≤ 0 at look 1 (AM-X47b-4)**; no effect ≥ 6.8 pp detected, never "depth does not help" |
 | 10 | **X49** | **intent SHAPING, production** | **≈ 15** | **B-INT + B-GROW** | weak prior (§2.3) |
 | 11 | X35-A5 / A6 | Nash archive / league exploiters | ≈ 14.4 / 18 | T57 / flags | conditional, as staged |
 | 12 | X14 | overlap collection with the update | build-heavy | NO | deferred until X44 reads (its gain is larger after X44) |
@@ -534,3 +538,4 @@ labels, offline, feeding search's opponent model. Re-open **rung 3**, the BC war
 | 2026-10-20 | **AM-X47c-1: the UNDECIDED line states the current look's detectable effect (orchestrator; X35 follow-up worker)** | A final UNDECIDED with Δ̂ ≤ 0 can end at look 1, where R1 detects ≈ 6.8 pp at 80 %, not look 2's 4.6; the line now prints the look's own figure from the registered power function (σ 1.07 pp, 200,000 common-random-number draws, bisection) | the constant 4.6 at every look (it overstated look 1's power) | `../research_state/measurements/x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md` §0 AM-X47c; `src/main/x35/readout.py`, `x47.py`, `x47_test.py` |
 | 2026-10-20 | **X50 S0 RUN (census worker)** | The census on the Rust reader over all 376,410 logs ([`x50_replay_census_2026-10-20`](../research_state/measurements/x50_replay_census_2026-10-20/README.md)): FEASIBLE by ai_v11's floor (489,973 tier A at ≥ 1500), but no decision has a complete own side; intent-label yield 86.0 % (choice) / 69.4 % (production rules) of opponent turn actions at ≥ 1500; §2.4, §3, §4 and §5 now carry it. Recommendation on Q1: re-open rung 1 only | treating "FEASIBLE on volume" as a GO for S1 (the completion problem is not a volume problem); quoting ai_v11's 3.9 % own items (a deleted-reader artifact); the production intent labeller on replays (it folds at decisions, and a replay has none: F-X50-5) | `census.py` / `census_report.py` / `shards/` / `results/census.md` there; HEAD `dfeb3d92d` |
 | 2026-10-20 | **B-KFFN BUILT** (build worker; `TASK_BACKLOG` T66) | `--grow trunk_ffn_by_kind=on` as specified in [`design_growth_builds_kffn_int.md`](design_growth_builds_kffn_int.md) §1 (its Decision record has the detail and what changed: F-GB-3 corrected, Q-K3 built); X48 is launch-ready once X47 reads | — | `trunk_kffn_test.py`, `grow_fork_test.py`; fresh production 2,609,183 → 3,400,223 params; grow gate max \|Δ\| 0.0 |
+| 2026-10-21 | **X47 look 1 READ as registered (X47 readout worker)** | UNDECIDED with Δ̂ ≤ 0, final at look 1: primary −0.88 pp [−3.20, +1.44] at s_eq, secondary −0.41 [−2.34, +1.51], G-F / G-C PASS. Not CONTINUE, so look 2 (T1b) does not run; X47b leaves its rank-9 slot and is deprioritised (AM-X47b-4). §2.1 and §3 rows 5 / 9 updated. Record `reads/toy_x47_look1.json` |

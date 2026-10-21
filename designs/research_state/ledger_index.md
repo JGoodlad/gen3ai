@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-28,051-line file. **The ledger itself is append-only and is never edited by this**;
+28,105-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**924 headings · 869 dated · 2026-08-01 → 2026-10-21 · ledger 28,051 lines.**
+**925 headings · 870 dated · 2026-08-01 → 2026-10-21 · ledger 28,105 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -944,3 +944,4 @@ rename.
   - `L27938` · `2026-10-20` · MEASUREMENT · **X50 R1, READ under its registration (`6888a5ec4`): X26's intent head predicts HUMAN opponents (≥ 1500) worse than its own snapshots through the same spectator pipeline. Δ NLL(H − S) +0.188 nats [+0.164, +0.213] ⇒ GAP (rule: the CI above +0.05); top-1 33.8 % vs 38.9 %. It is a SWITCH gap (+0.39 nats; moves +0.07). The pipeline itself costs 0.23 nats on our own battles**
   - `L27980` · `2026-10-21` · MEASURED · **X51 PLATEAU vs KAKUNA — goal (a) MET at P\* (home72 0.598 [0.549, 0.644]); goal (b) NOT met (unfamiliar 0.487 [0.459, 0.515], ≈ 4.3 pp short; P\* − 161M +3.0 pp n.d.); Kakuna ckpt 28 not stronger than 34 (0.515 [0.466, 0.564]); the toy T\* weaker than P\***
   - `L28003` · `2026-10-21` · MEASUREMENT · **THE WORLD SAMPLER's STAGE 1, READ under its registration: ONLY TEAM IDENTIFICATION PAYS. POOL beats today's honest worlds by +0.038 [+0.022, +0.055] per decision (r 0.72, PAYS, MATERIAL). Four open-population samplers are NOT DETECTED (≈ ±0.015), the network's species × real sets among them despite far better calibration. Partly right worlds carry no value at the 8-rollout leaf. F2's legality rule and F1 tier A move IMP undetectably. PROVISIONAL**
+  - `L28052` · `2026-10-21` · MEASUREMENT · **X47 LOOK 1, READ under its registration (launch sheet §4.5, AM-4 / AM-X47 / AM-X47b / AM-X47c): toy depth 2 → 4 at T\* is UNDECIDED with Δ̂ ≤ 0, FINAL at look 1. Primary at equal effective learn time −0.88 pp [−3.20, +1.44]; secondary (finals) −0.41 [−2.34, +1.51]; G-F PASS, G-C PASS. Not CONTINUE, so T1b does not run; X47b leaves its conditional slot (AM-X47b-4)**

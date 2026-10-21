@@ -28048,3 +28048,57 @@ PAYS / HURTS / NULL / NOT DETECTED; MATERIAL; SEARCH-ENABLED; CALIBRATED.
 Evidence: `research_state/measurements/world_sampler_stage1_2026-10-19/` (`result_s1.json`, `gigo_s1.json`,
 PREREGISTRATION §9–§11); `endstate/design_world_sampler.md` §6.2, §7 F1 / F2 / F9–F12, Decision record;
 `endstate/search_ledger.md` status, §1, W12, N17, Q12; `research_state/UNDERSTANDING.md` §4.7.
+
+### 2026-10-21 · MEASUREMENT · **X47 LOOK 1, READ under its registration (launch sheet §4.5, AM-4 / AM-X47 / AM-X47b / AM-X47c): toy depth 2 → 4 at T\* is UNDECIDED with Δ̂ ≤ 0, FINAL at look 1. Primary at equal effective learn time −0.88 pp [−3.20, +1.44]; secondary (finals) −0.41 [−2.34, +1.51]; G-F PASS, G-C PASS. Not CONTINUE, so T1b does not run; X47b leaves its conditional slot (AM-X47b-4)**
+
+**Question** (`endstate/design_bot_ideas_screen.md` §2.1, H-DEPTH). Is the toy's plateau partly a composition
+(depth) limit? Do two identity-init rounds added at T\* raise S at equal effective learn time?
+
+**Design** (registered before any read). The arms are X47 s3601–3603 (T\* + `--grow trunk_layers=4`, +70M) and toy
+C0 s3601–3603, all at the toy pin `4609c155`, all at 360M, all K9(b) PASS (arm-end records `c72748f0` … `f4b0a74f`),
+with X47 unthinned.
+- **Primary:** R1 at s_eq. s_eq is the largest node whose Σ(collect + update) ≤ the mean C0 final Σ.
+- **Secondary:** R1 of the finals.
+- **R:** the six-member toy R (five T\* lineage nodes + P\*), 500 mirrored pairs per cell, greedy, 63 cells.
+- **Required guards:** G-F (s_eq × C0 finals) and G-C (pooled over seed pairs of finals, the toy truth
+  `toyTstar@290M`).
+- **Rule:** look-1 CONTINUE iff UNDECIDED with Δ̂ > 0.
+
+**Result** (`main.x35.x47 seq` / `decide`). ρ = 1.136 (> 1.02), so the two reads are separate; s_eq = 352.0 /
+351.0 / 351.0M against the C0 finals at 360.0–360.1M.
+
+| | C0 final | X47 s_eq | X47 final |
+|---|---|---|---|
+| S mean (pp) | 52.428 | 51.544 | 52.014 |
+
+- **Primary: Δ −0.883 [−3.202, +1.435]** (Welch 97.5 %, df 3.9). UNDECIDED; Δ̂ ≤ 0, so FINAL.
+- **Secondary:** −0.414 [−2.336, +1.508], UNDECIDED. So the class is not PER-STEP ONLY.
+- **G-F:** +0.02 [−2.84, +2.89], PASS.
+- **G-C:** B1 −0.0050 nats [−0.0217, +0.0137], B2 −0.024 [−0.076, +0.026], PASS.
+- **The verdict line:** "X47b LEAVES its rank-9 conditional slot and is DEPRIORITISED in the backlog (AM-X47b-4);
+  report: no effect >= 6.8 pp detected; point estimate <= 0 (look 1, σ 1.07 pp, 80 %) -- never 'depth does not
+  help'".
+
+**Reported, never deciding.**
+- Per member Δ at s_eq: P\* (out of lineage) −1.13 [−4.76, +2.49]; the lineage members range from −2.22 to +1.00,
+  and every interval spans 0.
+- Both new rounds' weight norms end at ≈ 0.10–0.12 of the base rounds', so both read "engaged" (a weak descriptor,
+  F-AMX-4).
+- The policy-difference descriptor: zeroing the new rounds at the finals moves the argmax on 25–29 % of
+  `bank_x26`'s decisions, at a mean KL of 0.155–0.194 nats. The new rounds change the policy, but not S.
+
+**Reading.** At look 1 the toy shows no detectable gain from two more attention rounds at equal learn time, or at
+matched steps. A NULL is not shown either: the intervals cross the −2 pp bar. This is a verdict on this growth
+recipe, on the toy, before X35's transfer calibration. It does not show that depth fails to help.
+
+**FINDINGS.**
+- The kit reads the record at `reads/toy_x47_look1.json`, the kit's arm name, but the launch sheet writes
+  `reads/x47_look<k>.json`. Under the sheet's name, stage-check reported "not read yet".
+- Each cell was played as its own `play-many` invocation, to keep within the 45-minute chunks. The rows are the
+  same as one call's.
+- The ledger root is outside `models/`; a copy is committed.
+- The cells were played at main `f4b0a74f`.
+
+Evidence: `research_state/measurements/x35_breakers_stage_2026-10-17/reads/toy_x47_look1.json`, `x47_look1/`
+(README, `read_look1.json`, `seq_look1.json`, `gc_pooled_look1.json`, the norms, the ledger tarball);
+`research_state/UNDERSTANDING.md` §4.9.

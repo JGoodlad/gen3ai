@@ -1,0 +1,105 @@
+{
+ "b1": [
+  -0.004993903248653496,
+  -0.021701934471819402,
+  0.013655759040953173
+ ],
+ "b2": [
+  -0.024344569288389514,
+  -0.07602756892230576,
+  0.025641025641025644
+ ],
+ "bank": {
+  "content_sha256": "46233db20b30b55bd50d463b7d334559248eae80d996d63638d19c99d217d9ce",
+  "decisions": 7028,
+  "path": "designs/research_state/measurements/collapse_pilot_2026-10-17/bank_x26"
+ },
+ "boot_seed": 20261020,
+ "checkpoint_sha256": {
+  "C0_s3601": "d8c76b736f4338f2017beb8f97eb4aacf35249569b3ef379f57f8290a6051465",
+  "C0_s3602": "0d0c25afdc9c9bf6da8af8f51b53540987155fca09995c62b46e014e5e79d6d2",
+  "C0_s3603": "a560bf1f8199f6c7ff9080268b5fa5fbec6fbf90e8dbdff78d4b6b6f269f4bd7",
+  "X47_s3601": "70ba69505ba8cae91f402f7654d4d11a27262b742754df9d68288500ff62daf8",
+  "X47_s3602": "be87ea34b5761238e64dafe84587cc030e441ed80f249f097c81ec012b7e6624",
+  "X47_s3603": "b2c62bed74dd80d4ddeb99044b658d508b616f6139c897b1c6b31484d67dd7db"
+ },
+ "method": "crossed cluster bootstrap: seed pairs x bank battles (one battle draw shared by every pair), equal weight per pair, 95 % percentile (AM-X47b-1)",
+ "n_boot": 2000,
+ "off_seeds": [
+  3601,
+  3602,
+  3603
+ ],
+ "on_seeds": [
+  3601,
+  3602,
+  3603
+ ],
+ "per_pair": {
+  "3601": {
+   "b1": [
+    0.011864883301828024,
+    -0.002386730609647052,
+    0.026809806459590597
+   ],
+   "b1_decisions": 7028,
+   "b2": [
+    -0.0449438202247191,
+    -0.10240963855421686,
+    0.005781186987498315
+   ],
+   "b2_excluded_boundary": 0,
+   "b2_turns": 178,
+   "off": "C0_s3601",
+   "on": "X47_s3601"
+  },
+  "3602": {
+   "b1": [
+    -0.014751605292104203,
+    -0.02953438941715822,
+    0.0005214435336853157
+   ],
+   "b1_decisions": 7028,
+   "b2": [
+    -0.0056179775280898875,
+    -0.06321839080459771,
+    0.05883143580012646
+   ],
+   "b2_excluded_boundary": 0,
+   "b2_turns": 178,
+   "off": "C0_s3602",
+   "on": "X47_s3602"
+  },
+  "3603": {
+   "b1": [
+    -0.01209498775568431,
+    -0.026645604290559472,
+    0.0027734063453453734
+   ],
+   "b1_decisions": 7028,
+   "b2": [
+    -0.02247191011235955,
+    -0.09497206703910614,
+    0.046242774566473986
+   ],
+   "b2_excluded_boundary": 0,
+   "b2_turns": 178,
+   "off": "C0_s3603",
+   "on": "X47_s3603"
+  }
+ },
+ "schema": "x35_gc_pooled_v1",
+ "seeds": [
+  3601,
+  3602,
+  3603
+ ],
+ "side": "toy",
+ "truth": {
+  "continuation": "toyTstar@290M greedy (both sides)",
+  "ok_rows": 306,
+  "path": "designs/research_state/measurements/x35_toy_b2_truth_2026-10-20/rows_toyTstar290M_S32.compact.jsonl.gz",
+  "rows": 306,
+  "sha256": "02cf24152736846f384591ceaa0ccb6c5e199450d13060bf7005b71644ea705e"
+ }
+}

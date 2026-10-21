@@ -1,0 +1,96 @@
+{
+ "run": "rb_x35t_x47d4_s3601",
+ "bank": "46233db20b30b55bd50d463b7d334559248eae80d996d63638d19c99d217d9ce",
+ "obs_as_recorded": true,
+ "reported_only": true,
+ "series": [
+  {
+   "step": 300000162,
+   "file": "checkpoints/checkpoint_300000162_steps.zip",
+   "rounds_zeroed": 2,
+   "n": 7028,
+   "kl_mean": 0.051188823099468865,
+   "kl_max": 1.4063625237911708,
+   "argmax_moved_share": 0.15025611838360842,
+   "n_free": 6335,
+   "kl_mean_free": 0.052756298873958524
+  },
+  {
+   "step": 310000097,
+   "file": "checkpoints/checkpoint_310000097_steps.zip",
+   "rounds_zeroed": 2,
+   "n": 7028,
+   "kl_mean": 0.08391290950681005,
+   "kl_max": 1.5425805230992895,
+   "argmax_moved_share": 0.20034149117814457,
+   "n_free": 6335,
+   "kl_mean_free": 0.0882054721988938
+  },
+  {
+   "step": 320000003,
+   "file": "checkpoints/checkpoint_320000003_steps.zip",
+   "rounds_zeroed": 2,
+   "n": 7028,
+   "kl_mean": 0.10078666348654915,
+   "kl_max": 2.2126945745630233,
+   "argmax_moved_share": 0.2250996015936255,
+   "n_free": 6335,
+   "kl_mean_free": 0.10612733577468073
+  },
+  {
+   "step": 330000053,
+   "file": "checkpoints/checkpoint_330000053_steps.zip",
+   "rounds_zeroed": 2,
+   "n": 7028,
+   "kl_mean": 0.11934268145851262,
+   "kl_max": 2.637390418410012,
+   "argmax_moved_share": 0.23619806488332384,
+   "n_free": 6335,
+   "kl_mean_free": 0.12665241565363047
+  },
+  {
+   "step": 340000137,
+   "file": "checkpoints/checkpoint_340000137_steps.zip",
+   "rounds_zeroed": 2,
+   "n": 7028,
+   "kl_mean": 0.13136381116008888,
+   "kl_max": 2.6349787261791526,
+   "argmax_moved_share": 0.2472965281730222,
+   "n_free": 6335,
+   "kl_mean_free": 0.138543493381052
+  },
+  {
+   "step": 350000209,
+   "file": "checkpoints/checkpoint_350000209_steps.zip",
+   "rounds_zeroed": 2,
+   "n": 7028,
+   "kl_mean": 0.14760744768499112,
+   "kl_max": 2.7622599071689433,
+   "argmax_moved_share": 0.2657939669891861,
+   "n_free": 6335,
+   "kl_mean_free": 0.15645198632805304
+  },
+  {
+   "step": 360000438,
+   "file": "checkpoints/checkpoint_360000438_steps.zip",
+   "rounds_zeroed": 2,
+   "n": 7028,
+   "kl_mean": 0.15507112101391235,
+   "kl_max": 2.7114928403392153,
+   "argmax_moved_share": 0.2525611838360842,
+   "n_free": 6335,
+   "kl_mean_free": 0.16451205421983514
+  },
+  {
+   "step": "final",
+   "file": "final_model.zip",
+   "rounds_zeroed": 2,
+   "n": 7028,
+   "kl_mean": 0.1552447143954099,
+   "kl_max": 2.314584797124381,
+   "argmax_moved_share": 0.25526465566306206,
+   "n_free": 6335,
+   "kl_mean_free": 0.16463038618050851
+  }
+ ]
+}
