@@ -31,7 +31,10 @@ def main() -> None:
         raise SystemExit("phase A's bar was not met: no playout is registered")
     arms = list(ra["bar"]["play"])
     rows = K.read_by_id(K.ARCH / "rows" / "rows.jsonl")
-    idx = {arm: {did: K.play_indices(r, arm) for did, r in rows.items()} for arm in arms}
+    # an arm with no valid worlds on a state (an excluded set: ``arm_weights`` is None) plays nothing there; a uniform arm's
+    # ``play_indices`` alone would name its first 8 of a set that was never built
+    idx = {arm: {did: (K.play_indices(r, arm) if K.arm_weights(r, arm) is not None else None)
+                 for did, r in rows.items()} for arm in arms}
     body = json.dumps({"arms": arms, "idx": idx}, sort_keys=True)
     blob = {"sha256": hashlib.sha256(body.encode()).hexdigest(), "arms": arms, "idx": idx}
     out = K.d("play") / "play_idx.json"
