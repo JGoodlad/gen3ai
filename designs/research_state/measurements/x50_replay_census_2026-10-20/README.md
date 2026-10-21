@@ -93,6 +93,10 @@ The two overlap with each other and with the hidden choices, so the shares do no
 
 ## Recommendation for the owner's Q1 (re-open the human-replay design?)
 
+**Owner, 2026-10-20: rung 1 re-opened (labels only).** Its design and the registered first read:
+[`../../../endstate/design_x50_rung1_intent_labels.md`](../../../endstate/design_x50_rung1_intent_labels.md); F-X50-5's request
+synthesiser is built there.
+
 **Re-open it narrowly: rung 1 only, the human-opponent intent labels. Keep the behaviour-cloning warm start
 (rung 3, X50 S1) closed for now.**
 
