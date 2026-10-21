@@ -68,9 +68,10 @@ Mechanics: `designs/ops/ORCHESTRATOR_SOP.md` §2 (dispatch), §7 (stalls, waitin
 
 - Dispatch a named type (`opus-*`, `sonnet-*`), the cheapest that fits the risk and never above your own effort;
   never a fork or a generic type, whose effort you do not control.
-- Never an unbounded wait on a sub-agent (its notification can fail to arrive): arm ONE background
-  `timeout 3300 sleep 3300`; on a wake make one cheap status read per agent and re-arm. No wait runs past 55 min (the
-  prompt cache lives 1 h).
+- Never an unbounded wait on a sub-agent (its notification can fail to arrive). A main session is covered by the
+  idle-keepalive plugin (it wakes the session after 55 min idle); a sub-agent arms ONE bounded watcher, preferably on
+  the job's PID, and ends a turn only with a result, a blocker or a timer wake (each turn end notifies its caller).
+  No wait runs past 55 min (the prompt cache lives 1 h).
 - Resume a stalled `Agent` with `SendMessage` to its agentId; after two resumes that change nothing on disk, do the
   work inline.
 - In a Workflow script pass `stallMs: 900_000` on every `agent()` call (a separate 180 s watchdog), and track
