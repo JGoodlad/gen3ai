@@ -27875,3 +27875,62 @@ here steers until an off-pool bank and the plateau checkpoint replicate it (A4).
 
 **Evidence:** `research_state/measurements/search_1c_2026-10-20/` (README §4 the interim, §5 the read; `result_1c_a.json`,
 `result_1c_a_interim.json`); `endstate/design_world_sampler.md` §6.3; `endstate/search_ledger.md` §1, §7 Q15.
+### 2026-10-20 · MEASUREMENT · **L3 OFF-POOL: L3 and its decoy test replicated on an OFF-POOL bank at X26's plateau P\* (280M), under their pre-registration (`7642df0f6`, bank `5281bfae0`): REPLICATED-SELF-PLAY-ONLY (snapshots 0.794 [0.753, 0.834], bots 0.472 [0.410, 0.531] NO-EVIDENCE); an off-pool ladder decoy gets NO lift over honest worlds (0.503 [0.462, 0.543]) and the truth beats it (0.611 [0.543, 0.680]): the pool decoys' lift was pool MEMORY**
+
+**Question** (stage 1c's A4; the counter-test's finding 2). Does L3's separation survive opponents on teams X26 never
+trained against, at the plateau? Was the pool decoys' lift (0.575) pool memory or real-team coherence?
+
+**Design** (`measurements/search_offpool_bank_2026-10-20/PREREGISTRATION.md`, committed before any bank battle or
+likelihood; every driver and the read registered by sha256). The code is L3's commit `8fe4fb89`.
+- **Off-pool:** the 72 `heldout72_hpfix` ladder teams. 0 exact and 0 ≥ 4-set overlaps with every one of the 824
+  `data/teams` files at X26's pin and with Metamon's `competitive`; 0 packed teams in common with the pin's packed pool.
+  X26 is fresh, one pin, pool-only.
+- **Bank:** P\* plays the 280M cycle's roster (9 bots, its 5 sentinels), every opponent on a heldout team (patched
+  offline `eval_trace_gen`, 312 battles, all traced). The maturity battery's draw at LEAN size gives 320 states (160
+  per stratum) from 223 battles and 68 teams.
+- **Reads:** P\* is the opponent model. READ 2 is L3's registered read on the truth + 8 honest worlds. READ 3 is the
+  counter-test's read with up to 4 off-pool decoys per state: `hl_05_26` teams, Hidden Power repaired as the truths
+  were, never pool near copies, and never ≥ 4 sets shared with the truth by either key.
+
+**Gates.** All PASS:
+- the off-pool gate on 312 / 312 battles; gate ① 0 failures on 10,395 decisions;
+- 0 defects, 10 / 10 deterministic rechecks;
+- the encoder byte-identical at X26's pin on 318 / 318 states;
+- 2 builder exclusions.
+
+**Result.**
+- **READ 2:** pooled 0.633 [0.591, 0.675] WORKS; snapshot 0.794 WORKS; bot 0.472 NO-EVIDENCE. **REPLICATED-SELF-PLAY-ONLY.**
+  - Confidence control 0.469.
+  - Reweighting today's 8 worlds moves the hidden moves +0.003 [−0.005, +0.012].
+  - Team-clustered intervals give the same verdicts.
+- **READ 3 (118 decoy states, 412 decoys):**
+  - decoy vs honest 0.503 [0.462, 0.543] **NO-LIFT**;
+  - truth vs decoy 0.611 [0.543, 0.680] TRUTH-ABOVE; combined **TRUTH-SPECIFIC**;
+  - by stratum, truth vs decoy: snapshots 0.729 (56 states, UNDERPOWERED), bots 0.504.
+
+**What it means.**
+- Off-pool, the likelihood still points at the true team, but only against our own earlier snapshots. Seated as a
+  scripted bot, our network carries no evidence about a team it never trained on.
+- The pool-bank bot signal (0.588) and the pool decoys' lift (0.575) were pool memory: a coherent real team that is not
+  the truth ranks with Smogon-usage worlds.
+- By A4, L3 is **SELF-PLAY-ONLY**, and a pool-bank stage 1c result steers nothing until it replicates on this bank,
+  where it can pay only on the snapshot stratum.
+- A behaviour-cloned opponent model is the untested candidate for the ladder.
+
+**Findings.**
+1. The bot stratum is 96 % P\* wins (L3's 62 %). The AUC is 0.83 in P\*'s losses against 0.57 in its wins, and 0.703
+   reweighted to L3's outcome mix, so bots in P\*'s losses are not measured.
+2. The 0.575 vs 0.503 comparison crosses banks and checkpoints (225M on the pool bank, P\* off-pool).
+3. The decoy subset is selected (37 % of states).
+4. The truths' hidden parts are partly reconstructions (Metamon fill, the Hidden Power repair).
+5. Sentinels drew heldout teams, not the trainee's distribution.
+6. One model, one bank.
+7. Process: about 7 h of the wall time was the heavy-slot queue; a duplicate waiter was stopped at once.
+
+**Stage 1c phase B on this bank** (not run; a recommendation): about 12–15 slot-hours, phase A first. P\* must be the
+opponent model, C_ladder must drop each truth's own file and near copies, and only the snapshot stratum can carry a
+gain.
+
+Evidence: `research_state/measurements/search_offpool_bank_2026-10-20/` (README, PREREGISTRATION, `result_offpool.json`,
+`states_offpool.json`, `offpool_proof.json`); `endstate/search_ledger.md` (Status, §1, §7 Q15);
+`endstate/design_world_sampler.md` F4.

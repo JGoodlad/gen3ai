@@ -3,7 +3,22 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from
 this doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-20, latest): STAGE 1c's PHASE A is READ: the opponent's choices pick worlds that are NEARER the
+**Status (2026-10-20, latest): L3 REPLICATED OFF-POOL AT THE PLATEAU, SELF-PLAY-ONLY; the pool lift was MEMORY**
+(`../research_state/measurements/search_offpool_bank_2026-10-20/`; pre-registered `7642df0f6`, bank `5281bfae0`).
+X26's P\* (280M) played its plateau roster, every opponent on a ladder team X26 never trained against (`heldout72_hpfix`;
+0 exact and 0 ≥ 4-set overlaps with every pool file at its pin). On 318 states, with P\* as the opponent model:
+- **Truth vs honest worlds** (L3's metric): pooled 0.633 [0.591, 0.675] WORKS. **Snapshots 0.794 [0.753, 0.834]**
+  (L3: 0.796). **Bots 0.472 [0.410, 0.531], NO-EVIDENCE** (L3 on the pool bank: 0.588). By A4 that is
+  **SELF-PLAY-ONLY**.
+- **An off-pool ladder decoy gets NO lift over honest worlds:** 0.503 [0.462, 0.543], against the pool decoy's 0.575.
+  So the counter-test's pool lift was pool MEMORY, not real-team coherence. The truth beats these decoys (0.611 [0.543,
+  0.680]; TRUTH-SPECIFIC), carried by the snapshots (0.729; bots 0.504).
+- **Caveat:** the bot stratum is 96 % P\* wins (L3's bank: 62 %). Reweighted to L3's outcome mix the pooled AUC is
+  0.703, so bots in P\*'s losses are not measured.
+- **For stage 1c (its phase A, below):** its NEARER is SELF-PLAY-ONLY too, and off-pool the bots carry no likelihood
+  evidence, so a 1c gain can only be a self-play gain until a non-self opponent model exists.
+
+**Status (2026-10-20): STAGE 1c's PHASE A is READ: the opponent's choices pick worlds that are NEARER the
 truth, but only a little, only against our own network, and nowhere near the exact world search needs**
 (`../research_state/measurements/search_1c_2026-10-20/`; pre-registered `c9bdc928`, AMENDMENT A `a144482b`; zero
 playouts).
@@ -39,7 +54,7 @@ registered rule.
   the weight (0.360 against snapshots; uniform 0.111). That is NOT the dose curve's p (§5.1): no honest proposal set
   holds the truth, and the figure shrinks as proposals are added. It does not show search would get 0.2–0.35 (review
   F3).
-- **Carried by the snapshot stratum; PROVISIONAL-POOL:** the pooled WORKS is the average of snapshots (0.796, greedy
+- **Carried by the snapshot stratum; now SELF-PLAY-ONLY (the off-pool replication above):** the pooled WORKS is the average of snapshots (0.796, greedy
   copies of our own network) and bots (0.588, WEAK on its own). It was read at one pre-plateau anchor on pool
   opponents only (review F1, F2).
 - **Part of it is pool-ness (the familiarity counter-test, 2026-10-20, NOT-DETECTED):** a pool DECOY that is not the
@@ -253,6 +268,16 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
     separation there is pool-ness (share 0.52 [0.15, 0.95]; real-team coherence is not separated from familiarity).
     Snapshots: the truth is above its decoys (0.639 [0.518, 0.754]). Bots: decoys match the truth (0.589 vs 0.588).
     The off-pool replication (the review's A4) is required before L3 or stage 1c steers anything.
+  - **The off-pool replication at P\*** (`search_offpool_bank_2026-10-20/`, pre-registered `7642df0f6`): 318 states of
+    P\* against its plateau roster, every opponent on a held-out ladder team.
+    - Truth vs honest: snapshots 0.794 [0.753, 0.834] (unchanged from L3), bots 0.472 [0.410, 0.531] (NO-EVIDENCE),
+      pooled 0.633 WORKS: **REPLICATED-SELF-PLAY-ONLY**.
+    - Off-pool ladder decoys: 0.503 [0.462, 0.543] against honest worlds (**NO-LIFT**), and the truth beats them
+      (0.611 [0.543, 0.680]; snapshots 0.729, bots 0.504).
+    - **Reading:** the pool-bank bot signal and the pool decoy's lift were pool memory. What survives off-pool is
+      truth-specific, and only where the opponent model nearly is the opponent. For a non-self opponent our network
+      as the opponent model shows nothing; a behaviour-cloned model is the untested candidate.
+    - The bot stratum holds only 6 P\* losses (FINDING 1 there).
   - **The limit:** re-weighting the 8 honest worlds moves the share of correct unrevealed moves by only +0.005
     [−0.004, +0.013] (+0.014 [+0.005, +0.024] against snapshots); exact move sets and never-seen species are not
     detected.
@@ -303,7 +328,8 @@ comparator; the current-era re-measure is named beside it). Intervals are 95 % u
      log-likelihood its worlds give the truth, rather than its exact-world mass? Zero cost; time-critical. (C_pool is
      both the only exact and the only calibrated arm for a pool-opponent bank, so "only C_pool pays" cannot separate
      the two readings.)
-  3. **L3 READ 2026-10-20: WORKS, PROVISIONAL-POOL** (AUC 0.692; snapshots 0.796, bots 0.588 WEAK; the bullet above). Its registered
+  3. **L3 READ 2026-10-20: WORKS; off-pool at P\* SELF-PLAY-ONLY** (pool bank AUC 0.692; off-pool snapshots 0.794,
+     bots 0.472 NO-EVIDENCE; the bullet above). Its registered
      consequence: build stage 1c (`design_world_sampler.md` §4 (f), §6.2), with a proposal set large or good enough
      to hold near-true worlds, since re-weighting today's 8 moves almost nothing. **Stage 1c's PHASE A READ
      2026-10-20** (`design_world_sampler.md` §6.3): 128 F + 128 C_ladder proposals weighted by dice × the likelihood
@@ -656,7 +682,7 @@ feeds one shared trunk to both heads).
 | Q12 | Which world sampler puts search-sized weight on the truth, and do partly right worlds carry value? | **Stage 0** (zero playouts, READ 2026-10-19): the network holds the species, nothing holds the sets (§1). **Stage 1**: the sampler ablation on the maturity LEAN 287 states at X26 225M (arms: joint Smogon teammates, a team-level corpus model on the forum corpus minus near copies of the truth and on the ladder corpus, the pool ceiling, the network's species × the forum's sets), with PAYS / HURTS / NULL / MATERIAL / SEARCH-ENABLED rules (`design_world_sampler.md` §6.2) | **REGISTERED and RUNNING 2026-10-19** (`measurements/world_sampler_stage1_2026-10-19/`): ≈ 10–16 CPU-h on one slot, stop 24 h after launch; stage 1b on E2 only if 1a meets its trigger |
 | Q13 | Does honest search pay once its acting rule is ANCHORED to the policy (the optimizer's curse; Ataraxos's anchor)? | **L1** of the literature review: piKL / Gumbel scale / a deviation threshold, re-scored on the banked honest rows; λ fitted on Tier 1, read held out | **ANSWERED 2026-10-20** (pre-registered `d443c098`): PAYS-SCOPED on one cell (piKL, E2, TRUNC-4-K8 +0.012, lower +0.001 at 98.33 %), which is the leaf's own E2 signal (the anchor adds +0.002 [−0.005, +0.008]). The anchor removes the argmax's harm on X26 (−0.012 → ≈ 0) and beats the policy nowhere; the sampler binds, not the acting rule. Open: the registered replication on the plateau bank (≈ 1 CPU-min, after its `QUEUE_DONE`) |
 | Q14 | Does search need weight on the exact truth, or a CALIBRATED belief? | **L2** (a descriptive amendment to stage 1 before its read: IMP against the truth's log-likelihood, not q_SM) and **L4** (a bank whose opponents' teams are drawn by F's own sampler) | L2 zero; L4 ≈ 1–2 agent-days + 10–20 CPU-h; neither registered |
-| Q15 | Are the opponent's own past choices usable evidence about its hidden MOVES? | **L3**: the truth's rank among honest worlds by the likelihood of the opponent's observed choices under its policy, per opponent stratum | **ANSWERED 2026-10-20** (pre-registered `4d149799`): YES as a judge, PROVISIONAL-POOL. The truth out-ranks honest worlds, AUC 0.692 [0.655, 0.728] (WORKS), carried by the snapshot stratum (0.796; bots 0.588, WEAK alone); the confidence control reads 0.481, but pool familiarity is not ruled out by it (review F2). The familiarity counter-test (pre-registered, NOT-DETECTED): pool decoys beat honest worlds (0.575, clear), and the truth beats its decoys only inconclusively (0.578 [0.489, 0.664]), so part of L3 is pool-ness. Re-weighting today's 8 honest worlds barely moves the moves (+0.005 pooled), so the next step is stage 1c with a bigger or team-level proposal set. **Stage 1c's PHASE A READ 2026-10-20** (`../research_state/measurements/search_1c_2026-10-20/`; 128 F + 128 C_ladder proposals per state weighted by dice × the likelihood): NEARER on all three primaries (ΔH +0.007 F, +0.019 corpus STRICT, +0.013 both), none MATERIAL, PROVISIONAL-POOL and SELF-PLAY-ONLY (bots NOT-DETECTED); the likelihood's own selection +0.008 on F (snapshot-only), not detected on the corpus; the exact-world mass ≈ 0 (≤ 0.0003). Phase B (playouts with L1's anchor) RUNNING. Open: the same screen on E2 / the plateau bank, and a behaviour-cloned opponent model for the ladder |
+| Q15 | Are the opponent's own past choices usable evidence about its hidden MOVES? | **L3**: the truth's rank among honest worlds by the likelihood of the opponent's observed choices under its policy, per opponent stratum | **ANSWERED 2026-10-20** (pre-registered `4d149799`): YES as a judge, PROVISIONAL-POOL. The truth out-ranks honest worlds, AUC 0.692 [0.655, 0.728] (WORKS), carried by the snapshot stratum (0.796; bots 0.588, WEAK alone); the confidence control reads 0.481, but pool familiarity is not ruled out by it (review F2). The familiarity counter-test (pre-registered, NOT-DETECTED): pool decoys beat honest worlds (0.575, clear), and the truth beats its decoys only inconclusively (0.578 [0.489, 0.664]), so part of L3 is pool-ness. **Off-pool at P\* (`search_offpool_bank_2026-10-20/`): REPLICATED-SELF-PLAY-ONLY** (snapshots 0.794, bots 0.472 NO-EVIDENCE), and an off-pool ladder decoy gets no lift (0.503): the pool lift was memory, not coherence; the truth beats its off-pool decoys (0.611). Re-weighting today's 8 honest worlds barely moves the moves (+0.005 pooled), so the next step is stage 1c with a bigger or team-level proposal set. **Stage 1c's PHASE A READ 2026-10-20** (`../research_state/measurements/search_1c_2026-10-20/`; 128 F + 128 C_ladder proposals per state weighted by dice × the likelihood): NEARER on all three primaries (ΔH +0.007 F, +0.019 corpus STRICT, +0.013 both), none MATERIAL, PROVISIONAL-POOL and SELF-PLAY-ONLY (bots NOT-DETECTED); the likelihood's own selection +0.008 on F (snapshot-only), not detected on the corpus; the exact-world mass ≈ 0 (≤ 0.0003). Phase B (playouts with L1's anchor) RUNNING. Open: the same screen on E2, an off-pool bot bank rich in P\*'s losses, phase A / B on the off-pool bank (only the snapshot stratum can carry a gain there), and a behaviour-cloned opponent model for the ladder (our network as the opponent model shows nothing against a non-self opponent off-pool) |
 | Q16 | Does anchored one-ply search ADD to an exploiter, or DEFEND its target against one (the robustness side)? | **R0's search cells** (X35 `R0_REGISTRATION.md` §4, registered 2026-10-20): L1's piKL (λ 0.015, TRUNC-4-K8, 8 honest worlds) on a best responder's final against its target, and the target + piKL against the best responder; 100 paired deals a cell, DESCRIPTIVE. Predicted: +1 pp added to the exploiter, +3 pp of defence (by unpredictability, not better play). L1's decision-level IMP cannot answer it (its referee plays the searched network on both sides) | ≈ 53 CPU-h a cell, 4 cells; needs a LIVE one-ply search player in games (not built; S0b's was never built) |
 
 ---
@@ -709,3 +735,4 @@ feeds one shared trunk to both heads).
 | 2026-10-20 | **L3 CORRECTED after its adversarial review** (`../research_state/measurements/search_l3_2026-10-20/REVIEW.md`, findings F1–F3, F5) | Status line, §1 (the L3 bullet), the open list item 3, §7 Q15: p_truth 0.249 is labelled a COUNTERFACTUAL (the truth inserted among 8 distant honest worlds), not the dose curve's p (the true world's weight among the worlds search plays); the pooled WORKS is stated as carried by the snapshot stratum (bots 0.588, WEAK alone); the read is PROVISIONAL-POOL (one pre-plateau anchor, pool opponents only, familiarity not ruled out) | keeping "0.249 is the range the dose curve asks for" (it compares two quantities: no honest set holds the truth, and p_truth falls with the candidate count); quoting the pooled AUC as a population number (it averages a near-oracle stratum and a WEAK one) | REVIEW.md F1–F3, F5; the familiarity counter-test `search_l3_2026-10-20/counter_test/` |
 | 2026-10-20 | **L3 FAMILIARITY COUNTER-TEST READ: NOT-DETECTED, POOL-LIFT** (`../research_state/measurements/search_l3_2026-10-20/counter_test/`, pre-registered `b39c9cdc`) | §1 (two bullets: part of L3 is pool-ness), §7 Q15 | reading NOT-DETECTED as "familiarity ruled out" (decoys beat honest worlds clearly; the truth-vs-decoy interval reaches 0.489); reading it as "L3 is all familiarity" (the point estimate is 0.578 and snapshots show the truth above its decoys) | counter_test README §2, `result_decoy.json` |
 | 2026-10-20 | **STAGE 1c PHASE A READ** (`../research_state/measurements/search_1c_2026-10-20/` README §5, `result_1c_a.json`; pre-registered `c9bdc928` + AMENDMENT A `a144482b`) | Status line (the registration's line replaced: it named 64 + 64 proposals, the registered N is 128 + 128); §1's open list (L3's consequence); §7 Q15 | quoting NEARER without its labels (PROVISIONAL-POOL, SELF-PLAY-ONLY: the bot stratum reads nothing); reading the corpus arm's gain as the likelihood's (C8 − F8 alone is the species gain; C128L − C128d is NOT-DETECTED); quoting ΔH as search value (the exact-world mass stays ≈ 0; phase B's playouts are the value read) | README §5 |
+| 2026-10-20 | **L3 OFF-POOL REPLICATION READ: REPLICATED-SELF-PLAY-ONLY; off-pool decoy NO-LIFT, TRUTH-SPECIFIC** (`../research_state/measurements/search_offpool_bank_2026-10-20/`, pre-registered `7642df0f6`, bank `5281bfae0`) | Status line (new, latest), the L3 status block, §1 (the L3 bullet: the off-pool sub-bullet), the open list item 3, §7 Q15 | quoting L3's pooled 0.692 or the bots' 0.588 as evidence about a non-self opponent (off-pool the bots read 0.472); reading the pool decoy's 0.575 as real-team coherence (an off-pool real team reads 0.503); treating a pool-bank 1c NEARER as steering (A4: the pool bank cannot separate memory); reading the bot NO-EVIDENCE as covering P\*'s losses (6 of 159 bot states) | the folder's README §2–§6, `result_offpool.json` |

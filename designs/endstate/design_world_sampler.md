@@ -1031,7 +1031,12 @@ Detail: `measurements/search_1c_2026-10-20/README.md` §5, `result_1c_a.json`.
     would then hold the truth by construction.
 - **F4, the banks are pool-opponent banks.** The network's species belief is sharp on them because X26 trained on those
   teams for 230M steps. Off-pool, the pre-era head was worse than Smogon. No level-1 to level-3 number here speaks for
-  the ladder. The ladder read needs states from games against `hl_05_26` or heldout teams; those banks do not exist yet.
+  the ladder. The ladder read needs states from games against `hl_05_26` or heldout teams. **The first such bank exists
+  (2026-10-20, `measurements/search_offpool_bank_2026-10-20/`):** 320 states of P\* against its plateau roster, every
+  opponent on a `heldout72_hpfix` team, proven disjoint from every pool file at X26's pin. On it, the opponent-choice
+  likelihood (§4 (f)) replicates against our own snapshots (0.794) and shows nothing against bots (0.472). An off-pool
+  ladder decoy gets no lift over F's worlds (0.503), so the pool decoys' lift was pool memory. This doc's level-1 to
+  level-3 numbers have not been re-read on it.
 - **F5, the exclusions bias every honest read and are fatal live.** 125 of 1,520 bank states (8.2 %), 121 of them a
   seen mon's screen failing. A live search cannot exclude a decision (owner Q2).
 - **F6, the hidden counters are the truth's in every world** (the builder's residual). They are optimistic for F and
@@ -1086,3 +1091,4 @@ Detail: `measurements/search_1c_2026-10-20/README.md` §5, `result_1c_a.json`.
 | 2026-10-20 | **STAGE 1c AMENDMENT A registered** (the orchestrator's ruling on the independent review, `measurements/search_l3_2026-10-20/REVIEW.md` §3; PREREGISTRATION §11) | §6.3: the STRICT corpus read (`near4` weighted 0; F3's leak class), the L-vs-dice attribution co-primaries, the permuted-L placebo stop, PROVISIONAL-POOL / SELF-PLAY-ONLY, Holm, NOT-DETECTED = no search-sized gain, the ESS split; the runner (not yet past its first slot wait) stopped and relaunched with the same stop | a corpus-team-level near-copy flag in place of the per-world `near4` (it would need a driver change; the ruling's flag is conservative: it also zeroes rare honest near-exact worlds, declared, with the honest base rate reported) | PREREGISTRATION §11 |
 | 2026-10-20 | **L3 FAMILIARITY COUNTER-TEST READ: NOT-DETECTED, POOL-LIFT** (`measurements/search_l3_2026-10-20/counter_test/`, pre-registered `b39c9cdc`) | §4 (f): pool decoys beat honest worlds (0.575 [0.517, 0.631]); the truth vs its decoys is inconclusive (0.578 [0.489, 0.664]); L3 stays PROVISIONAL-POOL, the off-pool bank required | treating L3 as truth-specific evidence on pool banks | counter_test README, `result_decoy.json` |
 | 2026-10-20 | **STAGE 1c PHASE A READ** (`measurements/search_1c_2026-10-20/` README §5, `result_1c_a.json`) | Status; §6.3 rewritten (it still named the pre-registration draft's 64 + 64 proposals and its arm names; the registered N is 128 + 128) with the read: all primaries NEARER, none MATERIAL, PROVISIONAL-POOL and SELF-PLAY-ONLY; the corpus carries the species, the likelihood +0.008 among F worlds only; the exact-world mass ≈ 0; phase B running | ranking (f) above (c) on this read (the likelihood adds little to the corpus); calling the route closed before phase B's playouts and the off-pool replication | README §5 |
+| 2026-10-20 | **THE OFF-POOL BANK EXISTS; L3 off-pool SELF-PLAY-ONLY, the pool decoy lift was MEMORY** (`measurements/search_offpool_bank_2026-10-20/`, pre-registered `7642df0f6`) | F4 (the bank now exists; what it showed for §4 (f)) | quoting a pool-bank likelihood or corpus-arm number as a ladder number; reading the pool decoys' lift as coherence | that folder's README, `result_offpool.json` |
