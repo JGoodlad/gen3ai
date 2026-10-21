@@ -25,8 +25,10 @@ replicate distribution leaves it outside (so the triple is always ordered). §5.
 OFF, pooled over seeds", which names the clustering but no seed pooling; this is the ruled seed-pair bootstrap combined
 with it.
 
-THE TRUTH PER SIDE (AM-X47b-2). Production's B2 reads X26@150M's truth, the toy's the same subset re-branched under T*;
-:data:`TRUTH_BY_SIDE` is each side's continuation stamp, and :func:`pool` refuses rows of another continuation.
+THE TRUTH PER SIDE (AM-X47b-2, AM-X47c-2). Each side's B2 reads the same 306-turn subset re-branched under its own
+plateau checkpoint: production under P* (X26@280M; §5.6.5's refresh rule retired READ A's X26@150M truth), the toy
+under T*. :data:`TRUTH_BY_SIDE` is each side's continuation stamp, and :func:`pool` refuses rows of another
+continuation (the 150M truth included).
 
 THE RECORD (schema :data:`GC_SCHEMA`) is what ``readout decide`` / ``decide-d1`` / ``x47 decide`` take as ``g_c``;
 :func:`check_record` refuses (``ReadoutInputError``) a record whose ON or OFF seeds are not the read's R1 seeds, whose
@@ -54,9 +56,15 @@ BOOT_SEED = 20261020
 BOUNDARY = 1e-6
 #: the seeds of each side (``kit.PROD_SEEDS`` / ``kit.TOY_SEEDS``; ``gc_test`` pins the equality).
 SIDE_SEEDS: Dict[str, Tuple[int, ...]] = {"production": tuple(range(3501, 3506)), "toy": tuple(range(3601, 3606))}
-#: AM-X47b-2: each side's B2 truth, by the continuation every truth row is stamped with.
-TRUTH_BY_SIDE: Dict[str, str] = {"production": "X26@150M greedy (both sides)",
+#: AM-X47b-2 / AM-X47c-2: each side's B2 truth, by the continuation every truth row is stamped with (the committed
+#: rows: ``x35_prod_b2_truth_2026-10-20/`` and ``x35_toy_b2_truth_2026-10-20/``, :data:`TRUTH_ROWS_REL`).
+TRUTH_BY_SIDE: Dict[str, str] = {"production": "X26@280M greedy (both sides)",
                                  "toy": "toyTstar@290M greedy (both sides)"}
+#: each side's committed truth rows, relative to the repo root (``gc_test`` pins each file's stamp to its side's).
+_MEAS = "designs/research_state/measurements"
+TRUTH_ROWS_REL: Dict[str, str] = {
+    "production": f"{_MEAS}/x35_prod_b2_truth_2026-10-20/rows_X26at280M_S32.compact.jsonl.gz",
+    "toy": f"{_MEAS}/x35_toy_b2_truth_2026-10-20/rows_toyTstar290M_S32.compact.jsonl.gz"}
 
 
 # ---------------------------------------------------------------------------------------------- per turn
@@ -161,7 +169,7 @@ def pool_arrays(side: str, truth_continuation: str, pairs: Mapping[int, Mapping[
     if _side_of(seeds) != side:
         raise ReadoutInputError(f"G-C: seeds {seeds} are not all {side} seeds {list(SIDE_SEEDS[side])}")
     if truth_continuation != TRUTH_BY_SIDE[side]:
-        raise ReadoutInputError(f"G-C: the {side} side's B2 truth is {TRUTH_BY_SIDE[side]!r} (AM-X47b-2), "
+        raise ReadoutInputError(f"G-C: the {side} side's B2 truth is {TRUTH_BY_SIDE[side]!r} (AM-X47b-2, AM-X47c-2), "
                                 f"not {truth_continuation!r}")
     per_pair: Dict[str, Any] = {}
     for s in seeds:
@@ -252,7 +260,7 @@ def check_record(rec: Any, on_seeds: Sequence[Any], off_seeds: Sequence[Any]) ->
         why.append(f"the record's side {side!r} is not the R1 seeds' side {_side_of(want_on)!r}")
     elif (rec.get("truth") or {}).get("continuation") != TRUTH_BY_SIDE.get(str(side)):
         why.append(f"the record's B2 truth {(rec.get('truth') or {}).get('continuation')!r} is not the {side} side's "
-                   f"{TRUTH_BY_SIDE.get(str(side))!r} (AM-X47b-2)")
+                   f"{TRUTH_BY_SIDE.get(str(side))!r} (AM-X47b-2, AM-X47c-2)")
     if why:
         raise ReadoutInputError("G-C: " + "; ".join(why))
     return list(rec["b1"]), list(rec["b2"])

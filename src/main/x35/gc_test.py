@@ -162,3 +162,20 @@ def test_decide_d1_reads_g_c_over_h_seeds():
     good = D1.read_d1(dict(doc, g_c=GC.constructed_record("production", PROD, [0.0] * 3, [0.0] * 3)))
     bare = D1.read_d1(dict(doc, g_c={"b1": [0.0, -0.01, 0.01], "b2": [0.0, -0.01, 0.01]}))
     assert good.verdict == D1.ADOPT and bare.verdict == D1.INCONCLUSIVE
+
+
+def test_am_x47c_2_each_sides_committed_truth_carries_its_sides_stamp():
+    """F-5: production's B2 truth is the P* refresh (X26@280M), not READ A's 150M rows, and each committed file is
+    stamped with its side's continuation; the 150M truth is refused for a production G-C."""
+    from main.policy_spectrum.truth import load_rows
+    from utils.paths import repo_path
+
+    assert GC.TRUTH_BY_SIDE["production"] == "X26@280M greedy (both sides)"
+    for side, rel in GC.TRUTH_ROWS_REL.items():
+        rows = load_rows(repo_path(rel))
+        assert len(rows) == 306 and all(r.get("ok") for r in rows)
+        assert {r["continuation"] for r in rows} == {GC.TRUTH_BY_SIDE[side]}
+    arrays = {s: {"on": "a", "off": "b", "b1": _pair([0.1, 0.2], ["x", "y"]), "b2": _pair([0.0, 1.0], ["x", "y"])}
+              for s in PROD}
+    with pytest.raises(R.ReadoutInputError, match="AM-X47c-2"):
+        GC.pool_arrays("production", "X26@150M greedy (both sides)", arrays)

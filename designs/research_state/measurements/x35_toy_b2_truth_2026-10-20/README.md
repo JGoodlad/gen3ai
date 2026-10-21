@@ -2,11 +2,11 @@
 
 The orchestrator ruled on F-AMX-3 (AM-X47b-2, [`BATCH1_LAUNCH_SHEET.md`](../x35_breakers_stage_2026-10-17/BATCH1_LAUNCH_SHEET.md)
 §0) that the TOY side's G-C B2 reads starvation against what the TOY calls near-best. This directory holds that truth.
-**Production keeps its production truth.**
+**Production does not read the toy's truth.** Its own truth was refreshed under P\* by AM-X47c-2 ([`../x35_prod_b2_truth_2026-10-20/`](../x35_prod_b2_truth_2026-10-20/README.md)).
 
 | side | B2 truth | rows | continuation stamp (`main.x35.gc.TRUTH_BY_SIDE`) |
 |---|---|---|---|
-| production (A1 / A2 / D1 vs C0) | READ A, X26@150M greedy on both sides | [`../collapse_pilot_2026-10-17/rows_X26at150M_S32.compact.jsonl.gz`](../collapse_pilot_2026-10-17/rows_X26at150M_S32.compact.jsonl.gz) | `X26@150M greedy (both sides)` |
+| production (A1 / A2 / D1 vs C0) | the P\* refresh (AM-X47c-2), X26@280M greedy on both sides | [`../x35_prod_b2_truth_2026-10-20/rows_X26at280M_S32.compact.jsonl.gz`](../x35_prod_b2_truth_2026-10-20/rows_X26at280M_S32.compact.jsonl.gz) | `X26@280M greedy (both sides)` |
 | toy (X47, toy A1 / A2 vs toy C0) | **this record**, T\* greedy on both sides | [`rows_toyTstar290M_S32.compact.jsonl.gz`](rows_toyTstar290M_S32.compact.jsonl.gz) | `toyTstar@290M greedy (both sides)` |
 
 `python -m main.x35.gc pool` refuses truth rows whose stamp is not the side's, and `readout decide`, `decide-d1` and
@@ -37,7 +37,7 @@ The command is [`run_truth.sh`](run_truth.sh) `<archive dir>`, then [`summarize.
 - **Completeness:** 306 rows, 306 ok, 0 refused, 0 missing, 32 seeds each, and the stamp is the registered one.
 - **Decisive turns** (some action separably worse than the best by more than ε = 0.1):
   - toy truth: **178**;
-  - production truth: **179**;
+  - production's 150M truth (READ A, the one current when this record was made): **179**;
   - both: **150**.
 - **Near-best sets:** the action-wise set is identical on only **77 of 306** turns.
 - **So the two continuations disagree on what is near-best on most turns.** A toy's B2 read against production's
