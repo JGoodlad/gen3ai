@@ -31,7 +31,10 @@ def test_a_self_play_run_whose_seeding_gate_it_cannot_reach_completes_and_says_s
     directory (`RunArchiveError`, exit 3 = FATAL_CONFIG)."""
     rc, text = _trainer(tmp_path, "--debug-eval", "--self-play", "--self-play-start-wr", "1.01",
                         "--steps", "60000", "--supply-starve-cycles", "self_play_pool=2",
-                        "--run-dir", str(tmp_path / "run"), timeout=1200)
+                        "--run-dir", str(tmp_path / "run"), timeout=2400)
+    # 2400 s (was 1200): measured 2026-10-21 beside a live run, the 60000-step debug run takes 1312 s and COMPLETES
+    # (exit 0, 15 loud lines, one ZERO summary, no FATAL) -- the old bound sat under the measured cost, so the test
+    # banked INCONCLUSIVE (a timeout, never a semantic outcome) instead of the verdict.
     assert rc == int(TrainExitCode.COMPLETE), (rc, text[-4000:])
     assert "[SUPPLY] FATAL" not in text
     assert text.count("is below the seeding gate --self-play-start-wr 1.01") >= 2, "one loud line per gated cycle"
