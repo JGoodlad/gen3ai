@@ -1,22 +1,22 @@
 {
- "battles_finished": 24240,
- "battles_planned": 24240,
+ "battles_finished": 19820,
+ "battles_planned": 19820,
  "core_errors": [],
  "corpus": {
   "corpus": "w_forum_v1",
-  "data_sha256": "4af495c49a2df0266c8fe10c2691cea274e683da0f58c4e82d2a0124b7a17469",
-  "manifest_sha256": "e2b74d4fdf2672a03630b3a11186d4f5cf0fddb7aaaea6a7e6714cc44208a0c6",
-  "n": 2424,
+  "data_sha256": "7f42d95f7f08f667738fe6e8f2af33ede93f5dec78af6fa48ed3f72f3d231336",
+  "manifest_sha256": "7695fb61c2db2695963a156fb7c1c4aca3422e5f1e4936ff464046826b1b2027",
+  "n": 1982,
   "schema": "gen3_team_corpus_v1",
   "tier": "ABC",
-  "tier_sha256": "7bcdc835c1077fb8a5fee3c972b9703e45b419f4d46199d86f8bca1408abf83d"
+  "tier_sha256": "73a76e808431f5c430edf7effafc121a0b4822c6dbd19d33b82b6bb60570bdc4"
  },
- "decisions_p1": 796702,
+ "decisions_p1": 653232,
  "end_turn": {
   "max": 250,
   "median": 23
  },
- "forfeits": 42,
+ "forfeits": 48,
  "n_envs": 8,
  "opponent": {
   "bot": "heuristic",
@@ -32,5 +32,5 @@
  "threads": 3,
  "turn_limit": 250,
  "verdict": "PASS",
- "wall_s": 382.5
+ "wall_s": 190.6
 }
