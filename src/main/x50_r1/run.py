@@ -125,7 +125,7 @@ def human_paths(corpus: Path, dates: List[str]) -> List[str]:
 # ------------------------------------------------------------------------------------------------ traces
 
 def trace_summaries(run: Path, min_step: int) -> List[str]:
-    out = []
+    out: List[str] = []
     for d in sorted((run / "eval_traces").glob("step_*")):
         if int(d.name.split("_", 1)[1]) >= min_step:
             out.extend(str(p) for p in sorted(d.glob("*/*_summary.json")) if p.parent.name != "random")
@@ -201,7 +201,7 @@ def write_part(out: Path, name: str, ids: List[str], results: List[Dict[str, Any
         if r.get("error"):
             errors.append(r["error"])
     arrays = _concat(parts)
-    np.savez_compressed(out / f"{name}.npz", **arrays)
+    np.savez_compressed(out / f"{name}.npz", **arrays)  # type: ignore[arg-type]
     body = {"part": name, "battles": ids, "counts": dict(sorted(counts.items())), "errors": errors,
             "labelled_rows": int(len(arrays.get("k", []))), **meta}
     tmp = out / f"{name}.json.tmp"

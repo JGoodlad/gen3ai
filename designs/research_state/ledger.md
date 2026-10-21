@@ -27934,3 +27934,46 @@ gain.
 Evidence: `research_state/measurements/search_offpool_bank_2026-10-20/` (README, PREREGISTRATION, `result_offpool.json`,
 `states_offpool.json`, `offpool_proof.json`); `endstate/search_ledger.md` (Status, §1, §7 Q15);
 `endstate/design_world_sampler.md` F4.
+
+### 2026-10-20 · MEASUREMENT · **X50 R1, READ under its registration (`6888a5ec4`): X26's intent head predicts HUMAN opponents (≥ 1500) worse than its own snapshots through the same spectator pipeline. Δ NLL(H − S) +0.188 nats [+0.164, +0.213] ⇒ GAP (rule: the CI above +0.05); top-1 33.8 % vs 38.9 %. It is a SWITCH gap (+0.39 nats; moves +0.07). The pipeline itself costs 0.23 nats on our own battles**
+
+**What was run.** The owner re-opened the human-replay ladder at rung 1 only (2026-10-20). The design and the
+registration (`endstate/design_x50_rung1_intent_labels.md`) shipped before any code. The extractor (`a3b37d8a3`) is
+the production intent labeller on the Rust live reader, fed synthesised SPECTATOR decisions: legality only, with the
+own side public-only. It ran over the spectator manifest's held-out dates 2026-09-21..23 (7,413 logs, both seats) and
+over X26's eval traces at cycles ≥ 360M (2,306 battles, the trainee's seat). It had 0 refusals and 17,132
+prefix-guard checks passed, and on every trace the decision points equal the trainee's real requests. The read was
+one CPU forward of `rb_x26_s2601/checkpoint_380000195_steps.zip` per supervised row, with a battle-cluster bootstrap.
+
+**Result.**
+
+| | rows | NLL | top-1 |
+|---|---|---|---|
+| H humans ≥ 1500 | 48,579 | 1.937 | 0.338 |
+| S own snapshots | 29,953 | 1.748 | 0.389 |
+| B bots | 15,063 | 1.682 | 0.409 |
+| S-full / B-full (the training row) | 26,239 / 14,027 | 1.519 / 1.545 | 0.476 / 0.490 |
+
+- H − B: +0.255 nats [+0.225, +0.286].
+- Pipeline penalty: S − S-full +0.229 [+0.206, +0.254]; B − B-full +0.136.
+- By kind, H vs S: moves 1.692 vs 1.620; switches 2.508 vs 2.116. The uniform floor on human switches is 2.438.
+- By the labelled human's rating: 2.092 (< 1300), 2.001, 1.933, 1.975 (1700+, n = 3,810).
+
+**What it means.**
+- Human labels carry signal the self-play labels lack, mostly about when and to what humans switch. The bots (6 %
+  switch labels) cannot stand in for that.
+- The next step under the registration is a training-use design: human labels as an added intent-loss source on the
+  training dates 05-18..09-20; 09-21..23 are RESERVED. It is registered separately, and it should first close or
+  re-measure the 0.23-nat pipeline penalty (a Smogon-completed own side).
+
+**Findings.**
+1. The pipeline penalty is as large as the gap, and its interaction with the population is UNVERIFIED.
+2. The traces are loss-enriched by design.
+3. Bare Hidden Power labels (3.7 %) are excluded.
+4. Struggle-placeholder decisions (6.5 % of human decisions) move H by −0.016 nats when dropped.
+5. A plumbing dry run on one trace cycle and 60 human logs preceded the read; nothing in the design changed after it.
+6. One checkpoint.
+
+Evidence: `research_state/measurements/x50_r1_intent_read_2026-10-20/` (README, `r1_read.json`, `run_r1.sh`);
+`src/main/x50_r1/`; the extracted parts in `/home/goodlad/gen3ai_archive/x50_r1_intent/`.
+

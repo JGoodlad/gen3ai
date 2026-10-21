@@ -1,6 +1,7 @@
 # X50 rung 1: human opponent-action labels for the intent head (design + the registered first read)
 
-**Status (2026-10-20):** DESIGN + REGISTRATION. The owner re-opened the human-replay ladder at **rung 1 only**
+**Status (2026-10-20):** DESIGN + REGISTRATION; extractor BUILT; **R1 READ: GAP** (Δ NLL(H − S) +0.188 nats
+[+0.164, +0.213]; a switch gap; [`the read`](../research_state/measurements/x50_r1_intent_read_2026-10-20/README.md)). The owner re-opened the human-replay ladder at **rung 1 only**
 (2026-10-20): opponent-action labels from real ladder replays, for the network's opponent-intent prediction. Rungs 2+
 (anything beyond labels: behaviour cloning, a human prior) stay closed. This doc is the census's follow-up
 ([`x50_replay_census_2026-10-20`](../research_state/measurements/x50_replay_census_2026-10-20/README.md), its
@@ -137,6 +138,8 @@ labels" means here. S's and B's boards come from X26's own play; H's from two hu
   session, the synthesised decisions, the production label from `LABEL`, the prefix guard);
 - the Rust side: `live_reader`'s `SPECDECIDE` and `LABEL` commands, `SideReader::spectator_request`, and the
   `"spectator"` request branch of `BoardReading::parse_request_val` / `core_events::reading`;
+- `read.py`: the registered R1 read (one CPU forward per row, `flat_intent_targets`, the battle-cluster bootstrap,
+  `read.rule`), driven by the measurement's `run_r1.sh`;
 - `run.py`: deterministic (sorted inputs, fixed seeds), resumable (a shard per date or trace cycle is skipped when
   present), chunked ≤ 45 min per heavy slot under `scripts/ops/mem_cap.sh` at rule 5b's priority;
 - output under `/home/goodlad/gen3ai_archive/x50_r1_intent/` (never `data/`): one `npz` per shard (rows as float32,
@@ -159,3 +162,4 @@ labels" means here. S's and B's boards come from X26's own play; H's from two hu
 |---|---|---|---|
 | 2026-10-20 | **CREATED + R1 REGISTERED** (X50 rung-1 worker, the owner's rung-1 approval). Label = the production label by the production labeller on synthesised spectator decisions, resolved by `flat_intent_targets`; own side public-only; spectator manifest only; held-out 09-21..09-23; primary ≥ 1500; R1's rule on Δ NLL(H − S) at ±0.05 nats | completing the own side from the game's end (a selection leak); the census's text labeller (an approximation of the production rules); the archive pulls (upload selection unverified); a typed guess for Hidden Power; a training run in this unit | the census README; `opp_intent_labels.py`; `trackers/mod.rs`; `flat_intent.py`; X26's eval-trace manifests |
 | 2026-10-20 | **EXTRACTOR BUILT** | One decision guarded per seat (not a 1-in-16 battle sample: broader, cheaper). Two point-rule refinements found on traces before landing: the Pursuit-continuation switch is no decision; a log with no `\|t:\|` mark is refused. The trace merge aligns rather than zips (private `[silent]` / `\|error\|` / `\|-hint\|` lines). A battle whose trainee stream holds a refused choice (`\|error\|`, 7 % of traces) keeps its spectator read and skips only the full control (its retry request has no public twin) | zipping the two seat streams (fails on private lines); placing a forced point on every post-faint switch | `extract_test.py` (hand-read golden labels, the guard and its leak, spectator = full labels, full = the trainee's rows); `points_test.py` |
+| 2026-10-20 | **R1 READ: GAP** | X26's head on humans ≥ 1500: NLL 1.937 against 1.748 on its own snapshots, through the same pipeline; Δ +0.188 [+0.164, +0.213]. The gap is in switches (+0.39 nats; moves +0.07). The pipeline costs 0.23 nats on our own battles (F-R1-1). Next: a training-use design, registered separately; dates 09-21..23 stay reserved | reading H − B as the decision input (bots switch on 6 % of labels) | `x50_r1_intent_read_2026-10-20/` |

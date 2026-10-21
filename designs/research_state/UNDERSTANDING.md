@@ -1748,6 +1748,21 @@ The whole is PROVISIONAL at 15M: [`../endstate/design_hidden_info_binding.md`](.
 
 ---
 
+### 4.8 The intent head on human opponents: a GAP, and it is a switch gap (X50 R1, 2026-10-20)
+
+X26's flat intent head (380M) predicts human ladder opponents (rated ≥ 1500) worse than its own pool snapshots.
+Both were read through the same spectator pipeline, under the registered rule: **Δ NLL +0.188 nats [+0.164, +0.213]**
+(1.937 vs 1.748); top-1 33.8 % vs 38.9 %. The gap is in SWITCHES:
+- on a move label, +0.07 nats;
+- on a switch label, +0.39 nats. On a human switch the head is worse than a uniform guess over its candidates.
+- Humans switch on 30 % of labels, the snapshots on 26 % and the bots on 6 %.
+
+The spectator pipeline (public-only own side, fabricated own spread) costs the head 0.23 nats on its own battles, as
+much as the gap. The contrast holds the pipeline fixed, but the absolute numbers on humans are pessimistic.
+⇒ Human opponent-action labels carry signal the self-play labels lack (rung 1 of the human-replay ladder). Any
+training use is a separate registration. [SIGNIFICANT on the registered contrast · one checkpoint · ledger 2026-10-20
+*X50 R1* · `measurements/x50_r1_intent_read_2026-10-20/`]
+
 ## 5. Retired hypotheses
 
 Each is retired for the flywheel's gift question. None is retired as a general claim about RL.
