@@ -4,7 +4,7 @@ Stage 1c of [`design_world_sampler.md`](../../../endstate/design_world_sampler.m
 [`PREREGISTRATION.md`](PREREGISTRATION.md) before any world of a registered state was built. The numbers and their
 reading go to the design doc, `search_ledger.md`, `UNDERSTANDING.md` and the ledger once read.
 
-**Status: REGISTERED, with AMENDMENT A (PREREGISTRATION §11: the orchestrator's ruling on the independent review; a STRICT corpus read, the L-vs-dice attribution co-primaries, a permuted-L placebo that stops the read, PROVISIONAL-POOL / SELF-PLAY-ONLY labels, Holm, NOT-DETECTED's meaning, an ESS split); phase A crawls detached (§2).** An INTERIM read exists (§4); no verdict yet.
+**Status: REGISTERED, with AMENDMENT A (PREREGISTRATION §11: the orchestrator's ruling on the independent review; a STRICT corpus read, the L-vs-dice attribution co-primaries, a permuted-L placebo that stops the read, PROVISIONAL-POOL / SELF-PLAY-ONLY labels, Holm, NOT-DETECTED's meaning, an ESS split); PHASE A READ (§5): all three primaries NEARER, none MATERIAL, PROVISIONAL-POOL and SELF-PLAY-ONLY; the bar is met, so phase B (the playouts) runs.**
 
 | file | what |
 |---|---|
@@ -60,6 +60,11 @@ chunk (root rule 5b).
   loop's bash was stopped between states (its chunk left to finish, still SCHED_IDLE: an unprivileged process cannot
   leave it), and an operational wrapper, `~/gen3ai_archive/search_1c/ops/loop_a_nice19.sh` (the same loop and recheck,
   the same driver checkout's `run_1c.py`, so every row's head stays `a144482b0`), runs the next chunks at nice 19.
+- **THE ORCHESTRATOR'S RULING, 2026-10-20 ≈ 16:55 PDT: no longer BLOCKING.** Per A4 and the decoy result
+  (`3d14e51d`), nothing stage 1c finds can steer until the off-pool replication, so it is not the GPU's next work. The
+  remaining chunks run in the normal FIFO heavy slots (nice 19, cores 5-7,13-15, ≤ 45-min chunks); a later end is
+  accepted. The wrapper's bash was stopped between chunks' starts (the chunk in flight left to finish), and
+  `ops/loop_a_fifo.sh` (the same loop, without the mark) continues after it. The read is unchanged.
 
 ## 4. THE INTERIM READ (registered §7: about 12 h after launch, descriptive; NO verdict, NO bar; it changes no rule, n or stop)
 
@@ -101,3 +106,69 @@ Pooled, the amended reading (corpus arms STRICT), Δ against F8 (95 % CI, n = 23
 - **The A3 placebo** reads not NEARER on every arm (F128L's +0.004 [−0.001, +0.009] is the largest).
 
 Read as an interim only: the registered verdict and the bar are made once, at `A_DONE` or the stop, after G3.
+
+## 5. PHASE A: THE REGISTERED READ (2026-10-20 21:00 PDT; `read_1c.py a`, once, after `A_DONE` and the recheck)
+
+[`result_1c_a.json`](result_1c_a.json).
+
+**Gates: all pass.**
+- G1: 287 rows, the registered order. G2: 0 defects, 0 parked.
+- Exclusions: 2 states, in both sets. One is a 128-world build with one world never passing the joint gate in 60
+  tries (hazard 4). The other is a seen Tyranitar with no honest screen fit.
+- G3: 6 / 6 fresh-process rechecks identical. G5: 2,280 / 2,280 stored resamples recomputed exactly.
+- G4 (descriptive): 1 / 282 truth likelihoods equal L3's exactly; the rest differ by at most 6e-5 nats (median 4e-6;
+  the same scored steps), from the fp32_alt τ solve the driver commit inherited.
+- **285 states read** (bot 143, snapshot 142).
+
+**THE VERDICT (§5 and AMENDMENT A): all three primaries NEARER; none MATERIAL, none DOSE; each PROVISIONAL-POOL and
+SELF-PLAY-ONLY** (bot NOT-DETECTED, snapshot NEARER). Pooled, against F8 (the corpus arms STRICT):
+
+| arm | ΔH (binding facts held) | ΔM_hit | ΔU_hit | q_SM (exact-world mass) | bot ΔH | snapshot ΔH |
+|---|---|---|---|---|---|---|
+| **F128L** | **+0.007** [+0.001, +0.014] NEARER | +0.011 [+0.002, +0.019] | +0.004 | 0.0000 | −0.006 | +0.021 |
+| **C128L** | **+0.019** [+0.012, +0.027] NEARER | +0.006 [−0.003, +0.015] | +0.095 [+0.072, +0.118] | 0.0001 | −0.000 | +0.038 |
+| **M256L** | **+0.013** [+0.007, +0.019] NEARER | +0.008 [+0.000, +0.016] | +0.048 [+0.031, +0.066] | 0.0000 | −0.003 | +0.030 |
+
+- **Non-strict beside STRICT:** C128L +0.019, M256L +0.013, both NEARER; their q_SM is 0.0003 / 0.0001.
+- **The 64-world arms:** F64L NOT-DETECTED (+0.006); C64L NEARER (+0.020); M128L NEARER (+0.014).
+- **THE ATTRIBUTION CO-PRIMARIES (A2):**
+  - F128L − F128d: +0.008 [+0.002, +0.013], NEARER, SELF-PLAY-ONLY (bot −0.000, snapshot +0.016);
+  - C128L − C128d: +0.005 [−0.000, +0.011], NOT-DETECTED (bot −0.008, snapshot +0.018).
+- **A3, the permuted-L placebos:** NULL on all three (F128L +0.003 [−0.002, +0.007]).
+- **THE BAR IS MET.** Phase B plays F8, F128L, C128L, M256L, C8, F128d and C128d.
+
+**What the worlds hold** (the levels; descriptive):
+
+| | F8 | F128L | C8 | C128L | M256L |
+|---|---|---|---|---|---|
+| H (share of the binding facts) | 0.442 | 0.450 | 0.459 | 0.461 | 0.455 |
+| M_hit (seen mons' unrevealed moves) | 0.506 | 0.516 | 0.507 | 0.511 | 0.514 |
+| U_hit (never-seen species) | 0.151 | 0.155 | 0.246 | 0.246 | 0.199 |
+| M_exact (every seen mon's set exact) | 0.011 | 0.016 | 0.013 | 0.012 | 0.015 |
+| U_exact (the never-seen species set) | 0.017 | 0.017 | 0.064 | 0.065 | 0.041 |
+| q_SM (exact on both) | 0.0000 | 0.0000 | 0.0000 | 0.0001 | 0.0000 |
+
+- **The proposals and the likelihood, separately:**
+  - C8 − F8 = +0.017 [+0.011, +0.023] on H (+0.095 on U_hit): the corpus brings the species by itself.
+  - F128d − F8 = −0.000: more proposals alone change nothing.
+  - The likelihood's own selection on the F proposals: +0.008 on H (+0.008 on M_hit, +0.005 [+0.000, +0.012] on
+    M_exact).
+- **The N-scaling (128 − 64) is ≈ 0 on every arm** (F +0.002 [−0.002, +0.006]). The ESS of the likelihood-weighted
+  128 is ≈ 18–20 (≈ 107 for the dice alone). 10–13 % of states fall below 2.
+- **NW_lift** (extra weight on the nearest proposals): C128L +0.012, F128L +0.003.
+- **The tempered likelihood (L^0.5):** about the same (F128L +0.005, C128L +0.018).
+- **A1's leak report:** 11 % of states hold a near4 corpus proposal, and L puts 0.0018 of its weight on them.
+  C128L's ΔH without those states is +0.017. The honest base rate (F128d's near4 share) is 0.001.
+- **On the BOT stratum the likelihood works AGAINST the corpus.** C8 − F8 is +0.014 there, but C128L − C128d is −0.008:
+  the network, seated as a scripted bot, picks the wrong teams.
+
+**Reading (descriptive):**
+- The opponent's own choices do select nearer worlds, but only where the opponent IS our network (the snapshot
+  stratum). Even there the selection is small: about 0.8 points more of the binding facts held over 128 honest
+  proposals, and the every-move-exact share 0.011 → 0.016.
+- Against the dose curve's target (an exact world at weight ≈ 0.2), the exact-world mass stays ≈ 0 in every arm, more
+  than 100× short.
+- The team-level corpus moves the never-seen species a lot (exact set 0.017 → 0.065), and the likelihood adds little to
+  it. Doubling the proposals to 128 adds nothing. There is still nothing near the truth for the likelihood to pick.
+- Phase B tests whether these slightly nearer worlds pay in playouts. The dose curve and the power (±0.02) predict NOT
+  DETECTED.

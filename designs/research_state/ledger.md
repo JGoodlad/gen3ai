@@ -27829,3 +27829,49 @@ extracted with the battery's `tb_extract.py` (not committed); design `STAGED_PLA
 Evidence: `research_state/measurements/x55_league_headroom_2026-10-20/` (PREDICTIONS, README, `headroom_existing.*`,
 `play_pstar_row.sh`, `row.json`, `read_row.py`, `row_read.json`, `predictions_sim.*`, `chunks.log`);
 `endstate/design_alphastar_league_path.md` §2.4; X35 `BATCH1_LAUNCH_SHEET.md` §1, F-LS-24–26.
+
+### 2026-10-20 · MEASUREMENT · **Stage 1c's PHASE A, READ under its pre-registration (`c9bdc928`) and AMENDMENT A (`a144482b`): 128 honest and 128 real-team corpus worlds per state, weighted by the damage-roll weight × the opponent-choice likelihood, hold worlds NEARER the truth than today's 8 honest worlds on all three primaries (ΔH +0.007 [+0.001, +0.014] honest, +0.019 [+0.012, +0.027] corpus STRICT, +0.013 [+0.007, +0.019] both), none MATERIAL, all PROVISIONAL-POOL and SELF-PLAY-ONLY; the likelihood's own selection is +0.008 among honest worlds and not detected among corpus worlds; the exact-world mass stays ≈ 0. Phase B (playouts) launched. PROVISIONAL**
+
+**Question** (`endstate/design_world_sampler.md` §6.3; L3's registered consequence). L3 found the opponent-choice
+likelihood a good judge of worlds, but today's 8 honest worlds hold nothing near the truth for it to pick. Do a larger
+honest proposal set, a team-level one, or both, weighted by it, hold worlds clearly nearer the truth? If so, does honest
+search over the resampled 8 then pay?
+
+**Design** (`measurements/search_1c_2026-10-20/PREREGISTRATION.md`, committed before any registered world was built; the
+read script and the facts meter by sha256).
+- **States:** stage 1's 287 states, X26 225M, in stage 1's order.
+- **Proposals:** 128 F worlds and 128 C_ladder worlds (stage 1's corpus sampler, α 89.1), `dice="rolls"`, legality on,
+  one screen cache.
+- **Weights:** exp(log_w + log L), the opponent-choice likelihood with X26 225M as the opponent; a search's 8 by
+  systematic resampling (`opp_likelihood.resample`, built OFF by default, `SearchConfig(proposals=N)`).
+- **Primary:** ΔH, the change in the share of the truth's binding hidden facts the worlds hold (each never-seen species,
+  each seen mon's unrevealed move), against F8 (the first 8 F worlds). NEARER iff its lower bound > +0.0005.
+- **Amendment A** (the orchestrator's ruling on an independent review, registered before any state was built): a
+  STRICT corpus read (near copies of the pool truth weighted 0); the likelihood's credit only on F128L − F128d and
+  C128L − C128d; a permuted-L placebo that stops the read; PROVISIONAL-POOL and SELF-PLAY-ONLY labels; Holm for phase B.
+
+**Gates.** All PASS: 287 / 287 rows in the registered order; 0 defects, 0 parked, 2 exclusions (285 read); 6 / 6 fresh
+rechecks identical; 2,280 / 2,280 resamples recomputed. G4 (descriptive): the truth's likelihood within 6e-5 nats of L3's
+(the fp32_alt τ solve the driver commit inherited).
+
+**Result.**
+- **The primaries:** F128L +0.007 [+0.001, +0.014], C128L (STRICT) +0.019 [+0.012, +0.027], M256L +0.013 [+0.007,
+  +0.019]. All NEARER, none MATERIAL or DOSE.
+- **By stratum:** bot −0.006 / −0.000 / −0.003 (NOT-DETECTED), snapshot +0.021 / +0.038 / +0.030.
+- **Attribution:** F128L − F128d +0.008 [+0.002, +0.013] (NEARER, snapshot-only); C128L − C128d +0.005 [−0.000, +0.011]
+  (NOT-DETECTED; bot −0.008).
+- **The proposals alone:** C8 − F8 +0.017 (never-seen species +0.095; the exact never-seen set 0.017 → 0.065);
+  F128d − F8 −0.000; 128 − 64 ≈ 0 on every arm.
+- **The exact-world mass:** ≤ 0.0003 in every arm. The every-move-exact share: 0.011 (F8) → 0.016 (F128L).
+- **ESS** of the likelihood-weighted 128: ≈ 18–20.
+- **Placebos:** NULL. **Leak:** 11 % of states hold a near copy; the likelihood puts 0.0018 of its weight on them.
+
+**Reading.** The opponent's own choices select slightly nearer worlds where the opponent is our network, and none
+against scripted bots, where they even pull the corpus worlds away. The open corpus brings the never-seen species; the
+likelihood adds little to it. Neither a doubled honest set nor real teams put meaningful weight on a world exact on the
+binding classes: the mass search needs is still about 100× away. The bar (any primary NEARER) is met, so phase B
+(the registered playouts: F8, the three primaries, C8, F128d, C128d with L1's fitted piKL anchor) was launched; nothing
+here steers until an off-pool bank and the plateau checkpoint replicate it (A4).
+
+**Evidence:** `research_state/measurements/search_1c_2026-10-20/` (README §4 the interim, §5 the read; `result_1c_a.json`,
+`result_1c_a_interim.json`); `endstate/design_world_sampler.md` §6.3; `endstate/search_ledger.md` §1, §7 Q15.

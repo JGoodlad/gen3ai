@@ -3,11 +3,11 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this doc
 updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-20, latest): STAGE 1c REGISTERED (§6.3).** On stage 1's 287 states, 64 honest F worlds and 64
-C_ladder worlds per state are weighted by the damage-roll weight × the opponent-choice likelihood (L3) and resampled to
-8 (`opp_likelihood.resample`, built OFF by default). Phase A asks whether the weighted worlds hold more of the truth's
-binding hidden facts than today's 8 (zero playouts); only if one arm is clearly nearer does phase B play them with L1's
-anchored acting rule. No number yet.
+**Status (2026-10-20, latest): STAGE 1c's PHASE A READ (§6.3).** 128 honest F and 128 C_ladder worlds per state,
+weighted by the damage-roll weight × the opponent-choice likelihood, hold worlds NEARER the truth than today's 8 on all
+three primaries (ΔH +0.007 / +0.019 / +0.013), but none MATERIAL, all PROVISIONAL-POOL and SELF-PLAY-ONLY (bots
+NOT-DETECTED). The corpus brings the never-seen species; the likelihood adds +0.008 among F worlds and nothing among
+corpus worlds. The exact-world mass stays ≈ 0. Phase B (playouts) RUNNING.
 
 **Status (2026-10-19): STAGE 1 REGISTERED and RUNNING (§6.2).** The sampler ablation with playouts is
 pre-registered (`measurements/world_sampler_stage1_2026-10-19/PREREGISTRATION.md`) on the 287 maturity LEAN states at
@@ -908,30 +908,61 @@ the strict filter), and B's weight function: measurement-folder code. The valida
 itself (F2, 2026-10-19, `world_legality`): every arm through `WorldSampler` gets it, and a corpus arm's worlds pass
 `world_guard.check_legal`.
 
-### 6.3 Stage 1c: more or team-level proposals, resampled by the opponent's own choices (REGISTERED 2026-10-20; RUNNING)
+### 6.3 Stage 1c: more or team-level proposals, resampled by the opponent's own choices (PHASE A READ 2026-10-20; phase B RUNNING)
 
-**Registered** in `measurements/search_1c_2026-10-20/PREREGISTRATION.md` (the read script and the facts meter by
-sha256), as L3's registered consequence. On stage 1's 287 states at X26 225M, under `dice="rolls"` with the legality
-rule on, each state gets two PROPOSAL SETS on one screen cache: **64 honest F worlds** and **64 C_ladder worlds**
-(stage 1's corpus sampler, α 89.1, unchanged). Each proposal is weighted by its damage-roll weight × the
-opponent-choice likelihood (L3's, X26 225M as the opponent), and 8 are drawn by systematic resampling
-(`opp_likelihood.resample`, BUILT with this unit, OFF by default; `SearchConfig(proposals=N)` turns it on in a search).
-- **Arms:** F8 (the first 8 F worlds, uniform: the baseline of record); **F64L, C64L, M128L** (the 64 F, the 64 C, and
-  their union, weighted: PRIMARY); F64d, C64d (dice weight only) and C8 (the corpus alone) as controls.
-- **Phase A (zero playouts):** the primary is **ΔH**, the change in the posterior share of the truth's BINDING hidden
-  facts the worlds hold (each never-seen species and each seen mon's unrevealed move), against F8. Beside it: the moves'
-  and species' hits and exactness, the exact-world mass q_SM, items, spreads, the likelihood's own selection
-  (F64L − F64d), the effective sample size and the mass on the nearest proposal.
-  - NEARER iff ΔH's lower bound > +0.0005; MATERIAL iff > 0.0505; DOSE iff q_SM's lower bound > 0.1005.
-- **The bar:** any primary arm NEARER ⇒ phase B plays F8, every NEARER arm (and C8 for a corpus arm), with the pilot's
-  driver at X26's pin + the roll control, and scores them with L1's fitted piKL anchor (λ 0.1 / 0.015) on the true
-  world's referee. SEARCH-PAYS iff IMP's lower bound > +0.0005 at both LEAF-K8 and TRUNC-4-K8.
-- **Stop:** phase A no state after launch + 30 h (an interim descriptive read at ≈ 12 h); phase B no state after its
-  launch + 24 h. One heavy slot per ≤ 45-min chunk.
+**Registered** in `measurements/search_1c_2026-10-20/PREREGISTRATION.md` (`c9bdc928`; the read script and the facts meter
+by sha256), as L3's registered consequence, with **AMENDMENT A** (`a144482b`, §11 there: the orchestrator's ruling on an
+independent review, before any registered state was built).
+- **The setup.** On stage 1's 287 states at X26 225M, under `dice="rolls"` with the legality rule on, each state gets
+  two PROPOSAL SETS on one screen cache:
+  - **128 honest F worlds**;
+  - **128 C_ladder worlds** (stage 1's corpus sampler, α 89.1, unchanged).
 
-**AMENDMENT A (2026-10-20, before any registered state was built; PREREGISTRATION §11), ruled by the orchestrator on an independent review** (`measurements/search_l3_2026-10-20/REVIEW.md` §3): every corpus arm is read STRICT (its `near4` proposals, near copies of the pool truth, weighted 0; F3), with the non-strict read beside it; the claim that the opponent's choices move the worlds is read only on F128L − F128d and C128L − C128d (co-primary); a permuted-L placebo must not read NEARER or the read stops; any NEARER or SEARCH-PAYS is PROVISIONAL-POOL until an off-pool bank and the plateau checkpoint replicate it (SELF-PLAY-ONLY when only the snapshot stratum carries it); the unit's "honest search pays" is Holm-corrected; NOT-DETECTED means no search-sized gain (≈ +0.03).
+  Each proposal is weighted by its damage-roll weight × the opponent-choice likelihood (L3's, X26 225M as the
+  opponent). A search's 8 worlds are drawn by systematic resampling (`opp_likelihood.resample`, BUILT with this unit,
+  OFF by default; `SearchConfig(proposals=N)` turns it on in a search).
+- **The arms:**
+  - F8, the first 8 F worlds uniform: the baseline of record;
+  - **F128L, C128L, M256L** (the 128 F, the 128 corpus, and their union, weighted): PRIMARY;
+  - the nested 64-world arms, the dice-only F128d / C128d, and C8 (the corpus alone) as controls.
+- **The amendment.** Every corpus arm is read STRICT: proposals sharing ≥ 4 whole mon sets with the pool truth are
+  weighted 0 (F3).
+  - The likelihood's credit is read only on F128L − F128d and C128L − C128d.
+  - A permuted-L placebo must not read NEARER, or the read stops.
+  - Any positive is PROVISIONAL-POOL (until an off-pool bank and the plateau checkpoint replicate it), and
+    SELF-PLAY-ONLY when only the snapshot stratum carries it.
+- **Phase A, the rule:** the primary is **ΔH**, the change in the share of the truth's BINDING hidden facts the worlds
+  hold (each never-seen species and each seen mon's unrevealed move), against F8. NEARER iff its lower bound > +0.0005;
+  MATERIAL > 0.0505; DOSE iff the exact-world mass's lower bound > 0.1005.
 
-No number yet (§7 Q15 of `search_ledger.md`).
+**PHASE A READ (2026-10-20; 285 states; zero playouts; MEASURED, PROVISIONAL-POOL).** All gates pass (0 defects, 2
+exclusions, 6 / 6 deterministic rechecks, 2,280 / 2,280 resamples recomputed).
+
+| arm | ΔH vs F8 [95 %] | verdict | bot / snapshot | the exact-world mass q_SM |
+|---|---|---|---|---|
+| F128L | +0.007 [+0.001, +0.014] | NEARER, not MATERIAL | −0.006 / +0.021 | 0.0000 |
+| C128L (STRICT) | +0.019 [+0.012, +0.027] | NEARER, not MATERIAL | −0.000 / +0.038 | 0.0001 |
+| M256L | +0.013 [+0.007, +0.019] | NEARER, not MATERIAL | −0.003 / +0.030 | 0.0000 |
+
+All three are labelled **PROVISIONAL-POOL, SELF-PLAY-ONLY**.
+- **The corpus brings the never-seen species by itself.** C8 − F8 is +0.017 on H and +0.095 on the species share; the
+  exact never-seen set rises 0.017 → 0.065.
+- **The likelihood's own selection is small:**
+  - +0.008 [+0.002, +0.013] among the F proposals (NEARER, snapshot-only; the every-move-exact share 0.011 → 0.016);
+  - +0.005 [−0.000, +0.011] among the corpus ones (NOT-DETECTED);
+  - against scripted bots it pulls the corpus worlds AWAY from the truth (−0.008).
+- **More proposals buy nothing:** 128 − 64 ≈ 0 on every arm. The likelihood keeps an ESS of ≈ 18–20 of 128.
+- **A1's leak is small:** 11 % of states hold a near copy, and the likelihood puts 0.0018 of its weight on them. **The
+  placebos read NULL.**
+- **What it means for the sampler (descriptive):**
+  - The judge (L3) finds slightly nearer worlds where the opponent is our own network, and none against bots.
+  - The exact-world mass stays ≈ 0 in every arm, two orders of magnitude short of the dose curve's ≈ 0.2.
+  - What binds is still proposals that hold the truth's team. The likelihood cannot conjure them from 128–256 honest or
+    corpus draws.
+  - The bar (any primary NEARER) is met. **Phase B** plays F8, the three primaries, C8, F128d and C128d with L1's
+    fitted piKL anchor (RUNNING; stop 2026-10-21 21:00 PDT).
+
+Detail: `measurements/search_1c_2026-10-20/README.md` §5, `result_1c_a.json`.
 
 ---
 
@@ -1054,3 +1085,4 @@ No number yet (§7 Q15 of `search_ledger.md`).
 | 2026-10-20 | **L3 CORRECTED after its adversarial review** (`measurements/search_l3_2026-10-20/REVIEW.md`, F1–F3, F5) | §0 (the L3 bullet) and §4 (f) (the L3 read): p_truth 0.249 is a COUNTERFACTUAL (the truth inserted among 8 honest worlds), not the dose curve's p; the pooled WORKS is carried by the snapshot stratum (bots WEAK alone); the read is PROVISIONAL-POOL, with the familiarity counter-test named | "0.249 is the dose curve's p\* range" (two different quantities; the quantity search needs is the near-world mass after the resample, stage 1c's meters) | REVIEW.md F1–F3, F5 |
 | 2026-10-20 | **STAGE 1c AMENDMENT A registered** (the orchestrator's ruling on the independent review, `measurements/search_l3_2026-10-20/REVIEW.md` §3; PREREGISTRATION §11) | §6.3: the STRICT corpus read (`near4` weighted 0; F3's leak class), the L-vs-dice attribution co-primaries, the permuted-L placebo stop, PROVISIONAL-POOL / SELF-PLAY-ONLY, Holm, NOT-DETECTED = no search-sized gain, the ESS split; the runner (not yet past its first slot wait) stopped and relaunched with the same stop | a corpus-team-level near-copy flag in place of the per-world `near4` (it would need a driver change; the ruling's flag is conservative: it also zeroes rare honest near-exact worlds, declared, with the honest base rate reported) | PREREGISTRATION §11 |
 | 2026-10-20 | **L3 FAMILIARITY COUNTER-TEST READ: NOT-DETECTED, POOL-LIFT** (`measurements/search_l3_2026-10-20/counter_test/`, pre-registered `b39c9cdc`) | §4 (f): pool decoys beat honest worlds (0.575 [0.517, 0.631]); the truth vs its decoys is inconclusive (0.578 [0.489, 0.664]); L3 stays PROVISIONAL-POOL, the off-pool bank required | treating L3 as truth-specific evidence on pool banks | counter_test README, `result_decoy.json` |
+| 2026-10-20 | **STAGE 1c PHASE A READ** (`measurements/search_1c_2026-10-20/` README §5, `result_1c_a.json`) | Status; §6.3 rewritten (it still named the pre-registration draft's 64 + 64 proposals and its arm names; the registered N is 128 + 128) with the read: all primaries NEARER, none MATERIAL, PROVISIONAL-POOL and SELF-PLAY-ONLY; the corpus carries the species, the likelihood +0.008 among F worlds only; the exact-world mass ≈ 0; phase B running | ranking (f) above (c) on this read (the likelihood adds little to the corpus); calling the route closed before phase B's playouts and the off-pool replication | README §5 |
