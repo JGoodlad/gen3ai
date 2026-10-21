@@ -1,0 +1,143 @@
+{
+ "FAIL": [],
+ "arms": {
+  "B": {
+   "play_dup": 0,
+   "play_missing": 0,
+   "play_ok": 280,
+   "play_refused": 0,
+   "world_defect": 0,
+   "world_dup": 0,
+   "world_excluded": 7,
+   "world_missing": 0,
+   "world_ok": 280
+  },
+  "C_forum_strict": {
+   "play_dup": 0,
+   "play_missing": 0,
+   "play_ok": 280,
+   "play_refused": 0,
+   "world_defect": 0,
+   "world_dup": 0,
+   "world_excluded": 7,
+   "world_missing": 0,
+   "world_ok": 280
+  },
+  "C_ladder": {
+   "play_dup": 0,
+   "play_missing": 0,
+   "play_ok": 280,
+   "play_refused": 0,
+   "world_defect": 0,
+   "world_dup": 0,
+   "world_excluded": 7,
+   "world_missing": 0,
+   "world_ok": 280
+  },
+  "C_pool": {
+   "play_dup": 0,
+   "play_missing": 0,
+   "play_ok": 287,
+   "play_refused": 0,
+   "world_defect": 0,
+   "world_dup": 0,
+   "world_excluded": 0,
+   "world_missing": 0,
+   "world_ok": 287
+  },
+  "F_legal": {
+   "play_dup": 0,
+   "play_missing": 0,
+   "play_ok": 280,
+   "play_refused": 0,
+   "world_defect": 0,
+   "world_dup": 0,
+   "world_excluded": 7,
+   "world_missing": 0,
+   "world_ok": 280
+  },
+  "F_off": {
+   "play_dup": 0,
+   "play_missing": 0,
+   "play_ok": 280,
+   "play_refused": 0,
+   "world_defect": 0,
+   "world_dup": 0,
+   "world_excluded": 7,
+   "world_missing": 0,
+   "world_ok": 280
+  },
+  "F_rolls": {
+   "play_dup": 0,
+   "play_missing": 0,
+   "play_ok": 283,
+   "play_refused": 0,
+   "world_defect": 0,
+   "world_dup": 0,
+   "world_excluded": 4,
+   "world_missing": 0,
+   "world_ok": 283
+  },
+  "NS": {
+   "play_dup": 0,
+   "play_missing": 0,
+   "play_ok": 280,
+   "play_refused": 0,
+   "world_defect": 0,
+   "world_dup": 0,
+   "world_excluded": 7,
+   "world_missing": 0,
+   "world_ok": 280
+  }
+ },
+ "provenance": {
+  "builder_heads": [
+   "8d30495345b4d772fb7cc00b08d774395fed598c"
+  ],
+  "drivers": [
+   "8d30495345b4d772fb7cc00b08d774395fed598c"
+  ],
+  "play_heads": [
+   "13ffd55cf68d1aedfd5027ba23bffdd227367d27"
+  ]
+ },
+ "states": 287,
+ "teeth": {
+  "A3_near4_excess_over_F_legal": {
+   "mean_excess": -0.00045,
+   "states": 280
+  },
+  "A3_strict_filter_integrity": {
+   "bad_states": 0,
+   "candidate_teams_checked": 14767
+  },
+  "crn_corpus_is_B_when_n0": {
+   "C_forum_strict_checked": 131,
+   "C_ladder_checked": 89
+  },
+  "crn_off_is_legal_when_untouched": {
+   "checked": 169
+  },
+  "leak_tooth_as_written": {
+   "detail": [
+    {
+     "F_legal_near4": 0.125,
+     "corpus_worlds": 0,
+     "id": "rb_x26_s2601/step_230000074/sentinel_2/loss_s2_004#p1#40",
+     "k": 6,
+     "near4": 0.125
+    }
+   ],
+   "states_firing": 1
+  },
+  "rolls": {
+   "bad": 0
+  },
+  "true_team_in_pool": {
+   "missing": 0,
+   "rows_with_meta": 287,
+   "true_in_candidates": 287
+  }
+ },
+ "verdict": "PASS"
+}

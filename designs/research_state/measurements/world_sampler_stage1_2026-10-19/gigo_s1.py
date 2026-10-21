@@ -12,7 +12,10 @@ provenance fields only).
   CRN tooth 2  F_off on a state where F_legal's legality rule rejected nothing: its worlds ARE F_legal's (the rule spends
                no randomness until it rejects: F2's identity, re-checked here on the bank)
   pool tooth   every state's TRUE team is a pool team as X26's pin packed it (C_pool's meta ``true_in_pool``)
-  leak tooth   no C_forum_strict world shares >= 4 mon sets with the state's TRUE team (design §6.2)
+  leak tooth   AS WRITTEN (no C_forum_strict world shares >= 4 mon sets with the true team) is REPORTED only (A3, §11:
+               honest hits fire it); the registered leak check is A3's: (i) the strict filter's integrity (no candidate
+               corpus team shares >= 4 mon sets, counted independently) and (ii) C_forum_strict's near-copy share in
+               excess of F_legal's on the same states, mean <= +0.05
 
     python gigo_s1.py [--ids-from-table]      -> gigo_s1.json (this folder); exits 1 on a failed tooth
 """
@@ -119,24 +122,67 @@ def audit(ids) -> dict:
                                          "true_in_candidates": sum(1 for m in pool_meta if m.get("true_in_candidates"))}
     if miss:
         fail.append(f"pool tooth: {miss} states whose true team is not a pool team")
-    # leak tooth
+    # leak tooth AS WRITTEN (§7): no C_forum_strict world shares >= 4 mon sets with the true team. AMENDMENT A3 (§11):
+    # it also counts sets a world shares through REVEALED moves and correct honest draws, so an F world fires it (the
+    # one state it fired on: k = 6, no corpus team, every world B = F, F_legal's own share identical). Reported, not a
+    # stop; the registered leak check is now the two below.
     from main.policy_spectrum.bank import load_bank
     from main.policy_spectrum.truth import to_log
 
     bank = load_bank(E.MAT_ARCH / "bank")
     dec = {d["id"]: d for d in bank.decisions}
-    leak = 0
+    true_of = {}
+    for i in ids:
+        b = bank.battles[bank.battle_index[dec[i]["battle"]]]
+        true_of[i] = to_log(b)["teams"][1 if dec[i]["side"] == "p1" else 0]
+    as_written, excess = [], []
+    for i in ids:
+        w, f = worlds["C_forum_strict"].get(i, {}), worlds["F_legal"].get(i, {})
+        if not w.get("ok"):
+            continue
+        nw = SC.world_meters(w, true_of[i])["near4"]
+        if nw > 0:
+            nf = SC.world_meters(f, true_of[i])["near4"] if f.get("ok") else None
+            as_written.append({"id": i, "near4": nw, "F_legal_near4": nf, "k": len(w.get("revealed") or {}),
+                               "corpus_worlds": (w.get("prop") or {}).get("worlds_corpus", 0)})
+        if f.get("ok"):
+            excess.append(SC.world_meters(w, true_of[i])["near4"] - SC.world_meters(f, true_of[i])["near4"])
+    out["teeth"]["leak_tooth_as_written"] = {"states_firing": len(as_written), "detail": as_written}
+    # A3 (i) THE FILTER'S INTEGRITY: per state, the strict candidate set recomputed, and an INDEPENDENT count (each
+    # candidate's six mon sets against the true team's, from the normalised entries) finds none sharing >= 4
+    import corpus_s1 as CS
+    from main.value_search import world_legality as WL
+    from main.value_search import worlds as WW
+    from main.value_search.world_draws import Prior
+
+    forum = CS.load("forum", WL.Legality(pad=WW._gender_pad()), Prior())
+    bad_filter = 0
+    checked = 0
     for i in ids:
         w = worlds["C_forum_strict"].get(i, {})
         if not w.get("ok"):
             continue
-        b = bank.battles[bank.battle_index[dec[i]["battle"]]]
-        true_team = to_log(b)["teams"][1 if dec[i]["side"] == "p1" else 0]
-        if SC.world_meters(w, true_team)["near4"] > 0:
-            leak += 1
-    out["teeth"]["forum_strict_near_copies"] = leak
-    if leak:
-        fail.append(f"leak tooth: {leak} states")
+        kept = {s: set(m) for s, m in (w.get("revealed") or {}).items()}
+        tm = {CS.mon_set(e) for e in true_of[i].split("]")}
+        near = forum.near_copies(tm)
+        cands = [c for c in forum.consistent(kept) if c not in near]
+        if len(cands) != (w.get("prop") or {}).get("n", -1):
+            bad_filter += 1
+            continue
+        for c in cands:
+            checked += 1
+            if sum(1 for e in forum.teams[c] if CS.mon_set(e) in tm) >= CS.NEAR:
+                bad_filter += 1
+                break
+    out["teeth"]["A3_strict_filter_integrity"] = {"candidate_teams_checked": checked, "bad_states": bad_filter}
+    if bad_filter:
+        fail.append(f"A3 filter tooth: {bad_filter} states")
+    # A3 (ii) THE WORLD-LEVEL LEAK SIGNAL: C_forum_strict's near-copy share in EXCESS of F_legal's on the same state
+    # (a leak from the corpus would raise it; honest hits are common to both): its mean must not exceed +0.05
+    mx = float(sum(excess) / len(excess)) if excess else 0.0
+    out["teeth"]["A3_near4_excess_over_F_legal"] = {"states": len(excess), "mean_excess": round(mx, 5)}
+    if mx > 0.05:
+        fail.append(f"A3 excess tooth: mean near4 excess {mx:.4f} > 0.05")
     out["FAIL"] = fail
     out["verdict"] = "PASS" if not fail else "FAIL"
     return out

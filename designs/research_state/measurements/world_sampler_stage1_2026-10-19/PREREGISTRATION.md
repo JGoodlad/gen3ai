@@ -190,7 +190,8 @@ becomes F's baseline; NS or C_ladder PAYS with its q_SM < 0.01 → PARTLY right 
 - **CRN tooth 1**: on a state where no corpus team fits (λ = 0), a corpus arm's worlds ARE B's.
 - **CRN tooth 2**: on a state where F_legal's rule rejected nothing, F_off's worlds ARE F_legal's.
 - **Pool tooth**: every state's true team is a pool team (C_pool's `true_in_pool`).
-- **Leak tooth**: no C_forum_strict world shares ≥ 4 mon sets with the true team.
+- **Leak tooth**: no C_forum_strict world shares ≥ 4 mon sets with the true team (corrected by amendment A3, §11:
+  reported only; the registered leak check is the strict filter's integrity and the near-copy excess over F_legal).
 A failed tooth stops the read (a FINDING, reported).
 
 ## 8. CPU and safety
@@ -264,3 +265,28 @@ excluded and reported). `<archive>/STOP_AT` now holds a safety bound, 2026-11-03
 `STOP_AT.registered`. This registration named no minimum n and no interim look, so none is made: an interim report
 is sent only if something breaks. Everything else stands: the arms, the metrics, every rule, the bootstrap seed, A1.
 From 2026-10-20 18:27 the chunk jobs lose the BLOCKING mark and go through the FIFO heavy slots (the README).
+
+## 11. AMENDMENT A3 — the leak tooth corrected (registered 2026-10-21 05:43 PDT)
+
+**No outcome has been read.** The run finished at `QUEUE_DONE` (2026-10-21 05:40; 287 / 287 complete, 0 parked).
+`score_s1.py` then built the table (`score/table.pkl`, sha256 `5b53d306…`); only its counts line was printed (per
+arm: ok / excluded / defect / refused). The GIGO audit then ran, and §7's leak tooth FAILED on 1 state. No IMP, Δ, verdict
+or scorer value has been looked at.
+
+**The diagnosis** (from the world rows only). The state is
+`rb_x26_s2601/step_230000074/sentinel_2/loss_s2_004#p1#40`: k = 6 (every opponent mon seen), and no forum team is
+consistent (n = 0), so every C_forum_strict world is a B world, which equals F at k = 6. None of its mons came from the
+corpus. One world of eight shares 4 mon sets with the truth through F's own honest draws: Tyranitar fully revealed,
+Metagross's one hidden slot its Hidden Power, and Jolteon and Salamence drawn right. F_legal holds the identical share
+on the state (0.125). §7's tooth (as the design wrote it, §6.2) counts EVERY set a world shares with the truth,
+revealed and correctly drawn ones included, so honest hits fire it. It cannot separate a corpus leak from a good draw.
+
+**The correction.** The tooth as written is REPORTED, never a stop. The registered leak check becomes two teeth:
+1. **the strict filter's integrity**: per state, the strict candidate set is recomputed, and an independent count of
+   each candidate's six mon sets against the true team's finds none sharing ≥ 4. Result: 14,767 candidate teams, 0 bad;
+2. **the world-level leak signal**: C_forum_strict's near-copy share in EXCESS of F_legal's on the same states, mean ≤
+   +0.05 (a leak from the corpus raises it; honest hits are common to both). Result: mean −0.00045 over 280 states.
+
+Both pass. The +0.05 bound was set before tooth 2 was computed. The audit (`gigo_s1.json`) is otherwise unchanged: rolls
+0 bad; CRN tooth 1, 220 corpus-arm states with n = 0, all equal to B; CRN tooth 2, 169 states, F_off = F_legal; pool tooth
+287 / 287; one builder, play and driver commit. No arm, rule, state or seed changes.
