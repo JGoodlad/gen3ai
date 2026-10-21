@@ -7,7 +7,7 @@ HEAD `03b983be` (§4.3); nothing launched; every launch NEEDS THE ORCHESTRATOR'S
 `gen3_tau_fp32_alt_v1`; its GPU cost read gates production), so there is ONE PIN PER SIDE, the TOY BLOCK RUNS FIRST (AM-9) and production waits for the FP32_ALT commit (a
 placeholder the kit refuses to launch on).** **AMENDED 2026-10-20 (AM-X47, §0) before any X47 read:** the
 orchestrator accepted X47's readout review (AM-X47-1 to -11) and ruled that X47 arms are not thinned (AM-X47-12). X47's
-READ PLAN is §4.5, and its guards' pre-read (both READ on toys) is §4.5.1. **AMENDED 2026-10-20 (AM-X47b, §0) before any X47 read:** G-C pooled over seeds (a crossed cluster bootstrap), the toy's own B2 truth, a policy-difference descriptor (reported only), and UNDECIDED with Δ̂ ≤ 0 deprioritises X47b. **AMENDED 2026-10-20 (AM-X47c, §0) before any X35 read:** the UNDECIDED line prints the CURRENT look's detectable effect, and production's B2 truth is refreshed under P\* (§5.6.5's own refresh rule). **AMENDED 2026-10-20 (D1-CORPUS, §0) before any D1 launch:** X54's sealed confirmation panel `forum216b` was carved out of D1's corpus, which is now 1,982 teams (tier sha `73a76e808431`); launch pre-check 2d HOLDs a pin without it. **NOTE 2026-10-20 (TM, §0) before any production X35 read:** the X26 treadmill read's MECHANISM predictions for C0 / A1 / A2 (pool refresh, pool-relative edge, the learning rate in force), reported only, and the LR confound every production fork inherits; no arm, argv, bar or order changed. **AMENDED 2026-10-20 (AM-RP, §0) before any X47 look-1 read and any production arm:** the REPLAN memo's rulings: A2 and toy A2 DROPPED, P3 DEFERRED, LG-2 only on an A1 GAIN, A3's ROBUSTNESS GAIN rule, the toy calibration accepted NOT SHOWN, the GPU order after T1 (the GPU battery first), and batch 2's SPRT and toy LR-F registered. X47 is a **kit arm**
+READ PLAN is §4.5, and its guards' pre-read (both READ on toys) is §4.5.1. **AMENDED 2026-10-20 (AM-X47b, §0) before any X47 read:** G-C pooled over seeds (a crossed cluster bootstrap), the toy's own B2 truth, a policy-difference descriptor (reported only), and UNDECIDED with Δ̂ ≤ 0 deprioritises X47b. **AMENDED 2026-10-20 (AM-X47c, §0) before any X35 read:** the UNDECIDED line prints the CURRENT look's detectable effect, and production's B2 truth is refreshed under P\* (§5.6.5's own refresh rule). **AMENDED 2026-10-20 (D1-CORPUS, §0) before any D1 launch:** X54's sealed confirmation panel `forum216b` was carved out of D1's corpus, which is now 1,982 teams (tier sha `73a76e808431`); launch pre-check 2d HOLDs a pin without it. **NOTE 2026-10-20 (TM, §0) before any production X35 read:** the X26 treadmill read's MECHANISM predictions for C0 / A1 / A2 (pool refresh, pool-relative edge, the learning rate in force), reported only, and the LR confound every production fork inherits; no arm, argv, bar or order changed. **AMENDED 2026-10-20 (AM-RP, §0) before any X47 look-1 read and any production arm:** the REPLAN memo's rulings: A2 and toy A2 DROPPED, P3 DEFERRED, LG-2 only on an A1 GAIN, A3's ROBUSTNESS GAIN rule, the toy calibration accepted NOT SHOWN, the GPU order after T1 (the GPU battery first), and batch 2's SPRT and toy LR-F registered. **NOTE 2026-10-20 (AM-R0, §0):** R0, the exploitability curve, is registered (`R0_REGISTRATION.md`) and placed: R0-toy right after the GPU battery, R0-prod right after P1's C0 seeds (≈ 5.8 GPU-h); C4's deferral ends. X47 is a **kit arm**
 (`toy_x47`, F-LS-1 closed). The orchestrator has ruled **C1** (a), **C2** (X47 interleaved with its toy C0), **C3** (the
 toy arms run K9(b) `warn` under X34's ceilings), **C4** (batch 1 launches without R0) and every amendment of the
 [adversarial review](X35_BATCH1_REVIEW.md) (AM-1 to AM-7, the POOL check, the G-E readers); C1's rule (a) is SUPERSEDED by AM-8; C6 is still open; C5 is RULED and DONE (§5). This sheet is
@@ -284,6 +284,28 @@ are registered in [`STAGED_PLAN.md`](STAGED_PLAN.md) §4 after it.
   strict `>` (Binomial(500) > 0.55, exact), and 0.04 / 0.10 / 0.20 / 0.34 under `≥`. The memo's 0.04–0.33 sits between
   them. The SPRT figures reproduce exactly (0.10 / 0.32 / 0.66 / 0.89;
   [`batch2_sprt/sprt_vs_threshold.json`](batch2_sprt/sprt_vs_threshold.json)).
+
+### ORCHESTRATOR NOTE 2026-10-20 (AM-R0): R0, the exploitability curve, registered and placed in the GPU order
+
+**Registered 2026-10-20, before any R0 run exists.** No X35 run's telemetry was opened for it. The design, predictions
+and read are [`R0_REGISTRATION.md`](R0_REGISTRATION.md). The kit arms `toy_r0` / `r0` are `main.x35.r0`, built in the
+commit that follows this one. **Ruling C4's deferral ends here**: F27 / F-LS-19 are closed for R0. Batch 1, `BATCH1`
+and `STAGES` are unchanged and stay closed.
+
+| ruling | what it says | where it is enforced |
+|---|---|---|
+| **AM-R0-a: two best responders** (the owner's direction, 2026-10-20) | **R0-toy:** a fork of T\* trained ONLY against frozen T\*, at the toy pin `4609c155`, +20M, seed 3631, ≈ **1.4 GPU-h**. **R0-prod:** the same against P\*, at the PRODUCTION pin (it waits for FP32_ALT, AM-8), +20M, seed 3531, ≈ **4.4 GPU-h**. The argv is the G-E reader's (§4.4) with the start node as target. R0-prod's first 5M IS LG-1's R0 (A6's trigger, the R2 baseline), which absorbs LG-1's own 1.1 GPU-h | `kit.ARMS` (`toy_r0`, `r0`); side-pinned (`batch.R0_ARMS`: `pin-check`, pre-check 11); `batch.R0_STAGES`, never `STAGES` |
+| **AM-R0-b: the read** | the exploitability curve: the BR's gap against its target at k = 0, 2M, …, 20M, 400 greedy games a point, and the classes SATURATED / RISING / UNRESOLVED with t90. The stop rule is the fixed `--steps`; an extension to 40M only by a later registration | `python -m main.x35.r0 play` (CPU, after the run ends); `r0.classify` |
+| **AM-R0-c: the order** | **R0-toy runs IMMEDIATELY AFTER THE GPU BATTERY, before T1b**: it is cheap and on the toy pin. **R0-prod runs RIGHT AFTER P1's C0 seeds (s3501–s3503), before A1 s3501–s3503.** The rest of AM-RP-e's order is unchanged. The order is the Training session's, not a gate (F-RP-6) | the Training session's sequence; `stage-check`: `toy_r0` ALLOWED, `r0` PENDING until FP32_ALT is named |
+| **AM-R0-d: the search add-on** | "exploiter + pi search, just to know". L1's piKL (λ 0.015, TRUNC-4-K8, 8 honest worlds) on the BR's final against its target, and the mirror (the target + piKL against the BR). 100 paired deals a cell, ≈ 53 CPU-h a cell, CPU only, DESCRIPTIVE | not runnable yet: it needs a live one-ply search player (a build, F-R0-8) |
+
+**GPU-h added: ≈ 5.8** (1.4 toy + 4.4 production), ≈ **4.7 net** of LG-1's absorbed R0. The AM-RP-e order now reads:
+(1) the GPU battery → **(1b) R0-toy** → (2) T1b → (3) P1's C0 s3501–s3503 → **(3b) R0-prod** → A1 s3501–s3503 →
+(4) G1 → (5)–(11) as AM-RP-e.
+
+**FINDINGS (AM-R0).** Every hazard is in the registration's FINDINGS (F-R0-1 to F-R0-14). The two that touch this sheet:
+- **F-R0-12.** R0's K9(b) VOID would HOLD the next GO on either side (pre-check 11 is batch-wide, F-LS-16).
+- **F-R0-13.** The placement is not enforced. A `toy_r0` GO before the battery would pass every pre-check.
 
 
 ---
