@@ -27,7 +27,10 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   lever, at the side's written pin: ``sprt`` / ``toy_sprt`` (``--promotion-sprt``, §4.2) and ``lrfloor`` /
   ``toy_lrfloor`` (``--min-lr`` two controller rungs above the start's rate: 1.7361e-4 / 2.0833e-4, §4.1.1-§4.1.2).
   Their registered VOID guards are read by ``python -m main.x35.kit void --arm <arm> --run-dir <run>``
-  (``main.x35.batch2_void``).
+  (``main.x35.batch2_void``);
+* R0, the EXPLOITABILITY CURVE (``main.x35.r0``; launch sheet §0 AM-R0, 2026-10-20; ``batch.R0_STAGES``): ``toy_r0`` /
+  ``r0`` -- one fresh best responder of the side's start node (T* / P*), the G-E reader's argv with that node as the
+  target, +20M (the toy with its side extras), side-pinned, read at fixed checkpoints by ``python -m main.x35.r0 play``.
 
     python -m main.x35.kit describe --arm a1 --seed 3501 --call <R_production.json> [--phase1 <record>]
     python -m main.x35.kit describe --arm ge_a1 --seed 3501 --call <R_production.json> [--models-dir D]   # a G-E reader
@@ -66,6 +69,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from main.x35 import batch as _B
 from main.x35 import ge as _GE
+from main.x35 import r0 as _R0
 from main.x35.batch import STAGES as BATCH_STAGES
 from main.x35.batch import BatchError
 from main.x35.refpop import RefPopError, sha256_file
@@ -121,7 +125,7 @@ class Arm:
     length: int
     seeds: Tuple[int, ...]
     run: str             # run-name format
-    phase: int           # 0 = single phase, 1 = exploiters, 2 = folded in, 3 = a G-E reader (main.x35.ge)
+    phase: int           # 0 single phase, 1 exploiters, 2 folded in, 3 a G-E reader (main.x35.ge), 4 R0 (main.x35.r0)
     behaviour: str
     phase1_of: Optional[str] = None  # phase 2: the phase-1 arm whose record it reads
 
@@ -164,6 +168,9 @@ def canonical_arm(name: str) -> str:
 ARMS.update({r: Arm(r, ARMS[t].side, _GE.L_READER, _GE.TARGET_SEEDS,
                     "rb_x35_ge_" + ARMS[t].run[len("rb_x35_"):], _GE.READER_PHASE, "warn")
              for r, t in _GE.READER_ARMS.items()})
+#: R0, the exploitability curve (``main.x35.r0``, AM-R0): the kit seed is the training seed.
+ARMS.update({r: Arm(r, side, _R0.L_R0, _R0.R0_SEEDS[r], "rb_x35t_r0_s{seed}" if side == "toy" else "rb_x35_r0_s{seed}",
+                    _R0.R0_PHASE, "warn") for r, side in _R0.R0_ARMS.items()})
 assert all(v in ARMS for v in ARM_ALIASES.values()) and not set(ARM_ALIASES) & set(ARMS)
 #: Batch 1 + X47, in GPU order: AM-9 (orchestrator, 2026-10-20; it moved the toy block ahead of production, which waits
 #: for the FP32_ALT build), stage by stage in ``main.x35.batch.STAGES``: T1 toy C0 + X47 (C2's interleave, toy A1 out) ->
@@ -211,6 +218,9 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
         if target is None:
             raise KitError(f"arm {arm} is a G-E reader: it needs its target final (reader_target)")
         return _GE.build_reader_argv(arm, seed, target, behaviour=a.behaviour, ckpt_every=CKPT_EVERY)
+    if a.phase == _R0.R0_PHASE:
+        return _R0.build_r0_argv(arm, seed, call, run_name=run_name(arm, seed), behaviour=a.behaviour,
+                                 ckpt_every=CKPT_EVERY, extras=TOY_EXTRAS if a.side == "toy" else ())
     p = call["pstar"]
     start, step = str(p["path"]), int(p["step"])
     head = ["--model", start]
@@ -395,7 +405,7 @@ def check_validation(d: Mapping[str, Any], dryrun: str, checkargs: str, rc_check
 
 # ---------------------------------------------------------------------------------- the post-spawn pool check
 #: Arms whose fork does NOT self-play, so nothing is seeded (F16: the main exploiter types --no-self-play).
-NO_POOL_ARMS = frozenset({"a3_mx", *_GE.READER_ARMS})
+NO_POOL_ARMS = frozenset({"a3_mx", *_GE.READER_ARMS, *_R0.R0_ARMS})
 POOL_SEED_SCHEMA = 2
 _FILTER_RE = re.compile(r"\[step filter <= (\d+): (?:DROPPED (\d+) later snapshot\(s\) at steps \[([0-9, ]*)\]"
                         r"|none later)")

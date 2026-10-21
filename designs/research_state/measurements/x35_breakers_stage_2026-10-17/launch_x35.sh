@@ -14,7 +14,8 @@
 #          best responder of that arm's FINISHED final, launched only when the arm's primary reads GAIN (pre-check 9);
 #          ge_c0 is every arm's shared b-OFF reader) · BATCH 2 (STAGED_PLAN §4.1-§4.3, F-AS-8; each = the side's C0
 #          argv + ONE lever, at the side's written pin): sprt lrfloor (+20M) · toy_sprt toy_lrfloor (+70M)
-#                                                                      (main.x35.kit holds every argv)
+#          · R0, the exploitability curve (AM-R0, main.x35.r0, +20M, a best responder of the side's start node):
+#          toy_r0 3631 (toy pin) · r0 3531 (production pin)                  (main.x35.kit holds every argv)
 #   phase 1 → 2:  after the three exploiters END,
 #          python -m main.x35.kit phase1-record --arm a3 --call <R> --out <stage>/phase1_a3.json   (write-once)
 #
@@ -69,7 +70,7 @@ while [ $# -gt 0 ]; do
        shift;;
   esac
 done
-[ -n "$ARM" ] && [ -n "$SEED" ] && [ -n "$PIN" ] || { sed -n 2,16p "$0" >&2; exit 2; }
+[ -n "$ARM" ] && [ -n "$SEED" ] && [ -n "$PIN" ] || { sed -n 2,18p "$0" >&2; exit 2; }
 mkdir -p "$J"; log() { echo "[$(date -Is)] $ARM s$SEED: $1" >> "$ST"; }
 hold() { log "HOLD: $1"; echo "HOLD: $1" >&2; exit 7; }
 kit() { ( cd "$REPO" && PYTHONPATH="$REPO/src" CUDA_VISIBLE_DEVICES="" "$PY" -m main.x35.kit "$@" ); }

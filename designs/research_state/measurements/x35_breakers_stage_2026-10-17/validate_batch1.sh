@@ -14,6 +14,7 @@
 #          ge_a1 ge_a2 ge_d1 ge_c0 (the G-E READERS, main.x35.ge; seed = the TARGET's, 3501). Their target is an arm's
 #          FINISHED final, which does not exist before the arm ends, so a validation names a STAND-IN target model
 #          (--reader-standin, e.g. P*): printed as `target=STANDIN:<file>` on the line, never a launch value
+#          toy_r0:3631 r0:3531 (R0, AM-R0, main.x35.r0: the start node is the target, so no stand-in)
 # One line per argv on stdout, ending `verdict=PASS` or `verdict=FAIL <why>`, then `SUMMARY <n> PASS, <m> FAIL`; the exit
 # status is the number of FAILs (capped at 100). A --toy-call whose name says STANDIN is printed as `call=…STANDIN…` on
 # every toy line: a stand-in for T* is never a launch value. Transcripts: <out>/{argv,checkargs,dryrun,corpus}_<arm>_s<seed>.txt.
@@ -30,7 +31,7 @@ while [ $# -gt 0 ]; do
     *) SPECS+=("$1"); shift;;
   esac
 done
-[ -n "$PIN" ] && [ -n "$OUT" ] && [ "${#SPECS[@]}" -gt 0 ] || { sed -n 2,16p "$0" >&2; exit 2; }
+[ -n "$PIN" ] && [ -n "$OUT" ] && [ "${#SPECS[@]}" -gt 0 ] || { sed -n 2,17p "$0" >&2; exit 2; }
 case "$(realpath -m "$OUT")" in */models|*/models/*|*/data|*/data/*) echo "--out must not be under models/ or data/" >&2; exit 2;; esac
 PIN=$(git -C "$REPO" rev-parse --verify "$PIN^{commit}") || exit 2
 RPROD=$STAGE/reference_population_production.json

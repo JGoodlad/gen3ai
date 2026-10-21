@@ -337,10 +337,11 @@ def test_x47_is_toy_c0_plus_the_grow_lever_and_nothing_else():
 
 def test_c3_the_toy_arms_run_k9b_warn_under_x34s_ceilings_and_production_is_unchanged():
     toys = [n for n, a in K.ARMS.items() if a.side == "toy"]
-    assert sorted(toys) == ["toy_a1", "toy_a2", "toy_c0", "toy_lrfloor", "toy_sprt", "toy_x47"]
+    assert sorted(toys) == ["toy_a1", "toy_a2", "toy_c0", "toy_lrfloor", "toy_r0", "toy_sprt", "toy_x47"]
     for n in toys:
-        assert flags(K.build_argv(n, 3601, toy_call()))["--behaviour-check"] == "warn", n
-        d = K.describe(n, 3601, toy_call())
+        s = K.ARMS[n].seeds[0]                     # 3601, or toy R0's 3631 (AM-R0)
+        assert flags(K.build_argv(n, s, toy_call()))["--behaviour-check"] == "warn", n
+        d = K.describe(n, s, toy_call())
         assert d["behaviour"] == "warn"
         assert d["k9b_ceilings"] == {"judged_max": 1e-3, "p99": 1e-4, "non_finite": "STOP", "rule8_rel": 1e-9}
     for n, a in K.ARMS.items():   # production keeps what the kit said before C3: `warn` (X26's regime), no toy ceilings
