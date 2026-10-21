@@ -915,8 +915,13 @@ def behaviour_probe(model: Any, *, ages: Optional[np.ndarray] = None, prefix: st
         out.update(flip["metrics"])
     # the |Δ| each current row is JUDGED on: a flip-judged row's is the nearer of its two resolutions
     absd = np.abs(d) if flip is None else flip["absd"]
-    worst = float(np.abs(d[cur]).max()) if cur.any() else float("nan")
-    out["behaviour/max_abs_dlogp_current"] = worst
+    # The current-row statistics exist only when there ARE current rows (`gen3_k9b_no_row_no_tag_v1`): an update with
+    # none (every overlapped X14 update's learner probe) writes no row, as `max_abs_dlogp_judged` writes none — never a
+    # NaN "empty" placeholder, which X35 AM-6's arm-end reader (`main.x35.batch.judge_k9b`) rightly reads as a
+    # NON-FINITE |d log pi| and VOIDs on (the 2026-10-20 battery's X14 ON arm: 13 such rows,
+    # `designs/research_state/measurements/gpu_window_battery_2026-10-20/X14_K9B_DIAGNOSIS.md`).
+    if cur.any():
+        out["behaviour/max_abs_dlogp_current"] = float(np.abs(d[cur]).max())
     clip = model.clip_range(model._current_progress_remaining) if callable(model.clip_range) else float(model.clip_range)
     ratio = np.exp(d)
     for lo, hi in (AGE_BUCKETS if staleness else ()):
@@ -944,8 +949,8 @@ def behaviour_probe(model: Any, *, ages: Optional[np.ndarray] = None, prefix: st
         out["staleness/carry_rows"] = float(fill.carry_rows)
         out["staleness/in_progress_rows"] = float(fill.in_progress_rows)
         out["staleness/rows_cut_total"] = float(fill.cut_rows_total)
-    out["behaviour/p99_abs_dlogp_current"] = (behaviour_statistic(np.abs(d[cur]), "p99") if cur.any()
-                                              else float("nan"))
+    if cur.any():
+        out["behaviour/p99_abs_dlogp_current"] = behaviour_statistic(np.abs(d[cur]), "p99")
     logger = getattr(model, "logger", None)
     try:
         # an update with no current rows judges nothing (neither a violation nor a pass)

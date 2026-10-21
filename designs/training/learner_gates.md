@@ -156,7 +156,9 @@ gate, bar and tie rule, and swaps the learner back bit-exactly (also on a `Behav
 played the rows FAILS it (`overlap_integration_test`), so it is what checks them; it also catches T2 serving the
 wrong weights during the overlap, as the learner's probe does serially. `rust_collector.md` "Overlap (X14)".
 
-It logs `behaviour/max_abs_dlogp_current`, `behaviour/p99_abs_dlogp_current`, `rows_current`,
+It logs `behaviour/max_abs_dlogp_current`, `behaviour/p99_abs_dlogp_current` (both ONLY on an update with current
+rows: none means nothing was judged, never a NaN placeholder, which X35 AM-6's reader would read as a non-finite
+|Δ| — `gen3_k9b_no_row_no_tag_v1`, the 2026-10-20 battery's X14 ON arm), `rows_current`,
 `rows_probed`, one `behaviour/bar_<statistic>` per condition and
 `behaviour/excluded_frac`, `excluded_ceiling_judged`, `rows_excluded`, `rows_judged`, `max_abs_dlogp_judged`,
 `max_abs_dlogp_excluded`, `tie_eps` and `selection_free` (and the Rust probe `probe_forward_ms`; on a

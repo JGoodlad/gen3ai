@@ -122,6 +122,27 @@ def test_older_rows_are_bucketed_by_age_not_held_to_the_bar():
     assert out["staleness/probe_age_2_approx_kl"] == pytest.approx(np.exp(0.5) - 1 - 0.5, rel=1e-5)
 
 
+def test_an_update_with_no_current_rows_writes_no_current_row_statistic_never_a_NaN():
+    """gen3_k9b_no_row_no_tag_v1: every overlapped X14 update's learner probe sees no current row. It must write NO
+    ``max_abs_dlogp_current`` / ``p99_abs_dlogp_current`` (as it writes no ``max_abs_dlogp_judged``): the NaN
+    placeholder it wrote before VOIDed the 2026-10-20 battery's ON arm under X35 AM-6's reader, which reads any
+    non-finite value as a non-finite |d log pi|. FAILS on revert (the NaN is back)."""
+    import math
+
+    from main.x35 import batch as XB
+
+    m = _model()
+    m.behaviour_check = "fatal"
+    m._rust_row_versions, m._rust_version = np.full((16, 4), 4, dtype=np.int64), 5   # every row one version old
+    out = K.behaviour_probe(m)
+    assert out["behaviour/rows_current"] == 0 and out["staleness/probe_age_1_rows"] > 0      # the precondition
+    assert "behaviour/max_abs_dlogp_current" not in out and "behaviour/p99_abs_dlogp_current" not in out, out
+    assert all(math.isfinite(v) for k, v in out.items() if k.startswith("behaviour/")), out
+    # the arm-end reader on such a series alone: nothing judged is INCONCLUSIVE, never VOID
+    series = {key: [(1_001, out[tag])] if tag in out else [] for key, tag in XB.K9B_TAGS.items()}
+    assert XB.judge_k9b("r", 1_000, series).verdict == XB.INCONCLUSIVE
+
+
 def test_the_row_choice_takes_current_rows_first_and_every_present_age():
     rng = np.random.default_rng(0)
     ages = np.array([0] * 10 + [1] * 50 + [4] * 50 + [20] * 3)

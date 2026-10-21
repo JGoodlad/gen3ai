@@ -134,7 +134,12 @@ current version, and under overlap there are none. Every `after_update` copies t
 of two version-keyed slots (`BehaviourSnapshots`, allocated at startup), and `train()` swaps the version-(k) snapshot
 into the policy for one probe forward on the rows played at k, then swaps the learner back bit-exactly
 (`judge_snapshot`; the same gate, bar and tie rule; tags `behaviour_snapshot/*`, no `staleness/*`). The learner's
-own probe still writes `staleness/*` against μ — the lag read.
+own probe still writes `staleness/*` against μ — the lag read — and no current-row statistic (it has no current
+row, `gen3_k9b_no_row_no_tag_v1`). **An arm-end K9(b) read of an overlap arm takes `behaviour_snapshot/*` as its
+REQUIRED family**: its `behaviour/*` rows come only from each process's first (serial) update. The healthy fp32
+tail reaches the 1e-4 bar under overlap exactly as it does serially (the 2026-10-20 battery,
+`measurements/gpu_window_battery_2026-10-20/X14_K9B_DIAGNOSIS.md`), so an overlap arm runs `--behaviour-check
+warn` under AM-6's ceilings like every production arm.
 
 **CUDA.** T2's `execute` orders its copies on the CALLING thread's current stream; on the main thread that is the
 default stream the learner fills during `train()`. The worker runs under its OWN stream (acquired at startup) with

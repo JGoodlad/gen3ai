@@ -252,6 +252,9 @@ different checkout commits.
   log's non-finite line **FLAGS** the arm. `warn` means report: **a flag does not fail the cell or HOLD the battery**.
   The OFF arm reads `behaviour/*`; the ON arm reads `behaviour_snapshot/*` (and `behaviour/*` where present). The
   count of judged rows at or over the fatal 1e-4 bar is printed. A read error is `UNREAD`, also a flag.
+  **The 2026-10-21 run's ON-arm FLAG was this reader's artifact** (the learner probe's NaN "no current row"
+  placeholder, now never written); its snapshot family PASSES AM-6 and its two rows over 1e-4 are the healthy
+  fp32 tail: [`X14_K9B_DIAGNOSIS.md`](X14_K9B_DIAGNOSIS.md).
 - **The cell FAILS (HOLD)** when the launcher exits non-zero (11), or the run is not the arm that was specified (12): it
   stopped short of 381,474,755, the ON arm logged no `overlap/join_wait_ms` (a vacuous arm), the OFF arm did, the fork
   step is not 380,000,195, or the run's recorded `pin_history` is not the battery's pin.
