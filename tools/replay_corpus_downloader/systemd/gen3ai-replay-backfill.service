@@ -20,7 +20,7 @@ StartLimitIntervalSec=0
 [Service]
 Type=exec
 WorkingDirectory=/home/goodlad/dev/gen3ai
-Environment=PYTHONPATH=/home/goodlad/dev/gen3ai/src CUDA_VISIBLE_DEVICES=
+Environment=PYTHONPATH=/home/goodlad/dev/gen3ai/src CUDA_VISIBLE_DEVICES= PYTHONUNBUFFERED=1
 ExecStart=/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m tools.replay_corpus_downloader.service backfill --out /home/goodlad/dev/gen3ai/replays/showdown/gen3ou --proxy socks5h://127.0.0.1:1080 --chunk 4000 --sleep 1.0
 Restart=on-failure
 RestartSec=15min

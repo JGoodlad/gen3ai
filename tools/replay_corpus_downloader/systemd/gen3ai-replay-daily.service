@@ -12,7 +12,7 @@ After=network-online.target proxy-tunnel.service
 [Service]
 Type=oneshot
 WorkingDirectory=/home/goodlad/dev/gen3ai
-Environment=PYTHONPATH=/home/goodlad/dev/gen3ai/src CUDA_VISIBLE_DEVICES=
+Environment=PYTHONPATH=/home/goodlad/dev/gen3ai/src CUDA_VISIBLE_DEVICES= PYTHONUNBUFFERED=1
 ExecStart=/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m tools.replay_corpus_downloader.service daily --out /home/goodlad/dev/gen3ai/replays/showdown/gen3ou --proxy socks5h://127.0.0.1:1080 --max-replays 6000 --sleep 1.0
 Nice=19
 CPUAffinity=5-7 13-15
