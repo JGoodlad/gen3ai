@@ -154,7 +154,8 @@ that loaded them into T2 — swapped into the policy, judges the rows played at 
 gate, bar and tie rule, and swaps the learner back bit-exactly (also on a `BehaviourMismatch`). Its tags are the
 `behaviour/*` set under `behaviour_snapshot/*`; it writes no `staleness/*`. A snapshot that is not the weights that
 played the rows FAILS it (`overlap_integration_test`), so it is what checks them; it also catches T2 serving the
-wrong weights during the overlap, as the learner's probe does serially. `rust_collector.md` "Overlap (X14)".
+wrong weights during the overlap, as the learner's probe does serially. X35 AM-6's arm-end reader judges an overlap
+arm on these tags as its required family (`main.x35.batch.judge_k9b`). `rust_collector.md` "Overlap (X14)".
 
 It logs `behaviour/max_abs_dlogp_current`, `behaviour/p99_abs_dlogp_current` (both ONLY on an update with current
 rows: none means nothing was judged, never a NaN placeholder, which X35 AM-6's reader would read as a non-finite

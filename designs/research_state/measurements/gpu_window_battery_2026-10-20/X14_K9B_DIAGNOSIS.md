@@ -20,7 +20,8 @@ The read said `VOID`, `fired_families ['behaviour']`. The family that fired is *
   that case `consistency.behaviour_probe` wrote `p99_abs_dlogp_current` and `max_abs_dlogp_current` as **NaN** to
   mean "empty". X35 AM-6's reader (`main.x35.batch.judge_k9b`) reads any non-finite value as a non-finite |Δ| and
   VOIDs. So every overlap arm would have VOIDed this way, at any weights. The step `381,481,870` is listed twice
-  because the last step's rows are logged twice.
+  because the final dump writes the last update's rows at the step of the one before (`loop._final_dump`): two real
+  updates, not a duplicate (corrected 2026-10-21: 15 rows are 15 updates on 14 steps, and the K9(b) reader counts rows).
 - **`behaviour_snapshot` (the check that judges the stale rows) PASSED AM-6**: judged max 1.26e-4 against the 1e-3
   ceiling, and p99 max 3.13e-5 against 1e-4. The line "2 judged rows ≥ 1e-4" is a printed COUNT
   (`n_judged_at_or_over_1e-4`), not a ceiling. The 1e-4 bar is the in-run `fatal` gate's. Production arms don't run
@@ -109,7 +110,8 @@ NaN rows; §1 is its corrected read.
    `behaviour/*`. After the fix, an overlap arm's `behaviour/*` holds only one or two serial updates per process, so
    it would PASS near-vacuously. This is TECH_DEBT §2(b), the "X35 AM-6's arm-end K9(b) reader cannot judge an
    `--overlap-collect` arm" row, and it blocks registration. The battery's `x14_read.K9B_REQUIRED` already holds the
-   rule. Key it on the run's recorded `overlap_collect`.
+   rule. Key it on the run's recorded `overlap_collect`. **Built 2026-10-21**: `main.x35.batch.judge_k9b(..., overlap=)` /
+   `k9b_read` (`batch_test.py`; TECH_DEBT §3).
 3. **Both arms type `--behaviour-check warn` under AM-6's ceilings** (judged max < 1e-3, p99 < 1e-4, no non-finite
    value). That is the production regime, unchanged. `fatal` would stop either arm by rounding: X26's recent rate is
    about 1 update in 4.

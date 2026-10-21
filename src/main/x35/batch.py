@@ -39,7 +39,15 @@ exposes each as a subcommand, and ``launch_x35.sh`` calls them as pre-checks (a 
   X26's, ``gen3_tb_inherit_v1``). VOID iff any judged max ≥ 1e-3, any p99 ≥ 1e-4, any non-finite value, or the child
   log's NON-FINITE K9(b) line; a value within 1e-9 RELATIVE of a ceiling is recorded and does not fire (rule 8).
   No post-fork row, or an unknown fork step, is INCONCLUSIVE (never a PASS). A VOID arm enters no read and is re-run
-  at the same pin and seed after its cause is fixed.
+  at the same pin and seed after its cause is fixed. **An OVERLAP arm (X14, ``--overlap-collect``)** is judged on
+  ``behaviour_snapshot/*``, its REQUIRED family (:func:`overlap_evidence`: the run's recorded ``overlap_collect``, or
+  an ``overlap/*`` or ``behaviour_snapshot/*`` row of its own): the learner's own probe has no current row on an
+  overlapped update, so ``behaviour/*`` holds only each process's first, serial update and a PASS on it alone would be
+  near-vacuous. Both families' rows are judged against the ceilings (a fire in either VOIDs); only the required
+  family's ABSENCE is INCONCLUSIVE, the other's is "nothing judged" (``gen3_k9b_no_row_no_tag_v1``: the probe writes
+  no current-row tag on an update with no current row, and a real NaN still VOIDs). The last update's rows share a
+  step with the one before (the final dump writes them at the same step, ``loop._final_dump``): two real updates,
+  both counted, never deduplicated.
 
 THE READ RECORDS the stage rules read are ``<stage>/reads/<arm>_look<k>.json``: the saved JSON of
 ``python -m main.x35.readout decide`` (A1 / A2 and the toy pair), ``decide-d1`` (D1) or ``python -m main.x35.x47
@@ -113,6 +121,14 @@ G1_SIGMA_BAR_PP = 1.2
 G1_SEEDS = ("3501", "3502", "3503")
 #: AM-6's ceilings (X26's Amendment 3; X34's for the toy are the same numbers, ``kit.K9B_TOY_CEILINGS``).
 K9B_TAGS = {"judged_max": "behaviour/max_abs_dlogp_judged", "p99": "behaviour/p99_abs_dlogp_current"}
+#: The overlap arm's REQUIRED family: the same two statistics from the behaviour-snapshot pass of the same probe
+#: (``consistency.behaviour_probe(prefix="behaviour_snapshot/")``). Each key's ceiling is its :data:`K9B_CEILINGS` twin.
+K9B_SNAPSHOT_TAGS = {"snapshot_judged_max": "behaviour_snapshot/max_abs_dlogp_judged",
+                     "snapshot_p99": "behaviour_snapshot/p99_abs_dlogp_current"}
+K9B_CEILING_KEY = {"judged_max": "judged_max", "p99": "p99",
+                   "snapshot_judged_max": "judged_max", "snapshot_p99": "p99"}
+#: A row of this tag (written once per overlapped update) says the arm OVERLAPPED, whatever the record says.
+K9B_OVERLAP_TAG = "overlap/join_wait_ms"
 K9B_CEILINGS = {"judged_max": 1e-3, "p99": 1e-4}
 K9B_NONFINITE_LINE = "FATAL: a NON-FINITE |d log pi|"
 ALLOWED, PENDING, REFUSED = "ALLOWED", "PENDING", "REFUSED"
@@ -697,30 +713,47 @@ class K9b:
     fires: Tuple[str, ...]
     near: Tuple[str, ...]
     reasons: Tuple[str, ...]
+    #: the arm overlapped (X14): the snapshot family is the REQUIRED one; ``overlap_evidence`` says why we believe it
+    overlap: bool = False
+    overlap_evidence: Tuple[str, ...] = ()
 
     def as_dict(self) -> Dict[str, Any]:
         return {"schema": K9B_SCHEMA, "run": self.run, "verdict": self.verdict, "fork_step": self.fork_step,
                 "rows_after_fork": self.n_rows, "max_after_fork": self.max_value, "ceilings": K9B_CEILINGS,
-                "fires": list(self.fires), "near_ceiling": list(self.near), "reasons": list(self.reasons)}
+                "fires": list(self.fires), "near_ceiling": list(self.near), "reasons": list(self.reasons),
+                "overlap": self.overlap, "required_family": "behaviour_snapshot" if self.overlap else "behaviour",
+                "overlap_evidence": list(self.overlap_evidence)}
 
 
 def judge_k9b(run: str, fork: Optional[int], series: Mapping[str, Sequence[Tuple[int, float]]],
-              log_text: str = "") -> K9b:
+              log_text: str = "", *, overlap: bool = False, overlap_evidence: Sequence[str] = ()) -> K9b:
     """The deterministic AM-6 verdict on the fork's own rows (``series`` = ``{key: [(step, value)]}`` for
-    :data:`K9B_TAGS`' keys, already restricted to steps > ``fork``)."""
+    :data:`K9B_TAGS`' keys, plus :data:`K9B_SNAPSHOT_TAGS`' on an overlap arm, already restricted to steps > ``fork``).
+
+    Every row of every family present is judged against the ceilings (a fire in either VOIDs). The REQUIRED family is
+    ``behaviour`` on a serial arm and ``behaviour_snapshot`` when ``overlap`` (or when the series carries a snapshot row:
+    that row is itself the evidence); only the required family's absence is INCONCLUSIVE. The other family's absence
+    is "nothing judged" (a probe with no current row writes no tag, ``gen3_k9b_no_row_no_tag_v1``), never a reason
+    and never a VOID; a NON-FINITE row is a fire in either. Rows are COUNTED, never deduplicated by step: the last
+    update's rows are logged at the same step as the one before (``loop._final_dump``)."""
     fires: List[str] = []
     near: List[str] = []
     reasons: List[str] = []
     n_rows: Dict[str, int] = {}
     mx: Dict[str, Optional[float]] = {}
+    overlap = bool(overlap) or any(series.get(k) for k in K9B_SNAPSHOT_TAGS)
+    tags = dict(K9B_TAGS, **(K9B_SNAPSHOT_TAGS if overlap else {}))
+    required = tuple(K9B_SNAPSHOT_TAGS) if overlap else tuple(K9B_TAGS)
     if fork is None:
         reasons.append("the fork step is unknown: the inherited rows cannot be excluded")
-    for key, bar in K9B_CEILINGS.items():
+    for key, tag in tags.items():
+        bar = K9B_CEILINGS[K9B_CEILING_KEY[key]]
         rows = [(s, v) for s, v in series.get(key) or () if fork is None or s > fork]
         n_rows[key] = len(rows)
         if not rows:
-            reasons.append(f"{K9B_TAGS[key]}: no row after the fork step (absence is not a pass)")
             mx[key] = None
+            if key in required:
+                reasons.append(f"{tag}: no row after the fork step (absence is not a pass)")
             continue
         finite = [v for _, v in rows if math.isfinite(v)]
         mx[key] = max(finite) if finite else None
@@ -734,22 +767,53 @@ def judge_k9b(run: str, fork: Optional[int], series: Mapping[str, Sequence[Tuple
     if K9B_NONFINITE_LINE in log_text:
         fires.append(f"the child log carries '{K9B_NONFINITE_LINE}'")
     verdict = VOID if fires else INCONCLUSIVE if reasons else PASS
-    return K9b(run, verdict, fork, n_rows, mx, tuple(fires), tuple(near), tuple(reasons))
+    return K9b(run, verdict, fork, n_rows, mx, tuple(fires), tuple(near), tuple(reasons), overlap,
+               tuple(overlap_evidence))
+
+
+def recorded_overlap(run_dir: str) -> List[str]:
+    """What the run's own ``metadata.json`` records about ``--overlap-collect`` (X14): ``env_core.overlap_collect`` (the
+    env core the last process ran; written ON only) and ``cli_args.overlap_collect`` (the recipe row). Empty = the record
+    says OFF, is absent (a run that predates the flag) or is unreadable; the TensorBoard rows are the second witness."""
+    try:
+        meta = json.loads(Path(run_dir, "metadata.json").read_text())
+    except (OSError, ValueError):
+        return []
+    out: List[str] = []
+    for block, name in (("env_core", "metadata.json env_core.overlap_collect"),
+                        ("cli_args", "metadata.json cli_args.overlap_collect")):
+        b = meta.get(block)
+        if isinstance(b, dict) and b.get("overlap_collect") is True:
+            out.append(name)
+    return out
 
 
 def k9b_read(run_dir: str) -> K9b:
-    """AM-6 on a real run directory (read-only): its own TensorBoard rows after the fork step, and its child log."""
+    """AM-6 on a real run directory (read-only): its own TensorBoard rows after the fork step, and its child log.
+    An arm that OVERLAPPED (:func:`recorded_overlap`, or an own ``overlap/*`` or ``behaviour_snapshot/*`` row) is judged
+    with ``behaviour_snapshot/*`` as its required family (:func:`judge_k9b`)."""
     from main.x35.tbrows import fork_step, load_segments
 
     fork = fork_step(run_dir)
-    segs = load_segments(run_dir, list(K9B_TAGS.values()), after_step=fork) if fork is not None else []
-    series: Dict[str, List[Tuple[int, float]]] = {k: [] for k in K9B_TAGS}
+    tag_of = dict(K9B_TAGS, **K9B_SNAPSHOT_TAGS)
+    want = list(tag_of.values()) + [K9B_OVERLAP_TAG]
+    segs = load_segments(run_dir, want, after_step=fork) if fork is not None else []
+    series: Dict[str, List[Tuple[int, float]]] = {k: [] for k in tag_of}
+    n_overlap_rows = 0
     for seg in segs:
-        for key, tag in K9B_TAGS.items():
+        for key, tag in tag_of.items():
             series[key] += seg.rows.get(tag, [])
+        n_overlap_rows += len(seg.rows.get(K9B_OVERLAP_TAG, []))
+    evidence = recorded_overlap(run_dir)
+    if n_overlap_rows:
+        evidence.append(f"{n_overlap_rows} own {K9B_OVERLAP_TAG} row(s)")
+    n_snap = max(len(series[k]) for k in K9B_SNAPSHOT_TAGS)
+    if n_snap:
+        evidence.append(f"{n_snap} own behaviour_snapshot/* row(s)")
     log = os.path.join(run_dir, "launcher_child.full.log")
     text = Path(log).read_text(errors="replace") if os.path.isfile(log) else ""
-    return judge_k9b(os.path.basename(os.path.normpath(run_dir)), fork, series, text)
+    return judge_k9b(os.path.basename(os.path.normpath(run_dir)), fork, series, text, overlap=bool(evidence),
+                     overlap_evidence=evidence)
 
 
 def k9b_record(stage: str, k: K9b) -> str:

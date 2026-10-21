@@ -540,6 +540,159 @@ def test_k9b_read_on_a_run_dir_excludes_the_inherited_file(tmp_path):
     assert ok and lines == ["rb_x35_c0_s3501: K9(b) arm end PASS"] and (stage / B.K9B_DIR / "rb_x35_c0_s3501.json").is_file()
 
 
+# ---- an OVERLAP arm (X14, `--overlap-collect`): `behaviour_snapshot/*` is the REQUIRED family -------------------------
+NAN = float("nan")
+
+
+def _snap(judged, p99, start=FORK + 100_000):
+    return {"snapshot_judged_max": [(start + i, v) for i, v in enumerate(judged)],
+            "snapshot_p99": [(start + i, v) for i, v in enumerate(p99)]}
+
+
+def _overlap_series(*, serial_judged=(5e-5, 6e-5), serial_p99=(1e-5, 1e-5), snap_judged=(1.26e-4, 7e-5, 8e-5),
+                    snap_p99=(3.1e-5, 2e-5, 2e-5)):
+    """The shape of the 2026-10-20 battery's X14 ON arm AFTER `gen3_k9b_no_row_no_tag_v1`: the learner's own probe has
+    rows only at each process's first (serial) update; the snapshot family has one per overlapped update."""
+    return {**_series(serial_judged, serial_p99), **_snap(snap_judged, snap_p99, start=FORK + 200_000)}
+
+
+def test_an_overlap_arm_is_judged_on_the_snapshot_family_and_passes_on_it():
+    """The battery's real ON arm: judged max 1.26e-4 (over the 1e-4 `fatal` bar, 8x under AM-6's 1e-3), p99 3.1e-5."""
+    k = B.judge_k9b("r", FORK, _overlap_series(), overlap=True)
+    assert k.verdict == B.PASS and k.overlap, k
+    assert k.n_rows == {"judged_max": 2, "p99": 2, "snapshot_judged_max": 3, "snapshot_p99": 3}, k.n_rows
+    assert k.max_value["snapshot_judged_max"] == 1.26e-4
+    assert k.as_dict()["required_family"] == "behaviour_snapshot"
+
+
+def test_an_overlap_arm_read_on_the_learners_probe_alone_is_inconclusive_never_a_near_vacuous_pass():
+    """Fails on revert: before, the overlap flag did not exist and two serial rows PASSed an arm whose every stale row
+    was judged elsewhere (TECH_DEBT 2(b))."""
+    only_serial = _series([5e-5, 6e-5], [1e-5, 1e-5])
+    assert B.judge_k9b("r", FORK, only_serial).verdict == B.PASS                      # a SERIAL arm: this is its read
+    k = B.judge_k9b("r", FORK, only_serial, overlap=True)
+    assert k.verdict == B.INCONCLUSIVE and any("behaviour_snapshot/" in r for r in k.reasons), k
+    # a snapshot family with only one of its two statistics is not a read either
+    half = {**only_serial, "snapshot_judged_max": [(FORK + 5, 1e-5)]}
+    assert B.judge_k9b("r", FORK, half, overlap=True).verdict == B.INCONCLUSIVE
+
+
+def test_an_overlap_arm_without_any_learner_probe_row_is_nothing_judged_there_not_inconclusive_and_not_void():
+    """A missing `behaviour/*` current-row statistic is "nothing judged" (the snapshot is the required family)."""
+    snap_only = _snap([1e-5, 2e-5], [1e-6, 2e-6])
+    k = B.judge_k9b("r", FORK, snap_only, overlap=True)
+    assert k.verdict == B.PASS and k.n_rows["judged_max"] == 0 and k.max_value["judged_max"] is None, k
+    # the same series without the flag: the snapshot rows are themselves the evidence of an overlap arm
+    assert B.judge_k9b("r", FORK, snap_only).verdict == B.PASS
+    # judged max present at the process's first update, its p99 row absent: still not a reason, still not a fire
+    lopsided = {**snap_only, "judged_max": [(FORK + 10, 5e-5)], "p99": []}
+    assert B.judge_k9b("r", FORK, lopsided, overlap=True).verdict == B.PASS
+
+
+def test_a_real_nan_or_a_crossing_in_either_family_of_an_overlap_arm_still_voids():
+    ok = _overlap_series()
+    nan_serial = _overlap_series(serial_p99=(NAN, 1e-5))                              # the archived battery's shape
+    nan_snap = _overlap_series(snap_p99=(3.1e-5, NAN, 2e-5))
+    over_snap = _overlap_series(snap_judged=(1.26e-4, 2e-3, 8e-5))
+    over_serial = _overlap_series(serial_p99=(1e-5, 3e-4))
+    assert B.judge_k9b("r", FORK, ok, overlap=True).verdict == B.PASS
+    for bad in (nan_serial, nan_snap, over_snap, over_serial):
+        k = B.judge_k9b("r", FORK, bad, overlap=True)
+        assert k.verdict == B.VOID and k.fires, k
+    assert any("non-finite" in f and f.startswith("snapshot_p99") for f in
+               B.judge_k9b("r", FORK, nan_snap, overlap=True).fires)
+    assert B.judge_k9b("r", FORK, _snap([1e-5], [1e-6]), log_text=B.K9B_NONFINITE_LINE, overlap=True).verdict == B.VOID
+
+
+def test_the_snapshot_rows_obey_the_fork_step_and_rule_8_like_the_serial_ones():
+    inh, fresh = _snap([5e-3], [9e-4], start=FORK), _snap([1e-5], [1e-6])             # an INHERITED row at the fork step
+    mixed = {k: inh[k] + fresh[k] for k in inh}
+    assert B.judge_k9b("r", FORK, mixed, overlap=True).verdict == B.PASS
+    assert B.judge_k9b("r", FORK - 1, mixed, overlap=True).verdict == B.VOID          # the same row read as the fork's own
+    near = B.judge_k9b("r", FORK, _snap([1e-3 * (1 + 5e-10)], [1e-6]), overlap=True)
+    assert near.verdict == B.PASS and near.near
+    assert B.judge_k9b("r", FORK, _snap([1e-3 * (1 + 1e-6)], [1e-6]), overlap=True).verdict == B.VOID
+
+
+def test_rows_sharing_the_last_step_are_two_updates_both_counted_and_both_judged():
+    """The final dump writes the last update's scalars at the SAME step as the one before (`loop._final_dump`): 15 updates,
+    14 distinct steps, 15 rows (the battery's both arms). Deduplicating by step would drop a real update and could drop
+    its violation: the SECOND row at the shared step is the one over the ceiling."""
+    steps = [FORK + 100_000 + 100 * i for i in range(14)]
+    judged = [(st, 5e-5) for st in steps] + [(steps[-1], 2e-3)]
+    p99 = [(st, 1e-5) for st in steps] + [(steps[-1], 1e-5)]
+    k = B.judge_k9b("r", FORK, {"judged_max": judged, "p99": p99})
+    assert k.n_rows == {"judged_max": 15, "p99": 15}, k.n_rows
+    assert len({s for s, _ in judged}) == 14
+    assert k.verdict == B.VOID and any("0.002" in f and f.endswith(f"at step {steps[-1]}") for f in k.fires), k.fires
+
+
+def _overlap_run(tmp_path: Path, *, meta=None, rows=()):
+    run = tmp_path / "rb_x14ab_on_s2601"
+    tb = run / "tb"
+    tb.mkdir(parents=True)
+    (tb / "INHERITED_FROM.json").write_text(json.dumps({"fork_step": FORK}))
+    _write_events(tb, list(rows))
+    if meta is not None:
+        (run / "metadata.json").write_text(json.dumps(meta))
+    return run
+
+
+SNAP_J, SNAP_P = "behaviour_snapshot/max_abs_dlogp_judged", "behaviour_snapshot/p99_abs_dlogp_current"
+SER_J, SER_P = "behaviour/max_abs_dlogp_judged", "behaviour/p99_abs_dlogp_current"
+OVL = "overlap/join_wait_ms"
+
+
+def test_k9b_read_of_an_overlap_run_dir_judges_the_snapshot_and_counts_the_shared_last_step(tmp_path):
+    steps = [FORK + 100_000 + 100 * i for i in range(14)]
+    rows = [(SER_J, steps[0], 5e-5), (SER_P, steps[0], 1e-5)]                         # the first, serial update
+    for i, st in enumerate(steps[1:], 1):
+        rows += [(SNAP_J, st, 5e-5 + 1e-6 * i), (SNAP_P, st, 1e-5), (OVL, st, 3.0)]
+    rows += [(SNAP_J, steps[-1], 6e-5), (SNAP_P, steps[-1], 1e-5)]                  # the final dump: same step, 14th row
+    run = _overlap_run(tmp_path, meta={"env_core": {"overlap_collect": True}, "cli_args": {"overlap_collect": True}},
+                       rows=rows)
+    k = B.k9b_read(str(run))
+    assert k.verdict == B.PASS and k.overlap, k
+    assert k.n_rows == {"judged_max": 1, "p99": 1, "snapshot_judged_max": 14, "snapshot_p99": 14}, k.n_rows
+    assert "metadata.json env_core.overlap_collect" in k.overlap_evidence
+    assert "metadata.json cli_args.overlap_collect" in k.overlap_evidence
+    assert any(e.startswith("13 own overlap/join_wait_ms") for e in k.overlap_evidence)
+    assert any(e.startswith("14 own behaviour_snapshot/*") for e in k.overlap_evidence)
+
+
+def test_k9b_read_refuses_to_pass_an_arm_the_record_says_overlapped_on_the_learners_probe_alone(tmp_path):
+    """The record is the witness: an arm that recorded `overlap_collect` but has no snapshot row (a vacuous overlap, or
+    the snapshot pass missing) is INCONCLUSIVE even though its two serial `behaviour/*` rows look clean."""
+    rows = [(SER_J, FORK + 100_000, 5e-5), (SER_P, FORK + 100_000, 1e-5)]
+    run = _overlap_run(tmp_path, meta={"env_core": {"overlap_collect": True}}, rows=rows)
+    k = B.k9b_read(str(run))
+    assert k.verdict == B.INCONCLUSIVE and k.overlap and k.overlap_evidence == ("metadata.json env_core.overlap_collect",), k
+    assert any("behaviour_snapshot/" in r for r in k.reasons)
+    # the same rows with a record that says OFF (or none) and no overlap rows are a SERIAL arm's PASS
+    run2 = _overlap_run(tmp_path / "s", meta={"env_core": {"overlap_collect": False}, "cli_args": {"overlap_collect": False}},
+                        rows=rows)
+    k2 = B.k9b_read(str(run2))
+    assert k2.verdict == B.PASS and not k2.overlap and k2.n_rows == {"judged_max": 1, "p99": 1}, k2
+
+
+def test_k9b_read_takes_an_arm_whose_record_is_missing_as_overlapped_when_its_own_rows_say_so(tmp_path):
+    """No `metadata.json` at all, but the arm logged `overlap/*` rows and no snapshot row: still an overlap arm."""
+    rows = [(SER_J, FORK + 100_000, 5e-5), (SER_P, FORK + 100_000, 1e-5), (OVL, FORK + 100_100, 2.0)]
+    k = B.k9b_read(str(_overlap_run(tmp_path, meta=None, rows=rows)))
+    assert k.verdict == B.INCONCLUSIVE and k.overlap and len(k.overlap_evidence) == 1, k
+
+
+def test_k9b_read_of_the_archived_battery_shape_a_nan_current_row_statistic_still_voids(tmp_path):
+    """An overlap arm that wrote the pre-fix NaN placeholder on `behaviour/*` is VOID (a real non-finite |d log pi| to
+    the reader); an arm that wrote NO row there (the fix) and judged the snapshot passes."""
+    snap = [(SNAP_J, FORK + 100_100, 5e-5), (SNAP_P, FORK + 100_100, 1e-5), (OVL, FORK + 100_100, 2.0)]
+    meta = {"env_core": {"overlap_collect": True}}
+    nan = _overlap_run(tmp_path / "nan", meta=meta, rows=snap + [(SER_P, FORK + 100_100, NAN)])
+    assert B.k9b_read(str(nan)).verdict == B.VOID
+    fixed = _overlap_run(tmp_path / "fixed", meta=meta, rows=snap)
+    assert B.k9b_read(str(fixed)).verdict == B.PASS
+
+
 def test_k9b_batch_holds_on_a_void_finished_arm(tmp_path):
     stage = tmp_path / "stage"
     stage.mkdir()
