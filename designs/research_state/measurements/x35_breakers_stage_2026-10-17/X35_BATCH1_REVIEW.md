@@ -59,9 +59,9 @@ The revised order (§3) costs about 91 GPU-h before its conditional arms, agains
 
   Forks share their start, so their spread is plausibly SMALLER. The total per-final σ is therefore bracketed at
   **0.8–1.6 pp**, and 2.0–2.5 pp is not excluded.
-- **The zero-training pre-read (F-RV-2), interim 2026-10-20:** X26's own 290–380M nodes on the registered S give an SD
-  of 0.92 pp across 4 nodes (measurement se 0.55; mostly a +2 pp/100M climb), the low end of this bracket; descriptive
-  only, see [`x26_drift_preread/`](x26_drift_preread/README.md).
+- **The zero-training pre-read (F-RV-2), final 2026-10-20:** X26's own 290–380M nodes on the registered S give an SD
+  of 0.76 pp across 10 nodes (measurement se 0.55; the excess is a +2.05 ± 0.51 pp/100M climb, residual 0.47), the low
+  end of this bracket; descriptive only, see [`x26_drift_preread/`](x26_drift_preread/README.md).
 
 **The arithmetic.** At equal variances, a 3 v 3 Welch interval at 97.5 % (df ≤ 4, t ≥ 3.50) has a half-width of
 ≥ 2.85 σ; the simulated median is 3.1 σ, because the sampled df falls below 4. NULL needs a half-width below 2.0, so

@@ -56,6 +56,42 @@
    },
    {
     "ci95_pp": [
+     55.10760177851821,
+     57.459064888148454
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 300,
+    "per_member_pp": {
+     "production": 71.39999999999999,
+     "x26_080m": 54.05,
+     "x26_140m": 55.85,
+     "x26_210m": 50.5,
+     "x26_270m": 54.75,
+     "x26_pstar": 51.15
+    },
+    "per_member_se_pp": {
+     "production": 1.3762557901785555,
+     "x26_080m": 1.461059547041119,
+     "x26_140m": 1.4418928531621202,
+     "x26_210m": 1.5098013114314082,
+     "x26_270m": 1.495785746689679,
+     "x26_pstar": 1.526386255179206
+    },
+    "s_pp": 56.28333333333333,
+    "se_pp": 0.5998740608568509,
+    "sha256": "688f6ace05bc2c9e48cec0fe36e610c6f14415b3240faa8c8921d0a152134959",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_300000189_steps.zip"
+   },
+   {
+    "ci95_pp": [
      54.426933856008446,
      56.77306614399156
     ],
@@ -89,6 +125,42 @@
     "se_pp": 0.5985141323867521,
     "sha256": "c9bb509be41145331f25bcad416fd655a52ea9e5a6c9bd9d83e2683a2a219630",
     "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_310000097_steps.zip"
+   },
+   {
+    "ci95_pp": [
+     54.705233912929565,
+     57.01143275373709
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 320,
+    "per_member_pp": {
+     "production": 73.2,
+     "x26_080m": 56.35,
+     "x26_140m": 53.800000000000004,
+     "x26_210m": 52.65,
+     "x26_270m": 50.1,
+     "x26_pstar": 49.05
+    },
+    "per_member_se_pp": {
+     "production": 1.3109233387196981,
+     "x26_080m": 1.4376560784833068,
+     "x26_140m": 1.4920187666380071,
+     "x26_210m": 1.5127640265421438,
+     "x26_270m": 1.4781677847930523,
+     "x26_pstar": 1.4055941804091252
+    },
+    "s_pp": 55.85833333333333,
+    "se_pp": 0.5883268413239551,
+    "sha256": "14e636b74ce2f3fa5e2811cd84accebda102fd6609d27b8b59212cff7e61d411",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_320000071_steps.zip"
    },
    {
     "ci95_pp": [
@@ -127,21 +199,148 @@
     "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_330000202_steps.zip"
    },
    {
-    "inconclusive": [
-     "missing cell vs member production (4047f4380661)",
-     "missing cell vs member x26_080m (52cebba08e38)",
-     "missing cell vs member x26_140m (70d515b8c65c)",
-     "missing cell vs member x26_210m (b379a47b3d84)",
-     "missing cell vs member x26_270m (091979cd61bb)",
-     "missing cell vs member x26_pstar (814823c514fb)"
+    "ci95_pp": [
+     55.02062923113647,
+     57.379370768863524
     ],
-    "n_pairs": {},
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 340,
+    "per_member_pp": {
+     "production": 70.85000000000001,
+     "x26_080m": 57.35,
+     "x26_140m": 55.05,
+     "x26_210m": 52.05,
+     "x26_270m": 52.5,
+     "x26_pstar": 49.4
+    },
+    "per_member_se_pp": {
+     "production": 1.3631049115897134,
+     "x26_080m": 1.5229757056499622,
+     "x26_140m": 1.4988312113110003,
+     "x26_210m": 1.4591418711009563,
+     "x26_270m": 1.517399090549352,
+     "x26_pstar": 1.4762384631217276
+    },
+    "s_pp": 56.199999999999996,
+    "se_pp": 0.6017308368365378,
+    "sha256": "69648ce8f304a09b924f98d30ab5b645127305390986629166cd4555b8acf5e5",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_340000290_steps.zip"
+   },
+   {
+    "ci95_pp": [
+     56.642698203824445,
+     58.940635129508884
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
     "nominal_m": 350,
-    "per_member_pp": {},
-    "per_member_se_pp": {},
-    "s_pp": null,
+    "per_member_pp": {
+     "production": 74.65,
+     "x26_080m": 58.4,
+     "x26_140m": 55.60000000000001,
+     "x26_210m": 54.35,
+     "x26_270m": 51.9,
+     "x26_pstar": 51.849999999999994
+    },
+    "per_member_se_pp": {
+     "production": 1.3104407655441737,
+     "x26_080m": 1.4573537662489504,
+     "x26_140m": 1.4704693128385915,
+     "x26_210m": 1.4932029332947347,
+     "x26_270m": 1.42224470468341,
+     "x26_pstar": 1.4545291334311596
+    },
+    "s_pp": 57.791666666666664,
+    "se_pp": 0.586219171186568,
     "sha256": "6d742f27fc3440eed93e6ad8e2ccb3ffedc7eb6b6979fbd6b2f6d4a4974544e7",
     "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_350000020_steps.zip"
+   },
+   {
+    "ci95_pp": [
+     56.176841045104176,
+     58.50649228822916
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 360,
+    "per_member_pp": {
+     "production": 74.6,
+     "x26_080m": 58.199999999999996,
+     "x26_140m": 55.50000000000001,
+     "x26_210m": 54.85,
+     "x26_270m": 46.949999999999996,
+     "x26_pstar": 53.949999999999996
+    },
+    "per_member_se_pp": {
+     "production": 1.33778922106586,
+     "x26_080m": 1.4232076447237065,
+     "x26_140m": 1.5048255712872505,
+     "x26_210m": 1.464737177789927,
+     "x26_270m": 1.5079439644761339,
+     "x26_pstar": 1.4887226068008774
+    },
+    "s_pp": 57.34166666666667,
+    "se_pp": 0.5943097069523412,
+    "sha256": "4f6ef6aa4bc81342f0bb7a18ed9ea1014ea86b1c5e26949ee5f97a2c28eceb5e",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_360000095_steps.zip"
+   },
+   {
+    "ci95_pp": [
+     56.355682816655694,
+     58.66098385001096
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 370,
+    "per_member_pp": {
+     "production": 72.89999999999999,
+     "x26_080m": 59.099999999999994,
+     "x26_140m": 56.05,
+     "x26_210m": 54.449999999999996,
+     "x26_270m": 48.199999999999996,
+     "x26_pstar": 54.35
+    },
+    "per_member_se_pp": {
+     "production": 1.3308568668342964,
+     "x26_080m": 1.4609517445829618,
+     "x26_140m": 1.4437087656449272,
+     "x26_210m": 1.4362781763989871,
+     "x26_270m": 1.509476730526178,
+     "x26_pstar": 1.455903499549335
+    },
+    "s_pp": 57.508333333333326,
+    "se_pp": 0.5880978046020727,
+    "sha256": "6d7a7c7da74a7afb9293c0dee60b64927f167d5dc4bbb6cadd84866ae7ed874d",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_370000094_steps.zip"
    },
    {
     "ci95_pp": [
@@ -182,24 +381,30 @@
   ],
   "refpop": "reference_population_production_PRE_C5.json",
   "summary": {
-   "mean_meas_se_pp": 0.5953387807701501,
-   "mean_s_pp": 56.4125,
-   "meas_only_chi2": 8.89494177335009,
-   "meas_only_df": 3,
-   "meas_only_p": 0.03072080017116087,
-   "n_nodes": 4,
+   "mean_meas_se_pp": 0.5940106387000901,
+   "mean_s_pp": 56.663333333333334,
+   "meas_only_chi2": 19.534203253488627,
+   "meas_only_df": 9,
+   "meas_only_p": 0.021014965247124675,
+   "n_nodes": 10,
    "nodes_m": [
     290,
+    300,
     310,
+    320,
     330,
+    340,
+    350,
+    360,
+    370,
     380
    ],
-   "residual_sd_pp": 0.8631419156085769,
-   "sd_beyond_meas_pp": 0.8373749077391269,
-   "sd_ratio_to_meas": 1.7258007752705113,
-   "sd_s_pp": 1.027436129401726,
-   "slope_pp_per_100m": 1.9357541899441388,
-   "slope_se_pp_per_100m": 1.2902851155019606
+   "residual_sd_pp": 0.6037929007560184,
+   "sd_beyond_meas_pp": 0.6409460624251246,
+   "sd_ratio_to_meas": 1.4711465537576676,
+   "sd_s_pp": 0.8738767040190285,
+   "slope_pp_per_100m": 2.189898989898991,
+   "slope_se_pp_per_100m": 0.6647541053729131
   }
  },
  "regime": "main.h2h play-many, greedy vs greedy, mirrored pairs, eval team builder (no panel), cpu, torch_threads 1",
@@ -256,6 +461,45 @@
    },
    {
     "ci95_pp": [
+     55.884192289260724,
+     58.058664853596426
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "tstar": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 300,
+    "per_member_pp": {
+     "production": 71.39999999999999,
+     "tstar": 61.1,
+     "x26_080m": 54.05,
+     "x26_140m": 55.85,
+     "x26_210m": 50.5,
+     "x26_270m": 54.75,
+     "x26_pstar": 51.15
+    },
+    "per_member_se_pp": {
+     "production": 1.3762557901785555,
+     "tstar": 1.4572508363353236,
+     "x26_080m": 1.461059547041119,
+     "x26_140m": 1.4418928531621202,
+     "x26_210m": 1.5098013114314082,
+     "x26_270m": 1.495785746689679,
+     "x26_pstar": 1.526386255179206
+    },
+    "s_pp": 56.971428571428575,
+    "se_pp": 0.5547225818885895,
+    "sha256": "688f6ace05bc2c9e48cec0fe36e610c6f14415b3240faa8c8921d0a152134959",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_300000189_steps.zip"
+   },
+   {
+    "ci95_pp": [
      55.088130935548854,
      57.26901192159401
     ],
@@ -292,6 +536,45 @@
     "se_pp": 0.5563574133851111,
     "sha256": "c9bb509be41145331f25bcad416fd655a52ea9e5a6c9bd9d83e2683a2a219630",
     "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_310000097_steps.zip"
+   },
+   {
+    "ci95_pp": [
+     55.438592647882686,
+     57.57569306640303
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "tstar": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 320,
+    "per_member_pp": {
+     "production": 73.2,
+     "tstar": 60.4,
+     "x26_080m": 56.35,
+     "x26_140m": 53.800000000000004,
+     "x26_210m": 52.65,
+     "x26_270m": 50.1,
+     "x26_pstar": 49.05
+    },
+    "per_member_se_pp": {
+     "production": 1.3109233387196981,
+     "tstar": 1.4504068394764278,
+     "x26_080m": 1.4376560784833068,
+     "x26_140m": 1.4920187666380071,
+     "x26_210m": 1.5127640265421438,
+     "x26_270m": 1.4781677847930523,
+     "x26_pstar": 1.4055941804091252
+    },
+    "s_pp": 56.50714285714286,
+    "se_pp": 0.5451886960362571,
+    "sha256": "14e636b74ce2f3fa5e2811cd84accebda102fd6609d27b8b59212cff7e61d411",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_320000071_steps.zip"
    },
    {
     "ci95_pp": [
@@ -333,22 +616,160 @@
     "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_330000202_steps.zip"
    },
    {
-    "inconclusive": [
-     "missing cell vs member production (4047f4380661)",
-     "missing cell vs member tstar (cfa7f7bee7b7)",
-     "missing cell vs member x26_080m (52cebba08e38)",
-     "missing cell vs member x26_140m (70d515b8c65c)",
-     "missing cell vs member x26_210m (b379a47b3d84)",
-     "missing cell vs member x26_270m (091979cd61bb)",
-     "missing cell vs member x26_pstar (814823c514fb)"
+    "ci95_pp": [
+     55.69543359083332,
+     57.87599498059525
     ],
-    "n_pairs": {},
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "tstar": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 340,
+    "per_member_pp": {
+     "production": 70.85000000000001,
+     "tstar": 60.3,
+     "x26_080m": 57.35,
+     "x26_140m": 55.05,
+     "x26_210m": 52.05,
+     "x26_270m": 52.5,
+     "x26_pstar": 49.4
+    },
+    "per_member_se_pp": {
+     "production": 1.3631049115897134,
+     "tstar": 1.4587049050441971,
+     "x26_080m": 1.5229757056499622,
+     "x26_140m": 1.4988312113110003,
+     "x26_210m": 1.4591418711009563,
+     "x26_270m": 1.517399090549352,
+     "x26_pstar": 1.4762384631217276
+    },
+    "s_pp": 56.785714285714285,
+    "se_pp": 0.5562758822228923,
+    "sha256": "69648ce8f304a09b924f98d30ab5b645127305390986629166cd4555b8acf5e5",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_340000290_steps.zip"
+   },
+   {
+    "ci95_pp": [
+     56.838128971740275,
+     58.96187102825972
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "tstar": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
     "nominal_m": 350,
-    "per_member_pp": {},
-    "per_member_se_pp": {},
-    "s_pp": null,
+    "per_member_pp": {
+     "production": 74.65,
+     "tstar": 58.550000000000004,
+     "x26_080m": 58.4,
+     "x26_140m": 55.60000000000001,
+     "x26_210m": 54.35,
+     "x26_270m": 51.9,
+     "x26_pstar": 51.849999999999994
+    },
+    "per_member_se_pp": {
+     "production": 1.3104407655441737,
+     "tstar": 1.418201325623411,
+     "x26_080m": 1.4573537662489504,
+     "x26_140m": 1.4704693128385915,
+     "x26_210m": 1.4932029332947347,
+     "x26_270m": 1.42224470468341,
+     "x26_pstar": 1.4545291334311596
+    },
+    "s_pp": 57.9,
+    "se_pp": 0.5417808880093916,
     "sha256": "6d742f27fc3440eed93e6ad8e2ccb3ffedc7eb6b6979fbd6b2f6d4a4974544e7",
     "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_350000020_steps.zip"
+   },
+   {
+    "ci95_pp": [
+     56.7346995106748,
+     58.87958620361091
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "tstar": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 360,
+    "per_member_pp": {
+     "production": 74.6,
+     "tstar": 60.6,
+     "x26_080m": 58.199999999999996,
+     "x26_140m": 55.50000000000001,
+     "x26_210m": 54.85,
+     "x26_270m": 46.949999999999996,
+     "x26_pstar": 53.949999999999996
+    },
+    "per_member_se_pp": {
+     "production": 1.33778922106586,
+     "tstar": 1.398313269621654,
+     "x26_080m": 1.4232076447237065,
+     "x26_140m": 1.5048255712872505,
+     "x26_210m": 1.464737177789927,
+     "x26_270m": 1.5079439644761339,
+     "x26_pstar": 1.4887226068008774
+    },
+    "s_pp": 57.80714285714286,
+    "se_pp": 0.5471750270289039,
+    "sha256": "4f6ef6aa4bc81342f0bb7a18ed9ea1014ea86b1c5e26949ee5f97a2c28eceb5e",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_360000095_steps.zip"
+   },
+   {
+    "ci95_pp": [
+     56.98615686368451,
+     59.1281288506012
+    ],
+    "inconclusive": [],
+    "n_pairs": {
+     "production": 500,
+     "tstar": 500,
+     "x26_080m": 500,
+     "x26_140m": 500,
+     "x26_210m": 500,
+     "x26_270m": 500,
+     "x26_pstar": 500
+    },
+    "nominal_m": 370,
+    "per_member_pp": {
+     "production": 72.89999999999999,
+     "tstar": 61.35,
+     "x26_080m": 59.099999999999994,
+     "x26_140m": 56.05,
+     "x26_210m": 54.449999999999996,
+     "x26_270m": 48.199999999999996,
+     "x26_pstar": 54.35
+    },
+    "per_member_se_pp": {
+     "production": 1.3308568668342964,
+     "tstar": 1.4764332020108462,
+     "x26_080m": 1.4609517445829618,
+     "x26_140m": 1.4437087656449272,
+     "x26_210m": 1.4362781763989871,
+     "x26_270m": 1.509476730526178,
+     "x26_pstar": 1.455903499549335
+    },
+    "s_pp": 58.05714285714286,
+    "se_pp": 0.5464314659120351,
+    "sha256": "6d7a7c7da74a7afb9293c0dee60b64927f167d5dc4bbb6cadd84866ae7ed874d",
+    "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_370000094_steps.zip"
    },
    {
     "ci95_pp": [
@@ -392,24 +813,30 @@
   ],
   "refpop": "reference_population_production.json",
   "summary": {
-   "mean_meas_se_pp": 0.5537755614407154,
-   "mean_s_pp": 56.891071428571436,
-   "meas_only_chi2": 8.30875073042303,
-   "meas_only_df": 3,
-   "meas_only_p": 0.040043658845690895,
-   "n_nodes": 4,
+   "mean_meas_se_pp": 0.5506881687340609,
+   "mean_s_pp": 57.159285714285716,
+   "meas_only_chi2": 17.181221015265034,
+   "meas_only_df": 9,
+   "meas_only_p": 0.0459525580729825,
+   "n_nodes": 10,
    "nodes_m": [
     290,
+    300,
     310,
+    320,
     330,
+    340,
+    350,
+    360,
+    370,
     380
    ],
-   "residual_sd_pp": 0.6407376161405207,
-   "sd_beyond_meas_pp": 0.7341373356198578,
-   "sd_ratio_to_meas": 1.6605620975672537,
-   "sd_s_pp": 0.9195787078874779,
-   "slope_pp_per_100m": 1.9581005586592193,
-   "slope_se_pp_per_100m": 0.9578195590992887
+   "residual_sd_pp": 0.4666020308184307,
+   "sd_beyond_meas_pp": 0.5238716640630249,
+   "sd_ratio_to_meas": 1.380209633176439,
+   "sd_s_pp": 0.7600651153630432,
+   "slope_pp_per_100m": 2.047186147186144,
+   "slope_se_pp_per_100m": 0.5137119286654657
   }
  },
  "stop_history": [
