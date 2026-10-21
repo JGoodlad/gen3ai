@@ -27999,3 +27999,52 @@ Evidence: `research_state/measurements/x50_r1_intent_read_2026-10-20/` (README, 
 Evidence: `research_state/measurements/x51_plateau_vs_kakuna_2026-10-20/` (README, `cells.json`, `rows.jsonl`,
 `scripts/`); `endstate/design_beat_metamon_path.md` status, §0, §1, §3, §5, §6.1, FINDINGS 1 and 8, Decision record;
 `ops/EXTERNAL_ANCHORS_SOP.md` §4.
+
+### 2026-10-21 · MEASUREMENT · **THE WORLD SAMPLER's STAGE 1, READ under its registration: ONLY TEAM IDENTIFICATION PAYS. POOL beats today's honest worlds by +0.038 [+0.022, +0.055] per decision (r 0.72, PAYS, MATERIAL). Four open-population samplers are NOT DETECTED (≈ ±0.015), the network's species × real sets among them despite far better calibration. Partly right worlds carry no value at the 8-rollout leaf. F2's legality rule and F1 tier A move IMP undetectably. PROVISIONAL**
+
+**Question** (`endstate/design_world_sampler.md` §6.2). Does any candidate sampler put enough weight on the truth to
+make honest search pay, and do partly right worlds carry value?
+
+**Design** (registered `8d304953`; amendments before any outcome was read: A1 `54e76572` L2, A2 `961495e2` the stop
+lifted, A3 `25a6d996` a mis-specified leak tooth corrected). 287 maturity LEAN states at X26 225M; 8 worlds per arm;
+the playouts at X26's pin + the damage-roll control (identity tooth 12 / 12). Δ vs F_legal at LEAF-K8 and TRUNC-4-K8;
+PAYS / HURTS / NULL / NOT DETECTED; MATERIAL; SEARCH-ENABLED; CALIBRATED.
+
+**Result** (all 287 states, 248 battles; 0 parked; 0 defects; GIGO PASS with A3).
+
+| arm | Δ LEAF-K8 | Δ TRUNC-4-K8 | verdict |
+|---|---|---|---|
+| B (joint Smogon teammates) | −0.004 [−0.019, +0.011] | −0.007 | NOT DETECTED |
+| C_ladder (ladder-corpus teams) | +0.002 [−0.013, +0.018] | −0.001 | NOT DETECTED |
+| C_forum_strict | −0.008 [−0.023, +0.007] | −0.003 | NOT DETECTED |
+| NS (network species × forum sets) | −0.004 [−0.023, +0.014] | +0.008 | NOT DETECTED |
+| **C_pool (POOL)** | **+0.038 [+0.022, +0.055]** | **+0.023 [+0.006, +0.041]** | **PAYS, MATERIAL (r 0.72 [0.53, 0.92])** |
+
+- No arm is SEARCH-ENABLED. It is NOT CALIBRATED: POOL is exact 0.82 but its TODAY is 0.40 [0.27, 0.57].
+- The 1b trigger fires, on POOL alone.
+- Secondaries, all NOT DETECTED: F_legal − F_off (the legality rule) +0.005 [−0.001, +0.011]; F_rolls − F_legal
+  +0.003; weighted −0.003; the weighting alone −0.006 [−0.015, +0.001].
+- L2: within arms NEITHER; between arms EXACT-ONLY with POOL, NEITHER without.
+
+**Predictions scored** (registered in the 2026-10-19 REGISTRATION entry):
+- C_pool PAYS: **right**.
+- B, C_ladder and C_forum_strict NULL or NOT DETECTED: **right** (NOT DETECTED).
+- NS NOT DETECTED: **right**.
+- F_legal − F_off NULL: **wrong**. It is NOT DETECTED: the interval [−0.001, +0.011] crosses +0.0095.
+- F_rolls_w − F_legal NULL: **wrong**, also NOT DETECTED.
+
+**Reading.**
+- Exactness is the requirement at this leaf. The network-species arm makes the truth's facts far likelier (+3.3 nats
+  on the never-seen set) and gains nothing.
+- An open corpus loses almost all of what team identification buys: C_pool − C_forum_strict +0.046 [+0.029, +0.063].
+- The exact-world mass overstates value when states are identified all-or-nothing (post hoc: the dose curve's
+  concavity).
+
+**FINDINGS.**
+- Tier 1's POOL at HEAD is not the pinned pool: 34 / 719 teams are re-packed by the Hidden Power refactor.
+- The design's world-level leak tooth fires on honest worlds.
+- A long CPU measurement must take a heavy slot per bounded chunk, with the current FIFO `heavy_slots`.
+
+Evidence: `research_state/measurements/world_sampler_stage1_2026-10-19/` (`result_s1.json`, `gigo_s1.json`,
+PREREGISTRATION §9–§11); `endstate/design_world_sampler.md` §6.2, §7 F1 / F2 / F9–F12, Decision record;
+`endstate/search_ledger.md` status, §1, W12, N17, Q12; `research_state/UNDERSTANDING.md` §4.7.

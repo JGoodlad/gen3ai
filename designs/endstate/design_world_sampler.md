@@ -3,13 +3,23 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from this doc
 updates it in the same commit, and the Decision record at the end says what changed and why.
 
-**Status (2026-10-20, latest): STAGE 1c's PHASE A READ (§6.3).** 128 honest F and 128 C_ladder worlds per state,
+**Status (2026-10-21, latest): STAGE 1 READ (§6.2): ONLY TEAM IDENTIFICATION PAYS.** On the 287 maturity LEAN states
+at X26 225M, POOL (the training pool's consistent teams) beats today's honest worlds by +0.038 [+0.022, +0.055] per
+decision at the 8-rollout leaf and recovers 0.72 [0.53, 0.92] of the oracle gap (PAYS, MATERIAL). Every
+open-population sampler is NOT DETECTED against F, with points from −0.008 to +0.002 and intervals near ±0.015. That
+covers joint Smogon teammates, a ladder-corpus team model, the forum corpus without near copies, and the network's
+species with the forum's sets. The network-species arm makes the truth's facts far likelier and still gains nothing,
+so partly right worlds do not carry the value: exactness is the requirement at this leaf. No arm is SEARCH-ENABLED.
+The exact-world mass is NOT a calibrated proxy (POOL: 0.82 exact, worth p ≈ 0.40). F2's legality rule and tier A's
+dice move IMP undetectably. The 1b trigger fires on POOL alone. PROVISIONAL (pool opponents, 225M).
+
+**Status (2026-10-20): STAGE 1c's PHASE A READ (§6.3).** 128 honest F and 128 C_ladder worlds per state,
 weighted by the damage-roll weight × the opponent-choice likelihood, hold worlds NEARER the truth than today's 8 on all
 three primaries (ΔH +0.007 / +0.019 / +0.013), but none MATERIAL, all PROVISIONAL-POOL and SELF-PLAY-ONLY (bots
 NOT-DETECTED). The corpus brings the never-seen species; the likelihood adds +0.008 among F worlds and nothing among
 corpus worlds. The exact-world mass stays ≈ 0. Phase B (playouts) RUNNING.
 
-**Status (2026-10-19): STAGE 1 REGISTERED and RUNNING (§6.2).** The sampler ablation with playouts is
+**Status (2026-10-19): STAGE 1 REGISTERED and RUNNING (§6.2; READ 2026-10-21, above).** The sampler ablation with playouts is
 pre-registered (`measurements/world_sampler_stage1_2026-10-19/PREREGISTRATION.md`) on the 287 maturity LEAN states at
 X26 225M: B, C_ladder, C_forum_strict, C_pool and NS against F_legal (F at HEAD, F2's rule on), plus F_off (the legality
 rule alone) and F_rolls (F1 tier A, read uniform and likelihood-weighted) as secondaries. The corpus backoff's α is
@@ -84,8 +94,13 @@ The zero-playout screen (§6.1) already changes the picture:
   nothing near the truth for it to pick.
 - **So the first target is the moves of the seen Pokémon, kept consistent with the rest of the team**: real teams and
   sets (team-level and set-level models), the legality of move combinations, and the opponent's own choices as
-  evidence. A better species guess alone will not do it. Stage 1 (§6.2) then asks the open question: do worlds that are
-  PARTLY right carry the value instead?
+  evidence. A better species guess alone will not do it.
+- **Stage 1 (with playouts, READ 2026-10-21, §6.2) answers the open question: partly right worlds do NOT carry the
+  value.** Only identifying the opponent's whole team pays: POOL, on a closed pool, recovers 0.72 of the gap. The
+  open-population candidates (the Smogon joint, two real-team corpora, the network's species with real sets) read no
+  gain over F, although the network-species arm holds the true never-seen species set in 44 % of its worlds and
+  makes the truth's facts far likelier. At the 8-rollout leaf exactness is the requirement, and no honest source in
+  hand reaches it.
 
 ---
 
@@ -796,7 +811,7 @@ where the rule rejected any draw, plus controls.
 **Not read here, and why.** The PLATEAU bank's states are not read: they belong to the plateau step's pending
 registered read (`design_hidden_info_binding.md` §12.13.7), so reading even their inputs before it would muddy it.
 
-### 6.2 Stage 1: the sampler ablation with playouts (REGISTERED 2026-10-19; RUNNING)
+### 6.2 Stage 1: the sampler ablation with playouts (REGISTERED 2026-10-19; READ 2026-10-21)
 
 **Registered** in `measurements/world_sampler_stage1_2026-10-19/PREREGISTRATION.md`, which fixes what this section
 leaves open and adds the day's builds. In short:
@@ -815,6 +830,88 @@ leaves open and adds the day's builds. In short:
   facts under the arm's 8 worlds. It is read within arms (Spearman, pooled) and between arms (with and without
   C_pool), with BOTH / EXACT-ONLY / LL-ONLY / NEITHER. The literature review's point: "only C_pool pays" cannot tell
   the two apart.
+
+**THE READ (2026-10-21).** It ran on all 287 states (248 battles; 0 parked), under the registered rules after the
+GIGO audit passed. Amendment A3 corrected a mis-specified leak tooth before any outcome was read: as written it
+fired on an honest F world, while the corpus filter's integrity check and the near-copy excess over F are clean.
+Data: `measurements/world_sampler_stage1_2026-10-19/` (`result_s1.json`, `gigo_s1.json`). Each Δ is IMP_X − IMP_F_legal
+on the states both built. Battle-clustered 95 %, seed 20261019.
+
+| arm | IMP, LEAF-K8 | **Δ LEAF-K8** | Δ TRUNC-4-K8 | verdict | r = Δ / G | q_SM (own worlds) | TODAY (p on the truth) |
+|---|---|---|---|---|---|---|---|
+| F_legal (baseline; G +0.053 [+0.035, +0.072]) | −0.010 [−0.025, +0.005] | — | — | — | — | 0.000 | — |
+| B (joint Smogon teammates) | −0.014 [−0.029, +0.001] | −0.004 [−0.019, +0.011] | −0.007 [−0.020, +0.006] | NOT DETECTED | −0.08 [−0.46, +0.19] | 0.000 | 0.00 [0, 0.05] |
+| C_ladder (ladder-corpus teams, α 89) | −0.008 [−0.026, +0.009] | +0.002 [−0.013, +0.018] | −0.001 [−0.017, +0.014] | NOT DETECTED | +0.04 [−0.29, +0.31] | 0.000 | 0.01 [0, 0.19] |
+| C_forum_strict (forum teams, no near copy) | −0.018 [−0.034, −0.003] | −0.008 [−0.023, +0.007] | −0.003 [−0.018, +0.012] | NOT DETECTED | −0.15 [−0.54, +0.12] | 0.000 | 0.00 [0, 0.03] |
+| NS (network species × forum sets) | −0.014 [−0.031, +0.002] | −0.004 [−0.023, +0.014] | +0.008 [−0.008, +0.024] | NOT DETECTED | −0.08 [−0.54, +0.25] | 0.001 | 0.00 [0, 0.16] |
+| **C_pool (POOL, the closed pool)** | **+0.027 [+0.010, +0.045]** | **+0.038 [+0.022, +0.055]** | **+0.023 [+0.006, +0.041]** | **PAYS, MATERIAL** | **0.72 [0.53, 0.92]** | 0.822 | 0.40 [0.27, 0.57] |
+| O (the truth, banked) | +0.042 [+0.024, +0.061] | | | | | 1 | 1 |
+
+- **No arm is SEARCH-ENABLED.** POOL's honest search beats the policy at LEAF-K8, but its 4-turn leaf does not clear
+  its own critic search: +0.016 [−0.001, +0.034].
+- **NOT CALIBRATED.** POOL's TODAY interval [0.27, 0.57] excludes its own exact-world mass, 0.82. Every open arm's TODAY
+  contains its q ≈ 0.
+- **C_pool − C_forum_strict** is +0.046 [+0.029, +0.063] at LEAF-K8 and +0.026 [+0.008, +0.045] at TRUNC-4. An open
+  corpus loses almost all of what team identification on a closed pool buys.
+- **Per opponent stratum** (descriptive, Δ LEAF-K8): POOL pays on both, +0.027 [+0.006, +0.050] on the bots and +0.049
+  [+0.025, +0.076] on own snapshots. C_ladder: +0.014 [−0.010, +0.040] on snapshots, −0.009 on bots.
+- **The 1b trigger fires**, on C_pool alone (Δ ≥ +0.010 at both scorers). No C or NS arm is SEARCH-ENABLED. Stage 1b
+  (E2's 1,108 states) is not run by this unit.
+
+*Secondary contrasts, the same rule* (none clear):
+
+| contrast | Δ LEAF-K8 | Δ TRUNC-4-K8 | verdict |
+|---|---|---|---|
+| F_legal − F (every builder change since `826bee89`) | +0.003 [−0.007, +0.013] | +0.012 [+0.001, +0.023] | NOT DETECTED |
+| **F_legal − F_off (F2's legality rule alone)** | +0.005 [−0.001, +0.011] | +0.005 [−0.004, +0.014] | NOT DETECTED |
+| F_off − F (the Hidden Power fill and the rest) | −0.002 [−0.011, +0.007] | +0.007 [−0.001, +0.015] | NOT DETECTED |
+| F_rolls − F_legal (tier A, uniform) | +0.003 [−0.012, +0.018] | −0.007 [−0.019, +0.005] | NOT DETECTED |
+| F_rolls_w − F_legal (tier A, likelihood-weighted) | −0.003 [−0.018, +0.011] | −0.010 [−0.021, +0.001] | NOT DETECTED |
+| F_rolls_w − F_rolls (the weighting alone) | −0.006 [−0.015, +0.001] | −0.003 [−0.007, +0.001] | NOT DETECTED |
+
+*Amendment A1 (L2), exactness vs calibration:*
+- **Within arms the verdict is NEITHER, NOT SEPARATED.** Exactness is identically 0 on every open arm, so its
+  correlation is undefined. The pooled correlation of the gain with calibration (LL8) is −0.06, interval [−0.14,
+  +0.02].
+- **Between arms at LEAF-K8**, with POOL included, the verdict is **EXACT-ONLY** (ρ exact 0.47 [0.13, 0.80]; LL8 0.27
+  [−0.14, 0.82]). Without POOL it is **NEITHER** (LL8 −0.17 [−0.83, +0.71]). At TRUNC-4 (descriptive) it is BOTH with
+  POOL and NEITHER without (LL8 +0.77 [−0.26, +0.94]).
+- **The telling arm is NS.** Its worlds are far better calibrated than F's (+0.31 per hidden fact in LL8; +3.3 nats on
+  the never-seen species set), and its gain is −0.004 at LEAF-K8 (+0.008 at TRUNC-4).
+
+*World meters (descriptive):*
+
+| meter | F | NS | C_ladder | C_forum_strict | C_pool |
+|---|---|---|---|---|---|
+| the never-seen species set exact (k = 6 counts as exact) | 0.20 | 0.44 | 0.24 | 0.22 | 0.83 |
+| every seen mon's move set exact | 0.018 | 0.028 | 0.015 | 0.021 | 0.87 |
+
+- **The corpus arms' backoff, λ.**
+  - Ladder: mean 0.29; a consistent team exists on 68 % of states; 2.6 corpus worlds per state.
+  - Forum strict: 0.14; 53 %; 1.2.
+- **F_rolls:** weight ESS 7.4 of 8.
+- **Exclusions:** 7 / 287 on every F-screen arm, 4 for F_rolls, 0 for POOL. No defect in any arm.
+
+**Reading.**
+1. **Only team identification pays.** POOL recovers 0.72 of the gap at 225M (Tier 1's POOL: 0.80 at 15M), on both
+   opponent strata. Every open-population sampler reads NOT DETECTED against F, with points from −0.008 to +0.002.
+   None is search-sized (the dose curve's p = 0.2 is worth ≈ +0.03 at this leaf), but none is NULL either: the
+   intervals reach about ±0.015.
+2. **Partly right worlds do not carry the value** (the question of this section). NS holds the true never-seen species
+   set in 44 % of its worlds (F: 20 %), and its facts are far likelier, yet it gains nothing at the 8-rollout leaf.
+   By this section's key, **exactness IS the requirement at this leaf.** The honest path runs through the opponent's
+   choices (f, §6.3) or a population whose teams are public. L2 agrees within its power: EXACT-ONLY between arms,
+   NEITHER where exactness is ≈ 0.
+3. **The exact-world mass is not a calibrated proxy of value.** POOL's worlds are exact 82 % of the time but worth
+   p ≈ 0.40 on the dose curve. A post-hoc account, DESCRIPTIVE: POOL's exactness is nearly all-or-nothing per state
+   (it identifies the team or it does not), whereas the dose curve mixes the truth into EVERY state. Across states,
+   a mixture of the concave curve's ends falls below the curve at the average p. **UNVERIFIED** as the whole cause.
+4. **Today's two builds are correctness changes, not value levers.** Neither F2's legality rule nor tier A's dice
+   moves IMP detectably. The likelihood-weighted read is no better than the uniform one, and tier A's gain is the
+   exclusions: 4 against 7.
+5. **For search**, honest sampling from open populations does not approach the 0.2–0.3 of weight on the truth that
+   the dose curve asks: the best open arm's TODAY is 0.01, upper bound 0.19. Only knowing which team, on a closed
+   pool, reaches p ≈ 0.4. PROVISIONAL: pool opponents, X26 225M, the interim bank.
 
 The design as written before the registration:
 
@@ -976,7 +1073,9 @@ Detail: `measurements/search_1c_2026-10-20/README.md` §5, `result_1c_a.json`.
   marginals barely moved. **What remains:**
   - **Tier B is not built:** the crit roll, speed ties, a dice item / ability that did not trigger and the pre-root
     counters are still the truth's dice.
-  - **The default is still `seed`.** Switching it changes every honest read and is the next study's call (stage 1).
+  - **The default is still `seed`.** Switching it changes every honest read and was stage 1's call. Stage 1 read no
+    IMP effect (F_rolls − F_legal +0.003 [−0.012, +0.018]; weighted −0.003; the weighting alone −0.006 [−0.015,
+    +0.001]): tier A is a correctness change (exclusions 7 → 4 of 287), not a value lever.
   - **Search reads the weights only on request** (BUILT 2026-10-19 for stage 1): `SearchConfig(weights="likelihood")`
     averages each action's leaves by the self-normalised `rules.world_weights(Worlds.log_w)`; the default stays
     uniform, and halving refuses it. The worlds are draws from the prior restricted to the consistent set, so the
@@ -1018,7 +1117,9 @@ Detail: `measurements/search_1c_2026-10-20/README.md` §5, `result_1c_a.json`.
     type, so search was unaffected; only the text and Showdown's verdict were. The entry now drops a field that
     disagrees with its IVs (`world_screen.clear_stale_hp_type`).
   - **After** (316 random states rebuilt): 0 illegal worlds, 0 new exclusions caused by the rule, and the species
-    marginal unmoved. Its effect on IMP is UNMEASURED: stage 1's F_legal − F reads it (§6.2).
+    marginal unmoved. **Its effect on IMP (stage 1, §6.2):** F_legal − F_off (the rule alone) +0.005 [−0.001, +0.011]
+    at LEAF-K8, NOT DETECTED; every builder change since the banked F together +0.003 [−0.007, +0.013]. The banked
+    honest reads did not move detectably for the illegal worlds.
   - **Not comparable:** worlds built before 2026-10-19 and worlds built after differ (this rule and the same day's
     Hidden Power fill). The studies in flight run on their own pins (the maturity queue `826bee89` / `198fa91e`,
     X37b) and keep the old builder.
@@ -1053,6 +1154,19 @@ Detail: `measurements/search_1c_2026-10-20/README.md` §5, `result_1c_a.json`.
   30 SpD). POOL gates a candidate WHOLE, so at HEAD a true team can fail the gate by a stat point and the ceiling
   loses the truth. Stage 1 loads the pin's packing (`pool_pin.py`) and checks every true team is in it. Any later POOL
   read on a pinned bank must do the same.
+- **F10, the exact-world mass q_SM is not a calibrated proxy of value** (stage 1, NOT CALIBRATED). POOL's worlds are
+  exact 82 % of the time and worth p ≈ 0.40 [0.27, 0.57] on the dose curve. §2's level 3 maps to level 4 only within a
+  state; across states that are identified all-or-nothing it overstates value. Post hoc: the dose curve is concave
+  (§6.2 reading 3).
+- **F11, a world-level leak tooth cannot tell a leak from a good honest draw** (stage 1, amendment A3). "No world
+  shares ≥ 4 mon sets with the true team" fires on F's own worlds once most of a team is revealed: the one state it
+  fired on had k = 6, no corpus world, and F_legal's identical share. Test a corpus sampler's leakage on the corpus
+  teams it draws, and against F's share on the same state.
+- **F12, a long CPU measurement meets the heavy-job slots** (stage 1, 2026-10-19 to 21). A slot is held per bounded
+  chunk (≤ ~45 min), never for a whole run (orchestrator, 2026-10-20). The runner must import the CURRENT
+  `heavy_slots` (the FIFO ticket queue, `96f011dc`), or its waits jump the queue. A detached loop that takes one
+  `mem_cap.sh --slot` per chunk (`loop_s1.sh`) does both. Stage 1 also ran BLOCKING for a day by the orchestrator's
+  grant.
 - **The Counter / Mirror Coat / Hidden Power rule (§3.4)** is a named test for any propagation layer.
 
 ---
@@ -1092,3 +1206,4 @@ Detail: `measurements/search_1c_2026-10-20/README.md` §5, `result_1c_a.json`.
 | 2026-10-20 | **L3 FAMILIARITY COUNTER-TEST READ: NOT-DETECTED, POOL-LIFT** (`measurements/search_l3_2026-10-20/counter_test/`, pre-registered `b39c9cdc`) | §4 (f): pool decoys beat honest worlds (0.575 [0.517, 0.631]); the truth vs its decoys is inconclusive (0.578 [0.489, 0.664]); L3 stays PROVISIONAL-POOL, the off-pool bank required | treating L3 as truth-specific evidence on pool banks | counter_test README, `result_decoy.json` |
 | 2026-10-20 | **STAGE 1c PHASE A READ** (`measurements/search_1c_2026-10-20/` README §5, `result_1c_a.json`) | Status; §6.3 rewritten (it still named the pre-registration draft's 64 + 64 proposals and its arm names; the registered N is 128 + 128) with the read: all primaries NEARER, none MATERIAL, PROVISIONAL-POOL and SELF-PLAY-ONLY; the corpus carries the species, the likelihood +0.008 among F worlds only; the exact-world mass ≈ 0; phase B running | ranking (f) above (c) on this read (the likelihood adds little to the corpus); calling the route closed before phase B's playouts and the off-pool replication | README §5 |
 | 2026-10-20 | **THE OFF-POOL BANK EXISTS; L3 off-pool SELF-PLAY-ONLY, the pool decoy lift was MEMORY** (`measurements/search_offpool_bank_2026-10-20/`, pre-registered `7642df0f6`) | F4 (the bank now exists; what it showed for §4 (f)) | quoting a pool-bank likelihood or corpus-arm number as a ladder number; reading the pool decoys' lift as coherence | that folder's README, `result_offpool.json` |
+| 2026-10-21 | **STAGE 1 READ: only team identification pays** (`measurements/world_sampler_stage1_2026-10-19/result_s1.json`; registered, amendments A1–A3 before any outcome was read) | §6.2's read on all 287 states. C_pool (POOL) PAYS and is MATERIAL: Δ +0.038 [+0.022, +0.055], r 0.72. B, C_ladder, C_forum_strict and NS are NOT DETECTED, and none is SEARCH-ENABLED. NOT CALIBRATED (F10). L2 reads EXACT-ONLY between arms with POOL and NEITHER without. The secondaries (F2's rule, tier A uniform and weighted) are NOT DETECTED. The 1b trigger fires on POOL alone. Status, §0, §6.2, §7 F1 / F2 / F10–F12 updated | reading partial worlds as the path (NS's far better calibration bought nothing); calling the open arms NULL (their intervals reach ±0.015); flipping the dice default to `rolls` on value (no effect read; it stays a correctness option); quoting q_SM as a value proxy (POOL 0.82 vs TODAY 0.40) | `PREREGISTRATION.md` §9–§11; `gigo_s1.json` (PASS with A3); `read_s1_test.py` (14 planted) |

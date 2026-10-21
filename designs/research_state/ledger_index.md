@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-28,002-line file. **The ledger itself is append-only and is never edited by this**;
+28,051-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**923 headings · 868 dated · 2026-08-01 → 2026-10-21 · ledger 28,002 lines.**
+**924 headings · 869 dated · 2026-08-01 → 2026-10-21 · ledger 28,051 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -943,3 +943,4 @@ rename.
   - `L27878` · `2026-10-20` · MEASUREMENT · **L3 OFF-POOL: L3 and its decoy test replicated on an OFF-POOL bank at X26's plateau P\* (280M), under their pre-registration (`7642df0f6`, bank `5281bfae0`): REPLICATED-SELF-PLAY-ONLY (snapshots 0.794 [0.753, 0.834], bots 0.472 [0.410, 0.531] NO-EVIDENCE); an off-pool ladder decoy gets NO lift over honest worlds (0.503 [0.462, 0.543]) and the truth beats it (0.611 [0.543, 0.680]): the pool decoys' lift was pool MEMORY**
   - `L27938` · `2026-10-20` · MEASUREMENT · **X50 R1, READ under its registration (`6888a5ec4`): X26's intent head predicts HUMAN opponents (≥ 1500) worse than its own snapshots through the same spectator pipeline. Δ NLL(H − S) +0.188 nats [+0.164, +0.213] ⇒ GAP (rule: the CI above +0.05); top-1 33.8 % vs 38.9 %. It is a SWITCH gap (+0.39 nats; moves +0.07). The pipeline itself costs 0.23 nats on our own battles**
   - `L27980` · `2026-10-21` · MEASURED · **X51 PLATEAU vs KAKUNA — goal (a) MET at P\* (home72 0.598 [0.549, 0.644]); goal (b) NOT met (unfamiliar 0.487 [0.459, 0.515], ≈ 4.3 pp short; P\* − 161M +3.0 pp n.d.); Kakuna ckpt 28 not stronger than 34 (0.515 [0.466, 0.564]); the toy T\* weaker than P\***
+  - `L28003` · `2026-10-21` · MEASUREMENT · **THE WORLD SAMPLER's STAGE 1, READ under its registration: ONLY TEAM IDENTIFICATION PAYS. POOL beats today's honest worlds by +0.038 [+0.022, +0.055] per decision (r 0.72, PAYS, MATERIAL). Four open-population samplers are NOT DETECTED (≈ ±0.015), the network's species × real sets among them despite far better calibration. Partly right worlds carry no value at the 8-rollout leaf. F2's legality rule and F1 tier A move IMP undetectably. PROVISIONAL**

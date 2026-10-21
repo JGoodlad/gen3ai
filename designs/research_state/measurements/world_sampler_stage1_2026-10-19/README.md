@@ -5,7 +5,8 @@ Stage 1 of [`design_world_sampler.md`](../../../endstate/design_world_sampler.md
 design doc (§6.2's read, §7, the Decision record) once read; this folder holds the harness, the registration and the
 read's outputs.
 
-**Status: REGISTERED; the runner crawls detached to all 287 states (§3; the stop lifted, A2).** No number yet.
+**Status: READ 2026-10-21 (§4).** Only team identification (C_pool) pays. Every open-population sampler is NOT DETECTED,
+and none is SEARCH-ENABLED. The reading lives in the design doc (§6.2).
 
 | file | what |
 |---|---|
@@ -80,3 +81,15 @@ own `mem_cap` scope; `CUDA_VISIBLE_DEVICES=""`. No GPU.
   `STOP_AT.registered`. **BLOCKING ends 2026-10-20 18:27**: after it the loop is relaunched at a chunk boundary
   WITHOUT `GEN3AI_BLOCKING` (FIFO heavy slots, nice 19, the agent cores, 3-state chunks). The read must run from a
   checkout that holds it (`l2_s1.py`).
+
+## 4. The read (2026-10-21)
+
+- **QUEUE_DONE** 2026-10-21 05:40: 287 / 287 complete, 0 parked.
+- The table is `<archive>/score/table.pkl` (sha256 `5b53d306…`).
+- The GIGO audit PASSES (`gigo_s1.json`), with the leak tooth corrected by A3 before any outcome was read.
+- The planted tests pass (14), then `read_s1.py` → `result_s1.json`.
+- The verdicts, the tables and the reading are `design_world_sampler.md` §6.2. In one line: C_pool PAYS and is
+  MATERIAL (Δ +0.038, r 0.72); B, C_ladder, C_forum_strict and NS are NOT DETECTED; NOT CALIBRATED; L2 EXACT-ONLY
+  between arms; every secondary NOT DETECTED; the 1b trigger fires on C_pool.
+- The checkouts `~/.cache/gen3ai/ws_stage1/{builder,pin_rolls,runner}` and the archive stay until the orchestrator
+  closes the unit (the 1b decision). §1 says how to recreate the play checkout.
