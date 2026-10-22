@@ -415,6 +415,8 @@ only.
   `launch_x35.sh x52 3501 --pin f4b25238def57900c0305bb2a3a5a8f9edaef285 --lease-owner <owner> GO`, then the same with
   seed 3502. `describe` refuses the arm if a practised file differs from the manifest (`python -m main.x35.x52 verify`).
 
+**NOTE 2026-10-22 (AM-X52-i′, before G1's read):** AM-X52-i′ (orchestrator 2026-10-22): X52 does not depend on G1, so it runs right after P1's last arm, in parallel with G1's CPU read; D1 still waits for G1.
+
 
 ---
 
