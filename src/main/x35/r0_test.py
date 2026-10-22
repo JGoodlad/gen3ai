@@ -140,6 +140,19 @@ def test_a_thinned_read_point_is_a_refusal_and_the_final_covers_the_cap(tmp_path
     assert R.curve_plan(str(run), fork, "/s.zip", final_step=fork + 20_000_200)[-1][1].endswith("final_model.zip")
 
 
+def test_the_windows_sit_on_the_trainers_absolute_save_boundaries(tmp_path):
+    """R0-toy's REAL grid (rb_x35t_r0_s3631): saves land just past each absolute 1M multiple, so the +6M save
+    (296,000,066) is SHORT of fork + 6M = 296,000,087; a fork-anchored window refused it (the first read, 2026-10-21)."""
+    fork = 290_000_087
+    run = tmp_path / "rb_x35t_r0_s3631"
+    grid = [291000121, 292000095, 293000366, 294000197, 295000107, 296000066, 297000177, 298000012, 299000054,
+            300000063, 301000015, 302000218, 303000069, 304000041, 305000059, 306000306, 307000081, 308000096,
+            309000170, 310000106]
+    _ckpts(run, grid)
+    plan = R.curve_plan(str(run), fork, "/start.zip", final_step=310_059_274)
+    assert [s for _, _, s in plan] == [fork] + grid[1::2]
+
+
 # ----------------------------------------------------------------------------------------------------- the class
 def _curve(rates: Dict[int, float], n: int = 400, timeouts: int = 0) -> List[R.Point]:
     return [R.Point(k, round(rates[k] * n), n, 0, n + timeouts) for k in R.READ_POINTS]
@@ -209,3 +222,53 @@ def test_a_curve_record_is_written_once(tmp_path):
     out.write_text("{}")
     with pytest.raises(R.R0Error, match="written ONCE"):
         R.play_curve(str(tmp_path), str(out), call=standin_call())
+
+
+def test_a_ledgered_read_banks_each_point_resumes_without_replaying_and_writes_the_record_once(tmp_path, monkeypatch):
+    """The read runs in <= 45-min chunks (rule 5b): a banked point is reused, never replayed; ``max_points`` stops a
+    chunk without a record; a banked point for another file is a refusal; the record equals one un-chunked read's."""
+    from types import SimpleNamespace
+
+    from agents.training import best_response_gap as E
+    from agents.training import untaught_meter as um
+
+    fork = 290_000_087
+    run_dir = tmp_path / "rb_x35t_r0_s3631"
+    grid = [290_000_000 + m * 1_000_000 + 33 for m in range(1, 21)]
+    _ckpts(run_dir, grid)
+    (run_dir / "final_model.zip").write_bytes(b"f")
+    start = str(tmp_path / "start.zip")
+    Path(start).write_bytes(b"s")
+    run = SimpleNamespace(run=run_dir.name, target_file=start, archetype="offense", budget=R.L_R0, fork_step=fork,
+                          num_timesteps=fork + R.L_R0 + 50, teams=["t"], post_fork=[])
+    played: List[str] = []
+
+    def play_cells(refs, teams, target, *, games_per_team, seed, stochastic, progress=None, game_log=None):
+        out = {}
+        for r in refs:
+            played.append(r.label)
+            w = 40 + int(r.label[1:3])            # the gap rises by 1 game per 1M of k
+            out[r.label] = {"X0": um.Cell(wins=w, losses=80 - w, finished=80, attempted=80, transport="rust_eval")}
+            if game_log is not None:
+                game_log[(r.label, "X0")] = [{"game": 0}]
+        return out
+
+    monkeypatch.setattr(E, "read_exploiter", lambda *a, **k: run)
+    monkeypatch.setattr(E, "load_teamsets", lambda: None)
+    monkeypatch.setattr(um, "team_slices", lambda *a, **k: ["X0"])
+    monkeypatch.setattr(um, "resolve_ref", lambda path, label, role=None: SimpleNamespace(label=label, path=path))
+    monkeypatch.setattr(um, "play_cells", play_cells)
+    call = {"pstar": {"path": start, "step": fork}}
+    led, out = str(tmp_path / "ledger"), str(tmp_path / "curve.json")
+    part = R.play_curve(str(run_dir), out, call=call, games=80, ledger=led, max_points=4)
+    assert part["partial"] and part["remaining"] == 7 and played == ["k00M", "k02M", "k04M", "k06M"]
+    assert not Path(out).exists()
+    doc = R.play_curve(str(run_dir), out, call=call, games=80, ledger=led)
+    assert played[4:] == [f"k{k // 1_000_000:02d}M" for k in R.READ_POINTS[4:]]       # nothing replayed
+    ref = R.play_curve(str(run_dir), str(tmp_path / "once.json"), call=call, games=80)
+    assert {k: v for k, v in doc.items()} == ref and doc["points"][-1]["wins"] == 60
+    bad = json.loads((Path(led) / "k02M.json").read_text())
+    bad["step"] += 1
+    (Path(led) / "k02M.json").write_text(json.dumps(bad))
+    with pytest.raises(R.R0Error, match="banked for"):
+        R.play_curve(str(run_dir), str(tmp_path / "again.json"), call=call, games=80, ledger=led)

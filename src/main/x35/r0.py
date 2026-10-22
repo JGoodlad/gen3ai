@@ -61,8 +61,8 @@ NO_RISE = 0.02
 T90_FRAC = 0.9
 RULE8 = 0.0005
 TIMEOUT_BAR = 0.25
-#: a read point's checkpoint is the first one at or past fork + k and short of fork + k + this (saves land on rollout
-#: boundaries, e.g. checkpoint_292000216_steps.zip).
+#: a read point's checkpoint is the first one at or past B + k and short of B + k + this, B = the fork step floored to
+#: a multiple of this (saves land just past each ABSOLUTE multiple of the cadence, e.g. checkpoint_296000066_steps.zip).
 CKPT_TOL = 1_000_000
 CURVE_SCHEMA = "x35_r0_curve_v1"
 SATURATED, RISING, UNRESOLVED, INCONCLUSIVE = "SATURATED", "RISING", "UNRESOLVED", "INCONCLUSIVE"
@@ -104,11 +104,17 @@ def checkpoints(run_dir: str) -> Dict[int, str]:
 
 def checkpoint_for(run_dir: str, fork_step: int, k: int, start_file: str,
                    final_step: Optional[int] = None) -> Tuple[str, int]:
-    """``(path, step)`` of read point ``k``: the START FILE at k = 0; else the first checkpoint in
-    [fork + k, fork + k + CKPT_TOL), or, at the cap, ``final_model.zip`` when its step (``final_step``) is >= fork + k."""
+    """``(path, step)`` of read point ``k``: the START FILE at k = 0; else the first checkpoint in [B + k, B + k +
+    CKPT_TOL), B = the fork's checkpoint boundary (``fork_step`` floored to a multiple of CKPT_TOL), or, at the cap,
+    ``final_model.zip`` when its step (``final_step``) is >= B + k.
+
+    The window is anchored on B, not on ``fork_step``, because the trainer saves at the first call past each ABSOLUTE
+    multiple of ``--checkpoint-every-steps`` (``main.train.constants.checkpoint_due``): the +6M save of a fork at
+    290,000,087 is 296,000,066, short of fork + 6M (the first R0-toy read, 2026-10-21)."""
     if k == 0:
         return start_file, fork_step
-    lo, hi = fork_step + k, fork_step + k + CKPT_TOL
+    base = int(fork_step) - int(fork_step) % CKPT_TOL
+    lo, hi = base + k, base + k + CKPT_TOL
     hit = sorted(s for s in checkpoints(run_dir) if lo <= s < hi)
     if hit:
         return checkpoints(run_dir)[hit[0]], hit[0]
@@ -206,10 +212,23 @@ def prefix_cell(run: Any, limit: int = A6_PREFIX) -> Tuple[int, int]:
 
 
 # ------------------------------------------------------------------------------------------------------ the read
+def _point_record(ledger: str, label: str) -> Path:
+    return Path(ledger) / f"{label}.json"
+
+
 def play_curve(run_dir: str, out: str, *, call: Mapping[str, Any], games: int = GAMES_PER_POINT,
-               seed: int = READ_SEED, greedy: bool = True, progress=None) -> Dict[str, Any]:
+               seed: int = READ_SEED, greedy: bool = True, progress=None, ledger: Optional[str] = None,
+               max_points: Optional[int] = None) -> Dict[str, Any]:
     """Play the registered curve of one FINISHED R0 run against its target and write ``out`` ONCE (CPU; the Rust eval
-    core). The run must have recorded the call record's start node as its target and piloted the offense pin."""
+    core). The run must have recorded the call record's start node as its target and piloted the offense pin.
+
+    ``ledger`` (a directory OUTSIDE ``models/``) makes the read RESUMABLE in chunks: each read point is played as its
+    own ``play_cells`` call and banked as ``<ledger>/<label>.json`` (counts + trimmed game rows); a banked point whose
+    file, step, seed and regime match is reused, never replayed. The deals are identical either way (the Rust meter's
+    seed is a function of (seed, team index) only: CRN across refs). ``max_points`` stops after that many NEW points
+    and returns ``{"partial": True, ...}`` without writing ``out``; ``out`` is written once every point is banked."""
+    from dataclasses import asdict
+
     from agents.training import best_response_gap as E
     from agents.training import untaught_meter as um
 
@@ -228,15 +247,42 @@ def play_curve(run_dir: str, out: str, *, call: Mapping[str, Any], games: int = 
     refs = [um.resolve_ref(path, label=f"k{k // 1_000_000:02d}M") for k, path, _ in plan]
     target = um.resolve_ref(start, label="target", role="opponent")
     per_team = -(-int(games) // len(teams))
-    cells = um.play_cells(refs, teams, target, games_per_team=per_team, seed=seed, stochastic=not greedy,
-                          progress=progress)
+    regime = "greedy-vs-greedy" if greedy else "stochastic@1"
+    if ledger is None:
+        cells = um.play_cells(refs, teams, target, games_per_team=per_team, seed=seed, stochastic=not greedy,
+                              progress=progress)
+    else:
+        cells, new = {}, 0
+        Path(ledger).mkdir(parents=True, exist_ok=True)
+        for (k, path, step), ref in zip(plan, refs):
+            rec = _point_record(ledger, ref.label)
+            want = {"k": k, "path": path, "step": step, "seed": seed, "games_per_team": per_team, "regime": regime,
+                    "target_file": start}
+            if rec.is_file():
+                got = json.loads(rec.read_text())
+                if {f: got.get(f) for f in want} != want:
+                    raise R0Error(f"{rec}: banked for {({f: got.get(f) for f in want})}, this read is {want}")
+                cells[ref.label] = {t: um.Cell(**c) for t, c in got["cells"].items()}
+                continue
+            if max_points is not None and new >= max_points:
+                return {"partial": True, "banked": sorted(cells), "remaining": len(plan) - len(cells)}
+            log: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
+            one = um.play_cells([ref], teams, target, games_per_team=per_team, seed=seed, stochastic=not greedy,
+                                progress=progress, game_log=log)
+            cells[ref.label] = one[ref.label]
+            body = dict(want, cells={t: asdict(c) for t, c in one[ref.label].items()},
+                        games={f"{a}|{b}": rows for (a, b), rows in log.items()})
+            tmp = rec.with_suffix(".tmp")
+            tmp.write_text(json.dumps(body, sort_keys=True) + "\n")
+            os.replace(tmp, rec)
+            new += 1
     pts = []
     for (k, path, step), ref in zip(plan, refs):
         got = cells[ref.label].values()
         pts.append(Point(k, sum(c.wins for c in got), sum(c.finished for c in got), sum(c.ties for c in got),
                          sum(c.attempted for c in got)))
     doc = {"schema": CURVE_SCHEMA, "run": run.run, "target_file": start, "fork_step": run.fork_step,
-           "regime": "greedy-vs-greedy" if greedy else "stochastic@1", "seed": seed, "games_per_team": per_team,
+           "regime": regime, "seed": seed, "games_per_team": per_team,
            "transport": um.cells_transport(cells),
            "plan": [{"k": k, "path": path, "step": step} for k, path, step in plan],
            "a6_prefix_cell": list(prefix_cell(run)) if run.post_fork else None}
@@ -257,6 +303,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     q.add_argument("--call", required=True)
     q.add_argument("--out", required=True)
     q.add_argument("--stochastic", action="store_true", help="the SECONDARY regime (stochastic@1), never the class")
+    q.add_argument("--ledger", help="bank each read point here (outside models/) so the read resumes in chunks")
+    q.add_argument("--max-points", type=int, help="with --ledger: stop after this many NEW points (exit 3, partial)")
     a = ap.parse_args(argv)
     try:
         call = json.loads(Path(a.call).read_text())
@@ -268,7 +316,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                                             run.num_timesteps):
                 print(f"+{k:>10,}  {step:>12,}  {path}")
             return 0
-        doc = play_curve(a.run_dir, a.out, call=call, greedy=not a.stochastic)
+        if a.max_points is not None and not a.ledger:
+            raise R0Error("--max-points needs --ledger (a partial read must be banked)")
+        doc = play_curve(a.run_dir, a.out, call=call, greedy=not a.stochastic, ledger=a.ledger,
+                         max_points=a.max_points)
+        if doc.get("partial"):
+            print(json.dumps(doc))
+            return 3
         print(json.dumps({k: doc[k] for k in ("run", "cls", "why", "gap0", "headroom", "t90") if k in doc}, indent=1))
         return 0
     except R0Error as exc:

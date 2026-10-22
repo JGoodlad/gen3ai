@@ -308,11 +308,12 @@ ladder above and X26's in-run sentinel rows), part 2 P\*'s own row, 18 cells, 5,
 - **Expected value.** On exploitability it is LARGE and measured: −8 to −10 pp of gap per round on the old lineage.
   On the population score it is unknown and plausibly small. On outside meters none was detected. It is the only
   lever whose mechanism (finding holes outside the cluster) is not bounded by the cyclic size of §2.1.
-- **Built:** A3 and A6 as two-phase kits (T55); the G-E readers registered. **R0 is REGISTERED and staged (AM-R0,
-  2026-10-20):** one best responder per side (`toy_r0` against T\*, `r0` against P\*), +20M each, read as an
-  exploitability CURVE every 2M (the headroom H, t90, SATURATED / RISING), ≈ 1.4 + 4.4 GPU-h
-  ([`R0_REGISTRATION.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/R0_REGISTRATION.md)). Predicted
-  H: +18 pp production, +22 pp toy; LG-1's 5M R0 statistic +10 pp.
+- **Built:** A3 and A6 as two-phase kits (T55); the G-E readers registered. **R0 (AM-R0, 2026-10-20):** one best
+  responder per side (`toy_r0` against T\*, `r0` against P\*), +20M each, read as an exploitability CURVE every 2M
+  ([`R0_REGISTRATION.md`](../research_state/measurements/x35_breakers_stage_2026-10-17/R0_REGISTRATION.md)).
+  **R0-toy is READ (2026-10-21):** headroom H **+11.8 pp [+9.1, +14.5]** against T\* (predicted +22 [+10, +34]), most
+  of it by 4M (t90 4M), class RISING only through a 10–12M dip (P(SATURATED) 0.60 missed). R0-prod (predicted H
+  +18 pp; LG-1's 5M statistic +10 pp) waits for the production pin.
 - **Cheapest experiment:** A3 with R0 (LG-1). The cheaper-exploiter literature (§1.2: minimax exploiter) is a
   COST-REDUCER for LG-3's repeated rounds, not a first step.
 

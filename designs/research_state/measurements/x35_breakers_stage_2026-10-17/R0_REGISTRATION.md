@@ -210,3 +210,15 @@ P(t90_toy ≤ t90_prod) ≈ 0.6.
   ALLOWED once FP32_ALT is named.
 - **F-R0-14.** `r0 play` (11 checkpoints against their target through `untaught_meter.play_cells`) has not run end to
   end; no R0 run exists. Its tests cover the plan, the class and the refusals. The first read runs `plan` first.
+
+## 2026-10-21: CORRECTION to §2's read-point rule (the first R0-toy read, before any game was played)
+
+§2's "the first checkpoint in [fork + k, fork + k + 1M)" cannot be met by the trainer. It saves at the first call past
+each ABSOLUTE multiple of `--checkpoint-every-steps` (`main.train.constants.checkpoint_due`), so the +6M save of the
+fork at 290,000,087 is `checkpoint_296000066`, 21 steps SHORT of fork + 6M, and `r0 plan` refused the run. The window is
+now anchored on the fork's boundary B = the fork step floored to a multiple of 1M: [B + k, B + k + 1M). For R0-toy it
+picks the save of each nominal 2M point (292,000,095 … 310,000,106; `r0_test.py` pins this run's real grid). The fix
+was made from the file names alone, before any game was played. Also new: `r0 play --ledger DIR --max-points N` banks
+each point and resumes in chunks (the deals are identical: the meter's seed depends only on (seed, team index)).
+
+**R0-toy is READ** (`r0/curve_rb_x35t_r0_s3631.json`; the ledger entry of 2026-10-21): RISING, H +11.8 pp.

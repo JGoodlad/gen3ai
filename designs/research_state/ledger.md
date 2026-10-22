@@ -28150,3 +28150,53 @@ orchestrator's slot rulings.
 
 **Evidence:** `research_state/measurements/search_1c_2026-10-20/` (README §6, §7; `result_1c_b.json`);
 `endstate/design_world_sampler.md` §6.3; `endstate/search_ledger.md` §1, §7 Q15.
+
+### 2026-10-21 · MEASUREMENT · **R0-toy, READ under its registration (`b04f15b9`, launch sheet AM-R0): a fresh best responder of T\* finds HEADROOM H = +11.8 pp [+9.1, +14.5] (pooled 16–20M, 1,200 greedy games); its learned part +14.6 pp [+9.0, +20.1] over gap(0) −2.8. The class is RISING (D = +4.4 pp [+0.5, +8.3]), but only because of a dip at 10–12M; t90 4M. H sits inside its 80 % band (+22 [+10, +34]) at the low edge, t90 inside, the SATURATED prior (0.60) missed**
+
+**Question** (`R0_REGISTRATION.md` §2). How much does a best responder (BR), trained only against frozen T\* (X34
+290,000,087) for +20M at the toy pin `4609c155`, beat T\*? How fast, and is it saturated by 20M?
+
+**Design.** Run `rb_x35t_r0_s3631` (seed 3631, K9(b) PASS `797560c4`). 400 greedy-vs-greedy games per read point,
+k = 0, 2M, …, 20M: 80 per offense team, the target drawing from the pool, the same seed (20261020) and so the same
+deals at every point, on the Rust eval core. CPU, rule 5b; about 40 s a point. The reader `python -m main.x35.r0 play`
+ran end to end for the first time. **One reader correction before any game** (registration's dated section): saves
+land just past ABSOLUTE 1M multiples, so 6 of the 20 saves sit short of fork + k and the registered window refused
++6M; the window is now anchored on the fork's 1M boundary (a test pins this run's grid and fails on revert).
+
+**Result** (gap = P(BR wins) − 0.5; Wilson 95 %; 0 timeouts at every point; ties ≤ 2 a point).
+
+| k | 0 | 2M | 4M | 6M | 8M | 10M | 12M | 14M | 16M | 18M | 20M |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| gap (pp) | −2.8 | +4.3 | +11.8 | +7.3 | +12.8 | +5.0 | +7.0 | +10.3 | +13.5 | +11.8 | +10.3 |
+| gap − gap(0) | 0 | +7.0 | +14.5 | +10.0 | +15.5 | +7.8 | +9.8 | +13.0 | +16.3 | +14.5 | +13.0 |
+| registered 80 % band | [−6, +6] | [2, 22] | [6, 28] | [8, 31] | [10, 33] | [10, 34] | [10, 34] | [10, 34] | [10, 34] | [10, 34] | [10, 34] |
+| inside? | yes | yes | yes | **no** | yes | **no** | **no** | yes | yes | yes | yes |
+
+- **H** +11.8 pp [+9.1, +14.5]; the learned part H − gap(0) +14.6 [+9.0, +20.1].
+- **D** = pooled(16–20M) − pooled(10–14M) = +4.4 [+0.5, +8.3] ⇒ **RISING** (lower bound > 0).
+- **t90** = 4M (bar +10.4 pp). It is not NO RISE.
+- **SECONDARY** (the final in the training regime, stochastic@1, never classed): +15.5 pp [+10.7, +20.0].
+- **A6 prefix cell** (the run's own vs-target rows at ≤ fork + 5M): 119 / 200 = +9.5 pp. That is LG-1's statistic, but
+  this is the toy; LG-1's is production's.
+
+**Prediction checks** (P-R0-1, P-R0-3).
+- Points: **8 of 11 inside** their 80 % bands (calibrated ≈ 9; a miss of the curve model is ≤ 6). All 3 misses fall
+  below (6M, 10M, 12M).
+- H +11.8 vs **+22 [+10, +34]: inside**, at the low edge. The point missed by 10 pp, so the toy was LESS exploitable
+  than guessed.
+- t90 4M vs **6M [2, 12]: inside**.
+- Class RISING: P(RISING) was 0.10, log score ln 0.10 = −2.30. **P(SATURATED) 0.60 missed.**
+
+**Reading.**
+- A best responder finds ≈ 12 pp against T\* (≈ 15 pp over the matchup baseline), and most of it by 4M: the 4–8M pooled
+  gap (+10.6) equals the late pool (+11.8).
+- The RISING class rests on a dip at 10–12M (+5.0, +7.0), not on a climb past the 4–8M level. Under the registration it
+  is RISING all the same, and a RISING curve at the cap licenses nothing by itself (the extension is the orchestrator's
+  to register).
+- The points share their deals (F-R0-7), so the ± 4 pp wobble between neighbours is not deal sampling. It is the BR
+  changing from checkpoint to checkpoint under a constant LR, which in greedy play acts like noise.
+- On the toy, a 4–5M exploiter round already reads most of the hole. Whether that holds for P\* is R0-prod's question.
+
+**Evidence:** `research_state/measurements/x35_breakers_stage_2026-10-17/r0/curve_rb_x35t_r0_s3631.json` (and
+`_stochastic.json`, whose full stochastic curve was played by the reader but is not a registered read); the per-point
+game ledgers are `~/gen3ai_archive/x35_r0/rb_x35t_r0_s3631/`; `R0_REGISTRATION.md` (2026-10-21 section).

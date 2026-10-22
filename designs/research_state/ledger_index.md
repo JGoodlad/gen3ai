@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-28,153-line file. **The ledger itself is append-only and is never edited by this**;
+28,203-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**926 headings · 871 dated · 2026-08-01 → 2026-10-21 · ledger 28,153 lines.**
+**927 headings · 872 dated · 2026-08-01 → 2026-10-21 · ledger 28,203 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -946,3 +946,4 @@ rename.
   - `L28003` · `2026-10-21` · MEASUREMENT · **THE WORLD SAMPLER's STAGE 1, READ under its registration: ONLY TEAM IDENTIFICATION PAYS. POOL beats today's honest worlds by +0.038 [+0.022, +0.055] per decision (r 0.72, PAYS, MATERIAL). Four open-population samplers are NOT DETECTED (≈ ±0.015), the network's species × real sets among them despite far better calibration. Partly right worlds carry no value at the 8-rollout leaf. F2's legality rule and F1 tier A move IMP undetectably. PROVISIONAL**
   - `L28052` · `2026-10-21` · MEASUREMENT · **X47 LOOK 1, READ under its registration (launch sheet §4.5, AM-4 / AM-X47 / AM-X47b / AM-X47c): toy depth 2 → 4 at T\* is UNDECIDED with Δ̂ ≤ 0, FINAL at look 1. Primary at equal effective learn time −0.88 pp [−3.20, +1.44]; secondary (finals) −0.41 [−2.34, +1.51]; G-F PASS, G-C PASS. Not CONTINUE, so T1b does not run; X47b leaves its conditional slot (AM-X47b-4)**
   - `L28106` · `2026-10-21` · MEASUREMENT · **Stage 1c's PHASE B, READ under its pre-registration (`c9bdc928`) and AMENDMENT A (`a144482b`): honest one-ply search over the likelihood-resampled worlds, with L1's fitted piKL anchor, is NOT-DETECTED against the policy on every played arm (F128L −0.001, C128L +0.007 [−0.003, +0.017], M256L −0.002 at LEAF-K8; n 285), Holm rejects none, and none beats today's 8 F worlds. THE UNIT: NEARER BUT NOT PAYING. PROVISIONAL-POOL**
+  - `L28154` · `2026-10-21` · MEASUREMENT · **R0-toy, READ under its registration (`b04f15b9`, launch sheet AM-R0): a fresh best responder of T\* finds HEADROOM H = +11.8 pp [+9.1, +14.5] (pooled 16–20M, 1,200 greedy games); its learned part +14.6 pp [+9.0, +20.1] over gap(0) −2.8. The class is RISING (D = +4.4 pp [+0.5, +8.3]), but only because of a dip at 10–12M; t90 4M. H sits inside its 80 % band (+22 [+10, +34]) at the low edge, t90 inside, the SATURATED prior (0.60) missed**
