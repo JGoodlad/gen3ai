@@ -66,6 +66,10 @@ decide`` (X47). The record names its arm and look; a record for another arm or l
   ``r0`` the AM-8 side gate (PENDING until FP32_ALT is named) and nothing else; ``toy_r0`` has no condition. Their order
   (AM-R0: toy R0 right after the GPU battery, production R0 right after P1's C0 seeds) is the Training session's, not a
   gate. ``kit.disk_check`` does not count them (a best responder's REQUIRED GiB is below an arm's, F-LS-22's rule).
+* **X52, THE PRACTICE CEILING** (``main.x35.x52``; launch sheet §0 AM-X52, 2026-10-22): ``x52`` (:data:`X52_ARMS`) is
+  SIDE-PINNED at the production pin like R0, held by :data:`X52_STAGES`, never :data:`STAGES`; :func:`stage_status`
+  gives it the AM-8 side gate and nothing else. Its slot (after G1, before D1) is the Training session's order, not a
+  gate. ``kit.disk_check`` does not count it (a +5M fork, a quarter of an arm's checkpoints).
 * **THE G-E READERS** (``main.x35.ge``; launch sheet §0 "G-E readers"): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` / ``ge_c0``
   are not batch-1 ARMS (not in :data:`STAGES`, the disk count or AM-6's K9(b) pre-check) but they run at the SIDE'S
   pin: :func:`pin_check` judges their recorded pins with the side's batch-1 runs, and :func:`stage_status` gives a
@@ -161,7 +165,9 @@ BATCH2_ARMS = ("sprt", "lrfloor", "toy_sprt", "toy_lrfloor")
 #: forks the disk pre-check counts. The G-E readers share the side's pin too (:func:`side_pinned_run_names`).
 #: R0, the exploitability curve (``main.x35.r0``, AM-R0): one best responder per side, side-pinned.
 R0_ARMS = ("toy_r0", "r0")
-SIDE_PINNED_ARMS = BATCH1_ARMS + BATCH2_ARMS + R0_ARMS
+#: X52, the practice ceiling (``main.x35.x52``, AM-X52, 2026-10-22): one production arm, side-pinned.
+X52_ARMS = ("x52",)
+SIDE_PINNED_ARMS = BATCH1_ARMS + BATCH2_ARMS + R0_ARMS + X52_ARMS
 #: Batch 2's stages (F-AS-8), in AM-RP-e's slots: (6) production SPRT, (8) production LR-F, (11) the toy pair; each
 #: look 2 (``b``) only on its own look-1 CONTINUE. The ORDER is the Training session's (AM-RP-e), not a gate; the
 #: conditions are :func:`_batch2_status`'s. Never merged into the closed :data:`STAGES`.
@@ -178,6 +184,11 @@ BATCH2_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
 R0_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
     ("R0-T", (("toy_r0", 3631),)),
     ("R0-P", (("r0", 3531),)),
+)
+#: AM-X52's stage (2026-10-22): both seeds back to back in AM-RP-e's slot (5), after G1 and before D1. The order is the
+#: Training session's, not a gate (F-RP-6). Never merged into the closed STAGES.
+X52_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
+    ("X52", (("x52", 3501), ("x52", 3502))),
 )
 #: The arm label each read record carries (``readout`` A1 / A2 / SPRT / LRF, ``d1`` X38, ``x47`` X47).
 READ_LABEL = {"a1": "A1", "a2": "A2", "d1": "X38", "toy_a1": "A1", "toy_a2": "A2", "toy_x47": "X47",
@@ -619,7 +630,7 @@ def _look2_licence(stage: str, arm: str) -> Tuple[str, str]:
 
 
 def stage_of(arm: str, seed: int) -> Optional[str]:
-    for name, forks in STAGES + BATCH2_STAGES + R0_STAGES:
+    for name, forks in STAGES + BATCH2_STAGES + R0_STAGES + X52_STAGES:
         if (arm, seed) in forks:
             return name
     return None
@@ -635,12 +646,13 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
         return trigger(stage, arm)
     if arm in BATCH2_ARMS:                   # F-AS-8: the AM-8 side gate, then batch 2's registered conditions
         return _batch2_status(stage, arm, seed)
-    if arm in R0_ARMS:                       # AM-R0: the side gate only (production waits for FP32_ALT, AM-8)
+    if arm in R0_ARMS + X52_ARMS:            # AM-R0 / AM-X52: the side gate only (production waits for FP32_ALT, AM-8)
         if ARMS[arm].side == "production":
             filled, why = side_gate(stage, "production")
             if not filled:
                 return PENDING, why
-        return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, AM-R0)"
+        return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, " \
+                        f"{'AM-X52' if arm in X52_ARMS else 'AM-R0'})"
     if arm not in BATCH1_ARMS:
         return ALLOWED, f"{arm} is not a staged arm (no AM-9 or batch-2 condition)"
     if arm in DROPPED:

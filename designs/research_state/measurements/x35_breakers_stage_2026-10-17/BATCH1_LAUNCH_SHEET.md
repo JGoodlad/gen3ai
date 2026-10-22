@@ -400,6 +400,21 @@ to 36 unpractised teams of the same population?
 - **F-X52-6.** The REVERSE cell (our side on a half, Kakuna on home72) has never been run on this harness. X51 left its
   reverse cell open. Its config is UNVALIDATED until the read unit's smoke.
 
+**STAGED 2026-10-22 (the commit after the registration; nothing launched).** The kit arm `x52` is `main.x35.x52` +
+`kit.ARMS`; `batch.X52_ARMS` / `X52_STAGES` side-pin it at production, and `stage-check` gives it the AM-8 side gate
+only.
+- **Validated at the production pin.** `main.checkargs --pin f4b25238…` exits 0 for both seeds, against the PINNED
+  parser @`f4b25238`: 8 flags accepted, 0 unrecognized, the fork arch compatible, `self_play` inherited. The
+  transcripts are `../x52_practice_ceiling_2026-10-22/checkargs_x52_s350{1,2}_f4b25238.txt`, and `x52_test.py` holds
+  the kit argv equal to them.
+- **The trainer path.** A CPU `--debug` smoke at main (`--self-play --trainee-teams <the 36>`, 10k steps) ran to
+  completion. The Rust env validated all 753 teams (719 + 36), and the matchup echo reads "trainee PINNED 36 teams,
+  opponents full pool, mix self_play".
+- **No dry run** (no lease). The GPU-side preview is `launch_x35.sh`'s own default dry run at GO time.
+- **The launch (NEEDS GO; slot (5), after G1 and before D1):**
+  `launch_x35.sh x52 3501 --pin f4b25238def57900c0305bb2a3a5a8f9edaef285 --lease-owner <owner> GO`, then the same with
+  seed 3502. `describe` refuses the arm if a practised file differs from the manifest (`python -m main.x35.x52 verify`).
+
 
 ---
 

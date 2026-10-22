@@ -15,7 +15,9 @@
 #          ge_c0 is every arm's shared b-OFF reader) · BATCH 2 (STAGED_PLAN §4.1-§4.3, F-AS-8; each = the side's C0
 #          argv + ONE lever, at the side's written pin): sprt lrfloor (+20M) · toy_sprt toy_lrfloor (+70M)
 #          · R0, the exploitability curve (AM-R0, main.x35.r0, +20M, a best responder of the side's start node):
-#          toy_r0 3631 (toy pin) · r0 3531 (production pin)                  (main.x35.kit holds every argv)
+#          toy_r0 3631 (toy pin) · r0 3531 (production pin) · X52, the practice ceiling (AM-X52, main.x35.x52, +5M,
+#          C0's argv + --trainee-teams <36 practised files>, verified at describe): x52 3501 3502 (production pin)
+#                                                                             (main.x35.kit holds every argv)
 #   phase 1 → 2:  after the three exploiters END,
 #          python -m main.x35.kit phase1-record --arm a3 --call <R> --out <stage>/phase1_a3.json   (write-once)
 #

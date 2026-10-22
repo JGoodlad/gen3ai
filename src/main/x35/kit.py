@@ -30,7 +30,10 @@ canonical flag order (the order carries no meaning to the trainer's parser):
   (``main.x35.batch2_void``);
 * R0, the EXPLOITABILITY CURVE (``main.x35.r0``; launch sheet §0 AM-R0, 2026-10-20; ``batch.R0_STAGES``): ``toy_r0`` /
   ``r0`` -- one fresh best responder of the side's start node (T* / P*), the G-E reader's argv with that node as the
-  target, +20M (the toy with its side extras), side-pinned, read at fixed checkpoints by ``python -m main.x35.r0 play``.
+  target, +20M (the toy with its side extras), side-pinned, read at fixed checkpoints by ``python -m main.x35.r0 play``;
+* X52, the PRACTICE CEILING (``main.x35.x52``; launch sheet §0 AM-X52, 2026-10-22; ``batch.X52_STAGES``): ``x52`` --
+  C0's argv token for token at +5M + the ONE lever ``--trainee-teams <the 36 practised files>`` (verified against
+  their manifest at every build), seeds 3501-3502, side-pinned at the production pin.
 
     python -m main.x35.kit describe --arm a1 --seed 3501 --call <R_production.json> [--phase1 <record>]
     python -m main.x35.kit describe --arm ge_a1 --seed 3501 --call <R_production.json> [--models-dir D]   # a G-E reader
@@ -70,6 +73,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 from main.x35 import batch as _B
 from main.x35 import ge as _GE
 from main.x35 import r0 as _R0
+from main.x35 import x52 as _X52
 from main.x35.batch import STAGES as BATCH_STAGES
 from main.x35.batch import BatchError
 from main.x35.refpop import RefPopError, sha256_file
@@ -171,6 +175,9 @@ ARMS.update({r: Arm(r, ARMS[t].side, _GE.L_READER, _GE.TARGET_SEEDS,
 #: R0, the exploitability curve (``main.x35.r0``, AM-R0): the kit seed is the training seed.
 ARMS.update({r: Arm(r, side, _R0.L_R0, _R0.R0_SEEDS[r], "rb_x35t_r0_s{seed}" if side == "toy" else "rb_x35_r0_s{seed}",
                     _R0.R0_PHASE, "warn") for r, side in _R0.R0_ARMS.items()})
+#: X52, the practice ceiling (``main.x35.x52``, AM-X52): a single-phase production fork, C0's argv at +5M + its lever.
+ARMS.update({r: Arm(r, side, _X52.L_X52, _X52.X52_SEEDS, "rb_x35_x52prac_s{seed}", 0, "warn")
+             for r, side in _X52.X52_ARMS.items()})
 assert all(v in ARMS for v in ARM_ALIASES.values()) and not set(ARM_ALIASES) & set(ARMS)
 #: Batch 1 + X47, in GPU order: AM-9 (orchestrator, 2026-10-20; it moved the toy block ahead of production, which waits
 #: for the FP32_ALT build), stage by stage in ``main.x35.batch.STAGES``: T1 toy C0 + X47 (C2's interleave, toy A1 out) ->
@@ -243,6 +250,11 @@ def build_argv(arm: str, seed: int, call: Mapping[str, Any], phase1: Optional[Ma
         lever = list(SPRT_LEVER)
     elif arm in ("lrfloor", "toy_lrfloor"):
         lever = list(LRF_LEVER[a.side])
+    elif arm in _X52.X52_ARMS:
+        try:
+            lever = _X52.lever()
+        except _X52.X52Error as exc:
+            raise KitError(f"arm {arm}: {exc}") from exc
     elif a.phase == 2:
         if phase1 is None:
             raise KitError(f"arm {arm} is phase 2: it needs the {a.phase1_of} phase-1 record")
