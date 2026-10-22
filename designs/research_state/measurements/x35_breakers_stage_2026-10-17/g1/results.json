@@ -1,0 +1,299 @@
+{
+ "batch_pairs": 100,
+ "family": "x35_g1_2026-10-22",
+ "finals": [
+  {
+   "arm": "c0",
+   "ci95_pp": [
+    56.45251452009951,
+    58.590342622757646
+   ],
+   "inconclusive": [],
+   "label": "c0_s3501",
+   "n_pairs": {
+    "production": 500,
+    "tstar": 500,
+    "x26_080m": 500,
+    "x26_140m": 500,
+    "x26_210m": 500,
+    "x26_270m": 500,
+    "x26_pstar": 500
+   },
+   "per_member_pp": {
+    "production": 73.7,
+    "tstar": 61.95,
+    "x26_080m": 55.7,
+    "x26_140m": 55.900000000000006,
+    "x26_210m": 52.800000000000004,
+    "x26_270m": 50.55,
+    "x26_pstar": 52.05
+   },
+   "per_member_se_pp": {
+    "production": 1.3422443890737634,
+    "tstar": 1.4324437161717734,
+    "x26_080m": 1.4300419574264247,
+    "x26_140m": 1.4766109846537103,
+    "x26_210m": 1.4779445185797742,
+    "x26_270m": 1.492278459269583,
+    "x26_pstar": 1.443639497935686
+   },
+   "regime_ids": [
+    ""
+   ],
+   "run": "rb_x35_c0_s3501",
+   "s_pp": 57.52142857142858,
+   "se_pp": 0.5453743331559583,
+   "seed": "3501",
+   "sha256": "09a6a2df48509a59fd9aefe6d20d9722aad6717f1730c6dfd75274446b283303",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501/final_model.zip",
+   "step": 300061940
+  },
+  {
+   "arm": "a1",
+   "ci95_pp": [
+    56.44050854830688,
+    58.58806288026456
+   ],
+   "inconclusive": [],
+   "label": "a1_s3501",
+   "n_pairs": {
+    "production": 500,
+    "tstar": 500,
+    "x26_080m": 500,
+    "x26_140m": 500,
+    "x26_210m": 500,
+    "x26_270m": 500,
+    "x26_pstar": 500
+   },
+   "per_member_pp": {
+    "production": 73.15,
+    "tstar": 62.35000000000001,
+    "x26_080m": 58.650000000000006,
+    "x26_140m": 55.05,
+    "x26_210m": 50.4,
+    "x26_270m": 51.0,
+    "x26_pstar": 52.0
+   },
+   "per_member_se_pp": {
+    "production": 1.3713697532029792,
+    "tstar": 1.4097712580415307,
+    "x26_080m": 1.434522568661783,
+    "x26_140m": 1.4582506643235242,
+    "x26_210m": 1.5181172550234714,
+    "x26_270m": 1.4621901381147393,
+    "x26_pstar": 1.4872793954062566
+   },
+   "regime_ids": [
+    ""
+   ],
+   "run": "rb_x35_a1arch_s3501",
+   "s_pp": 57.51428571428572,
+   "se_pp": 0.5478555596922553,
+   "seed": "3501",
+   "sha256": "1ebf1e86fc5d538e0aafef3081e27920d4610f7439f3ac5e45b6907fb57ccc28",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_a1arch_s3501/final_model.zip",
+   "step": 300060532
+  },
+  {
+   "arm": "c0",
+   "ci95_pp": [
+    55.50941051495953,
+    57.690589485040476
+   ],
+   "inconclusive": [],
+   "label": "c0_s3502",
+   "n_pairs": {
+    "production": 500,
+    "tstar": 500,
+    "x26_080m": 500,
+    "x26_140m": 500,
+    "x26_210m": 500,
+    "x26_270m": 500,
+    "x26_pstar": 500
+   },
+   "per_member_pp": {
+    "production": 72.75,
+    "tstar": 61.8,
+    "x26_080m": 56.75,
+    "x26_140m": 53.949999999999996,
+    "x26_210m": 49.75,
+    "x26_270m": 50.05,
+    "x26_pstar": 51.15
+   },
+   "per_member_se_pp": {
+    "production": 1.3846931067929817,
+    "tstar": 1.441013532205718,
+    "x26_080m": 1.4769478663784987,
+    "x26_140m": 1.530129079522378,
+    "x26_210m": 1.5041193436692448,
+    "x26_270m": 1.4790182554654288,
+    "x26_pstar": 1.4848754156494073
+   },
+   "regime_ids": [
+    ""
+   ],
+   "run": "rb_x35_c0_s3502",
+   "s_pp": 56.6,
+   "se_pp": 0.5564334311176011,
+   "seed": "3502",
+   "sha256": "7e9a9890e2b397de6d8b87588c597d7f53e39b84efd3d1080305f77dbf22feec",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3502/final_model.zip",
+   "step": 300061805
+  },
+  {
+   "arm": "c0",
+   "ci95_pp": [
+    55.733383355162864,
+    57.895188073408555
+   ],
+   "inconclusive": [],
+   "label": "c0_s3503",
+   "n_pairs": {
+    "production": 500,
+    "tstar": 500,
+    "x26_080m": 500,
+    "x26_140m": 500,
+    "x26_210m": 500,
+    "x26_270m": 500,
+    "x26_pstar": 500
+   },
+   "per_member_pp": {
+    "production": 70.3,
+    "tstar": 59.699999999999996,
+    "x26_080m": 57.4,
+    "x26_140m": 56.3,
+    "x26_210m": 51.15,
+    "x26_270m": 51.449999999999996,
+    "x26_pstar": 51.4
+   },
+   "per_member_se_pp": {
+    "production": 1.3137046852318064,
+    "tstar": 1.49727085058115,
+    "x26_080m": 1.4596163879595214,
+    "x26_140m": 1.528273535725853,
+    "x26_210m": 1.4559721838002262,
+    "x26_270m": 1.5044251393804877,
+    "x26_pstar": 1.4443268328186665
+   },
+   "regime_ids": [
+    ""
+   ],
+   "run": "rb_x35_c0_s3503",
+   "s_pp": 56.81428571428571,
+   "se_pp": 0.5514909291166621,
+   "seed": "3503",
+   "sha256": "99096be8eccfc1cef4268ab4d6de15063a386cda475e72340212fdbf3a1b7e26",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3503/final_model.zip",
+   "step": 300061491
+  },
+  {
+   "arm": "a1",
+   "ci95_pp": [
+    56.023778212108894,
+    58.190507502176814
+   ],
+   "inconclusive": [],
+   "label": "a1_s3502",
+   "n_pairs": {
+    "production": 500,
+    "tstar": 500,
+    "x26_080m": 500,
+    "x26_140m": 500,
+    "x26_210m": 500,
+    "x26_270m": 500,
+    "x26_pstar": 500
+   },
+   "per_member_pp": {
+    "production": 73.7,
+    "tstar": 59.150000000000006,
+    "x26_080m": 59.9,
+    "x26_140m": 55.800000000000004,
+    "x26_210m": 51.74999999999999,
+    "x26_270m": 50.949999999999996,
+    "x26_pstar": 48.5
+   },
+   "per_member_se_pp": {
+    "production": 1.35706300516962,
+    "tstar": 1.4731106543637515,
+    "x26_080m": 1.4556716662764306,
+    "x26_140m": 1.4723179004549256,
+    "x26_210m": 1.4971222394981647,
+    "x26_270m": 1.4784096184752047,
+    "x26_pstar": 1.4984992492490612
+   },
+   "regime_ids": [
+    ""
+   ],
+   "run": "rb_x35_a1arch_s3502",
+   "s_pp": 57.107142857142854,
+   "se_pp": 0.5527472205230148,
+   "seed": "3502",
+   "sha256": "f22cb64f35506be40d059c627d1be30e196eff52857230d9708760ef1cd9d85c",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_a1arch_s3502/final_model.zip",
+   "step": 300061732
+  },
+  {
+   "arm": "a1",
+   "ci95_pp": [
+    55.81241925253177,
+    57.973295033182524
+   ],
+   "inconclusive": [],
+   "label": "a1_s3503",
+   "n_pairs": {
+    "production": 500,
+    "tstar": 500,
+    "x26_080m": 500,
+    "x26_140m": 500,
+    "x26_210m": 500,
+    "x26_270m": 500,
+    "x26_pstar": 500
+   },
+   "per_member_pp": {
+    "production": 73.4,
+    "tstar": 59.85,
+    "x26_080m": 56.49999999999999,
+    "x26_140m": 52.75,
+    "x26_210m": 51.9,
+    "x26_270m": 53.2,
+    "x26_pstar": 50.64999999999999
+   },
+   "per_member_se_pp": {
+    "production": 1.3076237991104323,
+    "tstar": 1.455491325978963,
+    "x26_080m": 1.523318745371434,
+    "x26_140m": 1.505780528496766,
+    "x26_210m": 1.4081122114377107,
+    "x26_270m": 1.532814404942751,
+    "x26_pstar": 1.4634394418629013
+   },
+   "regime_ids": [
+    ""
+   ],
+   "run": "rb_x35_a1arch_s3503",
+   "s_pp": 56.892857142857146,
+   "se_pp": 0.5512539508859297,
+   "seed": "3503",
+   "sha256": "d5fae94538087a71ab704d22ca827b3b62d9a6d5c7f9d0930351c3ec328d2bd2",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_a1arch_s3503/final_model.zip",
+   "step": 300061979
+  }
+ ],
+ "gate_preview": {
+  "bar_pp": 1.2,
+  "df": 4,
+  "near_bar": false,
+  "reestimate": null,
+  "rule": "AM-2: PASS iff the pooled within-arm SD of S over A1 / C0 s3501-s3503 <= 1.2 pp (within 1e-9 of 1.2 counts as above); HOLD holds D1, A2 and the toy calibration",
+  "schema": "x35_gate_g1_v1",
+  "sigma_hat_pp": 0.40751862358845814,
+  "verdict": "PASS"
+ },
+ "mean_meas_se_pp": 0.5508704768935482,
+ "pairs_per_cell": 500,
+ "refpop": "reference_population_production.json",
+ "refpop_content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519",
+ "regime": "main.h2h play-many, greedy vs greedy, mirrored pairs, eval team builder (no panel), cpu, torch_threads 1",
+ "sd_beyond_meas_pp": 0.0,
+ "stop_iso": "2026-10-23T00:34:39-0700"
+}

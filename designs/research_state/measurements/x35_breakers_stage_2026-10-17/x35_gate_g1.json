@@ -1,0 +1,23 @@
+{
+ "bar_pp": 1.2,
+ "df": 4,
+ "input": {
+  "a1": {
+   "3501": 57.51428571428572,
+   "3502": 57.107142857142854,
+   "3503": 56.892857142857146
+  },
+  "c0": {
+   "3501": 57.52142857142858,
+   "3502": 56.6,
+   "3503": 56.81428571428571
+  }
+ },
+ "near_bar": false,
+ "reestimate": null,
+ "rule": "AM-2: PASS iff the pooled within-arm SD of S over A1 / C0 s3501-s3503 <= 1.2 pp (within 1e-9 of 1.2 counts as above); HOLD holds D1, A2 and the toy calibration",
+ "schema": "x35_gate_g1_v1",
+ "sigma_hat_pp": 0.40751862358845814,
+ "verdict": "PASS",
+ "written_at": "2026-10-22T23:49:40+00:00"
+}
