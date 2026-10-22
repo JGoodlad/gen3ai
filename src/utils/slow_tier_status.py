@@ -72,6 +72,7 @@ Refresh the whole file with the slow tier itself:
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
@@ -170,45 +171,79 @@ def merge_outcome(previous: Optional[str], new: str) -> str:
     return new if _RANK.get(new, 0) > _RANK.get(previous, 0) else previous
 
 
-def record_results(results: Dict[str, Dict[str, Any]], path: Optional[Path] = None) -> Path:
-    """MERGE ``{nodeid: row}`` into the status file and return the path written.
-
-    Merge, never replace: running one slow test must not erase the other rows, and two xdist
-    workers finishing at the same moment must not lose each other's results. Per row, a SKIP never
-    replaces a recorded pass / fail / inconclusive — it only annotates it (`merge_row`). The read-modify-write
-    is done under an exclusive `flock` (in the temp dir, never beside the artifact) and committed
-    with an atomic rename,
-    so a crashed writer can never leave a half-written artifact behind.
-    """
+@contextlib.contextmanager
+def _exclusive(target: Path):
+    """The exclusive `flock` every read-modify-write of the artifact takes. The lock lives in the system temp dir,
+    keyed by the target's absolute path - NOT beside the artifact: a sidecar `.lock` in `designs/ops/` would be an
+    untracked file the whole tree then has to remember to ignore, and the concurrency this guards (two xdist workers)
+    is always same-box."""
     import fcntl
 
-    target = Path(path) if path is not None else status_path()
     target.parent.mkdir(parents=True, exist_ok=True)
-    # The lock lives in the system temp dir, keyed by the target's absolute path — NOT beside the
-    # artifact. A sidecar `.lock` in `designs/ops/` would be an untracked file the whole tree then
-    # has to remember to ignore, and the concurrency this guards (two xdist workers) is always
-    # same-box.
     lock = Path(tempfile.gettempdir()) / (
         "gen3_slow_tier_status."
         + hashlib.sha256(str(target.resolve()).encode()).hexdigest()[:16] + ".lock")
     with open(lock, "w") as lf:
         fcntl.flock(lf, fcntl.LOCK_EX)
         try:
-            doc = _read(target) if target.exists() else {"schema": SCHEMA, "tests": {}}
-            doc.setdefault("schema", SCHEMA)
-            tests = doc.setdefault("tests", {})
-            for nodeid, row in results.items():
-                tests[nodeid] = merge_row(tests.get(nodeid), row)
-            doc["tests"] = dict(sorted(tests.items()))
-            doc["last_written"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-            fd, tmp = tempfile.mkstemp(dir=str(target.parent), prefix=".slow_status.")
-            with os.fdopen(fd, "w") as f:
-                json.dump(doc, f, indent=1, sort_keys=False)
-                f.write("\n")
-            os.replace(tmp, target)
+            yield
         finally:
             fcntl.flock(lf, fcntl.LOCK_UN)
+
+
+def _write_atomic(target: Path, doc: Dict[str, Any]) -> None:
+    """Stamp `last_written` and commit with an atomic rename, so a crashed writer never leaves half an artifact."""
+    doc["last_written"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    fd, tmp = tempfile.mkstemp(dir=str(target.parent), prefix=".slow_status.")
+    with os.fdopen(fd, "w") as f:
+        json.dump(doc, f, indent=1, sort_keys=False)
+        f.write("\n")
+    os.replace(tmp, target)
+
+
+def record_results(results: Dict[str, Dict[str, Any]], path: Optional[Path] = None) -> Path:
+    """MERGE ``{nodeid: row}`` into the status file and return the path written.
+
+    Merge, never replace: running one slow test must not erase the other rows, and two xdist
+    workers finishing at the same moment must not lose each other's results. Per row, a SKIP never
+    replaces a recorded pass / fail / inconclusive - it only annotates it (`merge_row`). The read-modify-write
+    is done under an exclusive `flock` (`_exclusive`) and committed with an atomic rename.
+    """
+    target = Path(path) if path is not None else status_path()
+    with _exclusive(target):
+        doc = _read(target) if target.exists() else {"schema": SCHEMA, "tests": {}}
+        doc.setdefault("schema", SCHEMA)
+        tests = doc.setdefault("tests", {})
+        for nodeid, row in results.items():
+            tests[nodeid] = merge_row(tests.get(nodeid), row)
+        doc["tests"] = dict(sorted(tests.items()))
+        _write_atomic(target, doc)
     return target
+
+
+def prunable(doc: Dict[str, Any], collected: "set[str]") -> List[str]:
+    """The row ids whose test is no longer collected as `slow` (deleted, renamed, re-parametrised or un-marked).
+    Pure. A row is keyed by test id and nothing else removes it (`Verdict.red_message`)."""
+    return sorted(n for n in doc.get("tests", {}) if n not in collected)
+
+
+def prune_rows(collected: "set[str]", path: Optional[Path] = None, *, write: bool = True) -> List[Tuple[str, str]]:
+    """Delete every row whose id is not in ``collected`` (this session's FULL `slow` set); return ``[(id, status)]`` of
+    the rows removed (or, with ``write=False``, that WOULD be). Under the same lock + atomic rename as the writer, so
+    a tier run banking at the same moment loses nothing. Refuses an empty ``collected`` (a failed collection must
+    never read as 'every test is gone')."""
+    if not collected:
+        raise ValueError("refusing to prune against an EMPTY collected set (a failed collection is not 'no slow tests')")
+    target = Path(path) if path is not None else status_path()
+    with _exclusive(target):
+        doc = _read(target)
+        gone = prunable(doc, collected)
+        removed = [(n, str(doc["tests"][n].get("status"))) for n in gone]
+        if write and gone:
+            for n in gone:
+                del doc["tests"][n]
+            _write_atomic(target, doc)
+    return removed
 
 
 #: The verdicts a later SKIP may NOT replace — everything that is a measurement. See `merge_row`.
@@ -299,8 +334,8 @@ class Verdict:
             "    export PYTHONPATH=$PYTHONPATH:src && python3 -m pytest <that test> -q",
             "(any run in which the test executes updates its row; the full refresh is "
             "`python3 -m pytest src/ -m slow -q -n 2`).",
-            "If the test was RENAMED or DELETED, delete its row from the status file in the same "
-            "commit — a row is keyed by test id and nothing else prunes it.",
+            "If the test was RENAMED or DELETED, drop its row in the same commit: "
+            "`python -m utils.slow_tier_prune --write` removes every row no longer collected as `slow`.",
         ]
         return "\n".join(lines)
 

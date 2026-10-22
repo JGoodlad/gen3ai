@@ -95,7 +95,7 @@ Collapsing those into one axis is what the old single `integration` marker did, 
 | `sim` | real battles in-process via the bridge, no server | 60 tests, ~100 s total |
 | `browser` | headless chrome | 57 tests, **~19 s** (re-measured 2026-09-29, quiet box, 5 runs 18.0–20.3 s; was 1426 s) — NOT `slow` since 2026-09-29: it runs in the ROUTINE gate (a busy box skips a timed-out probe as inconclusive) |
 | `e2e` | a live Showdown server | run directly as scripts |
-| `slow` | *(orthogonal)* minutes, not seconds | 75 tests |
+| `slow` | *(orthogonal)* minutes, not seconds | the count moves with every commit: `pytest src/ -m slow --collect-only -q` prints it (the same collection the status file's rows are checked against) |
 | `static` | *(orthogonal)* a static gate: ~free warm, a bounded COLD-cache cost — its own 180 s budget, still in every tier | every static gate's file (`docs/DEVELOPING.md`'s table; `tier_budget_guard_test._STATIC_GATES` declares them) |
 
 **Counts are dated on purpose — RECOUNT before quoting one** (`pytest -m <tier> --collect-only -q`);
@@ -776,6 +776,9 @@ reads it:
   replacement would have hidden a red. A skip banks as a row's status only where nothing measured
   is on file.
 * **Artifact** — `designs/ops/slow_tier_status.json`, **committed**.
+  A row is keyed by test id and the writer only merges, so a deleted, renamed or un-marked test leaves its row behind:
+  `python -m utils.slow_tier_prune` lists them (exit 1) and `--write` removes them (`slow_tier_status.prune_rows`, same lock
+  and atomic rename; a failed collection refuses and touches nothing). Run it after tiering or renaming slow tests.
 * **Reader** — `src/slow_tier_status_gate_test.py`, unmarked, in every tier, ~0.03 s plus one
   `git rev-list` per distinct recorded commit.
 

@@ -544,70 +544,6 @@
    "contention": 1.39,
    "detail": ""
   },
-  "src/agents/model/build_arch_viewer_render_integration_test.py::test_dark_is_the_default_with_no_hash": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 1.02,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/agents/model/build_arch_viewer_render_integration_test.py::test_desktop_keeps_the_side_panel_in_flow": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.95,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/agents/model/build_arch_viewer_render_integration_test.py::test_landscape_phone_keeps_the_compact_chrome": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.87,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/agents/model/build_arch_viewer_render_integration_test.py::test_page_renders_and_the_theme_reaches_the_canvas[dark]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 1.14,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/agents/model/build_arch_viewer_render_integration_test.py::test_page_renders_and_the_theme_reaches_the_canvas[light]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 1.08,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/agents/model/build_arch_viewer_render_integration_test.py::test_phone_viewport_fits_and_is_usable": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.9,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/agents/model/build_arch_viewer_render_integration_test.py::test_serve_answers_every_route": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.3,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/agents/model/build_arch_viewer_render_integration_test.py::test_vendored_copy_renders_with_no_network": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 1.19,
-   "contention": 1.0,
-   "detail": ""
-  },
   "src/agents/model/canary_shift_max_gate_test.py::test_a_FATAL_record_carries_it_too": {
    "status": "pass",
    "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
@@ -1301,14 +1237,6 @@
    "at": "2026-10-21T18:47:24Z",
    "duration_s": 20.0,
    "contention": 1.38,
-   "detail": ""
-  },
-  "src/agents/model/extractor_compiles_test.py::test_intent_threshold_arch_compiled_output_matches_eager": {
-   "status": "pass",
-   "commit": "174f5e628dfa5cf656aff7d784c8e686522d634b",
-   "at": "2026-10-04T06:43:39Z",
-   "duration_s": 4.07,
-   "contention": 1.0,
    "detail": ""
   },
   "src/agents/model/extractor_compiles_test.py::test_production_arch_compiles_forward_and_backward_on_cuda": {
@@ -2294,14 +2222,6 @@
    "contention": 1.44,
    "detail": ""
   },
-  "src/agents/training/lever_supply_integration_test.py::test_a_self_play_run_whose_pool_never_seeds_exits_FATAL_SUPPLY": {
-   "status": "pass",
-   "commit": "264a35e3a671d74e65b0b7ce354f01e309fce763",
-   "at": "2026-10-15T21:32:05Z",
-   "duration_s": 211.3,
-   "contention": 1.5,
-   "detail": ""
-  },
   "src/agents/training/lever_supply_integration_test.py::test_a_self_play_run_whose_seeding_gate_it_cannot_reach_completes_and_says_so": {
    "status": "pass",
    "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
@@ -3085,22 +3005,6 @@
    "contention": 1.82,
    "detail": ""
   },
-  "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[node-poke-env]": {
-   "status": "pass",
-   "commit": "49326c1403d2de685c4fb37edfdecb8a632654e8",
-   "at": "2026-10-08T04:08:40Z",
-   "duration_s": 22.71,
-   "contention": 1.02,
-   "detail": ""
-  },
-  "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[node]": {
-   "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 19.76,
-   "contention": 1.02,
-   "detail": ""
-  },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-core]": {
    "status": "pass",
    "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
@@ -3115,22 +3019,6 @@
    "at": "2026-10-21T19:36:26Z",
    "duration_s": 30.54,
    "contention": 1.39,
-   "detail": ""
-  },
-  "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust-poke-env]": {
-   "status": "pass",
-   "commit": "49326c1403d2de685c4fb37edfdecb8a632654e8",
-   "at": "2026-10-08T04:08:40Z",
-   "duration_s": 25.01,
-   "contention": 1.03,
-   "detail": ""
-  },
-  "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[rust]": {
-   "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 29.23,
-   "contention": 1.01,
    "detail": ""
   },
   "src/main/anchors/anchors_integration_test.py::test_two_real_games_with_a_RUST_BOT_as_our_side": {
@@ -4704,398 +4592,6 @@
    "contention": 1.01,
    "detail": ""
   },
-  "src/main/prober/web/render_integration_test.py::test_a_404_page_still_renders_the_shell": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.11,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_a_wide_table_scrolls_inside_its_wrapper_not_the_page": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.16,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_chart_text_is_legible_on_whichever_palette_is_live": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.37,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_charts_still_draw_at_a_narrow_width": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.51,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_clicking_a_copy_button_copies_its_command": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.48,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_every_page_boots_with_its_vendored_libraries[/]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.68,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_every_page_boots_with_its_vendored_libraries[/analyze]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 1.26,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_every_page_boots_with_its_vendored_libraries[/battle]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.18,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_every_page_boots_with_its_vendored_libraries[/battles]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.12,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_every_page_boots_with_its_vendored_libraries[/calibration]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.11,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_every_page_boots_with_its_vendored_libraries[/falsify]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.11,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_every_page_boots_with_its_vendored_libraries[/scan]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.16,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_every_page_boots_with_its_vendored_libraries[/triage]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.17,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_form_controls_are_large_enough_not_to_trap_ios_zoom": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.4,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_links_follow_the_theme_rather_than_the_browser_default[/]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.36,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_links_follow_the_theme_rather_than_the_browser_default[/battle]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.28,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_links_follow_the_theme_rather_than_the_browser_default[/battles]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.22,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_no_page_scrolls_sideways_on_a_narrow_viewport[/]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.18,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_no_page_scrolls_sideways_on_a_narrow_viewport[/analyze]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.14,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_no_page_scrolls_sideways_on_a_narrow_viewport[/battle]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.16,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_no_page_scrolls_sideways_on_a_narrow_viewport[/battles]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.11,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_no_page_scrolls_sideways_on_a_narrow_viewport[/calibration]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.14,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_no_page_scrolls_sideways_on_a_narrow_viewport[/falsify]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.11,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_no_page_scrolls_sideways_on_a_narrow_viewport[/scan]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.16,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_no_page_scrolls_sideways_on_a_narrow_viewport[/triage]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.19,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_tapping_a_metric_opens_its_explanation_under_the_row_and_tapping_again_closes_it[desktop]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.22,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_tapping_a_metric_opens_its_explanation_under_the_row_and_tapping_again_closes_it[phone]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.2,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_api_answers_over_the_real_socket": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.01,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_battle_replay_is_side_by_side_on_a_desktop": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.15,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_battle_replay_stacks_on_a_phone_and_scrolls_nowhere": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.15,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_battles_page_arrives_already_populated": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.11,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_browsers_own_widgets_are_told_which_palette_is_live": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.23,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_copy_button_actually_copies": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.15,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_dark_palette_is_actually_painted[/]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.18,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_dark_palette_is_actually_painted[/battle]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.14,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_dark_palette_is_actually_painted[/battles]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.11,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_desktop_layout_does_not_inherit_the_phone_rules[/]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.17,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_desktop_layout_does_not_inherit_the_phone_rules[/calibration]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.12,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_desktop_layout_does_not_inherit_the_phone_rules[/scan]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.17,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_job_pages_render_before_anything_is_submitted[/calibration]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.11,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_job_pages_render_before_anything_is_submitted[/falsify]": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.12,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_narrow_header_stays_compact_and_hides_nothing": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.17,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_pages_reference_no_remote_asset": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.46,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_replay_metrics_are_tappable_in_the_browser": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.31,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_run_page_draws_its_chart": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.17,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_run_page_fetches_its_awareness_panel_over_htmx": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.17,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_scan_page_fetches_its_table_and_chart_over_htmx": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.15,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_triage_page_arrives_already_populated": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.17,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/main/prober/web/render_integration_test.py::test_the_whatsthis_link_takes_a_reader_to_the_legend": {
-   "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:44:41Z",
-   "duration_s": 0.17,
-   "contention": 1.0,
-   "detail": ""
-  },
   "src/main/team_strength/x26_lane_integration_test.py::test_a_unit_from_another_registration_is_refused": {
    "status": "pass",
    "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
@@ -5158,14 +4654,6 @@
    "at": "2026-10-21T17:40:40Z",
    "duration_s": 1468.82,
    "contention": 1.67,
-   "detail": ""
-  },
-  "src/main/train/debug_shape_smoke_integration_test.py::test_arch_debug_smoke_reaches_an_update_and_exits_0[static_recovery]": {
-   "status": "pass",
-   "commit": "f086988433aacd07b4b3cbec5b0451215a57ce6c",
-   "at": "2026-10-10T01:09:33Z",
-   "duration_s": 892.9,
-   "contention": 1.03,
    "detail": ""
   },
   "src/main/train/fatal_config_exits_integration_test.py::test_a_bot_weights_typo_exits_FATAL_CONFIG_not_CRASH": {
@@ -5368,14 +4856,6 @@
    "contention": 1.9,
    "detail": ""
   },
-  "src/utils/rust_env/bots_gate_test.py::test_milestone_every_decision_is_equal_at_scale": {
-   "status": "pass",
-   "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
-   "at": "2026-10-01T05:50:52Z",
-   "duration_s": 85.22,
-   "contention": 1.08,
-   "detail": ""
-  },
   "src/utils/rust_env/bots_gate_test.py::test_the_bank_holds_exactly_the_commit_tier_plan": {
    "status": "pass",
    "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
@@ -5529,5 +5009,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-21T20:49:34Z"
+ "last_written": "2026-10-22T03:05:31Z"
 }
