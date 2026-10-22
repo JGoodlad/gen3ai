@@ -38,6 +38,7 @@ Run every command from the worktree with `export PYTHONPATH=$PWD/src`.
 7. **Review what the rebase pulled in, even when clean.** `git log --oneline HEAD@{1}..origin/main`; a concurrent commit may have changed a constant, an obs or arch dimension, `ARCH_SIGNATURE`, or the doc or test you touched. Recompute numbers from live code, fold the fix into your commit with `--amend`, and re-run the gate on the rebased tree.
 8. **Push guard, then push.** `python -m utils.push_guard`: exit 0 push; exit 1 do NOT push (a stale file would revert others' work: rebuild the branch from its own commits on the current `origin/main`, never `git reset --soft` onto a moved ref); exit 2 find out why first. Then `git push origin HEAD:main`.
 9. **Fast-forward local main.** `git -C /home/goodlad/dev/gen3ai fetch origin main && git -C /home/goodlad/dev/gen3ai merge --ff-only origin/main`. If it cannot fast-forward, inspect `origin/main..HEAD` in the main checkout and report; never force it.
+   **If the fast-forwarded range touches `src/rust_sim` or `src/rust_env`** (`git -C /home/goodlad/dev/gen3ai diff --name-only <old main>..HEAD`), run `scripts/ops/rebuild_main_rust.sh run`: main's built binaries are REFUSED (`StampMismatch`) until rebuilt. It refuses while a live process maps main's `src/rust_*/target`; on its refusal (exit 3/4) or any failure, report it with its output as a FINDING, never force, kill or `POKESIM_ALLOW_STALE_BUILD`.
 10. **Confirm** in one line: the SHA on main, remote and local.
 
 ## Never
