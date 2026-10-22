@@ -222,3 +222,8 @@ was made from the file names alone, before any game was played. Also new: `r0 pl
 each point and resumes in chunks (the deals are identical: the meter's seed depends only on (seed, team index)).
 
 **R0-toy is READ** (`r0/curve_rb_x35t_r0_s3631.json`; the ledger entry of 2026-10-21): RISING, H +11.8 pp.
+
+## 2026-10-22: R0-prod is READ (no correction)
+
+**R0-prod is READ** (`r0/curve_rb_x35_r0_s3531.json`; the ledger entry of 2026-10-22) as registered, with the
+2026-10-21 window rule and no new correction: SATURATED, H +11.1 pp, t90 8M, LG-1's 5M statistic +6.0 pp.

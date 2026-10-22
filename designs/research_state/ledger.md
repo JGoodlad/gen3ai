@@ -28200,3 +28200,58 @@ land just past ABSOLUTE 1M multiples, so 6 of the 20 saves sit short of fork + k
 **Evidence:** `research_state/measurements/x35_breakers_stage_2026-10-17/r0/curve_rb_x35t_r0_s3631.json` (and
 `_stochastic.json`, whose full stochastic curve was played by the reader but is not a registered read); the per-point
 game ledgers are `~/gen3ai_archive/x35_r0/rb_x35t_r0_s3631/`; `R0_REGISTRATION.md` (2026-10-21 section).
+
+### 2026-10-22 · MEASUREMENT · **R0-prod, READ under its registration (`b04f15b9`, launch sheet AM-R0): a fresh best responder of P\* finds HEADROOM H = +11.1 pp [+8.3, +13.8] (pooled 16–20M, 1,200 greedy games); its learned part +13.6 pp [+7.9, +19.1] over gap(0) −2.5. The class is SATURATED (D = −0.3 pp [−4.2, +3.6]); t90 8M. LG-1's 5M statistic is +6.0 pp, so A6 is NOT triggered. H, t90, the 5M statistic and all 11 points sit inside their 80 % bands; the toy and production holes are the same size**
+
+**Question** (`R0_REGISTRATION.md` §2). How much does a best responder (BR), trained only against frozen P\* (X26
+280,000,170) for +20M at the production pin `f4b25238`, beat P\*? How fast, and is it saturated by 20M? Is the toy
+hole bigger?
+
+**Design.** Run `rb_x35_r0_s3531` (seed 3531, K9(b) PASS `383bb16c`). The same reader and procedure as R0-toy
+(`python -m main.x35.r0 play` at main `383bb16c`, `--ledger`, 3 points a chunk, rule 5b, CPU): 400 greedy-vs-greedy
+games per read point, k = 0, 2M, …, 20M, 80 per offense team, the target drawing from the pool, seed 20261020 (the
+same deals at every point), on the Rust eval core; ≈ 4 min a point (the toy's was ≈ 40 s).
+
+**Result** (gap = P(BR wins) − 0.5; Wilson 95 %; 0 timeouts at every point; ties ≤ 1 a point).
+
+| k | 0 | 2M | 4M | 6M | 8M | 10M | 12M | 14M | 16M | 18M | 20M |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| gap (pp) | −2.5 | +3.5 | +7.3 | +5.8 | +11.8 | +10.3 | +13.8 | +10.3 | +10.5 | +12.3 | +10.5 |
+| gap − gap(0) | 0 | +6.0 | +9.8 | +8.3 | +14.3 | +12.8 | +16.3 | +12.8 | +13.0 | +14.8 | +13.0 |
+| registered 80 % band | [−6, +6] | [0, 16] | [3, 21] | [5, 25] | [6, 27] | [7, 28] | [7, 29] | [7, 29] | [8, 30] | [8, 30] | [8, 30] |
+| inside? | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes | yes |
+
+- **H** +11.1 pp [+8.3, +13.8]; the learned part H − gap(0) +13.6 [+7.9, +19.1].
+- **D** = pooled(16–20M) − pooled(10–14M) = −0.3 [−4.2, +3.6] ⇒ **SATURATED** (upper bound < +5 pp).
+- **t90** = 8M (bar +9.7 pp). It is not NO RISE.
+- **SECONDARY** (the final in the training regime, stochastic@1, never classed): +14.5 pp [+9.7, +19.0].
+- **LG-1's R0 statistic / A6's trigger** (the run's own vs-target rows at ≤ fork + 5M, 2 cycles): 112 / 200 =
+  **+6.0 pp** (Wilson [−0.9, +12.7]). Below 0.15: **A6 is not triggered.**
+- The run's own vs-target rows (100 games each, the training regime): 0.0, +12, +7, +13, +10, +10, +19, +7, +21, +18 pp at
+  2M … 20M; pooled 16–20M +15.3 pp [+9.8, +20.5].
+
+**Prediction checks** (P-R0-1 to P-R0-3, LG-1).
+- Points: **11 of 11 inside** their 80 % bands (calibrated ≈ 9). Every point sits below its point guess.
+- H +11.1 vs **+18 [+8, +30]: inside**, in the lower third.
+- t90 8M vs **8M [4, 14]: inside**, on the point.
+- Class SATURATED: **P(SATURATED) 0.55 hit**, log score ln 0.55 = −0.60.
+- 5M statistic +6.0 vs **+10 [+3, +18]: inside**; P(≥ 0.15) was 0.25, and it did not happen.
+- **Toy vs production** (P-R0-2): H_toy − H_prod = **+0.8 pp [−3.1, +4.6]** (Newcombe) vs **+4 [−8, +14]: inside**;
+  the toy is higher, as P(H_toy > H_prod) 0.65 guessed, but by nothing measurable.
+
+**Reading.**
+- Both plateau policies give a best responder about 11–12 pp on the offense archetype (≈ 13–15 pp over the matchup
+  baseline). P\* is 9 pp stronger head to head than T\*, but it is not less exploitable.
+- Production's hole saturates: flat from 8M to 20M (the 10–14M and 16–20M pools differ by −0.3 pp). The toy's RISING
+  rests on a dip, so neither side shows a hole still growing at 20M.
+- Production is slower to find it: +7 at 4M against the toy's +12. **A 5M exploiter round reads only ≈ 2/3 of P\*'s hole**
+  (in-run +6 at 5M, greedy +7 at 4M against H +11). If LG-3 runs exploiter rounds against production, ≈ 8M a round
+  reaches t90, where 5M does not.
+- The training regime reads higher: the run's own rows pool to +15.3 at 16–20M, and the stochastic@1 final reads +14.5
+  against greedy +10.5. The reader's own stochastic curve (not registered) is still climbing at 18M (+17.8); "saturated"
+  is a statement about greedy play.
+
+**Evidence:** `research_state/measurements/x35_breakers_stage_2026-10-17/r0/curve_rb_x35_r0_s3531.json` (and
+`_stochastic.json`, the reader's full stochastic curve, of which only the final is registered); the per-point game
+ledgers are `~/gen3ai_archive/x35_r0/rb_x35_r0_s3531/`; K9(b) `k9b/rb_x35_r0_s3531.json`; `R0_REGISTRATION.md`
+(2026-10-22 section).

@@ -1,0 +1,225 @@
+{
+ "a6_prefix_cell": [
+  112,
+  200
+ ],
+ "cls": "SATURATED",
+ "fork_step": 280000170,
+ "games_per_team": 80,
+ "gap0": -0.025000000000000022,
+ "headroom": 0.11083333333333334,
+ "headroom_ci": [
+  0.08293505656170341,
+  0.13802424572524197
+ ],
+ "late_minus_early": [
+  -0.0033333333333332993,
+  -0.04225282835451636,
+  0.03560040406493005
+ ],
+ "learned": [
+  0.13583333333333336,
+  0.07949677479755295,
+  0.19140767508196935
+ ],
+ "no_rise": false,
+ "plan": [
+  {
+   "k": 0,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+   "step": 280000170
+  },
+  {
+   "k": 2000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x35_r0_s3531/checkpoints/checkpoint_282000014_steps.zip",
+   "step": 282000014
+  },
+  {
+   "k": 4000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x35_r0_s3531/checkpoints/checkpoint_284000021_steps.zip",
+   "step": 284000021
+  },
+  {
+   "k": 6000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x35_r0_s3531/checkpoints/checkpoint_286000076_steps.zip",
+   "step": 286000076
+  },
+  {
+   "k": 8000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x35_r0_s3531/checkpoints/checkpoint_288000123_steps.zip",
+   "step": 288000123
+  },
+  {
+   "k": 10000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x35_r0_s3531/checkpoints/checkpoint_290000048_steps.zip",
+   "step": 290000048
+  },
+  {
+   "k": 12000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x35_r0_s3531/checkpoints/checkpoint_292000227_steps.zip",
+   "step": 292000227
+  },
+  {
+   "k": 14000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x35_r0_s3531/checkpoints/checkpoint_294000161_steps.zip",
+   "step": 294000161
+  },
+  {
+   "k": 16000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x35_r0_s3531/checkpoints/checkpoint_296000135_steps.zip",
+   "step": 296000135
+  },
+  {
+   "k": 18000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x35_r0_s3531/checkpoints/checkpoint_298000203_steps.zip",
+   "step": 298000203
+  },
+  {
+   "k": 20000000,
+   "path": "/home/goodlad/dev/gen3ai/models/rb_x35_r0_s3531/checkpoints/checkpoint_300000097_steps.zip",
+   "step": 300000097
+  }
+ ],
+ "points": [
+  {
+   "finished": 400,
+   "gap": -0.025000000000000022,
+   "gap_ci": [
+    -0.07346815185345668,
+    0.02394378388344065
+   ],
+   "k": 0,
+   "ties": 1,
+   "timeout_fraction": 0.0,
+   "wins": 190
+  },
+  {
+   "finished": 400,
+   "gap": 0.03500000000000003,
+   "gap_ci": [
+    -0.013980840791229299,
+    0.08331495594925176
+   ],
+   "k": 2000000,
+   "ties": 1,
+   "timeout_fraction": 0.0,
+   "wins": 214
+  },
+  {
+   "finished": 400,
+   "gap": 0.07250000000000001,
+   "gap_ci": [
+    0.02355440156291888,
+    0.12006626555012734
+   ],
+   "k": 4000000,
+   "ties": 1,
+   "timeout_fraction": 0.0,
+   "wins": 229
+  },
+  {
+   "finished": 400,
+   "gap": 0.057499999999999996,
+   "gap_ci": [
+    0.00850709283494322,
+    0.1053989534960934
+   ],
+   "k": 6000000,
+   "ties": 0,
+   "timeout_fraction": 0.0,
+   "wins": 223
+  },
+  {
+   "finished": 400,
+   "gap": 0.11750000000000005,
+   "gap_ci": [
+    0.0689683892522508,
+    0.16379614020682443
+   ],
+   "k": 8000000,
+   "ties": 1,
+   "timeout_fraction": 0.0,
+   "wins": 247
+  },
+  {
+   "finished": 400,
+   "gap": 0.10250000000000004,
+   "gap_ci": [
+    0.053784314589345183,
+    0.14926559408772044
+   ],
+   "k": 10000000,
+   "ties": 1,
+   "timeout_fraction": 0.0,
+   "wins": 241
+  },
+  {
+   "finished": 400,
+   "gap": 0.13749999999999996,
+   "gap_ci": [
+    0.08928761317492795,
+    0.1830964106601597
+   ],
+   "k": 12000000,
+   "ties": 1,
+   "timeout_fraction": 0.0,
+   "wins": 255
+  },
+  {
+   "finished": 400,
+   "gap": 0.10250000000000004,
+   "gap_ci": [
+    0.053784314589345183,
+    0.14926559408772044
+   ],
+   "k": 14000000,
+   "ties": 0,
+   "timeout_fraction": 0.0,
+   "wins": 241
+  },
+  {
+   "finished": 400,
+   "gap": 0.10499999999999998,
+   "gap_ci": [
+    0.05631175102519115,
+    0.15169059444887578
+   ],
+   "k": 16000000,
+   "ties": 0,
+   "timeout_fraction": 0.0,
+   "wins": 242
+  },
+  {
+   "finished": 400,
+   "gap": 0.12250000000000005,
+   "gap_ci": [
+    0.0740402091679837,
+    0.16862919388509456
+   ],
+   "k": 18000000,
+   "ties": 0,
+   "timeout_fraction": 0.0,
+   "wins": 249
+  },
+  {
+   "finished": 400,
+   "gap": 0.10499999999999998,
+   "gap_ci": [
+    0.05631175102519115,
+    0.15169059444887578
+   ],
+   "k": 20000000,
+   "ties": 0,
+   "timeout_fraction": 0.0,
+   "wins": 242
+  }
+ ],
+ "regime": "greedy-vs-greedy",
+ "run": "rb_x35_r0_s3531",
+ "schema": "x35_r0_curve_v1",
+ "seed": 20261020,
+ "t90": 8000000,
+ "target_file": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+ "transport": "rust_eval",
+ "why": "D = -0.0033 [-0.0423, +0.0356]: the upper bound is below +0.05: saturated"
+}
