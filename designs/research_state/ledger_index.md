@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-28,258-line file. **The ledger itself is append-only and is never edited by this**;
+28,290-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**928 headings · 873 dated · 2026-08-01 → 2026-10-22 · ledger 28,258 lines.**
+**929 headings · 874 dated · 2026-08-01 → 2026-10-22 · ledger 28,290 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -948,3 +948,4 @@ rename.
   - `L28106` · `2026-10-21` · MEASUREMENT · **Stage 1c's PHASE B, READ under its pre-registration (`c9bdc928`) and AMENDMENT A (`a144482b`): honest one-ply search over the likelihood-resampled worlds, with L1's fitted piKL anchor, is NOT-DETECTED against the policy on every played arm (F128L −0.001, C128L +0.007 [−0.003, +0.017], M256L −0.002 at LEAF-K8; n 285), Holm rejects none, and none beats today's 8 F worlds. THE UNIT: NEARER BUT NOT PAYING. PROVISIONAL-POOL**
   - `L28154` · `2026-10-21` · MEASUREMENT · **R0-toy, READ under its registration (`b04f15b9`, launch sheet AM-R0): a fresh best responder of T\* finds HEADROOM H = +11.8 pp [+9.1, +14.5] (pooled 16–20M, 1,200 greedy games); its learned part +14.6 pp [+9.0, +20.1] over gap(0) −2.8. The class is RISING (D = +4.4 pp [+0.5, +8.3]), but only because of a dip at 10–12M; t90 4M. H sits inside its 80 % band (+22 [+10, +34]) at the low edge, t90 inside, the SATURATED prior (0.60) missed**
   - `L28204` · `2026-10-22` · MEASUREMENT · **R0-prod, READ under its registration (`b04f15b9`, launch sheet AM-R0): a fresh best responder of P\* finds HEADROOM H = +11.1 pp [+8.3, +13.8] (pooled 16–20M, 1,200 greedy games); its learned part +13.6 pp [+7.9, +19.1] over gap(0) −2.5. The class is SATURATED (D = −0.3 pp [−4.2, +3.6]); t90 8M. LG-1's 5M statistic is +6.0 pp, so A6 is NOT triggered. H, t90, the 5M statistic and all 11 points sit inside their 80 % bands; the toy and production holes are the same size**
+  - `L28259` · `2026-10-22` · MEASUREMENT · **X35 G1 PASSES (σ̂ 0.408 pp, 4 df ≤ 1.2) and A1 LOOK 1 reads NULL, FINAL: the archive pool at P\* moves S by +0.19 pp [−1.07, +1.46]; guards not read (non-qualifying R1); P3 moot**

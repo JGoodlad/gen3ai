@@ -1806,6 +1806,25 @@ seeds 3601–3603. It was read against toy C0 (the same fork without the growth)
 
 [UNDECIDED · 3 + 3 seeds · ledger 2026-10-21 *X47 LOOK 1* · `measurements/x35_breakers_stage_2026-10-17/x47_look1/`]
 
+### 4.10 The archive pool at the production plateau: NULL at look 1; the seed spread is meter noise (X35 A1 and G1, 2026-10-22)
+
+The test: P\* (X26 at 280M) was continued for 20M on seeds 3501–3503. A1 put half the self-play games against 8 frozen
+X26 nodes (the archive pool); C0 is the plain continuation. S is the population score against the frozen 7-member R:
+500 mirrored pairs per member, greedy, CPU.
+- **G1 (the variance gate): PASS.** σ̂ = 0.41 pp (4 df) against the 1.2 pp bar; it is 0.43 pp without A1 s3503
+  (descriptive). One S's measurement se is 0.55 pp, so no seed-to-seed spread beyond the meter is visible. D1 may run.
+- **A1's R1: Δ +0.19 pp [−1.07, +1.46]** (Welch 97.5 %, 3.4 df), wholly inside ±2 pp, so **NULL, FINAL at look 1**.
+  Mean S: A1 57.17, C0 56.98.
+- **Guards not read.** A NULL R1 cannot qualify, so no guard can change the class (orchestrator ruling (a)). P3 (A1's
+  look 2) is moot.
+- **What it licenses:**
+  - a uniform archive over X26's past moves S by less than ±2 pp at P\*'s halved rate. That matches the X55 LG-0
+    prediction (≈ 0–2 pp) and note TM's "NULL at the halved rate";
+  - it is never "the archive cannot help": it covers one pool, at share 0.5, over 20M;
+  - A5 (Nash weighting) stays conditional on A1 not LOSS, which holds.
+
+[NULL · 3 + 3 seeds · ledger 2026-10-22 *X35 A1 LOOK 1* · `measurements/x35_breakers_stage_2026-10-17/reads/a1_look1.json`, `g1/`]
+
 ## 5. Retired hypotheses
 
 Each is retired for the flywheel's gift question. None is retired as a general claim about RL.

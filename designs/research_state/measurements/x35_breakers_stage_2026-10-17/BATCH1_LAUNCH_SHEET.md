@@ -417,6 +417,10 @@ only.
 
 **NOTE 2026-10-22 (AM-X52-i′, before G1's read):** AM-X52-i′ (orchestrator 2026-10-22): X52 does not depend on G1, so it runs right after P1's last arm, in parallel with G1's CPU read; D1 still waits for G1.
 
+**NOTE 2026-10-22 (G1 and A1 look 1, read):** G1 PASSES (σ̂ 0.408 pp, 4 df; `x35_gate_g1.json`, `g1/`). A1's look 1 reads **NULL, FINAL** (R1 Δ +0.19 pp [−1.07, +1.46]; `reads/a1_look1.json`; guards not read, orchestrator ruling (a)), so **P3 (A1's look 2, deferred under AM-RP-d) is now moot**.
+
+**NOTE 2026-10-22 (AM-A1-T2, orchestrator 2026-10-22):** toy A1 (T2, s3601–s3603) is DEFERRED to idle GPU gaps after the queued production arms (D1, SPRT, X48, LR-F). With production A1 a FINAL NULL and the toy calibration pre-accepted as NOT SHOWN (AM-RP-a), it buys little. There is no kit change: `stage-check` reads it ALLOWED, and the GPU order holds it.
+
 
 ---
 

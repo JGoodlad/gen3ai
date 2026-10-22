@@ -28255,3 +28255,35 @@ same deals at every point), on the Rust eval core; ≈ 4 min a point (the toy's 
 `_stochastic.json`, the reader's full stochastic curve, of which only the final is registered); the per-point game
 ledgers are `~/gen3ai_archive/x35_r0/rb_x35_r0_s3531/`; K9(b) `k9b/rb_x35_r0_s3531.json`; `R0_REGISTRATION.md`
 (2026-10-22 section).
+
+### 2026-10-22 · MEASUREMENT · **X35 G1 PASSES (σ̂ 0.408 pp, 4 df ≤ 1.2) and A1 LOOK 1 reads NULL, FINAL: the archive pool at P\* moves S by +0.19 pp [−1.07, +1.46]; guards not read (non-qualifying R1); P3 moot**
+
+**Question** (`BATCH1_LAUNCH_SHEET.md` §0 AM-2, §1 rows 1–6). (1) G1: is the seed-to-seed SD of S over the six P1
+finals ≤ 1.2 pp? (2) A1 (archive pool: half the self-play games against 8 frozen X26 nodes) against C0, at look 1.
+
+**Design** (registered before any read). The finals are `models/rb_x35_{c0,a1arch}_s350{1,2,3}/final_model.zip`
+(steps 300.06M, all K9(b) PASS), all at the production pin `f4b25238`. S is `readout.population_score` against the
+frozen R (7 members, content `cef0960e`): 500 mirrored pairs per cell, `main.h2h play-many`, greedy, the eval
+builder, CPU, regime `adfdbee824c9eb0a`. That is 42 cells and 21,000 pairs. G1 = the pooled within-arm SD; PASS iff
+≤ 1.2 pp. R1 = Welch 97.5 %, with classes at ±2 pp.
+
+**Result.**
+
+| seed | C0 S (pp) | A1 S (pp) |
+|---|---|---|
+| 3501 | 57.52 | 57.51 |
+| 3502 | 56.60 | 57.11 |
+| 3503 | 56.81 | 56.89 |
+
+- **G1:** σ̂ = 0.408 pp (4 df), **PASS** (`x35_gate_g1.json`, written once by `kit gate --write`). Without A1 s3503
+  it is 0.427 (3 df), descriptive only. A1 s3503's u200 canary was UNCONFIRMED, and the orchestrator ruled the final
+  FIT before the write. One S's mean se is 0.55 pp, so the spread is within measurement noise.
+- **A1 R1:** Δ **+0.19 pp [−1.07, +1.46]** (df 3.45). The interval is inside ±2, so **NULL, FINAL at look 1**.
+- **Guards:** G-F, G-C and G-K were not read; G-E and dose are absent by design. The registered semantics let a guard
+  gate only a qualifying R1 (orchestrator ruling (a)). P3 is moot.
+- **Consequences:** `stage-check` now reads D1 ALLOWED and a1 s3504 REFUSED. toy_a1 is ALLOWED by the kit (AM-3 is
+  met by a FINAL NULL), although AM-RP-a pre-accepted the toy calibration as NOT SHOWN.
+
+**Evidence:** `research_state/measurements/x35_breakers_stage_2026-10-17/` (`x35_gate_g1.json`,
+`reads/a1_look1.json`, `g1/README.md`, `g1/results.json`, `g1/g1_read.py`); the game ledger is
+`~/gen3ai_archive/x35_g1/ledger`; `UNDERSTANDING.md` §4.10.

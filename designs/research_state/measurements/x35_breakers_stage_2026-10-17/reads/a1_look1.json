@@ -1,0 +1,106 @@
+{
+ "arm": "A1",
+ "guards": {
+  "G-C": {
+   "detail": {},
+   "guard": "G-C",
+   "near_boundary": [],
+   "reasons": [
+    "not read: R1 is non-qualifying (NULL), so registered guard semantics cannot change the class"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-E": {
+   "detail": {},
+   "guard": "G-E",
+   "near_boundary": [],
+   "reasons": [
+    "absent by design: the G-E readers launch only on an R1 GAIN"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-F": {
+   "detail": {},
+   "guard": "G-F",
+   "near_boundary": [],
+   "reasons": [
+    "not read: R1 is non-qualifying (NULL), so registered guard semantics cannot change the class"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-K": {
+   "detail": {},
+   "guard": "G-K",
+   "near_boundary": [],
+   "reasons": [
+    "not read: R1 is non-qualifying (NULL), so registered guard semantics cannot change the class"
+   ],
+   "status": "INCONCLUSIVE"
+  }
+ },
+ "inputs": {
+  "r1": {
+   "off": {
+    "3501": 57.52142857142858,
+    "3502": 56.6,
+    "3503": 56.81428571428571
+   },
+   "on": {
+    "3501": 57.51428571428572,
+    "3502": 57.107142857142854,
+    "3503": 56.892857142857146
+   },
+   "source": "g1/results.json (the G1 read: 7 members x 500 mirrored pairs, regime adfdbee824c9eb0a)"
+  }
+ },
+ "look": 1,
+ "r1": {
+  "class": "NULL",
+  "final": true,
+  "look": 1,
+  "near_boundary": [],
+  "outcome": "NULL",
+  "reasons": [],
+  "seeds": [
+   "3501",
+   "3502",
+   "3503"
+  ],
+  "stat": {
+   "ci_pp": [
+    -1.0716985220815218,
+    1.4574128077958222
+   ],
+   "confidence": 0.975,
+   "delta_pp": 0.19285714285715017,
+   "df": 3.4482758620689573,
+   "mean_off_pp": 56.97857142857143,
+   "mean_on_pp": 57.17142857142858,
+   "n_off": 3,
+   "n_on": 3,
+   "q": 3.800459600066935,
+   "se_pp": 0.332737562824349,
+   "var_off": 0.23250000000000454,
+   "var_on": 0.0996428571428583
+  }
+ },
+ "r2": {
+  "falls": false,
+  "gap_diff": null,
+  "near_boundary": [],
+  "reasons": [
+   "no R2 read"
+  ]
+ },
+ "reasons": [
+  "R1 does not qualify"
+ ],
+ "reported": {
+  "dose": {
+   "read": false,
+   "why": "absent by design (reported only, never decides)"
+  }
+ },
+ "ruling": "orchestrator 2026-10-22, option (a): saved with R1 only; G-F / G-C / G-K not read because R1 is NULL (non-qualifying); P3 (A1 look 2, deferred under AM-RP-d) is moot",
+ "verdict": "NULL"
+}
