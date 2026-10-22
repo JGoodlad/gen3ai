@@ -34,3 +34,29 @@ Transfer / L.
 **Named before playing.** C0 s3501 is a fork of P\* itself (+20M of production self-play), and X26 230M is P\*'s
 ancestor: neither is outside P\*'s lineage, so a GENERAL verdict shows transfer to P\*'s family, not to every
 policy. No strong production opponent outside this lineage exists at the pin.
+
+## 2. The read (2026-10-22, CPU, rule 5b; record `transfer_rb_x35_r0_s3531.json`)
+
+Played at main `460f8ea0` on the Rust eval core, 400 greedy games a file, 0 timeouts, the curve's deals.
+
+| opponent | BR start (k = 0) | BR k = 20M | **Transfer**, Newcombe 95 % | Transfer / L | class |
+|---|---|---|---|---|---|
+| **C0 s3501 final (300.06M), primary** | 180 / 400 (gap −5.0) | 238 / 400 (gap +9.5) | **+14.5 pp [+7.6, +21.2]** | 1.07 | **GENERAL** |
+| X26 230M, secondary | 199 / 400 (gap −0.25) | 249 / 400 (gap +12.25) | +12.5 pp [+5.6, +19.2] | 0.92 | MIXED |
+| P\* (the curve, reference) | 190 / 400 | 242 / 400 | +13.0 (point); L = +13.6 pooled | 1 | — |
+
+**Verdict: GENERAL.** What the BR learned against P\* carries over undiminished to a different strong opponent: its gain
+against C0 s3501 (+14.5) matches its gain against P\* (+13.6), and the lower bound clears the half bar (+7.6 > +6.8).
+Against X26 230M the point is the same (+12.5), but the lower bound (+5.6) sits below the bar, so it reads MIXED.
+R0-prod's headroom is mostly the BR learning to pilot the five offense teams better, not a hole specific to P\*.
+
+The gain is concentrated on the same two teams against both opponents: `ac17a9dd` (+12 / 80 and +19 / 80 wins) and
+`b904dbe0` (+21 and +19). The other three teams gain between +2 and +10 each.
+
+**Limits.**
+- Both opponents are in P\*'s lineage (C0 is P\* + 20M; 230M is its ancestor), so this shows transfer within P\*'s
+  family only.
+- Newcombe assumes the two files' games are independent. They share deals (common random numbers), so the interval is
+  conservative.
+- The scripts (`transfer_read.py`, `analyze.py`) and the per-game ledgers are in `~/gen3ai_archive/x35_r0_transfer/`,
+  outside the repo.

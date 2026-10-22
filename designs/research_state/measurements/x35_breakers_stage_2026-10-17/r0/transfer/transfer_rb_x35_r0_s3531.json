@@ -1,0 +1,186 @@
+{
+ "bands": {
+  "GENERAL": "lower > half_bar + 0.0005",
+  "INCONCLUSIVE": "> 25% timeouts on either file",
+  "TARGET_SPECIFIC": "upper < half_bar - 0.0005"
+ },
+ "half_bar": 0.06791666666666668,
+ "matched_point_learned_vs_pstar": 0.13,
+ "opponents": {
+  "c0_s3501_final": {
+   "cls": "GENERAL",
+   "k00M": {
+    "attempted": 400,
+    "file": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "finished": 400,
+    "gap": -0.04999999999999999,
+    "gap_ci": [
+     -0.09804863792072116,
+     -0.00100009801931078
+    ],
+    "per_team": {
+     "X_9ba039ba": [
+      40,
+      80
+     ],
+     "X_9eb3abdc": [
+      44,
+      80
+     ],
+     "X_a185b2d1": [
+      37,
+      80
+     ],
+     "X_ac17a9dd": [
+      29,
+      80
+     ],
+     "X_b904dbe0": [
+      30,
+      80
+     ]
+    },
+    "steps": 280000170,
+    "ties": 1,
+    "timeout_fraction": 0.0,
+    "wins": 180
+   },
+   "k20M": {
+    "attempted": 400,
+    "file": "/home/goodlad/dev/gen3ai/models/rb_x35_r0_s3531/checkpoints/checkpoint_300000097_steps.zip",
+    "finished": 400,
+    "gap": 0.09499999999999997,
+    "gap_ci": [
+     0.046209711837742695,
+     0.1419828864483179
+    ],
+    "per_team": {
+     "X_9ba039ba": [
+      49,
+      80
+     ],
+     "X_9eb3abdc": [
+      50,
+      80
+     ],
+     "X_a185b2d1": [
+      47,
+      80
+     ],
+     "X_ac17a9dd": [
+      41,
+      80
+     ],
+     "X_b904dbe0": [
+      51,
+      80
+     ]
+    },
+    "steps": 300000097,
+    "ties": 0,
+    "timeout_fraction": 0.0,
+    "wins": 238
+   },
+   "opp_file": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3501/final_model.zip",
+   "opp_steps": 300061940,
+   "role": "primary",
+   "transfer": [
+    0.14499999999999996,
+    0.07585173456207843,
+    0.21220166088016051
+   ],
+   "transfer_over_ref": 1.0674846625766867,
+   "transport": "rust_eval"
+  },
+  "x26_230m": {
+   "cls": "MIXED",
+   "k00M": {
+    "attempted": 400,
+    "file": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+    "finished": 400,
+    "gap": -0.0025000000000000022,
+    "gap_ci": [
+     -0.05124199801372875,
+     0.046289561216727226
+    ],
+    "per_team": {
+     "X_9ba039ba": [
+      42,
+      80
+     ],
+     "X_9eb3abdc": [
+      51,
+      80
+     ],
+     "X_a185b2d1": [
+      48,
+      80
+     ],
+     "X_ac17a9dd": [
+      26,
+      80
+     ],
+     "X_b904dbe0": [
+      32,
+      80
+     ]
+    },
+    "steps": 280000170,
+    "ties": 0,
+    "timeout_fraction": 0.0,
+    "wins": 199
+   },
+   "k20M": {
+    "attempted": 400,
+    "file": "/home/goodlad/dev/gen3ai/models/rb_x35_r0_s3531/checkpoints/checkpoint_300000097_steps.zip",
+    "finished": 400,
+    "gap": 0.12250000000000005,
+    "gap_ci": [
+     0.0740402091679837,
+     0.16862919388509456
+    ],
+    "per_team": {
+     "X_9ba039ba": [
+      46,
+      80
+     ],
+     "X_9eb3abdc": [
+      53,
+      80
+     ],
+     "X_a185b2d1": [
+      54,
+      80
+     ],
+     "X_ac17a9dd": [
+      45,
+      80
+     ],
+     "X_b904dbe0": [
+      51,
+      80
+     ]
+    },
+    "steps": 300000097,
+    "ties": 0,
+    "timeout_fraction": 0.0,
+    "wins": 249
+   },
+   "opp_file": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_230000074_steps.zip",
+   "opp_steps": 230000074,
+   "role": "secondary",
+   "transfer": [
+    0.12500000000000006,
+    0.05623392834250643,
+    0.19210949931909033
+   ],
+   "transfer_over_ref": 0.9202453987730064,
+   "transport": "rust_eval"
+  }
+ },
+ "reference_learned_vs_pstar": 0.13583333333333336,
+ "regime": "greedy-vs-greedy",
+ "run": "rb_x35_r0_s3531",
+ "schema": "x35_r0_transfer_v1",
+ "seed": 20261020
+}
