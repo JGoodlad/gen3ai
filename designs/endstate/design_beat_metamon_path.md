@@ -2,7 +2,7 @@
 
 **Status: X51 READ 2026-10-21 (`measurements/x51_plateau_vs_kakuna_2026-10-20/`): goal (a) MET at the plateau P\*
 (home72 0.598 [0.549, 0.644]); goal (b) NOT met, 0.487 [0.459, 0.515], ≈ 4.3 pp short; Kakuna ckpt 28 not
-detectably stronger than 34. X52 is next.** ALWAYS-CURRENT
+detectably stronger than 34. X52 is REGISTERED and staged (2026-10-22, §6.2), next after G1.** ALWAYS-CURRENT
 (owner, 2026-09-27): a later read, decision or build that differs updates this doc in the same commit, and the
 Decision record (§9) says what changed and why. Every number below is quoted from a banked read with its directory;
 every effect size that is not measured is marked **GUESS** or **ESTIMATE**.
@@ -32,9 +32,9 @@ Smogon-usage teams; U = the three UNFAMILIAR panels H, F and P72; "pilot" = play
 - **No lever we have measured is expected to close the remaining ≈ 4 pp alone.** Ranked by expected pp per unit of
   cost:
   1. **X51: read where P\* stands** (CPU only). DONE 2026-10-21 (above; §6.1).
-  2. **X52: a PRACTICE-CEILING fork** (≈ 2.5 GPU-h). It tests whether exposure to a team fixes piloting it, and
-     whether that transfers to the same population's other teams. It sizes or kills the D1 family before ≈ 13–60
-     GPU-h are spent on it.
+  2. **X52: a PRACTICE-CEILING fork** (≈ 2.2 GPU-h; REGISTERED and staged 2026-10-22, after G1 and before D1). It
+     tests whether exposure to a team fixes piloting it, and whether that transfers to the same population's other
+     teams. It sizes or kills the D1 family before ≈ 13–60 GPU-h are spent on it.
   3. **X38 / D1: widen the pool**, already staged in X35. Currently it sits ≈ 78 GPU-h deep in the queue (FINDING 3).
   4. **X41 / D3: set mutation.** Build it now on CPU; run it only on D1's verdict.
   5. **X53: a fresh wide run** (pool + forum teams from step 0) with a 100M look (≈ 21 GPU-h), if D1 reads NULL from
@@ -192,7 +192,7 @@ behind it is a GUESS.
 | lever | id | mechanism vs the measured deficit | expected pp (b) | evidence | cost | rank |
 |---|---|---|---|---|---|---|
 | **Read P\*** | X51 | none: it measures where the plateau stands | **MEASURED: +3.0 [−1.0, +7.0]** (n.d.) | X51: P\* 0.487 vs 161M 0.457 pooled | 0 GPU; 8 lane-h of play (18.5 h wall behind the slot queue) | **DONE** |
-| **Practice ceiling** | X52 | sizes the familiarity premium and its within-population transfer | diagnostic; **practised half up to +10** (GUESS: home72's premium) | §4 | ≈ 2.5 GPU-h; ≈ 4.5 lane-h; corpus ≈ 0.25 agent-day | **2** |
+| **Practice ceiling** | X52 | sizes the familiarity premium and its within-population transfer | diagnostic; registered: **practised half +5 [+0.5, +9.5], unpractised 0 [−3.5, +3]** (GUESS, §6.2) | §4; R0's practice curve | ≈ 2.2 GPU-h; ≈ 11.8 lane-h | **2** (staged) |
 | **Widen the pool (D1)** | X38 | breadth on BOTH sides: forum teams at a 0.5 share | **+2 to +6** (GUESS) | targets the 10–13 pp premium; dose ≈ 1 % per team (§4); plasticity at a plateau is a named risk (diversity doc §4.2) | ≈ 13 GPU-h (C0 shared); ≈ 10 lane-h for the readout | **3** |
 | **Set mutation (D3)** | X41 | defeats exact-set identification on familiar cores, the CORE-stratum ≈ 11 pp | **+1 to +4** (GUESS) | X37a reverse CORE 0.463 vs home72 0.575 | build 1–2 agent-days (CPU, now) + ≈ 13 GPU-h | **4** (build now, run on D1's verdict) |
 | **Fresh wide run** | X53 | breadth from step 0, without plateau plasticity | **+3 to +8** (GUESS) | X26 gained most of its in-house strength by 100M (X37b), so a 100M look is informative | ≈ 21 GPU-h to 100M; ≈ 60 to 280M (ESTIMATE: 1,333 steps/s) | **5** (conditional) |
@@ -255,36 +255,61 @@ toy is **UNVERIFIED**.
   REVERSE cell, which the unit's brief did not include (it stays open). Neither rule fired: the pair cell's LB is
   0.466, and (b)'s LB is 0.459. The numbers are in §0, §1 and §3.
 
-### 6.2 X52 — the practice ceiling (≈ 2.5 GPU-h; CPU ≈ 4.5 lane-h). SECOND.
+### 6.2 X52 — the practice ceiling (≈ 2.2 GPU-h; CPU ≈ 11.8 lane-h). SECOND. REGISTERED 2026-10-22
 
 **Question.** Does practising a team fix our piloting of it against Kakuna? Does practising 36 teams transfer to 36
 unpractised teams of the same population?
 
+**Registered** in the X35 launch sheet's §0 (AM-X52, 2026-10-22) before any argv. That note holds the predictions, the
+R0 grounding, the contamination analysis and FINDINGS F-X52-1 to 6. The halves are in
+[`x52_practice_ceiling_2026-10-22/`](../research_state/measurements/x52_practice_ceiling_2026-10-22/README.md).
+
 **Design.**
 
-- **The teams.** 72 tier-A teams from `w_forum_v1`, never a registered panel (the `--team-mix` guard refuses panel
-  teams). They are split 36 / 36 by a registered seed, stratified by `ladder_weights_v1` stratum, and frozen as a new
-  pin-safe corpus `w_practice36_v1` (≈ 0.25 agent-day, by `build_w_forum`'s machinery).
-- **The fork.** P\* + `--team-mix w_practice36_v1:0.5 --team-mix-sides trainee`. Our side practises; the opponent side
-  stays on the pool, because facing is not the deficit. The fork runs 5M steps, 2 seeds (≈ 1.2 GPU-h each), with
-  checkpoints at 1M and 5M.
-  - At 5M each practised team is piloted ≈ 1,650 times (ESTIMATE, §4's dose rule), ≈ 18 % of a pool team's dose.
-  - Use the X35 production pin, so the fork's network matches C0's.
-- **The read.** REVERSE-cell shape: our side pilots the half, Kakuna pilots home72.
-  - P\* on each half: 200 each.
-  - Each seed's 5M node on each half: 200 each.
-  - Total 1,200 games. The 1M node on the practised half is descriptive: the dose curve.
-- **Rules** (a team-clustered interval on fork − P\*, seeds pooled):
+- **The teams.** 72 teams of `w_forum_v1` tier A as committed at the production pin, never a registered panel's team or
+  near neighbour, and ≥ 4 mon sets away from every pool team and from each other. They are split 36 / 36 inside each
+  `ladder_weights_v1` stratum (CORE 1/1, NEAR 28/28, FAR 7/7; seeds 5200 / 5201).
+- **The fork.** P\* + `--trainee-teams <the 36 practised files>`: our side pilots ONLY the practised half, and the
+  opponent side stays on the pool, because facing is not the deficit.
+  - It runs 5M steps, seeds 3501 and 3502, at the X35 production pin `f4b25238`, so the network and the recipe are
+    C0's. Checkpoints come every 1M.
+  - Each practised team is piloted ≈ 3,300 times by 5M (ESTIMATE, §4's dose rule), ≈ 36 % of a pool team's dose.
+  - It is the kit arm `x52` (`main.x35.kit describe --arm x52`).
+  - **Changed from the first draft:** the share is 1.0, not 0.5. The planned `--team-mix w_practice36_v1:0.5` needs a
+    corpus in code, which a new pin would have to carry. So the dose doubles, and our side pilots no pool team for 5M.
+- **The read.** REVERSE cells: our model pilots one half, and Kakuna ckpt 34 pilots home72, greedy against greedy, on
+  X51's harness with the same deals for every model.
+  - P\*, s3501 @5M and s3502 @5M play **600 games per half each**: 3,600 primary games.
+  - Descriptive only: s3501 @1M on the practised half (200 games, the dose curve), and C0 s3501's final on the
+    unpractised half (400 games, the drift a continuation alone gives).
+- **The statistic.** Δ = the two seeds' pooled win rate minus P\*'s, per half. Its interval is a team-clustered
+  bootstrap (95 %, ≈ ±4.9 pp). At the first draft's 200 games a cell, it was ±8.5 pp.
+- **Rules,** in this order (the sheet's AM-X52-g has the exact bounds):
 
 | reading | rule | consequence |
 |---|---|---|
-| **FAMILIARITY WORKS** | practised-half gain LB > 0 | exposure fixes piloting. Its size is the ceiling D1 cannot exceed at its dose |
-| **TRANSFERS** | FAMILIARITY WORKS and unpractised-half gain LB > 0 | breadth generalises within the population: D1's mechanism is supported. Move D1 forward (§6.3) |
-| **NO TRANSFER** | FAMILIARITY WORKS and the unpractised gain's upper bound < +3 pp | D1 at 20M is unlikely to move U. Its expected value falls to +0–2 pp; D3 and the fresh run carry the hope; X53 waits for D1's read |
 | **NO FAMILIARITY** | practised-half gain upper bound < +4 pp | the deficit is not an exposure problem at this dose. Pause the D1 family; re-open the critic / representation question (§4) and capacity (X47b) |
+| **TRANSFERS** | practised-half gain LB > 0 and unpractised-half gain LB > 0 | breadth generalises within the population: D1's mechanism is supported. Move D1 forward (§6.3) |
+| **NO TRANSFER** | practised-half LB > 0 and the unpractised gain's upper bound < +3 pp | D1 at 20M is unlikely to move U. Its expected value falls to +0–2 pp; D3 and the fresh run carry the hope; X53 waits for D1's read. Weaker evidence than it looks: our side piloted no pool team for 5M |
+| **FAMILIARITY ONLY** | practised-half LB > 0, transfer unresolved | familiarity is sized. D1 proceeds as staged |
 | else | UNDECIDED | D1 proceeds as staged |
 
-**Why it is worth 2.5 GPU-h ahead of D1.** It is the cheapest read that can kill or size the whole widening family
+**Predicted (GUESS, registered):**
+
+- practised half +5 pp, 80 % [+0.5, +9.5];
+- unpractised half 0 pp, 80 % [−3.5, +3];
+- the classes: TRANSFERS 0.05 · NO TRANSFER 0.15 · FAMILIARITY ONLY 0.30 · NO FAMILIARITY 0.10 · UNDECIDED 0.40.
+
+**How R0 grounds this.** R0's best responder practised 5 already-familiar teams against P\* and learned +13.6 pp in
+20M. Per team that is +6 pp at ≈ 9,500 pilots (2M), and the gain is general within P\*'s family (+14.5 pp against
+C0). X52's ≈ 3,300 pilots per team is a third of that. The guess sits above the linear +2 pp because X52's teams start
+unfamiliar, where home72's premium says the early pilots matter most.
+
+**Contamination.** The practised half is the treatment, so its gain is a familiarity ceiling and never a goal (b)
+number. The unpractised half and every goal panel stay unseen by the fork. `w_forum_v1` holds all 72 teams, so after D1
+these halves are unfamiliar only to P\*'s lineage.
+
+**Why it is worth ≈ 2.2 GPU-h ahead of D1.** It is the cheapest read that can kill or size the whole widening family
 (D1, D3, X53: ≈ 13–90 GPU-h). It also measures test-time adaptation's feasibility as a by-product.
 
 ### 6.3 X38 / D1 — as staged, with a scheduling ask
@@ -354,13 +379,13 @@ with the interval named in the registration.
 | step | GPU-h | CPU lane-h | agent-days |
 |---|---:|---:|---:|
 | X51 | 0 | ≈ 9 | ≈ 0.2 (prereg + queue) |
-| X52 | ≈ 2.5 | ≈ 4.5 | ≈ 0.5 (corpus + prereg) |
+| X52 | ≈ 2.2 | ≈ 11.8 | ≈ 0.5 (halves + prereg + kit, DONE) |
 | X38 / D1 (already in X35) | ≈ 13 (C0 shared) | ≈ 10 | 0 (built) |
 | X41 / D3 build; run if triggered | 0; ≈ 13 | ≈ 10 | 1–2 |
 | X53 (conditional) | ≈ 21 to the look; ≈ 60 in all | ≈ 7 | ≈ 0.3 |
 | X54 | 0 | ≈ 5.6–7.9 per model | ≈ 0.3 (prereg; the carve is DONE) |
-| **sure path (X51, X52, D1, X54)** | **≈ 15.5** | **≈ 29–31** | **≈ 1.0** |
-| **with D3 and X53 to the plateau** | **≈ 89** | **≈ 46–48** | **≈ 2.8** |
+| **sure path (X51, X52, D1, X54)** | **≈ 15.2** | **≈ 36–39** | **≈ 1.0** |
+| **with D3 and X53 to the plateau** | **≈ 88** | **≈ 53–56** | **≈ 2.8** |
 
 ---
 
@@ -437,4 +462,5 @@ with the interval named in the registration.
 | 2026-10-20 | The ranked path (PROPOSED; the orchestrator's GO per step) | X51 plateau read (CPU) → X52 practice ceiling (≈ 2.5 GPU-h) → X38 / D1 as staged (with a scheduling ask) → X41 / D3 built now, run on D1's verdict → X53 fresh wide run with a 100M look (conditional) → X54 confirmation on a fresh panel | D1 first with no diagnostic (≈ 13–90 GPU-h of the widening family unsized); a fresh wide run first (≈ 60 GPU-h before the cheap reads); X35 breakers as the path (+0–2 pp, GUESS); search (≈ 0, measured); X49 (targets facing, which costs ≈ 0); training against Kakuna (trains on the meter; too slow) | §4, §5 |
 | 2026-10-20 | **FINDING 2 RULED and DONE: X54's confirmation panel carved before D1** (eval-registry worker, orchestrator ruling) | `forum216b`: 216 teams from `w_forum_v1` AB, seed 5400, forum72's strata × 3, curator cap 42; registered `held_out_from: ["training"]` and SEALED until X54 (`main.heldout_panels.SEALED`); no copy or near copy of the pool or any panel. `w_forum_v1` rebuilt: ABC 2,424 → 1,982 (tier sha `7bcdc835…` → `73a76e80…`); X35 AMENDMENT D1-CORPUS, launch pre-check 2d | forum72-sized (72: under the upper τ², 0.56 power at G = 2,400); 144 (0.79, fails the 80 % rule); the 1,828 capped C-tier leftovers (four curators, near-neighbour status unchecked); a successor corpus name (`w_forum_v2`: every registered panel must be excluded from any corpus anyway, and the startup guard would refuse `w_forum_v1` unrebuilt) | §6.6; `forum216b_x54_2026-10-20/` |
 | 2026-10-21 | **X51 READ** (anchor worker; CPU, 2,800 games at the `63f97a57` harness; the stop lifted by the orchestrator so every cell reached 400) | goal (a) MET at P\* (0.598 [0.549, 0.644]); goal (b) NOT met (0.487 [0.459, 0.515], ≈ 4.3 pp short; P\* − 161M +3.0 pp n.d.); ckpt 34 stays the opponent (ckpt 28 0.515 [0.466, 0.564] vs it, n.d.); T\* weaker than P\*. §0, §1, §3, §5 and FINDINGS 1 and 8 now quote it; the path's order is unchanged (X52 next) | switching the goal to ckpt 28 (its rule did not fire); reading (b) as within reach of the plateau alone (+3 pp, n.d.) | `x51_plateau_vs_kakuna_2026-10-20/` |
+| 2026-10-22 | **X52 REGISTERED and STAGED** (design worker; CPU only) | 72 forum tier-A teams drawn and split 36 / 36 (`x52_practice_ceiling_2026-10-22/`); the fork is C0's argv + `--trainee-teams <practised 36>` at the production pin `f4b25238`, +5M, s3501–s3502, ≈ 2.2 GPU-h, after G1 and before D1; the read is 600 games per (model, half) against Kakuna; predictions practised +5, unpractised 0 (X35 sheet §0 AM-X52) | the first draft's `--team-mix w_practice36_v1:0.5` (its corpus is code, so it needs a new pin, not C0's); 200 games a cell (±8.5 pp, wider than the predicted effect); practising on goal (b)'s own panels (that trains on the meter) | §6.2; X35 sheet §0 |
 | 2026-10-20 | Expected pp per lever | quoted from measured effects where they exist (X37b's 100M → 280M transfer; L1's search null; FACE_c), GUESS elsewhere, with the arithmetic that (b) needs +6–8 pp | single-number promises | §1, §5 |

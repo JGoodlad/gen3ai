@@ -1,0 +1,57 @@
+Hariyama @ Leftovers
+Ability: Thick Fat
+EVs: 184 Def / 252 SpD / 72 Spe
+Impish Nature
+- Brick Break
+- Knock Off
+- Whirlwind
+- Rest
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 248 SpD / 8 Spe
+Careful Nature
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD
+- Hidden Power [Flying]
+- Spikes
+- Whirlwind
+- Rest
+
+Tyranitar @ Leftovers
+Ability: Sand Stream
+EVs: 248 HP / 200 Atk / 48 Def / 12 Spe
+Adamant Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Rock Slide
+- Earthquake
+- Hidden Power [Bug]
+- Roar
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 248 HP / 56 Atk / 108 Def / 96 SpD
+Relaxed Nature
+- Earthquake
+- Psychic
+- Rapid Spin
+- Rest
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 240 SpD / 20 Spe
+Calm Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Toxic
+- Rest
+
+Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 224 HP / 252 Def / 32 Spe
+Bold Nature
+IVs: 0 Atk
+- Seismic Toss
+- Heal Bell
+- Thunder Wave
+- Soft-Boiled

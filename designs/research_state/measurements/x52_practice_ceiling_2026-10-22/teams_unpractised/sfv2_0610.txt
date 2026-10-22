@@ -1,0 +1,57 @@
+Tyranitar @ Choice Band
+Ability: Sand Stream
+EVs: 204 HP / 252 Atk / 52 Spe
+Adamant Nature
+- Rock Slide
+- Focus Punch
+- Earthquake
+- Brick Break
+
+Celebi @ Leftovers
+Ability: Natural Cure
+EVs: 248 HP / 80 SpA / 180 Spe
+Modest Nature
+IVs: 0 Atk
+- Calm Mind
+- Giga Drain
+- Leech Seed
+- Psychic
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 68 HP / 252 SpA / 188 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Toxic
+- Protect
+
+Snorlax @ Leftovers
+Ability: Thick Fat
+Shiny: Yes
+EVs: 44 HP / 132 Atk / 196 Def / 136 SpD
+Adamant Nature
+- Curse
+- Rest
+- Body Slam
+- Earthquake
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 68 Atk / 176 Def / 12 SpA
+Impish Nature
+- Rapid Spin
+- Earthquake
+- Psychic
+- Explosion
+
+Milotic @ Leftovers
+Ability: Marvel Scale
+EVs: 248 HP / 236 Def / 24 Spe
+Bold Nature
+IVs: 0 Atk
+- Surf
+- Recover
+- Ice Beam
+- Refresh

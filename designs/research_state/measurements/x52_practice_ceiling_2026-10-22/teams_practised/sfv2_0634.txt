@@ -1,0 +1,61 @@
+Skarmory (M) @ Leftovers
+Ability: Keen Eye
+Shiny: Yes
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Spikes
+- Drill Peck
+- Roar
+- Protect
+
+Flygon (M) @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 248 HP / 220 Def / 40 Spe
+Impish Nature
+IVs: 30 Def / 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Rock]
+- Toxic
+- Protect
+
+Blissey @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 252 Def / 252 SpA / 4 SpD
+Modest Nature
+IVs: 0 Atk
+- Seismic Toss
+- Ice Beam
+- Aromatherapy
+- Soft-Boiled
+
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 224 HP / 252 SpD / 32 Spe
+Calm Nature
+IVs: 0 Atk
+- Thunderbolt
+- Roar
+- Rest
+- Sleep Talk
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 100 HP / 136 SpA / 56 SpD / 216 Spe
+Modest Nature
+IVs: 0 Atk
+- Flamethrower
+- Protect
+- Toxic
+- Rest
+
+Misdreavus (F) @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 4 Def / 252 SpD
+Calm Nature
+IVs: 0 Atk
+- Toxic
+- Thunderbolt
+- Perish Song
+- Rest

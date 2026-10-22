@@ -7,7 +7,7 @@ HEAD `03b983be` (§4.3); nothing launched; every launch NEEDS THE ORCHESTRATOR'S
 `gen3_tau_fp32_alt_v1`; its GPU cost read gates production), so there is ONE PIN PER SIDE, the TOY BLOCK RUNS FIRST (AM-9) and production waits for the FP32_ALT commit (a
 placeholder the kit refuses to launch on).** **AMENDED 2026-10-20 (AM-X47, §0) before any X47 read:** the
 orchestrator accepted X47's readout review (AM-X47-1 to -11) and ruled that X47 arms are not thinned (AM-X47-12). X47's
-READ PLAN is §4.5, and its guards' pre-read (both READ on toys) is §4.5.1. **AMENDED 2026-10-20 (AM-X47b, §0) before any X47 read:** G-C pooled over seeds (a crossed cluster bootstrap), the toy's own B2 truth, a policy-difference descriptor (reported only), and UNDECIDED with Δ̂ ≤ 0 deprioritises X47b. **AMENDED 2026-10-20 (AM-X47c, §0) before any X35 read:** the UNDECIDED line prints the CURRENT look's detectable effect, and production's B2 truth is refreshed under P\* (§5.6.5's own refresh rule). **AMENDED 2026-10-20 (D1-CORPUS, §0) before any D1 launch:** X54's sealed confirmation panel `forum216b` was carved out of D1's corpus, which is now 1,982 teams (tier sha `73a76e808431`); launch pre-check 2d HOLDs a pin without it. **NOTE 2026-10-20 (TM, §0) before any production X35 read:** the X26 treadmill read's MECHANISM predictions for C0 / A1 / A2 (pool refresh, pool-relative edge, the learning rate in force), reported only, and the LR confound every production fork inherits; no arm, argv, bar or order changed. **AMENDED 2026-10-20 (AM-RP, §0) before any X47 look-1 read and any production arm:** the REPLAN memo's rulings: A2 and toy A2 DROPPED, P3 DEFERRED, LG-2 only on an A1 GAIN, A3's ROBUSTNESS GAIN rule, the toy calibration accepted NOT SHOWN, the GPU order after T1 (the GPU battery first), and batch 2's SPRT and toy LR-F registered. **NOTE 2026-10-20 (AM-R0, §0):** R0, the exploitability curve, is registered (`R0_REGISTRATION.md`) and placed: R0-toy right after the GPU battery, R0-prod right after P1's C0 seeds (≈ 5.8 GPU-h); C4's deferral ends. X47 is a **kit arm**
+READ PLAN is §4.5, and its guards' pre-read (both READ on toys) is §4.5.1. **AMENDED 2026-10-20 (AM-X47b, §0) before any X47 read:** G-C pooled over seeds (a crossed cluster bootstrap), the toy's own B2 truth, a policy-difference descriptor (reported only), and UNDECIDED with Δ̂ ≤ 0 deprioritises X47b. **AMENDED 2026-10-20 (AM-X47c, §0) before any X35 read:** the UNDECIDED line prints the CURRENT look's detectable effect, and production's B2 truth is refreshed under P\* (§5.6.5's own refresh rule). **AMENDED 2026-10-20 (D1-CORPUS, §0) before any D1 launch:** X54's sealed confirmation panel `forum216b` was carved out of D1's corpus, which is now 1,982 teams (tier sha `73a76e808431`); launch pre-check 2d HOLDs a pin without it. **NOTE 2026-10-20 (TM, §0) before any production X35 read:** the X26 treadmill read's MECHANISM predictions for C0 / A1 / A2 (pool refresh, pool-relative edge, the learning rate in force), reported only, and the LR confound every production fork inherits; no arm, argv, bar or order changed. **AMENDED 2026-10-20 (AM-RP, §0) before any X47 look-1 read and any production arm:** the REPLAN memo's rulings: A2 and toy A2 DROPPED, P3 DEFERRED, LG-2 only on an A1 GAIN, A3's ROBUSTNESS GAIN rule, the toy calibration accepted NOT SHOWN, the GPU order after T1 (the GPU battery first), and batch 2's SPRT and toy LR-F registered. **NOTE 2026-10-20 (AM-R0, §0):** R0, the exploitability curve, is registered (`R0_REGISTRATION.md`) and placed: R0-toy right after the GPU battery, R0-prod right after P1's C0 seeds (≈ 5.8 GPU-h); C4's deferral ends. **REGISTERED 2026-10-22 (AM-X52, §0) before any X52 argv:** X52, the practice ceiling (`--trainee-teams` on 36 practised forum teams, P\* + 5M, s3501–s3502, ≈ 2.2 GPU-h, after G1 and before D1), its predictions and its read. X47 is a **kit arm**
 (`toy_x47`, F-LS-1 closed). The orchestrator has ruled **C1** (a), **C2** (X47 interleaved with its toy C0), **C3** (the
 toy arms run K9(b) `warn` under X34's ceilings), **C4** (batch 1 launches without R0) and every amendment of the
 [adversarial review](X35_BATCH1_REVIEW.md) (AM-1 to AM-7, the POOL check, the G-E readers); C1's rule (a) is SUPERSEDED by AM-8; C6 is still open; C5 is RULED and DONE (§5). This sheet is
@@ -311,6 +311,94 @@ and `STAGES` are unchanged and stay closed.
 **FINDINGS (AM-R0).** Every hazard is in the registration's FINDINGS (F-R0-1 to F-R0-14). The two that touch this sheet:
 - **F-R0-12.** R0's K9(b) VOID would HOLD the next GO on either side (pre-check 11 is batch-wide, F-LS-16).
 - **F-R0-13.** The placement is not enforced. A `toy_r0` GO before the battery would pass every pre-check.
+
+### REGISTRATION 2026-10-22 (AM-X52): X52, the PRACTICE CEILING, registered BEFORE any X52 argv is built
+
+**Registered 2026-10-22, before any X52 argv, run or game exists.** No X35 run's telemetry was read for it; the R0 and
+transfer numbers below are the shipped reads' (`r0/curve_rb_x35_r0_s3531.json`, `r0/transfer/README.md`). The design
+is [`design_beat_metamon_path.md`](../../../endstate/design_beat_metamon_path.md) §6.2; this note fixes its open
+choices and its predictions. The two halves were drawn in this commit
+([`x52_practice_ceiling_2026-10-22/`](../x52_practice_ceiling_2026-10-22/README.md)); the kit arm `x52` comes in the
+NEXT commit. Batch 1, `BATCH1`, `STAGES`, batch 2 and R0 are unchanged and stay closed.
+
+**The question.** P\* pilots unfamiliar teams at 0.487 [0.459, 0.515] against Kakuna (X51), ≈ 4.3 pp short of the ≈ 0.53
+goal (b) needs. Does PRACTISING a team fix our piloting of it against Kakuna, and does practising 36 teams transfer
+to 36 unpractised teams of the same population?
+
+| item | registered | vs the design's text |
+|---|---|---|
+| **AM-X52-a: the teams** | 72 teams of `w_forum_v1` tier A **as committed at the production pin `f4b25238`** (169 teams, tier sha `3ac32aa6…`), drawn with seed 5200: forum72's curator cap (14) and stratum quotas **CORE 2 / NEAR 56 / FAR 14**, rejecting a validator / Hidden Power failure and any exact team or ≥ 4 shared mon sets with ONE team of the pool, home72, away, heldout72(_hpfix), forum72, P72 or an already-drawn team (the corpus had already removed forum216b and every panel's near neighbours). Split **36 / 36 inside each stratum** with seed 5201 (CORE 1/1, NEAR 28/28, FAR 7/7) | the design's "72 tier-A teams, split by stratum". CORE is 2, not forum72's 4: tier A fills only 3 CORE teams under the rejections. The POOL near-neighbour rejection is STRICTER than the corpus (which keeps them), so both halves are as unfamiliar to P\* as the U panels |
+| **AM-X52-b: the lever** | `--trainee-teams <the 36 practised files>`: our side pilots ONLY the practised half (uniform), the opponent side stays on the pool. C0's argv token for token + this ONE lever, at the **production pin `f4b25238`** | the design's `--team-mix w_practice36_v1:0.5 --team-mix-sides trainee` cannot run at that pin: a `--team-mix` corpus is CODE (`utils.team_corpora.CORPORA`), so a new corpus needs a new pin. `--trainee-teams` exists at the pin and reads files from the launch CWD (main). The share is therefore **1.0, not 0.5** (F-X52-1) |
+| **AM-X52-c: the fork** | P\* + 5M (`--steps 285000170`), `--checkpoint-every-steps 1000000`, **seeds 3501 and 3502** (C0's first two seeds, at C0's pin), runs `rb_x35_x52prac_s3501` / `_s3502` | as designed |
+| **AM-X52-d: the dose** | ≈ **3,300 pilots per practised team** at 5M (5M / 42 decisions a game / 36; ESTIMATE, §4's rule), ≈ 36 % of a pool team's ≈ 9,300 at P\*. Per seed, not pooled | 2× the design's ≈ 1,650 (share 1.0) |
+| **AM-X52-e: the read** | **REVERSE cells**: our model pilots one half (a directory of its 36 files), Kakuna ckpt 34 pilots home72, greedy against greedy, X51's harness (`main.anchors`, 20-game role-balanced units, the same unit seeds for every model on a half, so every model plays the same deals). **600 games per (model, half)** for P\*, X52 s3501 @5M and X52 s3502 @5M: **3,600 primary games**. Descriptive only: X52 s3501 @1M on the practised half (200 games, the dose curve) and C0 s3501's final (P\* + 20M of plain self-play) on the unpractised half (400 games, the drift a continuation alone gives). **4,200 games, ≈ 11.8 lane-h** | the design's 200 games a cell gives a ±8.5 pp interval on fork − P\*, wider than the predicted effect (F-X52-3). C0's own +5M node is thinned (only its sidecar JSON remains), so the drift descriptor uses C0's final |
+| **AM-X52-f: the statistic** | per half h, **Δ_h = (the two seeds' pooled win rate) − (P\*'s win rate)**, ties are not wins; its 95 % interval is a **team-clustered bootstrap** (resample the half's 36 teams with replacement, 10,000 resamples, seed 20261022, percentile). Expected half-width ≈ ±4.9 pp | as designed ("a team-clustered interval on fork − P\*, seeds pooled") |
+| **AM-X52-g: the classes**, in this order (rule 8 at 0.0005 on every bound) | **INCONCLUSIVE**: any primary cell > 25 % timeouts. **NO FAMILIARITY**: UB(Δ_pr) < +0.040. **TRANSFERS**: LB(Δ_pr) > 0 and LB(Δ_un) > 0. **NO TRANSFER**: LB(Δ_pr) > 0 and UB(Δ_un) < +0.030. **FAMILIARITY ONLY**: LB(Δ_pr) > 0, transfer unresolved. Else **UNDECIDED** | the design's table, with its "FAMILIARITY WORKS" split into its three outcomes so the classes are exclusive |
+| **AM-X52-h: the consequences** | as the design's §6.2 table: TRANSFERS ⇒ D1's mechanism is supported; NO TRANSFER ⇒ D1's expected value falls to +0–2 pp and the owner is told; NO FAMILIARITY ⇒ pause the D1 family and re-open the critic / representation question; FAMILIARITY ONLY and UNDECIDED ⇒ D1 proceeds as staged | unchanged |
+| **AM-X52-i: the slot** | AM-RP-e's slot (5): **after G1, before D1**, both seeds back to back, ≈ **2.2 GPU-h** (2 × 5M at the measured production ≈ 1,400 steps/s = 2 × 0.99 h, + ≈ 10 % startup and eval). The read is CPU and does not hold the GPU: D1 launches when X52's second seed ends | "X52 first if it is staged" |
+
+**Predictions (GUESS, registered now; R0 and X51 are the only measured inputs).**
+
+- **P-X52-1, practised half:** Δ_pr = **+5 pp, 80 % [+0.5, +9.5]**.
+- **P-X52-2, unpractised half:** Δ_un = **0 pp, 80 % [−3.5, +3]**. The lean is negative: for 5M our side pilots no pool
+  team at all.
+- **P-X52-3, the class:** TRANSFERS 0.05 · NO TRANSFER 0.15 · FAMILIARITY ONLY 0.30 · NO FAMILIARITY 0.10 · UNDECIDED
+  0.40.
+- **P-X52-4 (descriptive):** s3501 @1M on the practised half is +1 pp over P\*. C0 s3501's final minus P\* on the
+  unpractised half is 0 ± 3 pp. P\* scores ≈ 0.50 on each half (forum72 read 0.530, U 0.487).
+
+**How R0 grounds them, and where it does not map.**
+
+- **What R0 measured.** R0-prod's best responder practised 5 sample teams against frozen P\* and learned **+13.6 pp in
+  20M** (H +11.1, SATURATED, t90 8M).
+  - Per team that is ≈ 9,500 pilots at 2M (+6.0 pp over k = 0, one 400-game point), ≈ 19,000 at 4M (+9.75), and
+    ≈ 95,000 at 20M.
+  - The gain TRANSFERS to a different opponent in P\*'s family: +14.5 pp [+7.6, +21.2] against C0 s3501. So it is
+    mostly better piloting of those 5 teams, not a P\*-specific hole.
+- **Dose.** X52 gives each practised team ≈ 3,300 pilots, about a third of R0's 2M point. Linear in dose from R0, that
+  is ≈ +2 pp.
+- **Why the central guess is higher (+5).**
+  - R0's teams were already FAMILIAR (sample teams, ≈ 2× a pool team's dose). X52's start at zero, and home72's 10–13 pp
+    premium over unseen teams says the first thousands of pilots are worth the most.
+  - Against Kakuna, unfamiliar piloting is exactly where the deficit shows (X37a: 12 pp). In-house it does not show
+    (X37b).
+- **Why the interval is wide.**
+  - R0 practised against ONE opponent at a frozen fork LR of 5.6e-5. X52 inherits P\*'s recipe against its self-play
+    pool.
+  - R0's transfer is shown only within P\*'s lineage. Kakuna is outside it.
+- **Many teams.** The gain per practised team scales with ITS dose. D1's ≈ 120 pilots per team is ≈ 4 % of X52's, so
+  D1 has ≈ 0 direct familiarity by this mapping. D1 and every widening lever can move goal (b) ONLY through transfer,
+  which is P-X52-2's question. A large Δ_pr with no transfer makes per-team practice a regime for the teams WE bring
+  (goal (a), L), never goal (b)'s number.
+
+**Contamination (the brief's question).**
+
+- **The practised half IS practised by design.** Δ_pr is the ceiling of familiarity, the treatment's effect on the
+  treated teams. It is never pooled into U, never quoted as goal (b), and never a held-out number.
+- **The unpractised half and goal (b)'s panels are untouched.** No X52 run pilots or faces an unpractised team: the
+  opponent side draws only from the pool. Every one of the 72 is ≥ 4 mon sets away from H, F, P72, home72, away and the
+  pool. forum216b was carved out of the source corpus before this draw. The halves share ≤ 3 mon sets with each other.
+- **What "within-population transfer" means here.** At the SPECIES level the halves overlap: 26 of the 36 unpractised
+  teams share 4–6 species with some practised team (the manifest's histogram). Gen 3 OU's common species overlap is
+  part of what transfer can use, and is part of what it measures.
+- **D1 later.** `w_forum_v1` holds all 72 teams, so a D1-lineage model has seen both halves. These halves are
+  unfamiliar ONLY to P\*'s lineage, and X52-style reads of D1 models must draw new halves.
+
+**FINDINGS (AM-X52).**
+- **F-X52-1.** The share is 1.0, not the design's 0.5 (AM-X52-b). Two consequences:
+  - The dose doubles.
+  - Our side pilots no pool team for 5M. Any narrowing cost lands on Δ_un and biases TRANSFERS down / NO TRANSFER up.
+    A NO TRANSFER here is therefore weaker evidence against D1, which keeps the pool at share 0.5.
+- **F-X52-2.** With `--trainee-teams` and no `--team-mix`, in-run eval (and the snapshot promotion gate it feeds)
+  pilots the practised teams, not the pool. In-run meters are not comparable with C0's. The opponent pool still
+  pilots pool teams.
+- **F-X52-3.** At the design's 200 games a cell the read is UNDECIDED for any true effect below ≈ 8.5 pp. 600 games per
+  cell narrows that to ≈ 4.9 pp. Even so, P(UNDECIDED) ≈ 0.40 under P-X52-1.
+- **F-X52-4.** The practised files live outside `data/` (frozen), in the measurement directory. The launch reads them
+  from main's checkout, so they must not move. The kit verifies their sha256 against the manifest at every describe.
+- **F-X52-5.** The 1M checkpoint of `rb_x35_x52prac_s3501` must not be thinned before the read: C0's were.
+- **F-X52-6.** The REVERSE cell (our side on a half, Kakuna on home72) has never been run on this harness. X51 left its
+  reverse cell open. Its config is UNVALIDATED until the read unit's smoke.
 
 
 ---

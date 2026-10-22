@@ -1,0 +1,56 @@
+Jolteon @ Leftovers
+Ability: Volt Absorb
+EVs: 80 HP / 252 SpA / 176 Spe
+Timid Nature
+IVs: 2 Atk / 30 SpA
+- Baton Pass
+- Hidden Power [Grass]
+- Roar
+- Thunderbolt
+
+Moltres @ Leftovers
+Ability: Pressure
+EVs: 40 HP / 252 SpA / 216 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA
+- Flamethrower
+- Hidden Power [Grass]
+- Overheat
+- Toxic
+
+Aerodactyl @ Choice Band
+Ability: Rock Head
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+IVs: 30 Atk / 30 Def / 30 SpD
+- Double-Edge
+- Earthquake
+- Hidden Power [Bug]
+- Rock Slide
+
+Skarmory @ Leftovers
+Ability: Keen Eye
+EVs: 252 HP / 132 SpD / 124 Spe
+Careful Nature
+- Drill Peck
+- Roar
+- Spikes
+- Taunt
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+EVs: 40 HP / 152 Atk / 100 SpD / 216 Spe
+Jolly Nature
+- Aerial Ace
+- Beat Up
+- Earthquake
+- Rock Slide
+
+Swampert @ Leftovers
+Ability: Torrent
+EVs: 252 HP / 216 Def / 40 Spe
+Relaxed Nature
+- Earthquake
+- Focus Punch
+- Ice Beam
+- Surf

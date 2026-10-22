@@ -1,0 +1,57 @@
+Zapdos @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 60 SpA / 196 Spe
+Modest Nature
+IVs: 2 Atk / 30 Def
+- Thunderbolt
+- Hidden Power [Ice]
+- Thunder Wave
+- Baton Pass
+
+Magneton @ Magnet
+Ability: Magnet Pull
+EVs: 56 HP / 252 SpA / 200 Spe
+Modest Nature
+IVs: 2 Atk / 30 SpA / 30 Spe
+- Thunderbolt
+- Hidden Power [Fire]
+- Thunder Wave
+- Toxic
+
+Metagross @ Leftovers
+Ability: Clear Body
+EVs: 248 HP / 104 Atk / 100 SpD / 56 Spe
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Rock Slide
+- Explosion
+
+Heracross @ Leftovers
+Ability: Guts
+EVs: 24 HP / 252 Atk / 232 Spe
+Adamant Nature
+IVs: 30 Atk / 30 SpD
+- Megahorn
+- Focus Punch
+- Hidden Power [Ghost]
+- Sleep Talk
+
+Snorlax @ Leftovers
+Ability: Immunity
+EVs: 12 HP / 176 Atk / 176 Def / 144 SpD
+Adamant Nature
+- Curse
+- Earthquake
+- Shadow Ball
+- Self-Destruct
+
+Suicune @ Leftovers
+Ability: Pressure
+EVs: 248 HP / 100 Def / 160 SpA
+Bold Nature
+IVs: 0 Atk
+- Calm Mind
+- Surf
+- Rest
+- Sleep Talk

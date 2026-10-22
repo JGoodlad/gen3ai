@@ -1,0 +1,62 @@
+Metagross @ Leftovers
+Ability: Clear Body
+Shiny: Yes
+EVs: 252 HP / 8 Def / 220 SpA / 28 Spe
+Modest Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Psychic
+- Hidden Power [Fire]
+- Explosion
+- Ice Punch
+
+Claydol @ Leftovers
+Ability: Levitate
+EVs: 252 HP / 68 Atk / 96 Def / 92 SpA
+Relaxed Nature
+IVs: 30 Atk / 30 SpA / 30 Spe
+- Hidden Power [Fire]
+- Psychic
+- Rapid Spin
+- Explosion
+
+Blissey @ Leftovers
+Ability: Natural Cure
+Shiny: Yes
+EVs: 4 HP / 252 Def / 252 SpA
+Modest Nature
+IVs: 0 Atk / 30 Spe
+- Sing
+- Ice Beam
+- Seismic Toss
+- Soft-Boiled
+
+Snorlax @ Leftovers
+Ability: Immunity
+Shiny: Yes
+EVs: 96 HP / 56 Atk / 136 Def / 80 SpA / 140 SpD
+Brave Nature
+- Body Slam
+- Counter
+- Self-Destruct
+- Flamethrower
+
+Dugtrio @ Choice Band
+Ability: Arena Trap
+Shiny: Yes
+EVs: 252 Atk / 24 SpD / 232 Spe
+Adamant Nature
+IVs: 30 SpD / 30 Spe
+- Earthquake
+- Hidden Power [Bug]
+- Aerial Ace
+- Rock Slide
+
+Gengar @ Leftovers
+Ability: Levitate
+Shiny: Yes
+EVs: 248 HP / 44 Def / 40 SpD / 176 Spe
+Timid Nature
+- Will-O-Wisp
+- Explosion
+- Giga Drain
+- Ice Punch
