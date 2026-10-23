@@ -450,6 +450,25 @@ minutes, so D1 crash-loops. It is stopped; nothing of it is read.
 | **AM-D1-FIX-e: why the A/B stays fair** | **The trainer code that runs is C0's.** C0 passes no `--team-mix`, so it never loads the corpus package. D1's lever is "half of each side's teams from the registered forum corpus". The registered corpus is now the 1,981 teams the env can actually train on. The dropped team is part of the LEVER'S DEFINITION (0.05 % of it), not a confound: no D1 run could have trained on it, since the first draw of it kills the run. H, F, P72, `main.x35.d1`'s rule, the seeds and the argv are unchanged | — |
 | **AM-D1-FIX-f: the void attempt** | `rb_x35_d1wide_s3501` (pin `f4b25238`, 0.3M steps) is **VOID**: never read, never resumed (a resume keeps its pin). Before s3501 relaunches, the Training session moves it aside as `rb_x35_d1wide_s3501.<SUFFIX>`; pre-check 3 refuses an existing run dir. s3501 relaunches at the same seed on the D1 pin | pre-check 3; `batch.pin_check` lists it as PRE-FIX |
 
+**STAGED 2026-10-22 (the kit commit after the registration; nothing launched).**
+- **D1's pin is `440b61c320efdd4e172f54a192a2c84630a4c796`** (`batch.D1_PIN`). The local branch `x35-d1-pin` keeps it
+  reachable. Its parent is `f4b25238`. It changes 7 files, all under `src/utils/team_corpora/`, and its corpus tree
+  `e73d5a6f…` is the shipped guard commit's.
+- **The pre-checks, run on CPU against this stage and `models/` (read-only):**
+  - `kit pin-check --arm d1 --pin 440b61c3…` PASSes. The same pin for `c0` HOLDs, and `d1` at `f4b25238` HOLDs.
+  - `kit corpus-check --arm d1` PASSes at the D1 pin (1,981 teams, soaked with the label path) and FAILs at
+    `f4b25238`.
+  - `kit required-check` PASSes: FP32_ALT `d4af9f1e` is in the pin.
+  - `main.checkargs --pin 440b61c3…` on D1 s3501's argv exits 0: the fork arch is compatible and the pinned parser
+    accepts every flag ([`d1_fix_2026-10-22/checkargs_d1_s3501_440b61c3.txt`](d1_fix_2026-10-22/checkargs_d1_s3501_440b61c3.txt)).
+    The argv is token for token the crashed launch's.
+  - **No launcher dry run** was made (no lease, and the dry run must see the card). The GPU-side preview is
+    `launch_x35.sh`'s own default dry run.
+- **Before the GO:** the Training session moves `models/rb_x35_d1wide_s3501` aside as
+  `rb_x35_d1wide_s3501.<SUFFIX>` (AM-D1-FIX-f).
+- **The launch (NEEDS GO):** `launch_x35.sh d1 3501 --pin 440b61c320efdd4e172f54a192a2c84630a4c796 --lease-owner
+  <owner> GO`, then the same with 3502 and 3503.
+
 
 ---
 

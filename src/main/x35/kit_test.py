@@ -218,19 +218,21 @@ def test_d1_is_c0_plus_the_team_mix_and_nothing_else():
 
 # ------------------------------------------------------- AMENDMENT D1-CORPUS (2026-10-20): the forum216b carve
 def test_d1s_registered_corpus_is_the_committed_one():
-    """D1_CORPUS is w_forum_v1@ABC as committed: rebuilt WITHOUT X54's sealed panel forum216b (1,982 teams)."""
+    """D1_CORPUS is w_forum_v1@ABC as committed: rebuilt WITHOUT X54's sealed panel forum216b (1,982 teams), then
+    without the level-5 team the label path cannot encode (AM-D1-FIX: 1,981)."""
     from main import heldout_panels as HP
     from utils.team_corpora import load_corpus
 
     c = load_corpus(K.D1_CORPUS["corpus"], K.D1_CORPUS["tier"])
     assert (len(c), c.tier_sha256, c.data_sha256) == (K.D1_CORPUS["n"], K.D1_CORPUS["tier_sha256"],
-                                                      K.D1_CORPUS["data_sha256"]) == (1982, c.tier_sha256, c.data_sha256)
+                                                      K.D1_CORPUS["data_sha256"]) == (1981, c.tier_sha256, c.data_sha256)
+    assert "sfv2_5051" not in c.ids
     assert K.D1_LEVER[1] == f"{K.D1_CORPUS['corpus']}@{K.D1_CORPUS['tier']}:0.5" and K.ARM_CORPUS == {"d1": K.D1_CORPUS}
     assert HP.hits(list(zip(c.ids, c.texts)), ["forum216b"]) == []
 
 
 def _corpus_repo(tmp_path: Path, tiers_abc: Dict, data_sha: str, soak_sha: Union[str, None] = None,
-                 verdict: str = "PASS") -> str:
+                 verdict: str = "PASS", schema: str = K.D1_SOAK_SCHEMA, labels: Union[list, None] = None) -> str:
     import subprocess
 
     repo = tmp_path / "r"
@@ -239,7 +241,7 @@ def _corpus_repo(tmp_path: Path, tiers_abc: Dict, data_sha: str, soak_sha: Union
     (d / "manifest.json").write_text(json.dumps({"tiers": {"ABC": tiers_abc}, "data_sha256": data_sha}))
     if soak_sha is not None:
         (d / "soak_selfcheck.json").write_text(json.dumps({
-            "verdict": verdict, "core_errors": [], "battles_planned": 39640, "battles_finished": 39640,
+            "schema": schema, "labels": ["belief", "spread"] if labels is None else labels, "verdict": verdict, "core_errors": [], "battles_planned": 39640, "battles_finished": 39640,
             "corpus": {"corpus": "w_forum_v1", "tier": "ABC", "data_sha256": soak_sha}}))
     for cmd in (["init", "-q"], ["add", "-A"], ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "c"]):
         subprocess.run(["git", "-C", str(repo), *cmd], check=True, capture_output=True)
@@ -251,17 +253,28 @@ def test_corpus_check_reads_the_corpus_at_the_pin(tmp_path):
     tier = {"n": want["n"], "sha256": want["tier_sha256"]}
     good = _corpus_repo(tmp_path / "g", tier, want["data_sha256"], soak_sha=want["data_sha256"])
     ok, line = K.corpus_check("d1", "HEAD", good)
-    assert ok and "1982 teams" in line and "39640 battles" in line
+    assert ok and "1981 teams" in line and "39640 battles" in line
     # a pin from BEFORE the carve (the 2,424-team corpus) trains D1 on the confirmation panel: refused
     old_sha = "4af495c49a2df0266c8fe10c2691cea274e683da0f58c4e82d2a0124b7a17469"
     old = _corpus_repo(tmp_path / "o", {"n": 2424, "sha256": "7bcdc835" + "0" * 56}, old_sha, soak_sha=old_sha)
     ok, line = K.corpus_check("d1", "HEAD", old)
-    assert not ok and "D1-CORPUS" in line and "n 2424 != 1982" in line
+    assert not ok and "D1-CORPUS" in line and "n 2424 != 1981" in line
+    # AM-D1-FIX: the pre-fix 1,982 corpus (it holds the level-5 sfv2_5051) is refused at a pin too
+    pre = "7f42d95f7f08f667738fe6e8f2af33ede93f5dec78af6fa48ed3f72f3d231336"
+    prefix = _corpus_repo(tmp_path / "p", {"n": 1982, "sha256": "73a76e808431" + "0" * 52}, pre, soak_sha=pre)
+    ok, line = K.corpus_check("d1", "HEAD", prefix)
+    assert not ok and "n 1982 != 1981" in line
+    # AM-D1-FIX: a soak that did not drive the label path (schema v1, or no label family) is no soak of record
+    for i, (schema, labels) in enumerate((("gen3_team_corpus_soak_v1", None), (K.D1_SOAK_SCHEMA, []))):
+        blind = _corpus_repo(tmp_path / f"b{i}", tier, want["data_sha256"], soak_sha=want["data_sha256"], schema=schema,
+                             labels=labels)
+        ok, line = K.corpus_check("d1", "HEAD", blind)
+        assert not ok and "LABEL-PATH crash soak" in line, (schema, labels, line)
     # the right corpus without a PASSing soak OF IT (none, the old corpus's, or a FAIL) is refused too
     for i, (soak, verdict) in enumerate(((None, "PASS"), (old_sha, "PASS"), (want["data_sha256"], "FAIL"))):
         unsoaked = _corpus_repo(tmp_path / f"u{i}", tier, want["data_sha256"], soak_sha=soak, verdict=verdict)
         ok, line = K.corpus_check("d1", "HEAD", unsoaked)
-        assert not ok and "no PASSing crash soak" in line, (soak, verdict)
+        assert not ok and "no PASSing LABEL-PATH crash soak" in line, (soak, verdict)
     ok, line = K.corpus_check("d1", "HEAD", str(tmp_path))          # not a repo / no corpus at the pin
     assert not ok
     assert K.corpus_check("c0", "HEAD", old) == (True, "c0 names no team corpus")

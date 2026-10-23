@@ -157,6 +157,121 @@ def test_a_corrupt_pin_file_is_a_refusal_not_no_pin(tmp_path):
         B.pin_check(PIN, str(tmp_path), str(tmp_path / "models"), TOY)
 
 
+
+# ---------------------------------------------- AM-D1-FIX (2026-10-22): D1's own corpus-only pin, the one AM-8 exception
+def _git(repo: Path, *args: str) -> str:
+    return subprocess.run(["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t", *args],
+                          check=True, capture_output=True, text=True).stdout.strip()
+
+
+def _commit(repo: Path, files: dict, msg: str) -> str:
+    for rel, text in files.items():
+        (repo / rel).parent.mkdir(parents=True, exist_ok=True)
+        (repo / rel).write_text(text)
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", msg)
+    return _git(repo, "rev-parse", "HEAD")
+
+
+@pytest.fixture
+def d1_repo(tmp_path, monkeypatch):
+    """A repo: the side pin ``base``; ``pin`` = base + one corpus-only commit; ``wide`` = base + a commit that also
+    touches the trainer; ``two`` = pin + another corpus commit. B's D1 constants point at ``pin``."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    base = _commit(repo, {"src/main/train.py": "x = 1\n", "src/utils/team_corpora/a.txt": "1982\n"}, "base")
+    pin = _commit(repo, {"src/utils/team_corpora/a.txt": "1981\n"}, "guard")
+    two = _commit(repo, {"src/utils/team_corpora/b.txt": "more\n"}, "more")
+    _git(repo, "checkout", "-q", base)
+    wide = _commit(repo, {"src/utils/team_corpora/a.txt": "1981\n", "src/main/train.py": "x = 2\n"}, "wide")
+    monkeypatch.setattr(B, "D1_PIN", pin)
+    monkeypatch.setattr(B, "D1_PIN_BASE", base)
+    monkeypatch.setattr(B, "ARM_PINS", {"d1": pin})
+    monkeypatch.setattr(B, "D1_CORPORA_TREE", _git(repo, "rev-parse", f"{pin}:src/utils/team_corpora"))
+    return {"repo": str(repo), "base": base, "pin": pin, "wide": wide, "two": two}
+
+
+def test_d1_pin_check_accepts_only_the_side_pin_plus_one_corpus_only_commit(d1_repo):
+    r = d1_repo
+    ok, lines = B.d1_pin_check(r["pin"], r["base"], r["repo"])
+    assert ok and "one commit, 1 file(s)" in lines[0], lines
+    for pin, side_pin, why in ((r["base"], r["base"], "launches only at D1_PIN"),       # d1 at the side pin
+                               (r["pin"], r["two"], "sits on"),                        # another side pin
+                               ):
+        ok, lines = B.d1_pin_check(pin, side_pin, r["repo"])
+        assert not ok and why in lines[0], (why, lines)
+    B.D1_PIN = r["wide"]                                                               # a diff outside the corpus
+    ok, lines = B.d1_pin_check(r["wide"], r["base"], r["repo"])
+    assert not ok and "outside: ['src/main/train.py']" in lines[0], lines
+    B.D1_PIN = r["two"]                                                                # two commits on top
+    ok, lines = B.d1_pin_check(r["two"], r["base"], r["repo"])
+    assert not ok and "parent(s)" in lines[0], lines
+
+
+def test_d1_pin_check_refuses_a_corpus_tree_other_than_the_guard_commits(d1_repo, monkeypatch):
+    monkeypatch.setattr(B, "D1_CORPORA_TREE", "0" * 40)
+    ok, lines = B.d1_pin_check(d1_repo["pin"], d1_repo["base"], d1_repo["repo"])
+    assert not ok and "tree" in lines[0] and "guard commit's" in lines[0], lines
+
+
+def test_pin_check_holds_d1_to_its_own_pin_and_every_other_arm_to_the_sides(d1_repo, tmp_path):
+    r = d1_repo
+    stage, models = tmp_path / "stage", tmp_path / "models"
+    stage.mkdir()
+    models.mkdir()
+    ok, lines = B.pin_check(r["pin"], str(stage), str(models), PROD, arm="d1", repo=r["repo"])
+    assert not ok and "no x35_pin_batch1_production.txt is written yet" in lines[0], lines
+    B.pin_write_if_absent(r["base"], str(stage), PROD, FP32)
+    assert B.pin_check(r["pin"], str(stage), str(models), PROD, arm="d1", repo=r["repo"])[0]
+    ok, lines = B.pin_check(r["base"], str(stage), str(models), PROD, arm="d1", repo=r["repo"])
+    assert not ok and "d1 launches only at D1_PIN" in lines[0], lines                   # d1 at the side pin: HOLD
+    for arm in ("c0", "sprt", None):                                                 # nobody else at D1's pin
+        ok, lines = B.pin_check(r["pin"], str(stage), str(models), PROD, arm=arm, repo=r["repo"])
+        assert not ok and "!= X35_PIN_1_production" in lines[0], (arm, lines)
+        assert B.pin_check(r["base"], str(stage), str(models), PROD, arm=arm, repo=r["repo"])[0]
+    # the runs: d1 at the side pin is the listed PRE-FIX attempt, d1 at its pin passes, c0 at D1's pin HOLDs
+    _run(models, "rb_x35_d1wide_s3501.PREFIX_LABEL_CRASH", r["base"])
+    _run(models, "rb_x35_d1wide_s3501", r["pin"])
+    ok, lines = B.pin_check(r["base"], str(stage), str(models), PROD, arm="c0", repo=r["repo"])
+    assert ok and any("PRE-FIX d1 attempt" in x and "PREFIX_LABEL_CRASH" in x for x in lines), lines
+    _run(models, "rb_x35_d1wide_s3502", r["two"])
+    _run(models, "rb_x35_c0_s3501", r["pin"])
+    ok, lines = B.pin_check(r["base"], str(stage), str(models), PROD, arm="c0", repo=r["repo"])
+    assert not ok and any(x.startswith("rb_x35_d1wide_s3502:") for x in lines) and \
+        any(x.startswith("rb_x35_c0_s3501:") for x in lines), lines
+
+
+def test_pin_write_never_writes_for_d1_and_refuses_a_wrong_d1_pin(d1_repo, tmp_path):
+    r = d1_repo
+    stage = tmp_path / "stage"
+    stage.mkdir()
+    with pytest.raises(B.BatchError, match="AM-D1-FIX"):
+        B.pin_write_if_absent(r["pin"], str(stage), PROD, FP32, arm="d1")             # no side record to rest on
+    assert not list(stage.iterdir())
+    B.pin_write_if_absent(r["base"], str(stage), PROD, FP32)
+    before = Path(_pin_file(stage, PROD)).read_text()
+    assert "unchanged" in B.pin_write_if_absent(r["pin"], str(stage), PROD, None, arm="d1")
+    with pytest.raises(B.BatchError, match="AM-D1-FIX"):
+        B.pin_write_if_absent(r["base"], str(stage), PROD, None, arm="d1")
+    assert Path(_pin_file(stage, PROD)).read_text() == before
+
+
+def test_the_registered_d1_pin_is_reachable_and_carries_a_main_commits_corpus_tree():
+    """The real D1_PIN (local branch ``x35-d1-pin``) passes its own check against the production pin, and its corpus
+    tree is the one a commit on this checkout's history holds (the shipped guard commit)."""
+    from utils.paths import repo_root
+
+    root = str(repo_root())
+    ok, lines = B.d1_pin_check(B.D1_PIN, B.D1_PIN_BASE, root)
+    assert ok, lines
+    git = ["git", "-C", root]
+    shas = subprocess.run(git + ["log", "--format=%H", "HEAD", "--", "src/utils/team_corpora"], check=True,
+                          capture_output=True, text=True).stdout.split()
+    trees = {subprocess.run(git + ["rev-parse", f"{c}:src/utils/team_corpora"], capture_output=True,
+                            text=True).stdout.strip() for c in shas}
+    assert B.D1_CORPORA_TREE in trees
+
 # ------------------------------------------------------------------ AM-8: production's FP32_ALT commit, a placeholder
 def _side_file(stage: Path, line: str) -> Path:
     f = stage / B.SIDE_REQUIRED_FILE.format(side=PROD)
@@ -710,13 +825,14 @@ def test_launch_x35_runs_every_amendment_pre_check():
     sh = repo_path("designs/research_state/measurements/x35_breakers_stage_2026-10-17/launch_x35.sh").read_text()
     for needle in (
             # AM-1 as amended by AM-8: the pin is judged and written PER SIDE, and a typed --t62 is checked in the dry run
-            "kit pin-check --pin \"$PIN\" --side \"$SIDE\" --stage \"$STAGE\" --models-dir \"$MODELS\" "
+            # (AM-D1-FIX: the launching arm is passed, so d1 is held to its own corpus-only pin)
+            "kit pin-check --pin \"$PIN\" --side \"$SIDE\" --arm \"$ARM\" --stage \"$STAGE\" --models-dir \"$MODELS\" "
             "${T62:+--t62 \"$T62\"} >",
             "PINF=$STAGE/x35_pin_batch1_$SIDE.txt", "[ -e \"$PINF\" ] || [ -n \"$T62\" ]",
             # AM-8: the side's own required commits (production: FP32_ALT)
             "kit required-check --side \"$SIDE\" --pin \"$PIN\" --stage \"$STAGE\" --repo \"$REPO\" >",
             "kit stage-check --arm", "kit pool-check --arm \"$ARM\" --call \"$R\" --stage \"$STAGE\" >",
-            "kit k9b-batch", "--side \"$SIDE\" --stage \"$STAGE\" --models-dir \"$MODELS\" --write ${T62:+--t62",
+            "kit k9b-batch", "--side \"$SIDE\" --arm \"$ARM\" --stage \"$STAGE\" --models-dir \"$MODELS\" --write ${T62:+--t62",
             "pool-check --arm \"$ARM\" --call \"$R\" --stage \"$STAGE\" --write",
             "pool-seed-check --arm \"$ARM\" --run-dir \"$MODELS/$RUN\" --call \"$R\" --stage \"$STAGE\"",
             "kit disk --required-gib \"$gib\" --models-dir \"$MODELS\" --stage \"$STAGE\"",

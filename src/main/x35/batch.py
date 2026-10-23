@@ -70,6 +70,14 @@ decide`` (X47). The record names its arm and look; a record for another arm or l
   SIDE-PINNED at the production pin like R0, held by :data:`X52_STAGES`, never :data:`STAGES`; :func:`stage_status`
   gives it the AM-8 side gate and nothing else. Its slot (after G1, before D1) is the Training session's order, not a
   gate. ``kit.disk_check`` does not count it (a +5M fork, a quarter of an arm's checkpoints).
+* **AM-D1-FIX, D1'S OWN CORPUS-ONLY PIN** (launch sheet §0, 2026-10-22; the ONE exception to AM-8's one pin per side).
+  D1 s3501 crash-looped on a corpus team the env's label path cannot encode (``sfv2_5051``, level 5); the corpus fix is
+  code, so D1 launches at :data:`D1_PIN` = the production pin + ONE commit confined to :data:`D1_PIN_PATHS`
+  (:func:`d1_pin_check`: the parent IS the side's written pin, every changed path is under the corpus package, and the
+  package tree is :data:`D1_CORPORA_TREE`, the guard commit's). :func:`pin_check` with ``arm="d1"`` requires that pin
+  instead of the side's; every other arm still requires the side's. D1's runs are judged against {``D1_PIN``, the side
+  pin}: the side pin is only ever the VOID pre-fix attempt, since a D1 launch there is refused by this check and by
+  ``kit corpus-check``. :func:`pin_write_if_absent` never writes for D1.
 * **THE G-E READERS** (``main.x35.ge``; launch sheet §0 "G-E readers"): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` / ``ge_c0``
   are not batch-1 ARMS (not in :data:`STAGES`, the disk count or AM-6's K9(b) pre-check) but they run at the SIDE'S
   pin: :func:`pin_check` judges their recorded pins with the side's batch-1 runs, and :func:`stage_status` gives a
@@ -168,6 +176,19 @@ R0_ARMS = ("toy_r0", "r0")
 #: X52, the practice ceiling (``main.x35.x52``, AM-X52, 2026-10-22): one production arm, side-pinned.
 X52_ARMS = ("x52",)
 SIDE_PINNED_ARMS = BATCH1_ARMS + BATCH2_ARMS + R0_ARMS + X52_ARMS
+#: AM-D1-FIX (launch sheet §0, 2026-10-22): D1's pin. The production pin ``f4b25238`` + the corpus label-guard commit
+#: (``fix(team corpora): refuse teams the env's label path cannot encode ...``), rebuilt onto it with only
+#: ``src/utils/team_corpora/`` replaced. Kept reachable by the local branch ``x35-d1-pin``.
+D1_PIN = "440b61c320efdd4e172f54a192a2c84630a4c796"
+#: The production pin D1_PIN must sit directly on (the side's written ``x35_pin_batch1_production.txt``).
+D1_PIN_BASE = "f4b25238def57900c0305bb2a3a5a8f9edaef285"
+#: The only paths D1_PIN may change relative to D1_PIN_BASE.
+D1_PIN_PATHS = ("src/utils/team_corpora/",)
+#: The git tree of ``src/utils/team_corpora`` at D1_PIN: the guard commit's own (content-addressed, so it survives a
+#: rebase; a patch-id would not cover the binary ``teams.jsonl.gz``).
+D1_CORPORA_TREE = "e73d5a6fac6230cd15c74202be2c3f151485b281"
+#: The arms with their own pin (AM-D1-FIX): ``{arm: pin}``.
+ARM_PINS = {"d1": D1_PIN}
 #: Batch 2's stages (F-AS-8), in AM-RP-e's slots: (6) production SPRT, (8) production LR-F, (11) the toy pair; each
 #: look 2 (``b``) only on its own look-1 CONTINUE. The ORDER is the Training session's (AM-RP-e), not a gate; the
 #: conditions are :func:`_batch2_status`'s. Never merged into the closed :data:`STAGES`.
@@ -324,10 +345,42 @@ def _same_sha(a: str, b: str) -> bool:
     return n >= 7 and a[:n] == b[:n]
 
 
-def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[str] = None) -> Tuple[bool, List[str]]:
+def d1_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
+    """AM-D1-FIX: ``pin`` is :data:`D1_PIN`, sits directly on the side's written pin (:data:`D1_PIN_BASE`), changes only
+    paths under :data:`D1_PIN_PATHS`, and carries the guard commit's corpus tree (:data:`D1_CORPORA_TREE`)."""
+    def git(*args: str) -> "subprocess.CompletedProcess[str]":
+        return subprocess.run(["git", "-C", repo, *args], capture_output=True, text=True, check=False)
+
+    if pin != D1_PIN:
+        return False, [f"AM-D1-FIX: d1 launches only at D1_PIN {D1_PIN[:12]}, not {pin[:12]}"]
+    if side_pin != D1_PIN_BASE:
+        return False, [f"AM-D1-FIX: D1_PIN sits on {D1_PIN_BASE[:12]}, but the side's written pin is {side_pin[:12]}"]
+    parents = git("rev-list", "--parents", "-n", "1", pin)
+    if parents.returncode != 0:
+        return False, [f"AM-D1-FIX: D1_PIN {pin[:12]} is not a commit in {repo}: {parents.stderr.strip()[-200:]}"]
+    if parents.stdout.split()[1:] != [side_pin]:
+        return False, [f"AM-D1-FIX: D1_PIN's parent(s) {[h[:12] for h in parents.stdout.split()[1:]]} != the side's "
+                       f"pin {side_pin[:12]} (one commit on top of it, no more)"]
+    names = [n for n in git("diff", "--name-only", side_pin, pin).stdout.splitlines() if n]
+    outside = [n for n in names if not n.startswith(D1_PIN_PATHS)]
+    if not names or outside:
+        return False, [f"AM-D1-FIX: D1_PIN must change only {list(D1_PIN_PATHS)} relative to {side_pin[:12]}; it "
+                       f"changes {len(names)} file(s), outside: {outside[:10]}"]
+    tree = git("rev-parse", f"{pin}:src/utils/team_corpora").stdout.strip()
+    if tree != D1_CORPORA_TREE:
+        return False, [f"AM-D1-FIX: D1_PIN's src/utils/team_corpora tree {tree[:12]} != the guard commit's "
+                       f"{D1_CORPORA_TREE[:12]}"]
+    return True, [f"AM-D1-FIX: D1's pin {pin[:12]} = the side's pin {side_pin[:12]} + one commit, {len(names)} file(s), "
+                  f"all under {list(D1_PIN_PATHS)}, corpus tree {tree[:12]} (the guard commit's)"]
+
+
+def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[str] = None,
+              arm: Optional[str] = None, repo: Optional[str] = None) -> Tuple[bool, List[str]]:
     """AM-1's pre-check for one SIDE: ``(ok, lines)``. ``pin`` is the full sha the launch would use; ``t62`` (when typed)
     must be the side's token. Only this side's side-pinned runs (batch 1, batch 2, the G-E readers) are judged against
-    the side's pin; the other side's are listed (their own side's launches judge them)."""
+    the side's pin; the other side's are listed (their own side's launches judge them). ``arm`` (the launching arm) with
+    its own pin (:data:`ARM_PINS`, AM-D1-FIX) must launch at THAT pin, verified against the side's by
+    :func:`d1_pin_check` in ``repo`` (default: this checkout)."""
     lines: List[str] = []
     ok = True
     label, fname = pin_label(side), os.path.basename(pin_path(stage, side))
@@ -335,7 +388,17 @@ def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[st
         ok = False
         lines.append(f"--t62 {t62!r} is not a {side} token {T62_BY_SIDE[side]}")
     rec = read_pin_file(pin_path(stage, side), side)
-    if rec is None:
+    if arm in ARM_PINS:
+        if rec is None:
+            ok = False
+            lines.append(f"AM-D1-FIX: {arm}'s own pin rests on {label}, and no {fname} is written yet")
+        else:
+            from utils.paths import repo_root
+
+            ok_arm, arm_lines = d1_pin_check(pin, rec["sha"], repo or str(repo_root()))
+            ok = ok and ok_arm
+            lines += arm_lines
+    elif rec is None:
         lines.append(f"no {fname} yet: the first {side} GO writes {pin[:12]} as {label}")
     elif rec["sha"] != pin:
         ok = False
@@ -343,18 +406,23 @@ def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[st
     else:
         lines.append(f"the pin equals {label} {pin[:12]} ({fname}, T62 {rec.get('t62_verdict')})")
     want = rec["sha"] if rec is not None else pin
+    names = side_pinned_run_names(readers=True)
     ours, other = _side_pinned_dirs(models_dir, readers=True)
     mine = [(d, base) for d, base in ours if side_of_run(base) == side]
-    for d, _ in mine:
+    for d, base in mine:
         hs = recorded_pins(os.path.join(models_dir, d))
         if not hs:
             ok = False
             lines.append(f"{d}: no recorded pin (metadata.json absent or without git_hash): cannot show it is {label}")
             continue
-        bad = sorted({h for h in hs if not _same_sha(h, want)})
+        run_arm = names[base][0]
+        allowed = (want, ARM_PINS[run_arm]) if run_arm in ARM_PINS else (want,)
+        bad = sorted({h for h in hs if not any(_same_sha(h, a) for a in allowed)})
         if bad:
             ok = False
-            lines.append(f"{d}: recorded pin(s) {[h[:12] for h in bad]} != {want[:12]}")
+            lines.append(f"{d}: recorded pin(s) {[h[:12] for h in bad]} != {' / '.join(a[:12] for a in allowed)}")
+        elif run_arm in ARM_PINS and any(_same_sha(h, want) for h in hs):
+            lines.append(f"{d}: a PRE-FIX {run_arm} attempt at {label} {want[:12]} (AM-D1-FIX-f: VOID, never read)")
     if mine:
         lines.append(f"{len(mine)} side-pinned {side} run(s) checked against {want[:12]}")
     elsewhere = [d for d, base in ours if side_of_run(base) != side]
@@ -365,11 +433,17 @@ def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[st
     return ok, lines
 
 
-def pin_write_if_absent(pin: str, stage: str, side: str, t62: Optional[str]) -> str:
-    """At GO, after every pre-check: write the side's pin file if it does not exist (needs ``t62``), else confirm it."""
+def pin_write_if_absent(pin: str, stage: str, side: str, t62: Optional[str], arm: Optional[str] = None) -> str:
+    """At GO, after every pre-check: write the side's pin file if it does not exist (needs ``t62``), else confirm it. An
+    arm with its own pin (AM-D1-FIX) never writes: it confirms its pin and the side's record it rests on."""
     path = pin_path(stage, side)
     label, fname = pin_label(side), os.path.basename(path)
     rec = read_pin_file(path, side)
+    if arm in ARM_PINS:
+        if pin != ARM_PINS[arm] or rec is None:
+            raise BatchError(f"AM-D1-FIX: {arm} launches at {ARM_PINS[arm][:12]} on a written {label} "
+                             f"(got {pin[:12]}, {fname} {'absent' if rec is None else rec['sha'][:12]})")
+        return f"{arm}'s own pin {pin[:12]} (AM-D1-FIX) on {label} {rec['sha'][:12]}; {fname} unchanged"
     if rec is not None:
         if rec["sha"] != pin:
             raise BatchError(f"the pin {pin[:12]} != {label} {rec['sha'][:12]}")

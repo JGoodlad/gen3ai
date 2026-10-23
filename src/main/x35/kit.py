@@ -47,7 +47,7 @@ canonical flag order (the order carries no meaning to the trainer's parser):
 THE 2026-10-19 AMENDMENTS, and AM-8 / AM-9 of 2026-10-20 (``main.x35.batch``; ``launch_x35.sh`` pre-checks 2b / 2c / 9 /
 10 / 11):
 
-    python -m main.x35.kit pin-check --side toy --pin <sha> --stage <stage> [--write --t62 NA_TOY]   # AM-1: ONE pin PER SIDE
+    python -m main.x35.kit pin-check --side toy --pin <sha> --stage <stage> [--arm A] [--write --t62 NA_TOY]  # AM-1 / AM-D1-FIX
     python -m main.x35.kit required-check --side production --pin <sha> --stage <stage>   # AM-8: the side's FP32_ALT commit
     python -m main.x35.kit pool-check --arm c0 --call <R> --stage <stage> [--write]       # POOL: one seeded set
     python -m main.x35.kit gate <six_finals_S.json> --stage <stage> --write              # AM-2: G1, exit 1 = HOLD
@@ -97,9 +97,14 @@ D1_LEVER = ("--team-mix", "w_forum_v1@ABC:0.5", "--team-mix-sides", "both")
 #: The PIN must carry it (:func:`corpus_check`, launch pre-check 2d): a pin from before the carve would train D1 on the
 #: panel X54 confirms on. The pin must also carry a PASSing crash soak OF THIS corpus (``soak_selfcheck.json`` naming its
 #: data sha256): the rebuild re-selected the C tier, and 323 of its teams were in no soaked corpus.
-D1_CORPUS = {"corpus": "w_forum_v1", "tier": "ABC", "n": 1982,
-             "tier_sha256": "73a76e808431f5c430edf7effafc121a0b4822c6dbd19d33b82b6bb60570bdc4",
-             "data_sha256": "7f42d95f7f08f667738fe6e8f2af33ede93f5dec78af6fa48ed3f72f3d231336"}
+#: AM-D1-FIX (2026-10-22): the registered 1,982 (tier sha ``73a76e808431``) minus ``sfv2_5051``, a level-5 team the env's
+#: label path cannot encode (it crash-looped D1 s3501); every other team and its order unchanged. The soak must be the
+#: LABEL-PATH soak (:data:`D1_SOAK_SCHEMA`): v1 declared no label family and passed the crashing team.
+D1_CORPUS = {"corpus": "w_forum_v1", "tier": "ABC", "n": 1981,
+             "tier_sha256": "1218f1e7d3f88cf790324e00d806cf0d5a52f91139da765c3701e0692cc1ab99",
+             "data_sha256": "6c642b60d4044192b0fb54acde13a6b3fc3cee65ca47fff0a3221018b6271485"}
+#: The soak record's schema corpus-check accepts (``utils.team_corpora.soak``: every core label family declared).
+D1_SOAK_SCHEMA = "gen3_team_corpus_soak_v2"
 #: The arms whose argv names a team corpus, and the identity their pin must carry.
 ARM_CORPUS = {"d1": D1_CORPUS}
 #: X47's ONE lever (``design_bot_ideas_screen.md`` §2.1; B-GROW, T64): the toy's 2 attention rounds become 4 at the
@@ -533,16 +538,18 @@ def corpus_check(arm: str, pin: str, repo: str) -> Tuple[bool, str]:
     p = subprocess.run(["git", "-C", repo, "show", f"{pin}:{soak_rel}"], capture_output=True, text=True)
     soak = json.loads(p.stdout) if p.returncode == 0 else {}
     sc = soak.get("corpus", {})
-    if not (soak.get("verdict") == "PASS" and soak.get("core_errors") == [] and sc.get("tier") == want["tier"]
+    if not (soak.get("schema") == D1_SOAK_SCHEMA and soak.get("labels")
+            and soak.get("verdict") == "PASS" and soak.get("core_errors") == [] and sc.get("tier") == want["tier"]
             and sc.get("data_sha256") == want["data_sha256"]
             and soak.get("battles_finished") == soak.get("battles_planned") > 0):
-        return False, (f"the pin {pin[:12]} carries no PASSing crash soak of {arm}'s corpus ({soak_rel} names data "
-                       f"{str(sc.get('data_sha256'))[:12]}, verdict {soak.get('verdict')}; want data "
+        return False, (f"the pin {pin[:12]} carries no PASSing LABEL-PATH crash soak of {arm}'s corpus ({soak_rel}: "
+                       f"schema {soak.get('schema')}, labels {soak.get('labels')}, data "
+                       f"{str(sc.get('data_sha256'))[:12]}, verdict {soak.get('verdict')}; want {D1_SOAK_SCHEMA}, data "
                        f"{want['data_sha256'][:12]}): run `python -m utils.team_corpora.soak {want['corpus']} --tier "
-                       f"{want['tier']} --rounds 10 --out {soak_rel}` and commit it (AMENDMENT D1-CORPUS)")
+                       f"{want['tier']} --rounds 10 --out {soak_rel}` and commit it (D1-CORPUS, AM-D1-FIX)")
     return True, (f"{want['corpus']}@{want['tier']} at the pin {pin[:12]}: {want['n']} teams, tier sha "
-                  f"{want['tier_sha256'][:12]} (the registered corpus), soaked: {soak['battles_finished']} battles, "
-                  "0 core errors")
+                  f"{want['tier_sha256'][:12]} (the registered corpus), soaked with the label path: "
+                  f"{soak['battles_finished']} battles, 0 core errors")
 
 
 def _load(path: str) -> Dict[str, Any]:
@@ -596,6 +603,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     help="GO only: write x35_pin_batch1_<side>.txt if it does not exist")
     pc.add_argument("--t62", default=None, choices=_B.T62_VERDICTS,
                     help="the side's T62 token (production FP32_ALT, toy NA_TOY): the first GO of a side records it")
+    pc.add_argument("--arm", default=None, type=canonical_arm, choices=sorted(ARMS),
+                    help="the launching arm: an arm with its own pin (AM-D1-FIX: d1) must launch at it")
+    pc.add_argument("--repo", default=None, help="the git checkout an arm's own pin is checked in (default: this one)")
     rc = sub.add_parser("required-check", help="AM-8: the side's own required commits (production: FP32_ALT) are real "
                                                "and in the pin; a placeholder refuses; exit 0 / 1")
     rc.add_argument("--side", required=True, choices=_B.SIDES)
@@ -699,9 +709,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             if a.cmd == "k9b-batch":
                 ok, lines = _B.k9b_batch(a.stage, md)
             else:
-                ok, lines = _B.pin_check(a.pin, a.stage, md, a.side, a.t62)
+                ok, lines = _B.pin_check(a.pin, a.stage, md, a.side, a.t62, arm=a.arm, repo=a.repo)
                 if ok and a.write:
-                    lines.append(_B.pin_write_if_absent(a.pin, a.stage, a.side, a.t62))
+                    lines.append(_B.pin_write_if_absent(a.pin, a.stage, a.side, a.t62, arm=a.arm))
             for x in lines:
                 print(f"[x35 kit] {a.cmd}: {x}")
             return 0 if ok else 1

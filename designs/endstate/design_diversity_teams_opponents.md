@@ -518,12 +518,21 @@ Smogon-only; widen OUR side (X37a: the gap is PILOTING unfamiliar teams); no own
   - `panel` drops: 556 (216 drawn + 91 of their near neighbours).
   - The curator cap fell from 242 to 198, because it is 10 % of a smaller capped total. The C tier was re-selected:
     498 teams are new to the corpus, and 323 were in no earlier version.
-- **Crash soak** (`python -m utils.team_corpora.soak w_forum_v1 --rounds 10`, the emission self-check env core): 24,240
-  battles, every team 10× in each seat (p1 uniform over its mask, p2 the heuristic bot), **0 core errors**, 42 stall
-  forfeits (`w_forum_v1/soak_selfcheck.json`). That soak is of the 2,424-team corpus. **The 1,982-team corpus is not
-  soaked yet**, and X35's launch pre-check 2d (`kit corpus-check`) holds D1 until a PASSing soak naming its data sha
-  is committed. It does NOT check sim-vs-port agreement (the Node differential gates
-  were not run on this corpus: F-DV-21).
+- **The label guard (AM-D1-FIX, 2026-10-22).** D1 s3501 crash-looped on `sfv2_5051`, a level-5 team (all six sets
+  carry `Level: 5`). The env's spread labels recompute stats at L100 and FAULT. `gen3ou` sets no level floor, so the
+  validator passed the team, and the v1 soak declared no label family, so it passed too.
+  - The builder now drops a non-100 level (rule `level`, LAST, after the curator cap so that tier C is not
+    reshuffled), and every reader refuses a corpus holding one (`load_dir`).
+  - **The corpus is 1,981 teams**: the 1,982 minus `sfv2_5051`, every other team and its order unchanged. Data
+    sha256 `6c642b60…1485`, tier ABC sha256 `1218f1e7…ab99`; A and AB are byte-identical.
+- **Crash soak** (`python -m utils.team_corpora.soak w_forum_v1 --rounds 10`, schema v2, the emission self-check env
+  core).
+  - The core declares EVERY core label family, so p1's labels read each team as the truth side once per round.
+  - 19,810 battles, every team 10× in each seat (p1 uniform over its mask, p2 the heuristic bot). **0 core errors**,
+    33 stall forfeits (`w_forum_v1/soak_selfcheck.json`).
+  - The pre-fix 1,982 corpus FAILs it at battle 1,661, with the D1 fault.
+  - X35's pre-check 2d (`kit corpus-check`) requires a v2 PASS naming the data sha.
+  - It does NOT check sim-vs-port agreement: the Node differential gates were not run on this corpus (F-DV-21).
 - **Exposure at s = 0.5:** a 20M fork plays ≈ 570k games, so each corpus team is drawn ≈ 118 times per side against
   each pool team's ≈ 400. That is 3.4× the pool's team count at ~30 % of a pool team's exposure, not W_hl's ≈ 13
   draws per team: memorising the corpus is possible in a way it was not for W_hl (F-DV-22).
@@ -563,8 +572,8 @@ manifest and sha256s, like `src/utils/ladder_corpus`.
      a training crash, not a skipped battle) and Imprison (a possible livelock, UNVERIFIED) were excluded until fixed.
      **Both are CLOSED (2026-10-19: `0cef9320a`, `752aaf16a`), so `w_forum_v1` no longer excludes them**
      (`build_w_forum.CRASH_MOVES` is empty; a newly opened class is re-added there).
-5. A full-tier soak through the Rust env, in the emission self-check build, before any launch: 0 crashes, 0
-   divergences.
+5. A full-tier soak through the Rust env, in the emission self-check build and with every label family declared
+   (AM-D1-FIX), before any launch: 0 crashes, 0 divergences.
 
 **Where it lives (FINDING F-DV-2).** NOT under `data/teams/`:
 
@@ -1478,4 +1487,5 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 | 2026-10-19 | **X38 / D1 LAUNCH-READY on paper** (X38 launch-ready worker; NEEDS the orchestrator's GO) | b-ON = C0 + `--team-mix w_forum_v1@ABC:0.5 --team-mix-sides both` (B-D2 `c1b0c1f0`): BOTH sides, the doc's D1 (own side widened per the owner, opponent side with it; D2 stays the opponent-only follow-up); eval on the pool; `main.x35.kit` arm `d1` in BATCH1 after the A1 / C0 ABBA; `checkargs --pin c1b0c1f0` exit 0 and `launcher --dry-run` "would launch", FORK of `rb_x26_s2601`, +20M from the real P\* (280,000,170); B-D7 `main.h2h --panel` and the D1 decision function `main.x35.d1` (self-check 10 / 10) built | trainee-only widening (the owner's words allow it; it is one token, `--team-mix-sides trainee`, and would be a different arm than the registered D1); `hl_05_26` (superseded by the forum corpus for X38) | x35 STAGED_PLAN §7; `main/x35/kit_test.py`, `main/x35/d1_test.py` |
 | 2026-10-19 | **X37b READ: the in-house TRANSFER split** (transfer worker; PREREG `38c64909`, registration `91af4446`) | **H1 UNDECIDED** (KILLED needed T_tot's upper bound < +2.0 pp AND T_pilot's lower bound ≤ 0): T_tot +4.0 pp [−0.7, +8.4], T_pilot +0.4 [−5.8, +6.5], T_face +3.6 [−3.1, +10.4]; P\*'s edge over 25M +18.8 pp on home72, +14.8 pp on unseen panels (≈ 79 % transfers). D0e's fixed reference changed from `production` to P\* piloting home72 (the F-DV-19 design-around); GEN-M and D0e classes UNDECIDED; X38 / D1's rank unchanged (its demotion needs X37b TRANSFERS) | reading the pair-level (teams-fixed) T_tot [+1.6, +6.4] as the verdict (the registration names the team bootstrap); reading GEN-M's large transfer as "no held-out problem" (the Kakuna-side piloting deficit stands, F-DV-26) | `measurements/x37b_transfer_2026-10-19/`; ledger 2026-10-19 *X37b TRANSFER* |
 | 2026-10-20 | **X54's confirmation panel `forum216b` carved, registered and SEALED before D1** (eval-registry worker; the orchestrator's ruling on beat-Metamon FINDING 2) | 216 teams from `w_forum_v1` AB (seed 5400, forum72's strata × 3, curator cap 42; no copy or near copy of the pool or any panel); `held_out_from: ["training"]`; `main.heldout_panels.SEALED`. `w_forum_v1` rebuilt: 2,424 → 1,982 (AB 559 → 305); X35 AMENDMENT D1-CORPUS + launch pre-check 2d (the corpus AND a PASSing soak of it at the pin). Size from X54's power (`power.py`) | `forum216b_x54_2026-10-20/README.md`; `design_beat_metamon_path.md` §6.6 |
+| 2026-10-22 | **AM-D1-FIX: the corpus refuses teams the env's label path cannot encode; D1 gets a corpus-only pin** (corpus label-guard worker, orchestrator brief, after D1 s3501's crash loop) | builder rule `level` (Showdown's packed level ≠ 100) applied LAST, after the curator cap, plus a `format` rule; the reader's throwing guard (`load_dir`); `w_forum_v1` 1,982 → **1,981** (only `sfv2_5051`, L5, tier C; the source's other two non-100 teams had already left at `engine_unplayable` / `panel`); soak v2 declares every core label family (19,810 battles, 0 core errors); D1's pin = `f4b25238` + the one corpus-only commit (`batch.D1_PIN`, `pin-check --arm d1`) | the `level` drop before the cap (it re-permutes tier C: 197 teams swapped, measured); relaunching D1 at a new main HEAD (its trainer code would differ from C0's at `f4b25238`); skipping the bad team at draw time (a silent per-draw filter instead of a guard) | launch sheet §0 AM-D1-FIX; `w_forum_v1/manifest.json` `label_guard`; `team_corpora_test.py`, `batch_test.py` |
 | 2026-10-19 | **AM-5: D1's H interval WIDENED for seed overdispersion** (X35 amendment worker; the orchestrator's ruling on the batch-1 review F-RV-5, before any D1 data) | each Newcombe half-width × √max(1, φ̂), φ̂ = the mean over arms of the between-seed variance of the per-seed panel means over its binomial expectation (df 2(n−1)); classes on the widened interval; self-check 11 / 11 | the pooled-binomial interval (8–21 % false GAIN at a seed SD of 2–4 pp); a t-quantile on φ̂'s df (the amendment scales the half-widths, as the review simulated) | `main.x35.d1.overdispersion`; `selfcheck.check_d1_overdispersion`; `X35_BATCH1_REVIEW.md` F-RV-5 |

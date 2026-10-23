@@ -5002,12 +5002,12 @@
   },
   "src/utils/team_corpora/team_corpora_test.py::test_the_committed_corpus_reproduces_from_its_source": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 20.71,
-   "contention": 1.55,
+   "commit": "8d4d43b87d1a9ec042314374fd8a0713c87c004f",
+   "at": "2026-10-23T00:46:39Z",
+   "duration_s": 8.35,
+   "contention": 1.29,
    "detail": ""
   }
  },
- "last_written": "2026-10-22T03:05:31Z"
+ "last_written": "2026-10-23T00:46:39Z"
 }

@@ -29,7 +29,9 @@
 #   2b. AM-1 (one pin PER SIDE, AM-8): the pin EQUALS the side's X35_PIN_1 (x35_pin_batch1_<side>.txt, written ONCE by
 #      the side's first GO) and every SIDE-PINNED run (batch 1 + 2 + G-E readers) OF THAT SIDE's RECORDED pin
 #      (metadata.json git_hash + pin_history); a
-#      run of that side whose pin cannot be read HOLDs too; a typed --t62 must be the side's token
+#      run of that side whose pin cannot be read HOLDs too; a typed --t62 must be the side's token. AM-D1-FIX
+#      (2026-10-22): d1 launches at ITS OWN pin (batch.D1_PIN = the production pin + one src/utils/team_corpora/-only
+#      commit, verified by pin-check --arm d1); every other arm at the side's
 #   2c. AM-8: the side's OWN required commits (x35_required_commits_<side>.txt; production's names FP32_ALT) are real
 #      commits and in the pin; a placeholder sha (FP32_ALT has not landed) HOLDs every production launch
 #   2d. AMENDMENT D1-CORPUS (2026-10-20): the team corpus the arm names is, AT the pin, its registered identity
@@ -109,7 +111,7 @@ prechecks() {
     git -C "$REPO" merge-base --is-ancestor "$sha" "$PIN" 2>/dev/null || hold "pin ${PIN:0:8} lacks $name ($sha)"
   done < "$req"
   # 2b. AM-1 as amended by AM-8: ONE pin PER SIDE
-  kit pin-check --pin "$PIN" --side "$SIDE" --stage "$STAGE" --models-dir "$MODELS" ${T62:+--t62 "$T62"} > "$out.pin.txt" 2>&1 \
+  kit pin-check --pin "$PIN" --side "$SIDE" --arm "$ARM" --stage "$STAGE" --models-dir "$MODELS" ${T62:+--t62 "$T62"} > "$out.pin.txt" 2>&1 \
     || hold "AM-1 pin-check: $(tr '\n' ' ' < "$out.pin.txt")"
   [ -e "$PINF" ] || [ -n "$T62" ] \
     || hold "no $(basename "$PINF") yet: the first $SIDE launch names its T62 token (--t62 FP32_ALT for production, --t62 NA_TOY for the toy)"
@@ -188,7 +190,7 @@ if [ -n "$AT" ]; then
 fi
 prechecks go
 # the once-only batch records (AM-1 per side, POOL), written only now: every pre-check of this GO has passed
-kit pin-check --pin "$PIN" --side "$SIDE" --stage "$STAGE" --models-dir "$MODELS" --write ${T62:+--t62 "$T62"} \
+kit pin-check --pin "$PIN" --side "$SIDE" --arm "$ARM" --stage "$STAGE" --models-dir "$MODELS" --write ${T62:+--t62 "$T62"} \
   > "$J/$RUN.pin_write.txt" 2>&1 || hold "AM-1 pin write: $(tr '\n' ' ' < "$J/$RUN.pin_write.txt")"
 kit pool-check --arm "$ARM" --call "$R" --stage "$STAGE" --write > "$J/$RUN.pool_write.txt" 2>&1 \
   || hold "POOL record: $(cat "$J/$RUN.pool_write.txt")"
