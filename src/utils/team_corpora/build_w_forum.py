@@ -21,17 +21,27 @@ manifest counts each rule per tier:
 5. ``crash_class``: a team carrying a move of an OPEN crash class (``CRASH_MOVES``). EMPTY since 2026-10-19: Transform +
    Hidden Power (the tracker crash, ``0cef9320a``) and Imprison (verified NOT a livelock, ``752aaf16a``) are closed, so
    the 8 teams they excluded are IN; the rule stays so a newly opened class can be re-added (§4.1 step 4(b), F-DV-8).
-6. ``validator``: the pinned ``TeamValidator('gen3ou')`` rejects the REPAIRED text, or Showdown cannot import it as six
+6. ``format``: the source row names a format other than ``gen3ou`` (``sub_format``; an empty one is the thread's own).
+7. ``validator``: the pinned ``TeamValidator('gen3ou')`` rejects the REPAIRED text, or Showdown cannot import it as six
    Pokemon (``src/rust_sim/harness/ladder_corpus_filter.js``, the ladder corpus's own filter).
-7. ``engine_unplayable``: a species / move / item / ability the Rust ENGINE does not run (``scan_move_probe``).
-8. ``duplicate``: the same six mon sets as a team already kept (the source deduped before repair).
-9. ``strength``: the lenient TSR cut. A team is dropped iff it carries a Kakuna-pilot rating below ``STRENGTH_CUT_ELO``
+8. ``engine_unplayable``: a species / move / item / ability the Rust ENGINE does not run (``scan_move_probe``).
+9. ``duplicate``: the same six mon sets as a team already kept (the source deduped before repair).
+10. ``strength``: the lenient TSR cut. A team is dropped iff it carries a Kakuna-pilot rating below ``STRENGTH_CUT_ELO``
    in ``measurements/team_strength_2026-10-18/teams.tsv`` (joined by ``main.team_strength.panel.team_id``). An X26-only
    rating never drops a team (X26 rates off-meta teams low partly because it pilots them badly), and a team with no
    rating is KEPT and counted as ``unrated``.
-10. **Curator cap** (F4): the largest integer ``c`` such that ``c <= CURATOR_SHARE_CAP`` × the capped total
+11. **Curator cap** (F4): the largest integer ``c`` such that ``c <= CURATOR_SHARE_CAP`` × the capped total
     ``sum_k min(n_k, c)``; each curator keeps its first ``c`` teams in TIER order (A, then B, then C), within a tier in
     the seeded order below.
+12. ``level``, LAST: a mon not at level 100 (Showdown's PACKED level, which must agree with the text's ``Level:`` lines,
+    :func:`utils.team_corpora.label_path_defects`). The env's spread labels recompute stats at L100 and FAULT otherwise,
+    and ``gen3ou`` caps the level without a floor, so the validator passes such a team: ``sfv2_5051`` (all six at
+    level 5) crash-looped D1 s3501 (launch sheet AM-D1-FIX, 2026-10-22). It runs AFTER the cap on purpose: removing an
+    id from a tier's seeded shuffle re-permutes the whole tier and the cap then re-selects a capped curator's teams
+    (dropping ``sfv2_5051`` before the cap swapped 197 C teams, measured), so a late drop removes exactly the
+    unencodable teams and keeps every other team and its order. ``label_guard.source_scan`` in the manifest lists
+    every source team with a non-100 level and the rule that dropped it. The build then RE-CHECKS its output with the
+    readers' throwing guard (:func:`utils.team_corpora.check_label_encodable`).
 
 The kept teams are ordered tier A, then B, then C; inside each tier, ids sorted then shuffled once with
 ``random.Random(ORDER_SEED)``. The tiers are prefixes: ``A`` ⊂ ``AB`` ⊂ ``ABC`` (the default). The build is
@@ -54,7 +64,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from utils.paths import repo_path, repo_root
-from utils.team_corpora import (CORPORA, DATA_NAME, MANIFEST_NAME, SCHEMA, encode_rows, tier_sha256)
+from utils.team_corpora import (CORPORA, DATA_NAME, LABEL_LEVEL, MANIFEST_NAME, SCHEMA, check_label_encodable,
+                                 encode_rows, label_path_defects, tier_sha256)
 
 NAME = "w_forum_v1"
 SRC_REL = "designs/research_state/measurements/smogon_forum_teams_v2_2026-10-18"
@@ -72,7 +83,10 @@ TIERS = {"A": ("A",), "AB": ("A", "B"), "ABC": ("A", "B", "C")}
 DEFAULT_TIER = "ABC"
 #: The curator of a row whose source names none (one curator for the cap: unknown builders are not independent).
 UNCREDITED = "(uncredited)"
-RULES = ("pool_exact", "panel", "crash_class", "validator", "engine_unplayable", "duplicate", "strength")
+RULES = ("pool_exact", "panel", "crash_class", "format", "validator", "engine_unplayable", "duplicate", "strength",
+         "level")
+#: The source ``sub_format`` values a team may carry (rule ``format``; "" = the gen3ou thread's own, unlabelled).
+FORMATS = ("gen3ou", "")
 FILTER_JS = repo_path("src", "rust_sim", "harness", "ladder_corpus_filter.js")
 
 _MOVE_RE = re.compile(r"^\s*-\s*(.+?)\s*$")
@@ -96,10 +110,26 @@ def source_rows() -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         if _sha(raw) != r["sha256"]:
             raise RuntimeError(f"{r['id']}: the source file's sha256 does not match manifest_teams.jsonl")
         out.append({"id": r["id"], "tier": r["tier"], "curator": r["curator"] or UNCREDITED, "category": r["category"],
-                    "source_url": r["source_url"], "text": raw.decode().strip()})
+                    "sub_format": r.get("sub_format", ""), "source_url": r["source_url"], "text": raw.decode().strip()})
     prov = {"dir": SRC_REL, "manifest_teams_sha256": _sha(man_path.read_bytes()),
             "kept": len(kept), "kept_verbatim": len(out), "kept_transcribed_dropped": len(kept) - len(out)}
     return out, prov
+
+
+def packed_levels(packed: str) -> List[str]:
+    """Each mon's level in a Showdown PACKED team (field 10 of ``nick|species|item|ability|moves|nature|evs|gender|ivs|
+    shiny|level|...``; empty = 100)."""
+    return [(m.split("|")[10] if len(m.split("|")) > 10 else "") or LABEL_LEVEL for m in packed.split("]")]
+
+
+def level_defects(tid: str, text: str, packed: str) -> List[str]:
+    """Rule ``level``: the non-100 levels of a team, from Showdown's packed team; the text's ``Level:`` lines must say
+    the same (a disagreement is a build error, never a verdict)."""
+    by_packed = sorted(f"Level: {lv}" for lv in packed_levels(packed) if lv != LABEL_LEVEL)
+    by_text = sorted(label_path_defects(text))
+    if by_packed != by_text:
+        raise RuntimeError(f"{tid}: Showdown's packed levels {by_packed} disagree with the text's {by_text}")
+    return by_packed
 
 
 def moves_of(text: str) -> List[str]:
@@ -192,6 +222,9 @@ def build() -> Tuple[bytes, Dict[str, Any]]:
         if any(m in CRASH_MOVES for m in moves_of(r["text"])):
             drop("crash_class", r)
             continue
+        if r["sub_format"] not in FORMATS:
+            drop("format", r)
+            continue
         survivors.append(r)
 
     # 6. validator + import (the REPAIRED text)
@@ -254,13 +287,26 @@ def build() -> Tuple[bytes, Dict[str, Any]]:
     cap = curator_cap(dict(counts), CURATOR_SHARE_CAP)
     taken: collections.Counter = collections.Counter()
     capped_drop: collections.Counter = collections.Counter()
-    final = []
+    capped = []
     for r in ordered:
         if taken[r["curator"]] >= cap:
             capped_drop[r["tier"]] += 1
             continue
         taken[r["curator"]] += 1
+        capped.append(r)
+    # 12. LAST: the label path encodes level 100 only (after the cap: no reshuffle, no re-selection)
+    level_why: Dict[str, List[str]] = {}
+    final = []
+    for r in capped:
+        why = level_defects(r["id"], r["text"], sd[r["id"]]["packed"])
+        if why:
+            level_why[r["id"]] = why
+            drop("level", r)
+            continue
         final.append(r)
+    fate = {i: rule for rule, ids in dropped_ids.items() for i in ids}
+    source_scan = {r["id"]: {"tier": r["tier"], "levels": sorted(set(d)), "dropped_by": fate.get(r["id"], "curator_cap")}
+                   for r in rows if (d := label_path_defects(r["text"]))}
 
     # descriptive only (no rule reads it): the corpus against our pool and the sample reference's species cores
     sample_ref = [t for t in parse_items(list(HP.panel_team_texts("home72")) + list(HP.panel_team_texts("away")))
@@ -277,6 +323,7 @@ def build() -> Tuple[bytes, Dict[str, Any]]:
                 "strata_rule": "ladder_weights_v1's rule: best SPECIES overlap with one sample team (home72 + away): "
                                "CORE 6, NEAR 4-5, FAR <= 3 (descriptive)"}
 
+    check_label_encodable([r["id"] for r in final], [r["text"] for r in final], f"the {NAME} build")
     out_rows = [{"i": i, "id": r["id"], "tier": r["tier"], "curator": r["curator"],
                  "sha256": _sha(r["text"].encode()), "text": r["text"]} for i, r in enumerate(final)]
     data = encode_rows(out_rows)
@@ -309,6 +356,12 @@ def build() -> Tuple[bytes, Dict[str, Any]]:
         "engine": {"oracle": "scan_move_probe", "unplayable_ids": unplayable,
                    "unplayable_by_id": dict(why_engine.most_common())},
         "crash_class_moves": list(CRASH_MOVES),
+        "formats": list(FORMATS),
+        "label_guard": {"rule": "a mon not at level 100 (Showdown's packed level, agreeing with the text) is dropped: "
+                                "the env's spread labels recompute stats at L100 and FAULT otherwise (AM-D1-FIX); "
+                                "every reader re-checks with utils.team_corpora.check_label_encodable",
+                        "level": int(LABEL_LEVEL), "dropped": {k: sorted(set(v)) for k, v in sorted(level_why.items())},
+                        "source_scan": dict(sorted(source_scan.items()))},
         "strength_cut": {"rule": f"drop iff a Kakuna-pilot TSR rating < {STRENGTH_CUT_ELO} Elo; an X26-only rating "
                                  "never drops; an unrated team is KEPT",
                          "table": TSR_REL, "table_sha256": _sha(repo_path(TSR_REL).read_bytes()),
