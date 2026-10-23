@@ -906,3 +906,19 @@ def test_am8_the_shipped_production_file_names_fp32_alt_d4af9f1e():
     tmp_rows = [ln.split(" ", 2)[:2] for ln in shipped.read_text().splitlines() if ln and not ln.startswith("#")]
     assert tmp_rows == [["d4af9f1e26061681644473d22e2022dda2b43655", FP32]]
     assert B._is_commit_sha(tmp_rows[0][0])
+
+
+def test_every_committed_read_record_carries_its_arms_registered_label():
+    """Each saved ``reads/<arm>_look<k>.json`` at the real stage loads through ``read_record`` (its ``arm`` is the
+    registered READ_LABEL, e.g. D1's is 'X38'), so stage-check can never refuse a launch on a mislabelled record (the
+    2026-10-23 D1 look-1 record was written as 'D1' and held D1's look-2 seeds)."""
+    stage = repo_path("designs/research_state/measurements/x35_breakers_stage_2026-10-17")
+    found = 0
+    for p in sorted((stage / B.READS_DIR).glob("*_look*.json")):
+        m = re.fullmatch(r"(.+)_look(\d+)\.json", p.name)
+        assert m, p.name
+        arm, look = m.group(1), int(m.group(2))
+        assert arm in B.READ_LABEL, f"{p.name}: no registered label for arm {arm!r}"
+        assert B.read_record(str(stage), arm, look) is not None
+        found += 1
+    assert found >= 1, "no committed read record found: the precondition of this test does not hold"

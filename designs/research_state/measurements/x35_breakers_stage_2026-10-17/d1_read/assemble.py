@@ -58,7 +58,7 @@ def main() -> int:
     s_c0 = {r["seed"]: r["s_pp"] for r in g1["finals"] if r["arm"] == "c0"}
     seeds = sorted(s_c0)
     w = R.welch_interval([s_d1[s] for s in seeds], [s_c0[s] for s in seeds], confidence=R.R1_CONFIDENCE)
-    doc = {"arm": "D1", "look": 1, "h": h, "p": p,
+    doc = {"arm": "X38", "look": 1, "h": h, "p": p,
            "reported_pool_s": {"on": s_d1, "off": s_c0, "welch975": w.as_dict() if hasattr(w, "as_dict") else str(w),
                                "source": "D1: d1_read/d1s_read.py (family x35_d1_s_2026-10-23); C0: g1/results.json; "
                                          "regime adfdbee824c9eb0a, 7 members x 500 mirrored pairs"}}
