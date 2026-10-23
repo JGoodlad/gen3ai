@@ -253,7 +253,7 @@
    "goldyn_": 2,
    "greenapricotttss": 2,
    "henchanted": 1,
-   "jimmy the card": 9,
+   "jimmy the card": 8,
    "johnnyg2": 61,
    "joho": 1,
    "kd458": 1,
@@ -321,7 +321,7 @@
   }
  },
  "data_file": "teams.jsonl.gz",
- "data_sha256": "7f42d95f7f08f667738fe6e8f2af33ede93f5dec78af6fa48ed3f72f3d231336",
+ "data_sha256": "6c642b60d4044192b0fb54acde13a6b3fc3cee65ca47fff0a3221018b6271485",
  "default_tier": "ABC",
  "describe": {
   "ladder_strata_by_tier": {
@@ -336,12 +336,12 @@
    },
    "C": {
     "CORE": 83,
-    "FAR": 227,
+    "FAR": 226,
     "NEAR": 1367
    }
   },
   "pool_max_shared_mon_sets_hist": {
-   "0": 6,
+   "0": 5,
    "1": 245,
    "2": 1051,
    "3": 579,
@@ -364,6 +364,10 @@
    "sfv2_4370",
    "sfv2_4486",
    "sfv2_5123"
+  ],
+  "format": [],
+  "level": [
+   "sfv2_5051"
   ],
   "panel": [
    "sfv2_0036",
@@ -1655,6 +1659,16 @@
    },
    "n": 9
   },
+  "format": {
+   "by_tier": {},
+   "n": 0
+  },
+  "level": {
+   "by_tier": {
+    "C": 1
+   },
+   "n": 1
+  },
   "panel": {
    "by_tier": {
     "A": 259,
@@ -1707,12 +1721,48 @@
    "species": []
   }
  },
+ "formats": [
+  "gen3ou",
+  ""
+ ],
  "hp_repair": {
   "mons_repaired": 0,
   "seed": 20261019,
   "seed_rule": "team_seed(seed, source id); only an UNTYPED Hidden Power with absent / all-31 IVs is a target",
   "teams_repaired": 0,
   "version": "gen3_hp_repair_v1"
+ },
+ "label_guard": {
+  "dropped": {
+   "sfv2_5051": [
+    "Level: 5"
+   ]
+  },
+  "level": 100,
+  "rule": "a mon not at level 100 (Showdown's packed level, agreeing with the text) is dropped: the env's spread labels recompute stats at L100 and FAULT otherwise (AM-D1-FIX); every reader re-checks with utils.team_corpora.check_label_encodable",
+  "source_scan": {
+   "sfv2_0809": {
+    "dropped_by": "engine_unplayable",
+    "levels": [
+     "Level: 97"
+    ],
+    "tier": "B"
+   },
+   "sfv2_0810": {
+    "dropped_by": "panel",
+    "levels": [
+     "Level: 99"
+    ],
+    "tier": "B"
+   },
+   "sfv2_5051": {
+    "dropped_by": "level",
+    "levels": [
+     "Level: 5"
+    ],
+    "tier": "C"
+   }
+  }
  },
  "name": "w_forum_v1",
  "order": {
@@ -1771,8 +1821,8 @@
    ]
   },
   "ABC": {
-   "n": 1982,
-   "sha256": "73a76e808431f5c430edf7effafc121a0b4822c6dbd19d33b82b6bb60570bdc4",
+   "n": 1981,
+   "sha256": "1218f1e7d3f88cf790324e00d806cf0d5a52f91139da765c3701e0692cc1ab99",
    "source_tiers": [
     "A",
     "B",
