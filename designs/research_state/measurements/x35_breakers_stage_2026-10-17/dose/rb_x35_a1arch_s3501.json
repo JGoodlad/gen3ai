@@ -1,0 +1,36 @@
+{
+ "schema": "x35_dose_v1",
+ "run": "rb_x35_a1arch_s3501",
+ "arm": "a1",
+ "seed": 3501,
+ "pin": "f4b25238def57900c0305bb2a3a5a8f9edaef285",
+ "wall_min": 253.3,
+ "gpu_h": 4.223,
+ "gpu_h_note": "one card: GPU-h = wall START\u2192END",
+ "steps_per_s": 1355,
+ "steps_per_s_source": "launcher summary 'FPS'",
+ "first_step": 280000170,
+ "last_step": 300060532,
+ "target_steps": 300000170,
+ "restarts": 0,
+ "launcher_rc": 0,
+ "start": "2026-10-22T02:06:28-07:00",
+ "end": "2026-10-22T06:19:49-07:00",
+ "c0_comparator": {
+  "wall_min": [
+   265,
+   241,
+   240
+  ],
+  "steps_per_s": [
+   1384,
+   1418,
+   1424
+  ],
+  "seeds": [
+   3501,
+   3502,
+   3503
+  ]
+ }
+}
