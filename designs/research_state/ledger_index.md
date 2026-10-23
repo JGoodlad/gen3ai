@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-28,323-line file. **The ledger itself is append-only and is never edited by this**;
+28,351-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**930 headings · 875 dated · 2026-08-01 → 2026-10-23 · ledger 28,323 lines.**
+**931 headings · 876 dated · 2026-08-01 → 2026-10-23 · ledger 28,351 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -950,3 +950,4 @@ rename.
   - `L28204` · `2026-10-22` · MEASUREMENT · **R0-prod, READ under its registration (`b04f15b9`, launch sheet AM-R0): a fresh best responder of P\* finds HEADROOM H = +11.1 pp [+8.3, +13.8] (pooled 16–20M, 1,200 greedy games); its learned part +13.6 pp [+7.9, +19.1] over gap(0) −2.5. The class is SATURATED (D = −0.3 pp [−4.2, +3.6]); t90 8M. LG-1's 5M statistic is +6.0 pp, so A6 is NOT triggered. H, t90, the 5M statistic and all 11 points sit inside their 80 % bands; the toy and production holes are the same size**
   - `L28259` · `2026-10-22` · MEASUREMENT · **X35 G1 PASSES (σ̂ 0.408 pp, 4 df ≤ 1.2) and A1 LOOK 1 reads NULL, FINAL: the archive pool at P\* moves S by +0.19 pp [−1.07, +1.46]; guards not read (non-qualifying R1); P3 moot**
   - `L28291` · `2026-10-23` · MEASUREMENT · **X52 PRACTICE CEILING reads UNDECIDED: practising 36 teams for 5M moves our piloting of them against Kakuna by +3.2 pp [−0.2, +6.8], and of 36 unpractised teams by +1.3 pp [−3.5, +6.1]**
+  - `L28324` · `2026-10-23` · MEASUREMENT · **X35 D1 LOOK 1 reads CONTINUE: widening the pool with 1,981 forum teams moves the Kakuna unfamiliar-panel score by +2.78 pp [−1.12, +6.67] (H UNDECIDED, Δ̂ > 0) and in-house home72 S by −1.30 pp [−4.54, +1.93] (P inferiority not excluded); guards not read; look 2 decides**

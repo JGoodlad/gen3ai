@@ -28320,3 +28320,31 @@ seed 20261022). The classes are AM-X52-g's, in order.
 **Evidence:** `research_state/measurements/x52_practice_ceiling_2026-10-22/read/` (`README.md`, `cells.json`,
 `rows.jsonl`, `scripts/`); the raw units are in `~/gen3ai_archive/x52_read/`. `UNDERSTANDING.md` (the Kakuna standing
 block), `design_beat_metamon_path.md` §0 / §6.2.
+
+### 2026-10-23 · MEASUREMENT · **X35 D1 LOOK 1 reads CONTINUE: widening the pool with 1,981 forum teams moves the Kakuna unfamiliar-panel score by +2.78 pp [−1.12, +6.67] (H UNDECIDED, Δ̂ > 0) and in-house home72 S by −1.30 pp [−4.54, +1.93] (P inferiority not excluded); guards not read; look 2 decides**
+
+**Question** (diversity doc §4.2, `main.x35.d1`; X35 launch sheet P4, D1-CORPUS, AM-D1-FIX). Does training on half
+forum teams (both sides) improve piloting unseen teams against Kakuna without costing in-pool strength?
+
+**Design.** D1 = C0's argv + `--team-mix w_forum_v1@ABC:0.5 --team-mix-sides both`, P\* + 20M, s3501–s3503, D1's pin
+`440b61c3` (K9(b) PASS all three). OFF = C0 s3501–s3503. H: each final plays 7 role-balanced 20-game units (seeds 0–6)
+per panel (heldout72_hpfix, forum72, p72) against `metamon:Kakuna` greedy, `main.x35.kakuna`; equal-weight panel mean,
+Newcombe 95 % widened by √max(1, φ̂). P: S against the frozen R (7 members × 500 mirrored pairs) on the home72 panel,
+Welch 97.5 %, bar −2.0 pp.
+
+**Result.** 126 / 126 Kakuna units counted; every P and pool-S cell at 500 pairs.
+
+| | D1 | C0 | D1 − C0 | class |
+|---|---|---|---|---|
+| H | 0.506 [0.479, 0.534] | 0.479 [0.451, 0.506] | **+2.78 [−1.12, +6.67]** (φ̂ 0.33, not widened) | UNDECIDED → CONTINUE |
+| P (home72 S, pp) | 54.51 / 56.09 / 56.51 | 56.78 / 57.39 / 56.86 | **−1.30 [−4.54, +1.93]** | inferiority not excluded |
+| pool S (reported) | 54.61 / 55.89 / 55.82 | 57.52 / 56.60 / 56.81 | −1.54 [−3.41, +0.34] | — |
+
+- H per seed +4.3 / 0.0 / +4.0 (sign rule 2 of 3 holds); per panel forum72 +4.0, heldout72_hpfix +2.4, p72 +1.9 (n.d.).
+- Verdict **CONTINUE**: look 2 = D1 and C0 at s3504–s3505. Guards G-F / G-E / G-C not read (H non-qualifying, the
+  orchestrator's A1 ruling); G-K and dose not read (reported only).
+- Goal (b) not met by D1 (LB 0.479 ≤ 0.50).
+
+**Evidence:** `research_state/measurements/x35_breakers_stage_2026-10-17/d1_read/` (README, drivers, results,
+`read_look1_input.json`), `reads/d1_look1.json`; raw ledgers and units in `~/gen3ai_archive/x35_d1_read/`.
+`UNDERSTANDING.md` (Kakuna block), `design_beat_metamon_path.md` §0 / §6.3.
