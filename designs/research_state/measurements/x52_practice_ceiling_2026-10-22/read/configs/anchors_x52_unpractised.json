@@ -1,0 +1,59 @@
+{
+ "_README": [
+  "X52 REVERSE cell, unpractised half: our side pilots the X52 unpractised half (36 files, byte copy, sha256-checked against x52_teams_manifest.json before every unit); Kakuna pilots home72 (Metamon set gen3ai_home72)."
+ ],
+ "showdown": {
+  "node": "node",
+  "port_range": [
+   9500,
+   9599
+  ]
+ },
+ "opponents": {
+  "metamon": {
+   "checkout": "/home/goodlad/dev/metamon",
+   "python": "/home/goodlad/miniconda3/envs/metamon/bin/python",
+   "cache_dir": "/home/goodlad/dev/metamon/cache",
+   "agents": {
+    "SmallRL": {
+     "checkpoint": 40,
+     "params": 13938567
+    },
+    "SyntheticRLV2": {
+     "checkpoint": 48,
+     "params": 200894911
+    },
+    "Kakuna": {
+     "checkpoint": 34,
+     "params": 142832563
+    }
+   },
+   "reference_team_dirs": {
+    "competitive": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou",
+    "hl_05_26": "/home/goodlad/gen3ai_archive/metamon_cache_2026-09-24/teams/hl_05_26/gen3ou"
+   },
+   "team_sets": {
+    "home": "gen3ai_home72",
+    "away": "competitive"
+   }
+  },
+  "foulplay": {
+   "checkout": "/home/goodlad/dev/foul-play",
+   "python": "/home/goodlad/dev/foul-play/.conda/bin/python",
+   "team_dirs": {
+    "home": "/home/goodlad/gen3ai_archive/x52_read/teams_unpractised",
+    "away": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou"
+   }
+  }
+ },
+ "our_team_sources": {
+  "home": {
+   "kind": "dir",
+   "path": "/home/goodlad/gen3ai_archive/x52_read/teams_unpractised"
+  },
+  "away": {
+   "kind": "dir",
+   "path": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou"
+  }
+ }
+}

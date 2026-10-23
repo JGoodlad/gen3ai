@@ -812,6 +812,16 @@ Kakuna ckpt 34, greedy:
   memorisation channel stays open.
 [ledger 2026-10-21 · *X51 PLATEAU vs KAKUNA*]
 
+**…and practising a team for 5M does not detectably fix piloting it, nor transfer (2026-10-23, X52,
+`measurements/x52_practice_ceiling_2026-10-22/read/`):** [MEASURED · UNDECIDED by its registered rule · 4,200 games,
+two seeds, reverse cells (we pilot a half, Kakuna pilots home72), production pin `f4b25238`] P\* + 5M with our side
+piloting ONLY 36 practised forum teams (≈ 3,300 pilots a team), against P\*:
+- **practised half +3.2 pp [−0.2, +6.8]; unpractised half +1.3 pp [−3.5, +6.1]** (pooled seeds, team-clustered).
+  So familiarity is neither shown nor ruled out, and transfer is unresolved.
+- Plain continuation (C0's final) moves the unpractised half by −2.3 pp [−7.9, +3.6]. So exposure is worth at most a few
+  pp per team at this dose, and the ≈ 4 pp gap to goal (b) has no lever shown to close it. D1 proceeds as staged.
+[ledger 2026-10-23 · *X52 PRACTICE CEILING*]
+
 **…and X26's plateau sits beside a small, REAL cyclic component (2026-10-19, the cycle monitor's retro read,
 `measurements/cycle_monitor_retro_2026-10-19/`):** [MEASURED · DESCRIPTIVE · the in-run snapshot ladder, not the
 registered instrument] Read by the cycle monitor's four signals, X26's ladder (72 snapshots, 1,150 mirrored lines) is

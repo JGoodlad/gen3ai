@@ -28287,3 +28287,36 @@ builder, CPU, regime `adfdbee824c9eb0a`. That is 42 cells and 21,000 pairs. G1 =
 **Evidence:** `research_state/measurements/x35_breakers_stage_2026-10-17/` (`x35_gate_g1.json`,
 `reads/a1_look1.json`, `g1/README.md`, `g1/results.json`, `g1/g1_read.py`); the game ledger is
 `~/gen3ai_archive/x35_g1/ledger`; `UNDERSTANDING.md` §4.10.
+
+### 2026-10-23 · MEASUREMENT · **X52 PRACTICE CEILING reads UNDECIDED: practising 36 teams for 5M moves our piloting of them against Kakuna by +3.2 pp [−0.2, +6.8], and of 36 unpractised teams by +1.3 pp [−3.5, +6.1]**
+
+**Question** (X35 launch sheet §0 AM-X52; `design_beat_metamon_path.md` §6.2). Does practising a team fix our
+piloting of it against Kakuna, and does practising 36 teams transfer to 36 unpractised teams of the same population?
+
+**Design** (registered before any argv). `rb_x35_x52prac_s3501` / `_s3502`: P\* + 5M at the production pin
+`f4b25238`, C0's argv plus `--trainee-teams <the 36 practised files>` (K9(b) PASS both). The read is REVERSE cells:
+our model pilots a half and Kakuna ckpt 34 pilots home72, greedy against greedy, `main.anchors`, 20-game units with
+unit seeds 0–29 for every model on a half (the same deals). That is 600 games per (model, half) for P\*, s3501 @5M
+and s3502 @5M (`final_model.zip`). Descriptive cells: s3501 @1M on the practised half (200) and C0 s3501's final on
+the unpractised half (400). Δ_h = pooled seeds − P\*, with a team-clustered percentile bootstrap (10,000 resamples,
+seed 20261022). The classes are AM-X52-g's, in order.
+
+**Result.** 210 / 210 units counted (declared digests and the capture check); twins 1,200 / 1,200.
+
+| half | 5M pooled | P\* | Δ [95 %] | predicted (80 %) |
+|---|---|---|---|---|
+| practised | 0.553 | 0.522 | **+3.2 [−0.2, +6.8]** | +5 [+0.5, +9.5] |
+| unpractised | 0.572 | 0.558 | **+1.3 [−3.5, +6.1]** | 0 [−3.5, +3] |
+
+- **Class: UNDECIDED** (UB_pr ≥ 4, so not NO FAMILIARITY; LB_pr ≤ 0, so no familiarity class). It was the modal
+  registered class (0.40). D1 proceeds as staged (AM-X52-h).
+- **Per seed:** practised +3.7 / +2.7; unpractised +2.3 / +0.3 (all n.d.).
+- **Descriptive:**
+  - s3501 @1M − P\* (practised, 200 games) is −3.5 [−12.1, +4.6].
+  - C0 final − P\* (unpractised, 400 games) is −2.3 [−7.9, +3.6].
+  - X52 − C0 on the same 20 units is +4.0 pp (unregistered, no interval).
+  - P\* scored 0.522 / 0.558 against the registered ≈ 0.50 (these are reverse cells, never a goal (b) number).
+
+**Evidence:** `research_state/measurements/x52_practice_ceiling_2026-10-22/read/` (`README.md`, `cells.json`,
+`rows.jsonl`, `scripts/`); the raw units are in `~/gen3ai_archive/x52_read/`. `UNDERSTANDING.md` (the Kakuna standing
+block), `design_beat_metamon_path.md` §0 / §6.2.

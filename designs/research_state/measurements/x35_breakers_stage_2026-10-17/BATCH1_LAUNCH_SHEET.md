@@ -1242,3 +1242,6 @@ accepted both (`gen3_mon_tied_gain_v1`, obs 2845), and the re-encode reproduced 
   3 agent cores, 44 s and 717 MB peak RSS per line (measured on line 1 with `/usr/bin/time -v`), 4 minutes in all, which is
   the shape the earlier validations ran in. Rule 5b reads "heavy" as traces / benchmarks / many checkpoints; this was judged
   not to be one. The Training session's own dry runs before each GO are the same size.
+
+**NOTE 2026-10-23 (X52, read):** X52's registered read is **UNDECIDED**: practised Δ +3.2 pp [−0.2, +6.8], unpractised
++1.3 pp [−3.5, +6.1] (`../x52_practice_ceiling_2026-10-22/read/`). By AM-X52-h, D1 proceeds as staged.
