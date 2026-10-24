@@ -822,16 +822,17 @@ piloting ONLY 36 practised forum teams (≈ 3,300 pilots a team), against P\*:
   pp per team at this dose, and the ≈ 4 pp gap to goal (b) has no lever shown to close it. D1 proceeds as staged.
 [ledger 2026-10-23 · *X52 PRACTICE CEILING*]
 
-**…and widening the pool with 1,981 forum teams (D1) moves goal (b)'s statistic by a point +2.8 pp that look 1 cannot
-resolve (2026-10-23, X35 D1 look 1, `measurements/x35_breakers_stage_2026-10-17/d1_read/`):** [MEASURED · CONTINUE by
-its registered rule · 3 seeds per arm, 2,520 Kakuna games + 6 × 3,500 in-house pairs] P\* + 20M with half of each
-side's teams from `w_forum_v1`, against C0 (plain continuation):
-- **H (Kakuna, unseen panels H / F / P72): +2.78 pp [−1.12, +6.67]**; D1 0.506 [0.479, 0.534] vs C0 0.479. Per seed
-  +4.3 / 0.0 / +4.0; per panel forum72 +4.0, H +2.4, P72 +1.9 (none detected). So breadth may transfer a few pp, not shown.
-- **P (in-house S on home72): −1.30 pp [−4.54, +1.93]**, inferiority not excluded; the pool S moves −1.54 [−3.41, +0.34].
-  The widening may cost some in-pool strength, also not shown.
-- Goal (b) stays unmet (D1's LB 0.479 < 0.50). Look 2 (s3504–s3505 both arms) decides.
-[ledger 2026-10-23 · *X35 D1 LOOK 1*]
+**…and widening the pool with 1,981 forum teams (D1) leaves goal (b)'s statistic +2.1 pp up, UNRESOLVED at the final
+look, and costs in-pool strength (2026-10-24, X35 D1 look 2, `measurements/x35_breakers_stage_2026-10-17/d1_read/`):**
+[MEASURED · UNDECIDED (final) by its registered rule · 5 seeds per arm, 4,200 Kakuna games + 10 × 3,500 in-house pairs]
+P\* + 20M with half of each side's teams from `w_forum_v1`, against C0 (plain continuation):
+- **H (Kakuna, unseen panels H / F / P72): +2.10 pp [−0.92, +5.11]**; D1 0.492 [0.471, 0.513] vs C0 0.471. Per seed
+  +4.3 / 0.0 / +4.0 / 0.0 / +2.1. Per panel forum72 +4.0, H +2.1, P72 +0.1: what gain there is sits on the forum
+  population D1 trains on; transfer to the other two populations is not shown.
+- **P (in-house S on home72): −1.61 pp [−2.90, −0.32]**: the whole interval is below 0, so the widening COSTS in-pool
+  strength (≈ 1.6 pp), though the −2.0 bar is not excluded.
+- Goal (b) stays unmet (D1's LB 0.471 < 0.50). Breadth at this dose is not the lever that closes the ≈ 4 pp gap.
+[ledger 2026-10-24 · *X35 D1 LOOK 2*]
 
 **…and X26's plateau sits beside a small, REAL cyclic component (2026-10-19, the cycle monitor's retro read,
 `measurements/cycle_monitor_retro_2026-10-19/`):** [MEASURED · DESCRIPTIVE · the in-run snapshot ladder, not the

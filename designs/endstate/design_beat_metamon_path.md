@@ -3,8 +3,9 @@
 **Status: X51 READ 2026-10-21 (`measurements/x51_plateau_vs_kakuna_2026-10-20/`): goal (a) MET at the plateau P\*
 (home72 0.598 [0.549, 0.644]); goal (b) NOT met, 0.487 [0.459, 0.515], ≈ 4.3 pp short; Kakuna ckpt 28 not
 detectably stronger than 34. X52 READ 2026-10-23: UNDECIDED (practised +3.2 pp [−0.2, +6.8], unpractised +1.3
-[−3.5, +6.1]; §6.2); D1 proceeds as staged. D1 LOOK 1 READ 2026-10-23: CONTINUE (H +2.78 pp [−1.12, +6.67],
-P −1.30 [−4.54, +1.93]; §6.3); look 2 decides.** ALWAYS-CURRENT
+[−3.5, +6.1]; §6.2); D1 proceeds as staged. D1 LOOK 2 (FINAL) READ 2026-10-24: UNDECIDED (H +2.10 pp
+[−0.92, +5.11], D1 0.492 [0.471, 0.513]; P −1.61 [−2.90, −0.32]; §6.3); D3 / X53's trigger is the orchestrator's
+call (FINDING 11).** ALWAYS-CURRENT
 (owner, 2026-09-27): a later read, decision or build that differs updates this doc in the same commit, and the
 Decision record (§9) says what changed and why. Every number below is quoted from a banked read with its directory;
 every effect size that is not measured is marked **GUESS** or **ESTIMATE**.
@@ -37,7 +38,8 @@ Smogon-usage teams; U = the three UNFAMILIAR panels H, F and P72; "pilot" = play
   2. **X52: a PRACTICE-CEILING fork.** READ 2026-10-23: **UNDECIDED**. Practising 36 teams for 5M moved our piloting
      of them against Kakuna by +3.2 pp [−0.2, +6.8], and of 36 unpractised teams by +1.3 pp [−3.5, +6.1]. That is too
      small to call, and too large to kill exposure as a lever. D1 proceeds as staged (§6.2).
-  3. **X38 / D1: widen the pool**, run in X35; look 1 reads CONTINUE (H +2.78 pp [−1.12, +6.67], §6.3), look 2 decides.
+  3. **X38 / D1: widen the pool**, run in X35; FINAL (look 2) reads UNDECIDED: H +2.10 pp [−0.92, +5.11], and
+     it costs in-pool strength (P −1.61 [−2.90, −0.32]); §6.3.
   4. **X41 / D3: set mutation.** Build it now on CPU; run it only on D1's verdict.
   5. **X53: a fresh wide run** (pool + forum teams from step 0) with a 100M look (≈ 21 GPU-h), if D1 reads NULL from
      plasticity or GAIN but short.
@@ -339,15 +341,17 @@ these halves are unfamiliar only to P\*'s lineage.
 D1's design, readout and rule are the diversity doc's §4.2 (`main.x35.d1`). Its primary H IS goal (b)'s statistic
 taken as ON − OFF.
 
-**Look 1 READ 2026-10-23: CONTINUE** (`x35_breakers_stage_2026-10-17/d1_read/`, record `reads/d1_look1.json`).
-D1 s3501–s3503 ran at D1's own pin `440b61c3` (AM-D1-FIX), all K9(b) PASS.
-- **H = +2.78 pp [−1.12, +6.67]** (2,520 games against Kakuna): D1 0.506 [0.479, 0.534] vs C0 0.479 [0.451, 0.506].
-  Seeds +4.3 / 0.0 / +4.0. Panels forum72 +4.0, H +2.4, P72 +1.9 (each n.d.). UNDECIDED with Δ̂ > 0, so CONTINUE.
-- **P = −1.30 pp [−4.54, +1.93]** on home72 in-house (inferiority not excluded). Guards not read (H non-qualifying).
-- **For goal (b):** the point estimate is about two thirds of the ≈ 4 pp gap, but D1's own LB (0.479) is far below
-  0.50, and even a resolved +2.8 would leave D1 short alone. D3 (set mutation) stays queued on D1's verdict; X53 (the
-  fresh wide run) waits for it too.
-- **Next:** look 2 = D1 and C0 at s3504–s3505 (≈ 4 × 4.3 GPU-h at their pins), final at 5 seeds.
+**Look 2 (FINAL) READ 2026-10-24: UNDECIDED** (`x35_breakers_stage_2026-10-17/d1_read/`, record
+`reads/d1_look2.json`). D1 s3501–s3505 at D1's pin `440b61c3` (AM-D1-FIX), C0 s3501–s3505, all K9(b) PASS.
+- **H = +2.10 pp [−0.92, +5.11]** (4,200 games against Kakuna): D1 0.492 [0.471, 0.513] vs C0 0.471 [0.450, 0.492].
+  Seeds +4.3 / 0.0 / +4.0 / 0.0 / +2.1 (3 of 5 up). Panels forum72 +4.0, H +2.1, P72 +0.1 (each n.d.): the gain, if
+  any, is on D1's own (forum) population. Not GAIN (LB < 0), not NULL (UB > +3): UNDECIDED at the final look.
+- **P = −1.61 pp [−2.90, −0.32]** on home72 in-house: a COST, wholly below 0, inferiority vs −2.0 not excluded. Guards
+  not read (H non-qualifying).
+- **For goal (b):** D1's own score is 0.492, LB 0.471 < 0.50. The point gain is about half the ≈ 4 pp gap, unresolved,
+  and paid for with ≈ 1.6 pp in-pool. D1 alone does not reach (b). Look 1 (3 seeds) had read +2.78 [−1.12, +6.67].
+- **Next:** none of §6's D1 triggers fired as written (D3 "on D1's verdict"; X53 "if NULL from plasticity or GAIN but
+  short"), so whether D3 or X53 runs is the orchestrator's ruling (FINDING 11).
 
 ### 6.4 X41 / D3 — build now, run on D1's verdict
 
@@ -475,6 +479,9 @@ with the interval named in the registration.
    immaterial at this resolution.
 10. This unit played no game, used no GPU, and wrote nothing under `models/` or `data/`. It read Metamon's checkout
     and upstream's `pretrained.py` read-only.
+11. **D1's final UNDECIDED matches none of §6's written triggers.** D3 was to run "on D1's verdict" and X53 "if D1
+    reads NULL from plasticity or GAIN but short". The final is neither: +2.10 pp [−0.92, +5.11] with a −1.61 pp
+    in-pool cost (§6.3). Whether D3, X53 or neither runs next is an orchestrator ruling, not this doc's.
 
 ---
 
@@ -490,4 +497,5 @@ with the interval named in the registration.
 | 2026-10-22 | **X52 REGISTERED and STAGED** (design worker; CPU only) | 72 forum tier-A teams drawn and split 36 / 36 (`x52_practice_ceiling_2026-10-22/`); the fork is C0's argv + `--trainee-teams <practised 36>` at the production pin `f4b25238`, +5M, s3501–s3502, ≈ 2.2 GPU-h, after G1 and before D1; the read is 600 games per (model, half) against Kakuna; predictions practised +5, unpractised 0 (X35 sheet §0 AM-X52) | the first draft's `--team-mix w_practice36_v1:0.5` (its corpus is code, so it needs a new pin, not C0's); 200 games a cell (±8.5 pp, wider than the predicted effect); practising on goal (b)'s own panels (that trains on the meter) | §6.2; X35 sheet §0 |
 | 2026-10-23 | **X52 READ: UNDECIDED** (anchor worker; CPU, 4,200 games, reverse cells at the production pin `f4b25238`) | practised Δ +3.2 pp [−0.2, +6.8], unpractised +1.3 [−3.5, +6.1] (pooled seeds − P\*, team-clustered); no rule held, so D1 proceeds as staged; §0 and §6.2 quote it | a third seed or more games to resolve it (not registered; a new registration if wanted); reading +3.2 as familiarity shown (its LB is below 0) | `x52_practice_ceiling_2026-10-22/read/` |
 | 2026-10-23 | **D1 LOOK 1 READ: CONTINUE** (readout worker; CPU, 2,520 Kakuna games + 21,000 in-house pairs) | H +2.78 pp [−1.12, +6.67], P −1.30 [−4.54, +1.93]; guards not read; look 2 (s3504–s3505, both arms) decides; §0 status and §6.3 quote it; §6.3's schedule ask is retired (D1 ran) | reading +2.78 as a breadth gain (its LB is below 0); skipping look 2 for D3 / X53 | `x35_breakers_stage_2026-10-17/d1_read/` |
+| 2026-10-24 | **D1 LOOK 2 (FINAL) READ: UNDECIDED** (readout worker; CPU, 4,200 Kakuna games + 35,000 in-house pairs; look 1's rows reused) | H +2.10 pp [−0.92, +5.11] (D1 0.492, LB 0.471), P −1.61 [−2.90, −0.32]; guards not read; goal (b) not met by D1; §0, §6.3 quote it; D3 / X53's trigger left to the orchestrator (FINDING 11) | reading +2.10 as a breadth gain (LB < 0); calling the final UNDECIDED a NULL (its UB is +5.1) | `x35_breakers_stage_2026-10-17/d1_read/` |
 | 2026-10-20 | Expected pp per lever | quoted from measured effects where they exist (X37b's 100M → 280M transfer; L1's search null; FACE_c), GUESS elsewhere, with the arithmetic that (b) needs +6–8 pp | single-number promises | §1, §5 |

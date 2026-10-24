@@ -1,0 +1,264 @@
+{
+ "arm": "X38",
+ "guards": {
+  "G-C": {
+   "detail": {},
+   "guard": "G-C",
+   "near_boundary": [],
+   "reasons": [
+    "not read: H is non-qualifying (UNDECIDED at the FINAL look, not a GAIN), so registered guard semantics cannot change the verdict"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-E": {
+   "detail": {},
+   "guard": "G-E",
+   "near_boundary": [],
+   "reasons": [
+    "not read: H is non-qualifying (UNDECIDED at the FINAL look, not a GAIN), so registered guard semantics cannot change the verdict"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-F": {
+   "detail": {},
+   "guard": "G-F",
+   "near_boundary": [],
+   "reasons": [
+    "not read: H is non-qualifying (UNDECIDED at the FINAL look, not a GAIN), so registered guard semantics cannot change the verdict"
+   ],
+   "status": "INCONCLUSIVE"
+  }
+ },
+ "h": {
+  "ci95_pp": [
+   -0.9235215506514793,
+   5.108591907960052
+  ],
+  "ci95_unwidened_pp": [
+   -0.9235215506514793,
+   5.108591907960052
+  ],
+  "class": "UNDECIDED",
+  "delta_pp": 2.0952380952380945,
+  "final": true,
+  "look": 2,
+  "near_boundary": [],
+  "off": {
+   "mean": 0.47095238095238096,
+   "n_eff": 2101.955077489827,
+   "per_panel": {
+    "forum72": [
+     342,
+     700
+    ],
+    "heldout72_hpfix": [
+     316,
+     700
+    ],
+    "p72": [
+     331,
+     700
+    ]
+   },
+   "var": 0.00011853547133138969,
+   "wilson95": [
+    0.44968586587197507,
+    0.4923248751533133
+   ]
+  },
+  "on": {
+   "mean": 0.4919047619047619,
+   "n_eff": 2105.6662527462036,
+   "per_panel": {
+    "forum72": [
+     370,
+     700
+    ],
+    "heldout72_hpfix": [
+     331,
+     700
+    ],
+    "p72": [
+     332,
+     700
+    ]
+   },
+   "var": 0.00011869614512471654,
+   "wilson95": [
+    0.4705855810669284,
+    0.5132534259472603
+   ]
+  },
+  "outcome": "UNDECIDED",
+  "overdispersion": {
+   "df": 8,
+   "half_width_factor": 1.0,
+   "phi_hat": 0.7704053883810678,
+   "ratio_off": 0.6981657543455306,
+   "ratio_on": 0.8426450224166049
+  },
+  "per_panel_reported": {
+   "forum72": {
+    "ci95_pp": [
+     -1.2344245662260216,
+     9.203559395456622
+    ],
+    "delta_pp": 4.0000000000000036,
+    "off": [
+     342,
+     700
+    ],
+    "on": [
+     370,
+     700
+    ],
+    "role": "X38's own population (Smogon forum), unseen teams: a gain here alone = 'learned the population'"
+   },
+   "heldout72_hpfix": {
+    "ci95_pp": [
+     -3.073247660349904,
+     7.342517337298283
+    ],
+    "delta_pp": 2.1428571428571463,
+    "off": [
+     316,
+     700
+    ],
+    "on": [
+     331,
+     700
+    ],
+    "role": "a population X38 does not train on (ladder replays, HP repaired)"
+   },
+   "p72": {
+    "ci95_pp": [
+     -5.074374332683875,
+     5.358989047653407
+    ],
+    "delta_pp": 0.14285714285714457,
+    "off": [
+     331,
+     700
+    ],
+    "on": [
+     332,
+     700
+    ],
+    "role": "a population X38 does not train on (procedural, MATERIALLY WEAKER, F-DV-20)"
+   }
+  },
+  "positive_seeds": 3,
+  "reasons": [],
+  "seed_deltas_pp": {
+   "3501": 4.285714285714276,
+   "3502": 0.0,
+   "3503": 4.04761904761905,
+   "3504": 0.0,
+   "3505": 2.1428571428571406
+  },
+  "sign_ok": true,
+  "sign_rule": ">= 3 of 5"
+ },
+ "inputs": {
+  "assembled": "d1_read/read_look2_input.json (d1_read/assemble.py --look 2)",
+  "finals_sha256_prefix": {
+   "c0_s3501": "09a6a2df4850",
+   "c0_s3502": "7e9a9890e2b3",
+   "c0_s3503": "99096be8eccf",
+   "c0_s3504": "26835480f068",
+   "c0_s3505": "bb10cd96b4c5",
+   "d1_s3501": "3d5c9d45ce36",
+   "d1_s3502": "dc3d5cd7d60a",
+   "d1_s3503": "30e4e79a38d8",
+   "d1_s3504": "fdaf6daa66a3",
+   "d1_s3505": "2e36697e57bb"
+  },
+  "h": "python -m main.x35.kakuna d1h --on D1 --off C0 over ~/gen3ai_archive/x35_d1_read/h_{a,b,c} (look 1, reused) + h_d (C0 s3504, D1 s3504-s3505) + h_e (C0 s3505); 7 units x 20 games x 3 panels per final, unit seeds 0-6, 210 / 210 units counted",
+  "p": "python -m main.x35.d1 p-input on ~/gen3ai_archive/x35_d1_read/p/ledger, family x35_d1_p_2026-10-23, requests d1p_look1_b100 (s3501-s3503, reused) + d1p_look2_b100 (s3504-s3505), merged; home72 panel team_set ts:08142ee8b0c18e8a, regime d4de0fd7c16a2658 for both requests, 7 members x 500 mirrored pairs"
+ },
+ "look": 2,
+ "p": {
+  "bar_pp": -2.0,
+  "class": "INFERIORITY-NOT-EXCLUDED",
+  "look": 2,
+  "near_boundary": [],
+  "reasons": [],
+  "stat": {
+   "ci_pp": [
+    -2.9021434447399255,
+    -0.32071369811721184
+   ],
+   "confidence": 0.975,
+   "delta_pp": -1.6114285714285685,
+   "df": 5.394192546309811,
+   "mean_off_pp": 56.997142857142855,
+   "mean_on_pp": 55.385714285714286,
+   "n_off": 5,
+   "n_on": 5,
+   "q": 3.075568986871314,
+   "se_pp": 0.4196670205809179,
+   "var_off": 0.1342755102040816,
+   "var_on": 0.7463265306122414
+  }
+ },
+ "reasons": [
+  "H is not a GAIN"
+ ],
+ "reported": {
+  "dose": {
+   "read": false,
+   "why": "absent by design (reported only, never decides); see ../dose/"
+  },
+  "goal_b": {
+   "bar": "LB > 0.50",
+   "c0": [
+    0.47095238095238096,
+    0.44968586587197507,
+    0.4923248751533133
+   ],
+   "d1": [
+    0.4919047619047619,
+    0.4705855810669284,
+    0.5132534259472603
+   ],
+   "met": false,
+   "statistic": "D1's H score (equal-weight mean of the three panel win rates, Kish n_eff, Wilson 95 %)"
+  },
+  "kakuna_in_pool": {
+   "read": false,
+   "why": "G-K home72 / away is REPORTED with no rule for D1; not played in this read"
+  },
+  "pool_s_r1_style": {
+   "off": {
+    "3501": 57.52142857142858,
+    "3502": 56.6,
+    "3503": 56.81428571428571
+   },
+   "on": {
+    "3501": 54.614285714285714,
+    "3502": 55.885714285714286,
+    "3503": 55.82142857142857
+   },
+   "source": "D1: d1_read/d1s_read.py (family x35_d1_s_2026-10-23); C0: g1/results.json; regime adfdbee824c9eb0a, 7 members x 500 mirrored pairs; LOOK 1's 3 seeds only: not played for s3504-s3505 (reported, no rule)",
+   "welch975": {
+    "ci_pp": [
+     -3.414079954835577,
+     0.3378894786450868
+    ],
+    "confidence": 0.975,
+    "delta_pp": -1.538095238095245,
+    "df": 3.5039931300987743,
+    "mean_off_pp": 56.97857142857143,
+    "mean_on_pp": 55.44047619047618,
+    "n_off": 3,
+    "n_on": 3,
+    "q": 3.7633363445170227,
+    "se_pp": 0.49848978273588007,
+    "var_off": 0.23250000000000454,
+    "var_on": 0.5129761904761903
+   }
+  }
+ },
+ "ruling": "orchestrator A1 ruling applied as at look 1: guards recorded 'not read' because the primary H is non-qualifying",
+ "verdict": "UNDECIDED"
+}

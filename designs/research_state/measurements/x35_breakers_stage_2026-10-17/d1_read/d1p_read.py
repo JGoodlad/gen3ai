@@ -1,5 +1,5 @@
-"""X35 D1's CO-PRIMARY P (``main.x35.d1``, ``design_diversity_teams_opponents.md`` §4.2): S of each of the six
-finals (C0 and D1 at s3501-s3503) against the FROZEN R, mirrored pairs on the REGISTERED ``home72`` panel
+"""X35 D1's CO-PRIMARY P (``main.x35.d1``, ``design_diversity_teams_opponents.md`` §4.2): S of each final (C0 and
+D1 at s3501-s3503 for look 1, request ``d1p_look1_b100``; s3504-s3505 added for look 2, ``d1p_look2_b100``) against the FROZEN R, mirrored pairs on the REGISTERED ``home72`` panel
 (``main.h2h play-many --panel home72``, B-D7), ONE request for the look (``python -m main.x35.d1 p-input`` reads one).
 This file is ``d1s_read.py`` (itself ``../g1/g1_read.py``, the pool-ground S REPORTED beside P) with ONLY the finals,
 the family / request / log names, the ``--panel home72`` flag and the read's output changed.
@@ -57,14 +57,21 @@ LENGTH = 20_000_000
 #: (label, arm, seed, run), in the order they are played (the five finals ready at the start first)
 FINALS = (("c0_s3501", "c0", "3501", "rb_x35_c0_s3501"), ("d1_s3501", "d1", "3501", "rb_x35_d1wide_s3501"),
           ("c0_s3502", "c0", "3502", "rb_x35_c0_s3502"), ("c0_s3503", "c0", "3503", "rb_x35_c0_s3503"),
-          ("d1_s3502", "d1", "3502", "rb_x35_d1wide_s3502"), ("d1_s3503", "d1", "3503", "rb_x35_d1wide_s3503"))
+          ("d1_s3502", "d1", "3502", "rb_x35_d1wide_s3502"), ("d1_s3503", "d1", "3503", "rb_x35_d1wide_s3503"),
+          # LOOK 2 (the registered final, 5 seeds per arm): only the four new finals are played, in the same family
+          # and regime, under the look-2 request; look 1's rows are reused as they stand
+          ("c0_s3504", "c0", "3504", "rb_x35_c0_s3504"), ("d1_s3504", "d1", "3504", "rb_x35_d1wide_s3504"),
+          ("d1_s3505", "d1", "3505", "rb_x35_d1wide_s3505"), ("c0_s3505", "c0", "3505", "rb_x35_c0_s3505"))
+#: the look each final is first read at (its request); look 1's six were played under ``d1p_look1_b100``
+LOOK2 = frozenset({"c0_s3504", "d1_s3504", "d1_s3505", "c0_s3505"})
 PANEL = "home72"
 POLL_S = 300
 UNIT_TIME_UP = PR.UNIT_TIME_UP
 
 
 def req_id(label: str) -> str:
-    return f"d1p_look1_b{BATCH_PAIRS}"  # ONE request for the look (p-input)
+    """The request a final's rows are under: ONE per look (``p-input`` reads one; look 2 merges the two)."""
+    return f"d1p_look{2 if label in LOOK2 else 1}_b{BATCH_PAIRS}"
 
 
 def _log(msg: str) -> None:
@@ -125,6 +132,12 @@ def cmd_run(a: argparse.Namespace) -> int:
         st["stop_epoch"] = time.time() + 3600.0 * a.hours
         st["stop_iso"] = time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(st["stop_epoch"]))
         st["refpop_content_sha256"] = refpop()["content_sha256"]
+        PR._save_state(cache, st)
+    elif st["stop_epoch"] <= time.time() and "look1_stop_epoch" not in st:
+        # look 2 resumes look 1's state (same family, R, members): look 1's stop is kept as history, a new one set
+        st["look1_stop_epoch"], st["look1_stop_iso"] = st["stop_epoch"], st["stop_iso"]
+        st["stop_epoch"] = time.time() + 3600.0 * a.hours
+        st["stop_iso"] = time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(st["stop_epoch"]))
         PR._save_state(cache, st)
     _log(f"registered stop {st['stop_iso']}; R content {st['refpop_content_sha256'][:12]}")
     py = sys.executable

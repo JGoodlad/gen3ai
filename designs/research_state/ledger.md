@@ -28468,3 +28468,29 @@ our network or with a human model as the judge, the opponent-choice route stays 
 
 Evidence: `research_state/measurements/x50_r1b_hom_2026-10-23/` (README §R-b2, `rb2_read.json`, `rb2_run.py`,
 `rb2_read.py`); the rows `/home/goodlad/gen3ai_archive/x50_r1b/rb2_rows.jsonl`.
+### 2026-10-24 · MEASUREMENT · **X35 D1 LOOK 2 (FINAL) reads UNDECIDED: widening the pool with 1,981 forum teams moves the Kakuna unfamiliar-panel score by +2.10 pp [−0.92, +5.11] (neither GAIN nor NULL) and costs in-house home72 S −1.61 pp [−2.90, −0.32] (P inferiority not excluded); guards not read; goal (b) not met (D1 0.492, LB 0.471)**
+
+**Question** (diversity doc §4.2, `main.x35.d1`; X35 launch sheet P4, D1-CORPUS, AM-D1-FIX). As look 1: does training
+on half forum teams (both sides) improve piloting unseen teams against Kakuna without costing in-pool strength? Look 2
+is the registered final at 5 seeds per arm.
+
+**Design.** As look 1, adding D1 s3504–s3505 (D1's pin `440b61c3`) and C0 s3504–s3505 (production pin), all K9(b)
+PASS. Only the four new finals were played: H in Kakuna states `h_d` / `h_e`, P under request `d1p_look2_b100` in look
+1's family and regime (`d4de0fd7c16a2658`); look 1's rows reused. Sign rule 3 of 5.
+
+**Result.** 210 / 210 Kakuna units counted; every P cell at 500 pairs.
+
+| | D1 | C0 | D1 − C0 | class |
+|---|---|---|---|---|
+| H | 0.492 [0.471, 0.513] | 0.471 [0.450, 0.492] | **+2.10 [−0.92, +5.11]** (φ̂ 0.77, not widened) | UNDECIDED (final) |
+| P (home72 S, pp) | 54.51 / 56.09 / 56.51 / 54.98 / 54.84 | 56.78 / 57.39 / 56.86 / 57.38 / 56.58 | **−1.61 [−2.90, −0.32]** | inferiority not excluded |
+
+- H per seed +4.3 / 0.0 / +4.0 / 0.0 / +2.1 (3 of 5 positive); per panel forum72 +4.0 [−1.2, +9.2], heldout72_hpfix
+  +2.1 [−3.1, +7.3], p72 +0.1 [−5.1, +5.4].
+- Verdict **UNDECIDED** (H not a GAIN). Guards G-F / G-E / G-C not read (H non-qualifying, the A1 ruling); G-K, dose
+  and the pool S at s3504–s3505 not read (reported only).
+- Goal (b) not met by D1 (LB 0.471 ≤ 0.50). P's interval lies wholly below 0: the widening costs ≈ 1.6 pp in-pool.
+
+**Evidence:** `research_state/measurements/x35_breakers_stage_2026-10-17/d1_read/` (README, drivers,
+`read_look2_input.json`), `reads/d1_look2.json`; raw ledgers and units in `~/gen3ai_archive/x35_d1_read/`.
+`UNDERSTANDING.md` (Kakuna block), `design_beat_metamon_path.md` §0 / §6.3 / FINDING 11.

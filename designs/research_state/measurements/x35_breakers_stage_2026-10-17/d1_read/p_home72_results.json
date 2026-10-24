@@ -277,12 +277,196 @@
    "sha256": "30e4e79a38d83c6066c37ddc93e1807135f6acfcb70b59ede0e3e589a0296aec",
    "source": "/home/goodlad/dev/gen3ai/models/rb_x35_d1wide_s3503/final_model.zip",
    "step": 300062078
+  },
+  {
+   "arm": "c0",
+   "ci95_pp": [
+    56.29171864189632,
+    58.465424215246536
+   ],
+   "inconclusive": [],
+   "label": "c0_s3504",
+   "n_pairs": {
+    "production": 500,
+    "tstar": 500,
+    "x26_080m": 500,
+    "x26_140m": 500,
+    "x26_210m": 500,
+    "x26_270m": 500,
+    "x26_pstar": 500
+   },
+   "per_member_pp": {
+    "production": 71.0,
+    "tstar": 59.050000000000004,
+    "x26_080m": 60.45,
+    "x26_140m": 55.7,
+    "x26_210m": 52.2,
+    "x26_270m": 51.24999999999999,
+    "x26_pstar": 52.0
+   },
+   "per_member_se_pp": {
+    "production": 1.425833089811006,
+    "tstar": 1.4225663429169129,
+    "x26_080m": 1.4812477848084702,
+    "x26_140m": 1.5116282611806384,
+    "x26_210m": 1.4526940489999949,
+    "x26_270m": 1.4997916521970645,
+    "x26_pstar": 1.4737706741552432
+   },
+   "regime_ids": [
+    ""
+   ],
+   "run": "rb_x35_c0_s3504",
+   "s_pp": 57.378571428571426,
+   "se_pp": 0.5545269173275689,
+   "seed": "3504",
+   "sha256": "26835480f06840020880b3dd0e4de0558d9677ff1529360b99994dcf1dfa5fae",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3504/final_model.zip",
+   "step": 300062191
+  },
+  {
+   "arm": "d1",
+   "ci95_pp": [
+    53.88989198545847,
+    56.0672508716844
+   ],
+   "inconclusive": [],
+   "label": "d1_s3504",
+   "n_pairs": {
+    "production": 500,
+    "tstar": 500,
+    "x26_080m": 500,
+    "x26_140m": 500,
+    "x26_210m": 500,
+    "x26_270m": 500,
+    "x26_pstar": 500
+   },
+   "per_member_pp": {
+    "production": 71.3,
+    "tstar": 58.15,
+    "x26_080m": 57.3,
+    "x26_140m": 53.2,
+    "x26_210m": 48.0,
+    "x26_270m": 49.5,
+    "x26_pstar": 47.4
+   },
+   "per_member_se_pp": {
+    "production": 1.4169050779780556,
+    "tstar": 1.4610458582809782,
+    "x26_080m": 1.4657489553126073,
+    "x26_140m": 1.481391237992179,
+    "x26_210m": 1.5238110119040353,
+    "x26_270m": 1.4210911300827966,
+    "x26_pstar": 1.5137635218223486
+   },
+   "regime_ids": [
+    ""
+   ],
+   "run": "rb_x35_d1wide_s3504",
+   "s_pp": 54.978571428571435,
+   "se_pp": 0.5554589020231242,
+   "seed": "3504",
+   "sha256": "fdaf6daa66a31c1559b034763d711607de652c4f693be91eaaef49e5e9eaf645",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_d1wide_s3504/final_model.zip",
+   "step": 300060820
+  },
+  {
+   "arm": "d1",
+   "ci95_pp": [
+    53.74059806664786,
+    55.930830504780715
+   ],
+   "inconclusive": [],
+   "label": "d1_s3505",
+   "n_pairs": {
+    "production": 500,
+    "tstar": 500,
+    "x26_080m": 500,
+    "x26_140m": 500,
+    "x26_210m": 500,
+    "x26_270m": 500,
+    "x26_pstar": 500
+   },
+   "per_member_pp": {
+    "production": 72.39999999999999,
+    "tstar": 55.7,
+    "x26_080m": 54.300000000000004,
+    "x26_140m": 51.7,
+    "x26_210m": 51.4,
+    "x26_270m": 48.449999999999996,
+    "x26_pstar": 49.9
+   },
+   "per_member_se_pp": {
+    "production": 1.3807534175224772,
+    "tstar": 1.562056337012209,
+    "x26_080m": 1.4993398547360768,
+    "x26_140m": 1.4711288182888675,
+    "x26_210m": 1.47006122321487,
+    "x26_270m": 1.4891927343362912,
+    "x26_pstar": 1.469687041515982
+   },
+   "regime_ids": [
+    ""
+   ],
+   "run": "rb_x35_d1wide_s3505",
+   "s_pp": 54.83571428571429,
+   "se_pp": 0.5587430317330176,
+   "seed": "3505",
+   "sha256": "2e36697e57bb0facf81cad5dd79ff8bd606ac81d0ea2a8b3398e65d6ab4f2450",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_d1wide_s3505/final_model.zip",
+   "step": 300061809
+  },
+  {
+   "arm": "c0",
+   "ci95_pp": [
+    55.4981778010607,
+    57.65896505608216
+   ],
+   "inconclusive": [],
+   "label": "c0_s3505",
+   "n_pairs": {
+    "production": 500,
+    "tstar": 500,
+    "x26_080m": 500,
+    "x26_140m": 500,
+    "x26_210m": 500,
+    "x26_270m": 500,
+    "x26_pstar": 500
+   },
+   "per_member_pp": {
+    "production": 73.5,
+    "tstar": 60.85,
+    "x26_080m": 56.49999999999999,
+    "x26_140m": 54.300000000000004,
+    "x26_210m": 52.65,
+    "x26_270m": 49.05,
+    "x26_pstar": 49.2
+   },
+   "per_member_se_pp": {
+    "production": 1.3078608488673404,
+    "tstar": 1.5106472122901495,
+    "x26_080m": 1.4749576265099957,
+    "x26_140m": 1.463905734670098,
+    "x26_210m": 1.4994849115613,
+    "x26_270m": 1.4935511373903474,
+    "x26_pstar": 1.4486959653426248
+   },
+   "regime_ids": [
+    ""
+   ],
+   "run": "rb_x35_c0_s3505",
+   "s_pp": 56.57857142857143,
+   "se_pp": 0.5512313674022581,
+   "seed": "3505",
+   "sha256": "bb10cd96b4c5f7e79fcc8256884685053c2ac3c142f6a14c996f809e0b2626a0",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_c0_s3505/final_model.zip",
+   "step": 300062098
   }
  ],
- "mean_meas_se_pp": 0.5528952859980917,
+ "mean_meas_se_pp": 0.5537367310797964,
  "pairs_per_cell": 500,
  "refpop": "reference_population_production.json",
  "refpop_content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519",
  "regime": "main.h2h play-many, greedy vs greedy, mirrored pairs, home72 panel (--panel home72), cpu, torch_threads 1",
- "stop_iso": "2026-10-23T21:28:43-0700"
+ "stop_iso": "2026-10-24T17:16:11-0700"
 }

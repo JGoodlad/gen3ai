@@ -76,6 +76,8 @@ def test_the_unit_argv_is_rule_5b_wrapped_and_greedy_from_the_root():
     a = KA.unit_argv(u, Path("/o"), 9541, py="PY")
     assert a[:6] == ["nice", "-n", "19", "taskset", "-c", "5-7,13-15"] and a[6].endswith("scripts/ops/mem_cap.sh")
     i = a.index("PY")
+    assert a[a.index("--max-s") + 1] == str(KA.UNIT_MAX_S) and a.index("--max-s") < i   # the SHORT lane (mem_cap's)
+    assert 0 < KA.UNIT_MAX_S <= 600
     tail = a[i:]
     for flag, val in (("--regime", "greedy"), ("--teamset", "away"), ("--team-seed", "4"), ("--seed-base", "4"),
                       ("--device", "cpu"), ("--port", "9541"), ("--opponent", "metamon:Kakuna")):
@@ -87,6 +89,21 @@ def test_the_unit_argv_is_rule_5b_wrapped_and_greedy_from_the_root():
 def test_the_port_is_a_free_95xx_one():
     p = KA.choose_port()
     assert KA.PORT_RANGE[0] <= p <= KA.PORT_RANGE[1]
+
+
+def test_two_supervisors_never_claim_the_same_port(tmp_path):
+    """D1 look 1's collision: two supervisors both bind-and-released 9540. A held claim excludes the port for every
+    other claimant until it is closed; a closed claim frees it again."""
+    p1, f1 = KA.claim_port(lock_dir=tmp_path)
+    p2, f2 = KA.claim_port(lock_dir=tmp_path)
+    try:
+        assert p1 != p2 and KA.PORT_RANGE[0] <= min(p1, p2) and max(p1, p2) <= KA.PORT_RANGE[1]
+    finally:
+        f2.close()
+    f1.close()
+    import fcntl
+    with open(tmp_path / f"{p1}.lock", "w") as fh:   # the closed claim is free again
+        fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
 
 
 def test_the_stop_epoch_must_be_absolute_and_bounded():

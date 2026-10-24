@@ -96,6 +96,12 @@ UNIT_GAMES = 20
 CORES = "5-7,13-15"
 MEM_GB = "12"
 PORT_RANGE = (9540, 9599)
+#: Every supervisor's port claims (one ``<port>.lock`` flock per port, held for the unit's life): two supervisors
+#: never pick the same port, which bind-and-release alone could not promise (D1 look 1's 9540 collision).
+PORT_LOCK_DIR = Path.home() / ".claude" / "jobs" / "x35_kakuna_ports"
+#: A unit DECLARES the heavy slots' SHORT LANE (``mem_cap.sh --max-s``): it plays in 2-5 min, so it need not wait
+#: out the 40-min S chunks ahead of it (D1 look 1's starvation). An overrun (exit 88) is an uncounted attempt.
+UNIT_MAX_S = 600
 MANIFEST_SCHEMA = "x35_home72_manifest_v1"
 MAX_ATTEMPTS = 2
 
@@ -233,6 +239,28 @@ def choose_port(lo: int = PORT_RANGE[0], hi: int = PORT_RANGE[1]) -> int:
     raise KakunaError(f"no free port in {lo}-{hi}")
 
 
+def claim_port(lo: int = PORT_RANGE[0], hi: int = PORT_RANGE[1], lock_dir: Path = PORT_LOCK_DIR) -> Tuple[int, Any]:
+    """``(port, held lock file)``: the first 95xx port no OTHER supervisor has claimed (an exclusive flock on
+    ``<lock_dir>/<port>.lock``) and nobody holds (bound and released at once). The caller keeps the file open until
+    its unit ends; closing it releases the claim."""
+    lock_dir.mkdir(parents=True, exist_ok=True)
+    for p in range(lo, hi + 1):
+        fh = open(lock_dir / f"{p}.lock", "w")  # noqa: SIM115 - held for the unit's life by the caller
+        try:
+            fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            fh.close()
+            continue
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(("0.0.0.0", p))
+            except OSError:
+                fh.close()
+                continue
+        return p, fh
+    raise KakunaError(f"no free, unclaimed port in {lo}-{hi}")
+
+
 def config_of(teamset: str) -> Path:
     """The anchors config a unit on ``teamset`` runs under (:data:`CONFIG` for home72 / away)."""
     return PANEL_CELLS[teamset].path if teamset in PANEL_CELLS else CONFIG
@@ -253,7 +281,7 @@ def unit_argv(u: Unit, out: Path, port: int, py: str = sys.executable) -> List[s
         # It changes no stamp and no play (the seed comes from --seed-base); home72 / away units are unchanged.
         a += ["--capture-dir", str(out / "capture")]
     return ["nice", "-n", "19", "taskset", "-c", CORES, str(repo_path("scripts/ops/mem_cap.sh")), "--name",
-            "x35kakuna", MEM_GB, *a]
+            "x35kakuna", "--max-s", str(UNIT_MAX_S), MEM_GB, *a]
 
 
 def unit_env(base: Optional[Mapping[str, str]] = None, config: Path = CONFIG) -> Dict[str, str]:
@@ -333,16 +361,20 @@ def run_unit(state: Path, u: Unit) -> int:
     out = state / "cells" / u.name
     if out.exists():
         out.rename(out.with_name(f"{u.name}.partial.{int(time.time())}"))
-    port = choose_port()
-    argv = unit_argv(u, out, port)
-    _jl(state, {"event": "start", "unit": u.name, "port": port, "argv": argv, "load": os.getloadavg()})
-    (state / "logs").mkdir(parents=True, exist_ok=True)
-    t0 = time.time()
-    with open(state / "logs" / f"{u.name}.log", "ab") as log:
-        proc = subprocess.Popen(argv, cwd=str(repo_root()), env=unit_env(config=config_of(u.teamset)), stdout=log, stderr=subprocess.STDOUT,
-                                stdin=subprocess.DEVNULL, start_new_session=True)
-        _jl(state, {"event": "pid", "unit": u.name, "pid": proc.pid})
-        rc = proc.wait()
+    port, claim = claim_port()
+    try:
+        argv = unit_argv(u, out, port)
+        _jl(state, {"event": "start", "unit": u.name, "port": port, "argv": argv, "load": os.getloadavg()})
+        (state / "logs").mkdir(parents=True, exist_ok=True)
+        t0 = time.time()
+        with open(state / "logs" / f"{u.name}.log", "ab") as log:
+            proc = subprocess.Popen(argv, cwd=str(repo_root()), env=unit_env(config=config_of(u.teamset)),
+                                    stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                                    start_new_session=True)
+            _jl(state, {"event": "pid", "unit": u.name, "pid": proc.pid})
+            rc = proc.wait()
+    finally:
+        claim.close()
     _jl(state, {"event": "end", "unit": u.name, "rc": rc, "counted": is_done(state, u),
                 "wall_s": round(time.time() - t0, 1)})
     return rc
