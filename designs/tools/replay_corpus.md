@@ -8,7 +8,9 @@ to 2026-09-23 12:07 PDT (listed in `SPECTATOR_MANIFEST_2026-09-23.txt` in the co
 🚨 **It is NOT under `data/`.** `data/replays/` is an EMPTY directory (nothing tracked, nothing written since 2026-05-12); the corpus lives under the
 main checkout's top-level `replays/`. Root rule 6 (no `data/` change while a pinned run is live) is therefore not touched by any replay write.
 
-## Status (2026-10-20; replace this section when the state changes)
+## Status (2026-10-24; replace this section when the state changes)
+
+**BACKFILL DONE 2026-10-21 06:47 UTC** (`BACKFILL_DONE.json` in the corpus root: all three phases, 3,652 replays written); every date folder through 2026-10-24 exists and `gen3ai-replay-daily.timer` keeps it growing. The history below is the 2026-10-20 restart.
 
 **RESTARTED 2026-10-20 from the public replay ARCHIVE, through the owner's SOCKS5 proxy (owner: "Sure use the proxy for replay download",
 2026-10-20; download only, no play, login or chat), supervised by systemd user units (§ Supervision).** The backfill runs the weeks since the
