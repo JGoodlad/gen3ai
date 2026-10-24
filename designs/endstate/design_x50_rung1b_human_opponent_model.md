@@ -140,7 +140,11 @@ requests, so each decision's request is a REAL one, synthesised as the simulator
   recharge) lists that move alone, as the real request did. The lock is read off the decision's own window and
   handed to the prefix guard as an input, like the team;
 - the own stream's private lines a spectator log lacks: the own Pressure announce (`[silent]`) and Struggle's
-  `-activate`.
+  `-activate`;
+- **Mimic's slot swap** (R0 FINDING 1's 14 refusals; built 2026-10-23 before the training-date extraction): gen 3
+  takes gen 4's `onHit`, so the copied move sits in Mimic's slot (PP min(5, base), max PP with Mimic's 3 PP Ups, no
+  target) until the mon leaves, and the label maps onto it. All 14 refused held-out seats now complete. A mimicked
+  Hidden Power (the user's type) is not modelled and refuses, counted.
 
 Every public line naming an own mon is fed with its HP exact: the MIDDLE integer of the percent display's preimage
 (±1 HP on a 3-wide preimage; F-1b-9). **The fidelity gate:** with the trainee's TRUE team and the own stream's

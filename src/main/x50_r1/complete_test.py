@@ -181,3 +181,19 @@ def test_a_seat_with_no_smogon_prior_is_excluded_not_guessed(completer):
     facts = C.SeatFacts("p1", 1, [C.OwnSeen("Pidgey", "pidgey", "M", 100, ["gust"])])
     with pytest.raises(C.CompletionError, match="no Smogon prior"):
         completer.team(facts, C.seat_rng("x", "p1", 0))
+
+
+def test_a_mimic_seat_completes_and_its_copied_move_is_a_legal_label(reader):
+    """R0 FINDING 1's class (all 14 refusals): Blissey mimics Spikes and uses it three times. Before the slot swap
+    the synthesised request still listed Mimic and the reader refused the seat (``Error with move mimic``)."""
+    import collections
+
+    from main.x50_r1 import run
+
+    log = DATA / "human_mimic_2679271755.log"
+    lines = battle_lines(log.read_text())
+    counts: collections.Counter = collections.Counter()
+    cr = run.completed_seat(reader, lines, "p1", E.player_info(lines)["p1"]["name"], str(log), counts)
+    assert cr is not None and counts["c_seats"] == 1, dict(counts)
+    used = [k for k, a in enumerate(cr.own_action) if a >= 0 and cr.read.tokens[k].get(a) == "move spikes"]
+    assert len(used) == 3 and all('"id":"spikes"' in cr.requests[k] for k in used)

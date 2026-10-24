@@ -174,3 +174,30 @@ def test_an_unknown_own_mon_is_a_refusal_but_a_side_token_is_not_a_mon():
     _feed(t, "|-sidestart|p1: me|Spikes")
     with pytest.raises(O.OwnError):
         _feed(t, "|switch|p1a: Mewtwo|Mewtwo|100/100")
+
+
+MIMIC_TEAM = ("Blissey||leftovers|naturalcure|softboiled,icebeam,mimic,seismictoss|Bold|252,,252,,4,|||||]"
+              "Skarmory||leftovers|keeneye|spikes,whirlwind,drillpeck,rest|Impish|252,,252,,4,|||||")
+
+
+def test_mimic_swaps_its_slot_for_the_copied_move_until_the_mon_leaves():
+    """R0 FINDING 1 (the 14 refusals): gen 3's Mimic (gen 4's ``onHit``) puts the copied move in Mimic's slot,
+    PP min(5, base) and max PP with 3 PP Ups, for as long as the mon stays in; the request lists it there and the
+    own-action label maps onto it. Fails on revert (the request would still list Mimic)."""
+    t = O.OwnTracker("p1", "me", O.parse_team(MIMIC_TEAM))
+    _feed(t, "|switch|p1a: Blissey|Blissey, F|100/100", "|switch|p2a: Foe|Skarmory, M|100/100",
+          "|move|p1a: Blissey|Mimic|p2a: Foe", "|-activate|p1a: Blissey|move: Mimic|Spikes")
+    r = _req(t)
+    mv = r["active"][0]["moves"]
+    assert [m["id"] for m in mv] == ["softboiled", "icebeam", "spikes", "seismictoss"]
+    assert (mv[2]["move"], mv[2]["pp"], mv[2]["maxpp"]) == ("Spikes", 5, 32) and "target" not in mv[2]
+    assert r["side"]["pokemon"][0]["moves"] == ["softboiled", "icebeam", "spikes", "seismictoss"]
+    _feed(t, "|move|p1a: Blissey|Spikes|p2a: Foe")
+    assert _req(t)["active"][0]["moves"][2]["pp"] == 4
+    acts = O.viewer_actions(["|move|p1a: Blissey|Spikes|p2a: Foe"], "p1", [(0, "turn")])
+    tokens = {6: "move softboiled", 7: "move icebeam", 8: "move spikes", 9: "move seismictoss"}
+    assert O.action_index(acts[0], tokens, [0] * 6 + [1] * 4 + [0], t.mons["Blissey"].moves) == 8
+    # it leaves: Mimic's own slot returns with Mimic's own PP (one use: 15 of 16)
+    _feed(t, "|switch|p1a: Skarmory|Skarmory|100/100", "|switch|p1a: Blissey|Blissey, F|100/100")
+    mv = _req(t)["active"][0]["moves"]
+    assert (mv[2]["id"], mv[2]["pp"], mv[2]["maxpp"]) == ("mimic", 15, 16) and mv[2]["target"] == "normal"

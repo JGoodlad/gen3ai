@@ -1,0 +1,1183 @@
+|init|battle
+|title|JohnnycageMk11 vs. GraniteFerret
+|j|☆JohnnycageMk11
+|j|☆GraniteFerret
+|t:|1789126728
+|gametype|singles
+|player|p1|JohnnycageMk11|fisherman-gen4|1427
+|player|p2|GraniteFerret|2|1319
+|gen|3
+|tier|[Gen 3] OU
+|rated|
+|rule|HP Percentage Mod: HP is shown in percentages
+|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+|rule|Endless Battle Clause: Forcing endless battles is banned
+|rule|Sleep Clause Mod: Limit one foe put to sleep
+|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+|rule|Species Clause: Limit one of each Pokémon
+|rule|OHKO Clause: OHKO moves are banned
+|rule|Evasion Items Clause: Evasion items are banned
+|rule|Evasion Moves Clause: Evasion moves are banned
+|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+|rule|Freeze Clause Mod: Limit one foe frozen
+|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+|
+|t:|1789126728
+|teamsize|p1|6
+|teamsize|p2|6
+|start
+|switch|p1a: Tyranocif|Tyranitar, F, shiny|100/100
+|switch|p2a: Tyranitar|Tyranitar, M|100/100
+|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+|turn|1
+|inactive|Battle timer is ON: inactive players will automatically lose when time's up. (requested by GraniteFerret)
+|j| DedenneAppreciator
+|
+|t:|1789126743
+|switch|p1a: Swampert|Swampert, F, shiny|100/100
+|move|p2a: Tyranitar|Brick Break|p1a: Swampert
+|-damage|p1a: Swampert|85/100
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Swampert|92/100|[from] item: Leftovers
+|upkeep
+|turn|2
+|
+|t:|1789126749
+|move|p1a: Swampert|Protect|p1a: Swampert
+|-singleturn|p1a: Swampert|Protect
+|move|p2a: Tyranitar|Hidden Power|p1a: Swampert
+|-activate|p1a: Swampert|Protect
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Swampert|98/100|[from] item: Leftovers
+|upkeep
+|turn|3
+|
+|t:|1789126771
+|move|p2a: Tyranitar|Hidden Power|p1a: Swampert
+|-supereffective|p1a: Swampert
+|-damage|p1a: Swampert|26/100
+|move|p1a: Swampert|Surf|p2a: Tyranitar
+|-supereffective|p2a: Tyranitar
+|-damage|p2a: Tyranitar|10/100
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Swampert|32/100|[from] item: Leftovers
+|upkeep
+|turn|4
+|
+|t:|1789126776
+|move|p1a: Swampert|Protect|p1a: Swampert
+|-singleturn|p1a: Swampert|Protect
+|move|p2a: Tyranitar|Hidden Power|p1a: Swampert
+|-activate|p1a: Swampert|Protect
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Swampert|38/100|[from] item: Leftovers
+|upkeep
+|turn|5
+|
+|t:|1789126784
+|switch|p1a: Ectoplasma|Gengar, F, shiny|100/100
+|move|p2a: Tyranitar|Hidden Power|p1a: Ectoplasma
+|-resisted|p1a: Ectoplasma
+|-damage|p1a: Ectoplasma|88/100
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Ectoplasma|82/100|[from] Sandstorm
+|-heal|p1a: Ectoplasma|88/100|[from] item: Leftovers
+|upkeep
+|turn|6
+|
+|t:|1789126790
+|move|p1a: Ectoplasma|Ice Punch|p2a: Tyranitar
+|-damage|p2a: Tyranitar|0 fnt
+|faint|p2a: Tyranitar
+|
+|t:|1789126790
+|switch|p2a: Blissey|Blissey, F|100/100
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Ectoplasma|82/100|[from] Sandstorm
+|-damage|p2a: Blissey|94/100|[from] Sandstorm
+|-heal|p1a: Ectoplasma|88/100|[from] item: Leftovers
+|-heal|p2a: Blissey|100/100|[from] item: Leftovers
+|upkeep
+|turn|7
+|
+|t:|1789126802
+|switch|p1a: Swampert|Swampert, F, shiny|38/100
+|move|p2a: Blissey|Ice Beam|p1a: Swampert
+|-damage|p1a: Swampert|17/100
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p2a: Blissey|94/100|[from] Sandstorm
+|-heal|p1a: Swampert|23/100|[from] item: Leftovers
+|-heal|p2a: Blissey|100/100|[from] item: Leftovers
+|upkeep
+|turn|8
+|
+|t:|1789126809
+|move|p1a: Swampert|Protect|p1a: Swampert
+|-singleturn|p1a: Swampert|Protect
+|move|p2a: Blissey|Calm Mind|p2a: Blissey
+|-boost|p2a: Blissey|spa|1
+|-boost|p2a: Blissey|spd|1
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p2a: Blissey|94/100|[from] Sandstorm
+|-heal|p1a: Swampert|29/100|[from] item: Leftovers
+|-heal|p2a: Blissey|100/100|[from] item: Leftovers
+|upkeep
+|turn|9
+|
+|t:|1789126812
+|move|p1a: Swampert|Toxic|p2a: Blissey
+|-status|p2a: Blissey|tox
+|move|p2a: Blissey|Ice Beam|p1a: Swampert
+|-damage|p1a: Swampert|0 fnt
+|faint|p1a: Swampert
+|
+|t:|1789126822
+|switch|p1a: Tyranocif|Tyranitar, F, shiny|100/100
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p2a: Blissey|94/100 tox|[from] Sandstorm
+|-heal|p2a: Blissey|100/100 tox|[from] item: Leftovers
+|-damage|p2a: Blissey|94/100 tox|[from] psn
+|upkeep
+|turn|10
+|
+|t:|1789126826
+|move|p1a: Tyranocif|Substitute|p1a: Tyranocif
+|-start|p1a: Tyranocif|Substitute
+|-damage|p1a: Tyranocif|75/100
+|move|p2a: Blissey|Ice Beam|p1a: Tyranocif
+|-end|p1a: Tyranocif|Substitute
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p2a: Blissey|88/100 tox|[from] Sandstorm
+|-heal|p1a: Tyranocif|82/100|[from] item: Leftovers
+|-heal|p2a: Blissey|94/100 tox|[from] item: Leftovers
+|-damage|p2a: Blissey|82/100 tox|[from] psn
+|upkeep
+|turn|11
+|
+|t:|1789126834
+|-curestatus|p2a: Blissey|tox|[from] ability: Natural Cure|[silent]
+|switch|p2a: Flygon|Flygon, F|100/100
+|move|p1a: Tyranocif|Substitute|p1a: Tyranocif
+|-start|p1a: Tyranocif|Substitute
+|-damage|p1a: Tyranocif|57/100
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Tyranocif|63/100|[from] item: Leftovers
+|upkeep
+|turn|12
+|
+|t:|1789126839
+|-singleturn|p1a: Tyranocif|move: Focus Punch
+|move|p2a: Flygon|Earthquake|p1a: Tyranocif
+|-supereffective|p1a: Tyranocif
+|-end|p1a: Tyranocif|Substitute
+|move|p1a: Tyranocif|Focus Punch|p2a: Flygon
+|-damage|p2a: Flygon|67/100
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Flygon|74/100|[from] item: Leftovers
+|-heal|p1a: Tyranocif|69/100|[from] item: Leftovers
+|upkeep
+|turn|13
+|
+|t:|1789126849
+|switch|p1a: Ectoplasma|Gengar, F, shiny|88/100
+|move|p2a: Flygon|Earthquake|p1a: Ectoplasma
+|-immune|p1a: Ectoplasma
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Ectoplasma|82/100|[from] Sandstorm
+|-heal|p1a: Ectoplasma|88/100|[from] item: Leftovers
+|-heal|p2a: Flygon|80/100|[from] item: Leftovers
+|upkeep
+|turn|14
+|
+|t:|1789126855
+|switch|p2a: Blissey|Blissey, F|82/100
+|move|p1a: Ectoplasma|Ice Punch|p2a: Blissey
+|-damage|p2a: Blissey|73/100
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Ectoplasma|82/100|[from] Sandstorm
+|-damage|p2a: Blissey|67/100|[from] Sandstorm
+|-heal|p1a: Ectoplasma|88/100|[from] item: Leftovers
+|-heal|p2a: Blissey|73/100|[from] item: Leftovers
+|upkeep
+|turn|15
+|
+|t:|1789126871
+|move|p1a: Ectoplasma|Will-O-Wisp|p2a: Blissey
+|-status|p2a: Blissey|brn
+|move|p2a: Blissey|Ice Beam|p1a: Ectoplasma
+|-damage|p1a: Ectoplasma|61/100
+|-status|p1a: Ectoplasma|frz
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Ectoplasma|55/100 frz|[from] Sandstorm
+|-damage|p2a: Blissey|67/100 brn|[from] Sandstorm
+|-heal|p1a: Ectoplasma|61/100 frz|[from] item: Leftovers
+|-heal|p2a: Blissey|73/100 brn|[from] item: Leftovers
+|-damage|p2a: Blissey|61/100 brn|[from] brn
+|upkeep
+|turn|16
+|
+|t:|1789126881
+|switch|p1a: Tyranocif|Tyranitar, F, shiny|69/100
+|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+|-heal|p2a: Blissey|100/100 brn
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p2a: Blissey|94/100 brn|[from] Sandstorm
+|-heal|p1a: Tyranocif|75/100|[from] item: Leftovers
+|-heal|p2a: Blissey|100/100 brn|[from] item: Leftovers
+|-damage|p2a: Blissey|88/100 brn|[from] brn
+|upkeep
+|turn|17
+|
+|t:|1789126890
+|-singleturn|p1a: Tyranocif|move: Focus Punch
+|-curestatus|p2a: Blissey|brn|[from] ability: Natural Cure|[silent]
+|switch|p2a: Flygon|Flygon, F|80/100
+|move|p1a: Tyranocif|Focus Punch|p2a: Flygon
+|-damage|p2a: Flygon|48/100
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Flygon|54/100|[from] item: Leftovers
+|-heal|p1a: Tyranocif|81/100|[from] item: Leftovers
+|upkeep
+|turn|18
+|
+|t:|1789126898
+|switch|p1a: Ectoplasma|Gengar, F, shiny|61/100 frz
+|move|p2a: Flygon|Earthquake|p1a: Ectoplasma
+|-immune|p1a: Ectoplasma
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Ectoplasma|55/100 frz|[from] Sandstorm
+|-heal|p1a: Ectoplasma|61/100 frz|[from] item: Leftovers
+|-heal|p2a: Flygon|60/100|[from] item: Leftovers
+|upkeep
+|turn|19
+|
+|t:|1789126901
+|move|p2a: Flygon|Protect|p2a: Flygon
+|-singleturn|p2a: Flygon|Protect
+|cant|p1a: Ectoplasma|frz
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Ectoplasma|55/100 frz|[from] Sandstorm
+|-heal|p1a: Ectoplasma|61/100 frz|[from] item: Leftovers
+|-heal|p2a: Flygon|66/100|[from] item: Leftovers
+|upkeep
+|turn|20
+|
+|t:|1789126904
+|-curestatus|p1a: Ectoplasma|frz|[msg]
+|move|p1a: Ectoplasma|Ice Punch|p2a: Flygon
+|-supereffective|p2a: Flygon
+|-damage|p2a: Flygon|0 fnt
+|faint|p2a: Flygon
+|
+|t:|1789126904
+|switch|p2a: Gengar|Gengar, M|100/100
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p2a: Gengar|95/100|[from] Sandstorm
+|-damage|p1a: Ectoplasma|55/100|[from] Sandstorm
+|-heal|p2a: Gengar|100/100|[from] item: Leftovers
+|-heal|p1a: Ectoplasma|61/100|[from] item: Leftovers
+|upkeep
+|turn|21
+|
+|t:|1789126912
+|switch|p1a: Blissey|Blissey, F, shiny|100/100
+|move|p2a: Gengar|Thunderbolt|p1a: Blissey
+|-damage|p1a: Blissey|90/100
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p2a: Gengar|95/100|[from] Sandstorm
+|-damage|p1a: Blissey|83/100|[from] Sandstorm
+|-heal|p2a: Gengar|100/100|[from] item: Leftovers
+|-heal|p1a: Blissey|90/100|[from] item: Leftovers
+|upkeep
+|turn|22
+|
+|t:|1789126928
+|switch|p2a: Skarmory|Skarmory, F|100/100
+|move|p1a: Blissey|Ice Beam|p2a: Skarmory
+|-damage|p2a: Skarmory|76/100
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Blissey|83/100|[from] Sandstorm
+|-heal|p2a: Skarmory|82/100|[from] item: Leftovers
+|-heal|p1a: Blissey|90/100|[from] item: Leftovers
+|upkeep
+|turn|23
+|
+|t:|1789126934
+|move|p2a: Skarmory|Spikes|p1a: Blissey
+|-sidestart|p1: JohnnycageMk11|Spikes
+|move|p1a: Blissey|Mimic|p2a: Skarmory
+|-activate|p1a: Blissey|move: Mimic|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Blissey|83/100|[from] Sandstorm
+|-heal|p2a: Skarmory|88/100|[from] item: Leftovers
+|-heal|p1a: Blissey|90/100|[from] item: Leftovers
+|upkeep
+|turn|24
+|
+|t:|1789126937
+|move|p2a: Skarmory|Spikes|p1a: Blissey
+|-sidestart|p1: JohnnycageMk11|Spikes
+|move|p1a: Blissey|Spikes|p2a: Skarmory
+|-sidestart|p2: GraniteFerret|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Blissey|83/100|[from] Sandstorm
+|-heal|p2a: Skarmory|94/100|[from] item: Leftovers
+|-heal|p1a: Blissey|90/100|[from] item: Leftovers
+|upkeep
+|turn|25
+|
+|t:|1789126940
+|move|p2a: Skarmory|Spikes|p1a: Blissey
+|-sidestart|p1: JohnnycageMk11|Spikes
+|move|p1a: Blissey|Spikes|p2a: Skarmory
+|-sidestart|p2: GraniteFerret|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Blissey|83/100|[from] Sandstorm
+|-heal|p2a: Skarmory|99/100|[from] item: Leftovers
+|-heal|p1a: Blissey|90/100|[from] item: Leftovers
+|upkeep
+|turn|26
+|
+|t:|1789126943
+|move|p2a: Skarmory|Toxic|p1a: Blissey
+|-status|p1a: Blissey|tox
+|move|p1a: Blissey|Spikes|p2a: Skarmory
+|-sidestart|p2: GraniteFerret|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Blissey|83/100 tox|[from] Sandstorm
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|-heal|p1a: Blissey|90/100 tox|[from] item: Leftovers
+|-damage|p1a: Blissey|83/100 tox|[from] psn
+|upkeep
+|turn|27
+|
+|t:|1789126947
+|-curestatus|p1a: Blissey|tox|[from] ability: Natural Cure|[silent]
+|switch|p1a: Claydol|Claydol|100/100
+|move|p2a: Skarmory|Spikes||[still]
+|-fail|p2a: Skarmory
+|
+|-weather|Sandstorm|[upkeep]
+|upkeep
+|turn|28
+|
+|t:|1789126952
+|switch|p2a: Gengar|Gengar, M|100/100
+|move|p1a: Claydol|Shadow Ball|p2a: Gengar
+|-supereffective|p2a: Gengar
+|-damage|p2a: Gengar|48/100
+|-unboost|p2a: Gengar|spd|1
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p2a: Gengar|42/100|[from] Sandstorm
+|-heal|p2a: Gengar|48/100|[from] item: Leftovers
+|upkeep
+|turn|29
+|
+|t:|1789126955
+|move|p2a: Gengar|Will-O-Wisp|p1a: Claydol
+|-status|p1a: Claydol|brn
+|move|p1a: Claydol|Shadow Ball|p2a: Gengar
+|-supereffective|p2a: Gengar
+|-damage|p2a: Gengar|21/100
+|-unboost|p2a: Gengar|spd|1
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p2a: Gengar|15/100|[from] Sandstorm
+|-heal|p2a: Gengar|21/100|[from] item: Leftovers
+|-damage|p1a: Claydol|88/100 brn|[from] brn
+|upkeep
+|turn|30
+|
+|t:|1789126959
+|move|p2a: Gengar|Ice Punch|p1a: Claydol
+|-supereffective|p1a: Claydol
+|-damage|p1a: Claydol|52/100 brn
+|move|p1a: Claydol|Shadow Ball|p2a: Gengar
+|-supereffective|p2a: Gengar
+|-damage|p2a: Gengar|0 fnt
+|faint|p2a: Gengar
+|
+|t:|1789126959
+|switch|p2a: Skarmory|Skarmory, F|100/100
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Claydol|58/100 brn|[from] item: Leftovers
+|-damage|p1a: Claydol|46/100 brn|[from] brn
+|upkeep
+|turn|31
+|
+|t:|1789126966
+|move|p1a: Claydol|Refresh|p1a: Claydol
+|-curestatus|p1a: Claydol|brn|[msg]
+|move|p2a: Skarmory|Spikes||[still]
+|-fail|p2a: Skarmory
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Claydol|52/100|[from] item: Leftovers
+|upkeep
+|turn|32
+|
+|t:|1789126968
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Toxic|p1a: Claydol
+|-status|p1a: Claydol|tox
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Claydol|58/100 tox|[from] item: Leftovers
+|-damage|p1a: Claydol|52/100 tox|[from] psn
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|33
+|
+|t:|1789126972
+|move|p1a: Claydol|Refresh|p1a: Claydol
+|-curestatus|p1a: Claydol|tox|[msg]
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Claydol|58/100|[from] item: Leftovers
+|upkeep
+|turn|34
+|
+|t:|1789126977
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Claydol|64/100|[from] item: Leftovers
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|35
+|
+|t:|1789126979
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Claydol|71/100|[from] item: Leftovers
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|36
+|
+|t:|1789126982
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Claydol|77/100|[from] item: Leftovers
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|37
+|
+|t:|1789126985
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Claydol|83/100|[from] item: Leftovers
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|38
+|
+|t:|1789126987
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Claydol|89/100|[from] item: Leftovers
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|39
+|
+|t:|1789126993
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Claydol|95/100|[from] item: Leftovers
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|40
+|
+|t:|1789126995
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Claydol|100/100|[from] item: Leftovers
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|41
+|
+|t:|1789126997
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|42
+|
+|t:|1789127000
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|43
+|
+|t:|1789127002
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|44
+|
+|t:|1789127005
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|45
+|
+|t:|1789127010
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|46
+|
+|t:|1789127012
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|47
+|
+|t:|1789127015
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-crit|p2a: Skarmory
+|-damage|p2a: Skarmory|97/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|48
+|
+|t:|1789127018
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|49
+|
+|t:|1789127020
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|50
+|
+|t:|1789127024
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|51
+|
+|t:|1789127028
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|52
+|
+|t:|1789127031
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|53
+|
+|t:|1789127033
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|54
+|
+|t:|1789127035
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|55
+|
+|t:|1789127037
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|56
+|
+|t:|1789127039
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|57
+|
+|t:|1789127043
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|58
+|
+|t:|1789127046
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|59
+|
+|t:|1789127049
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Spikes|p1a: Claydol
+|-sidestart|p1: JohnnycageMk11|Spikes
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|60
+|
+|t:|1789127053
+|move|p1a: Claydol|Rapid Spin|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|99/100
+|-sideend|p1: JohnnycageMk11|Spikes|[from] move: Rapid Spin|[of] p1a: Claydol
+|move|p2a: Skarmory|Toxic|p1a: Claydol
+|-status|p1a: Claydol|tox
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Claydol|94/100 tox|[from] psn
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|61
+|
+|t:|1789127057
+|move|p1a: Claydol|Refresh|p1a: Claydol
+|-curestatus|p1a: Claydol|tox|[msg]
+|move|p2a: Skarmory|Toxic|p1a: Claydol
+|-status|p1a: Claydol|tox
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Claydol|100/100 tox|[from] item: Leftovers
+|-damage|p1a: Claydol|94/100 tox|[from] psn
+|upkeep
+|turn|62
+|
+|t:|1789127060
+|switch|p2a: Charizard|Charizard, F|100/100
+|move|p1a: Claydol|Refresh|p1a: Claydol
+|-curestatus|p1a: Claydol|tox|[msg]
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p2a: Charizard|94/100|[from] Sandstorm
+|-heal|p2a: Charizard|100/100|[from] item: Leftovers
+|-heal|p1a: Claydol|100/100|[from] item: Leftovers
+|upkeep
+|turn|63
+|
+|t:|1789127073
+|move|p2a: Charizard|Flamethrower|p1a: Claydol
+|-damage|p1a: Claydol|62/100
+|move|p1a: Claydol|Explosion|p2a: Charizard
+|-damage|p2a: Charizard|0 fnt
+|faint|p1a: Claydol
+|faint|p2a: Charizard
+|
+|t:|1789127081
+|switch|p2a: Skarmory|Skarmory, F|100/100
+|switch|p1a: Dugtrio|Dugtrio, F, shiny|100/100
+|
+|-weather|Sandstorm|[upkeep]
+|upkeep
+|turn|64
+|
+|t:|1789127087
+|switch|p1a: Tyranocif|Tyranitar, F, shiny|81/100
+|move|p2a: Skarmory|Toxic|p1a: Tyranocif
+|-status|p1a: Tyranocif|tox
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Tyranocif|88/100 tox|[from] item: Leftovers
+|-damage|p1a: Tyranocif|81/100 tox|[from] psn
+|upkeep
+|turn|65
+|
+|t:|1789127091
+|move|p1a: Tyranocif|Flamethrower|p2a: Skarmory
+|-supereffective|p2a: Skarmory
+|-damage|p2a: Skarmory|49/100
+|move|p2a: Skarmory|Roar|p1a: Tyranocif
+|drag|p1a: Blissey|Blissey, F, shiny|83/100
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Blissey|77/100|[from] Sandstorm
+|-heal|p2a: Skarmory|55/100|[from] item: Leftovers
+|-heal|p1a: Blissey|83/100|[from] item: Leftovers
+|upkeep
+|turn|66
+|
+|t:|1789127096
+|move|p2a: Skarmory|Toxic|p1a: Blissey
+|-status|p1a: Blissey|tox
+|move|p1a: Blissey|Seismic Toss|p2a: Skarmory
+|-damage|p2a: Skarmory|25/100
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Blissey|77/100 tox|[from] Sandstorm
+|-heal|p2a: Skarmory|31/100|[from] item: Leftovers
+|-heal|p1a: Blissey|83/100 tox|[from] item: Leftovers
+|-damage|p1a: Blissey|77/100 tox|[from] psn
+|upkeep
+|turn|67
+|
+|t:|1789127099
+|move|p2a: Skarmory|Protect|p2a: Skarmory
+|-singleturn|p2a: Skarmory|Protect
+|move|p1a: Blissey|Seismic Toss|p2a: Skarmory
+|-activate|p2a: Skarmory|Protect
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Blissey|71/100 tox|[from] Sandstorm
+|-heal|p2a: Skarmory|37/100|[from] item: Leftovers
+|-heal|p1a: Blissey|77/100 tox|[from] item: Leftovers
+|-damage|p1a: Blissey|65/100 tox|[from] psn
+|upkeep
+|turn|68
+|
+|t:|1789127102
+|move|p2a: Skarmory|Protect||[still]
+|-fail|p2a: Skarmory
+|move|p1a: Blissey|Seismic Toss|p2a: Skarmory
+|-damage|p2a: Skarmory|7/100
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Blissey|59/100 tox|[from] Sandstorm
+|-heal|p2a: Skarmory|13/100|[from] item: Leftovers
+|-heal|p1a: Blissey|65/100 tox|[from] item: Leftovers
+|-damage|p1a: Blissey|47/100 tox|[from] psn
+|upkeep
+|turn|69
+|
+|t:|1789127107
+|-curestatus|p1a: Blissey|tox|[from] ability: Natural Cure|[silent]
+|switch|p1a: Ectoplasma|Gengar, F, shiny|61/100
+|move|p2a: Skarmory|Protect||[still]
+|-fail|p2a: Skarmory
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Ectoplasma|55/100|[from] Sandstorm
+|-heal|p1a: Ectoplasma|61/100|[from] item: Leftovers
+|-heal|p2a: Skarmory|19/100|[from] item: Leftovers
+|upkeep
+|turn|70
+|
+|t:|1789127111
+|move|p2a: Skarmory|Protect|p2a: Skarmory
+|-singleturn|p2a: Skarmory|Protect
+|move|p1a: Ectoplasma|Ice Punch|p2a: Skarmory
+|-activate|p2a: Skarmory|Protect
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Ectoplasma|55/100|[from] Sandstorm
+|-heal|p1a: Ectoplasma|61/100|[from] item: Leftovers
+|-heal|p2a: Skarmory|25/100|[from] item: Leftovers
+|upkeep
+|turn|71
+|
+|t:|1789127113
+|switch|p2a: Blissey|Blissey, F|88/100
+|-damage|p2a: Blissey|63/100|[from] Spikes
+|move|p1a: Ectoplasma|Ice Punch|p2a: Blissey
+|-damage|p2a: Blissey|55/100
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Ectoplasma|55/100|[from] Sandstorm
+|-damage|p2a: Blissey|49/100|[from] Sandstorm
+|-heal|p1a: Ectoplasma|61/100|[from] item: Leftovers
+|-heal|p2a: Blissey|55/100|[from] item: Leftovers
+|upkeep
+|turn|72
+|
+|t:|1789127118
+|move|p1a: Ectoplasma|Explosion|p2a: Blissey
+|-damage|p2a: Blissey|0 fnt
+|faint|p1a: Ectoplasma
+|faint|p2a: Blissey
+|
+|t:|1789127122
+|switch|p1a: Blissey|Blissey, F, shiny|47/100
+|switch|p2a: Skarmory|Skarmory, F|25/100
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Blissey|41/100|[from] Sandstorm
+|-heal|p2a: Skarmory|31/100|[from] item: Leftovers
+|-heal|p1a: Blissey|47/100|[from] item: Leftovers
+|upkeep
+|turn|73
+|
+|t:|1789127127
+|move|p2a: Skarmory|Protect|p2a: Skarmory
+|-singleturn|p2a: Skarmory|Protect
+|move|p1a: Blissey|Soft-Boiled|p1a: Blissey
+|-heal|p1a: Blissey|97/100
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Blissey|91/100|[from] Sandstorm
+|-heal|p2a: Skarmory|37/100|[from] item: Leftovers
+|-heal|p1a: Blissey|97/100|[from] item: Leftovers
+|upkeep
+|turn|74
+|
+|t:|1789127134
+|switch|p1a: Dugtrio|Dugtrio, F, shiny|100/100
+|move|p2a: Skarmory|Protect||[still]
+|-fail|p2a: Skarmory
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|43/100|[from] item: Leftovers
+|upkeep
+|turn|75
+|
+|t:|1789127137
+|move|p2a: Skarmory|Protect|p2a: Skarmory
+|-singleturn|p2a: Skarmory|Protect
+|move|p1a: Dugtrio|Screech|p2a: Skarmory
+|-activate|p2a: Skarmory|Protect
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|49/100|[from] item: Leftovers
+|upkeep
+|turn|76
+|
+|t:|1789127140
+|move|p2a: Skarmory|Protect|p2a: Skarmory
+|-singleturn|p2a: Skarmory|Protect
+|move|p1a: Dugtrio|Screech|p2a: Skarmory
+|-activate|p2a: Skarmory|Protect
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|55/100|[from] item: Leftovers
+|upkeep
+|turn|77
+|
+|t:|1789127144
+|move|p2a: Skarmory|Protect||[still]
+|-fail|p2a: Skarmory
+|move|p1a: Dugtrio|Screech|p2a: Skarmory
+|-unboost|p2a: Skarmory|def|2
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|61/100|[from] item: Leftovers
+|upkeep
+|turn|78
+|
+|t:|1789127148
+|move|p2a: Skarmory|Protect|p2a: Skarmory
+|-singleturn|p2a: Skarmory|Protect
+|move|p1a: Dugtrio|Screech|p2a: Skarmory
+|-activate|p2a: Skarmory|Protect
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|67/100|[from] item: Leftovers
+|upkeep
+|turn|79
+|
+|t:|1789127150
+|move|p2a: Skarmory|Protect|p2a: Skarmory
+|-singleturn|p2a: Skarmory|Protect
+|move|p1a: Dugtrio|Screech|p2a: Skarmory
+|-activate|p2a: Skarmory|Protect
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|73/100|[from] item: Leftovers
+|upkeep
+|turn|80
+|
+|t:|1789127155
+|move|p2a: Skarmory|Protect|p2a: Skarmory
+|-singleturn|p2a: Skarmory|Protect
+|move|p1a: Dugtrio|Screech|p2a: Skarmory
+|-activate|p2a: Skarmory|Protect
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|79/100|[from] item: Leftovers
+|upkeep
+|turn|81
+|
+|t:|1789127158
+|move|p2a: Skarmory|Protect||[still]
+|-fail|p2a: Skarmory
+|move|p1a: Dugtrio|Screech|p2a: Skarmory
+|-unboost|p2a: Skarmory|def|2
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|85/100|[from] item: Leftovers
+|upkeep
+|turn|82
+|
+|t:|1789127161
+|move|p2a: Skarmory|Protect|p2a: Skarmory
+|-singleturn|p2a: Skarmory|Protect
+|move|p1a: Dugtrio|Screech|p2a: Skarmory
+|-activate|p2a: Skarmory|Protect
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|91/100|[from] item: Leftovers
+|upkeep
+|turn|83
+|
+|t:|1789127164
+|move|p2a: Skarmory|Protect|p2a: Skarmory
+|-singleturn|p2a: Skarmory|Protect
+|move|p1a: Dugtrio|Screech|p2a: Skarmory|[miss]
+|-miss|p1a: Dugtrio|p2a: Skarmory
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p2a: Skarmory|97/100|[from] item: Leftovers
+|upkeep
+|turn|84
+|
+|t:|1789127167
+|move|p1a: Dugtrio|Screech|p2a: Skarmory
+|-unboost|p2a: Skarmory|def|2
+|move|p2a: Skarmory|Toxic|p1a: Dugtrio
+|-status|p1a: Dugtrio|tox
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Dugtrio|94/100 tox|[from] psn
+|-heal|p2a: Skarmory|100/100|[from] item: Leftovers
+|upkeep
+|turn|85
+|
+|t:|1789127170
+|move|p2a: Skarmory|Protect|p2a: Skarmory
+|-singleturn|p2a: Skarmory|Protect
+|move|p1a: Dugtrio|Screech|p2a: Skarmory
+|-activate|p2a: Skarmory|Protect
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Dugtrio|82/100 tox|[from] psn
+|upkeep
+|turn|86
+|
+|t:|1789127173
+|move|p1a: Dugtrio|Screech|p2a: Skarmory
+|-unboost|p2a: Skarmory|def|0
+|move|p2a: Skarmory|Toxic|p1a: Dugtrio
+|-fail|p1a: Dugtrio|tox
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Dugtrio|64/100 tox|[from] psn
+|upkeep
+|turn|87
+|
+|t:|1789127181
+|switch|p1a: Tyranocif|Tyranitar, F, shiny|81/100 tox
+|move|p2a: Skarmory|Roar|p1a: Tyranocif
+|drag|p1a: Dugtrio|Dugtrio, F, shiny|64/100 tox
+|
+|-weather|Sandstorm|[upkeep]
+|-damage|p1a: Dugtrio|57/100 tox|[from] psn
+|upkeep
+|turn|88
+|
+|t:|1789127189
+|move|p1a: Dugtrio|Hidden Power|p2a: Skarmory
+|-resisted|p2a: Skarmory
+|-damage|p2a: Skarmory|79/100
+|move|p2a: Skarmory|Roar|p1a: Dugtrio
+|drag|p1a: Tyranocif|Tyranitar, F, shiny|81/100 tox
+|
+|-weather|Sandstorm|[upkeep]
+|-heal|p1a: Tyranocif|88/100 tox|[from] item: Leftovers
+|-damage|p1a: Tyranocif|81/100 tox|[from] psn
+|-heal|p2a: Skarmory|85/100|[from] item: Leftovers
+|upkeep
+|turn|89
+|
+|t:|1789127193
+|-singleturn|p1a: Tyranocif|move: Focus Punch
+|move|p1a: Tyranocif|Focus Punch|p2a: Skarmory
+|-damage|p2a: Skarmory|0 fnt
+|faint|p2a: Skarmory
+|
+|win|JohnnycageMk11

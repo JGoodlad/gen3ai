@@ -207,7 +207,7 @@ def read_completed(reader: LiveReader, lines: Sequence[str], seat: str, name: st
         if '"id":"struggle"' in req and trk.active:
             # the own stream's `-activate|…|move: Struggle` follows the choice (the next write's first line)
             carry = [f"|-activate|{seat}a: {trk.active}|move: Struggle"]
-        moves = trk.mons[trk.active].s.moves if trk.active else []
+        moves = trk.mons[trk.active].moves if trk.active else []      # Mimic's swap included
         out.own_action.append(O.action_index(acts[k], fr.tokens, fr.mask, moves))
         out.active.append(trk.active)
         out.choice_lock.append(trk.vol.choice if kind != FORCED else None)

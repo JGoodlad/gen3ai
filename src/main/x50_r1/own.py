@@ -168,6 +168,29 @@ class MonState:
     item: str = ""
     pp: List[int] = field(default_factory=list)
     maxpp: List[int] = field(default_factory=list)
+    #: MIMIC's slot swap while the mon stays in (gen 3 inherits gen 4's ``mimic.onHit``): the copied move sits in
+    #: Mimic's slot as a VIRTUAL move slot, ``pp`` min(5, its base PP), ``maxpp`` its PP with Mimic's 3 PP Ups;
+    #: [slot, move id, pp, maxpp]. Mimic's own slot (and its PP) returns when the mon leaves (``clearVolatile``).
+    mimic: Optional[List] = None
+
+    @property
+    def moves(self) -> List[str]:
+        """The CURRENT move slots (the copied move in Mimic's slot while it holds)."""
+        if self.mimic is None:
+            return self.s.moves
+        return [self.mimic[1] if i == self.mimic[0] else x for i, x in enumerate(self.s.moves)]
+
+    def pp_at(self, i: int) -> Tuple[int, int]:
+        """(pp, maxpp) of the current slot ``i``."""
+        if self.mimic is not None and i == self.mimic[0]:
+            return int(self.mimic[2]), int(self.mimic[3])
+        return self.pp[i], self.maxpp[i]
+
+    def spend(self, i: int, cost: int) -> None:
+        if self.mimic is not None and i == self.mimic[0]:
+            self.mimic[2] = max(0, int(self.mimic[2]) - cost)
+        else:
+            self.pp[i] = max(0, self.pp[i] - cost)
 
 
 @dataclass
@@ -334,7 +357,9 @@ class OwnTracker:
                 self.vol.trapped = False
         elif kind == "-activate" and len(p) > 3 and m.s.nick == self.active:
             eff = toid(p[3])
-            if eff in ("trapped", "movemeanlook", "movespiderweb", "moveblock"):
+            if eff == "movemimic" and len(p) > 4:
+                self._mimic(m, toid(p[4]))
+            elif eff in ("trapped", "movemeanlook", "movespiderweb", "moveblock"):
                 self.vol.trapped = True
             elif eff in ("movewrap", "movebind", "movefirespin", "moveclamp", "movewhirlpool", "movesandtomb"):
                 self.vol.trapped = True
@@ -362,7 +387,26 @@ class OwnTracker:
             return ab == "pressure"
         return float(priors.ability(sid).get("pressure", 0.0)) > 0.5
 
+    @staticmethod
+    def _mimic(m: MonState, copied: str) -> None:
+        """Mimic's slot swap (``MonState.mimic``). A copied Hidden Power would take the USER's type, which the
+        request names and the set's IVs carry; it is not modelled: :class:`OwnError` (the seat is refused, counted)."""
+        from agents.gen3_data import moves
+
+        i = next((j for j, x in enumerate(m.moves) if x == "mimic"), None)
+        if i is None:
+            raise OwnError(f"{m.s.nick} mimicked {copied!r} without Mimic in its current slots")
+        if copied == "hiddenpower":
+            raise OwnError(f"{m.s.nick} mimicked Hidden Power (the user's type is not modelled)")
+        raw = moves.raw().get(copied)
+        if raw is None:
+            raise OwnError(f"mimicked move {copied!r} has no data")
+        base = int(raw["pp"])
+        m.mimic = [i, copied, min(5, base), base if raw.get("noPPBoosts") else base * 8 // 5]
+
     def _switch_in(self, m: MonState) -> None:
+        if self.active is not None and self.active in self.mons:
+            self.mons[self.active].mimic = None      # the leaving mon's virtual slot ends (``clearVolatile``)
         if self.active is not None and self.active != m.s.nick:
             i, j = self.order.index(self.active), self.order.index(m.s.nick)
             self.order[i], self.order[j] = self.order[j], self.order[i]
@@ -385,15 +429,15 @@ class OwnTracker:
         if idx is None:
             return
         cost = 1
-        target = _move_row(m.s.moves[idx])[3]
+        target = _move_row(m.moves[idx])[3]
         if mid == "curse" and not self._ghost(m):
             target = "self"                     # a non-Ghost's Curse targets itself (no Pressure deduction)
         if self.foe_pressure and target not in SELF_TARGETS:
             cost = 2
-        m.pp[idx] = max(0, m.pp[idx] - cost)
-        self.vol.last_move = m.s.moves[idx]
+        m.spend(idx, cost)
+        self.vol.last_move = m.moves[idx]
         if m.item == "choiceband" and self.vol.choice is None:
-            self.vol.choice = m.s.moves[idx]
+            self.vol.choice = m.moves[idx]
 
     @staticmethod
     def _ghost(m: MonState) -> bool:
@@ -404,7 +448,7 @@ class OwnTracker:
 
     @staticmethod
     def _slot(m: MonState, mid: str) -> Optional[int]:
-        for i, x in enumerate(m.s.moves):
+        for i, x in enumerate(m.moves):
             if x == mid or (mid == "hiddenpower" and x.startswith("hiddenpower")):
                 return i
         return None
@@ -436,24 +480,28 @@ class OwnTracker:
                 i = self._slot(a, locked)
                 if i is None:
                     raise OwnError(f"{self.seat}: locked into {locked!r}, which {a.s.nick} does not hold")
-                name, rid, _, _ = _move_row(a.s.moves[i], a.s.happiness)
+                name, rid, _, _ = _move_row(a.moves[i], a.s.happiness)
                 one = {"move": name, "id": rid}
-                acts[f"move:{a.s.moves[i]}"] = 1
+                acts[f"move:{a.moves[i]}"] = 1
             req = {"active": [{"moves": [one], "trapped": True}], "side": side, "rqid": self.rqid}
             return "|request|" + json.dumps(req, separators=(",", ":"), ensure_ascii=False), acts
         moves = []
-        for i, mid in enumerate(a.s.moves):
+        for i, mid in enumerate(a.moves):
             name, rid, mx, target = _move_row(mid, a.s.happiness)
             dis = self._disabled(a, i, mid)
-            moves.append({"move": name, "id": rid, "pp": a.pp[i], "maxpp": a.maxpp[i], "target": target,
-                          "disabled": dis})
+            pp, maxpp = a.pp_at(i)
+            mv: Dict[str, object] = {"move": name, "id": rid, "pp": pp, "maxpp": maxpp, "target": target,
+                                     "disabled": dis}
+            if a.mimic is not None and i == a.mimic[0]:
+                del mv["target"]                 # the virtual slot carries no target (gen 4's onHit sets none)
+            moves.append(mv)
         if all(m["disabled"] for m in moves):
             moves = [{"move": "Struggle", "id": "struggle", "target": "randomNormal", "disabled": False}]
             acts["move:struggle"] = 1
         else:
             for i, m in enumerate(moves):
                 if not m["disabled"]:
-                    acts[f"move:{a.s.moves[i]}"] = i + 1
+                    acts[f"move:{a.moves[i]}"] = i + 1
         active: Dict[str, object] = {"moves": moves}
         trapped = self.vol.trapped
         if trapped:
@@ -465,7 +513,7 @@ class OwnTracker:
         return "|request|" + json.dumps(req, separators=(",", ":"), ensure_ascii=False), acts
 
     def _disabled(self, a: MonState, i: int, mid: str) -> bool:
-        if a.pp[i] <= 0:
+        if a.pp_at(i)[0] <= 0:
             return True
         v = self.vol
         if v.choice is not None and mid != v.choice:
@@ -504,7 +552,7 @@ class OwnTracker:
         return {"ident": f"{self.seat}: {m.s.nick}", "details": m.s.details, "condition": cond,
                 "active": m.s.nick == self.active,
                 "stats": {k: m.s.stats[k] for k in STATS[1:]},
-                "moves": [side_move_id(x, m.s.happiness) for x in m.s.moves],
+                "moves": [side_move_id(x, m.s.happiness) for x in m.moves],
                 "baseAbility": m.s.ability, "item": m.item, "pokeball": "pokeball"}
 
 
