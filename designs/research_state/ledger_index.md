@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-28,497-line file. **The ledger itself is append-only and is never edited by this**;
+28,535-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**935 headings · 880 dated · 2026-08-01 → 2026-10-24 · ledger 28,497 lines.**
+**936 headings · 881 dated · 2026-08-01 → 2026-10-24 · ledger 28,535 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -955,3 +955,4 @@ rename.
   - `L28403` · `2026-10-24` · MEASUREMENT · **X50 R-b1, READ under its registration (`42f1d9a7`): the HUMAN OPPONENT MODEL is LEARNED. On held-out humans (09-21..23, actor ≥ 1500), the HOM's NLL of the human's own choice is −0.582 nats [−0.599, −0.565] below P\*'s (bar: upper < −0.05): 1.148 vs 1.730; top-1 0.567 vs 0.460; voluntary switches −0.874**
   - `L28436` · `2026-10-24` · MEASUREMENT · **X50 R-b2, READ under its registration (`42f1d9a7`): HOM-NONE. With the human opponent model as search's opponent-choice judge, the off-pool bank's bot stratum ranks the truth above honest worlds at AUC 0.459 [0.406, 0.510] (NO-EVIDENCE; P\* 0.472), paired ΔAUC −0.013 [−0.068, +0.045]; the lever is CLOSED for search at P\***
   - `L28471` · `2026-10-24` · MEASUREMENT · **X35 D1 LOOK 2 (FINAL) reads UNDECIDED: widening the pool with 1,981 forum teams moves the Kakuna unfamiliar-panel score by +2.10 pp [−0.92, +5.11] (neither GAIN nor NULL) and costs in-house home72 S −1.61 pp [−2.90, −0.32] (P inferiority not excluded); guards not read; goal (b) not met (D1 0.492, LB 0.471)**
+  - `L28497` · `2026-10-24` · MEASUREMENT · **X35 SPRT LOOK 1 reads NULL, FINAL: SPRT promotion accepts 10 of 30 candidates (0.33, inside the registered [0.10, 0.90]), more than triples the promotions (10 vs 3) and lowers the pool age (60–68M vs 72M), but R1 is −0.25 pp [−1.65, +1.16]; the guards are not read; the dose is ×0.85 steps/s**

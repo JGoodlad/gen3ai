@@ -1860,6 +1860,23 @@ X26 nodes (the archive pool); C0 is the plain continuation. S is the population 
 
 [NULL · 3 + 3 seeds · ledger 2026-10-22 *X35 A1 LOOK 1* · `measurements/x35_breakers_stage_2026-10-17/reads/a1_look1.json`, `g1/`]
 
+### 4.11 A fresher pool via SPRT promotion: the lever acts, S does not move (X35 SPRT, 2026-10-24)
+
+The same frame as §4.10. SPRT admits each 2M-step snapshot to the pool only if it wins its own sequential test
+(H0 0.50 vs H1 0.55 on fresh mirrored pairs), replacing today's one-crossing-of-0.55 rule. C0's S values are G1's.
+- **The mechanism acted as predicted.** 10 of 30 candidates were accepted (0.33, inside the registered [0.10, 0.90]).
+  Promotions after the fork were 10 against C0's 3 (≥ 2×), and the final median pool age was 60 / 68 / 60M against
+  C0's 72M. The plateaued trainee's edge over its own pool is real but small (test scores 0.48–0.56). That falsifies
+  TM-1's "edge ≈ 0.50, so the pool stopped refreshing".
+- **R1: Δ −0.25 pp [−1.65, +1.16]** (Welch 97.5 %, 2.6 df), inside ±2 pp, so **NULL, FINAL at look 1**. Mean S:
+  SPRT 56.73, C0 56.98. The guards were not read (R1 does not qualify, ruling (a)).
+- **What it licenses.** It is the registered "high fraction, no S gain" branch: at P\* over 20M, **pool freshness
+  is not the binding constraint** on S. Together with A1 (§4.10), neither a fresher pool nor an older one moves S.
+- **Its cost.** The tests block collection: 1,199 vs 1,409 steps/s (×0.85), +14 % GPU-h. The memo estimated ≈ 11 s per
+  cycle; the measured cost was 205–263 s.
+
+[NULL · 3 + 3 seeds · ledger 2026-10-24 *X35 SPRT LOOK 1* · `measurements/x35_breakers_stage_2026-10-17/reads/sprt_look1.json`, `sprt_read/`]
+
 ## 5. Retired hypotheses
 
 Each is retired for the flywheel's gift question. None is retired as a general claim about RL.

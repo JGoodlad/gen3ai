@@ -28494,3 +28494,41 @@ PASS. Only the four new finals were played: H in Kakuna states `h_d` / `h_e`, P 
 **Evidence:** `research_state/measurements/x35_breakers_stage_2026-10-17/d1_read/` (README, drivers,
 `read_look2_input.json`), `reads/d1_look2.json`; raw ledgers and units in `~/gen3ai_archive/x35_d1_read/`.
 `UNDERSTANDING.md` (Kakuna block), `design_beat_metamon_path.md` §0 / §6.3 / FINDING 11.
+### 2026-10-24 · MEASUREMENT · **X35 SPRT LOOK 1 reads NULL, FINAL: SPRT promotion accepts 10 of 30 candidates (0.33, inside the registered [0.10, 0.90]), more than triples the promotions (10 vs 3) and lowers the pool age (60–68M vs 72M), but R1 is −0.25 pp [−1.65, +1.16]; the guards are not read; the dose is ×0.85 steps/s**
+
+**Question** (STAGED_PLAN §4.2, registered 2026-10-20 by AM-RP-f). Does admitting every eval-cycle snapshot that
+passes its own sequential test (pentanomial GSPRT, H0 0.50 vs H1 0.55, α = β = 0.05, cap 1,680 pairs) raise the
+population score S at the production plateau? The one lever is `--promotion-sprt`. Prediction: Δ 0.0 pp, 80 %
+[−1.0, +1.5]; accept fraction in [0.10, 0.90], against today's rule's 0.04–0.33.
+
+**Design.** SPRT s3501–s3503: P\* + 20M at pin `f4b25238`. The matched control is C0 s3501–s3503 at the same pin. The
+VOID guards were read at arm end: K9(b) PASS on each seed, V-S1 / V-S2 PASS on each (10 candidates, 10 decided,
+0 abandoned). S is read in G1's regime (`adfdbee824c9eb0a`): 7 members × 500 mirrored pairs, greedy, CPU. All 249
+SPRT ledger rows carry that regime; C0's S values are G1's, reused. The decision is `main.x35.readout.read`.
+
+**Result.**
+
+| | s3501 | s3502 | s3503 | mean |
+|---|---|---|---|---|
+| S, SPRT (pp) | 56.52 | 56.79 | 56.89 | 56.73 |
+| S, C0 (pp, G1) | 57.52 | 56.60 | 56.81 | 56.98 |
+| accepted / candidates | 4 / 10 | 2 / 10 | 4 / 10 | 10 / 30 |
+| N_prom SPRT / C0 | 4 / 1 | 2 / 1 | 4 / 1 | 10 / 3 |
+| median pool age at the final, SPRT / C0 (M) | 60.1 / 72.1 | 68.1 / 72.1 | 60.1 / 72.1 | |
+| steps/s SPRT / C0 | 1155 / 1384 | 1243 / 1418 | 1199 / 1424 | ×0.85 |
+
+- **R1 Δ −0.25 pp [−1.65, +1.16]** (Welch 97.5 %, df 2.6), inside ±2 pp: **NULL, FINAL at look 1**. It sits inside
+  the registered 80 % band.
+- **The mechanism matched its prediction.** The accept fraction was 0.33 and N_prom ≥ 2 × C0's (the iff holds). The
+  pool age fell below C0's, though C0's age of 72M is inside TM-3's 55–76M. Pairs per candidate: median 460, mean
+  549. One test hit the cap (a REJECT).
+- **Guards** G-F / G-C / G-K were not read: R1 is non-qualifying (ruling (a)). G-E is absent by design.
+- **Dose (reported):** 4.75 vs 4.16 GPU-h, +14 %, flagged as a confound by the readout's 10 % rule. The arms stop at
+  equal steps, so it does not bias S. Each seed's tests took 2,052–2,625 s of wall in total, against the memo's
+  ≈ 110 s.
+- **Reading** (the registered branch): a high fraction with no S gain says freshness is not the binding constraint.
+  TM-1's "edge ≈ 0.50" is falsified: the edge is small but positive.
+
+**Evidence:** `research_state/measurements/x35_breakers_stage_2026-10-17/sprt_read/` (README, `s_read.py`,
+`assemble.py`, `s_results.json`, `read_look1_input.json`), `reads/sprt_look1.json`; the raw ledger is
+`~/gen3ai_archive/x35_sprt_read/ledger` (family `x35_sprt_read_2026-10-24`). See `UNDERSTANDING.md` §4.11.

@@ -1,0 +1,365 @@
+{
+ "arm": "SPRT",
+ "guards": {
+  "G-C": {
+   "detail": {},
+   "guard": "G-C",
+   "near_boundary": [],
+   "reasons": [
+    "not read: R1 is non-qualifying (NULL), so registered guard semantics cannot change the class"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-E": {
+   "detail": {},
+   "guard": "G-E",
+   "near_boundary": [],
+   "reasons": [
+    "absent by design: the G-E readers launch only on an R1 GAIN"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-F": {
+   "detail": {},
+   "guard": "G-F",
+   "near_boundary": [],
+   "reasons": [
+    "not read: R1 is non-qualifying (NULL), so registered guard semantics cannot change the class"
+   ],
+   "status": "INCONCLUSIVE"
+  },
+  "G-K": {
+   "detail": {},
+   "guard": "G-K",
+   "near_boundary": [],
+   "reasons": [
+    "not read: R1 is non-qualifying (NULL), so registered guard semantics cannot change the class"
+   ],
+   "status": "INCONCLUSIVE"
+  }
+ },
+ "inputs": {
+  "k9b": {
+   "3501": "PASS",
+   "3502": "PASS",
+   "3503": "PASS"
+  },
+  "r1": {
+   "off": {
+    "3501": 57.52142857142858,
+    "3502": 56.6,
+    "3503": 56.81428571428571
+   },
+   "on": {
+    "3501": 56.521428571428565,
+    "3502": 56.792857142857144,
+    "3503": 56.885714285714286
+   },
+   "source": "SPRT: sprt_read/s_read.py (family x35_sprt_read_2026-10-24); C0: g1/results.json; regime adfdbee824c9eb0a, 7 members x 500 mirrored pairs"
+  },
+  "void": {
+   "3501": {
+    "detail": {
+     "abandoned": 0,
+     "abandoned_steps": [],
+     "candidates": 10,
+     "decided": 10,
+     "promoted": 4
+    },
+    "fires": [],
+    "guard": "SPRT V-S1/V-S2",
+    "near_bar": [],
+    "reasons": [],
+    "run": "rb_x35_sprt_s3501",
+    "schema": "x35_batch2_void_v1",
+    "verdict": "PASS"
+   },
+   "3502": {
+    "detail": {
+     "abandoned": 0,
+     "abandoned_steps": [],
+     "candidates": 10,
+     "decided": 10,
+     "promoted": 2
+    },
+    "fires": [],
+    "guard": "SPRT V-S1/V-S2",
+    "near_bar": [],
+    "reasons": [],
+    "run": "rb_x35_sprt_s3502",
+    "schema": "x35_batch2_void_v1",
+    "verdict": "PASS"
+   },
+   "3503": {
+    "detail": {
+     "abandoned": 0,
+     "abandoned_steps": [],
+     "candidates": 10,
+     "decided": 10,
+     "promoted": 4
+    },
+    "fires": [],
+    "guard": "SPRT V-S1/V-S2",
+    "near_bar": [],
+    "reasons": [],
+    "run": "rb_x35_sprt_s3503",
+    "schema": "x35_batch2_void_v1",
+    "verdict": "PASS"
+   }
+  }
+ },
+ "look": 1,
+ "r1": {
+  "class": "NULL",
+  "final": true,
+  "look": 1,
+  "near_boundary": [],
+  "outcome": "NULL",
+  "reasons": [],
+  "seeds": [
+   "3501",
+   "3502",
+   "3503"
+  ],
+  "stat": {
+   "ci_pp": [
+    -1.6475432114438102,
+    1.157067020967609
+   ],
+   "confidence": 0.975,
+   "delta_pp": -0.24523809523810058,
+   "df": 2.602183460911043,
+   "mean_off_pp": 56.97857142857143,
+   "mean_on_pp": 56.73333333333333,
+   "n_off": 3,
+   "n_on": 3,
+   "q": 4.688844531866289,
+   "se_pp": 0.29907264074877604,
+   "var_off": 0.23250000000000454,
+   "var_on": 0.03583333333333483
+  }
+ },
+ "r2": {
+  "falls": false,
+  "gap_diff": null,
+  "near_boundary": [],
+  "reasons": [
+   "no R2 read"
+  ]
+ },
+ "reasons": [
+  "R1 does not qualify"
+ ],
+ "reported": {
+  "dose": {
+   "confound": true,
+   "dose_off": 4.156333333333333,
+   "dose_on": 4.753666666666667,
+   "near": false,
+   "read": true,
+   "rel_gap": 0.14371641671344934
+  },
+  "dose_steps_per_s": {
+   "c0": [
+    1384,
+    1418,
+    1424
+   ],
+   "ratio_of_means": 0.8511594888783719,
+   "source": "../dose/<run>.json (launcher summary 'FPS'); reported, never decides",
+   "sprt": [
+    1155,
+    1243,
+    1199
+   ]
+  },
+  "mechanism": {
+   "accept_fraction": 0.3333333333333333,
+   "accept_fraction_in_band": true,
+   "accept_fraction_prediction": [
+    0.1,
+    0.9
+   ],
+   "accepted": 10,
+   "candidates": 30,
+   "capped": 1,
+   "how": "accept fraction / pairs from each seed's sprt_promotion.jsonl verdict lines; N_prom and age from the final's snapshots/ (steps > the fork 280,000,170; age = final step - snapshot step, median)",
+   "median_pool_age_m": {
+    "c0": [
+     72.06191,
+     72.061775,
+     72.061461
+    ],
+    "sprt": [
+     60.060925000000005,
+     68.06113450000001,
+     60.061796
+    ]
+   },
+   "n_prom_ge_2x_c0": true,
+   "n_prom_pooled": {
+    "c0": 3,
+    "sprt": 10
+   },
+   "pairs_per_candidate_mean": 549.3333333333334,
+   "pairs_per_candidate_median": 460.0,
+   "per_seed": {
+    "3501": {
+     "c0": {
+      "median_age_m": 72.06191,
+      "n_prom": 1,
+      "n_snapshots": 15
+     },
+     "sprt": {
+      "accepted": 4,
+      "candidates": 10,
+      "median_age_m": 60.060925000000005,
+      "n_prom": 4,
+      "n_snapshots": 18,
+      "pairs": [
+       160,
+       1680,
+       800,
+       520,
+       640,
+       240,
+       320,
+       400,
+       360,
+       1000
+      ],
+      "stops": [
+       "bound",
+       "cap",
+       "bound",
+       "bound",
+       "bound",
+       "bound",
+       "bound",
+       "bound",
+       "bound",
+       "bound"
+      ],
+      "test_scores": [
+       0.475,
+       0.526339,
+       0.516563,
+       0.510577,
+       0.535937,
+       0.554167,
+       0.497656,
+       0.541875,
+       0.545139,
+       0.51625
+      ],
+      "test_wall_s": 2625.3
+     }
+    },
+    "3502": {
+     "c0": {
+      "median_age_m": 72.061775,
+      "n_prom": 1,
+      "n_snapshots": 15
+     },
+     "sprt": {
+      "accepted": 2,
+      "candidates": 10,
+      "median_age_m": 68.06113450000001,
+      "n_prom": 2,
+      "n_snapshots": 16,
+      "pairs": [
+       400,
+       200,
+       480,
+       800,
+       240,
+       240,
+       760,
+       240,
+       1080,
+       1080
+      ],
+      "stops": [
+       "bound",
+       "bound",
+       "bound",
+       "bound",
+       "bound",
+       "bound",
+       "bound",
+       "bound",
+       "bound",
+       "bound"
+      ],
+      "test_scores": [
+       0.50875,
+       0.56125,
+       0.50625,
+       0.516563,
+       0.496875,
+       0.496875,
+       0.536513,
+       0.4875,
+       0.517824,
+       0.518519
+      ],
+      "test_wall_s": 2053.0
+     }
+    },
+    "3503": {
+     "c0": {
+      "median_age_m": 72.061461,
+      "n_prom": 1,
+      "n_snapshots": 15
+     },
+     "sprt": {
+      "accepted": 4,
+      "candidates": 10,
+      "median_age_m": 60.061796,
+      "n_prom": 4,
+      "n_snapshots": 18,
+      "pairs": [
+       440,
+       320,
+       440,
+       480,
+       600,
+       440,
+       760,
+       480,
+       520,
+       360
+      ],
+      "stops": [
+       "bound",
+       "bound",
+       "bound",
+       "bound",
+       "bound",
+       "bound",
+       "bound",
+       "bound",
+       "bound",
+       "bound"
+      ],
+      "test_scores": [
+       0.504545,
+       0.494531,
+       0.539205,
+       0.510938,
+       0.511667,
+       0.539773,
+       0.539474,
+       0.511458,
+       0.538462,
+       0.50625
+      ],
+      "test_wall_s": 2051.9
+     }
+    }
+   }
+  }
+ },
+ "ruling": "guards gate only a qualifying R1 (the orchestrator's A1 ruling (a)); R1 is non-qualifying, so G-F / G-C / G-K are not read and G-E is absent by design",
+ "verdict": "NULL"
+}

@@ -1,0 +1,154 @@
+{
+ "batch_pairs": 100,
+ "c0_from": {
+  "family": "x35_g1_2026-10-22",
+  "file": "g1/results.json",
+  "refpop_content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519"
+ },
+ "family": "x35_sprt_read_2026-10-24",
+ "finals": [
+  {
+   "arm": "sprt",
+   "ci95_pp": [
+    55.444486132859616,
+    57.598371009997514
+   ],
+   "inconclusive": [],
+   "label": "sprt_s3501",
+   "n_pairs": {
+    "production": 500,
+    "tstar": 500,
+    "x26_080m": 500,
+    "x26_140m": 500,
+    "x26_210m": 500,
+    "x26_270m": 500,
+    "x26_pstar": 500
+   },
+   "per_member_pp": {
+    "production": 73.45,
+    "tstar": 58.5,
+    "x26_080m": 57.35,
+    "x26_140m": 52.2,
+    "x26_210m": 50.349999999999994,
+    "x26_270m": 49.85,
+    "x26_pstar": 53.949999999999996
+   },
+   "per_member_se_pp": {
+    "production": 1.3314259273425615,
+    "tstar": 1.438923208513922,
+    "x26_080m": 1.4981505264825694,
+    "x26_140m": 1.4388606603837635,
+    "x26_210m": 1.4923990753146426,
+    "x26_270m": 1.5272377025204689,
+    "x26_pstar": 1.4409354600397617
+   },
+   "regime_ids": [
+    ""
+   ],
+   "run": "rb_x35_sprt_s3501",
+   "s_pp": 56.521428571428565,
+   "se_pp": 0.5494705243621874,
+   "seed": "3501",
+   "sha256": "972121743d3d321d43cad0f7a4fd17f27eefb692ddc3a6830566be4bc4bcbe21",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_sprt_s3501/final_model.zip",
+   "step": 300061026
+  },
+  {
+   "arm": "sprt",
+   "ci95_pp": [
+    55.71267977615407,
+    57.87303450956022
+   ],
+   "inconclusive": [],
+   "label": "sprt_s3502",
+   "n_pairs": {
+    "production": 500,
+    "tstar": 500,
+    "x26_080m": 500,
+    "x26_140m": 500,
+    "x26_210m": 500,
+    "x26_270m": 500,
+    "x26_pstar": 500
+   },
+   "per_member_pp": {
+    "production": 71.0,
+    "tstar": 59.050000000000004,
+    "x26_080m": 56.25,
+    "x26_140m": 55.50000000000001,
+    "x26_210m": 52.300000000000004,
+    "x26_270m": 53.5,
+    "x26_pstar": 49.95
+   },
+   "per_member_se_pp": {
+    "production": 1.3538833036861042,
+    "tstar": 1.506218775609971,
+    "x26_080m": 1.4367933045501011,
+    "x26_140m": 1.424605208470052,
+    "x26_210m": 1.4626756304799777,
+    "x26_270m": 1.4850925897061098,
+    "x26_pstar": 1.530521153071724
+   },
+   "regime_ids": [
+    ""
+   ],
+   "run": "rb_x35_sprt_s3502",
+   "s_pp": 56.792857142857144,
+   "se_pp": 0.5511210282280128,
+   "seed": "3502",
+   "sha256": "f1eb9d9605bbae92527793fd73642997670f1a34f6ab82fce9726f1f48865453",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_sprt_s3502/final_model.zip",
+   "step": 300061227
+  },
+  {
+   "arm": "sprt",
+   "ci95_pp": [
+    55.79808725495869,
+    57.973341316469885
+   ],
+   "inconclusive": [],
+   "label": "sprt_s3503",
+   "n_pairs": {
+    "production": 500,
+    "tstar": 500,
+    "x26_080m": 500,
+    "x26_140m": 500,
+    "x26_210m": 500,
+    "x26_270m": 500,
+    "x26_pstar": 500
+   },
+   "per_member_pp": {
+    "production": 73.45,
+    "tstar": 59.85,
+    "x26_080m": 58.099999999999994,
+    "x26_140m": 54.2,
+    "x26_210m": 52.25,
+    "x26_270m": 50.5,
+    "x26_pstar": 49.85
+   },
+   "per_member_se_pp": {
+    "production": 1.3684644679347724,
+    "tstar": 1.492801058413344,
+    "x26_080m": 1.484513388285872,
+    "x26_140m": 1.4438559484934776,
+    "x26_210m": 1.4991247446426865,
+    "x26_270m": 1.5147607071745688,
+    "x26_pstar": 1.4688277638988176
+   },
+   "regime_ids": [
+    ""
+   ],
+   "run": "rb_x35_sprt_s3503",
+   "s_pp": 56.885714285714286,
+   "se_pp": 0.5549219470762882,
+   "seed": "3503",
+   "sha256": "9443c95755d4d25a9bdb26b4cf3b9f0253ab58d204ca03c6cae35d533034a38a",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x35_sprt_s3503/final_model.zip",
+   "step": 300061897
+  }
+ ],
+ "pairs_per_cell": 500,
+ "refpop": "reference_population_production.json",
+ "refpop_content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519",
+ "regime": "main.h2h play-many, greedy vs greedy, mirrored pairs, eval team builder (no panel), cpu, torch_threads 1",
+ "stop_iso": "2026-10-25T00:32:15-0700"
+}
