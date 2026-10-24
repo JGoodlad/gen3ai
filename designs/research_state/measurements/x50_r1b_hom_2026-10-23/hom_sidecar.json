@@ -1,0 +1,80 @@
+{
+ "schema": "x50_r1b_hom_sidecar_v1",
+ "what": "the human opponent model (X50 rung 1b use (b)): search's opponent-choice likelihood judge only; never a run, a baseline or a policy",
+ "init": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+ "init_sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+ "rows_manifest_sha256": "44522bf3ed5bdecf2471bf88de0cbb80ce6893b5dfc962494695c1d38b5bb4ea",
+ "seed": 51,
+ "commit": "2bbdffa7d2043a8e883dff67302523b078ecbb01",
+ "recipe": {
+  "loss": "masked policy softmax cross-entropy at the human's action",
+  "optimizer": "AdamW",
+  "lr": "0.0001 cosine to 1e-05 over 3 epochs",
+  "weight_decay": 1e-05,
+  "batch": 512,
+  "clip": 0.5,
+  "dtype": "fp32",
+  "device": "cpu",
+  "validation": "step 0 and every 1/4 epoch; kept = lowest; stop after 2 consecutive rises"
+ },
+ "steps_planned": 10346,
+ "steps_run": 10346,
+ "kept_step": 10346,
+ "val_hist": [
+  [
+   0,
+   1.7663788009905041
+  ],
+  [
+   862,
+   1.2597166664618933
+  ],
+  [
+   1725,
+   1.2279931441420358
+  ],
+  [
+   2588,
+   1.2092893933679096
+  ],
+  [
+   3450,
+   1.1965921385083376
+  ],
+  [
+   4312,
+   1.183170063189658
+  ],
+  [
+   5174,
+   1.178533893349468
+  ],
+  [
+   6036,
+   1.1709992508041327
+  ],
+  [
+   6898,
+   1.1676452118456169
+  ],
+  [
+   7760,
+   1.1641929064395895
+  ],
+  [
+   8622,
+   1.159226517962397
+  ],
+  [
+   9484,
+   1.1571275504448988
+  ],
+  [
+   10346,
+   1.1557004715365073
+  ]
+ ],
+ "hom_zip": "/home/goodlad/gen3ai_archive/x50_r1b/hom/model/hom_x50r1b.zip",
+ "hom_sha256": "76e29a0176fd450d95496b4722d898e38ca2b98a50de0fc9147a2dea671bb36f",
+ "note": "policy.optimizer.pth, data and pytorch_variables.pth are P*'s, unchanged; the value head is P*'s (no gradient); the belief and intent heads are not calibrated and nothing may read them"
+}

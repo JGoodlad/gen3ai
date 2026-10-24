@@ -1,0 +1,25 @@
+{
+ "gate": "G-ENC",
+ "commit": "2bbdffa7d2043a8e883dff67302523b078ecbb01",
+ "run": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601",
+ "min_step": 360000000,
+ "traces": 2306,
+ "counts": {
+  "equal": 2106,
+  "skipped_refused_choice": 191,
+  "short_by_one": 9
+ },
+ "failures": [],
+ "short_by_one": [
+  "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/eval_traces/step_362000059/sentinel_0/draw_s0_006_summary.json",
+  "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/eval_traces/step_362000059/sentinel_2/draw_s1_006_summary.json",
+  "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/eval_traces/step_364000045/sentinel_4/draw_s0_006_summary.json",
+  "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/eval_traces/step_366000214/sentinel_4/draw_s1_006_summary.json",
+  "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/eval_traces/step_368000119/sentinel_3/draw_s3_006_summary.json",
+  "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/eval_traces/step_370000094/sentinel_2/draw_s3_006_summary.json",
+  "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/eval_traces/step_370000094/sentinel_4/draw_s3_005_summary.json",
+  "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/eval_traces/step_372000089/sentinel_0/draw_s1_006_summary.json",
+  "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/eval_traces/step_376000163/sentinel_4/draw_s2_003_summary.json"
+ ],
+ "verdict": "PASS"
+}
