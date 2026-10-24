@@ -60,7 +60,8 @@ def collect(model: Any, d: Path, kind: str, cache: Path) -> Dict[str, np.ndarray
     """Every part of one extraction directory → per-row arrays (rows with an opponent-action label only; humans:
     the labelled player rated ≥ 1500, R0's band), with the per-part forward numbers cached
     (``cache/<kind>_<part>.npz``)."""
-    keep = ("label", "hp", "forced", "turn", "k", "battle", "seat", "mode", "rating_labelled", "rating_viewer",
+    keep = ("label", "hp", "forced", "placeholder", "turn", "k", "battle", "seat", "mode", "rating_labelled",
+            "rating_viewer",
             "own_action", "n_legal")
     out: Dict[str, List[np.ndarray]] = {}
     opp_of: Dict[int, str] = {}

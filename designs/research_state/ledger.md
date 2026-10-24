@@ -28348,3 +28348,54 @@ Welch 97.5 %, bar −2.0 pp.
 **Evidence:** `research_state/measurements/x35_breakers_stage_2026-10-17/d1_read/` (README, drivers, results,
 `read_look1_input.json`), `reads/d1_look1.json`; raw ledgers and units in `~/gen3ai_archive/x35_d1_read/`.
 `UNDERSTANDING.md` (Kakuna block), `design_beat_metamon_path.md` §0 / §6.3.
+
+### 2026-10-23 · MEASUREMENT · **X50 R0, READ under its registration (`42f1d9a7`): F-R1-1 is FIXED. With the viewer's own side completed (C-GAME: the log's own reveals kept, the rest drawn from Smogon, validator-legal), the pipeline costs X26's intent head P_c = +0.012 nats [+0.005, +0.020] on its own battles (bar: upper < +0.08; R1's pipeline +0.229). R1's gap, re-read through the fixed pipeline: +0.253 [+0.232, +0.276], GAP, larger than R1's +0.188**
+
+**What was run.** Step 0 of `endstate/design_x50_rung1b_human_opponent_model.md`, built at `d66a74ec1`
+(`src/main/x50_r1/own.py`, `complete.py`). Per seat, ONE packed team drawn once: every own fact the log reveals by
+the end kept, the rest from the Smogon prior through the honest world builder's draws, Showdown's validator on every
+set and the team, a redraw of the refuted mons until every own labelled action is legal (≤ 32). Each decision opens
+on a synthesised REAL request (the whole roster, PP, the public lines' legality). Fidelity gate: with the trainee's
+TRUE team and exact HP, the completed rows equal the training rows byte for byte (4,581 / 4,582 rows, 150 traces).
+R1's populations re-extracted in one pass with four row modes; X26 @380M read every supervised row on the CPU;
+battle-cluster bootstrap, joint within the traces.
+
+**Result.**
+
+| | rows | NLL | top-1 |
+|---|---|---|---|
+| H_c humans ≥ 1500, completed | 48,542 | 1.785 | 0.392 |
+| S_c snapshots, completed | 29,884 | 1.531 | 0.471 |
+| S-own-true (true team, synthesised decisions) | 29,953 | 1.513 | 0.479 |
+| S-full (the training row) | 26,239 | 1.519 | 0.476 |
+| H / S, R1's spectator rows (re-extracted) | 48,579 / 29,953 | 1.937 / 1.748 | 0.338 / 0.389 |
+
+- **P_c = S_c − S-full +0.012 [+0.005, +0.020] ⇒ FIXED.** The reduction S − S_c is +0.217 [+0.204, +0.230].
+- Split: completion error S_c − S-own-true +0.019 [+0.014, +0.023]; synthesised decision S-own-true − S-full
+  −0.006 [−0.012, −0.001]. B_c − B-full +0.020.
+- **Δ NLL(H_c − S_c) +0.253 [+0.232, +0.276] ⇒ GAP** under R1's rule. Switches +0.411 [+0.378, +0.447]; moves
+  +0.160 [+0.138, +0.184] (R1: +0.07). H − S re-extracted reproduces R1's +0.188 exactly.
+
+**What it means.**
+- The 0.23-nat penalty was the public-only own side. Completed, the spectator row is the training row to a hundredth
+  of a nat. §6: R0 FIXED unlocks R-a1 and the HOM's training rows.
+- The penalty hid part of the human gap: our battles gained 0.217 from the completion, the humans' 0.152. The human
+  gap is now in moves as well as switches.
+
+**Findings.**
+1. 14 human seats refused (0.09 %), all one class: the tracker does not model Mimic's slot swap, so the reader
+   refuses the request. 56 seats excluded (47 a species with no Smogon prior, 8 no consistent team, 1 revealed facts
+   no legal set holds). 0.47 % in all, under the 1 % stop.
+2. The completion error is measured on our pool teams only; on human teams it is UNVERIFIED.
+3. S-own-true and S-full differ in their row sets (191 battles with a refused choice are in S-own-true only), so
+   their −0.006 is not a pure synthesis effect.
+4. C-GAME's declared leak (F-1b-4) is in every completed row; the frozen head cannot exploit it.
+5. A foe's unrevealed Pressure is its species' Smogon majority (gen 3 never announces it).
+6. The first read attempt crashed on a missing field after caching its forwards; a one-line fix, no number seen
+   before it.
+
+(b)'s viewer-action labels were extracted alongside (the owner approved (b) 2026-10-23): `own_action` on the
+completed rows, 389,156 on the held-out human dates (evaluation only).
+
+Evidence: `research_state/measurements/x50_r1b_r0_2026-10-23/` (README, `r0_read.json`, `run_r0.sh`);
+`src/main/x50_r1/`; the parts in `/home/goodlad/gen3ai_archive/x50_r1b/`.

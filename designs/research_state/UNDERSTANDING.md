@@ -1790,7 +1790,7 @@ The whole is PROVISIONAL at 15M: [`../endstate/design_hidden_info_binding.md`](.
 
 ---
 
-### 4.8 The intent head on human opponents: a GAP, and it is a switch gap (X50 R1, 2026-10-20)
+### 4.8 The intent head on human opponents: a GAP, mostly a switch gap (X50 R1 2026-10-20; R0 2026-10-23)
 
 X26's flat intent head (380M) predicts human ladder opponents (rated ≥ 1500) worse than its own pool snapshots.
 Both were read through the same spectator pipeline, under the registered rule: **Δ NLL +0.188 nats [+0.164, +0.213]**
@@ -1799,11 +1799,15 @@ Both were read through the same spectator pipeline, under the registered rule: *
 - on a switch label, +0.39 nats. On a human switch the head is worse than a uniform guess over its candidates.
 - Humans switch on 30 % of labels, the snapshots on 26 % and the bots on 6 %.
 
-The spectator pipeline (public-only own side, fabricated own spread) costs the head 0.23 nats on its own battles, as
-much as the gap. The contrast holds the pipeline fixed, but the absolute numbers on humans are pessimistic.
-⇒ Human opponent-action labels carry signal the self-play labels lack (rung 1 of the human-replay ladder). The
-training-use design (2026-10-23, pre-registered, nothing read): `endstate/design_x50_rung1b_human_opponent_model.md`. [SIGNIFICANT on the registered contrast · one checkpoint · ledger 2026-10-20
-*X50 R1* · `measurements/x50_r1_intent_read_2026-10-20/`]
+R1's spectator pipeline (public-only own side, fabricated own spread) cost the head 0.23 nats on its own battles.
+**Fixed (R0, 2026-10-23):** with the own side completed from the log's reveals plus Smogon draws (C-GAME), the
+penalty is **+0.012 nats [+0.005, +0.020]** (registered bar: upper < +0.08). Through the fixed pipeline **the gap
+is LARGER: +0.253 [+0.232, +0.276]** (1.785 vs 1.531); switches +0.411, and moves now +0.160. The old penalty hid
+part of it. The completion's own cost is +0.019 on our teams; on human teams it is UNVERIFIED (no truth).
+⇒ Human opponent-action labels carry signal the self-play labels lack (rung 1 of the human-replay ladder). Next under
+`endstate/design_x50_rung1b_human_opponent_model.md`: the human opponent model (b, owner-approved 2026-10-23), then
+the head refit offline (R-a1). [SIGNIFICANT on the registered contrasts · one checkpoint · ledger 2026-10-20
+*X50 R1*, 2026-10-23 *X50 R0* · `measurements/x50_r1_intent_read_2026-10-20/`, `measurements/x50_r1b_r0_2026-10-23/`]
 
 ### 4.9 Toy depth 2 → 4 at the plateau: UNDECIDED, Δ̂ ≤ 0, ended at look 1 (X47, 2026-10-21)
 
