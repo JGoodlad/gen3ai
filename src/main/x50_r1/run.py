@@ -37,8 +37,13 @@ from main.x50_r1.points import PointError, decision_points
 
 MANIFEST = "SPECTATOR_MANIFEST_2026-09-23.txt"
 FIELDS = ("rows", "mask", "label", "hp", "forced", "placeholder", "turn", "k", "battle", "seat", "mode",
-          "rating_labelled", "rating_viewer")
+          "rating_labelled", "rating_viewer", "own_action", "n_legal")
+#: the row modes: 0 spectator (R1's public-only own side), 1 full (the trainee's own stream: the training row),
+#: 2 COMPLETED (C-GAME, rung 1b step 0), 3 OWN-TRUE (the trainee's TRUE team, synthesised decisions; traces only)
+MODE_SPECTATOR, MODE_FULL, MODE_COMPLETED, MODE_OWN_TRUE = 0, 1, 2, 3
 _READER: Optional[LiveReader] = None
+#: emit the COMPLETED modes (2, 3) beside R1's (rung 1b step 0; ``--complete``)
+COMPLETE = False
 
 
 def _reader() -> LiveReader:
@@ -54,11 +59,18 @@ def _rating(info: Dict[str, Dict[str, Optional[str]]], seat: str) -> int:
 
 
 def _pack(read: E.SeatRead, *, battle: int, seat: str, mode: int, r_lab: int, r_view: int,
-          counts: collections.Counter, tag: str) -> Dict[str, np.ndarray]:
+          counts: collections.Counter, tag: str, own: Optional[E.CompletedRead] = None) -> Dict[str, np.ndarray]:
+    """A seat's rows: every decision with an opponent-action label (use (a)) or, on a completed read, a legal own
+    action (use (b)'s label, ``own_action``: the 11-way index; -1 none)."""
     lab, hp = read.labels()
     n = len(read.rows)
     counts[f"{tag}decisions"] += n
-    keep = lab[:, 0] != E.KIND_UNKNOWN
+    oa = np.asarray(own.own_action, np.int8) if own is not None else np.full(n, -1, np.int8)
+    nl = np.asarray([int(np.asarray(m).sum()) for m in read.masks], np.int8)
+    keep = (lab[:, 0] != E.KIND_UNKNOWN) | (oa >= 0)
+    if own is not None:
+        counts[f"{tag}own_action_labelled"] += int((oa >= 0).sum())
+        counts[f"{tag}own_action_one_legal"] += int(((oa >= 0) & (nl == 1)).sum())
     for k in range(n):
         counts[f"{tag}label_kind_{int(lab[k, 0])}"] += 1
     counts[f"{tag}labels_hp"] += int(hp.sum())
@@ -79,6 +91,7 @@ def _pack(read: E.SeatRead, *, battle: int, seat: str, mode: int, r_lab: int, r_
         "mode": np.full(len(idx), mode, np.int8),
         "rating_labelled": np.full(len(idx), r_lab, np.int32),
         "rating_viewer": np.full(len(idx), r_view, np.int32),
+        "own_action": oa[idx], "n_legal": nl[idx],
     }
 
 
@@ -91,6 +104,77 @@ def _guarded_spectator(reader: LiveReader, lines: List[str], seat: str, name: st
         E.prefix_guard(reader, lines, seat, name, pts, k, read.rows[k])
         counts["guard_checks"] += 1
     return read
+
+
+_COMPLETER = None
+
+
+def _completer():
+    global _COMPLETER
+    if _COMPLETER is None:
+        from main.x50_r1.complete import Completer
+        _COMPLETER = Completer()
+    return _COMPLETER
+
+
+def completed_seat(reader: LiveReader, lines: List[str], seat: str, name: str, battle_id: str,
+                   counts: collections.Counter, tag: str = "c_",
+                   team: Optional[str] = None, genders: Optional[Dict[str, str]] = None) -> Optional[E.CompletedRead]:
+    """One seat's COMPLETED read (design §2): C-GAME's team (``team`` None) redrawn until every own labelled action
+    is legal under it (:data:`complete.MAX_ATTEMPTS`), or the given ``team`` (the trace's TRUE team: no redraw; an
+    illegal own action is a refusal). Then the prefix guard on the seat's guarded decision. None = excluded."""
+    from main.x50_r1 import complete as C
+
+    pts = decision_points(lines, seat)
+    locks = E.decision_locks(lines, seat, pts)
+    if team is not None:
+        cr = E.read_completed(reader, lines, seat, name, team, genders, points=pts, locks=locks)
+        if any(a == -2 for a in cr.own_action):
+            raise E.GuardError(f"{seat}: an own action is illegal under the TRUE team's synthesised requests")
+        attempt = 0
+    else:
+        try:
+            facts = C.seat_facts(lines, seat)
+        except C.CompletionError:
+            counts[f"{tag}excluded:facts"] += 1
+            return None
+        genders = facts.genders
+        comp = _completer()
+        cr, attempt = None, -1
+        keep: Dict[str, str] = {}
+        ban: Dict[str, List[str]] = {}
+        for attempt in range(C.MAX_ATTEMPTS):
+            try:
+                team, sets = comp.team(facts, C.seat_rng(battle_id, seat, attempt), keep=keep, ban_items=ban)
+            except C.TeamIllegal:
+                counts[f"{tag}attempt_team_illegal"] += 1
+                keep = {}
+                continue
+            except C.CompletionError as exc:
+                counts[f"{tag}excluded:{'no_prior' if 'no Smogon prior' in str(exc) else 'revealed_illegal'}"] += 1
+                return None
+            got = E.read_completed(reader, lines, seat, name, team, genders, points=pts, locks=locks)
+            bad = [k for k, a in enumerate(got.own_action) if a == -2]
+            if not bad:
+                cr = got
+                break
+            counts[f"{tag}attempt_action_illegal"] += 1
+            refuted = {got.active[k] for k in bad if got.active[k] is not None}
+            for k in bad:
+                if got.choice_lock[k] is not None and got.active[k] is not None:
+                    ban.setdefault(got.active[k], []).append("choiceband")    # the mon broke a Band lock
+            keep = {n: e for n, e in sets.items() if n not in refuted}
+        if cr is None:
+            counts[f"{tag}excluded:no_consistent_team"] += 1
+            return None
+        counts[f"{tag}attempts_{min(attempt, 9)}"] += 1
+    assert team is not None
+    if cr.read.rows:
+        k = E.guard_index(battle_id, seat, len(cr.read.rows))
+        E.prefix_guard_completed(reader, lines, seat, name, team, genders, pts, locks, k, cr.read.rows[k])
+        counts[f"{tag}guard_checks"] += 1
+    counts[f"{tag}seats"] += 1
+    return cr
 
 
 # ------------------------------------------------------------------------------------------------ humans
@@ -109,8 +193,26 @@ def human_job(args: Tuple[int, str]) -> Dict[str, Any]:
             counts[f"refused:{type(exc).__name__}"] += 1
             continue
         counts["seats_read"] += 1
-        d = _pack(read, battle=battle, seat=seat, mode=0, r_lab=_rating(info, other), r_view=_rating(info, seat),
-                  counts=counts, tag="")
+        name = info.get(seat, {}).get("name") or seat
+        d = _pack(read, battle=battle, seat=seat, mode=MODE_SPECTATOR, r_lab=_rating(info, other),
+                  r_view=_rating(info, seat), counts=counts, tag="")
+        if d:
+            parts.append(d)
+        if not COMPLETE:
+            continue
+        try:
+            cr = completed_seat(_reader(), lines, seat, name, path, counts)
+        except (ReaderRefusal, PointError, E.LabelError, RuntimeError) as exc:
+            counts[f"c_refused:{type(exc).__name__}"] += 1
+            counts["c_errors"] += 1
+            continue
+        if cr is None:
+            continue
+        if not np.array_equal(cr.read.labels()[0], read.labels()[0]):
+            counts["c_refused:label_mismatch"] += 1
+            continue
+        d = _pack(cr.read, battle=battle, seat=seat, mode=MODE_COMPLETED, r_lab=_rating(info, other),
+                  r_view=_rating(info, seat), counts=counts, tag="c_", own=cr)
         if d:
             parts.append(d)
     return {"counts": counts, "parts": parts}
@@ -169,14 +271,57 @@ def trace_job(args: Tuple[int, str]) -> Dict[str, Any]:
         counts[f"refused:{type(exc).__name__}"] += 1
         return {"counts": counts, "parts": parts, "error": f"{sp}: {exc}"[:400]}
     counts["seats_read"] += 1
-    for mode, read in ((0, spec), (1, full)):
+    for mode, read in ((MODE_SPECTATOR, spec), (MODE_FULL, full)):
         if read is None:
             continue
         dd = _pack(read, battle=battle, seat=seat, mode=mode, r_lab=-1, r_view=-1, counts=counts,
                    tag="" if mode == 0 else "full_")
         if dd:
             parts.append(dd)
+    if COMPLETE:
+        parts.extend(_trace_completed(battle, sp, view.lines, seat, name, own, team, spec, counts))
     return {"counts": counts, "parts": parts}
+
+
+def _real_genders(own: List[str]) -> Dict[str, str]:
+    """The genders the simulator drew for the trainee's team (its first request): part of the TRUE team."""
+    for ln in own:
+        if ln.startswith("|request|") and ln[len("|request|"):].strip():
+            q = json.loads(ln[len("|request|"):])
+            return {m["ident"].split(": ", 1)[1]: next((x for x in m["details"].split(", ")[1:] if x in ("M", "F")), "")
+                    for m in q["side"]["pokemon"]}
+    return {}
+
+
+def _trace_completed(battle: int, sp: str, lines: List[str], seat: str, name: str, own: List[str], team: str,
+                     spec: E.SeatRead, counts: collections.Counter) -> List[Dict[str, np.ndarray]]:
+    """The trainee's seat COMPLETED (mode 2: C-GAME from the public log) and OWN-TRUE (mode 3: its true team,
+    synthesised decisions). The true team must pass the validator (the design's stop rule: a defect, never an
+    exclusion)."""
+    from main.value_search.world_legality import LegalityRuleError
+
+    out: List[Dict[str, np.ndarray]] = []
+    try:
+        _completer().L.require_true_team(team, sp)
+    except LegalityRuleError:
+        counts["true_team_illegal"] += 1
+        raise
+    for mode, tag, kw in ((MODE_COMPLETED, "c_", {}),
+                          (MODE_OWN_TRUE, "t_", {"team": team, "genders": _real_genders(own)})):
+        try:
+            cr = completed_seat(_reader(), lines, seat, name, sp, counts, tag=tag, **kw)
+        except (ReaderRefusal, PointError, E.LabelError, RuntimeError) as exc:
+            counts[f"{tag}refused:{type(exc).__name__}"] += 1
+            continue
+        if cr is None:
+            continue
+        if not np.array_equal(cr.read.labels()[0], spec.labels()[0]):
+            counts[f"{tag}refused:label_mismatch"] += 1
+            continue
+        dd = _pack(cr.read, battle=battle, seat=seat, mode=mode, r_lab=-1, r_view=-1, counts=counts, tag=tag, own=cr)
+        if dd:
+            out.append(dd)
+    return out
 
 
 # ------------------------------------------------------------------------------------------------ driver
@@ -232,7 +377,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         p.add_argument("--workers", type=int, default=3)
         p.add_argument("--part-size", type=int, default=500)
         p.add_argument("--deadline", type=float, default=None, help="epoch seconds: start no part after it")
+        p.add_argument("--complete", action="store_true",
+                       help="also emit the completed own side (modes 2 / 3; rung 1b step 0)")
     a = ap.parse_args(argv)
+    global COMPLETE
+    COMPLETE = bool(a.complete)
     out = Path(a.out).resolve()
     if under_data(out):
         print("[x50_r1] refusing an output under a checkout's data/ (design §6)", file=sys.stderr)
@@ -252,6 +401,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     chunks = [items[i:i + a.part_size] for i in range(0, len(items), a.part_size)]
     print(f"[x50_r1] {a.cmd}: {len(items)} battles in {len(chunks)} parts -> {out}", flush=True)
     t0 = time.time()
+    meta["complete"] = COMPLETE
     with Pool(a.workers) as pool:
         for ci, chunk in enumerate(chunks):
             name = f"{prefix}_{ci:04d}"

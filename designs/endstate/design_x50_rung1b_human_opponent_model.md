@@ -1,6 +1,7 @@
 # X50 rung 1b: what to do with the human labels — a human opponent model for search, and the intent head offline (design + pre-registration)
 
-**Status (2026-10-23):** DESIGN + PRE-REGISTRATION (§8). Nothing is built, trained or read. No GPU. This is the
+**Status (2026-10-23):** DESIGN + PRE-REGISTRATION (§8). **Step 0 BUILT** (C-GAME, §2 "As built"); R0 is the
+next read. Nothing else is built, trained or read. No GPU. This is the
 training-use design that R1's GAP verdict asked for
 ([`design_x50_rung1_intent_labels.md`](design_x50_rung1_intent_labels.md) §5;
 [the R1 read](../research_state/measurements/x50_r1_intent_read_2026-10-20/README.md), `6d10e6f9`).
@@ -125,14 +126,33 @@ battle and the seat):
   this team. Otherwise the team is redrawn. A seat with no consistent team after 32 draws is excluded and counted.
   This catches, for example, a Choice item drawn for a mon that changed moves without switching.
 
-The reader is OPENED with this team, as the S-full control opens with the trainee's packed team. Each decision's
-request is synthesised from the reader's own reading of the completed team:
-- all four of the active's moves at their read PP;
-- every alive benched mon;
-- the request's legality only, as F-X50-5's spectator flag does today.
+The reader is OPENED with this team, as the S-full control opens with the trainee's packed team.
+**As built (`src/main/x50_r1/own.py`, `complete.py`; 2026-10-23).** The reader learns its own roster only from
+requests, so each decision's request is a REAL one, synthesised as the simulator writes it:
+- the whole roster (details, condition, stats, moves, ability, the current item) in the simulator's slot order (a
+  switch swaps the incoming mon into slot 1), Return / Frustration with their power;
+- the active's four moves at their tracked PP (Pressure deducts 2: the foe's revealed ability, else its species'
+  Smogon majority, since gen 3 never announces it; a non-Ghost's Curse targets itself; a called move pays nothing);
+- the legality the public lines determine: a Choice Band lock, Encore, Disable, Taunt, Torment, 0 PP, Struggle when
+  nothing is left, the trap flags. A locked turn (a `[from] lockedmove` continuation, a charge's release, a
+  recharge) lists that move alone, as the real request did. The lock is read off the decision's own window and
+  handed to the prefix guard as an input, like the team;
+- the own stream's private lines a spectator log lacks: the own Pressure announce (`[silent]`) and Struggle's
+  `-activate`.
 
-The own exact HP is the log's percent × the completed max HP, rounded (±1 HP: F-1b-9). The Struggle placeholder
-goes away: a lead always has its four moves.
+Every public line naming an own mon is fed with its HP exact: the MIDDLE integer of the percent display's preimage
+(±1 HP on a 3-wide preimage; F-1b-9). **The fidelity gate:** with the trainee's TRUE team and the own stream's
+exact HP, the completed rows equal the rows the trainee played on byte for byte (4,581 of 4,582 rows on 150 traces
+of 380M; `complete_test.py` holds the golden trace), and the own-action labels are its real choices. On the
+public log only the HP cells move.
+
+The C-GAME draws: the reveals are `agents.info_levers.revealed`'s, read from the other seat. The packed order is
+the lead, then the seen mons by first appearance, then the drawn ones. A never-seen gender-ratio species draws M / F
+uniformly; a Frustration set gets happiness 0. A REDRAW draws only the mons the log refuted (an action's legality
+depends on the acting mon's set alone, so this samples the same conditional as a whole-team redraw), and a refuted
+Choice Band (the mon broke its lock without switching) leaves that mon's item draw: the exact conditioning. A seat
+whose species has no Smogon prior is excluded and counted. The extraction emits BOTH labels per row (owner's yes to
+(b), 2026-10-23): `label` (a) and `own_action` (b's 11-way index, −1 none) with `n_legal`; a row with either is kept.
 
 **Why C-GAME and not prefix-only.** A prefix-only completion keeps only what is revealed before each decision and
 redraws the rest. It has no future information. But it needs one completed team per reveal epoch, and so a fresh
@@ -435,3 +455,4 @@ Scope: R1's S and B traces, read from the OPPONENT's seat (the sentinel or the b
 | date | what | rejected | evidence |
 |---|---|---|---|
 | 2026-10-23 | **CREATED + PRE-REGISTERED** (research-design worker, orchestrator brief after R1's GAP and the off-pool L3 read). Both uses, in order: step 0 (C-GAME completion of the viewer's own side, one extraction giving two labels) → (b) the HOM, X26's network fine-tuned from P\* on ≈ 2M human ≥ 1500 choices, judge only, its build waiting on the owner's scope ruling → (a) offline only (R-a1, the head refit on a frozen trunk). Reads R0, R-a1, R-b1 (a gate), and R-b2, the decisive read: the off-pool bank's bot-stratum AUC with the HOM as the judge, PASS = WORKS and BETTER than P\* paired. CPU only, ≈ 15–18 CPU-hours | a GPU training-use arm of (a) now (no in-play consumer: we play no humans); the intent head as the judge (it cannot rank worlds); a fresh HOM (data-small, a second lever); prefix-only completion (≈ 50 CPU-hours, and the label becomes illegal); the archive pulls (uploaded, skewed); training without the heldout72 exclusion (memory) | R1's README; the off-pool README §2–§6; `opp_likelihood.py`; `world_draws.py`; the census; `fd7f4624`; the feasibility timing (§7) |
+| 2026-10-23 | **STEP 0 BUILT** (X50 rung-1b worker). The synthesised request is a REAL request carrying the completed roster and the tracker's state, not a legality-only spectator request: the reader learns its own roster only from requests. HP is the preimage's middle; Pressure from the revealed ability, else the Smogon majority; locks read off the decision's window and passed to the guard as inputs; the own private lines re-inserted; per-mon redraws with a refuted Choice Band removed from the draw; both labels emitted (the owner approved (b) the same day) | a legality-only request on a team reading (the bench would stay unknown, the fix undone); `pct × max` rounded (a larger expected error); a whole-team redraw (the same distribution, a 25 % failure rate on Dugtrio's 96 % Band prior) | `own.py`, `complete.py`, `complete_test.py` (the byte-equal golden trace) |

@@ -85,6 +85,7 @@ class SeatRead:
     turn: List[int] = field(default_factory=list)
     placeholder: List[bool] = field(default_factory=list)
     raw_labels: List[Optional[dict]] = field(default_factory=list)   # LABEL read AT decision k (= k - 1's label)
+    tokens: List[Dict[int, str]] = field(default_factory=list)       # the frame's choice tokens
 
     def labels(self) -> Tuple[np.ndarray, np.ndarray]:
         """``[n, 4]`` labels aligned to the decisions (decision k ← the label read at k + 1) and the HP flag."""
@@ -106,6 +107,7 @@ def _take(read: SeatRead, fr: Frame, *, pos: int, forced: bool, placeholder: boo
     read.turn.append(fr.turn)
     read.placeholder.append(placeholder)
     read.raw_labels.append(raw)
+    read.tokens.append(dict(fr.tokens))
 
 
 def read_spectator(reader: LiveReader, lines: Sequence[str], seat: str, name: str,
@@ -148,6 +150,71 @@ def read_full(reader: LiveReader, own_lines: Sequence[str], seat: str, name: str
     return out
 
 
+@dataclass
+class CompletedRead:
+    """:func:`read_completed`'s result: the rows (a :class:`SeatRead`), the synthesised request of each decision,
+    and the viewer's OWN action at each decision as its 11-way index (-1 no label, -2 not legal: a refusal)."""
+    read: SeatRead
+    requests: List[str]
+    own_action: List[int]
+    n_legal: List[int]
+    active: List[Optional[str]] = field(default_factory=list)          # the own active's nickname
+    choice_lock: List[Optional[str]] = field(default_factory=list)     # its Choice Band lock, if any
+
+
+def decision_locks(lines: Sequence[str], seat: str, points: List[Tuple[int, str]]) -> List[Optional[str]]:
+    """Per decision, the move the viewer's request was LOCKED to (``recharge`` for a recharge), read off the
+    decision's own window (its continuation line), or None. The player's real request said so; it is an input of
+    the request like the team, so the prefix guard receives it, never re-derives it from a truncated log."""
+    from main.x50_r1 import own as O
+
+    acts = O.viewer_actions(lines, seat, points)
+    charges = O.charge_locks(lines, seat, points)
+    return [a.locked or c for a, c in zip(acts, charges)]
+
+
+def read_completed(reader: LiveReader, lines: Sequence[str], seat: str, name: str, packed_team: str,
+                   genders: Optional[Dict[str, str]] = None,
+                   points: Optional[List[Tuple[int, str]]] = None,
+                   locks: Optional[List[Optional[str]]] = None) -> CompletedRead:
+    """The viewer ``seat``'s decisions over a PUBLIC log with its own side COMPLETED (rung 1b step 0): the reader is
+    OPENED with ``packed_team``, every public line naming an own mon is fed with its HP exact
+    (:class:`main.x50_r1.own.OwnTracker`), and each decision opens on ONE synthesised REAL request (the whole
+    roster, the active's moves, the public lines' legality). The label read is the production one, as in
+    :func:`read_spectator`; the viewer's own action (use (b)'s label) is read off the decision's window."""
+    from main.x50_r1 import own as O
+
+    pts = decision_points(list(lines), seat) if points is None else points
+    team = O.parse_team(packed_team, genders)
+    trk = O.OwnTracker(seat, name, team)
+    acts = O.viewer_actions(lines, seat, pts)
+    lk = decision_locks(lines, seat, pts) if locks is None else locks
+    reader.open(seat, name, packed_team)
+    out = CompletedRead(SeatRead(), [], [], [])
+    prev = 0
+    carry: List[str] = []
+    for k, (pos, kind) in enumerate(pts):
+        write = carry + [x for ln in lines[prev:pos] for x in trk.lines(ln)] + trk.flush()
+        carry = []
+        prev = pos
+        req, _ = trk.request(kind == FORCED, lk[k])
+        fr = reader.feed(write + [req])
+        if fr is None:
+            raise RuntimeError(f"{seat}: the completed {kind} point at line {pos} opened no decision")
+        _, lab = reader.intent_label()
+        _take(out.read, fr, pos=pos, forced=kind == FORCED, placeholder=False, raw=lab)
+        out.requests.append(req)
+        if '"id":"struggle"' in req and trk.active:
+            # the own stream's `-activate|…|move: Struggle` follows the choice (the next write's first line)
+            carry = [f"|-activate|{seat}a: {trk.active}|move: Struggle"]
+        moves = trk.mons[trk.active].s.moves if trk.active else []
+        out.own_action.append(O.action_index(acts[k], fr.tokens, fr.mask, moves))
+        out.active.append(trk.active)
+        out.choice_lock.append(trk.vol.choice if kind != FORCED else None)
+        out.n_legal.append(int(np.asarray(fr.mask).sum()))
+    return out
+
+
 def prefix_guard(reader: LiveReader, lines: Sequence[str], seat: str, name: str,
                  points: List[Tuple[int, str]], k: int, row: np.ndarray) -> None:
     """Raise :class:`GuardError` unless decision ``k``'s ``row`` is what a fresh reader makes from the lines
@@ -157,6 +224,19 @@ def prefix_guard(reader: LiveReader, lines: Sequence[str], seat: str, name: str,
     again = read_spectator(reader, prefix, seat, name, points=points[:k + 1])
     if not np.array_equal(again.rows[k].view(np.uint32), np.asarray(row, dtype=np.float32).view(np.uint32)):
         raise GuardError(f"{seat} decision {k} (line {cut}): the row differs from the prefix-only read")
+
+
+def prefix_guard_completed(reader: LiveReader, lines: Sequence[str], seat: str, name: str, packed_team: str,
+                           genders: Optional[Dict[str, str]], points: List[Tuple[int, str]],
+                           locks: List[Optional[str]], k: int, row: np.ndarray) -> None:
+    """:func:`prefix_guard` for a COMPLETED read: the same team and request locks, the lines before
+    ``points[k]`` alone. The team itself holds facts revealed later (C-GAME's declared leak, F-1b-4); the guard
+    checks that nothing else past the decision reaches its row."""
+    cut = points[k][0]
+    again = read_completed(reader, list(lines[:cut]), seat, name, packed_team, genders, points=points[:k + 1],
+                           locks=locks[:k + 1])
+    if not np.array_equal(again.read.rows[k].view(np.uint32), np.asarray(row, dtype=np.float32).view(np.uint32)):
+        raise GuardError(f"{seat} decision {k} (line {cut}): the completed row differs from the prefix-only read")
 
 
 def guard_index(battle: str, seat: str, n: int) -> int:
