@@ -3,6 +3,8 @@
 > Lifted out of `src/main/launcher/CLAUDE.md` (2026-10-10). Always-current: update it with the code.
 > This is the launcher's one flag table (the leaf keeps none); `restart_interval_default_test.py`
 > reads its `--restart-interval-hours` row. `designs/ops/flag_census.md` names each flag's live user.
+> The second table (below) classes EVERY flag, the launcher's and the trainer's, for a `--model` launch;
+> its source is `src/main/train/launch_flags.py`, pinned flag-by-flag by `launch_flags_test.py`.
 
 ## The table
 
@@ -20,10 +22,35 @@
 | `--arch production` | unset | *(forwarded)* Apply the whole ARCH surface AND the TRAINING RECIPE from `designs/production_config.json` as if typed — see [`launch_guards.md`](launch_guards.md) → the ARCH-SURFACE and RECIPE-SURFACE guards. Refused on a resume (`FATAL_CONFIG`); the launcher's own restarts STRIP it (resume role). |
 | `--allow-nonproduction-arch` | off | *(forwarded)* Consent to a FRESH run whose architecture differs from the production mirror; without it that launch is REFUSED. |
 | `--allow-nonproduction-recipe` | off | *(forwarded)* Consent to a FRESH run whose training recipe differs from the mirror's `recipe` block on a knob the argv did NOT type; without it that launch is REFUSED. A TYPED differing value never needs it. |
-| `--dry-run` | off | **Resolve this launch and PRINT it, then exit — creating nothing.** Role (FRESH / FORK of <parent> / RESTART of <run>), the run dir the argv would write into, the pin (sha + subject + source), `--steps` beside the checkpoint's recorded `num_timesteps` so `+X steps` is visible, the effective config a `--model` inherits (per-flag `INHERITED` vs `from the argv`), the pool as recorded, a `--model` argv's architecture verdict against the checkpoint's `model_config.json` (`main.train.fork_arch`, the trainer's own `check_compatible`), and a `(child-only: …)` line for everything that needs a built model. Exits `0`, or `FATAL_CONFIG` (3) on any refusal the real path makes. See [`launch_guards.md`](launch_guards.md) → `--dry-run`. |
+| `--dry-run` | off | **Resolve this launch and PRINT it, then exit — creating nothing.** Role (FRESH / FORK of <parent> / RESTART of <run>), the run dir the argv would write into, the pin (sha + subject + source), `--steps` beside the checkpoint's recorded `num_timesteps` so `+X steps` is visible, the effective config a `--model` inherits (per flag: `TYPED`, `RESTORED from <record>`, `INHERITED` or `default`; the K9(b) mode on its own `K9(b) check :` line), the pool as recorded, a `--model` argv's architecture verdict against the checkpoint's `model_config.json` (`main.train.fork_arch`, the trainer's own `check_compatible`), and a `(child-only: …)` line for everything that needs a built model. Exits `0`, or `FATAL_CONFIG` (3) on any refusal the real path makes. See [`launch_guards.md`](launch_guards.md) → `--dry-run`. |
 
 All other flags are forwarded verbatim to `train_rl_agent.py` (the launcher strips only
 launcher-owned flags).
+
+## What a `--model` launch carries over: every flag, once
+
+**An argv is not a config.** With `--model`, every flag the argv does not TYPE is carried over from the run that wrote
+the checkpoint: the run itself on a same-run restart, the PARENT on a fork. Each flag below is in exactly ONE class
+(`launch_flags_test.py` fails on a flag in none or two), and a typed flag always wins, even one equal to the default.
+The resolver is `recipe_surface.inherit_recorded_recipe` (checkargs, `--dry-run`, `resolve_config` and the launcher
+all call it); `_prepare_session` writes what it restored into the child argv TYPED (`materialize_recorded_recipe`),
+because a child pinned to an older commit resolves an untyped flag to that commit's own default. A bool is written
+BARE (`--flag` / `--no-flag`, omitted when it is the parser's own value): `--flag true` is refused by a pin whose parser
+spelled the flag `store_true` or `BooleanOptionalAction` (found on the real dry run of an X35 arm, pin `440b61c3`).
+
+| Class | Restart | Fork | Flags |
+|---|---|---|---|
+| **recipe row** (`recipe_surface.ROWS`) | yes | yes | `--n-envs --n-epochs --grad-accum-steps --ent-coef --vf-coef --clip-range(-vf) --min-lr --max-lr --anneal-lr-start-steps --weight-decay --self-play --policy-gae-lambda --trunk-precision --overlap-collect --fork-fraction` and the belief / intent doses, the T2 and collector sizes; `--lr --batch-size --n-steps` are INERT (SB3 restores them). A missing value REFUSES by name |
+| **recorded field** (a `ModelVersion` tri-state flag) | yes | yes | every structural / numerics / diagnostic flag `config.resolve_config` resolves by a `_resolve` line, plus `--promote-threshold` and `--eval-sentinel-greedy` (`resolve_eval_sentinel_regime`): from the checkpoint's `model_config.json` |
+| **RECORDED row** | yes | yes | safety: `--behaviour-check --supply-starve-cycles --rust-env-refusal-budget --rust-env-respawn-budget`; cadence: `--checkpoint-every-steps --eval-freq --eval-games --eval-shard-games --n-sentinels --snapshot-ladder-games`; retention: `--keep-eval-snapshots --keep-eval-trace-steps --keep-stalls --keep-crashes --forensic-{win,loss,draw}-quota`; telemetry: `--value-sidecar(-fraction,-seed) --team-wr-tracking`; learner: `--anneal-min-lr --adaptive-batch(-target,-band,-min-accum,-max-accum,-every) --opp-belief-moves-weight`; self-play schedule: `--self-play-{temp,start-wr,full-wr} --heuristic-floor --pfsp-scale --pool-spread --team-block-episodes`. A key the record lacks (the run predates the flag) or holds as None stays untyped, never an error |
+| **RESTART-ONLY row** | yes | **no** | `--seed`, `--trainee-team(s)`, `--bot-weights`, `--stable-opponents` and its four knobs. A fork is a new experiment that declares its own seed and matchup; the report names what it did not carry. `--team-mix(-sides)` follows the same rule through `matchup_setup.inherit_team_mix` |
+| **PER-LAUNCH** (`launch_flags.PER_LAUNCH`, a reason each) | no | no | identity and dose: `--model --run-dir --run-name --steps`; process: `--debug --debug-eval --device --log-level`; fresh-only sugar: `--arch --unified-moves --unified-damage --damage-matrices`; consents: every `--allow-*` and `--diagnostic-fork-consent`; fork acts: `--fork-lr(-freeze) --grow --fork-pool-seed --tb-inherit --exploiter(-keep-bots,-bot-fraction)`; host-bound performance: `--compile-trainer --learner-cudagraphs --device-batch --grad-checkpointing --t2-* --rust-env-{front,profile,threads} --rust-eval-envs`; the launcher's own session: every flag in the first table above |
+
+The dry run prints each of `--grad-accum-steps --checkpoint-every-steps --eval-freq --eval-games --seed` with its source,
+and the K9(b) mode with its own (`typed` / `inherited from <record>` / `the default`). Gap closed 2026-10-24: only the
+recipe rows were restored, so a manual resume of an arm recorded `--behaviour-check warn --checkpoint-every-steps
+1000000` ran K9(b) FATAL with saves every 2.4M. The launcher's own restarts were never affected: they re-launch the
+session's child argv, which kept every flag the original launch typed.
 
 ## The launcher owns NO compile default, and forwards everything else
 

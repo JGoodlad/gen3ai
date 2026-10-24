@@ -42,7 +42,7 @@ def test_the_resolved_k9b_mode_is_stated_with_its_source():
     unset = behaviour_check_line(_args())
     assert unset.startswith("fatal") and "neither typed nor inherited" in unset and "NOT fatal" not in unset
     typed_fatal = behaviour_check_line(_args("--behaviour-check", "fatal"))
-    assert typed_fatal.startswith("fatal") and "typed or inherited" in typed_fatal
+    assert typed_fatal.startswith("fatal") and "(typed)" in typed_fatal
     for mode in ("warn", "off"):
         line = behaviour_check_line(_args("--behaviour-check", mode))
         assert line.startswith(mode) and "NOT fatal" in line, line

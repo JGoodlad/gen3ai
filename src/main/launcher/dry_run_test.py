@@ -598,6 +598,73 @@ def test_i_a_FORK_dry_run_restores_the_PARENTs_recipe_and_passes_it_typed(isolat
 
 
 # ---------------------------------------------------------------------------------------
+# (i2) 2026-10-24: a --model launch carries the run's K9(b) mode and save cadence, and SAYS where each came from
+# ---------------------------------------------------------------------------------------
+# A dry run of `rb_x35_d1wide_s3505` printed "K9(b) check : fatal (the default: ... neither typed nor inherited)"
+# although its metadata.json:cli_args held `behaviour_check=warn`, and planned saves every 2.4M, not the run's 1M.
+
+def _flag_line(out, flag):
+    lines = [ln for ln in out.splitlines() if ln.strip().startswith(flag + " ")]
+    assert len(lines) == 1, (flag, lines, out)
+    return lines[0]
+
+
+def _x35_like_run(work, first, name="ai_v9_171"):
+    from main.train.recipe_testkit import write_recorded_recipe
+    run_dir, ckpt = _make_run(work, first, name=name)
+    write_recorded_recipe(run_dir, behaviour_check="warn", checkpoint_every_steps=1_000_000, seed=3504)
+    return run_dir, ckpt
+
+
+def test_i_a_restart_dry_run_prints_the_runs_k9b_mode_and_cadence_with_their_source(isolated, monkeypatch, capsys):
+    _root, (first, _second), work = isolated
+    _run_dir, ckpt = _x35_like_run(work, first)
+    _dry_run(["--model", ckpt, "--steps", "30000000"], monkeypatch)
+    out = capsys.readouterr().out
+    k9 = [ln for ln in out.splitlines() if ln.lstrip().startswith("K9(b) check")]
+    assert len(k9) == 1 and k9[0].split(":", 1)[1].split()[0] == "warn", k9
+    assert "inherited from metadata.json:cli_args" in k9[0] and "neither typed nor inherited" not in k9[0], k9[0]
+    cadence = _flag_line(out, "--checkpoint-every-steps")
+    assert "1000000" in cadence and "RESTORED from metadata.json:cli_args" in cadence, cadence
+    assert "passed to the child TYPED" in cadence
+    seed = _flag_line(out, "--seed")
+    assert "3504" in seed and "RESTORED" in seed, seed                       # a restart keeps its identity
+
+
+def test_i_a_typed_flag_wins_and_is_labelled_typed(isolated, monkeypatch, capsys):
+    _root, (first, _second), work = isolated
+    _run_dir, ckpt = _x35_like_run(work, first)
+    _dry_run(["--model", ckpt, "--steps", "30000000", "--behaviour-check", "fatal",
+              "--checkpoint-every-steps", "2400000"], monkeypatch)
+    out = capsys.readouterr().out
+    k9 = next(ln for ln in out.splitlines() if ln.lstrip().startswith("K9(b) check"))
+    assert k9.split(":", 1)[1].split()[0] == "fatal" and "(typed)" in k9, k9
+    cadence = _flag_line(out, "--checkpoint-every-steps")
+    assert "2400000" in cadence and "TYPED" in cadence and "RESTORED" not in cadence, cadence
+
+
+def test_i_a_fresh_dry_run_labels_an_untyped_flag_as_the_default(isolated, monkeypatch, capsys):
+    _root, (_first, second), _work = isolated
+    monkeypatch.setattr(wt, "get_git_hash", lambda *a, **k: second)
+    _dry_run(["--steps", "1000", *_ARCH_OK], monkeypatch)
+    cadence = _flag_line(capsys.readouterr().out, "--checkpoint-every-steps")
+    assert "default - neither typed nor inherited" in cadence, cadence
+
+
+def test_i_a_FORK_dry_run_carries_the_mode_and_cadence_but_not_the_parents_seed(isolated, monkeypatch, capsys):
+    _root, (first, _second), work = isolated
+    _run_dir, ckpt = _x35_like_run(work, first, name="parent")
+    _dry_run(["--model", ckpt, "--run-name", "a_fork_of_it", "--steps", "30000000", *_ARCH_OK], monkeypatch)
+    out = capsys.readouterr().out
+    assert "inherited from parent metadata.json:cli_args" in next(
+        ln for ln in out.splitlines() if ln.lstrip().startswith("K9(b) check"))
+    assert "RESTORED from parent metadata.json:cli_args" in _flag_line(out, "--checkpoint-every-steps")
+    seed = _flag_line(out, "--seed")
+    assert " 42 " in seed and "default - neither typed nor inherited" in seed, seed      # its own, not 3504
+    assert "NOT carried" in out and "seed=3504" in out
+
+
+# ---------------------------------------------------------------------------------------
 # (j) the DISK GUARD: the dry run reports the verdict the launch and the trainer reach
 # ---------------------------------------------------------------------------------------
 

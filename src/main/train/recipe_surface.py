@@ -64,6 +64,14 @@ recipe (`--n-envs` 32, `--self-play` False, `--grad-accum-steps` 1, …) — the
 writes the restored rows into a `--model` child's argv as TYPED tokens (`materialize_recorded_recipe`), so a
 child pinned to a commit from before the fix trains the same recipe. ``recipe.fork`` is never applied: a
 fork's recipe is its argv plus its parent's record, compared with ``recipe.fork`` as INFO.
+
+**THE RUN FLAGS** (`main.train.launch_flags`, 2026-10-24: a manual resume of an arm recorded `--behaviour-check warn` /
+`--checkpoint-every-steps 1000000` ran FATAL / every 2.4M, because only the recipe rows above were restored). The same
+function restores the other run-defining flags (the safety modes, the save and eval cadence, retention, the self-play
+schedule: `RECORDED_ROWS`; a restart also the seed and the matchup levers: `RESTART_ONLY_ROWS`) by the `cli_args`
+route, and `launch_flags.PER_LAUNCH` is the ONE table of flags a `--model` launch deliberately does not carry. Unlike a
+recipe row, a run flag the record lacks (or holds as None) is not an error: the run predates the flag, and the flag
+stays untyped. Every flag is classed once, pinned by `launch_flags_test.py`.
 """
 
 from __future__ import annotations
@@ -225,7 +233,8 @@ def _recording(cls: type) -> type:
 
 def record_typed_recipe_flags(parser: argparse.ArgumentParser) -> None:
     """Make every RECIPE row's action record that it was typed. Called once, by `build_parser`."""
-    dests = {r.dest for r in ALL_ROWS}
+    from main.train.launch_flags import INHERITED_DESTS
+    dests = {r.dest for r in ALL_ROWS} | set(INHERITED_DESTS)
     for action in parser._actions:
         if action.dest in dests:
             action.__class__ = _recording(type(action))
@@ -233,6 +242,18 @@ def record_typed_recipe_flags(parser: argparse.ArgumentParser) -> None:
 
 def typed_dests(ns: Any) -> FrozenSet[str]:
     return frozenset(getattr(ns, TYPED_ATTR, None) or ())
+
+
+def value_source(ns: Any, dest: str) -> Tuple[str, str]:
+    """Where a flag's value on a resolved namespace came from: ``("typed", "")``, ``("inherited", <the record it
+    was restored from>)`` or ``("default", "")`` (neither typed nor restored: the value is the parser's / the
+    trainer's own). One reader for the dry run, `main.checkargs` and the K9(b) line."""
+    if dest in typed_dests(ns):
+        return "typed", ""
+    for d, _v, source in getattr(ns, "_recipe_record_inherited", ()) or ():
+        if d == dest:
+            return "inherited", str(source)
+    return "default", ""
 
 
 # --------------------------------------------------------------------------------- the mirror
@@ -446,6 +467,28 @@ def inherit_recorded_recipe(ns: Any, run_dir: Optional[str], saved_ver: Any = No
             value, source = cli[r.dest], f"{'parent ' if src.role == 'fork' else ''}metadata.json:cli_args"
         setattr(ns, r.dest, value)
         out.append((r.dest, value, source))
+    # THE RUN FLAGS (`launch_flags`): run-defining, outside the production recipe — the same record, the same route.
+    # Lenient where a recipe row is strict: a key the record lacks (the run predates the flag) or holds as None stays
+    # UNTYPED and resolves to the flag's own default. A FORK carries `RECORDED_ROWS` only; the restart-only rows (the
+    # seed, the matchup levers) are the fork's own to declare, and what it did not carry is reported.
+    from main.train.launch_flags import INHERITED_ROWS, RESTART_ONLY_DESTS
+    not_carried: List[Tuple[str, Any]] = []
+    fork_defaults = None
+    run_source = f"{'parent ' if src.role == 'fork' else ''}metadata.json:cli_args"
+    for r in INHERITED_ROWS:
+        if r.dest in typed or not isinstance(cli, dict) or cli.get(r.dest) is None:
+            continue
+        value = cli[r.dest]
+        if src.role == "fork" and r.dest in RESTART_ONLY_DESTS:
+            if fork_defaults is None:
+                from main.train.parser import build_parser
+                fork_defaults = build_parser()
+            if value != fork_defaults.get_default(r.dest):
+                not_carried.append((r.dest, value))
+            continue
+        setattr(ns, r.dest, value)
+        out.append((r.dest, value, run_source))
+    ns._recipe_record_not_carried = tuple(not_carried)
     if missing:
         who = "its own run" if src.role == "restart" else f"its PARENT run ({src.run_dir})"
         raise RecipeRecordError(
@@ -494,10 +537,31 @@ def materialize_recorded_recipe(child_args: Sequence[str], run_dir: Optional[str
     by_dest = {a.dest: a for a in p._actions}
     added: List[Tuple[str, Any, str]] = []
     unspellable: List[str] = []
+    from main.train.launch_flags import INHERITED_ROWS
+    rows = {**_ROW, **{r.dest: r for r in INHERITED_ROWS}}
     for dest, value, source in restored:
-        r = _ROW[dest]
+        r = rows[dest]
         if value is None and p.get_default(dest) is None:
             continue                       # the parser's own None: nothing to write
+        if isinstance(value, bool):
+            # A bool is written BARE, never `--flag true`: the commit the child is PINNED to may spell the flag with
+            # another arity (2026-10-24, the real dry run of an X35 arm pinned at 440b61c3: `--team-wr-tracking` was a
+            # `BooleanOptionalAction` and `--stable-opponent-pfsp` a `store_true` there, so its parser refused the
+            # `true` / `false` as stray values). `--flag` parses under every arity; `--no-flag` where the parser's own
+            # value is not False; a False that IS the parser's value is not written (a `store_true` has no spelling).
+            neg = "--no-" + r.flag[2:]
+            action = by_dest.get(dest)
+            if value:
+                args.append(r.flag)
+            elif p.get_default(dest) is False:
+                continue
+            elif action is not None and neg in action.option_strings:
+                args.append(neg)
+            else:
+                unspellable.append(f"{r.flag} (recorded {value!r})")
+                continue
+            added.append((dest, value, source))
+            continue
         tok = _token(by_dest.get(dest), value)
         if tok is None:
             unspellable.append(f"{r.flag} (recorded {value!r})")
@@ -545,6 +609,8 @@ class RecipeReport(NamedTuple):
     #: The trunk-round precision this argv RESOLVES to (``"bf16"`` / ``"fp32"``): printed on every surface, so the
     #: adopted bf16 default is visible in the report and not only as a refusal when it is missing.
     trunk_precision: Optional[str] = None
+    #: The restart-only run flags a FORK did not carry over from its parent's record, `(dest, parent's value)`.
+    not_carried: Tuple[Tuple[str, Any], ...] = ()
 
     @property
     def silent(self) -> Tuple[RecipeDiff, ...]:
@@ -622,7 +688,8 @@ def report(ns: Any, *, fresh: bool, restart: bool = False, allowed: bool = False
         diffs=tuple(diff_against_production(ns, mirror, kind=kind, inherited=inherited)),
         fresh=bool(fresh), allowed=bool(allowed), umbrella=umbrella, source_tag=source_tag(),
         advisory=bool(advisory), kind=kind, record_inherited=restored, record_role=role,
-        trunk_precision=str(_resolved(_ROW["trunk_precision"], ns, _parser_defaults())))
+        trunk_precision=str(_resolved(_ROW["trunk_precision"], ns, _parser_defaults())),
+        not_carried=tuple(getattr(ns, "_recipe_record_not_carried", ()) or ()))
 
 
 def report_for_child_argv(child_args: Sequence[str], *, advisory: bool = False) -> Optional[RecipeReport]:
@@ -659,12 +726,22 @@ def report_lines(rep: RecipeReport) -> List[str]:
                    "precision; type `--trunk-precision bf16` to train it at the production precision")
         out.append(f"  trunk       : {rep.trunk_precision} — {why}")
     if rep.record_inherited:
+        from main.train.launch_flags import INHERITED_DESTS
         whose = "the PARENT run's" if rep.record_role == "fork" else "the run's own"
-        out.append(f"  ♻️  --model launch ({rep.record_role or '?'}): every untyped recipe knob restored from "
-                   f"{whose} record — "
-                   + "  ".join(f"{d}={v!r} [{s}]" for d, v, s in rep.record_inherited))
-        out.append("      (--lr / --batch-size / --n-steps are INERT on a resume — SB3 "
-                   "restores them — and are never re-applied here)")
+        knobs = [(d, v, s) for d, v, s in rep.record_inherited if d not in INHERITED_DESTS]
+        flags = [(d, v, s) for d, v, s in rep.record_inherited if d in INHERITED_DESTS]
+        if knobs:
+            out.append(f"  ♻️  --model launch ({rep.record_role or '?'}): every untyped recipe knob restored from "
+                       f"{whose} record — " + "  ".join(f"{d}={v!r} [{s}]" for d, v, s in knobs))
+            out.append("      (--lr / --batch-size / --n-steps are INERT on a resume — SB3 "
+                       "restores them — and are never re-applied here)")
+        if flags:
+            out.append(f"  ♻️  run flags (K9(b), cadence, retention, self-play schedule"
+                       f"{', seed, matchup' if rep.record_role == 'restart' else ''}) restored from {whose} "
+                       "record: " + "  ".join(f"{d}={v!r}" for d, v, _s in flags))
+    if rep.not_carried:
+        out.append("  ℹ️  a FORK declares its own seed and matchup: NOT carried from the parent's record — "
+                   + "  ".join(f"{d}={v!r}" for d, v in rep.not_carried) + " (type any you want kept)")
     n = len(ROWS) if rep.kind == FRESH_KEY else len(ALL_ROWS)
     if not rep.diffs:
         out.append(f"  ✓ every RECIPE knob matches recipe.{rep.kind} ({n} knobs)")

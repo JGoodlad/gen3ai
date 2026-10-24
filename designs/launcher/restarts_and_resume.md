@@ -102,12 +102,20 @@
   `_resolve` (the mechanism above — `opp_intent_coef`, `trunk_precision` included); value-checked fields from
   `model_config.json`; the rest from `metadata.json:cli_args` — each announced `[Recipe] … from <source>`,
   and a MISSING value REFUSED (`RecipeRecordError`, `FATAL_CONFIG`, naming the flag).
+  🚨 **The same function restores the RUN FLAGS** (`main.train.launch_flags`; 2026-10-24: a manual resume of an
+  X35 arm recorded `--behaviour-check warn --checkpoint-every-steps 1000000` ran K9(b) FATAL with saves every 2.4M,
+  because only the recipe rows were restored): the safety modes, the save / eval cadence, retention and the self-play
+  schedule on a restart AND a fork; the seed and the matchup levers on a restart only (a fork declares its own).
+  A flag the record lacks stays untyped (the run predates it). `launch_flags.PER_LAUNCH` is the one table of what is
+  deliberately not carried; the table of every flag is `flags.md`. A launcher RESTART was never affected: it
+  re-launches the session's child argv, which keeps every flag the launch typed or the launcher passed TYPED.
   🚨 **The LAUNCHER passes the restored `cli_args` rows to the child TYPED** (`materialize_recorded_recipe`,
   after the fork swap and the preflights, before the pin and its pinned-parser check): a resume / fork runs
   PINNED, by default to the checkpoint's own commit, and a trainer from before 2026-10-14 resolves an
   untyped knob to the PARSER default (the knock-in forks' `--dry-run` showed `--n-envs` 32, `--self-play`
   False, `--grad-accum-steps` 1, `--ent-coef` 0.02 for a 256-env self-play parent). The restart argv keeps
-  those tokens. Tests: `recipe_surface_test.py` (the fork, the fork's resume, the no-record refusal, the
+  those tokens. A bool is written BARE (`--flag` / `--no-flag`, omitted at the parser's own value): a pin whose
+  parser spelled the flag `store_true` / `BooleanOptionalAction` refuses `--flag true` as a stray value. Tests: `recipe_surface_test.py` (the fork, the fork's resume, the no-record refusal, the
   materialized argv parsed by a plain parser, `resolve_config` end to end), `dry_run_test.py::
   test_i_a_FORK_dry_run_restores_the_PARENTs_recipe_and_passes_it_typed`, and
   `test_a_launcher_restart_of_a_fresh_arch_production_run_keeps_the_whole_recipe`.

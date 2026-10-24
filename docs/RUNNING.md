@@ -101,9 +101,10 @@ python -m main.launcher --model models/<run>/checkpoints/checkpoint_NNNN_steps.z
   --restart-interval-hours 6 --steps 15000000 --device cuda
 ```
 
-On a resume an argv is not a config: every flag you do not name is inherited from the checkpoint's
-`model_config.json`, and `--lr`, `--batch-size` and `--n-steps` are inert because SB3
-restores the checkpoint's own values. A bare run directory anywhere a model is expected means that
+On a resume an argv is not a config: every flag you do not name is inherited from the run that wrote the
+checkpoint (its `model_config.json` and `metadata.json:cli_args`; a fork takes its parent's, and keeps its own
+`--seed` and matchup), and `--lr`, `--batch-size` and `--n-steps` are inert because SB3
+restores the checkpoint's own values. `--dry-run` prints where each value came from. A bare run directory anywhere a model is expected means that
 run's **last snapshot** — name the `.zip` to pin a file.
 
 Checkpoints land in `models/rb_run_<timestamp>/checkpoints/` (the `rb_` prefix is the current

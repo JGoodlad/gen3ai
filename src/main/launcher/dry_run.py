@@ -77,6 +77,14 @@ REPORTED_DESTS = (
     "grad_accum_steps",
     "fork_lr",
     "fork_lr_freeze",
+    # The run flags that decide when the run SAVES, EVALUATES and is told apart from its siblings
+    # (`main.train.launch_flags`; the K9(b) mode has its own `K9(b) check :` line). Each prints its SOURCE:
+    # TYPED, RESTORED from the record, INHERITED, or default (2026-10-24: an untyped `--checkpoint-every-steps`
+    # of a 1M-cadence run planned 2.4M saves, and nothing printed that it was not inherited).
+    "checkpoint_every_steps",
+    "eval_freq",
+    "eval_games",
+    "seed",
 )
 
 #: Lines the dry run structurally cannot compute: each needs torch, a built model, or a spawned
@@ -144,7 +152,11 @@ def _value_source(ns, dest: str, inherited: dict, materialized: "dict | None" = 
     for d, _v, source in getattr(ns, "_recipe_record_inherited", ()) or ():
         if d == dest:
             return f"RESTORED from {source} - the argv leaves it unset"
-    return "INHERITED" if dest in inherited else "from the argv"
+    if dest in inherited:
+        return "INHERITED"
+    from main.train.recipe_surface import value_source
+    return ("TYPED - from the argv" if value_source(ns, dest)[0] == "typed"
+            else "default - neither typed nor inherited")
 
 
 def _effective_namespace(child_args: List[str]) -> dict:
@@ -251,7 +263,7 @@ def dry_run(
         out("  ✗ DRY RUN — this command would NOT launch. Nothing was created or modified.")
         return int(TrainExitCode.FATAL_CONFIG)
     if _materialized:
-        out(f"  recipe      : {len(_materialized)} untyped recipe knob(s) restored from the "
+        out(f"  recipe      : {len(_materialized)} untyped recipe knob(s) / run flag(s) restored from the "
             f"{'run' if role.startswith('RESTART') else 'PARENT'}'s record and passed to the child TYPED:")
         out("                " + "  ".join(f"{d}={v!r}" for d, v, _s in _materialized))
     if fork_resume is not None:
@@ -385,7 +397,7 @@ def dry_run(
             out(f"  {switch}")
         # T60: an unset --behaviour-check runs FATAL; say so, so a `warn`/`off` argv is not byte-identical to a default one.
         from main.train.rust_env_setup import behaviour_check_line
-        out(f"  K9(b) check : {behaviour_check_line(ns)}")
+        out(f"  K9(b) check : {behaviour_check_line(ns, {d: s for d, _v, s in _materialized})}")
 
     # 6c. B-GROW, THE DECLARED GROWTH — `main.train.grow_fork`, the trainer's own namespace step (already applied by
     #     `resolve_against_parent`) and its own `decide`, over the resolved namespace and run dir.

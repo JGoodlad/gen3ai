@@ -71,7 +71,7 @@ def _proc(rc: int) -> MagicMock:
     return p
 
 
-def _run_loop(tmp_path, first_rc: int, *, interval_hours: float):
+def _run_loop(tmp_path, first_rc: int, *, interval_hours: float, extra=()):
     """Drive `_supervise` through ONE restart (first child exits `first_rc`, second COMPLETEs)
     with the incident argv, and return the argv each child was spawned with."""
     run_dir = tmp_path / "models" / "ai_v14_01_base"
@@ -79,7 +79,7 @@ def _run_loop(tmp_path, first_rc: int, *, interval_hours: float):
     ckpt = run_dir / "checkpoints" / "checkpoint_1000_steps.zip"
     ckpt.write_text("x")
     ctx = _SessionCtx(
-        child_args=[*FRESH_ARCH_ARGV, "--run-dir", str(run_dir)],
+        child_args=[*FRESH_ARCH_ARGV, *extra, "--run-dir", str(run_dir)],
         child_env={}, train_script="train.py", src_dir="/src",
         run_dir=str(run_dir), run_dir_box=[str(run_dir)], session_start=time.time(),
         interval_seconds=interval_hours * 3600, grace_seconds=1200.0, pin=False,
@@ -121,6 +121,23 @@ def test_restart_of_an_arch_production_run_resumes_without_arch(tmp_path, first_
     assert restart[restart.index("--model") + 1] == ckpt
     assert restart[restart.index("--run-dir") + 1] == run_dir
     assert any("dropped FRESH-only --arch" in e for e in state.snapshot().events)
+
+
+@pytest.mark.parametrize("first_rc,interval_hours,kind", [
+    (TrainExitCode.INTERRUPTED, 3.0, "interval"),
+    (TrainExitCode.CRASH, 3.0, "crash"),
+])
+def test_a_restart_keeps_the_typed_k9b_mode_and_save_cadence(tmp_path, first_rc, interval_hours, kind):
+    """2026-10-24 (the run-flag inheritance defect): the live X35 arms are launched with `--behaviour-check warn
+    --checkpoint-every-steps 1000000` TYPED, and every interval / crash restart re-launches the session's own child argv,
+    so both survive it. The defect was a MANUAL `--model` launch that omitted them (`launch_flags_test.py`)."""
+    extra = ["--behaviour-check", "warn", "--checkpoint-every-steps", "1000000", "--seed", "3505"]
+    argvs, _ckpt, _run_dir, _state = _run_loop(tmp_path, first_rc, interval_hours=interval_hours, extra=extra)
+    assert len(argvs) == 2, kind
+    for argv in argvs:                      # the first launch AND the restart
+        assert argv[argv.index("--behaviour-check") + 1] == "warn", (kind, argv)
+        assert argv[argv.index("--checkpoint-every-steps") + 1] == "1000000", (kind, argv)
+        assert argv[argv.index("--seed") + 1] == "3505", (kind, argv)
 
 
 # ── the FRESH-into-an-existing-run refusal ──────────────────────────────────────

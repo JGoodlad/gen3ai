@@ -14,10 +14,15 @@ codes in `crashes_and_exit_codes.md`, the child's interpreter in `interpreter.md
 - **Every same-run restart (interval, crash, the `r` key) re-launches in the RESUME role**
   (`checkpoint.resume_child_args`): strip `main.train.combination_checks.fresh_only_flags()`, add
   `--model <latest checkpoint>` and `--run-dir`. Never re-pass the original argv.
-- 🚨 **A `--model` launch inherits its recipe from the run that wrote the checkpoint**
-  (`recipe_surface.inherit_recorded_recipe`; a fork: the parent's), and `_prepare_session` passes those
-  knobs to the child TYPED (`materialize_recorded_recipe`), because a child pinned to an older commit
-  resolves an untyped knob to its own parser default. A missing value refuses by name, never guesses.
+- 🚨 **A `--model` launch inherits EVERY flag it does not type from the run that wrote the checkpoint**
+  (a fork: the parent's). Each trainer and launcher flag is classed once in `main.train.launch_flags` (recipe
+  row, recorded field, RECORDED row, RESTART-ONLY row, or `PER_LAUNCH` with a reason; `launch_flags_test.py`
+  fails on a flag in none, so a new flag cannot silently resume at its parser default: the 2026-10-24
+  `--behaviour-check` / `--checkpoint-every-steps` defect). `recipe_surface.inherit_recorded_recipe` is the one
+  resolver; `_prepare_session` passes what it restored to the child TYPED (`materialize_recorded_recipe`; a
+  bool BARE, never `--flag true`, which a pin that spelled the flag `store_true` refuses), because a child pinned
+  to an older commit resolves an untyped flag to its own default. A recipe row with no record refuses by name; a
+  run flag the record lacks predates the flag and stays untyped.
 - **Fork vs restart is one predicate, imported, never re-derived**:
   `main.train.fork_lr.is_same_run_checkpoint`. `--fork-lr`, the fork's pool seeding, the idempotent-fork
   `--model` swap (`checkpoint.resolve_fork_resume_model`, run first), the restart pin guard and

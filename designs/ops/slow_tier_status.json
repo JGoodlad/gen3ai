@@ -4626,66 +4626,66 @@
   },
   "src/main/train/canary_shift_max_test.py::test_one_update_is_BIT_IDENTICAL_with_the_flag_at_two_values": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 9.9,
-   "contention": 1.38,
+   "commit": "d49806281ebaa0ef91c2c5da67c77b7673fd341f",
+   "at": "2026-10-24T09:42:13Z",
+   "duration_s": 11.96,
+   "contention": 1.87,
    "detail": ""
   },
   "src/main/train/canary_shift_max_test.py::test_the_fingerprint_has_teeth_a_real_hyperparameter_change_moves_it": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 6.09,
-   "contention": 1.38,
+   "commit": "d49806281ebaa0ef91c2c5da67c77b7673fd341f",
+   "at": "2026-10-24T09:42:13Z",
+   "duration_s": 7.15,
+   "contention": 1.84,
    "detail": ""
   },
   "src/main/train/debug_shape_smoke_integration_test.py::test_arch_debug_smoke_reaches_an_update_and_exits_0[endstate]": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T17:58:59Z",
-   "duration_s": 1099.42,
-   "contention": 1.31,
+   "commit": "d49806281ebaa0ef91c2c5da67c77b7673fd341f",
+   "at": "2026-10-24T09:42:13Z",
+   "duration_s": 1272.41,
+   "contention": 4.66,
    "detail": ""
   },
   "src/main/train/debug_shape_smoke_integration_test.py::test_arch_debug_smoke_reaches_an_update_and_exits_0[production]": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T17:40:40Z",
-   "duration_s": 1468.82,
-   "contention": 1.67,
+   "commit": "d49806281ebaa0ef91c2c5da67c77b7673fd341f",
+   "at": "2026-10-24T09:42:13Z",
+   "duration_s": 1352.09,
+   "contention": 2.3,
    "detail": ""
   },
   "src/main/train/fatal_config_exits_integration_test.py::test_a_bot_weights_typo_exits_FATAL_CONFIG_not_CRASH": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 4.63,
-   "contention": 1.45,
+   "commit": "d49806281ebaa0ef91c2c5da67c77b7673fd341f",
+   "at": "2026-10-24T09:42:13Z",
+   "duration_s": 4.88,
+   "contention": 2.58,
    "detail": ""
   },
   "src/main/train/fresh_build_threads_test.py::test_a_fresh_production_build_is_byte_identical_at_1_and_8_threads[fixture]": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 8.87,
-   "contention": 1.41,
+   "commit": "d49806281ebaa0ef91c2c5da67c77b7673fd341f",
+   "at": "2026-10-24T09:42:13Z",
+   "duration_s": 16.71,
+   "contention": 3.61,
    "detail": ""
   },
   "src/main/train/fresh_build_threads_test.py::test_a_fresh_production_build_is_byte_identical_at_1_and_8_threads[trainer]": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 10.47,
-   "contention": 1.41,
+   "commit": "d49806281ebaa0ef91c2c5da67c77b7673fd341f",
+   "at": "2026-10-24T09:42:13Z",
+   "duration_s": 9.78,
+   "contention": 1.82,
    "detail": ""
   },
   "src/main/train/grow_fork_test.py::test_kffn_the_seeded_pool_grows_its_experts_and_a_relaunch_mid_pool_is_idempotent": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 18.72,
-   "contention": 1.38,
+   "commit": "d49806281ebaa0ef91c2c5da67c77b7673fd341f",
+   "at": "2026-10-24T09:42:13Z",
+   "duration_s": 15.88,
+   "contention": 1.77,
    "detail": ""
   },
   "src/main/untaught_meter_reproducibility_integration_test.py::test_the_artifact_carries_the_rust_eval_transport_stamp": {
@@ -5009,5 +5009,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-23T00:46:39Z"
+ "last_written": "2026-10-24T09:42:13Z"
 }

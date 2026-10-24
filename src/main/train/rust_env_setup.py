@@ -22,15 +22,28 @@ from main.launcher.ipc import emit as _emit
 DEFAULT_BEHAVIOUR_CHECK = "fatal"
 
 
-def behaviour_check_line(args: Any) -> str:
+def behaviour_check_line(args: Any, restored: "Optional[Dict[str, str]]" = None) -> str:
     """The resolved K9(b) mode and where it came from (the text after the label), as ``main.checkargs`` and
     ``main.launcher --dry-run`` print it (T60).
 
-    An unset flag resolves to :data:`DEFAULT_BEHAVIOUR_CHECK` (``resolve_env_core_args``), so a fork or a restart
-    that types nothing runs FATAL without any line saying so; this states the mode and where it came from."""
-    typed = getattr(args, "behaviour_check", None)
-    mode = typed or DEFAULT_BEHAVIOUR_CHECK
-    source = "typed or inherited" if typed else "the default: --behaviour-check is neither typed nor inherited"
+    An unset flag resolves to :data:`DEFAULT_BEHAVIOUR_CHECK` (``resolve_env_core_args``). A ``--model`` launch
+    carries the source run's recorded mode (``launch_flags.RECORDED_ROWS``; 2026-10-24: a resume of a ``warn`` arm
+    printed ``fatal`` and ran it), so the source is one of three: ``typed``, ``inherited from <record>`` or the
+    default. ``restored`` is ``{dest: record}`` for a caller whose argv already carries the launcher's TYPED copies of
+    the restored flags (``--dry-run``: the namespace then reads them as typed)."""
+    from main.train.recipe_surface import value_source
+    mode = getattr(args, "behaviour_check", None) or DEFAULT_BEHAVIOUR_CHECK
+    how, where = value_source(args, "behaviour_check")
+    if restored and "behaviour_check" in restored:
+        how, where = "inherited", restored["behaviour_check"]
+    if how == "typed":
+        source = "typed"
+    elif how == "inherited":
+        source = f"inherited from {where}"
+    elif getattr(args, "behaviour_check", None):
+        source = "typed or inherited"
+    else:
+        source = "the default: --behaviour-check is neither typed nor inherited"
     note = "" if mode == DEFAULT_BEHAVIOUR_CHECK else (
         f"  ⚠️  NOT {DEFAULT_BEHAVIOUR_CHECK}: a behaviour-policy mismatch " + (
             "is logged, not fatal" if mode == "warn" else "is not checked at all"))

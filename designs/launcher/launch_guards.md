@@ -24,9 +24,9 @@ block, and exits.
 **What it prints**, in order: role · run dir (flagged `EXISTS — a real launch WRITES INTO IT` when
 it does) · `--model` · pin sha + subject + source · `--steps` beside the checkpoint's recorded
 `num_timesteps` and the `+X steps` delta · interpreter · transport · restart/grace/nice · the
-effective config with each reported flag marked `INHERITED`, `RESTORED at restart from <source>` or `from the argv` (`grad_accum_steps`, `fork_lr`,
-`fork_lr_freeze` — `dry_run.REPORTED_DESTS`; a same-run restart of an `--arch production` run restores its untyped recipe rows from `metadata.json:cli_args`, even when HEAD's `ModelVersion` cannot read a PINNED run's `model_config.json`, in which case a `could NOT be read under THIS tree` line says so — `dry_run_test.py::test_i_*`) · the pool as recorded (`N snapshot(s)` + `win_rate_vs_bots`, so pool
-drift is visible BEFORE launch) · the resolved K9(b) mode (`K9(b) check`: `fatal` unless `--behaviour-check` is typed or inherited — `main.checkargs` prints it too) · the `--model` architecture verdict (`fork arch`, below) · then one `(child-only: …)` line per fact it structurally cannot
+effective config with each reported flag marked `INHERITED`, `RESTORED from <source>`, `TYPED - from the argv` or `default - neither typed nor inherited` (`grad_accum_steps`, `fork_lr`,
+`fork_lr_freeze`, `checkpoint_every_steps`, `eval_freq`, `eval_games`, `seed` — `dry_run.REPORTED_DESTS`; a same-run restart of an `--arch production` run restores its untyped recipe rows from `metadata.json:cli_args`, even when HEAD's `ModelVersion` cannot read a PINNED run's `model_config.json`, in which case a `could NOT be read under THIS tree` line says so — `dry_run_test.py::test_i_*`) · the pool as recorded (`N snapshot(s)` + `win_rate_vs_bots`, so pool
+drift is visible BEFORE launch) · the resolved K9(b) mode and its source (`K9(b) check`: `typed`, `inherited from <record>`, or the `fatal` default — `main.checkargs` prints it too) · the `--model` architecture verdict (`fork arch`, below) · then one `(child-only: …)` line per fact it structurally cannot
 compute.
 
 **It refuses what the real path refuses**, with the same exit code: an unresolvable `--pin-commit`
