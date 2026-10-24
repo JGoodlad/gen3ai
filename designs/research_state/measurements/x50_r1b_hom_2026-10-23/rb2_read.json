@@ -1,0 +1,775 @@
+{
+ "CO_PRIMARY_bot_delta_AUC": {
+  "BETTER": false,
+  "ci": [
+   -0.0679,
+   0.045
+  ],
+  "mean": -0.0126,
+  "n": 159
+ },
+ "PRIMARY_bot_AUC_hom": {
+  "ci": [
+   0.4062,
+   0.5097
+  ],
+  "mean": 0.4591,
+  "n": 159,
+  "verdict": "NO-EVIDENCE"
+ },
+ "descriptive": {
+  "bot_by_outcome": {
+   "draw": {
+    "AUC_hom": {
+     "ci": [
+      null,
+      null
+     ],
+     "mean": null,
+     "n": 0
+    },
+    "AUC_pstar": {
+     "ci": [
+      null,
+      null
+     ],
+     "mean": null,
+     "n": 0
+    },
+    "delta": {
+     "ci": [
+      null,
+      null
+     ],
+     "mean": null,
+     "n": 0
+    }
+   },
+   "loss": {
+    "AUC_hom": {
+     "ci": [
+      0.375,
+      1.0
+     ],
+     "mean": 0.6875,
+     "n": 6
+    },
+    "AUC_pstar": {
+     "ci": [
+      0.75,
+      0.875
+     ],
+     "mean": 0.8542,
+     "n": 6
+    },
+    "delta": {
+     "ci": [
+      -0.5,
+      0.125
+     ],
+     "mean": -0.1667,
+     "n": 6
+    }
+   },
+   "win": {
+    "AUC_hom": {
+     "ci": [
+      0.3988,
+      0.5007
+     ],
+     "mean": 0.4502,
+     "n": 153
+    },
+    "AUC_pstar": {
+     "ci": [
+      0.3933,
+      0.515
+     ],
+     "mean": 0.4567,
+     "n": 153
+    },
+    "delta": {
+     "ci": [
+      -0.0617,
+      0.0512
+     ],
+     "mean": -0.0065,
+     "n": 153
+    }
+   }
+  },
+  "delta_AUC_pooled": {
+   "BETTER": false,
+   "ci": [
+    -0.0925,
+    -0.0091
+   ],
+   "mean": -0.0503,
+   "n": 318
+  },
+  "delta_AUC_snapshot": {
+   "BETTER": false,
+   "ci": [
+    -0.1532,
+    -0.0273
+   ],
+   "mean": -0.0881,
+   "n": 159
+  },
+  "familiarity_flag": false,
+  "team_memory": {
+   "bank_states_whose_team_was_removed": 318,
+   "bot_not_removed": {
+    "AUC_hom": {
+     "ci": [
+      null,
+      null
+     ],
+     "mean": null,
+     "n": 0
+    },
+    "delta": {
+     "ci": [
+      null,
+      null
+     ],
+     "mean": null,
+     "n": 0
+    }
+   },
+   "bot_removed": {
+    "AUC_hom": {
+     "ci": [
+      0.4062,
+      0.5097
+     ],
+     "mean": 0.4591,
+     "n": 159
+    },
+    "delta": {
+     "ci": [
+      -0.0679,
+      0.045
+     ],
+     "mean": -0.0126,
+     "n": 159
+    }
+   },
+   "teams_with_removed_training_battles": 72
+  }
+ },
+ "gates": {
+  "G_REPRO_read2_equal": true,
+  "G_REPRO_state_failures": [],
+  "G_REPRO_states": true,
+  "n_states": 320
+ },
+ "hom": {
+  "by_informative_decisions": {
+   "0-0": {
+    "ci": [
+     0.5,
+     0.5
+    ],
+    "mean": 0.5,
+    "n": 2
+   },
+   "1-4": {
+    "ci": [
+     0.3872,
+     0.5729
+    ],
+    "mean": 0.484,
+    "n": 47
+   },
+   "10-inf": {
+    "ci": [
+     0.5495,
+     0.6556
+    ],
+    "mean": 0.6044,
+    "n": 194
+   },
+   "5-9": {
+    "ci": [
+     0.5094,
+     0.6699
+    ],
+    "mean": 0.59,
+    "n": 75
+   }
+  },
+  "by_stratum": {
+   "bot": {
+    "AUC": {
+     "ci": [
+      0.4062,
+      0.5097
+     ],
+     "mean": 0.4591,
+     "n": 159,
+     "verdict": "NO-EVIDENCE"
+    },
+    "AUC_conf": {
+     "ci": [
+      0.4334,
+      0.5467
+     ],
+     "mean": 0.4898,
+     "n": 159
+    },
+    "AUC_regret": {
+     "ci": [
+      0.4153,
+      0.5215
+     ],
+     "mean": 0.4682,
+     "n": 159
+    },
+    "informative_share": {
+     "ci": [
+      0.9671,
+      1.0
+     ],
+     "mean": 0.9874,
+     "n": 159
+    },
+    "lift_moves": {
+     "ci": [
+      -0.0182,
+      0.003
+     ],
+     "mean": -0.0075,
+     "n": 159
+    },
+    "lift_moves_exact": {
+     "ci": [
+      -0.0039,
+      0.0018
+     ],
+     "mean": -0.0005,
+     "n": 159
+    },
+    "lift_species": {
+     "ci": [
+      -0.0252,
+      0.0202
+     ],
+     "mean": -0.0039,
+     "n": 127
+    },
+    "p_truth": {
+     "ci": [
+      0.0766,
+      0.1352
+     ],
+     "mean": 0.1054,
+     "n": 159,
+     "uniform": 0.1111
+    },
+    "top1": {
+     "chance_if_exchangeable": 0.1111,
+     "ci": [
+      0.053,
+      0.1482
+     ],
+     "mean": 0.1006,
+     "n": 159
+    }
+   },
+   "snapshot": {
+    "AUC": {
+     "ci": [
+      0.6468,
+      0.7602
+     ],
+     "mean": 0.706,
+     "n": 159,
+     "verdict": "WORKS"
+    },
+    "AUC_conf": {
+     "ci": [
+      0.4251,
+      0.5511
+     ],
+     "mean": 0.489,
+     "n": 159
+    },
+    "AUC_regret": {
+     "ci": [
+      0.6622,
+      0.7646
+     ],
+     "mean": 0.7142,
+     "n": 159
+    },
+    "informative_share": {
+     "ci": [
+      1.0,
+      1.0
+     ],
+     "mean": 1.0,
+     "n": 159
+    },
+    "lift_moves": {
+     "ci": [
+      0.0009,
+      0.0196
+     ],
+     "mean": 0.0109,
+     "n": 158
+    },
+    "lift_moves_exact": {
+     "ci": [
+      -0.0044,
+      0.0022
+     ],
+     "mean": -0.0007,
+     "n": 158
+    },
+    "lift_species": {
+     "ci": [
+      -0.0034,
+      0.0285
+     ],
+     "mean": 0.0117,
+     "n": 127
+    },
+    "p_truth": {
+     "ci": [
+      0.2062,
+      0.2843
+     ],
+     "mean": 0.2444,
+     "n": 159,
+     "uniform": 0.1111
+    },
+    "top1": {
+     "chance_if_exchangeable": 0.1111,
+     "ci": [
+      0.25,
+      0.4063
+     ],
+     "mean": 0.327,
+     "n": 159
+    }
+   }
+  },
+  "counts": {
+   "by_stratum": {
+    "bot": 159,
+    "snapshot": 159
+   },
+   "defects": 0,
+   "excluded": 2,
+   "ok": 318,
+   "states_with_pending": 2,
+   "steps_informative_mean": 13.52,
+   "steps_pending_total": 2,
+   "steps_scored_mean": 13.61,
+   "steps_unobserved_total": 417
+  },
+  "gates": {
+   "G1_ids": true,
+   "G2_defects": true,
+   "G3": null,
+   "G4_encoder_identity": {
+    "checked": 318,
+    "equal": 318
+   },
+   "defects": [],
+   "excluded": 2,
+   "exclusion_reasons": [
+    "world build: WorldError: cyc1_bots/step_280000170/staller_v2/win_s0_004#p1#14: n",
+    "world build: WorldError: cyc1_sentB/step_280000170/sentinel_1/loss_s0_002#p1#29:"
+   ],
+   "ids_sha256": "db5edcdc5c54af419d6360b41fccce352bb5a1ca1d8ada09841f994e11be29f6",
+   "n_rows": 320
+  },
+  "pooled": {
+   "AUC": {
+    "ci": [
+     0.5407,
+     0.6246
+    ],
+    "mean": 0.5825,
+    "n": 318,
+    "verdict": "WEAK"
+   },
+   "AUC_conf": {
+    "ci": [
+     0.4482,
+     0.5321
+    ],
+    "mean": 0.4894,
+    "n": 318
+   },
+   "AUC_regret": {
+    "ci": [
+     0.5519,
+     0.6303
+    ],
+    "mean": 0.5912,
+    "n": 318
+   },
+   "informative_share": {
+    "ci": [
+     0.9839,
+     1.0
+    ],
+    "mean": 0.9937,
+    "n": 318
+   },
+   "lift_moves": {
+    "ci": [
+     -0.0059,
+     0.0085
+    ],
+    "mean": 0.0017,
+    "n": 317
+   },
+   "lift_moves_exact": {
+    "ci": [
+     -0.0032,
+     0.0013
+    ],
+    "mean": -0.0006,
+    "n": 317
+   },
+   "lift_species": {
+    "ci": [
+     -0.0095,
+     0.0187
+    ],
+    "mean": 0.0039,
+    "n": 254
+   },
+   "p_truth": {
+    "ci": [
+     0.1492,
+     0.2001
+    ],
+    "mean": 0.1749,
+    "n": 318,
+    "uniform": 0.1111
+   },
+   "top1": {
+    "chance_if_exchangeable": 0.1111,
+    "ci": [
+     0.1656,
+     0.2602
+    ],
+    "mean": 0.2138,
+    "n": 318
+   }
+  },
+  "spearman_auc_vs_n_informative": 0.1219,
+  "stopped": false,
+  "verdict": "WEAK"
+ },
+ "pstar": {
+  "by_informative_decisions": {
+   "0-0": {
+    "ci": [
+     0.5,
+     0.5
+    ],
+    "mean": 0.5,
+    "n": 2
+   },
+   "1-4": {
+    "ci": [
+     0.503,
+     0.6813
+    ],
+    "mean": 0.5931,
+    "n": 47
+   },
+   "10-inf": {
+    "ci": [
+     0.5918,
+     0.697
+    ],
+    "mean": 0.6443,
+    "n": 194
+   },
+   "5-9": {
+    "ci": [
+     0.5557,
+     0.7114
+    ],
+    "mean": 0.6317,
+    "n": 75
+   }
+  },
+  "by_stratum": {
+   "bot": {
+    "AUC": {
+     "ci": [
+      0.4101,
+      0.5306
+     ],
+     "mean": 0.4717,
+     "n": 159,
+     "verdict": "NO-EVIDENCE"
+    },
+    "AUC_conf": {
+     "ci": [
+      0.4461,
+      0.5509
+     ],
+     "mean": 0.4969,
+     "n": 159
+    },
+    "AUC_regret": {
+     "ci": [
+      0.4162,
+      0.5351
+     ],
+     "mean": 0.4768,
+     "n": 159
+    },
+    "informative_share": {
+     "ci": [
+      0.9671,
+      1.0
+     ],
+     "mean": 0.9874,
+     "n": 159
+    },
+    "lift_moves": {
+     "ci": [
+      -0.013,
+      0.0121
+     ],
+     "mean": -0.001,
+     "n": 159
+    },
+    "lift_moves_exact": {
+     "ci": [
+      -0.004,
+      0.0111
+     ],
+     "mean": 0.0021,
+     "n": 159
+    },
+    "lift_species": {
+     "ci": [
+      -0.0358,
+      0.0145
+     ],
+     "mean": -0.0118,
+     "n": 127
+    },
+    "p_truth": {
+     "ci": [
+      0.0764,
+      0.151
+     ],
+     "mean": 0.1126,
+     "n": 159,
+     "uniform": 0.1111
+    },
+    "top1": {
+     "chance_if_exchangeable": 0.1111,
+     "ci": [
+      0.0576,
+      0.1569
+     ],
+     "mean": 0.1069,
+     "n": 159
+    }
+   },
+   "snapshot": {
+    "AUC": {
+     "ci": [
+      0.7531,
+      0.8343
+     ],
+     "mean": 0.794,
+     "n": 159,
+     "verdict": "WORKS"
+    },
+    "AUC_conf": {
+     "ci": [
+      0.3835,
+      0.4974
+     ],
+     "mean": 0.4403,
+     "n": 159
+    },
+    "AUC_regret": {
+     "ci": [
+      0.7561,
+      0.8384
+     ],
+     "mean": 0.7976,
+     "n": 159
+    },
+    "informative_share": {
+     "ci": [
+      1.0,
+      1.0
+     ],
+     "mean": 1.0,
+     "n": 159
+    },
+    "lift_moves": {
+     "ci": [
+      -0.0029,
+      0.0177
+     ],
+     "mean": 0.0074,
+     "n": 158
+    },
+    "lift_moves_exact": {
+     "ci": [
+      -0.0066,
+      0.0
+     ],
+     "mean": -0.0028,
+     "n": 158
+    },
+    "lift_species": {
+     "ci": [
+      -0.0145,
+      0.0287
+     ],
+     "mean": 0.0059,
+     "n": 127
+    },
+    "p_truth": {
+     "ci": [
+      0.3064,
+      0.4215
+     ],
+     "mean": 0.3634,
+     "n": 159,
+     "uniform": 0.1111
+    },
+    "top1": {
+     "chance_if_exchangeable": 0.1111,
+     "ci": [
+      0.3296,
+      0.4885
+     ],
+     "mean": 0.4088,
+     "n": 159
+    }
+   }
+  },
+  "counts": {
+   "by_stratum": {
+    "bot": 159,
+    "snapshot": 159
+   },
+   "defects": 0,
+   "excluded": 2,
+   "ok": 318,
+   "states_with_pending": 2,
+   "steps_informative_mean": 13.52,
+   "steps_pending_total": 2,
+   "steps_scored_mean": 13.61,
+   "steps_unobserved_total": 417
+  },
+  "gates": {
+   "G1_ids": true,
+   "G2_defects": true,
+   "G3": null,
+   "G4_encoder_identity": {
+    "checked": 318,
+    "equal": 318
+   },
+   "defects": [],
+   "excluded": 2,
+   "exclusion_reasons": [
+    "world build: WorldError: cyc1_bots/step_280000170/staller_v2/win_s0_004#p1#14: n",
+    "world build: WorldError: cyc1_sentB/step_280000170/sentinel_1/loss_s0_002#p1#29:"
+   ],
+   "ids_sha256": "db5edcdc5c54af419d6360b41fccce352bb5a1ca1d8ada09841f994e11be29f6",
+   "n_rows": 320
+  },
+  "pooled": {
+   "AUC": {
+    "ci": [
+     0.5905,
+     0.6749
+    ],
+    "mean": 0.6329,
+    "n": 318,
+    "verdict": "WORKS"
+   },
+   "AUC_conf": {
+    "ci": [
+     0.4297,
+     0.509
+    ],
+    "mean": 0.4686,
+    "n": 318
+   },
+   "AUC_regret": {
+    "ci": [
+     0.5958,
+     0.6817
+    ],
+    "mean": 0.6372,
+    "n": 318
+   },
+   "informative_share": {
+    "ci": [
+     0.9839,
+     1.0
+    ],
+    "mean": 0.9937,
+    "n": 318
+   },
+   "lift_moves": {
+    "ci": [
+     -0.0046,
+     0.0116
+    ],
+    "mean": 0.0032,
+    "n": 317
+   },
+   "lift_moves_exact": {
+    "ci": [
+     -0.0041,
+     0.0047
+    ],
+    "mean": -0.0003,
+    "n": 317
+   },
+   "lift_species": {
+    "ci": [
+     -0.0187,
+     0.0147
+    ],
+    "mean": -0.003,
+    "n": 254
+   },
+   "p_truth": {
+    "ci": [
+     0.2029,
+     0.2767
+    ],
+    "mean": 0.238,
+    "n": 318,
+    "uniform": 0.1111
+   },
+   "top1": {
+    "chance_if_exchangeable": 0.1111,
+    "ci": [
+     0.2099,
+     0.3077
+    ],
+    "mean": 0.2579,
+    "n": 318
+   }
+  },
+  "spearman_auc_vs_n_informative": 0.0698,
+  "stopped": false,
+  "verdict": "WORKS"
+ },
+ "rule": "HOM-EVIDENCE = WORKS and BETTER; HOM-WEAK = WEAK and BETTER, or WORKS without BETTER; HOM-NONE = NO-EVIDENCE or REVERSED; else INCONCLUSIVE (BETTER: \u0394AUC CI lower > 0.002)",
+ "verdict": "HOM-NONE"
+}

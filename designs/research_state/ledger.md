@@ -28432,3 +28432,39 @@ ran with 3 threads from step 6,739. The HOM's training rows came out below the d
 Evidence: `research_state/measurements/x50_r1b_hom_2026-10-23/` (README, `rb1_read.json`, `hom_sidecar.json`,
 `hom_rows_summary.json`, `genc.json`, `run_hom.sh`); `src/main/x50_r1/{memory,genc,hom,read_rb1}.py`; the archive
 `/home/goodlad/gen3ai_archive/x50_r1b/`.
+
+### 2026-10-24 · MEASUREMENT · **X50 R-b2, READ under its registration (`42f1d9a7`): HOM-NONE. With the human opponent model as search's opponent-choice judge, the off-pool bank's bot stratum ranks the truth above honest worlds at AUC 0.459 [0.406, 0.510] (NO-EVIDENCE; P\* 0.472), paired ΔAUC −0.013 [−0.068, +0.045]; the lever is CLOSED for search at P\***
+
+**The read.** The frozen off-pool bank (`search_offpool_bank_2026-10-20/`, 320 states, 159 bot / 159 snapshot read),
+rebuilt at L3's code `8fe4fb89` (a fresh detached checkout), each state's candidates replayed once and scored by two
+judges in one process: P\* and the HOM (sha256 `76e29a01`, frozen in `a0d2c8900`). **G-REPRO PASS:** P\*'s re-score
+equals the bank's on all 320 states (|Δ| = 0, the same steps, the same 2 exclusions) and reproduces READ 2.
+
+| (L3's read; battle-clustered 95 % CIs) | bot | snapshot | pooled |
+|---|---|---|---|
+| **AUC, HOM** | **0.459 [0.406, 0.510] NO-EVIDENCE** | 0.706 [0.647, 0.760] | 0.583 [0.541, 0.625] |
+| AUC, P\* | 0.472 [0.410, 0.531] | 0.794 [0.753, 0.834] | 0.633 [0.591, 0.675] |
+| **ΔAUC (HOM − P\*)** | **−0.013 [−0.068, +0.045]** | −0.088 [−0.153, −0.027] | −0.050 [−0.093, −0.009] |
+
+Descriptive: the HOM's familiarity control is 0.490 on bots (no flag); P\*'s 6 bot losses read 0.688 (HOM) vs 0.854
+(P\*). The near-match restriction is degenerate: all 72 bank teams had training battles removed.
+
+**Verdict: HOM-NONE.** Under design §6 the human-opponent-model lever is CLOSED for search at P\*. Public-team proposals
+remain the open lever; search stays paused; the INCONCLUSIVE extension does not apply.
+
+**What it means.** A judge that predicts held-out humans 0.58 nats better than P\* (R-b1) carries no evidence about a
+scripted bot's hidden team. Against our own snapshots it is a worse judge than P\*, which nearly is that opponent. With
+our network or with a human model as the judge, the opponent-choice route stays SELF-PLAY-ONLY.
+
+**Findings.**
+1. The proxy (F-1b-3): the bank's non-self opponents are scripted bots, which switch on 6 % of labels, while the HOM's
+   gain is largest on switches. Whether a human's choices identify a human's team is L3-H's question; it is unregistered
+   and needs a replay world builder.
+2. The bot stratum holds 6 P\* losses (the bank's FINDING 1). The loss-enriched extension was registered only for an
+   INCONCLUSIVE verdict.
+3. The near-match split is uninformative: the species-only fit hit every heldout team.
+4. The `8fe4fb89` checkout had been deleted; it was recreated and its `core_events` rebuilt. The bit-exact G-REPRO shows
+   the rebuild reproduces the bank.
+
+Evidence: `research_state/measurements/x50_r1b_hom_2026-10-23/` (README §R-b2, `rb2_read.json`, `rb2_run.py`,
+`rb2_read.py`); the rows `/home/goodlad/gen3ai_archive/x50_r1b/rb2_rows.jsonl`.

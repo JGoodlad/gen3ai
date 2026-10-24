@@ -1,6 +1,7 @@
 # X50 rung 1b use (b): the HUMAN OPPONENT MODEL, built and read (2026-10-24)
 
-**Status: BUILT and FROZEN; R-b1 READ: LEARNED** (Δ NLL −0.582 nats [−0.599, −0.565]; §R-b1 below).
+**Status: BUILT and FROZEN; R-b1 READ: LEARNED** (Δ NLL −0.582 nats [−0.599, −0.565]); **R-b2 READ: HOM-NONE** (bot
+AUC 0.459 [0.406, 0.510], ΔAUC vs P\* −0.013 [−0.068, +0.045]). The lever is CLOSED for search at P\*.
 The HOM is X26's network fine-tuned from P\* on human choices (actor rated >= 1500), as
 registered in [`design_x50_rung1b_human_opponent_model.md`](../../../endstate/design_x50_rung1b_human_opponent_model.md)
 §3-§4 (`42f1d9a7`). It is search's opponent-choice likelihood judge ONLY (owner's yes, 2026-10-23); the policy never reads
@@ -83,6 +84,43 @@ softmax in float64. The read refused any HOM whose sha256 differed from the comm
 - Reference only, a different conditioning (R0's X26 intent head on H_c, predicting the same humans from the
   OPPONENT's view without their team): 1.785. The HOM, which sees the actor's completed own side, reads 1.148.
 
+## R-b2: the off-pool L3 likelihood with the HOM as the judge (§8.4, THE DECISIVE READ) — **HOM-NONE**
+
+The frozen off-pool bank ([`search_offpool_bank_2026-10-20`](../search_offpool_bank_2026-10-20/README.md)), 320 states:
+the truth, the 8 honest worlds and the off-pool decoys rebuilt at L3's code `8fe4fb89` (a fresh detached checkout;
+`core_events` built there), ONE replay per state, two judges (`rb2_run.py`). L3's own read code scores each judge
+(`rb2_read.py`, through the bank's sha256-checked `offpool_read.py`). Every number is in [`rb2_read.json`](rb2_read.json).
+Wall: ≈ 30 min of scoring in one heavy slot (≈ 5.7 s a state).
+
+**G-REPRO: PASS.** P\*'s re-score equals `rows.jsonl` on every state: every candidate's log-likelihood and familiarity
+term with |Δ| = 0, the same opponent steps, the same 2 states excluded (the builder's `WorldError`), 0 defects. P\*'s
+read through L3's code equals the bank's registered READ 2.
+
+| quantity (95 % CIs, battle-clustered, L3's bootstrap) | bot (159) | snapshot (159) | pooled (318) |
+|---|---|---|---|
+| **AUC truth vs honest, HOM** | **0.459 [0.406, 0.510] NO-EVIDENCE** | 0.706 [0.647, 0.760] WORKS | 0.583 [0.541, 0.625] WEAK |
+| AUC, P\* (the bank's READ 2, reproduced) | 0.472 [0.410, 0.531] | 0.794 [0.753, 0.834] | 0.633 [0.591, 0.675] |
+| **ΔAUC (HOM − P\*), paired per state** | **−0.013 [−0.068, +0.045]** not BETTER | −0.088 [−0.153, −0.027] | −0.050 [−0.093, −0.009] |
+| AUC_conf (familiarity control), HOM | 0.490 [0.433, 0.547] | 0.489 [0.425, 0.551] | |
+| top1, HOM / P\* | 0.101 / 0.107 | 0.327 / 0.409 | |
+| p_truth, HOM / P\* | 0.105 / 0.113 | 0.244 / 0.363 | |
+| lift_moves, HOM | −0.008 [−0.018, +0.003] | +0.011 [+0.001, +0.020] | |
+
+By P\*'s outcome (bot stratum): wins (153) HOM 0.450 vs P\* 0.457; losses (6) 0.688 vs 0.854.
+
+**VERDICT under the registered rule: HOM-NONE** (the bot stratum reads NO-EVIDENCE). No FAMILIARITY flag
+(AUC_conf's lower end 0.433). The INCONCLUSIVE extension (a loss-enriched bot bank) does not apply.
+
+**What it means for search (design §6).** The human-opponent-model lever is **CLOSED for search at P\*.** A judge that
+models human players far better than P\* (R-b1) carries no evidence about a scripted bot's hidden team, and on our own
+snapshots it is a worse judge than P\* itself (the opponent model is no longer the opponent). The opponent-choice route
+stays SELF-PLAY-ONLY; public-team proposals remain the open lever, and search stays paused.
+
+**What it does not say.** The bank's only non-self opponents are scripted bots, which switch on 6 % of labels while
+the HOM's gain is largest on switches (F-1b-3). So R-b2 cannot tell whether a human's own choices identify a human's
+team. That read is L3-H (§8.6, unregistered: it needs a replay world builder). The bot stratum also holds only 6 P\*
+losses, where L3's signal lives (the bank's FINDING 1).
+
 ## FINDINGS (standing rule 7)
 
 1. **The trainer ran from the worktree before it was committed.** The sidecar's `commit` (`2bbdffa7d`) is the
@@ -99,5 +137,11 @@ softmax in float64. The read refused any HOM whose sha256 differed from the comm
    states split by whether their team had training battles removed.
 6. **R-b1's forward cache first landed inside the worktree** (`measurements/rb1_cache/`, the default beside `--out`); it
    was moved to the archive before anything was committed, and `--cache` now defaults to the archive.
-7. **Process.** CPU only; `models/`, the corpus, the bank and `data/` were only read. Kills: my own driver shells by
+7. **The near-match restriction is degenerate.** Every one of the 72 heldout teams had training battles removed, so
+   every bank state is in the "removed" subset and its complement is empty. The species-only fit makes that subset
+   uninformative.
+8. **The 8fe4fb89 checkout had been deleted since the bank was scored.** It was recreated as a detached worktree at
+   `~/.cache/gen3ai/offpool/code` and its `core_events` rebuilt; G-REPRO's bit-exact match shows the rebuild reproduces
+   the bank.
+9. **Process.** CPU only; `models/`, the corpus, the bank and `data/` were only read. Kills: my own driver shells by
    PID; one `pkill -P <my PID>` took the bounded wait child of my own relaunch.
