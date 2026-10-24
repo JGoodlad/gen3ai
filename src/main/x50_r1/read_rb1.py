@@ -14,7 +14,7 @@ out-predict P* on held-out humans? A GATE for R-b2.
 
 The HOM must be FROZEN and HASHED before this runs: its zip's sha256 must equal the sidecar's (a committed record),
 else the read refuses. Bootstrap: battle clusters, 2,000 resamples, seed 50 (R1's). Forwards are cached per part
-and per model sha256 under ``<out>/../rb1_cache`` (resumable).
+and per model sha256 under ``--cache`` (default ``<heldout>/../rb1_cache``, the archive: never the repo; resumable).
 """
 from __future__ import annotations
 
@@ -97,6 +97,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--pstar", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--threads", type=int, default=6)
+    ap.add_argument("--cache", default=None, help="default: <heldout>/../rb1_cache")
     a = ap.parse_args(argv)
     from main.policy_spectrum.reader import inference_globals, load_checkpoint
 
@@ -111,7 +112,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 2
     with inference_globals(a.threads):
         models = {"hom": load_checkpoint(Path(a.hom)), "pstar": load_checkpoint(Path(a.pstar))}
-        A = collect(models, shas, Path(a.heldout), Path(a.out).resolve().parent / "rb1_cache")
+        cache = Path(a.cache) if a.cache else Path(a.heldout).resolve().parent / "rb1_cache"
+        A = collect(models, shas, Path(a.heldout), cache)
     prim = A["rating_viewer"] >= R1.PRIMARY_RATING
     sw = A["own_action"] <= SWITCH_MAX
     forced = A["forced"].astype(bool)

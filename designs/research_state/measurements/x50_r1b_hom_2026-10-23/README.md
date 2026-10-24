@@ -1,6 +1,7 @@
-# X50 rung 1b use (b): the HUMAN OPPONENT MODEL, built (2026-10-24)
+# X50 rung 1b use (b): the HUMAN OPPONENT MODEL, built and read (2026-10-24)
 
-**Status: BUILT and FROZEN.** The HOM is X26's network fine-tuned from P\* on human choices (actor rated >= 1500), as
+**Status: BUILT and FROZEN; R-b1 READ: LEARNED** (Δ NLL −0.582 nats [−0.599, −0.565]; §R-b1 below).
+The HOM is X26's network fine-tuned from P\* on human choices (actor rated >= 1500), as
 registered in [`design_x50_rung1b_human_opponent_model.md`](../../../endstate/design_x50_rung1b_human_opponent_model.md)
 §3-§4 (`42f1d9a7`). It is search's opponent-choice likelihood judge ONLY (owner's yes, 2026-10-23); the policy never reads
 it. **HOM sha256 `76e29a0176fd450d95496b4722d898e38ca2b98a50de0fc9147a2dea671bb36f`**, committed here
@@ -52,6 +53,36 @@ logits read moved; the win head and the flat intent head did not (no gradient).
 The exported zip reproduces the last validation NLL exactly (1.155700). The validation rows are training-date battles,
 so this selects the model and reads nothing held out.
 
+## R-b1: does the HOM out-predict P\* on held-out humans? (§8.2, a GATE) — **LEARNED**
+
+Rows: the held-out dates 09-21..23, completed, (b)'s label, >= 2 legal actions; both models through the judge's masked
+softmax in float64. The read refused any HOM whose sha256 differed from the committed sidecar. Every number is in
+[`rb1_read.json`](rb1_read.json). 95 % CIs: battle-cluster bootstrap, 2,000 resamples, seed 50.
+
+| stratum | rows | battles | Δ NLL (HOM − P\*) | NLL HOM / P\* | top-1 HOM / P\* |
+|---|---|---|---|---|---|
+| **PRIMARY: actor >= 1500** | 69,171 | 1,481 | **−0.582 [−0.599, −0.565]** | 1.148 / 1.730 | 0.567 / 0.460 |
+| voluntary switches (>= 1500) | 15,807 | 1,454 | −0.874 [−0.912, −0.839] | 1.642 / 2.516 | 0.389 / 0.307 |
+| moves (>= 1500) | 46,881 | 1,481 | −0.490 [−0.510, −0.470] | 1.006 / 1.496 | 0.626 / 0.505 |
+| forced replacements (>= 1500) | 6,483 | 1,379 | −0.537 [−0.575, −0.502] | 0.969 / 1.506 | 0.578 / 0.512 |
+| all ratings | 384,601 | 7,335 | −0.600 [−0.606, −0.593] | 1.223 / 1.823 | 0.538 / 0.435 |
+| rating < 1300 | 171,631 | 4,193 | −0.602 [−0.611, −0.593] | 1.291 / 1.893 | 0.513 / 0.417 |
+| 1300–1499 | 136,198 | 3,249 | −0.609 [−0.620, −0.598] | 1.168 / 1.777 | 0.559 / 0.448 |
+| 1500–1599 | 47,723 | 1,226 | −0.578 [−0.600, −0.558] | 1.156 / 1.734 | 0.563 / 0.460 |
+| 1600–1699 | 16,203 | 435 | −0.595 [−0.626, −0.567] | 1.118 / 1.713 | 0.579 / 0.466 |
+| >= 1700 | 5,245 | 128 | −0.583 [−0.644, −0.523] | 1.169 / 1.752 | 0.567 / 0.442 |
+
+**Verdict under the registered rule: LEARNED** (the CI's upper end, −0.565, is far below −0.05). R-b2 is unlocked.
+
+**Reading it.**
+- The gain is ten times the bar and holds in every stratum and rating band, the largest on voluntary switches
+  (−0.87 nats), where R1 found the human gap. Validation (training dates) read 1.156; the held-out humans read 1.148, so
+  there is no sign of drift over the three later days.
+- **It is a gate, not the evidence (F-1b-5).** Both models read completed rows, and only the HOM trained on them: part
+  of the gain may be the completion's signature (F-1b-4). R-b2 reads true rows.
+- Reference only, a different conditioning (R0's X26 intent head on H_c, predicting the same humans from the
+  OPPONENT's view without their team): 1.785. The HOM, which sees the actor's completed own side, reads 1.148.
+
 ## FINDINGS (standing rule 7)
 
 1. **The trainer ran from the worktree before it was committed.** The sidecar's `commit` (`2bbdffa7d`) is the
@@ -66,5 +97,7 @@ so this selects the model and reads nothing held out.
    driver to stop.
 5. **The team-memory rule excludes far more than copies** (above). It is the registered rule; R-b2 reports the bank's
    states split by whether their team had training battles removed.
-6. **Process.** CPU only; `models/`, the corpus, the bank and `data/` were only read. Kills: my own driver shells by
+6. **R-b1's forward cache first landed inside the worktree** (`measurements/rb1_cache/`, the default beside `--out`); it
+   was moved to the archive before anything was committed, and `--cache` now defaults to the archive.
+7. **Process.** CPU only; `models/`, the corpus, the bank and `data/` were only read. Kills: my own driver shells by
    PID; one `pkill -P <my PID>` took the bounded wait child of my own relaunch.

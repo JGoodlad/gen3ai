@@ -28399,3 +28399,36 @@ completed rows, 389,156 on the held-out human dates (evaluation only).
 
 Evidence: `research_state/measurements/x50_r1b_r0_2026-10-23/` (README, `r0_read.json`, `run_r0.sh`);
 `src/main/x50_r1/`; the parts in `/home/goodlad/gen3ai_archive/x50_r1b/`.
+
+### 2026-10-24 · MEASUREMENT · **X50 R-b1, READ under its registration (`42f1d9a7`): the HUMAN OPPONENT MODEL is LEARNED. On held-out humans (09-21..23, actor ≥ 1500), the HOM's NLL of the human's own choice is −0.582 nats [−0.599, −0.565] below P\*'s (bar: upper < −0.05): 1.148 vs 1.730; top-1 0.567 vs 0.460; voluntary switches −0.874**
+
+**The model.** Use (b) of `endstate/design_x50_rung1b_human_opponent_model.md` (owner's yes 2026-10-23): X26's network
+fine-tuned from P\* (280M) on 1,762,236 completed human rows (actor ≥ 1500, 05-18..09-20 of the spectator manifest),
+the registered recipe unchanged, all 10,346 steps, kept = last (validation 1.766 → 1.156). It is search's opponent-choice
+likelihood judge only; the policy never reads it. Frozen and committed before the read (sha256 `76e29a01…b36f`,
+`a0d2c8900`). Before training: Mimic's slot swap fixed (`3f5d4b4da`; R0's 14 refusals), G-ENC PASS, and the
+team-memory exclusion (F-1b-2) removed 70,010 training battles (19 %; a species-only reveal fits, so all 72 heldout
+teams are hit, mostly by common cores).
+
+**Results** (battle-clustered 95 % CIs, 2,000 resamples, seed 50):
+
+| stratum | rows | Δ NLL (HOM − P\*) |
+|---|---|---|
+| **PRIMARY, actor ≥ 1500** | 69,171 | **−0.582 [−0.599, −0.565] ⇒ LEARNED** |
+| voluntary switches | 15,807 | −0.874 [−0.912, −0.839] |
+| moves | 46,881 | −0.490 [−0.510, −0.470] |
+| forced replacements | 6,483 | −0.537 [−0.575, −0.502] |
+| all ratings | 384,601 | −0.600 [−0.606, −0.593] |
+
+Every rating band reads −0.58 to −0.61.
+
+**What it means.** R-b1 is a GATE (F-1b-5): both models read completed rows and only the HOM trained on them, so part
+of the gain may be the completion's signature (F-1b-4). It unlocks R-b2, the decisive read on true rows.
+
+**Findings.** The trainer ran from the worktree before it was committed (the file is unchanged). CPU training is not
+bit-deterministic (7th digit). Throughput fell 8–20× with 6 threads while other agents shared the agent cores, so it
+ran with 3 threads from step 6,739. The HOM's training rows came out below the design's ≈ 2.0–2.4M estimate.
+
+Evidence: `research_state/measurements/x50_r1b_hom_2026-10-23/` (README, `rb1_read.json`, `hom_sidecar.json`,
+`hom_rows_summary.json`, `genc.json`, `run_hom.sh`); `src/main/x50_r1/{memory,genc,hom,read_rb1}.py`; the archive
+`/home/goodlad/gen3ai_archive/x50_r1b/`.

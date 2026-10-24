@@ -1790,7 +1790,7 @@ The whole is PROVISIONAL at 15M: [`../endstate/design_hidden_info_binding.md`](.
 
 ---
 
-### 4.8 The intent head on human opponents: a GAP, mostly a switch gap (X50 R1 2026-10-20; R0 2026-10-23)
+### 4.8 Human opponents: the intent head's GAP (X50 R1, R0) and a human opponent model (R-b1, 2026-10-24)
 
 X26's flat intent head (380M) predicts human ladder opponents (rated ≥ 1500) worse than its own pool snapshots.
 Both were read through the same spectator pipeline, under the registered rule: **Δ NLL +0.188 nats [+0.164, +0.213]**
@@ -1804,10 +1804,16 @@ R1's spectator pipeline (public-only own side, fabricated own spread) cost the h
 penalty is **+0.012 nats [+0.005, +0.020]** (registered bar: upper < +0.08). Through the fixed pipeline **the gap
 is LARGER: +0.253 [+0.232, +0.276]** (1.785 vs 1.531); switches +0.411, and moves now +0.160. The old penalty hid
 part of it. The completion's own cost is +0.019 on our teams; on human teams it is UNVERIFIED (no truth).
-⇒ Human opponent-action labels carry signal the self-play labels lack (rung 1 of the human-replay ladder). Next under
-`endstate/design_x50_rung1b_human_opponent_model.md`: the human opponent model (b, owner-approved 2026-10-23), then
-the head refit offline (R-a1). [SIGNIFICANT on the registered contrasts · one checkpoint · ledger 2026-10-20
-*X50 R1*, 2026-10-23 *X50 R0* · `measurements/x50_r1_intent_read_2026-10-20/`, `measurements/x50_r1b_r0_2026-10-23/`]
+⇒ Human opponent-action labels carry signal the self-play labels lack (rung 1 of the human-replay ladder).
+
+**The human opponent model (use (b), owner-approved 2026-10-23; R-b1 2026-10-24).** X26's network fine-tuned from P\*
+on 1.76M completed human choices (actor ≥ 1500), a search-only likelihood judge the policy never reads. On held-out
+humans it predicts the human's own choice **0.582 nats [0.565, 0.599] better than P\*** (1.148 vs 1.730; top-1 57 %
+vs 46 %), most on voluntary switches (−0.87). LEARNED, but only a gate: both read completed rows and only the HOM
+trained on them. Whether it helps search is R-b2's question (the off-pool bank, true rows). The head refit (R-a1) is
+not read. [SIGNIFICANT on the registered contrasts · one checkpoint · ledger 2026-10-20 *X50 R1*, 2026-10-23
+*X50 R0*, 2026-10-24 *X50 R-b1* · `measurements/x50_r1_intent_read_2026-10-20/`, `measurements/x50_r1b_r0_2026-10-23/`,
+`measurements/x50_r1b_hom_2026-10-23/`]
 
 ### 4.9 Toy depth 2 → 4 at the plateau: UNDECIDED, Δ̂ ≤ 0, ended at look 1 (X47, 2026-10-21)
 
