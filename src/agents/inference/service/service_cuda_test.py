@@ -399,3 +399,34 @@ def test_overlap_attribution_books_only_t2s_own_streams(alloc, tmp_path):
         assert bw["state"] == "POISONED", r                                # (a) T2's own new segment is fatal
         assert "0 dynamo graphs, 1 CUDA segments" in (bw["error"] or ""), r
         assert bw["delta"]["cuda_segments_foreign_in_window"] == 1, r
+
+
+def test_overlap_compile_and_precision_are_foreign_not_fatal(tmp_path):
+    """gen3_t2_guard_attribution_v1 — THE CARD PROOF that a learner's recompile or precision change beside a worker-thread
+    flush no longer false-FATALs T2, in a fresh process with the launcher's ``expandable_segments:True``. T2 (graph
+    backend) flushes on a WORKER thread under its own CUDA stream, as ``overlap.py`` runs it, while the calling thread
+    ("the learner") compiles Inductor graphs and flips the matmul precision beside it. ``run_overlap_probe`` drives the
+    legs and ``check_overlap_probe`` judges them (both in ``guard_attribution_test``) — the SAME body and judge it runs on CPU:
+
+    - (b) a learner compile INSIDE a worker guard window is FOREIGN (``compiles_foreign_in_window`` >= 1), a learner
+      precision change likewise (``precision_foreign_in_window`` == 1); T2 stays FROZEN with 0 own compiles, no fallback;
+    - a flush loop on the worker while the learner compiles 3 graphs and flips the precision: still FROZEN, 0 own;
+    - (a) the WORKER compiling a graph inside its own window is T2's: POISONED, exactly the graphs it compiled.
+    NOT YET RUN (no lease when it was written; the t2_guard battery cell pins its 4 nodes and does not include it)."""
+    import json
+    import os
+    import subprocess
+    import sys
+
+    from agents.inference.service.guard_attribution_test import check_overlap_probe
+
+    env = {**os.environ, "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+           "TORCHINDUCTOR_CACHE_DIR": str(tmp_path / "inductor"), "TRITON_CACHE_DIR": str(tmp_path / "triton")}
+    code = ("import json; from agents.inference.service.guard_attribution_test import run_overlap_probe as P; "
+            "print(json.dumps(P('cuda', 'graph')))")
+    out = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, timeout=1800)
+    assert out.returncode == 0, out.stderr[-4000:]
+    r = json.loads(out.stdout.strip().splitlines()[-1])
+    print("overlap compile/precision probe:", json.dumps(r))        # the battery cell's record (-s / junit)
+    assert (r["device"], r["backend"]) == ("cuda", "graph"), r
+    check_overlap_probe(r)

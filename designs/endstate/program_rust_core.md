@@ -431,7 +431,7 @@ the bucket set should be COARSE.
   arenas and the pinned host output arena, per lane its stream, graph pool and static bucket
   inputs, one compiled forward per bucket (or, `aot`, one package per group × bucket), one CUDA
   graph per slot × bucket in its lane's pool, and runs the parity gate; then it freezes. After the freeze a flush only copies in, replays and
-  copies out. Counters that must stay 0: `compiles_after_freeze` (dynamo graph count),
+  copies out. Counters that must stay 0: `compiles_after_freeze` (dynamo graphs compiled on T2's own thread),
   `captures_after_freeze`, `cuda_segments_after_freeze` (`torch.cuda.memory_stats`
   `segment.all.allocated` across the service's own calls — BLIND under `expandable_segments:True`,
   which the launcher sets for every child); a non-zero one is a typed
@@ -452,7 +452,16 @@ the bucket set should be COARSE.
   overlap (the learner allocating on the default stream while a worker-stream flush runs) leave T2 alone. A snapshot is
   read only when a cumulative counter moved (none in a steady state); an unreadable one books the window process-wide
   (`cuda_attribution_fallbacks`). Card proof: `service_cuda_test.py::test_overlap_attribution_books_only_t2s_own_streams`
-  (the 2026-10-20 battery's `t2_guard` cell; UNVERIFIED on a card until it runs). Nothing is lazily compiled: an undeclared bucket
+  (the 2026-10-20 battery's `t2_guard` cell; UNVERIFIED on a card until it runs). The guard's other two process-wide
+  reads are attributed by THREAD (`gen3_t2_guard_attribution_v1`, `guard_attribution.py`; the thread that entered the
+  guard is T2's): a dynamo graph counts to T2 only when it compiled on that thread (`compile_control.thread_graph_marks`,
+  a per-thread tally of dynamo's `unique_graphs`; a learner recompile beside a worker flush is
+  `compiles_foreign_in_window`), and an fp32 matmul-precision change is fatal only when T2's own thread made it
+  (`PrecisionLedger` wraps `torch.set_float32_matmul_precision` to record the setter; another thread's change is
+  `precision_foreign_in_window`, warned). A window the instruments cannot place keeps the old process-wide rule and is
+  counted (`compile_attribution_fallbacks`, `precision_attribution_fallbacks`). CPU-proved on real threads
+  (`guard_attribution_test.py`); card proof `service_cuda_test.py::test_overlap_compile_and_precision_are_foreign_not_fatal`
+  (UNVERIFIED on a card; not yet a node of the `t2_guard` cell). Nothing is lazily compiled: an undeclared bucket
   cannot be reached (rows are packed into declared buckets), and a new slot cannot be added.
 * **Validation — the same bars as the compile gate.** At startup, for EVERY slot × bucket, the
   committed real-obs fixture (`compile_parity_obs.npz`; full bucket AND a partially-filled one)

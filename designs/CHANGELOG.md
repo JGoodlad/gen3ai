@@ -15348,3 +15348,32 @@ was downloaded or written under `data/`.
   `main/train/checkpoint_commit_test.py` (a failed interrupted save leaves the previous zip, mtime and pointer; `latest.txt` never names a
   missing or partial target; the order is zip, sidecars, pointer; no training-process module calls `model.save` in place),
   `agents/training/atomic_writers_test.py`. Doc: `training/checkpoint_writes.md` (the write-by-write audit).
+
+## 2026-10-24 — T2's frozen guard books a dynamo compile and a matmul-precision change to T2 only when T2's OWN thread made it (`gen3_t2_guard_attribution_v1`; `agents.inference.service` + one `compile_control` accessor; no model / config / obs / signature change)
+
+- **The defect (X14 finding 6, the sibling of C-1).** `_frozen_guard` diffed two more PROCESS-WIDE values around a flush:
+  dynamo's `counters['stats']['unique_graphs']` and `torch.get_float32_matmul_precision()`. With X14's overlap on (T2
+  flushing on the collector's worker thread, the learner on the main thread) a learner recompile inside a T2 window was a
+  FATAL `compiles_after_freeze`, and a learner precision change a FATAL on T2, on a healthy run. Production arms do not
+  run overlap, so nothing live was affected.
+- **The mechanism (by thread; the thread that entered the guard is T2's).** *Graphs:* dynamo bumps `unique_graphs` ON THE
+  COMPILING THREAD (`OutputGraph.compile_and_call_fx_graph`, under `convert_frame.compile_lock`), so
+  `compile_control.thread_graph_marks()` replaces `counters["stats"]` with a `Counter` that tallies the writing thread's
+  ident per increment; `guard_attribution.attribute_compiles` charges T2 only its own thread's share, the rest is
+  `compiles_foreign_in_window`. A start callback was rejected: dynamo skips it while another compile is pending, and
+  `torch._dynamo.reset()` drops it. *Precision:* torch's precision is one process global, so the SETTER is recorded:
+  `PrecisionLedger` wraps `torch.set_float32_matmul_precision` (once, at T2's startup; the wrapper records the thread whose
+  call CHANGED the value, under one lock with every read) and `judge_precision` fails the guard when the value left the
+  startup one and T2's own thread did it (in the window, even if set back, or in a state it carried in), is FOREIGN when only
+  other threads did (`precision_foreign_in_window`, warned at 1, 2, 4, 8, ...), and keeps the old rule when the setter was
+  not seen (`allow_tf32`, a C++ setter, a name bound before the wrap).
+- **Fallback.** A window the instruments cannot place (the ledger unavailable, rebuilt mid-window by a `counters.clear()`,
+  or a counter write that bypassed the tally) is booked to T2 process-wide, the old rule, and counted
+  (`compile_attribution_fallbacks`, `precision_attribution_fallbacks`). A serial run has one thread, so it is unchanged.
+- **Tests.** `guard_attribution_test.py` (CPU, the real guard on real threads: a foreign compile and a foreign precision
+  change are not fatal, T2's own still are, beside each other too; 10 of them fail when the guard is reverted to the
+  process-wide reads), `compile_graph_ledger_test.py` (contract tests of the tally on real dynamo compiles),
+  `overlap_probe.py` (one probe body and judge, run on CPU by `guard_attribution_test`). The card test
+  `service_cuda_test.py::test_overlap_compile_and_precision_are_foreign_not_fatal` runs the same probe on the graph backend
+  with Inductor compiles; WRITTEN, NOT RUN (no lease), and not yet a node of the `t2_guard` battery cell. Docs:
+  `endstate/program_rust_core.md` (the T2 lifecycle paragraph), `training/rust_collector.md`, the `TECH_DEBT_BACKLOG.md` rows.

@@ -99,8 +99,8 @@ straddles two updates, as in a serial run, is older). The worker plays until the
 never plays past the target and never reloads T2 mid-rollout, so no wall-clock timing reaches a row and an ON run
 is deterministic (`overlap_integration_test`: two learns, same bytes). The first update of every process runs
 alone, so the learner's CUDA reservation reaches its peak before a flush runs beside it (kept although T2's frozen
-guard now books only T2's own streams, `gen3_t2_stream_attribution_v1`: fewer foreign snapshots, and the same
-memory peak as a serial run).
+guard now books only T2's own streams and thread, `gen3_t2_stream_attribution_v1` and `gen3_t2_guard_attribution_v1`:
+fewer foreign snapshots, and the same memory peak as a serial run).
 
 **The worker touches the collector's side only** (the core, T2, the opponent server, the stager, the arena, the
 counters) — never the learner, the logger, a callback or `num_timesteps`. Each host step's decision count and the
@@ -148,11 +148,17 @@ warn` under AM-6's ceilings like every production arm.
 **CUDA.** T2's `execute` orders its copies on the CALLING thread's current stream; on the main thread that is the
 default stream the learner fills during `train()`. The worker runs under its OWN stream (acquired at startup) with
 explicit joins at `begin` and `join`. ⚠️ UNVERIFIED on the card (no GPU lease when it was built). T2's frozen guard
-reads process-wide allocator counters and ATTRIBUTES them per stream (`gen3_t2_stream_attribution_v1`,
-`reserved_growth.StreamAttribution`): a learner allocation on the default stream inside a worker-stream flush is
-counted FOREIGN (`cuda_reserved_bytes_foreign_in_window`, `cuda_segments_foreign_in_window`), never T2's — before it, a
+reads process-wide counters and ATTRIBUTES them: allocator growth per stream (`gen3_t2_stream_attribution_v1`,
+`reserved_growth.StreamAttribution`) — a learner allocation on the default stream inside a worker-stream flush is
+counted FOREIGN (`cuda_reserved_bytes_foreign_in_window`, `cuda_segments_foreign_in_window`), never T2's; before it, a
 learner segment there was a FATAL `cuda_segments_after_freeze` without `expandable_segments` (core review C-1) and a
-learner reservation was booked as T2's growth. ⚠️ The card proof is the 2026-10-20 battery's `t2_guard` cell.
+learner reservation was booked as T2's growth — and dynamo graphs and the fp32 matmul precision per THREAD
+(`gen3_t2_guard_attribution_v1`, `guard_attribution.py`; X14 finding 6): the learner's recompile on the main thread
+during a worker flush is `compiles_foreign_in_window` and its precision change `precision_foreign_in_window`, both
+counted and never fatal (before it, either was a FATAL on a healthy overlap run); only a compile or change made on the
+worker's own thread is T2's. The thread legs are CPU-proved on real threads; production arms run no overlap, so nothing
+live depended on either. ⚠️ The card proofs are the 2026-10-20 battery's `t2_guard` cell (memory) and
+`service_cuda_test.py::test_overlap_compile_and_precision_are_foreign_not_fatal` (threads; not yet a node of that cell).
 `RESERVED_GROWTH_POISONS` stays OFF until it passes AND the worker stream's FIRST flushes are shown to grow nothing on
 T2's streams (a working set acquired lazily on the fresh worker stream is a real T2 growth that arming would make
 fatal; the cell records it).
