@@ -115,7 +115,8 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   patch (2026-10-07) took watchdog aborts from 131 to 0 (§7). Size the fan-out by the RESOURCES that
   actually bind, each with its own guard: ONE GPU lease (standing rule 5); ONE routine gate at a
   time (`scripts/ops/gate_lock.sh`); while a training run is live, ≤ 2 heavy CPU jobs on ≤ 3 whole
-  physical cores (rule 5b); no two agents on the same files (separate worktrees, disjoint scopes);
+  physical cores (rule 5b; a job of ≤ 10 min declares `mem_cap.sh --max-s <S>` and rides the SHORT LANE instead of
+  waiting out 45-min chunks, killed past S + 30 s: `designs/ops/testing.md` > "The short lane"); no two agents on the same files (separate worktrees, disjoint scopes);
   and quota (frugal, not stingy). Re-impose a cap only if stalls return (check
   `cc_keepalive_patch.py self`) — then measure, do not guess.
 - **Quota: the account is on the Max 20x plan — plenty, and never to be wasted** (owner,
@@ -523,7 +524,7 @@ hourly LLM check caught them. Three layers now stand, cheapest first:
    measurement drivers, anything that loads many checkpoints) runs under
    `scripts/ops/mem_cap.sh <GB> <cmd>`** — its own scope with a hard cap, inside the shared
    `gen3ai-heavy.slice` (aggregate cap 64 GB by default), at `oom_score_adj` +500; an overrun kills
-   only that job (exit 86). Say so in every brief that runs one. The owner set the user manager's
+   only that job (exit 86). Say so in every brief that runs one (`--max-s <S>` too, when the job is under 10 min). The owner set the user manager's
    `DefaultOOMPolicy=continue` the same day (`~/.config/systemd/user.conf.d/oom.conf`), so a scope
    now survives an OOM kill of one child — but a global OOM still kills whatever the kernel picks.
 2. **RETIRED as a cron (owner, 2026-10-04: *"more of a problem than a helper"*) — do NOT schedule it.** The script

@@ -16,14 +16,23 @@ usage() {
 mem_cap.sh — run a command under a memory cap in its own scope (see src/utils/mem_cap.py)
 
 USAGE
-    scripts/ops/mem_cap.sh [--name N] [--slice-gb G] [--term-grace S] [--slot] [--no-wait] [--blocking WHY] <GB> <cmd> [args...]
+    scripts/ops/mem_cap.sh [--name N] [--slice-gb G] [--term-grace S] [--slot] [--no-wait] [--blocking WHY] [--max-s S] <GB> <cmd> [args...]
     scripts/ops/mem_cap.sh --status           # the heavy slice, every capped job, the HEAVY SLOTS
 
-HEAVY SLOTS (rule 5b, utils/heavy_slots.py): while a training run is live (or with --slot) the job
-first takes one of the box's 2 heavy slots, waiting with a visible line; --no-wait refuses at once
-(exit 87). A job the orchestrator marks BLOCKING ($GEN3AI_BLOCKING=<why> or --blocking <why>) bypasses
-them; a job inside a slot holder (the routine gate holds one) takes none. Lock order: gate_lock.sh
-OUTSIDE mem_cap.sh.
+HEAVY SLOTS (rule 5b, utils/heavy_slots.py): while a training run is live or the GPU is leased (or
+with --slot) the job first takes one of the box's 2 heavy slots, waiting with a visible line; --no-wait
+refuses at once (exit 87). A job the orchestrator marks BLOCKING ($GEN3AI_BLOCKING=<why> or --blocking
+<why>) bypasses them; a job inside a slot holder (the routine gate holds one) takes none. Lock order:
+gate_lock.sh OUTSIDE mem_cap.sh.
+
+SHORT LANE: a job of at most 10 minutes DECLARES it with --max-s S (0 < S <= 600; or
+$GEN3AI_HEAVY_SLOT_MAX_S=S) so it need not wait out the 40-45-minute chunks ahead of it. It queues in the
+short lane (FIFO among shorts, FIFO among longs) and may jump ahead of a queued LONG job, at most 3 times
+per long job. The price is a HARD TIMEOUT of S + 30 s (SIGTERM, then SIGKILL after --term-grace, which
+a short job caps at 60 s). An overrun prints "SHORT-LANE OVERRUN ... re-queue it as a LONG job" and exits
+88: its work is incomplete; re-run it WITHOUT --max-s, in bounded chunks (<= 45 min). The deadline binds
+only a job that took a slot of its own: not one that needed none, bypassed (BLOCKING, gpu_lock) or runs
+inside a holder. A declaration above 600 s, or --term-grace above 60 s, is refused (exit 2).
 
 The command runs in gen3ai-capped-<name>-<pid>.scope (MemoryMax=<GB>G, MemorySwapMax=0,
 OOMPolicy=stop) inside gen3ai-heavy.slice ($GEN3AI_HEAVY_SLICE), whose aggregate MemoryMax is
@@ -37,7 +46,8 @@ worker too. The wrapper dying by SIGKILL (timeout -k, kill -9) stops the job the
 SIGTERM, 137 once the grace killed it. Composes with gpu_lock.sh either way.
 Exit status: the command's own (128+N if signal N killed it); 86 = OOM-killed at its cap or the
 slice's; 85 = the cap could not be put in force (the command did NOT run); 87 = --no-wait and every
-heavy slot is held (the command did NOT run); 2 = usage.
+heavy slot is held (the command did NOT run); 88 = a declared-short job overran its hard timeout and
+was killed; 2 = usage.
 USAGE_EOF
 }
 

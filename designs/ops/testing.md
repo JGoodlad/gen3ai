@@ -315,7 +315,7 @@ or fails DETERMINISTICALLY):
 | just the bridge | `-m sim` | ~100 s |
 | just the browser views | `-m browser` | **~19 s** (2026-09-29) |
 | **anything on the GPU** (a `GEN3AI_TEST_ALLOW_GPU=1` test, a cuda benchmark) | **Only under a GPU LEASE** the orchestrator granted you in your brief (owner, 2026-10-03: nobody blocks on the GPU). `scripts/ops/gpu_lease.sh acquire --owner <name>` (immediate typed refusal if leased or busy) prints `export GEN3AI_GPU_LEASE_TOKEN=<token>`; an agent's Bash tool keeps no exports between calls, so put `GEN3AI_GPU_LEASE_TOKEN=<token>` (or `--token-file F` once + `GEN3AI_GPU_LEASE_TOKEN_FILE=F`) in front of each call; `release` when done. Then `scripts/ops/gpu_lock.sh <cmd>` — **never a bare `flock ~/.claude/jobs/gpu.lock`** — passes straight through on your token and runs WITHOUT queueing. Everyone else is refused AT ONCE: exit **6** `GpuLeased` (names the owner, holder pid, since when), exit **5** `GpuBusy` (a one-off holder), never a wait; `--wait` / `wait=True` (kernel-blocked, a lease appearing ends it) is for the orchestrator or a training launch. **An agent with no lease never sets `GEN3AI_TEST_ALLOW_GPU=1` and runs every test, gate and script with `CUDA_VISIBLE_DEVICES=""`** (GPU tests skip without the first, so the routine gate stays CPU-only; the second is because a "CPU-only" job can still create a CUDA context through an import or a default device, as one did during a leased window on 2026-10-15). The helper (`src/utils/gpu_lock.py`, `src/utils/gpu_lease.py`) also exports `GEN3AI_GPU_LOCK_HELD=<pid>`, so a command that takes the lock itself (`policy_spectrum truth --lock`) re-enters instead of deadlocking on its own ancestor (2026-09-30: 15 min at 0% CPU); a bare-`flock` ancestor raises `GpuLockSelfDeadlock` at once. **A wall timeout goes INSIDE the lock** — `scripts/ops/gpu_lock.sh timeout 3000 <cmd>`; a stale lease (dead holder, reused pid) is detected and cleared by `status` / `acquire`; a crashed owner's lease is ended by the orchestrator (`release --force`), or expires at `--max-hours` (default 12) / when `--watch-pid` dies. Tests: `src/utils/gpu_lease_test.py`, `src/utils/gpu_lock_test.py` | — |
-| **any exploratory or one-off HEAVY job** (a trace, a benchmark, a measurement driver, anything that loads many checkpoints) | `scripts/ops/mem_cap.sh <GB> <cmd>` (Python: `utils.mem_cap`), a timeout INSIDE (`mem_cap.sh 24 timeout 2h python …`: bounds the command, not the slot wait) or OUTSIDE (`timeout 3000 mem_cap.sh 24 python …`: bounds the wrapper too, and since 2026-10-19 it STOPS the job — SIGTERM forwarded, then `--term-grace` (default 60 s) later SIGKILL of everything left in the scope, a `setsid` worker included; `utils/mem_cap_test.py` runs real trees), composes with `gpu_lock.sh` in either order. The job gets its OWN scope (`MemoryMax=<GB>G`, swap 0, `OOMPolicy=stop`) inside `gen3ai-heavy.slice` (aggregate cap, default 64 GB of 89) at `oom_score_adj` +500, so an overrun kills only that job (exit 86). 2026-09-30: three global OOM kills of a 74-82 GB python3 each tore down the whole tmux scope (Claude + every agent). **While a training run is live OR the GPU is LEASED it also takes one of the box's 2 HEAVY SLOTS** (rule 5b is keyed to the lease too, so a leased measurement window is not flooded by the jobs queued behind a run; a job already running under `gpu_lock` takes none, so the lease owner's cells never queue; `src/utils/heavy_slots.py`, 2026-10-19), waiting visibly in FIFO order (the oldest ticket gets the next free slot; `--no-wait`: exit 87); the routine gate holds one itself and everything inside it re-enters; `$GEN3AI_BLOCKING=<why>` (the orchestrator's mark) bypasses; **hold a slot per BOUNDED CHUNK (<= 45 min), never per run** (`--status` flags a holder past 60 min as `LONG HOLD`, the holder is warned once, nothing is killed); `mem_cap.sh --status` shows holders, queue, bypassers; `gate_lock.sh` goes OUTSIDE `mem_cap.sh` (the other order is refused when the gate is busy: exit 5) | — |
+| **any exploratory or one-off HEAVY job** (a trace, a benchmark, a measurement driver, anything that loads many checkpoints) | `scripts/ops/mem_cap.sh <GB> <cmd>` (Python: `utils.mem_cap`), a timeout INSIDE (`mem_cap.sh 24 timeout 2h python …`: bounds the command, not the slot wait) or OUTSIDE (`timeout 3000 mem_cap.sh 24 python …`: bounds the wrapper too, and since 2026-10-19 it STOPS the job — SIGTERM forwarded, then `--term-grace` (default 60 s) later SIGKILL of everything left in the scope, a `setsid` worker included; `utils/mem_cap_test.py` runs real trees), composes with `gpu_lock.sh` in either order. The job gets its OWN scope (`MemoryMax=<GB>G`, swap 0, `OOMPolicy=stop`) inside `gen3ai-heavy.slice` (aggregate cap, default 64 GB of 89) at `oom_score_adj` +500, so an overrun kills only that job (exit 86). 2026-09-30: three global OOM kills of a 74-82 GB python3 each tore down the whole tmux scope (Claude + every agent). **While a training run is live OR the GPU is LEASED it also takes one of the box's 2 HEAVY SLOTS** (rule 5b is keyed to the lease too, so a leased measurement window is not flooded by the jobs queued behind a run; a job already running under `gpu_lock` takes none, so the lease owner's cells never queue; `src/utils/heavy_slots.py`, 2026-10-19), waiting visibly in FIFO order per LANE (`--no-wait`: exit 87; **a job of at most 10 min declares itself with `--max-s <S>` and rides the SHORT LANE**, killed past S + 30 s: § "The short lane" below); the routine gate holds one itself and everything inside it re-enters; `$GEN3AI_BLOCKING=<why>` (the orchestrator's mark) bypasses; **hold a slot per BOUNDED CHUNK (<= 45 min), never per run** (`--status` flags a holder past 60 min as `LONG HOLD`, the holder is warned once, nothing is killed); `mem_cap.sh --status` shows holders, queue, bypassers; `gate_lock.sh` goes OUTSIDE `mem_cap.sh` (the other order is refused when the gate is busy: exit 5) | — |
 
 ```bash
 # THE SHIP GATE — the routine gate below, in the shape the box affords (rule 5b when a run is live), one command:
@@ -359,6 +359,59 @@ sample: a tree under 0.05 cores is flagged IDLE — a possible deadlock to `py-s
 kill someone else's gate), OVERDUE past 1.5x the ETA, and every blocked taker with its wait (flock wakes
 waiters in no guaranteed order, so the list is not a promise). `--json` for agents. The waiting log line
 every 60 s carries the holder's age and ETA. The records only REPORT: the flock alone is the lock.
+
+### The short lane of the heavy slots (2026-10-23)
+
+**Why.** Jobs of a few minutes waited 1-2 h behind 40-45-min research chunks in the 2-slot FIFO (the D1 corpus soak: 4 min of
+work after 53 min of waiting; slow-test banking, G3 rechecks, the Kakuna 3-min units behind two 40-min S drivers).
+
+**How an agent uses it.** Know your job's bound, declare it, and put it under the wrapper:
+
+```bash
+scripts/ops/mem_cap.sh --max-s 300 24 python -m main.<the 4-minute job>     # or GEN3AI_HEAVY_SLOT_MAX_S=300 in front
+```
+
+- `S` is a ceiling, `0 < S <= 600`; above it (or `--term-grace` above 60) is refused, exit 2. Declare the real bound plus
+  slack, not 600 by habit: the hard timeout is **S + 30 s** (SIGTERM, then SIGKILL of the whole scope after the stop grace,
+  so a job that defers SIGTERM is killed too); the worst-case slot hold is S + 30 + the grace (12 min at S = 600).
+- **An overrun is killed and labelled**: stderr `[mem_cap] SHORT-LANE OVERRUN: ... re-queue it as a LONG job`, exit **88**, an
+  `overrun` line in `~/.claude/jobs/heavy_slots/events.jsonl`. Its work is INCOMPLETE: re-run it WITHOUT `--max-s`, in bounded
+  chunks (<= 45 min). A script that must survive one re-runs on 88.
+- **What the lane buys**: a declared job queues in the short lane (FIFO among shorts) and a free slot goes to it ahead of a
+  queued LONG job, at most **3 times per long job** (`heavy_slots.SHORT_JUMPS`; the count is kept in that long job's own ticket
+  file, so a waiting gate or an old-code process is covered). The fourth short waits for that long job's turn, then the next
+  long head starts fresh. FIFO inside each lane and BLOCKING are unchanged. `mem_cap.sh --status` shows each job's lane and
+  the grant order.
+- **When the deadline does NOT bind**: only a job that TOOK a slot is killed. A job that needs none (no run live, no lease),
+  runs BLOCKING / under `gpu_lock`, or inside a slot holder (the ship gate's tests) is never cut, so an ambient
+  `GEN3AI_HEAVY_SLOT_MAX_S` cannot kill a gate. The routine gate and `gate_lock` are always LONG.
+
+**Where 3 and 600 s come from (measured 2026-10-23).** The queue logged nothing durable, so the numbers are read from the
+`released heavy slot ... after N s` / `took heavy slot ... after waiting N s` stderr lines that agent transcripts kept
+(10-20..23): **214 distinct releases and 32 distinct waits** (waiters only: the zero waits collapse when de-duplicated). Holds: median 271 s, p75 798, p90 1,521, max 12,948 (3.6 h);
+**68 % of jobs held <= 600 s but they are only 18 % of the slot-seconds** (<= 300 s: 50 % of jobs, 5.5 % of slot-seconds), so
+a 10-min lane absorbs two thirds of the jobs for under a fifth of the capacity. Waits (waiters only): median 2,054 s, p75
+3,246, p90 6,877, max 7,626 (2.1 h); of 51 jobs whose wait and hold were both kept, 17 waited at all, the nine SHORT ones for
+a median 2,961 s (49 min). A discrete-event simulation of two slots on the 214 measured holds (Poisson and bursty arrivals,
+utilisation 0.7-0.9; FIFO matches the measured wait at 0.8: median 37 min) gave, at 0.8 (minutes, short p50 / p90, long mean):
+
+| policy | short p50 | short p90 | long mean |
+|---|---|---|---|
+| FIFO (before) | 17 | 158 | 54 |
+| K = 1 | 18 | **332 (worse)** | 40 |
+| K = 2 | 10 | 130 | 57 |
+| **K = 3** | **6.5** | **51** | **62 (+15 %)** |
+| K = 4 | 5.5 | 34 | 63 |
+| shorts first | 4.6 | 22 | 64 |
+
+K must exceed the short:long arrival ratio (146:68 = 2.1) or the short lane fills faster than it drains (K = 1 is WORSE than
+FIFO for shorts, K = 2 barely better); K = 3 is the smallest value that clearly helps and costs the long jobs ~12-15 % mean wait, and
+its worst case per queued long job is 3 x (600 + 30 + 60) s = 34.5 min. The bursty variant (clusters of 1-4) gives the same
+ranking (short p90 51 -> 26 min, long mean 18 -> 20 min at 0.8). **UNVERIFIED:** the simulation assumes every job <= 600 s
+declares itself and the arrival process is Poisson / simple bursts; the real mix and rate are not measured. Re-tune from
+`events.jsonl` (one `slot` line per release: lane, waited_s, held_s) once it has a few days, with `GEN3AI_SHORT_JUMPS` as the
+knob. Tests: `src/utils/heavy_slots_lane_test.py` (ordering, the bound, real waiters, the deadline's reach),
+`src/utils/mem_cap_test.py` (a real overrun is killed and labelled).
 
 ### The SHIP GATE — the routine gate in the shape the box affords (2026-10-19)
 

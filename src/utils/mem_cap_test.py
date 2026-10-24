@@ -17,13 +17,18 @@ drop-ins ``set-property --runtime`` wrote). The load-bearing pins, each FAILS on
   (the trainer's deferred abort) — the whole tree, a ``setsid``-ed worker included — after the grace; a job
   that exits on SIGTERM gets its detached leftovers swept; the wrapper's own SIGKILL stops the job too;
   a bad ``--term-grace`` is refused. Each runs a REAL process tree in a REAL scope and fails on revert
-  (the old wrapper never returns).
+  (the old wrapper never returns);
+* THE SHORT LANE (2026-10-23): a job declared short (``--max-s``) that runs past declared + margin is stopped (a job that
+  DEFERS SIGTERM is SIGKILLed after the grace), labelled ``SHORT-LANE OVERRUN`` and exits 88 so the caller re-queues it as
+  a long job; a declared job inside its bound passes with its own exit status. The queue's ordering is
+  ``heavy_slots_lane_test.py``.
 
 ``integration``: needs a systemd user manager with the memory controller delegated; SKIPS (with the
 reason) where there is none. ~15 s.
 """
 from __future__ import annotations
 
+import json
 import os
 import selectors
 import shutil
@@ -79,7 +84,9 @@ def env(tmp_path):
     sl = f"gen3ai-heavytest{os.getpid()}.slice"
     # never the REAL heavy slots (taken while a run is live), and never a wait on them here
     # (an inherited BLOCKING mark - the gate running THIS file may carry one - would bypass the slots under test)
-    e = {**{k: v for k, v in M._env().items() if k not in (HS.HELD_ENV, HS.BLOCKING_ENV)}, M.SLICE_ENV: sl, M.SLICE_GB_ENV: "4",
+    # (nor an ambient short-lane declaration / margin / budget: a job declared short is killed, and these tests pick their own)
+    ambient = (HS.HELD_ENV, HS.BLOCKING_ENV, HS.MAX_S_ENV, HS.SHORT_MARGIN_ENV, HS.SHORT_JUMPS_ENV)
+    e = {**{k: v for k, v in M._env().items() if k not in ambient}, M.SLICE_ENV: sl, M.SLICE_GB_ENV: "4",
          HS.DIR_ENV: str(tmp_path / "heavy_slots"), HS.SLOTS_ENV: "16",
          "PYTHONPATH": os.pathsep.join([str(src_root()), os.environ.get("PYTHONPATH", "")])}
     yield e
@@ -494,3 +501,45 @@ def test_gpu_lock_outside_mem_cap_takes_no_cpu_slot_beside_a_full_house(env, tmp
     finally:
         holder.kill()
         holder.wait()
+
+
+_SLEEPER_PY = ("import os, signal, sys, time\n"
+               "open(sys.argv[1], 'w').write(str(os.getpid()))\n"
+               "if sys.argv[3] == 'defer':\n"
+               "    signal.signal(signal.SIGTERM, signal.SIG_IGN)       # a job that defers its stop (the trainer's abort)\n"
+               "time.sleep(float(sys.argv[2]))\n"
+               "open(sys.argv[1] + '.done', 'w').write('finished')\n")
+
+
+@pytest.mark.parametrize("how", ["exit", "defer"])
+def test_a_declared_short_job_that_overruns_is_killed_and_labelled_for_a_long_requeue(env, tmp_path, how):
+    """The short lane's price: ``--max-s 1`` + the 1 s margin = a 2 s hard timeout. A job that sleeps 120 s is stopped, the
+    wrapper says SHORT-LANE OVERRUN / re-queue as a LONG job and exits 88 - and the process is really gone, also when it
+    DEFERS SIGTERM (SIGKILL after the ``--term-grace``). The control, the SAME job inside a wider bound, finishes with its
+    own exit status. Fails on a revert of the supervisor's deadline (the 120 s job would run to its end) or of the label."""
+    e = {**env, HS.SHORT_MARGIN_ENV: "1"}
+    pidfile = tmp_path / "pid"
+    t0 = time.monotonic()
+    r = _run(["--slot", "--max-s", "1", "--term-grace", "3", "0.5", sys.executable, "-c", _SLEEPER_PY, str(pidfile), "120",
+              how], e, timeout=90.0)
+    took = time.monotonic() - t0
+    assert r.returncode == HS.EXIT_SHORT_OVERRUN == M.EXIT_SHORT_OVERRUN == 88, (r.returncode, r.stderr)
+    assert "SHORT-LANE OVERRUN" in r.stderr and "re-queue it as a LONG job" in r.stderr, r.stderr
+    assert "hard timeout" in r.stderr and not (tmp_path / "pid.done").exists()
+    assert took < scale_timeout(60), f"the wrapper outlived a 2 s hard timeout by {took:.0f} s"
+    assert not _alive(int(pidfile.read_text())), "the overrunning job is still alive"
+    rows = [json.loads(ln) for ln in (Path(env[HS.DIR_ENV]) / HS.EVENTS_FILE).read_text().splitlines()]
+    assert [(x["kind"], x.get("lane")) for x in rows] == [("overrun", None), ("slot", "short")], rows   # logged, then released
+    # control: the same job, finishing inside declared + margin, passes untouched (and is not labelled)
+    ok = _run(["--slot", "--max-s", "20", "--term-grace", "3", "0.5", sys.executable, "-c", _SLEEPER_PY,
+               str(tmp_path / "pid2"), "1", how], e, timeout=90.0)
+    assert ok.returncode == 0 and "OVERRUN" not in ok.stderr, (ok.returncode, ok.stderr)
+    assert (tmp_path / "pid2.done").read_text() == "finished"
+    assert "SHORT lane: declared <= 20 s, hard timeout 21 s" in ok.stderr, ok.stderr
+
+
+def test_a_long_job_is_not_given_a_deadline_by_the_short_lane(env, tmp_path):
+    """No declaration, no deadline: the same 3 s job beside a 1 s margin runs to its end."""
+    e = {**env, HS.SHORT_MARGIN_ENV: "1"}
+    r = _run(["--slot", "0.5", sys.executable, "-c", _SLEEPER_PY, str(tmp_path / "p"), "3", "exit"], e, timeout=90.0)
+    assert r.returncode == 0 and (tmp_path / "p.done").exists(), (r.returncode, r.stderr)

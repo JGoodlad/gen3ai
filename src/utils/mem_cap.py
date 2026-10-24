@@ -6,6 +6,7 @@ USAGE
     scripts/ops/mem_cap.sh --name k8trace 24 timeout 2h python -m main.compile_inventory run ...
     scripts/ops/mem_cap.sh --status                              # the slice and every capped job now
     python -m utils.mem_cap [--name N] [--slice-gb G] [--term-grace S] <GB> -- <cmd> [args...]
+    scripts/ops/mem_cap.sh --max-s 300 24 <cmd>                  # a SHORT job (<= 600 s): the short lane, killed past its bound
 
     # composes with the GPU lock in BOTH orders; a timeout INSIDE bounds the command alone (the
     # heavy-slot wait is not counted), one OUTSIDE bounds the whole wrapper and ALSO stops the scope
@@ -64,6 +65,17 @@ job (``pass_fds``), so the slot stays held while any process of the job's tree l
 SIGKILLed wrapper leaves a job that defers SIGTERM (``--status`` marks a slot whose locker is gone "owner gone");
 a normal end still releases it at once.
 
+THE SHORT LANE (2026-10-23, ``utils.heavy_slots``): ``--max-s S`` (or ``$GEN3AI_HEAVY_SLOT_MAX_S=S``; 0 < S <= 600) declares
+the job short. It queues in the short lane - it may jump ahead of a queued LONG job (at most 3 times per long job; FIFO
+among shorts and among longs) - and in return it runs under a HARD TIMEOUT of S + 30 s (``$GEN3AI_SHORT_MARGIN_S`` can only
+narrow the 30), enforced by the supervisor: SIGTERM at the deadline, then the ordinary ``--term-grace`` (<= 60 s for a short
+job) to SIGKILL of everything left in the scope. An overrun is labelled on stderr, ``[mem_cap] SHORT-LANE OVERRUN: ...
+Re-queue it as a LONG job``, and exits ``EXIT_SHORT_OVERRUN`` (88): its output is incomplete and it must be re-run WITHOUT
+the declaration, in bounded chunks. The deadline binds only a job that took a slot of its own: with no run live and no
+lease (no slot wanted), under BLOCKING / ``gpu_lock`` (bypass) or inside a slot holder (re-entrant) nothing is killed, so an
+ambient ``$GEN3AI_HEAVY_SLOT_MAX_S`` cannot cut a ship gate. A declaration above 600 s or a ``--term-grace`` above 60 s is
+refused (exit 2).
+
 STOPPING A JOB (2026-10-19, ``gen3_mem_cap_stop_v1``; backlog row "a ``timeout`` OUTSIDE mem_cap.sh does not
 stop a trainer", U4 finding (a) 2026-10-02: ``timeout 590 mem_cap.sh … <trainer>`` ran 12 min past its bound
 and needed a SIGKILL by PID). SIGINT / SIGTERM / SIGHUP — from ``timeout``, a terminal, a ``kill`` of the
@@ -115,6 +127,7 @@ DEFAULT_TERM_GRACE_S = 60.0
 UNIT_PREFIX = "gen3ai-capped-"
 EXIT_NOCAP = 85
 EXIT_OOM = 86
+EXIT_SHORT_OVERRUN = HS.EXIT_SHORT_OVERRUN       # 88
 GiB = 1 << 30
 PAGE = 4096
 
@@ -127,9 +140,9 @@ PAGE = 4096
 # kernel for SIGTERM when its own parent (the wrapper) dies.
 SUPERVISOR = r"""
 import os, signal, subprocess, sys, time
-report, want, want_slice, adj, grace, wrapper, slot_fd = sys.argv[1:8]
-cmd = sys.argv[9:]
-grace = float(grace)
+report, want, want_slice, adj, grace, wrapper, slot_fd, deadline = sys.argv[1:9]
+cmd = sys.argv[10:]
+grace, deadline = float(grace), float(deadline)
 def rd(p):
     try:
         with open(p) as f:
@@ -202,7 +215,17 @@ except OSError as e:
     sys.exit(127)
 if stop:
     child.send_signal(stop[1])
-rc = child.wait()
+# a declared-SHORT job (the short lane) has a hard timeout: at ``deadline`` seconds it is stopped exactly as if its wrapper had
+# been SIGTERMed (forward, grace, sweep) and the report says it overran - the wrapper labels it and exits EXIT_SHORT_OVERRUN
+t_start, rc = time.monotonic(), None
+while rc is None:
+    try:
+        rc = child.wait(timeout=max(0.0, t_start + deadline - time.monotonic()) if deadline > 0 and not stop else None)
+    except subprocess.TimeoutExpired:
+        if not stop:
+            out("overrun %g %g" % (deadline, time.monotonic() - t_start))
+            say("SHORT-LANE deadline: still running %g s after it started; stopping it (SIGTERM, SIGKILL in %g s)" % (deadline, grace))
+            on_stop(signal.SIGTERM, None)
 if stop:    # asked to stop: the scope must end up EMPTY (the command's descendants, a setsid-ed worker too)
     left = scope_pids()
     if left:
@@ -325,28 +348,34 @@ class CapResult:
     oom: bool
     peak_bytes: Optional[int]
     cmd_rc: Optional[int]     # the command's own exit status, when it ran to an exit
+    overrun: bool = False     # a declared-short job ran past its hard timeout and was stopped (rc = EXIT_SHORT_OVERRUN)
 
 
 def capped_argv(cmd: Sequence[str], cap_bytes: int, *, unit: str, slice_: str, slice_bytes: int,
                 report: str, adj: int = OOM_SCORE_ADJ, grace: float = DEFAULT_TERM_GRACE_S,
-                slot_fd: Optional[int] = None) -> List[str]:
-    """The ``systemd-run`` argv that runs ``cmd`` under the supervisor in a capped scope."""
+                slot_fd: Optional[int] = None, deadline_s: Optional[float] = None) -> List[str]:
+    """The ``systemd-run`` argv that runs ``cmd`` under the supervisor in a capped scope. ``deadline_s``: the short lane's
+    hard timeout, seconds from the command's start (``None``: none)."""
     return ["systemd-run", "--user", "--scope", "--quiet", f"--slice={slice_}",
             "-p", f"MemoryMax={cap_bytes}", "-p", "MemorySwapMax=0", "-p", "OOMPolicy=stop",
             "--unit", unit, "--",
             sys.executable, "-I", "-S", "-c", SUPERVISOR, report, str(cap_bytes), str(slice_bytes), str(adj),
-            repr(grace), str(os.getpid()), str(-1 if slot_fd is None else slot_fd), "--", *cmd]
+            repr(grace), str(os.getpid()), str(-1 if slot_fd is None else slot_fd),
+            repr(float(deadline_s)) if deadline_s else "0", "--", *cmd]
 
 
 def run_capped(cmd: Sequence[str], gb: float, *, name: Optional[str] = None,
                slice_: Optional[str] = None, slice_gb_: Optional[float] = None,
                term_grace: Optional[float] = None, slot_fd: Optional[int] = None,
+               deadline_s: Optional[float] = None, declared_s: Optional[float] = None,
                log: Callable[[str], None] = _stderr) -> CapResult:
     """Run ``cmd`` capped at ``gb`` GB in its own scope inside the heavy slice; report and return.
     ``slot_fd``: the heavy slot's locked fd (``heavy_slots.slot_fd``), handed to the supervisor and the job so
     the slot lives as long as any process of the job's tree (a SIGKILLed wrapper stops the job after the grace).
     A stop signal (SIGINT / SIGTERM / SIGHUP) reaching this process is forwarded to the supervisor, which
-    SIGKILLs the whole scope ``term_grace`` seconds after the first one (module docs, STOPPING A JOB)."""
+    SIGKILLs the whole scope ``term_grace`` seconds after the first one (module docs, STOPPING A JOB).
+    ``deadline_s`` (+ ``declared_s``, for the label): the short lane's hard timeout - an overrun is stopped like a stop
+    signal and reported as ``CapResult(rc=EXIT_SHORT_OVERRUN, overrun=True)`` (module docs, THE SHORT LANE)."""
     cap = gb_to_bytes(gb)
     grace = parse_grace(term_grace) if term_grace is not None else term_grace_s()
     sl = slice_ or slice_name()
@@ -379,7 +408,7 @@ def run_capped(cmd: Sequence[str], gb: float, *, name: Optional[str] = None,
     fwd = {s: signal.signal(s, _forward) for s in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)}
     try:
         child = subprocess.Popen(capped_argv(cmd, cap, unit=unit, slice_=sl, slice_bytes=sl_bytes, report=report,
-                                             grace=grace, slot_fd=slot_fd), env=_env(),
+                                             grace=grace, slot_fd=slot_fd, deadline_s=deadline_s), env=_env(),
                                  pass_fds=() if slot_fd is None else (slot_fd,))
         holder.append(child)
         for n in pending:
@@ -391,11 +420,12 @@ def run_capped(cmd: Sequence[str], gb: float, *, name: Optional[str] = None,
         for s, h in fwd.items():
             signal.signal(s, h)
         os.unlink(report)
-    return _verdict(unit, cap, sl, sl_bytes, raw_rc, lines, log)
+    return _verdict(unit, cap, sl, sl_bytes, raw_rc, lines, log, declared_s=declared_s, grace=grace)
 
 
 def _verdict(unit: str, cap: int, sl: str, sl_bytes: int, raw_rc: int, lines: List[str],
-             log: Callable[[str], None]) -> CapResult:
+             log: Callable[[str], None], *, declared_s: Optional[float] = None,
+             grace: float = DEFAULT_TERM_GRACE_S) -> CapResult:
     props = unit_props(unit, "Result", "MemoryPeak", "LoadState")
     rc = 128 - raw_rc if raw_rc < 0 else raw_rc
     done = [ln.split() for ln in lines if ln.startswith("done ")]
@@ -414,6 +444,17 @@ def _verdict(unit: str, cap: int, sl: str, sl_bytes: int, raw_rc: int, lines: Li
     if nocap:
         log(f"[mem_cap] REFUSING: the cap was not in force inside {unit}: {nocap[-1][6:]}")
         return CapResult(EXIT_NOCAP, unit, False, None, None)
+    over = [ln.split() for ln in lines if ln.startswith("overrun ")]
+    if over:
+        deadline, elapsed = float(over[-1][1]), float(over[-1][2])
+        peak = int(done[-1][2]) if done else None
+        log(f"[mem_cap] SHORT-LANE OVERRUN: {unit} was declared short ({HS.MAX_S_ENV} / --max-s "
+            f"{declared_s if declared_s is not None else '?'} s) and was still running at its {deadline:g} s hard timeout "
+            f"(declared + {HS.short_margin_s():g} s margin): SIGTERM sent, SIGKILL of everything left in the scope "
+            f"{grace:g} s later. Its work is INCOMPLETE - re-queue it as a LONG job: drop --max-s / unset {HS.MAX_S_ENV} and "
+            f"hold the slot per bounded chunk (<= {HS.CHUNK_MIN} min). exit {EXIT_SHORT_OVERRUN}")
+        HS.log_event(HS.lock_dir(), "overrun", unit=unit, declared_s=declared_s, deadline_s=deadline, ran_s=round(elapsed, 1))
+        return CapResult(EXIT_SHORT_OVERRUN, unit, False, peak, None, overrun=True)
     if not done:
         if not any(ln.startswith("started") for ln in lines):
             log(f"[mem_cap] REFUSING: {unit} never started (systemd-run exit {rc}) — the command did NOT run")
@@ -455,6 +496,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     sgb: Optional[float] = None
     grace: Optional[float] = None
     force_slot, wait = False, True
+    max_s: Optional[float] = None
     while args and args[0].startswith("--") and args[0] != "--":
         flag = args.pop(0)
         if flag == "--name" and args:
@@ -473,6 +515,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             wait = False
         elif flag == "--blocking" and args:
             os.environ[HS.BLOCKING_ENV] = args.pop(0)      # the child inherits the mark
+        elif flag == "--max-s" and args:
+            try:
+                max_s = HS.parse_max_s(args.pop(0), source="--max-s")
+            except HS.ShortLaneError as e:
+                print(f"[mem_cap] REFUSING: {e}", file=sys.stderr)
+                return 2
         else:
             print(f"[mem_cap] unknown option {flag!r}", file=sys.stderr)
             return 2
@@ -496,8 +544,19 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(f"[mem_cap] REFUSING: ${TERM_GRACE_ENV}: {e}", file=sys.stderr)
         return 2
     try:
-        with HS.heavy_slot(args, force=force_slot, wait=wait) as slot:
-            return run_capped(args, gb, name=name, slice_gb_=sgb, term_grace=grace, slot_fd=HS.slot_fd(slot)).rc
+        max_s = HS.declared_max_s() if max_s is None else max_s    # the ambient declaration; a malformed one is a refusal
+    except HS.ShortLaneError as e:
+        print(f"[mem_cap] REFUSING: {e}", file=sys.stderr)
+        return 2
+    if max_s is not None and grace > HS.SHORT_GRACE_MAX_S:
+        print(f"[mem_cap] REFUSING: a SHORT-lane job's stop grace is at most {HS.SHORT_GRACE_MAX_S:g} s (its worst-case slot hold "
+              f"is declared + {HS.short_margin_s():g} s margin + the grace), got {grace:g} s: lower --term-grace / "
+              f"${TERM_GRACE_ENV}, or drop the declaration and queue as a LONG job", file=sys.stderr)
+        return 2
+    try:
+        with HS.heavy_slot(args, force=force_slot, wait=wait, max_s=max_s) as slot:
+            return run_capped(args, gb, name=name, slice_gb_=sgb, term_grace=grace, slot_fd=HS.slot_fd(slot),
+                              deadline_s=HS.short_deadline_s(slot, max_s), declared_s=max_s).rc
     except (HS.SlotsFull, TimeoutError) as e:
         print(str(e), file=sys.stderr)
         return HS.EXIT_SLOTS_FULL
