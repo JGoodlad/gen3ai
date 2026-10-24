@@ -209,6 +209,11 @@ legality check above; the team validator. Counts of refusals and exclusions go i
   one of them. Any training battle in which some side has ≥ 4 mons whose revealed facts all fit the same heldout72
   team's sets is EXCLUDED, both seats. The count is reported. Without the exclusion, R-b2 could pass on memory, as the
   pool-bank L3 read did.
+  **As built** (`src/main/x50_r1/memory.py`, `run.py --exclude-teams`): a mon fits a set of its species
+  (`team_overlap`'s forme rule) that holds every revealed move (a bare Hidden Power fits any typed one) and its
+  revealed original item and ability. A mon that revealed only its species fits a set of that species: the rule
+  counts what the log cannot tell apart, so it excludes more than true copies (a dev day, 07-01: 585 of 3,301 logs,
+  63 of the 72 teams hit). The excluded battles and their teams ride each part's JSON.
 - **Expected size (ESTIMATED):** the census counted 2.10M observable turn choices at ≥ 1500 over the whole corpus
   ([census](../research_state/measurements/x50_replay_census_2026-10-20/README.md)). Less the held-out days, plus
   forced replacements, that is **N ≈ 2.0–2.4M** rows for (b). R1's held-out yield (48,579 supervised ≥ 1500 rows in
@@ -240,7 +245,8 @@ legality check above; the team validator. Counts of refusals and exclusions go i
   run, never a baseline and never in `models/`.
 - **The encoder gate (G-ENC, F-1b-6):** the training rows must be encoded byte for byte as X26's pin encodes them.
   - R1's full reads matched the trainee's played rows on 404 of 405 traces at R1's commit.
-  - The build re-asserts it at its own commit on R1's 2,306 traces before extracting anything.
+  - The build re-asserts it at its own commit on R1's 2,306 traces before extracting anything
+    (`python -m main.x50_r1.genc`: the full read against `*_states.npz`'s rows and masks, bit for bit).
   - The bank's rows are already byte-identical at X26's pin (the off-pool gate G4).
 
 ## 5. (a) The intent head, offline (R-a1)

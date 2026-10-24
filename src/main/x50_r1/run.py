@@ -44,6 +44,20 @@ MODE_SPECTATOR, MODE_FULL, MODE_COMPLETED, MODE_OWN_TRUE = 0, 1, 2, 3
 _READER: Optional[LiveReader] = None
 #: emit the COMPLETED modes (2, 3) beside R1's (rung 1b step 0; ``--complete``)
 COMPLETE = False
+#: keep only the COMPLETED rows of a human seat (``--rows completed``; the spectator read still runs, as the label
+#: guard): the HOM's training extraction, which reads mode 2 alone
+COMPLETED_ONLY = False
+#: the heldout72 manifest of the TEAM-MEMORY EXCLUSION (F-1b-2, ``memory.py``; ``--exclude-teams``), None = off
+EXCLUDE_TEAMS: Optional[str] = None
+_MATCHER = None
+
+
+def _matcher():
+    global _MATCHER
+    if _MATCHER is None and EXCLUDE_TEAMS is not None:
+        from main.x50_r1.memory import HeldoutMatcher
+        _MATCHER = HeldoutMatcher(Path(EXCLUDE_TEAMS))
+    return _MATCHER
 
 
 def _reader() -> LiveReader:
@@ -186,6 +200,15 @@ def human_job(args: Tuple[int, str]) -> Dict[str, Any]:
     counts["logs"] += 1
     lines = battle_lines(Path(path).read_text(encoding="utf-8", errors="replace"))
     info = E.player_info(lines)
+    mt = _matcher()
+    if mt is not None:
+        hits = mt.matches(lines)
+        if hits:                                   # F-1b-2: both seats out, before anything is read
+            counts["excluded:team_memory"] += 1
+            for _, tid, _ in hits:
+                counts[f"team_memory:{tid}"] += 1
+            return {"counts": counts, "parts": [], "memory": [path, [list(h) for h in hits]]}
+        counts["team_memory_checked"] += 1
     for seat, other in (("p1", "p2"), ("p2", "p1")):
         try:
             read = _guarded_spectator(_reader(), lines, seat, info.get(seat, {}).get("name") or seat, path, counts)
@@ -196,7 +219,7 @@ def human_job(args: Tuple[int, str]) -> Dict[str, Any]:
         name = info.get(seat, {}).get("name") or seat
         d = _pack(read, battle=battle, seat=seat, mode=MODE_SPECTATOR, r_lab=_rating(info, other),
                   r_view=_rating(info, seat), counts=counts, tag="")
-        if d:
+        if d and not COMPLETED_ONLY:
             parts.append(d)
         if not COMPLETE:
             continue
@@ -219,9 +242,16 @@ def human_job(args: Tuple[int, str]) -> Dict[str, Any]:
 
 
 def human_paths(corpus: Path, dates: List[str]) -> List[str]:
-    want = set(dates)
+    """The manifest's logs under the named date folders; an entry ``FROM..TO`` names every folder in that inclusive
+    ISO-date range (the training dates: ``2026-05-18..2026-09-20``)."""
     rel = [ln.strip() for ln in (corpus / MANIFEST).read_text().splitlines() if ln.strip()]
-    return sorted(str(corpus / r) for r in rel if r.split("/", 1)[0] in want)
+    want = {d for d in dates if ".." not in d}
+    spans = [tuple(d.split("..", 1)) for d in dates if ".." in d]
+
+    def keep(folder: str) -> bool:
+        return folder in want or any(a <= folder <= b for a, b in spans)
+
+    return sorted(str(corpus / r) for r in rel if keep(r.split("/", 1)[0]))
 
 
 # ------------------------------------------------------------------------------------------------ traces
@@ -340,14 +370,18 @@ def write_part(out: Path, name: str, ids: List[str], results: List[Dict[str, Any
     counts: collections.Counter = collections.Counter()
     parts: List[Dict[str, np.ndarray]] = []
     errors = []
+    memory = []
     for r in results:
         counts.update(r["counts"])
         parts.extend(r["parts"])
         if r.get("error"):
             errors.append(r["error"])
+        if r.get("memory"):
+            memory.append(r["memory"])
     arrays = _concat(parts)
     np.savez_compressed(out / f"{name}.npz", **arrays)  # type: ignore[arg-type]
     body = {"part": name, "battles": ids, "counts": dict(sorted(counts.items())), "errors": errors,
+            "team_memory_excluded": memory,
             "labelled_rows": int(len(arrays.get("k", []))), **meta}
     tmp = out / f"{name}.json.tmp"
     tmp.write_text(json.dumps(body, indent=1))
@@ -369,6 +403,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     h = sub.add_parser("humans")
     h.add_argument("--dates", required=True)
     h.add_argument("--corpus", default=None, help="default: the main checkout's replays/showdown/gen3ou")
+    h.add_argument("--rows", choices=("all", "completed"), default="all",
+                   help="completed: keep only the completed rows (mode 2); needs --complete")
+    h.add_argument("--exclude-teams", default=None,
+                   help="heldout72_hpfix_manifest.json: the team-memory exclusion (F-1b-2), both seats")
     t = sub.add_parser("traces")
     t.add_argument("--run", required=True)
     t.add_argument("--min-step", type=int, required=True)
@@ -380,8 +418,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         p.add_argument("--complete", action="store_true",
                        help="also emit the completed own side (modes 2 / 3; rung 1b step 0)")
     a = ap.parse_args(argv)
-    global COMPLETE
+    global COMPLETE, COMPLETED_ONLY, EXCLUDE_TEAMS
     COMPLETE = bool(a.complete)
+    if a.cmd == "humans":
+        COMPLETED_ONLY = a.rows == "completed"
+        if COMPLETED_ONLY and not COMPLETE:
+            print("[x50_r1] --rows completed needs --complete", file=sys.stderr)
+            return 2
+        EXCLUDE_TEAMS = a.exclude_teams
     out = Path(a.out).resolve()
     if under_data(out):
         print("[x50_r1] refusing an output under a checkout's data/ (design §6)", file=sys.stderr)
@@ -402,6 +446,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f"[x50_r1] {a.cmd}: {len(items)} battles in {len(chunks)} parts -> {out}", flush=True)
     t0 = time.time()
     meta["complete"] = COMPLETE
+    meta["rows"] = "completed" if COMPLETED_ONLY else "all"
+    if _matcher() is not None:
+        from main.x50_r1.memory import NEAR
+        meta["exclude_teams"] = {"manifest": str(EXCLUDE_TEAMS), "sha256": _matcher().sha256, "near": NEAR}
     with Pool(a.workers) as pool:
         for ci, chunk in enumerate(chunks):
             name = f"{prefix}_{ci:04d}"
