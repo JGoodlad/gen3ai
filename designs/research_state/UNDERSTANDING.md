@@ -1801,8 +1801,8 @@ Both were read through the same spectator pipeline, under the registered rule: *
 
 The spectator pipeline (public-only own side, fabricated own spread) costs the head 0.23 nats on its own battles, as
 much as the gap. The contrast holds the pipeline fixed, but the absolute numbers on humans are pessimistic.
-⇒ Human opponent-action labels carry signal the self-play labels lack (rung 1 of the human-replay ladder). Any
-training use is a separate registration. [SIGNIFICANT on the registered contrast · one checkpoint · ledger 2026-10-20
+⇒ Human opponent-action labels carry signal the self-play labels lack (rung 1 of the human-replay ladder). The
+training-use design (2026-10-23, pre-registered, nothing read): `endstate/design_x50_rung1b_human_opponent_model.md`. [SIGNIFICANT on the registered contrast · one checkpoint · ledger 2026-10-20
 *X50 R1* · `measurements/x50_r1_intent_read_2026-10-20/`]
 
 ### 4.9 Toy depth 2 → 4 at the plateau: UNDECIDED, Δ̂ ≤ 0, ended at look 1 (X47, 2026-10-21)
