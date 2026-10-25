@@ -21,6 +21,7 @@ Follow the pointer when you touch the subject.
 | touch a training flag, or quote an offline meter / ELO | `src/agents/training/CLAUDE.md` → `designs/training/<topic>.md`; meters + ELO rules: the runbook |
 | touch the rust port | `src/rust_sim/CLAUDE.md` → `designs/rust_sim/<topic>.md` |
 | probe a run's traces / the prober | `src/main/prober/CLAUDE.md` → `designs/prober/<topic>.md` |
+| run a registered read (S vs R, Kakuna cells, a PREREG'd verdict) | `designs/tools/reads.md` (`python -m main.reads`); a `measurements/<read>/` script is a frozen record, never a tool |
 | play over a websocket, or read an external anchor | § Playing below, then `designs/ops/EXTERNAL_ANCHORS_SOP.md` |
 | edit anything under `designs/` | `designs/CLAUDE.md` |
 | see where the system is heading | `designs/endstate/README.md` |

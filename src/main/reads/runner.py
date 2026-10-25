@@ -1,0 +1,459 @@
+"""PLAN / RUN / STATUS: a read's games, on the box's two lanes (``designs/tools/reads.md`` §4).
+
+* THE ANCHOR LANE plays :mod:`main.x35.kakuna` units, unchanged: 20-game units on the heavy slots' SHORT lane
+  (``mem_cap.sh --max-s 600``), each on a 95xx port claimed with a held flock (``kakuna.claim_port``), each preflighted
+  (the T28 halt marker, the committed team manifest / panel cell, the model's bytes). One kakuna state per (group,
+  model), planned only once the model SETTLES (``main.reads.models``), so a not-yet-final model is never played.
+* THE S LANE plays S against the frozen R: ``main.h2h play-many`` cells of ``pairs`` mirrored pairs recorded in
+  ``batch_pairs`` batches (the resume grain) into the group's own eval ledger and family; a UNIT is up to ``workers``
+  engines inside ONE heavy slot (``mem_cap.sh --slot``), time-boxed to ``unit_s`` (<= 40 min), at nice 19 on the
+  agent cores. R is re-verified (every member's sha256 and its ``content_sha256``) before every unit; a change STOPS
+  the lane (exit 3), never a silent re-score.
+
+Both lanes: resumable (a counted unit / a recorded batch is never replayed), one supervisor per lane per state (a
+flock), a REGISTERED stop (``stop_epoch``: an absolute epoch, never open-ended), and the playing checkout must stay at
+the commit ``plan`` recorded (``code.json``; with a spec ``pin``, that commit and a clean tree). Run them detached
+(``setsid nohup python -m main.reads run --lane anchor ...``), one process per lane.
+"""
+from __future__ import annotations
+
+import fcntl
+import hashlib
+import json
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+
+from main.reads import layout as LY
+from main.reads.assemble import AssembleError
+from main.reads import models as M
+from main.reads.spec import ReadSpec, load as load_spec
+
+CORES = "5-7,13-15"
+S_CAP_GB = 12
+S_UNIT_S = 2400
+S_WORKERS = 2
+S_THREADS = 2
+POLL_S = 300
+#: ``s-unit``'s exit when its time box ended a cell mid-way (the batches recorded so far stand).
+UNIT_TIME_UP = 124
+#: The S lane's exit when R moved under the read.
+R_MOVED = 3
+FAMILY_RULE = "main.reads S on the frozen R (population_score of design_compute_efficiency §5.6.4)"
+
+
+class RunError(RuntimeError):
+    """A precondition of a verb does not hold (named; nothing is played)."""
+
+
+def child_env() -> Dict[str, str]:
+    """A child's env: THIS checkout's ``src`` (a worktree's ``python`` would import main's), CPU only."""
+    from utils.paths import src_path
+
+    return dict(os.environ, PYTHONPATH=str(src_path()), CUDA_VISIBLE_DEVICES="")
+
+
+def _log(msg: str) -> None:
+    print(f"[reads {time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
+
+
+def _jl(path: Path, obj: Dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "a") as f:
+        f.write(json.dumps({"t": time.time(), **obj}, default=str) + "\n")
+
+
+def _atomic(path: Path, doc: Any) -> None:
+    tmp = path.with_suffix(".part")
+    tmp.write_text(json.dumps(doc, indent=1, sort_keys=True, default=str) + "\n")
+    os.replace(tmp, path)
+
+
+# -------------------------------------------------------------------------------------------- the code
+def checkout_code(root: Optional[Path] = None) -> Dict[str, Any]:
+    """The playing checkout's commit and whether its tracked tree is dirty."""
+    from utils.paths import repo_root
+
+    r = str(root or repo_root())
+    commit = subprocess.run(["git", "-C", r, "rev-parse", "HEAD"], capture_output=True, text=True,
+                            check=True).stdout.strip()
+    dirty = bool(subprocess.run(["git", "-C", r, "status", "--porcelain", "--untracked-files=no"],
+                                capture_output=True, text=True, check=True).stdout.strip())
+    diff = subprocess.run(["git", "-C", r, "diff", "HEAD"], capture_output=True, check=True).stdout
+    # a dirty tree's EDITS are part of the code: a later edit keeps "dirty" but moves this digest
+    return {"commit": commit, "dirty": dirty, "diff_sha": hashlib.sha256(diff).hexdigest()[:16], "root": r}
+
+
+def check_code(spec: ReadSpec, code: Dict[str, Any]) -> None:
+    if spec.pin is not None:
+        if not code["commit"].startswith(spec.pin):
+            raise RunError(f"the playing checkout is at {code['commit'][:12]}, not the spec's pin {spec.pin}")
+        if code["dirty"]:
+            raise RunError(f"the playing checkout {code['root']} has tracked changes (a pin plays a clean tree)")
+
+
+def _code_holds(state: Path, now_code: Dict[str, Any]) -> None:
+    was = json.loads(LY.code_file(state).read_text())
+    if (now_code["commit"] != was["commit"] or now_code["dirty"] != was["dirty"]
+            or now_code.get("diff_sha") != was.get("diff_sha")):
+        raise RunError(f"the playing code changed under the read: planned at {was['commit'][:12]}"
+                       f"{' (dirty)' if was['dirty'] else ''}, now {now_code['commit'][:12]}"
+                       f"{' (dirty)' if now_code['dirty'] else ''}")
+
+
+# -------------------------------------------------------------------------------------------- plan
+def _load_models(state: Path) -> Dict[str, Dict[str, Any]]:
+    p = LY.models_file(state)
+    return json.loads(p.read_text()) if p.exists() else {}
+
+
+def settle(spec: ReadSpec, state: Path, *, now: Optional[float] = None,
+           step_of: Callable[[str], int] = M.recorded_step) -> Dict[str, str]:
+    """Resolve and copy every model that has SETTLED and is not yet copied; plan its anchor units. Returns
+    ``{label: why}`` for the models still not ready."""
+    with open(state / "settle.lock", "w") as lk:       # the two lanes' supervisors both settle: one at a time
+        fcntl.flock(lk, fcntl.LOCK_EX)
+        return _settle(spec, state, now=now, step_of=step_of)
+
+
+def _settle(spec: ReadSpec, state: Path, *, now: Optional[float], step_of: Callable[[str], int]) -> Dict[str, str]:
+    from main.x35 import kakuna as KA
+
+    have = _load_models(state)
+    waiting: Dict[str, str] = {}
+    for lab, m in spec.models.items():
+        if lab in have:
+            continue
+        r = M.resolve(m, now=now, step_of=step_of)
+        if isinstance(r, M.NotReady):
+            waiting[lab] = r.why
+            continue
+        have[lab] = M.copy_resolved(r, LY.ckpt_dir(state, lab))
+        _atomic(LY.models_file(state), have)
+        _log(f"model {lab}: {r.source} step {r.step:,} sha {r.sha256[:12]} copied")
+    for g, a in spec.anchor.items():
+        for lab in a.models:
+            st = LY.anchor_state(state, g, lab)
+            if lab not in have or (st / "plan.json").exists():
+                continue
+            m = spec.models[lab]
+            units = KA.plan_units([{"label": lab, "arm": m.arm, "seed": m.seed, "path": have[lab]["copy"]}],
+                                  teamsets=a.teamsets, unit_seeds=a.unit_seeds)
+            if any(u.model_sha256 != have[lab]["sha256"] for u in units):
+                raise RunError(f"{lab}: the copy no longer hashes to its recorded sha256")
+            st.mkdir(parents=True, exist_ok=True)
+            _atomic(st / "plan.json", {"units": [u.__dict__ for u in units]})
+            _log(f"anchor {g}/{lab}: planned {len(units)} units")
+    return waiting
+
+
+def plan(spec_path: Path, state: Path, *, code: Optional[Dict[str, Any]] = None, now: Optional[float] = None,
+         step_of: Callable[[str], int] = M.recorded_step) -> Dict[str, Any]:
+    """Write the read's state (``main.reads.layout``) from its spec; idempotent with the SAME spec bytes."""
+    state = LY.check_state_dir(state)
+    spec = load_spec(spec_path)
+    state.mkdir(parents=True, exist_ok=True)
+    sf = LY.spec_file(state)
+    b = Path(spec_path).read_bytes()
+    if sf.exists() and sf.read_bytes() != b:
+        raise RunError(f"{sf} holds another spec: a state is ONE read (plan a new state for a new spec)")
+    code = code or checkout_code()
+    check_code(spec, code)
+    if LY.code_file(state).exists():
+        _code_holds(state, code)
+    else:
+        _atomic(LY.code_file(state), dict(code, pin=spec.pin))
+    if not sf.exists():
+        sf.write_bytes(b)
+    for g, x in spec.s.items():
+        _s_prepare(spec, state, g)
+    waiting = settle(spec, state, now=now, step_of=step_of)
+    return {"state": str(state), "spec_sha256": spec.sha256, "waiting": waiting}
+
+
+def load_state(state: Path) -> ReadSpec:
+    state = LY.check_state_dir(state)
+    if not LY.spec_file(state).exists():
+        raise RunError(f"{state}: no spec.json (run `plan` first)")
+    return load_spec(LY.spec_file(state))
+
+
+# -------------------------------------------------------------------------------------------- S lane
+def _s_members(spec: ReadSpec, g: str) -> List[Dict[str, Any]]:
+    from main.reads.assemble import members_of
+
+    x = spec.s[g]
+    p = M.spec_path(x.refpop)
+    members_of(p, want_content=x.refpop_content_sha256)       # every file re-hashed, the content checked
+    return [dict(m) for m in json.loads(p.read_text())["members"]]
+
+
+def _s_prepare(spec: ReadSpec, state: Path, g: str) -> Dict[str, Any]:
+    """Copy R's members (sha-checked) and register the group's family; idempotent."""
+    x = spec.s[g]
+    d = LY.s_dir(state, g)
+    stf = d / "state.json"
+    st = json.loads(stf.read_text()) if stf.exists() else {}
+    if "members" not in st:
+        st["members"] = {}
+        for m in _s_members(spec, g):
+            dst, sha = M.copy_checked(Path(m["path"]), d / "members" / m["label"], m["sha256"])
+            st["members"][m["label"]] = {"copy": str(dst), "sha256": sha, "source": m["path"]}
+        st["refpop_content_sha256"] = x.refpop_content_sha256
+        d.mkdir(parents=True, exist_ok=True)
+        _atomic(stf, st)
+    if not st.get("family_registered"):
+        r = subprocess.run([sys.executable, "-m", "main.eval_ledger", "family-register", "--root",
+                            str(LY.s_ledger(state, g)), "--id", x.family, "--decision-kind", "ab_verdict", "--rule",
+                            FAMILY_RULE, "--protocol", "gen3_eval_protocol_v1_h2h"], check=False,
+                           env=child_env(), capture_output=True, text=True)
+        if r.returncode != 0:
+            raise RunError(f"family-register {x.family} refused (exit {r.returncode}): {r.stderr.strip()[-800:]}")
+        st["family_registered"] = True
+        _atomic(stf, st)
+    return st
+
+
+def s_pairs(state: Path, spec: ReadSpec, g: str, label: str, sha: str) -> Dict[str, int]:
+    """``{member: completed pairs}`` of ``label``'s cells in group ``g`` so far."""
+    from main.reads.assemble import cell_pairs
+
+    x = spec.s[g]
+    st = json.loads((LY.s_dir(state, g) / "state.json").read_text())
+    return cell_pairs(LY.s_ledger(state, g), x.family, x.request(label), sha,
+                      {k: v["sha256"] for k, v in st["members"].items()})
+
+
+def s_engines(pending: Sequence[Tuple[str, Sequence[str]]], workers: int) -> List[str]:
+    """Split the pending ``(label, [members])`` cells over at most ``workers`` engines (``label:m1,m2``)."""
+    engines: List[str] = []
+    for label, left in pending:
+        k = min(len(left), workers - len(engines))
+        engines += [f"{label}:" + ",".join(left[w::k]) for w in range(k)]
+        if len(engines) >= workers:
+            break
+    return engines
+
+
+def s_unit_argv(state: Path, g: str, engines: Sequence[str], box_s: int, *, deadline_epoch: float,
+                threads: int = S_THREADS, cap_gb: int = S_CAP_GB, cpus: str = CORES,
+                py: str = sys.executable) -> List[str]:
+    """ONE heavy-slot S unit (``mem_cap.sh --slot``: it waits for a slot and holds it for the box)."""
+    from utils.paths import repo_path
+
+    return [str(repo_path("scripts/ops/mem_cap.sh")), "--slot", "--name", "reads_s", str(cap_gb), "nice", "-n", "19",
+            "taskset", "-c", cpus, py, "-m", "main.reads", "s-unit", "--state", str(state), "--group", g,
+            "--box-s", str(int(box_s)), "--deadline-epoch", str(int(deadline_epoch)), "--threads", str(threads),
+            *[x for e in engines for x in ("--engine", e)]]
+
+
+def play_many_argv(spec: ReadSpec, state: Path, g: str, label: str, member_labels: Sequence[str],
+                   models: Dict[str, Dict[str, Any]], members: Dict[str, Dict[str, Any]], *, threads: int,
+                   py: str = sys.executable) -> List[str]:
+    x = spec.s[g]
+    a = [py, "-m", "main.h2h", "play-many", "--players", models[label]["copy"], "--opponents",
+         *[members[m]["copy"] for m in member_labels], "--pairs", str(x.pairs), "--batch-pairs", str(x.batch_pairs),
+         "--purpose", "ab", "--family", x.family, "--request", x.request(label), "--out", str(LY.s_ledger(state, g)),
+         "--label", f"reads_{spec.read}"[:64], "--device", "cpu", "--torch-threads", "1", "--threads", str(threads)]
+    if x.panel is not None:
+        a += ["--panel", x.panel]
+    return a
+
+
+def s_unit(state: Path, g: str, engines: Sequence[str], box_s: int, *, deadline_epoch: Optional[float] = None,
+           threads: int = S_THREADS) -> int:
+    """The body of one S unit (inside its heavy slot): the engines' ``play-many`` children, killed at the box or
+    the registered stop, whichever is first (the box starts AFTER the slot wait, so the stop is absolute)."""
+    spec = load_state(state)
+    models = _load_models(state)
+    st = json.loads((LY.s_dir(state, g) / "state.json").read_text())
+    for spec_e in engines:
+        M.verify(models[spec_e.split(":", 1)[0]])
+    env = child_env()
+    deadline = time.time() + box_s
+    if deadline_epoch is not None:
+        deadline = min(deadline, float(deadline_epoch))
+    procs = []
+    logs = LY.s_dir(state, g) / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
+    for e in engines:
+        label, labs = e.split(":", 1)
+        argv = play_many_argv(spec, state, g, label, labs.split(","), models, st["members"], threads=threads)
+        logf = open(logs / f"play_{label}.log", "a")  # noqa: SIM115 - closed when the child is reaped
+        procs.append((e, subprocess.Popen(argv, env=env, stdout=logf, stderr=subprocess.STDOUT,
+                                          stdin=subprocess.DEVNULL), logf))
+    while any(p.poll() is None for _e, p, _f in procs) and time.time() < deadline:
+        time.sleep(min(5.0, max(0.05, deadline - time.time())))
+    boxed = set()
+    for e, p, _f in procs:
+        if p.poll() is None:
+            boxed.add(e)
+            p.terminate()
+    rc = 0
+    for e, p, logf in procs:
+        try:
+            r = p.wait(timeout=120)
+        except subprocess.TimeoutExpired:
+            p.kill()
+            r = p.wait()
+        logf.close()
+        _log(f"s unit engine {e}: exit {r}{' (time box)' if e in boxed else ''}")
+        if e not in boxed:
+            rc = rc or r                                      # an engine that ENDED on its own reports its exit
+    return UNIT_TIME_UP if boxed and rc == 0 else rc
+
+
+def _progress(spec: ReadSpec, state: Path, g: str, engines: Sequence[str],
+              models: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, int]]:
+    labs = sorted({e.split(":", 1)[0] for e in engines})
+    return {lab: s_pairs(state, spec, g, lab, models[lab]["sha256"]) for lab in labs}
+
+
+def _s_pending(spec: ReadSpec, state: Path, models: Dict[str, Dict[str, Any]]) -> List[Tuple[str, str, List[str]]]:
+    out = []
+    for g, x in spec.s.items():
+        st = json.loads((LY.s_dir(state, g) / "state.json").read_text())
+        for lab in x.models:
+            if lab not in models:
+                continue
+            have = s_pairs(state, spec, g, lab, models[lab]["sha256"])
+            left = [m for m in st["members"] if have.get(m, 0) < x.pairs]
+            if left:
+                out.append((g, lab, left))
+    return out
+
+
+# -------------------------------------------------------------------------------------------- run
+def _lock(state: Path, lane: str) -> Any:
+    fh = open(LY.lane_lock(state, lane), "w")  # noqa: SIM115 - held for the supervisor's life
+    try:
+        fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        fh.close()
+        raise RunError(f"another {lane} supervisor holds {LY.lane_lock(state, lane)}") from None
+    return fh
+
+
+def _anchor_todo(spec: ReadSpec, state: Path, fails: Dict[str, int]) -> List[Tuple[Path, Any]]:
+    from main.x35 import kakuna as KA
+
+    out = []
+    for s in range(max((len(a.unit_seeds) for a in spec.anchor.values()), default=0)):
+        for g, a in spec.anchor.items():
+            if s >= len(a.unit_seeds):
+                continue
+            for lab in a.models:
+                st = LY.anchor_state(state, g, lab)
+                if not (st / "plan.json").exists():
+                    continue
+                for u in KA.load_plan(st):
+                    if (u.unit_seed == a.unit_seeds[s] and not KA.is_done(st, u)
+                            and fails.get(u.name, 0) < KA.MAX_ATTEMPTS):
+                        out.append((st, u))
+    return out
+
+
+def run(state: Path, lane: str, stop_epoch: float, *, workers: int = S_WORKERS, threads: int = S_THREADS,
+        unit_s: int = S_UNIT_S, run_unit: Optional[Callable[..., int]] = None,
+        run_s: Optional[Callable[[List[str]], int]] = None, sleep: Callable[[float], None] = time.sleep,
+        clock: Callable[[], float] = time.time) -> int:
+    """Work ``lane`` (``anchor`` | ``s``) until done or ``stop_epoch``; resumable (module docstring)."""
+    from main.x35 import kakuna as KA
+
+    if lane not in ("anchor", "s"):
+        raise RunError(f"lane {lane!r} is none of anchor, s")
+    spec = load_state(state)
+    if lane == "anchor" and not spec.anchor or lane == "s" and not spec.s:
+        raise RunError(f"the spec has no {lane} group")
+    KA.check_stop_epoch(int(stop_epoch), now=clock())
+    hold = _lock(state, lane)
+    run_unit = run_unit or KA.run_unit
+    run_s = run_s or (lambda argv: subprocess.run(argv, check=False, env=child_env()).returncode)
+    jl = state / f"{lane}_supervisor.jsonl"
+    _jl(jl, {"event": "start", "pid": os.getpid(), "stop_epoch": stop_epoch})
+    fails: Dict[str, int] = {}
+    try:
+        while True:
+            _code_holds(state, checkout_code())
+            waiting = settle(spec, state)
+            models = _load_models(state)
+            if lane == "anchor":
+                todo = _anchor_todo(spec, state, fails)
+                if todo:
+                    st, u = todo[0]
+                    if clock() >= stop_epoch:
+                        _jl(jl, {"event": "stop_at", "left": len(todo)})
+                        return 0
+                    run_unit(st, u)
+                    if not KA.is_done(st, u):
+                        fails[u.name] = fails.get(u.name, 0) + 1
+                    continue
+            else:
+                try:
+                    for g in spec.s:
+                        _s_members(spec, g)                  # R re-verified before every unit
+                except (ValueError, OSError, AssembleError) as exc:   # R moved under the read: stop, never re-score
+                    _jl(jl, {"event": "r_moved", "why": f"{type(exc).__name__}: {exc}"})
+                    return R_MOVED
+                pending = _s_pending(spec, state, models)
+                if pending:
+                    if clock() + 60.0 >= stop_epoch:
+                        _jl(jl, {"event": "stop_at", "left": [(g, lab) for g, lab, _ in pending]})
+                        return 0
+                    g = pending[0][0]
+                    engines = s_engines([(lab, left) for gg, lab, left in pending if gg == g], workers)
+                    box = int(min(unit_s, stop_epoch - clock()))
+                    argv = s_unit_argv(state, g, engines, box, deadline_epoch=stop_epoch, threads=threads)
+                    before = _progress(spec, state, g, engines, models)
+                    _jl(jl, {"event": "unit", "group": g, "engines": engines, "box_s": box})
+                    rc = run_s(argv)
+                    _jl(jl, {"event": "unit_end", "group": g, "engines": engines, "rc": rc})
+                    if rc not in (0, UNIT_TIME_UP):
+                        return rc
+                    if rc == 0 and _progress(spec, state, g, engines, models) == before:
+                        # every engine ended cleanly and no pair was added: play-many has nothing left to play
+                        raise RunError(f"S unit {engines} ended OK with no new pair: the cells cannot reach "
+                                       f"{spec.s[g].pairs} pairs (incomplete batches?); read the ledger")
+                    continue
+            if not waiting:
+                _jl(jl, {"event": "done", "not_counted": sorted(n for n, k in fails.items() if k >= KA.MAX_ATTEMPTS)})
+                return 0
+            if clock() + POLL_S >= stop_epoch:
+                _jl(jl, {"event": "stop_at", "waiting": waiting})
+                return 0
+            _log(f"{lane}: waiting for {sorted(waiting)} to settle (poll {POLL_S} s)")
+            sleep(POLL_S)
+    except Exception as exc:
+        _jl(jl, {"event": "refused", "why": f"{type(exc).__name__}: {exc}"})
+        raise
+    finally:
+        hold.close()
+
+
+# -------------------------------------------------------------------------------------------- status
+def status(state: Path) -> Dict[str, Any]:
+    """Every group's progress: models settled or waiting, anchor units counted / planned, S pairs per member."""
+    from main.x35 import kakuna as KA
+
+    spec = load_state(state)
+    models = _load_models(state)
+    out: Dict[str, Any] = {"read": spec.read, "models": {lab: (models[lab]["sha256"][:12] if lab in models
+                                                              else "waiting") for lab in spec.models},
+                           "anchor": {}, "s": {}}
+    for g, a in spec.anchor.items():
+        for lab in a.models:
+            st = LY.anchor_state(state, g, lab)
+            if not (st / "plan.json").exists():
+                out["anchor"].setdefault(g, {})[lab] = "not planned"
+                continue
+            units = KA.load_plan(st)
+            out["anchor"].setdefault(g, {})[lab] = {"counted": sum(KA.is_done(st, u) for u in units),
+                                                    "planned": len(units)}
+    for g, x in spec.s.items():
+        for lab in x.models:
+            out["s"].setdefault(g, {})[lab] = (s_pairs(state, spec, g, lab, models[lab]["sha256"]) if lab in models
+                                               else "waiting")
+    return out

@@ -268,7 +268,9 @@ verified_digests=None) -> UnitCount(counts, reasons)` counts a unit iff `status 
   from an older pinned tree carries none) must EQUAL the declared pair; no digest at all ⇒ it does
   NOT count. `team_source_asymmetry` is not a reason here, so a declared 72-vs-16 cell CAN count.
 
-Every failing reason is listed. `main.x35.kakuna` counts through it (undeclared).
+Every failing reason is listed. `main.x35.kakuna` counts through it (undeclared), and so does a registered read's
+anchor lane (`python -m main.reads`, `designs/tools/reads.md`), which plays kakuna's units and records each unit's
+regime id.
 
 ### `--opponent-temperature T` — the Metamon peer SAMPLES, our side stays greedy
 

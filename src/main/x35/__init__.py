@@ -27,6 +27,7 @@
   bootstrap; each side's B2 truth, AM-X47b-2), the record every reader's ``g_c`` must be;
   :mod:`main.x35.tbrows` -- a fork's OWN TensorBoard rows (the inherited prefix excluded).
 
-Nothing here launches, trains or plays on import. The staging record is
+A NEW registered read does not script against these directly: :mod:`main.reads` wraps ``readout``, ``d1`` and
+``kakuna`` unchanged (``designs/tools/reads.md``). Nothing here launches, trains or plays on import. The staging record is
 ``designs/research_state/measurements/x35_breakers_stage_2026-10-17/STAGED_PLAN.md``.
 """

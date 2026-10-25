@@ -75,6 +75,14 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   **Why:** the 2026-09-24 belief win-rate A/B was a single 18,000-battle driver launched from its
   agent's shell. A session restart killed the agent mid-run, and only luck (the workers happened to
   keep running and write per-battle rows) meant the hours were not lost.
+- **A REGISTERED READ IS A `main.reads` SPEC, never a new script (2026-10-25).** A brief for a read (an arm
+  against its control, a final against a comparator, Kakuna cells) names: the spec to write
+  (`read_spec.json`, committed with the PREREG before any counted game), the state directory (outside the repo
+  and `models/`), and the rule from `main.reads.rules.RULES`; the agent runs `python -m main.reads plan / run /
+  record` (`designs/tools/reads.md`). A read the module cannot express (a new rule, an opponent other than
+  Kakuna) is a module change with a test, landed BEFORE the read, never a one-off driver under
+  `measurements/`. **Why:** every read re-derived the same units, intervals and model choice, and the same bugs
+  recurred (the final-selection race, empty regime ids, port races, copies without `model_config.json`).
 - **THE GPU IS LEASED, NOT QUEUED (owner, 2026-10-03: "I would prefer subagents not block at all on the gpu").**
   The orchestrator grants the GPU lease to ONE agent at a time and NAMES it in that agent's brief ("you hold
   the GPU lease: `scripts/ops/gpu_lease.sh acquire --owner <name>` first, `release` when done"). An agent

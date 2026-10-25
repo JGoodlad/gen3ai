@@ -39,7 +39,7 @@ owner's word).
 | [`prober/`](prober/) | `src/main/prober/CLAUDE.md` (+ `web/`) | the engine, panels, session reference, counterfactuals, arch drift, the web service and pages |
 | [`launcher/`](launcher/) | `src/main/launcher/CLAUDE.md` | index: [`launcher/README.md`](launcher/README.md) |
 | [`observation/`](observation/) | `src/agents/observation/CLAUDE.md` | index: [`observation/README.md`](observation/README.md) |
-| [`tools/`](tools/) | `tools/CLAUDE.md`, `src/agents/gen3_data/CLAUDE.md` | index: [`tools/README.md`](tools/README.md) |
+| [`tools/`](tools/) | `tools/CLAUDE.md`, `src/agents/gen3_data/CLAUDE.md`, `src/main/reads/` | index: [`tools/README.md`](tools/README.md) |
 | [`ops/`](ops/) | the root `CLAUDE.md` | the procedures below |
 
 **`ops/`:** `TRAINING_RUN_SOP.md` and `ORCHESTRATOR_SOP.md` are the procedures of record for the two

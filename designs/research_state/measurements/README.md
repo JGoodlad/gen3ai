@@ -6,6 +6,15 @@ here. The reason is narrow and practical: **a number quoted in prose has no expi
 stopped existing. If the number lives in a file that carries its own checkpoint, step, state count
 and date, a stale citation is detectable by comparing dates instead of by re-deriving the result.
 
+## A new registered read uses `main.reads`
+
+A read measured against a rule registered before any counted game is a SPEC run through
+`python -m main.reads` (`designs/tools/reads.md`): the settled-file rule, the Kakuna and S lanes, the regime id
+recorded on every cell, the registered rules by name, and one schema-checked `record.json`. The read's folder here
+holds its PREREG, its `read_spec.json`, its README and the record. The per-read scripts already in this tree
+(`*_read.py`, `assemble.py`, `verdict.py`, `xq.py`, …) are FROZEN records of how those reads were played: never
+edit them, and never copy one as the tool for a new read.
+
 ## How to read a file here
 
 Each `.json` is the probe's **verbatim output** with one added top-level key:
