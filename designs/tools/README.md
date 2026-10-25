@@ -1,9 +1,10 @@
 # `designs/tools/` — the acquisition layer's and the read tooling's detail
 
-The detail lifted out of `tools/CLAUDE.md` (2026-10-10) and `src/agents/gen3_data/CLAUDE.md`
-(2026-10-19), and the design of record of `src/main/reads/` (2026-10-25). Always-current: each doc OWNS its topic and is updated in the same pass as the tool or
-facade module it describes. The leaves keep the map, the commands and the rules. The original tools leaf
-is frozen at `designs/research_state/claude_md_archive/tools_CLAUDE_2026-10-10.md`.
+The detail behind `tools/CLAUDE.md` and `src/agents/gen3_data/CLAUDE.md`, and the design of record of `src/main/reads/`.
+Always-current: each doc OWNS its topic
+and is updated in the same pass as the tool or facade module it describes. The leaves keep the map, the commands
+and the rules. The pre-split tools leaf is history at
+`designs/research_state/claude_md_archive/tools_CLAUDE_2026-10-10.md`.
 
 | doc | holds |
 |---|---|
@@ -11,5 +12,5 @@ is frozen at `designs/research_state/claude_md_archive/tools_CLAUDE_2026-10-10.m
 | [`pokemon_data_extractor.md`](pokemon_data_extractor.md) | per-builder notes for `pokemon_data_extractor/sync.py`: the type chart's rule, item `num` vs `spritenum`, the species FORMES and why a `num` rule can't select them, the item / ability / move MECHANICS fields the Rust port reads and their drift gate, the typed Hidden Power `num`, the move aliases |
 | [`smogon_priors.md`](smogon_priors.md) | the chaos-record denominator W, the 12-month merge, the format-spec filter, and the throwing checks before a write |
 | [`team_downloaders.md`](team_downloaders.md) | the one-entry-per-team manifest invariant and its history, the `main.promote_teams` second writer, the named encodings and the committed mojibake |
-| [`replay_corpus.md`](replay_corpus.md) | the public gen3ou replay corpus under `<main>/replays/` (NOT `data/`): how it grew, why it stopped (a reboot killed its unsupervised collector, twice), the restart plan, and the freshness alarm |
+| [`replay_corpus.md`](replay_corpus.md) | the public gen3ou replay corpus under `<main>/replays/` (NOT `data/`): how it grows, why its collector stopped, the supervision and the freshness alarm |
 | [`reads.md`](reads.md) | `main.reads`, the ONE module for registered reads: the spec, the settled-file rule, the anchor and S lanes, the regime id always recorded, the registered rules by name, the record schema, the golden reproductions of three shipped reads, and the per-read scripts and bug classes it replaced |

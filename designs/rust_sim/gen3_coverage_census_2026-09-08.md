@@ -25,8 +25,8 @@ drift away from `turn.rs`, because it *is* `turn.rs` running.
 class has bitten.** Its `SCAN_UNIVERSE=1` verdict is computed from modeled-move sets **mirrored by
 hand** from `turn.rs`, and those mirrors had not been updated for ROUND 51's `defensecurl` or ROUND
 52's `minimize` / `imprison`. It therefore reported **309 MODELED / 60 FAIL-LOUD** where the engine
-itself runs **312 / 57** — and 309 is the number the leaf `CLAUDE.md`, the root `CLAUDE.md` and
-`src/utils/bridge/README.md` all carry. **A hand-mirrored predicate that gates a census silently
+itself runs **312 / 57** — and 309 was the number the leaf `CLAUDE.md`, the root `CLAUDE.md` and
+the bridge README all carried. **A hand-mirrored predicate that gates a census silently
 shrinks that census**, which is the same shape as the ROUND-42 picker lesson and the ROUND-31
 allowlist lesson. The three moves were never broken; only the map was.
 

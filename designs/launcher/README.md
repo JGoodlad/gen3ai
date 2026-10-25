@@ -1,11 +1,10 @@
 # designs/launcher/ — the launcher's topic docs
 
-Detail lifted out of `src/main/launcher/CLAUDE.md` on 2026-10-10. **Always-current**: each doc OWNS
-its topic and is updated in the same pass as the launcher code, exactly like the leaf. The leaf keeps
-only the rules for changing the code; these hold the mechanism, the evidence, the gates, the flag and
-exit-code tables and the module map (below). The operator's chapter (how to launch, resume, fork) is
-`designs/ops/training_runbook.md` → *Launcher*; the frozen pre-cleanup leaf is
-`designs/research_state/claude_md_archive/src_main_launcher_CLAUDE_2026-10-10.md` (history).
+The detail behind `src/main/launcher/CLAUDE.md`. **Always-current**: each doc OWNS its topic and is updated in the
+same pass as the launcher code. The leaf keeps only the rules for changing the code; these hold the mechanism, the
+gates, the flag and exit-code tables, and the module map (below). The operator's chapter (how to launch, resume,
+fork) is `designs/ops/training_runbook.md` → *Launcher*; the pre-split leaf is history at
+`designs/research_state/claude_md_archive/src_main_launcher_CLAUDE_2026-10-10.md`.
 
 | doc | owns |
 |---|---|
@@ -23,7 +22,7 @@ exit-code tables and the module map (below). The operator's chapter (how to laun
 | file | does |
 |---|---|
 | `__init__.py` / `__main__.py` | entry point `main()` (`python -m main.launcher`); `tui.py` is the back-compat alias (`python -m main.launcher.tui`) |
-| `run.py` | the run loop / supervisor (`_prepare_session`, `_supervise`, `_reap`), `build_launcher_parser()`, the module constants (`DEFAULT_RESTART_INTERVAL_HOURS`, `DEFAULT_NICE`, `KILL_GRACE_SECONDS`, `_FAST_CRASH_SECONDS`), `headless_mode()`, `_arch_surface_gate` |
+| `run.py` | the run loop / supervisor (`_prepare_session`, `_supervise`, `_reap`), `build_launcher_parser()`, the module constants (`DEFAULT_RESTART_INTERVAL_HOURS`, `DEFAULT_NICE`, `KILL_GRACE_SECONDS`, `_FAST_CRASH_SECONDS`), `headless_mode()`, the arch-surface gate |
 | `checkpoint.py` | run-dir resolution, `find_latest_checkpoint`, `run_dir_for_checkpoint`, the RESUME-role argv (`resume_child_args`), the idempotent-fork swap, the fresh-into-progress refusal, `_strip_launcher_args` |
 | `worktree.py` | the pin (`resolve_pin` → `PinDecision` / `PinRefused`), `_create_run_worktree` + its ownership record, the startup prune, the Showdown-submodule link |
 | `child.py` | spawning the child (`_launch_child`, `resolve_child_python`), the log sinks (ring + rotating full copy), checkpoint events |

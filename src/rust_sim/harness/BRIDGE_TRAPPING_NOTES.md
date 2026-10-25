@@ -18,7 +18,7 @@ It complements the two harnesses added alongside it:
   includes the trapped state machine.
 
 The gen3 trapping MECHANICS (who is trapped) are already modeled bit-for-bit in the
-Rust engine — see `designs/rust_sim/port_build_log.md` → "Trapping: the SWITCH-legality gate" (`gen3_trapping_v1`) + the
+Rust engine — see `designs/research_state/claude_md_archive/rust_sim_port_build_log.md` → "Trapping: the SWITCH-legality gate" (`gen3_trapping_v1`) + the
 `tests/regression_test.rs` pins T1–T5. This note is about the REQUEST-DISPLAY surface
 downstream of that fact.
 

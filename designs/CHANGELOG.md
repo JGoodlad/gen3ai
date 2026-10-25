@@ -15437,3 +15437,20 @@ was downloaded or written under `data/`.
   `_load_saved_version` reads the one resolver's file, a model_config-route miss names the file, the key and the
   recorded value (`recipe_surface.model_config_miss`), and `diag_bf16_canary.build_learner` names a missing zip first
   (it used to read "--trunk-precision is 'fp32'"). `checkpoint_not_found_test`.
+
+## 2026-10-25 — the freshness gate scans the seven `designs/<topic>/` trees and byte-caps their docs (docs and gate only; no model / config / obs / signature change; the static-gate count does not move)
+
+- **Scope.** `claude_md_freshness_gate_test.py` checks 1-3 (paths, `--flags`, `python -m` modules) now also read every doc of
+  `designs/training/`, `model/`, `rust_sim/`, `prober/`, `launcher/`, `observation/` and `tools/`
+  (`utils.instruction_budget.TREE_DIRS`). `designs/rust_sim/` resolves crate-relative paths (`src/turn.rs` means
+  `src/rust_sim/src/turn.rs`) and the upstream Showdown sources, as the rust_sim leaf already did.
+- **Byte cap.** A new `tree` kind in `designs/ops/instruction_docs_budget.json` (cap 120 KB, target 40 KB; principles §3), checked by
+  the existing ratchet (check 4). No file is grandfathered: the three that exceeded it were cut
+  (`rust_sim/port_build_log.md` 535 KB moved whole to `claude_md_archive/` as a log of closed rounds,
+  `training/compile_flags.md` 246 KB to 99 KB, `training/eval_and_rating.md` 166 KB to 100 KB; the narrative lifted verbatim to
+  `claude_md_archive/`).
+- **What the trial scan found and the sweep fixed** (no allowlist entry anywhere): 62 dead paths, 48 flag claims, 6 modules. The whole
+  counterfactual-label stack's doc (`training/cf_grounding.md`, deleted 2026-10-02 / 2026-10-08) became a tombstone.
+- **Same unit:** every `CLAUDE.md` and `README.md` swept by the deletion test and checked against the code; the seven TECH_DEBT docs rows
+  closed; the endstate README is a compact index whose status column was verified against each doc's status block (13 + 13 status
+  blocks were false or stale and were corrected, each with a dated Decision-record line).

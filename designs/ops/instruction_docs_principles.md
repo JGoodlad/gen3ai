@@ -56,13 +56,13 @@ replacing rather than appending, do.
 
 ## 1. Who loads what, and what it costs
 
-| file | loaded | cost today (2026-10-19, ≈ bytes / 4) |
+| file | loaded | cost today (2026-10-25, ≈ bytes / 4) |
 |---|---|---|
-| root `CLAUDE.md` | every session and every subagent (Explore / Plan excepted) | 38.6 KB ≈ 9.6k tokens |
-| `MEMORY.md` | every session; **observed** in our `opus-*` subagents' context too (see the FINDING below) | 12.6 KB ≈ 3.2k tokens |
-| `~/.claude/agents/<type>.md` body | the system prompt of every subagent of that type | ≈ 2.8 KB ≈ 0.7k tokens |
-| a leaf `CLAUDE.md` | on demand, the first time the agent reads or edits a file in that directory | 3.7–35.5 KB |
-| `.claude/commands/*.md` | when invoked (the description line always) | 2.9–12.9 KB |
+| root `CLAUDE.md` | every session and every subagent (Explore / Plan excepted) | 15.0 KB ≈ 3.8k tokens |
+| `MEMORY.md` | every session; **observed** in our `opus-*` subagents' context too (see the FINDING below) | 7.8 KB ≈ 1.9k tokens |
+| `~/.claude/agents/<type>.md` body | the system prompt of every subagent of that type | 1.8-2.0 KB ≈ 0.5k tokens |
+| a leaf `CLAUDE.md` | on demand, the first time the agent reads or edits a file in that directory | 0.8–10.1 KB |
+| `.claude/commands/*.md` | when invoked (the description line always) | 2.2–5.7 KB |
 | `@path` imports | at launch, with the file that imports them; **imports do not reduce cost** | — |
 
 Sources (fetched 2026-10-19; §6): Claude Code loads `CLAUDE.md` from the working directory and its
@@ -128,10 +128,14 @@ subagent definitions are machine-local: checked only where they exist, and only 
 | `MEMORY.md` | 8 KB | 10 KB (the owner's own ceiling; the platform drops past 25 KB) |
 | a code leaf `CLAUDE.md` | 8 KB (≈ 2k tokens) | 12 KB |
 | `designs/CLAUDE.md` (a map) | 8 KB | 12 KB |
+| a `designs/<topic>/` tree doc | 40 KB | 120 KB |
 | a subagent definition file | 1.5 KB | 2.5 KB |
 | a slash command | 8 KB | 12 KB |
 
-**Always-loaded total** (root + `MEMORY.md` + one agent definition): today ≈ 54 KB ≈ 13.5k tokens;
+A `designs/<topic>/` tree doc is read on demand, never loaded, so its cap (120 KB) only stops a dump; a tree doc
+over the 40 KB target is a sweep candidate (a TECH_DEBT row), and a story in one moves to the archive.
+
+**Always-loaded total** (root + `MEMORY.md` + one agent definition): today ≈ 25 KB ≈ 6.2k tokens;
 target ≤ 21.5 KB ≈ 5.4k tokens.
 
 ---
@@ -141,13 +145,16 @@ target ≤ 21.5 KB ≈ 5.4k tokens.
 - **The ALWAYS-CURRENT rule** (root § Documentation Maintenance) stands unchanged. These principles
   make it cheaper to honour: fewer facts per file means fewer facts to keep current.
 - **`src/claude_md_freshness_gate_test.py`** checks that every path under the five owned prefixes,
-  every `--flag` and every `python -m <module>` resolves, and enforces the byte-budget ratchet
-  (§3). It stays green through every sweep.
-- **Tests that pin doc text.** A few tests assert that a `CLAUDE.md` still contains a sentence:
-  `src/utils/static_gates_test.py` (the root's "**Seventeen static gates**" count),
-  `src/agents/training/tb_relevance_test.py` (two training-leaf anchors),
-  `src/main/train/disk_guard_wiring_test.py` and `src/main/launcher/restart_interval_default_test.py`
-  (launcher-leaf rows). A pinned copy cannot go stale, but it does make the doc keep the text.
+  every `--flag` and every `python -m <module>` that a `CLAUDE.md`, a `README.md`, an always-current doc or a
+  `designs/<topic>/` tree doc names resolves, and enforces the byte-budget ratchet (§3). It stays green through
+  every sweep. A closed round's log is history: it goes to `designs/research_state/claude_md_archive/`, out of the
+  always-current set, not into a tree.
+- **Tests that pin doc text.** A few tests assert that a doc still contains a sentence:
+  `src/utils/static_gates_test.py` (the root's "**Eighteen static gates**" count),
+  `src/agents/training/tb_relevance_test.py` (`designs/training/telemetry_scalars.md`),
+  `src/main/train/disk_guard_wiring_test.py` (`designs/launcher/crashes_and_exit_codes.md`) and
+  `src/main/launcher/restart_interval_default_test.py` (`designs/launcher/flags.md`, `designs/ops/flag_census.md`).
+  A pinned copy cannot go stale, but it does make the doc keep the text.
   When a sweep moves pinned text, the test's target moves in the same unit. A new pin goes on the
   text's one home, never on a summary of it.
 - **`designs/deleted_flags.md`** is a history file. When a sweep deletes a doc's mention of a

@@ -14,7 +14,7 @@
 // records the exact `active[0]` flags + the `|error|` text on both sides.
 //
 // The gen3 trapping SEMANTICS are already modeled in the Rust engine
-// (`gen3_trapping_v1`, `designs/rust_sim/port_build_log.md` → "## Trapping: the SWITCH-legality
+// (`gen3_trapping_v1`, `designs/research_state/claude_md_archive/rust_sim_port_build_log.md` → "## Trapping: the SWITCH-legality
 // gate") — this probe pins the REQUEST-DISPLAY state machine the Rust `|request|` EMITTER must
 // reproduce so the reader's request parse (`src/rust_sim/src/present/legal.rs`, the port of
 // poke-env's `parse_request`) derives the identical switch-legality (`active[0].trapped` →

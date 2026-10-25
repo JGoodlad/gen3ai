@@ -47,9 +47,8 @@ measured 2026-09-07). Different filters, both current. For scale, the ROUND-40 e
 both were true when written. **The invariant is the load-bearing claim, not the split:** 0
 MISMODELED is what makes an unmodeled move a loud construction failure rather than a silent
 desync, and it has held under every round separately and combined. Re-run after admitting any move
-class, and fix the always-current doc that carries a copy of this number (`src/utils/bridge/README.md`)
-in the same pass — it (and the root `CLAUDE.md`, which no longer carries one) had gone stale by 28
-moves before the 2026-08-23 doc audit.
+class, and never copy this number into another doc (point at the generator): a copy in the bridge README and the
+leaf had gone stale by 28 moves before the 2026-08-23 doc audit.
 
 🚨 **SWAGGER and FLATTER inflict confusion and are NOT in that family** — they carry a TARGET
 `boosts` map whose half succeeds INDEPENDENTLY of the confusion half (probe-measured: into an

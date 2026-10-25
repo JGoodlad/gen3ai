@@ -1,0 +1,1945 @@
+# Eval and rating — history lifted out of `designs/training/eval_and_rating.md`
+
+Lifted out of `designs/training/eval_and_rating.md` on 2026-10-25 by the docs-health sweep, **verbatim and in original
+order**. This is **history, not a claim about the present**: the numbers, flags, file names and "now" / "owed" / "default
+stays OFF" statements below were true on the dates they carry, and several name code that has since been deleted (the
+poke-env eval workers, `main.eval_worker`, `bot_elo_calibration`, `bot_matchup_matrix`, `--games-store`, `--heatmap`,
+`--target-games`, `--max-snapshots`, `--eval-workers`, `--eval-device`, `--eval-concurrency-per-worker`). The live rule for
+each section is in `designs/training/eval_and_rating.md` under the SAME heading. The pre-sweep file is
+`git show 13c704e63:designs/training/eval_and_rating.md`.
+
+Each block is the passage(s) removed from the live section; a line `(passage: lines A-B of the pre-sweep file)` precedes a
+block and is the only text added here.
+
+
+# Training — eval and rating
+
+(passage: lines 3-9 of the pre-sweep file)
+
+Moved verbatim out of `src/agents/training/CLAUDE.md` on **2026-09-07**, when that leaf was
+split by topic (it was 8,219 lines / 676 KB, loaded in full for any session touching the
+training package). Each section below is unchanged, including its dated measurements.
+
+`src/agents/training/CLAUDE.md` keeps the heading and the opening paragraph of each, and
+points here. **This file is the owner of the detail.** *THE BASELINE REGISTRY* below was added
+in the **2026-09-08** second pass.
+
+
+## THE BASELINE REGISTRY (`baselines.py` · `designs/baselines.json` · `python -m main.baselines`)
+
+(passage: lines 15-20 of the pre-sweep file)
+
+**A baseline is the thing a result is read AGAINST, and this module is the ONE accessor over the
+named set.** `gen3_baselines_registry_v1` (2026-09-06) — before it, "production" was a hand-copied
+JSON nothing consumes at launch, THIS package's untaught meter kept its fixed opponent as a string
+literal (`DEFAULT_OPPONENT = "ai_v9_29_rev1_0823/snapshots/…"`), the famine comparator and its floor
+lived in one ledger entry, and the curated TensorBoard set was decided by asking. Torch-free and
+offline: it reads JSON, and only `resolve()` touches `models/`.
+
+(passage: lines 22-56 of the pre-sweep file)
+
+**Every entry is EXPLICIT** — a `.zip`, a `.json`, or an `@step`, never a bare run directory — so
+`gen3_last_snapshot_resolution_v1`'s last-snapshot rule cannot move what a name points at while its
+run keeps training. `resolve()` therefore always lands on the `explicit_zip` / `explicit_step` rung,
+and that is asserted rather than assumed.
+
+```python
+from agents.training import baselines
+baselines.get("v9_fold_parent").spec        # "ai_v9_59_R2ACTION_0827/final_model.zip"
+baselines.resolve("v9_fold_parent")         # through fixed_opponent_pool.resolve_model_ref
+baselines.describe("famine_comparator")     # the line every consumer prints
+baselines.get("famine_comparator").floor_elo   # 38.0 — the bar travels with its comparator
+baselines.protected_files()                 # {run: [rel path]} — the grooming keep-list
+```
+
+**Consumers in this package and its CLIs, all accepting a NAME wherever they accept a ref:**
+`main.untaught_meter`'s `--opponent` / `--config` (their literals are GONE — the engine exposes
+`default_opponent()` and `resolve_ref` expands a name; the config default is the literal `auto`), `--baseline` and
+`--control` through the same path; `main.elo`'s positional run dir; `main.tb_curate`, which unions the registry's `tb_curated`
+list into the curated logdir. **Each prints `baseline <name> = <run>@<step> (set <date>, <ledger
+title>)`** — a reader must never have to recognise a path.
+
+🚨 **A NEW OPPONENT IS A RE-MEASUREMENT, NOT A RENAME.** Untaught-meter levels are not comparable
+across opponents, so re-pointing `untaught_meter_opponent` invalidates every banked level measured
+against the old one. That is exactly why it is a registry entry with a `set_by` ledger title rather
+than a constant somebody can edit: `python -m main.baselines set <name> <run>/<file>.zip --reason
+"<ledger entry title>"` rewrites the entry with a freshly computed sha/commit/version and PRINTS the
+ledger line to append. It never edits the ledger — append-only, and the WHY is the one field no tool
+can author.
+
+**Validation is a test in the routine suite** (`src/main/baselines_test.py`, unmarked): every named
+file exists, every sha matches, `config_version` / `arch_signature` are re-read from the run's own
+`model_config.json`, and the `production` entry's declared CONSTRUCTION matches
+`designs/production_config.json`. Archive-backed checks skip through `main_models_dir()`; the
+structural half runs everywhere. `designs/research_state/measurements/archive_grooming_tiers.py`
+reads `protected_files()` so a registry-named checkpoint survives every retention tier.
+
+
+### A name either LOADS or fails LOUD — `baselines.load` and `BaselineLoadError`
+
+(passage: lines 60-98 of the pre-sweep file)
+
+🚨 **Load a baseline with `baselines.load(name)`, never with a bare `MaskablePPO.load`.** It goes
+through `agents.model.snapshot.load_foreign_opponent` — the loader that verifies the
+`arch_signature` and runs the deleted-kwarg sanitizer (`_patch_historical_floor` →
+`sanitize_dead_extractor_kwargs`). A bare `MaskablePPO.load` rebuilds the extractor from the zip's
+own pickled `features_extractor_kwargs` and therefore dies on any constructor flag deleted since
+the checkpoint was written.
+
+**MEASURED 2026-09-22: a bare load raises `TypeError: ExtractorBuild.__init__() got an unexpected
+keyword argument 'threat_prob_outspeed'` on ALL FIVE current-generation entries** (`production`,
+`v9_long_baseline`, `v9_fold_parent`, `famine_comparator`, `untaught_meter_opponent`), and every
+one of them loads through `baselines.load`. That number is what closed the 2026-09-14 tech-debt row
+"the `production` baseline does not load at HEAD": the entry was never the problem, the loader was,
+and **re-pointing the name would have moved the failure rather than removed it**. `production` is
+therefore NOT re-pointed — its `pending` block still names the owner-visible condition for the move
+(the win-prob arm passing its critic gate), and it remains the architecture SURFACE the mirror is
+constructed from.
+
+A by-name load now either returns a model or raises **`BaselineLoadError`** (a `BaselineError`
+subclass, so every existing `except BaselineError` keeps working), carrying `.reason` —
+`pre_generation` · `arch_drift` · `unresolvable` · `not_a_model` — and a message that always names
+the FIX. A `pre_generation` refusal names the entry's recorded era (`v45/gen3_opp_hp_typed_…`), this
+tree's `MIGRATION_FLOOR` / `ARCH_SIGNATURE`, the commit the weights ARE readable from, and the
+current-generation names to use instead. `arch_drift` — a current-generation entry the loader still
+refuses — says in the message that it is a defect, **not a licence to substitute a stand-in
+checkpoint**, which is precisely what happened on 2026-09-14 (`metamon_derisk_2026-09-14/`).
+
+**`era_checkout_only` is now VALIDATED, not merely declared.** `is_pre_generation()` answers from
+registry data alone (`config_version < MIGRATION_FLOOR`, or a different `arch_signature`) — no
+archive, no torch, so it is the same verdict in a fresh clone — and `validate()` makes an unmarked
+pre-generation entry an ERROR, as it does a stale mark on an entry this tree loads.
+
+```bash
+python -m main.baselines check --load     # + actually load every checkpoint entry (~2.5 s each)
+```
+
+`src/agents/training/baselines_loadability_test.py` iterates the whole registry and asserts each
+entry either loads or raises the typed error naming the fix; its `integration` half also pins that
+the bare path still fails where `baselines.load` succeeds, so a "simplification" back to
+`MaskablePPO.load` fails red.
+
+
+## Bot evaluation (in process on the Rust eval core, BLOCKING)
+
+(passage: lines 102-123 of the pre-sweep file)
+
+**Flat schedule, full roster.** Eval fires every `EVAL_FREQ_STEPS` (2M steps) and plays
+`EVAL_GAMES` (100) games per opponent — overridable per run with `--eval-games N` (threaded to both
+callbacks via the `_schedule()` seam; n=100 → ±0.098 per-cell 95% CI, n=200 → ±0.069; the recorded
+`n_games` tracks the actual cycle size) — one cadence, one game count, applied uniformly to
+every bot *and* every self-play sentinel (no maturity tiers, no per-opponent caps). The
+roster is the full set of eight archetype bots — both the v1 and v2 of each
+(`heuristic`/`heuristic2`, `staller`/`staller_v2`, `aggressive`/`aggressive_v2`,
+`setup_sweep`/`setup_sweep_v2`) — plus `random` as the eval-only "is-the-model-broken"
+floor (excluded from `win_rate_vs_bots`). All nine are the single source of truth in
+`eval_schedule._EVAL_ROSTER` / `eval_opponent_names()` (poke-env-free; the poke-env class table `eval_roster._EVAL_OPPONENT_SPECS`
+that once bound the same names to Python classes was deleted in P6 slice 6d-1), shared by the bot path, the self-play path, the offline Rust eval harness
+(`rust_eval.offline`, `main.ops.eval_trace_gen`) and the Rust eval core's bot routes. There is no roster flag — every bot always plays,
+because they play differently and the playstyle diversity is the point. 🚨 **The cycle is BLOCKING**:
+it plays in the trainer's own process between two host steps of the collector and is collected in the
+same step (`eval_callback._launch_eval` → `eval_launch.launch_rust_eval_cycle` → `_collect_pending`),
+so it costs training its wall time. O9 measured **~1.5 % of wall at N=256**
+(`designs/research_state/measurements/m5_sizing/PROGRESS.md`: 9.6-16.3 s per cycle at the production roster). The
+end-state production net costs more: **≈ 3.5 %** (`rb_bf_eb_s2001`: a 43-47 s cycle, 1,300-1,400 games, every 2M steps
+≈ 1,270 s), and the T-ENT toy ≈ 4.2 % (16 s every ≈ 380 s). Source: T33, `designs/endstate/design_x26_readiness.md`
+§2.6 F15. The earlier "non-blocking subprocess workers that
+skip a cycle while the previous one runs" model died with the Python eval branch (deletion pass
+P10-F2); no cycle is ever "still running" when the next step begins, so nothing is skipped.
+
+(passage: lines 125-141 of the pre-sweep file)
+
+🚨 **BOT ERA BOUNDARY — F-LF-1, fixed 2026-09-29.** Until then the SETUP step of `heuristic`,
+`heuristic2`, `setup_sweep` and `setup_sweep_v2` never fired (each compared poke-env's `Target`
+enum to the string `"self"`), so `setup_sweep` / `setup_sweep_v2` were attackers with switch logic.
+Every `eval/win_rate_vs_{heuristic,heuristic2,setup_sweep,setup_sweep_v2}` row, every
+`win_rate_vs_bots` aggregate, every training bot mix and every `bot:<name>` anchor / prober replay
+before the fix measured the BROKEN bots and is not comparable with a later one (ledger
+`2026-09-29 · GIGO FIX · F-LF-1`). The same day, before any run used the fixed bots, a NON-Ghost's
+Curse became a setup move for all four (owner: "allow Curse"; a Ghost's Curse never is) — the same
+boundary, no second one.
+
+**The anchor after the boundary — Rustboro-era bot base ratings (2026-10-03):** a mirrored, per-game-seeded
+bot-vs-bot round robin of the nine eval bots with the FIXED bots (259,200 games, 3,600 pairs/edge, every bot
+±9 Elo at 95 %, `random` pinned at 1000; HodgeRank excess width 12 Elo, p = 0.003, no significant 3-cycle) is
+banked in `designs/research_state/measurements/bot_base_ratings_2026-10-03/` with its anchor file in this
+format. 🚨 **`data/gen3_bot_elo_anchors.json` still holds the PRE-FIX anchor until that file is installed** (a
+separate decision: it re-scales every ladder's bot-anchored headline); until then a ladder fitted today pins the
+bots to the broken bots' ratings.
+
+
+### ⚠️ GLOBAL-RANDOM COUPLING — the five seeds a paired-arm design must set
+
+(passage: lines 145-206 of the pre-sweep file)
+
+A drawer that reaches into a **process-wide** RNG couples itself to every other drawer in the
+process. Two players interleave their `choose_move` calls inside one battle; two paired **arms**
+interleave them *differently* (the searched arm awaits an executor, the control runs inline). So a
+decision that consumed the shared stream lands differently in the two arms **with no treatment
+involved**, which is precisely what a paired design claims cannot happen.
+
+**It is measured, not hypothetical**, and it was found by a FAILED INTEGRITY CHECK rather than by
+review. The transfer-coefficient cell
+(`designs/research_state/measurements/transfer_coefficient_cell_2026-08-29.md` §4) ran a paired-arm
+falsifier whose zero-overrule units MUST be the same battle in both arms. It passed **exactly** on
+the deterministic bots (2,693 pairs, A−B = 0.0000, **zero** divergences) and failed on **exactly the
+two stallers** (755 pairs, 4 divergences), whose Protect coin (`_PROTECT_PROBABILITY = 0.6`) came
+off the global module. Unbiased noise (3 favoured A, 1 favoured B), but it widens every paired
+interval for free.
+
+⚠️ **"The two stallers are the roster's only source of randomness" was WRONG, and this doc said it.**
+The follow-up census (`designs/research_state/measurements/global_random_sweep_2026-08-30.md`) found
+**four more** and the stallers were the *smallest*. The falsifier above could not have caught the
+biggest one: it conditions on zero-overrule units, and the overrule rate against `random` is 1.00,
+so that bot contributed **no units at all** — a subject a falsifier gets zero units from has not
+been exonerated by it.
+
+| what draws | when | seed kwarg | env hook |
+|---|---|---|---|
+| **every player's** `choose_random_move` + `DEFAULT_CHOICE_CHANCE` (`poke_env.Player`; the Python roster is deleted, T27 P6 — the Rust bots are seeded by the env core) | per decision | `rng_seed=` | **`$GEN3AI_PLAYER_SEED`** |
+| the **team draw** (`Gen3Teambuilder`) | per battle | `rng_seed=` | **`$GEN3AI_TEAM_SEED`** |
+| the **policy's action sample** (`RLPlayer`, deleted in T27 P6; today the inference service / `main.anchors.core_side`, torch's default generator) | per decision, when `stochastic` | `policy_seed=` | **`$GEN3AI_POLICY_SEED`** |
+| the **self-play pool draw** (`SnapshotPool.sample`) | per episode | `rng_seed=` | **`$GEN3AI_POOL_SEED`** |
+| the two stallers' **Protect coin** (`agents/opponents.py`, deleted in P6 slice 6d-1 — the Rust bots draw the same stream, `bots::rng`) | conditional | `protect_seed=` | **`$GEN3AI_STALLER_SEED`** |
+
+The first is the widest: `choose_random_move` is `RandomPlayer`'s *entire policy*, the fallback of
+all sixteen scripted bots, and `DEFAULT_CHOICE_CHANCE` fires inside the RL players too — so even an
+all-deterministic-bot roster has a shared-stream consumer in it. The third is the one a
+`random`-only grep never finds: torch has its own process-wide generator, and `stochastic=True` is
+the **default** for the pool and stable cross-run opponents.
+
+**Every fix is OPT-IN and every default is unchanged, byte-for-byte.** With no seed by either route
+the RNG *is* the `random` module (or torch's default generator), so the call site makes the same
+call on the same stream in the same order; an unseeded instance does not even carry the attribute.
+An unparseable env seed **raises** rather than falling back — a seed that was meant to be set and
+silently was not would make an arm look reproducible while it is not.
+
+**Any paired-arm design over battles should set all five:**
+
+```bash
+GEN3AI_PLAYER_SEED=1 GEN3AI_TEAM_SEED=2 GEN3AI_POLICY_SEED=3 GEN3AI_POOL_SEED=4 \
+GEN3AI_STALLER_SEED=5   <harness>
+```
+
+Measured stake — 2 real bridge battles per arm under the **same fixed sim seed**, arm B burning
+1234 unrelated global draws first: **unseeded the arms played different games** (84/145 turns vs
+212/233, different winners); **seeded they were identical battle for battle.** A fixed sim seed
+bought nothing on its own.
+
+Caveat: a flat seed makes two instances draw the same *sequence* — reproducibility, not
+independence (their decisions still differ, because their legal-order lists do). Pass distinct
+`rng_seed=` values where the two sides must be independent as well.
+
+Tests: `global_random_coupling_test.py` (47, all four new seams) and
+`opponents_test.py::TestStallerProtectRng`. Each seam carries a **revert arm** — unseeded, the same
+interleaving pulls the two apart — so if that ever passes, the per-instance RNG has stopped being
+the difference and the rest of the suite is asserting nothing.
+
+
+### The untaught meter (`untaught_meter.py` · CLI `python -m main.untaught_meter`)
+
+(passage: lines 210-282 of the pre-sweep file)
+
+**The first in-tree consumer of all five seeds, and the meter every fold verdict in the ledger rests
+on.** It plays a checkpoint PILOTING a fixed team slice against ONE fixed opponent and reports a
+cluster-bootstrapped win rate. Offline — no training, no launcher, no server, nothing written under
+`models/`.
+
+**THE RECIPE**, which is the banked probes' recipe with one declaration instead of five copies:
+
+| | |
+|---|---|
+| teams | `--teams` a manifest JSON, **in order — the order IS the seed** (index = team seed offset). Default: the untaught 8 (`reuse_batch_2026-09-03/offline_collateral_kl/untaught_teams.json`). `--taught` swaps in the taught 16 (`teacher_content_2x2_2026-09-04/taught_teams.json`). Both `pin_sha` (raw bytes, the MatchupSpec convention) and `team_sha` (strip-normalized, the archetype-artifact join key) are recorded per team — they DIFFER on a file with a trailing newline |
+| refs | resolved through the **imported** `fixed_opponent_pool.resolve_model_ref` — the same call every checkpoint-reference flag (`--stable-opponents`, `--exploiter`) goes through. A bare run dir therefore means the run's **LAST SNAPSHOT**, and the resolved file + `rung` + `rule` + `num_timesteps` are printed per ref and stamped in the JSON, so no reader has to infer WHICH FILE was scored |
+| opponent | one fixed model piloting the **paired** pool draw — **BY NAME** out of the baseline registry: **`untaught_meter_opponent_v14`** (N0's 24M snapshot, config v121), an **INTERIM** default until the Rustboro opponent (legacy manifest D-L3 / R0). **Behind the X5 version break's floor (v144) it is `era_checkout_only`: a bare launch at HEAD refuses at the default (`main.untaught_meter.apply_baseline_defaults`), naming `--opponent` and the pin `f7567a9f`; no post-break opponent is registered yet.** It was rev-1's 24M (`untaught_meter_opponent`, config v101) until 2026-10-04, which does not load at HEAD (F-LR-2, fixed in B3). `--opponent` also takes any other registry name or a raw ref |
+| module tree | **`--config auto` is the default** — each model's OWN `model_config.json`, the only value that loads a current checkpoint (the shared v101 `untaught_meter_config` is history: selectable by name, unloadable at HEAD). `device="cpu"` |
+| play | `stochastic=True` both sides (keyed draw at T = 1.0: the pilot on `STREAM_TRAINEE`, the opponent a sentinel on `STREAM_OPPONENT`) · the Rust EVAL CORE with T2 on the CPU, on the training encoder's rows (`agents.training.untaught_rust`, poke-env retirement P2) · `--n-envs` (default 32) games in flight; `--concurrency` other than 1 and `--impl node` are retired and refused with the reason. Run it from the repo root (`main.h2h`'s team-pool rule) |
+| aggregation | equal-weight cluster mean over TEAMS, and **ONE fixed resampling index set shared by every ref and every contrast** so a ref-vs-ref difference is paired on the same team draws |
+
+**THE OPPONENT DEFAULT IS A REGISTRY NAME** (`gen3_baselines_registry_v1`), and the CLI prints `[baseline] --opponent default: …` naming the run before it resolves anything — see *THE BASELINE REGISTRY* above. 🚨 **A new opponent is a RE-MEASUREMENT, not a rename**: levels are not comparable across opponents, so re-pointing that entry is a `python -m main.baselines set` with a ledger title, never a module edit.
+
+🚨 **THE SERIES BOUNDARY IS RECORDED AND ENFORCED (B3, 2026-10-04).** Every played artifact stamps `_meta.series` (`opponent_run`, `opponent_file`, `opponent_num_timesteps`, `opponent_sha256`, `key`, `config_mode`) and `_meta.opponent.sha256`. `--from-rows` reads each artifact's recorded opponent (`engine.rows_artifact_series`) and **REFUSES a mix of different opponents** (`MeterError`, exit 1; a sha256 decides when both sides carry one, else `run/file`); `--allow-opponent-mix` reads them side by side knowingly and says the levels are on different scales; an artifact that records no opponent is warned about, never silently trusted. The v101 (rev-1) series and the v121 (`ai_v14_01_base`) series are two series: the B3 re-point to v14 opened NO new one, because every post-M5 read (sizing, P0, the X5 A/B) already used v14 with `--config auto`.
+
+**THE SEEDS (since P2, 2026-10-06).** A cell = one (ref, team) = one eval cycle at cycle seed
+`blake2b('gen3_untaught_cycle_seed_v1', seed, team_index)` — never the ref. Each game is keyed (cycle seed,
+`untaught`, game index) through `rust_eval.seeds` (`gen3_eval_game_seed_v1`): the opponent's team draw, the battle
+seed and both sides' keyed-draw seed, so every ref plays the SAME games (CRN) and the schedule is prefix-consistent
+(a 20-game cell is the first 20 games of a 60-game one). A cell replays bit for bit at one compute; a decision within
+a rounding error of a tie can flip with `--n-envs` (the batch shape), so the compute is stamped. SHARDING is over
+TEAMS (`--workers N`, each its own CPU engine) and cannot move a number — gated by
+`src/main/untaught_meter_reproducibility_integration_test.py`.
+
+**Pre-boundary (the poke-env bridge path, every artifact before 2026-10-06), kept as the record only (its seed
+helpers and the replay driver `gu_unit.py` were deleted 2026-10-08, deletion manifest §8.7):** per team, all five global-RNG seams above were set from `--seed` + the team
+index, both players' sampling generators re-seeded **per battle**, and the sim took a per-battle dice seed; **at
+`--seed 0` they reproduced `arch_transfer_2026-09-05/exploiter_competence/compete.py` exactly.**
+
+| stream | value |
+|---|---|
+| `$GEN3AI_{PLAYER,TEAM,POLICY,POOL,STALLER}_SEED` | `{10000,20000,30000,40000,50000} + 1e6·seed + team_index` |
+| sim dice | `[seed + team_index + 1, battle_index + 1, 3, 4]` |
+| pool sequence | `random.Random(61000 + 1e6·seed + team_index).randrange(n_pool)`, drawn **sequentially** — one `Random` per team, prefix-consistent, so a ref at 12 games/team plays the first 12 of another ref's 200 |
+| pilot / opponent policy | `71000 / 72000 + 1e6·seed + team_index·1000 + battle_index`, re-seeded per battle |
+
+Pre-boundary, `concurrency > 1` was REFUSED because interleaved battles consumed the shared streams in a
+scheduling-dependent order (measured 2026-09-03: seeded at concurrency 3, two runs of the offline collateral-KL
+probe gave 1193 vs 1141 states, arm levels up to +0.043 apart). On the Rust core every game is keyed, so the
+games in flight are the core's envs (`--n-envs`), and the reproducibility gate asserts two `--workers 2` runs are
+byte-identical and `--workers 1` gives the same per-team cells.
+
+🚨 **THE TRANSPORT BOUNDARY (P2, 2026-10-06).** Every cell / shard / artifact stamps `_meta.transport =
+"rust_eval"` (+ `encoder`, `core_stamp`, `eval_regime`, `compute`); an artifact without it is `python_bridge`
+(pre-boundary). `aggregate`, `merge_cells` and `--from-rows` REFUSE a mix (`TransportMixError`);
+`--allow-transport-mix` reads them side by side and labels the read `MIXED:…`. Paired read at the switch
+(`rb_x5ab_blob_s1001` vs the v14 opponent, the untaught 8, 60 games/team, team-level pairing only): Δ new − old
+**−4.38pp [−8.75, +0.42], NOT DETECTED**, which still allows a few pp either way
+(`designs/research_state/measurements/pokeenv_p2_ladder_2026-10-06/untaught/`). `main.best_response_gap --play`
+plays through the same `play_cells`.
+
+🚨 **THE CONTINUATION CONTROL IS THE SECOND COLUMN, and it is not optional bookkeeping.** Ledger
+2026-09-06 (cell 2) measured a plain +1.08M-step continuation of v8's parent — no teacher, no
+distillation term (the lever is since deleted), no stable opponents — moving this meter **+3.45pp [+0.46, +6.48]** on its own. A
+delta against a **frozen** parent therefore credits a fold with progress the parent would have made
+anyway; re-based, v8's celebrated +4.64pp becomes ≈ +1.2pp and is not significant. `--control
+<arms…>` pools the continuation arms equal-weight and computes their **max-pairwise replicate
+floor** (`|Δ|` is a magnitude; **one** control arm gives a re-based delta but NO floor, and the
+meter says so rather than inventing a zero). `--floor PP` supplies the externally-ruled floor for
+the *baseline* column — regime-specific (1.66pp frozen K=3 · 4.27pp controller-live), **never
+pooled across regimes**. Verdicts, in order: `WITHIN FLOOR` (|Δ| below the floor — the CI may still
+exclude zero, which says the games are consistent, not that the arm differs) → `NOT DETECTED` (CI
+spans zero) → `SIGNIFICANT`.
+
+**Timeouts:** a game at the turn limit is a DRAW (as in training), so a Rust read has no TIMEOUT bucket
+(`Cell.turn_limit_draws` counts those ties). A pre-boundary read's unfinished battle was never scored as a loss (win
+rate over FINISHED games), and a read whose timeouts exceed **25%** of attempted battles still reports
+`INCONCLUSIVE` with no verdict at all (CLI exit 3).
+
+(passage: lines 293-297 of the pre-sweep file)
+
+`--from-rows` re-reads committed per-team artifacts (`untaught_<TAG>_<depth>.json`-shaped) with no
+models and no battles — the `POOLED` row is a summary and is never counted as a ninth cluster. It is
+what pins the aggregation to the record: `untaught_meter_test.py` reproduces the banked 2×2 endpoint
+legs (`TCFUNDA−TCUNFA −4.50`, `TCFUNDB−TCUNFB −4.25`, mean **−4.37**, the ledger's funded−unfunded
+untaught endpoint) and the `UNF/end` replicate draw that is the two-arm control floor.
+
+
+### The critic gate: RETIRED 2026-10-25 (what outlives it)
+
+(passage: lines 301-318 of the pre-sweep file)
+
+`main.critic_gate` (the win-prob-critic arm's pre-registered read, `designs/ai_v12/design_winprob_only_critic.md` §5.5:
+the ladder at matched SNAPSHOT COUNT, the G1-G4 calibration bars, the G7 stall kill, `main.untaught_meter`), its
+renderer and design constants, `main.ops.g7_report`, `main.ops.calib_trend` and `scripts/ops/famine_read.sh` were
+retired by the owner's standing grant: the win-prob critic is a constant, the arm's read is decided and closed, and no
+registered read cites G1-G8 (`designs/deleted_flags.md`). Three things outlive it:
+
+- **The matched-COUNT ladder read** is a rule, not a tool: "Reading an ELO" rules 2-5 below. Its library layer is
+  `snapshot_ladder.own_rated_steps_ever` (the counting basis) and `fit_ladder(run_dir, first_n=n, write=False, steps=…)`
+  (the strict-prefix refit). **No CLI composes a cross-run matched-count read now**; `main.elo refit` is a same-run
+  recipe refit.
+- **The calibration numbers** G1-G4 were built from: `main.scaffolding_gauge --reliability --reliability-reweight`
+  (selection-reweighted, `bot` and `pool` never pooled) and the training-side `main.ops.value_sidecar_read`.
+- **The episode-length lesson.** `eval_results.jsonl` carries NO episode-length field (a full-cycle
+  `mean_ep_len_vs_{bots,pool}` is a TensorBoard scalar and sits in `metadata.json`'s `latest_eval` /
+  `snapshot_history[*].latest_eval`, keyed by CHECKPOINT, so it misses a cycle no checkpoint captured); a stall rate is
+  a CAPTURE-QUOTA statistic (loss-enriched traces, `meta.turns >= MAX_TURNS`); and a threshold defined on EVAL episode
+  length is never applied to the train series `rollout/ep_len_mean` (same name and units, different population: at 18M
+  on `ai_v12_02` the train series was +25% over its early value while eval-vs-bots was +3.7%).
+
+
+### The in-loop eval callback (`PerOpponentEvalCallback`) and what its cycle writes
+
+(passage: lines 322-612 of the pre-sweep file)
+
+`PerOpponentEvalCallback` (non-self-play path) evals IN PROCESS on the Rust eval core, blocking (see
+the section heading; until P10-F2 (2026-10-03) it also had a Python branch that spawned `main.eval_worker`
+subprocesses which **work-steal at battle granularity** and played beside training — that branch, its
+`--eval-workers` / `--eval-device` / `--eval-concurrency-per-worker` knobs (deleted in P11); the standalone
+`main.eval_worker` that survived it as the Python oracle of the Rust eval was DELETED in poke-env retirement P6
+slice 6c, with `rust_eval.parity`, `eval_benchmark` and `EvalRLPlayer`. A paragraph below that still says "worker" is
+HISTORY of that path; the shard mechanics it describes are the Rust executor's — one unit on one env, in plan
+order). On each scheduled step it snapshots the live weights (`model.save`) and the
+cycle plays against the **frozen** snapshot. **The trainee's eval teambuilder follows the
+run's `--trainee-team` pin** (`trainee_team_str` → `agents.training.eval_teams.build_trainee_tb`, the Rust eval core's trainee builder;
+threaded by BOTH callbacks): a specialist run is measured piloting ITS OWN team. The worker used to
+hardcode the default full-pool builder, so every specialist eval (win rates / ELO / `vs_ext`
+verdicts) measured the model piloting random teams it never trained on — pure OOD; the
+"ai_v7_05–08 plateau" was this instrumentation gap, not the training (the fix's pin was
+`eval_worker_test.py`, deleted with the worker in P6 slice 6c). No pin → the default pool builder, byte-identical. **The companion TRAINING-side bug
+(the mirror):** PokeEnv feeds its single `team=` kwarg to BOTH internal env agents, and the
+per-episode opponent Players are decision-functions over `battle2` (agent2 does the networking), so
+agent2's `_team` decides the opponent's REAL team — a `--trainee-team` pin therefore also pinned the
+OPPONENTS, turning every specialist run's training into a single-team MIRROR vs bot pilots
+(genuinely-won ~100% training WRs, fake curriculum; a probe on the exact path measured the same
+checkpoint at 1.000 mirror vs 0.483 with real opponent teams). Fixed by an opponent-team seam on the Python env (`Gen3Env(opponent_team=…)`, threaded from the env factory; both deleted in U3 — the Rust env core plays each side on its own team, `rust_rollout/teams.py`). Each opponent's `EVAL_GAMES` are split into
+**shard units** of `--eval-shard-games` (default 25 → 4 shards/opponent); a worker claims units
+(atomic `O_EXCL` lock per `unit_id`), plays them, and publishes one `shard__<unit_id>.json` of
+**raw** counts; the parent pools an opponent's shards back into one **exact** result. This is the
+long-tail fix — when fewer opponents remain than workers, the straggler's remaining games spread
+across idle workers instead of one worker grinding a whole opponent alone (workers are capped by
+unit count, not opponent count). The whole mechanism lives in the **`eval_sharding/` package**
+(below); when all workers finish the parent merges → TensorBoard + TUI + best-model (the winning
+snapshot is promoted by copy, not re-saved). Forensic traces land under
+`<run_dir>/eval_traces/step_<N>/<opponent>/` as a per-captured-battle triple (`write_battle_record`,
+`battle_recorder.py`): `<outcome>_s<shard>_NNN_summary.json` (the human-readable per-decision dump —
+each invocation also carries a **`belief`** block, the model's top-`BELIEF_TOPK` (3) most-likely species
+per still-HIDDEN opp slot, present ONLY when the hidden-opponent belief is on and a slot is un-revealed;
+the belief decode (`inference/belief_decode`; formerly `RLPlayer._decode_belief`, deleted in T27 P6), see `src/agents/model/CLAUDE.md` — and an
+**`opp_intent`** block, the v67 `α`/`β` heads' read of what the OPPONENT was about to do: `α` a ranked
+list of NAMED believed moves plus `SWITCH`, `β` the candidate switch-ins each named by the model's own
+species posterior. Present only under `--opp-intent-coef>0`, so an intent-off run's trace is unchanged;
+it is what the prober's `EXPECT` line and the web replay's per-turn *expect* line read) +
+`<outcome>_s<shard>_NNN_states.npz` (raw obs/logits/values **+ the chosen `actions`** for the prober
+and offline obs replay) +
+**`<outcome>_s<shard>_NNN_replay.html`** — a self-contained, **browser-watchable** Showdown replay of
+that battle (poke-env `save_replay` over the accumulated protocol stream). The first two are
+prober-only; the HTML lets a human just open the game in a browser (no checkout, no prober) — the
+only watchable replay for *non-stall* eval battles (stall games still get their own `stalls/*.html`).
+The `s<shard>_` prefix namespaces the files so concurrent shards of one opponent never collide.
+The filename stem is built by the single helper **`trace_filename_stem(outcome, trace_tag, idx)`**
+(`<outcome>_<trace_tag><idx:03d>`) — the **one source of the naming contract** the prober's
+`discovery._FNAME_RE` must invert. (When sharding added the `s<shard>_` infix, the prober's regex
+didn't follow → every sharded trace parsed as outcome `"?"` and the **whole prober went blind**;
+`eval_callback_test.test_trace_naming_contract` now pins that `discovery` parses exactly what
+`trace_filename_stem` emits, so the producer↔consumer pair can't silently drift again.)
+On a BRIDGE run each trace also gets a fourth sibling,
+`…_NNN_reconstruction.json` — the battle's **full-information reconstruction record** (resolved
+PRNG seed + both packed teams + the raw command log), captured at the bridge layer and joined to
+the trace by battle tag (`utils/bridge/reconstruction.py`). It makes the battle fully replayable
+and turn-re-rollable offline (`replay_battle` / `reroll_turn`), and
+the prober's core walk (`main.prober.core_walk`) rebuilds the trainee's one-sided obs from it on the Rust core (the Python `obs_materializer` and `obs_roundtrip_fuzz_test.py` were deleted in T27 P6). It is referee-view data in a **separate artifact** on
+purpose — nothing in the obs/training path reads it (the one-sided/omniscient wall; see the bridge
+README). Websocket eval simply doesn't produce it (degrades gracefully). 🚨 **THE RESULT VOCABULARY IS `WIN` | `LOSS` | `DRAW`** (`gen3_trace_result_v2`,
+`agents/training/trace_result.py`, pure stdlib — one declaration the recorder writes and the
+prober, the harvesters and the gauge read). `<outcome>` in every filename above is the lowercase
+form, so a captured draw is `draw_s<shard>_NNN_*`. A `DRAW` carries **`meta.draw_kind`**:
+
+| `draw_kind` | the battle layer's report | what it is |
+|---|---|---|
+| `timeout` | `lost` **and** `turn >= MAX_TURNS` (250) | the trainee FORFEITED at the deadline — a stall |
+| `tie` | `won`/`lost` both falsy, `finished` | the sim emitted `\|tie\|` |
+
+🚨 **THE DEFECT THIS CLOSED (2026-09-07).** A timeout arrives wearing a loss's flags — the trainee
+forfeits at the cap (the stall forfeit; `inference/player._handle_stall` until T27 P6), so the stream reports `lost=True` — and was
+written as an ordinary `loss_*`. The **training reward never agreed**: the terminal
+fold (then `reward_manager`'s, now `reward_config.terminal_breakdown` and the Rust env core's) pays `draw_penalty` for exactly that state, detected by the TURN COUNT, which is also why the
+G7 kill clause survived (it keys on `meta.turns`, never on the label). A true TIE was worse: it
+matched neither quota branch, so its buffered capture was **dropped** — no file, no count, nothing
+on disk to question. Measured over the whole archive: **145,173 traces, every one `win_*` or
+`loss_*`, `meta.result` never anything but `WIN`/`LOSS`.** "0 draws in every eval trace" was what
+the instrument could express, not what happened.
+
+**The two seams that implement it.** `classify_result` tests the 250-turn cap **before** the
+loss, on the same constant the reward uses (`reward_weights._TIMEOUT_TURN_CAP` == `MAX_TURNS`),
+so the label and the terminal fold cannot disagree about a timeout; and the per-cycle manifest
+states all three quotas in words under `forensic_selection_rule`, so a reader never has to
+recognise the numbers.
+
+**READING AN OLD TREE.** A trace written before this carries no `meta.result_vocabulary`, and that
+ABSENCE is what dates it (`trace_result.result_era` → `gen3_trace_result_v1`). In that era a
+timeout is separable only by `meta.turns >= MAX_TURNS` and a tie is not present at all, so such a
+tree can estimate a **STALL rate** but a **TIE rate is NOT MEASURABLE** there —
+`trace_result.era_note` is the one sentence that says so, printed by `run_summary()` and by the
+prober's `/` page. Nothing back-fills the archive, and `to_summary` / the prober both **REFUSE** a
+result outside the vocabulary (`UnknownTraceResult`) rather than coercing it. ⚠️ The live arm
+`ai_v12_02_winprob_critic` is PINNED and keeps writing `gen3_trace_result_v1` until it ends.
+
+🚨 **THE CAPTURE QUOTA IS OUTCOME-CONDITIONAL, and the manifest now RECORDS it**
+(`gen3_trace_selection_manifest_v1`): the eval executor (`RustEvalCore._finish`; `EvalRLPlayer` until P6 slice 6c) persists at most `_FORENSIC_WIN_QUOTA` (5) wins,
+`_FORENSIC_LOSS_QUOTA` (10) losses and `_FORENSIC_DRAW_QUOTA` (5) draws per opponent per cycle
+(scaled per shard unit), so the traces are a LOSS-ENRICHED sample by design — and every consumer that averages over them (`calibration`,
+`falsify_scan`, `main.scaffolding_gauge`) used to inherit that skew with nothing on disk saying so.
+**WHERE DRAWS SIT: their OWN bucket**, independent of both others. Folding them into the loss
+quota is what the old code did, and it lets a stall storm evict the decisive losses the prober
+exists to study — the loss slice would change meaning in exactly the cycles where a regression is
+worth reading. Giving them no bucket is the other half of the old defect. The draw quota is set to
+the WIN quota rather than the loss quota because a draw is a rate to notice, not a game to dissect,
+and it bounds a pathological stall cycle at 5 extra traces per opponent.
+
+`record_eval_selection` patches each cycle's manifest at COLLECT with, per opponent,
+`battles_played` / `battles_won` / `battles_drawn` / `traces_written` / `traces_won` /
+`traces_drawn` plus the derived `capture_rate_win` / `capture_rate_loss` / `capture_rate_draw` and
+the rule in words; the counts ride the existing shard plumbing (`ShardResult.traces_{written,won,drawn}`
++ `n_drawn`, defaulted so a legacy shard still deserializes). 🚨 **A DRAW IS SUBTRACTED FROM THE
+LOSSES, NOT ADDED TO THE PLAYED COUNT** — poke-env's `n_finished_battles` already contains every
+draw (a tie is neither a win nor a loss to it, a timeout is our forfeit), so
+`lost = played − won − drawn` is what keeps `capture_rate_loss` a statement about DECISIVE losses.
+The drawn-battles-played denominator comes from the unit's `draws_seen` (`rust_eval.executor._Unit`; pinned by
+`rust_eval/capture_quota_test.py`) because **no other layer counts it**. The `selection` block is **schema 2**, purely additive: `read_selection` accepts
+schema 1 as well, so every cycle recorded before today stays READ rather than being demoted to
+SELECTION UNKNOWN — its draw keys are simply ABSENT, which is not the same as zero.
+**Absent reads as SELECTION UNKNOWN, never as uniform** — a legacy tree, or a cycle that crashed
+before collecting (the block is written `null` at launch). One declaration,
+`agents/training/trace_selection.py` (pure stdlib, imported by the prober and the gauge too), so
+producer and consumers cannot drift. All
+three sit alongside a per-cycle
+**`eval_manifest.json`** (`write_eval_manifest`) recording exactly which model produced them
+— `num_timesteps`, `git_hash` + `arch_signature` (read from the run's `metadata.json` /
+`model_config.json`), and a `snapshot` pointer. The eval snapshot is normally ephemeral
+(`model.save` → the cycle loads it → deleted in `_cleanup`) and the eval `step` lines up with
+a persisted `<run>/checkpoints/checkpoint_<N>_steps.zip` only where the two cadences coincide, so the prober can't reload the *exact* weights unless
+they're retained: `--keep-eval-snapshots N` puts the snapshot at
+`eval_traces/step_<N>/snapshot.zip` (keeping the N most-recent) and points the manifest at it.
+🚨 **`snapshot.zip` IS A HARD LINK to the checkpoint saved at the same step** (`eval_collect.store_eval_snapshot`,
+2026-10-10) when `checkpoints/checkpoint_<N>_steps.zip` exists on the same filesystem and is BYTE-IDENTICAL
+(sha256 of both, size first), else a copy. A finished screen run's five coincident steps were all sha256-identical,
+and the copies were 416 MB of a run's 484 MB of eval traces (the battle records are 21 MB). The manifest's
+`snapshot_storage` block says `{mode: hardlink|copy, note, sha256, checkpoint}`; a copy made although a checkpoint
+exists at that step prints `⚠️ [EVAL] … COPIED although a checkpoint exists` with the reason (not identical /
+other size / other filesystem / link failed). A hard link is an ordinary path to every reader, SURVIVES the
+checkpoint's deletion (the blocks go with the last name, so checkpoint retention can never orphan a trace) and
+leaves the checkpoint intact when the snapshot is pruned. 🚨 The file is replaced ATOMICALLY (`dst.tmp` then
+`os.replace`) and never opened for writing — a plain copy onto an existing link would truncate the CHECKPOINT
+through the shared inode. `main.prober.groom` counts a hard-linked snapshot as NOT reclaimed
+(`bytes_hardlinked_not_freed`). The ledger/archive caveat: a `cp -r` or a cross-filesystem move of a run dir
+un-links them (each name becomes its own copy). Existing runs are not rewritten. Pinned by
+`agents/training/eval_snapshot_dedup_test.py`.
+**The same rule now stores two more names for the same bytes** (`agents/training/weights_link.py`, one
+implementation `link_or_copy(src, dst, twin)` behind all three): `best_model/best_model.zip` (both eval callbacks'
+`_maybe_save_best` → `eval_collect.store_best_model`, which prints the link in the "new best" line and warns about a
+copy made although a checkpoint exists) and the self-play pool entry (`SnapshotPool.add_from_path(src, step,
+twin=<checkpoint_at_step>)`, called by `SelfPlayCallback` at a seeding and a promotion). A hard link is only ever made
+to a SAME-STEP checkpoint that is byte-identical, so at a non-coincident step both stay copies. 🚨 The mirror hazard
+is an IN-PLACE writer opening a name that shares an inode. There is none: the periodic checkpointer
+(`run_io._TrackingCheckpointCallback`), the pool's live `add` and the eval snapshots save through
+`utils.atomic_io.atomic_save_model` (a temp file, then `os.replace`), which gives the name a fresh inode, so a
+re-reached step can neither rewrite nor (torn) corrupt the other names (`designs/training/checkpoint_writes.md`).
+Pinned by `agents/training/weights_link_test.py`, each test failing on revert.
+The prober consumes the manifest to load the exact model, falling back to the nearest
+checkpoint. **The trainer grooms the traces it writes**: after each cycle
+`_prune_eval_traces` keeps only the `--keep-eval-trace-steps` most-recent eval
+step dirs — **default `0` = KEEP ALL since 2026-09-08** (`gen3_keep_all_eval_traces_v1`) — and
+`_prune_eval_snapshots` keeps the `--keep-eval-snapshots` (default 10)
+most-recent snapshots (`python -m main.prober.groom` is the manual fallback).
+🚨 **THE OLD CAP OF 20 DELETED A REGISTERED COMPARATOR.** Arm A
+(`ai_v12_02_winprob_critic`) ran to 75M under it, so its 10M-step traces were groomed off disk
+and the win-prob critic ladder's own **A@10M control became uncomputable** — the matched-step
+read every ladder arm is scored against. A cycle is ~55 MB and a 75M run's full set ~3 GB: disk
+is recoverable, a matched-step comparator is not. The weight snapshots stay capped at 10 because
+those are ~27 MB *each* and the prober falls back to the nearest checkpoint; only the TRACES,
+which nothing can reconstruct, are now kept forever. **The same cycle also bounds the run's
+two append-only debug dirs** via `_prune_run_artifacts` (`artifact_retention.py`, a dedicated
+module — not bolted onto this busy callback): keep the `--keep-stalls` (default 50) most-recent
+`stalls/stall_*.html` replays and the `--keep-crashes` (default 10) most-recent
+`crashes/restart_err_*.txt` launcher diagnostics, newest-by-mtime, `0` = keep all. Same
+producer-grooms-its-own-data contract; `python -m agents.training.artifact_retention <run_dir |
+models_dir> [--apply]` is the manual fallback (dry-run by default; sweeps every run under a
+`models/` tree). The eval summary itself is
+written to `metadata.json` as a **top-level `latest_eval`** block (step-labeled, NOT
+nested under a checkpoint) — robust to the async timing (an eval can finish after a
+newer checkpoint, or before any checkpoint exists); `save_model_snapshot` carries it
+forward so a later checkpoint never erases it. That top-level block is the canonical,
+timing-robust record; **additionally, `record_checkpoint` stamps a point-in-time copy
+of the then-current `latest_eval` into each checkpoint's entry** (both the per-checkpoint
+sidecar `.json` and the run-level `snapshot_history` entry, under a `latest_eval` key) so
+each checkpoint carries the most-recent eval+pool stats as of when it was saved. The
+embedded block keeps its own `step`, so storing it under a possibly-newer checkpoint never
+mislabels which weights were measured (`snapshot._read_latest_eval` reads it; the union
+builder `_build_snapshot_entry` keeps sidecar + history in lockstep).
+
+The frozen snapshot (`model.save` at the cycle's launch) is what the prober reloads and what the best-model
+copy and a pool promotion take — each cycle evaluates the model exactly as it was at the snapshot step.
+Behaviors:
+- **A failed cycle is logged-and-continued**, never fatal: an `EvalCoreError` (e.g. a QUARANTINED
+  battle) leaves the shard files absent, the collect reads the opponents as missing, and a cycle with
+  no results records nothing (`eval_callback_rust_test`). A lifecycle violation and a missing eval core
+  RAISE (`RustEvalUnavailable`).
+- **There is no hung-cycle watchdog and no skip-while-running rule** (both belonged to the Python
+  worker pool, deleted in P10-F2 with `eval_cycle_timeout()` / `_abort_pending_cycle`). A stop signal
+  is honoured INSIDE the cycle at its safe points (`safe_point_fn`, `gen3_deferred_abort_v1`, P10-A2),
+  and the abort's 120 s deadline bounds a cycle that never reaches one.
+- **An operator can force an off-cadence eval** from the launcher's `f` button (confirm →
+  SIGUSR2). The signal handler (`train_rl_agent._setup_signal_handlers`) only flags a
+  process-global `request_forced_eval()`; whichever eval callback is active CONSUMES it on its
+  next `_on_step` (the shared `eval_callback._ForcedEvalMixin._maybe_force_eval`, mixed into BOTH
+  callbacks so the path can't drift) and launches a cycle immediately. The cycle is blocking, so a
+  request is never consumed "while a cycle is in flight"; one flagged DURING a cycle is consumed at
+  the next step and launches another cycle straight after it (the old "rejected while running" rule
+  was the Python workers'). The forced launch consumes the current
+  cadence bucket (`_last_eval_step = num_timesteps`) so the schedule check can't double-launch the
+  same step; the next boundary still fires normally. Tests: `eval_callback_test.py` /
+  `selfplay_callback_test.py` (`test_force_eval_*`).
+- **Graceful shutdown has no eval to wait for.** A scheduled restart is self-initiated by
+  `GracefulRestartCallback` at a rollout boundary; the cycle is blocking, so there is never an
+  in-flight eval to drain (`PerOpponentEvalCallback.drain`, `eval_drain_fn` and
+  `_ABORT_EVAL_DRAIN_SEC` were deleted in P10-F2). A stop signal during a cycle saves within one host
+  step (the cycle's SAFE POINT, P10-A2) and abandons the partial cycle — it is never collected, so no
+  partial eval is recorded.
+- **On resume the last eval is re-published to the TUI** from the resumed checkpoint's
+  `metadata.json` (`replay_last_eval_to_tui`), so the eval panel isn't blank until the next
+  cycle. This covers the **self-play `pool` block too** — the aggregate (`win_rate_vs_pool`,
+  `mean_reward_vs_pool`, monotonicity, snapshot count) and every per-sentinel row are
+  re-published from the saved block, with the saved step tags, so Pool/sentinel rows survive
+  a restart exactly like the bot rows (no waiting a full cadence for fresh numbers). Safe
+  because the pool only changes at an eval-collect — the same moment the block is persisted —
+  so the saved rows match the pool reconstructed from `snapshots/`. A pre-seed eval persists an
+  empty `sentinels` list, which isn't re-published (nothing to show yet).
+- **The cadence ANCHOR is restored on resume — CLAMPED to the current step**
+  (`_ForcedEvalMixin._restore_last_eval_step`, shared by BOTH callbacks). `_last_eval_step` is
+  in-memory and resets each process, so it is restored from metadata; otherwise the resumed step
+  sits far past a boundary and a fresh `0` would eval on step 1. That is right for a launcher
+  RESTART and **wrong for a FORK**: `resume_eval_metadata` is the SOURCE run's run-level
+  `metadata.json`, whose `latest_eval.step` is where *that* run last evaluated, not the step of the
+  older checkpoint being forked from. Measured 2026-08-21 on an exploiter fork of gen-17's
+  9,084,672-step checkpoint out of a run that reached 25M: the anchor restored to **24,000,000**,
+  and since the cadence test is `(now // freq) > (anchor // freq)`, the fork would have launched
+  **ZERO eval cycles** until it itself reached 26M — no `win_rate_vs_*`, no `eval_results.jsonl`
+  row, no ELO. A gate arm whose verdict IS an eval metric silently produces nothing to read.
+  Clamping to the model's `num_timesteps` restores the intended meaning and the next boundary after
+  the fork point fires normally; a restart is unaffected (its recorded step is at or behind the
+  loaded one, so the clamp never bites) and the clamp announces itself with an `anchor is AHEAD`
+  event that states the FACT rather than asserting a cause — a crash-restart that rewound past a
+  completed eval reads identically to a fork.
+  ⚠️ It reads **`self.model.num_timesteps`**, not the callback's own `num_timesteps` (`loop_callbacks.BaseCallback`) — the latter is a
+  mirror the protocol only syncs at `training_start` and every `step`, so at `_init_callback` time it is still `0` even on a 9M
+  resume, and reading it would clamp every restart to 0 and re-eval on step 1 (observed live before
+  the fix, as `this model is at 0`). Same family as `_warn_if_fork_pool_empty`: a fork inherits the
+  base's weights but none of its run-directory state, and the silent failures live in that gap.
+  Test: `eval_fork_cadence_test.py` (both callbacks, parametrized).
+
+| Flag | Default | Notes |
+|------|---------|-------|
+| ~~`--eval-workers`~~ (DELETED, P11) | `5` | Eval subprocesses per cycle; work-steal **shard units** from a shared pool. Capped at the unit count (≈ opponents × shards-per-opponent, so sharding lets the full pool help). Self-play doubles this (→ `10`) since sentinel matchups run the model for both players. |
+| `--eval-games` | `None` (=`EVAL_GAMES`, 100) | Games per **opponent** per eval cycle. Raise for tighter sentinel/promotion CIs (200 → ±0.069) at proportionally more eval compute — work-stolen across the workers, off the training path. Shards/opponent = eval-games / `--eval-shard-games`. |
+| `--eval-shard-games` | `25` | Games per work-steal **shard unit** (battle-level work-stealing). Each opponent's `EVAL_GAMES` split into chunks any idle worker drains → the long tail collapses to one shard (≈4-shards-per-opponent default = ~4× shorter tail). Smaller = finer tail collapse but more player builds / (on websocket) more connection churn — the bridge is preferred for fine shards. `>= EVAL_GAMES` ⇒ one shard/opponent = the original opponent-level behaviour. Aggregation is exact (Σwon/Σfinished etc.); see the package below. |
+| ~~`--eval-device`~~ (DELETED, P11) | `cpu` | Device for eval-worker inference. `cpu` decouples eval from the training GPU. |
+| ~~`--eval-concurrency-per-worker`~~ (DELETED, P11) | `1` | Battles each worker overlaps **within** its claimed opponent (single-thread asyncio latency-hiding — NOT multi-core). `1` = today's sequential play. Threaded to the constructor's `eval_concurrency` → `cfg["concurrency"]` → `run_local_battles(concurrency=)` (bridge) / the player's `max_concurrent_battles` (websocket). See the concurrency note below. |
+| `--keep-eval-snapshots` | `10` | Retain the N most-recent eval weight snapshots in `eval_traces/step_<N>/snapshot.zip` (~62MB each; a HARD LINK to the same-step checkpoint where one is byte-identical, so ~0 extra) for bit-exact prober replay. `0` writes the identity manifest only; the prober then loads the nearest persisted checkpoint. The trainer auto-prunes to this cap each cycle. |
+| `--keep-eval-trace-steps` | `0` (= **KEEP ALL**) | The trainer keeps only the N most-recent eval **step dirs** under `eval_traces/` after each cycle. 🚨 **Was `20`, and that default deleted arm A's 10M traces — the ladder's registered A@10M comparator — before anyone read them** (`gen3_keep_all_eval_traces_v1`, 2026-09-08). ~55 MB/cycle, ~3 GB for a 75M run. Pass a positive N to cap it again; `python -m main.prober.groom` is the manual fallback. |
+| `--keep-stalls` | `50` | Each cycle keep only the N most-recent `stalls/stall_*.html` replays (`0` = keep all). A self-play run writes thousands (~80 KB each); this caps the dir. `artifact_retention.py`; CLI fallback `python -m agents.training.artifact_retention`. |
+| `--keep-crashes` | `10` | Each cycle keep only the N most-recent `crashes/restart_err_*.txt` launcher diagnostics (`0` = keep all). Same module/CLI as `--keep-stalls`. |
+
+**TD-residual tail metric (`eval/td_resid_tail_*`).** Each cycle also folds a **left-tail
+statistic of the per-decision critic surprise** δ(t) = r(t) + γ·V(s_{t+1}) − V(s_t) — the same
+formula the prober uses (`main/prober/session/core.py::ProbeSession._td`, the single source of
+truth). `BattleRecorder`
+accumulates δ live (one-step delayed backfill, closing each transition at the next `record()` when
+the reward is finalized and V(s′) is known; the last decision has no δ). It costs **zero extra GPU**:
+δ is computed only over the battles eval already captures forensically (where `need_aux=True` already
+paid for V(s)), pooled per opponent (the executor's per-unit δ list → `td_tail()`), and folded as a
+**CVaR@5%** (mean of the worst 5%, `TD_TAIL_FRAC`; single min below `TD_TAIL_MIN_SAMPLES`=20). It
+rides the exact win-rate plumbing — worker `shard__<unit_id>.json` (raw δ pooled across shards) → `merge_eval_results` →
+`eval/td_resid_tail_vs_<opponent>` + `eval/td_resid_tail_mean` (TB + TUI), the `metadata.json`
+`latest_eval` block (per-opponent + pool aggregate), and the append-only `eval_results.jsonl`. The
+run's `model.gamma` is threaded into the cycle (`run_rust_eval_cycle(gamma=…)`; the standalone worker reads `cfg["gamma"]`) so the live δ matches the
+prober's offline recompute (guarded by `td_residual_parity_fuzz_test.py`). More-negative = the critic
+got blindsided more often — the **leading indicator for the critic-coverage obs work** (it moves in a
+cycle or two, where saturated win-rate / gate-pinned `win_rate_vs_pool` / wide-CI ELO don't).
+
+**Intra-worker concurrency (the flag `--eval-concurrency-per-worker` was deleted in P11; every production path runs `1` = sequential).** Each
+worker overlaps up to N battles **within** its claimed opponent. This is **single-thread asyncio
+latency-hiding, NOT multi-core** — everything (the obs build + PyTorch forward in `choose_move`, the
+bridge/server I/O) runs on the one `POKE_LOOP` thread with BLAS pinned (`OMP/MKL=1`), so concurrency
+only overlaps the time a worker is *blocked* on the bridge subprocess / websocket round-trip with
+another battle's forward. The ceiling is **one core of compute**: a single-core bridge benchmark
+(`/tmp/eval_concurrency_bench.py`, NN trainee vs bot and vs NN sentinel) measured ~**2.0× decisions/sec
+at conc=3** on spare cores (plateau ~3; bot eval ≈2.0×, the heavier NN-vs-NN ≈1.8×) — i.e. about half
+the per-decision wall-time at conc=1 was bridge I/O wait. **The old `_EVAL_SUBPROCESS_CONCURRENCY` = 1 (deleted, P10-F2)
+default and its "measured slower" note were the *saturated* regime** (eval contending with training's
+64 env workers for already-full cores — there the extra event-loop overhead nets negative); on **spare
+cores (idle box / the cycle tail)** it's a clean ~2×. So the live gain runs between 1× and 2×
+depending on how saturated the box is during the eval window; default stays `1` (opt-in). It does
+**not** use idle cores at the tail — that needs *process-level* sharding (chunk one opponent across
+workers); concurrency stacks multiplicatively on top of that (≈`2 × #shards`). Cross-opponent
+parallelism is still the (5) eval-worker subprocesses work-stealing the pool.
+
+
+### Battle-level work-stealing (`eval_sharding/` package)
+
+(passage: lines 616-650 of the pre-sweep file)
+
+The *process-level* tail fix above is the `eval_sharding/` package — a small, deeply-encapsulated
+unit with a narrow interface (4 focused files, no mega-file):
+
+- **`units.py`** — `EvalItem` (one opponent the parent declares) + `ShardUnit` (a chunk of its
+  games) + `plan_units(items, shard_games)`, a **pure** partition: split each item's games into
+  ≤`shard_games` chunks (Σshards == n_games exactly), ordered LPT-ish (cost-descending items, shards
+  round-robined) so every opponent starts early and the expensive ones lead.
+- **`results.py`** — `ShardResult` (raw additive metrics: won/finished, reward+turn sums, the raw δ
+  list — never a reduced ratio) + `aggregate`, which pools an opponent's shards back **exactly**:
+  win_rate=Σwon/Σfinished, reward/ep_len count-weighted, and the TD tail by **pooling raw δ then one
+  `td_tail`** (a CVaR can't be averaged). `td_tail` + its constants live here (the single source of
+  truth; `eval_callback` re-exports them, so the dependency is one-way `eval_* → eval_sharding`).
+- **`pool.py`** — `ShardedEvalPool`, the deep coordinator. Parent: `write_plan(run_dir)` →
+  `collect(result_dir)`. Worker: `from_plan(run_dir)` → `claim_next(claim_dir)` / `publish(...)`. It
+  hides every filesystem mechanic; the worker never touches a lock file, the parent never touches a
+  shard file. The plan (`plan.json`, items + shard_games) is the **single source of truth** both
+  sides read — neither reconstructs the universe independently, so they can't drift.
+- **`merge_eval_results`** is now a thin delegate to `ShardedEvalPool.collect` returning the same
+  `merged` shape every downstream consumer already reads (record_per_opponent / build_bot_eval_block
+  / record_elo / pool & externals blocks are **untouched**), plus additive `counts` (exact W/L) and
+  `coverage` siblings.
+
+**Exactness caveat (documented, by design):** win_rate / reward / ep_len are exact regardless of
+`shard_games`. `td_resid_tail`'s *aggregation* is exact (pool the raw δ, compute the CVaR once), but
+the *captured-battle sample* it's computed over shifts slightly with the shard count — the forensic
+capture quota is per-unit (scaled `max(1, ⌈quota/shards⌉)`), so which battles contribute δ depends on
+the split. It's a sampled diagnostic either way. Forensic trace files are namespaced by a per-unit
+`trace_tag` (`{outcome}_s{shard}_{idx}`) so concurrent shards of one opponent don't collide in the
+shared `eval_traces/step_<N>/<opponent>/` dir. Per-cycle `run_dir` is wiped at cleanup (and cleared
+at launch), so no lock/shard/plan ever leaks across cycles. Sentinel/fixed opponent models are cached
+per worker by path (immutable within a cycle → safe; the version check rides the first load) so a
+fine split doesn't pay an N× 27MB deserialize. (That was the Python worker's `_play_unit`, deleted in P6 slice 6c;
+the Rust executor plays a unit on one env and publishes the same `ShardResult`.) Tests: `eval_sharding_test.py`
+(partition + aggregation-exactness property + claim-once + coverage); the real-battle half,
+`eval_sharding_fuzz_test.py`, went with the worker.
+
+
+### Mirrored team pairs (`--eval-mirrored-pairs`, T17 — `gen3_mirrored_pairs_v1`, DEFAULT OFF)
+
+(passage: lines 654-733 of the pre-sweep file)
+
+**What it is.** Every team pairing of the in-loop eval (the bot roster, the pool sentinels and the
+fixed / stable opponents) is played from BOTH sides on ONE battle seed: game `2k` the trainee pilots
+team `A` (its own builder's draw) against the opponent on `B` (the opponent builder's draw); game `2k+1`
+the teams are HANDED OVER — the trainee on `B`, the opponent on `A` — with the same battle seed, the same
+scripted-bot streams and the same sampled-opponent seed. Team-draw luck ("my team happened to counter
+yours") cancels inside the pair instead of riding the win rate as noise. Training games are untouched
+(their diversity is the point). The trainee keeps seat p1 in both games; only the teams change hands.
+
+**One rule, both eval paths** (`rust_eval.seeds.pair_game`): unmirrored, a game's key is its own
+`(cycle seed, opponent, game)`; mirrored, games `2k` and `2k+1` both take the key of game `2k` and the
+second is `swapped`. The Rust eval core (`executor._make_game`) calls it (the Python worker's per-GAME seed rule did
+too, until the worker was deleted in P6 slice 6c). (The `mirrored_pairs_need_*` combination rows, which refused `--use-bridge off` and a concurrency other than 1, were removed in U3 — the bridge is the only transport.)
+
+**Counts are even by construction.** An odd `--eval-games` is rounded UP (`mirrored_eval_games`; the
+`--debug` cadence's 3 becomes 4), and the shard split is in PAIRS (`units._split_games(paired=True)`), so
+a pair's two games always sit in ONE unit, played back to back, and the unit can score it. The plan
+carries `"mirrored": true` (absent when off, so an unmirrored `plan.json` is byte-identical).
+
+🚨 **THE PAIR IS THE STATISTICAL UNIT** (`agents.training.mirrored_pairs`). A game is worth 2 / 1 / 0
+HALF-POINTS to the trainee (win / draw / loss — a 250-turn timeout and a sim `|tie|` are DRAWs,
+`trace_result.classify_result`), so a pair is one draw from a five-category PENTANOMIAL. Each shard
+publishes its `pair_counts`; the collect pools them exactly (`merged["pairs"]`). A pair with an
+unfinished game is VOIDED whole, never half-counted. Every interval recorded on mirrored games is the
+pentanomial one over PAIRS — never a per-game binomial interval, which would treat the two games of a
+pair as independent draws: `eval/pair_score_vs_{bots,pool}` (the mean per-game score, a draw = ½,
+Random excluded from bots like `win_rate_vs_bots`), `eval/pair_score_ci_vs_*` (the 95% half-width) and
+`eval/pairs_vs_*` (the pair count). `win_rate_*` keep their meaning (`n_won / n_finished`) and the
+promotion read stays `win_rate_vs_pool > --promote-threshold`; the score and the win rate differ by
+½·draw rate (0 draws in 145k archived eval traces). ⚠️ **`eval/elo`'s CI is still the BT fit's per-game
+one** — the live BT fit consumes game counts; the per-opponent pentanomials ride on the row for a
+pair-level refit.
+
+**THE REGIME, recorded and inherited like `eval_sentinel_greedy`.** `model_config.json`'s
+`eval_mirrored_pairs` (config v128) is read back by `_resolve` on a flagless resume, so a live run
+never crosses the boundary unless the flag is NAMED; the launch prints `⚖️  [EVAL REGIME] in-loop eval
+pairing: …` with its source. Every artifact states it: the cycle manifest's `mirrored_pairs` (always
+written), the `eval_results.jsonl` row's `mirrored_pairs` block (each opponent's pentanomial — bots by
+name, sentinels by STEP, externals by label; ABSENT on an unmirrored row, so those rows stay
+byte-identical), and `latest_eval.mirrored_pairs` / `latest_eval.pool.pairs`.
+
+🚨 **A REGIME BOUNDARY — and the readers refuse to cross it.** Half the mirrored games put the trainee
+on the OPPONENT's builder's team (the flat pool for a bot; a specialist's untaught team), so
+`win_rate_vs_pool` / `eval/elo` / the promotion read are a different population on either side of it
+(the T17 row's own words). `elo.load_rows` REFUSES (`MixedEvalRegimeError`, naming the first mirrored
+step) a run whose rows span it unless the caller picks one regime (`mirrored=True/False`); the live
+callbacks pass THEIR regime, so a run that switched rates each era apart. `snapshot_ladder.
+eval_measured_pairs` skips mirrored rows (not the ladder's protocol). `best_response_gap`'s regime
+tuple carries `eval_mirrored_pairs`, so two exploiters across it are an UNMATCHED comparison.
+
+**The default is OFF on purpose.** The M5 sizing arms (A2, A′, then B and C) are compared now, and B / C
+are pinned at a commit that may carry this code: flipping the in-loop regime under them would confound
+the comparison. The orchestrator flips it ON at the era boundary — the X26 baseline launch — together
+with `--promotion-sprt` (T6), so it is one regime change, not two.
+
+🚨 **The PINNED-TEAM meters do NOT mirror — `--mirrored-pairs` is REFUSED there** (owner 2026-10-02,
+deletion pass P13). `main.untaught_meter` and `main.best_response_gap --play` measure the pilot ON its
+pinned team; a mirrored pair hands that team to the opponent for its second game, so one game measures
+PILOTING the pinned team and the other the RESPONSE to it as an opponent — two different quantities a
+pair would pool into one number. Both CLIs refuse before anything is read, and so does the one library
+path they play through, `untaught_meter.play_cells(mirrored=True)` (typed: `untaught_meter.
+MirroredPinnedTeamError` / `best_response_gap.MirroredPinnedTeamError`, cause `mirrored_pinned_team`;
+the text is `mirrored_pairs.pinned_team_refusal`). Mirroring belongs to the SYMMETRIC evals: the in-loop
+`--eval-mirrored-pairs` above and `main.anchors --mirrored-pairs` (see
+[`EXTERNAL_ANCHORS_SOP.md`](../ops/EXTERNAL_ANCHORS_SOP.md)). (The readers of a mirrored cell —
+`cells_regime` / `merge_cells` refusing a mixed set, `aggregate`'s `levels[*].pairs` — stay, for the
+shards written while the meters could mirror, 2026-10-01 to 10-02.)
+
+Tests: `agents/training/mirrored_pairs_test.py` (the rule on both paths, the split, the pentanomial and
+its interval, every reader's refusal), `main/train/eval_mirrored_pairs_regime_test.py` (resolve /
+inherit / migrate), `main/anchors/mirrored_test.py`. **CPU evidence (2026-10-01)**, read off the traces'
+reconstruction records (`prng_seed` + both players' teams): (1) Python core, `--debug --debug-eval
+--self-play --eval-mirrored-pairs` — 72 traces, every bot's games in pairs sharing one seed with the
+teams swapped between p1 and p2, 16 pairs vs the bots per cycle (`--eval-games 3 → 4`); (2) Rust eval
+core, the same on the Rust env core (the win-prob critic (the only critic)) and a pool forced to seed — the trace's `cycle`
+block reads game 2k `swapped False` / 2k+1 `swapped True` on one seed with the teams handed over, for the
+nine bots AND a pool sentinel (`pairs_vs_pool` 2 at step 12,000); (3) `main.untaught_meter
+--mirrored-pairs` on two current-generation checkpoints, 16 games → 8 pairs, each pair one pool draw
+(since refused, P13);
+(4) `main.anchors --mirrored-pairs` vs `metamon:SmallRL`, 8 games → 4 pairs, all four VERIFIED (teams,
+order, shared seed). ⚠️ **Not yet seen on a GPU run** — one confirmation rides a planned launch.
+
+
+### The eval COUNT ledger (`agents/training/eval_ledger/`, `gen3_eval_count_row_v2`, eval U1)
+
+(passage: lines 737-768 of the pre-sweep file)
+
+**What it is.** design_evaluation.md §0b, built: ONE append-only, archive-level ledger of COUNTS — one row per
+(batch × matchup) — at `<archive>/_ledger/` (`utils.paths.run_archive_dir()`; `$GEN3AI_MODELS_DIR` is authoritative;
+pytest seals it, so a test uses the `run_archive` fixture or a temp root). Beside the rows: `requests/` (the claim
+queue, a deterministic fold of `open` / `family` / `claim` / `void` / `row` / `done` / `cancel` events), `decisions/`
+and `references/`. One writer per file, every append fsynced; under `models/` a writer may write ONLY to
+`<archive>/_ledger/` itself.
+
+🚨 **EVERY READ IS DECLARED.** `eval_ledger.read(ReaderDecl(name, purposes, regime, requests, selection, flags_ok,
+inference[, decision_kind]), ...)` — every field spelled out. It validates every row (a v1 row is upgraded ON READ,
+never rewritten), applies corrections, refuses ANY duplicate batch key or seed block anywhere in the ledger
+(`DuplicateBatchError`), filters by the declaration, returns ONE regime (`MixedRegimeError`) and honours `as_of`.
+`src/eval_ledger_reader_gate_test.py` (static, EMPTY allowlist) fails a module that reads the ledger any other way,
+or whose declaration is not spelled out, and checks the closed lists against design_evaluation.md §0b.2.
+
+🚨 **EVERY BATCH IS WRITTEN UNDER A CLAIM, FOR A REQUEST.** `LedgerWriter.claim` takes the unit `(request, batch,
+player, opponent, regime)` under one `flock`; a dead writer's claim (pid dead on this host, or expired) is voided
+deterministically and the batch replayed on the same seeds; a writer whose claim was voided DROPS its batch. A
+request pins its purpose, its spec and (once a row lands) its regime; a family pins its protocol (§0c rule 6).
+
+**Per-cell INCONCLUSIVE and family reads.** `cells.cells(read)` gives each (request, player, opponent) cell its
+verdict: INCONCLUSIVE when `4 × aborted > attempted` (integers: exactly 25 % is not) or below a registered pair
+minimum. `cells.looks(read)` reads a group-sequential FAMILY (X5's A/B) across its looks. `cells.pooled_pairs` is the
+conditional pair-clustered estimate and refuses a read declared `across_runs`.
+
+**Operate it:** `python -m main.eval_ledger audit | show | verify <decision> | void-dead | close-stale [--apply] |
+family-register | request-close`. `audit` exits 1 on any broken cross-record invariant (duplicates, unresolved
+requests / families / supersedes, a requested row without its claim, a decision whose rows or digest no longer match).
+
+Tests: `agents/training/eval_ledger/schema_test.py` (every v2 rule refused for exactly that rule; the v1 upgrade),
+`writer_test.py` (claims, voids, pins, the lock, closing — a hand-moved clock and a liveness oracle, no sleeps),
+`reader_test.py` (declarations, scopes, `as_of`, selection, a planted duplicate, X5's family read, the audit),
+`producers_contract_test.py` (the bot round robin's builder; the banked v1 rows read upgraded).
+
+
+### The in-loop eval on the ledger (`agents/training/cycle_ledger.py`, eval U2 — DUAL WRITE)
+
+(passage: lines 772-803 of the pre-sweep file)
+
+🚨 **The trainer's in-loop eval cycle and the SPRT promotion write ledger rows BESIDE their old files.** The trainer
+builds ONE `CycleLedger.for_run(model_dir)` at startup (`main/train/callbacks.py`, only when eval runs; the
+`📒 [EVAL LEDGER]` line names the root) and hands it to the eval callback; rows land in
+`run_archive_dir()/_ledger/rows/inloop/`, protocol `gen3_eval_protocol_v1_inloop`. `eval_results.jsonl`,
+`metadata.json`'s eval block and `sprt_promotion.jsonl` are written EXACTLY as before and every existing reader
+(TensorBoard / TUI, `main.elo`, `best_response_gap`, the supply guards) still reads them — moving those readers and
+retiring the file is eval U3c. Nothing about a game changed (storage only; the before / after outcome-digest proof is
+`designs/research_state/measurements/eval_ledger_u2_2026-10-04/`).
+
+- **The cycle:** purpose `cycle`, request kind `cycle`, ONE request per (cycle step × regime)
+  (`<run>:cycle:<step>:<regime_id>` — bots, sentinels and each fixed opponent are different regimes), one row per
+  opponent (`request.batch` 0): exact W / L / D (a draw is COUNTED — `eval_results.jsonl` still has no draw column),
+  per-team counters, the pentanomial under `--eval-mirrored-pairs`, the outcome digest (GPU bar 2e-3) and
+  `compute.outcome_digest_all` (every game). `seat_rule = fixed_p1`; the trainee greedy; a bot `sampled` /
+  `bot_native`; a sentinel greedy under `eval_sentinel_greedy`, else sampled at `--self-play-temp`.
+- **The SPRT** (`--promotion-sprt`): ONE request per candidate (`<run>:sprt:<step>`, kind `sprt`, purpose
+  `promotion`), one row per (batch × sentinel) with `request.batch` = the test's batch index, and ONE decision row at
+  the verdict (`promotion`, subject = the candidate's sha256, verdict `accept` / `reject` / `abandoned`).
+- **How it is kept honest:** claims are taken BEFORE the cycle plays; after it, every row is checked against the
+  executor's published shard results (a mismatch RAISES — `CycleLedgerError`) before any row is appended. A stop at a
+  safe point exits inside the cycle and writes nothing; a cycle that fails on the core writes nothing and CANCELS its
+  requests; a re-eval at the same step re-opens the same request and replays only what is missing.
+- **Cost is flat in the archive's size since F-ED-22 was fixed** (design_evaluation.md §0b.4 / §0b.7): the writer folds only
+  the requests-stream bytes beyond each file's cursor (a persisted index under `<ledger>/.ledger_index/`, a CACHE: rebuilt
+  from the streams when missing, corrupt or stale, checked by `python -m main.eval_ledger audit`, `--rebuild-index`), and a
+  request-scoped `read` (the SPRT decision) costs that request's rows. A claim / append is ~0.5 ms of CPU beyond its own fsync
+  at any archive size (it was 13 → 500 ms from 1.7k to 50k events). `GEN3AI_LEDGER_INDEX=0` runs the old full fold / scan.
+
+Tests: `agents/training/cycle_ledger_test.py` (a fake executor: both callbacks' cycles, regime-split requests, draws,
+the dual write, an abort + restart, a failed cycle, the GIGO refusal, the trainer's startup wiring, SPRT rows +
+duplicate refusal + decision) and `cycle_ledger_integration_test.py` (`sim` + `slow`, the REAL core: each row's digest and
+W / L / D are the full game log's, and the shard results are identical with and without the ledger).
+
+
+### The checkpoint-vs-checkpoint head-to-head (`main.h2h`, X5 §7.3 / U0 — ledger v2 since eval U1)
+
+(passage: lines 807-1024 of the pre-sweep file)
+
+**What it is.** The offline, SYMMETRIC read of one checkpoint against another: `python -m main.h2h play
+--player <ckpt.zip | run dir | run@step> --opponent <…> --pairs N [--out <root>]` plays N MIRRORED team pairs on the
+Rust eval core and prints the player's win rate with its PAIR-clustered 95 % interval; `python -m main.h2h read
+[<root>]` pools a ledger's h2h rows per edge, one regime at a time. Nothing here is new machinery for the game: it declares ONE T2 service
+with two slots (the player's eval slot, one SENTINEL slot for the opponent) and ONE eval core — or, when the player and the
+opponent are TWO architectures (the X5 cross), one slot group per architecture with the slot its side needs (below) —, and plays the plan
+through `RustEvalCore.run_cycle` — the executor the in-loop eval and the SPRT promotion use — in BATCHES.
+(`main.h2h` writes the COUNT ledger above, protocol `gen3_eval_protocol_v1_h2h`: by default to the archive's
+`<archive>/_ledger/`, or to a root `--out` names outside `models/`; every batch under a claim for a REQUEST — by default
+one derived from the players, the regime and the schedule, so a re-run resumes it; `--request` / `--family` /
+`--request-kind` / `--purpose ab` put the edge into a caller's request, e.g. an X5 look. The U1 migration was
+STORAGE-ONLY: the same seeded batches play byte-identical games before and after,
+`designs/research_state/measurements/eval_ledger_u1_2026-10-03/`.)
+
+**The regime — on every row, and readers refuse to mix it.** BOTH sides GREEDY (the eval regime); MIRRORED pairs
+(`rust_eval.seeds.pair_game`, `gen3_mirrored_pairs_v1`); the turn limit is `StallConfig().threshold` (a timeout is a
+DRAW); BOTH sides draw their teams from the PLAYER's eval team builder — the default pool with its 10 % sample-team
+bias, what `eval_builders(None, [])` builds and what a greedy sentinel draws from in the in-loop eval — UNLESS `--panel
+<name>` names a REGISTERED frozen team panel (below). A player whose
+run pinned its eval trainee team (`metadata.json` `matchup_history`) is REFUSED, as is a player whose
+`model_config.json` records `progress_decision_tense` / `progress_switch_freeze` ON (the env core no longer has those
+variants, P11d, so such a checkpoint cannot be played as it was trained). Both players
+load through `load_checkpoint_strict` with `historical_load_kwargs` (a kwarg deleted since the checkpoint was written —
+PopArt, the value-dist head — is stripped, an ON one refused) and are gated against the live architecture
+(`check_opponent_snapshot_compatible`). A slot group's version and toggles are the checkpoint's RECORDED ones
+(`snapshot.recorded_model_version` / `arch_toggles_from_model`, read from its policy kwargs, never off the built
+modules — `gen3_recorded_version_gate_v1`: a built-module read rejected every `--arch endstate` checkpoint, whose
+move resolution retired seven blocks its config records ON — the blocks were deleted in legacy deletion U3, the
+records remain; `main/h2h/recorded_version_cross_test.py`).
+
+🚨 **THE MIRROR CANCELS TEAM LUCK, NOT SEAT LUCK, AND IT IS NOT AN EXACT MIRROR IMAGE.** A pair hands the teams over and
+KEEPS the player in seat p1 on one battle seed. So (1) a SEAT advantage `u` adds to every edge — a checkpoint against
+ITSELF reads `0.5 + u`, and the measurement carries it (`runfloor.seat_effect`, or the two directions of an edge:
+`d_ij + d_ji = 2u`); and (2) a player against itself is NOT exactly 0.5 per pair: the second game is the first with
+the seats relabelled, which is a mirror image only while the engine is seat-symmetric, and a speed tie is broken by the
+RNG in a seat-dependent order. Measured on seeded perturbed-fresh checkpoints, 64 pairs against itself: the mirrored
+decision margins agree to 5 digits until a seat-dependent event and jump after it; 3 of 64 pairs scored 0 or 4
+half-points (two LL, one WW — the same seat favoured in both games, which RAISES the within-pair correlation; the
+pair-clustered interval is the honest one). **On the trained M5 sizing finals (X5 P0, 2026-10-03, 15,000 self-play pairs):
+the seat effect is u = −0.006 ± 0.083 pp, and 5.2 % of self-play pairs are WW or LL — 779 of the 14,963 pairs that are
+CLEAR of a near-tie decision, so it is not rounding** (the speed-tie diagnosis above was traced on the perturbed-fresh
+checkpoints only). `play_test.py` pins the exact cancellation of the SCORING on a seat-symmetric
+toy engine; `play_mirror_integration_test.py` asserts it on the real engine only for the pairs that stayed mirror images
+decision for decision. A 4-game block (teams × seats) would cancel seat luck too — it needs the core to seat the
+sentinel at p1, which it does not (a FINDING, not built).
+
+**The rows.** One row per (batch × matchup), appended and fsynced when the batch ends: the player and opponent
+(`id` = `<run>@<step>`, the checkpoint's sha256, path, how `resolve_model_ref` chose it), the regime (+ `regime_id`), a
+`compute` block (device, backend, env count, the games per second, the load average and contention factor at the
+batch, and a NEAR-TIE CENSUS and the OUTCOME DIGEST — sha256 over the `(game, W/L/D, turns)` vector of the games with no decision
+inside 2e-3, plus the indices of those that had one), `purpose` (default `audit`; `ab` for a pre-registered A/B read),
+the `request` block, W / L / D / aborted, the pentanomial and per-team counters (`{team id: {p: [games, wins], o:
+[games, wins]}}`, team id = `t:` + blake2b-16 hex of the packed team), and the seed block. The schema validator
+(`eval_ledger.validate_row`) checks the shapes, the closed vocabularies and the arithmetic that ties the blocks
+together (W + L + D = 2 × pairs; half-points = 2W + D; the team counters sum to the games and the wins). `--out`
+under `models/` is REFUSED except the archive's own `_ledger/`.
+
+**Reproducible by construction — and the one thing a re-run can change.** Every game's teams and battle seed are a pure
+function of `(schedule seed, schedule key, batch, game index)` (`play.cycle_seed` + `rust_eval.seeds`), never of the env,
+the env count, the thread count or the batch schedule. The default schedule key is a digest of the two checkpoints'
+content hashes, ORDER-INDEPENDENT: `A vs B` and `B vs A` draw the same team pairs. What can differ across devices,
+backends or batch shapes is the FORWARD: a greedy decision within a rounding error of a tie can flip. Every row therefore
+counts the decisions inside `NEAR_TIE` (2e-5, twice the CPU eager-vs-eager bar) and inside the GPU-bar margin (2e-3), the
+games that contain one, and the pairs with none (`clean_pairs`, `clean_pairs_off_center`) — the games whose outcome rests
+on a rounding error are COUNTED, never left to chance (standing rule 8). A re-run of one configuration reproduces every
+game bit for bit (tested, two cycles on one engine); a change of env count changes no game that is clear of a near-tie.
+
+**Resumable.** A re-run with the same arguments resumes the same request: it skips the batches already recorded and
+plays the rest; a longer `--pairs` plays only the new batches; a different `--batch-pairs` over an existing request is
+REFUSED (its spec pins it: the same batch index would replay the same games under another length), and the ledger
+refuses a second row on one seed block under ANY request.
+
+**Reading.** `stats.edge_summary` pools an edge's batches: the mean per-game score over PAIRS (a draw = ½; equals W / games
+with no draws), its pair-clustered normal interval (`mirrored_pairs.pair_score_ci`) and the unbiased pair SE. A reader
+refuses rows of two regimes or two edges. `runfloor.sigma_h` turns a complete round-robin into the run SD σ_h on this
+scale with the METER's variance subtracted exactly — the estimator, its exact chi-square interval and its limits are in
+the module's docstring; its unbiasedness is a deterministic identity test (all sign patterns of the edge noise).
+
+**Hardware.** On CUDA the tool takes the GPU lock itself (re-entrant under `scripts/ops/gpu_lock.sh`); a heavy job runs
+under `scripts/ops/mem_cap.sh`. Measured 2026-10-03 on the production model (X5 P0, `designs/research_state/measurements/x5_p0_h2h_2026-10-03/`): T2
+`graph` on the RTX 3080 Ti, 64 envs — 45–171 games/s per 1,000-game batch (median 130, pooled 118, beside other agents' test
+gates), but the ENGINE START is 114–167 s per edge (the T2 graphs compile again for every engine), so a 1,000-pair cell is
+~17 s of play after ~2.5 min of start; T2 `eager` on the CPU — 4.77 games/s (8 torch threads, load average 6–10), a
+2,000-game cell ≈ 7 min. CPU eager and GPU graph played identical games (200 games: the same W/L/D, pentanomial and per-team
+counters). The engine start is what the multi-cell engine below removes from every cell after the first.
+
+**On a REGISTERED team panel (`--panel <name>`, `main/h2h/panel.py` — B-D7, 2026-10-19, GEN-M's engine and X38 / D1's
+co-primary P).** `main.h2h play | play-many --panel home72` makes BOTH sides of every mirrored pair draw from ONE panel of
+`designs/research_state/heldout_panels.json` (`main.heldout_panels`) instead of the pool: a plain `Gen3Teambuilder` over the
+panel's teams, no bias, re-seeded per (game key, side) by the eval core as the pool builder is, so a re-run reproduces
+game for game and the mirror is unchanged. The regime's `team_set` is `ts:` over `{registered_panel, panel name, its
+gen3_team_set_digest_v1 content digest, the registry schema, the draw rule}` — the panel's CONTENT is identity, so its rows
+never pool with the pool's or another panel's (readers key on `regime_id`, and the ledger's seed block includes it) — and
+the `team_source` label names the panel and its full content digest. The protocol stays `gen3_eval_protocol_v1_h2h` (the
+team set is a regime field, as the team-strength meter's scheduled builder already uses it). REFUSED, before any request is
+opened or any player hashed: an unregistered name, a panel whose files no longer match the registry (count, content
+digest), and a panel the gen3ou validator does not pack WHOLE. Without `--panel` every regime, engine and game is the pool
+path's, unchanged (`panel_test.py`). Proved on the real engine (`play_panel_integration_test.py`, 2 pairs): the row carries
+the panel's regime and every team either side piloted is a home72 team. D1's P reads it as `python -m main.x35.d1 p-input`
+(one registered `--purpose ab` family look, played `play-many --panel home72` against the frozen reference population;
+a look whose rows are on another team set is INCONCLUSIVE).
+
+**Many cells on ONE engine (`main.h2h play-many`, `main/h2h/many.py` — eval U6 / X5 U0, 2026-10-04).** `python -m main.h2h
+play-many --cells <cells.json> | --players P1 P2 … --opponents O1 O2 … --pairs N [the play flags]` plays every cell
+(`--players`/`--opponents` = the CROSS, players outer) on ONE engine: one T2 service, its two declared slots, one eval
+core, built once; a cell only changes which checkpoints the next cycles LOAD into the slots (`H2HEngine.set_cell`). Each
+cell is planned and played by the single-cell code itself (`play.plan_edge` / `play.play_planned`: the request, the
+claims, the seeds, the row), so it is STORAGE AND ENGINE REUSE ONLY — the games are byte-identical to single-cell `play`
+on the same seeds (proved: `play_many_integration_test.py`, and on the P0 production checkpoints
+`designs/research_state/measurements/h2h_multicell_2026-10-04/`). `--request R` puts EVERY cell into one request (an X5
+LOOK: `--purpose ab --family F --request <look>`); without it each cell keeps its own default request, so single-cell
+`play` and `play-many` on the same arguments resume each other's rows. A re-run skips every recorded batch of every cell
+and builds no engine when nothing is left.
+- 🚨 **UP TO TWO ARCHITECTURES PER ENGINE (F-U6-1 closed, 2026-10-04; `main/h2h/arch.py`).** A PRE-FLIGHT sorts every side
+  of every cell to play into at most TWO architectures (`arch.declare_engine`, comparing the architecture toggles, the model
+  version, the served state-dict signature and the forward fingerprint; a player's terminal against its group's first
+  player's) BEFORE any engine is built, and DECLARES the engine from them: one T2 slot group per architecture, each with
+  ONLY the slots its cells need (`player` = an eval slot, `opponent` = a sentinel slot), and one eval core per (player
+  group, opponent group) the cells use (a core's route table names the opponent's slot when it opens). The X5 A/B's
+  cross (`--players <fixed_mass seeds> --opponents <blob seeds>`, played at its own pin — blob no longer builds at HEAD
+  since the X5 version break) is therefore ONE engine of two one-slot groups and one core —
+  as many slots as a single-architecture engine. Single-cell `play` declares from its one cell, so it plays a cross cell
+  too. A THIRD architecture, a side with no slot in its group, or an undeclared combination is `CellArchMismatch`, naming
+  what differs from each group. **A same-architecture cell plays on the two-group engine exactly the games it plays on the
+  single-group one**, in either group (proved: `play_cross_integration_test.py`, and on the P0 finals beside a
+  `fixed_mass` checkpoint, `designs/research_state/measurements/h2h_cross_2026-10-04/` — 8 / 8 rows and every game's
+  `outcome_digest_all`); a cross cell replays exactly on the same seeds, also with its groups declared the other way
+  round. GPU memory is ESTIMATED there (the cross: ≈ today's engine; 4 slots worst case ≈ 2×), UNMEASURED.
+- 🚨 **A KWARG RECORDED AT ITS DEFAULT DOES NOT SPLIT AN ARCHITECTURE (X5 look 3 FINDING 1, 2026-10-07).** A checkpoint
+  written at a later commit records extractor kwargs at their defaults that an older checkpoint of the same architecture
+  lacks (`policy_readout: "tower"`, `oracle_reveal: "off"` in the `706fa536`-trained seeds' zips), and the forward
+  fingerprint used to hash them as different — so blob s1006 and s1007 were two "architectures" and the look-3 cross was
+  refused. The fingerprint now hashes the CANONICAL extractor kwargs (`agents.inference.service.slots.
+  canonical_extractor_kwargs`): a key recorded at EXACTLY (same type, equal, same repr) the value its ABSENCE means at
+  load is dropped. "What absence means" has ONE source, the one sb3's load applies: the extractor class's own
+  constructor-signature default (the zip's saved kwargs are splatted into it; nothing fills a missing key) — NOT the flag
+  registry's CLI default (`attend_unrevealed_opponents` is `True` there, `False` in the signature, so a checkpoint
+  recording `True` still splits from one that lacks the key) and not a `ModelVersion` migration default. Any non-default
+  value still splits, two OFF spellings (`"off"` / `"none"`) and `0` vs `False` are not merged, and a kwarg added later
+  with a default changes no older checkpoint's fingerprint. The state-dict signature check is unchanged. Proved on the
+  look-3 finals (CPU, read-only): blob s1001 / s1006 / s1007 / s1008 share one fingerprint, fm s1001 / s1007 another,
+  and the cross `fm{1001,1007} × blob{1001,1006,1007,1008}` declares ONE engine of two groups (it was refused);
+  tests `src/agents/inference/service/slots_fingerprint_test.py`, `src/main/h2h/arch_default_kwargs_test.py`. The same
+  fingerprint groups the TRAINER's T2 slots (`rust_rollout.build._arch_key`), so a pool snapshot that differs from the
+  trainee only by such a record now shares its group (the same function, `designs/training/rust_collector.md`).
+- 🚨 **THE TEAM POOL IS READ FROM THE WORKING DIRECTORY** (`utils.team_loader.TeamLoader`: `./data/teams`), so `main.h2h`
+  REFUSES any cwd whose `data/teams` is not this checkout's (`play.check_team_pool`) — before, it loaded NO team, recorded
+  the empty pool's team-set id and died on an `IndexError` in the eval core. Run it from the repo root.
+- **A SCHEDULED team source (`H2HEngine(team_builder=...)`, opt-in, 2026-10-18).** `None` (every CLI path) is the engine of before. Given a builder, BOTH sides draw from it (it is the trainee builder, and a greedy sentinel draws from the trainee builder), its teams join the core's team table at startup, and its `team_set_id` / `team_source` replace the regime's. The one caller is the team-strength meter (`main.team_strength.scheduled.ScheduledTeams`), which names every game's two teams in advance by keying the draw the seed rule will make; a draw it did not plan is a typed `ScheduleMiss`, and the lane checks every played game's teams against the plan (`src/main/team_strength/x26_lane_integration_test.py`).
+- 🚨 **HOT-SWAP SAFETY (each slot group alike).** Every cycle loads the cell's two slots through `InferenceService.load` (an in-place copy, the bit-exact copy
+  check, the parity gate at every bucket, the copy check again; a failure POISONS the service, so no later cell is served),
+  and after every cycle the engine checks both slots bit-exact against THIS cell's checkpoints (`H2HEngine.verify_slots`):
+  a skipped load and a copy that did nothing are both caught before the batch is scored, and no row is written (tested).
+- The host copies of the checkpoints (the load SOURCE, never served) go through `load_checkpoint_strict` on the CPU, an LRU of 4.
+- 🚨 **THE PER-SIDE ORACLE REVEAL (`--oracle-reveal-mode {off,one_sided,both_sided,withheld}`, `main/h2h/reveal.py`; X5 A/B
+  §7.7(a), 2026-10-05).** `main.h2h` is the one offline tool that PLAYS an oracle checkpoint (one whose run recorded
+  any non-`off` `--oracle-reveal` spec, played at its recorded LABEL). A plan declares ONE mode, and each cell's `(p1, p2)` levels follow from it and the
+  two checkpoints' RECORDED levels — never typed: `off` = no reveal (an oracle checkpoint is REFUSED, typed
+  `RevealModeError`, before anything loads); `one_sided` = the oracle side at its recorded level, the other side `off`
+  (clairvoyance, the primary read); `both_sided` = the other side told the oracle's team too, at the same level
+  (DESCRIPTIVE: out of distribution for that side); `withheld` = the HONEST-PLAY read (2026-10-14, the hidden-information
+  study's knock-in forks, `design_hidden_info_binding.md` §8.4): the oracle-trained checkpoint plays at `off` BY
+  DECLARATION, BELOW its recorded level, against a plain checkpoint (did learning WITH the information change its play
+  WITHOUT it: a dependence cost, or a transfer?) — both seats `off`, so the OBSERVATIONS are `off`'s and a withheld cell
+  plays bit-for-bit the `off` games of the same weights (`play_reveal_integration_test.py`); it is the one explicit
+  exception to `off`'s refusal, which stays the default. A reveal mode needs exactly ONE oracle side per cell (none, or an
+  oracle vs an oracle, is `RevealModeError`; for `withheld` that is: nothing to withhold, and a row's stamp names ONE
+  withheld level — a fork-vs-fork honest-play cell would carry two dependence costs that could not be told apart, so
+  it is not a declared cell; lifting it is a deliberate change of the stamp, not a flag); a side at a level other than its checkpoint's / the mode's is
+  `RevealLevelMismatch` (checked per cell against the core it plays on). The reveal reaches the observation through
+  the Rust encoder exactly as in training: the eval core's spec carries the levels per SEAT (`Spec.oracle_reveal` as
+  `[p1, p2]`, `core::spec::Reveal`; `build_eval_core(oracle_reveal=(p1, p2))`), each side's chain told the OTHER
+  side's team at its own side's level, and the engine declares one eval core per (player group, opponent group,
+  levels; `(off, off)` is accepted for an oracle cell ONLY under `withheld`). **Rows:** each mode is its own eval
+  PROTOCOL (`gen3_eval_protocol_v1_h2h_oracle_one_sided` / `..._both_sided` / `..._withheld`, so its own regime — never
+  pooled with `off` nor with each other), and every revealed row carries `compute.oracle_reveal = {mode, player,
+  opponent, oracle}` — a `withheld` row also `withheld_level` (the oracle side's RECORDED level, which its `off` no longer
+  names: `{mode: withheld, player: off, opponent: off, withheld_level: moves:seen@0.95, …}`). `oracle` is the oracle
+  checkpoint's PROVENANCE (`reveal.oracle_side`): `side`, `run`, its recorded `level`, the `canonical` clause text and
+  the `reveal_hash` (derived from the RECORDED label — `model_config.json` — never from `metadata.json`'s per-checkpoint
+  `oracle_reveal_record`, which a diagnostic fork written before `gen3_reveal_provenance_v1` took from its PARENT's
+  extractor mode — the 11 `rb_hib_*` knock-ins, flagged KNOWN-BAD by `main.lineage` / `main.sidecar_audit`), and `diagnostic_fork` /
+  `fork_consent` (the NEAREST `--diagnostic-fork-consent` stamp in its lineage, the run's own or an ancestor's: run,
+  `self`, schema, reason, date, the parent and child spec hashes; `False` / null for a checkpoint trained fresh under the
+  reveal). A lineage whose consent contradicts the recorded level is `RevealProvenanceMismatch` (the cell is refused).
+  A family pins ONE protocol, so an A/B look's oracle cells are a request and a family per mode. **`off` is byte-identical** to the engine before the reveal (recorded at `c7b4d03e`
+  and reproduced: every action, margin and log-prob bit of a 24-game play, and the row's every non-volatile field —
+  pinned in `play_reveal_integration_test.py`). Tests: `reveal_test.py` (the level matrix, every refusal, the stamp,
+  the protocols, the withheld mode's refusals / stamp / provenance, the spec's form), `play_reveal_integration_test.py`
+  (real games: the off pin; one-sided moves only the oracle side's turn-1 decision in either seat; both-sided moves
+  both; withheld is `off`'s games bit for bit in either seat; every row stamped), and the Rust
+  `oracle_reveal_test.rs::a_per_side_reveal_writes_each_side_exactly_as_the_symmetric_core_of_its_level` (a split
+  core's side rows — obs, mask, every label — are bit-identical to the training core's at that side's level).
+- **Cost (CPU, measured 2026-10-04 on the P0 finals):** a swap to the next cell is 0.27 s (both checkpoints cached) to 1.1 s
+  (one loaded for the first time), against a 4.7–5.5 s CPU engine start per cell before; the slot loads (copy-checked and
+  parity-gated) stay per BATCH, ~0.47 s. On the GPU the engine start it removes is 114–167 s — the GPU per-cell time is
+  **UNVERIFIED** (DEFERRED to the GPU owner; the commands are in the measurement README).
+
+**The A/B's registered read (`main/h2h/cross.py`, X5 §7.4, 2026-10-06, committed before any look-1 cell was
+played).** Pure functions over the seed × seed matrix h_ij (pp, draws ½): Δ̂ = mean h − 50, V̂ = (s²_R + s²_C)/n,
+t = (Δ̂ + δ)/√V̂ on 2(n − 1) df, δ = 3.5; the look boundaries 5.761 / 2.683 / 1.874; the outcome table
+(INCONCLUSIVE / NON-INFERIOR / FUTILITY STOP with the INFERIOR label / CONTINUE / NOT DETECTED); rule 8 at EVERY
+boundary (a statistic within 1e-9 is not a crossing). The oracle reads: C (the same statistic, oracle rows),
+C_full − C_species on shared reference columns, the replicate floor F = max(P0's h2h 4.57 pp, the blob columns'
+spread) and H = Δ / C only when C's two-sided 95 % lower end clears F. The matrix comes from a declared FAMILY read
+(`inference="across_runs"`) per protocol; a missing / short (< 1,000 pairs) / aborted cell is an INCONCLUSIVE
+reason. Tests: `cross_test.py` (synthetic matrices: known Δ, an exact-fraction hand computation, every outcome row,
+rule 8 at each boundary, the column cancellation, the adapter's refusals).
+
+Tests: `agents/training/eval_ledger/` (above),
+`main/h2h/play_test.py` (scoring, the toy-engine mirror, seeds, the digest, resume, the team-source refusal),
+`stats_test.py`, `runfloor_test.py`, and on the real engine `play_mirror_integration_test.py` /
+`play_edge_integration_test.py` (CPU, tiny, the in-process core); `many_test.py` and `play_many_integration_test.py`
+(the multi-cell engine: rows equal single-cell rows, a swapped cell equals a fresh engine game for game, resume, the family
+read, the third-architecture refusal, the stale-slot checks); `play_cross_integration_test.py` (the two-architecture
+engine: a cross cell's valid rows, same-architecture identity on the two-group engine in either group, cross replay,
+resume, the family read, the refusals, a stale slot caught in EACH group); `reveal_test.py` and
+`play_reveal_integration_test.py` (the per-side oracle reveal, above).
+
+
+### SPRT promotion (`--promotion-sprt`, T6 — `gen3_sprt_promotion_v1`, DEFAULT OFF)
+
+(passage: lines 1028-1103 of the pre-sweep file)
+
+**What it replaces.** Without it, a snapshot is promoted the first cycle its `win_rate_vs_pool`
+crosses `--promote-threshold`. That is repeated peeking at a noisy rate — optional stopping — so the
+promoted snapshots are weaker than their promotion score (a winner's curse). With it, **every
+eval-cycle snapshot is a CANDIDATE** once the pool holds a snapshot, and its own sequential test
+decides it (`agents/training/sprt.py`, `sprt_promotion.py`). `--promote-threshold` is then not read,
+and typing it is REFUSED.
+
+**The test is Fishtest's GSPRT.**
+- The likelihood is the PENTANOMIAL over MIRRORED PAIRS (each pairing from both sides on one seed;
+  *Mirrored team pairs* above). A pair is 0..4 half-points; a 250-turn timeout and a `|tie|` are DRAWs
+  (½), checked at the source in `trace_result.classify_result`.
+- Under each hypothesis's mean constraint, the maximum-likelihood pentanomial is solved for its 1-D
+  Lagrange multiplier λ by deterministic bisection (Van den Bergh). The 200 fixed halvings are pinned by
+  a test to a constraint residual < 1e-12.
+- The LLR is `N · Σ p̂ ln(q1/q0)`, with zero counts regularized to 1e-3.
+
+**The hypotheses are in SCORE space: H0 ≤ 0.50 vs H1 ≥ 0.55**, the mean per-game score with a draw
+worth ½. α = β = 0.05, giving Wald bounds ±2.944. Score space was chosen over normalized Elo for three
+reasons:
+- the owner's hypotheses and the gate being replaced are stated as win rates;
+- eval draws are ~0 (0 in 145k traces), so normalized Elo's draw-ratio invariance buys nothing;
+- the GSPRT already uses the empirical pentanomial variance.
+
+**The schedule, from the Monte Carlo**
+([`measurements/sprt_promotion/`](../research_state/measurements/sprt_promotion/README.md); pinned by
+`sprt_test.py`):
+- a check every **40** pairs, split round-robin over the sentinels;
+- the first decision at **40**: a minimum of 80 or 160 moved neither error rate beyond noise and cost
+  pairs;
+- a cap of **1,680 pairs**, the untruncated worst-cell p95; reaching it is a REJECT;
+- plain **Wald** bounds. Siegmund overshoot-corrected bounds saved ~21% of pairs, but held α only within
+  simulation noise (5.07%).
+
+Operating characteristics (20k runs per cell, τ = 0/1/2 team effects):
+- false promotion at a true 0.50: 2.7–2.8%;
+- false rejection at a true 0.55: 2.6–2.8%;
+- expected pairs at 0.50: 225–346; p95 ≤ 1,680.
+
+**The three discipline rules, made true rather than intended:**
+1. **The pool is FROZEN at the test's start.** The test plays the sentinels the candidate's own cycle
+   launched against, in every batch. The test runs to its verdict inside the candidate's own collect, so no
+   other cycle can launch, promote or seed while it is pending.
+2. **Selection games never pool into the decision.** The cycle's own pool games are telemetry. The test
+   plays its OWN fresh pairs on a seed namespace disjoint from every cycle's (`sprt_seed`, pinned by a
+   test), with no forensic trace and no `rust_eval/*` scalar.
+3. **A failed test is never re-run.** `<run>/sprt_promotion.jsonl` holds the start and verdict lines,
+   append-only. A candidate step with ANY line is never retested. A test the process died in is recorded
+   `abandoned` at the next start, as is a batch that played nothing; abandoned means not promoted.
+
+**Where it runs.** The whole test runs inside the candidate's own collect on the Rust eval core,
+blocking like the cycle, so the live weights ARE the candidate's. (The Python-core variant — each batch a
+non-blocking worker round in `_pending`, `kind: "sprt"` — was deleted in P10-F2.)
+
+**What it records.** On ACCEPT the candidate's frozen snapshot is promoted exactly as before (pool,
+generation, `train/selfplay_promoted_steps`, the detached ladder update). TensorBoard gets
+`eval/sprt_llr`, `eval/sprt_pairs` and `eval/sprt_promoted` at the candidate's step. 🚨 **The test's own
+score is a SELECTED number** (`test_score_selected` in the log): a promoted snapshot's strength is read
+from later, unselected games (`ladder.json`), never from its passing test.
+
+**The regime.** It is recorded as `promotion_sprt` (config v129), `_resolve`-inherited, and announced as
+`⚖️  [EVAL REGIME] promotion: …`. It is a regime boundary for which snapshots enter the pool, so the
+default stays OFF while the M5 sizing arms are compared. The orchestrator flips it with
+`--eval-mirrored-pairs` at the X26 baseline.
+
+**Evidence and what is owed.**
+- CPU, 2026-10-01, `--debug --debug-eval --self-play --eval-mirrored-pairs --promotion-sprt` with the
+  pool forced to seed early:
+  - **Rust core:** candidate @12,000 was ACCEPTED after 80 pairs (LLR +4.05) against its frozen pool
+    `[8000]`; candidate @16,000 after 80 pairs against `[12000, 8000]`. Both tests ran inside their
+    cycle's collect (cycle wall 31 s and 40 s at CPU speed), and each pentanomial includes draw-bearing
+    categories.
+  - **Python core (deleted in P10-F2; kept as the recorded evidence):** candidate @8,000 was ACCEPTED
+    after 800 pairs in 20 non-blocking batches (LLR trail −1.84 → +3.91). The three later cycles were
+    skipped while the test ran, which is the frozen pool working as designed.
+- ⚠️ **The cost is real:** a long test blocks training until its verdict.
+- Owed: one GPU confirmation, which rides a planned launch.
+
+
+### The plateau meter, TIER 1 (`python -m main.plateau`, eval U9a — `gen3_plateau_t1_v1`)
+
+(passage: lines 1107-1143 of the pre-sweep file)
+
+**What it answers:** "does Tier 1 say PLATEAU, or not yet?" for a live or finished run
+(`designs/endstate/design_evaluation.md` §8.1, "As built"). Every Δ = 10M steps, the newest node (the first periodic
+checkpoint at or above the grid step) plays the node W = 50M steps back on mirrored pairs, and a pentanomial GSPRT
+(`agents/training/plateau_t1.py`: H0 0.50 / H1 0.52, α = β = 0.05, Wald bounds, 40-pair batches, cap 6,000 pairs)
+decides GAIN / FLAT / UNDECIDED (INCONCLUSIVE above 25 % aborted games).
+
+```bash
+python -m main.plateau status <run>                  # every check's state + the run's Tier-1 status; plays nothing
+python -m main.plateau tick <run> [--max-checks N]    # play every DUE check to its decision (CPU by default)
+python -m main.plateau tick <run> --dry-run           # list the due checks
+python -m main.plateau tick <fork> --lineage-run <parent>   # the parent's checkpoints are nodes too
+python -m main.eval_ledger verify <decision_id>       # re-derives a check's verdict from its rows
+```
+
+- 🚨 **Tier 1 alone is a CANDIDATE.** `TIER1_PLATEAU` (FLAT at two consecutive checks) is not a plateau: §8.3's
+  plateau also needs the cycle monitor NONE and the panel FLAT at the same two checks. `status` prints TIER 2 below
+  Tier 1 and the run's **TWO-TIER STATUS** (next section); `--tier1-only` skips it.
+- **Statuses:** `NOT_YET` (no decided check) · `CLIMBING` (newest decided check GAIN) · `FLAT_ONCE` · `TIER1_PLATEAU`
+  · `CONTINUE` (newest decided check UNDECIDED / INCONCLUSIVE: re-check at the next interval). A later check still
+  running does not erase a called status; it is listed as pending.
+- **Ledger:** one `plateau_t1` request per (run, check step, W), purpose `plateau`, the h2h protocol and regime; its
+  spec freezes both nodes' sha256 (a replaced node file is REFUSED). One decision row (kind `plateau`) per request,
+  written once under the ledger lock; its `rule` string carries every constant. `status` exits 2 on a CONFLICT (two
+  decisions, or a decision its rows contradict).
+- **Resumable at any batch**: a re-run never replays a banked batch, fills a gap first, and records a decided test
+  without playing.
+- **Parallel batches (T38, `--inflight-batches K`, default 4; 1 = one batch per cycle).** One WAVE of K batches is ONE
+  eval cycle on the one engine, in ONE process (no extra process or model copy, so rule 5b's ≤ 2 heavy jobs holds at
+  any K): every batch keeps its own seed block (the executor's opt-in `seed_blocks`), so its games are the ones it plays
+  alone, and it is its own row under its own claim. The envs pull single pairs across the wave instead of waiting on
+  each batch's slowest game. The decision is unchanged: the rule folds batches 0, 1, 2, … and stops at the first
+  crossing; a wave's batches past the stop are surplus rows (an overshoot of ≤ K − 1 batches costs games, never the
+  verdict). Proof and speed-up: `design_evaluation.md` §8.1 "Parallel batches", `design_x26_readiness.md` §2.6.
+- 🚨 **Where to run it.** Offline, by the operator after each 10M checkpoint (the deep run's training agent; its 55-min
+  cron can call `tick`). CPU by default, under `scripts/ops/mem_cap.sh` and `nice`. **Never on CPU beside an X5 A/B
+  arm** (the registered speed rule, `design_evaluation.md` §4.2). `--device cuda` takes the GPU lease through the
+  engine: only the lease holder, never while a run owns the GPU. The in-trainer window is not built (U4).
+
+
+### The cycle monitor = the plateau's TIER 2 (`python -m main.cycle_monitor`, eval U5 + U9 offline — `gen3_cycle_monitor_v1`, `gen3_plateau_t2_v2`)
+
+(passage: lines 1147-1188 of the pre-sweep file)
+
+**What it answers:** "is the run CYCLING — beating its recent past while holes open against older selves?" at every
+Δ = 10M check, and, with Tier 1 and the panel, which §8.3 signature the run is in
+(`designs/endstate/design_evaluation.md` §2.5 / §8.2 "As built"). Each check's ROW plays the newest node against
+every older node at the hybrid lags {1..8, 16, 32, 64} × Δ, 500 mirrored pairs per edge; the accumulated matrix is
+read by four signals (Hodge χ², the lag curve, triangles through the newest node, the Nash support), each at
+α = 0.05 against a parametric bootstrap or its Bonferroni / Holm bound. Verdicts: NONE · SUSPECTED (a signal flags) ·
+CONFIRMED (it flags again on 500 fresh top-up pairs) · INCONCLUSIVE (a signal in its rounding band, or > 25 %
+aborts).
+
+```bash
+python -m main.cycle_monitor status <run> [--panel NAME]       # per check: monitor + panel + the TWO-TIER STATUS
+python -m main.cycle_monitor tick <run> [--panel NAME] [--grid G ...] [--max-checks N] [--dry-run]
+python -m main.cycle_monitor tick <fork> --lineage-run <parent>  # a fork re-plays the parent's rows in its own family
+python -m main.cycle_monitor ladder <run> [--tier1] [--json]   # DESCRIPTIVE: the in-run snapshot ladder, no games
+python -m main.plateau status <run> [--panel NAME]             # Tier 1 + Tier 2 + the two-tier status
+```
+
+- **The TWO-TIER STATUS** (`agents/training/plateau_t2.py`): `TRANSITIVE_IMPROVEMENT` (Tier 1 GAIN, monitor
+  counted NONE) · `TRUE_PLATEAU` (Tier 1 FLAT, monitor counted NONE, panel FLAT at two consecutive checks) ·
+  `PLATEAU_BUT_PANEL` (the same without a FLAT panel — it is NOT a plateau) · `TREADMILL` (the monitor CONFIRMED and
+  MATERIAL) · `CONTINUE`.
+- 🚨 **The SIZE BAR (amended 2026-10-19, F-ED-27):** a SUSPECTED / CONFIRMED check COUNTS only when the per-edge
+  cyclic SD on its RECENT WINDOW (the last 8 checks' nodes) is MATERIAL — the one-sided 95 % lower bound above
+  1.7 pp; NEGLIGIBLE (upper bound below 1.7 pp) counts as NONE; the bar inside the interval counts as INCONCLUSIVE.
+  The reader computes it from the rows (`cycle_monitor.cyclic_size`; `status` prints `size` and `counted`); the
+  `cycle_flag` decisions are unchanged. One check resolves sizes below ≈ 1 pp or above ≈ 2.5 pp (F-ED-28).
+- **Ledger:** one `monitor_row` request per check in ONE family per run (`monitor:<run>:d<Δ>`, decision kind
+  `cycle_flag`), purpose `monitor`, the h2h protocol, the row's node set frozen in its spec; a check is decided only
+  when every row up to it is complete (`WAITING` otherwise); one `cycle_flag` decision per check, which
+  `python -m main.eval_ledger verify` re-derives. A SUSPECTED check plays a `monitor_topup` first.
+- **The panel:** a REGISTERED frozen checkpoint set (`designs/research_state/plateau_panels.json`: `outside_v2` =
+  six closing-test end-state seeds (`production` + five `outside_es_end2_s*` baselines), all measured IN the 15–85 %
+  band against X26's P* and X34's T*; ≈ 6 × the one-member cost a check (hours on the loaded box); P(FLAT | zero gain)
+  ≈ 0.89–0.92 per check; its one-member predecessor `outside_v1` stays registered, F-ED-29), one `panel` request per (node, panel), purpose `plateau`, 500 pairs per member (1,000 at a candidate:
+  Tier 1 FLAT and the counted monitor NONE); Δ_panel in Elo, FLAT iff its upper one-sided 95 % bound < 14 Elo. Bots
+  cannot be members (`main.h2h` plays checkpoints only); Metamon / Kakuna stay REPORTED milestones on `main.anchors`.
+- 🚨 **Cost.** The toy ≈ 15–20 games/s on rule 5b's cores (≈ 10 min a row); the production net ≈ 1.2–2 games/s
+  (≈ 1.5–2.5 h a row). Run it like Tier 1: offline, `nice` + `taskset -c 5-7,13-15` + `scripts/ops/mem_cap.sh`
+  beside a live run, never on CPU beside an X5 A/B arm. The in-trainer window is not built (U4).
+- **`ladder`** applies the same signals to `snapshot_ladder/games.jsonl` (mirrored, 50–100 pairs per line, the pool's
+  sliding window) as of each check, plus the windowed size (its nodes in the last 80M of grid); `--tier1` adds a
+  DESCRIPTIVE two-tier status: a free FIRST LOOK at a pinned run, never a decision, never the registered row.
+
+
+### Eval on the Rust env core (the only trainer core, M5 Lane H — `agents/training/rust_eval/`)
+
+(passage: lines 1192-1259 of the pre-sweep file)
+
+An eval cycle is played on the M5 Rust env core (the `main.eval_worker` processes it replaced were deleted in
+poke-env retirement P6 slice 6c). **What it keeps, exactly:** the plan (`ShardedEvalPool`: the nine roster bots, the pool
+sentinels, the fixed / stable opponents, the same shard units), the regime (the trainee GREEDY; the
+sentinels greedy on the trainee's own teams under `eval_sentinel_greedy`, else a sample at
+`--self-play-temp`; fixed opponents greedy on their own pinned teams), the forensic quota per unit and
+its LOSS-preferring selection, `eval_manifest.json` with its `selection` record, the promotion
+thresholds, and every metric — because the Rust cycle publishes the SAME per-unit `ShardResult` a
+worker publishes and the callback's collect / record / promote code is unchanged. **What changes,
+declared:**
+
+- **In process and BLOCKING.** The callback writes the plan and manifest, then `rust_eval.launch`
+  plays the cycle between two host steps of the collector and collects it in the same `_on_step`.
+  No subprocess, no work-stealing, no hung-worker watchdog; a failed cycle (`EvalCoreError`, e.g. a
+  quarantined battle) is logged and records nothing, like a crashed worker; a lifecycle violation and
+  a missing eval core (`RustEvalUnavailable`) are FATAL — never a silent fall-back to Python workers.
+- **Everything is declared at startup** (`rust_eval.build`, from `main.train.rust_env_setup`): the
+  eval CORE (`--rust-eval-envs`, default 64; the collector's threads / front end / build), the eval
+  SLOTS in the trainer's ONE T2 service — the trainee's eval slot and one slot per `--n-sentinels`
+  (under `--self-play`), both in the trainee's slot group, so eval rides the rollout's compiled
+  buckets; a fixed opponent reuses its training slot when the plan has one (a stable opponent under
+  `--self-play`), else gets its own eval slot, which is LOADED with its weights once at startup
+  (`rust_eval.build.load_fixed_slots` — a T2 slot starts with its group template's weights, the
+  TRAINEE's for a same-architecture opponent) — and the eval ROUTE TABLE (the roster bots in the core,
+  the sentinel / fixed policy routes, a filler route). A cycle only LOADS weights (the trainee's
+  current policy; each sentinel's snapshot) into declared slots; every core and T2 `*_after_freeze`
+  counter is checked after each cycle.
+- **Units play in order on one env** (a Python worker at concurrency 1), so capture and the quota are
+  decided game by game in the same order; an env without a unit plays FILLER games (nothing recorded)
+  until the cycle ends.
+- **Every game is seeded by the game** (`gen3_eval_game_seed_v1`, `rust_eval/seeds.py`): key =
+  (cycle seed, opponent, game index in plan order) → the two teams (one `yield_team` of the eval
+  builders, `rust_eval.build.eval_builders`, re-seeded per game), the battle seed, and a scripted bot's streams,
+  which the core re-seeds at the game's start from the route seed and the battle seed (the bot route's
+  `"streams": "episode"`). A game's result is therefore a function of the game and the weights, not of
+  the env, N, the threads or the schedule. The cycle seed is a hash of the collector's run seed and the
+  step. (The live Python eval it replaced was unseeded — a declared change of STREAM, not of distribution.)
+- **Traces are core traces** (`gen3_core_trace_v1`, `rust_eval/traces.py`): per kept game, both sides'
+  `gen3_core_event_v1` records (`.p1/.p2.jsonl.gz`, written by the core's record writer from the game's
+  input log), the reconstruction record, the states npz (the core's obs rows, T2's legal log-probs as
+  `logits`, V, the actions and masks) and a meta-only `_summary.json`. The prober EXPANDS the full
+  summary on read (`main.prober.core_trace`, cross-checked against the record); no `_replay.html`, and
+  the auxiliary heads (`win_probs` NaN, belief / intent absent) — `analyze` re-runs the
+  model on the stored obs.
+- `rust_eval/*` TensorBoard tags: the cycle's wall-clock, games, trainee decisions/s, traces, near-ties.
+
+**The gate — HISTORY** (`rust_eval/parity.py`, deleted with the Python eval worker in poke-env retirement P6 slice
+6c; its seeded-checkpoint and Rust-cycle helpers live on in `rust_eval/offline.py`; the lane's PROGRESS has the
+numbers): one plan and one cycle seed played by the Rust executor AND by the eval worker in its per-game-seeded mode
+(`eval_worker` `seed_rule = "per_game"`: each game alone on the rust bridge with the same teams, battle
+seed and bot streams) — every game's winner, end turn and trainee action equal (a first differing
+action excused only as a TIE under Lane E's margin rule), the pooled metrics equal, the kept traces the
+same files, and each Rust trace expanding to the Python trace's decisions. In that mode the worker also
+logs every POLICY opponent's decisions (sentinel, fixed), so an opponent's own near-tie flip is judged
+where it happens (the earliest first difference on the game's clock is the one judged), and a SAMPLED
+sentinel (`--no-eval-sentinel-greedy`) draws the Rust core's keyed draw at the same key
+(`eval_worker.install_opponent_log`, gate-only) — so the sampled regime and fixed / stable opponents
+(a reused training slot and an eval slot, pinned and pool teams) are compared game for game and draw
+for draw. What those rows do NOT prove is in the lane's PROGRESS (F-LH-10).
+
+**Two OPT-IN overrides of `RustEvalCore.run_cycle`** (P2, 2026-10-06; both `None` by default = the cycle above, byte
+for byte — no in-loop, SPRT or head-to-head caller passes either): `trainee_temp` (`gen3_eval_trainee_sample_v1`, the
+trainee SAMPLES by the keyed draw on `STREAM_TRAINEE` from the game's sample seed, the logged margin is the draw's CDF
+margin and the game log carries the argmax beside each action) and `trainee_builder` (this cycle's trainee team
+builder; its teams must be in the core's declared team table). Their one user is the offline untaught meter's
+training regime (`agents.training.untaught_rust`). A THIRD, `seed_blocks` `(seeds, B)` (`gen3_eval_seed_blocks_v1`,
+T38, 2026-10-16), keys plan game g as game g mod B of cycle seed `seeds[g // B]` (B even under a mirrored pool), so ONE
+cycle plays several head-to-head batches whose games are each batch's own; its one user is the plateau meter's
+parallel batches (`main.h2h.play.H2HEngine.play_batches`, `main.plateau tick --inflight-batches`).
+
+
+### OFFLINE generation of an eval cycle (`main.ops.eval_trace_gen`) — and the PROVENANCE marker
+
+(passage: lines 1263-1341 of the pre-sweep file)
+
+A live eval cycle is sized for a training run: `--eval-games` games (100 by default; the old `--eval-battles` was the deleted final eval's knob and never sized a live cycle) per opponent,
+with a per-opponent OUTCOME QUOTA persisting only ~200 traced battles a side. That is right for a
+run — the traces are a loss-forensics sample and the disk is the trainer's — and wrong for a
+MEASUREMENT, because every conditioning and identity row an offline read computes is a statistic of
+that frame. When a read's binding constraint turns out to be POWER rather than effect size,
+`python -m main.ops.eval_trace_gen <run>@<step> --games N --sentinels K --out DIR` plays the cycle
+again from the saved checkpoint, offline and on CPU, at whatever size is worth paying for.
+
+**It reuses this chapter's machinery rather than restating it.** The generator builds the same
+`EvalItem` list and the same `ShardedEvalPool` plan, and plays it on the same executor a live cycle plays on
+(`RustEvalCore.run_cycle`), over an eval core and T2 slots it declares the way the trainer does
+(`rust_eval.offline.run_rust`: one slot group of the trainee's architecture — its eval slot and one per sentinel —
+the eval builders, the core's terminal from `model_config.json`) — so the sentinel regime and teams, the forensic
+quota, the shard-namespaced `trace_tag`, the CORE traces and the `record_eval_selection` collect are all the code
+documented above, not a parallel copy. What it supplies is the WHAT: which checkpoint, how many games, which pool
+snapshots, the compute (`--n-envs`, `--threads`, `--torch-threads`, `--front`, `--profile`; CPU, eager) and where the
+output goes. Until P6 slice 6c it spawned `python -m main.eval_worker` processes on the poke-env path; such a cycle's
+`generated_by` carries no `transport`, and the spec keeps it apart from a Rust-core one (`spec_of`'s `transport`).
+
+**Four contracts are worth stating here, because they are what make a generated cycle safe to read.**
+
+1. **The REGIME is read, never assumed.** `eval_sentinel_greedy` is taken from the run's
+   `model_config.json`; a run that recorded none is REFUSED. The mirrored-pair regime
+   (`eval_mirrored_pairs`; an odd `--games` is then refused) and the observation mode (`oracle_reveal`) are read the
+   same way. That key names the 2026-09-07
+   opponent-regime boundary worth **+8.9 pp** to the trainee, and generating a cycle under the
+   other regime would produce numbers that look exactly like a result.
+2. **Capture defaults to ALL.** `--quota` restores a live-shaped outcome quota for parity work, but
+   the default writes a trace for every battle played, and the manifest's `selection_rule` says
+   which was used. Full capture is why the low-variance rows gain power and not merely precision.
+3. **Nothing is written under `models/`.** The output is a self-contained SHADOW RUN DIR: the run's
+   `model_config.json` and `metadata.json` copied (with `latest_eval.pool.sentinels` REWRITTEN to
+   this cycle's sentinels, so a reader of the pins — the deleted `cf_audit.sentinel_snapshots` was one — resolves the right networks), `snapshots/`
+   symlinked back read-only, and the checkpoint copied to `eval_traces/step_<N>/snapshot.zip` —
+   which is where the offline readers and the prober's `resolve_model_for_step` look for the network that
+   played the traces. `--out` inside the run archive is refused.
+4. 🚨 **The manifest carries a `generated_by` block, and a reader may not ignore it.** It records
+   the tool, schema, source run, checkpoint sha, games, the bot list, `sentinels_requested` beside
+   `sentinels_used`, the capture rule, the regime fields, the `transport` (`rust_eval`) and the eval core's compute
+   flags, the seed and whether it was given or drawn, the cycle's near-tie count, whether the cycle is
+   REPRODUCIBLE, and the POPULATION in words. A reader must REFUSE to form a
+   delta between a generated frame and a live one — they are different populations, and a
+   quota match corrects a difference in capture RATE between two frames of the same shape, not a
+   difference in the shape itself. Two generated frames must further agree on games / opponent set
+   / capture rule / sentinel regime; a differing SEED is deliberately NOT checked, being two draws
+   from one population. It also records `battles_expected` beside `battles_played` and a
+   `complete` flag; a reader must REFUSE a side that is incomplete **or** whose completeness
+   is UNRECORDED. A truncated cycle is otherwise indistinguishable from a finished one — same
+   nominal games, same opponents, same `selection`, same capture rates — while being a smaller
+   frame. (2026-09-09: `scripts/land.sh` removed the worktree a generation was running out of;
+   all four workers died with `failed to make path absolute` and the cycle landed at 71%. Run a
+   long generation from the MAIN checkout. On the Rust core a cycle cut short — `--timeout-min` — keeps the shard
+   units that finished and is recorded INCOMPLETE the same way.)
+5. 🚨 **A generated cycle is CORE traces, so every reader that samples or scores by the RECORDED win-prob head
+   REFUSES it** — a core trace records none (`win_probs` NaN, F-LH-4), exactly as on every live Rust-core cycle.
+   The calibration gauge (`scaffolding_gauge`) is such a reader. The prober's views and the shadow run's layout (the step dir's `snapshot.zip`, the sentinel
+   pins) read it (`main/ops/eval_trace_gen_integration_test.py`); a critic read on a Rust-core cycle waits on the
+   win-prob head being recorded at eval.
+
+**Sentinels are CLAMPED, never padded.** `--sentinels K` draws from the run's own `snapshots/`,
+evenly spaced across the step range (hence the rating range, both endpoints kept), excluding any
+snapshot at or above the read step — a live pool holds only snapshots older than the trainee, and a
+self-mirror is a 50%-by-construction cell (`--include-current-snapshot` opts in). A run with fewer
+than K keeps what it has and records the gap: repeating a snapshot to reach the requested count
+would inflate the between-opponent SPREAD with a duplicated cell, which is the quantity being
+measured. Unlike a live cycle, the chosen snapshot steps ARE recorded (a live cycle leaves
+`opponent_pins` empty for pool sentinels).
+
+**Reproducibility, and its honest limit.** On the Rust eval core every game is seeded by the GAME
+(`gen3_eval_game_seed_v1`): its two teams, its battle seed, the bots' streams and a sampled sentinel's draws are a
+pure function of (`--seed`, opponent, game index) — never of the env that played it, the schedule or a thread count.
+The same seed, checkpoint, plan and compute flags therefore give the IDENTICAL cycle, file for file
+(`eval_trace_gen_integration_test.py`); a run with no `--seed` draws one and RECORDS it (`seed_source: drawn`), since
+the core has no unseeded mode. What the seed does NOT pin is the float rounding of the batched forward, whose batch
+composition follows `--n-envs` and the schedule: a greedy decision within a rounding error of a tie can resolve the
+other way under other compute flags, another env-core build or another torch. The manifest records the compute flags
+and the near-tie count beside the seed, and states this in `reproducibility_note`. (The Python-path tool keyed a
+UNIT seed on `(seed, opponent, shard index)` and was not reproducible above `--concurrency 1`; its `--workers`,
+`--concurrency` and `--impl` flags went with it.)
+
+
+### Rating-model seam (`rating.py`) — extensibility for Glicko-2 / TrueSkill
+
+(passage: lines 1345-1356 of the pre-sweep file)
+
+The live skill rating is anchored Bradley-Terry (`elo.py`), a *global batch* fit. `rating.py` is the
+**ready drop-in point** for a different model without re-plumbing: `MatchRecord` (exact counts +
+draws + `period_id` + optional opponent priors — the union BT, Glicko-2 and TrueSkill all need),
+`RatingResult`, a `RatingModel` **batch** protocol, and `BradleyTerryRating` — a thin adapter over
+`elo.fit_pairwise` whose ratings+SE are **byte-identical** to the live fit (pinned by `rating_test.py`).
+`eval_rows_to_match_records` bridges the existing `EvalRow` history. The live `record_elo` path is
+**deliberately unchanged** (zero risk): the seam exists and is tested, but routing through it buys
+nothing until a new model is actually wanted — and Glicko-2 is *sequential* (period-by-period RD
+carry-forward), so it needs the `SequentialRatingModel` sibling sketched in the module footer, not the
+batch `fit`. Data fidelity is already in place: `eval_results.jsonl` now carries exact per-opponent
+`counts` (additive, backward-compatible), so a future Glicko backfill has an exact ladder even under
+partial shard coverage (where `win_rate × n_games` would be ambiguous).
+
+
+## ELO / skill rating (`elo.py`, `main.elo`; the bot anchor `data/gen3_bot_elo_anchors.json`)
+
+(passage: lines 1359-1380 of the pre-sweep file)
+
+Once training is mostly self-play **pool play**, win-rate stops being legible: the promotion
+gate only promotes when `win_rate_vs_pool > promote_threshold` and the pool is a *sliding window
+of recent selves*, so `win_rate_vs_pool` is a treadmill pinned near 50-65% **by construction** —
+it cannot trend up however much the model improves; `win_rate_vs_bots` saturates near 100%. The
+ELO subsystem gives a single **absolute** number that genuinely rises with skill, anchored to the
+fixed bots.
+
+- **No new battles.** Every eval cycle already plays the trainee (greedy) vs all 9 bots and vs
+  up to `--n-sentinels` (default 5) pool sentinels, `EVAL_GAMES` each — a full tournament-matrix
+  row. `record_elo`
+  (`eval_record.py`, shared by BOTH callbacks) appends that row to an **append-only
+  `<run>/eval_results.jsonl`** (`snapshot.append_eval_result_row`) — the canonical, restart-safe
+  source of truth, distinct from the overwritten `metadata.json:latest_eval`.
+- **The model = anchored Bradley-Terry** (`elo.fit_elo`): `P(i beats j)=σ((Rᵢ−Rⱼ)·ln10/400)`,
+  fit in **batch** by penalized MLE (weak Gaussian prior keeps 100-0 records finite), SE from the
+  inverse Hessian. Each bot is a player `bot:<name>`, each snapshot `snap:<step>` — a snapshot is
+  the SAME player whether it appears as a cycle's trainee or later as a sentinel (unified by
+  step), which links the whole ladder. Batch-BT (not online K-factor Elo) is drift-free and
+  re-runnable; the fit is a few Newton steps over ~tens of players. **Not Glicko-2**: its
+  volatility models skill drift, but snapshots are *frozen* — the drift is the *sequence* of
+  snapshots (the ELO-vs-step curve); the per-player uncertainty (Glicko's valuable part) is the
+  Hessian SE.
+
+(passage: lines 1381-1406 of the pre-sweep file)
+
+- **Anchor = a precomputed bot-vs-bot round-robin.** 🚨 **The Python calibration that produced it
+  (`bot_elo_calibration`, and `bot_matchup_matrix` below) was DELETED in P6 of the poke-env retirement (slice 6c,
+  2026-10-08)**: it played the Python roster bots through poke-env. The committed anchor
+  `data/gen3_bot_elo_anchors.json` and its provenance (`designs/ai_v5/elo_calibration/`) stay as they are; a
+  re-calibration is backlog T15's RUST bot-vs-bot port. As it was: `python -m agents.training.bot_elo_calibration`
+  plays all 36 bot pairs toward `--target-games` (default 5000) **in-process via the bridge — no
+  server** (safe alongside a live run; it does use CPU — throttle with `--concurrency`), fits BT
+  (`elo.fit_pairwise`, `random` pinned at `base`=1000), and writes the anchor. **Artifact split:**
+  the immutable bot anchor (ratings, SEs, the 9×9 win-matrix, a non-transitivity `fit_quality`) is
+  the only runtime input, so it lives in **`data/gen3_bot_elo_anchors.json`**; the raw game-count
+  **store** (resume state) and the **heatmap** PNG are calibration provenance/viz, so they live with
+  the ELO design work under **`designs/ai_v5/elo_calibration/`** (override with `--games-store` /
+  `--heatmap`). The
+  live/offline fits then **pin all 9 bots** to those high-confidence ratings and fit only
+  snapshots — so a snapshot is well-grounded from its first cycle, and because the anchor is
+  identical across runs, **snapshot ELOs are comparable run-to-run**. **Regenerate when bot logic
+  changes** (the json records `git_hash` + date). Graceful fallback when the file is absent:
+  `random` pinned at `base`, other bots float (rank/trend preserved, scale not cross-run-stable).
+  Bots build once and are reused across pairs (`reset_battles` between) — building warms the data
+  singletons (~4.5 s each), so per-pair rebuilds dominated cost; the full 5000-game job is a
+  many-hour, run-overnight one-time cost.
+- **The RAW matrix, at higher resolution** (DELETED with the calibration, P6 slice 6c; `data/gen3_bot_matchups.json`
+  stays). `python -m agents.training.bot_matchup_matrix` accumulated the same round-robin (same bots, same team sampling, same bridge driver — it calls
+  the calibration's own `_build_bot`/`_play_chunk`) as **raw per-pair `wins_a`/`wins_b`/`draws`/`n`**
+  toward 10 000 games/pair in resumable chunks → `data/gen3_bot_matchups.json`. Draws stay
+  separate and it **never writes the anchor** (regenerating that is an owner decision).
+
+(passage: lines 1407-1419 of the pre-sweep file)
+
+- **Live (each eval cycle).** `record_elo` refits and records `eval/elo` + `eval/elo_ci` (95% CI
+  half-width) to TensorBoard + the TUI dict, and stamps `elo`/`elo_ci` into `metadata.json:
+  latest_eval` (so the resume-republish path shows ELO immediately after a restart — the saved
+  headline is authoritative; and if a resumed checkpoint predates the `elo` field,
+  `replay_last_eval_to_tui` **fits** the saved block's win rates via `elo.fit_from_block` to recover
+  both the headline and each opponent's ELO, so the badge never blanks for a full cadence). The
+  launcher
+  surfaces a `🏅 ELO 1532 ±40` badge (`app.py::_elo_badge`) + an `elo` column in the eval panel:
+  the model's rating on the `all` row, and each opponent's anchored ELO on its row
+  (`_record_opponent_elos` records `eval/elo_vs_<bot>` + positional `eval/elo_vs_sentinel_<i>` to
+  the TUI). The live number is the best estimate from data SO FAR (batch-BT is global → early
+  points retro-adjust; the single-cycle per-sentinel ELO is rough — only the trainee is
+  bot-anchored each cycle); the offline CLI re-fits canonically over the full per-snapshot history.
+
+(passage: lines 1420-1426 of the pre-sweep file)
+
+- **Offline (`python -m main.elo <run_dir>`).** Loads results (`--source auto|log|tb|meta` —
+  `tb` **backfills an already-running run straight from TensorBoard, zero training change**), fits,
+  and prints a ranked ladder + writes `elo_ratings.json` + an Elo-vs-step `elo_curve.png` (CI band
+  + bot anchor lines). `--out` defaults to `<run>/elo/`; point elsewhere to analyze a LIVE run
+  without writing into it. 🚨 With no `--out` and the run LIVE (`utils.procfs.live_training_runs`) it REFUSES
+  (`LiveRunDirError`, exit 3, naming `--out <dir>`); `--allow-live-run-dir` overrides (2026-10-17: a bare run
+  overwrote a live run's `elo/`; `src/main/elo_live_guard_test.py`).
+
+(passage: lines 1427-1441 of the pre-sweep file)
+
+- **The two-regime caveat is CLOSED for new runs (2026-09-07, `gen3_eval_sentinel_greedy_default_v1`).**
+  It used to bite by default: the trainee played greedy but the sentinels sampled at
+  `--self-play-temp`, so a snapshot's rating blended greedy strength (as a cycle's trainee) with
+  stochastic strength (as a later sentinel), and the sentinel additionally drew its team from the
+  flat pool builder while the trainee drew sample-biased. **Sentinels are now GREEDY and draw the
+  trainee's own teams by default**, so every snapshot is scored in one regime and the ELO ladder is
+  internally consistent. `--no-eval-sentinel-greedy` restores the old behaviour. 🚨 **The cost is a
+  ONE-TIME DISCONTINUITY in `eval/elo` and `win_rate_vs_pool` against every v9-era run** — the
+  asymmetric edge read **+8.9 pp [+7.0, +10.7]** in the trainee's favour — and the discontinuity is
+  in the SENTINEL edges only: the bot-anchored scale is preserved, since trainee-vs-bot records are
+  untouched. A run's regime is recorded (`model_config.json` config v112) and INHERITED on a
+  flagless resume, so a windowed statistic can no longer cross the boundary unmarked; see
+  [`self_play_and_pool.md`](self_play_and_pool.md) for the resolution rule and the startup line.
+  Tests: `elo_test.py` (synthetic-ladder recovery, anchoring, perfect-score, loaders,
+  `fit_pairwise`), `main/train/eval_sentinel_regime_test.py` (the regime + gate resolution).
+
+
+### Frozen-snapshot ELO ladder — the dense, pay-once resolution (`snapshot_ladder.py`)
+
+(passage: lines 1445-1470 of the pre-sweep file)
+
+The live ELO above is RESOLUTION-limited at the frontier: the fixed bots have SATURATED (we sit
+~400 Elo above them, out on the flat tail of the logistic — a 10-Elo trainee move shifts its
+bot-WR by ~0.5% against a 1.9%/200-game noise floor), so the bots pin the absolute LEVEL but the
+fine ordering rides on the sparse, near-50% sentinel edges (±15 Elo CIs). Fix from the other side:
+a promoted snapshot is FROZEN, so snapshot-A-vs-snapshot-B is a STATIONARY Bernoulli — measure it
+ONCE (dense round-robin) and it is permanent. On each promotion, `SelfPlayCallback._spawn_snapshot_ladder_update`
+fires a **DETACHED** `python -m agents.training.snapshot_ladder <run> --promote <step>` subprocess
+(CPU, off the training path; since 2026-10-06 every game on the **Rust eval engine**, see "The TRANSPORT
+boundary" below) that plays the new frozen node vs the current frozen pool —
+**200 FRESH games vs each sentinel the promoting eval cycle used** (`source: "promotion_baseline"`,
+recipe v3 — see below) and `--snapshot-ladder-games` (default 100/pair; 0 disables the whole
+update) vs every other frozen node — and appends to
+`<run>/snapshot_ladder/games.jsonl` (**forever, race-safe line appends; a measured pair is NEVER
+replayed**). `fit_ladder` combines that dense frozen-vs-frozen matrix with each snapshot's
+historical bot edges (from `eval_results.jsonl` — the anchor connection, **and only the BOT edges**:
+see the eval-sentinel exclusion below) → an anchored BT fit
+(`fit_pairwise`, bots pinned) written to `<run>/snapshot_ladder/ladder.json` (the sidecar metric);
+`_record_ladder_elo` surfaces the latest promoted node's rating as `eval/ladder_elo` (+`_ci`) on
+TB/TUI — the high-resolution counterpart to the saturated `eval/elo`. Snapshots load through the
+strict loader with each zip's historical kwargs sanitized (`main.h2h.arch._load_host`). `--backfill` pays the one-time back tax over the whole current pool (idempotent — skips
+measured pairs); `--fit-only` refits without playing. `ladder.json.fit_quality.mean_abs_err`
+QUANTIFIES non-transitivity (a scalar Elo is lossy if the pool is rock-paper-scissors — the dense
+matrix at least measures it). Tests: `snapshot_ladder_test.py` (store accumulation/symmetry,
+measure-once contract, fit-recovers-ordering, sidecar read, the eval-sentinel exclusion),
+`snapshot_ladder_transport_test.py` (the transport boundary) and `snapshot_ladder_rust_integration_test.py`
+(an edge played end to end on the Rust engine, `sim` + `integration`).
+
+
+#### 🚨 The TRANSPORT boundary — the ladder plays on the Rust eval engine (poke-env retirement P2, 2026-10-06)
+
+(passage: lines 1474-1489 of the pre-sweep file)
+
+**What changed.** Until 2026-10-06 every ladder edge was played by two poke-env `RLPlayer`s over the in-process
+bridge, each building its observation with the PYTHON encoder, while every trainee since the M5 cutover trains on
+RUST rows — so the ELO headline was measured on a stack the trainee never saw (survey finding A-F2,
+`designs/research_state/measurements/pokeenv_and_hotpath_survey_2026-10-06/`). Every NEW edge is now played by
+`agents/training/snapshot_ladder_play.py` on the head-to-head meter's engine (`main.h2h.play.H2HEngine`: one T2
+service, one Rust eval core, CPU eager, every slot load byte-checked), the code the in-loop eval and `main.h2h` play
+on. What an edge measures (protocol `gen3_ladder_rust_v1`):
+
+| | Python ladder (`python_bridge`, every row before 2026-10-06) | Rust ladder (`rust_eval`) |
+|---|---|---|
+| observation | the Python encoder (`RLPlayer`) | the Rust encoder (the trainee's own rows) |
+| both sides | greedy, the default pool with its 10 % sample-team bias, independent draws | greedy, the same pool (the eval core's trainee builder), `n_games // 2` MIRRORED team pairs |
+| seats | `a` (the NEW node, on a promotion) on p1 in every game | SEAT-BALANCED: `ceil(P/2)` pairs with `a` as the player, `floor(P/2)` with `b`, on the same schedule (the key is order-independent) |
+| a draw | folded into `b`'s column (`wins_a` / finished) | recorded (`draws`) and EXCLUDED from the edge (`games` = decisive games) |
+| seeds | the unseeded global `random` stream | a pure function of the two content hashes and the edge's batch index (a deliberate re-measurement takes a NEW batch) |
+| pinned-team run | played on the default pool | the same (the yardstick is the default pool for every run); the pool is the imported checkout's (`check_team_pool`), which inside a pinned run is the pin's own `data/teams` (`gen3_pinned_data_root_v1`) |
+
+(passage: lines 1491-1514 of the pre-sweep file)
+
+**THE DECISION: a REGIME BOUNDARY, like 2026-09-07's.** Even a zero transport shift would leave the protocol
+changed (the seat effect no longer credited to the newest node; draws no longer `b`'s), so the two are different
+measurements of the same frozen pair, and nothing may fit or compare them as one:
+
+- every `games.jsonl` row carries `transport` (absent = `python_bridge`) plus the play stamp (`encoder`,
+  `protocol`, `draws`, `by_seat`, both seats' pentanomials, `seat_split`, the schedule key and cycle seed,
+  `regime_id`, `core_stamp`, both content hashes);
+- `fit_ladder` REFUSES a fit whose kept pairs span both transports (`LadderTransportError`, naming the fix):
+  `--transport rust_eval` fits only the Rust rows, `--allow-mixed-transport` fits both, stamped `mixed`;
+- `ladder.json`'s `recipe` block carries `transport` (`snapshot_ladder.ladder_transport`; absent =
+  `python_bridge`). It is PROVENANCE, not part of `recipe_status` (the FIT did not change, so a refit reproduces a
+  file exactly and `LADDER_FITTER_VERSION` stays 3);
+- a reader that compares two ladders calls `snapshot_ladder.check_same_transport`, which REFUSES a pair played on
+  different transports (or a side whose log mixes them) unless told (the retired critic gate was the one caller);
+  `main.elo` and
+  `main.ops.plateau_signal` print the transport beside the number; `hodge.edges_from_run` states a mixed log as a
+  caveat;
+- `missing_pairs` counts a pair measured only by the Python ladder as MISSING, so `--backfill` on a pre-boundary run
+  re-measures every pair on Rust (then fit it with `--transport rust_eval`).
+
+A live run pinned before the boundary keeps its pinned code, so it keeps writing Python rows; only a run launched (or
+re-pinned) at or after the boundary writes Rust rows. The CLI still ACCEPTS a pre-P2 caller's `--impl` /
+`--concurrency` and says they are ignored; the engine's shape is `--n-envs` (32) / `--threads` (2) /
+`--torch-threads` (2).
+
+(passage: lines 1516-1523 of the pre-sweep file)
+
+**The measured shift** (`designs/research_state/measurements/pokeenv_p2_ladder_2026-10-06/`; N0
+`ai_v14_01_base`, 16 frozen pairs × 100 games per stack, CPU, both greedy, the box loaded so timings are
+contaminated, counts are not): the transport alone (Rust with `a` on p1 and the old draw fold, minus Python) moves
+the mean edge **+1.31 pp [−2.90, +5.52]**; the edge as the Rust ladder fits it **+0.99 pp [−2.46, +4.43]**; the same
+Python stack against its own banked games **−4.00 pp [−8.58, +0.58]** (the floor). **NOT DETECTED**, and the
+cross-stack per-pair |Δ| (6.7–7.7 pp) is no larger than the same-stack one (8.0 pp). That is not equivalence (no
+registered bar): a mean shift of a few pp (≈ ±25–35 Elo per edge) is not excluded. The seat effect is **u = +0.56 pp**
+(not detected), which the Python ladder credited to the newest node on every edge.
+
+(passage: lines 1525-1539 of the pre-sweep file)
+
+🚨 **THE EVAL CYCLES' SENTINEL EDGES ARE EXCLUDED FROM THE LADDER FIT** (2026-09-07).
+`elo._rows_to_results` yields TWO families off one eval row — trainee-vs-bot (`bot:`) and
+trainee-vs-**sentinel** (`snap:` vs `snap:`) — and `fit_ladder` used to fold in both. The second
+is a **different measurement of the same frozen pair** the dense matrix already holds: an eval
+cycle plays the GREEDY trainee against a **STOCHASTIC** sentinel (the sampled regime then — the Python eval
+worker's `stochastic=not sentinel_greedy`, `temperature=self_play_temp`) with an **asymmetric teambuilder**
+(the trainee gets the sample-team bias, the sentinel does not), while the ladder plays
+greedy-vs-greedy with the same biased builder on both sides. Measured on
+`ai_v12_02_winprob_critic` over the **60 pairs both sources cover**: the eval edge favours the
+NEWER snapshot by **+8.9 pp [+7.0, +10.7]** — systematic, not noise. Mixing them inflated
+`ladder.json`'s newest nodes by **+21 to +29 Elo**, compounding exactly the newest-node inflation
+the matched-count rule exists to control. All three runs compared in the win-prob era carry
+`eval_sentinel_greedy=False` / `self_play_temp=1.0`, so **every ladder written before 2026-09-07
+has it**. `games.jsonl` is now the ONLY snapshot-vs-snapshot source; the excluded count is
+returned and written as **`eval_sentinel_edges_dropped`**.
+
+
+##### 🚨 THE RECIPE STAMP — a rating is only comparable to one fitted the same way
+
+(passage: lines 1543-1546 of the pre-sweep file)
+
+The excluded COUNT was the first, weak version of this check, and it is not enough: `0` means
+"this run measured no sentinel pair", which is indistinguishable from "fitted by a tree that did
+not drop them", and the 2026-09-08 file that started this records the key as `null`. So
+`fit_ladder` now writes a **`recipe` block**:
+
+(passage: lines 1556-1578 of the pre-sweep file)
+
+`eval_sentinel_edges_dropped` here is the **policy** (a boolean); the count beside it is a
+property of the run's eval history. `LADDER_FITTER_VERSION` is **bumped whenever the fit changes
+what a rating MEANS** — a new edge family, a dropped one, a different anchor set. A bump makes
+every previously committed file read `differs`, which is the correct and loud outcome.
+
+`snapshot_ladder.recipe_status(doc)` returns `current` / `absent` / `differs` (pure: a dict in, a
+verdict out, so every reader asks the same question), and `check_recipe` raises
+**`LadderRecipeError`** whose message carries the refit command and the size of the error it
+prevents. **Why it is a refusal and not a label:** measured 2026-09-14
+(`flywheel_armS_reads_2026-09-14/` §2.1), `ai_v12_02_winprob_critic`'s committed file reads
+**2057.3** at its newest node where the current recipe refits the same 20 nodes to **1984.2** —
+**+73.1 Elo**, which FLIPPED THE SIGN of a cross-run delta. A label on a number nobody can
+convert is not a safeguard.
+
+| reader | what it does with a stale stamp |
+|---|---|
+| *(the exploiter ladder's `auto:<run>` rung draw — deleted, deletion pass L4)* | it REFIT in memory from `games.jsonl` and REFUSED when there was none, because rungs were picked BY ELO and the pre-fix inflation is non-uniform (+21..+29 on the newest nodes only) |
+| `main.ops.plateau_signal` | its bias note now READS the stamp instead of asserting the bias unconditionally; a stale file is named as stale and pointed at `--fixed-fit` |
+| `snapshot_ladder.latest_promoted_elo` | **deliberately does NOT check it** — a WITHIN-RUN trend scalar (`eval/ladder_elo`) written moments earlier by the run's own pinned code. Refusing there would stop a live run logging its own curve, and no cross-run comparison is being made |
+| `agents.training.snapshot_ladder` CLI | prints `[ladder] recipe: …` beside every table it renders |
+| `main.elo <run>` | prints a `[ladder]` HEADLINE line under its star table, and **WITHHOLDS the dense number** on a stale stamp, printing the refusal in its place. Its own star fit is the ±29 read and is never the headline |
+
+Pinned by `src/agents/training/ladder_recipe_test.py` (before/after fixtures) and `src/main/elo_refit_test.py`.
+
+
+###### Putting a committed ladder BACK on the current recipe — `main.elo refit`
+
+(passage: lines 1587-1616 of the pre-sweep file)
+
+Both **refit and play NOTHING** — `games.jsonl` is append-only and never stale. The fit is over
+**the committed file's own node set** (`--pool` uses the snapshots on disk instead): BT re-solves
+every node on every add and the newest node is systematically inflated, so a fit over a different
+node set is a different object and its deltas would conflate the recipe change with a node-set
+change. `--apply` keeps the file it replaces as **`snapshot_ladder/ladder.pre_recipe.json`** — the
+only surviving evidence of what a banked number was quoted from (a file stamped with an older
+fitter version N is kept as **`ladder.pre_recipe_vN.json`** instead, so a run converted once can be
+converted again) — and REFUSES rather than overwrite one that is already there; on an
+already-current identical file it is a no-op.
+`--fit-only` on the `snapshot_ladder` CLI does the same fit but rewrites in place, keeping nothing.
+
+**The whole archive was audited this way on 2026-09-22 without writing to `models/`**:
+`designs/research_state/measurements/ladder_refit_audit_2026-09-22/`. 93 runs, all with a
+`games.jsonl` and therefore all refittable; **68 move, 25 reproduce to 0.0**, and the split is
+exactly the `3e6875a5` boundary (every mover records the count key as `null`). Median max |Δ|
+across a mover's nodes **53.4 Elo**, largest **255.6**; 39 runs' newest node moves by more than 10
+Elo, **65 of 68 downward**. The ordering is not safe either: the **v9 generation ladder reverses
+21 of its 153 pairwise orderings**, the argmax (best) node moves on 33 of 93 runs, and
+`ai_v9_51_fdF_p2c_0826`'s 18M and 24M nodes become UNRATEABLE — the committed fit carried them on
+sentinel edges alone. The 2026-09-16 and 2026-09-18 flywheel entries, and the 2026-09-08/09 v12
+ladder cells, refit to **0.0** and stand as banked.
+
+Re-fit shift, per run (committed `ladder.json` → current `fit_ladder`, same rated steps): the
+early nodes RISE and the late nodes FALL — `ai_v12_02_winprob_critic` 4M **+32.1** → 34M
+**−33.6**; `ai_v9_29_rev1_0823` 2M **+30.5** → 24M **−45.1**.
+**The per-cycle `eval/elo` star fit (`elo.fit_from_run` / `record_elo`) is UNCHANGED and still
+uses the sentinel edges** — it has no dense matrix to prefer, and those near-50% edges are the
+only resolution the saturated bots cannot give (removing them from one cycle moves the trainee
+−110 Elo and WIDENS the CI ±30 → ±41). The exclusion is the LADDER's alone, and
+`snapshot_ladder_test.py` pins that separation with a test on `fit_from_run`.
+
+
+#### The games that SELECTED a snapshot never RATE it — recipe v3 (owner decision 2026-09-27)
+
+(passage: lines 1620-1628 of the pre-sweep file)
+
+**What v2 did (2026-09-07 → 2026-09-27, "OPTION A").** Once a run's eval sentinels played greedy
+with the ladder's own team draw (`sentinel_regime` = `greedy` AND `symmetric_teams`), the ladder
+REUSED the eval cycle's sentinel pairs as edges — `ingest_eval_measured_pairs` appended them to
+`games.jsonl` tagged `"source": "eval_cycle"` and the round-robin skipped them, saving ~400–500
+battles a promotion (N0's 54M promotion reused 4 of 19 pairs).
+
+**Why v3 stops.** Promotion is DECIDED by those very games (win rate vs the pool ≥ the threshold).
+Rating a snapshot on the sample that selected it is a **winner's curse** — about **+15 to +40 Elo at
+n = 100**, analytic — one reason a new node reads high and drifts down (N0's 20M went 2030 → 1968).
+
+(passage: lines 1631-1664 of the pre-sweep file)
+
+- **Each promotion plays a FRESH 200-game pair vs every sentinel the promoting eval used**
+  (`PROMOTION_BASELINE_GAMES`; the sentinels are read from that step's `eval_results.jsonl` rows in
+  ANY regime — selection, not protocol, causes the curse), tagged `"source": "promotion_baseline"`.
+  A sentinel groomed out of the pool is named and skipped; a hand `--promote` with no eval row plays
+  everything as round-robin.
+- **Every other pair is the ordinary round-robin** at `--snapshot-ladder-games` (100), never
+  replayed. The promotion decision itself is unchanged.
+- **The eval games stay in `eval_results.jsonl` only.** `load_games` skips every `eval_cycle` row a
+  v2 tree left behind, so such a pair reads as UNMEASURED; `eval_measured_pairs` survives as the
+  read of what the eval measured (the winner's-curse comparator; the writer→row contract).
+- Every new `games.jsonl` row carries `"recipe_version": 3`.
+- **The cost line:** `update_for_promotion` prints `FRESH GAMES THIS PROMOTION: N` (and
+  `--promote <step> --dry-run` prints the plan without playing). On a 20-node pool with 4 sentinels
+  in it: v2 played 15 × 100 = **1,500**; v3 plays 4 × 200 + 15 × 100 = **2,300** (+800, +53%).
+
+**Converting a v2 ladder.** A v2 file reads `differs` everywhere the recipe is checked. `python -m
+main.elo refit <run>` already DROPS the eval-cycle pairs (it plays nothing) and names how many pairs
+carried ONLY such rows and what their fresh replacement costs; `python -m
+agents.training.snapshot_ladder <run> --backfill-fresh [--dry-run]` plays exactly those pairs at 200
+games (idempotent; the old rows are never deleted — `games.jsonl` is append-only). A v2 run whose
+log holds no `eval_cycle` rows refits to IDENTICAL ratings. Measured 2026-09-27 on N0
+(`ai_v14_01_base`, read-only refit of its 20 committed nodes): **54 of 190 pairs** were
+eval-cycle-only; dropping them moves nodes by at most **12.8 Elo** (20M 1965.2 → 1952.4, newest 58M
++1.5), and the fresh backfill is **54 × 200 = 10,800 games** (~1.5 h single-process at the ~50–100 s
+per 100-game pair its updater.log shows).
+
+**Scope:** runs LAUNCHED on the v3 code. A live or pinned run keeps its pinned tree's v2 behaviour
+(`ai_v14_01_base` at `8d07051a`, the learner-battery arms at `2cc83080`) and keeps writing v2
+stamps, which every main-tree cross-run reader flags as stale.
+
+Tests: `snapshot_ladder_test.py` (a v3 promotion writes no `eval_cycle` row and plays 200 fresh
+games per sentinel pair; the plan/cost line; a v2 `eval_cycle` row is not an edge and reads as
+missing; `--backfill-fresh` idempotence), `ladder_recipe_test.py` (the v3 stamp, the v2 file flagged
+stale and refused, the versioned backup, the refit report pricing the backfill).
+
+
+#### The RELATIVE column — Elo above a pinned frozen reference node (2026-09-27)
+
+(passage: lines 1668-1683 of the pre-sweep file)
+
+`ladder.json` carries a SECOND rating column beside the bot-anchored headline:
+**`ratings_relative`** (+ `se_relative`) = each node's Elo **above the reference node**
+(`reference.step`, pinned at exactly 0), fitted by BT over the **frozen-vs-frozen `games.jsonl`
+edges ALONE** — no bot edges, no eval edges, a weak prior (SD 2000) that only keeps a sweep finite.
+The reference defaults to the registry baseline **`untaught_meter_opponent_v14`** (N0's 24M
+snapshot) when the run's ladder holds THAT FILE (its own run, or a matching sha256), else the run's
+**first** snapshot; `--reference <step>` overrides. Nodes with no frozen path to the reference are
+omitted.
+
+**Why it exists:** a frozen pair is measured once and never changes, so this column moves only when a
+new edge genuinely says something about an existing node — adding a stronger node leaves the others'
+relative Elo unchanged on a transitive matrix (pinned by a hand-built test). The bot-anchored level,
+by contrast, re-solves against bot edges whose newest nodes keep arriving. **The headline is still
+the bot-anchored `ratings`**; the relative column is for "how far above the pinned reference", within
+a run or across runs that share that reference file. The `snapshot_ladder` CLI table, the `main.elo`
+headline line and the `main.elo refit` table all print it.
+
+
+### Hodge decomposition — the SPINE and the WIDTH (`hodge.py`)
+
+(passage: lines 1687-1755 of the pre-sweep file)
+
+A scalar rating is a **transitive** model by construction, so a BT fit cannot see a cycle: two
+snapshots with identical ELO can have a lopsided head-to-head. `ladder.json`'s
+`fit_quality.mean_abs_err` NOTICES the residue but reports it as one unitless number with **no
+noise floor**, which cannot answer the only question that matters — *is the non-transitivity real,
+or is it binomial noise on 100-game edges?* HodgeRank answers it by splitting the measured flows
+
+```
+Y_ij = logit(p_ij)   =   (r_i − r_j)   +   R_ij        w_ij = n_ij·p_ij·(1−p_ij)
+                          ───────────       ────
+                          TRANSITIVE        CYCLIC     (Fisher info of a logit = the weight)
+```
+
+where `r` is the weighted-least-squares (graph-Laplacian) solve — BT's quadratic cousin, reported
+BESIDE the BT ratings so the estimators' disagreement is visible. The split is **exactly
+w-orthogonal** (`Σw·Y² = Σw·(rᵢ−rⱼ)² + Σw·R²`, pinned by a test), so spine and width cannot be
+traded against each other by refitting. Units: 1 logit = 400/ln10 ≈ **173.72 ELO**.
+
+**The noise floor is the whole instrument.** Two nulls, both reported: an exact-mean analytic one
+(`E[Σw·R²] = Σ(1 − w_e·Reff_e)` — per-edge effective resistance, i.e. Foster's `E−V+C` spread over
+edges) and a **parametric bootstrap** that simulates games from the fitted transitive model and
+re-runs the whole pipeline. `width_rms_excess = √(raw² − null²)` is the width that survives, with a
+p-value for "width > noise".
+
+**Width SCOPE — a pendant edge's residual is identically zero.** A player with one measured
+opponent has that single edge as its whole normal equation, so counting it only inflates Σw and
+deflates the RMS. Width statistics therefore default to the **triangle-supported subgraph**; the
+spine is always fit over every edge. `n_triangles` + `n_width_edges` ride with every read.
+
+- **Offline — THE instrument.** `python -m main.elo <run>` prints the block and writes it into
+  `elo/elo_ratings.json` under `hodge` (flags: `--no-hodge`, `--hodge-bootstrap N`, `--hodge-seed`,
+  `--hodge-with-bot-rr`). The graph is exactly `fit_ladder`'s: the dense frozen matrix
+  (`snapshot_ladder/games.jsonl`) + every cycle's bot/sentinel edges. The static bot round-robin is
+  **excluded by default** — its 36 edges carry ~2700 games each against a ladder edge's 100, so on
+  the Fisher weighting they would carry ~99% of Σw and the "width" would become a property of the
+  immutable shared anchor rather than of this run. `main.endofrun`'s §1 block carries the same read
+  for the run and its `--ref`.
+- **Live — two scalars beside `eval/elo`**, recorded by `record_elo` on the same cadence:
+  `eval/hodge_width_elo` (excess width, ELO) and `eval/hodge_cyclic_fraction` (null-adjusted).
+  Both also ride in the `eval_results.jsonl` row's `hodge` block for offline replotting, and a
+  cycle whose graph had **no testable triangle** writes `recorded: false` + a reason there and
+  records NOTHING to TB (never 0-as-a-stand-in, never NaN — a missing point and a suppressed one
+  look identical in TensorBoard, and only one is a fact about the graph).
+
+⚠️ **THE STAR-GRAPH SUBTLETY — read this before quoting a live width.** A cycle's own new games are
+a **star** (trainee vs each opponent). A star is a tree; a tree has no cycles; so a width computed
+on the cycle's games alone is *identically zero* — a fake instrument that would read "no
+non-transitivity" forever. The triangles come from joining the trainee's edges to the **static
+bot-vs-bot round-robin** in `data/gen3_bot_elo_anchors.json` (which does ship the raw 9×9
+`win_matrix` + per-pair `pair_games`, so those are MEASURED edges; a future anchor carrying only
+`ratings` falls back to edges reconstructed from them, which are transitive by construction and act
+purely as a pinning prior — flagged in `caveats` when it happens). So the live metric means exactly
+**"the trainee's matchup deviation from its own rating, over trainee×bot×bot triangles"** — nothing
+about the pool's width. Sentinel edges are in the FIT (real spine information) but on no triangle,
+so they are excluded from the width scope. And the live read is **weak by construction**: ~100-game
+edges put the noise floor around 35-60 ELO, so only a gross cyclic profile clears it (measured on
+gen-15's 12 cycles: p between 0.13 and 0.93, i.e. never significant on its own). **The offline
+dense-ladder read is the real instrument; the ELO-reading rules below apply unchanged — never
+narrate a mid-run width.**
+
+**First reading (gen-15, `ai_v9_18_gen15_v8rewards_0818`, 21 players / 174 edges / 814 triangles,
+300 bootstrap reps):** spine 939 ELO, width raw 58 → null 36 → **excess 46 ELO, p = 0.005**; cyclic
+energy 6.3% raw / 3.8% null-adjusted; **3 significant 3-cycles**, all snapshot-vs-snapshot
+(16M > 20M > 18M > 16M, curl +217 ELO z=4.3; 8M > 20M > 18M; 8M > 20M > 14M). gen-14 on the same
+read (same 21/174/814 shape): spine 765, excess **26 ELO, p = 0.0033**, 2.2% null-adjusted, and **0
+individually-significant cycles** — its width is real but diffuse. So both ladders are
+overwhelmingly spine (96-98%) and both carry cycle content that is **not sampling noise** — the
+first evidence here that the BT gate is a lossy projection by a *measured* amount, and that the
+loss is bigger on gen-15. (p ≈ 0.003-0.005 is the bootstrap's floor `1/(B+1)`, not a coincidence:
+no null replicate reached the observed width.) Tests: `hodge_test.py`.
+
+
+#### 🚨 Reading an ELO: `ladder.json`, at matched SNAPSHOT COUNT, never mid-run
+
+(passage: lines 1763-1773 of the pre-sweep file)
+
+**A snapshot's rating keeps moving until it stops gaining opponents.** Anchored BT is a GLOBAL
+BATCH fit — every added player re-solves every rating — and the movement is a **systematic
+downward bias on the newest node**, not noise. Measured over gen-10's 12 successive refits
+(`snapshot_ladder/updater.log` records each one):
+
+| snapshot | first fit | final fit (n=12) | drift |
+|---|---|---|---|
+| 2M | 1790 | 1705 | **−85** |
+| 4M | 1945 | 1844 | **−101** |
+| 12M | 2089 | 2021 | **−68** |
+| 14M | 2088 | 2044 | **−44** |
+
+(passage: lines 1775-1779 of the pre-sweep file)
+
+Mechanism, and the SE is the tell (12M: 25.9 → 18.4 as it fell 2089 → 2021): a fresh snapshot's
+only edges are ~90% wins over the bots. A saturated edge says *"≥380 Elo above"* with a likelihood
+that is **flat upward**, so the MLE is inflated and under-constrained. The near-50% frozen-vs-frozen
+edges are sharply informative, and as they accumulate they pull the chain down onto the anchor.
+Dense measurement buys resolution; it does not buy an early answer.
+
+(passage: lines 1781-1781 of the pre-sweep file)
+
+**Therefore, two rules:**
+
+(passage: lines 1783-1789 of the pre-sweep file)
+
+1. **Never narrate a mid-run ELO or a mid-run delta.** The gen-10 12M delta read +108, +82, +73,
+   +64 before settling at **+11** — four reported "results", all artifacts. Wait for the run to end.
+2. **Cross-run comparison must be at matched snapshot count `n`, not matched step.** Both runs'
+   node at n=k carries the same inflation, so it cancels; a live run's newest node against a
+   finished run's *final* value does not. Worked example — gen-11 at n=7 vs gen-10's **n=7** fit
+   (recoverable from `updater.log`) reads 14M: 2082 vs 2088 = **−6, tied**; against gen-10's n=12
+   final it reads **+38**, which is the drift and nothing else.
+
+(passage: lines 1794-1806 of the pre-sweep file)
+
+3. **Matched COUNT means matched FIT SIZE: REFIT, never read the comparator's n-th node off its FINAL fit.**
+   Rule 2's "recoverable from `updater.log`" was the only mechanism, and the (retired) critic gate did not use it
+   until 2026-09-07: it took the comparator's n-th node from its FINAL fit. Measured at the win-prob
+   arm's 10M read: rev-1's 8M node is **2052** in a first-4 fit and **1958** in its final 12-node
+   fit, so the gate read a **30-Elo TRAIL as a 64-Elo LEAD** (94 Elo handed to the arm; ledger
+   *10M DECIDING READ*). `snapshot_ladder.fit_ladder(run_dir, first_n=n, write=False, steps=…)`
+   is the refit — every frozen pair AND every bot/sentinel edge whose snapshot endpoints all lie
+   in the prefix, **strict**: an edge to a node outside the prefix re-imports exactly the future
+   the rule excludes (the loose filter reads −12 where strict reads −30). A ladder that cannot be
+   refit — no `games.jsonl`, or a FORK's ladder whose early nodes are rated only through edges to
+   its own late selves (`ai_v9_59_R2ACTION_0827`: every pair touches 26M/28M) — is reported at
+   **UNMATCHED FIT SIZE** with that label on the number, and the famine pre-test REFUSES on it
+   rather than printing a lead (a read built on this must do the same).
+
+(passage: lines 1808-1824 of the pre-sweep file)
+
+4. **A committed `ladder.json` is not evidence — REFIT BOTH SIDES from `games.jsonl`.** A run's
+   `ladder.json` was written by the code that run is PINNED to, and every ladder written before
+   2026-09-07 folded the eval cycles' greedy-vs-stochastic **sentinel** edges into the fit
+   (+8.9 pp to the newer snapshot, +21..+29 Elo on the newest nodes — see the ladder section
+   above). A live run pinned to an older commit keeps writing biased ladders for as long as it
+   runs, so trusting the committed file compares one side's corrected fit against another side's
+   biased one. A cross-run read therefore refits **both** sides with THIS tree's `fit_ladder`
+   whenever `games.jsonl` exists — even at already-matched node counts, where the retired gate's old
+   `len(nodes) > n` guard refit neither — and LABELS any side that had to fall back to its committed
+   ladder — **and REFUSES that fallback outright
+   when the committed file's `recipe` stamp is absent or differs** (see the recipe-stamp section
+   above; +73.1 Elo on one measured run, enough to flip a delta's sign). Measured effect on the registered
+   famine read (arm `ai_v12_02_winprob_critic` vs `famine_comparator` = `ai_v9_29_rev1_0823`,
+   both refit on a strict prefix): the trail goes from **+29.9 Elo (se 20.7) → +13.0 (se 22.1)**
+   at n=4 and from **+34.3 (se 14.7) → +20.9 (se 15.8)** at n=12. The verdict does not change —
+   both are inside the registry floor of 38 — but the registered −30 / −34 numbers were
+   measured through the biased fit.
+
+(passage: lines 1826-1839 of the pre-sweep file)
+
+5. **The COUNT is over every OWN snapshot EVER rated — `games.jsonl`, never the committed file's
+   nodes** (2026-10-19; D2 VERDICT 2026-09-08, ledger `6c4ae35d`). The pool is GROOMED to
+   `--max-snapshots` (20) and every refit rates only the SURVIVORS, so a closed run's `ladder.json`
+   is its last 20: at run end "the arm's first 12" read 36M → 58M against the comparator's 2M → 24M
+   (on the archive, `ai_v12_02_winprob_critic` has rated 36 snapshots and its committed file holds
+   36M → 74M). A FORK's ladder also rates the parent snapshots its pool was seeded with — 19 of the
+   ~23 ever-rated nodes of a typical `ai_v13`/`ai_v14` fork sit at or below its `fork_step`.
+   `snapshot_ladder.own_rated_steps_ever` (the append-only log's endpoints + the committed nodes,
+   above the lineage record's `fork_step`; pinned by `snapshot_ladder_test.py`) is the counting basis, and
+   `fit_ladder(first_n=n, steps=<that list>)` the strict-prefix refit. A read must REFUSE a side with NO `games.jsonl`
+   whose eval record names a pool snapshot its committed file no longer rates (the first n cannot be known).
+   🚨 A hand read off `ladder.json`'s n-th node is NOT a matched-count read on a groomed or forked run, and
+   **since the critic gate's retirement (2026-10-25) no CLI composes this read**: build it from those two calls and
+   say so in the report (`TECH_DEBT_BACKLOG.md` carries the open row).

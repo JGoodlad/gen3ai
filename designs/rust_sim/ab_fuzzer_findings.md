@@ -680,7 +680,7 @@ saved non-allowlisted `ab_fuzz --protocol` repros (four by the end of this pass)
     (Water/Flying), then p1 brought in Magneton; the Smeargle is NOT trapped (its switch is
     accepted) but its request says `maybeTrapped:true`. The port tied `maybeTrapped` to the real
     trap (`bridge.rs` `is_trapped && has_bench && !firm`), so it emitted nothing. A SECOND arm of
-    the same flag (already PROBE-SETTLED for the harness in `port_build_log.md`'s
+    the same flag (already PROBE-SETTLED for the harness in `claude_md_archive/rust_sim_port_build_log.md`'s
     `gen3_simbridge_probe_accepted_v1` round, `probe_maybetrapped_probe_accepted.js`, but never
     implemented in the port): the "canceling switches would leak information" loop
     runs `FoeMaybeTrapPokemon` for EVERY ability of the foe's SPECIES in an `obtainableabilities`

@@ -373,7 +373,7 @@ function scenarios() {
   });
 
   // ── PHASE 3 scenarios — the deferred / previously-un-emitted line types.
-  // Each targets a documented protocol gap (designs/rust_sim/port_build_log.md "Protocol honesty note" +
+  // Each targets a documented protocol gap (designs/research_state/claude_md_archive/rust_sim_port_build_log.md "Protocol honesty note" +
   // the handler-audit manifest's display-only rows): the taunt/disable residual
   // `-end` lines + the Disable retro-edit forms, the Trace `-ability` reveal, the
   // Flash Fire arm/immune/`-end [silent]` cycle, the STATUS_IMMUNE `-immune [from]

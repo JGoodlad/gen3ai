@@ -64,7 +64,7 @@ default, and `checkargs` reports such a pin as ADVISORY). ⚠️ Today this is b
 `MIGRATION_FLOOR` 121 already refuses every pre-v121 checkpoint, and every v121 run on record is a
 win-prob arm. A FROZEN load (eval opponent, pool, teacher, prober) of any vintage is unaffected: the
 deleted fields POP silently in `_migrate_config`, because a frozen forward never reads the reward.
-Pinned by `src/agents/model/model_version/shaped_reward_test.py`, which fails if either refusal is
+Pinned by `src/agents/model/shaped_reward_test.py`, which fails if either refusal is
 reverted. 🚨 **Arm S (the shaped comparator) is therefore not re-runnable on HEAD** — its
 comparator runs pinned.
 

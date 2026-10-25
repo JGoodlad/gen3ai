@@ -242,8 +242,8 @@ never the launcher's cwd), and shares only when that HEAD agrees with `$LAUNCHER
 launcher change: the launcher already passes the full pin sha. ⚠️ **The pinned worktree's
 `deps/pokemon-showdown` is a SYMLINK** (to the launching checkout's submodule, `_create_run_worktree`),
 so a plain `git status --porcelain` there EXITS 128 ("expected submodule path … not to be a symbolic
-link") and `git diff-files` reports a typechange `T`; the clean check runs with
-`--ignore-submodules=all` and excludes that path (no torch compile reads the JS simulator).
+link") and `git diff-files` reports a typechange `T`; the clean check (`agents.model.compile_cache_shared`) runs `git status`
+with git's ignore-all-submodules option and excludes that path (no torch compile reads the JS simulator).
 
 **`pin_history` — the scalar `git_hash` is "current", not "the code that ran".** It is
 rewritten on every save, so on a run that restarts every 3 h it names the LAST code to touch
@@ -315,8 +315,7 @@ in the pinned tree and resolves `data/pokemon` from the repo holding its own mod
 
 **The mechanism is the one `gen3_data` already used: every runtime `data/` reader resolves through
 `utils.paths.repo_path` — the checkout the code was IMPORTED from**, which for a pinned child is its own worktree. No
-copy and no new launcher step: `data/` is entirely tracked (~22 MB; only the ignored
-`data/pokemon/smogon_stats_monthly/` is not, and the runtime never reads it), so `git worktree add` at the pin already
+copy and no new launcher step: `data/` is entirely tracked (~22 MB), so `git worktree add` at the pin already
 checks out the pin's `data/`. `TeamLoader()` defaults to `utils.team_loader.default_base_dir()` and raises
 `EmptyTeamPoolError` on a missing or empty pool (the old silent empty list was a wrong input); `main.h2h`'s two pool
 rules collapsed to one (`check_team_pool`: the imported checkout's pool, from any CWD). Gate:
@@ -329,7 +328,7 @@ asserts it reads the PIN's teams and anchors; `src/utils/team_loader/loader_test
 fork or restart that keeps an older pin — a restart never moves the pin) still reads main's `data/teams/**` and
 `data/gen3_bot_elo_anchors.json` CWD-relative, so root rule 6's freeze holds while any such run is live or queued.
 
-⚠️ **A TYPED relative path is still the launcher's CWD's**: `--trainee-team data/teams/specialist/x.txt` (and
+⚠️ **A TYPED relative path is still the launcher's CWD's**: `--trainee-team data/teams/specialist/cm_pass_celebi.txt` (and
 `--trainee-teams`) is opened by the child relative to the launcher's directory — main's file, not the pin's (**UNVERIFIED:** whether a
 restart re-reads it). Name a pin-stable file (an absolute path to a file that will not change) for a specialist run.
 

@@ -5,7 +5,7 @@
 to 2026-09-23 12:07 PDT (listed in `SPECTATOR_MANIFEST_2026-09-23.txt` in the corpus root), and the archive pull since 2026-10-20 (below). Readers: `python -m main.live.replay_scan` (the Rust reader's bulk drift scan), `main.ladder_drift_scan`, the X50 census
 (`research_state/measurements/x50_replay_census_2026-10-20/`) and ai_v11's human-replay design.
 
-🚨 **It is NOT under `data/`.** `data/replays/` is an EMPTY directory (nothing tracked, nothing written since 2026-05-12); the corpus lives under the
+🚨 **It is NOT under `data/`:** no replay directory exists under `data/`; the corpus lives under the
 main checkout's top-level `replays/`. Root rule 6 (no `data/` change while a pinned run is live) is therefore not touched by any replay write.
 
 ## Status (2026-10-24; replace this section when the state changes)
@@ -37,8 +37,8 @@ write only under `<main>/replays/showdown/gen3ou/`, at `Nice=19`, `CPUAffinity=5
 
 | unit | what | stop it |
 |---|---|---|
-| `gen3ai-replay-backfill.service` | the phases in 4,000-replay chunks; `Restart=on-failure` every 15 min (a dead proxy, a persistent 429 / 5xx); writes `BACKFILL_DONE.json` in the corpus root when done, and `ConditionPathExists=!` keeps it from running again | `systemctl --user disable --now gen3ai-replay-backfill.service` |
-| `gen3ai-replay-daily.timer` → `.service` | 05:30 Los Angeles daily, `Persistent=true`: pulls since the newest folder minus a day (≤ 6,000), then the freshness alarm | `systemctl --user disable --now gen3ai-replay-daily.timer` |
+| `gen3ai-replay-backfill.service` | the phases in 4,000-replay chunks; `Restart=on-failure` every 15 min (a dead proxy, a persistent 429 / 5xx); writes `BACKFILL_DONE.json` in the corpus root when done, and `ConditionPathExists=!` keeps it from running again | `systemctl --user stop gen3ai-replay-backfill.service`, then `systemctl --user disable` it so a login does not restart it |
+| `gen3ai-replay-daily.timer` → `.service` | 05:30 Los Angeles daily, `Persistent=true`: pulls since the newest folder minus a day (≤ 6,000), then the freshness alarm | `systemctl --user stop gen3ai-replay-daily.timer`, then `systemctl --user disable` it |
 
 - **Every request goes through the proxy** (`--proxy socks5h://127.0.0.1:1080`, the `proxy-tunnel.service` SSH tunnel `main.play --proxy` uses; no
   credential in it). It fails CLOSED: an unreachable proxy exits 3 before any request, a proxy lost mid-run is a persistent failure (exit 1), and the
@@ -46,7 +46,7 @@ write only under `<main>/replays/showdown/gen3ou/`, at `Nice=19`, `CPUAffinity=5
 - **One downloader at a time:** an `flock` on `$XDG_RUNTIME_DIR/gen3ai_replay_corpus_downloader.lock`; a second one exits 75. The daily run defers to
   a running backfill (skips the pull, still checks freshness).
 - **The alarm is logged** in the daily unit's journal: a STALE corpus (newest folder > 3 days old) exits 1, so the unit shows in
-  `systemctl --user --failed`, and the line `[freshness] REPLAY CORPUS STALE: …` is at priority err:
+  the user manager's failed-units listing (`systemctl --user list-units`), and the line `[freshness] REPLAY CORPUS STALE: …` is at priority err:
   `journalctl --user -u gen3ai-replay-daily.service -p err`. Progress: `journalctl --user -u gen3ai-replay-backfill.service` (one line a chunk).
 - **The units start with the user manager.** `Linger=no` for `goodlad`: after a reboot they run once the owner logs in (as every other user unit
   here); enabling linger is the owner's call.
@@ -57,7 +57,7 @@ write only under `<main>/replays/showdown/gen3ou/`, at `Nice=19`, `CPUAffinity=5
 |---|---|
 | The corpus was produced by a LIVE SPECTATOR daemon, `src/main/collect_replays.py` (poke-env's `BattleSpectator`, a Rich dashboard, optional SOCKS5 proxy), run BY HAND in a tmux window. No cron entry, no systemd unit, no supervisor. | `git show 5d85d8a20^:src/main/collect_replays.py`; added `77ef01cac` 2026-05-18, dated subfolders `03abef85f` 2026-05-25, stuck-room reaper `5d77790d9` 2026-07-05. `crontab -l` holds only the two `tmp_sweep` lines; `systemctl --user list-timers` has no replay timer. |
 | It is DELETED (T27, poke-env retired) and cannot be revived without poke-env. | `5d85d8a20` 2026-10-06 |
-| Its last file is 2026-09-23 12:07:58; the box REBOOTED at 12:08:00 (a clean `systemd-reboot`, journal boot `-2` ends 12:08:00) and the tmux session was recreated by the 2026-10-04 reboot. | `ls -l --time-style=full-iso`; `journalctl --list-boots`; `journalctl -b -2` tail |
+| Its last file is 2026-09-23 12:07:58; the box REBOOTED at 12:08:00 (a clean `systemd-reboot`, journal boot `-2` ends 12:08:00) and the tmux session was recreated by the 2026-10-04 reboot. | `ls -l` with the full-iso time style; journalctl's boot listing; `journalctl -b -2` tail |
 | **Cause of THIS stop: a reboot killed the unsupervised tmux window, and nobody restarted it.** | the last file and the reboot are 2 seconds apart |
 | The previous stop (the census's "again"; ai_v11's D4) has the SAME cause: last file 2026-08-02 20:22:58, clean reboot at 20:23:12, restarted by hand 2026-08-18 21:20. | same sources; the gap folders 08-03..08-17 are missing |
 | A THIRD hole, 2026-06-16..06-20: last file 06-15 08:07, restarted 06-21 16:30. No reboot, no OOM near 06-15 08:07 (an OOM kill hit the user slice 06-16 20:04, a day after the last file). **UNVERIFIED:** a wedge (rooms that never finish held every spectator slot); the reaper that fixes that class landed 2026-07-05. | `journalctl -b -4` around 06-15 |

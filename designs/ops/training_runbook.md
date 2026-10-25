@@ -421,9 +421,9 @@ launches because the fuzz drives only masked-LEGAL tokens. A related trap: **an 
 outlive its own fix and then mislead every reader after it**, including a subagent briefed from it.
 
 Detail — the (all FIXED) seed and CHOOSE-path defects, the parity-gate inventory, the coverage
-census and the throughput tables — is in `src/utils/bridge/README.md`, `designs/rust_sim/move_census.md`,
+census and the throughput tables — is in `src/utils/bridge/README.md` (the current surface), `designs/rust_sim/move_census.md`,
 `designs/ai_v5/design_local_sim_bridge_transport.md`, and
-`designs/research_state/claude_md_archive/bridge_transport_history.md`.
+`designs/research_state/claude_md_archive/bridge_transport_history.md` and `bridge_readme_history.md`.
 ### The compile flag — `--compile-trainer` (GPU learner)
 
 `torch.compile` is applied to the LEARNER (CUDA), through the one flag `--compile-trainer`: **AUTO — ON when the resolved device is cuda**, OFF on cpu, OFF under `--debug`; opt-out `--no-compile-trainer`; on failure **always FATAL**. It is a runtime perf knob: never versioned, never in `check_compatible`, and **not INHERITED on resume** (a flagless resume gets it ON, so the opt-out is what you re-pass). It cannot be a flat `True`: it **refuses** a non-cuda device by design, so its default is conditioned on the resolved device, and `--debug` is excluded even with `--device cuda`. **An EXPLICIT `--compile-trainer` on cpu still refuses, loudly.**

@@ -1,6 +1,9 @@
 # The Rust Showdown port — build log (CLOSED rounds)
 
-Moved out of `src/rust_sim/CLAUDE.md` on **2026-09-07**, verbatim and in original order.
+Moved out of `src/rust_sim/CLAUDE.md` on **2026-09-07**, verbatim and in original order. Moved again on **2026-10-25**
+from `designs/rust_sim/port_build_log.md` to this archive: the port is done, so a log of CLOSED rounds is history, not a
+thing to keep current (a doc under `designs/rust_sim/` is always-current and byte-capped). Paths and flags below are
+as they were when each round closed, and many are gone.
 
 Each entry is a **closed** coverage round or fix: the differential gate that was built, the bug it
 found, and the pins that hold it. The port itself is done (e2e 220/220 STRICT), so none of this is

@@ -40,8 +40,8 @@ to run on.
 
 **Perf (measured while both engines existed):** per-op the Rust driver was 7–20× the Node one
 (clone-and-branch 13–20×), but end-to-end `better_line` only ~1.9× — child-wait fell from 51% to 4%
-of a call, so Python-side obs materialization is the bottleneck. See `src/utils/bridge/README.md` →
-Offline driver transport.
+of a call, so Python-side obs materialization is the bottleneck. See `designs/research_state/claude_md_archive/bridge_readme_history.md` (the bridge README's
+measurements, lifted 2026-10-25).
 
 ## `--compile` (search-shaped commands)
 

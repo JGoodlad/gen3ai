@@ -18,38 +18,24 @@ The Rust search server emits, per arm, the **projection of its own board onto wh
 observed**, in exactly the shape `agents.battle.live_view.LiveView` holds — so a search
 successor's observation can be built without replaying that ply's protocol text through poke-env.
 The Python sub-encoders are **unchanged**: only the `LiveView`'s constructor differs.
+What existed (all deleted in `97a30387a`, the Rust half; the Python half with it): a Rust projection
+(`one_sided_view`, `SideObservation`) emitted by the search driver as `view_p1` / `view_p2` on `open_root` and on
+every `expand_many` arm, a Python adapter that built a `LiveView` from it, and a differential, wall and truth-audit
+gate set around them. Nothing below names a path that resolves: `git show 97a30387a^` has the code and its tests.
 
-| | |
-|---|---|
-| **Rust** | `src/rust_sim/src/view.rs` (`one_sided_view`, `SideObservation`); emitted by `src/bin/search_driver.rs` as `view_p1` / `view_p2` on `open_root` AND on every `expand_many` arm |
-| **Python** | `src/agents/battle/view_adapter.py` (`live_view_from_payload`, `legal_actions_from_payload`, `ViewBattle`); reachable as `LiveView.from_view_json` |
-| **Wall gate** | `src/rust_sim/tests/one_sided_view_test.rs` (22 tests — the wall, the D10 capture, and one pin per reading rule, §2b) |
-| **Unit gate** | `src/agents/battle/view_adapter_test.py` (33 tests, the newer ones checked against poke-env fed the same protocol) |
-| **Differential gate** | `src/agents/battle/one_sided_view_parity_fuzz_test.py` (`sim`) — the SEARCH road (roots + arms) |
-| **Truth audit** | `src/agents/battle/rust_core_parity_views.py` — slice V of the Rust Core parity harness: this projection AND the engine truth against the `LiveView` training builds at EVERY decision, both viewers (§4a) |
-| **Benchmark** | `src/agents/training/view_materialize_benchmark.py` (the two ROADS on a hand-built arm set) and `src/main/search_dividend/search_decision_benchmark.py` (the real `SearchEngine` over BANKED eval traces, broken into phases) — they answer different questions, keep both |
-
----
 
 ## 1. The wall
 
-`pre_state` / `outcome` are the OMNISCIENT readouts and must never reach the encoder. This is the
-other half of that wall, and it is a different object, not a filtered one:
+`pre_state` / `outcome` are the OMNISCIENT readouts and must never reach the encoder. The projection was the other
+half of that wall, and a different object, not a filtered one:
 
 * **`ours`** — the viewer's six mons in full. Nothing is hidden from its owner.
-* **`opp`** — ONLY mons the viewer has seen switch in, each carrying only what the viewer was
-  told: moves it watched being used, an item/ability the protocol disclosed, HP as the gen3ou
-  `ceil%` fold rather than the true integer pair, no spread, no computed stats.
+* **`opp`** — ONLY mons the viewer has seen switch in, each carrying only what the viewer was told: moves it watched
+  being used, an item/ability the protocol disclosed, HP as the gen3ou `ceil%` fold rather than the true integer
+  pair, no spread, no computed stats.
 
-An unrevealed opposing mon has **no row at all** — not a redacted one — so the composition of the
-rest of the team is not inferable from the payload's shape either.
-
-**Proof, not assertion**: `one_sided_view_test::the_view_hides_every_unrevealed_opposing_mon_that_pre_state_shows`
-takes a real mid-battle board, reads the omniscient `pre_state` for the species the view does not
-list, and asserts each is absent from the view's **bytes**. It carries a non-vacuity guard (there
-must BE an unrevealed mon) and a symmetric twin for p2.
-
----
+An unrevealed opposing mon had **no row at all** — not a redacted one — so the composition of the rest of the team
+was not inferable from the payload's shape either. The Rust core's `present()` keeps this wall (`present.md`).
 
 ## 2. THE CENTRAL FINDING — `LiveView` is not a projection of sim state
 
@@ -114,166 +100,22 @@ still compared EXACTLY; the rule is reproduced, never excused.
 
 ---
 
-## 3. The payload
+## 3. The payload — OBSOLETE
 
-```text
-{"side":"p1","turn":N,"finished":bool,"won":bool|null,"lost":bool|null,
- "weather":{"weather":id|null,"is_permanent":bool,"turns_active":n},
- "ours":SIDE,"opp":SIDE,
- "request":<the |request| payload verbatim>|null}
+The `view_pN` / `view_pN_at` payloads, the reveal fold riding the bridge session and the lazy `enable_view_fold`
+are deleted. The search driver's live payload contract is `search_and_replay_drivers.md`.
 
-SIDE = {"team_size":n,"active":<species id>|null,"side_conditions":{id:n},"mons":[MON,…]}
+## 4. The GATE and what it reads — OBSOLETE
 
-MON  = {"species",                     # the IDENTITY species — its own, even while Transformed
-        "active","fainted","revealed",
-        "hp_fraction","current_hp","max_hp",
-        "status","status_counter","protect_counter",
-        "types":[…],"moves":[MOVE,…],
-        "item","consumed_item",
-        "ability",                       # OURS only — the engine's (the BASE one once fainted)
-        "base_ability",                  # OURS only — the set's (poke-env's own base slot)
-        "ability_events":[{"id","trace","if_unknown"},…],  # announcements in order, BOTH sides;
-                                         #   id "" = left the field or fainted (temp slot cleared)
-        "boosts":{stat:stage},          # NONZERO stages only, as LiveView keeps them (none once fainted)
-        "volatiles":[{"name","starts":[tick,…],"now":tick,"bp_carried":n},…],
-        "base_stats":{…},
-        "ivs"|null,"evs"|null,"nature"|null,"spread_known",
-        "stats":{…}|null}               # null == poke-env's all-None dict (an opponent's)
-
-MOVE = own:     {"id","move_id","current_pp","max_pp"}
-       watched: {"id","move_id","uses","max_pp","sightings":[SIGHTING,…]}
-SIGHTING = {"mv","called","t","t_own","t_k","d","d_k","n"}   # rule V3: the move (or CALLED
-         # move) whose target type decides Pressure, the named target (species, its side, its
-         # ability-event index at USE time), the default target, and the count of identical ones
-```
-
-`id` is the poke-env **moves-dict KEY** and `move_id` is the `Move.id` it maps to; they differ for
-a typed Hidden Power (the wire re-keys it bare) and the two are sorted on by **different**
-consumers — `LiveView.moves` by the key, `MovesEncoder` by `Move.id`.
-
-### `view_p1_at` / `view_p2_at` — the boards at the decisions the ARM resolved itself
-
-Every `expand_many` arm carries two more fields beside `view_p1` / `view_p2`
-(`gen3_view_at_intermediate_v1`):
-
-```text
-"view_p1_at":[VIEW,…],"view_p2_at":[VIEW,…]      # same object as view_pN, ORDERED, usually EMPTY
-```
-
-A turn can contain more than one request round: our mon faints mid-turn and the replacement is a
-SECOND request inside the same arm, or a trapped switch is refused and the request re-opens.
-`resolve_turn_sourced` answers those from its follow-up policy, so `view_pN` is the board one
-decision PAST the row a per-request consumer needs. Entry `k` of `view_pN_at` is
-`one_sided_view(sess, N, dex)` rendered at the **top of the loop iteration that round opened** —
-before any of its choices are committed — so `view_pN_at.len()` equals the number of `|request|`
-lines that side's suffix carries **minus the last**, which is exactly what
-`view_successor.intermediate_decisions` counts off the protocol.
-
-🚨 **EMPTY is the normal case and an empty array is not a missing field.** The turn's final
-request is never in here (the loop exits once the boundary turn moves) and an ordinary arm opens
-no decision at all. It is also empty on a `recorded_exact` arm and under `impl="node"`; a consumer
-that finds no entry falls back exactly as it did before the field existed. Pinned by
-`one_sided_view_test::a_mid_turn_faint_captures_the_view_AT_its_replacement_request` and its
-NEGATIVE twin `an_ordinary_turn_captures_no_intermediate_view` (the predicate was fault-injected:
-capturing on iteration 0 fails both).
-
-### The reveal fold rides the session, not the chunks
-
-`SideObservation` lives on `BridgeChunks` (the one funnel every per-side line passes through) but
-**survives `clear_chunks()`**: a branch drops its parent's chunk HISTORY so its own chunks are its
-suffix, while what a side has SEEN is cumulative from turn 1. Resetting it would make every branch
-claim the opponent's team is unrevealed. Pinned by
-`one_sided_view_test::the_reveal_fold_survives_clear_chunks_and_the_snapshot`.
-
-🚨 **The fold is OFF unless a reader turns it on** (`gen3_view_fold_opt_in_v1`):
-`BridgeChunks::observed` is `None` in every constructor, and a session that will call
-`one_sided_view` calls `BridgeSession::enable_view_fold()` — LAZILY, folding the chunk history
-shipped so far and every later line (it REFUSES after a `clear_chunks` with the fold off, since the
-history would then start mid-battle). `one_sided_view` returns `Err` on a fold-less session rather
-than a view claiming nothing was revealed. The readers that enable it: `search_driver`'s view and
-protocol roots, and `core_events --views`. **`sim_bridge` never does**: it paid the fold on every
-shipped line — ≈ 60 % of M1's +13 % per-decision Rust CPU
-(`designs/research_state/measurements/m1_transport_throughput_2026-09-23/`) — and after the gate the
-recorded-transcript replay reads **0.909× the pre-M1 CPU** (95 % CI 0.876–0.932) and **0.833× the
-pre-fix CPU**, with byte-identical stdout
-(`designs/research_state/measurements/rust_core_m2_2026-09-23/view_fold/`). Pinned by
-`tests/view_fold_opt_in_test.rs` (the constructors, a source scan of `sim_bridge.rs`, the late
-enable, and byte identity with the fold on).
-
----
-
-## 4. The GATE and what it reads
-
-`one_sided_view_parity_fuzz_test.py` drives real gen3ou battles, opens a search root at
-three turns per battle, expands five arms each, and compares BOTH roads at every point:
-
-1. the whole `LiveView` graph, field by field, per mon;
-2. `LegalActions`, field by field;
-3. the **2501-dim observation vector**, `np.array_equal` on float32.
-
-The obs comparison threads **no trackers and no assembler** on either side. That is what makes it
-sharp rather than broad: the tracker-fed blocks are then zero in both vectors, so every surviving
-difference is attributable to the read-models and to nothing else. There is **no allowlist** — the
-run prints a CENSUS keyed by field path and fails on any non-empty census.
-
-**Exactly TWO classes are DECLARED residual** (`DECLARED_RESIDUAL` in the gate), each naming its
-deferral below, each matched by a NARROW path predicate, and each PRINTED with its count — or
-printed as NOT SEEN — on every run. Everything else fails. The narrowness is enforced by
-construction: the Wish entry matches only the two reactive columns the layout DECLARES, and the PP
-entry only a `current_pp` disagreement on a watched moveset (the move id list and every `max_pp`
-are still strict), so a wrong revealed-move SET cannot hide behind it. A decision at which a
-declared residual fires has its VECTOR marked inconclusive rather than compared — a vector
-downstream of a known input difference is not evidence either way.
-
-🚨 **TWO ENTRY POINTS, and the split is the project's fuzz rule.** The SWEEP records fresh random
-battles and runs as a script; the COLLECTED test takes its battle from
-`obs_roundtrip_fuzz_test.record_fixture_battle(key=…)` — pinned teams, per-player RNG and sim seed
-— so it is the same board every run and cannot ride main red on a draw nobody has seen (verified:
-three runs, 54 comparisons each, identical).
-
-🚨 **RUN THE SWEEP ON AT LEAST TWO FRESH SEEDS BEFORE CALLING IT GREEN.** Three of the findings
-above appeared only on the SECOND or THIRD seed — the own-side `consumed_item` and the Traced
-ability among them — and a single clean sweep would have read as a green gate.
-
-**A D10 arm is COMPARED, not deferred** (§5b). It gets a SECOND protocol road, fed the prefix plus
-the CUT and nothing else — the padded road above deliberately runs PAST the replacement, so its
-read-models describe the next turn and say nothing about the board `view_pN_at[0]` carries. Both
-the read-model census and the tracker-fed successor comparison run on that road, and the collected
-test asserts `d10 >= 1` so a fixture whose arms stop KO-ing cannot make the gate vacuous.
-
----
+The search-road differential fuzz gate is deleted with the road. Its lesson stands: run a parity gate on at least two
+fresh seeds before calling it green (three of that gate's findings appeared only on the second or later seed).
 
 ## 4a. The TRUTH AUDIT — slice V of the Rust Core parity harness (`gen3_core_parity_views_v1`)
 
-The search-road gate above compares at three roots and their arms per battle. The truth audit
-compares at **every decision of every recorded battle, for both viewers**, on the TRAINING
-observation path: `core_events --views` replays a recorded input log through the production
-bridge session and captures BOTH `one_sided_view`s plus the ENGINE truth at the end of every write
-that shipped a `|request|`; the reference is a `Gen3Battle` fed each viewer's text through
-`offline_feed` and read at the exact chunk `Player._handle_battle_message` dispatches the decision
-on (`decision_points`). Field by field (§2b's classes), plus the TRUTH checks no projection can
-make: a revealed opposing item / ability / move / type against the OTHER viewer's engine-sourced
-`ours` row, a consumed item no longer held, and thirteen audited volatiles (`TRUTH_VOLATILES`)
-present on the reading exactly when the engine holds them (Ingrain and Nightmare among them, one-sidedly: the engine fails
-loud on both moves, `ENGINE_CANNOT_HOLD`). No allowlist; a decision the two sides
-cannot align is an `[ALIGN]` divergence, never a skip. Scope: gen3ou (the training obs path is
-gen3ou-only); the `gen3customgame` scenario corpora are counted as out of scope and printed.
-
-**Why `one_sided_view` is the projection, not the M1 core**: M1's `CoreEvent`s carry the event
-reading and no board; this is the only board projection that exists, and M2's `present()` replaces
-it under the same slice (`designs/endstate/program_rust_core.md` M2).
-
-| tier | corpus | wall (load ~15-20 / 16 cpus) |
-|---|---|---|
-| COMMIT (routine gate, `rust_core_parity_test.py`) | the 10 recorded battles (incl. the two **Baton Pass** battles `random_34` — a passed Substitute — and `random_177` — passed Calm Mind stages) + the 3 in-scope byte-fuzz fixtures: **13 battles, 1,838 decisions** | ~2 s (the file ~6 s) |
-| MILESTONE (`slow`, verdicts in `designs/ops/slow_tier_status.json`) | 2 × 200 seeded-random + 2 × 50 `production`-policy battles played live — the same battles slice E runs: **83,896 decisions, 23.9M field comparisons, 1.94M truth checks** | ~70 s check per 200 battles + play |
-
-**Teeth**, each a routine test: re-introducing the pre-2026-08-23 Baton Pass drop FAILS on the
-entrant's SIM-FACT `boosts` and its engine-truth `volatiles`; a misread Spikes layer FAILS on
-`side_conditions`; a dropped capture FAILS as `[ALIGN]`; a read-model field added without a class
-FAILS `test_every_read_model_field_is_classified`.
-
----
+Slice V compares, at EVERY decision of every recorded battle and for both viewers, the core's reading (audited
+against the engine's truth by `present::check_view`) with the training `LiveView` field by field in §2b's classes,
+with no allowlist and an `[ALIGN]` divergence, never a skip, where the two sides cannot be aligned. Its PROJECTION
+column and the Python `LiveView` side are deleted; the core column and the board audit are `present.md`'s.
 
 ## 4b. The three read-model findings — CLOSED (2026-09-23), and what the truth audit found next
 
@@ -332,7 +174,7 @@ makes R3 fire in the pool tier, so it lands with R3's fix, not before.
 
 **R1–R3 are FIXED in the fork** (`pokemon.py` status setter, `abstract_battle.py` `-copyboost`,
 `battle.py` `_sync_active_pp`), the projection's V5 following R1 and `event_fold`'s boost ledger
-following R2, each pinned by `src/poke_env/battle/reading_fixes_test.py` (fails on upstream); the
+following R2 (their pins went with the fork, T27 P6); the
 MILESTONE random recipe strides the whole pool (even keys 0–718 + odd keys 1–719) and is green. R1b
 was fixed with M2's findings (below). Still open after it: R4, and the
 part of R3 no client can see — a mon that leaves the field between its move and the next request
@@ -343,7 +185,7 @@ rule (V15) the projection does not yet reproduce; procedural teams only so far.
 
 The Rust core's `present()` (`designs/rust_sim/present.md`) does not reproduce a poke-env mistake:
 where poke-env is wrong about a sim fact, the core carries the truth and slice V's core column counts
-the disagreement under a registered finding (`agents/battle/poke_env_findings.py`). M2 registered
+the disagreement under a registered finding (the registry module is deleted with the fork). M2 registered
 three — **PE-V10** (this projection's V10: a fainted mon's stages), **PE-R1b** (R1b above) and
 **PE-V16** (poke-env's `moved` ended Flash Fire on its holder's own Fire move; the sim keeps it
 until switch-out) — and all three are FIXED in the fork (`gen3_pe_reading_fixes_v1`, 2026-09-24, a
@@ -351,289 +193,27 @@ TRAINING-INPUT change), so the registry is empty. This projection (the view road
 poke-env, which is what its column is compared against, so it followed: V10 retired, V5's toxic half
 moved to the residual chip; it never ended Flash Fire on a Fire move.
 
-**Two VIEW-ROAD projection defects found on procedural teams** (`procedural_slice_v.py`, seed 23 —
-outside the MILESTONE corpus; the core column is clean on both): a Trick shown as a `trick`
-volatile, which neither poke-env nor the sim holds (`procedural_9124`, turn 5), and an opponent's
-Mimic-copied move shown as `mimic` where poke-env shows the copied move (`procedural_9146`, turn
-45). Not fixed: the road is on the program's deletion manifest (M2 row).
+## 5. DEFERRALS — OBSOLETE
 
-### Standing rule
+D1-D10 (sub-encoders reading the raw `Pokemon`, the Wish and sleep-wake logs, the trackers, Pressure at use time, own
+PP, Mimic / Transform overlays, `Mist`, the intermediate-decision board) were the view road's deferrals; the road is
+deleted. The reading defects they surfaced are in §4b.
 
-**Run slice V's MILESTONE tier before trusting a change to `view.rs`, `view_adapter.py`,
-`offline_feed.py`, or any poke-env reading.** The pool alone is not enough: R2, R4 and the locked
-request have ZERO pool exposure and appeared only on the procedural generator's teams, and the
-MILESTONE pool range does not reach R3's.
+## 5b. D10 — CLOSED (`gen3_view_at_intermediate_v1`) — OBSOLETE
 
-## 5. DEFERRALS — what is knowingly not carried
+An arm whose ply KO'd one of our mons (or refused a trapped switch) resolves a SECOND decision inside the same
+`expand_many` arm, so the board the driver returned was one decision past the row the protocol road produced. The
+close captured the board at the top of every loop iteration, cut the arm's events at the chunk that closed the first
+decision, and fixed two poke-env presentation rules the gate found: the out-of-band `CHOICE_REJECTED` event, and a
+fainted mon's stages (PE-V10, fixed in the fork). All of it is deleted with the road.
 
-| id | what | why, and what it would take |
-|---|---|---|
-| **D1** | the obs SLOT order still comes from `battle.team` / `battle.opponent_team` | `state_encoder.encode` walks `base.get_team_list(battle, …)` to assign slots and only then looks the mon up in the `LiveView`. So an ordered identity list must exist whatever else happens; `ViewBattle` supplies it FROM the view |
-| **D2** | four sub-encoders never took a `live_mon` | `items` (`mon.item`/`mon.consumed_item`), `abilities` (`mon.ability`), `types` (`mon.type_1`/`type_2`) and `moves` (`mon.moves`) read the raw `Pokemon` unconditionally, though `LivePokemon` carries every one of those fields and the rest of `pokemon.encode` is `if live_mon is not None:` throughout. `ViewMon` feeds them from the same read-model in the meantime. **Migrating those four onto `live_mon` is the right fix** and is a value-neutral refactor that owes the obs-build benchmark |
-| **D3** | ✅ **CLOSED for a successor** — the reactive block's **Wish pair** | `reactive.encode` folds `battle.events` through `wish_belief.build_wish_pending`. The fix was not the port's `SideState::wish_pending` at all: the payload was never the problem, the missing LOG was. `ViewBattle` now carries the successor's whole-battle event log (the root's, plus the ply folded by `ViewEventFolder`) and the existing fold runs unchanged. Still OPEN for a BOARD-ONLY caller with no log, which is exactly what the gate's tracker-less comparison is — so the residual is still DECLARED there, and seen there |
-| **D4** | ✅ **CLOSED for a successor** — the 3-dim **sleep-wake belief** | `build_sleep_sources(battle)` reads `battle.events` and `battle.turn` and nothing else, so the same log closes it. Same board-only caveat as D3 |
-| **D5** | ✅ **CLOSED** — the per-decision **TRACKERS** — recency, pair history, the event window, the progress clock, the Hidden-Power block | `gen3_view_successor_v1` — see §7. The ply's events are folded from the arm's OWN one-sided protocol by `agents/battle/event_fold.py`, and the root's `EpisodeTracker` is carried forward and advanced through `record_context` / `advance_window` (the bodies of `record` / `update_progress_clock`, split out rather than copied) |
-| ~~**D6**~~ | ✅ **CLOSED** — Pressure is judged at USE time | Each sighting carries its target's ability-event index at use time (both sides — our own Traced Pressure counts), and the adapter replays poke-env's two-slot ability rules up to it (rule V3). The un-fainted clause is still not re-checked at read time: a mon cannot be targeted while fainted |
-| **D7** | our OWN pp is the wire's, not poke-env's counter | Now a measured poke-env READING defect (**R3**, §4b): poke-env never syncs our own move PP from the `\|request\|`, so a PP the sim deducts without poke-env knowing (an un-inferable foe Pressure) drifts it HIGH. The payload keeps sending the engine's `current_pp` — the truth — and slice V classifies own PP as SIM-FACT, so the drift FAILS the gate where it occurs (0 per 1,000 on the MILESTONE pool corpus, 6.19 on procedural teams, and present on pool teams outside that corpus). FIXED in the fork (`Battle._sync_active_pp`), except a mon that leaves the field before its next request |
-| **D8** | Mimic / Transform move overlays on our own side | The own moveset is rendered from `set.moves`; an overlay would need the same resolver the request path uses |
-| **D9** | `Mist` as a side condition | The port models spikes / reflect / lightscreen / safeguard only |
-| ~~**D10**~~ | ✅ **CLOSED** — an arm whose ply resolved an INTERMEDIATE decision | `gen3_view_at_intermediate_v1`. See §5b below |
+## 6. Cost — OBSOLETE
 
-## 5b. D10 — CLOSED (`gen3_view_at_intermediate_v1`)
+The view road's per-arm wall was measured and optimised (side elision, one fork per decision, lazy `action_choices`);
+the record is `designs/research_state/measurements/search_profile_2026-09-22/README.md`. The side-elision contract
+(`expand_many`'s `side`) survives in `search_and_replay_drivers.md`.
 
-**The mechanism.** When an arm's ply KOs one of our mons, the replacement round is a SECOND
-request inside the same `expand_many` arm; a refused trapped switch does the same thing by
-re-opening the request. `search.rs::resolve_turn_sourced` loops
-`while !sess.is_ended() && open_boundary_turn(sess) == start_turn` and answers those rounds from
-`followup_choice`, so the board it returns as `view_pN` is one decision PAST the row
-`materialize_branches` produces. A leaf scored at the wrong one of them is not a rounding
-difference. It fired on **16.8–17.1% of arms** on mid-game decisions banked from a real run's
-`eval_traces` (and 6.9% of branch points on 24 fresh battles — the same mechanism at different
-anchor distributions), and the per-arm fallback into `materialize_branches` cost **17.2% of the
-view road's decision wall**.
+## 7. Transport status, and THE FLIP — OBSOLETE
 
-**The close has THREE parts and only the first was the one on the design.**
-
-| part | where | what it does |
-|---|---|---|
-| the BOARD | `search.rs` + `bin/search_driver.rs` | `Resolved::views_at` captures `one_sided_view` at the top of every loop iteration that answers a round the source could not, and the driver emits it as `view_pN_at` (§3). Nothing about poke-env enters the port |
-| the EVENT CUT | `view_successor.split_at_intermediate` | the view road folds WHOLE chunks while `materialize_branches` stops at the `\|request\|` that opened the decision, so the arm's chunks are cut at the **chunk that closed the first decision** — a CHUNK boundary because that is poke-env's own rule (`Player._handle_battle_message` parses a whole message and only THEN dispatches the request), and a line-level cut would stop earlier than the protocol road does |
-| the two poke-env RULES the port cannot supply | `event_fold.py` + `view_adapter.py` | below |
-
-🚨 **THE TWO RULES WERE FOUND BY THE GATE, NOT BY READING CODE, AND NEITHER IS VISIBLE ON AN
-ORDINARY ARM.** Both are poke-env PRESENTATION rules, so both are fixed in Python (§2's contract):
-
-* **`|error|[Unavailable choice]` is intercepted but NOT dropped.** `Player._handle_battle_message`
-  routes it to `Gen3Battle.record_choice_rejected`, an out-of-band hook that appends a
-  `CHOICE_REJECTED` event, so a live battle's log carries the rejection even though
-  `parse_message` never saw the line. `ViewEventFolder.fold` skipped it with the other six
-  intercepted keywords; the missing event lands in the H-B event window and moved **~200 obs
-  cells**. It can only appear on a ply whose reject re-opens the request — a D10 arm — which is
-  why it survived every sweep until those arms stopped falling back.
-* **A fainted mon's stages — CLOSED by fixing the fork, not the road.** Showdown's `clearVolatile`
-  (and the port) zero a mon's stages at the faint; upstream poke-env dropped them only at
-  `switch_out`, so at an INTERMEDIATE decision the protocol road showed the dead mon's stages and
-  the payload could not (eleven cases over seven fixture battles, every one a mon FAINTED and still
-  ACTIVE). The view road used to reproduce that with a ply-folded boost LEDGER on the light board
-  and a restore of FAINTED mons' stages in `view_adapter`; both were deleted when the fork's
-  `Pokemon.faint` started clearing them (`gen3_pe_reading_fixes_v1`, PE-V10). Leaving the ledger
-  in place against the fixed fork was measured: every D10 arm with a boosted corpse diverged
-  (`one_sided_view_parity_fuzz_test.py`, 6 of 10 fixed-key sweeps RED), 0 after the deletion.
-
-**What it does NOT close.** A D10-served leaf carries **`fork=None`**: the rust child `node_id` it
-is paired with sits at the END of the arm's turn, not at the decision the leaf describes, so a
-deeper ply expanded from it would branch from a state the leaf is not. Ply d+1 therefore falls
-back to the protocol road — exactly what a D10 arm did at every depth before the close, so the
-close is scoped to the depth-1 row it is evidenced at. `view_fallback_intermediate` also survives,
-for an arm the port sent no entry for (`impl="node"`, a `recorded_exact` arm).
-
-**The gates.** `one_sided_view_parity_fuzz_test` compares a D10 arm instead of deferring it, and
-its collected test asserts `d10 >= 1` so the fixture cannot go vacuous; the comparison is made
-against a SECOND protocol road stopped AT the cut (the padded one runs past the replacement and
-its read-models say nothing about this board). `event_fold_parity_fuzz_test::run_split` asserts
-the cut materializes exactly ONE further row on the protocol road and that the events over it
-agree field by field. Both were fault-injected: an uncut fold and a one-chunk over-run each
-produce 219/204 differing obs indices, and the wrong BOARD (`view_pN` instead of `view_pN_at[0]`)
-is caught too. 🚨 **The cut gate alone cannot see an over-run that stops before the next request**
-— both roads are fed the same bytes there — which is why the tracker-fed obs comparison is run
-beside it and not instead of it.
-
----
-
-**Not deferred, and worth saying so:** the volatile NAMES here are NOT the `pre_state`
-reconstruction that `search_and_replay_drivers.md` marks UNVERIFIED. That set is the port's own
-typed fields and includes conditions the sim never announces — feeding it to the obs layer raised
-`UnknownVolatileError: volatile 'choicelock' has no gen3 encoding slot` on the first real board.
-This fold reads the protocol instead.
-
----
-
-## 6. Cost
-
-`view_materialize_benchmark.py`, per successor, **the two PRODUCTION roads**, three battles, same
-load, busy box (load ~50/16 cpus — ratios are the claim, absolute ms are inflated ~3x):
-
-| B | arms | protocol ms | view ms | speedup |
-|---|---|---|---|---|
-| 1 | 3 | 93.628 | 95.706 | **0.98x** |
-| 33 | 99 | 5.708 | 4.227 | **1.35x** |
-
-🚨 **THIS TABLE REPLACES A 47x / 6.4x ONE, AND THE OLD NUMBERS WERE NOT WRONG — THEY WERE
-MEASURING A DIFFERENT THING.** The first version of this benchmark timed *payload → read-models →
-encode* against the production materializer. That leaf had **no trackers** (five obs blocks at
-zero) and **no shared prefix** (the view column paid no replay at all), so it was not a leaf any
-search scores. Closing D5 gave the view road both — the prefix replay through `open_view_fork`,
-which is `materialize_branches`' own first half, and a per-arm tracker fork — and the honest
-speedup is what is in the table. Both columns now also ask for `map_actions_at`, which production
-always asks for and which is ~24% of the view road's per-arm wall.
-
-At B=1 the whole cost IS the shared prefix, which both roads pay once, so there is nothing to win
-and the table says so. The win is per-ARM and therefore appears as the ply widens.
-
-**Where the view road's per-arm wall goes** — measured on the real `SearchEngine` over banked
-eval traces, 864 arms of 12 decisions, with a stack-accounted wall timer
-(`src/main/search_dividend/search_decision_benchmark.py`; the record is
-`designs/research_state/measurements/search_profile_2026-09-22/README.md`): `expand_many` and its
-JSON 15.7%, the tracker fork 10.9%, the **D10 fallback into `materialize_branches` 21.1%
-inclusive**, encode 9.5%, `open_root` 7.8%, the shared prefix replay 13.7% inclusive, the
-read-models 6.7%, `_choice_map` **1.2%**.
-
-🚨 **THIS TABLE RETRACTS A cProfile ONE, AND THE RETRACTED NUMBER WAS `_choice_map` AT 24%.** It
-is 1.2% (0.054 ms/arm) on the production engine, and **1.1% when the identical benchmark is re-run
-under cProfile** — so the old figure is not explained by profiler overhead either; the two
-measurements disagree about the denominator and the one taken on the road production drives is the
-one to act on. What cProfile DOES distort is in the same pair: encode reads 9.5% un-profiled and
-15.6% profiled, the action mask 14.7% against 2.2%. **A cProfile share is not a wall share.**
-
-### THE SPAN IS SHIPPING, NOT SIMULATING — `gen3_expand_many_side_elision_v1`
-
-`expand_many` and its JSON was the largest single span left (20.2%). Split with a driver-side
-timer against a Python-side one, over the same 864 banked arms, it is **30.2% the rust child
-(0.164 ms/arm), 4.1% the pipe, and 64.5% Python** — `json.loads` of a reply of which the port
-rendered BOTH sides' `view_pN` + `pN_chunks` while the search reads one. That half was **43.0% of
-the reply bytes**, and `expand_many` now takes a `side` on the request and omits it: **30,326 →
-17,330 B/arm**, with the surviving `view_pN` byte-identical (a rust gate expands the same arm both
-ways in one process and diffs the bytes). `requests` is never elided — both sides are read.
-
-**Measured** — interleaved against a baseline worktree, load-matched, **one road per process**
-(the benchmark's two roads in one interpreter are NOT independent and the first A/B of that
-campaign pointed the wrong way because of it): **1.10x on the view road at wide B** (2.315 ->
-2.110 and 2.293 -> 2.084 ms/arm, two warm pairs agreeing to three digits), **1.11x on the protocol
-road** — which parses the same reply, so a result that moved only one road would have meant
-something else — and **NOT RESOLVED at B = 1**, where the decision is its prefix and there are 31
-arms to save on. `expand_many` is **31.1% -> 26.6% of the decision wall** and no longer the
-largest single span.
-
-**Four candidates were killed by measurement, each with its number**: a compact fixed-order
-payload saves 0.024 ms/arm of parse and gives it all back re-keying for the existing adapter (~1%
-of the decision wall); one request per DECISION is worth 0.9% and the call pattern is already one
-per PLY (864 arms in 39 batches); caching the ply-invariant view parts in the driver is ~1% for a
-cache, a merge and a risk to the byte-parity gate; and holding Python's cyclic collector off for
-the reply parse measures **2.3x on a captured 454 KB reply and NOTHING end to end** — it was
-built, gated, and reverted. 🚨 **A micro-benchmark share is not a wall share**, the sibling of this
-file's cProfile retraction and for the same reason: the toy process lacks the heap the collector
-has to walk. Full record, both instrument findings, and the 5% stop rule:
-[`../research_state/measurements/expand_many_2026-09-22/README.md`](../research_state/measurements/expand_many_2026-09-22/README.md).
-
-The tracker fork was **10.5 ms** by `deepcopy` and is **0.5 ms** by a pinned-pickle thaw — the
-same 9x `_PlayerSnapshot._freeze` documents, and until it landed the view road was SLOWER than the
-road it replaces (0.84x at B=33). `agents/training/clone_pins.py` is now the ONE home for both
-mechanisms.
-
-### ONE FORK PER DECISION — `gen3_one_fork_per_decision_v1`
-
-The fork is a function of the one-sided PREFIX, our action history and OUR packed team, and a
-determinized world changes only the OPPONENT's team — so the K worlds of one decision were each
-replaying one identical prefix. `SearchEngine._root_fork` builds it once per decision and **keys
-the cache on the prefix BYTES**: `determinize.prefix_matches` truncates its comparison at the
-`|turn|` marker, so the gate alone does not license reuse of what follows it, and a world whose
-prefix differs simply misses and replays its own (`RealizedWidths.fork_cache_hit` /
-`fork_cache_miss` count both). What makes the factory reusable is that `successor()` mutates
-none of its three carried objects — it branches the event folder, thaws the frozen tracker and
-concatenates the prior-event list — which is the same property that already let one fork serve the
-arms of one world.
-
-**Gated by `src/main/search_dividend/fork_sharing_parity_integration_test.py`**: the real engine
-over one seeded decision, sharing ON against a store-but-never-serve control, comparing every
-successor's observation BYTES in order plus the scores, the chosen action and the widths, with
-non-vacuity asserted on both sides. The failure it stands for is silent — a factory that mutated
-would give world 2 world 1's ply and still produce a well-formed obs.
-
-The same sharing is applied to the PROTOCOL road's own fork, which every **D10 fallback arm**
-pays: `materialize_branches` is split into `open_branch_fork` (prefix replay + frozen
-`_PlayerSnapshot`) and `materialize_branches_from` (the arms), with `materialize_branches` kept as
-the composition so its gate is untouched, and `SearchEngine._branch_fork` caches it per decision.
-Its key carries the prefix bytes **plus** `map_actions_at` / `stop_after_decision` /
-`encode_only_at`, because those are baked into the player at construction and a deeper ply asks
-about a different decision index. That one is a LIVE poke-env player every arm mutates, so
-reusing it asserts `_PlayerSnapshot.restore` is COMPLETE — a separate test, not a second copy of
-the first.
-
-### `action_choices` IS LAZY NOW — `gen3_lazy_action_choices_v1`
-
-The last of the two sized-but-unbuilt wins. A successor's token map is the real action mapper over
-every legal index, and its only readers — `TreeNode.expandable`, `plan_beam`'s arm-count estimate
-and `search._expand_ply`'s loop — are all inside `_score_world`'s `while ply < md`, so a **depth-1
-decision built one per arm and read none**. `agents.training.view_successor.LazyTokens` builds on
-first read; it is a `Mapping`, so `bool()` falls through to `__len__` and materializes, and
-"is this branchable?" still gets a true answer. Gated by
-`src/main/search_dividend/lazy_action_choices_integration_test.py`: **0 of 18 built** at
-`max_depth=1`, **17 of 17 built and equal to their producer** at `max_depth=2`. VIEW road only —
-the protocol road's map is built where the poke-env battle still stands, and deferring it there
-is a second replay, not a lazy read.
-
-**Measured — an INTERLEAVED A/B**, a baseline worktree against this branch, the same 10 banked
-eval-trace decisions, back to back, twice. The NOW runs carried the HIGHER load in three of the
-four pairs, so the ratios are conservative:
-
-| B | BASE view ms/decision | NOW view ms/decision | speedup |
-|---|---|---|---|
-| wide (684 arms / 10 decisions) | 326.8, 361.9 | **250.5, 269.3** | **1.33x** |
-| 1 (31 arms / 10 decisions) | 96.0, 98.9 | **58.1, 59.0** | **1.66x** |
-
-The protocol road moved too (1.12x wide, 1.81x at B = 1) because it shares the second fork, which
-is why protocol-vs-view (1.57x -> 1.74x at wide B) understates the change. Spans, before -> after:
-the shared prefix replay **14.3% -> 7.8%**, the D10 fallback **24.0% -> 17.2%**, `_choice_map`
-**1.2% -> 0.7%**; `expand_many` and its JSON is now the largest single span at **20.2%**.
-
-**`obs_build_benchmark.py` must read UNCHANGED** — no file on the `encode` path was touched, and
-that is the check rather than a hope.
-
-### THE D10 CLOSE COST NOTHING AND BOUGHT CONSISTENCY — `gen3_view_at_intermediate_v1`
-
-An interleaved A/B on the same 10 banked decisions, twice, base worktree at `48e767ba`, on a box
-whose load rose monotonically from 20.8 to 33.2 on 16 cpus (so every NOW run carried the heavier
-box; the protocol road run back to back is the control):
-
-| B | `view_fallback_intermediate` | view ÷ protocol, BASE → NOW |
-|---|---|---|
-| wide (684 arms / 10 decisions) | **117 → 0** | 0.576, 0.574 → **0.562, 0.553** |
-| 1 (10 arms) | **2 → 0** | 0.980, 0.917 → **0.673, 0.746** |
-
-🚨 **D10's 17.2% SPAN WAS NOT RECOVERABLE WALL, and the §6 table above is where that belief was
-written down.** The span was the cost of serving those arms *at all*: a D10 arm answered on the
-view road costs about what it cost through the fallback, so moving 117 of 684 arms onto a
-~4.2 ms/arm path refunds nearly the whole 16.4% the view road's breakdown attributed to
-`open_branch_fork` + `materialize_branches_from` (both rows vanish — the branch fork is never
-opened now). **A phase share is not a saving**: a span that disappears because the work MOVED is
-an accounting change. At B = 1 the win IS real (~25%) and structural — there the fallback forced
-an entire second poke-env prefix replay to serve ONE arm, and at B = 1 the decision is its prefix.
-What wide B buys is ROAD CONSISTENCY: `--materializer view` no longer runs 17% of its arms on the
-other road, so a cell measured on it is no longer a blend. Record:
-`designs/research_state/measurements/search_profile_2026-09-22/README.md` §4b.
-
-## 7. Transport status, and THE FLIP
-
-`view_p1` / `view_p2` and `view_p1_at` / `view_p2_at` are **rust-only**; `search_driver.js` emits
-no such field and `SearchSession` defaults them to `{}` / `[]`. The cross-impl parity harness
-(`src/rust_sim/harness/search_impl_parity.py`) carries ONE allowlist entry per pair and each
-allowlists exactly that absence and ONLY that absence — both are value-aware and refuse to forgive
-anything but `<absent>` vs present, so neither can outlive its own fix the way two entries in that
-harness once did.
-
-**`--materializer {protocol,view}` is BUILT and `view` is the DEFAULT** (`SearchConfig.materializer`).
-`search._materialize` is the one seam: it opens the fork once per ply through `open_view_fork` and
-then answers each arm from the port's payload, falling back to `materialize_branches` per arm —
-never per cell, and never silently — for the three classes it cannot answer:
-
-| fallback | counter | why |
-|---|---|---|
-| no `view_pN` | `view_fallback_no_payload` | `search_impl="node"`, or a parent that had itself fallen back (a deeper ply cannot fork from a board the view road never built) |
-| an intermediate decision with no `view_pN_at` entry | `view_fallback_intermediate` | `impl="node"`, or a `recorded_exact` arm. The ordinary intermediate arm is now ANSWERED — §5b — and counted by `view_arms_intermediate` |
-| the arm opened no decision | — | both roads agree there is no row |
-
-`RealizedWidths.view_arms` counts what the view road actually answered, and the parity gate asserts
-it is non-zero: a run in which every arm fell back would compare the protocol road with itself and
-pass.
-
-### What licenses the flip
-
-| gate | what it holds |
-|---|---|
-| `one_sided_view_parity_fuzz_test.py` | the FULL 2501-dim successor obs, trackers included, `np.array_equal` against the production `materialize_branches` row. **422 tracker-fed comparisons over 24 fresh battles, ZERO `successor.*` divergences**; 176 over a separate 16-battle sweep, also zero |
-| `event_fold_parity_fuzz_test.py` | `ViewEventFolder`'s events == `Gen3Battle`'s on the same bytes, field by field including `raw` |
-| `materializer_parity_integration_test.py` | the real `SearchEngine` decides identically on both roads — per-action scores, chosen action, fallback reason and `arms_scored` — with a scorer that is a PURE FUNCTION of the obs, which is strictly sharper than a trained net |
-
-The remaining sweep failures are all READ-MODEL classes that predate this work and are listed in
-§4b; none of them is on the successor path, and a read-model residual makes the gate skip the
-successor comparison rather than pass it.
+`--materializer {protocol,view}` and its fallbacks are deleted; every search successor is a Rust-core row
+(`present.md`, `encoder.md`).

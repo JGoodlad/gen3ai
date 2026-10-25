@@ -69,9 +69,8 @@ reads 0, not NaN — that class is caught by the byte gate against the Python va
 `src/rust_sim/src/encoder/layout.rs` holds every offset and dim, `EventCol`, the event-type and item-transition ids,
 the volatile slot table (`VOLATILE_SLOTS`, `VOLATILE_TO_SLOT`, `NOT_A_VOLATILE`, `CANT_REASONS_LIVE`), the faint-cause
 vocabulary, `TYPE_TO_IDX`, the status / weather / screen maps, the saturation LUT, the sleep-wake tables, the protect
-floor and the pre-split category map. It was RENDERED by `python -m agents.observation.rust_core_obs_layout --write`
-from the Python encoder's constants and internals until T27 P6 slice 6d-2 (2026-10-08) deleted the Python encoder's
-encode path; it is now edited DIRECTLY (the P1 precedent for `core_events/schema.rs` and `present/tables.rs`), and its
+floor and the pre-split category map. It was RENDERED from the Python encoder's constants and internals until T27 P6
+slice 6d-2 (2026-10-08) deleted the Python encoder's encode path (the generator module is gone); it is now edited DIRECTLY (the P1 precedent for `core_events/schema.rs` and `present/tables.rs`), and its
 header says so.
 
 What the MODEL reads still lives in Python — `agents/observation/constants.py` (the extractor slices by those offsets),

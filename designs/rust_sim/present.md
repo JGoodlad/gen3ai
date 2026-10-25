@@ -114,12 +114,9 @@ entries deleted, so every comparison of the core against poke-env is now exact:
 | **PE-V16** | `volatiles` | a damaging Fire move of the holder's own ENDED Flash Fire (`Pokemon.moved`, any gen) | `flashfire` lasts until the holder leaves the field (`data/abilities.ts`; the Rust board, probe-verified) | the branch in `Pokemon.moved` removed |
 
 All three reached the obs (the fainted active's stages in `active_context`, the per-mon toxic slot,
-the `flashfire` volatile slot). Pins: `src/poke_env/battle/reading_fixes_test.py` (each FAILED on
-upstream) and `agents/training/poke_env_gaps/pe_reading_fixes_obs_integration_test.py` (three
-constructed real-Showdown battles read at the obs) — both deleted in T27 P6 (6e / 6d-2) with the fork and the gap tests — and this crate's `present::tests` (+
-`rust_core_present_test.py`, deleted in P6 slice 6c, which asserted the two readings EQUAL at the truth). The view road
-(`view.rs` / `view_adapter` / `event_fold`) reproduces poke-env and followed: V10 and its boost
-ledger deleted, V5's toxic half on the residual chip.
+the `flashfire` volatile slot). The fork and its pin tests are deleted (T27 P6 slices 6e / 6d-2), as are the
+`rust_core_present_test.py` that asserted the two readings EQUAL at the truth (6c) and the view road, which
+reproduced poke-env and followed; this crate's `present::tests` pin the truth.
 
 **The CALLED-MOVE class — fixed in the fork AND mirrored here (`gen3_called_move_reading_v1`).**
 gen3's `useMoveInner` announces a move another move called in the BARE form

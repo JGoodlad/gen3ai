@@ -1,7 +1,7 @@
 # `designs/observation/` — the observation layer's topic docs
 
-Detail lifted OUT of [`src/agents/observation/CLAUDE.md`](../../src/agents/observation/CLAUDE.md) on 2026-10-10.
-Each doc OWNS its subject and is ALWAYS-CURRENT like that leaf: update it in the same pass as the code.
+The detail behind [`src/agents/observation/CLAUDE.md`](../../src/agents/observation/CLAUDE.md). Each doc OWNS its
+subject and is ALWAYS-CURRENT like that leaf: update it in the same pass as the code.
 
 What the observation IS (the block table, the per-mon slot, the event-record schema) is
 [`../ARCHITECTURE.md`](../ARCHITECTURE.md) §1 — it wins any disagreement. The Rust encoder that WRITES the row
@@ -14,4 +14,4 @@ trackers are [`../rust_sim/trackers.md`](../rust_sim/trackers.md).
 | [`volatile_vocabulary.md`](volatile_vocabulary.md) | the source-derived volatile class (`gen3_effect_sources.py`), the classification (`GEN3_VOLATILE_TO_SLOT`, `NOT_A_VOLATILE`, the field sports), its gates, and the poke-env reading findings it surfaced (history) |
 | [`typing.md`](typing.md) | the package's mypy scope and the obs layer's typing idioms |
 
-Frozen snapshot of the leaf before the move: `../research_state/claude_md_archive/src_agents_observation_CLAUDE_2026-10-10.md`.
+The leaf before the split is history at `../research_state/claude_md_archive/src_agents_observation_CLAUDE_2026-10-10.md`.

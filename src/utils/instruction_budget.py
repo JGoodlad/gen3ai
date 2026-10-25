@@ -14,7 +14,8 @@ ONE committed file, :data:`BUDGET_FILE`; ``src/claude_md_freshness_gate_test.py`
 
 A cap is never raised. An addition to an over-budget file removes more than it adds (principle 7).
 
-**Two scopes.** The REPO files (every ``CLAUDE.md``, ``.claude/commands/*.md``) are checked on every run. The
+**Two scopes.** The REPO files (every ``CLAUDE.md``, ``.claude/commands/*.md``, and every ``*.md`` of the seven
+``designs/<topic>/`` leaf-detail trees, kind ``tree``) are checked on every run. The
 USER files (the auto-memory index ``MEMORY.md`` and the subagent definitions ``~/.claude/agents/*.md``) are
 machine-local configuration outside git: they are checked only where they exist (skipped, saying so, elsewhere),
 and against rule 1 only; their grandfathered entries are keyed by the placeholder paths below. Sizes are
@@ -43,13 +44,18 @@ LOWER_SLACK = 1000
 MEMORY_KEY = "~/.claude/projects/<main checkout>/memory/MEMORY.md"
 AGENT_KEY_PREFIX = "~/.claude/agents/"
 
+#: The seven ``designs/<topic>/`` trees that own a leaf's detail (``designs/CLAUDE.md``). Always-current, so the
+#: freshness gate scans them (``claude_md_freshness_gate_test.always_current_docs``) and this ratchet caps each file.
+#: ``designs/ops/`` is not here: its SOPs are procedures of record and are scanned by name.
+TREE_DIRS = ("training", "model", "rust_sim", "prober", "launcher", "observation", "tools")
+
 # `deps/` is a submodule, `.claude/worktrees/` holds other agents' checkouts of this repo, and the build trees are
 # output: none is a document this checkout owns.
 _EXCLUDED_DIR_PARTS = ("deps", ".claude", "node_modules", "target")
 
 
 class Doc(NamedTuple):
-    kind: str   # a key of ``type_caps``: root / leaf / command / memory / agent
+    kind: str   # a key of ``type_caps``: root / leaf / tree / command / memory / agent
     size: int   # bytes
 
 
@@ -64,6 +70,12 @@ def claude_md_files(root: Optional[Path] = None) -> List[Path]:
                   if not any(part in _EXCLUDED_DIR_PARTS for part in p.relative_to(root).parts[:-1]))
 
 
+def tree_docs(root: Optional[Path] = None) -> List[Path]:
+    """Every ``*.md`` under the seven :data:`TREE_DIRS` of ``designs/``, sorted."""
+    root = root or repo_root()
+    return sorted(p for t in TREE_DIRS for p in (root / "designs" / t).rglob("*.md"))
+
+
 def repo_docs(root: Optional[Path] = None) -> Dict[str, Doc]:
     """Repo-relative path -> :class:`Doc` for every in-repo instruction file."""
     root = root or repo_root()
@@ -71,6 +83,8 @@ def repo_docs(root: Optional[Path] = None) -> Dict[str, Doc]:
     for p in claude_md_files(root):
         rel = p.relative_to(root).as_posix()
         out[rel] = Doc("root" if rel == "CLAUDE.md" else "leaf", p.stat().st_size)
+    for p in tree_docs(root):
+        out[p.relative_to(root).as_posix()] = Doc("tree", p.stat().st_size)
     for p in sorted((root / ".claude" / "commands").glob("*.md")):
         out[p.relative_to(root).as_posix()] = Doc("command", p.stat().st_size)
     return out

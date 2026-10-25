@@ -82,12 +82,11 @@ climbs is buying less, whatever its fork count says.
 |---|---|
 | `win_mask == 1` — the episode TERMINATED in this buffer (which is also what makes the state replayable: the `__RECON__` record is written at episode END) | `fork_arm.eligible_mask` |
 | a per-decision reconstruction HANDLE was captured (`turns >= 0`) | the per-decision handle capture the (deleted) `WinProbLabelCallback` performed for the Python fork arm |
-| `MIN_LABELABLE_TURN <= turn <= 40` | `fork_arm.MIN_LABELABLE_TURN` (= 2; it MOVED there from the deleted `cf_producer_sampler` in P6 slice 6d-1, same value, with its rationale) / the offline builder's `--max-turn` |
-| a MOVE ROUND with `>= 3` legal actions | `fork_arm.is_move_round_mask` (the rule the deleted `cf_producer_sampler.is_move_round` spelled), `--min-legal 3` |
+| `MIN_LABELABLE_TURN <= turn <= 40` | `fork_arm.MIN_LABELABLE_TURN` (= 2) and `MAX_FORKABLE_TURN` |
+| a MOVE ROUND with `>= 3` legal actions | `fork_arm.is_move_round_mask` with `fork_arm.MIN_LEGAL_ACTIONS` (= 3) |
 
 and then the CONTESTED test: the policy's **top-2 masked-logit gap** is at or below the
-`--fork-contested-gap` **QUANTILE of this rollout's own candidate pool** (0.40 — the offline
-builder's `--gap-quantile` default, taken verbatim so the arm forks the population the 0.5169
+`--fork-contested-gap` **QUANTILE of this rollout's own candidate pool** (0.40, taken from the offline builder so the arm forks the population the 0.5169
 baseline was measured on). Ties are broken tightest-gap-first.
 
 🚨 **A QUANTILE, not an absolute gap.** The gap's SCALE moves as a run's logits sharpen, so a fixed

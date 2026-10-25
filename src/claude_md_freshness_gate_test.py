@@ -13,9 +13,10 @@ compiler, so it needs a gate.
 
 **Five checks, all mechanical.** None is a judgement about writing. Checks 1-3 scan every ALWAYS-CURRENT doc, not
 only the `CLAUDE.md` files: `designs/ARCHITECTURE.md`, `designs/endstate/*.md`, the `designs/ops/` SOPs (+ the
-runbook and `testing.md`), `docs/*.md` and every owned `README.md` (`always_current_docs()`; the history trees —
-`measurements/`, the archives, `ai_v3/` — are out of scope on purpose, and so are the seven `designs/<topic>/`
-trees: their logs name deleted files by design, and that cleanup is its own backlog row).
+runbook and `testing.md`), the seven `designs/<topic>/` leaf-detail trees (`training/`, `model/`, `rust_sim/`,
+`prober/`, `launcher/`, `observation/`, `tools/`: `utils.instruction_budget.TREE_DIRS`), `docs/*.md` and every owned
+`README.md` (`always_current_docs()`; the history trees — `measurements/`, the archives, `ai_v3/` — are out of scope on
+purpose). A closed round's log is history and lives in `designs/research_state/claude_md_archive/`, not in a tree.
 
 1. **Every repo-relative path a CLAUDE.md names must EXIST** (a `data/*.ts` citation is a Showdown source and
    resolves in `deps/pokemon-showdown`; a path gone on purpose is listed in `designs/deleted_flags.md`). Scope is the five owned prefixes
@@ -27,8 +28,9 @@ trees: their logs name deleted files by design, and that cleanup is its own back
 3. **Every `python -m <module>` a CLAUDE.md names must be RUNNABLE**: `<module>.py`, or a package
    with a `__main__.py`, under `src/` or the repo root — or a third-party tool in `_EXTERNAL_MODULES`.
 4. **Every instruction file stays within its BYTE BUDGET** — the ratchet of `utils.instruction_budget`
-   (rules there; numbers in `designs/ops/instruction_docs_budget.json`). Folded into this gate, not
-   a gate of its own, so the root's pinned static-gate count does not move (audit U1).
+   (rules there; numbers in `designs/ops/instruction_docs_budget.json`): every `CLAUDE.md`, slash command and
+   `designs/<topic>/` tree doc (kind `tree`). Folded into this gate, not a gate of its own, so the root's pinned
+   static-gate count does not move (audit U1).
 5. **Every `<file> § <section>` pointer in any doc or code comment must land on a section** of the file it names
    (`utils.section_refs`: the forms, what resolves one and what is skipped are its docstring; `python -m
    utils.section_refs` lists the dangling ones). Scope is the whole tree, not only the `CLAUDE.md` files.
@@ -107,6 +109,7 @@ _ALWAYS_CURRENT_GLOBS = (
     "designs/ai_v12/launch_runbook.md",
     "README.md",
     "docs/*.md",
+    *(f"designs/{tree}/**/*.md" for tree in budget.TREE_DIRS),   # the seven leaf-detail trees (`designs/CLAUDE.md`)
 )
 # Every `README.md` in the tree EXCEPT these: a vendored/untracked/build tree, and the HISTORY trees (frozen digraph,
 # dated measurement records, archives).
@@ -150,15 +153,28 @@ _PLACEHOLDER_SEGMENTS = re.compile(r"(?:^|/)(?:ai_v[NX]|v[NX]|NNNN|N)(?:/|$)")
 # Some CLAUDE.md files legitimately cite paths that are relative to something other than the repo
 # root. Declared per file WITH THE REASON, never inferred, so a genuine typo cannot be absorbed by
 # a base that happens to contain a same-named file.
+_UPSTREAM_BASES: Tuple[Tuple[str, str], ...] = (
+    ("deps/pokemon-showdown", "the upstream Showdown data/ the port was derived from"),
+    ("deps/pokemon-showdown/dist", "the compiled upstream, cited by line number"),
+)
+#: A key ending in "/" covers every doc under that directory.
 _EXTRA_BASES: Dict[str, Tuple[Tuple[str, str], ...]] = {
-    # The Rust port's leaf cites (1) its own crate layout — `src/turn.rs` means
-    # `src/rust_sim/src/turn.rs` — and (2) the upstream Showdown sources it was ported FROM,
-    # which is the whole point of a port's evidence trail.
-    "src/rust_sim/CLAUDE.md": (
-        ("deps/pokemon-showdown", "the upstream Showdown data/ the port was derived from"),
-        ("deps/pokemon-showdown/dist", "the compiled upstream, cited by line number"),
-    ),
+    # The Rust port's leaf cites (1) its own crate layout — `src/turn.rs` means `src/rust_sim/src/turn.rs` (the doc's
+    # own directory is already a base) — and (2) the upstream Showdown sources it was ported FROM, which is the whole
+    # point of a port's evidence trail. Its `designs/rust_sim/` detail tree cites both, from outside the crate.
+    "src/rust_sim/CLAUDE.md": _UPSTREAM_BASES,
+    "designs/rust_sim/": (("src/rust_sim", "the crate's own layout: `src/turn.rs` means `src/rust_sim/src/turn.rs`"),
+                          *_UPSTREAM_BASES),
 }
+
+
+def _extra_bases(rel_doc: str) -> Tuple[Tuple[str, str], ...]:
+    out: Tuple[Tuple[str, str], ...] = ()
+    for key, bases in _EXTRA_BASES.items():
+        if rel_doc == key or (key.endswith("/") and rel_doc.startswith(key)):
+            out += bases
+    return out
+
 
 # Tokens that MATCH the path regex but are prose, not path claims. Each needs a reason; the list
 # may only shrink. Do not park a real broken path here.
@@ -190,7 +206,7 @@ def _bases_for(rel_doc: str, token: str = "") -> List[pathlib.Path]:
         base = _REPO_ROOT / _UPSTREAM_BASE
         return [base] if (base / "data").is_dir() else []
     bases = [_REPO_ROOT, _REPO_ROOT / pathlib.PurePosixPath(rel_doc).parent]
-    for extra, _reason in _EXTRA_BASES.get(rel_doc, ()):
+    for extra, _reason in _extra_bases(rel_doc):
         base = _REPO_ROOT / extra
         # An uninitialised submodule is not a documentation defect. Skip the base rather than
         # failing every citation into it.
@@ -631,8 +647,13 @@ def test_meta_the_scan_scope_reaches_every_always_current_doc():
     must = {"CLAUDE.md", "README.md", "designs/ARCHITECTURE.md", "designs/ops/ORCHESTRATOR_SOP.md",
             "designs/ops/TRAINING_RUN_SOP.md", "designs/ops/EXTERNAL_ANCHORS_SOP.md", "designs/ops/training_runbook.md",
             "designs/ops/testing.md", "docs/DEVELOPING.md", "src/rust_sim/README.md",
-            "designs/endstate/README.md", "designs/endstate/program_rust_core.md"}
+            "designs/endstate/README.md", "designs/endstate/program_rust_core.md",
+            # the seven leaf-detail trees (one doc of each): their stale paths, flags and modules were once unchecked
+            "designs/training/compile_flags.md", "designs/model/versioning.md", "designs/rust_sim/module_map.md",
+            "designs/prober/web_service.md", "designs/launcher/README.md", "designs/observation/README.md",
+            "designs/tools/README.md"}
     assert must <= scanned, sorted(must - scanned)
+    assert {t for r in scanned for t in budget.TREE_DIRS if r.startswith(f"designs/{t}/")} == set(budget.TREE_DIRS)
     assert any(r.startswith("designs/endstate/") and r.endswith("search_ledger.md") for r in scanned)
     history = [r for r in scanned if "/measurements/" in r or "/ai_v3/" in r or "claude_md_archive" in r
                or r.startswith(("deps/", ".claude/")) or r == "designs/CHANGELOG.md"]
@@ -651,6 +672,16 @@ def test_meta_a_non_claude_md_doc_is_checked_for_paths_flags_and_modules(tmp_pat
     assert not flag_resolves("--no-such-flag-xyz", set(), set())
     assert [c[2] for c in collect_module_claims([doc])] == ["main.gone_module_xyz"]
     assert not module_resolves("main.gone_module_xyz")
+
+
+def test_meta_a_rust_sim_detail_doc_may_cite_the_crate_layout_and_nothing_else_may():
+    """Revert-proof: `designs/rust_sim/*.md` resolves a crate-relative path (`src/turn.rs`), another tree does not."""
+    crate = _REPO_ROOT / "src" / "rust_sim"
+    in_crate = next(p for p in sorted(crate.glob("src/*.rs")))
+    token = in_crate.relative_to(crate).as_posix()   # e.g. `src/turn.rs`
+    assert any((b / token).exists() for b in _bases_for("designs/rust_sim/module_map.md", token))
+    assert not any((b / token).exists() for b in _bases_for("designs/training/compile_flags.md", token))
+    assert not any((b / token).exists() for b in _bases_for("designs/rust_sim.md", token))   # a prefix, not a substring
 
 
 def test_meta_an_upstream_ts_citation_resolves_against_the_submodule_only():
@@ -703,12 +734,12 @@ def test_user_instruction_files_respect_the_byte_budget():
 
 
 #: The caps the meta tests below use (any consistent set would do).
-_CAPS = {"root": 16000, "leaf": 12000, "command": 12000, "memory": 10000, "agent": 2500}
+_CAPS = {"root": 16000, "leaf": 12000, "tree": 120000, "command": 12000, "memory": 10000, "agent": 2500}
 
 #: The rows of principles §3's table, by kind (`designs/CLAUDE.md` is a leaf).
 _PRINCIPLES_ROWS = {"root `CLAUDE.md`": "root", "`MEMORY.md`": "memory", "a code leaf `CLAUDE.md`": "leaf",
-                    "`designs/CLAUDE.md` (a map)": "leaf", "a subagent definition file": "agent",
-                    "a slash command": "command"}
+                    "`designs/CLAUDE.md` (a map)": "leaf", "a `designs/<topic>/` tree doc": "tree",
+                    "a subagent definition file": "agent", "a slash command": "command"}
 
 
 def test_the_budget_file_matches_the_principles_table():
@@ -731,6 +762,12 @@ def test_the_budget_file_matches_the_principles_table():
 
 def _leaf(size: int) -> "budget.Doc":
     return budget.Doc("leaf", size)
+
+
+def test_meta_a_tree_doc_is_held_to_its_own_cap():
+    assert budget.check({"designs/x/a.md": budget.Doc("tree", 120001)}, _CAPS, {})[0].startswith("OVER BUDGET")
+    assert budget.check({"designs/x/a.md": budget.Doc("tree", 120000)}, _CAPS, {}) == []
+    assert budget.check({"designs/x/a.md": _leaf(120000)}, _CAPS, {})[0].startswith("OVER BUDGET")   # a leaf is 12 KB
 
 
 def test_meta_a_new_file_over_its_type_cap_fails_and_one_at_it_passes():
@@ -773,10 +810,13 @@ def test_meta_the_scans_find_each_kind(tmp_path):
     (tmp_path / "x" / "deps").mkdir(parents=True)
     (tmp_path / ".claude" / "commands").mkdir(parents=True)
     (tmp_path / ".claude" / "worktrees" / "w").mkdir(parents=True)
+    (tmp_path / "designs" / "training").mkdir(parents=True)
+    (tmp_path / "designs" / "ops").mkdir()
     for rel in ("CLAUDE.md", "x/CLAUDE.md", "x/deps/CLAUDE.md", ".claude/commands/c.md",
-                ".claude/worktrees/w/CLAUDE.md"):
+                ".claude/worktrees/w/CLAUDE.md", "designs/training/t.md", "designs/ops/o.md"):
         (tmp_path / rel).write_text("abc")
     assert budget.repo_docs(tmp_path) == {"CLAUDE.md": budget.Doc("root", 3), "x/CLAUDE.md": budget.Doc("leaf", 3),
+                                          "designs/training/t.md": budget.Doc("tree", 3),   # `ops/` is not a tree
                                           ".claude/commands/c.md": budget.Doc("command", 3)}
 
     main = pathlib.Path("/w/my.repo")

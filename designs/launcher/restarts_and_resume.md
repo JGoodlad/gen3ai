@@ -116,7 +116,7 @@
   PINNED, by default to the checkpoint's own commit, and a trainer from before 2026-10-14 resolves an
   untyped knob to the PARSER default (the knock-in forks' `--dry-run` showed `--n-envs` 32, `--self-play`
   False, `--grad-accum-steps` 1, `--ent-coef` 0.02 for a 256-env self-play parent). The restart argv keeps
-  those tokens. A bool is written BARE (`--flag` / `--no-flag`, omitted at the parser's own value): a pin whose
+  those tokens. A bool is written BARE (the flag, or its `no-` negation for a `BooleanOptionalAction`; omitted at the parser's own value): a pin whose
   parser spelled the flag `store_true` / `BooleanOptionalAction` refuses `--flag true` as a stray value. Tests: `recipe_surface_test.py` (the fork, the fork's resume, the no-record refusal, the
   materialized argv parsed by a plain parser, `resolve_config` end to end), `dry_run_test.py::
   test_i_a_FORK_dry_run_restores_the_PARENTs_recipe_and_passes_it_typed`, and

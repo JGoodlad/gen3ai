@@ -35,7 +35,7 @@ the checkpoint: the run itself on a same-run restart, the PARENT on a fork. Each
 The resolver is `recipe_surface.inherit_recorded_recipe` (checkargs, `--dry-run`, `resolve_config` and the launcher
 all call it); `_prepare_session` writes what it restored into the child argv TYPED (`materialize_recorded_recipe`),
 because a child pinned to an older commit resolves an untyped flag to that commit's own default. A bool is written
-BARE (`--flag` / `--no-flag`, omitted when it is the parser's own value): `--flag true` is refused by a pin whose parser
+BARE (the flag, or its `no-` negation for a `BooleanOptionalAction`; omitted when it is the parser's own value): `--flag true` is refused by a pin whose parser
 spelled the flag `store_true` or `BooleanOptionalAction` (found on the real dry run of an X35 arm, pin `440b61c3`).
 
 | Class | Restart | Fork | Flags |

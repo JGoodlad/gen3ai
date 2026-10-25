@@ -33,7 +33,7 @@
 // CONFIRMED FINDINGS (vs the omniscient sim — run this file to regenerate):
 //
 //   (filled in after running — see the run log below in the repo docs; the findings are
-//    transcribed into designs/rust_sim/port_build_log.md "Trapping: the SWITCH-legality gate".)
+//    transcribed into designs/research_state/claude_md_archive/rust_sim_port_build_log.md "Trapping: the SWITCH-legality gate".)
 // ===================================================================================
 //
 // Run:  node src/rust_sim/harness/probe_trapping_rng.js

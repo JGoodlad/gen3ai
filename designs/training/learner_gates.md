@@ -535,8 +535,7 @@ rate functions, the `try/except` telemetry blocks in
 `noise_scale*`, `rollout_probes`, `capacity_terms`; `consistency.py`'s own bar (`not worst
 < BAR` also fails on NaN).
 
-**OPEN — off in production, recorded rather than changed:** `keyed_draw.py` reports a NaN logit row as "no legal action" (fail-closed, misleading message);
-`--target-kl nan` parses (no finiteness validation in the parser).
+**OPEN — off in production, recorded rather than changed:** `keyed_draw.py` reports a NaN logit row as "no legal action" (fail-closed, misleading message).
 
 **The deferred reads and the host-sync guard (`gen3_batched_host_reads_v1`, T25 item 1).** On CUDA every
 device→host read blocks the host until the GPU queue drains; the 2026-10-03 profile counted ~764 per production

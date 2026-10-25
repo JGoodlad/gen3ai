@@ -390,71 +390,10 @@ parent's pool hidden exited **3** with the three-way message. Gates:
   loading mismatched weights. The check ignores the ride-along keys alone (F-MEM). The load is
   INFERENCE-ONLY: no optimizer and no ride-along acquisition, because it runs after the learner froze
   (`gen3_opponent_inference_load_v1`, `designs/training/learner_lifecycle.md`).
-- **HISTORY — the Python road's stale-decision race (the whole bullet, and every module and test it names — `RLPlayer`, `SingleAgentWrapper`, `EpisodeTracker`, `agents/action/mapper.py`, `redecide_rollback_fuzz_test`, `episode_tracker_test`, `single_agent_wrapper_test`, `order_to_action_race_fuzz_test` — is DELETED, T27 P6; the Rust env core has no Python decision loop).** The opponent RE-DECIDED on a stale decision; the trainee crashed — split by who *owned* the
-  decision. `SingleAgentWrapper` polls the opponent's `choose_move` on the *training* thread while
-  POKE_LOOP mutates its battle, so by serialize time the captured snapshot (`ctx.legal`) can diverge
-  from the live battle: POKE_LOOP parses an **in-flight turn-resolution during the model forward**,
-  advancing `battle.turn` one ahead of `ctx.turn` (proven by the race trace — mutual Arena-Trap
-  Dugtrios, the turn resolves mid-decision). `assert_decision_current` / `action_to_order` raise
-  `StaleDecisionError`; handling then splits:
-  - **Opponent** — its decision is *internal* to `step` (SB3 never sees it), so `RLPlayer.choose_move`
-    catches the error and **re-decides on the now-current request**, bounded (`_OPP_REDECIDE_MAX`),
-    with a valid default fallback only if the battle never settles. It must always return a valid
-    order: SB3 has **no failed-step path** (a raise kills the `SubprocVecEnv` worker → parent hangs →
-    worker-watchdog `os._exit`s → launcher restart). Each attempt's `embed_battle()` records its
-    would-be decision into the rolling turn-history, so `choose_move` snapshots the tracker before
-    the loop and `EpisodeTracker.restore()`s on a stale attempt — the superseded decision leaves
-    **no phantom turn** in the opponent's turn-history obs (only the committed one survives; guarded
-    by `redecide_rollback_fuzz_test.py` + `episode_tracker_test.py`). The re-decide guards only up to
-    the order `choose_move` RETURNS; `SingleAgentWrapper.step` then re-serializes it via
-    `self.env.order_to_action`, re-reading the battle **one more time** — a second, narrower window
-    where it can finish/flip-to-wait under us (`ValueError ... not in valid orders ['/choose
-    default']`). On that the wrapper falls back to the default order rather than crash (guarded by
-    `single_agent_wrapper_test.py` + `order_to_action_race_fuzz_test.py`).
-  - **Trainee** — its action is *SB3's*, computed outside `step` and not re-runnable mid-step, so a
-    stale trainee decision **crashes** (the Python `gen3_env`, deleted in U3; no fallback): acting on it would corrupt its
-    `(obs, action) → (reward, next_obs)` transition. Empirically it doesn't hit this — gated by the
-    env's `race_get` request-wait (17 h vs-bots + self-play, zero trainee staleness).
-  `_settle_opponent_battle` is a **pre-drain** that only trims how often the opponent re-decides — it
-  can't drain *in-flight* messages, which is why re-decide (not settle) is the fix. The comprehensive
-  `assert_decision_current` (every axis: moves+disabled, switches+species,
-  force_switch/trapped/maybe_trapped/wait/struggle) is the detector; `train/selfplay_opp_redecide_rate`
-  surfaces the resolved-race rate. **Full context — mechanism, the race trace, why it was hard, and the
-  verification tiers — is in `race_fuzz_README.md`.** (`GEN3_FORCE_SELFPLAY` forces 100% self-play for
-  the stress; `GEN3_RACE_TRACE=1` dumps the per-battle cross-thread interleaving into the
-  `StaleDecisionError` **and** into the `race_get` silent-stall crash — see below. `StaleDecisionError`
-  lives in `agents/action/mapper.py`.)
-  - **Force-switch request-delivery deadlock (`_AsyncQueue.race_get`, `env.py`) — FIXED.** A
-    *different* failure from the stale-decision race, and a latent bug **inherited verbatim from
-    upstream poke-env 0.15.0**: `race_get` races a per-agent `queue.get()` against the
-    `_waiting`/`_trying_again` coordination events, and can drop a request the server already
-    delivered into the `battle_queue`. Two ways: **(1) stranding** — `asyncio.wait(FIRST_COMPLETED)`
-    returns the instant any waiter completes, so an already-set **stale** event wins before the
-    equally-ready `queue.get()` runs → `race_get` returns `None`, the agent is marked not-to-move,
-    and its request sits unread; **(2) orphan theft** — `race_get` `cancel()`s the pending
-    `queue.get()`, which a later `put` can resurrect to dequeue-and-discard the request.
-    `_trying_again` goes stale because `env.step` cleared it only on the `None` path, and a
-    re-request makes the battle non-`None`, skipping that clear. The trigger is the mutual
-    Arena-Trap Dugtrio self-play mirror (trapped-switch `[Unavailable choice]` → stale
-    `_trying_again`, then a faint → a `wait`+`forceSwitch` pair whose force-switch is stranded);
-    rare (~1/8600 battles), so it only surfaced once self-play was on. **Fix:** `race_get` now
-    `cancel()`s **and `await`s** the get to settle it (recovering its item, never orphaning it) and
-    **prefers a queued battle over a stale event**, and `env.step` clears `_trying_again` the moment
-    its agent receives a battle. Repro + regression guard: `forceswitch_deadlock_fuzz_e2e_test.py`
-    (needs a `9XXX` server; `--widen` surfaces the timing race); unit coverage of both failure modes
-    in `async_queue_disconnect_test.py`.
-  - **Silent-stall watchdog (now a should-never-fire backstop).** Independently of the fix above,
-    `race_get` bounds its wait by `_RACE_GET_TIMEOUT_S` (120 s, ~100× a normal step; override with
-    `GEN3_RACE_GET_TIMEOUT_S`) and on a silent stall **raises `ShowdownException`** — a hard crash
-    that propagates uncaught through the wrapper step chain to the SubprocVecEnv worker, so SB3
-    discards the in-flight rollout (no fabricated transition reaches backprop) and the launcher
-    restarts from the last checkpoint. It **crashes, never recovers in place** (recovering would feed
-    PPO a stale `(obs, action) → (reward, next_obs)`). With `GEN3_RACE_TRACE=1` the wedged battle's
-    interleaving is appended to the crash message via `race_trace.dump_recent()` (wedged battle
-    ordered last so its newest events survive the launcher's last-100-line crash-file tail; the full
-    trace is in `launcher_child.log`). `env.step` also emits `ENVSTEP` enter/race trace lines under
-    `GEN3_RACE_TRACE` for debugging this handshake. Kept as defense-in-depth against any future
-    request-delivery regression.
+- **The Python road's stale-decision race and `race_get` request-delivery deadlock are DELETED** with the Python env core
+  (T27 P6, U3): the Rust env core has no Python decision loop, so no opponent re-decide, trainee crash or silent-stall
+  watchdog exists to operate. The race write-up that remains is `src/agents/training/race_fuzz_README.md`; the full
+  text of this bullet is in git history.
 - **Self-play engages in the first process, not only after a restart.** The env is built before
   the model exists (the model needs the env's spaces), so on the first self-play process
   `_maybe_engage_self_play` seeds the pool from the loaded weights and rebuilds the env with
@@ -462,8 +401,7 @@ parent's pool hidden exited **3** with the three-way message. Gates:
   `learn()`. Later restarts find the pool already populated and skip the rebuild.
 - **`--debug --self-play --debug-eval` exercises the real path** (seed → pool eval → promotion)
   on a fast eval cadence (add a short `--eval-freq`), in process and serverless (`--debug` skips
-  all eval by default — `--debug-eval` opts in). (`selfplay_opponent_fuzz_test.py`, which drove Python battles, was deleted in T27 P6 slice 6d-2,
-  `cbfc2a31`.)
+  all eval by default — `--debug-eval` opts in).
 
 ## Stable (cross-run) opponents (`--stable-opponents`, `fixed_opponent_pool.py`)
 

@@ -1,8 +1,9 @@
 {
-  "_doc": "The byte-budget ratchet for the instruction docs. Type caps and targets: designs/ops/instruction_docs_principles.md §3 (1 KB = 1,000 bytes). `grandfathered` holds each file that was over its type cap when the ratchet landed (2026-10-19), at its size then; a sweep lowers an entry as it shrinks the file, and removes it once the file is within its type cap (audit U11 empties the list). Never raise a cap. Enforced by src/claude_md_freshness_gate_test.py; the census: python -m utils.instruction_budget. Kinds: root = the root CLAUDE.md, leaf = every other CLAUDE.md, command = .claude/commands/*.md, memory = the user auto-memory MEMORY.md, agent = ~/.claude/agents/*.md (whole file). The two user kinds are machine-local and checked only where present.",
+  "_doc": "The byte-budget ratchet for the instruction docs. Type caps and targets: designs/ops/instruction_docs_principles.md §3 (1 KB = 1,000 bytes). `grandfathered` holds each file that was over its type cap when the ratchet landed (2026-10-19), at its size then; a sweep lowers an entry as it shrinks the file, and removes it once the file is within its type cap (audit U11 empties the list). Never raise a cap. Enforced by src/claude_md_freshness_gate_test.py; the census: python -m utils.instruction_budget. Kinds: root = the root CLAUDE.md, leaf = every other CLAUDE.md, tree = every *.md under the seven designs/<topic>/ leaf-detail trees (instruction_budget.TREE_DIRS), command = .claude/commands/*.md, memory = the user auto-memory MEMORY.md, agent = ~/.claude/agents/*.md (whole file). The two user kinds are machine-local and checked only where present.",
   "type_caps": {
     "root": 16000,
     "leaf": 12000,
+    "tree": 120000,
     "command": 12000,
     "memory": 10000,
     "agent": 2500
@@ -10,6 +11,7 @@
   "type_targets": {
     "root": 12000,
     "leaf": 8000,
+    "tree": 40000,
     "command": 8000,
     "memory": 8000,
     "agent": 1500
