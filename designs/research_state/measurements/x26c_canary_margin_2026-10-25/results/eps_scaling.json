@@ -1,0 +1,893 @@
+{
+ "380M": {
+  "51": {
+   "seed": 9,
+   "curve": [
+    {
+     "rel": 0.001953125,
+     "abs_dlogp": 1.2320303916931152,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.00048828125,
+     "abs_dlogp": 0.27341175079345703,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.0001220703125,
+     "abs_dlogp": 0.05340290069580078,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 3.0517578125e-05,
+     "abs_dlogp": 0.012389898300170898,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 7.62939453125e-06,
+     "abs_dlogp": 0.003041505813598633,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 1.9073486328125e-06,
+     "abs_dlogp": 0.0007860660552978516,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 4.76837158203125e-07,
+     "abs_dlogp": 0.00017642974853515625,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    }
+   ],
+   "gain_dlogp_per_rel": [
+    630.799560546875,
+    559.947265625,
+    437.4765625,
+    405.9921875,
+    398.65625,
+    412.125,
+    370.0
+   ]
+  },
+  "41": {
+   "seed": 2,
+   "curve": [
+    {
+     "rel": 0.001953125,
+     "abs_dlogp": 0.9481196403503418,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.00048828125,
+     "abs_dlogp": 0.24970531463623047,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.0001220703125,
+     "abs_dlogp": 0.0633091926574707,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 3.0517578125e-05,
+     "abs_dlogp": 0.015909671783447266,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 7.62939453125e-06,
+     "abs_dlogp": 0.003966331481933594,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 1.9073486328125e-06,
+     "abs_dlogp": 0.0010008811950683594,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 4.76837158203125e-07,
+     "abs_dlogp": 0.0002474784851074219,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    }
+   ],
+   "gain_dlogp_per_rel": [
+    485.437255859375,
+    511.396484375,
+    518.62890625,
+    521.328125,
+    519.875,
+    524.75,
+    519.0
+   ]
+  },
+  "13": {
+   "seed": 8,
+   "curve": [
+    {
+     "rel": 0.001953125,
+     "abs_dlogp": 0.8507332801818848,
+     "n_changed_sites": 4,
+     "changed_sites": [
+      "gt@agents/model/damage_kinds.py:119",
+      "gt@agents/model/damage_op.py:697",
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.00048828125,
+     "abs_dlogp": 0.031493186950683594,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.0001220703125,
+     "abs_dlogp": 0.007961750030517578,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 3.0517578125e-05,
+     "abs_dlogp": 0.0019674301147460938,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 7.62939453125e-06,
+     "abs_dlogp": 0.0004749298095703125,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 1.9073486328125e-06,
+     "abs_dlogp": 0.00011014938354492188,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 4.76837158203125e-07,
+     "abs_dlogp": 1.430511474609375e-05,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    }
+   ],
+   "gain_dlogp_per_rel": [
+    435.575439453125,
+    64.498046875,
+    65.22265625,
+    64.46875,
+    62.25,
+    57.75,
+    30.0
+   ]
+  },
+  "50": {
+   "seed": 6,
+   "curve": [
+    {
+     "rel": 0.001953125,
+     "abs_dlogp": 0.17602062225341797,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.00048828125,
+     "abs_dlogp": 0.039116859436035156,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.0001220703125,
+     "abs_dlogp": 0.009830474853515625,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 3.0517578125e-05,
+     "abs_dlogp": 0.0024557113647460938,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 7.62939453125e-06,
+     "abs_dlogp": 0.0006122589111328125,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 1.9073486328125e-06,
+     "abs_dlogp": 0.00016689300537109375,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 4.76837158203125e-07,
+     "abs_dlogp": 3.62396240234375e-05,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    }
+   ],
+   "gain_dlogp_per_rel": [
+    90.12255859375,
+    80.111328125,
+    80.53125,
+    80.46875,
+    80.25,
+    87.5,
+    76.0
+   ]
+  }
+ },
+ "478M": {
+  "35": {
+   "seed": 15,
+   "curve": [
+    {
+     "rel": 0.001953125,
+     "abs_dlogp": 0.8276546001434326,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.00048828125,
+     "abs_dlogp": 0.15842604637145996,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.0001220703125,
+     "abs_dlogp": 0.03723406791687012,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 3.0517578125e-05,
+     "abs_dlogp": 0.009192466735839844,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 7.62939453125e-06,
+     "abs_dlogp": 0.002422809600830078,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 1.9073486328125e-06,
+     "abs_dlogp": 0.0005900859832763672,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 4.76837158203125e-07,
+     "abs_dlogp": 0.00020313262939453125,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    }
+   ],
+   "gain_dlogp_per_rel": [
+    423.7591552734375,
+    324.45654296875,
+    305.021484375,
+    301.21875,
+    317.5625,
+    309.375,
+    426.0
+   ]
+  },
+  "11": {
+   "seed": 12,
+   "curve": [
+    {
+     "rel": 0.001953125,
+     "abs_dlogp": 0.6620779037475586,
+     "n_changed_sites": 9,
+     "changed_sites": [
+      "gt@agents/model/damage_kinds.py:119",
+      "gt@agents/model/damage_op_pairwise.py:459",
+      "gt@agents/model/damage_op_pairwise.py:460",
+      "gt@agents/model/damage_op_pairwise.py:470",
+      "gt@agents/model/damage_op_pairwise.py:697",
+      "gt@agents/model/damage_op_pairwise.py:791",
+      "gt@agents/model/damage_op_pairwise.py:975",
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.00048828125,
+     "abs_dlogp": 0.07061004638671875,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.0001220703125,
+     "abs_dlogp": 0.006794452667236328,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 3.0517578125e-05,
+     "abs_dlogp": 0.0017313957214355469,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 7.62939453125e-06,
+     "abs_dlogp": 0.0004363059997558594,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 1.9073486328125e-06,
+     "abs_dlogp": 7.152557373046875e-05,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 4.76837158203125e-07,
+     "abs_dlogp": 3.6716461181640625e-05,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    }
+   ],
+   "gain_dlogp_per_rel": [
+    338.98388671875,
+    144.609375,
+    55.66015625,
+    56.734375,
+    57.1875,
+    37.5,
+    77.0
+   ]
+  },
+  "62": {
+   "seed": 14,
+   "curve": [
+    {
+     "rel": 0.001953125,
+     "abs_dlogp": 0.539600133895874,
+     "n_changed_sites": 10,
+     "changed_sites": [
+      "argmax@agents/model/index_max.py:28",
+      "gt@agents/model/damage_kinds.py:119",
+      "gt@agents/model/damage_op_pairwise.py:459",
+      "gt@agents/model/damage_op_pairwise.py:460",
+      "gt@agents/model/damage_op_pairwise.py:470",
+      "gt@agents/model/damage_op_pairwise.py:697",
+      "gt@agents/model/damage_op_pairwise.py:791",
+      "gt@agents/model/damage_op_pairwise.py:975",
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.00048828125,
+     "abs_dlogp": 0.01401972770690918,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.0001220703125,
+     "abs_dlogp": 0.002817869186401367,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 3.0517578125e-05,
+     "abs_dlogp": 0.0006740093231201172,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 7.62939453125e-06,
+     "abs_dlogp": 0.0001647472381591797,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 1.9073486328125e-06,
+     "abs_dlogp": 4.363059997558594e-05,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 4.76837158203125e-07,
+     "abs_dlogp": 9.775161743164062e-06,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    }
+   ],
+   "gain_dlogp_per_rel": [
+    276.2752685546875,
+    28.71240234375,
+    23.083984375,
+    22.0859375,
+    21.59375,
+    22.875,
+    20.5
+   ]
+  },
+  "50": {
+   "seed": 3,
+   "curve": [
+    {
+     "rel": 0.001953125,
+     "abs_dlogp": 0.26664018630981445,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.00048828125,
+     "abs_dlogp": 0.07680988311767578,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.0001220703125,
+     "abs_dlogp": 0.01919841766357422,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 3.0517578125e-05,
+     "abs_dlogp": 0.004727363586425781,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 7.62939453125e-06,
+     "abs_dlogp": 0.0011749267578125,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 1.9073486328125e-06,
+     "abs_dlogp": 0.00027751922607421875,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 4.76837158203125e-07,
+     "abs_dlogp": 4.9591064453125e-05,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    }
+   ],
+   "gain_dlogp_per_rel": [
+    136.519775390625,
+    157.306640625,
+    157.2734375,
+    154.90625,
+    154.0,
+    145.5,
+    104.0
+   ]
+  }
+ },
+ "479M": {
+  "58": {
+   "seed": 13,
+   "curve": [
+    {
+     "rel": 0.001953125,
+     "abs_dlogp": 0.9024558067321777,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.00048828125,
+     "abs_dlogp": 0.2115492820739746,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.0001220703125,
+     "abs_dlogp": 0.047579288482666016,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 3.0517578125e-05,
+     "abs_dlogp": 0.011512279510498047,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 7.62939453125e-06,
+     "abs_dlogp": 0.0029144287109375,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 1.9073486328125e-06,
+     "abs_dlogp": 0.0006589889526367188,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 4.76837158203125e-07,
+     "abs_dlogp": 0.0001850128173828125,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    }
+   ],
+   "gain_dlogp_per_rel": [
+    462.057373046875,
+    433.2529296875,
+    389.76953125,
+    377.234375,
+    382.0,
+    345.5,
+    388.0
+   ]
+  },
+  "29": {
+   "seed": 2,
+   "curve": [
+    {
+     "rel": 0.001953125,
+     "abs_dlogp": 0.7513971328735352,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.00048828125,
+     "abs_dlogp": 0.12415885925292969,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.0001220703125,
+     "abs_dlogp": 0.025816917419433594,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 3.0517578125e-05,
+     "abs_dlogp": 0.0061397552490234375,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 7.62939453125e-06,
+     "abs_dlogp": 0.001499176025390625,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 1.9073486328125e-06,
+     "abs_dlogp": 0.00037479400634765625,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 4.76837158203125e-07,
+     "abs_dlogp": 7.534027099609375e-05,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    }
+   ],
+   "gain_dlogp_per_rel": [
+    384.71533203125,
+    254.27734375,
+    211.4921875,
+    201.1875,
+    196.5,
+    196.5,
+    158.0
+   ]
+  },
+  "35": {
+   "seed": 4,
+   "curve": [
+    {
+     "rel": 0.001953125,
+     "abs_dlogp": 0.6374619007110596,
+     "n_changed_sites": 2,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.00048828125,
+     "abs_dlogp": 0.17365431785583496,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.0001220703125,
+     "abs_dlogp": 0.04129457473754883,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 3.0517578125e-05,
+     "abs_dlogp": 0.010143280029296875,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 7.62939453125e-06,
+     "abs_dlogp": 0.0025217533111572266,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 1.9073486328125e-06,
+     "abs_dlogp": 0.0005762577056884766,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 4.76837158203125e-07,
+     "abs_dlogp": 0.00014328956604003906,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    }
+   ],
+   "gain_dlogp_per_rel": [
+    326.3804931640625,
+    355.64404296875,
+    338.28515625,
+    332.375,
+    330.53125,
+    302.125,
+    300.5
+   ]
+  },
+  "50": {
+   "seed": 5,
+   "curve": [
+    {
+     "rel": 0.001953125,
+     "abs_dlogp": 0.4720592498779297,
+     "n_changed_sites": 9,
+     "changed_sites": [
+      "argmax@agents/model/index_max.py:28",
+      "gt@agents/model/damage_op_pairwise.py:459",
+      "gt@agents/model/damage_op_pairwise.py:460",
+      "gt@agents/model/damage_op_pairwise.py:470",
+      "gt@agents/model/damage_op_pairwise.py:697",
+      "gt@agents/model/damage_op_pairwise.py:791",
+      "gt@agents/model/damage_op_pairwise.py:975",
+      "gt@agents/model/hypothesis_set.py:197",
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.00048828125,
+     "abs_dlogp": 0.007170200347900391,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 0.0001220703125,
+     "abs_dlogp": 0.002064228057861328,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 3.0517578125e-05,
+     "abs_dlogp": 0.0005335807800292969,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 7.62939453125e-06,
+     "abs_dlogp": 0.00014257431030273438,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 1.9073486328125e-06,
+     "abs_dlogp": 1.71661376953125e-05,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    },
+    {
+     "rel": 4.76837158203125e-07,
+     "abs_dlogp": 5.245208740234375e-06,
+     "n_changed_sites": 1,
+     "changed_sites": [
+      "gt@agents/model/hypothesis_set.py:200"
+     ]
+    }
+   ],
+   "gain_dlogp_per_rel": [
+    241.6943359375,
+    14.6845703125,
+    16.91015625,
+    17.484375,
+    18.6875,
+    9.0,
+    11.0
+   ]
+  }
+ }
+}
