@@ -1,6 +1,8 @@
-"""PIN-SAFE TRAINING TEAM CORPORA (``gen3_team_corpus_v1``): the pool-widening corpora ``--team-mix`` draws from.
+"""PIN-SAFE TRAINING TEAM CORPORA (``gen3_team_corpus_v1``): the corpora ``--team-mix`` draws from.
 
-Design: ``designs/endstate/design_diversity_teams_opponents.md`` §4.1 ("Where it lives", F-DV-2) and §4.2 (D1 / X38).
+Design: ``designs/endstate/design_diversity_teams_opponents.md`` §4.1 ("Where it lives", F-DV-2), §4.2 (D1 / X38:
+``w_forum_v1``, human-built forum teams, ``build_w_forum``) and §4.5 (D3 / X41: ``d3_setmut_v1``, pool teams with 1-2
+mons' sets redrawn from Smogon usage, ``build_d3_setmut``).
 
 🚨 **Why under ``src/`` and not ``data/teams/``.** ``TeamLoader`` walks ``data/teams/`` RECURSIVELY, and a pinned run
 reads ``data/`` from MAIN: a corpus placed there would silently widen every live run's pool at its next restart. A
@@ -16,6 +18,13 @@ the tiers, ``data_sha256``) and ``teams.jsonl.gz`` (one row per team, in TIER OR
 "sha256", "text"}``; ``text`` is the Showdown paste, ``.strip()``ed, ``sha256`` is over it). A TIER is a PREFIX of the
 rows (``A`` ⊂ ``AB`` ⊂ ``ABC``), each stamped in the manifest with its count and :func:`tier_sha256`; every reader
 verifies the data file and the tier against the manifest and REFUSES on a mismatch (:class:`CorpusError`).
+
+🚨 **The LABEL-PATH GUARD** (:func:`label_path_defects`, launch sheet AM-D1-FIX, 2026-10-22). The env's spread labels
+(``src/rust_env/src/labels/spread.rs``) recompute every truth mon's five stats from its declared spread AT LEVEL 100
+and FAULT on a mismatch, so a team with a ``Level:`` line other than 100 kills every run that draws it. The pinned
+``gen3ou`` validator accepts such a team (OU sets a level CAP, not a floor): ``sfv2_5051``, a level-5 team, passed the
+build and the v1 soak and crash-looped D1 s3501. The builder drops the class (rule ``level``) and every reader
+(:func:`load_dir`) REFUSES a corpus that still holds one.
 """
 from __future__ import annotations
 
@@ -23,6 +32,7 @@ import functools
 import gzip
 import hashlib
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Sequence, Tuple
@@ -32,11 +42,31 @@ SCHEMA = "gen3_team_corpus_v1"
 DATA_NAME = "teams.jsonl.gz"
 MANIFEST_NAME = "manifest.json"
 #: The registered corpora, by name. A name not here is refused (a typo must not train on nothing).
-CORPORA: Dict[str, Path] = {"w_forum_v1": HERE / "w_forum_v1"}
+CORPORA: Dict[str, Path] = {"w_forum_v1": HERE / "w_forum_v1", "d3_setmut_v1": HERE / "d3_setmut_v1"}
 
 
 class CorpusError(RuntimeError):
-    """A corpus is unknown, or its committed files do not match its manifest."""
+    """A corpus is unknown, its committed files do not match its manifest, or it holds a team the env cannot label."""
+
+
+#: A Showdown export's level line (Showdown's importer reads ``Level: <n>``; matched case-insensitively, so stricter).
+LEVEL_RE = re.compile(r"^[ \t]*Level:[ \t]*(.*?)[ \t]*$", re.MULTILINE | re.IGNORECASE)
+#: The one level the env's label path encodes (``spread.rs`` ``gen3_stat``: "L100, exact integer nature math").
+LABEL_LEVEL = "100"
+
+
+def label_path_defects(text: str) -> List[str]:
+    """Why the env's LABEL path cannot encode this team text (``[]`` = no defect): each ``Level:`` line other than
+    100. No ``Level:`` line means 100 (Showdown's default)."""
+    return [f"Level: {m.group(1)}" for m in LEVEL_RE.finditer(text) if m.group(1) != LABEL_LEVEL]
+
+
+def check_label_encodable(ids: Sequence[str], texts: Sequence[str], where: str) -> None:
+    """THE THROWING GUARD: raise :class:`CorpusError` naming every team the env's label path cannot encode."""
+    bad = {str(i): d for i, t in zip(ids, texts) if (d := label_path_defects(str(t)))}
+    if bad:
+        raise CorpusError(f"{where}: {len(bad)} team(s) the env's label path cannot encode (it labels at level 100 "
+                          f"only; launch sheet AM-D1-FIX): " + "; ".join(f"{i} {sorted(set(d))}" for i, d in bad.items()))
 
 
 @dataclass(frozen=True)
@@ -101,6 +131,7 @@ def read_dir(directory: Path) -> Tuple[Dict[str, object], Tuple[Dict[str, object
 def load_dir(directory: Path, tier: str, name: str = "") -> Corpus:
     """One verified tier of the corpus in ``directory`` (tests build corpora in a temp dir through this)."""
     man, rows, data_sha, man_sha = read_dir(directory)
+    check_label_encodable([str(r["id"]) for r in rows], [str(r["text"]) for r in rows], f"corpus {name or directory}")
     tiers = man["tiers"]
     if tier not in tiers:
         raise CorpusError(f"corpus {name or directory}: tier {tier!r} not in {list(tiers)}")

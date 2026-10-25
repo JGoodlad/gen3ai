@@ -1,5 +1,6 @@
 """``w_forum_v1`` is what its manifest says, it holds no panel team or near neighbour, and a tampered file is refused."""
 import collections
+import hashlib
 import json
 import shutil
 
@@ -106,3 +107,70 @@ def test_an_unknown_corpus_or_tier_is_refused():
 def test_the_committed_corpus_reproduces_from_its_source():
     """Node (the pinned validator) + the engine's coverage oracle: the build is deterministic."""
     assert B.main(["--check"]) == 0
+
+
+# ---------------------------------------------------------------- THE LABEL-PATH GUARD (launch sheet AM-D1-FIX)
+_SFV2_5051 = repo_path(B.SRC_REL, "teams", "sfv2_5051.txt")
+
+
+def test_label_path_defects_names_every_non_100_level_and_nothing_else():
+    assert TC.label_path_defects("Krabby @ Salac Berry\nLevel: 5\n- Endure") == ["Level: 5"]
+    assert TC.label_path_defects("Mew\nlevel: 50 \n- Psychic\n\nAbra\nLevel: 100\n- Psychic") == ["Level: 50"]
+    assert TC.label_path_defects("Mew\nLevel: 100\n- Psychic") == []
+    assert TC.label_path_defects("Mew\nAbility: Synchronize\n- Psychic") == [], "no Level line = Showdown's 100"
+
+
+def test_the_corpus_holds_no_team_the_label_path_cannot_encode_and_sfv2_5051_is_out():
+    c = TC.load_corpus("w_forum_v1", "ABC")
+    assert not [i for i, t in zip(c.ids, c.texts) if TC.label_path_defects(t)]
+    assert "sfv2_5051" not in c.ids, "the level-5 team that crash-looped D1 s3501 (AM-D1-FIX)"
+    g = _manifest()["label_guard"]
+    assert g["dropped"] == {"sfv2_5051": ["Level: 5"]} and _manifest()["drops"]["level"]["by_tier"] == {"C": 1}
+    assert g["source_scan"]["sfv2_5051"]["dropped_by"] == "level"
+    assert all(v["dropped_by"] in B.RULES for v in g["source_scan"].values())
+
+
+def test_a_corpus_holding_a_non_100_level_team_is_refused_by_every_reader(tmp_path):
+    """The throwing guard in ``load_dir``: a consistent corpus (shas re-stamped) with one level-5 team never loads."""
+    man, rows, _, _ = TC.read_dir(TC.CORPORA["w_forum_v1"])
+    rows = [dict(r) for r in rows]
+    text = _SFV2_5051.read_text().strip()
+    rows[0].update(id="sfv2_5051", text=text, sha256=hashlib.sha256(text.encode()).hexdigest())
+    data = TC.encode_rows(rows)
+    man = dict(man, data_sha256=hashlib.sha256(data).hexdigest())
+    texts = [r["text"] for r in rows]
+    man["tiers"] = {k: dict(v, sha256=TC.tier_sha256(texts[:v["n"]])) for k, v in man["tiers"].items()}
+    d = tmp_path / "w"
+    d.mkdir()
+    (d / TC.DATA_NAME).write_bytes(data)
+    (d / TC.MANIFEST_NAME).write_text(json.dumps(man))
+    with pytest.raises(TC.CorpusError, match=r"label path cannot encode.*sfv2_5051 \['Level: 5'\]"):
+        TC.load_dir(d, "A")
+
+
+def test_the_level_rule_reads_showdowns_packed_level_and_refuses_a_disagreeing_text():
+    one = "Krabby||salacberry|hypercutter|swordsdance,return|Adamant|196,,,,116,196||,30,30,,30,|"
+    assert B.packed_levels("]".join([one + "|5|", one + "||", one + "|100|"])) == ["5", "100", "100"]
+    assert B.level_defects("t", "Krabby\nLevel: 5", one + "|5|") == ["Level: 5"]
+    assert B.level_defects("t", "Krabby", one + "||") == []
+    with pytest.raises(RuntimeError, match="disagree"):
+        B.level_defects("t", "Krabby", one + "|5|")
+
+
+@pytest.mark.sim
+@pytest.mark.integration
+def test_the_soak_runs_the_label_path_and_fails_on_the_level_5_team_and_passes_it_at_level_100():
+    """Schema v1 declared no label family and PASSED sfv2_5051; the v2 soak drives the label writers (every core
+    family), so the D1 s3501 fault reproduces here, and the same team with its ``Level:`` lines removed passes."""
+    from utils.team_corpora import soak as S
+
+    good = TC.load_corpus("w_forum_v1", "A")
+    bad = _SFV2_5051.read_text().strip()
+    kw = dict(rounds=1, n_envs=2, threads=1)
+    r = S.soak_texts([good.ids[0], "sfv2_5051"], [good.texts[0], bad], {"corpus": "test"}, **kw)
+    assert r["schema"] == S.SOAK_SCHEMA and r["labels"] == S.all_label_families() and r["labels"]
+    assert r["verdict"] == "FAIL", r
+    assert "at L100 but the server's stats" in r["core_errors"][0]["error"]
+    l100 = "\n".join(ln for ln in bad.splitlines() if not ln.strip().startswith("Level:"))
+    ok = S.soak_texts([good.ids[0], "sfv2_5051_l100"], [good.texts[0], l100], {"corpus": "test"}, **kw)
+    assert ok["verdict"] == "PASS" and ok["battles_finished"] == 2, ok
