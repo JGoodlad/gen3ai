@@ -8,7 +8,13 @@ from the suite, so this SKIPS with the reason named unless run with a GPU LEASE 
 
     GEN3AI_TEST_ALLOW_GPU=1 scripts/ops/gpu_lock.sh python3 -m pytest src/agents/inference/service/grouped_cuda_test.py -q
 
-UNVERIFIED until a GPU window runs it (written 2026-10-19 without a lease; the CPU contract is `grouped_test.py`).
+COST: FOUR cold production-forward compiles (slot 3's `decide` and the grouped range's vmapped `call_with`, at
+buckets 4 and 8; the 3-replica vmapped graph is the largest) plus the parity gates. Measured: 830.7 s, peak RSS
+12.6 GB, at `7244e74c` (the 2026-10-19 battery, `~/gen3ai_archive/gpu_battery_2026-10-19/cells/x45_cuda_test.*`) and
+837 s alone on the card (2026-10-25, under `timeout 1800`). The test has no in-process bound (one blocking startup
+compile has no progress to time); its bound is the GPU window node's: `timeout` of `scale_timeout(1800)`
+(`utils.contention`, ~2.15x the measured run) and `mem_cap.sh 24`. The 2026-10-25 window's flat 600 s killed it
+(rc 124): a bound, not a hang. The CPU contract is `grouped_test.py`.
 """
 from __future__ import annotations
 

@@ -2507,6 +2507,43 @@ touched files' slow tier is green (58 passed, 3 CUDA cells skipped; the opponent
 `compile_cache_shared_test`, `utils/compile_pool_teardown_test`: one-line elementwise lambdas that cannot form the
 gather-beside-reduction pattern), and a compile entry point reached through an alias (`f = torch.compile; f(...)`).
 
+### Triton RemoveLayoutConversions at XBLOCK 16 (triton 3.4.0, 2026-10-25): the CUDA inference compile at B = 2 only
+
+**The red.** `extractor_compiles_test.py::test_production_arch_compiles_on_cuda` (the CUDA eval / no-grad cell, B = 2)
+failed in the 2026-10-25 window at `51c95abc` / `c0d0c971`: `InductorError ... _worker_compile_triton ... make_ttgir ...
+RuntimeError: PassManager::run failed`. Its last pass was `174f5e62` (2026-10-04); it was skipped (busy card) from then
+to 10-21, so no window saw it go red.
+
+**The cause, found on the CPU** (`designs/research_state/measurements/triton_xblock16_2026-10-25/`: Inductor's Triton
+codegen of the production extractor driven with fake device properties, every kernel then compiled for sm_86 by
+`triton.compile`, which needs no GPU). At B = 2, 2 of the forward's 656 kernels fail (0 at B = 4, 8, 64 and 256),
+both `triton_red_fused__to_copy_add_clamp_cumsum_index_mul_ones_like_reciprocal_sub_where`:
+the speed mixture's fp64 cumsum (`damage_op_speed._opp_speed_mix`, a looped scan over the 512-speed lattice) with the
+`[B,6]` Beat-Up / max-HP pointwise epilogue (`damage_kinds.beatup_base_def`, the opponent max-HP formula) fused in, which
+makes that epilogue `[XBLOCK, 1]`-shaped. Every autotune config with `XBLOCK = 16` fails Triton's
+`TritonGPURemoveLayoutConversions` ("operand #1 does not dominate this use"); every other config compiles. `XBLOCK = 16`
+is chosen only when the `6B` rows round to 16, i.e. B = 2 (B = 8 autotunes this kernel at `XBLOCK` 1 / 8 / 64). The
+cumsum is not part of the bug (the epilogue alone fails; `triton_xblock16_remat_test.py` pins it, routine tier) and the
+fp64 is not either (an fp32 copy fails the same); the scan is what fuses the epilogue into a 2-D kernel. triton 3.1.0
+(torch 2.5.1) compiles the pinned kernel at `XBLOCK = 16`: a Triton regression. Introduced by
+`50b034a73` (2026-10-07, the discrete speed mixture, behind `--speed-physics on`), reaching this test's graph at
+`ed58a3ad6` (2026-10-12, `production_config.json` takes `speed_physics: on`); unconditional since `38a21c0fc`. Not
+`fe16d565` (move resolution): no node of the failing kernels comes from it, and the counterfactual (the cumsum spelled
+as a triangular matmul) compiles every kernel at B = 2. **Confirmed on the card** (window 2, `TORCH_LOGS=output_code`,
+`~/gen3ai_archive/extractor_crash_2026-10-25/`): its two kernels of that name are statement-for-statement the harness's.
+
+**No launch is at risk.** The served forward is compiled only at T2's buckets, `>= MIN_BUCKET = 8` by default
+(`rust_rollout/build.py`; `--t2-buckets` can type a smaller one, which would fail LOUD at T2 startup, `suppress_errors`
+off), R1 compiles a train-mode forward + backward (its own cells and `rb_x26c` pass), and the live fork's T2 came up at
+(8, 64, 256) on the same forward code. **The fix** is the cell's shape: it runs at `MIN_BUCKET`, the smallest shape a
+default launch compiles; production kernels and numerics are untouched. When the pin reports the bug lifted, the cell
+may return to `_BATCH`.
+
+**B = 1 fails differently** (same harness, UNVERIFIED on the card): 33 kernels with `xnumel = 1` die in Triton's
+frontend (`tl.broadcast_to` of a constant index: `'constexpr_type' object has no attribute 'is_block'`). Nothing
+compiles the extractor at B = 1 on CUDA today (T2 >= 8; `maybe_compile_extractor` is CPU at its callers); a new CUDA
+B = 1 compile (a `--t2-buckets 1`) must be proven on the card first.
+
 ## From the training leaf (moved 2026-10-10)
 
 > These sections headed `src/agents/training/CLAUDE.md` until its 2026-10-10 cleanup; moved here as they

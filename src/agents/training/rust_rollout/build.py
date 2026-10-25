@@ -45,6 +45,10 @@ from utils.rust_env.protocol import oracle_reveal_label
 FRONTS = ("proc", "ffi")
 PROFILES = ("release", "selfcheck")
 NAMES = ("rgone", "rgtwo")
+#: The smallest DEFAULT T2 bucket (BUCKETS above): no default launch compiles the policy forward below it, so the
+#: extractor's CUDA inference compile cell runs at it (`extractor_compiles_test.py`; at B = 2 Triton 3.4.0 fails
+#: one fused kernel, `designs/training/compile_flags.md` "Triton RemoveLayoutConversions at XBLOCK 16").
+MIN_BUCKET = 8
 
 
 @dataclass(frozen=True)
@@ -111,10 +115,10 @@ class RustEnvDecl:
     def resolved_buckets(self) -> Tuple[int, ...]:
         if self.buckets:
             return tuple(sorted(set(int(b) for b in self.buckets)))
-        n, cap = max(8, int(self.n_envs)), int(self.opponent_bucket_cap)
+        n, cap = max(MIN_BUCKET, int(self.n_envs)), int(self.opponent_bucket_cap)
         # the cap is itself a bucket when the trainee's is larger: an opponent slot's 20-80 rows then
         # replay at the cap, not at 8-row chunks
-        return tuple(sorted({8, n} | ({cap} if 8 < cap < n else set())))
+        return tuple(sorted({MIN_BUCKET, n} | ({cap} if MIN_BUCKET < cap < n else set())))
 
     def lead_slots(self, trainee_slots: Sequence[int]) -> Tuple[int, ...]:
         """gen3_t2_lead_lanes_v1: T2's LEAD slots — the trainee's, with ``lead_trainee``; else none (OFF)."""
