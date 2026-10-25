@@ -202,7 +202,17 @@ its row, RECORDED with no bar until a CUDA census) — filled before any check c
 `yardstick_out_of_margin` (each event: the arms past M with their shift, row and fixture row, M, M′, and the first
 read's shifts per arm, compiled included). An UNCONFIRMED or FATAL record carries `policy_pt`: the policy `state_dict`
 written beside it (`canary_u<update>_<verdict>_policy.pt`, ~40 MB), at most `compile_canary.DUMP_WEIGHTS_MAX` = 3 per
-process (like K9(b)'s cap, T61), `"cap"` after that. Every
+process (like K9(b)'s cap, T61), `"cap"` after that. **A PASS near its bar dumps them too**
+(`gen3_canary_near_margin_dump_v1`, 2026-10-25; the X26c u1000 PASS at compiled 0.712 against M 0.72, whose weights were
+lost): every record carries `bar_fractions`, each judged quantity of the scheduled check as a fraction of the bar it was
+judged at (`compile_canary.bar_fractions`: `clip_margin` against M or M′, naming the arm; under the bf16 rule
+`drift_loss`, `drift_grad`, `envelope_loss`, `envelope_grad` and `param_ratio`, naming the parameter). A PASS with any
+at >= `NEAR_MARGIN_FRACTION` 0.9 lists them in `near_margin`, logs a `📐 [CompileCanary]` line and writes
+`policy_pt` = `canary_u<update>_s<steps>_near_policy.pt` (temp file + rename). Only the newest `NEAR_MARGIN_KEEP` = 3
+of those survive in the run dir, by write time, so the cap spans restarts; an UNCONFIRMED / FATAL dump is never
+rotated. It is a diagnostic, never a verdict. The fp32 rule contributes only `clip_margin`, and only the first route's
+live rung is read (the rung that fills the watch). On X26c's 11 canaries it would have fired once, at u1000. Pinned by
+`canary_near_margin_test` (fails on revert). Every
 record also carries the top-level `canary_shift_max` {value, source, margin} (`--canary-shift-max`, T37: the code's
 `R1_LOGPROB_SHIFT_MAX` 0.18 with source `default`, or a RAISED value a same-run resume typed), whatever its verdict
 (`designs/training/compile_flags.md` "The check-only margin override"). The `rb_toy_ent_s4001` FATAL

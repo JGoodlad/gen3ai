@@ -50,7 +50,9 @@ the fp32 reference are what the compiled arm is measured against: one past the c
 re-runs once at M' (`compile_regions.YARDSTICK_ARMS`) and is judged there. The log says "compiled DISAGREES with eager"
 only when the compiled arm failed; a `compile_regions.YardstickRefusal` is worded as the yardstick. Every record names
 each arm's worst row (batch and fixture row) and the same-precision compiled-vs-eager gap; an UNCONFIRMED or FATAL
-record dumps the policy weights (`DUMP_WEIGHTS_MAX` per process).
+record dumps the policy weights (`DUMP_WEIGHTS_MAX` per process). So does a PASS that read any judged quantity at >= 0.9
+of its bar (`gen3_canary_near_margin_dump_v1`, the X26c u1000 PASS at 0.712 / 0.72: `NEAR_MARGIN_FRACTION`, rotated to
+the newest `NEAR_MARGIN_KEEP` per run); every record carries each judged quantity's `bar_fractions`.
 
 Every verdict (update, step, pass / unconfirmed / fatal) is appended to
 `<run_dir>/canary_verdicts.jsonl` WITH THE WATCH-LIST RECORD (`WATCH_PREFIXES`, `gen3_canary_watch_v1`): every
@@ -111,6 +113,21 @@ FIRST_ENV = "GEN3AI_CANARY_FIRST"
 #: (`rust_rollout.consistency._DUMP_WEIGHTS_MAX`, T61).
 DUMP_WEIGHTS_MAX = 3
 _WEIGHT_DUMPS = 0
+#: THE NEAR-MARGIN DUMP (`gen3_canary_near_margin_dump_v1`, 2026-10-25; the X26 continuation's u1000 PASS at compiled
+#: 0.712 against M 0.72, `designs/research_state/measurements/x26c_canary_margin_2026-10-25/` F1: a PASS dumped nothing,
+#: so the weights a 1 %-headroom read was taken on were never saved and the CUDA read cannot be replayed exactly). A
+#: PASSING canary whose scheduled check read ANY judged quantity at >= this fraction of the bar it was judged at
+#: (`bar_fractions`: the clip margin, the bf16 drift (loss, gradient), the bf16 envelope (loss, gradient) and the
+#: per-parameter ratio) writes the same `state_dict` an UNCONFIRMED does, as ``canary_u<update>_s<steps>_near_policy.pt``
+#: (the step makes the name unique across restarts: `self.updates` restarts at 0 in every process). A diagnostic
+#: trigger, never a verdict: the canary's PASS stands whatever it reads.
+NEAR_MARGIN_FRACTION = 0.9
+#: ROTATED, per RUN (the files are the run dir's, so the cap spans restarts): after each near-margin write only the
+#: newest this many ``*_near_policy.pt`` survive (~40 MB each), so a run whose healthy reads sit near a bar for a whole
+#: era cannot fill the disk. A record naming a rotated-away file keeps its name (the record is history, the file is not).
+#: Independent of `DUMP_WEIGHTS_MAX` (an UNCONFIRMED / FATAL dump is never rotated away by a near-margin one).
+NEAR_MARGIN_KEEP = 3
+NEAR_MARGIN_SUFFIX = "_near_policy.pt"
 
 
 def _first_from_env() -> Optional[int]:
@@ -158,6 +175,97 @@ def _dump_weights(model: Any, run_dir: Optional[str], update: int, verdict: str)
     except OSError:
         return None
     _WEIGHT_DUMPS += 1
+    return name
+
+
+def _frac(value: Any, bar: Any) -> float:
+    """``value / bar`` as a float; a non-finite value or a non-positive / non-finite bar reads +inf (it would not have
+    passed, and an unreadable quantity is treated as at its bar, never as far from it)."""
+    try:
+        v, b = float(value), float(bar)
+    except (TypeError, ValueError):
+        return float("inf")
+    if not (v == v and abs(v) != float("inf") and b > 0 and b != float("inf")):
+        return float("inf")
+    return v / b
+
+
+def bar_fractions(watch: Any) -> Dict[str, Dict[str, Any]]:
+    """EVERY JUDGED QUANTITY of one check, as the fraction of the bar it was judged at (`gen3_canary_near_margin_dump_v1`),
+    from the live rung's `compile_regions.GradWatch` (its UNROUNDED numbers, so the 0.9 trigger is not a rounding read):
+
+      * ``clip_margin`` — the largest |Δ log π| from the fp32 reference over the arms, / the margin the rung was judged
+        at (M, or the yardstick re-run's M′); ``arm`` names the arm that carries it;
+      * bf16 rule only (`_r1_verdict_bf16`): ``drift_loss`` / ``drift_grad`` (eager bf16 vs the reference, /
+        `BF16_DRIFT_BARS`), ``envelope_loss`` / ``envelope_grad`` (compiled vs the reference, / `BF16_ENVELOPE_K` x
+        max(eager's, the floor)), ``param_ratio`` (the worst per-parameter ratio, / `BF16_ENVELOPE_K["param"]`).
+
+    A quantity the rung never reached (it refused before filling it, or the fp32 rule, which records no loss / cosine
+    here) is absent. Only the FIRST route's live rung fills a watch (`r1_rungs`), so the other rungs are not read."""
+    from agents.model import compile_regions as cr
+    out: Dict[str, Dict[str, Any]] = {}
+    m = getattr(watch, "margin", None)
+    if m and m.get("max_abs_dlogp"):
+        arm, shift = max(m["max_abs_dlogp"].items(), key=lambda kv: _frac(kv[1], m["margin"]))
+        out["clip_margin"] = {"fraction": _frac(shift, m["margin"]), "value": float(shift), "bar": float(m["margin"]),
+                              "arm": arm}
+    g = getattr(watch, "globals", None) or {}
+    if getattr(watch, "rule", None) == "bf16" and cr.BF16_DRIFT_BARS is not None and cr.BF16_ENVELOPE_K is not None:
+        drift = {"loss": ("drift_loss", cr.BF16_LOSS_FLOOR), "grad_rel_l2": ("drift_grad", cr.BF16_GRAD_FLOOR)}
+        for what, (key, floor) in drift.items():
+            if key in g:
+                bar = cr.BF16_DRIFT_BARS[what]
+                out[key] = {"fraction": _frac(g[key], bar), "value": float(g[key]), "bar": float(bar)}
+            env = "envelope_" + key.split("_", 1)[1]
+            if env in g and key in g:
+                bar = cr.BF16_ENVELOPE_K[what] * max(float(g[key]), floor)
+                out[env] = {"fraction": _frac(g[env], bar), "value": float(g[env]), "bar": float(bar)}
+        w = getattr(watch, "worst", None)
+        if w and "ratio" in w:
+            k = cr.BF16_ENVELOPE_K["param"]
+            out["param_ratio"] = {"fraction": _frac(w["ratio"], k), "value": float(w["ratio"]), "bar": float(k),
+                                  "param": w.get("param")}
+    return out
+
+
+def _r4(v: Any) -> Any:
+    """A float to 4 significant digits for the JSONL record (a non-finite one as its string, as `GradWatch.record`)."""
+    if not isinstance(v, float):
+        return v
+    return float(f"{v:.4g}") if v == v and abs(v) != float("inf") else str(v)
+
+
+def near_margin(fractions: Dict[str, Dict[str, Any]]) -> List[str]:
+    """The quantities of `bar_fractions` at >= `NEAR_MARGIN_FRACTION` of their bar (in its order)."""
+    return [q for q, d in fractions.items() if not d["fraction"] < NEAR_MARGIN_FRACTION]
+
+
+def _dump_near_margin(model: Any, run_dir: Optional[str], update: int, steps: int) -> Optional[str]:
+    """Write the policy's `state_dict` for a near-margin PASS (atomically: a temp file, then a rename), then ROTATE: keep
+    only the newest `NEAR_MARGIN_KEEP` ``canary_*_near_policy.pt`` of the run dir (by write time, then name). Returns
+    the file name written, None with no run directory or on an OSError (diagnostics: the PASS stands either way)."""
+    if not run_dir:
+        return None
+    name = f"canary_u{int(update)}_s{int(steps)}{NEAR_MARGIN_SUFFIX}"
+    path = os.path.join(run_dir, name)
+    try:
+        torch.save({k: v.detach().cpu() for k, v in model.policy.state_dict().items()}, path + ".tmp")
+        os.replace(path + ".tmp", path)
+    except OSError:
+        with contextlib.suppress(OSError):
+            os.remove(path + ".tmp")
+        return None
+    with contextlib.suppress(OSError):
+        kept = []
+        for f in os.listdir(run_dir):
+            if f.startswith("canary_") and f.endswith(NEAR_MARGIN_SUFFIX):
+                with contextlib.suppress(OSError):
+                    kept.append((os.stat(os.path.join(run_dir, f)).st_mtime_ns, f))
+        kept.sort()
+        for _t, f in kept[:-NEAR_MARGIN_KEEP]:
+            if f != name:
+                with contextlib.suppress(OSError):
+                    os.remove(os.path.join(run_dir, f))
     return name
 
 
@@ -279,13 +387,25 @@ class CompileCanary:
             return str(exc)[:500]
         return None
 
-    def _record(self, verdict: str, detail: str = "", watch: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def _record(self, verdict: str, detail: str = "", watch: Optional[Dict[str, Any]] = None,
+                fractions: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
         rec: Dict[str, Any] = {"verdict": verdict, "update": self.updates,
                                "num_timesteps": int(getattr(self.model, "num_timesteps", 0) or 0),
                                "time": time.time(), "detail": detail[:4000],
                                "canary_shift_max": self._shift_max_record()}
+        if fractions is not None:                           # gen3_canary_near_margin_dump_v1: every judged quantity
+            rec["bar_fractions"] = {q: {k: _r4(v) for k, v in d.items()} for q, d in fractions.items()}
         if verdict != "pass":                               # gen3_r1_yardstick_margin_v1: the weights it was read on
             rec["policy_pt"] = _dump_weights(self.model, _run_dir(self.model), self.updates, verdict)
+        elif fractions and near_margin(fractions):          # a PASS near its bar: the weights, rotated per run
+            rec["near_margin"] = near_margin(fractions)
+            rec["policy_pt"] = _dump_near_margin(self.model, _run_dir(self.model), self.updates, rec["num_timesteps"])
+            self._say(f"📐 [CompileCanary] update {self.updates}: PASS, but "
+                      + ", ".join(f"{q} at {fractions[q]['fraction']:.3f} of its bar ({fractions[q]['value']:.4g} / "
+                                  f"{fractions[q]['bar']:.4g})" for q in rec["near_margin"])
+                      + f" (>= {NEAR_MARGIN_FRACTION:g}) — policy weights "
+                      + (f"dumped to {rec['policy_pt']} (the newest {NEAR_MARGIN_KEEP} per run kept)"
+                         if rec["policy_pt"] else "NOT dumped (no run directory, or the write failed)"))
         if self.memory:
             rec["memory"] = dict(self.memory)
         if watch:
@@ -314,7 +434,8 @@ class CompileCanary:
                 self._emit(line[:500])
 
     def _fatal(self, why: str, first: BaseException, *, compared: bool = True,
-               watch: Optional[Dict[str, Any]] = None) -> None:
+               watch: Optional[Dict[str, Any]] = None,
+               fractions: Optional[Dict[str, Dict[str, Any]]] = None) -> None:
         run_dir = _run_dir(self.model)
         saved = "not written (no run directory declared)"
         if run_dir:
@@ -324,7 +445,7 @@ class CompileCanary:
                 saved = path + ".zip (forensics only: these weights trained on the graph in question)"
             except Exception as exc:                          # the FATAL stands either way
                 saved = f"FAILED to write ({type(exc).__name__}: {exc})"
-        self._record("fatal", f"{why} — {first}", watch)
+        self._record("fatal", f"{why} — {first}", watch, fractions)
         verdict = ("NO comparison was made, so this says nothing about the compiled arithmetic — the "
                    "learner's compiled route is not the one the gate certified" if not compared else
                    "The canary's YARDSTICK (eager / the fp32 reference) refused, NOT the compiled arm: there is "
@@ -369,17 +490,19 @@ class CompileCanary:
                 watches[f"confirm_slice{sl}"] = wc.record()
             if len(again) == len(ct.FIXTURE_HALVES):        # (2) confirmed on both disjoint halves
                 self._fatal("the disagreement is CONFIRMED (it reproduced on BOTH disjoint halves of the "
-                            "fixture rows in the same update)", first, watch=watches)
+                            "fixture rows in the same update)", first, watch=watches,
+                            fractions=bar_fractions(w0))
             if self.prev_disagreed:                          # (4) two consecutive scheduled canaries
                 self._fatal("the previous scheduled canary disagreed too — two CONSECUTIVE "
-                            "disagreements, each unconfirmed", first, watch=watches)
+                            "disagreements, each unconfirmed", first, watch=watches,
+                            fractions=bar_fractions(w0))
             # (3) not confirmed: count it, keep training, the next scheduled canary decides
             self.unconfirmed += 1
             self.prev_disagreed = True
             self.runs += 1
             halves = list(ct.FIXTURE_HALVES)
             self._record("unconfirmed", f"reproduced on slice(s) {[sl for sl, _ in again]} of {halves}; {first}",
-                         watches)
+                         watches, bar_fractions(w0))
             self._say(f"⚠️  [CompileCanary] update {self.updates}: the disagreement did NOT confirm "
                       f"(reproduced on slice(s) {[sl for sl, _ in again]} of the halves {halves}) — training "
                       f"continues; {self.unconfirmed} unconfirmed so far; a disagreement at the NEXT "
@@ -394,7 +517,7 @@ class CompileCanary:
         self.prev_disagreed = False
         self.runs += 1
         watches = {"scheduled": w0.record()}
-        self._record("pass", watch=watches)
+        self._record("pass", watch=watches, fractions=bar_fractions(w0))
         self._note_yardstick(watches)
         out["compile/canary_ok"] = 1.0
         out["compile/canary_unconfirmed_disagreements"] = float(self.unconfirmed)

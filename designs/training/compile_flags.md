@@ -2148,6 +2148,21 @@ The gradient rule's ratio on the re-relocated rows is **UNVERIFIED** (the u1700 
 census behind them. A pin before this change (X34 at `ae2d0901`) keeps the old rule; its only remedy for a yardstick tail
 is the `--canary-shift-max` raise on a resume (below, and `TRAINING_RUN_SOP.md` §3 rule 5).
 
+### A PASS near its bar keeps its weights (`gen3_canary_near_margin_dump_v1`, 2026-10-25)
+
+The X26 continuation's u1000 canary PASSED with the compiled arm 0.712 from the fp32 reference against M 0.72. A PASS
+dumped nothing, so the 478.31M weights were lost and the CUDA read cannot be replayed
+(`../research_state/measurements/x26c_canary_margin_2026-10-25/` F1). Now any judged quantity at >= 0.9 of its bar
+writes the same `state_dict` an UNCONFIRMED does, rotated to the newest 3 per run; every record carries
+`bar_fractions`. The record and the rotation are documented in `learner_lifecycle.md` (the canary). A run picks it up
+only at its next PIN: a live run keeps its pin's canary through every restart.
+
+**The per-row dither-null margin is DESIGNED, NOT BUILT**
+(`../research_state/measurements/canary_row_null_design_2026-10-25/README.md`). It would replace the global M with a
+per-row bar of k × that row's own fp32 half-ulp dither null. On CPU, healthy bf16 arms read at most 1.1 × their row's
+null (704 row-reads), so k ≈ 4.4. The one CUDA compiled point (u1000) reads 2.7 × a CPU null, so k is unsettled. The
+lease-gated CUDA census `gpu_census.sh` is written there, not run.
+
 ### bf16 drift on a sharpening policy: the loss is read on the golden's own rows (`gen3_r1_loss_on_golden_rows_v1`, 2026-10-17)
 
 **The event.** X26 (`rb_x26_s2601`, pinned `9c033489`) read the startup gate's bf16 DRIFT on the loss at about 1e-4 at

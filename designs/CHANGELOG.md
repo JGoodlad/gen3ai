@@ -15391,3 +15391,25 @@ was downloaded or written under `data/`.
   trained on float64, and a HEAD fork or resume migrates the record to `fp32_alt`. On disk that is SEVEN toy-side runs
   (pin `4609c155`), named in the v160 migration comment, `designs/model/versioning.md` and the X35 launch sheet; the cost
   the window paid is in the archived battery `~/gen3ai_archive/gpu_battery_2026-10-20/`.
+## 2026-10-25 — a canary PASS near its bar keeps its weights (`gen3_canary_near_margin_dump_v1`; no model / config / obs / signature change; training math untouched)
+
+- **The gap (the X26 continuation's u1000 canary, `research_state/measurements/x26c_canary_margin_2026-10-25/` F1).** The
+  canary PASSED with the compiled arm 0.712 from the fp32 reference against M 0.72. Only an UNCONFIRMED / FATAL dumped the
+  policy weights, so the 478.31M weights were lost and the CUDA read could not be replayed exactly.
+- **The change.** `compile_canary.bar_fractions` reads every judged quantity of the scheduled check against the bar it
+  was judged at: the clip margin (M or M′, naming the arm); under the bf16 rule the drift (loss, gradient), the envelope
+  (loss, gradient) and the per-parameter ratio. It reads from the live rung's `GradWatch`, unrounded. Every record
+  carries them as `bar_fractions`. A PASS with any at >= `NEAR_MARGIN_FRACTION` 0.9 lists them in `near_margin`, logs a
+  `📐` line and writes `policy_pt` = `canary_u<update>_s<steps>_near_policy.pt` (temp file + rename). The run dir keeps
+  only the newest `NEAR_MARGIN_KEEP` = 3 of those, by write time, across restarts; an UNCONFIRMED / FATAL dump is never
+  rotated. It is a diagnostic, never a verdict. A live run gets it only at its next pin.
+- **Designed, not built: the per-row dither-null clip margin**
+  (`research_state/measurements/canary_row_null_design_2026-10-25/`). The README holds the rule, the CPU calibration
+  table (healthy bf16 <= 1.1 × the row's own null over 704 row-reads, against one CUDA compiled point at 2.7 ×), the
+  cost and six open questions. `gpu_census.sh` there is the lease-gated CUDA census, WRITTEN, NOT RUN.
+- **Tests.** `src/agents/model/canary_near_margin_test.py` (planted arms through the real `_r1_judge`, CPU, fast). The
+  u1000 shape PASSES with a loadable dump and the path recorded (it fails on revert). A far PASS dumps nothing. The
+  dumps rotate per run across a restart and spare an UNCONFIRMED one. Each bf16 bar is read as judged, floors included. A
+  non-finite quantity reads as at its bar. The clip margin is read against M′ after a yardstick re-run. A failed write
+  leaves the PASS standing. Docs: `training/learner_lifecycle.md` (the canary record), `training/compile_flags.md`, the
+  `ops/TRAINING_RUN_SOP.md` §3 rule 5, and the TECH-DEBT canary row.

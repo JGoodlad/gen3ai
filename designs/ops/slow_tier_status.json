@@ -606,90 +606,90 @@
   },
   "src/agents/model/compile_canary_test.py::test_TWO_CONSECUTIVE_unconfirmed_disagreements_are_FATAL": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
-   "duration_s": 22.86,
-   "contention": 1.04,
+   "commit": "03286c809a6ef6aca942ea6e035264b652b14e06",
+   "at": "2026-10-25T18:00:51Z",
+   "duration_s": 28.68,
+   "contention": 1.65,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_FATAL_record_carries_the_watch_of_the_scheduled_check_and_of_BOTH_confirmations": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
-   "duration_s": 20.26,
-   "contention": 1.05,
+   "commit": "03286c809a6ef6aca942ea6e035264b652b14e06",
+   "at": "2026-10-25T18:00:51Z",
+   "duration_s": 17.58,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_PASS_record_carries_the_watch_lists_per_parameter_numbers": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
-   "duration_s": 19.7,
-   "contention": 1.05,
+   "commit": "03286c809a6ef6aca942ea6e035264b652b14e06",
+   "at": "2026-10-25T18:00:51Z",
+   "duration_s": 19.39,
+   "contention": 1.32,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_PERSISTENT_fault_is_CONFIRMED_and_FATAL_in_the_SAME_update_with_a_checkpoint": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
-   "duration_s": 20.31,
-   "contention": 1.06,
+   "commit": "03286c809a6ef6aca942ea6e035264b652b14e06",
+   "at": "2026-10-25T18:00:51Z",
+   "duration_s": 20.66,
+   "contention": 1.41,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_backward_only_drift_is_caught_on_EVERY_canary_including_the_first": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
-   "duration_s": 19.75,
-   "contention": 1.0,
+   "commit": "03286c809a6ef6aca942ea6e035264b652b14e06",
+   "at": "2026-10-25T18:00:51Z",
+   "duration_s": 22.95,
+   "contention": 1.72,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_disagreement_carried_by_ONE_row_does_NOT_confirm_itself": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
-   "duration_s": 30.18,
-   "contention": 1.05,
+   "commit": "03286c809a6ef6aca942ea6e035264b652b14e06",
+   "at": "2026-10-25T18:00:51Z",
+   "duration_s": 27.26,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_healthy_compiled_learner_passes_with_the_gradient_checked": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
-   "duration_s": 17.56,
-   "contention": 1.0,
+   "commit": "03286c809a6ef6aca942ea6e035264b652b14e06",
+   "at": "2026-10-25T18:00:51Z",
+   "duration_s": 29.5,
+   "contention": 1.67,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_one_shot_BLIP_warns_counts_and_training_continues": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
-   "duration_s": 21.93,
-   "contention": 1.05,
+   "commit": "03286c809a6ef6aca942ea6e035264b652b14e06",
+   "at": "2026-10-25T18:00:51Z",
+   "duration_s": 24.13,
+   "contention": 1.44,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_a_u1700_shaped_EAGER_tail_on_the_real_learner_reads_PASS_with_a_yardstick_event": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
-   "duration_s": 21.09,
-   "contention": 1.06,
+   "commit": "03286c809a6ef6aca942ea6e035264b652b14e06",
+   "at": "2026-10-25T18:00:51Z",
+   "duration_s": 18.35,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_the_cadence_runs_every_N_updates_and_writes_nothing_between": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
-   "duration_s": 19.18,
-   "contention": 1.05,
+   "commit": "03286c809a6ef6aca942ea6e035264b652b14e06",
+   "at": "2026-10-25T18:00:51Z",
+   "duration_s": 18.93,
+   "contention": 1.37,
    "detail": ""
   },
   "src/agents/model/compile_canary_test.py::test_the_canary_changes_nothing_about_training": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:11:57Z",
-   "duration_s": 18.73,
-   "contention": 1.04,
+   "commit": "03286c809a6ef6aca942ea6e035264b652b14e06",
+   "at": "2026-10-25T18:00:51Z",
+   "duration_s": 19.57,
+   "contention": 1.38,
    "detail": ""
   },
   "src/agents/model/compile_regions_bf16_test.py::test_a_COMPILED_error_beyond_K_x_eager_bf16s_own_error_is_the_typed_FATAL": {
@@ -4971,5 +4971,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-25T17:43:52Z"
+ "last_written": "2026-10-25T18:00:51Z"
 }
