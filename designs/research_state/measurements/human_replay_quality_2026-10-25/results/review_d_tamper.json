@@ -1,0 +1,41 @@
+{
+ "clean": {
+  "exit": 0,
+  "timed_out": false,
+  "tail": [
+   "2026-07-01 40 (0 errors)"
+  ],
+  "records": 40,
+  "of": 40
+ },
+ "one_byte_changed_fresh_cache": {
+  "exit": null,
+  "timed_out": true,
+  "tail": [
+   "HUNG: no result within 60 s"
+  ],
+  "records": 0
+ },
+ "one_byte_changed_cache_reused": {
+  "exit": 0,
+  "timed_out": false,
+  "tail": [
+   "2026-07-01 cached"
+  ],
+  "records": 40
+ },
+ "registry_digest_changed": {
+  "exit": 1,
+  "timed_out": false,
+  "tail": [
+   "hr_t: manifest sha256 130fa3844ec4a9c88695c3925be1d2f582c3390a75c99da89251b9b5c4bc1296 != registry 0000000000000000000000000000000000000000000000000000000000000000"
+  ]
+ },
+ "spectator_logs_declared_archive": {
+  "exit": null,
+  "timed_out": true,
+  "tail": [
+   "HUNG: no result within 60 s"
+  ]
+ }
+}

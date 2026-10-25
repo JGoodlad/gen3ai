@@ -1,0 +1,38 @@
+x60 phi=point seed_sd=0.0pp delta=0.0pp {"GAIN": 0.03, "NULL": 0.579, "LOSS": 0.018, "UNDECIDED": 0.372, "halfwidth_look2_pp_median": 1.74}
+x60 phi=point seed_sd=0.0pp delta=2.5pp {"GAIN": 0.767, "NULL": 0.083, "LOSS": 0.0, "UNDECIDED": 0.15, "halfwidth_look2_pp_median": 1.74}
+x60 phi=point seed_sd=1.5pp delta=0.0pp {"GAIN": 0.064, "NULL": 0.24, "LOSS": 0.044, "UNDECIDED": 0.652, "halfwidth_look2_pp_median": 2.45}
+x60 phi=point seed_sd=1.5pp delta=2.5pp {"GAIN": 0.557, "NULL": 0.077, "LOSS": 0.001, "UNDECIDED": 0.364, "halfwidth_look2_pp_median": 2.45}
+x60 phi=t seed_sd=0.0pp delta=0.0pp {"GAIN": 0.009, "NULL": 0.298, "LOSS": 0.002, "UNDECIDED": 0.691, "halfwidth_look2_pp_median": 2.05}
+x60 phi=t seed_sd=0.0pp delta=2.5pp {"GAIN": 0.625, "NULL": 0.024, "LOSS": 0.0, "UNDECIDED": 0.351, "halfwidth_look2_pp_median": 2.05}
+x60 phi=t seed_sd=1.5pp delta=0.0pp {"GAIN": 0.027, "NULL": 0.089, "LOSS": 0.011, "UNDECIDED": 0.872, "halfwidth_look2_pp_median": 2.87}
+x60 phi=t seed_sd=1.5pp delta=2.5pp {"GAIN": 0.41, "NULL": 0.022, "LOSS": 0.0, "UNDECIDED": 0.569, "halfwidth_look2_pp_median": 2.88}
+x60 phi=chi2 seed_sd=0.0pp delta=0.0pp {"GAIN": 0.006, "NULL": 0.157, "LOSS": 0.002, "UNDECIDED": 0.834, "halfwidth_look2_pp_median": 2.86}
+x60 phi=chi2 seed_sd=0.0pp delta=2.5pp {"GAIN": 0.388, "NULL": 0.015, "LOSS": 0.0, "UNDECIDED": 0.597, "halfwidth_look2_pp_median": 2.86}
+x60 phi=chi2 seed_sd=1.5pp delta=0.0pp {"GAIN": 0.008, "NULL": 0.021, "LOSS": 0.004, "UNDECIDED": 0.966, "halfwidth_look2_pp_median": 4.18}
+x60 phi=chi2 seed_sd=1.5pp delta=2.5pp {"GAIN": 0.173, "NULL": 0.006, "LOSS": 0.0, "UNDECIDED": 0.82, "halfwidth_look2_pp_median": 4.18}
+x60 phi=t games=1000 seed_sd=0.0pp delta=0.0pp {"GAIN": 0.009, "NULL": 0.589, "LOSS": 0.002, "UNDECIDED": 0.4, "halfwidth_look2_pp_median": 1.63}
+x60 phi=t games=1000 seed_sd=0.0pp delta=2.5pp {"GAIN": 0.843, "NULL": 0.045, "LOSS": 0.0, "UNDECIDED": 0.112, "halfwidth_look2_pp_median": 1.63}
+x60 phi=chi2 games=1000 seed_sd=0.0pp delta=0.0pp {"GAIN": 0.005, "NULL": 0.369, "LOSS": 0.002, "UNDECIDED": 0.623, "halfwidth_look2_pp_median": 2.27}
+x60 phi=chi2 games=1000 seed_sd=0.0pp delta=2.5pp {"GAIN": 0.605, "NULL": 0.021, "LOSS": 0.0, "UNDECIDED": 0.374, "halfwidth_look2_pp_median": 2.27}
+x60 phi=t games=1260 seed_sd=0.0pp delta=0.0pp {"GAIN": 0.009, "NULL": 0.724, "LOSS": 0.002, "UNDECIDED": 0.265, "halfwidth_look2_pp_median": 1.45}
+x60 phi=t games=1260 seed_sd=0.0pp delta=2.5pp {"GAIN": 0.919, "NULL": 0.044, "LOSS": 0.0, "UNDECIDED": 0.037, "halfwidth_look2_pp_median": 1.45}
+x60 phi=chi2 games=1260 seed_sd=0.0pp delta=0.0pp {"GAIN": 0.005, "NULL": 0.483, "LOSS": 0.002, "UNDECIDED": 0.509, "halfwidth_look2_pp_median": 2.03}
+x60 phi=chi2 games=1260 seed_sd=0.0pp delta=2.5pp {"GAIN": 0.724, "NULL": 0.021, "LOSS": 0.0, "UNDECIDED": 0.254, "halfwidth_look2_pp_median": 2.02}
+seed_rule true_seed_sd=0.00pp {"P(rule fires)": 0.666, "median implied seed-SD UB (pp)": 1.83}
+seed_rule true_seed_sd=0.75pp {"P(rule fires)": 0.808, "median implied seed-SD UB (pp)": 2.21}
+seed_rule true_seed_sd=1.50pp {"P(rule fires)": 0.95, "median implied seed-SD UB (pp)": 3.07}
+seed_rule true_seed_sd=2.70pp {"P(rule fires)": 0.996, "median implied seed-SD UB (pp)": 4.79}
+contrast H-TEAMS-D1 seed_sd=0.0pp delta=0pp {"true_se_pp": 0.89, "registered_halfwidth_pp": 1.74, "P(registered LB > 0)": 0.025}
+contrast H-TEAMS-D1 seed_sd=0.0pp delta=3pp {"true_se_pp": 0.89, "registered_halfwidth_pp": 1.74, "P(registered LB > 0)": 0.921}
+contrast H-TEAMS-D1 seed_sd=1.5pp delta=0pp {"true_se_pp": 1.3, "registered_halfwidth_pp": 1.74, "P(registered LB > 0)": 0.09}
+contrast H-TEAMS-D1 seed_sd=1.5pp delta=3pp {"true_se_pp": 1.3, "registered_halfwidth_pp": 1.74, "P(registered LB > 0)": 0.833}
+contrast H-TEAMS-D1 seed_sd=2.7pp delta=0pp {"true_se_pp": 1.93, "registered_halfwidth_pp": 1.74, "P(registered LB > 0)": 0.183}
+contrast H-TEAMS-D1 seed_sd=2.7pp delta=3pp {"true_se_pp": 1.93, "registered_halfwidth_pp": 1.74, "P(registered LB > 0)": 0.743}
+x59s student_sd=0pp delta=0pp {"P(HLB) one pair": 0.025, "P(HLB) replicated": 0.001}
+x59s student_sd=0pp delta=4pp {"P(HLB) one pair": 0.856, "P(HLB) replicated": 0.733}
+x59s student_sd=1pp delta=0pp {"P(HLB) one pair": 0.09, "P(HLB) replicated": 0.008}
+x59s student_sd=1pp delta=4pp {"P(HLB) one pair": 0.766, "P(HLB) replicated": 0.587}
+x59s student_sd=2pp delta=0pp {"P(HLB) one pair": 0.203, "P(HLB) replicated": 0.041}
+x59s student_sd=2pp delta=4pp {"P(HLB) one pair": 0.674, "P(HLB) replicated": 0.454}
+x59s student_sd=3pp delta=0pp {"P(HLB) one pair": 0.28, "P(HLB) replicated": 0.078}
+x59s student_sd=3pp delta=4pp {"P(HLB) one pair": 0.624, "P(HLB) replicated": 0.39}

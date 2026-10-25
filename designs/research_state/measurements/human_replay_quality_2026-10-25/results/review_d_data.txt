@@ -1,0 +1,6 @@
+exclusion_share_of_ge1500_train_battles (4 panels, forum216b not read) 0.7070069373851943
+kept_battles {"battles": 16429, "mean_turns": 27.356747215290035, "forfeit_or_timer": 0.6628522734189543, "turns<=10": 0.19477752754275976, "mons_seen_per_side": 4.823330695720982, "moves_seen_per_mon": 1.8945767738271762, "full6_side_share": 0.5008521516829996}
+kept_ge1500_full6_nonbot_sides {"ge1500_full6_sides": 10853, "pool_unfamiliar(<=2 fits)": 0.3148438219847047, "postfill_exact>=3_heldout72": 9.214042200313278e-05, "postfill_exact>=3_heldout72_hpfix": 0.00046070211001566385, "postfill_exact>=3_forum72": 0.0026720722380908506, "postfill_exact>=3_p72": 0.00018428084400626556, "postfill_exact>=3_any": 0.0032249147701096472, "unfamiliar_and_postfill_exact>=3_any": 0.0, "pool_unfamiliar_count": 3417}
+excluded_battles {"battles": 39644, "mean_turns": 30.907400867722732, "forfeit_or_timer": 0.4756835838966805, "turns<=10": 0.016597719705377864, "mons_seen_per_side": 5.678526384824942, "moves_seen_per_mon": 1.9069738516654489, "full6_side_share": 0.7670895974170114}
+excluded_ge1500_full6_nonbot_sides {"ge1500_full6_sides": 39974, "pool_unfamiliar(<=2 fits)": 0.11630059538700155, "pool_unfamiliar_count": 4649}
+pool_unfamiliar_sides_surviving_the_exclusion 0.42363005207041904
