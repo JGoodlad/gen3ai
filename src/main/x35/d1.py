@@ -92,6 +92,14 @@ PANEL_ROLE: Dict[str, str] = {
     "forum72": "X38's own population (Smogon forum), unseen teams: a gain here alone = 'learned the population'",
     "p72": "a population X38 does not train on (procedural, MATERIALLY WEAKER, F-DV-20)",
 }
+#: The same rule reads X41 / D3 (set mutation, ``x41_d3_setmut_2026-10-25/PREREG.md``): it trains on mutated POOL
+#: teams, so no panel is its own population. Each arm's roles, by its read label.
+PANEL_ROLES: Dict[str, Dict[str, str]] = {
+    "X38": PANEL_ROLE,
+    "X41": {"heldout72_hpfix": "a population X41 does not train on (ladder replays, HP repaired)",
+            "forum72": "a population X41 does not train on (Smogon forum, human-built)",
+            "p72": "a population X41 does not train on (procedural Smogon usage, MATERIALLY WEAKER, F-DV-20)"},
+}
 #: The NULL band of H, pp.
 H_BAND_PP = 3.0
 #: P's non-inferiority bar, pp.
@@ -285,8 +293,10 @@ def _check_seeds(look: int, on: Mapping[str, Any], off: Mapping[str, Any], what:
     return reasons
 
 
-def d1_primary(look: int, on: Counts, off: Counts, *, panels: Sequence[str] = PANELS) -> HDecision:
-    """PRIMARY H at ``look`` from each side's ``{seed: {panel: (wins, n)}}`` (module docs)."""
+def d1_primary(look: int, on: Counts, off: Counts, *, panels: Sequence[str] = PANELS,
+               roles: Optional[Mapping[str, str]] = None) -> HDecision:
+    """PRIMARY H at ``look`` from each side's ``{seed: {panel: (wins, n)}}`` (module docs); ``roles`` (reported
+    only) default to X38's :data:`PANEL_ROLE`."""
     from main.anchors.results import newcombe
 
     if look not in LOOK_SEEDS:
@@ -332,7 +342,7 @@ def d1_primary(look: int, on: Counts, off: Counts, *, panels: Sequence[str] = PA
         (x1, n1), (x2, n2) = pooled["on"][k], pooled["off"][k]
         pd, plo, phi = newcombe(x1, n1, x2, n2)
         per_panel[k] = {"on": [x1, n1], "off": [x2, n2], "delta_pp": 100.0 * pd, "ci95_pp": [100.0 * plo, 100.0 * phi],
-                        "role": PANEL_ROLE.get(k, "")}
+                        "role": (PANEL_ROLE if roles is None else roles).get(k, "")}
     cls, near = classify_h(ci, sign_ok)
     common = dict(delta_pp=100.0 * d, ci_pp=ci, on=s_on, off=s_off, seed_deltas_pp=tuple(seed_d),
                   positive_seeds=n_pos, sign_ok=sign_ok, per_panel=per_panel, reasons=(), od=od,
@@ -455,7 +465,7 @@ def read_d1(doc: Mapping[str, Any]) -> D1Verdict:
     ``h`` is ``python -m main.x35.kakuna d1h``'s output (its ``on`` / ``off``); P's seed sets must equal H's."""
     arm, look = str(doc.get("arm", "X38")), int(doc["look"])
     hd = doc.get("h") or {}
-    h = d1_primary(look, dict(hd.get("on") or {}), dict(hd.get("off") or {}))
+    h = d1_primary(look, dict(hd.get("on") or {}), dict(hd.get("off") or {}), roles=PANEL_ROLES.get(arm, PANEL_ROLE))
     pd = doc.get("p") or {}
     p_on, p_off = dict(pd.get("on") or {}), dict(pd.get("off") or {})
     extra = []

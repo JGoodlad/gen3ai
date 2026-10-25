@@ -78,6 +78,13 @@ decide`` (X47). The record names its arm and look; a record for another arm or l
   instead of the side's; every other arm still requires the side's. D1's runs are judged against {``D1_PIN``, the side
   pin}: the side pin is only ever the VOID pre-fix attempt, since a D1 launch there is refused by this check and by
   ``kit corpus-check``. :func:`pin_write_if_absent` never writes for D1.
+* **AM-D3, D3'S OWN CORPUS-ONLY PIN** (``x41_d3_setmut_2026-10-25/PREREG.md``, 2026-10-25): ``d3`` (:data:`D3_ARMS`,
+  X41, set mutation) names a corpus (``d3_setmut_v1``) the production pin does not hold, so it launches at
+  :data:`D3_PIN` = the production pin + ONE commit confined to ``src/utils/team_corpora/`` (D1's pattern, checked by the
+  same function, :func:`arm_pin_check`, against :data:`D3_CORPORA_TREE`). Its runs are judged against ``D3_PIN`` only
+  (no pre-fix attempt exists). :data:`D3_STAGES` holds it, never :data:`STAGES`; :func:`stage_status` gives it the
+  AM-8 side gate (its look 1 is the orchestrator's GO, no gate) and its look 2 (s3504-s3505) only on its own look-1
+  CONTINUE, as D1's. Its read record is ``reads/d3_look<k>.json``, arm label ``X41`` (``decide-d1``: D1's rule).
 * **THE G-E READERS** (``main.x35.ge``; launch sheet §0 "G-E readers"): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` / ``ge_c0``
   are not batch-1 ARMS (not in :data:`STAGES`, the disk count or AM-6's K9(b) pre-check) but they run at the SIDE'S
   pin: :func:`pin_check` judges their recorded pins with the side's batch-1 runs, and :func:`stage_status` gives a
@@ -175,7 +182,9 @@ BATCH2_ARMS = ("sprt", "lrfloor", "toy_sprt", "toy_lrfloor")
 R0_ARMS = ("toy_r0", "r0")
 #: X52, the practice ceiling (``main.x35.x52``, AM-X52, 2026-10-22): one production arm, side-pinned.
 X52_ARMS = ("x52",)
-SIDE_PINNED_ARMS = BATCH1_ARMS + BATCH2_ARMS + R0_ARMS + X52_ARMS
+#: X41 / D3, set mutation (AM-D3, 2026-10-25): one production arm at its OWN corpus-only pin (:data:`D3_PIN`).
+D3_ARMS = ("d3",)
+SIDE_PINNED_ARMS = BATCH1_ARMS + BATCH2_ARMS + R0_ARMS + X52_ARMS + D3_ARMS
 #: AM-D1-FIX (launch sheet §0, 2026-10-22): D1's pin. The production pin ``f4b25238`` + the corpus label-guard commit
 #: (``fix(team corpora): refuse teams the env's label path cannot encode ...``), rebuilt onto it with only
 #: ``src/utils/team_corpora/`` replaced. Kept reachable by the local branch ``x35-d1-pin``.
@@ -187,8 +196,22 @@ D1_PIN_PATHS = ("src/utils/team_corpora/",)
 #: The git tree of ``src/utils/team_corpora`` at D1_PIN: the guard commit's own (content-addressed, so it survives a
 #: rebase; a patch-id would not cover the binary ``teams.jsonl.gz``).
 D1_CORPORA_TREE = "e73d5a6fac6230cd15c74202be2c3f151485b281"
-#: The arms with their own pin (AM-D1-FIX): ``{arm: pin}``.
-ARM_PINS = {"d1": D1_PIN}
+#: AM-D3 (2026-10-25): D3's pin. The production pin ``f4b25238`` + the D3 lever commit's ``src/utils/team_corpora/`` (the
+#: ``d3_setmut_v1`` corpus, its builder and its label-path soak), built onto it with only that path replaced. Tagged on
+#: origin as ``x35-d3-pin-<sha8>`` and kept reachable by the local branch ``x35-d3-pin``.
+D3_PIN = "9e289ba44eb0015f6fa9c7815fc2e94f296d8f4f"
+#: The production pin D3_PIN sits directly on (the same side pin as D1's).
+D3_PIN_BASE = D1_PIN_BASE
+#: The only paths D3_PIN may change relative to D3_PIN_BASE.
+D3_PIN_PATHS = ("src/utils/team_corpora/",)
+#: The git tree of ``src/utils/team_corpora`` at D3_PIN: the lever commit's own (content-addressed).
+D3_CORPORA_TREE = "2156dd46c78e749feb1d3bd3f6d42b8a16beb4d8"
+#: The arms with their own pin (AM-D1-FIX, AM-D3): ``{arm: pin}``.
+ARM_PINS = {"d1": D1_PIN, "d3": D3_PIN}
+#: The amendment that registered each own-pin arm (named in every line its checks print).
+ARM_PIN_AMENDMENT = {"d1": "AM-D1-FIX", "d3": "AM-D3"}
+#: The own-pin arms whose run MAY also sit at the side's pin: D1's VOID pre-fix attempt (AM-D1-FIX-f) only.
+ARM_PIN_PREFIX_OK = ("d1",)
 #: Batch 2's stages (F-AS-8), in AM-RP-e's slots: (6) production SPRT, (8) production LR-F, (11) the toy pair; each
 #: look 2 (``b``) only on its own look-1 CONTINUE. The ORDER is the Training session's (AM-RP-e), not a gate; the
 #: conditions are :func:`_batch2_status`'s. Never merged into the closed :data:`STAGES`.
@@ -211,13 +234,19 @@ R0_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
 X52_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
     ("X52", (("x52", 3501), ("x52", 3502))),
 )
-#: The arm label each read record carries (``readout`` A1 / A2 / SPRT / LRF, ``d1`` X38, ``x47`` X47).
-READ_LABEL = {"a1": "A1", "a2": "A2", "d1": "X38", "toy_a1": "A1", "toy_a2": "A2", "toy_x47": "X47",
+#: AM-D3's stages (2026-10-25): look 1 (s3501-s3503) on the orchestrator's GO, look 2 (s3504-s3505) only on D3's own
+#: look-1 CONTINUE. C0 s3501-s3505 (shared, already run at the side pin) is the control. Never merged into STAGES.
+D3_STAGES: Tuple[Tuple[str, Tuple[Tuple[str, int], ...]], ...] = (
+    ("D3", (("d3", 3501), ("d3", 3502), ("d3", 3503))),
+    ("D3b", (("d3", 3504), ("d3", 3505))),
+)
+#: The arm label each read record carries (``readout`` A1 / A2 / SPRT / LRF, ``d1`` X38, ``d3`` X41, ``x47`` X47).
+READ_LABEL = {"a1": "A1", "a2": "A2", "d1": "X38", "d3": "X41", "toy_a1": "A1", "toy_a2": "A2", "toy_x47": "X47",
               "sprt": "SPRT", "toy_sprt": "SPRT", "lrfloor": "LRF", "toy_lrfloor": "LRF"}
 #: The toy arms whose look-1 CONTINUE licenses toy C0's look-2 seeds s3604-s3605 (their shared control).
 TOY_LOOK2_LICENSORS = ("toy_x47", "toy_a1", "toy_a2", "toy_lrfloor", "toy_sprt")
 #: Where a read record keeps its PRIMARY when it is not R1 (``d1.D1Verdict``: H).
-PRIMARY_KEY = {"d1": "h"}
+PRIMARY_KEY = {"d1": "h", "d3": "h"}
 CONTROLS = ("c0", "toy_c0")
 LOOK2_SEEDS = {"production": (3504, 3505), "toy": (3604, 3605)}
 
@@ -345,33 +374,56 @@ def _same_sha(a: str, b: str) -> bool:
     return n >= 7 and a[:n] == b[:n]
 
 
-def d1_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
-    """AM-D1-FIX: ``pin`` is :data:`D1_PIN`, sits directly on the side's written pin (:data:`D1_PIN_BASE`), changes only
-    paths under :data:`D1_PIN_PATHS`, and carries the guard commit's corpus tree (:data:`D1_CORPORA_TREE`)."""
+def own_pin_check(arm: str, pin: str, side_pin: str, repo: str, *, want_pin: str, base: str,
+                  paths: Tuple[str, ...], tree_want: str, tree_of: str) -> Tuple[bool, List[str]]:
+    """An OWN-PIN arm's check (AM-D1-FIX, AM-D3): ``pin`` is ``want_pin``, sits directly on the side's written pin
+    (``base``), changes only paths under ``paths``, and carries the registered corpus tree ``tree_want`` (``tree_of``
+    names whose tree it is)."""
+    am, tag = ARM_PIN_AMENDMENT.get(arm, arm), arm.upper()
+
     def git(*args: str) -> "subprocess.CompletedProcess[str]":
         return subprocess.run(["git", "-C", repo, *args], capture_output=True, text=True, check=False)
 
-    if pin != D1_PIN:
-        return False, [f"AM-D1-FIX: d1 launches only at D1_PIN {D1_PIN[:12]}, not {pin[:12]}"]
-    if side_pin != D1_PIN_BASE:
-        return False, [f"AM-D1-FIX: D1_PIN sits on {D1_PIN_BASE[:12]}, but the side's written pin is {side_pin[:12]}"]
+    if pin != want_pin:
+        return False, [f"{am}: {arm} launches only at {tag}_PIN {want_pin[:12]}, not {pin[:12]}"]
+    if side_pin != base:
+        return False, [f"{am}: {tag}_PIN sits on {base[:12]}, but the side's written pin is {side_pin[:12]}"]
     parents = git("rev-list", "--parents", "-n", "1", pin)
     if parents.returncode != 0:
-        return False, [f"AM-D1-FIX: D1_PIN {pin[:12]} is not a commit in {repo}: {parents.stderr.strip()[-200:]}"]
+        return False, [f"{am}: {tag}_PIN {pin[:12]} is not a commit in {repo}: {parents.stderr.strip()[-200:]}"]
     if parents.stdout.split()[1:] != [side_pin]:
-        return False, [f"AM-D1-FIX: D1_PIN's parent(s) {[h[:12] for h in parents.stdout.split()[1:]]} != the side's "
+        return False, [f"{am}: {tag}_PIN's parent(s) {[h[:12] for h in parents.stdout.split()[1:]]} != the side's "
                        f"pin {side_pin[:12]} (one commit on top of it, no more)"]
     names = [n for n in git("diff", "--name-only", side_pin, pin).stdout.splitlines() if n]
-    outside = [n for n in names if not n.startswith(D1_PIN_PATHS)]
+    outside = [n for n in names if not n.startswith(paths)]
     if not names or outside:
-        return False, [f"AM-D1-FIX: D1_PIN must change only {list(D1_PIN_PATHS)} relative to {side_pin[:12]}; it "
+        return False, [f"{am}: {tag}_PIN must change only {list(paths)} relative to {side_pin[:12]}; it "
                        f"changes {len(names)} file(s), outside: {outside[:10]}"]
     tree = git("rev-parse", f"{pin}:src/utils/team_corpora").stdout.strip()
-    if tree != D1_CORPORA_TREE:
-        return False, [f"AM-D1-FIX: D1_PIN's src/utils/team_corpora tree {tree[:12]} != the guard commit's "
-                       f"{D1_CORPORA_TREE[:12]}"]
-    return True, [f"AM-D1-FIX: D1's pin {pin[:12]} = the side's pin {side_pin[:12]} + one commit, {len(names)} file(s), "
-                  f"all under {list(D1_PIN_PATHS)}, corpus tree {tree[:12]} (the guard commit's)"]
+    if tree != tree_want:
+        return False, [f"{am}: {tag}_PIN's src/utils/team_corpora tree {tree[:12]} != the {tree_of} "
+                       f"{tree_want[:12]}"]
+    return True, [f"{am}: {tag}'s pin {pin[:12]} = the side's pin {side_pin[:12]} + one commit, {len(names)} file(s), "
+                  f"all under {list(paths)}, corpus tree {tree[:12]} (the {tree_of})"]
+
+
+def d1_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
+    """AM-D1-FIX: ``pin`` is :data:`D1_PIN`, sits directly on the side's written pin (:data:`D1_PIN_BASE`), changes only
+    paths under :data:`D1_PIN_PATHS`, and carries the guard commit's corpus tree (:data:`D1_CORPORA_TREE`)."""
+    return own_pin_check("d1", pin, side_pin, repo, want_pin=D1_PIN, base=D1_PIN_BASE, paths=D1_PIN_PATHS,
+                         tree_want=D1_CORPORA_TREE, tree_of="guard commit's")
+
+
+def d3_pin_check(pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
+    """AM-D3: ``pin`` is :data:`D3_PIN`, sits directly on the side's written pin (:data:`D3_PIN_BASE`), changes only
+    paths under :data:`D3_PIN_PATHS`, and carries the lever commit's corpus tree (:data:`D3_CORPORA_TREE`)."""
+    return own_pin_check("d3", pin, side_pin, repo, want_pin=D3_PIN, base=D3_PIN_BASE, paths=D3_PIN_PATHS,
+                         tree_want=D3_CORPORA_TREE, tree_of="lever commit's")
+
+
+def arm_pin_check(arm: str, pin: str, side_pin: str, repo: str) -> Tuple[bool, List[str]]:
+    """The own-pin check of ``arm`` (:data:`ARM_PINS`)."""
+    return {"d1": d1_pin_check, "d3": d3_pin_check}[arm](pin, side_pin, repo)
 
 
 def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[str] = None,
@@ -391,11 +443,12 @@ def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[st
     if arm in ARM_PINS:
         if rec is None:
             ok = False
-            lines.append(f"AM-D1-FIX: {arm}'s own pin rests on {label}, and no {fname} is written yet")
+            lines.append(f"{ARM_PIN_AMENDMENT.get(arm, arm)}: {arm}'s own pin rests on {label}, and no {fname} is "
+                         "written yet")
         else:
             from utils.paths import repo_root
 
-            ok_arm, arm_lines = d1_pin_check(pin, rec["sha"], repo or str(repo_root()))
+            ok_arm, arm_lines = arm_pin_check(arm, pin, rec["sha"], repo or str(repo_root()))
             ok = ok and ok_arm
             lines += arm_lines
     elif rec is None:
@@ -416,7 +469,8 @@ def pin_check(pin: str, stage: str, models_dir: str, side: str, t62: Optional[st
             lines.append(f"{d}: no recorded pin (metadata.json absent or without git_hash): cannot show it is {label}")
             continue
         run_arm = names[base][0]
-        allowed = (want, ARM_PINS[run_arm]) if run_arm in ARM_PINS else (want,)
+        allowed = ((want, ARM_PINS[run_arm]) if run_arm in ARM_PIN_PREFIX_OK else (ARM_PINS[run_arm],)) \
+            if run_arm in ARM_PINS else (want,)
         bad = sorted({h for h in hs if not any(_same_sha(h, a) for a in allowed)})
         if bad:
             ok = False
@@ -441,9 +495,9 @@ def pin_write_if_absent(pin: str, stage: str, side: str, t62: Optional[str], arm
     rec = read_pin_file(path, side)
     if arm in ARM_PINS:
         if pin != ARM_PINS[arm] or rec is None:
-            raise BatchError(f"AM-D1-FIX: {arm} launches at {ARM_PINS[arm][:12]} on a written {label} "
+            raise BatchError(f"{ARM_PIN_AMENDMENT.get(arm, arm)}: {arm} launches at {ARM_PINS[arm][:12]} on a written {label} "
                              f"(got {pin[:12]}, {fname} {'absent' if rec is None else rec['sha'][:12]})")
-        return f"{arm}'s own pin {pin[:12]} (AM-D1-FIX) on {label} {rec['sha'][:12]}; {fname} unchanged"
+        return f"{arm}'s own pin {pin[:12]} ({ARM_PIN_AMENDMENT.get(arm, arm)}) on {label} {rec['sha'][:12]}; {fname} unchanged"
     if rec is not None:
         if rec["sha"] != pin:
             raise BatchError(f"the pin {pin[:12]} != {label} {rec['sha'][:12]}")
@@ -704,7 +758,7 @@ def _look2_licence(stage: str, arm: str) -> Tuple[str, str]:
 
 
 def stage_of(arm: str, seed: int) -> Optional[str]:
-    for name, forks in STAGES + BATCH2_STAGES + R0_STAGES + X52_STAGES:
+    for name, forks in STAGES + BATCH2_STAGES + R0_STAGES + X52_STAGES + D3_STAGES:
         if (arm, seed) in forks:
             return name
     return None
@@ -727,6 +781,13 @@ def stage_status(stage: str, arm: str, seed: int) -> Tuple[str, str]:
                 return PENDING, why
         return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, " \
                         f"{'AM-X52' if arm in X52_ARMS else 'AM-R0'})"
+    if arm in D3_ARMS:                       # AM-D3: the side gate; look 2 only on its own look-1 CONTINUE
+        filled, why = side_gate(stage, "production")
+        if not filled:
+            return PENDING, why
+        if seed in LOOK2_SEEDS["production"]:
+            return _look2_licence(stage, arm)
+        return ALLOWED, f"{arm} s{seed}: no unmet condition (stage {stage_of(arm, seed)}, AM-D3: the orchestrator's GO)"
     if arm not in BATCH1_ARMS:
         return ALLOWED, f"{arm} is not a staged arm (no AM-9 or batch-2 condition)"
     if arm in DROPPED:

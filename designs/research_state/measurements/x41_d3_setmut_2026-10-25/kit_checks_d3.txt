@@ -1,0 +1,13 @@
+[x35 kit] pin-check: AM-D3: D3's pin 9e289ba44eb0 = the side's pin f4b25238def5 + one commit, 12 file(s), all under ['src/utils/team_corpora/'], corpus tree 2156dd46c78e (the lever commit's)
+[x35 kit] pin-check: rb_x35_d1wide_s3501.crashed-20261022: a PRE-FIX d1 attempt at X35_PIN_1_production f4b25238def5 (AM-D1-FIX-f: VOID, never read)
+[x35 kit] pin-check: 20 side-pinned production run(s) checked against f4b25238def5
+[x35 kit] pin-check: the other side's run(s), judged at its own launches: ['rb_x35t_c0_s3601', 'rb_x35t_c0_s3602', 'rb_x35t_c0_s3603', 'rb_x35t_r0_s3631', 'rb_x35t_x47d4_s3601', 'rb_x35t_x47d4_s3602', 'rb_x35t_x47d4_s3603']
+rc=0
+[x35 kit] corpus-check: PASS: d3_setmut_v1@ALL at the pin 9e289ba44eb0: 2876 teams, tier sha 625d664aff21 (the registered corpus), soaked with the label path: 28760 battles, 0 core errors
+rc=0
+[x35 kit] corpus-check: FAIL: the pin f4b25238def5 holds no src/utils/team_corpora/d3_setmut_v1/manifest.json: fatal: path 'src/utils/team_corpora/d3_setmut_v1/manifest.json' exists on disk, but not in 'f4b25238def57900c0305bb2a3a5a8f9edaef285'
+rc=1
+[x35 kit] stage-check d3 s3501: ALLOWED: d3 s3501: no unmet condition (stage D3, AM-D3: the orchestrator's GO)
+rc=0
+[x35 kit] stage-check d3 s3504: PENDING: d3 look 1 is not read yet (look 2 runs only on CONTINUE)
+rc=1

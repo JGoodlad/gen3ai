@@ -767,6 +767,19 @@ pin-safe), plus ≈ 13 GPU-h for the arm.
 **Rank.** Below D1. D1 uses real human sets. D3 is the fallback if D1 reads TRADE with a large in-pool cost, or the
 alternative if W_hl's repair fails validation at scale.
 
+**BUILT 2026-10-25 as (a), set resampling: X41 / D3** (`x41_d3_setmut_2026-10-25/PREREG.md`; not launched, the GO is
+the orchestrator's).
+- **The corpus `d3_setmut_v1`** (`src/utils/team_corpora/`, `python -m utils.team_corpora.build_d3_setmut [--check]`,
+  deterministic): 4 variants of each of the 719 pool teams, so 2,876 teams.
+  - Each variant redraws k ∈ {1, 2} mons (uniform) from the Smogon priors: 4 moves by P(move in set), the item, and
+    nature + EVs as one usage spread. Hidden Power is typed by `gen3_hp_repair_v1`.
+  - It keeps the species, abilities and other mons.
+  - It passes the pinned validator, and every redrawn set is a new mon set.
+  - The held-out panels' neighbours are excluded. home72 / away are NOT: D3 perturbs the familiar cores.
+- **The lever:** `--team-mix d3_setmut_v1@ALL:0.3 --team-mix-sides both`, so q = 0.3 per episode and side.
+- **Declared where this section is open:** an offline corpus, so a finite set of variants rather than a fresh draw
+  per episode; both sides; the ability kept.
+
 ### 4.6 L6 — our side's team diversity vs the opponent side's
 
 **The argument for asymmetry.** On a ladder WE choose our team (a few sample teams: the ladder campaign's stage 2)
@@ -1489,3 +1502,4 @@ held-out gain and in-pool cost, is the right design. Three amendments:
 | 2026-10-20 | **X54's confirmation panel `forum216b` carved, registered and SEALED before D1** (eval-registry worker; the orchestrator's ruling on beat-Metamon FINDING 2) | 216 teams from `w_forum_v1` AB (seed 5400, forum72's strata × 3, curator cap 42; no copy or near copy of the pool or any panel); `held_out_from: ["training"]`; `main.heldout_panels.SEALED`. `w_forum_v1` rebuilt: 2,424 → 1,982 (AB 559 → 305); X35 AMENDMENT D1-CORPUS + launch pre-check 2d (the corpus AND a PASSing soak of it at the pin). Size from X54's power (`power.py`) | `forum216b_x54_2026-10-20/README.md`; `design_beat_metamon_path.md` §6.6 |
 | 2026-10-22 | **AM-D1-FIX: the corpus refuses teams the env's label path cannot encode; D1 gets a corpus-only pin** (corpus label-guard worker, orchestrator brief, after D1 s3501's crash loop) | builder rule `level` (Showdown's packed level ≠ 100) applied LAST, after the curator cap, plus a `format` rule; the reader's throwing guard (`load_dir`); `w_forum_v1` 1,982 → **1,981** (only `sfv2_5051`, L5, tier C; the source's other two non-100 teams had already left at `engine_unplayable` / `panel`); soak v2 declares every core label family (19,810 battles, 0 core errors); D1's pin = `f4b25238` + the one corpus-only commit (`batch.D1_PIN`, `pin-check --arm d1`) | the `level` drop before the cap (it re-permutes tier C: 197 teams swapped, measured); relaunching D1 at a new main HEAD (its trainer code would differ from C0's at `f4b25238`); skipping the bad team at draw time (a silent per-draw filter instead of a guard) | launch sheet §0 AM-D1-FIX; `w_forum_v1/manifest.json` `label_guard`; `team_corpora_test.py`, `batch_test.py` |
 | 2026-10-19 | **AM-5: D1's H interval WIDENED for seed overdispersion** (X35 amendment worker; the orchestrator's ruling on the batch-1 review F-RV-5, before any D1 data) | each Newcombe half-width × √max(1, φ̂), φ̂ = the mean over arms of the between-seed variance of the per-seed panel means over its binomial expectation (df 2(n−1)); classes on the widened interval; self-check 11 / 11 | the pooled-binomial interval (8–21 % false GAIN at a seed SD of 2–4 pp); a t-quantile on φ̂'s df (the amendment scales the half-widths, as the review simulated) | `main.x35.d1.overdispersion`; `selfcheck.check_d1_overdispersion`; `X35_BATCH1_REVIEW.md` F-RV-5 |
+| 2026-10-25 | **D3 (§4.5 (a), X41) BUILT and registered** (training-lever builder, orchestrator brief) | an offline set-mutation corpus `d3_setmut_v1` (2,876 = 719 pool teams × 4; k ∈ {1, 2}; Smogon priors only; HP by the L1 repair; validator; no held-out-panel neighbour), the lever `--team-mix d3_setmut_v1@ALL:0.3 --team-mix-sides both`, its own corpus-only pin (D1's pattern) and D1's readout rule | per-episode resampling in the trainer (a trainer build, so C0's code would differ); excluding home72 / away cores (they are the lever's target); (b) / (c) (separate levers) | `x41_d3_setmut_2026-10-25/PREREG.md` |

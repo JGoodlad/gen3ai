@@ -51,7 +51,11 @@ conflates pilot competence with team strength (see the tracking section).
   `data/teams/`: `TeamLoader` walks that tree, and a pinned run reads `data/` from MAIN — F-DV-2). A tier is a
   PREFIX (`A` ⊂ `AB` ⊂ `ABC`); no `@tier` = the manifest's `default_tier`. The parser checks the SYNTAX (registered
   corpus, share in (0, 1]); startup loads and VERIFIES it (the sha256s; every mon at level 100, the
-  only level the env's labels encode, AM-D1-FIX — `CorpusError` → FATAL_CONFIG).
+  only level the env's labels encode, AM-D1-FIX — `CorpusError` → FATAL_CONFIG). Registered corpora
+  (`utils.team_corpora.CORPORA`): `w_forum_v1` (D1: 1,981 human-built forum teams, tiers A ⊂ AB ⊂ ABC) and
+  `d3_setmut_v1` (D3: 2,876 pool teams with 1–2 mons' sets redrawn from Smogon usage, one tier `ALL`;
+  `utils.team_corpora.build_d3_setmut`). A corpus reaches only a pin that holds it, so each arm that names a new one
+  launches at its own corpus-only pin (`main.x35.batch.ARM_PINS`).
 - **The startup guard** (`main.train.matchup_setup.team_mix_guard`, FATAL_CONFIG on any failure): the held-out
   panel registry verifies; `main.heldout_panels.contamination` finds NO corpus team that is an exact copy or near
   neighbour (≥ 4 shared mon sets) of a HELD-OUT panel; the validator dropped NO corpus team (corpus teams go through

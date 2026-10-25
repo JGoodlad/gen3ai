@@ -119,7 +119,7 @@ def _stage(tmp_path: Path, fp32: bool = True) -> str:
 
 
 def _save(stage: str, arm: str, look: int, cls: str, final: bool = True, verdict: str = "INCONCLUSIVE") -> None:
-    key = "h" if arm == "d1" else "r1"
+    key = B.PRIMARY_KEY.get(arm, "r1")
     doc = {"arm": B.READ_LABEL[arm], "look": look, "verdict": verdict, key: {"final": final, "class": cls}}
     (Path(stage) / B.READS_DIR / f"{arm}_look{look}.json").write_text(json.dumps(doc))
 
@@ -160,7 +160,12 @@ def test_the_shared_c0_reader_waits_for_any_gain_and_is_refused_when_none_can_co
     _save(st, "d1", 1, "GAIN")
     assert B.stage_status(st, "ge_c0", 3501)[0] == B.ALLOWED
     _save(st, "d1", 1, "UNDECIDED", verdict="UNDECIDED")
+    assert B.stage_status(st, "ge_c0", 3501)[0] == B.PENDING                 # D3 (AM-D3) not read yet
+    _save(st, "d3", 1, "NULL", verdict="NULL")
     assert B.stage_status(st, "ge_c0", 3501)[0] == B.REFUSED
+    _save(st, "d3", 1, "GAIN")
+    assert B.stage_status(st, "ge_c0", 3501)[0] == B.ALLOWED
+    assert B.stage_status(st, "ge_d3", 3501)[0] == B.ALLOWED and B.stage_status(st, "ge_d1", 3501)[0] == B.REFUSED
 
 
 def test_production_readers_wait_for_the_fp32_alt_commit(tmp_path):
@@ -280,7 +285,16 @@ def test_r2_is_only_defined_for_the_gain_arms():
 VALIDATED = repo_path("designs/research_state/measurements/x35_breakers_stage_2026-10-17/ge_readers_validation_dfeb3d92")
 
 
-@pytest.mark.parametrize("arm", sorted(GE.READER_ARMS))
+#: The readers validated at dfeb3d92. ``ge_d3`` (AM-D3, 2026-10-25) came later: its argv is the same function's with
+#: D3's final as the target, and it has no transcript of its own (D3's PREREG FINDING).
+VALIDATED_READERS = ("ge_a1", "ge_a2", "ge_c0", "ge_d1")
+
+
+def test_every_reader_but_d3s_has_a_validation_transcript():
+    assert set(GE.READER_ARMS) - set(VALIDATED_READERS) == {"ge_d3"}
+
+
+@pytest.mark.parametrize("arm", VALIDATED_READERS)
 def test_the_validated_reader_argv_is_the_kits_and_its_real_transcripts_pass_the_verdict(arm):
     """The four argvs validated at dfeb3d92 on the stand-in target P* (checkargs + launcher --dry-run) are exactly what
     the kit builds today, and the kit's own verdict passes their transcripts; the same transcripts FAIL as a batch-1 arm

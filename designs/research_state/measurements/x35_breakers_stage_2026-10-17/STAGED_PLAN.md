@@ -625,3 +625,15 @@ each D1 and C0 seed final (≈ 2,520 games per arm, ≈ 6.3 lane-hours); P = an 
 play-many --panel home72` each final vs R's 6 members (500 pairs each: ≈ 18k games per arm, ≈ 10 GPU-minutes or
 ≈ 8.6 CPU-hours), then `main.x35.d1 p-input`; the guards G-F / G-E / G-C from X35's tools, assembled into the read
 JSON by hand (no assembler exists). L / L_c1, GEN-M and the D0e transfer read are reported-only and not built.
+
+## 8. The D3 arm (X41, SET MUTATION), registered 2026-10-25, NEEDS THE ORCHESTRATOR'S GO
+
+The registration, the predictions, the VOID guards and the validation transcripts are
+[`../x41_d3_setmut_2026-10-25/PREREG.md`](../x41_d3_setmut_2026-10-25/PREREG.md). In one line:
+- **Lever:** C0's argv + `--team-mix d3_setmut_v1@ALL:0.3 --team-mix-sides both` (`main.x35.kit` arm `d3`, run
+  `rb_x35_d3mut_s<seed>`).
+- **Pin:** its own corpus-only pin `batch.D3_PIN` = `f4b25238` + one `src/utils/team_corpora/` commit, checked by
+  `kit pin-check --arm d3` and `kit corpus-check --arm d3`.
+- **Seeds and control:** look 1 s3501–s3503, look 2 s3504–s3505 on CONTINUE (`batch.D3_STAGES`), against C0 s3501–s3505.
+- **Rule:** D1's (`decide-d1`, arm label `X41`).
+- **Launch:** `launch_x35.sh d3 3501 --pin <D3_PIN> --lease-owner <owner>`; add `GO` only on the orchestrator's go.

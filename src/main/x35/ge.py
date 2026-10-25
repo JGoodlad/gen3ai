@@ -10,7 +10,8 @@ regime. ``gap = P(the reader beats its target) − 0.5`` is its POOLED post-fork
 population-loop round 1 read it). G-E FAILs iff the Newcombe 95 % LOWER bound of gap(ON) − gap(OFF) > 0
 (``main.x35.readout.guard_e``): the arm is detected MORE exploitable than C0.
 
-THE ARMS (``kit.ARMS``, phase :data:`READER_PHASE`): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` read A1 / A2 / D1's final, and
+THE ARMS (``kit.ARMS``, phase :data:`READER_PHASE`): ``ge_a1`` / ``ge_a2`` / ``ge_d1`` / ``ge_d3`` read A1 / A2 / D1 /
+D3's final, and
 ``ge_c0`` reads C0's, the b-OFF reader EVERY arm's G-E shares. The kit seed is the TARGET's seed (3501, the only one
 §5.6.4 registers); the reader trains at seed :data:`READER_SEED` (§5.6.1: "best-response readers 3531+"), the same on
 both sides so the two readers share the dice. Run ``rb_x35_ge_<target tag>_s<target seed>``, e.g.
@@ -25,10 +26,10 @@ neither ``model_config.json`` nor the recipe surface (checked on X26's records, 
 in the SAME regime and only its TARGET differs.
 
 THE TRIGGER (:func:`trigger`, ``kit stage-check`` = ``launch_x35.sh`` pre-check 9). A reader of arm X is ALLOWED only
-when X's PRIMARY (A1 / A2: R1; D1: H) has a saved FINAL class GAIN (``reads/<arm>_look<k>.json``, the latest look);
+when X's PRIMARY (A1 / A2: R1; D1 / D3: H) has a saved FINAL class GAIN (``reads/<arm>_look<k>.json``, the latest look);
 not read yet, CONTINUE, or an INCONCLUSIVE primary is PENDING; a final NULL / LOSS / UNDECIDED is REFUSED (G-E decides
 only between ADOPT-CANDIDATE and TRADE, so a reader of a non-GAIN arm buys nothing: launch sheet §0). ``ge_c0`` is
-ALLOWED as soon as ANY of A1 / A2 / D1 reads GAIN. Production readers also wait for the side's FP32_ALT commit (AM-8),
+ALLOWED as soon as ANY of A1 / A2 / D1 / D3 reads GAIN. Production readers also wait for the side's FP32_ALT commit (AM-8),
 and run at the SIDE'S pin (``kit pin-check`` judges the reader runs with the side's batch-1 runs).
 
 THE READ (:func:`r2_input`, ``python -m main.x35.ge r2-input --arm a1``): the ``r2`` block of ``readout.decide`` /
@@ -60,9 +61,9 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 #: kit.Arm.phase of a reader (0 single, 1 exploiters, 2 folded in).
 READER_PHASE = 3
 #: Reader arm -> the arm whose seed final it reads. ``ge_c0`` is every arm's shared b-OFF reader.
-READER_ARMS: Dict[str, str] = {"ge_a1": "a1", "ge_a2": "a2", "ge_d1": "d1", "ge_c0": "c0"}
+READER_ARMS: Dict[str, str] = {"ge_a1": "a1", "ge_a2": "a2", "ge_d1": "d1", "ge_d3": "d3", "ge_c0": "c0"}
 #: The arms whose PRIMARY GAIN needs G-E before a verdict (``readout.decide``: A1 / A2; ``d1.d1_verdict``: D1).
-GAIN_ARMS = ("a1", "a2", "d1")
+GAIN_ARMS = ("a1", "a2", "d1", "d3")
 #: §5.6.4: "for each arm's seed-3501 final … 5M steps".
 L_READER = 5_000_000
 TARGET_SEEDS = (3501,)

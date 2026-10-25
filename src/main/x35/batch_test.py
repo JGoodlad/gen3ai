@@ -272,6 +272,88 @@ def test_the_registered_d1_pin_is_reachable_and_carries_a_main_commits_corpus_tr
                             text=True).stdout.strip() for c in shas}
     assert B.D1_CORPORA_TREE in trees
 
+# ------------------------------------------- AM-D3 (2026-10-25): D3's own corpus-only pin, checked as D1's is
+@pytest.fixture
+def d3_repo(d1_repo, monkeypatch):
+    """D1's fixture repo, read as D3's: ``pin`` is D3's lever commit on the side pin."""
+    r = d1_repo
+    monkeypatch.setattr(B, "D3_PIN", r["pin"])
+    monkeypatch.setattr(B, "D3_PIN_BASE", r["base"])
+    monkeypatch.setattr(B, "D3_CORPORA_TREE", B.D1_CORPORA_TREE)
+    monkeypatch.setattr(B, "ARM_PINS", {"d3": r["pin"]})
+    return r
+
+
+def test_d3_pin_check_accepts_only_the_side_pin_plus_one_corpus_only_commit(d3_repo, monkeypatch):
+    r = d3_repo
+    ok, lines = B.d3_pin_check(r["pin"], r["base"], r["repo"])
+    assert ok and lines[0].startswith("AM-D3: D3's pin") and "lever commit's" in lines[0], lines
+    ok, lines = B.d3_pin_check(r["base"], r["base"], r["repo"])
+    assert not ok and "d3 launches only at D3_PIN" in lines[0], lines
+    monkeypatch.setattr(B, "D3_PIN", r["wide"])
+    ok, lines = B.d3_pin_check(r["wide"], r["base"], r["repo"])
+    assert not ok and "outside: ['src/main/train.py']" in lines[0], lines
+    monkeypatch.setattr(B, "D3_PIN", r["pin"])
+    monkeypatch.setattr(B, "D3_CORPORA_TREE", "0" * 40)
+    ok, lines = B.d3_pin_check(r["pin"], r["base"], r["repo"])
+    assert not ok and "lever commit's" in lines[0], lines
+
+
+def test_pin_check_holds_d3_to_its_own_pin_and_a_d3_run_at_the_side_pin_is_refused(d3_repo, tmp_path):
+    r = d3_repo
+    stage, models = tmp_path / "stage", tmp_path / "models"
+    stage.mkdir()
+    models.mkdir()
+    B.pin_write_if_absent(r["base"], str(stage), PROD, FP32)
+    assert B.pin_check(r["pin"], str(stage), str(models), PROD, arm="d3", repo=r["repo"])[0]
+    ok, lines = B.pin_check(r["base"], str(stage), str(models), PROD, arm="d3", repo=r["repo"])
+    assert not ok and "d3 launches only at D3_PIN" in lines[0], lines
+    assert "unchanged" in B.pin_write_if_absent(r["pin"], str(stage), PROD, None, arm="d3")
+    with pytest.raises(B.BatchError, match="AM-D3"):
+        B.pin_write_if_absent(r["base"], str(stage), PROD, None, arm="d3")
+    _run(models, "rb_x35_d3mut_s3501", r["pin"])
+    assert B.pin_check(r["base"], str(stage), str(models), PROD, arm="c0", repo=r["repo"])[0]
+    _run(models, "rb_x35_d3mut_s3502", r["base"])                 # no pre-fix attempt exists for D3: refused
+    ok, lines = B.pin_check(r["base"], str(stage), str(models), PROD, arm="c0", repo=r["repo"])
+    assert not ok and any(x.startswith("rb_x35_d3mut_s3502:") for x in lines), lines
+
+
+def test_d3_stages_look1_on_the_side_gate_and_look2_only_on_its_own_continue(tmp_path):
+    stage = tmp_path / "stage"
+    (stage / B.READS_DIR).mkdir(parents=True)
+    st = str(stage)
+    assert B.stage_status(st, "d3", 3501)[0] == B.PENDING                        # AM-8: no FP32_ALT named
+    _fill_fp32(stage)
+    for seed in (3501, 3502, 3503):
+        status, why = B.stage_status(st, "d3", seed)
+        assert status == B.ALLOWED and "AM-D3" in why and B.stage_of("d3", seed) == "D3", why
+    assert B.stage_status(st, "d3", 3504)[0] == B.PENDING and B.stage_of("d3", 3504) == "D3b"
+    rec = {"arm": "X41", "look": 1, "verdict": "CONTINUE", "h": {"final": False, "class": "UNDECIDED"}}
+    (stage / B.READS_DIR / "d3_look1.json").write_text(json.dumps(rec))
+    assert B.stage_status(st, "d3", 3505)[0] == B.ALLOWED
+    (stage / B.READS_DIR / "d3_look1.json").write_text(json.dumps(dict(rec, verdict="NULL")))
+    assert B.stage_status(st, "d3", 3504)[0] == B.REFUSED
+    (stage / B.READS_DIR / "d3_look1.json").write_text(json.dumps(dict(rec, arm="X38")))
+    with pytest.raises(B.BatchError, match="not X41"):
+        B.stage_status(st, "d3", 3504)
+
+
+def test_the_registered_d3_pin_is_reachable_and_carries_a_main_commits_corpus_tree():
+    """The real D3_PIN (tag ``x35-d3-pin-<sha8>`` on origin) passes its own check against the production pin, and its
+    corpus tree is the one a commit on this checkout's history holds (the shipped lever commit)."""
+    from utils.paths import repo_root
+
+    root = str(repo_root())
+    ok, lines = B.d3_pin_check(B.D3_PIN, B.D3_PIN_BASE, root)
+    assert ok, lines
+    git = ["git", "-C", root]
+    shas = subprocess.run(git + ["log", "--format=%H", "HEAD", "--", "src/utils/team_corpora"], check=True,
+                          capture_output=True, text=True).stdout.split()
+    trees = {subprocess.run(git + ["rev-parse", f"{c}:src/utils/team_corpora"], capture_output=True,
+                            text=True).stdout.strip() for c in shas}
+    assert B.D3_CORPORA_TREE in trees
+
+
 # ------------------------------------------------------------------ AM-8: production's FP32_ALT commit, a placeholder
 def _side_file(stage: Path, line: str) -> Path:
     f = stage / B.SIDE_REQUIRED_FILE.format(side=PROD)

@@ -2233,10 +2233,10 @@
   },
   "src/agents/training/matchup_spec_test.py::test_default_spec_builders_match_legacy": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.26,
-   "contention": 1.39,
+   "commit": "9ff6cafb753164486553a32c33d119be861d333a",
+   "at": "2026-10-25T19:31:08Z",
+   "duration_s": 1.49,
+   "contention": 1.32,
    "detail": ""
   },
   "src/agents/training/opponent_inference_load_test.py::test_SENTINEL_and_FOREIGN_opponent_loads_after_the_freeze_acquire_nothing": {
@@ -4823,14 +4823,22 @@
    "contention": 1.39,
    "detail": ""
   },
+  "src/utils/team_corpora/d3_setmut_test.py::test_the_committed_corpus_reproduces_from_the_pool_and_the_priors": {
+   "status": "pass",
+   "commit": "9ff6cafb753164486553a32c33d119be861d333a",
+   "at": "2026-10-25T19:31:08Z",
+   "duration_s": 8.28,
+   "contention": 1.23,
+   "detail": ""
+  },
   "src/utils/team_corpora/team_corpora_test.py::test_the_committed_corpus_reproduces_from_its_source": {
    "status": "pass",
-   "commit": "8d4d43b87d1a9ec042314374fd8a0713c87c004f",
-   "at": "2026-10-23T00:46:39Z",
-   "duration_s": 8.35,
-   "contention": 1.29,
+   "commit": "9ff6cafb753164486553a32c33d119be861d333a",
+   "at": "2026-10-25T19:31:08Z",
+   "duration_s": 7.01,
+   "contention": 1.13,
    "detail": ""
   }
  },
- "last_written": "2026-10-25T19:13:05Z"
+ "last_written": "2026-10-25T19:31:08Z"
 }

@@ -848,6 +848,16 @@ production pin, to 480,081,209):
   deterministic per (model, unit seed), so banked P\* cells stay comparable.
 [ledger 2026-10-25 · *X26c CONTINUATION vs KAKUNA*]
 
+**The next lever on the shelf is set mutation (D3 / X41), BUILT and pre-registered, not run (2026-10-25,
+`measurements/x41_d3_setmut_2026-10-25/PREREG.md`):** [BUILT · no measurement yet]
+- **What it is:** P\* + 20M with 30 % of each side's teams drawn from 2,876 of our pool teams, each with 1–2 mons'
+  sets redrawn from Smogon usage. The species cores stay; the exact sets change.
+- **What it tests:** whether the CORE-stratum piloting deficit (familiar species, unfamiliar sets, ≈ 11 pp) is
+  exact-set memorisation.
+- **How it is read:** by D1's rule, against the same C0.
+- **The registered guess:** H +1.5 pp, 80 % [−1.5, +4.5], most likely UNDECIDED at the final look. Nothing above
+  changes until it is read.
+
 **…and X26's plateau sits beside a small, REAL cyclic component (2026-10-19, the cycle monitor's retro read,
 `measurements/cycle_monitor_retro_2026-10-19/`):** [MEASURED · DESCRIPTIVE · the in-run snapshot ladder, not the
 registered instrument] Read by the cycle monitor's four signals, X26's ladder (72 snapshots, 1,150 mirrored lines) is

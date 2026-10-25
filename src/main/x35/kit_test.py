@@ -227,7 +227,7 @@ def test_d1s_registered_corpus_is_the_committed_one():
     assert (len(c), c.tier_sha256, c.data_sha256) == (K.D1_CORPUS["n"], K.D1_CORPUS["tier_sha256"],
                                                       K.D1_CORPUS["data_sha256"]) == (1981, c.tier_sha256, c.data_sha256)
     assert "sfv2_5051" not in c.ids
-    assert K.D1_LEVER[1] == f"{K.D1_CORPUS['corpus']}@{K.D1_CORPUS['tier']}:0.5" and K.ARM_CORPUS == {"d1": K.D1_CORPUS}
+    assert K.D1_LEVER[1] == f"{K.D1_CORPUS['corpus']}@{K.D1_CORPUS['tier']}:0.5" and K.ARM_CORPUS["d1"] == K.D1_CORPUS
     assert HP.hits(list(zip(c.ids, c.texts)), ["forum216b"]) == []
 
 
@@ -456,3 +456,49 @@ def test_the_verdict_fails_a_growth_line_on_an_arm_that_declared_none_and_a_c3_m
     assert not ok and "declared growth 'trunk_layers 2 -> 4' != None" in line
     ok, line = K.check_validation(K.describe("toy_x47", 3601, _validated_x47_call()), dry, chk, 0, 0)   # C3: warn
     assert not ok and "K9(b) mode 'fatal' != the arm's 'warn'" in line      # a pre-C3 (fatal) transcript no longer passes
+
+
+# ------------------------------------------------------------------------- AM-D3 (2026-10-25): X41 / D3, set mutation
+def test_d3_is_c0_plus_the_set_mutation_mix_and_nothing_else():
+    """X41 / D3 (§4.5 (a) of the diversity doc; PREREG x41_d3_setmut_2026-10-25): b-ON = C0's argv token for token +
+    the ONE lever (``--team-mix d3_setmut_v1@ALL:0.3``, both sides), the same P*, seed, steps; look 2 at s3504-s3505."""
+    call = standin_call()
+    for seed in K.PROD_SEEDS:
+        on, off = K.build_argv("d3", seed, call), K.build_argv("c0", seed, call)
+        assert on[:-2] == off[:-2][:off.index("--seed")] + list(K.D3_LEVER) + ["--seed", str(seed)]
+        assert on[-2:] == ["--run-name", f"rb_x35_d3mut_s{seed}"] and off[-1] == f"rb_x35_c0_s{seed}"
+    assert K.D3_LEVER == ("--team-mix", "d3_setmut_v1@ALL:0.3", "--team-mix-sides", "both")
+    assert K.ARM_CORPUS["d3"] is K.D3_CORPUS and K.D3_LEVER[1] == f"{K.D3_CORPUS['corpus']}@{K.D3_CORPUS['tier']}:0.3"
+    d = K.describe("d3", 3501, call)
+    assert d["delta_text"] == "+20,000,000 steps" and d["parent_run_dir"].endswith("rb_x26_s2601")
+
+
+def test_d3s_registered_corpus_is_the_committed_one_and_parses_as_its_lever():
+    from agents.training.matchup_spec import parse_team_mix
+    from utils.team_corpora import load_corpus
+
+    c = load_corpus(K.D3_CORPUS["corpus"], K.D3_CORPUS["tier"])
+    assert (len(c), c.tier_sha256, c.data_sha256) == (K.D3_CORPUS["n"], K.D3_CORPUS["tier_sha256"],
+                                                      K.D3_CORPUS["data_sha256"])
+    assert parse_team_mix(K.D3_LEVER[1]) == ("d3_setmut_v1", "ALL", 0.3)
+
+
+def test_corpus_check_reads_d3s_corpus_at_the_pin(tmp_path):
+    import subprocess
+
+    want = K.D3_CORPUS
+    repo = tmp_path / "r"
+    d = repo / "src/utils/team_corpora/d3_setmut_v1"
+    d.mkdir(parents=True)
+    (d / "manifest.json").write_text(json.dumps({"tiers": {"ALL": {"n": want["n"], "sha256": want["tier_sha256"]}},
+                                                 "data_sha256": want["data_sha256"]}))
+    (d / "soak_selfcheck.json").write_text(json.dumps({
+        "schema": K.D1_SOAK_SCHEMA, "labels": ["belief", "spread"], "verdict": "PASS", "core_errors": [],
+        "battles_planned": 57520, "battles_finished": 57520,
+        "corpus": {"corpus": "d3_setmut_v1", "tier": "ALL", "data_sha256": want["data_sha256"]}}))
+    for cmd in (["init", "-q"], ["add", "-A"], ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "c"]):
+        subprocess.run(["git", "-C", str(repo), *cmd], check=True, capture_output=True)
+    ok, line = K.corpus_check("d3", "HEAD", str(repo))
+    assert ok and "2876 teams" in line and "57520 battles" in line, line
+    ok, line = K.corpus_check("d1", "HEAD", str(repo))            # D1's corpus is not at this pin
+    assert not ok

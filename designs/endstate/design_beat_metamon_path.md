@@ -5,7 +5,8 @@
 detectably stronger than 34. X52 READ 2026-10-23: UNDECIDED (practised +3.2 pp [−0.2, +6.8], unpractised +1.3
 [−3.5, +6.1]; §6.2); D1 proceeds as staged. D1 LOOK 2 (FINAL) READ 2026-10-24: UNDECIDED (H +2.10 pp
 [−0.92, +5.11], D1 0.492 [0.471, 0.513]; P −1.61 [−2.90, −0.32]; §6.3); D3 / X53's trigger is the orchestrator's
-call (FINDING 11).** ALWAYS-CURRENT
+call (FINDING 11). D3 BUILT and REGISTERED 2026-10-25 (X41, set mutation; `x41_d3_setmut_2026-10-25/PREREG.md`;
+its own corpus-only pin; not launched, the GO is the orchestrator's; §6.4).** ALWAYS-CURRENT
 (owner, 2026-09-27): a later read, decision or build that differs updates this doc in the same commit, and the
 Decision record (§9) says what changed and why. Every number below is quoted from a banked read with its directory;
 every effect size that is not measured is marked **GUESS** or **ESTIMATE**.
@@ -43,7 +44,9 @@ Smogon-usage teams; U = the three UNFAMILIAR panels H, F and P72; "pilot" = play
      small to call, and too large to kill exposure as a lever. D1 proceeds as staged (§6.2).
   3. **X38 / D1: widen the pool**, run in X35; FINAL (look 2) reads UNDECIDED: H +2.10 pp [−0.92, +5.11], and
      it costs in-pool strength (P −1.61 [−2.90, −0.32]); §6.3.
-  4. **X41 / D3: set mutation.** Build it now on CPU; run it only on D1's verdict.
+  4. **X41 / D3: set mutation.** BUILT and pre-registered 2026-10-25 (§6.4): 2,876 pool teams with 1–2 mons' sets
+     redrawn from Smogon usage, mixed in at 0.3 per side, read by D1's rule against the shared C0. ≈ 12.1 GPU-h at
+     look 1, ≈ 20.2 with look 2. It runs only on the orchestrator's GO.
   5. **X53: a fresh wide run** (pool + forum teams from step 0) with a 100M look (≈ 21 GPU-h), if D1 reads NULL from
      plasticity or GAIN but short.
   6. **X54: the goal's confirmation read** on a FRESH panel (FINDING 2): **`forum216b`**, 216 human-built teams,
@@ -205,7 +208,7 @@ behind it is a GUESS.
 | **Read P\*** | X51 | none: it measures where the plateau stands | **MEASURED: +3.0 [−1.0, +7.0]** (n.d.) | X51: P\* 0.487 vs 161M 0.457 pooled | 0 GPU; 8 lane-h of play (18.5 h wall behind the slot queue) | **DONE** |
 | **Practice ceiling** | X52 | sizes the familiarity premium and its within-population transfer | diagnostic; **READ: practised +3.2 [−0.2, +6.8], unpractised +1.3 [−3.5, +6.1], UNDECIDED** (§6.2) | §4; R0's practice curve | 2.2 GPU-h; 8.4 lane-h | **2** (DONE) |
 | **Widen the pool (D1)** | X38 | breadth on BOTH sides: forum teams at a 0.5 share | **+2 to +6** (GUESS) | targets the 10–13 pp premium; dose ≈ 1 % per team (§4); plasticity at a plateau is a named risk (diversity doc §4.2) | ≈ 13 GPU-h (C0 shared); ≈ 10 lane-h for the readout | **3** |
-| **Set mutation (D3)** | X41 | defeats exact-set identification on familiar cores, the CORE-stratum ≈ 11 pp | **+1 to +4** (GUESS) | X37a reverse CORE 0.463 vs home72 0.575 | build 1–2 agent-days (CPU, now) + ≈ 13 GPU-h | **4** (build now, run on D1's verdict) |
+| **Set mutation (D3)** | X41 | defeats exact-set identification on familiar cores, the CORE-stratum ≈ 11 pp | **+1 to +4** (GUESS) | X37a reverse CORE 0.463 vs home72 0.575 | BUILT 2026-10-25 (CPU); ≈ 12.1 GPU-h at look 1, ≈ 20.2 final (C0 shared) | **4** (built; runs on the orchestrator's GO) |
 | **Fresh wide run** | X53 | breadth from step 0, without plateau plasticity | **+3 to +8** (GUESS) | X26 gained most of its in-house strength by 100M (X37b), so a 100M look is informative | ≈ 21 GPU-h to 100M; ≈ 60 to 280M (ESTIMATE: 1,333 steps/s) | **5** (conditional) |
 | Off-meta exploiters (D4) | X42 | exploiters pilot FAR teams | +0 to +3 (GUESS) | FAR 0.263 | ≈ 18 GPU-h | conditional (diversity doc §6.1) |
 | X35 plateau breakers (A1 archive, A2 PFSP, A3 exploiters) | X35 | the in-pool plateau and its cycling | **+0 to +2** (GUESS) | ≈ 79 % of in-house gain transfers (X37b), but the plateau's in-house remainder is small; A2's prior is negative | ≈ 65–91 GPU-h for batch 1 | runs anyway (owner goal 4); report U per final (§6) |
@@ -361,13 +364,30 @@ taken as ON − OFF.
 - **Next:** none of §6's D1 triggers fired as written (D3 "on D1's verdict"; X53 "if NULL from plasticity or GAIN but
   short"), so whether D3 or X53 runs is the orchestrator's ruling (FINDING 11; RULED 2026-10-24: neither now — the X26 continuation fork runs instead, see the decision record).
 
-### 6.4 X41 / D3 — build now, run on D1's verdict
+### 6.4 X41 / D3 — BUILT and REGISTERED 2026-10-25; runs on the orchestrator's GO
 
-The build (diversity doc §4.5, an offline pre-generated augmented corpus; 1–2 agent-days) uses CPU and agent time
-only, and can land while the GPU works through X35. Run D3 (≈ 13 GPU-h, one lever, its own C0) if:
+**The written triggers did not fire.** D3 was to run if D1 read TRADE, or GAIN with the target unreached. D1's final
+was UNDECIDED (FINDING 11), and X26c's revisit rule ("FLAT with S rising") did not fire either. The build was the
+orchestrator's standing queue item, so the GO is a fresh ruling.
 
-- D1 reads TRADE (it gains on U but costs in-pool), or
-- D1 reads GAIN with the target unreached (P\* + Δ_D1 below ≈ 0.53 pooled).
+**What was built** (CPU only; [`x41_d3_setmut_2026-10-25/PREREG.md`](../research_state/measurements/x41_d3_setmut_2026-10-25/PREREG.md)):
+
+- **The lever:** `--team-mix d3_setmut_v1@ALL:0.3 --team-mix-sides both` (kit arm `d3`, C0's argv token for token plus
+  this one lever).
+- **The corpus** (`utils.team_corpora.build_d3_setmut`, deterministic, an offline pre-generated corpus as §4.5 of the
+  diversity doc recommends): 2,876 teams, i.e. 4 variants of each of the 719 pool teams.
+  - Each variant keeps its source's six species, the abilities and the untouched mons byte for byte.
+  - It redraws k ∈ {1, 2} mons from Smogon usage only: 4 moves by P(move in set), the item by usage, and nature + EVs
+    as one usage spread. Hidden Power is typed by `gen3_hp_repair_v1`.
+  - Every redrawn set is a new mon set, so a variant shares exactly 6 − k sets with its source.
+  - Every variant passes the pinned validator, and none is near a held-out panel.
+- **The soak:** PASS, 10 rounds, 28,760 battles (every team 10 times in each seat), 951,264 p1 decisions, 0 core errors, 32 stall forfeits, 121.9 s; every one of the 2,876 teams packed by the training teambuilder with 0 drops (label path included).
+- **Its own pin** D3_PIN `9e289ba44eb0015f6fa9c7815fc2e94f296d8f4f` = the production pin `f4b25238` + one commit under `src/utils/team_corpora/`
+  (D1's AM-D1-FIX pattern). It carries the pinned-data root.
+- **The read:** D1's rule verbatim (H primary, P co-primary, G-F / G-E / G-C, look 2 on CONTINUE). C0 s3501–s3505 are
+  shared, and their banked rows are reused after a deterministic replay check.
+- **Registered prediction (GUESS):** H +1.5 pp, 80 % [−1.5, +4.5]; P −0.8 [−2.5, +0.9]; the final class UNDECIDED with
+  probability 0.67.
 
 ### 6.5 X53 — a fresh wide run, conditional
 
@@ -419,7 +439,7 @@ with the interval named in the registration.
 | X51 | 0 | ≈ 9 | ≈ 0.2 (prereg + queue) |
 | X52 | ≈ 2.2 | ≈ 11.8 | ≈ 0.5 (halves + prereg + kit, DONE) |
 | X38 / D1 (already in X35) | ≈ 13 (C0 shared) | ≈ 10 | 0 (built) |
-| X41 / D3 build; run if triggered | 0; ≈ 13 | ≈ 10 | 1–2 |
+| X41 / D3: built (DONE 2026-10-25); run on GO | 0; ≈ 12.1 (look 1), ≈ 20.2 (final) | ≈ 10 | DONE |
 | X53 (conditional) | ≈ 21 to the look; ≈ 60 in all | ≈ 7 | ≈ 0.3 |
 | X54 | 0 | ≈ 5.6–7.9 per model | ≈ 0.3 (prereg; the carve is DONE) |
 | **sure path (X51, X52, D1, X54)** | **≈ 15.2** | **≈ 36–39** | **≈ 1.0** |
@@ -510,4 +530,5 @@ with the interval named in the registration.
 | 2026-10-24 | **ORCHESTRATOR RULING on FINDING 11: neither D3 nor X53 now** | D1's final is UNDECIDED, and its gain sits mostly on its own forum population (+4.0 pp) with no transfer shown to unseen populations (heldout +2.1, p72 +0.1), at a resolved in-pool cost (P −1.6 pp). D3 targets exact-set identification on familiar cores, which this read does not implicate, and X53 (≈ 60 GPU-h) needs X52 = TRANSFERS, which X52 did not read. The GPU instead runs the one lever with consistently positive measured value: more training. That is `rb_x26c_s2601`, a continuation fork of X26 @380M to 480M at the production pin (≈ 20 GPU-h), re-read against Kakuna after. D3's build stays queued and can be revisited if the continuation's re-read shows the unfamiliar gap persisting with in-house strength rising | the X26 drift read (dbc49cc1, +2.05 pp / 100M); X51 (161M 0.457 → 280M 0.487 unfamiliar) |
 | 2026-10-25 | **X26c READ: goal (b) NOT met; FLAT** (readout worker; CPU, 2,400 Kakuna games + 10,500 in-house mirrored pairs; preregistered `e05c45eeb`) | the continuation to 480M scores U 0.4875 [0.459, 0.516] vs P\* 0.4867 (same harness, seeds 0–19), Δ +0.08 pp [−3.90, +4.06]; S1 58.22 vs 58.23 at 380M (−0.01 [−1.54, +1.52]): in-house strength did NOT rise, so the ruling's D3 trigger does not fire; §0 quotes it; the next lever is the orchestrator's | reading the FLAT as "training has stopped helping" outright (Δ's UB is +4.1 pp); revisiting D3 on the gap alone (the ruling tied it to S rising) | `x26c_continuation_2026-10-25/` |
 | 2026-10-25 | **Human replays enter the lever table** (design worker, the owner's grant: human replays may train the policy, toggleable, off by default, after a data-quality analysis) | the data card on `hr_spec_v1` (1.80M informative ≥ 1500 rows; ≥ 15.9 % of ≥ 1500 human sides in the panels' region; no familiarity gradient in P\*'s human-prediction NLL); ranked H-BC > H-TEAMS > a human-only comparator HB0 > H-KL > a BC warm start; **X59 (the HOM vs Kakuna on U and home72, CPU, no build) first**, then one lever in X60 in D1's frame; the always-current architecture `human_data_architecture.md` (DRAFT until two adversarial reviews) | building H-BC before X59 (the offline proxy for its mechanism is absent); H-KL (acts on self-play states, where we are strong); a fresh warm-start run (≥ 42 GPU-h before a comparable read); human outcomes as critic labels (off-policy) | `measurements/human_replay_quality_2026-10-25/`; [`design_human_replay_lever.md`](design_human_replay_lever.md) |
+| 2026-10-25 | **X41 / D3 BUILT and REGISTERED** (training-lever builder, orchestrator brief; CPU only) | the set-mutation corpus `d3_setmut_v1` (2,876 = 719 pool teams × 4 variants, k ∈ {1, 2} mons redrawn from Smogon usage, HP by `gen3_hp_repair_v1`, the pinned validator, no held-out-panel neighbour); the lever `--team-mix d3_setmut_v1@ALL:0.3 --team-mix-sides both`; kit arm `d3` with its own corpus-only pin D3_PIN (production pin + `src/utils/team_corpora/` only) and the G-E reader `ge_d3`; the label-path soak; D1's readout rule; the PREREG with predictions; checkargs and the launcher dry-run at the pin. Not launched: the GO is the orchestrator's | per-episode resampling inside the trainer (a trainer build, so a pin beyond the corpus package and an A/B whose code differs from C0's); excluding the home72 / away cores (they are the familiar cores the lever targets); a 0.5 share (§4.5 names q = 0.3); species substitution or procedural teams (§4.5 (b) / (c), separate levers) | `x41_d3_setmut_2026-10-25/PREREG.md`; `src/utils/team_corpora/d3_setmut_v1/` |
 | 2026-10-20 | Expected pp per lever | quoted from measured effects where they exist (X37b's 100M → 280M transfer; L1's search null; FACE_c), GUESS elsewhere, with the arithmetic that (b) needs +6–8 pp | single-number promises | §1, §5 |

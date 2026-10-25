@@ -10,7 +10,7 @@
   pre-check helpers ``launch_x35.sh`` calls (the script lives in the staging directory);
 * :mod:`main.x35.kakuna` -- the external-anchor (G-K) unit runner on the COMMITTED home72 config;
 * :mod:`main.x35.d1` -- D1's (X38's) own readout (H on the unfamiliar panels, widened by the seed overdispersion
-  (AM-5), and P);
+  (AM-5), and P); D3 (X41, set mutation) is read by the same rule under its own label;
 * :mod:`main.x35.batch` -- batch 1's gates, the orchestrator's 2026-10-19 rulings on the review and 2026-10-20 rulings
   after the GPU battery's read: ONE pin PER SIDE (AM-1 as amended by AM-8), the production side's FP32_ALT commit (AM-8),
   one seeded pool set per side, the variance gate G1 (AM-2), the staged order (the toy block FIRST, AM-9) and its
