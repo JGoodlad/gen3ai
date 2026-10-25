@@ -1,0 +1,36 @@
+{
+ "schema": "x35_dose_v1",
+ "run": "rb_x26c_s2601",
+ "arm": "x26c (X26-continuation, orchestrator 10-24; not an X35 arm)",
+ "seed": 2601,
+ "pin": "f4b25238def57900c0305bb2a3a5a8f9edaef285",
+ "wall_min": 1195.2,
+ "gpu_h": 19.92,
+ "gpu_h_note": "one card: GPU-h = wall GO\u2192END",
+ "steps_per_s": 1402,
+ "steps_per_s_source": "launcher summary 'FPS'",
+ "first_step": 380000195,
+ "last_step": 480081209,
+ "target_steps": 480000195,
+ "restarts": 0,
+ "launcher_rc": 0,
+ "start": "2026-10-24T12:37:52-07:00",
+ "end": "2026-10-25T08:33:05-07:00",
+ "c0_comparator": {
+  "wall_min": [
+   265,
+   241,
+   240
+  ],
+  "steps_per_s": [
+   1384,
+   1418,
+   1424
+  ],
+  "seeds": [
+   3501,
+   3502,
+   3503
+  ]
+ }
+}
