@@ -108,7 +108,7 @@ measured on a Kakuna cell (**UNVERIFIED**). The registration of the goal read (X
      incorrect". Every one of our reads used ckpt 34. A Kakuna-28 vs Kakuna-34 pair cell settles which one is the
      strongest in OUR regime.
   2. **The ensemble.** Metamon's strongest deployed agent is a TEST-TIME ENSEMBLE: `KakunaEnsemble` / the
-     `PastaMittens` router (Kakuna ckpts 28 / 30 / 34 + Superkazam). It was "the first Metamon agent to reach #1 on the
+     `PastaMittens` router (Kakuna ckpts 28 / 30 / 34 + Alakazam ckpt 8). It was "the first Metamon agent to reach #1 on the
      Showdown leaderboard" (format not stated). `main.anchors` cannot play it. The goal names Kakuna, and this doc
      keeps that. Beating the ensemble is a separate, later bar, costed in §5.
 
@@ -400,8 +400,9 @@ with the interval named in the registration.
 
 - **Every X35 FINAL reports U against Kakuna** (`kakuna plan --teamsets unfamiliar`, ≈ 3.5 lane-h per arm, CPU). Each
   breaker then says what it does to goal (b), as a descriptor; no rule reads it.
-- **Beating the ensemble.** `PastaMittens` is a later bar. It needs a build: the peer script would have to load an
-  ensemble preset, at ≈ 3–6× Kakuna's cost per decision (ESTIMATE). Not before (b) is met.
+- **Beating the ensemble.** `PastaMittens` is a later bar. It needs a build (two downloads, an agent entry, a
+  router regime instrument) and costs ≈ 4× Kakuna per decision on CPU (a 5-member cost proxy, 0.23–0.28 s median);
+  the read is preregistered in [`metamon_strongest_2026-10-25/PREREG.md`](../research_state/measurements/metamon_strongest_2026-10-25/PREREG.md).
 
 ### 6.8 The cost of the direct path
 
