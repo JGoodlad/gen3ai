@@ -28563,3 +28563,37 @@ exclusion removes the best-covered part. No offline evidence that human labels c
 the cache and snapshots under `~/gen3ai_archive/human_replay_quality/` and `~/gen3ai_archive/human_replay_snapshots/`.
 Design: `endstate/human_data_architecture.md` (always-current, DRAFT), `endstate/design_human_replay_lever.md` (DRAFT).
 See `UNDERSTANDING.md` §4.8.
+
+### 2026-10-25 · MEASUREMENT · **X26c CONTINUATION vs KAKUNA, read under its registration (`e05c45eeb`): goal (b) NOT met; FLAT. X26 trained on from 380M to 480M scores U 0.4875 [0.459, 0.516] on the unfamiliar panels against P\*'s 0.4867 in the same harness, Δ +0.08 pp [−3.90, +4.06]; in-house S 58.22 vs 58.23 at 380M (−0.01 [−1.54, +1.52]), so the drift slope did not continue and the D3-revisit trigger does not fire**
+
+**Question** (`design_beat_metamon_path.md` §9, the orchestrator's 2026-10-24 ruling). Does more plain training, the
+one lever with a consistently positive measured value (the X26 drift read, +2.05 ± 0.51 pp / 100M over 290–380M; X51,
+161M → 280M +3.0 pp unfamiliar), move goal (b)? Predictions: U ≈ 0.515 [0.49, 0.54], Δ ≈ +3 pp, S1 ≈ 60.1.
+
+**Design.** `rb_x26c_s2601`: X26 @380,000,195 forked at the production pin `f4b25238`, seed 2601, ended at
+480,081,209 (`final_model.zip`, sha `cba7a1f8…`); K9(b) at the end PASS (judged max 6.3e-4, p99 4.9e-5). Primary: D1
+look 2's H cell (Kakuna ckpt 34, greedy, symmetric H / F / P72) at unit seeds 0–19 (400 games per panel per model),
+the 480M final against P\* re-played at the prereg commit; U = `main.x35.d1.strat_score`, Δ by Newcombe. Secondary S1:
+`population_score` on the frozen R (`cef0960e…`) in the drift read's regime (`adfdbee824c9eb0a`), 7 × 500 mirrored
+pairs, against the drift read's 380M node; S2 (home72 panel, `d4de0fd7c16a2658`) reported. Rules: goal (b) iff U's
+LB > 0.50; CLIMBING iff Δ's LB > 0, else FLAT; FLAT with S rising ⇒ revisit D3; VOID iff K9(b) not PASS or < 90 % of
+units.
+
+**Result.**
+
+| | H | F | P72 | U [Wilson 95 %] |
+|---|---|---|---|---|
+| 480M | 182 / 400 | 217 / 400 | 186 / 400 | **0.4875 [0.459, 0.516]** |
+| P\* (re-played) | 199 / 400 | 212 / 400 | 173 / 400 | 0.4867 [0.459, 0.515] |
+| 480M − P\* | −4.3 pp | +1.3 pp | +3.3 pp | **+0.08 pp [−3.90, +4.06]** (unit-paired +0.08 [−3.61, +3.78]) |
+
+- **Goal (b) NOT met; trajectory FLAT.** 60 / 60 units counted for each model; not VOID.
+- **S1 58.22 ± 0.55 at 480M vs 58.23 ± 0.55 at 380M: −0.01 pp [−1.54, +1.52], not rising.** The +2 pp / 100M
+  prediction failed. S2 (home72 panel): 57.61 → 58.79, +1.18 [−0.35, +2.71], reported only.
+- **D3 is NOT triggered** (the ruling tied it to the gap persisting WITH in-house strength rising).
+- **Harness reproducibility:** P\* at `e05c45eeb` wins exactly what X51 recorded at `63f97a57` on all 60 units:
+  Kakuna-cell play is deterministic per (model, unit seed) across those commits.
+
+**Evidence:** `research_state/measurements/x26c_continuation_2026-10-25/` (`PREREG.md`, `README.md`, `finals.py`,
+`s_read.py`, `verdict.py`, `read/`); raw units and ledgers in `~/gen3ai_archive/x26c_read/`. See `UNDERSTANDING.md`
+(the Kakuna block) and `design_beat_metamon_path.md` §0 / §3 / §9.

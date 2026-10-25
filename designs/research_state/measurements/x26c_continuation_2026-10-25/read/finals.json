@@ -1,0 +1,20 @@
+[
+ {
+  "label": "pstar",
+  "arm": "pstar",
+  "seed": 2601,
+  "path": "/home/goodlad/gen3ai_archive/x26c_read/ckpts/pstar/checkpoint_280000170_steps.zip",
+  "sha256": "814823c514fb791e3c6e671ba126f7d0fd90733098b0539bb85babe7c5ab91ed",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_280000170_steps.zip",
+  "step": 280000170
+ },
+ {
+  "label": "x26c_480m",
+  "arm": "x26c_480m",
+  "seed": 2601,
+  "path": "/home/goodlad/gen3ai_archive/x26c_read/ckpts/x26c_480m/final_model.zip",
+  "sha256": "cba7a1f835930e618871cfcafcc78d95320bd0c3b20210d4f423f0b4ff72fc4c",
+  "source": "/home/goodlad/dev/gen3ai/models/rb_x26c_s2601/final_model.zip",
+  "step": 480081209
+ }
+]

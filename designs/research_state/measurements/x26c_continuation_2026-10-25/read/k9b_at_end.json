@@ -1,0 +1,24 @@
+{
+ "schema": "x35_k9b_arm_end_v1",
+ "run": "rb_x26c_s2601",
+ "verdict": "PASS",
+ "fork_step": 380000195,
+ "rows_after_fork": {
+  "judged_max": 1018,
+  "p99": 1018
+ },
+ "max_after_fork": {
+  "judged_max": 0.0006328821182250977,
+  "p99": 4.942655505146831e-05
+ },
+ "ceilings": {
+  "judged_max": 0.001,
+  "p99": 0.0001
+ },
+ "fires": [],
+ "near_ceiling": [],
+ "reasons": [],
+ "overlap": false,
+ "required_family": "behaviour",
+ "overlap_evidence": []
+}

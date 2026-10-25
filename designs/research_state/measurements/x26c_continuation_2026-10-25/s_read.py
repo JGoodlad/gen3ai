@@ -251,7 +251,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     r.add_argument("--hours", type=float, default=20.0)
     r.add_argument("--threads", type=int, default=2, help="the Rust core's worker threads per engine")
     r.add_argument("--workers", type=int, default=2, help="engines per unit (one cell each at a time)")
-    r.add_argument("--mem-cap", default=str(HERE.parents[4] / "scripts" / "ops" / "mem_cap.sh"))
+    r.add_argument("--mem-cap", default=str(HERE.parents[3] / "scripts" / "ops" / "mem_cap.sh"))
     r.add_argument("--cap-gb", type=int, default=12)
     r.add_argument("--cpus", default="5-7,13-15")
     r.add_argument("--unit-s", type=int, default=2400, help="a unit's time box (one heavy-slot hold), s")

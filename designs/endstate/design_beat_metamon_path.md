@@ -25,6 +25,9 @@ Smogon-usage teams; U = the three UNFAMILIAR panels H, F and P72; "pilot" = play
 - **Goal (b), unfamiliar teams: not met, about 4 pp away.** P\* scores 0.497 on H, 0.530 on F and 0.433 on P72, a
   pooled **0.487 [0.459, 0.515]** (161M: 0.457; +3.0 pp, n.d.). A pooled LB > 0.50 needs about **0.53** at 1,200
   games (§1).
+- **More plain training did not move it (X26c, 2026-10-25).** X26 trained on from 380M to 480M at the production pin
+  scores **0.4875 [0.459, 0.516]**, against P\*'s 0.4867 in the same harness: **Δ +0.08 pp [−3.90, +4.06]**, FLAT. In-house
+  S did not rise either (58.22 vs 58.23 at 380M), so the 2026-10-24 ruling's D3 trigger does not fire (§9).
 - **The deficit is PILOTING an unfamiliar team, and only Kakuna sees it.**
   - Against Kakuna, X26 pilots unfamiliar teams 12 pp worse after correcting for team strength (X37a PILOT_c +0.123),
     and 11–28 pp worse at matched strength (TSR).
@@ -128,13 +131,17 @@ All cells are greedy against greedy, Kakuna ckpt 34, on CPU, 20-game role-balanc
 | home72, Kakuna at T = 1.0 | X26 @161M | 240 | 0.600 [0.537, 0.660] | `x26_metamon_anchor_2026-10-17` |
 | away (`competitive`; 19 / 20 in our pool) | X26 @161M | 400 | 0.497 [0.449, 0.546] | `k2_x26_kakuna_both_teamsets_2026-10-17` |
 | **H, symmetric** | **P\*** | 400 | **0.497 [0.449, 0.546]** | `x51_plateau_vs_kakuna_2026-10-20` |
+| | X26c @480M | 400 | 0.455 [0.407, 0.504] | `x26c_continuation_2026-10-25` |
 | | X26 @161M | 400 | 0.448 [0.400, 0.496] WORSE | `heldout72_hpfix_kakuna_2026-10-18` |
 | **F, symmetric** | **P\*** | 400 | **0.530 [0.481, 0.578]** | `x51_plateau_vs_kakuna_2026-10-20` |
 | | T\* (toy) | 400 | 0.458 [0.409, 0.506] | the same |
+| | X26c @480M | 400 | 0.543 [0.494, 0.591] | `x26c_continuation_2026-10-25` |
 | | X26 @161M | 400 | 0.470 [0.422, 0.519] | `x37a_eval_matrix_2026-10-18` stage 2 |
 | **P72, symmetric** | **P\*** | 400 | **0.433 [0.385, 0.481]** WORSE | `x51_plateau_vs_kakuna_2026-10-20` |
+| | X26c @480M | 400 | 0.465 [0.417, 0.514] | `x26c_continuation_2026-10-25` |
 | | X26 @161M | 400 | 0.453 [0.404, 0.501] | `x37a_eval_matrix_2026-10-18` stage 2 |
 | **U** (H, F, P72 equal weight; Kish n_eff ≈ 1,200) | **P\*** / X26 @161M | — | **0.487 [0.459, 0.515]** / 0.457 [0.429, 0.485] | X51 |
+| **U** | X26c @480M (P\* re-played: 0.4867, identical to X51) | — | 0.4875 [0.459, 0.516] | X26c |
 | Kakuna ckpt 28 vs Kakuna ckpt 34, home72 (from ckpt 28's side) | Kakuna vs Kakuna | 400 | 0.515 [0.466, 0.564] | X51 |
 | DEPLOYMENT: we pilot home72, Kakuna pilots H by stratum | X26 @161M | 600 | **L = 0.630 [0.573, 0.686]** | X37a stage 1 |
 | REVERSE: we pilot H, Kakuna pilots home72 | X26 @161M | 400 | **0.380 [0.334, 0.428]** | the same |
@@ -501,5 +508,6 @@ with the interval named in the registration.
 | 2026-10-23 | **D1 LOOK 1 READ: CONTINUE** (readout worker; CPU, 2,520 Kakuna games + 21,000 in-house pairs) | H +2.78 pp [−1.12, +6.67], P −1.30 [−4.54, +1.93]; guards not read; look 2 (s3504–s3505, both arms) decides; §0 status and §6.3 quote it; §6.3's schedule ask is retired (D1 ran) | reading +2.78 as a breadth gain (its LB is below 0); skipping look 2 for D3 / X53 | `x35_breakers_stage_2026-10-17/d1_read/` |
 | 2026-10-24 | **D1 LOOK 2 (FINAL) READ: UNDECIDED** (readout worker; CPU, 4,200 Kakuna games + 35,000 in-house pairs; look 1's rows reused) | H +2.10 pp [−0.92, +5.11] (D1 0.492, LB 0.471), P −1.61 [−2.90, −0.32]; guards not read; goal (b) not met by D1; §0, §6.3 quote it; D3 / X53's trigger left to the orchestrator (FINDING 11) | reading +2.10 as a breadth gain (LB < 0); calling the final UNDECIDED a NULL (its UB is +5.1) | `x35_breakers_stage_2026-10-17/d1_read/` |
 | 2026-10-24 | **ORCHESTRATOR RULING on FINDING 11: neither D3 nor X53 now** | D1's final is UNDECIDED, and its gain sits mostly on its own forum population (+4.0 pp) with no transfer shown to unseen populations (heldout +2.1, p72 +0.1), at a resolved in-pool cost (P −1.6 pp). D3 targets exact-set identification on familiar cores, which this read does not implicate, and X53 (≈ 60 GPU-h) needs X52 = TRANSFERS, which X52 did not read. The GPU instead runs the one lever with consistently positive measured value: more training. That is `rb_x26c_s2601`, a continuation fork of X26 @380M to 480M at the production pin (≈ 20 GPU-h), re-read against Kakuna after. D3's build stays queued and can be revisited if the continuation's re-read shows the unfamiliar gap persisting with in-house strength rising | the X26 drift read (dbc49cc1, +2.05 pp / 100M); X51 (161M 0.457 → 280M 0.487 unfamiliar) |
+| 2026-10-25 | **X26c READ: goal (b) NOT met; FLAT** (readout worker; CPU, 2,400 Kakuna games + 10,500 in-house mirrored pairs; preregistered `e05c45eeb`) | the continuation to 480M scores U 0.4875 [0.459, 0.516] vs P\* 0.4867 (same harness, seeds 0–19), Δ +0.08 pp [−3.90, +4.06]; S1 58.22 vs 58.23 at 380M (−0.01 [−1.54, +1.52]): in-house strength did NOT rise, so the ruling's D3 trigger does not fire; §0 quotes it; the next lever is the orchestrator's | reading the FLAT as "training has stopped helping" outright (Δ's UB is +4.1 pp); revisiting D3 on the gap alone (the ruling tied it to S rising) | `x26c_continuation_2026-10-25/` |
 | 2026-10-25 | **Human replays enter the lever table** (design worker, the owner's grant: human replays may train the policy, toggleable, off by default, after a data-quality analysis) | the data card on `hr_spec_v1` (1.80M informative ≥ 1500 rows; ≥ 15.9 % of ≥ 1500 human sides in the panels' region; no familiarity gradient in P\*'s human-prediction NLL); ranked H-BC > H-TEAMS > a human-only comparator HB0 > H-KL > a BC warm start; **X59 (the HOM vs Kakuna on U and home72, CPU, no build) first**, then one lever in X60 in D1's frame; the always-current architecture `human_data_architecture.md` (DRAFT until two adversarial reviews) | building H-BC before X59 (the offline proxy for its mechanism is absent); H-KL (acts on self-play states, where we are strong); a fresh warm-start run (≥ 42 GPU-h before a comparable read); human outcomes as critic labels (off-policy) | `measurements/human_replay_quality_2026-10-25/`; [`design_human_replay_lever.md`](design_human_replay_lever.md) |
 | 2026-10-20 | Expected pp per lever | quoted from measured effects where they exist (X37b's 100M → 280M transfer; L1's search null; FACE_c), GUESS elsewhere, with the arithmetic that (b) needs +6–8 pp | single-number promises | §1, §5 |

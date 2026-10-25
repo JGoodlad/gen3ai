@@ -1,0 +1,146 @@
+{
+ "batch_pairs": 100,
+ "families": {
+  "None": "x26c_s_pool_2026-10-25",
+  "home72": "x26c_s_home72_2026-10-25"
+ },
+ "nodes": [
+  {
+   "ci95_pp": [
+    56.5181516501509,
+    58.69613406413481
+   ],
+   "inconclusive": [],
+   "label": "x26_380m_home72",
+   "n_pairs": {
+    "production": 500,
+    "tstar": 500,
+    "x26_080m": 500,
+    "x26_140m": 500,
+    "x26_210m": 500,
+    "x26_270m": 500,
+    "x26_pstar": 500
+   },
+   "panel": "home72",
+   "per_member_pp": {
+    "production": 73.55000000000001,
+    "tstar": 59.35,
+    "x26_080m": 57.599999999999994,
+    "x26_140m": 57.3,
+    "x26_210m": 51.65,
+    "x26_270m": 50.349999999999994,
+    "x26_pstar": 53.449999999999996
+   },
+   "per_member_se_pp": {
+    "production": 1.3558373796292829,
+    "tstar": 1.4958793400538695,
+    "x26_080m": 1.4695169274288746,
+    "x26_140m": 1.4978050607472255,
+    "x26_210m": 1.5514686590453575,
+    "x26_270m": 1.4619353610881707,
+    "x26_pstar": 1.45041201043014
+   },
+   "regime_ids": [
+    ""
+   ],
+   "s_pp": 57.607142857142854,
+   "se_pp": 0.5556179681495301,
+   "sha256": "7e0ebe942eaaac69f1a5ef123d236fbb69f1e7a9fe32011f4d7e0e833dfbf6fd",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x26_s2601/checkpoints/checkpoint_380000195_steps.zip",
+   "step": 380000195
+  },
+  {
+   "ci95_pp": [
+    57.13804185545314,
+    59.30481528740401
+   ],
+   "inconclusive": [],
+   "label": "x26c_480m_pool",
+   "n_pairs": {
+    "production": 500,
+    "tstar": 500,
+    "x26_080m": 500,
+    "x26_140m": 500,
+    "x26_210m": 500,
+    "x26_270m": 500,
+    "x26_pstar": 500
+   },
+   "panel": null,
+   "per_member_pp": {
+    "production": 71.8,
+    "tstar": 59.550000000000004,
+    "x26_080m": 60.95,
+    "x26_140m": 54.2,
+    "x26_210m": 54.35,
+    "x26_270m": 54.949999999999996,
+    "x26_pstar": 51.74999999999999
+   },
+   "per_member_se_pp": {
+    "production": 1.3544445355938353,
+    "tstar": 1.4832717215668878,
+    "x26_080m": 1.4637947260459714,
+    "x26_140m": 1.4915495298514225,
+    "x26_210m": 1.4576196348842179,
+    "x26_270m": 1.4978300971739085,
+    "x26_pstar": 1.4837031374233862
+   },
+   "regime_ids": [
+    ""
+   ],
+   "s_pp": 58.221428571428575,
+   "se_pp": 0.5527584814143608,
+   "sha256": "cba7a1f835930e618871cfcafcc78d95320bd0c3b20210d4f423f0b4ff72fc4c",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x26c_s2601/final_model.zip",
+   "step": 480081209
+  },
+  {
+   "ci95_pp": [
+    57.70479742082371,
+    59.86663115060486
+   ],
+   "inconclusive": [],
+   "label": "x26c_480m_home72",
+   "n_pairs": {
+    "production": 500,
+    "tstar": 500,
+    "x26_080m": 500,
+    "x26_140m": 500,
+    "x26_210m": 500,
+    "x26_270m": 500,
+    "x26_pstar": 500
+   },
+   "panel": "home72",
+   "per_member_pp": {
+    "production": 74.2,
+    "tstar": 61.8,
+    "x26_080m": 60.199999999999996,
+    "x26_140m": 55.65,
+    "x26_210m": 54.1,
+    "x26_270m": 51.6,
+    "x26_pstar": 53.949999999999996
+   },
+   "per_member_se_pp": {
+    "production": 1.3504517762585968,
+    "tstar": 1.3933843690812666,
+    "x26_080m": 1.4906106131381192,
+    "x26_140m": 1.4978835068188714,
+    "x26_210m": 1.5285221620899059,
+    "x26_270m": 1.474747436003874,
+    "x26_pstar": 1.4701343476022863
+   },
+   "regime_ids": [
+    ""
+   ],
+   "s_pp": 58.785714285714285,
+   "se_pp": 0.5514983301545574,
+   "sha256": "cba7a1f835930e618871cfcafcc78d95320bd0c3b20210d4f423f0b4ff72fc4c",
+   "source": "/home/goodlad/dev/gen3ai/models/rb_x26c_s2601/final_model.zip",
+   "step": 480081209
+  }
+ ],
+ "pairs_per_cell": 500,
+ "refpop": "reference_population_production.json",
+ "refpop_content_sha256": "cef0960eac605f1dc026442d1089dc23654e23df91010feaaeea7890901e4519",
+ "regime": "main.h2h play-many, greedy vs greedy, mirrored pairs, cpu, torch_threads 1; pool = the eval team builder (no panel), home72 = --panel home72",
+ "stop_iso": "2026-10-26T00:05:45-0700"
+}

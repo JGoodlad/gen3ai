@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-28,566-line file. **The ledger itself is append-only and is never edited by this**;
+28,600-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**937 headings · 882 dated · 2026-08-01 → 2026-10-25 · ledger 28,566 lines.**
+**938 headings · 883 dated · 2026-08-01 → 2026-10-25 · ledger 28,600 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -957,3 +957,4 @@ rename.
   - `L28471` · `2026-10-24` · MEASUREMENT · **X35 D1 LOOK 2 (FINAL) reads UNDECIDED: widening the pool with 1,981 forum teams moves the Kakuna unfamiliar-panel score by +2.10 pp [−0.92, +5.11] (neither GAIN nor NULL) and costs in-house home72 S −1.61 pp [−2.90, −0.32] (P inferiority not excluded); guards not read; goal (b) not met (D1 0.492, LB 0.471)**
   - `L28497` · `2026-10-24` · MEASUREMENT · **X35 SPRT LOOK 1 reads NULL, FINAL: SPRT promotion accepts 10 of 30 candidates (0.33, inside the registered [0.10, 0.90]), more than triples the promotions (10 vs 3) and lowers the pool age (60–68M vs 72M), but R1 is −0.25 pp [−1.65, +1.16]; the guards are not read; the dose is ×0.85 steps/s**
   - `L28536` · `2026-10-25` · MEASUREMENT · **THE HUMAN-REPLAY DATA CARD (`hr_spec_v1`, DESCRIPTIVE): 376,410 spectator logs, 0 parse errors, one rule set; the actors rated ≥ 1500 give 1.80M informative rows; ≈ 6 % of sides are rule-flagged bots; ≥ 15.9 % of ≥ 1500 human sides sit in the unfamiliar panels' region; P\* predicts human choices no worse on unfamiliar teams than on pool-like ones (1.762 vs 1.738 nats)**
+  - `L28567` · `2026-10-25` · MEASUREMENT · **X26c CONTINUATION vs KAKUNA, read under its registration (`e05c45eeb`): goal (b) NOT met; FLAT. X26 trained on from 380M to 480M scores U 0.4875 [0.459, 0.516] on the unfamiliar panels against P\*'s 0.4867 in the same harness, Δ +0.08 pp [−3.90, +4.06]; in-house S 58.22 vs 58.23 at 380M (−0.01 [−1.54, +1.52]), so the drift slope did not continue and the D3-revisit trigger does not fire**

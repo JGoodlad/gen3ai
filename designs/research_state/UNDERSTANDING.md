@@ -834,6 +834,20 @@ P\* + 20M with half of each side's teams from `w_forum_v1`, against C0 (plain co
 - Goal (b) stays unmet (D1's LB 0.471 < 0.50). Breadth at this dose is not the lever that closes the ≈ 4 pp gap.
 [ledger 2026-10-24 · *X35 D1 LOOK 2*]
 
+**…and 100M more plain training (X26 380M → 480M) moves neither goal (b) nor in-house S (2026-10-25, X26c,
+`measurements/x26c_continuation_2026-10-25/`):** [MEASURED · preregistered (`e05c45eeb`) · one seed · 1,200 Kakuna
+games per model, P\* re-played in the same harness, seeds 0–19] `rb_x26c_s2601` (the fork of X26 @380M at the
+production pin, to 480,081,209):
+- **Kakuna, unfamiliar panels: U 0.4875 [0.459, 0.516] vs P\* 0.4867; Δ +0.08 pp [−3.90, +4.06]**: goal (b) NOT met,
+  trajectory FLAT (predicted ≈ 0.515, Δ ≈ +3). Per panel H −4.3, F +1.3, P72 +3.3 pp, none detected.
+- **In-house S (the X26 drift read's regime): 58.22 at 480M vs 58.23 at 380M, −0.01 [−1.54, +1.52]**: the drift
+  read's +2.05 ± 0.51 pp / 100M over 290–380M did NOT continue. On the home72 panel S moved +1.2 pp, not detected.
+- So the D3-revisit trigger ("the gap persisting with in-house strength rising") does not fire. Plain continuation past
+  380M is not shown to be a lever for either meter; the interval still allows ≈ +4 pp per 100M against Kakuna.
+- P\* re-played at the current code reproduces X51's 60 units game-for-game in wins: Kakuna-cell play is
+  deterministic per (model, unit seed), so banked P\* cells stay comparable.
+[ledger 2026-10-25 · *X26c CONTINUATION vs KAKUNA*]
+
 **…and X26's plateau sits beside a small, REAL cyclic component (2026-10-19, the cycle monitor's retro read,
 `measurements/cycle_monitor_retro_2026-10-19/`):** [MEASURED · DESCRIPTIVE · the in-run snapshot ladder, not the
 registered instrument] Read by the cycle monitor's four signals, X26's ladder (72 snapshots, 1,150 mirrored lines) is
