@@ -3,6 +3,16 @@
 🚨 **ALWAYS-CURRENT (owner, 2026-09-27; `README.md` in this directory).** A decision or build that differs from
 this doc updates it in the same commit, and the Decision record at the end says what changed and why.
 
+**Next-step design (DRAFT, 2026-10-25, explicit-only, not registered):** [`design_search_next.md`](design_search_next.md),
+the owner's goal 5. It makes four points:
+- every IMP here is scored by a referee that plays the searched network on BOTH sides, so only the judge has been measured against a
+  non-self opponent;
+- the leaf's opponent model and V against a non-self opponent were never varied;
+- the decision-to-game bridge is unmeasured, and to first order (the performance-difference lemma, ≈ 26 eligible
+  decisions a game) +4.6 pp needs only ≈ +0.0018 per decision, against this ledger's ≈ ±0.010 intervals;
+- a ranked plan: E2, the bridge and R0's known hole; E1, an opponent-exact referee; E3, human identification and the
+  human judge, zero playouts; E4, a live player against Kakuna, gated.
+
 **Status (2026-10-24, latest): R-b2 READ — a HUMAN OPPONENT MODEL as the judge: HOM-NONE**
 (`../research_state/measurements/x50_r1b_hom_2026-10-23/`; registered in `design_x50_rung1b_human_opponent_model.md`
 §8.4, `42f1d9a7`). The HOM (X26's network fine-tuned from P\* on 1.76M human choices; held-out human NLL 0.58 nats
@@ -787,3 +797,4 @@ feeds one shared trunk to both heads).
 | 2026-10-21 | **STAGE 1c PHASE B READ: NEARER BUT NOT PAYING** (`../research_state/measurements/search_1c_2026-10-20/` README §6, `result_1c_b.json`) | Status line (the latest, read beside stage 1 and L3's off-pool read); §1 (the stage 1c bullet; "what does not help"); the open list; §7 Q15 | quoting phase A's NEARER as a search gain (the playouts read nothing); reading NOT-DETECTED as "no effect" (it excludes only a search-sized ≈ +0.03 gain at n 285); re-running 1c on this bank (A6) | README §6 |
 | 2026-10-23 | **The HUMAN OPPONENT MODEL designed and pre-registered** (`design_x50_rung1b_human_opponent_model.md`, X50 rung 1b) | §7 Q15 (the open item "a behaviour-cloned opponent model" replaced by the design, its decisive read R-b2 and its bar) | quoting any HOM number before its registered read; reading R-b1 (held-out humans, completed rows) as the decisive read (only R-b2 runs on true rows); counting the bot stratum as a ladder read (bots switch on 6 % of labels; L3-H, the human-replay read, is unbuilt) | the design §8; R1's README; the off-pool README |
 | 2026-10-24 | **R-b2 READ: HOM-NONE** (`../research_state/measurements/x50_r1b_hom_2026-10-23/`, registered `42f1d9a7` §8.4; G-REPRO 320 / 320 bit-exact) | Status line (new, latest); §1 (the off-pool L3 bullet: the behaviour-cloned candidate is now tested); §7 Q15 | reading HOM-NONE as "humans' choices carry no evidence" (the bank's opponents are scripted bots: F-1b-3; L3-H is the ladder's read, unbuilt); reading R-b1's −0.58 nats as a search gain (a gate on completed rows); un-pausing search | the README §R-b2, `rb2_read.json` |
+| 2026-10-25 | **The next-step DESIGN written (DRAFT, `design_search_next.md`; no measurement)** | the pointer line under the banner; no row, verdict or number here changes | adding its derived bars (the bridge, the identification target) to §4 / §5 before E2 measures the bridge (they are UNVERIFIED derivations) | `design_search_next.md` §1.2, §1.6, §3 |
