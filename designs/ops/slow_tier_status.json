@@ -50,11 +50,11 @@
    "detail": ""
   },
   "src/agents/inference/service/grouped_cuda_test.py::test_grouped_graph_backend_parity_weight_swap_and_a_frozen_steady_state": {
-   "status": "skip",
-   "commit": "4290d652a517a61c255572a97636a340beeecc6e",
-   "at": "2026-10-24T23:30:30Z",
-   "duration_s": 0.0,
-   "contention": 1.01,
+   "status": "pass",
+   "commit": "9ff6cafb753164486553a32c33d119be861d333a",
+   "at": "2026-10-25T19:34:17Z",
+   "duration_s": 835.77,
+   "contention": 1.02,
    "detail": ""
   },
   "src/agents/inference/service/grouped_test.py::test_a_load_into_a_grouped_slot_is_served_on_the_next_flush": {
@@ -163,14 +163,11 @@
   },
   "src/agents/inference/service/service_cuda_test.py::test_aot_backend_one_package_per_bucket_serves_every_slot": {
    "status": "pass",
-   "commit": "065d2d7ff2caaa1e5d968577499cabd144d10c8c",
-   "at": "2026-10-06T05:50:22Z",
-   "duration_s": 103.02,
-   "contention": 1.0,
-   "detail": "",
-   "last_skipped_at": "2026-10-24T23:42:19Z",
-   "last_skipped_commit": "4290d652a517a61c255572a97636a340beeecc6e",
-   "last_skip_detail": ""
+   "commit": "9ff6cafb753164486553a32c33d119be861d333a",
+   "at": "2026-10-25T19:16:15Z",
+   "duration_s": 461.45,
+   "contention": 1.01,
+   "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_eager_cuda_steady_state_allocates_no_segment_and_a_new_one_poisons": {
    "status": "pass",
@@ -4840,5 +4837,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-25T19:31:08Z"
+ "last_written": "2026-10-25T19:34:17Z"
 }
