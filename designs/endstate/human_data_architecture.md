@@ -19,11 +19,11 @@ STATUS
   human decisions in training / eval / play     : none / none / none
   human-built teams in training                 : yes (the 719-team pool; --team-mix corpora when typed)
   replay-derived teams in eval                  : yes (heldout72_hpfix = Metamon hl_05_26)
-  human-trained models                          : Kakuna, SmallRL, PastaMittens (eval anchors); the HOM (offline only)
+  human-trained models                          : Kakuna, SmallRL, LargeRL, LargeIL, PastaMittens (eval anchors); the HOM (offline only)
   human aggregates                              : Smogon usage / sets / spreads (every prior; the C-GAME fill)
   switch --human-data                           : NOT BUILT
   snapshot hr_spec_v1                           : 376,410 logs; durable copy yes
-  snapshot hr_arch_2026-10-24                   : 16,490 logs; durable copy no
+  snapshot hr_arch_2026-10-24                   : 16,490 logs; durable copy yes
   rowsets / models registered                   : 0 / 0
   informative rows, actor >= 1500               : 1.80M
   human sides in the panels' region (>= 1500)   : 15.9 %
@@ -53,7 +53,7 @@ is Smogon's aggregate of human ladder games. The switch that would let human dec
 | human-BUILT teams | **training** | the 719-team pool = PokePaste collections of five community builders (`data/teams/others/`; four are listed in its `sources.json`) + Smogon sample teams (`data/teams/sample/`); D1's forum corpus (`src/utils/team_corpora/w_forum_v1/`) only when `--team-mix` is typed | none for the pool (it IS the baseline); `--team-mix` | self-play pilots human-designed teams; "no human data" never meant "no human artefacts" |
 | REPLAY-derived teams | **evaluation** | `heldout72_hpfix` = Metamon's `hl_05_26`: teams extracted from ladder replays, hidden sets filled from usage | none | a human-data lever trains on H's POPULATION: a gain on H alone is "learned the ladder", not generalisation (Q-H13) |
 | human AGGREGATES | **every prior** | Smogon usage / sets / teammates / spreads (`data/pokemon/`), read through `agents.gen3_data`; the C-GAME fill; P72's generator | none | allowed by the root priors rule; P72 and every C-GAME fill draw from the SAME tables (Q-H13) |
-| human-TRAINED models | **evaluation**; offline | Kakuna (Superkazam: self-play + 4M human replays), `metamon:SmallRL` (human-only offline RL), PastaMittens (a Kakuna-family router) in `designs/ops/anchors.json`; the HOM (offline measurement only) | none | Kakuna is human-pretrained, so it is not a neutral meter for human-likeness (B-M6) |
+| human-TRAINED models | **evaluation**; offline | Kakuna (Superkazam: self-play + 4M human replays), `metamon:SmallRL`, `LargeRL` (human-only offline RL) and `LargeIL` (human-only imitation), PastaMittens (a Kakuna-family router) in `designs/ops/anchors.json`; the HOM (offline measurement only) | none | Kakuna is human-pretrained, so it is not a neutral meter for human-likeness (B-M6) |
 | human DECISIONS (rows) | **none** in training / eval / play | `hr_spec_v1`, `hr_arch_2026-10-24`: offline measurement only | `--human-data` (**NOT BUILT**) | the rest of this doc |
 
 **The priors rule, stated once.** The root `CLAUDE.md` rule governs what the network READS: it traces to Smogon,
@@ -134,16 +134,16 @@ checks it against `designs/research_state/heldout_panels.json`).
 | id | population | files | dates (Los Angeles) | manifest sha256 | durable copy | status | use |
 |---|---|---:|---|---|---|---|---|
 | `hr_spec_v1` | spectator | 376,410 | 2026-05-18 → 2026-09-23 | `e7d491e7f7a1b98093360ece7929eca0d2880c0ffc5706244edee4700935f3b1` | yes | reference | X50 R1 / R0 / R-b1 / R-b2, this card; TRAIN ≤ 09-20, HELD OUT 09-21..23 |
-| `hr_arch_2026-10-24` | archive | 16,490 | 2026-06-16 → 2026-10-24 | `ad940108978dd6a52a72cf2d637cc108c652d3eaa5c673346e8351c0f1f2f7a2` | no | measurement | drift and collection reads only |
+| `hr_arch_2026-10-24` | archive | 16,490 | 2026-06-16 → 2026-10-24 | `ad940108978dd6a52a72cf2d637cc108c652d3eaa5c673346e8351c0f1f2f7a2` | yes | measurement | drift and collection reads only |
 
 - **The manifest IS the definition.** Late uploads land in old date folders, so "as on disk" is not reproducible.
 - **Verification exists for the card's code.** `hrq.py extract --snapshot <id>` reads the manifest, checks its digest
   against the registry, re-hashes every log and checks the population's header, and REFUSES on any mismatch; the cache
   and `results.json` carry `{snapshot_id, manifest_sha256, extraction_commit, hrq_sha256}`. **PROPOSED:** the same
   check inside `agents.info_levers.human_data`, refusing any consumer whose stamp the registry does not hold.
-- **The durable copy.** `hr_spec_v1`'s bytes lived once, in the main checkout's gitignored `replays/`. Its copy is
-  `~/gen3ai_archive/human_snapshots/hr_spec_v1/logs.tar.zst` beside its manifest, every member re-hashed after writing;
-  both locations are in the registry row. The original was only read. `hr_arch_2026-10-24` has no copy (FINDING).
+- **The durable copy.** Each snapshot's bytes lived once, in the main checkout's gitignored `replays/`. Each has a copy,
+  `~/gen3ai_archive/human_snapshots/<id>/logs.tar.zst` beside its manifest (`hrq.py archive`), every member re-hashed
+  after writing; both locations and the archive's sha256 are in the registry row. The originals were only read.
 - **Two live at most:** one `reference`, one `candidate`; others are `measurement` or `retired` (the gate counts).
 - **A new snapshot** is cut on the drift alarm (§8) or at +50 % usable volume; it is a new treatment, never a replicate.
 - **Accounts in committed artifacts are salted hashes** (`hrq.acct`); the salt and the name map stay in
@@ -183,9 +183,9 @@ checks it against `designs/research_state/heldout_panels.json`).
 
 | order | question | the read | cost | answer now |
 |---|---|---|---|---|
-| 1 | **Q-H10 HUMAN-ONLY MODEL:** does a model trained only on human data beat ours? | P\* vs `metamon:SmallRL` (human-only offline RL, pinned) on H, F, P72, home72, 400 games each | ≈ 1.3 CPU lane-h, no build | unmeasured; Metamon's own table puts its human-only models far below its self-play-trained ones (README, UNVERIFIED for our cells) |
+| 1 | **Q-H10 HUMAN-ONLY MODEL:** does a model trained only on human data beat ours? | P\* vs `metamon:SmallRL` (human-only offline RL, pinned) on H, F, P72, home72, 400 games each | ≈ 1.3 CPU lane-h, no build | REGISTERED and playing ([`human_only_vs_pstar_2026-10-25`](../research_state/measurements/human_only_vs_pstar_2026-10-25/PREREG.md)); Metamon's own table puts its human-only models far below its self-play-trained ones (README, UNVERIFIED for our cells) |
 | 2 | instrument check | the HOM's TRACE TWIN: NLL on C-GAME-completed vs true rows of the same decisions, minus P\*'s | ≈ 1 lane-h + ≈ 0.2 agent-day | unread (registered in rung 1b, never run) |
-| 3 | Q-H10 at scale | P\* vs `LargeRL` and `LargeIL` (200M, human-only) | 2 downloads (owner's approval) + ≈ 4.5 lane-h each | not pinned |
+| 3 | Q-H10 at scale | P\* vs `LargeRL` and `LargeIL` (200M, human-only) | ≈ 4.5 lane-h each | pinned (hub `ac8e88e7`, ckpt 40, sha256 in the registration); REGISTERED and playing ([`human_only_vs_pstar_2026-10-25`](../research_state/measurements/human_only_vs_pstar_2026-10-25/PREREG.md)) |
 | 4 | **Q-H9 HUMAN vs SELF-PLAY DATA:** on the same states, do human labels teach better than ours? | X59-S, the matched-student contest (S-H human labels vs S-P P\*'s sampled labels); S-H vs P\* is also Q-H10 in our architecture | ≈ 0.5–1 agent-day + 25–35 CPU lane-h (or ≈ 2 GPU-h + 20 lane-h) | unmeasured |
 
 ### 7.2 The rest
@@ -223,7 +223,7 @@ checks it against `designs/research_state/heldout_panels.json`).
 
 ## 9. Where this is heading (all PROPOSED)
 
-1. The first reads of §7.1, in order (CPU; the downloads need the owner's word).
+1. The first reads of §7.1, in order (CPU): FR-1 and FR-3 are playing; the trace twin and X59-S follow.
 2. The switch and the consumer-side snapshot check (≈ 1 agent-day), only once a first read routes a lever to a build.
 3. H-TEAMS (with the D1 contrast) or H-BC / H-INIT, per X59-S, read in X60 as REVIEW B fixed it.
 4. A live spectator collector on the Rust live reader: read-only spectating needs the owner's word; not designed here.
@@ -237,3 +237,4 @@ checks it against `designs/research_state/heldout_panels.json`).
 |---|---|---|---|---|
 | 2026-10-25 | **This doc CREATED (DRAFT)**: the owner's requirement of an always-current architecture for human data, split from the lever design (explicit-only) | the four-source taxonomy; snapshots frozen by manifest sha256; one flag registered in `agents.info_levers`; Q-H1..Q-H12; a split-half-floored drift policy | one doc for architecture and experiment; pooling (a) and (b); per-lever flags | the card; X50 R-b1 / R-b2 |
 | 2026-10-25 | **REVISED after REVIEW A / B / C** (REVISED DRAFT, pending re-review) | a status box pinned by a new static gate; the INVENTORY of human data already in use (the old headline "no human data enters" was false); the taxonomy on two axes with the (c1) intake; the snapshot → rowset → model chain; ONE grammar here (judge and the consent flag dropped); fork / resume refuse without a typed clause; the owner's two questions as first reads; the account-clustered drift floor; snapshot extraction from the manifest, a durable copy, salted account ids; future things PROPOSED | keeping "no human data enters" with a footnote (it answers the contamination question wrongly); a rowset id hidden behind the snapshot id (two runs citing one snapshot could train on different rows); `judge` kept "closed" inside the grammar (replace, don't append) | `RESPONSE.md`; `REVIEW_A_data.md`, `REVIEW_B_experiments.md`, `REVIEW_C_reasoning.md` |
+| 2026-10-25 | **FR-1 and FR-3 REGISTERED; `hr_arch_2026-10-24` copied** | P\* vs SmallRL, LargeRL, LargeIL on H, F, P72, home72 (400 each, X51's twins, greedy); LargeRL / LargeIL pinned at hub `ac8e88e7` ckpt 40; the archive snapshot's durable copy (16,490 members re-hashed) | re-running an identity unit (the strongest read showed it at the same commit); a sampling regime (SOP rule 2) | `human_only_vs_pstar_2026-10-25/PREREG.md`; the registry row |

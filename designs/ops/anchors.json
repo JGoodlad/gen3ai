@@ -23,6 +23,8 @@
         "SyntheticRLV2": {"checkpoint": 48, "params": 200894911},
         "Kakuna": {"checkpoint": 34, "params": 142832563},
         "Kakuna28": {"policy": "Kakuna", "checkpoint": 28, "params": 142832563},
+        "LargeRL": {"checkpoint": 40, "params": 194792947},
+        "LargeIL": {"checkpoint": 40, "params": 194405089},
         "PastaMittens": {"preset": "dt4_k34_midjudge_switchk28", "preset_sha256": "1b0d180e82207414132ac03478fedb6b771921146e908906760f71c6a2050a9b"}
       },
       "team_sets": {

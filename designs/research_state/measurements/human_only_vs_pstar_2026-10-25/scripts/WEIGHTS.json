@@ -1,0 +1,23 @@
+{
+ "SmallRL": {
+  "path": "/home/goodlad/dev/metamon/cache/pretrained_models/models--jakegrigsby--metamon/snapshots/ac8e88e7da8dc2a2b85176d88f81fd8854b1445b/small-rl/ckpts/policy_weights/policy_epoch_40.pt",
+  "sha256": "f4258211777480643fbfe573ff906a2ef1a86b0bc2ad9cce117efdc797e40369",
+  "bytes": 55821762,
+  "hub_revision": "ac8e88e7da8dc2a2b85176d88f81fd8854b1445b",
+  "file": "small-rl/ckpts/policy_weights/policy_epoch_40.pt"
+ },
+ "LargeRL": {
+  "path": "/home/goodlad/dev/metamon/cache/pretrained_models/models--jakegrigsby--metamon/snapshots/ac8e88e7da8dc2a2b85176d88f81fd8854b1445b/large-rl/ckpts/policy_weights/policy_epoch_40.pt",
+  "sha256": "04ed6d5179a0fbc1254384a8199cbf09eed56982c41adf0e22465bfe95044d59",
+  "bytes": 779316162,
+  "hub_revision": "ac8e88e7da8dc2a2b85176d88f81fd8854b1445b",
+  "file": "large-rl/ckpts/policy_weights/policy_epoch_40.pt"
+ },
+ "LargeIL": {
+  "path": "/home/goodlad/dev/metamon/cache/pretrained_models/models--jakegrigsby--metamon/snapshots/ac8e88e7da8dc2a2b85176d88f81fd8854b1445b/large-il/ckpts/policy_weights/policy_epoch_40.pt",
+  "sha256": "8a43fcc7798c41df404a72486002a2d6a7c3ef9f988b948ae062af6a2bb1e89b",
+  "bytes": 777764866,
+  "hub_revision": "ac8e88e7da8dc2a2b85176d88f81fd8854b1445b",
+  "file": "large-il/ckpts/policy_weights/policy_epoch_40.pt"
+ }
+}

@@ -75,9 +75,15 @@
    "status": "measurement",
    "locations": {
     "original": "<main checkout>/replays/showdown/gen3ou (gitignored; only ever read)",
-    "durable": null
+    "durable": "~/gen3ai_archive/human_snapshots/hr_arch_2026-10-24/logs.tar.zst"
    },
-   "durable": null,
+   "durable": {
+    "archive": "~/gen3ai_archive/human_snapshots/hr_arch_2026-10-24/logs.tar.zst",
+    "archive_sha256": "bb4f29096d3b87ec5f1f9557725ae5d36766aa6e36b4b8ca23ceabcabae5e242",
+    "archive_bytes": 17051964,
+    "members_verified": 16490,
+    "verified_at": "2026-10-25T20:17:29+00:00"
+   },
    "actor_side": "public",
    "opp_side": "public"
   }
