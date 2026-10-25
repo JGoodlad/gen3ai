@@ -76,7 +76,7 @@ def _open_window(run_dir: Path) -> Optional[str]:
     return None
 
 
-def _lease_line(no_lease_check: Optional[str]) -> str:
+def _lease_line(no_lease_check: Optional[str], launcher_rec: Optional[dict] = None) -> str:
     """The lease the guest will run on. The caller must HOLD it (its token is in this environment):
     the guest's GPU commands run on the holder's token, so the lease never moves during a window."""
     from utils.gpu_lease import holds_lease, read_lease
@@ -88,6 +88,12 @@ def _lease_line(no_lease_check: Optional[str]) -> str:
         if held is not None:
             raise Refused(f"--no-lease-check is refused while a GPU lease is held ({held.describe()}): "
                           "put the holder's GEN3AI_GPU_LEASE_TOKEN(_FILE) in front of the call instead")
+        # ...and a run LAUNCHED under a lease (launcher.json `leaseless` false or absent) keeps the lease rule for
+        # life: once its holder releases, "no lease is held" must not open it to any caller (T46 residual, 2026-10-25).
+        if (launcher_rec or {}).get("leaseless") is not True:
+            raise Refused("--no-lease-check is refused: this run's launcher was not recorded as started with NO GPU "
+                          "lease (launcher.json `leaseless`), so only a caller holding the lease may arm or "
+                          "guest a window; acquire one (scripts/ops/gpu_lease.sh), or re-launch the run leaseless")
         return f"lease NOT checked: {no_lease_check}"
     mine = holds_lease(lock_path())
     if mine is None:
@@ -132,7 +138,7 @@ def cmd_arm(a: argparse.Namespace) -> int:
     problems = req.problems()
     if problems:
         raise Refused("; ".join(problems))
-    lease = _lease_line(a.no_lease_check)
+    lease = _lease_line(a.no_lease_check, rec)
     if a.precheck is not None:
         pre = _run_precheck(a.precheck, float(a.precheck_timeout_s))
     else:
@@ -170,7 +176,7 @@ def cmd_guest(a: argparse.Namespace) -> int:
         raise Refused("no guest command after `--`")
     if not (0 < float(a.wait_max_min) <= GUEST_WAIT_CEILING_MIN):
         raise Refused(f"--wait-max-min must be in (0, {GUEST_WAIT_CEILING_MIN:.0f}]: a guest's wait is always bounded")
-    _lease_line(a.no_lease_check)
+    _lease_line(a.no_lease_check, P.read_json(P.window_root(run_dir) / P.LAUNCHER_FILE))
     wid = _guest_window_id(run_dir)
     wdir = P.window_dir(run_dir, wid)
     deadline = time.time() + 60.0 * float(a.wait_max_min)

@@ -109,8 +109,7 @@ _METRIC_LABELS = {
     "rank/policy_n95": "policy n95",
     "rank/policy_n99": "policy n99",
     # Hidden-opponent belief-aux diagnostics (--opp-belief-aux-coef / --move-belief-mode /
-    # --opp-belief-latent-coef). species_acc is the headline; move_* = the move-belief head;
-    # latent_* = the role-token latent predictor (std→0 while cosine→1 is the collapse NO-GO).
+    # --opp-belief-latent-coef). species_acc is the headline; move_* = the move-belief head.
     "belief/species_acc": "species acc",
     "belief/species_acc_above_chance": "species acc>chance",
     "belief/moves_precision": "moves prec",
@@ -126,12 +125,6 @@ _METRIC_LABELS = {
     "belief/move_revealed_slots": "move revealed",
     "belief/move_unrevealed_slots": "move unrevealed",
     "belief/move_loss": "move loss",
-    "belief/latent_cosine": "latent cos",
-    "belief/latent_cosine_above_chance": "latent cos>chance",
-    "belief/latent_cosine_baseline": "latent cos base",
-    "belief/latent_std": "latent std",
-    "belief/latent_vicreg": "latent vicreg",
-    "belief/latent_loss": "latent loss",
     # Spread belief (--spread-belief-coef, gen3_unified_spread_belief_v1): the op's believed opp stats vs
     # truth. mae = stat-point error (falls); largest_bias = signed error on each mon's largest stat → 0
     # (the "over-estimates the largest EV" diagnostic); n_slots = supervised (revealed) slots/minibatch.
@@ -222,9 +215,8 @@ _METRIC_ORDER = [
     "train/stable_fraction",
     # Belief-aux diagnostics (only present when a belief aux is on) — rendered in their own
     # `belief/` section directly BELOW train/ (same column). species_acc is the headline; the
-    # move_* block is the move-belief head; the latent_* block is the role-token latent predictor
-    # (watch latent_std — →0 while latent_cosine→1 is the collapse NO-GO). The shared-trunk PULL of
-    # each aux lives separately under grad/species_belief_* / grad/move_belief_* / grad/latent_*
+    # move_* block is the move-belief head. The shared-trunk PULL of
+    # each aux lives separately under grad/species_belief_* / grad/move_belief_*
     # (+ grad/aux_share for the combined non-RL draw).
     "belief/species_acc",
     "belief/species_acc_above_chance",
@@ -241,12 +233,6 @@ _METRIC_ORDER = [
     "belief/move_revealed_slots",
     "belief/move_unrevealed_slots",
     "belief/move_loss",
-    "belief/latent_cosine",
-    "belief/latent_cosine_above_chance",
-    "belief/latent_cosine_baseline",
-    "belief/latent_std",
-    "belief/latent_vicreg",
-    "belief/latent_loss",
     # Gradient balance: every head's pull on the SHARED trunk, on ONE common denominator so the
     # shares are comparable + sum to ~1 (policy_share + value_share + aux_share). policy/value are
     # always present; value_policy_logratio = log10(‖g_v‖/‖g_p‖) is the AUX-INDEPENDENT value-vs-policy

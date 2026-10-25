@@ -355,6 +355,16 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     run_dir = resolve_models_path(effective_run_dir(ns))
     same_run = bool(run_dir) and is_same_run_checkpoint(model, run_dir)
     config_path, tried = parent_config_path(model)
+    # THE LAUNCH'S FIRST --model REFUSAL (`resolve_config`, 2026-10-25): a `--model` that names no checkpoint zip is
+    # "file not found" (`checkpoint_state.require_checkpoint`, FATAL_CONFIG) whatever the run dir's model_config.json
+    # and the typed flags supply. Run here too, or an argv with every value typed read "launches" for a zip the
+    # launch refuses (4fa4e536 FINDING 7). The launch defers it to after the combination sweep; `main()` does the same.
+    from main.train.checkpoint_state import CheckpointNotFoundError, require_checkpoint
+    try:
+        require_checkpoint(model)
+        checkpoint_refusal = None
+    except CheckpointNotFoundError as e:
+        checkpoint_refusal = str(e)
 
     saved = None
     if config_path:
@@ -378,7 +388,7 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
             _critic()
             return {"ns": ns, "model": model, "config_path": config_path, "tried": tried,
                     "inherited": {}, "same_run": same_run, "read_error": str(e),
-                    "recipe_refusal": recipe_refusal}
+                    "recipe_refusal": recipe_refusal, "checkpoint_refusal": checkpoint_refusal}
 
     ns._saved_config_present = saved is not None
     inherited: Dict[str, Any] = {}
@@ -442,7 +452,8 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
         grow_refusal = str(e)
     return {"ns": ns, "model": model, "config_path": config_path, "tried": tried,
             "inherited": inherited, "same_run": same_run, "derived_refusal": derived_refusal,
-            "recipe_refusal": recipe_refusal, "env_core_refusal": env_core_refusal, "grow_refusal": grow_refusal}
+            "recipe_refusal": recipe_refusal, "env_core_refusal": env_core_refusal, "grow_refusal": grow_refusal,
+            "checkpoint_refusal": checkpoint_refusal}
 
 
 def unsatisfiable_from_namespace(ns) -> List[Tuple[str, str, str]]:
@@ -628,6 +639,7 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
            "unsatisfiable": unsatisfiable_pairs(argv),
            "resolution": None, "combinations": [], "ns": None,
            "arch": None, "recipe": None, "recipe_refusal": None, "env_core_refusal": None,
+           "checkpoint_refusal": None,
            "umbrella_refusal": None, "parse_refusal": None, "fork_arch": None,
            "shaped_reward": shaped_reward_finding(argv),
            "retired_levers": retired_levers_finding(argv),
@@ -684,7 +696,9 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
         advisory=advisory,
         inherited=frozenset(inherited),
     )
-    res["recipe_refusal"] = resolution.get("recipe_refusal")
+    # the launch raises the missing-checkpoint refusal BEFORE the recipe refusal, so the latter is never reached then
+    res["checkpoint_refusal"] = resolution.get("checkpoint_refusal")
+    res["recipe_refusal"] = None if res["checkpoint_refusal"] else resolution.get("recipe_refusal")
     res["env_core_refusal"] = resolution.get("env_core_refusal")
     # F-BI-2: a `--model` argv's ARCHITECTURE against the checkpoint's recorded model_config.json — the
     # trainer's own version build and `check_compatible` (`main.train.fork_arch`), so a fork the child
@@ -1093,6 +1107,12 @@ def main(raw: List[str] | None = None) -> int:
                   f"{res['env_core_refusal']}")
         else:
             print(f"\n  ✗ this command would be REFUSED at launch (FATAL_CONFIG): {res['env_core_refusal']}")
+            return int(TrainExitCode.FATAL_CONFIG)
+    if res.get("checkpoint_refusal"):
+        # `resolve_config`'s first --model refusal (after the combination sweep, before the recipe refusal):
+        # the zip is not there, so the launch exits FATAL_CONFIG as "file not found" whatever else is typed.
+        print(f"\n  ✗ this --model launch would be REFUSED (FATAL_CONFIG): {res['checkpoint_refusal']}")
+        if not (res["unknown"] or res["unsatisfiable"] or res["combinations"]):
             return int(TrainExitCode.FATAL_CONFIG)
     if res.get("recipe_refusal"):
         # The --model launch's recipe refusal (a recipe value missing from its record). The launch defers it to

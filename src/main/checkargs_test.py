@@ -207,10 +207,20 @@ def _minimal_model_config(**overrides) -> dict:
     return out
 
 
-def _parent_run(tmp_path, name="parent", *, write_config=True, **recorded):
-    """`(checkpoint_path, run_dir)` for a run whose recorded config carries `recorded`."""
+def _write_zip(path) -> None:
+    """A real (valid, tiny) zip at `path`: the launch's first `--model` refusal is a MISSING zip
+    (`checkpoint_state.require_checkpoint`), and `main.checkargs` now runs the same one."""
+    import zipfile
+    with zipfile.ZipFile(path, "w") as z:
+        z.writestr("data", "{}")
+
+
+def _parent_run(tmp_path, name="parent", *, write_config=True, write_zip=True, **recorded):
+    """`(checkpoint_path, run_dir)` for a run whose recorded config carries `recorded`, with its checkpoint zip."""
     run = tmp_path / name
     (run / "checkpoints").mkdir(parents=True)
+    if write_zip:
+        _write_zip(run / "checkpoints" / "checkpoint_10_steps.zip")
     if write_config:
         (run / "model_config.json").write_text(json.dumps(_minimal_model_config(**recorded)))
     (run / "metadata.json").write_text(json.dumps({"original_command": "x.py --steps 1"}))
@@ -297,6 +307,25 @@ def test_a_parent_with_no_recorded_config_WARNS_and_still_checks_the_argv(tmp_pa
     # Nothing in the ARGV itself is wrong — but with no recorded config the launch cannot restore the
     # value-checked `--vf-coef` (the 2026-10-14 record rule: never a parser default), and says so by name.
     assert rc == 3 and "--vf-coef" in out and "would be REFUSED" in out, out
+
+
+def test_a_missing_checkpoint_zip_is_refused_as_file_not_found_even_with_every_config_value_typed(tmp_path, capsys):
+    """4fa4e536 FINDING 7: the run dir's config and recipe records are intact and the argv types `--vf-coef`, so every
+    value resolves, yet the LAUNCH refuses the missing zip (`checkpoint_state.require_checkpoint`, FATAL_CONFIG). The
+    checker must say so too, not "still launches". Fails on revert."""
+    from main.checkargs import main as checkargs_main
+    from main.exit_codes import TrainExitCode
+    ckpt, _ = _parent_run(tmp_path, write_zip=False, **_C1_PARENT)
+    argv = _c1_argv(ckpt, "--move-belief-mode", "revealed", "--vf-coef", "0.5")
+    res = check(argv)
+    assert "checkpoint file not found" in res["checkpoint_refusal"] and res["recipe_refusal"] is None
+    assert checkargs_main(["--argv", " ".join(argv)]) == int(TrainExitCode.FATAL_CONFIG)
+    out = capsys.readouterr().out
+    assert "REFUSED (FATAL_CONFIG)" in out and "checkpoint file not found" in out
+    # the same argv with the zip in place launches
+    _write_zip(ckpt)
+    assert check(argv)["checkpoint_refusal"] is None
+    assert checkargs_main(["--argv", " ".join(argv)]) == 0
 
 
 def test_no_model_still_builds_a_namespace_and_runs_the_combination_checks():

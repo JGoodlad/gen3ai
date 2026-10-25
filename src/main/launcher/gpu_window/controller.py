@@ -33,6 +33,13 @@ GPU_RELEASE_TIMEOUT_S = 600.0
 CHECKPOINT_SLACK_S = 2.0
 
 
+def _no_lease_held() -> bool:
+    """True when no GPU lease is held on this box right now (the launcher's start, ``announce``)."""
+    from utils.gpu_lease import read_lease
+    from utils.gpu_lock import lock_path
+    return read_lease(lock_path()) is None
+
+
 class GpuQueryFailed(RuntimeError):
     """``nvidia-smi`` is installed but could not answer (non-zero exit, timeout, OSError). NOT "free": a
     hung or failing ``nvidia-smi`` is exactly when the card's state is least known (review 2026-10-20)."""
@@ -110,7 +117,11 @@ class WindowController:
             self._event(f"⚠️  GPU window {cur.get('window_id')}: its launcher is gone and it was left "
                         f"{str(cur.get('phase')).upper()} — closed as ABANDONED (check the run's checkpoint)")
         P.write_json_atomic(self.root / P.LAUNCHER_FILE, {
-            "launcher": self._identity, "started_epoch": self._clock(), "run_dir": self._run_dir_fn()})
+            "launcher": self._identity, "started_epoch": self._clock(), "run_dir": self._run_dir_fn(),
+            # No GPU lease was held when this launcher started: only then may `arm` / `guest` pass
+            # `--no-lease-check` (cli._lease_line). A run launched UNDER a lease is never pausable by a caller
+            # that merely says "no lease" after the holder has released it.
+            "leaseless": _no_lease_held()})
         self._event(f"🪟 GPU window: ENABLED — arm one with `python -m main.launcher.gpu_window arm "
                     f"{self._run_dir_fn()} …` (requests read from {self.root})")
 

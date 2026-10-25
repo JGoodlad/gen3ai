@@ -322,6 +322,38 @@ def test_no_lease_check_is_refused_while_a_lease_is_held(run_dir, capsys, monkey
     assert not (P.window_root(run_dir) / P.REQUEST_FILE).exists()
 
 
+def test_no_lease_check_is_refused_for_a_run_launched_under_a_lease_even_after_the_lease_is_released(
+        run_dir, capsys, monkeypatch):
+    """T46 residual (2026-10-25): the lease rule must not lapse with the lease. A launcher that started while a lease
+    was held records `leaseless: false`; `arm` / `guest` with `--no-lease-check` then refuse once the holder is gone."""
+    import utils.gpu_lease as L
+
+    class _Held:
+        def describe(self):
+            return "owner 'training' pid 1"
+    monkeypatch.setattr(L, "read_lease", lambda lock: _Held())
+    _controller(run_dir, []).announce()
+    assert P.read_json(P.window_root(run_dir) / P.LAUNCHER_FILE)["leaseless"] is False
+    monkeypatch.setattr(L, "read_lease", lambda lock: None)          # the holder released
+    assert _arm(run_dir) == cli.EXIT_REFUSED
+    assert "not recorded as started with NO GPU lease" in capsys.readouterr().err
+    assert not (P.window_root(run_dir) / P.REQUEST_FILE).exists()
+    assert cli.main(["guest", str(run_dir), "--wait-max-min", "1", "--no-lease-check", "test", "--", "true"]) \
+        == cli.EXIT_REFUSED
+    assert "not recorded as started with NO GPU lease" in capsys.readouterr().err
+
+
+def test_a_launcher_record_without_the_leaseless_key_is_not_leaseless(run_dir, capsys):
+    """A launcher.json from before the key (a live older launcher) does not open the opt-out."""
+    _controller(run_dir, []).announce()
+    rec = P.read_json(P.window_root(run_dir) / P.LAUNCHER_FILE)
+    assert rec["leaseless"] is True
+    del rec["leaseless"]
+    P.write_json_atomic(P.window_root(run_dir) / P.LAUNCHER_FILE, rec)
+    assert _arm(run_dir) == cli.EXIT_REFUSED
+    assert "not recorded as started with NO GPU lease" in capsys.readouterr().err
+
+
 # ── 2026-10-25: an operator's `resume` re-checks the GPU (T46 adversarial review) ──────────────────
 
 def _resume_cmd(run_dir: Path) -> int:

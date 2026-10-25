@@ -472,6 +472,8 @@ def dry_run(
             inherited=frozenset(inherited))
         for line in recipe_surface.report_lines(recipe):
             out(f"  {line}")
+    if res.get("checkpoint_refusal"):
+        out(f"  ✗ REFUSED (checkpoint): {res['checkpoint_refusal']}")
     if res.get("recipe_refusal"):
         out(f"  ✗ REFUSED (recipe record): {res['recipe_refusal']}")
     # Deletion pass D4: a shaped-critic checkpoint. A PINNED child runs its own commit's resolve_config
@@ -557,7 +559,7 @@ def dry_run(
     # one is advisory (see the `advisory=` argument above) and `refuses` is already False.
     if arch is not None and arch.refuses:
         failed = True
-    if (recipe is not None and recipe.refuses) or res.get("recipe_refusal"):
+    if (recipe is not None and recipe.refuses) or res.get("recipe_refusal") or res.get("checkpoint_refusal"):
         failed = True
     if res.get("env_core_refusal") and not _d4_advisory:
         failed = True

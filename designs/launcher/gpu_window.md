@@ -66,8 +66,9 @@ safe point, exits INTERRUPTED ─▶ checkpoint + empty GPU checked ─▶ GO �
   signal death is `128+N`, so a SIGTERM reads `rc 143` and HOLDs); SIGKILL of the guest cannot be forwarded, and
   leaves the job running (the HOLD then names it). The command has no controlling terminal.
 - **The lease never moves.** `arm` and `guest` require the caller to HOLD the GPU lease: its token must be in
-  the environment. `--no-lease-check REASON` is for a box with NO lease (a CPU run, a test) and is refused
-  while anyone holds one. The guest's GPU commands go through
+  the environment. `--no-lease-check REASON` is for a box with NO lease (a CPU run, a test): it is refused
+  while anyone holds one, AND for any run whose launcher did not start leaseless (`launcher.json` `leaseless`, written
+  by `announce()`; absent reads false), so the rule does not lapse when the holder releases. The guest's GPU commands go through
   `scripts/ops/gpu_lock.sh` on the holder's token. The launcher stays alive throughout, so a lease that
   watches it is kept.
 

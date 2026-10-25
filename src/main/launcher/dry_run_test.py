@@ -187,6 +187,18 @@ def test_a_same_run_restart_dry_run_leaves_the_run_dir_byte_identical(
     assert "would launch" in out
 
 
+def test_a_dry_run_of_a_removed_checkpoint_zip_is_refused_as_file_not_found(isolated, monkeypatch, capsys):
+    """4fa4e536 FINDING 7: the sidecar and the run dir's records are intact, only the zip is gone (checkpoint retention):
+    the launch refuses it, so `--dry-run` (which takes `main.checkargs.check`'s verdict) must not say "would launch"."""
+    root, (first, _second), work = isolated
+    _run_dir, ckpt = _make_run(work, first)
+    os.remove(ckpt)
+    _dry_run(["--model", ckpt, "--steps", "30000000"], monkeypatch, expect=3)    # FATAL_CONFIG
+    out = capsys.readouterr().out
+    assert "REFUSED (checkpoint)" in out and "checkpoint file not found" in out
+    assert "would launch" not in out
+
+
 def test_a_same_run_restart_dry_run_creates_no_worktree(isolated, monkeypatch, capsys):
     root, (first, _second), work = isolated
     _run_dir, ckpt = _make_run(work, first)

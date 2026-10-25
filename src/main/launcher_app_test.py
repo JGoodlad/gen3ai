@@ -190,13 +190,15 @@ async def test_dashboard_metrics_tables_populated():
 
 
 def test_the_panel_lists_no_row_that_has_no_producer():
-    """`grad/latent_*` (no producer since `opp_belief_latent` died at v75) and `grad/win_prob_*` (deduplicated against
+    """`grad/latent_*` and `belief/latent_*` (no producer since `opp_belief_latent` died at v75) and `grad/win_prob_*` (deduplicated against
     `grad/value_*` under the constant critic, `tb_relevance_test`) never fill, so a panel row for them reads as a broken
     run. `grad/move_latent_*` is live in production and stays. Fails on revert."""
     from main.launcher import format as F
-    dead = ("grad/latent_", "grad/win_prob_")
+    dead = ("grad/latent_", "belief/latent_", "grad/win_prob_")
     assert not [k for k in list(F._METRIC_LABELS) + list(F._METRIC_ORDER) if k.startswith(dead)]
     assert {"grad/move_latent_share", "grad/move_latent_norm_shared", "grad/move_latent_policy_cosine"} <= set(F._METRIC_ORDER)
+    # `belief/move_*` is the live move-belief head and stays
+    assert {"belief/move_bce", "belief/move_loss"} <= set(F._METRIC_ORDER)
 
 
 def test_a_non_finite_metric_renders_as_itself_never_raises():

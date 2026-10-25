@@ -173,6 +173,7 @@ and stop only the server you started.
 python src/main/play.py --mode selfplay --port 9017   # Rust-stack websocket client: selfplay/challenge/accept/ladder (ladder: users only, concurrency 1, needs a fresh drift-gate pass; never an agent without the owner's token)
 python src/main/ladder_drift_scan.py --n 200      # pre-flight protocol-drift gate (public replays); a full pass <= 2 days old is what --mode ladder requires
 python -m main.elo models/<run>                  # offline ELO ladder + Elo-vs-step curve
+python -m main.elo compare models/<run_a> models/<run_b>   # cross-run dense ladder at matched snapshot COUNT
 python -m main.prober models/<run>               # forensic replay inspector (web UI, :6008)
 ```
 

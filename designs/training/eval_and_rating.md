@@ -304,9 +304,9 @@ renderer and design constants, `main.ops.g7_report`, `main.ops.calib_trend` and 
 retired by the owner's standing grant: the win-prob critic is a constant, the arm's read is decided and closed, and no
 registered read cites G1-G8 (`designs/deleted_flags.md`). Three things outlive it:
 
-- **The matched-COUNT ladder read** is a rule, not a tool: "Reading an ELO" rules 2-5 below. Its library layer is
-  `snapshot_ladder.own_rated_steps_ever` (the counting basis) and `fit_ladder(run_dir, first_n=n, write=False, steps=…)`
-  (the strict-prefix refit). **No CLI composes a cross-run matched-count read now**; `main.elo refit` is a same-run
+- **The matched-COUNT ladder read** is `python -m main.elo compare <run_a> <run_b> […]` (`main/elo_compare.py`; rules 2-5
+  below, enforced). Its library layer is `snapshot_ladder.own_rated_steps_ever` (the counting basis) and
+  `fit_ladder(run_dir, first_n=n, write=False, steps=…)` (the strict-prefix refit); `main.elo refit` is a same-run
   recipe refit.
 - **The calibration numbers** G1-G4 were built from: `main.scaffolding_gauge --reliability --reliability-reweight`
   (selection-reweighted, `bot` and `pool` never pooled) and the training-side `main.ops.value_sidecar_read`.
@@ -1834,6 +1834,8 @@ at 21/21 pairs is internally complete but only 7 nodes deep, and depth is what t
    above the lineage record's `fork_step`; pinned by `snapshot_ladder_test.py`) is the counting basis, and
    `fit_ladder(first_n=n, steps=<that list>)` the strict-prefix refit. A read must REFUSE a side with NO `games.jsonl`
    whose eval record names a pool snapshot its committed file no longer rates (the first n cannot be known).
-   🚨 A hand read off `ladder.json`'s n-th node is NOT a matched-count read on a groomed or forked run, and
-   **since the critic gate's retirement (2026-10-25) no CLI composes this read**: build it from those two calls and
-   say so in the report (`TECH_DEBT_BACKLOG.md` carries the open row).
+   🚨 A hand read off `ladder.json`'s n-th node is NOT a matched-count read on a groomed or forked run:
+   `python -m main.elo compare <run_a> <run_b> […]` composes those two calls and applies rules 2-5 (first run =
+   reference; both sides refit on the first N own-rated snapshots; a log-less side is read from a CURRENT committed
+   file only when it rates exactly N, else refused; a prefix with no inner edge, a non-converged fit, a transport mix
+   and an unanchored fit are refused; a cross-era pair and an unfinished run are labelled). It plays and writes nothing.

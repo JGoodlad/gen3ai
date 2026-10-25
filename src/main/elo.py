@@ -46,6 +46,10 @@ instead. ``--apply`` keeps the file it replaces as ``snapshot_ladder/ladder.pre_
 remaining evidence of what a banked number was quoted from — and refuses rather than overwrite one
 that is already there.
 
+``compare`` — the cross-run read at matched snapshot COUNT (``main/elo_compare.py``; plays and writes nothing)::
+
+    python -m main.elo compare <run_a> <run_b> [<run_c> ...] [--at-snapshots N] [--allow-transport-mix] [--json]
+
 Recipe v3 (2026-09-27): a refit DROPS the eval-cycle pair rows a v2 tree reused in ``games.jsonl``
 (the games that decided each promotion — a winner's curse). The report counts the pairs that
 carried ONLY such rows and names ``snapshot_ladder --backfill-fresh``, the one step that plays.
@@ -431,6 +435,9 @@ def ladder_headline(run_dir: str) -> str:
 def main() -> int:
     if len(sys.argv) > 1 and sys.argv[1] == "refit":
         return refit_main(sys.argv[2:])
+    if len(sys.argv) > 1 and sys.argv[1] == "compare":
+        from main.elo_compare import compare_main
+        return compare_main(sys.argv[2:])
     ap = argparse.ArgumentParser(description="Offline ELO analyzer for a training run")
     ap.add_argument("run_dir", help="models/run_<ts> directory, or a NAME from "
                                     "designs/baselines.json (e.g. `v9_long_baseline`)")
