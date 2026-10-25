@@ -172,6 +172,10 @@ class MetamonPeer(Peer):
         if team_sequence is not None:
             # MIRRORED TEAM PAIRS (T17): the peer plays exactly this team list, in order.
             argv += ["--team-sequence", str(team_sequence)]
+        preset = cfg.preset(agent)
+        if preset is not None:
+            # An ENSEMBLE (a router over a member preset): the peer checks the preset it builds is this one.
+            argv += ["--expect-preset", preset[0], "--expect-preset-sha256", preset[1]]
         if temperature is not None:
             # Only `t1` samples; the peer IGNORES a temperature under greedy (hazard H7).
             argv += ["--temperature", repr(float(temperature))]
@@ -207,7 +211,7 @@ class MetamonPeer(Peer):
             report_path=report_path,
             their_regime=(f"sample:T={float(temperature):g}" if temperature is not None
                           else regime),
-            version=f"{policy}@ckpt{checkpoint}",
+            version=(f"{policy}@preset:{preset[0]}" if preset is not None else f"{policy}@ckpt{checkpoint}"),
             commit=git_head(cfg.checkout),
             team_dir=cfg.team_dir(teamset, battle_format),
         )
@@ -242,6 +246,9 @@ class MetamonPeer(Peer):
         out.update({
             "sample_kwargs": blob.get("sample_kwarg_values", []),
             "argmax_match_rate": blob.get("argmax_match_rate"),
+            # An ENSEMBLE peer's per-decision check (its router has no argmax): the fraction of router calls
+            # that left every RNG untouched. None for a single policy.
+            "router_no_rng_rate": blob.get("router_no_rng_rate"),
             "regime_verified_decisions": bool(legacy if decisions is None else decisions),
             "peer_error_free": bool(legacy if error_free is None else error_free),
             "peer_wins": blob.get("peer_wins"),

@@ -266,3 +266,49 @@ def test_the_metamon_peer_env_pins_ONE_thread(tmp_path) -> None:
     # and the two that were already load-bearing
     assert plan.env["CUDA_VISIBLE_DEVICES"] == ""      # a training arm owns the GPU
     assert plan.env["PYTHONPATH"] == ""                # two `poke_env` packages must not meet
+
+
+# ------------------------------------------------- an ENSEMBLE agent (PastaMittens, the Kakuna router)
+def _ensemble_plan(cfg, tmp_path: Path) -> PeerPlan:
+    return MetamonPeer().plan(
+        cfg=cfg.metamon, agent="PastaMittens", regime="greedy", teamset="away",
+        battle_format="gen3ou", server_uri="ws://localhost:9501/showdown/websocket",
+        username="MetaPastaMittens1", opponent_username="Gen3AIAnchor", role="acceptor", n_games=4,
+        team_seed=7, out_dir=tmp_path)
+
+
+def test_an_ensemble_is_stamped_by_its_PRESET_and_the_peer_is_told_to_check_it(cfg, tmp_path) -> None:
+    plan = _ensemble_plan(cfg, tmp_path)
+    name, sha = cfg.metamon.preset("PastaMittens")
+    assert plan.version == f"PastaMittens@preset:{name}"
+    i = plan.argv.index("--expect-preset")
+    assert plan.argv[i + 1:i + 4] == [name, "--expect-preset-sha256", sha]
+    assert "--checkpoint" not in plan.argv
+
+
+def test_a_single_policy_carries_no_preset_check(cfg, tmp_path) -> None:
+    plan = _metamon_plan(cfg, tmp_path)
+    assert "--expect-preset" not in plan.argv and plan.version.startswith("SmallRL@ckpt")
+
+
+@pytest.mark.parametrize("entry", [{"preset": "x"}, {"preset_sha256": "0" * 64},
+                                   {"preset": "x", "preset_sha256": "0" * 63},
+                                   {"preset": "x", "preset_sha256": "0" * 64, "checkpoint": 3}])
+def test_a_half_specified_ensemble_entry_is_refused(cfg, entry) -> None:
+    import dataclasses
+
+    from main.anchors.config import AnchorConfigError
+
+    meta = dataclasses.replace(cfg.metamon, agents={"E": entry})
+    with pytest.raises(AnchorConfigError):
+        meta.preset("E")
+
+
+def test_the_router_rate_reaches_the_report(cfg, tmp_path) -> None:
+    plan = _ensemble_plan(cfg, tmp_path)
+    plan.report_path.write_text(json.dumps({"regime_verified_decisions": True, "peer_error_free": True,
+                                            "sample_kwarg_values": [False], "argmax_match_rate": None,
+                                            "router_no_rng_rate": 1.0}))
+    rep = MetamonPeer.read_report(plan)
+    assert rep["router_no_rng_rate"] == 1.0 and rep["argmax_match_rate"] is None
+    assert rep["regime_verified_decisions"] is True

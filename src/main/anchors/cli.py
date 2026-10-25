@@ -868,9 +868,10 @@ def main(argv: Optional[List[str]] = None) -> int:
 
             return int(TrainExitCode.FATAL_LIVE_PARSE)
         return 2
-    if not summary["their_argmax_match_rates"] and plan.opponent_kind == "metamon":
+    if (not summary["their_argmax_match_rates"] and not summary.get("their_router_no_rng_rates")
+            and plan.opponent_kind == "metamon"):
         print("")
-        print("⚠️  the peer reported no argmax_match_rate — the regime is UNVERIFIED for this "
+        print("⚠️  the peer reported no argmax_match_rate (nor a router no-RNG rate) — the regime is UNVERIFIED for this "
               "cell, so the number above must not be quoted as a matched read.")
     return 0
 

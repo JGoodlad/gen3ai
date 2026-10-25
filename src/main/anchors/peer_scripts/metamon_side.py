@@ -74,6 +74,7 @@ import os
 import random
 import re
 import sys
+import threading
 import time
 
 # Before torch: a GPU this process can see is a GPU it may grab, and a training arm owns it.
@@ -168,8 +169,134 @@ def install_sequence_team_draw(sequence_path, draw_log):
     print(f"[peer] team draw = the mirrored-pair SEQUENCE {sequence_path} ({len(files)} battles)", flush=True)
 
 
+def _rng_states():
+    """The process-global RNGs a router could draw from whose STATE is compared: torch's CPU generator and
+    NumPy's. Python's ``random`` is checked per THREAD instead (:func:`_install_python_draw_guard`)."""
+    import numpy as np
+    import torch
+
+    return torch.get_rng_state(), np.random.get_state()
+
+
+#: Python ``random``'s module-level draw functions. Their global state is SHARED with poke-env's event-loop thread,
+#: which draws while the router computes (measured 2026-10-25: 1 call in ~23 moved it, always ``python`` only), so
+#: a state compare would blame the router for another thread's draw.
+_PY_DRAWS = ("random", "uniform", "triangular", "randint", "randrange", "choice", "choices", "shuffle", "sample",
+             "gauss", "normalvariate", "lognormvariate", "expovariate", "vonmisesvariate", "gammavariate",
+             "betavariate", "paretovariate", "weibullvariate", "getrandbits", "randbytes", "binomialvariate")
+_ROUTER_THREAD = threading.local()
+_PY_DRAWS_IN_ROUTER = [0]
+
+
+def _install_python_draw_guard():
+    """Wrap each ``random.<draw>`` so a draw made by the thread that is INSIDE a router call is counted
+    (``_PY_DRAWS_IN_ROUTER``); draws from other threads pass through uncounted. Idempotent. (A module that bound a
+    draw by ``from random import …`` before this ran is not seen; Metamon's router imports no ``random`` at all.)"""
+    if getattr(random, "_gen3ai_draw_guard", False):
+        return
+    for name in _PY_DRAWS:
+        inner = getattr(random, name, None)
+        if inner is None:
+            continue
+
+        def draw(*a, _inner=inner, **k):
+            if getattr(_ROUTER_THREAD, "active", False):
+                _PY_DRAWS_IN_ROUTER[0] += 1
+            return _inner(*a, **k)
+
+        setattr(random, name, draw)
+    random._gen3ai_draw_guard = True
+
+
+def _rng_moved(a, b):
+    """The names of the RNGs whose state differs between two :func:`_rng_states` snapshots ([] = none)."""
+    import numpy as np
+    import torch
+
+    (ta, na), (tb, nb) = a, b
+    moved = []
+    if not torch.equal(ta, tb):
+        moved.append("torch")
+    if not (na[0] == nb[0] and np.array_equal(na[1], nb[1]) and tuple(na[2:]) == tuple(nb[2:])):
+        moved.append("numpy")
+    return moved
+
+
+def wrap_router(cls, probe):
+    """Instrument an ENSEMBLE ROUTER's ``get_actions`` (Metamon's ``HeuristicRouterEnsemblePolicy``).
+
+    The router is not an ``amago`` ``Agent``, so the argmax probe never sees it, and it has no argmax: it
+    scores its members' proposals and picks one. What makes it GREEDY-equivalent is that it is
+    DETERMINISTIC: it ignores the ``sample`` keyword and draws no random number. So each call records the
+    ``sample`` keyword, its time, and whether every RNG state is byte-equal before and after
+    (``router_no_rng_rate``, exactly 1.0 required). A router that sampled would move a state and fail. Python's
+    ``random`` is shared with poke-env's thread, so for it the check is per thread: no draw made BY THE ROUTER'S
+    THREAD during the call (:func:`_install_python_draw_guard`).
+    """
+    inner = cls.get_actions
+    _install_python_draw_guard()
+
+    def get_actions(self_, *a, **k):
+        probe.sample_kwargs.add(bool(k.get("sample", True)))
+        before = _rng_states()
+        py_before = _PY_DRAWS_IN_ROUTER[0]
+        _ROUTER_THREAD.active = True
+        t0 = time.perf_counter()
+        try:
+            return inner(self_, *a, **k)
+        finally:
+            _ROUTER_THREAD.active = False
+            probe.samples.append(time.perf_counter() - t0)
+            moved = _rng_moved(before, _rng_states())
+            if _PY_DRAWS_IN_ROUTER[0] != py_before:
+                moved.append("python")
+            if moved:
+                probe.router_rng_moved.append({"call": probe.n_router_checked, "rngs": moved})
+            probe.n_router_checked += 1
+            probe.n_router_no_rng += int(not moved)
+
+    cls.get_actions = get_actions
+
+
+def decisions_verified(regime, rate, n_dec, router_rate=None, n_router=0):
+    """The per-decision regime rule. A single policy: greedy demands an argmax rate of exactly 1.0, t1
+    materially below it (the positive control). An ENSEMBLE router (``n_router >= 1``): greedy demands a
+    no-RNG rate of exactly 1.0 on every call; t1 is never verified, because the router cannot sample."""
+    if n_router >= 1:
+        return regime == "greedy" and router_rate == 1.0
+    return (rate is not None and n_dec >= 1
+            and (rate == 1.0 if regime == "greedy" else rate < 1.0))
+
+
+def preset_sha256(members):
+    """The identity of an ensemble preset: sha256 over its member list's canonical JSON."""
+    import hashlib
+
+    return hashlib.sha256(json.dumps(members, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def check_preset(model, expect_name, expect_sha):
+    """Refuse to play unless ``model`` (a built Metamon nickname ensemble) routes over EXACTLY the pinned preset:
+    the preset file's entry hashes to the pin, and the member specs the model will build equal that entry."""
+    import dataclasses
+
+    import metamon.rl.experimental.ensemble as ens
+
+    with open(os.path.join(os.path.dirname(ens.__file__), "ensemble_presets.json")) as fh:
+        members = json.load(fh).get(expect_name)
+    got = preset_sha256(members) if members is not None else None
+    specs = [{**dataclasses.asdict(m), "proposal_roles": list(m.proposal_roles)}
+             for m in getattr(type(model), "MEMBER_SPECS", None) or []]
+    built = preset_sha256(specs) if specs else None
+    if got != expect_sha or built != expect_sha:
+        raise SystemExit(f"ensemble {type(model).__name__}: preset file {expect_name!r} sha256 {got}, built members "
+                         f"sha256 {built}; the pin is {expect_sha}")
+    print(f"[peer] ensemble preset {expect_name} sha256 {got} == the members it builds (pinned)", flush=True)
+    return {"preset": expect_name, "preset_sha256": got}
+
+
 class RegimeProbe:
-    """Per-decision timing + the two regime-verification instruments."""
+    """Per-decision timing + the regime-verification instruments (argmax for a policy, no-RNG for a router)."""
 
     def __init__(self, verify=True):
         self.samples = []
@@ -177,6 +304,9 @@ class RegimeProbe:
         self.sample_kwargs = set()
         self.n_checked = 0
         self.n_argmax_match = 0
+        self.n_router_checked = 0
+        self.n_router_no_rng = 0
+        self.router_rng_moved = []
         self._last_probs = None
 
     def install(self):
@@ -221,6 +351,12 @@ class RegimeProbe:
             return actions, hidden
 
         amago.agent.Agent.get_actions = get_actions
+        try:
+            from metamon.rl.experimental.ensemble.ensemble import HeuristicRouterEnsemblePolicy
+        except ImportError:
+            HeuristicRouterEnsemblePolicy = None
+        if HeuristicRouterEnsemblePolicy is not None:
+            wrap_router(HeuristicRouterEnsemblePolicy, probe)
         print("[peer] probes installed on Agent.get_actions"
               + (" + BaseActorHead.forward" if self.verify else ""), flush=True)
 
@@ -235,8 +371,14 @@ class RegimeProbe:
         if self.verify:
             out["argmax_checked"] = self.n_checked
             out["argmax_matched"] = self.n_argmax_match
+            # A router run has no argmax to compare with (its members' last actor call is not its choice).
             out["argmax_match_rate"] = (self.n_argmax_match / self.n_checked
-                                        if self.n_checked else None)
+                                        if self.n_checked and not self.n_router_checked else None)
+        out["router_checked"] = self.n_router_checked
+        out["router_no_rng"] = self.n_router_no_rng
+        out["router_rng_moved"] = self.router_rng_moved
+        out["router_no_rng_rate"] = (self.n_router_no_rng / self.n_router_checked
+                                     if self.n_router_checked else None)
         return out
 
 
@@ -379,6 +521,9 @@ def build_parser():
     ap.add_argument("--temperature", type=float, default=1.0,
                     help="action_temperature for t1; IGNORED by greedy (see the module docstring: "
                          "MetamonDiscrete clips probabilities and cannot express it)")
+    ap.add_argument("--expect-preset", default=None,
+                    help="an ENSEMBLE agent: the member preset it must route over (refused otherwise)")
+    ap.add_argument("--expect-preset-sha256", default=None)
     ap.add_argument("--no-verify", dest="verify", action="store_false")
     ap.add_argument("--battle-backend", default=None,
                     help="default: the model's own (SmallRL/SyntheticRLV2 want 'poke-env', Kakuna 'metamon')")
@@ -406,6 +551,9 @@ def main(argv=None):
         install_seeded_team_draw(args.team_seed, draw_log)
 
     model = get_pretrained_model(args.agent)
+    preset_record = {}
+    if args.expect_preset is not None:
+        preset_record = check_preset(model, args.expect_preset, args.expect_preset_sha256)
     backend = args.battle_backend or model.battle_backend
 
     attention_record = {"attention": "FlashAttention" if args.attention == "flash" else None,
@@ -455,6 +603,7 @@ def main(argv=None):
         "n_team_draws": len(draw_log), "team_draws": draw_log,
         "error": error,
         **attention_record,
+        **preset_record,
     })
     # Metamon's own scoreboard, complementing ours — the independent cross-check that the win
     # accounting is right. Its `won` field is a BOOLEAN, so it books a TIE as its own loss
@@ -477,8 +626,9 @@ def main(argv=None):
     # demands materially below it (the positive control that the instrument has any power). What
     # it no longer does is pass VACUOUSLY — `rate is None` or zero decisions now FAILS, because a
     # check that never ran reads exactly like one that passed.
-    ok_rate = (rate is not None and n_dec >= 1
-               and (rate == 1.0 if args.regime == "greedy" else rate < 1.0))
+    # (`rate is not None and n_dec >= 1` for a policy; a router's no-RNG rate for an ensemble.)
+    ok_rate = decisions_verified(args.regime, rate, n_dec, timing.get("router_no_rng_rate"),
+                                 timing.get("router_checked") or 0)
     timing["regime_verified_decisions"] = bool(ok_kw and ok_rate)
     timing["peer_error_free"] = error is None
     #: DEPRECATED (one release, gen3_anchor_regime_split_v1). The composite AND of the two fields
@@ -487,7 +637,8 @@ def main(argv=None):
     timing["regime_check_ok"] = bool(timing["regime_verified_decisions"] and error is None)
     print(f"[peer] REGIME CHECK regime={args.regime} "
           f"sample_kwargs={timing['sample_kwarg_values']} (ok={ok_kw}) "
-          f"argmax_match_rate={rate} over {n_dec} decisions (ok={ok_rate}) "
+          f"argmax_match_rate={rate} router_no_rng_rate={timing.get('router_no_rng_rate')} "
+          f"over {n_dec} decisions (ok={ok_rate}) "
           f"| peer_error_free={timing['peer_error_free']}", flush=True)
     if not timing["regime_verified_decisions"]:
         print("[peer] 🚨 REGIME CHECK FAILED — this cell is NOT a measurement", flush=True)

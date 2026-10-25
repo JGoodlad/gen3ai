@@ -169,6 +169,8 @@ class GameRow:
     our_stochastic_kwargs: List[bool] = field(default_factory=list)
     their_sample_kwargs: List[bool] = field(default_factory=list)
     their_argmax_match_rate: Optional[float] = None
+    # An ENSEMBLE peer's check instead (the router has no argmax): router calls with every RNG untouched.
+    their_router_no_rng_rate: Optional[float] = None
     # 🚨 THE TWO SEPARATE VERIFICATION FACTS (gen3_anchor_regime_split_v1). Series-level, written
     # per row so a row is self-contained. `regime_verified_decisions` — did the regime take effect
     # on every decision, in BOTH halves? `peer_clean` — did every peer process exit 0?
@@ -203,6 +205,7 @@ class GameRow:
             "our_stochastic_kwargs": self.our_stochastic_kwargs,
             "their_sample_kwargs": self.their_sample_kwargs,
             "their_argmax_match_rate": self.their_argmax_match_rate,
+            "their_router_no_rng_rate": self.their_router_no_rng_rate,
             "regime_verified_decisions": self.regime_verified_decisions,
             "peer_clean": self.peer_clean,
             "regime_verified": self.regime_verified,
@@ -280,6 +283,9 @@ def summarize(cell: CellSpec, rows: List[GameRow], *, status: str,
     rates = sorted({r.their_argmax_match_rate for r in rows
                     if r.their_argmax_match_rate is not None})
 
+    router_rates = sorted({r.their_router_no_rng_rate for r in rows
+                           if r.their_router_no_rng_rate is not None})
+
     our_m = sum(r.our_argmax_matches or 0 for r in rows)
     our_d = sum(r.our_argmax_decisions or 0 for r in rows)
 
@@ -307,6 +313,8 @@ def summarize(cell: CellSpec, rows: List[GameRow], *, status: str,
         "realized_visits_per_decision_mean": (sum(visits) / len(visits)) if visits else None,
         "realized_visits_samples": len(visits),
         "their_argmax_match_rates": rates,
+        # An ENSEMBLE peer's per-decision check (router calls that drew no random number); [] otherwise.
+        "their_router_no_rng_rates": router_rates,
         # OUR side's argmax rate, pooled over every observed decision of the cell (None when no
         # decision was observed — a bot or peer our-side). 1.0 under greedy by construction.
         "our_argmax_matches": our_m,
@@ -470,6 +478,10 @@ def render(summary: Dict[str, Any]) -> str:
     if rates:
         lines.append("  verified    peer argmax_match_rate = "
                      + ", ".join(f"{r:.4f}" for r in rates))
+    router_rates = summary.get("their_router_no_rng_rates") or []
+    if router_rates:
+        lines.append("  verified    peer router no-RNG rate = "
+                     + ", ".join(f"{r:.4f}" for r in router_rates))
     # 🚨 TWO LINES, NEVER ONE. The regime is what licenses the number; a dirty exit is an
     # operational fact about a process. Printing them as one flag is what made 31 of 84 sub-cells
     # read UNVERIFIED on 2026-09-20 with every argmax rate at 1.0000.

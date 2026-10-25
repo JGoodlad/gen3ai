@@ -205,6 +205,19 @@ lets a pair cell play two checkpoints of one policy: `--opponent-a metamon:Kakun
 checkpoint is still refused as a policy against itself. A new checkpoint's weights download from the Hugging Face
 hub into Metamon's cache on first use; fetch them once by hand and record their sha256 before the first unit.
 
+### An ENSEMBLE agent — `metamon:PastaMittens` (2026-10-25)
+
+An agent with `"preset"` + `"preset_sha256"` (and no checkpoint) is a Metamon nickname ENSEMBLE: `PastaMittens` is
+the Kakuna router over preset `dt4_k34_midjudge_switchk28` (Kakuna ckpts 28 ×2, 34, 30 + Alakazam ckpt 8). The rows'
+`opponent_version` is `PastaMittens@preset:<name>`; the peer refuses to play unless the preset file's entry AND the member
+specs the built model will route over both hash (canonical JSON, sha256) to the pin. 🚨 **The router has no argmax**, so its
+regime is verified differently: it is DETERMINISTIC (it ignores `sample` and draws no random number), and the peer
+checks exactly that per router call — torch's and NumPy's RNG states byte-equal before and after, and no Python
+`random` draw from the router's own thread (poke-env's loop thread shares that state and draws mid-call; a plain
+state compare blamed the router for 1 call in ~23). The rate is `their_router_no_rng_rate` on every row (exactly
+1.0 in greedy); `--regime t1` never verifies for a router. Pinned by
+`src/main/anchors/ensemble_router_regime_integration_test.py`. CPU cost ≈ 4× Kakuna (§ Cost per read).
+
 ### `--our-teamset {home,away}` — an ASYMMETRIC pair cell (B-D9, 2026-10-18)
 
 PAIR CELLS ONLY (a `metamon:` our-side, or `--opponent-a/-b`): our peer draws from the Metamon
@@ -507,6 +520,7 @@ nothing here touches the GPU.
 | `metamon:SmallRL` | **3.0** (🚨 **7.2–7.9 with an end-state checkpoint on our side**, 2026-10-17) | **~5 min** (**~13 min** on rule 5b's agent cores, 2026-10-17) | 12–17 ms/decision; seconds to load. At the end-state network our in-process side (one torch thread) dominates the game time; Kakuna's cell then costs only a little more (8.8 s/game) On `--server rust` (the default) the same cell took **126 s** on a quiet box against **203 s** on Node, 2026-09-20 |
 | `metamon:SyntheticRLV2` | **6.1** | **~10 min** | 56–113 ms/decision, **plus a multi-minute build per half** (200M params, 804 MB) |
 | `metamon:Kakuna` | **~10–18** (smoke, n = 4) | **~15–25 min** (est.) | **median 73–78 ms, p90 86–88 ms/decision** over 157 greedy decisions; the FIRST decision of each peer is a 4–19 s warm-up; build ~10 s per half; **peak RSS ~2.0 GB per peer** (571 MB fp32 weights). Load 21–27 on 16 cores, 2026-09-28 (`measurements/kakuna_wiring_2026-09-28/`). **Measured 2026-09-28 over 500 games vs N0: ~6 s/game** (a 20-game unit in ~120 s wall, load 24–25); a Kakuna-vs-SyntheticRLV2 pair cell ~13–16 s/game (50 games in 620–815 s, load ~28) |
+| `metamon:PastaMittens` | ≈ 19–20 with P\* on our side (est. from X51's 11.8 + the per-decision delta) | ≈ 33 min | **median 0.22–0.23 s, p90 0.28 s per router call** (95 calls, 2026-10-25, `measurements/metamon_strongest_2026-10-25/`); first call 5–33 s; **peak ~3.9–4.9 GB per scope** (5 members on CPU) |
 | `foulplay` @ 1000 ms | **~88** | **~2.5 h** | **~80 core-seconds/game** — ~17× ours; cost is linear in `--search-time-ms` × `--search-parallelism` × the ×2 world multiplier while the opponent's active has <3 revealed moves |
 
 🚨 **ONE THREAD PER PEER, and it is worth ~20×.** Measured 2026-09-14 on a box at load 63: each

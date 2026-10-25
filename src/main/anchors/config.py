@@ -117,6 +117,23 @@ class MetamonOpponent:
         are one policy (the self-pair refusal reads this, not the names)."""
         return self.policy(agent), self.agents.get(agent, {}).get("checkpoint")
 
+    def preset(self, agent: str) -> Optional[Tuple[str, str]]:
+        """``(preset name, sha256)`` for a Metamon ENSEMBLE agent, else ``None``. An ensemble (``PastaMittens``,
+        the Kakuna router) has no checkpoint: its identity is the member preset it routes over, pinned by the
+        sha256 of the preset's canonical JSON (``json.dumps(members, sort_keys=True, separators=(",", ":"))``
+        over its entry in Metamon's ``ensemble_presets.json``). The peer refuses to play if either differs."""
+        entry = self.agents.get(agent, {})
+        name, sha = entry.get("preset"), entry.get("preset_sha256")
+        if name is None and sha is None:
+            return None
+        if not (isinstance(name, str) and name and isinstance(sha, str) and len(sha) == 64):
+            raise AnchorConfigError(
+                f"metamon agent {agent!r}: an ensemble entry needs BOTH 'preset' (a name) and 'preset_sha256' "
+                f"(64 hex), got {name!r} / {sha!r}")
+        if entry.get("checkpoint") is not None:
+            raise AnchorConfigError(f"metamon agent {agent!r}: an ensemble preset has no single checkpoint")
+        return name, sha
+
     def team_set(self, teamset: str) -> str:
         try:
             return self.team_sets[teamset]

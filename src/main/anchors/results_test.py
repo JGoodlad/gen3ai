@@ -287,3 +287,15 @@ def test_every_failing_reason_is_listed_in_a_fixed_order() -> None:
     assert [r.split("=")[0] for r in got.reasons] == [
         "status", "n", "regime_verified_decisions", "peer_clean", "team_content_asymmetry"]
     assert unit_counts(bad, games=4) == got                # deterministic
+
+
+def test_an_ensemble_cells_router_rate_is_on_every_row_in_the_summary_and_PRINTED() -> None:
+    """An ensemble peer has no argmax rate; its no-RNG rate is what verified it, so it must not fall off."""
+    cell = _cell(opponent="metamon:PastaMittens", opponent_agent="PastaMittens",
+                 opponent_version="PastaMittens@preset:dt4_k34_midjudge_switchk28")
+    rows = [_row(cell, "win", index=i, their_argmax_match_rate=None, their_router_no_rng_rate=1.0,
+                 regime_verified_decisions=True) for i in range(1, 3)]
+    assert all(r.to_json()["their_router_no_rng_rate"] == 1.0 for r in rows)
+    summary = summarize(cell, rows, status="OK")
+    assert summary["their_router_no_rng_rates"] == [1.0] and summary["their_argmax_match_rates"] == []
+    assert "router no-RNG rate = 1.0000" in render(summary)

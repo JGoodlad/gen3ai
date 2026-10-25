@@ -647,6 +647,7 @@ def rows_from(records: List[Any], half: str, cell: CellSpec, report: Dict[str, A
             our_stochastic_kwargs=list(report.get("our_stochastic_kwargs") or []),
             their_sample_kwargs=list(report.get("sample_kwargs") or []),
             their_argmax_match_rate=report.get("argmax_match_rate"),
+            their_router_no_rng_rate=report.get("router_no_rng_rate"),
             their_visits_mean=report.get("visits_mean"),
             their_visits_n=report.get("visits_n"),
             our_argmax_matches=getattr(rec, "our_argmax_matches", None),
