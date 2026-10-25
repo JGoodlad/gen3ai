@@ -52,6 +52,21 @@ def test_the_plan_is_every_final_by_team_set_by_shared_unit_seed():
         KA.plan_units(finals + finals[:1], hash_models=False)
 
 
+def test_the_plan_takes_named_unit_seeds_and_refuses_bad_specs():
+    finals = [{"label": "x26c_480m", "arm": "X26C", "seed": 2601, "path": "/x/a.zip"}]
+    assert KA.parse_unit_seeds("0-19") == tuple(range(20))
+    assert KA.parse_unit_seeds("3, 0-1") == (0, 1, 3)
+    units = KA.plan_units(finals, hash_models=False, teamsets=KA.UNFAMILIAR,
+                          unit_seeds=KA.parse_unit_seeds("0-19"))
+    assert len(units) == 20 * 3 and {u.unit_seed for u in units} == set(range(20))
+    assert units[-1].name == "x26c_480m__p72__19"
+    assert KA.plan_units(finals, hash_models=False) == KA.plan_units(finals, hash_models=False,
+                                                                     unit_seeds=KA.UNIT_SEEDS)
+    for bad in ("", "0-3,2", "5-1", "x", "-1"):
+        with pytest.raises(KA.KakunaError, match="unit seeds"):
+            KA.parse_unit_seeds(bad)
+
+
 GOOD = {"status": "OK", "n": 20, "regime_verified_decisions": True, "team_source_asymmetry": False,
         "peer_clean": True, "wins": 11, "ties": 1}
 

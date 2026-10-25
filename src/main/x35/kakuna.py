@@ -188,11 +188,31 @@ def parse_teamsets(spec: str) -> Tuple[str, ...]:
     return tuple(out)
 
 
+def parse_unit_seeds(spec: str) -> Tuple[int, ...]:
+    """``"0-19"`` or ``"0,1,2"`` (or a mix) -> the sorted, distinct unit seeds; a read that wants more games per
+    cell than the registered 7 (X26c's 20, X51's seeds) names them, and seeds 0-6 stay the shared D1 subset."""
+    out: List[int] = []
+    for part in (p.strip() for p in str(spec).split(",")):
+        if not part:
+            continue
+        lo, sep, hi = part.partition("-")
+        try:
+            a, b = (int(lo), int(hi)) if sep else (int(part), int(part))
+        except ValueError:
+            raise KakunaError(f"unit seeds {spec!r}: {part!r} is not an integer or a range") from None
+        if a < 0 or b < a:
+            raise KakunaError(f"unit seeds {spec!r}: bad range {part!r}")
+        out.extend(range(a, b + 1))
+    if not out or len(set(out)) != len(out):
+        raise KakunaError(f"unit seeds {spec!r}: empty or repeated")
+    return tuple(sorted(out))
+
+
 def plan_units(finals: Sequence[Mapping[str, Any]], *, hash_models: bool = True,
-               teamsets: Sequence[str] = DEFAULT_TEAMSETS) -> List[Unit]:
+               teamsets: Sequence[str] = DEFAULT_TEAMSETS, unit_seeds: Sequence[int] = UNIT_SEEDS) -> List[Unit]:
     """Every (final × team set × unit seed) unit, unit seeds outermost so a stopped queue is role- and seed-balanced
     across finals. ``teamsets`` defaults to X35's G-K cell (home72, away); D1's PRIMARY H names the unfamiliar
-    panels (:data:`UNFAMILIAR`)."""
+    panels (:data:`UNFAMILIAR`). ``unit_seeds`` defaults to the registered 0-6 (:data:`UNIT_SEEDS`)."""
     teamsets = parse_teamsets(",".join(teamsets))
     seen = set()
     for f in finals:
@@ -202,7 +222,7 @@ def plan_units(finals: Sequence[Mapping[str, Any]], *, hash_models: bool = True,
     shas = {f["label"]: (_sha(f["path"]) if hash_models else "") for f in finals}
     return [Unit(name=f"{f['label']}__{ts}__{s:02d}", label=str(f["label"]), arm=str(f["arm"]), seed=int(f["seed"]),
                  teamset=ts, unit_seed=s, model=str(f["path"]), model_sha256=shas[f["label"]])
-            for s in UNIT_SEEDS for ts in teamsets for f in finals]
+            for s in unit_seeds for ts in teamsets for f in finals]
 
 
 def counts(summary: Mapping[str, Any], games: int) -> bool:
@@ -484,6 +504,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             sp.add_argument("--teamsets", default=",".join(DEFAULT_TEAMSETS),
                             help="comma list of team sets / registered panels (default home72,away = G-K's cell); "
                                  "'unfamiliar' = D1's heldout72_hpfix,forum72,p72")
+            sp.add_argument("--unit-seeds", default="0-6",
+                            help="unit seeds, a comma list of integers / ranges (default 0-6, the registered 7)")
         if n == "run":
             sp.add_argument("--stop-at-epoch", type=int, default=None)
         if n in ("gk", "d1h"):
@@ -515,7 +537,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if a.cmd == "plan":
             if (state / "plan.json").exists():
                 raise KakunaError(f"{state / 'plan.json'} exists: a plan is written once per read")
-            units = plan_units(json.loads(Path(a.finals).read_text()), teamsets=parse_teamsets(a.teamsets))
+            units = plan_units(json.loads(Path(a.finals).read_text()), teamsets=parse_teamsets(a.teamsets),
+                               unit_seeds=parse_unit_seeds(a.unit_seeds))
             (state / "plan.json").write_text(json.dumps({"units": [u.__dict__ for u in units]}, indent=1) + "\n")
             print(f"[x35 kakuna] planned {len(units)} units")
             return 0
@@ -533,9 +556,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         units = load_plan(state)
         pooled = pool(state, units)
         if a.cmd == "status":
+            planned: Dict[Tuple[str, str], int] = {}
+            for u in units:
+                planned[(u.label, u.teamset)] = planned.get((u.label, u.teamset), 0) + 1
             for lab, cells in pooled.items():
                 for ts, c in cells.items():
-                    print(f"{lab:24s} {ts:7s} {c['units']}/{len(UNIT_SEEDS)} units  {c['wins']}/{c['n']} wins  "
+                    n_plan = planned.get((lab, ts), 0)
+                    print(f"{lab:24s} {ts:7s} {c['units']}/{n_plan} units  {c['wins']}/{c['n']} wins  "
                           f"skipped {len(c['skipped'])}")
             return 0
         if a.cmd == "d1h":
