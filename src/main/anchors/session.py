@@ -57,7 +57,7 @@ class SeriesFailure(RuntimeError):
 
 
 # ------------------------------------------------------------------ the team source we draw from
-def load_team_texts(directory: Path) -> "list[tuple[str, str]]":
+def load_team_texts(directory: Path, *, label_guard: bool = True) -> "list[tuple[str, str]]":
     """``(basename, text)`` for every team file in ``directory``, each ``.strip()``ed.
 
     The glob allowlist lives in :data:`main.anchors.peers.TEAM_FILE_GLOBS` so BOTH sides count the
@@ -71,6 +71,12 @@ def load_team_texts(directory: Path) -> "list[tuple[str, str]]":
     became a battle: the series HUNG. The fork is fixed and ``Gen3Teambuilder`` now raises on an
     oversize pack, so this is the third line of defence rather than the first; it stays because
     normalising a file we did not write costs nothing and the failure it prevents costs a session.
+
+    🚨 **The LABEL-PATH GUARD** (``label_guard``, default ON): the env's spread labels fault on a team whose ``Level:``
+    is not 100, so a directory holding one is REFUSED (:class:`utils.team_corpora.CorpusError`, the corpora's and the
+    training pool's own ``check_label_encodable``). This is the one reader of every eval panel's directory (anchors
+    configs, ``main.heldout_panels``, ``main.h2h``). Only a SEALED panel's registry read turns it off
+    (``heldout_panels.panel_team_texts``).
     """
     seen: Dict[str, str] = {}
     for pattern in TEAM_FILE_GLOBS:
@@ -80,6 +86,10 @@ def load_team_texts(directory: Path) -> "list[tuple[str, str]]":
                 continue
             with open(path) as fh:
                 seen[name] = fh.read().strip()
+    if label_guard:
+        from utils.team_corpora import check_label_encodable
+
+        check_label_encodable(list(seen), list(seen.values()), f"the team directory {directory}")
     return sorted(seen.items())
 
 

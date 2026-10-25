@@ -179,3 +179,31 @@ def test_forum216b_is_sealed_and_only_it():
             H.check_unsealed(name)
     # sealed is not unregistered: the exclusion rule still reads its content
     assert len(H.panel_team_texts("forum216b")) == 216 and "forum216b" in H.panel_names(held_out_only=True)
+
+
+# ------------------------------------------------- the label-path guard (every eval panel is level 100)
+def test_every_unsealed_panel_is_label_encodable_and_the_sealed_ones_known_defect_is_pinned():
+    """The env's L100 spread labels fault on any other level (D1 s3501). Every panel the meters play (home72, away,
+    heldout72, heldout72_hpfix, forum72, p72) passes the guard through its directory reader; the SEALED forum216b holds
+    exactly one team the label path cannot encode (`sfv2_0810`, Level 99, left in at carving), which unsealing (X54)
+    must resolve: deleting its SEALED entry turns the guard on for it (the next test)."""
+    from utils.team_corpora import label_path_defects
+    for name in H.panel_names():
+        bad = {label: label_path_defects(t) for label, t in H.panel_team_texts(name) if label_path_defects(t)}
+        if name in H.SEALED:
+            assert bad == {"sfv2_0810.txt": ["Level: 99"]}, bad
+        else:
+            assert bad == {}, (name, bad)
+
+
+def test_a_panel_read_is_guarded_unless_the_panel_is_sealed(monkeypatch):
+    """Fails on revert of ``label_guard=name not in SEALED``: with forum216b unsealed its read refuses on `sfv2_0810`."""
+    from utils.team_corpora import CorpusError
+    monkeypatch.setattr(H, "SEALED", {})
+    H.panel_team_texts.cache_clear()
+    try:
+        with pytest.raises(CorpusError, match=r"sfv2_0810\.txt.*Level: 99"):
+            H.panel_team_texts("forum216b")
+        assert len(H.panel_team_texts("p72")) == 72
+    finally:
+        H.panel_team_texts.cache_clear()

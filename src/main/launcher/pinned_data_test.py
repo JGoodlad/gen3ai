@@ -33,7 +33,7 @@ from utils.paths import repo_root, src_path
 
 #: The modules the probe imports, copied from THIS checkout into the fake repo (so the test judges today's code).
 _COPIED = ("utils/__init__.py", "utils/paths.py", "utils/team_loader/__init__.py", "utils/team_loader/loader.py",
-           "agents/__init__.py", "agents/training/elo.py")
+           "utils/team_corpora/__init__.py", "agents/__init__.py", "agents/training/elo.py")
 
 _PROBE = """
 import json, os, sys

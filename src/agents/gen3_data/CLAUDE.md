@@ -62,3 +62,6 @@ A VALUE change in `data/` (a re-numbered id, a changed stat) is retrain-class: v
 `designs/model/versioning.md` and re-record the obs golden (`python -m agents.training.golden_obs_core`).
 A change to how data loads must change no value: `golden_obs_core_test.py` and
 `extractor_parity_test.py` (the committed files equal the builders' output) are the gates.
+A team added to `data/teams` must be LEVEL 100: `TeamLoader` refuses a pool holding a `Level:` line of any other value
+(`utils.team_corpora.check_label_encodable`, the corpora's guard; the env's spread labels fault off level 100), so a
+non-100 team makes every trainer and eval launch fail at pool load.

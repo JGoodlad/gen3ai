@@ -182,7 +182,9 @@ def panel_team_texts(name: str) -> Tuple[Tuple[str, str], ...]:
     from main.anchors.session import load_team_texts, team_set_digest
 
     ent = panel_entry(name)
-    items = load_team_texts(panel_dir(name))
+    # A SEALED panel is read only for the exclusion rule (never played) and holds one team the label path cannot
+    # encode (`sfv2_0810`, Level 99; pinned by a test); unsealing removes the entry, so the guard then applies to it.
+    items = load_team_texts(panel_dir(name), label_guard=name not in SEALED)
     if len(items) != int(ent["n"]):
         raise PanelRegistryError(f"panel {name}: {len(items)} team files, registered {ent['n']}")
     got = team_set_digest([t for _, t in items])

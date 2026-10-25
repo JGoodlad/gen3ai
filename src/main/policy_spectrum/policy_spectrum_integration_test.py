@@ -51,8 +51,14 @@ def _check(sub):
     if same_encoder:
         assert gate["obs_as_recorded"], gate
     else:
-        pytest.skip("the encoder changed since the bank was built — gate ①'s byte check belongs to "
-                    "the recording commit; the structural replay above passed")
+        pytest.skip(
+            "gate ①'s BYTE check cannot run: the encoder changed since the bank was built, and the bank CANNOT be "
+            "re-recorded -- its reference obs hashes and logits are the RECORDING policies' own, read from pre-era "
+            "`ai_v14_*` eval traces that were deleted 2026-10-09, so a re-encode at this commit would only pin the "
+            "current encoder against itself (golden_obs_core already does) and rewrite a bank whose inputs the bridge "
+            "tests and qhat read. Only the structural replay above (legal tokens, mask, played choice) ran. The byte "
+            "check belongs to the recording commit (built_at_commit in the manifest); this skip lasts until the "
+            "OWNER-GATED TECH_DEBT row 'retire critic_gate's chain' (g) decides the builder's and the check's fate")
     return rows, masks, gate
 
 

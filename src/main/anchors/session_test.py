@@ -190,6 +190,18 @@ def test_load_team_texts_strips_the_trailing_blank_lines_that_hung_a_series(
     assert not items[0][1].endswith("\n")
 
 
+def test_a_team_directory_the_label_path_cannot_encode_is_REFUSED(tmp_path: Path) -> None:
+    """Every eval panel's directory is read here: a non-100 ``Level:`` would fault the env's L100 spread labels, so the
+    corpora's own throwing guard refuses it (fails on revert of the guard in ``load_team_texts``)."""
+    from utils.team_corpora import CorpusError
+
+    (tmp_path / "ok.gen3ou_team").write_text("Mew @ Leftovers\n- Psychic")
+    (tmp_path / "low.gen3ou_team").write_text("Krabby @ Salac Berry\nLevel: 5\n- Endure")
+    with pytest.raises(CorpusError, match=r"low\.gen3ou_team.*Level: 5"):
+        load_team_texts(tmp_path)
+    assert [n for n, _ in load_team_texts(tmp_path, label_guard=False)] == ["low.gen3ou_team", "ok.gen3ou_team"]
+
+
 def test_an_empty_team_directory_is_a_named_failure_not_an_empty_pool(tmp_path: Path) -> None:
     with pytest.raises(SeriesFailure) as excinfo:
         build_team_source({"kind": "dir", "path": str(tmp_path)}, seed=1, draw_log=[])
