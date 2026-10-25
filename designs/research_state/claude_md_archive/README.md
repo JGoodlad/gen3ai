@@ -82,11 +82,25 @@ statements were deleted:
 | `src_main_prober_web_CLAUDE_2026-10-10.md` | `src/main/prober/web/CLAUDE.md` — detail moved to the new `designs/prober/web_service.md`, `web_pages.md`, `web_tests.md` | 67.6 KB → 10.8 KB |
 <!-- leaf rows: append below -->
 
+**Added 2026-10-25 (the docs-health sweep): narrative lifted out of always-current docs**, verbatim and in original
+order, when the freshness gate began to scan and byte-cap the seven `designs/<topic>/` trees (a tree doc is
+capped at 120 KB) and the README sweep ran. The live doc keeps the rule and points here.
+
+| file | lifted from |
+|---|---|
+| `rust_sim_port_build_log.md` | `designs/rust_sim/port_build_log.md` — the CLOSED rounds of the Rust port (535 KB; moved here whole, a log of closed rounds is history) |
+| `rust_sim_readme_history.md` | `src/rust_sim/README.md` — the status blockquote, the layout tree, the fuzzer-mode prose and the golden-regeneration narrative (115 KB -> 14 KB) |
+| `bridge_readme_history.md` | `src/utils/bridge/README.md` — deleted-road passages, incident narratives and Node-vs-Rust measurements (63 KB -> 17 KB) |
+| `research_state_readme_history.md` | `designs/research_state/README.md` — the 2026-08-30 programme state, the August frontier table and the defect-genre specimens (62 KB -> 14 KB) |
+| `training_compile_flags_history.md` | `designs/training/compile_flags.md` — the incident and measurement narratives of the compile chapter (245 KB -> 99 KB) |
+| `training_eval_and_rating_history.md` | `designs/training/eval_and_rating.md` — dated measurements, Python-worker era text and superseded designs (166 KB -> 100 KB) |
+| `training_cf_grounding_deleted_history.md` | `designs/training/cf_grounding.md` — the counterfactual-label stack deleted 2026-10-02 / 2026-10-08 (the live doc is now a tombstone) |
+
 **Nothing here is current.** Every guard these incidents produced is live and described in
 `CLAUDE.md`; this is the evidence behind them. Do not re-derive a plan from anything here without
 checking the code first — an entry that outlives its own fix misleads every reader after it.
 
 Related, from the same passes: `designs/training/` (the training leaf's topics), `designs/model/`
 (the model leaf's topics), `designs/prober/` (the prober leaf's topics), `designs/rust_sim/` (the
-port's topics, plus `designs/rust_sim/port_build_log.md`'s closed coverage rounds), and
+port's topics; its closed coverage rounds are `rust_sim_port_build_log.md` here), and
 `designs/research_state/memory_archive/` (retired agent memories).

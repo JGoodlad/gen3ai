@@ -33,21 +33,17 @@ Detail lives in `designs/prober/`, always current and updated with the code:
   framework-agnostic; `web/` renders it for a human and `query.py` prints it for an agent. Change the
   analysis once, never in a surface. Every torch call goes through the injected `model`, so the engine
   is tested with a `FakeProbeModel`.
-- `engine/` and `session/` are packages whose `__init__.py` is a re-export hub; `engine/` is a strict
-  DAG, leaves first (`hub_contract_test.py` pins the exports and the no-cycle rule).
 - The battle-log vocabulary (`engine.CANT_PHRASE`, `NO_EFFECT_TEXT`, `surprise_phrase`) lives in the
   engine, so a reason one surface learns cannot go missing on another.
 - `ProbeSession` methods return JSON-serializable dicts; a `battle_id` is a `*_summary.json` path or a
-  short `step_<N>/<Opponent>/<outcome>_<idx>`; `ProbeSession(..., model_loader=fn)` injects a fake model.
-  The CLI prints JSON, and `{"error": …}` with exit 1 on failure.
+  short `step_<N>/<Opponent>/<outcome>_<idx>`. The CLI prints JSON, and `{"error": …}` with exit 1 on failure.
 
 ## Hazards that have cost a wrong reading
 
 - **A turn's events land in the NEXT decision's obs**: read `describe_turn_outcome` from decision T+1.
-- `core_trace` is the one `*_summary.json` reader under `src/` (`src/trace_summary_reader_gate_test.py`
-  fails any other). The stored `.p1.jsonl.gz` record is the authority: a walk that differs raises
-  `CoreTraceMismatch` and is never repaired.
-- `discovery`'s `<outcome>` alternation is built from `agents.training.trace_result.OUTCOMES`, never retyped.
+- `core_trace` is the one `*_summary.json` reader under `src/` (`src/trace_summary_reader_gate_test.py`). The
+  stored `.p1.jsonl.gz` record is the authority: a walk that differs raises `CoreTraceMismatch` and is never
+  repaired.
 - A model view that cannot run is one typed `ArchDriftError`, said before trying: render its `plain`
   sentence with `exc.detail` folded under it, never "analysis failed", and branch on `kind`, never on
   the message.
@@ -69,8 +65,8 @@ Detail lives in `designs/prober/`, always current and updated with the code:
   SELECTION UNKNOWN, never uniform.
 - Move-action labels are already in action-index order; do not re-sort them
   (`engine_test::test_recorded_actions_are_action_index_aligned`).
-- Obs offsets resolve at runtime from `Gen3ObservationEncoder.get_layout()`; a deleted region resolves
-  to 0 and every consumer no-ops on it. A trace whose obs length differs gets the `obs_mismatch` banner.
+- A deleted obs region resolves to offset 0 and every consumer no-ops on it; a trace whose obs length differs
+  gets the `obs_mismatch` banner.
 
 ## Counterfactuals
 

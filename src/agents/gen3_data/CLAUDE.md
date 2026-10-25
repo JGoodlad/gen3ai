@@ -7,11 +7,10 @@ field by field, is `designs/tools/data_files.md`.
 
 ## Where `data/` is
 
-Every runtime reader of `data/` resolves it through `utils.paths.repo_path` — the checkout the code was IMPORTED
-from — never the CWD (`_base` here; `utils.team_loader.default_base_dir()`, the ELO anchors and the `data/teams/`
-artifacts outside). A launcher-pinned child imports its pin while standing in main's checkout, so this is what makes it
-read the pin's `data/` (`designs/launcher/pinning_and_worktrees.md`; gate `src/main/launcher/pinned_data_test.py`). A
-new `data/` reader that opens a CWD-relative path reopens root rule 6's freeze.
+Every runtime reader of `data/` resolves it through `utils.paths.repo_path` (the checkout the code was IMPORTED
+from), never the CWD: `_base` here, `utils.team_loader.default_base_dir()` and the ELO anchors outside. A
+launcher-pinned child stands in main's checkout, so a CWD-relative read sees main's `data/` and reopens root
+rule 6's freeze (`designs/launcher/pinning_and_worktrees.md`; gate `src/main/launcher/pinned_data_test.py`).
 
 ## Module conventions
 
@@ -51,10 +50,9 @@ power 70), `ivs_of` / `ivs_packed`, `type_of` / `power_of` (the gen-3 formula), 
 `FORMULA_TYPES`. `utils.gen3_utils.GEN3_HP_IVS` and `hp_repair.HP_IVS` are this object.
 `hidden_power_single_impl_test.py` fails on a second table, formula or formula-order type list in any
 `.py` or `.rs` under `src/`, so import the module. Two copies stay outside it: the Rust engine's own
-`getHiddenPower` (`src/rust_sim/src/state.rs`, pinned by `tests/hidden_power_fill_test.rs` and
-`hidden_power_test.py`), and the JS harness `ou_random_teams.js`, whose seeded output is the frozen P72
-panel's provenance. `hp_repair.py` re-samples the typeless all-31 Hidden Power of replay-derived teams;
-its docstring is the spec.
+`getHiddenPower` (`src/rust_sim/src/state.rs`, pinned by `hidden_power_test.py`) and the JS harness
+`ou_random_teams.js` (seeded output is a frozen panel's provenance). `hp_repair.py`'s docstring is the spec for
+re-sampling the typeless all-31 Hidden Power of replay-derived teams.
 
 ## Changing the data
 

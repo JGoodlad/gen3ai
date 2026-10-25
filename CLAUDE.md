@@ -82,7 +82,8 @@ Mechanics: `designs/ops/ORCHESTRATOR_SOP.md` §2 (dispatch), §7 (stalls, waitin
 ## Documentation Maintenance
 
 Keep docs current **in the same change**, unasked. Apply the deletion test and replace, never append
-(`designs/ops/instruction_docs_principles.md`; the freshness gate enforces each file's byte cap).
+(`designs/ops/instruction_docs_principles.md`; the freshness gate checks every path, flag and `python -m` module an
+always-current doc names, and caps the bytes of each `CLAUDE.md`, slash command and `designs/<topic>/` tree doc).
 
 - **Always current:** every `CLAUDE.md` and `README.md` (except the frozen `designs/ai_v3/README.md`);
   `designs/ARCHITECTURE.md` (the model as it is now, the first thing an architecture change updates; no version
@@ -143,11 +144,7 @@ Full chapter: [`designs/ops/testing.md`](designs/ops/testing.md). Prefix each co
 - **Eighteen static gates** run in every tier (`python -m utils.static_gates` lists them; the table with every
   opt-out is `docs/DEVELOPING.md`); a missing tool FAILS. Their allowlists are empty: fix the code (decompose a file
   over 2,000 lines, fix a vacuous stub at the source), never add an entry.
-- A deselected `slow` test cannot fail the routine gate, so the slow tier records its verdicts in
-  `designs/ops/slow_tier_status.json` and the routine gate fails on a recorded FAIL.
 - **A timeout is never a semantic outcome**: bounds scale by measured contention; > 25 % timeouts ⇒ INCONCLUSIVE.
-- A collected test plays the SAME battle every run (`utils.rust_env.fixture_battles.play_rows(...)`) and asserts its
-  precondition; a test restores any process-global torch state it changes.
 - **Any obs change:** run `python -m agents.observation.rust_encoder_benchmark` before and after, and
   `python -m agents.training.golden_obs_core --check`.
 

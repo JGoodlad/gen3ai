@@ -4,9 +4,6 @@ A thin base (`Gen3App`, `theme.tcss`, `colors.gradient_color`) for the launcher'
 (`src/main/launcher/app.py`), its one consumer. Keep it thin: only presentation goes here; the
 launcher's runtime stays in `src/main/launcher/`.
 
-- A subclass sets `CSS_PATH = [str(THEME_PATH), "my_app.tcss"]`: the absolute theme path first, so it
-  resolves from any package; per-app layout goes in the app's own `.tcss`.
-
 ## Copying text
 
 `super+c` copies the Textual selection (needs a terminal that forwards ⌘C and honours OSC 52). `v`

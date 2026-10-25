@@ -4,12 +4,6 @@ The 11-action discrete space the model acts in, and the row guard that keeps the
 active's moves aligned with it. Every legality decision, mask and choice token is the RUST core's
 (`src/rust_sim/`, served to training by the env core and to the inference service as rows + masks).
 
-The Python action stack that decoded an action against a poke-env battle — the masker
-(`mask_generator.py`), the mapper (`mapper.py`), the `Choice` type (`choice.py`) and the poke-env
-`BattleOrder` serializer (`serialize.py`) — is DELETED with the Python battle layer (T27 P6 slice 6d-2),
-with its tests (`mapper_test.py`, `fuzz_test.py`, `fuzz_test_unit.py`, `trapping_signals_fuzz_test.py`,
-`telemetry_e2e_test.py`).
-
 ## Action Space
 
 | Index | Meaning |

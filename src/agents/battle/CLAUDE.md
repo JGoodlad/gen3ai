@@ -12,11 +12,10 @@ This package is a thin Python side of it.
 - **What a protocol line revealed is current knowledge and lives on the view** (`LiveMove.seen`,
   `LivePokemon.item_public` / `ability_public`, `LiveView.residual_done`), carried by the core's
   `present()`.
-- **Two faint-cause vocabularies** (`faint_causes.py`): `FAINT_CAUSE_VOCAB` (8) sizes the frozen archive
-  `TurnDelta` frame the prober decodes; `FAINT_CAUSE_VOCAB_LIVE` (10) sizes the event window
+- **Two faint-cause vocabularies** (`faint_causes.py`): `FAINT_CAUSE_VOCAB` sizes the frozen archive
+  `TurnDelta` frame the prober decodes; `FAINT_CAUSE_VOCAB_LIVE` sizes the event window
   (`team_transformer.EventSeats`), held equal to `layout.rs` by
   `src/agents/observation/rust_core_obs_layout_test.py`.
-- **`core_corpus_test.py`** (`sim`, routine gate) replays the 12 recorded battles of
-  `rust_core_parity_fixtures/commit_tier.json.gz` through `core_replay`: every battle replays `ok`, every
-  row is fully written, every decision's tokens are its legal actions, the information boundary holds, and
-  the golden records re-write byte-identically. Contract: `designs/rust_sim/core_events.md`.
+- **`core_corpus_test.py`** (`sim`, `integration`; in the routine gate) replays the recorded battles of
+  `rust_core_parity_fixtures/commit_tier.json.gz` through `core_replay`; a change to the core's rows, tokens or
+  information boundary is judged there. Contract: `designs/rust_sim/core_events.md`.
