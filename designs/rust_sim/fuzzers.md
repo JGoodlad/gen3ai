@@ -60,6 +60,8 @@ POKESIM_AB_REPLAY_BIN=/tmp/pokesim_target_bytefuzz/selfcheck/ab_replay \
   node src/rust_sim/harness/ab_fuzz.js --mode pool --protocol \
   --format gen3ou --battles 300
 ```
+`ab_fuzz.js`, `bridge_ab_fuzz.js` and `probe_batch7_isolated.js` refuse a replayer whose BUILD STAMP is not this checkout's
+(`harness/stamp_guard.js`; an override path included; `POKESIM_ALLOW_STALE_BUILD=1` is the loud opt-out).
 
 FAULT-INJECTION PROVEN (a mangled `[from] item: Leftovers` tag ⇒ 6/6 flagged `kind=protocol` at the
 exact `-heal` line). The byte bugs it found and closed — BF1-BF4, the STATUS-MOVE EMISSION-FORM SWEEP

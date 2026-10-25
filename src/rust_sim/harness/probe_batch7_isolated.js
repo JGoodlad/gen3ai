@@ -18,6 +18,8 @@ const { runBattle, emitBattle, seedFrom } = require('./gen_e2e_fuzz.js');
 
 const REPLAYER = process.env.POKESIM_AB_REPLAY_BIN
   || path.join(__dirname, '..', 'target/release/ab_replay');
+const { requireFreshBinary } = require('./stamp_guard.js');
+requireFreshBinary(REPLAYER, 'ab_replay');   // a pre-built target/ or override is judged by its BUILD STAMP
 const IV31 = { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 };
 const EV0 = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
 function mon(species, moves, opts = {}) {

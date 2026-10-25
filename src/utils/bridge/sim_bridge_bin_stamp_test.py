@@ -28,7 +28,12 @@ DRIVERS = {
     "search_driver": ("POKESIM_SEARCH_DRIVER_BIN", sb.resolve_search_driver_bin),
     "core_events": ("POKESIM_CORE_EVENTS_BIN", sb.resolve_core_events_bin),
     "live_reader": ("POKESIM_LIVE_READER_BIN", sb.resolve_live_reader_bin),
+    # the three OFFLINE tools (2026-10-25): the fuzzers' replayers and the coverage oracle were taken by path unjudged
+    "ab_replay": (sb.AB_REPLAY_ENV, sb.resolve_ab_replay_bin),
+    "scan_move_probe": (sb.SCAN_MOVE_PROBE_ENV, sb.resolve_scan_move_probe_bin),
+    "bridge_replay": (sb.BRIDGE_REPLAY_ENV, sb.resolve_bridge_replay_bin),
 }
+OFFLINE_TOOLS = ("ab_replay", "scan_move_probe", "bridge_replay")
 
 
 @pytest.fixture(autouse=True)
@@ -71,6 +76,20 @@ def test_the_spawn_argv_helpers_refuse_a_stale_override_too(tmp_path, monkeypatc
     monkeypatch.setenv("POKESIM_SEARCH_DRIVER_BIN", str(stale_driver))
     with pytest.raises(S.StampMismatch):
         sb.search_driver_spawn_argv()
+
+
+def test_the_ladder_corpus_oracle_is_taken_through_the_stamped_resolver(tmp_path, monkeypatch):
+    """`utils.ladder_corpus.build.scan_probe_bin` (the coverage oracle that decides which moves are "unplayable") once ran
+    a bare `cargo build` + path; it now resolves through the stamp check, so a stale oracle is refused."""
+    from utils.ladder_corpus import build as corpus_build
+
+    stale = write_fake_binary(tmp_path / "scan_move_probe", make_stamp("port", src="0123456789abcdef"))
+    monkeypatch.setenv(sb.SCAN_MOVE_PROBE_ENV, str(stale))
+    with pytest.raises(S.StampMismatch, match="scan_move_probe"):
+        corpus_build.scan_probe_bin()
+    good = write_fake_binary(tmp_path / "good_scan_move_probe", make_stamp("port"))
+    monkeypatch.setenv(sb.SCAN_MOVE_PROBE_ENV, str(good))
+    assert corpus_build.scan_probe_bin() == str(good.resolve())
 
 
 def test_a_binary_that_predates_the_flag_is_refused(tmp_path, monkeypatch):

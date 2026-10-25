@@ -75,7 +75,8 @@ root `conftest.py` sets it).
 `Cargo.lock`; the env core's covers this crate too) and every binary prints it on `<bin> --build-stamp`. Python
 recomputes it from the checkout it runs in (a pinned run's own pin, never main's) and raises `StampMismatch`, one line
 with the built-at hash, this tree's and the rebuild command: `ffi.load` and the `proc` handshake always; every
-`sim_bridge_bin` / `bot_reader_bin` resolve, a `$POKESIM_*_BIN` path included; the env core's loader also demands the data
+`sim_bridge_bin` / `bot_reader_bin` resolve (the offline `ab_replay` / `scan_move_probe` / `bridge_replay` too; the Node fuzzers
+via `harness/stamp_guard.js`), a `$POKESIM_*_BIN` path included; the env core's loader also demands the data
 dir its module resolves be this checkout's (`utils.rust_env.stamp.runtime_data_dir`). After a Rust commit, rebuild every
 target you run (`target/` is per checkout; MAIN's is rebuilt by `/gen3ai-ship` step 9, `scripts/ops/rebuild_main_rust.sh`). A `#[cfg(test)] mod x;` file must be named `tests.rs` / `*_tests.rs` /
 `*_test.rs` (`stamp_test.py` enforces; an edit to a test file then never stales a build).

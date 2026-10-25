@@ -26,12 +26,14 @@ Only the direction test changes. With x = a + τ and H = {x > 0}:
 - The near-1 term σ(x) ≈ 1 − 1e-5 is never formed. Its 1 − π is what the naive fp32 sum loses below ulp(1).
 
 **Proof.** Let R + D = Σ σ(−|x_s|), the absolute sum of the terms.
-1. Any summation order errs by at most c·(R + D), with c ≈ (depth + 2)·u (u = 2^-24).
+1. Any summation order errs by at most c·(R + D), with c ≈ (L + 2)·u (u = 2^-24; L = the longest serial accumulation
+   chain, at most n − 1: a tree reduction has L ≈ its depth, ≤ 9 for 400 columns, but the CPU Inductor kernel is one
+   serial chain of n = 400, so the provable worst case is c ≈ 2.4e-5).
 2. S' = Σ π(1 − π) ≥ ½ Σ min(π, 1 − π) = ½ (R + D).
 3. log(R + D) is Lipschitz-1 in τ, since each term's derivative is at most the term.
 
-So S(τ) − k exceeds the evaluation error whenever |τ − τ*| > −ln(1 − 2c) ≈ 2c. τ is fixed to about 2c ≈ 1e-6 absolute,
-WHATEVER the slope. The naive fp32 sum's resolution is ulp(k) / S', which is 7e-3 – 2.8e-2 on these rows.
+So S(τ) − k exceeds the evaluation error whenever |τ − τ*| > −ln(1 − 2c) ≈ 2c. τ is fixed to about 2c absolute,
+WHATEVER the slope: worst case ≈ 5e-5, MEASURED ≤ 4e-6 (300 random rows) and ≤ 1.5e-6 on X26's violators. The naive fp32 sum's resolution is ulp(k) / S', which is 7e-3 – 2.8e-2 on these rows.
 
 **Where it degrades.** Only when EVERY σ(−|x|) underflows in fp32, with the top candidate about 165 nats or more clear
 of the next. τ then lands where the runner-up's log π floors at about −88.7, instead of its true −100 or below. These
@@ -95,8 +97,8 @@ Error against REF:
   - Its taken-action K9(b) analogue on the 915 fixture rows is the lowest of the three solves: max 1.5e-5, p99 1.0e-5,
     no row above 5e-5. The bar is 1e-4.
   - Its all-actions program floor max is 8.4e-5 on A and B, against fp64's 6.4e-5 / 7.2e-5, while its p99 is equal or
-    lower. FP32_ALT's τ sits within ~1 ulp of fp64's, so two programs can land on adjacent floats. That adds ulp-scale
-    wobbles of up to about 2e-5 in log π, the class the naive sum already had on every well-conditioned row.
+    lower. FP32_ALT's τ sits within ~1 ulp of fp64's, so two programs can land on adjacent floats. By first order that
+    moves log π by ≲ 1e-6 (|∂log π/∂τ| ≲ 0.2 × 2 ulp(τ)); the all-actions max is ordinary fp32 program noise (REVIEW F4).
 - **The 4e-4 rows at u32320's neighbour checkpoint are NOT τ.** They are equal in all three arms, and the saturated rows
   there sit at 1e-5. Some other fp32-sensitive mechanism acts on those scan rows at those weights. FINDING F4.
 
@@ -142,10 +144,11 @@ Error against REF:
 ## FINDINGS (standing rule 7)
 
 - **F1. The cross-program residue is ulp-scale, not zero.** FP32_ALT's τ sits within about 1 fp32 ulp of the float64
-  root, so two programs can land on adjacent floats where fp64's land on the same one. That adds wobbles of up to
-  about 2e-5 to log π. These are the class of the naive sum on every well-conditioned row, which X26 lived with for
-  380M steps at a K9(b) p99 of about 2.2e-5. On the taken action this read finds no excess. The all-actions program
-  floor max is 8.4e-5, against fp64's 6.4e-5 / 7.2e-5 on A / B. A live run's K9(b) record is the confirmation.
+  root, so two programs can land on adjacent floats where fp64's land on the same one. By first order that moves log π by
+  ≲ 1e-6 (the review's bound, REVIEW F4; no systematic bias: 29 positive to 19 negative on 256 rows). It cannot reorder a
+  selection, since τ shifts every candidate's logit alike. Program noise of this class is what the naive sum had on every
+  well-conditioned row, which X26 lived with for 380M steps at a K9(b) p99 of about 2.2e-5. On the taken action this read finds no excess. The all-actions program
+  floor max is 8.4e-5, against fp64's 6.4e-5 / 7.2e-5 on A / B: ordinary fp32 program noise, not the wobble. A live run's K9(b) record is the confirmation.
 - **F2. The GPU cost is unmeasured here.** On the CPU, FP32_ALT's test does about 2× the naive test's elementwise work.
   On a GPU, inductor fuses each bisection step into one kernel either way, so the cost should stay near fp32's.
   **UNVERIFIED** until `../gpu_window_battery_2026-10-20/` runs.

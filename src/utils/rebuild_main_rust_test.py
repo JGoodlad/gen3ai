@@ -74,6 +74,8 @@ def test_plan_is_the_four_builds_with_the_documented_cargo_flags(main_dir: Path)
     names = {a.path.name for a in by["rust_env/release"].artifacts}
     assert names == {"rust_env_proc", "bot_reader", "libpokesim_env.so"}
     assert {a.path.name for a in by["rust_sim/release"].artifacts} == set(R.PORT_STAMPED)
+    # the three offline tools are VERIFIED after a rebuild too (they once "carried no stamp")
+    assert {"ab_replay", "scan_move_probe", "bridge_replay"} <= {a.path.name for a in by["rust_sim/selfcheck"].artifacts}
     assert all(a.path.parent == main_dir / "src" / b.crate / "target" / b.profile for b in builds for a in b.artifacts)
 
 

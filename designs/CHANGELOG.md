@@ -15377,3 +15377,17 @@ was downloaded or written under `data/`.
   `service_cuda_test.py::test_overlap_compile_and_precision_are_foreign_not_fatal` runs the same probe on the graph backend
   with Inductor compiles; WRITTEN, NOT RUN (no lease), and not yet a node of the `t2_guard` battery cell. Docs:
   `endstate/program_rust_core.md` (the T2 lifecycle paragraph), `training/rust_collector.md`, the `TECH_DEBT_BACKLOG.md` rows.
+
+## 2026-10-25 — FP32_ALT's review follow-ups F1, F3-F5 (docs, comments and provenance only; no model / config / obs / signature change; the solve is untouched)
+
+- **The proof's constant (F3).** The 2026-10-20 entry above says "τ is fixed to ~2(depth + 2)u ≈ 1e-6". The constant is
+  c ≈ (L + 2)u with L the longest serial accumulation chain (≤ n − 1; the CPU Inductor kernel is one serial chain of
+  n = 400, a tree reduction has L ≈ its depth): worst case 2c ≈ 5e-5, MEASURED ≤ 4e-6 over 300 random rows and ≤ 1.5e-6 on
+  X26's violators. Corrected in `design_x5_belief_tokens.md` §3.2, the `hypothesis_set.py` docstring, the `selection_sites`
+  BISECT reason and the measurement README. The underflow limit is ~165 nats everywhere (the docstring said ~175; F5).
+- **The wobble (F4).** The ~1-ulp τ difference moves log π by ≲ 1e-6 by first order (not "about 2e-5"); the all-actions max
+  difference is ordinary fp32 program noise.
+- **Provenance (F1).** A v159 config is not "trained on fp32_alt": the T62 window (after `bd3126e0`, before `d4af9f1e`)
+  trained on float64, and a HEAD fork or resume migrates the record to `fp32_alt`. On disk that is SEVEN toy-side runs
+  (pin `4609c155`), named in the v160 migration comment, `designs/model/versioning.md` and the X35 launch sheet; the cost
+  the window paid is in the archived battery `~/gen3ai_archive/gpu_battery_2026-10-20/`.

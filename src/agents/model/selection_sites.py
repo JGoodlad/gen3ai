@@ -177,7 +177,7 @@ REASONS: Dict[str, str] = {
               "never a log pi jump. HOW FAR the root can sit from the true one is the constraint's evaluation error "
               "over its slope S'(tau) = sum pi (1 - pi). Under the default `fp32_alt` solve (gen3_tau_fp32_alt_v1) "
               "the constraint is the SPLIT residual sum(+-sigma(-|x|)) > k - |{x > 0}|: every term is relative-"
-              "accurate and k - |H| is an exact integer, so the root is fixed to ~2 (depth + 2) u ~ 1e-6 WHATEVER "
+              "accurate and k - |H| is an exact integer, so the root is fixed to ~2 (L + 2) u (L = the longest serial chain; MEASURED <= 4e-6) WHATEVER "
               "the slope (S' >= (R + D) / 2 bounds the error over the slope) — <= 2 fp32 ulp of tau across programs "
               "on X26's k = 1 tau-class rows (S' ~ 1e-5). Its membership test `x > 0` is the same class: a flip at "
               "x within a rounding of 0 swaps +sigma(x) for -sigma(-x) (both ~1/2) and moves |H| by one in the "
@@ -366,7 +366,7 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
     # `hypothesis_set.near_tie_rows`, including OTHER's tail-mean cutoff and the move seats); the
     # bisection's direction tests (`total > k_t`; the split residual's `resid > …` and its `x > 0` membership,
     # gen3_tau_fp32_alt_v1) are NOT discontinuities (τ converges to the same root either way, to the resolution of the
-    # solve: ~1e-6 for fp32_alt, ~1e-10 for fp64 — the naive fp32 sum's was up to 2.8e-2 on a saturated k = 1 row) and
+    # solve: <= 4e-6 MEASURED for fp32_alt, ~1e-10 for fp64 — the naive fp32 sum's was up to 2.8e-2 on a saturated k = 1 row) and
     # need a reason of their own; `denom > 0` is a structural-count gate.
     "hypothesis_set": {
         "BISECT": ("total > k_t", "x > 0", "resid > (k_safe - in_h.sum(-1)).to(dt)"),

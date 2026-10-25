@@ -565,6 +565,11 @@ def _migrate_config(data: dict) -> dict:
     # v160 (gen3_tau_fp32_alt_v1, FP32_ALT) — the τ SOLVE: no run before v160 CHOSE one (pre-T62 runs trained on the
     # naive fp32 sum, T62's float64 had no field), and the default split-residual solve evaluates them as T62 did to
     # within fp32's own rounding (<= 2 ulp of τ) — so the default, which is also what an absent extractor kwarg means.
+    # PROVENANCE WARNING: a v159 config is NOT "fp32_alt trained": a run pinned in the T62 WINDOW (after bd3126e0,
+    # before d4af9f1e: pin 4609c155, the X35 toy side's, `rb_x35t_*`) TRAINED on T62's float64 solve, and a HEAD fork
+    # or resume of it records fp32_alt from here on. Read what a run trained on from its `pin_history`, never from this
+    # field (`designs/research_state/measurements/tau_fp32_alt_2026-10-20/REVIEW.md` F1; the cost the T62 window paid:
+    # the archived battery `~/gen3ai_archive/gpu_battery_2026-10-20/`).
     if version < 160:
         data.setdefault("tau_solve", "fp32_alt")
         data["config_version"] = 160

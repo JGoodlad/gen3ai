@@ -312,3 +312,31 @@ def check_binary_stamp(path: Path, what: str, *, kind: str = "port", fix: Option
         raise StampMismatch(f"{what}: STALE RUST BUILD — {e} — rebuild it: {fix}; or {ALLOW_STALE_ENV}=1 to run it stale on "
                             f"purpose") from None
     return check_stamp(text, f"{what} ({path})", src=src, kind=kind, module=path, fix=fix, allow_stale=allow_stale)
+
+
+# ------------------------------------------------------------------ the command line (for the Node harnesses)
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    """``python -m utils.rust_env.stamp --check-binary <path> [--kind port|env] [--what NAME]``: judge a binary by its build
+    stamp against THIS checkout (``PYTHONPATH`` names which), exactly as the Python resolvers do. Exit 0 = current (or
+    ``POKESIM_ALLOW_STALE_BUILD=1``, warned loudly on stderr), 1 = refused (the one-line reason on stderr). The Node
+    fuzz harnesses (``src/rust_sim/harness/stamp_guard.js``) call it before they exec a replayer."""
+    import argparse
+
+    ap = argparse.ArgumentParser(prog="python -m utils.rust_env.stamp", description=main.__doc__)
+    ap.add_argument("--check-binary", required=True, metavar="PATH")
+    ap.add_argument("--kind", choices=sorted(SCOPES), default="port")
+    ap.add_argument("--what", default=None, help="the name quoted in a refusal (default: the file name)")
+    a = ap.parse_args(argv)
+    path = Path(a.check_binary)
+    try:
+        check_binary_stamp(path, a.what or path.name, kind=a.kind)
+    except (StampMismatch, OSError) as e:
+        sys.stderr.write(f"{e}\n")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

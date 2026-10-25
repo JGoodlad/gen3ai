@@ -304,7 +304,9 @@ RECORDED so a run keeps the arithmetic it trained with:
   extractor after every `--model` load (`resume_reapply.SETTERS`, the builder's `tau_solve` attribute), because SB3
   rebuilds the extractor from the zip's kwargs. A pre-v160 config MIGRATES to `fp32_alt`: no earlier run chose a solve
   (pre-T62 runs trained on the naive fp32 sum, T62's float64 had no field), and `fp32_alt` evaluates them as T62 did
-  to within fp32's own rounding. The measurement-only `fp32_naive` (the pre-T62 sum) is refused by the flag, the
+  to within fp32's own rounding. **The record is not the training solve for a T62-window run** (pin after `bd3126e0`,
+  before `d4af9f1e`; config v159; on disk the X35 toy side, `rb_x35t_*` at `4609c155`, trained on float64): a HEAD
+  fork or resume of one reads `fp32_alt`, so read what a run trained on from its `pin_history`. The measurement-only `fp32_naive` (the pre-T62 sum) is refused by the flag, the
   config check and the builder.
 * **`ARCH_SIGNATURE`: no bump** — T62's judgment: the same real function, its evaluation moved by ≤ 2 fp32 ulp of τ
   (`research_state/measurements/tau_fp32_alt_2026-10-20/`).

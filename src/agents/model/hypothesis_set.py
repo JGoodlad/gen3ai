@@ -61,13 +61,14 @@ THE FIXED-SIZE CONSTRUCTION (`fixed_size_tau`).
     every term is ``±σ(−|x|) ∈ [−½, ½]``, computed to a few ulp RELATIVE, and ``k − |H|`` is an exact
     integer — the near-1 term ``σ(x) ≈ 1`` is never formed, so nothing cancels. CONDITIONING (the
     proof): with ``R + D = Σ σ(−|x_s|)`` the terms' absolute sum, any summation order errs by at most
-    ``c·(R + D)``, ``c ≈ (depth + 2)·u`` (u = 2^-24; depth = the reduction's, ≤ 9 for a 400-wide tree;
+    ``c·(R + D)``, ``c ≈ (L + 2)·u`` (u = 2^-24; L = the longest serial accumulation chain, ≤ n − 1: ≈ the depth, ≤ 9, of a tree
+    reduction, but the CPU Inductor kernel is one serial chain of n = 400;
     the rounding of ``x = a + τ`` itself moves ``τ`` only as a one-ulp change of the scores would);
     and ``S' = Σ π(1 − π) ≥ ½ Σ min(π, 1 − π) = ½(R + D)``, with ``R + D`` Lipschitz-1 in log over τ.
     So the direction test is right whenever ``|τ − τ*| > −ln(1 − 2c) ≈ 2c``: the root is fixed to
-    ~2c ≈ 1e-6 absolute (plus ``τ``'s own fp32 rounding, ~1 ulp) WHATEVER the slope — on the τ-class
+    ~2c absolute (worst case ≈ 5e-5, MEASURED ≤ 4e-6; plus ``τ``'s own fp32 rounding, ~1 ulp) WHATEVER the slope — on the τ-class
     rows the naive band was 1e-2. The bound fails only where every ``σ(−|x_s|)`` underflows (all
-    ``|x_s|`` > ~87 at the root: the top candidate ~175 nats clear of the next), where float64's own
+    ``|x_s|`` > ~87 at the root: the top candidate ~165 nats clear of the next), where float64's own
     naive sum failed long before (its band reaches 1e-2 at a ~64-nat lead).
   - ``"fp64"`` (T62, ``gen3_tau_fp64_solve_v1``): the naive sum on a float64 copy of the scores, ``τ``
     cast back once. Exact to ~1e-11 on the τ-class rows, but float64 runs at ~1/64 rate on consumer GPUs

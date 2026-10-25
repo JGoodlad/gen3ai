@@ -31,7 +31,6 @@ from utils.paths import repo_path
 
 DEFAULT_SRC = Path.home() / "gen3ai_archive" / "metamon_cache_2026-09-24" / "teams" / "hl_05_26" / "gen3ou"
 FILTER_JS = repo_path("src", "rust_sim", "harness", "ladder_corpus_filter.js")
-CRATE = repo_path("src", "rust_sim")
 KINDS = (("species", "species"), ("move", "moves"), ("item", "items"), ("ability", "abilities"))
 
 
@@ -43,10 +42,11 @@ def showdown_rows(src: Path) -> List[dict]:
 
 
 def scan_probe_bin() -> str:
-    """The engine's coverage oracle, built into THIS checkout's own target (never main's)."""
-    subprocess.run(["cargo", "build", "--release", "--bin", "scan_move_probe"], cwd=CRATE,
-                   check=True, capture_output=True)
-    return str(CRATE / "target" / "release" / "scan_move_probe")
+    """The engine's coverage oracle: THIS checkout's own build (never main's), judged by its BUILD STAMP so a stale binary
+    (``$POKESIM_SCAN_MOVE_PROBE_BIN`` included) is refused before it names a move "unplayable"."""
+    from utils.bridge.sim_bridge_bin import resolve_scan_move_probe_bin
+
+    return resolve_scan_move_probe_bin()
 
 
 def engine_verdicts(rows: List[dict]) -> Dict[str, Dict[str, str]]:

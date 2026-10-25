@@ -56,6 +56,7 @@ const {
 } = e2e;
 const ab = require('./ab_fuzz.js');
 const ladderCorpus = require('./ladder_corpus.js');
+const { requireFreshBinary } = require('./stamp_guard.js');
 // `--mode ladder` widens the picker to typed Hidden Power: the corpus is gen3ou-VALIDATED and the
 // engine prices HP at its IV-true BP (R3). Every other mode keeps `isModeledMove`'s default.
 let PICK_HIDDEN_POWER = false;
@@ -428,6 +429,7 @@ function buildReplayer() {
   const r = spawnSync('cargo', ['build', '--profile', 'selfcheck', '--features', 'emission-selfcheck', '--bin', 'bridge_replay'], { cwd: CRATE, env, stdio: 'inherit' });
   if (r.status !== 0) { console.error('[bridge_ab_fuzz] cargo build failed'); process.exit(1); }
   if (!fs.existsSync(REPLAYER)) { console.error(`[bridge_ab_fuzz] replayer missing: ${REPLAYER}`); process.exit(1); }
+  requireFreshBinary(REPLAYER, 'bridge_replay');   // the BUILD STAMP: never fuzz against another tree's engine
 }
 
 // The GREEN-GATE accounting of ONE replayer verdict: `ok`, `allowlisted` (a documented residual

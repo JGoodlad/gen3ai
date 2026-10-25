@@ -68,6 +68,7 @@ const { execFileSync, spawnSync } = require('child_process');
 const e2e = require('./gen_e2e_fuzz.js');
 const ouRandom = require('./ou_random_teams.js');
 const ladderCorpus = require('./ladder_corpus.js');
+const { requireFreshBinary } = require('./stamp_guard.js');
 const {
   runBattle, emitBattle, isModeledMove, abilityAllowed, itemAllowed,
   teamFilterClean, loadTeams, mulberry32, randInt, seedFrom, toId, dex3,
@@ -467,6 +468,8 @@ async function main() {
   } else {
     console.error(`[ab_fuzz] using replayer ${REPLAYER} (no rebuild)`);
   }
+  // A stale replayer (an override, or a build the cargo step above did not touch) is refused by its BUILD STAMP.
+  requireFreshBinary(REPLAYER, 'ab_replay');
 
   // Deterministic streams, all derived from the master seed.
   const teamRng = mulberry32(flags.masterSeed);

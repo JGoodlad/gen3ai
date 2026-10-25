@@ -54,9 +54,9 @@ PROFILE_FLAGS: Dict[str, Tuple[str, ...]] = {
     "release": ("--release",),
     "selfcheck": ("--profile", "selfcheck", "--features", "emission-selfcheck"),
 }
-#: The binaries that answer ``--build-stamp`` (port ``kind=port``; env ``kind=env``). ``ab_replay`` /
-#: ``scan_move_probe`` / ``bridge_replay`` carry no stamp: they are built by the port build but cannot be judged.
-PORT_STAMPED = ("sim_bridge", "search_driver", "core_events", "live_reader")
+#: The binaries that answer ``--build-stamp`` (port ``kind=port``; env ``kind=env``): every bin of the port build,
+#: the three offline tools (``ab_replay`` / ``scan_move_probe`` / ``bridge_replay``) included.
+PORT_STAMPED = ("sim_bridge", "search_driver", "core_events", "live_reader", "ab_replay", "scan_move_probe", "bridge_replay")
 ENV_STAMPED = ("rust_env_proc", "bot_reader")
 CDYLIB = "libpokesim_env.so"
 
