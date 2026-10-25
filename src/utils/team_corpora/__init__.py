@@ -1,6 +1,8 @@
-"""PIN-SAFE TRAINING TEAM CORPORA (``gen3_team_corpus_v1``): the pool-widening corpora ``--team-mix`` draws from.
+"""PIN-SAFE TRAINING TEAM CORPORA (``gen3_team_corpus_v1``): the corpora ``--team-mix`` draws from.
 
-Design: ``designs/endstate/design_diversity_teams_opponents.md`` §4.1 ("Where it lives", F-DV-2) and §4.2 (D1 / X38).
+Design: ``designs/endstate/design_diversity_teams_opponents.md`` §4.1 ("Where it lives", F-DV-2), §4.2 (D1 / X38:
+``w_forum_v1``, human-built forum teams, ``build_w_forum``) and §4.5 (D3 / X41: ``d3_setmut_v1``, pool teams with 1-2
+mons' sets redrawn from Smogon usage, ``build_d3_setmut``).
 
 🚨 **Why under ``src/`` and not ``data/teams/``.** ``TeamLoader`` walks ``data/teams/`` RECURSIVELY, and a pinned run
 reads ``data/`` from MAIN: a corpus placed there would silently widen every live run's pool at its next restart. A
@@ -40,7 +42,7 @@ SCHEMA = "gen3_team_corpus_v1"
 DATA_NAME = "teams.jsonl.gz"
 MANIFEST_NAME = "manifest.json"
 #: The registered corpora, by name. A name not here is refused (a typo must not train on nothing).
-CORPORA: Dict[str, Path] = {"w_forum_v1": HERE / "w_forum_v1"}
+CORPORA: Dict[str, Path] = {"w_forum_v1": HERE / "w_forum_v1", "d3_setmut_v1": HERE / "d3_setmut_v1"}
 
 
 class CorpusError(RuntimeError):

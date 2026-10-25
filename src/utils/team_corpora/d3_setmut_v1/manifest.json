@@ -1,0 +1,271 @@
+{
+ "attempts_to_accept": {
+  "0": 2618,
+  "1": 232,
+  "2": 23,
+  "3": 3
+ },
+ "built_by": "python -m utils.team_corpora.build_d3_setmut",
+ "data_file": "teams.jsonl.gz",
+ "data_sha256": "fa3674297fcaed2c7508401d2c69774a5289f63902ce8107b18859dd916f6778",
+ "default_tier": "ALL",
+ "describe": {
+  "k_hist": {
+   "1": 1494,
+   "2": 1382
+  },
+  "mutated_sets": 4258,
+  "mutated_sets_with_hidden_power": 1661,
+  "shared_mon_sets_with_source_hist": {
+   "4": 1382,
+   "5": 1494
+  },
+  "sources_with_a_variant": 719,
+  "variants_per_source_hist": {
+   "4": 719
+  }
+ },
+ "design": "designs/endstate/design_diversity_teams_opponents.md §4.5 (a); design_beat_metamon_path.md §6.4",
+ "engine": {
+  "corpus_unplayable": {
+   "ability": [],
+   "item": [],
+   "move": [],
+   "species": []
+  },
+  "dropped_move_slot_mass": {
+   "aerodactyl": 0.000542,
+   "alakazam": 0.00025,
+   "arcanine": 0.0006,
+   "armaldo": 7.6e-05,
+   "blaziken": 8.8e-05,
+   "blissey": 4.5e-05,
+   "breloom": 6e-06,
+   "camerupt": 0.000113,
+   "celebi": 5.2e-05,
+   "chansey": 0.000907,
+   "charizard": 0.002351,
+   "claydol": 1e-05,
+   "cloyster": 4.5e-05,
+   "donphan": 0.002438,
+   "dragonite": 0.001285,
+   "dugtrio": 8.2e-05,
+   "dusclops": 0.000968,
+   "exeggutor": 0.000177,
+   "flygon": 0.000161,
+   "forretress": 4e-06,
+   "gengar": 0.000199,
+   "glalie": 6.4e-05,
+   "gyarados": 3e-05,
+   "hariyama": 3.2e-05,
+   "heracross": 1.4e-05,
+   "houndoom": 0.0001,
+   "jirachi": 0.000643,
+   "jolteon": 6.8e-05,
+   "jumpluff": 0.000114,
+   "jynx": 0.000179,
+   "kingdra": 0.00011,
+   "linoone": 0.000865,
+   "ludicolo": 0.021873,
+   "lunatone": 0.000203,
+   "machamp": 0.000303,
+   "magneton": 1.3e-05,
+   "mantine": 3.7e-05,
+   "marowak": 4.9e-05,
+   "medicham": 3.5e-05,
+   "metagross": 1e-06,
+   "milotic": 0.000107,
+   "misdreavus": 0.004104,
+   "moltres": 0.001299,
+   "politoed": 0.000557,
+   "porygon2": 7.2e-05,
+   "quagsire": 0.000231,
+   "raikou": 2e-06,
+   "regice": 1.6e-05,
+   "regirock": 1.5e-05,
+   "registeel": 1.9e-05,
+   "sableye": 0.001477,
+   "salamence": 7.5e-05,
+   "sceptile": 0.000132,
+   "shiftry": 0.000252,
+   "skarmory": 9.7e-05,
+   "slaking": 4.3e-05,
+   "smeargle": 0.000283,
+   "snorlax": 0.000443,
+   "starmie": 2.6e-05,
+   "steelix": 6.5e-05,
+   "suicune": 4.2e-05,
+   "swampert": 2.1e-05,
+   "tyranitar": 2e-06,
+   "umbreon": 0.000213,
+   "vaporeon": 5.8e-05,
+   "venusaur": 0.001366,
+   "wailord": 0.000463,
+   "weezing": 0.00028,
+   "zapdos": 0.000267
+  },
+  "oracle": "scan_move_probe",
+  "prefilter_unplayable": {
+   "item": [
+    "machobrace",
+    "mail",
+    "mentalherb",
+    "shellbell"
+   ],
+   "move": [
+    "attract",
+    "bide",
+    "blastburn",
+    "camouflage",
+    "dig",
+    "dive",
+    "flatter",
+    "fly",
+    "followme",
+    "foresight",
+    "frenzyplant",
+    "grudge",
+    "helpinghand",
+    "hydrocannon",
+    "ingrain",
+    "lockon",
+    "magnitude",
+    "metronome",
+    "mindreader",
+    "mirrormove",
+    "mist",
+    "mudsport",
+    "naturepower",
+    "nightmare",
+    "odorsleuth",
+    "present",
+    "psywave",
+    "razorwind",
+    "roleplay",
+    "sketch",
+    "skullbash",
+    "skyattack",
+    "snore",
+    "spite",
+    "spitup",
+    "stockpile",
+    "swallow",
+    "teleport",
+    "watersport"
+   ]
+  }
+ },
+ "exhausted": {
+  "ids": [],
+  "n": 0
+ },
+ "mutation": {
+  "hidden_power": "gen3_hp_repair_v1",
+  "item": "weight = Smogon item usage ('nothing' = no item)",
+  "k_choices": [
+   1,
+   2
+  ],
+  "kept": "species, ability, nickname / gender / shiny / happiness lines; IVs all 31 unless HP",
+  "max_attempts": 12,
+  "moves": "4 distinct, sequentially without replacement, weight P(move in set); the 16 typed HP keys are one 'Hidden Power' candidate with their summed mass",
+  "nature_evs": "one draw of a Smogon usage spread (nature and EVs joint)",
+  "new_set": "every mutated slot is a new mon set (gen3_team_overlap_v1): a variant shares 6 - k sets with its source",
+  "variants_per_team": 4
+ },
+ "name": "d3_setmut_v1",
+ "panel_registry": {
+  "excluded": [
+   "heldout72",
+   "heldout72_hpfix",
+   "forum72",
+   "p72",
+   "forum216b"
+  ],
+  "matcher": "gen3_team_overlap_v1",
+  "near_neighbour_min_shared": 4,
+  "not_excluded": [
+   "away",
+   "home72"
+  ],
+  "path": "designs/research_state/heldout_panels.json",
+  "rule": "a variant hitting a HELD-OUT panel is refused; the in-pool panels (home72, away) are not excluded: D3 perturbs the pool's own cores",
+  "sha256": "ea3917c2f1e61c8a6e9d74cd38f20888eccb2cf9f8d7d4d4ff90fe224391784f"
+ },
+ "pool": {
+  "content_sha256": "53b6e7e222bf6d8095f42e39c13d6b39be79f3d20b12843940762ce44cea2b38",
+  "n_distinct_texts": 719,
+  "n_files": 719,
+  "source_drops": {
+   "source_no_eligible_mon": {
+    "ids": [],
+    "n": 0
+   },
+   "source_shape": {
+    "ids": [],
+    "n": 0
+   }
+  },
+  "sources": 719
+ },
+ "priors": {
+  "gen3_hidden_power_priors.json": "9df0949e3e4b5813005bfd8c36217d1a7ebd73b5558707f1f500dba925f7d052",
+  "gen3_item_priors.json": "a1d2d92139ba02f75d0f456a3203ee946ee2cd9f976cd0975664b0eeb2314daa",
+  "gen3_move_priors.json": "a9afa7a344d6f6a971b3a360ab989b8b20af4dad7fa7c07ef295f8b436288f58",
+  "gen3_smogon_stats.json": "03c8233a0268e5704b568f263da23d48e53aaa5de0143bc994e1cad22e7c713e",
+  "gen3_spread_priors.json": "5f7c157c6848ac0376698b417e83b76f60f3e22ef878981cc9d773cada4ef908"
+ },
+ "rule_failures": {
+  "duplicate": 4,
+  "level": 0,
+  "panel": 5,
+  "pool_exact": 1,
+  "unchanged": 191,
+  "validator": 86
+ },
+ "schema": "gen3_team_corpus_v1",
+ "seeds": {
+  "build": 4101,
+  "order": 4102,
+  "rule": "one random.Random per (source id, variant, attempt): stream_seed = sha256('BUILD_SEED|source|v|t'); Hidden Power's own stream adds ('hp', slot)"
+ },
+ "tiers": {
+  "ALL": {
+   "n": 2876,
+   "sha256": "625d664aff2125dc39a0c574eb62bfaa8f28d8b2c7aa107a1cbf2cd9d248bcd3",
+   "source_tiers": [
+    "ALL"
+   ]
+  }
+ },
+ "validator": "TeamValidator('gen3ou') via src/rust_sim/harness/ladder_corpus_filter.js, pinned deps/pokemon-showdown",
+ "validator_failures_by_reason": {
+  "validator_fail: Blissey can't get its egg move combination (aromatherapy, healbell) from any pos": 2,
+  "validator_fail: Blissey's moves Aromatherapy, Wish are incompatible.": 2,
+  "validator_fail: Blissey's moves Heal Bell, Wish are incompatible.": 2,
+  "validator_fail: Blissey's moves Wish, Aromatherapy are incompatible.": 4,
+  "validator_fail: Blissey's moves Wish, Heal Bell are incompatible.": 4,
+  "validator_fail: Celebi has Baton Pass and multiple ways to boost its stats, which is banned by O": 2,
+  "validator_fail: Charizard can't get its egg move combination (beatup, bellydrum) from any possib": 3,
+  "validator_fail: Cloyster's moves Refresh, Rapid Spin are incompatible.": 1,
+  "validator_fail: Gengar can't get its egg move combination (willowisp, perishsong) from any possi": 1,
+  "validator_fail: Jolteon has Baton Pass and a way to boost its Speed, which is banned by Speed Pa": 1,
+  "validator_fail: Leuphorie (Blissey)'s moves Aromatherapy, Wish are incompatible.": 1,
+  "validator_fail: Milotic can't get its egg move combination (mirrorcoat, hypnosis) from any possi": 1,
+  "validator_fail: Multiple Pokemon have Baton Pass and a way to boost their stats, which is banned": 1,
+  "validator_fail: Salamence's moves Dragon Dance, Wish are incompatible.": 2,
+  "validator_fail: Salamence's moves Hydro Pump, Refresh are incompatible.": 1,
+  "validator_fail: Salamence's moves Wish, Dragon Dance are incompatible.": 1,
+  "validator_fail: Salamence's moves Wish, Refresh are incompatible.": 1,
+  "validator_fail: Skarmory can't get its egg move combination (drillpeck, whirlwind) from any poss": 2,
+  "validator_fail: Skarmory can't get its egg move combination (whirlwind, drillpeck) from any poss": 2,
+  "validator_fail: Smeargle has Baton Pass and a way to boost its Speed, which is banned by Speed P": 1,
+  "validator_fail: Tyranitar can't get its egg move combination (dragondance, ancientpower) from an": 2,
+  "validator_fail: Tyranitar can't get its egg move combination (dragondance, pursuit) from any pos": 13,
+  "validator_fail: Tyranitar can't get its egg move combination (pursuit, dragondance) from any pos": 24,
+  "validator_fail: Tyranocif (Tyranitar) can't get its egg move combination (dragondance, pursuit) ": 1,
+  "validator_fail: Tyranocif (Tyranitar) can't get its egg move combination (pursuit, dragondance) ": 1,
+  "validator_fail: Zapdos has Baton Pass and a way to boost its Speed, which is banned by Speed Pas": 10
+ },
+ "what": "X41 / D3's set-mutation corpus: our pool teams with 1-2 mons' moves, item, nature and EVs resampled from Smogon usage (Hidden Power typed by gen3_hp_repair_v1); the species cores, abilities and the other mons are the pool's; TRAINING DATA, never a prior"
+}
