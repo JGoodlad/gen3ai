@@ -28628,3 +28628,21 @@ the same across consecutive months minus WITHIN.
 `results/results.json`, `plan_power.py`, `results/plan_power.json`); caches under
 `~/gen3ai_archive/human_replay_quality/cache_v2/`. Design: `endstate/human_data_architecture.md` and
 `endstate/design_human_replay_lever.md` (both REVISED DRAFT). See `UNDERSTANDING.md` §4.8.
+
+### 2026-10-26 · MEASUREMENT · **GOAL (b)'S PANELS ARE NOT SHOWN KAKUNA-FAMILIAR; dropping H LOWERS P\* to 0.481 [0.447, 0.516]; no verdict changes (DESCRIPTIVE; survey F3)**
+
+**Question.** H came from Metamon's `hl_05_26`: is any goal-(b) panel familiar to Kakuna, so that our 0.487
+understates our standing? No games; banked rows only.
+
+**Result.**
+- Kakuna (Dec 2025) predates `hl_05_26` (teams v5, 2026-05-21). Its human data was parsed-replays ≤ v4 (2025-08-13).
+  An H team can be in it only as its one source replay (≲ 2 trajectories); hl's date window is UNVERIFIED.
+- Ladder near-copies (≥ 4 shared sets, HP-agnostic, own source excluded): H 4.2 %, a random hl team 8.9 %, F 14 %,
+  P72 0 %, **home72 47 % plus 8 exact `competitive` copies**. home72 is the Kakuna-familiar panel, and there we win.
+- forum216b (manifest metadata only): 9 / 216 at ≥ 4 with hl, 0 with `competitive`; 86 teams posted in 2026.
+- No within-panel gradient (Kakuna's team ladder-typical vs not): H +0.6 pp [−9.3, +10.5], underpowered.
+- Goal (b) on F + P72: P\* 0.481 [0.447, 0.516]; X26c − P\* +2.3 [−2.6, +7.1] (FLAT); D1 look 2 +2.07
+  [−1.63, +5.76] (UNDECIDED). Every subset keeps every verdict.
+
+**Evidence:** `research_state/measurements/goal_b_panel_validity_2026-10-26/` (README, `validity.py`, `results.json`).
+Design: `endstate/design_beat_metamon_path.md` §0, §9. Open: Kakuna's self-play team sets (needs downloads).
