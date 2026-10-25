@@ -17,7 +17,7 @@ Follow the pointer when you touch the subject.
 | touch `data/` or the data facade | `src/agents/gen3_data/CLAUDE.md`, `tools/CLAUDE.md` |
 | reason about the research | `designs/research_state/UNDERSTANDING.md`; `ledger.md` wins any disagreement |
 | reason about search | `designs/endstate/search_ledger.md` (always-current; update it with any search result) |
-| give training, search or the model's inputs EXTRA information | `designs/endstate/design_information_levers.md` (`agents.info_levers`) |
+| give training, search or the model's inputs EXTRA information, or HUMAN replays | `designs/endstate/design_information_levers.md` (`agents.info_levers`); human data: `designs/endstate/human_data_architecture.md` |
 | touch a training flag, or quote an offline meter / ELO | `src/agents/training/CLAUDE.md` → `designs/training/<topic>.md`; meters + ELO rules: the runbook |
 | touch the rust port | `src/rust_sim/CLAUDE.md` → `designs/rust_sim/<topic>.md` |
 | probe a run's traces / the prober | `src/main/prober/CLAUDE.md` → `designs/prober/<topic>.md` |

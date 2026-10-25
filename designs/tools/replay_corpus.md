@@ -76,3 +76,7 @@ write only under `<main>/replays/showdown/gen3ou/`, at `Nice=19`, `CPUAffinity=5
 - The only readers a growing corpus changes are the OFFLINE ones, and the pull writes into old date folders too (the 09-23 folder, the two holes):
   a date range no longer names a set. **Name the population:** the spectator set is the manifest's 376,410 paths (the X50 census's set); the rest
   is the archive pull.
+- **Frozen snapshots (2026-10-25):** `hr_spec_v1` (the manifest's 376,410 logs) and `hr_arch_2026-10-24` (the 16,490
+  archive logs through 10-24), by per-file sha256 manifest (`designs/research_state/human_replay_snapshots.json`;
+  [`../endstate/human_data_architecture.md`](../endstate/human_data_architecture.md) §3). A result cites one of them,
+  never a date range.

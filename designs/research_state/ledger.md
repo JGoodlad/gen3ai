@@ -28532,3 +28532,34 @@ SPRT ledger rows carry that regime; C0's S values are G1's, reused. The decision
 **Evidence:** `research_state/measurements/x35_breakers_stage_2026-10-17/sprt_read/` (README, `s_read.py`,
 `assemble.py`, `s_results.json`, `read_look1_input.json`), `reads/sprt_look1.json`; the raw ledger is
 `~/gen3ai_archive/x35_sprt_read/ledger` (family `x35_sprt_read_2026-10-24`). See `UNDERSTANDING.md` §4.11.
+
+### 2026-10-25 · MEASUREMENT · **THE HUMAN-REPLAY DATA CARD (`hr_spec_v1`, DESCRIPTIVE): 376,410 spectator logs, 0 parse errors, one rule set; the actors rated ≥ 1500 give 1.80M informative rows; ≈ 6 % of sides are rule-flagged bots; ≥ 15.9 % of ≥ 1500 human sides sit in the unfamiliar panels' region; P\* predicts human choices no worse on unfamiliar teams than on pool-like ones (1.762 vs 1.738 nats)**
+
+The owner's 2026-10-25 grant lets human replays train the policy as a toggleable lever, off by default, after a
+data-quality analysis. This is that analysis, CPU only, no model run (the NLL cuts re-read R-b1's cached forwards).
+Two corpus snapshots were frozen by per-file sha256 manifest: `hr_spec_v1` (the 2026-09-23 spectator manifest,
+`e7d491e7…f3b1`) and `hr_arch_2026-10-24` (16,490 archive logs, `ad940108…f7a2`), registered in
+`designs/research_state/human_replay_snapshots.json`. No verdict rule was registered; the thresholds (strata, the bot
+rule, walk-overs) were fixed in the script before the full analysis.
+
+| quantity | value |
+|---|---|
+| format / parse | 100 % `[Gen 3] OU` singles, one rule set; 0 text-pass errors; C-GAME seats completed 99.39 % (rung-1b build) |
+| informative rows (own label, ≥ 2 legal) by actor stratum | < 1300 7.70M · 1300–1499 5.14M · 1500–1599 1.26M · 1600–1699 0.44M · 1700+ 0.09M |
+| chosen action known | 90.3 % of completed decisions |
+| suspected bots (name / ≥ 100 games a day / ≥ 20 clock hours a day) | 61 accounts, 5.2–6.1 % of sides per rated stratum |
+| forfeit endings / walk-overs (≤ 3 turns) | ≈ 50 % / 1.0–1.6 % at ≥ 1500; 58 % / 5.1 % below 1300 |
+| ≥ 1500 sides with ≤ 2 mons fitting any pool team's sets (the panels: H 98.6 %, F 77.8 %, P72 100 %) | ≥ 15.9 % (a lower bound) |
+| ≥ 1500 human sides fitting ≥ 4 sets of a panel team, median per team | home72 218 · H 105 · F 74 (FAR 11) · P72 6 |
+| P\* NLL on human choices, panels' region vs pool-like (≥ 1500, held out) | 1.762 [1.706, 1.826] vs 1.738 [1.709, 1.767]; the HOM's gain −0.62 vs −0.58 |
+| species-mix drift, month to month / split-half floor | 0.038–0.049 / 0.009; the distance to the pool flat at 0.19–0.20 |
+
+**Reading.** Usable at ≥ 1500 with filters (bots, walk-overs, duplicates, panel-near battles); the archive stays out
+of training (SKEWED). Humans do reach the unfamiliar region, but their cores sit near most H and F teams, so the panel
+exclusion removes the best-covered part. No offline evidence that human labels carry the unfamiliar-team skill goal
+(b) lacks; the planned test is X59 (the HOM against Kakuna, CPU).
+
+**Evidence:** `research_state/measurements/human_replay_quality_2026-10-25/` (README, `hrq.py`, `results/results.json`);
+the cache and snapshots under `~/gen3ai_archive/human_replay_quality/` and `~/gen3ai_archive/human_replay_snapshots/`.
+Design: `endstate/human_data_architecture.md` (always-current, DRAFT), `endstate/design_human_replay_lever.md` (DRAFT).
+See `UNDERSTANDING.md` §4.8.

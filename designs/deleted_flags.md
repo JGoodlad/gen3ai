@@ -365,6 +365,8 @@ constructor kwarg. A document that still spells one of these `--like-a-flag` is 
 | `--belief-oracle` | proposed in `designs/endstate/design_hidden_info_binding.md` §8.1 (2026-10-11); `designs/endstate/design_information_levers.md` and `designs/endstate/search_ledger.md` record it as NOT built | the training-time oracle-belief injection "to build"; no `--belief-oracle` was ever added |
 | `--belief-oracle-mass` | the same §8.1 proposal (2026-10-11) | the mass fraction of the proposed oracle belief; never built |
 | `--comparator` | proposed in `designs/endstate/design_model_management.md` §3.1 (2026-09-22; "not started") | a role-printing comparator selector for the model-record diff tool; never built |
+| `--human-data` | proposed in `designs/endstate/human_data_architecture.md` §4 and `designs/endstate/design_human_replay_lever.md` §7.1 (2026-10-25, DRAFT; "to build") | the one switch for every human-replay training lever (`off` by default, or ONE `<lever>:<snapshot>@<param>` clause); not built |
+| `--human-data-combined-consent` | the same proposal, `design_human_replay_lever.md` §6 (2026-10-25) | the consent that would let one run combine two human-data levers; not built |
 | `--team-exclude` | proposed in `designs/endstate/design_diversity_teams_opponents.md` (2026-10-18; "it needs") | a team-manifest source filter for the pool builder; never built |
 | `--value-threat-route` | proposed and REJECTED in `designs/endstate/design_arch_audit.md` (2026-10-07) | "a second name for one lever": the existing `--value-threat-inject` selects it, so no new flag was added |
 

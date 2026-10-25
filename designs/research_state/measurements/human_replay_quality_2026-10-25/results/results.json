@@ -1,0 +1,1789 @@
+{
+ "schema": "hrq_v1",
+ "corpus": "/home/goodlad/dev/gen3ai/replays/showdown/gen3ou",
+ "files": {
+  "total": 392979,
+  "errors": 0,
+  "error_examples": [],
+  "spectator": 376410,
+  "archive": 16569,
+  "spectator_dates": [
+   "2026-05-18",
+   "2026-09-23"
+  ],
+  "archive_dates": [
+   "2026-06-16",
+   "2026-10-25"
+  ]
+ },
+ "format": {
+  "gen_tier_gametype": {
+   "3 / [Gen 3] OU / singles": 376410
+  },
+  "rule_sets": {
+   "70baabd719": 376410
+  },
+  "n_rule_sets": 1,
+  "no_result": 0
+ },
+ "duplicates": {
+  "id_in_two_files": 0,
+  "spectator_identical_bodies_extra_copies": 4
+ },
+ "accounts": {
+  "n": 23364,
+  "sides": 752820,
+  "top1_share": 0.005504635902340533,
+  "top10_share": 0.03128769161286895,
+  "top100_share": 0.1486211843468558,
+  "games_per_account": {
+   "p50": 4.0,
+   "p90": 73.0,
+   "p99": 486.0
+  },
+  "flagged": {
+   "ioricordo": {
+    "name": "io ricordo",
+    "why": [
+     "volume",
+     "hours"
+    ],
+    "games": 4144,
+    "max_per_day": 179,
+    "max_hours": 21,
+    "mean_rating": 1251.63194780087,
+    "top_team_share": 0.015444015444015444
+   },
+   "resourcespro": {
+    "name": "resourcespro",
+    "why": [
+     "volume"
+    ],
+    "games": 2808,
+    "max_per_day": 172,
+    "max_hours": 18,
+    "mean_rating": 1309.8254985754986,
+    "top_team_share": 0.07727920227920228
+   },
+   "i8veil": {
+    "name": "i8veil",
+    "why": [
+     "volume"
+    ],
+    "games": 2617,
+    "max_per_day": 122,
+    "max_hours": 14,
+    "mean_rating": 1047.6175009552924,
+    "top_team_share": 0.01757737867787543
+   },
+   "graniteferret": {
+    "name": "GraniteFerret",
+    "why": [
+     "volume",
+     "hours"
+    ],
+    "games": 2207,
+    "max_per_day": 340,
+    "max_hours": 24,
+    "mean_rating": 1327.8717716357046,
+    "top_team_share": 0.19755323969188945
+   },
+   "optionsfs": {
+    "name": "OptionsFS",
+    "why": [
+     "volume"
+    ],
+    "games": 2005,
+    "max_per_day": 129,
+    "max_hours": 15,
+    "mean_rating": 1070.8994497248625,
+    "top_team_share": 0.11670822942643391
+   },
+   "prokameronbot": {
+    "name": "ProKameron Bot",
+    "why": [
+     "name",
+     "volume",
+     "hours"
+    ],
+    "games": 1796,
+    "max_per_day": 883,
+    "max_hours": 24,
+    "mean_rating": 1071.4646118721462,
+    "top_team_share": 0.1787305122494432
+   },
+   "quolarkprime": {
+    "name": "QuolarkPrime",
+    "why": [
+     "volume",
+     "hours"
+    ],
+    "games": 1397,
+    "max_per_day": 164,
+    "max_hours": 24,
+    "mean_rating": 1539.402290622763,
+    "top_team_share": 0.19327129563350035
+   },
+   "swordofthespirit": {
+    "name": "Swordofthespirit",
+    "why": [
+     "volume"
+    ],
+    "games": 1359,
+    "max_per_day": 137,
+    "max_hours": 12,
+    "mean_rating": 1437.4440353460973,
+    "top_team_share": 0.6254598969830758
+   },
+   "drebln": {
+    "name": "DreBLN",
+    "why": [
+     "volume"
+    ],
+    "games": 1313,
+    "max_per_day": 110,
+    "max_hours": 14,
+    "mean_rating": 1214.9817073170732,
+    "top_team_share": 0.18126428027418126
+   },
+   "year2004": {
+    "name": "Year2004",
+    "why": [
+     "volume"
+    ],
+    "games": 1189,
+    "max_per_day": 104,
+    "max_hours": 15,
+    "mean_rating": 1266.8895497026338,
+    "top_team_share": 0.0832632464255677
+   },
+   "santir96": {
+    "name": "Santir96",
+    "why": [
+     "volume"
+    ],
+    "games": 1157,
+    "max_per_day": 107,
+    "max_hours": 14,
+    "mean_rating": 1168.351771823682,
+    "top_team_share": 0.12618841832324978
+   },
+   "otumed": {
+    "name": "otumed",
+    "why": [
+     "volume"
+    ],
+    "games": 1110,
+    "max_per_day": 118,
+    "max_hours": 15,
+    "mean_rating": 1421.9389243391067,
+    "top_team_share": 0.07117117117117117
+   },
+   "bawiinterlude": {
+    "name": "bawiinterlude",
+    "why": [
+     "volume"
+    ],
+    "games": 1076,
+    "max_per_day": 168,
+    "max_hours": 17,
+    "mean_rating": 1279.8348880597016,
+    "top_team_share": 0.31226765799256506
+   },
+   "rana2023": {
+    "name": "Rana2023",
+    "why": [
+     "volume"
+    ],
+    "games": 1037,
+    "max_per_day": 247,
+    "max_hours": 16,
+    "mean_rating": 1033.9411764705883,
+    "top_team_share": 0.022179363548698167
+   },
+   "areugood": {
+    "name": "are u good",
+    "why": [
+     "volume"
+    ],
+    "games": 998,
+    "max_per_day": 100,
+    "max_hours": 12,
+    "mean_rating": 1287.2184368737476,
+    "top_team_share": 0.08517034068136273
+   },
+   "quolark23": {
+    "name": "Quolark23",
+    "why": [
+     "volume",
+     "hours"
+    ],
+    "games": 875,
+    "max_per_day": 329,
+    "max_hours": 24,
+    "mean_rating": 1033.6182857142858,
+    "top_team_share": 0.8331428571428572
+   },
+   "bouoba": {
+    "name": "BOUOBA",
+    "why": [
+     "volume"
+    ],
+    "games": 818,
+    "max_per_day": 105,
+    "max_hours": 13,
+    "mean_rating": 1074.7102689486553,
+    "top_team_share": 0.042787286063569685
+   },
+   "w00perunb0und": {
+    "name": "W00PER__UNB0UND",
+    "why": [
+     "volume"
+    ],
+    "games": 795,
+    "max_per_day": 101,
+    "max_hours": 14,
+    "mean_rating": 1635.6201257861635,
+    "top_team_share": 0.04654088050314465
+   },
+   "gsprs": {
+    "name": "gsprs",
+    "why": [
+     "volume"
+    ],
+    "games": 766,
+    "max_per_day": 111,
+    "max_hours": 12,
+    "mean_rating": 1152.7994757536042,
+    "top_team_share": 0.09007832898172324
+   },
+   "greenforest2026": {
+    "name": "greenforest2026",
+    "why": [
+     "volume"
+    ],
+    "games": 760,
+    "max_per_day": 102,
+    "max_hours": 14,
+    "mean_rating": 1391.3847167325428,
+    "top_team_share": 0.2644736842105263
+   },
+   "aftermathbeef": {
+    "name": "Aftermath Beef",
+    "why": [
+     "volume"
+    ],
+    "games": 739,
+    "max_per_day": 291,
+    "max_hours": 17,
+    "mean_rating": 1504.274695534506,
+    "top_team_share": 0.7550744248985115
+   },
+   "discountmansa": {
+    "name": "DiscountMansa",
+    "why": [
+     "hours"
+    ],
+    "games": 611,
+    "max_per_day": 62,
+    "max_hours": 20,
+    "mean_rating": 1249.2605504587157,
+    "top_team_share": 0.2144026186579378
+   },
+   "pokeurmom69420": {
+    "name": "pokeurmom69420",
+    "why": [
+     "volume"
+    ],
+    "games": 610,
+    "max_per_day": 103,
+    "max_hours": 15,
+    "mean_rating": 1421.355737704918,
+    "top_team_share": 0.22459016393442624
+   },
+   "jazpal123": {
+    "name": "Jazpal123",
+    "why": [
+     "volume"
+    ],
+    "games": 606,
+    "max_per_day": 106,
+    "max_hours": 14,
+    "mean_rating": 1109.2743801652894,
+    "top_team_share": 0.04950495049504951
+   },
+   "dumbo124": {
+    "name": "dumbo124",
+    "why": [
+     "volume"
+    ],
+    "games": 582,
+    "max_per_day": 103,
+    "max_hours": 16,
+    "mean_rating": 1392.946735395189,
+    "top_team_share": 0.0429553264604811
+   },
+   "swagiary": {
+    "name": "Swagiary",
+    "why": [
+     "volume",
+     "hours"
+    ],
+    "games": 542,
+    "max_per_day": 202,
+    "max_hours": 20,
+    "mean_rating": 1466.7933579335793,
+    "top_team_share": 0.3210332103321033
+   },
+   "ajaxmoly": {
+    "name": "AjaxMoly",
+    "why": [
+     "volume"
+    ],
+    "games": 496,
+    "max_per_day": 126,
+    "max_hours": 18,
+    "mean_rating": 1135.6214574898786,
+    "top_team_share": 0.3407258064516129
+   },
+   "bantyranitar": {
+    "name": "ban tyranitar",
+    "why": [
+     "volume"
+    ],
+    "games": 460,
+    "max_per_day": 106,
+    "max_hours": 11,
+    "mean_rating": 1399.8282608695652,
+    "top_team_share": 0.04782608695652174
+   },
+   "cobaltmarten": {
+    "name": "CobaltMarten",
+    "why": [
+     "volume",
+     "hours"
+    ],
+    "games": 434,
+    "max_per_day": 173,
+    "max_hours": 24,
+    "mean_rating": 1452.5967741935483,
+    "top_team_share": 0.23963133640552994
+   },
+   "guest6144843": {
+    "name": "Guest 6144843",
+    "why": [
+     "volume"
+    ],
+    "games": 416,
+    "max_per_day": 236,
+    "max_hours": 19,
+    "mean_rating": 1023.0408653846154,
+    "top_team_share": 0.875
+   },
+   "tidalbrindle": {
+    "name": "TidalBrindle",
+    "why": [
+     "volume",
+     "hours"
+    ],
+    "games": 358,
+    "max_per_day": 168,
+    "max_hours": 24,
+    "mean_rating": 1476.8491620111731,
+    "top_team_share": 0.4776536312849162
+   },
+   "gimokofan": {
+    "name": "gimokofan",
+    "why": [
+     "volume"
+    ],
+    "games": 353,
+    "max_per_day": 138,
+    "max_hours": 15,
+    "mean_rating": 1437.328611898017,
+    "top_team_share": 0.34277620396600567
+   },
+   "hpbrianivs": {
+    "name": "HP Brian IVs",
+    "why": [
+     "volume"
+    ],
+    "games": 340,
+    "max_per_day": 104,
+    "max_hours": 15,
+    "mean_rating": 1414.934169278997,
+    "top_team_share": 0.052941176470588235
+   },
+   "guest34329222": {
+    "name": "Guest 34329222",
+    "why": [
+     "volume"
+    ],
+    "games": 317,
+    "max_per_day": 254,
+    "max_hours": 14,
+    "mean_rating": 1334.8454258675079,
+    "top_team_share": 0.7097791798107256
+   },
+   "newyorkheart91": {
+    "name": "newyorkheart91",
+    "why": [
+     "volume"
+    ],
+    "games": 307,
+    "max_per_day": 123,
+    "max_hours": 19,
+    "mean_rating": 1194.5537459283387,
+    "top_team_share": 0.38762214983713356
+   },
+   "brainprovince": {
+    "name": "Brain Province",
+    "why": [
+     "volume"
+    ],
+    "games": 263,
+    "max_per_day": 123,
+    "max_hours": 15,
+    "mean_rating": 1395.6730038022813,
+    "top_team_share": 0.5475285171102662
+   },
+   "newportjunkie": {
+    "name": "newport junkie",
+    "why": [
+     "volume"
+    ],
+    "games": 253,
+    "max_per_day": 187,
+    "max_hours": 15,
+    "mean_rating": 1265.5873015873017,
+    "top_team_share": 0.7114624505928854
+   },
+   "enoxium": {
+    "name": "enoxium",
+    "why": [
+     "volume"
+    ],
+    "games": 219,
+    "max_per_day": 105,
+    "max_hours": 13,
+    "mean_rating": 1209.324200913242,
+    "top_team_share": 0.1643835616438356
+   },
+   "paratext": {
+    "name": "paratext",
+    "why": [
+     "hours"
+    ],
+    "games": 193,
+    "max_per_day": 98,
+    "max_hours": 22,
+    "mean_rating": 1463.896373056995,
+    "top_team_share": 0.046632124352331605
+   },
+   "mochimarshal": {
+    "name": "mochimarshal",
+    "why": [
+     "hours"
+    ],
+    "games": 192,
+    "max_per_day": 77,
+    "max_hours": 23,
+    "mean_rating": 1456.59375,
+    "top_team_share": 0.09895833333333333
+   },
+   "pilotpermit": {
+    "name": "Pilot Permit",
+    "why": [
+     "hours"
+    ],
+    "games": 183,
+    "max_per_day": 78,
+    "max_hours": 20,
+    "mean_rating": 1364.0655737704917,
+    "top_team_share": 0.5409836065573771
+   },
+   "pretzelpilot": {
+    "name": "pretzelpilot",
+    "why": [
+     "hours"
+    ],
+    "games": 179,
+    "max_per_day": 90,
+    "max_hours": 24,
+    "mean_rating": 1517.4804469273743,
+    "top_team_share": 0.055865921787709494
+   },
+   "gloriafoster": {
+    "name": "GloriaFoster",
+    "why": [
+     "volume"
+    ],
+    "games": 156,
+    "max_per_day": 108,
+    "max_hours": 13,
+    "mean_rating": 1429.025641025641,
+    "top_team_share": 0.05128205128205128
+   },
+   "buhffalo": {
+    "name": "buhffalo",
+    "why": [
+     "volume"
+    ],
+    "games": 148,
+    "max_per_day": 148,
+    "max_hours": 10,
+    "mean_rating": 1268.6148648648648,
+    "top_team_share": 0.7837837837837838
+   },
+   "coldwaterbay": {
+    "name": "coldwaterbay",
+    "why": [
+     "hours"
+    ],
+    "games": 123,
+    "max_per_day": 81,
+    "max_hours": 21,
+    "mean_rating": 1311.3252032520325,
+    "top_team_share": 0.04065040650406504
+   },
+   "guest35243221": {
+    "name": "Guest 35243221",
+    "why": [
+     "volume"
+    ],
+    "games": 109,
+    "max_per_day": 109,
+    "max_hours": 4,
+    "mean_rating": 1384.0642201834862,
+    "top_team_share": 0.22935779816513763
+   },
+   "guest35898120": {
+    "name": "Guest 35898120",
+    "why": [
+     "volume"
+    ],
+    "games": 100,
+    "max_per_day": 100,
+    "max_hours": 9,
+    "mean_rating": 1377.8,
+    "top_team_share": 0.71
+   },
+   "exeggcuteorder67": {
+    "name": "ExeggcuteOrder67",
+    "why": [
+     "name"
+    ],
+    "games": 94,
+    "max_per_day": 37,
+    "max_hours": 7,
+    "mean_rating": 1299.6703296703297,
+    "top_team_share": 0.2127659574468085
+   },
+   "sablecurrent": {
+    "name": "Sablecurrent",
+    "why": [
+     "hours"
+    ],
+    "games": 84,
+    "max_per_day": 71,
+    "max_hours": 23,
+    "mean_rating": 1635.107142857143,
+    "top_team_share": 0.05952380952380952
+   },
+   "bottledpears": {
+    "name": "bottled pears",
+    "why": [
+     "name"
+    ],
+    "games": 27,
+    "max_per_day": 10,
+    "max_hours": 7,
+    "mean_rating": 1136.9259259259259,
+    "top_team_share": 0.2222222222222222
+   },
+   "cynthiafromtemubot": {
+    "name": "CynthiafromtemuBOT",
+    "why": [
+     "name"
+    ],
+    "games": 10,
+    "max_per_day": 10,
+    "max_hours": 2,
+    "mean_rating": 1076.4,
+    "top_team_share": 0.4
+   },
+   "whackbot": {
+    "name": "WhackBot",
+    "why": [
+     "name"
+    ],
+    "games": 9,
+    "max_per_day": 6,
+    "max_hours": 3,
+    "mean_rating": 1331.5555555555557,
+    "top_team_share": 0.7777777777777778
+   },
+   "bottellugi": {
+    "name": "Bottellugi",
+    "why": [
+     "name"
+    ],
+    "games": 6,
+    "max_per_day": 6,
+    "max_hours": 1,
+    "mean_rating": 1080.8333333333333,
+    "top_team_share": 0.16666666666666666
+   },
+   "choobot": {
+    "name": "choobot",
+    "why": [
+     "name"
+    ],
+    "games": 4,
+    "max_per_day": 2,
+    "max_hours": 1,
+    "mean_rating": 1071.25,
+    "top_team_share": 0.5
+   },
+   "bottythebot1": {
+    "name": "Botty the bot 1",
+    "why": [
+     "name"
+    ],
+    "games": 2,
+    "max_per_day": 2,
+    "max_hours": 1,
+    "mean_rating": null,
+    "top_team_share": 0.5
+   },
+   "bothf": {
+    "name": "both f",
+    "why": [
+     "name"
+    ],
+    "games": 2,
+    "max_per_day": 2,
+    "max_hours": 1,
+    "mean_rating": 1043.5,
+    "top_team_share": 1.0
+   },
+   "bot3661": {
+    "name": "Bot3661",
+    "why": [
+     "name"
+    ],
+    "games": 1,
+    "max_per_day": 1,
+    "max_hours": 1,
+    "mean_rating": 1000.0,
+    "top_team_share": 1.0
+   },
+   "botflo1": {
+    "name": "botflo1",
+    "why": [
+     "name"
+    ],
+    "games": 1,
+    "max_per_day": 1,
+    "max_hours": 1,
+    "mean_rating": null,
+    "top_team_share": null
+   },
+   "bottleonthestreet": {
+    "name": "bottleonthestreet",
+    "why": [
+     "name"
+    ],
+    "games": 1,
+    "max_per_day": 1,
+    "max_hours": 1,
+    "mean_rating": 1027.0,
+    "top_team_share": 1.0
+   },
+   "atestingbot": {
+    "name": "a_testing_bot",
+    "why": [
+     "name"
+    ],
+    "games": 1,
+    "max_per_day": 1,
+    "max_hours": 1,
+    "mean_rating": null,
+    "top_team_share": 1.0
+   },
+   "aibotchatgpt": {
+    "name": "ai bot chatgpt",
+    "why": [
+     "name"
+    ],
+    "games": 1,
+    "max_per_day": 1,
+    "max_hours": 1,
+    "mean_rating": 1000.0,
+    "top_team_share": 1.0
+   }
+  },
+  "top25": [
+   {
+    "name": "io ricordo",
+    "games": 4144,
+    "max_per_day": 179,
+    "mean_rating": 1251.63194780087,
+    "top_team_share": 0.015444015444015444
+   },
+   {
+    "name": "resourcespro",
+    "games": 2808,
+    "max_per_day": 172,
+    "mean_rating": 1309.8254985754986,
+    "top_team_share": 0.07727920227920228
+   },
+   {
+    "name": "i8veil",
+    "games": 2617,
+    "max_per_day": 122,
+    "mean_rating": 1047.6175009552924,
+    "top_team_share": 0.01757737867787543
+   },
+   {
+    "name": "egal1986",
+    "games": 2356,
+    "max_per_day": 86,
+    "mean_rating": 1371.4128401360545,
+    "top_team_share": 0.4265704584040747
+   },
+   {
+    "name": "GraniteFerret",
+    "games": 2207,
+    "max_per_day": 340,
+    "mean_rating": 1327.8717716357046,
+    "top_team_share": 0.19755323969188945
+   },
+   {
+    "name": "OptionsFS",
+    "games": 2005,
+    "max_per_day": 129,
+    "mean_rating": 1070.8994497248625,
+    "top_team_share": 0.11670822942643391
+   },
+   {
+    "name": "Naked Iker Lakunza",
+    "games": 1907,
+    "max_per_day": 86,
+    "mean_rating": 1344.1836842105263,
+    "top_team_share": 0.5663345568956476
+   },
+   {
+    "name": "calciumlover",
+    "games": 1901,
+    "max_per_day": 83,
+    "mean_rating": 1146.5102577590742,
+    "top_team_share": 0.07311941083640189
+   },
+   {
+    "name": "Canetteman",
+    "games": 1813,
+    "max_per_day": 58,
+    "mean_rating": 1388.1814671814673,
+    "top_team_share": 0.06839492553778267
+   },
+   {
+    "name": "ProKameron Bot",
+    "games": 1796,
+    "max_per_day": 883,
+    "mean_rating": 1071.4646118721462,
+    "top_team_share": 0.1787305122494432
+   },
+   {
+    "name": "colors22",
+    "games": 1667,
+    "max_per_day": 94,
+    "mean_rating": 1477.6960960960962,
+    "top_team_share": 0.08578284343131373
+   },
+   {
+    "name": "Hot Garbage856",
+    "games": 1495,
+    "max_per_day": 77,
+    "mean_rating": 1402.804420629605,
+    "top_team_share": 0.1096989966555184
+   },
+   {
+    "name": "Kupcha",
+    "games": 1410,
+    "max_per_day": 70,
+    "mean_rating": 1336.2617021276596,
+    "top_team_share": 0.09361702127659574
+   },
+   {
+    "name": "QuolarkPrime",
+    "games": 1397,
+    "max_per_day": 164,
+    "mean_rating": 1539.402290622763,
+    "top_team_share": 0.19327129563350035
+   },
+   {
+    "name": "redwarden7",
+    "games": 1374,
+    "max_per_day": 34,
+    "mean_rating": 1436.655749636099,
+    "top_team_share": 0.29621542940320233
+   },
+   {
+    "name": "scally_wagon",
+    "games": 1359,
+    "max_per_day": 91,
+    "mean_rating": 1468.6227786752827,
+    "top_team_share": 0.09050772626931568
+   },
+   {
+    "name": "Swordofthespirit",
+    "games": 1359,
+    "max_per_day": 137,
+    "mean_rating": 1437.4440353460973,
+    "top_team_share": 0.6254598969830758
+   },
+   {
+    "name": "Hephlex",
+    "games": 1348,
+    "max_per_day": 74,
+    "mean_rating": 1239.9399109792284,
+    "top_team_share": 0.08086053412462908
+   },
+   {
+    "name": "chocoprince",
+    "games": 1327,
+    "max_per_day": 54,
+    "mean_rating": 1327.9525244913339,
+    "top_team_share": 0.25169555388093445
+   },
+   {
+    "name": "Dr Herbert West",
+    "games": 1327,
+    "max_per_day": 84,
+    "mean_rating": 1526.6525037936267,
+    "top_team_share": 0.08967596081386586
+   },
+   {
+    "name": "DreBLN",
+    "games": 1313,
+    "max_per_day": 110,
+    "mean_rating": 1214.9817073170732,
+    "top_team_share": 0.18126428027418126
+   },
+   {
+    "name": "Memesforthebelly",
+    "games": 1311,
+    "max_per_day": 78,
+    "mean_rating": 1382.5507246376812,
+    "top_team_share": 0.3005339435545385
+   },
+   {
+    "name": "kanin_yummy",
+    "games": 1281,
+    "max_per_day": 96,
+    "mean_rating": 1345.8626073380171,
+    "top_team_share": 0.05932864949258392
+   },
+   {
+    "name": "Ygactive",
+    "games": 1251,
+    "max_per_day": 37,
+    "mean_rating": 1142.3285371702639,
+    "top_team_share": 0.0903277378097522
+   },
+   {
+    "name": "ThatOneGentleman",
+    "games": 1228,
+    "max_per_day": 51,
+    "mean_rating": 1419.5852459016394,
+    "top_team_share": 0.21742671009771988
+   }
+  ]
+ },
+ "by_stratum": {
+  "1300-1499": {
+   "sides": 246435,
+   "share_of_sides": 0.32734916713158524,
+   "turns": {
+    "p10": 11.0,
+    "p50": 25.0,
+    "p90": 45.0
+   },
+   "end_forfeit": 0.5223486923529531,
+   "end_timer": 0.042059772353764686,
+   "end_ko": 0.43305942743522635,
+   "early_walkover": 0.020488161178404043,
+   "this_side_quit": 0.27974110820297443,
+   "bot_side": 0.05170531783228843,
+   "machine_speed_game": 0.00013796741534278815,
+   "full_team_seen": 0.6327550875484408,
+   "moves_seen_per_mon": 1.8619393462332,
+   "item_seen_per_mon": 0.6563573302011235
+  },
+  "1500-1599": {
+   "sides": 57547,
+   "share_of_sides": 0.0764419117451715,
+   "turns": {
+    "p10": 13.0,
+    "p50": 26.0,
+    "p90": 48.0
+   },
+   "end_forfeit": 0.4989139312214364,
+   "end_timer": 0.030983370114862633,
+   "end_ko": 0.4670964602846369,
+   "early_walkover": 0.015500373607659827,
+   "this_side_quit": 0.24880532434358002,
+   "bot_side": 0.06125427911098754,
+   "machine_speed_game": 0.0001737710045701774,
+   "full_team_seen": 0.6786974125497419,
+   "moves_seen_per_mon": 1.90254896665252,
+   "item_seen_per_mon": 0.686742029656494
+  },
+  "1600-1699": {
+   "sides": 19235,
+   "share_of_sides": 0.025550596424112004,
+   "turns": {
+    "p10": 14.0,
+    "p50": 28.0,
+    "p90": 51.0
+   },
+   "end_forfeit": 0.4920717442162724,
+   "end_timer": 0.025110475695347023,
+   "end_ko": 0.4789706264621783,
+   "early_walkover": 0.011801403691187939,
+   "this_side_quit": 0.22360280738237587,
+   "bot_side": 0.0589030413309072,
+   "machine_speed_game": 0.0002079542500649857,
+   "full_team_seen": 0.7065765531583051,
+   "moves_seen_per_mon": 1.9312863416901436,
+   "item_seen_per_mon": 0.7065915407453781
+  },
+  "1700+": {
+   "sides": 3844,
+   "share_of_sides": 0.005106134268483834,
+   "turns": {
+    "p10": 15.0,
+    "p50": 29.0,
+    "p90": 56.0
+   },
+   "end_forfeit": 0.5078043704474505,
+   "end_timer": 0.021852237252861603,
+   "end_ko": 0.46748178980228927,
+   "early_walkover": 0.01040582726326743,
+   "this_side_quit": 0.2047346514047867,
+   "bot_side": 0.056711758584807495,
+   "machine_speed_game": 0.0,
+   "full_team_seen": 0.690426638917794,
+   "moves_seen_per_mon": 1.9696883584351614,
+   "item_seen_per_mon": 0.7427299422184332
+  },
+  "<1300": {
+   "sides": 410177,
+   "share_of_sides": 0.5448540155681305,
+   "turns": {
+    "p10": 6.0,
+    "p50": 21.0,
+    "p90": 41.0
+   },
+   "end_forfeit": 0.5758806563995543,
+   "end_timer": 0.07180558636881151,
+   "end_ko": 0.350797338709874,
+   "early_walkover": 0.05113889857305505,
+   "this_side_quit": 0.3297917728200265,
+   "bot_side": 0.05351835914739247,
+   "machine_speed_game": 4.875943799871763e-05,
+   "full_team_seen": 0.498365339841093,
+   "moves_seen_per_mon": 1.7960780236971752,
+   "item_seen_per_mon": 0.6113516213523059
+  },
+  "unrated": {
+   "sides": 15582,
+   "share_of_sides": 0.020698174862516936,
+   "turns": {
+    "p10": 8.0,
+    "p50": 25.0,
+    "p90": 47.0
+   },
+   "end_forfeit": 0.28070850981902196,
+   "end_timer": 0.012706969580284944,
+   "end_ko": 0.7027339237581826,
+   "early_walkover": 0.039789500705942754,
+   "this_side_quit": 0.14670773969965345,
+   "bot_side": 0.012129380053908356,
+   "machine_speed_game": 0.0005134129123347452,
+   "full_team_seen": 0.6366320112950841,
+   "moves_seen_per_mon": 1.9151122472222926,
+   "item_seen_per_mon": 0.6018450558072436
+  }
+ },
+ "team_distance": {
+  "hi_sides_full6": 50827,
+  "rated_sides_full6": 386017,
+  "hi_distinct_species6": 4810,
+  "rated_distinct_species6": 41238,
+  "species_tvd_vs_humans_ge1500": {
+   "pool": 0.16146953952784593,
+   "home72": 0.15965226815144137,
+   "heldout72_hpfix": 0.12507683106601966,
+   "forum72": 0.16995491788047895,
+   "p72": 0.13380961307383274
+  },
+  "species_tvd_pool_vs": {
+   "home72": 0.10378032761551526,
+   "heldout72_hpfix": 0.17049464276515736,
+   "forum72": 0.18411953330242617,
+   "p72": 0.21206794416112917
+  },
+  "human_species_absent_from_pool_mass": 0.01666437129871921,
+  "human_species_rare_in_pool_mass(<1% of pool teams)": 0.05993861530289018,
+  "humans_ge1500_vs_pool": {
+   "species_overlap": {
+    "0": 0.0,
+    "1": 0.0001770712416628957,
+    "2": 0.007614063391504515,
+    "3": 0.07527495228913766,
+    "4": 0.30174907037598125,
+    "5": 0.36907549137269563,
+    "6": 0.24610935132901804
+   },
+   "set_fits": {
+    "0": 0.009640545379424322,
+    "1": 0.019477836582918528,
+    "2": 0.12957679973242567,
+    "3": 0.37407283530407065,
+    "4": 0.26515434709898283,
+    "5": 0.09079819780825152,
+    "6": 0.11127943809392646
+   }
+  },
+  "home72_vs_pool": {
+   "species_overlap": {
+    "0": 0.0,
+    "1": 0.0,
+    "2": 0.0,
+    "3": 0.0,
+    "4": 0.0,
+    "5": 0.0,
+    "6": 1.0
+   },
+   "set_fits": {
+    "0": 0.0,
+    "1": 0.0,
+    "2": 0.0,
+    "3": 0.0,
+    "4": 0.0,
+    "5": 0.0,
+    "6": 1.0
+   }
+  },
+  "heldout72_hpfix_vs_pool": {
+   "species_overlap": {
+    "0": 0.0,
+    "1": 0.0,
+    "2": 0.0,
+    "3": 0.041666666666666664,
+    "4": 0.2638888888888889,
+    "5": 0.4027777777777778,
+    "6": 0.2916666666666667
+   },
+   "set_fits": {
+    "0": 0.08333333333333333,
+    "1": 0.5277777777777778,
+    "2": 0.375,
+    "3": 0.013888888888888888,
+    "4": 0.0,
+    "5": 0.0,
+    "6": 0.0
+   }
+  },
+  "forum72_vs_pool": {
+   "species_overlap": {
+    "0": 0.0,
+    "1": 0.0,
+    "2": 0.0,
+    "3": 0.041666666666666664,
+    "4": 0.2777777777777778,
+    "5": 0.5972222222222222,
+    "6": 0.08333333333333333
+   },
+   "set_fits": {
+    "0": 0.027777777777777776,
+    "1": 0.20833333333333334,
+    "2": 0.5416666666666666,
+    "3": 0.2222222222222222,
+    "4": 0.0,
+    "5": 0.0,
+    "6": 0.0
+   }
+  },
+  "p72_vs_pool": {
+   "species_overlap": {
+    "0": 0.0,
+    "1": 0.0,
+    "2": 0.013888888888888888,
+    "3": 0.125,
+    "4": 0.6111111111111112,
+    "5": 0.25,
+    "6": 0.0
+   },
+   "set_fits": {
+    "0": 0.20833333333333334,
+    "1": 0.5277777777777778,
+    "2": 0.2638888888888889,
+    "3": 0.0,
+    "4": 0.0,
+    "5": 0.0,
+    "6": 0.0
+   }
+  },
+  "panel_coverage_by_humans_ge1500": {
+   "home72": {
+    "teams": 72,
+    "fit4_sides": {
+     "p10": 21.500000000000004,
+     "p25": 81.75,
+     "p50": 218.0,
+     "p75": 548.75,
+     "p90": 821.8999999999999
+    },
+    "share_teams_fit4_ge10": 0.9722222222222222,
+    "share_teams_fit4_zero": 0.0,
+    "sp5_sides": {
+     "p10": 7.800000000000004,
+     "p25": 92.25,
+     "p50": 427.0,
+     "p75": 693.75,
+     "p90": 1454.2
+    },
+    "share_teams_sp5_zero": 0.041666666666666664
+   },
+   "heldout72_hpfix": {
+    "teams": 72,
+    "fit4_sides": {
+     "p10": 7.0,
+     "p25": 35.75,
+     "p50": 105.0,
+     "p75": 292.75,
+     "p90": 473.09999999999997
+    },
+    "share_teams_fit4_ge10": 0.8472222222222222,
+    "share_teams_fit4_zero": 0.013888888888888888,
+    "sp5_sides": {
+     "p10": 3.0,
+     "p25": 32.0,
+     "p50": 246.0,
+     "p75": 701.0,
+     "p90": 1457.0
+    },
+    "share_teams_sp5_zero": 0.08333333333333333
+   },
+   "forum72": {
+    "teams": 72,
+    "fit4_sides": {
+     "p10": 3.1000000000000005,
+     "p25": 17.75,
+     "p50": 73.5,
+     "p75": 181.5,
+     "p90": 281.5
+    },
+    "share_teams_fit4_ge10": 0.8194444444444444,
+    "share_teams_fit4_zero": 0.041666666666666664,
+    "sp5_sides": {
+     "p10": 1.0,
+     "p25": 14.5,
+     "p50": 43.0,
+     "p75": 294.25,
+     "p90": 537.6999999999999
+    },
+    "share_teams_sp5_zero": 0.08333333333333333,
+    "by_stratum": {
+     "CORE": {
+      "teams": 4,
+      "fit4_median": 262.5,
+      "sp5_median": 784.5,
+      "fit4_zero": 0.0
+     },
+     "NEAR": {
+      "teams": 54,
+      "fit4_median": 90.5,
+      "sp5_median": 60.5,
+      "fit4_zero": 0.0
+     },
+     "FAR": {
+      "teams": 14,
+      "fit4_median": 11.0,
+      "sp5_median": 5.5,
+      "fit4_zero": 0.21428571428571427
+     }
+    }
+   },
+   "p72": {
+    "teams": 72,
+    "fit4_sides": {
+     "p10": 1.0,
+     "p25": 3.0,
+     "p50": 6.0,
+     "p75": 20.75,
+     "p90": 61.8
+    },
+    "share_teams_fit4_ge10": 0.4305555555555556,
+    "share_teams_fit4_zero": 0.09722222222222222,
+    "sp5_sides": {
+     "p10": 0.0,
+     "p25": 0.0,
+     "p50": 2.5,
+     "p75": 24.75,
+     "p90": 92.9
+    },
+    "share_teams_sp5_zero": 0.4305555555555556
+   }
+  }
+ },
+ "drift": {
+  "by_month": {
+   "spec 2026-05": {
+    "full6_sides": 56849,
+    "rating_mean_all_sides": 1258.4322267914258,
+    "rating_share_ge1500": 0.08732145340405666,
+    "tvd_vs": {
+     "pool": 0.19907709540959734,
+     "home72": 0.18780009648692475,
+     "heldout72_hpfix": 0.1798585336202532,
+     "forum72": 0.1796575870581129,
+     "p72": 0.15431254531986294
+    }
+   },
+   "spec 2026-06": {
+    "full6_sides": 107082,
+    "rating_mean_all_sides": 1266.1744945437854,
+    "rating_share_ge1500": 0.10004798965092745,
+    "tvd_vs": {
+     "pool": 0.19413624991846565,
+     "home72": 0.19744253624947872,
+     "heldout72_hpfix": 0.17176906482882284,
+     "forum72": 0.18483070606326624,
+     "p72": 0.15408207417368625
+    },
+    "tvd_vs_previous_month": 0.04351371724358446
+   },
+   "spec 2026-07": {
+    "full6_sides": 117533,
+    "rating_mean_all_sides": 1286.5078530293656,
+    "rating_share_ge1500": 0.12337823045071629,
+    "tvd_vs": {
+     "pool": 0.19014117937920333,
+     "home72": 0.19206276503588757,
+     "heldout72_hpfix": 0.16643617584470374,
+     "forum72": 0.18485854327437126,
+     "p72": 0.14693064138645393
+    },
+    "tvd_vs_previous_month": 0.04097999492238233
+   },
+   "spec 2026-08": {
+    "full6_sides": 59033,
+    "rating_mean_all_sides": 1273.1519306586272,
+    "rating_share_ge1500": 0.10970354050711194,
+    "tvd_vs": {
+     "pool": 0.19760848424509045,
+     "home72": 0.19865536601938277,
+     "heldout72_hpfix": 0.17586589202147448,
+     "forum72": 0.18941983015149708,
+     "p72": 0.16125840004115716
+    },
+    "tvd_vs_previous_month": 0.03825937652558706
+   },
+   "spec 2026-09": {
+    "full6_sides": 75156,
+    "rating_mean_all_sides": 1279.0573298389431,
+    "rating_share_ge1500": 0.11716619177497753,
+    "tvd_vs": {
+     "pool": 0.19856491728544448,
+     "home72": 0.1862200696625093,
+     "heldout72_hpfix": 0.1669597607347087,
+     "forum72": 0.2001004577146203,
+     "p72": 0.16372685554786776
+    },
+    "tvd_vs_previous_month": 0.04908356460267
+   },
+   "arch 2026-06": {
+    "full6_sides": 1403,
+    "rating_mean_all_sides": 1299.8130271790067,
+    "rating_share_ge1500": 0.16213683223992503,
+    "tvd_vs": {
+     "pool": 0.2035523256178974,
+     "home72": 0.19916316887093777,
+     "heldout72_hpfix": 0.17459280378025913,
+     "forum72": 0.1838652622686834,
+     "p72": 0.170877220770307
+    }
+   },
+   "arch 2026-08": {
+    "full6_sides": 4288,
+    "rating_mean_all_sides": 1379.551718650541,
+    "rating_share_ge1500": 0.29583068109484406,
+    "tvd_vs": {
+     "pool": 0.16627593084646303,
+     "home72": 0.14814382946379215,
+     "heldout72_hpfix": 0.1436437603648424,
+     "forum72": 0.18044326976229946,
+     "p72": 0.15237614013266992
+    },
+    "tvd_vs_previous_month": 0.09392533612231081
+   },
+   "arch 2026-09": {
+    "full6_sides": 5247,
+    "rating_mean_all_sides": 1410.9466518477354,
+    "rating_share_ge1500": 0.2988330091692137,
+    "tvd_vs": {
+     "pool": 0.25105844530097293,
+     "home72": 0.26454402515723274,
+     "heldout72_hpfix": 0.24057000825868755,
+     "forum72": 0.25644415856680014,
+     "p72": 0.2914601994790675
+    },
+    "tvd_vs_previous_month": 0.2324305920013996
+   },
+   "arch 2026-10": {
+    "full6_sides": 9548,
+    "rating_mean_all_sides": 1391.168005952381,
+    "rating_share_ge1500": 0.30424107142857143,
+    "tvd_vs": {
+     "pool": 0.21076367625674464,
+     "home72": 0.20961729429471376,
+     "heldout72_hpfix": 0.18807991590249662,
+     "forum72": 0.20789306273177247,
+     "p72": 0.2358337600273085
+    },
+    "tvd_vs_previous_month": 0.09933483312972058
+   }
+  },
+  "split_half_floor": {
+   "month": "spec 2026-07",
+   "tvd": 0.009264946353578971,
+   "half_sides": 58766
+  }
+ },
+ "labels_x50_train": {
+  "parts": 738,
+  "counts": {
+   "c_attempt_action_illegal": 50115,
+   "c_attempt_team_illegal": 1329,
+   "c_attempts_0": 567575,
+   "c_attempts_1": 26241,
+   "c_attempts_9": 59,
+   "c_decisions": 16808248,
+   "c_excluded:no_prior": 2407,
+   "c_guard_checks": 594266,
+   "c_label_kind_0": 7783731,
+   "c_label_kind_1": 2869394,
+   "c_label_kind_2": 6155123,
+   "c_labels_hp": 385770,
+   "c_own_action_labelled": 15180478,
+   "c_own_action_one_legal": 190634,
+   "c_placeholder": 0,
+   "c_seats": 594266,
+   "decisions": 16920305,
+   "excluded:team_memory": 70010,
+   "guard_checks": 597920,
+   "label_kind_0": 7836019,
+   "label_kind_1": 2886659,
+   "label_kind_2": 6197627,
+   "labels_hp": 388020,
+   "logs": 368997,
+   "placeholder": 1168216,
+   "seats_read": 597920,
+   "team_memory:team_000877": 5412,
+   "team_memory:team_001427": 2281,
+   "team_memory:team_002014": 1611,
+   "team_memory:team_002163": 790,
+   "team_memory:team_003172": 2004,
+   "team_memory:team_005093": 4038,
+   "team_memory:team_005234": 7398,
+   "team_memory:team_005788": 1340,
+   "team_memory:team_007108": 7416,
+   "team_memory:team_007621": 1980,
+   "team_memory:team_007656": 1105,
+   "team_memory:team_008014": 933,
+   "team_memory:team_008663": 2016,
+   "team_memory:team_008696": 4453,
+   "team_memory:team_008783": 7498,
+   "team_memory:team_009065": 8478,
+   "team_memory:team_009374": 1619,
+   "team_memory:team_009733": 1253,
+   "team_memory:team_010056": 6909,
+   "team_memory:team_010314": 4594,
+   "team_memory:team_011393": 186,
+   "team_memory:team_011708": 3825,
+   "team_memory:team_011729": 1122,
+   "team_memory:team_012630": 3139,
+   "team_memory:team_012837": 2607,
+   "team_memory:team_013464": 365,
+   "team_memory:team_013522": 662,
+   "team_memory:team_014353": 2349,
+   "team_memory:team_014665": 980,
+   "team_memory:team_014715": 886,
+   "team_memory:team_015684": 985,
+   "team_memory:team_017962": 377,
+   "team_memory:team_019541": 218,
+   "team_memory:team_020017": 1594,
+   "team_memory:team_020024": 2333,
+   "team_memory:team_021267": 10605,
+   "team_memory:team_022531": 581,
+   "team_memory:team_023933": 754,
+   "team_memory_checked": 298987,
+   "parts": 738,
+   "team_memory_excluded": 70010,
+   "c_attempts_2": 186,
+   "c_excluded:no_consistent_team": 721,
+   "team_memory:team_002884": 81,
+   "team_memory:team_003019": 2339,
+   "team_memory:team_003060": 1723,
+   "team_memory:team_004796": 807,
+   "team_memory:team_004921": 445,
+   "team_memory:team_005081": 396,
+   "team_memory:team_005213": 1951,
+   "team_memory:team_006457": 262,
+   "team_memory:team_009243": 988,
+   "team_memory:team_013515": 274,
+   "team_memory:team_015131": 201,
+   "team_memory:team_016671": 1853,
+   "team_memory:team_017350": 464,
+   "team_memory:team_023627": 194,
+   "c_excluded:revealed_illegal": 500,
+   "team_memory:team_001563": 608,
+   "team_memory:team_021256": 679,
+   "refused:ReaderRefusal": 54,
+   "team_memory:team_021930": 538,
+   "team_memory:team_000389": 123,
+   "team_memory:team_004582": 332,
+   "team_memory:team_006707": 666,
+   "team_memory:team_001438": 58,
+   "team_memory:team_014188": 83,
+   "team_memory:team_014595": 131,
+   "team_memory:team_022770": 573,
+   "c_attempts_4": 34,
+   "c_attempts_3": 104,
+   "team_memory:team_003193": 44,
+   "team_memory:team_020973": 285,
+   "team_memory:team_022854": 86,
+   "c_attempts_5": 24,
+   "team_memory:team_023007": 58,
+   "team_memory:team_002661": 253,
+   "c_attempts_8": 11,
+   "team_memory:team_003500": 50,
+   "c_errors": 26,
+   "c_refused:OwnError": 22,
+   "team_memory:team_004203": 31,
+   "team_memory:team_016264": 35,
+   "c_attempts_7": 11,
+   "team_memory:team_019922": 7,
+   "c_attempts_6": 21,
+   "c_refused:ReaderRefusal": 4,
+   "team_memory:team_018679": 25,
+   "c_refused:label_mismatch": 1
+  },
+  "by_stratum": {
+   "<1300": {
+    "rows": 8065855,
+    "completed": 8065855,
+    "own_label": 7801466,
+    "informative": 7702787,
+    "switch_label": 2356473,
+    "forced": 816448
+   },
+   "1300-1499": {
+    "rows": 5382905,
+    "completed": 5382905,
+    "own_label": 5207971,
+    "informative": 5143206,
+    "switch_label": 1636334,
+    "forced": 539950
+   },
+   "1500-1599": {
+    "rows": 1320852,
+    "completed": 1320852,
+    "own_label": 1276037,
+    "informative": 1260933,
+    "switch_label": 407540,
+    "forced": 127689
+   },
+   "1600-1699": {
+    "rows": 465333,
+    "completed": 465333,
+    "own_label": 449739,
+    "informative": 444944,
+    "switch_label": 147007,
+    "forced": 42531
+   },
+   "1700+": {
+    "rows": 98574,
+    "completed": 98574,
+    "own_label": 95443,
+    "informative": 94662,
+    "switch_label": 32144,
+    "forced": 8307
+   },
+   "unrated": {
+    "rows": 364039,
+    "informative": 343312
+   }
+  }
+ },
+ "hom_join": {
+  "rows": 384601,
+  "seat_check_share": 0.9802366608511158,
+  "strata": {
+   "pool species overlap <= 3 (unfamiliar team)": {
+    "rows": 4300,
+    "battles": 217,
+    "d": {
+     "mean": -0.5676584229963866,
+     "ci95": [
+      -0.6198351445539572,
+      -0.5132627276771634
+     ]
+    },
+    "hom": {
+     "mean": 1.1402347126901624,
+     "ci95": [
+      1.1036375995836507,
+      1.176248736796912
+     ]
+    },
+    "pstar": {
+     "mean": 1.707893135686549,
+     "ci95": [
+      1.6359588392774087,
+      1.775829621841954
+     ]
+    }
+   },
+   "pool species overlap 4": {
+    "rows": 20643,
+    "battles": 577,
+    "d": {
+     "mean": -0.6110649002106489,
+     "ci95": [
+      -0.6429671239086722,
+      -0.5804953371271329
+     ]
+    },
+    "hom": {
+     "mean": 1.1289754405773376,
+     "ci95": [
+      1.1059715755738353,
+      1.153957354660716
+     ]
+    },
+    "pstar": {
+     "mean": 1.7400403407879868,
+     "ci95": [
+      1.70040659558346,
+      1.7821354132168683
+     ]
+    }
+   },
+   "pool species overlap 5-6 (familiar team)": {
+    "rows": 44228,
+    "battles": 996,
+    "d": {
+     "mean": -0.5704313430578104,
+     "ci95": [
+      -0.5923056959711639,
+      -0.5470599446482979
+     ]
+    },
+    "hom": {
+     "mean": 1.1573484607248168,
+     "ci95": [
+      1.1415531233511256,
+      1.1728089228855618
+     ]
+    },
+    "pstar": {
+     "mean": 1.7277798037826273,
+     "ci95": [
+      1.7006439820039314,
+      1.7532000434770634
+     ]
+    }
+   },
+   "pool set fits <= 2": {
+    "rows": 11792,
+    "battles": 341,
+    "d": {
+     "mean": -0.6187219353809121,
+     "ci95": [
+      -0.6616942613341561,
+      -0.5759993069538263
+     ]
+    },
+    "hom": {
+     "mean": 1.1436259018754173,
+     "ci95": [
+      1.1116307059343966,
+      1.1818528586204426
+     ]
+    },
+    "pstar": {
+     "mean": 1.7623478372563297,
+     "ci95": [
+      1.706399049523507,
+      1.825998870309941
+     ]
+    }
+   },
+   "pool set fits >= 4 (pool-like sets)": {
+    "rows": 31978,
+    "battles": 872,
+    "d": {
+     "mean": -0.5806709373315978,
+     "ci95": [
+      -0.6066921688435786,
+      -0.5544937991384666
+     ]
+    },
+    "hom": {
+     "mean": 1.157216952842345,
+     "ci95": [
+      1.1399058102269546,
+      1.1762581815796134
+     ]
+    },
+    "pstar": {
+     "mean": 1.737887890173943,
+     "ci95": [
+      1.7086554079365874,
+      1.7673883138236521
+     ]
+    }
+   },
+   "turn <= 5": {
+    "rows": 10656,
+    "battles": 1481,
+    "d": {
+     "mean": -0.5771405927547044,
+     "ci95": [
+      -0.6068754703298852,
+      -0.549171371284886
+     ]
+    },
+    "hom": {
+     "mean": 1.1873768334545676,
+     "ci95": [
+      1.1667911355946319,
+      1.2075684169435668
+     ]
+    },
+    "pstar": {
+     "mean": 1.7645174262092718,
+     "ci95": [
+      1.7260172416891755,
+      1.8006961846432774
+     ]
+    }
+   },
+   "turn 6-20": {
+    "rows": 29119,
+    "battles": 1461,
+    "d": {
+     "mean": -0.5944206363393651,
+     "ci95": [
+      -0.6167167820792719,
+      -0.5728696866362776
+     ]
+    },
+    "hom": {
+     "mean": 1.1718916653767841,
+     "ci95": [
+      1.1585057433924093,
+      1.1854482464862306
+     ]
+    },
+    "pstar": {
+     "mean": 1.7663123017161493,
+     "ci95": [
+      1.7395928960105973,
+      1.7937833986721807
+     ]
+    }
+   },
+   "turn > 20": {
+    "rows": 29396,
+    "battles": 1113,
+    "d": {
+     "mean": -0.5723648363292156,
+     "ci95": [
+      -0.6016383370580614,
+      -0.5415714579581342
+     ]
+    },
+    "hom": {
+     "mean": 1.1096290673542122,
+     "ci95": [
+      1.0858090296603053,
+      1.1350643464996502
+     ]
+    },
+    "pstar": {
+     "mean": 1.681993903683428,
+     "ci95": [
+      1.6414700264947046,
+      1.722918554235392
+     ]
+    }
+   },
+   "game ends in forfeit / timer": {
+    "rows": 26899,
+    "battles": 684,
+    "d": {
+     "mean": -0.6110346227476224,
+     "ci95": [
+      -0.6406729512041565,
+      -0.5832835319114651
+     ]
+    },
+    "hom": {
+     "mean": 1.1852002105215271,
+     "ci95": [
+      1.1686742776739125,
+      1.2015519641175512
+     ]
+    },
+    "pstar": {
+     "mean": 1.7962348332691496,
+     "ci95": [
+      1.7649143074273381,
+      1.829904412803306
+     ]
+    }
+   },
+   "game played out (KO)": {
+    "rows": 41794,
+    "battles": 794,
+    "d": {
+     "mean": -0.5607463224939754,
+     "ci95": [
+      -0.5818867424002472,
+      -0.5395311593827351
+     ]
+    },
+    "hom": {
+     "mean": 1.1202055644221658,
+     "ci95": [
+      1.1044574248466699,
+      1.136661503934308
+     ]
+    },
+    "pstar": {
+     "mean": 1.680951886916141,
+     "ci95": [
+      1.6564340559696575,
+      1.7056025400539288
+     ]
+    }
+   }
+  }
+ }
+}

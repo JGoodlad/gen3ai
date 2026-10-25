@@ -1,0 +1,30 @@
+{
+ "schema": "gen3_human_replay_snapshots_v1",
+ "doc": "designs/endstate/human_data_architecture.md §3",
+ "store": "~/gen3ai_archive/human_replay_snapshots/ (<id>.tsv.gz: relative path, sha256, bytes per log; <id>.json)",
+ "corpus": "<main checkout>/replays/showdown/gen3ou",
+ "producer": "designs/research_state/measurements/human_replay_quality_2026-10-25/hrq.py snapshot",
+ "snapshots": {
+  "hr_spec_v1": {
+   "population": "spectator",
+   "source_class": "(b) spectator stream",
+   "rule": "every path of replays/showdown/gen3ou/SPECTATOR_MANIFEST_2026-09-23.txt",
+   "files": 376410,
+   "bytes": 3488238306,
+   "dates": ["2026-05-18", "2026-09-23"],
+   "splits": {"train": "dates <= 2026-09-20", "held_out": "2026-09-21..2026-09-23 (X50's; read-only for evaluation)"},
+   "manifest_sha256": "e7d491e7f7a1b98093360ece7929eca0d2880c0ffc5706244edee4700935f3b1",
+   "frozen_since": "2026-10-25 (the X50 reads of 2026-10-20..24 ran on exactly these paths)"
+  },
+  "hr_arch_2026-10-24": {
+   "population": "archive",
+   "source_class": "(a) uploaded / archived replays (SKEWED vs the spectator stream, fd7f4624)",
+   "rule": "every .log under a date folder <= 2026-10-24 that is NOT in the spectator manifest, as on disk 2026-10-25",
+   "files": 16490,
+   "bytes": 206499219,
+   "dates": ["2026-06-16", "2026-10-24"],
+   "manifest_sha256": "ad940108978dd6a52a72cf2d637cc108c652d3eaa5c673346e8351c0f1f2f7a2",
+   "frozen_since": "2026-10-25"
+  }
+ }
+}
