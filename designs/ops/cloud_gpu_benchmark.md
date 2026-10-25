@@ -4,7 +4,8 @@
 the GPU-upgrade decision (backlog T13; plan in the memory note `project_cloud_gpu_benchmark.md`). The kit is
 [`tools/cloud/vast/`](../../tools/cloud/vast/README.md). This document holds the MEASURED step times of the first
 real rental, the cost model, the cu126 / cu128 caveat, the offer criteria and the safety rules. It is
-always-current: a later rental that measures differently updates the tables here.
+always-current: a later rental that measures differently updates the tables here. Running TRAINING on a rented card (what may run there, the card rule, the cost) is
+[`cloud_gpu_plan.md`](cloud_gpu_plan.md).
 
 **Status (2026-10-18): the GPU ladder is RUN** — the frozen suite (`python -m agents.training.gpu_bench_suite`, §2)
 on 9 rentals: RTX 3090 x2, 4090, 5090 x2, 5080, 5070 Ti, A100, plus one misbehaving host destroyed. Total
