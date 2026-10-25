@@ -169,7 +169,7 @@ def policy_shape(ref: Dict[str, torch.Tensor], actions: torch.Tensor) -> Dict[st
     s = torch.sort(neg, dim=1, descending=True).values
     n_legal = m.sum(1)
     top2 = torch.where(n_legal > 1, s[:, 0] - s[:, 1], torch.full_like(s[:, 0], float("inf")))
-    a = actions.reshape(-1).long()
+    a = actions.reshape(-1).long().to(lp.device)  # actions come back on the model device (CUDA); ref stays on CPU
     taken = lp.gather(1, a[:, None]).reshape(-1)
     rank = (neg > taken[:, None]).sum(1)
     spread = torch.where(n_legal > 1, s[:, 0] - torch.where(m, lp, torch.full_like(lp, 1e30)).min(1).values,
