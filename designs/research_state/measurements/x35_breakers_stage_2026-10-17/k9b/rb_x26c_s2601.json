@@ -12,12 +12,12 @@
  "near_ceiling": [],
  "overlap": false,
  "overlap_evidence": [],
- "read_at": "2026-10-25T15:33:23+00:00",
+ "read_at": "2026-10-25T19:04:32+00:00",
  "reasons": [],
  "required_family": "behaviour",
  "rows_after_fork": {
-  "judged_max": 1018,
-  "p99": 1018
+  "judged_max": 1116,
+  "p99": 1116
  },
  "run": "rb_x26c_s2601",
  "schema": "x35_k9b_arm_end_v1",
