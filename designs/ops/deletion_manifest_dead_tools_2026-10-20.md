@@ -1,6 +1,6 @@
 # Deletion manifest: the five "dead tools" (owner approval 2026-10-20)
 
-**Status: DONE for 3 of 5; STOPPED on 2 of 5 (live callers).** The owner approved deleting
+**Status: DONE for 3 of 5; the other 2 STOPPED on live callers, then `main.critic_gate` was RETIRED 2026-10-25 under the owner's standing grant (with `g7_report`, `famine_read.sh`, `calib_trend` and the four orphaned libs). `policy_spectrum.bank` was NOT retired: only its `ai_v14` source default and the CLI `build` went; the builder library has live callers (the era-bank measurement drivers). §4 and §5 below are the 2026-10-20 analysis as it stood.** The owner approved deleting
 `/gen3ai-update-design-docs`, `critic_gate`, `critic_read`, `policy_spectrum.bank` and `ridealong_read`
 (`TECH_DEBT_BACKLOG.md` had asked "check whether `policy_spectrum.bank` and `ridealong_read` are dead tools
 altogether"; `instruction_docs_audit_2026-10-19.md` F16 retired the slash command). The brief's stop rule: a tool a

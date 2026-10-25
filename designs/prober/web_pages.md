@@ -80,11 +80,10 @@ contains "realized return" nowhere.
 **The era's offline instruments are LINKED from `/`, not re-implemented.** Each owns statistics this app
 does not (a Bradley-Terry ladder, a cluster bootstrap, a selection reweighting that REFUSES), and
 re-deriving one in a handler breaks *the one rule*. So `/` carries a card with the commands
-(`critic_gate` only on a winprob run). ⚠ **A command in a template is a command someone will paste** —
-they were checked against the live parsers (which caught `main.untaught_meter` taking its refs
-POSITIONALLY; all four re-checked against `--help` 2026-10-19). **No gate checks them** — the
-`CLAUDE.md` freshness gate reads only `CLAUDE.md` files — so re-run each one's `--help` when you edit
-the card; a web test that resolves each against its parser is an open build decision.
+(`main.scaffolding_gauge`, `main.untaught_meter`, `main.elo`; the winprob-only critic-gate row was retired 2026-10-25).
+⚠ **A command in a template is a command someone will paste** — they were checked against the live parsers (which
+caught `main.untaught_meter` taking its refs POSITIONALLY). `index_commands_test.py` now parses each printed command
+against its module's REAL parser, so a renamed module or a deleted flag fails there.
 
 ## 3. `/game` — THE battle viewer
 

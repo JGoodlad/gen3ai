@@ -14,7 +14,6 @@ globs to nothing and reads as "no data".
 from __future__ import annotations
 
 import os
-import sys
 from pathlib import Path
 
 from utils.paths import MODELS_DIR_ENV_VAR, main_models_dir
@@ -55,19 +54,6 @@ def resolve_run_dir(arg: str) -> Path:
     if not run_dir.is_dir():
         refuse(f"REFUSING: no run {arg!r} under {models}")
     return run_dir
-
-
-def interpreter() -> str:
-    """The interpreter a subprocess should be spawned with.
-
-    ``$GEN3AI_PYTHON`` if it names an executable — the launcher's own knob for pinning a child's
-    interpreter — else ``sys.executable``, which is by construction the one running this code.
-    Never a literal path: that was correct on one box and silently wrong everywhere else.
-    """
-    pinned = os.environ.get("GEN3AI_PYTHON")
-    if pinned and os.access(pinned, os.X_OK):
-        return pinned
-    return sys.executable
 
 
 def event_dirs(run_dir: Path) -> list:

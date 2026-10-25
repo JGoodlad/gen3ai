@@ -7,7 +7,7 @@ Fires ONLY when BOTH hold at a new snapshot:
   (2) pooled head-to-head vs its THREE most recent ancestors is below 0.50 with the Wilson
       95% interval EXCLUDING 0.50 — again.
 
-Firing is a REPORT TRIGGER, never a kill. THE KILL STAYS G7.
+Firing is a REPORT TRIGGER, never a kill.
 
 If the new node comes in ABOVE the pre-dip node, or the pooled interval includes 0.50, the dip
 node is recorded as a ONE-OFF and nothing further is said about it.
@@ -281,7 +281,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901 - one register
 
     fires = c1 and c2
     print(f"\n  => PLATEAU SIGNAL {'FIRES — REPORT to the orchestrator' if fires else 'does not fire'}")
-    print("     This is a REPORT trigger, never a kill. THE KILL STAYS G7.")
+    print("     This is a REPORT trigger, never a kill.")
     if not fires and new != dip:
         print(f"     Not firing means the {dip/1e6:.0f}M node is recorded as a ONE-OFF and")
         print("     nothing further is said about it.")

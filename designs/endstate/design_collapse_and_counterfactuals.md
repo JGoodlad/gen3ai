@@ -165,7 +165,7 @@ actions. **What we know:** X5's hypothesis tokens predict the opponent's next ac
 
 | type | what | our instrument / status |
 |---|---|---|
-| **Value-head collapse (under-dispersion)** | V's predictions shrink toward the mean; resolution falls while calibration may hold | `main.critic_gate`; X21 (native fix); the ride-along ensemble's R1 |
+| **Value-head collapse (under-dispersion)** | V's predictions shrink toward the mean; resolution falls while calibration may hold | no standing instrument (the critic gate was retired 2026-10-25; the prober's `calibration` and `main.ops.value_sidecar_read` read V against the outcome); X21 (native fix); the ride-along ensemble's R1 |
 | **Plasticity / dormant-unit collapse** | the network loses the ability to fit new targets late in training (Nikishin et al. 2022 primacy bias; Sokar et al. 2023 dormant neurons; Lyle et al. 2023; **UNVERIFIED:** from memory) | `main.capacity` (capacity telemetry, cosine / velocity), dormant-unit share — no plasticity probe is registered on X26 (FINDING F-CC-6) |
 | **Feature-rank collapse** | the representation's effective rank falls (Kumar et al. 2021 implicit under-parameterisation; **UNVERIFIED:** from memory) | the probe battery (`main.probe_battery`) reads representation use, not rank; a rank read is cheap to add |
 | **Behavioural degenerate modes** | stalling to the 250-turn forfeit, one archetype for every team | the eval's draw / timeout bucket; per-team win rates (`team_win_rates` in `metadata.json`) |

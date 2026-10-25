@@ -258,11 +258,10 @@ with what it measures.
 |---|---|
 | layer 1, the OS watcher | `scripts/ops/watch_run.sh <run> --pid-file … --launcher-log …` |
 | MARGINAL fps, from checkpoint mtimes | `scripts/ops/marginal_fps.sh <run> [--target N:label]` |
-| the deciding famine read | `scripts/ops/famine_read.sh <run> --parent … --famine-comparator … --control "…"` |
 | the registered first-restart read | `scripts/ops/restart_read.sh <run> [--baseline …]` |
 | the registered scalars, at the SOURCE | `python -m main.ops.tb_read <run> --last 20` — 🚨 on a FORK every live-tier TB reader reads the ARM's steps only (> the lineage `fork_step`; the parent's inherited prefix is cut and the first line says where; `--include-inherited` shows it) |
 | the kill bars · the vf_coef framings | `python -m main.ops.killbar` · `python -m main.ops.vf_framings` |
-| G7, QUOTED never inferred · the plateau signal | `python -m main.ops.g7_report` · `python -m main.ops.plateau_signal` |
+| the plateau signal | `python -m main.ops.plateau_signal` |
 | stall vs sawtooth · per-bot calibration | `python -m main.ops.stall_exhibit` · `main.ops.perbot_r` / `perbot_rank` / `negskill_null` |
 | **a HIGH-POWER offline re-read** | `python -m main.ops.eval_trace_gen <run>@<step> --games N --sentinels K --out DIR` — a saved checkpoint's eval cycle regenerated OFFLINE on CPU at any size, for a read whose binding constraint is POWER, not effect size (the paragraphs below) |
 | **the TRAINING-SIDE calibration** | `python -m main.ops.value_sidecar_read <run> --out <dir>` — mean V vs mean target, the Murphy decomposition and skill, sliced by turn bucket / opponent class / outcome / 1M step bucket, each with an EPISODE-clustered CI |
@@ -270,7 +269,7 @@ with what it measures.
 🚨 **EVERYTHING IN THAT TABLE IS A *LIVE* INSTRUMENT — the OFFLINE meters are a different tier and
 are NOT run against a live arm for a verdict.** The live ones read TensorBoard events, the launcher
 child log and checkpoint mtimes while all of those are still being appended to; the offline ones
-(the runbook's offline-meter index: `main.elo`, `main.untaught_meter`, `main.critic_gate`,
+(the runbook's offline-meter index: `main.elo`, `main.untaught_meter`,
 `main.exploitability`, `main.dose`, `main.lineage`, `main.best_response_gap`, …) read a FINISHED
 run's committed artifacts, play no part in the four watch layers, and write nothing under
 `models/`. Two that a population-loop week reaches for, and which tier each belongs to:
@@ -292,7 +291,7 @@ REFUSED). Two frames differ in games, in opponent cells and in whether the trace
 a loss-enriched slice, so never difference a generated frame against a live one, and difference two generated
 frames only at the identical spec (a differing seed is fine). Core traces record NO win-prob head (F-LH-4), so
 the win-prob readers refuse a core cycle until that head is recorded at eval. Calibration on EVAL battles comes
-from `main.critic_gate` and the prober's `calibration`.
+from the prober's `calibration` and `main.scaffolding_gauge --reliability`.
 
 🚨 **A GENERATED CYCLE MUST SAY IT FINISHED.** A cycle whose workers die part-way still writes a well-formed
 manifest (nominal `--games`, a recorded `selection`, capture rates of 1.0), so nothing else on disk separates it
@@ -332,7 +331,7 @@ ones and are what this document names.
 **🤫 THE CADENCE IS SILENCE (owner, 2026-09-07).** *"We don't need so many updates from the training agent.
 The training agent can merely wake up on the cron, hit the cache, and no-op. … we definitely don't need
 extensive checks just to have back-and-forth conversations."* A cron wake is a cache-hitting NO-OP unless
-something CHANGED: a registered verdict flips (a G7 half, the plateau signal, the draw-rate monitor), a
+something CHANGED: a registered verdict flips (the plateau signal, the draw-rate monitor), a
 restart read is not KEEP, the run is blocked or crashed, or the batch completes. Otherwise run the
 registered reads, bank the routine row in the ledger, send nothing. No new instrument unless a
 registered read needs one. Measured 2026-09-06/07: ~55 messages in 18 h, most of them routine reads and
@@ -353,7 +352,7 @@ session now sends exactly four things and nothing else:**
 
 1. **the bank line at completion** — and the FULL dose table goes in the ledger entry, not in a
    message;
-2. **a watch item firing** — a crash, a void condition, the >25 % timeout line, a G7 breach;
+2. **a watch item firing** — a crash, a void condition, the >25 % timeout line, a stall-rate or episode-length breach;
 3. **a MAJOR finding**;
 4. **a point that needs a DECISION before a number lands** — sent ONCE, carrying the decision it
    needs, and answered once.
@@ -369,8 +368,10 @@ wake. Re-create it on the next GO, written to this contract.
 
 - **Pre-registered kill conditions are executed, not debated.** Under the win-prob critic (the only critic) stall rate
   and mean episode length are standing KILL conditions (a [0,1] critic cannot rank a timeout below a
-  loss). The famine pre-test compares against the named comparator at matched SNAPSHOT COUNT with
-  the registry's floor.
+  loss). Their instrument (G7 of the retired critic gate, 2026-10-25) is gone: read `signal/stall_rate`,
+  `eval/mean_ep_len_vs_{bots,pool}` and `rollout/ep_len_mean` with `main.ops.tb_read` / `main.ops.stall_exhibit`
+  and say which bar you applied (an EVAL-length bar is never applied to the train series). The famine pre-test
+  (the named comparator at matched SNAPSHOT COUNT, the registry's floor) has no CLI either.
 - **Never quote a mid-run ELO or delta.** The newest Bradley-Terry node is systematically inflated;
   read `<run>/snapshot_ladder/ladder.json` at run END, and compare runs at matched snapshot count,
   never matched step (`feedback_elo_reading_rules`).
@@ -475,8 +476,7 @@ chaining across runs. A run must be LAUNCHED with `--gpu-window` to take one.
 
 ## 5. Reading and banking
 
-- One command per registered read: `python -m main.critic_gate <run> --parent <name> --control <refs…>`
-  for a critic arm; `python -m main.untaught_meter … --control <continuation arms>` for the untaught
+- One command per registered read: `python -m main.untaught_meter … --control <continuation arms>` for the untaught
   meter (a frozen-parent delta overstates a fold); `python -m main.exploitability` for the
   best-response curve. Every consumer prints which baseline it resolved.
 - Every delta carries its confidence interval and one word of the evidence vocabulary:

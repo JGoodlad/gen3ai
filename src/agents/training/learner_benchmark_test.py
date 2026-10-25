@@ -208,6 +208,15 @@ def _flags(argv):
     return [t for t in argv if t.startswith("--")]
 
 
+def test_a_bare_run_is_REFUSED_not_defaulted_to_a_retired_arm(capsys):
+    """`--run` has no default: the old one (`ai_v14_02_lbat_ctrl`, config v123) is pre-era, and a bare call died at the
+    version gate. Reverting to a default makes `run_main` proceed past this refusal."""
+    a = lb.build_parser().parse_args(["run", "--device", "cpu", "--tiny"])
+    assert a.run is None and a.model is None and not hasattr(lb, "DEFAULT_RUN")
+    assert lb.run_main(a) == 2
+    assert "no default run" in capsys.readouterr().out
+
+
 def test_trainer_argv_repoints_the_recorded_command_as_a_fork():
     from main.checkargs import LAUNCHER_ONLY
     a = lb.build_trainer_argv(_CMD, model_zip="/m/final_model.zip", run_dir="/arch/run",

@@ -1,6 +1,6 @@
 """THE TRAINING-SIDE CALIBRATION READ — `python -m main.ops.value_sidecar_read <run>`.
 
-The counterpart to the EVAL-battle readers (the prober's `calibration`, `main.critic_gate`), and the
+The counterpart to the EVAL-battle readers (the prober's `calibration`; the retired `main.critic_gate`), and the
 distinction between them is the whole point:
 
 * **an eval read uses EVAL battles** — a greedy trainee against a fixed roster, sampled under a

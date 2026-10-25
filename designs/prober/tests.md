@@ -50,8 +50,8 @@ expanding it while `_summary` refuses its missing siblings) + `core_walk_test.py
 `|init|battle` framing, one terminal line), a non-`--walk` result refused, the legal choice map, the
 one-decision stall-forfeit rule) +
 `core_trace_readers_test.py` (pure, `core_trace.expand` stubbed: each reader family OUTSIDE the
-prober on a core trace — `mechanic_usage_baseline` counts the expanded decisions, the meta readers
-(`critic_gate._trace_turns`, `quota_match`, `harvest_meter`) never expand and never report a NaN phi,
+prober on a core trace — `mechanic_usage_baseline` counts the expanded decisions, the meta reader
+(`harvest_meter`) never expands and never reports a NaN phi,
 and `harvest`, `scaffolding_gauge` and the win-prob teacher REFUSE (so did `cf_audit`, deleted P6 slice 6d-1) with
 `CoreTraceUnsupported`; each fails on revert) + `src/trace_summary_reader_gate_test.py` (the static
 gate: no module but `core_trace.py` opens a `*_summary.json`; EMPTY allowlist; its scanner's shapes

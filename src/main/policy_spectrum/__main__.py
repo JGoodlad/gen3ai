@@ -1,11 +1,14 @@
 """CLI for the policy-spectrum instrument (M5 Lane S). See ``main/policy_spectrum/__init__.py``.
 
-  python -m main.policy_spectrum build  --out <bank dir>            # once; gate ① runs inside
   python -m main.policy_spectrum gate   --bank <bank dir>           # re-check gate ① here
   python -m main.policy_spectrum read   --bank <bank dir> --out <reads dir> \\
         --ckpt models/<run>/checkpoints/<ckpt>.zip=<label> [...]   # forward passes only, CPU
   python -m main.policy_spectrum report --bank <bank dir> --reads <reads dir> \\
         --labels L1,L2,... [--pair A:B ...] --out <report.md>
+
+There is no ``build`` subcommand (retired 2026-10-25): it banked the v1 sources (``ai_v14_*`` eval traces, deleted
+2026-10-09). A new bank is built by calling ``bank.build(models, out, sources, ...)`` with the cycles to bank, as the
+measurement drivers under ``designs/research_state/measurements/`` do.
 """
 
 from __future__ import annotations
@@ -33,24 +36,6 @@ def _models() -> Path:
     if md is None:
         sys.exit("[policy_spectrum] no models/ archive (main_models_dir() is None)")
     return md
-
-
-def cmd_build(a) -> int:
-    from main.policy_spectrum.bank import build
-    from main.policy_spectrum.reader import refuse_under_models
-
-    out = Path(a.out)
-    refuse_under_models(out)
-    if (out / "manifest.json").exists() and not a.force:
-        sys.exit(f"[policy_spectrum] {out} already holds a bank — a bank is written ONCE (--force to rebuild)")
-    t = time.time()
-    man = build(_models(), out, workers=a.workers, commit=_commit())
-    c = man["counts"]
-    print(f"[policy_spectrum] bank {man['content_sha256'][:12]}: {c['decisions']} decisions, "
-          f"{c['battles']} battles; gate ① PASS on {man['gate1']['decisions_checked']} recorded "
-          f"decisions ({time.time() - t:.1f} s)")
-    print(json.dumps(c, indent=1))
-    return 0
 
 
 def cmd_gate(a) -> int:
@@ -112,10 +97,6 @@ def cmd_report(a) -> int:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m main.policy_spectrum")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    b = sub.add_parser("build")
-    b.add_argument("--out", required=True)
-    b.add_argument("--workers", type=int, default=2)
-    b.add_argument("--force", action="store_true")
     g = sub.add_parser("gate")
     g.add_argument("--bank", required=True)
     g.add_argument("--workers", type=int, default=2)
@@ -136,7 +117,7 @@ def main(argv=None) -> int:
     p.add_argument("--title", default="Policy spectrum")
     p.add_argument("--preamble", default=None)
     a = ap.parse_args(argv)
-    return {"build": cmd_build, "gate": cmd_gate, "read": cmd_read, "report": cmd_report}[a.cmd](a)
+    return {"gate": cmd_gate, "read": cmd_read, "report": cmd_report}[a.cmd](a)
 
 
 if __name__ == "__main__":

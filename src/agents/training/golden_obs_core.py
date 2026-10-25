@@ -13,8 +13,7 @@ hashed in order.
     python -m agents.training.golden_obs_core --write    # re-record the hashes (a DELIBERATE obs change only)
 
 ``--write`` prints the first changed decision and how many moved; review that diff before committing it (an obs
-change that moves more decisions than you meant is the finding). The hashes file keeps its name and its JSON shape
-(``main.policy_spectrum.bank.encoder_identity`` fingerprints its bytes).
+change that moves more decisions than you meant is the finding). The hashes file keeps its name and its JSON shape.
 """
 from __future__ import annotations
 

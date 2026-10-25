@@ -168,7 +168,7 @@ derives from `BaseException`, so `pytest.raises(Exception)` does NOT catch it.
   reconstruction plants facts the protocol never reveals; none may reach the `model` / `public` page,
   our private ones never the `public` page, and under `truth` every planted fact appears only MARKED.
 - `index_commands_test.py` — the run picker's printed meter commands (`templates/index.html`): each is parsed
-  against the REAL parser of the module it names (`main.critic_gate`, `main.scaffolding_gauge`,
+  against the REAL parser of the module it names (`main.scaffolding_gauge`,
   `main.untaught_meter`, `main.elo`), so a renamed module or a deleted flag fails the test, not a reader.
 - `render_integration_test.py` — §1–§4.
 

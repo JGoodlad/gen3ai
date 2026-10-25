@@ -257,7 +257,7 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
      entry (the read it bears on), never as its own landing; acknowledgements are not sent; a reply
      is sent only when a decision is needed before a number lands, once, with the decision.
   4. **Peer traffic from the Training Run is limited to three kinds:** the bank line at completion,
-     a watch-item firing (crash, void condition, a registered guard, a G7 breach), and a MAJOR
+     a watch-item firing (crash, void condition, a registered guard, a stall-rate or episode-length breach), and a MAJOR
      finding. Mid-run status lines and dose tables belong in the bank entry.
   5. **The 2026-09-07 one-liner allowance is WITHDRAWN** (the Training Run session's own amendment of
      the same evening, `TRAINING_RUN_SOP.md` §3, on the second round of the same complaint): no

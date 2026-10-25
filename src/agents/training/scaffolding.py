@@ -55,7 +55,7 @@ and an i.i.d. interval on this data would be a fabricated tightness of roughly s
 
 Everything in this module is PURE — numpy in, floats out. No torch, no RNG except the explicitly
 seeded bootstrap, no filesystem. It is shared by the offline CLI (`python -m main.scaffolding_gauge`)
-and the offline readers built on it (`stats`, `critic_gate`, `main/ops/*`), and `reliability_table` is also
+and the offline readers built on it (`stats`, `main/ops/*`), and `reliability_table` is also
 the win-prob calibration read's statistic (`instrumented_ppo/calibration.py`).
 
 **The IN-TRAINING `train/scaffolding_{gauge,rho,n}` scalar was RETIRED** (flag census P11d, orchestrator's call

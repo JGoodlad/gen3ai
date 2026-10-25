@@ -260,12 +260,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     # smoke and the 10M read. Both have been taken and passed, so the gate is DISCHARGED,
     # not standing. The NUMBERS above still matter and are still printed; the GATE VERDICT
     # is retired, because a train draw_rate crossing 0.01 tomorrow cannot fire a kill on its
-    # own. THE STANDING KILL IS G7 (eval stall_rate <= 0.05, ep_len <= 1.25x era), which
-    # `python -m main.critic_gate` computes at every snapshot. This tool does not compute it.
+    # own. G7 (eval stall_rate <= 0.05, ep_len <= 1.25x era) was the standing kill of the win-prob
+    # critic arm; its instrument was retired 2026-10-25 (`designs/deleted_flags.md`) and nothing computes it now.
     print("\n  => GATE DISCHARGED after its two reads (READ AMENDMENT 5, ledger 08de50d4)")
     print(f"     numbers stand, verdict retired: clause1={'MET' if c1 else 'no'}, "
           f"clause2={'MET' if c2 else 'no/NOT EVALUABLE'}")
-    print("     THE STANDING KILL IS G7 — see `python -m main.critic_gate`.")
+    print("     G7 (eval stall rate / episode length vs the era), the win-prob arm's kill, has no instrument now.")
     print("     MONITOR (report, not kill): train draw_rate > 0.01 in TWO consecutive 1M buckets.")
     print("\n  DIRECTION: AMENDMENT 4 makes this HARDER to fire and favours the arm being run.")
     print("    Registered before 8M, i.e. before the data it judges existed.")

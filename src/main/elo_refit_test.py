@@ -169,7 +169,7 @@ def test_the_headline_QUOTES_the_number_once_the_file_is_stamped(tmp_path):
 
 
 def test_EVERY_readers_refusal_names_the_apply_tool(tmp_path):
-    """`recipe_refusal` words the fix once, so `main.critic_gate`, `--exploiter-ladder auto` and
+    """`recipe_refusal` words the fix once, so `--exploiter-ladder auto` and
     `main.ops.plateau_signal` all name the same two commands."""
     msg = sl.recipe_refusal("/x/snapshot_ladder/ladder.json", "absent", "no `recipe` block",
                             "/x")

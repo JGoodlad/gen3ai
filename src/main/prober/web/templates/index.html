@@ -123,12 +123,6 @@
   <table>
     <thead><tr><th>question</th><th>command</th></tr></thead>
     <tbody>
-    {% if data.critic_currency and data.critic_currency.is_probability %}
-      <tr><td>Does this critic clear the era's pre-registered gate? (ladder at matched snapshot
-        count, calibration with <strong>resolution</strong> primary, the stall kill-condition,
-        the untaught meter)</td>
-        <td class="mono">python -m main.critic_gate {{ run or "&lt;run&gt;" }} --parent &lt;ref&gt; --control &lt;refs…&gt;</td></tr>
-    {% endif %}
       <tr><td>Is the win-prob head calibrated against the realized outcome, with the eval quota's
         loss-enrichment undone?</td>
         <td class="mono">python -m main.scaffolding_gauge {{ run or "&lt;run&gt;" }} --reliability --reliability-reweight</td></tr>

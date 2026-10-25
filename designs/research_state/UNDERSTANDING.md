@@ -106,7 +106,7 @@ no pointer is not a measurement.
 15. **Live now: `ai_v12_02_winprob_critic`** (arm 2, the full production surface at 2048×32;
     arm 1 `ai_v12_01` ran a stripped architecture and is DEAD, not evidence) — `V(s) = σ(win logit)
     ∈ [0,1]`, the value loss is that head's BCE against the terminal WIN INDICATOR, γ=1, no PopArt,
-    no shaping. Read by `python -m main.critic_gate`; famine pre-test floor **38 Elo** against
+    no shaping. Read by the critic gate (retired 2026-10-25); famine pre-test floor **38 Elo** against
     `ai_v9_29_rev1_0823`: **10M read NO KILL (−30 at n = 4), n = 12 read WITHIN FLOOR (−34 at 26M)**;
     the standing kill is G7 (stall rate + episode length on the EVAL traces), at ~0%. [§4.2; ledger
     2026-09-07 · *10M DECIDING READ* and *THE n = 12 STRENGTH READ*]
@@ -1027,8 +1027,7 @@ identical gradient; the micro-batch sets the activation peak and the peak is a f
 architecture surface, so a fit measured on the stripped arm was evidence about a different model.
 In flight: ~7.3 GB at 87% utilisation, 0 OOM.
 
-**The read is one command**: `python -m main.critic_gate <run> --parent models/ai_v9_59_R2ACTION_0827
---control <G5 arms>` — the anchored ladder at **matched SNAPSHOT COUNT** against the parent
+**The read was one command** (the critic gate, retired 2026-10-25): the anchored ladder at **matched SNAPSHOT COUNT** against the parent
 CONTINUED, the §4.3 calibration gate with **RESOLUTION primary** and `bot`/`pool` never pooled, the
 G7 stall kill condition, and `main.untaught_meter` with its continuation control. Every bar is READ
 from `measurements/winprob_critic_baseline_2026-09-06/`, never hardcoded.
@@ -1919,7 +1918,7 @@ z=−1.40" rules out >4.5pp, not >0.
 | question | the test that would settle it | cost |
 |---|---|---|
 | **How much headroom does a fresh best responder find against our plateau policies (T\*, P\*), how fast does it saturate, and does one-ply search add to the exploiter or defend the target?** The owner's question (2026-10-20). The only anchor is pre-era: offense exploiters of a 95M plateau parent read +12 to +16 pp pooled over 8M, flat by 8M | **R0** ([`R0_REGISTRATION.md`](measurements/x35_breakers_stage_2026-10-17/R0_REGISTRATION.md), launch sheet AM-R0): one best responder per side, +20M, the gap read every 2M (the headroom H, t90, SATURATED / RISING), predicted H +18 pp production / +22 toy. **R0-toy READ 2026-10-21:** H +11.8 pp [+9.1, +14.5] (learned part +14.6 over gap(0) −2.8), most of it by 4M (t90 4M), class RISING (D +4.4 [+0.5, +8.3]) only through a 10–12M dip. **R0-prod READ 2026-10-22:** H +11.1 pp [+8.3, +13.8] against P\* (learned part +13.6 over gap(0) −2.5), SATURATED (D −0.3 [−4.2, +3.6]), t90 8M; its first 5M (LG-1's statistic) +6.0 pp, so A6 is not triggered; the toy and production holes are the same size (+0.8 [−3.1, +4.6]). Both plateau policies give a best responder ≈ 11–12 pp on the offense archetype. Still to come: DESCRIPTIVE piKL cells, the BR + search vs its target and the target + search vs the BR, which need a live one-ply search player (a build) | ≈ 1.4 + 4.4 GPU-h; ≈ 2.5 CPU-h of curve reads; the search cells ≈ 213 CPU-h after the build |
-| **Does the win-prob critic RESOLVE better than the shaped one?** | `python -m main.critic_gate ai_v12_02_winprob_critic --parent ai_v9_59_R2ACTION_0827 --control <G5 arms>` — G1 is the primary endpoint | free once the arm reaches its eval cycles; the arm is ~14 h at the measured 5.2M steps/h (a FLOOR: `ep_len_mean` lengthens as play improves) |
+| **Does the win-prob critic RESOLVE better than the shaped one?** | DECIDED (G1 was the primary endpoint); the critic gate that read it was retired 2026-10-25 | free once the arm reaches its eval cycles; the arm is ~14 h at the measured 5.2M steps/h (a FLOOR: `ep_len_mean` lengthens as play improves) |
 | **Does terminal-only reward STARVE?** | the famine pre-test at ~5M against rev-1 at matched snapshot count, floor 38 Elo, AND-gated with `win_rate_vs_bots` rising | already inside the live arm |
 | **Is MATURITY the cause of the era gap, or is it era?** | a gen-era parent trained to a comparable step count, then the same continuation cell. There is no cheap version — step counts are not commensurable across architectures | a multi-week generation; **not scheduled** |
 | **Does a FOLD ON v8's PARENT with OUR teachers gift?** | the origin factorial's unrun half — 8 exploiters forked FROM R2ACTION in v8's recipe (`TC_ORIGIN`), then the fold ×3. A gift here makes the fork origin the whole story | 8 exploiter runs + 3 folds, ~30+ GPU-h |
@@ -2096,6 +2095,6 @@ POINT?*; *THE MATERIALIZER FLIP LANDED — AND THE P1 UNDER IT WAS NEVER A RUST 
 | what the MODEL is now · how it got here | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) · [`../CHANGELOG.md`](../CHANGELOG.md) |
 
 **Instruments** (all offline, none needs a GPU): `python -m main.untaught_meter` ·
-`python -m main.critic_gate` · `python -m main.elo` · `python -m main.exploitability` ·
+`python -m main.elo` · `python -m main.exploitability` ·
 `python -m main.scaffolding_gauge` · `python -m main.dose` · `python -m main.lineage` ·
 `python -m main.capacity` · `python -m main.prober.query` · `python -m main.ledger_index`.

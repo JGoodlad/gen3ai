@@ -23,6 +23,20 @@ def test_games_log_accumulates_and_is_symmetric(tmp_path):
     assert total == 50 and wins_lo == 15
 
 
+def test_rated_steps_ever_counts_the_append_only_log_and_own_cuts_a_forks_inherited_nodes(tmp_path):
+    """The matched-COUNT rule's counting basis (the ELO reading rules): every snapshot EVER rated, from the append-only
+    `games.jsonl`, never the groomed pool; a fork's parent nodes (steps <= the lineage `fork_step`) are not its own.
+    The retired critic gate was the only CLI composing these; they are the library layer a replacement reuses."""
+    run = str(tmp_path)
+    _append_pair(run, 100, 200, 5, 10)          # 100 was groomed out of the pool; its rows outlive its zip
+    _append_pair(run, 200, 300, 6, 10)
+    assert sl.rated_steps_ever(run) == [100, 200, 300]
+    assert sl.rated_steps_ever(run, committed=[300, 400]) == [100, 200, 300, 400]
+    assert sl.own_rated_steps_ever(run) == [100, 200, 300]                # no lineage record: nothing to cut
+    (tmp_path / "metadata.json").write_text(json.dumps({"lineage": {"fork_parent": {"path": "p"}, "fork_step": 200}}))
+    assert sl.own_rated_steps_ever(run, committed=[400]) == [300, 400]    # 100, 200 are the parent's
+
+
 def test_pair_key_orders(tmp_path):
     assert sl._pair_key(248, 100) == (100, 248)
     assert sl._pair_key(100, 248) == (100, 248)

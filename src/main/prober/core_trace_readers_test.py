@@ -106,18 +106,6 @@ def test_mechanic_usage_baseline_counts_the_expanded_decisions(core_run, fake_ex
 # readers of META only — sound on a core trace, and they never expand
 # ---------------------------------------------------------------------------
 
-def test_meta_readers_read_the_stored_outcome_without_expanding(core_run, no_expand):
-    from main.critic_gate import _trace_turns
-    from main.ops.quota_match import classify_on_disk
-
-    run_dir, _paths = core_run
-    split = classify_on_disk(os.path.join(run_dir, "eval_traces", f"step_{STEP}"), "heuristic")
-    assert split == {"WIN": ["win_g1_002"], "LOSS": ["loss_g0_001"], "DRAW": []}
-    row = _trace_turns(run_dir, stall_turns=100)[STEP]
-    assert row["n_traces"] == 2 and row["n_unreadable"] == 0 and row["max_turns"] == 120
-    assert row["outcomes"] == {"WIN": 1, "LOSS": 1} and row["stalls"] == 1 and row["mean_turns"] == 80
-
-
 def test_harvest_meter_tail_reads_meta_and_never_reports_a_nan_phi(core_run, no_expand):
     from main.harvest_meter import _load_tail
 

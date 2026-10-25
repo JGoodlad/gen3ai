@@ -1,12 +1,12 @@
-"""Gate ① through the Rust core, and the reader's teeth and determinism (integration).
+"""The committed v1 bank replays through the Rust core, gate 1 has teeth, and the reader is deterministic (integration).
 
-Gate ①: re-encoding a banked turn reproduces the recorded obs byte-equal. The routine tier replays
-a fixed slice of the COMMITTED bank (4 battles per source cycle); the slow tier replays all of it.
-While this checkout's encoder identity (the obs golden's hash, the obs width, the arch signature)
-equals the one stamped at build, byte-equality is REQUIRED. After a deliberate encoder change the
-recorded rows are a property of the RECORDING commit: the test then requires only that every
-banked decision replays to the same legal tokens and played choice (the input logs stay valid), and
-gate ①'s byte check runs in a worktree pinned at the recording commit.
+`reencode` replays every banked battle's input log and REFUSES (RuntimeError) a decision whose legal tokens, mask or
+played choice differ from the bank's: that structural replay is what the committed bank's inputs must keep passing.
+The recorded-OBS byte comparison is NOT asserted on the v1 bank (until 2026-10-25 it ran only while this checkout's
+encoder identity equalled the bank's, and otherwise SKIPPED): the v1 reference obs hashes are the RECORDING policies' own,
+read from pre-era `ai_v14_*` eval traces deleted 2026-10-09, so the bank cannot be re-recorded and a byte check at this
+commit could only pin the current encoder against itself (`golden_obs_core` already does). The byte check lives in
+`bank.build` / `bank.check_recorded`, which every NEW era bank runs at build (`test_gate_one_has_teeth`).
 """
 
 from __future__ import annotations
@@ -42,37 +42,27 @@ def _subset(bank, per_source: int):
                   [d for d in bank.decisions if d["battle"] in keep])
 
 
-def _check(sub):
+def _replays(sub):
+    """Re-encode ``sub`` through the core; ``reencode`` itself raises on a token / mask / played-choice mismatch."""
     from main.policy_spectrum.reader import reencode
 
     rows, masks, gate = reencode(sub, workers=2)
-    same_encoder = B.encoder_identity() == sub.manifest["encoder_identity"]
+    assert len(rows) == len(sub.decisions) == len(masks)
     assert gate["recorded_rows_checked"] > 0
-    if same_encoder:
-        assert gate["obs_as_recorded"], gate
-    else:
-        pytest.skip(
-            "gate ①'s BYTE check cannot run: the encoder changed since the bank was built, and the bank CANNOT be "
-            "re-recorded -- its reference obs hashes and logits are the RECORDING policies' own, read from pre-era "
-            "`ai_v14_*` eval traces that were deleted 2026-10-09, so a re-encode at this commit would only pin the "
-            "current encoder against itself (golden_obs_core already does) and rewrite a bank whose inputs the bridge "
-            "tests and qhat read. Only the structural replay above (legal tokens, mask, played choice) ran. The byte "
-            "check belongs to the recording commit (built_at_commit in the manifest); this skip lasts until the "
-            "OWNER-GATED TECH_DEBT row 'retire critic_gate's chain' (g) decides the builder's and the check's fate")
     return rows, masks, gate
 
 
 @pytest.mark.slow  # ship gate (2026-10-19): 9 s beside a live run
-def test_gate_one_on_a_slice_of_the_committed_bank():
+def test_a_slice_of_the_committed_bank_replays_through_the_core():
     bank = B.load_bank(BANK_V1)
     sub = _subset(bank, per_source=4)
     assert len({b.source["label"] for b in sub.battles}) == len(bank.manifest["sources"])
-    _check(sub)
+    _replays(sub)
 
 
 @pytest.mark.slow
-def test_gate_one_on_the_whole_committed_bank():
-    _check(B.load_bank(BANK_V1))
+def test_the_whole_committed_bank_replays_through_the_core():
+    _replays(B.load_bank(BANK_V1))
 
 
 def test_gate_one_has_teeth():

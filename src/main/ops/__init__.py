@@ -6,7 +6,7 @@ in as literals, and where they vanished with the session that wrote them
 (``designs/ops/TECH_DEBT_BACKLOG.md`` P1).
 
 **Why a subpackage and not ``src/main/`` beside the offline CLIs.** ``src/main/*.py`` is a
-curated list — ``elo``, ``dose``, ``lineage``, ``baselines``, ``critic_gate``,
+curated list — ``elo``, ``dose``, ``lineage``, ``baselines``,
 ``untaught_meter``, ``exploitability``, ``scaffolding_gauge``, ``capacity``, ``checkargs``,
 ``sidecar_audit``, ``tb_curate`` — and the root ``CLAUDE.md`` names it as *the offline meters*:
 tools that read a FINISHED run's artifacts and write nothing. These are a different tier. They

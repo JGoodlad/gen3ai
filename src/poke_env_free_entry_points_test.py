@@ -89,7 +89,6 @@ ENTRY_POINTS = (
     "main.launcher",
     "main.checkargs",
     "main.elo",
-    "main.critic_gate",
     "main.untaught_meter",
     "main.best_response_gap",
     "main.eval_ledger",

@@ -69,21 +69,11 @@ class Source:
     other_label: Optional[str] = None
 
 
-#: The v1 bank's sources: the fixed lineage N0 → C_fix → K2 → K3, and K2 against the round-0
-#: exploiter A′. N0's traces start at 36M (earlier cycles are not on disk).
-SOURCES_V1: Tuple[Source, ...] = (
-    Source("ai_v14_01_base", "step_36000000", "N0@36M"),
-    Source("ai_v14_01_base", "step_46000032", "N0@46M"),
-    Source("ai_v14_01_base", "step_56000016", "N0@56M"),
-    Source("ai_v14_01_base", "step_66000000", "N0@66M"),
-    Source("ai_v14_01_base", "step_74000016", "N0@74M"),
-    Source("ai_v14_06_lbat_ctrl_fix", "step_82000032", "C_fix@82M"),
-    Source("ai_v14_07_g0p_k2", "step_90000000", "K2@90M"),
-    Source("ai_v14_08_g0p_k3", "step_98000016", "K3@98M"),
-    Source("ai_v14_09_r0_offense_a", "step_92000016", "K2final_vs_A'@92M",
-           mode="other:ext_ai_v14_07_g0p_k2",
-           other_policy="ai_v14_07_g0p_k2/final_model.zip", other_label="K2 final (91.1M)"),
-)
+# There is NO default source list. The v1 bank's (the lineage N0 → C_fix → K2 → K3 and K2 against the round-0
+# exploiter A′, all `ai_v14_*` runs whose eval traces were deleted 2026-10-09) lived here as `SOURCES_V1` until
+# 2026-10-25 and are recorded in `bank_v1/manifest.json`'s `sources`; a caller names the cycles it banks (the
+# era-bank drivers under `designs/research_state/measurements/` do): the stale default named cycles whose traces no longer
+# exist, so a bare `select` / `build` raised FileNotFoundError.
 
 
 @dataclass
@@ -190,7 +180,7 @@ def load_battle(models: Path, src: Source, opp: str, prefix: str) -> Tuple[BankB
                       banked_side=banked, traced_side=traced, outcome=outcome), arrays
 
 
-def select(models: Path, sources: Sequence[Source] = SOURCES_V1) -> List[Tuple[Source, str, str]]:
+def select(models: Path, sources: Sequence[Source]) -> List[Tuple[Source, str, str]]:
     """Every (source, opponent, prefix) the bank takes, in a fixed order."""
     out = []
     for src in sources:
@@ -440,7 +430,7 @@ def summarize(decisions: Sequence[dict]) -> dict:
     }
 
 
-def build(models: Path, out: Path, sources: Sequence[Source] = SOURCES_V1, workers: int = 2,
+def build(models: Path, out: Path, sources: Sequence[Source], workers: int = 2,
           commit: str = "unknown", log=print) -> dict:
     """Select, re-encode (gate ①), stamp and write a bank. Returns the manifest."""
     from main.policy_spectrum.replay import core_events_identity, replay

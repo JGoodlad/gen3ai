@@ -118,15 +118,6 @@ def test_check_recipe_refuses_with_the_refit_command(tmp_path):
 
 # ── the readers ──────────────────────────────────────────────────────────────────────────────
 
-def test_critic_gate_load_ladder_records_the_stamp(tmp_path):
-    from main import critic_gate
-    _write(str(tmp_path), pre_recipe_ladder())
-    doc = critic_gate.load_ladder(str(tmp_path), what="run")
-    assert doc["recipe_status"] == "absent"
-    _write(str(tmp_path), current_ladder())
-    assert critic_gate.load_ladder(str(tmp_path), what="run")["recipe_status"] == "current"
-
-
 def test_latest_promoted_elo_does_NOT_check_the_stamp(tmp_path):
     """A WITHIN-RUN trend scalar written by the run's own pinned code. Refusing here would stop a
     live run logging its own curve, and no cross-run comparison is being made."""

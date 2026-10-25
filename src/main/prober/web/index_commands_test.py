@@ -73,12 +73,12 @@ def resolve_against_its_parser(command: str, monkeypatch) -> argparse.ArgumentPa
 def test_the_page_prints_the_meter_commands_this_test_covers():
     """A new command on the page is covered automatically; one that vanished from the table fails here."""
     modules = {c.split()[2] for c in printed_commands()}
-    assert {"main.critic_gate", "main.scaffolding_gauge", "main.untaught_meter", "main.elo"} <= modules, modules
+    assert {"main.scaffolding_gauge", "main.untaught_meter", "main.elo"} <= modules, modules
 
 
 def test_every_printed_command_parses_against_its_parser(monkeypatch):
     commands = printed_commands()
-    assert len(commands) >= 4, commands
+    assert len(commands) >= 3, commands
     for command in commands:
         resolve_against_its_parser(command, monkeypatch)
         monkeypatch.undo()

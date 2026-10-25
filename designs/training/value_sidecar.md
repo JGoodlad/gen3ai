@@ -13,7 +13,7 @@ Code: `src/agents/training/value_sidecar.py` (writer) · `src/main/ops/value_sid
 
 ## 1. The hole it closes
 
-**Every instrument this project owns that reads the critic reads EVAL battles** — `main.critic_gate`,
+**Every instrument this project owns that reads the critic reads EVAL battles** — the retired `critic_gate`,
 the prober's `calibration`, the scaffolding gauge, the whole win-prob
 ladder. Nothing had ever logged the value estimate against **its own training target**. Three
 reasons that is a real hole rather than a cosmetic one:

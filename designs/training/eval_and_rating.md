@@ -36,11 +36,7 @@ baselines.protected_files()                 # {run: [rel path]} — the grooming
 **Consumers in this package and its CLIs, all accepting a NAME wherever they accept a ref:**
 `main.untaught_meter`'s `--opponent` / `--config` (their literals are GONE — the engine exposes
 `default_opponent()` and `resolve_ref` expands a name; the config default is the literal `auto`), `--baseline` and
-`--control` through the same path; `main.critic_gate --parent` and its new
-`--famine-comparator` (default the `famine_comparator` baseline, whose `floor_elo` is the kill
-floor — and **an absent DEFAULT comparator is recorded as NOT READ rather than refusing the whole
-read**, since `models/` is not committed and one endpoint of five must not take the other four down;
-an explicit one still refuses); `main.elo`'s positional run dir; `main.tb_curate`, which unions the registry's `tb_curated`
+`--control` through the same path; `main.elo`'s positional run dir; `main.tb_curate`, which unions the registry's `tb_curated`
 list into the curated logdir. **Each prints `baseline <name> = <run>@<step> (set <date>, <ledger
 title>)`** — a reader must never have to recognise a path.
 
@@ -300,65 +296,28 @@ what pins the aggregation to the record: `untaught_meter_test.py` reproduces the
 legs (`TCFUNDA−TCUNFA −4.50`, `TCFUNDB−TCUNFB −4.25`, mean **−4.37**, the ledger's funded−unfunded
 untaught endpoint) and the `UNF/end` replicate draw that is the two-arm control floor.
 
-### The CRITIC GATE (`python -m main.critic_gate`) — the meter's caller, and three others
+### The critic gate: RETIRED 2026-10-25 (what outlives it)
 
-The win-prob-critic arm's pre-registered read (`designs/ai_v12/design_winprob_only_critic.md` §5.5)
-is four instruments. `python -m main.critic_gate <run> --parent <ref> --control <cont…>` runs all
-four and emits ONE markdown report + a JSON, and its whole design rule is that **it composes and
-never re-derives** — a second estimator for a number another tool already owns is how two published
-values of one quantity start disagreeing.
+`main.critic_gate` (the win-prob-critic arm's pre-registered read, `designs/ai_v12/design_winprob_only_critic.md` §5.5:
+the ladder at matched SNAPSHOT COUNT, the G1-G4 calibration bars, the G7 stall kill, `main.untaught_meter`), its
+renderer and design constants, `main.ops.g7_report`, `main.ops.calib_trend` and `scripts/ops/famine_read.sh` were
+retired by the owner's standing grant: the win-prob critic is a constant, the arm's read is decided and closed, and no
+registered read cites G1-G8 (`designs/deleted_flags.md`). Three things outlive it:
 
-| section | what it does | whose statistics |
-|---|---|---|
-| 1 ladder | counts each side's OWN snapshots EVER rated (`games.jsonl` + the committed nodes, above the lineage `fork_step` — never the groomed survivors in `ladder.json`, never a fork's inherited parent nodes; rule 5 of "Reading an ELO"), then **REFITS BOTH SIDES** on their first n from their own `games.jsonl` with this tree's `fit_ladder(first_n=…)` (strict prefix) — *always*, not only when the counts differ, because a committed ladder written before 2026-09-07 carries the eval-**sentinel** bias (+21..+29 Elo on its newest nodes) and a run pinned to an older commit keeps writing it. Compares at **matched SNAPSHOT COUNT**, never matched step. A side that cannot be refit falls back to its committed ladder and is NAMED in `refit_fallbacks` + `fit_size_note`; a side with MORE rated nodes that cannot be refit is still **UNMATCHED FIT SIZE** and the famine pre-test still REFUSES on it. Prints `rating not final` while the run is unfinished | the BT fit's, re-fit on the prefix — both sides |
-| 2 calibration | §4.3 G1–G4 per checkpoint, `bot`/`pool` **separately**, selection-reweighted | `main.scaffolding_gauge`'s `collect_slices` / `build_reliability` / `true_win_rates`, IMPORTED |
-| 3 G7 kill | stall rate + mean episode length vs the era; episode length is read from TensorBoard `eval/mean_ep_len_vs_{bots,pool}` (every cycle) first, the `metadata.json` blocks second — the blocks are keyed by CHECKPOINT and miss any cycle no checkpoint captured (10M and 14M on `ai_v12_02`); a step with no episode length prints **ep_len NOT EVALUABLE**, never OK. 🚨 **The 1.25× threshold is defined on EVAL episode length, never on the train series `rollout/ep_len_mean`** — same name, same units, different population: on `ai_v12_02` at 18M the train series was +25% over its early value (self-play opponents improve WITH the trainee, so near-equal games lengthen) while eval-vs-bots was +3.7% and eval-vs-pool flat, so applying the eval threshold to the train series would have fired a kill on an arm at 0% of the real one | the run's own recorded metrics + its trace summaries |
-| 4 untaught meter | `main.untaught_meter --baseline <parent> --control <cont…>` | the meter's, read back out of its own `--json` |
+- **The matched-COUNT ladder read** is a rule, not a tool: "Reading an ELO" rules 2-5 below. Its library layer is
+  `snapshot_ladder.own_rated_steps_ever` (the counting basis) and `fit_ladder(run_dir, first_n=n, write=False, steps=…)`
+  (the strict-prefix refit). **No CLI composes a cross-run matched-count read now**; `main.elo refit` is a same-run
+  recipe refit.
+- **The calibration numbers** G1-G4 were built from: `main.scaffolding_gauge --reliability --reliability-reweight`
+  (selection-reweighted, `bot` and `pool` never pooled) and the training-side `main.ops.value_sidecar_read`.
+- **The episode-length lesson.** `eval_results.jsonl` carries NO episode-length field (a full-cycle
+  `mean_ep_len_vs_{bots,pool}` is a TensorBoard scalar and sits in `metadata.json`'s `latest_eval` /
+  `snapshot_history[*].latest_eval`, keyed by CHECKPOINT, so it misses a cycle no checkpoint captured); a stall rate is
+  a CAPTURE-QUOTA statistic (loss-enriched traces, `meta.turns >= MAX_TURNS`); and a threshold defined on EVAL episode
+  length is never applied to the train series `rollout/ep_len_mean` (same name and units, different population: at 18M
+  on `ai_v12_02` the train series was +25% over its early value while eval-vs-bots was +3.7%).
 
-**Where the two halves of G7 come from is not obvious and is worth stating**: `eval_results.jsonl`
-carries **no** episode-length field, so the full-cycle `mean_ep_len_vs_bots` / `pool.mean_ep_len`
-come from `metadata.json`'s `latest_eval` and every `snapshot_history[*].latest_eval`; the stall
-rate is computed off the per-battle trace summaries (`meta.turns >= MAX_TURNS`, which is also the
-forfeit deadline, or a non-win/loss result) and is therefore a **CAPTURE-QUOTA** statistic, printed
-with that label every time because the quota is loss-enriched by design.
-
-**The one statistic the gauge does not publish is the RESOLUTION CI** that G1 needs. It is obtained
-by calling the gauge's own `reliability_table` under `agents.training.scaffolding`'s own
-`cluster_bootstrap_ci` — the same primitives, one extra pass over the gated strata only — never a
-second estimator. The committed baseline publishes no interval for `resolution` either, so G1
-compares the arm's CI against the baseline as a **FIXED bar**; that asymmetry is printed rather than
-smoothed over.
-
-Refusals (exit 2, key named, `main.exploitability`'s pattern): an absent or **unconverged** ladder,
-an empty `ratings` block, `--at-snapshots` beyond the matched count, a missing baseline artifact, a
-**raw (un-reweighted)** baseline artifact (§4.2 — the raw table inverts the verdict, so it is not a
-bar), a missing matched stratum, and the gauge's own `SelectionWeightError` surfaced verbatim rather
-than falling back to unweighted. `--check` resolves every input including the meter's own `--check`
-and exits non-zero naming **every** miss, computing nothing.
-
-```bash
-export PYTHONPATH=$PYTHONPATH:src
-python -m main.critic_gate models/<arm> --parent models/<parent> \
-  --control models/<contA> models/<contB> --md gate.md --json gate.json
-python -m main.critic_gate models/<arm> --parent models/<parent> --check   # resolve only
-```
-
-**Validated against the record**: run over `ai_v9_59_R2ACTION_0827` it reproduces §4.1's committed
-table value for value (26M `all` resolution 0.0618 / reliability 0.0013 / ECE 0.0249 / skill +0.336;
-28M `bot` 0.0215 / 0.0012 / 0.0228 / +0.222; …), and comparing that run against itself correctly
-reports **G1 false everywhere** — a generation cannot out-resolve its own baseline.
-
-🚨 **G2 and G3 are PER-STRATUM RELATIVE bars** (owner ruling 2026-09-06, §4.3): because the
-committed baseline's `pool` stratum already breaches §4.3's absolutes (reliability 0.0064 / 0.0103
-against ≤0.005, ECE 0.0667 / 0.0875 against ≤0.05, true on `bot` and pooled but not on the stratum
-the criteria are registered "in both classes" over), the arm must be **no worse than the baseline's
-SAME-stratum value at the matched checkpoint** (its own row at that step, else the artifact's steps
-reduced by `--baseline-reduce`, default `last` — without the matched half a generation reads as
-inferior to ITSELF) — PASS when its point estimate is at or below that value or its
-cluster-bootstrap CI contains it (non-inferiority, never a direction claim), FAIL only when its
-whole CI sits above — while the absolute numbers are still computed and printed as ASPIRATIONAL
-targets that gate nothing, and every row names which clause decided it beside the baseline value it
-was decided against. G1 and G4 are unchanged.
+### The in-loop eval callback (`PerOpponentEvalCallback`) and what its cycle writes
 
 `PerOpponentEvalCallback` (non-self-play path) evals IN PROCESS on the Rust eval core, blocking (see
 the section heading; until P10-F2 (2026-10-03) it also had a Python branch that spawned `main.eval_worker`
@@ -1356,7 +1315,7 @@ output goes. Until P6 slice 6c it spawned `python -m main.eval_worker` processes
    units that finished and is recorded INCOMPLETE the same way.)
 5. 🚨 **A generated cycle is CORE traces, so every reader that samples or scores by the RECORDED win-prob head
    REFUSES it** — a core trace records none (`win_probs` NaN, F-LH-4), exactly as on every live Rust-core cycle.
-   The gate and conditioning meters (`scaffolding_gauge`, `conditioning_meters`) are such readers. The prober's views and the shadow run's layout (the step dir's `snapshot.zip`, the sentinel
+   The calibration gauge (`scaffolding_gauge`) is such a reader. The prober's views and the shadow run's layout (the step dir's `snapshot.zip`, the sentinel
    pins) read it (`main/ops/eval_trace_gen_integration_test.py`); a critic read on a Rust-core cycle waits on the
    win-prob head being recorded at eval.
 
@@ -1541,8 +1500,9 @@ measurements of the same frozen pair, and nothing may fit or compare them as one
 - `ladder.json`'s `recipe` block carries `transport` (`snapshot_ladder.ladder_transport`; absent =
   `python_bridge`). It is PROVENANCE, not part of `recipe_status` (the FIT did not change, so a refit reproduces a
   file exactly and `LADDER_FITTER_VERSION` stays 3);
-- `main.critic_gate` REFUSES a run/parent pair whose ladders were played on different transports (or a side whose
-  log mixes them) unless `--allow-transport-mix`, which records `transport_warning`; `main.elo` and
+- a reader that compares two ladders calls `snapshot_ladder.check_same_transport`, which REFUSES a pair played on
+  different transports (or a side whose log mixes them) unless told (the retired critic gate was the one caller);
+  `main.elo` and
   `main.ops.plateau_signal` print the transport beside the number; `hodge.edges_from_run` states a mixed log as a
   caveat;
 - `missing_pairs` counts a pair measured only by the Python ladder as MISSING, so `--backfill` on a pre-boundary run
@@ -1609,15 +1569,13 @@ convert is not a safeguard.
 
 | reader | what it does with a stale stamp |
 |---|---|
-| `main.critic_gate --at-snapshots` | normally REFITS both sides, which makes the committed recipe irrelevant. On the FALLBACK path (no `games.jsonl`, so the committed numbers are the ones quoted) a stale stamp is a **`GateRefusal`**, not the old "⚠️ FELL BACK" label. Each side's `recipe_status` / `recipe` is reported either way |
 | *(the exploiter ladder's `auto:<run>` rung draw — deleted, deletion pass L4)* | it REFIT in memory from `games.jsonl` and REFUSED when there was none, because rungs were picked BY ELO and the pre-fix inflation is non-uniform (+21..+29 on the newest nodes only) |
 | `main.ops.plateau_signal` | its bias note now READS the stamp instead of asserting the bias unconditionally; a stale file is named as stale and pointed at `--fixed-fit` |
 | `snapshot_ladder.latest_promoted_elo` | **deliberately does NOT check it** — a WITHIN-RUN trend scalar (`eval/ladder_elo`) written moments earlier by the run's own pinned code. Refusing there would stop a live run logging its own curve, and no cross-run comparison is being made |
 | `agents.training.snapshot_ladder` CLI | prints `[ladder] recipe: …` beside every table it renders |
 | `main.elo <run>` | prints a `[ladder]` HEADLINE line under its star table, and **WITHHOLDS the dense number** on a stale stamp, printing the refusal in its place. Its own star fit is the ±29 read and is never the headline |
 
-Pinned by `src/agents/training/ladder_recipe_test.py` (before/after fixtures), the three
-recipe tests in `src/main/critic_gate_test.py`, and `src/main/elo_refit_test.py`.
+Pinned by `src/agents/training/ladder_recipe_test.py` (before/after fixtures) and `src/main/elo_refit_test.py`.
 
 ###### Putting a committed ladder BACK on the current recipe — `main.elo refit`
 
@@ -1833,9 +1791,9 @@ Dense measurement buys resolution; it does not buy an early answer.
 `n_frozen_pairs_measured` / `n_pairs_possible` in `ladder.json` is the completeness check — a fit
 at 21/21 pairs is internally complete but only 7 nodes deep, and depth is what the bias tracks.
 
-3. **Matched COUNT means matched FIT SIZE, and the tool now REFITS to get it.** Rule 2's
-   "recoverable from `updater.log`" was the only mechanism, and `main.critic_gate` did not use it:
-   it took the comparator's n-th node from its FINAL fit. Measured 2026-09-07 at the win-prob
+3. **Matched COUNT means matched FIT SIZE: REFIT, never read the comparator's n-th node off its FINAL fit.**
+   Rule 2's "recoverable from `updater.log`" was the only mechanism, and the (retired) critic gate did not use it
+   until 2026-09-07: it took the comparator's n-th node from its FINAL fit. Measured at the win-prob
    arm's 10M read: rev-1's 8M node is **2052** in a first-4 fit and **1958** in its final 12-node
    fit, so the gate read a **30-Elo TRAIL as a 64-Elo LEAD** (94 Elo handed to the arm; ledger
    *10M DECIDING READ*). `snapshot_ladder.fit_ladder(run_dir, first_n=n, write=False, steps=…)`
@@ -1845,7 +1803,7 @@ at 21/21 pairs is internally complete but only 7 nodes deep, and depth is what t
    refit — no `games.jsonl`, or a FORK's ladder whose early nodes are rated only through edges to
    its own late selves (`ai_v9_59_R2ACTION_0827`: every pair touches 26M/28M) — is reported at
    **UNMATCHED FIT SIZE** with that label on the number, and the famine pre-test REFUSES on it
-   rather than printing a lead.
+   rather than printing a lead (a read built on this must do the same).
 
 4. **A committed `ladder.json` is not evidence — REFIT BOTH SIDES from `games.jsonl`.** A run's
    `ladder.json` was written by the code that run is PINNED to, and every ladder written before
@@ -1853,10 +1811,10 @@ at 21/21 pairs is internally complete but only 7 nodes deep, and depth is what t
    (+8.9 pp to the newer snapshot, +21..+29 Elo on the newest nodes — see the ladder section
    above). A live run pinned to an older commit keeps writing biased ladders for as long as it
    runs, so trusting the committed file compares one side's corrected fit against another side's
-   biased one. `main.critic_gate` therefore refits **both** sides with THIS tree's `fit_ladder`
-   whenever `games.jsonl` exists — even at already-matched node counts, where the old
-   `len(nodes) > n` guard refit neither — and LABELS in `fit_size_note` (and `refit_fallbacks`)
-   any side that had to fall back to its committed ladder — **and REFUSES that fallback outright
+   biased one. A cross-run read therefore refits **both** sides with THIS tree's `fit_ladder`
+   whenever `games.jsonl` exists — even at already-matched node counts, where the retired gate's old
+   `len(nodes) > n` guard refit neither — and LABELS any side that had to fall back to its committed
+   ladder — **and REFUSES that fallback outright
    when the committed file's `recipe` stamp is absent or differs** (see the recipe-stamp section
    above; +73.1 Elo on one measured run, enough to flip a delta's sign). Measured effect on the registered
    famine read (arm `ai_v12_02_winprob_critic` vs `famine_comparator` = `ai_v9_29_rev1_0823`,
@@ -1873,9 +1831,9 @@ at 21/21 pairs is internally complete but only 7 nodes deep, and depth is what t
    36M → 74M). A FORK's ladder also rates the parent snapshots its pool was seeded with — 19 of the
    ~23 ever-rated nodes of a typical `ai_v13`/`ai_v14` fork sit at or below its `fork_step`.
    `snapshot_ladder.own_rated_steps_ever` (the append-only log's endpoints + the committed nodes,
-   above the lineage record's `fork_step`) is what `main.critic_gate` counts and refits the strict
-   prefix over; each side's JSON carries `n_own_rated_ever`, `n_groomed_out`, `fork_step` and
-   `n_inherited_excluded`, and the report prints the count basis. A side with NO `games.jsonl` whose
-   eval record names a pool snapshot its committed file no longer rates is REFUSED (the first n cannot
-   be known). 🚨 A hand read off `ladder.json`'s n-th node is NOT a matched-count read on a groomed or
-   forked run — use `main.critic_gate`.
+   above the lineage record's `fork_step`; pinned by `snapshot_ladder_test.py`) is the counting basis, and
+   `fit_ladder(first_n=n, steps=<that list>)` the strict-prefix refit. A read must REFUSE a side with NO `games.jsonl`
+   whose eval record names a pool snapshot its committed file no longer rates (the first n cannot be known).
+   🚨 A hand read off `ladder.json`'s n-th node is NOT a matched-count read on a groomed or forked run, and
+   **since the critic gate's retirement (2026-10-25) no CLI composes this read**: build it from those two calls and
+   say so in the report (`TECH_DEBT_BACKLOG.md` carries the open row).

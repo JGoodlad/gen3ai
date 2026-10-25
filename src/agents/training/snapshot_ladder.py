@@ -47,7 +47,7 @@ encoder (unmirrored, the newer node always on p1, a draw folded into ``b`` 's co
 ``transport`` (absent = ``python_bridge``), ``ladder.json``'s recipe block names the transport its edges came from,
 and a fit over rows of BOTH transports is REFUSED (:class:`LadderTransportError`) unless the caller names one
 (``--transport``) or accepts the mix (``--allow-mixed-transport``, stamped ``mixed``). Readers comparing two ladders
-(``main.critic_gate``) refuse a transport mismatch the same way. Measured shift and the decision:
+refuse a transport mismatch the same way (:func:`check_same_transport`). Measured shift and the decision:
 ``designs/training/eval_and_rating.md`` "The TRANSPORT boundary".
 
 CLI:
@@ -660,7 +660,7 @@ def fit_ladder(run_dir: str, base: float | None = None, *,
     systematically inflated (gen-10's 12M fell 2089 → 2021 over 12 refits), so the n-th node of
     a run's FINAL 12-node fit is not the same object as the n-th node of a 4-node fit. Measured
     2026-09-07 on `ai_v9_29_rev1_0823`: its 8M node reads **2052** in a first-4 fit and **1958**
-    in the final 12-node fit — 94 Elo of newest-node deflation, which `main.critic_gate` was
+    in the final 12-node fit — 94 Elo of newest-node deflation, which the (retired) critic gate was
     silently handing to the arm it compared against.
 
     🚨 THE TRANSPORT (P2, 2026-10-06): the kept pairs' rows must all come from ONE transport (:func:`fit_transport`) —
@@ -671,7 +671,7 @@ def fit_ladder(run_dir: str, base: float | None = None, *,
     base = base if base is not None else (anchors or {}).get("base", elo_mod.DEFAULT_BASE)
 
     # ``steps`` lets a caller re-slice a COMMITTED ladder whose pool has since been groomed
-    # (`main.critic_gate` passes the ladder's own rated steps); the default is the pool on disk.
+    # (`main.elo`'s refit passes the ladder's own rated steps); the default is the pool on disk.
     steps = sorted(steps) if steps is not None else pool_snapshot_steps(run_dir)
     if first_n is not None:
         if first_n < 1:
@@ -948,7 +948,7 @@ def latest_promoted_elo(run_dir: str) -> "tuple[int, float, float] | None":
     Deliberately does NOT check the recipe stamp. This reads the run's OWN file, written moments
     ago by the same process tree, to emit a WITHIN-RUN trend scalar — the recipe is whatever that
     run is pinned to, by construction, and refusing here would stop a live run from logging its
-    own curve. Everything that compares ACROSS runs (`main.critic_gate`, `--exploiter-ladder
+    own curve. Everything that compares ACROSS runs (`--exploiter-ladder
     auto`, `main.ops.plateau_signal`) checks it, because that is where a scale mismatch turns
     into a wrong verdict.
     """

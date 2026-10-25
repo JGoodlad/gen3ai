@@ -435,7 +435,7 @@ token injection), through `value_entity_pool`'s op-row source, and through `valu
   op's rows through the trunk (`prefuse_proj`) AND `value_entity_pool`'s op-row source: F10 deletes one of three
   routes, not two. `--arch production --value-threat-inject off --allow-nonproduction-arch` is the screen arm;
   composes with `--token-encoding static`, `--policy-readout trunk`, `--move-resolution on` and X5's fixed-mass
-  surface (tested; production since the X5 version break, v144). **The screen's meter** (not registered, not run): `python -m main.critic_gate <off arm> --parent <ref> --control <production arm>`, read on its G rows — PRIMARY
+  surface (tested; production since the X5 version break, v144). **The screen's meter** (not registered, not run; the critic gate that would have read it was retired 2026-10-25, `designs/deleted_flags.md`) — PRIMARY
   `gate.resolution.bot` and `gate.resolution.pool` (G1: Murphy resolution of V against the outcome, the
   discrimination term, per stratum); SECONDARY `gate.skill.bot` / `gate.skill.pool` (G4), with
   `gate.reliability.*` / `gate.ece.*` as the calibration guard. Caveats: Murphy resolution pools states ACROSS

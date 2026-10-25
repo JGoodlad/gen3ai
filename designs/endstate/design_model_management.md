@@ -195,7 +195,7 @@ inference.score(model_id, rows, masks, mode)      # Tier 2 — the only way a mo
 inference.manifest() / .evict(name)               # what is resident
 ```
 
-Every offline meter (`main.elo`, `main.untaught_meter`, `main.critic_gate`, `main.exploitability`,
+Every offline meter (`main.elo`, `main.untaught_meter`, `main.exploitability`,
 `main.best_response_gap`, `main.anchors`, `main.dose`, `main.lineage`) reads through `registry` and
 runs through `inference`. None loads a network itself.
 

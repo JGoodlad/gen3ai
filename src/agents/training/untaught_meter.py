@@ -331,7 +331,7 @@ def expand_baseline_name(ref: str) -> str:
     """A registry NAME → that baseline's explicit spec; anything else through unchanged.
 
     So ``--baseline v9_fold_parent`` works wherever a ref does, and a caller that already holds a
-    name (``main.critic_gate`` forwarding its ``--parent``) can pass it straight through.
+    name can pass it straight through.
     """
     return baselines.spec(ref) if baselines.is_name(ref) else ref
 

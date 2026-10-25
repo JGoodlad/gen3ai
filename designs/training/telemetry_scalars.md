@@ -268,7 +268,7 @@ rather than patching the guard: `scaffolding.live_gauge_metrics` and `_same_orde
 calibration read and the episode-start read now key on `win_prob_on`, the same predicate) are deleted. `tb_relevance_test`'s
 `NOISE_TAGS` still names the three tags and the slow smoke fails if anything publishes them again. **KEPT:**
 `scaffolding.py`'s `rank_gauge` / `affine_gauge` / `gauge_slice` / `constancy_row` / `reliability_table` /
-`spearman_rho` / `cluster_bootstrap_ci` (offline readers: `main.scaffolding_gauge`, `critic_gate`, `main/ops/*`,
+`spearman_rho` / `cluster_bootstrap_ci` (offline readers: `main.scaffolding_gauge`, `main/ops/*`,
 `stats.py`; `reliability_table` is also the win-prob calibration read's statistic) and the CLI, which still reads
 the eval traces of old shaped runs (the only runs whose V and P(win) are different readouts). Do not read it as a
 scaffolding measurement of a terminal-only run, which has no scaffolding to measure.
@@ -841,7 +841,7 @@ Grouped by the question each answers, **with its currency**. Everything in the f
 5. `rollout/ep_rew_mean` — under the indicator this IS the training win rate (see the window note above).
 
 **Is the critic HONEST?** *(probability — the era's central claim, and the §4.3 gate's inputs)*
-6. **`win_prob/critic_resolution`** — Murphy RES, **HIGHER is better**. The G1 PRIMARY meter; `main.critic_gate` reads its bar from the committed baseline artifact.
+6. **`win_prob/critic_resolution`** — Murphy RES, **HIGHER is better**. The G1 PRIMARY meter of the (retired 2026-10-25) critic gate, whose bar came from the committed baseline artifact.
 7. `win_prob/critic_reliability` — Murphy REL, LOWER is better. Miscalibration only.
 8. `win_prob/critic_brier` · `critic_skill` — the DEPLOYED value's proper score, and its skill over the base rate.
 9. `win_prob/critic_uncertainty` · `critic_base_rate` — the decomposition's context; a skill score without them is unreadable.
@@ -872,8 +872,7 @@ Grouped by the question each answers, **with its currency**. Everything in the f
 **What to read when the contested split is ABSENT:** on a run whose margin has no spread the whole
 `contested_*` family is now gated off rather than duplicated, so the contested-vs-blowout question
 is answered offline by `python -m main.scaffolding_gauge --reliability --reliability-reweight`
-(which stratifies bot vs pool sentinel, where the head's bias FLIPS SIGN) and by
-`main.critic_gate`. ⚠️ A run started before `gen3_obs_margin_unconditional_v1` carries the
+(which stratifies bot vs pool sentinel, where the head's bias FLIPS SIGN). ⚠️ A run started before `gen3_obs_margin_unconditional_v1` carries the
 degenerate margin AND, if it also predates the gate, the duplicate tags — read them as absent.
 
 ## From the training leaf (moved 2026-10-10)
@@ -938,7 +937,7 @@ these. Each tag's currency and reading rule: the topic doc.
 
 **What to read when the contested split is ABSENT:** the family is gated off rather than duplicated
 on a spread-free margin, so the contested-vs-blowout question is answered offline by
-`python -m main.scaffolding_gauge --reliability --reliability-reweight` and by `main.critic_gate`.
+`python -m main.scaffolding_gauge --reliability --reliability-reweight`.
 
 ### Gradient-balance + value-scale diagnostics (`grad_balance.py`)
 
@@ -964,7 +963,7 @@ TWO readouts — the shaped critic V and the win-prob head. Under the win-prob c
 `sigmoid(win_prob_logit)`, so a rank gauge between them is a tautology (rho 1, gauge 0) and it published exactly that on
 every run. `scaffolding.live_gauge_metrics`, `_same_ordering`, `ppo.py`'s paired epoch-0 reads and `metrics_export`'s publish
 are deleted; the offline math (`rank_gauge`, `affine_gauge`, `gauge_slice`, `constancy_row`, `reliability_table`,
-`spearman_rho`, `cluster_bootstrap_ci`) and the CLI stay for what reads them (`critic_gate`, `main/ops/*`, `stats.py`, the
+`spearman_rho`, `cluster_bootstrap_ci`) and the CLI stay for what reads them (`main/ops/*`, `stats.py`, the
 win-prob calibration read). Read the CLI on an archived shaped run; do not read it as a scaffolding measurement of a
 terminal-only run, which has no scaffolding to measure.
 

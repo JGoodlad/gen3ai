@@ -1,12 +1,12 @@
 """LEARNER-ONLY PPO UPDATE BENCHMARK — where the wall time of one `train()` call goes (T13).
 
-    python3 src/agents/training/learner_benchmark.py run --device cuda          # the real read
-    python3 src/agents/training/learner_benchmark.py run --device cpu --tiny    # the code path, CPU
+    python3 src/agents/training/learner_benchmark.py run --device cuda --run <run>        # the real read
+    python3 src/agents/training/learner_benchmark.py run --device cpu --tiny --run <run>  # the code path, CPU
 
 **WHAT IT MEASURES.** One production PPO update — the real `InstrumentedMaskablePPO.train()` of
-arm C (`models/ai_v14_02_lbat_ctrl`, `final_model.zip` by default, resolved explicitly) on ONE real
-98,304-sample rollout buffer, with C's own flags (its recorded `original_command`, compile-trainer
-ON) — run K times from IDENTICAL state (weights, optimizer, the model's plain counters/EMAs, the
+the run named by `--run` (under the main checkout's `models/`; its `final_model.zip` by default, resolved explicitly)
+or the checkpoint named by `--model`, on ONE real rollout buffer, with that run's own flags (its recorded
+`original_command`, compile-trainer ON) — run K times from IDENTICAL state (weights, optimizer, the model's plain counters/EMAs, the
 pristine pre-`train()` buffer, the RNG seeds), so every repeat is the same work. Reported:
 
   * `train/train_ms` (the trainer's own un-bracketed wall clock around the WHOLE call) per repeat;
@@ -63,9 +63,9 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 import numpy as np
 
-#: The arm whose update this measures (T13's learner-only benchmark). Resolved against the MAIN
-#: checkout's run archive — `models/` is not committed and a worktree has none.
-DEFAULT_RUN = "ai_v14_02_lbat_ctrl"
+#: There is NO default run (T13's arm C, `ai_v14_02_lbat_ctrl`, is pre-era: its config v123 is refused by
+#: `_migrate_config` below `MIGRATION_FLOOR`, so a bare call died at the version gate). `--run` is resolved against the
+#: MAIN checkout's run archive — `models/` is not committed and a worktree has none.
 DEFAULT_CHECKPOINT = "final_model.zip"
 DEFAULT_OUT_ROOT = Path.home() / "gen3ai_archive" / "learner_bench"
 
@@ -1018,6 +1018,10 @@ def run_main(a: argparse.Namespace) -> int:
     if a.model:
         model_zip = Path(a.model).resolve()
     else:
+        if not a.run:
+            print("REFUSED: name the run to measure (--run <run under models/>) or an explicit checkpoint "
+                  "(--model <.zip>); there is no default run.")
+            return 2
         if models is None:
             print("REFUSED: no models/ archive on this box and no --model given.")
             return 2
@@ -1101,8 +1105,8 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--device", choices=("cuda", "cpu"), required=True)
     r.add_argument("--tiny", action="store_true",
                    help=f"CPU code-path exercise: {TINY}")
-    r.add_argument("--run", default=DEFAULT_RUN,
-                   help=f"run under the main checkout's models/ (default {DEFAULT_RUN})")
+    r.add_argument("--run", default=None,
+                   help="run under the main checkout's models/ (REQUIRED unless --model is given)")
     r.add_argument("--model", default=None,
                    help=f"explicit checkpoint .zip (default <run>/{DEFAULT_CHECKPOINT})")
     r.add_argument("--buffer", default=None, help="reuse a saved rollout_buffer.pkl")

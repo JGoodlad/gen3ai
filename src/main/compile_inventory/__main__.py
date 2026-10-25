@@ -4,9 +4,9 @@
 stack-profiled trace OOM-killed the host three times — `memcap.py`), at nice 19:
 
   scripts/ops/mem_cap.sh 12 nice -n 19 python -m main.compile_inventory run --stage trace \
-        --device cpu --micro 64 --trace-steps 4                       # (a)(b)(c), both views
+        --device cpu --micro 64 --trace-steps 4 --run <run> --buffer <rollout_buffer.pkl>   # (a)(b)(c), both views
   scripts/ops/gpu_lock.sh timeout 1200 scripts/ops/mem_cap.sh 16 python -m main.compile_inventory \
-        run --stage time --device cuda --time-epochs 1 --keep-prewarm        # (d)
+        run --stage time --device cuda --time-epochs 1 --keep-prewarm --run <run> --buffer <pkl>   # (d)
   scripts/ops/mem_cap.sh 8 python -m main.compile_inventory fullgraph  # fullgraph=True verdicts
   python -m main.compile_inventory analyze <out dir>                  # re-classify (streaming)
   python -m main.compile_inventory report <out dir> [...] --out <tables.md>
@@ -27,11 +27,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 DEFAULT_OUT_ROOT = Path.home() / "gen3ai_archive" / "k8_inventory"
-DEFAULT_RUN = "ai_v14_02_lbat_ctrl"
+#: No default run and no default buffer: both named pre-era arm C (`ai_v14_02_lbat_ctrl`, config v123, which
+#: `_migrate_config` refuses below `MIGRATION_FLOOR`), so a bare call died at the version gate. `--run` (or `--model`)
+#: and `--buffer` (a `learner_benchmark` `rollout_buffer.pkl` collected by THAT checkpoint) are required.
 DEFAULT_CHECKPOINT = "final_model.zip"
-#: The learner benchmark's pinned full rollout of arm C's final checkpoint (98,304 rows).
-DEFAULT_BUFFER = (Path.home() / "gen3ai_archive" / "learner_bench" / "20260928_135948_cuda"
-                  / "rollout_buffer.pkl")
 #: Env workers the trainer builds: the buffer replaces the rollout, so 2 is enough.
 WORKER_N_ENVS = "2"
 
@@ -92,6 +91,10 @@ def cmd_run(a: argparse.Namespace) -> int:
             print(f"REFUSED: {e}")
             return 2
     models = main_models_dir()
+    if not a.model and not a.run:
+        print("REFUSED: name the run (--run <run under models/>) or an explicit checkpoint (--model <.zip>); "
+              "there is no default run.")
+        return 2
     model_zip = Path(a.model).resolve() if a.model else (
         (models / a.run / DEFAULT_CHECKPOINT).resolve() if models else None)
     if model_zip is None or not model_zip.is_file():
@@ -254,10 +257,10 @@ def build_parser() -> argparse.ArgumentParser:
     r = sub.add_parser("run", help="spawn the trainer-hosted worker for one stage")
     r.add_argument("--stage", choices=("trace", "time"), required=True)
     r.add_argument("--device", choices=("cpu", "cuda"), required=True)
-    r.add_argument("--run", default=DEFAULT_RUN)
+    r.add_argument("--run", default=None, help="run under models/ (REQUIRED unless --model is given)")
     r.add_argument("--model", default=None, help="explicit checkpoint .zip")
-    r.add_argument("--buffer", default=str(DEFAULT_BUFFER),
-                   help="the pinned rollout buffer (learner_benchmark's rollout_buffer.pkl)")
+    r.add_argument("--buffer", required=True,
+                   help="the pinned rollout buffer (learner_benchmark's rollout_buffer.pkl) collected by that checkpoint")
     r.add_argument("--backend", choices=("aot_eager", "eager", "inductor"), default="aot_eager",
                    help="trace stage: the backend the capture compiles with")
     r.add_argument("--trace-steps", type=int, default=128,

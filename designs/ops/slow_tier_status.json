@@ -4239,175 +4239,36 @@
    "contention": 1.0,
    "detail": ""
   },
-  "src/main/ops/quota_match_test.py::test_a_manifest_that_claims_a_count_the_tree_does_not_hold_is_reported_and_the_disk_wins": {
+  "src/main/policy_spectrum/policy_spectrum_integration_test.py::test_a_slice_of_the_committed_bank_replays_through_the_core": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.02,
-   "contention": 1.9,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_a_pair_level_row_is_declared_and_is_never_quota_matched": {
-   "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.0,
-   "contention": 1.2,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_equal_caps_are_a_symmetric_pair_and_nothing_is_subsampled": {
-   "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.03,
-   "contention": 1.87,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_every_meter_declares_its_frame_sensitivity_with_a_reason": {
-   "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.0,
-   "contention": 1.56,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_every_row_that_goes_through_the_out_of_fold_decoder_is_frame_sensitive": {
-   "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.01,
-   "contention": 1.28,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_nothing_is_written_anywhere_by_a_subsample": {
-   "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.13,
-   "contention": 1.68,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_the_calibration_slope_is_read_as_traced_and_only_its_stratum_row_is_matched": {
-   "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.0,
-   "contention": 1.2,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_the_decoder_matched_rung_gives_the_richer_side_the_poorer_sides_decoder_frame": {
-   "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.18,
-   "contention": 1.62,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_the_default_seed_count_is_odd_and_at_least_twenty": {
-   "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.0,
-   "contention": 1.57,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_the_legacy_three_tuple_view_still_unpacks": {
-   "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.0,
-   "contention": 1.45,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_the_provisional_row_is_declared_and_carries_its_reason": {
-   "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.0,
-   "contention": 1.2,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_the_realized_profile_is_read_off_the_disk_not_the_nominal_quota": {
-   "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.02,
-   "contention": 1.73,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_the_richer_side_is_the_one_cut_whichever_role_it_holds": {
-   "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.06,
-   "contention": 1.75,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_the_richer_sides_matched_frame_is_the_size_of_the_poorer_sides": {
-   "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 7.15,
-   "contention": 1.21,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_the_subsample_is_seeded_reproducible_and_seed_dependent": {
-   "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.11,
-   "contention": 1.64,
-   "detail": ""
-  },
-  "src/main/ops/quota_match_test.py::test_the_subsample_recomputes_the_capture_rates_for_the_view_it_produces": {
-   "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 0.13,
-   "contention": 1.68,
-   "detail": ""
-  },
-  "src/main/ops/v_column_matched_test.py::test_the_matched_rows_CHANGE_when_the_v_column_does": {
-   "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 3.1,
+   "commit": "c6b15d44c60bb8bcedd257d7f8a6980e823be687",
+   "at": "2026-10-25T18:43:07Z",
+   "duration_s": 2.82,
    "contention": 1.0,
    "detail": ""
-  },
-  "src/main/policy_spectrum/policy_spectrum_integration_test.py::test_gate_one_on_a_slice_of_the_committed_bank": {
-   "status": "skip",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:36:26Z",
-   "duration_s": 4.74,
-   "contention": 1.31,
-   "detail": ""
-  },
-  "src/main/policy_spectrum/policy_spectrum_integration_test.py::test_gate_one_on_the_whole_committed_bank": {
-   "status": "pass",
-   "commit": "c153396c4650dfd66828c0898005686c42fcf7bc",
-   "at": "2026-10-03T23:25:24Z",
-   "duration_s": 38.96,
-   "contention": 1.0,
-   "detail": "",
-   "last_skipped_at": "2026-10-21T19:36:26Z",
-   "last_skipped_commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "last_skip_detail": ""
   },
   "src/main/policy_spectrum/policy_spectrum_integration_test.py::test_the_reader_is_deterministic_on_an_x5_checkpoint": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:36:26Z",
-   "duration_s": 4.06,
-   "contention": 1.19,
+   "commit": "c6b15d44c60bb8bcedd257d7f8a6980e823be687",
+   "at": "2026-10-25T18:43:07Z",
+   "duration_s": 4.95,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/main/policy_spectrum/policy_spectrum_integration_test.py::test_the_whole_committed_bank_replays_through_the_core": {
+   "status": "pass",
+   "commit": "c6b15d44c60bb8bcedd257d7f8a6980e823be687",
+   "at": "2026-10-25T18:43:07Z",
+   "duration_s": 45.71,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/policy_spectrum/truth_integration_test.py::test_branch_turns_are_crn_deterministic_and_token_checked": {
    "status": "pass",
-   "commit": "922e8df4859cdb0f17a790b6ed89352b4ff8db76",
-   "at": "2026-10-21T19:41:46Z",
-   "duration_s": 3.17,
-   "contention": 1.05,
+   "commit": "c6b15d44c60bb8bcedd257d7f8a6980e823be687",
+   "at": "2026-10-25T18:43:07Z",
+   "duration_s": 3.07,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/prober/better_line_integration_test.py::test_better_line_depth1_chosen_value_matches_recorded_next_obs": {
@@ -4971,5 +4832,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-25T18:00:51Z"
+ "last_written": "2026-10-25T18:43:07Z"
 }

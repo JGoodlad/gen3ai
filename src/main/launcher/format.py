@@ -81,22 +81,16 @@ _METRIC_LABELS = {
     "grad/value_norm_shared": "value grad-norm",
     # Per-aux pull on the shared trunk (each present only when ITS head is on) — every scaffold broken
     # out individually so any one crowding out the rest is visible (--opp-belief-aux-coef /
-    # --move-belief-* / --opp-belief-latent-coef / --win-prob-* / --value-dist-*).
+    # --move-belief-* / --value-dist-*).
     "grad/species_belief_share": "species blf share",
     "grad/species_belief_norm_shared": "species blf norm",
     "grad/species_belief_policy_cosine": "species blf-pol cos",
     "grad/move_belief_share": "move blf share",
     "grad/move_belief_norm_shared": "move blf norm",
     "grad/move_belief_policy_cosine": "move blf-pol cos",
-    "grad/latent_share": "latent share",
-    "grad/latent_norm_shared": "latent grad-norm",
-    "grad/latent_policy_cosine": "latent-policy cos",
     "grad/move_latent_share": "move-lat share",
     "grad/move_latent_norm_shared": "move-lat norm",
     "grad/move_latent_policy_cosine": "move-lat-pol cos",
-    "grad/win_prob_share": "winprob share",
-    "grad/win_prob_norm_shared": "winprob grad-norm",
-    "grad/win_prob_policy_cosine": "winprob-pol cos",
     "grad/spread_belief_share": "spread blf share",
     "grad/spread_belief_norm_shared": "spread blf norm",
     "grad/spread_belief_policy_cosine": "spread blf-pol cos",
@@ -265,8 +259,8 @@ _METRIC_ORDER = [
     "grad/policy_value_cosine",
     "grad/policy_norm_shared",
     "grad/value_norm_shared",
-    # Per-aux pull on the shared trunk (each present only when ITS head is on) — species/move/latent/
-    # move-latent belief + win-prob + value-dist, each broken out so any single scaffold crowding out
+    # Per-aux pull on the shared trunk (each present only when ITS head is on) — species/move/
+    # move-latent belief + value-dist, each broken out so any single scaffold crowding out
     # the rest is visible. Watch each sit small; a spike with a degrading policy = lower its coef.
     "grad/species_belief_share",
     "grad/species_belief_norm_shared",
@@ -274,15 +268,9 @@ _METRIC_ORDER = [
     "grad/move_belief_share",
     "grad/move_belief_norm_shared",
     "grad/move_belief_policy_cosine",
-    "grad/latent_share",
-    "grad/latent_norm_shared",
-    "grad/latent_policy_cosine",
     "grad/move_latent_share",
     "grad/move_latent_norm_shared",
     "grad/move_latent_policy_cosine",
-    "grad/win_prob_share",
-    "grad/win_prob_norm_shared",
-    "grad/win_prob_policy_cosine",
     # Effective-rank probe (always on): how many dims each readout actually uses (rank_metrics.py).
     # trunk = shared body (the capacity-utilization signal); value_cls = critic readout (runs low);
     # policy = actor rep (runs higher → the n90/n95/n99 percentile counts are the view).

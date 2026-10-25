@@ -159,14 +159,6 @@ def test_the_cross_era_warning(tmp_path):
     assert "CROSS-ERA" in era_mod.cross_era_warning(str(a), str(nxt))
 
 
-def test_the_critic_gate_ladder_section_carries_the_cross_era_warning():
-    # the wiring: ladder_section's result has an `era_warning` key fed by cross_era_warning
-    import inspect
-    from main import critic_gate
-    src = inspect.getsource(critic_gate.ladder_section)
-    assert '"era_warning": cross_era_warning(run["run_dir"], parent["run_dir"])' in src
-
-
 def test_the_elo_headline_names_the_era(tmp_path):
     from main import elo
     a = _run(tmp_path, "rb_a", era_mod.ERAS[0])

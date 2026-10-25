@@ -1,7 +1,7 @@
 """THE TRAINING-SIDE VALUE SIDECAR (`gen3_value_sidecar_v1`, 2026-09-08).
 
 **WHY THIS EXISTS.** Every instrument this project owns that reads the critic reads EVAL battles —
-`main.critic_gate`, the deleted `critic_read` ladder reader, the prober's `calibration`, the scaffolding gauge, the
+the retired `critic_gate` and `critic_read` readers, the prober's `calibration`, the scaffolding gauge, the
 whole win-prob ladder. Nothing has ever logged the value estimate against **its own training
 target**. That is a real hole and not a cosmetic one, for three reasons:
 

@@ -563,7 +563,7 @@ heavy hitters are the M5 parity gates (`rust_eval/parity*`,
 `extractor_compiles` (compile) and the two mypy-backed static gates on a COLD cache (~45 s on a fresh
 worktree's first gate; since 2026-10-02 they sit in the `static` budget tier above, so that cost is
 declared, not a flake). The fixes that shipped with this table: `3e766294` (a VACUOUS 30 s watchdog
-test), `8dcc32ce` (quota_match −20 s), `aff426f0` (the schedule), `2dcf59c3` (the compile pool),
+test), `8dcc32ce` (a −20 s fix to a since-retired test module), `aff426f0` (the schedule), `2dcf59c3` (the compile pool),
 `a49ddee7` (the anchors smoke), `940ce487` (the Lane H file split). What was profiled and NOT fixed is
 in `TECH_DEBT_BACKLOG.md` §2(b).
 
@@ -1267,8 +1267,8 @@ python -m agents.observation.rust_encoder_benchmark [--decisions 40] [--reps 300
 #   from identical state; phases (sync-bracketed), ablations (incl. `diag_skipped`: an update the
 #   --diagnostics-every cadence skips, at the run's own flags), a per-epoch torch.profiler read (T13).
 #   cuda REFUSES a GPU with any compute process or a live trainer; --tiny is the CPU code-path check
-python3 -m agents.training.learner_benchmark run --device cuda [--k 5] [--warmup 1] [--buffer <pkl>] [--publish <dir>]
-python3 -m agents.training.learner_benchmark run --device cpu --tiny
+python3 -m agents.training.learner_benchmark run --device cuda --run <run> [--k 5] [--warmup 1] [--buffer <pkl>] [--publish <dir>]
+python3 -m agents.training.learner_benchmark run --device cpu --tiny --run <run>   # --run (or --model) is REQUIRED: no default arm
 # HOW FAST IS THIS CARD — the FROZEN GPU suite (T13, the GPU-upgrade decision; FIXTURES only, no run data, so it runs
 #   on a rented box from the public repo): the production update at bf16 + fp32, two larger-micro-batch points (the
 #   VRAM-headroom question), rollout throughput through the real trainer against a fixture self-play pool, nvidia-smi
@@ -1368,10 +1368,12 @@ skipping, blind, until lane C re-measured it. Performance is checked two ways:
 2. **The on-demand update BENCHMARK, at milestones** — after a torch upgrade, before a baseline run, on suspicion:
 
         scripts/ops/gpu_lock.sh timeout 1260 scripts/ops/mem_cap.sh 48 python -m main.compile_inventory run \
-            --stage time --device cuda --keep-prewarm --unbracketed --out-root <dir>        # ≈ 6.5 min, idle GPU
+            --stage time --device cuda --keep-prewarm --unbracketed --run <run> --buffer <pkl> --out-root <dir>   # ≈ 6.5 min, idle GPU
 
-   It times the production update on the pinned 98,304-row buffer (arm C's checkpoint) and reports the profiled compiled
-   share; `learner_benchmark` gives the phase / kernel breakdown. The pinned buffer is reused on the Rust core since lane C
+   It times the production update on a pinned rollout buffer (`--buffer`, a `learner_benchmark` `rollout_buffer.pkl`
+   collected by the checkpoint `--run` / `--model` names; `--buffer` and one of those two are REQUIRED, there is no default
+   arm) and reports the profiled compiled share. The 2026-10-02 read below used arm C's 98,304-row buffer (`ai_v14_02_lbat_ctrl`, config v123),
+   which is pre-era and no longer loads, so a re-run needs a run that loads at HEAD and a buffer collected from it; `learner_benchmark` gives the phase / kernel breakdown. The pinned buffer is reused on the Rust core since lane C
    fixed the tools to leave the trainer's startup update (the fit check's dry `train()`) alone. Its 2026-10-02 read — 40.17 s,
    compiled share 0.892, n = 5 — and the planted-regression and loaded-box units are in
    `designs/research_state/measurements/k6_k8/update_benchmark_fp32/`; **a read, not a baseline: it goes stale, re-run it.**

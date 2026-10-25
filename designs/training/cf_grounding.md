@@ -66,7 +66,6 @@ decision-time handle capture; the python-core refusal row went with the Python c
 | the per-action label arithmetic, the MC-return label | `agents/training/cf_q_labels.py`, `agents/training/cf_mc_return.py` | § PER-ACTION stream |
 | prefix-sharing materialization | `agents/training/obs_materializer.py` | § Prefix-sharing |
 | the win-prob fine-tune, the harvest schema | `agents/training/winprob_finetune.py`, `agents/training/harvest_schema.py` | their own module docstrings |
-| the live critic read | `main/critic_gate.py` | its docstring |
 | the counterfactual rollout driver | DELETED (T27 P6 slice 6d-1; the prober's replay-counterfactual runs on the Rust play-out) | [`../prober/counterfactual_probes.md`](../prober/counterfactual_probes.md) |
 | the prober's counterfactual views | `main/prober/` | [`../prober/counterfactual_probes.md`](../prober/counterfactual_probes.md) |
 

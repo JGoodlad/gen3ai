@@ -310,8 +310,7 @@ block `main.lineage` reads, never re-derived from the curves. It REFUSES (`ArmBo
 `tb/` carries an inherited prefix (`INHERITED_FROM.json`) that the record cannot confirm (no
 `fork_step`, or a different one). Every live-tier TensorBoard reader goes through
 `main.ops.run_ref.scalar_events` (`tb_read`, `killbar`, `stall_exhibit`, `vf_framings`,
-`restart_startup`) and prints where it cut (`floor_line`); `main.critic_gate`'s G7 cuts both the arm's
-rows and the parent's ERA (a forked parent's own cycles only), and `agents.training.elo`'s TB
+`restart_startup`) and prints where it cut (`floor_line`); `agents.training.elo`'s TB
 backfill drops the inherited cycles. `main.dose` excludes the inherited FILE. Display tools that WANT
 the whole history (`main.tb_curate`, `utils.plot_tb`, the TensorBoard UI) keep it; `tb_read
 --include-inherited` shows it on request. Census 2026-10-19: 194 forks in `models/`, 193 with a
