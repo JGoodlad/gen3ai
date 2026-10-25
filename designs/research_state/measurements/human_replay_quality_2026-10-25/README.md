@@ -195,3 +195,7 @@ $PY -m pytest $D/hrq_test.py -q
 
 `results/results.json` holds every number above. The extraction cache reflects the corpus as of 2026-10-25: its
 archive rows (§A's count, §F) include the 79 logs of the partial 10-25 folder beyond `hr_arch_2026-10-24`'s 16,490.
+
+**Adversarial reviews of the plan built on this card:** [`REVIEW_C_reasoning.md`](REVIEW_C_reasoning.md) (the
+architecture's reasoning) and [`REVIEW_B_experiments.md`](REVIEW_B_experiments.md) (X59 / X60's design and causal
+inference; its power numbers are `review_b_power.py`'s).
