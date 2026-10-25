@@ -96,9 +96,15 @@ def build_package(module: torch.nn.Module, static_obs: torch.Tensor, static_mask
     os.environ.setdefault("CUDA_HOME", cuda_home())
     names = weight_names(module)
     wrapped = _WeightsAsInputs(module, names).eval()
+    # NO AUTOGRAD IN THE BUILD (gen3_aot_build_no_grad_v1). The export STORES its example inputs, and the
+    # real-input tuning pass (`AOT_BUILD_CONFIG`) RUNS the Python-wrapper graph on them: a weight that is a
+    # requires-grad Parameter, run with grad mode on, made the wrapper's `extern_kernels.addmm(..., out=buf)`
+    # raise "functions with out=... arguments don't support automatic differentiation" (card, c0d0c9714).
+    # So the export takes DETACHED weights (same storage) and the compile runs under no_grad.
+    example = (static_obs.detach(), static_mask.detach(),
+               *(t.detach() for t in weight_tensors(module, names)))
     with torch.no_grad():
-        ep = torch.export.export(wrapped, (static_obs, static_mask,
-                                           *weight_tensors(module, names)), strict=False)
+        ep = torch.export.export(wrapped, example, strict=False)
     path.parent.mkdir(parents=True, exist_ok=True)
     inductor: Any = torch._inductor               # the torch 2.8 API
     # torch 2.8's AOTI codegen writes `metadata["AOTI_DEVICE_KEY"] = device_type` INTO the
@@ -111,7 +117,7 @@ def build_package(module: torch.nn.Module, static_obs: torch.Tensor, static_mask
     # the only device this backend serves (`ServiceSpec` refuses another)
     from agents.model.inductor_compile import inductor_options
     with inductor_config.patch({"aot_inductor.metadata": {}, **AOT_BUILD_CONFIG,
-                                **inductor_options(static_obs.device)}):
+                                **inductor_options(static_obs.device)}), torch.no_grad():
         pkg = inductor.aoti_compile_and_package(ep, package_path=str(path))
     runner = inductor.aoti_load_package(pkg)
     return runner, names
