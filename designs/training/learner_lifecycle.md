@@ -753,6 +753,14 @@ and the violation is appended to the freeze's sticky list, so a swallowed raise 
 a `random.Random`, a `torch.Generator`). The learner golden's harness pins its update seed BEFORE its
 test freezes (`learner_golden.compute(before_train=...)`), and the K9 golden is unchanged.
 
+**A resume or a fork seeds from ITS run's `--seed`** (`gen3_learner_segment_seed_v1`, `main.train.learner_seed`).
+The trainee's own load still seeds the global streams from the checkpoint's saved seed — a fork's PARENT's:
+every X35 replicate (`--seed 3501`–`3505`, forked from `rb_x26_s2601`) saved `seed 2601`, so all of them, and
+every restart segment, shuffled their (independent) buffers in one shared permutation order
+(`gigo_audit_datapath_2026-10-26`). After the load the trainer records `--seed` and seeds the streams from
+`learner_segment_seed(--seed, num_timesteps)`, before the freeze; `check_declared_seed` (FATAL_CONFIG) guards
+both `learn()` calls.
+
 Its limits are deterministic and stated:
 - A state RESTORE (`setstate` / `set_state` / `set_rng_state`) is not a seed and is not guarded.
 - A name bound before arming bypasses the wrappers, so the static twin

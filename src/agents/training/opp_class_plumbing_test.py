@@ -64,6 +64,53 @@ def test_the_shift_drops_a_pair_that_spans_an_episode_boundary():
     assert shifted[1, 0, 0] == 0                          # row 1's successor is another battle
 
 
+def _aligned_opp_class(cls_rows, starts_rows):
+    """`train()`'s REAL alignment (`TrainSetup._align_opp_intent_labels`) on a one-column buffer stub."""
+    from types import SimpleNamespace
+
+    from agents.training.instrumented_ppo.train_setup import TrainSetup
+    from agents.training.opp_intent_labels import KIND_MOVE
+
+    n = len(cls_rows)
+    obs = {"opp_action_kind": np.full((n, 1, 1), KIND_MOVE, dtype=np.int64),
+           "opp_action_num": np.arange(n, dtype=np.int64).reshape(n, 1, 1),
+           "opp_switch_slot": np.zeros((n, 1, 1), dtype=np.int64),
+           "opp_switch_species": np.zeros((n, 1, 1), dtype=np.int64),
+           "opp_class": np.asarray(cls_rows, dtype=np.int64).reshape(n, 1, 1)}
+    stub = SimpleNamespace(opp_intent_coef=0.05, rollout_buffer=SimpleNamespace(
+        observations=obs, episode_starts=np.asarray(starts_rows, dtype=np.float32).reshape(n, 1)))
+    TrainSetup._align_opp_intent_labels(stub)                     # type: ignore[arg-type]
+    return obs
+
+
+def test_a_dropped_row_keeps_its_own_opp_class_not_the_bot_code():
+    """gigo_audit_datapath_2026-10-26: the shift's scalar fill 0 IS `OPP_CLASS_BOT`, so every game's LAST
+    row (its successor starts the next game) and every column's last row was re-labelled a BOT row in
+    the per-class metrics (`ridealong/rnd*_z_<class>`, the intent fold's per-class rates). Two self-play
+    games (class 2) in one column: no row may read as a bot. FAILS on revert of the per-row fill."""
+    from agents.model.opp_intent import OPP_CLASS_BOT
+
+    obs = _aligned_opp_class([2, 2, 2, 2, 2, 2], [1, 0, 0, 1, 0, 0])
+    assert OPP_CLASS_BOT != 2
+    assert obs["opp_class"][:, 0, 0].tolist() == [2] * 6
+    # the intent labels themselves are still dropped at the game boundary and the column end
+    from agents.training.opp_intent_labels import KIND_UNKNOWN
+    assert obs["opp_action_kind"][:, 0, 0].tolist()[2] == KIND_UNKNOWN
+    assert obs["opp_action_kind"][:, 0, 0].tolist()[5] == KIND_UNKNOWN
+
+
+def test_a_class_change_inside_one_game_is_refused_before_the_shift():
+    """The shift's premise (a buffer column is one game's consecutive rows) is checked FAIL-CLOSED: a
+    per-episode key that changes with no episode start raises, naming the cell."""
+    import pytest
+
+    from agents.training.opp_intent_labels import EpisodeKeyNotConstant
+
+    _aligned_opp_class([0, 0, 3, 3], [1, 0, 1, 0])               # a change AT a start is a new game: fine
+    with pytest.raises(EpisodeKeyNotConstant, match="rows 1 and 2"):
+        _aligned_opp_class([0, 0, 3, 3], [1, 0, 0, 0])
+
+
 # ── hop 4: the rollout buffer keeps it paired through the shuffle ──────────────────────────
 
 def test_the_buffer_shuffle_keeps_opp_class_paired_with_its_label():

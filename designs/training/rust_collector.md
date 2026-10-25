@@ -207,7 +207,10 @@ EXACTLY from its key (`rust_env_opponents_parity.py` mode `keyed`) — not speed
 ~0.13 / 0.25 / 0.38 ms at 8 / 40 / 48 rows either way (F-LE-8's "5.1 ms of sampling" was the host
 waiting for the forward, corrected 2026-09-30), so the keyed draw saves ~0.2 ms a step at most. The
 RUN SEED is a hash of `--seed` and `num_timesteps` at the process's startup, so a launcher restart
-never replays the first segment's teams, battle seeds or draws; a core RESPAWN re-derives it too.
+never replays the first segment's teams, battle seeds or draws; a core RESPAWN re-derives it too. The
+scripted bots' route seed is keyed to it as well (`rust_env_setup.bot_route_seed`, `gen3_bot_seed_keyed_v1`,
+recorded as `env_core.bot_seed`): it was the constant 0, so every run, replicate and segment replayed one bot
+stream (`gigo_audit_datapath_2026-10-26`). A respawned core keeps its spec's bot seed (residual).
 
 ## Every micro-batch is full — no padding, no drop
 

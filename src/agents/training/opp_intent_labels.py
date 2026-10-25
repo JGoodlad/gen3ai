@@ -146,17 +146,44 @@ def align_labels_to_predictions(labels, episode_starts, fill):
         shape check and no loss curve would reveal.
 
     Pure and array-library-agnostic (numpy or torch), so it is testable without a rollout.
-    `fill` is the masked-out value (`INTENT_IGNORE` / `SWITCH_SLOT_NONE`).
+    `fill` is the masked-out value (`INTENT_IGNORE` / `SWITCH_SLOT_NONE`), a scalar, or an ARRAY of
+    `labels`' shape whose own row is written at every dropped row — the form a per-EPISODE key takes
+    (`opp_class`: a dropped row keeps its own class; a scalar fill would be a real class code,
+    `OPP_CLASS_BOT` = 0, stamped on every game's last row — `gigo_audit_datapath_2026-10-26`).
     """
     out = labels.copy() if hasattr(labels, "copy") else labels.clone()
     out[:-1] = labels[1:]
-    out[-1] = fill
+    per_row = hasattr(fill, "shape") and tuple(fill.shape) == tuple(labels.shape)
+    out[-1] = fill[-1] if per_row else fill
     # `episode_starts[i+1] == 1` ⇒ row i+1 opens a new episode ⇒ row i's pair is invalid.
     starts_next = episode_starts[1:]
     if hasattr(out, "shape"):
         sel = starts_next > 0.5
-        out[:-1][sel] = fill
+        out[:-1][sel] = fill[:-1][sel] if per_row else fill
     return out
+
+
+class EpisodeKeyNotConstant(ValueError):
+    """A per-EPISODE key (``opp_class``) changed between two rows of one game in a buffer column: the
+    rows of a column are not one game's consecutive decisions, so every one-ahead label shift is wrong."""
+
+
+def check_constant_within_episodes(values, episode_starts, key: str) -> None:
+    """FAIL-CLOSED producer/consumer check of the one-ahead shift's premise: inside every ``[n_steps,
+    n_envs]`` column, a per-episode key is the same on row i and row i + 1 unless row i + 1 starts an
+    episode. Raises `EpisodeKeyNotConstant` naming the first offending cell."""
+    import numpy as _np
+
+    v = _np.asarray(values).reshape(_np.asarray(values).shape[0], _np.asarray(values).shape[1], -1)
+    s = _np.asarray(episode_starts).reshape(v.shape[0], v.shape[1])
+    same_game = s[1:] <= 0.5
+    differs = (v[1:] != v[:-1]).any(axis=-1) & same_game
+    if bool(differs.any()):
+        i, j = (int(x) for x in _np.argwhere(differs)[0])
+        raise EpisodeKeyNotConstant(
+            f"{key}: buffer column {j} changes from {v[i, j].tolist()} to {v[i + 1, j].tolist()} between rows {i} "
+            f"and {i + 1} with no episode start — the column is not one game's consecutive rows "
+            f"({int(differs.sum())} such pairs)")
 
 
 def zero_opp_intent_label() -> Tuple[int, int, int, int]:

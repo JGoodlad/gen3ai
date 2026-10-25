@@ -13,6 +13,8 @@ checkpoint's n_steps / batch_size / gamma / gae_lambda, so they are read off the
 """
 from __future__ import annotations
 
+import dataclasses
+
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from main.launcher.ipc import emit as _emit
@@ -202,6 +204,16 @@ def segment_seed(seed: int, num_timesteps: int) -> int:
     return int(KD.draw_keys(int(seed or 0) & 0x7FFFFFFFFFFFFFFF, 9, 0, int(num_timesteps), 0)) & 0x7FFFFFFFFFFF
 
 
+def bot_route_seed(run_seed: int) -> int:
+    """The training core's scripted-bot route seed for THIS segment (`gen3_bot_seed_keyed_v1`): a keyed hash of the
+    collector's run seed, so the bots' streams differ across ``--seed`` replicates and restart segments as every
+    other collector stream does. It was a constant 0 (`OpponentPlan.bot_seed`): every run, every replicate and
+    every restart replayed the same bot draws (`gigo_audit_datapath_2026-10-26`)."""
+    from agents.training import keyed_draw as KD
+
+    return int(KD.draw_keys(int(run_seed) & 0x7FFFFFFFFFFFFFFF, 14, 0, 0, 0)) & 0x7FFFFFFFFFFF
+
+
 def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, opponent_teambuilder: Any,
                        opponent_names: Sequence[str], bot_weights: Optional[Sequence[float]],
                        fixed_opponents: Sequence[Any], exploiter_entry: Any, snapshot_dir: Optional[str],
@@ -236,6 +248,7 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
         from agents.training.snapshot_pool import SnapshotPool
 
         run_seed = segment_seed(getattr(args, "seed", 0), int(model.num_timesteps))
+        seg_plan = dataclasses.replace(plan, bot_seed=bot_route_seed(run_seed))   # gen3_bot_seed_keyed_v1
         decl = RustEnvDecl(
             n_envs=int(n_envs), threads=int(args.rust_env_threads), front=args.rust_env_front,
             profile=args.rust_env_profile, n_steps=int(model.n_steps),
@@ -281,7 +294,7 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
             from agents.training.rust_eval.build import eval_extra_slots
 
             extra = tuple(eval_extra_slots(edecl, model.policy, sources.stable))
-        col = build_collector(decl, obs_space=obs_space, trainee_policy=model.policy, plan=plan, sources=sources,
+        col = build_collector(decl, obs_space=obs_space, trainee_policy=model.policy, plan=seg_plan, sources=sources,
                               trainee_builder=trainee_teambuilder, opponent_builder=opponent_teambuilder,
                               route_builders=route_builders,
                               team_wr_tracking=bool(getattr(args, "team_wr_tracking", True)), emit=emit,
@@ -340,6 +353,7 @@ def env_core_stamp(decl: Any, col: Any) -> Dict[str, Any]:
                **({"grouped_opponents": True} if decl.grouped_opponents else {})},  # X45: ON only
         "opponent_sampling": "keyed", "keyed_draw": "gen3_keyed_draw_v1",
         "run_seed": decl.run_seed,
+        "bot_seed": int(getattr(getattr(getattr(col, "opponents", None), "plan", None), "bot_seed", 0)),
         # gen3_reveal_provenance_v1: the reveal the ENV CORE was DECLARED at (`RustEnvDecl.oracle_reveal`, resolved from
         # the run config) -- the authoritative source `metadata.json`'s `oracle_reveal` copies (`run_io.run_reveal`)
         "oracle_reveal": decl.oracle_reveal,

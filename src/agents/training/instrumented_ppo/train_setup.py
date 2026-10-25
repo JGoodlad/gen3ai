@@ -80,8 +80,13 @@ class TrainSetup:
             _obs_buf = getattr(self.rollout_buffer, "observations", None)
             if isinstance(_obs_buf, dict) and "opp_action_kind" in _obs_buf:
                 from agents.training.opp_intent_labels import (KIND_UNKNOWN, SWITCH_SLOT_NONE,
-                                                               align_labels_to_predictions)
+                                                               align_labels_to_predictions,
+                                                               check_constant_within_episodes)
                 _starts = self.rollout_buffer.episode_starts
+                # THE SHIFT'S PREMISE, fail-closed: a buffer column is one game's consecutive rows, so the
+                # per-episode `opp_class` cannot change inside a game (`EpisodeKeyNotConstant`).
+                if "opp_class" in _obs_buf:
+                    check_constant_within_episodes(_obs_buf["opp_class"], _starts, "opp_class")
                 # EVERY one-ahead intent key must be shifted, including `opp_switch_species`.
                 # It was omitted originally, so beta's CONTENT-ADDRESSED target read the species of
                 # decision t-1 against the kind/slot of decision t. That is not merely wrong, it is
@@ -97,8 +102,13 @@ class TrainSetup:
                                   # row-aligned by the same rule. A reader should never have to
                                   # remember which of these keys was shifted and which was not;
                                   # that asymmetry is what produced the bug documented above.
-                                  ("opp_class", 0)):
-                    _obs_buf[_k] = align_labels_to_predictions(_obs_buf[_k], _starts, _fill)
+                                  # Its fill is each row's OWN class (None below): a scalar 0 is
+                                  # OPP_CLASS_BOT, and stamped every game's last row (and every
+                                  # column's last row) as a bot row in the per-class metrics
+                                  # (`gigo_audit_datapath_2026-10-26`).
+                                  ("opp_class", None)):
+                    _src = _obs_buf[_k]
+                    _obs_buf[_k] = align_labels_to_predictions(_src, _starts, _src if _fill is None else _fill)
 
     def _behaviour_probe(self) -> None:
         # +K9(b) BEHAVIOUR-POLICY CONSISTENCY + the STALENESS probe (M5 Lane G): one learner forward

@@ -73,6 +73,30 @@ def test_a_restart_segment_draws_a_different_run_seed():
     assert 0 <= segment_seed(7, 5) < 2 ** 47
 
 
+def test_the_training_bots_are_keyed_to_the_segment_not_a_constant():
+    """gen3_bot_seed_keyed_v1 (`gigo_audit_datapath_2026-10-26`): the scripted bots' route seeds were the
+    constant `OpponentPlan.bot_seed` 0 in EVERY training run, so replicates `--seed 3501` ... `3505` and every
+    restart segment replayed one bot stream. Now each segment's spec rows carry a seed keyed to its run seed;
+    the wiring is pinned too (FAILS on revert: `build` hands the collector the per-segment plan)."""
+    import dataclasses
+    import inspect
+
+    from agents.training import rust_env_opponents as E
+    from main.train import rust_env_setup as RS
+
+    plan = E.OpponentPlan(bots=("random", "max_damage"))
+    seeds = set()
+    for s in range(3501, 3506):
+        for t in (280_000_170, 286_396_721):
+            rows = dataclasses.replace(plan, bot_seed=RS.bot_route_seed(RS.segment_seed(s, t))).spec_rows(bots="core")
+            seeds.add(tuple(r["seed"] for r in rows if r["kind"] == "bot"))
+    assert len(seeds) == 10
+    assert all(0 <= x < 2 ** 48 for row in seeds for x in row)
+    src = inspect.getsource(RS.build_rust_vec_env)
+    assert "seg_plan = dataclasses.replace(plan, bot_seed=bot_route_seed(run_seed))" in src
+    assert "plan=seg_plan" in src and "plan=plan," not in src
+
+
 def test_every_save_records_the_env_core():
     from main.train.run_io import _model_hparams
 

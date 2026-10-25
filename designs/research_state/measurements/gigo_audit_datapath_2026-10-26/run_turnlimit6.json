@@ -1,0 +1,16 @@
+{
+ "counts": {
+  "E_max_dlogp_e9": 715,
+  "E_max_dvalue_e9": 447,
+  "E_rows": 719,
+  "G_truncated": 120,
+  "adjacent_pairs": 744,
+  "cells": 768,
+  "checked": 768,
+  "dupes_at_play": 0,
+  "games": 120,
+  "played": 783,
+  "wins": 0
+ },
+ "fails": {}
+}

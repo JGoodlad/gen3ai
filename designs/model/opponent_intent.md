@@ -92,6 +92,10 @@ opponent never picked).
 obs for t+1, so `instrumented_ppo` shifts the label block back one row **before `get()` shuffles**
 and drops any pair whose successor starts an episode (`align_labels_to_predictions`). Skipping that
 drop splices one battle's first decision onto another's last board — invisible in every metric.
+`opp_class` rides the same shift but a dropped row keeps its OWN class (a scalar fill 0 is `OPP_CLASS_BOT`,
+which stamped every game's last row as a bot row in `ridealong/rnd*_z_bot` and `opp_intent/other_*_rate_bot`
+until `gigo_audit_datapath_2026-10-26`), and a class change inside one game is refused before the shift
+(`EpisodeKeyNotConstant`).
 
 ## Reading `opp_intent/*` — the per-class split, and the whole path to a human
 

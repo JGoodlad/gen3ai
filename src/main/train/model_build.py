@@ -297,6 +297,12 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         model.ent_coef = args.ent_coef          # resume-only: the fresh path passes it to the ctor
         # Every training-only hparam, from the one table shared with the fresh path below.
         apply_training_hparams(model, args, mappings=mappings)
+        # gen3_learner_segment_seed_v1: the load seeded the global streams from the CHECKPOINT's saved seed (a
+        # fork's PARENT's); record THIS run's --seed and seed this segment's streams (`main.train.learner_seed`).
+        from main.train.learner_seed import seed_loaded_learner
+        _seg_seed = seed_loaded_learner(model, args.seed)
+        print(f"[LearnerSeed] --seed {args.seed}: the learner's global streams seeded {_seg_seed} for the segment "
+              f"at step {model.num_timesteps:,} (gen3_learner_segment_seed_v1)")
         # K9(b): where a behaviour violation's row dump is appended (`consistency.VIOLATION_DUMP`).
         model.behaviour_dump_dir = model_dir
         model.vf_coef = args.vf_coef  # == the saved value (enforced above); set explicitly for parity
@@ -483,6 +489,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             # printed "915,520 remaining of 25,000,000" and kept going 1M steps past the target —
             # the message was computed correctly and then not used. gen-9 hit this too (it was at
             # 26M against a 25M budget and had to be killed by hand); gen-10 reached 26.05M.
+            from main.train.learner_seed import check_declared_seed
+            check_declared_seed(model, args.seed)      # gen3_learner_segment_seed_v1: FATAL_CONFIG on a mismatch
             model.learn(total_timesteps=remaining_steps, callback=callbacks,
                         reset_num_timesteps=False)
         except Exception as e:
@@ -653,6 +661,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             # FRESH run: `num_timesteps` is 0, so SB3's `total_timesteps += num_timesteps` is a
             # no-op and the absolute target is correct here. The RESUME site must pass the REMAINING
             # budget instead — see the note there.
+            from main.train.learner_seed import check_declared_seed
+            check_declared_seed(model, args.seed)      # gen3_learner_segment_seed_v1: FATAL_CONFIG on a mismatch
             model.learn(total_timesteps=args.steps, callback=callbacks, reset_num_timesteps=False)
         except Exception as e:
             # Claim the exit (P10-A2; see the resume path): the crash's exit code, never the fallback's 15.
