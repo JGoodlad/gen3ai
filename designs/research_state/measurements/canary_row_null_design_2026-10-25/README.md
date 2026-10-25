@@ -1,6 +1,13 @@
-# The canary's per-row dither-null clip margin: DESIGNED, NOT BUILT (2026-10-25)
+# The canary's per-row dither-null clip margin: DESIGNED; its null RECORDED as a shadow (2026-10-25)
 
-**Status.** A design with its calibration evidence and the scripts that settle it. Not built: four judgement calls below
+**Status (update, 2026-10-25).** The cheaper path below is BUILT with the orchestrator's go: every canary computes this
+design's null (rule 1, verbatim: 64 unique rows, K = 16 fixed name-keyed seeds, relative 2^-9, fp32 'highest') and
+records it as `row_null` beside each arm's per-row |Δ log π| and ratio, judging NOTHING (`gen3_canary_row_null_shadow_v1`,
+`src/agents/model/canary_row_null.py`; the record: `designs/training/learner_lifecycle.md`, the canary). Measured cost:
+CPU 3.3-3.5 s per canary on the K9 golden learner (0.17-0.20 s per B = 64 forward, 3 agent cores beside a live run);
+GPU UNVERIFIED; capped at 5 s, a skip recorded. The margin rule itself (rules 2-5) is still not built.
+
+**Status (original).** A design with its calibration evidence and the scripts that settle it. Not built: four judgement calls below
 cannot be settled from the CPU data (open questions 1-4), and the brief's rule was "build only if it is clean". Built in
 the same unit instead: the near-margin weight dump (`gen3_canary_near_margin_dump_v1`, `compile_canary.py`), so the next
 near-miss leaves its weights behind. Source of the problem: `../x26c_canary_margin_2026-10-25/README.md` (fa682e92), and
@@ -115,7 +122,9 @@ canary (cost and memory: the GPU estimate above), so it is not built here unaske
   `python derive_k.py ../x26c_canary_margin_2026-10-25/results` reproduces `results/calibration_cpu.json`.
 - `null_cost.py --ckpt <zip> --out cost.json [--device cpu|cuda] [--k 16] [--vf-coef 0.5]` measures the cost.
   `--vf-coef` is typed through because a re-read of an X26-lineage checkpoint is otherwise refused (finding F7 of the
-  x26c README; the value is the run's `model_config.json` 0.5, and it weights the critic only).
+  x26c README; the value is the run's `model_config.json` 0.5, and it weights the critic only). F7's root cause was a
+  checkpoint zip the run's retention had REMOVED; since 2026-10-25 that is refused as "checkpoint file not found"
+  (`checkpoint_state.require_checkpoint`), so `--vf-coef` is no longer needed for a zip that exists.
 - `census_read.py --run-dir <models/run> --at 330M --out D [--device cuda] [--dither 32]` reads one checkpoint, every
   fixture row as a row of interest, with `--compiled`. At this checkout it reproduces the pin's 478M eager per-row read
   bit-identically (max difference 0.0, CPU smoke).
@@ -129,3 +138,4 @@ canary (cost and memory: the GPU estimate above), so it is not built here unaske
 | date | decision | why |
 |---|---|---|
 | 2026-10-25 | Design only; the near-margin dump built instead | open questions 1-4 move a bar or the gradient rule's fixture on CPU data alone, and the only CUDA points are cross-weight |
+| 2026-10-25 | The null built as a recorded-only shadow in every canary (orchestrator's go) | it closes open questions 1-3 from production CUDA canaries without a GPU window, and judges nothing |

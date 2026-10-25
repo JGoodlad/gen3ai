@@ -10,6 +10,32 @@ import sys
 import torch
 
 
+class CheckpointNotFoundError(FileNotFoundError):
+    """A `--model` path names no checkpoint on disk (`require_checkpoint`). FATAL_CONFIG: re-running cannot create it."""
+
+
+def require_checkpoint(model_path: str) -> str:
+    """The checkpoint zip a `--model` path names (`snapshot._resolve_paths`' candidates: the path, ``.zip``, a run
+    dir's ``final_model.zip`` / ``best_model.zip``), or `CheckpointNotFoundError` saying FILE NOT FOUND.
+
+    THE CLASS IT CLOSES (2026-10-25, the x26c re-read F7 / 0dcf0ea4 FINDING 6). A checkpoint the run's retention had
+    removed (its ``.json`` step sidecar left behind) read as "no saved config", so the launch resolution refused
+    "--vf-coef (the checkpoint's model_config.json)" although the run dir's config records ``vf_coef`` — and with
+    ``--vf-coef`` typed, it trained on to "the run's resolved --trunk-precision is 'fp32'" (the untyped fp32
+    default). A missing checkpoint is now named as itself, first."""
+    from agents.model.snapshot import _resolve_paths
+    try:
+        zip_path, _ = _resolve_paths(model_path)
+        return zip_path
+    except FileNotFoundError as exc:
+        hint = ""
+        stem = model_path[:-4] if model_path.endswith(".zip") else model_path
+        if os.path.exists(stem + ".json"):
+            hint = (f"; its step sidecar {stem}.json exists, so the zip was REMOVED after it was written (checkpoint "
+                    "retention keeps only the newest; an archived copy must be read where it now lives)")
+        raise CheckpointNotFoundError(f"--model {model_path}: checkpoint file not found ({exc}){hint}") from exc
+
+
 def _load_saved_version(model_path: str):
     """Best-effort read of a checkpoint's saved ModelVersion (its model_config.json).
 
@@ -17,21 +43,18 @@ def _load_saved_version(model_path: str):
     distinguish "could not determine" from a real value (rather than silently fail-safe to a default
     and then FATAL at the version check). Used to let a flagless resume INHERIT every version-checked
     structural toggle (opp_belief_cls_k / move_belief_mode / damage_op)
-    + the belief coef, so the documented `--model … --steps …` resume works uniformly."""
+    + the belief coef, so the documented `--model … --steps …` resume works uniformly.
+
+    A `model_path` that names NO checkpoint raises `CheckpointNotFoundError` (`require_checkpoint`): "could not
+    determine" is never the answer for a file that is not there. The config read is THE one resolver
+    (`shaped_reward.saved_config_path`: the checkpoint's directory, then its parent), the same file every launch-path
+    refusal reads."""
+    require_checkpoint(model_path)
     try:
-        from agents.model.snapshot import _resolve_paths
         from agents.model.model_version import ModelVersion
-        _, cfg_dir = _resolve_paths(model_path)
-        cfg = os.path.join(cfg_dir, "model_config.json")
-        if not os.path.exists(cfg):
-            # The checkpoint may live in <run>/checkpoints/ while the run-level
-            # model_config.json stays at the run root — search the parent too (mirroring
-            # load_model_snapshot). Without this, a flagless resume of a toggle-ON run reads
-            # no saved version, falls back to OFF defaults, and FATALs at the arch check.
-            parent_cfg = os.path.join(os.path.dirname(cfg_dir), "model_config.json")
-            if os.path.exists(parent_cfg):
-                cfg = parent_cfg
-        if os.path.exists(cfg):
+        from agents.model.model_version.shaped_reward import saved_config_path
+        cfg = saved_config_path(model_path)
+        if cfg is not None:
             return ModelVersion.from_json_file(cfg)
     except Exception as e:
         print(f"[Resume] WARNING: could not read saved model_config.json from {model_path}: {e}")

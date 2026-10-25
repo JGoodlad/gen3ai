@@ -84,6 +84,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
 
+from agents.model import canary_row_null
 from agents.model import compile_trainer as ct
 
 #: Updates between canaries (owner, 2026-10-01: 100; a production update is ~36 s on K8, so ~1 h).
@@ -107,10 +108,13 @@ WATCH_PREFIXES: Tuple[str, ...] = ("pointer_head.",)
 #: production launch.
 FIRST_ENV = "GEN3AI_CANARY_FIRST"
 #: THE WEIGHT DUMP (gen3_r1_yardstick_margin_v1, 2026-10-19): an UNCONFIRMED or FATAL verdict writes the policy's
-#: `state_dict` (``canary_u<update>_<verdict>_policy.pt``, ~40 MB) beside its record, so the weights a disagreement was
-#: read on can be re-read offline (the X34 u1700 weights were never saved, and its row is unrecoverable). At most this
-#: many per PROCESS (`_WEIGHT_DUMPS`, a module counter: no checkpoint carries it), like K9(b)'s cap
-#: (`rust_rollout.consistency._DUMP_WEIGHTS_MAX`, T61).
+#: `state_dict` (``canary_u<update>_s<steps>_<verdict>_policy.pt``, ~40 MB) beside its record, so the weights a
+#: disagreement was read on can be re-read offline (the X34 u1700 weights were never saved, and its row is
+#: unrecoverable). NAMED BY THE GLOBAL STEP and NEVER OVERWRITTEN (`gen3_canary_dump_no_clobber_v1`, 2026-10-25): the
+#: update number restarts at 0 in every process, so a post-restart dump used to overwrite an earlier one of the same
+#: update; a name already taken (a resume from the same checkpoint reaches the same update AND step) gets ``_r<n>``
+#: (`_save_new`). At most this many per PROCESS (`_WEIGHT_DUMPS`, a module counter: no checkpoint carries it), like
+#: K9(b)'s cap (`rust_rollout.consistency._DUMP_WEIGHTS_MAX`, T61).
 DUMP_WEIGHTS_MAX = 3
 _WEIGHT_DUMPS = 0
 #: THE NEAR-MARGIN DUMP (`gen3_canary_near_margin_dump_v1`, 2026-10-25; the X26 continuation's u1000 PASS at compiled
@@ -128,6 +132,11 @@ NEAR_MARGIN_FRACTION = 0.9
 #: Independent of `DUMP_WEIGHTS_MAX` (an UNCONFIRMED / FATAL dump is never rotated away by a near-margin one).
 NEAR_MARGIN_KEEP = 3
 NEAR_MARGIN_SUFFIX = "_near_policy.pt"
+#: THE SHADOW PER-ROW NULL (`gen3_canary_row_null_shadow_v1`, 2026-10-25, orchestrator-approved; `canary_row_null`):
+#: every canary records each golden row's fp32 dither null and each arm's per-row |Δ log π| / null as ``row_null``,
+#: judging NOTHING — a CUDA census row for the per-row margin's k at every production canary. A test seam turns it
+#: off per canary (`CompileCanary(row_null=False)`); ``$GEN3AI_CANARY_ROW_NULL_CAP_S`` 0 turns it off for a process.
+ROW_NULL_ON = True
 
 
 def _first_from_env() -> Optional[int]:
@@ -160,19 +169,46 @@ def _what(exc: BaseException) -> str:
             if _yardstick_refused(exc) else "compiled DISAGREES with eager")
 
 
-def _dump_weights(model: Any, run_dir: Optional[str], update: int, verdict: str) -> Optional[str]:
-    """Write the policy's `state_dict` for an unconfirmed / FATAL verdict (`DUMP_WEIGHTS_MAX` per process). Returns
-    the file name written, ``"cap"`` when this process has used its cap, None with no run directory or on an
-    OSError (diagnostics: the verdict stands either way)."""
+#: The most ``_r<n>`` suffixes `_save_new` tries before it gives up (diagnostics: the verdict stands either way).
+_SAVE_NEW_TRIES = 100
+
+
+def _save_new(model: Any, run_dir: str, stem: str, tag: str) -> Optional[str]:
+    """Write the policy's `state_dict` as ``<stem>_<tag>_policy.pt`` in ``run_dir`` — or, when that name is TAKEN, as
+    ``<stem>_r2_<tag>_policy.pt``, ``_r3`` … — and NEVER over an existing file (`gen3_canary_dump_no_clobber_v1`): a
+    temp file, then `os.link` (which refuses an existing target), then the temp file removed. Returns the name written,
+    None on an OSError or when every try is taken."""
+    sd = {k: v.detach().cpu() for k, v in model.policy.state_dict().items()}
+    tmp = os.path.join(run_dir, f".{stem}_{tag}_policy.pt.{os.getpid()}.tmp")
+    try:
+        torch.save(sd, tmp)
+        for i in range(1, _SAVE_NEW_TRIES + 1):
+            name = f"{stem}_{tag}_policy.pt" if i == 1 else f"{stem}_r{i}_{tag}_policy.pt"
+            try:
+                os.link(tmp, os.path.join(run_dir, name))
+            except FileExistsError:
+                continue
+            return name
+        return None
+    except OSError:
+        return None
+    finally:
+        with contextlib.suppress(OSError):
+            os.remove(tmp)
+
+
+def _dump_weights(model: Any, run_dir: Optional[str], update: int, verdict: str, steps: int = 0) -> Optional[str]:
+    """Write the policy's `state_dict` for an unconfirmed / FATAL verdict (`DUMP_WEIGHTS_MAX` per process) as
+    ``canary_u<update>_s<steps>_<verdict>_policy.pt``, never over an existing file (`_save_new`). Returns the file
+    name written, ``"cap"`` when this process has used its cap, None with no run directory or on an OSError
+    (diagnostics: the verdict stands either way)."""
     global _WEIGHT_DUMPS
     if not run_dir:
         return None
     if _WEIGHT_DUMPS >= DUMP_WEIGHTS_MAX:
         return "cap"
-    name = f"canary_u{int(update)}_{verdict}_policy.pt"
-    try:
-        torch.save({k: v.detach().cpu() for k, v in model.policy.state_dict().items()}, os.path.join(run_dir, name))
-    except OSError:
+    name = _save_new(model, run_dir, f"canary_u{int(update)}_s{int(steps)}", str(verdict))
+    if name is None:
         return None
     _WEIGHT_DUMPS += 1
     return name
@@ -241,19 +277,14 @@ def near_margin(fractions: Dict[str, Dict[str, Any]]) -> List[str]:
 
 
 def _dump_near_margin(model: Any, run_dir: Optional[str], update: int, steps: int) -> Optional[str]:
-    """Write the policy's `state_dict` for a near-margin PASS (atomically: a temp file, then a rename), then ROTATE: keep
-    only the newest `NEAR_MARGIN_KEEP` ``canary_*_near_policy.pt`` of the run dir (by write time, then name). Returns
-    the file name written, None with no run directory or on an OSError (diagnostics: the PASS stands either way)."""
+    """Write the policy's `state_dict` for a near-margin PASS (atomically, never over an existing file: `_save_new`),
+    then ROTATE: keep only the newest `NEAR_MARGIN_KEEP` ``canary_*_near_policy.pt`` of the run dir (by write time,
+    then name). Returns the file name written, None with no run directory or on an OSError (diagnostics: the PASS
+    stands either way)."""
     if not run_dir:
         return None
-    name = f"canary_u{int(update)}_s{int(steps)}{NEAR_MARGIN_SUFFIX}"
-    path = os.path.join(run_dir, name)
-    try:
-        torch.save({k: v.detach().cpu() for k, v in model.policy.state_dict().items()}, path + ".tmp")
-        os.replace(path + ".tmp", path)
-    except OSError:
-        with contextlib.suppress(OSError):
-            os.remove(path + ".tmp")
+    name = _save_new(model, run_dir, f"canary_u{int(update)}_s{int(steps)}", NEAR_MARGIN_SUFFIX[1:-len("_policy.pt")])
+    if name is None:
         return None
     with contextlib.suppress(OSError):
         kept = []
@@ -323,7 +354,8 @@ class CompileCanary:
                  emit: Optional[Callable[[str], None]] = None,
                  every: int = CANARY_EVERY,
                  saver: Optional[Callable[[str], None]] = None,
-                 first: Optional[int] = None) -> None:
+                 first: Optional[int] = None,
+                 row_null: Optional[bool] = None) -> None:
         self.model = model
         self.batch_size = int(batch_size)
         self.every = max(1, int(every))
@@ -342,6 +374,16 @@ class CompileCanary:
         self.memory: Dict[str, float] = {}   # the last check's card (gen3_canary_memory_v1; CUDA only)
         self.prev_disagreed = False     # the previous SCHEDULED canary disagreed (unconfirmed)
         self.last: Dict[str, float] = {}
+        #: gen3_canary_row_null_shadow_v1: compute + record the shadow per-row null at every canary (`ROW_NULL_ON`
+        #: unless the caller says; `canary_row_null`'s cap can still skip it, recorded)
+        self.row_null_on = ROW_NULL_ON if row_null is None else bool(row_null)
+        if self.row_null_on:
+            try:                                        # a malformed cap refuses at STARTUP, never at a canary
+                canary_row_null.cap_seconds()
+            except ValueError as exc:
+                raise ct.CompileTrainerError(str(exc)) from exc
+        self._row_null_raw: Optional[Dict[str, Any]] = None
+        self._w0: Optional[Any] = None
 
     def after_update(self) -> Dict[str, float]:
         """Count one update; run the canary when due. Returns the TB scalars it produced (``{}`` on
@@ -395,8 +437,11 @@ class CompileCanary:
                                "canary_shift_max": self._shift_max_record()}
         if fractions is not None:                           # gen3_canary_near_margin_dump_v1: every judged quantity
             rec["bar_fractions"] = {q: {k: _r4(v) for k, v in d.items()} for q, d in fractions.items()}
+        if self._row_null_raw is not None:                  # gen3_canary_row_null_shadow_v1: recorded, never judged
+            rec["row_null"] = canary_row_null.record(self._row_null_raw, getattr(self._w0, "row_dlogp", None))
         if verdict != "pass":                               # gen3_r1_yardstick_margin_v1: the weights it was read on
-            rec["policy_pt"] = _dump_weights(self.model, _run_dir(self.model), self.updates, verdict)
+            rec["policy_pt"] = _dump_weights(self.model, _run_dir(self.model), self.updates, verdict,
+                                             rec["num_timesteps"])
         elif fractions and near_margin(fractions):          # a PASS near its bar: the weights, rotated per run
             rec["near_margin"] = near_margin(fractions)
             rec["policy_pt"] = _dump_near_margin(self.model, _run_dir(self.model), self.updates, rec["num_timesteps"])
@@ -459,9 +504,18 @@ class CompileCanary:
             f"(FATAL_CONFIG). See designs/training/learner_lifecycle.md (the canary).") from first
 
     def run(self) -> Dict[str, float]:
+        # gen3_canary_row_null_shadow_v1: the SHADOW per-row null on these weights, BEFORE the check and outside its
+        # timer and memory card; it judges nothing (`canary_row_null`), and every record of this canary carries it
+        self._row_null_raw = None
+        if self.row_null_on:
+            try:
+                self._row_null_raw = canary_row_null.compute(self.model)
+            except Exception as exc:                        # noqa: BLE001 — recorded, never a verdict
+                self._row_null_raw = {"error": f"{type(exc).__name__}: {exc}"[:500]}
         out: Dict[str, float] = {}
         t0 = time.perf_counter()
         w0 = self._new_watch()
+        self._w0 = w0
         try:
             rules = self._check(0, out, w0)
         except ct.GateArmsNotIndependentError as first:
@@ -512,6 +566,7 @@ class CompileCanary:
                    "compile/canary_unconfirmed_disagreements": float(self.unconfirmed),
                    "compile/canary_yardstick_events": float(self.yardstick_events),
                    "compile/canary_seconds": time.perf_counter() - t0}
+            out.update(self._row_null_scalars())
             self.last = out
             return out
         self.prev_disagreed = False
@@ -523,6 +578,7 @@ class CompileCanary:
         out["compile/canary_unconfirmed_disagreements"] = float(self.unconfirmed)
         out["compile/canary_yardstick_events"] = float(self.yardstick_events)
         out["compile/canary_seconds"] = time.perf_counter() - t0
+        out.update(self._row_null_scalars())
         if self.memory:
             out["compile/canary_peak_alloc_mib"] = float(self.memory["peak_alloc_mib"])
             out["compile/canary_reserved_mib"] = float(self.memory["reserved_mib"])
@@ -533,8 +589,27 @@ class CompileCanary:
                 f"reserved {self.memory['reserved_mib']:,.0f}" if self.memory else "")
         self._say(f"🐤 [CompileCanary] update {self.updates}: compiled == eager on the fixture "
                   f"({trunk_precision_of(self.model.policy)}, {out['compile/canary_seconds']:.1f} s{memo}) — "
-                  + " | ".join(rules))
+                  + " | ".join(rules) + self._row_null_line())
         return out
+
+    def _row_null_scalars(self) -> Dict[str, float]:
+        """The shadow null's TB scalar (its wall time; absent when it was off) — gen3_canary_row_null_shadow_v1."""
+        raw = self._row_null_raw
+        return {"compile/canary_row_null_seconds": float(raw["seconds"])} if raw and "seconds" in raw else {}
+
+    def _row_null_line(self) -> str:
+        """The PASS line's shadow fragment: the null's worst row and each arm's worst ratio (recorded, NOT judged)."""
+        raw = self._row_null_raw
+        if raw is None:
+            return ""
+        rec = canary_row_null.record(raw, getattr(self._w0, "row_dlogp", None))
+        if "null" not in rec:
+            why = rec.get("skipped") or rec.get("error") or "no null"
+            return f" | row null (shadow, not judged): {why}"
+        arms = ", ".join(f"{a} ratio max {d['ratio']['max']} (row {d['ratio']['argmax_row']})"
+                         for a, d in rec.get("arms", {}).items() if "ratio" in d)
+        return (f" | row null (shadow, not judged; K {rec['seeds_done']}, {rec['seconds']:.2f} s): max "
+                f"{rec['null']['max']} (row {rec['null']['argmax_row']})" + (f"; {arms}" if arms else ""))
 
     def _note_yardstick(self, watches: Dict[str, Any]) -> None:
         """Count and LOG the yardstick-out-of-margin events of this canary's checks (gen3_r1_yardstick_margin_v1):

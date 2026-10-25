@@ -402,6 +402,35 @@ def record_source(model: str, run_dir: Optional[str]) -> RecordSource:
     return RecordSource("restart" if same else "fork", src, meta_path, meta)
 
 
+def model_config_miss(model: str, dest: str, saved_ver: Any = None) -> str:
+    """WHERE the `model_config` route looked for ``dest`` and why it found no value — the FILE and the KEY, never
+    "the checkpoint's model_config.json" alone (2026-10-25: the x26c re-read refused "--vf-coef (the checkpoint's
+    model_config.json)" while the run dir's config records ``vf_coef`` 0.5; the checkpoint zip had been removed by
+    retention, `checkpoint_state.require_checkpoint`). The config is THE one resolver's
+    (`shaped_reward.saved_config_path`), the file `_load_saved_version` reads."""
+    from agents.model.model_version.shaped_reward import saved_config_path
+    from main.train.checkpoint_state import CheckpointNotFoundError, require_checkpoint
+    try:
+        require_checkpoint(model)
+    except CheckpointNotFoundError as e:
+        return f"key {dest!r} of the checkpoint's model_config.json, not read: {e}"
+    cfg = saved_config_path(model)
+    if cfg is None:
+        return (f"key {dest!r}: no model_config.json in {os.path.dirname(os.path.abspath(model))} or its parent "
+                "directory")
+    if saved_ver is not None:
+        return f"key {dest!r} of {cfg}: not a field of the config read"
+    try:
+        with open(cfg) as fh:
+            raw = json.load(fh)
+    except (OSError, ValueError) as e:
+        return f"key {dest!r} of {cfg}: the file could not be parsed ({type(e).__name__}: {e})"
+    if isinstance(raw, dict) and dest in raw:
+        return (f"key {dest!r} of {cfg}: the file records {dest}={raw[dest]!r}, but it was not readable as a "
+                "ModelVersion under this tree (the [Resume] WARNING above names why)")
+    return f"key {dest!r} of {cfg}: the file does not record it"
+
+
 def inherit_recorded_recipe(ns: Any, run_dir: Optional[str], saved_ver: Any = None,
                             parser_defaults: Optional[Dict[str, Any]] = None,
                             *, model: Optional[str] = None,
@@ -450,7 +479,7 @@ def inherit_recorded_recipe(ns: Any, run_dir: Optional[str], saved_ver: Any = No
             if saved_ver is None and partial:
                 continue
             if saved_ver is None or not hasattr(saved_ver, r.dest):
-                missing.append(f"{r.flag} (the checkpoint's model_config.json)")
+                missing.append(f"{r.flag} ({model_config_miss(model, r.dest, saved_ver)})")
                 continue
             value, source = getattr(saved_ver, r.dest), "model_config.json"
         else:

@@ -101,7 +101,9 @@
   `--batch-size` / `--n-steps` untouched (INERT — SB3 restores them); recorded tri-state fields left to
   `_resolve` (the mechanism above — `opp_intent_coef`, `trunk_precision` included); value-checked fields from
   `model_config.json`; the rest from `metadata.json:cli_args` — each announced `[Recipe] … from <source>`,
-  and a MISSING value REFUSED (`RecipeRecordError`, `FATAL_CONFIG`, naming the flag).
+  and a MISSING value REFUSED (`RecipeRecordError`, `FATAL_CONFIG`, naming the flag, and for a `model_config.json`
+  row the file and the key). A `--model` naming no checkpoint is "checkpoint file not found" first
+  (`checkpoint_state.require_checkpoint`; a retention-removed zip's step sidecar is named).
   🚨 **The same function restores the RUN FLAGS** (`main.train.launch_flags`; 2026-10-24: a manual resume of an
   X35 arm recorded `--behaviour-check warn --checkpoint-every-steps 1000000` ran K9(b) FATAL with saves every 2.4M,
   because only the recipe rows were restored): the safety modes, the save / eval cadence, retention and the self-play

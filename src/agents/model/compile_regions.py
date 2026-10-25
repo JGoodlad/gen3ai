@@ -1588,6 +1588,7 @@ def _clip_margin_rule(fix: ClipRelocation, arms: Dict[str, Dict[str, torch.Tenso
     same = _same_precision(arms)
     if watch is not None:
         watch.fill_margin(fix, reads, same)
+        watch.fill_rows(fix, arms)
     out = [n for n, (sh, _, fl) in reads.items() if not sh <= fix.margin or fl]
     yard = [n for n in out if n in YARDSTICK_ARMS]
     judged = [n for n in out if n not in YARDSTICK_ARMS]
@@ -1651,6 +1652,9 @@ class GradWatch:
         #: recorded as a FIXTURE row too; None = batch rows only
         self.fixture_rows: Optional[List[int]] = None
         self.yardstick: List[Dict[str, Any]] = []        # gen3_r1_yardstick_margin_v1: the rung's yardstick events
+        #: gen3_canary_row_null_shadow_v1: per arm, |Δ log π| from the reference per FIXTURE row (the max over its
+        #: tiles), for the canary's shadow per-row null (`canary_row_null.record`); not part of `record()`
+        self.row_dlogp: Dict[str, np.ndarray] = {}
 
     def _fixture(self, row: int) -> Optional[int]:
         fr = self.fixture_rows
@@ -1673,6 +1677,23 @@ class GradWatch:
             self.margin["same_precision"] = {"arms": f"{same[0]} - eager", "max_abs_dlogp": float(same[1]),
                                              "row": int(same[2]), "fixture_row": self._fixture(int(same[2])),
                                              "bar": None}
+
+    def fill_rows(self, fix: "ClipRelocation", arms: Dict[str, Dict[str, torch.Tensor]]) -> None:
+        """Every arm's |Δ log π| from the relocation's reference PER FIXTURE ROW (the max over the batch rows that tile
+        it; a non-finite shift reads +inf) — bookkeeping for the shadow per-row null (gen3_canary_row_null_shadow_v1),
+        read by nothing that judges. Without known fixture rows, nothing is filled."""
+        fr = self.fixture_rows
+        self.row_dlogp = {}
+        if fr is None or not len(fr):
+            return
+        idx = np.asarray(fr, dtype=np.int64)
+        for name, arm in arms.items():
+            d = _nan_inf((arm["log_prob"].detach().double().cpu().reshape(-1) - fix.ref_log_prob).abs()).numpy()
+            if d.shape != idx.shape:
+                continue
+            rows = np.zeros(int(idx.max()) + 1)
+            np.maximum.at(rows, idx, d)
+            self.row_dlogp[name] = rows
 
     def add_yardstick(self, event: Dict[str, Any]) -> None:
         """A yardstick-out-of-margin event (`_clip_margin_rule`), its rows also as fixture rows when known."""

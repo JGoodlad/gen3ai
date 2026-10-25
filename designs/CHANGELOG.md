@@ -15413,3 +15413,27 @@ was downloaded or written under `data/`.
   non-finite quantity reads as at its bar. The clip margin is read against M′ after a yardstick re-run. A failed write
   leaves the PASS standing. Docs: `training/learner_lifecycle.md` (the canary record), `training/compile_flags.md`, the
   `ops/TRAINING_RUN_SOP.md` §3 rule 5, and the TECH-DEBT canary row.
+## 2026-10-25 — the canary records a SHADOW per-row dither null (`gen3_canary_row_null_shadow_v1`); canary dumps never overwrite (`gen3_canary_dump_no_clobber_v1`); a missing `--model` checkpoint is "file not found" (no model / config / obs / signature change; training math and every verdict untouched)
+
+- **The shadow null (orchestrator-approved; the design's "cheaper path", `research_state/measurements/canary_row_null_design_2026-10-25/`).**
+  Every canary, before its check, computes each golden row's fp32 dither null on the live weights (`canary_row_null`: 64
+  unique rows, 16 fixed name-keyed seeds of a relative 2^-9 dither, `diag_bf16_canary.dithered`'s formula on the
+  parameters' device, every parameter restored bit-exactly) and records it as `row_null` with each arm's per-row
+  |Δ log π| (`GradWatch.row_dlogp`, the max over a row's tiles) and its ratio to max(null, 0.02). It judges nothing: the
+  verdict, the TB scalars and every other record field are identical with it on or off (`canary_row_null_test`). Cost:
+  CPU 3.3-3.5 s per canary on the K9 golden learner; GPU UNVERIFIED (est. 0.5-1.6 s); capped at 5 s
+  (`$GEN3AI_CANARY_ROW_NULL_CAP_S`), a skip recorded. New TB scalar `compile/canary_row_null_seconds`. A live run gets
+  it only at its next pin.
+- **Dump naming (0dcf0ea4 FINDING 3).** An UNCONFIRMED / FATAL weight dump was `canary_u<update>_<verdict>_policy.pt`;
+  the update restarts at 0 in every process, so a post-restart dump overwrote an earlier one. Now
+  `canary_u<update>_s<steps>_<verdict>_policy.pt`, written temp-then-`os.link` (never over an existing file; a taken
+  name gets `_r2` …); the near-margin dump shares the write.
+- **The `--vf-coef` refusal (x26c margin F7; 0dcf0ea4 FINDING 6).** A re-read of `rb_x26c_s2601`'s 479M checkpoint
+  refused "--vf-coef (the checkpoint's model_config.json)" although the run's config records 0.5. Root cause: the zip had
+  been removed by checkpoint retention (its step sidecar left), and `_load_saved_version` (via `snapshot._resolve_paths`)
+  swallowed the missing zip as "no config", while the launch path's refusals read the run's config through
+  `shaped_reward.saved_config_path` — two resolvers. Now `checkpoint_state.require_checkpoint` raises
+  `CheckpointNotFoundError` ("checkpoint file not found", naming the sidecar), `resolve_config` exits FATAL_CONFIG on it,
+  `_load_saved_version` reads the one resolver's file, a model_config-route miss names the file, the key and the
+  recorded value (`recipe_surface.model_config_miss`), and `diag_bf16_canary.build_learner` names a missing zip first
+  (it used to read "--trunk-precision is 'fp32'"). `checkpoint_not_found_test`.

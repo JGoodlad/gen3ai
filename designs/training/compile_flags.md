@@ -2135,7 +2135,8 @@ the judged one):
 5. **The instrument gap closed.** Every record names each arm's worst row (`clip_margin.worst_row`, and
    `worst_fixture_row`: the committed fixture row it tiles, via `R1Batch.fixture_rows`) and carries `same_precision`:
    max |log π_compiled − log π_eager| and its row, **RECORDED with no bar** until a CUDA census reads it. An UNCONFIRMED
-   or FATAL verdict writes the policy `state_dict` beside its record (`policy_pt`, `canary_u<update>_<verdict>_policy.pt`),
+   or FATAL verdict writes the policy `state_dict` beside its record (`policy_pt`,
+   `canary_u<update>_s<steps>_<verdict>_policy.pt`, never over an existing file: `gen3_canary_dump_no_clobber_v1`),
    at most `compile_canary.DUMP_WEIGHTS_MAX` = 3 per process (a module counter no checkpoint carries, like K9(b)'s T61
    cap). At u1700 neither the row nor the weights could be recovered.
 
@@ -2157,11 +2158,14 @@ writes the same `state_dict` an UNCONFIRMED does, rotated to the newest 3 per ru
 `bar_fractions`. The record and the rotation are documented in `learner_lifecycle.md` (the canary). A run picks it up
 only at its next PIN: a live run keeps its pin's canary through every restart.
 
-**The per-row dither-null margin is DESIGNED, NOT BUILT**
-(`../research_state/measurements/canary_row_null_design_2026-10-25/README.md`). It would replace the global M with a
-per-row bar of k × that row's own fp32 half-ulp dither null. On CPU, healthy bf16 arms read at most 1.1 × their row's
-null (704 row-reads), so k ≈ 4.4. The one CUDA compiled point (u1000) reads 2.7 × a CPU null, so k is unsettled. The
-lease-gated CUDA census `gpu_census.sh` is written there, not run.
+**The per-row dither-null margin is DESIGNED; its null runs as a RECORDED-ONLY SHADOW**
+(`../research_state/measurements/canary_row_null_design_2026-10-25/README.md`; `gen3_canary_row_null_shadow_v1`,
+`canary_row_null`). The margin would replace the global M with a per-row bar of k × that row's own fp32 half-ulp dither
+null. On CPU, healthy bf16 arms read at most 1.1 × their row's null (704 row-reads), so k ≈ 4.4. The one CUDA compiled
+point (u1000) reads 2.7 × a CPU null, so k is unsettled. Every canary now records each row's 16-seed null and each
+arm's per-row shift / null as `row_null` and judges nothing (`learner_lifecycle.md`, the canary), so each production
+canary from its next pin on is one CUDA census row; the global M stays binding. The lease-gated census
+`gpu_census.sh` is still written there, not run.
 
 ### bf16 drift on a sharpening policy: the loss is read on the golden's own rows (`gen3_r1_loss_on_golden_rows_v1`, 2026-10-17)
 

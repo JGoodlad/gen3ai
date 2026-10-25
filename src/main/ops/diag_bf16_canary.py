@@ -175,6 +175,11 @@ def build_learner(zip_path: Path, device: str, *, precision: str = "bf16", batch
     from agents.model.trunk_precision import set_trunk_precision, trunk_precision_of
     from agents.training import learner_golden as LG
     from main.ops.cuda_build_validate import resolved_args
+    from main.train.checkpoint_state import CheckpointNotFoundError, require_checkpoint
+    try:                     # 0dcf0ea4 FINDING 6: a missing zip read as "--trunk-precision is 'fp32'" below
+        require_checkpoint(str(zip_path))
+    except CheckpointNotFoundError as exc:
+        raise DiagError(str(exc)) from exc
     args = resolved_args(["--model", str(zip_path)], "cpu")
     if getattr(args, "trunk_precision", None) != "bf16" and not ALLOW_FP32_RUN:
         raise DiagError(f"{zip_path}: the run's resolved --trunk-precision is {getattr(args, 'trunk_precision', None)!r}, "

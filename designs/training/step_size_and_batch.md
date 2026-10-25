@@ -693,7 +693,11 @@ The production TRAINING RECIPE is mirrored in `designs/production_config.json`'s
     `trainee_slots` / `t2_buckets` / `t2_lanes` — are derived at startup when unrecorded).
 
   A value MISSING from its route REFUSES by name (`RecipeRecordError` → `FATAL_CONFIG`, after the combination
-  sweep; `checkargs` and `--dry-run` report it) — never a parser or registry default. `recipe.fork` (E5) is never
+  sweep; `checkargs` and `--dry-run` report it) — never a parser or registry default. A `model_config.json` miss names
+  the FILE and the KEY it looked for, and the recorded value when the file has one (`recipe_surface.model_config_miss`).
+  A `--model` that names NO checkpoint is refused before any of this as "checkpoint file not found"
+  (`checkpoint_state.require_checkpoint`, `FATAL_CONFIG`; 2026-10-25: a zip removed by retention used to read as a
+  missing `--vf-coef`), and the config is read through ONE resolver (`shaped_reward.saved_config_path`). `recipe.fork` (E5) is never
   applied: a fork's recipe is its argv plus its parent's record, compared with `recipe.fork` as INFO. The restart also KEEPS the
   provenance tags the stripped `--arch` would have stamped — `recipe_source` from `cli_args`, and (any
   same-run restart, `arch_surface.inherit_arch_source_on_restart`) `arch_source` from the

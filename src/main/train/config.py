@@ -445,8 +445,18 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # terminal alone (owner decision, 2026-09-26).
     if args.model:
         enforce_not_shaped_parent(args.model)
-    _saved_ver = _load_saved_version(args.model) if args.model else None
-    if args.model and _saved_ver is None:
+    # A --model that names no checkpoint is refused as itself ("file not found",
+    # `checkpoint_state.require_checkpoint`, 2026-10-25), never as a recipe value or a precision the missing record
+    # could not supply (the x26c re-read: "--vf-coef (the checkpoint's model_config.json)"). DEFERRED, like the recipe
+    # refusal below, to just after the combination sweep (a refused combination keeps its own verdict first, as
+    # `main.checkargs` reports it), and raised BEFORE the recipe refusal.
+    from main.train.checkpoint_state import CheckpointNotFoundError
+    _checkpoint_refusal = None
+    try:
+        _saved_ver = _load_saved_version(args.model) if args.model else None
+    except CheckpointNotFoundError as e:
+        _saved_ver, _checkpoint_refusal = None, str(e)
+    if args.model and _saved_ver is None and _checkpoint_refusal is None:
         print("[Resume] WARNING: saved model_config.json unreadable — structural toggles fall back to "
               "their OFF defaults and may FATAL at the version check; pass them explicitly if needed.")
     # Whether a recorded parent config was READ. `combination_checks`' `needs=("saved_config",)`
@@ -796,6 +806,11 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # `combination_checks_test.py` AST-scans this file and fails if a cross-flag
     # `parser.error` reappears outside the list.
     refuse_first(args, parser)
+    if _checkpoint_refusal is not None:   # the deferred missing-checkpoint refusal (above): before the recipe's
+        from main.exit_codes import TrainExitCode
+        print(f"\n[Resume] FATAL: {_checkpoint_refusal}", file=sys.stderr, flush=True)
+        emit(f"[Resume] FATAL: {_checkpoint_refusal}")
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
     if _recipe_refusal is not None:       # the deferred record refusal (above): never a parser default
         from main.exit_codes import TrainExitCode
         print(f"\n[Recipe] FATAL: {_recipe_refusal}", file=sys.stderr, flush=True)
