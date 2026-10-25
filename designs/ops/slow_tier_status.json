@@ -1,6 +1,14 @@
 {
  "schema": "gen3_slow_tier_status_v1",
  "tests": {
+  "src/agents/inference/service/aot_test.py::test_a_real_cpu_aot_build_serves_eager": {
+   "status": "pass",
+   "commit": "cfa3c490b82b943ca77f17728789b0db37c78c6a",
+   "at": "2026-10-25T17:43:52Z",
+   "duration_s": 11.2,
+   "contention": 1.65,
+   "detail": ""
+  },
   "src/agents/inference/service/flat_weights_test.py::test_NaN_weights_are_REFUSED_at_load_before_the_slot_is_touched": {
    "status": "pass",
    "commit": "4290d652a517a61c255572a97636a340beeecc6e",
@@ -4963,5 +4971,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-25T16:58:31Z"
+ "last_written": "2026-10-25T17:43:52Z"
 }
